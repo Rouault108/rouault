@@ -202,36 +202,79 @@ describe('ui-copy-button browser contract', () => {
 
     const successButton = getInnerButton(successHost);
     const errorButton = getInnerButton(errorHost);
+    const originalSetTimeout = window.setTimeout.bind(window);
+    const originalClearTimeout = window.clearTimeout.bind(window);
+    const pendingResetTimers = new Map<number, VoidFunction>();
+    let nextTimerId = 1;
 
-    await withMockedClipboardWrite(
-      async (value: string) => {
-        if (value === 'error') {
-          throw new Error('forced error');
-        }
-        return Promise.resolve();
-      },
-      async () => {
-        successButton.click();
-        await waitMs(80);
-        expect(successHost.getAttribute('state')).to.equal('success');
+    window.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
+      if (timeout === 2000 || timeout === 3000) {
+        const id = nextTimerId++;
+        pendingResetTimers.set(id, () => {
+          pendingResetTimers.delete(id);
+          if (typeof handler === 'function') {
+            handler(...args);
+          }
+        });
+        return id as unknown as number;
+      }
 
-        await waitMs(2100);
-        await waitForLitUpdate(successHost);
+      return originalSetTimeout(handler, timeout as number, ...args);
+    }) as typeof window.setTimeout;
 
-        expect(successHost.getAttribute('state')).to.equal('idle');
-        expect(successButton.getAttribute('aria-label')).to.equal('成功テスト');
+    window.clearTimeout = ((timeoutId: number) => {
+      pendingResetTimers.delete(timeoutId);
+      return originalClearTimeout(timeoutId);
+    }) as typeof window.clearTimeout;
 
-        errorButton.click();
-        await waitMs(80);
-        expect(errorHost.getAttribute('state')).to.equal('error');
+    const flushResetTimers = (): void => {
+      const timers = Array.from(pendingResetTimers.values());
+      pendingResetTimers.clear();
+      for (const timer of timers) {
+        timer();
+      }
+    };
 
-        await waitMs(3100);
-        await waitForLitUpdate(errorHost);
+    try {
+      await withMockedClipboardWrite(
+        async (value: string) => {
+          if (value === 'error') {
+            throw new Error('forced error');
+          }
+          return Promise.resolve();
+        },
+        async () => {
+          successButton.click();
+          await waitForLitUpdate(successHost);
+          await nextAnimationFrame();
 
-        expect(errorHost.getAttribute('state')).to.equal('idle');
-        expect(errorButton.getAttribute('aria-label')).to.equal('失敗テスト');
-      },
-    );
+          expect(successHost.getAttribute('state')).to.equal('success');
+
+          flushResetTimers();
+          await waitForLitUpdate(successHost);
+          await nextAnimationFrame();
+
+          expect(successHost.getAttribute('state')).to.equal('idle');
+          expect(successButton.getAttribute('aria-label')).to.equal('成功テスト');
+
+          errorButton.click();
+          await waitForLitUpdate(errorHost);
+          await nextAnimationFrame();
+
+          expect(errorHost.getAttribute('state')).to.equal('error');
+
+          flushResetTimers();
+          await waitForLitUpdate(errorHost);
+          await nextAnimationFrame();
+
+          expect(errorHost.getAttribute('state')).to.equal('idle');
+          expect(errorButton.getAttribute('aria-label')).to.equal('失敗テスト');
+        },
+      );
+    } finally {
+      window.setTimeout = originalSetTimeout;
+      window.clearTimeout = originalClearTimeout;
+    }
   });
 
   it('disabled 時は clipboard 書き込みも event も発火しないこと', async () => {

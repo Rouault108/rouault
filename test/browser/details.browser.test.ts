@@ -13,8 +13,10 @@ const getTrigger = (host: Details): HTMLButtonElement | null =>
 const getContentWrapper = (host: Details): HTMLElement | null =>
   host.shadowRoot?.querySelector<HTMLElement>('.content-wrapper') ?? null;
 
-const getSummary = (host: Details): HTMLElement | null =>
-  host.shadowRoot?.querySelector<HTMLElement>('.summary') ?? null;
+const getSummarySlotContent = (host: Details): string =>
+  (host.querySelector<HTMLElement>('[slot="summary"]')?.textContent ?? '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 const expectPresent = <T>(value: T | null | undefined, name: string): T => {
   expect(value, `${name} should exist`).to.not.equal(null);
@@ -123,8 +125,7 @@ describe('ui-details browser contract', () => {
 
     await waitForLitUpdate(host);
 
-    const summary = expectPresent(getSummary(host), 'summary');
-    expect(summary.textContent?.replace(/\s+/g, ' ').trim()).to.equal('slot summary を優先');
+    expect(getSummarySlotContent(host)).to.equal('slot summary を優先');
   });
 
   it('可視 summary がある場合は aria-label を trigger に反映しないこと', async () => {
@@ -140,20 +141,32 @@ describe('ui-details browser contract', () => {
     expect(trigger.hasAttribute('aria-label')).to.equal(false);
   });
 
-  it('icon-only かつ aria-label なしでは render 時に例外を投げること', async () => {
-    let thrown: unknown;
+  it('icon-only かつ aria-label なしでは console.error を出すこと', async () => {
+    const originalError = console.error;
+    const errors: unknown[][] = [];
+
+    console.error = (...args: unknown[]) => {
+      if (String(args[0]).includes('[ui-details]')) {
+        errors.push(args);
+      }
+    };
 
     try {
-      await fixture<Details>(html`
+      const host = await fixture<Details>(html`
         <ui-details>
           <p>本文</p>
         </ui-details>
       `);
-    } catch (error) {
-      thrown = error;
+
+      await waitForLitUpdate(host);
+
+      const trigger = expectPresent(getTrigger(host), 'trigger');
+      expect(trigger.hasAttribute('aria-label')).to.equal(false);
+    } finally {
+      console.error = originalError;
     }
 
-    expect(thrown instanceof Error).to.equal(true);
-    expect((thrown as Error).message.includes('aria-label')).to.equal(true);
+    expect(errors.length).to.be.greaterThan(0);
+    expect(String(errors[0]?.[0] ?? '').includes('aria-label')).to.equal(true);
   });
 });

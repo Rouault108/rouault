@@ -2,6 +2,11 @@ import { expect, fixture, html } from '@open-wc/testing';
 import '../../../src/components/ui/tabs/tabs.js';
 import type { Tabs } from '../../../src/components/ui/tabs/tabs.js';
 import type { UiTabChangeDetail } from '../../../src/components/ui/tabs/tabs.types.js';
+import {
+  clearTabsUrlSyncStrategy,
+  registerTabsUrlSyncStrategy,
+} from '../../../src/components/ui/tabs/tabs-url-sync-strategy.js';
+import { primaryTabTabsUrlSyncStrategy } from '../../../src/components/app/navigation/primary-tab-url-state.js';
 import { dispatchKey, waitForLitUpdate } from './wait-for-lit.js';
 
 const must = <T>(value: T | null | undefined, message: string): T => {
@@ -15,6 +20,14 @@ const asHtmlElements = (elements: Iterable<Element>): HTMLElement[] =>
   Array.from(elements).filter((element): element is HTMLElement => element instanceof HTMLElement);
 
 describe('ui-tabs browser contract', () => {
+  beforeEach(() => {
+    registerTabsUrlSyncStrategy(primaryTabTabsUrlSyncStrategy);
+  });
+
+  afterEach(() => {
+    clearTabsUrlSyncStrategy();
+  });
+
   const withThreeTabs = html`
     <ui-tabs>
       <button slot="tab" value="overview">概要</button>

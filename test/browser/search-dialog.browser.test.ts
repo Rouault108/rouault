@@ -353,6 +353,6 @@ describe('ui-search-dialog browser contract', () => {
 
     const text = dialog.shadowRoot?.textContent ?? '';
     expect(text).to.contain('検索結果を取得できませんでした');
-    expect(text).to.contain('検索サービスに接続できません');
+    expect(text).to.contain('時間をおいて再度お試しください');
   });
 });

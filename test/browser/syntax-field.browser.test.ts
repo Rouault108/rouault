@@ -39,7 +39,7 @@ describe('ui-syntax-field browser contract', () => {
 
     await flush(host);
 
-    expect(host.shadowRoot).to.equal(host);
+    expect(host.shadowRoot).to.equal(null);
 
     const wrapper = expectPresent(
       host.querySelector<HTMLElement>('.field-wrapper'),

@@ -59,12 +59,12 @@ const waitForMathSettled = async (host: UiMath): Promise<void> => {
 };
 
 describe('ui-math browser contract', () => {
-  it('accessibleLabel がある runtime inline は label speech mode を採り、MathML を aria-hidden にすること', async () => {
+  it('aria-label がある runtime inline は label speech mode を採り、MathML を aria-hidden にすること', async () => {
     const restoreResizeObserver = installResizeObserverStub();
 
     try {
       const host = await fixture<UiMath>(html`
-        <ui-math latex="c = \\pm \\sqrt{a^2 + b^2}" accessible-label="平方根の式"></ui-math>
+        <ui-math latex="c = \\pm \\sqrt{a^2 + b^2}" aria-label="平方根の式"></ui-math>
       `);
 
       await flush(host);

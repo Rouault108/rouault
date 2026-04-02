@@ -289,12 +289,12 @@ describe('ui-footnote browser contract', () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>
         <article data-footnote-scope>
-          <p>
+          <div>
             SSR 再接続
             <ui-footnote id="ssr-footnote" ref-id="fn-60" index="0" ref-instance="-1">
               <p>SSR で埋め込まれた脚注本文。</p>
             </ui-footnote>
-          </p>
+          </div>
 
           <section class="footnotes" role="doc-endnotes">
             <h2 class="sr-only">脚注</h2>

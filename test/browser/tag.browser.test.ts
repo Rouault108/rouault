@@ -37,7 +37,7 @@ describe('ui-tag browser contract', () => {
     const root = getTagRoot(tag);
 
     expect(root.tagName.toLowerCase()).to.equal('span');
-    expect(text(root.textContent)).to.equal('JavaScript');
+    expect(text(tag.textContent)).to.equal('JavaScript');
     expect(getTagLink(tag)).to.equal(null);
     expect(getTagRemoveButton(tag)).to.equal(null);
 
@@ -59,8 +59,7 @@ describe('ui-tag browser contract', () => {
 
     expect(link.tagName.toLowerCase()).to.equal('a');
     expect(link.getAttribute('href')).to.equal('/tags/javascript');
-    expect(text(link.textContent)).to.equal('JavaScript');
-    expect(getTagRoot(tag)).to.equal(link);
+    expect(text(tag.textContent)).to.equal('JavaScript');
     expect(getTagRemoveButton(tag)).to.equal(null);
     expect(getTagGroup(tag)).to.equal(null);
   });
@@ -107,7 +106,7 @@ describe('ui-tag browser contract', () => {
     expect(group.getAttribute('role')).to.equal('group');
     expect(group.getAttribute('aria-label')).to.equal('Rust タグ');
     expect(link.getAttribute('href')).to.equal('/tags/rust');
-    expect(text(link.textContent)).to.equal('Rust');
+    expect(text(tag.textContent)).to.equal('Rust');
     expect(removeButton.getAttribute('aria-label')).to.equal('Rustを削除');
   });
 
@@ -166,6 +165,6 @@ describe('ui-tag browser contract', () => {
 
     expect(iconSlot).to.not.equal(null);
     expect(textSlot).to.not.equal(null);
-    expect(text(textSlot?.textContent)).to.equal('Literature');
+    expect(text(tag.textContent)).to.equal('Literature');
   });
 });

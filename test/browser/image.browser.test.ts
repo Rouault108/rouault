@@ -45,10 +45,15 @@ describe('ui-image browser contract', () => {
       host.shadowRoot?.querySelector<HTMLElement>('.error-fallback'),
       'empty fallback',
     );
+    const trigger = expectPresent(
+      host.shadowRoot?.querySelector<HTMLButtonElement>('button.trigger'),
+      'trigger',
+    );
 
     expect(figure.getAttribute('aria-busy')).to.equal('false');
     expect(fallback.textContent?.includes('画像が指定されていません')).to.equal(true);
-    expect(host.shadowRoot?.querySelector('button.trigger')).to.equal(null);
+    expect(trigger.disabled).to.equal(true);
+    expect(trigger.getAttribute('aria-expanded')).to.equal('false');
   });
 
   it('load 後に openLightbox / Escape close / focus return / scroll lock を満たすこと', async () => {

@@ -50,6 +50,22 @@ const findToastByMessage = (host: UiToast, message: string): HTMLOutputElement =
   return target;
 };
 
+const findToastByVariantAndMessage = (
+  host: UiToast,
+  variant: ToastVariant,
+  message: string,
+): HTMLOutputElement => {
+  const target = getOutputs(host).find(
+    (toast) => toast.dataset['variant'] === variant && getMessage(toast) === message,
+  );
+
+  if (!target) {
+    throw new Error(`"${variant}" / "${message}" の toast が見つかりません`);
+  }
+
+  return target;
+};
+
 const assertRole = (toast: HTMLOutputElement, expected: 'status' | 'alert'): void => {
   expect(toast.getAttribute('role')).to.equal(expected);
 };
@@ -60,22 +76,6 @@ const assertVariant = (toast: HTMLOutputElement, expected: ToastVariant): void =
 
 const getSnapshotByMessage = (message: string): ToastItem | undefined =>
   ToastManager.getSnapshot().find((item) => item.message === message);
-
-const waitForSnapshotCount = async (expected: number, timeoutMs = 1800): Promise<void> => {
-  const startedAt = Date.now();
-
-  while (Date.now() - startedAt <= timeoutMs) {
-    if (ToastManager.getSnapshot().length === expected) {
-      return;
-    }
-
-    await waitMs(16);
-  }
-
-  throw new Error(
-    `snapshot 件数が ${String(expected)} になることを期待しましたが、実際には ${String(ToastManager.getSnapshot().length)} でした`,
-  );
-};
 
 describe('ui-toast browser contract', () => {
   afterEach(() => {
@@ -185,18 +185,20 @@ describe('ui-toast browser contract', () => {
     });
     await flush(host);
 
-    const hoverToast = findToastByMessage(host, '接続が不安定です');
+    const hoverToast = findToastByVariantAndMessage(host, 'warning', '接続が不安定です');
 
-    await waitMs(80);
+    await waitMs(40);
     hoverToast.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
-    await waitMs(260);
+    await waitMs(140);
     await flush(host);
 
     expect(ToastManager.getSnapshot().length).to.equal(1);
 
     hoverToast.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
-    await waitForSnapshotCount(0);
+    await waitMs(TOAST_EXIT_DURATION_MS + 260);
     await flush(host);
+
+    expect(ToastManager.getSnapshot().length).to.equal(0);
 
     ToastManager.show({
       variant: 'warning',
@@ -205,19 +207,21 @@ describe('ui-toast browser contract', () => {
     });
     await flush(host);
 
-    const focusToast = findToastByMessage(host, 'フォーカステスト');
+    const focusToast = findToastByVariantAndMessage(host, 'warning', 'フォーカステスト');
     const closeButton = getCloseButton(focusToast);
 
-    await waitMs(80);
+    await waitMs(40);
     closeButton.focus();
-    await waitMs(260);
+    await waitMs(140);
     await flush(host);
 
     expect(ToastManager.getSnapshot().length).to.equal(1);
 
     closeButton.blur();
-    await waitForSnapshotCount(0);
+    await waitMs(TOAST_EXIT_DURATION_MS + 240);
     await flush(host);
+
+    expect(ToastManager.getSnapshot().length).to.equal(0);
 
     ToastManager.show({
       variant: 'info',
@@ -226,16 +230,18 @@ describe('ui-toast browser contract', () => {
     });
     await flush(host);
 
-    await waitMs(80);
+    await waitMs(40);
     ToastManager.setVisibilityPaused(true);
-    await waitMs(260);
+    await waitMs(140);
     await flush(host);
 
     expect(ToastManager.getSnapshot().length).to.equal(1);
 
     ToastManager.setVisibilityPaused(false);
-    await waitForSnapshotCount(0);
+    await waitMs(TOAST_EXIT_DURATION_MS + 240);
     await flush(host);
+
+    expect(ToastManager.getSnapshot().length).to.equal(0);
   });
 
   it('duration:0 は dismissible=true になり、variant 違いは重複統合せず、legacy error は danger へ写像されること', async () => {
@@ -263,8 +269,8 @@ describe('ui-toast browser contract', () => {
     const outputs = getOutputs(host);
     expect(outputs.length).to.equal(3);
 
-    const infoToast = findToastByMessage(host, '同一文言');
-    const legacyToast = findToastByMessage(host, '旧variant互換テスト');
+    const infoToast = findToastByVariantAndMessage(host, 'info', '同一文言');
+    const legacyToast = findToastByVariantAndMessage(host, 'danger', '旧variant互換テスト');
 
     getCloseButton(infoToast);
     assertRole(infoToast, 'status');

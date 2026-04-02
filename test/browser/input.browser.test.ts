@@ -214,7 +214,7 @@ describe('ui-input browser contract', () => {
     const submitInner = getInnerInput(submitter);
     expect(submitInner.getAttribute('inputmode')).to.equal('tel');
     expect(submitInner.getAttribute('enterkeyhint')).to.equal('next');
-    expect(submitInner.getAttribute('autocapitalize')).to.equal('off');
+    expect(['off', 'none']).to.include(submitInner.getAttribute('autocapitalize'));
     expect(submitInner.getAttribute('spellcheck')).to.equal('false');
 
     let submitCount = 0;

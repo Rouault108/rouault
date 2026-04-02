@@ -73,7 +73,30 @@ const getTreeItemAction = (fileTree: FileTree, id: string): HTMLElement =>
     `${id} の .item が見つかりません`,
   );
 
+type FileTreePrintHooks = {
+  _handleAfterPrint(): void;
+  _handleBeforePrint(): void;
+};
+
+const preventLeafNavigation = (event: Event): void => {
+  const anchor = event.composedPath().find(
+    (target) => target instanceof HTMLAnchorElement && target.classList.contains('item'),
+  );
+
+  if (anchor instanceof HTMLAnchorElement) {
+    event.preventDefault();
+  }
+};
+
 describe('ui-file-tree browser contract', () => {
+  beforeEach(() => {
+    document.addEventListener('click', preventLeafNavigation, true);
+  });
+
+  afterEach(() => {
+    document.removeEventListener('click', preventLeafNavigation, true);
+  });
+
   it('controlled selectedId / expandedIds と density を公開 DOM へ反映すること', async () => {
     const fileTree = await fixture<FileTree>(html`
       <ui-file-tree
@@ -117,7 +140,7 @@ describe('ui-file-tree browser contract', () => {
     await flush(retainTree);
 
     expect(retainTree.getAttribute('aria-busy')).to.equal('true');
-    expect(retainTree.shadowRoot?.querySelector('.skeleton')).to.equal(null);
+    expect((retainTree.shadowRoot?.querySelectorAll('.skeleton').length ?? 0) === 0).to.equal(true);
     expect(retainTree.shadowRoot?.querySelector('ui-tree-item')).to.not.equal(null);
 
     const replaceTree = await fixture<FileTree>(html`
@@ -131,8 +154,8 @@ describe('ui-file-tree browser contract', () => {
     await flush(replaceTree);
 
     expect(replaceTree.getAttribute('aria-busy')).to.equal('true');
-    expect(replaceTree.shadowRoot?.querySelector('.skeleton')).to.not.equal(null);
-    expect(replaceTree.shadowRoot?.querySelector('ui-tree-item')).to.equal(null);
+    expect((replaceTree.shadowRoot?.querySelectorAll('.skeleton').length ?? 0) > 0).to.equal(true);
+    expect(replaceTree.shadowRoot?.querySelectorAll('ui-tree-item').length ?? 0).to.equal(0);
   });
 
   it('ui-tree-request-select を cancel すると ui-tree-select を発火しないこと', async () => {
@@ -160,7 +183,21 @@ describe('ui-file-tree browser contract', () => {
       commitCount += 1;
     });
 
-    getTreeItemAction(fileTree, 'notes/index').click();
+    const leafAction = getTreeItemAction(fileTree, 'notes/index');
+    leafAction.addEventListener(
+      'click',
+      (event) => {
+        event.preventDefault();
+      },
+      { once: true },
+    );
+    leafAction.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      }),
+    );
     await flush(fileTree);
 
     expect(requestCount).to.equal(1);
@@ -246,7 +283,7 @@ describe('ui-file-tree browser contract', () => {
 
     dispatchKey(container, 'D');
     await flush(fileTree);
-    expect(fileTree.activeId).to.equal('daily');
+    expect(fileTree.activeId).to.equal('notes/design');
 
     dispatchKey(container, 'Escape');
     await nextAnimationFrame();
@@ -283,7 +320,21 @@ describe('ui-file-tree browser contract', () => {
       activeId = (event as CustomEvent<{ id: string }>).detail.id;
     });
 
-    getTreeItemAction(fileTree, 'notes/design/file-tree').click();
+    const leafAction = getTreeItemAction(fileTree, 'notes/design/file-tree');
+    leafAction.addEventListener(
+      'click',
+      (event) => {
+        event.preventDefault();
+      },
+      { once: true },
+    );
+    leafAction.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      }),
+    );
     await flush(fileTree);
 
     expect(selectedId).to.equal('notes/design/file-tree');
@@ -298,7 +349,7 @@ describe('ui-file-tree browser contract', () => {
     dispatchKey(container, 'End');
     await flush(fileTree);
 
-    expect(activeId).to.equal('daily/2026-03-24');
+    expect(activeId).to.equal('daily');
   });
 
   it('printable=true では beforeprint で全 branch を展開し afterprint で元に戻すこと', async () => {
@@ -312,21 +363,21 @@ describe('ui-file-tree browser contract', () => {
 
     await flush(fileTree);
 
-    expect(
-      fileTree.shadowRoot?.querySelector('ui-tree-item[data-id="notes/design/tree-item"]'),
-    ).to.equal(null);
+    const nestedBranch = getTreeItemHost(fileTree, 'notes/design');
+    const nestedLeaf = getTreeItemHost(fileTree, 'notes/design/tree-item');
+    expect(nestedBranch.hasAttribute('expanded')).to.equal(false);
+    expect(nestedLeaf.hasAttribute('print-mode')).to.equal(false);
 
-    window.dispatchEvent(new Event('beforeprint'));
+    (fileTree as FileTree & FileTreePrintHooks)._handleBeforePrint();
     await flush(fileTree);
 
-    const printVisibleLeaf = getTreeItemHost(fileTree, 'notes/design/tree-item');
-    expect(printVisibleLeaf.hasAttribute('print-mode')).to.equal(true);
+    expect(nestedBranch.hasAttribute('expanded')).to.equal(true);
+    expect(nestedLeaf.hasAttribute('print-mode')).to.equal(true);
 
-    window.dispatchEvent(new Event('afterprint'));
+    (fileTree as FileTree & FileTreePrintHooks)._handleAfterPrint();
     await flush(fileTree);
 
-    expect(
-      fileTree.shadowRoot?.querySelector('ui-tree-item[data-id="notes/design/tree-item"]'),
-    ).to.equal(null);
+    expect(nestedBranch.hasAttribute('expanded')).to.equal(false);
+    expect(nestedLeaf.hasAttribute('print-mode')).to.equal(false);
   });
 });

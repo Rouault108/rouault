@@ -345,20 +345,20 @@ describe('search-page browser contract', () => {
 
     await flush(host);
 
-    const filterDetails = getFilterDetails(host);
-    const filterSummaryText =
-      host.shadowRoot?.querySelector('.filter-summary-state')?.textContent ?? '';
+    const searchPage = expectPresent(host.querySelector<SearchPage>('search-page'), 'search page');
+    const filterDetails = getFilterDetails(searchPage);
+    const filterSummaryText = searchPage.shadowRoot?.querySelector('.filter-summary-state')?.textContent ?? '';
 
     expect(filterDetails.open).to.equal(false);
     expect(filterSummaryText.includes('すべてのタグ')).to.equal(true);
 
-    getFilterTrigger(host).click();
-    await flush(host);
+    getFilterTrigger(searchPage).click();
+    await flush(searchPage);
 
     expect(filterDetails.open).to.equal(true);
 
     const filterList = expectPresent(
-      host.shadowRoot?.querySelector<HTMLElement>('.filter-list'),
+      searchPage.shadowRoot?.querySelector<HTMLElement>('.filter-list'),
       'filter list',
     );
     const filterListStyle = getComputedStyle(filterList);
@@ -366,30 +366,30 @@ describe('search-page browser contract', () => {
     expect(filterListStyle.overflowY).to.equal('auto');
     expect(filterListStyle.maxHeight).to.not.equal('none');
 
-    const filterSearchField = getFilterSearchField(host);
+    const filterSearchField = getFilterSearchField(searchPage);
     const filterSearchInput = getSearchInput(filterSearchField);
     const urlBeforeFilterSearch = `${window.location.pathname}${window.location.search}`;
 
     filterSearchInput.value = 'lit';
     filterSearchInput.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-    await flush(host);
+    await flush(searchPage);
 
     const visibleCheckboxesAfterFilter =
-      host.shadowRoot?.querySelectorAll('ui-checkbox.filter-option-checkbox') ?? [];
+      searchPage.shadowRoot?.querySelectorAll('ui-checkbox.filter-option-checkbox') ?? [];
 
     expect(visibleCheckboxesAfterFilter.length).to.equal(1);
     expect(`${window.location.pathname}${window.location.search}`).to.equal(urlBeforeFilterSearch);
 
     filterSearchInput.value = '';
     filterSearchInput.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-    await flush(host);
+    await flush(searchPage);
 
-    const litCheckbox = getFilterCheckbox(host, 'lit');
+    const litCheckbox = getFilterCheckbox(searchPage, 'lit');
     await clickCheckboxLabel(litCheckbox);
-    await settleSearch(host);
+    await settleSearch(searchPage);
 
     const urlAfterTagSelect = new URL(window.location.href);
-    const resultLinksAfterTagSelect = host.shadowRoot?.querySelectorAll('.result-link') ?? [];
+    const resultLinksAfterTagSelect = searchPage.shadowRoot?.querySelectorAll('.result-link') ?? [];
 
     expect(
       urlAfterTagSelect.pathname === '/tags/lit/' ||
@@ -398,20 +398,20 @@ describe('search-page browser contract', () => {
     expect(resultLinksAfterTagSelect.length).to.equal(1);
 
     const mainSearchField = expectPresent(
-      host.shadowRoot?.querySelector<SearchField>('ui-search-field.search-input-control'),
+      searchPage.shadowRoot?.querySelector<SearchField>('ui-search-field.search-input-control'),
       'main search field',
     );
     const mainSearchInput = getSearchInput(mainSearchField);
 
     mainSearchInput.value = 'router';
     mainSearchInput.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-    await settleSearch(host);
+    await settleSearch(searchPage);
 
     const urlAfterQuery = new URL(window.location.href);
-    const litCheckboxAfterQuery = getFilterCheckbox(host, 'lit');
-    const performanceCheckboxAfterQuery = getFilterCheckbox(host, 'performance');
+    const litCheckboxAfterQuery = getFilterCheckbox(searchPage, 'lit');
+    const performanceCheckboxAfterQuery = getFilterCheckbox(searchPage, 'performance');
     const selectedTag = expectPresent(
-      host.shadowRoot?.querySelector<HTMLElement>('.selected-tags ui-tag'),
+      searchPage.shadowRoot?.querySelector<HTMLElement>('.selected-tags ui-tag'),
       'selected tag chip',
     );
 
@@ -427,12 +427,12 @@ describe('search-page browser contract', () => {
         detail: { value: 'lit' },
       }),
     );
-    await settleSearch(host);
+    await settleSearch(searchPage);
 
     const urlAfterRemove = new URL(window.location.href);
-    const resultLinksAfterRemove = host.shadowRoot?.querySelectorAll('.result-link') ?? [];
+    const resultLinksAfterRemove = searchPage.shadowRoot?.querySelectorAll('.result-link') ?? [];
     const filterSummaryAfterRemove =
-      host.shadowRoot?.querySelector('.filter-summary-state')?.textContent ?? '';
+      searchPage.shadowRoot?.querySelector('.filter-summary-state')?.textContent ?? '';
 
     expect(urlAfterRemove.searchParams.getAll('tag').includes('lit')).to.equal(false);
     expect(resultLinksAfterRemove.length).to.equal(2);
@@ -451,31 +451,33 @@ describe('search-page browser contract', () => {
 
     await flush(host);
 
-    getFilterTrigger(host).click();
-    await flush(host);
+    const searchPage = expectPresent(host.querySelector<SearchPage>('search-page'), 'search page');
 
-    const litCheckbox = getFilterCheckbox(host, 'lit');
+    getFilterTrigger(searchPage).click();
+    await flush(searchPage);
+
+    const litCheckbox = getFilterCheckbox(searchPage, 'lit');
     await clickCheckboxLabel(litCheckbox);
     await settleSearch(host);
 
-    const statesAfterLitSelect = getFilterOptionStates(host);
+    const statesAfterLitSelect = getFilterOptionStates(searchPage);
     expect(statesAfterLitSelect[0]?.label).to.equal('lit');
-    assertFilterSelectionConsistency(host, 'lit 選択後');
+    assertFilterSelectionConsistency(searchPage, 'lit 選択後');
 
-    const architectureCheckbox = getFilterCheckbox(host, 'architecture');
+    const architectureCheckbox = getFilterCheckbox(searchPage, 'architecture');
     await clickCheckboxLabel(architectureCheckbox);
     await settleSearch(host);
 
-    const statesAfterArchitectureSelect = getFilterOptionStates(host);
+    const statesAfterArchitectureSelect = getFilterOptionStates(searchPage);
     expect(statesAfterArchitectureSelect[0]?.label).to.equal('architecture');
     expect(statesAfterArchitectureSelect[1]?.label).to.equal('lit');
-    assertFilterSelectionConsistency(host, 'architecture 選択後');
+    assertFilterSelectionConsistency(searchPage, 'architecture 選択後');
 
-    const architectureCheckboxAtTop = getFilterCheckbox(host, 'architecture');
+    const architectureCheckboxAtTop = getFilterCheckbox(searchPage, 'architecture');
     await clickCheckboxLabel(architectureCheckboxAtTop);
     await settleSearch(host);
 
-    const statesAfterArchitectureRemove = getFilterOptionStates(host);
+    const statesAfterArchitectureRemove = getFilterOptionStates(searchPage);
     const topStateAfterRemove = expectPresent(statesAfterArchitectureRemove[0], 'top state');
 
     expect(topStateAfterRemove.label).to.equal('lit');
@@ -488,6 +490,6 @@ describe('search-page browser contract', () => {
 
     expect(architectureState?.selected).to.equal(false);
     expect(architectureState?.checked).to.equal(false);
-    assertFilterSelectionConsistency(host, 'architecture 解除後');
+    assertFilterSelectionConsistency(searchPage, 'architecture 解除後');
   });
 });

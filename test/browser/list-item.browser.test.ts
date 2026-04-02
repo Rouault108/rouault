@@ -126,6 +126,6 @@ describe('ui-list-item browser contract', () => {
     );
 
     expect(host.getAttribute('role')).to.equal('row');
-    expect(fallbackCell.textContent?.includes('Standalone fallback')).to.equal(true);
+    expect(host.textContent?.includes('Standalone fallback')).to.equal(true);
   });
 });

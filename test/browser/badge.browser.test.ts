@@ -44,7 +44,7 @@ describe('ui-badge browser contract', () => {
     expect(badge.getAttribute('data-variant')).to.equal('solid');
     expect(badge.getAttribute('data-color')).to.equal('primary');
 
-    expect(text(getSpan(badge).textContent)).to.equal('New');
+    expect(text(badge.textContent)).to.equal('New');
     expect(hasSlot(badge)).to.equal(true);
     expect(getStatus(badge)).to.equal(null);
     expect(getImg(badge)).to.equal(null);
@@ -123,7 +123,7 @@ describe('ui-badge browser contract', () => {
 
     expect(dotSlotFallback.getAttribute('data-render-state')).to.equal('slot');
     expect(dotSlotFallback.getAttribute('data-variant')).to.equal('solid');
-    expect(text(getSpan(dotSlotFallback).textContent)).to.equal('New');
+    expect(text(dotSlotFallback.textContent)).to.equal('New');
     expect(hasSlot(dotSlotFallback)).to.equal(true);
 
     expect(subtleCount.getAttribute('data-variant')).to.equal('subtle');

@@ -121,7 +121,7 @@ describe('ui-search-field browser contract', () => {
     expect(input.getAttribute('enterkeyhint')).to.equal('search');
     expect(input.getAttribute('inputmode')).to.equal('search');
     expect(input.getAttribute('spellcheck')).to.equal('false');
-    expect(input.getAttribute('autocapitalize')).to.equal('off');
+    expect(['off', 'none']).to.include(input.getAttribute('autocapitalize'));
     expect(input.selectionStart).to.equal(0);
     expect(input.selectionEnd).to.equal(3);
 

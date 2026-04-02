@@ -59,7 +59,14 @@ describe('ui-info-box browser contract', () => {
     expect(icon.getAttribute('aria-hidden')).to.equal('true');
 
     expect(header.textContent?.includes('作品情報')).to.equal(true);
-    expect(body.textContent?.includes('本文です。')).to.equal(true);
+
+    const bodySlot = expectPresent(body.querySelector('slot'), 'body slot');
+    const bodyText = bodySlot
+      .assignedNodes({ flatten: true })
+      .map((node) => node.textContent ?? '')
+      .join('');
+
+    expect(bodyText.includes('本文です。')).to.equal(true);
   });
 
   it('variant / density / icon rendering の違いを公開 DOM で観測できること', async () => {

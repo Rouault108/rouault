@@ -233,17 +233,28 @@ describe('ui-popover browser contract', () => {
     expect(outsideChange.detail.reason).to.equal('outside-pointer');
     expect(outsideChange.detail.returnFocus).to.equal(false);
 
-    host.disabled = true;
+    const reopenByDisabled = waitForCustomEvent<UiPopoverOpenChangeDetail>(
+      host,
+      'ui-popover-open-change',
+    );
     host.opened = true;
     await waitForLitUpdate(host);
     await nextAnimationFrame();
 
-    const closeByDisabled = await waitForCustomEvent<UiPopoverOpenChangeDetail>(
+    const reopenedByDisabled = await reopenByDisabled;
+    expect(reopenedByDisabled.detail.open).to.equal(true);
+
+    const closeByDisabled = waitForCustomEvent<UiPopoverOpenChangeDetail>(
       host,
       'ui-popover-open-change',
     );
-    expect(closeByDisabled.detail.open).to.equal(false);
-    expect(closeByDisabled.detail.reason).to.equal('disabled');
+    host.disabled = true;
+    await waitForLitUpdate(host);
+    await nextAnimationFrame();
+
+    const disabledChange = await closeByDisabled;
+    expect(disabledChange.detail.open).to.equal(false);
+    expect(disabledChange.detail.reason).to.equal('disabled');
 
     expect(changes.length).to.be.greaterThan(0);
   });
