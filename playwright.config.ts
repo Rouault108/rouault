@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import process from 'node:process';
 
 const crossBrowserFinalCheck = [
   '**/app-shell.spec.ts',
@@ -7,6 +8,8 @@ const crossBrowserFinalCheck = [
   '**/tag-page.spec.ts',
   '**/toc-tabs.spec.ts',
 ];
+
+const isCI = !!process.env['CI'];
 
 export default defineConfig({
   testDir: './test/e2e',
@@ -18,9 +21,9 @@ export default defineConfig({
 
   fullyParallel: true,
 
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 0,
+  ...(isCI ? { workers: 1 } : {}),
 
   reporter: 'html',
 
@@ -50,7 +53,7 @@ export default defineConfig({
   webServer: {
     command: 'pnpm build && pnpm exec vite preview --host 127.0.0.1 --port 8080 --strictPort',
     url: 'http://127.0.0.1:8080/search/',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !isCI,
     timeout: 120 * 1000,
   },
 });

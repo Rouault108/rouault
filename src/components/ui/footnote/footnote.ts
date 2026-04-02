@@ -1,7 +1,7 @@
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import type { UiPopover } from '../popover/popover';
-import '../popover/popover';
+import type { UiPopover } from '../popover/popover.js';
+import '../popover/popover.js';
 
 interface ImportMetaEnvLike {
   DEV?: boolean;

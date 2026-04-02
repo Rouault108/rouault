@@ -104,8 +104,8 @@ describe('table node contracts', () => {
 
     expect(first?.tagName).toBe('div');
     expect(first?.properties?.['data-table-root']).toBe('true');
-    expect(first?.properties?.role).toBe('region');
-    expect(first?.properties?.tabindex).toBe('0');
+    expect(first?.properties?.['role']).toBe('region');
+    expect(first?.properties?.['tabindex']).toBe('0');
     expect(first?.properties?.['aria-label']).toBe('2024年 四半期別売上実績');
     expect(first?.properties?.['data-density']).toBe('compact');
 
@@ -118,7 +118,7 @@ describe('table node contracts', () => {
       'tfoot',
     ]);
     expect(table?.children?.[0]?.children?.[0]?.value).toBe('2024年 四半期別売上実績');
-    expect(table?.children?.[1]?.children?.[0]?.children?.[1]?.properties?.align).toBe('right');
+    expect(table?.children?.[1]?.children?.[0]?.children?.[1]?.properties?.['align']).toBe('right');
   });
 
   it('caption も aria-label も無い table には fallback aria-label を補完すること', () => {
@@ -196,8 +196,8 @@ describe('table node contracts', () => {
     const table = first?.children?.[0];
     expect(table?.tagName).toBe('table');
     expect(table?.children?.[0]?.tagName).toBe('tbody');
-    expect(table?.children?.[0]?.children?.[0]?.children?.[0]?.properties?.colspan).toBe('2');
-    expect(table?.children?.[0]?.children?.[1]?.children?.[0]?.properties?.rowspan).toBe('2');
+    expect(table?.children?.[0]?.children?.[0]?.children?.[0]?.properties?.['colspan']).toBe('2');
+    expect(table?.children?.[0]?.children?.[1]?.children?.[0]?.properties?.['rowspan']).toBe('2');
   });
 
   it('representative な static table root 群を note content contract として受け入れること', () => {
