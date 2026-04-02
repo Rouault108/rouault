@@ -135,7 +135,7 @@ export const SmallTextHardLimit: Story = {
  * 複合キーが途中改行せず、意味のまとまりを保つことを確認します。
  */
 
-export const DarkModeTokenContract: Story = {
+export const DarkModeManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <div
@@ -171,7 +171,7 @@ export const DarkModeTokenContract: Story = {
  * 空入力時に空のキートップを出力しないことを確認します。
  */
 
-export const MediaModeContracts: Story = {
+export const MediaModeManual: Story = {
   tags: ['manual-only'],
   render: () => html`<ui-kbd id="media-contract-kbd" .tokens=${['Esc']}></ui-kbd>`,
   parameters: {

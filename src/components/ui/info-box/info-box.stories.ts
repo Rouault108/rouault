@@ -524,7 +524,7 @@ export const HeadingLevelBoundaries: Story = {
  * 境界条件:
  * landmark=true でも heading が空なら region を公開しない。
  */
-export const LandmarkRequiresHeadingBoundary: Story = {
+export const LandmarkRequiresHeadingExample: Story = {
   render: () => html`
     <ui-info-box id="landmark-without-heading" heading="   " icon="music" landmark>
       heading 空文字時は landmark を無効化します。
@@ -568,7 +568,7 @@ export const DensityStateMatrix: Story = {
  * 境界条件:
  * icon は heading があるときのみ描画し、装飾扱いで aria-hidden を持つ。
  */
-export const IconRenderingBoundary: Story = {
+export const IconRenderingExamples: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-info-box id="icon-with-heading" heading="アイコン付き" icon="music"
@@ -622,7 +622,7 @@ export const EmptySlotDoesNotRender: Story = {
  * スタイル契約:
  * 受け入れ基準にあるトークンと forced-colors ブロックを保持していることを検証。
  */
-export const StyleContracts: Story = {
+export const StyleManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <ui-info-box
@@ -650,7 +650,7 @@ export const StyleContracts: Story = {
  * Dark Mode 契約:
  * prefers-color-scheme 分岐を持たず、セマンティックトークンで Light/Dark を追従する。
  */
-export const DarkModeTokenContract: Story = {
+export const DarkModeManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <ui-info-box
@@ -678,7 +678,7 @@ export const DarkModeTokenContract: Story = {
  * Print 契約:
  * 印刷時も背景に依存せず情報塊として識別できること。
  */
-export const PrintContract: Story = {
+export const PrintManual: Story = {
   tags: ['manual-only'],
   args: {
     heading: 'Print Contract',

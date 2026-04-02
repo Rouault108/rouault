@@ -72,7 +72,7 @@ export const CurrentMatchMatrix: Story = {
   `,
 };
 
-export const CurrentMatchVisualContract: Story = {
+export const CurrentMatchReference: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-highlight id="visual-passive" text="通常ヒット"></ui-highlight>
@@ -81,7 +81,7 @@ export const CurrentMatchVisualContract: Story = {
   `,
 };
 
-export const MediaAndTokenContracts: Story = {
+export const MediaAndTokenManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <ui-highlight id="media-highlight" current-match text="検索ヒット"></ui-highlight>
@@ -96,7 +96,7 @@ export const MediaAndTokenContracts: Story = {
   },
 };
 
-export const DarkModeTokenAndContrastContract: Story = {
+export const DarkModeContrastReference: Story = {
   render: () => html`
     <style>
       .theme {

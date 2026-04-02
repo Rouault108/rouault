@@ -95,7 +95,7 @@ export const VariantStateCombinations: Story = {
   `,
 };
 
-export const SlotBoundaryConditions: Story = {
+export const SlotExamples: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-banner variant="info">

@@ -117,8 +117,7 @@ export const VariantStateMatrix: Story = {
  * semantic token 上の表示確認用 story です。
  * CSS 構造契約の合否は SSR 側テストを正本とします。
  */
-
-export const DarkModeTokenContract: Story = {
+export const DarkModeManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <div style="display: grid; gap: 1rem;">
@@ -151,8 +150,7 @@ export const DarkModeTokenContract: Story = {
  * - 強制カラーモードで構造線を維持する
  * - 色指定がトークン参照を維持する
  */
-
-export const ForcedColorsContract: Story = {
+export const ForcedColorsManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <ui-blockquote id="forced-colors-contract" source="出典: トークン契約">
@@ -174,8 +172,7 @@ export const ForcedColorsContract: Story = {
  * - blockquote / figure の分断抑止が定義されている
  * - 構造線の印刷色固定が定義されている
  */
-
-export const PrintStyleContract: Story = {
+export const PrintStyleManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <ui-blockquote id="print-contract" source="出典: 印刷設計">

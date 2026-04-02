@@ -204,7 +204,7 @@ export const NestedUnorderedListIsolation: Story = {
   `,
 };
 
-export const EnvironmentContracts: Story = {
+export const EnvironmentManual: Story = {
   tags: ['manual-only'],
   parameters: {
     docs: {

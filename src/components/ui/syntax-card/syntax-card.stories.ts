@@ -122,7 +122,7 @@ WHERE deleted_at IS NULL;</code></pre>
   `,
 };
 
-export const EmptyContentContract: Story = {
+export const EmptyContentExample: Story = {
   render: () => html`
     <ui-syntax-card
       id="empty-content-card"
@@ -262,7 +262,7 @@ export const DefaultOnlyMembers: Story = {
 /**
  * 契約: forced-colors の境界フォールバックが定義されていること。
  */
-export const ForcedColorsContract: Story = {
+export const ForcedColorsManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <ui-syntax-card
@@ -288,7 +288,7 @@ export const ForcedColorsContract: Story = {
 /**
  * 契約: print 時の baseline ルールが定義されていること。
  */
-export const PrintContract: Story = {
+export const PrintManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <ui-syntax-card
@@ -311,7 +311,7 @@ export const PrintContract: Story = {
   },
 };
 
-export const CopyDisabledInteractionContract: Story = {
+export const CopyDisabledExample: Story = {
   render: () => html`
     <ui-syntax-card
       id="copy-disabled-interaction"

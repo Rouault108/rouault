@@ -149,7 +149,7 @@ export const AccessibilityReference: Story = {
   },
 };
 
-export const TokenContractManual: Story = {
+export const TokenManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     ${renderStoryFooter({

@@ -195,7 +195,7 @@ export const DynamicSlotStateSync: Story = {
   `,
 };
 
-export const ActionOrderContract: Story = {
+export const ActionOrderExample: Story = {
   render: () => html`
     <ui-empty-state id="action-order-contract" style="max-inline-size: 220px;">
       <h2 slot="heading">Choose the first recovery path</h2>
@@ -228,7 +228,7 @@ export const NoPublicDerivedState: Story = {
   `,
 };
 
-export const VisualDensityContract: Story = {
+export const VisualDensityReference: Story = {
   render: () => html`
     <ui-empty-state id="visual-density-contract">
       <ui-icon slot="icon" name="inbox" aria-hidden="true"></ui-icon>
@@ -241,7 +241,7 @@ export const VisualDensityContract: Story = {
   `,
 };
 
-export const PrintContract: Story = {
+export const PrintReference: Story = {
   render: () => html`
     <ui-empty-state id="print-contract">
       <svg slot="illustration" viewBox="0 0 120 80" aria-hidden="true">
@@ -257,7 +257,7 @@ export const PrintContract: Story = {
   `,
 };
 
-export const DarkModeContract: Story = {
+export const DarkModePreview: Story = {
   render: () => html`
     <style>
       .dark-surface {
@@ -285,7 +285,7 @@ export const DarkModeContract: Story = {
   `,
 };
 
-export const BoundaryConditions: Story = {
+export const EdgeCases: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-empty-state id="boundary-empty-description">

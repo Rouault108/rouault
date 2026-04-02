@@ -169,7 +169,7 @@ export const StatusStateMatrix: Story = {
   `,
 };
 
-export const HeadingOnlyBoundary: Story = {
+export const HeadingOnlyMinimal: Story = {
   render: () => html` <ui-article-header heading="見出しのみの最小構成"></ui-article-header> `,
   parameters: {
     docs: {
@@ -181,7 +181,7 @@ export const HeadingOnlyBoundary: Story = {
   },
 };
 
-export const AccessibilityMediaContracts: Story = {
+export const AccessibilityMediaManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <ui-article-header
@@ -200,7 +200,7 @@ export const AccessibilityMediaContracts: Story = {
   },
 };
 
-export const DarkModeTokenContract: Story = {
+export const DarkModeManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <ui-article-header

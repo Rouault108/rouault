@@ -157,7 +157,7 @@ export const MobileColumnsAndSupplement: Story = {
     }),
 };
 
-export const LoadingAndBoundarySurface: Story = {
+export const LoadingAndEdgeSurface: Story = {
   parameters: {
     docs: {
       description: {

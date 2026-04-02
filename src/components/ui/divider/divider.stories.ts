@@ -122,7 +122,7 @@ export const VariantStateMatrix: Story = {
  * - host tabindex 非転送
  * - スタイルスコープ漏れ防止
  */
-export const BoundaryConditions: Story = {
+export const EdgeCases: Story = {
   render: () => html`
     <style>
       #boundary-scope {
@@ -165,7 +165,7 @@ export const ScopeWithoutComponentInstance: Story = {
   `,
 };
 
-export const MediaAndTokenContracts: Story = {
+export const MediaAndTokenManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <div style="display: grid; gap: 0.5rem;">
@@ -183,7 +183,7 @@ export const MediaAndTokenContracts: Story = {
   },
 };
 
-export const DarkModeTokenContract: Story = {
+export const DarkModeManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
@@ -211,7 +211,7 @@ export const DarkModeTokenContract: Story = {
   },
 };
 
-export const SelectorSpecificityContract: Story = {
+export const SelectorSpecificityReference: Story = {
   render: () => html`
     <style>
       #specificity-scope .override-target {

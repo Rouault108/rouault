@@ -24,7 +24,7 @@ HTML/CSS/JS を \`srcdoc\` の sandboxed iframe へ閉じ込めて描画する p
 - \`allow-js\` は author JS の注入可否だけを制御します
 - \`iframe-title\` / \`base-url\` / \`activation-policy\` / \`height-mode\` / \`max-height\` を公開入力として扱います
 - opt-in capability は \`allow-forms\` / \`allow-downloads\` / \`allow-pointer-lock\` / \`allow-popups\` だけを公開します
-- activation / iframe / srcdoc / capability / height / integration の契約は \`test/browser/preview-sandbox.browser.test.ts\` に移送済みです
+- activation / iframe / srcdoc / capability / height / integration の契約は \`test/browser/preview-sandbox-contract.browser.test.ts\` に移送済みです
         `,
       },
     },

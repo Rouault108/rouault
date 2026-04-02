@@ -103,7 +103,7 @@ export const Default: Story = {
   `,
 };
 
-export const NamingContract: Story = {
+export const NamingReference: Story = {
   render: () => html`
     <style>
       .grid {
@@ -162,7 +162,7 @@ export const NamingContract: Story = {
   `,
 };
 
-export const ContractViolations: Story = {
+export const InvalidValueExamples: Story = {
   render: () => html`
     <div
       id="contract-violations-root"

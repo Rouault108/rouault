@@ -138,7 +138,7 @@ export const VariantStateMatrix: Story = {
  * - MutationObserver による後追加ノードの role 補強
  */
 
-export const MediaAndTokenContracts: Story = {
+export const MediaAndTokenManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <ui-ul id="contract-ul">
@@ -163,7 +163,7 @@ export const MediaAndTokenContracts: Story = {
  * - マーカー色は `--fg-muted` を追従する
  */
 
-export const DarkModeTokenContract: Story = {
+export const DarkModeManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <style>

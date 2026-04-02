@@ -103,7 +103,7 @@ export const AriaDelegationReference: Story = {
   },
 };
 
-export const BoundaryManual: Story = {
+export const EdgeCasesManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <div style="display: grid; gap: 1rem; max-width: 22rem;">

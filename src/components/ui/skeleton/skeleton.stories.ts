@@ -138,7 +138,7 @@ export const VariantStateMatrix: Story = {
   `,
 };
 
-export const BoundaryConditions: Story = {
+export const EdgeCases: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem; width: 240px;">
       <ui-skeleton

@@ -236,7 +236,7 @@ export const InvalidKindFallback: Story = {
  * スタイル契約:
  * 受け入れ基準で要求されるトークン参照、part 公開、forced-colors フォールバックが維持されていること。
  */
-export const StyleContracts: Story = {
+export const StyleManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <ui-callout id="style-contracts" kind="warning" heading="Style Contracts" heading-level="2">
@@ -257,7 +257,7 @@ export const StyleContracts: Story = {
  * Dark Mode 契約:
  * コンポーネント側で prefers-color-scheme 分岐を書かず、セマンティックトークン参照でモード切替に追従する。
  */
-export const DarkModeTokenContract: Story = {
+export const DarkModeManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <ui-callout

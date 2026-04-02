@@ -133,7 +133,7 @@ export const InteractionReference: Story = {
   },
 };
 
-export const FormBoundaryManual: Story = {
+export const FormEdgeCasesManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <form style="display: flex; flex-direction: column; gap: 1rem; max-width: 24rem;">

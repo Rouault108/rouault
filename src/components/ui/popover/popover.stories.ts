@@ -58,7 +58,7 @@ const movedToBrowserDocs = (story: string): Pick<Story, 'tags' | 'parameters'> =
   },
 });
 
-export const BasicContract: Story = {
+export const BasicSmoke: Story = {
   tags: ['smoke'],
   parameters: {
     docs: {
@@ -135,7 +135,7 @@ export const ControlledReference: Story = {
   },
 };
 
-export const RequestCancelContract: Story = {
+export const RequestCancelReference: Story = {
   ...movedToBrowserDocs(
     'open-change-request cancel の契約は test/browser/popover.browser.test.ts で検査します。',
   ),
@@ -149,7 +149,7 @@ export const RequestCancelContract: Story = {
   `,
 };
 
-export const ControlledAndUncontrolledContract: Story = {
+export const ControlledAndUncontrolledReference: Story = {
   ...movedToBrowserDocs(
     'controlled / uncontrolled の分離契約は test/browser/popover.browser.test.ts で検査します。',
   ),
@@ -168,7 +168,7 @@ export const ControlledAndUncontrolledContract: Story = {
   `,
 };
 
-export const SlotInvalidationContract: Story = {
+export const SlotInvalidationReference: Story = {
   ...movedToBrowserDocs(
     'trigger/content slot invalidation と active trigger の再同期は test/browser/popover.browser.test.ts で検査します。',
   ),
