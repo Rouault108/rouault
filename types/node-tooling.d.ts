@@ -1,14 +1,22 @@
 declare module '@11ty/eleventy' {
+  export interface EleventyWatchTargetOptions {
+    resetConfig?: boolean;
+  }
+
+  export type EleventySyncOrAsync = void | Promise<void>;
+  export type EleventyEventCallback = (...args: unknown[]) => EleventySyncOrAsync;
+  export type EleventyDataFactory = () => unknown;
+
   export interface UserConfig {
     addExtension(fileExtension: string, options: { key: string }): void;
-    addGlobalData(name: string, data: () => unknown): void;
+    addGlobalData(name: string, data: EleventyDataFactory): void;
     addPassthroughCopy(copy: Record<string, string>): void;
     addLayoutAlias(alias: string, layoutPath: string): void;
     addWatchTarget(
-      additionalWatchTargets: string | string[],
-      options?: { resetConfig?: boolean },
+      additionalWatchTargets: string | readonly string[],
+      options?: EleventyWatchTargetOptions,
     ): void;
-    on(eventName: string, callback: () => Promise<void> | void): void;
+    on(eventName: string, callback: EleventyEventCallback): void;
     addPlugin(plugin: unknown, options?: unknown): void;
   }
 }
