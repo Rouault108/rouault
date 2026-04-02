@@ -63,7 +63,7 @@ describe('story discovery', () => {
     );
     expect(packageJson.scripts?.['test:node']).toBe('vitest --project node');
     expect(packageJson.scripts?.['test:browser']).toBe(
-      'pnpm exec web-test-runner --config web-test-runner.config.mjs',
+      'node scripts/run-web-test-runner.mjs --config web-test-runner.config.mjs',
     );
     expect(packageJson.scripts?.['test:unit']).toBeUndefined();
     expect(packageJson.scripts?.['test:storybook:meta']).toBe('vitest --project storybook-meta');

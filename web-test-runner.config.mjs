@@ -10,6 +10,7 @@ const config = {
     esbuildPlugin({
       ts: true,
       target: 'es2022',
+      tsconfig: './tsconfig.json',
     }),
   ],
   browsers: [

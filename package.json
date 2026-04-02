@@ -18,7 +18,7 @@
     "pretest:storybook": "pnpm run generate:icons",
     "pretest:e2e": "pnpm run generate:icons",
     "test:node": "vitest --project node",
-    "test:browser": "pnpm exec web-test-runner --config web-test-runner.config.mjs",
+    "test:browser": "node scripts/run-web-test-runner.mjs --config web-test-runner.config.mjs",
     "test:ssr": "vitest --project ssr",
     "test:storybook:meta": "vitest --project storybook-meta",
     "test:storybook:smoke": "vitest --project storybook-smoke",
