@@ -31,7 +31,9 @@ describe('remarkExpandExampleIncludes', () => {
       throw new Error('example-include が失敗しませんでした');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      expect(message).to.equal('[markdown] example-include の ref "missing/example" は未登録です');
+      expect(message).to.equal(
+        '[markdown] example-include の ref "missing/example" は未登録です: content/testing/code.md:1:1',
+      );
     }
   });
 

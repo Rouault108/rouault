@@ -2,6 +2,7 @@ import type { TabsUrlSyncStrategy } from '../../ui/tabs/tabs-url-sync-strategy.j
 
 export const PRIMARY_TAB_QUERY_PARAM = 'tab';
 export const PRIMARY_TAB_URL_STATE_CHANGE_EVENT = 'ui-url-state-change';
+const FALLBACK_URL_ORIGIN = 'http://localhost';
 
 export interface PrimaryTabUrlStateChangeDetail {
   previousUrl: string;
@@ -10,14 +11,14 @@ export interface PrimaryTabUrlStateChangeDetail {
 
 const toUrl = (input?: string | URL): URL => {
   if (input instanceof URL) {
-    return new URL(input.toString(), window.location.origin);
+    return new URL(input.toString());
   }
 
   if (typeof input === 'string' && input.length > 0) {
-    return new URL(input, window.location.origin);
+    return new URL(input, FALLBACK_URL_ORIGIN);
   }
 
-  return new URL(window.location.href);
+  return new URL(FALLBACK_URL_ORIGIN);
 };
 
 const normalizeComparableParams = (url: URL): string[] => {
@@ -73,6 +74,10 @@ export const isPrimaryTabOnlyNavigation = (currentUrl: string, nextUrl: string):
 };
 
 export const dispatchPrimaryTabUrlStateChange = (previousUrl: string, url: string): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
   window.dispatchEvent(
     new CustomEvent<PrimaryTabUrlStateChangeDetail>(PRIMARY_TAB_URL_STATE_CHANGE_EVENT, {
       detail: {

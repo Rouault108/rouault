@@ -29,7 +29,7 @@ export interface SearchDialogSearchSessionHost {
 }
 
 export class SearchDialogSearchSession {
-  private _searchTimerId: number | undefined;
+  private _searchTimerId: ReturnType<typeof setTimeout> | undefined;
   private _searchToken = 0;
   private _abortController: AbortController | null = null;
 
@@ -45,8 +45,8 @@ export class SearchDialogSearchSession {
   }
 
   clearScheduled(): void {
-    if (typeof this._searchTimerId !== 'number') return;
-    window.clearTimeout(this._searchTimerId);
+    if (this._searchTimerId === undefined) return;
+    globalThis.clearTimeout(this._searchTimerId);
     this._searchTimerId = undefined;
   }
 
@@ -100,7 +100,7 @@ export class SearchDialogSearchSession {
     this._host.setError(null);
     const currentToken = this._searchToken;
 
-    this._searchTimerId = window.setTimeout(() => {
+    this._searchTimerId = globalThis.setTimeout(() => {
       void this._executeSearch(trimmedQuery, currentToken);
     }, SEARCH_DEBOUNCE_MS);
   }

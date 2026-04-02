@@ -326,6 +326,34 @@ const cloneNode = (node: HastNode): HastNode => {
   return clonedNode;
 };
 
+const unwrapTableNode = (node: HastNode): HastNode | null => {
+  if (isElement(node, 'table')) {
+    return cloneNode(node);
+  }
+
+  if (!isElement(node)) {
+    return null;
+  }
+
+  const directChildren = Array.isArray(node.children) ? node.children : [];
+  const nestedTableRoot = directChildren.find(
+    (child) =>
+      isElement(child, 'div') &&
+      child.properties?.['data-table-root'] === 'true' &&
+      Array.isArray(child.children) &&
+      isElement(child.children[0], 'table'),
+  );
+
+  if (nestedTableRoot && Array.isArray(nestedTableRoot.children)) {
+    const table = nestedTableRoot.children[0];
+    if (table && isElement(table, 'table')) {
+      return cloneNode(table);
+    }
+  }
+
+  return null;
+};
+
 const toStaticTable = (node: HastNode): void => {
   const originalProperties = node.properties ?? {};
   const originalChildren = Array.isArray(node.children) ? node.children : [];
@@ -337,8 +365,10 @@ const toStaticTable = (node: HastNode): void => {
   if (node.tagName === 'table') {
     tableChild = createElement('table', originalProperties, originalChildren);
   } else {
-    const firstTable = originalChildren.find((child) => isElement(child, 'table'));
-    tableChild = firstTable ? cloneNode(firstTable) : createElement('table', {}, []);
+    const firstTable = originalChildren.map((child) => unwrapTableNode(child)).find(
+      (child): child is HastNode => child !== null,
+    );
+    tableChild = firstTable ?? createElement('table', {}, []);
   }
 
   const tableChildren = Array.isArray(tableChild.children) ? tableChild.children : [];
@@ -1169,14 +1199,36 @@ export function rehypeRouaultComponents() {
       }
 
       const current = node as HastNode;
+      if (!isElement(current)) {
+        if (Array.isArray(current.children)) {
+          for (const child of current.children) {
+            visit(child);
+          }
+        }
+        return;
+      }
+
+      if (current.tagName === 'table' || current.tagName === 'ui-table') {
+        toStaticTable(current);
+
+        const tableRoot = Array.isArray(current.children) ? current.children[0] : undefined;
+        if (isElement(tableRoot, 'table') && Array.isArray(tableRoot.children)) {
+          for (const child of tableRoot.children) {
+            visit(child);
+          }
+        }
+
+        const hydrationDirective = resolveHydrationDirective(current);
+        if (hydrationDirective) {
+          setHydrationDirective(current, hydrationDirective);
+        }
+        return;
+      }
+
       if (Array.isArray(current.children)) {
         for (const child of current.children) {
           visit(child);
         }
-      }
-
-      if (!isElement(current)) {
-        return;
       }
 
       if (isElement(current, 'li')) {

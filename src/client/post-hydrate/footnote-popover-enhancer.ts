@@ -148,21 +148,23 @@ const enhanceAnchor = (anchor: HTMLElement): void => {
   anchor.dataset['footnoteEnhanced'] = 'true';
 };
 
-document.addEventListener('click', (event) => {
-  const target = event.target;
-  if (!(target instanceof Node)) {
-    return;
-  }
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Node)) {
+      return;
+    }
 
-  if (
-    activePopover &&
-    activeTrigger &&
-    !activePopover.contains(target) &&
-    !activeTrigger.contains(target)
-  ) {
-    closeActivePopover();
-  }
-});
+    if (
+      activePopover &&
+      activeTrigger &&
+      !activePopover.contains(target) &&
+      !activeTrigger.contains(target)
+    ) {
+      closeActivePopover();
+    }
+  });
+}
 
 export const enhanceFootnotePopovers = (root: ParentNode): void => {
   const anchors = Array.from(root.querySelectorAll<HTMLElement>(FOOTNOTE_SELECTOR));
