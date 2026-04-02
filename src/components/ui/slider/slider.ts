@@ -414,6 +414,8 @@ export class Slider extends LitElement {
   private _handleInput = (e: Event): void => {
     if (this.disabled) return;
 
+    e.stopPropagation();
+
     const input = e.target as HTMLInputElement;
     const rawValue = parseFloat(input.value);
     const safeRawValue = Number.isFinite(rawValue) ? rawValue : this._normalizedMin;
@@ -431,8 +433,11 @@ export class Slider extends LitElement {
   };
 
   /** change イベント: 値の変更が確定した時点で発火 */
-  private _handleChange = (): void => {
+  private _handleChange = (e: Event): void => {
     if (this.disabled) return;
+
+    e.stopPropagation();
+
     this.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
   };
 

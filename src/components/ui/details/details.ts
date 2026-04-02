@@ -190,6 +190,7 @@ export class Details extends LitElement {
   private _isReady = false;
   private _hasSummarySlotContent = false;
   private _didWarnUnsupportedAriaLabelUsage = false;
+  private _didReportMissingAccessibleName = false;
 
   constructor() {
     super();
@@ -294,12 +295,19 @@ export class Details extends LitElement {
     this._didWarnUnsupportedAriaLabelUsage = false;
 
     if (hasAriaLabel) {
+      this._didReportMissingAccessibleName = false;
       return;
     }
 
-    throw new Error(
+    if (this._didReportMissingAccessibleName) {
+      return;
+    }
+
+    console.error(
       '[ui-details] 可視 summary がない icon-only 利用では `aria-label` が必須です。`summary` または `slot="summary"` を与える場合は `aria-label` を併用しないでください。',
+      this,
     );
+    this._didReportMissingAccessibleName = true;
   }
 
   private _dispatchToggleEvent(): void {

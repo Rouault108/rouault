@@ -286,6 +286,8 @@ export class Input extends LitElement {
   private _hasNativeError = false;
   private _formDisabled = false;
   private _hasExplicitSpellcheck = false;
+  private _initialValue = '';
+  private _hasExplicitDefaultValue = false;
 
   constructor() {
     super();
@@ -293,11 +295,18 @@ export class Input extends LitElement {
   }
 
   override connectedCallback(): void {
+    this._hasExplicitDefaultValue = this.hasAttribute('default-value');
+    if (!this.hasAttribute('default-value') && this._initialValue === '') {
+      this._initialValue = this.getAttribute('value') ?? this.value;
+    }
     super.connectedCallback();
     this._warnIfLabelMissing();
   }
 
   override firstUpdated(): void {
+    if (!this.hasAttribute('default-value')) {
+      this.defaultValue = this.value;
+    }
     this._syncFormValue();
     this._syncValidity();
   }
@@ -445,7 +454,7 @@ export class Input extends LitElement {
   }
 
   formResetCallback(): void {
-    this.value = this.defaultValue;
+    this.value = this._hasExplicitDefaultValue ? this.defaultValue : this._initialValue;
     this.error = false;
     this.errorMessage = '';
     this._syncFormValue();

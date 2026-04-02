@@ -742,10 +742,6 @@ export class SearchPage extends LitElement {
 
   private _renderFilterPanel(): unknown {
     const entries = this._buildGenreFilterEntries();
-    if (entries.length === 0) {
-      return nothing;
-    }
-
     const visibleEntries = this._visibleGenreFilterEntries();
 
     return html`
@@ -794,35 +790,33 @@ export class SearchPage extends LitElement {
               @input=${this._onFilterInput}
             ></ui-search-field>
 
-            ${visibleEntries.length > 0
-              ? html`
-                  <div class="filter-list" role="list">
-                    ${repeat(
-                      visibleEntries,
-                      (entry) => entry.tag,
-                      (entry) => html`
-                        <div
-                          class="filter-option"
-                          role="listitem"
-                          data-selected=${entry.selected ? 'true' : 'false'}
-                          data-disabled=${entry.disabled ? 'true' : 'false'}
-                        >
-                          <ui-checkbox
-                            class="filter-option-checkbox"
-                            .checked=${live(entry.selected)}
-                            .disabled=${entry.disabled}
-                            .label=${entry.tag}
-                            @change=${() => {
-                              this._toggleTag(entry.tag);
-                            }}
-                          ></ui-checkbox>
-                          <span class="filter-option-count">${entry.count.toString()}件</span>
-                        </div>
-                      `,
-                    )}
-                  </div>
-                `
-              : html`<p class="filter-empty">一致するタグはありません。</p>`}
+            <div class="filter-list" role="list">
+              ${visibleEntries.length > 0
+                ? repeat(
+                    visibleEntries,
+                    (entry) => entry.tag,
+                    (entry) => html`
+                      <div
+                        class="filter-option"
+                        role="listitem"
+                        data-selected=${entry.selected ? 'true' : 'false'}
+                        data-disabled=${entry.disabled ? 'true' : 'false'}
+                      >
+                        <ui-checkbox
+                          class="filter-option-checkbox"
+                          .checked=${live(entry.selected)}
+                          .disabled=${entry.disabled}
+                          .label=${entry.tag}
+                          @change=${() => {
+                            this._toggleTag(entry.tag);
+                          }}
+                        ></ui-checkbox>
+                        <span class="filter-option-count">${entry.count.toString()}件</span>
+                      </div>
+                    `,
+                  )
+                : html`<p class="filter-empty">一致するタグはありません。</p>`}
+            </div>
           </section>
         </div>
       </ui-details>

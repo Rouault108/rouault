@@ -674,6 +674,7 @@ export class FileTree extends LitElement {
 
   private _handleBranchToggle(event: CustomEvent<{ expanded: boolean }>, node: BranchNode): void {
     event.stopPropagation();
+    event.preventDefault();
 
     const expanded = event.detail.expanded;
     const requestEvent = new CustomEvent<{ id: string; expanded: boolean }>(
@@ -893,7 +894,7 @@ export class FileTree extends LitElement {
               this._handleLeafSelect(event, node);
             }
           }}
-          @expanded-change=${(event: CustomEvent<{ expanded: boolean }>) => {
+          @tree-item-expanded-request=${(event: CustomEvent<{ expanded: boolean }>) => {
             if (isBranchNode(node)) {
               this._handleBranchToggle(event, node);
             }

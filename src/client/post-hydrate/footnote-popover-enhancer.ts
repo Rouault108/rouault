@@ -46,9 +46,9 @@ const closeActivePopover = (): void => {
 
   if ('hidePopover' in activePopover) {
     (activePopover as HTMLElement & { hidePopover(): void }).hidePopover();
-  } else {
-    (activePopover as HTMLElement & { hidden: boolean }).hidden = true;
   }
+
+  (activePopover as HTMLElement & { hidden: boolean }).hidden = true;
 
   activeTrigger.classList.remove('is-active-trigger');
   activeTrigger.removeAttribute('aria-expanded');

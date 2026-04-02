@@ -1,5 +1,6 @@
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import type { UiPopover } from '../popover/popover.js';
 import '../popover/popover.js';
 
@@ -202,15 +203,17 @@ export class Footnote extends LitElement {
   @property({ type: Boolean, reflect: true })
   shared = false;
 
-  private readonly _contentNodes: Node[] = [];
+  @state()
+  private _contentHtml = '';
   private readonly _reportedDiagnostics = new Set<string>();
   private readonly _fallbackBaseId = `ui-footnote-invalid-${Math.random().toString(36).slice(2, 11)}`;
 
   private _didCaptureContent = false;
 
   override connectedCallback(): void {
-    super.connectedCallback();
     this._injectDocumentStyles();
+    this._captureInitialContentNodes();
+    super.connectedCallback();
     queueMicrotask(() => {
       this._runDiagnostics();
     });
@@ -222,9 +225,6 @@ export class Footnote extends LitElement {
 
   protected override willUpdate(changedProperties: PropertyValues<this>): void {
     super.willUpdate(changedProperties);
-    if (!this._didCaptureContent) {
-      this._captureInitialContentNodes();
-    }
   }
 
   protected override updated(changedProperties: PropertyValues<this>): void {
@@ -309,7 +309,9 @@ export class Footnote extends LitElement {
       : Array.from(this.childNodes);
 
     const renderableNodes = sourceNodes.filter((node) => this._isRenderableContentNode(node));
-    this._contentNodes.push(...renderableNodes.map((node) => node.cloneNode(true)));
+    const container = document.createElement('div');
+    container.append(...renderableNodes.map((node) => node.cloneNode(true)));
+    this._contentHtml = container.innerHTML;
 
     // CSR では初期子ノードを退避後に除去し、再描画時の二重化を防ぐ。
     if (!existingContent) {
@@ -411,7 +413,7 @@ export class Footnote extends LitElement {
       );
     }
 
-    if (this.shared && this._contentNodes.length > 0) {
+    if (this.shared && this._contentHtml !== '') {
       this._warnDiagnostic(
         'shared-has-content',
         'secondary reference は本文入力を持てません。本文は primary reference だけに与えてください。',
@@ -544,8 +546,8 @@ export class Footnote extends LitElement {
   };
 
   private _renderBodyContent(): TemplateResult | typeof nothing {
-    if (this._contentNodes.length === 0) return nothing;
-    return html`${this._contentNodes}`;
+    if (this._contentHtml === '') return nothing;
+    return unsafeHTML(this._contentHtml);
   }
 
   private _renderTriggerTemplate(sharedTrigger: boolean): TemplateResult {

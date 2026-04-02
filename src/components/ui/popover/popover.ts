@@ -203,7 +203,7 @@ const IS_DEVELOPMENT = (import.meta as ImportMeta & { env?: ImportMetaEnvLike })
 
 const toNonNegativeFiniteNumber = (value: number, fallback: number): number => {
   if (!Number.isFinite(value)) return fallback;
-  if (value < 0) return 0;
+  if (value < 0) return fallback;
   return value;
 };
 

@@ -136,7 +136,7 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
   }
 
   private _initializeHydratedState(): void {
-    if (this.hasAttribute('hydrated')) {
+    if (this.hasAttribute('hydrated') && this.snapshot.interactiveCount > 0) {
       return;
     }
 
@@ -160,7 +160,9 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
       }
     }
 
-    this.setAttribute('hydrated', '');
+    if (this.snapshot.interactiveCount > 0) {
+      this.setAttribute('hydrated', '');
+    }
   }
 
   override updated(changedProperties: PropertyValues<this>): void {
@@ -217,12 +219,6 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
 
   override willUpdate(changedProperties: PropertyValues<this>): void {
     super.willUpdate(changedProperties);
-
-    if (changedProperties.has('orientation')) {
-      if (this.orientation !== 'horizontal') {
-        this.orientation = 'horizontal';
-      }
-    }
   }
 
   // ─────────────────────────────────────────────────

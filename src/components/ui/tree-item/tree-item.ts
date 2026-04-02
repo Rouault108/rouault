@@ -692,6 +692,10 @@ export class TreeItem extends LitElement {
       case 'ArrowRight':
         e.preventDefault();
         if (this.hasChildren && !this.expanded) {
+          if (!this._requestExpanded(true)) {
+            return;
+          }
+
           this._toggleExpanded();
         } else {
           this.dispatchEvent(
@@ -706,6 +710,10 @@ export class TreeItem extends LitElement {
       case 'ArrowLeft':
         e.preventDefault();
         if (this.hasChildren && this.expanded) {
+          if (!this._requestExpanded(false)) {
+            return;
+          }
+
           this._toggleExpanded();
         } else {
           this.dispatchEvent(
@@ -725,7 +733,15 @@ export class TreeItem extends LitElement {
       return;
     }
 
+    if (clickedAnchor) {
+      e.preventDefault();
+    }
+
     if (this.hasChildren) {
+      if (!this._requestExpanded(!this.expanded)) {
+        return;
+      }
+
       this._toggleExpanded();
       return;
     }
@@ -749,6 +765,17 @@ export class TreeItem extends LitElement {
         detail: { selected: this.selected },
         bubbles: true,
         composed: true,
+      }),
+    );
+  }
+
+  private _requestExpanded(expanded: boolean): boolean {
+    return this.dispatchEvent(
+      new CustomEvent('tree-item-expanded-request', {
+        detail: { expanded },
+        bubbles: true,
+        composed: true,
+        cancelable: true,
       }),
     );
   }

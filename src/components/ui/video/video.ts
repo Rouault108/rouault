@@ -943,7 +943,7 @@ export class UiVideo extends LitElement {
   }
 
   private get _statusRole(): 'status' | 'alert' {
-    if (this._status === 'ERROR' && !this._canRetry) return 'alert';
+    if (this._status === 'ERROR') return 'alert';
     return 'status';
   }
 

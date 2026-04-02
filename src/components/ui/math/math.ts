@@ -311,7 +311,7 @@ export class UiMath extends LitElement {
     }
   `;
 
-  @property({ type: String, attribute: false })
+  @property({ type: String, attribute: 'latex' })
   latex = '';
 
   @property({ type: Boolean, reflect: true })

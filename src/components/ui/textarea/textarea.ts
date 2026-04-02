@@ -628,21 +628,11 @@ export class Textarea extends LitElement {
   };
 
   private _handleFocus = (): void => {
-    this.dispatchEvent(
-      new FocusEvent('focus', {
-        bubbles: true,
-        composed: true,
-      }),
-    );
+    // focus は内部 textarea からの native event をそのまま外へ流します。
   };
 
   private _handleBlur = (): void => {
-    this.dispatchEvent(
-      new FocusEvent('blur', {
-        bubbles: true,
-        composed: true,
-      }),
-    );
+    // blur も合成せず、重複再送を避けます。
   };
 
   // ──────────────────────────────────────────────

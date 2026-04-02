@@ -238,13 +238,20 @@ export class Breadcrumbs extends LitElement {
     }
 
     const firstItem = sourceItems[0];
-    const trailingItems = sourceItems.slice(-(max - 2));
-    const hiddenItems = sourceItems.slice(1, -(max - 2));
+    const currentItem = sourceItems[sourceItems.length - 1];
+    const middleStart = Math.max(sourceItems.length - max, 1);
+    const middleEnd = Math.max(sourceItems.length - 2, middleStart);
+    const middleItems = sourceItems.slice(middleStart, middleEnd);
+    const hiddenItems = [
+      ...sourceItems.slice(1, middleStart),
+      ...sourceItems.slice(middleEnd, sourceItems.length - 1),
+    ];
 
     if (!firstItem) return sourceItems;
-    if (hiddenItems.length === 0) return sourceItems;
+    if (!currentItem) return sourceItems;
+    if (middleItems.length === 0 || hiddenItems.length === 0) return sourceItems;
 
-    return [firstItem, { isEllipsis: true, hiddenItems }, ...trailingItems];
+    return [firstItem, { isEllipsis: true, hiddenItems }, ...middleItems, currentItem];
   }
 
   private _createMobileDisplayItems(): DisplayItem[] {
