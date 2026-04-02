@@ -1,9 +1,6 @@
 import { SSR_TARGET_TAGS, type SsrTargetTag } from './targets.js';
 import { type SsrAttribute } from './attributes.js';
-import {
-  collectSsrDocumentStyles,
-  renderSsrTarget,
-} from './target-adapters.js';
+import { collectSsrDocumentStyles, renderSsrTarget } from './target-adapters.js';
 import { type SsrDocumentStyleDefinition } from './target-definitions.js';
 
 export { SSR_TARGET_TAGS };

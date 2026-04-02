@@ -80,38 +80,38 @@ Rouault の token は、文書上明示的に **Primitive / Semantic Foundation 
 
 この節は**分類原則を定義するための節**であり、個別トークンの網羅表を置く場所ではありません。ここでは各層の意味と利用規約を示すために代表例のみを記載し、個別トークンの具体値・用途・差分は後続の各章に委ねます。
 
-| 層 | 役割 | 代表例 | 利用規約 |
-| --- | --- | --- | --- |
-| Primitive Tokens | 生の設計値。色相、彩度、寸法、時間、イージングなどの基礎パラメータ | `--hue-primary`, `--space-4`, `--duration-normal` | foundation / theme 定義で使用し、コンポーネントから直接参照しない |
-| Semantic Foundation Tokens | UI の役割を表す値。背景、前景、境界、状態、フォーカス、elevation など | `--bg-default`, `--fg-default`, `--border-default`, `--focus-ring-color` | コンポーネントは原則としてこちらを参照する |
-| Pattern / Recipe Tokens | 用途ごとに束ねた設計済み token 群、または再利用可能な規約 | `--animation-focus`, `--view-transition-fade`, `--reading-h2-size` | component pattern や document recipe で参照し、foundation の基礎値とは区別して扱う |
-| Application / Shell Constants | 製品構造・画面構成・shell 実装に依存する値 | `--header-height`, `--sidebar-width`, `--aside-width`, `--z-sidebar` | app shell と layout system に限定して参照し、汎用 component token と混同しない |
+| 層                            | 役割                                                                  | 代表例                                                                   | 利用規約                                                                           |
+| ----------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Primitive Tokens              | 生の設計値。色相、彩度、寸法、時間、イージングなどの基礎パラメータ    | `--hue-primary`, `--space-4`, `--duration-normal`                        | foundation / theme 定義で使用し、コンポーネントから直接参照しない                  |
+| Semantic Foundation Tokens    | UI の役割を表す値。背景、前景、境界、状態、フォーカス、elevation など | `--bg-default`, `--fg-default`, `--border-default`, `--focus-ring-color` | コンポーネントは原則としてこちらを参照する                                         |
+| Pattern / Recipe Tokens       | 用途ごとに束ねた設計済み token 群、または再利用可能な規約             | `--animation-focus`, `--view-transition-fade`, `--reading-h2-size`       | component pattern や document recipe で参照し、foundation の基礎値とは区別して扱う |
+| Application / Shell Constants | 製品構造・画面構成・shell 実装に依存する値                            | `--header-height`, `--sidebar-width`, `--aside-width`, `--z-sidebar`     | app shell と layout system に限定して参照し、汎用 component token と混同しない     |
 
 ### 1.2 設計原則
 
 Rouault の token 設計では、**値の共有**よりも**責務の分離**を優先します。  
 同じ値を内部的に共有していても、役割が異なるなら別 token として公開します。逆に、用途固有の振る舞いを foundation token に直接持ち込まないようにします。
 
-| 原則 | 内容 |
-| --- | --- |
-| 層の分離 | Primitive・Semantic Foundation・Pattern / Recipe・Application / Shell を混在させない |
-| 意味優先 | 同じ値でも役割が異なれば別 token として扱う |
-| foundation 優先 | コンポーネントはまず Semantic Foundation を参照し、Primitive 直参照を避ける |
-| pattern の独立 | animation、reading scale、view transition などの用途プリセットは Pattern / Recipe として分離する |
-| shell の独立 | header、sidebar、aside、breakpoint、z-index など製品構造依存の値は foundation 本体と分離する |
-| 差分吸収 | light / dark / reduced-motion / forced-colors の差分は token で吸収する |
+| 原則            | 内容                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| 層の分離        | Primitive・Semantic Foundation・Pattern / Recipe・Application / Shell を混在させない             |
+| 意味優先        | 同じ値でも役割が異なれば別 token として扱う                                                      |
+| foundation 優先 | コンポーネントはまず Semantic Foundation を参照し、Primitive 直参照を避ける                      |
+| pattern の独立  | animation、reading scale、view transition などの用途プリセットは Pattern / Recipe として分離する |
+| shell の独立    | header、sidebar、aside、breakpoint、z-index など製品構造依存の値は foundation 本体と分離する     |
+| 差分吸収        | light / dark / reduced-motion / forced-colors の差分は token で吸収する                          |
 
 ### 1.3 実装契約
 
-| 項目 | 契約 |
-| --- | --- |
-| 参照優先順位 | コンポーネントは Semantic Foundation Tokens を優先する |
-| Primitive 直参照 | foundation / theme / low-level utility に限定する |
-| Pattern 参照 | animation や reading scale などの設計済みパターンに限定して使う |
-| Shell constants | app shell / responsive layout / navigation 構造に限定して使う |
-| 直値 | 色コード、px、ms、cubic-bezier の直書きを避ける |
-| 差分吸収 | light / dark / reduced-motion / forced-colors の差分は token で吸収する |
-| 命名規約 | foundation token に component 名や具体 widget 名を入れない |
+| 項目             | 契約                                                                    |
+| ---------------- | ----------------------------------------------------------------------- |
+| 参照優先順位     | コンポーネントは Semantic Foundation Tokens を優先する                  |
+| Primitive 直参照 | foundation / theme / low-level utility に限定する                       |
+| Pattern 参照     | animation や reading scale などの設計済みパターンに限定して使う         |
+| Shell constants  | app shell / responsive layout / navigation 構造に限定して使う           |
+| 直値             | 色コード、px、ms、cubic-bezier の直書きを避ける                         |
+| 差分吸収         | light / dark / reduced-motion / forced-colors の差分は token で吸収する |
+| 命名規約         | foundation token に component 名や具体 widget 名を入れない              |
 
 ---
 
@@ -283,58 +283,58 @@ Rouault の Typography は、**UI 用の密度管理**と**長文読書面の可
 
 ### 3.5 Tracking / Line Height
 
-| トークン                | 具体値     | 役割           | 使用指針        |
-| ----------------------- | ---------- | -------------- | --------------- |
-| `--tracking-tighter`    | `-0.03em`  | 強く詰める     | display heading |
-| `--tracking-tight`      | `-0.015em` | やや詰める     | 見出し          |
-| `--tracking-normal`     | `0`        | 標準           | 本文            |
-| `--tracking-wide`       | `0.01em`   | やや広げる     | ラベル          |
-| `--tracking-wider`      | `0.03em`   | 強いラベル感   | badge, overline |
-| `--line-height-none`    | `1`        | 詰まった表示   | 大見出し限定    |
-| `--line-height-tight`   | `1.25`     | 密度高め       | 見出し          |
-| `--line-height-normal`  | `1.5`      | 標準本文       | UI 本文         |
-| `--line-height-relaxed` | `1.75`     | 読みやすさ重視 | 長文、説明文    |
-| `--line-height-code`    | `1.45`     | 等幅コード用     | code block / inline code |
+| トークン                | 具体値     | 役割           | 使用指針                 |
+| ----------------------- | ---------- | -------------- | ------------------------ |
+| `--tracking-tighter`    | `-0.03em`  | 強く詰める     | display heading          |
+| `--tracking-tight`      | `-0.015em` | やや詰める     | 見出し                   |
+| `--tracking-normal`     | `0`        | 標準           | 本文                     |
+| `--tracking-wide`       | `0.01em`   | やや広げる     | ラベル                   |
+| `--tracking-wider`      | `0.03em`   | 強いラベル感   | badge, overline          |
+| `--line-height-none`    | `1`        | 詰まった表示   | 大見出し限定             |
+| `--line-height-tight`   | `1.25`     | 密度高め       | 見出し                   |
+| `--line-height-normal`  | `1.5`      | 標準本文       | UI 本文                  |
+| `--line-height-relaxed` | `1.75`     | 読みやすさ重視 | 長文、説明文             |
+| `--line-height-code`    | `1.45`     | 等幅コード用   | code block / inline code |
 
 ### 3.6 Reading Typography Tokens
 
 #### 3.6.1 Reading Measure / Body
 
-| トークン | 具体値 | 役割 | 備考 |
-| --- | --- | --- | --- |
-| `--width-reading` | `75ch` | 読書面最大幅 | 行長制御 |
-| `--width-reading-fallback` | `46rem` | 代替幅 | `ch` 非依存 |
-| `--reading-measure` | `72ch` | 読書面標準 measure | 視線移動抑制 |
-| `--reading-body-size` | `clamp(1rem, 0.96rem + 0.18vw, 1.125rem)` | 読書本文サイズ | 画面幅に追従 |
-| `--reading-body-line-height` | `1.9` | 読書本文行間 | 長文の可読性を優先 |
-| `--reading-flow-space` | `1.4em` | flow 間隔 | 段落・ブロック分離 |
+| トークン                     | 具体値                                    | 役割               | 備考               |
+| ---------------------------- | ----------------------------------------- | ------------------ | ------------------ |
+| `--width-reading`            | `75ch`                                    | 読書面最大幅       | 行長制御           |
+| `--width-reading-fallback`   | `46rem`                                   | 代替幅             | `ch` 非依存        |
+| `--reading-measure`          | `72ch`                                    | 読書面標準 measure | 視線移動抑制       |
+| `--reading-body-size`        | `clamp(1rem, 0.96rem + 0.18vw, 1.125rem)` | 読書本文サイズ     | 画面幅に追従       |
+| `--reading-body-line-height` | `1.9`                                     | 読書本文行間       | 長文の可読性を優先 |
+| `--reading-flow-space`       | `1.4em`                                   | flow 間隔          | 段落・ブロック分離 |
 
 ### 3.7 Reading Typography Recipes
 
 #### 3.7.1 Reading Heading Scale
 
-| トークン | 具体値 | 役割 |
-| --- | --- | --- |
-| `--reading-h2-size` | `clamp(1.5rem, 1.34rem + 0.7vw, 2rem)` | H2 サイズ |
-| `--reading-h3-size` | `clamp(1.25rem, 1.16rem + 0.35vw, 1.5rem)` | H3 サイズ |
-| `--reading-h4-size` | `1.125rem` | H4 サイズ |
-| `--reading-h5-size` | `1rem` | H5 サイズ |
-| `--reading-h6-size` | `0.95rem` | H6 サイズ |
-| `--reading-h2-weight` | `650` | H2 ウェイト |
-| `--reading-h3-weight` | `620` | H3 ウェイト |
-| `--reading-h4-weight` | `600` | H4 ウェイト |
-| `--reading-h5-weight` | `600` | H5 ウェイト |
-| `--reading-h6-weight` | `600` | H6 ウェイト |
+| トークン              | 具体値                                     | 役割        |
+| --------------------- | ------------------------------------------ | ----------- |
+| `--reading-h2-size`   | `clamp(1.5rem, 1.34rem + 0.7vw, 2rem)`     | H2 サイズ   |
+| `--reading-h3-size`   | `clamp(1.25rem, 1.16rem + 0.35vw, 1.5rem)` | H3 サイズ   |
+| `--reading-h4-size`   | `1.125rem`                                 | H4 サイズ   |
+| `--reading-h5-size`   | `1rem`                                     | H5 サイズ   |
+| `--reading-h6-size`   | `0.95rem`                                  | H6 サイズ   |
+| `--reading-h2-weight` | `650`                                      | H2 ウェイト |
+| `--reading-h3-weight` | `620`                                      | H3 ウェイト |
+| `--reading-h4-weight` | `600`                                      | H4 ウェイト |
+| `--reading-h5-weight` | `600`                                      | H5 ウェイト |
+| `--reading-h6-weight` | `600`                                      | H6 ウェイト |
 
 #### 3.7.2 Typography Usage Contract
 
-| 文脈 | 使用すべき系統 |
-| --- | --- |
-| app shell / navigation / controls | UI Typography |
-| article body / about prose / long-form docs | Reading Typography Tokens |
-| reading article headings | Reading Typography Recipes |
-| code / numeric / machine-readable text | Mono Typography + `--line-height-code` |
-| display title | UI scale の大見出しを利用し、reading scale と混同しない |
+| 文脈                                        | 使用すべき系統                                          |
+| ------------------------------------------- | ------------------------------------------------------- |
+| app shell / navigation / controls           | UI Typography                                           |
+| article body / about prose / long-form docs | Reading Typography Tokens                               |
+| reading article headings                    | Reading Typography Recipes                              |
+| code / numeric / machine-readable text      | Mono Typography + `--line-height-code`                  |
+| display title                               | UI scale の大見出しを利用し、reading scale と混同しない |
 
 ---
 
@@ -527,34 +527,34 @@ Rouault の Accessibility は、後付けの調整ではなく foundation 層に
 
 ### 7.1 Layout Dimensions
 
-| トークン | 具体値 | 役割 | 利用範囲 |
-| --- | --- | --- | --- |
-| `--header-height` | `48px` | app header の基準高さ | shell layout に限定 |
-| `--sidebar-width` | `272px` | sidebar 展開幅 | shell / navigation に限定 |
-| `--aside-width` | `240px` | aside 領域幅 | article + aside layout に限定 |
-| `--page-shell-max-width` | `72rem` | 単一カラムのトップレベルページにおける本文外枠の最大幅 | top-level page shell に限定 |
-| `--page-shell-padding-inline` | `clamp(var(--space-4), 2vw, var(--space-6))` | 単一カラムのトップレベルページにおける左右ガター | top-level page shell に限定 |
-| `--page-shell-padding-block-start` | `clamp(var(--space-6), 4vw, var(--space-10))` | 単一カラムのトップレベルページにおける上余白 | top-level page shell に限定 |
-| `--page-shell-padding-block-end` | `var(--space-12)` | 単一カラムのトップレベルページにおける下余白 | top-level page shell に限定 |
-| `--home-shell-padding-block-start` | `clamp(var(--space-4), 2.5vw, var(--space-8))` | home 専用の上余白 | home shell に限定 |
-| `--home-shell-padding-block-end` | `var(--space-12)` | home 専用の下余白 | home shell に限定 |
+| トークン                           | 具体値                                         | 役割                                                   | 利用範囲                      |
+| ---------------------------------- | ---------------------------------------------- | ------------------------------------------------------ | ----------------------------- |
+| `--header-height`                  | `48px`                                         | app header の基準高さ                                  | shell layout に限定           |
+| `--sidebar-width`                  | `272px`                                        | sidebar 展開幅                                         | shell / navigation に限定     |
+| `--aside-width`                    | `240px`                                        | aside 領域幅                                           | article + aside layout に限定 |
+| `--page-shell-max-width`           | `72rem`                                        | 単一カラムのトップレベルページにおける本文外枠の最大幅 | top-level page shell に限定   |
+| `--page-shell-padding-inline`      | `clamp(var(--space-4), 2vw, var(--space-6))`   | 単一カラムのトップレベルページにおける左右ガター       | top-level page shell に限定   |
+| `--page-shell-padding-block-start` | `clamp(var(--space-6), 4vw, var(--space-10))`  | 単一カラムのトップレベルページにおける上余白           | top-level page shell に限定   |
+| `--page-shell-padding-block-end`   | `var(--space-12)`                              | 単一カラムのトップレベルページにおける下余白           | top-level page shell に限定   |
+| `--home-shell-padding-block-start` | `clamp(var(--space-4), 2.5vw, var(--space-8))` | home 専用の上余白                                      | home shell に限定             |
+| `--home-shell-padding-block-end`   | `var(--space-12)`                              | home 専用の下余白                                      | home shell に限定             |
 
 `--page-shell-*` は、about・search・corpus 一覧などの単一カラムなトップレベルページで共有する外枠規律を表します。`--home-shell-*` はその共通外枠を前提としつつ、home の縦方向の呼吸のみを局所的に調整するための token です。これらは reading typography や article body width を直接置き換えるものではありません。
 
 ### 7.2 Breakpoints
 
-| トークン | 具体値 | 役割 | 利用範囲 |
-| --- | --- | --- | --- |
-| `--breakpoint-sm` | `...` | 小画面境界 | responsive layout に限定 |
-| `--breakpoint-md` | `...` | 中画面境界 | responsive layout に限定 |
-| `--breakpoint-lg` | `...` | 大画面境界 | responsive layout に限定 |
+| トークン          | 具体値 | 役割       | 利用範囲                 |
+| ----------------- | ------ | ---------- | ------------------------ |
+| `--breakpoint-sm` | `...`  | 小画面境界 | responsive layout に限定 |
+| `--breakpoint-md` | `...`  | 中画面境界 | responsive layout に限定 |
+| `--breakpoint-lg` | `...`  | 大画面境界 | responsive layout に限定 |
 
 ### 7.3 Z-index
 
-| トークン | 具体値 | 役割 | 利用範囲 |
-| --- | --- | --- | --- |
-| `--z-base` | `...` | 通常文脈 | 汎用レイヤー |
-| `--z-dropdown` | `...` | dropdown / popover | overlay UI |
-| `--z-sidebar` | `...` | sidebar 系 | shell に限定 |
-| `--z-modal` | `...` | modal / dialog | overlay UI |
-| `--z-toast` | `...` | toast 通知 | feedback UI |
+| トークン       | 具体値 | 役割               | 利用範囲     |
+| -------------- | ------ | ------------------ | ------------ |
+| `--z-base`     | `...`  | 通常文脈           | 汎用レイヤー |
+| `--z-dropdown` | `...`  | dropdown / popover | overlay UI   |
+| `--z-sidebar`  | `...`  | sidebar 系         | shell に限定 |
+| `--z-modal`    | `...`  | modal / dialog     | overlay UI   |
+| `--z-toast`    | `...`  | toast 通知         | feedback UI  |

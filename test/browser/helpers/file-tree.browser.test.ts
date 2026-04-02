@@ -56,7 +56,10 @@ const flush = async (fileTree: FileTree): Promise<void> => {
 };
 
 const getContainer = (fileTree: FileTree): HTMLElement =>
-  must(fileTree.shadowRoot?.querySelector<HTMLElement>('.container'), '.container が見つかりません');
+  must(
+    fileTree.shadowRoot?.querySelector<HTMLElement>('.container'),
+    '.container が見つかりません',
+  );
 
 const getTreeItemHost = (fileTree: FileTree, id: string): HTMLElement =>
   must(
@@ -309,9 +312,9 @@ describe('ui-file-tree browser contract', () => {
 
     await flush(fileTree);
 
-    expect(fileTree.shadowRoot?.querySelector('ui-tree-item[data-id="notes/design/tree-item"]')).to.equal(
-      null,
-    );
+    expect(
+      fileTree.shadowRoot?.querySelector('ui-tree-item[data-id="notes/design/tree-item"]'),
+    ).to.equal(null);
 
     window.dispatchEvent(new Event('beforeprint'));
     await flush(fileTree);
@@ -322,8 +325,8 @@ describe('ui-file-tree browser contract', () => {
     window.dispatchEvent(new Event('afterprint'));
     await flush(fileTree);
 
-    expect(fileTree.shadowRoot?.querySelector('ui-tree-item[data-id="notes/design/tree-item"]')).to.equal(
-      null,
-    );
+    expect(
+      fileTree.shadowRoot?.querySelector('ui-tree-item[data-id="notes/design/tree-item"]'),
+    ).to.equal(null);
   });
 });

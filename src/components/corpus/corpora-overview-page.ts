@@ -1,10 +1,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { HomeNoteItem } from '../../data/home.js';
-import type {
-  CorporaOverviewCorpusItem,
-  CorporaOverviewData,
-} from '../../data/corporaOverview.js';
+import type { CorporaOverviewCorpusItem, CorporaOverviewData } from '../../data/corporaOverview.js';
 import { navigateToUrl } from '../../search/navigation.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
 import '../ui/card/card.js';
@@ -248,7 +245,9 @@ export class CorporaOverviewPage extends LitElement {
       return html`
         <ui-empty-state class="empty-hint" variant="default">
           <span slot="heading">公開ノートはまだありません</span>
-          <span slot="description">ノートが公開されると、ここに最近更新した項目が表示されます。</span>
+          <span slot="description"
+            >ノートが公開されると、ここに最近更新した項目が表示されます。</span
+          >
         </ui-empty-state>
       `;
     }
@@ -271,7 +270,9 @@ export class CorporaOverviewPage extends LitElement {
                   <div class="result-meta corpora-overview__note-meta">
                     <span>更新日: ${renderDate(note.date)}</span>
                     ${note.genres.length > 0
-                      ? html`<span class="corpora-overview__genres">${note.genres.join(' / ')}</span>`
+                      ? html`<span class="corpora-overview__genres"
+                          >${note.genres.join(' / ')}</span
+                        >`
                       : nothing}
                   </div>
                   ${note.summary.length > 0
@@ -303,17 +304,26 @@ export class CorporaOverviewPage extends LitElement {
             公開しているコーパスと最近更新したノートを、ひとつの入口から横断して辿るための一覧です。
           </p>
           <div class="meta-row corpora-overview__meta">
-            <span class="corpora-overview__summary">${overview.corpusCount.toString()}件のコーパス</span>
-            <span class="corpora-overview__summary">${overview.noteCount.toString()}件のノート</span>
+            <span class="corpora-overview__summary"
+              >${overview.corpusCount.toString()}件のコーパス</span
+            >
+            <span class="corpora-overview__summary"
+              >${overview.noteCount.toString()}件のノート</span
+            >
             ${overview.latestUpdatedDate
               ? html`<span>最新更新 ${renderDate(overview.latestUpdatedDate)}</span>`
               : nothing}
           </div>
         </div>
 
-        <section class="results-section corpora-overview__section" aria-labelledby="corpora-list-title">
+        <section
+          class="results-section corpora-overview__section"
+          aria-labelledby="corpora-list-title"
+        >
           <header class="corpora-overview__section-header">
-            <h2 id="corpora-list-title" class="corpora-overview__section-title">コーパスから辿る</h2>
+            <h2 id="corpora-list-title" class="corpora-overview__section-title">
+              コーパスから辿る
+            </h2>
             <p class="corpora-overview__section-description">
               個別の閲覧単位としてコーパスを選び、そのまとまりに属するノートへ入ります。
             </p>
@@ -323,7 +333,9 @@ export class CorporaOverviewPage extends LitElement {
 
         <section class="corpora-overview__section" aria-labelledby="recent-notes-title">
           <header class="corpora-overview__section-header">
-            <h2 id="recent-notes-title" class="corpora-overview__section-title">最近更新したノート</h2>
+            <h2 id="recent-notes-title" class="corpora-overview__section-title">
+              最近更新したノート
+            </h2>
             <p class="corpora-overview__section-description">
               コーパスを横断して、最近更新した公開ノートから読み始められます。
             </p>

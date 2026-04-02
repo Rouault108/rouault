@@ -56,9 +56,7 @@ const meta: Meta<Callout> = {
 export default meta;
 type Story = StoryObj<Callout>;
 
-const movedToBrowserDocs = (
-  story: string,
-): Pick<Story, 'tags' | 'parameters'> => ({
+const movedToBrowserDocs = (story: string): Pick<Story, 'tags' | 'parameters'> => ({
   tags: ['manual-only'],
   parameters: {
     docs: {
@@ -98,7 +96,7 @@ export const Default: Story = {
     >
       長文ノートは、まず結論を冒頭に1文で書いてから詳細を追記すると再読効率が上がります。
     </ui-callout>
-  `
+  `,
 };
 
 /**
@@ -152,7 +150,7 @@ export const KindStateMatrix: Story = {
         )}
       </div>
     </div>
-  `
+  `,
 };
 
 /**

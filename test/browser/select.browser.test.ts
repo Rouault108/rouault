@@ -1,7 +1,12 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/select/select.js';
 import type { Select, SelectOption } from '../../src/components/ui/select/select.js';
-import { dispatchKey, nextAnimationFrame, waitForLitUpdate, waitMs } from './helpers/wait-for-lit.js';
+import {
+  dispatchKey,
+  nextAnimationFrame,
+  waitForLitUpdate,
+  waitMs,
+} from './helpers/wait-for-lit.js';
 
 const FRUIT_OPTIONS: SelectOption[] = [
   { value: 'apple', label: 'Apple' },
@@ -62,12 +67,23 @@ describe('ui-select browser contract', () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>
         <ui-select id="disabled" label="無効" disabled .options=${FRUIT_OPTIONS}></ui-select>
-        <ui-select id="readonly" label="読み取り専用" readonly .options=${FRUIT_OPTIONS}></ui-select>
+        <ui-select
+          id="readonly"
+          label="読み取り専用"
+          readonly
+          .options=${FRUIT_OPTIONS}
+        ></ui-select>
       </div>
     `);
 
-    const disabledSelect = expectPresent(wrapper.querySelector<Select>('#disabled'), 'disabledSelect');
-    const readonlySelect = expectPresent(wrapper.querySelector<Select>('#readonly'), 'readonlySelect');
+    const disabledSelect = expectPresent(
+      wrapper.querySelector<Select>('#disabled'),
+      'disabledSelect',
+    );
+    const readonlySelect = expectPresent(
+      wrapper.querySelector<Select>('#readonly'),
+      'readonlySelect',
+    );
 
     await flush(disabledSelect);
     await flush(readonlySelect);
@@ -90,7 +106,11 @@ describe('ui-select browser contract', () => {
 
   it('keyboard navigation で listbox を開き、disabled option を飛ばして Home/End/Tab/Escape を処理すること', async () => {
     const select = await fixture<Select>(html`
-      <ui-select label="キーボード" placeholder="選択してください" .options=${OPTIONS_WITH_DISABLED}></ui-select>
+      <ui-select
+        label="キーボード"
+        placeholder="選択してください"
+        .options=${OPTIONS_WITH_DISABLED}
+      ></ui-select>
     `);
 
     await flush(select);
@@ -283,7 +303,10 @@ describe('ui-select browser contract', () => {
 
     const empty = expectPresent(wrapper.querySelector<Select>('#empty'), 'empty');
     const single = expectPresent(wrapper.querySelector<Select>('#single'), 'single');
-    const allDisabled = expectPresent(wrapper.querySelector<Select>('#all-disabled'), 'allDisabled');
+    const allDisabled = expectPresent(
+      wrapper.querySelector<Select>('#all-disabled'),
+      'allDisabled',
+    );
 
     await flush(empty);
     await flush(single);

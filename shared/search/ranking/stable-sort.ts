@@ -13,7 +13,8 @@ export function stableSortCandidates(
         return dateOrder;
       }
 
-      const evidenceOrder = right.featureScores.matchEvidenceScore - left.featureScores.matchEvidenceScore;
+      const evidenceOrder =
+        right.featureScores.matchEvidenceScore - left.featureScores.matchEvidenceScore;
       if (evidenceOrder !== 0) {
         return evidenceOrder;
       }
@@ -32,7 +33,8 @@ export function stableSortCandidates(
       return scoreOrder;
     }
 
-    const evidenceOrder = right.featureScores.matchEvidenceScore - left.featureScores.matchEvidenceScore;
+    const evidenceOrder =
+      right.featureScores.matchEvidenceScore - left.featureScores.matchEvidenceScore;
     if (evidenceOrder !== 0) {
       return evidenceOrder;
     }

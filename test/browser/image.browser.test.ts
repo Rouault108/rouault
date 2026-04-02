@@ -3,8 +3,7 @@ import '../../src/components/ui/image/image.js';
 import type { UiImage } from '../../src/components/ui/image/image.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
-const SAMPLE_DATA_URI =
-  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+const SAMPLE_DATA_URI = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
 const expectPresent = <T>(value: T | null | undefined, name: string): T => {
   expect(value, `${name} should exist`).to.not.equal(null);
@@ -27,17 +26,21 @@ const getTrigger = (host: UiImage): HTMLButtonElement =>
   expectPresent(host.shadowRoot?.querySelector<HTMLButtonElement>('button.trigger'), 'trigger');
 
 const getThumbnail = (host: UiImage): HTMLImageElement =>
-  expectPresent(host.shadowRoot?.querySelector<HTMLImageElement>('img.thumbnail-image'), 'thumbnail');
+  expectPresent(
+    host.shadowRoot?.querySelector<HTMLImageElement>('img.thumbnail-image'),
+    'thumbnail',
+  );
 
 describe('ui-image browser contract', () => {
   it('src 未設定時は empty state を公開し、aria-busy=false のままであること', async () => {
-    const host = await fixture<UiImage>(html`
-      <ui-image alt="未設定画像"></ui-image>
-    `);
+    const host = await fixture<UiImage>(html` <ui-image alt="未設定画像"></ui-image> `);
 
     await flush(host);
 
-    const figure = expectPresent(host.shadowRoot?.querySelector<HTMLElement>('figure.root'), 'figure');
+    const figure = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('figure.root'),
+      'figure',
+    );
     const fallback = expectPresent(
       host.shadowRoot?.querySelector<HTMLElement>('.error-fallback'),
       'empty fallback',
@@ -71,7 +74,10 @@ describe('ui-image browser contract', () => {
     await flush(host);
     await nextAnimationFrame();
 
-    const lightbox = expectPresent(host.shadowRoot?.querySelector<HTMLElement>('.lightbox'), 'lightbox');
+    const lightbox = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('.lightbox'),
+      'lightbox',
+    );
     const dialog = expectPresent(
       host.shadowRoot?.querySelector<HTMLElement>('.lightbox-dialog'),
       'dialog',
@@ -118,7 +124,10 @@ describe('ui-image browser contract', () => {
       host.shadowRoot?.querySelector<HTMLElement>('.error-fallback'),
       'error fallback',
     );
-    const lightbox = expectPresent(host.shadowRoot?.querySelector<HTMLElement>('.lightbox'), 'lightbox');
+    const lightbox = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('.lightbox'),
+      'lightbox',
+    );
 
     expect(fallback.textContent?.includes('画像を読み込めませんでした')).to.equal(true);
 

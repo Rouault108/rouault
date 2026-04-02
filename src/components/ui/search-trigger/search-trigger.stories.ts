@@ -108,9 +108,7 @@ export const BoundaryManual: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem; max-width: 22rem;">
       <ui-search-trigger placeholder=""></ui-search-trigger>
-      <ui-search-trigger
-        placeholder=${'一行目\n二行目\n三行目'}
-      ></ui-search-trigger>
+      <ui-search-trigger placeholder=${'一行目\n二行目\n三行目'}></ui-search-trigger>
       <ui-search-trigger
         placeholder="これは非常に長いプレースホルダーテキストであり、表示幅を超えた場合でも 1 行のまま省略表示される必要があります"
       ></ui-search-trigger>

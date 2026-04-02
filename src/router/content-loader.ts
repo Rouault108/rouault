@@ -74,7 +74,8 @@ export class ContentLoader {
         kind: 'page',
         html: mainContent,
         title: doc.title,
-        metaDescription: doc.querySelector('meta[name="description"]')?.getAttribute('content') ?? null,
+        metaDescription:
+          doc.querySelector('meta[name="description"]')?.getAttribute('content') ?? null,
         shell,
         announcedTitle: doc.title,
       },

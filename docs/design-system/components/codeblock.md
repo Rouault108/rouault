@@ -91,17 +91,17 @@ copy button を見せるかどうかと、実際に copy 可能かどうかは�
 
 読者向けの正規入力は `pre[data-code-block]` 上の `data-code-*` 属性です。`ui-code-block` を使う場合は、次の入力を static 契約へ写像できなければなりません。
 
-| property | attribute | 必須 | 既定値 | 内容 |
-| --- | --- | --- | --- | --- |
-| `filename` | `filename` | いいえ | 空文字 | ヘッダー表示や copy 文脈の補助に用いるファイル名です。 |
-| `lang` | `lang` | いいえ | 空文字 | 言語識別子です。表示ラベルや `data-lang` に用います。 |
-| `intent` | `intent` | いいえ | `neutral` | `neutral` / `valid` / `invalid` を受理します。 |
-| `showLineNumbers` | `show-line-numbers` | いいえ | `false` | 行番号を表示します。 |
-| `copyMode` | `copy-mode` | いいえ | `auto` | `auto` / `always` / `hidden` を受理します。 |
-| `copyable` | `copyable` | いいえ | `true` | copy 操作を公開上許可するかどうかを表します。 |
-| `wrap` | `wrap` | いいえ | `false` | 長い行を折り返すかどうかを表します。 |
-| `highlightLines` | `highlight-lines` | いいえ | 空文字 | `1,3-5` のような論理行範囲指定です。 |
-| `layout` | `layout` | いいえ | `standalone` | `standalone` / `inline` を受理します。 |
+| property          | attribute           | 必須   | 既定値       | 内容                                                   |
+| ----------------- | ------------------- | ------ | ------------ | ------------------------------------------------------ |
+| `filename`        | `filename`          | いいえ | 空文字       | ヘッダー表示や copy 文脈の補助に用いるファイル名です。 |
+| `lang`            | `lang`              | いいえ | 空文字       | 言語識別子です。表示ラベルや `data-lang` に用います。  |
+| `intent`          | `intent`            | いいえ | `neutral`    | `neutral` / `valid` / `invalid` を受理します。         |
+| `showLineNumbers` | `show-line-numbers` | いいえ | `false`      | 行番号を表示します。                                   |
+| `copyMode`        | `copy-mode`         | いいえ | `auto`       | `auto` / `always` / `hidden` を受理します。            |
+| `copyable`        | `copyable`          | いいえ | `true`       | copy 操作を公開上許可するかどうかを表します。          |
+| `wrap`            | `wrap`              | いいえ | `false`      | 長い行を折り返すかどうかを表します。                   |
+| `highlightLines`  | `highlight-lines`   | いいえ | 空文字       | `1,3-5` のような論理行範囲指定です。                   |
+| `layout`          | `layout`            | いいえ | `standalone` | `standalone` / `inline` を受理します。                 |
 
 ### 契約
 
@@ -118,11 +118,11 @@ copy button を見せるかどうかと、実際に copy 可能かどうかは�
 
 次の入力は、`section[data-code-group]` 配下で比較対象として使われるときにのみ意味を持ちます。`ui-code-block` adapter を使う場合も、最終的には同じ metadata として静的 DOM へ落ちなければなりません。
 
-| property | attribute | 必須 | 既定値 | 内容 |
-| --- | --- | --- | --- | --- |
-| `groupKey` | `group-key` | 条件付き必須 | 空文字 | group 内で一意な安定識別子です。`ui-code-group` 配下では必須です。 |
-| `tabLabel` | `tab-label` | いいえ | 空文字 | 比較 UI における可視タブラベルです。 |
-| `copyLabel` | `copy-label` | いいえ | 空文字 | copy 文脈ラベルです。 |
+| property    | attribute    | 必須         | 既定値 | 内容                                                               |
+| ----------- | ------------ | ------------ | ------ | ------------------------------------------------------------------ |
+| `groupKey`  | `group-key`  | 条件付き必須 | 空文字 | group 内で一意な安定識別子です。`ui-code-group` 配下では必須です。 |
+| `tabLabel`  | `tab-label`  | いいえ       | 空文字 | 比較 UI における可視タブラベルです。                               |
+| `copyLabel` | `copy-label` | いいえ       | 空文字 | copy 文脈ラベルです。                                              |
 
 ### 契約
 
@@ -135,14 +135,14 @@ copy button を見せるかどうかと、実際に copy 可能かどうかは�
 
 次の入力は受理してもよいですが、**新規利用では推奨しません**。
 
-| 名前 | 種別 | 移行先 |
-| --- | --- | --- |
-| `headless` | property / attribute | 明示的なメタデータ省略と `copyMode` / `layout` の組み合わせへ移行します。 |
-| `embedded` | property / attribute | `layout="inline"` へ移行します。 |
-| `initialCode` | property / attribute (`initial-code`) | slotted `pre` / `code` を正本とする設計へ移行します。 |
-| `label` | property / attribute | `tabLabel` / `copyLabel` / 上位側の `heading` へ分解します。 |
-| `data-wrap="true"` | host または `pre` | `wrap=true` へ移行します。 |
-| `data-raw` | slotted `pre` | slotted 本文を正本に統一します。 |
+| 名前               | 種別                                  | 移行先                                                                    |
+| ------------------ | ------------------------------------- | ------------------------------------------------------------------------- |
+| `headless`         | property / attribute                  | 明示的なメタデータ省略と `copyMode` / `layout` の組み合わせへ移行します。 |
+| `embedded`         | property / attribute                  | `layout="inline"` へ移行します。                                          |
+| `initialCode`      | property / attribute (`initial-code`) | slotted `pre` / `code` を正本とする設計へ移行します。                     |
+| `label`            | property / attribute                  | `tabLabel` / `copyLabel` / 上位側の `heading` へ分解します。              |
+| `data-wrap="true"` | host または `pre`                     | `wrap=true` へ移行します。                                                |
+| `data-raw`         | slotted `pre`                         | slotted 本文を正本に統一します。                                          |
 
 ### 契約
 
@@ -190,13 +190,13 @@ copy 用の文字列を返します。
 
 `ui-code-block` adapter を使う場合に、`ui-code-group` などの上位コンポーネントが再評価すべき状態変化を通知します。読者向けの静的本文では runtime event を前提にしません。
 
-| 項目 | 内容 |
-| --- | --- |
-| 名前 | `ui-code-block-change` |
-| 発火条件 | コンテンツまたはメタデータが変化し、上位が再評価を要する場合 |
+| 項目     | 内容                                                                   |
+| -------- | ---------------------------------------------------------------------- |
+| 名前     | `ui-code-block-change`                                                 |
+| 発火条件 | コンテンツまたはメタデータが変化し、上位が再評価を要する場合           |
 | `detail` | `{ kinds: Array<'content' \| 'metadata'>, affectsCopyValue: boolean }` |
-| bubbles | `true` |
-| composed | `true` |
+| bubbles  | `true`                                                                 |
+| composed | `true`                                                                 |
 
 #### 契約
 
@@ -342,14 +342,14 @@ copy 用の文字列を返します。
 
 ## 11. 境界条件
 
-| 条件 | 扱い |
-| --- | --- |
-| code root が空 | 正規契約不成立です。描画できても保証対象外です。 |
-| `pre` が複数ある | 正規契約不成立です。最初の 1 件だけを採っても公開保証しません。 |
-| `pre` なしで `code` のみ | 正規契約不成立です。 |
-| `copyable=false` | `getCodeContent()` が値を返しても公開上は copy 不可です。 |
-| `groupKey` が空 | 単体利用では問題ありません。`ui-code-group` 配下では契約違反です。 |
-| `label` が指定される | 互換入力として受理してもよいですが、新設計では意味づけしません。 |
+| 条件                     | 扱い                                                               |
+| ------------------------ | ------------------------------------------------------------------ |
+| code root が空           | 正規契約不成立です。描画できても保証対象外です。                   |
+| `pre` が複数ある         | 正規契約不成立です。最初の 1 件だけを採っても公開保証しません。    |
+| `pre` なしで `code` のみ | 正規契約不成立です。                                               |
+| `copyable=false`         | `getCodeContent()` が値を返しても公開上は copy 不可です。          |
+| `groupKey` が空          | 単体利用では問題ありません。`ui-code-group` 配下では契約違反です。 |
+| `label` が指定される     | 互換入力として受理してもよいですが、新設計では意味づけしません。   |
 
 ---
 

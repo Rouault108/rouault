@@ -40,12 +40,7 @@ console.log(greeting);</code></pre>
 export const LayoutModes: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem;">
-      <ui-code-block
-        layout="standalone"
-        filename="standalone.ts"
-        lang="ts"
-        style=${SURFACE_STYLE}
-      >
+      <ui-code-block layout="standalone" filename="standalone.ts" lang="ts" style=${SURFACE_STYLE}>
         <pre><code>export const mode = 'standalone';</code></pre>
       </ui-code-block>
 

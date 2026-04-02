@@ -70,28 +70,28 @@ Rouault における state presenter は、必要以上に騒がず、しかし�
 
 ### 入力契約
 
-| 名前       | 種別                 | 必須   | 内容       | 契約                                                                 |
-| ---------- | -------------------- | ------ | ---------- | -------------------------------------------------------------------- |
+| 名前       | 種別                 | 必須   | 内容       | 契約                                                                                      |
+| ---------- | -------------------- | ------ | ---------- | ----------------------------------------------------------------------------------------- |
 | `variant`  | property / attribute | いいえ | 状態種別   | semantic kind として `default` / `search` / `error` を受理します。既定値は `default` です |
-| `announce` | property / attribute | いいえ | 通知モード | `off` / `polite` を受理します。既定値は `off` です                  |
+| `announce` | property / attribute | いいえ | 通知モード | `off` / `polite` を受理します。既定値は `off` です                                        |
 
 ### 属性反映契約
 
 公開入力のうち `variant` および `announce` は property と attribute の両面から操作できます。
 
-| property   | attribute   | reflect | 備考                                                                                  |
-| ---------- | ----------- | ------- | ------------------------------------------------------------------------------------- |
-| `variant`  | `variant`   | あり    | 列挙外値は公開契約上の入力ではありません。無効値は canonical な正規値へ正規化します |
-| `announce` | `announce`  | あり    | 列挙外値は公開契約上の入力ではありません。無効値は canonical な正規値へ正規化します |
+| property   | attribute  | reflect | 備考                                                                                |
+| ---------- | ---------- | ------- | ----------------------------------------------------------------------------------- |
+| `variant`  | `variant`  | あり    | 列挙外値は公開契約上の入力ではありません。無効値は canonical な正規値へ正規化します |
+| `announce` | `announce` | あり    | 列挙外値は公開契約上の入力ではありません。無効値は canonical な正規値へ正規化します |
 
 ### スロット契約
 
-| 名前           | 種別       | 位置づけ | 個数契約      | 内容                                                                 |
-| -------------- | ---------- | -------- | ------------- | -------------------------------------------------------------------- |
-| `heading`      | named slot | 必須入力 | 1 個          | 状態の主文言です。アクセシブルな状態理解の主たる入力です             |
-| `description`  | named slot | 任意入力 | 0 または 1 個 | 状態の補足説明です。空または空白のみの場合は非表示として扱います     |
-| `action`       | named slot | 任意入力 | 0 個以上      | 次に取る行動を提示する操作要素です。複数配置を許可します             |
-| `icon`         | named slot | 任意入力 | 0 または 1 個 | 状態を補助的に示す簡潔な視覚要素です                                 |
+| 名前           | 種別       | 位置づけ | 個数契約      | 内容                                                                |
+| -------------- | ---------- | -------- | ------------- | ------------------------------------------------------------------- |
+| `heading`      | named slot | 必須入力 | 1 個          | 状態の主文言です。アクセシブルな状態理解の主たる入力です            |
+| `description`  | named slot | 任意入力 | 0 または 1 個 | 状態の補足説明です。空または空白のみの場合は非表示として扱います    |
+| `action`       | named slot | 任意入力 | 0 個以上      | 次に取る行動を提示する操作要素です。複数配置を許可します            |
+| `icon`         | named slot | 任意入力 | 0 または 1 個 | 状態を補助的に示す簡潔な視覚要素です                                |
 | `illustration` | named slot | 任意入力 | 0 または 1 個 | 状態をより広い文脈で補助的に示す視覚要素です。`icon` より優先します |
 
 `heading` スロットは、`h2`、`h3`、`h4` など、画面文脈に応じた見出し要素を受け取ることができます。見出しレベルはコンポーネント側で固定しません。利用側は文書アウトラインに整合する見出しレベルを選択しなければなりません（MUST）。
@@ -142,11 +142,11 @@ canonicalization の観測時点は次のとおりです。
 
 `variant` は視覚差分の指定子ではなく、**state presenter の状態種別**です。意味は次表のとおりです。
 
-| `variant` 値 | 意味                     | 想定用途                                   |
-| ------------ | ------------------------ | ------------------------------------------ |
-| `default`    | 中立的な内容不在状態     | 初期状態、未作成、未配置                   |
+| `variant` 値 | 意味                     | 想定用途                                     |
+| ------------ | ------------------------ | -------------------------------------------- |
+| `default`    | 中立的な内容不在状態     | 初期状態、未作成、未配置                     |
 | `search`     | 条件不一致による結果不在 | 検索語や絞り込み条件に一致する結果がない状態 |
-| `error`      | 継続表示不能な失敗状態   | 読み込み失敗、取得失敗、再試行が必要な状態 |
+| `error`      | 継続表示不能な失敗状態   | 読み込み失敗、取得失敗、再試行が必要な状態   |
 
 本コンポーネントは狭義の empty のみでなく、**no-result** および **failure** を含む広義の状態提示を担います。したがって `error` は命名上の例外ではなく、state presenter の 1 種別として扱います。ただし、失敗原因の業務分類や復旧戦略そのものは本契約の責務ではありません。
 
@@ -473,23 +473,23 @@ canonicalization の観測時点は次のとおりです。
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                            | 固定する契約                                                                                                                                               |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Default`                        | 既定 `variant` が `default`、既定 `announce` が `off` であり、自動的に live announcement を前提としないこと                                               |
-| `PoliteAnnouncement`             | `announce="polite"` のときに限り、状態メッセージ領域のみが `role="status"` / `aria-live="polite"` / `aria-atomic="true"` を持つこと                    |
-| `VariantStateMatrix`             | `default` / `search` / `error` の 3 状態種別が意味差として成立すること                                                                                     |
-| `InvalidVariantCanonicalization` | 無効 `variant` が入力された場合に property・attribute・描画結果が `default` へ正規化されること                                                            |
-| `InvalidAnnounceCanonicalization`| 無効 `announce` が入力された場合に property・attribute・描画結果が `off` へ正規化されること                                                                |
-| `IllustrationPriority`           | `illustration` が存在する場合に `icon` が非表示となること                                                                                                  |
-| `TextOnlyState`                  | `icon` も `illustration` もない text-first の状態提示が正規構成として成立すること                                                                          |
-| `HeadingLevelFreedom`            | `heading` に `h2` / `h3` / `h4` など複数レベルの見出しを受理できること                                                                                     |
-| `DynamicSlotStateSync`           | `description` / `action` / `illustration` の再割当に表示状態が追従すること                                                                                 |
-| `ActionOrderContract`            | DOM 順序がアクション優先順位となること                                                                                                                      |
-| `DescriptionLinkGuidance`        | 説明文内リンクが補助参照導線として扱われ、主要導線の唯一入力にならないこと                                                                                 |
-| `NoPublicDerivedState`           | 内部派生状態をホスト属性として公開 API にしないこと                                                                                                        |
-| `VisualDensityContract`          | `heading` / `description` の最大幅、メッセージ領域とアクション領域の間隔、象徴要素未指定時の余白折り畳みが視覚契約として成立すること                     |
-| `PrintContract`                  | print 時に装飾要素を落としても主意味が残り、リンク型 action の扱いが一律非表示前提でないこと                                                               |
-| `BoundaryConditions`             | 空白説明文の折り畳み、見出し欠落時警告、複数トップレベルノード入力の非正規扱い、reduced motion / forced colors / print の定義が存在すること              |
+| Story                             | 固定する契約                                                                                                                                |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Default`                         | 既定 `variant` が `default`、既定 `announce` が `off` であり、自動的に live announcement を前提としないこと                                 |
+| `PoliteAnnouncement`              | `announce="polite"` のときに限り、状態メッセージ領域のみが `role="status"` / `aria-live="polite"` / `aria-atomic="true"` を持つこと         |
+| `VariantStateMatrix`              | `default` / `search` / `error` の 3 状態種別が意味差として成立すること                                                                      |
+| `InvalidVariantCanonicalization`  | 無効 `variant` が入力された場合に property・attribute・描画結果が `default` へ正規化されること                                              |
+| `InvalidAnnounceCanonicalization` | 無効 `announce` が入力された場合に property・attribute・描画結果が `off` へ正規化されること                                                 |
+| `IllustrationPriority`            | `illustration` が存在する場合に `icon` が非表示となること                                                                                   |
+| `TextOnlyState`                   | `icon` も `illustration` もない text-first の状態提示が正規構成として成立すること                                                           |
+| `HeadingLevelFreedom`             | `heading` に `h2` / `h3` / `h4` など複数レベルの見出しを受理できること                                                                      |
+| `DynamicSlotStateSync`            | `description` / `action` / `illustration` の再割当に表示状態が追従すること                                                                  |
+| `ActionOrderContract`             | DOM 順序がアクション優先順位となること                                                                                                      |
+| `DescriptionLinkGuidance`         | 説明文内リンクが補助参照導線として扱われ、主要導線の唯一入力にならないこと                                                                  |
+| `NoPublicDerivedState`            | 内部派生状態をホスト属性として公開 API にしないこと                                                                                         |
+| `VisualDensityContract`           | `heading` / `description` の最大幅、メッセージ領域とアクション領域の間隔、象徴要素未指定時の余白折り畳みが視覚契約として成立すること        |
+| `PrintContract`                   | print 時に装飾要素を落としても主意味が残り、リンク型 action の扱いが一律非表示前提でないこと                                                |
+| `BoundaryConditions`              | 空白説明文の折り畳み、見出し欠落時警告、複数トップレベルノード入力の非正規扱い、reduced motion / forced colors / print の定義が存在すること |
 
 ---
 

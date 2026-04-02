@@ -86,18 +86,18 @@ Rouault における math は、本文の読解を中断させずに式を提示
 
 ### 入力契約
 
-| 名前                | 種別                 | 必須   | 内容                              | 契約                                                                                                              |
-| ------------------- | -------------------- | ------ | --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `latex`             | property             | いいえ | ランタイム描画用 LaTeX 文字列     | slot に正規入力がない場合にのみ使用します                                                                         |
-| `block`             | property / attribute | いいえ | display mode                      | `true` の場合は別行数式として描画します                                                                           |
-| `primary`           | property / attribute | いいえ | ランドマーク付与フラグ            | 互換性のため公開入力名は `primary` としますが、契約上は `block=true` の場合に region ランドマークを付与するかどうかだけを表します |
-| `speech-mode`       | property / attribute | いいえ | 読み上げモード                    | `mathml` または `label` を取ります。既定値は `mathml` です                                                       |
-| `aria-label`        | attribute            | いいえ | 手動読み上げテキスト              | `speech-mode="label"` の場合に主要ラベルとして使います。`speech-mode` 未指定時は後方互換入力としてモード切替も担います |
-| `error-message`     | attribute            | いいえ | 外部注入エラーメッセージ          | 表示状態を上書きし、数式を描画せず `external` エラー UI を表示します                                              |
-| `error-kind`        | property / attribute | いいえ | `external` 下位分類               | `build-failed` / `data-missing` / `runtime-failed` / `upstream-invalid` / `unspecified` のいずれかを取ります    |
-| `error-code`        | attribute            | いいえ | 外部エラー補助コード              | 診断補助情報です。表示骨格の主キーではありません                                                                  |
-| `show-error-source` | property / attribute | いいえ | エラー時ソース開示フラグ          | `true` の場合に限り、入力ソースが存在すれば `details` / `summary` による開示を許可します。既定値は `false` です   |
-| `id`                | global attribute     | いいえ | アンカー識別子                    | 公開アンカー対象はホスト要素です                                                                                  |
+| 名前                | 種別                 | 必須   | 内容                          | 契約                                                                                                                              |
+| ------------------- | -------------------- | ------ | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `latex`             | property             | いいえ | ランタイム描画用 LaTeX 文字列 | slot に正規入力がない場合にのみ使用します                                                                                         |
+| `block`             | property / attribute | いいえ | display mode                  | `true` の場合は別行数式として描画します                                                                                           |
+| `primary`           | property / attribute | いいえ | ランドマーク付与フラグ        | 互換性のため公開入力名は `primary` としますが、契約上は `block=true` の場合に region ランドマークを付与するかどうかだけを表します |
+| `speech-mode`       | property / attribute | いいえ | 読み上げモード                | `mathml` または `label` を取ります。既定値は `mathml` です                                                                        |
+| `aria-label`        | attribute            | いいえ | 手動読み上げテキスト          | `speech-mode="label"` の場合に主要ラベルとして使います。`speech-mode` 未指定時は後方互換入力としてモード切替も担います            |
+| `error-message`     | attribute            | いいえ | 外部注入エラーメッセージ      | 表示状態を上書きし、数式を描画せず `external` エラー UI を表示します                                                              |
+| `error-kind`        | property / attribute | いいえ | `external` 下位分類           | `build-failed` / `data-missing` / `runtime-failed` / `upstream-invalid` / `unspecified` のいずれかを取ります                      |
+| `error-code`        | attribute            | いいえ | 外部エラー補助コード          | 診断補助情報です。表示骨格の主キーではありません                                                                                  |
+| `show-error-source` | property / attribute | いいえ | エラー時ソース開示フラグ      | `true` の場合に限り、入力ソースが存在すれば `details` / `summary` による開示を許可します。既定値は `false` です                   |
+| `id`                | global attribute     | いいえ | アンカー識別子                | 公開アンカー対象はホスト要素です                                                                                                  |
 
 ### スロット契約
 
@@ -143,17 +143,17 @@ slot 側の読み上げモード正規化は入力側責務です。`ui-math` �
 
 ### 属性反映契約
 
-| property          | attribute           | reflect | 備考                                                |
-| ----------------- | ------------------- | ------- | --------------------------------------------------- |
-| `block`           | `block`             | あり    | boolean attribute として扱います                    |
-| `primary`         | `primary`           | あり    | boolean attribute として扱います                    |
-| `speechMode`      | `speech-mode`       | なし    | 列挙外値は `mathml` として扱います                  |
-| `accessibleLabel` | `aria-label`        | なし    | 公開入力名は `aria-label` として扱います            |
-| `errorMessage`    | `error-message`     | なし    | `external` エラー表示用です                         |
-| `errorKind`       | `error-kind`        | なし    | 列挙外値は `unspecified` として扱います             |
-| `errorCode`       | `error-code`        | なし    | 診断補助情報です                                    |
-| `showErrorSource` | `show-error-source` | なし    | boolean attribute として扱います。既定値は `false`  |
-| `latex`           | なし                | なし    | property 専用です                                   |
+| property          | attribute           | reflect | 備考                                               |
+| ----------------- | ------------------- | ------- | -------------------------------------------------- |
+| `block`           | `block`             | あり    | boolean attribute として扱います                   |
+| `primary`         | `primary`           | あり    | boolean attribute として扱います                   |
+| `speechMode`      | `speech-mode`       | なし    | 列挙外値は `mathml` として扱います                 |
+| `accessibleLabel` | `aria-label`        | なし    | 公開入力名は `aria-label` として扱います           |
+| `errorMessage`    | `error-message`     | なし    | `external` エラー表示用です                        |
+| `errorKind`       | `error-kind`        | なし    | 列挙外値は `unspecified` として扱います            |
+| `errorCode`       | `error-code`        | なし    | 診断補助情報です                                   |
+| `showErrorSource` | `show-error-source` | なし    | boolean attribute として扱います。既定値は `false` |
+| `latex`           | なし                | なし    | property 専用です                                  |
 
 ### 列挙外値・無効値の扱い
 
@@ -355,13 +355,13 @@ Storybook や内部テストでこれらの内部 detail を参照すること�
 
 `external` エラーは、`error-kind` により下位分類されます。下位分類ごとの差分は、**共通レイアウト骨格を維持したまま、文言・補助情報・視覚トーンのみを差し替える** 契約とします。分類ごとに骨格から別 UI パターンへ分岐させてはなりません（MUST NOT）。
 
-| `error-kind`        | 見出しの性格 | 補助説明                                             | 推奨補助情報                           | 視覚トーン |
-| ------------------- | ------------ | ---------------------------------------------------- | -------------------------------------- | ---------- |
-| `build-failed`      | 生成失敗     | ビルドまたは事前生成で描画不能になったことを示します | ビルド工程名、失敗時点、再生成の必要性 | danger     |
-| `data-missing`      | 欠落         | 数式ソースまたは参照先が存在しないことを示します     | 欠落対象、参照名、復旧待ち可否         | muted      |
-| `runtime-failed`    | 実行時失敗   | 実行時条件が満たされず描画できないことを示します     | 実行環境差分、再試行可否               | danger     |
-| `upstream-invalid`  | 上流契約違反 | 上流整形済み入力が契約違反であることを示します       | 上流入力種別、契約違反の所在           | danger     |
-| `unspecified`       | 外部エラー   | 外部要因で描画不能であることのみを示します           | なし、または最小限の説明               | muted      |
+| `error-kind`       | 見出しの性格 | 補助説明                                             | 推奨補助情報                           | 視覚トーン |
+| ------------------ | ------------ | ---------------------------------------------------- | -------------------------------------- | ---------- |
+| `build-failed`     | 生成失敗     | ビルドまたは事前生成で描画不能になったことを示します | ビルド工程名、失敗時点、再生成の必要性 | danger     |
+| `data-missing`     | 欠落         | 数式ソースまたは参照先が存在しないことを示します     | 欠落対象、参照名、復旧待ち可否         | muted      |
+| `runtime-failed`   | 実行時失敗   | 実行時条件が満たされず描画できないことを示します     | 実行環境差分、再試行可否               | danger     |
+| `upstream-invalid` | 上流契約違反 | 上流整形済み入力が契約違反であることを示します       | 上流入力種別、契約違反の所在           | danger     |
+| `unspecified`      | 外部エラー   | 外部要因で描画不能であることのみを示します           | なし、または最小限の説明               | muted      |
 
 ここでいう `danger` は、致命性や注意喚起を示す視覚トーンであり、`role="alert"` を意味しません。`muted` は、本文の読解を過度に中断しないための抑制されたトーンです。
 
@@ -653,18 +653,18 @@ slot に投入する MathML / 可視 HTML のアクセシビリティ状態は�
 
 各 Story は見本ではなく、**契約確認点** として扱います。将来変更時には、次の契約を維持します。
 
-| Story                    | 固定する契約                                                                                                                                 |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Default`                | `block + primary` の基本 display 数式が region として成立すること                                                                            |
-| `VariantStateMatrix`     | inline / block / primary / `speech-mode` / `aria-label` の組み合わせ責務が保たれること                                                       |
-| `ErrorStates`            | `external` と `author-invalid` の role 差分、および `show-error-source` による opt-in 開示契約が保たれること                                 |
-| `ErrorKindMatrix`        | `error-kind` ごとに共通骨格を維持したまま、文言・補助情報・トーン差分のみが変化すること                                                       |
-| `BoundaryConditions`     | `error-message` 優先、slot の runtime 優先、空白 `aria-label` 無効化、`speech-mode` 列挙外値のフォールバック、inline で region 非付与が保たれること |
-| `KeyboardInteraction`    | overflow 時のみフォーカス可能であること、およびスクロール状態が安定後に遷移すること                                                          |
-| `SettledEventContract`   | 公開状態の安定化後に `math-settled` が発火すること                                                                                            |
-| `IdAnchorContract`       | host 要素の `id` を公開アンカーとして扱えること。内部 id ミラーは公開 API ではないこと                                                       |
-| `DarkModeTokenContract`  | KaTeX が `color: inherit` により暗色トークンへ追従すること                                                                                   |
-| `ForcedColorsContract`   | 強制色時のマスク無効化とシステムカラー追従定義が存在すること                                                                                 |
+| Story                   | 固定する契約                                                                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Default`               | `block + primary` の基本 display 数式が region として成立すること                                                                                   |
+| `VariantStateMatrix`    | inline / block / primary / `speech-mode` / `aria-label` の組み合わせ責務が保たれること                                                              |
+| `ErrorStates`           | `external` と `author-invalid` の role 差分、および `show-error-source` による opt-in 開示契約が保たれること                                        |
+| `ErrorKindMatrix`       | `error-kind` ごとに共通骨格を維持したまま、文言・補助情報・トーン差分のみが変化すること                                                             |
+| `BoundaryConditions`    | `error-message` 優先、slot の runtime 優先、空白 `aria-label` 無効化、`speech-mode` 列挙外値のフォールバック、inline で region 非付与が保たれること |
+| `KeyboardInteraction`   | overflow 時のみフォーカス可能であること、およびスクロール状態が安定後に遷移すること                                                                 |
+| `SettledEventContract`  | 公開状態の安定化後に `math-settled` が発火すること                                                                                                  |
+| `IdAnchorContract`      | host 要素の `id` を公開アンカーとして扱えること。内部 id ミラーは公開 API ではないこと                                                              |
+| `DarkModeTokenContract` | KaTeX が `color: inherit` により暗色トークンへ追従すること                                                                                          |
+| `ForcedColorsContract`  | 強制色時のマスク無効化とシステムカラー追従定義が存在すること                                                                                        |
 
 `KeyboardInteraction` は独自キー操作を固定する Story ではありません。overflow 時のみフォーカス可能であること、およびフォーカス可能性が安定後に成立することを確認する Story として扱います。
 

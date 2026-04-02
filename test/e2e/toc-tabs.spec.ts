@@ -75,10 +75,9 @@ test.describe('TOC follows active tab', () => {
     await page.goto(`${path}?tab=rust`);
     await waitForTabsHydration(page);
 
-    await expect(page.locator('ui-tabs').first().locator('[slot="tab"][value="rust"]')).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    await expect(
+      page.locator('ui-tabs').first().locator('[slot="tab"][value="rust"]'),
+    ).toHaveAttribute('aria-selected', 'true');
 
     await expectTocText(page, 'RustのHello, World!', true);
     await expectTocText(page, 'JavaScriptのHello, World!', false);
@@ -103,10 +102,9 @@ test.describe('TOC follows active tab', () => {
     await page.goto(`${path}#rustのhello-world`);
     await waitForTabsHydration(page);
 
-    await expect(page.locator('ui-tabs').first().locator('[slot="tab"][value="rust"]')).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    await expect(
+      page.locator('ui-tabs').first().locator('[slot="tab"][value="rust"]'),
+    ).toHaveAttribute('aria-selected', 'true');
 
     await expectTocText(page, 'RustのHello, World!', true);
     await expectTocText(page, 'JavaScriptのHello, World!', false);

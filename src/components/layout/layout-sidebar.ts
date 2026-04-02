@@ -67,8 +67,8 @@ const toTreeNode = (value: unknown): TreeNode | null => {
         .map((item: unknown) => toTreeNode(item))
         .filter((item): item is TreeNode => item !== null)
     : [];
-    const icon = toOptionalTreeIcon(value['icon']);
-    const href = toOptionalString(value['href']);
+  const icon = toOptionalTreeIcon(value['icon']);
+  const href = toOptionalString(value['href']);
 
   if (children.length > 0 && href) {
     return null;
@@ -335,9 +335,13 @@ export class LayoutSidebar extends LitElement {
       this._persistedExpandedIds.delete(id);
     }
 
-    writeLayoutSidebarTreeState(this._storage, {
-      expandedIds: [...this._persistedExpandedIds],
-    }, this.selectedId);
+    writeLayoutSidebarTreeState(
+      this._storage,
+      {
+        expandedIds: [...this._persistedExpandedIds],
+      },
+      this.selectedId,
+    );
   };
 
   private _onSidebarSelect = (): void => {

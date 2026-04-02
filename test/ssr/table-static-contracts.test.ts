@@ -70,6 +70,10 @@ describe('table static css contracts', () => {
   });
 
   it('note static table CSS が legacy ui-table selector に依存しないこと', () => {
-    expectCssExcludes(mainCss, ['ui-table table', 'ui-table tbody tr:hover', 'ui-table[density="compact"]']);
+    expectCssExcludes(mainCss, [
+      'ui-table table',
+      'ui-table tbody tr:hover',
+      'ui-table[density="compact"]',
+    ]);
   });
 });

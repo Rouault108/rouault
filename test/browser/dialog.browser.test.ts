@@ -7,10 +7,7 @@ import type {
   UiDialogModeChangedDetail,
   UiDialogOpenedDetail,
 } from '../../src/components/ui/dialog/dialog.js';
-import {
-  nextAnimationFrame,
-  waitForLitUpdate,
-} from './helpers/wait-for-lit.js';
+import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const BODY_DIALOG_OPEN_ATTRIBUTE = 'data-ui-dialog-open';
 

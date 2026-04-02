@@ -69,9 +69,7 @@ const findCodeChild = (preNode: HastNode): HastNode | null => {
 };
 
 const getElementChildren = (node: HastNode): HastNode[] =>
-  Array.isArray(node.children)
-    ? node.children.filter((child) => child.type === 'element')
-    : [];
+  Array.isArray(node.children) ? node.children.filter((child) => child.type === 'element') : [];
 
 const getTextContent = (node: HastNode): string => {
   if (node.type === 'text') {
@@ -141,7 +139,10 @@ const addLineClass = (lineNode: HastNode, className: string): void => {
   };
 };
 
-const annotateExplicitHighlights = (codeNode: HastNode, highlightLines: string | undefined): void => {
+const annotateExplicitHighlights = (
+  codeNode: HastNode,
+  highlightLines: string | undefined,
+): void => {
   const explicitLines = parseHighlightLines(highlightLines);
   if (explicitLines.size === 0) {
     return;

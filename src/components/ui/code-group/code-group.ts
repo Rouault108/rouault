@@ -46,7 +46,15 @@ const DEFAULT_COPY_CONTEXT = 'コード';
 const DEFAULT_GROUP_LABEL = 'コードグループ';
 const DEFAULT_COPY_BUTTON_LABEL = 'コードをコピー';
 const FALSE_BOOLEAN_ATTRIBUTE_VALUES = new Set(['false', '0', 'off', 'no']);
-const RECOMPOSE_TRIGGER_ATTRIBUTES = new Set(['group-key', 'tab-label', 'copy-label', 'copyable', 'filename', 'lang', 'id']);
+const RECOMPOSE_TRIGGER_ATTRIBUTES = new Set([
+  'group-key',
+  'tab-label',
+  'copy-label',
+  'copyable',
+  'filename',
+  'lang',
+  'id',
+]);
 const VALID_ACTIVATION_MODES = new Set<ActivationMode>(['auto', 'manual']);
 
 let codeGroupId = 0;
@@ -182,7 +190,10 @@ export class CodeGroup extends LitElement {
       display: inline-flex;
       align-items: center;
       gap: 0;
-      padding-inline: var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-2, 8px)));
+      padding-inline: var(
+        --ui-code-surface-padding,
+        var(--ui-code-block-padding, var(--space-2, 8px))
+      );
       background: var(--bg-default, oklch(1 0 0));
     }
 
@@ -243,7 +254,7 @@ export class CodeGroup extends LitElement {
       display: none !important;
     }
 
-      @container (max-width: 639.98px) {
+    @container (max-width: 639.98px) {
       :host {
         --ui-code-header-display: block;
         --ui-code-block-header-display: block;
@@ -1038,7 +1049,10 @@ export class CodeGroup extends LitElement {
   private _shouldRecompose(records: readonly MutationRecord[]): boolean {
     for (const record of records) {
       if (record.type === 'attributes') {
-        if (this._isDirectCodeBlock(record.target) && RECOMPOSE_TRIGGER_ATTRIBUTES.has(record.attributeName ?? '')) {
+        if (
+          this._isDirectCodeBlock(record.target) &&
+          RECOMPOSE_TRIGGER_ATTRIBUTES.has(record.attributeName ?? '')
+        ) {
           return true;
         }
         continue;

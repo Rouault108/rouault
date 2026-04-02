@@ -11,8 +11,7 @@ type FootnoteScope = Document | HTMLElement;
 
 export const DOCUMENT_STYLE_ID = 'ui-footnote-document-styles';
 
-const IS_DEVELOPMENT =
-  (import.meta as ImportMeta & { env?: ImportMetaEnvLike }).env?.DEV ?? true;
+const IS_DEVELOPMENT = (import.meta as ImportMeta & { env?: ImportMetaEnvLike }).env?.DEV ?? true;
 
 const SCOPE_SELECTOR = '[data-footnote-scope], article, [role="article"], [data-note-root], main';
 
@@ -357,7 +356,9 @@ export class Footnote extends LitElement {
   }
 
   private _getScopeEndnotes(): HTMLElement | null {
-    return this._getScopeRoot().querySelector<HTMLElement>('section.footnotes[role="doc-endnotes"]');
+    return this._getScopeRoot().querySelector<HTMLElement>(
+      'section.footnotes[role="doc-endnotes"]',
+    );
   }
 
   private _getScopeEndnoteItem(refId: string): HTMLElement | null {
@@ -376,7 +377,10 @@ export class Footnote extends LitElement {
     );
 
     if (refId === '') {
-      this._warnDiagnostic('missing-ref-id', 'refId は必須です。index からの黙示補完には依存しません。');
+      this._warnDiagnostic(
+        'missing-ref-id',
+        'refId は必須です。index からの黙示補完には依存しません。',
+      );
     }
 
     if (this.refId !== this.refId.trim()) {

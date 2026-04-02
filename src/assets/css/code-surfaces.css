@@ -32,7 +32,8 @@
 }
 
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line.highlighted,
-:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line.ui-explicit-highlight {
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])
+  .line.ui-explicit-highlight {
   background: color-mix(in oklch, var(--bg-highlight-subtle, oklch(96% 0.04 65)) 78%, transparent);
 }
 
@@ -58,7 +59,8 @@
   }
 }
 
-:root[data-theme='dark'] :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki {
+:root[data-theme='dark']
+  :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki {
   background-color: var(--shiki-dark-bg, transparent) !important;
   color: var(--shiki-dark, inherit) !important;
 }
@@ -76,17 +78,29 @@
   animation: var(--animation-focus);
 }
 
-:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])[data-code-line-numbers='true'] code {
+:where(
+    pre[data-code-block],
+    [data-code-block-root] pre[data-code-block]
+  )[data-code-line-numbers='true']
+  code {
   counter-reset: ui-code-block-line;
 }
 
-:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])[data-code-line-numbers='true'] .line {
+:where(
+    pre[data-code-block],
+    [data-code-block-root] pre[data-code-block]
+  )[data-code-line-numbers='true']
+  .line {
   display: block;
   position: relative;
   padding-inline-start: calc(var(--space-8, 2rem) + var(--space-2, 0.5rem));
 }
 
-:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])[data-code-line-numbers='true'] .line::before {
+:where(
+    pre[data-code-block],
+    [data-code-block-root] pre[data-code-block]
+  )[data-code-line-numbers='true']
+  .line::before {
   counter-increment: ui-code-block-line;
   content: counter(ui-code-block-line);
   position: absolute;
@@ -139,7 +153,9 @@
   padding: 0;
 }
 
-[data-code-block-root].code-surface-root--overlay > .code-surface-caption > .code-surface-caption-main {
+[data-code-block-root].code-surface-root--overlay
+  > .code-surface-caption
+  > .code-surface-caption-main {
   display: none;
 }
 
@@ -178,19 +194,22 @@
 
   opacity: 0.56;
   pointer-events: auto;
-  transition: opacity var(--duration-normal, 150ms)
-    var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+  transition: opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
 }
 
 [data-code-block-root]:hover .code-surface-copy-button-shell > ui-copy-button,
 [data-code-block-root]:focus-within .code-surface-copy-button-shell > ui-copy-button,
 section[data-code-group][data-enhanced='true']:hover .code-group-header-tools > ui-copy-button,
-section[data-code-group][data-enhanced='true']:focus-within .code-group-header-tools > ui-copy-button {
+section[data-code-group][data-enhanced='true']:focus-within
+  .code-group-header-tools
+  > ui-copy-button {
   opacity: 1;
 }
 
 [data-code-block-root]:focus-within .code-surface-copy-button-shell > ui-copy-button,
-section[data-code-group][data-enhanced='true']:focus-within .code-group-header-tools > ui-copy-button {
+section[data-code-group][data-enhanced='true']:focus-within
+  .code-group-header-tools
+  > ui-copy-button {
   transition-duration: var(--duration-instant, 0ms);
 }
 

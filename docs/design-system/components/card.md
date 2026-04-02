@@ -516,7 +516,7 @@ generic clickable card における主要リンクは、**現時点では** `ui-
 | `TextSelectionGuard`           | カード内部選択では委譲せず、カード外部選択では委譲を維持すること                                         |
 | `ClickableNoLink`              | 内部リンクなしでも例外を出さないこと                                                                     |
 | `MultipleLinksPrimaryFirst`    | 複数リンク時に文書順で最初のリンクのみへ背景クリックを委譲すること                                       |
-| `InteractiveElementsGuard`     | 入力系要素、`summary`、`role=button`、`role=link`、`tabindex` 要素への直接クリックで委譲しないこと      |
+| `InteractiveElementsGuard`     | 入力系要素、`summary`、`role=button`、`role=link`、`tabindex` 要素への直接クリックで委譲しないこと       |
 | `FocusWithin`                  | カード自体に `tabindex` を付けず、内部リンクフォーカスでカード全体へリングを出すこと                     |
 | `DefaultRoleAutoSet`           | `role` 未指定時に `article` が入ること                                                                   |
 | `ExplicitRoleOverride`         | 明示 `role` を自動設定が上書きしないこと                                                                 |
@@ -551,8 +551,6 @@ generic clickable card における主要リンクは、**現時点では** `ui-
 - `card.ts` 先頭の JSDoc も、公開 CSS Custom Properties と現行入力契約に揃えます。
 
 以下の旧メモは、今回の整合化で解消済みの履歴として残しているものです。現時点で利用者が依存してよい事実は、本書本文と Storybook 契約表に記載した内容です。
-
-
 
 ### 9. JSDoc の公開面と現行契約の不整合
 

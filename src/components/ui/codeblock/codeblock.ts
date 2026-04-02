@@ -228,7 +228,8 @@ export class CodeBlock extends LitElement {
           (
             var(--control-height-sm, 24px) -
               (var(--text-sm, 0.8125rem) * var(--line-height-code, 1.45))
-          ) / 2
+          ) /
+          2
       );
       inset-inline-end: 0;
       z-index: 1;
@@ -700,7 +701,7 @@ export class CodeBlock extends LitElement {
   }
 
   private _normalizeLineMarkup(pre: HTMLPreElement): void {
-    const container = (pre.querySelector('code') ?? pre);
+    const container = pre.querySelector('code') ?? pre;
 
     if (!isDirectLineContainer(container)) {
       return;
@@ -729,44 +730,44 @@ export class CodeBlock extends LitElement {
     return null;
   }
 
-private _applyPreAttributes(pre: HTMLPreElement): void {
-  const wrapEnabled = this.wrap || (!this.hasAttribute('wrap') && this._hasLegacyWrap(pre));
+  private _applyPreAttributes(pre: HTMLPreElement): void {
+    const wrapEnabled = this.wrap || (!this.hasAttribute('wrap') && this._hasLegacyWrap(pre));
 
-  pre.setAttribute('part', 'pre');
-  pre.setAttribute('aria-description', this._ariaDescription);
-  pre.setAttribute('data-code-block', '');
+    pre.setAttribute('part', 'pre');
+    pre.setAttribute('aria-description', this._ariaDescription);
+    pre.setAttribute('data-code-block', '');
 
-  setOptionalAttribute(pre, 'data-code-language', this._normalizedLang);
-  setOptionalAttribute(pre, 'data-code-filename', this._resolvedFilename);
-  setOptionalAttribute(pre, 'data-code-label', this.label);
-  setOptionalAttribute(
-    pre,
-    'data-code-intent',
-    this._resolvedIntent === 'neutral' ? '' : this._resolvedIntent,
-  );
-  setBooleanAttribute(pre, 'data-code-line-numbers', this.showLineNumbers);
-  setOptionalAttribute(pre, 'data-code-copy-mode', this._resolvedCopyMode);
-  setBooleanAttribute(pre, 'data-code-wrap', wrapEnabled);
-  setOptionalAttribute(pre, 'data-code-highlight-lines', this.highlightLines);
-  setOptionalAttribute(pre, 'data-code-layout', this._resolvedLayout);
+    setOptionalAttribute(pre, 'data-code-language', this._normalizedLang);
+    setOptionalAttribute(pre, 'data-code-filename', this._resolvedFilename);
+    setOptionalAttribute(pre, 'data-code-label', this.label);
+    setOptionalAttribute(
+      pre,
+      'data-code-intent',
+      this._resolvedIntent === 'neutral' ? '' : this._resolvedIntent,
+    );
+    setBooleanAttribute(pre, 'data-code-line-numbers', this.showLineNumbers);
+    setOptionalAttribute(pre, 'data-code-copy-mode', this._resolvedCopyMode);
+    setBooleanAttribute(pre, 'data-code-wrap', wrapEnabled);
+    setOptionalAttribute(pre, 'data-code-highlight-lines', this.highlightLines);
+    setOptionalAttribute(pre, 'data-code-layout', this._resolvedLayout);
 
-  if (this.copyable) {
-    pre.removeAttribute('data-code-copyable');
-  } else {
-    pre.setAttribute('data-code-copyable', 'false');
-  }
-
-  const code = pre.querySelector('code');
-  if (code) {
-    code.setAttribute('part', 'code');
-
-    if (this._normalizedLang === '') {
-      code.removeAttribute('data-lang');
+    if (this.copyable) {
+      pre.removeAttribute('data-code-copyable');
     } else {
-      code.setAttribute('data-lang', this._normalizedLang);
+      pre.setAttribute('data-code-copyable', 'false');
+    }
+
+    const code = pre.querySelector('code');
+    if (code) {
+      code.setAttribute('part', 'code');
+
+      if (this._normalizedLang === '') {
+        code.removeAttribute('data-lang');
+      } else {
+        code.setAttribute('data-lang', this._normalizedLang);
+      }
     }
   }
-}
 
   private _ensureLineWrappers(pre: HTMLPreElement): void {
     const needsLineWrappers = this.showLineNumbers || this.highlightLines.trim() !== '';
@@ -798,7 +799,7 @@ private _applyPreAttributes(pre: HTMLPreElement): void {
   }
 
   private _applyHighlightLines(pre: HTMLPreElement): void {
-    const container = (pre.querySelector('code') ?? pre);
+    const container = pre.querySelector('code') ?? pre;
     const lines = Array.from(container.querySelectorAll<HTMLElement>(':scope > .line'));
 
     lines.forEach((line) => {
@@ -937,7 +938,7 @@ private _applyPreAttributes(pre: HTMLPreElement): void {
         data-layout="${this._resolvedLayout}"
       >
         ${this._shouldRenderCaption
-        ? html`
+          ? html`
               <figcaption class="caption">
                 <div class="caption-layout">
                   <span class="caption-main">
@@ -945,19 +946,19 @@ private _applyPreAttributes(pre: HTMLPreElement): void {
                       ${this._resolvedFilename}
                     </span>
                     ${intentMeta
-            ? html`
+                      ? html`
                           <span class="intent" data-intent="${this._resolvedIntent}">
                             <ui-icon name="${intentMeta.icon}" aria-hidden="true"></ui-icon>
                             <span>${intentMeta.label}</span>
                           </span>
                         `
-            : nothing}
+                      : nothing}
                   </span>
                   ${this._renderCopyButton()}
                 </div>
               </figcaption>
             `
-        : nothing}
+          : nothing}
 
         <slot @slotchange="${this._onSlotChange}"></slot>
       </figure>

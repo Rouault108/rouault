@@ -2,13 +2,7 @@ export type SearchMode = 'navigate' | 'explore';
 
 export type SearchSourceKind = 'pagefind' | 'catalog';
 
-export type SearchFieldKind =
-  | 'title'
-  | 'description'
-  | 'body'
-  | 'path'
-  | 'keyword'
-  | 'tag';
+export type SearchFieldKind = 'title' | 'description' | 'body' | 'path' | 'keyword' | 'tag';
 
 export type SearchTagMode = 'or' | 'and';
 

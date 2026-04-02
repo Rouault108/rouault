@@ -61,9 +61,7 @@ const meta: Meta<Footnote> = {
 export default meta;
 type Story = StoryObj<Footnote>;
 
-const movedToBrowserDocs = (
-  story: string,
-): Pick<Story, 'tags' | 'parameters'> => ({
+const movedToBrowserDocs = (story: string): Pick<Story, 'tags' | 'parameters'> => ({
   tags: ['manual-only'],
   parameters: {
     docs: {

@@ -85,7 +85,10 @@ const adaptPreviewSandboxOutput = (payload: PreviewSandboxPayload): RemarkOutput
   ]),
 });
 
-const adaptSlotOutput = (slotName: 'preview' | 'toolbar' | 'tab' | 'panel', extraValue?: string): RemarkOutputBinding => ({
+const adaptSlotOutput = (
+  slotName: 'preview' | 'toolbar' | 'tab' | 'panel',
+  extraValue?: string,
+): RemarkOutputBinding => ({
   hName: 'div',
   hProperties: toOptionalProps([
     ['slot', slotName],
@@ -167,7 +170,9 @@ const adaptTranslationOutput = (payload: TranslationPayload): RemarkOutputBindin
   ],
 });
 
-const adaptTranslationOverlayOutput = (payload: TranslationOverlayPayload): RemarkOutputBinding => ({
+const adaptTranslationOverlayOutput = (
+  payload: TranslationOverlayPayload,
+): RemarkOutputBinding => ({
   hName: 'ui-translation',
   hProperties: toOptionalProps([
     ['lang', payload.lang],

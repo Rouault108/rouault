@@ -32,12 +32,7 @@ describe('ui-syntax-field browser contract', () => {
 
   it('Light DOM で描画し、required / type / default と document style を注入すること', async () => {
     const host = await fixture<SyntaxField>(html`
-      <ui-syntax-field
-        name="slug"
-        type="string"
-        required
-        default="memo-1"
-      >
+      <ui-syntax-field name="slug" type="string" required default="memo-1">
         URL セグメントです。
       </ui-syntax-field>
     `);
@@ -46,7 +41,10 @@ describe('ui-syntax-field browser contract', () => {
 
     expect(host.shadowRoot).to.equal(host);
 
-    const wrapper = expectPresent(host.querySelector<HTMLElement>('.field-wrapper'), 'field wrapper');
+    const wrapper = expectPresent(
+      host.querySelector<HTMLElement>('.field-wrapper'),
+      'field wrapper',
+    );
     const required = expectPresent(host.querySelector<HTMLElement>('.field-required'), 'required');
     const typeText = expectPresent(host.querySelector<HTMLElement>('.field-type'), 'field type');
     const defaultText = expectPresent(
@@ -70,9 +68,7 @@ describe('ui-syntax-field browser contract', () => {
 
   it('空白のみの type / default は表示せず、style は 1 回しか注入しないこと', async () => {
     const first = await fixture<SyntaxField>(html`
-      <ui-syntax-field name="title" type="   " default=" ">
-        タイトルです。
-      </ui-syntax-field>
+      <ui-syntax-field name="title" type="   " default=" "> タイトルです。 </ui-syntax-field>
     `);
     const second = await fixture<SyntaxField>(html`
       <ui-syntax-field name="body">本文です。</ui-syntax-field>

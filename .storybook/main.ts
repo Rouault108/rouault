@@ -8,11 +8,7 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const config: StorybookConfig = {
   stories: ['../src/**/*.stories.@(js|ts)'],
 
-  addons: [
-    '@storybook/addon-a11y',
-    '@storybook/addon-themes',
-    '@storybook/addon-vitest',
-  ],
+  addons: ['@storybook/addon-a11y', '@storybook/addon-themes', '@storybook/addon-vitest'],
 
   framework: {
     name: '@storybook/web-components-vite',
@@ -20,20 +16,17 @@ const config: StorybookConfig = {
   },
 
   viteFinal(config) {
-    return mergeConfig(
-      config,
-      {
-        resolve: {
-          alias: {
-            '@': path.resolve(projectRoot, 'src'),
-          },
-          dedupe: ['lit', 'lit-html', '@lit/reactive-element'],
+    return mergeConfig(config, {
+      resolve: {
+        alias: {
+          '@': path.resolve(projectRoot, 'src'),
         },
-        optimizeDeps: {
-          include: ['lit', 'lit-html', '@lit/reactive-element'],
-        },
-      } satisfies UserConfig,
-    );
+        dedupe: ['lit', 'lit-html', '@lit/reactive-element'],
+      },
+      optimizeDeps: {
+        include: ['lit', 'lit-html', '@lit/reactive-element'],
+      },
+    } satisfies UserConfig);
   },
 };
 

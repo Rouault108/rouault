@@ -65,31 +65,31 @@ Rouault における textarea は、UI 上の入力欄であるだけでなく�
 
 ### 入力契約
 
-| 名前             | 種別                                   | 必須   | 内容                         | 契約                                                                                                        |
-| ---------------- | -------------------------------------- | ------ | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `label`          | property / attribute                   | はい   | 入力欄のラベル               | 空文字・空白のみは不可です                                                                                  |
-| `hideLabel`      | property / attribute (`hide-label`)    | いいえ | ラベルの視覚非表示           | 視覚的にのみ隠し、名前付け自体は維持します                                                                  |
-| `name`           | property / attribute                   | いいえ | フォーム送信名               | 未指定時は送信対象に含めません                                                                              |
-| `placeholder`    | property / attribute                   | いいえ | プレースホルダー             | 補助的ヒントであり、ラベル代替にはしません                                                                  |
-| `value`          | property                               | いいえ | 現在値                       | 現在値の正本です。外部からの代入でも内部値と高さ再計算は同期しますが、`input` / `change` は自動発火しません |
-| `defaultValue`   | property / attribute (`default-value`) | いいえ | 初期値                       | 初期表示値かつ reset 基準値です                                                                             |
-| `helpText`       | property / attribute (`help-text`)     | いいえ | 補助テキスト                 | 入力意図や制約を示す常設説明です                                                                            |
-| `errorMessage`   | property / attribute (`error-message`) | いいえ | エラーメッセージ             | 可視エラー文言です。UI 文言の唯一の正規ソースです                                                           |
-| `error`          | property / attribute                   | いいえ | 強制 invalid 状態            | `true` の場合、ネイティブ validity より優先します                                                           |
-| `disabled`       | property / attribute                   | いいえ | 操作無効                     | 非操作・非検証・非送信として扱います                                                                        |
-| `readonly`       | property / attribute                   | いいえ | 読み取り専用                 | 非編集だが可フォーカス・可送信として扱います                                                                |
-| `required`       | property / attribute                   | いいえ | 必須入力                     | 公開検証面として正規に依存できる native validity です                                                       |
-| `variant`        | property / attribute                   | いいえ | タイポグラフィモード         | `default` / `prose`。表示密度と可読性だけを切り替えます                                                     |
-| `rows`           | property / attribute                   | いいえ | 最小表示行数                 | 正の整数として扱い、`1` 未満は `1` に正規化します                                                           |
-| `maxRows`        | property / attribute (`max-rows`)      | いいえ | 自動伸長時の最大行数         | 未指定でなければ `rows` 以上に正規化します                                                                  |
-| `autoGrow`       | property / attribute (`auto-grow`)     | いいえ | 自動高さ拡張                 | 既定値は `true` です                                                                                        |
-| `resize`         | property / attribute                   | いいえ | 手動リサイズ方向             | `none` / `vertical`。実効性があるのは `autoGrow=false` 時のみです                                           |
-| `maxlength`      | property / attribute                   | いいえ | 最大文字数                   | ネイティブ textarea と同義に扱います。`tooLong` は公開検証面に含みます                                      |
-| `minlength`      | property / attribute                   | いいえ | 最小文字数                   | ネイティブ textarea と同義に扱います。`tooShort` は公開検証面に含みます                                     |
-| `spellcheck`     | property / attribute                   | いいえ | スペルチェック               | ネイティブ textarea と同義に扱います                                                                        |
-| `autocapitalize` | property / attribute                   | いいえ | 自動大文字化ヒント           | ネイティブ textarea と同義に扱います                                                                        |
-| `autocomplete`   | property / attribute                   | いいえ | オートコンプリートヒント     | ネイティブ textarea と同義に扱います                                                                        |
-| `inputmode`      | property / attribute                   | いいえ | 入力モードヒント             | ネイティブ textarea と同義に扱います                                                                        |
+| 名前             | 種別                                   | 必須   | 内容                     | 契約                                                                                                        |
+| ---------------- | -------------------------------------- | ------ | ------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `label`          | property / attribute                   | はい   | 入力欄のラベル           | 空文字・空白のみは不可です                                                                                  |
+| `hideLabel`      | property / attribute (`hide-label`)    | いいえ | ラベルの視覚非表示       | 視覚的にのみ隠し、名前付け自体は維持します                                                                  |
+| `name`           | property / attribute                   | いいえ | フォーム送信名           | 未指定時は送信対象に含めません                                                                              |
+| `placeholder`    | property / attribute                   | いいえ | プレースホルダー         | 補助的ヒントであり、ラベル代替にはしません                                                                  |
+| `value`          | property                               | いいえ | 現在値                   | 現在値の正本です。外部からの代入でも内部値と高さ再計算は同期しますが、`input` / `change` は自動発火しません |
+| `defaultValue`   | property / attribute (`default-value`) | いいえ | 初期値                   | 初期表示値かつ reset 基準値です                                                                             |
+| `helpText`       | property / attribute (`help-text`)     | いいえ | 補助テキスト             | 入力意図や制約を示す常設説明です                                                                            |
+| `errorMessage`   | property / attribute (`error-message`) | いいえ | エラーメッセージ         | 可視エラー文言です。UI 文言の唯一の正規ソースです                                                           |
+| `error`          | property / attribute                   | いいえ | 強制 invalid 状態        | `true` の場合、ネイティブ validity より優先します                                                           |
+| `disabled`       | property / attribute                   | いいえ | 操作無効                 | 非操作・非検証・非送信として扱います                                                                        |
+| `readonly`       | property / attribute                   | いいえ | 読み取り専用             | 非編集だが可フォーカス・可送信として扱います                                                                |
+| `required`       | property / attribute                   | いいえ | 必須入力                 | 公開検証面として正規に依存できる native validity です                                                       |
+| `variant`        | property / attribute                   | いいえ | タイポグラフィモード     | `default` / `prose`。表示密度と可読性だけを切り替えます                                                     |
+| `rows`           | property / attribute                   | いいえ | 最小表示行数             | 正の整数として扱い、`1` 未満は `1` に正規化します                                                           |
+| `maxRows`        | property / attribute (`max-rows`)      | いいえ | 自動伸長時の最大行数     | 未指定でなければ `rows` 以上に正規化します                                                                  |
+| `autoGrow`       | property / attribute (`auto-grow`)     | いいえ | 自動高さ拡張             | 既定値は `true` です                                                                                        |
+| `resize`         | property / attribute                   | いいえ | 手動リサイズ方向         | `none` / `vertical`。実効性があるのは `autoGrow=false` 時のみです                                           |
+| `maxlength`      | property / attribute                   | いいえ | 最大文字数               | ネイティブ textarea と同義に扱います。`tooLong` は公開検証面に含みます                                      |
+| `minlength`      | property / attribute                   | いいえ | 最小文字数               | ネイティブ textarea と同義に扱います。`tooShort` は公開検証面に含みます                                     |
+| `spellcheck`     | property / attribute                   | いいえ | スペルチェック           | ネイティブ textarea と同義に扱います                                                                        |
+| `autocapitalize` | property / attribute                   | いいえ | 自動大文字化ヒント       | ネイティブ textarea と同義に扱います                                                                        |
+| `autocomplete`   | property / attribute                   | いいえ | オートコンプリートヒント | ネイティブ textarea と同義に扱います                                                                        |
+| `inputmode`      | property / attribute                   | いいえ | 入力モードヒント         | ネイティブ textarea と同義に扱います                                                                        |
 
 ### 列挙値契約
 
@@ -110,17 +110,17 @@ Rouault における textarea は、UI 上の入力欄であるだけでなく�
 
 `ui-textarea` は、Shadow DOM 内部の textarea を外部から安全に操作するため、次の公開メソッドと公開プロパティを持ちます。
 
-| 名前                  | 種別     | 契約                                                                             |
-| --------------------- | -------- | -------------------------------------------------------------------------------- |
-| `focus(options?)`     | method   | 内部 textarea にフォーカスを委譲します                                           |
-| `blur()`              | method   | 内部 textarea からフォーカスを外します                                           |
-| `select()`            | method   | 内部 textarea のテキストを選択します                                             |
-| `checkValidity()`     | method   | 現在の公開検証面を同期したうえで真偽値を返します                                 |
-| `reportValidity()`    | method   | 現在の公開検証面を同期したうえで検証結果を報告します                             |
-| `setSelectionRange()` | method   | 内部 textarea の選択範囲を設定します                                             |
-| `setRangeText()`      | method   | 内部 textarea の選択範囲または指定範囲の文字列を置換します                       |
-| `selectionStart`      | property | 内部 textarea の選択開始位置を表します                                           |
-| `selectionEnd`        | property | 内部 textarea の選択終了位置を表します                                           |
+| 名前                  | 種別     | 契約                                                       |
+| --------------------- | -------- | ---------------------------------------------------------- |
+| `focus(options?)`     | method   | 内部 textarea にフォーカスを委譲します                     |
+| `blur()`              | method   | 内部 textarea からフォーカスを外します                     |
+| `select()`            | method   | 内部 textarea のテキストを選択します                       |
+| `checkValidity()`     | method   | 現在の公開検証面を同期したうえで真偽値を返します           |
+| `reportValidity()`    | method   | 現在の公開検証面を同期したうえで検証結果を報告します       |
+| `setSelectionRange()` | method   | 内部 textarea の選択範囲を設定します                       |
+| `setRangeText()`      | method   | 内部 textarea の選択範囲または指定範囲の文字列を置換します |
+| `selectionStart`      | property | 内部 textarea の選択開始位置を表します                     |
+| `selectionEnd`        | property | 内部 textarea の選択終了位置を表します                     |
 
 これらは高機能エディタ機能ではなく、ネイティブ textarea として自然に期待される命令的操作面です。引用挿入、定型文展開、ショートカット補助などは、これらの公開面を用いて上位レイヤで実現します。
 
@@ -188,10 +188,10 @@ Rouault における textarea は、UI 上の入力欄であるだけでなく�
 
 `variant` は、入力内容の意味を変えず、表示密度と可読性だけを切り替える状態です。
 
-| `variant` 値 | 意味            | 想定用途               |
-| ------------ | --------------- | ---------------------- |
-| `default`    | 密度優先        | メモ、設定、短い説明文 |
-| `prose`      | 可読性優先      | 本文、長文、執筆欄     |
+| `variant` 値 | 意味       | 想定用途               |
+| ------------ | ---------- | ---------------------- |
+| `default`    | 密度優先   | メモ、設定、短い説明文 |
+| `prose`      | 可読性優先 | 本文、長文、執筆欄     |
 
 `default` は UI 内で過度に主張しない密度を基準とし、`prose` は長文入力時の読み書きしやすさを優先します。どちらも入力意味やイベント契約を変えず、視覚密度と読みやすさだけを変えるものとします。
 
@@ -361,16 +361,16 @@ Auto Grow は装飾ではなく入力継続性の契約です。したがって�
 
 `ui-textarea` は、入力変更、入力意図、IME 過程、およびフォーカス遷移をホストで扱えるようにします。
 
-| イベント             | 契約                                                                       |
-| -------------------- | -------------------------------------------------------------------------- |
-| `beforeinput`        | ユーザー入力の適用前に、入力意図を観測するために発生します                 |
-| `input`              | ユーザー入力に起因する現在値変更時に発生します                             |
-| `change`             | ユーザー操作によるコミットタイミングで発生します                           |
-| `compositionstart`   | IME 変換の開始を観測するために発生します                                   |
-| `compositionupdate`  | IME 変換中の更新を観測するために発生します                                 |
-| `compositionend`     | IME 変換の終了を観測するために発生します                                   |
-| `focusin`            | 内部 textarea がフォーカスを受けたことをホストで観測できます               |
-| `focusout`           | 内部 textarea からフォーカスが外れたことをホストで観測できます             |
+| イベント            | 契約                                                           |
+| ------------------- | -------------------------------------------------------------- |
+| `beforeinput`       | ユーザー入力の適用前に、入力意図を観測するために発生します     |
+| `input`             | ユーザー入力に起因する現在値変更時に発生します                 |
+| `change`            | ユーザー操作によるコミットタイミングで発生します               |
+| `compositionstart`  | IME 変換の開始を観測するために発生します                       |
+| `compositionupdate` | IME 変換中の更新を観測するために発生します                     |
+| `compositionend`    | IME 変換の終了を観測するために発生します                       |
+| `focusin`           | 内部 textarea がフォーカスを受けたことをホストで観測できます   |
+| `focusout`          | 内部 textarea からフォーカスが外れたことをホストで観測できます |
 
 ここでいうイベントは、ユーザー操作に起因する状態遷移または入力過程の通知です。外部から `value` を代入した場合、内部値同期と高さ再計算は行いますが、`beforeinput`、`input`、`change`、composition 系イベントは再送しません。利用者は、プログラム更新の検知に DOM イベントではなく自身の状態管理を用いる必要があります。
 
@@ -466,20 +466,20 @@ invalid 状態は成立します。ただし、可視エラー文言は表示さ
 
 Storybook は、公開契約を確認するための手段として用います。各 Story の名前や分割方法自体は固定契約ではなく、次の確認観点が維持されることを重視します。
 
-| 確認観点 | 固定する契約 |
-| --- | --- |
-| 既定値 | `variant="default"`、`rows=3`、`autoGrow=true`、`resize="none"` が成立すること |
-| variant | `default` と `prose` が表示密度と可読性の差として成立すること |
-| help / error | `helpText` と `errorMessage` が併存でき、順序が help → error であること |
-| disabled / readonly | 両者の意味差が描画と挙動の両方で維持されること |
-| required / error | 公開バリデーション面として invalid が成立すること |
-| Auto Grow | 入力増加で高さが伸び、`maxRows` 超過時のみ内部スクロールへ移行すること |
-| resize | `autoGrow=false` のときのみ `resize="vertical"` が正規運用となること |
-| 正規化 | `rows < 1` が `1` に、`maxRows < rows` が `rows` に正規化されること |
-| プログラム更新 | 外部からの `value` 更新で高さとフォーム値は同期し、`input` / `change` は自動発火しないこと |
-| focus | `focus()` が内部 textarea に委譲され、ホストで `focusin` / `focusout` を観測できること |
-| Accessibility | label ベースの名前付け、`aria-invalid`、`aria-describedby`、`aria-live` が成立すること |
-| 環境差 | dark theme、forced colors、reduced motion、print で構造契約が維持されること |
+| 確認観点            | 固定する契約                                                                               |
+| ------------------- | ------------------------------------------------------------------------------------------ |
+| 既定値              | `variant="default"`、`rows=3`、`autoGrow=true`、`resize="none"` が成立すること             |
+| variant             | `default` と `prose` が表示密度と可読性の差として成立すること                              |
+| help / error        | `helpText` と `errorMessage` が併存でき、順序が help → error であること                    |
+| disabled / readonly | 両者の意味差が描画と挙動の両方で維持されること                                             |
+| required / error    | 公開バリデーション面として invalid が成立すること                                          |
+| Auto Grow           | 入力増加で高さが伸び、`maxRows` 超過時のみ内部スクロールへ移行すること                     |
+| resize              | `autoGrow=false` のときのみ `resize="vertical"` が正規運用となること                       |
+| 正規化              | `rows < 1` が `1` に、`maxRows < rows` が `rows` に正規化されること                        |
+| プログラム更新      | 外部からの `value` 更新で高さとフォーム値は同期し、`input` / `change` は自動発火しないこと |
+| focus               | `focus()` が内部 textarea に委譲され、ホストで `focusin` / `focusout` を観測できること     |
+| Accessibility       | label ベースの名前付け、`aria-invalid`、`aria-describedby`、`aria-live` が成立すること     |
+| 環境差              | dark theme、forced colors、reduced motion、print で構造契約が維持されること                |
 
 Storybook は公開契約の確認面であり、内部 class、Shadow DOM の入れ子、内部回帰検知専用の観測点をそのまま公開契約へ昇格させるものではありません。
 

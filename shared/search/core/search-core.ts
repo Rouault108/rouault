@@ -9,7 +9,10 @@ import {
   type PagefindLoader,
 } from './stages/source-federation.js';
 import { runCandidateMergeStage } from '../../../src/search/core/stages/candidate-merge.js';
-import { buildEmptySearchResponse, runCountsAndDiagnosticsStage } from './stages/counts-and-diagnostics.js';
+import {
+  buildEmptySearchResponse,
+  runCountsAndDiagnosticsStage,
+} from './stages/counts-and-diagnostics.js';
 import { runCandidateValidationStage } from '../../../src/search/core/stages/candidate-validation.js';
 import { runQueryPreparationStage } from '../../../src/search/core/stages/query-preparation.js';
 import { runRankingAndSortingStage } from './stages/ranking-and-sorting.js';

@@ -1,5 +1,10 @@
 import { createFieldTokens } from '../../../build/search/indexing/field-tokenizers.js';
-import { addFailure, addIssue, createCandidateRef, type MutableDiagnostics } from '../diagnostics.js';
+import {
+  addFailure,
+  addIssue,
+  createCandidateRef,
+  type MutableDiagnostics,
+} from '../diagnostics.js';
 import {
   derivePathLabel,
   normalizeDocumentCanonicalUrl,
@@ -7,7 +12,12 @@ import {
 } from '../../../shared/search/document-url.js';
 import type { PreparedSearchQuery } from '../../../shared/search/query-preprocessor.js';
 import { snippetFromDescription, snippetFromExcerptHtml } from '../search-snippet.js';
-import type { SearchCandidate, SearchCountMap, SearchRequest, SearchSourceBatch } from '../../../shared/search/search-types.js';
+import type {
+  SearchCandidate,
+  SearchCountMap,
+  SearchRequest,
+  SearchSourceBatch,
+} from '../../../shared/search/search-types.js';
 
 type PagefindFilterExpression = string | string[] | Record<string, unknown>;
 
@@ -153,7 +163,12 @@ function normalizeCountMap(value: unknown): SearchCountMap | null {
   const countMap = new Map<string, number>();
 
   for (const [rawTag, rawCount] of Object.entries(value as Record<string, unknown>)) {
-    if (typeof rawTag !== 'string' || typeof rawCount !== 'number' || !Number.isSafeInteger(rawCount) || rawCount < 0) {
+    if (
+      typeof rawTag !== 'string' ||
+      typeof rawCount !== 'number' ||
+      !Number.isSafeInteger(rawCount) ||
+      rawCount < 0
+    ) {
       return null;
     }
 

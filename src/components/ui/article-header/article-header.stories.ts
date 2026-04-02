@@ -74,7 +74,7 @@ interface ArticleHeaderStoryArgs {
   status?: '' | 'draft' | 'archived' | 'wip' | 'deprecated';
   source?: string;
   license?: string;
-};
+}
 
 const renderArticleHeader = (args: ArticleHeaderStoryArgs, id?: string) => {
   const tags = Array.isArray(args.tags) ? args.tags : [];
@@ -129,7 +129,8 @@ export const PublishedFallback: Story = {
   parameters: {
     docs: {
       description: {
-        story: '公開日フォールバックの最終 DOM 契約は SSR 側で検査し、この story は表示見本として残しています。',
+        story:
+          '公開日フォールバックの最終 DOM 契約は SSR 側で検査し、この story は表示見本として残しています。',
       },
     },
   },
@@ -144,22 +145,37 @@ export const StatusStateMatrix: Story = {
       }
     </style>
     <div class="matrix">
-      <ui-article-header heading="下書き記事" published="2026-01-01" status="draft"></ui-article-header>
-      <ui-article-header heading="アーカイブ記事" published="2026-01-01" status="archived"></ui-article-header>
-      <ui-article-header heading="作業中記事" published="2026-01-01" status="wip"></ui-article-header>
-      <ui-article-header heading="非推奨記事" published="2026-01-01" status="deprecated"></ui-article-header>
+      <ui-article-header
+        heading="下書き記事"
+        published="2026-01-01"
+        status="draft"
+      ></ui-article-header>
+      <ui-article-header
+        heading="アーカイブ記事"
+        published="2026-01-01"
+        status="archived"
+      ></ui-article-header>
+      <ui-article-header
+        heading="作業中記事"
+        published="2026-01-01"
+        status="wip"
+      ></ui-article-header>
+      <ui-article-header
+        heading="非推奨記事"
+        published="2026-01-01"
+        status="deprecated"
+      ></ui-article-header>
     </div>
   `,
 };
 
 export const HeadingOnlyBoundary: Story = {
-  render: () => html`
-    <ui-article-header heading="見出しのみの最小構成"></ui-article-header>
-  `,
+  render: () => html` <ui-article-header heading="見出しのみの最小構成"></ui-article-header> `,
   parameters: {
     docs: {
       description: {
-        story: '最小構成の表示例です。metadata の有無は Storybook ではなく SSR 側の契約で判定します。',
+        story:
+          '最小構成の表示例です。metadata の有無は Storybook ではなく SSR 側の契約で判定します。',
       },
     },
   },
@@ -168,7 +184,11 @@ export const HeadingOnlyBoundary: Story = {
 export const AccessibilityMediaContracts: Story = {
   tags: ['manual-only'],
   render: () => html`
-    <ui-article-header heading="A11yメディア契約確認" published="2026-02-21" .tags=${['検証']}></ui-article-header>
+    <ui-article-header
+      heading="A11yメディア契約確認"
+      published="2026-02-21"
+      .tags=${['検証']}
+    ></ui-article-header>
   `,
   parameters: {
     docs: {
@@ -183,7 +203,11 @@ export const AccessibilityMediaContracts: Story = {
 export const DarkModeTokenContract: Story = {
   tags: ['manual-only'],
   render: () => html`
-    <ui-article-header heading="ダークモードトークン契約" published="2026-02-22" .tags=${['theme']}></ui-article-header>
+    <ui-article-header
+      heading="ダークモードトークン契約"
+      published="2026-02-22"
+      .tags=${['theme']}
+    ></ui-article-header>
   `,
   parameters: {
     docs: {

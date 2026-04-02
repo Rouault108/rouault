@@ -30,9 +30,7 @@ const text = (value: string | null | undefined): string => value?.replace(/\s+/g
 
 describe('ui-tag browser contract', () => {
   it('既定状態では span root の非インタラクティブ tag として描画されること', async () => {
-    const tag = await fixture<Tag>(html`
-      <ui-tag id="default-tag">JavaScript</ui-tag>
-    `);
+    const tag = await fixture<Tag>(html` <ui-tag id="default-tag">JavaScript</ui-tag> `);
 
     await waitForLitUpdate(tag);
 
@@ -68,9 +66,7 @@ describe('ui-tag browser contract', () => {
   });
 
   it('removable のみを与えた場合は span root + remove button を描画し ui-tag-remove を送出すること', async () => {
-    const tag = await fixture<Tag>(html`
-      <ui-tag removable>Python</ui-tag>
-    `);
+    const tag = await fixture<Tag>(html` <ui-tag removable>Python</ui-tag> `);
 
     await waitForLitUpdate(tag);
 
@@ -100,9 +96,7 @@ describe('ui-tag browser contract', () => {
   });
 
   it('href + removable の場合は group 内に link と remove button を並列配置すること', async () => {
-    const tag = await fixture<Tag>(html`
-      <ui-tag href="/tags/rust" removable>Rust</ui-tag>
-    `);
+    const tag = await fixture<Tag>(html` <ui-tag href="/tags/rust" removable>Rust</ui-tag> `);
 
     await waitForLitUpdate(tag);
 

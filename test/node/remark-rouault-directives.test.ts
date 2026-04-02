@@ -1015,7 +1015,9 @@ describe('remarkRouaultDirectives', () => {
       remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
     };
 
-    expect(run).to.throw('[markdown] tabs の url-sync は 1 文書につき 1 系統までしか使用できません');
+    expect(run).to.throw(
+      '[markdown] tabs の url-sync は 1 文書につき 1 系統までしか使用できません',
+    );
   });
 
   it('code-preview と preview/toolbar スロットディレクティブを変換すること', () => {

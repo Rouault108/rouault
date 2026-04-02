@@ -42,7 +42,10 @@ export class TranslationOverlayOrchestrator {
     }
 
     this._started = false;
-    this._root.removeEventListener('translation-toggle', this._onTranslationToggle as EventListener);
+    this._root.removeEventListener(
+      'translation-toggle',
+      this._onTranslationToggle as EventListener,
+    );
     this._detachViewportListeners();
     this._openTranslations.clear();
 

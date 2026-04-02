@@ -44,20 +44,13 @@ const createScopeId = (scope: Element, fallbackIndex: number): string => {
   return value && value.length > 0 ? value : `scope-${String(fallbackIndex)}`;
 };
 
-const readPlanItem = (
-  element: Element,
-  scopeId: string,
-): HydrationPlanItem | null => {
+const readPlanItem = (element: Element, scopeId: string): HydrationPlanItem | null => {
   const capabilityValue = element.getAttribute(CAPABILITY_ATTRIBUTE)?.trim();
   const triggerValue = element.getAttribute(TRIGGER_ATTRIBUTE)?.trim();
   const capability =
-    capabilityValue && capabilityValue.length > 0
-      ? (capabilityValue as HydrationCapability)
-      : null;
+    capabilityValue && capabilityValue.length > 0 ? (capabilityValue as HydrationCapability) : null;
   const trigger =
-    triggerValue && triggerValue.length > 0
-      ? (triggerValue as HydrationTrigger)
-      : null;
+    triggerValue && triggerValue.length > 0 ? (triggerValue as HydrationTrigger) : null;
 
   if (!capability || !trigger) {
     return null;
@@ -82,10 +75,7 @@ const readPlanItem = (
 const buildScopePlan = (scope: Element, scopeId: string): HydrationScopePlan => {
   const items: HydrationPlanItem[] = [];
 
-  if (
-    scope.hasAttribute(CAPABILITY_ATTRIBUTE) &&
-    scope.hasAttribute(TRIGGER_ATTRIBUTE)
-  ) {
+  if (scope.hasAttribute(CAPABILITY_ATTRIBUTE) && scope.hasAttribute(TRIGGER_ATTRIBUTE)) {
     const directItem = readPlanItem(scope, scopeId);
     if (directItem) {
       items.push(directItem);

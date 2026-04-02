@@ -1,6 +1,12 @@
 import type { MutableDiagnostics } from '../diagnostics.js';
 import type { PreparedSearchQuery } from '../../../shared/search/query-preprocessor.js';
-import type { SearchCandidate, SearchDiagnostics, SearchRequest, SearchResponse, SearchSourceBatch } from '../../../shared/search/search-types.js';
+import type {
+  SearchCandidate,
+  SearchDiagnostics,
+  SearchRequest,
+  SearchResponse,
+  SearchSourceBatch,
+} from '../../../shared/search/search-types.js';
 
 export interface QueryPreparationStageOutput {
   request: SearchRequest;

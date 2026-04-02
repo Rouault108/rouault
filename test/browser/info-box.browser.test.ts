@@ -127,8 +127,16 @@ describe('ui-info-box browser contract', () => {
       waitForLitUpdate(noHeadingLandmark),
     ]);
 
-    expect(expectPresent(getContainer(invalidVariant), 'invalidVariantContainer').getAttribute('data-variant')).to.equal('default');
-    expect(expectPresent(getContainer(invalidDensity), 'invalidDensityContainer').getAttribute('data-density')).to.equal('comfortable');
+    expect(
+      expectPresent(getContainer(invalidVariant), 'invalidVariantContainer').getAttribute(
+        'data-variant',
+      ),
+    ).to.equal('default');
+    expect(
+      expectPresent(getContainer(invalidDensity), 'invalidDensityContainer').getAttribute(
+        'data-density',
+      ),
+    ).to.equal('comfortable');
 
     expect(empty.shadowRoot?.querySelector('.info-box')).to.equal(null);
     expect(whitespaceOnly.shadowRoot?.querySelector('.info-box')).to.equal(null);

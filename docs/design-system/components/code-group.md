@@ -82,24 +82,24 @@ block 側の互換入力や単体表示専用入力には依存しません。
 
 ### root に要求する契約
 
-| 項目 | 必須 | 内容 |
-| --- | --- | --- |
-| `data-code-group` | はい | code group root であることを示します。 |
-| `data-code-group-id` | はい | tab と panel を対応付ける一意 ID です。 |
-| `data-code-group-selected` | はい | 現在選択中の `groupKey` を示します。 |
-| `role="tablist"` を持つ要素 | 条件付き必須 | 比較 UI が成立する場合に必要です。 |
-| `data-code-group-copy` を持つ button | いいえ | active panel に対する copy 操作です。 |
-| `data-code-group-panel` を持つ panel 群 | はい | 各比較対象を保持します。 |
+| 項目                                    | 必須         | 内容                                    |
+| --------------------------------------- | ------------ | --------------------------------------- |
+| `data-code-group`                       | はい         | code group root であることを示します。  |
+| `data-code-group-id`                    | はい         | tab と panel を対応付ける一意 ID です。 |
+| `data-code-group-selected`              | はい         | 現在選択中の `groupKey` を示します。    |
+| `role="tablist"` を持つ要素             | 条件付き必須 | 比較 UI が成立する場合に必要です。      |
+| `data-code-group-copy` を持つ button    | いいえ       | active panel に対する copy 操作です。   |
+| `data-code-group-panel` を持つ panel 群 | はい         | 各比較対象を保持します。                |
 
 ### panel に要求する契約
 
-| 項目 | 必須 | 内容 |
-| --- | --- | --- |
-| `data-code-group-panel` | はい | panel の stable key です。 |
-| `data-code-group-panel-label` | はい | panel の可視ラベルです。 |
-| `role="tabpanel"` | 条件付き必須 | 比較 UI が成立する場合に必要です。 |
-| `pre[data-code-block]` | はい | 各 panel は 1 件の code block を保持します。 |
-| `.code-group-stack-label` | いいえ | no-JS stacked fallback 用のラベルです。 |
+| 項目                          | 必須         | 内容                                         |
+| ----------------------------- | ------------ | -------------------------------------------- |
+| `data-code-group-panel`       | はい         | panel の stable key です。                   |
+| `data-code-group-panel-label` | はい         | panel の可視ラベルです。                     |
+| `role="tabpanel"`             | 条件付き必須 | 比較 UI が成立する場合に必要です。           |
+| `pre[data-code-block]`        | はい         | 各 panel は 1 件の code block を保持します。 |
+| `.code-group-stack-label`     | いいえ       | no-JS stacked fallback 用のラベルです。      |
 
 ## 3.2 adapter 入力契約
 
@@ -115,11 +115,11 @@ block 側の互換入力や単体表示専用入力には依存しません。
 
 ## 3.3 公開 property / attribute
 
-| property | attribute | reflect | 既定値 | 内容 |
-| --- | --- | --- | --- | --- |
-| `selectedValue` | `selected-value` | あり | なし | controlled mode における現在選択値です。 |
-| `defaultSelectedValue` | `default-selected-value` | なし | なし | uncontrolled mode における初期選択値です。 |
-| `activation` | `activation` | あり | `auto` | `auto` / `manual` を受理します。 |
+| property               | attribute                | reflect | 既定値 | 内容                                       |
+| ---------------------- | ------------------------ | ------- | ------ | ------------------------------------------ |
+| `selectedValue`        | `selected-value`         | あり    | なし   | controlled mode における現在選択値です。   |
+| `defaultSelectedValue` | `default-selected-value` | なし    | なし   | uncontrolled mode における初期選択値です。 |
+| `activation`           | `activation`             | あり    | `auto` | `auto` / `manual` を受理します。           |
 
 ### 契約
 
@@ -199,12 +199,12 @@ child list と child metadata を再評価し、選択状態・copy 状態・ラ
 
 選択状態が変化した場合に送出します。
 
-| 項目 | 内容 |
-| --- | --- |
-| 名前 | `ui-code-group-change` |
+| 項目     | 内容                                                    |
+| -------- | ------------------------------------------------------- |
+| 名前     | `ui-code-group-change`                                  |
 | `detail` | `{ value, prevValue, index, prevIndex, userInitiated }` |
-| bubbles | `true` |
-| composed | `true` |
+| bubbles  | `true`                                                  |
+| composed | `true`                                                  |
 
 ### 契約
 
@@ -348,15 +348,15 @@ URL 同期、永続化、分析イベント、authoring lint、違反の重大�
 
 ## 9. 境界条件
 
-| 条件 | 扱い |
-| --- | --- |
-| child が 0 件 | fallback content をそのまま表示します。 |
-| child が 1 件 | 比較 UI を生成せず単一表示へ退行します。 |
-| `groupKey` 欠落 | その child は有効比較対象に含めません。 |
-| `groupKey` 重複 | 重複集合は有効比較対象に含めません。 |
-| タブラベル未解決 | その child は有効比較対象に含めません。 |
+| 条件                   | 扱い                                               |
+| ---------------------- | -------------------------------------------------- |
+| child が 0 件          | fallback content をそのまま表示します。            |
+| child が 1 件          | 比較 UI を生成せず単一表示へ退行します。           |
+| `groupKey` 欠落        | その child は有効比較対象に含めません。            |
+| `groupKey` 重複        | 重複集合は有効比較対象に含めません。               |
+| タブラベル未解決       | その child は有効比較対象に含めません。            |
 | 比較対象以外の要素混在 | 正規契約不成立です。比較 UI を無効化してよいです。 |
-| wrapper 越し child | 正規契約不成立です。比較対象に含めません。 |
+| wrapper 越し child     | 正規契約不成立です。比較対象に含めません。         |
 
 ---
 

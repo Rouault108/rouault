@@ -5,7 +5,9 @@ const buildImageProperties = (payload: ImagePayload): Record<string, unknown> =>
   ...(payload.loading ? { loading: payload.loading } : {}),
   ...(typeof payload.width === 'number' ? { width: payload.width } : {}),
   ...(typeof payload.height === 'number' ? { height: payload.height } : {}),
-  ...(typeof payload.zoomable === 'boolean' ? { zoomable: payload.zoomable ? 'true' : 'false' } : {}),
+  ...(typeof payload.zoomable === 'boolean'
+    ? { zoomable: payload.zoomable ? 'true' : 'false' }
+    : {}),
 });
 
 export const adaptImageOutput = (node: MdastNode): MdastNode => {

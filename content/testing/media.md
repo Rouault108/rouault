@@ -10,4 +10,3 @@ status: 'wip'
 ---
 
 ::example-include{ref="media/core"}
-

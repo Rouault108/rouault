@@ -42,13 +42,22 @@ const registerDevelopmentStaticDirectories = (server: ViteDevServer): void => {
     createStaticDirectoryMiddleware('/pagefind/', path.resolve(process.cwd(), 'dist', 'pagefind')),
   );
   server.middlewares.use(
-    createStaticDirectoryMiddleware('/media/', path.resolve(process.cwd(), '.generated', 'media', 'assets')),
+    createStaticDirectoryMiddleware(
+      '/media/',
+      path.resolve(process.cwd(), '.generated', 'media', 'assets'),
+    ),
   );
   server.middlewares.use(
-    createStaticDirectoryMiddleware('/content-assets/', path.resolve(process.cwd(), 'content', '_assets')),
+    createStaticDirectoryMiddleware(
+      '/content-assets/',
+      path.resolve(process.cwd(), 'content', '_assets'),
+    ),
   );
   server.middlewares.use(
-    createStaticDirectoryMiddleware('/example-assets/', path.resolve(process.cwd(), 'examples', 'media')),
+    createStaticDirectoryMiddleware(
+      '/example-assets/',
+      path.resolve(process.cwd(), 'examples', 'media'),
+    ),
   );
 };
 

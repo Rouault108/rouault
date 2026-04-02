@@ -31,9 +31,7 @@ const renderRequestedPath = (requestedPath: string): string => {
     `;
 };
 
-export const buildNotFoundPageMarkup = (
-  options: BuildNotFoundPageMarkupOptions = {},
-): string => {
+export const buildNotFoundPageMarkup = (options: BuildNotFoundPageMarkupOptions = {}): string => {
   const requestedPath = options.requestedPath?.trim() ?? '';
   const hostAttributes = serializeHtmlAttributes([
     { name: 'requested-path', value: requestedPath.length > 0 ? requestedPath : null },

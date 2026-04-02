@@ -32,8 +32,10 @@ const getOutputs = (host: UiToast): HTMLOutputElement[] =>
   Array.from(host.shadowRoot?.querySelectorAll<HTMLOutputElement>('output.toast') ?? []);
 
 const getMessage = (toast: HTMLOutputElement): string =>
-  expectPresent(toast.querySelector<HTMLElement>('.toast-message'), 'toast message').textContent?.trim() ??
-  '';
+  expectPresent(
+    toast.querySelector<HTMLElement>('.toast-message'),
+    'toast message',
+  ).textContent?.trim() ?? '';
 
 const getCloseButton = (toast: HTMLOutputElement): HTMLButtonElement =>
   expectPresent(toast.querySelector<HTMLButtonElement>('button.toast-close'), 'toast close button');

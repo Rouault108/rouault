@@ -114,7 +114,10 @@ describe('ui-textarea browser contract', () => {
 
     const empty = expectPresent(wrapper.querySelector<Textarea>('#empty'), 'empty');
     const requiredField = expectPresent(wrapper.querySelector<Textarea>('#required'), 'required');
-    const forcedError = expectPresent(wrapper.querySelector<Textarea>('#forced-error'), 'forcedError');
+    const forcedError = expectPresent(
+      wrapper.querySelector<Textarea>('#forced-error'),
+      'forcedError',
+    );
 
     await flush(empty);
     await flush(requiredField);
@@ -157,7 +160,13 @@ describe('ui-textarea browser contract', () => {
   it('disabled + error を保持しつつ readonly/disabled を内部 textarea へ委譲すること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>
-        <ui-textarea id="disabled-error" label="無効" disabled error error-message="エラー"></ui-textarea>
+        <ui-textarea
+          id="disabled-error"
+          label="無効"
+          disabled
+          error
+          error-message="エラー"
+        ></ui-textarea>
         <ui-textarea id="readonly" label="読み取り専用" readonly value="read-only"></ui-textarea>
       </div>
     `);

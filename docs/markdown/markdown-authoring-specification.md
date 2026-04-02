@@ -185,14 +185,14 @@ frontmatter metadata には次の制約を適用します。
 
 ### 5.1 一覧
 
-| 入力                    | 出力ノード               | 許可属性 / 補足                                                                                                                                                                                                                                                                      |
-| ----------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `::callout`             | `aside[data-callout]`    | `kind` / `heading` / `label` / `icon` / `heading-level`                                                                                                                                                                                                                              |
-| `::code-group`          | `ui-code-group`          | `aria-label`。内包 `code` メタは `filename` / `group-key` / `tab-label` / `copy-label` / `copyable` / `copy-mode` / `wrap` / `highlight-lines` / `layout`                                                                                                                            |
-| `::code-preview`        | `ui-code-preview`        | `heading` / `controls` / `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport`                                                                                                                                                              |
-| `::preview-sandbox`     | `ui-preview-sandbox`     | `iframe-title` / `base-url` / `allow-js` / `activation-policy` / `height-mode` / `allow-forms` / `allow-downloads` / `allow-pointer-lock` / `allow-popups` / `height` / `max-height`。`code-preview` 直下専用。内部は `preview-html` / `preview-css` / `preview-js` fenced code のみ |
-| `::details`             | `ui-details`             | `summary` または `aria-label` 必須。両立不可。`open` / `variant` / `region`                                                                                                                                                                                                          |
-| `::info-box`            | `section[data-info-box]` | `heading` / `icon` / `heading-level` / `landmark` / `variant` / `density`                                                                                                                                                                                                            |
+| 入力                | 出力ノード               | 許可属性 / 補足                                                                                                                                                                                                                                                                      |
+| ------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `::callout`         | `aside[data-callout]`    | `kind` / `heading` / `label` / `icon` / `heading-level`                                                                                                                                                                                                                              |
+| `::code-group`      | `ui-code-group`          | `aria-label`。内包 `code` メタは `filename` / `group-key` / `tab-label` / `copy-label` / `copyable` / `copy-mode` / `wrap` / `highlight-lines` / `layout`                                                                                                                            |
+| `::code-preview`    | `ui-code-preview`        | `heading` / `controls` / `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport`                                                                                                                                                              |
+| `::preview-sandbox` | `ui-preview-sandbox`     | `iframe-title` / `base-url` / `allow-js` / `activation-policy` / `height-mode` / `allow-forms` / `allow-downloads` / `allow-pointer-lock` / `allow-popups` / `height` / `max-height`。`code-preview` 直下専用。内部は `preview-html` / `preview-css` / `preview-js` fenced code のみ |
+| `::details`         | `ui-details`             | `summary` または `aria-label` 必須。両立不可。`open` / `variant` / `region`                                                                                                                                                                                                          |
+| `::info-box`        | `section[data-info-box]` | `heading` / `icon` / `heading-level` / `landmark` / `variant` / `density`                                                                                                                                                                                                            |
 
 ### 5.2 共通規則
 
@@ -560,15 +560,15 @@ link-card 解決後の主要属性は少なくとも次を持つものとしま�
 
 ### 7.1 一覧
 
-| 入力                                     | 出力           | 補足                                                     |
-| ---------------------------------------- | -------------- | -------------------------------------------------------- |
-| `:emoji[text]{aria-label="..."}`         | `span`         | `label` または `aria-label` があれば `role="img"` を付与 |
-| `:subscript[text]` / `~text~`            | `sub`          | 属性なし                                                 |
-| `:superscript[text]` / `^text^`          | `sup`          | 属性なし                                                 |
-| `:highlight[text]{current-match="true"}` | `mark[data-current-match]` | `current-match` のみ許可 |
-| `==text==`                               | `mark`                     | 追加属性なし             |
-| `==text==`                               | `ui-highlight` | 追加属性なし                                             |
-| `:sparkles:` など                        | 絵文字文字列   | 内蔵 shortcodes のみ置換                                 |
+| 入力                                     | 出力                       | 補足                                                     |
+| ---------------------------------------- | -------------------------- | -------------------------------------------------------- |
+| `:emoji[text]{aria-label="..."}`         | `span`                     | `label` または `aria-label` があれば `role="img"` を付与 |
+| `:subscript[text]` / `~text~`            | `sub`                      | 属性なし                                                 |
+| `:superscript[text]` / `^text^`          | `sup`                      | 属性なし                                                 |
+| `:highlight[text]{current-match="true"}` | `mark[data-current-match]` | `current-match` のみ許可                                 |
+| `==text==`                               | `mark`                     | 追加属性なし                                             |
+| `==text==`                               | `ui-highlight`             | 追加属性なし                                             |
+| `:sparkles:` など                        | 絵文字文字列               | 内蔵 shortcodes のみ置換                                 |
 
 ### 7.2 emoji
 

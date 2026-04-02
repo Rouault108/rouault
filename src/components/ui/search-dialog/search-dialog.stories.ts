@@ -159,7 +159,8 @@ export const LoadingSurface: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'loading surface の docs story です。loading 中の編集継続契約は browser test 側を正本とします。',
+        story:
+          'loading surface の docs story です。loading 中の編集継続契約は browser test 側を正本とします。',
       },
     },
   },

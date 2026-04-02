@@ -188,7 +188,8 @@ export const SizeVariants: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'size と disabled の代表表示です。size forward の合否は browser test を正本とします。',
+        story:
+          'size と disabled の代表表示です。size forward の合否は browser test を正本とします。',
       },
     },
   },
@@ -347,7 +348,11 @@ export const ContrastAndMediaManual: Story = {
         "
       >
         <ui-copy-button value="dark-default" label="ダークモードでコピー"></ui-copy-button>
-        <ui-copy-button value="dark-disabled" label="ダークモード無効" ?disabled=${true}></ui-copy-button>
+        <ui-copy-button
+          value="dark-disabled"
+          label="ダークモード無効"
+          ?disabled=${true}
+        ></ui-copy-button>
       </section>
 
       <section
@@ -362,7 +367,11 @@ export const ContrastAndMediaManual: Story = {
         "
       >
         <ui-copy-button value="forced" label="forced colors でコピー"></ui-copy-button>
-        <ui-copy-button value="forced-disabled" label="forced colors 無効" ?disabled=${true}></ui-copy-button>
+        <ui-copy-button
+          value="forced-disabled"
+          label="forced colors 無効"
+          ?disabled=${true}
+        ></ui-copy-button>
       </section>
     </div>
   `,

@@ -27,7 +27,11 @@ import {
   type SearchTagMode,
   type SearchSortMode,
 } from '../../../shared/search/search-url.js';
-import type { ExploreSearchResponse, SearchResultItem, SearchSnippet } from '../../../shared/search/search-types.js';
+import type {
+  ExploreSearchResponse,
+  SearchResultItem,
+  SearchSnippet,
+} from '../../../shared/search/search-types.js';
 
 const SEARCH_DEBOUNCE_MS = 150;
 const SEARCH_SORT_OPTIONS: SelectOption[] = [
@@ -241,8 +245,7 @@ export class SearchPage extends LitElement {
           border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
           background-color var(--duration-fast, 70ms)
             var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-          color var(--duration-fast, 70ms)
-            var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+          color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
       }
 
       .filter-option[data-selected='true'] {
@@ -864,7 +867,9 @@ export class SearchPage extends LitElement {
       return html`
         <ui-empty-state class="empty-hint" variant="search">
           <span slot="heading">一致するメモが見つかりません</span>
-          <span slot="description">検索語を変えるか、タグの組み合わせや演算子を見直してください。</span>
+          <span slot="description"
+            >検索語を変えるか、タグの組み合わせや演算子を見直してください。</span
+          >
         </ui-empty-state>
       `;
     }
@@ -901,7 +906,7 @@ export class SearchPage extends LitElement {
     const activeCount = this._results.length;
     const currentState = this._currentSearchState();
     const isTagDefaultView = isSingleTagDefaultState(currentState);
-    const singleTag = isTagDefaultView ? currentState.tags[0] ?? '' : '';
+    const singleTag = isTagDefaultView ? (currentState.tags[0] ?? '') : '';
 
     return html`
       <section class="search-page page-shell" aria-label="検索結果">
@@ -968,12 +973,11 @@ export class SearchPage extends LitElement {
 
   private _renderResultSecondaryText(snippet: SearchSnippet | null, description: string): unknown {
     const normalizedDescription = description.trim();
-    const sourceSegments =
-      snippet?.segments.length
-        ? snippet.segments
-        : normalizedDescription.length > 0
-          ? [{ text: normalizedDescription, matched: false }]
-          : [];
+    const sourceSegments = snippet?.segments.length
+      ? snippet.segments
+      : normalizedDescription.length > 0
+        ? [{ text: normalizedDescription, matched: false }]
+        : [];
 
     if (sourceSegments.length === 0) {
       return nothing;

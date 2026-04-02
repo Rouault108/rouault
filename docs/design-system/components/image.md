@@ -88,17 +88,17 @@ note 本文の図版は、少なくとも次の構造を満たさなければな
   data-image-lightbox-srcset="/..."
   data-image-lightbox-sizes="100vw"
   data-image-lightbox-sources="[...]"
->
+></figure>
 ```
 
 ### `zoomable=false`
 
 `zoomable=false` の場合、最終 DOM は静的図版のみで成立しなければなりません。
 
-* `data-hydration-key`
-* `data-hydration-capability`
-* `data-hydration-trigger`
-* `button[data-image-zoom-trigger]`
+- `data-hydration-key`
+- `data-hydration-capability`
+- `data-hydration-trigger`
+- `button[data-image-zoom-trigger]`
 
 これらは存在してはなりません。
 
@@ -132,19 +132,19 @@ inline 面の `img[loading]` へ反映する読み込み優先度です。note �
 
 `image-lightbox-enhancer` が所有してよい責務は次に限ります。
 
-* 拡大 trigger への click handler 付与
-* dialog 生成
-* expanded 用 `picture` / `img` の構築
-* close button / backdrop click / native close への応答
-* focus return
-* scroll lock
+- 拡大 trigger への click handler 付与
+- dialog 生成
+- expanded 用 `picture` / `img` の構築
+- close button / backdrop click / native close への応答
+- focus return
+- scroll lock
 
 逆に、次は所有してはなりません。
 
-* 図版本体の意味論
-* caption の正本管理
-* note 本文での画像可読性
-* `zoomable=false` 図版の表示成立
+- 図版本体の意味論
+- caption の正本管理
+- note 本文での画像可読性
+- `zoomable=false` 図版の表示成立
 
 ---
 
@@ -152,11 +152,11 @@ inline 面の `img[loading]` へ反映する読み込み優先度です。note �
 
 ### 必須
 
-* 図版 root は `figure[data-image]` であること
-* 画像本体は `img` を含むこと
-* caption がある場合は `figcaption` で表現すること
-* 拡大 trigger はネイティブ `button` であること
-* trigger のアクセシブルネームは拡大動作を説明すること
+- 図版 root は `figure[data-image]` であること
+- 画像本体は `img` を含むこと
+- caption がある場合は `figcaption` で表現すること
+- 拡大 trigger はネイティブ `button` であること
+- trigger のアクセシブルネームは拡大動作を説明すること
 
 ### JS 無効時
 
@@ -172,12 +172,12 @@ dialog は補助 UI です。画像の正本は依然として本文中の `figu
 
 note 本文の図版スタイルは、`ui-image` selector ではなく、少なくとも次の static selector を正本として記述します。
 
-* `figure[data-image]`
-* `figure[data-image] > picture`
-* `figure[data-image] img`
-* `figure[data-image] > figcaption`
-* `figure[data-image] > [data-image-zoom-trigger]`
-* `figure[data-image] dialog[data-image-lightbox-dialog]`
+- `figure[data-image]`
+- `figure[data-image] > picture`
+- `figure[data-image] img`
+- `figure[data-image] > figcaption`
+- `figure[data-image] > [data-image-zoom-trigger]`
+- `figure[data-image] dialog[data-image-lightbox-dialog]`
 
 component 側 document style に依存して note 本文図版を成立させてはなりません。
 
@@ -187,19 +187,19 @@ component 側 document style に依存して note 本文図版を成立させて
 
 ### build / projection
 
-* note 最終 DOM に `ui-image` が出現しないこと
-* `figure[data-image]` が出力されること
-* `zoomable=true` のときだけ `data-hydration-key="image-lightbox-enhancer"` が付くこと
-* `zoomable=false` では hydration directive が付かないこと
-* caption がある場合に `figcaption` が出力されること
+- note 最終 DOM に `ui-image` が出現しないこと
+- `figure[data-image]` が出力されること
+- `zoomable=true` のときだけ `data-hydration-key="image-lightbox-enhancer"` が付くこと
+- `zoomable=false` では hydration directive が付かないこと
+- caption がある場合に `figcaption` が出力されること
 
 ### browser / hydration
 
-* trigger クリックで dialog が開くこと
-* close button / backdrop / native close で閉じること
-* close 後に trigger へ focus が戻ること
-* open 中だけ scroll lock が有効であること
-* JS 無効でも画像本体と caption が読めること
+- trigger クリックで dialog が開くこと
+- close button / backdrop / native close で閉じること
+- close 後に trigger へ focus が戻ること
+- open 中だけ scroll lock が有効であること
+- JS 無効でも画像本体と caption が読めること
 
 ---
 

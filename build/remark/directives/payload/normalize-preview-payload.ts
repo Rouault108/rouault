@@ -90,7 +90,9 @@ export const normalizeCodePreviewPayload = (
           ),
         }
       : {}),
-    ...(previewPadding ? { previewPadding: previewPadding as CodePreviewPayload['previewPadding'] } : {}),
+    ...(previewPadding
+      ? { previewPadding: previewPadding as CodePreviewPayload['previewPadding'] }
+      : {}),
     ...(previewAlign ? { previewAlign: previewAlign as CodePreviewPayload['previewAlign'] } : {}),
     ...(previewTheme ? { previewTheme: previewTheme as CodePreviewPayload['previewTheme'] } : {}),
     ...(previewSurface
@@ -125,10 +127,7 @@ export const normalizePreviewSandboxPayload = (
   }
 
   const activationPolicy = pickOptional(attrs['activation-policy']);
-  if (
-    activationPolicy &&
-    !['eager', 'visible', 'manual'].includes(activationPolicy)
-  ) {
+  if (activationPolicy && !['eager', 'visible', 'manual'].includes(activationPolicy)) {
     throw toError(
       file,
       node,
@@ -151,11 +150,11 @@ export const normalizePreviewSandboxPayload = (
       ? { iframeTitle: pickOptional(attrs['iframe-title']) }
       : {}),
     ...(baseUrl ? { baseUrl: new URL(baseUrl).href } : {}),
-    allowJs: parseBooleanAttribute(attrs['allow-js'], node, file, 'preview-sandbox', 'allow-js') === true,
+    allowJs:
+      parseBooleanAttribute(attrs['allow-js'], node, file, 'preview-sandbox', 'allow-js') === true,
     ...(activationPolicy
       ? {
-          activationPolicy:
-            activationPolicy as PreviewSandboxPayload['activationPolicy'],
+          activationPolicy: activationPolicy as PreviewSandboxPayload['activationPolicy'],
         }
       : {}),
     ...(heightMode
@@ -164,7 +163,8 @@ export const normalizePreviewSandboxPayload = (
         }
       : {}),
     allowForms:
-      parseBooleanAttribute(attrs['allow-forms'], node, file, 'preview-sandbox', 'allow-forms') === true,
+      parseBooleanAttribute(attrs['allow-forms'], node, file, 'preview-sandbox', 'allow-forms') ===
+      true,
     allowDownloads:
       parseBooleanAttribute(
         attrs['allow-downloads'],
@@ -182,8 +182,15 @@ export const normalizePreviewSandboxPayload = (
         'allow-pointer-lock',
       ) === true,
     allowPopups:
-      parseBooleanAttribute(attrs['allow-popups'], node, file, 'preview-sandbox', 'allow-popups') === true,
-    ...(typeof parseIntegerMin(attrs['height'], node, file, 'preview-sandbox', 'height', 1) === 'number'
+      parseBooleanAttribute(
+        attrs['allow-popups'],
+        node,
+        file,
+        'preview-sandbox',
+        'allow-popups',
+      ) === true,
+    ...(typeof parseIntegerMin(attrs['height'], node, file, 'preview-sandbox', 'height', 1) ===
+    'number'
       ? {
           height: parseIntegerMin(attrs['height'], node, file, 'preview-sandbox', 'height', 1),
         }

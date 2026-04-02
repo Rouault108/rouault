@@ -95,14 +95,14 @@
 
 ### 入力契約
 
-| 名前          | 種別                 | 必須     | 内容             | 契約                                                                       |
-| ------------- | -------------------- | -------- | ---------------- | -------------------------------------------------------------------------- |
-| `opened`      | property / attribute | はい     | 開閉状態         | `true` で開き、`false` で閉じます。唯一の開閉真実源です                    |
-| `query` | property / attribute | はい | 入力文字列 | 表示値であり検索入力の原値です。検索評価に用いる正規化、空判定、tokenization は `search-specification.md` の query 仕様および shared `search-core` に従います。`ui-search-dialog` 自身は `trim()` のみを独自意味論として固定しません |
-| `items`       | property             | 条件付き | ローカル検索対象 | `searcher` を使わない場合の検索対象です                                    |
-| `searcher`    | property             | 条件付き | 外部検索関数     | `items` の代わりに検索を完全外部化するための入力です                       |
-| `messages`    | property             | いいえ   | 文言セット       | ラベル、loading、empty、error などの文言です                               |
-| `matchFields` | property             | いいえ   | 一致対象面       | 既定では `title` / `path` / `keywords` です                                |
+| 名前          | 種別                 | 必須     | 内容             | 契約                                                                                                                                                                                                                                 |
+| ------------- | -------------------- | -------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `opened`      | property / attribute | はい     | 開閉状態         | `true` で開き、`false` で閉じます。唯一の開閉真実源です                                                                                                                                                                              |
+| `query`       | property / attribute | はい     | 入力文字列       | 表示値であり検索入力の原値です。検索評価に用いる正規化、空判定、tokenization は `search-specification.md` の query 仕様および shared `search-core` に従います。`ui-search-dialog` 自身は `trim()` のみを独自意味論として固定しません |
+| `items`       | property             | 条件付き | ローカル検索対象 | `searcher` を使わない場合の検索対象です                                                                                                                                                                                              |
+| `searcher`    | property             | 条件付き | 外部検索関数     | `items` の代わりに検索を完全外部化するための入力です                                                                                                                                                                                 |
+| `messages`    | property             | いいえ   | 文言セット       | ラベル、loading、empty、error などの文言です                                                                                                                                                                                         |
+| `matchFields` | property             | いいえ   | 一致対象面       | 既定では `title` / `path` / `keywords` です                                                                                                                                                                                          |
 
 `items` と `searcher` は同時に必須ではありませんが、**どちらか一方**を検索ソースとして与えます。両方が与えられた場合、公開契約では**設定エラー**として扱い、暗黙優先は設けません。責務の明快さを優先し、ローカル検索と外部検索の同時混在は認めません。
 
@@ -179,11 +179,11 @@ type UiSearchDialogSearcher = (
 
 追加で、次を固定します。
 
-* `searcher` が **例外を送出した場合**、コンポーネントはその検索を `error` 状態として扱います
-* `searcher` が **`error` を含む構造化結果**を返した場合、コンポーネントはその検索を `error` 状態として扱います
-* 例外送出と構造化エラー結果は、UI 上は同一の `error` 状態へ正規化します
-* `signal.aborted === true` に起因する中断は `error` とみなさず、**破棄された旧検索**として扱います
-* `error.retryable === true` の場合でも、再試行は内部で自律実行しません。再試行は、同一 query に対する再検索要求として上位から駆動します
+- `searcher` が **例外を送出した場合**、コンポーネントはその検索を `error` 状態として扱います
+- `searcher` が **`error` を含む構造化結果**を返した場合、コンポーネントはその検索を `error` 状態として扱います
+- 例外送出と構造化エラー結果は、UI 上は同一の `error` 状態へ正規化します
+- `signal.aborted === true` に起因する中断は `error` とみなさず、**破棄された旧検索**として扱います
+- `error.retryable === true` の場合でも、再試行は内部で自律実行しません。再試行は、同一 query に対する再検索要求として上位から駆動します
 
 これにより、通信失敗、検索器内部失敗、構造化エラー、旧検索中断を同一レイヤで整理できます。
 
@@ -191,11 +191,11 @@ type UiSearchDialogSearcher = (
 
 #### 要求イベント
 
-| イベント名                         | detail                               | 契約                   |
-| ---------------------------------- | ------------------------------------ | ---------------------- |
-| `ui-search-dialog-open-requested`  | `{ trigger: HTMLElement \| null }`   | 開く要求を通知します   |
-| `ui-search-dialog-close-requested` | `{ reason: CloseReason }`            | 閉じる要求を通知します |
-| `ui-search-dialog-query-changed`   | `{ query: string }`                  | 入力変更を通知します   |
+| イベント名                         | detail                             | 契約                   |
+| ---------------------------------- | ---------------------------------- | ---------------------- |
+| `ui-search-dialog-open-requested`  | `{ trigger: HTMLElement \| null }` | 開く要求を通知します   |
+| `ui-search-dialog-close-requested` | `{ reason: CloseReason }`          | 閉じる要求を通知します |
+| `ui-search-dialog-query-changed`   | `{ query: string }`                | 入力変更を通知します   |
 
 ```ts
 type CloseReason = 'selection' | 'escape' | 'backdrop' | 'close-button' | 'programmatic';
@@ -252,12 +252,12 @@ interface UiSearchDialogSelectedDetail {
 
 ### 公開メソッド
 
-| 名前                     | 種別   | 契約                                                                 |
-| ------------------------ | ------ | -------------------------------------------------------------------- |
-| `focusInput()`           | method | 検索入力へフォーカスを移します。内部的には `ui-search-field.focus()` に委譲します。 |
-| `focusClearButton()`     | method | clear button が利用可能な場合のみ、clear button へフォーカスを移します。利用不能時は no-op です。 |
-| `requestOpen(trigger?)`  | method | 開く要求を通知します。`trigger` を与えた場合、その参照を open request の detail に含めます。 |
-| `requestClose(reason?)`  | method | 閉じる要求を通知します。reason 未指定時は `programmatic` として扱います。 |
+| 名前                    | 種別   | 契約                                                                                              |
+| ----------------------- | ------ | ------------------------------------------------------------------------------------------------- |
+| `focusInput()`          | method | 検索入力へフォーカスを移します。内部的には `ui-search-field.focus()` に委譲します。               |
+| `focusClearButton()`    | method | clear button が利用可能な場合のみ、clear button へフォーカスを移します。利用不能時は no-op です。 |
+| `requestOpen(trigger?)` | method | 開く要求を通知します。`trigger` を与えた場合、その参照を open request の detail に含めます。      |
+| `requestClose(reason?)` | method | 閉じる要求を通知します。reason 未指定時は `programmatic` として扱います。                         |
 
 `open()` / `close()` のような**強制状態変更メソッド**は、controlled 契約とは相性が悪いため採りません。公開メソッドは request ベースに寄せます。
 
@@ -284,11 +284,11 @@ interface UiSearchDialogMessages {
 
 契約は次のとおりです。
 
-* `messages` は**部分指定**を許容します
-* 未指定キーはコンポーネント既定文言へフォールバックします
-* `messages` に含まれる各キーは、空文字列を許容しません
-* `dialogLabel`、`closeLabel`、`clearLabel` は、視覚文言だけでなくアクセシビリティ名の供給元にもなります
-* `errorDescription` は、検索器が返した `error.message` をそのまま露出することを必須としません。既定では安全側に要約表示してよく、詳細露出は上位判断とします
+- `messages` は**部分指定**を許容します
+- 未指定キーはコンポーネント既定文言へフォールバックします
+- `messages` に含まれる各キーは、空文字列を許容しません
+- `dialogLabel`、`closeLabel`、`clearLabel` は、視覚文言だけでなくアクセシビリティ名の供給元にもなります
+- `errorDescription` は、検索器が返した `error.message` をそのまま露出することを必須としません。既定では安全側に要約表示してよく、詳細露出は上位判断とします
 
 これにより、差し替え可能性を維持しつつ、公開契約としての文言供給面を固定します。
 
@@ -673,21 +673,21 @@ trim 後 query が空なら検索は行わず、状態は `idle` です。empty 
 
 各 Story は見本ではなく、**観測可能な契約確認点**として扱います。
 
-| Story                             | 固定する契約                                                                 |
-| --------------------------------- | ---------------------------------------------------------------------------- |
-| `ControlledOpenedContract`        | 内部操作だけでは最終開閉状態が確定せず、外部の `opened` 反映で確定すること   |
-| `ControlledQueryContract`         | 入力変更が `ui-search-dialog-query-changed` を経由して外部へ返ること         |
-| `FocusReturnContract`             | close 成立後に trigger へ focus が戻ること                                   |
-| `LoadingStateEditableInput`       | loading 中でも入力継続ができ、旧検索結果を操作対象にしないこと               |
-| `EmptyStateContract`              | 非空 query かつ 0 件で empty を表示すること                                  |
-| `ErrorStateContract`              | search failure を empty と区別し、error UI が表示されること                  |
-| `KeyboardLoopAndEnterSelection`   | Arrow key 循環移動と Enter 選択が成立すること                                |
-| `StableItemIdentityContract`      | 結果更新時に ID 基準で active を維持できること                               |
+| Story                             | 固定する契約                                                                           |
+| --------------------------------- | -------------------------------------------------------------------------------------- |
+| `ControlledOpenedContract`        | 内部操作だけでは最終開閉状態が確定せず、外部の `opened` 反映で確定すること             |
+| `ControlledQueryContract`         | 入力変更が `ui-search-dialog-query-changed` を経由して外部へ返ること                   |
+| `FocusReturnContract`             | close 成立後に trigger へ focus が戻ること                                             |
+| `LoadingStateEditableInput`       | loading 中でも入力継続ができ、旧検索結果を操作対象にしないこと                         |
+| `EmptyStateContract`              | 非空 query かつ 0 件で empty を表示すること                                            |
+| `ErrorStateContract`              | search failure を empty と区別し、error UI が表示されること                            |
+| `KeyboardLoopAndEnterSelection`   | Arrow key 循環移動と Enter 選択が成立すること                                          |
+| `StableItemIdentityContract`      | 結果更新時に ID 基準で active を維持できること                                         |
 | `CloseReasonContract`             | `escape` / `backdrop` / `close-button` / `selection` / `programmatic` を区別できること |
-| `SelectionEventOrderContract`     | 選択時に `selected` → `close-requested` → 外部反映 → `closed` の順になること |
-| `MatchingSemanticsContract`       | 一致対象面とハイライト規則が一致すること                                     |
-| `VirtualizationSemanticsContract` | 仮想化の有無で意味論が変わらず、active option が常にアクセシブルであること   |
-| `DarkModeTokenContract`           | dark token でも視認性が維持されること                                        |
+| `SelectionEventOrderContract`     | 選択時に `selected` → `close-requested` → 外部反映 → `closed` の順になること           |
+| `MatchingSemanticsContract`       | 一致対象面とハイライト規則が一致すること                                               |
+| `VirtualizationSemanticsContract` | 仮想化の有無で意味論が変わらず、active option が常にアクセシブルであること             |
+| `DarkModeTokenContract`           | dark token でも視認性が維持されること                                                  |
 
 ---
 
@@ -726,4 +726,3 @@ trim 後 query が空なら検索は行わず、状態は `idle` です。empty 
 - `path` 未指定時の表示補助は引き続き `url` から導出します。これは convenience であり、`path` の意味論そのものを置き換えるものではありません。
 
 以後も仕様を更新する場合は、実装、Storybook、test を同時に更新し、契約書と実装契約のずれを長期放置しません。
-

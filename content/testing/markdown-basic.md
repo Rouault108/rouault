@@ -9,4 +9,3 @@ status: 'wip'
 ---
 
 ::example-include{ref="markdown-basic/core"}
-

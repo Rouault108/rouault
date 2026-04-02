@@ -736,11 +736,7 @@ export class UiMath extends LitElement {
 
     if (!this.block) return errorBody;
 
-    return html`
-      <div class="math-display" data-scroll="none">
-        ${errorBody}
-      </div>
-    `;
+    return html` <div class="math-display" data-scroll="none">${errorBody}</div> `;
   }
 
   private _renderInline(): TemplateResult {

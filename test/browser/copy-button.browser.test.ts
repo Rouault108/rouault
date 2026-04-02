@@ -236,12 +236,7 @@ describe('ui-copy-button browser contract', () => {
 
   it('disabled 時は clipboard 書き込みも event も発火しないこと', async () => {
     const host = await fixture<CopyButton>(html`
-      <ui-copy-button
-        value="disabled"
-        label="無効"
-        size="sm"
-        ?disabled=${true}
-      ></ui-copy-button>
+      <ui-copy-button value="disabled" label="無効" size="sm" ?disabled=${true}></ui-copy-button>
     `);
 
     await waitForLitUpdate(host);

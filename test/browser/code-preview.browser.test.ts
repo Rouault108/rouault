@@ -180,7 +180,9 @@ describe('ui-code-preview browser contract', () => {
       }
     });
 
-    const initialPreviewToken = getComputedStyle(previewHost).getPropertyValue('--bg-default').trim();
+    const initialPreviewToken = getComputedStyle(previewHost)
+      .getPropertyValue('--bg-default')
+      .trim();
     const initialCodeToken = getComputedStyle(codeBlock).getPropertyValue('--bg-default').trim();
     const initialPreviewAreaBg = getComputedStyle(previewArea).backgroundColor;
     const initialFrameWidth = Number.parseFloat(getComputedStyle(previewFrame).width);
@@ -259,7 +261,9 @@ describe('ui-code-preview browser contract', () => {
     await nextAnimationFrame();
 
     const previewStyle = getComputedStyle(preview);
-    expect(previewStyle.getPropertyValue('--ui-code-surface-breakout-width').trim()).to.equal('100%');
+    expect(previewStyle.getPropertyValue('--ui-code-surface-breakout-width').trim()).to.equal(
+      '100%',
+    );
     expect(previewStyle.getPropertyValue('--ui-code-surface-breakout-margin').trim()).to.equal('0');
     expect(previewStyle.getPropertyValue('--ui-code-surface-radius-top').trim()).to.equal('0');
     expect(previewStyle.getPropertyValue('--ui-code-group-width').trim()).to.equal('100%');
@@ -269,10 +273,7 @@ describe('ui-code-preview browser contract', () => {
       preview.querySelector<CodeBlockLike>('#copy-block'),
       'codeBlock',
     );
-    const codeGroup = expectPresent(
-      preview.querySelector<HTMLElement>('#copy-group'),
-      'codeGroup',
-    );
+    const codeGroup = expectPresent(preview.querySelector<HTMLElement>('#copy-group'), 'codeGroup');
 
     const blockExpected = codeBlock.getCodeContent?.() ?? '';
     const blockCopy = expectPresent(

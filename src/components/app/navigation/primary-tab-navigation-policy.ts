@@ -1,4 +1,7 @@
-import type { UrlStateNavigationDecision, UrlStateNavigationPolicy } from '../../../router/router.js';
+import type {
+  UrlStateNavigationDecision,
+  UrlStateNavigationPolicy,
+} from '../../../router/router.js';
 import { isPrimaryTabOnlyNavigation } from './primary-tab-url-state.js';
 
 export class PrimaryTabNavigationPolicy implements UrlStateNavigationPolicy {

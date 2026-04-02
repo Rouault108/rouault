@@ -5,8 +5,7 @@ export const NOTE_HYDRATION_BUDGET_PROFILE_NAMES = [
   'testing-code-canary',
 ] as const;
 
-export type NoteHydrationBudgetProfileName =
-  (typeof NOTE_HYDRATION_BUDGET_PROFILE_NAMES)[number];
+export type NoteHydrationBudgetProfileName = (typeof NOTE_HYDRATION_BUDGET_PROFILE_NAMES)[number];
 
 export const normalizeNoteHydrationBudgetProfileName = (
   value: unknown,
@@ -16,9 +15,7 @@ export const normalizeNoteHydrationBudgetProfileName = (
   }
 
   const normalized = value.trim();
-  const matched = NOTE_HYDRATION_BUDGET_PROFILE_NAMES.find(
-    (candidate) => candidate === normalized,
-  );
+  const matched = NOTE_HYDRATION_BUDGET_PROFILE_NAMES.find((candidate) => candidate === normalized);
 
   return matched;
 };

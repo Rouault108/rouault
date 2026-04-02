@@ -418,7 +418,9 @@ export class ListItem extends LitElement {
     if (this.currentColumnId === null) return;
     const exists = this._columns.some((column) => column.id === this.currentColumnId);
     if (!exists) {
-      this._warn(`[ui-list-item] currentColumnId が columns.id に存在しません: ${this.currentColumnId}`);
+      this._warn(
+        `[ui-list-item] currentColumnId が columns.id に存在しません: ${this.currentColumnId}`,
+      );
     }
   }
 
@@ -576,7 +578,11 @@ export class ListItem extends LitElement {
       ${visibleColumns.map((column, index) => this._renderDataCell(column, index + 1))}
       ${this._renderActionsCell
         ? html`
-            <div role="gridcell" class="cell cell--actions" aria-colindex="${String(visibleColumns.length + 1)}">
+            <div
+              role="gridcell"
+              class="cell cell--actions"
+              aria-colindex="${String(visibleColumns.length + 1)}"
+            >
               <div class="actions">
                 <slot name="${ACTIONS_SLOT_NAME}"></slot>
               </div>

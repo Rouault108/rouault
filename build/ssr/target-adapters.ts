@@ -38,21 +38,14 @@ import {
 } from '../../src/components/ui/article-header/article-header-tags-adapter.js';
 import { createRouterContentHtml } from '../../src/router/router-content-html.js';
 
-import {
-  getAttributeValue,
-  serializeAttributes,
-  type SsrAttribute,
-} from './attributes.js';
+import { getAttributeValue, serializeAttributes, type SsrAttribute } from './attributes.js';
 import {
   getSsrComponentDefinition,
   SSR_COMPONENT_DEFINITIONS,
   type SsrComponentDefinition,
   type SsrDocumentStyleDefinition,
 } from './target-definitions.js';
-import {
-  type SsrShadowTargetTag,
-  type SsrTargetTag,
-} from './targets.js';
+import { type SsrShadowTargetTag, type SsrTargetTag } from './targets.js';
 
 const ARTICLE_HEADER_BRIDGED_ATTRIBUTE_NAMES = new Set([
   'heading',
@@ -68,10 +61,7 @@ const ARTICLE_HEADER_BRIDGED_ATTRIBUTE_NAMES = new Set([
 interface SsrTargetAdapter {
   readonly tag: SsrTargetTag;
   readonly documentStyle?: SsrDocumentStyleDefinition;
-  readonly render: (
-    attributes: readonly SsrAttribute[],
-    innerHtml: string,
-  ) => Promise<string>;
+  readonly render: (attributes: readonly SsrAttribute[], innerHtml: string) => Promise<string>;
 }
 
 const renderTemplateResult = async (template: TemplateResult): Promise<string> =>

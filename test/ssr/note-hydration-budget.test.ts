@@ -64,7 +64,9 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
   const contentHtml = note.content ?? '';
   const hasHeadings = /<h[2-6]\b/i.test(contentHtml);
   const genres = Array.isArray(note.genre)
-    ? note.genre.filter((genre): genre is string => typeof genre === 'string' && genre.trim().length > 0)
+    ? note.genre.filter(
+        (genre): genre is string => typeof genre === 'string' && genre.trim().length > 0,
+      )
     : [];
   const showSidebar = note.kind === 'reader';
   const dataId = slugToId(note.slug);
@@ -79,7 +81,9 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
           sidebar: {
             sourceId: `sidebar-source-${dataId}`,
             selectedId: note.slug,
-            items: [{ kind: 'leaf', id: note.slug, label: note.title, href: `/notes/${note.slug}` }],
+            items: [
+              { kind: 'leaf', id: note.slug, label: note.title, href: `/notes/${note.slug}` },
+            ],
             heading: 'ナビゲーション',
             fixedBreakpoint: '768',
           },
@@ -104,17 +108,18 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
       genres,
       shouldHydrateTags: genres.length > 0,
     },
-    pagefind: note.kind === 'reader'
-      ? {
-          sortDate: typeof note.date === 'string' ? note.date.slice(0, 10) : '0000-00-00',
-          title: note.title,
-          tokenizedTitle: '',
-          description: typeof note.description === 'string' ? note.description : '',
-          tokenizedDescription: '',
-          date: typeof note.date === 'string' ? note.date.slice(0, 10) : '',
-          tags: genres,
-        }
-      : null,
+    pagefind:
+      note.kind === 'reader'
+        ? {
+            sortDate: typeof note.date === 'string' ? note.date.slice(0, 10) : '0000-00-00',
+            title: note.title,
+            tokenizedTitle: '',
+            description: typeof note.description === 'string' ? note.description : '',
+            tokenizedDescription: '',
+            date: typeof note.date === 'string' ? note.date.slice(0, 10) : '',
+            tags: genres,
+          }
+        : null,
   };
 };
 

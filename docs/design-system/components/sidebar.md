@@ -118,19 +118,19 @@
 
 ### 既定値
 
-| 名前              | 既定値                         |
-| ----------------- | ------------------------------ |
-| `state`           | `expanded`                     |
-| `mode`            | `auto`                         |
-| `items`           | `[]`                           |
-| `loading`         | `false`                        |
-| `density`         | `normal`                       |
-| `variant`         | `default`                      |
-| `label`           | `サイドバー ナビゲーション`    |
-| `heading`         | `目次`                         |
-| `headingLevel`    | `2`                            |
-| `fixedBreakpoint` | `1280`                         |
-| `closable`        | `true`                         |
+| 名前              | 既定値                      |
+| ----------------- | --------------------------- |
+| `state`           | `expanded`                  |
+| `mode`            | `auto`                      |
+| `items`           | `[]`                        |
+| `loading`         | `false`                     |
+| `density`         | `normal`                    |
+| `variant`         | `default`                   |
+| `label`           | `サイドバー ナビゲーション` |
+| `heading`         | `目次`                      |
+| `headingLevel`    | `2`                         |
+| `fixedBreakpoint` | `1280`                      |
+| `closable`        | `true`                      |
 
 `label` と `heading` の既定値は便宜上のフォールバックです。アプリケーション統合では、ページ内の他 landmark や見出しとの重複を避けるため、文脈に応じた値を明示指定することを推奨します。
 
@@ -187,13 +187,13 @@ close 操作は slot へ委ねず、`closable` により標準導線を提供し
 
 ### 公開メソッド
 
-| 名前               | 契約                                                         |
-| ------------------ | ------------------------------------------------------------ |
-| `expand(trigger?)` | `state` を `expanded` に設定します                           |
-| `collapse()`       | `state` を `collapsed` に設定します                          |
-| `toggle(trigger?)` | 現在の `state` を反転します                                  |
-| `focusSelected()`  | 現在の `selectedId` に対応する項目へフォーカスを移動します   |
-| `focusFirstItem()` | 現在表示中の tree における先頭項目へフォーカスを移動します   |
+| 名前               | 契約                                                       |
+| ------------------ | ---------------------------------------------------------- |
+| `expand(trigger?)` | `state` を `expanded` に設定します                         |
+| `collapse()`       | `state` を `collapsed` に設定します                        |
+| `toggle(trigger?)` | 現在の `state` を反転します                                |
+| `focusSelected()`  | 現在の `selectedId` に対応する項目へフォーカスを移動します |
+| `focusFirstItem()` | 現在表示中の tree における先頭項目へフォーカスを移動します |
 
 公開メソッドは **imperative API** です。呼び出しにより対象状態が実際に変化する場合、対応する公開 property を同期更新し、その後に対応イベントを dispatch します。
 
@@ -207,14 +207,14 @@ close 操作は slot へ委ねず、`closable` により標準導線を提供し
 
 ### 公開イベント
 
-| 名前                       | detail                           | bubbles | composed | 契約                               |
-| -------------------------- | -------------------------------- | ------- | -------- | ---------------------------------- |
-| `ui-sidebar-state-change`  | `{ state }`                      | `true`  | `true`   | 開閉状態の変化通知                 |
-| `ui-sidebar-mode-change`   | `{ effectiveMode }`              | `true`  | `true`   | 実効モードの変化通知               |
-| `ui-sidebar-select`        | `{ id }`                         | `true`  | `true`   | 項目選択通知                       |
-| `ui-sidebar-expand`        | `{ id, expanded }`               | `true`  | `true`   | 項目展開変更通知                   |
-| `ui-sidebar-focus-change`  | `{ id }`                         | `true`  | `true`   | ツリー内フォーカス移動通知         |
-| `ui-sidebar-request-close` | `{ reason }`                     | `true`  | `true`   | 利用者操作による close 要求        |
+| 名前                       | detail              | bubbles | composed | 契約                        |
+| -------------------------- | ------------------- | ------- | -------- | --------------------------- |
+| `ui-sidebar-state-change`  | `{ state }`         | `true`  | `true`   | 開閉状態の変化通知          |
+| `ui-sidebar-mode-change`   | `{ effectiveMode }` | `true`  | `true`   | 実効モードの変化通知        |
+| `ui-sidebar-select`        | `{ id }`            | `true`  | `true`   | 項目選択通知                |
+| `ui-sidebar-expand`        | `{ id, expanded }`  | `true`  | `true`   | 項目展開変更通知            |
+| `ui-sidebar-focus-change`  | `{ id }`            | `true`  | `true`   | ツリー内フォーカス移動通知  |
+| `ui-sidebar-request-close` | `{ reason }`        | `true`  | `true`   | 利用者操作による close 要求 |
 
 ### イベント発火順序契約
 

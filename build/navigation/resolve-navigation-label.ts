@@ -43,10 +43,7 @@ export const buildDirectoryLabelMap = (
     }
 
     const title = toTrimmedString(note.title);
-    map.set(
-      directoryPath,
-      title.length > 0 ? title : fallbackDirectoryLabel(directoryPath),
-    );
+    map.set(directoryPath, title.length > 0 ? title : fallbackDirectoryLabel(directoryPath));
   }
 
   return map;

@@ -5,11 +5,7 @@ import type {
   UiPopoverOpenChangeDetail,
   UiPopoverOpenChangeRequestDetail,
 } from '../../src/components/ui/popover/popover.js';
-import {
-  dispatchKey,
-  nextAnimationFrame,
-  waitForLitUpdate,
-} from './helpers/wait-for-lit.js';
+import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const supportsPopoverApi = (): boolean =>
   typeof HTMLElement !== 'undefined' &&
@@ -162,10 +158,7 @@ describe('ui-popover browser contract', () => {
 
     const trigger = expectPresent(getTrigger(host), 'trigger');
     const content = expectPresent(getContent(host), 'content');
-    const outside = expectPresent(
-      wrapper.querySelector<HTMLButtonElement>('#outside'),
-      'outside',
-    );
+    const outside = expectPresent(wrapper.querySelector<HTMLButtonElement>('#outside'), 'outside');
 
     const requests: UiPopoverOpenChangeRequestDetail[] = [];
     const changes: UiPopoverOpenChangeDetail[] = [];
@@ -186,7 +179,10 @@ describe('ui-popover browser contract', () => {
     expect(trigger.getAttribute('aria-expanded')).to.equal('true');
     expect(content.dataset['open']).to.equal('true');
 
-    const closeByTrigger = waitForCustomEvent<UiPopoverOpenChangeDetail>(host, 'ui-popover-open-change');
+    const closeByTrigger = waitForCustomEvent<UiPopoverOpenChangeDetail>(
+      host,
+      'ui-popover-open-change',
+    );
     clickPrimary(trigger);
     const triggerChange = await closeByTrigger;
     await nextAnimationFrame();
@@ -202,7 +198,10 @@ describe('ui-popover browser contract', () => {
     await reopen;
     await nextAnimationFrame();
 
-    const closeByEscape = waitForCustomEvent<UiPopoverOpenChangeDetail>(host, 'ui-popover-open-change');
+    const closeByEscape = waitForCustomEvent<UiPopoverOpenChangeDetail>(
+      host,
+      'ui-popover-open-change',
+    );
     dispatchKey(content, 'Escape');
     const escapeChange = await closeByEscape;
     await nextAnimationFrame();
@@ -216,7 +215,10 @@ describe('ui-popover browser contract', () => {
     await reopen2;
     await nextAnimationFrame();
 
-    const closeByOutside = waitForCustomEvent<UiPopoverOpenChangeDetail>(host, 'ui-popover-open-change');
+    const closeByOutside = waitForCustomEvent<UiPopoverOpenChangeDetail>(
+      host,
+      'ui-popover-open-change',
+    );
     outside.dispatchEvent(
       new PointerEvent('pointerdown', {
         bubbles: true,

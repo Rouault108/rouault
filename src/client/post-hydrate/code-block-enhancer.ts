@@ -14,7 +14,8 @@ interface CopyButtonElement extends HTMLElement {
   value: string;
 }
 
-const isOwnedByCodeGroup = (pre: HTMLElement): boolean => pre.closest('section[data-code-group]') !== null;
+const isOwnedByCodeGroup = (pre: HTMLElement): boolean =>
+  pre.closest('section[data-code-group]') !== null;
 
 const syncCopyButton = (button: CopyButtonElement, pre: HTMLElement): void => {
   button.size = 'sm';

@@ -46,7 +46,8 @@ function issueSeverity(code: SearchDiagnosticIssueCode): SearchDiagnosticSeverit
 }
 
 function compareIssues(left: SearchDiagnosticIssue, right: SearchDiagnosticIssue): number {
-  const severityOrder = SEVERITY_ORDER.indexOf(left.severity) - SEVERITY_ORDER.indexOf(right.severity);
+  const severityOrder =
+    SEVERITY_ORDER.indexOf(left.severity) - SEVERITY_ORDER.indexOf(right.severity);
   if (severityOrder !== 0) {
     return severityOrder;
   }
@@ -136,7 +137,12 @@ export function finalizeDiagnostics(
   const issues = [...diagnostics.issues].sort(compareIssues).slice(0, 100);
   const degraded =
     diagnostics.failures.length > 0 ||
-    issues.some((issue) => issue.code === 'source-degraded' && issue.source !== undefined && activeSources.includes(issue.source));
+    issues.some(
+      (issue) =>
+        issue.code === 'source-degraded' &&
+        issue.source !== undefined &&
+        activeSources.includes(issue.source),
+    );
 
   return {
     degraded,

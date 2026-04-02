@@ -30,11 +30,7 @@ export const Default: Story = {
   tags: ['smoke'],
   render: () => html`
     <div style="max-width: 32rem;">
-      <ui-search-field
-        label="検索"
-        hide-label
-        placeholder="メモを検索"
-      ></ui-search-field>
+      <ui-search-field label="検索" hide-label placeholder="メモを検索"></ui-search-field>
     </div>
   `,
 };
@@ -53,7 +49,8 @@ export const ClearableReference: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'clear button が表示される状態の docs story です。clear の合否は browser test を正本とします。',
+        story:
+          'clear button が表示される状態の docs story です。clear の合否は browser test を正本とします。',
       },
     },
   },
@@ -95,18 +92,8 @@ export const ComboboxReference: Story = {
 export const ReadonlyAndDisabled: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem; max-width: 32rem;">
-      <ui-search-field
-        label="検索"
-        hide-label
-        value="router"
-        readonly
-      ></ui-search-field>
-      <ui-search-field
-        label="検索"
-        hide-label
-        value="router"
-        disabled
-      ></ui-search-field>
+      <ui-search-field label="検索" hide-label value="router" readonly></ui-search-field>
+      <ui-search-field label="検索" hide-label value="router" disabled></ui-search-field>
     </div>
   `,
 };
@@ -115,22 +102,9 @@ export const ManualObservation: Story = {
   tags: ['manual-only'],
   render: () => html`
     <div style="display: grid; gap: 1rem; max-width: 32rem;">
-      <ui-search-field
-        label="検索"
-        hide-label
-        placeholder="メモを検索"
-      ></ui-search-field>
-      <ui-search-field
-        label="検索"
-        hide-label
-        value="router"
-      ></ui-search-field>
-      <ui-search-field
-        label="検索"
-        hide-label
-        value="readonly"
-        readonly
-      ></ui-search-field>
+      <ui-search-field label="検索" hide-label placeholder="メモを検索"></ui-search-field>
+      <ui-search-field label="検索" hide-label value="router"></ui-search-field>
+      <ui-search-field label="検索" hide-label value="readonly" readonly></ui-search-field>
     </div>
   `,
   parameters: {

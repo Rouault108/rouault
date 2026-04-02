@@ -427,9 +427,11 @@ export class List extends LitElement {
     const slot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[data-list-rows]');
     if (!slot) return;
 
-    const rows = slot.assignedElements({ flatten: true }).filter((element): element is UiListItemLike => {
-      return element instanceof HTMLElement && element.tagName.toLowerCase() === 'ui-list-item';
-    });
+    const rows = slot
+      .assignedElements({ flatten: true })
+      .filter((element): element is UiListItemLike => {
+        return element instanceof HTMLElement && element.tagName.toLowerCase() === 'ui-list-item';
+      });
     this._rowElements = rows;
   }
 
@@ -644,7 +646,10 @@ export class List extends LitElement {
       }
       case 'End': {
         event.preventDefault();
-        this._requestCurrentChangeForRow(this._rowElements[this._rowElements.length - 1] ?? row, columnId);
+        this._requestCurrentChangeForRow(
+          this._rowElements[this._rowElements.length - 1] ?? row,
+          columnId,
+        );
         break;
       }
       case 'PageDown': {
@@ -768,14 +773,17 @@ export class List extends LitElement {
     const currentPage =
       pagination === null ? 1 : Math.floor(pagination.offset / Math.max(1, pagination.limit)) + 1;
     const totalPages =
-      pagination === null ? 1 : Math.max(1, Math.ceil(pagination.total / Math.max(1, pagination.limit)));
+      pagination === null
+        ? 1
+        : Math.max(1, Math.ceil(pagination.total / Math.max(1, pagination.limit)));
 
     return html`
       <section aria-label="${ifDefined(this.ariaLabel ?? undefined)}">
         <div
           role="grid"
           class="grid"
-          style="grid-template-columns: ${this._gridTemplateColumns}; --_gtc: ${this._gridTemplateColumns};"
+          style="grid-template-columns: ${this._gridTemplateColumns}; --_gtc: ${this
+            ._gridTemplateColumns};"
           aria-colcount="${String(logicalColCount)}"
           aria-rowcount="${ifDefined(pagination !== null ? String(pagination.total) : undefined)}"
           aria-label="${ifDefined(this.ariaLabel ?? undefined)}"
@@ -786,7 +794,8 @@ export class List extends LitElement {
             <div role="row" class="header-row">
               ${map(visibleColumns, (column, visibleIndex) => {
                 const ariaSort = this._getAriaSort(column);
-                const logicalColIndex = this.columns.findIndex((candidate) => candidate.id === column.id) + 1;
+                const logicalColIndex =
+                  this.columns.findIndex((candidate) => candidate.id === column.id) + 1;
 
                 return html`
                   <div
@@ -794,7 +803,8 @@ export class List extends LitElement {
                     class="${classMap({
                       'header-cell': true,
                       'header-cell--sortable': Boolean(column.sortable),
-                      'header-cell--sorted': Boolean(column.sortable) &&
+                      'header-cell--sorted':
+                        Boolean(column.sortable) &&
                         currentSort.key === (column.sortKey ?? column.id),
                     })}"
                     aria-colindex="${String(logicalColIndex || visibleIndex + 1)}"
@@ -816,7 +826,6 @@ export class List extends LitElement {
                   </div>
                 `;
               })}
-
               ${this.showActions
                 ? html`
                     <div
@@ -851,7 +860,9 @@ export class List extends LitElement {
           : nothing}
         ${shouldShowPagination
           ? html`
-              <div style="margin-top: var(--space-3, 12px); display: flex; justify-content: center;">
+              <div
+                style="margin-top: var(--space-3, 12px); display: flex; justify-content: center;"
+              >
                 <ui-pagination
                   .current="${currentPage}"
                   .total="${totalPages}"

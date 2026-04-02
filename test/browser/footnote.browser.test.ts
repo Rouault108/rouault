@@ -3,11 +3,7 @@ import '../../src/components/ui/footnote/footnote.js';
 import '../../src/components/ui/popover/popover.js';
 import type { Footnote } from '../../src/components/ui/footnote/footnote.js';
 import type { UiPopover } from '../../src/components/ui/popover/popover.js';
-import {
-  dispatchKey,
-  nextAnimationFrame,
-  waitForLitUpdate,
-} from './helpers/wait-for-lit.js';
+import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const supportsPopoverApi = (): boolean =>
   typeof HTMLElement !== 'undefined' &&
@@ -92,9 +88,7 @@ describe('ui-footnote browser contract', () => {
       'footerLink',
     );
     const backlink = expectPresent(
-      wrapper.querySelector<HTMLAnchorElement>(
-        'section.footnotes a[data-footnote-backref]',
-      ),
+      wrapper.querySelector<HTMLAnchorElement>('section.footnotes a[data-footnote-backref]'),
       'backlink',
     );
 
@@ -329,7 +323,9 @@ describe('ui-footnote browser contract', () => {
     expect(trigger.textContent?.trim()).to.equal('[1]');
     expect(body.textContent?.includes('SSR で埋め込まれた脚注本文。')).to.equal(true);
     expect(
-      body.querySelector('[data-part="trigger"], [data-part="content"], [data-part="popover-host"]'),
+      body.querySelector(
+        '[data-part="trigger"], [data-part="content"], [data-part="popover-host"]',
+      ),
     ).to.equal(null);
     expect(body.querySelector('.footnote-list-link, .footnote-popover-footer')).to.equal(null);
 

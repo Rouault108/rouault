@@ -133,10 +133,10 @@ const ensureHeadingPermalink = (node: HastNode, id: string, text: string): void 
         'data-heading-permalink': 'true',
       },
       [
-      createElement('ui-icon', {
+        createElement('ui-icon', {
           icon: 'link',
           'aria-hidden': 'true',
-        })
+        }),
       ],
     ),
   );

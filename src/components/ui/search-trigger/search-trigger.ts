@@ -269,7 +269,9 @@ export class SearchTrigger extends LitElement {
         <span class="icon" part="icon" aria-hidden="true">
           <ui-icon name="search" aria-hidden="true"></ui-icon>
         </span>
-        <span class="placeholder" part="placeholder" aria-hidden="true">${this._normalizedPlaceholder}</span>
+        <span class="placeholder" part="placeholder" aria-hidden="true"
+          >${this._normalizedPlaceholder}</span
+        >
       </button>
     `;
   }

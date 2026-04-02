@@ -593,12 +593,12 @@ History API の直接操作、URL からの状態復元、状態からの URL �
 
 `location-adapter.ts` の役割は、次のとおりです。
 
-| 関数                  | 役割                                                      |
-| --------------------- | --------------------------------------------------------- |
-| `normalizeUrl()`      | 比較・履歴更新向け **navigation URL** を作る              |
-| `normalizePathname()` | `/search` を正規化し、`/tags/<tag>/` は保持する           |
+| 関数                  | 役割                                                           |
+| --------------------- | -------------------------------------------------------------- |
+| `normalizeUrl()`      | 比較・履歴更新向け **navigation URL** を作る                   |
+| `normalizePathname()` | `/search` を正規化し、`/tags/<tag>/` は保持する                |
 | `resolveContentUrl()` | 取得直前のみ **fetch target URL** として trailing slash を補う |
-| `stripHash()`         | path + search 単位で比較する                              |
+| `stripHash()`         | path + search 単位で比較する                                   |
 
 ここでいう `navigation URL` と `fetch target URL` は、`router-specification.md` の用語定義に従います。
 

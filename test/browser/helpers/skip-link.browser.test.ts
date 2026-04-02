@@ -58,10 +58,7 @@ describe('ui-skip-link browser contract', () => {
       skipLink.shadowRoot?.querySelector<HTMLAnchorElement>('a'),
       'shadow DOM 内の anchor が見つかりません',
     );
-    const target = must(
-      mount.querySelector<HTMLElement>('#content'),
-      '#content が見つかりません',
-    );
+    const target = must(mount.querySelector<HTMLElement>('#content'), '#content が見つかりません');
 
     anchor.click();
     await Promise.resolve();

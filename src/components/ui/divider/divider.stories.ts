@@ -1,10 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './divider';
-import {
-  type Divider,
-  type DividerVariant,
-} from './divider';
+import { type Divider, type DividerVariant } from './divider';
 
 const VARIANTS = ['section', 'layout'] as const satisfies DividerVariant[];
 

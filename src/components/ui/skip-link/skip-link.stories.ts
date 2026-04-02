@@ -151,7 +151,8 @@ export const CustomTarget: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'href と label を変えた利用例です。属性反映そのものの合否は browser test 側で判定します。',
+        story:
+          'href と label を変えた利用例です。属性反映そのものの合否は browser test 側で判定します。',
       },
     },
   },

@@ -56,7 +56,7 @@ blockquote の責務は、**引用本文を意味的に表現すること**で�
 <blockquote>
   <p>引用本文</p>
 </blockquote>
-````
+```
 
 出典ありの正規形は次です。
 
@@ -73,21 +73,21 @@ blockquote の責務は、**引用本文を意味的に表現すること**で�
 
 ### 入力契約
 
-| 名前                         | 種別            | 必須  | 内容         | 契約                                               |
-| -------------------------- | ------------- | --- | ---------- | ------------------------------------------------ |
-| `source`                   | build-time 入力 | いいえ | プレーンテキスト出典 | 出典がある場合に `figcaption > cite` を構成してよい             |
-| `slot="source"` 相当         | 互換入力          | いいえ | リッチ出典内容    | 可視出典として優先してよい                                    |
-| `cite`                     | build-time 入力 | いいえ | 引用元 URL    | 非空なら `blockquote[cite]` に正規化してよい                 |
-| `quote-lang` / `quoteLang` | build-time 入力 | いいえ | 引用本文の言語    | 非空なら `blockquote[lang]` に正規化してよい                 |
-| `variant`                  | build-time 入力 | いいえ | 表示バリアント    | `default` 以外なら `data-blockquote-variant` を付与してよい |
+| 名前                       | 種別            | 必須   | 内容                 | 契約                                                        |
+| -------------------------- | --------------- | ------ | -------------------- | ----------------------------------------------------------- |
+| `source`                   | build-time 入力 | いいえ | プレーンテキスト出典 | 出典がある場合に `figcaption > cite` を構成してよい         |
+| `slot="source"` 相当       | 互換入力        | いいえ | リッチ出典内容       | 可視出典として優先してよい                                  |
+| `cite`                     | build-time 入力 | いいえ | 引用元 URL           | 非空なら `blockquote[cite]` に正規化してよい                |
+| `quote-lang` / `quoteLang` | build-time 入力 | いいえ | 引用本文の言語       | 非空なら `blockquote[lang]` に正規化してよい                |
+| `variant`                  | build-time 入力 | いいえ | 表示バリアント       | `default` 以外なら `data-blockquote-variant` を付与してよい |
 
 ### 構造契約
 
-* 出典がない場合、最終 DOM は `blockquote` です。
-* 出典がある場合、最終 DOM は `figure > blockquote + figcaption > cite` です。
-* 引用本文は常に `blockquote` 内に保持しなければなりません。
-* 出典は引用本文の補助情報として `figcaption` 側へ置きます。
-* note 本文の最終 DOM に `ui-blockquote` を残してはなりません。
+- 出典がない場合、最終 DOM は `blockquote` です。
+- 出典がある場合、最終 DOM は `figure > blockquote + figcaption > cite` です。
+- 引用本文は常に `blockquote` 内に保持しなければなりません。
+- 出典は引用本文の補助情報として `figcaption` 側へ置きます。
+- note 本文の最終 DOM に `ui-blockquote` を残してはなりません。
 
 ---
 
@@ -95,10 +95,10 @@ blockquote の責務は、**引用本文を意味的に表現すること**で�
 
 ### Accessibility 契約
 
-* 引用本文の主体は常にネイティブ `blockquote` です。
-* 出典は `figcaption` / `cite` により補助情報として表現します。
-* 追加の interactive role は持ちません。
-* 引用言語が分かる場合は `blockquote[lang]` を付与してよいものとします。
+- 引用本文の主体は常にネイティブ `blockquote` です。
+- 出典は `figcaption` / `cite` により補助情報として表現します。
+- 追加の interactive role は持ちません。
+- 引用言語が分かる場合は `blockquote[lang]` を付与してよいものとします。
 
 ---
 
@@ -108,10 +108,10 @@ blockquote は本文から静かに分離される必要があります。
 
 視覚契約は次のとおりです。
 
-* 本文と区別できるが、callout ほど強くは主張しない
-* 出典は引用本文より従属的に見えること
-* `nested` 等の差分があっても、意味論は変えないこと
-* 装飾は引用内容の可読性を優先すること
+- 本文と区別できるが、callout ほど強くは主張しない
+- 出典は引用本文より従属的に見えること
+- `nested` 等の差分があっても、意味論は変えないこと
+- 装飾は引用内容の可読性を優先すること
 
 ---
 
@@ -120,6 +120,6 @@ blockquote は本文から静かに分離される必要があります。
 `ui-blockquote` は互換入力として受理してよいですが、note 本文の最終 DOM では採用しません。
 本文では、次を固定します。
 
-* `ui-blockquote` を `blockquote` または `figure > blockquote + figcaption` へ正規化する
-* prose CSS は静的要素を対象にする
-* note hydration では blockquote を数えない
+- `ui-blockquote` を `blockquote` または `figure > blockquote + figcaption` へ正規化する
+- prose CSS は静的要素を対象にする
+- note hydration では blockquote を数えない

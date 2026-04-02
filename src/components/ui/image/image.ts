@@ -33,7 +33,8 @@ const zoomableAttributeConverter = {
 };
 
 const mediaSourcesAttributeConverter = {
-  fromAttribute: (value: string | null): MediaSourceDescriptor[] => parseMediaSourcesAttribute(value),
+  fromAttribute: (value: string | null): MediaSourceDescriptor[] =>
+    parseMediaSourcesAttribute(value),
   toAttribute: (value: MediaSourceDescriptor[]): string | null =>
     value.length > 0 ? serializeMediaSources(value) : null,
 };
@@ -450,7 +451,9 @@ export class UiImage extends LitElement {
   }
 
   private get _resolvedSources(): MediaSourceDescriptor[] {
-    return this.sources.filter((entry) => entry.type.trim().length > 0 && entry.srcset.trim().length > 0);
+    return this.sources.filter(
+      (entry) => entry.type.trim().length > 0 && entry.srcset.trim().length > 0,
+    );
   }
 
   private get _resolvedCaption(): string {
@@ -532,7 +535,9 @@ export class UiImage extends LitElement {
     const declarations: string[] = [];
 
     if (this._hasAspectRatio) {
-      declarations.push(`aspect-ratio: ${String(this._resolvedWidth)} / ${String(this._resolvedHeight)};`);
+      declarations.push(
+        `aspect-ratio: ${String(this._resolvedWidth)} / ${String(this._resolvedHeight)};`,
+      );
     }
 
     if (this._isBusy || this._isErrorState || this._isEmptyState) {
@@ -666,7 +671,8 @@ export class UiImage extends LitElement {
       }
 
       const activeElement = this.shadowRoot?.activeElement;
-      const currentIndex = activeElement instanceof HTMLElement ? focusables.indexOf(activeElement) : -1;
+      const currentIndex =
+        activeElement instanceof HTMLElement ? focusables.indexOf(activeElement) : -1;
 
       if (currentIndex === -1) {
         const fallbackTarget = event.shiftKey ? focusables.at(-1) : focusables[0];
@@ -712,7 +718,9 @@ export class UiImage extends LitElement {
           aria-describedby="${ifDefined(describedBy)}"
           loading="${loading}"
           decoding="async"
-          width="${ifDefined(this._resolvedWidth !== null ? String(this._resolvedWidth) : undefined)}"
+          width="${ifDefined(
+            this._resolvedWidth !== null ? String(this._resolvedWidth) : undefined,
+          )}"
           height="${ifDefined(
             this._resolvedHeight !== null ? String(this._resolvedHeight) : undefined,
           )}"
@@ -837,11 +845,7 @@ export class UiImage extends LitElement {
                 ${this._renderMediaSurface(undefined)}
               </button>
             `
-          : html`
-              <div class="static-frame">
-                ${this._renderMediaSurface(this._captionRef)}
-              </div>
-            `}
+          : html` <div class="static-frame">${this._renderMediaSurface(this._captionRef)}</div> `}
         ${caption === ''
           ? nothing
           : html` <figcaption id="${this._captionId}" class="caption">${caption}</figcaption> `}

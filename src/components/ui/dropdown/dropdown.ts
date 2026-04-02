@@ -586,9 +586,9 @@ export class Dropdown extends LitElement {
     const searchOrder =
       currentIndex >= 0
         ? [
-          ...enabledItems.filter((item) => items.indexOf(item) > currentIndex),
-          ...enabledItems.filter((item) => items.indexOf(item) <= currentIndex),
-        ]
+            ...enabledItems.filter((item) => items.indexOf(item) > currentIndex),
+            ...enabledItems.filter((item) => items.indexOf(item) <= currentIndex),
+          ]
         : enabledItems;
 
     const match = searchOrder.find((item) =>

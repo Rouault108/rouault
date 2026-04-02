@@ -104,9 +104,7 @@ light DOM structure / style injection の合否は browser test 側へ移して�
       <ui-syntax-field name="query" type="string" required default="''">
         検索クエリ文字列。
       </ui-syntax-field>
-      <ui-syntax-field name="limit" type="number" default="20">
-        最大件数。
-      </ui-syntax-field>
+      <ui-syntax-field name="limit" type="number" default="20"> 最大件数。 </ui-syntax-field>
       <ui-syntax-field name="highlight" type="boolean">ハイライト表示の有効化。</ui-syntax-field>
     </dl>
   `,

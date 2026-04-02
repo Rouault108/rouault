@@ -52,4 +52,3 @@ x:subscript[2]
 x:superscript[2]
 
 [^serene]: 読書面での最小構成を確認するための脚注です。
-

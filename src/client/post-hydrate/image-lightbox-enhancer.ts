@@ -137,9 +137,11 @@ const enhanceFigure = (figure: HTMLElement): void => {
     returnFocusTo = null;
   });
 
-  dialog.querySelector<HTMLButtonElement>('[data-image-lightbox-close]')?.addEventListener('click', () => {
-    closeDialog();
-  });
+  dialog
+    .querySelector<HTMLButtonElement>('[data-image-lightbox-close]')
+    ?.addEventListener('click', () => {
+      closeDialog();
+    });
 
   figure.dataset['imageEnhanced'] = 'true';
 };

@@ -91,7 +91,8 @@ export const StateMatrix: Story = {
   parameters: {
     docs: {
       description: {
-        story: '主要状態の見本です。checked / disabled の意味論的合否は browser test を正本とします。',
+        story:
+          '主要状態の見本です。checked / disabled の意味論的合否は browser test を正本とします。',
       },
     },
   },

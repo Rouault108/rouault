@@ -76,35 +76,40 @@ Rouault では、見た目だけでなく、将来の修正容易性も重要視
 Rouault の設計では、次の原則を重視しています。
 
 ### 読書体験を優先する
+
 操作の派手さよりも、本文に集中できることを優先します。
 
 ### 予測可能であること
+
 UI の振る舞いは一貫して理解できるべきであり、意外性よりも安定性を重視します。
 
 ### アクセシビリティを損なわないこと
+
 キーボード操作、見出し構造、コントラスト、ランドマークなど、基本的なアクセシビリティ要件を保ちます。
 
 ### Markdown を中心に据えること
+
 コンテンツは長期的に扱えるプレーンな資産として保持し、表示側の都合で本文資産を壊さない方針を取ります。
 
 ### 長期保守性を優先すること
+
 暫定的な実装を積み重ねるのではなく、責務境界を明確にし、拡張時に破綻しにくい構成を目指します。
 
 ---
 
 ## 技術スタック
 
-| 区分 | 採用技術 |
-| --- | --- |
-| SSG | Eleventy |
-| UI | Lit |
-| 言語 | TypeScript |
-| コンテンツ | Markdown / Velite |
-| 検索 | Pagefind |
-| コードハイライト | Shiki |
-| アイコン | Iconify / Lucide |
-| テスト | Web Test Runner / Vitest / Storybook / Playwright |
-| Lint / Format | ESLint / Prettier |
+| 区分             | 採用技術                                          |
+| ---------------- | ------------------------------------------------- |
+| SSG              | Eleventy                                          |
+| UI               | Lit                                               |
+| 言語             | TypeScript                                        |
+| コンテンツ       | Markdown / Velite                                 |
+| 検索             | Pagefind                                          |
+| コードハイライト | Shiki                                             |
+| アイコン         | Iconify / Lucide                                  |
+| テスト           | Web Test Runner / Vitest / Storybook / Playwright |
+| Lint / Format    | ESLint / Prettier                                 |
 
 ---
 
@@ -190,23 +195,23 @@ pnpm lint:fix           # ESLint + Prettier による整形
 
 現時点の Rouault では、主に次の領域を実装・整備しています。
 
-* Eleventy を基盤とした静的サイト生成
-* Lit コンポーネントによる UI 構築
-* 検索機能の統合
-* SSR / hydration 経路の整備
-* Markdown 表示基盤の整備
-* デザインシステム文書化
-* browser / node / SSR / Storybook のテスト分離
-* router / search / markdown まわりの責務整理
+- Eleventy を基盤とした静的サイト生成
+- Lit コンポーネントによる UI 構築
+- 検索機能の統合
+- SSR / hydration 経路の整備
+- Markdown 表示基盤の整備
+- デザインシステム文書化
+- browser / node / SSR / Storybook のテスト分離
+- router / search / markdown まわりの責務整理
 
 一方で、次のような領域は継続的に整理・拡張中です。
 
-* Markdown 変換系の契約整理
-* 対訳表示の仕様明確化
-* 特殊コンテンツ表現の責務分離
-* UI コンポーネント群の正規化
-* 読書用レイアウトの細部調整
-* 長期保守性を前提とした構造再編
+- Markdown 変換系の契約整理
+- 対訳表示の仕様明確化
+- 特殊コンテンツ表現の責務分離
+- UI コンポーネント群の正規化
+- 読書用レイアウトの細部調整
+- 長期保守性を前提とした構造再編
 
 ---
 
@@ -216,33 +221,33 @@ pnpm lint:fix           # ESLint + Prettier による整形
 
 ### 全体設計・基盤
 
-* `docs/content-config-syntax.md`
+- `docs/content-config-syntax.md`
   コンテンツ設定と構文の基本仕様
-* `docs/corpus-specification.md`
+- `docs/corpus-specification.md`
   corpus 周辺の仕様
-* `docs/router-specification.md`
+- `docs/router-specification.md`
   ルーター設計と URL 状態モデル
-* `docs/search-specification.md`
+- `docs/search-specification.md`
   検索仕様
-* `docs/testing-taxonomy.md`
+- `docs/testing-taxonomy.md`
   テスト責務の整理
-* `docs/notes_sidebar_breadcrumb_contract.md`
+- `docs/notes_sidebar_breadcrumb_contract.md`
   ノート / サイドバー / パンくずの契約
 
 ### Markdown 関連
 
-* `docs/markdown/markdown-overview.md`
-* `docs/markdown/markdown-authoring-specification.md`
-* `docs/markdown/note-authoring-guide.md`
-* `docs/markdown/markdown-output-contract.md`
-* `docs/markdown/markdown-safety-and-test-policy.md`
+- `docs/markdown/markdown-overview.md`
+- `docs/markdown/markdown-authoring-specification.md`
+- `docs/markdown/note-authoring-guide.md`
+- `docs/markdown/markdown-output-contract.md`
+- `docs/markdown/markdown-safety-and-test-policy.md`
 
 ### デザインシステム
 
-* `docs/design-system/foundations.md`
-* `docs/design-system/accessibility.md`
-* `docs/design-system/patterns.md`
-* `docs/design-system/components/`
+- `docs/design-system/foundations.md`
+- `docs/design-system/accessibility.md`
+- `docs/design-system/patterns.md`
+- `docs/design-system/components/`
 
 ---
 
@@ -251,11 +256,11 @@ pnpm lint:fix           # ESLint + Prettier による整形
 Rouault は、機能をただ追加するのではなく、**境界を壊さずに育てること** を重視しています。
 そのため、実装時には次の観点を重要視します。
 
-* 表示上の都合をコンテンツ資産へ逆流させない
-* router / search / markdown / data projection の責務を混在させない
-* コンポーネントの見た目と契約を分離する
-* 一時的な回避策を恒久仕様にしない
-* 「いま動く」だけでなく「後で壊れにくい」ことを優先する
+- 表示上の都合をコンテンツ資産へ逆流させない
+- router / search / markdown / data projection の責務を混在させない
+- コンポーネントの見た目と契約を分離する
+- 一時的な回避策を恒久仕様にしない
+- 「いま動く」だけでなく「後で壊れにくい」ことを優先する
 
 ---
 
@@ -263,9 +268,9 @@ Rouault は、機能をただ追加するのではなく、**境界を壊さず�
 
 この README は、次の読者を想定しています。
 
-* 初めてプロジェクトを見る人
-* 実装に入る前に全体像を知りたい人
-* どこから読めばよいかを把握したい人
+- 初めてプロジェクトを見る人
+- 実装に入る前に全体像を知りたい人
+- どこから読めばよいかを把握したい人
 
 そのため、詳細仕様や完了条件、未解決論点の精査は README ではなく `docs/` 側に寄せています。
 

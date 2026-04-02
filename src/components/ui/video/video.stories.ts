@@ -46,7 +46,8 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: '代表表示用の smoke story です。poster と video surface の基本見え方だけを残します。',
+        story:
+          '代表表示用の smoke story です。poster と video surface の基本見え方だけを残します。',
       },
     },
   },

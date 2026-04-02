@@ -1,8 +1,5 @@
 import type { IntrinsicNote, IntrinsicNotesCollection } from '../../build/data/notes.js';
-import {
-  buildCorpusPageProjection,
-  type CorpusPageEntry,
-} from './corpus-page-projection.js';
+import { buildCorpusPageProjection, type CorpusPageEntry } from './corpus-page-projection.js';
 import { buildHomePageProjection, type HomeNoteItem } from './home-page-projection.js';
 
 export type CorporaOverviewSourceNote = IntrinsicNote;

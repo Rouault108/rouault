@@ -153,7 +153,11 @@ export const NonButtonTriggerSurface: Story = {
           style="display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; height: 32px; border: 1px dashed oklch(80% 0.01 250); border-radius: 6px;"
         >
           div trigger
-          <ui-icon name="chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></ui-icon>
+          <ui-icon
+            name="chevron-down"
+            aria-hidden="true"
+            style="width: 14px; height: 14px;"
+          ></ui-icon>
         </div>
         <ui-menu-item value="open">開く</ui-menu-item>
         <ui-menu-item value="rename">名前変更</ui-menu-item>

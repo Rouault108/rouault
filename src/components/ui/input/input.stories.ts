@@ -120,9 +120,6 @@ const renderInput = (args: Partial<InputStoryArgs>) => {
   `;
 };
 
-
-
-
 /**
  * ## Input `<ui-input>`
  *

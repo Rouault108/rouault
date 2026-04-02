@@ -6,7 +6,10 @@
  */
 
 import { buildPagefindDocumentData } from '../build/search/build-pagefind-document-data.js';
-import { buildNotePageProjection, type NotePageProjection } from '../build/projections/note-page-projection.js';
+import {
+  buildNotePageProjection,
+  type NotePageProjection,
+} from '../build/projections/note-page-projection.js';
 import { buildNoteNavigationModel } from '../build/navigation/index.js';
 import type { IntrinsicNote } from './data/notes.js';
 

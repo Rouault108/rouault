@@ -41,7 +41,11 @@ export const Default: Story = {
     },
   },
   render: () => html`
-    <ui-image src="${SAMPLE_IMAGE_SRC}" alt="サンプル画像" caption="サンプルキャプション"></ui-image>
+    <ui-image
+      src="${SAMPLE_IMAGE_SRC}"
+      alt="サンプル画像"
+      caption="サンプルキャプション"
+    ></ui-image>
   `,
 };
 
@@ -56,7 +60,12 @@ export const VariantStateMatrix: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-image src="${SAMPLE_IMAGE_SRC}" alt="標準画像" caption="通常表示"></ui-image>
-      <ui-image src="${SECOND_IMAGE_SRC}" alt="拡大可能画像" caption="zoomable 表示" zoomable></ui-image>
+      <ui-image
+        src="${SECOND_IMAGE_SRC}"
+        alt="拡大可能画像"
+        caption="zoomable 表示"
+        zoomable
+      ></ui-image>
       <div class="prose">
         <ui-image src="${SAMPLE_IMAGE_SRC}" alt="本文内画像" caption="prose 内の表示例"></ui-image>
       </div>
@@ -74,7 +83,12 @@ export const LoadingAndErrorStates: Story = {
   },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
-      <ui-image src="${SAMPLE_IMAGE_SRC}" alt="eager image" caption="eager" loading="eager"></ui-image>
+      <ui-image
+        src="${SAMPLE_IMAGE_SRC}"
+        alt="eager image"
+        caption="eager"
+        loading="eager"
+      ></ui-image>
       <ui-image src="${BROKEN_IMAGE_SRC}" alt="broken image" caption="broken source"></ui-image>
     </div>
   `,
@@ -99,6 +113,11 @@ keyboard / focus return / scroll lock / error fallback の合否は browser test
     },
   },
   render: () => html`
-    <ui-image src="${SECOND_IMAGE_SRC}" alt="manual lightbox image" caption="manual review" zoomable></ui-image>
+    <ui-image
+      src="${SECOND_IMAGE_SRC}"
+      alt="manual lightbox image"
+      caption="manual review"
+      zoomable
+    ></ui-image>
   `,
 };

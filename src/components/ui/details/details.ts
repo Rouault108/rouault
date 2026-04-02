@@ -339,7 +339,9 @@ export class Details extends LitElement {
           id="${this._summaryId}"
           aria-expanded="${String(this.open)}"
           aria-controls="${this._contentId}"
-          aria-label="${ifDefined(!hasVisibleSummary && hasAriaLabel ? normalizedAriaLabel : undefined)}"
+          aria-label="${ifDefined(
+            !hasVisibleSummary && hasAriaLabel ? normalizedAriaLabel : undefined,
+          )}"
           @click="${this._onTriggerClick}"
         >
           <span class="icon" aria-hidden="true">

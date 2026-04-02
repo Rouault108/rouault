@@ -110,9 +110,7 @@ export const VariantColorMatrix: Story = {
                           aria-label="${color} の更新があります"
                         ></ui-badge>
                       `
-                    : html`
-                        <ui-badge variant="${variant}" color="${color}">${color}</ui-badge>
-                      `,
+                    : html` <ui-badge variant="${variant}" color="${color}">${color}</ui-badge> `,
                 )}
               </div>
             </div>

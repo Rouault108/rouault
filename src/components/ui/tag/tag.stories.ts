@@ -170,7 +170,8 @@ export const IconSlotReference: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'icon slot の見本です。slot の有無による DOM 切り替え合否は browser test を正本とします。',
+        story:
+          'icon slot の見本です。slot の有無による DOM 切り替え合否は browser test を正本とします。',
       },
     },
   },

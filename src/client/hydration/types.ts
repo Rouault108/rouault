@@ -12,11 +12,7 @@ export type HydrationStage =
   | 'aborted';
 
 export interface HydrationIssue {
-  code:
-    | 'module-load-failed'
-    | 'upgrade-failed'
-    | 'activation-failed'
-    | 'missing-directive';
+  code: 'module-load-failed' | 'upgrade-failed' | 'activation-failed' | 'missing-directive';
   trigger: HydrationTrigger;
   capability: HydrationCapability;
   count: number;

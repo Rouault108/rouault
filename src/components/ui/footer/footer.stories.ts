@@ -1,10 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
-import {
-  ensureFooterDocumentStyles,
-  renderFooter,
-  type FooterRenderOptions,
-} from './footer';
+import { ensureFooterDocumentStyles, renderFooter, type FooterRenderOptions } from './footer';
 
 const DEFAULT_OPTIONS: FooterRenderOptions = {
   id: 'footer-default',

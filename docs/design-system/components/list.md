@@ -86,19 +86,19 @@ Rouault における list は、検索結果、ノート一覧、索引、履歴
 
 ### 入力契約
 
-| 名前                | 種別                                       | 必須   | 内容                                  | 契約                                                       |
-| ------------------- | ------------------------------------------ | ------ | ------------------------------------- | ---------------------------------------------------------- |
-| `columns`           | property                                   | はい   | 列定義配列                            | 一覧の論理列を定義します                                   |
-| `currentRowId`      | property / attribute (`current-row-id`)    | いいえ | 現在行 ID                             | `null` は current 行なしを表します                         |
-| `currentColumnId`   | property / attribute (`current-column-id`) | いいえ | 現在列 ID                             | `null` は current 列なしを表します                         |
-| `sort`              | property                                   | いいえ | ソート状態                            | `{ key, direction }` を扱います                            |
-| `pagination`        | property                                   | いいえ | ページ状態                            | `{ offset, limit, total }` を扱います                      |
-| `getPageHref`       | property                                   | いいえ | ページ番号から URL を生成する関数     | `pagination` 使用時のリンク生成に使います                  |
-| `loading`           | property / attribute (`loading`)           | いいえ | 読み込み中か                          | `true` の間は空状態と混同しません                          |
-| `loadingLabel`      | property / attribute (`loading-label`)     | いいえ | loading 状態の説明文                  | 省略時は既定文言を用いてもかまいません                     |
+| 名前                | 種別                                         | 必須   | 内容                                     | 契約                                                       |
+| ------------------- | -------------------------------------------- | ------ | ---------------------------------------- | ---------------------------------------------------------- |
+| `columns`           | property                                     | はい   | 列定義配列                               | 一覧の論理列を定義します                                   |
+| `currentRowId`      | property / attribute (`current-row-id`)      | いいえ | 現在行 ID                                | `null` は current 行なしを表します                         |
+| `currentColumnId`   | property / attribute (`current-column-id`)   | いいえ | 現在列 ID                                | `null` は current 列なしを表します                         |
+| `sort`              | property                                     | いいえ | ソート状態                               | `{ key, direction }` を扱います                            |
+| `pagination`        | property                                     | いいえ | ページ状態                               | `{ offset, limit, total }` を扱います                      |
+| `getPageHref`       | property                                     | いいえ | ページ番号から URL を生成する関数        | `pagination` 使用時のリンク生成に使います                  |
+| `loading`           | property / attribute (`loading`)             | いいえ | 読み込み中か                             | `true` の間は空状態と混同しません                          |
+| `loadingLabel`      | property / attribute (`loading-label`)       | いいえ | loading 状態の説明文                     | 省略時は既定文言を用いてもかまいません                     |
 | `autoRevealCurrent` | property / attribute (`auto-reveal-current`) | いいえ | current 解決後に自動で可視範囲復帰するか | `true` の場合のみ opt-in で current 行を視界へ復帰させます |
-| `ariaLabel`         | property / attribute (`aria-label`)        | いいえ | grid 全体の名称                       | 省略時は上位文脈に依存します                               |
-| `showActions`       | property / attribute (`show-actions`)      | いいえ | 行末操作領域の有無                    | `true` の場合のみ補助操作列を表示します                    |
+| `ariaLabel`         | property / attribute (`aria-label`)          | いいえ | grid 全体の名称                          | 省略時は上位文脈に依存します                               |
+| `showActions`       | property / attribute (`show-actions`)        | いいえ | 行末操作領域の有無                       | `true` の場合のみ補助操作列を表示します                    |
 
 ### 正本入力の意味
 
@@ -136,27 +136,27 @@ current は **行 ID と列 ID** の組で表します。`currentColumnId` は `
 
 `ui-list` は current 行の可視範囲復帰のため、次の命令的 API を公開してよいものとします。
 
-| 名前              | 形態     | 契約                                                                 |
-| ----------------- | -------- | -------------------------------------------------------------------- |
-| `revealCurrent()` | method   | 現在の current 行を視界へ復帰させます。current が解決不能なら no-op です |
+| 名前                      | 形態         | 契約                                                                           |
+| ------------------------- | ------------ | ------------------------------------------------------------------------------ |
+| `revealCurrent()`         | method       | 現在の current 行を視界へ復帰させます。current が解決不能なら no-op です       |
 | `scrollCurrentIntoView()` | method alias | 互換的な別名を置いてもかまいませんが、正本 API 名は `revealCurrent()` とします |
 
 `revealCurrent()` は current の意味を変更しません。位置だけを補助します。
 
 ### 既定値と正規化
 
-| 項目                | 既定値 / 正規化                       | 契約                                                         |
-| ------------------- | ------------------------------------- | ------------------------------------------------------------ |
-| `currentRowId`      | `null`                                | current 行なしとして扱います                                 |
-| `currentColumnId`   | `null`                                | current 列なしとして扱います                                 |
-| `sort`              | `{ key: null, direction: null }` 相当 | 非ソート状態として扱います                                   |
-| `pagination`        | `null`                                | ページネーション非表示とします                               |
-| `getPageHref`       | `null`                                | 未指定時は非リンク表示または既定関数に依存します             |
-| `loading`           | `false`                               | 非 loading 状態として扱います                                |
-| `loadingLabel`      | `null`                                | 省略時は実装既定の loading 説明文を使ってもかまいません      |
-| `autoRevealCurrent` | `false`                               | 自動可視範囲復帰なしとして扱います                           |
-| `ariaLabel`         | `null`                                | 上位文脈で十分なら省略できます                               |
-| `showActions`       | `false`                               | 操作列なしとして扱います                                     |
+| 項目                | 既定値 / 正規化                       | 契約                                                    |
+| ------------------- | ------------------------------------- | ------------------------------------------------------- |
+| `currentRowId`      | `null`                                | current 行なしとして扱います                            |
+| `currentColumnId`   | `null`                                | current 列なしとして扱います                            |
+| `sort`              | `{ key: null, direction: null }` 相当 | 非ソート状態として扱います                              |
+| `pagination`        | `null`                                | ページネーション非表示とします                          |
+| `getPageHref`       | `null`                                | 未指定時は非リンク表示または既定関数に依存します        |
+| `loading`           | `false`                               | 非 loading 状態として扱います                           |
+| `loadingLabel`      | `null`                                | 省略時は実装既定の loading 説明文を使ってもかまいません |
+| `autoRevealCurrent` | `false`                               | 自動可視範囲復帰なしとして扱います                      |
+| `ariaLabel`         | `null`                                | 上位文脈で十分なら省略できます                          |
+| `showActions`       | `false`                               | 操作列なしとして扱います                                |
 
 `currentRowId` または `currentColumnId` が不正値であっても、`ui-list` は例外を投げることを正本契約としません。ただし、開発時には警告または検証失敗として扱います。
 
@@ -204,10 +204,10 @@ current は、`currentRowId` と `currentColumnId` の**組**としてのみ成�
 
 列集合は、次の 3 層に分離して扱います。
 
-| 名称         | 正体                                 | current の対象     | `aria-colcount` への算入                |
-| ------------ | ------------------------------------ | ------------------ | --------------------------------------- |
-| 論理列       | `columns` そのもの                   | はい               | はい                                    |
-| 可視列       | 論理列から環境条件で導出された表示列 | 間接的に関与します | はい                                    |
+| 名称         | 正体                                 | current の対象     | `aria-colcount` への算入                    |
+| ------------ | ------------------------------------ | ------------------ | ------------------------------------------- |
+| 論理列       | `columns` そのもの                   | はい               | はい                                        |
+| 可視列       | 論理列から環境条件で導出された表示列 | 間接的に関与します | はい                                        |
 | 補助操作領域 | `actions`                            | いいえ             | `showActions=true` かつ描画時のみ加算します |
 
 `mobile-supplement` は列集合に参加しません。これは可視列から脱落した情報を補助的に再提示する領域です。
@@ -252,11 +252,11 @@ current は、`currentRowId` と `currentColumnId` の**組**としてのみ成�
 
 予約スロットは次のとおりです。
 
-| スロット名          | 位置づけ         | 契約                                                                 |
-| ------------------- | ---------------- | -------------------------------------------------------------------- |
-| `<column-id>`       | データセル       | `columns.id` に対応します                                             |
-| `actions`           | 補助操作領域     | `showActions=true` の場合に限り描画対象です                           |
-| `mobile-supplement` | モバイル補助情報 | 非表示列の要約に限定します                                            |
+| スロット名          | 位置づけ         | 契約                                        |
+| ------------------- | ---------------- | ------------------------------------------- |
+| `<column-id>`       | データセル       | `columns.id` に対応します                   |
+| `actions`           | 補助操作領域     | `showActions=true` の場合に限り描画対象です |
+| `mobile-supplement` | モバイル補助情報 | 非表示列の要約に限定します                  |
 
 `actions` は**補助操作領域**であり、data column と同列の意味を持ちません。`showActions=false` の場合、`actions` スロット内容は表示に寄与しません。内部実装都合でプレースホルダーを持つことは妨げませんが、その存在に外部契約は依存しません。
 
@@ -715,21 +715,21 @@ Enter または click による行起動時、既定起動先が見つからな�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                        | 固定する契約                                                                       |
-| ---------------------------- | ---------------------------------------------------------------------------------- |
-| `Default`                    | grid、columnheader、行収集、row-id 同期が成立すること                              |
-| `Empty`                      | 空状態で `role="status"` と `aria-live="polite"` を持つこと                        |
-| `SortCycle`                  | ソート可能列が `asc → desc → null` の三段階循環を持つこと                          |
-| `KeyboardRowNavigation`      | `ArrowDown` により同列の次行へ current が移ること                                  |
-| `CellHorizontalNavigation`   | 横方向セル移動契約が `ui-list-item` 連携で成立すること                             |
-| `PreviewAndContextRequests`  | `Shift+Space` と `Shift+F10` / `contextmenu` が所定イベントを発火すること          |
-| `PaginationContract`         | `offset` / `limit` / `total` に基づいてページ計算が成立すること                    |
-| `MobileColumnsAndSupplement` | モバイル時に非表示列が抑制され、補助情報が表示されること                           |
-| `SingleRowBoundary`          | 単一行で `ArrowDown` による行移動が発生しないこと                                  |
-| `DarkMode`                   | トークン差し替え下でも一覧として読めること                                         |
-| `ValidationFailures`         | 構造違反が開発時に検出可能であること                                               |
-| `ControlledCurrent`          | `ui-current-change` を受けて外部が state を戻したときにのみ current が確定すること |
-| `LoadingState`               | `loading=true` の間、空状態と混同せず状態説明を表示できること                      |
+| Story                        | 固定する契約                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------ |
+| `Default`                    | grid、columnheader、行収集、row-id 同期が成立すること                                |
+| `Empty`                      | 空状態で `role="status"` と `aria-live="polite"` を持つこと                          |
+| `SortCycle`                  | ソート可能列が `asc → desc → null` の三段階循環を持つこと                            |
+| `KeyboardRowNavigation`      | `ArrowDown` により同列の次行へ current が移ること                                    |
+| `CellHorizontalNavigation`   | 横方向セル移動契約が `ui-list-item` 連携で成立すること                               |
+| `PreviewAndContextRequests`  | `Shift+Space` と `Shift+F10` / `contextmenu` が所定イベントを発火すること            |
+| `PaginationContract`         | `offset` / `limit` / `total` に基づいてページ計算が成立すること                      |
+| `MobileColumnsAndSupplement` | モバイル時に非表示列が抑制され、補助情報が表示されること                             |
+| `SingleRowBoundary`          | 単一行で `ArrowDown` による行移動が発生しないこと                                    |
+| `DarkMode`                   | トークン差し替え下でも一覧として読めること                                           |
+| `ValidationFailures`         | 構造違反が開発時に検出可能であること                                                 |
+| `ControlledCurrent`          | `ui-current-change` を受けて外部が state を戻したときにのみ current が確定すること   |
+| `LoadingState`               | `loading=true` の間、空状態と混同せず状態説明を表示できること                        |
 | `RevealCurrent`              | `revealCurrent()` または `autoRevealCurrent` により current 行を視界へ復帰できること |
 
 `CellHorizontalNavigation` は `ui-list` 単体契約ではなく、`ui-list-item` との結合契約を確認する Story として扱います。

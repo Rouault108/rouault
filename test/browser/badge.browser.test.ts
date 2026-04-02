@@ -25,15 +25,14 @@ const getStatus = (badge: Badge): HTMLElement | null =>
 const getImg = (badge: Badge): HTMLElement | null =>
   badge.shadowRoot?.querySelector<HTMLElement>('[role="img"]') ?? null;
 
-const hasSlot = (badge: Badge): boolean => (badge.shadowRoot?.querySelector('slot') ?? null) !== null;
+const hasSlot = (badge: Badge): boolean =>
+  (badge.shadowRoot?.querySelector('slot') ?? null) !== null;
 
 const text = (value: string | null | undefined): string => value?.replace(/\s+/g, ' ').trim() ?? '';
 
 describe('ui-badge browser contract', () => {
   it('既定状態では slot 表示の solid / primary / announce=off として成立すること', async () => {
-    const badge = await fixture<Badge>(html`
-      <ui-badge id="default-badge">New</ui-badge>
-    `);
+    const badge = await fixture<Badge>(html` <ui-badge id="default-badge">New</ui-badge> `);
 
     await badge.updateComplete;
 

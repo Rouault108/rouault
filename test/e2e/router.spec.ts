@@ -189,7 +189,9 @@ test.describe('Router Navigation', () => {
     await page.goto(testNotePath);
     await hideTocOverlay(page);
 
-    const headingPermalink = page.locator('#note-content-testing-markdown-basic h2 .heading-anchor').first();
+    const headingPermalink = page
+      .locator('#note-content-testing-markdown-basic h2 .heading-anchor')
+      .first();
     await expect(headingPermalink).toBeVisible();
 
     const href = await headingPermalink.getAttribute('href');
@@ -209,8 +211,12 @@ test.describe('Router Navigation', () => {
     await page.goto(testNotePath);
     await hideTocOverlay(page);
 
-    const headingText = page.locator('#note-content-testing-markdown-basic h2 .heading-text').first();
-    const headingPermalink = page.locator('#note-content-testing-markdown-basic h2 .heading-anchor').first();
+    const headingText = page
+      .locator('#note-content-testing-markdown-basic h2 .heading-text')
+      .first();
+    const headingPermalink = page
+      .locator('#note-content-testing-markdown-basic h2 .heading-anchor')
+      .first();
 
     await headingText.click({ force: true });
     await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('');

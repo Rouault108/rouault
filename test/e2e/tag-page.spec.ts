@@ -22,31 +22,35 @@ const changeSearchSelect = async (
     );
   }, index);
 
-  await page.evaluate((detail) => {
-    const host = document.querySelector('#main-content search-page');
-    const selects = host?.shadowRoot?.querySelectorAll<HTMLElement & { modelValue?: unknown }>(
-      'ui-select.sort-select',
-    );
-    const target = selects?.[detail.index];
-    if (!(target instanceof HTMLElement)) {
-      throw new Error(`ui-select[${String(detail.index)}] が見つかりません`);
-    }
+  await page.evaluate(
+    (detail) => {
+      const host = document.querySelector('#main-content search-page');
+      const selects = host?.shadowRoot?.querySelectorAll<HTMLElement & { modelValue?: unknown }>(
+        'ui-select.sort-select',
+      );
+      const target = selects?.[detail.index];
+      if (!(target instanceof HTMLElement)) {
+        throw new Error(`ui-select[${String(detail.index)}] が見つかりません`);
+      }
 
-    target.modelValue = detail.value;
-    target.dispatchEvent(
-      new CustomEvent('change', {
-        detail: { value: detail.value },
-        bubbles: true,
-        composed: true,
-      }),
-    );
-  }, { index, value });
+      target.modelValue = detail.value;
+      target.dispatchEvent(
+        new CustomEvent('change', {
+          detail: { value: detail.value },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    },
+    { index, value },
+  );
 };
 
 const waitForSearchInputReady = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
     const host = document.querySelector('#main-content search-page');
-    const input = host?.shadowRoot?.querySelector('ui-search-field.search-input-control')
+    const input = host?.shadowRoot
+      ?.querySelector('ui-search-field.search-input-control')
       ?.shadowRoot?.querySelector('input[type="search"]');
     return input instanceof HTMLInputElement;
   });

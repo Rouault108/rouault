@@ -63,7 +63,12 @@ describe('ui-input browser contract', () => {
           error
           error-message="ユーザー名は3文字以上で入力してください"
         ></ui-input>
-        <ui-input id="native" label="メールアドレス" type="email" value="invalid-address"></ui-input>
+        <ui-input
+          id="native"
+          label="メールアドレス"
+          type="email"
+          value="invalid-address"
+        ></ui-input>
       </div>
     `);
 
@@ -120,9 +125,27 @@ describe('ui-input browser contract', () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>
         <form id="form">
-          <ui-input id="active" label="通常" name="active" value="現在値" default-value="初期値"></ui-input>
-          <ui-input id="disabled" label="無効" name="disabledField" value="disabled-value" disabled></ui-input>
-          <ui-input id="readonly" label="readonly" name="readonlyField" value="readonly-value" readonly></ui-input>
+          <ui-input
+            id="active"
+            label="通常"
+            name="active"
+            value="現在値"
+            default-value="初期値"
+          ></ui-input>
+          <ui-input
+            id="disabled"
+            label="無効"
+            name="disabledField"
+            value="disabled-value"
+            disabled
+          ></ui-input>
+          <ui-input
+            id="readonly"
+            label="readonly"
+            name="readonlyField"
+            value="readonly-value"
+            readonly
+          ></ui-input>
         </form>
       </div>
     `);
@@ -172,8 +195,14 @@ describe('ui-input browser contract', () => {
 
     const invalidType = expectPresent(wrapper.querySelector<Input>('#invalid-type'), 'invalidType');
     const submitter = expectPresent(wrapper.querySelector<Input>('#submitter'), 'submitter');
-    const form = expectPresent(wrapper.querySelector<HTMLFormElement>('#submit-form'), 'submit form');
-    const output = expectPresent(wrapper.querySelector<HTMLOutputElement>('#submit-count'), 'output');
+    const form = expectPresent(
+      wrapper.querySelector<HTMLFormElement>('#submit-form'),
+      'submit form',
+    );
+    const output = expectPresent(
+      wrapper.querySelector<HTMLOutputElement>('#submit-count'),
+      'output',
+    );
 
     await flush(invalidType);
     await flush(submitter);

@@ -100,7 +100,12 @@ export const UsageContexts: Story = {
       </form>
 
       <div style="display: flex; gap: 0.75rem; align-items: center;">
-        <ui-button variant="ghost" aria-expanded="false" aria-controls="menu-panel" aria-haspopup="menu">
+        <ui-button
+          variant="ghost"
+          aria-expanded="false"
+          aria-controls="menu-panel"
+          aria-haspopup="menu"
+        >
           メニュー
         </ui-button>
         <ui-button variant="outline">補助アクション</ui-button>
@@ -132,9 +137,14 @@ submit / reset / aria-expanded / pressed の合否は browser test 側へ移し�
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
         <ui-button variant="primary">Primary action</ui-button>
         <ui-button aria-pressed="true">Pressed state</ui-button>
-        <ui-button variant="ghost" aria-expanded="true" aria-controls="manual-panel">Expanded</ui-button>
+        <ui-button variant="ghost" aria-expanded="true" aria-controls="manual-panel"
+          >Expanded</ui-button
+        >
       </div>
-      <div id="manual-panel" style="padding: 1rem; border: 1px solid color-mix(in oklab, currentColor 12%, transparent);">
+      <div
+        id="manual-panel"
+        style="padding: 1rem; border: 1px solid color-mix(in oklab, currentColor 12%, transparent);"
+      >
         手動確認用 panel
       </div>
     </div>

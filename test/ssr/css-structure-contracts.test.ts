@@ -12,11 +12,7 @@ import { FileTree } from '../../src/components/ui/file-tree/file-tree.js';
 import { CopyButton } from '../../src/components/ui/copy-button/copy-button.js';
 import { Details } from '../../src/components/ui/details/details.js';
 import { UiDialog } from '../../src/components/ui/dialog/dialog.js';
-import {
-  Dropdown,
-  MenuItem,
-  MenuSeparator,
-} from '../../src/components/ui/dropdown/dropdown.js';
+import { Dropdown, MenuItem, MenuSeparator } from '../../src/components/ui/dropdown/dropdown.js';
 import { DOCUMENT_CSS as FOOTNOTE_DOCUMENT_CSS } from '../../src/components/ui/footnote/footnote.js';
 import { InfoBox } from '../../src/components/ui/info-box/info-box.js';
 import { DOCUMENT_CSS as POPOVER_DOCUMENT_CSS } from '../../src/components/ui/popover/popover.js';
@@ -431,67 +427,67 @@ describe('css structure contracts', () => {
     ]);
   });
 
-    it('callout が forced-colors / semantic token 契約を保持すること', () => {
-      const cssText = collectCssText(Callout.styles);
+  it('callout が forced-colors / semantic token 契約を保持すること', () => {
+    const cssText = collectCssText(Callout.styles);
 
-      expectCssIncludes(cssText, [
-        '@media (forced-colors: active)',
-        'var(--border-width-thick',
-        'var(--border-default)',
-        'var(--bg-note-subtle)',
-        'var(--bg-tip-subtle)',
-        'var(--bg-success-subtle)',
-        'var(--bg-warning-subtle)',
-        'var(--bg-danger-subtle)',
-        'var(--fg-muted)',
-        'var(--fg-info)',
-        'var(--fg-success)',
-        'var(--fg-warning)',
-        'var(--fg-danger)',
-        'stroke-width: 1.5',
-      ]);
+    expectCssIncludes(cssText, [
+      '@media (forced-colors: active)',
+      'var(--border-width-thick',
+      'var(--border-default)',
+      'var(--bg-note-subtle)',
+      'var(--bg-tip-subtle)',
+      'var(--bg-success-subtle)',
+      'var(--bg-warning-subtle)',
+      'var(--bg-danger-subtle)',
+      'var(--fg-muted)',
+      'var(--fg-info)',
+      'var(--fg-success)',
+      'var(--fg-warning)',
+      'var(--fg-danger)',
+      'stroke-width: 1.5',
+    ]);
 
-      expectCssExcludes(cssText, ['prefers-color-scheme']);
-    });
+    expectCssExcludes(cssText, ['prefers-color-scheme']);
+  });
 
-    it('code-preview が forced-colors / print / breakout / hierarchy 契約を保持すること', () => {
-      const cssText = collectCssText(CodePreview.styles);
+  it('code-preview が forced-colors / print / breakout / hierarchy 契約を保持すること', () => {
+    const cssText = collectCssText(CodePreview.styles);
 
-      expectCssIncludes(cssText, [
-        '@media (forced-colors: active)',
-        'border-color: CanvasText',
-        'background: Canvas',
-        'border-bottom-color: CanvasText',
-        'border-bottom-width: var(--border-width-thick, 2px)',
-        '@media print',
-        'width: 100% !important',
-        'margin-inline: 0 !important',
-        'border-color: #000 !important',
-        'background: transparent !important',
-        '.header-tools',
-        '.header-toolbar',
-        'display: none !important',
-        'page-break-inside: avoid',
-        'break-inside: avoid',
-        'calc(100% + var(--space-8, 2rem))',
-        'var(--space-n4, -1rem)',
-        'calc(100% + var(--space-16, 4rem))',
-        'var(--space-n8, -2rem)',
-        '@media (min-width: 768px)',
-        '--ui-code-surface-breakout-width: 100%',
-        '--ui-code-surface-breakout-margin: 0',
-        '--ui-code-surface-radius-top: 0',
-        '--ui-code-block-breakout-width: 100%',
-        '--ui-code-block-breakout-margin: 0',
-        '--ui-code-block-radius-top: 0',
-        '--ui-code-group-width: 100%',
-        '--ui-code-group-margin-inline: 0',
-        '--_ui-code-preview-surface-bg',
-        '--ui-code-preview-preview-bg',
-        'var(--bg-fill-muted',
-        'var(--border-style-subtle',
-      ]);
-    });
+    expectCssIncludes(cssText, [
+      '@media (forced-colors: active)',
+      'border-color: CanvasText',
+      'background: Canvas',
+      'border-bottom-color: CanvasText',
+      'border-bottom-width: var(--border-width-thick, 2px)',
+      '@media print',
+      'width: 100% !important',
+      'margin-inline: 0 !important',
+      'border-color: #000 !important',
+      'background: transparent !important',
+      '.header-tools',
+      '.header-toolbar',
+      'display: none !important',
+      'page-break-inside: avoid',
+      'break-inside: avoid',
+      'calc(100% + var(--space-8, 2rem))',
+      'var(--space-n4, -1rem)',
+      'calc(100% + var(--space-16, 4rem))',
+      'var(--space-n8, -2rem)',
+      '@media (min-width: 768px)',
+      '--ui-code-surface-breakout-width: 100%',
+      '--ui-code-surface-breakout-margin: 0',
+      '--ui-code-surface-radius-top: 0',
+      '--ui-code-block-breakout-width: 100%',
+      '--ui-code-block-breakout-margin: 0',
+      '--ui-code-block-radius-top: 0',
+      '--ui-code-group-width: 100%',
+      '--ui-code-group-margin-inline: 0',
+      '--_ui-code-preview-surface-bg',
+      '--ui-code-preview-preview-bg',
+      'var(--bg-fill-muted',
+      'var(--border-style-subtle',
+    ]);
+  });
 
   it('file-tree が loading / motion / forced-colors / print の構造契約を保持すること', () => {
     const cssText = collectCssText(FileTree.styles);
@@ -516,93 +512,90 @@ describe('css structure contracts', () => {
     ]);
   });
 
-    it('copy-button が state / motion / forced-colors / print の構造契約を保持すること', () => {
-      const cssText = collectCssText(CopyButton.styles);
+  it('copy-button が state / motion / forced-colors / print の構造契約を保持すること', () => {
+    const cssText = collectCssText(CopyButton.styles);
 
-      expectCssIncludes(cssText, [
-        '.copy-button-icon-container',
-        '.sr-only',
-        ":host([state='idle']) ui-icon",
-        ":host([state='success']) ui-icon",
-        ":host([state='error']) ui-icon",
-        '@keyframes flash-copy-success',
-        '@keyframes flash-copy-error',
-        '@media (prefers-reduced-motion: reduce)',
-        'transition-duration: 0.01ms',
-        'animation-duration: 0.01ms',
-        '@media (forced-colors: active)',
-        'CanvasText',
-        'Highlight',
-        'outline: 2px solid CanvasText',
-        '@media print',
-        'display: none',
-      ]);
-    });
+    expectCssIncludes(cssText, [
+      '.copy-button-icon-container',
+      '.sr-only',
+      ":host([state='idle']) ui-icon",
+      ":host([state='success']) ui-icon",
+      ":host([state='error']) ui-icon",
+      '@keyframes flash-copy-success',
+      '@keyframes flash-copy-error',
+      '@media (prefers-reduced-motion: reduce)',
+      'transition-duration: 0.01ms',
+      'animation-duration: 0.01ms',
+      '@media (forced-colors: active)',
+      'CanvasText',
+      'Highlight',
+      'outline: 2px solid CanvasText',
+      '@media print',
+      'display: none',
+    ]);
+  });
 
-    it('footnote / popover の document css が media / token / endnotes 契約を保持すること', () => {
-      expectCssIncludes(FOOTNOTE_DOCUMENT_CSS, [
-        '@media (prefers-reduced-motion: reduce)',
-        '@media (forced-colors: active)',
-        '@media print',
-        'section.footnotes',
-        'data-footnote-backref',
-        'var(--primary',
-      ]);
+  it('footnote / popover の document css が media / token / endnotes 契約を保持すること', () => {
+    expectCssIncludes(FOOTNOTE_DOCUMENT_CSS, [
+      '@media (prefers-reduced-motion: reduce)',
+      '@media (forced-colors: active)',
+      '@media print',
+      'section.footnotes',
+      'data-footnote-backref',
+      'var(--primary',
+    ]);
 
-      expectCssIncludes(POPOVER_DOCUMENT_CSS, [
-        'var(--bg-surface-2',
-        'var(--fg-default',
-        'var(--border-default',
-        'var(--z-popover',
-      ]);
+    expectCssIncludes(POPOVER_DOCUMENT_CSS, [
+      'var(--bg-surface-2',
+      'var(--fg-default',
+      'var(--border-default',
+      'var(--z-popover',
+    ]);
 
-      if (/section\.footnotes\s*\{[^}]*display\s*:\s*none/i.test(FOOTNOTE_DOCUMENT_CSS)) {
-        throw new Error('section.footnotes を非表示にする契約違反があります');
-      }
-    });
+    if (/section\.footnotes\s*\{[^}]*display\s*:\s*none/i.test(FOOTNOTE_DOCUMENT_CSS)) {
+      throw new Error('section.footnotes を非表示にする契約違反があります');
+    }
+  });
 
-    it('info-box が forced-colors / semantic token / density / print 契約を保持すること', () => {
-      const cssText = collectCssText(InfoBox.styles);
+  it('info-box が forced-colors / semantic token / density / print 契約を保持すること', () => {
+    const cssText = collectCssText(InfoBox.styles);
 
-      expectCssIncludes(cssText, [
-        '@media (forced-colors: active)',
-        'var(--bg-fill-muted',
-        'var(--font-semibold',
-        'var(--tracking-wide',
-        'var(--icon-xs',
-        'var(--border-style-subtle',
-        ":host([density='compact']) .header",
-        ":host([density='compact']) .body",
-        '@media print',
-        'background: transparent',
-        'border: var(--border-style-subtle',
-        'var(--fg-muted,',
-        'var(--fg-default,',
-      ]);
+    expectCssIncludes(cssText, [
+      '@media (forced-colors: active)',
+      'var(--bg-fill-muted',
+      'var(--font-semibold',
+      'var(--tracking-wide',
+      'var(--icon-xs',
+      'var(--border-style-subtle',
+      ":host([density='compact']) .header",
+      ":host([density='compact']) .body",
+      '@media print',
+      'background: transparent',
+      'border: var(--border-style-subtle',
+      'var(--fg-muted,',
+      'var(--fg-default,',
+    ]);
 
-      expectCssExcludes(cssText, ['prefers-color-scheme']);
-    });
+    expectCssExcludes(cssText, ['prefers-color-scheme']);
+  });
 
-    it('syntax-card / syntax-section が forced-colors / print 契約を保持すること', () => {
-      const syntaxCardCssText = collectCssText(SyntaxCard.styles);
-      const syntaxSectionCssText = collectCssText(SyntaxSection.styles);
+  it('syntax-card / syntax-section が forced-colors / print 契約を保持すること', () => {
+    const syntaxCardCssText = collectCssText(SyntaxCard.styles);
+    const syntaxSectionCssText = collectCssText(SyntaxSection.styles);
 
-      expectCssIncludes(syntaxCardCssText, [
-        '@media (forced-colors: active)',
-        'border-color: CanvasText;',
-        '.signature-area',
-        '.kind-tag',
-        '.copy-action',
-        '@media print',
-        'display: none;',
-        'background: transparent !important;',
-      ]);
+    expectCssIncludes(syntaxCardCssText, [
+      '@media (forced-colors: active)',
+      'border-color: CanvasText;',
+      '.signature-area',
+      '.kind-tag',
+      '.copy-action',
+      '@media print',
+      'display: none;',
+      'background: transparent !important;',
+    ]);
 
-      expectCssIncludes(syntaxSectionCssText, [
-        '@media (forced-colors: active)',
-        '.section-title',
-      ]);
-    });
+    expectCssIncludes(syntaxSectionCssText, ['@media (forced-colors: active)', '.section-title']);
+  });
 
   it('dropdown / menu-item / separator が media / forced-colors / print 契約を保持すること', () => {
     const dropdownCssText = collectCssText(Dropdown.styles);
@@ -625,8 +618,8 @@ describe('css structure contracts', () => {
     ]);
 
     expectCssIncludes(menuItemCssText, [
-      "button:hover:not(:disabled)",
-      "button:focus-visible:not(:disabled)",
+      'button:hover:not(:disabled)',
+      'button:focus-visible:not(:disabled)',
       ":host([variant='danger']) button",
       '@media (prefers-reduced-motion: reduce)',
       'transition-duration: 0.01ms',

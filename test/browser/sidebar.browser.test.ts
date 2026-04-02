@@ -88,9 +88,7 @@ const waitForSidebarStateChange = (host: UiSidebar): Promise<UiSidebarStateChang
     );
   });
 
-const waitForSidebarSelect = (
-  host: UiSidebar,
-): Promise<CustomEvent<UiSidebarSelectDetail>> =>
+const waitForSidebarSelect = (host: UiSidebar): Promise<CustomEvent<UiSidebarSelectDetail>> =>
   new Promise((resolve) => {
     host.addEventListener(
       'ui-sidebar-select',
@@ -103,9 +101,7 @@ const waitForSidebarSelect = (
     );
   });
 
-const waitForSidebarToggle = (
-  host: UiSidebar,
-): Promise<CustomEvent<UiSidebarToggleDetail>> =>
+const waitForSidebarToggle = (host: UiSidebar): Promise<CustomEvent<UiSidebarToggleDetail>> =>
   new Promise((resolve) => {
     host.addEventListener(
       'ui-sidebar-toggle',

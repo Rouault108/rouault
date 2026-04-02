@@ -38,10 +38,7 @@ interface MatchMediaController {
   restore(): void;
 }
 
-const mockMatchMedia = (
-  reducedMotion = true,
-  overlayMatches = false,
-): MatchMediaController => {
+const mockMatchMedia = (reducedMotion = true, overlayMatches = false): MatchMediaController => {
   const original = window.matchMedia.bind(window);
   let currentOverlayMatches = overlayMatches;
   const overlayListeners = new Set<(event: MediaQueryListEvent) => void>();
@@ -51,7 +48,11 @@ const mockMatchMedia = (
     const isBreakpointQuery = query.startsWith('(min-width:');
 
     return {
-      matches: isReducedMotionQuery ? reducedMotion : isBreakpointQuery ? currentOverlayMatches : false,
+      matches: isReducedMotionQuery
+        ? reducedMotion
+        : isBreakpointQuery
+          ? currentOverlayMatches
+          : false,
       media: query,
       onchange: null,
       addEventListener: (_type: string, listener: EventListenerOrEventListenerObject) => {

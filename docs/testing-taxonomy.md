@@ -21,7 +21,7 @@ Rouault では、次の設計前提を採用します。
 3. **browser behavior は browser unit または E2E で観測します。**
 4. **build-time / SSR / Markdown transform / final DOM 契約は Node 側で検証します。**
 5. **CSS 契約は「構造の存在」と「表示結果」を分離して扱います。**
-6. **`test/unit/**` は使用しません。テストは `test/node/**` / `test/browser/**` / `test/ssr/**` / `test/e2e/**` / `test/storybook/**` にのみ置きます。**
+6. **`test/unit/**`は使用しません。テストは`test/node/**`/`test/browser/**`/`test/ssr/**`/`test/e2e/**`/`test/storybook/**` にのみ置きます。**
 
 ## 3. テストレイヤの正本
 

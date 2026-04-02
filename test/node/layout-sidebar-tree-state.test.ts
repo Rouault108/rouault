@@ -60,9 +60,7 @@ describe('layout-sidebar-tree-state', () => {
   });
 
   it('scopeId ごとに保存キーを分離できること', () => {
-    expect(getLayoutSidebarTreeStateStorageKey()).to.equal(
-      LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY,
-    );
+    expect(getLayoutSidebarTreeStateStorageKey()).to.equal(LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY);
     expect(getLayoutSidebarTreeStateStorageKey('notes/program')).to.equal(
       `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY}:notes/program`,
     );

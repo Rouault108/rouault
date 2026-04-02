@@ -178,13 +178,12 @@ export const LoadingStrategiesReference: Story = {
 };
 
 export const EmptyStateReference: Story = {
-  render: () => html`
-    <ui-file-tree .items=${[]}></ui-file-tree>
-  `,
+  render: () => html` <ui-file-tree .items=${[]}></ui-file-tree> `,
   parameters: {
     docs: {
       description: {
-        story: 'empty state の docs story です。文言完全一致ではなく empty surface の存在のみを前提にします。',
+        story:
+          'empty state の docs story です。文言完全一致ではなく empty surface の存在のみを前提にします。',
       },
     },
   },

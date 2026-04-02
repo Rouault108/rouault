@@ -100,20 +100,20 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 
 ### 5.1 一覧
 
-| 入力 HAST / 互換入力                                  | 出力                                                                 | 契約                                                                                                                                                                                                                  |
-| ---------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pre > code`                                         | `pre[data-code-block] > code[data-lang]`                             | `language-*` から `data-lang` / `data-code-language` を推論し、対象メタ属性を `pre[data-code-block]` の `data-code-*` 属性へ正規化する。note 本文では個々の code block を hydrate せず、必要な場合に限り `code-block-enhancer` 用の build-time 注釈を代表 root に付与する |
-| `blockquote` / `ui-blockquote`                       | `blockquote` または `figure > blockquote + figcaption > cite`        | 引用本文を保持し、source / cite / quote-lang / variant を静的 DOM へ正規化する。source がある場合のみ `figure` 化してよい                                                                                             |
-| `table` / `ui-table`                                 | `div[data-table-root][role="region"][tabindex="0"] > table`          | `caption` があれば `aria-label` を補完し、行列構造や `thead` / `tbody` / `tfoot` の意味を失ってはなりません                                                                                                            |
-| `hr`                                                 | `hr[data-divider-variant="section"]`                                 | note 本文では静的 `hr` を正本とする                                                                                                                                                                                    |
-| `li` + `input[type=checkbox]`                        | `ui-checkbox`                                                        | task list ラベルを抽出し、後続ネストリストを維持する                                                                                                                                                                  |
-| `mark`                                               | `mark[data-current-match]`                                           | `current-match` / `data-current-match` / 旧互換入力を `data-current-match` へ正規化し、note 本文では静的 `<mark>` を正本とする                                                                                       |
-| `aside[data-callout]` / `ui-callout`                 | `aside[data-callout][data-callout-kind]`                             | heading / label / icon / heading-level を静的 DOM へ正規化し、本文と補助ラベルを保持する                                                                                                                              |
-| `section[data-info-box]` / `ui-info-box`             | `section[data-info-box][data-variant][data-density]`                 | heading / icon / heading-level / landmark / variant / density を静的 DOM へ正規化し、空内容は非描画として扱ってよい                                                                                                   |
-| `img`                                                | `figure[data-image] > picture > source* + img`                            | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化する。`zoomable!="false"` の note 本文では `figure[data-image]` に `data-hydration-key="image-lightbox-enhancer"`、`data-hydration-capability="progressive"`、`data-hydration-trigger="visible"` を付与する |
-| `figure(img + figcaption)`                           | `figure[data-image] > picture > source* + img + figcaption`               | `figcaption` を保持し、静的図版 DOM へ収束させる。`zoomable!="false"` の note 本文では `figure[data-image]` に enhancer 用 directive を付与する |
-| footnote 参照 / 定義                                 | `a[data-footnote-ref][role=doc-noteref]` + `section[role=doc-endnotes]`   | 参照 ID、backref、接頭辞、backlink を正規化する。本文 trigger は plain link を正本とし、必要な場合のみ `footnote-popover-enhancer` を付与する |
-| `a[href]`（本文リンク）                              | `a[data-link-kind][data-link-surface="prose"]`                       | `href` から種別注釈を付与し、外部系では `data-external="true"` を付与する。`.heading-anchor` は対象外とする                                                                                                           |
+| 入力 HAST / 互換入力                     | 出力                                                                    | 契約                                                                                                                                                                                                                                                                                      |
+| ---------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pre > code`                             | `pre[data-code-block] > code[data-lang]`                                | `language-*` から `data-lang` / `data-code-language` を推論し、対象メタ属性を `pre[data-code-block]` の `data-code-*` 属性へ正規化する。note 本文では個々の code block を hydrate せず、必要な場合に限り `code-block-enhancer` 用の build-time 注釈を代表 root に付与する                 |
+| `blockquote` / `ui-blockquote`           | `blockquote` または `figure > blockquote + figcaption > cite`           | 引用本文を保持し、source / cite / quote-lang / variant を静的 DOM へ正規化する。source がある場合のみ `figure` 化してよい                                                                                                                                                                 |
+| `table` / `ui-table`                     | `div[data-table-root][role="region"][tabindex="0"] > table`             | `caption` があれば `aria-label` を補完し、行列構造や `thead` / `tbody` / `tfoot` の意味を失ってはなりません                                                                                                                                                                               |
+| `hr`                                     | `hr[data-divider-variant="section"]`                                    | note 本文では静的 `hr` を正本とする                                                                                                                                                                                                                                                       |
+| `li` + `input[type=checkbox]`            | `ui-checkbox`                                                           | task list ラベルを抽出し、後続ネストリストを維持する                                                                                                                                                                                                                                      |
+| `mark`                                   | `mark[data-current-match]`                                              | `current-match` / `data-current-match` / 旧互換入力を `data-current-match` へ正規化し、note 本文では静的 `<mark>` を正本とする                                                                                                                                                            |
+| `aside[data-callout]` / `ui-callout`     | `aside[data-callout][data-callout-kind]`                                | heading / label / icon / heading-level を静的 DOM へ正規化し、本文と補助ラベルを保持する                                                                                                                                                                                                  |
+| `section[data-info-box]` / `ui-info-box` | `section[data-info-box][data-variant][data-density]`                    | heading / icon / heading-level / landmark / variant / density を静的 DOM へ正規化し、空内容は非描画として扱ってよい                                                                                                                                                                       |
+| `img`                                    | `figure[data-image] > picture > source* + img`                          | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化する。`zoomable!="false"` の note 本文では `figure[data-image]` に `data-hydration-key="image-lightbox-enhancer"`、`data-hydration-capability="progressive"`、`data-hydration-trigger="visible"` を付与する |
+| `figure(img + figcaption)`               | `figure[data-image] > picture > source* + img + figcaption`             | `figcaption` を保持し、静的図版 DOM へ収束させる。`zoomable!="false"` の note 本文では `figure[data-image]` に enhancer 用 directive を付与する                                                                                                                                           |
+| footnote 参照 / 定義                     | `a[data-footnote-ref][role=doc-noteref]` + `section[role=doc-endnotes]` | 参照 ID、backref、接頭辞、backlink を正規化する。本文 trigger は plain link を正本とし、必要な場合のみ `footnote-popover-enhancer` を付与する                                                                                                                                             |
+| `a[href]`（本文リンク）                  | `a[data-link-kind][data-link-surface="prose"]`                          | `href` から種別注釈を付与し、外部系では `data-external="true"` を付与する。`.heading-anchor` は対象外とする                                                                                                                                                                               |
 
 ### 5.2 `pre > code` → `pre[data-code-block] > code[data-lang]`
 
@@ -263,21 +263,21 @@ note ページの scope は次の 4 つです。
 
 note 本文の標準マッピングは次のとおりです。
 
-| ノード                                   | capability    | trigger       |
-| ---------------------------------------- | ------------- | ------------- |
-| `layout-sidebar`                         | `interactive` | `initial`     |
-| `layout-toc[runtime capability あり]`    | `interactive` | `initial`     |
-| `ui-article-header[data-tags]`           | `progressive` | `post-commit` |
-| `figure[data-image][data-hydration-key="image-lightbox-enhancer"]` | `progressive` | `visible`     |
+| ノード                                                                 | capability    | trigger       |
+| ---------------------------------------------------------------------- | ------------- | ------------- |
+| `layout-sidebar`                                                       | `interactive` | `initial`     |
+| `layout-toc[runtime capability あり]`                                  | `interactive` | `initial`     |
+| `ui-article-header[data-tags]`                                         | `progressive` | `post-commit` |
+| `figure[data-image][data-hydration-key="image-lightbox-enhancer"]`     | `progressive` | `visible`     |
 | `a[data-footnote-ref][data-hydration-key="footnote-popover-enhancer"]` | `progressive` | `post-commit` |
-| `pre[data-code-block][data-hydration-key="code-block-enhancer"]` | `progressive` | `post-commit` |
-| `section[data-code-group]`                                        | `interactive` | `visible`     |
-| `ui-code-preview[controls あり]`         | `interactive` | `visible`     |
-| `ui-code-preview[slot="toolbar" を持つ]` | `interactive` | `visible`     |
-| `ui-tabs`                                | `interactive` | `initial`     |
-| `ui-translation`                         | `interactive` | `visible`     |
-| `ui-preview-sandbox`                     | `sandboxed`   | `interaction` |
-| `ui-score`                               | `progressive` | `visible`     |
+| `pre[data-code-block][data-hydration-key="code-block-enhancer"]`       | `progressive` | `post-commit` |
+| `section[data-code-group]`                                             | `interactive` | `visible`     |
+| `ui-code-preview[controls あり]`                                       | `interactive` | `visible`     |
+| `ui-code-preview[slot="toolbar" を持つ]`                               | `interactive` | `visible`     |
+| `ui-tabs`                                                              | `interactive` | `initial`     |
+| `ui-translation`                                                       | `interactive` | `visible`     |
+| `ui-preview-sandbox`                                                   | `sandboxed`   | `interaction` |
+| `ui-score`                                                             | `progressive` | `visible`     |
 
 補足規則:
 
@@ -299,7 +299,7 @@ note ページの hydration budget は **profile 単位**で build-time の正�
 
 現行 profile は次のとおりです。
 
-| profile                       | initial | post-commit | visible | interaction | total |
+| profile                      | initial | post-commit | visible | interaction | total |
 | ---------------------------- | ------- | ----------- | ------- | ----------- | ----- |
 | `reader-shell-canary`        | 2       | 0           | 0       | 0           | 2     |
 | `testing-interactive-canary` | 6       | 0           | 1       | 0           | 7     |
@@ -308,12 +308,12 @@ note ページの hydration budget は **profile 単位**で build-time の正�
 
 現在の代表 canary は次の 4 つです。
 
-| canary note                  | profile                       | initial | post-commit | visible | interaction | total |
-| --------------------------- | ----------------------------- | ------- | ----------- | ------- | ----------- | ----- |
-| `testing/reader-basic`      | `reader-shell-canary`         | 2       | 0           | 0       | 0           | 2     |
-| `testing/interactive`       | `testing-interactive-canary`  | 6       | 0           | 1       | 0           | 7     |
-| `testing/sandbox`           | `testing-sandbox-canary`      | 0       | 1           | 2       | 1           | 4     |
-| `testing/code`              | `testing-code-canary`         | 1       | 1           | 2       | 0           | 4     |
+| canary note            | profile                      | initial | post-commit | visible | interaction | total |
+| ---------------------- | ---------------------------- | ------- | ----------- | ------- | ----------- | ----- |
+| `testing/reader-basic` | `reader-shell-canary`        | 2       | 0           | 0       | 0           | 2     |
+| `testing/interactive`  | `testing-interactive-canary` | 6       | 0           | 1       | 0           | 7     |
+| `testing/sandbox`      | `testing-sandbox-canary`     | 0       | 1           | 2       | 1           | 4     |
+| `testing/code`         | `testing-code-canary`        | 1       | 1           | 2       | 0           | 4     |
 
 規則:
 
@@ -322,7 +322,6 @@ note ページの hydration budget は **profile 単位**で build-time の正�
 - 代表 canary の counts は `test/ssr/note-hydration-budget.test.ts` で固定しなければなりません。
 - build / test / CI は同じ profile registry を参照しなければなりません。
 - 代表 canary または profile が変わる場合は、本文 workload が実際に変わった根拠を伴って本節とテストを同時に改訂しなければなりません。
-
 
 ---
 

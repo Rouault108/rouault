@@ -73,13 +73,13 @@ selection model は本コンポーネントの base 契約に含めません。�
 
 `ui-list-item` の長期契約として公開する入力は次のとおりです。
 
-| 名前            | 種別                                     | 必須   | 内容                   | 契約 |
-| --------------- | ---------------------------------------- | ------ | ---------------------- | ---- |
-| `rowId`         | property / attribute (`row-id`)                 | はい   | 行 ID              | `ui-current-change` の識別子です。空文字列は許可しません |
-| `current`       | property / attribute                            | いいえ | 現在行か           | `true` の場合、その行は親 `ui-list` が決定した**現在行**です |
-| `currentColumnId` | property / attribute (`current-column-id`)    | いいえ | current 列 ID      | `columns.id` のいずれか、または `null` を取ります |
-| `rowIndex`      | property / attribute (`row-index`)              | いいえ | 1-based の論理行 index | 指定時に `aria-rowindex` を出力します |
-| `leadLineClamp` | property / attribute (`lead-line-clamp`)        | いいえ | 主列の最大表示行数 | `1` または `2` を許可します。既定値は `1` です。lead 列だけに適用します |
+| 名前              | 種別                                       | 必須   | 内容                   | 契約                                                                    |
+| ----------------- | ------------------------------------------ | ------ | ---------------------- | ----------------------------------------------------------------------- |
+| `rowId`           | property / attribute (`row-id`)            | はい   | 行 ID                  | `ui-current-change` の識別子です。空文字列は許可しません                |
+| `current`         | property / attribute                       | いいえ | 現在行か               | `true` の場合、その行は親 `ui-list` が決定した**現在行**です            |
+| `currentColumnId` | property / attribute (`current-column-id`) | いいえ | current 列 ID          | `columns.id` のいずれか、または `null` を取ります                       |
+| `rowIndex`        | property / attribute (`row-index`)         | いいえ | 1-based の論理行 index | 指定時に `aria-rowindex` を出力します                                   |
+| `leadLineClamp`   | property / attribute (`lead-line-clamp`)   | いいえ | 主列の最大表示行数     | `1` または `2` を許可します。既定値は `1` です。lead 列だけに適用します |
 
 `current` は**現在行**を意味します。選択済み状態、編集状態、主遷移可否を意味しません。
 
@@ -91,16 +91,16 @@ selection model は本コンポーネントの base 契約に含めません。�
 
 次の表面は現行実装に存在していても、長期契約には含めません。
 
-| 名前                 | 扱い   | 理由                                                                 |
-| -------------------- | ------ | -------------------------------------------------------------------- |
-| `href`               | 非契約 | 主遷移責務は `ui-list-item` が持たないためです                       |
-| `managed`            | 非契約 | 親管理下かどうかは接続関係で決まるためです                           |
-| `rowId`             | 非契約 | 長期正本は `rowId` へ統一するためです                               |
-| `current`             | 非契約 | 長期正本は `current` へ統一するためです                             |
-| `selected`           | 非契約 | selection は base 契約外とするためです                              |
-| `currentCellIndex`    | 非契約 | 可視 index は長期正本にしないためです                               |
-| `leadLineClamp`   | 非契約 | 長期正本は `leadLineClamp` へ統一するためです                       |
-| `requestListContext()` | 非契約 | 再同期機構は内部協調面であり、公開 API に含めないためです           |
+| 名前                   | 扱い   | 理由                                                      |
+| ---------------------- | ------ | --------------------------------------------------------- |
+| `href`                 | 非契約 | 主遷移責務は `ui-list-item` が持たないためです            |
+| `managed`              | 非契約 | 親管理下かどうかは接続関係で決まるためです                |
+| `rowId`                | 非契約 | 長期正本は `rowId` へ統一するためです                     |
+| `current`              | 非契約 | 長期正本は `current` へ統一するためです                   |
+| `selected`             | 非契約 | selection は base 契約外とするためです                    |
+| `currentCellIndex`     | 非契約 | 可視 index は長期正本にしないためです                     |
+| `leadLineClamp`        | 非契約 | 長期正本は `leadLineClamp` へ統一するためです             |
+| `requestListContext()` | 非契約 | 再同期機構は内部協調面であり、公開 API に含めないためです |
 
 これらは将来削除または内部化してよく、外部利用者は依存しません。
 
@@ -133,11 +133,11 @@ selection model は本コンポーネントの base 契約に含めません。�
 
 `ui-list-item` は親 `ui-list` から、列定義、モバイル状態、操作領域の表示可否、現在行状態、および current 列状態を受け取る前提で動作します。
 
-| 名前          | 内容                 | 契約                                                                                                    |
-| ------------- | -------------------- | ------------------------------------------------------------------------------------------------------- |
-| `columns`     | 列定義配列           | `id` は一意であり、slot 名として有効でなければなりません                                                |
-| `isMobile`    | モバイル表示かどうか | 真の場合は mobile 縮退契約を適用します                                                                  |
-| `showActions` | 操作領域を表示するか | 真の場合に限り `actions` 領域を描画対象にします                                                        |
+| 名前          | 内容                 | 契約                                                     |
+| ------------- | -------------------- | -------------------------------------------------------- |
+| `columns`     | 列定義配列           | `id` は一意であり、slot 名として有効でなければなりません |
+| `isMobile`    | モバイル表示かどうか | 真の場合は mobile 縮退契約を適用します                   |
+| `showActions` | 操作領域を表示するか | 真の場合に限り `actions` 領域を描画対象にします          |
 
 列定義には次の不変条件を課します。
 
@@ -284,15 +284,15 @@ lead 列以外の列は補助列です。補助列は、lead 列の理解を助�
 
 ### アクセシビリティ契約
 
-* ホストは常に `role="row"` を持ちます。
-* 各 data cell は常に `role="gridcell"` を持ちます。
-* `rowIndex` 指定時のみ `aria-rowindex` を出力します。
-* `aria-colindex` は**描画中セル順**に基づいて付与してよいですが、current の正本は `currentColumnId` です。
-* `data-column-id` は data cell に対してのみ付与します。
-* 補助操作領域は current 列、lead 列、既定起動先列の意味論に参加しません。
-* selection は base 契約に含めないため、`aria-selected` は既定出力として要求しません。
-* 行内タブ停止はセル主体で扱います。
-* フォーカス可視表示はセル単位で扱います。
+- ホストは常に `role="row"` を持ちます。
+- 各 data cell は常に `role="gridcell"` を持ちます。
+- `rowIndex` 指定時のみ `aria-rowindex` を出力します。
+- `aria-colindex` は**描画中セル順**に基づいて付与してよいですが、current の正本は `currentColumnId` です。
+- `data-column-id` は data cell に対してのみ付与します。
+- 補助操作領域は current 列、lead 列、既定起動先列の意味論に参加しません。
+- selection は base 契約に含めないため、`aria-selected` は既定出力として要求しません。
+- 行内タブ停止はセル主体で扱います。
+- フォーカス可視表示はセル単位で扱います。
 
 ### フォーカスモデル契約
 
@@ -404,11 +404,11 @@ lead 列以外の列は補助列です。補助列は、lead 列の理解を助�
 
 touch 由来であっても、上記条件に実質的に等価な単純活性化である場合に限り、有効な click とみなしてよいです。
 
-| 入力         | 前提                                 | 結果                                                         |
-| ------------ | ------------------------------------ | ------------------------------------------------------------ |
-| `click`      | 上記の有効条件をすべて満たすこと     | 対象セルの `columnId` で `ui-current-change` を送出します    |
-| `ArrowLeft`  | 左境界でないこと                     | 1 つ前の**表示中 data column** の `columnId` を送出します    |
-| `ArrowRight` | 右境界でないこと                     | 1 つ次の**表示中 data column** の `columnId` を送出します    |
+| 入力         | 前提                             | 結果                                                      |
+| ------------ | -------------------------------- | --------------------------------------------------------- |
+| `click`      | 上記の有効条件をすべて満たすこと | 対象セルの `columnId` で `ui-current-change` を送出します |
+| `ArrowLeft`  | 左境界でないこと                 | 1 つ前の**表示中 data column** の `columnId` を送出します |
+| `ArrowRight` | 右境界でないこと                 | 1 つ次の**表示中 data column** の `columnId` を送出します |
 
 `focusin` は状態遷移の正規トリガーに含めません。フォーカス追従は表示整合のために存在してよいですが、外部契約上の状態変化源としては扱いません。
 
@@ -484,19 +484,19 @@ action セル内操作は **selection-neutral** です。action セル内の `bu
 
 各 Story は見本ではなく、現時点で成立している契約確認点です。
 
-| Story                           | 現時点で確認する契約                                                                           |
-| ------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `DefaultInList`                 | `ui-list` 配下で `role="row"`、`role="gridcell"`、lead 列 / 補助列 / 補助操作領域の構造が成立すること |
-| `CurrentColumnProjection`       | `currentColumnId` に一致する data cell だけが current 列として扱われること                    |
-| `EmitsCurrentChangeOnArrow`     | 左右矢印キーにより `ui-current-change` が `{ rowId, columnId }` で送出されること             |
-| `EdgeBoundaryStopsByColumnId`   | 左右境界で current 列変更要求が停止すること                                                  |
-| `MissingSlotBoundary`           | 既知列 slot 未提供時も cell 構造を維持すること                                               |
-| `HiddenCurrentColumnBoundary`   | 非表示列が `currentColumnId` に指定されても、子が勝手に別列へ current を移し替えないこと     |
-| `ActionRegionExcludedFromCurrent` | 補助操作領域が current 列モデルに参加しないこと                                            |
-| `UnknownSlotIgnoredWithWarning` | 未知 slot が描画に寄与せず、開発時警告対象になること                                         |
-| `MobileSupplement`              | モバイル時に hidden metadata の要約だけが lead 領域へ再掲されること                          |
-| `StandaloneFallback`            | 親未接続時でも即時破綻しないこと                                                             |
-| `DarkMode`                      | ダークモードで可読性と状態識別が維持されること                                               |
+| Story                             | 現時点で確認する契約                                                                                  |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `DefaultInList`                   | `ui-list` 配下で `role="row"`、`role="gridcell"`、lead 列 / 補助列 / 補助操作領域の構造が成立すること |
+| `CurrentColumnProjection`         | `currentColumnId` に一致する data cell だけが current 列として扱われること                            |
+| `EmitsCurrentChangeOnArrow`       | 左右矢印キーにより `ui-current-change` が `{ rowId, columnId }` で送出されること                      |
+| `EdgeBoundaryStopsByColumnId`     | 左右境界で current 列変更要求が停止すること                                                           |
+| `MissingSlotBoundary`             | 既知列 slot 未提供時も cell 構造を維持すること                                                        |
+| `HiddenCurrentColumnBoundary`     | 非表示列が `currentColumnId` に指定されても、子が勝手に別列へ current を移し替えないこと              |
+| `ActionRegionExcludedFromCurrent` | 補助操作領域が current 列モデルに参加しないこと                                                       |
+| `UnknownSlotIgnoredWithWarning`   | 未知 slot が描画に寄与せず、開発時警告対象になること                                                  |
+| `MobileSupplement`                | モバイル時に hidden metadata の要約だけが lead 領域へ再掲されること                                   |
+| `StandaloneFallback`              | 親未接続時でも即時破綻しないこと                                                                      |
+| `DarkMode`                        | ダークモードで可読性と状態識別が維持されること                                                        |
 
 selection model は base 契約に含めないため、`SelectedState`、`ActiveWithoutSelected`、`SelectedWithoutActive`、`ActiveAndSelected`、`AriaSelectedFromSelectedOnly`、`SelectedVisualPriority`、`SelectedAriaFalsePolicy` は本節から削除します。selection を将来導入する場合は、`ui-list` 側で別契約として昇格させた後に追加します。
 

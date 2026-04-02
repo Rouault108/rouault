@@ -454,25 +454,25 @@ pagination は補助導線です。永続アニメーション、過大な拡大
 
 Storybook または同等の検証では、少なくとも次を確認しなければなりません。
 
-| 検証項目 | 確認内容 |
-| --- | --- |
-| root navigation semantics | `nav` がページ移動ナビゲーションとして解釈され、`aria-label="ページナビゲーション"` を持つこと |
-| current page link | 現在ページが `aria-current="page"` を持つリンクであること |
-| prev/next enabled state | 移動可能時の Prev / Next がリンクであること |
-| prev/next disabled state | 境界で Prev / Next が `<span aria-disabled="true">` になること |
-| ellipsis semantics | 省略記号が非対話要素であり、フォーカス対象にも読み上げ対象にも入らないこと |
-| single page | `total = 1` でページ 1 のみが表示され、省略記号が出ないこと |
-| small total | `total <= 7` で全ページが表示されること |
-| threshold 7/8 | `total = 7` と `total = 8` の閾値が維持されること |
-| one-page gap | 欠落が 1 ページのとき、省略記号ではなく実ページ番号が表示されること |
-| near start / near end | 冗長な省略記号が表示されないこと |
-| compact mode | `compact` で current と必要な側の省略記号だけに圧縮されること |
-| representative examples | 本書の代表例と描画結果が一致すること |
-| no custom event assumption | 利用側テストがコンポーネント固有イベントに依存していないこと |
-| reduced motion | Reduced Motion 環境でも動きが補助的表現に留まり、識別が失われないこと |
-| forced colors | 強制カラーで current / non-current、enabled / disabled、focus visible の区別が維持されること |
-| dark theme tokens | トークン差し替えで暗色環境に適応できること |
-| structural privacy | テストが内部 class 名、private state、helper 関数の戻り値に依存せず、公開入力と描画結果だけを見ていること |
+| 検証項目                   | 確認内容                                                                                                  |
+| -------------------------- | --------------------------------------------------------------------------------------------------------- |
+| root navigation semantics  | `nav` がページ移動ナビゲーションとして解釈され、`aria-label="ページナビゲーション"` を持つこと            |
+| current page link          | 現在ページが `aria-current="page"` を持つリンクであること                                                 |
+| prev/next enabled state    | 移動可能時の Prev / Next がリンクであること                                                               |
+| prev/next disabled state   | 境界で Prev / Next が `<span aria-disabled="true">` になること                                            |
+| ellipsis semantics         | 省略記号が非対話要素であり、フォーカス対象にも読み上げ対象にも入らないこと                                |
+| single page                | `total = 1` でページ 1 のみが表示され、省略記号が出ないこと                                               |
+| small total                | `total <= 7` で全ページが表示されること                                                                   |
+| threshold 7/8              | `total = 7` と `total = 8` の閾値が維持されること                                                         |
+| one-page gap               | 欠落が 1 ページのとき、省略記号ではなく実ページ番号が表示されること                                       |
+| near start / near end      | 冗長な省略記号が表示されないこと                                                                          |
+| compact mode               | `compact` で current と必要な側の省略記号だけに圧縮されること                                             |
+| representative examples    | 本書の代表例と描画結果が一致すること                                                                      |
+| no custom event assumption | 利用側テストがコンポーネント固有イベントに依存していないこと                                              |
+| reduced motion             | Reduced Motion 環境でも動きが補助的表現に留まり、識別が失われないこと                                     |
+| forced colors              | 強制カラーで current / non-current、enabled / disabled、focus visible の区別が維持されること              |
+| dark theme tokens          | トークン差し替えで暗色環境に適応できること                                                                |
+| structural privacy         | テストが内部 class 名、private state、helper 関数の戻り値に依存せず、公開入力と描画結果だけを見ていること |
 
 ---
 

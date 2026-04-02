@@ -73,9 +73,7 @@ export const resolveNoteHydrationBudgetProfile = (
   note: Pick<IntrinsicNote, 'slug'> & { hydrationBudgetProfile?: unknown },
 ): NoteHydrationBudgetProfile | null => {
   const rawExplicitProfile =
-    typeof note.hydrationBudgetProfile === 'string'
-      ? note.hydrationBudgetProfile.trim()
-      : '';
+    typeof note.hydrationBudgetProfile === 'string' ? note.hydrationBudgetProfile.trim() : '';
 
   if (rawExplicitProfile.length === 0) {
     return null;

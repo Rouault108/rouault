@@ -280,11 +280,7 @@ export class InfoBox extends LitElement {
           ? html`
               <div class="header">
                 ${icon.length > 0
-                  ? html`<ui-icon
-                      class="icon"
-                      name="${icon}"
-                      aria-hidden="true"
-                    ></ui-icon>`
+                  ? html`<ui-icon class="icon" name="${icon}" aria-hidden="true"></ui-icon>`
                   : nothing}
                 <div
                   id="${headingId}"

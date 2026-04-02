@@ -93,7 +93,9 @@ describe('remarkLinkCards', () => {
     expect(card?.type).to.equal('rouaultResolvedLinkCard');
     expect(card?.data?.hProperties?.['card-title']).to.equal('Cache Title');
     expect(card?.data?.hProperties?.['description']).to.equal('Cache Description');
-    expect(card?.data?.hProperties?.['image-src']).to.equal('/content-assets/testing/test-card.jpg');
+    expect(card?.data?.hProperties?.['image-src']).to.equal(
+      '/content-assets/testing/test-card.jpg',
+    );
     expect(card?.data?.hProperties?.['site-name']).to.equal('Example');
   });
 

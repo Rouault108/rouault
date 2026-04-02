@@ -2099,10 +2099,7 @@ export class UiVideo extends LitElement {
                         ?disabled=${this._controlDisabled}
                         @click="${this._toggleCaptions}"
                       >
-                        <ui-icon
-                          name="${this._captionToggleIcon}"
-                          aria-hidden="true"
-                        ></ui-icon>
+                        <ui-icon name="${this._captionToggleIcon}" aria-hidden="true"></ui-icon>
                       </ui-button>
                     `
                   : nothing}
@@ -2116,10 +2113,7 @@ export class UiVideo extends LitElement {
                   ?disabled=${this._controlDisabled}
                   @click="${this._toggleFullscreen}"
                 >
-                  <ui-icon
-                    name="${this._fullscreenButtonIcon}"
-                    aria-hidden="true"
-                  ></ui-icon>
+                  <ui-icon name="${this._fullscreenButtonIcon}" aria-hidden="true"></ui-icon>
                 </ui-button>
               </div>
             </div>

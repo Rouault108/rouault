@@ -67,7 +67,8 @@ export const AuthorJsOptIn: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'author JS の注入可否は browser test 側で検査し、この story は opt-in の見本として残しています。',
+        story:
+          'author JS の注入可否は browser test 側で検査し、この story は opt-in の見本として残しています。',
       },
     },
   },
@@ -109,23 +110,35 @@ export const SandboxCapabilityTokens: Story = {
 export const HeightBehavior: Story = {
   render: () => html`
     <div style="padding: 2rem; max-width: 720px; display: grid; gap: 1.5rem;">
-      <ui-preview-sandbox iframe-title="fixed height sandbox" height="120" height-mode="fixed" allow-js>
+      <ui-preview-sandbox
+        iframe-title="fixed height sandbox"
+        height="120"
+        height-mode="fixed"
+        allow-js
+      >
         <template data-preview-kind="html"><div class="box">fixed</div></template>
         <template data-preview-kind="css"
           >body { padding: 8px; } .box { height: 48px; background: rgb(238 242 255); }</template
         >
         <template data-preview-kind="js"
-          >setTimeout(() => { const box = document.querySelector('.box'); if (box instanceof HTMLElement) { box.style.height = '260px'; } }, 80);</template
+          >setTimeout(() => { const box = document.querySelector('.box'); if (box instanceof
+          HTMLElement) { box.style.height = '260px'; } }, 80);</template
         >
       </ui-preview-sandbox>
 
-      <ui-preview-sandbox iframe-title="auto height sandbox" height="120" height-mode="auto" allow-js>
+      <ui-preview-sandbox
+        iframe-title="auto height sandbox"
+        height="120"
+        height-mode="auto"
+        allow-js
+      >
         <template data-preview-kind="html"><div class="box">auto</div></template>
         <template data-preview-kind="css"
           >body { padding: 8px; } .box { height: 48px; background: rgb(236 253 245); }</template
         >
         <template data-preview-kind="js"
-          >setTimeout(() => { const box = document.querySelector('.box'); if (box instanceof HTMLElement) { box.style.height = '260px'; } }, 80);</template
+          >setTimeout(() => { const box = document.querySelector('.box'); if (box instanceof
+          HTMLElement) { box.style.height = '260px'; } }, 80);</template
         >
       </ui-preview-sandbox>
 
@@ -141,7 +154,8 @@ export const HeightBehavior: Story = {
           >body { padding: 8px; } .box { height: 48px; background: rgb(254 249 195); }</template
         >
         <template data-preview-kind="js"
-          >setTimeout(() => { const box = document.querySelector('.box'); if (box instanceof HTMLElement) { box.style.height = '260px'; } }, 80);</template
+          >setTimeout(() => { const box = document.querySelector('.box'); if (box instanceof
+          HTMLElement) { box.style.height = '260px'; } }, 80);</template
         >
       </ui-preview-sandbox>
     </div>

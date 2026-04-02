@@ -10,7 +10,6 @@ export type TreeItemDensity = 'normal' | 'compact';
 export type FileTreeVariant = 'default' | 'card';
 export type FileTreeLoadingStrategy = 'retain' | 'replace';
 
-
 interface FlattenedTreeNode {
   node: TreeNode;
   depth: number;
@@ -72,7 +71,10 @@ const toValidEnum = <T extends string>(
   return fallback;
 };
 
-const toBranchIds = (value: ReadonlySet<string>, index: ReadonlyMap<string, IndexedTreeNode>): Set<string> => {
+const toBranchIds = (
+  value: ReadonlySet<string>,
+  index: ReadonlyMap<string, IndexedTreeNode>,
+): Set<string> => {
   const result = new Set<string>();
 
   for (const id of value) {
@@ -166,7 +168,9 @@ const validateNodes = (nodes: readonly TreeNode[]): void => {
 
     if (isBranchNode(node)) {
       if (node.children.length === 0) {
-        console.warn(`[ui-file-tree] branch は 1 件以上の children を持つ必要があります: ${node.id}`);
+        console.warn(
+          `[ui-file-tree] branch は 1 件以上の children を持つ必要があります: ${node.id}`,
+        );
       }
 
       for (const child of node.children) {
@@ -407,7 +411,8 @@ export class FileTree extends LitElement {
   }
 
   override focus(options?: FocusOptions): void {
-    const targetId = this._activeId ?? this._selectedLeafId ?? this._flattenedNodes[0]?.node.id ?? null;
+    const targetId =
+      this._activeId ?? this._selectedLeafId ?? this._flattenedNodes[0]?.node.id ?? null;
     if (targetId === null) {
       return;
     }
@@ -489,7 +494,11 @@ export class FileTree extends LitElement {
       return;
     }
 
-    if (!this.hasUpdated || changedProperties.has('defaultExpandedIds') || changedProperties.has('items')) {
+    if (
+      !this.hasUpdated ||
+      changedProperties.has('defaultExpandedIds') ||
+      changedProperties.has('items')
+    ) {
       const nextExpandedIds = toBranchIds(this.defaultExpandedIds, this._nodeIndex);
       if (!setsAreEqual(this._uncontrolledExpandedIds, nextExpandedIds)) {
         this._uncontrolledExpandedIds = nextExpandedIds;
@@ -723,7 +732,7 @@ export class FileTree extends LitElement {
     }
 
     this._moveFocusByIndex(currentIndex + 1);
-  }
+  };
 
   private _handleArrowLeft = (event: CustomEvent): void => {
     event.stopPropagation();
@@ -748,10 +757,12 @@ export class FileTree extends LitElement {
         return;
       }
     }
-  }
+  };
 
   private _focusItem(nodeId: string, options?: FocusOptions): void {
-    const treeItem = this.shadowRoot?.querySelector<HTMLElement>(`ui-tree-item[data-id="${nodeId}"]`);
+    const treeItem = this.shadowRoot?.querySelector<HTMLElement>(
+      `ui-tree-item[data-id="${nodeId}"]`,
+    );
     treeItem?.focus(options);
   }
 
@@ -765,7 +776,9 @@ export class FileTree extends LitElement {
   }
 
   private _scrollItemIntoView(nodeId: string, behavior?: ScrollBehavior): void {
-    const treeItem = this.shadowRoot?.querySelector<HTMLElement>(`ui-tree-item[data-id="${nodeId}"]`);
+    const treeItem = this.shadowRoot?.querySelector<HTMLElement>(
+      `ui-tree-item[data-id="${nodeId}"]`,
+    );
     if (!(treeItem instanceof HTMLElement)) {
       return;
     }
@@ -862,19 +875,19 @@ export class FileTree extends LitElement {
       const tabindex = this._activeId === node.id ? 0 : -1;
 
       return html`
-          <ui-tree-item
-            slot=${ifDefined(slotName)}
-            data-id=${node.id}
-            .label=${node.label}
-            .icon=${node.icon ?? ''}
-            .href=${isLeafNode(node) ? node.href : ''}
-            .expanded=${isExpanded}
-            .selected=${isSelected}
-            .ancestorSelected=${isBranchNode(node) && this._selectedAncestorBranchIds.has(node.id)}
-            .depth=${depth}
-            .printMode=${this.printable && this._printExpanding}
-            .tabIndex=${tabindex}
-            .density=${this.density}
+        <ui-tree-item
+          slot=${ifDefined(slotName)}
+          data-id=${node.id}
+          .label=${node.label}
+          .icon=${node.icon ?? ''}
+          .href=${isLeafNode(node) ? node.href : ''}
+          .expanded=${isExpanded}
+          .selected=${isSelected}
+          .ancestorSelected=${isBranchNode(node) && this._selectedAncestorBranchIds.has(node.id)}
+          .depth=${depth}
+          .printMode=${this.printable && this._printExpanding}
+          .tabIndex=${tabindex}
+          .density=${this.density}
           @selected-change=${(event: CustomEvent) => {
             if (isLeafNode(node)) {
               this._handleLeafSelect(event, node);

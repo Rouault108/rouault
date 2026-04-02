@@ -108,15 +108,15 @@
 
 ### 入力一覧
 
-| 名前          | 種別                 | 既定値      | 契約                                                                 |
-| ------------- | -------------------- | ----------- | -------------------------------------------------------------------- |
-| `checked`     | property / attribute | `false`     | 現在値。`true` で ON、`false` で OFF                                 |
-| `disabled`    | property / attribute | `false`     | 完全に非操作化する。Tab 移動対象から外れる                           |
-| `readonly`    | property / attribute | `false`     | 値は表示するが変更は受け付けない。Tab 移動対象には残る               |
-| `label`       | property / attribute | `''`        | 内部に描画する単純テキストラベル                                     |
-| `labelledBy`  | property             | `undefined` | 外部ラベル要素 IDREF。空白区切りで複数 ID を指定できる               |
-| `describedBy` | property             | `undefined` | 外部説明要素 IDREF。空白区切りで複数 ID を指定できる                 |
-| `aria-label`  | host attribute        | なし        | `label` も `labelledBy` も指定しない場合のアクセシブル名             |
+| 名前          | 種別                 | 既定値      | 契約                                                     |
+| ------------- | -------------------- | ----------- | -------------------------------------------------------- |
+| `checked`     | property / attribute | `false`     | 現在値。`true` で ON、`false` で OFF                     |
+| `disabled`    | property / attribute | `false`     | 完全に非操作化する。Tab 移動対象から外れる               |
+| `readonly`    | property / attribute | `false`     | 値は表示するが変更は受け付けない。Tab 移動対象には残る   |
+| `label`       | property / attribute | `''`        | 内部に描画する単純テキストラベル                         |
+| `labelledBy`  | property             | `undefined` | 外部ラベル要素 IDREF。空白区切りで複数 ID を指定できる   |
+| `describedBy` | property             | `undefined` | 外部説明要素 IDREF。空白区切りで複数 ID を指定できる     |
+| `aria-label`  | host attribute       | なし        | `label` も `labelledBy` も指定しない場合のアクセシブル名 |
 
 ### 入力契約
 
@@ -466,25 +466,25 @@
 
 各 Story は見本ではなく、契約確認点として扱います。長期的には少なくとも次を固定します。
 
-| Story                      | 固定する契約                                     |
-| -------------------------- | ------------------------------------------------ |
-| `Default`                  | 既定値が OFF であること                          |
-| `On`                       | ON 状態が成立すること                            |
-| `Disabled`                 | disabled で非操作・Tab 除外であること            |
-| `Readonly`                 | readonly でフォーカス可能かつ非変更であること    |
-| `InternalLabel`            | `label` による内部ラベルが成立すること           |
-| `ExternalLabelledBy`       | `labelledBy` による外部ラベル連携が成立すること  |
-| `DescribedBy`              | `describedBy` により説明文関連付けが成立すること |
-| `NoLabelNeedsAriaLabel`    | ラベルなしでは `aria-label` が必要であること     |
-| `PointerToggle`            | control click で `checked-change` が発火すること |
-| `InternalLabelClickToggle` | 内部ラベル click で toggle すること              |
-| `KeyboardSpaceToggle`      | Space でのみ toggle すること                     |
-| `KeyboardEnterNoToggle`    | Enter では toggle しないこと                     |
-| `RepeatKeyIgnored`         | キーリピートで連続 toggle しないこと             |
-| `ReducedMotion`            | reduced motion で transition が極小化されること  |
-| `ForcedColors`             | forced-colors 環境で状態差分が視認できること     |
-| `InvalidLabelConfigWarning`  | ラベル指定の競合が開発時警告として検出できること         |
-| `DisabledReadonlyWarning`    | `disabled` と `readonly` の併用が開発時警告として検出できること |
+| Story                       | 固定する契約                                                    |
+| --------------------------- | --------------------------------------------------------------- |
+| `Default`                   | 既定値が OFF であること                                         |
+| `On`                        | ON 状態が成立すること                                           |
+| `Disabled`                  | disabled で非操作・Tab 除外であること                           |
+| `Readonly`                  | readonly でフォーカス可能かつ非変更であること                   |
+| `InternalLabel`             | `label` による内部ラベルが成立すること                          |
+| `ExternalLabelledBy`        | `labelledBy` による外部ラベル連携が成立すること                 |
+| `DescribedBy`               | `describedBy` により説明文関連付けが成立すること                |
+| `NoLabelNeedsAriaLabel`     | ラベルなしでは `aria-label` が必要であること                    |
+| `PointerToggle`             | control click で `checked-change` が発火すること                |
+| `InternalLabelClickToggle`  | 内部ラベル click で toggle すること                             |
+| `KeyboardSpaceToggle`       | Space でのみ toggle すること                                    |
+| `KeyboardEnterNoToggle`     | Enter では toggle しないこと                                    |
+| `RepeatKeyIgnored`          | キーリピートで連続 toggle しないこと                            |
+| `ReducedMotion`             | reduced motion で transition が極小化されること                 |
+| `ForcedColors`              | forced-colors 環境で状態差分が視認できること                    |
+| `InvalidLabelConfigWarning` | ラベル指定の競合が開発時警告として検出できること                |
+| `DisabledReadonlyWarning`   | `disabled` と `readonly` の併用が開発時警告として検出できること |
 
 `SettingsPanel` のような複合 UI は `ui-switch` 単体の Story ではなく、上位コンポーネントの Story で担保します。
 

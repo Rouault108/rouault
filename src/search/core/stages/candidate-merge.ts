@@ -3,7 +3,11 @@ import {
   normalizeDocumentCanonicalUrl,
   validateResultUrl,
 } from '../../../../shared/search/document-url.js';
-import type { SearchCandidate, SearchSourceBatch, SearchSourceKind } from '../../../../shared/search/search-types.js';
+import type {
+  SearchCandidate,
+  SearchSourceBatch,
+  SearchSourceKind,
+} from '../../../../shared/search/search-types.js';
 import type { CandidateMergeStageOutput, CandidateValidationStageOutput } from '../stage-types.js';
 
 interface MergedCandidateUrlEntry {
@@ -46,21 +50,23 @@ function pickPreferredUrl(
     return null;
   }
 
-  return [...validEntries].sort((left, right) => {
-    const leftSourceOrder = left.source === 'pagefind' ? 0 : 1;
-    const rightSourceOrder = right.source === 'pagefind' ? 0 : 1;
-    if (leftSourceOrder !== rightSourceOrder) {
-      return leftSourceOrder - rightSourceOrder;
-    }
+  return (
+    [...validEntries].sort((left, right) => {
+      const leftSourceOrder = left.source === 'pagefind' ? 0 : 1;
+      const rightSourceOrder = right.source === 'pagefind' ? 0 : 1;
+      if (leftSourceOrder !== rightSourceOrder) {
+        return leftSourceOrder - rightSourceOrder;
+      }
 
-    const leftHasQueryOrHash = left.url.includes('?') || left.url.includes('#') ? 1 : 0;
-    const rightHasQueryOrHash = right.url.includes('?') || right.url.includes('#') ? 1 : 0;
-    if (leftHasQueryOrHash !== rightHasQueryOrHash) {
-      return leftHasQueryOrHash - rightHasQueryOrHash;
-    }
+      const leftHasQueryOrHash = left.url.includes('?') || left.url.includes('#') ? 1 : 0;
+      const rightHasQueryOrHash = right.url.includes('?') || right.url.includes('#') ? 1 : 0;
+      if (leftHasQueryOrHash !== rightHasQueryOrHash) {
+        return leftHasQueryOrHash - rightHasQueryOrHash;
+      }
 
-    return left.url.localeCompare(right.url, 'ja');
-  })[0]?.url ?? null;
+      return left.url.localeCompare(right.url, 'ja');
+    })[0]?.url ?? null
+  );
 }
 
 function mergeCandidates(
@@ -90,7 +96,8 @@ function mergeCandidates(
       }
 
       const preferredDescription =
-        existing.matchedSources.includes('pagefind') && !candidate.matchedSources.includes('pagefind')
+        existing.matchedSources.includes('pagefind') &&
+        !candidate.matchedSources.includes('pagefind')
           ? existing.description
           : candidate.matchedSources.includes('pagefind') &&
               !existing.matchedSources.includes('pagefind')
@@ -99,7 +106,8 @@ function mergeCandidates(
               ? existing.description
               : candidate.description;
       const preferredSnippet =
-        existing.matchedSources.includes('pagefind') && !candidate.matchedSources.includes('pagefind')
+        existing.matchedSources.includes('pagefind') &&
+        !candidate.matchedSources.includes('pagefind')
           ? existing.snippet
           : candidate.matchedSources.includes('pagefind') &&
               !existing.matchedSources.includes('pagefind')
@@ -108,7 +116,9 @@ function mergeCandidates(
               ? existing.snippet
               : candidate.snippet;
       const preferredDate =
-        (existing.date.epochMs ?? -1) >= (candidate.date.epochMs ?? -1) ? existing.date : candidate.date;
+        (existing.date.epochMs ?? -1) >= (candidate.date.epochMs ?? -1)
+          ? existing.date
+          : candidate.date;
       const preferredTitle =
         existing.title.length > 0
           ? existing.title

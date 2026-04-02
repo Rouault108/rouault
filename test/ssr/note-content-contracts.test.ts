@@ -23,7 +23,9 @@ describe('validateNoteContentContracts', () => {
         '<ui-code-preview controls="viewport"><button slot="toolbar">Open</button></ui-code-preview>',
         'testing/test',
       );
-    }).toThrow('[note-content:testing/test] reader note の code-preview では controls を使用できません');
+    }).toThrow(
+      '[note-content:testing/test] reader note の code-preview では controls を使用できません',
+    );
   });
 
   it('testing note の sandbox と controls は許可すること', () => {
@@ -45,7 +47,9 @@ describe('validateNoteContentContracts', () => {
         'testing/interactive',
         'interactive',
       );
-    }).toThrow('[note-content:testing/interactive] testing/sandbox 以外では preview-sandbox を使用できません');
+    }).toThrow(
+      '[note-content:testing/interactive] testing/sandbox 以外では preview-sandbox を使用できません',
+    );
   });
 
   it('static-first 化した legacy ui-* が note 最終 HTML に残っていれば build error にすること', () => {

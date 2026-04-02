@@ -126,11 +126,7 @@ export const ManualInteractionReview: Story = {
       <ui-checkbox label="クリックと Space で切り替え"></ui-checkbox>
       <ui-checkbox label="ラベルクリック" checked></ui-checkbox>
       <ui-checkbox label="無効状態" checked disabled></ui-checkbox>
-      <ui-checkbox
-        label="エラー表示"
-        invalid
-        error-message="選択が必要です"
-      ></ui-checkbox>
+      <ui-checkbox label="エラー表示" invalid error-message="選択が必要です"></ui-checkbox>
     </div>
   `,
   parameters: {

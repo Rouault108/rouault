@@ -38,7 +38,12 @@ describe('ui-list-item browser contract', () => {
   it('list context を受けて grid row と current column projection を構成すること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>
-        <ui-list .columns=${columns} .showActions=${true} .currentRowId=${'row-1'} .currentColumnId=${'date'}>
+        <ui-list
+          .columns=${columns}
+          .showActions=${true}
+          .currentRowId=${'row-1'}
+          .currentColumnId=${'date'}
+        >
           <ui-list-item row-id="row-1">
             <a id="title-link" slot="title" href="/notes/row-1">List Item 単体検証</a>
             <time slot="date" datetime="2026-04-01">2026-04-01</time>
@@ -64,7 +69,10 @@ describe('ui-list-item browser contract', () => {
     const currentCell = getDataCell(row, 'date');
     expect(currentCell.classList.contains('cell--current')).to.equal(true);
 
-    const titleLink = expectPresent(row.querySelector<HTMLAnchorElement>('#title-link'), 'title link');
+    const titleLink = expectPresent(
+      row.querySelector<HTMLAnchorElement>('#title-link'),
+      'title link',
+    );
     expect(titleLink.tabIndex).to.equal(-1);
   });
 
@@ -108,9 +116,7 @@ describe('ui-list-item browser contract', () => {
   });
 
   it('standalone では fallback cell を描画すること', async () => {
-    const host = await fixture<ListItem>(html`
-      <ui-list-item>Standalone fallback</ui-list-item>
-    `);
+    const host = await fixture<ListItem>(html` <ui-list-item>Standalone fallback</ui-list-item> `);
 
     await flush(host);
 

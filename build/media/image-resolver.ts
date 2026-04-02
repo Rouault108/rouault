@@ -178,11 +178,7 @@ const loadLinkCardThumbnailCache = (): LinkCardThumbnailCache | null => {
   }
 
   const parsed = JSON.parse(readFileSync(LINK_CARD_THUMBNAIL_CACHE_PATH, 'utf8')) as unknown;
-  if (
-    !isRecord(parsed) ||
-    parsed['version'] !== 1 ||
-    !isRecord(parsed['entries'])
-  ) {
+  if (!isRecord(parsed) || parsed['version'] !== 1 || !isRecord(parsed['entries'])) {
     throw buildError('link-card thumbnail cache JSON が不正です');
   }
 
@@ -248,10 +244,14 @@ const resolveManifestBackedAsset = (
   const lightboxEntry = item.variants[lightboxVariant];
 
   if (!inlineEntry) {
-    throw buildError(`image manifest に "${normalizedSourcePath}" の ${inlineVariant} variant がありません`);
+    throw buildError(
+      `image manifest に "${normalizedSourcePath}" の ${inlineVariant} variant がありません`,
+    );
   }
   if (!lightboxEntry) {
-    throw buildError(`image manifest に "${normalizedSourcePath}" の ${lightboxVariant} variant がありません`);
+    throw buildError(
+      `image manifest に "${normalizedSourcePath}" の ${lightboxVariant} variant がありません`,
+    );
   }
 
   return {

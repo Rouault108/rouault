@@ -87,9 +87,7 @@ export interface NotePageProjection {
   pagefind: NotePagePagefindProjection | null;
 }
 
-function normalizeHeadings(
-  value: IntrinsicNote['tocHeadings'],
-): NotePageTocHeading[] {
+function normalizeHeadings(value: IntrinsicNote['tocHeadings']): NotePageTocHeading[] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -111,8 +109,7 @@ function normalizeHeadings(
       const scopeSelections = Array.isArray(item.scopeSelections)
         ? item.scopeSelections
             .map((selection: RawTocScopeSelection) => {
-              const scopeId =
-                typeof selection.scopeId === 'string' ? selection.scopeId.trim() : '';
+              const scopeId = typeof selection.scopeId === 'string' ? selection.scopeId.trim() : '';
               const value = typeof selection.value === 'string' ? selection.value.trim() : '';
               if (scopeId.length === 0 || value.length === 0) {
                 return null;

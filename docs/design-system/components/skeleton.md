@@ -77,25 +77,25 @@ Rouault における Skeleton は、読書体験への没入を阻害しない�
 
 ### 公開入力
 
-| 名前          | 種別                 | 必須   | 内容               | 契約                                                                 |
-| ------------- | -------------------- | ------ | ------------------ | -------------------------------------------------------------------- |
-| `variant`     | property / attribute | いいえ | 用途別形状種別     | `text` / `circular` / `rectangular`。既定値は `rectangular`          |
-| `width`       | property / attribute | いいえ | 幅                 | CSS 寸法文字列。前後空白は正規化されます                             |
-| `height`      | property / attribute | いいえ | 高さ               | CSS 寸法文字列。前後空白は正規化されます                             |
-| `aspectRatio` | property / attribute | いいえ | 矩形比率           | `rectangular` の比率指定。property 名は `aspectRatio`、attribute 名は `aspect-ratio` |
-| `animated`    | property / attribute | いいえ | Shimmer 表示可否   | 既定値は `false`。`true` の場合のみ Shimmer を許可します             |
+| 名前          | 種別                 | 必須   | 内容             | 契約                                                                                 |
+| ------------- | -------------------- | ------ | ---------------- | ------------------------------------------------------------------------------------ |
+| `variant`     | property / attribute | いいえ | 用途別形状種別   | `text` / `circular` / `rectangular`。既定値は `rectangular`                          |
+| `width`       | property / attribute | いいえ | 幅               | CSS 寸法文字列。前後空白は正規化されます                                             |
+| `height`      | property / attribute | いいえ | 高さ             | CSS 寸法文字列。前後空白は正規化されます                                             |
+| `aspectRatio` | property / attribute | いいえ | 矩形比率         | `rectangular` の比率指定。property 名は `aspectRatio`、attribute 名は `aspect-ratio` |
+| `animated`    | property / attribute | いいえ | Shimmer 表示可否 | 既定値は `false`。`true` の場合のみ Shimmer を許可します                             |
 
 ### 属性反映契約
 
 公開入力は property と attribute の両面から操作できます。`animated` は boolean attribute として扱います。`variant`、`width`、`height`、`aspectRatio` は reflect されます。
 
-| property      | attribute       | reflect | 備考                                                        |
-| ------------- | --------------- | ------- | ----------------------------------------------------------- |
-| `variant`     | `variant`       | あり    | 列挙外値は `rectangular` に正規化されます                   |
-| `width`       | `width`         | あり    | 文字列前後の空白は除去されます                              |
-| `height`      | `height`        | あり    | 文字列前後の空白は除去されます                              |
-| `aspectRatio` | `aspect-ratio`  | あり    | 前後空白は除去されます。空文字は未指定として扱います        |
-| `animated`    | `animated`      | あり    | boolean attribute として扱います                            |
+| property      | attribute      | reflect | 備考                                                 |
+| ------------- | -------------- | ------- | ---------------------------------------------------- |
+| `variant`     | `variant`      | あり    | 列挙外値は `rectangular` に正規化されます            |
+| `width`       | `width`        | あり    | 文字列前後の空白は除去されます                       |
+| `height`      | `height`       | あり    | 文字列前後の空白は除去されます                       |
+| `aspectRatio` | `aspect-ratio` | あり    | 前後空白は除去されます。空文字は未指定として扱います |
+| `animated`    | `animated`     | あり    | boolean attribute として扱います                     |
 
 ### 正規化契約
 

@@ -72,11 +72,11 @@
 
 `ui-search-trigger` は、`placeholder`、`disabled`、`density` を公開入力として扱います。
 
-| 名前          | 種別                 | 必須   | 内容                         | 契約                                                                                                                                 |
-| ------------- | -------------------- | ------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `placeholder` | property / attribute | いいえ | 視覚表示用ラベル             | 既定値は `"検索..."` です。アクセシブル名、検索語初期値、検索スコープには使用しません。                                             |
-| `disabled`    | property / attribute | いいえ | 無効状態                     | `true` の場合、内部 button を無効化し、起動しません。                                                                                |
-| `density`     | property / attribute | いいえ | 視覚密度                     | `auto` / `default` / `compact` / `icon-only` を受け付けます。既定値は `auto` です。意味論は変えず、視覚密度だけを制御します。 |
+| 名前          | 種別                 | 必須   | 内容             | 契約                                                                                                                          |
+| ------------- | -------------------- | ------ | ---------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `placeholder` | property / attribute | いいえ | 視覚表示用ラベル | 既定値は `"検索..."` です。アクセシブル名、検索語初期値、検索スコープには使用しません。                                       |
+| `disabled`    | property / attribute | いいえ | 無効状態         | `true` の場合、内部 button を無効化し、起動しません。                                                                         |
+| `density`     | property / attribute | いいえ | 視覚密度         | `auto` / `default` / `compact` / `icon-only` を受け付けます。既定値は `auto` です。意味論は変えず、視覚密度だけを制御します。 |
 
 加えて、アクセシビリティおよびダイアログ関係の補助入力として、次を受け付けます。
 
@@ -140,10 +140,10 @@
 
 `placeholder`、`disabled`、`density` は property と attribute の両面から操作できます。`disabled` は boolean attribute として扱います。
 
-| property      | attribute     | reflect | 備考                                                |
-| ------------- | ------------- | ------- | --------------------------------------------------- |
-| `placeholder` | `placeholder` | あり    | 既定値は `"検索..."` です。                         |
-| `disabled`    | `disabled`    | あり    | boolean attribute として扱います。                  |
+| property      | attribute     | reflect | 備考                                                   |
+| ------------- | ------------- | ------- | ------------------------------------------------------ |
+| `placeholder` | `placeholder` | あり    | 既定値は `"検索..."` です。                            |
+| `disabled`    | `disabled`    | あり    | boolean attribute として扱います。                     |
 | `density`     | `density`     | あり    | 既定値は `auto` です。無効値は `auto` として扱います。 |
 
 `aria-label`、`aria-controls`、`aria-expanded` は、ホスト上の補助入力として受理し、内部 button のアクセシビリティ属性へ委譲します。これらは trigger 自身を stateful widget に変えるためのものではありません。
@@ -479,15 +479,15 @@ button がフォーカスを得ても、`open-search-dialog` は発火しませ�
 
 Storybook は公開契約の検証手段です。個々の Story 名一覧そのものを公開契約には含めません。将来変更時も、少なくとも次の観点を検証できなければなりません。
 
-| 観点                  | 固定する契約                                                                 |
-| --------------------- | ---------------------------------------------------------------------------- |
-| Semantic / ARIA       | ネイティブ button、`type="button"`、アクセシブル名、`aria-haspopup="dialog"` が維持されること |
-| Input Reflection      | `placeholder` と `disabled` が property / attribute の両面から反映されること |
-| Activation            | click、Enter、Space、公開 `click()` が同一の起動契約へ合流すること          |
-| Disabled / Form Safety| `disabled` 時に起動しないこと、form 内でも submit の起点にならないこと      |
-| Boundary              | 空文字 `placeholder` でも意味論が維持されること、長文が 1 行で省略表示されること |
-| Visual Density        | 通常表示と狭幅時の icon-only 表示で意味と起動領域が維持されること           |
-| Environment           | Forced Colors 等の強い環境条件で判別可能性が維持されること                   |
+| 観点                   | 固定する契約                                                                                  |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| Semantic / ARIA        | ネイティブ button、`type="button"`、アクセシブル名、`aria-haspopup="dialog"` が維持されること |
+| Input Reflection       | `placeholder` と `disabled` が property / attribute の両面から反映されること                  |
+| Activation             | click、Enter、Space、公開 `click()` が同一の起動契約へ合流すること                            |
+| Disabled / Form Safety | `disabled` 時に起動しないこと、form 内でも submit の起点にならないこと                        |
+| Boundary               | 空文字 `placeholder` でも意味論が維持されること、長文が 1 行で省略表示されること              |
+| Visual Density         | 通常表示と狭幅時の icon-only 表示で意味と起動領域が維持されること                             |
+| Environment            | Forced Colors 等の強い環境条件で判別可能性が維持されること                                    |
 
 ---
 

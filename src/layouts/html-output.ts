@@ -51,11 +51,11 @@ const serializeHtmlAttribute = ({
   return ` ${name}="${serializedValue}"`;
 };
 
-export const serializeHtmlAttributes = (
-  attributes: readonly HtmlAttributeDescriptor[],
-): string => attributes.map((attribute) => serializeHtmlAttribute(attribute)).join('');
+export const serializeHtmlAttributes = (attributes: readonly HtmlAttributeDescriptor[]): string =>
+  attributes.map((attribute) => serializeHtmlAttribute(attribute)).join('');
 
-export const renderJsonScriptElement = (id: string, value: unknown): string => `
+export const renderJsonScriptElement = (id: string, value: unknown): string =>
+  `
 <script type="application/json"${serializeHtmlAttributes([{ name: 'id', value: id }])}>
 ${serializeJsonForScriptTag(value)}
 </script>

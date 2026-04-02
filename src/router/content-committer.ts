@@ -1,10 +1,6 @@
 import { HeadManager } from './head-manager.js';
 import { LocationAdapter } from './location-adapter.js';
-import type {
-  ContentUpdateAdapter,
-  DocumentSnapshot,
-  HistoryMode,
-} from './router-types.js';
+import type { ContentUpdateAdapter, DocumentSnapshot, HistoryMode } from './router-types.js';
 
 interface CommitRequest {
   snapshot: DocumentSnapshot;
@@ -33,7 +29,10 @@ export class ContentCommitter {
       document.querySelector('meta[name="description"]')?.getAttribute('content') ?? null;
     const previousUrl = this.location.readCurrentUrl();
     const previousHistoryState: unknown = history.state;
-    const preparedMutation = await this.prepareContentMutation(request.snapshot, request.normalizedUrl);
+    const preparedMutation = await this.prepareContentMutation(
+      request.snapshot,
+      request.normalizedUrl,
+    );
     let historyApplied = false;
 
     try {

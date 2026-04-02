@@ -424,32 +424,32 @@ Hover、Dragging、Focus に応じた装飾差分を設けることはできま�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                  | 固定する契約                                                                                           |
-| ---------------------- | ------------------------------------------------------------------------------------------------------ |
-| `Default`              | 中間値、ARIA 属性、内部 input の存在が成立すること                                                     |
-| `AtMinValue`           | `value=min` のとき Fill 幅が `0%` であること                                                           |
-| `AtMaxValue`           | `value=max` のとき Fill 幅が `100%` であること                                                         |
-| `DisabledNormal`       | disabled 状態で input が無効化されること                                                               |
-| `DisabledAtMin`        | disabled かつ最小値の組み合わせが成立すること                                                          |
-| `DisabledAtMax`        | disabled かつ最大値の組み合わせが成立すること                                                          |
-| `WithSlots`            | `prefix` と `suffix` スロットを併用できること                                                          |
-| `BrightnessControl`    | 補助表示付きの実用構成が成立すること                                                                   |
-| `AllStates`            | 主要状態群を一覧表示できること                                                                         |
-| `EventFiring`          | `input` と `change` の再発火契約が成立すること                                                         |
-| `KeyboardNavigation`   | `PageUp` と `PageDown` の独自保証と、その他キーが range input 標準挙動に依存することが成立すること     |
-| `MinGreaterThanMax`    | `min > max` が自動入れ替えされること                                                                   |
-| `InvalidStepFallback`  | `step <= 0` が `1` にフォールバックされること                                                          |
-| `ValueOutOfRange`      | 範囲上限超過値が `max` へクランプされること                                                            |
-| `ValueBelowMin`        | 範囲下限未満値が `min` へクランプされること                                                            |
-| `DecimalStepPrecision` | 小数ステップで精度丸めが成立すること                                                                   |
-| `ValueUnspecified`     | `value` 未指定時に正規化後の `min` が採用されること                                                    |
-| `ValueSnapToStep`      | `step` 非整合値が最近傍ステップへスナップされること                                                    |
-| `DisabledClickBlocked` | disabled 時にイベントが発火せず値も変わらないこと                                                      |
-| `MinEqualsMax`         | 範囲ゼロでも disabled へ自動昇格せず、有効入力として描画継続すること                                   |
-| `NegativeRange`        | 負の範囲で中間値が正しく描画されること                                                                 |
-| `DarkMode`             | ダークトークン環境で視認性が維持されること                                                             |
-| `HighContrastFallback` | forced-colors 環境で視認性確保のフォールバックが成立すること                                           |
-| `MissingLabelFallback` | 契約違反入力時でもアクセシブル名が空欄にならない最低限の退避挙動が存在すること                         |
+| Story                  | 固定する契約                                                                                       |
+| ---------------------- | -------------------------------------------------------------------------------------------------- |
+| `Default`              | 中間値、ARIA 属性、内部 input の存在が成立すること                                                 |
+| `AtMinValue`           | `value=min` のとき Fill 幅が `0%` であること                                                       |
+| `AtMaxValue`           | `value=max` のとき Fill 幅が `100%` であること                                                     |
+| `DisabledNormal`       | disabled 状態で input が無効化されること                                                           |
+| `DisabledAtMin`        | disabled かつ最小値の組み合わせが成立すること                                                      |
+| `DisabledAtMax`        | disabled かつ最大値の組み合わせが成立すること                                                      |
+| `WithSlots`            | `prefix` と `suffix` スロットを併用できること                                                      |
+| `BrightnessControl`    | 補助表示付きの実用構成が成立すること                                                               |
+| `AllStates`            | 主要状態群を一覧表示できること                                                                     |
+| `EventFiring`          | `input` と `change` の再発火契約が成立すること                                                     |
+| `KeyboardNavigation`   | `PageUp` と `PageDown` の独自保証と、その他キーが range input 標準挙動に依存することが成立すること |
+| `MinGreaterThanMax`    | `min > max` が自動入れ替えされること                                                               |
+| `InvalidStepFallback`  | `step <= 0` が `1` にフォールバックされること                                                      |
+| `ValueOutOfRange`      | 範囲上限超過値が `max` へクランプされること                                                        |
+| `ValueBelowMin`        | 範囲下限未満値が `min` へクランプされること                                                        |
+| `DecimalStepPrecision` | 小数ステップで精度丸めが成立すること                                                               |
+| `ValueUnspecified`     | `value` 未指定時に正規化後の `min` が採用されること                                                |
+| `ValueSnapToStep`      | `step` 非整合値が最近傍ステップへスナップされること                                                |
+| `DisabledClickBlocked` | disabled 時にイベントが発火せず値も変わらないこと                                                  |
+| `MinEqualsMax`         | 範囲ゼロでも disabled へ自動昇格せず、有効入力として描画継続すること                               |
+| `NegativeRange`        | 負の範囲で中間値が正しく描画されること                                                             |
+| `DarkMode`             | ダークトークン環境で視認性が維持されること                                                         |
+| `HighContrastFallback` | forced-colors 環境で視認性確保のフォールバックが成立すること                                       |
+| `MissingLabelFallback` | 契約違反入力時でもアクセシブル名が空欄にならない最低限の退避挙動が存在すること                     |
 
 `label` 必須の品質担保は、ランタイム例外による遮断ではなく、Storybook、テスト、レビューによる検証を主とします。したがって、`MissingLabelFallback` は正規入力を推奨するための Story ではなく、契約違反入力時にもアクセシブル名が空欄にならない最低保証を確認するための Story として扱います。
 

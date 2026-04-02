@@ -57,9 +57,7 @@ describe('ui-syntax-card browser contract', () => {
             <ui-syntax-field name="effect" type="() =&gt; void" required>
               effect 関数。
             </ui-syntax-field>
-            <ui-syntax-field name="deps" type="readonly unknown[]">
-              依存配列。
-            </ui-syntax-field>
+            <ui-syntax-field name="deps" type="readonly unknown[]"> 依存配列。 </ui-syntax-field>
           </dl>
         </ui-syntax-section>
 

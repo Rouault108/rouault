@@ -280,10 +280,9 @@ const getFilterOptionStates = (host: SearchPage): FilterOptionState[] => {
 const assertFilterSelectionConsistency = (host: SearchPage, context: string): void => {
   const mismatch = getFilterOptionStates(host).find((state) => state.checked !== state.selected);
 
-  expect(
-    mismatch,
-    `${context}: checked と data-selected が不一致のタグが存在しないこと`,
-  ).to.equal(undefined);
+  expect(mismatch, `${context}: checked と data-selected が不一致のタグが存在しないこと`).to.equal(
+    undefined,
+  );
 };
 
 describe('search-page browser contract', () => {

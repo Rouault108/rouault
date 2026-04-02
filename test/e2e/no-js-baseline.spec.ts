@@ -78,7 +78,9 @@ test.describe('No-JS baseline', () => {
     await expect(page.locator('section[data-code-group]')).toContainText('JavaScript');
   });
 
-  test('タグページが JavaScript 無効時も search-page として初期表示されること', async ({ page }) => {
+  test('タグページが JavaScript 無効時も search-page として初期表示されること', async ({
+    page,
+  }) => {
     await page.goto('/tags/music/');
 
     await expect(page.locator('#main-content h1').first()).toHaveText('#music');

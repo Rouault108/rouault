@@ -1,4 +1,8 @@
-import { filterNotesBySurface, type IntrinsicNote, type IntrinsicNotesCollection } from '../../build/data/notes.js';
+import {
+  filterNotesBySurface,
+  type IntrinsicNote,
+  type IntrinsicNotesCollection,
+} from '../../build/data/notes.js';
 
 const VALID_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/u;
 
@@ -133,9 +137,7 @@ export const buildHomePageProjection = (
       return [];
     }
 
-    const effectiveDate = normalizeDate(
-      normalizeText(note.updated) || normalizeText(note.date),
-    );
+    const effectiveDate = normalizeDate(normalizeText(note.updated) || normalizeText(note.date));
 
     return [
       {

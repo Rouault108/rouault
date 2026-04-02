@@ -109,8 +109,20 @@ describe('SearchDialogSearchSession', () => {
     const state = createState();
     state.query = 'api';
     state.items = [
-      { id: 'alpha', title: 'Alpha Guide', url: '/alpha', path: '/docs/alpha', keywords: ['guide'] },
-      { id: 'delta', title: 'Delta Reference', url: '/delta', path: '/api/delta', keywords: ['schema'] },
+      {
+        id: 'alpha',
+        title: 'Alpha Guide',
+        url: '/alpha',
+        path: '/docs/alpha',
+        keywords: ['guide'],
+      },
+      {
+        id: 'delta',
+        title: 'Delta Reference',
+        url: '/delta',
+        path: '/api/delta',
+        keywords: ['schema'],
+      },
       { id: 'gamma', title: 'Gamma Note', url: '/gamma', path: '/notes/gamma', keywords: ['api'] },
     ];
 

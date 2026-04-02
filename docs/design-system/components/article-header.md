@@ -62,17 +62,17 @@
 
 `source` と `license` は現行では単純入力です。ただし、帰属情報の拡張は `sourceLabel` や `licenseHref` のような場当たり的な prop 追加では受けません。必要になった時点で、表示ラベル、遷移先、種別を分離した構造化帰属情報モデルとして扱います。
 
-| 名前          | 種別                                  | 必須   | 内容                   | 契約                                                                                                                                   |
-| ------------- | ------------------------------------- | ------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `heading`     | property / attribute                  | はい   | 記事タイトル           | 公開契約上は必須です。実装上は空文字既定値を持ちますが、空文字運用は行いません。                                                       |
-| `published`   | property / attribute                  | いいえ | 公開日                 | `YYYY-MM-DD` 形式の正規値を受理します。代表日付の候補です。                                                                            |
-| `created`     | property / attribute                  | いいえ | 作成日                 | `YYYY-MM-DD` 形式の正規値を受理します。可視表示には用いず、日付の補助文脈にのみ用います。                                              |
-| `updatedDate` | property                              | いいえ | 更新日                 | `YYYY-MM-DD` 形式の正規値を受理します。HTML 属性名は `updated` です。代表日付の最優先候補です。                                        |
-| `tags`        | property                              | いいえ | タグ配列               | 正規入力です。現行契約では各要素を表示名兼識別子として扱う文字列配列です。前後空白除去と空要素除外を行います。構造化が必要になった場合は `key` / `label` / 必要に応じて `href` を持つ別契約へ移行します。 |
-| `readingTime` | property / attribute (`reading-time`) | いいえ | 読了時間（分）         | 四捨五入後に 1 以上の整数値のみ表示します。                                                                                            |
-| `status`      | property / attribute                  | いいえ | 読者向け注意状態       | `draft` / `archived` / `wip` / `deprecated` のみ有効です。単一表示のみ許容します。                                                     |
-| `source`      | property / attribute                  | いいえ | 出典 URL               | `http:` / `https:` のみ表示対象です。現行契約では単一 URL を受理します。帰属情報の拡張が必要になった場合は、個別 prop 増築ではなく構造化帰属情報モデルへ移行します。 |
-| `license`     | property / attribute                  | いいえ | ライセンス表示名       | 表示専用の文字列です。可視表示前には前後空白を除去し、空文字列は非表示とします。帰属情報の拡張が必要になった場合は、個別 prop 増築ではなく構造化帰属情報モデルへ移行します。 |
+| 名前          | 種別                                  | 必須   | 内容             | 契約                                                                                                                                                                                                      |
+| ------------- | ------------------------------------- | ------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `heading`     | property / attribute                  | はい   | 記事タイトル     | 公開契約上は必須です。実装上は空文字既定値を持ちますが、空文字運用は行いません。                                                                                                                          |
+| `published`   | property / attribute                  | いいえ | 公開日           | `YYYY-MM-DD` 形式の正規値を受理します。代表日付の候補です。                                                                                                                                               |
+| `created`     | property / attribute                  | いいえ | 作成日           | `YYYY-MM-DD` 形式の正規値を受理します。可視表示には用いず、日付の補助文脈にのみ用います。                                                                                                                 |
+| `updatedDate` | property                              | いいえ | 更新日           | `YYYY-MM-DD` 形式の正規値を受理します。HTML 属性名は `updated` です。代表日付の最優先候補です。                                                                                                           |
+| `tags`        | property                              | いいえ | タグ配列         | 正規入力です。現行契約では各要素を表示名兼識別子として扱う文字列配列です。前後空白除去と空要素除外を行います。構造化が必要になった場合は `key` / `label` / 必要に応じて `href` を持つ別契約へ移行します。 |
+| `readingTime` | property / attribute (`reading-time`) | いいえ | 読了時間（分）   | 四捨五入後に 1 以上の整数値のみ表示します。                                                                                                                                                               |
+| `status`      | property / attribute                  | いいえ | 読者向け注意状態 | `draft` / `archived` / `wip` / `deprecated` のみ有効です。単一表示のみ許容します。                                                                                                                        |
+| `source`      | property / attribute                  | いいえ | 出典 URL         | `http:` / `https:` のみ表示対象です。現行契約では単一 URL を受理します。帰属情報の拡張が必要になった場合は、個別 prop 増築ではなく構造化帰属情報モデルへ移行します。                                      |
+| `license`     | property / attribute                  | いいえ | ライセンス表示名 | 表示専用の文字列です。可視表示前には前後空白を除去し、空文字列は非表示とします。帰属情報の拡張が必要になった場合は、個別 prop 増築ではなく構造化帰属情報モデルへ移行します。                              |
 
 ### 1.2 受理値と非受理値
 
@@ -114,17 +114,18 @@
 
 公開入力のうち、attribute 経路と property 経路の対応は固定します。
 
-| 入力名        | HTML 属性名    | property      | 契約                                                |
-| ------------- | -------------- | ------------- | --------------------------------------------------- |
-| `heading`     | `heading`      | `heading`     | attribute / property の双方を受理します。           |
-| `published`   | `published`    | `published`   | attribute / property の双方を受理します。           |
-| `created`     | `created`      | `created`     | attribute / property の双方を受理します。           |
-| `updatedDate` | `updated`      | `updatedDate` | HTML 属性名は `updated` に固定します。              |
-| `readingTime` | `reading-time` | `readingTime` | number 変換後に評価します。                         |
-| `status`      | `status`       | `status`      | attribute / property の双方を受理します。           |
-| `source`      | `source`       | `source`      | attribute / property の双方を受理します。           |
-| `license`     | `license`      | `license`     | attribute / property の双方を受理します。           |
-| `tags`        | なし           | `tags`        | property 専用の正規入力です。                       |
+| 入力名        | HTML 属性名    | property      | 契約                                      |
+| ------------- | -------------- | ------------- | ----------------------------------------- |
+| `heading`     | `heading`      | `heading`     | attribute / property の双方を受理します。 |
+| `published`   | `published`    | `published`   | attribute / property の双方を受理します。 |
+| `created`     | `created`      | `created`     | attribute / property の双方を受理します。 |
+| `updatedDate` | `updated`      | `updatedDate` | HTML 属性名は `updated` に固定します。    |
+| `readingTime` | `reading-time` | `readingTime` | number 変換後に評価します。               |
+| `status`      | `status`       | `status`      | attribute / property の双方を受理します。 |
+| `source`      | `source`       | `source`      | attribute / property の双方を受理します。 |
+| `license`     | `license`      | `license`     | attribute / property の双方を受理します。 |
+| `tags`        | なし           | `tags`        | property 専用の正規入力です。             |
+
 `tags` は property 専用の正規入力です。
 
 ---
@@ -211,9 +212,9 @@
 
 status は現行契約では単一の読者向け注意状態として扱います。対応関係は次のとおりです。
 
-| `status` 値  | 表示ラベル | アイコン                | トーンクラス        |
-| ------------ | ---------- | ----------------------- | ------------------- |
-| `draft`      | 下書き     | `file-pen`    | `status-draft`      |
+| `status` 値  | 表示ラベル | アイコン         | トーンクラス        |
+| ------------ | ---------- | ---------------- | ------------------- |
+| `draft`      | 下書き     | `file-pen`       | `status-draft`      |
 | `archived`   | アーカイブ | `archive`        | `status-archived`   |
 | `wip`        | 作業中     | `construction`   | `status-wip`        |
 | `deprecated` | 非推奨     | `alert-triangle` | `status-deprecated` |
@@ -398,14 +399,14 @@ tag-click は現行イベント名を維持しつつ、意味論上はタグ act
 
 タグ活性化時には `tag-click` イベントを発火します。これは単なる通知ではなく、**ネイティブリンク遷移へ介入可能なキャンセル可能イベント**です。
 
-| 項目          | 契約                                                                 |
-| ------------- | -------------------------------------------------------------------- |
-| イベント名    | `tag-click`                                                          |
+| 項目          | 契約                                                                               |
+| ------------- | ---------------------------------------------------------------------------------- |
+| イベント名    | `tag-click`                                                                        |
 | `detail.tag`  | 活性化されたタグ文字列です。現行の文字列タグ契約では `key` と `label` が同一です。 |
-| `detail.href` | 現行互換の標準形 `href` です。                                       |
-| `bubbles`     | `true`                                                               |
-| `composed`    | `true`                                                               |
-| `cancelable`  | `true`                                                               |
+| `detail.href` | 現行互換の標準形 `href` です。                                                     |
+| `bubbles`     | `true`                                                                             |
+| `composed`    | `true`                                                                             |
+| `cancelable`  | `true`                                                                             |
 
 親側が `preventDefault()` を呼び出した場合は、内部の click handler が元のクリックイベントに対して `event.preventDefault()` を実行し、ネイティブ遷移を中止します。
 
@@ -434,18 +435,18 @@ tag-click は現行イベント名を維持しつつ、意味論上はタグ act
 
 各 Story は単なる表示例ではなく、将来変更時の契約確認点です。
 
-| Story                         | 固定する契約                                                                                                                           |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `CompleteState`               | フル構成時の総合契約、更新日優先、作成日の `aria-label` 付加、出典リンク属性、タグ数、ステータス表示                                   |
-| `PublishedFallback`           | `updatedDate` 不在時に `published` へフォールバックする契約                                                                            |
-| `StatusStateMatrix`           | `status` 値ごとのラベル、アイコン、トーンクラス対応                                                                                    |
-| `TagEventContract`            | `tags` の property 経路、`tag-click` の発火条件とキャンセル可能性                                                                      |
-| `HeadingOnlyBoundary`         | 見出しのみ最小構成                                                                                                                     |
-| `NormalizationBoundary`       | `tags`・`readingTime`・`source` の正規化契約、およびタグ行の `nav > ul > li > ui-tag` 構造                                           |
-| `StrictDateBoundary`          | 非正規日付を表示しない契約、`created` を `aria-label` に混入させない契約、空白ライセンスで補助行を生成しない契約                     |
-| `UnsafeSourceOnlyBoundary`    | unsafe source 単独時に補助メタデータ行ごと非表示とする契約                                                                             |
-| `AccessibilityMediaContracts` | `prefers-reduced-motion` MUST、`forced-colors` MUST、coarse pointer discoverability SHOULD の CSS 契約                                 |
-| `DarkModeTokenContract`       | public semantic tokens 参照によるモード非依存契約                                                                                      |
+| Story                         | 固定する契約                                                                                                     |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `CompleteState`               | フル構成時の総合契約、更新日優先、作成日の `aria-label` 付加、出典リンク属性、タグ数、ステータス表示             |
+| `PublishedFallback`           | `updatedDate` 不在時に `published` へフォールバックする契約                                                      |
+| `StatusStateMatrix`           | `status` 値ごとのラベル、アイコン、トーンクラス対応                                                              |
+| `TagEventContract`            | `tags` の property 経路、`tag-click` の発火条件とキャンセル可能性                                                |
+| `HeadingOnlyBoundary`         | 見出しのみ最小構成                                                                                               |
+| `NormalizationBoundary`       | `tags`・`readingTime`・`source` の正規化契約、およびタグ行の `nav > ul > li > ui-tag` 構造                       |
+| `StrictDateBoundary`          | 非正規日付を表示しない契約、`created` を `aria-label` に混入させない契約、空白ライセンスで補助行を生成しない契約 |
+| `UnsafeSourceOnlyBoundary`    | unsafe source 単独時に補助メタデータ行ごと非表示とする契約                                                       |
+| `AccessibilityMediaContracts` | `prefers-reduced-motion` MUST、`forced-colors` MUST、coarse pointer discoverability SHOULD の CSS 契約           |
+| `DarkModeTokenContract`       | public semantic tokens 参照によるモード非依存契約                                                                |
 
 `AccessibilityMediaContracts` の強度は次のとおりです。
 

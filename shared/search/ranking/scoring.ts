@@ -25,10 +25,7 @@ function fieldTokenMatch(queryToken: string, fieldTokens: readonly string[]): nu
     return 0.75;
   }
 
-  if (
-    queryToken.length >= 2 &&
-    fieldTokens.some((token) => token.includes(queryToken))
-  ) {
+  if (queryToken.length >= 2 && fieldTokens.some((token) => token.includes(queryToken))) {
     return 0.4;
   }
 
@@ -71,8 +68,7 @@ export function extractFeatureScores(
   nowUtcMs: number,
 ): SearchFeatureScores {
   const normalizedTitle = normalizeSearchQuery(candidate.title);
-  const titleExactScore =
-    normalizedQuery.length > 0 && normalizedTitle === normalizedQuery ? 1 : 0;
+  const titleExactScore = normalizedQuery.length > 0 && normalizedTitle === normalizedQuery ? 1 : 0;
   const titlePrefixScore =
     normalizedQuery.length > 0 && normalizedTitle.startsWith(normalizedQuery) ? 1 : 0;
 

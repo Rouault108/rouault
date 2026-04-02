@@ -6,7 +6,10 @@ import {
   normalizeSearchTags,
   normalizeSearchTagMode,
 } from '../../shared/search/search-url.js';
-import { derivePathLabel, normalizeDocumentCanonicalUrl } from '../../shared/search/document-url.js';
+import {
+  derivePathLabel,
+  normalizeDocumentCanonicalUrl,
+} from '../../shared/search/document-url.js';
 import type {
   ExploreSearchResponse,
   SearchState,
@@ -113,7 +116,9 @@ export function buildStaticExploreResponse(
               }
             : null,
         reasons:
-          state.tags.length > 0 ? [{ kind: 'tag-filter-match' as const, tokens: [...state.tags] }] : [],
+          state.tags.length > 0
+            ? [{ kind: 'tag-filter-match' as const, tokens: [...state.tags] }]
+            : [],
       },
     ];
   });

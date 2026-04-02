@@ -84,9 +84,7 @@ export const Default: Story = {
     },
   },
   render: () => html`
-    <ui-score caption="Inline score" label="簡単な楽譜">
-      ${INLINE_SCORE_TEMPLATE}
-    </ui-score>
+    <ui-score caption="Inline score" label="簡単な楽譜"> ${INLINE_SCORE_TEMPLATE} </ui-score>
   `,
 };
 
@@ -103,7 +101,11 @@ export const LoadingAndErrorStates: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-score src="${RUNTIME_SCORE_SRC}" caption="Runtime score" label="runtime score"></ui-score>
-      <ui-score src="${INVALID_SCORE_SRC}" caption="Invalid source" label="invalid score"></ui-score>
+      <ui-score
+        src="${INVALID_SCORE_SRC}"
+        caption="Invalid source"
+        label="invalid score"
+      ></ui-score>
     </div>
   `,
 };
@@ -117,7 +119,11 @@ export const OverflowAndFadeHints: Story = {
     },
   },
   render: () => html`
-    <ui-score src="${RUNTIME_SCORE_SRC}" caption="Overflow surface" label="overflow score"></ui-score>
+    <ui-score
+      src="${RUNTIME_SCORE_SRC}"
+      caption="Overflow surface"
+      label="overflow score"
+    ></ui-score>
   `,
 };
 

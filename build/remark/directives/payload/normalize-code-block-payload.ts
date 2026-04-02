@@ -56,7 +56,10 @@ const parseCodeMetaAttributes = (
   return attrs;
 };
 
-export const normalizeCodeBlockPayload = (node: MdastNode, file?: VFileLike): CodeBlockPayload | undefined => {
+export const normalizeCodeBlockPayload = (
+  node: MdastNode,
+  file?: VFileLike,
+): CodeBlockPayload | undefined => {
   if (node.type !== 'code') {
     return undefined;
   }
@@ -90,7 +93,10 @@ export const normalizeCodeBlockPayload = (node: MdastNode, file?: VFileLike): Co
   }
 
   const copyMode = pickOptional(attrs['copy-mode'])?.toLowerCase();
-  if (copyMode && !CODE_BLOCK_COPY_MODES.includes(copyMode as (typeof CODE_BLOCK_COPY_MODES)[number])) {
+  if (
+    copyMode &&
+    !CODE_BLOCK_COPY_MODES.includes(copyMode as (typeof CODE_BLOCK_COPY_MODES)[number])
+  ) {
     throw toError(file, node, 'code meta の copy-mode は auto/always/hidden のみ指定可能です');
   }
 

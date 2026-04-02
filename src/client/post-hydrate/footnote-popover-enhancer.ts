@@ -6,7 +6,9 @@ const resolveScope = (anchor: HTMLElement): ParentNode => {
 };
 
 const cloneFootnoteBody = (scope: ParentNode, refId: string): HTMLElement | null => {
-  const item = scope.querySelector<HTMLElement>(`section[role="doc-endnotes"] #${CSS.escape(refId)}`);
+  const item = scope.querySelector<HTMLElement>(
+    `section[role="doc-endnotes"] #${CSS.escape(refId)}`,
+  );
   if (!item) {
     return null;
   }
@@ -18,7 +20,9 @@ const cloneFootnoteBody = (scope: ParentNode, refId: string): HTMLElement | null
     const cloned = node.cloneNode(true);
 
     if (cloned instanceof HTMLElement) {
-      cloned.querySelectorAll('a[data-footnote-backref]').forEach((backref) => { backref.remove(); });
+      cloned.querySelectorAll('a[data-footnote-backref]').forEach((backref) => {
+        backref.remove();
+      });
       if (cloned.matches('a[data-footnote-backref]')) {
         continue;
       }
@@ -104,7 +108,10 @@ const enhanceAnchor = (anchor: HTMLElement): void => {
   }
 
   const popover = ensurePopover(anchor);
-  if (!popover || typeof (popover as HTMLElement & { showPopover?: () => void }).showPopover !== 'function') {
+  if (
+    !popover ||
+    typeof (popover as HTMLElement & { showPopover?: () => void }).showPopover !== 'function'
+  ) {
     anchor.dataset['footnoteEnhanced'] = 'true';
     return;
   }

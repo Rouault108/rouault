@@ -12,9 +12,9 @@ describe('search-document-url', () => {
     expect(normalizeDocumentCanonicalUrl('/notes/math//logic/index.html')).to.equal(
       '/notes/math/logic/',
     );
-    expect(normalizeDocumentCanonicalUrl('https://example.com/notes/math/logic/?q=test#hash')).to.equal(
-      '/notes/math/logic/',
-    );
+    expect(
+      normalizeDocumentCanonicalUrl('https://example.com/notes/math/logic/?q=test#hash'),
+    ).to.equal('/notes/math/logic/');
   });
 
   it('検索状態 URL は DocumentCanonicalUrl として拒否すること', () => {

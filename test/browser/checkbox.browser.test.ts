@@ -115,9 +115,7 @@ describe('ui-checkbox browser contract', () => {
   });
 
   it('checked=true にすると indeterminate を自動解除すること', async () => {
-    const checkbox = await fixture<Checkbox>(html`
-      <ui-checkbox label="一括選択"></ui-checkbox>
-    `);
+    const checkbox = await fixture<Checkbox>(html` <ui-checkbox label="一括選択"></ui-checkbox> `);
 
     checkbox.indeterminate = true;
     await flush(checkbox);

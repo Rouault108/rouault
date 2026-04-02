@@ -29,7 +29,8 @@ const validateDirectiveParentConstraint = (
     return;
   }
 
-  const allowedParents = getDirectiveDescriptor(directiveName).structuralRule.allowedParentDirectives;
+  const allowedParents =
+    getDirectiveDescriptor(directiveName).structuralRule.allowedParentDirectives;
   if (!allowedParents || allowedParents.length === 0) {
     return;
   }
@@ -64,7 +65,8 @@ const validateChildOccurrenceConstraints = (node: MdastNode, file?: VFileLike): 
   const counts = countChildDirectives(children);
 
   for (const [directiveName, count] of counts) {
-    const maxOccurrences = getDirectiveDescriptor(directiveName).structuralRule.maxOccurrencesWithinParent;
+    const maxOccurrences =
+      getDirectiveDescriptor(directiveName).structuralRule.maxOccurrencesWithinParent;
     if (typeof maxOccurrences === 'number' && count > maxOccurrences) {
       throw toError(
         file,
@@ -274,10 +276,7 @@ const validateTabsStructure = (node: MdastNode, payload: TabsPayload, file?: VFi
   }
 };
 
-export const validateTabsUrlSyncConstraint = (
-  nodes: MdastNode[],
-  file?: VFileLike,
-): void => {
+export const validateTabsUrlSyncConstraint = (nodes: MdastNode[], file?: VFileLike): void => {
   let primaryTabsNode: MdastNode | null = null;
 
   const visit = (node: MdastNode): void => {
@@ -307,7 +306,11 @@ export const validateTabsUrlSyncConstraint = (
   }
 };
 
-const validateTabStructure = (node: MdastNode, payload: TabPayload | undefined, file?: VFileLike): void => {
+const validateTabStructure = (
+  node: MdastNode,
+  payload: TabPayload | undefined,
+  file?: VFileLike,
+): void => {
   if (!payload?.value?.trim()) {
     throw toError(file, node, 'tab には value 属性が必須です');
   }

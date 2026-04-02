@@ -25,7 +25,9 @@ export function isRouaultStoryRole(value: unknown): value is RouaultStoryRole {
 export function isRouaultStoryRoleTag(
   value: unknown,
 ): value is (typeof ROUAULT_STORY_ROLE_TAGS)[number] {
-  return typeof value === 'string' && (ROUAULT_STORY_ROLE_TAGS as readonly string[]).includes(value);
+  return (
+    typeof value === 'string' && (ROUAULT_STORY_ROLE_TAGS as readonly string[]).includes(value)
+  );
 }
 
 export function getStoryTags(value: unknown): readonly string[] {

@@ -92,7 +92,10 @@ const getSearchInput = (dialog: UiSearchDialog): HTMLInputElement =>
   );
 
 const getCloseButton = (dialog: UiSearchDialog): HTMLButtonElement =>
-  expectPresent(dialog.shadowRoot?.querySelector<HTMLButtonElement>('.close-button'), 'closeButton');
+  expectPresent(
+    dialog.shadowRoot?.querySelector<HTMLButtonElement>('.close-button'),
+    'closeButton',
+  );
 
 const getResultItems = (dialog: UiSearchDialog): HTMLElement[] =>
   Array.from(dialog.shadowRoot?.querySelectorAll<HTMLElement>('.result-item') ?? []);
@@ -179,10 +182,7 @@ describe('ui-search-dialog browser contract', () => {
     await waitForLitUpdate(dialog);
     await nextAnimationFrame();
 
-    const detail = expectPresent<OpenRequestedDetail>(
-      requestedDetail,
-      'open requested detail',
-    );
+    const detail = expectPresent<OpenRequestedDetail>(requestedDetail, 'open requested detail');
     expect(detail.trigger).to.equal(trigger);
     expect(dialog.opened).to.equal(false);
   });
@@ -191,7 +191,11 @@ describe('ui-search-dialog browser contract', () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>
         <button data-testid="trigger" type="button">検索を開く</button>
-        <ui-search-dialog .items=${FIXTURE_ITEMS} .loading=${true} .query=${'alp'}></ui-search-dialog>
+        <ui-search-dialog
+          .items=${FIXTURE_ITEMS}
+          .loading=${true}
+          .query=${'alp'}
+        ></ui-search-dialog>
       </div>
     `);
 

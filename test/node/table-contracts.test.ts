@@ -111,7 +111,12 @@ describe('table node contracts', () => {
 
     const table = first?.children?.[0];
     expect(table?.tagName).toBe('table');
-    expect(table?.children?.map((child) => child.tagName)).toEqual(['caption', 'thead', 'tbody', 'tfoot']);
+    expect(table?.children?.map((child) => child.tagName)).toEqual([
+      'caption',
+      'thead',
+      'tbody',
+      'tfoot',
+    ]);
     expect(table?.children?.[0]?.children?.[0]?.value).toBe('2024年 四半期別売上実績');
     expect(table?.children?.[1]?.children?.[0]?.children?.[1]?.properties?.align).toBe('right');
   });

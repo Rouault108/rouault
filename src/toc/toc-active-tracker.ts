@@ -114,7 +114,9 @@ export class TocActiveTracker {
         ? filterHeadingsByScopeSelections(this._allHeadings, readTocScopeSelectionMap(contentRoot))
         : this._allHeadings;
 
-    this._visibleHeadings = contentRoot ? filterVisibleHeadings(contentRoot, scopedHeadings) : scopedHeadings;
+    this._visibleHeadings = contentRoot
+      ? filterVisibleHeadings(contentRoot, scopedHeadings)
+      : scopedHeadings;
     this._visibleIds.clear();
     this._onVisibleHeadingsChange(this._visibleHeadings);
 
@@ -127,7 +129,9 @@ export class TocActiveTracker {
       return;
     }
 
-    const isCurrentVisible = this._visibleHeadings.some((heading) => heading.id === currentActiveId);
+    const isCurrentVisible = this._visibleHeadings.some(
+      (heading) => heading.id === currentActiveId,
+    );
     if (!isCurrentVisible) {
       const fallbackId = this._resolveInitialActiveId();
       this._onActiveIdChange(fallbackId);
@@ -154,7 +158,11 @@ export class TocActiveTracker {
       return;
     }
 
-    if (this._contentRoot && targetHeading.scopeSelections && targetHeading.scopeSelections.length > 0) {
+    if (
+      this._contentRoot &&
+      targetHeading.scopeSelections &&
+      targetHeading.scopeSelections.length > 0
+    ) {
       applyTocScopeSelections(this._contentRoot, targetHeading.scopeSelections);
       this._syncVisibleHeadings();
     }
@@ -167,7 +175,11 @@ export class TocActiveTracker {
   private _setupObserver(): void {
     this._teardownObserver();
 
-    if (!this._capabilities.activeTracking || !this._contentRoot || this._visibleHeadings.length === 0) {
+    if (
+      !this._capabilities.activeTracking ||
+      !this._contentRoot ||
+      this._visibleHeadings.length === 0
+    ) {
       return;
     }
 
@@ -187,7 +199,9 @@ export class TocActiveTracker {
           }
         }
 
-        const activeHeading = this._visibleHeadings.find((heading) => this._visibleIds.has(heading.id));
+        const activeHeading = this._visibleHeadings.find((heading) =>
+          this._visibleIds.has(heading.id),
+        );
         if (activeHeading && activeHeading.id !== this._getActiveId()) {
           this._onActiveIdChange(activeHeading.id);
         }

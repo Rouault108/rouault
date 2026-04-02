@@ -6,9 +6,12 @@ interface SearchDialogElement extends HTMLElement {
   opened: boolean;
   query: string;
   requestOpen(trigger?: HTMLElement): void;
-  searcher?: (
-    context: { query: string; signal: AbortSignal },
-  ) => Promise<{ items: readonly UiSearchDialogItem[] }> | { items: readonly UiSearchDialogItem[] };
+  searcher?: (context: {
+    query: string;
+    signal: AbortSignal;
+  }) =>
+    | Promise<{ items: readonly UiSearchDialogItem[] }>
+    | { items: readonly UiSearchDialogItem[] };
 }
 
 let initialized = false;

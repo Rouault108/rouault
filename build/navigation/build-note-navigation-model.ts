@@ -38,10 +38,7 @@ const resolvePermalink = (note: Pick<NoteNavigationEntry, 'slug' | 'permalink'>)
   return slug.length > 0 ? normalizeNoteNavigationUrl(`/notes/${slug}`) : '';
 };
 
-const findBranchNodeById = (
-  nodes: TreeNode[],
-  id: string,
-): SidebarBranchNode | null => {
+const findBranchNodeById = (nodes: TreeNode[], id: string): SidebarBranchNode | null => {
   for (const node of nodes) {
     if (node.id === id && node.kind === 'branch') {
       return node as SidebarBranchNode;
@@ -190,10 +187,7 @@ const mergeCurrentNoteIntoSidebarNotes = (
   return alreadyIncluded ? [...base] : [...base, currentEntry];
 };
 
-const buildSidebarTree = (
-  notes: readonly NoteNavigationEntry[],
-  rootSlug: string,
-): TreeNode[] => {
+const buildSidebarTree = (notes: readonly NoteNavigationEntry[], rootSlug: string): TreeNode[] => {
   const roots: TreeNode[] = [];
   const directoryLabelMap = buildDirectoryLabelMap(notes);
 

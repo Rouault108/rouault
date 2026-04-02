@@ -35,11 +35,7 @@ const getClearButton = (host: SearchField): HTMLButtonElement =>
 describe('ui-search-field browser contract', () => {
   it('既定状態で search input / label 関連付け / clear button hidden を満たすこと', async () => {
     const host = await fixture<SearchField>(html`
-      <ui-search-field
-        label="検索"
-        hide-label
-        placeholder="メモを検索"
-      ></ui-search-field>
+      <ui-search-field label="検索" hide-label placeholder="メモを検索"></ui-search-field>
     `);
 
     await flush(host);
@@ -60,11 +56,7 @@ describe('ui-search-field browser contract', () => {
 
   it('clear button が value を消去し、input event を再送出し、入力へ focus を戻すこと', async () => {
     const host = await fixture<SearchField>(html`
-      <ui-search-field
-        label="検索"
-        hide-label
-        value="router"
-      ></ui-search-field>
+      <ui-search-field label="検索" hide-label value="router"></ui-search-field>
     `);
 
     await flush(host);
@@ -141,21 +133,11 @@ describe('ui-search-field browser contract', () => {
 
   it('readonly / disabled では clear affordance を抑止し、clear() が no-op であること', async () => {
     const readonlyHost = await fixture<SearchField>(html`
-      <ui-search-field
-        label="検索"
-        hide-label
-        value="router"
-        readonly
-      ></ui-search-field>
+      <ui-search-field label="検索" hide-label value="router" readonly></ui-search-field>
     `);
 
     const disabledHost = await fixture<SearchField>(html`
-      <ui-search-field
-        label="検索"
-        hide-label
-        value="router"
-        disabled
-      ></ui-search-field>
+      <ui-search-field label="検索" hide-label value="router" disabled></ui-search-field>
     `);
 
     await flush(readonlyHost);

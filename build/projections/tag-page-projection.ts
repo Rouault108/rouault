@@ -1,4 +1,8 @@
-import { filterNotesBySurface, type IntrinsicNote, type IntrinsicNotesCollection } from '../../build/data/notes.js';
+import {
+  filterNotesBySurface,
+  type IntrinsicNote,
+  type IntrinsicNotesCollection,
+} from '../../build/data/notes.js';
 
 export type TagPageSourceNote = IntrinsicNote;
 

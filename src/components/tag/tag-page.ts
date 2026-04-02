@@ -2,7 +2,10 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { TagPageEntry, TagPageNoteSummary } from '../../data/tagPages.js';
 import { navigateToUrl } from '../../search/navigation.js';
-import { DEFAULT_SEARCH_SORT_MODE, buildUrlForSearchState } from '../../../shared/search/search-url.js';
+import {
+  DEFAULT_SEARCH_SORT_MODE,
+  buildUrlForSearchState,
+} from '../../../shared/search/search-url.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
 import '../ui/card/card.js';
 import '../ui/empty-state/empty-state.js';

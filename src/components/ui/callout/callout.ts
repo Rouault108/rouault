@@ -252,12 +252,7 @@ export class Callout extends LitElement {
         aria-labelledby="${ifDefined(hasHeading ? this._headingId : undefined)}"
         aria-label="${ifDefined(hasHeading ? undefined : this._resolvedLabel)}"
       >
-        <ui-icon
-          class="icon"
-          part="icon"
-          name="${this._resolvedIcon}"
-          aria-hidden="true"
-        ></ui-icon>
+        <ui-icon class="icon" part="icon" name="${this._resolvedIcon}" aria-hidden="true"></ui-icon>
 
         <div class="content">
           ${hasHeading

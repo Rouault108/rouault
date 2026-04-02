@@ -29,7 +29,7 @@ describe('icon catalog', () => {
 
   it('生成済み subset が catalog を完全に包含すること', () => {
     for (const name of ICON_NAMES) {
-      const exists = name in LUCIDE_SUBSET.icons || name in (LUCIDE_SUBSET.aliases);
+      const exists = name in LUCIDE_SUBSET.icons || name in LUCIDE_SUBSET.aliases;
       expect(exists).toBe(true);
     }
   });

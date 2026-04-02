@@ -74,6 +74,10 @@ export function runRankingAndSortingStage(
     mergedCandidates,
     queryMatchedCandidates,
     filteredCandidates,
-    sortedCandidates: stableSortCandidates(filteredCandidates, input.request.mode, input.request.sort),
+    sortedCandidates: stableSortCandidates(
+      filteredCandidates,
+      input.request.mode,
+      input.request.sort,
+    ),
   };
 }

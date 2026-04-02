@@ -1,9 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('App Shell', () => {
-  test('最初の Tab 停留点が skip link であり Enter で main へ移動できること', async ({
-    page,
-  }) => {
+  test('最初の Tab 停留点が skip link であり Enter で main へ移動できること', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
@@ -13,7 +11,7 @@ test.describe('App Shell', () => {
       const skipLink = document.querySelector('ui-skip-link');
       const activeElement = document.activeElement;
       const shadowActiveElement =
-        skipLink instanceof HTMLElement ? skipLink.shadowRoot?.activeElement ?? null : null;
+        skipLink instanceof HTMLElement ? (skipLink.shadowRoot?.activeElement ?? null) : null;
 
       return {
         isSkipLinkFocused: activeElement === skipLink,

@@ -123,7 +123,9 @@ export class SearchDialogSearchSession {
       this._host.setActiveId(null);
       this._host.setHasCompletedSearch(true);
       this._host.setError(
-        error instanceof SearchDialogStructuredError ? error.searchError : { code: 'search-failed' },
+        error instanceof SearchDialogStructuredError
+          ? error.searchError
+          : { code: 'search-failed' },
       );
       this._host.setLiveMessage(ERROR_HEADING);
       return;
@@ -180,7 +182,12 @@ export class SearchDialogSearchSession {
       SearchDialogSearchSession._canUseWorker(this._host.getMatchFields())
     ) {
       try {
-        const workerResults = await this._worker.run(query, token, items, this._host.getMatchFields());
+        const workerResults = await this._worker.run(
+          query,
+          token,
+          items,
+          this._host.getMatchFields(),
+        );
         if (workerResults !== null) {
           return workerResults;
         }
@@ -202,7 +209,9 @@ export class SearchDialogSearchSession {
           case 'title':
             return SearchDialogSearchSession._normalizeText(item.title).includes(normalizedQuery);
           case 'path':
-            return SearchDialogSearchSession._normalizeText(item.path ?? '').includes(normalizedQuery);
+            return SearchDialogSearchSession._normalizeText(item.path ?? '').includes(
+              normalizedQuery,
+            );
           case 'keywords':
             return (item.keywords ?? []).some((keyword) =>
               SearchDialogSearchSession._normalizeText(keyword).includes(normalizedQuery),
@@ -277,7 +286,9 @@ export class SearchDialogSearchSession {
   }
 
   private static _canUseWorker(matchFields: readonly UiSearchDialogMatchField[]): boolean {
-    return matchFields.every((field) => field === 'title' || field === 'path' || field === 'keywords');
+    return matchFields.every(
+      (field) => field === 'title' || field === 'path' || field === 'keywords',
+    );
   }
 
   private static _isAbortError(error: unknown): boolean {

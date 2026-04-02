@@ -134,7 +134,12 @@ describe('ui-math browser contract', () => {
 
     try {
       const host = await fixture<UiMath>(html`
-        <ui-math id="block-math" block primary latex="x + y + z + w + v + u + t + s + r + q + p"></ui-math>
+        <ui-math
+          id="block-math"
+          block
+          primary
+          latex="x + y + z + w + v + u + t + s + r + q + p"
+        ></ui-math>
       `);
 
       await flush(host);

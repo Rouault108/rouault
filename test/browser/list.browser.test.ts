@@ -44,11 +44,7 @@ const getRowCell = (row: ListItem, columnId: string): HTMLElement =>
 describe('ui-list browser contract', () => {
   it('row navigation / preview request / context request / default action を公開 event として扱うこと', async () => {
     const host = await fixture<List>(html`
-      <ui-list
-        .columns=${columns}
-        .currentRowId=${'row-1'}
-        .currentColumnId=${'title'}
-      >
+      <ui-list .columns=${columns} .currentRowId=${'row-1'} .currentColumnId=${'title'}>
         <ui-list-item row-id="row-1">
           <a id="row-1-link" slot="title" href="/notes/row-1">row 1</a>
           <time slot="date" datetime="2026-04-01">2026-04-01</time>
@@ -165,9 +161,7 @@ describe('ui-list browser contract', () => {
   });
 
   it('loading=false かつ row 不在では empty status を出し、loading=true では loading status を優先すること', async () => {
-    const empty = await fixture<List>(html`
-      <ui-list .columns=${columns}></ui-list>
-    `);
+    const empty = await fixture<List>(html` <ui-list .columns=${columns}></ui-list> `);
 
     await flush(empty);
 

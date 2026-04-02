@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildNoteNavigationModel } from '../../build/navigation/index.js';
-import { buildNotePageProjection, type NotePageProjection } from '../../build/projections/note-page-projection.js';
+import {
+  buildNotePageProjection,
+  type NotePageProjection,
+} from '../../build/projections/note-page-projection.js';
 import type { IntrinsicNote } from '../../build/data/notes.js';
 import { buildPagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 

@@ -62,24 +62,24 @@ Rouault における radio は、読みの流れを壊す強い UI ではなく�
 
 ### 入力契約（`ui-radio`）
 
-| 名前           | 種別                                   | 必須   | 内容                       | 契約                                                          |
-| -------------- | -------------------------------------- | ------ | -------------------------- | ------------------------------------------------------------- |
-| `checked`      | property / attribute                   | いいえ | 選択状態                   | `true` のとき選択状態です                                     |
-| `name`         | property / attribute                   | いいえ | フォーム名・グループ識別子 | 同一 `name` の `ui-radio` 群が排他的に扱われます              |
-| `value`        | property / attribute                   | いいえ | フォーム送信値             | 既定値は `on` です                                            |
-| `label`        | property / attribute                   | いいえ | アクセシビリティラベル | 非空時は `radiogroup` の `aria-label` として使用します。可視見出しはこの入力だけでは描画しません |
-| `disabled`     | property / attribute                   | いいえ | 無効状態                   | `true` の場合、選択不可・フォーム送信除外です                 |
+| 名前           | 種別                                   | 必須   | 内容                       | 契約                                                                                                    |
+| -------------- | -------------------------------------- | ------ | -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `checked`      | property / attribute                   | いいえ | 選択状態                   | `true` のとき選択状態です                                                                               |
+| `name`         | property / attribute                   | いいえ | フォーム名・グループ識別子 | 同一 `name` の `ui-radio` 群が排他的に扱われます                                                        |
+| `value`        | property / attribute                   | いいえ | フォーム送信値             | 既定値は `on` です                                                                                      |
+| `label`        | property / attribute                   | いいえ | アクセシビリティラベル     | 非空時は `radiogroup` の `aria-label` として使用します。可視見出しはこの入力だけでは描画しません        |
+| `disabled`     | property / attribute                   | いいえ | 無効状態                   | `true` の場合、選択不可・フォーム送信除外です                                                           |
 | `invalid`      | property / attribute                   | いいえ | エラー状態                 | `true` の場合、`ui-radio` は invalid 状態です。視覚メッセージの表示は `errorMessage` の有無で決まります |
-| `errorMessage` | property / attribute (`error-message`) | いいえ | エラー文言                 | `invalid=true` かつ非空文字列の場合に表示と妥当性へ反映します |
+| `errorMessage` | property / attribute (`error-message`) | いいえ | エラー文言                 | `invalid=true` かつ非空文字列の場合に表示と妥当性へ反映します                                           |
 
 ### 入力契約（`ui-radio-group`）
 
-| 名前           | 種別                                   | 必須   | 内容               | 契約                                                             |
-| -------------- | -------------------------------------- | ------ | ------------------ | ---------------------------------------------------------------- |
-| `label`        | property / attribute                   | いいえ | グループラベル     | 非空時は `radiogroup` の `aria-label` として使用します           |
-| `required`     | property / attribute                   | いいえ | 必須選択           | `true` の場合、配下の `ui-radio` から 1 つ以上の選択を要求します |
+| 名前           | 種別                                   | 必須   | 内容               | 契約                                                                                                          |
+| -------------- | -------------------------------------- | ------ | ------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `label`        | property / attribute                   | いいえ | グループラベル     | 非空時は `radiogroup` の `aria-label` として使用します                                                        |
+| `required`     | property / attribute                   | いいえ | 必須選択           | `true` の場合、配下の `ui-radio` から 1 つ以上の選択を要求します                                              |
 | `invalid`      | property / attribute                   | いいえ | グループエラー状態 | `true` の場合、`ui-radio-group` は invalid 状態です。視覚メッセージの表示は `errorMessage` の有無で決まります |
-| `errorMessage` | property / attribute (`error-message`) | いいえ | グループエラー文言 | `invalid=true` かつ非空文字列の場合に表示します                  |
+| `errorMessage` | property / attribute (`error-message`) | いいえ | グループエラー文言 | `invalid=true` かつ非空文字列の場合に表示します                                                               |
 
 ### 作者入力エラー通知契約
 

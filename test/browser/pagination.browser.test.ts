@@ -23,7 +23,11 @@ const flush = async (host: Pagination): Promise<void> => {
 describe('ui-pagination browser contract', () => {
   it('regular mode は current / total を防御的に正規化し、href と aria-current を公開すること', async () => {
     const host = await fixture<Pagination>(html`
-      <ui-pagination .current=${99} .total=${10} .getHref=${(page: number): string => `/notes?page=${String(page)}`}></ui-pagination>
+      <ui-pagination
+        .current=${99}
+        .total=${10}
+        .getHref=${(page: number): string => `/notes?page=${String(page)}`}
+      ></ui-pagination>
     `);
 
     await flush(host);
@@ -53,7 +57,9 @@ describe('ui-pagination browser contract', () => {
     const disabledButtons = Array.from(
       host.shadowRoot?.querySelectorAll<HTMLElement>('.nav-btn[aria-disabled="true"]') ?? [],
     );
-    const pageLinks = Array.from(host.shadowRoot?.querySelectorAll<HTMLAnchorElement>('a.page-btn') ?? []);
+    const pageLinks = Array.from(
+      host.shadowRoot?.querySelectorAll<HTMLAnchorElement>('a.page-btn') ?? [],
+    );
 
     expect(disabledButtons.length).to.equal(2);
     expect(pageLinks.length).to.equal(1);
@@ -84,7 +90,9 @@ describe('ui-pagination browser contract', () => {
 
     await flush(edge);
 
-    const edgeEllipsis = Array.from(edge.shadowRoot?.querySelectorAll<HTMLElement>('.ellipsis') ?? []);
+    const edgeEllipsis = Array.from(
+      edge.shadowRoot?.querySelectorAll<HTMLElement>('.ellipsis') ?? [],
+    );
     const edgeCurrent = expectPresent(
       edge.shadowRoot?.querySelector<HTMLAnchorElement>('a.page-btn[aria-current="page"]'),
       'edge current page',

@@ -483,9 +483,7 @@ export class Radio extends LitElement {
 
     const ariaDescribedBy = describedByIds.join(' ');
     const ariaLabel = this.label === '' ? externalLabel : nothing;
-    const ariaLabelledBy = this.label
-      ? this._labelId
-      : (externalLabelledBy ?? nothing);
+    const ariaLabelledBy = this.label ? this._labelId : (externalLabelledBy ?? nothing);
 
     return html`
       <div

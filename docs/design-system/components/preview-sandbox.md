@@ -63,19 +63,19 @@
 
 ### 入力契約
 
-| 名前               | 種別                                        | 既定値               | 内容                           | 契約                                                                                                                                  |
-| ------------------ | ------------------------------------------- | -------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `iframeTitle`      | property / attribute (`iframe-title`)       | `""`                 | iframe のアクセシブル名        | 空文字または空白のみの場合は `プレビュー sandbox` を用います                                                                          |
-| `height`           | property / attribute                        | `160`                | preview の基準高さ             | `heightMode="fixed"` では固定高さ、`auto` / `bounded-auto` では最小初期高さ兼 fallback 高さとして扱います。有限正数以外は `160` に正規化します |
-| `maxHeight`        | property / attribute (`max-height`)         | 未指定               | preview の上限高さ             | `heightMode="bounded-auto"` の場合だけ意味を持ちます。有限正数でなければ未指定として扱います                                         |
-| `baseUrl`          | property / attribute (`base-url`)           | 埋め込み元文書の URL | 相対 URL の解決基準            | 絶対 URL でなければなりません。無効値は埋め込み元文書の URL に正規化します                                                            |
-| `allowJs`          | property / attribute (`allow-js`)           | `false`              | author JS の注入可否           | `true` の場合のみ `js` payload を有効入力として扱います                                                                               |
-| `activationPolicy` | property / attribute (`activation-policy`)  | `visible`            | 初回構築タイミング             | `eager` / `visible` / `manual` だけを受け付けます。無効値は `visible` に正規化します                                                 |
-| `heightMode`       | property / attribute (`height-mode`)        | `auto`               | 高さ解決方式                   | `fixed` / `auto` / `bounded-auto` だけを受け付けます。無効値は `auto` に正規化します                                                 |
-| `allowForms`       | property / attribute (`allow-forms`)        | `false`              | form capability                | sandbox token に `allow-forms` を追加します                                                                                           |
-| `allowDownloads`   | property / attribute (`allow-downloads`)    | `false`              | download capability            | sandbox token に `allow-downloads` を追加します                                                                                       |
-| `allowPointerLock` | property / attribute (`allow-pointer-lock`) | `false`              | pointer lock capability        | sandbox token に `allow-pointer-lock` を追加します                                                                                    |
-| `allowPopups`      | property / attribute (`allow-popups`)       | `false`              | popup capability               | sandbox token に `allow-popups` を追加します                                                                                          |
+| 名前               | 種別                                        | 既定値               | 内容                    | 契約                                                                                                                                           |
+| ------------------ | ------------------------------------------- | -------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `iframeTitle`      | property / attribute (`iframe-title`)       | `""`                 | iframe のアクセシブル名 | 空文字または空白のみの場合は `プレビュー sandbox` を用います                                                                                   |
+| `height`           | property / attribute                        | `160`                | preview の基準高さ      | `heightMode="fixed"` では固定高さ、`auto` / `bounded-auto` では最小初期高さ兼 fallback 高さとして扱います。有限正数以外は `160` に正規化します |
+| `maxHeight`        | property / attribute (`max-height`)         | 未指定               | preview の上限高さ      | `heightMode="bounded-auto"` の場合だけ意味を持ちます。有限正数でなければ未指定として扱います                                                   |
+| `baseUrl`          | property / attribute (`base-url`)           | 埋め込み元文書の URL | 相対 URL の解決基準     | 絶対 URL でなければなりません。無効値は埋め込み元文書の URL に正規化します                                                                     |
+| `allowJs`          | property / attribute (`allow-js`)           | `false`              | author JS の注入可否    | `true` の場合のみ `js` payload を有効入力として扱います                                                                                        |
+| `activationPolicy` | property / attribute (`activation-policy`)  | `visible`            | 初回構築タイミング      | `eager` / `visible` / `manual` だけを受け付けます。無効値は `visible` に正規化します                                                           |
+| `heightMode`       | property / attribute (`height-mode`)        | `auto`               | 高さ解決方式            | `fixed` / `auto` / `bounded-auto` だけを受け付けます。無効値は `auto` に正規化します                                                           |
+| `allowForms`       | property / attribute (`allow-forms`)        | `false`              | form capability         | sandbox token に `allow-forms` を追加します                                                                                                    |
+| `allowDownloads`   | property / attribute (`allow-downloads`)    | `false`              | download capability     | sandbox token に `allow-downloads` を追加します                                                                                                |
+| `allowPointerLock` | property / attribute (`allow-pointer-lock`) | `false`              | pointer lock capability | sandbox token に `allow-pointer-lock` を追加します                                                                                             |
+| `allowPopups`      | property / attribute (`allow-popups`)       | `false`              | popup capability        | sandbox token に `allow-popups` を追加します                                                                                                   |
 
 ### 入力文法契約
 

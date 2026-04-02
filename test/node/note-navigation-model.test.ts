@@ -44,9 +44,7 @@ describe('buildNoteNavigationModel', () => {
 
     expect(findNode(model.sidebarTree as SidebarTreeNode[], 'music')).to.not.equal(null);
     expect(findNode(model.sidebarTree as SidebarTreeNode[], 'music/classical')).to.not.equal(null);
-    expect(findNode(model.sidebarTree as SidebarTreeNode[], 'computer-science')).to.not.equal(
-      null,
-    );
+    expect(findNode(model.sidebarTree as SidebarTreeNode[], 'computer-science')).to.not.equal(null);
 
     const leaf = findNode(
       model.sidebarTree as SidebarTreeNode[],
@@ -81,8 +79,9 @@ describe('buildNoteNavigationModel', () => {
     });
 
     expect(findNode(model.sidebarTree as SidebarTreeNode[], 'music')).to.equal(null);
-    expect(findNode(model.sidebarTree as SidebarTreeNode[], 'music/classical/tchaikovsky')).to
-      .equal(null);
+    expect(
+      findNode(model.sidebarTree as SidebarTreeNode[], 'music/classical/tchaikovsky'),
+    ).to.equal(null);
     expect(model.sidebarTree).to.have.length(1);
     expect(model.sidebarTree[0]?.id).to.equal('music/classical/beethoven');
   });
@@ -174,7 +173,8 @@ describe('buildNoteNavigationModel', () => {
     expect(findNode(model.sidebarTree as SidebarTreeNode[], 'music/classical')?.icon).to.equal(
       'folder-open',
     );
-    expect(findNode(model.sidebarTree as SidebarTreeNode[], 'music/classical/mozart')?.icon).to
-      .equal('music');
+    expect(
+      findNode(model.sidebarTree as SidebarTreeNode[], 'music/classical/mozart')?.icon,
+    ).to.equal('music');
   });
 });

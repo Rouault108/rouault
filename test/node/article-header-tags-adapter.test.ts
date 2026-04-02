@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  parseArticleHeaderTagsAdapterValue,
-} from '../../src/components/ui/article-header/article-header-tags-adapter.js';
+import { parseArticleHeaderTagsAdapterValue } from '../../src/components/ui/article-header/article-header-tags-adapter.js';
 
 describe('parseArticleHeaderTagsAdapterValue', () => {
   it('JSON 配列から trim 済みタグ配列を復元すること', () => {

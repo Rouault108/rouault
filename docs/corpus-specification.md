@@ -108,4 +108,3 @@ directory-index がないコーパスは、ディレクトリ名を整形した�
 - コーパス追加は、まず `content/{corpusKey}/...` にノートを置くことで発生する
 - コーパス名を見やすくしたい場合は、`content/{corpusKey}/index.md` を置いて `title` を定義する
 - 既存の `genre` 追加は、コーパス追加とは別の変更として扱う
-

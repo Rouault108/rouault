@@ -88,9 +88,7 @@ export const DefaultSelectedValue: Story = {
 
 export const Vertical: Story = {
   render: () => html`
-    <div style="min-height: 220px;">
-      ${renderBasicTabs({ orientation: 'vertical' })}
-    </div>
+    <div style="min-height: 220px;">${renderBasicTabs({ orientation: 'vertical' })}</div>
   `,
 };
 
@@ -121,15 +119,23 @@ export const IntegrationExample: Story = {
     <section style="display: grid; gap: 16px;">
       <header>
         <h2 style="margin: 0;">API Reference</h2>
-        <p style="margin: 0; color: var(--fg-muted, #666);">仕様・サンプル・注意事項を切り替えて表示します。</p>
+        <p style="margin: 0; color: var(--fg-muted, #666);">
+          仕様・サンプル・注意事項を切り替えて表示します。
+        </p>
       </header>
       <ui-tabs default-selected-value="reference">
         <button slot="tab" value="reference">Reference</button>
-        <div slot="panel" style="padding: 1rem; border: 1px solid var(--border-default, #ddd);">API リファレンス本文</div>
+        <div slot="panel" style="padding: 1rem; border: 1px solid var(--border-default, #ddd);">
+          API リファレンス本文
+        </div>
         <button slot="tab" value="example">Example</button>
-        <div slot="panel" style="padding: 1rem; border: 1px solid var(--border-default, #ddd);">使用例</div>
+        <div slot="panel" style="padding: 1rem; border: 1px solid var(--border-default, #ddd);">
+          使用例
+        </div>
         <button slot="tab" value="notes">Notes</button>
-        <div slot="panel" style="padding: 1rem; border: 1px solid var(--border-default, #ddd);">補足事項</div>
+        <div slot="panel" style="padding: 1rem; border: 1px solid var(--border-default, #ddd);">
+          補足事項
+        </div>
       </ui-tabs>
     </section>
   `,

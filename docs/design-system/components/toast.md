@@ -101,12 +101,12 @@ Rouault における toast は、読書や閲覧を遮断せず、必要な変�
 
 ### 4.4 入力契約（`ToastManager.show(options)`）
 
-| 名前          | 種別     | 必須   | 内容               | 契約                                                                                |
-| ------------- | -------- | ------ | ------------------ | ----------------------------------------------------------------------------------- |
-| `message`     | string   | はい   | 通知本文           | 空白正規化後に空文字列となる場合は通知を生成しません                                |
-| `variant`     | property | いいえ | 通知種別           | `success` / `info` / `warning` / `danger`。後方互換で `error` を受理します          |
-| `duration`    | number   | いいえ | 自動消滅までの時間 | 有限数なら 0 以上の整数へ丸めます。未指定または無効値は既定値へフォールバックします |
-| `dismissible` | boolean  | いいえ | 手動クローズ可否   | `duration > 0` の場合のみ任意指定できます。`duration = 0` の場合は常に `true` です  |
+| 名前          | 種別     | 必須   | 内容               | 契約                                                                                         |
+| ------------- | -------- | ------ | ------------------ | -------------------------------------------------------------------------------------------- |
+| `message`     | string   | はい   | 通知本文           | 空白正規化後に空文字列となる場合は通知を生成しません                                         |
+| `variant`     | property | いいえ | 通知種別           | `success` / `info` / `warning` / `danger`。後方互換で `error` を受理します                   |
+| `duration`    | number   | いいえ | 自動消滅までの時間 | 有限数なら 0 以上の整数へ丸めます。未指定または無効値は既定値へフォールバックします          |
+| `dismissible` | boolean  | いいえ | 手動クローズ可否   | `duration > 0` の場合のみ任意指定できます。`duration = 0` の場合は常に `true` です           |
 | `dedupeKey`   | string   | いいえ | 重複統合の意味キー | 非空文字列なら重複統合キーとして優先使用します。空文字列または空白のみは未指定として扱います |
 
 `dedupeKey` は、表示文言とは独立した **通知の意味単位** を表す任意キーです。再試行通知、進行状態通知、同一処理の再発火など、文言差分に依存せず同一通知として扱いたい場合に用います。
@@ -205,7 +205,7 @@ Rouault における toast は、読書や閲覧を遮断せず、必要な変�
 | 名前                    | 種別     | 契約                                                                                                                      |
 | ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `show(options)`         | function | 通知を追加し、生成された `id` を返します。生成しなかった場合は `null` を返します                                          |
-| `update(id, patch)`     | function | 指定通知を更新します。対象が存在しない場合は `false` を返します。更新に成功した場合は `true` を返します                  |
+| `update(id, patch)`     | function | 指定通知を更新します。対象が存在しない場合は `false` を返します。更新に成功した場合は `true` を返します                   |
 | `dismiss(id)`           | function | 指定通知を退出状態へ移し、存在しない場合は `false` を返します                                                             |
 | `clear()`               | function | すべての通知・タイマー・退出タイマーを即時破棄します                                                                      |
 | `subscribe(subscriber)` | function | 読み取り専用スナップショットの購読を開始し、解除関数を返します。購読開始時には現在スナップショットを直ちに 1 回通知します |
@@ -547,18 +547,18 @@ toast 内部でフォーカス移動している限りタイマーは再開し�
 
 ### 10.1 現行確認済みの Story
 
-| Story                            | 固定する契約                                                                                                       |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `Default`                        | success 通知が描画され、`role="status"` と閉じるボタンの `aria-label` が成立すること                               |
-| `VariantStateCombinations`       | `success/info` は `status`、`warning/danger` は `alert` であること。`danger` の既定 duration が 6000 ms であること |
-| `OverflowAndOrderIntegrity`      | 新着が先頭に積まれ、4 件目で最古が削除され、最大 3 件で保たれること                                                |
-| `DuplicateMergeAndDurationReset` | 同一 duplicate key は統合され、再通知で duration がリセットされること                                              |
-| `HoverPauseAndResumeTimer`       | hover 中はタイマー停止、hover 解除後に再開すること                                                                 |
-| `FocusPauseAndResumeTimer`       | focus 中はタイマー停止、focusout 後に再開すること                                                                  |
-| `VisibilityPauseAndResumeTimer`  | hidden 中はタイマー停止、visible 復帰後に再開すること                                                              |
-| `DuplicateKeyRespectsVariant`    | `dedupeKey` 未指定時は、同一本文でも variant が異なれば統合しないこと                                              |
+| Story                            | 固定する契約                                                                                                                                                                                    |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Default`                        | success 通知が描画され、`role="status"` と閉じるボタンの `aria-label` が成立すること                                                                                                            |
+| `VariantStateCombinations`       | `success/info` は `status`、`warning/danger` は `alert` であること。`danger` の既定 duration が 6000 ms であること                                                                              |
+| `OverflowAndOrderIntegrity`      | 新着が先頭に積まれ、4 件目で最古が削除され、最大 3 件で保たれること                                                                                                                             |
+| `DuplicateMergeAndDurationReset` | 同一 duplicate key は統合され、再通知で duration がリセットされること                                                                                                                           |
+| `HoverPauseAndResumeTimer`       | hover 中はタイマー停止、hover 解除後に再開すること                                                                                                                                              |
+| `FocusPauseAndResumeTimer`       | focus 中はタイマー停止、focusout 後に再開すること                                                                                                                                               |
+| `VisibilityPauseAndResumeTimer`  | hidden 中はタイマー停止、visible 復帰後に再開すること                                                                                                                                           |
+| `DuplicateKeyRespectsVariant`    | `dedupeKey` 未指定時は、同一本文でも variant が異なれば統合しないこと                                                                                                                           |
 | `DarkModeAndStyleContracts`      | dark mode で背景・文字・境界線の識別可能性が維持されること。forced-colors でシステム色により可読性が保たれること。reduced-motion で過大な移動モーションを用いないこと。print で非表示になること |
-| `LegacyErrorVariantMapping`      | `variant="error"` が `danger` に内部マッピングされ、`role="alert"` になること                                      |
+| `LegacyErrorVariantMapping`      | `variant="error"` が `danger` に内部マッピングされ、`role="alert"` になること                                                                                                                   |
 
 ### 10.2 追加予定の確認点
 

@@ -27,25 +27,23 @@ function createCandidate(
     matchedSources: overrides.matchedSources ?? ['catalog'],
     matchedFields: overrides.matchedFields ?? [],
     matchedTokens: overrides.matchedTokens ?? [],
-    featureScores:
-      overrides.featureScores ?? {
-        titleExactScore: 0,
-        titlePrefixScore: 0,
-        titleTokenCoverageScore: 0,
-        bodyScore: 0,
-        pathScore: 0,
-        keywordScore: 0,
-        freshnessScore: 0,
-        sourceReliabilityScore: 0.6,
-        matchEvidenceScore: 0,
-      },
-    fieldTokens:
-      overrides.fieldTokens ?? {
-        titleTokens: [],
-        bodyTokens: [],
-        pathTokens: [],
-        keywordTokens: [],
-      },
+    featureScores: overrides.featureScores ?? {
+      titleExactScore: 0,
+      titlePrefixScore: 0,
+      titleTokenCoverageScore: 0,
+      bodyScore: 0,
+      pathScore: 0,
+      keywordScore: 0,
+      freshnessScore: 0,
+      sourceReliabilityScore: 0.6,
+      matchEvidenceScore: 0,
+    },
+    fieldTokens: overrides.fieldTokens ?? {
+      titleTokens: [],
+      bodyTokens: [],
+      pathTokens: [],
+      keywordTokens: [],
+    },
   };
 }
 
@@ -298,6 +296,8 @@ describe('search-stages', () => {
       architecture: 1,
       router: 1,
     });
-    expect(buildEmptySearchResponse(prepared.request, result.diagnosticsResult).mode).to.equal('explore');
+    expect(buildEmptySearchResponse(prepared.request, result.diagnosticsResult).mode).to.equal(
+      'explore',
+    );
   });
 });

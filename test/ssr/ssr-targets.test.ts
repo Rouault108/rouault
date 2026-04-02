@@ -50,9 +50,8 @@ describe('component manifest / ssr targets', () => {
     ];
 
     expect(
-      SSR_COMPONENT_DEFINITIONS.some(
-        (definition: (typeof SSR_COMPONENT_DEFINITIONS)[number]) =>
-          removedTags.includes(definition.tag),
+      SSR_COMPONENT_DEFINITIONS.some((definition: (typeof SSR_COMPONENT_DEFINITIONS)[number]) =>
+        removedTags.includes(definition.tag),
       ),
     ).toBe(false);
 

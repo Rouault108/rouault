@@ -60,8 +60,7 @@ export const SummarySlot: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'summary slot 優先の見本です。優先順位の合否は browser test を正本とします。',
+        story: 'summary slot 優先の見本です。優先順位の合否は browser test を正本とします。',
       },
     },
   },

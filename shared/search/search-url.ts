@@ -7,7 +7,9 @@ export const DEFAULT_SEARCH_SORT_MODE: SearchSortMode = 'relevance';
 export const DEFAULT_SEARCH_TAG_MODE: SearchTagMode = 'or';
 
 function parseUrl(input: string | URL): URL {
-  return input instanceof URL ? new URL(input.toString()) : new URL(input, 'https://rouault.invalid');
+  return input instanceof URL
+    ? new URL(input.toString())
+    : new URL(input, 'https://rouault.invalid');
 }
 
 export function normalizeSearchQuery(value: string): string {

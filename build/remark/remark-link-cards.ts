@@ -216,10 +216,7 @@ const loadMetadataMap = (metadataFile: string): Map<string, LinkCardMetadata> =>
     throw error;
   }
 
-  if (
-    cachedMetadataFilePath === resolvedPath &&
-    cachedMetadataMtimeMs === stat.mtimeMs
-  ) {
+  if (cachedMetadataFilePath === resolvedPath && cachedMetadataMtimeMs === stat.mtimeMs) {
     return cachedMetadataMap;
   }
 
@@ -296,7 +293,8 @@ const getDirectiveLinkCardSource = (node: MdastNode): LinkCardSource | null => {
   }
 
   const payload = node.rouaultDirective?.payload as LinkCardPayload | undefined;
-  const url = pickOptionalString(payload?.url) ?? pickOptionalString(node.data?.hProperties?.['url']);
+  const url =
+    pickOptionalString(payload?.url) ?? pickOptionalString(node.data?.hProperties?.['url']);
   if (!url) {
     return null;
   }

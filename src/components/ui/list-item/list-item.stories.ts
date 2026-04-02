@@ -100,7 +100,8 @@ export const MobileSupplement: Story = {
       },
     },
   },
-  render: () => renderInList({ currentRowId: item.id, currentColumnId: 'title', showActions: true }),
+  render: () =>
+    renderInList({ currentRowId: item.id, currentColumnId: 'title', showActions: true }),
 };
 
 export const StandaloneFallback: Story = {

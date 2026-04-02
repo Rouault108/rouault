@@ -51,9 +51,7 @@ signature スロットには素の \`<pre><code>\` を直接配置します。
 export default meta;
 type Story = StoryObj<SyntaxCard>;
 
-const movedToBrowserDocs = (
-  story: string,
-): Pick<Story, 'tags' | 'parameters'> => ({
+const movedToBrowserDocs = (story: string): Pick<Story, 'tags' | 'parameters'> => ({
   tags: ['manual-only'],
   parameters: {
     docs: {

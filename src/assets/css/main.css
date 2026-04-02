@@ -258,7 +258,8 @@ ui-article-header + .prose {
 
 :is(.prose, .about-prose) mark[data-current-match='true'] {
   box-shadow:
-    inset 0 -0.68em 0 color-mix(in oklch, var(--bg-highlight-current, var(--bg-highlight-subtle)) 72%, transparent),
+    inset 0 -0.68em 0
+      color-mix(in oklch, var(--bg-highlight-current, var(--bg-highlight-subtle)) 72%, transparent),
     inset 0 -0.32em 0 color-mix(in oklch, var(--bg-highlight-subtle) 92%, transparent);
 }
 
@@ -400,7 +401,16 @@ hr[data-divider-variant='layout'] {
   text-align: start;
 }
 
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > :is(ui-code-block, ui-code-group, pre[data-code-block], section[data-code-group], [data-code-block-root]) {
+:is(.prose, .about-prose)
+  > ui-tabs
+  > [slot='panel']
+  > :is(
+    ui-code-block,
+    ui-code-group,
+    pre[data-code-block],
+    section[data-code-group],
+    [data-code-block-root]
+  ) {
   width: 100%;
   margin-inline: 0;
 }
@@ -539,8 +549,22 @@ hr[data-divider-variant='layout'] {
   max-width: none;
 }
 
-.prose > :is(ui-code-block, ui-code-group, pre[data-code-block], section[data-code-group], [data-code-block-root]),
-.about-prose > :is(ui-code-block, ui-code-group, pre[data-code-block], section[data-code-group], [data-code-block-root]) {
+.prose
+  > :is(
+    ui-code-block,
+    ui-code-group,
+    pre[data-code-block],
+    section[data-code-group],
+    [data-code-block-root]
+  ),
+.about-prose
+  > :is(
+    ui-code-block,
+    ui-code-group,
+    pre[data-code-block],
+    section[data-code-group],
+    [data-code-block-root]
+  ) {
   width: 100%;
   margin-inline: 0;
 }
@@ -630,7 +654,8 @@ hr[data-divider-variant='layout'] {
 
 [data-table-root] > table tr {
   border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(0% 0 0 / 0.08));
-  transition: background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+  transition: background-color var(--duration-fast, 70ms)
+    var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -706,7 +731,8 @@ hr[data-divider-variant='layout'] {
 :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > figure > blockquote {
   margin: 0;
   padding-inline-start: var(--space-4, 16px);
-  border-inline-start: var(--border-width-thick, 2px) solid var(--border-muted, var(--border-default, oklch(70% 0 0 / 0.28)));
+  border-inline-start: var(--border-width-thick, 2px) solid
+    var(--border-muted, var(--border-default, oklch(70% 0 0 / 0.28)));
   color: var(--fg-default, oklch(20% 0 0));
   font-style: normal;
 }
@@ -727,8 +753,15 @@ hr[data-divider-variant='layout'] {
 
 :is(.prose, .about-prose) > figure[data-blockquote-variant='nested'] > blockquote,
 :is(.prose, .about-prose) > blockquote[data-blockquote-variant='nested'],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > figure[data-blockquote-variant='nested'] > blockquote,
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > blockquote[data-blockquote-variant='nested'] {
+:is(.prose, .about-prose)
+  > ui-tabs
+  > [slot='panel']
+  > figure[data-blockquote-variant='nested']
+  > blockquote,
+:is(.prose, .about-prose)
+  > ui-tabs
+  > [slot='panel']
+  > blockquote[data-blockquote-variant='nested'] {
   margin-block: var(--space-4, 16px);
   margin-inline-start: 0;
 }

@@ -8,4 +8,3 @@ function bgChange(event) {
 }
 
 document.querySelector('.demo-button')?.addEventListener('click', bgChange);
-

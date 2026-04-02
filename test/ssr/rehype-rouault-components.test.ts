@@ -132,7 +132,9 @@ describe('rehypeRouaultComponents', () => {
             'data-callout-kind': 'warning',
             'data-callout-heading': '注意',
           },
-          children: [{ type: 'element', tagName: 'p', children: [{ type: 'text', value: '本文' }] }],
+          children: [
+            { type: 'element', tagName: 'p', children: [{ type: 'text', value: '本文' }] },
+          ],
         },
         {
           type: 'element',
@@ -145,7 +147,9 @@ describe('rehypeRouaultComponents', () => {
             'data-variant': 'filled',
             'data-density': 'compact',
           },
-          children: [{ type: 'element', tagName: 'p', children: [{ type: 'text', value: '内容' }] }],
+          children: [
+            { type: 'element', tagName: 'p', children: [{ type: 'text', value: '内容' }] },
+          ],
         },
       ],
     };

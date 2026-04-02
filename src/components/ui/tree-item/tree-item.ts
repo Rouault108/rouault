@@ -58,9 +58,7 @@ export class TreeItem extends LitElement {
       );
 
       --tree-item-selection-start-gap: 2px;
-      --tree-item-selection-start: calc(
-        var(--tree-item-depth, 1) * var(--tree-indent-step, 16px)
-      );
+      --tree-item-selection-start: calc(var(--tree-item-depth, 1) * var(--tree-indent-step, 16px));
 
       --tree-item-active-surface-inset-block: var(
         --sidebar-item-active-surface-inset-block,
@@ -134,10 +132,8 @@ export class TreeItem extends LitElement {
       text-decoration: none;
       appearance: none;
       -webkit-appearance: none;
-      transition:
-        color
-          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
-          var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
+      transition: color var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+        var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
     .item::before {
@@ -147,10 +143,8 @@ export class TreeItem extends LitElement {
       inset-inline-start: var(--tree-item-selection-start);
       inset-inline-end: 0;
       background: transparent;
-      transition:
-        background-color
-          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
-          var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
+      transition: background-color var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+        var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
     .item::after {
@@ -171,20 +165,17 @@ export class TreeItem extends LitElement {
     }
 
     .item.is-branch:hover::before {
-      background: var(
-        --sidebar-item-branch-hover-bg,
-        oklch(from var(--fg-default) l c h / 0.022)
-      );
+      background: var(--sidebar-item-branch-hover-bg, oklch(from var(--fg-default) l c h / 0.022));
     }
 
     .item.is-page {
       color: var(--sidebar-item-fg-page, var(--fg-muted, oklch(45% 0 0)));
       font-weight: var(--sidebar-item-font-weight, 400);
       --tree-item-selection-start: calc(
-        (var(--tree-item-active-slot-index, 0) * var(--tree-indent-step, 16px))
-        + (var(--tree-indent-step, 16px) / 2)
-        + (var(--tree-item-selected-indicator-width, 2px) / 2)
-        + var(--tree-item-selection-start-gap, 0px)
+        (var(--tree-item-active-slot-index, 0) * var(--tree-indent-step, 16px)) +
+          (var(--tree-indent-step, 16px) / 2) +
+          (var(--tree-item-selected-indicator-width, 2px) / 2) +
+          var(--tree-item-selection-start-gap, 0px)
       );
     }
 
@@ -193,7 +184,10 @@ export class TreeItem extends LitElement {
     }
 
     .item.is-page:hover::before {
-      background: var(--sidebar-item-hover-bg, var(--bg-hover, oklch(from var(--fg-default) l c h / 0.05)));
+      background: var(
+        --sidebar-item-hover-bg,
+        var(--bg-hover, oklch(from var(--fg-default) l c h / 0.05))
+      );
     }
 
     :host([selected]) .item {
@@ -224,15 +218,9 @@ export class TreeItem extends LitElement {
       position: relative;
       display: flex;
       align-self: stretch;
-      inline-size: calc(
-        var(--tree-item-leading-slot-count, 1) * var(--tree-indent-step, 16px)
-      );
-      min-inline-size: calc(
-        var(--tree-item-leading-slot-count, 1) * var(--tree-indent-step, 16px)
-      );
-      flex: 0 0 calc(
-        var(--tree-item-leading-slot-count, 1) * var(--tree-indent-step, 16px)
-      );
+      inline-size: calc(var(--tree-item-leading-slot-count, 1) * var(--tree-indent-step, 16px));
+      min-inline-size: calc(var(--tree-item-leading-slot-count, 1) * var(--tree-indent-step, 16px));
+      flex: 0 0 calc(var(--tree-item-leading-slot-count, 1) * var(--tree-indent-step, 16px));
     }
 
     .leading-slot {
@@ -297,18 +285,13 @@ export class TreeItem extends LitElement {
       inset-inline-start: 50%;
       inline-size: var(--tree-item-selected-indicator-width, 2px);
       border-radius: var(--tree-item-selected-indicator-radius, var(--radius-full, 9999px));
-      background: var(
-        --tree-item-selected-indicator-color,
-        var(--primary, oklch(55% 0.2 250))
-      );
+      background: var(--tree-item-selected-indicator-color, var(--primary, oklch(55% 0.2 250)));
       transform: translateX(-50%);
       opacity: 0;
       transition:
-        background-color
-          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+        background-color var(--nav-item-transition-duration, var(--duration-fast, 70ms))
           var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9))),
-        opacity
-          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+        opacity var(--nav-item-transition-duration, var(--duration-fast, 70ms))
           var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
@@ -912,9 +895,7 @@ export class TreeItem extends LitElement {
       'is-branch': isBranch,
       'is-page': !isBranch,
     };
-    const leadingSlotCount = isBranch
-      ? Math.max(resolvedDepth, 1)
-      : Math.max(resolvedDepth - 1, 1);
+    const leadingSlotCount = isBranch ? Math.max(resolvedDepth, 1) : Math.max(resolvedDepth - 1, 1);
     const currentSlotIndex = Math.max(leadingSlotCount - 1, 0);
     const rowStyle = [
       `--tree-item-depth: ${resolvedDepth.toString()};`,
@@ -938,8 +919,9 @@ export class TreeItem extends LitElement {
           })}
           aria-hidden="true"
         >
-          ${shouldRenderGuideLine ? html`<span class="guide-line" aria-hidden="true"></span>` : null}
-
+          ${shouldRenderGuideLine
+            ? html`<span class="guide-line" aria-hidden="true"></span>`
+            : null}
           ${isCurrentSlot && isBranch
             ? html`
                 <span class="current-slot-line"></span>
@@ -950,7 +932,6 @@ export class TreeItem extends LitElement {
                 </span>
               `
             : null}
-
           ${isCurrentSlot && !isBranch ? html`<span class="current-slot-indicator"></span>` : null}
         </span>
       `;
@@ -958,9 +939,7 @@ export class TreeItem extends LitElement {
 
     const controlContent = html`
       <span class="leading">
-        <span class="leading-rails">
-          ${leadingSlots}
-        </span>
+        <span class="leading-rails"> ${leadingSlots} </span>
       </span>
 
       <span
@@ -1033,11 +1012,7 @@ export class TreeItem extends LitElement {
           ?inert=${childrenHidden || !this.expanded}
           ?hidden=${childrenHidden}
         >
-          <slot
-            class="children-slot"
-            name="children"
-            @slotchange=${this._slotChangeHandler}
-          ></slot>
+          <slot class="children-slot" name="children" @slotchange=${this._slotChangeHandler}></slot>
         </div>
       </div>
     `;

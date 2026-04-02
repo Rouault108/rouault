@@ -159,7 +159,8 @@ export function rehypeStaticCodeGroups(): (tree: unknown) => void {
         'data-code-group': true,
         'data-code-group-id': groupId,
         'data-code-group-selected': selectedKey,
-        'data-code-group-label': pickOptionalString(originalProperties['aria-label']) ?? 'コード比較',
+        'data-code-group-label':
+          pickOptionalString(originalProperties['aria-label']) ?? 'コード比較',
         'data-hydration-key': 'code-group-enhancer',
         'data-hydration-capability': 'interactive',
         'data-hydration-trigger': 'visible',

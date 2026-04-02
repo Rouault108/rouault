@@ -82,7 +82,9 @@ export const BasicContract: Story = {
 export const VariantAndPlacementReference: Story = {
   tags: ['manual-only'],
   render: () => html`
-    <div style="display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 3rem;">
+    <div
+      style="display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 3rem;"
+    >
       <ui-popover variant="default" placement="bottom-start" opened>
         <button slot="trigger" type="button">default</button>
         <div slot="content">default surface</div>

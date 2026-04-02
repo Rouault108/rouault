@@ -80,7 +80,10 @@ export class RadioGroup extends LitElement {
 
   override disconnectedCallback(): void {
     this.removeEventListener('change', this._handleChange as EventListener);
-    this.removeEventListener(RADIO_STATE_CHANGE_EVENT, this._handleRadioStateChange as EventListener);
+    this.removeEventListener(
+      RADIO_STATE_CHANGE_EVENT,
+      this._handleRadioStateChange as EventListener,
+    );
     this._memberObserver?.disconnect();
     this._memberObserver = null;
     super.disconnectedCallback();
@@ -136,7 +139,9 @@ export class RadioGroup extends LitElement {
     }
 
     const scope = member.closest('form') ?? (member.getRootNode() as Document | ShadowRoot);
-    return [...scope.querySelectorAll<RadioLikeElement>(`ui-radio[name="${CSS.escape(member.name)}"]`)];
+    return [
+      ...scope.querySelectorAll<RadioLikeElement>(`ui-radio[name="${CSS.escape(member.name)}"]`),
+    ];
   }
 
   private _handleMembersChanged = (): void => {

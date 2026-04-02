@@ -2,9 +2,7 @@ import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/layout/layout-sidebar.js';
 import '../../src/components/ui/sidebar/sidebar.js';
 import type { LayoutSidebar } from '../../src/components/layout/layout-sidebar.js';
-import {
-  getLayoutSidebarTreeStateStorageKey,
-} from '../../src/components/layout/layout-sidebar-tree-state.js';
+import { getLayoutSidebarTreeStateStorageKey } from '../../src/components/layout/layout-sidebar-tree-state.js';
 import type {
   UiSidebar,
   UiSidebarSelectDetail,

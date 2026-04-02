@@ -1,12 +1,6 @@
 import { describe, it } from 'vitest';
-import {
-  DIVIDER_SCOPE_SELECTOR,
-  DOCUMENT_CSS,
-} from '../../src/components/ui/divider/divider.js';
-import {
-  expectCssExcludes,
-  expectCssIncludes,
-} from './css-contract-test-helpers.js';
+import { DIVIDER_SCOPE_SELECTOR, DOCUMENT_CSS } from '../../src/components/ui/divider/divider.js';
+import { expectCssExcludes, expectCssIncludes } from './css-contract-test-helpers.js';
 
 describe('divider CSS structure contracts', () => {
   it('selector / forced-colors / print / token / low-specificity 契約を保持すること', () => {

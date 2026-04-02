@@ -168,9 +168,7 @@ const installMediaMock = (video: HTMLVideoElement, state: MediaMockState): void 
 
 describe('ui-video browser contract', () => {
   it('src が空のとき EMPTY state と empty panel を公開すること', async () => {
-    const component = await fixture<UiVideo>(html`
-      <ui-video caption="ソース未設定"></ui-video>
-    `);
+    const component = await fixture<UiVideo>(html` <ui-video caption="ソース未設定"></ui-video> `);
 
     await waitForLitUpdate(component);
 
@@ -329,9 +327,7 @@ describe('ui-video browser contract', () => {
   });
 
   it('ended から playVideo() で先頭へ戻して再生すること', async () => {
-    const component = await fixture<UiVideo>(html`
-      <ui-video src="/media/sample.mp4"></ui-video>
-    `);
+    const component = await fixture<UiVideo>(html` <ui-video src="/media/sample.mp4"></ui-video> `);
 
     await waitForLitUpdate(component);
 
@@ -365,9 +361,7 @@ describe('ui-video browser contract', () => {
   });
 
   it('error から retry() で loading へ戻し、video.load() を再実行すること', async () => {
-    const component = await fixture<UiVideo>(html`
-      <ui-video src="/media/sample.mp4"></ui-video>
-    `);
+    const component = await fixture<UiVideo>(html` <ui-video src="/media/sample.mp4"></ui-video> `);
 
     await waitForLitUpdate(component);
 
@@ -403,9 +397,7 @@ describe('ui-video browser contract', () => {
   });
 
   it('error state の live region を status paragraph に反映すること', async () => {
-    const component = await fixture<UiVideo>(html`
-      <ui-video src="/media/sample.mp4"></ui-video>
-    `);
+    const component = await fixture<UiVideo>(html` <ui-video src="/media/sample.mp4"></ui-video> `);
 
     await waitForLitUpdate(component);
 

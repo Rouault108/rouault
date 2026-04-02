@@ -1,4 +1,7 @@
-import { FOOTER_DOCUMENT_CSS, FOOTER_DOCUMENT_STYLE_ID } from '../../src/components/ui/footer/footer.js';
+import {
+  FOOTER_DOCUMENT_CSS,
+  FOOTER_DOCUMENT_STYLE_ID,
+} from '../../src/components/ui/footer/footer.js';
 import {
   DOCUMENT_CSS as HIGHLIGHT_DOCUMENT_CSS,
   DOCUMENT_STYLE_ID as HIGHLIGHT_DOCUMENT_STYLE_ID,

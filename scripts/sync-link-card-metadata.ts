@@ -163,7 +163,9 @@ const parseHtmlMetadata = (html: string, pageUrl: string): HtmlMetadataPayload =
       return;
     }
 
-    const attrs = Object.fromEntries((node.attrs ?? []).map((attr) => [attr.name.toLowerCase(), attr.value]));
+    const attrs = Object.fromEntries(
+      (node.attrs ?? []).map((attr) => [attr.name.toLowerCase(), attr.value]),
+    );
 
     if (tagName === 'meta') {
       const key =
@@ -242,7 +244,9 @@ const fetchTextWithTimeout = async (
   timeoutMs: number,
 ): Promise<{ text: string; finalUrl: string }> => {
   const controller = new AbortController();
-  const timer = setTimeout(() => { controller.abort(); }, timeoutMs);
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
 
   try {
     const response = await fetch(url, {
@@ -269,7 +273,9 @@ const fetchTextWithTimeout = async (
 
 const fetchJsonWithTimeout = async (url: string, timeoutMs: number): Promise<unknown> => {
   const controller = new AbortController();
-  const timer = setTimeout(() => { controller.abort(); }, timeoutMs);
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
 
   try {
     const response = await fetch(url, {

@@ -55,8 +55,7 @@ const patchManifest = () => {
 
   manifest.modules = (manifest.modules ?? [])
     .filter(
-      (module) =>
-        typeof module?.path === 'string' && module.path.startsWith('src/components/'),
+      (module) => typeof module?.path === 'string' && module.path.startsWith('src/components/'),
     )
     .map((module) => {
       const declarations = Array.isArray(module.declarations)

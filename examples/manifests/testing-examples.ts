@@ -94,7 +94,7 @@ export const SHARED_TABS_URL_SYNC_EXAMPLE: TabsExampleDefinition = {
       heading: 'RustのHello, World!',
       body: 'Rustではこのように書きます。',
       codeLang: 'rust',
-      code: "fn main() {\n    println!(\"Hello, World!\");\n}",
+      code: 'fn main() {\n    println!("Hello, World!");\n}',
     },
   ],
 };
@@ -116,15 +116,13 @@ export const SHARED_TABS_URL_SYNC_INTERACTIVE_CANARY_EXAMPLE: TabsExampleDefinit
       value: 'javascript',
       label: 'JavaScript',
       heading: 'JavaScriptのHello, World!',
-      body:
-        'JavaScriptではこのように書きます。ここでは interactive canary を純化するため、コードブロックは含めません。',
+      body: 'JavaScriptではこのように書きます。ここでは interactive canary を純化するため、コードブロックは含めません。',
     },
     {
       value: 'rust',
       label: 'Rust',
       heading: 'RustのHello, World!',
-      body:
-        'Rustではこのように書きます。ここでは interactive canary を純化するため、コードブロックは含めません。',
+      body: 'Rustではこのように書きます。ここでは interactive canary を純化するため、コードブロックは含めません。',
     },
   ],
 };
@@ -264,9 +262,7 @@ const renderSandboxMarkdown = (
   readText: (filePath: string) => string,
 ): string => {
   const controlsAttribute =
-    definition.controls.length > 0
-      ? ` controls="${definition.controls.join(' ')}"`
-      : '';
+    definition.controls.length > 0 ? ` controls="${definition.controls.join(' ')}"` : '';
 
   const lines = [
     `::code-preview{heading="${escapeAttribute(definition.heading)}"${controlsAttribute} preview-theme="${definition.previewTheme}" preview-surface="${definition.previewSurface}" preview-viewport="${definition.previewViewport}" preview-padding="${definition.previewPadding}" preview-align="${definition.previewAlign}"}`,
@@ -279,14 +275,18 @@ const renderSandboxMarkdown = (
 
   if (definition.cssPath) {
     lines.push('');
-    lines.push(`\`\`\`preview-css filename="${definition.cssPath.split('/').at(-1) ?? 'example.css'}"`);
+    lines.push(
+      `\`\`\`preview-css filename="${definition.cssPath.split('/').at(-1) ?? 'example.css'}"`,
+    );
     lines.push(readText(definition.cssPath).trimEnd());
     lines.push('```');
   }
 
   if (definition.jsPath) {
     lines.push('');
-    lines.push(`\`\`\`preview-js filename="${definition.jsPath.split('/').at(-1) ?? 'example.js'}"`);
+    lines.push(
+      `\`\`\`preview-js filename="${definition.jsPath.split('/').at(-1) ?? 'example.js'}"`,
+    );
     lines.push(readText(definition.jsPath).trimEnd());
     lines.push('```');
   }

@@ -6,9 +6,7 @@ import { toError } from '../shared/errors.js';
 import type { TranslationOverlayPayload, TranslationPayload } from './payload-types.js';
 
 const buildTextBlocks = (children: MdastNode[]): string[] =>
-  children
-    .map((item) => getNodeTextContent(item).trim())
-    .filter((item) => item.length > 0);
+  children.map((item) => getNodeTextContent(item).trim()).filter((item) => item.length > 0);
 
 const validateTextBlockCount = (
   textBlocks: string[],
@@ -20,11 +18,7 @@ const validateTextBlockCount = (
     return;
   }
 
-  throw toError(
-    file,
-    node,
-    `${directiveName} の本文は非空テキスト段落を 2 つまでしか持てません`,
-  );
+  throw toError(file, node, `${directiveName} の本文は非空テキスト段落を 2 つまでしか持てません`);
 };
 
 const resolveTranslationContent = (
@@ -92,11 +86,7 @@ export const normalizeTranslationOverlayPayload = (
 
   const surface = pickOptional(attrs['surface'])?.toLowerCase() ?? 'popover';
   if (!TRANSLATION_OVERLAY_SURFACES.has(surface)) {
-    throw toError(
-      file,
-      node,
-      'translation-overlay の surface は popover/drawer のみ指定可能です',
-    );
+    throw toError(file, node, 'translation-overlay の surface は popover/drawer のみ指定可能です');
   }
 
   return {

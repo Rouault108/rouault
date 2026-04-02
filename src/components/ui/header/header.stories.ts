@@ -113,9 +113,7 @@ export const DefaultExpanded: Story = {
 };
 
 export const ZenModeCollapsed: Story = {
-  render: () => html`
-    <ui-header id="header-zen"> ${fullSlotContent} </ui-header>
-  `,
+  render: () => html` <ui-header id="header-zen"> ${fullSlotContent} </ui-header> `,
 };
 
 export const ResponsiveVisualComparison: Story = {
@@ -232,7 +230,8 @@ export const PrintStyles: Story = {
       <main style="padding: 2rem;">
         <h1 style="font-size: 1.5rem; margin: 0 0 1rem;">印刷テスト</h1>
         <p>
-          ブラウザの印刷プレビュー（Cmd+P / Ctrl+P）を使用して、ヘッダーが非表示になることを確認してください。
+          ブラウザの印刷プレビュー（Cmd+P /
+          Ctrl+P）を使用して、ヘッダーが非表示になることを確認してください。
         </p>
       </main>
     </div>
@@ -240,7 +239,8 @@ export const PrintStyles: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'print の CSS 構造契約は test/ssr 側で検査し、この story は印刷プレビュー確認用に残しています。',
+        story:
+          'print の CSS 構造契約は test/ssr 側で検査し、この story は印刷プレビュー確認用に残しています。',
       },
     },
   },
@@ -262,7 +262,8 @@ export const DarkModeGlassmorphism: Story = {
               style="margin-bottom: 1rem; padding: 1rem; border-radius: 6px; background: oklch(17% 0.02 250);"
             >
               ダークモード背景コンテンツ #${i + 1}: スクロールするとヘッダーの見え方を確認できます。
-              <span style="color: oklch(65% 0.15 250);">カラーテキスト</span>も合わせて確認してください。
+              <span style="color: oklch(65% 0.15 250);">カラーテキスト</span
+              >も合わせて確認してください。
             </p>
           `,
         )}

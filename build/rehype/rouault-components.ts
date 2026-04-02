@@ -126,7 +126,9 @@ const hasMeaningfulChildren = (children: readonly HastNode[]): boolean =>
     if (isElement(child)) {
       return true;
     }
-    return child.type === 'text' && typeof child.value === 'string' && child.value.trim().length > 0;
+    return (
+      child.type === 'text' && typeof child.value === 'string' && child.value.trim().length > 0
+    );
   });
 
 const isParse5Element = (node: Parse5Node): node is Parse5Element =>
@@ -144,10 +146,15 @@ const parse5NodeToHast = (node: Parse5Node): HastNode | null => {
     return null;
   }
 
-  const properties = Object.fromEntries(node.attrs.map((attribute) => [attribute.name, attribute.value]));
-  const children = ('childNodes' in node && Array.isArray(node.childNodes)
-    ? node.childNodes.map((child) => parse5NodeToHast(child)).filter((child): child is HastNode => child !== null)
-    : []);
+  const properties = Object.fromEntries(
+    node.attrs.map((attribute) => [attribute.name, attribute.value]),
+  );
+  const children =
+    'childNodes' in node && Array.isArray(node.childNodes)
+      ? node.childNodes
+          .map((child) => parse5NodeToHast(child))
+          .filter((child): child is HastNode => child !== null)
+      : [];
 
   return createElement(node.tagName, properties, children);
 };
@@ -170,9 +177,9 @@ const createInlineIcon = (
     return cached ? cloneNode(cached) : null;
   }
 
-  const iconDefinition = (
-    LUCIDE_SUBSET.icons as Record<string, { body?: string }>
-  )[normalizedIconName];
+  const iconDefinition = (LUCIDE_SUBSET.icons as Record<string, { body?: string }>)[
+    normalizedIconName
+  ];
   if (!iconDefinition?.body) {
     svgIconCache.set(cacheKey, null);
     return null;
@@ -185,9 +192,10 @@ const createInlineIcon = (
     },
   );
 
-  const rootNode = fragment.childNodes
-    .map((child) => parse5NodeToHast(child))
-    .find((child): child is HastNode => child !== null) ?? null;
+  const rootNode =
+    fragment.childNodes
+      .map((child) => parse5NodeToHast(child))
+      .find((child): child is HastNode => child !== null) ?? null;
 
   svgIconCache.set(cacheKey, rootNode);
   return rootNode ? cloneNode(rootNode) : null;
@@ -204,7 +212,9 @@ const CALLOUT_KIND_CONFIG = {
 type CalloutKind = keyof typeof CALLOUT_KIND_CONFIG;
 
 const normalizeCalloutKind = (value: unknown): CalloutKind => {
-  const normalized = String(value ?? '').trim().toLowerCase();
+  const normalized = String(value ?? '')
+    .trim()
+    .toLowerCase();
   if (normalized in CALLOUT_KIND_CONFIG) {
     return normalized as CalloutKind;
   }
@@ -212,12 +222,16 @@ const normalizeCalloutKind = (value: unknown): CalloutKind => {
 };
 
 const normalizeInfoBoxVariant = (value: unknown): 'default' | 'filled' => {
-  const normalized = String(value ?? '').trim().toLowerCase();
+  const normalized = String(value ?? '')
+    .trim()
+    .toLowerCase();
   return normalized === 'filled' ? 'filled' : 'default';
 };
 
 const normalizeInfoBoxDensity = (value: unknown): 'comfortable' | 'compact' => {
-  const normalized = String(value ?? '').trim().toLowerCase();
+  const normalized = String(value ?? '')
+    .trim()
+    .toLowerCase();
   return normalized === 'compact' ? 'compact' : 'comfortable';
 };
 
@@ -359,7 +373,8 @@ const toStaticBlockquote = (node: HastNode): void => {
   const properties = node.properties ?? {};
   const source = pickOptionalString(properties['source']);
   const cite = pickOptionalString(properties['cite']);
-  const quoteLang = pickOptionalString(properties['quote-lang']) ?? pickOptionalString(properties['quoteLang']);
+  const quoteLang =
+    pickOptionalString(properties['quote-lang']) ?? pickOptionalString(properties['quoteLang']);
   const variant = pickOptionalString(properties['variant']);
   const children = Array.isArray(node.children) ? node.children : [];
 
@@ -383,12 +398,16 @@ const toStaticBlockquote = (node: HastNode): void => {
 
   const blockquoteNode = createElement('blockquote', blockquoteProperties, quoteChildren);
   if (source || sourceSlotNodes.length > 0) {
-    const sourceChildren = sourceSlotNodes.length > 0 ? sourceSlotNodes : [createTextNode(source ?? '')];
+    const sourceChildren =
+      sourceSlotNodes.length > 0 ? sourceSlotNodes : [createTextNode(source ?? '')];
     node.tagName = 'figure';
-    node.properties = variant && variant !== 'default' ? { 'data-blockquote-variant': variant } : {};
+    node.properties =
+      variant && variant !== 'default' ? { 'data-blockquote-variant': variant } : {};
     node.children = [
       blockquoteNode,
-      createElement('figcaption', { className: ['source'] }, [createElement('cite', {}, sourceChildren)]),
+      createElement('figcaption', { className: ['source'] }, [
+        createElement('cite', {}, sourceChildren),
+      ]),
     ];
     return;
   }
@@ -400,7 +419,9 @@ const toStaticBlockquote = (node: HastNode): void => {
 
 const toStaticCallout = (node: HastNode, context: SurfaceNormalizationContext): void => {
   const properties = node.properties ?? {};
-  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+  const children = Array.isArray(node.children)
+    ? node.children.map((child) => cloneNode(child))
+    : [];
 
   const kind = normalizeCalloutKind(properties['data-callout-kind'] ?? properties['kind']);
   const heading = pickOptionalString(properties['data-callout-heading'] ?? properties['heading']);
@@ -413,7 +434,9 @@ const toStaticCallout = (node: HastNode, context: SurfaceNormalizationContext): 
   const iconName =
     pickOptionalString(properties['data-callout-icon'] ?? properties['icon']) ??
     CALLOUT_KIND_CONFIG[kind].icon;
-  const headingId = heading ? `callout-heading-${String(++context.calloutHeadingCount)}` : undefined;
+  const headingId = heading
+    ? `callout-heading-${String(++context.calloutHeadingCount)}`
+    : undefined;
   const headingTagName = headingLevel ? `h${String(headingLevel)}` : 'p';
 
   node.tagName = 'aside';
@@ -449,7 +472,9 @@ const toStaticCallout = (node: HastNode, context: SurfaceNormalizationContext): 
 
 const toStaticInfoBox = (node: HastNode, context: SurfaceNormalizationContext): void => {
   const properties = node.properties ?? {};
-  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+  const children = Array.isArray(node.children)
+    ? node.children.map((child) => cloneNode(child))
+    : [];
 
   if (!hasMeaningfulChildren(children)) {
     node.type = 'text';
@@ -464,12 +489,15 @@ const toStaticInfoBox = (node: HastNode, context: SurfaceNormalizationContext): 
   const headingLevel = toHeadingLevel(
     properties['data-info-box-heading-level'] ?? properties['heading-level'],
   );
-  const landmark =
-    toBooleanAttribute(properties['data-info-box-landmark'] ?? properties['landmark']);
+  const landmark = toBooleanAttribute(
+    properties['data-info-box-landmark'] ?? properties['landmark'],
+  );
   const iconName = pickOptionalString(properties['data-info-box-icon'] ?? properties['icon']);
   const variant = normalizeInfoBoxVariant(properties['data-variant'] ?? properties['variant']);
   const density = normalizeInfoBoxDensity(properties['data-density'] ?? properties['density']);
-  const headingId = heading ? `info-box-heading-${String(++context.infoBoxHeadingCount)}` : undefined;
+  const headingId = heading
+    ? `info-box-heading-${String(++context.infoBoxHeadingCount)}`
+    : undefined;
   const headingTagName = headingLevel ? `h${String(headingLevel)}` : 'p';
 
   node.tagName = 'section';
@@ -478,7 +506,9 @@ const toStaticInfoBox = (node: HastNode, context: SurfaceNormalizationContext): 
     'data-variant': variant,
     'data-density': density,
     ...(iconName ? { 'data-info-box-icon': iconName } : {}),
-    ...(landmark && headingId && headingLevel ? { role: 'region', 'aria-labelledby': headingId } : {}),
+    ...(landmark && headingId && headingLevel
+      ? { role: 'region', 'aria-labelledby': headingId }
+      : {}),
   };
 
   const nextChildren: HastNode[] = [];
@@ -765,7 +795,11 @@ const toStaticFigureImage = (
       continue;
     }
 
-    if (!imageNode && (isElement(child, 'img') || (isElement(child, 'figure') && child.properties?.['data-image'] !== undefined))) {
+    if (
+      !imageNode &&
+      (isElement(child, 'img') ||
+        (isElement(child, 'figure') && child.properties?.['data-image'] !== undefined))
+    ) {
       imageNode = child;
       continue;
     }
@@ -976,7 +1010,9 @@ const synchronizeFootnoteBackrefs = (
 ): void => {
   for (const definition of definitions.values()) {
     const refCount = refCounters.get(definition.refId) ?? 1;
-    definition.itemNode.children = definition.contentNodes.map((contentNode) => cloneNode(contentNode));
+    definition.itemNode.children = definition.contentNodes.map((contentNode) =>
+      cloneNode(contentNode),
+    );
 
     for (let refInstance = 1; refInstance <= refCount; refInstance += 1) {
       definition.itemNode.children.push({
@@ -1107,9 +1143,7 @@ const toStaticFootnoteReference = (
     'data-hydration-trigger': 'post-commit',
     'aria-label': `脚注 ${String(resolvedIndex)} を開く`,
   };
-  node.children = [
-    createElement('sup', {}, [createTextNode(String(resolvedIndex))]),
-  ];
+  node.children = [createElement('sup', {}, [createTextNode(String(resolvedIndex))])];
   return true;
 };
 

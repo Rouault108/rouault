@@ -20,10 +20,7 @@ import {
   type NoteSurfacePolicy,
   resolveNoteSurfacePolicy,
 } from '../../shared/note/note-surface-policy.js';
-import {
-  type TestingArea,
-  normalizeTestingArea,
-} from '../../shared/note/testing-area.js';
+import { type TestingArea, normalizeTestingArea } from '../../shared/note/testing-area.js';
 import type { NoteHydrationBudgetProfileName } from '../../src/types/note-hydration-budget-profile.js';
 
 type SidebarIconSetting = IconName | 'none';
@@ -210,10 +207,7 @@ const calculateSortIndex = (slug: string, contentRoot: string): number => {
   return sortIndex;
 };
 
-const collectSidebarScopeRules = (
-  slug: string,
-  contentRoot: string,
-): SidebarScopeRule[] => {
+const collectSidebarScopeRules = (slug: string, contentRoot: string): SidebarScopeRule[] => {
   const parts = slug.split('/');
   const dirParts = parts.slice(0, -1);
   const rules: SidebarScopeRule[] = [];

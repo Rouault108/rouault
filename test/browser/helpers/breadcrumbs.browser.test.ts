@@ -70,12 +70,7 @@ describe('ui-breadcrumbs browser contract', () => {
       const dropdown = host.shadowRoot?.querySelector('ui-dropdown');
       const menuItems = host.shadowRoot?.querySelectorAll('ui-menu-item');
 
-      expect(renderedLabels).to.deep.equal([
-        'ホーム',
-        'バックエンド',
-        'API',
-        'ユーザー管理',
-      ]);
+      expect(renderedLabels).to.deep.equal(['ホーム', 'バックエンド', 'API', 'ユーザー管理']);
       expect(dropdown).to.not.equal(null);
       expect(menuItems?.length).to.equal(3);
     } finally {

@@ -50,10 +50,7 @@ const resolveBaseUrl = (options: ClassifyLinkOptions): URL => {
   return new URL(FALLBACK_ORIGIN);
 };
 
-export const classifyLinkHref = (
-  href: string,
-  options: ClassifyLinkOptions = {},
-): LinkKind => {
+export const classifyLinkHref = (href: string, options: ClassifyLinkOptions = {}): LinkKind => {
   const trimmed = href.trim();
 
   if (trimmed.length === 0) {

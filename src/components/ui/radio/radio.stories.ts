@@ -105,7 +105,6 @@ Form-Associated Custom Element として、標準フォームとシームレス�
 export default meta;
 type Story = StoryObj<Radio>;
 
-
 // ──────────────────────────────────────────────
 // デフォルト
 // ──────────────────────────────────────────────

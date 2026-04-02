@@ -1,9 +1,7 @@
 import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
 
-import {
-  type NoteContentKind,
-} from '../../shared/note/note-kind.js';
+import { type NoteContentKind } from '../../shared/note/note-kind.js';
 import type { TestingArea } from '../../shared/note/testing-area.js';
 import { createNotePolicyContext } from '../remark/directives/policy/note-policy-context.js';
 import {

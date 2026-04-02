@@ -11,4 +11,3 @@
 ::info-box{heading="作品情報" icon="book" heading-level="3" landmark="true" variant="filled"}
 ここに説明を書く
 ::
-

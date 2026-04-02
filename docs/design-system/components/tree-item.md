@@ -87,16 +87,16 @@
 
 ### 入力契約
 
-| 名前           | 種別                 | 必須     | 内容                 | 契約                                                                                               |
-| -------------- | -------------------- | -------- | -------------------- | -------------------------------------------------------------------------------------------------- |
-| `selected`     | property / attribute | いいえ   | 選択表示状態         | `ui-file-tree.selectedId` に対応する現在位置表示です。focus とは別です                             |
-| `expanded`     | property / attribute | いいえ   | 展開表示状態         | controlled input です。`ui-file-tree` から与えられる展開状態を表示します                           |
-| `label`        | property / attribute | **はい** | 主ラベル             | 非空必須です。可視ラベル、リンクテキスト、トランケーション時の補助表示の原文として用います         |
-| `description`  | property / attribute | いいえ   | 補助説明             | 主ラベルとは別の補助説明です。存在する場合、アクセシビリティ上の補助説明へ反映します               |
-| `icon`         | property / attribute | いいえ   | 補助アイコン識別子   | `ui-file-tree` のノードデータと整合する string property です                                       |
-| `href`         | property / attribute | いいえ   | 遷移先               | リーフ項目のみが持つことを想定します                                                               |
-| `density`      | property / attribute | いいえ   | 行密度               | `normal` / `compact` を受理します。既定値は `normal` です                                          |
-| `matchRanges`  | property             | いいえ   | ラベル内一致区間配列 | `label` の表示補助だけを担う入力です。一致区間の算出責務は上位に置き、`ui-tree-item` は強調だけを担います |
+| 名前          | 種別                 | 必須     | 内容                 | 契約                                                                                                      |
+| ------------- | -------------------- | -------- | -------------------- | --------------------------------------------------------------------------------------------------------- |
+| `selected`    | property / attribute | いいえ   | 選択表示状態         | `ui-file-tree.selectedId` に対応する現在位置表示です。focus とは別です                                    |
+| `expanded`    | property / attribute | いいえ   | 展開表示状態         | controlled input です。`ui-file-tree` から与えられる展開状態を表示します                                  |
+| `label`       | property / attribute | **はい** | 主ラベル             | 非空必須です。可視ラベル、リンクテキスト、トランケーション時の補助表示の原文として用います                |
+| `description` | property / attribute | いいえ   | 補助説明             | 主ラベルとは別の補助説明です。存在する場合、アクセシビリティ上の補助説明へ反映します                      |
+| `icon`        | property / attribute | いいえ   | 補助アイコン識別子   | `ui-file-tree` のノードデータと整合する string property です                                              |
+| `href`        | property / attribute | いいえ   | 遷移先               | リーフ項目のみが持つことを想定します                                                                      |
+| `density`     | property / attribute | いいえ   | 行密度               | `normal` / `compact` を受理します。既定値は `normal` です                                                 |
+| `matchRanges` | property             | いいえ   | ラベル内一致区間配列 | `label` の表示補助だけを担う入力です。一致区間の算出責務は上位に置き、`ui-tree-item` は強調だけを担います |
 
 `label` はプレーンテキスト契約です。HTML 断片やリッチテキストを渡す用途は公開契約に含めません。
 
@@ -120,11 +120,11 @@
 
 ### スロット契約
 
-| 名前       | 種別       | 位置づけ | 内容                                                               |
-| ---------- | ---------- | -------- | ------------------------------------------------------------------ |
-| `children` | named slot | 正規入力 | 直接の子要素である `ui-tree-item` を受け取ります                   |
-| `icon`     | named slot | 補助入力 | `icon` property の代替として補助アイコンを受け取ります             |
-| `end`      | named slot | 補助入力 | 件数、状態、注記などの補助情報を受け取ります                       |
+| 名前       | 種別       | 位置づけ | 内容                                                   |
+| ---------- | ---------- | -------- | ------------------------------------------------------ |
+| `children` | named slot | 正規入力 | 直接の子要素である `ui-tree-item` を受け取ります       |
+| `icon`     | named slot | 補助入力 | `icon` property の代替として補助アイコンを受け取ります |
+| `end`      | named slot | 補助入力 | 件数、状態、注記などの補助情報を受け取ります           |
 
 `children` スロットは、**ツリー構造を DOM ネストで表すための唯一の正規入力**です。データ配列を渡して内部再帰描画する API は公開しません。
 
@@ -169,15 +169,15 @@
 
 ### 属性反映契約
 
-| property      | attribute     | reflect | 備考                                                  |
-| ------------- | ------------- | ------- | ----------------------------------------------------- |
-| `selected`    | `selected`    | あり    | boolean attribute として扱います                      |
-| `expanded`    | `expanded`    | あり    | boolean attribute として扱います                      |
-| `label`       | `label`       | あり    | 非空必須です                                          |
-| `description` | `description` | あり    | 補助説明です                                          |
-| `icon`        | `icon`        | あり    | 補助アイコン識別子です                                |
-| `href`        | `href`        | あり    | リーフの遷移先です                                    |
-| `density`     | `density`     | あり    | `normal` / `compact` を受理します                     |
+| property      | attribute     | reflect | 備考                                                   |
+| ------------- | ------------- | ------- | ------------------------------------------------------ |
+| `selected`    | `selected`    | あり    | boolean attribute として扱います                       |
+| `expanded`    | `expanded`    | あり    | boolean attribute として扱います                       |
+| `label`       | `label`       | あり    | 非空必須です                                           |
+| `description` | `description` | あり    | 補助説明です                                           |
+| `icon`        | `icon`        | あり    | 補助アイコン識別子です                                 |
+| `href`        | `href`        | あり    | リーフの遷移先です                                     |
+| `density`     | `density`     | あり    | `normal` / `compact` を受理します                      |
 | `matchRanges` | なし          | なし    | 構造化データであるため property のみを安定契約とします |
 
 内部用属性は安定契約に含めません。
@@ -452,30 +452,30 @@ selected 表示を優先します。
 
 各 Story は見本ではなく、`ui-file-tree` と整合した契約確認点として扱います。
 
-| Story                      | 固定する契約                                                                                   |
-| -------------------------- | ---------------------------------------------------------------------------------------------- |
-| `Default`                  | `role="treeitem"` と `aria-level="1"` を持つこと                                               |
-| `Selected`                 | `selected=true` で selected 表示と `aria-selected="true"` が成立すること                       |
-| `WithChildren`             | ブランチで `aria-expanded` を持つこと                                                          |
-| `DeepNesting`              | direct child ネストに応じて `aria-level` が正しく増加すること                                  |
-| `Collapsed`                | 収縮時に子要素が操作対象から除外されること                                                     |
-| `SelectedAndExpanded`      | selected と展開状態を同時に保持できること                                                      |
-| `LongLabel`                | 省略時のみ補助表示が有効になること                                                             |
-| `WithDescription`          | `description` が補助説明として表現され、主ラベルを代替しないこと                               |
-| `CustomIconSlot`           | `icon` スロットによる補助アイコン表示ができること                                              |
-| `EndSlot`                  | `end` スロットが補助情報専用として表示され、主操作面を侵食しないこと                           |
-| `MatchRanges`              | `matchRanges` により `label` の一致区間だけを強調できること                                    |
-| `LeafNode`                 | リーフでは `aria-expanded` を持たず、`expanded=true` 入力が正規化されること                    |
-| `PrimaryActionRequest`     | 行クリック、`Enter`、`Space` で `tree-item-primary-action-request` を通知すること              |
-| `ExpandControlRequest`     | 展開アイコンクリックで `tree-item-expanded-request` のみを通知すること                         |
-| `KeyboardBranchNavigation` | `ArrowRight` / `ArrowLeft` の integration event 契約が成立すること                             |
-| `TabIndexDelegation`       | ホスト `tabindex` が実フォーカス対象へ反映されること                                           |
-| `AllDensities`             | `normal` 32px / `compact` 24px の視覚高さを持つこと                                            |
-| `CompactTouchTarget`       | `compact` でも最小操作領域が 44px 以上であること                                               |
-| `ForcedColorsMode`         | 強制カラー環境で selected 表示、補助説明、フォーカスが維持されること                           |
-| `ReducedMotion`            | reduced motion 相当で遷移時間が極小化されること                                                |
-| `RealWorldFileTree`        | selected ノードの経路強調、補助情報、ラベル強調が同居しても破綻なく表現できること              |
-| `RowLayoutIsolation` | tooltip 等の補助 UI を併用しても、行本体が幅解決の主語であり、ラベル位置・末尾補助情報・子グループ位置が崩れないこと |
+| Story                      | 固定する契約                                                                                                         |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `Default`                  | `role="treeitem"` と `aria-level="1"` を持つこと                                                                     |
+| `Selected`                 | `selected=true` で selected 表示と `aria-selected="true"` が成立すること                                             |
+| `WithChildren`             | ブランチで `aria-expanded` を持つこと                                                                                |
+| `DeepNesting`              | direct child ネストに応じて `aria-level` が正しく増加すること                                                        |
+| `Collapsed`                | 収縮時に子要素が操作対象から除外されること                                                                           |
+| `SelectedAndExpanded`      | selected と展開状態を同時に保持できること                                                                            |
+| `LongLabel`                | 省略時のみ補助表示が有効になること                                                                                   |
+| `WithDescription`          | `description` が補助説明として表現され、主ラベルを代替しないこと                                                     |
+| `CustomIconSlot`           | `icon` スロットによる補助アイコン表示ができること                                                                    |
+| `EndSlot`                  | `end` スロットが補助情報専用として表示され、主操作面を侵食しないこと                                                 |
+| `MatchRanges`              | `matchRanges` により `label` の一致区間だけを強調できること                                                          |
+| `LeafNode`                 | リーフでは `aria-expanded` を持たず、`expanded=true` 入力が正規化されること                                          |
+| `PrimaryActionRequest`     | 行クリック、`Enter`、`Space` で `tree-item-primary-action-request` を通知すること                                    |
+| `ExpandControlRequest`     | 展開アイコンクリックで `tree-item-expanded-request` のみを通知すること                                               |
+| `KeyboardBranchNavigation` | `ArrowRight` / `ArrowLeft` の integration event 契約が成立すること                                                   |
+| `TabIndexDelegation`       | ホスト `tabindex` が実フォーカス対象へ反映されること                                                                 |
+| `AllDensities`             | `normal` 32px / `compact` 24px の視覚高さを持つこと                                                                  |
+| `CompactTouchTarget`       | `compact` でも最小操作領域が 44px 以上であること                                                                     |
+| `ForcedColorsMode`         | 強制カラー環境で selected 表示、補助説明、フォーカスが維持されること                                                 |
+| `ReducedMotion`            | reduced motion 相当で遷移時間が極小化されること                                                                      |
+| `RealWorldFileTree`        | selected ノードの経路強調、補助情報、ラベル強調が同居しても破綻なく表現できること                                    |
+| `RowLayoutIsolation`       | tooltip 等の補助 UI を併用しても、行本体が幅解決の主語であり、ラベル位置・末尾補助情報・子グループ位置が崩れないこと |
 
 ---
 

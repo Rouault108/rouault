@@ -84,8 +84,8 @@ note 本文の脚注参照は、次の要素へ正規化します。
 
 `data-footnote-role` は少なくとも次を取ります。
 
-* `primary`: その論理脚注への最初の参照
-* `secondary`: 2 回目以降の参照
+- `primary`: その論理脚注への最初の参照
+- `secondary`: 2 回目以降の参照
 
 ### 末尾脚注一覧
 
@@ -103,15 +103,15 @@ note 本文の脚注参照は、次の要素へ正規化します。
 
 許容される実装差分は次の範囲に限ります。
 
-* `class` 名
-* 補助的な `data-*` 属性
-* `li` 内部の細かなラップ要素
+- `class` 名
+- 補助的な `data-*` 属性
+- `li` 内部の細かなラップ要素
 
 一方、次は変えてはなりません。
 
-* `section[role="doc-endnotes"]` が存在すること
-* 各脚注項目が `id="{data-footnote-id}"` で解決可能であること
-* 本文 trigger が `href="#..."` で endnotes 項目へ到達できること
+- `section[role="doc-endnotes"]` が存在すること
+- 各脚注項目が `id="{data-footnote-id}"` で解決可能であること
+- 本文 trigger が `href="#..."` で endnotes 項目へ到達できること
 
 ---
 
@@ -135,18 +135,18 @@ note 本文の脚注参照は、次の要素へ正規化します。
 
 `footnote-popover-enhancer` が所有してよい責務は次に限ります。
 
-* trigger クリック時の Popover 開閉
-* active trigger の一時管理
-* endnotes 本文の複製による補助表示生成
-* Escape / outside click による dismissal
-* 補助 UI 内の「脚注一覧で見る」導線の提示
+- trigger クリック時の Popover 開閉
+- active trigger の一時管理
+- endnotes 本文の複製による補助表示生成
+- Escape / outside click による dismissal
+- 補助 UI 内の「脚注一覧で見る」導線の提示
 
 逆に、次は所有してはなりません。
 
-* 脚注本文の正本管理
-* 脚注 ID の採番
-* 本文参照と endnotes の意味的整合の最終判断
-* JS 無効時の基本導線
+- 脚注本文の正本管理
+- 脚注 ID の採番
+- 本文参照と endnotes の意味的整合の最終判断
+- JS 無効時の基本導線
 
 ---
 
@@ -154,10 +154,10 @@ note 本文の脚注参照は、次の要素へ正規化します。
 
 ### 必須
 
-* trigger はネイティブリンクでなければなりません
-* trigger は `role="doc-noteref"` を持たなければなりません
-* endnotes ルートは `role="doc-endnotes"` を持たなければなりません
-* trigger テキストは視覚上 `sup` でよいですが、アクセシブルネームは脚注番号を含む説明を持つことが望まれます
+- trigger はネイティブリンクでなければなりません
+- trigger は `role="doc-noteref"` を持たなければなりません
+- endnotes ルートは `role="doc-endnotes"` を持たなければなりません
+- trigger テキストは視覚上 `sup` でよいですが、アクセシブルネームは脚注番号を含む説明を持つことが望まれます
 
 ### JS 無効時
 
@@ -173,11 +173,11 @@ JS 無効時または Popover API 非対応環境でも、trigger の通常操�
 
 note 本文の脚注スタイルは、`ui-footnote` selector ではなく、少なくとも次の static selector を正本として記述します。
 
-* `a[data-footnote-ref]`
-* `a[data-footnote-ref] > sup`
-* `a[data-footnote-ref].is-active-trigger`
-* `[data-footnote-popover]`
-* `section[role="doc-endnotes"]`
+- `a[data-footnote-ref]`
+- `a[data-footnote-ref] > sup`
+- `a[data-footnote-ref].is-active-trigger`
+- `[data-footnote-popover]`
+- `section[role="doc-endnotes"]`
 
 component 側 document style に依存して note 本文を成立させてはなりません。
 
@@ -187,18 +187,18 @@ component 側 document style に依存して note 本文を成立させてはな
 
 ### build / projection
 
-* note 最終 DOM に `ui-footnote` が出現しないこと
-* `a[data-footnote-ref][role="doc-noteref"]` が出力されること
-* `section[role="doc-endnotes"]` が存在すること
-* primary / secondary が `data-footnote-role` で識別できること
+- note 最終 DOM に `ui-footnote` が出現しないこと
+- `a[data-footnote-ref][role="doc-noteref"]` が出力されること
+- `section[role="doc-endnotes"]` が存在すること
+- primary / secondary が `data-footnote-role` で識別できること
 
 ### browser / hydration
 
-* enhancer 適用後も trigger がリンクであり続けること
-* Popover 本文が endnotes 由来であること
-* Escape で閉じること
-* outside click で閉じること
-* JS 無効でも endnotes へ到達できること
+- enhancer 適用後も trigger がリンクであり続けること
+- Popover 本文が endnotes 由来であること
+- Escape で閉じること
+- outside click で閉じること
+- JS 無効でも endnotes へ到達できること
 
 ---
 

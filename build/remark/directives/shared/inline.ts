@@ -9,10 +9,7 @@ import {
 } from './constants.js';
 import { appendText, createInlineNode } from './ast.js';
 import { parseAttributes, pickOptional } from '../parser-core/parse-attributes.js';
-import {
-  assertAllowedAttributes,
-  parseBooleanAttribute,
-} from '../payload/normalize-helpers.js';
+import { assertAllowedAttributes, parseBooleanAttribute } from '../payload/normalize-helpers.js';
 
 export const applyEmojiInlineAttributes = (
   attrs: Record<string, string>,

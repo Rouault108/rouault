@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  normalizeNoteNavigationUrl,
-  normalizeNotePath,
-} from '../../build/navigation/index.js';
+import { normalizeNoteNavigationUrl, normalizeNotePath } from '../../build/navigation/index.js';
 import { resolveTrailingSlashRewrite } from '../../shared/navigation/trailing-slash-rewrite.js';
 
 describe('normalizeNotePath', () => {

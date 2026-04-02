@@ -54,9 +54,7 @@ const meta: Meta<UiDialog> = {
 export default meta;
 type Story = StoryObj<UiDialog>;
 
-const movedToBrowserDocs = (
-  story: string,
-): Pick<Story, 'tags' | 'parameters'> => ({
+const movedToBrowserDocs = (story: string): Pick<Story, 'tags' | 'parameters'> => ({
   tags: ['manual-only'],
   parameters: {
     docs: {

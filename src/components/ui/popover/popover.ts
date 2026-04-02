@@ -199,8 +199,7 @@ interface PendingOpenChange {
   returnFocus: boolean;
 }
 
-const IS_DEVELOPMENT =
-  (import.meta as ImportMeta & { env?: ImportMetaEnvLike }).env?.DEV ?? true;
+const IS_DEVELOPMENT = (import.meta as ImportMeta & { env?: ImportMetaEnvLike }).env?.DEV ?? true;
 
 const toNonNegativeFiniteNumber = (value: number, fallback: number): number => {
   if (!Number.isFinite(value)) return fallback;
@@ -470,9 +469,9 @@ export class UiPopover extends LitElement {
 
   private _getAssignedElements(slot: HTMLSlotElement | undefined): HTMLElement[] {
     if (!slot) return [];
-    return slot.assignedElements({ flatten: true }).filter(
-      (element): element is HTMLElement => element instanceof HTMLElement,
-    );
+    return slot
+      .assignedElements({ flatten: true })
+      .filter((element): element is HTMLElement => element instanceof HTMLElement);
   }
 
   private _resolveSingleAssignedElement(
@@ -491,9 +490,10 @@ export class UiPopover extends LitElement {
     const previousOwnerTrigger = this._ownerTrigger;
     const previousContent = this._contentElement;
     const nextOwnerTrigger = this._resolveSingleAssignedElement(this._triggerSlot, 'trigger');
-    const nextContent = this._resolveSingleAssignedElement(this._contentSlot, 'content') as
-      | PopoverElement
-      | null;
+    const nextContent = this._resolveSingleAssignedElement(
+      this._contentSlot,
+      'content',
+    ) as PopoverElement | null;
 
     if (!nextContent && previousContent && this._openState) {
       this._requestStateChange(false, 'slot-invalidated', this._activeTrigger, {
@@ -1018,7 +1018,11 @@ export class UiPopover extends LitElement {
         const nextTrigger = pending?.trigger ?? this._activeTrigger ?? this._ownerTrigger;
         if (!nextTrigger) return;
         this._setActiveTrigger(nextTrigger);
-        this._commitOpenState(true, pending?.reason ?? 'programmatic', pending?.returnFocus ?? false);
+        this._commitOpenState(
+          true,
+          pending?.reason ?? 'programmatic',
+          pending?.returnFocus ?? false,
+        );
       }
       return;
     }

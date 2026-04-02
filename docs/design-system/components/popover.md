@@ -100,10 +100,10 @@ anchored mode が既定です。controller mode は共有 trigger や外部制�
 
 `ui-popover` は、開閉を外部から制御するため、次の公開メソッドを持ちます。
 
-| 名前                                | 種別   | 契約                                                                 |
-| ----------------------------------- | ------ | -------------------------------------------------------------------- |
-| `openForTrigger(trigger, options?)` | method | 指定 trigger を active trigger として開きます                        |
-| `close(options?)`                   | method | `reason='programmatic'` で閉じます                                   |
+| 名前                                | 種別   | 契約                                                                           |
+| ----------------------------------- | ------ | ------------------------------------------------------------------------------ |
+| `openForTrigger(trigger, options?)` | method | 指定 trigger を active trigger として開きます                                  |
+| `close(options?)`                   | method | `reason='programmatic'` で閉じます                                             |
 | `toggleForTrigger(trigger?)`        | method | 解決された trigger を基準に、open / close または active trigger 切替を行います |
 
 `openForTrigger()` は controller mode の正規 API です。anchored mode であっても、共有 trigger を明示的に扱う場合はこのメソッドを使用します。
@@ -155,14 +155,14 @@ anchored mode が既定です。controller mode は共有 trigger や外部制�
 
 公開メソッド起点の `reason` は次のとおり固定します。
 
-| 起点                                                        | `reason`         |
-| ----------------------------------------------------------- | ---------------- |
-| `openForTrigger()` による closed → open                     | `trigger`        |
-| `toggleForTrigger()` による open → close                    | `trigger`        |
-| `close()` による close                                      | `programmatic`   |
-| `disabled=true` への遷移に伴う強制 close                    | `disabled`       |
-| slot 差し替えにより必要要素を失った場合の close             | `slot-invalidated` |
-| disconnect に伴う close                                     | `disconnected`   |
+| 起点                                            | `reason`           |
+| ----------------------------------------------- | ------------------ |
+| `openForTrigger()` による closed → open         | `trigger`          |
+| `toggleForTrigger()` による open → close        | `trigger`          |
+| `close()` による close                          | `programmatic`     |
+| `disabled=true` への遷移に伴う強制 close        | `disabled`         |
+| slot 差し替えにより必要要素を失った場合の close | `slot-invalidated` |
+| disconnect に伴う close                         | `disconnected`     |
 
 ### trigger 所有権契約
 
@@ -558,22 +558,22 @@ content は `overflow-y: auto` と `max-height` により、viewport を超え�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、少なくとも次の確認点を維持します。
 
-| 確認点                     | 固定する契約                                                                                                    |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| 基本開閉                   | anchored mode の open / close、`aria-controls`、`aria-expanded` が成立すること                                 |
-| request cancel             | `ui-popover-open-change-request` を `preventDefault()` した場合、内部状態、属性反映、`aria-*` が変化しないこと |
-| 制御モデル                 | controlled / uncontrolled が分離して振る舞うこと                                                               |
-| dismiss reason             | `escape`、`outside-pointer`、`disabled`、`programmatic` が区別されること                                       |
-| 公開メソッド冪等性         | open 状態で同一 trigger へ `openForTrigger()` を再度呼んでも no-op であり、event が再発火しないこと           |
-| active trigger 切替        | open 中に別 trigger へ切り替えた場合、open を維持したまま `aria-expanded` / `aria-controls` が移管されること  |
-| shared trigger             | owner trigger / active trigger の責務分離と focus return 先が成立すること                                      |
-| controller mode            | trigger slot なし構成でも `openForTrigger()` / `close()` / focus return が契約どおり成立すること              |
-| slot 再同期                | slot 差し替え時に参照再同期が行われ、必要要素喪失時は `reason='slot-invalidated'` で close すること            |
-| event 順序                 | 状態変更が成立する場合は request → change の順で発火し、拒否時は request のみで終わること                     |
-| reconnect                  | reconnect 後に open / close が再び成立し、controller mode の active trigger を暗黙に owner trigger へ巻き戻さないこと |
-| 境界条件                   | invalid 値正規化、要素欠如時の非起動、長文 content 境界、単一要素制約が成立すること                            |
-| 環境差分                   | Reduced Motion / Forced Colors / Print が成立すること                                                          |
-| visual variant             | `default` / `subtle` / `inverse` の差分が維持されること                                                        |
+| 確認点              | 固定する契約                                                                                                          |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 基本開閉            | anchored mode の open / close、`aria-controls`、`aria-expanded` が成立すること                                        |
+| request cancel      | `ui-popover-open-change-request` を `preventDefault()` した場合、内部状態、属性反映、`aria-*` が変化しないこと        |
+| 制御モデル          | controlled / uncontrolled が分離して振る舞うこと                                                                      |
+| dismiss reason      | `escape`、`outside-pointer`、`disabled`、`programmatic` が区別されること                                              |
+| 公開メソッド冪等性  | open 状態で同一 trigger へ `openForTrigger()` を再度呼んでも no-op であり、event が再発火しないこと                   |
+| active trigger 切替 | open 中に別 trigger へ切り替えた場合、open を維持したまま `aria-expanded` / `aria-controls` が移管されること          |
+| shared trigger      | owner trigger / active trigger の責務分離と focus return 先が成立すること                                             |
+| controller mode     | trigger slot なし構成でも `openForTrigger()` / `close()` / focus return が契約どおり成立すること                      |
+| slot 再同期         | slot 差し替え時に参照再同期が行われ、必要要素喪失時は `reason='slot-invalidated'` で close すること                   |
+| event 順序          | 状態変更が成立する場合は request → change の順で発火し、拒否時は request のみで終わること                             |
+| reconnect           | reconnect 後に open / close が再び成立し、controller mode の active trigger を暗黙に owner trigger へ巻き戻さないこと |
+| 境界条件            | invalid 値正規化、要素欠如時の非起動、長文 content 境界、単一要素制約が成立すること                                   |
+| 環境差分            | Reduced Motion / Forced Colors / Print が成立すること                                                                 |
+| visual variant      | `default` / `subtle` / `inverse` の差分が維持されること                                                               |
 
 ---
 

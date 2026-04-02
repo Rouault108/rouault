@@ -11,7 +11,10 @@ import {
   validateResultUrl,
 } from '../../../shared/search/document-url.js';
 import { snippetFromDescription } from '../search-snippet.js';
-import type { SearchCatalogItem, SearchCatalogLoadError } from '../../../shared/search/search-catalog.js';
+import type {
+  SearchCatalogItem,
+  SearchCatalogLoadError,
+} from '../../../shared/search/search-catalog.js';
 import type { SearchSourceBatch } from '../../../shared/search/search-types.js';
 
 const catalogCapabilities = {

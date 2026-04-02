@@ -43,7 +43,9 @@ const validateCodePreviewPolicy = (
     }
   }
 
-  const hasToolbar = (node.children ?? []).some((child) => getDirectiveNameFromNode(child) === 'toolbar');
+  const hasToolbar = (node.children ?? []).some(
+    (child) => getDirectiveNameFromNode(child) === 'toolbar',
+  );
   if (hasToolbar) {
     const toolbarRestriction = getCodePreviewToolbarRestrictionMessage(policyContext);
     if (toolbarRestriction) {

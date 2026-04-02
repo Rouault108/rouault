@@ -406,13 +406,7 @@ UI は検索ロジックを持ってはなりません。
 ```ts
 type SearchSourceKind = 'pagefind' | 'catalog';
 
-type SearchFieldKind =
-  | 'title'
-  | 'description'
-  | 'body'
-  | 'path'
-  | 'keyword'
-  | 'tag';
+type SearchFieldKind = 'title' | 'description' | 'body' | 'path' | 'keyword' | 'tag';
 
 type SearchFailureKind =
   | 'pagefind-load-failed'
@@ -1373,7 +1367,7 @@ score =
   pathScore * W5 +
   keywordScore * W6 +
   freshnessScore * W7 +
-  sourceReliabilityScore * W8
+  sourceReliabilityScore * W8;
 ```
 
 `matchEvidenceScore` はこの式に加算してはなりません。
@@ -2064,4 +2058,3 @@ src/components/ui/search-dialog/
 - 意味論変更は仕様改訂として扱わなければなりません
 - 実装都合による調整を、非規範記述の更新だけで既成事実化してはなりません
 - 既存契約を変更する場合は、変更対象となる正本章を直接改訂しなければなりません
-

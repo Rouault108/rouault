@@ -9,7 +9,10 @@ import { normalizeTabsPayloadByNode } from './normalize-tabs-registry.js';
 import { normalizeTranslationPayloadByNode } from './normalize-translation-registry.js';
 import type { DirectivePayload } from './payload-types.js';
 
-const normalizeDirectivePayload = (node: MdastNode, file?: VFileLike): DirectivePayload | undefined => {
+const normalizeDirectivePayload = (
+  node: MdastNode,
+  file?: VFileLike,
+): DirectivePayload | undefined => {
   const directiveState = node.rouaultDirective;
   if (!directiveState) {
     return undefined;
@@ -48,7 +51,10 @@ const normalizeNodePayload = (node: MdastNode, file?: VFileLike): void => {
   }
 };
 
-export const normalizeDirectivePayloadTree = (nodes: MdastNode[], file?: VFileLike): MdastNode[] => {
+export const normalizeDirectivePayloadTree = (
+  nodes: MdastNode[],
+  file?: VFileLike,
+): MdastNode[] => {
   for (const node of nodes) {
     normalizeNodePayload(node, file);
     if (Array.isArray(node.children)) {

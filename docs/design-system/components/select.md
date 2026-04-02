@@ -72,22 +72,22 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ### 正式な公開入力
 
-| 名前             | 種別                                   | 必須   | 型                        | 既定値     | 内容                             |
-| ---------------- | -------------------------------------- | ------ | ------------------------- | ---------- | -------------------------------- |
-| `label`          | property / attribute                   | はい   | `string`                  | なし       | 入力ラベル                       |
-| `hideLabel`      | property / attribute (`hide-label`)    | いいえ | `boolean`                 | `false`    | label を視覚非表示にする         |
-| `name`           | property / attribute                   | いいえ | `string`                  | なし       | フォーム送信名                   |
-| `value`          | property / attribute                   | いいえ | `string \| null`          | `null`     | 現在の選択値                     |
-| `defaultValue`   | property / attribute (`default-value`) | いいえ | `string \| null`          | `null`     | reset 復元先となる初期値         |
-| `placeholder`    | property / attribute                   | いいえ | `string`                  | `''`       | 未選択時表示                     |
-| `emptyStateText` | property / attribute (`empty-state-text`) | いいえ | `string`               | `''`       | 候補不在時の短い説明             |
-| `helpText`       | property / attribute (`help-text`)     | いいえ | `string`                  | `''`       | 非エラー時の補助説明             |
-| `error`          | property / attribute                   | いいえ | `boolean`                 | `false`    | エラー状態                       |
-| `errorMessage`   | property / attribute (`error-message`) | いいえ | `string`                  | `''`       | エラー説明                       |
-| `disabled`       | property / attribute                   | いいえ | `boolean`                 | `false`    | 操作無効化                       |
-| `required`       | property / attribute                   | いいえ | `boolean`                 | `false`    | 選択必須                         |
-| `variant`        | property / attribute                   | いいえ | `'filled' \| 'outline'`   | `'filled'` | 外観バリアント                   |
-| `options`        | property                               | はい   | `readonly SelectOption[]` | なし       | 選択肢配列                       |
+| 名前             | 種別                                      | 必須   | 型                        | 既定値     | 内容                     |
+| ---------------- | ----------------------------------------- | ------ | ------------------------- | ---------- | ------------------------ |
+| `label`          | property / attribute                      | はい   | `string`                  | なし       | 入力ラベル               |
+| `hideLabel`      | property / attribute (`hide-label`)       | いいえ | `boolean`                 | `false`    | label を視覚非表示にする |
+| `name`           | property / attribute                      | いいえ | `string`                  | なし       | フォーム送信名           |
+| `value`          | property / attribute                      | いいえ | `string \| null`          | `null`     | 現在の選択値             |
+| `defaultValue`   | property / attribute (`default-value`)    | いいえ | `string \| null`          | `null`     | reset 復元先となる初期値 |
+| `placeholder`    | property / attribute                      | いいえ | `string`                  | `''`       | 未選択時表示             |
+| `emptyStateText` | property / attribute (`empty-state-text`) | いいえ | `string`                  | `''`       | 候補不在時の短い説明     |
+| `helpText`       | property / attribute (`help-text`)        | いいえ | `string`                  | `''`       | 非エラー時の補助説明     |
+| `error`          | property / attribute                      | いいえ | `boolean`                 | `false`    | エラー状態               |
+| `errorMessage`   | property / attribute (`error-message`)    | いいえ | `string`                  | `''`       | エラー説明               |
+| `disabled`       | property / attribute                      | いいえ | `boolean`                 | `false`    | 操作無効化               |
+| `required`       | property / attribute                      | いいえ | `boolean`                 | `false`    | 選択必須                 |
+| `variant`        | property / attribute                      | いいえ | `'filled' \| 'outline'`   | `'filled'` | 外観バリアント           |
+| `options`        | property                                  | はい   | `readonly SelectOption[]` | なし       | 選択肢配列               |
 
 ### `SelectOption` 契約
 
@@ -154,10 +154,10 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ### 正式イベント
 
-| 名前           | 型            | detail                                                                                                                                                 | 発火条件               | 契約                               |
-| -------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- | ---------------------------------- |
-| `value-change` | `CustomEvent` | `{ value: string \| null, previousValue: string \| null, reason: 'selection' \| 'options-change' \| 'reset' \| 'programmatic' }`                   | 値が変化したとき       | `bubbles: true` / `composed: true` |
-| `open-change`  | `CustomEvent` | `{ opened: boolean, reason: 'trigger' \| 'keyboard' \| 'selection' \| 'escape' \| 'outside-pointer' \| 'outside-scroll' \| 'programmatic' }`       | 開閉状態が変化したとき | `bubbles: true` / `composed: true` |
+| 名前           | 型            | detail                                                                                                                                       | 発火条件               | 契約                               |
+| -------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------------------------- |
+| `value-change` | `CustomEvent` | `{ value: string \| null, previousValue: string \| null, reason: 'selection' \| 'options-change' \| 'reset' \| 'programmatic' }`             | 値が変化したとき       | `bubbles: true` / `composed: true` |
+| `open-change`  | `CustomEvent` | `{ opened: boolean, reason: 'trigger' \| 'keyboard' \| 'selection' \| 'escape' \| 'outside-pointer' \| 'outside-scroll' \| 'programmatic' }` | 開閉状態が変化したとき | `bubbles: true` / `composed: true` |
 
 ### イベント契約
 
@@ -191,22 +191,22 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ## 属性反映契約
 
-| property         | attribute          | reflect | 備考                                               |
-| ---------------- | ------------------ | ------- | -------------------------------------------------- |
-| `label`          | `label`            | あり    | 必須                                               |
-| `hideLabel`      | `hide-label`       | あり    | boolean attribute                                  |
-| `name`           | `name`             | あり    | フォーム送信名                                     |
-| `value`          | `value`            | あり    | `null` は attribute 未設定として扱います           |
-| `defaultValue`   | `default-value`    | あり    | `null` は attribute 未設定として扱います           |
-| `placeholder`    | `placeholder`      | あり    | 未選択時のみ表示                                   |
-| `emptyStateText` | `empty-state-text` | あり    | 候補不在時のみ意味を持ちます                       |
-| `helpText`       | `help-text`        | あり    | 非エラー時のみ表示                                 |
-| `error`          | `error`            | あり    | boolean attribute                                  |
-| `errorMessage`   | `error-message`    | あり    | `error=true` のときのみ意味を持ちます              |
-| `disabled`       | `disabled`         | あり    | boolean attribute                                  |
-| `required`       | `required`         | あり    | boolean attribute                                  |
-| `variant`        | `variant`          | あり    | `filled` / `outline`                               |
-| `options`        | なし               | なし    | property 専用                                      |
+| property         | attribute          | reflect | 備考                                                            |
+| ---------------- | ------------------ | ------- | --------------------------------------------------------------- |
+| `label`          | `label`            | あり    | 必須                                                            |
+| `hideLabel`      | `hide-label`       | あり    | boolean attribute                                               |
+| `name`           | `name`             | あり    | フォーム送信名                                                  |
+| `value`          | `value`            | あり    | `null` は attribute 未設定として扱います                        |
+| `defaultValue`   | `default-value`    | あり    | `null` は attribute 未設定として扱います                        |
+| `placeholder`    | `placeholder`      | あり    | 未選択時のみ表示                                                |
+| `emptyStateText` | `empty-state-text` | あり    | 候補不在時のみ意味を持ちます                                    |
+| `helpText`       | `help-text`        | あり    | 非エラー時のみ表示                                              |
+| `error`          | `error`            | あり    | boolean attribute                                               |
+| `errorMessage`   | `error-message`    | あり    | `error=true` のときのみ意味を持ちます                           |
+| `disabled`       | `disabled`         | あり    | boolean attribute                                               |
+| `required`       | `required`         | あり    | boolean attribute                                               |
+| `variant`        | `variant`          | あり    | `filled` / `outline`                                            |
+| `options`        | なし               | なし    | property 専用                                                   |
 | `opened`         | `opened`           | あり    | 内部状態の reflect 専用。外部からの書き換えは命令ではありません |
 
 ---
@@ -560,25 +560,25 @@ Trigger と option の表示は一貫した省略規則を持ちます。省略�
 
 各 Story は見本ではなく、**契約確認点** として扱います。少なくとも次を固定します。
 
-| Story                | 固定する契約                                                    |
-| -------------------- | --------------------------------------------------------------- |
-| `Default`            | button + listbox パターンで成立すること                         |
-| `WithValue`          | 選択値に対応する label が Trigger に表示されること              |
-| `WithHelpText`       | 通常状態で `helpText` が表示されること                          |
-| `ErrorState`         | `error=true` かつ `errorMessage` 非空でエラー表示が成立すること |
-| `Disabled`           | open 不可、FormData 不参加であること                            |
-| `Required`           | 未選択時に妥当性エラーになること                                |
-| `HiddenLabel`        | 視覚非表示でも label がアクセシブル名の source であること       |
-| `Typeahead`          | 前方一致と 1 秒バッファが成立すること                           |
-| `OptionsUpdate`      | `options` 更新時に値正規化と再描画が成立すること                |
-| `ResetIntegration`   | form reset で初期値へ戻ること                                   |
+| Story                | 固定する契約                                                          |
+| -------------------- | --------------------------------------------------------------------- |
+| `Default`            | button + listbox パターンで成立すること                               |
+| `WithValue`          | 選択値に対応する label が Trigger に表示されること                    |
+| `WithHelpText`       | 通常状態で `helpText` が表示されること                                |
+| `ErrorState`         | `error=true` かつ `errorMessage` 非空でエラー表示が成立すること       |
+| `Disabled`           | open 不可、FormData 不参加であること                                  |
+| `Required`           | 未選択時に妥当性エラーになること                                      |
+| `HiddenLabel`        | 視覚非表示でも label がアクセシブル名の source であること             |
+| `Typeahead`          | 前方一致と 1 秒バッファが成立すること                                 |
+| `OptionsUpdate`      | `options` 更新時に値正規化と再描画が成立すること                      |
+| `ResetIntegration`   | form reset で初期値へ戻ること                                         |
 | `EmptyOptions`       | popup を開かず、`emptyStateText` または補助説明で状態が説明されること |
-| `AllDisabledOptions` | popup を開かず、選択不能状態が説明されること                    |
-| `OpenChangeEvent`    | open / close ごとに `open-change` が発火すること                |
-| `ValueChangeEvent`   | 値変更時のみ `value-change` が発火すること                      |
-| `DarkMode`           | 暗背景上で視覚破綻しないこと                                    |
-| `ForcedColors`       | forced-colors で構造が維持されること                            |
-| `ReducedMotion`      | reduced-motion でモーションが抑制されること                     |
+| `AllDisabledOptions` | popup を開かず、選択不能状態が説明されること                          |
+| `OpenChangeEvent`    | open / close ごとに `open-change` が発火すること                      |
+| `ValueChangeEvent`   | 値変更時のみ `value-change` が発火すること                            |
+| `DarkMode`           | 暗背景上で視覚破綻しないこと                                          |
+| `ForcedColors`       | forced-colors で構造が維持されること                                  |
+| `ReducedMotion`      | reduced-motion でモーションが抑制されること                           |
 
 ---
 

@@ -76,15 +76,15 @@ preview ヘッダー左側の見出しは `heading` で表します。
 
 ## 3.1 公開入力
 
-| property | attribute | 必須 | 既定値 | 内容 |
-| --- | --- | --- | --- | --- |
-| `heading` | `heading` | いいえ | 空文字 | ヘッダー左側に表示する見出しです。 |
-| `controls` | `controls` | いいえ | 空文字 | built-in controls を空白区切りで指定します。 |
-| `previewPadding` | `preview-padding` | いいえ | `normal` | `normal` / `compact` / `none` を受理します。 |
-| `previewAlign` | `preview-align` | いいえ | `center` | `center` / `start` / `stretch` を受理します。 |
-| `previewTheme` | `preview-theme` | いいえ | `page` | `page` / `light` / `dark` を受理します。 |
-| `previewSurface` | `preview-surface` | いいえ | `surface` | `surface` / `canvas` / `muted` を受理します。 |
-| `previewViewport` | `preview-viewport` | いいえ | `full` | `full` / `tablet` / `mobile` を受理します。 |
+| property          | attribute          | 必須   | 既定値    | 内容                                          |
+| ----------------- | ------------------ | ------ | --------- | --------------------------------------------- |
+| `heading`         | `heading`          | いいえ | 空文字    | ヘッダー左側に表示する見出しです。            |
+| `controls`        | `controls`         | いいえ | 空文字    | built-in controls を空白区切りで指定します。  |
+| `previewPadding`  | `preview-padding`  | いいえ | `normal`  | `normal` / `compact` / `none` を受理します。  |
+| `previewAlign`    | `preview-align`    | いいえ | `center`  | `center` / `start` / `stretch` を受理します。 |
+| `previewTheme`    | `preview-theme`    | いいえ | `page`    | `page` / `light` / `dark` を受理します。      |
+| `previewSurface`  | `preview-surface`  | いいえ | `surface` | `surface` / `canvas` / `muted` を受理します。 |
+| `previewViewport` | `preview-viewport` | いいえ | `full`    | `full` / `tablet` / `mobile` を受理します。   |
 
 ### 契約
 
@@ -105,11 +105,11 @@ preview ヘッダー左側の見出しは `heading` で表します。
 
 ## 3.2 スロット契約
 
-| 名前 | 種別 | 必須 | 個数 | 内容 |
-| --- | --- | --- | --- | --- |
-| `preview` | named slot | 正規構成では必須 | ちょうど 1 | preview 面の root を受け取ります。 |
-| 既定スロット | slot | 正規構成では必須 | ちょうど 1 | `pre[data-code-block]` または `section[data-code-group]` を直接受け取ります。 |
-| `toolbar` | named slot | いいえ | 0 個以上 | ヘッダー右側の補助操作を受け取ります。 |
+| 名前         | 種別       | 必須             | 個数       | 内容                                                                          |
+| ------------ | ---------- | ---------------- | ---------- | ----------------------------------------------------------------------------- |
+| `preview`    | named slot | 正規構成では必須 | ちょうど 1 | preview 面の root を受け取ります。                                            |
+| 既定スロット | slot       | 正規構成では必須 | ちょうど 1 | `pre[data-code-block]` または `section[data-code-group]` を直接受け取ります。 |
+| `toolbar`    | named slot | いいえ           | 0 個以上   | ヘッダー右側の補助操作を受け取ります。                                        |
 
 ## 3.3 正規構成
 
@@ -160,11 +160,11 @@ preview ヘッダー左側の見出しは `heading` で表します。
 
 ## 3.6 built-in controls の意味
 
-| control | 対象属性 | 選択肢 | 効果 |
-| --- | --- | --- | --- |
-| `theme` | `preview-theme` | `page` / `light` / `dark` | preview 面のテーマを切り替えます。 |
-| `surface` | `preview-surface` | `surface` / `canvas` / `muted` | preview 面の背景文脈を切り替えます。 |
-| `viewport` | `preview-viewport` | `full` / `tablet` / `mobile` | preview frame の幅を切り替えます。 |
+| control    | 対象属性           | 選択肢                         | 効果                                 |
+| ---------- | ------------------ | ------------------------------ | ------------------------------------ |
+| `theme`    | `preview-theme`    | `page` / `light` / `dark`      | preview 面のテーマを切り替えます。   |
+| `surface`  | `preview-surface`  | `surface` / `canvas` / `muted` | preview 面の背景文脈を切り替えます。 |
+| `viewport` | `preview-viewport` | `full` / `tablet` / `mobile`   | preview frame の幅を切り替えます。   |
 
 ### 契約
 
@@ -178,12 +178,12 @@ preview ヘッダー左側の見出しは `heading` で表します。
 
 built-in controls または公開 property 更新により preview の公開状態が変化した場合に送出します。
 
-| 項目 | 内容 |
-| --- | --- |
-| 名前 | `ui-code-preview-state-change` |
+| 項目     | 内容                                                                                                                                                |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 名前     | `ui-code-preview-state-change`                                                                                                                      |
 | `detail` | `{ keys: Array<'previewTheme' \| 'previewSurface' \| 'previewViewport'>, state: { previewTheme, previewSurface, previewViewport }, userInitiated }` |
-| bubbles | `true` |
-| composed | `true` |
+| bubbles  | `true`                                                                                                                                              |
+| composed | `true`                                                                                                                                              |
 
 ### 契約
 
@@ -329,13 +329,13 @@ built-in controls または公開 property 更新により preview の公開状�
 
 ## 9. 境界条件
 
-| 入力異常 | 挙動 |
-| --- | --- |
-| `preview` スロットが空 | code 面のみ残してよいです。正規契約は不成立です。 |
-| 既定スロットが空 | preview 面のみ残してよいです。正規契約は不成立です。 |
-| 複数 code root | 最初の有効 root だけを描画してもよいですが、その挙動は公開保証しません。正規契約は不成立です。 |
-| wrapper 越し code root | code 面は描画できても、正規保証対象にはしません。 |
-| 無関係要素混在 | 統合対象に含めません。必要に応じて開発時警告の対象としてよいです。 |
+| 入力異常               | 挙動                                                                                           |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| `preview` スロットが空 | code 面のみ残してよいです。正規契約は不成立です。                                              |
+| 既定スロットが空       | preview 面のみ残してよいです。正規契約は不成立です。                                           |
+| 複数 code root         | 最初の有効 root だけを描画してもよいですが、その挙動は公開保証しません。正規契約は不成立です。 |
+| wrapper 越し code root | code 面は描画できても、正規保証対象にはしません。                                              |
+| 無関係要素混在         | 統合対象に含めません。必要に応じて開発時警告の対象としてよいです。                             |
 
 ---
 

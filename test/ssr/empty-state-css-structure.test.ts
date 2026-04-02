@@ -27,9 +27,9 @@ describe('empty-state CSS structure contracts', () => {
       'CanvasText',
       '@media print',
       'display: none !important',
-      "::slotted(button)",
+      '::slotted(button)',
       "::slotted([role='button'])",
-      "::slotted(ui-button)",
+      '::slotted(ui-button)',
     ]);
   });
 });

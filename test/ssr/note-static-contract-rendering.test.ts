@@ -72,7 +72,10 @@ const isElementNode = (node: ChildNode): node is ElementNode => {
   return 'tagName' in node;
 };
 
-const hasChildElement = (node: ElementNode, predicate: (child: ElementNode) => boolean): boolean => {
+const hasChildElement = (
+  node: ElementNode,
+  predicate: (child: ElementNode) => boolean,
+): boolean => {
   return node.childNodes.some((child) => isElementNode(child) && predicate(child));
 };
 
@@ -135,13 +138,15 @@ describe('note final html static contract', () => {
     expect(
       hasElement(
         tree,
-        (element) => element.tagName === 'aside' && getAttribute(element, 'data-callout') === 'true',
+        (element) =>
+          element.tagName === 'aside' && getAttribute(element, 'data-callout') === 'true',
       ),
     ).toBe(true);
     expect(
       hasElement(
         tree,
-        (element) => element.tagName === 'section' && getAttribute(element, 'data-info-box') === 'true',
+        (element) =>
+          element.tagName === 'section' && getAttribute(element, 'data-info-box') === 'true',
       ),
     ).toBe(true);
     expect(hasElement(tree, (element) => element.tagName === 'blockquote')).toBe(true);
@@ -175,7 +180,8 @@ describe('note final html static contract', () => {
     expect(
       hasElement(
         tree,
-        (element) => element.tagName === 'section' && getAttribute(element, 'role') === 'doc-endnotes',
+        (element) =>
+          element.tagName === 'section' && getAttribute(element, 'role') === 'doc-endnotes',
       ),
     ).toBe(true);
 

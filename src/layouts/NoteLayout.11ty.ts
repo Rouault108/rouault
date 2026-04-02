@@ -7,11 +7,7 @@
 
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import { ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE } from '../components/ui/article-header/article-header-tags-adapter.js';
-import {
-  escapeHtmlText,
-  renderJsonScriptElement,
-  serializeHtmlAttributes,
-} from './html-output.js';
+import { escapeHtmlText, renderJsonScriptElement, serializeHtmlAttributes } from './html-output.js';
 
 interface NoteLayoutData {
   notePage?: NotePageProjection;

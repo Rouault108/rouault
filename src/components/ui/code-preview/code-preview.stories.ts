@@ -29,9 +29,7 @@ export default meta;
 type Story = StoryObj<CodePreview>;
 
 const renderFrame = (content: unknown) => html`
-  <div style="padding: 2rem; max-width: 960px;">
-    ${content}
-  </div>
+  <div style="padding: 2rem; max-width: 960px;">${content}</div>
 `;
 
 const commonStyle =

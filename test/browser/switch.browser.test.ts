@@ -28,9 +28,7 @@ const getLabel = (sw: Switch): HTMLLabelElement | null =>
 
 describe('ui-switch browser contract', () => {
   it('既定状態で role=switch / aria-checked=false / tabindex=0 / label 関連付けを持つこと', async () => {
-    const sw = await fixture<Switch>(html`
-      <ui-switch label="ダークモード"></ui-switch>
-    `);
+    const sw = await fixture<Switch>(html` <ui-switch label="ダークモード"></ui-switch> `);
 
     await flush(sw);
 
@@ -46,9 +44,7 @@ describe('ui-switch browser contract', () => {
   });
 
   it('track click と label click で checked が反転し change/input を送出すること', async () => {
-    const sw = await fixture<Switch>(html`
-      <ui-switch label="通知を受け取る"></ui-switch>
-    `);
+    const sw = await fixture<Switch>(html` <ui-switch label="通知を受け取る"></ui-switch> `);
 
     await flush(sw);
 
@@ -171,9 +167,7 @@ describe('ui-switch browser contract', () => {
   });
 
   it('focus()/blur() が内部 track へ委譲されること', async () => {
-    const sw = await fixture<Switch>(html`
-      <ui-switch label="フォーカス確認"></ui-switch>
-    `);
+    const sw = await fixture<Switch>(html` <ui-switch label="フォーカス確認"></ui-switch> `);
 
     await flush(sw);
 

@@ -33,7 +33,8 @@ export const normalizeImagePayload = (
     ...(typeof parseIntegerMin(attrs['height'], node, file, 'image', 'height', 1) === 'number'
       ? { height: parseIntegerMin(attrs['height'], node, file, 'image', 'height', 1) }
       : {}),
-    ...(typeof parseBooleanAttribute(attrs['zoomable'], node, file, 'image', 'zoomable') === 'boolean'
+    ...(typeof parseBooleanAttribute(attrs['zoomable'], node, file, 'image', 'zoomable') ===
+    'boolean'
       ? {
           zoomable: parseBooleanAttribute(attrs['zoomable'], node, file, 'image', 'zoomable'),
         }

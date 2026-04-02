@@ -112,12 +112,12 @@
 
 ### 公開入力
 
-| 名前           | 種別             | 必須   | 内容               | 契約                                                                 |
-| -------------- | ---------------- | ------ | ------------------ | -------------------------------------------------------------------- |
-| root `<ol>`    | child node       | はい   | 順序付きリスト本体 | 正規入力ではホスト直下に root `<ol>` を 1 つだけ持ちます             |
-| `variant`      | host attribute   | いいえ | 表現バリアント     | 現時点の正式値は `steps` のみです。未指定時が既定状態です            |
-| `ol[start]`    | native attribute | いいえ | 開始番号           | native semantics と視覚マーカーを整合させます                        |
-| `ol[reversed]` | native attribute | いいえ | 降順番号           | native semantics と視覚マーカーを整合させます                        |
+| 名前           | 種別             | 必須   | 内容               | 契約                                                                     |
+| -------------- | ---------------- | ------ | ------------------ | ------------------------------------------------------------------------ |
+| root `<ol>`    | child node       | はい   | 順序付きリスト本体 | 正規入力ではホスト直下に root `<ol>` を 1 つだけ持ちます                 |
+| `variant`      | host attribute   | いいえ | 表現バリアント     | 現時点の正式値は `steps` のみです。未指定時が既定状態です                |
+| `ol[start]`    | native attribute | いいえ | 開始番号           | native semantics と視覚マーカーを整合させます                            |
+| `ol[reversed]` | native attribute | いいえ | 降順番号           | native semantics と視覚マーカーを整合させます                            |
 | `li[value]`    | native attribute | いいえ | 明示番号           | 当該項目の番号を native semantics に従って再設定し、視覚表示へ反映します |
 
 ### 正規入力契約
@@ -135,11 +135,11 @@
 
 正規入力における制約は、次のとおりです。
 
-* ホスト直下の root list は `<ol>` 1 個のみでなければなりません（MUST）
-* root `<ol>` の正規子は `<li>` のみでなければなりません（MUST）
-* nested `<ol>` は `<li>` の子としてのみ許可します（MAY）
-* nested `<ul>` は存在してもよいですが、`ui-ol` の公開契約対象外です
-* `<ol>` 以外の一般ノードをホスト直下へ置く構成は正規入力ではありません
+- ホスト直下の root list は `<ol>` 1 個のみでなければなりません（MUST）
+- root `<ol>` の正規子は `<li>` のみでなければなりません（MUST）
+- nested `<ol>` は `<li>` の子としてのみ許可します（MAY）
+- nested `<ul>` は存在してもよいですが、`ui-ol` の公開契約対象外です
+- `<ol>` 以外の一般ノードをホスト直下へ置く構成は正規入力ではありません
 
 ### 救済入力契約
 
@@ -483,29 +483,29 @@ Storybook は、次を担いません。
 
 確認方法は次の 3 種に限定します。
 
-| 確認方法            | 用途                                                                 |
-| ------------------- | -------------------------------------------------------------------- |
-| DOM 観測            | 構造、native 属性意味、正規入力 / 非正規入力の区別、list 境界の確認  |
-| computed style 観測 | 本文開始位置、マーカー整列、色差、spacing、トークン反映の確認        |
-| visual diff         | 総合的な見た目崩れの補助確認                                         |
+| 確認方法            | 用途                                                                |
+| ------------------- | ------------------------------------------------------------------- |
+| DOM 観測            | 構造、native 属性意味、正規入力 / 非正規入力の区別、list 境界の確認 |
+| computed style 観測 | 本文開始位置、マーカー整列、色差、spacing、トークン反映の確認       |
+| visual diff         | 総合的な見た目崩れの補助確認                                        |
 
 visual diff は補助手段です。意味契約の主要確認には用いません。
 
 ### Story 一覧
 
-| Story                          | 主要契約                           | 第一確認手段        | 補助確認手段        |
-| ------------------------------ | ---------------------------------- | ------------------- | ------------------- |
-| `Default`                      | 正規入力の基本構造と既定番号       | DOM 観測            | computed style 観測 |
-| `StartZeroAndNegative`         | `start` の 0 / 負数受理            | DOM 観測            | computed style 観測 |
-| `StartAndValueJump`            | `start` と `li[value]` の番号再設定 | DOM 観測            | computed style 観測 |
-| `Reversed`                     | `reversed` の意味整合              | DOM 観測            | computed style 観測 |
-| `ReversedWithStartAndValue`    | `reversed` と `start` / `value` の複合 | DOM 観測         | computed style 観測 |
-| `MarkerAlignment`              | 本文開始位置とマーカー右端整列     | computed style 観測 | visual diff         |
-| `VariantSteps`                 | `steps` がマーカー差分に限定されること | computed style 観測 | visual diff      |
-| `NestedOrderedList`            | 親子 ordered list の独立整列       | DOM 観測            | computed style 観測 |
-| `NestedUnorderedListIsolation` | unordered list への非干渉          | DOM 観測            | computed style 観測 |
-| `StructureViolation`           | 非正規入力が非保証であること       | DOM 観測            | visual diff         |
-| `EnvironmentContracts`         | トークン差し替え・forced colors 耐性 | computed style 観測 | visual diff       |
+| Story                          | 主要契約                               | 第一確認手段        | 補助確認手段        |
+| ------------------------------ | -------------------------------------- | ------------------- | ------------------- |
+| `Default`                      | 正規入力の基本構造と既定番号           | DOM 観測            | computed style 観測 |
+| `StartZeroAndNegative`         | `start` の 0 / 負数受理                | DOM 観測            | computed style 観測 |
+| `StartAndValueJump`            | `start` と `li[value]` の番号再設定    | DOM 観測            | computed style 観測 |
+| `Reversed`                     | `reversed` の意味整合                  | DOM 観測            | computed style 観測 |
+| `ReversedWithStartAndValue`    | `reversed` と `start` / `value` の複合 | DOM 観測            | computed style 観測 |
+| `MarkerAlignment`              | 本文開始位置とマーカー右端整列         | computed style 観測 | visual diff         |
+| `VariantSteps`                 | `steps` がマーカー差分に限定されること | computed style 観測 | visual diff         |
+| `NestedOrderedList`            | 親子 ordered list の独立整列           | DOM 観測            | computed style 観測 |
+| `NestedUnorderedListIsolation` | unordered list への非干渉              | DOM 観測            | computed style 観測 |
+| `StructureViolation`           | 非正規入力が非保証であること           | DOM 観測            | visual diff         |
+| `EnvironmentContracts`         | トークン差し替え・forced colors 耐性   | computed style 観測 | visual diff         |
 
 ### 各 Story の固定条件
 

@@ -14,11 +14,7 @@ import {
   RESOLVED_THEME_ATTRIBUTE,
 } from '../theme/theme-manager.js';
 import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
-import {
-  escapeHtmlText,
-  escapeInlineScriptText,
-  serializeHtmlAttributes,
-} from './html-output.js';
+import { escapeHtmlText, escapeInlineScriptText, serializeHtmlAttributes } from './html-output.js';
 
 export interface BaseLayoutData {
   title?: string;
@@ -31,7 +27,8 @@ export interface BaseLayoutData {
   clientBundle?: ClientBundleData;
 }
 
-const buildThemeBootstrapScript = (): string => `
+const buildThemeBootstrapScript = (): string =>
+  `
 (() => {
   const root = document.documentElement;
   const storageKey = ${JSON.stringify(THEME_STORAGE_KEY)};

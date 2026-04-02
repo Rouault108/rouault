@@ -50,7 +50,7 @@
 
 ### 3. 遷移完了は outcome で定義する
 
-遷移 API は、成功・中止・上書き・失敗を `` として返します。呼び出し側は Promise 解決の有無ではなく `outcome` を観測します。
+遷移 API は、成功・中止・上書き・失敗を ``として返します。呼び出し側は Promise 解決の有無ではなく`outcome` を観測します。
 
 ### 4. 生成と起動を分離する
 
@@ -102,20 +102,20 @@ router が反映対象として扱う統一文書表現です。route 経路で�
 
 ## 全体構成
 
-| 要素                     | 主責務                                                                 |
-| ---------------------- | -------------------------------------------------------------------- |
-| `Router`               | 公開 API、ライフサイクル、依存関係の組み立て                                              |
-| Link Interceptor       | `document click` / `popstate` 監視と内部遷移化                                |
-| Location Adapter       | URL 正規化、履歴 state 生成、navigation URL と fetch target URL の差分吸収           |
-| Navigation Queue       | latest-wins の直列化制御                                                    |
-| Navigation Runner      | 1 回の遷移実行、outcome 確定、イベント通知                                            |
-| Before Navigate Hooks  | 遷移前フック登録・実行                                                           |
-| Route Registry         | document route 登録とマッチング                                               |
+| 要素                   | 主責務                                                                     |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `Router`               | 公開 API、ライフサイクル、依存関係の組み立て                               |
+| Link Interceptor       | `document click` / `popstate` 監視と内部遷移化                             |
+| Location Adapter       | URL 正規化、履歴 state 生成、navigation URL と fetch target URL の差分吸収 |
+| Navigation Queue       | latest-wins の直列化制御                                                   |
+| Navigation Runner      | 1 回の遷移実行、outcome 確定、イベント通知                                 |
+| Before Navigate Hooks  | 遷移前フック登録・実行                                                     |
+| Route Registry         | document route 登録とマッチング                                            |
 | Content Loader         | fetch / route 実行と `DocumentSnapshot` 生成                               |
-| Content Committer      | title / meta description / content / history の durable commit を担当する |
-| Shell Adapter          | shell snapshot の抽出・適用を担う任意統合                                          |
-| URL State Policy       | state-only navigation 判定を担う任意統合                                        |
-| Post Commit Controller | 描画後後処理を担う任意統合                                                        |
+| Content Committer      | title / meta description / content / history の durable commit を担当する  |
+| Shell Adapter          | shell snapshot の抽出・適用を担う任意統合                                  |
+| URL State Policy       | state-only navigation 判定を担う任意統合                                   |
+| Post Commit Controller | 描画後後処理を担う任意統合                                                 |
 
 ### 構成原則
 
@@ -203,14 +203,14 @@ interface RouterOptions {
 }
 ```
 
-| 項目                         | 既定          | 意味                                                                       |
-| -------------------------- | ----------- | ------------------------------------------------------------------------ |
-| `contentAdapter`           | `undefined` | 本文描画を外側へ委譲する 2 相 adapter です。未指定時、router は outlet を直接更新します。               |
+| 項目                       | 既定        | 意味                                                                                                  |
+| -------------------------- | ----------- | ----------------------------------------------------------------------------------------------------- |
+| `contentAdapter`           | `undefined` | 本文描画を外側へ委譲する 2 相 adapter です。未指定時、router は outlet を直接更新します。             |
 | `shellAdapter`             | `undefined` | shell snapshot の抽出・適用を行う任意 adapter です。未指定時、router core は shell 同期を行いません。 |
-| `urlStateNavigationPolicy` | `undefined` | state-only navigation 判定を行う任意 policy です。未指定時、すべて full navigation とします。   |
-| `postCommitController`     | `undefined` | 描画後後処理を行う任意 controller です。未指定時、router core は後処理を行いません。                   |
-| `skipInitialNavigation`    | `false`     | `start()` 時の初回 `historyMode: 'none'` 遷移を抑止します。SSR 初期本文を保持する統合構成で用います。    |
-| `navigationTimeoutMs`      | `null`      | 1 件の navigation の上限時間です。`null` は timeout 無効を意味します。                       |
+| `urlStateNavigationPolicy` | `undefined` | state-only navigation 判定を行う任意 policy です。未指定時、すべて full navigation とします。         |
+| `postCommitController`     | `undefined` | 描画後後処理を行う任意 controller です。未指定時、router core は後処理を行いません。                  |
+| `skipInitialNavigation`    | `false`     | `start()` 時の初回 `historyMode: 'none'` 遷移を抑止します。SSR 初期本文を保持する統合構成で用います。 |
+| `navigationTimeoutMs`      | `null`      | 1 件の navigation の上限時間です。`null` は timeout 無効を意味します。                                |
 
 ## ライフサイクル API
 
@@ -266,11 +266,7 @@ destroy(): void
 ```ts
 type HistoryMode = 'none' | 'push' | 'replace';
 
-type NavigationOutcome =
-  | 'completed'
-  | 'cancelled'
-  | 'superseded'
-  | 'failed';
+type NavigationOutcome = 'completed' | 'cancelled' | 'superseded' | 'failed';
 
 type NavigationErrorReason =
   | 'auth'
@@ -330,11 +326,10 @@ interface NavigationResult {
 `committed` は、この要求が **router core の durable commit point に到達したか** を表します。
 
 - `committed = true` となるのは次の場合のみです。
-
   - full navigation で title / meta description / content / history の commit が完了した場合
   - state-only navigation で URL state 更新が確定した場合
-- `committed = false` となるのは次の場合です。
 
+- `committed = false` となるのは次の場合です。
   - `cancelled`
   - `superseded`
   - durable commit 前に終了した `failed`
@@ -348,12 +343,12 @@ interface NavigationResult {
 
 ### `outcome` と `committed` の対応
 
-| outcome      | committed | 意味                                 |
-| ------------ | --------- | ---------------------------------- |
-| `completed`  | `true`    | durable commit が成立した               |
-| `cancelled`  | `false`   | hook により中止された                      |
+| outcome      | committed | 意味                                                  |
+| ------------ | --------- | ----------------------------------------------------- |
+| `completed`  | `true`    | durable commit が成立した                             |
+| `cancelled`  | `false`   | hook により中止された                                 |
 | `superseded` | `false`   | 後続要求に上書きされ、durable commit に到達しなかった |
-| `failed`     | `false`   | durable commit に到達しなかった            |
+| `failed`     | `false`   | durable commit に到達しなかった                       |
 
 ### `degraded` の定義
 
@@ -483,20 +478,21 @@ type DocumentSnapshot =
       announcedTitle?: string | null;
     };
 
-type DocumentRouteHandler =
-  (context: DocumentRouteContext) => DocumentSnapshot | Promise<DocumentSnapshot>;
+type DocumentRouteHandler = (
+  context: DocumentRouteContext,
+) => DocumentSnapshot | Promise<DocumentSnapshot>;
 ```
 
 #### 契約
 
-* `handler` は `DocumentSnapshot` を返します。
-* `handler` は `url` / `normalizedUrl` / `pathname` / `searchParams` / `hash` / `signal` を受け取ります。
-* route 経路でも fetch 経路と同一の durable commit 規則を適用します。
-* `handler` へ渡す `searchParams` は **防御的コピー** です。mutation は router 内部状態へ影響しません。
-* `handler` は `AbortSignal` を尊重すべきです。
-* `shell` は **任意** とします。router core は `shell` の不在を失敗理由として扱ってはなりません。
-* `shell` を返す場合、`DocumentShellSnapshot` は **閉じた意味モデル** とし、任意属性 bag や `Record<string, unknown>` として拡張してはなりません。
-* `shell` の拡張は、将来必要になったときに明示的なサブ snapshot 追加として行います。既存フィールドの意味変更や型変更は認めません。
+- `handler` は `DocumentSnapshot` を返します。
+- `handler` は `url` / `normalizedUrl` / `pathname` / `searchParams` / `hash` / `signal` を受け取ります。
+- route 経路でも fetch 経路と同一の durable commit 規則を適用します。
+- `handler` へ渡す `searchParams` は **防御的コピー** です。mutation は router 内部状態へ影響しません。
+- `handler` は `AbortSignal` を尊重すべきです。
+- `shell` は **任意** とします。router core は `shell` の不在を失敗理由として扱ってはなりません。
+- `shell` を返す場合、`DocumentShellSnapshot` は **閉じた意味モデル** とし、任意属性 bag や `Record<string, unknown>` として拡張してはなりません。
+- `shell` の拡張は、将来必要になったときに明示的なサブ snapshot 追加として行います。既存フィールドの意味変更や型変更は認めません。
 
 ### `addDocumentRoute()` の呼び出し時期
 
@@ -606,13 +602,13 @@ getCurrentPath(): string
 
 ### 例
 
-| 入力                                   | navigation URL            | fetch target URL            |
-| -------------------------------------- | ------------------------- | --------------------------- |
-| `/docs/example/`                       | `/docs/example`           | `/docs/example/`            |
-| `/search/?q=test&wtr-session-id=abc`   | `/search?q=test`          | `/search/?q=test`           |
-| `/tags/music/`                         | `/tags/music/`            | `/tags/music/`              |
-| `/archives/1a2b3c4d5e6f/`              | `/archives/1a2b3c4d5e6f`  | `/archives/1a2b3c4d5e6f/`   |
-| `/notes/a#section-1`                   | `/notes/a#section-1`      | `/notes/a/`                 |
+| 入力                                 | navigation URL           | fetch target URL          |
+| ------------------------------------ | ------------------------ | ------------------------- |
+| `/docs/example/`                     | `/docs/example`          | `/docs/example/`          |
+| `/search/?q=test&wtr-session-id=abc` | `/search?q=test`         | `/search/?q=test`         |
+| `/tags/music/`                       | `/tags/music/`           | `/tags/music/`            |
+| `/archives/1a2b3c4d5e6f/`            | `/archives/1a2b3c4d5e6f` | `/archives/1a2b3c4d5e6f/` |
+| `/notes/a#section-1`                 | `/notes/a#section-1`     | `/notes/a/`               |
 
 ### archives ルートの扱い
 
@@ -681,16 +677,16 @@ router core は、fetch 経路において **特定 shell コンポーネント�
 
 ### HTTP ステータスと例外
 
-| 事象                            | kind        | reason                | 変換先                |
-| ----------------------------- | ----------- | --------------------- | ------------------ |
-| `401`                         | `error`     | `auth`                | 認証エラー snapshot     |
-| `403`                         | `error`     | `forbidden`           | 権限エラー snapshot     |
-| `404`                         | `not-found` | なし                    | not-found snapshot |
-| `500`                         | `error`     | `server`              | サーバーエラー snapshot   |
-| `503`                         | `error`     | `service-unavailable` | サービス利用不可 snapshot  |
-| `AbortError` / `TimeoutError` | `error`     | `timeout`             | タイムアウト snapshot    |
-| `fetch` を含む `TypeError`       | `error`     | `network`             | ネットワークエラー snapshot |
-| その他                           | `error`     | `unexpected`          | 汎用エラー snapshot     |
+| 事象                          | kind        | reason                | 変換先                      |
+| ----------------------------- | ----------- | --------------------- | --------------------------- |
+| `401`                         | `error`     | `auth`                | 認証エラー snapshot         |
+| `403`                         | `error`     | `forbidden`           | 権限エラー snapshot         |
+| `404`                         | `not-found` | なし                  | not-found snapshot          |
+| `500`                         | `error`     | `server`              | サーバーエラー snapshot     |
+| `503`                         | `error`     | `service-unavailable` | サービス利用不可 snapshot   |
+| `AbortError` / `TimeoutError` | `error`     | `timeout`             | タイムアウト snapshot       |
+| `fetch` を含む `TypeError`    | `error`     | `network`             | ネットワークエラー snapshot |
+| その他                        | `error`     | `unexpected`          | 汎用エラー snapshot         |
 
 #### 契約
 
@@ -865,24 +861,19 @@ interface RouterEventMap {
   };
   error: {
     error: Error;
-    stage:
-      | 'before-navigate'
-      | 'load'
-      | 'commit'
-      | 'shell'
-      | 'post-commit';
+    stage: 'before-navigate' | 'load' | 'commit' | 'shell' | 'post-commit';
   };
 }
 ```
 
 ### 発火規則
 
-| イベント名                    | 発火タイミング                                         | payload                           |
-| ------------------------ | ----------------------------------------------- | --------------------------------- |
-| `navigation:busy-change` | `isNavigating()` の値が変化した時                       | `{ isNavigating }`                |
-| `content:load`           | durable commit 完了後                              | `{ previousUrl, url, isInitial }` |
-| `after:navigate`         | 要求単位の結果確定後                                      | `NavigationResult`                |
-| `ui-url-state-change`    | state-only navigation 確定時                       | `{ previousUrl, url }`            |
+| イベント名               | 発火タイミング                                      | payload                           |
+| ------------------------ | --------------------------------------------------- | --------------------------------- |
+| `navigation:busy-change` | `isNavigating()` の値が変化した時                   | `{ isNavigating }`                |
+| `content:load`           | durable commit 完了後                               | `{ previousUrl, url, isInitial }` |
+| `after:navigate`         | 要求単位の結果確定後                                | `NavigationResult`                |
+| `ui-url-state-change`    | state-only navigation 確定時                        | `{ previousUrl, url }`            |
 | `error`                  | hook / load / commit / shell / post-commit の失敗時 | `{ error, stage }`                |
 
 ### 順序保証

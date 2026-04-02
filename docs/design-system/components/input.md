@@ -79,32 +79,32 @@ Rouault における input は、読書の合間に現れる操作部品であ�
 
 ### 入力契約
 
-| 名前                | 種別                                        | 必須   | 内容                     | 契約                                                                                                                                         |
-| ------------------- | ------------------------------------------- | ------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `label`             | property / attribute                        | はい   | 入力項目のラベル         | 空文字列は契約違反です。`hide-label` 使用時も必須です                                                                                        |
-| `hideLabel`         | property / attribute (`hide-label`)         | いいえ | ラベルの視覚的非表示     | 対応付けられた label 要素は維持します                                                                                                        |
-| `variant`           | property / attribute                        | いいえ | 外観種別                 | `filled` / `outline`。既定値は `filled` です。列挙外値は契約違反であり、`filled` に正規化します                                              |
-| `type`              | property / attribute                        | いいえ | ネイティブ入力種別       | `text` / `email` / `password` / `tel` / `url`。既定値は `text` です。列挙外値は契約違反であり、`text` に正規化します                         |
-| `name`              | property / attribute                        | いいえ | フォーム送信名           | FormData 参加時のキーです                                                                                                                    |
-| `placeholder`       | property / attribute                        | いいえ | ヒント文字列             | ラベルの代替にはしません                                                                                                                     |
-| `value`             | property                                    | いいえ | 現在値                   | 文字列として扱います                                                                                                                         |
-| `defaultValue`      | property / attribute (`default-value`)      | いいえ | 初期値                   | reset 時の復元元です                                                                                                                         |
-| `helpText`          | property / attribute (`help-text`)          | いいえ | 補助説明                 | 非エラー時のみ表示します                                                                                                                     |
-| `errorMessage`      | property / attribute (`error-message`)      | いいえ | エラー文言               | `error=true` の場合は空でない文言が必須です                                                                                                  |
-| `error`             | property / attribute                        | いいえ | 強制エラー状態           | `true` の場合、`errorMessage` と組で外部エラー状態を構成します。`errorMessage` が空の場合は契約違反として警告し、外部エラー状態に入りません  |
-| `disabled`          | property / attribute                        | いいえ | 不活性状態               | `true` の場合、フォーム値へ参加しません                                                                                                      |
-| `readonly`          | property / attribute                        | いいえ | 読み取り専用             | フォーカス、選択、コピーは可能です                                                                                                           |
-| `required`          | property / attribute                        | いいえ | 必須入力                 | ネイティブ妥当性へ参加します                                                                                                                 |
-| `requiredIndicator` | property / attribute (`required-indicator`) | いいえ | 必須表示方式             | `text` / `asterisk` / `none`。既定値は `text` です                                                                                           |
-| `pattern`           | property / attribute                        | いいえ | 正規表現パターン         | ネイティブ妥当性へ参加します                                                                                                                 |
-| `minlength`         | property / attribute                        | いいえ | 最小文字数               | 数値で指定します                                                                                                                             |
-| `maxlength`         | property / attribute                        | いいえ | 最大文字数               | 数値で指定します                                                                                                                             |
-| `autocomplete`      | property / attribute                        | いいえ | 自動補完ヒント           | ネイティブ input へ委譲します                                                                                                                |
-| `inputmode`         | property / attribute                        | いいえ | 入力モードヒント         | ネイティブ input へそのまま委譲します。値モデル、妥当性モデル、イベント契約を変更しません                                                    |
-| `enterkeyhint`      | property / attribute                        | いいえ | Enter キー表示ヒント     | ネイティブ input へそのまま委譲します。送信契約そのものは変更しません                                                                        |
-| `autocapitalize`    | property / attribute                        | いいえ | 自動大文字化ヒント       | ネイティブ input へそのまま委譲します。コンポーネント側で既定値を暗黙設定しません                                                            |
-| `spellcheck`        | property / attribute                        | いいえ | スペルチェック指定       | ネイティブ input へそのまま委譲します。コンポーネント側で既定値を暗黙設定しません                                                            |
-| `describedBy`       | property / attribute (`described-by`)       | いいえ | 外部説明要素 ID 群       | 説明専用 API です。アクセシブル名には関与しません。内部 `helpText` / `errorMessage` と結合して `aria-describedby` を構成できます            |
+| 名前                | 種別                                        | 必須   | 内容                 | 契約                                                                                                                                        |
+| ------------------- | ------------------------------------------- | ------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `label`             | property / attribute                        | はい   | 入力項目のラベル     | 空文字列は契約違反です。`hide-label` 使用時も必須です                                                                                       |
+| `hideLabel`         | property / attribute (`hide-label`)         | いいえ | ラベルの視覚的非表示 | 対応付けられた label 要素は維持します                                                                                                       |
+| `variant`           | property / attribute                        | いいえ | 外観種別             | `filled` / `outline`。既定値は `filled` です。列挙外値は契約違反であり、`filled` に正規化します                                             |
+| `type`              | property / attribute                        | いいえ | ネイティブ入力種別   | `text` / `email` / `password` / `tel` / `url`。既定値は `text` です。列挙外値は契約違反であり、`text` に正規化します                        |
+| `name`              | property / attribute                        | いいえ | フォーム送信名       | FormData 参加時のキーです                                                                                                                   |
+| `placeholder`       | property / attribute                        | いいえ | ヒント文字列         | ラベルの代替にはしません                                                                                                                    |
+| `value`             | property                                    | いいえ | 現在値               | 文字列として扱います                                                                                                                        |
+| `defaultValue`      | property / attribute (`default-value`)      | いいえ | 初期値               | reset 時の復元元です                                                                                                                        |
+| `helpText`          | property / attribute (`help-text`)          | いいえ | 補助説明             | 非エラー時のみ表示します                                                                                                                    |
+| `errorMessage`      | property / attribute (`error-message`)      | いいえ | エラー文言           | `error=true` の場合は空でない文言が必須です                                                                                                 |
+| `error`             | property / attribute                        | いいえ | 強制エラー状態       | `true` の場合、`errorMessage` と組で外部エラー状態を構成します。`errorMessage` が空の場合は契約違反として警告し、外部エラー状態に入りません |
+| `disabled`          | property / attribute                        | いいえ | 不活性状態           | `true` の場合、フォーム値へ参加しません                                                                                                     |
+| `readonly`          | property / attribute                        | いいえ | 読み取り専用         | フォーカス、選択、コピーは可能です                                                                                                          |
+| `required`          | property / attribute                        | いいえ | 必須入力             | ネイティブ妥当性へ参加します                                                                                                                |
+| `requiredIndicator` | property / attribute (`required-indicator`) | いいえ | 必須表示方式         | `text` / `asterisk` / `none`。既定値は `text` です                                                                                          |
+| `pattern`           | property / attribute                        | いいえ | 正規表現パターン     | ネイティブ妥当性へ参加します                                                                                                                |
+| `minlength`         | property / attribute                        | いいえ | 最小文字数           | 数値で指定します                                                                                                                            |
+| `maxlength`         | property / attribute                        | いいえ | 最大文字数           | 数値で指定します                                                                                                                            |
+| `autocomplete`      | property / attribute                        | いいえ | 自動補完ヒント       | ネイティブ input へ委譲します                                                                                                               |
+| `inputmode`         | property / attribute                        | いいえ | 入力モードヒント     | ネイティブ input へそのまま委譲します。値モデル、妥当性モデル、イベント契約を変更しません                                                   |
+| `enterkeyhint`      | property / attribute                        | いいえ | Enter キー表示ヒント | ネイティブ input へそのまま委譲します。送信契約そのものは変更しません                                                                       |
+| `autocapitalize`    | property / attribute                        | いいえ | 自動大文字化ヒント   | ネイティブ input へそのまま委譲します。コンポーネント側で既定値を暗黙設定しません                                                           |
+| `spellcheck`        | property / attribute                        | いいえ | スペルチェック指定   | ネイティブ input へそのまま委譲します。コンポーネント側で既定値を暗黙設定しません                                                           |
+| `describedBy`       | property / attribute (`described-by`)       | いいえ | 外部説明要素 ID 群   | 説明専用 API です。アクセシブル名には関与しません。内部 `helpText` / `errorMessage` と結合して `aria-describedby` を構成できます            |
 
 ### スロット契約
 
@@ -155,32 +155,32 @@ Rouault における input は、読書の合間に現れる操作部品であ�
 
 公開入力のうち、`label`、`hideLabel`、`variant`、`type`、`name`、`placeholder`、`defaultValue`、`helpText`、`errorMessage`、`error`、`disabled`、`readonly`、`required`、`requiredIndicator`、`pattern`、`minlength`、`maxlength`、`autocomplete`、`inputmode`、`enterkeyhint`、`autocapitalize`、`spellcheck`、`describedBy` は property と attribute の両面から操作できます。`value` は property として扱うことを基本とし、反射属性ではありません。
 
-| property            | attribute            | reflect | 備考                                                                                                                  |
-| ------------------- | -------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| `label`             | `label`              | あり    | 必須契約です                                                                                                          |
-| `hideLabel`         | `hide-label`         | あり    | boolean attribute として扱います                                                                                      |
-| `variant`           | `variant`            | あり    | `filled` / `outline` を正規入力とします。列挙外値は `filled` に正規化します                                            |
-| `type`              | `type`               | あり    | 非対応値は `text` に正規化します                                                                                       |
-| `name`              | `name`               | あり    | FormData キーに使用します                                                                                             |
-| `placeholder`       | `placeholder`        | あり    | 補助ヒントです                                                                                                        |
-| `value`             | `value`              | なし    | 現在値を表す property です                                                                                            |
-| `defaultValue`      | `default-value`      | あり    | 初期値および reset 復元値です                                                                                         |
-| `helpText`          | `help-text`          | あり    | 非エラー時のみ表示します                                                                                              |
-| `errorMessage`      | `error-message`      | あり    | 強制エラー文言です                                                                                                    |
-| `error`             | `error`              | あり    | boolean attribute として扱います                                                                                      |
-| `disabled`          | `disabled`           | あり    | boolean attribute として扱います                                                                                      |
-| `readonly`          | `readonly`           | あり    | boolean attribute として扱います                                                                                      |
-| `required`          | `required`           | あり    | boolean attribute として扱います                                                                                      |
-| `requiredIndicator` | `required-indicator` | あり    | `text` / `asterisk` / `none` を正規入力とします                                                                       |
-| `pattern`           | `pattern`            | あり    | ネイティブ input に委譲します                                                                                         |
-| `minlength`         | `minlength`          | あり    | 数値として扱います                                                                                                    |
-| `maxlength`         | `maxlength`          | あり    | 数値として扱います                                                                                                    |
-| `autocomplete`      | `autocomplete`       | あり    | ネイティブ input に委譲します                                                                                         |
-| `inputmode`         | `inputmode`          | あり    | ネイティブ input に委譲します                                                                                         |
-| `enterkeyhint`      | `enterkeyhint`       | あり    | ネイティブ input に委譲します                                                                                         |
-| `autocapitalize`    | `autocapitalize`     | あり    | ネイティブ input に委譲します                                                                                         |
-| `spellcheck`        | `spellcheck`         | あり    | ネイティブ input に委譲します                                                                                         |
-| `describedBy`       | `described-by`       | あり    | 外部説明要素 ID 群です。`aria-describedby` の合成に使用します                                                         |
+| property            | attribute            | reflect | 備考                                                                        |
+| ------------------- | -------------------- | ------- | --------------------------------------------------------------------------- |
+| `label`             | `label`              | あり    | 必須契約です                                                                |
+| `hideLabel`         | `hide-label`         | あり    | boolean attribute として扱います                                            |
+| `variant`           | `variant`            | あり    | `filled` / `outline` を正規入力とします。列挙外値は `filled` に正規化します |
+| `type`              | `type`               | あり    | 非対応値は `text` に正規化します                                            |
+| `name`              | `name`               | あり    | FormData キーに使用します                                                   |
+| `placeholder`       | `placeholder`        | あり    | 補助ヒントです                                                              |
+| `value`             | `value`              | なし    | 現在値を表す property です                                                  |
+| `defaultValue`      | `default-value`      | あり    | 初期値および reset 復元値です                                               |
+| `helpText`          | `help-text`          | あり    | 非エラー時のみ表示します                                                    |
+| `errorMessage`      | `error-message`      | あり    | 強制エラー文言です                                                          |
+| `error`             | `error`              | あり    | boolean attribute として扱います                                            |
+| `disabled`          | `disabled`           | あり    | boolean attribute として扱います                                            |
+| `readonly`          | `readonly`           | あり    | boolean attribute として扱います                                            |
+| `required`          | `required`           | あり    | boolean attribute として扱います                                            |
+| `requiredIndicator` | `required-indicator` | あり    | `text` / `asterisk` / `none` を正規入力とします                             |
+| `pattern`           | `pattern`            | あり    | ネイティブ input に委譲します                                               |
+| `minlength`         | `minlength`          | あり    | 数値として扱います                                                          |
+| `maxlength`         | `maxlength`          | あり    | 数値として扱います                                                          |
+| `autocomplete`      | `autocomplete`       | あり    | ネイティブ input に委譲します                                               |
+| `inputmode`         | `inputmode`          | あり    | ネイティブ input に委譲します                                               |
+| `enterkeyhint`      | `enterkeyhint`       | あり    | ネイティブ input に委譲します                                               |
+| `autocapitalize`    | `autocapitalize`     | あり    | ネイティブ input に委譲します                                               |
+| `spellcheck`        | `spellcheck`         | あり    | ネイティブ input に委譲します                                               |
+| `describedBy`       | `described-by`       | あり    | 外部説明要素 ID 群です。`aria-describedby` の合成に使用します               |
 
 ### 列挙外値・無効値の扱い
 
@@ -275,13 +275,13 @@ Rouault における input は、読書の合間に現れる操作部品であ�
 
 `readonly=true` の場合、入力値の編集はできませんが、フォーカス、選択、コピーは可能です。FormData にも参加します。readonly は disabled と異なり、**編集不能だが、内容確認と参照は継続できる状態**です。
 
-| 観点          | `readonly=true` の契約                                  |
-| ------------- | ------------------------------------------------------- |
-| フォーカス    | 可能です                                                |
-| テキスト選択  | 可能です                                                |
-| FormData 参加 | 維持します                                              |
+| 観点          | `readonly=true` の契約                                     |
+| ------------- | ---------------------------------------------------------- |
+| フォーカス    | 可能です                                                   |
+| テキスト選択  | 可能です                                                   |
+| FormData 参加 | 維持します                                                 |
 | Enter 送信    | 既定契約には含めません。必要な場合は上位レイヤで定義します |
-| エラー表示    | 許容します                                              |
+| エラー表示    | 許容します                                                 |
 
 本書における readonly は、**編集を止める状態**であって、送信操作まで積極的に意味付ける状態ではありません。関連フォームが存在しても、readonly 上の Enter を送信契約の一部として固定しません。
 
@@ -517,13 +517,13 @@ disabled 状態では、少なくとも次を満たします。
 
 `ui-input` は、内部 input のネイティブ妥当性と、`error` / `errorMessage` による外部強制エラーを ElementInternals へ同期します。外部強制エラーは、**`error=true` かつ `errorMessage` が空でない場合にのみ成立**します。
 
-| 条件                                  | 妥当性 API 上の扱い                                               |
-| ------------------------------------- | ------------------------------------------------------------------ |
-| `disabled=true`                       | フォーム妥当性上は非参加として扱います                             |
-| `error=true` かつ `errorMessage` あり | 外部強制エラーとして invalid 扱いにできます                        |
-| `error=true` かつ `errorMessage` なし | 契約違反として警告し、外部強制エラーは成立させません                |
-| ネイティブ妥当性エラーあり            | ネイティブ妥当性結果を同期し invalid として扱います                |
-| 強制エラーなし、ネイティブ妥当性 OK   | valid として扱います                                               |
+| 条件                                  | 妥当性 API 上の扱い                                  |
+| ------------------------------------- | ---------------------------------------------------- |
+| `disabled=true`                       | フォーム妥当性上は非参加として扱います               |
+| `error=true` かつ `errorMessage` あり | 外部強制エラーとして invalid 扱いにできます          |
+| `error=true` かつ `errorMessage` なし | 契約違反として警告し、外部強制エラーは成立させません |
+| ネイティブ妥当性エラーあり            | ネイティブ妥当性結果を同期し invalid として扱います  |
+| 強制エラーなし、ネイティブ妥当性 OK   | valid として扱います                                 |
 
 外部強制エラーとネイティブエラーが競合する場合、**表示上は外部強制エラーを優先してよい**ものとします。ただし、どの情報を公開 API として追加で観測可能にするかは、本書では閉じ切りません。
 
@@ -651,12 +651,12 @@ disabled 状態では、少なくとも次を満たします。
 | `ExternalErrorState`                 | 外部強制エラーで `aria-invalid`、エラー文言表示、help 非表示が成立すること                    |
 | `NativeValidationState`              | ネイティブ妥当性エラーが invalid として成立すること                                           |
 | `HiddenLabel`                        | `hide-label` 使用時も label 由来のアクセシブル名が失われないこと                              |
-| `Disabled`                           | disabled 状態で内部 input が不活性になり、FormData へ参加しないこと                                      |
-| `Readonly`                           | readonly 状態で編集不可だが選択と FormData 参加が維持されること                                          |
+| `Disabled`                           | disabled 状態で内部 input が不活性になり、FormData へ参加しないこと                           |
+| `Readonly`                           | readonly 状態で編集不可だが選択と FormData 参加が維持されること                               |
 | `RequiredMeaningAndPresentation`     | `required` の意味状態と `requiredIndicator` の表示状態が分離されていること                    |
 | `SupportedTypes`                     | サポート対象 type 群のみが描画されること                                                      |
-| `UnsupportedTypeFallback`            | 非対応 type が `text` 系の正規状態へ収束し、描画と意味が破綻しないこと                                    |
-| `VariantFallback`                    | 列挙外 `variant` が正規状態へ収束し、描画と意味が破綻しないこと                                           |
+| `UnsupportedTypeFallback`            | 非対応 type が `text` 系の正規状態へ収束し、描画と意味が破綻しないこと                        |
+| `VariantFallback`                    | 列挙外 `variant` が正規状態へ収束し、描画と意味が破綻しないこと                               |
 | `FocusState`                         | 公開 `focus()` が内部 input に到達すること                                                    |
 | `FormIntegration`                    | 複数 `ui-input` がフォーム部品として共存できること                                            |
 | `DefaultValueReset`                  | reset 時の復元元が `defaultValue` であること                                                  |
@@ -664,7 +664,7 @@ disabled 状態では、少なくとも次を満たします。
 | `FormDataParticipation`              | FormData へ現在値が反映されること                                                             |
 | `StableInternalIds`                  | 再描画で label / help / error の参照関係が崩れないこと                                        |
 | `ErrorWithoutMessage`                | `error=true` かつ空の `errorMessage` を契約違反として警告し、外部強制エラーを成立させないこと |
-| `DisabledSuppressesInvalidByDefault` | disabled 既定表示では invalid 状態を前景化しないこと                                                      |
+| `DisabledSuppressesInvalidByDefault` | disabled 既定表示では invalid 状態を前景化しないこと                                          |
 | `MinMaxLengthBoundary`               | 文字数境界で妥当性が切り替わること                                                            |
 | `VariantStateMatrix`                 | 主要状態の組み合わせが共存できること                                                          |
 | `DarkMode`                           | トークン差し替えにより暗色背景上でも可視性が保たれること                                      |

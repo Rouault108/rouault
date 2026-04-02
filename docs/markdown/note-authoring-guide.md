@@ -71,20 +71,20 @@ genre:
 
 ### 3.2 よく使う項目
 
-| 項目          | 目安 | 内容                              |
-| ------------- | ---- | --------------------------------- |
-| `title`       | 必須 | ノートタイトル                    |
-| `description` | 推奨 | 一覧、検索、OG などで使う短い説明 |
-| `date`        | 推奨 | 作成日。`YYYY-MM-DD` 形式         |
-| `updated`     | 任意 | 更新日。`YYYY-MM-DD` 形式         |
-| `genre`       | 任意 | 分類用の文字列配列                |
-| `sidebarIcon` | 任意 | サイドバーで使うアイコン名        |
-| `cover`       | 任意 | カバー画像のパスまたは URL        |
-| `license`     | 任意 | ライセンス名                      |
-| `licenseNote` | 任意 | ライセンスに関する補足            |
-| `status`      | 任意 | 公開状態                          |
-| `kind`        | 任意 | ノートの公開面種別                |
-| `testingArea` | 条件付き | `kind: testing` の責務区分     |
+| 項目          | 目安     | 内容                              |
+| ------------- | -------- | --------------------------------- |
+| `title`       | 必須     | ノートタイトル                    |
+| `description` | 推奨     | 一覧、検索、OG などで使う短い説明 |
+| `date`        | 推奨     | 作成日。`YYYY-MM-DD` 形式         |
+| `updated`     | 任意     | 更新日。`YYYY-MM-DD` 形式         |
+| `genre`       | 任意     | 分類用の文字列配列                |
+| `sidebarIcon` | 任意     | サイドバーで使うアイコン名        |
+| `cover`       | 任意     | カバー画像のパスまたは URL        |
+| `license`     | 任意     | ライセンス名                      |
+| `licenseNote` | 任意     | ライセンスに関する補足            |
+| `status`      | 任意     | 公開状態                          |
+| `kind`        | 任意     | ノートの公開面種別                |
+| `testingArea` | 条件付き | `kind: testing` の責務区分        |
 
 ### 3.3 各項目の書き方
 
@@ -536,18 +536,18 @@ Je pense, donc je suis.
 
 注意:
 
-* `translation` / `translation-overlay` が保持するのは plain-text 2 片だけです。
-* 本文入力を使う場合も、取り出されるのは 1 段落目と 2 段落目のプレーンテキスト相当だけです。
-* 強調、脚注、リンク、ルビなどの構造は保持されません。
-* rich な対訳本文を表現したい場合は、この directive family を使わず、別 directive を検討してください。
+- `translation` / `translation-overlay` が保持するのは plain-text 2 片だけです。
+- 本文入力を使う場合も、取り出されるのは 1 段落目と 2 段落目のプレーンテキスト相当だけです。
+- 強調、脚注、リンク、ルビなどの構造は保持されません。
+- rich な対訳本文を表現したい場合は、この directive family を使わず、別 directive を検討してください。
 
 使い分けの目安:
 
-* 常に原文と訳文を読ませたい
+- 常に原文と訳文を読ませたい
   → `translation`
-* クリック時だけ開きたい
+- クリック時だけ開きたい
   → `translation-overlay`
-* 属性へ直接書きたくない plain-text 2 片を簡便入力したい
+- 属性へ直接書きたくない plain-text 2 片を簡便入力したい
   → `translation` の本文 2 段落
 
 ---

@@ -112,45 +112,45 @@ type TreeNode = BranchNode | LeafNode;
 
 #### TreeNode 契約
 
-| 名前         | 種別                    | 必須           | 内容     | 契約                                        |
-| ---------- | --------------------- | ------------ | ------ | ----------------------------------------- |
-| `kind`     | `'branch' \| 'leaf'`  | はい           | ノード種別  | `branch` と `leaf` を明示的に区別しなければなりません（MUST） |
-| `id`       | string                | はい           | ノード識別子 | tree 全体で一意かつ安定でなければなりません（MUST）            |
-| `label`    | string                | はい           | 表示ラベル  | type-ahead の照合対象です                        |
-| `icon`     | `TreeIcon`            | いいえ          | アイコン表現 | 現時点では string を受理します。意味解釈は視覚補助に限定します       |
-| `children` | `readonly TreeNode[]` | `branch` で必須 | 子ノード列  | `branch` のみが持ちます                          |
-| `href`     | string                | `leaf` で必須   | 遷移先    | `leaf` のみが持ちます                            |
+| 名前       | 種別                  | 必須            | 内容         | 契約                                                           |
+| ---------- | --------------------- | --------------- | ------------ | -------------------------------------------------------------- |
+| `kind`     | `'branch' \| 'leaf'`  | はい            | ノード種別   | `branch` と `leaf` を明示的に区別しなければなりません（MUST）  |
+| `id`       | string                | はい            | ノード識別子 | tree 全体で一意かつ安定でなければなりません（MUST）            |
+| `label`    | string                | はい            | 表示ラベル   | type-ahead の照合対象です                                      |
+| `icon`     | `TreeIcon`            | いいえ          | アイコン表現 | 現時点では string を受理します。意味解釈は視覚補助に限定します |
+| `children` | `readonly TreeNode[]` | `branch` で必須 | 子ノード列   | `branch` のみが持ちます                                        |
+| `href`     | string                | `leaf` で必須   | 遷移先       | `leaf` のみが持ちます                                          |
 
 ### ノード種別契約
 
-* `branch` と `leaf` は排他的でなければなりません（MUST）。
-* `href` と `children` を同時に持つノードは不正入力として扱わなければなりません（MUST）。
-* `leaf` は子ノードを持ってはなりません（MUST NOT）。
-* `branch` は直接遷移先を持ってはなりません（MUST NOT）。
+- `branch` と `leaf` は排他的でなければなりません（MUST）。
+- `href` と `children` を同時に持つノードは不正入力として扱わなければなりません（MUST）。
+- `leaf` は子ノードを持ってはなりません（MUST NOT）。
+- `branch` は直接遷移先を持ってはなりません（MUST NOT）。
 
 #### Rouault 固有制約
 
 本契約は、一般的な tree UI の完全な汎用契約ではなく、Rouault におけるノート木を前提としたコンポーネント契約です。したがって、次の制約を Rouault 固有制約として採用します。
 
-* `branch` は 1 件以上の `children` を持たなければなりません（MUST）。
-* `children=[]` の `branch` は不正入力として扱わなければなりません（MUST）。
-* 空ディレクトリ、未ロード branch、カテゴリページ branch を表したい場合は、将来の別契約で明示的に拡張しなければなりません（MUST）。
+- `branch` は 1 件以上の `children` を持たなければなりません（MUST）。
+- `children=[]` の `branch` は不正入力として扱わなければなりません（MUST）。
+- 空ディレクトリ、未ロード branch、カテゴリページ branch を表したい場合は、将来の別契約で明示的に拡張しなければなりません（MUST）。
 
 ### 入力契約
 
-| 名前                 | 種別                                      | 必須   | 内容                          | 契約                                                                 |
-| -------------------- | ----------------------------------------- | ------ | ----------------------------- | -------------------------------------------------------------------- |
-| `items`              | property                                  | はい   | 不変の tree 構造              | `readonly TreeNode[]` として与えなければなりません（MUST）           |
-| `selectedId`         | property / attribute (`selected-id`)      | いいえ | 現在位置に対応する葉ノード ID | 選択なしは `null` で表さなければなりません（MUST）                   |
-| `expandedIds`        | property                                  | いいえ | 展開中 branch の ID 集合      | `ReadonlySet<string>` として与えなければなりません（MUST）           |
-| `defaultExpandedIds` | property                                  | いいえ | 初期展開 branch の ID 集合    | `ReadonlySet<string>` として与えなければなりません（MUST）           |
-| `variant`            | property / attribute                      | いいえ | 視覚バリアント                | `default` または `card` のみを受理します                             |
-| `density`            | property / attribute                      | いいえ | 行密度                        | `normal` または `compact` のみを受理します                           |
-| `loading`            | property / attribute                      | いいえ | ローディング状態              | boolean として解釈しなければなりません（MUST）                       |
-| `loadingStrategy`    | property / attribute (`loading-strategy`) | いいえ | ローディング時の表示戦略      | `retain` または `replace` のみを受理します                           |
-| `printable`          | property / attribute                      | いいえ | 印刷対象とするか              | boolean として解釈しなければなりません（MUST）                       |
-| `aria-label`         | attribute                                 | いいえ | tree のアクセシブル名         | `aria-labelledby` がない場合のみ利用されます                         |
-| `aria-labelledby`    | attribute                                 | いいえ | tree のアクセシブル名参照     | `aria-label` より優先されます                                        |
+| 名前                 | 種別                                      | 必須   | 内容                          | 契約                                                       |
+| -------------------- | ----------------------------------------- | ------ | ----------------------------- | ---------------------------------------------------------- |
+| `items`              | property                                  | はい   | 不変の tree 構造              | `readonly TreeNode[]` として与えなければなりません（MUST） |
+| `selectedId`         | property / attribute (`selected-id`)      | いいえ | 現在位置に対応する葉ノード ID | 選択なしは `null` で表さなければなりません（MUST）         |
+| `expandedIds`        | property                                  | いいえ | 展開中 branch の ID 集合      | `ReadonlySet<string>` として与えなければなりません（MUST） |
+| `defaultExpandedIds` | property                                  | いいえ | 初期展開 branch の ID 集合    | `ReadonlySet<string>` として与えなければなりません（MUST） |
+| `variant`            | property / attribute                      | いいえ | 視覚バリアント                | `default` または `card` のみを受理します                   |
+| `density`            | property / attribute                      | いいえ | 行密度                        | `normal` または `compact` のみを受理します                 |
+| `loading`            | property / attribute                      | いいえ | ローディング状態              | boolean として解釈しなければなりません（MUST）             |
+| `loadingStrategy`    | property / attribute (`loading-strategy`) | いいえ | ローディング時の表示戦略      | `retain` または `replace` のみを受理します                 |
+| `printable`          | property / attribute                      | いいえ | 印刷対象とするか              | boolean として解釈しなければなりません（MUST）             |
+| `aria-label`         | attribute                                 | いいえ | tree のアクセシブル名         | `aria-labelledby` がない場合のみ利用されます               |
+| `aria-labelledby`    | attribute                                 | いいえ | tree のアクセシブル名参照     | `aria-label` より優先されます                              |
 
 ### 状態主導権契約
 
@@ -196,17 +196,17 @@ type TreeNode = BranchNode | LeafNode;
 
 ### 属性反映契約
 
-| property             | attribute          | reflect | 備考                                                  |
-| -------------------- | ------------------ | ------- | ----------------------------------------------------- |
-| `items`              | なし               | なし    | property 専用です                                     |
-| `selectedId`         | `selected-id`      | なし    | attribute は string のみを受理します                  |
-| `expandedIds`        | なし               | なし    | property 専用です                                     |
-| `defaultExpandedIds` | なし               | なし    | property 専用です                                     |
-| `variant`            | `variant`          | あり    | `default` / `card`                                    |
-| `density`            | `density`          | あり    | `normal` / `compact`                                  |
-| `loading`            | `loading`          | あり    | boolean attribute として扱います                      |
-| `loadingStrategy`    | `loading-strategy` | あり    | `retain` / `replace`                                  |
-| `printable`          | `printable`        | あり    | boolean attribute として扱います                      |
+| property             | attribute          | reflect | 備考                                 |
+| -------------------- | ------------------ | ------- | ------------------------------------ |
+| `items`              | なし               | なし    | property 専用です                    |
+| `selectedId`         | `selected-id`      | なし    | attribute は string のみを受理します |
+| `expandedIds`        | なし               | なし    | property 専用です                    |
+| `defaultExpandedIds` | なし               | なし    | property 専用です                    |
+| `variant`            | `variant`          | あり    | `default` / `card`                   |
+| `density`            | `density`          | あり    | `normal` / `compact`                 |
+| `loading`            | `loading`          | あり    | boolean attribute として扱います     |
+| `loadingStrategy`    | `loading-strategy` | あり    | `retain` / `replace`                 |
+| `printable`          | `printable`        | あり    | boolean attribute として扱います     |
 
 #### attribute から property への変換規則
 
@@ -338,17 +338,17 @@ type TreeNode = BranchNode | LeafNode;
 
 `ui-file-tree` は tree ルートとして次のキーボード意味論を持たなければなりません（MUST）。
 
-| キー         | 振る舞い                                              |
-| ------------ | ----------------------------------------------------- |
-| `ArrowDown`  | 次の可視項目へ移動                                    |
-| `ArrowUp`    | 前の可視項目へ移動                                    |
-| `ArrowRight` | `branch` なら展開し、展開済みなら先頭子へ移動         |
+| キー         | 振る舞い                                                |
+| ------------ | ------------------------------------------------------- |
+| `ArrowDown`  | 次の可視項目へ移動                                      |
+| `ArrowUp`    | 前の可視項目へ移動                                      |
+| `ArrowRight` | `branch` なら展開し、展開済みなら先頭子へ移動           |
 | `ArrowLeft`  | `branch` なら収縮し、収縮済みまたは `leaf` なら親へ移動 |
-| `Home`       | 最初の可視項目へ移動                                  |
-| `End`        | 最後の可視項目へ移動                                  |
-| `Enter`      | アクティブ項目の主操作を確定                          |
-| `Space`      | アクティブ項目の主操作を確定                          |
-| 文字入力     | type-ahead による前方一致検索                         |
+| `Home`       | 最初の可視項目へ移動                                    |
+| `End`        | 最後の可視項目へ移動                                    |
+| `Enter`      | アクティブ項目の主操作を確定                            |
+| `Space`      | アクティブ項目の主操作を確定                            |
+| 文字入力     | type-ahead による前方一致検索                           |
 
 - `leaf` に対する主操作は選択でなければなりません（MUST）。
 - `branch` に対する主操作は展開 / 収縮でなければなりません（MUST）。
@@ -607,45 +607,45 @@ Storybook は見本集ではなく、契約確認のための検証面を提供�
 
 ### 必須検証観点
 
-1. ルート意味論  
+1. ルート意味論
    - `role="tree"` と `aria-orientation="vertical"` が成立すること。
 
-2. 視覚バリアント  
+2. 視覚バリアント
    - `variant="default"` と `variant="card"` の視覚差分が成立すること。
 
-3. 密度差分  
+3. 密度差分
    - `density="normal"` と `density="compact"` の行高差が成立すること。
 
-4. Empty State  
+4. Empty State
    - `items=[]` かつ `loading=false` で `role="status"` を持つ Empty State が描画されること。
 
-5. Loading  
+5. Loading
    - `loadingStrategy="retain"` で既存 tree を維持したまま busy 表示できること。
    - `loadingStrategy="replace"` で skeleton に置き換わること。
 
-6. 深い階層  
+6. 深い階層
    - 深い階層でも `selectedId` に対応する現在位置を視認できること。
 
-7. 多数項目  
+7. 多数項目
    - 多数項目でも基本操作が破綻しないこと。
 
-8. イベント  
+8. イベント
    - request / commit 系イベントを監視できること。
    - `detail` が最小 snapshot に限定されていること。
 
-9. キーボード  
+9. キーボード
    - Arrow、Home、End、Enter、Space、type-ahead によるナビゲーションが成立すること。
 
-10. 公開メソッド  
+10. 公開メソッド
     - `focus()`、`focusSelected()`、`focusFirst()` が動作すること。
 
-11. Forced Colors  
+11. Forced Colors
     - forced colors 環境で構造認識が維持されること。
 
-12. Reduced Motion  
+12. Reduced Motion
     - reduced motion 環境でモーション依存が除去されること。
 
-13. Print  
+13. Print
     - `printable=true` の場合のみ印刷対象となること。
 
 ### Story 構成方針

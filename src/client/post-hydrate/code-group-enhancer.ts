@@ -33,7 +33,8 @@ const syncCopyButton = (state: GroupState, selectedKey: string): void => {
     return;
   }
 
-  const activePanel = state.panels.find((panel) => panel.dataset['codeGroupPanel'] === selectedKey) ?? null;
+  const activePanel =
+    state.panels.find((panel) => panel.dataset['codeGroupPanel'] === selectedKey) ?? null;
   const activePre = activePanel?.querySelector<HTMLElement>(CODE_BLOCK_SELECTOR) ?? null;
   if (!activePre || !shouldRenderCodeCopyButton(activePre)) {
     button.hidden = true;

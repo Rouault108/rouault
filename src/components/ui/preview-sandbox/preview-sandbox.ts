@@ -374,14 +374,12 @@ export class PreviewSandbox extends LitElement {
 
     if (
       this._hydrationActivated &&
-      (
-        changedProperties.has('baseUrl') ||
+      (changedProperties.has('baseUrl') ||
         changedProperties.has('allowJs') ||
         changedProperties.has('allowForms') ||
         changedProperties.has('allowDownloads') ||
         changedProperties.has('allowPointerLock') ||
-        changedProperties.has('allowPopups')
-      )
+        changedProperties.has('allowPopups'))
     ) {
       this._refreshSandboxDocument();
     }
@@ -611,7 +609,9 @@ export class PreviewSandbox extends LitElement {
       lowerRawHtml.includes('<base') ||
       lowerRawHtml.includes('<script')
     ) {
-      warnings.push('html payload は body fragment を前提とし、head/meta/base/script には依存できません');
+      warnings.push(
+        'html payload は body fragment を前提とし、head/meta/base/script には依存できません',
+      );
     }
 
     const parser = new DOMParser();
@@ -821,8 +821,8 @@ export class PreviewSandbox extends LitElement {
       <div
         class="root"
         style=${`--_ui-preview-sandbox-min-height: ${String(
-            this._normalizedHeight,
-          )}px; --_ui-preview-sandbox-resolved-height: ${String(this._resolvedHeight)}px;`}
+          this._normalizedHeight,
+        )}px; --_ui-preview-sandbox-resolved-height: ${String(this._resolvedHeight)}px;`}
       >
         ${this._isActivated
           ? html`

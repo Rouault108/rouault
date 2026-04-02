@@ -359,9 +359,7 @@ export class Banner extends LitElement {
         ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children)
         : [];
 
-    this._hasActions = children.some(
-      (element) => element.getAttribute('slot') === 'action',
-    );
+    this._hasActions = children.some((element) => element.getAttribute('slot') === 'action');
   }
 
   private _syncActionSlot(slot: HTMLSlotElement): void {

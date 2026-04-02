@@ -89,9 +89,7 @@ export const VariantStateCombinations: Story = {
 
       <div class="cell">
         <p class="label">success x dismissible</p>
-        <ui-banner variant="success" dismissible>
-          データのバックアップが完了しました。
-        </ui-banner>
+        <ui-banner variant="success" dismissible> データのバックアップが完了しました。 </ui-banner>
       </div>
     </div>
   `,
@@ -169,7 +167,8 @@ export const PrintVisualOutcome: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'print の構造契約は test/ssr 側で検査し、この story は印刷時の見え方確認用に残しています。',
+        story:
+          'print の構造契約は test/ssr 側で検査し、この story は印刷時の見え方確認用に残しています。',
       },
     },
   },

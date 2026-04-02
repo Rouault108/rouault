@@ -63,11 +63,7 @@ export const DefaultLeaf: Story = {
     },
   },
   render: () => html`
-    <ui-tree-item
-      label="ファイル.txt"
-      icon="file-text"
-      density="normal"
-    ></ui-tree-item>
+    <ui-tree-item label="ファイル.txt" icon="file-text" density="normal"></ui-tree-item>
   `,
 };
 
@@ -134,9 +130,7 @@ export const DensityReference: Story = {
 };
 
 export const SelectedReference: Story = {
-  render: () => html`
-    <ui-tree-item label="README.md" icon="file-text" selected></ui-tree-item>
-  `,
+  render: () => html` <ui-tree-item label="README.md" icon="file-text" selected></ui-tree-item> `,
   parameters: {
     docs: {
       description: {

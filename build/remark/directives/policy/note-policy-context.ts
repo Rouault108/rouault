@@ -23,8 +23,7 @@ export const createNotePolicyContext = (
   const normalizedKind = normalizeNoteContentKind(kind);
   const normalizedTestingArea = normalizeTestingArea(testingArea);
   const isReaderFacing = isReaderFacingNoteContentKind(normalizedKind);
-  const allowsPreviewSandbox =
-    normalizedKind === 'testing' && normalizedTestingArea === 'sandbox';
+  const allowsPreviewSandbox = normalizedKind === 'testing' && normalizedTestingArea === 'sandbox';
 
   return {
     kind: normalizedKind,

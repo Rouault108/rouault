@@ -66,13 +66,15 @@ export class HomePageTemplate {
               <h2 id="home-feed-heading" class="home-feed-title">新着一覧</h2>
               <p class="home-feed-meta">${escapeHtmlText(noteCount)}件</p>
             </div>
-            ${home.notes.length > 0
-              ? `
+            ${
+              home.notes.length > 0
+                ? `
                 <ol class="home-feed-list">
                   ${home.notes.map((entry) => renderHomeEntry(entry)).join('')}
                 </ol>
               `
-              : '<p class="home-empty">公開ノートはまだありません。</p>'}
+                : '<p class="home-empty">公開ノートはまだありません。</p>'
+            }
           </section>
         </article>
       </section>

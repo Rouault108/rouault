@@ -72,12 +72,13 @@ export class Toc extends LitElement {
       display: flex;
       align-items: center;
       min-block-size: var(--toc-item-min-block-size, var(--control-height-sm, 24px));
-      padding-block: var(--toc-item-padding-block, var(--nav-item-padding-block, var(--space-1, 4px)));
+      padding-block: var(
+        --toc-item-padding-block,
+        var(--nav-item-padding-block, var(--space-1, 4px))
+      );
       padding-inline-start: calc(
-        var(--_toc-rail-offset-inline)
-        + var(--_toc-level-offset)
-        + var(--_toc-indicator-width)
-        + var(--_toc-rail-gap)
+        var(--_toc-rail-offset-inline) + var(--_toc-level-offset) + var(--_toc-indicator-width) +
+          var(--_toc-rail-gap)
       );
       padding-inline-end: var(--_toc-padding-inline-end);
       font-size: var(--toc-item-font-size, var(--text-sm, 13px));
@@ -86,10 +87,8 @@ export class Toc extends LitElement {
       color: var(--toc-item-fg, var(--fg-muted, oklch(48% 0 0)));
       text-decoration: none;
       background-color: transparent;
-      transition:
-        color
-          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
-          var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
+      transition: color var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+        var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
     .toc-link::after {
@@ -98,20 +97,15 @@ export class Toc extends LitElement {
       z-index: 0;
       inset-block: var(--_toc-active-inset-block);
       inset-inline-start: calc(
-        var(--_toc-rail-offset-inline)
-        + var(--_toc-level-offset)
-        + var(--_toc-indicator-width)
-        + var(--_toc-rail-gap)
-        - 2px
+        var(--_toc-rail-offset-inline) + var(--_toc-level-offset) + var(--_toc-indicator-width) +
+          var(--_toc-rail-gap) - 2px
       );
       inset-inline-end: 0;
       border-radius: var(--toc-item-active-radius, var(--radius-sm, 4px));
       background-color: transparent;
       pointer-events: none;
-      transition:
-        background-color
-          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
-          var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
+      transition: background-color var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+        var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
     .toc-link-label {
@@ -191,10 +185,8 @@ export class Toc extends LitElement {
       );
       opacity: 0;
       pointer-events: none;
-      transition:
-        opacity
-          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
-          var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
+      transition: opacity var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+        var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
     .toc-link.is-active::before {
@@ -509,7 +501,9 @@ export class Toc extends LitElement {
                     aria-current=${isActive ? 'location' : undefined}
                     @click=${(event: Event) => void this._handleLinkClick(event, heading.id)}
                   >
-                    <span class="toc-link-label" data-heading-id=${heading.id}>${heading.text}</span>
+                    <span class="toc-link-label" data-heading-id=${heading.id}
+                      >${heading.text}</span
+                    >
                   </a>
                 </ui-tooltip>
               </li>

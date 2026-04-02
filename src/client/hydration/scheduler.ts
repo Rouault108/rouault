@@ -68,7 +68,12 @@ export class HydrationScheduler {
 
     const prepared = await this.#prepareSession(session);
     await Promise.all([
-      this.#waitForVisible(prepared.visibleItems, session, prepared.diagnostics, prepared.processed),
+      this.#waitForVisible(
+        prepared.visibleItems,
+        session,
+        prepared.diagnostics,
+        prepared.processed,
+      ),
       this.#waitForInteraction(
         prepared.interactionItems,
         session,
@@ -96,7 +101,12 @@ export class HydrationScheduler {
     }
 
     void Promise.all([
-      this.#waitForVisible(prepared.visibleItems, session, prepared.diagnostics, prepared.processed),
+      this.#waitForVisible(
+        prepared.visibleItems,
+        session,
+        prepared.diagnostics,
+        prepared.processed,
+      ),
       this.#waitForInteraction(
         prepared.interactionItems,
         session,
@@ -116,7 +126,10 @@ export class HydrationScheduler {
     });
   }
 
-  #dispatchDiagnostics(diagnostics: HydrationDiagnostics, dispatchTarget: EventTarget | null): void {
+  #dispatchDiagnostics(
+    diagnostics: HydrationDiagnostics,
+    dispatchTarget: EventTarget | null,
+  ): void {
     if (dispatchTarget instanceof EventTarget) {
       dispatchTarget.dispatchEvent(
         new CustomEvent<HydrationDiagnostics>('app-router:hydration-diagnostics', {
@@ -163,7 +176,9 @@ export class HydrationScheduler {
     );
 
     const secondPass = this.#plan(session.root);
-    const firstPassElements = new Set(firstPass.flatMap((scope) => scope.items.map((item) => item.element)));
+    const firstPassElements = new Set(
+      firstPass.flatMap((scope) => scope.items.map((item) => item.element)),
+    );
     const secondPassItems = secondPass
       .flatMap((scope) => scope.items)
       .filter((item) => !processed.has(item.element) && !firstPassElements.has(item.element));

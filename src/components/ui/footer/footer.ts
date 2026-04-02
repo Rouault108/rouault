@@ -427,7 +427,9 @@ export const renderFooter = (options: FooterRenderOptions): TemplateResult => {
           <div class="ui-footer__subline">
             <div class="ui-footer__legal">
               <p class="ui-footer__copyright">${meta.copyrightText}</p>
-              ${meta.buildLabel ? html`<p class="ui-footer__build">${meta.buildLabel}</p>` : nothing}
+              ${meta.buildLabel
+                ? html`<p class="ui-footer__build">${meta.buildLabel}</p>`
+                : nothing}
             </div>
 
             ${links.length > 0

@@ -45,9 +45,7 @@ const expectPresent = <T>(value: T | null | undefined, name: string): T => {
 describe('ui-callout browser contract', () => {
   it('heading がある場合は aria-labelledby / heading role / part を公開すること', async () => {
     const callout = await fixture<Callout>(html`
-      <ui-callout kind="tip" heading="読書のヒント" heading-level="3">
-        本文です。
-      </ui-callout>
+      <ui-callout kind="tip" heading="読書のヒント" heading-level="3"> 本文です。 </ui-callout>
     `);
 
     await waitForLitUpdate(callout);

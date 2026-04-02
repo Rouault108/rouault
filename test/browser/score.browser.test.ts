@@ -134,9 +134,9 @@ describe('ui-score browser contract', () => {
 
       expect(runtimeSvg.hasAttribute('onload')).to.equal(false);
       expect(host.shadowRoot?.querySelector('.score-svg-host script')).to.equal(null);
-      expect(runtimeSvg.querySelector('[href^="javascript:"], [xlink\\:href^="javascript:"]')).to.equal(
-        null,
-      );
+      expect(
+        runtimeSvg.querySelector('[href^="javascript:"], [xlink\\:href^="javascript:"]'),
+      ).to.equal(null);
 
       const rect = expectPresent(runtimeSvg.querySelector<SVGRectElement>('rect'), 'rect');
       expect(rect.getAttribute('fill')).to.equal('currentColor');

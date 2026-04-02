@@ -42,7 +42,9 @@ export class NavigationQueue {
         this.activeNavigation.controller.abort();
 
         if (this.pendingNavigation) {
-          this.pendingNavigation.resolve(this.createSupersededResult(this.pendingNavigation.request));
+          this.pendingNavigation.resolve(
+            this.createSupersededResult(this.pendingNavigation.request),
+          );
         }
 
         this.pendingNavigation = {

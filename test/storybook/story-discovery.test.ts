@@ -14,21 +14,25 @@ describe('story discovery', () => {
     const smokeCount = stories.filter((story) => story.resolvedRole === 'smoke').length;
     const docsCount = stories.filter((story) => story.resolvedRole === 'docs').length;
 
-    const noteContractFiles = [...new Set(
-      stories
-        .filter((story) => story.filePath.startsWith('src/stories/note-contracts/'))
-        .map((story) => story.filePath),
-    )];
+    const noteContractFiles = [
+      ...new Set(
+        stories
+          .filter((story) => story.filePath.startsWith('src/stories/note-contracts/'))
+          .map((story) => story.filePath),
+      ),
+    ];
 
-    const boundaryFiles = [...new Set(
-      stories
-        .filter(
-          (story) =>
-            story.filePath.endsWith('-boundary.stories.ts') ||
-            story.metaTitle?.endsWith('/Boundary') === true,
-        )
-        .map((story) => story.filePath),
-    )];
+    const boundaryFiles = [
+      ...new Set(
+        stories
+          .filter(
+            (story) =>
+              story.filePath.endsWith('-boundary.stories.ts') ||
+              story.metaTitle?.endsWith('/Boundary') === true,
+          )
+          .map((story) => story.filePath),
+      ),
+    ];
 
     expect(filePaths.size).toBeGreaterThan(0);
     expect(stories.length).toBeGreaterThan(0);
@@ -63,9 +67,7 @@ describe('story discovery', () => {
     );
     expect(packageJson.scripts?.['test:unit']).toBeUndefined();
     expect(packageJson.scripts?.['test:storybook:meta']).toBe('vitest --project storybook-meta');
-    expect(packageJson.scripts?.['test:storybook:smoke']).toBe(
-      'vitest --project storybook-smoke',
-    );
+    expect(packageJson.scripts?.['test:storybook:smoke']).toBe('vitest --project storybook-smoke');
 
     expect(vitestConfig).toContain("name: 'node'");
     expect(vitestConfig).toContain("name: 'storybook-smoke'");

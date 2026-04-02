@@ -156,7 +156,9 @@ describe('note progressive enhancers', () => {
     expect(dialog?.getAttribute('aria-modal')).to.equal('true');
     expect(image?.getAttribute('src')).to.contain('/static/example.png');
     expect(image?.getAttribute('alt')).to.equal('zoom target');
-    expect(image?.getAttribute('srcset')).to.equal('/static/example.png 1x, /static/example@2x.png 2x');
+    expect(image?.getAttribute('srcset')).to.equal(
+      '/static/example.png 1x, /static/example@2x.png 2x',
+    );
     expect(image?.getAttribute('sizes')).to.equal('min(100vw, 72rem)');
     expect(caption?.textContent).to.equal('lightbox caption');
 

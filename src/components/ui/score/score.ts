@@ -384,23 +384,19 @@ export class UiScore extends LitElement {
 
     if (
       this._hydrationActivated &&
-      (
-        changedProperties.has('src') ||
+      (changedProperties.has('src') ||
         changedProperties.has('loading') ||
-        internalChanges.has('_hasInlineSvg')
-      )
+        internalChanges.has('_hasInlineSvg'))
     ) {
       this._scheduleLoad();
     }
 
     if (
       this._hydrationActivated &&
-      (
-        internalChanges.has('_svgMarkup') ||
+      (internalChanges.has('_svgMarkup') ||
         internalChanges.has('_isLoading') ||
         internalChanges.has('_errorMessage') ||
-        internalChanges.has('_hasInlineSvg')
-      )
+        internalChanges.has('_hasInlineSvg'))
     ) {
       this._applyRuntimeSvgAccessibilityAttributes();
       this._queueOverflowMeasurement();

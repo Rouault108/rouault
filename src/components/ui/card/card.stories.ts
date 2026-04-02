@@ -74,15 +74,21 @@ export const VariantMatrix: Story = {
       </ui-card>
       <ui-card variant="elevated">
         <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">Elevated</h3>
-        <p style="margin: 0; color: var(--fg-muted); font-size: var(--text-sm);">影で浮かせたカード</p>
+        <p style="margin: 0; color: var(--fg-muted); font-size: var(--text-sm);">
+          影で浮かせたカード
+        </p>
       </ui-card>
       <ui-card variant="flat">
         <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">Flat</h3>
-        <p style="margin: 0; color: var(--fg-muted); font-size: var(--text-sm);">背景で領域を示すカード</p>
+        <p style="margin: 0; color: var(--fg-muted); font-size: var(--text-sm);">
+          背景で領域を示すカード
+        </p>
       </ui-card>
       <ui-card variant="ghost">
         <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">Ghost</h3>
-        <p style="margin: 0; color: var(--fg-muted); font-size: var(--text-sm);">最小限の輪郭だけを持つカード</p>
+        <p style="margin: 0; color: var(--fg-muted); font-size: var(--text-sm);">
+          最小限の輪郭だけを持つカード
+        </p>
       </ui-card>
     </div>
   `,
@@ -92,7 +98,8 @@ export const LinkCardSurface: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'リンクカードの代表表示用 smoke story です。header / body / footer の組み合わせだけを残します。',
+        story:
+          'リンクカードの代表表示用 smoke story です。header / body / footer の組み合わせだけを残します。',
       },
     },
   },

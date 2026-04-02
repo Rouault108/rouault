@@ -345,11 +345,7 @@ export class EmptyState extends LitElement {
             <slot name="heading" @slotchange=${this._onHeadingSlotChange}></slot>
           </div>
 
-          <div
-            class="description"
-            id="${this._descriptionId}"
-            ?hidden=${!this._hasDescription}
-          >
+          <div class="description" id="${this._descriptionId}" ?hidden=${!this._hasDescription}>
             <slot name="description" @slotchange=${this._onDescriptionSlotChange}></slot>
           </div>
         </div>

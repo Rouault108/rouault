@@ -4,7 +4,10 @@ import {
   validateResultUrl,
 } from '../../../../shared/search/document-url.js';
 import type { SearchSourceBatch } from '../../../../shared/search/search-types.js';
-import type { CandidateValidationStageOutput, SourceFederationStageOutput } from '../stage-types.js';
+import type {
+  CandidateValidationStageOutput,
+  SourceFederationStageOutput,
+} from '../stage-types.js';
 
 function validateBatch(
   batch: SearchSourceBatch,

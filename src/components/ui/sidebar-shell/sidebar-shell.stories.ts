@@ -112,8 +112,7 @@ export const OverlayExpanded: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'overlay / expanded の docs story です。surface と scrim の見え方だけを残します。',
+        story: 'overlay / expanded の docs story です。surface と scrim の見え方だけを残します。',
       },
     },
   },

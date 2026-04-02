@@ -81,7 +81,9 @@ describe('transformHtmlWithLitSsr', () => {
       name: 'summary',
       value: '通知',
     });
-    expect(renderCalls[0]?.attributes.find((attribute) => attribute.name === 'initial-code')).toBeUndefined();
+    expect(
+      renderCalls[0]?.attributes.find((attribute) => attribute.name === 'initial-code'),
+    ).toBeUndefined();
   });
 
   it('タグ・検索・独立ページ相当のHTMLで対象外の構造を壊さずに変換する', async () => {

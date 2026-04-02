@@ -6,4 +6,3 @@
 https://note.com/info/n/nea1b96233fbf
 
 ::link-card{url="https://note.com/info/n/nea1b96233fbf" title="任意タイトル" description="任意説明" image="examples/media/testing/test-card.jpg"}
-

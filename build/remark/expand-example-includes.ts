@@ -13,11 +13,9 @@ import { toError } from './directives/shared/errors.js';
 import type { MdastNode, VFileLike } from './directives/types.js';
 
 const INCLUDE_PATTERN = /^::example-include(?:\{(.*)\})?$/u;
-let markdownParserPromise:
-  | Promise<{
-      parse(markdown: string): MdastNode[];
-    }>
-  | null = null;
+let markdownParserPromise: Promise<{
+  parse(markdown: string): MdastNode[];
+}> | null = null;
 
 const ensureSafeExamplePath = (filePath: string): string => {
   const normalized = filePath.trim().replace(/\\/g, '/');
@@ -82,17 +80,16 @@ const loadMarkdownParser = async (): Promise<{
     const remarkParseModule = await import(
       pathToFileURL(resolvePnpmPackageEntry('remark-parse')).href
     );
-    const remarkGfmModule = await import(
-      pathToFileURL(resolvePnpmPackageEntry('remark-gfm')).href
-    );
+    const remarkGfmModule = await import(pathToFileURL(resolvePnpmPackageEntry('remark-gfm')).href);
 
     const unified = unifiedModule.unified as () => {
-      use(plugin: unknown, options?: unknown): { use(plugin: unknown, options?: unknown): { parse(markdown: string): unknown } };
+      use(
+        plugin: unknown,
+        options?: unknown,
+      ): { use(plugin: unknown, options?: unknown): { parse(markdown: string): unknown } };
     };
     const remarkParse = remarkParseModule.default as unknown;
-    const remarkGfm = remarkGfmModule.default as (
-      options?: { singleTilde?: boolean },
-    ) => unknown;
+    const remarkGfm = remarkGfmModule.default as (options?: { singleTilde?: boolean }) => unknown;
 
     return {
       parse(markdown: string): MdastNode[] {
@@ -120,7 +117,11 @@ const expandNodes = async (
     const includeRef = parseExampleRef(node, file);
     if (includeRef) {
       if (stack.includes(includeRef)) {
-        throw toError(file, node, `example-include の循環参照 "${includeRef}" は許可されていません`);
+        throw toError(
+          file,
+          node,
+          `example-include の循環参照 "${includeRef}" は許可されていません`,
+        );
       }
 
       const markdown = renderTestingExampleMarkdown(TESTING_EXAMPLES[includeRef], readExampleText);

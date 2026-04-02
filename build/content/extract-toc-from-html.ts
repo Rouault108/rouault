@@ -141,7 +141,8 @@ const visitNode = (
 
   if (node.tagName === 'ui-tabs') {
     counters.scope += 1;
-    const scopeId = getAttributeValue(node, 'data-toc-scope')?.trim() || `toc-scope-${String(counters.scope)}`;
+    const scopeId =
+      getAttributeValue(node, 'data-toc-scope')?.trim() || `toc-scope-${String(counters.scope)}`;
     setAttributeValue(node, 'data-toc-scope', scopeId);
 
     const panelSelections = getPanelSelectionMap(node);

@@ -24,7 +24,8 @@ export const normalizeCalloutPayload = (
   node: MdastNode,
   file?: VFileLike,
 ): CalloutPayload => {
-  const calloutKind = (pickOptional(attrs['kind'])?.toLowerCase() ?? 'note') as CalloutPayload['calloutKind'];
+  const calloutKind = (pickOptional(attrs['kind'])?.toLowerCase() ??
+    'note') as CalloutPayload['calloutKind'];
   if (!CALLOUT_VARIANTS.has(calloutKind)) {
     throw toError(file, node, `callout の kind "${calloutKind}" は未対応です`);
   }
@@ -35,7 +36,15 @@ export const normalizeCalloutPayload = (
     ...(pickOptional(attrs['heading']) ? { heading: pickOptional(attrs['heading']) } : {}),
     ...(pickOptional(attrs['label']) ? { label: pickOptional(attrs['label']) } : {}),
     ...(pickOptional(attrs['icon']) ? { icon: pickOptional(attrs['icon']) } : {}),
-    ...(typeof parseIntegerInRange(attrs['heading-level'], node, file, 'callout', 'heading-level', 1, 6) === 'number'
+    ...(typeof parseIntegerInRange(
+      attrs['heading-level'],
+      node,
+      file,
+      'callout',
+      'heading-level',
+      1,
+      6,
+    ) === 'number'
       ? {
           headingLevel: parseIntegerInRange(
             attrs['heading-level'],
@@ -51,9 +60,7 @@ export const normalizeCalloutPayload = (
   };
 };
 
-export const normalizeCodeGroupPayload = (
-  attrs: Record<string, string>,
-): CodeGroupPayload => ({
+export const normalizeCodeGroupPayload = (attrs: Record<string, string>): CodeGroupPayload => ({
   kind: 'code-group',
   ...(pickOptional(attrs['aria-label']) ? { ariaLabel: pickOptional(attrs['aria-label']) } : {}),
 });
@@ -144,7 +151,9 @@ export const normalizeLinkCardPayload = (
     kind: 'link-card',
     url,
     ...(pickOptional(attrs['title']) ? { title: pickOptional(attrs['title']) } : {}),
-    ...(pickOptional(attrs['description']) ? { description: pickOptional(attrs['description']) } : {}),
+    ...(pickOptional(attrs['description'])
+      ? { description: pickOptional(attrs['description']) }
+      : {}),
     ...(pickOptional(attrs['image']) ? { image: pickOptional(attrs['image']) } : {}),
     ...(pickOptional(attrs['site-name']) ? { siteName: pickOptional(attrs['site-name']) } : {}),
   };
@@ -165,7 +174,9 @@ export const normalizeScorePayload = (
     ...(pickOptional(attrs['src']) ? { src: pickOptional(attrs['src']) } : {}),
     ...(pickOptional(attrs['caption']) ? { caption: pickOptional(attrs['caption']) } : {}),
     ...(pickOptional(attrs['label']) ? { label: pickOptional(attrs['label']) } : {}),
-    ...(pickOptional(attrs['description']) ? { description: pickOptional(attrs['description']) } : {}),
+    ...(pickOptional(attrs['description'])
+      ? { description: pickOptional(attrs['description']) }
+      : {}),
     ...(pickOptional(attrs['aspect-ratio'])
       ? { aspectRatio: pickOptional(attrs['aspect-ratio']) }
       : {}),

@@ -132,7 +132,7 @@ export class Blockquote extends LitElement {
     return children.some((element) => {
       if (!(element instanceof HTMLElement)) return false;
       if (element.getAttribute('slot') !== 'source') return false;
-      return (element.textContent.trim()).length > 0;
+      return element.textContent.trim().length > 0;
     });
   }
 

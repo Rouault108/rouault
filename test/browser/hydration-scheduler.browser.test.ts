@@ -63,7 +63,10 @@ describe('HydrationScheduler', () => {
 
     await waitUntil(() => diagnostics !== null, 'enhancer diagnostics が発火すること');
 
-    const currentDiagnostics = requireDiagnostics(diagnostics, 'diagnostics が取得できませんでした');
+    const currentDiagnostics = requireDiagnostics(
+      diagnostics,
+      'diagnostics が取得できませんでした',
+    );
 
     expect(steps).to.deep.equal(['load:enhancer', 'activate:enhancer']);
     expect(currentDiagnostics.plannedCount).to.equal(1);
@@ -168,7 +171,10 @@ describe('HydrationScheduler', () => {
       'visible が focusin で起動し diagnostics が発火すること',
     );
 
-    const currentDiagnostics = requireDiagnostics(diagnostics, 'diagnostics が取得できませんでした');
+    const currentDiagnostics = requireDiagnostics(
+      diagnostics,
+      'diagnostics が取得できませんでした',
+    );
 
     expect(currentDiagnostics.plannedCount).to.equal(3);
     expect(currentDiagnostics.activatedCount).to.equal(3);
@@ -235,10 +241,7 @@ describe('HydrationScheduler', () => {
     await scheduler.hydrateContent(firstRoot, { dispatchTarget: firstRoot });
     await scheduler.hydrateContent(secondRoot, { dispatchTarget: secondRoot });
 
-    await waitUntil(
-      () => secondDiagnostics !== null,
-      '後続 session の diagnostics が発火すること',
-    );
+    await waitUntil(() => secondDiagnostics !== null, '後続 session の diagnostics が発火すること');
 
     const currentSecondDiagnostics = requireDiagnostics(
       secondDiagnostics,
@@ -298,12 +301,12 @@ describe('HydrationScheduler', () => {
     const scheduler = new HydrationScheduler(registry);
     await scheduler.hydrateContent(root, { dispatchTarget: root });
 
-    await waitUntil(
-      () => diagnostics !== null,
-      'failure diagnostics が発火すること',
-    );
+    await waitUntil(() => diagnostics !== null, 'failure diagnostics が発火すること');
 
-    const currentDiagnostics = requireDiagnostics(diagnostics, 'diagnostics が取得できませんでした');
+    const currentDiagnostics = requireDiagnostics(
+      diagnostics,
+      'diagnostics が取得できませんでした',
+    );
 
     expect(currentDiagnostics.failedCount).to.equal(2);
     expect(currentDiagnostics.issues).to.deep.equal([
