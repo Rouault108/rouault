@@ -14,7 +14,32 @@ import {
   renderSearchCatalogArtifact,
 } from './build/search/emit-search-artifacts.js';
 import { resolveTrailingSlashRewrite } from './shared/navigation/trailing-slash-rewrite.js';
-import { buildPagefindIndex } from './scripts/build-pagefind.js';
+
+let veliteWatchStartupPromise: Promise<void> | null = null;
+
+const ensureVeliteBuild = async (isServing: boolean): Promise<void> => {
+  if (!isServing) {
+    await build({
+      clean: true,
+      watch: false,
+    });
+    return;
+  }
+
+  if (veliteWatchStartupPromise === null) {
+    veliteWatchStartupPromise = build({
+      clean: false,
+      watch: true,
+    })
+      .then(() => undefined)
+      .catch((error: unknown) => {
+        veliteWatchStartupPromise = null;
+        throw error;
+      });
+  }
+
+  await veliteWatchStartupPromise;
+};
 
 const registerTrailingSlashRewrite = (server: ViteDevServer): void => {
   const middleware: Connect.NextHandleFunction = (req, _res, next) => {
@@ -37,10 +62,6 @@ const registerTrailingSlashRewrite = (server: ViteDevServer): void => {
 };
 
 const registerDevelopmentStaticDirectories = (server: ViteDevServer): void => {
-  // 開発サーバーでは dist/pagefind を明示的に配信しないと dynamic import が 404 になる。
-  server.middlewares.use(
-    createStaticDirectoryMiddleware('/pagefind/', path.resolve(process.cwd(), 'dist', 'pagefind')),
-  );
   server.middlewares.use(
     createStaticDirectoryMiddleware(
       '/media/',
@@ -106,15 +127,15 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
     eleventyConfig.addPassthroughCopy({ '.generated/client/assets': 'assets' });
   }
 
+  // src 外にあるコンテンツを開発時の監視対象へ追加する。
+  eleventyConfig.addWatchTarget?.('./content/**/*');
+
   eleventyConfig.addLayoutAlias('base', 'BaseLayout.11ty.ts');
   eleventyConfig.addLayoutAlias('note', 'NoteLayout.11ty.ts');
 
   eleventyConfig.on('eleventy.before', async () => {
     try {
-      await build({
-        clean: !isServing,
-        watch: isServing,
-      });
+      await ensureVeliteBuild(isServing);
     } catch (error: unknown) {
       console.error('❌ Velite build failed:', error);
 
@@ -137,10 +158,6 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
       notes: loadNotesData(),
       outputDir: path.resolve(process.cwd(), 'dist'),
     });
-
-    if (isServing) {
-      await buildPagefindIndex();
-    }
   });
 
   if (isServing) {

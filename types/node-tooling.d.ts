@@ -4,7 +4,11 @@ declare module '@11ty/eleventy' {
     addGlobalData(name: string, data: () => unknown): void;
     addPassthroughCopy(copy: Record<string, string>): void;
     addLayoutAlias(alias: string, layoutPath: string): void;
-    on(eventName: string, callback: () => Promise<void>): void;
+    addWatchTarget(
+      additionalWatchTargets: string | string[],
+      options?: { resetConfig?: boolean },
+    ): void;
+    on(eventName: string, callback: () => Promise<void> | void): void;
     addPlugin(plugin: unknown, options?: unknown): void;
   }
 }
