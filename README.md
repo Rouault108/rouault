@@ -67,7 +67,7 @@ Rouault では、見た目だけでなく、将来の修正容易性も重要視
 - UI コンポーネントの分離
 - Markdown 変換系の責務整理
 - router / search / content projection の境界整理
-- Storybook / SSR / unit / e2e のテスト責務分離
+- browser / node / SSR / E2E / Storybook のテスト責務分離
 
 ---
 
@@ -131,11 +131,12 @@ pnpm dev
 
 ```bash
 pnpm build              # 本番ビルド
-pnpm test               # unit + ssr + storybook
-pnpm test:unit          # ロジック寄りの単体テスト
-pnpm test:ssr           # SSR / build-time 契約テスト
-pnpm test:storybook     # コンポーネント / UI テスト
-pnpm test:e2e           # E2E テスト
+pnpm test               # node + ssr + browser + storybook metadata
+pnpm test:node          # pure logic / policy / parser / transform
+pnpm test:browser       # custom element / shadow DOM / interaction
+pnpm test:ssr           # SSR / build-time / CSS structure 契約
+pnpm test:storybook     # Storybook metadata + smoke
+pnpm test:e2e           # 実ページ統合の最終確認
 pnpm storybook          # Storybook 起動
 pnpm lint               # ESLint
 pnpm lint:fix           # ESLint + Prettier による整形
@@ -172,7 +173,7 @@ pnpm lint:fix           # ESLint + Prettier による整形
 │  ├─ theme/                 # テーマ管理
 │  ├─ toc/                   # TOC 関連
 │  └─ types/                 # src 配下の型
-├─ test/                     # unit / ssr / storybook / e2e
+├─ test/                     # node / browser / ssr / storybook / e2e
 ├─ types/                    # グローバル型定義、raw module 宣言
 ├─ eleventy.config.ts        # Eleventy 設定
 ├─ playwright.config.ts      # Playwright 設定
@@ -195,7 +196,7 @@ pnpm lint:fix           # ESLint + Prettier による整形
 * SSR / hydration 経路の整備
 * Markdown 表示基盤の整備
 * デザインシステム文書化
-* Storybook / SSR / unit のテスト分離
+* browser / node / SSR / Storybook のテスト分離
 * router / search / markdown まわりの責務整理
 
 一方で、次のような領域は継続的に整理・拡張中です。

@@ -3,30 +3,6 @@ import { html } from 'lit';
 import './tree-item';
 import type { TreeItem } from './tree-item';
 
-/**
- * ## ツリーアイテム (Tree Item)
- *
- * 階層化された情報を探索するためのナビゲーション・コンポーネントです。
- * ネスト構造（Recursive Nesting）により、DOM 構造と視覚階層を一致させ、
- * 堅牢なアクセシビリティを担保します。
- *
- * ### デザイン哲学
- *
- * - **Structural Visibility**: 階層構造は「無意識のオリエンテーション」の基盤です。
- *   インデントガイドは低コントラストで常時表示し、構造理解を支えます。
- * - **Shared Navigation Grammar**: TOC と current/hover/focus の語彙を共有します。
- *   ただし tree-item は構造ナビゲーションなので、TOC より 1 段強い active 面を持ちます。
- * - **Smooth Expansion**: 展開/収縮のアニメーションは `--duration-slow` (200ms) で行い、
- *   視覚的なレイアウトシフトに対する認知負荷を抑えます。
- *
- * ### 使用上の注意
- *
- * - **単独では不完全**: このコンポーネントは `ui-file-tree` コンテナ内で使用することを前提としています。
- *   `Up` / `Down` / `Home` / `End` / `Esc` / Type-ahead などのキーボード操作は、
- *   ルートコンテナ側の Event Delegation で管理されます。
- * - **シングルセレクト**: マルチセレクトは採用せず、閲覧体験に特化しています。
- * - **密度の選択**: Compact 密度は視覚サイズ 24px を維持しつつ、高密度な一覧表示を可能にします。
- */
 const meta: Meta<TreeItem> = {
   title: 'Components/Tree Item',
   component: 'ui-tree-item',
@@ -37,35 +13,13 @@ const meta: Meta<TreeItem> = {
         component: `
 階層化された情報を探索するためのナビゲーション・コンポーネントです。
 
-TOC と current / hover / focus の語彙を共有しますが、
-tree-item は構造ナビゲーションなので、TOC より少し強い active 面を持ちます。
+この story ファイルは **docs / smoke / 手動確認** に限定します。  
+role / aria-level / aria-selected / aria-expanded、branch の click toggle、leaf の keyboard activate、
+ArrowRight / ArrowLeft の委譲、長いラベル時の tooltip、icon なし時の縮退、focus() 委譲は
+\`test/browser/tree-item.browser.test.ts\` を正本とします。
 
-## 使用方法
-
-\`\`\`html
-<!-- 単独アイテム -->
-<ui-tree-item label="ファイル.txt" icon="file"></ui-tree-item>
-
-<!-- ネスト構造 -->
-<ui-tree-item label="フォルダ" icon="folder" expanded>
-  <ui-tree-item slot="children" label="サブファイル.txt" icon="file"></ui-tree-item>
-</ui-tree-item>
-
-<!-- Compact密度 -->
-<ui-tree-item label="アイテム" density="compact"></ui-tree-item>
-\`\`\`
-
-## 重要な注意事項
-
-このコンポーネントは **ui-file-tree コンテナ内で使用することを前提** としています。
-単独で使用した場合、以下のキーボード操作が正常に動作しません：
-
-- Up / Down キーによるフォーカス移動
-- Home / End キーによる先頭/末尾へのジャンプ
-- Type-ahead による検索
-- Esc キーによるフォーカス解除
-
-これらの操作は、ルートコンテナ側の Event Delegation で管理されます。
+なお、\`ui-tree-item\` は **単独で完結する tree widget ではなく \`ui-file-tree\` の内部要素** です。  
+Up / Down / Home / End / Escape / type-ahead は \`ui-file-tree\` 側の browser contract を正本とします。
         `,
       },
     },
@@ -74,41 +28,23 @@ tree-item は構造ナビゲーションなので、TOC より少し強い activ
     expanded: {
       control: 'boolean',
       description: '子要素の展開状態',
-      table: {
-        type: { summary: 'boolean' },
-        defaultValue: { summary: 'false' },
-      },
     },
     selected: {
       control: 'boolean',
-      description: '現在選択されているか（カレント）',
-      table: {
-        type: { summary: 'boolean' },
-        defaultValue: { summary: 'false' },
-      },
+      description: '現在選択されているか',
     },
     label: {
       control: 'text',
       description: '表示ラベル',
-      table: {
-        type: { summary: 'string' },
-      },
     },
     icon: {
       control: 'text',
-      description: 'コンテンツアイコン（例: "folder", "file"）',
-      table: {
-        type: { summary: 'string' },
-      },
+      description: 'アイコン名',
     },
     density: {
       control: 'select',
       options: ['normal', 'compact'],
-      description: '行の高さ密度（normal: 36px, compact: 24px）',
-      table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: 'normal' },
-      },
+      description: '行の密度',
     },
   },
 };
@@ -116,94 +52,50 @@ tree-item は構造ナビゲーションなので、TOC より少し強い activ
 export default meta;
 type Story = StoryObj<TreeItem>;
 
-const nextFrame = async (): Promise<void> =>
-  new Promise((resolve) => {
-    requestAnimationFrame(() => {
-      resolve();
-    });
-  });
-
-/**
- * デフォルトのツリーアイテム（Normal密度）。
- *
- * 閲覧・操作に適した標準サイズ（36px）です。Linear Docs準拠。
- */
-export const Default: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  args: {
-    label: 'ファイル.txt',
-    icon: 'file',
-    density: 'normal',
-    selected: false,
-    expanded: false,
+export const DefaultLeaf: Story = {
+  tags: ['smoke'],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'leaf の代表表示用 smoke story です。role / aria / tabindex の合否は browser test を正本とします。',
+      },
+    },
   },
-  render: (args) => html`
+  render: () => html`
     <ui-tree-item
-      label="${args.label}"
-      icon="${args.icon}"
-      density="${args.density}"
-      .selected=${args.selected}
-      .expanded=${args.expanded}
+      label="ファイル.txt"
+      icon="file-text"
+      density="normal"
     ></ui-tree-item>
   `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector('ui-tree-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
-
-    await treeItem.updateComplete;
-
-    // テスト: デフォルトのdensityが"normal"であること
-    if (treeItem.density !== 'normal') {
-      throw new Error(
-        `density="normal" を期待していましたが、実際には "${treeItem.density}" でした`,
-      );
-    }
-
-    // テスト: role="treeitem"が設定されていること
-    if (treeItem.getAttribute('role') !== 'treeitem') {
-      throw new Error('TreeItem は role="treeitem" を持つ必要があります');
-    }
-
-    // テスト: aria-selectedが設定されていること
-    if (treeItem.getAttribute('aria-selected') !== 'false') {
-      throw new Error('aria-selected="false" を期待していましたが、実際には違います');
-    }
-
-    if (treeItem.getAttribute('aria-level') !== '1') {
-      throw new Error(
-        `aria-level="1" を期待していましたが、実際には "${String(treeItem.getAttribute('aria-level'))}" でした`,
-      );
-    }
-
-    const itemElement = treeItem.shadowRoot?.querySelector<HTMLElement>('.item');
-    if (!itemElement) {
-      throw new Error('アイテム要素が見つかりませんでした');
-    }
-
-    if (itemElement.getAttribute('tabindex') !== '0') {
-      throw new Error(
-        `アイテムの tabindex="0" を期待していましたが、実際には "${String(itemElement.getAttribute('tabindex'))}" でした`,
-      );
-    }
-  },
 };
 
-/**
- * 全密度の一覧。
- *
- * Normal（36px）とCompact（24px）の2つの密度を比較できます。
- * Compact密度では、視覚サイズは24pxですが、物理タッチターゲットは44pxに拡張されています。
- */
-export const AllDensities: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+export const BranchExpanded: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'branch + expanded の代表表示用 smoke story です。expanded / children visibility の合否は browser test を正本とします。',
+      },
+    },
+  },
+  render: () => html`
+    <ui-tree-item label="src" icon="folder" expanded>
+      <ui-tree-item slot="children" label="components" icon="folder"></ui-tree-item>
+      <ui-tree-item slot="children" label="utils" icon="folder"></ui-tree-item>
+      <ui-tree-item slot="children" label="index.ts" icon="file-code"></ui-tree-item>
+    </ui-tree-item>
+  `,
+};
+
+export const DensityReference: Story = {
   render: () => html`
     <style>
       .density-showcase {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 1.25rem;
       }
 
       .density-group {
@@ -216,156 +108,46 @@ export const AllDensities: Story = {
         font-weight: var(--font-medium, 500);
         font-size: var(--text-sm, 13px);
         color: var(--fg-muted, #666);
-        margin-bottom: 0.25rem;
       }
     </style>
 
     <div class="density-showcase">
       <div class="density-group">
-        <span class="density-label">Normal (36px) - 標準サイズ</span>
+        <span class="density-label">Normal</span>
         <ui-tree-item label="ドキュメント" icon="file-text" density="normal"></ui-tree-item>
       </div>
 
       <div class="density-group">
-        <span class="density-label">Compact (24px) - 高密度表示</span>
+        <span class="density-label">Compact</span>
         <ui-tree-item label="ドキュメント" icon="file-text" density="compact"></ui-tree-item>
       </div>
     </div>
   `,
-  play: async ({ canvasElement }) => {
-    const treeItems = canvasElement.querySelectorAll<TreeItem>('ui-tree-item');
-    if (treeItems.length !== 2) {
-      throw new Error(
-        `2つのツリーアイテムを期待していましたが、実際には ${String(treeItems.length)}個でした`,
-      );
-    }
-
-    const normal = treeItems[0];
-    const compact = treeItems[1];
-    if (!normal || !compact) {
-      throw new Error('ツリーアイテムが見つかりませんでした');
-    }
-
-    await normal.updateComplete;
-    await compact.updateComplete;
-
-    const normalRow = normal.shadowRoot?.querySelector<HTMLElement>('.item');
-    const compactRow = compact.shadowRoot?.querySelector<HTMLElement>('.item');
-    if (!normalRow || !compactRow) {
-      throw new Error('アイテムの行（row）が見つかりませんでした');
-    }
-
-    const normalHeight = Math.round(normalRow.getBoundingClientRect().height);
-    const compactHeight = Math.round(compactRow.getBoundingClientRect().height);
-
-    if (normalHeight < 34 || normalHeight > 38) {
-      throw new Error(
-        `Normal 密度の高さは約 36px であるべきですが、実際には ${String(normalHeight)}px でした`,
-      );
-    }
-    if (compactHeight < 22 || compactHeight > 26) {
-      throw new Error(
-        `Compact 密度の高さは約 24px であるべきですが、実際には ${String(compactHeight)}px でした`,
-      );
-    }
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'density の視覚比較用 docs story です。高さや hit area の最終合否は browser / CSS contract を正本とします。',
+      },
+    },
   },
 };
 
-/**
- * 選択状態（Selected）。
- *
- * 現在選択されているアイテムを示します。
- * tree-item は TOC と同じ shared navigation grammar を使いますが、
- * 構造ナビゲーションであるため、TOC より少し強い active 面を持ちます。
- *
- * 現在地は次の 3 要素で示されます。
- * - 淡い active 面
- * - current rail
- * - 文字ウェイトの上昇
- */
-export const Selected: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  args: {
-    label: 'README.md',
-    icon: 'file-text',
-    selected: true,
-  },
-  render: (args) => html`
-    <ui-tree-item
-      label="${args.label}"
-      icon="${args.icon}"
-      .selected=${args.selected}
-    ></ui-tree-item>
-  `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector('ui-tree-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
-
-    await treeItem.updateComplete;
-
-    // テスト: aria-selected="true"が設定されていること
-    if (treeItem.getAttribute('aria-selected') !== 'true') {
-      throw new Error('aria-selected="true" を期待していましたが、実際には違います');
-    }
-
-    // テスト: selected属性が設定されていること
-    if (!treeItem.selected) {
-      throw new Error('selected プロパティが true であるべきです');
-    }
-  },
-};
-
-/**
- * ネスト構造（基本）。
- *
- * 親アイテムと子アイテムの階層構造を示します。
- * 展開アイコン（ChevronRight）は左端に配置され、展開時に90度回転します。
- */
-export const WithChildren: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+export const SelectedReference: Story = {
   render: () => html`
-    <ui-tree-item label="src" icon="folder" expanded>
-      <ui-tree-item slot="children" label="components" icon="folder"></ui-tree-item>
-      <ui-tree-item slot="children" label="utils" icon="folder"></ui-tree-item>
-      <ui-tree-item slot="children" label="index.ts" icon="file-code"></ui-tree-item>
-    </ui-tree-item>
+    <ui-tree-item label="README.md" icon="file-text" selected></ui-tree-item>
   `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector('ui-tree-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
-
-    await treeItem.updateComplete;
-
-    // テスト: aria-expandedが設定されていること（子要素がある場合）
-    const ariaExpanded = treeItem.getAttribute('aria-expanded');
-    if (ariaExpanded !== 'true') {
-      throw new Error(
-        `aria-expanded="true" を期待していましたが、実際には "${String(ariaExpanded)}" でした`,
-      );
-    }
-
-    // テスト: 子要素が存在すること
-    const children = treeItem.querySelectorAll('ui-tree-item[slot="children"]');
-    if (children.length !== 3) {
-      throw new Error(
-        `3つの子要素を期待していましたが、実際には ${String(children.length)}個でした`,
-      );
-    }
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'selected 状態の見本です。aria-selected と active surface の意味論的合否は browser test を正本とします。',
+      },
+    },
   },
 };
 
-/**
- * 深いネスト構造（3階層）。
- *
- * 複数レベルの階層構造を示します。
- * インデントガイド（ツリー線）により、構造が一目で把握できます。
- */
-export const DeepNesting: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+export const DeepNestingReference: Story = {
   render: () => html`
     <ui-tree-item label="プロジェクト" icon="folder" expanded>
       <ui-tree-item slot="children" label="src" icon="folder" expanded>
@@ -373,219 +155,45 @@ export const DeepNesting: Story = {
           <ui-tree-item slot="children" label="button.ts" icon="file-code"></ui-tree-item>
           <ui-tree-item slot="children" label="input.ts" icon="file-code"></ui-tree-item>
         </ui-tree-item>
+
         <ui-tree-item slot="children" label="utils" icon="folder">
           <ui-tree-item slot="children" label="helpers.ts" icon="file-code"></ui-tree-item>
         </ui-tree-item>
       </ui-tree-item>
+
       <ui-tree-item slot="children" label="README.md" icon="file-text"></ui-tree-item>
     </ui-tree-item>
   `,
-  play: async ({ canvasElement }) => {
-    const root = canvasElement.querySelector('ui-tree-item');
-    if (!root) {
-      throw new Error('ルートツリーアイテムが見つかりませんでした');
-    }
-
-    await root.updateComplete;
-
-    const nestedItems = canvasElement.querySelectorAll<TreeItem>('ui-tree-item');
-    if (nestedItems.length < 5) {
-      throw new Error(
-        `深いネスト構造のアイテムを期待していましたが、実際には ${String(nestedItems.length)}個でした`,
-      );
-    }
-
-    const rootLevel = root.getAttribute('aria-level');
-    if (rootLevel !== '1') {
-      throw new Error(
-        `ルートの aria-level="1" を期待していましたが、実際には "${String(rootLevel)}" でした`,
-      );
-    }
-
-    const thirdLevelNode = canvasElement.querySelector<TreeItem>(
-      'ui-tree-item[label="components"]',
-    );
-    if (!thirdLevelNode) {
-      throw new Error('3階層目のツリーアイテムが見つかりませんでした');
-    }
-    await thirdLevelNode.updateComplete;
-
-    const thirdLevel = thirdLevelNode.getAttribute('aria-level');
-    if (thirdLevel !== '3') {
-      throw new Error(
-        `3階層目の aria-level="3" を期待していましたが、実際には "${String(thirdLevel)}" でした`,
-      );
-    }
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '深いネスト構造の docs story です。aria-level の算出契約は browser test を正本とします。',
+      },
+    },
   },
 };
 
-/**
- * 収縮状態（Collapsed）。
- *
- * 子要素を持つアイテムの収縮状態を示します。
- * 展開アイコンは右向き（0度）を維持します。
- */
-export const Collapsed: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+export const LinkLeafReference: Story = {
   render: () => html`
-    <ui-tree-item label="node_modules" icon="folder" .expanded=${false}>
-      <ui-tree-item slot="children" label="react" icon="folder"></ui-tree-item>
-      <ui-tree-item slot="children" label="vue" icon="folder"></ui-tree-item>
-    </ui-tree-item>
+    <ui-tree-item
+      label="楽曲分析: くるみ割り人形"
+      icon="file-text"
+      href="/notes/music/classical/tchaikovsky/the-nutcracker"
+    ></ui-tree-item>
   `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector('ui-tree-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
-
-    await treeItem.updateComplete;
-
-    // テスト: aria-expanded="false"が設定されていること
-    if (treeItem.getAttribute('aria-expanded') !== 'false') {
-      throw new Error('aria-expanded="false" を期待していましたが、実際には違います');
-    }
-
-    // テスト: expanded属性がfalseであること
-    if (treeItem.expanded) {
-      throw new Error('expanded プロパティが false であるべきです');
-    }
-
-    const childrenContainer = treeItem.shadowRoot?.querySelector<HTMLElement>('.children');
-    if (!childrenContainer) {
-      throw new Error('子要素コンテナが見つかりませんでした');
-    }
-
-    if (childrenContainer.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('収縮状態の子要素は aria-hidden="true" を持つべきです');
-    }
-
-    const expandIcon = treeItem.shadowRoot?.querySelector<HTMLElement>('.expand-icon');
-    const expandGlyph = treeItem.shadowRoot?.querySelector<HTMLElement>('.expand-glyph');
-    if (!expandIcon || !expandGlyph) {
-      throw new Error('展開アイコンが見つかりませんでした');
-    }
-
-    treeItem.expanded = true;
-    await treeItem.updateComplete;
-    await nextFrame();
-
-    if (treeItem.getAttribute('aria-expanded') !== 'true') {
-      throw new Error('展開後の aria-expanded が true ではありません');
-    }
-
-    if (expandIcon.classList.contains('hidden')) {
-      throw new Error('展開可能なノードで expand-icon が hidden になってはいけません');
-    }
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'href を持つ leaf の見本です。Enter/Space による選択と anchor activation の合否は browser test を正本とします。',
+      },
+    },
   },
 };
 
-/**
- * 選択済み + 展開済みの組み合わせ。
- *
- * 選択されたフォルダが展開されている状態を示します。
- * インデントガイドの色が強化され、Active Context を視覚化します。
- */
-export const SelectedAndExpanded: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html`
-    <ui-tree-item label="components" icon="folder" selected expanded>
-      <ui-tree-item slot="children" label="button.ts" icon="file-code"></ui-tree-item>
-      <ui-tree-item slot="children" label="input.ts" icon="file-code"></ui-tree-item>
-      <ui-tree-item slot="children" label="tree-item.ts" icon="file-code"></ui-tree-item>
-    </ui-tree-item>
-  `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector('ui-tree-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
-
-    await treeItem.updateComplete;
-
-    // テスト: 両方の状態が設定されていること
-    if (!treeItem.selected) {
-      throw new Error('selected プロパティが true であるべきです');
-    }
-    if (!treeItem.expanded) {
-      throw new Error('expanded プロパティが true であるべきです');
-    }
-
-    // テスト: aria属性が正しく設定されていること
-    if (treeItem.getAttribute('aria-selected') !== 'true') {
-      throw new Error('aria-selected="true" ではなく false でした');
-    }
-    if (treeItem.getAttribute('aria-expanded') !== 'true') {
-      throw new Error('aria-expanded="true" ではなく false でした');
-    }
-
-    await nextFrame();
-
-    const childrenContainer = treeItem.shadowRoot?.querySelector<HTMLElement>('.children');
-    if (!childrenContainer) {
-      throw new Error('展開済みの子要素コンテナが見つかりませんでした');
-    }
-
-    const height = Math.round(childrenContainer.getBoundingClientRect().height);
-    if (height <= 0) {
-      throw new Error('展開済みの子要素コンテナが表示されていません');
-    }
-  },
-};
-
-/**
- * Compact + Selected + Expanded の複合状態。
- * 密度変更時でも選択状態・展開状態・ARIA属性が一貫することを確認します。
- */
-export const CompactSelectedExpanded: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html`
-    <ui-tree-item label="components" icon="folder" density="compact" selected expanded>
-      <ui-tree-item
-        slot="children"
-        label="button.ts"
-        icon="file-code"
-        density="compact"
-      ></ui-tree-item>
-      <ui-tree-item
-        slot="children"
-        label="input.ts"
-        icon="file-code"
-        density="compact"
-      ></ui-tree-item>
-    </ui-tree-item>
-  `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector<TreeItem>('ui-tree-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
-
-    await treeItem.updateComplete;
-
-    if (treeItem.density !== 'compact') {
-      throw new Error(
-        `density="compact" を期待していましたが、実際には "${treeItem.density}" でした`,
-      );
-    }
-
-    if (treeItem.getAttribute('aria-selected') !== 'true') {
-      throw new Error('aria-selected="true" を期待していました');
-    }
-
-    if (treeItem.getAttribute('aria-expanded') !== 'true') {
-      throw new Error('aria-expanded="true" を期待していました');
-    }
-  },
-};
-
-/**
- * 境界条件: 長いラベルテキスト。
- *
- * ラベルが長い場合、text-overflow: ellipsis により省略されます。
- */
-export const LongLabel: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+export const LongLabelTooltipManual: Story = {
+  tags: ['manual-only'],
   render: () => html`
     <style>
       .container {
@@ -603,914 +211,82 @@ export const LongLabel: Story = {
       ></ui-tree-item>
     </div>
   `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector('ui-tree-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
+  parameters: {
+    docs: {
+      description: {
+        story: `
+手動確認用 story です。
 
-    await treeItem.updateComplete;
-    await nextFrame();
-    await nextFrame();
+確認内容:
+- 長いラベルの省略表示
+- truncate 時のみ tooltip が有効になること
+- hover / focus 時の tooltip surface
 
-    const labelElement = treeItem.shadowRoot?.querySelector('.label');
-    if (!labelElement) {
-      throw new Error('ラベル要素が見つかりませんでした');
-    }
-
-    // テスト: text-overflow: ellipsis が適用されていること
-    const computedStyle = window.getComputedStyle(labelElement);
-    if (computedStyle.textOverflow !== 'ellipsis') {
-      throw new Error('text-overflow="ellipsis" を期待していましたが違います');
-    }
-
-    const tooltipHost = treeItem.shadowRoot?.querySelector<HTMLElement & { disabled?: boolean }>(
-      'ui-tooltip.label-tooltip',
-    );
-    if (!tooltipHost) {
-      throw new Error('ui-tooltip.label-tooltip が見つかりません');
-    }
-    if (tooltipHost.disabled === true) {
-      throw new Error('長いラベルでは tooltip が無効化されてはいけません');
-    }
-
-    const trigger = treeItem.shadowRoot?.querySelector<HTMLElement>('.label');
-    if (!trigger) {
-      throw new Error('.label trigger が見つかりません');
-    }
-
-    trigger.dispatchEvent(new MouseEvent('mouseenter'));
-    await nextFrame();
-    await nextFrame();
-
-    let panel: HTMLElement | null = null;
-    for (let attempt = 0; attempt < 10; attempt += 1) {
-      const tooltipId = tooltipHost.dataset['tooltipId'];
-      if (tooltipId) {
-        panel = treeItem.ownerDocument.getElementById(tooltipId);
-      }
-      if (panel) {
-        break;
-      }
-      await nextFrame();
-    }
-
-    if (!panel) {
-      throw new Error('tooltip panel が見つかりません');
-    }
-
-    if (panel.getAttribute('aria-hidden') !== 'false') {
-      throw new Error('hover 時に tooltip が表示される必要があります');
-    }
-
-    trigger.dispatchEvent(new MouseEvent('mouseleave'));
-    await nextFrame();
-    await nextFrame();
-
-    if (panel.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('leave 後に tooltip が閉じる必要があります');
-    }
+tooltip 有効化の合否は Storybook ではなく \`test/browser/tree-item.browser.test.ts\` を正本とします。
+        `,
+      },
+    },
   },
 };
 
-/**
- * 境界条件: アイコンなし。
- *
- * アイコンプロパティを省略した場合、アイコンスロットが使用されます。
- * スロットにも何も提供しない場合、アイコン領域は空になります。
- */
-export const NoIcon: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html` <ui-tree-item label="テキストのみのアイテム"></ui-tree-item> `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector<TreeItem>('ui-tree-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
-
-    await treeItem.updateComplete;
-
-    const contentIcon = treeItem.shadowRoot?.querySelector<HTMLElement>('.content-icon');
-    const labelCell = treeItem.shadowRoot?.querySelector<HTMLElement>('.label-cell');
-    if (!contentIcon || !labelCell) {
-      throw new Error('content-icon または label-cell が見つかりませんでした');
-    }
-
-    if (!contentIcon.classList.contains('hidden')) {
-      throw new Error('アイコンがない場合は content-icon に hidden クラスが必要です');
-    }
-
-    const computedStyle = window.getComputedStyle(contentIcon);
-    if (computedStyle.display !== 'none') {
-      throw new Error('hidden な content-icon は display:none である必要があります');
-    }
-
-    if (Math.round(contentIcon.getBoundingClientRect().width) !== 0) {
-      throw new Error('hidden な content-icon は幅を持つべきではありません');
-    }
-
-    if (labelCell.getBoundingClientRect().left <= 0) {
-      throw new Error('label-cell の位置が取得できませんでした');
-    }
-  },
-};
-
-/**
- * 境界条件: カスタムアイコンスロット。
- *
- * icon プロパティの代わりに、slot="icon" でカスタムアイコンを提供できます。
- */
-export const CustomIconSlot: Story = {
-  parameters: { rouaultContractKind: 'visual' },
-  render: () => html`
-    <ui-tree-item label="カスタムアイコン">
-      <ui-icon slot="icon" name="star" style="color: gold;"></ui-icon>
-    </ui-tree-item>
-  `,
-};
-
-/**
- * 境界条件: 子要素なし（リーフノード）。
- *
- * 子要素がない場合、展開アイコンは非表示になります（スペースは維持）。
- */
-export const LeafNode: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html` <ui-tree-item label="index.ts" icon="file-code"></ui-tree-item> `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector('ui-tree-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
-
-    await treeItem.updateComplete;
-
-    // テスト: aria-expandedが設定されていないこと（子要素なし）
-    const ariaExpanded = treeItem.getAttribute('aria-expanded');
-    if (ariaExpanded !== null) {
-      throw new Error(
-        `aria-expanded が null であることを期待していましたが、実際には "${ariaExpanded}" でした`,
-      );
-    }
-
-    // テスト: リーフノードでは展開アイコン自体を描画しないこと
-    const expandIcon = treeItem.shadowRoot?.querySelector<HTMLElement>('.expand-icon');
-    if (expandIcon !== null) {
-      throw new Error('リーフノードでは展開アイコンを描画しないでください');
-    }
-  },
-};
-
-/**
- * インタラクティブテスト: キーボード操作。
- *
- * Enter / Space キーによる選択、Arrow キーによる展開/収縮を確認します。
- */
-export const KeyboardInteraction: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+export const KeyboardAndClickManual: Story = {
+  tags: ['manual-only'],
   render: () => html`
     <style>
-      .keyboard-info {
+      .info {
         padding: 1rem;
         background: var(--bg-surface-2, #f5f5f5);
         border-radius: var(--radius-md, 6px);
         font-size: var(--text-sm, 13px);
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
       }
     </style>
 
-    <div class="keyboard-info">
-      <strong>操作方法</strong>:
-      <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
-        <li><kbd>Enter</kbd> / <kbd>Space</kbd>: アイテムを選択</li>
-        <li><kbd>→</kbd>: フォルダを展開（展開済みの場合は子へ移動 ※file-tree内で動作）</li>
-        <li><kbd>←</kbd>: フォルダを収縮（収縮済みの場合は親へ移動 ※file-tree内で動作）</li>
-      </ul>
-      <p style="margin: 0.5rem 0 0 0;">
-        ※ Up/Down/Home/End/Esc は ui-file-tree コンテナ内で動作します。
-      </p>
+    <div class="info">
+      Enter / Space / ArrowRight / ArrowLeft / click の操作感を手動確認するための story です。
+      合否は browser test を正本とします。
     </div>
 
-    <ui-tree-item id="keyboard-test-item" label="components" icon="folder">
+    <ui-tree-item label="components" icon="folder">
       <ui-tree-item slot="children" label="button.ts" icon="file-code"></ui-tree-item>
       <ui-tree-item slot="children" label="input.ts" icon="file-code"></ui-tree-item>
     </ui-tree-item>
   `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector<TreeItem>('#keyboard-test-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
-
-    await treeItem.updateComplete;
-
-    const itemElement = treeItem.shadowRoot?.querySelector<HTMLElement>('.item');
-    if (!itemElement) {
-      throw new Error('アイテム要素が見つかりませんでした');
-    }
-
-    // テスト: Enter キーで選択状態になること
-    let selectedEventFired = false;
-    treeItem.addEventListener('selected-change', () => {
-      selectedEventFired = true;
-    });
-
-    itemElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    await treeItem.updateComplete;
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!selectedEventFired) {
-      throw new Error(
-        'Enter キーの押下時に selected-change イベントが発火することを期待していましたが、発火しませんでした',
-      );
-    }
-
-    if (!treeItem.selected) {
-      throw new Error('Enter キーの押下後に selected=true になりませんでした');
-    }
-
-    // テスト: Space キーでも選択イベントが発火すること
-    selectedEventFired = false;
-    treeItem.selected = false;
-    await treeItem.updateComplete;
-
-    itemElement.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
-    await treeItem.updateComplete;
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!selectedEventFired) {
-      throw new Error(
-        'Space キーの押下時に selected-change イベントが発火することを期待していましたが、発火しませんでした',
-      );
-    }
-
-    // テスト: ArrowRight キーで展開すること
-    let expandedEventFired = false;
-    treeItem.addEventListener('expanded-change', () => {
-      expandedEventFired = true;
-    });
-
-    itemElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
-    await treeItem.updateComplete;
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!expandedEventFired) {
-      throw new Error(
-        'ArrowRight キーの押下時に expanded-change イベントが発火することを期待していましたが、発火しませんでした',
-      );
-    }
-
-    if (!treeItem.expanded) {
-      throw new Error('ArrowRight キーの押下後に expanded=true になることを期待していました');
-    }
-
-    // テスト: ArrowRight キー（展開済み）で委譲イベントが発火すること
-    let arrowRightDelegated = false;
-    treeItem.addEventListener('tree-item-arrow-right', () => {
-      arrowRightDelegated = true;
-    });
-    itemElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
-    await treeItem.updateComplete;
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!arrowRightDelegated) {
-      throw new Error(
-        '展開済みの状態で ArrowRight キーが押された際に tree-item-arrow-right イベントが発火することを期待していましたが、発火しませんでした',
-      );
-    }
-
-    // テスト: ArrowLeft キーで収縮すること
-    expandedEventFired = false;
-    itemElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
-    await treeItem.updateComplete;
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!expandedEventFired) {
-      throw new Error(
-        'ArrowLeft キーの押下時に expanded-change イベントが発火することを期待していましたが、発火しませんでした',
-      );
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (treeItem.expanded) {
-      throw new Error('ArrowLeft キーの押下後に expanded=false になりませんでした');
-    }
-
-    // テスト: ArrowLeft キー（収縮済み）で委譲イベントが発火すること
-    let arrowLeftDelegated = false;
-    treeItem.addEventListener('tree-item-arrow-left', () => {
-      arrowLeftDelegated = true;
-    });
-    itemElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
-    await treeItem.updateComplete;
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!arrowLeftDelegated) {
-      throw new Error(
-        '収縮済みの状態で ArrowLeft キーが押された際に tree-item-arrow-left イベントが発火することを期待していましたが、発火しませんでした',
-      );
-    }
-  },
-};
-
-/**
- * インタラクティブテスト: クリック操作。
- *
- * 展開可能な行は行全体で展開/収縮し、葉ノードは選択と遷移のまま動作します。
- */
-export const ClickInteraction: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html`
-    <style>
-      .click-info {
-        padding: 1rem;
-        background: var(--bg-surface-2, #f5f5f5);
-        border-radius: var(--radius-md, 6px);
-        font-size: var(--text-sm, 13px);
-        margin-bottom: 1.5rem;
-      }
-    </style>
-
-    <div class="click-info">
-      <strong>操作方法</strong>:
-      <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
-        <li>展開可能なアイテム行をクリック: 行全体で展開/収縮を切り替える</li>
-        <li>葉ノードをクリック: 選択して、href があれば遷移する</li>
-      </ul>
-    </div>
-
-    <ui-tree-item id="click-test-item" label="src" icon="folder">
-      <ui-tree-item slot="children" label="index.ts" icon="file-code"></ui-tree-item>
-    </ui-tree-item>
-  `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector<TreeItem>('#click-test-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
-
-    await treeItem.updateComplete;
-
-    const itemElement = treeItem.shadowRoot?.querySelector<HTMLElement>('.item');
-    const expandIcon = treeItem.shadowRoot?.querySelector<HTMLElement>('.expand-icon');
-
-    if (!itemElement || !expandIcon) {
-      throw new Error('必要な要素が見つかりませんでした');
-    }
-
-    // テスト: 行クリックで展開すること（選択はされない）
-    let expandedEventCount = 0;
-    let selectedEventCount = 0;
-    treeItem.addEventListener('expanded-change', () => {
-      expandedEventCount += 1;
-    });
-    treeItem.addEventListener('selected-change', () => {
-      selectedEventCount += 1;
-    });
-
-    const assertCount = (actual: number, expected: number, message: string): void => {
-      if (actual !== expected) {
-        throw new Error(message);
-      }
-    };
-
-    const assertBoolean = (actual: boolean, expected: boolean, message: string): void => {
-      if (actual !== expected) {
-        throw new Error(message);
-      }
-    };
-
-    itemElement.click();
-    await treeItem.updateComplete;
-
-    assertCount(
-      expandedEventCount,
-      1,
-      `行クリック時に expanded-change イベントが 1 回発火することを期待していましたが、実際には ${String(expandedEventCount)} 回でした`,
-    );
-    assertBoolean(treeItem.expanded, true, '行クリックの後に expanded=true になりませんでした');
-    assertBoolean(
-      treeItem.selected,
-      false,
-      '展開可能な行のクリック後も selected=false を維持することを期待していましたが、維持されませんでした',
-    );
-    assertCount(
-      selectedEventCount,
-      0,
-      `展開可能な行のクリックで selected-change が発火しないことを期待していましたが、実際には ${String(selectedEventCount)} 回でした`,
-    );
-
-    // テスト: 再クリックで収縮すること
-    itemElement.click();
-    await treeItem.updateComplete;
-
-    assertCount(
-      expandedEventCount,
-      2,
-      `再クリック時に expanded-change イベントが 2 回目として発火することを期待していましたが、実際には ${String(expandedEventCount)} 回でした`,
-    );
-    assertBoolean(treeItem.expanded, false, '再クリックの後に expanded=false になりませんでした');
-
-    // テスト: 展開アイコンクリックでも同じ動作になること
-    expandIcon.click();
-    await treeItem.updateComplete;
-
-    assertCount(
-      expandedEventCount,
-      3,
-      `展開アイコンクリック時に expanded-change イベントが 3 回目として発火することを期待していましたが、実際には ${String(expandedEventCount)} 回でした`,
-    );
-    assertBoolean(
-      treeItem.expanded,
-      true,
-      '展開アイコンのクリック後に expanded=true になりませんでした',
-    );
-  },
-};
-
-/**
- * フォーカス状態のデモ。
- *
- * Adaptive Focus により、移動中のノイズを低減し、停止時に明確化します。
- */
-export const FocusState: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html`
-    <style>
-      .focus-demo {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .focus-info {
-        padding: 1rem;
-        background: var(--bg-surface-2, #f5f5f5);
-        border-radius: var(--radius-md, 6px);
-        font-size: var(--text-sm, 13px);
-      }
-    </style>
-
-    <div class="focus-demo">
-      <div class="focus-info">
-        <strong>操作方法</strong>: アイテムをクリックしてフォーカスを当ててください。 Adaptive Focus
-        により、フォーカスリングが適切に表示されます。
-      </div>
-
-      <ui-tree-item id="focus-test-item" label="README.md" icon="file-text" selected></ui-tree-item>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector<TreeItem>('#focus-test-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
-
-    await treeItem.updateComplete;
-
-    // フォーカスを当てる
-    treeItem.focus();
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    const itemElement = treeItem.shadowRoot?.querySelector<HTMLElement>('.item');
-    if (!itemElement) {
-      throw new Error('アイテム要素が見つかりませんでした');
-    }
-
-    // テスト: フォーカスが当たっていること
-    if (treeItem.shadowRoot?.activeElement !== itemElement) {
-      throw new Error('アイテムがフォーカスされている必要があります');
-    }
-  },
-};
-
-/**
- * Compact密度のタッチターゲット確認。
- *
- * Compact密度では、視覚サイズは24pxですが、物理タッチターゲットは44pxに拡張されています。
- * ::after 疑似要素により、WCAG 2.5.5（Target Size: Enhanced）に準拠します。
- */
-export const CompactDensityTouchTarget: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html`
-    <style>
-      .touch-info {
-        padding: 1rem;
-        background: var(--bg-surface-2, #f5f5f5);
-        border-radius: var(--radius-md, 6px);
-        font-size: var(--text-sm, 13px);
-        margin-bottom: 1.5rem;
-      }
-
-      .touch-showcase {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-      }
-    </style>
-
-    <div class="touch-info">
-      <strong>Compact密度のタッチターゲット仕様</strong>:
-      <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
-        <li>視覚サイズ: 24px（WCAG 2.5.8 AA 最小要件）</li>
-        <li>物理タッチターゲット: 44px（WCAG 2.5.5 推奨、::after疑似要素で拡張）</li>
-      </ul>
-      <p style="margin: 0.5rem 0 0 0;">
-        開発者ツールで ::after 疑似要素を検証して、44px
-        の高さが確保されていることを確認してください。
-      </p>
-    </div>
-
-    <div class="touch-showcase">
-      <ui-tree-item label="アイテム 1" icon="file" density="compact"></ui-tree-item>
-      <ui-tree-item label="アイテム 2" icon="file" density="compact"></ui-tree-item>
-      <ui-tree-item label="アイテム 3" icon="file" density="compact"></ui-tree-item>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const treeItems = canvasElement.querySelectorAll<TreeItem>('ui-tree-item');
-    if (treeItems.length !== 3) {
-      throw new Error(
-        `3つのツリーアイテムを期待していましたが、実際には ${String(treeItems.length)}個でした`,
-      );
-    }
-
-    const firstItem = treeItems[0];
-    if (!firstItem) {
-      throw new Error('最初のツリーアイテムが見つかりませんでした');
-    }
-    await firstItem.updateComplete;
-
-    if (!firstItem.shadowRoot) {
-      throw new Error('Shadow root が見つかりませんでした');
-    }
-
-    const itemElement = firstItem.shadowRoot.querySelector<HTMLElement>('.item');
-    if (!itemElement) {
-      throw new Error('アイテム要素が見つかりませんでした');
-    }
-
-    // テスト: Compact密度のアイテムの高さが24px前後であること
-    const height = itemElement.getBoundingClientRect().height;
-    if (height < 20 || height > 28) {
-      throw new Error(
-        `アイテムの高さが 24px 前後であることを期待していましたが、実際には ${String(height)}px でした`,
-      );
-    }
-  },
-};
-
-/**
- * Forced Colors Mode での表示確認。
- *
- * Windows の高コントラストモードなど、強制カラーモード環境での表示を確認します。
- * システムカラー（Highlight, HighlightText, CanvasText）へのフォールバックを検証できます。
- */
-export const ForcedColorsMode: Story = {
-  render: () => html`
-    <style>
-      .forced-colors-info {
-        padding: 1rem;
-        background: var(--bg-surface-2, #f5f5f5);
-        border-radius: var(--radius-md, 6px);
-        font-size: var(--text-sm, 13px);
-        margin-bottom: 1.5rem;
-      }
-    </style>
-
-    <div class="forced-colors-info">
-      <strong>確認方法</strong>:
-      <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
-        <li>
-          <strong>Windows</strong>: 設定 > アクセシビリティ > コントラストテーマ
-          で高コントラストモードを有効化
-        </li>
-        <li>
-          <strong>開発者ツール</strong>: Chrome DevTools > Rendering > Emulate CSS media feature
-          forced-colors: active
-        </li>
-      </ul>
-      <p style="margin: 0.5rem 0 0 0;">
-        インデントガイドが CanvasText で表示され、選択状態が Highlight/HighlightText
-        で明確化されることを確認してください。
-      </p>
-    </div>
-
-    <ui-tree-item label="src" icon="folder" expanded>
-      <ui-tree-item slot="children" label="components" icon="folder" selected>
-        <ui-tree-item slot="children" label="button.ts" icon="file-code"></ui-tree-item>
-      </ui-tree-item>
-      <ui-tree-item slot="children" label="utils" icon="folder">
-        <ui-tree-item slot="children" label="helpers.ts" icon="file-code"></ui-tree-item>
-      </ui-tree-item>
-    </ui-tree-item>
-  `,
-  play: async ({ canvasElement }) => {
-    const selectedItem = canvasElement.querySelector<TreeItem>('ui-tree-item[label="components"]');
-    if (!selectedItem) {
-      throw new Error('選択されたアイテムが見つかりませんでした');
-    }
-
-    await selectedItem.updateComplete;
-
-    if (selectedItem.getAttribute('aria-selected') !== 'true') {
-      throw new Error('選択されたアイテムが aria-selected="true" を持っていません');
-    }
-
-    const childrenContainer = selectedItem.shadowRoot?.querySelector<HTMLElement>('.children');
-    if (!childrenContainer) {
-      throw new Error('子要素コンテナが見つかりませんでした');
-    }
-
-    if (childrenContainer.getAttribute('role') !== 'group') {
-      throw new Error('子要素コンテナは role="group" を持つ必要があります');
-    }
-  },
   parameters: {
-    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
-          'Forced Colors Mode（高コントラストモード）での表示を確認します。インデントガイドと選択状態がシステムカラーで明確化されます。',
+          'branch click toggle と keyboard interaction の手動確認用 story です。合否は test/browser/tree-item.browser.test.ts を正本とします。',
       },
     },
   },
 };
 
-/**
- * Reduced Motion での表示確認。
- *
- * prefers-reduced-motion 環境下でのアニメーション抑制を確認します。
- * 展開/収縮のトランジションが即座に適用され、色遷移も短縮されます。
- */
-export const ReducedMotion: Story = {
+export const NoIconAndCustomIconReference: Story = {
   render: () => html`
-    <style>
-      .reduced-motion-info {
-        padding: 1rem;
-        background: var(--bg-surface-2, #f5f5f5);
-        border-radius: var(--radius-md, 6px);
-        font-size: var(--text-sm, 13px);
-        margin-bottom: 1.5rem;
-      }
+    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+      <ui-tree-item label="テキストのみのアイテム"></ui-tree-item>
 
-      /* このストーリー内で reduced-motion を強制 */
-      @media (prefers-reduced-motion: no-preference) {
-        .reduced-motion-showcase ui-tree-item {
-          --duration-slow: 0.01ms;
-          --duration-fast: 0.01ms;
-        }
-      }
-    </style>
-
-    <div class="reduced-motion-info">
-      <strong>確認方法</strong>:
-      <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
-        <li>
-          <strong>Windows</strong>: 設定 > アクセシビリティ > 視覚効果 > アニメーション効果をオフ
-        </li>
-        <li>
-          <strong>macOS</strong>: システム設定 > アクセシビリティ > ディスプレイ > 視差効果を減らす
-        </li>
-        <li><strong>このストーリー</strong>: reduced-motion を強制的にシミュレートしています</li>
-      </ul>
-      <p style="margin: 0.5rem 0 0 0;">
-        展開アイコンをクリックして、アニメーションが即座に適用されることを確認してください。
-      </p>
-    </div>
-
-    <div class="reduced-motion-showcase">
-      <ui-tree-item label="アニメーションテスト" icon="folder">
-        <ui-tree-item slot="children" label="ファイル1.ts" icon="file-code"></ui-tree-item>
-        <ui-tree-item slot="children" label="ファイル2.ts" icon="file-code"></ui-tree-item>
-      </ui-tree-item>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector<TreeItem>('ui-tree-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
-
-    await treeItem.updateComplete;
-
-    const children = treeItem.shadowRoot?.querySelector<HTMLElement>('.children');
-    if (!children) {
-      throw new Error('子要素コンテナが見つかりませんでした');
-    }
-
-    const durations = window.getComputedStyle(children).transitionDuration;
-    // ブラウザは 0.01ms を秒単位 (0.00001s / 1e-05s) に変換して報告する場合がある
-    if (
-      !durations.includes('0.01ms') &&
-      !durations.includes('0s') &&
-      !durations.includes('1e-05s') &&
-      !durations.includes('0.00001s')
-    ) {
-      throw new Error(
-        `reduced-motion 時のような transition-duration を期待していましたが、実際には "${durations}" でした`,
-      );
-    }
-  },
-  parameters: {
-    rouaultContractKind: 'boundary-contract',
-    docs: {
-      description: {
-        story:
-          'prefers-reduced-motion 環境下でのアニメーション抑制を確認します。展開/収縮のトランジションが即座に適用されます。',
-      },
-    },
-  },
-};
-
-/**
- * ダークトーン背景での視認性確認。
- * 実際のダークモードトークン適用時の読みやすさを確認するための境界条件ストーリーです。
- */
-export const DarkSurfaceContrast: Story = {
-  parameters: { rouaultContractKind: 'boundary-contract' },
-  render: () => html`
-    <style>
-      .dark-surface {
-        background: #111417;
-        color: #e6edf3;
-        border-radius: 8px;
-        padding: 12px;
-        max-width: 360px;
-      }
-
-      .dark-surface ui-tree-item {
-        --fg-muted: oklch(84% 0.01 250);
-        --fg-default: oklch(96% 0.01 250);
-        --primary: oklch(78% 0.13 250);
-
-        --nav-item-fg: var(--fg-muted);
-        --nav-item-fg-hover: var(--fg-default);
-        --nav-item-fg-active: var(--fg-default);
-        --nav-item-hover-bg: oklch(100% 0 0 / 0.08);
-        --nav-item-active-bg: oklch(78% 0.13 250 / 0.2);
-        --nav-item-indicator-color: var(--primary);
-
-        --tree-item-branch-hover-bg: oklch(100% 0 0 / 0.05);
-        --tree-item-guide-color: oklch(100% 0 0 / 0.12);
-      }
-    </style>
-    <div class="dark-surface">
-      <ui-tree-item label="src" icon="folder" expanded>
-        <ui-tree-item slot="children" label="components" icon="folder" selected></ui-tree-item>
-        <ui-tree-item slot="children" label="README.md" icon="file-text"></ui-tree-item>
-      </ui-tree-item>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const selectedItem = canvasElement.querySelector<TreeItem>('ui-tree-item[label="components"]');
-    if (!selectedItem) {
-      throw new Error('選択された子アイテムが見つかりませんでした');
-    }
-
-    await selectedItem.updateComplete;
-
-    if (selectedItem.getAttribute('aria-selected') !== 'true') {
-      throw new Error('選択されたアイテムが aria-selected="true" を持っていません');
-    }
-
-    const item = selectedItem.shadowRoot?.querySelector<HTMLElement>('.item');
-    if (!item) {
-      throw new Error('.item が見つかりませんでした');
-    }
-
-    const itemBefore = getComputedStyle(item, '::before');
-    if (itemBefore.backgroundColor === 'rgba(0, 0, 0, 0)') {
-      throw new Error('暗色面でも selected 面が可視である必要があります');
-    }
-
-    const indicator =
-      selectedItem.shadowRoot?.querySelector<HTMLElement>('.current-slot-indicator');
-    if (!indicator) {
-      throw new Error('current-slot-indicator が見つかりませんでした');
-    }
-
-    const indicatorStyle = getComputedStyle(indicator);
-    if (indicatorStyle.opacity === '0') {
-      throw new Error('暗色面でも current rail が表示される必要があります');
-    }
-  },
-};
-
-/**
- * 実用例: ファイルツリー。
- *
- * 実際のファイルツリーを模した複雑な階層構造を示します。
- * フォルダとファイルの混在、複数レベルのネスト、選択状態の表現を確認できます。
- */
-export const RealWorldFileTree: Story = {
-  render: () => html`
-    <style>
-      .file-tree-demo {
-        border: 1px solid var(--border-default, #e0e0e0);
-        border-radius: var(--radius-md, 6px);
-        padding: var(--space-2, 8px);
-        max-width: 400px;
-      }
-    </style>
-
-    <div class="file-tree-demo">
-      <ui-tree-item label="my-project" icon="folder" expanded>
-        <ui-tree-item slot="children" label="src" icon="folder" expanded>
-          <ui-tree-item slot="children" label="components" icon="folder" expanded>
-            <ui-tree-item slot="children" label="ui" icon="folder">
-              <ui-tree-item slot="children" label="button.ts" icon="file-code"></ui-tree-item>
-              <ui-tree-item slot="children" label="input.ts" icon="file-code"></ui-tree-item>
-              <ui-tree-item
-                slot="children"
-                label="tree-item.ts"
-                icon="file-code"
-                selected
-              ></ui-tree-item>
-            </ui-tree-item>
-          </ui-tree-item>
-          <ui-tree-item slot="children" label="utils" icon="folder">
-            <ui-tree-item slot="children" label="helpers.ts" icon="file-code"></ui-tree-item>
-            <ui-tree-item slot="children" label="validators.ts" icon="file-code"></ui-tree-item>
-          </ui-tree-item>
-          <ui-tree-item slot="children" label="index.ts" icon="file-code"></ui-tree-item>
-        </ui-tree-item>
-        <ui-tree-item slot="children" label="public" icon="folder">
-          <ui-tree-item slot="children" label="favicon.ico" icon="file-image"></ui-tree-item>
-          <ui-tree-item slot="children" label="index.html" icon="file-code"></ui-tree-item>
-        </ui-tree-item>
-        <ui-tree-item slot="children" label="package.json" icon="file-code"></ui-tree-item>
-        <ui-tree-item slot="children" label="README.md" icon="file-text"></ui-tree-item>
-        <ui-tree-item slot="children" label="tsconfig.json" icon="file-code"></ui-tree-item>
+      <ui-tree-item label="カスタムアイコン">
+        <svg
+          slot="icon"
+          viewBox="0 0 12 12"
+          width="12"
+          height="12"
+          aria-hidden="true"
+          style="display: block; color: gold;"
+        >
+          <circle cx="6" cy="6" r="5" fill="currentColor"></circle>
+        </svg>
       </ui-tree-item>
     </div>
   `,
   parameters: {
-    rouaultContractKind: 'visual',
     docs: {
       description: {
         story:
-          '実際のファイルツリーを模した複雑な階層構造です。インデントガイドと選択状態により、構造とカレント位置が一目で把握できます。',
+          'icon なしと custom icon slot の見本です。content-icon の hidden 縮退合否は browser test を正本とします。',
       },
     },
-  },
-};
-
-export const NavigableRowActivation: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html`
-    <ui-tree-item
-      label="ソートアルゴリズム比較"
-      icon="file-text"
-      href="/notes/computer-science/algorithms/sorting"
-    ></ui-tree-item>
-  `,
-  play: async ({ canvasElement }) => {
-    const treeItem = canvasElement.querySelector<TreeItem>('ui-tree-item');
-    if (!treeItem) {
-      throw new Error('TreeItem コンポーネントが見つかりません');
-    }
-
-    await treeItem.updateComplete;
-
-    let selectedCount = 0;
-    let anchorPathCount = 0;
-
-    treeItem.addEventListener('selected-change', () => {
-      selectedCount += 1;
-    });
-
-    const clickHandler = (event: Event): void => {
-      const hasAnchorInPath = event
-        .composedPath()
-        .some((target) => target instanceof HTMLAnchorElement);
-      if (hasAnchorInPath) {
-        anchorPathCount += 1;
-      }
-      event.preventDefault();
-    };
-
-    document.addEventListener('click', clickHandler);
-
-    try {
-      const row = treeItem.shadowRoot?.querySelector<HTMLElement>('.item');
-      if (!row) {
-        throw new Error('.item が見つかりませんでした');
-      }
-
-      row.click();
-      await nextFrame();
-
-      if (selectedCount !== 1) {
-        throw new Error(
-          `selected-change は 1 回だけ発火する必要があります: ${String(selectedCount)}`,
-        );
-      }
-
-      if (anchorPathCount < 1) {
-        throw new Error('行クリック時に document から辿れるアンカー click が発火していません');
-      }
-    } finally {
-      document.removeEventListener('click', clickHandler);
-    }
   },
 };

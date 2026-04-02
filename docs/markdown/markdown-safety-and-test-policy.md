@@ -260,9 +260,9 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 
 戦略更新時は、先にテストを増やし、そのあと文書を追従させることを原則とします。
 
-### 8.3 fixture と unit の責務分離
+### 8.3 fixture と Node test の責務分離
 
-- grammar 受理可否は unit test または fixture test で固定してよいものとします。
+- grammar 受理可否は Node test または fixture test で固定してよいものとします。
 - 出力 DOM 契約は output fixture または構造比較で固定してよいものとします。
 - safety は禁止入力 fixture で固定してよいものとします。
 
@@ -276,11 +276,11 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 
 現状の仕様は、少なくとも次の単体テスト群で固定しているものとします。
 
-1. `test/unit/remark-disallow-raw-html.test.ts`
-2. `test/unit/remark-rouault-directives.test.ts`
-3. `test/unit/rehype-heading-ids.test.ts`
-4. `test/unit/rehype-rouault-components.test.ts`
-5. `test/unit/rehype-disallow-dangerous-props.test.ts`
+1. `test/node/remark-disallow-raw-html.test.ts`
+2. `test/node/remark-rouault-directives.test.ts`
+3. `test/node/rehype-heading-ids.test.ts`
+4. `test/ssr/rehype-rouault-components.test.ts`
+5. `test/node/rehype-disallow-dangerous-props.test.ts`
 6. `test/ssr/note-hydration-budget.test.ts`
 
 規則:

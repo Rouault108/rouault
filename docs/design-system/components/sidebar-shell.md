@@ -686,7 +686,7 @@ Rouault の sidebar は、本文を読む行為を補助するための導線で
 
 ## 現行実装を基準にした未対応・未固定項目
 
-本節は参考情報であり、Normative ではありません。本節の目的は、**本書で提示した契約や追加候補のうち、現行 `sidebar-shell.ts` と `sidebar-shell.stories.ts` / `sidebar-shell-boundary.stories.ts` を基準にして、まだ実装されていないもの、または現行では別挙動のものを記述漏れなく列挙すること**です。
+本節は参考情報であり、Normative ではありません。本節の目的は、**本書で提示した契約や追加候補のうち、現行 `sidebar-shell.ts` と `sidebar-shell.stories.ts` を基準にして、まだ実装されていないもの、または現行では別挙動のものを記述漏れなく列挙すること**です。
 
 ### 公開入力で未対応のもの
 

@@ -1,408 +1,110 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './search-page.js';
-import type { Checkbox } from '../ui/checkbox/checkbox.js';
-import type { Details } from '../ui/details/details.js';
-import type { SearchField } from '../ui/search-field/search-field.js';
 import type { SearchPage } from './search-page.js';
-import {
-  SEARCH_PAGE_STORY_WAIT_MS,
-  installSearchPageStorySearchMock,
-  restoreSearchPageStorySearchMock,
-} from '../../testing/storybook/search-page-story-search-adapter.js';
+import { installSearchPageStorySearchMock } from '../../testing/storybook/search-page-story-search-adapter.js';
 
-interface FilterOptionState {
-  label: string;
-  checked: boolean;
-  selected: boolean;
-}
-
-const wait = async (ms: number): Promise<void> =>
-  new Promise((resolve) => {
-    window.setTimeout(resolve, ms);
-  });
-
-const waitFrame = async (): Promise<void> =>
-  new Promise((resolve) => {
-    requestAnimationFrame(() => {
-      resolve();
-    });
-  });
-
-const flush = async (host: SearchPage): Promise<void> => {
-  await host.updateComplete;
-  await waitFrame();
-  await host.updateComplete;
+const ensureSearchMock = (): void => {
+  installSearchPageStorySearchMock();
 };
 
-const settleSearch = async (host: SearchPage): Promise<void> => {
-  await wait(SEARCH_PAGE_STORY_WAIT_MS);
-  await flush(host);
-};
+const renderSearchPage = (
+  id: string,
+  options: {
+    maxInlineSize?: string;
+  } = {},
+) => {
+  ensureSearchMock();
 
-const getHost = (canvasElement: Element, id: string): SearchPage => {
-  const host = canvasElement.querySelector<SearchPage>(`#${id}`);
-  if (!host) {
-    throw new Error(`#${id} が見つかりません`);
-  }
-
-  return host;
-};
-
-function assert(condition: unknown, message: string): asserts condition {
-  if (!condition) {
-    throw new Error(message);
-  }
-}
-
-const getSearchInput = (field: SearchField | null | undefined): HTMLInputElement => {
-  const input = field?.shadowRoot?.querySelector<HTMLInputElement>('input');
-  if (!input) {
-    throw new Error('ui-search-field 内の input が見つかりません');
-  }
-
-  return input;
-};
-
-const getFilterDetails = (host: SearchPage): Details => {
-  const details = host.shadowRoot?.querySelector<Details>('ui-details.filter-details');
-  if (!details) {
-    throw new Error('filter details が見つかりません');
-  }
-
-  return details;
-};
-
-const getFilterTrigger = (host: SearchPage): HTMLButtonElement => {
-  const trigger =
-    getFilterDetails(host).shadowRoot?.querySelector<HTMLButtonElement>('button.trigger');
-  if (!trigger) {
-    throw new Error('filter details の trigger が見つかりません');
-  }
-
-  return trigger;
-};
-
-const getFilterSearchField = (host: SearchPage): SearchField => {
-  const field = host.shadowRoot?.querySelector<SearchField>('ui-search-field.filter-search-field');
-  if (!field) {
-    throw new Error('タグ絞り込み用の ui-search-field が見つかりません');
-  }
-
-  return field;
-};
-
-const getFilterCheckbox = (host: SearchPage, label: string): Checkbox => {
-  const checkboxes =
-    host.shadowRoot?.querySelectorAll<Checkbox>('ui-checkbox.filter-option-checkbox') ?? [];
-  const checkbox = [...checkboxes].find((candidate) => candidate.label === label);
-  if (!checkbox) {
-    throw new Error(`"${label}" の filter checkbox が見つかりません`);
-  }
-
-  return checkbox;
-};
-
-const clickCheckboxLabel = async (checkbox: Checkbox): Promise<void> => {
-  await checkbox.updateComplete;
-  const label = checkbox.shadowRoot?.querySelector<HTMLElement>('label.label');
-  if (!label) {
-    throw new Error('checkbox label が見つかりません');
-  }
-
-  label.click();
-};
-
-const getFilterOptionStates = (host: SearchPage): FilterOptionState[] => {
-  const options = host.shadowRoot?.querySelectorAll<HTMLElement>('.filter-option') ?? [];
-
-  return [...options].map((option) => {
-    const checkbox = option.querySelector<Checkbox>('ui-checkbox.filter-option-checkbox');
-    if (!checkbox) {
-      throw new Error('filter option 内の checkbox が見つかりません');
-    }
-
-    return {
-      label: checkbox.label,
-      checked: checkbox.checked,
-      selected: option.dataset['selected'] === 'true',
-    } satisfies FilterOptionState;
-  });
-};
-
-const assertFilterSelectionConsistency = (host: SearchPage, context: string): void => {
-  const mismatch = getFilterOptionStates(host).find((state) => state.checked !== state.selected);
-  assert(
-    mismatch === undefined,
-    `${context}: "${mismatch?.label ?? 'unknown'}" の checked=${String(mismatch?.checked)} と data-selected=${String(mismatch?.selected)} が不一致です`,
-  );
+  return html`
+    <div
+      style=${[
+        'display: grid',
+        'gap: var(--space-4, 16px)',
+        options.maxInlineSize ? `max-inline-size: ${options.maxInlineSize}` : '',
+      ]
+        .filter((value) => value.length > 0)
+        .join('; ')}
+    >
+      <search-page id=${id}></search-page>
+    </div>
+  `;
 };
 
 const meta: Meta<SearchPage> = {
   title: 'Search/SearchPage',
   component: 'search-page',
   tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component: `
+検索ページの Storybook は **docs / smoke / 手動確認** に限定します。
+
+query 入力、clear、filter panel、selected chip removal、tag reorder などの browser contract は
+\`test/browser/search-page.browser.test.ts\` を正本とします。  
+実ページ上の検索導線と遷移は \`test/e2e/tag-page.spec.ts\` などの E2E を正本とします。
+
+この story では Storybook 用の検索 mock を使って、見た目と操作面の観察だけを行います。
+        `,
+      },
+    },
+  },
 };
 
 export default meta;
 type Story = StoryObj<SearchPage>;
 
-export const QueryAndClearFlow: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => {
-    installSearchPageStorySearchMock();
-    return html`<search-page id="search-page-regression"></search-page>`;
-  },
-  play: async ({ canvasElement }) => {
-    await customElements.whenDefined('search-page');
-    await customElements.whenDefined('ui-search-field');
-    const host = getHost(canvasElement, 'search-page-regression');
-    const originalUrl = `${window.location.pathname}${window.location.search}`;
+export const Default: Story = {
+  tags: ['smoke'],
+  render: () => renderSearchPage('search-page-default'),
+};
 
-    try {
-      await flush(host);
-
-      const searchField = host.shadowRoot?.querySelector<SearchField>(
-        'ui-search-field.search-input-control',
-      );
-      const input = getSearchInput(searchField);
-      const clearButton =
-        searchField?.shadowRoot?.querySelector<HTMLButtonElement>('.clear-button');
-      assert(!!searchField, 'search-page 内に主検索用 ui-search-field が見つかりません');
-      assert(!!clearButton, 'search-page 内の clear button が見つかりません');
-
-      input.value = 'router';
-      input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-      await settleSearch(host);
-
-      const resultLinks = host.shadowRoot?.querySelectorAll('.result-link') ?? [];
-      const currentUrl = new URL(window.location.href);
-      assert(resultLinks.length === 2, 'query 入力後に結果が期待通り絞り込まれていません');
-      assert(
-        currentUrl.searchParams.get('q') === 'router',
-        'query 入力時に URL が同期されていません',
-      );
-      assert(!clearButton.hidden, 'query 入力後に clear button が表示されていません');
-
-      clearButton.click();
-      await settleSearch(host);
-
-      const metaRowText = host.shadowRoot?.querySelector('.meta-row')?.textContent ?? '';
-      const clearedUrl = new URL(window.location.href);
-      assert(input.value === '', 'clear 後に input.value が空になっていません');
-      assert(
-        clearedUrl.searchParams.get('q') === null,
-        'clear 後に URL の query が除去されていません',
-      );
-      assert(metaRowText.includes('0 件の結果'), 'clear 後の件数表示が更新されていません');
-    } finally {
-      history.replaceState(history.state, '', originalUrl);
-      restoreSearchPageStorySearchMock();
-    }
+export const NarrowPanel: Story = {
+  render: () => renderSearchPage('search-page-narrow', { maxInlineSize: '22.5rem' }),
+  parameters: {
+    docs: {
+      description: {
+        story: '狭い幅で filter panel と結果カードの見え方を観察するための docs story です。',
+      },
+    },
   },
 };
 
-export const FilterPanelFlow: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => {
-    installSearchPageStorySearchMock();
-    return html`
-      <div style="max-inline-size: 22.5rem;">
-        <search-page id="search-page-filters"></search-page>
-      </div>
-    `;
-  },
-  play: async ({ canvasElement }) => {
-    await customElements.whenDefined('search-page');
-    await customElements.whenDefined('ui-details');
-    await customElements.whenDefined('ui-search-field');
-    await customElements.whenDefined('ui-checkbox');
-    await customElements.whenDefined('ui-tag');
-    const host = getHost(canvasElement, 'search-page-filters');
-    const originalUrl = `${window.location.pathname}${window.location.search}`;
+export const FilterInteractionManual: Story = {
+  tags: ['manual-only'],
+  render: () => renderSearchPage('search-page-filter-manual', { maxInlineSize: '22.5rem' }),
+  parameters: {
+    docs: {
+      description: {
+        story: `
+手動確認用 story です。
 
-    try {
-      await flush(host);
+確認内容:
+- filter panel の開閉
+- ローカルタグ検索の視認性
+- selected tag chip の見え方
+- 狭幅での一覧スクロール感
 
-      const filterDetails = getFilterDetails(host);
-      const filterSummaryText =
-        host.shadowRoot?.querySelector('.filter-summary-state')?.textContent ?? '';
-      assert(!filterDetails.open, '初期状態のフィルターパネルは閉じている必要があります');
-      assert(
-        filterSummaryText.includes('すべてのタグ'),
-        '初期 summary が "すべてのタグ" ではありません',
-      );
-
-      getFilterTrigger(host).click();
-      await flush(host);
-
-      assert(filterDetails.open, 'フィルターパネルが開いていません');
-      const filterList = host.shadowRoot?.querySelector<HTMLElement>('.filter-list');
-      assert(!!filterList, 'タグ一覧が描画されていません');
-      const filterListStyle = getComputedStyle(filterList);
-      assert(filterListStyle.overflowY === 'auto', 'タグ一覧は内部スクロールである必要があります');
-      assert(filterListStyle.maxHeight !== 'none', 'タグ一覧に max-height が設定されていません');
-
-      const filterSearchField = getFilterSearchField(host);
-      const filterSearchInput = getSearchInput(filterSearchField);
-      const urlBeforeFilterSearch = `${window.location.pathname}${window.location.search}`;
-
-      filterSearchInput.value = 'lit';
-      filterSearchInput.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-      await flush(host);
-
-      const visibleCheckboxesAfterFilter =
-        host.shadowRoot?.querySelectorAll('ui-checkbox.filter-option-checkbox') ?? [];
-      assert(
-        visibleCheckboxesAfterFilter.length === 1,
-        'ローカルタグ検索で候補が絞り込まれていません',
-      );
-      assert(
-        `${window.location.pathname}${window.location.search}` === urlBeforeFilterSearch,
-        'ローカルタグ検索で URL が変わってはいけません',
-      );
-
-      filterSearchInput.value = '';
-      filterSearchInput.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-      await flush(host);
-
-      const litCheckbox = getFilterCheckbox(host, 'lit');
-      await clickCheckboxLabel(litCheckbox);
-      await settleSearch(host);
-
-      const urlAfterTagSelect = new URL(window.location.href);
-      const resultLinksAfterTagSelect = host.shadowRoot?.querySelectorAll('.result-link') ?? [];
-      assert(
-        urlAfterTagSelect.pathname === '/tags/lit/' ||
-          urlAfterTagSelect.searchParams.getAll('tag').includes('lit'),
-        'タグ選択時に URL が同期されていません',
-      );
-      assert(resultLinksAfterTagSelect.length === 1, 'タグ選択で結果数が更新されていません');
-
-      const mainSearchField = host.shadowRoot?.querySelector<SearchField>(
-        'ui-search-field.search-input-control',
-      );
-      const mainSearchInput = getSearchInput(mainSearchField);
-      mainSearchInput.value = 'router';
-      mainSearchInput.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-      await settleSearch(host);
-
-      const urlAfterQuery = new URL(window.location.href);
-      const litCheckboxAfterQuery = getFilterCheckbox(host, 'lit');
-      const performanceCheckboxAfterQuery = getFilterCheckbox(host, 'performance');
-      const selectedTag = host.shadowRoot?.querySelector<HTMLElement>('.selected-tags ui-tag');
-      assert(
-        urlAfterQuery.searchParams.get('q') === 'router',
-        'query 入力時に URL が同期されていません',
-      );
-      assert(litCheckboxAfterQuery.checked, 'query 後も選択中タグは維持される必要があります');
-      assert(!litCheckboxAfterQuery.disabled, '0件の選択済みタグは再操作可能である必要があります');
-      assert(
-        performanceCheckboxAfterQuery.disabled,
-        '0件の未選択タグは disabled である必要があります',
-      );
-      assert(!!selectedTag, '選択中タグの removable chip が表示されていません');
-
-      selectedTag.dispatchEvent(
-        new CustomEvent<{ value: string }>('ui-tag-remove', {
-          bubbles: true,
-          composed: true,
-          detail: { value: 'lit' },
-        }),
-      );
-      await settleSearch(host);
-
-      const urlAfterRemove = new URL(window.location.href);
-      const resultLinksAfterRemove = host.shadowRoot?.querySelectorAll('.result-link') ?? [];
-      const filterSummaryAfterRemove =
-        host.shadowRoot?.querySelector('.filter-summary-state')?.textContent ?? '';
-      assert(
-        !urlAfterRemove.searchParams.getAll('tag').includes('lit'),
-        'removable chip 削除後に URL から tag が除去されていません',
-      );
-      assert(resultLinksAfterRemove.length === 2, 'removable chip 削除後に結果数が戻っていません');
-      assert(
-        filterSummaryAfterRemove.includes('すべてのタグ'),
-        '最後のタグ削除後に summary が戻っていません',
-      );
-    } finally {
-      history.replaceState(history.state, '', originalUrl);
-      restoreSearchPageStorySearchMock();
-    }
+URL 同期や件数更新の合否は \`test/browser/search-page.browser.test.ts\` を正本とします。
+        `,
+      },
+    },
   },
 };
 
-export const FilterPanelReorderRegression: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => {
-    installSearchPageStorySearchMock();
-    return html`
-      <div style="max-inline-size: 22.5rem;">
-        <search-page id="search-page-filter-regression"></search-page>
-      </div>
-    `;
-  },
-  play: async ({ canvasElement }) => {
-    await customElements.whenDefined('search-page');
-    await customElements.whenDefined('ui-details');
-    await customElements.whenDefined('ui-checkbox');
-    const host = getHost(canvasElement, 'search-page-filter-regression');
-    const originalUrl = `${window.location.pathname}${window.location.search}`;
-
-    try {
-      await flush(host);
-      getFilterTrigger(host).click();
-      await flush(host);
-
-      const litCheckbox = getFilterCheckbox(host, 'lit');
-      await clickCheckboxLabel(litCheckbox);
-      await settleSearch(host);
-
-      const statesAfterLitSelect = getFilterOptionStates(host);
-      assert(
-        statesAfterLitSelect[0]?.label === 'lit',
-        '非先頭タグ選択後に選択タグが先頭へ移動していません',
-      );
-      assertFilterSelectionConsistency(host, 'lit 選択後');
-
-      const architectureCheckbox = getFilterCheckbox(host, 'architecture');
-      await clickCheckboxLabel(architectureCheckbox);
-      await settleSearch(host);
-
-      const statesAfterArchitectureSelect = getFilterOptionStates(host);
-      assert(
-        statesAfterArchitectureSelect[0]?.label === 'architecture',
-        '高頻度タグ選択後に並び順が更新されていません',
-      );
-      assert(
-        statesAfterArchitectureSelect[1]?.label === 'lit',
-        '先に選択したタグの相対位置が期待通りではありません',
-      );
-      assertFilterSelectionConsistency(host, 'architecture 選択後');
-
-      const architectureCheckboxAtTop = getFilterCheckbox(host, 'architecture');
-      await clickCheckboxLabel(architectureCheckboxAtTop);
-      await settleSearch(host);
-
-      const statesAfterArchitectureRemove = getFilterOptionStates(host);
-      const topStateAfterRemove = statesAfterArchitectureRemove[0];
-      assert(topStateAfterRemove !== undefined, '先頭のタグ状態が存在しません');
-      assert(
-        topStateAfterRemove.label === 'lit',
-        '先頭タグ解除後に残った選択タグが先頭へ戻っていません',
-      );
-      assert(topStateAfterRemove.selected, '残った選択タグが選択状態ではありません');
-      assert(topStateAfterRemove.checked, '残った選択タグの checkbox が checked ではありません');
-
-      const architectureState = statesAfterArchitectureRemove.find(
-        (state) => state.label === 'architecture',
-      );
-      assert(!architectureState?.selected, '解除したタグが data-selected=true のままです');
-      assert(!architectureState?.checked, '解除したタグの checkbox が checked のままです');
-      assertFilterSelectionConsistency(host, 'architecture 解除後');
-    } finally {
-      history.replaceState(history.state, '', originalUrl);
-      restoreSearchPageStorySearchMock();
-    }
+export const ReorderObservationManual: Story = {
+  tags: ['manual-only'],
+  render: () => renderSearchPage('search-page-reorder-manual', { maxInlineSize: '22.5rem' }),
+  parameters: {
+    docs: {
+      description: {
+        story: `
+selected tag が先頭へ寄る並び替えの観察用 story です。  
+checked / data-selected の整合や並び替え回帰の合否は Storybook ではなく
+\`test/browser/search-page.browser.test.ts\` を正本とします。
+        `,
+      },
+    },
   },
 };

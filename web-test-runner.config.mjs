@@ -2,7 +2,7 @@ import { esbuildPlugin } from '@web/dev-server-esbuild';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
 const config = {
-  files: ['src/**/*.test.ts', 'test/unit/**/*.test.ts'],
+  files: ['test/browser/**/*.test.ts'],
   nodeResolve: {
     exportConditions: ['browser', 'development'],
   },

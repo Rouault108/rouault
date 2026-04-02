@@ -3,7 +3,6 @@ import { html } from 'lit';
 import './sidebar';
 import type { UiSidebar } from './sidebar';
 import type { TreeNode } from '../file-tree/file-tree';
-import type { UiSidebarShell } from '../sidebar-shell/sidebar-shell';
 
 const createLeaf = (id: string, label: string, href: string): TreeNode => ({
   kind: 'leaf',
@@ -43,41 +42,24 @@ const cloneTree = (nodes: readonly TreeNode[]): TreeNode[] =>
       : { ...node },
   );
 
-const waitFrame = async (): Promise<void> =>
-  new Promise((resolve) => {
-    requestAnimationFrame(() => {
-      resolve();
-    });
-  });
-
-const flush = async (host: UiSidebar): Promise<void> => {
-  await host.updateComplete;
-  await waitFrame();
-  await host.updateComplete;
-};
-
-const getHost = (canvasElement: Element, id: string): UiSidebar => {
-  const host = canvasElement.querySelector<UiSidebar>(`#${id}`);
-  if (!host) {
-    throw new Error(`#${id} が見つかりません`);
-  }
-  return host;
-};
-
-const getShell = (host: UiSidebar): UiSidebarShell => {
-  const shell = host.shadowRoot?.querySelector<UiSidebarShell>('ui-sidebar-shell');
-  if (!shell) {
-    throw new Error('ui-sidebar-shell が見つかりません');
-  }
-  return shell;
-};
-
 const meta: Meta<UiSidebar> = {
   title: 'Components/Sidebar',
   component: 'ui-sidebar',
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    docs: {
+      description: {
+        component: `
+sidebar は file-tree と sidebar-shell を束ねる host です。
+
+この story ファイルは **docs / smoke / 手動確認** に限定します。  
+state / mode / fixedBreakpoint の shell 同期、variant の file-tree 伝播、
+ui-tree-* から ui-sidebar-* への event bridge は
+\`test/browser/sidebar.browser.test.ts\` を正本として検査します。
+        `,
+      },
+    },
   },
 };
 
@@ -85,7 +67,15 @@ export default meta;
 type Story = StoryObj<UiSidebar>;
 
 export const FixedExpandedDefault: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+  tags: ['smoke'],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'fixed + expanded の代表表示用 smoke story です。state / mode / shell 同期の合否は test/browser/sidebar.browser.test.ts を正本とします。',
+      },
+    },
+  },
   render: () => html`
     <div
       style="display: grid; grid-template-columns: var(--sidebar-width, 240px) 1fr; min-height: 420px;"
@@ -102,25 +92,18 @@ export const FixedExpandedDefault: Story = {
       <main style="padding: 1.5rem;">本文エリア</main>
     </div>
   `,
-  play: async ({ canvasElement }) => {
-    const host = getHost(canvasElement, 'sidebar-fixed-expanded');
-    await flush(host);
-
-    const shell = getShell(host);
-    if (host.state !== 'expanded') {
-      throw new Error('state が expanded である必要があります');
-    }
-    if (host.mode !== 'fixed') {
-      throw new Error('mode が fixed である必要があります');
-    }
-    if (shell.state !== 'expanded') {
-      throw new Error('shell.state が expanded である必要があります');
-    }
-  },
 };
 
 export const OverlayExpandedCard: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+  tags: ['manual-only'],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'overlay + card variant の見え方を手で確認するための manual-only story です。variant の file-tree 伝播と state 同期の合否は `test/browser/sidebar.browser.test.ts` を正本とします。',
+      },
+    },
+  },
   render: () => html`
     <div style="min-height: 420px; position: relative;">
       <ui-sidebar
@@ -135,19 +118,74 @@ export const OverlayExpandedCard: Story = {
       ></ui-sidebar>
     </div>
   `,
-  play: async ({ canvasElement }) => {
-    const host = getHost(canvasElement, 'sidebar-overlay-expanded');
-    await flush(host);
-
-    const tree = host.shadowRoot?.querySelector<HTMLElement>('ui-file-tree');
-    if (tree?.getAttribute('variant') !== 'card') {
-      throw new Error('overlay card では ui-file-tree に variant="card" が必要です');
-    }
-  },
 };
 
-export const EventBridge: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+export const StateReflectionManual: Story = {
+  tags: ['manual-only'],
+  parameters: {
+    docs: {
+      description: {
+        story: `
+\`ui-sidebar\` の \`data-state\` / \`state\` が shell と整合して見えることを手で確認するための story です。  
+合否判定は Storybook ではなく browser test 側で行います。
+        `,
+      },
+    },
+  },
+  render: () => html`
+    <ui-sidebar
+      data-state="expanded"
+      mode="fixed"
+      heading="状態反映"
+      .items=${cloneTree(sampleItems)}
+      .expandedIds=${new Set(['notes'])}
+      selected-id="notes/reading"
+    ></ui-sidebar>
+  `,
+};
+
+export const ShellSyncManual: Story = {
+  tags: ['manual-only'],
+  parameters: {
+    docs: {
+      description: {
+        story: `
+overlay モードでの shell 同期を観察するための story です。  
+\`collapse()\` と state-change の合否は \`test/browser/sidebar.browser.test.ts\` を正本とします。
+        `,
+      },
+    },
+  },
+  render: () => html`
+    <ui-sidebar
+      data-state="expanded"
+      mode="overlay"
+      heading="shell 同期"
+      .items=${cloneTree(sampleItems)}
+      .expandedIds=${new Set(['notes'])}
+      selected-id="notes/reading"
+    ></ui-sidebar>
+  `,
+};
+
+export const EventBridgeManual: Story = {
+  tags: ['manual-only'],
+  parameters: {
+    docs: {
+      description: {
+        story: `
+手動確認用 story です。
+
+確認内容:
+- ui-sidebar-select / ui-sidebar-toggle / ui-sidebar-active-change の利用例
+- host 側でイベントを購読したときの UI 応答の見え方
+
+event bridge の合否は Storybook ではなく
+\`test/browser/sidebar.browser.test.ts\` を正本とします。
+        `,
+      },
+    },
+  },
   render: () => {
     const updateLog = (label: string, detail: object): void => {
       const log = document.querySelector<HTMLElement>('#sidebar-event-log');
@@ -180,26 +218,5 @@ export const EventBridge: Story = {
         ></ui-sidebar>
       </div>
     `;
-  },
-  play: async ({ canvasElement }) => {
-    const host = canvasElement.querySelector<UiSidebar>('ui-sidebar');
-    const log = canvasElement.querySelector<HTMLElement>('#sidebar-event-log');
-    if (!host || !log) {
-      throw new Error('event bridge の検証に必要な要素が見つかりません');
-    }
-
-    await flush(host);
-    host.dispatchEvent(
-      new CustomEvent<{ id: string }>('ui-sidebar-select', {
-        bubbles: true,
-        composed: true,
-        detail: { id: 'notes/reading' },
-      }),
-    );
-
-    const logText = log.textContent;
-    if (!logText.includes('select')) {
-      throw new Error('ui-sidebar-select の bridge が log へ反映されていません');
-    }
   },
 };

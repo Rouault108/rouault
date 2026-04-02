@@ -82,7 +82,7 @@ const VALID_PLACEMENTS = new Set<UiPopoverPlacement>([
   'right-end',
 ]);
 
-const DOCUMENT_CSS = `
+export const DOCUMENT_CSS = `
 ui-popover [data-ui-popover-content] {
   position: fixed;
   left: 0;

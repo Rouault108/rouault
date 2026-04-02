@@ -1,51 +1,21 @@
 import { html } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { expect } from 'storybook/test';
-import './not-found-page';
+import { buildNotFoundPageMarkup } from './not-found-page.js';
 
 interface StoryArgs {
   requestedPath: string;
 }
 
-function getComponent(canvasElement: HTMLElement): HTMLElement {
-  const element = canvasElement.querySelector('not-found-page');
-  if (!(element instanceof HTMLElement)) {
-    throw new Error('not-found-page が見つかりません');
-  }
-  return element;
-}
-
-function getShadowRoot(element: HTMLElement): ShadowRoot {
-  const shadowRoot = element.shadowRoot;
-  if (!(shadowRoot instanceof ShadowRoot)) {
-    throw new Error('shadowRoot が見つかりません');
-  }
-  return shadowRoot;
-}
-
-function getStyleText(shadowRoot: ShadowRoot): string {
-  const inlineStyles = Array.from(shadowRoot.querySelectorAll('style'))
-    .map((style) => style.textContent)
-    .join('\n');
-
-  const adoptedStyles = shadowRoot.adoptedStyleSheets
-    .map((sheet) => {
-      try {
-        return Array.from(sheet.cssRules)
-          .map((rule) => rule.cssText)
-          .join('\n');
-      } catch {
-        return '';
-      }
-    })
-    .join('\n');
-
-  const styleText = `${inlineStyles}\n${adoptedStyles}`.trim();
-  if (styleText.length === 0) {
-    throw new Error('style が見つかりません');
-  }
-  return styleText;
-}
+const renderNotFoundPage = (args: StoryArgs) => html`
+  <div style="min-height: 100vh; background: var(--bg-default); color: var(--fg-default);">
+    ${unsafeHTML(
+      buildNotFoundPageMarkup({
+        requestedPath: args.requestedPath,
+      }),
+    )}
+  </div>
+`;
 
 const meta = {
   title: 'Components/NotFoundPage',
@@ -53,92 +23,64 @@ const meta = {
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    docs: {
+      description: {
+        component: `
+not-found-page は Lit custom element ではなく、**静的マークアップ生成関数**
+\`buildNotFoundPageMarkup()\` を正本とする 404 fallback です。
+
+基本構造と requestedPath 表示は \`test/ssr/not-found-page.test.ts\`、  
+SSR 経由での描画は \`test/ssr/server-entry.test.ts\`、  
+CSS 構造契約は \`test/ssr/css-structure-contracts.test.ts\` を正本とします。
+
+この story ファイルは **docs / smoke / 手動確認** に限定します。
+        `,
+      },
+    },
   },
   args: {
     requestedPath: '',
   },
-  render: (args: StoryArgs) => html`
-    <div style="min-height: 100vh; background: var(--bg-default); color: var(--fg-default);">
-      <not-found-page requested-path=${args.requestedPath}></not-found-page>
-    </div>
-  `,
+  render: (args: StoryArgs) => renderNotFoundPage(args),
 } satisfies Meta<StoryArgs>;
 
 export default meta;
-
 type Story = StoryObj<StoryArgs>;
 
-export const DefaultContract: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  play: async ({ canvasElement }) => {
-    const element = getComponent(canvasElement);
-    const root = getShadowRoot(element);
-
-    const section = root.querySelector<HTMLElement>('section.not-found-page');
-    await expect(section).not.toBeNull();
-    await expect(section?.getAttribute('aria-labelledby')).toBe('not-found-page-title');
-
-    const heading = root.querySelector<HTMLHeadingElement>('#not-found-page-title');
-    await expect(heading?.textContent.trim()).toBe('このページは見つかりませんでした');
-
-    const nav = root.querySelector<HTMLElement>('nav.actions[aria-label="404 navigation"]');
-    await expect(nav).not.toBeNull();
-
-    const links = Array.from(root.querySelectorAll<HTMLAnchorElement>('a.action-link'));
-    const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('button.action-button'));
-
-    await expect(links.length).toBe(2);
-    await expect(buttons.length).toBe(1);
-    await expect(links[0]?.getAttribute('href')).toBe('/search');
-    await expect(links[1]?.getAttribute('href')).toBe('/about/');
-    await expect(buttons[0]?.getAttribute('type')).toBe('button');
-  },
+export const Default: Story = {
+  tags: ['smoke'],
 };
 
-export const RequestedPathContract: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+export const RequestedPathExample: Story = {
   args: {
     requestedPath: '/notes/missing-entry?tab=outline#section-2',
   },
-  play: async ({ canvasElement, args }) => {
-    const element = getComponent(canvasElement);
-    const root = getShadowRoot(element);
-
-    const metaSection = root.querySelector<HTMLElement>('dl.meta');
-    await expect(metaSection).not.toBeNull();
-
-    const code = root.querySelector<HTMLElement>('.meta-value code');
-    await expect(code?.textContent.trim()).toBe(args.requestedPath);
+  parameters: {
+    docs: {
+      description: {
+        story: '要求されたパスがある場合の 404 fallback 表示例です。',
+      },
+    },
   },
 };
 
-export const NativeActionSemantics: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  play: async ({ canvasElement }) => {
-    const element = getComponent(canvasElement);
-    const root = getShadowRoot(element);
+export const AccessibilityMediaManual: Story = {
+  tags: ['manual-only'],
+  parameters: {
+    docs: {
+      description: {
+        story: `
+手動確認用 story です。
 
-    const actionLinks = Array.from(root.querySelectorAll<HTMLAnchorElement>('a.action-link'));
-    const actionButton = root.querySelector<HTMLButtonElement>('button.action-button');
+確認内容:
+- 404 fallback の全体レイアウト
+- action link の視認性
+- mobile 相当でのリンク並び
+- forced-colors / reduced-motion を含む見え方
 
-    await expect(actionLinks.length).toBe(2);
-    await expect(actionButton).not.toBeNull();
-
-    await expect(actionLinks[0]?.textContent.trim()).toBe('検索ページへ');
-    await expect(actionLinks[1]?.textContent.trim()).toBe('このサイトについて');
-    await expect(actionButton?.textContent.trim()).toBe('前のページへ戻る');
-  },
-};
-
-export const AccessibilityMediaContracts: Story = {
-  parameters: { rouaultContractKind: 'boundary-contract' },
-  play: async ({ canvasElement }) => {
-    const element = getComponent(canvasElement);
-    const root = getShadowRoot(element);
-    const styleText = getStyleText(root);
-
-    await expect(styleText.includes(':focus-visible')).toBe(true);
-    await expect(styleText.includes('@media (prefers-reduced-motion: reduce)')).toBe(true);
-    await expect(styleText.includes('@media (forced-colors: active)')).toBe(true);
+CSS 構造契約の合否は \`test/ssr/css-structure-contracts.test.ts\` を正本とします。
+        `,
+      },
+    },
   },
 };

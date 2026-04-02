@@ -3,7 +3,6 @@ import { html } from 'lit';
 import './layout-sidebar';
 import type { LayoutSidebar } from './layout-sidebar';
 import type { TreeNode } from '../ui/file-tree/file-tree';
-import { getLayoutSidebarTreeStateStorageKey } from './layout-sidebar-tree-state.js';
 
 const sampleItems: readonly TreeNode[] = [
   {
@@ -38,119 +37,109 @@ const sampleItems: readonly TreeNode[] = [
   },
 ];
 
+const sampleItemsJson = JSON.stringify(sampleItems);
+
+const renderSidebar = ({
+  id,
+  selectedId,
+  heading = 'ナビゲーション',
+  fixedBreakpoint,
+}: {
+  id: string;
+  selectedId: string;
+  heading?: string;
+  fixedBreakpoint?: number;
+}) => html`
+  <div style="min-height: 420px;">
+    <layout-sidebar
+      id="${id}"
+      .itemsJson=${sampleItemsJson}
+      selected-id="${selectedId}"
+      heading="${heading}"
+      ${fixedBreakpoint === undefined ? '' : html`fixed-breakpoint="${String(fixedBreakpoint)}"`}
+    ></layout-sidebar>
+  </div>
+`;
+
 const meta: Meta<LayoutSidebar> = {
   title: 'Layout/Layout Sidebar',
   component: 'layout-sidebar',
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    docs: {
+      description: {
+        component: `
+layout-sidebar の docs / 手動確認用 story です。
+
+このファイルは **Storybook 上で contract を判定しません**。  
+expandedIds の永続化と overlay での selection collapse は
+\`test/browser/layout-sidebar.browser.test.ts\` を正本とし、  
+保存キーや state merge の純粋ロジックは
+\`test/node/layout-sidebar-tree-state.test.ts\` を正本とします。
+        `,
+      },
+    },
   },
 };
 
 export default meta;
 type Story = StoryObj<LayoutSidebar>;
 
-const waitFrame = async (): Promise<void> =>
-  new Promise((resolve) => {
-    requestAnimationFrame(() => {
-      resolve();
-    });
-  });
-
-const flush = async (host: LayoutSidebar): Promise<void> => {
-  await host.updateComplete;
-  await waitFrame();
-  await host.updateComplete;
+export const Default: Story = {
+  render: () =>
+    renderSidebar({
+      id: 'layout-sidebar-default',
+      selectedId: 'music/classical/beethoven/symphony-9',
+    }),
 };
 
-const getHost = (canvasElement: Element, id: string): LayoutSidebar => {
-  const host = canvasElement.querySelector<LayoutSidebar>(`#${id}`);
-  if (!host) {
-    throw new Error(`#${id} が見つかりません`);
-  }
-  return host;
-};
+export const PersistedExpandedIdsManual: Story = {
+  tags: ['manual-only'],
+  parameters: {
+    docs: {
+      description: {
+        story: `
+手動確認用 story です。
 
-export const PersistsExpandedIds: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html`
-    <div style="min-height: 420px;">
-      <layout-sidebar
-        id="layout-sidebar-persist"
-        .itemsJson=${JSON.stringify(sampleItems)}
-        selected-id="music/classical/beethoven/symphony-9"
-        heading="ナビゲーション"
-      ></layout-sidebar>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const storageKey = getLayoutSidebarTreeStateStorageKey('music/classical/beethoven/symphony-9');
-    localStorage.removeItem(storageKey);
+確認内容:
+- branch 展開後に見た目が保たれること
+- 再描画してもナビゲーションの骨格が崩れないこと
 
-    const host = getHost(canvasElement, 'layout-sidebar-persist');
-    await flush(host);
-
-    const sidebar = host.shadowRoot?.querySelector<HTMLElement>('ui-sidebar');
-    if (!sidebar) {
-      throw new Error('ui-sidebar が見つかりません');
-    }
-
-    sidebar.dispatchEvent(
-      new CustomEvent<{ id: string; expanded: boolean }>('ui-sidebar-toggle', {
-        bubbles: true,
-        composed: true,
-        detail: {
-          id: 'music/classical',
-          expanded: true,
-        },
-      }),
-    );
-    await flush(host);
-
-    const storedRaw = localStorage.getItem(storageKey);
-    if (storedRaw === null) {
-      throw new Error('expandedIds が保存されていません');
-    }
-
-    const stored = JSON.parse(storedRaw) as { expandedIds?: string[] };
-    if (!stored.expandedIds?.includes('music/classical')) {
-      throw new Error('toggle した branch id が保存されていません');
-    }
-
-    localStorage.removeItem(storageKey);
+expandedIds の保存そのものの合否は \`test/browser/layout-sidebar.browser.test.ts\` を正本とします。
+        `,
+      },
+    },
   },
+  render: () =>
+    renderSidebar({
+      id: 'layout-sidebar-persist',
+      selectedId: 'music/classical/beethoven/symphony-9',
+      heading: 'ナビゲーション',
+    }),
 };
 
-export const OverlaySelectionCollapses: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html`
-    <div style="min-height: 420px;">
-      <layout-sidebar
-        id="layout-sidebar-overlay"
-        .itemsJson=${JSON.stringify(sampleItems)}
-        selected-id="music/classical/beethoven/symphony-9"
-        fixed-breakpoint="99999"
-      ></layout-sidebar>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const host = getHost(canvasElement, 'layout-sidebar-overlay');
-    await flush(host);
+export const OverlaySelectionManual: Story = {
+  tags: ['manual-only'],
+  parameters: {
+    docs: {
+      description: {
+        story: `
+手動確認用 story です。
 
-    const sidebar = host.shadowRoot?.querySelector('ui-sidebar');
-    if (!sidebar) {
-      throw new Error('ui-sidebar が見つかりません');
-    }
+確認内容:
+- 狭い画面相当の overlay で表示できること
+- 選択後に本文優先へ戻る設計であることを docs 上で説明できること
 
-    sidebar.dispatchEvent(
-      new CustomEvent<{ id: string }>('ui-sidebar-select', {
-        bubbles: true,
-        composed: true,
-        detail: {
-          id: 'music/classical/tchaikovsky/the-nutcracker',
-        },
-      }),
-    );
-    await flush(host);
+overlay での collapse 合否は \`test/browser/layout-sidebar.browser.test.ts\` を正本とします。
+        `,
+      },
+    },
   },
+  render: () =>
+    renderSidebar({
+      id: 'layout-sidebar-overlay',
+      selectedId: 'music/classical/beethoven/symphony-9',
+      fixedBreakpoint: 99999,
+    }),
 };

@@ -12,6 +12,13 @@ export default defineConfig({
     projects: [
       {
         test: {
+          name: 'node',
+          environment: 'node',
+          include: ['test/node/**/*.test.ts'],
+        },
+      },
+      {
+        test: {
           name: 'ssr',
           environment: 'node',
           include: ['test/ssr/**/*.test.ts'],
@@ -21,12 +28,17 @@ export default defineConfig({
         plugins: await storybookTest({
           configDir: path.join(dirname, '.storybook'),
           disableAddonDocs: true,
+          tags: {
+            include: ['smoke'],
+            exclude: ['manual-only'],
+            skip: [],
+          },
         }),
         optimizeDeps: {
           include: ['@storybook/web-components', '@storybook/web-components-vite'],
         },
         test: {
-          name: 'storybook-runtime',
+          name: 'storybook-smoke',
           setupFiles: ['.storybook/vitest.setup.ts'],
           browser: {
             enabled: true,

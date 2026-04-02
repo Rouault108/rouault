@@ -3,8 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import {
-  isRouaultContractKind,
-  type RouaultContractKind,
+  resolveRouaultStoryRole,
+  type RouaultStoryRole,
 } from '../../src/testing/story-taxonomy.js';
 
 export interface StorySourceRecord {
@@ -13,9 +13,10 @@ export interface StorySourceRecord {
   hasPlay: boolean;
   importSpecifiers: readonly string[];
   metaTitle: string | undefined;
-  storyContractKind: RouaultContractKind | undefined;
-  metaContractKind: RouaultContractKind | undefined;
-  resolvedContractKind: RouaultContractKind | undefined;
+  storyTags: readonly string[];
+  metaTags: readonly string[];
+  resolvedTags: readonly string[];
+  resolvedRole: RouaultStoryRole;
 }
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -91,36 +92,34 @@ function getObjectProperty(
   return undefined;
 }
 
-function getParametersExpression(
-  objectLiteral: ts.ObjectLiteralExpression,
-): ts.ObjectLiteralExpression | undefined {
-  const parametersProperty = getObjectProperty(objectLiteral, 'parameters');
-  if (!parametersProperty) {
-    return undefined;
+function getStringArrayProperty(
+  objectLiteral: ts.ObjectLiteralExpression | undefined,
+  propertyName: string,
+): readonly string[] {
+  if (!objectLiteral) {
+    return [];
   }
 
-  return unwrapObjectLiteral(parametersProperty.initializer);
-}
-
-function getRouaultContractKindFromParameters(
-  parametersExpression: ts.ObjectLiteralExpression | undefined,
-): RouaultContractKind | undefined {
-  if (!parametersExpression) {
-    return undefined;
+  const property = getObjectProperty(objectLiteral, propertyName);
+  if (!property || !ts.isArrayLiteralExpression(property.initializer)) {
+    return [];
   }
 
-  const kindProperty = getObjectProperty(parametersExpression, 'rouaultContractKind');
-  if (!kindProperty) {
-    return undefined;
+  const values = new Set<string>();
+  for (const element of property.initializer.elements) {
+    if (!ts.isStringLiteral(element)) {
+      continue;
+    }
+
+    const normalized = element.text.trim();
+    if (normalized.length === 0) {
+      continue;
+    }
+
+    values.add(normalized);
   }
 
-  if (!ts.isStringLiteral(kindProperty.initializer)) {
-    return undefined;
-  }
-
-  return isRouaultContractKind(kindProperty.initializer.text)
-    ? kindProperty.initializer.text
-    : undefined;
+  return [...values];
 }
 
 function getMetaTitle(objectLiteral: ts.ObjectLiteralExpression | undefined): string | undefined {
@@ -190,9 +189,8 @@ export function collectStorySourceRecords(): StorySourceRecord[] {
       ts.ScriptKind.TS,
     );
     const metaObject = collectMetaObject(sourceFile);
-    const metaParameters = metaObject ? getParametersExpression(metaObject) : undefined;
-    const metaContractKind = getRouaultContractKindFromParameters(metaParameters);
     const metaTitle = getMetaTitle(metaObject);
+    const metaTags = getStringArrayProperty(metaObject, 'tags');
     const importSpecifiers = sourceFile.statements
       .filter(ts.isImportDeclaration)
       .map((statement) => statement.moduleSpecifier)
@@ -221,17 +219,17 @@ export function collectStorySourceRecords(): StorySourceRecord[] {
           continue;
         }
 
-        const storyParameters = getParametersExpression(objectLiteral);
-        const storyContractKind = getRouaultContractKindFromParameters(storyParameters);
+        const storyTags = getStringArrayProperty(objectLiteral, 'tags');
         records.push({
           filePath: normalizePath(path.relative(repositoryRoot, absolutePath)),
           exportName: declaration.name.text,
           hasPlay: hasPlayFunction(objectLiteral),
           importSpecifiers,
           metaTitle,
-          storyContractKind,
-          metaContractKind,
-          resolvedContractKind: storyContractKind ?? metaContractKind,
+          storyTags,
+          metaTags,
+          resolvedTags: [...new Set([...metaTags, ...storyTags])],
+          resolvedRole: resolveRouaultStoryRole({ tags: storyTags }, { tags: metaTags }),
         });
       }
     }

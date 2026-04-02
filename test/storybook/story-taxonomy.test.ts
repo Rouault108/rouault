@@ -1,70 +1,60 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ROUAULT_BOUNDARY_NAME_PATTERN,
-  ROUAULT_CONTRACT_KINDS,
-  ROUAULT_INTERACTION_NAME_PATTERN,
-  isBoundaryStoryFile,
-  isFoundationStoryFile,
+  ROUAULT_STORYBOOK_MANUAL_ONLY_TAG,
+  ROUAULT_STORYBOOK_SMOKE_TAG,
 } from '../../src/testing/story-taxonomy.js';
 import { collectStorySourceRecords } from './story-source.js';
 
 describe('story taxonomy', () => {
   const stories = collectStorySourceRecords();
 
-  it('requires rouaultContractKind on every named story export', () => {
-    const missing = stories
-      .filter((story) => story.resolvedContractKind === undefined)
+  it('Storybook runtime 用の smoke allowlist が空にならないこと', () => {
+    const smokeStories = stories
+      .filter((story) => story.resolvedRole === 'smoke')
       .map((story) => `${story.filePath}#${story.exportName}`);
 
-    expect(missing).toEqual([]);
+    expect(smokeStories.length).toBeGreaterThan(0);
   });
 
-  it('limits rouaultContractKind to the normalized taxonomy', () => {
-    const invalid = stories
+  it('smoke と manual-only を同じ story に同居させないこと', () => {
+    const conflicts = stories
       .filter(
         (story) =>
-          story.resolvedContractKind !== undefined &&
-          !(ROUAULT_CONTRACT_KINDS as readonly string[]).includes(story.resolvedContractKind),
+          story.resolvedTags.includes(ROUAULT_STORYBOOK_SMOKE_TAG) &&
+          story.resolvedTags.includes(ROUAULT_STORYBOOK_MANUAL_ONLY_TAG),
       )
-      .map(
-        (story) => `${story.filePath}#${story.exportName}:${String(story.resolvedContractKind)}`,
-      );
-
-    expect(invalid).toEqual([]);
-  });
-
-  it('requires play on interaction-contract stories', () => {
-    const missingPlay = stories
-      .filter((story) => story.resolvedContractKind === 'interaction-contract' && !story.hasPlay)
       .map((story) => `${story.filePath}#${story.exportName}`);
 
-    expect(missingPlay).toEqual([]);
+    expect(conflicts).toEqual([]);
   });
 
-  it('keeps foundations and boundary hints aligned with taxonomy', () => {
-    const mismatches = stories
-      .filter((story) => {
-        if (isFoundationStoryFile(story.filePath)) {
-          return story.resolvedContractKind !== 'visual';
-        }
+  it('smoke story は Storybook runtime の対象として manual-only に混在しないこと', () => {
+    const invalidSmokeStories = stories
+      .filter(
+        (story) =>
+          story.resolvedRole === 'smoke' &&
+          story.resolvedTags.includes(ROUAULT_STORYBOOK_MANUAL_ONLY_TAG),
+      )
+      .map((story) => `${story.filePath}#${story.exportName}`);
 
-        if (
-          isBoundaryStoryFile(story.filePath) ||
-          ROUAULT_BOUNDARY_NAME_PATTERN.test(story.exportName)
-        ) {
-          return story.resolvedContractKind !== 'boundary-contract';
-        }
+    expect(invalidSmokeStories).toEqual([]);
+  });
 
-        if (ROUAULT_INTERACTION_NAME_PATTERN.test(story.exportName)) {
-          return story.resolvedContractKind !== 'interaction-contract';
-        }
+  it('1 つの story file に複数の smoke story を置かないこと', () => {
+    const smokeCountByFile = new Map<string, number>();
 
-        return false;
-      })
-      .map(
-        (story) => `${story.filePath}#${story.exportName}:${String(story.resolvedContractKind)}`,
-      );
+    for (const story of stories) {
+      if (story.resolvedRole !== 'smoke') {
+        continue;
+      }
 
-    expect(mismatches).toEqual([]);
+      smokeCountByFile.set(story.filePath, (smokeCountByFile.get(story.filePath) ?? 0) + 1);
+    }
+
+    const offenders = [...smokeCountByFile.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([filePath, count]) => `${filePath} (${count})`);
+
+    expect(offenders).toEqual([]);
   });
 });

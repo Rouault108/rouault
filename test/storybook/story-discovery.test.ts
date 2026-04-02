@@ -5,94 +5,76 @@ import { describe, expect, it } from 'vitest';
 import { collectStorySourceRecords } from './story-source.js';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const legacyStaticFirstStoryFiles = [
-  'src/components/ui/blockquote/blockquote.stories.ts',
-  'src/components/ui/callout/callout.stories.ts',
-  'src/components/ui/divider/divider.stories.ts',
-  'src/components/ui/footnote/footnote.stories.ts',
-  'src/components/ui/highlight/highlight.stories.ts',
-  'src/components/ui/image/image.stories.ts',
-  'src/components/ui/info-box/info-box.stories.ts',
-  'src/components/ui/table/table.stories.ts',
-] as const;
 
 describe('story discovery', () => {
   const stories = collectStorySourceRecords();
 
-  it('ストーリーブックの分類体系のカバレッジが空にならないようにする', () => {
+  it('Storybook metadata gate の入力が空でなく、docs/smoke/manual-only に収束していること', () => {
     const filePaths = new Set(stories.map((story) => story.filePath));
-    const interactionCount = stories.filter(
-      (story) => story.resolvedContractKind === 'interaction-contract',
-    ).length;
-    const boundaryCount = stories.filter(
-      (story) => story.resolvedContractKind === 'boundary-contract',
-    ).length;
-    const visualCount = stories.filter((story) => story.resolvedContractKind === 'visual').length;
+    const smokeCount = stories.filter((story) => story.resolvedRole === 'smoke').length;
+    const docsCount = stories.filter((story) => story.resolvedRole === 'docs').length;
+
+    const noteContractFiles = [...new Set(
+      stories
+        .filter((story) => story.filePath.startsWith('src/stories/note-contracts/'))
+        .map((story) => story.filePath),
+    )];
+
+    const boundaryFiles = [...new Set(
+      stories
+        .filter(
+          (story) =>
+            story.filePath.endsWith('-boundary.stories.ts') ||
+            story.metaTitle?.endsWith('/Boundary') === true,
+        )
+        .map((story) => story.filePath),
+    )];
 
     expect(filePaths.size).toBeGreaterThan(0);
     expect(stories.length).toBeGreaterThan(0);
-    expect(interactionCount).toBeGreaterThan(0);
-    expect(boundaryCount).toBeGreaterThan(0);
-    expect(visualCount).toBeGreaterThan(0);
+    expect(smokeCount).toBeGreaterThan(0);
+    expect(docsCount).toBeGreaterThan(0);
+    expect(noteContractFiles).toEqual([]);
+    expect(boundaryFiles).toEqual([]);
   });
 
-  it('test:storybook が runtime と metadata validation に接続されていることを確認する', () => {
+  it('常設ゲートと拡張ゲートが分離され、browser/node/E2E の責務境界が崩れていないことを確認する', () => {
     const packageJson = JSON.parse(
       fs.readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'),
     ) as {
       scripts?: Record<string, string>;
     };
-    const testStorybook = packageJson.scripts?.['test:storybook'] ?? '';
+
     const vitestConfig = fs.readFileSync(path.join(repositoryRoot, 'vitest.config.ts'), 'utf8');
-
-    expect(testStorybook).toContain('--project storybook-meta');
-    expect(testStorybook).toContain('--project storybook-runtime');
-    expect(vitestConfig).toContain("name: 'storybook-runtime'");
-    expect(vitestConfig).not.toContain('passWithNoTests');
-  });
-
-  it('note contract stories が責任に基づいて分割されていることを確認する', () => {
-    const filePaths = new Set(stories.map((story) => story.filePath));
-
-    expect(filePaths.has('src/stories/note-contracts/static-primitives.stories.ts')).toBe(true);
-    expect(filePaths.has('src/stories/note-contracts/enhancers.stories.ts')).toBe(true);
-
-    expect(filePaths.has('src/components/ui/tabs/tabs.stories.ts')).toBe(true);
-    expect(filePaths.has('src/components/ui/details/details.stories.ts')).toBe(true);
-  });
-
-  it('note contracts を Storybook 先頭に並べ、legacy component stories を補助階層へ退避すること', () => {
-    const previewSource = fs.readFileSync(path.join(repositoryRoot, '.storybook/preview.ts'), 'utf8');
-    expect(previewSource).toContain(
-      "order: ['Note Contracts', 'Foundations', 'Layouts', 'Components', 'Legacy Components']",
+    const wtrConfig = fs.readFileSync(
+      path.join(repositoryRoot, 'web-test-runner.config.mjs'),
+      'utf8',
     );
 
-    const noteContractTitles = new Set(
-      stories
-        .filter((story) => story.filePath.startsWith('src/stories/note-contracts/'))
-        .map((story) => story.metaTitle),
+    expect(packageJson.scripts?.['test']).toBe(
+      'pnpm test:node && pnpm test:ssr && pnpm test:browser && pnpm test:storybook:meta',
     );
-    expect(noteContractTitles).toEqual(
-      new Set(['Note Contracts/Static Primitives', 'Note Contracts/Enhancers']),
+    expect(packageJson.scripts?.['test:extended']).toBe(
+      'pnpm test:storybook:smoke && pnpm test:e2e',
+    );
+    expect(packageJson.scripts?.['test:node']).toBe('vitest --project node');
+    expect(packageJson.scripts?.['test:browser']).toBe(
+      'pnpm exec web-test-runner --config web-test-runner.config.mjs',
+    );
+    expect(packageJson.scripts?.['test:unit']).toBeUndefined();
+    expect(packageJson.scripts?.['test:storybook:meta']).toBe('vitest --project storybook-meta');
+    expect(packageJson.scripts?.['test:storybook:smoke']).toBe(
+      'vitest --project storybook-smoke',
     );
 
-    const legacyTitles = stories
-      .filter((story) =>
-        legacyStaticFirstStoryFiles.includes(
-          story.filePath as (typeof legacyStaticFirstStoryFiles)[number],
-        ),
-      )
-      .map((story) => `${story.filePath}:${story.metaTitle ?? ''}`);
+    expect(vitestConfig).toContain("name: 'node'");
+    expect(vitestConfig).toContain("name: 'storybook-smoke'");
+    expect(vitestConfig).toContain("include: ['smoke']");
+    expect(vitestConfig).toContain("exclude: ['manual-only']");
+    expect(vitestConfig).not.toContain("name: 'storybook-runtime'");
 
-    expect(legacyTitles).toEqual([
-      'src/components/ui/blockquote/blockquote.stories.ts:Legacy Components/Blockquote',
-      'src/components/ui/callout/callout.stories.ts:Legacy Components/Callout',
-      'src/components/ui/divider/divider.stories.ts:Legacy Components/Divider',
-      'src/components/ui/footnote/footnote.stories.ts:Legacy Components/Footnote',
-      'src/components/ui/highlight/highlight.stories.ts:Legacy Components/Highlight',
-      'src/components/ui/image/image.stories.ts:Legacy Components/Image',
-      'src/components/ui/info-box/info-box.stories.ts:Legacy Components/InfoBox',
-      'src/components/ui/table/table.stories.ts:Legacy Components/Table',
-    ]);
+    expect(wtrConfig).toContain("files: ['test/browser/**/*.test.ts']");
+    expect(wtrConfig).not.toContain('test/unit/');
+    expect(wtrConfig).not.toContain('src/**/*.test.ts');
   });
 });

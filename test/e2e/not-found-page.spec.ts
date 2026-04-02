@@ -1,19 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('not-found page', () => {
-  test('direct 404.html load works without JavaScript', async ({ browser }) => {
-    const context = await browser.newContext({ javaScriptEnabled: false });
-    const page = await context.newPage();
-
-    await page.goto('/404.html');
-
-    await expect(page.getByRole('heading', { level: 1, name: 'このページは見つかりませんでした' })).toBeVisible();
-    await expect(page.getByRole('link', { name: '検索ページへ' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'このサイトについて' })).toBeVisible();
-
-    await context.close();
-  });
-
   test('router commits not-found as completed outcome', async ({ page }) => {
     await page.goto('/search/');
 

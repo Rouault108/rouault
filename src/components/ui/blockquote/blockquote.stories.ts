@@ -6,41 +6,6 @@ import type { BlockquoteVariant } from './blockquote';
 
 const VARIANTS = ['default', 'nested'] as const satisfies BlockquoteVariant[];
 
-const getBlockquote = (canvasElement: Element, id: string): Blockquote => {
-  const blockquote = canvasElement.querySelector<Blockquote>(`#${id}`);
-  if (!blockquote) throw new Error(`#${id} が見つかりません`);
-  return blockquote;
-};
-
-const getQuoteRoot = (block: Blockquote): HTMLElement => {
-  const quote = block.shadowRoot?.querySelector<HTMLElement>('blockquote.quote');
-  if (!quote) throw new Error('blockquote.quote が見つかりません');
-  return quote;
-};
-
-const getSourceCaption = (block: Blockquote): HTMLElement => {
-  const caption = block.shadowRoot?.querySelector<HTMLElement>('figcaption.source');
-  if (!caption) throw new Error('figcaption.source が見つかりません');
-  return caption;
-};
-
-const getSourceSlotElement = (block: Blockquote): HTMLSlotElement | null =>
-  block.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="source"]') ?? null;
-
-const getAssignedSourceElements = (block: Blockquote): Element[] => {
-  const slot = getSourceSlotElement(block);
-  if (!slot) throw new Error('source slot 要素が見つかりません');
-  return slot.assignedElements({ flatten: true });
-};
-
-const getSourceFallbackText = (block: Blockquote): string => {
-  const cite = block.shadowRoot?.querySelector<HTMLElement>('figcaption.source cite');
-  if (!cite) throw new Error('figcaption.source cite が見つかりません');
-  return cite.textContent.replace(/\s+/g, ' ').trim();
-};
-
-const readCssText = (styles: unknown): string => String(styles);
-
 const meta: Meta<Blockquote> = {
   title: 'Components/Blockquote',
   component: 'ui-blockquote',
@@ -95,30 +60,13 @@ type Story = StoryObj<Blockquote>;
  * - 出典なしでは `blockquote` 単体を使う
  * - キーボード非インタラクティブ契約（tabindex/role を持たない）
  */
+
 export const Default: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-blockquote id="default-quote">
       <p>読書体験は、UIを消すことではなく、本文の信号を最大化することで成立する。</p>
     </ui-blockquote>
   `,
-  play: async ({ canvasElement }) => {
-    const block = getBlockquote(canvasElement, 'default-quote');
-    await block.updateComplete;
-
-    const quote = getQuoteRoot(block);
-    if (quote.getAttribute('data-variant') !== 'default') {
-      throw new Error('default バリアントの data-variant が不正です');
-    }
-
-    if (block.shadowRoot?.querySelector('figure')) {
-      throw new Error('出典なしで figure を描画してはいけません');
-    }
-
-    if (quote.hasAttribute('tabindex') || quote.hasAttribute('role')) {
-      throw new Error('blockquote は非インタラクティブ要素として扱う必要があります');
-    }
-  },
 };
 
 /**
@@ -126,8 +74,8 @@ export const Default: Story = {
  * - variant: default / nested
  * - source: あり / なし
  */
+
 export const VariantStateMatrix: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -163,316 +111,15 @@ export const VariantStateMatrix: Story = {
       </ui-blockquote>
     </div>
   `,
-  play: async ({ canvasElement }) => {
-    const ids = [
-      'matrix-default-no-source',
-      'matrix-default-source',
-      'matrix-nested-no-source',
-      'matrix-nested-source',
-    ] as const;
-
-    const blocks = ids.map((id) => getBlockquote(canvasElement, id));
-    await Promise.all(blocks.map((block) => block.updateComplete));
-
-    for (const block of blocks) {
-      const quote = getQuoteRoot(block);
-      const expectedVariant = block.getAttribute('variant') ?? 'default';
-      if (quote.getAttribute('data-variant') !== expectedVariant) {
-        throw new Error(`${block.id} の data-variant が不正です`);
-      }
-    }
-
-    const withSource = ['matrix-default-source', 'matrix-nested-source'] as const;
-    for (const id of withSource) {
-      const block = getBlockquote(canvasElement, id);
-      const figure = block.shadowRoot?.querySelector('figure');
-      const source = block.shadowRoot?.querySelector('figcaption.source cite');
-      if (!figure || !source) {
-        throw new Error(`${id} は source あり構造 (figure/figcaption/cite) を満たす必要があります`);
-      }
-    }
-
-    const noSource = ['matrix-default-no-source', 'matrix-nested-no-source'] as const;
-    for (const id of noSource) {
-      const block = getBlockquote(canvasElement, id);
-      if (block.shadowRoot?.querySelector('figure')) {
-        throw new Error(`${id} は source なしのため figure を描画してはいけません`);
-      }
-    }
-
-    const defaultQuote = getQuoteRoot(getBlockquote(canvasElement, 'matrix-default-no-source'));
-    const nestedQuote = getQuoteRoot(getBlockquote(canvasElement, 'matrix-nested-no-source'));
-    const defaultMargin = Number.parseFloat(getComputedStyle(defaultQuote).marginTop);
-    const nestedMargin = Number.parseFloat(getComputedStyle(nestedQuote).marginTop);
-    if (!(nestedMargin < defaultMargin)) {
-      throw new Error('nested バリアントの margin が default より小さい想定を満たしていません');
-    }
-  },
 };
 
 /**
- * Source Contract:
- * - cite 属性の伝播
- * - quote-lang / lang の伝播
- * - source は簡易テキスト出典
- * - slot="source" は優先可視出典
- * - 無効な source slot は source へフォールバックする
+ * semantic token 上の表示確認用 story です。
+ * CSS 構造契約の合否は SSR 側テストを正本とします。
  */
-export const SourceContract: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html`
-    <div style="display: grid; gap: 1rem;">
-      <ui-blockquote
-        id="source-prop-contract"
-        source="Grace Hopper, Compiler Talk"
-        cite=" https://example.com/compiler-talk "
-        quote-lang="en"
-      >
-        <p>One accurate measurement is worth a thousand expert opinions.</p>
-      </ui-blockquote>
 
-      <ui-blockquote id="source-slot-contract" cite="https://example.com/interview">
-        <p>設計は見えないところにこそ現れる。</p>
-        <span slot="source">著者, <em>Interview</em></span>
-      </ui-blockquote>
-
-      <ui-blockquote
-        id="source-slot-priority-contract"
-        source="Fallback Source"
-        cite="https://example.com/priority"
-      >
-        <p>可視出典は優先入力を採用する。</p>
-        <span slot="source">Visible Source, <em>Priority Slot</em></span>
-      </ui-blockquote>
-
-      <ui-blockquote
-        id="source-empty-slot-fallback-contract"
-        source="Fallback Source From Empty Slot"
-      >
-        <p>空白のみの source slot は可視出典として扱わない。</p>
-        <span slot="source"> </span>
-      </ui-blockquote>
-
-      <ui-blockquote
-        id="source-decorative-slot-fallback-contract"
-        source="Fallback Source From Decorative Slot"
-      >
-        <p>文字情報を持たない装飾のみの source slot は可視出典として扱わない。</p>
-        <span slot="source" aria-hidden="true">
-          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
-            <circle cx="8" cy="8" r="6"></circle>
-          </svg>
-        </span>
-      </ui-blockquote>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const sourceProp = getBlockquote(canvasElement, 'source-prop-contract');
-    const sourceSlot = getBlockquote(canvasElement, 'source-slot-contract');
-    const sourceSlotPriority = getBlockquote(canvasElement, 'source-slot-priority-contract');
-    const sourceEmptySlotFallback = getBlockquote(
-      canvasElement,
-      'source-empty-slot-fallback-contract',
-    );
-    const sourceDecorativeSlotFallback = getBlockquote(
-      canvasElement,
-      'source-decorative-slot-fallback-contract',
-    );
-    await Promise.all([
-      sourceProp.updateComplete,
-      sourceSlot.updateComplete,
-      sourceSlotPriority.updateComplete,
-      sourceEmptySlotFallback.updateComplete,
-      sourceDecorativeSlotFallback.updateComplete,
-    ]);
-
-    const propQuote = getQuoteRoot(sourceProp);
-    if (propQuote.getAttribute('cite') !== 'https://example.com/compiler-talk') {
-      throw new Error('cite 属性は trim 済みURLで blockquote に反映される必要があります');
-    }
-    if (propQuote.getAttribute('lang') !== 'en') {
-      throw new Error('quote-lang は blockquote.lang に反映される必要があります');
-    }
-    if (getSourceSlotElement(sourceProp)) {
-      throw new Error('source のみのケースでは source slot を描画してはいけません');
-    }
-    if (!getSourceFallbackText(sourceProp).includes('Grace Hopper')) {
-      throw new Error('source プロパティ値が figcaption > cite に反映されていません');
-    }
-
-    const slotQuote = getQuoteRoot(sourceSlot);
-    if (slotQuote.getAttribute('cite') !== 'https://example.com/interview') {
-      throw new Error('source slot ケースでも cite 属性を保持する必要があります');
-    }
-    const sourceSlotElements = getAssignedSourceElements(sourceSlot);
-    const assignedSource = sourceSlotElements.at(0);
-    if (!assignedSource) {
-      throw new Error('source slot に要素が割り当てられていません');
-    }
-    if ((getSourceSlotElement(sourceSlot)?.textContent ?? '').trim() !== '') {
-      throw new Error('source slot 専用ケースでフォールバック本文を混在させてはいけません');
-    }
-    const slotSourceEm = assignedSource.querySelector('em');
-    if (slotSourceEm?.textContent.trim() !== 'Interview') {
-      throw new Error('source slot のリッチテキストが cite 内に保持されていません');
-    }
-
-    const priorityQuote = getQuoteRoot(sourceSlotPriority);
-    if (priorityQuote.getAttribute('cite') !== 'https://example.com/priority') {
-      throw new Error('優先 source slot ケースでも cite 属性を保持する必要があります');
-    }
-    const prioritySlot = getSourceSlotElement(sourceSlotPriority);
-    if (!prioritySlot) {
-      throw new Error('優先 source slot ケースでは slot[name="source"] が必要です');
-    }
-    if (prioritySlot.textContent.trim() !== '') {
-      throw new Error('有効な source slot がある場合、source は可視出典として混在してはいけません');
-    }
-    const priorityAssignedSource = prioritySlot.assignedElements({ flatten: true }).at(0);
-    if (!(priorityAssignedSource instanceof HTMLElement)) {
-      throw new Error('優先 source slot に要素が割り当てられていません');
-    }
-    if (!priorityAssignedSource.textContent.includes('Visible Source')) {
-      throw new Error('同時指定時は source slot の内容を優先表示する必要があります');
-    }
-    if (priorityAssignedSource.textContent.includes('Fallback Source')) {
-      throw new Error('同時指定時に source プロパティの文字列を可視出典へ昇格させてはいけません');
-    }
-
-    if (getSourceSlotElement(sourceEmptySlotFallback)) {
-      throw new Error('空白のみの source slot は描画経路として採用してはいけません');
-    }
-    if (getSourceFallbackText(sourceEmptySlotFallback) !== 'Fallback Source From Empty Slot') {
-      throw new Error('空白のみの source slot では source を可視出典として使う必要があります');
-    }
-
-    if (getSourceSlotElement(sourceDecorativeSlotFallback)) {
-      throw new Error('装飾のみの source slot は描画経路として採用してはいけません');
-    }
-    if (
-      getSourceFallbackText(sourceDecorativeSlotFallback) !== 'Fallback Source From Decorative Slot'
-    ) {
-      throw new Error('装飾のみの source slot では source を可視出典として使う必要があります');
-    }
-  },
-};
-
-/**
- * フォーカス契約:
- * - blockquote は非インタラクティブ
- * - 出典リンクのみがフォーカス対象になる
- */
-export const FocusContract: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html`
-    <ui-blockquote id="focus-contract">
-      <p>本文はフォーカス対象ではなく、出典リンクのみを到達可能とする。</p>
-      <span slot="source"
-        >出典: <a id="focus-contract-link" href="https://example.com/source">設計資料</a></span
-      >
-    </ui-blockquote>
-  `,
-  play: async ({ canvasElement }) => {
-    const block = getBlockquote(canvasElement, 'focus-contract');
-    await block.updateComplete;
-
-    const quote = getQuoteRoot(block);
-    if (quote.hasAttribute('tabindex') || quote.hasAttribute('role')) {
-      throw new Error('blockquote にインタラクション属性を付与してはいけません');
-    }
-
-    const link = block.querySelector<HTMLAnchorElement>('#focus-contract-link');
-    if (!link) throw new Error('#focus-contract-link が見つかりません');
-    link.focus();
-    if (document.activeElement !== link) {
-      throw new Error('出典リンクがキーボードフォーカス対象になっていません');
-    }
-  },
-};
-
-/**
- * 事故が多い境界条件:
- * - 不正 variant のフォールバック
- * - 空白 source / 空白 source slot の抑止
- * - 装飾のみ source slot の抑止
- * - host の lang フォールバック
- * - 空白 cite の無効化
- */
-export const BoundaryConditions: Story = {
-  parameters: { rouaultContractKind: 'boundary-contract' },
-  render: () => html`
-    <div style="display: grid; gap: 1rem;">
-      <ui-blockquote id="boundary-invalid-variant" variant="unknown" source="   ">
-        <p>不正バリアント + 空白source。</p>
-      </ui-blockquote>
-
-      <ui-blockquote id="boundary-host-lang" lang="fr" cite="   ">
-        <p>host lang を blockquote に引き継ぐ。</p>
-      </ui-blockquote>
-
-      <ui-blockquote id="boundary-empty-source-slot">
-        <p>空白だけの source slot は無視する。</p>
-        <span slot="source"> </span>
-      </ui-blockquote>
-
-      <ui-blockquote id="boundary-decorative-source-slot">
-        <p>装飾だけの source slot は無視する。</p>
-        <span slot="source" aria-hidden="true">
-          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
-            <circle cx="8" cy="8" r="6"></circle>
-          </svg>
-        </span>
-      </ui-blockquote>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const invalidVariant = getBlockquote(canvasElement, 'boundary-invalid-variant');
-    const hostLang = getBlockquote(canvasElement, 'boundary-host-lang');
-    const emptySourceSlot = getBlockquote(canvasElement, 'boundary-empty-source-slot');
-    const decorativeSourceSlot = getBlockquote(canvasElement, 'boundary-decorative-source-slot');
-    await Promise.all([
-      invalidVariant.updateComplete,
-      hostLang.updateComplete,
-      emptySourceSlot.updateComplete,
-      decorativeSourceSlot.updateComplete,
-    ]);
-
-    const invalidQuote = getQuoteRoot(invalidVariant);
-    if (invalidQuote.getAttribute('data-variant') !== 'default') {
-      throw new Error('不正 variant は default にフォールバックする必要があります');
-    }
-    if (invalidVariant.shadowRoot?.querySelector('figure')) {
-      throw new Error('空白 source は「出典なし」として扱う必要があります');
-    }
-
-    const hostLangQuote = getQuoteRoot(hostLang);
-    if (hostLangQuote.getAttribute('lang') !== 'fr') {
-      throw new Error('quote-lang 未指定時は host の lang を継承する必要があります');
-    }
-    if (hostLangQuote.hasAttribute('cite')) {
-      throw new Error('空白 cite は blockquote に反映してはいけません');
-    }
-    if (hostLangQuote.hasAttribute('tabindex') || hostLangQuote.hasAttribute('role')) {
-      throw new Error('blockquote に余分なインタラクション属性を付与してはいけません');
-    }
-
-    if (emptySourceSlot.shadowRoot?.querySelector('figure')) {
-      throw new Error('空白のみの source slot は figcaption 描画条件に含めてはいけません');
-    }
-
-    if (decorativeSourceSlot.shadowRoot?.querySelector('figure')) {
-      throw new Error('装飾のみの source slot は figcaption 描画条件に含めてはいけません');
-    }
-  },
-};
-
-/**
- * Dark Mode契約:
- * - セマンティックトークン参照で Light/Dark を横断する
- * - prefers-color-scheme の直接分岐を持たない
- */
 export const DarkModeTokenContract: Story = {
-  parameters: { rouaultContractKind: 'boundary-contract' },
+  tags: ['manual-only'],
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <div style="padding: 1rem; background: var(--bg-default); color: var(--fg-default);">
@@ -489,30 +136,13 @@ export const DarkModeTokenContract: Story = {
       </div>
     </div>
   `,
-  play: async ({ canvasElement }) => {
-    const light = getBlockquote(canvasElement, 'dark-token-light');
-    const dark = getBlockquote(canvasElement, 'dark-token-dark');
-    await Promise.all([light.updateComplete, dark.updateComplete]);
-
-    const cssText = readCssText(Blockquote.styles);
-    const requiredTokens = [
-      'var(--fg-default',
-      'var(--fg-muted',
-      'var(--border-default',
-      'var(--border-muted',
-    ];
-
-    for (const token of requiredTokens) {
-      if (!cssText.includes(token)) {
-        throw new Error(`Dark/Light 共通トークン参照が不足しています: ${token}`);
-      }
-    }
-
-    if (cssText.includes('prefers-color-scheme')) {
-      throw new Error(
-        'blockquote は prefers-color-scheme 分岐ではなくトークンでモード追従する必要があります',
-      );
-    }
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'blockquote の semantic token 参照契約は test/ssr/css-structure-contracts.test.ts で検査します。この story は手動確認専用です。',
+      },
+    },
   },
 };
 
@@ -521,32 +151,21 @@ export const DarkModeTokenContract: Story = {
  * - 強制カラーモードで構造線を維持する
  * - 色指定がトークン参照を維持する
  */
+
 export const ForcedColorsContract: Story = {
-  parameters: { rouaultContractKind: 'boundary-contract' },
+  tags: ['manual-only'],
   render: () => html`
     <ui-blockquote id="forced-colors-contract" source="出典: トークン契約">
       <p>forced-colors でも左構造線が失われないこと。</p>
     </ui-blockquote>
   `,
-  play: async ({ canvasElement }) => {
-    const block = getBlockquote(canvasElement, 'forced-colors-contract');
-    await block.updateComplete;
-
-    const cssText = readCssText(Blockquote.styles);
-    const requiredTokens = [
-      '@media (forced-colors: active)',
-      'border-inline-start: var(--border-width-thick',
-      'var(--border-default',
-      'forced-color-adjust: auto',
-      '.source cite',
-      'var(--fg-muted',
-    ];
-
-    for (const token of requiredTokens) {
-      if (!cssText.includes(token)) {
-        throw new Error(`forced-colors 契約の定義が不足しています: ${token}`);
-      }
-    }
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'blockquote の forced-colors CSS 構造契約は test/ssr/css-structure-contracts.test.ts で検査します。この story は手動確認専用です。',
+      },
+    },
   },
 };
 
@@ -555,32 +174,20 @@ export const ForcedColorsContract: Story = {
  * - blockquote / figure の分断抑止が定義されている
  * - 構造線の印刷色固定が定義されている
  */
+
 export const PrintStyleContract: Story = {
-  parameters: { rouaultContractKind: 'boundary-contract' },
+  tags: ['manual-only'],
   render: () => html`
     <ui-blockquote id="print-contract" source="出典: 印刷設計">
       <p>print 時の構造保持を確認する。</p>
     </ui-blockquote>
   `,
-  play: async ({ canvasElement }) => {
-    const block = getBlockquote(canvasElement, 'print-contract');
-    await block.updateComplete;
-    getSourceCaption(block);
-
-    const cssText = readCssText(Blockquote.styles);
-    const requiredTokens = [
-      '@media print',
-      'break-inside: avoid',
-      'page-break-inside: avoid',
-      'border-inline-start-color: #000 !important',
-      'figure',
-      '.quote',
-    ];
-
-    for (const token of requiredTokens) {
-      if (!cssText.includes(token)) {
-        throw new Error(`印刷スタイル契約の定義が不足しています: ${token}`);
-      }
-    }
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'blockquote の print CSS 構造契約は test/ssr/css-structure-contracts.test.ts で検査します。この story は手動確認専用です。',
+      },
+    },
   },
 };

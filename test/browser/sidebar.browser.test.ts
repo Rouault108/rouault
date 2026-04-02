@@ -1,0 +1,333 @@
+import { expect, fixture, html } from '@open-wc/testing';
+import '../../src/components/ui/sidebar/sidebar.js';
+import type { TreeNode } from '../../src/components/ui/file-tree/file-tree.js';
+import type {
+  UiSidebar,
+  UiSidebarActiveChangeDetail,
+  UiSidebarSelectDetail,
+  UiSidebarToggleDetail,
+} from '../../src/components/ui/sidebar/sidebar.js';
+import type {
+  UiSidebarShell,
+  UiSidebarStateChangeDetail,
+} from '../../src/components/ui/sidebar-shell/sidebar-shell.js';
+import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
+
+const sampleItems: readonly TreeNode[] = [
+  {
+    kind: 'branch',
+    id: 'root',
+    label: 'root',
+    icon: 'folder',
+    children: [
+      {
+        kind: 'leaf',
+        id: 'root/readme',
+        label: 'README.md',
+        href: '/notes/readme',
+        icon: 'file-text',
+      },
+    ],
+  },
+];
+
+const cloneTree = (nodes: readonly TreeNode[]): TreeNode[] =>
+  nodes.map((node) =>
+    node.kind === 'branch'
+      ? {
+          ...node,
+          children: cloneTree(node.children),
+        }
+      : { ...node },
+  );
+
+const expectPresent = <T>(value: T | null | undefined, name: string): T => {
+  expect(value, `${name} should exist`).to.not.equal(null);
+  expect(value, `${name} should exist`).to.not.equal(undefined);
+
+  if (value === null || value === undefined) {
+    throw new Error(`${name} が見つかりません`);
+  }
+
+  return value;
+};
+
+const getShell = (host: UiSidebar): UiSidebarShell | null =>
+  host.shadowRoot?.querySelector<UiSidebarShell>('ui-sidebar-shell') ?? null;
+
+const getTree = (host: UiSidebar): HTMLElement | null =>
+  host.shadowRoot?.querySelector<HTMLElement>('ui-file-tree') ?? null;
+
+const flush = async (host: UiSidebar): Promise<void> => {
+  await waitForLitUpdate(host);
+  await nextAnimationFrame();
+
+  const shell = getShell(host);
+  if (shell) {
+    await waitForLitUpdate(shell);
+  }
+
+  const tree = getTree(host);
+  if (tree) {
+    await nextAnimationFrame();
+  }
+
+  await waitForLitUpdate(host);
+};
+
+const waitForSidebarStateChange = (host: UiSidebar): Promise<UiSidebarStateChangeDetail> =>
+  new Promise((resolve) => {
+    host.addEventListener(
+      'ui-sidebar-state-change',
+      ((event: Event) => {
+        if (event instanceof CustomEvent) {
+          resolve((event as CustomEvent<UiSidebarStateChangeDetail>).detail);
+        }
+      }) as EventListener,
+      { once: true },
+    );
+  });
+
+const waitForSidebarSelect = (
+  host: UiSidebar,
+): Promise<CustomEvent<UiSidebarSelectDetail>> =>
+  new Promise((resolve) => {
+    host.addEventListener(
+      'ui-sidebar-select',
+      ((event: Event) => {
+        if (event instanceof CustomEvent) {
+          resolve(event as CustomEvent<UiSidebarSelectDetail>);
+        }
+      }) as EventListener,
+      { once: true },
+    );
+  });
+
+const waitForSidebarToggle = (
+  host: UiSidebar,
+): Promise<CustomEvent<UiSidebarToggleDetail>> =>
+  new Promise((resolve) => {
+    host.addEventListener(
+      'ui-sidebar-toggle',
+      ((event: Event) => {
+        if (event instanceof CustomEvent) {
+          resolve(event as CustomEvent<UiSidebarToggleDetail>);
+        }
+      }) as EventListener,
+      { once: true },
+    );
+  });
+
+const waitForSidebarActiveChange = (
+  host: UiSidebar,
+): Promise<CustomEvent<UiSidebarActiveChangeDetail>> =>
+  new Promise((resolve) => {
+    host.addEventListener(
+      'ui-sidebar-active-change',
+      ((event: Event) => {
+        if (event instanceof CustomEvent) {
+          resolve(event as CustomEvent<UiSidebarActiveChangeDetail>);
+        }
+      }) as EventListener,
+      { once: true },
+    );
+  });
+
+describe('ui-sidebar browser contract', () => {
+  it('state / mode / fixedBreakpoint の property と attribute を shell と同期すること', async () => {
+    const host = await fixture<UiSidebar>(html`
+      <ui-sidebar
+        data-state="expanded"
+        mode="fixed"
+        fixed-breakpoint="960"
+        .items=${cloneTree(sampleItems)}
+        .expandedIds=${new Set(['root'])}
+        selected-id="root/readme"
+      ></ui-sidebar>
+    `);
+
+    await flush(host);
+
+    const shell = expectPresent(getShell(host), 'shell');
+
+    expect(host.state).to.equal('expanded');
+    expect(host.mode).to.equal('fixed');
+    expect(host.fixedBreakpoint).to.equal(960);
+
+    expect(host.getAttribute('data-state')).to.equal('expanded');
+    expect(host.getAttribute('mode')).to.equal('fixed');
+    expect(host.getAttribute('fixed-breakpoint')).to.equal('960');
+
+    expect(shell.state).to.equal('expanded');
+    expect(shell.mode).to.equal('fixed');
+    expect(shell.fixedBreakpoint).to.equal(960);
+    expect(shell.getAttribute('data-state')).to.equal('expanded');
+    expect(shell.getAttribute('mode')).to.equal('fixed');
+    expect(shell.getAttribute('fixed-breakpoint')).to.equal('960');
+
+    host.state = 'collapsed';
+    host.mode = 'overlay';
+    host.fixedBreakpoint = 640;
+    await flush(host);
+
+    expect(host.getAttribute('data-state')).to.equal('collapsed');
+    expect(host.getAttribute('mode')).to.equal('overlay');
+    expect(host.getAttribute('fixed-breakpoint')).to.equal('640');
+
+    expect(shell.state).to.equal('collapsed');
+    expect(shell.mode).to.equal('overlay');
+    expect(shell.fixedBreakpoint).to.equal(640);
+    expect(shell.getAttribute('data-state')).to.equal('collapsed');
+    expect(shell.getAttribute('mode')).to.equal('overlay');
+    expect(shell.getAttribute('fixed-breakpoint')).to.equal('640');
+  });
+
+  it('collapse() が shell を経由して host state-change を再送出すること', async () => {
+    const host = await fixture<UiSidebar>(html`
+      <ui-sidebar
+        data-state="expanded"
+        mode="overlay"
+        .items=${cloneTree(sampleItems)}
+        .expandedIds=${new Set(['root'])}
+        selected-id="root/readme"
+      ></ui-sidebar>
+    `);
+
+    await flush(host);
+
+    const shell = expectPresent(getShell(host), 'shell');
+    expect(shell.state).to.equal(host.state);
+
+    const stateChange = waitForSidebarStateChange(host);
+    host.collapse();
+
+    const detail = await stateChange;
+    await flush(host);
+
+    expect(detail.state).to.equal('collapsed');
+    expect(detail.mode).to.equal('overlay');
+    expect(host.state).to.equal('collapsed');
+    expect(host.getAttribute('data-state')).to.equal('collapsed');
+    expect(shell.state).to.equal('collapsed');
+    expect(shell.getAttribute('data-state')).to.equal('collapsed');
+  });
+
+  it('variant と density を inner ui-file-tree へ伝播すること', async () => {
+    const host = await fixture<UiSidebar>(html`
+      <ui-sidebar
+        data-state="expanded"
+        mode="overlay"
+        variant="card"
+        density="compact"
+        .items=${cloneTree(sampleItems)}
+        .expandedIds=${new Set(['root'])}
+        selected-id="root/readme"
+      ></ui-sidebar>
+    `);
+
+    await flush(host);
+
+    const tree = expectPresent(getTree(host), 'ui-file-tree');
+
+    expect(tree.getAttribute('variant')).to.equal('card');
+    expect(tree.getAttribute('density')).to.equal('compact');
+
+    host.variant = 'default';
+    host.density = 'normal';
+    await flush(host);
+
+    expect(tree.getAttribute('variant')).to.equal('default');
+    expect(tree.getAttribute('density')).to.equal('normal');
+  });
+
+  it('ui-tree-select を ui-sidebar-select として bubbles/composed 付きで再送出すること', async () => {
+    const host = await fixture<UiSidebar>(html`
+      <ui-sidebar
+        .items=${cloneTree(sampleItems)}
+        .expandedIds=${new Set(['root'])}
+        selected-id="root/readme"
+      ></ui-sidebar>
+    `);
+
+    await flush(host);
+
+    const tree = expectPresent(getTree(host), 'ui-file-tree');
+    const selectEventPromise = waitForSidebarSelect(host);
+
+    tree.dispatchEvent(
+      new CustomEvent<UiSidebarSelectDetail>('ui-tree-select', {
+        bubbles: true,
+        composed: true,
+        detail: { id: 'root/readme' },
+      }),
+    );
+
+    const event = await selectEventPromise;
+
+    expect(event.detail.id).to.equal('root/readme');
+    expect(event.bubbles).to.equal(true);
+    expect(event.composed).to.equal(true);
+  });
+
+  it('ui-tree-toggle を ui-sidebar-toggle として bubbles/composed 付きで再送出すること', async () => {
+    const host = await fixture<UiSidebar>(html`
+      <ui-sidebar
+        .items=${cloneTree(sampleItems)}
+        .expandedIds=${new Set(['root'])}
+        selected-id="root/readme"
+      ></ui-sidebar>
+    `);
+
+    await flush(host);
+
+    const tree = expectPresent(getTree(host), 'ui-file-tree');
+    const toggleEventPromise = waitForSidebarToggle(host);
+
+    tree.dispatchEvent(
+      new CustomEvent<UiSidebarToggleDetail>('ui-tree-toggle', {
+        bubbles: true,
+        composed: true,
+        detail: {
+          id: 'root',
+          expanded: false,
+        },
+      }),
+    );
+
+    const event = await toggleEventPromise;
+
+    expect(event.detail.id).to.equal('root');
+    expect(event.detail.expanded).to.equal(false);
+    expect(event.bubbles).to.equal(true);
+    expect(event.composed).to.equal(true);
+  });
+
+  it('ui-tree-active-change を ui-sidebar-active-change として bubbles/composed 付きで再送出すること', async () => {
+    const host = await fixture<UiSidebar>(html`
+      <ui-sidebar
+        .items=${cloneTree(sampleItems)}
+        .expandedIds=${new Set(['root'])}
+        selected-id="root/readme"
+      ></ui-sidebar>
+    `);
+
+    await flush(host);
+
+    const tree = expectPresent(getTree(host), 'ui-file-tree');
+    const activeChangePromise = waitForSidebarActiveChange(host);
+
+    tree.dispatchEvent(
+      new CustomEvent<UiSidebarActiveChangeDetail>('ui-tree-active-change', {
+        bubbles: true,
+        composed: true,
+        detail: { id: 'root/readme' },
+      }),
+    );
+
+    const event = await activeChangePromise;
+
+    expect(event.detail.id).to.equal('root/readme');
+    expect(event.bubbles).to.equal(true);
+    expect(event.composed).to.equal(true);
+  });
+});

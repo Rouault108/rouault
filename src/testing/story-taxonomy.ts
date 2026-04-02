@@ -1,65 +1,14 @@
-export const ROUAULT_CONTRACT_KINDS = [
-  'visual',
-  'interaction-contract',
-  'boundary-contract',
+export const ROUAULT_STORY_ROLES = ['docs', 'smoke', 'manual-only'] as const;
+
+export type RouaultStoryRole = (typeof ROUAULT_STORY_ROLES)[number];
+
+export const ROUAULT_STORYBOOK_SMOKE_TAG = 'smoke';
+export const ROUAULT_STORYBOOK_MANUAL_ONLY_TAG = 'manual-only';
+
+const ROUAULT_STORY_ROLE_TAGS = [
+  ROUAULT_STORYBOOK_SMOKE_TAG,
+  ROUAULT_STORYBOOK_MANUAL_ONLY_TAG,
 ] as const;
-
-export type RouaultContractKind = (typeof ROUAULT_CONTRACT_KINDS)[number];
-
-export interface RouaultStoryParameters {
-  rouaultContractKind: RouaultContractKind;
-}
-
-export const ROUAULT_BOUNDARY_NAME_HINTS = [
-  'Dark',
-  'ForcedColors',
-  'ReducedMotion',
-  'Print',
-  'Overflow',
-  'Empty',
-  'Boundary',
-  'Fallback',
-  'Invalid',
-  'NoJs',
-  'AccessibilityMedia',
-  'Persistence',
-  'Degraded',
-  'Strict',
-  'Unsafe',
-] as const;
-
-export const ROUAULT_INTERACTION_NAME_HINTS = [
-  'Flow',
-  'Keyboard',
-  'Focus',
-  'Event',
-  'Selection',
-  'Open',
-  'Close',
-  'Submit',
-  'Reset',
-  'Toggle',
-  'Pause',
-  'Resume',
-  'Navigation',
-] as const;
-
-export const ROUAULT_BOUNDARY_NAME_PATTERN = new RegExp(
-  `(?:${ROUAULT_BOUNDARY_NAME_HINTS.join('|')})`,
-);
-export const ROUAULT_INTERACTION_NAME_PATTERN = new RegExp(
-  `(?:${ROUAULT_INTERACTION_NAME_HINTS.join('|')})`,
-);
-
-interface ParametersLike {
-  rouaultContractKind?: unknown;
-}
-
-interface ContractKindHintInput {
-  filePath: string;
-  exportName: string;
-  hasPlay: boolean;
-}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -69,71 +18,69 @@ function normalizePath(value: string): string {
   return value.replaceAll('\\', '/');
 }
 
-export function isRouaultContractKind(value: unknown): value is RouaultContractKind {
-  return typeof value === 'string' && (ROUAULT_CONTRACT_KINDS as readonly string[]).includes(value);
+export function isRouaultStoryRole(value: unknown): value is RouaultStoryRole {
+  return typeof value === 'string' && (ROUAULT_STORY_ROLES as readonly string[]).includes(value);
 }
 
-export function getRouaultStoryParameters(
+export function isRouaultStoryRoleTag(
   value: unknown,
-): Partial<RouaultStoryParameters> | undefined {
+): value is (typeof ROUAULT_STORY_ROLE_TAGS)[number] {
+  return typeof value === 'string' && (ROUAULT_STORY_ROLE_TAGS as readonly string[]).includes(value);
+}
+
+export function getStoryTags(value: unknown): readonly string[] {
   if (!isRecord(value)) {
-    return undefined;
+    return [];
   }
 
-  return value as Partial<RouaultStoryParameters>;
+  const { tags } = value;
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  const normalized = new Set<string>();
+  for (const entry of tags) {
+    if (typeof entry !== 'string') {
+      continue;
+    }
+
+    const tag = entry.trim();
+    if (tag.length === 0) {
+      continue;
+    }
+
+    normalized.add(tag);
+  }
+
+  return [...normalized];
 }
 
-export function resolveRouaultContractKind(
-  storyParameters: unknown,
-  metaParameters?: unknown,
-): RouaultContractKind | undefined {
-  const story = getRouaultStoryParameters(storyParameters) as ParametersLike | undefined;
-  if (isRouaultContractKind(story?.rouaultContractKind)) {
-    return story.rouaultContractKind;
+export function resolveStoryTags(story: unknown, meta?: unknown): readonly string[] {
+  const resolved = new Set<string>();
+
+  for (const tag of getStoryTags(meta)) {
+    resolved.add(tag);
   }
 
-  const meta = getRouaultStoryParameters(metaParameters) as ParametersLike | undefined;
-  if (isRouaultContractKind(meta?.rouaultContractKind)) {
-    return meta.rouaultContractKind;
+  for (const tag of getStoryTags(story)) {
+    resolved.add(tag);
   }
 
-  return undefined;
+  return [...resolved];
 }
 
-export function isFoundationStoryFile(filePath: string): boolean {
-  const normalized = normalizePath(filePath);
-  return (
-    normalized.startsWith('src/stories/foundations/') ||
-    normalized.includes('/src/stories/foundations/')
-  );
-}
+export function resolveRouaultStoryRole(story: unknown, meta?: unknown): RouaultStoryRole {
+  const resolvedTags = resolveStoryTags(story, meta);
 
-export function isBoundaryStoryFile(filePath: string): boolean {
-  return /(?:^|\/)[^/]*boundary\.stories\.ts$/i.test(normalizePath(filePath));
-}
-
-export function classifyRouaultContractKindFromHints({
-  filePath,
-  exportName,
-  hasPlay,
-}: ContractKindHintInput): RouaultContractKind {
-  if (isFoundationStoryFile(filePath)) {
-    return 'visual';
+  if (resolvedTags.includes(ROUAULT_STORYBOOK_MANUAL_ONLY_TAG)) {
+    return 'manual-only';
   }
 
-  if (isBoundaryStoryFile(filePath) || ROUAULT_BOUNDARY_NAME_PATTERN.test(exportName)) {
-    return 'boundary-contract';
+  if (resolvedTags.includes(ROUAULT_STORYBOOK_SMOKE_TAG)) {
+    return 'smoke';
   }
 
-  if (ROUAULT_INTERACTION_NAME_PATTERN.test(exportName)) {
-    return 'interaction-contract';
-  }
-
-  if (hasPlay) {
-    return 'interaction-contract';
-  }
-
-  return 'visual';
+  return 'docs';
 }
 
 export function isStorybookExecutionHelperPath(filePath: string): boolean {

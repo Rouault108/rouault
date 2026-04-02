@@ -27,7 +27,7 @@ const INTERACTIVE_ANCESTOR_SELECTOR = [
   '[role="link"]',
 ].join(', ');
 
-const DOCUMENT_CSS = `
+export const DOCUMENT_CSS = `
 ui-footnote {
   --footnote-popover-max-width: 400px;
   display: inline;

@@ -20,7 +20,7 @@ export const DOCUMENT_STYLE_ID = 'ui-divider-document-styles';
 export const DIVIDER_SCOPE_SELECTOR =
   ':where(.prose hr, ui-divider > hr, hr[data-divider-variant="layout"])';
 
-const DOCUMENT_CSS = `
+export const DOCUMENT_CSS = `
 ui-divider {
   display: block;
 }

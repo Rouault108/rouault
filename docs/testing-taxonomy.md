@@ -21,7 +21,7 @@ Rouault では、次の設計前提を採用します。
 3. **browser behavior は browser unit または E2E で観測します。**
 4. **build-time / SSR / Markdown transform / final DOM 契約は Node 側で検証します。**
 5. **CSS 契約は「構造の存在」と「表示結果」を分離して扱います。**
-6. **`test/unit/**` は歴史的経路であり、browser unit 専用を意味しません。**
+6. **`test/unit/**` は使用しません。テストは `test/node/**` / `test/browser/**` / `test/ssr/**` / `test/e2e/**` / `test/storybook/**` にのみ置きます。**
 
 ## 3. テストレイヤの正本
 
@@ -186,29 +186,42 @@ Storybook は **contract test harness** ではありません。
 
 ## 5. Story taxonomy
 
-Rouault の Storybook taxonomy は次の 3 区分を正とします。
+Rouault の Storybook taxonomy は、**契約種別**ではなく**運用上の役割**で扱います。  
+`parameters.rouaultContractKind` は Storybook taxonomy の正本ではありません。
+
+Story の role は **Storybook tags** により解決します。  
+`autodocs` などの Storybook 標準タグは、この role 判定とは独立です。
 
 ### 5.1 docs story
 
 通常の表示・説明・catalog 用 story です。  
 主目的は**見せること**です。
 
+`smoke` / `manual-only` のいずれも付かない story は、既定で docs story とみなします。
+
 ### 5.2 smoke story
 
 CI で runtime 実行する限定 story です。  
 主目的は**docs 面の最低限の健全性確認**です。
+
+smoke story は `smoke` tag で明示します。  
+smoke story には、runtime 上で観測する内容に対応した `play` を原則として持たせます。
 
 ### 5.3 manual-only story
 
 手動確認専用 story です。  
 runtime 契約には含めません。
 
+manual-only story は `manual-only` tag で明示します。
+
 ### 5.4 運用原則
 
-- Storybook で runtime 実行する対象は **明示 allowlist** に限定します。
-- すべての story に契約種別を強制しません。
-- `interaction-contract` / `boundary-contract` を Storybook taxonomy の中心にしません。
-- Story の有無、名前、並び順を契約正本にしません。
+- Storybook で runtime 実行する対象は **`smoke` tag が付いた明示 allowlist** に限定します。
+- `manual-only` tag が付いた story は runtime 実行対象へ含めません。
+- `smoke` と `manual-only` は同じ story に同居させません。
+- すべての story に独自 taxonomy を強制しません。
+- `interaction-contract` / `boundary-contract` / `visual` を Storybook taxonomy の中心にしません。
+- Story の有無、名前、並び順、preview order を契約正本にしません。
 
 ## 6. note 本文の契約ルール
 
@@ -260,16 +273,15 @@ CSS 契約は、**構造の存在**と**表示結果**を同じ場所で扱い�
 - interaction に伴う class / attribute / DOM state の変化
 - 本当に壊れると痛い媒体 outcome
 
-## 8. `test/unit/**` の扱い
+## 8. test ディレクトリの固定ルール
 
-`test/unit/**` は現状では責務が混在した**移行中ディレクトリ**です。  
-したがって、次を採用します。
-
-- `test/unit/**` を browser unit と同義に扱いません。
-- 新規テストの追加先としては原則使用しません。
-- browser 実体不要の新規テストは `test/node/**` に追加します。
-- browser behavior の新規テストは `test/browser/**` に追加します。
-- 既存の `test/unit/**` は段階的に再配置します。
+- `test/unit/**` は使用しません。
+- `src/**/*.test.ts` は使用しません。
+- `test/**` にはテストコードだけを置き、計画書や設計メモは `docs/**` へ置きます。
+- browser 実体不要のテストは `test/node/**` に置きます。
+- browser behavior のテストは `test/browser/**` に置きます。
+- build-time / final DOM / CSS structure のテストは `test/ssr/**` に置きます。
+- app 全体統合の最終確認は `test/e2e/**` に置きます。
 
 ## 9. 新規テスト追加時の判断順
 
@@ -298,7 +310,6 @@ CSS 契約は、**構造の存在**と**表示結果**を同じ場所で扱い�
 - CSS 構造契約を Storybook に追加すること
 - preview order や story title を契約正本にすること
 - private method / internals に依存した Story 契約を固定すること
-- `test/unit/**` を恒久的な browser unit 置き場として説明すること
 
 ## 11. 受け入れ条件
 
@@ -313,9 +324,9 @@ CSS 契約は、**構造の存在**と**表示結果**を同じ場所で扱い�
 7. story の増減や並び替えが contract failure に直結しにくい。
 8. 新規テスト追加時に置き場判断がぶれない。
 
-## 12. 実装移行上の注記
+## 12. 実装運用上の注記
 
-- 実体が完全に整理されるまで、文書上の taxonomy を先行させます。
-- 文書が先、実ディレクトリ整列は後です。
-- 文書と実体が一時的に不一致な箇所があっても、新規追加は本書に従います。
-- `test/unit/**` の解消は別フェーズで実施しますが、文書上はすでに移行先 taxonomy を正とします。
+- taxonomy と実ディレクトリ構造は常に一致させます。
+- browser contract は `test/browser/**`、pure logic / policy / parser は `test/node/**` を正本とします。
+- E2E は no-JS baseline と主要統合導線の最終確認面に限定します。
+- Storybook は docs / smoke / metadata に限定します。

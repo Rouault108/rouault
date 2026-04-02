@@ -15,11 +15,15 @@
   },
   "include": [
     "eleventy.config.ts",
-    "web-test-runner.config.ts",
-    "cem.config.ts",
+    "playwright.config.ts",
+    "vitest.config.ts",
+    "build/**/*.ts",
     "scripts/**/*.ts",
+    "shared/**/*.ts",
     "src/data/**/*.ts",
     "types/**/*.d.ts",
-    "test/ssr/**/*.test.ts"
+    "test/node/**/*.test.ts",
+    "test/ssr/**/*.test.ts",
+    "test/storybook/**/*.test.ts"
   ]
 }

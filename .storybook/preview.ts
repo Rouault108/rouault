@@ -53,7 +53,7 @@ const preview: Preview = {
 
     options: {
       storySort: {
-        order: ['Note Contracts', 'Foundations', 'Layouts', 'Components', 'Legacy Components'],
+        order: ['Foundations', 'Layouts', 'Components', 'Legacy Components'],
       },
     },
 

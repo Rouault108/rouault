@@ -16,14 +16,6 @@ const nestedHeaders: Heading[] = [
   { id: 'appendix', text: '補足', level: 4 },
 ];
 
-const getToc = (canvasElement: Element, id: string): Toc => {
-  const toc = canvasElement.querySelector<Toc>(`#${id}`);
-  if (!toc) {
-    throw new Error(`#${id} が見つかりません`);
-  }
-  return toc;
-};
-
 const meta: Meta<Toc> = {
   title: 'Components/Toc',
   component: 'ui-toc',
@@ -38,6 +30,8 @@ static view 専用の TOC です。
 - \`activeId\` は controlled
 - click 時のみ \`ui-toc-active-change\` を通知
 - 現在地追跡や mobile summary は \`layout-toc\` 側 controller が担当します
+
+この story ファイルは **docs / smoke / 手動確認** に限定します。activeId 更新や emitted event の合否は Storybook ではなく browser 側で判定します。
         `,
       },
     },
@@ -48,35 +42,15 @@ export default meta;
 type Story = StoryObj<Toc>;
 
 export const Default: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+  tags: ['smoke'],
   render: () =>
     html`<ui-toc id="toc-default" .headers=${flatHeaders} active-id="implementation"></ui-toc>`,
-  play: async ({ canvasElement }) => {
-    const toc = getToc(canvasElement, 'toc-default');
-    await toc.updateComplete;
-
-    const active = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[aria-current="location"]');
-    if (active?.getAttribute('href') !== '#implementation') {
-      throw new Error(
-        'activeId に対応するリンクだけが aria-current="location" を持つ必要があります',
-      );
-    }
-  },
 };
 
 export const NestedLevels: Story = {
-  parameters: { rouaultContractKind: 'visual' },
   render: () => html`<ui-toc id="toc-nested" .headers=${nestedHeaders} active-id="setup"></ui-toc>`,
 };
 
 export const Empty: Story = {
-  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`<ui-toc id="toc-empty" .headers=${[]}></ui-toc>`,
-  play: async ({ canvasElement }) => {
-    const toc = getToc(canvasElement, 'toc-empty');
-    await toc.updateComplete;
-    if (toc.shadowRoot?.querySelector('nav')) {
-      throw new Error('headers が空のときは nav を描画してはいけません');
-    }
-  },
 };

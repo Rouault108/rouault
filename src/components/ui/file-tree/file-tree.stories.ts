@@ -63,10 +63,12 @@ const meta: Meta<FileTree> = {
         component: `
 仕様書準拠の \`ui-file-tree\` です。
 
-- 構造データは \`TreeNode\` の discriminated union
-- 選択は \`selectedId\`、展開は \`expandedIds\` / \`defaultExpandedIds\`
-- root 公開イベントは request / commit の二段階
-- ローディングは \`retain\` / \`replace\` で制御
+この story ファイルは **docs / smoke / 手動確認** に限定します。  
+controlled / uncontrolled の選択・展開、request / commit event、keyboard navigation、
+type-ahead、Escape による外部フォーカス復帰、loading retain/replace、printable の挙動は
+\`test/browser/helpers/file-tree.browser.test.ts\` を正本とします。  
+motion / forced-colors / print の CSS 構造契約は
+\`test/ssr/css-structure-contracts.test.ts\` を正本とします。
         `,
       },
     },
@@ -91,12 +93,20 @@ export default meta;
 type Story = StoryObj<FileTree>;
 
 export const Default: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+  tags: ['smoke'],
   args: {
     variant: 'default',
     density: 'normal',
     loading: false,
     loadingStrategy: 'retain',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'default variant の代表表示用 smoke story です。tree root と item の基本密度だけを残します。',
+      },
+    },
   },
   render: (args) => html`
     <ui-file-tree
@@ -109,294 +119,131 @@ export const Default: Story = {
       loading-strategy=${args.loadingStrategy}
     ></ui-file-tree>
   `,
-  play: async ({ canvasElement }) => {
-    const fileTree = canvasElement.querySelector<FileTree>('ui-file-tree');
-    if (!fileTree) {
-      throw new Error('ui-file-tree が見つかりません');
-    }
-
-    await fileTree.updateComplete;
-
-    if (fileTree.getAttribute('role') !== 'tree') {
-      throw new Error('role="tree" が必要です');
-    }
-
-    if (fileTree.selectedId !== 'notes/index') {
-      throw new Error(`selectedId が反映されていません: ${String(fileTree.selectedId)}`);
-    }
-
-    const selectedItem = fileTree.shadowRoot?.querySelector('ui-tree-item[selected]');
-    if (!selectedItem) {
-      throw new Error('selectedId に対応する行が selected 表示になる必要があります');
-    }
-  },
 };
 
-export const ControlledSelectionAndExpansion: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+export const ControlledCardSelection: Story = {
+  tags: ['manual-only'],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'controlled selection / expansion と card variant の見え方を手で確認するための manual-only story です。DOM 反映の合否は `test/browser/helpers/file-tree.browser.test.ts` を正本とします。',
+      },
+    },
+  },
   render: () => html`
     <ui-file-tree
       .items=${cloneTree(sampleTree)}
       .expandedIds=${new Set(['notes', 'notes/design'])}
       selected-id="notes/design/file-tree"
       variant="card"
+      density="compact"
     ></ui-file-tree>
   `,
-  play: async ({ canvasElement }) => {
-    const fileTree = canvasElement.querySelector<FileTree>('ui-file-tree');
-    if (!fileTree) {
-      throw new Error('ui-file-tree が見つかりません');
-    }
-
-    await fileTree.updateComplete;
-
-    const selectedItem = fileTree.shadowRoot?.querySelector<HTMLElement>(
-      'ui-tree-item[data-id="notes/design/file-tree"]',
-    );
-    if (!selectedItem?.hasAttribute('selected')) {
-      throw new Error('controlled selectedId が行へ伝播していません');
-    }
-
-    const expandedBranch = fileTree.shadowRoot?.querySelector<HTMLElement>(
-      'ui-tree-item[data-id="notes/design"]',
-    );
-    if (!expandedBranch?.hasAttribute('expanded')) {
-      throw new Error('controlled expandedIds が branch へ伝播していません');
-    }
-
-    const selectedTreeItem = fileTree.shadowRoot?.querySelector<HTMLElement>(
-      'ui-tree-item[data-id="notes/design/file-tree"]',
-    );
-    if (!selectedTreeItem) {
-      throw new Error('選択された leaf が見つかりません');
-    }
-
-    const selectedButton = selectedTreeItem.shadowRoot?.querySelector<HTMLElement>('.item');
-    if (!selectedButton) {
-      throw new Error('選択された leaf の操作要素が見つかりません');
-    }
-
-    const selectedButtonStyle = window.getComputedStyle(selectedButton);
-    if (selectedButtonStyle.backgroundColor !== 'rgba(0, 0, 0, 0)') {
-      throw new Error('選択背景は .item 本体に直接塗られてはいけません');
-    }
-
-    const selectedFillStyle = window.getComputedStyle(selectedButton, '::before');
-    if (selectedFillStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
-      throw new Error('選択背景が本文列に描画されていません');
-    }
-
-    const selectedIndicatorStyle = window.getComputedStyle(selectedButton, '::after');
-    if (selectedIndicatorStyle.width !== '2px') {
-      throw new Error(
-        `current indicator の幅が 2px ではありません: ${selectedIndicatorStyle.width}`,
-      );
-    }
-    if (selectedIndicatorStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
-      throw new Error('current indicator が表示されていません');
-    }
-
-    const ancestorBranch = fileTree.shadowRoot?.querySelector<HTMLElement>(
-      'ui-tree-item[data-id="notes/design"]',
-    );
-    if (!ancestorBranch?.hasAttribute('ancestor-selected')) {
-      throw new Error('祖先枝に ancestor-selected が伝播していません');
-    }
-
-    const ancestorGuideLine = ancestorBranch.shadowRoot?.querySelector<HTMLElement>('.guide-line');
-    if (!ancestorGuideLine) {
-      throw new Error('祖先枝の guide-line が見つかりません');
-    }
-
-    const ancestorGuideLineStyle = window.getComputedStyle(ancestorGuideLine);
-    if (ancestorGuideLineStyle.opacity !== '0.72') {
-      throw new Error(
-        `祖先経路の guide-line の opacity が 0.72 ではありません: ${ancestorGuideLineStyle.opacity}`,
-      );
-    }
-  },
 };
 
-export const LoadingRetain: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
+export const LoadingStrategiesReference: Story = {
   render: () => html`
-    <ui-file-tree
-      .items=${cloneTree(sampleTree)}
-      .defaultExpandedIds=${new Set(['notes'])}
-      selected-id="notes/index"
-      loading
-      loading-strategy="retain"
-    ></ui-file-tree>
-  `,
-  play: async ({ canvasElement }) => {
-    const fileTree = canvasElement.querySelector<FileTree>('ui-file-tree');
-    if (!fileTree) {
-      throw new Error('ui-file-tree が見つかりません');
-    }
-
-    await fileTree.updateComplete;
-
-    if (fileTree.getAttribute('aria-busy') !== 'true') {
-      throw new Error('retain loading では aria-busy="true" が必要です');
-    }
-
-    if (fileTree.shadowRoot?.querySelector('.skeleton')) {
-      throw new Error('retain loading では skeleton に置き換えてはいけません');
-    }
-  },
-};
-
-export const LoadingReplace: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html`
-    <ui-file-tree
-      .items=${cloneTree(sampleTree)}
-      loading
-      loading-strategy="replace"
-      variant="card"
-    ></ui-file-tree>
-  `,
-  play: async ({ canvasElement }) => {
-    const fileTree = canvasElement.querySelector<FileTree>('ui-file-tree');
-    if (!fileTree) {
-      throw new Error('ui-file-tree が見つかりません');
-    }
-
-    await fileTree.updateComplete;
-
-    if (!fileTree.shadowRoot?.querySelector('.skeleton')) {
-      throw new Error('replace loading では skeleton が必要です');
-    }
-  },
-};
-
-export const EventContract: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => {
-    const logEvent = (label: string, detail: object): void => {
-      const target = document.querySelector<HTMLElement>('#file-tree-event-log');
-      if (target) {
-        target.textContent = `${label}: ${JSON.stringify(detail)}`;
-      }
-    };
-
-    return html`
-      <div style="display: grid; gap: 12px;">
-        <div
-          id="file-tree-event-log"
-          style="padding: 12px; border: 1px solid var(--border-default); border-radius: 6px; font-family: var(--font-mono, monospace);"
-        >
-          イベント待機中
-        </div>
+    <div style="display: grid; gap: 1.5rem; max-width: 420px;">
+      <section>
+        <h3 style="margin: 0 0 0.5rem; font-size: 13px;">retain</h3>
         <ui-file-tree
           .items=${cloneTree(sampleTree)}
           .defaultExpandedIds=${new Set(['notes'])}
-          @ui-tree-request-select=${(event: CustomEvent<{ id: string }>) => {
-            logEvent('request-select', event.detail);
-          }}
-          @ui-tree-select=${(event: CustomEvent<{ id: string }>) => {
-            logEvent('select', event.detail);
-          }}
-          @ui-tree-request-toggle=${(event: CustomEvent<{ id: string; expanded: boolean }>) => {
-            logEvent('request-toggle', event.detail);
-          }}
-          @ui-tree-toggle=${(event: CustomEvent<{ id: string; expanded: boolean }>) => {
-            logEvent('toggle', event.detail);
-          }}
-          @ui-tree-active-change=${(event: CustomEvent<{ id: string }>) => {
-            logEvent('active-change', event.detail);
-          }}
+          selected-id="notes/index"
+          loading
+          loading-strategy="retain"
         ></ui-file-tree>
-      </div>
-    `;
-  },
-  play: async ({ canvasElement }) => {
-    const fileTree = canvasElement.querySelector<FileTree>('ui-file-tree');
-    const log = canvasElement.querySelector<HTMLElement>('#file-tree-event-log');
-    if (!fileTree || !log) {
-      throw new Error('event contract の検証に必要な要素が見つかりません');
-    }
+      </section>
 
-    await fileTree.updateComplete;
-
-    fileTree.dispatchEvent(
-      new CustomEvent<{ id: string }>('ui-tree-select', {
-        bubbles: true,
-        composed: true,
-        detail: { id: 'notes/index' },
-      }),
-    );
-
-    const logText = log.textContent;
-    if (!logText.includes('select')) {
-      throw new Error('ui-tree-select の bridge が log へ反映されていません');
-    }
-  },
-};
-
-export const KeyboardNavigation: Story = {
-  parameters: { rouaultContractKind: 'interaction-contract' },
-  render: () => html`
-    <div>
-      <button id="tree-trigger" type="button">Tree Trigger</button>
-      <div
-        style="max-height: 280px; overflow: auto; border: 1px solid var(--border-default); margin-top: 8px;"
-      >
+      <section>
+        <h3 style="margin: 0 0 0.5rem; font-size: 13px;">replace</h3>
         <ui-file-tree
           .items=${cloneTree(sampleTree)}
-          .defaultExpandedIds=${new Set(['notes', 'notes/design'])}
-          selected-id="notes/design/file-tree"
+          loading
+          loading-strategy="replace"
+          variant="card"
         ></ui-file-tree>
-      </div>
+      </section>
     </div>
   `,
-  play: async ({ canvasElement }) => {
-    const fileTree = canvasElement.querySelector<FileTree>('ui-file-tree');
-    const trigger = canvasElement.querySelector<HTMLButtonElement>('#tree-trigger');
-    if (!fileTree || !trigger) {
-      throw new Error('必要な要素が見つかりません');
-    }
-
-    await fileTree.updateComplete;
-    trigger.focus();
-    fileTree.focusSelected();
-    await fileTree.updateComplete;
-
-    const container = fileTree.shadowRoot?.querySelector<HTMLElement>('.container');
-    if (!container) {
-      throw new Error('container が見つかりません');
-    }
-
-    container.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }),
-    );
-    await fileTree.updateComplete;
-    const activeIdAfterArrowDown = fileTree.activeId;
-    if (activeIdAfterArrowDown !== 'notes/design/tree-item') {
-      throw new Error(`ArrowDown 後の activeId が不正です: ${String(activeIdAfterArrowDown)}`);
-    }
-
-    container.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Home', bubbles: true, composed: true }),
-    );
-    await fileTree.updateComplete;
-    const activeIdAfterHome = fileTree.activeId;
-    if ((activeIdAfterHome ?? '') !== 'notes') {
-      throw new Error(`Home 後の activeId が不正です: ${String(activeIdAfterHome)}`);
-    }
-
-    container.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }),
-    );
-    await Promise.resolve();
-    if (document.activeElement !== trigger) {
-      throw new Error('Escape で直前の外部フォーカスへ戻る必要があります');
-    }
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'retain / replace の視覚差を比較する docs story です。aria-busy と skeleton 置換の合否は browser test を正本とします。',
+      },
+    },
   },
 };
 
-export const PrintableCard: Story = {
-  parameters: { rouaultContractKind: 'boundary-contract' },
+export const EmptyStateReference: Story = {
+  render: () => html`
+    <ui-file-tree .items=${[]}></ui-file-tree>
+  `,
+  parameters: {
+    docs: {
+      description: {
+        story: 'empty state の docs story です。文言完全一致ではなく empty surface の存在のみを前提にします。',
+      },
+    },
+  },
+};
+
+export const KeyboardNavigationManual: Story = {
+  tags: ['manual-only'],
+  render: () => html`
+    <style>
+      .manual-shell {
+        display: grid;
+        gap: 1rem;
+        max-width: 480px;
+      }
+
+      .manual-note {
+        padding: 0.75rem;
+        border: 1px solid var(--border-default, #ddd);
+        border-radius: 8px;
+        background: var(--bg-surface-2, #f7f7f7);
+        font-size: 13px;
+      }
+    </style>
+
+    <div class="manual-shell">
+      <button type="button">外部フォーカス復帰先</button>
+
+      <div class="manual-note">
+        Home / End / ArrowUp / ArrowDown / type-ahead / Escape を手動確認するための story です。
+      </div>
+
+      <ui-file-tree
+        .items=${cloneTree(sampleTree)}
+        .defaultExpandedIds=${new Set(['notes', 'notes/design'])}
+        selected-id="notes/design/file-tree"
+      ></ui-file-tree>
+    </div>
+  `,
+  parameters: {
+    docs: {
+      description: {
+        story: `
+手動確認用 story です。
+
+確認内容:
+- roving tabindex による移動感
+- type-ahead の体感
+- Escape で外部要素へ戻ること
+- selected / active の視覚差
+
+合否は Storybook ではなく \`test/browser/helpers/file-tree.browser.test.ts\` を正本とします。
+        `,
+      },
+    },
+  },
+};
+
+export const PrintableManual: Story = {
+  tags: ['manual-only'],
   render: () => html`
     <ui-file-tree
       .items=${cloneTree(sampleTree)}
@@ -406,4 +253,21 @@ export const PrintableCard: Story = {
       printable
     ></ui-file-tree>
   `,
+  parameters: {
+    docs: {
+      description: {
+        story: `
+印刷確認用 story です。
+
+確認内容:
+- printable=true の surface
+- print preview 時の見え方
+- card variant の印刷時縮退
+
+beforeprint / afterprint による全 branch 展開の合否は Storybook ではなく
+\`test/browser/helpers/file-tree.browser.test.ts\` を正本とします。
+        `,
+      },
+    },
+  },
 };

@@ -35,4 +35,22 @@ describe('BaseLayout', () => {
       'breadcrumbs-json="[{&quot;label&quot;:&quot;Notes&quot;,&quot;href&quot;:&quot;/&quot;},{&quot;label&quot;:&quot;計算機科学&quot;,&quot;href&quot;:&quot;/notes/computer-science&quot;},{&quot;label&quot;:&quot;アルゴリズム&quot;,&quot;href&quot;:&quot;/notes/computer-science/algorithms&quot;},{&quot;label&quot;:&quot;ソートアルゴリズム比較&quot;}]"',
     );
   });
+
+  it('app shell の骨格として skip link / app root / main / footer を出力すること', () => {
+    const layout = new BaseLayout();
+    const rendered = layout.render({
+      content: '<article><h1>本文</h1><p>静かな本文です。</p></article>',
+    });
+
+    expect(rendered).toContain('<ui-skip-link');
+    expect(rendered).toContain('href="#main-content"');
+    expect(rendered).toContain('label="メインコンテンツへ移動"');
+    expect(rendered).toContain('data-hydration-scope="skip-link"');
+
+    expect(rendered).toContain('<div id="app" class="app-root" data-hydration-scope="app-shell">');
+    expect(rendered).toContain('<layout-header');
+    expect(rendered).toContain('<app-router');
+    expect(rendered).toContain('<main id="main-content" tabindex="-1">');
+    expect(rendered).toContain('<layout-footer>');
+  });
 });

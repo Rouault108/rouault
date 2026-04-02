@@ -3,7 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 
 const DOCUMENT_STYLE_ID = 'ui-syntax-field-document-styles';
 
-const DOCUMENT_CSS = `
+export const DOCUMENT_CSS = `
 ui-syntax-field {
   display: contents;
 }
