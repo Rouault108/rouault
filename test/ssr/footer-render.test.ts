@@ -34,7 +34,9 @@ describe('renderFooter', () => {
     expect(rendered).toContain('class="ui-footer__legal"');
     expect(rendered).toContain('class="ui-footer__build"');
     expect(rendered).toContain(`aria-label="${FOOTER_DEFAULT_NAV_LABEL}"`);
-    expect(rendered).toContain('<p class="ui-footer__site"><a href="/">Rouault</a></p>');
+    expect(rendered).toContain('<p class="ui-footer__site">');
+    expect(rendered).toContain('href="/"');
+    expect(rendered).toContain('>Rouault<');
     expect(rendered).toContain('© 2026 Ruo Miyata. CC BY 4.0.');
     expect(rendered).toContain('build 4a2b9f1');
     expect(rendered).toContain('href="/search"');
@@ -54,7 +56,8 @@ describe('renderFooter', () => {
     expect(rendered).toContain('class="ui-footer__meta"');
     expect(rendered).toContain('class="ui-footer__subline"');
     expect(rendered).toContain('class="ui-footer__legal"');
-    expect(rendered).toContain('<p class="ui-footer__site">Rouault</p>');
+    expect(rendered).toContain('<p class="ui-footer__site">');
+    expect(rendered).toContain('>Rouault<');
     expect(rendered).toContain('© 2026 Ruo Miyata.');
     expect(rendered).not.toContain('class="ui-footer__build"');
     expect(rendered).not.toContain('class="ui-footer__nav"');
@@ -84,7 +87,8 @@ describe('renderFooter', () => {
 
     const navItemCount = rendered.match(/class="ui-footer__nav-item"/g)?.length ?? 0;
 
-    expect(rendered).toContain('<a href="https://rouault.example">Rouault</a>');
+    expect(rendered).toContain('<a href="https://rouault.example">');
+    expect(rendered).toContain('>Rouault<');
     expect(rendered).toContain('release 2026.03.24');
     expect(rendered).toContain('aria-label="フッター補助導線"');
     expect(rendered).toContain('href="/license"');

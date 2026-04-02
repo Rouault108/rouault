@@ -34,11 +34,11 @@ export const NOTE_HYDRATION_BUDGET_PROFILES = {
   'testing-interactive-canary': {
     name: 'testing-interactive-canary',
     budget: {
-      initial: 6,
+      initial: 4,
       postCommit: 0,
       visible: 1,
       interaction: 0,
-      total: 7,
+      total: 5,
     },
   },
   /**
@@ -51,10 +51,10 @@ export const NOTE_HYDRATION_BUDGET_PROFILES = {
     name: 'testing-sandbox-canary',
     budget: {
       initial: 0,
-      postCommit: 1,
+      postCommit: 0,
       visible: 2,
       interaction: 1,
-      total: 4,
+      total: 3,
     },
   },
   'testing-code-canary': {

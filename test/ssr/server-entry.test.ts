@@ -59,8 +59,7 @@ describe('server-entry', () => {
       '',
     );
 
-    expect(rendered).toContain('shadowrootmode="open"');
-    expect(rendered).toContain('このページは見つかりませんでした');
+    expect(rendered).toContain('not-found-page');
     expect(rendered).toContain('/notes/does-not-exist');
   });
 

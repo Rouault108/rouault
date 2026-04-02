@@ -38,7 +38,6 @@ describe('markdown plugin order', () => {
           "rehypeInlineCodeTranslateNo",
           "rehypeOrderedListContracts",
           "rehypeDisallowDangerousProps",
-          "rehypeDisallowStaticMark",
         ],
         "remark": [
           "remarkMath",
@@ -83,6 +82,7 @@ describe('markdown plugin order', () => {
       15. \`rehypeInlineCodeTranslateNo\`
       16. \`rehypeOrderedListContracts\`
       17. \`rehypeDisallowDangerousProps\`
+      18. \`rehypeDisallowStaticMark\`
 
       規則:
 

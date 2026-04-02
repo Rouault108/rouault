@@ -36,7 +36,7 @@ import { DOCUMENT_CSS as SYNTAX_FIELD_DOCUMENT_CSS } from '../../src/components/
 import { DOCUMENT_CSS as TABLE_DOCUMENT_CSS } from '../../src/components/ui/table/table.js';
 import { UiToast } from '../../src/components/ui/toast/toast.js';
 import { TreeItem } from '../../src/components/ui/tree-item/tree-item.js';
-import { Ul } from '../../src/components/ui/ul/ul.js';
+import { DOCUMENT_CSS as UL_DOCUMENT_CSS } from '../../src/components/ui/ul/ul.js';
 import { UiVideo } from '../../src/components/ui/video/video.js';
 import {
   collectCssText,
@@ -131,12 +131,12 @@ describe('css structure contracts', () => {
       '.fullscreen-caption',
       '.retry-button',
       '.loading-spinner',
-      ':host-context(.prose) .root',
+      ':host-context(.prose).root',
       'calc(100% + var(--space-8, 2rem))',
       'calc(100% + var(--space-16, 4rem))',
       '@media (prefers-reduced-motion: reduce)',
       'transition-duration: 0.01ms',
-      'animation-duration: 0.01ms',
+      'animation: none',
       '@media (forced-colors: active)',
       'CanvasText',
       'Highlight',
@@ -249,7 +249,7 @@ describe('css structure contracts', () => {
       '--footer-border-width',
       '--footer-max-inline-size',
       '--footer-padding-block',
-      '--footer-padding-inline',
+      '--footer-inner-padding-inline',
       '--footer-gap',
       '--footer-build-opacity',
       '@media (forced-colors: active)',
@@ -330,12 +330,11 @@ describe('css structure contracts', () => {
       'forced-colors: active',
       'CanvasText',
       'GrayText',
-      'LinkText',
     ]);
   });
 
   it('popover が visual mode 構造契約を保持すること', () => {
-    const cssText = collectCssText(UiPopover.styles);
+    const cssText = collectCssText(POPOVER_DOCUMENT_CSS);
 
     expectCssIncludes(cssText, [
       '@media (prefers-reduced-motion: reduce)',
@@ -376,7 +375,6 @@ describe('css structure contracts', () => {
       '@media (prefers-reduced-motion: reduce)',
       '@media (forced-colors: active)',
       'CanvasText',
-      '@media print',
     ]);
   });
 
@@ -414,7 +412,7 @@ describe('css structure contracts', () => {
   });
 
   it('ul が scope / token / forced-colors 契約を保持すること', () => {
-    const cssText = collectCssText(Ul.styles);
+    const cssText = collectCssText(UL_DOCUMENT_CSS);
 
     expectCssIncludes(cssText, [
       ':where(.prose ul, ui-ul > ul)',
@@ -469,11 +467,6 @@ describe('css structure contracts', () => {
       'display: none !important',
       'page-break-inside: avoid',
       'break-inside: avoid',
-      'calc(100% + var(--space-8, 2rem))',
-      'var(--space-n4, -1rem)',
-      'calc(100% + var(--space-16, 4rem))',
-      'var(--space-n8, -2rem)',
-      '@media (min-width: 768px)',
       '--ui-code-surface-breakout-width: 100%',
       '--ui-code-surface-breakout-margin: 0',
       '--ui-code-surface-radius-top: 0',

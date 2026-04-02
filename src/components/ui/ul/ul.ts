@@ -11,7 +11,7 @@ const DOCUMENT_STYLE_ID = 'ui-ul-document-styles';
  * 適用スコープは `.prose ul` と `ui-ul > ul` のみに限定し、
  * グローバル `ul` への副作用を防ぐ。
  */
-const DOCUMENT_CSS = `
+export const DOCUMENT_CSS = `
 :where(.prose ul, ui-ul > ul) {
   list-style: none;
   padding: 0;

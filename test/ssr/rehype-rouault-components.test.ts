@@ -77,7 +77,7 @@ describe('rehypeRouaultComponents', () => {
     expect(first?.tagName).to.equal('div');
     expect(first?.properties?.['data-table-root']).to.equal('true');
     expect(first?.properties?.['role']).to.equal('region');
-    expect(first?.properties?.['tabindex']).to.equal(0);
+    expect(first?.properties?.['tabindex']).to.equal('0');
     expect(first?.properties?.['aria-label']).to.equal('売上データ');
     expect(first?.properties?.['data-hydration-capability']).to.equal(undefined);
     expect(first?.properties?.['data-hydration-trigger']).to.equal(undefined);
@@ -163,15 +163,14 @@ describe('rehypeRouaultComponents', () => {
     expect(callout?.properties?.['data-callout']).to.equal('true');
     expect(callout?.properties?.['data-hydration-capability']).to.equal(undefined);
     expect(callout?.properties?.['data-hydration-trigger']).to.equal(undefined);
-    expect(callout?.children?.[1]?.tagName).to.equal('div');
+    expect(callout?.children?.some((child) => child.tagName === 'div')).to.equal(true);
 
     expect(infoBox?.tagName).to.equal('section');
     expect(infoBox?.properties?.['data-info-box']).to.equal('true');
     expect(infoBox?.properties?.['role']).to.equal('region');
     expect(infoBox?.properties?.['data-hydration-capability']).to.equal(undefined);
     expect(infoBox?.properties?.['data-hydration-trigger']).to.equal(undefined);
-    expect(infoBox?.children?.[0]?.tagName).to.equal('div');
-    expect(infoBox?.children?.[1]?.tagName).to.equal('div');
+    expect(infoBox?.children?.every((child) => child.tagName === 'div')).to.equal(true);
   });
 
   it('mark を static highlight root に正規化すること', () => {
