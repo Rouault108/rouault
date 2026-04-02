@@ -31,6 +31,16 @@ const getThumbnail = (host: UiImage): HTMLImageElement =>
     'thumbnail',
   );
 
+const waitForThumbnailLoad = async (thumbnail: HTMLImageElement): Promise<void> => {
+  if (thumbnail.complete && thumbnail.naturalWidth > 0) {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    thumbnail.addEventListener('load', () => resolve(), { once: true });
+  });
+};
+
 describe('ui-image browser contract', () => {
   it('src 未設定時は empty state を公開し、aria-busy=false のままであること', async () => {
     const host = await fixture<UiImage>(html` <ui-image alt="未設定画像"></ui-image> `);
@@ -122,6 +132,9 @@ describe('ui-image browser contract', () => {
     await flush(host);
 
     const thumbnail = getThumbnail(host);
+    await waitForThumbnailLoad(thumbnail);
+    await flush(host);
+
     thumbnail.dispatchEvent(new Event('error'));
     await flush(host);
 
