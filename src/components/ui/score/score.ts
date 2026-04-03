@@ -355,6 +355,15 @@ export class UiScore extends LitElement {
     this._cancelFetch();
   }
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this._syncInlineSvgState();
+    if (!this.hasAttribute('data-hydration-trigger')) {
+      this._hydrationActivated = true;
+      this._scheduleLoad();
+    }
+  }
+
   override willUpdate(changedProperties: PropertyValues<this>): void {
     super.willUpdate(changedProperties);
 
@@ -369,27 +378,28 @@ export class UiScore extends LitElement {
       this._cancelFetch();
       this._teardownIntersectionObserver();
     }
+
+    if (
+      this._hydrationActivated &&
+      (changedProperties.has('src') || changedProperties.has('loading'))
+    ) {
+      this._scheduleLoad();
+    }
   }
 
   override firstUpdated(): void {
-    this._syncInlineSvgState();
-    if (!this.hasAttribute('data-hydration-trigger')) {
+    if (this.hasAttribute('data-hydration-trigger')) {
       this.activateHydration();
+      return;
     }
+
+    this._setupResizeObserver();
+    this._queueOverflowMeasurement();
   }
 
   override updated(changedProperties: PropertyValues<this>): void {
     super.updated(changedProperties);
     const internalChanges = changedProperties as Map<string, unknown>;
-
-    if (
-      this._hydrationActivated &&
-      (changedProperties.has('src') ||
-        changedProperties.has('loading') ||
-        internalChanges.has('_hasInlineSvg'))
-    ) {
-      this._scheduleLoad();
-    }
 
     if (
       this._hydrationActivated &&
@@ -556,7 +566,7 @@ export class UiScore extends LitElement {
 
   private _syncInlineSvgState(): void {
     const slot = this._defaultSlot;
-    const assignedNodes = slot?.assignedNodes({ flatten: true }) ?? [];
+    const assignedNodes = slot?.assignedNodes({ flatten: true }) ?? this.childNodes;
     let inlineSvg: SVGSVGElement | null = null;
 
     for (const node of assignedNodes) {
