@@ -50,6 +50,8 @@
     "build": "pnpm run build:client && pnpm run build:images && tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts && tsx scripts/apply-lit-ssr.ts && tsx scripts/build-pagefind.ts",
     "start": "tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
     "prestart": "pnpm run generate:icons",
+    "typecheck": "pnpm typecheck:app && pnpm typecheck:node",
+    "typecheck:app": "pnpm exec tsc -p tsconfig.json --noEmit",
     "typecheck:node": "pnpm exec tsc -p tsconfig.node.json --noEmit",
     "pretypecheck:node": "pnpm run generate:icons",
     "sync:link-cards": "tsx scripts/sync-link-card-metadata.ts"
