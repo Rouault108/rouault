@@ -7,13 +7,13 @@ const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 
 const resolvedBuildLabel = resolveBuildLabel();
 
-const env = {
+const env: NodeJS.ProcessEnv = {
   ...process.env,
   ROUAULT_MEDIA_STRICT: '1',
 };
 
 if (resolvedBuildLabel) {
-  env.ROUAULT_BUILD_LABEL = resolvedBuildLabel;
+  env['ROUAULT_BUILD_LABEL'] = resolvedBuildLabel;
 }
 
 const result = spawnSync(command, ['build'], {

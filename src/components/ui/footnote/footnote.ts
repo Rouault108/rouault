@@ -547,7 +547,7 @@ export class Footnote extends LitElement {
 
   private _renderBodyContent(): TemplateResult | typeof nothing {
     if (this._contentHtml === '') return nothing;
-    return unsafeHTML(this._contentHtml);
+    return html`${unsafeHTML(this._contentHtml)}`;
   }
 
   private _renderTriggerTemplate(sharedTrigger: boolean): TemplateResult {

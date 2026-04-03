@@ -938,10 +938,6 @@ export class UiVideo extends LitElement {
     return this._status === 'PLAYING' || this._status === 'BUFFERING';
   }
 
-  private get _canRetry(): boolean {
-    return this._hasMediaSource;
-  }
-
   private get _statusRole(): 'status' | 'alert' {
     if (this._status === 'ERROR') return 'alert';
     return 'status';
