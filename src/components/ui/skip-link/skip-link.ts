@@ -118,11 +118,23 @@ export class SkipLink extends LitElement {
     this.shadowRoot?.querySelector<HTMLAnchorElement>('a')?.focus(options);
   }
 
-  private readonly handleLinkClick = (): void => {
+  private readonly handleLinkClick = (event: MouseEvent): void => {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
     const targetElement = this.getTargetElementFromHref();
     if (!targetElement) {
       return;
     }
+
+    event.preventDefault();
     targetElement.focus();
   };
 
