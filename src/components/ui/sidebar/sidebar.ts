@@ -11,6 +11,9 @@ import type {
   UiSidebarStateChangeDetail,
 } from '../sidebar-shell/sidebar-shell.js';
 
+const STORAGE_KEY = 'rouault.sidebar.state';
+const MIN_BREAKPOINT = 320;
+
 export interface UiSidebarSelectDetail {
   id: string;
 }
@@ -119,33 +122,18 @@ export class UiSidebar extends LitElement {
 
   private _shellObserver: MutationObserver | null = null;
 
-  /**
-   * HTML パース時に mode 属性が明示的に指定されたか追跡するフラグ。
-   * Lit の reflect による属性設定（接続後・非同期）と区別するため、
-   * isConnected が false の間に attributeChangedCallback が呼ばれた場合のみ true にする。
-   */
-  private _modeSetExplicitly = false;
-
-  override attributeChangedCallback(name: string, old: string | null, value: string | null): void {
-    super.attributeChangedCallback(name, old, value);
-    if (name === 'mode' && !this.isConnected) {
-      this._modeSetExplicitly = true;
-    }
-  }
-
   override disconnectedCallback(): void {
     this._detachShellObserver();
     super.disconnectedCallback();
   }
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this._restoreState();
+    this._initModeFromMediaQuery();
+  }
+
   protected override firstUpdated(): void {
-    if (this._modeSetExplicitly) {
-      /* mode が明示的に指定されている場合はシェルへ同期（メディアクエリの自動判定を上書き） */
-      this._syncStateToShell();
-    } else {
-      /* 未指定の場合はシェルの自動判定（メディアクエリ）を取得 */
-      this._syncStateFromShell();
-    }
     this._attachShellObserver();
   }
 
@@ -197,6 +185,29 @@ export class UiSidebar extends LitElement {
     this._shellObserver = null;
   }
 
+  private _syncStateFromShell(): void {
+    if (!this._shellElement) {
+      return;
+    }
+
+    const shell = this._shellElement;
+    this._syncFromShellInProgress = true;
+
+    if (this.state !== shell.state) {
+      this.state = shell.state;
+    }
+
+    if (this.mode !== shell.mode) {
+      this.mode = shell.mode;
+    }
+
+    if (this.fixedBreakpoint !== shell.fixedBreakpoint) {
+      this.fixedBreakpoint = shell.fixedBreakpoint;
+    }
+
+    this._syncFromShellInProgress = false;
+  }
+
   private _syncStateToShell(): void {
     if (!this._shellElement) {
       return;
@@ -215,28 +226,42 @@ export class UiSidebar extends LitElement {
     }
   }
 
-  private _syncStateFromShell(): void {
-    if (!this._shellElement) {
+  private _restoreState(): void {
+    if (this.hasAttribute('data-state')) {
       return;
     }
 
-    const nextState = this._shellElement.state;
-    const nextMode = this._shellElement.mode;
-    const nextFixedBreakpoint = this._shellElement.fixedBreakpoint;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === 'expanded' || stored === 'collapsed') {
+        this.state = stored;
+      }
+    } catch {
+      /* localStorage が使えない環境では復元を諦める */
+    }
+  }
 
-    if (
-      nextState === this.state &&
-      nextMode === this.mode &&
-      nextFixedBreakpoint === this.fixedBreakpoint
-    ) {
+  private _initModeFromMediaQuery(): void {
+    if (this.hasAttribute('mode')) {
       return;
     }
 
-    this._syncFromShellInProgress = true;
-    this.state = nextState;
-    this.mode = nextMode;
-    this.fixedBreakpoint = nextFixedBreakpoint;
-    this._syncFromShellInProgress = false;
+    const resolvedBreakpoint = this._resolveFixedBreakpoint(this.fixedBreakpoint);
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+
+    const isFixed = window.matchMedia(`(min-width: ${String(resolvedBreakpoint)}px)`).matches;
+    this.mode = isFixed ? 'fixed' : 'overlay';
+  }
+
+  private _resolveFixedBreakpoint(value: number): number {
+    if (!Number.isFinite(value)) {
+      return 1280;
+    }
+
+    const normalized = Math.trunc(value);
+    return normalized >= MIN_BREAKPOINT ? normalized : MIN_BREAKPOINT;
   }
 
   private _onShellStateChange = (event: CustomEvent<UiSidebarStateChangeDetail>): void => {
@@ -292,7 +317,7 @@ export class UiSidebar extends LitElement {
     return html`
       <ui-sidebar-shell
         data-state=${this.state}
-        mode=${ifDefined(this._modeSetExplicitly ? this.mode : undefined)}
+        mode=${ifDefined(this.mode)}
         .fixedBreakpoint=${this.fixedBreakpoint}
         @ui-sidebar-state-change=${this._onShellStateChange}
       >
