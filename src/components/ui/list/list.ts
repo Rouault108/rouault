@@ -254,6 +254,7 @@ export class List extends LitElement {
       'ui-list-context-request',
       this._handleListContextRequest as EventListener,
     );
+    this._collectRowElements();
   }
 
   override disconnectedCallback(): void {
@@ -425,13 +426,26 @@ export class List extends LitElement {
 
   private _collectRowElements(): void {
     const slot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[data-list-rows]');
-    if (!slot) return;
-
     const rows = slot
-      .assignedElements({ flatten: true })
-      .filter((element): element is UiListItemLike => {
-        return element instanceof HTMLElement && element.tagName.toLowerCase() === 'ui-list-item';
-      });
+      ? slot
+          .assignedElements({ flatten: true })
+          .filter((element): element is UiListItemLike => {
+            return (
+              element instanceof HTMLElement && element.tagName.toLowerCase() === 'ui-list-item'
+            );
+          })
+      : Array.from(this.children).filter(
+          (element): element is UiListItemLike =>
+            element instanceof HTMLElement && element.tagName.toLowerCase() === 'ui-list-item',
+        );
+
+    if (
+      rows.length === this._rowElements.length &&
+      rows.every((row, index) => row === this._rowElements[index])
+    ) {
+      return;
+    }
+
     this._rowElements = rows;
   }
 
