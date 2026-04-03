@@ -164,71 +164,81 @@ describe('ui-toast browser contract', () => {
     expect(ToastManager.getSnapshot().length).to.equal(0);
   });
 
-  it('hover / focus / visibility で auto-dismiss timer を pause / resume すること', async () => {
+  it('hover で auto-dismiss timer を pause / resume すること', async () => {
     const host = await fixture<UiToast>(html`<ui-toast></ui-toast>`);
     await flush(host);
 
     ToastManager.show({
       variant: 'warning',
       message: '接続が不安定です',
-      duration: 260,
+      duration: 120,
     });
     await flush(host);
 
     const hoverToast = findToastByVariantAndMessage(host, 'warning', '接続が不安定です');
 
-    await waitMs(40);
+    await waitMs(20);
     hoverToast.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
-    await waitMs(140);
+    await waitMs(60);
     await flush(host);
 
     expect(ToastManager.getSnapshot().length).to.equal(1);
 
     hoverToast.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
-    await waitMs(TOAST_EXIT_DURATION_MS + 260);
+    await waitMs(TOAST_EXIT_DURATION_MS + 90);
     await flush(host);
 
     expect(ToastManager.getSnapshot().length).to.equal(0);
+  });
+
+  it('focus で auto-dismiss timer を pause / resume すること', async () => {
+    const host = await fixture<UiToast>(html`<ui-toast></ui-toast>`);
+    await flush(host);
 
     ToastManager.show({
       variant: 'warning',
       message: 'フォーカステスト',
-      duration: 220,
+      duration: 120,
     });
     await flush(host);
 
     const focusToast = findToastByVariantAndMessage(host, 'warning', 'フォーカステスト');
     const closeButton = getCloseButton(focusToast);
 
-    await waitMs(40);
+    await waitMs(20);
     closeButton.focus();
-    await waitMs(140);
+    await waitMs(60);
     await flush(host);
 
     expect(ToastManager.getSnapshot().length).to.equal(1);
 
     closeButton.blur();
-    await waitMs(TOAST_EXIT_DURATION_MS + 240);
+    await waitMs(TOAST_EXIT_DURATION_MS + 90);
     await flush(host);
 
     expect(ToastManager.getSnapshot().length).to.equal(0);
+  });
+
+  it('visibility で auto-dismiss timer を pause / resume すること', async () => {
+    const host = await fixture<UiToast>(html`<ui-toast></ui-toast>`);
+    await flush(host);
 
     ToastManager.show({
       variant: 'info',
       message: 'visibility テスト',
-      duration: 220,
+      duration: 120,
     });
     await flush(host);
 
-    await waitMs(40);
+    await waitMs(20);
     ToastManager.setVisibilityPaused(true);
-    await waitMs(140);
+    await waitMs(60);
     await flush(host);
 
     expect(ToastManager.getSnapshot().length).to.equal(1);
 
     ToastManager.setVisibilityPaused(false);
-    await waitMs(TOAST_EXIT_DURATION_MS + 240);
+    await waitMs(TOAST_EXIT_DURATION_MS + 90);
     await flush(host);
 
     expect(ToastManager.getSnapshot().length).to.equal(0);
