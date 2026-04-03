@@ -147,6 +147,19 @@ pnpm lint               # ESLint
 pnpm lint:fix           # ESLint + Prettier による整形
 ```
 
+### 配信とビルドの運用前提
+
+- 開発時は `/media/` をローカル配信し、`/example-assets/*` はそのまま利用します
+- `pnpm build:production` は production 寄りの build 条件をまとめた入口です
+- production build では `ROUAULT_MEDIA_BASE_URL` を与えます
+- CI と deploy では `ROUAULT_MEDIA_STRICT=1` を使います
+- `/example-assets/*` は当面 Pages 配信のままです
+- `/content-assets/*` は現時点では development fallback を中心に扱います
+- Pages deploy は GitHub Actions を主体にして、Direct Upload で実行します
+- footer の buildLabel は workflow 由来の値を優先し、未指定時のみ Git fallback を使います
+- `/media/*` は manifest 駆動で R2 に同期します
+- archive 系の build 統合は現時点では CI/CD の前提に含めません
+
 ---
 
 ## ディレクトリ構成

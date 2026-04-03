@@ -8,6 +8,7 @@ import {
   resolveCurrentCorpusKey,
   type CorpusPageEntry,
 } from '../data/corpusPages.js';
+import { type BuildMetadataData } from '../data/buildMetadata.js';
 import {
   THEME_ATTRIBUTE,
   THEME_STORAGE_KEY,
@@ -24,6 +25,7 @@ export interface BaseLayoutData {
   notes?: NoteNavigationEntry[];
   corpusPages?: readonly CorpusPageEntry[];
   currentCorpusKey?: string;
+  buildMetadata?: BuildMetadataData;
   clientBundle?: ClientBundleData;
 }
 
@@ -73,6 +75,9 @@ export class BaseLayout {
       currentNote: data.note,
       notes: data.notes ?? [],
     }).breadcrumbs;
+    const footerAttributes = serializeHtmlAttributes([
+      { name: 'build-label', value: data.buildMetadata?.buildLabel },
+    ]);
     const themeBootstrapScript = buildThemeBootstrapScript();
     const bodyAttributes = serializeHtmlAttributes([
       {
@@ -120,7 +125,7 @@ export class BaseLayout {
         ${data.content}
       </main>
     </app-router>
-    <layout-footer></layout-footer>
+    <layout-footer${footerAttributes}></layout-footer>
   </div>
   <ui-search-dialog
     id="global-search-dialog"

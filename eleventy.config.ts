@@ -8,11 +8,14 @@ import { build } from 'velite';
 import { loadNotesData } from './src/data/notes.js';
 import { loadHomeData } from './src/data/home.js';
 import { loadClientBundleData } from './src/data/clientBundle.js';
+import { loadBuildMetadataData } from './src/data/buildMetadata.js';
 import { createStaticDirectoryMiddleware } from './build/dev/dev-static-directory.js';
 import {
   emitSearchArtifacts,
   renderSearchCatalogArtifact,
 } from './build/search/emit-search-artifacts.js';
+import { hasExternalMediaBaseUrl } from './build/media/media-base-url.js';
+import { resolveBuildLabel } from './build/metadata/build-metadata.js';
 import { resolveTrailingSlashRewrite } from './shared/navigation/trailing-slash-rewrite.js';
 
 let veliteWatchStartupPromise: Promise<void> | null = null;
@@ -108,6 +111,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   eleventyConfig.addGlobalData('notes', () => loadNotesData());
   eleventyConfig.addGlobalData('home', () => loadHomeData());
   eleventyConfig.addGlobalData('clientBundle', () => loadClientBundleData());
+  eleventyConfig.addGlobalData('buildMetadata', () => loadBuildMetadataData(resolveBuildLabel()));
 
   eleventyConfig.addGlobalData('tagPages', async () => {
     const tagPagesModule = await import('./src/data/tagPages.js');
@@ -120,7 +124,9 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   });
 
   eleventyConfig.addPassthroughCopy({ 'src/assets': 'assets' });
-  eleventyConfig.addPassthroughCopy({ '.generated/media/assets': 'media' });
+  if (!hasExternalMediaBaseUrl()) {
+    eleventyConfig.addPassthroughCopy({ '.generated/media/assets': 'media' });
+  }
   eleventyConfig.addPassthroughCopy({ 'examples/media': 'example-assets' });
 
   if (!isServing) {
@@ -149,10 +155,12 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   });
 
   eleventyConfig.on('eleventy.after', async () => {
-    await copyFile(
-      path.resolve(process.cwd(), '_redirects'),
-      path.resolve(process.cwd(), 'dist/_redirects'),
-    );
+    for (const [source, target] of [
+      ['_redirects', 'dist/_redirects'],
+      ['_headers', 'dist/_headers'],
+    ] as const) {
+      await copyFile(path.resolve(process.cwd(), source), path.resolve(process.cwd(), target));
+    }
 
     await emitSearchArtifacts({
       notes: loadNotesData(),

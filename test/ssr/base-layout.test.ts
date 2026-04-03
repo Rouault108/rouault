@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { BaseLayout } from '../../src/layouts/BaseLayout.11ty.js';
+import { loadBuildMetadataData } from '../../src/data/buildMetadata.js';
 
 describe('BaseLayout', () => {
   it('breadcrumb 規則を note navigation model から受け取ること', () => {
@@ -52,5 +53,15 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('<app-router');
     expect(rendered).toContain('<main id="main-content" tabindex="-1">');
     expect(rendered).toContain('<layout-footer>');
+  });
+
+  it('buildMetadata の buildLabel を footer 属性へ流し込むこと', () => {
+    const layout = new BaseLayout();
+    const rendered = layout.render({
+      content: '<p>本文</p>',
+      buildMetadata: loadBuildMetadataData('abcdef1'),
+    });
+
+    expect(rendered).toContain('<layout-footer build-label="build abcdef1"></layout-footer>');
   });
 });

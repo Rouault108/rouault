@@ -6,8 +6,7 @@ import {
   type FooterLinkItem,
   type FooterRenderOptions,
 } from '../ui/footer/footer.js';
-
-declare const __GIT_HASH__: string | undefined;
+import { loadBuildMetadataData } from '../../data/buildMetadata.js';
 
 const DEFAULT_SITE_NAME = 'Rouault';
 const DEFAULT_SITE_URL = '/';
@@ -29,13 +28,6 @@ const normalizeOptionalText = (value: string | undefined): string | undefined =>
 
 const escapePlainText = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-const resolveDefaultBuildLabel = (): string | undefined => {
-  const gitHash =
-    typeof __GIT_HASH__ === 'string' ? normalizeOptionalText(__GIT_HASH__) : undefined;
-
-  return gitHash ? `build ${gitHash}` : undefined;
-};
 
 const resolveDefaultCopyrightText = (): string =>
   `© ${new Date().getFullYear().toString()} Ruo Miyata. CC BY 4.0.`;
@@ -100,7 +92,7 @@ export const buildLayoutFooterOptions = ({
 }): FooterRenderOptions => {
   const normalizedFooterId = normalizeOptionalText(footerId);
   const normalizedSiteUrl = normalizeOptionalText(siteUrl) ?? DEFAULT_SITE_URL;
-  const resolvedBuildLabel = normalizeOptionalText(buildLabel) ?? resolveDefaultBuildLabel();
+  const resolvedBuildLabel = normalizeOptionalText(buildLabel) ?? loadBuildMetadataData().buildLabel;
   const resolvedDescription = normalizeOptionalText(siteDescription);
   const resolvedEyebrow = normalizeOptionalText(siteEyebrow);
 

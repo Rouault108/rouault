@@ -1,23 +1,12 @@
-import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { defineConfig } from 'vite';
+import { resolveBuildLabel } from './build/metadata/build-metadata.js';
 
-const resolveGitHash = (): string => {
-  try {
-    return execSync('git rev-parse --short HEAD', {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-  } catch {
-    return '';
-  }
-};
-
-const gitHash = resolveGitHash();
+const buildLabel = resolveBuildLabel();
 
 export default defineConfig({
   define: {
-    __GIT_HASH__: JSON.stringify(gitHash),
+    __ROUAULT_BUILD_LABEL__: buildLabel === undefined ? 'undefined' : JSON.stringify(buildLabel),
   },
   publicDir: false,
   resolve: {

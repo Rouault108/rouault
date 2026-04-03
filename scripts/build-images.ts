@@ -9,6 +9,7 @@ import type {
   MediaVariantEntry,
   MediaVariantOutput,
 } from '../build/media/image-resolver.js';
+import { getMediaBaseUrl, resolveMediaAssetUrl } from '../build/media/media-base-url.js';
 
 const CONTENT_ROOT = path.resolve(process.cwd(), 'content');
 const EXAMPLES_ROOT = path.resolve(process.cwd(), 'examples');
@@ -206,6 +207,7 @@ const createVariantOutputs = async (
   hash: string,
   variantName: VariantName,
   definition: VariantDefinition,
+  mediaBaseUrl: string | undefined,
 ): Promise<MediaVariantOutput[]> => {
   const outputs: MediaVariantOutput[] = [];
   const variantDirectory = path.join(GENERATED_ASSET_ROOT, hash);
@@ -232,14 +234,17 @@ const createVariantOutputs = async (
       format,
       mediaType: MEDIA_TYPE_BY_FORMAT[format],
       byteSize: outputStat.size,
-      url: `/media/${hash}/${outputFileName}`,
+      url: resolveMediaAssetUrl(hash, outputFileName, mediaBaseUrl),
     });
   }
 
   return outputs;
 };
 
-const buildManifestItem = async (sourcePath: string): Promise<MediaManifestItem> => {
+const buildManifestItem = async (
+  sourcePath: string,
+  mediaBaseUrl: string | undefined,
+): Promise<MediaManifestItem> => {
   const absolutePath = path.resolve(process.cwd(), sourcePath);
   const fileBuffer = await readFile(absolutePath);
   const hash = createHash('sha256').update(fileBuffer).digest('hex').slice(0, 12);
@@ -255,7 +260,13 @@ const buildManifestItem = async (sourcePath: string): Promise<MediaManifestItem>
       async ([variantName, definition]): Promise<[VariantName, MediaVariantEntry]> => [
         variantName,
         {
-          outputs: await createVariantOutputs(absolutePath, hash, variantName, definition),
+          outputs: await createVariantOutputs(
+            absolutePath,
+            hash,
+            variantName,
+            definition,
+            mediaBaseUrl,
+          ),
         },
       ],
     ),
@@ -278,6 +289,7 @@ const buildManifestItem = async (sourcePath: string): Promise<MediaManifestItem>
 };
 
 export const buildImageManifest = async (): Promise<MediaManifest> => {
+  const mediaBaseUrl = getMediaBaseUrl();
   const referencedSourcePaths = await collectReferencedSourcePaths();
 
   await rm(GENERATED_ASSET_ROOT, { recursive: true, force: true });
@@ -288,7 +300,7 @@ export const buildImageManifest = async (): Promise<MediaManifest> => {
       referencedSourcePaths.map(
         async (sourcePath): Promise<[string, MediaManifestItem]> => [
           sourcePath,
-          await buildManifestItem(sourcePath),
+          await buildManifestItem(sourcePath, mediaBaseUrl),
         ],
       ),
     ),

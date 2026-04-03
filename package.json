@@ -5,11 +5,15 @@
   "description": "",
   "type": "module",
   "main": "index.js",
+  "engines": {
+    "node": "22.x",
+    "pnpm": "10.x"
+  },
   "scripts": {
     "analyze": "node scripts/generate-custom-elements-manifest.mjs",
     "preanalyze": "pnpm run generate:icons",
     "test": "pnpm test:node && pnpm test:ssr && pnpm test:browser && pnpm test:storybook:meta",
-    "test:extended": "pnpm test:storybook:smoke && pnpm test:e2e",
+    "test:extended": "pnpm test:storybook:smoke && pnpm test:e2e:production",
     "pretest:node": "pnpm run generate:icons",
     "pretest:browser": "pnpm run generate:icons",
     "pretest:ssr": "pnpm run generate:icons",
@@ -26,6 +30,7 @@
     "test:storybook:watch": "vitest --project storybook-smoke --watch",
     "test:storybook:ui": "vitest --project storybook-smoke --ui",
     "test:e2e": "playwright test",
+    "test:e2e:production": "pnpm exec playwright test",
     "lint": "pnpm exec eslint .",
     "prelint": "pnpm run generate:icons",
     "lint:fix": "pnpm exec eslint . --fix && prettier --write .",
@@ -37,6 +42,7 @@
     "prestorybook:build": "pnpm run generate:icons",
     "build:client": "pnpm exec vite build --config vite.client.config.ts",
     "prebuild:client": "pnpm run generate:icons",
+    "build:production": "tsx scripts/run-production-build.ts",
     "build:images": "tsx scripts/build-images.ts",
     "generate:icons": "node --import tsx scripts/generate-icon-subset.ts",
     "dev": "tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",

@@ -75,7 +75,7 @@ const buildServerEntry = async (): Promise<{
   const outfile = path.join(tempDir, 'server-entry.mjs');
 
   await build({
-    entryPoints: [path.resolve(process.cwd(), 'src/ssr/server-entry.ts')],
+    entryPoints: [path.resolve(process.cwd(), 'build/ssr/server-entry.ts')],
     outfile,
     bundle: true,
     format: 'esm',
