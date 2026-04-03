@@ -37,8 +37,7 @@ describe('ui-button browser contract', () => {
     const iconOnly = expectPresent(wrapper.querySelector<Button>('#icon-only'), 'icon-only');
     const labeled = expectPresent(wrapper.querySelector<Button>('#labeled'), 'labeled');
 
-    await flush(iconOnly);
-    await flush(labeled);
+    await Promise.all([waitForLitUpdate(iconOnly), waitForLitUpdate(labeled)]);
 
     expect(getInnerButton(iconOnly).getAttribute('aria-label')).to.equal('設定を開く');
     expect(getInnerButton(labeled).getAttribute('aria-label')).to.equal(null);
