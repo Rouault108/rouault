@@ -32,6 +32,9 @@ importers:
       iconify-icon:
         specifier: 3.0.2
         version: 3.0.2
+      katex:
+        specifier: 0.16.27
+        version: 0.16.27
       lit:
         specifier: ~3.3.2
         version: 3.3.2
@@ -87,6 +90,9 @@ importers:
       '@tsconfig/strictest':
         specifier: ~2.0.8
         version: 2.0.8
+      '@types/katex':
+        specifier: 0.16.8
+        version: 0.16.8
       '@types/mocha':
         specifier: ~10.0.10
         version: 10.0.10
@@ -126,6 +132,9 @@ importers:
       globals:
         specifier: ~17.0.0
         version: 17.0.0
+      hast-util-to-html:
+        specifier: 9.0.5
+        version: 9.0.5
       pagefind:
         specifier: 1.4.0
         version: 1.4.0
