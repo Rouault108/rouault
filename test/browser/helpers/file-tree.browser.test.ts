@@ -73,11 +73,6 @@ const getTreeItemAction = (fileTree: FileTree, id: string): HTMLElement =>
     `${id} の .item が見つかりません`,
   );
 
-interface FileTreePrintHooks {
-  _handleAfterPrint(): void;
-  _handleBeforePrint(): void;
-}
-
 const preventLeafNavigation = (event: Event): void => {
   const anchor = event.composedPath().find(
     (target) => target instanceof HTMLAnchorElement && target.classList.contains('item'),
@@ -368,13 +363,13 @@ describe('ui-file-tree browser contract', () => {
     expect(nestedBranch.hasAttribute('expanded')).to.equal(false);
     expect(nestedLeaf.hasAttribute('print-mode')).to.equal(false);
 
-    (fileTree as FileTree & FileTreePrintHooks)._handleBeforePrint();
+    window.dispatchEvent(new Event('beforeprint'));
     await flush(fileTree);
 
     expect(nestedBranch.hasAttribute('expanded')).to.equal(true);
     expect(nestedLeaf.hasAttribute('print-mode')).to.equal(true);
 
-    (fileTree as FileTree & FileTreePrintHooks)._handleAfterPrint();
+    window.dispatchEvent(new Event('afterprint'));
     await flush(fileTree);
 
     expect(nestedBranch.hasAttribute('expanded')).to.equal(false);
