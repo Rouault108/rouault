@@ -375,6 +375,12 @@ export class UiMath extends LitElement {
     this._resizeObserver = null;
   }
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this._syncSlottedContent();
+    this._syncRuntimeState();
+  }
+
   override firstUpdated(): void {
     this._syncSlottedContent();
     this._syncRuntimeState();
@@ -383,8 +389,8 @@ export class UiMath extends LitElement {
     this._syncRuntimeMathMlVisibility();
   }
 
-  override updated(changedProperties: PropertyValues<this>): void {
-    super.updated(changedProperties);
+  override willUpdate(changedProperties: PropertyValues<this>): void {
+    super.willUpdate(changedProperties);
     const internalChanges = changedProperties as Map<string, unknown>;
 
     if (
@@ -395,6 +401,11 @@ export class UiMath extends LitElement {
     ) {
       this._syncRuntimeState();
     }
+  }
+
+  override updated(changedProperties: PropertyValues<this>): void {
+    super.updated(changedProperties);
+    const internalChanges = changedProperties as Map<string, unknown>;
 
     if (
       changedProperties.has('block') ||
@@ -496,7 +507,9 @@ export class UiMath extends LitElement {
   };
 
   private _syncSlottedContent(): void {
-    const assignedNodes = this._defaultSlot?.assignedNodes({ flatten: true }) ?? [];
+    const assignedNodes = Array.from(
+      this._defaultSlot?.assignedNodes({ flatten: true }) ?? this.childNodes,
+    );
     const hasMeaningfulNode = assignedNodes.some((node) => this._isMeaningfulNode(node));
 
     if (this._hasSlottedContent !== hasMeaningfulNode) {
