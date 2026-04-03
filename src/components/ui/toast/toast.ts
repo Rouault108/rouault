@@ -733,6 +733,8 @@ export class UiToast extends LitElement {
                       class="toast-close"
                       aria-label="${TOAST_CLOSE_LABEL}"
                       data-toast-id="${toast.id}"
+                      @focus="${this._onToastFocusIn}"
+                      @blur="${this._onToastFocusOut}"
                       @click="${this._onDismissClick}"
                     >
                       <ui-icon name="x" aria-hidden="true"></ui-icon>
