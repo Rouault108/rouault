@@ -406,6 +406,8 @@ export class CodeBlock extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this._syncSlottedPre();
+
     if (!this.hasAttribute('data-hydration-trigger')) {
       this.activateHydration();
     }
@@ -725,6 +727,11 @@ export class CodeBlock extends LitElement {
       if (nestedPre instanceof HTMLPreElement) {
         return nestedPre;
       }
+    }
+
+    const lightDomPre = this.querySelector('pre');
+    if (lightDomPre instanceof HTMLPreElement) {
+      return lightDomPre;
     }
 
     return null;
