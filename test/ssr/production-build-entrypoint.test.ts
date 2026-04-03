@@ -7,6 +7,17 @@ const projectRoot = process.cwd();
 const workflowPath = path.resolve(projectRoot, '.github/workflows/ci-cd.yml');
 const playwrightConfigPath = path.resolve(projectRoot, 'playwright.config.ts');
 
+const sliceWorkflowJob = (workflow: string, jobName: string, nextJobName: string): string => {
+  const start = workflow.indexOf(`${jobName}:`);
+  const end = workflow.indexOf(`${nextJobName}:`);
+
+  if (start < 0 || end < 0 || end <= start) {
+    throw new Error(`workflow から ${jobName} job を切り出せません`);
+  }
+
+  return workflow.slice(start, end);
+};
+
 describe('production build entrypoint contract', () => {
   it('Playwright preview 起動前に共有 production build entrypoint を使うこと', () => {
     const playwrightConfig = readFileSync(playwrightConfigPath, 'utf8');
@@ -16,17 +27,17 @@ describe('production build entrypoint contract', () => {
 
   it('build-production と test-extended が同じ media base URL と build label 経路を使うこと', () => {
     const workflow = readFileSync(workflowPath, 'utf8');
-    const mediaBaseUrlEntries = workflow.match(
-      /ROUAULT_MEDIA_BASE_URL: \$\{\{ vars\.ROUAULT_MEDIA_BASE_URL \}\}/g,
-    );
-    const buildLabelEntries = workflow.match(
-      /echo "ROUAULT_BUILD_LABEL=\$\{GITHUB_SHA::7\}" >> "\$GITHUB_ENV"/g,
-    );
+    const testExtendedJob = sliceWorkflowJob(workflow, 'test-extended', 'build-production');
+    const buildProductionJob = sliceWorkflowJob(workflow, 'build-production', 'deploy-production');
+    const mediaBaseUrlPattern = /ROUAULT_MEDIA_BASE_URL: \$\{\{ vars\.ROUAULT_MEDIA_BASE_URL \}\}/g;
+    const buildLabelPattern = /echo "ROUAULT_BUILD_LABEL=\$\{GITHUB_SHA::7\}" >> "\$GITHUB_ENV"/g;
 
     expect(workflow).toContain('test-extended:');
     expect(workflow).toContain('build-production:');
-    expect(mediaBaseUrlEntries).toHaveLength(2);
-    expect(buildLabelEntries).toHaveLength(3);
+    expect(testExtendedJob.match(mediaBaseUrlPattern) ?? []).toHaveLength(1);
+    expect(buildProductionJob.match(mediaBaseUrlPattern) ?? []).toHaveLength(1);
+    expect(testExtendedJob.match(buildLabelPattern) ?? []).toHaveLength(1);
+    expect(buildProductionJob.match(buildLabelPattern) ?? []).toHaveLength(1);
     expect(workflow).toContain('- run: pnpm build:production');
   });
 });

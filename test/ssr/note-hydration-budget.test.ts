@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
@@ -31,7 +31,19 @@ interface CountedNotePage {
   readonly counts: HydrationTriggerCounts;
 }
 
-const notes = JSON.parse(readFileSync('.velite/notes.json', 'utf8')) as VeliteNoteFixture[];
+const projectRoot = process.cwd();
+const veliteNotesPath = `${projectRoot}/.velite/notes.json`;
+const canaryFixturePath = new URL('../fixtures/note-hydration-canary-notes.json', import.meta.url);
+
+const loadHydrationCanaryNotes = (): VeliteNoteFixture[] => {
+  if (existsSync(veliteNotesPath)) {
+    return JSON.parse(readFileSync(veliteNotesPath, 'utf8')) as VeliteNoteFixture[];
+  }
+
+  return JSON.parse(readFileSync(canaryFixturePath, 'utf8')) as VeliteNoteFixture[];
+};
+
+const notes = loadHydrationCanaryNotes();
 const layout = new NoteLayout();
 
 const slugToId = (slug: string): string => slug.replace(/[^a-zA-Z0-9_-]/g, '-');
