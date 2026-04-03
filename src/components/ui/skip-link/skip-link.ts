@@ -119,13 +119,7 @@ export class SkipLink extends LitElement {
   }
 
   private readonly handleLinkClick = (event: MouseEvent): void => {
-    if (
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
       return;
     }
 

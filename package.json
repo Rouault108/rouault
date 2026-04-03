@@ -13,18 +13,14 @@
   "scripts": {
     "codegen:icons": "node --import tsx scripts/generate-icon-subset.ts",
     "generate:icons": "pnpm run codegen:icons",
-
     "codegen:manifest": "pnpm run codegen:icons && node scripts/generate-custom-elements-manifest.mjs",
     "analyze": "pnpm run codegen:manifest",
-
     "lint": "pnpm run codegen:icons && pnpm exec eslint .",
     "lint:fix": "pnpm run codegen:icons && pnpm exec eslint . --fix && pnpm exec prettier --write .",
     "format": "pnpm exec prettier --write .",
-
     "typecheck:app": "pnpm run codegen:manifest && pnpm exec tsc -p tsconfig.json --noEmit",
     "typecheck:node": "pnpm run codegen:icons && pnpm exec tsc -p tsconfig.node.json --noEmit",
     "typecheck": "pnpm run typecheck:app && pnpm run typecheck:node",
-
     "test:node": "pnpm run codegen:icons && pnpm exec vitest --project node",
     "test:ssr": "pnpm run codegen:icons && pnpm exec vitest --project ssr",
     "test:browser": "pnpm run codegen:icons && node scripts/run-web-test-runner.mjs --config web-test-runner.config.mjs",
@@ -35,24 +31,18 @@
     "test:storybook:ui": "pnpm exec vitest --project storybook-smoke --ui",
     "test:e2e": "pnpm run codegen:icons && pnpm exec playwright test",
     "test:e2e:production": "pnpm run codegen:icons && pnpm exec playwright test",
-
     "test": "pnpm run test:node && pnpm run test:ssr && pnpm run test:browser && pnpm run test:storybook:meta",
     "test:extended": "pnpm run test:storybook:smoke && pnpm run test:e2e",
-
     "storybook": "pnpm run codegen:manifest && pnpm exec storybook dev",
     "storybook:build": "pnpm run codegen:manifest && pnpm exec storybook build",
-
     "build:client": "pnpm run codegen:icons && pnpm exec vite build --config vite.client.config.ts",
     "build:images": "pnpm exec tsx scripts/build-images.ts",
     "build": "pnpm run build:client && pnpm run build:images && tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts && tsx scripts/apply-lit-ssr.ts && tsx scripts/build-pagefind.ts",
     "build:production": "pnpm exec tsx scripts/run-production-build.ts",
-
     "dev": "pnpm run codegen:icons && tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
     "start": "pnpm run dev",
-
     "check": "pnpm run lint && pnpm run typecheck && pnpm run test",
     "ci": "pnpm run check && pnpm run test:extended",
-
     "sync:link-cards": "pnpm exec tsx scripts/sync-link-card-metadata.ts"
   },
   "dependencies": {

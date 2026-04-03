@@ -236,9 +236,7 @@ export class SyntaxCard extends LitElement {
   private _syncContentState(): void {
     const slot = this._contentSlot;
     if (!slot) {
-      const hasSections = Array.from(this.children).some((el) =>
-        el.matches('ui-syntax-section'),
-      );
+      const hasSections = Array.from(this.children).some((el) => el.matches('ui-syntax-section'));
       this.toggleAttribute('data-content-empty', !hasSections);
       return;
     }
@@ -253,10 +251,9 @@ export class SyntaxCard extends LitElement {
   /** signature スロットに直接配置された <pre> 要素を収集する */
   private _getSignaturePreElements(): HTMLElement[] {
     const assignedElements = this._signatureSlot?.assignedElements({ flatten: true }) ?? [];
-    const slotElements =
-      assignedElements.filter(
-        (el): el is HTMLElement => el instanceof HTMLElement && el.tagName === 'PRE',
-      );
+    const slotElements = assignedElements.filter(
+      (el): el is HTMLElement => el instanceof HTMLElement && el.tagName === 'PRE',
+    );
 
     if (slotElements.length > 0) {
       return slotElements;

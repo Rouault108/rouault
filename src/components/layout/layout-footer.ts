@@ -92,7 +92,8 @@ export const buildLayoutFooterOptions = ({
 }): FooterRenderOptions => {
   const normalizedFooterId = normalizeOptionalText(footerId);
   const normalizedSiteUrl = normalizeOptionalText(siteUrl) ?? DEFAULT_SITE_URL;
-  const resolvedBuildLabel = normalizeOptionalText(buildLabel) ?? loadBuildMetadataData().buildLabel;
+  const resolvedBuildLabel =
+    normalizeOptionalText(buildLabel) ?? loadBuildMetadataData().buildLabel;
   const resolvedDescription = normalizeOptionalText(siteDescription);
   const resolvedEyebrow = normalizeOptionalText(siteEyebrow);
 

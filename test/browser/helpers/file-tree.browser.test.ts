@@ -74,9 +74,9 @@ const getTreeItemAction = (fileTree: FileTree, id: string): HTMLElement =>
   );
 
 const preventLeafNavigation = (event: Event): void => {
-  const anchor = event.composedPath().find(
-    (target) => target instanceof HTMLAnchorElement && target.classList.contains('item'),
-  );
+  const anchor = event
+    .composedPath()
+    .find((target) => target instanceof HTMLAnchorElement && target.classList.contains('item'));
 
   if (anchor instanceof HTMLAnchorElement) {
     event.preventDefault();

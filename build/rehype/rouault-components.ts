@@ -367,9 +367,9 @@ const toStaticTable = (node: HastNode): void => {
   if (node.tagName === 'table') {
     tableChild = createElement('table', originalProperties, originalChildren);
   } else {
-    const firstTable = originalChildren.map((child) => unwrapTableNode(child)).find(
-      (child): child is HastNode => child !== null,
-    );
+    const firstTable = originalChildren
+      .map((child) => unwrapTableNode(child))
+      .find((child): child is HastNode => child !== null);
     tableChild = firstTable ?? createElement('table', {}, []);
   }
 
@@ -467,8 +467,7 @@ const hasCanonicalStaticCallout = (node: HastNode): boolean => {
 
   const contentRoot = findDirectChildElement(
     node,
-    (child) =>
-      child.tagName === 'div' && child.properties?.['data-callout-content'] !== undefined,
+    (child) => child.tagName === 'div' && child.properties?.['data-callout-content'] !== undefined,
   );
 
   if (!contentRoot || !Array.isArray(contentRoot.children)) {
@@ -487,7 +486,8 @@ const hasCanonicalStaticInfoBox = (node: HastNode): boolean => {
 
   return Array.isArray(node.children)
     ? node.children.some(
-        (child) => isElement(child, 'div') && child.properties?.['data-info-box-body'] !== undefined,
+        (child) =>
+          isElement(child, 'div') && child.properties?.['data-info-box-body'] !== undefined,
       )
     : false;
 };
@@ -1265,7 +1265,11 @@ export function rehypeRouaultComponents() {
         toStaticTable(current);
 
         const tableRoot = Array.isArray(current.children) ? current.children[0] : undefined;
-        if (tableRoot !== undefined && !isElement(tableRoot, 'table') && Array.isArray(tableRoot.children)) {
+        if (
+          tableRoot !== undefined &&
+          !isElement(tableRoot, 'table') &&
+          Array.isArray(tableRoot.children)
+        ) {
           for (const child of tableRoot.children) {
             visit(child);
           }
@@ -1373,9 +1377,7 @@ const normalizeRouaultStaticSurfacesTree = (tree: HastNode): void => {
   visit(tree);
 };
 
-export const normalizeRouaultStaticSurfaceHtml = (
-  html: string | undefined,
-): string | undefined => {
+export const normalizeRouaultStaticSurfaceHtml = (html: string | undefined): string | undefined => {
   if (typeof html !== 'string' || html.trim().length === 0) {
     return html;
   }

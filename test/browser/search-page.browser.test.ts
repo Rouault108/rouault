@@ -347,7 +347,8 @@ describe('search-page browser contract', () => {
 
     const searchPage = expectPresent(host.querySelector<SearchPage>('search-page'), 'search page');
     const filterDetails = getFilterDetails(searchPage);
-    const filterSummaryText = searchPage.shadowRoot?.querySelector('.filter-summary-state')?.textContent ?? '';
+    const filterSummaryText =
+      searchPage.shadowRoot?.querySelector('.filter-summary-state')?.textContent ?? '';
 
     expect(filterDetails.open).to.equal(false);
     expect(filterSummaryText.includes('すべてのタグ')).to.equal(true);

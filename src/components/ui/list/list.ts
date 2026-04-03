@@ -427,13 +427,9 @@ export class List extends LitElement {
   private _collectRowElements(): void {
     const slot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[data-list-rows]');
     const rows = slot
-      ? slot
-          .assignedElements({ flatten: true })
-          .filter((element): element is UiListItemLike => {
-            return (
-              element instanceof HTMLElement && element.tagName.toLowerCase() === 'ui-list-item'
-            );
-          })
+      ? slot.assignedElements({ flatten: true }).filter((element): element is UiListItemLike => {
+          return element instanceof HTMLElement && element.tagName.toLowerCase() === 'ui-list-item';
+        })
       : Array.from(this.children).filter(
           (element): element is UiListItemLike =>
             element instanceof HTMLElement && element.tagName.toLowerCase() === 'ui-list-item',

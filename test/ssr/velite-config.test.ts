@@ -18,7 +18,9 @@ describe('velite config', () => {
     expect(source).toContain('testingArea: s.enum(TESTING_AREAS).optional(),');
     expect(source).toContain('const kind = normalizeNoteContentKind(data.kind);');
     expect(source).toContain('const testingArea = normalizeTestingArea(data.testingArea);');
-    expect(source).toContain('const normalizedContent = normalizeRouaultStaticSurfaceHtml(data.content);');
+    expect(source).toContain(
+      'const normalizedContent = normalizeRouaultStaticSurfaceHtml(data.content);',
+    );
     expect(source).toContain('validateNoteMetadataContracts(kind, testingArea, data.slug);');
     expect(source).toContain(
       'validateNoteContentContracts(kind, normalizedContent, data.slug, testingArea);',

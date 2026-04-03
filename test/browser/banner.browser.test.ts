@@ -44,9 +44,7 @@ describe('ui-banner browser contract', () => {
   });
 
   it('action slot の有無に応じて actions 領域を表示・非表示にすること', async () => {
-    const banner = await fixture<Banner>(html`
-      <ui-banner>通知本文</ui-banner>
-    `);
+    const banner = await fixture<Banner>(html` <ui-banner>通知本文</ui-banner> `);
 
     await waitForLitUpdate(banner);
 

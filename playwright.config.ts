@@ -51,7 +51,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'pnpm run build:production && pnpm exec vite preview --host 127.0.0.1 --port 8080 --strictPort',
+    command:
+      'pnpm run build:production && pnpm exec vite preview --host 127.0.0.1 --port 8080 --strictPort',
     url: 'http://127.0.0.1:8080/search/',
     reuseExistingServer: !isCI,
     timeout: 120 * 1000,

@@ -17,9 +17,7 @@ const expectPresent = <T>(value: T | null | undefined, name: string): T => {
   return value;
 };
 
-const waitForHeaderToggle = (
-  header: UiHeader,
-): Promise<CustomEvent<UiHeaderSidebarToggleDetail>> =>
+const waitForHeaderToggle = (header: UiHeader): Promise<CustomEvent<UiHeaderSidebarToggleDetail>> =>
   new Promise((resolve) => {
     header.addEventListener(
       'ui-header-sidebar-toggle',
