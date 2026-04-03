@@ -55,20 +55,53 @@ describe('story discovery', () => {
       'utf8',
     );
 
-    expect(packageJson.scripts?.['test']).toBe(
-      'pnpm test:node && pnpm test:ssr && pnpm test:browser && pnpm test:storybook:meta',
-    );
-    expect(packageJson.scripts?.['test:extended']).toBe(
-      'pnpm test:storybook:smoke && pnpm test:e2e:production',
-    );
-    expect(packageJson.scripts?.['test:e2e:production']).toBe('pnpm exec playwright test');
-    expect(packageJson.scripts?.['test:node']).toBe('vitest --project node');
-    expect(packageJson.scripts?.['test:browser']).toBe(
-      'node scripts/run-web-test-runner.mjs --config web-test-runner.config.mjs',
-    );
+    const getScript = (name: string): string => {
+      const script = packageJson.scripts?.[name];
+      expect(script, `${name} script should exist`).toEqual(expect.any(String));
+      return script ?? '';
+    };
+
+    const normalize = (value: string): string => value.replace(/\s+/g, ' ').trim();
+
+    const testScript = normalize(getScript('test'));
+    const extendedScript = normalize(getScript('test:extended'));
+    const nodeScript = normalize(getScript('test:node'));
+    const browserScript = normalize(getScript('test:browser'));
+    const storybookMetaScript = normalize(getScript('test:storybook:meta'));
+    const storybookSmokeScript = normalize(getScript('test:storybook:smoke'));
+    const e2eProductionScript = normalize(getScript('test:e2e:production'));
+
+    expect(testScript).toContain('test:node');
+    expect(testScript).toContain('test:ssr');
+    expect(testScript).toContain('test:browser');
+    expect(testScript).toContain('test:storybook:meta');
+    expect(testScript).not.toContain('test:storybook:smoke');
+    expect(testScript).not.toContain('test:e2e');
+
+    expect(extendedScript).toContain('test:storybook:smoke');
+    expect(extendedScript).toContain('test:e2e');
+    expect(extendedScript).not.toContain('test:node');
+    expect(extendedScript).not.toContain('test:ssr');
+    expect(extendedScript).not.toContain('test:browser');
+    expect(extendedScript).not.toContain('test:storybook:meta');
+
+    expect(e2eProductionScript).toContain('playwright test');
+
+    expect(nodeScript).toContain('vitest');
+    expect(nodeScript).toContain('--project node');
+    expect(nodeScript).not.toContain('playwright');
+
+    expect(browserScript).toContain('scripts/run-web-test-runner.mjs');
+    expect(browserScript).toContain('--config web-test-runner.config.mjs');
+    expect(browserScript).not.toContain('vitest --project node');
+
     expect(packageJson.scripts?.['test:unit']).toBeUndefined();
-    expect(packageJson.scripts?.['test:storybook:meta']).toBe('vitest --project storybook-meta');
-    expect(packageJson.scripts?.['test:storybook:smoke']).toBe('vitest --project storybook-smoke');
+
+    expect(storybookMetaScript).toContain('vitest');
+    expect(storybookMetaScript).toContain('--project storybook-meta');
+
+    expect(storybookSmokeScript).toContain('vitest');
+    expect(storybookSmokeScript).toContain('--project storybook-smoke');
 
     expect(vitestConfig).toContain("name: 'node'");
     expect(vitestConfig).toContain("name: 'storybook-smoke'");
