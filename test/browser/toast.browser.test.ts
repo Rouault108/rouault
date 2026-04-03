@@ -40,16 +40,6 @@ const getMessage = (toast: HTMLOutputElement): string =>
 const getCloseButton = (toast: HTMLOutputElement): HTMLButtonElement =>
   expectPresent(toast.querySelector<HTMLButtonElement>('button.toast-close'), 'toast close button');
 
-const findToastByMessage = (host: UiToast, message: string): HTMLOutputElement => {
-  const target = getOutputs(host).find((toast) => getMessage(toast) === message);
-
-  if (!target) {
-    throw new Error(`"${message}" の toast が見つかりません`);
-  }
-
-  return target;
-};
-
 const findToastByVariantAndMessage = (
   host: UiToast,
   variant: ToastVariant,

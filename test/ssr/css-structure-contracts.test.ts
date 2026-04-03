@@ -30,7 +30,6 @@ import { UiImage } from '../../src/components/ui/image/image.js';
 import { Kbd } from '../../src/components/ui/kbd/kbd.js';
 import { UiMath } from '../../src/components/ui/math/math.js';
 import { Pagination } from '../../src/components/ui/pagination/pagination.js';
-import { UiPopover } from '../../src/components/ui/popover/popover.js';
 import { UiScore } from '../../src/components/ui/score/score.js';
 import { DOCUMENT_CSS as SYNTAX_FIELD_DOCUMENT_CSS } from '../../src/components/ui/syntax-field/syntax-field.js';
 import { DOCUMENT_CSS as TABLE_DOCUMENT_CSS } from '../../src/components/ui/table/table.js';

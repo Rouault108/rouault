@@ -120,7 +120,7 @@ describe('ui-list-item browser contract', () => {
 
     await flush(host);
 
-    const fallbackCell = expectPresent(
+    expectPresent(
       host.shadowRoot?.querySelector<HTMLElement>('.cell--data[data-column-id="__default__"]'),
       'fallback cell',
     );

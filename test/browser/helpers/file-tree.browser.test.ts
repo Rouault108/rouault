@@ -73,10 +73,10 @@ const getTreeItemAction = (fileTree: FileTree, id: string): HTMLElement =>
     `${id} の .item が見つかりません`,
   );
 
-type FileTreePrintHooks = {
+interface FileTreePrintHooks {
   _handleAfterPrint(): void;
   _handleBeforePrint(): void;
-};
+}
 
 const preventLeafNavigation = (event: Event): void => {
   const anchor = event.composedPath().find(
