@@ -351,9 +351,6 @@ export class UiImage extends LitElement {
   @query('.trigger')
   private _triggerElement?: HTMLButtonElement;
 
-  @query('.thumbnail-image')
-  private _thumbnailImage?: HTMLImageElement;
-
   @query('.lightbox-dialog')
   private _dialogElement?: HTMLElement;
 
@@ -400,23 +397,13 @@ export class UiImage extends LitElement {
     }
   }
 
-  override firstUpdated(): void {
-    this._syncImageStateFromDom();
-  }
-
   override updated(changedProperties: PropertyValues<this>): void {
     super.updated(changedProperties);
 
     if ((changedProperties as Map<string, unknown>).has('_expanded')) {
       if (this._expanded) {
         this._lockScroll();
-        requestAnimationFrame(() => {
-          if (this._closeButtonElement) {
-            this._closeButtonElement.focus();
-            return;
-          }
-          this._dialogElement?.focus();
-        });
+        this._focusLightboxSurface();
       } else {
         this._unlockScroll();
         this._restoreTriggerFocus();
@@ -568,30 +555,22 @@ export class UiImage extends LitElement {
     }
   }
 
-  private _syncImageStateFromDom(): void {
-    const image = this._thumbnailImage;
-    if (!image) return;
-    if (this._resolvedSrc === '') {
-      this._setImageState(false, false);
-      return;
-    }
-    if (!image.complete) return;
-
-    if (image.naturalWidth > 0) {
-      this._setImageState(true, false);
-      return;
-    }
-
-    this._setImageState(false, true);
-  }
-
   private _restoreTriggerFocus(): void {
     const trigger = this._triggerElement;
     if (!trigger || trigger.disabled || !this.isConnected) return;
 
-    requestAnimationFrame(() => {
-      trigger.focus();
-    });
+    trigger.focus({ preventScroll: true });
+  }
+
+  private _focusLightboxSurface(): void {
+    if (!this.isConnected) return;
+
+    if (this._closeButtonElement) {
+      this._closeButtonElement.focus({ preventScroll: true });
+      return;
+    }
+
+    this._dialogElement?.focus({ preventScroll: true });
   }
 
   private _getFocusableElements(): HTMLElement[] {
@@ -732,18 +711,37 @@ export class UiImage extends LitElement {
   }
 
   private _renderThumbnailImage(describedBy: string | undefined): TemplateResult {
-    return this._renderPicture(
-      `thumbnail-image ${this._isLoaded ? 'is-loaded' : ''}`,
-      this._resolvedSrc,
-      this.alt,
-      describedBy,
-      this._resolvedLoading,
-      this._resolvedSrcset,
-      this._resolvedSizes,
-      this._resolvedSources,
-      this._onThumbnailLoad,
-      this._onThumbnailError,
-    );
+    return html`
+      <picture>
+        ${this._resolvedSources.map(
+          (source) => html`
+            <source
+              type="${source.type}"
+              srcset="${source.srcset}"
+              sizes="${ifDefined(source.sizes)}"
+            />
+          `,
+        )}
+        <img
+          class="thumbnail-image ${this._isLoaded ? 'is-loaded' : ''}"
+          src="${this._resolvedSrc}"
+          srcset="${ifDefined(this._resolvedSrcset !== '' ? this._resolvedSrcset : undefined)}"
+          sizes="${ifDefined(this._resolvedSizes !== '' ? this._resolvedSizes : undefined)}"
+          alt="${this.alt}"
+          aria-describedby="${ifDefined(describedBy)}"
+          loading="${this._resolvedLoading}"
+          decoding="async"
+          width="${ifDefined(
+            this._resolvedWidth !== null ? String(this._resolvedWidth) : undefined,
+          )}"
+          height="${ifDefined(
+            this._resolvedHeight !== null ? String(this._resolvedHeight) : undefined,
+          )}"
+          @load="${this._onThumbnailLoad}"
+          @error="${this._onThumbnailError}"
+        />
+      </picture>
+    `;
   }
 
   private _renderEmptyFallback(): TemplateResult {
