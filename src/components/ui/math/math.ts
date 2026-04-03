@@ -543,13 +543,14 @@ export class UiMath extends LitElement {
       });
       this._setRuntimeState(latex, renderedHtml, '', false);
     } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : '数式をレンダリングできませんでした。';
+
       if (error instanceof ParseError) {
-        this._setRuntimeState('', '', `${LATEX_PARSE_ERROR_PREFIX}${error.message}`, true);
+        this._setRuntimeState('', '', `${LATEX_PARSE_ERROR_PREFIX}${message}`, true);
         return;
       }
 
-      const message =
-        error instanceof Error ? error.message : '数式をレンダリングできませんでした。';
       this._setRuntimeState('', '', `${LATEX_PARSE_ERROR_PREFIX}${message}`, true);
     }
   }
