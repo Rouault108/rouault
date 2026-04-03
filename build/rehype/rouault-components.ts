@@ -1,3 +1,4 @@
+import { toHtml } from 'hast-util-to-html';
 import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
 
@@ -341,6 +342,7 @@ const unwrapTableNode = (node: HastNode): HastNode | null => {
       isElement(child, 'div') &&
       child.properties?.['data-table-root'] === 'true' &&
       Array.isArray(child.children) &&
+      child.children[0] !== undefined &&
       isElement(child.children[0], 'table'),
   );
 
@@ -447,7 +449,54 @@ const toStaticBlockquote = (node: HastNode): void => {
   node.children = quoteChildren;
 };
 
+const findDirectChildElement = (
+  node: HastNode,
+  predicate: (candidate: HastNode) => boolean,
+): HastNode | undefined => {
+  if (!Array.isArray(node.children)) {
+    return undefined;
+  }
+
+  return node.children.find((child) => isElement(child) && predicate(child));
+};
+
+const hasCanonicalStaticCallout = (node: HastNode): boolean => {
+  if (!isElement(node, 'aside') || node.properties?.['data-callout'] === undefined) {
+    return false;
+  }
+
+  const contentRoot = findDirectChildElement(
+    node,
+    (child) =>
+      child.tagName === 'div' && child.properties?.['data-callout-content'] !== undefined,
+  );
+
+  if (!contentRoot || !Array.isArray(contentRoot.children)) {
+    return false;
+  }
+
+  return contentRoot.children.some(
+    (child) => isElement(child, 'div') && child.properties?.['data-callout-body'] !== undefined,
+  );
+};
+
+const hasCanonicalStaticInfoBox = (node: HastNode): boolean => {
+  if (!isElement(node, 'section') || node.properties?.['data-info-box'] === undefined) {
+    return false;
+  }
+
+  return Array.isArray(node.children)
+    ? node.children.some(
+        (child) => isElement(child, 'div') && child.properties?.['data-info-box-body'] !== undefined,
+      )
+    : false;
+};
+
 const toStaticCallout = (node: HastNode, context: SurfaceNormalizationContext): void => {
+  if (hasCanonicalStaticCallout(node)) {
+    return;
+  }
+
   const properties = node.properties ?? {};
   const children = Array.isArray(node.children)
     ? node.children.map((child) => cloneNode(child))
@@ -501,6 +550,10 @@ const toStaticCallout = (node: HastNode, context: SurfaceNormalizationContext): 
 };
 
 const toStaticInfoBox = (node: HastNode, context: SurfaceNormalizationContext): void => {
+  if (hasCanonicalStaticInfoBox(node)) {
+    return;
+  }
+
   const properties = node.properties ?? {};
   const children = Array.isArray(node.children)
     ? node.children.map((child) => cloneNode(child))
@@ -1212,7 +1265,7 @@ export function rehypeRouaultComponents() {
         toStaticTable(current);
 
         const tableRoot = Array.isArray(current.children) ? current.children[0] : undefined;
-        if (isElement(tableRoot, 'table') && Array.isArray(tableRoot.children)) {
+        if (tableRoot !== undefined && !isElement(tableRoot, 'table') && Array.isArray(tableRoot.children)) {
           for (const child of tableRoot.children) {
             visit(child);
           }
@@ -1277,3 +1330,68 @@ export function rehypeRouaultComponents() {
     synchronizeFootnoteBackrefs(footnoteDefinitions, footnoteRefCounters);
   };
 }
+
+const normalizeRouaultStaticSurfacesTree = (tree: HastNode): void => {
+  const surfaceContext: SurfaceNormalizationContext = {
+    calloutHeadingCount: 0,
+    infoBoxHeadingCount: 0,
+  };
+
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== 'object') {
+      return;
+    }
+
+    const current = node as HastNode;
+
+    if (Array.isArray(current.children)) {
+      for (const child of current.children) {
+        visit(child);
+      }
+    }
+
+    if (!isElement(current)) {
+      return;
+    }
+
+    if (
+      current.tagName === 'ui-callout' ||
+      (current.tagName === 'aside' && current.properties?.['data-callout'] !== undefined)
+    ) {
+      toStaticCallout(current, surfaceContext);
+      return;
+    }
+
+    if (
+      current.tagName === 'ui-info-box' ||
+      (current.tagName === 'section' && current.properties?.['data-info-box'] !== undefined)
+    ) {
+      toStaticInfoBox(current, surfaceContext);
+    }
+  };
+
+  visit(tree);
+};
+
+export const normalizeRouaultStaticSurfaceHtml = (
+  html: string | undefined,
+): string | undefined => {
+  if (typeof html !== 'string' || html.trim().length === 0) {
+    return html;
+  }
+
+  const fragment = parse5.parseFragment(html, {
+    sourceCodeLocationInfo: false,
+  });
+
+  const root: HastNode = {
+    type: 'root',
+    children: fragment.childNodes
+      .map((child) => parse5NodeToHast(child))
+      .filter((child): child is HastNode => child !== null),
+  };
+
+  normalizeRouaultStaticSurfacesTree(root);
+
+  return toHtml(root as Parameters<typeof toHtml>[0]);
+};

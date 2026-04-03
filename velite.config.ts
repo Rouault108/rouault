@@ -9,7 +9,10 @@ import { rehypeHeadingIds } from './build/rehype/rehype-heading-ids.js';
 import { rehypeInlineCodeTranslateNo } from './build/rehype/inline-code-translate-no.js';
 import { rehypeOrderedListContracts } from './build/rehype/ordered-list-contracts.js';
 import { rehypePreviewSandbox } from './build/rehype/preview-sandbox.js';
-import { rehypeRouaultComponents } from './build/rehype/rouault-components.js';
+import {
+  normalizeRouaultStaticSurfaceHtml,
+  rehypeRouaultComponents,
+} from './build/rehype/rouault-components.js';
 import { rehypeShikiCodeBlocks } from './build/rehype/shiki-code-blocks.js';
 import { rehypeStaticCodeGroups } from './build/rehype/static-code-groups.js';
 import { validateNoteContentContracts } from './build/content/note-content-contracts.js';
@@ -56,12 +59,14 @@ const notes = defineCollection({
       const hydrationBudgetProfile = normalizeNoteHydrationBudgetProfileName(
         data.hydrationBudgetProfile,
       );
+      const normalizedContent = normalizeRouaultStaticSurfaceHtml(data.content);
 
       validateNoteMetadataContracts(kind, testingArea, data.slug);
-      validateNoteContentContracts(kind, data.content, data.slug, testingArea);
+      validateNoteContentContracts(kind, normalizedContent, data.slug, testingArea);
 
       return {
         ...data,
+        content: normalizedContent,
         kind,
         ...(testingArea !== undefined ? { testingArea } : {}),
         ...(hydrationBudgetProfile !== undefined ? { hydrationBudgetProfile } : {}),

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { rehypeRouaultComponents } from '../../build/rehype/rouault-components.js';
+import {
+  normalizeRouaultStaticSurfaceHtml,
+  rehypeRouaultComponents,
+} from '../../build/rehype/rouault-components.js';
 
 interface HastNode {
   type: string;
@@ -171,6 +174,81 @@ describe('rehypeRouaultComponents', () => {
     expect(infoBox?.properties?.['data-hydration-capability']).to.equal(undefined);
     expect(infoBox?.properties?.['data-hydration-trigger']).to.equal(undefined);
     expect(infoBox?.children?.every((child) => child.tagName === 'div')).to.equal(true);
+  });
+
+  it('HTML 断片を保存前 surface HTML に正規化できること', () => {
+    const html = `
+      <aside data-callout="true" data-callout-kind="warning" data-callout-heading="注意">
+        <p>本文</p>
+      </aside>
+      <section
+        data-info-box="true"
+        data-info-box-heading="作品情報"
+        data-info-box-heading-level="3"
+        data-info-box-landmark="true"
+        data-variant="filled"
+        data-density="compact"
+      >
+        <p>内容</p>
+      </section>
+    `;
+
+    const normalized = normalizeRouaultStaticSurfaceHtml(html) ?? '';
+
+    expect(normalized).toContain('data-callout-content="true"');
+    expect(normalized).toContain('data-callout-body="true"');
+    expect(normalized).toContain('data-info-box-body="true"');
+    expect(normalized).toContain('data-info-box-header="true"');
+  });
+
+  it('保存前 surface HTML 正規化が冪等であること', () => {
+    const html = `
+      <aside data-callout="true" data-callout-kind="tip" data-callout-heading="補助情報">
+        <p>本文</p>
+      </aside>
+      <section
+        data-info-box="true"
+        data-info-box-heading="作品情報"
+        data-info-box-heading-level="3"
+        data-info-box-landmark="true"
+        data-variant="filled"
+        data-density="compact"
+      >
+        <p>内容</p>
+      </section>
+    `;
+
+    const once = normalizeRouaultStaticSurfaceHtml(html) ?? '';
+    const twice = normalizeRouaultStaticSurfaceHtml(once) ?? '';
+
+    expect(twice).toBe(once);
+  });
+
+  it('保存前 surface HTML 正規化は既存の static image を再解決しないこと', () => {
+    const html = `
+      <figure
+        data-image="true"
+        data-image-zoomable="true"
+        data-hydration-key="image-lightbox-enhancer"
+        data-hydration-capability="progressive"
+        data-hydration-trigger="visible"
+        data-image-lightbox-src="/static/example.png"
+      >
+        <button type="button" data-image-zoom-trigger="true" aria-label="画像を拡大して表示">
+          拡大
+        </button>
+        <picture>
+          <img src="/static/example.png" alt="example image">
+        </picture>
+      </figure>
+    `;
+
+    const normalized = normalizeRouaultStaticSurfaceHtml(html) ?? '';
+
+    expect(normalized).toContain('data-image="true"');
+    expect(normalized).toContain('/static/example.png');
+    expect(normalized).not.toContain('content/_assets');
+    expect(normalized).not.toContain('examples/media');
   });
 
   it('mark を static highlight root に正規化すること', () => {

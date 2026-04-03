@@ -10,7 +10,7 @@ describe('velite config', () => {
     expect(source).not.toContain('title: s.string().optional(),');
   });
 
-  it('ノートの frontmatter で kind を受け付け、既定を reader に正規化すること', () => {
+  it('ノートの frontmatter で kind を受け付け、保存前に surface HTML へ正規化してから契約検証すること', () => {
     const configPath = new URL('../../velite.config.ts', import.meta.url);
     const source = readFileSync(configPath, 'utf8');
 
@@ -18,10 +18,14 @@ describe('velite config', () => {
     expect(source).toContain('testingArea: s.enum(TESTING_AREAS).optional(),');
     expect(source).toContain('const kind = normalizeNoteContentKind(data.kind);');
     expect(source).toContain('const testingArea = normalizeTestingArea(data.testingArea);');
+    expect(source).toContain(
+      "normalizeRouaultStaticSurfaceHtml(data.content, { path: data.slug });",
+    );
     expect(source).toContain('validateNoteMetadataContracts(kind, testingArea, data.slug);');
     expect(source).toContain(
-      'validateNoteContentContracts(kind, data.content, data.slug, testingArea);',
+      'validateNoteContentContracts(kind, normalizedContent, data.slug, testingArea);',
     );
+    expect(source).toContain('content: normalizedContent,');
   });
 
   it('remarkGfm を Markdown frontmatter pipeline に含めること', () => {
