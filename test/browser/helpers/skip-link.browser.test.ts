@@ -60,9 +60,19 @@ describe('ui-skip-link browser contract', () => {
     );
     const target = must(mount.querySelector<HTMLElement>('#content'), '#content が見つかりません');
 
-    anchor.click();
+    const originalUrl = window.location.href;
+    const clickEvent = new MouseEvent('click', {
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+      button: 0,
+    });
+
+    anchor.dispatchEvent(clickEvent);
     await Promise.resolve();
 
+    expect(clickEvent.defaultPrevented).to.equal(true);
+    expect(window.location.href).to.equal(originalUrl);
     expect(document.activeElement).to.equal(target);
   });
 
