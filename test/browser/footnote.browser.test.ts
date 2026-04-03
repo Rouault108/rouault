@@ -166,8 +166,17 @@ describe('ui-footnote browser contract', () => {
         composed: true,
         ...init,
       });
+      let defaultPrevented = false;
+      const preventNavigation = (clickEvent: Event): void => {
+        defaultPrevented = clickEvent.defaultPrevented;
+        clickEvent.preventDefault();
+      };
+
+      document.addEventListener('click', preventNavigation);
       followerTrigger.dispatchEvent(event);
-      expect(event.defaultPrevented).to.equal(false);
+      document.removeEventListener('click', preventNavigation);
+
+      expect(defaultPrevented).to.equal(false);
     }
 
     if (!supportsPopoverApi()) {
@@ -234,6 +243,10 @@ describe('ui-footnote browser contract', () => {
     const trigger = expectPresent(getTrigger(host), 'trigger');
     const popover = expectPresent(getPopover(host), 'popover');
     const popoverHost = expectPresent(getPopoverHost(host), 'popoverHost');
+    const afterFootnote = expectPresent(
+      wrapper.querySelector<HTMLAnchorElement>('#after-footnote'),
+      'afterFootnote',
+    );
 
     trigger.focus();
 
@@ -275,7 +288,6 @@ describe('ui-footnote browser contract', () => {
       popover.querySelector<HTMLAnchorElement>('.footnote-list-link'),
       'footerLink',
     );
-    footerLink.focus();
 
     const closedByTab = waitForCustomEvent(popoverHost, 'ui-popover-closed');
     dispatchKey(footerLink, 'Tab');
@@ -283,6 +295,7 @@ describe('ui-footnote browser contract', () => {
     await nextAnimationFrame();
 
     expect(isPopoverOpen(popover)).to.equal(false);
+    expect(document.activeElement).to.equal(afterFootnote);
   });
 
   it('SSR 由来本文を保持し、再描画後も失わず、無効 index / refInstance を正規化すること', async () => {
