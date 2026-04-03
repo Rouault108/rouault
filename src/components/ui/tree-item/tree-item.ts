@@ -565,8 +565,7 @@ export class TreeItem extends LitElement {
   };
 
   private readonly _iconSlotChangeHandler = () => {
-    const slot = this.shadowRoot?.querySelector('slot[name="icon"]') as HTMLSlotElement | null;
-    this.hasCustomIcon = (slot?.assignedElements({ flatten: true }).length ?? 0) > 0;
+    this._syncHasCustomIcon();
   };
 
   private readonly _hostFocusHandler = (e: FocusEvent) => {
@@ -632,6 +631,8 @@ export class TreeItem extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('role', 'treeitem');
+    this._syncHasChildren();
+    this._syncHasCustomIcon();
     this.addEventListener('focus', this._hostFocusHandler);
   }
 
@@ -821,6 +822,17 @@ export class TreeItem extends LitElement {
 
     if (this.hasChildren !== nextHasChildren) {
       this.hasChildren = nextHasChildren;
+    }
+  }
+
+  private _syncHasCustomIcon(): void {
+    const slot = this.shadowRoot?.querySelector('slot[name="icon"]') as HTMLSlotElement | null;
+    const nextHasCustomIcon =
+      (slot?.assignedElements({ flatten: true }).length ?? 0) > 0 ||
+      this.querySelector('[slot="icon"]') !== null;
+
+    if (this.hasCustomIcon !== nextHasCustomIcon) {
+      this.hasCustomIcon = nextHasCustomIcon;
     }
   }
 
