@@ -412,13 +412,14 @@ export class CodeGroup extends LitElement {
     super.connectedCallback();
 
     this.addEventListener('ui-code-block-change', this._onCodeBlockChange as EventListener);
+    this._composeFromLightDom();
+
     if (!this.hasAttribute('data-hydration-trigger')) {
       this.activateHydration();
     }
   }
 
   override firstUpdated(): void {
-    this._composeFromLightDom();
     queueMicrotask(() => {
       this._hasCompletedInitialUpdate = true;
     });
