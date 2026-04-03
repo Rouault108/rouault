@@ -15,6 +15,8 @@ export const DOCUMENT_STYLE_ID = 'ui-footnote-document-styles';
 const IS_DEVELOPMENT = (import.meta as ImportMeta & { env?: ImportMetaEnvLike }).env?.DEV ?? true;
 
 const SCOPE_SELECTOR = '[data-footnote-scope], article, [role="article"], [data-note-root], main';
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const INTERACTIVE_ANCESTOR_SELECTOR = [
   'a',
@@ -540,10 +542,45 @@ export class Footnote extends LitElement {
 
   private _onFooterLinkKeyDown = (event: KeyboardEvent): void => {
     if (event.key !== 'Tab' || event.shiftKey) return;
+
+    const currentTarget = event.currentTarget;
+    if (!(currentTarget instanceof HTMLElement)) return;
+
     const popoverHost = this._resolvePopoverHost();
     if (!popoverHost) return;
+
+    event.preventDefault();
+    const nextFocusTarget = this._getAdjacentFocusableElement(currentTarget, 1);
+    if (nextFocusTarget) {
+      nextFocusTarget.focus({ preventScroll: true });
+    } else {
+      currentTarget.blur();
+    }
+
     popoverHost.close({ returnFocus: false });
   };
+
+  private _getFocusableElements(): HTMLElement[] {
+    const root = this._getScopeRoot();
+    return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+      (element): element is HTMLElement => element instanceof HTMLElement,
+    );
+  }
+
+  private _getAdjacentFocusableElement(
+    currentTarget: HTMLElement,
+    delta: 1 | -1,
+  ): HTMLElement | null {
+    const focusableElements = this._getFocusableElements();
+    const currentIndex = focusableElements.indexOf(currentTarget);
+
+    if (currentIndex < 0) return null;
+
+    const nextIndex = currentIndex + delta;
+    if (nextIndex < 0 || nextIndex >= focusableElements.length) return null;
+
+    return focusableElements[nextIndex] ?? null;
+  }
 
   private _renderBodyContent(): TemplateResult | typeof nothing {
     if (this._contentHtml === '') return nothing;
