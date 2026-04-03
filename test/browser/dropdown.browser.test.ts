@@ -2,7 +2,7 @@ import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/dropdown/dropdown.js';
 import '../../src/components/ui/icon/icon.js';
 import type { Dropdown, MenuItem } from '../../src/components/ui/dropdown/dropdown.js';
-import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { dispatchKey, waitForLitUpdate, waitMs } from './helpers/wait-for-lit.js';
 
 interface MenuItemSelectDetail {
   value: string;
@@ -53,6 +53,67 @@ const waitForCustomEvent = <T>(target: EventTarget, type: string): Promise<Custo
     );
   });
 
+const waitUntil = async (
+  predicate: () => boolean,
+  timeoutMs = 2000,
+  intervalMs = 20,
+  message = 'condition not met',
+): Promise<void> => {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    if (predicate()) {
+      return;
+    }
+    await waitMs(intervalMs);
+  }
+
+  throw new Error(message);
+};
+
+const waitUntilOpenState = async (
+  dropdown: Dropdown,
+  trigger: HTMLElement,
+  panel: HTMLElement,
+): Promise<void> => {
+  await waitUntil(
+    () =>
+      dropdown.opened === true &&
+      trigger.getAttribute('aria-expanded') === 'true' &&
+      panel.getAttribute('aria-hidden') === 'false' &&
+      panel.hasAttribute('inert') === false,
+    2000,
+    20,
+    'dropdown が開状態へ遷移しません',
+  );
+};
+
+const waitUntilClosedState = async (
+  dropdown: Dropdown,
+  trigger: HTMLElement,
+  panel: HTMLElement,
+): Promise<void> => {
+  await waitUntil(
+    () =>
+      dropdown.opened === false &&
+      trigger.getAttribute('aria-expanded') === 'false' &&
+      panel.getAttribute('aria-hidden') === 'true' &&
+      panel.hasAttribute('inert') === true,
+    2000,
+    20,
+    'dropdown が閉状態へ遷移しません',
+  );
+};
+
+const waitUntilFocusedValue = async (dropdown: Dropdown, value: string): Promise<void> => {
+  await waitUntil(
+    () => getFocusedValue(dropdown) === value,
+    2000,
+    20,
+    `focus が ${value} へ移動しません`,
+  );
+};
+
 describe('ui-dropdown browser contract', () => {
   it('open/close と trigger aria / panel state を公開すること', async () => {
     const dropdown = await fixture<Dropdown>(html`
@@ -76,8 +137,7 @@ describe('ui-dropdown browser contract', () => {
 
     dropdown.open();
     await waitForLitUpdate(dropdown);
-    await nextAnimationFrame();
-    await nextAnimationFrame();
+    await waitUntilOpenState(dropdown, trigger, panel);
 
     expect(dropdown.opened).to.equal(true);
     expect(trigger.getAttribute('aria-expanded')).to.equal('true');
@@ -86,6 +146,7 @@ describe('ui-dropdown browser contract', () => {
 
     dropdown.close();
     await waitForLitUpdate(dropdown);
+    await waitUntilClosedState(dropdown, trigger, panel);
 
     expect(dropdown.opened).to.equal(false);
     expect(trigger.getAttribute('aria-expanded')).to.equal('false');
@@ -113,14 +174,14 @@ describe('ui-dropdown browser contract', () => {
 
     dispatchKey(trigger, 'ArrowDown');
     await waitForLitUpdate(dropdown);
-    await nextAnimationFrame();
-    await nextAnimationFrame();
+    await waitUntilOpenState(dropdown, trigger, panel);
+    await waitUntilFocusedValue(dropdown, 'edit');
 
     expect(dropdown.opened).to.equal(true);
     expect(getFocusedValue(dropdown)).to.equal('edit');
 
     dispatchKey(panel, 'ArrowDown');
-    await nextAnimationFrame();
+    await waitUntilFocusedValue(dropdown, 'duplicate');
 
     expect(getFocusedValue(dropdown)).to.equal('duplicate');
 
@@ -132,6 +193,12 @@ describe('ui-dropdown browser contract', () => {
 
     const selectEvent = await selectPromise;
     await waitForLitUpdate(dropdown);
+    await waitUntil(
+      () => dropdown.opened === false && document.activeElement === trigger,
+      2000,
+      20,
+      'dropdown が閉じず trigger へ focus が戻りません',
+    );
 
     expect(selectEvent.detail.value).to.equal('duplicate');
     expect(selectEvent.detail.label).to.equal('複製');
