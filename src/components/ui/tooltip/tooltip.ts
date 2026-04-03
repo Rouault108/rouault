@@ -253,10 +253,6 @@ export class UiTooltip extends LitElement {
     if (changedProperties.has('closeDelay')) {
       this.closeDelay = toNonNegativeFiniteNumber(this.closeDelay, 0);
     }
-  }
-
-  protected override updated(changedProperties: PropertyValues<this>): void {
-    this._syncTooltipElement();
 
     if (changedProperties.has('disabled') || changedProperties.has('text')) {
       if (this._shouldSuppressTooltip()) {
@@ -264,7 +260,19 @@ export class UiTooltip extends LitElement {
         this._hoveringTooltip = false;
         this._focusWithinTrigger = false;
         this._clearTimers();
-        void this._closeTooltip();
+        this._open = false;
+      }
+    }
+  }
+
+  protected override updated(changedProperties: PropertyValues<this>): void {
+    this._syncTooltipElement();
+
+    if (changedProperties.has('disabled') || changedProperties.has('text')) {
+      if (this._shouldSuppressTooltip()) {
+        this._removeAriaDescribedBy();
+        this._destroyTooltipElement();
+        return;
       }
     }
 
