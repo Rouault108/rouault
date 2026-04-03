@@ -21,8 +21,11 @@ const sliceWorkflowJob = (workflow: string, jobName: string, nextJobName: string
 describe('production build entrypoint contract', () => {
   it('Playwright preview 起動前に共有 production build entrypoint を使うこと', () => {
     const playwrightConfig = readFileSync(playwrightConfigPath, 'utf8');
+    const normalizedPlaywrightConfig = playwrightConfig.replace(/\s+/g, ' ');
 
-    expect(playwrightConfig).toContain("command: 'pnpm run build:production &&");
+    expect(normalizedPlaywrightConfig).toContain(
+      "command: 'pnpm run build:production && pnpm exec vite preview --host 127.0.0.1 --port 8080 --strictPort'",
+    );
   });
 
   it('build-production と test-extended が同じ media base URL と build label 経路を使うこと', () => {
