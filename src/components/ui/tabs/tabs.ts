@@ -5,6 +5,7 @@ import { tabsStyles } from './tabs.styles.js';
 import {
   applyTabsAria,
   readTabsSnapshot,
+  readTabsSnapshotFromLightDom,
   scrollTabElementIntoView,
   switchPanels,
   validateTabsSnapshot,
@@ -268,7 +269,16 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
     const tabSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="tab"]') ?? null;
     const panelSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="panel"]') ?? null;
 
-    this.snapshot = readTabsSnapshot(tabSlot, panelSlot);
+    const nextSnapshot =
+      tabSlot === null && panelSlot === null
+        ? readTabsSnapshotFromLightDom(this)
+        : readTabsSnapshot(tabSlot, panelSlot);
+
+    if (this._snapshotsAreEqual(this.snapshot, nextSnapshot)) {
+      return;
+    }
+
+    this.snapshot = nextSnapshot;
     validateTabsSnapshot(this.snapshot, this.warnDev);
   }
 
@@ -543,6 +553,21 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
 
   private getTabValueAt(index: number): string | null {
     return this.snapshot.tabs[index]?.getAttribute('value') ?? null;
+  }
+
+  private _snapshotsAreEqual(left: TabsSnapshot, right: TabsSnapshot): boolean {
+    if (left.interactiveCount !== right.interactiveCount) {
+      return false;
+    }
+
+    if (left.tabs.length !== right.tabs.length || left.panels.length !== right.panels.length) {
+      return false;
+    }
+
+    return (
+      left.tabs.every((tab, index) => tab === right.tabs[index]) &&
+      left.panels.every((panel, index) => panel === right.panels[index])
+    );
   }
 
   private readonly warnDev = (message: string): void => {
