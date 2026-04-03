@@ -18,9 +18,7 @@ describe('velite config', () => {
     expect(source).toContain('testingArea: s.enum(TESTING_AREAS).optional(),');
     expect(source).toContain('const kind = normalizeNoteContentKind(data.kind);');
     expect(source).toContain('const testingArea = normalizeTestingArea(data.testingArea);');
-    expect(source).toContain(
-      "normalizeRouaultStaticSurfaceHtml(data.content, { path: data.slug });",
-    );
+    expect(source).toContain('const normalizedContent = normalizeRouaultStaticSurfaceHtml(data.content);');
     expect(source).toContain('validateNoteMetadataContracts(kind, testingArea, data.slug);');
     expect(source).toContain(
       'validateNoteContentContracts(kind, normalizedContent, data.slug, testingArea);',
@@ -35,7 +33,7 @@ describe('velite config', () => {
     expect(source).toContain("import remarkGfm from 'remark-gfm';");
 
     const remarkMathIndex = source.indexOf('remarkMath,');
-    const remarkGfmIndex = source.indexOf('remarkGfm,');
+    const remarkGfmIndex = source.indexOf('[remarkGfm, { singleTilde: false }],');
     const expandExamplesIndex = source.indexOf('remarkExpandExampleIncludes,');
 
     expect(remarkMathIndex).toBeGreaterThan(-1);
@@ -65,13 +63,15 @@ describe('velite config', () => {
     );
 
     const shikiCodeBlocksIndex = source.indexOf('rehypeShikiCodeBlocks,');
-    const staticCodeGroupsIndex = source.indexOf('rehypeStaticCodeGroups,');
-    const rouaultComponentsIndex = source.indexOf('rehypeRouaultComponents,');
+    const rouaultComponentsImportIndex = source.indexOf('rehypeRouaultComponents,');
+    const staticCodeGroupsIndex = source.lastIndexOf('rehypeStaticCodeGroups,');
+    const rouaultComponentsIndex = source.lastIndexOf('rehypeRouaultComponents,');
     const annotateLinkKindsIndex = source.indexOf('rehypeAnnotateLinkKinds(),');
     const inlineCodeTranslateNoIndex = source.indexOf('rehypeInlineCodeTranslateNo,');
 
     expect(shikiCodeBlocksIndex).toBeGreaterThan(-1);
     expect(staticCodeGroupsIndex).toBeGreaterThan(shikiCodeBlocksIndex);
+    expect(rouaultComponentsImportIndex).toBeGreaterThan(-1);
     expect(rouaultComponentsIndex).toBeGreaterThan(-1);
     expect(rouaultComponentsIndex).toBeGreaterThan(staticCodeGroupsIndex);
     expect(annotateLinkKindsIndex).toBeGreaterThan(rouaultComponentsIndex);
