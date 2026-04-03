@@ -20,6 +20,21 @@ export function readTabsSnapshot(
   };
 }
 
+export function readTabsSnapshotFromLightDom(host: HTMLElement): TabsSnapshot {
+  const tabs = Array.from(host.children).filter(
+    (el): el is HTMLElement => el instanceof HTMLElement && el.getAttribute('slot') === 'tab',
+  );
+  const panels = Array.from(host.children).filter(
+    (el): el is HTMLElement => el instanceof HTMLElement && el.getAttribute('slot') === 'panel',
+  );
+
+  return {
+    tabs,
+    panels,
+    interactiveCount: getInteractiveCount(tabs, panels),
+  };
+}
+
 export function validateTabsSnapshot(
   snapshot: TabsSnapshot,
   warn: (message: string) => void,
