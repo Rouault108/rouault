@@ -6,6 +6,15 @@ import {
   resolveGitShortSha,
 } from '../../build/metadata/build-metadata.js';
 
+const restoreEnv = (previousBuildLabel: string | undefined): void => {
+  if (previousBuildLabel === undefined) {
+    delete process.env['ROUAULT_BUILD_LABEL'];
+    return;
+  }
+
+  process.env['ROUAULT_BUILD_LABEL'] = previousBuildLabel;
+};
+
 describe('build metadata', () => {
   it('短い SHA 形式の値は build ラベルへ正規化すること', () => {
     expect(normalizeBuildLabel('abcdef1')).to.equal('build abcdef1');
@@ -23,11 +32,39 @@ describe('build metadata', () => {
       expect(resolveBuildLabel('explicit 2026.04.04')).to.equal('explicit 2026.04.04');
       expect(resolveBuildLabel()).to.equal('release 2026.04.03');
     } finally {
-      if (previousBuildLabel === undefined) {
-        delete process.env['ROUAULT_BUILD_LABEL'];
-      } else {
-        process.env['ROUAULT_BUILD_LABEL'] = previousBuildLabel;
+      restoreEnv(previousBuildLabel);
+    }
+  });
+
+  it('ROUAULT_BUILD_LABEL が設定されている場合は git fallback より優先すること', () => {
+    const previousBuildLabel = process.env['ROUAULT_BUILD_LABEL'];
+    process.env['ROUAULT_BUILD_LABEL'] = 'release 2026.04.03';
+
+    try {
+      const gitLabel = resolveGitShortSha();
+
+      expect(resolveBuildLabel()).to.equal('release 2026.04.03');
+      if (gitLabel !== undefined) {
+        expect(resolveBuildLabel()).not.to.equal(gitLabel);
       }
+    } finally {
+      restoreEnv(previousBuildLabel);
+    }
+  });
+
+  it('ROUAULT_BUILD_LABEL が未設定なら git short sha にフォールバックすること', () => {
+    const previousBuildLabel = process.env['ROUAULT_BUILD_LABEL'];
+    delete process.env['ROUAULT_BUILD_LABEL'];
+
+    try {
+      const gitLabel = resolveGitShortSha();
+      if (gitLabel === undefined) {
+        return;
+      }
+
+      expect(resolveBuildLabel()).to.equal(gitLabel);
+    } finally {
+      restoreEnv(previousBuildLabel);
     }
   });
 
