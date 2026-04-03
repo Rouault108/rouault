@@ -59,8 +59,9 @@ describe('story discovery', () => {
       'pnpm test:node && pnpm test:ssr && pnpm test:browser && pnpm test:storybook:meta',
     );
     expect(packageJson.scripts?.['test:extended']).toBe(
-      'pnpm test:storybook:smoke && pnpm test:e2e',
+      'pnpm test:storybook:smoke && pnpm test:e2e:production',
     );
+    expect(packageJson.scripts?.['test:e2e:production']).toBe('pnpm exec playwright test');
     expect(packageJson.scripts?.['test:node']).toBe('vitest --project node');
     expect(packageJson.scripts?.['test:browser']).toBe(
       'node scripts/run-web-test-runner.mjs --config web-test-runner.config.mjs',
