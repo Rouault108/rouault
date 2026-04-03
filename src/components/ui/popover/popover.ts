@@ -334,13 +334,22 @@ export class UiPopover extends LitElement {
     ) {
       this._controlMode = 'controlled';
     }
-  }
 
-  protected override updated(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has('disabled') && this.disabled && this._openState) {
       this._requestStateChange(false, 'disabled', this._activeTrigger, { returnFocus: false });
     }
 
+    if (
+      this._didInitializeControlMode &&
+      this._controlMode === 'controlled' &&
+      changedProperties.has('opened') &&
+      !this._isReflectingOpened
+    ) {
+      this._syncControlledOpenState();
+    }
+  }
+
+  protected override updated(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has('variant')) {
       this._applyContentSemantics(this._contentElement);
     }
@@ -353,15 +362,6 @@ export class UiPopover extends LitElement {
 
     if (changedProperties.has('opened') && this._isReflectingOpened) {
       this._isReflectingOpened = false;
-    }
-
-    if (
-      this._didInitializeControlMode &&
-      this._controlMode === 'controlled' &&
-      changedProperties.has('opened') &&
-      !this._isReflectingOpened
-    ) {
-      this._syncControlledOpenState();
     }
   }
 
