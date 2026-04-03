@@ -586,8 +586,6 @@ export class Button extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this._validateAccessibilityContract();
-    this._warnUnsupportedAriaLabelUsage();
     this._warnDeprecatedSizeUsage();
   }
 
@@ -670,7 +668,6 @@ export class Button extends LitElement {
     if (this.iconOnly && !this.ariaLabel) {
       console.error(
         '[ui-button]: icon-only="true" の場合、aria-label は必須です。アクセシビリティのために代替テキストを提供してください。',
-        this,
       );
     }
   }
@@ -686,7 +683,6 @@ export class Button extends LitElement {
     if (!this.iconOnly && this.ariaLabel !== null) {
       console.warn(
         '[ui-button]: aria-label は icon-only="true" の場合にのみサポートします。可視ラベルを持つ button では aria-label を内部 button に反映しません。',
-        this,
       );
     }
   }
@@ -702,7 +698,6 @@ export class Button extends LitElement {
     if (this.size === 'lg') {
       console.warn(
         '[ui-button]: size="lg" は非推奨です。デザインレビューなしでの使用を禁止します。md サイズに variant="primary" を組み合わせることを検討してください。',
-        this,
       );
     }
   }
