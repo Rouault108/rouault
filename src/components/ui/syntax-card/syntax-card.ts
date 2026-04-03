@@ -256,7 +256,7 @@ export class SyntaxCard extends LitElement {
     const slotElements =
       assignedElements.filter(
         (el): el is HTMLElement => el instanceof HTMLElement && el.tagName === 'PRE',
-      ) ?? [];
+      );
 
     if (slotElements.length > 0) {
       return slotElements;
