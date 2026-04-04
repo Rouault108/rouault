@@ -485,7 +485,7 @@ hr[data-divider-variant='layout'] {
   text-decoration: none;
 }
 
-:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id]:hover > .heading-text,
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id] > .heading-text:hover,
 :is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id]:focus-within > .heading-text {
   text-decoration: underline;
   text-decoration-thickness: var(--border-width);
@@ -516,7 +516,8 @@ hr[data-divider-variant='layout'] {
   block-size: 1em;
 }
 
-:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id]:hover > .heading-anchor,
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id] > .heading-text:hover + .heading-anchor,
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id] > .heading-anchor:hover,
 :is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id]:focus-within > .heading-anchor {
   opacity: 1;
 }
