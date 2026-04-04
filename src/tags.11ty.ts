@@ -65,6 +65,7 @@ export class TagPagesTemplate {
     }
 
     return `<search-page${serializeHtmlAttributes([
+      { name: 'data-hydration-scope', value: 'search-page' },
       {
         name: 'initial-search-state-json',
         value: buildInitialSearchState(tagPage),
@@ -75,6 +76,8 @@ export class TagPagesTemplate {
         value: buildInitialSearchResponse(tagPage),
         kind: 'json',
       },
+      { name: 'data-hydration-capability', value: 'interactive' },
+      { name: 'data-hydration-trigger', value: 'initial' },
     ])}></search-page>`;
   }
 }
