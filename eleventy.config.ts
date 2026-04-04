@@ -20,6 +20,22 @@ import { resolveTrailingSlashRewrite } from './shared/navigation/trailing-slash-
 
 let veliteWatchStartupPromise: Promise<void> | null = null;
 
+const formatErrorForConsole = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.stack ?? `${error.name}: ${error.message}`;
+  }
+
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+};
+
 const ensureVeliteBuild = async (isServing: boolean): Promise<void> => {
   if (!isServing) {
     await build({
@@ -143,7 +159,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
     try {
       await ensureVeliteBuild(isServing);
     } catch (error: unknown) {
-      console.error('❌ Velite build failed:', error);
+      console.error(`❌ Velite build failed:\n${formatErrorForConsole(error)}`);
 
       if (!isServing) {
         console.error('Exiting due to build failure in production mode.');
@@ -181,11 +197,9 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
               registerTrailingSlashRewrite(server);
             },
             configurePreviewServer(server: ViteDevServer) {
-              return () => {
-                registerDevelopmentStaticDirectories(server);
-                registerSearchCatalogMiddleware(server);
-                registerTrailingSlashRewrite(server);
-              };
+              registerDevelopmentStaticDirectories(server);
+              registerSearchCatalogMiddleware(server);
+              registerTrailingSlashRewrite(server);
             },
           },
         ],
