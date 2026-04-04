@@ -70,7 +70,9 @@ export function resolveSelectedIndex(
     }
 
     warning = `[ui-tabs]: selected-value="${selectedValue}" が有効なタブに一致しません。先頭タブ (index=0) を選択します。`;
-  } else if (!initialized && defaultSelectedValue !== null) {
+  }
+
+  if (defaultSelectedValue !== null) {
     const defaultIndex = findIndex(defaultSelectedValue);
     if (defaultIndex !== -1) {
       return {
@@ -81,7 +83,9 @@ export function resolveSelectedIndex(
     }
 
     warning = `[ui-tabs]: default-selected-value="${defaultSelectedValue}" が有効なタブに一致しません。先頭タブ (index=0) を選択します。`;
-  } else if (initialized && currentActiveIndex >= 0 && currentActiveIndex < count) {
+  }
+
+  if (initialized && currentActiveIndex >= 0 && currentActiveIndex < count) {
     return {
       index: currentActiveIndex,
       source: 'current',
