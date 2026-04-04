@@ -1,5 +1,6 @@
 import type { Heading } from '../components/ui/toc/toc.js';
 import { getTabsUrlSyncStrategy } from '../components/ui/tabs/tabs-url-sync-strategy.js';
+import { isHTMLElement } from '../lib/dom.js';
 
 type TabsLike = HTMLElement & {
   selectedValue?: string | null;
@@ -21,7 +22,7 @@ export interface TocCapabilities {
 export type TocScopeSelection = NonNullable<Heading['scopeSelections']>[number];
 
 const isTabPanel = (value: Element | null): value is HTMLElement =>
-  value instanceof HTMLElement && value.getAttribute('role') === 'tabpanel';
+  isHTMLElement(value) && value.getAttribute('role') === 'tabpanel';
 
 const isHiddenTabPanel = (panel: HTMLElement): boolean =>
   panel.hasAttribute('hidden') || panel.getAttribute('aria-hidden') === 'true';
@@ -33,12 +34,12 @@ export const findContentRoot = (contentRootId: string): HTMLElement | null => {
   }
 
   const element = document.getElementById(normalized);
-  return element instanceof HTMLElement ? element : null;
+  return isHTMLElement(element) ? element : null;
 };
 
 export const findHeadingElement = (root: HTMLElement, id: string): HTMLElement | null => {
   const element = root.ownerDocument.getElementById(id);
-  if (!(element instanceof HTMLElement)) {
+  if (!isHTMLElement(element)) {
     return null;
   }
   return root.contains(element) ? element : null;
@@ -71,7 +72,7 @@ export const filterVisibleHeadings = (
 
 const resolvePanelTabValue = (tabsHost: HTMLElement, panel: HTMLElement): string | null => {
   const children = Array.from(tabsHost.children).filter(
-    (child): child is HTMLElement => child instanceof HTMLElement,
+    (child): child is HTMLElement => isHTMLElement(child),
   );
 
   const panels = children.filter((child) => child.getAttribute('slot') === 'panel');
@@ -83,7 +84,7 @@ const resolvePanelTabValue = (tabsHost: HTMLElement, panel: HTMLElement): string
   }
 
   const tab = tabs[panelIndex];
-  if (!(tab instanceof HTMLElement)) {
+  if (!isHTMLElement(tab)) {
     return null;
   }
 
@@ -96,13 +97,13 @@ export const resolveTabValueForDescendant = (
   target: HTMLElement,
 ): string | null => {
   const children = Array.from(tabsHost.children).filter(
-    (child): child is HTMLElement => child instanceof HTMLElement,
+    (child): child is HTMLElement => isHTMLElement(child),
   );
 
   const panels = children.filter((child) => child.getAttribute('slot') === 'panel');
   const panel = panels.find((candidate) => candidate.contains(target));
 
-  if (!(panel instanceof HTMLElement)) {
+  if (!isHTMLElement(panel)) {
     return null;
   }
 
@@ -124,7 +125,7 @@ export const revealHeadingInTabs = (contentRoot: HTMLElement, target: HTMLElemen
 
   for (const panel of ancestorPanels) {
     const tabsHost = panel.closest('ui-tabs') as TabsLike | null;
-    if (!(tabsHost instanceof HTMLElement)) {
+    if (!isHTMLElement(tabsHost)) {
       continue;
     }
 
@@ -204,7 +205,7 @@ export const applyTocScopeSelections = (
     const tabsHost = contentRoot.querySelector<TabsLike>(
       `ui-tabs[data-toc-scope="${selection.scopeId}"]`,
     );
-    if (!(tabsHost instanceof HTMLElement) || typeof tabsHost.select !== 'function') {
+    if (!isHTMLElement(tabsHost) || typeof tabsHost.select !== 'function') {
       continue;
     }
 

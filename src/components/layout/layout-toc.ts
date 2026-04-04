@@ -12,6 +12,7 @@ import {
 } from '../../toc/filter-visible-headings.js';
 import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
 import { TocMobileSummaryController } from '../../toc/toc-mobile-summary-controller.js';
+import { isHTMLElement } from '../../lib/dom.js';
 import '../ui/toc/toc.js';
 import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc.js';
 
@@ -343,10 +344,14 @@ export class LayoutToc extends LitElement {
       return;
     }
 
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     this._hydrationActivated = true;
     this._upgradeNestedShadowHosts();
     this._loadHeadingsFromSource();
-    const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
+    const stickyTarget = isHTMLElement(this.parentElement) ? this.parentElement : this;
     this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
     this._connectControllers();
   }
@@ -529,6 +534,10 @@ export class LayoutToc extends LitElement {
       return;
     }
 
+    if (typeof document === 'undefined') {
+      return;
+    }
+
     const resolvedHeadings = this._resolveVisibleHeadings(this._allHeadings);
     if (!hasSameHeadingIds(this._visibleHeadings, resolvedHeadings)) {
       this._applyVisibleHeadings(resolvedHeadings);
@@ -563,12 +572,16 @@ export class LayoutToc extends LitElement {
 
   private _resolveContentRoot(): HTMLElement | null {
     const explicitRoot = findContentRoot(this.contentRootId);
-    if (explicitRoot instanceof HTMLElement) {
+    if (isHTMLElement(explicitRoot)) {
       return explicitRoot;
     }
 
+    if (typeof this.closest !== 'function') {
+      return null;
+    }
+
     const main = this.closest('main');
-    if (!(main instanceof HTMLElement)) {
+    if (!isHTMLElement(main)) {
       return null;
     }
 

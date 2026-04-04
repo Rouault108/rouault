@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { renderCustomElement } from '../../build/ssr/server-entry.js';
 import { SSR_COMPONENT_DEFINITIONS } from '../../build/ssr/target-definitions.js';
 import {
   SSR_NOTE_TARGET_TAGS,
@@ -66,5 +67,23 @@ describe('component manifest / ssr targets', () => {
     expect(SSR_PAGE_TARGET_TAGS).toContain('search-page');
     expect(SSR_PAGE_TARGET_TAGS).toContain('tag-page');
     expect(SSR_PAGE_TARGET_TAGS).toContain('not-found-page');
+  });
+
+  it('layout-toc の SSR が Node 環境で HTMLElement を参照せずに完了すること', async () => {
+    const rendered = await renderCustomElement(
+      'layout-toc',
+      [
+        { name: 'headings-json', value: '[{"id":"intro","text":"Intro","level":2}]' },
+        {
+          name: 'capabilities-json',
+          value: '{"activeTracking":false,"dynamicScopes":false,"mobileSummary":false}',
+        },
+        { name: 'content-root-id', value: 'note-content-intro' },
+        { name: 'data-hydration-trigger', value: '' },
+      ],
+      '',
+    );
+
+    expect(rendered).toContain('<layout-toc');
   });
 });
