@@ -31,6 +31,10 @@ export function resolvePagefindCliPath(projectRoot: string = process.cwd()): str
   return cliPath;
 }
 
+export function shouldSkipPagefind(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env['ROUAULT_SKIP_PAGEFIND'] === '1';
+}
+
 const defaultRunner: PagefindCommandRunner = async (command) => {
   const result = await execFileAsync(command.file, [...command.args], {
     cwd: command.cwd,
@@ -70,10 +74,14 @@ const isDirectExecution = (): boolean => {
 };
 
 if (isDirectExecution()) {
-  try {
-    await buildPagefindIndex();
-  } catch (error: unknown) {
-    console.error('[build-pagefind] Pagefind index generation failed.', error);
-    process.exitCode = 1;
+  if (shouldSkipPagefind()) {
+    process.stdout.write('[build-pagefind] skipped because ROUAULT_SKIP_PAGEFIND=1\n');
+  } else {
+    try {
+      await buildPagefindIndex();
+    } catch (error: unknown) {
+      console.error('[build-pagefind] Pagefind index generation failed.', error);
+      process.exitCode = 1;
+    }
   }
 }
