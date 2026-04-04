@@ -3,7 +3,7 @@ import '../../src/components/ui/footnote/footnote.js';
 import '../../src/components/ui/popover/popover.js';
 import type { Footnote } from '../../src/components/ui/footnote/footnote.js';
 import type { UiPopover } from '../../src/components/ui/popover/popover.js';
-import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { dispatchKey, nextAnimationFrame, waitForLitUpdate, waitMs } from './helpers/wait-for-lit.js';
 
 const supportsPopoverApi = (): boolean =>
   typeof HTMLElement !== 'undefined' &&
@@ -48,6 +48,24 @@ const waitForCustomEvent = <T>(target: EventTarget, type: string): Promise<Custo
       { once: true },
     );
   });
+
+const waitUntil = async (
+  predicate: () => boolean,
+  timeoutMs = 1000,
+  intervalMs = 20,
+  message = 'condition not met',
+): Promise<void> => {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    if (predicate()) {
+      return;
+    }
+    await waitMs(intervalMs);
+  }
+
+  throw new Error(message);
+};
 
 describe('ui-footnote browser contract', () => {
   it('trigger / popover / endnotes backlink の公開 DOM 契約を保持すること', async () => {
@@ -260,14 +278,15 @@ describe('ui-footnote browser contract', () => {
       }),
     );
     await opened;
-    await nextAnimationFrame();
+    await waitForLitUpdate(host);
 
     expect(isPopoverOpen(popover)).to.equal(true);
 
     const closedByEscape = waitForCustomEvent(popoverHost, 'ui-popover-closed');
     dispatchKey(popover, 'Escape');
     await closedByEscape;
-    await nextAnimationFrame();
+    await waitForLitUpdate(host);
+    await waitUntil(() => document.activeElement === trigger, 1000, 20, 'trigger へ focus が戻りません');
 
     expect(isPopoverOpen(popover)).to.equal(false);
     expect(document.activeElement).to.equal(trigger);
@@ -282,7 +301,7 @@ describe('ui-footnote browser contract', () => {
       }),
     );
     await reopened;
-    await nextAnimationFrame();
+    await waitForLitUpdate(host);
 
     const footerLink = expectPresent(
       popover.querySelector<HTMLAnchorElement>('.footnote-list-link'),
@@ -292,7 +311,13 @@ describe('ui-footnote browser contract', () => {
     const closedByTab = waitForCustomEvent(popoverHost, 'ui-popover-closed');
     dispatchKey(footerLink, 'Tab');
     await closedByTab;
-    await nextAnimationFrame();
+    await waitForLitUpdate(host);
+    await waitUntil(
+      () => document.activeElement === afterFootnote,
+      1000,
+      20,
+      'afterFootnote へ focus が移動しません',
+    );
 
     expect(isPopoverOpen(popover)).to.equal(false);
     expect(document.activeElement).to.equal(afterFootnote);

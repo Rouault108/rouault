@@ -551,16 +551,15 @@ export class Footnote extends LitElement {
 
     event.preventDefault();
     const nextFocusTarget = this._getAdjacentFocusableElement(currentTarget, 1);
-    popoverHost.close({ returnFocus: false });
 
-    // WebKit では、popover を閉じる前に focus を移そうとすると
-    // そのまま閉鎖イベントまで到達しないケースがあるため、close 後に移動する。
-    requestAnimationFrame(() => {
-      if (nextFocusTarget) {
-        nextFocusTarget.focus({ preventScroll: true });
-      } else {
-        currentTarget.blur();
-      }
+    if (nextFocusTarget) {
+      nextFocusTarget.focus({ preventScroll: true });
+    } else {
+      currentTarget.blur();
+    }
+
+    queueMicrotask(() => {
+      popoverHost.close({ returnFocus: false });
     });
   };
 
