@@ -78,6 +78,12 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
     return this.snapshot.tabs[this.activeIndex]?.getAttribute('value') ?? null;
   }
 
+  clearControlledSelection(): void {
+    if (this.selectedValue !== null) {
+      this.selectedValue = null;
+    }
+  }
+
   onUrlStateChanged(): void {
     if (this.snapshot.interactiveCount === 0) {
       return;
