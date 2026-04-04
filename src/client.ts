@@ -38,6 +38,9 @@ const hydrateCurrentContent = async (): Promise<void> => {
   if (mainContent.querySelector('layout-toc')) {
     eagerLoaders.push(import('./components/layout/layout-toc.js'));
   }
+  if (mainContent.querySelector('ui-tabs')) {
+    eagerLoaders.push(import('./components/ui/tabs/tabs.js'));
+  }
 
   if (eagerLoaders.length > 0) {
     await Promise.all(eagerLoaders);
@@ -46,16 +49,15 @@ const hydrateCurrentContent = async (): Promise<void> => {
   // SSR を保持した既存 host に対して、補助処理より前に upgrade を完了させる。
   customElements.upgrade(mainContent);
   await Promise.resolve();
+  await hydrationScheduler.hydrateContent(mainContent, {
+    dispatchTarget: document.querySelector('app-router'),
+  });
 
   for (const toc of mainContent.querySelectorAll<HTMLElement & { activateHydration?: () => void }>(
     'layout-toc',
   )) {
     toc.activateHydration?.();
   }
-
-  await hydrationScheduler.hydrateContent(mainContent, {
-    dispatchTarget: document.querySelector('app-router'),
-  });
 };
 
 const bootstrapClient = async (): Promise<void> => {
