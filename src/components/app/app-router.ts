@@ -39,15 +39,25 @@ export class AppRouter extends LitElement {
   declare private _pageContent: RouterContentHtml | null;
   declare private _ariaAnnouncement: string;
   declare private _serverContent: RouterContentHtml | null;
+  private _allowClientRender = false;
 
   override createRenderRoot(): this {
     return this;
   }
 
   private _routerController = new RouterController(this);
-  private _contentController = new AppRouterContentController(this, (html) => {
-    this._pageContent = html;
-  });
+  private _contentController = new AppRouterContentController(
+    this,
+    (html) => {
+      this._pageContent = html;
+    },
+    () => {
+      // SSR で成立している既存 DOM を手動で破棄すると、Lit の初回 client render /
+      // hydrate と競合して host ごと空になることがある。
+      // 初回 commit では描画解禁だけ行い、実際の差し替えは _pageContent 更新に任せる。
+      this._allowClientRender = true;
+    },
+  );
   private _postRenderController = new AppRouterPostRenderController(this, (text) => {
     this._ariaAnnouncement = text;
   });
@@ -84,6 +94,14 @@ export class AppRouter extends LitElement {
     });
 
     void router.start();
+  }
+
+  protected override performUpdate(): void {
+    if (!this._allowClientRender) {
+      return;
+    }
+
+    super.performUpdate();
   }
 
   protected override updated(changedProperties: PropertyValues): void {
