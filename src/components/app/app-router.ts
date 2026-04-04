@@ -88,6 +88,8 @@ export class AppRouter extends LitElement {
     this._allowClientRender = !this._manualDomMode;
     if (!this._manualDomMode) {
       this._serverContent = initialContent;
+      // SSR 由来の light DOM を残すと、Lit の描画結果と重複して main が二重化する。
+      this.replaceChildren();
     }
     super.connectedCallback();
 
