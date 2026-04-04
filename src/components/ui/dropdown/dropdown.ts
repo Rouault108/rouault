@@ -139,7 +139,7 @@ export class Dropdown extends LitElement {
   private _typeaheadBuffer = '';
   private _typeaheadTimer: ReturnType<typeof setTimeout> | null = null;
   private _openFocusTarget: 'first' | 'last' = 'first';
-  private _openFocusRafId: number | null = null;
+  private _openFocusTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private _restoreFocusOnClose = true;
   private readonly _menuId = `dropdown-menu-${Math.random().toString(36).slice(2, 11)}`;
   private readonly _triggerId = `dropdown-trigger-${Math.random().toString(36).slice(2, 11)}`;
@@ -165,8 +165,8 @@ export class Dropdown extends LitElement {
       clearTimeout(this._typeaheadTimer);
     }
 
-    if (this._openFocusRafId !== null) {
-      cancelAnimationFrame(this._openFocusRafId);
+    if (this._openFocusTimeoutId !== null) {
+      clearTimeout(this._openFocusTimeoutId);
     }
   }
 
@@ -245,25 +245,25 @@ export class Dropdown extends LitElement {
     const focusTarget = this._openFocusTarget;
     this._openFocusTarget = 'first';
 
-    if (this._openFocusRafId !== null) {
-      cancelAnimationFrame(this._openFocusRafId);
+    if (this._openFocusTimeoutId !== null) {
+      clearTimeout(this._openFocusTimeoutId);
     }
 
-    this._openFocusRafId = requestAnimationFrame(() => {
-      this._openFocusRafId = null;
+    this._openFocusTimeoutId = setTimeout(() => {
+      this._openFocusTimeoutId = null;
       const items = this._getMenuItems();
       const target =
         focusTarget === 'last'
           ? [...items].reverse().find((item) => !item.disabled)
           : items.find((item) => !item.disabled);
       this._focusItem(target ?? null);
-    });
+    }, 0);
   }
 
   private _onClose(): void {
-    if (this._openFocusRafId !== null) {
-      cancelAnimationFrame(this._openFocusRafId);
-      this._openFocusRafId = null;
+    if (this._openFocusTimeoutId !== null) {
+      clearTimeout(this._openFocusTimeoutId);
+      this._openFocusTimeoutId = null;
     }
 
     this._cleanupFloating();
