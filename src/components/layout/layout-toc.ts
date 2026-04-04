@@ -361,7 +361,9 @@ export class LayoutToc extends LitElement {
         ? headings
         : filterHeadingsByScopeSelections(headings, readTocScopeSelectionMap(contentRoot));
 
-    return contentRoot === null ? scopedHeadings : filterVisibleHeadings(contentRoot, scopedHeadings);
+    return contentRoot === null
+      ? scopedHeadings
+      : filterVisibleHeadings(contentRoot, scopedHeadings);
   }
 
   private _resetSsrShadowRootIfNeeded(): void {

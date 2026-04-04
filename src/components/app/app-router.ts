@@ -47,18 +47,15 @@ export class AppRouter extends LitElement {
   }
 
   private _routerController = new RouterController(this);
-  private _contentController = new AppRouterContentController(
-    this,
-    (html) => {
-      if (this._manualDomMode) {
-        this._syncMainContent(html);
-        this._dispatchContentRendered();
-        return;
-      }
+  private _contentController = new AppRouterContentController(this, (html) => {
+    if (this._manualDomMode) {
+      this._syncMainContent(html);
+      this._dispatchContentRendered();
+      return;
+    }
 
-      this._pageContent = html;
-    },
-  );
+    this._pageContent = html;
+  });
   private _postRenderController = new AppRouterPostRenderController(this, (text) => {
     if (this._manualDomMode) {
       this._syncAnnouncement(text);

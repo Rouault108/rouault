@@ -8,7 +8,8 @@ const waitForAppRouterReady = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
     const router = document.querySelector('app-router');
     return (
-      router instanceof HTMLElement && typeof (router as { navigate?: unknown }).navigate === 'function'
+      router instanceof HTMLElement &&
+      typeof (router as { navigate?: unknown }).navigate === 'function'
     );
   });
 };
@@ -23,24 +24,27 @@ const changeSearchSelect = async (
   value: 'and' | 'or' | 'relevance' | 'date-desc',
 ): Promise<void> => {
   await waitForSearchInputReady(page);
-  await page.locator('#main-content search-page').evaluate((element, next) => {
-    const host = element as HTMLElement & {
-      _onTagModeChange?: (event: Event) => void;
-      _onSortChange?: (event: Event) => void;
-    };
-    const event = new CustomEvent('change', {
-      detail: { value: next.value },
-      bubbles: true,
-      composed: true,
-    });
+  await page.locator('#main-content search-page').evaluate(
+    (element, next) => {
+      const host = element as HTMLElement & {
+        _onTagModeChange?: (event: Event) => void;
+        _onSortChange?: (event: Event) => void;
+      };
+      const event = new CustomEvent('change', {
+        detail: { value: next.value },
+        bubbles: true,
+        composed: true,
+      });
 
-    if (next.index === 0) {
-      host._onTagModeChange?.(event);
-      return;
-    }
+      if (next.index === 0) {
+        host._onTagModeChange?.(event);
+        return;
+      }
 
-    host._onSortChange?.(event);
-  }, { index, value });
+      host._onSortChange?.(event);
+    },
+    { index, value },
+  );
 };
 
 const waitForSearchInputReady = async (page: Page): Promise<void> => {
@@ -75,7 +79,10 @@ const clickArticleHeaderTag = async (page: Page, href: string): Promise<void> =>
 
 const inputSearchQuery = async (page: Page, value: string): Promise<void> => {
   await waitForSearchInputReady(page);
-  await page.locator('ui-search-field.search-input-control input[type="search"]').first().fill(value);
+  await page
+    .locator('ui-search-field.search-input-control input[type="search"]')
+    .first()
+    .fill(value);
 };
 
 const toggleFilterCheckbox = async (page: Page, label: string): Promise<void> => {

@@ -4,7 +4,8 @@ const navigateToMissingRoute = async (page: Page, url: string) => {
   await page.waitForFunction(() => {
     const router = document.querySelector('app-router');
     return (
-      router instanceof HTMLElement && typeof (router as { navigate?: unknown }).navigate === 'function'
+      router instanceof HTMLElement &&
+      typeof (router as { navigate?: unknown }).navigate === 'function'
     );
   });
 
@@ -41,7 +42,10 @@ test.describe('not-found page', () => {
   test('router commits not-found as completed outcome', async ({ page }) => {
     await page.goto('/search/');
 
-    const navigationResult = (await navigateToMissingRoute(page, '/__playwright_missing_route__')) as {
+    const navigationResult = (await navigateToMissingRoute(
+      page,
+      '/__playwright_missing_route__',
+    )) as {
       outcome?: string;
       renderedKind?: string;
       committed?: boolean;
@@ -69,7 +73,9 @@ test.describe('not-found page', () => {
       page.getByRole('heading', { level: 1, name: 'このページは見つかりませんでした' }),
     ).toBeVisible();
     await expect(page.locator('dt', { hasText: '要求されたパス' })).toBeVisible();
-    await expect(page.locator('dd code')).toHaveText('/__playwright_missing_route__?from=e2e#section-x');
+    await expect(page.locator('dd code')).toHaveText(
+      '/__playwright_missing_route__?from=e2e#section-x',
+    );
   });
 
   test('keyboard navigation can reach fallback links', async ({ page }) => {

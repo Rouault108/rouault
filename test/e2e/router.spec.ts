@@ -44,7 +44,8 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
   await page.waitForFunction(() => {
     const router = document.querySelector('app-router');
     return (
-      router instanceof HTMLElement && typeof (router as { navigate?: unknown }).navigate === 'function'
+      router instanceof HTMLElement &&
+      typeof (router as { navigate?: unknown }).navigate === 'function'
     );
   });
 
