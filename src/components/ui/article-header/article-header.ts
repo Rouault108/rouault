@@ -4,6 +4,10 @@ import '../tag/tag.js';
 import { linkTextStyles } from '../../../styles/contracts/link-styles.js';
 import type { ArticleStatus } from '../../../types/article-status.js';
 import { formatArticleDate } from './format-article-date.js';
+import {
+  ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE,
+  parseArticleHeaderTagsAdapterValue,
+} from './article-header-tags-adapter.js';
 import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 
 export type { ArticleStatus } from '../../../types/article-status.js';
@@ -274,7 +278,14 @@ export class ArticleHeader extends LitElement {
   }
 
   private get _normalizedTags(): string[] {
-    return this.tags.map((tag) => tag.trim()).filter((tag) => tag.length > 0);
+    const propertyTags = this.tags.map((tag) => tag.trim()).filter((tag) => tag.length > 0);
+    if (propertyTags.length > 0) {
+      return propertyTags;
+    }
+
+    return parseArticleHeaderTagsAdapterValue(
+      this.getAttribute(ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE),
+    );
   }
 
   private get _displayReadingTime(): number | null {
