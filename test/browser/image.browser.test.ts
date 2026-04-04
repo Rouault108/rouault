@@ -1,7 +1,7 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/image/image.js';
 import type { UiImage } from '../../src/components/ui/image/image.js';
-import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { waitForLitUpdate, waitMs } from './helpers/wait-for-lit.js';
 
 const SAMPLE_DATA_URI = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
@@ -18,8 +18,26 @@ const expectPresent = <T>(value: T | null | undefined, name: string): T => {
 
 const flush = async (host: UiImage): Promise<void> => {
   await waitForLitUpdate(host);
-  await nextAnimationFrame();
+  await waitMs(0);
   await waitForLitUpdate(host);
+};
+
+const waitUntil = async (
+  predicate: () => boolean,
+  timeoutMs = 2000,
+  intervalMs = 20,
+  message = 'condition not met',
+): Promise<void> => {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    if (predicate()) {
+      return;
+    }
+    await waitMs(intervalMs);
+  }
+
+  throw new Error(message);
 };
 
 const getTrigger = (host: UiImage): HTMLButtonElement =>
@@ -87,7 +105,6 @@ describe('ui-image browser contract', () => {
 
     host.openLightbox();
     await flush(host);
-    await nextAnimationFrame();
 
     const lightbox = expectPresent(
       host.shadowRoot?.querySelector<HTMLElement>('.lightbox'),
@@ -117,7 +134,12 @@ describe('ui-image browser contract', () => {
       }),
     );
     await flush(host);
-    await nextAnimationFrame();
+    await waitUntil(
+      () => host.shadowRoot?.activeElement === trigger,
+      2000,
+      20,
+      'focus が trigger へ戻りません',
+    );
 
     expect(lightbox.classList.contains('is-open')).to.equal(false);
     expect(document.body.style.overflow).to.equal('');

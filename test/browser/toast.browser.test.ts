@@ -28,6 +28,24 @@ const flush = async (host: UiToast): Promise<void> => {
   await waitForLitUpdate(host);
 };
 
+const waitUntil = async (
+  predicate: () => boolean,
+  timeoutMs = 2000,
+  intervalMs = 20,
+  message = 'condition not met',
+): Promise<void> => {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    if (predicate()) {
+      return;
+    }
+    await waitMs(intervalMs);
+  }
+
+  throw new Error(message);
+};
+
 const getOutputs = (host: UiToast): HTMLOutputElement[] =>
   Array.from(host.shadowRoot?.querySelectorAll<HTMLOutputElement>('output.toast') ?? []);
 
@@ -240,6 +258,12 @@ describe('ui-toast browser contract', () => {
     ToastManager.setVisibilityPaused(false);
     await waitMs(TOAST_EXIT_DURATION_MS + 90);
     await flush(host);
+    await waitUntil(
+      () => ToastManager.getSnapshot().length === 0,
+      2000,
+      20,
+      'visibility resume 後に toast が dismiss されません',
+    );
 
     expect(ToastManager.getSnapshot().length).to.equal(0);
   });
