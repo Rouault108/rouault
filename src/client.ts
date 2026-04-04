@@ -18,14 +18,43 @@ const hydrateShellScopes = async (): Promise<void> => {
 };
 
 const hydrateCurrentContent = async (): Promise<void> => {
-  const appRouter = document.querySelector<HTMLElement>('app-router');
+  await customElements.whenDefined('app-router');
+
   const mainContent = document.querySelector<HTMLElement>('#main-content');
   if (!(mainContent instanceof HTMLElement)) {
     return;
   }
 
+  const eagerLoaders: Promise<unknown>[] = [];
+  if (mainContent.querySelector('search-page')) {
+    eagerLoaders.push(import('./components/search/search-page.js'));
+  }
+  if (mainContent.querySelector('ui-article-header')) {
+    eagerLoaders.push(import('./components/ui/article-header/article-header.js'));
+  }
+  if (mainContent.querySelector('layout-sidebar')) {
+    eagerLoaders.push(import('./components/layout/layout-sidebar.js'));
+  }
+  if (mainContent.querySelector('layout-toc')) {
+    eagerLoaders.push(import('./components/layout/layout-toc.js'));
+  }
+
+  if (eagerLoaders.length > 0) {
+    await Promise.all(eagerLoaders);
+  }
+
+  // SSR を保持した既存 host に対して、補助処理より前に upgrade を完了させる。
+  customElements.upgrade(mainContent);
+  await Promise.resolve();
+
+  for (const toc of mainContent.querySelectorAll<HTMLElement & { activateHydration?: () => void }>(
+    'layout-toc',
+  )) {
+    toc.activateHydration?.();
+  }
+
   await hydrationScheduler.hydrateContent(mainContent, {
-    dispatchTarget: appRouter,
+    dispatchTarget: document.querySelector('app-router'),
   });
 };
 
