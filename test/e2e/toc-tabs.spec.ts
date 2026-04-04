@@ -22,36 +22,20 @@ const waitForTabsHydration = async (page: Page): Promise<void> => {
   });
 };
 
+const waitForTocReady = async (page: Page): Promise<void> => {
+  await page.locator('layout-toc .desktop ui-toc .toc-link-label').first().waitFor();
+};
+
 const readTocText = async (page: Page): Promise<string> =>
-  page.evaluate(() => {
-    const collectText = (node: Node | null): string => {
-      if (!node) {
-        return '';
-      }
-
-      if (node.nodeType === Node.TEXT_NODE) {
-        return node.textContent ?? '';
-      }
-
-      if (node instanceof HTMLSlotElement) {
-        return node
-          .assignedNodes({ flatten: true })
-          .map((assignedNode) => collectText(assignedNode))
-          .join('');
-      }
-
-      if (node instanceof Element && node.shadowRoot) {
-        return collectText(node.shadowRoot);
-      }
-
-      return Array.from(node.childNodes)
-        .map((childNode) => collectText(childNode))
-        .join('');
-    };
-
-    const toc = document.querySelector('layout-toc');
-    return collectText(toc);
-  });
+  page
+    .locator('layout-toc .desktop ui-toc .toc-link-label')
+    .allTextContents()
+    .then((labels) =>
+      labels
+        .map((label) => label.trim())
+        .filter((label) => label.length > 0)
+        .join('\n'),
+    );
 
 const expectTocText = async (page: Page, expectedText: string, present: boolean): Promise<void> => {
   if (present) {
@@ -66,6 +50,7 @@ test.describe('TOC follows active tab', () => {
   test('初期表示ではアクティブタブ内の見出しだけ TOC に出ること', async ({ page }) => {
     await page.goto(path);
     await waitForTabsHydration(page);
+    await waitForTocReady(page);
 
     await expectTocText(page, 'JavaScriptのHello, World!', true);
     await expectTocText(page, 'RustのHello, World!', false);
@@ -74,6 +59,7 @@ test.describe('TOC follows active tab', () => {
   test('?tab=rust 直アクセス時は Rust タブが初期選択され TOC も同期すること', async ({ page }) => {
     await page.goto(`${path}?tab=rust`);
     await waitForTabsHydration(page);
+    await waitForTocReady(page);
 
     await expect(
       page.locator('ui-tabs').first().locator('[slot="tab"][value="rust"]'),
@@ -86,11 +72,9 @@ test.describe('TOC follows active tab', () => {
   test('タブ切り替えで TOC の見出しも切り替わること', async ({ page }) => {
     await page.goto(path);
     await waitForTabsHydration(page);
+    await waitForTocReady(page);
 
-    await page.evaluate(() => {
-      const rustTab = document.querySelector<HTMLElement>('ui-tabs [slot="tab"][value="rust"]');
-      rustTab?.click();
-    });
+    await page.locator('ui-tabs').first().locator('[slot="tab"][value="rust"]').click();
 
     await expectTocText(page, 'RustのHello, World!', true);
     await expectTocText(page, 'JavaScriptのHello, World!', false);
@@ -101,6 +85,7 @@ test.describe('TOC follows active tab', () => {
   }) => {
     await page.goto(`${path}#rustのhello-world`);
     await waitForTabsHydration(page);
+    await waitForTocReady(page);
 
     await expect(
       page.locator('ui-tabs').first().locator('[slot="tab"][value="rust"]'),

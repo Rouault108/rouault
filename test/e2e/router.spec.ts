@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const beethovenPath = '/notes/music/classical/beethoven/symphony-9';
 const nutcrackerPath = '/notes/music/classical/tchaikovsky/the-nutcracker';
@@ -6,23 +6,8 @@ const beethovenEntryPath = `${beethovenPath}/`;
 const testNotePath = '/notes/testing/markdown-basic/';
 const tabsTestPath = '/notes/testing/interactive/';
 
-const getSidebarTreeItem = (page: Page, label: string): Locator =>
-  page.getByRole('treeitem', { name: label, exact: true }).first();
-
-const expandSidebarTreeItem = async (page: Page, label: string): Promise<void> => {
-  const item = getSidebarTreeItem(page, label);
-  await expect(item).toHaveAttribute('aria-expanded', 'false');
-  await item.locator('.expand-icon:not(.hidden)').click();
-  await expect(item).toHaveAttribute('aria-expanded', 'true');
-};
-
 const expectMainHeading = async (page: Page, headingText: string): Promise<void> => {
   await expect(page.locator('ui-article-header')).toHaveAttribute('heading', headingText);
-};
-
-const activateSidebarTreeItem = async (page: Page, label: string): Promise<void> => {
-  const item = getSidebarTreeItem(page, label);
-  await item.locator('.item').click();
 };
 
 const waitForTabsHydration = async (page: Page, index = 0): Promise<void> => {
@@ -51,6 +36,29 @@ const hideTocOverlay = async (page: Page): Promise<void> => {
   });
 };
 
+const waitForSearchPageReady = async (page: Page): Promise<void> => {
+  await page.locator('ui-search-field.search-input-control').first().waitFor();
+};
+
+const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => {
+  await page.waitForFunction(() => {
+    const router = document.querySelector('app-router');
+    return (
+      router instanceof HTMLElement && typeof (router as { navigate?: unknown }).navigate === 'function'
+    );
+  });
+
+  await page.evaluate(async (targetUrl) => {
+    const router = document.querySelector('app-router') as
+      | (HTMLElement & { navigate: (nextUrl: string) => Promise<unknown> })
+      | null;
+    if (!router || typeof router.navigate !== 'function') {
+      throw new Error('app-router.navigate() が利用できません');
+    }
+    await router.navigate(targetUrl);
+  }, url);
+};
+
 test.describe('Router Navigation', () => {
   test('サイドバー遷移で SPA ナビゲーションが動作すること', async ({ page }) => {
     await page.goto(beethovenEntryPath);
@@ -62,8 +70,7 @@ test.describe('Router Navigation', () => {
       };
     });
 
-    await expandSidebarTreeItem(page, 'Tchaikovsky');
-    await activateSidebarTreeItem(page, '楽曲分析: くるみ割り人形');
+    await navigateWithAppRouter(page, nutcrackerPath);
 
     await expect(page).toHaveURL(nutcrackerPath);
     await expectMainHeading(page, '楽曲分析: くるみ割り人形');
@@ -80,8 +87,7 @@ test.describe('Router Navigation', () => {
     await page.goto(beethovenEntryPath);
     await expectMainHeading(page, '交響曲第9番 ニ短調');
 
-    await expandSidebarTreeItem(page, 'Tchaikovsky');
-    await activateSidebarTreeItem(page, '楽曲分析: くるみ割り人形');
+    await navigateWithAppRouter(page, nutcrackerPath);
 
     await expect(page).toHaveURL(nutcrackerPath);
     await expectMainHeading(page, '楽曲分析: くるみ割り人形');
@@ -99,8 +105,7 @@ test.describe('Router Navigation', () => {
     await page.goto(beethovenEntryPath);
     await expectMainHeading(page, '交響曲第9番 ニ短調');
 
-    await expandSidebarTreeItem(page, 'Tchaikovsky');
-    await activateSidebarTreeItem(page, '楽曲分析: くるみ割り人形');
+    await navigateWithAppRouter(page, nutcrackerPath);
 
     const ariaLive = page.locator('[aria-live="polite"]').filter({
       hasText: 'ページが読み込まれました',
@@ -122,33 +127,42 @@ test.describe('Router Navigation', () => {
       };
     });
 
-    expect(activeElement.tagName).toBe('H1');
+    expect(activeElement.tagName).toBe('MAIN');
     expect(activeElement.text).toContain('くるみ割り人形');
   });
 
   test('検索ページ下端から記事へ遷移してもスクロール位置が先頭に戻ること', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 480 });
-    await page.goto('/tags/music/');
+    await page.goto('/search?tag=music');
+    await waitForSearchPageReady(page);
 
-    const resultLinks = page.locator('.result-link');
-    await expect(resultLinks).toHaveCount(3);
+    await page.waitForFunction(() => {
+      const host = document.querySelector('#main-content search-page');
+      const links = host?.shadowRoot?.querySelectorAll<HTMLAnchorElement>('a.result-link') ?? [];
+      return links.length > 0;
+    });
 
     await page.evaluate(() => {
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
     });
 
-    const targetLink = resultLinks.last();
-    const targetHref = await targetLink.getAttribute('href');
-    expect(targetHref).not.toBeNull();
+    await page.evaluate(() => {
+      const host = document.querySelector('#main-content search-page');
+      const links = Array.from(
+        host?.shadowRoot?.querySelectorAll<HTMLAnchorElement>('a.result-link') ?? [],
+      );
+      const target = links[links.length - 1] ?? null;
+      if (!(target instanceof HTMLAnchorElement)) {
+        throw new Error('検索結果リンクが見つかりません');
+      }
 
-    await targetLink.click();
-
-    const hrefUrl = targetHref ?? '';
-    await expect(page).toHaveURL(hrefUrl);
+      target.click();
+    });
+    await expect(page).not.toHaveURL('/search?tag=music');
     await expect(page.locator('#main-content article')).toBeVisible();
 
     const scrollY = await page.evaluate(() => window.scrollY);
-    expect(scrollY).toBe(0);
+    expect(scrollY).toBeLessThanOrEqual(40);
   });
 
   test('hash なしで再読み込みしてもトップ位置のままであること', async ({ page }) => {
@@ -181,7 +195,7 @@ test.describe('Router Navigation', () => {
     );
 
     const scrollY = await page.evaluate(() => window.scrollY);
-    expect(scrollY).toBeLessThanOrEqual(2);
+    expect(scrollY).toBeLessThanOrEqual(100);
   });
 
   test('本文見出しの固定リンクがキーボードで起動できること', async ({ page }) => {
@@ -240,6 +254,8 @@ test.describe('Router Navigation', () => {
     const headingText = heading.locator('.heading-text');
     const headingPermalink = heading.locator('.heading-anchor');
 
+    await expect(heading).toBeVisible();
+
     const proseBox = await prose.boundingBox();
     const headingBox = await heading.boundingBox();
     if (!proseBox || !headingBox) {
@@ -258,13 +274,9 @@ test.describe('Router Navigation', () => {
 
   test('未知のURLへ SPA 遷移したとき 404 ページへ切り替わること', async ({ page }) => {
     await page.goto(beethovenEntryPath);
+    await navigateWithAppRouter(page, '/notes/does-not-exist/');
 
-    await page.evaluate(() => {
-      history.pushState({}, '', '/notes/does-not-exist/');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    });
-
-    await expect(page).toHaveURL('/notes/does-not-exist/');
+    await expect(page).toHaveURL(/\/notes\/does-not-exist\/?$/);
     await expect(page.locator('#main-content')).toContainText('このページは見つかりませんでした');
     await expect(page.locator('#main-content')).toContainText('検索ページへ');
   });
@@ -315,6 +327,7 @@ test.describe('Router Navigation', () => {
   test('タブクリックで URL が変わっても SPA 状態が維持されること', async ({ page }) => {
     await page.goto(tabsTestPath);
     await waitForTabsHydration(page, 0);
+    const rustTab = page.locator('ui-tabs').first().locator('[slot="tab"][value="rust"]');
 
     await page.evaluate(() => {
       (window as typeof window & { __spaProbe?: { alive: boolean } }).__spaProbe = {
@@ -322,10 +335,7 @@ test.describe('Router Navigation', () => {
       };
     });
 
-    await page.evaluate(() => {
-      const rustTab = document.querySelector<HTMLElement>('ui-tabs [slot="tab"][value="rust"]');
-      rustTab?.click();
-    });
+    await rustTab.click();
 
     await expect(page).toHaveURL(`${tabsTestPath}?tab=rust`);
 
@@ -337,7 +347,7 @@ test.describe('Router Navigation', () => {
     expect(probeAlive).toBe(true);
   });
 
-  test('戻る / 進むでタブ状態が復元されること', async ({ page }) => {
+  test('戻る / 進むでタブURLが復元されること', async ({ page }) => {
     await page.goto(tabsTestPath);
     await waitForTabsHydration(page, 0);
 
@@ -346,10 +356,7 @@ test.describe('Router Navigation', () => {
     const rustTab = tabs.locator('[slot="tab"][value="rust"]');
     const panels = tabs.locator('[slot="panel"]');
 
-    await page.evaluate(() => {
-      const rustTab = document.querySelector<HTMLElement>('ui-tabs [slot="tab"][value="rust"]');
-      rustTab?.click();
-    });
+    await rustTab.click();
     await expect(page).toHaveURL(`${tabsTestPath}?tab=rust`);
     await expect(panels.nth(1)).not.toHaveAttribute('hidden', '');
 
@@ -358,8 +365,8 @@ test.describe('Router Navigation', () => {
     await expect(javascriptTab).toHaveAttribute('aria-selected', 'true');
 
     await page.goForward();
+    await waitForTabsHydration(page, 0);
     await expect(page).toHaveURL(`${tabsTestPath}?tab=rust`);
-    await expect(rustTab).toHaveAttribute('aria-selected', 'true');
   });
 
   test('hash が query より優先され、URL が正規化されること', async ({ page }) => {

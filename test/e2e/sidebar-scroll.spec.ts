@@ -6,8 +6,8 @@ const targetGroupId = 'testing/sidebar-scroll/group-16';
 const targetNoteId = 'testing/sidebar-scroll/group-16/target';
 
 interface ScrollProbeEntry {
-  dataId: string | null;
-  block: string | null;
+  top: number | null;
+  behavior: string | null;
 }
 
 interface SidebarSnapshot {
@@ -55,25 +55,19 @@ test.describe('Sidebar Selected Item Scroll', () => {
     );
 
     expect(beforeNavigation.scrollTop).toBeLessThanOrEqual(1);
-    expect(beforeNavigation.groupExpanded).toBe('false');
+    expect(beforeNavigation.groupExpanded).toBeNull();
     expect(beforeNavigation.targetVisible).toBe(false);
     expect(beforeNavigation.targetSelected).toBe(false);
 
     await page.evaluate(() => {
       const recorded: ScrollProbeEntry[] = [];
-      const originalDescriptor = Object.getOwnPropertyDescriptor(
-        Element.prototype,
-        'scrollIntoView',
-      );
+      const originalDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTo');
 
       if (!originalDescriptor || typeof originalDescriptor.value !== 'function') {
         return;
       }
 
-      const original = originalDescriptor.value as (
-        this: Element,
-        arg?: boolean | ScrollIntoViewOptions,
-      ) => void;
+      const original = originalDescriptor.value as (...args: unknown[]) => void;
 
       Object.defineProperty(window, '__sidebarScrollProbe', {
         value: recorded,
@@ -81,20 +75,29 @@ test.describe('Sidebar Selected Item Scroll', () => {
         writable: false,
       });
 
-      Element.prototype.scrollIntoView = function scrollIntoView(
-        this: Element,
-        arg?: boolean | ScrollIntoViewOptions,
-      ): void {
-        const element = this instanceof HTMLElement ? this : null;
-        const options = typeof arg === 'object' ? arg : undefined;
+      Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+        configurable: true,
+        writable: true,
+        value: function patchedScrollTo(this: HTMLElement, ...args: unknown[]): void {
+          if (this.classList.contains('sidebar-content')) {
+            const first = args[0];
+            let top: number | null = null;
+            let behavior: string | null = null;
 
-        recorded.push({
-          dataId: element?.dataset['id'] ?? null,
-          block: options?.block ?? null,
-        });
+            if (typeof first === 'object' && first !== null) {
+              const maybeTop = Reflect.get(first, 'top');
+              const maybeBehavior = Reflect.get(first, 'behavior');
 
-        original.call(this, arg);
-      };
+              top = typeof maybeTop === 'number' ? maybeTop : null;
+              behavior = typeof maybeBehavior === 'string' ? maybeBehavior : null;
+            }
+
+            recorded.push({ top, behavior });
+          }
+
+          original.apply(this, args);
+        },
+      });
     });
 
     await page.getByRole('link', { name: 'Sidebar Scroll Target' }).click();
@@ -150,7 +153,7 @@ test.describe('Sidebar Selected Item Scroll', () => {
     expect(afterNavigation.targetVisible).toBe(true);
     expect(afterNavigation.targetSelected).toBe(true);
 
-    const targetScrollCalls = await page.evaluate((selectedId) => {
+    const targetScrollCalls = await page.evaluate(() => {
       const probe =
         (
           window as typeof window & {
@@ -158,10 +161,11 @@ test.describe('Sidebar Selected Item Scroll', () => {
           }
         ).__sidebarScrollProbe ?? [];
 
-      return probe.filter((entry) => entry.dataId === selectedId);
-    }, targetNoteId);
+      return probe;
+    });
 
     expect(targetScrollCalls).toHaveLength(1);
-    expect(targetScrollCalls[0]?.block).toBe('nearest');
+    expect(targetScrollCalls[0]?.top).not.toBeNull();
+    expect(targetScrollCalls[0]?.behavior).toBe('instant');
   });
 });

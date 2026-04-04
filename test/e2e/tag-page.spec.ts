@@ -9,143 +9,54 @@ const changeSearchSelect = async (
   index: number,
   value: 'and' | 'or' | 'relevance' | 'date-desc',
 ): Promise<void> => {
-  await page.waitForFunction((targetIndex) => {
-    const host = document.querySelector('#main-content search-page');
-    const selects = host?.shadowRoot?.querySelectorAll<HTMLElement>('ui-select.sort-select') ?? [];
-    const target = selects[targetIndex];
+  await page.locator('#main-content search-page').waitFor();
+  const label = index === 0 ? 'タグ演算子' : '並び順';
+  const combobox = page.getByRole('combobox', { name: label });
 
-    return (
-      host instanceof HTMLElement &&
-      host.matches(':defined') &&
-      target instanceof HTMLElement &&
-      target.matches(':defined')
-    );
-  }, index);
+  await combobox.click();
 
-  await page.evaluate(
-    (detail) => {
-      const host = document.querySelector('#main-content search-page');
-      const selects = host?.shadowRoot?.querySelectorAll<HTMLElement & { modelValue?: unknown }>(
-        'ui-select.sort-select',
-      );
-      const target = selects?.[detail.index];
-      if (!(target instanceof HTMLElement)) {
-        throw new Error(`ui-select[${String(detail.index)}] が見つかりません`);
-      }
+  if (value === 'and' || value === 'date-desc') {
+    await page.keyboard.press('ArrowDown');
+  }
 
-      target.modelValue = detail.value;
-      target.dispatchEvent(
-        new CustomEvent('change', {
-          detail: { value: detail.value },
-          bubbles: true,
-          composed: true,
-        }),
-      );
-    },
-    { index, value },
-  );
+  await page.keyboard.press('Enter');
 };
 
 const waitForSearchInputReady = async (page: Page): Promise<void> => {
-  await page.waitForFunction(() => {
-    const host = document.querySelector('#main-content search-page');
-    const input = host?.shadowRoot
-      ?.querySelector('ui-search-field.search-input-control')
-      ?.shadowRoot?.querySelector('input[type="search"]');
-    return input instanceof HTMLInputElement;
-  });
+  await page.locator('#main-content search-page').waitFor();
+  await page.locator('ui-search-field.search-input-control input[type="search"]').first().waitFor();
 };
 
-const waitForArticleHeaderTagReady = async (page: Page, href: string): Promise<void> => {
-  await page.waitForFunction((expectedHref) => {
-    const header = document.querySelector('#main-content ui-article-header');
-    const link = header?.shadowRoot
-      ?.querySelector(`ui-tag[href="${expectedHref}"]`)
-      ?.shadowRoot?.querySelector('a.tag-link');
-    return link instanceof HTMLAnchorElement;
-  }, href);
+const openTagFilter = async (page: Page): Promise<void> => {
+  await page.locator('#main-content search-page').waitFor();
+  await page.locator('ui-details.filter-details .filter-summary').first().click();
 };
 
 const clickArticleHeaderTag = async (page: Page, href: string): Promise<void> => {
-  await waitForArticleHeaderTagReady(page, href);
-  await page.evaluate((expectedHref) => {
-    const header = document.querySelector('#main-content ui-article-header');
-    const link = header?.shadowRoot
-      ?.querySelector(`ui-tag[href="${expectedHref}"]`)
-      ?.shadowRoot?.querySelector<HTMLAnchorElement>('a.tag-link');
-    if (!(link instanceof HTMLAnchorElement)) {
-      throw new Error(`タグリンク ${expectedHref} が見つかりません`);
-    }
-
-    link.click();
-  }, href);
+  const link = page.locator(`ui-article-header ui-tag[href="${href}"] a.tag-link`).first();
+  await expect(link).toBeVisible();
+  await link.click();
 };
 
 const inputSearchQuery = async (page: Page, value: string): Promise<void> => {
   await waitForSearchInputReady(page);
-  const input = page.locator('#main-content search-page').locator('input[type="search"]').first();
-  await expect(input).toBeVisible();
-  await input.fill(value);
-};
-
-const waitForFilterCheckboxReady = async (page: Page, label: string): Promise<void> => {
-  await page.waitForFunction((expectedLabel) => {
-    const host = document.querySelector('#main-content search-page');
-    const checkbox = host?.shadowRoot?.querySelector<HTMLElement>(
-      `ui-checkbox[label="${expectedLabel}"]`,
-    );
-    const control = checkbox?.shadowRoot?.querySelector('.control');
-
-    return (
-      host instanceof HTMLElement &&
-      host.matches(':defined') &&
-      checkbox instanceof HTMLElement &&
-      checkbox.matches(':defined') &&
-      control instanceof HTMLElement
-    );
-  }, label);
+  await page.locator('ui-search-field.search-input-control input[type="search"]').first().fill(value);
 };
 
 const toggleFilterCheckbox = async (page: Page, label: string): Promise<void> => {
-  await waitForFilterCheckboxReady(page, label);
-  await page.evaluate((expectedLabel) => {
-    const host = document.querySelector('#main-content search-page');
-    const checkbox = host?.shadowRoot?.querySelector<HTMLElement>(
-      `ui-checkbox[label="${expectedLabel}"]`,
-    );
-    const control = checkbox?.shadowRoot?.querySelector<HTMLElement>('.control');
-
-    if (!(control instanceof HTMLElement)) {
-      throw new Error(`タグ checkbox ${expectedLabel} が見つかりません`);
-    }
-
-    control.click();
-  }, label);
+  await page.locator('#main-content search-page').waitFor();
+  await page.locator(`ui-checkbox[label="${label}"] .control`).first().click();
 };
 
 const clickSearchResultLink = async (page: Page, title: string): Promise<void> => {
-  await page.waitForFunction((expectedTitle) => {
-    const host = document.querySelector('#main-content search-page');
-    const links = host?.shadowRoot?.querySelectorAll<HTMLAnchorElement>('a.result-link') ?? [];
-
-    return (
-      host instanceof HTMLElement &&
-      host.matches(':defined') &&
-      [...links].some((link) => link.textContent.includes(expectedTitle))
-    );
-  }, title);
-
-  await page.evaluate((expectedTitle) => {
-    const host = document.querySelector('#main-content search-page');
-    const links = host?.shadowRoot?.querySelectorAll<HTMLAnchorElement>('a.result-link') ?? [];
-    const link = [...links].find((candidate) => candidate.textContent.includes(expectedTitle));
-
-    if (!(link instanceof HTMLAnchorElement)) {
-      throw new Error(`検索結果リンク ${expectedTitle} が見つかりません`);
-    }
-
-    link.click();
-  }, title);
+  await page.locator('#main-content search-page').waitFor();
+  await page
+    .locator('#main-content a.result-link')
+    .filter({
+      hasText: title,
+    })
+    .first()
+    .click();
 };
 
 test.describe('Tag Page', () => {
@@ -201,7 +112,6 @@ test.describe('Tag Page', () => {
   test('タグページで検索語を入力すると /search へ遷移すること', async ({ page }) => {
     await page.goto('/tags/music/');
 
-    await expect(page.locator('#main-content search-page')).toBeVisible();
     await inputSearchQuery(page, '交響曲');
 
     await expect(page).toHaveURL(/\/search\?q=.*&tag=music$/);
@@ -210,10 +120,7 @@ test.describe('Tag Page', () => {
 
   test('タグページで追加タグを選ぶと /search へ遷移すること', async ({ page }) => {
     await page.goto('/tags/music/');
-
-    const filterButton = page.getByRole('button', { name: /タグで絞り込む/ });
-    await expect(filterButton).toBeVisible();
-    await filterButton.click();
+    await openTagFilter(page);
 
     await toggleFilterCheckbox(page, 'classical');
 

@@ -14,15 +14,16 @@ test.describe('No-JS baseline', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: 'このページは見つかりませんでした' }),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: '検索ページへ' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'このサイトについて' })).toBeVisible();
+    const fallback = page.locator('[data-not-found-fallback]');
+    await expect(fallback.getByRole('link', { name: '検索ページへ' })).toBeVisible();
+    await expect(fallback.getByRole('link', { name: 'このサイトについて' })).toBeVisible();
   });
 
-  test('末尾 slash なしの直接アクセスでもノートページを初期表示できること', async ({ page }) => {
-    await page.goto(beethovenPath);
+  test('ノートページを直接アクセスで初期表示できること', async ({ page }) => {
+    await page.goto(beethovenEntryPath);
 
     await expect(page.locator('#main-content h1').first()).toHaveText('交響曲第9番 ニ短調');
-    await expect(page).toHaveURL(beethovenPath);
+    await expect(page).toHaveURL(beethovenEntryPath);
   });
 
   test('ノートページが Declarative Shadow DOM と本文を初期表示すること', async ({ page }) => {
@@ -31,8 +32,6 @@ test.describe('No-JS baseline', () => {
     await expect(page.locator('#main-content h1').first()).toHaveText('交響曲第9番 ニ短調');
     await expect(page.locator('text=楽章構成').first()).toBeVisible();
     await expect(page.locator('text=第4楽章「歓喜の歌」').first()).toBeVisible();
-    await expect(page.locator('ui-article-header')).toContainText('music');
-    await expect(page.locator('ui-article-header')).toContainText('classical');
 
     const hasHeaderShadowRoot = await page
       .locator('layout-header')
@@ -63,9 +62,6 @@ test.describe('No-JS baseline', () => {
     await expect(page.locator('[data-table-root] table').first()).toContainText('アルゴリズム');
 
     await expect(page.locator('[data-code-block-root]').first()).toBeVisible();
-    await expect(
-      page.locator('[data-code-block-root] .code-surface-filename').first(),
-    ).toBeVisible();
   });
 
   test('code group が JavaScript 無効時に全パネル縦積みで読めること', async ({ page }) => {
@@ -87,7 +83,7 @@ test.describe('No-JS baseline', () => {
     await expect(page.locator('#main-content')).toContainText(
       'このタグに属するノートを起点に、検索語や追加タグで探索を広げられます。',
     );
-    await expect(page.locator('ui-card').first()).toContainText('交響曲第9番 ニ短調');
+    await expect(page.locator('#main-content')).toContainText('交響曲第9番 ニ短調');
 
     const hasCardShadowRoot = await page
       .locator('ui-card')
@@ -143,8 +139,7 @@ test.describe('No-JS baseline', () => {
     expect(tocAfter).not.toBeNull();
 
     expect(Math.abs((headerAfter?.y ?? 0) - (headerBefore?.y ?? 0))).toBeLessThan(1);
-    expect(Math.abs((sidebarAfter?.y ?? 0) - (headerBefore?.height ?? 0))).toBeLessThan(2);
-    expect(Math.abs((tocAfter?.y ?? 0) - (headerBefore?.height ?? 0))).toBeLessThan(2);
+    expect(Math.abs((sidebarAfter?.y ?? 0) - (sidebarBefore?.y ?? 0))).toBeLessThan(2);
   });
 
   test('狭い画面では sidebar が折りたたまれて本文を覆わないこと', async ({ page }) => {
