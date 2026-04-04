@@ -39,6 +39,7 @@ export class AppRouter extends LitElement {
   declare private _pageContent: RouterContentHtml | null;
   declare private _ariaAnnouncement: string;
   declare private _serverContent: RouterContentHtml | null;
+  private _manualDomMode = false;
   private _allowClientRender = false;
 
   override createRenderRoot(): this {
@@ -49,16 +50,21 @@ export class AppRouter extends LitElement {
   private _contentController = new AppRouterContentController(
     this,
     (html) => {
+      if (this._manualDomMode) {
+        this._syncMainContent(html);
+        this._dispatchContentRendered();
+        return;
+      }
+
       this._pageContent = html;
-    },
-    () => {
-      // SSR で成立している既存 DOM を手動で破棄すると、Lit の初回 client render /
-      // hydrate と競合して host ごと空になることがある。
-      // 初回 commit では描画解禁だけ行い、実際の差し替えは _pageContent 更新に任せる。
-      this._allowClientRender = true;
     },
   );
   private _postRenderController = new AppRouterPostRenderController(this, (text) => {
+    if (this._manualDomMode) {
+      this._syncAnnouncement(text);
+      return;
+    }
+
     this._ariaAnnouncement = text;
   });
 
@@ -80,7 +86,12 @@ export class AppRouter extends LitElement {
   }
 
   override connectedCallback(): void {
-    this._contentController.captureInitialContent(this);
+    const initialContent = this._contentController.captureInitialContent(this);
+    this._manualDomMode = this.querySelector('#main-content') instanceof HTMLElement;
+    this._allowClientRender = !this._manualDomMode;
+    if (!this._manualDomMode) {
+      this._serverContent = initialContent;
+    }
     super.connectedCallback();
 
     const router = this._routerController.initRouter(this, {
@@ -91,6 +102,11 @@ export class AppRouter extends LitElement {
       postCommitController: this._postRenderController.createPostCommitController(this),
       shellAdapter: createLayoutHeaderShellAdapter(),
       urlStateNavigationPolicy: new PrimaryTabNavigationPolicy(),
+    });
+    router.on('navigation:busy-change', ({ isNavigating }) => {
+      if (this._manualDomMode) {
+        this._syncBusyState(isNavigating);
+      }
     });
 
     void router.start();
@@ -111,12 +127,7 @@ export class AppRouter extends LitElement {
       return;
     }
 
-    this.dispatchEvent(
-      new CustomEvent('app-router:content-rendered', {
-        bubbles: true,
-        composed: true,
-      }),
-    );
+    this._dispatchContentRendered();
   }
 
   async navigate(url: string): Promise<NavigationResult> {
@@ -145,6 +156,47 @@ export class AppRouter extends LitElement {
         ${pageContent ? unsafeHTML(unwrapRouterContentHtml(pageContent)) : nothing}
       </main>
     `;
+  }
+
+  private _syncMainContent(content: RouterContentHtml): void {
+    const main = this.querySelector('#main-content');
+    if (!(main instanceof HTMLElement)) {
+      return;
+    }
+
+    main.innerHTML = unwrapRouterContentHtml(content);
+  }
+
+  private _syncAnnouncement(text: string): void {
+    const region = this.querySelector('[aria-live="polite"]');
+    if (!(region instanceof HTMLElement)) {
+      return;
+    }
+
+    region.textContent = text;
+  }
+
+  private _syncBusyState(isNavigating: boolean): void {
+    const main = this.querySelector('#main-content');
+    if (!(main instanceof HTMLElement)) {
+      return;
+    }
+
+    if (isNavigating) {
+      main.setAttribute('aria-busy', 'true');
+      return;
+    }
+
+    main.removeAttribute('aria-busy');
+  }
+
+  private _dispatchContentRendered(): void {
+    this.dispatchEvent(
+      new CustomEvent('app-router:content-rendered', {
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 }
 
