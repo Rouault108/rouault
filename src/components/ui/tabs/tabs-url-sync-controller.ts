@@ -11,6 +11,7 @@ export interface TabsUrlSyncHost {
   getHostElement(): HTMLElement;
   isUrlSyncEnabled(): boolean;
   getActiveValue(): string | null;
+  clearControlledSelection(): void;
   onUrlStateChanged(): void;
 }
 
@@ -186,13 +187,46 @@ export class TabsUrlSyncController implements ReactiveController {
     strategy?.dispatchChange(previousUrl, nextUrl);
   }
 
+  private syncFromLocationState(): void {
+    const strategy = getTabsUrlSyncStrategy();
+    const url = typeof window === 'undefined' ? '' : window.location.href;
+    const hasQueryValue = (strategy?.readValue(url) ?? null) !== null;
+    const hasHashValue = (strategy?.readHash(url) ?? '') !== '';
+
+    this.withSuppressedWrite(() => {
+      if (!hasQueryValue && !hasHashValue) {
+        this.host.clearControlledSelection();
+      }
+      this.host.onUrlStateChanged();
+    });
+  }
+
   private readonly onLocationStateChange = (): void => {
     if (!this.host.isUrlSyncEnabled()) {
       return;
     }
 
-    this.withSuppressedWrite(() => {
-      this.host.onUrlStateChanged();
+    // popstate と router の state-only commit は、ブラウザ側 URL 更新と component 側の
+    // selected-value / panel state 反映順が前後することがある。
+    // 即時・microtask・次フレームの 3 段階で再同期して履歴復元を安定化する。
+    this.syncFromLocationState();
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    queueMicrotask(() => {
+      if (!this.host.isUrlSyncEnabled()) {
+        return;
+      }
+      this.syncFromLocationState();
+    });
+
+    window.requestAnimationFrame(() => {
+      if (!this.host.isUrlSyncEnabled()) {
+        return;
+      }
+      this.syncFromLocationState();
     });
   };
 }
