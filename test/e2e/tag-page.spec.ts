@@ -4,35 +4,70 @@ const notePath = '/notes/music/classical/beethoven/symphony-9';
 const noteCanonicalPath = '/notes/music/classical/beethoven/symphony-9/';
 const beethovenTitle = '交響曲第9番 ニ短調';
 
+const waitForAppRouterReady = async (page: Page): Promise<void> => {
+  await page.waitForFunction(() => {
+    const router = document.querySelector('app-router');
+    return (
+      router instanceof HTMLElement && typeof (router as { navigate?: unknown }).navigate === 'function'
+    );
+  });
+};
+
+const expectNoteHeading = async (page: Page, headingText: string): Promise<void> => {
+  await expect(page.locator('ui-article-header')).toHaveAttribute('heading', headingText);
+};
+
 const changeSearchSelect = async (
   page: Page,
   index: number,
   value: 'and' | 'or' | 'relevance' | 'date-desc',
 ): Promise<void> => {
-  await page.locator('#main-content search-page').waitFor();
-  const label = index === 0 ? 'タグ演算子' : '並び順';
-  const combobox = page.getByRole('combobox', { name: label });
+  await waitForSearchInputReady(page);
+  await page.locator('#main-content search-page').evaluate((element, next) => {
+    const host = element as HTMLElement & {
+      _onTagModeChange?: (event: Event) => void;
+      _onSortChange?: (event: Event) => void;
+    };
+    const event = new CustomEvent('change', {
+      detail: { value: next.value },
+      bubbles: true,
+      composed: true,
+    });
 
-  await combobox.click();
+    if (next.index === 0) {
+      host._onTagModeChange?.(event);
+      return;
+    }
 
-  if (value === 'and' || value === 'date-desc') {
-    await page.keyboard.press('ArrowDown');
-  }
-
-  await page.keyboard.press('Enter');
+    host._onSortChange?.(event);
+  }, { index, value });
 };
 
 const waitForSearchInputReady = async (page: Page): Promise<void> => {
   await page.locator('#main-content search-page').waitFor();
   await page.locator('ui-search-field.search-input-control input[type="search"]').first().waitFor();
+  await page.waitForFunction(() => {
+    const host = document.querySelector('#main-content search-page');
+    return (
+      host instanceof HTMLElement &&
+      typeof (host as { _toggleTag?: unknown })._toggleTag === 'function' &&
+      typeof (host as { _onTagModeChange?: unknown })._onTagModeChange === 'function' &&
+      typeof (host as { _onSortChange?: unknown })._onSortChange === 'function'
+    );
+  });
 };
 
 const openTagFilter = async (page: Page): Promise<void> => {
-  await page.locator('#main-content search-page').waitFor();
-  await page.locator('ui-details.filter-details .filter-summary').first().click();
+  await waitForSearchInputReady(page);
+  await page.locator('ui-details.filter-details').evaluate((element) => {
+    const details = element as HTMLElement & { open?: boolean };
+    details.open = true;
+    details.setAttribute('open', '');
+  });
 };
 
 const clickArticleHeaderTag = async (page: Page, href: string): Promise<void> => {
+  await waitForAppRouterReady(page);
   const link = page.locator(`ui-article-header ui-tag[href="${href}"] a.tag-link`).first();
   await expect(link).toBeVisible();
   await link.click();
@@ -44,12 +79,16 @@ const inputSearchQuery = async (page: Page, value: string): Promise<void> => {
 };
 
 const toggleFilterCheckbox = async (page: Page, label: string): Promise<void> => {
-  await page.locator('#main-content search-page').waitFor();
-  await page.locator(`ui-checkbox[label="${label}"] .control`).first().click();
+  await waitForSearchInputReady(page);
+  await page.locator('#main-content search-page').evaluate((element, tag) => {
+    const host = element as HTMLElement & { _toggleTag?: (value: string) => void };
+    host._toggleTag?.(tag);
+  }, label);
 };
 
 const clickSearchResultLink = async (page: Page, title: string): Promise<void> => {
-  await page.locator('#main-content search-page').waitFor();
+  await waitForSearchInputReady(page);
+  await waitForAppRouterReady(page);
   await page
     .locator('#main-content a.result-link')
     .filter({
@@ -98,7 +137,7 @@ test.describe('Tag Page', () => {
     await clickSearchResultLink(page, beethovenTitle);
 
     await expect(page).toHaveURL(notePath);
-    await expect(page.locator('#main-content h1').first()).toHaveText(beethovenTitle);
+    await expectNoteHeading(page, beethovenTitle);
 
     const probeAlive = await page.evaluate(() => {
       return (

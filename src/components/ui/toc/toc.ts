@@ -230,6 +230,12 @@ export class Toc extends LitElement {
   private _truncatedHeadingIds = new Set<string>();
   private _labelResizeObserver: ResizeObserver | null = null;
   private _truncationSyncFrame: number | null = null;
+  private _ssrRootReset = false;
+
+  protected override performUpdate(): void {
+    this._resetSsrShadowRootIfNeeded();
+    super.performUpdate();
+  }
 
   override firstUpdated(): void {
     this._labelResizeObserver = new ResizeObserver(() => {
@@ -237,6 +243,24 @@ export class Toc extends LitElement {
     });
     this._observeLabels();
     this._scheduleTruncationSync();
+  }
+
+  private _resetSsrShadowRootIfNeeded(): void {
+    if (this._ssrRootReset || !this.hasAttribute('defer-hydration')) {
+      return;
+    }
+
+    if (this.renderRoot.childNodes.length === 0) {
+      this.removeAttribute('defer-hydration');
+      this._ssrRootReset = true;
+      return;
+    }
+
+    // SSR された ui-toc は hydration 中に見出し数が変わると iterable の差分適用が壊れる。
+    // 初回 client update 前にいったん shadow root を空に戻し、以後は通常 render に切り替える。
+    this.renderRoot.replaceChildren();
+    this.removeAttribute('defer-hydration');
+    this._ssrRootReset = true;
   }
 
   override disconnectedCallback(): void {

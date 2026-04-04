@@ -1,5 +1,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import type { PropertyValues } from 'lit';
+import { keyed } from 'lit/directives/keyed.js';
 import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
 import {
   filterHeadingsByScopeSelections,
@@ -12,6 +14,16 @@ import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
 import { TocMobileSummaryController } from '../../toc/toc-mobile-summary-controller.js';
 import '../ui/toc/toc.js';
 import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc.js';
+
+interface SyncableTocElement extends HTMLElement {
+  headers: Heading[];
+  activeId: string;
+  refresh?: () => void;
+  requestUpdate?: () => void;
+}
+
+const hasSameHeadingIds = (left: readonly Heading[], right: readonly Heading[]): boolean =>
+  left.length === right.length && left.every((heading, index) => heading.id === right[index]?.id);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -280,6 +292,12 @@ export class LayoutToc extends LitElement {
   private _tracker: TocActiveTracker | null = null;
   private _mobileController: TocMobileSummaryController | null = null;
   private _hydrationActivated = false;
+  private _ssrRootReset = false;
+
+  protected override performUpdate(): void {
+    this._resetSsrShadowRootIfNeeded();
+    super.performUpdate();
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -296,12 +314,25 @@ export class LayoutToc extends LitElement {
     super.disconnectedCallback();
   }
 
+  protected override updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+
+    if (
+      changedProperties.has('_visibleHeadings') ||
+      changedProperties.has('_activeId') ||
+      changedProperties.has('_tocReady')
+    ) {
+      this._syncRenderedTocProps();
+    }
+  }
+
   protected override willUpdate(changedProperties: Map<string, unknown>): void {
     if (
       !this.hasUpdated ||
       changedProperties.has('sourceId') ||
       changedProperties.has('headingsJson') ||
-      changedProperties.has('capabilitiesJson')
+      changedProperties.has('capabilitiesJson') ||
+      changedProperties.has('contentRootId')
     ) {
       this._loadHeadingsFromSource();
     }
@@ -313,6 +344,7 @@ export class LayoutToc extends LitElement {
     }
 
     this._hydrationActivated = true;
+    this._upgradeNestedShadowHosts();
     this._loadHeadingsFromSource();
     const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
     this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
@@ -320,13 +352,34 @@ export class LayoutToc extends LitElement {
   }
 
   private _resolveVisibleHeadings(headings: Heading[] = this._allHeadings): Heading[] {
-    const contentRoot = findContentRoot(this.contentRootId);
+    const contentRoot = this._resolveContentRoot();
+    const hasDynamicScopes = headings.some(
+      (heading) => Array.isArray(heading.scopeSelections) && heading.scopeSelections.length > 0,
+    );
     const scopedHeadings =
-      contentRoot === null || !this._capabilities.dynamicScopes
+      contentRoot === null || !(this._capabilities.dynamicScopes || hasDynamicScopes)
         ? headings
         : filterHeadingsByScopeSelections(headings, readTocScopeSelectionMap(contentRoot));
 
     return contentRoot === null ? scopedHeadings : filterVisibleHeadings(contentRoot, scopedHeadings);
+  }
+
+  private _resetSsrShadowRootIfNeeded(): void {
+    if (this._ssrRootReset || !this.hasAttribute('defer-hydration')) {
+      return;
+    }
+
+    if (this.renderRoot.childNodes.length === 0) {
+      this.removeAttribute('defer-hydration');
+      this._ssrRootReset = true;
+      return;
+    }
+
+    // SSR 済み layout-toc は hydration 中に ui-toc が重複しやすいため、
+    // 初回 client update 前に shadow root を空へ戻してから再描画する。
+    this.renderRoot.replaceChildren();
+    this.removeAttribute('defer-hydration');
+    this._ssrRootReset = true;
   }
 
   private _loadHeadingsFromSource(): void {
@@ -377,10 +430,17 @@ export class LayoutToc extends LitElement {
       return;
     }
 
+    const contentRoot = this._resolveContentRoot();
+    const hasDynamicScopes = this._allHeadings.some(
+      (heading) => Array.isArray(heading.scopeSelections) && heading.scopeSelections.length > 0,
+    );
     this._tracker = new TocActiveTracker({
-      contentRootId: this.contentRootId,
+      contentRootId: contentRoot?.id ?? this.contentRootId,
       headings: this._allHeadings,
-      capabilities: this._capabilities,
+      capabilities: {
+        ...this._capabilities,
+        dynamicScopes: this._capabilities.dynamicScopes || hasDynamicScopes,
+      },
       getActiveId: () => this._activeId,
       onVisibleHeadingsChange: (headings) => {
         this._applyVisibleHeadings(headings);
@@ -449,11 +509,77 @@ export class LayoutToc extends LitElement {
     }
 
     this._tocReady = true;
+    queueMicrotask(() => {
+      this._syncRenderedTocProps();
+    });
   }
 
   private _applyActiveId(id: string): void {
     this._activeId = id;
     this._activeIndex = this._visibleHeadings.findIndex((heading) => heading.id === id);
+    queueMicrotask(() => {
+      this._syncRenderedTocProps();
+    });
+  }
+
+  private _syncRenderedTocProps(): void {
+    if (!this._tocReady || this._visibleHeadings.length === 0) {
+      return;
+    }
+
+    const resolvedHeadings = this._resolveVisibleHeadings(this._allHeadings);
+    if (!hasSameHeadingIds(this._visibleHeadings, resolvedHeadings)) {
+      this._applyVisibleHeadings(resolvedHeadings);
+      return;
+    }
+
+    this._upgradeNestedShadowHosts();
+
+    // SSR 済みの ui-toc は hydration 直後に property part が再注入されないことがあるため、
+    // host 側で見出し集合と activeId を明示同期して DOM を実状態へ寄せる。
+    const tocs = this.renderRoot.querySelectorAll<SyncableTocElement>('ui-toc');
+    for (const toc of tocs) {
+      const renderedLabelCount = toc.shadowRoot?.querySelectorAll('.toc-link-label').length ?? 0;
+      if (renderedLabelCount !== resolvedHeadings.length) {
+        const replacement = document.createElement('ui-toc') as SyncableTocElement;
+        replacement.headers = resolvedHeadings;
+        replacement.activeId = this._activeId;
+        replacement.addEventListener(
+          'ui-toc-active-change',
+          this._onTocActiveChange as EventListener,
+        );
+        toc.replaceWith(replacement);
+        continue;
+      }
+
+      toc.headers = this._visibleHeadings;
+      toc.activeId = this._activeId;
+      toc.requestUpdate?.();
+      toc.refresh?.();
+    }
+  }
+
+  private _resolveContentRoot(): HTMLElement | null {
+    const explicitRoot = findContentRoot(this.contentRootId);
+    if (explicitRoot instanceof HTMLElement) {
+      return explicitRoot;
+    }
+
+    const main = this.closest('main');
+    if (!(main instanceof HTMLElement)) {
+      return null;
+    }
+
+    const article = main.querySelector<HTMLElement>('article[id]');
+    return article ?? main;
+  }
+
+  private _upgradeNestedShadowHosts(): void {
+    if (!(this.renderRoot instanceof ShadowRoot)) {
+      return;
+    }
+
+    customElements.upgrade(this.renderRoot);
   }
 
   private _onTocActiveChange = (event: CustomEvent<UiTocActiveChangeDetail>): void => {
@@ -500,14 +626,20 @@ export class LayoutToc extends LitElement {
     const circumference = 2 * Math.PI * 8;
     const dashOffset = this._getProgressOffset();
     const label = this._getCurrentHeadingLabel();
+    const tocKey = this._visibleHeadings.map((heading) => heading.id).join('|');
 
     return html`
       <div class="desktop">
-        <ui-toc
-          .headers=${this._visibleHeadings}
-          .activeId=${this._activeId}
-          @ui-toc-active-change=${this._onTocActiveChange}
-        ></ui-toc>
+        ${keyed(
+          `desktop:${tocKey}`,
+          html`
+            <ui-toc
+              .headers=${this._visibleHeadings}
+              .activeId=${this._activeId}
+              @ui-toc-active-change=${this._onTocActiveChange}
+            ></ui-toc>
+          `,
+        )}
       </div>
 
       ${this._showMobileBar
@@ -545,11 +677,16 @@ export class LayoutToc extends LitElement {
             <ui-icon name="x"></ui-icon>
           </button>
         </div>
-        <ui-toc
-          .headers=${this._visibleHeadings}
-          .activeId=${this._activeId}
-          @ui-toc-active-change=${this._onTocActiveChange}
-        ></ui-toc>
+        ${keyed(
+          `mobile:${tocKey}`,
+          html`
+            <ui-toc
+              .headers=${this._visibleHeadings}
+              .activeId=${this._activeId}
+              @ui-toc-active-change=${this._onTocActiveChange}
+            ></ui-toc>
+          `,
+        )}
       </div>
     `;
   }

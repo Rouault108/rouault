@@ -65,8 +65,11 @@ test.describe('not-found page', () => {
 
     await navigateToMissingRoute(page, '/__playwright_missing_route__?from=e2e#section-x');
 
-    await expect(page.getByText('要求されたパス')).toBeVisible();
-    await expect(page.getByText('/__playwright_missing_route__?from=e2e#section-x')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'このページは見つかりませんでした' }),
+    ).toBeVisible();
+    await expect(page.locator('dt', { hasText: '要求されたパス' })).toBeVisible();
+    await expect(page.locator('dd code')).toHaveText('/__playwright_missing_route__?from=e2e#section-x');
   });
 
   test('keyboard navigation can reach fallback links', async ({ page }) => {

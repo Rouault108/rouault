@@ -192,6 +192,45 @@ describe('app-router', () => {
     expect(renderedCount).to.be.greaterThan(0);
   });
 
+  it('SSR 済み app-router からでも navigate() で本文を差し替えられること', async () => {
+    globalThis.fetch = () =>
+      Promise.resolve(
+        new Response(
+          `
+            <!doctype html>
+            <html>
+              <head><title>Hydrated Client Routed</title></head>
+              <body><main><h1>Hydrated Client Page</h1></main></body>
+            </html>
+          `,
+          { status: 200 },
+        ),
+      );
+
+    host = await fixture<AppRouterElement>(
+      html`<app-router>
+        <div aria-live="polite" aria-atomic="true" class="sr-only"></div>
+        <main id="main-content" tabindex="-1">
+          <h1>SSR Title</h1>
+        </main>
+      </app-router>`,
+    );
+    const appHost = host;
+
+    await appHost.updateComplete;
+
+    const result = await appHost.navigate('/hydrated-client-page');
+
+    await waitUntil(() => {
+      const text = appHost.querySelector('#main-content')?.textContent ?? '';
+      return text.includes('Hydrated Client Page');
+    }, 'SSR 済みの app-router でもページコンテンツが差し替わること');
+
+    expect(result.outcome).to.equal('completed');
+    expect(result.renderedKind).to.equal('page');
+    expect(document.title).to.equal('Hydrated Client Routed');
+  });
+
   it('post-commit controller が aria-live と main への focus を担うこと', async () => {
     let focusedTagName = '';
     let focusOptions: FocusOptions | undefined;
