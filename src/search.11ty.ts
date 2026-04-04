@@ -26,8 +26,11 @@ export class SearchPageTemplate {
         <p class="noscript-notice">検索・フィルタ機能にはJavaScriptが必要です。</p>
       </noscript>
       <search-page${serializeHtmlAttributes([
+        { name: 'data-hydration-scope', value: 'search-page' },
         { name: 'initial-search-state-json', value: initialState, kind: 'json' },
         { name: 'initial-search-response-json', value: initialResponse, kind: 'json' },
+        { name: 'data-hydration-capability', value: 'interactive' },
+        { name: 'data-hydration-trigger', value: 'initial' },
       ])}></search-page>
     `.trim();
   }
