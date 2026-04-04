@@ -1,8 +1,14 @@
 /// <reference types="node" />
 
-import { createHash, createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+
+import {
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+  S3ServiceException,
+} from '@aws-sdk/client-s3';
 
 import type { MediaManifest, MediaVariantOutput } from '../build/media/image-resolver.js';
 
@@ -10,9 +16,7 @@ const GENERATED_ROOT = path.resolve(process.cwd(), '.generated', 'media');
 const GENERATED_ASSET_ROOT = path.join(GENERATED_ROOT, 'assets');
 const MANIFEST_PATH = path.join(GENERATED_ROOT, 'image-manifest.json');
 const CACHE_CONTROL = 'public, max-age=31536000, immutable';
-const R2_SERVICE = 's3';
 const R2_REGION = 'auto';
-const ERROR_BODY_MAX_LENGTH = 1_500;
 
 interface R2Credentials {
   readonly accountId: string;
@@ -67,6 +71,17 @@ const getCredentials = (): R2Credentials => ({
   bucketName: validateBareBucketName(readRequiredEnv('R2_BUCKET_NAME')),
 });
 
+const createS3Client = (credentials: R2Credentials): S3Client =>
+  new S3Client({
+    region: R2_REGION,
+    endpoint: `https://${credentials.accountId}.r2.cloudflarestorage.com`,
+    forcePathStyle: true,
+    credentials: {
+      accessKeyId: credentials.accessKeyId,
+      secretAccessKey: credentials.secretAccessKey,
+    },
+  });
+
 const loadManifest = async (): Promise<MediaManifest> => {
   const raw = await readFile(MANIFEST_PATH, 'utf8');
   const parsed = JSON.parse(raw) as unknown;
@@ -83,180 +98,52 @@ const loadManifest = async (): Promise<MediaManifest> => {
   return parsed as unknown as MediaManifest;
 };
 
-const encodeRfc3986 = (value: string): string =>
-  encodeURIComponent(value).replace(
-    /[!'()*]/g,
-    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
-  );
-
-const encodeCanonicalPath = (pathname: string): string =>
-  pathname
-    .split('/')
-    .map((segment) => encodeRfc3986(segment))
-    .join('/');
-
-const getAmzDate = (date = new Date()): string =>
-  date.toISOString().replace(/[:-]|\.\d{3}/g, '');
-
-const sha256Hex = (value: string | Uint8Array): string =>
-  createHash('sha256').update(value).digest('hex');
-
-const hmac = (key: string | Uint8Array, value: string): Buffer =>
-  createHmac('sha256', key).update(value, 'utf8').digest();
-
-const getSigningKey = (secretAccessKey: string, dateStamp: string): Buffer => {
-  const kDate = hmac(`AWS4${secretAccessKey}`, dateStamp);
-  const kRegion = hmac(kDate, R2_REGION);
-  const kService = hmac(kRegion, R2_SERVICE);
-  return hmac(kService, 'aws4_request');
+const sha256Hex = async (fileBuffer: Buffer): Promise<string> => {
+  const { createHash } = await import('node:crypto');
+  return createHash('sha256').update(fileBuffer).digest('hex');
 };
 
-const buildSignedHeaders = (
-  method: 'GET' | 'HEAD' | 'PUT',
-  url: URL,
-  payloadHash: string,
-  extraHeaders: Record<string, string>,
-  credentials: R2Credentials,
-): Record<string, string> => {
-  const amzDate = getAmzDate();
-  const dateStamp = amzDate.slice(0, 8);
-  const headers: Record<string, string> = {
-    host: url.host,
-    'x-amz-date': amzDate,
-    'x-amz-content-sha256': payloadHash,
-    ...extraHeaders,
-  };
-
-  const canonicalHeaders = Object.entries(headers)
-    .map(([name, value]) => [name.toLowerCase(), value.trim().replace(/\s+/g, ' ')] as const)
-    .sort(([left], [right]) => left.localeCompare(right));
-  const signedHeaderNames = canonicalHeaders.map(([name]) => name).join(';');
-  const canonicalHeadersText = `${canonicalHeaders
-    .map(([name, value]) => `${name}:${value}`)
-    .join('\n')}\n`;
-  const canonicalRequest = [
-    method,
-    encodeCanonicalPath(url.pathname),
-    '',
-    canonicalHeadersText,
-    signedHeaderNames,
-    payloadHash,
-  ].join('\n');
-
-  const credentialScope = `${dateStamp}/${R2_REGION}/${R2_SERVICE}/aws4_request`;
-  const stringToSign = [
-    'AWS4-HMAC-SHA256',
-    amzDate,
-    credentialScope,
-    sha256Hex(canonicalRequest),
-  ].join('\n');
-  const signature = createHmac('sha256', getSigningKey(credentials.secretAccessKey, dateStamp))
-    .update(stringToSign, 'utf8')
-    .digest('hex');
-
-  return {
-    ...headers,
-    authorization: [
-      'AWS4-HMAC-SHA256',
-      `Credential=${credentials.accessKeyId}/${credentialScope}`,
-      `SignedHeaders=${signedHeaderNames}`,
-      `Signature=${signature}`,
-    ].join(' '),
-  };
-};
-
-const normalizeErrorText = (value: string): string =>
-  value.replace(/\s+/g, ' ').trim();
-
-const truncateText = (value: string, maxLength = ERROR_BODY_MAX_LENGTH): string =>
-  value.length <= maxLength ? value : `${value.slice(0, maxLength)}…`;
-
-const readResponseTextSafe = async (response: Response): Promise<string | undefined> => {
-  try {
-    const text = await response.text();
-    const normalized = normalizeErrorText(text);
-    return normalized.length > 0 ? truncateText(normalized) : undefined;
-  } catch {
-    return undefined;
-  }
-};
-
-const formatResponseHeaders = (response: Response): string | undefined => {
-  const headerEntries: [string, string][] = [];
-
-  for (const [name, value] of [
-    ['content-type', response.headers.get('content-type')],
-    ['cf-ray', response.headers.get('cf-ray')],
-    ['x-amz-request-id', response.headers.get('x-amz-request-id')],
-    ['x-amz-id-2', response.headers.get('x-amz-id-2')],
-  ] as const) {
-    if (typeof value === 'string' && value.length > 0) {
-      headerEntries.push([name, value]);
-    }
-  }
-
-  if (headerEntries.length === 0) {
-    return undefined;
-  }
-
-  return headerEntries.map(([name, value]) => `${name}=${value}`).join(', ');
-};
-
-const formatFailureMessage = (args: {
-  readonly operation: 'inspect' | 'upload';
-  readonly objectKey: string;
-  readonly bucketName: string;
-  readonly url: URL;
-  readonly response: Response;
-  readonly responseBody: string | undefined;
-}): string => {
-  const responseHeaders = formatResponseHeaders(args.response);
-
-  const lines = [
-    `[media] failed to ${args.operation} ${args.objectKey}: ${String(args.response.status)} ${args.response.statusText}`,
-    `bucket=${args.bucketName}`,
-    `url=${args.url.toString()}`,
-  ];
-
-  if (responseHeaders !== undefined) {
-    lines.push(`responseHeaders=${responseHeaders}`);
-  }
-
-  if (args.responseBody !== undefined) {
-    lines.push(`responseBody=${args.responseBody}`);
-  }
-
-  return lines.join('\n');
-};
-
-const getObjectUrl = (credentials: R2Credentials, objectKey: string): URL =>
-  new URL(
-    `https://${credentials.accountId}.r2.cloudflarestorage.com/${credentials.bucketName}/${objectKey}`,
-  );
-
-const readHeadFailureDiagnosticBody = async (
-  credentials: R2Credentials,
+const formatS3Error = (
+  operation: 'inspect' | 'upload',
+  bucketName: string,
   objectKey: string,
-): Promise<string | undefined> => {
-  const url = getObjectUrl(credentials, objectKey);
-  const headers = buildSignedHeaders(
-    'GET',
-    url,
-    sha256Hex(''),
-    { range: 'bytes=0-0' },
-    credentials,
-  );
+  error: unknown,
+): string => {
+  if (error instanceof S3ServiceException) {
+    const status = error.$metadata.httpStatusCode;
+    const requestId = error.$metadata.requestId;
+    const extendedRequestId = error.$metadata.extendedRequestId;
 
-  const response = await fetch(url, {
-    method: 'GET',
-    headers,
-  });
+    const lines = [
+      `[media] failed to ${operation} ${objectKey}: ${String(status ?? 'unknown')} ${error.name}`,
+      `bucket=${bucketName}`,
+      `message=${error.message}`,
+    ];
 
-  if (response.ok || response.status === 206) {
-    return undefined;
+    if (requestId) {
+      lines.push(`requestId=${requestId}`);
+    }
+
+    if (extendedRequestId) {
+      lines.push(`extendedRequestId=${extendedRequestId}`);
+    }
+
+    return lines.join('\n');
   }
 
-  return readResponseTextSafe(response);
+  if (error instanceof Error) {
+    return [
+      `[media] failed to ${operation} ${objectKey}: unexpected error`,
+      `bucket=${bucketName}`,
+      `message=${error.message}`,
+    ].join('\n');
+  }
+
+  return [
+    `[media] failed to ${operation} ${objectKey}: unexpected non-error value`,
+    `bucket=${bucketName}`,
+    `message=${String(error)}`,
+  ].join('\n');
 };
 
 const parseUploadTarget = (output: MediaVariantOutput): ParsedUploadTarget => {
@@ -273,12 +160,9 @@ const parseUploadTarget = (output: MediaVariantOutput): ParsedUploadTarget => {
     throw new Error(`[media] invalid media object URL: ${output.url}`);
   }
 
-  const objectKey = segments.join('/');
-  const localPath = path.join(GENERATED_ASSET_ROOT, hash, fileName);
-
   return {
-    objectKey,
-    localPath,
+    objectKey: segments.join('/'),
+    localPath: path.join(GENERATED_ASSET_ROOT, hash, fileName),
     contentType: output.mediaType,
   };
 };
@@ -290,92 +174,66 @@ const createUploadTarget = async (output: MediaVariantOutput): Promise<UploadTar
   return {
     ...parsedTarget,
     contentLength: fileBuffer.byteLength,
-    sha256: sha256Hex(fileBuffer),
+    sha256: await sha256Hex(fileBuffer),
     fileBuffer,
   };
 };
 
 const headObject = async (
+  client: S3Client,
   credentials: R2Credentials,
   objectKey: string,
 ): Promise<HeadObjectMetadata | null> => {
-  const url = getObjectUrl(credentials, objectKey);
-  const headers = buildSignedHeaders('HEAD', url, sha256Hex(''), {}, credentials);
-  const response = await fetch(url, {
-    method: 'HEAD',
-    headers,
-  });
-
-  if (response.status === 404) {
-    return null;
-  }
-
-  if (!response.ok) {
-    const responseBody =
-      (await readResponseTextSafe(response)) ??
-      (await readHeadFailureDiagnosticBody(credentials, objectKey));
-
-    throw new Error(
-      formatFailureMessage({
-        operation: 'inspect',
-        objectKey,
-        bucketName: credentials.bucketName,
-        url,
-        response,
-        responseBody,
+  try {
+    const response = await client.send(
+      new HeadObjectCommand({
+        Bucket: credentials.bucketName,
+        Key: objectKey,
       }),
     );
-  }
 
-  return {
-    sha256: response.headers.get('x-amz-meta-sha256') ?? undefined,
-  };
+    return {
+      sha256: response.Metadata?.['sha256'],
+    };
+  } catch (error) {
+    if (error instanceof S3ServiceException) {
+      const status = error.$metadata.httpStatusCode;
+      if (status === 404 || error.name === 'NotFound' || error.name === 'NoSuchKey') {
+        return null;
+      }
+    }
+
+    throw new Error(formatS3Error('inspect', credentials.bucketName, objectKey, error));
+  }
 };
 
 const putObject = async (
+  client: S3Client,
   credentials: R2Credentials,
   target: UploadTarget,
-  fileBuffer: Buffer,
 ): Promise<void> => {
-  const url = getObjectUrl(credentials, target.objectKey);
-  const payloadHash = target.sha256;
-  const headers = buildSignedHeaders(
-    'PUT',
-    url,
-    payloadHash,
-    {
-      'cache-control': CACHE_CONTROL,
-      'content-length': String(target.contentLength),
-      'content-type': target.contentType,
-      'x-amz-meta-sha256': target.sha256,
-    },
-    credentials,
-  );
-
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers,
-    body: fileBuffer as unknown as BodyInit,
-  });
-
-  if (!response.ok) {
-    const responseBody = await readResponseTextSafe(response);
-
-    throw new Error(
-      formatFailureMessage({
-        operation: 'upload',
-        objectKey: target.objectKey,
-        bucketName: credentials.bucketName,
-        url,
-        response,
-        responseBody,
+  try {
+    await client.send(
+      new PutObjectCommand({
+        Bucket: credentials.bucketName,
+        Key: target.objectKey,
+        Body: target.fileBuffer,
+        ContentType: target.contentType,
+        ContentLength: target.contentLength,
+        CacheControl: CACHE_CONTROL,
+        Metadata: {
+          sha256: target.sha256,
+        },
       }),
     );
+  } catch (error) {
+    throw new Error(formatS3Error('upload', credentials.bucketName, target.objectKey, error));
   }
 };
 
 const uploadMediaObjects = async (): Promise<void> => {
   const credentials = getCredentials();
+  const client = createS3Client(credentials);
   const manifest = await loadManifest();
   const items = Object.entries(manifest.items).sort(([left], [right]) =>
     left.localeCompare(right),
@@ -393,7 +251,7 @@ const uploadMediaObjects = async (): Promise<void> => {
     for (const variant of variants) {
       for (const output of variant.outputs) {
         const target = await createUploadTarget(output);
-        const existingObject = await headObject(credentials, target.objectKey);
+        const existingObject = await headObject(client, credentials, target.objectKey);
 
         if (existingObject?.sha256 === target.sha256) {
           skippedCount += 1;
@@ -401,7 +259,7 @@ const uploadMediaObjects = async (): Promise<void> => {
           continue;
         }
 
-        await putObject(credentials, target, target.fileBuffer);
+        await putObject(client, credentials, target);
         uploadedCount += 1;
         console.log(`[media] uploaded ${target.objectKey}`);
       }
