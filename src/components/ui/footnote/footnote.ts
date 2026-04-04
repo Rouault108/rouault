@@ -564,6 +564,18 @@ export class Footnote extends LitElement {
     });
   };
 
+  private _onContentKeyDown = (event: KeyboardEvent): void => {
+    if (event.defaultPrevented) return;
+
+    if (event.key === 'Escape') {
+      const popoverHost = this._resolvePopoverHost();
+      if (!popoverHost) return;
+
+      event.preventDefault();
+      popoverHost.close({ returnFocus: true });
+    }
+  };
+
   private _getFocusableElements(): HTMLElement[] {
     const root = this._getScopeRoot();
     return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
@@ -649,6 +661,7 @@ export class Footnote extends LitElement {
           slot="content"
           role="note"
           aria-labelledby="${this._resolvedLabelId}"
+          @keydown="${this._onContentKeyDown}"
         >
           <span id="${this._resolvedLabelId}" class="sr-only">脚注 ${String(index)}</span>
           <div class="footnote-body">${this._renderBodyContent()}</div>
