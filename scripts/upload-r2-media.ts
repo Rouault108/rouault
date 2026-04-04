@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import { createHash, createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -10,6 +12,7 @@ const MANIFEST_PATH = path.join(GENERATED_ROOT, 'image-manifest.json');
 const CACHE_CONTROL = 'public, max-age=31536000, immutable';
 const R2_SERVICE = 's3';
 const R2_REGION = 'auto';
+const ERROR_BODY_MAX_LENGTH = 1_500;
 
 interface R2Credentials {
   readonly accountId: string;
@@ -48,11 +51,20 @@ const readRequiredEnv = (name: string): string => {
   return value;
 };
 
+const validateBareBucketName = (bucketName: string): string => {
+  if (bucketName.includes('://') || bucketName.includes('/')) {
+    throw new Error(
+      `[media] R2_BUCKET_NAME must be a bare bucket name, but got: ${bucketName}`,
+    );
+  }
+  return bucketName;
+};
+
 const getCredentials = (): R2Credentials => ({
   accountId: readRequiredEnv('CLOUDFLARE_ACCOUNT_ID'),
   accessKeyId: readRequiredEnv('R2_ACCESS_KEY_ID'),
   secretAccessKey: readRequiredEnv('R2_SECRET_ACCESS_KEY'),
-  bucketName: readRequiredEnv('R2_BUCKET_NAME'),
+  bucketName: validateBareBucketName(readRequiredEnv('R2_BUCKET_NAME')),
 });
 
 const loadManifest = async (): Promise<MediaManifest> => {
@@ -83,7 +95,8 @@ const encodeCanonicalPath = (pathname: string): string =>
     .map((segment) => encodeRfc3986(segment))
     .join('/');
 
-const getAmzDate = (date = new Date()): string => date.toISOString().replace(/[:-]|\.\d{3}/g, '');
+const getAmzDate = (date = new Date()): string =>
+  date.toISOString().replace(/[:-]|\.\d{3}/g, '');
 
 const sha256Hex = (value: string | Uint8Array): string =>
   createHash('sha256').update(value).digest('hex');
@@ -99,7 +112,7 @@ const getSigningKey = (secretAccessKey: string, dateStamp: string): Buffer => {
 };
 
 const buildSignedHeaders = (
-  method: 'HEAD' | 'PUT',
+  method: 'GET' | 'HEAD' | 'PUT',
   url: URL,
   payloadHash: string,
   extraHeaders: Record<string, string>,
@@ -118,7 +131,9 @@ const buildSignedHeaders = (
     .map(([name, value]) => [name.toLowerCase(), value.trim().replace(/\s+/g, ' ')] as const)
     .sort(([left], [right]) => left.localeCompare(right));
   const signedHeaderNames = canonicalHeaders.map(([name]) => name).join(';');
-  const canonicalHeadersText = `${canonicalHeaders.map(([name, value]) => `${name}:${value}`).join('\n')}\n`;
+  const canonicalHeadersText = `${canonicalHeaders
+    .map(([name, value]) => `${name}:${value}`)
+    .join('\n')}\n`;
   const canonicalRequest = [
     method,
     encodeCanonicalPath(url.pathname),
@@ -148,6 +163,100 @@ const buildSignedHeaders = (
       `Signature=${signature}`,
     ].join(' '),
   };
+};
+
+const normalizeErrorText = (value: string): string =>
+  value.replace(/\s+/g, ' ').trim();
+
+const truncateText = (value: string, maxLength = ERROR_BODY_MAX_LENGTH): string =>
+  value.length <= maxLength ? value : `${value.slice(0, maxLength)}…`;
+
+const readResponseTextSafe = async (response: Response): Promise<string | undefined> => {
+  try {
+    const text = await response.text();
+    const normalized = normalizeErrorText(text);
+    return normalized.length > 0 ? truncateText(normalized) : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const formatResponseHeaders = (response: Response): string | undefined => {
+  const headerEntries: [string, string][] = [];
+
+  for (const [name, value] of [
+    ['content-type', response.headers.get('content-type')],
+    ['cf-ray', response.headers.get('cf-ray')],
+    ['x-amz-request-id', response.headers.get('x-amz-request-id')],
+    ['x-amz-id-2', response.headers.get('x-amz-id-2')],
+  ] as const) {
+    if (typeof value === 'string' && value.length > 0) {
+      headerEntries.push([name, value]);
+    }
+  }
+
+  if (headerEntries.length === 0) {
+    return undefined;
+  }
+
+  return headerEntries.map(([name, value]) => `${name}=${value}`).join(', ');
+};
+
+const formatFailureMessage = (args: {
+  readonly operation: 'inspect' | 'upload';
+  readonly objectKey: string;
+  readonly bucketName: string;
+  readonly url: URL;
+  readonly response: Response;
+  readonly responseBody: string | undefined;
+}): string => {
+  const responseHeaders = formatResponseHeaders(args.response);
+
+  const lines = [
+    `[media] failed to ${args.operation} ${args.objectKey}: ${String(args.response.status)} ${args.response.statusText}`,
+    `bucket=${args.bucketName}`,
+    `url=${args.url.toString()}`,
+  ];
+
+  if (responseHeaders !== undefined) {
+    lines.push(`responseHeaders=${responseHeaders}`);
+  }
+
+  if (args.responseBody !== undefined) {
+    lines.push(`responseBody=${args.responseBody}`);
+  }
+
+  return lines.join('\n');
+};
+
+const getObjectUrl = (credentials: R2Credentials, objectKey: string): URL =>
+  new URL(
+    `https://${credentials.accountId}.r2.cloudflarestorage.com/${credentials.bucketName}/${objectKey}`,
+  );
+
+const readHeadFailureDiagnosticBody = async (
+  credentials: R2Credentials,
+  objectKey: string,
+): Promise<string | undefined> => {
+  const url = getObjectUrl(credentials, objectKey);
+  const headers = buildSignedHeaders(
+    'GET',
+    url,
+    sha256Hex(''),
+    { range: 'bytes=0-0' },
+    credentials,
+  );
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers,
+  });
+
+  if (response.ok || response.status === 206) {
+    return undefined;
+  }
+
+  return readResponseTextSafe(response);
 };
 
 const parseUploadTarget = (output: MediaVariantOutput): ParsedUploadTarget => {
@@ -190,9 +299,7 @@ const headObject = async (
   credentials: R2Credentials,
   objectKey: string,
 ): Promise<HeadObjectMetadata | null> => {
-  const url = new URL(
-    `https://${credentials.accountId}.r2.cloudflarestorage.com/${credentials.bucketName}/${objectKey}`,
-  );
+  const url = getObjectUrl(credentials, objectKey);
   const headers = buildSignedHeaders('HEAD', url, sha256Hex(''), {}, credentials);
   const response = await fetch(url, {
     method: 'HEAD',
@@ -204,8 +311,19 @@ const headObject = async (
   }
 
   if (!response.ok) {
+    const responseBody =
+      (await readResponseTextSafe(response)) ??
+      (await readHeadFailureDiagnosticBody(credentials, objectKey));
+
     throw new Error(
-      `[media] failed to inspect ${objectKey}: ${String(response.status)} ${response.statusText}`,
+      formatFailureMessage({
+        operation: 'inspect',
+        objectKey,
+        bucketName: credentials.bucketName,
+        url,
+        response,
+        responseBody,
+      }),
     );
   }
 
@@ -219,9 +337,7 @@ const putObject = async (
   target: UploadTarget,
   fileBuffer: Buffer,
 ): Promise<void> => {
-  const url = new URL(
-    `https://${credentials.accountId}.r2.cloudflarestorage.com/${credentials.bucketName}/${target.objectKey}`,
-  );
+  const url = getObjectUrl(credentials, target.objectKey);
   const payloadHash = target.sha256;
   const headers = buildSignedHeaders(
     'PUT',
@@ -243,8 +359,17 @@ const putObject = async (
   });
 
   if (!response.ok) {
+    const responseBody = await readResponseTextSafe(response);
+
     throw new Error(
-      `[media] failed to upload ${target.objectKey}: ${String(response.status)} ${response.statusText}`,
+      formatFailureMessage({
+        operation: 'upload',
+        objectKey: target.objectKey,
+        bucketName: credentials.bucketName,
+        url,
+        response,
+        responseBody,
+      }),
     );
   }
 };
@@ -252,7 +377,13 @@ const putObject = async (
 const uploadMediaObjects = async (): Promise<void> => {
   const credentials = getCredentials();
   const manifest = await loadManifest();
-  const items = Object.entries(manifest.items).sort(([left], [right]) => left.localeCompare(right));
+  const items = Object.entries(manifest.items).sort(([left], [right]) =>
+    left.localeCompare(right),
+  );
+
+  console.log(
+    `[media] starting upload: bucket=${credentials.bucketName}, itemCount=${String(items.length)}`,
+  );
 
   let uploadedCount = 0;
   let skippedCount = 0;
