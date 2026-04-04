@@ -107,6 +107,8 @@ describe('story discovery', () => {
     expect(vitestConfig).toContain("name: 'storybook-smoke'");
     expect(vitestConfig).toContain("include: ['smoke']");
     expect(vitestConfig).toContain("exclude: ['manual-only']");
+    expect(vitestConfig).toContain("host: '127.0.0.1'");
+    expect(vitestConfig).toContain('strictPort: false');
     expect(vitestConfig).not.toContain("name: 'storybook-runtime'");
 
     expect(wtrConfig).toContain("files: ['test/browser/**/*.test.ts']");

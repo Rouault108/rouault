@@ -42,6 +42,10 @@ export default defineConfig({
           setupFiles: ['.storybook/vitest.setup.ts'],
           browser: {
             enabled: true,
+            api: {
+              host: '127.0.0.1',
+              strictPort: false,
+            },
             headless: true,
             provider: playwright({}),
             instances: [{ browser: 'chromium' }],
