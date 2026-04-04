@@ -1,7 +1,13 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
-import { type TocCapabilities } from '../../toc/filter-visible-headings.js';
+import {
+  filterHeadingsByScopeSelections,
+  filterVisibleHeadings,
+  findContentRoot,
+  readTocScopeSelectionMap,
+  type TocCapabilities,
+} from '../../toc/filter-visible-headings.js';
 import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
 import { TocMobileSummaryController } from '../../toc/toc-mobile-summary-controller.js';
 import '../ui/toc/toc.js';
@@ -307,9 +313,20 @@ export class LayoutToc extends LitElement {
     }
 
     this._hydrationActivated = true;
+    this._loadHeadingsFromSource();
     const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
     this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
     this._connectControllers();
+  }
+
+  private _resolveVisibleHeadings(headings: Heading[] = this._allHeadings): Heading[] {
+    const contentRoot = findContentRoot(this.contentRootId);
+    const scopedHeadings =
+      contentRoot === null || !this._capabilities.dynamicScopes
+        ? headings
+        : filterHeadingsByScopeSelections(headings, readTocScopeSelectionMap(contentRoot));
+
+    return contentRoot === null ? scopedHeadings : filterVisibleHeadings(contentRoot, scopedHeadings);
   }
 
   private _loadHeadingsFromSource(): void {
@@ -337,14 +354,18 @@ export class LayoutToc extends LitElement {
     }
 
     this._allHeadings = nextHeadings;
-
     this._capabilities = normalizeCapabilities(parseJsonValue(this.capabilitiesJson));
 
+    const visibleHeadings = this._resolveVisibleHeadings(nextHeadings);
+
     if (!this._hydrationActivated || typeof window === 'undefined') {
-      this._applyVisibleHeadings(nextHeadings);
+      this._applyVisibleHeadings(visibleHeadings);
       return;
     }
 
+    // hydration 後の tracker 起動前にも、現在 DOM / URL / selected-value を使って
+    // いったん正しい見出し集合を反映しておく。
+    this._applyVisibleHeadings(visibleHeadings);
     this._connectControllers();
   }
 
@@ -355,8 +376,6 @@ export class LayoutToc extends LitElement {
       this._applyVisibleHeadings(this._allHeadings);
       return;
     }
-
-    this._tocReady = false;
 
     this._tracker = new TocActiveTracker({
       contentRootId: this.contentRootId,
@@ -371,6 +390,14 @@ export class LayoutToc extends LitElement {
       },
     });
     this._tracker.start();
+
+    // ui-tabs の upgrade / selected-value 反映直後にも追従させる。
+    queueMicrotask(() => {
+      this._tracker?.refresh();
+    });
+    requestAnimationFrame(() => {
+      this._tracker?.refresh();
+    });
 
     this._mobileController = new TocMobileSummaryController({
       enabled: this._capabilities.mobileSummary,
