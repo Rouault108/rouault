@@ -5,9 +5,9 @@ test.describe('Static pages', () => {
     await page.goto('/about/');
 
     await expect(page.locator('#main-content h1').first()).toHaveText(
-      '静かに読むための、独立したページ骨格',
+      '個人ノートを、静かに読むためのアプリケーション',
     );
-    await expect(page.locator('#main-content')).toContainText('Rouaultはどういうものなのか');
+    await expect(page.locator('#main-content')).toContainText('Rouault の目的と設計方針');
   });
 
   test('corpora 一覧ページが主要見出しまで表示されること', async ({ page }) => {

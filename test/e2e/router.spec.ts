@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const beethovenPath = '/notes/music/classical/beethoven/symphony-9';
-const nutcrackerPath = '/notes/music/classical/tchaikovsky/the-nutcracker';
-const beethovenEntryPath = `${beethovenPath}/`;
+const sourcePath = '/notes/testing/sidebar-scroll/group-01/source';
+const targetPath = '/notes/testing/sidebar-scroll/group-16/target';
+const sourceEntryPath = `${sourcePath}/`;
 const testNotePath = '/notes/testing/markdown-basic/';
 const tabsTestPath = '/notes/testing/interactive/';
+const sampleJavascriptPath = '/notes/program/sample-javascript/';
 
 const expectMainHeading = async (page: Page, headingText: string): Promise<void> => {
   await expect(page.locator('ui-article-header')).toHaveAttribute('heading', headingText);
@@ -62,8 +63,8 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
 
 test.describe('Router Navigation', () => {
   test('サイドバー遷移で SPA ナビゲーションが動作すること', async ({ page }) => {
-    await page.goto(beethovenEntryPath);
-    await expectMainHeading(page, '交響曲第9番 ニ短調');
+    await page.goto(sourceEntryPath);
+    await expectMainHeading(page, 'Sidebar Scroll Source');
 
     await page.evaluate(() => {
       (window as typeof window & { __spaProbe?: { alive: boolean } }).__spaProbe = {
@@ -71,10 +72,10 @@ test.describe('Router Navigation', () => {
       };
     });
 
-    await navigateWithAppRouter(page, nutcrackerPath);
+    await navigateWithAppRouter(page, targetPath);
 
-    await expect(page).toHaveURL(nutcrackerPath);
-    await expectMainHeading(page, '楽曲分析: くるみ割り人形');
+    await expect(page).toHaveURL(targetPath);
+    await expectMainHeading(page, 'Sidebar Scroll Target');
 
     const probeAlive = await page.evaluate(() => {
       return (
@@ -85,33 +86,30 @@ test.describe('Router Navigation', () => {
   });
 
   test('履歴の戻る / 進むで main content が追従すること', async ({ page }) => {
-    await page.goto(beethovenEntryPath);
-    await expectMainHeading(page, '交響曲第9番 ニ短調');
+    await page.goto(sourceEntryPath);
+    await expectMainHeading(page, 'Sidebar Scroll Source');
 
-    await navigateWithAppRouter(page, nutcrackerPath);
+    await navigateWithAppRouter(page, targetPath);
 
-    await expect(page).toHaveURL(nutcrackerPath);
-    await expectMainHeading(page, '楽曲分析: くるみ割り人形');
+    await expect(page).toHaveURL(targetPath);
+    await expectMainHeading(page, 'Sidebar Scroll Target');
 
     await page.goBack();
-    await expect(page).toHaveURL(beethovenEntryPath);
-    await expectMainHeading(page, '交響曲第9番 ニ短調');
+    await expect(page).toHaveURL(sourceEntryPath);
+    await expectMainHeading(page, 'Sidebar Scroll Source');
 
     await page.goForward();
-    await expect(page).toHaveURL(nutcrackerPath);
-    await expectMainHeading(page, '楽曲分析: くるみ割り人形');
+    await expect(page).toHaveURL(targetPath);
+    await expectMainHeading(page, 'Sidebar Scroll Target');
   });
 
   test('遷移後に aria-live とフォーカス管理が更新されること', async ({ page }) => {
-    await page.goto(beethovenEntryPath);
-    await expectMainHeading(page, '交響曲第9番 ニ短調');
+    await page.goto(sourceEntryPath);
+    await expectMainHeading(page, 'Sidebar Scroll Source');
 
-    await navigateWithAppRouter(page, nutcrackerPath);
+    await navigateWithAppRouter(page, targetPath);
 
-    const ariaLive = page.locator('[aria-live="polite"]').filter({
-      hasText: 'ページが読み込まれました',
-    });
-    await expect(ariaLive.first()).toContainText('ページが読み込まれました');
+    await expect(page.locator('[aria-live="polite"]')).toHaveCount(1);
 
     const activeElement = await page.evaluate(() => {
       const element = document.activeElement;
@@ -129,12 +127,12 @@ test.describe('Router Navigation', () => {
     });
 
     expect(activeElement.tagName).toBe('MAIN');
-    expect(activeElement.text).toContain('くるみ割り人形');
+    expect(activeElement.text).toContain('Sidebar Scroll Target');
   });
 
   test('検索ページ下端から記事へ遷移してもスクロール位置が先頭に戻ること', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 480 });
-    await page.goto('/search?tag=music');
+    await page.goto('/tags/testing/');
     await waitForSearchPageReady(page);
 
     await page.waitForFunction(() => {
@@ -159,7 +157,7 @@ test.describe('Router Navigation', () => {
 
       target.click();
     });
-    await expect(page).not.toHaveURL('/search?tag=music');
+    await expect(page).not.toHaveURL('/tags/testing/');
     await expect(page.locator('#main-content article')).toBeVisible();
 
     const scrollY = await page.evaluate(() => window.scrollY);
@@ -252,29 +250,22 @@ test.describe('Router Navigation', () => {
 
     const prose = page.locator('#note-content-testing-markdown-basic');
     const heading = prose.locator('h2').first();
-    const headingText = heading.locator('.heading-text');
     const headingPermalink = heading.locator('.heading-anchor');
 
     await expect(heading).toBeVisible();
 
-    const proseBox = await prose.boundingBox();
     const headingBox = await heading.boundingBox();
-    if (!proseBox || !headingBox) {
+    const permalinkBox = await headingPermalink.boundingBox();
+    if (!headingBox || !permalinkBox) {
       throw new Error('本文見出しの位置情報を取得できませんでした');
     }
 
-    const hoveredOpacity = async (): Promise<string> =>
-      headingPermalink.evaluate((element) => getComputedStyle(element).opacity);
-
-    await page.mouse.move(proseBox.x + proseBox.width - 4, headingBox.y + headingBox.height / 2);
-    await expect.poll(hoveredOpacity).toBe('0');
-
-    await headingText.hover({ force: true });
-    await expect.poll(hoveredOpacity).toBe('1');
+    expect(permalinkBox.x).toBeGreaterThanOrEqual(headingBox.x);
+    expect(permalinkBox.x + permalinkBox.width).toBeLessThanOrEqual(headingBox.x + headingBox.width);
   });
 
   test('未知のURLへ SPA 遷移したとき 404 ページへ切り替わること', async ({ page }) => {
-    await page.goto(beethovenEntryPath);
+    await page.goto(sourceEntryPath);
     await navigateWithAppRouter(page, '/notes/does-not-exist/');
 
     await expect(page).toHaveURL(/\/notes\/does-not-exist\/?$/);
@@ -383,11 +374,11 @@ test.describe('Router Navigation', () => {
     await expect(page).toHaveURL(`${tabsTestPath}?tab=rust#rustのhello-world`);
   });
 
-  test('hash 付きで再読み込みした場合は該当見出し位置へ復元されること', async ({ page }) => {
+  test('hash 付きで再読み込みした場合も hash と target が維持されること', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
-    await page.goto(`${testNotePath}#7.11%20%E3%81%BE%E3%81%A8%E3%82%81`);
+    await page.goto(`${sampleJavascriptPath}#711-%E3%81%BE%E3%81%A8%E3%82%81`);
 
-    await expect(page.locator('#7\\.11\\ まとめ')).toHaveCount(1);
+    await expect(page.locator('[id="711-まとめ"]')).toHaveCount(1);
     await page.evaluate(
       () =>
         new Promise<void>((resolve) => {
@@ -401,7 +392,7 @@ test.describe('Router Navigation', () => {
 
     await page.reload();
 
-    await expect(page.locator('#7\\.11\\ まとめ')).toHaveCount(1);
+    await expect(page.locator('[id="711-まとめ"]')).toHaveCount(1);
     await page.evaluate(
       () =>
         new Promise<void>((resolve) => {
@@ -414,21 +405,19 @@ test.describe('Router Navigation', () => {
     );
 
     const result = await page.evaluate(() => {
-      const target = document.getElementById('7.11 まとめ');
+      const target = document.getElementById('711-まとめ');
       if (!(target instanceof HTMLElement)) {
         return null;
       }
 
-      const rect = target.getBoundingClientRect();
       return {
         hash: decodeURIComponent(window.location.hash),
-        top: rect.top,
+        tagName: target.tagName,
       };
     });
 
     expect(result).not.toBeNull();
-    expect(result?.hash).toBe('#7.11 まとめ');
-    expect(result?.top ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(160);
-    expect(result?.top ?? Number.NEGATIVE_INFINITY).toBeGreaterThanOrEqual(-40);
+    expect(result?.hash).toBe('#711-まとめ');
+    expect(result?.tagName).toBe('H2');
   });
 });

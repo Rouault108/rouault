@@ -1,8 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const notePath = '/notes/music/classical/beethoven/symphony-9';
-const noteCanonicalPath = '/notes/music/classical/beethoven/symphony-9/';
-const beethovenTitle = '交響曲第9番 ニ短調';
+const notePath = '/notes/testing/sidebar-scroll/group-16/target';
+const noteCanonicalPath = '/notes/testing/sidebar-scroll/group-16/target/';
+const testingTagPagePath = '/tags/testing/';
+const targetTitle = 'Sidebar Scroll Target';
+const sourceTitle = 'Sidebar Scroll Source';
 
 const waitForAppRouterReady = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
@@ -115,14 +117,14 @@ test.describe('Tag Page', () => {
       };
     });
 
-    await clickArticleHeaderTag(page, '/tags/music/');
+    await clickArticleHeaderTag(page, '/tags/testing/');
 
-    await expect(page).toHaveURL('/tags/music/');
-    await expect(page.locator('#main-content h1').first()).toHaveText('#music');
+    await expect(page).toHaveURL(testingTagPagePath);
+    await expect(page.locator('#main-content h1').first()).toHaveText('#testing');
     await expect(page.locator('#main-content')).toContainText(
       'このタグに属するノートを起点に、検索語や追加タグで探索を広げられます。',
     );
-    await expect(page.locator('#main-content')).toContainText(beethovenTitle);
+    await expect(page.locator('#main-content')).toContainText(targetTitle);
 
     const probeAlive = await page.evaluate(() => {
       return (
@@ -133,7 +135,7 @@ test.describe('Tag Page', () => {
   });
 
   test('タグページのカード内リンクからノートへ遷移できること', async ({ page }) => {
-    await page.goto('/tags/music/');
+    await page.goto(testingTagPagePath);
 
     await page.evaluate(() => {
       (window as typeof window & { __tagCardProbe?: { alive: boolean } }).__tagCardProbe = {
@@ -141,10 +143,10 @@ test.describe('Tag Page', () => {
       };
     });
 
-    await clickSearchResultLink(page, beethovenTitle);
+    await clickSearchResultLink(page, targetTitle);
 
     await expect(page).toHaveURL(notePath);
-    await expectNoteHeading(page, beethovenTitle);
+    await expectNoteHeading(page, targetTitle);
 
     const probeAlive = await page.evaluate(() => {
       return (
@@ -156,33 +158,59 @@ test.describe('Tag Page', () => {
   });
 
   test('タグページで検索語を入力すると /search へ遷移すること', async ({ page }) => {
-    await page.goto('/tags/music/');
+    await page.goto(testingTagPagePath);
 
-    await inputSearchQuery(page, '交響曲');
+    await inputSearchQuery(page, 'Target');
 
-    await expect(page).toHaveURL(/\/search\?q=.*&tag=music$/);
+    await expect(page).toHaveURL(/\/search\?/);
+    await expect
+      .poll(() => page.evaluate(() => {
+        const url = new URL(window.location.href);
+        return {
+          pathname: url.pathname,
+          q: url.searchParams.get('q'),
+          tags: url.searchParams.getAll('tag'),
+        };
+      }))
+      .toEqual({
+        pathname: '/search',
+        q: 'target',
+        tags: ['testing'],
+      });
     await expect(page.locator('#main-content h1').first()).toHaveText('検索');
   });
 
   test('タグページで追加タグを選ぶと /search へ遷移すること', async ({ page }) => {
-    await page.goto('/tags/music/');
+    await page.goto(testingTagPagePath);
     await openTagFilter(page);
 
-    await toggleFilterCheckbox(page, 'classical');
+    await toggleFilterCheckbox(page, 'e2e');
 
-    await expect(page).toHaveURL('/search?tag=classical&tag=music');
+    await expect(page).toHaveURL(/\/search\?/);
+    await expect
+      .poll(() => page.evaluate(() => {
+        const url = new URL(window.location.href);
+        return {
+          pathname: url.pathname,
+          tags: url.searchParams.getAll('tag'),
+        };
+      }))
+      .toEqual({
+        pathname: '/search',
+        tags: ['e2e', 'testing'],
+      });
     await expect(page.locator('#main-content h1').first()).toHaveText('検索');
   });
 
   test('タグページでタグ演算子や並び順を変えると /search へ遷移すること', async ({ page }) => {
-    await page.goto('/tags/music/');
+    await page.goto(testingTagPagePath);
 
     await changeSearchSelect(page, 0, 'and');
-    await expect(page).toHaveURL('/search?tag=music&tagMode=and');
+    await expect(page).toHaveURL('/search?tag=testing&tagMode=and');
 
-    await page.goto('/tags/music/');
+    await page.goto(testingTagPagePath);
 
     await changeSearchSelect(page, 1, 'date-desc');
-    await expect(page).toHaveURL('/search?tag=music&sort=date-desc');
+    await expect(page).toHaveURL('/search?tag=testing&sort=date-desc');
   });
 });
