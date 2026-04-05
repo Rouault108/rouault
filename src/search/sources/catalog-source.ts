@@ -10,6 +10,7 @@ import {
   normalizeDocumentCanonicalUrl,
   validateResultUrl,
 } from '../../../shared/search/document-url.js';
+import { isSearchVisibleCanonicalUrl } from '../../../shared/search/search-visibility.js';
 import { snippetFromDescription } from '../search-snippet.js';
 import type {
   SearchCatalogItem,
@@ -146,6 +147,9 @@ export async function loadCatalogSourceBatch(input: {
         source: 'catalog',
         candidateRef,
       });
+      return [];
+    }
+    if (!isSearchVisibleCanonicalUrl(canonicalUrl)) {
       return [];
     }
 

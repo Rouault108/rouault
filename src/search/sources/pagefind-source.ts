@@ -10,6 +10,7 @@ import {
   normalizeDocumentCanonicalUrl,
   validateResultUrl,
 } from '../../../shared/search/document-url.js';
+import { isSearchVisibleCanonicalUrl } from '../../../shared/search/search-visibility.js';
 import type { PreparedSearchQuery } from '../../../shared/search/query-preprocessor.js';
 import { snippetFromDescription, snippetFromExcerptHtml } from '../search-snippet.js';
 import type {
@@ -215,6 +216,9 @@ function createPagefindCandidate(data: PagefindFragmentData): SearchCandidate | 
 
   const canonicalUrl = normalizeDocumentCanonicalUrl(validatedUrl.url);
   if (canonicalUrl === null) {
+    return null;
+  }
+  if (!isSearchVisibleCanonicalUrl(canonicalUrl)) {
     return null;
   }
 

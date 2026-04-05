@@ -181,6 +181,85 @@ describe('search-core', () => {
     expect(response.total).to.equal(25);
   });
 
+  it('testing 配下のコンテンツは検索結果から除外すること', async () => {
+    const core = createSearchCore({
+      loadPagefind: () =>
+        Promise.resolve({
+          filters() {
+            return Promise.resolve({});
+          },
+          search() {
+            return Promise.resolve({
+              results: [
+                {
+                  data() {
+                    return Promise.resolve({
+                      url: '/notes/testing/interactive/',
+                      excerpt: '<mark>ジャズ</mark> testing note',
+                      meta: {
+                        title: 'Testing Jazz Fixture',
+                        description: 'ジャズ向け internal testing note',
+                        date: '2026-03-20',
+                        genre: 'testing,jazz',
+                      },
+                    });
+                  },
+                },
+                {
+                  data() {
+                    return Promise.resolve({
+                      url: '/notes/music/jazz/jazz-theory/',
+                      excerpt: '<mark>ジャズ</mark>理論の基礎',
+                      meta: {
+                        title: 'ジャズ理論の基礎',
+                        description: 'ジャズ音楽の基本理論',
+                        date: '2026-02-01',
+                        genre: 'music,jazz',
+                      },
+                    });
+                  },
+                },
+              ],
+              unfilteredResultCount: 2,
+              totalFilters: {
+                genre: {
+                  testing: 1,
+                  music: 1,
+                  jazz: 1,
+                },
+              },
+            });
+          },
+        }),
+      loadSearchCatalog: () =>
+        Promise.resolve([
+          ...catalogItems,
+          {
+            title: 'Testing Jazz Fixture',
+            url: '/notes/testing/interactive/',
+            path: '/notes/testing/interactive/',
+            description: 'ジャズ向け internal testing note',
+            date: '2026-03-20',
+            keywords: ['testing', 'ジャズ'],
+            tags: ['testing', 'jazz'],
+          },
+        ]),
+      now: () => Date.parse('2026-03-23T00:00:00Z'),
+    });
+
+    const response = await core.search({
+      mode: 'explore',
+      q: 'ジャズ',
+      tags: [],
+      tagMode: 'or',
+      sort: 'relevance',
+    });
+
+    expect(response.mode).to.equal('explore');
+    expect(response.items.some((item) => item.url.startsWith('/notes/testing/'))).to.equal(false);
+    expect(response.items.map((item) => item.title)).to.deep.equal(['ジャズ理論の基礎']);
+  });
+
   it('全 source 失敗時は all-sources-failed を返すこと', async () => {
     const core = createSearchCore({
       loadPagefind: () => Promise.reject(new Error('missing pagefind')),
