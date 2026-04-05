@@ -115,6 +115,7 @@ export class SearchTrigger extends LitElement {
       text-overflow: ellipsis;
     }
 
+    button[data-density='auto'],
     button[data-density='compact'] {
       gap: var(--space-1, 4px);
       padding-inline: var(--space-2, 8px);

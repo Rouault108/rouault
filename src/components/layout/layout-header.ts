@@ -390,7 +390,7 @@ export class LayoutHeader extends LitElement {
           ? html`<span slot="compact-center" class="context">${this._compactContextLabel}</span>`
           : nothing}
         <div slot="end" class="slot-group">
-          <ui-search-trigger density=${this.noteLayout ? 'auto' : 'compact'}></ui-search-trigger>
+          <ui-search-trigger density="auto"></ui-search-trigger>
           <ui-dropdown
             data-dropdown="theme"
             align="end"
