@@ -14,13 +14,16 @@ import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
 import { TocMobileSummaryController } from '../../toc/toc-mobile-summary-controller.js';
 import { isHTMLElement } from '../../lib/dom.js';
 import '../ui/toc/toc.js';
-import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc.js';
+import type { Heading, UiTocActiveChangeDetail, UiTocHostState } from '../ui/toc/toc.js';
 
 interface SyncableTocElement extends HTMLElement {
   headers: Heading[];
   activeId: string;
   refresh?: () => void;
   requestUpdate?: () => void;
+  applyHostState?: (state: UiTocHostState) => void;
+  matchesHostState?: (state: UiTocHostState) => boolean;
+  renderedHeadingCount?: () => number;
 }
 
 const hasSameHeadingIds = (left: readonly Heading[], right: readonly Heading[]): boolean =>
@@ -530,6 +533,55 @@ export class LayoutToc extends LitElement {
     });
   }
 
+  private _createTocHostState(headings: Heading[]): UiTocHostState {
+    return {
+      headers: headings,
+      activeId: this._activeId,
+    };
+  }
+
+  private _replaceStaleToc(toc: SyncableTocElement, state: UiTocHostState): void {
+    const replacement = document.createElement('ui-toc') as SyncableTocElement;
+    replacement.addEventListener(
+      'ui-toc-active-change',
+      this._onTocActiveChange as EventListener,
+    );
+
+    if (replacement.applyHostState) {
+      replacement.applyHostState(state);
+    }
+    if (!replacement.applyHostState) {
+      replacement.headers = [...state.headers];
+      replacement.activeId = state.activeId;
+      replacement.requestUpdate?.();
+      replacement.refresh?.();
+    }
+
+    toc.replaceWith(replacement);
+  }
+
+  private _isTocSynchronized(toc: SyncableTocElement, state: UiTocHostState): boolean {
+    const matchesState = toc.matchesHostState?.(state);
+    if (matchesState === false) {
+      return false;
+    }
+
+    const renderedHeadingCount =
+      toc.renderedHeadingCount?.() ??
+      toc.shadowRoot?.querySelectorAll('.toc-link-label').length ??
+      0;
+
+    if (renderedHeadingCount !== state.headers.length) {
+      return false;
+    }
+
+    if (matchesState === true) {
+      return true;
+    }
+
+    return hasSameHeadingIds(toc.headers, state.headers) && toc.activeId === state.activeId;
+  }
+
   private _syncRenderedTocProps(): void {
     if (!this._tocReady || this._visibleHeadings.length === 0) {
       return;
@@ -547,27 +599,25 @@ export class LayoutToc extends LitElement {
 
     this._upgradeNestedShadowHosts();
 
-    // SSR 済みの ui-toc は hydration 直後に property part が再注入されないことがあるため、
-    // host 側で見出し集合と activeId を明示同期して DOM を実状態へ寄せる。
+    // SSR 起点の ui-toc は hydration 後に property 再注入が取りこぼされることがある。
+    // host state と child state の一致を明示検査し、差分が残る場合は新しい client-only 要素へ置換する。
+    const state = this._createTocHostState(this._visibleHeadings);
     const tocs = this.renderRoot.querySelectorAll<SyncableTocElement>('ui-toc');
+
     for (const toc of tocs) {
-      const renderedLabelCount = toc.shadowRoot?.querySelectorAll('.toc-link-label').length ?? 0;
-      if (renderedLabelCount !== resolvedHeadings.length) {
-        const replacement = document.createElement('ui-toc') as SyncableTocElement;
-        replacement.headers = resolvedHeadings;
-        replacement.activeId = this._activeId;
-        replacement.addEventListener(
-          'ui-toc-active-change',
-          this._onTocActiveChange as EventListener,
-        );
-        toc.replaceWith(replacement);
-        continue;
+      if (toc.applyHostState) {
+        toc.applyHostState(state);
+      }
+      if (!toc.applyHostState) {
+        toc.headers = [...state.headers];
+        toc.activeId = state.activeId;
+        toc.requestUpdate?.();
+        toc.refresh?.();
       }
 
-      toc.headers = this._visibleHeadings;
-      toc.activeId = this._activeId;
-      toc.requestUpdate?.();
-      toc.refresh?.();
+      if (!this._isTocSynchronized(toc, state)) {
+        this._replaceStaleToc(toc, state);
+      }
     }
   }
 
