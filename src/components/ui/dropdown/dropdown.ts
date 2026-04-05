@@ -623,8 +623,21 @@ export class Dropdown extends LitElement {
         detail: event.detail,
       }),
     );
-    this.close(true);
+    // ポインター選択後は trigger へフォーカスを戻さず、不要な focus ring の残留を避ける。
+    this.close(false);
+    this._blurTriggerIfActive();
   };
+
+  private _blurTriggerIfActive(): void {
+    const trigger = this._getTriggerElement();
+    if (!trigger) {
+      return;
+    }
+
+    if (trigger === trigger.ownerDocument.activeElement) {
+      trigger.blur();
+    }
+  }
 
   private _handleTriggerClick = (event: Event): void => {
     if (this.disabled) {

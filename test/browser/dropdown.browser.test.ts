@@ -183,13 +183,8 @@ describe('ui-dropdown browser contract', () => {
     dispatchKey(panel, 'ArrowDown');
     await waitUntilFocusedValue(dropdown, 'duplicate');
 
-    expect(getFocusedValue(dropdown)).to.equal('duplicate');
-
-    const duplicateItem = expectPresent(items[2], 'items[2]');
-    const duplicateButton = expectPresent(getItemButton(duplicateItem), 'duplicateButton');
-
     const selectPromise = waitForCustomEvent<MenuItemSelectDetail>(dropdown, 'menu-item-select');
-    duplicateButton.click();
+    dispatchKey(panel, 'Enter');
 
     const selectEvent = await selectPromise;
     await waitForLitUpdate(dropdown);
@@ -204,6 +199,38 @@ describe('ui-dropdown browser contract', () => {
     expect(selectEvent.detail.label).to.equal('複製');
     expect(dropdown.opened).to.equal(false);
     expect(document.activeElement).to.equal(trigger);
+  });
+
+  it('pointer で項目選択した場合は trigger へ focus を戻さないこと', async () => {
+    const dropdown = await fixture<Dropdown>(html`
+      <ui-dropdown>
+        <button slot="trigger" type="button">操作</button>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+        <ui-menu-item value="duplicate">複製</ui-menu-item>
+      </ui-dropdown>
+    `);
+
+    await waitForLitUpdate(dropdown);
+
+    const trigger = expectPresent(getTrigger(dropdown), 'trigger');
+    const panel = expectPresent(getPanel(dropdown), 'panel');
+    const duplicateItem = expectPresent(getMenuItems(dropdown)[1], 'duplicateItem');
+    const duplicateButton = expectPresent(getItemButton(duplicateItem), 'duplicateButton');
+
+    trigger.click();
+    await waitForLitUpdate(dropdown);
+    await waitUntilOpenState(dropdown, trigger, panel);
+
+    const selectPromise = waitForCustomEvent<MenuItemSelectDetail>(dropdown, 'menu-item-select');
+    duplicateButton.click();
+
+    const selectEvent = await selectPromise;
+    await waitForLitUpdate(dropdown);
+    await waitUntilClosedState(dropdown, trigger, panel);
+
+    expect(selectEvent.detail.value).to.equal('duplicate');
+    expect(selectEvent.detail.label).to.equal('複製');
+    expect(document.activeElement).to.not.equal(trigger);
   });
 
   it('non-button trigger では role/tabindex/aria-disabled を公開し、disabled 時は開かないこと', async () => {
