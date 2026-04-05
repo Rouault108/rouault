@@ -294,7 +294,7 @@ Rouault の Typography は、**UI 用の密度管理**と**長文読書面の可
 | `--line-height-tight`   | `1.25`     | 密度高め       | 見出し                   |
 | `--line-height-normal`  | `1.5`      | 標準本文       | UI 本文                  |
 | `--line-height-relaxed` | `1.75`     | 読みやすさ重視 | 長文、説明文             |
-| `--line-height-code`    | `1.45`     | 等幅コード用   | code block / inline code |
+| `--line-height-code`    | `1.35`     | 等幅コード用   | code block / inline code |
 
 ### 3.6 Reading Typography Tokens
 

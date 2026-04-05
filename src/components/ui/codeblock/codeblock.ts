@@ -227,7 +227,7 @@ export class CodeBlock extends LitElement {
         var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-3, 12px))) -
           (
             var(--control-height-sm, 24px) -
-              (var(--text-sm, 0.8125rem) * var(--line-height-code, 1.45))
+              (var(--text-sm, 0.8125rem) * var(--line-height-code, 1))
           ) /
           2
       );
