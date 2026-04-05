@@ -180,14 +180,16 @@ export class Dropdown extends LitElement {
     if (changedProperties.has('opened')) {
       const previousOpened = changedProperties.get('opened');
       const wasOpened = typeof previousOpened === 'boolean' ? previousOpened : false;
+      const didOpen = !wasOpened && this.opened;
+      const didClose = wasOpened && !this.opened;
 
-      if (this.opened) {
+      if (didOpen) {
         this._onOpen();
-      } else {
+      } else if (didClose) {
         this._onClose();
       }
 
-      if (wasOpened !== this.opened) {
+      if (didOpen || didClose) {
         this.dispatchEvent(
           new CustomEvent(this.opened ? 'open' : 'close', {
             bubbles: true,

@@ -115,6 +115,45 @@ const waitUntilFocusedValue = async (dropdown: Dropdown, value: string): Promise
 };
 
 describe('ui-dropdown browser contract', () => {
+  it('初回レンダリング時に close 副作用を発生させず、trigger へ focus を戻さないこと', async () => {
+    const sentinel = document.createElement('button');
+    sentinel.type = 'button';
+    sentinel.textContent = 'sentinel';
+    document.body.append(sentinel);
+    sentinel.focus();
+
+    let closeEventCount = 0;
+
+    try {
+      const dropdown = await fixture<Dropdown>(html`
+        <ui-dropdown
+          @close=${() => {
+            closeEventCount += 1;
+          }}
+        >
+          <button slot="trigger" type="button">メニュー</button>
+          <ui-menu-item value="edit">編集</ui-menu-item>
+          <ui-menu-item value="copy">コピー</ui-menu-item>
+        </ui-dropdown>
+      `);
+
+      await waitForLitUpdate(dropdown);
+      await waitMs(0);
+
+      const trigger = expectPresent(getTrigger(dropdown), 'trigger');
+      const panel = expectPresent(getPanel(dropdown), 'panel');
+
+      expect(dropdown.opened).to.equal(false);
+      expect(trigger.getAttribute('aria-expanded')).to.equal('false');
+      expect(panel.getAttribute('aria-hidden')).to.equal('true');
+      expect(document.activeElement).to.equal(sentinel);
+      expect(document.activeElement).to.not.equal(trigger);
+      expect(closeEventCount).to.equal(0);
+    } finally {
+      sentinel.remove();
+    }
+  });
+
   it('open/close と trigger aria / panel state を公開すること', async () => {
     const dropdown = await fixture<Dropdown>(html`
       <ui-dropdown side="bottom" align="start">
