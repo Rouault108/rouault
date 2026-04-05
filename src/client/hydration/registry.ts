@@ -75,10 +75,6 @@ export const HYDRATION_REGISTRY = [
     loader: () => import('../../components/ui/card/card.js'),
   },
   {
-    tag: 'about-page',
-    loader: () => import('../../components/about/about-page.js'),
-  },
-  {
     tag: 'search-page',
     loader: () => import('../../components/search/search-page.js'),
   },

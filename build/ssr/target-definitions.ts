@@ -15,7 +15,6 @@ export type SsrAdapterKind =
   | 'shadow-default'
   | 'shadow-article-header'
   | 'light-app-router'
-  | 'light-about-page'
   | 'light-layout-footer';
 
 export interface SsrDocumentStyleDefinition {
@@ -78,12 +77,6 @@ export const SSR_COMPONENT_DEFINITIONS = [
     ssr: 'shadow',
     profiles: ['shell', 'page'],
     adapterKind: 'shadow-default',
-  },
-  {
-    tag: 'about-page',
-    ssr: 'light',
-    profiles: ['page'],
-    adapterKind: 'light-about-page',
   },
   {
     tag: 'search-page',

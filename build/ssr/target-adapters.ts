@@ -6,7 +6,6 @@ import type { TemplateResult } from 'lit';
 import { html, unsafeStatic } from 'lit/static-html.js';
 
 import { AppRouter } from '../../src/components/app/app-router.js';
-import { AboutPage } from '../../src/components/about/about-page.js';
 import { LayoutFooter } from '../../src/components/layout/layout-footer.js';
 
 import '../../src/components/ui/icon/icon.js';
@@ -152,14 +151,6 @@ const renderAppRouterLightElement = async (
   return `<app-router${serializeAttributes(attributes)}>${rendered}</app-router>`;
 };
 
-const renderAboutPageLightElement = async (
-  attributes: readonly SsrAttribute[],
-): Promise<string> => {
-  const aboutPage = new AboutPage();
-  const rendered = await collectResult(renderThunked(aboutPage.render()));
-  return `<about-page${serializeAttributes(attributes)}>${rendered}</about-page>`;
-};
-
 const renderLayoutFooterLightElement = async (
   attributes: readonly SsrAttribute[],
 ): Promise<string> => {
@@ -207,13 +198,6 @@ const createSsrTargetAdapter = (definition: SsrComponentDefinition): SsrTargetAd
       return createSsrTargetAdapterResult(
         tag,
         renderAppRouterLightElement,
-        definition.documentStyle,
-      );
-
-    case 'light-about-page':
-      return createSsrTargetAdapterResult(
-        tag,
-        renderAboutPageLightElement,
         definition.documentStyle,
       );
 

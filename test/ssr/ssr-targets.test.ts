@@ -63,10 +63,12 @@ describe('component manifest / ssr targets', () => {
   });
 
   it('独立ページ系 UI タグを page target に含めること', () => {
-    expect(SSR_PAGE_TARGET_TAGS).toContain('about-page');
     expect(SSR_PAGE_TARGET_TAGS).toContain('search-page');
     expect(SSR_PAGE_TARGET_TAGS).toContain('tag-page');
+    expect(SSR_PAGE_TARGET_TAGS).toContain('corpus-page');
+    expect(SSR_PAGE_TARGET_TAGS).toContain('corpora-overview-page');
     expect(SSR_PAGE_TARGET_TAGS).toContain('not-found-page');
+    expect(SSR_PAGE_TARGET_TAGS).not.toContain('about-page');
   });
 
   it('layout-toc の SSR が Node 環境で HTMLElement を参照せずに完了すること', async () => {

@@ -12,14 +12,19 @@ describe('AboutPageTemplate', () => {
     expect(data.permalink).toBe('/about/index.html');
   });
 
-  it('独立した about-page 要素を描画すること', () => {
+  it('about を静的 HTML として描画し、TOC を独立して hydration 可能にすること', () => {
     const template = new AboutPageTemplate();
     const rendered = template.render();
 
-    expect(rendered).toContain('<about-page');
-    expect(rendered).toContain('data-hydration-scope="about-page"');
+    expect(rendered).toContain('<section class="about-shell">');
+    expect(rendered).toContain('id="about-page-content" class="about-prose"');
+    expect(rendered).toContain('About Rouault');
+    expect(rendered).toContain('個人ノートを、静かに読むためのアプリケーション');
+    expect(rendered).toContain('<layout-toc');
+    expect(rendered).toContain('data-hydration-scope="about-toc"');
     expect(rendered).toContain('data-hydration-capability="interactive"');
     expect(rendered).toContain('data-hydration-trigger="initial"');
+    expect(rendered).not.toContain('<about-page');
     expect(rendered).not.toContain('<layout-sidebar');
     expect(rendered).not.toContain('<search-page');
   });

@@ -71,11 +71,11 @@ const replaceNodeWithHtml = (
   parentNode: Parse5ParentNode,
   currentNode: Parse5ChildNode,
   html: string,
-): void => {
+): Parse5ChildNode[] => {
   const nextFragment = parse5.parseFragment(html);
   const currentIndex = parentNode.childNodes.indexOf(currentNode);
   if (currentIndex < 0) {
-    return;
+    return [];
   }
 
   for (const child of nextFragment.childNodes) {
@@ -83,6 +83,7 @@ const replaceNodeWithHtml = (
   }
 
   parentNode.childNodes.splice(currentIndex, 1, ...nextFragment.childNodes);
+  return [...nextFragment.childNodes];
 };
 
 const cloneAttributes = (attributes: readonly Parse5Attribute[]): SsrAttribute[] =>
@@ -119,8 +120,14 @@ export const transformHtmlWithLitSsr = async (
         serializeInnerHtml(childNode),
       );
 
-      replaceNodeWithHtml(node, childNode, renderedHtml);
+      const insertedNodes = replaceNodeWithHtml(node, childNode, renderedHtml);
       renderedTagNames.add(childNode.tagName);
+
+      for (const insertedNode of insertedNodes) {
+        if ('childNodes' in insertedNode && Array.isArray(insertedNode.childNodes)) {
+          await visit(insertedNode);
+        }
+      }
     }
   };
 

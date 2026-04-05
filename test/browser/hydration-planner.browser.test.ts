@@ -38,7 +38,7 @@ describe('planHydration', () => {
   it('scope がない root では fallback せず空配列を返すこと', async () => {
     const root = await fixture<HTMLElement>(html`
       <main>
-        <about-page></about-page>
+        <section class="plain-page"></section>
       </main>
     `);
 
