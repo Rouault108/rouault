@@ -1,5 +1,5 @@
 import { css, html, LitElement, nothing } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property, query, state } from 'lit/decorators.js';
 import '../ui/icon/icon.js';
 import '../ui/header/header.js';
 import '../ui/search-trigger/search-trigger.js';
@@ -178,6 +178,9 @@ export class LayoutHeader extends LitElement {
   @state()
   private _themePreference: ThemePreference = 'system';
 
+  @query('[data-dropdown="theme"]')
+  private _themeDropdownElement!: HTMLElement | null;
+
   private _mediaQuery: MediaQueryList | null = null;
 
   override connectedCallback(): void {
@@ -244,7 +247,19 @@ export class LayoutHeader extends LitElement {
 
     this._themePreference = nextPreference;
     applyThemePreference(nextPreference);
+    void this._settleThemeDropdownFocus();
   };
+
+  private async _settleThemeDropdownFocus(): Promise<void> {
+    this._blurThemeDropdownTrigger();
+    await this.updateComplete;
+    this._blurThemeDropdownTrigger();
+  }
+
+  private _blurThemeDropdownTrigger(): void {
+    const trigger = this._themeDropdownElement?.querySelector<HTMLElement>('[slot="trigger"]');
+    trigger?.blur();
+  }
 
   private get _breadcrumbItems(): BreadcrumbItem[] {
     const normalized = this.breadcrumbsJson.trim();
@@ -376,7 +391,11 @@ export class LayoutHeader extends LitElement {
           : nothing}
         <div slot="end" class="slot-group">
           <ui-search-trigger density=${this.noteLayout ? 'auto' : 'compact'}></ui-search-trigger>
-          <ui-dropdown align="end" @menu-item-select=${this._handleThemeSelect}>
+          <ui-dropdown
+            data-dropdown="theme"
+            align="end"
+            @menu-item-select=${this._handleThemeSelect}
+          >
             <ui-button slot="trigger" variant="ghost">
               <span class="theme-trigger-label">
                 <ui-icon
