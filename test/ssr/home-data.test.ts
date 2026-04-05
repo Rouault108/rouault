@@ -70,6 +70,14 @@ describe('buildHomePageProjection', () => {
         date: '2026-03-11',
         kind: 'testing',
       }),
+      createHomeNote({
+        title: 'Testing Reader',
+        permalink: '/notes/testing/reader-basic/',
+        slug: 'testing/reader-basic',
+        description: 'reader note in testing corpus',
+        date: '2026-03-12',
+        kind: 'reader',
+      }),
       ...Array.from({ length: 11 }, (_value, index) => {
         const noteNumber = index + 4;
         const date = new Date(Date.UTC(2026, 2, 9 - index)).toISOString().slice(0, 10);
@@ -116,6 +124,7 @@ describe('buildHomePageProjection', () => {
     });
     expect(home.notes.some((note) => note.title === 'Beta')).toBe(false);
     expect(home.notes.some((note) => note.title === 'Testing')).toBe(false);
+    expect(home.notes.some((note) => note.title === 'Testing Reader')).toBe(false);
     expect(home.notes.some((note) => note.title === 'Note 14')).toBe(false);
   });
 });
