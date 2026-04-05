@@ -177,4 +177,43 @@ describe('buildNoteNavigationModel', () => {
       findNode(model.sidebarTree as SidebarTreeNode[], 'music/classical/mozart')?.icon,
     ).to.equal('music');
   });
+
+  it('通常 reader note の sidebar には testing corpus を混在させないこと', () => {
+    const model = buildNoteNavigationModel({
+      currentNote: {
+        slug: 'music/classical/mozart',
+        title: 'モーツァルト',
+        permalink: '/notes/music/classical/mozart',
+        noteKind: 'leaf',
+        kind: 'reader',
+      },
+      notes: [
+        {
+          slug: 'music/classical/mozart',
+          title: 'モーツァルト',
+          permalink: '/notes/music/classical/mozart',
+          noteKind: 'leaf',
+          kind: 'reader',
+        },
+        {
+          slug: 'testing/reader-basic',
+          title: 'Reader Basic',
+          permalink: '/notes/testing/reader-basic',
+          noteKind: 'leaf',
+          kind: 'reader',
+        },
+        {
+          slug: 'testing',
+          title: 'テスト',
+          permalink: '/notes/testing',
+          noteKind: 'directory-index',
+          directoryPath: 'testing',
+          kind: 'testing',
+        },
+      ],
+    });
+
+    expect(findNode(model.sidebarTree as SidebarTreeNode[], 'testing')).to.equal(null);
+    expect(findNode(model.sidebarTree as SidebarTreeNode[], 'testing/reader-basic')).to.equal(null);
+  });
 });

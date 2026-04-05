@@ -130,11 +130,37 @@ const isSidebarVisible = (note: NoteNavigationEntry): boolean =>
 const isBreadcrumbVisible = (note: NoteNavigationEntry): boolean =>
   resolveNoteSurfacePolicy(note.kind).breadcrumb;
 
+const resolveTopLevelCorpusKey = (slug: string): string => {
+  const [firstSegment] = slug.split('/').filter((segment) => segment.length > 0);
+  return firstSegment ?? '';
+};
+
+const shouldSuppressSidebarCorpus = (
+  note: NoteNavigationEntry,
+  currentNote: NoteNavigationEntry | null | undefined,
+): boolean => {
+  const noteSlug = toTrimmedString(note.slug);
+  if (noteSlug.length === 0) {
+    return false;
+  }
+
+  const noteCorpusKey = resolveTopLevelCorpusKey(noteSlug);
+  if (noteCorpusKey !== 'testing') {
+    return false;
+  }
+
+  const currentSlug = toTrimmedString(currentNote?.slug);
+  const currentCorpusKey = resolveTopLevelCorpusKey(currentSlug);
+  return currentCorpusKey !== 'testing';
+};
+
 const mergeCurrentNoteIntoSidebarNotes = (
   currentNote: NoteNavigationEntry | null | undefined,
   notes: readonly NoteNavigationEntry[],
 ): NoteNavigationEntry[] => {
-  const base = notes.filter((note) => isSidebarVisible(note));
+  const base = notes.filter(
+    (note) => isSidebarVisible(note) && !shouldSuppressSidebarCorpus(note, currentNote),
+  );
 
   if (!currentNote || !isSidebarVisible(currentNote)) {
     return [...base];
