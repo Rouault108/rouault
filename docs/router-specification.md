@@ -911,16 +911,21 @@ router core の公開契約において、**後処理は durable commit の成�
 
 - router core は、描画後 DOM に依存する具体手順を必須責務として内蔵しません。
 - `postCommitController` が存在する場合、durable commit 完了後にそれを呼び出します。
-- `postCommitController` の失敗は `completed + degraded` として扱い、durable commit 済み文書を巻き戻してはなりません。
+- `postCommitController` の失敗は `completed + degraded` として扱い、durable commit 済み文書を巻き戻してはいけません。
+- navigation URL が hash を持つ場合、推奨既定実装のスクロール処理は先頭復帰ではなく hash target への移動を優先してよいものとします。
 
 ### 単体 `Router` 利用時の推奨既定実装
 
 単体利用時には、`postCommitController` の既定実装として次を採用してよいものとします。
 
 1. 再初期化フックを実行する
-2. `window.scrollTo({ top: 0, left: 0, behavior: 'instant' })` を行う
-3. outlet 内の `h1, h2` へフォーカスし、なければ outlet 自身へフォーカスする
-4. `aria-live="polite"` 相当の読み上げ通知を行う
+2. navigation URL に hash がある場合は、2 回の `requestAnimationFrame` 後に該当要素へスクロールする
+3. navigation URL に hash がない場合は、`window.scrollTo({ top: 0, left: 0, behavior: 'instant' })` を行う
+4. outlet 内の `h1, h2` へフォーカスし、なければ outlet 自身へフォーカスする
+5. `aria-live="polite"` 相当の読み上げ通知を行う
+
+このとき、**hash が存在する full navigation でも、先頭スクロールより hash target へのスクロールを優先**しなければなりません。  
+state-only navigation における hash スクロールは URL state 更新のみを伴う特殊経路ですが、full navigation においても navigation URL が hash を持つ場合は、後処理の推奨既定実装として同じく hash を尊重してよいものとします。
 
 ただし、これは **推奨既定実装** であって router core の durable commit 契約ではありません。
 

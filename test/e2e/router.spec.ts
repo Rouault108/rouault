@@ -382,4 +382,53 @@ test.describe('Router Navigation', () => {
     await expect(panels.nth(1)).not.toHaveAttribute('hidden', '');
     await expect(page).toHaveURL(`${tabsTestPath}?tab=rust#rustのhello-world`);
   });
+
+  test('hash 付きで再読み込みした場合は該当見出し位置へ復元されること', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto(`${testNotePath}#7.11%20%E3%81%BE%E3%81%A8%E3%82%81`);
+
+    await expect(page.locator('#7\\.11\\ まとめ')).toHaveCount(1);
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              resolve();
+            });
+          });
+        }),
+    );
+
+    await page.reload();
+
+    await expect(page.locator('#7\\.11\\ まとめ')).toHaveCount(1);
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              resolve();
+            });
+          });
+        }),
+    );
+
+    const result = await page.evaluate(() => {
+      const target = document.getElementById('7.11 まとめ');
+      if (!(target instanceof HTMLElement)) {
+        return null;
+      }
+
+      const rect = target.getBoundingClientRect();
+      return {
+        hash: decodeURIComponent(window.location.hash),
+        top: rect.top,
+      };
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.hash).toBe('#7.11 まとめ');
+    expect(result?.top ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(160);
+    expect(result?.top ?? Number.NEGATIVE_INFINITY).toBeGreaterThanOrEqual(-40);
+  });
 });

@@ -49,7 +49,10 @@ export class AppRouterPostRenderController implements ReactiveController {
           this.clearTimer = null;
         }, 1000);
 
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        const didScrollToHash = await this.scrollToHash(context.url);
+        if (!didScrollToHash) {
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        }
 
         const main = hostElement.querySelector('#main-content');
         if (main instanceof HTMLElement) {
@@ -59,10 +62,10 @@ export class AppRouterPostRenderController implements ReactiveController {
     };
   }
 
-  private async scrollToHash(url: string): Promise<void> {
+  private async scrollToHash(url: string): Promise<boolean> {
     const hash = readDecodedHash(url);
     if (hash.length === 0) {
-      return;
+      return false;
     }
 
     await new Promise<void>((resolve) => {
@@ -74,8 +77,11 @@ export class AppRouterPostRenderController implements ReactiveController {
     });
 
     const target = document.getElementById(hash);
-    if (target instanceof HTMLElement) {
-      target.scrollIntoView({ block: 'start', inline: 'nearest' });
+    if (!(target instanceof HTMLElement)) {
+      return false;
     }
+
+    target.scrollIntoView({ block: 'start', inline: 'nearest' });
+    return true;
   }
 }

@@ -441,6 +441,65 @@ describe('app-router', () => {
     }
   });
 
+  it('full navigation でも hash 付き URL なら先頭ではなく hash target へ scroll すること', async () => {
+    let scrollToCalled = false;
+    Object.defineProperty(window, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: () => {
+        scrollToCalled = true;
+      },
+    });
+
+    let scrollTargetId = '';
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      writable: true,
+      value(this: HTMLElement) {
+        scrollTargetId = this.id;
+      },
+    });
+
+    globalThis.fetch = () =>
+      Promise.resolve(
+        new Response(
+          `
+            <!doctype html>
+            <html>
+              <head><title>Hash Target Page</title></head>
+              <body>
+                <main>
+                  <h1>Hash Target Page</h1>
+                  <section style="height: 1200px"></section>
+                  <h2 id="details-heading">Details</h2>
+                </main>
+              </body>
+            </html>
+          `,
+          { status: 200 },
+        ),
+      );
+
+    host = await fixture<AppRouterElement>(
+      html`<app-router
+        ><main><h1>SSR Title</h1></main></app-router
+      >`,
+    );
+    const appHost = host;
+    await appHost.updateComplete;
+
+    const result = await appHost.navigate('/hash-target#details-heading');
+
+    await waitUntil(
+      () => scrollTargetId === 'details-heading',
+      'full navigation 後に hash target へ scroll すること',
+    );
+
+    expect(result.stateOnly).to.equal(false);
+    expect(scrollTargetId).to.equal('details-heading');
+    expect(scrollToCalled).to.equal(false);
+  });
+
   it('serverContent に branded 本文を与えた場合も描画できること', async () => {
     host = await fixture<AppRouterElement>(html`<app-router></app-router>`);
     const appHost = host as AppRouterElement & { serverContent: unknown };
