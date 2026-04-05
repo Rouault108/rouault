@@ -32,7 +32,8 @@ const ABOUT_SECTIONS: readonly AboutSection[] = [
       html`当サイトの文章は特記がない限り、<a href="https://creativecommons.org/licenses/by/4.0/"
           >Creative Commons Attribution 4.0 International License（CC BY 4.0）</a
         >のもとで利用を許諾します。`,
-      html`ただし、引用部分、第三者著作物、外部サイトのスクリーンショット、ロゴ・商標、埋め込みコンテンツその他個別注記のある素材は、各権利者に権利が帰属し、上記 CC BY 4.0 の対象外です。`,
+      html`ただし、引用部分、第三者著作物、外部サイトのスクリーンショット、ロゴ・商標、埋め込みコンテンツその他個別注記のある素材は、各権利者に権利が帰属し、上記
+      CC BY 4.0 の対象外です。`,
       html`個別の注記がある場合は、当該注記を優先します。`,
     ],
   },
@@ -41,7 +42,10 @@ const ABOUT_SECTIONS: readonly AboutSection[] = [
     heading: '技術構成',
     body: [
       html`Rouaultは、静的生成を中核に据えつつ、必要な箇所だけに動的な振る舞いを与える構成を採っています。コンテンツはMarkdownを中心に管理し、UIはLitとTypeScriptで実装しています。`,
-      html`表示面では、検索、目次、サイドバー、コード表示、数式、画像などを扱いますが、どの機能も本文の可読性を損なわないことを優先しています。実装や検証の詳細は継続的に更新されるため、技術的な正本は<a href="https://github.com/Rouault108/rouault">リポジトリー</a>のREADMEおよびdocsを参照してください。`,
+      html`表示面では、検索、目次、サイドバー、コード表示、数式、画像などを扱いますが、どの機能も本文の可読性を損なわないことを優先しています。実装や検証の詳細は継続的に更新されるため、技術的な正本は<a
+          href="https://github.com/Rouault108/rouault"
+          >リポジトリー</a
+        >のREADMEおよびdocsを参照してください。`,
     ],
   },
 ] as const;

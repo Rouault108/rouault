@@ -261,7 +261,9 @@ test.describe('Router Navigation', () => {
     }
 
     expect(permalinkBox.x).toBeGreaterThanOrEqual(headingBox.x);
-    expect(permalinkBox.x + permalinkBox.width).toBeLessThanOrEqual(headingBox.x + headingBox.width);
+    expect(permalinkBox.x + permalinkBox.width).toBeLessThanOrEqual(
+      headingBox.x + headingBox.width,
+    );
   });
 
   test('未知のURLへ SPA 遷移したとき 404 ページへ切り替わること', async ({ page }) => {

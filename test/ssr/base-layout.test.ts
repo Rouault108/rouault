@@ -65,7 +65,9 @@ describe('BaseLayout', () => {
 
     expect(rendered).toContain('data-hydration-capability="static"');
     expect(rendered).toContain('data-hydration-trigger="initial"');
-    expect(rendered).toContain('<layout-footer data-hydration-capability="static" data-hydration-trigger="initial"></layout-footer>');
+    expect(rendered).toContain(
+      '<layout-footer data-hydration-capability="static" data-hydration-trigger="initial"></layout-footer>',
+    );
   });
 
   it('buildMetadata の buildLabel を footer 属性へ流し込むこと', () => {

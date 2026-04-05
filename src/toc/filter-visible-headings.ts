@@ -71,8 +71,8 @@ export const filterVisibleHeadings = (
   });
 
 const resolvePanelTabValue = (tabsHost: HTMLElement, panel: HTMLElement): string | null => {
-  const children = Array.from(tabsHost.children).filter(
-    (child): child is HTMLElement => isHTMLElement(child),
+  const children = Array.from(tabsHost.children).filter((child): child is HTMLElement =>
+    isHTMLElement(child),
   );
 
   const panels = children.filter((child) => child.getAttribute('slot') === 'panel');
@@ -96,8 +96,8 @@ export const resolveTabValueForDescendant = (
   tabsHost: HTMLElement,
   target: HTMLElement,
 ): string | null => {
-  const children = Array.from(tabsHost.children).filter(
-    (child): child is HTMLElement => isHTMLElement(child),
+  const children = Array.from(tabsHost.children).filter((child): child is HTMLElement =>
+    isHTMLElement(child),
   );
 
   const panels = children.filter((child) => child.getAttribute('slot') === 'panel');

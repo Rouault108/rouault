@@ -69,7 +69,13 @@ export class AppRouterPostRenderController implements ReactiveController {
       }
 
       await new Promise<void>((resolve) => {
-        window.addEventListener('load', () => { resolve(); }, { once: true });
+        window.addEventListener(
+          'load',
+          () => {
+            resolve();
+          },
+          { once: true },
+        );
       });
     };
 

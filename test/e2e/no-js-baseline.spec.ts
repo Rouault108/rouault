@@ -21,16 +21,22 @@ test.describe('No-JS baseline', () => {
   test('ノートページを直接アクセスで初期表示できること', async ({ page }) => {
     await page.goto(sidebarSourcePath);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Sidebar Scroll Source' }).first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Sidebar Scroll Source' }).first(),
+    ).toBeVisible();
     await expect(page).toHaveURL(sidebarSourcePath);
   });
 
   test('ノートページが SSR シェルと本文を初期表示すること', async ({ page }) => {
     await page.goto(sidebarSourcePath);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Sidebar Scroll Source' }).first()).toBeVisible();
     await expect(
-      page.locator('text=サイドバーのルート遷移時に現在地へ寄せる挙動を検証するための遷移元です。').first(),
+      page.getByRole('heading', { level: 1, name: 'Sidebar Scroll Source' }).first(),
+    ).toBeVisible();
+    await expect(
+      page
+        .locator('text=サイドバーのルート遷移時に現在地へ寄せる挙動を検証するための遷移元です。')
+        .first(),
     ).toBeVisible();
 
     await expect(page.locator('layout-header')).toHaveCount(1);
@@ -60,9 +66,7 @@ test.describe('No-JS baseline', () => {
     await expect(firstCodeGroup).toContainText('誤り例');
   });
 
-  test('タグページが JavaScript 無効時も search-page host を初期配置すること', async ({
-    page,
-  }) => {
+  test('タグページが JavaScript 無効時も search-page host を初期配置すること', async ({ page }) => {
     await page.goto('/tags/testing/');
 
     await expect(page.locator('#main-content search-page')).toHaveCount(1);

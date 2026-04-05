@@ -57,9 +57,7 @@ const readRequiredEnv = (name: string): string => {
 
 const validateBareBucketName = (bucketName: string): string => {
   if (bucketName.includes('://') || bucketName.includes('/')) {
-    throw new Error(
-      `[media] R2_BUCKET_NAME must be a bare bucket name, but got: ${bucketName}`,
-    );
+    throw new Error(`[media] R2_BUCKET_NAME must be a bare bucket name, but got: ${bucketName}`);
   }
   return bucketName;
 };
@@ -235,9 +233,7 @@ const uploadMediaObjects = async (): Promise<void> => {
   const credentials = getCredentials();
   const client = createS3Client(credentials);
   const manifest = await loadManifest();
-  const items = Object.entries(manifest.items).sort(([left], [right]) =>
-    left.localeCompare(right),
-  );
+  const items = Object.entries(manifest.items).sort(([left], [right]) => left.localeCompare(right));
 
   console.log(
     `[media] starting upload: bucket=${credentials.bucketName}, itemCount=${String(items.length)}`,

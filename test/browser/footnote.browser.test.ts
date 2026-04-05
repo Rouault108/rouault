@@ -3,7 +3,12 @@ import '../../src/components/ui/footnote/footnote.js';
 import '../../src/components/ui/popover/popover.js';
 import type { Footnote } from '../../src/components/ui/footnote/footnote.js';
 import type { UiPopover } from '../../src/components/ui/popover/popover.js';
-import { dispatchKey, nextAnimationFrame, waitForLitUpdate, waitMs } from './helpers/wait-for-lit.js';
+import {
+  dispatchKey,
+  nextAnimationFrame,
+  waitForLitUpdate,
+  waitMs,
+} from './helpers/wait-for-lit.js';
 
 const supportsPopoverApi = (): boolean =>
   typeof HTMLElement !== 'undefined' &&
@@ -286,7 +291,12 @@ describe('ui-footnote browser contract', () => {
     dispatchKey(popover, 'Escape');
     await closedByEscape;
     await waitForLitUpdate(host);
-    await waitUntil(() => document.activeElement === trigger, 1000, 20, 'trigger へ focus が戻りません');
+    await waitUntil(
+      () => document.activeElement === trigger,
+      1000,
+      20,
+      'trigger へ focus が戻りません',
+    );
 
     expect(isPopoverOpen(popover)).to.equal(false);
     expect(document.activeElement).to.equal(trigger);

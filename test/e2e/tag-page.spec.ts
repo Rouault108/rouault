@@ -163,14 +163,16 @@ test.describe('Tag Page', () => {
 
     await expect(page).toHaveURL(/\/search\?/);
     await expect
-      .poll(() => page.evaluate(() => {
-        const url = new URL(window.location.href);
-        return {
-          pathname: url.pathname,
-          q: url.searchParams.get('q'),
-          tags: url.searchParams.getAll('tag'),
-        };
-      }))
+      .poll(() =>
+        page.evaluate(() => {
+          const url = new URL(window.location.href);
+          return {
+            pathname: url.pathname,
+            q: url.searchParams.get('q'),
+            tags: url.searchParams.getAll('tag'),
+          };
+        }),
+      )
       .toEqual({
         pathname: '/search',
         q: 'target',
@@ -187,13 +189,15 @@ test.describe('Tag Page', () => {
 
     await expect(page).toHaveURL(/\/search\?/);
     await expect
-      .poll(() => page.evaluate(() => {
-        const url = new URL(window.location.href);
-        return {
-          pathname: url.pathname,
-          tags: url.searchParams.getAll('tag'),
-        };
-      }))
+      .poll(() =>
+        page.evaluate(() => {
+          const url = new URL(window.location.href);
+          return {
+            pathname: url.pathname,
+            tags: url.searchParams.getAll('tag'),
+          };
+        }),
+      )
       .toEqual({
         pathname: '/search',
         tags: ['e2e', 'testing'],
