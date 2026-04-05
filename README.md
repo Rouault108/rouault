@@ -1,124 +1,70 @@
 # Rouault
 
-**Rouault** は、個人的なノートを閲覧するための専用 Web アプリケーションです。  
-一般的なドキュメントサイトではなく、**「没入して読む」こと** を主眼に、静かで予測可能な読書体験を提供することを目指しています。
+Rouault は、個人的なノートを読むための静かな Web アプリケーションです。  
+一般的なドキュメントサイトではなく、Markdown で蓄積した内容を「落ち着いて通読する」ことを優先して設計しています。
 
-Eleventy と Lit を基盤に、Markdown で管理されたノートを、サイドバー・本文・目次を中心とする読書向け UI で表示します。  
-検索、テーマ切替、コード表示、対訳表示、楽譜表示など、ノートの内容に応じた表現拡張も段階的に整備しています。
+現行実装は、Eleventy を基盤とした静的生成、Lit による UI、build-time SSR、クライアント hydration、Markdown 中心のコンテンツ管理を組み合わせています。  
+検索、テーマ切り替え、サイドバー、TOC、コード表示、画像、音楽、対訳などの表示面は、本文の読みやすさを損なわない範囲で整理しています。
 
-> この README は **プロジェクトの入口文書** です。  
-> 厳密な仕様、設計判断、実装契約、テスト方針は `docs/` 以下の文書を参照してください。
+仕様や設計判断は README ではなく `docs/` を正本とします。特にテスト責務は `docs/testing-taxonomy.md`、router は `docs/router-specification.md`、検索は `docs/search-specification.md` を参照してください。
 
----
+## 何をしているか
 
-## これは何か
+Rouault は、次の用途を想定した個人向け読書アプリです。
 
-Rouault は、次のような用途を想定したアプリケーションです。
+- Markdown ノートの閲覧
+- サイドバーと TOC を使ったノート内外の移動
+- Pagefind を使った全文検索
+- コード、画像、脚注、数式、音楽、対訳などの表現
+- build-time SSR と hydration を前提にした静的配信
 
-- 個人用ノートの集積と閲覧
-- 学術・人文・技術メモの横断的な読書
-- Markdown ベースの長期的なコンテンツ運用
-- 読書体験を優先した UI の構築
-- Web Components / SSG / client hydration を前提とした設計検証
-
-単なる「Markdown を表示するサイト」ではなく、**読むための構造・見通し・静けさ** を重視した専用アプリケーションとして設計しています。
-
----
-
-## 主な特徴
-
-### 1. 読書向けの画面構成
-
-Rouault は、ノート本文を中心に据えつつ、周辺情報を過不足なく扱える構成を採用しています。
-
-- サイドバー: ノート階層や一覧への移動
-- メイン: ノート本文
-- 目次（TOC）: 現在のノート内の見出し移動
-
-デスクトップでは 3 カラム、狭い画面では 2 カラムまたは 1 カラムへ段階的に縮退します。
-
-### 2. Markdown ベースのノート管理
-
-ノート本文は Markdown を基盤に管理します。  
-加えて、通常の Markdown を超える表現も段階的に扱います。
-
-- コードブロック
-- 数式
-- テーブル
-- 引用
-- 脚注
-- 画像・メディア
-- 対訳表示
-- 楽譜表示
-
-### 3. 検索と絞り込み
-
-Pagefind を利用した全文検索を備えています。  
-タグや語句を組み合わせて、ノートを絞り込めます。
-
-### 4. テーマと可読性
-
-ライト / ダークテーマに対応し、読書時の視認性と静かな画面印象を重視しています。
-
-### 5. 長期保守性を意識した分離
-
-Rouault では、見た目だけでなく、将来の修正容易性も重要視しています。
-
-- UI コンポーネントの分離
-- Markdown 変換系の責務整理
-- router / search / content projection の境界整理
-- browser / node / SSR / E2E / Storybook のテスト責務分離
-
----
-
-## 目指していること
-
-Rouault の設計では、次の原則を重視しています。
-
-### 読書体験を優先する
-
-操作の派手さよりも、本文に集中できることを優先します。
-
-### 予測可能であること
-
-UI の振る舞いは一貫して理解できるべきであり、意外性よりも安定性を重視します。
-
-### アクセシビリティを損なわないこと
-
-キーボード操作、見出し構造、コントラスト、ランドマークなど、基本的なアクセシビリティ要件を保ちます。
-
-### Markdown を中心に据えること
-
-コンテンツは長期的に扱えるプレーンな資産として保持し、表示側の都合で本文資産を壊さない方針を取ります。
-
-### 長期保守性を優先すること
-
-暫定的な実装を積み重ねるのではなく、責務境界を明確にし、拡張時に破綻しにくい構成を目指します。
-
----
+コンテンツは `content/` に置き、表示ロジックと変換ロジックは `build/`、共有ドメインロジックは `shared/`、UI は `src/` に分けています。
 
 ## 技術スタック
 
-| 区分             | 採用技術                                          |
-| ---------------- | ------------------------------------------------- |
-| SSG              | Eleventy                                          |
-| UI               | Lit                                               |
-| 言語             | TypeScript                                        |
-| コンテンツ       | Markdown / Velite                                 |
-| 検索             | Pagefind                                          |
-| コードハイライト | Shiki                                             |
-| アイコン         | Iconify / Lucide                                  |
-| テスト           | Web Test Runner / Vitest / Storybook / Playwright |
-| Lint / Format    | ESLint / Prettier                                 |
+- SSG: Eleventy
+- UI: Lit
+- 言語: TypeScript
+- コンテンツ処理: Velite + Markdown 変換パイプライン
+- 検索: Pagefind
+- コードハイライト: Shiki
+- 数式: KaTeX
+- テスト: Vitest / Web Test Runner / Playwright / Storybook
 
----
+## 現行の構成
 
-## クイックスタート
+```text
+.
+├─ build/      # content / navigation / projection / search / SSR / remark / rehype
+├─ content/    # ノート本文、frontmatter、関連アセット
+├─ docs/       # 仕様、設計、契約、テスト方針
+├─ shared/     # build-time と runtime で共有するドメインロジック
+├─ src/        # アプリケーション本体、UI、controller、layout、client
+├─ test/       # node / browser / ssr / storybook / e2e
+├─ *.config.*  # Eleventy / Vite / Vitest / Playwright / Web Test Runner / ESLint など
+└─ package.json
+```
 
-### 前提条件
+主な入口は次のとおりです。
 
-- Node.js 22 以上
-- pnpm
+- `src/index.11ty.ts`
+- `src/notes.11ty.ts`
+- `src/search.11ty.ts`
+- `src/about.11ty.ts`
+- `src/corpora.11ty.ts`
+- `src/tags.11ty.ts`
+- `src/client.ts`
+- `src/router/router.ts`
+- `src/search/search-core.ts`
+
+## 開発環境
+
+### 必要条件
+
+- Node.js 24.x
+- pnpm 10.x
+
+`.node-version` と `package.json` の `engines` を基準にしています。
 
 ### セットアップ
 
@@ -126,169 +72,75 @@ UI の振る舞いは一貫して理解できるべきであり、意外性よ�
 pnpm install
 ```
 
-### 開発サーバー起動
+### 開発サーバー
 
 ```bash
 pnpm dev
 ```
 
-### 主なコマンド
+### よく使うコマンド
 
 ```bash
-pnpm build              # 本番ビルド
-pnpm test               # node + ssr + browser + storybook metadata
-pnpm test:node          # pure logic / policy / parser / transform
-pnpm test:browser       # custom element / shadow DOM / interaction
-pnpm test:ssr           # SSR / build-time / CSS structure 契約
-pnpm test:storybook     # Storybook metadata + smoke
-pnpm test:e2e           # 実ページ統合の最終確認
-pnpm storybook          # Storybook 起動
-pnpm lint               # ESLint
-pnpm lint:fix           # ESLint + Prettier による整形
+pnpm build                  # 本番ビルド
+pnpm build:production       # production 条件をまとめたビルド入口
+pnpm build:client           # client bundle のみ生成
+pnpm build:images           # 画像生成
+pnpm storybook              # Storybook 起動
+pnpm storybook:build        # Storybook 静的ビルド
+pnpm test:node              # node 側の pure logic / policy / parser / transform
+pnpm test:ssr               # SSR / build-time / static contract
+pnpm test:browser           # browser contract
+pnpm test:storybook         # Storybook metadata + smoke
+pnpm test:e2e               # Playwright による統合確認
+pnpm test                   # node + ssr + browser + storybook metadata
+pnpm test:extended          # storybook smoke + e2e
+pnpm check                  # lint + typecheck + test
+pnpm ci                     # check + test:extended
+pnpm lint                   # ESLint
+pnpm lint:fix               # ESLint + Prettier
+pnpm typecheck              # app + node の型チェック
 ```
 
-### 配信とビルドの運用前提
+## テスト方針
 
-- 開発時は `/media/` をローカル配信し、`/example-assets/*` はそのまま利用します
-- `pnpm build:production` は production 寄りの build 条件をまとめた入口です
-- production build では `ROUAULT_MEDIA_BASE_URL` を与えます
-- CI と deploy では `ROUAULT_MEDIA_STRICT=1` を使います
-- `/example-assets/*` は当面 Pages 配信のままです
-- `/content-assets/*` は現時点では development fallback を中心に扱います
-- Pages deploy は GitHub Actions を主体にして、Direct Upload で実行します
-- footer の buildLabel は workflow 由来の値を優先し、未指定時のみ Git fallback を使います
-- `/media/*` は manifest 駆動で R2 に同期します
-- archive 系の build 統合は現時点では CI/CD の前提に含めません
+Rouault では、テストの置き場を責務で分けています。
 
----
+- `test/node/`: pure logic、URL / path policy、parser helper、data shaping
+- `test/browser/`: custom element、shadow DOM、focus、keyboard、pointer、public DOM contract
+- `test/ssr/`: Markdown 変換、build-time contract、static artifact、CSS structure
+- `test/e2e/`: app shell、no-JS baseline、router、search、主要導線
+- `test/storybook/`: Storybook の metadata、import boundary、smoke
 
-## ディレクトリ構成
+詳細は `docs/testing-taxonomy.md` を参照してください。
 
-> 生成物・依存ディレクトリ（`dist/`、`.generated/`、`.velite/`、`node_modules/`、`playwright-report/`、`test-results/` など）は省略しています。
+## ドキュメント
 
-```text
-.
-├─ build/                    # build-time 専用処理（content / navigation / projections / search / ssr / remark / rehype）
-├─ content/                  # ノート本文、frontmatter、関連アセット
-├─ docs/                     # 詳細仕様・設計文書
-├─ examples/                 # 記法例、マニフェスト例、補助メディア
-├─ scripts/                  # 開発・ビルド補助スクリプト
-├─ shared/                   # build-time / runtime で共有するドメインロジック
-├─ src/                      # アプリケーション本体
-│  ├─ assets/                # CSS、画像、動画、その他静的資産
-│  ├─ client/                # hydration / post-hydrate
-│  ├─ components/            # 画面・UI コンポーネント
-│  ├─ controllers/           # controller 層
-│  ├─ data/                  # page projection / data shaping
-│  ├─ icons/                 # アイコン登録
-│  ├─ layout/                # layout 補助ロジック
-│  ├─ layouts/               # Eleventy レイアウト
-│  ├─ router/                # router 本体
-│  ├─ search/                # search 本体
-│  ├─ stories/               # Storybook 用 story
-│  ├─ styles/                # スタイルと契約
-│  ├─ testing/               # テスト補助コード
-│  ├─ theme/                 # テーマ管理
-│  ├─ toc/                   # TOC 関連
-│  └─ types/                 # src 配下の型
-├─ test/                     # node / browser / ssr / storybook / e2e
-├─ types/                    # グローバル型定義、raw module 宣言
-├─ eleventy.config.ts        # Eleventy 設定
-├─ playwright.config.ts      # Playwright 設定
-├─ velite.config.ts          # Velite 設定
-├─ vite.client.config.ts     # client bundle 設定
-├─ vitest.config.ts          # Vitest 設定
-├─ web-test-runner.config.mjs# browser test 設定
-└─ package.json
-```
+重要な参照先は次のとおりです。
 
----
-
-## いま何があるか
-
-現時点の Rouault では、主に次の領域を実装・整備しています。
-
-- Eleventy を基盤とした静的サイト生成
-- Lit コンポーネントによる UI 構築
-- 検索機能の統合
-- SSR / hydration 経路の整備
-- Markdown 表示基盤の整備
-- デザインシステム文書化
-- browser / node / SSR / Storybook のテスト分離
-- router / search / markdown まわりの責務整理
-
-一方で、次のような領域は継続的に整理・拡張中です。
-
-- Markdown 変換系の契約整理
-- 対訳表示の仕様明確化
-- 特殊コンテンツ表現の責務分離
-- UI コンポーネント群の正規化
-- 読書用レイアウトの細部調整
-- 長期保守性を前提とした構造再編
-
----
-
-## ドキュメント案内
-
-詳細は README ではなく、`docs/` 以下を参照してください。ドキュメントも全てを反映できておらず未整理の状態です。適宜修正を加えます。
-
-### 全体設計・基盤
-
-- `docs/content-config-syntax.md`
-  コンテンツ設定と構文の基本仕様
-- `docs/corpus-specification.md`
-  corpus 周辺の仕様
 - `docs/router-specification.md`
-  ルーター設計と URL 状態モデル
 - `docs/search-specification.md`
-  検索仕様
 - `docs/testing-taxonomy.md`
-  テスト責務の整理
 - `docs/notes_sidebar_breadcrumb_contract.md`
-  ノート / サイドバー / パンくずの契約
-
-### Markdown 関連
-
+- `docs/content-config-syntax.md`
+- `docs/corpus-specification.md`
 - `docs/markdown/markdown-overview.md`
 - `docs/markdown/markdown-authoring-specification.md`
 - `docs/markdown/note-authoring-guide.md`
 - `docs/markdown/markdown-output-contract.md`
 - `docs/markdown/markdown-safety-and-test-policy.md`
-
-### デザインシステム
-
 - `docs/design-system/foundations.md`
 - `docs/design-system/accessibility.md`
 - `docs/design-system/patterns.md`
 - `docs/design-system/components/`
 
----
+## 開発の考え方
 
-## 開発上の考え方
-
-Rouault は、機能をただ追加するのではなく、**境界を壊さずに育てること** を重視しています。
-そのため、実装時には次の観点を重要視します。
-
+- 本文の読みやすさを優先する
 - 表示上の都合をコンテンツ資産へ逆流させない
-- router / search / markdown / data projection の責務を混在させない
-- コンポーネントの見た目と契約を分離する
+- router / search / markdown / projection の責務を混在させない
 - 一時的な回避策を恒久仕様にしない
-- 「いま動く」だけでなく「後で壊れにくい」ことを優先する
-
----
-
-## この README の位置づけ
-
-この README は、次の読者を想定しています。
-
-- 初めてプロジェクトを見る人
-- 実装に入る前に全体像を知りたい人
-- どこから読めばよいかを把握したい人
-
-そのため、詳細仕様や完了条件、未解決論点の精査は README ではなく `docs/` 側に寄せています。
-
----
+- まず静的に成立する HTML を優先し、必要な部分だけを hydration する
 
 ## ライセンス
 
-現時点では整理中です。
+ISC
