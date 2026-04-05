@@ -102,6 +102,7 @@ export const HYDRATION_REGISTRY = [
   {
     tag: 'layout-sidebar',
     loader: () => import('../../components/layout/layout-sidebar.js'),
+    activate: activateElementMethod,
   },
   {
     tag: 'layout-toc',

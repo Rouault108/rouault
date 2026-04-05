@@ -191,6 +191,15 @@ export class LayoutSidebar extends LitElement {
 
   private _detachStickyFooterBoundary: (() => void) | null = null;
 
+  private _hydrationActivated = false;
+
+  private _ssrRootReset = false;
+
+  protected override performUpdate(): void {
+    this._resetSsrShadowRootIfNeeded();
+    super.performUpdate();
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     this._storage = this._resolveStorage();
@@ -200,8 +209,10 @@ export class LayoutSidebar extends LitElement {
       'layout-sidebar-toggle-request',
       this._onToggleRequest as EventListener,
     );
-    const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
-    this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
+
+    if (!this.hasAttribute('data-hydration-trigger')) {
+      this.activateHydration();
+    }
   }
 
   override disconnectedCallback(): void {
@@ -227,6 +238,52 @@ export class LayoutSidebar extends LitElement {
     ) {
       this._loadItemsFromSource();
     }
+  }
+
+  activateHydration(): void {
+    if (this._hydrationActivated) {
+      return;
+    }
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    this._hydrationActivated = true;
+    this._upgradeNestedShadowHosts();
+    this._storage = this._resolveStorage();
+    this._state = this._resolveInitialState();
+    this._loadItemsFromSource();
+    const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
+    this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
+    this.requestUpdate();
+  }
+
+  private _resetSsrShadowRootIfNeeded(): void {
+    if (this._ssrRootReset || !this.hasAttribute('defer-hydration')) {
+      return;
+    }
+
+    if (this.renderRoot.childNodes.length === 0) {
+      this.removeAttribute('defer-hydration');
+      this._ssrRootReset = true;
+      return;
+    }
+
+    // SSR 済み layout-sidebar は hydration 中に ui-sidebar / ui-file-tree / ui-tree-item の
+    // subtree を中途半端に再利用しやすいため、初回 client update 前に shadow root を
+    // 空へ戻してから client render へ寄せる。
+    this.renderRoot.replaceChildren();
+    this.removeAttribute('defer-hydration');
+    this._ssrRootReset = true;
+  }
+
+  private _upgradeNestedShadowHosts(): void {
+    if (!(this.renderRoot instanceof ShadowRoot)) {
+      return;
+    }
+
+    customElements.upgrade(this.renderRoot);
   }
 
   private _loadItemsFromSource(): void {

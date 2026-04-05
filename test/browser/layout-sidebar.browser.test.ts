@@ -164,6 +164,30 @@ describe('layout-sidebar browser contract', () => {
     }
   });
 
+  it('SSR 済み shadow root を hydration 前に空へ戻して再描画すること', async () => {
+    const media = mockMatchMedia(true);
+    const host = document.createElement('layout-sidebar') as LayoutSidebar;
+
+    try {
+      host.setAttribute('defer-hydration', '');
+      host.setAttribute('selected-id', 'music/classical/beethoven/symphony-9');
+      host.itemsJson = sampleItemsJson;
+
+      const shadowRoot = host.attachShadow({ mode: 'open' });
+      shadowRoot.innerHTML = '<div data-ssr-stale="true"></div>';
+      document.body.appendChild(host);
+
+      await flush(host);
+
+      expect(host.hasAttribute('defer-hydration')).to.equal(false);
+      expect(host.shadowRoot?.querySelector('[data-ssr-stale="true"]')).to.equal(null);
+      expect(getSidebar(host)).to.not.equal(null);
+    } finally {
+      host.remove();
+      media.restore();
+    }
+  });
+
   it('overlay では selection 後に sidebar を collapse すること', async () => {
     const media = mockMatchMedia(false);
 

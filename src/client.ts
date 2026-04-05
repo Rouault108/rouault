@@ -57,6 +57,12 @@ const hydrateCurrentContent = async (): Promise<void> => {
     dispatchTarget: document.querySelector('app-router'),
   });
 
+  for (const sidebar of mainContent.querySelectorAll<
+    HTMLElement & { activateHydration?: () => void }
+  >('layout-sidebar')) {
+    sidebar.activateHydration?.();
+  }
+
   for (const toc of mainContent.querySelectorAll<HTMLElement & { activateHydration?: () => void }>(
     'layout-toc',
   )) {
