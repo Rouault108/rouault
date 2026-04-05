@@ -92,7 +92,7 @@ describe('ui-file-tree browser contract', () => {
     document.removeEventListener('click', preventLeafNavigation, true);
   });
 
-  it('controlled selectedId / expandedIds と density を公開 DOM へ反映すること', async () => {
+  it('controlled selectedId / expandedIds と density を公開 DOM へ反映し、SSR 安定属性を保持すること', async () => {
     const fileTree = await fixture<FileTree>(html`
       <ui-file-tree
         .items=${cloneTree(sampleTree)}
@@ -116,7 +116,9 @@ describe('ui-file-tree browser contract', () => {
     expect(fileTree.selectedId).to.equal('notes/design/file-tree');
 
     expect(selectedItem.hasAttribute('selected')).to.equal(true);
+    expect(expandedBranch.hasAttribute('has-children')).to.equal(true);
     expect(expandedBranch.hasAttribute('expanded')).to.equal(true);
+    expect(ancestorBranch.hasAttribute('has-children')).to.equal(true);
     expect(ancestorBranch.hasAttribute('ancestor-selected')).to.equal(true);
 
     expect(firstVisibleItem.getAttribute('density')).to.equal('compact');

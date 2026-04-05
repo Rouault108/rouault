@@ -880,15 +880,27 @@ export class FileTree extends LitElement {
           slot=${ifDefined(slotName)}
           data-id=${node.id}
           .label=${node.label}
+          label=${node.label}
           .icon=${node.icon ?? ''}
+          icon=${ifDefined(node.icon)}
           .href=${isLeafNode(node) ? node.href : ''}
+          href=${ifDefined(isLeafNode(node) ? node.href : undefined)}
+          .hasChildren=${isBranchNode(node)}
+          ?has-children=${isBranchNode(node)}
           .expanded=${isExpanded}
+          ?expanded=${isExpanded}
           .selected=${isSelected}
+          ?selected=${isSelected}
           .ancestorSelected=${isBranchNode(node) && this._selectedAncestorBranchIds.has(node.id)}
+          ?ancestor-selected=${isBranchNode(node) && this._selectedAncestorBranchIds.has(node.id)}
           .depth=${depth}
+          depth=${String(depth)}
           .printMode=${this.printable && this._printExpanding}
+          ?print-mode=${this.printable && this._printExpanding}
           .tabIndex=${tabindex}
+          tabindex=${String(tabindex)}
           .density=${this.density}
+          density=${this.density}
           @selected-change=${(event: CustomEvent) => {
             if (isLeafNode(node)) {
               this._handleLeafSelect(event, node);

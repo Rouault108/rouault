@@ -9,25 +9,6 @@ import '../icon/icon.js';
 
 type TreeItemDensity = 'normal' | 'compact';
 
-/**
- * ツリーアイテム (Tree Item) コンポーネント
- *
- * 階層化された情報を探索するためのナビゲーション・コンポーネントです。
- * ネスト構造（Recursive Nesting）により、DOM構造と視覚階層を一致させ、
- * 堅牢なアクセシビリティを担保します。
- *
- * @slot children - 子ツリーアイテム（ネスト構造）
- * @slot icon - カスタムアイコン（icon プロパティの代わりに使用可能）
- *
- * @property {boolean} expanded - 子要素の展開状態
- * @property {boolean} selected - 現在選択されているか（カレント）
- * @property {string} label - 表示ラベル
- * @property {string} icon - コンテンツアイコン（例: "folder", "file"）
- * @property {string} density - 行の高さ密度（normal: 36px, compact: 24px）
- *
- * @fires expanded-change - 展開状態が変化した時
- * @fires selected-change - 選択状態が変化した時
- */
 @customElement('ui-tree-item')
 export class TreeItem extends LitElement {
   static override styles = css`
@@ -548,8 +529,8 @@ export class TreeItem extends LitElement {
   @property({ type: Boolean, reflect: true, attribute: 'print-mode' })
   printMode = false;
 
-  @state()
-  private hasChildren = false;
+  @property({ type: Boolean, reflect: true, attribute: 'has-children' })
+  hasChildren = false;
 
   @state()
   private hasCustomIcon = false;
@@ -816,9 +797,10 @@ export class TreeItem extends LitElement {
   }
 
   private _syncHasChildren(): void {
-    const nextHasChildren = Array.from(this.children).some(
-      (child) => child.getAttribute('slot') === 'children',
-    );
+    const hasExplicitChildren = this.hasAttribute('has-children');
+    const nextHasChildren =
+      hasExplicitChildren ||
+      Array.from(this.children).some((child) => child.getAttribute('slot') === 'children');
 
     if (this.hasChildren !== nextHasChildren) {
       this.hasChildren = nextHasChildren;

@@ -193,6 +193,8 @@ export class LayoutSidebar extends LitElement {
 
   private _hydrationActivated = false;
 
+  private _ssrRootReset = false;
+
   override connectedCallback(): void {
     super.connectedCallback();
 
@@ -207,6 +209,11 @@ export class LayoutSidebar extends LitElement {
     if (!this.hasAttribute('data-hydration-trigger')) {
       this.activateHydration();
     }
+  }
+
+  protected override performUpdate(): void {
+    this._resetSsrShadowRootIfNeeded();
+    super.performUpdate();
   }
 
   override disconnectedCallback(): void {
@@ -259,6 +266,24 @@ export class LayoutSidebar extends LitElement {
     }
 
     customElements.upgrade(this.renderRoot);
+  }
+
+  private _resetSsrShadowRootIfNeeded(): void {
+    if (this._ssrRootReset || !this.hasAttribute('defer-hydration')) {
+      return;
+    }
+
+    if (this.renderRoot.childNodes.length === 0) {
+      this.removeAttribute('defer-hydration');
+      this._ssrRootReset = true;
+      return;
+    }
+
+    // SSR 済み layout-sidebar は hydration 中に tree の構造差分が崩れやすいため、
+    // 初回 client update 前に shadow root を空へ戻してから再描画する。
+    this.renderRoot.replaceChildren();
+    this.removeAttribute('defer-hydration');
+    this._ssrRootReset = true;
   }
 
   private _loadItemsFromSource(): void {
