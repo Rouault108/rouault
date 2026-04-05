@@ -547,17 +547,27 @@ export class LayoutToc extends LitElement {
       this._onTocActiveChange as EventListener,
     );
 
-    if (replacement.applyHostState) {
-      replacement.applyHostState(state);
-    }
-    if (!replacement.applyHostState) {
-      replacement.headers = [...state.headers];
-      replacement.activeId = state.activeId;
-      replacement.requestUpdate?.();
-      replacement.refresh?.();
-    }
+    // 未接続の custom element に applyHostState() を呼ぶと、
+    // ui-toc 側の refresh() が未初期化 renderRoot に触れて落ち得る。
+    // 先にプレーンな property だけを設定して接続し、接続後に同期 API を流す。
+    replacement.headers = [...state.headers];
+    replacement.activeId = state.activeId;
 
     toc.replaceWith(replacement);
+
+    queueMicrotask(() => {
+      if (!replacement.isConnected) {
+        return;
+      }
+
+      if (replacement.applyHostState) {
+        replacement.applyHostState(state);
+        return;
+      }
+
+      replacement.requestUpdate?.();
+      replacement.refresh?.();
+    });
   }
 
   private _isTocSynchronized(toc: SyncableTocElement, state: UiTocHostState): boolean {

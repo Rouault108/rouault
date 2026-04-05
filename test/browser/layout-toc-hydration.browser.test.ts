@@ -32,9 +32,19 @@ const flush = async (host: LayoutToc): Promise<void> => {
   await waitForLitUpdate(host);
 };
 
+const queryDesktopToc = (host: LayoutToc): SyncableUiToc | null =>
+  host.shadowRoot?.querySelector<SyncableUiToc>('.desktop ui-toc') ?? null;
+
 describe('layout-toc hydration reconciliation', () => {
   it('子 ui-toc が host state と不整合な場合でも再生成して activeId を復旧すること', async () => {
-    document.body.innerHTML = '<article id="note-content"></article>';
+    document.body.innerHTML = `
+      <article id="note-content">
+        <h2 id="71-配列の生成">7.1 配列の生成</h2>
+        <p>配列の生成に関する本文。</p>
+        <h2 id="72-配列の要素の読み書き">7.2 配列の要素の読み書き</h2>
+        <p>配列の要素の読み書きに関する本文。</p>
+      </article>
+    `;
 
     const host = await fixture<LayoutToc>(html`
       <layout-toc
@@ -49,9 +59,9 @@ describe('layout-toc hydration reconciliation', () => {
     await flush(host);
 
     const internals = host as unknown as LayoutTocInternals;
-    const staleChild = host.shadowRoot?.querySelector<SyncableUiToc>('ui-toc');
+    const staleChild = queryDesktopToc(host);
     if (!staleChild) {
-      throw new Error('ui-toc が見つかりません');
+      throw new Error('desktop ui-toc が見つかりません');
     }
 
     staleChild.applyHostState = () => undefined;
@@ -63,9 +73,9 @@ describe('layout-toc hydration reconciliation', () => {
     internals._syncRenderedTocProps();
     await flush(host);
 
-    const repairedChild = host.shadowRoot?.querySelector<SyncableUiToc>('ui-toc');
+    const repairedChild = queryDesktopToc(host);
     if (!repairedChild) {
-      throw new Error('復旧後の ui-toc が見つかりません');
+      throw new Error('復旧後の desktop ui-toc が見つかりません');
     }
 
     expect(repairedChild).to.not.equal(staleChild);

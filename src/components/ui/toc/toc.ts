@@ -292,7 +292,15 @@ export class Toc extends LitElement {
     }
   }
 
+  private _getQueryableRenderRoot(): ShadowRoot | null {
+    return this.renderRoot instanceof ShadowRoot ? this.renderRoot : null;
+  }
+
   refresh(): void {
+    if (!this._getQueryableRenderRoot()) {
+      return;
+    }
+
     this._observeLabels();
     this._scheduleTruncationSync();
     this._syncActiveLinkVisibility();
@@ -327,7 +335,8 @@ export class Toc extends LitElement {
   }
 
   renderedHeadingCount(): number {
-    return this.renderRoot.querySelectorAll('.toc-link-label').length;
+    const root = this._getQueryableRenderRoot();
+    return root?.querySelectorAll('.toc-link-label').length ?? 0;
   }
 
   private get _minLevel(): number {
@@ -344,12 +353,13 @@ export class Toc extends LitElement {
 
   private _observeLabels(): void {
     const observer = this._labelResizeObserver;
-    if (!observer) {
+    const root = this._getQueryableRenderRoot();
+    if (!observer || !root) {
       return;
     }
 
     observer.disconnect();
-    const labels = this.renderRoot.querySelectorAll<HTMLElement>('.toc-link-label');
+    const labels = root.querySelectorAll<HTMLElement>('.toc-link-label');
     for (const label of labels) {
       observer.observe(label);
     }
@@ -367,8 +377,13 @@ export class Toc extends LitElement {
   }
 
   private _syncTruncationState(): void {
+    const root = this._getQueryableRenderRoot();
+    if (!root) {
+      return;
+    }
+
     const nextTruncatedIds = new Set<string>();
-    const labels = this.renderRoot.querySelectorAll<HTMLElement>('.toc-link-label');
+    const labels = root.querySelectorAll<HTMLElement>('.toc-link-label');
 
     for (const label of labels) {
       const headingId = label.dataset['headingId'];
@@ -388,7 +403,12 @@ export class Toc extends LitElement {
   }
 
   private _syncActiveLinkVisibility(): void {
-    const activeLink = this.renderRoot.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
+    const root = this._getQueryableRenderRoot();
+    if (!root) {
+      return;
+    }
+
+    const activeLink = root.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
     if (!activeLink || activeLink.getClientRects().length === 0) {
       return;
     }
