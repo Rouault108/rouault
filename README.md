@@ -8,7 +8,7 @@ Rouault は、個人的なノートを読むための静かな Web アプリケ�
 
 仕様や設計判断は README ではなく `docs/` を正本とします。特にテスト責務は `docs/testing-taxonomy.md`、router は `docs/router-specification.md`、検索は `docs/search-specification.md` を参照してください。
 
-## 何をしているか
+## このサイトとは
 
 Rouault は、次の用途を想定した個人向け読書アプリです。
 
@@ -143,4 +143,4 @@ Rouault では、テストの置き場を責務で分けています。
 
 ## ライセンス
 
-ISC
+CC BY 4.0
