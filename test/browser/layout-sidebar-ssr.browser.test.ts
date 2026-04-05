@@ -1,6 +1,6 @@
-import { expect } from '@open-wc/testing';
+import { expect, fixture, html } from '@open-wc/testing';
+import '../../src/components/layout/layout-sidebar.js';
 import type { LayoutSidebar } from '../../src/components/layout/layout-sidebar.js';
-import { promoteDeclarativeShadowRoots } from '../../src/router/declarative-shadow-dom.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 interface MatchMediaController {
@@ -90,48 +90,29 @@ const flush = async (host: LayoutSidebar): Promise<void> => {
   await waitForLitUpdate(host);
 };
 
-describe('layout-sidebar SSR hydration contract', () => {
-  it('SSR 済み shadow root を hydration 前に空へ戻して再描画すること', async () => {
+describe('layout-sidebar hydration activation contract', () => {
+  it('activateHydration() を複数回呼んでも再描画が破綻しないこと', async () => {
     const media = mockMatchMedia(true);
-    const wrapper = document.createElement('div');
 
     try {
-      const host = document.createElement('layout-sidebar');
-      host.setAttribute('defer-hydration', '');
-      host.setAttribute('data-hydration-trigger', 'initial');
-      host.setAttribute('selected-id', 'music/classical/beethoven/symphony-9');
-      host.setAttribute('items-json', sampleItemsJson);
-      host.innerHTML = `
-        <template shadowrootmode="open">
-          <div data-ssr-stale="true"></div>
-        </template>
-      `;
+      const host = await fixture<LayoutSidebar>(html`
+        <layout-sidebar
+          .itemsJson=${sampleItemsJson}
+          selected-id="music/classical/beethoven/symphony-9"
+          data-hydration-trigger="manual"
+        ></layout-sidebar>
+      `);
 
-      wrapper.appendChild(host);
-      document.body.appendChild(wrapper);
+      await flush(host);
 
-      promoteDeclarativeShadowRoots(wrapper);
+      host.activateHydration();
+      await flush(host);
 
-      await import('../../src/components/layout/layout-sidebar.js');
-      await customElements.whenDefined('layout-sidebar');
-      customElements.upgrade(wrapper);
+      host.activateHydration();
+      await flush(host);
 
-      const upgradedHost = wrapper.querySelector('layout-sidebar') as LayoutSidebar | null;
-      expect(upgradedHost).to.not.equal(null);
-      if (!upgradedHost) {
-        throw new Error('layout-sidebar の upgrade に失敗しました');
-      }
-
-      await flush(upgradedHost);
-
-      upgradedHost.activateHydration();
-      await flush(upgradedHost);
-
-      expect(upgradedHost.hasAttribute('defer-hydration')).to.equal(false);
-      expect(upgradedHost.shadowRoot?.querySelector('[data-ssr-stale="true"]')).to.equal(null);
-      expect(getSidebar(upgradedHost)).to.not.equal(null);
+      expect(getSidebar(host)).to.not.equal(null);
     } finally {
-      wrapper.remove();
       media.restore();
     }
   });
