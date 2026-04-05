@@ -179,6 +179,13 @@ describe('ui-toast browser contract', () => {
     await waitMs(170 + TOAST_EXIT_DURATION_MS + 30);
     await flush(host);
 
+    await waitUntil(
+      () => ToastManager.getSnapshot().length === 0,
+      2000,
+      20,
+      '重複統合後の toast が dismiss されません',
+    );
+
     expect(ToastManager.getSnapshot().length).to.equal(0);
   });
 
