@@ -62,6 +62,45 @@ export class AppRouterPostRenderController implements ReactiveController {
     };
   }
 
+  async restoreInitialHashScroll(): Promise<void> {
+    const waitForLoad = async (): Promise<void> => {
+      if (document.readyState === 'complete') {
+        return;
+      }
+
+      await new Promise<void>((resolve) => {
+        window.addEventListener('load', () => resolve(), { once: true });
+      });
+    };
+
+    await waitForLoad();
+    const didScroll = await this.scrollToHash(window.location.href);
+    if (didScroll) {
+      return;
+    }
+
+    const hash = readDecodedHash(window.location.href);
+    if (hash.length === 0) {
+      return;
+    }
+
+    const target = document.getElementById(hash);
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          resolve();
+        });
+      });
+    });
+
+    const absoluteTop = target.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({ top: absoluteTop, left: 0, behavior: 'instant' });
+  }
+
   private async scrollToHash(url: string): Promise<boolean> {
     const hash = readDecodedHash(url);
     if (hash.length === 0) {

@@ -109,6 +109,9 @@ export class AppRouter extends LitElement {
     });
 
     void router.start();
+    if (this._manualDomMode) {
+      void this._postRenderController.restoreInitialHashScroll();
+    }
   }
 
   protected override performUpdate(): void {
