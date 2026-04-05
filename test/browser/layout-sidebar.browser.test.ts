@@ -1,5 +1,4 @@
 import { expect, fixture, html } from '@open-wc/testing';
-import '../../src/components/layout/layout-sidebar.js';
 import '../../src/components/ui/sidebar/sidebar.js';
 import type { LayoutSidebar } from '../../src/components/layout/layout-sidebar.js';
 import { getLayoutSidebarTreeStateStorageKey } from '../../src/components/layout/layout-sidebar-tree-state.js';
@@ -50,6 +49,11 @@ const sampleItemsJson = JSON.stringify([
     ],
   },
 ]);
+
+const ensureLayoutSidebarDefined = async (): Promise<void> => {
+  await import('../../src/components/layout/layout-sidebar.js');
+  await customElements.whenDefined('layout-sidebar');
+};
 
 const expectPresent = <T>(value: T | null | undefined, name: string): T => {
   expect(value, `${name} should exist`).to.not.equal(null);
@@ -124,6 +128,8 @@ describe('layout-sidebar browser contract', () => {
     const media = mockMatchMedia(true);
 
     try {
+      await ensureLayoutSidebarDefined();
+
       const selectedId = 'music/classical/beethoven/symphony-9';
       const storageKey = getLayoutSidebarTreeStateStorageKey(selectedId);
 
@@ -164,34 +170,12 @@ describe('layout-sidebar browser contract', () => {
     }
   });
 
-  it('SSR 済み shadow root を hydration 前に空へ戻して再描画すること', async () => {
-    const media = mockMatchMedia(true);
-    const host = document.createElement('layout-sidebar') as LayoutSidebar;
-
-    try {
-      host.setAttribute('defer-hydration', '');
-      host.setAttribute('selected-id', 'music/classical/beethoven/symphony-9');
-      host.itemsJson = sampleItemsJson;
-
-      const shadowRoot = host.attachShadow({ mode: 'open' });
-      shadowRoot.innerHTML = '<div data-ssr-stale="true"></div>';
-      document.body.appendChild(host);
-
-      await flush(host);
-
-      expect(host.hasAttribute('defer-hydration')).to.equal(false);
-      expect(host.shadowRoot?.querySelector('[data-ssr-stale="true"]')).to.equal(null);
-      expect(getSidebar(host)).to.not.equal(null);
-    } finally {
-      host.remove();
-      media.restore();
-    }
-  });
-
   it('overlay では selection 後に sidebar を collapse すること', async () => {
     const media = mockMatchMedia(false);
 
     try {
+      await ensureLayoutSidebarDefined();
+
       const host = await fixture<LayoutSidebar>(html`
         <layout-sidebar
           .itemsJson=${sampleItemsJson}

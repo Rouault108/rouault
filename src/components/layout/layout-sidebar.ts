@@ -195,13 +195,9 @@ export class LayoutSidebar extends LitElement {
 
   private _ssrRootReset = false;
 
-  protected override performUpdate(): void {
-    this._resetSsrShadowRootIfNeeded();
-    super.performUpdate();
-  }
-
   override connectedCallback(): void {
     super.connectedCallback();
+
     this._storage = this._resolveStorage();
     this._state = this._resolveInitialState();
     this._loadItemsFromSource();
@@ -213,6 +209,12 @@ export class LayoutSidebar extends LitElement {
     if (!this.hasAttribute('data-hydration-trigger')) {
       this.activateHydration();
     }
+  }
+
+  protected override createRenderRoot() {
+    const renderRoot = super.createRenderRoot();
+    this._resetSsrShadowRootIfNeeded(renderRoot);
+    return renderRoot;
   }
 
   override disconnectedCallback(): void {
@@ -259,21 +261,18 @@ export class LayoutSidebar extends LitElement {
     this.requestUpdate();
   }
 
-  private _resetSsrShadowRootIfNeeded(): void {
+  private _resetSsrShadowRootIfNeeded(renderRoot: HTMLElement | DocumentFragment): void {
     if (this._ssrRootReset || !this.hasAttribute('defer-hydration')) {
       return;
     }
 
-    if (this.renderRoot.childNodes.length === 0) {
-      this.removeAttribute('defer-hydration');
-      this._ssrRootReset = true;
-      return;
+    if (renderRoot.childNodes.length > 0) {
+      // SSR 済み layout-sidebar は hydration 中に ui-sidebar / ui-file-tree / ui-tree-item の
+      // subtree を中途半端に再利用しやすいため、Lit が初回 render の内部境界を確立する前に
+      // shadow root を空へ戻してから client render へ寄せる。
+      renderRoot.replaceChildren();
     }
 
-    // SSR 済み layout-sidebar は hydration 中に ui-sidebar / ui-file-tree / ui-tree-item の
-    // subtree を中途半端に再利用しやすいため、初回 client update 前に shadow root を
-    // 空へ戻してから client render へ寄せる。
-    this.renderRoot.replaceChildren();
     this.removeAttribute('defer-hydration');
     this._ssrRootReset = true;
   }
