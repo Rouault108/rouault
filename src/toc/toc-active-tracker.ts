@@ -30,6 +30,14 @@ const decodeHash = (hash: string): string => {
   }
 };
 
+const readHeaderOffset = (): number => {
+  const headerHeightRaw = getComputedStyle(document.documentElement)
+    .getPropertyValue('--header-height')
+    .trim();
+  const headerHeight = headerHeightRaw ? Number.parseFloat(headerHeightRaw) : Number.NaN;
+  return (Number.isFinite(headerHeight) ? headerHeight : 48) + 32;
+};
+
 export class TocActiveTracker {
   private readonly _contentRootId: string;
   private readonly _capabilities: TocCapabilities;
@@ -38,13 +46,13 @@ export class TocActiveTracker {
   private readonly _onActiveIdChange: (id: string) => void;
   private _allHeadings: Heading[];
   private _contentRoot: HTMLElement | null = null;
-  private _observer: IntersectionObserver | null = null;
   private _mutationObserver: MutationObserver | null = null;
-  private _visibleIds = new Set<string>();
   private _visibleHeadings: Heading[] = [];
   private _started = false;
   private _refreshScheduled = false;
+  private _viewportSyncScheduled = false;
   private _initialRefreshTimer: number | null = null;
+  private _initialViewportSyncFrame: number | null = null;
 
   constructor(options: TocActiveTrackerOptions) {
     this._contentRootId = options.contentRootId;
@@ -71,15 +79,30 @@ export class TocActiveTracker {
 
     this._started = true;
     window.addEventListener('hashchange', this._onHashChange);
+    window.addEventListener('scroll', this._onViewportChange, { passive: true });
+    window.addEventListener('resize', this._onViewportChange);
+    window.addEventListener('pageshow', this._onViewportChange);
     document.addEventListener('ui-tab-change', this._onTabChange as EventListener);
+
     this.refresh();
+    this._scheduleViewportSync();
+
     this._initialRefreshTimer = window.setTimeout(() => {
       this._initialRefreshTimer = null;
       if (!this._started) {
         return;
       }
       this.refresh();
+      this._scheduleViewportSync();
     }, 0);
+
+    this._initialViewportSyncFrame = window.requestAnimationFrame(() => {
+      this._initialViewportSyncFrame = null;
+      if (!this._started) {
+        return;
+      }
+      this._syncActiveHeadingFromViewport();
+    });
   }
 
   destroy(): void {
@@ -89,13 +112,22 @@ export class TocActiveTracker {
 
     this._started = false;
     window.removeEventListener('hashchange', this._onHashChange);
+    window.removeEventListener('scroll', this._onViewportChange);
+    window.removeEventListener('resize', this._onViewportChange);
+    window.removeEventListener('pageshow', this._onViewportChange);
     document.removeEventListener('ui-tab-change', this._onTabChange as EventListener);
     this._teardownMutationObserver();
-    this._teardownObserver();
     this._refreshScheduled = false;
+    this._viewportSyncScheduled = false;
+
     if (this._initialRefreshTimer !== null) {
       clearTimeout(this._initialRefreshTimer);
       this._initialRefreshTimer = null;
+    }
+
+    if (this._initialViewportSyncFrame !== null) {
+      cancelAnimationFrame(this._initialViewportSyncFrame);
+      this._initialViewportSyncFrame = null;
     }
   }
 
@@ -104,7 +136,7 @@ export class TocActiveTracker {
     this._setupMutationObserver();
     this._syncVisibleHeadings();
     this._syncActiveHeadingFromHash();
-    this._setupObserver();
+    this._scheduleViewportSync();
   }
 
   private _syncVisibleHeadings(): void {
@@ -117,7 +149,6 @@ export class TocActiveTracker {
     this._visibleHeadings = contentRoot
       ? filterVisibleHeadings(contentRoot, scopedHeadings)
       : scopedHeadings;
-    this._visibleIds.clear();
     this._onVisibleHeadingsChange(this._visibleHeadings);
 
     const currentActiveId = this._getActiveId();
@@ -172,58 +203,65 @@ export class TocActiveTracker {
     }
   }
 
-  private _setupObserver(): void {
-    this._teardownObserver();
+  private _resolveActiveHeadingFromViewport(): string {
+    if (this._visibleHeadings.length === 0) {
+      return '';
+    }
 
-    if (
-      !this._capabilities.activeTracking ||
-      !this._contentRoot ||
-      this._visibleHeadings.length === 0
-    ) {
+    const headingElements = this._visibleHeadings
+      .map((heading) => {
+        const element = document.getElementById(heading.id);
+        return element instanceof HTMLElement ? { heading, element } : null;
+      })
+      .filter(
+        (entry): entry is { heading: Heading; element: HTMLElement } => entry !== null,
+      );
+
+    if (headingElements.length === 0) {
+      return this._resolveInitialActiveId();
+    }
+
+    const viewportTop = readHeaderOffset();
+    let candidateId = headingElements[0]?.heading.id ?? '';
+
+    for (const { heading, element } of headingElements) {
+      const top = element.getBoundingClientRect().top;
+      if (top <= viewportTop) {
+        candidateId = heading.id;
+        continue;
+      }
+      break;
+    }
+
+    return candidateId;
+  }
+
+  private _syncActiveHeadingFromViewport(): void {
+    if (!this._started || !this._capabilities.activeTracking) {
       return;
     }
 
-    const headerHeightRaw = getComputedStyle(document.documentElement)
-      .getPropertyValue('--header-height')
-      .trim();
-    const headerHeight = headerHeightRaw ? parseFloat(headerHeightRaw) : 0;
-    const topMargin = headerHeight + 32 - 1;
-
-    this._observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            this._visibleIds.add(entry.target.id);
-          } else {
-            this._visibleIds.delete(entry.target.id);
-          }
-        }
-
-        const activeHeading = this._visibleHeadings.find((heading) =>
-          this._visibleIds.has(heading.id),
-        );
-        if (activeHeading && activeHeading.id !== this._getActiveId()) {
-          this._onActiveIdChange(activeHeading.id);
-        }
-      },
-      {
-        rootMargin: `-${String(topMargin)}px 0px -70% 0px`,
-        threshold: 0,
-      },
-    );
-
-    for (const heading of this._visibleHeadings) {
-      const element = document.getElementById(heading.id);
-      if (element instanceof HTMLElement) {
-        this._observer.observe(element);
-      }
+    const nextId = this._resolveActiveHeadingFromViewport();
+    if (nextId.length === 0 || nextId === this._getActiveId()) {
+      return;
     }
+
+    this._onActiveIdChange(nextId);
   }
 
-  private _teardownObserver(): void {
-    this._observer?.disconnect();
-    this._observer = null;
-    this._visibleIds.clear();
+  private _scheduleViewportSync(): void {
+    if (!this._started || this._viewportSyncScheduled) {
+      return;
+    }
+
+    this._viewportSyncScheduled = true;
+    requestAnimationFrame(() => {
+      this._viewportSyncScheduled = false;
+      if (!this._started) {
+        return;
+      }
+      this._syncActiveHeadingFromViewport();
+    });
   }
 
   private _setupMutationObserver(): void {
@@ -289,6 +327,7 @@ export class TocActiveTracker {
 
   private _onHashChange = (): void => {
     this._syncActiveHeadingFromHash();
+    this._scheduleViewportSync();
   };
 
   private _onTabChange = (event: Event): void => {
@@ -300,5 +339,9 @@ export class TocActiveTracker {
     }
 
     this.refresh();
+  };
+
+  private _onViewportChange = (): void => {
+    this._scheduleViewportSync();
   };
 }

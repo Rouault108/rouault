@@ -5,6 +5,10 @@ import { TocActiveTracker } from '../../src/toc/toc-active-tracker.js';
 const waitForRefresh = async (): Promise<void> => {
   await Promise.resolve();
   await Promise.resolve();
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
+  await Promise.resolve();
 };
 
 describe('TocActiveTracker', () => {
@@ -76,5 +80,95 @@ describe('TocActiveTracker', () => {
     expect(snapshots.at(-1)).to.deep.equal(['rust-heading']);
 
     tracker.destroy();
+  });
+
+  it('スクロール位置に応じて現在見出しを幾何学的に再計算すること', async () => {
+    document.body.innerHTML = `
+      <article id="content-root">
+        <h2 id="section-1">Section 1</h2>
+        <h2 id="section-2">Section 2</h2>
+        <h2 id="section-3">Section 3</h2>
+      </article>
+    `;
+
+    document.documentElement.style.setProperty('--header-height', '48px');
+
+    const headings: Heading[] = [
+      { id: 'section-1', text: 'Section 1', level: 2 },
+      { id: 'section-2', text: 'Section 2', level: 2 },
+      { id: 'section-3', text: 'Section 3', level: 2 },
+    ];
+
+    const topById = new Map<string, number>([
+      ['section-1', 16],
+      ['section-2', 220],
+      ['section-3', 520],
+    ]);
+
+    for (const heading of headings) {
+      const element = document.getElementById(heading.id);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`${heading.id} の fixture 構築に失敗しました。`);
+      }
+
+      Object.defineProperty(element, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => {
+          const top = topById.get(heading.id) ?? 0;
+          return {
+            x: 0,
+            y: top,
+            top,
+            left: 0,
+            right: 800,
+            bottom: top + 32,
+            width: 800,
+            height: 32,
+            toJSON: () => undefined,
+          } satisfies DOMRect;
+        },
+      });
+    }
+
+    let activeId = '';
+    const snapshots: string[] = [];
+    const tracker = new TocActiveTracker({
+      contentRootId: 'content-root',
+      headings,
+      capabilities: {
+        activeTracking: true,
+        dynamicScopes: false,
+        mobileSummary: false,
+      },
+      getActiveId: () => activeId,
+      onVisibleHeadingsChange: () => undefined,
+      onActiveIdChange: (id) => {
+        activeId = id;
+        snapshots.push(id);
+      },
+    });
+
+    tracker.start();
+    await waitForRefresh();
+    expect(activeId).to.equal('section-1');
+
+    topById.set('section-1', -120);
+    topById.set('section-2', 40);
+    topById.set('section-3', 320);
+    window.dispatchEvent(new Event('scroll'));
+    await waitForRefresh();
+    expect(activeId).to.equal('section-2');
+
+    topById.set('section-1', -360);
+    topById.set('section-2', -96);
+    topById.set('section-3', 24);
+    window.dispatchEvent(new Event('scroll'));
+    await waitForRefresh();
+    expect(activeId).to.equal('section-3');
+
+    expect(snapshots).to.deep.equal(['section-1', 'section-2', 'section-3']);
+
+    tracker.destroy();
+    document.documentElement.style.removeProperty('--header-height');
   });
 });

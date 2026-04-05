@@ -303,6 +303,7 @@ export class LayoutToc extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this._loadHeadingsFromSource();
+    this._connectControllers();
     if (!this.hasAttribute('data-hydration-trigger')) {
       this.activateHydration();
     }
