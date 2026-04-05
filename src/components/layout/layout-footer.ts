@@ -69,6 +69,11 @@ const parseFooterLinksJson = (value: string | undefined): readonly FooterLinkIte
   }
 };
 
+const hasDirectFooterChild = (host: HTMLElement): boolean =>
+  Array.from(host.children).some(
+    (child) => child instanceof HTMLElement && child.classList.contains('ui-footer'),
+  );
+
 export const buildLayoutFooterOptions = ({
   footerId,
   siteEyebrow,
@@ -145,13 +150,26 @@ export class LayoutFooter extends LitElement {
   @property({ type: String, attribute: 'links-json' })
   linksJson?: string;
 
+  private _manualDomMode = false;
+  private _allowClientRender = true;
+
   override createRenderRoot(): this {
     return this;
   }
 
   override connectedCallback(): void {
     ensureFooterDocumentStyles();
+    this._manualDomMode = hasDirectFooterChild(this);
+    this._allowClientRender = !this._manualDomMode;
     super.connectedCallback();
+  }
+
+  protected override performUpdate(): void {
+    if (!this._allowClientRender) {
+      return;
+    }
+
+    super.performUpdate();
   }
 
   override render() {
