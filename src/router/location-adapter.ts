@@ -1,4 +1,7 @@
 export class LocationAdapter {
+  private static readonly CORPORA_ROOT_PATH = '/corpora';
+  private static readonly ABOUT_ROOT_PATH = '/about';
+
   private sanitizeUrl(url: URL): void {
     url.searchParams.delete('wtr-session-id');
   }
@@ -64,6 +67,22 @@ export class LocationAdapter {
 
     if (pathname === '/search/' || pathname === '/search') {
       return '/search';
+    }
+
+    if (pathname === LocationAdapter.ABOUT_ROOT_PATH) {
+      return '/about/';
+    }
+
+    if (pathname.startsWith('/about/')) {
+      return pathname.endsWith('/') ? pathname : `${pathname}/`;
+    }
+
+    if (pathname === LocationAdapter.CORPORA_ROOT_PATH) {
+      return '/corpora/';
+    }
+
+    if (pathname.startsWith('/corpora/')) {
+      return pathname.endsWith('/') ? pathname : `${pathname}/`;
     }
 
     if (/^\/tags\/[^/]+\/$/u.test(pathname)) {

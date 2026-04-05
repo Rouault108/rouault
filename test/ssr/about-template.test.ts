@@ -16,7 +16,10 @@ describe('AboutPageTemplate', () => {
     const template = new AboutPageTemplate();
     const rendered = template.render();
 
-    expect(rendered).toBe('<about-page></about-page>');
+    expect(rendered).toContain('<about-page');
+    expect(rendered).toContain('data-hydration-scope="about-page"');
+    expect(rendered).toContain('data-hydration-capability="interactive"');
+    expect(rendered).toContain('data-hydration-trigger="initial"');
     expect(rendered).not.toContain('<layout-sidebar');
     expect(rendered).not.toContain('<search-page');
   });

@@ -1,3 +1,5 @@
+import { serializeHtmlAttributes } from './layouts/html-output.js';
+
 export class AboutPageTemplate {
   data() {
     return {
@@ -8,7 +10,11 @@ export class AboutPageTemplate {
   }
 
   render() {
-    return '<about-page></about-page>';
+    return `<about-page${serializeHtmlAttributes([
+      { name: 'data-hydration-scope', value: 'about-page' },
+      { name: 'data-hydration-capability', value: 'interactive' },
+      { name: 'data-hydration-trigger', value: 'initial' },
+    ])}></about-page>`;
   }
 }
 

@@ -39,7 +39,10 @@ export class CorpusPagesTemplate {
     }
 
     return `<corpus-page${serializeHtmlAttributes([
+      { name: 'data-hydration-scope', value: 'corpus-page' },
       { name: 'corpus-page-json', value: data.corpusPage, kind: 'json' },
+      { name: 'data-hydration-capability', value: 'interactive' },
+      { name: 'data-hydration-trigger', value: 'initial' },
     ])}></corpus-page>`;
   }
 }

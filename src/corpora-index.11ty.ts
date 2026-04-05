@@ -20,7 +20,10 @@ export class CorporaOverviewTemplate {
     const corporaOverview = data.corporaOverview ?? loadCorporaOverviewData();
 
     return `<corpora-overview-page${serializeHtmlAttributes([
+      { name: 'data-hydration-scope', value: 'corpora-overview-page' },
       { name: 'corpora-overview-json', value: corporaOverview, kind: 'json' },
+      { name: 'data-hydration-capability', value: 'interactive' },
+      { name: 'data-hydration-trigger', value: 'initial' },
     ])}></corpora-overview-page>`;
   }
 }

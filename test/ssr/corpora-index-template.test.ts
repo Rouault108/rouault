@@ -32,7 +32,12 @@ describe('CorporaOverviewTemplate', () => {
       },
     });
 
-    expect(rendered).toContain('<corpora-overview-page corpora-overview-json="');
+    expect(rendered).toContain(
+      '<corpora-overview-page data-hydration-scope="corpora-overview-page"',
+    );
+    expect(rendered).toContain('data-hydration-capability="interactive"');
+    expect(rendered).toContain('data-hydration-trigger="initial"');
+    expect(rendered).toContain('corpora-overview-json="');
     expect(rendered).toContain('&quot;corpusCount&quot;:2');
     expect(rendered).toContain('&quot;noteCount&quot;:3');
     expect(rendered).toContain('&quot;href&quot;:&quot;/corpora/music/&quot;');

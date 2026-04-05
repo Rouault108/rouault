@@ -9,6 +9,11 @@ describe('resolveTrailingSlashRewrite', () => {
     );
   });
 
+  it('corpora URL を trailing slash 付きへ rewrite すること', () => {
+    expect(resolveTrailingSlashRewrite('/corpora')).to.equal('/corpora/');
+    expect(resolveTrailingSlashRewrite('/corpora/music')).to.equal('/corpora/music/');
+  });
+
   it('クエリ文字列を維持すること', () => {
     expect(resolveTrailingSlashRewrite('/search?q=router')).to.equal('/search/?q=router');
   });

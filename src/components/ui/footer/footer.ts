@@ -54,7 +54,6 @@ export const FOOTER_DOCUMENT_CSS = `
 ${FOOTER_SCOPE_SELECTOR} {
   --_footer-bg: var(--footer-bg, var(--bg-default));
   --_footer-fg: var(--footer-fg, var(--fg-muted));
-  --_footer-fg-muted: var(--footer-fg-muted, var(--fg-subtle, var(--fg-muted)));
   --_footer-border: var(--footer-border, var(--border-ghost));
   --_footer-border-width: var(--footer-border-width, var(--border-width));
   --_footer-max-inline-size: var(--footer-max-inline-size, var(--bp-lg, 72rem));
@@ -169,7 +168,7 @@ ${FOOTER_SCOPE_SELECTOR} .ui-footer__copyright {
 }
 
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__build {
-  color: var(--_footer-fg-muted);
+  color: var(--_footer-fg);
   opacity: var(--_footer-build-opacity);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -182,7 +181,7 @@ ${FOOTER_SCOPE_SELECTOR} .ui-footer__build::before,
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__nav::before,
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__nav-item + .ui-footer__nav-item::before {
   content: '·';
-  color: var(--_footer-fg-muted);
+  color: var(--_footer-fg);
   opacity: var(--_footer-build-opacity);
   margin-inline: var(--space-2);
 }
@@ -237,7 +236,7 @@ ${FOOTER_SCOPE_SELECTOR} .ui-footer__nav a[data-external='true']::after {
   content: '↗';
   display: inline-block;
   margin-inline-start: 0.28em;
-  color: var(--_footer-fg-muted);
+  color: var(--_footer-fg);
   font-size: 0.78em;
   line-height: 1;
   text-decoration: none;

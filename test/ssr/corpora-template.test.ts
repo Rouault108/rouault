@@ -32,7 +32,10 @@ describe('CorpusPagesTemplate', () => {
       },
     });
 
-    expect(rendered).toContain('<corpus-page corpus-page-json="');
+    expect(rendered).toContain('<corpus-page data-hydration-scope="corpus-page"');
+    expect(rendered).toContain('data-hydration-capability="interactive"');
+    expect(rendered).toContain('data-hydration-trigger="initial"');
+    expect(rendered).toContain('corpus-page-json="');
     expect(rendered).toContain('&quot;key&quot;:&quot;music&quot;');
     expect(rendered).toContain('&quot;label&quot;:&quot;音楽&quot;');
     expect(rendered).toContain('&quot;href&quot;:&quot;/corpora/music/&quot;');

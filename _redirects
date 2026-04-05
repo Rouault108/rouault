@@ -1,3 +1,6 @@
 /notes/* /notes/:splat/ 200
+/about /about/ 200
+/corpora /corpora/ 200
+/corpora/* /corpora/:splat/ 200
 /search /search/ 200
 /tags/* /tags/:splat/ 200
