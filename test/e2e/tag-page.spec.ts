@@ -4,7 +4,6 @@ const notePath = '/notes/testing/sidebar-scroll/group-16/target';
 const noteCanonicalPath = '/notes/testing/sidebar-scroll/group-16/target/';
 const testingTagPagePath = '/tags/testing/';
 const targetTitle = 'Sidebar Scroll Target';
-const sourceTitle = 'Sidebar Scroll Source';
 
 const waitForAppRouterReady = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
