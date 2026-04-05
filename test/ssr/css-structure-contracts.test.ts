@@ -243,14 +243,17 @@ describe('css structure contracts', () => {
     expectCssIncludes(FOOTER_DOCUMENT_CSS, [
       '--footer-bg',
       '--footer-fg',
-      '--footer-fg-muted',
       '--footer-border',
       '--footer-border-width',
       '--footer-max-inline-size',
       '--footer-padding-block',
       '--footer-inner-padding-inline',
       '--footer-gap',
-      '--footer-build-opacity',
+      '--footer-build-fg',
+      '--footer-build-font-size',
+      '--footer-build-letter-spacing',
+      '--footer-build-line-height',
+      '--footer-build-font-weight',
       '@media (forced-colors: active)',
       '@media print',
       'CanvasText',
@@ -258,6 +261,10 @@ describe('css structure contracts', () => {
       '.ui-footer__build',
       '.ui-footer__subline',
       '.ui-footer__nav-item',
+      'font-size: var(--_footer-build-font-size)',
+      'font-weight: var(--_footer-build-font-weight)',
+      'letter-spacing: var(--_footer-build-letter-spacing)',
+      'line-height: var(--_footer-build-line-height)',
     ]);
 
     expectCssExcludes(FOOTER_DOCUMENT_CSS, ['prefers-color-scheme']);

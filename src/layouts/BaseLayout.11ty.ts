@@ -77,6 +77,8 @@ export class BaseLayout {
     }).breadcrumbs;
     const footerAttributes = serializeHtmlAttributes([
       { name: 'build-label', value: data.buildMetadata?.buildLabel },
+      { name: 'data-hydration-capability', value: 'static' },
+      { name: 'data-hydration-trigger', value: 'initial' },
     ]);
     const themeBootstrapScript = buildThemeBootstrapScript();
     const bodyAttributes = serializeHtmlAttributes([

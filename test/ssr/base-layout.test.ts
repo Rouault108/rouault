@@ -52,7 +52,20 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('<layout-header');
     expect(rendered).toContain('<app-router');
     expect(rendered).toContain('<main id="main-content" tabindex="-1">');
-    expect(rendered).toContain('<layout-footer>');
+    expect(rendered).toContain(
+      '<layout-footer data-hydration-capability="static" data-hydration-trigger="initial"></layout-footer>',
+    );
+  });
+
+  it('footer を shell hydration の初期計画へ含めること', () => {
+    const layout = new BaseLayout();
+    const rendered = layout.render({
+      content: '<p>本文</p>',
+    });
+
+    expect(rendered).toContain('data-hydration-capability="static"');
+    expect(rendered).toContain('data-hydration-trigger="initial"');
+    expect(rendered).toContain('<layout-footer data-hydration-capability="static" data-hydration-trigger="initial"></layout-footer>');
   });
 
   it('buildMetadata の buildLabel を footer 属性へ流し込むこと', () => {
@@ -62,6 +75,8 @@ describe('BaseLayout', () => {
       buildMetadata: loadBuildMetadataData('abcdef1'),
     });
 
-    expect(rendered).toContain('<layout-footer build-label="build abcdef1"></layout-footer>');
+    expect(rendered).toContain(
+      '<layout-footer build-label="build abcdef1" data-hydration-capability="static" data-hydration-trigger="initial"></layout-footer>',
+    );
   });
 });

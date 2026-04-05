@@ -67,7 +67,11 @@ ${FOOTER_SCOPE_SELECTOR} {
   --_footer-column-gap: var(--footer-column-gap, clamp(var(--space-4), 2vw, var(--space-5)));
   --_footer-primary-max-inline-size: var(--footer-primary-max-inline-size, 40rem);
   --_footer-nav-inline-size: var(--footer-nav-inline-size, 12rem);
-  --_footer-build-opacity: var(--footer-build-opacity, 0.58);
+  --_footer-build-fg: var(--footer-build-fg, var(--fg-default, var(--_footer-fg)));
+  --_footer-build-font-size: var(--footer-build-font-size, var(--text-sm));
+  --_footer-build-letter-spacing: var(--footer-build-letter-spacing, 0.04em);
+  --_footer-build-line-height: var(--footer-build-line-height, var(--line-height-relaxed));
+  --_footer-build-font-weight: var(--footer-build-font-weight, var(--font-medium));
   --_footer-link-underline-offset: var(--footer-link-underline-offset, 0.16em);
   --_footer-kicker-fg: var(--footer-kicker-fg, var(--fg-subtle, var(--fg-muted)));
   --_footer-description-fg: var(--footer-description-fg, var(--fg-muted));
@@ -168,12 +172,12 @@ ${FOOTER_SCOPE_SELECTOR} .ui-footer__copyright {
 }
 
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__build {
-  color: var(--_footer-fg);
-  opacity: var(--_footer-build-opacity);
+  color: var(--_footer-build-fg);
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: var(--tracking-wide);
-  line-height: var(--line-height-tight);
+  font-size: var(--_footer-build-font-size);
+  font-weight: var(--_footer-build-font-weight);
+  letter-spacing: var(--_footer-build-letter-spacing);
+  line-height: var(--_footer-build-line-height);
   text-transform: uppercase;
 }
 
@@ -182,7 +186,7 @@ ${FOOTER_SCOPE_SELECTOR} .ui-footer__nav::before,
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__nav-item + .ui-footer__nav-item::before {
   content: '·';
   color: var(--_footer-fg);
-  opacity: var(--_footer-build-opacity);
+  opacity: 0.72;
   margin-inline: var(--space-2);
 }
 

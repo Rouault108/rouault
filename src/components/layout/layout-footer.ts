@@ -118,8 +118,6 @@ export const buildLayoutFooterOptions = ({
 
 @customElement('layout-footer')
 export class LayoutFooter extends LitElement {
-  private _didInitializeFromSsr = false;
-
   @property({ type: String, attribute: 'footer-id' })
   footerId?: string;
 
@@ -153,12 +151,6 @@ export class LayoutFooter extends LitElement {
 
   override connectedCallback(): void {
     ensureFooterDocumentStyles();
-
-    if (!this._didInitializeFromSsr) {
-      this.replaceChildren();
-      this._didInitializeFromSsr = true;
-    }
-
     super.connectedCallback();
   }
 
