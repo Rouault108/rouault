@@ -53,6 +53,13 @@ describe('buildCorporaOverviewProjection', () => {
         date: '2026-03-08',
         genre: ['algorithms'],
       }),
+      createOverviewNote({
+        title: 'Testing Reader',
+        permalink: '/notes/testing/reader-basic/',
+        slug: 'testing/reader-basic',
+        date: '2026-03-12',
+        kind: 'reader',
+      }),
     ];
 
     expect(buildCorporaOverviewProjection(notes)).toEqual({

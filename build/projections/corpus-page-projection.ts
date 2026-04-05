@@ -76,6 +76,10 @@ function getCorpusKeyFromSlug(slug: string): string {
   return firstSegment?.trim() ?? '';
 }
 
+function isCorpusVisible(key: string): boolean {
+  return key !== 'testing';
+}
+
 function toCorpusPageNoteSummary(note: CorpusPageSourceNote): CorpusPageNoteSummary | null {
   const title = normalizeString(note.title);
   const permalink = normalizeString(note.permalink);
@@ -146,7 +150,7 @@ export function buildCorpusPageProjection(
     }
 
     const corpusKey = getCorpusKeyFromSlug(summary.slug);
-    if (corpusKey.length === 0) {
+    if (corpusKey.length === 0 || !isCorpusVisible(corpusKey)) {
       continue;
     }
 

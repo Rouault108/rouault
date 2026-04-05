@@ -26,9 +26,10 @@
 
 - `content/music/...` は `music` コーパス
 - `content/computer-science/...` は `computer-science` コーパス
-- `content/testing/...` は `testing` コーパス
 
 コーパスの境界は `genre` では決めない。
+
+ただし、`testing` 配下は内部検証用の導線として扱い、コーパス一覧やコーパス切替 UI の公開対象には含めない。
 
 ## 3. コーパスラベル
 
