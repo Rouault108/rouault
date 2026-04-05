@@ -1,4 +1,5 @@
 import { HeadManager } from './head-manager.js';
+import { replaceElementChildrenFromHtml } from './declarative-shadow-dom.js';
 import { LocationAdapter } from './location-adapter.js';
 import type { ContentUpdateAdapter, DocumentSnapshot, HistoryMode } from './router-types.js';
 
@@ -67,9 +68,10 @@ export class ContentCommitter {
     }
 
     const previousHtml = this.outlet.innerHTML;
+
     return {
       commit: () => {
-        this.outlet.innerHTML = snapshot.html;
+        replaceElementChildrenFromHtml(this.outlet, snapshot.html, this.outlet.ownerDocument);
       },
       rollback: () => {
         this.outlet.innerHTML = previousHtml;

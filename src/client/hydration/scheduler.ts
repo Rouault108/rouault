@@ -5,6 +5,7 @@ import {
   type MutableHydrationDiagnostics,
 } from './diagnostics.js';
 import { HYDRATION_REGISTRY_BY_TAG, type HydrationRegistryEntry } from './registry.js';
+import { promoteDeclarativeShadowRoots } from '../../router/declarative-shadow-dom.js';
 import { planHydration } from './planner.js';
 import type {
   HydrationDiagnostics,
@@ -67,6 +68,7 @@ export class HydrationScheduler {
     } satisfies HydrationSession;
 
     const prepared = await this.#prepareSession(session);
+
     await Promise.all([
       this.#waitForVisible(
         prepared.visibleItems,
@@ -81,6 +83,7 @@ export class HydrationScheduler {
         prepared.processed,
       ),
     ]);
+
     return finalizeHydrationDiagnostics(prepared.diagnostics);
   }
 
@@ -96,6 +99,7 @@ export class HydrationScheduler {
 
     const prepared = await this.#prepareSession(session);
     const activeContentSession = this.activeContentSession;
+
     if (activeContentSession.id !== session.id || session.controller.signal.aborted) {
       return;
     }
@@ -154,10 +158,13 @@ export class HydrationScheduler {
     const diagnostics = createHydrationDiagnostics();
     const processed = new WeakSet<HTMLElement>();
 
+    promoteDeclarativeShadowRoots(session.root);
+
     const firstPass = this.#plan(session.root);
     diagnostics.plannedCount += firstPass.reduce((sum, scope) => sum + scope.items.length, 0);
 
     await this.#executePhase(matchPlanItems(firstPass, 'initial'), session, diagnostics, processed);
+
     if (session.controller.signal.aborted) {
       return {
         diagnostics,
@@ -168,12 +175,15 @@ export class HydrationScheduler {
     }
 
     await delayTask();
+
     await this.#executePhase(
       matchPlanItems(firstPass, 'post-commit'),
       session,
       diagnostics,
       processed,
     );
+
+    promoteDeclarativeShadowRoots(session.root);
 
     const secondPass = this.#plan(session.root);
     const firstPassElements = new Set(
@@ -182,6 +192,7 @@ export class HydrationScheduler {
     const secondPassItems = secondPass
       .flatMap((scope) => scope.items)
       .filter((item) => !processed.has(item.element) && !firstPassElements.has(item.element));
+
     diagnostics.plannedCount += secondPassItems.length;
 
     return {
@@ -438,6 +449,7 @@ export class HydrationScheduler {
       const onClick = (event: Event): void => {
         tryHydrate(event);
       };
+
       const onKeyDown = (event: Event): void => {
         if (!(event instanceof KeyboardEvent) || !isKeyboardActivation(event)) {
           return;

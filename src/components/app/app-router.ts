@@ -6,6 +6,10 @@ import {
   type RouterContentHtml,
   unwrapRouterContentHtml,
 } from '../../router/router-content-html.js';
+import {
+  promoteDeclarativeShadowRoots,
+  replaceElementChildrenFromHtml,
+} from '../../router/declarative-shadow-dom.js';
 import { registerTabsUrlSyncStrategy } from '../ui/tabs/tabs-url-sync-strategy.js';
 import { AppRouterContentController } from './controllers/app-router-content-controller.js';
 import { AppRouterPostRenderController } from './controllers/app-router-post-render-controller.js';
@@ -41,35 +45,36 @@ export class AppRouter extends LitElement {
   declare private _serverContent: RouterContentHtml | null;
   private _manualDomMode = false;
   private _allowClientRender = false;
+  private readonly _routerController: RouterController;
+  private readonly _contentController: AppRouterContentController;
+  private readonly _postRenderController: AppRouterPostRenderController;
 
   override createRenderRoot(): this {
     return this;
   }
-
-  private _routerController = new RouterController(this);
-  private _contentController = new AppRouterContentController(this, (html) => {
-    if (this._manualDomMode) {
-      this._syncMainContent(html);
-      this._dispatchContentRendered();
-      return;
-    }
-
-    this._pageContent = html;
-  });
-  private _postRenderController = new AppRouterPostRenderController(this, (text) => {
-    if (this._manualDomMode) {
-      this._syncAnnouncement(text);
-      return;
-    }
-
-    this._ariaAnnouncement = text;
-  });
 
   constructor() {
     super();
     this._pageContent = null;
     this._ariaAnnouncement = '';
     this._serverContent = null;
+    this._routerController = new RouterController(this);
+    this._contentController = new AppRouterContentController(this, (html) => {
+      if (this._manualDomMode) {
+        this._syncMainContent(html);
+        return;
+      }
+
+      this._pageContent = html;
+    });
+    this._postRenderController = new AppRouterPostRenderController(this, (text) => {
+      if (this._manualDomMode) {
+        this._syncAnnouncement(text);
+        return;
+      }
+
+      this._ariaAnnouncement = text;
+    });
   }
 
   get serverContent(): RouterContentHtml | null {
@@ -86,11 +91,18 @@ export class AppRouter extends LitElement {
     const initialContent = this._contentController.captureInitialContent(this);
     this._manualDomMode = this.querySelector('#main-content') instanceof HTMLElement;
     this._allowClientRender = !this._manualDomMode;
+
     if (!this._manualDomMode) {
       this._serverContent = initialContent;
       // SSR 由来の light DOM を残すと、Lit の描画結果と重複して main が二重化する。
       this.replaceChildren();
+    } else {
+      const main = this.querySelector('#main-content');
+      if (main instanceof HTMLElement) {
+        promoteDeclarativeShadowRoots(main);
+      }
     }
+
     super.connectedCallback();
 
     const router = this._routerController.initRouter(this, {
@@ -102,6 +114,7 @@ export class AppRouter extends LitElement {
       shellAdapter: createLayoutHeaderShellAdapter(),
       urlStateNavigationPolicy: new PrimaryTabNavigationPolicy(),
     });
+
     router.on('navigation:busy-change', ({ isNavigating }) => {
       if (this._manualDomMode) {
         this._syncBusyState(isNavigating);
@@ -109,6 +122,7 @@ export class AppRouter extends LitElement {
     });
 
     void router.start();
+
     if (this._manualDomMode) {
       void this._postRenderController.restoreInitialHashScroll();
     }
@@ -127,6 +141,11 @@ export class AppRouter extends LitElement {
 
     if (!changedProperties.has('_pageContent')) {
       return;
+    }
+
+    const main = this.querySelector('#main-content');
+    if (main instanceof HTMLElement) {
+      promoteDeclarativeShadowRoots(main);
     }
 
     this._dispatchContentRendered();
@@ -166,7 +185,8 @@ export class AppRouter extends LitElement {
       return;
     }
 
-    main.innerHTML = unwrapRouterContentHtml(content);
+    replaceElementChildrenFromHtml(main, unwrapRouterContentHtml(content), main.ownerDocument);
+    this._dispatchContentRendered();
   }
 
   private _syncAnnouncement(text: string): void {

@@ -1,5 +1,6 @@
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import { HydrationScheduler } from './client/hydration/scheduler.js';
+import { promoteDeclarativeShadowRoots } from './router/declarative-shadow-dom.js';
 import { initSearch } from './search/bootstrap.js';
 import { initTheme } from './theme/theme-manager.js';
 
@@ -25,6 +26,8 @@ const hydrateCurrentContent = async (): Promise<void> => {
     return;
   }
 
+  promoteDeclarativeShadowRoots(mainContent);
+
   const eagerLoaders: Promise<unknown>[] = [];
   if (mainContent.querySelector('search-page')) {
     eagerLoaders.push(import('./components/search/search-page.js'));
@@ -49,6 +52,7 @@ const hydrateCurrentContent = async (): Promise<void> => {
   // SSR を保持した既存 host に対して、補助処理より前に upgrade を完了させる。
   customElements.upgrade(mainContent);
   await Promise.resolve();
+
   await hydrationScheduler.hydrateContent(mainContent, {
     dispatchTarget: document.querySelector('app-router'),
   });
