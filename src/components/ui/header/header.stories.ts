@@ -36,10 +36,6 @@ const fullSlotContent = html`
     ]}
   ></ui-breadcrumbs>
 
-  <span slot="compact-center" style="font-size: 12px; color: var(--fg-muted); white-space: nowrap;">
-    設定
-  </span>
-
   <div slot="end" style="display: flex; align-items: center; gap: 8px;">
     <ui-search-trigger></ui-search-trigger>
     <ui-button variant="ghost" icon-only aria-label="テーマを変更">
@@ -54,10 +50,6 @@ const mobileSlotContent = html`
       <ui-icon name="menu" aria-hidden="true"></ui-icon>
     </ui-button>
   </div>
-
-  <span slot="compact-center" style="font-size: 12px; color: var(--fg-muted); white-space: nowrap;">
-    Notes
-  </span>
 
   <div slot="end">
     <ui-button variant="ghost" icon-only aria-label="テーマを変更">
@@ -77,9 +69,9 @@ const meta: Meta<UiHeader> = {
 アプリケーションシェル上端のヘッダーコンポーネントです。
 
 - \`display: contents\` で app-shell の Grid に透過的に参加
-- 4 スロット構成（\`start\` / \`center\` / \`compact-center\` / \`end\`）
+- 4 スロット契約を持つ一方、Storybook の例示は \`start\` / \`center\` / \`end\` に限定
 - \`sidebarExpanded\` は sidebar 状態そのものではなく start ゾーンの予約幅入力
-- 狭幅では \`center\` を隠し、\`compact-center\` を代替文脈表示面として使える
+- 狭幅では \`center\` を隠し、文脈表示を出さない例を含む
 - event / attribute / responsive contract は \`test/browser/header.browser.test.ts\` に移送済み
         `,
       },

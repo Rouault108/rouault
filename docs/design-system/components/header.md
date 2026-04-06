@@ -606,16 +606,7 @@ header は固定高さであり、自動伸長しません。`start`、`center`�
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
 | `DefaultExpanded`                    | 4 zone、4 slot、sticky header、`sidebarExpanded=true` の基本構造が成立すること                                |
 | `ZenModeCollapsed`                   | `sidebarExpanded=false` で start ゾーン幅が縮退すること                                                       |
-| `SidebarToggleEvent`                 | `ui-header-sidebar-toggle` が `detail.expanded` を含み、`bubbles=false`、`composed=false` であること          |
 | `EmptySlots`                         | `center` と `compact-center` が空でもレイアウト構造が維持されること                                           |
-| `AttributeDrivenToggle`              | property / attribute 双方向反映が成立すること                                                                 |
-| `RapidToggleReentrancy`              | 同一値設定で冗長イベントが発火せず、高速変更で有効変化分だけ発火すること                                      |
-| `DynamicSlotContent`                 | `center` / `compact-center` を含む公開スロットに対して、動的差し替え後も slot 割り当てが維持されること        |
-| `CompactCenterResponsiveReplacement` | 通常幅では `center` が表示され、狭幅では `center` が非表示となり、`compact-center` が代替文脈表示面になること |
-| `CompactCenterNotSimultaneous`       | `center` と `compact-center` が同時表示されないこと                                                           |
-| `CompactCenterEmptyFallback`         | 狭幅時に `compact-center` が空であれば、文脈表示面が存在しないこと                                            |
-| `CompactCenterAccessibilityContract` | `compact-center` に配置した内容が slot host 契約および Accessibility 契約を満たすこと                         |
-| `CompactCenterDynamicSlotContent`    | `compact-center` 内容の動的差し替え後も slot 割り当てと表示切替が維持されること                               |
 
 これらの Story は、現行実装が追従している公開面に対する契約試験です。削除または意味変更を行う場合は、対応する公開契約または実装の変更を先に明示しなければなりません（MUST）。
 
@@ -627,7 +618,7 @@ header は固定高さであり、自動伸長しません。`start`、`center`�
 
 | Story                        | 確認目的                                                                  |
 | ---------------------------- | ------------------------------------------------------------------------- |
-| `ResponsiveVisualComparison` | 異なる幅での start / center / compact-center / end の見え方を比較すること |
+| `ResponsiveVisualComparison` | 異なる幅での start / center / end の見え方を比較すること                 |
 | `ForcedColorsMode`           | 強制カラー環境で header 構造と境界線が視認可能であること                  |
 | `ReducedMotion`              | reduced motion 環境で過度なモーションに依存せず描画が成立すること         |
 | `PrintStyles`                | 印刷時に非表示となること                                                  |
@@ -642,7 +633,7 @@ header は固定高さであり、自動伸長しません。`start`、`center`�
 
 本節に属する Story は、推奨構成を伝えるための **reference-only** の扱いとします。これらは CI 上の契約ゲートとしては扱いません。また、参考使用例を根拠に本文契約を推定してはなりません（MUST NOT）。
 
-現行の Story 群では、`DefaultExpanded` と `ZenModeCollapsed` が使用例としても読めますが、本書ではこれらをまず公開契約試験として扱います。したがって、現時点で reference-only の Story は必須としていません。
+現行の Story 群では、`DefaultExpanded` と `ZenModeCollapsed` が使用例としても読めますが、本書ではこれらをまず公開契約試験として扱います。Storybook の例示は `compact-center` を使わず、`start` / `center` / `end` に限定します。したがって、現時点で reference-only の Story は必須としていません。
 
 ---
 
@@ -651,7 +642,7 @@ header は固定高さであり、自動伸長しません。`start`、`center`�
 本節は、**本文で採用済みの公開契約のうち、現行実装にまだ反映されていないものだけ**を整理するものです。  
 適用文脈、運用前提、非目標、component が自動保証しない利用規範はここに含めません。それらは各本文節の契約として扱います。
 
-現時点では、`compact-center` を含む公開契約、状態モデル、Visual Contract、Storybook 契約試験は `header.ts` および `header.stories.ts` に反映済みです。したがって、本節に列挙すべき未対応項目はありません。
+現時点では、`compact-center` を含む公開契約、状態モデル、Visual Contract は `header.ts` に反映済みです。一方、`header.stories.ts` の例示は `compact-center` を使わない方針に揃えています。したがって、本節に列挙すべき未対応項目はありません。
 
 ## 補足
 

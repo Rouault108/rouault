@@ -50,4 +50,16 @@ describe('layout-header browser contract', () => {
 
     expect(document.activeElement).to.not.equal(themeTrigger);
   });
+
+  it('breadcrumbs を持つ場合でも compact-center の文脈ラベルを出さないこと', async () => {
+    const header = await fixture<LayoutHeader>(html`
+      <layout-header
+        note-layout
+        breadcrumbs-json='[{"label":"Notes","href":"/"},{"label":"Section","href":"/notes/section"},{"label":"Current"}]'
+      ></layout-header>
+    `);
+    await waitForLitUpdate(header);
+
+    expect(header.shadowRoot?.querySelector('[slot="compact-center"]')).to.equal(null);
+  });
 });

@@ -289,17 +289,6 @@ export class LayoutHeader extends LitElement {
     }
   }
 
-  private get _compactContextLabel(): string {
-    const breadcrumbs = this._breadcrumbItems;
-    const lastItem = breadcrumbs.at(-1);
-
-    if (lastItem?.label.trim()) {
-      return lastItem.label.trim();
-    }
-
-    return this.noteLayout ? 'ノート' : 'ホーム';
-  }
-
   private get _corpusItems(): CorpusNavigationItem[] {
     const normalized = this.corporaJson.trim();
     if (normalized.length === 0) {
@@ -385,9 +374,6 @@ export class LayoutHeader extends LitElement {
                 aria-label="現在の階層"
               ></ui-breadcrumbs>
             `
-          : nothing}
-        ${hasBreadcrumbs
-          ? html`<span slot="compact-center" class="context">${this._compactContextLabel}</span>`
           : nothing}
         <div slot="end" class="slot-group">
           <ui-search-trigger density="auto"></ui-search-trigger>
