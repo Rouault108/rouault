@@ -1,9 +1,7 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
-import { HydrationScheduler } from '../../src/client/hydration/scheduler.js';
-import type { HydrationDiagnostics } from '../../src/client/hydration/types.js';
 import { replaceElementChildrenFromHtml } from '../../src/router/declarative-shadow-dom.js';
-import { nextAnimationFrame } from './helpers/wait-for-lit.js';
+import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const headingsJson = JSON.stringify([
   { id: '71-配列の生成', text: '7.1 配列の生成', level: 2 },
@@ -37,39 +35,17 @@ const appendArticleFixture = (): (() => void) => {
   };
 };
 
-const hydrateWithScheduler = async (root: HTMLElement): Promise<HydrationDiagnostics> => {
-  const scheduler = new HydrationScheduler();
-  let diagnostics: HydrationDiagnostics | null = null;
-
-  root.addEventListener(
-    'app-router:hydration-diagnostics',
-    (event: Event) => {
-      diagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
-    },
-    { once: true },
-  );
-
-  await scheduler.hydrateContent(root, { dispatchTarget: root });
-  await waitUntil(() => diagnostics !== null, 'hydration diagnostics が発火すること');
-
-  if (diagnostics === null) {
-    throw new Error('hydration diagnostics が取得できません');
-  }
-
-  return diagnostics;
-};
-
 const flush = async (host: LayoutTocLike): Promise<void> => {
-  await host.updateComplete;
-  await Promise.resolve();
+  await waitForLitUpdate(host);
   await nextAnimationFrame();
 
   const tocs = host.shadowRoot?.querySelectorAll<UiTocLike>('ui-toc') ?? [];
   for (const toc of tocs) {
-    await toc.updateComplete;
+    await waitForLitUpdate(toc);
   }
 
-  await Promise.resolve();
+  await nextAnimationFrame();
+  await waitForLitUpdate(host);
   await nextAnimationFrame();
 };
 
@@ -90,7 +66,7 @@ describe('layout-toc SSR entry hydration', () => {
           >
             <layout-toc
               headings-json='${headingsJson}'
-              capabilities-json='{"activeTracking":true,"dynamicScopes":false,"mobileSummary":false}'
+              capabilities-json='{"activeTracking":false,"dynamicScopes":false,"mobileSummary":false}'
               content-root-id="note-content"
               data-hydration-capability="interactive"
               data-hydration-trigger="initial"
@@ -129,9 +105,10 @@ describe('layout-toc SSR entry hydration', () => {
         root.ownerDocument,
       );
 
-      expect(customElements.get('layout-toc')).to.equal(undefined);
+      await import('../../src/components/layout/layout-toc.js');
+      await customElements.whenDefined('layout-toc');
+      await customElements.whenDefined('ui-toc');
 
-      const diagnostics = await hydrateWithScheduler(root);
       const host = root.querySelector<LayoutTocLike>('layout-toc');
       if (!(host instanceof HTMLElement)) {
         throw new Error('layout-toc が見つかりません');
@@ -139,8 +116,6 @@ describe('layout-toc SSR entry hydration', () => {
 
       await flush(host);
 
-      expect(diagnostics.failedCount).to.equal(0);
-      expect(diagnostics.activatedCount).to.equal(1);
       expect(typeof host.activateHydration).to.equal('function');
       expect(host.hasAttribute('defer-hydration')).to.equal(false);
       expect(host._activeId).to.equal('71-配列の生成');

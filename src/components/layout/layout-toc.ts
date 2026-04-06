@@ -300,13 +300,12 @@ export class LayoutToc extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this._loadHeadingsFromSource();
 
     const hydrationTrigger = this.getAttribute('data-hydration-trigger')?.trim();
     // layout-toc は initial trigger の時点で current state を維持できないと
     // 初期 hash と scroll tracker の両方を取りこぼすため、upgrade 直後に自前で起動する。
     if (hydrationTrigger === undefined || hydrationTrigger.length === 0 || hydrationTrigger === 'initial') {
-      this.activateHydration();
+      void this.activateHydration();
     }
   }
 
@@ -346,7 +345,7 @@ export class LayoutToc extends LitElement {
     }
   }
 
-  activateHydration(): void {
+  activateHydration(): Promise<void> | void {
     if (this._hydrationActivated) {
       return;
     }
@@ -358,6 +357,21 @@ export class LayoutToc extends LitElement {
     this._hydrationActivated = true;
     this._upgradeNestedShadowHosts();
     this._releaseDeferredHydrationIfNeeded();
+
+    if (!this.hasUpdated) {
+      return this.updateComplete.then(() => {
+        if (!this.isConnected) {
+          return;
+        }
+
+        this._finishHydrationActivation();
+      });
+    }
+
+    this._finishHydrationActivation();
+  }
+
+  private _finishHydrationActivation(): void {
     this._loadHeadingsFromSource();
 
     const stickyTarget = isHTMLElement(this.parentElement) ? this.parentElement : this;
@@ -381,15 +395,6 @@ export class LayoutToc extends LitElement {
       return;
     }
 
-    if (this.renderRoot.childNodes.length === 0) {
-      this.removeAttribute('defer-hydration');
-      this._ssrRootReset = true;
-      return;
-    }
-
-    // SSR 済み layout-toc は host state と子 ui-toc の hydration 状態が分離しやすいため、
-    // 初回 client update 前に shadow root を空へ戻してから現在の state で再描画する。
-    this.renderRoot.replaceChildren();
     this.removeAttribute('defer-hydration');
     this._ssrRootReset = true;
   }
@@ -397,12 +402,6 @@ export class LayoutToc extends LitElement {
   private _releaseDeferredHydrationIfNeeded(): void {
     if (this._ssrRootReset || !this.hasAttribute('defer-hydration')) {
       return;
-    }
-
-    if (this.renderRoot.childNodes.length > 0) {
-      // SSR 済み host は stale な subtree を握ったままになりうるため、
-      // defer-hydration を外す前に shadow root を空へ戻して client state を正本にする。
-      this.renderRoot.replaceChildren();
     }
 
     this.removeAttribute('defer-hydration');
@@ -463,7 +462,10 @@ export class LayoutToc extends LitElement {
     }
 
     this._applyVisibleHeadings(visibleHeadings);
-    this._connectControllers();
+    if (this._tracker !== null) {
+      this._tracker.setHeadings(nextHeadings);
+      this._tracker.refresh();
+    }
   }
 
   private _connectControllers(): void {
