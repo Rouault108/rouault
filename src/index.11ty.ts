@@ -49,8 +49,8 @@ export class HomePageTemplate {
         <article class="home-content">
           <header class="home-hero">
             <p class="home-eyebrow">Rouault</p>
-            <h1 class="home-title">静かに入り、静かに読み進める。</h1>
-            <p class="home-lead">公開している個人ノートの入口です。新しいものから辿れます。</p>
+            <h1 class="home-title">調べたことと考えたことを、ここに置いています。</h1>
+            <p class="home-lead">技術とその周辺についての個人ノートです。公開しているものを、新しい順に並べています。</p>
             <p${serializeHtmlAttributes([
               { name: 'class', value: 'home-meta' },
               { name: 'aria-label', value: '公開ノートの概要' },
