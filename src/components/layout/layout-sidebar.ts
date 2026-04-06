@@ -323,11 +323,6 @@ export class LayoutSidebar extends LitElement {
     return window.matchMedia(mediaQuery).matches ? 'expanded' : 'collapsed';
   }
 
-  private _onToggleButtonClick = (event: Event): void => {
-    const trigger = event.currentTarget;
-    this._sidebarElement?.toggle(trigger instanceof HTMLElement ? trigger : undefined);
-  };
-
   private _onToggleRequest = (event: Event): void => {
     if (!(event instanceof CustomEvent)) {
       return;
