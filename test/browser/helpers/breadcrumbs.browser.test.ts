@@ -95,7 +95,7 @@ describe('ui-breadcrumbs browser contract', () => {
     }
   });
 
-  it('モバイル時は auto collapse して root / ellipsis / current の3要素に縮退すること', async () => {
+  it('狭幅時はパンくずを描画しないこと', async () => {
     const originalMatchMedia = window.matchMedia;
     window.matchMedia = createMatchMediaMock(true);
 
@@ -107,12 +107,12 @@ describe('ui-breadcrumbs browser contract', () => {
       await waitForLitUpdate(host);
 
       const renderedItems = host.shadowRoot?.querySelectorAll('.breadcrumb-item');
-      const renderedLabels = getRenderedLabels(host);
+      const nav = host.shadowRoot?.querySelector('nav');
       const dropdown = host.shadowRoot?.querySelector('ui-dropdown');
 
-      expect(renderedItems?.length).to.equal(3);
-      expect(renderedLabels).to.deep.equal(['ホーム', 'ユーザー管理']);
-      expect(dropdown).to.not.equal(null);
+      expect(renderedItems?.length).to.equal(0);
+      expect(nav).to.equal(null);
+      expect(dropdown).to.equal(null);
     } finally {
       window.matchMedia = originalMatchMedia;
     }

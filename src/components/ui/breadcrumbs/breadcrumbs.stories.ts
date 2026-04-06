@@ -23,7 +23,7 @@ const meta: Meta<Breadcrumbs> = {
         component: `
 \`ui-breadcrumbs\` は Storybook では **display / smoke / manual review** に限定します。
 
-desktop collapse、mobile auto collapse、ellipsis dropdown、\`breadcrumb-navigate\`、
+desktop collapse、狭幅時の非表示、ellipsis dropdown、\`breadcrumb-navigate\`、
 omit-root、focus を含む browser contract は
 \`test/browser/helpers/breadcrumbs.browser.test.ts\` を正本とします。  
 forced-colors / reduced-motion / print の CSS 構造契約は
@@ -83,7 +83,7 @@ export const CollapsedWithDropdown: Story = {
     docs: {
       description: {
         story:
-          'desktop で ellipsis dropdown が入る見え方を手で確認するための manual-only story です。collapse の合否は `test/browser/helpers/breadcrumbs.browser.test.ts` を正本とします。',
+          'desktop で ellipsis dropdown が入る見え方を手で確認するための manual-only story です。desktop collapse の合否は `test/browser/helpers/breadcrumbs.browser.test.ts` を正本とします。',
       },
     },
   },
@@ -137,7 +137,7 @@ export const AllStatesReference: Story = {
   `,
 };
 
-export const MobileAutoCollapseManual: Story = {
+export const MobileHiddenManual: Story = {
   tags: ['manual-only'],
   render: () => html`
     <div style="max-width: 420px; border: 1px dashed var(--border-default); padding: 16px;">
@@ -151,7 +151,7 @@ export const MobileAutoCollapseManual: Story = {
 手動確認用 story です。
 
 確認内容:
-- モバイル幅での root / ellipsis / current への縮退
+- 狭幅でパンくずが描画されないこと
 - dropdown trigger の見え方
 - 長い current label の切り詰め
 - focus ring

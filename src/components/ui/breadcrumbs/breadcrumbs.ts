@@ -1,4 +1,4 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { map } from 'lit/directives/map.js';
 import '../button/button';
@@ -16,7 +16,7 @@ interface EllipsisItem {
 
 type DisplayItem = BreadcrumbItem | EllipsisItem;
 
-const MOBILE_BREAKPOINT_QUERY = '(max-width: 640px)';
+const NARROW_BREAKPOINT_QUERY = '(max-width: 640px)';
 
 @customElement('ui-breadcrumbs')
 export class Breadcrumbs extends LitElement {
@@ -118,6 +118,12 @@ export class Breadcrumbs extends LitElement {
       height: var(--icon-base, 16px);
     }
 
+    @media (max-width: 640px) {
+      :host {
+        display: none !important;
+      }
+    }
+
     @media (forced-colors: active) {
       .breadcrumb-link {
         color: LinkText !important;
@@ -168,46 +174,42 @@ export class Breadcrumbs extends LitElement {
   @property({ type: String, attribute: 'aria-label' })
   override ariaLabel = 'パンくずリスト';
 
-  private _mobileMediaQuery: MediaQueryList | null = null;
+  private _narrowMediaQuery: MediaQueryList | null = null;
 
   override connectedCallback(): void {
     super.connectedCallback();
-    const mediaQuery = this._getMobileMediaQuery();
+    const mediaQuery = this._getNarrowMediaQuery();
     if (!mediaQuery) return;
-    mediaQuery.addEventListener('change', this._handleMobileQueryChange);
+    mediaQuery.addEventListener('change', this._handleNarrowQueryChange);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    const mediaQuery = this._getMobileMediaQuery();
+    const mediaQuery = this._getNarrowMediaQuery();
     if (!mediaQuery) return;
-    mediaQuery.removeEventListener('change', this._handleMobileQueryChange);
+    mediaQuery.removeEventListener('change', this._handleNarrowQueryChange);
   }
 
-  private readonly _handleMobileQueryChange = (): void => {
+  private readonly _handleNarrowQueryChange = (): void => {
     this.requestUpdate();
   };
 
-  private _getMobileMediaQuery(): MediaQueryList | null {
-    if (this._mobileMediaQuery) return this._mobileMediaQuery;
+  private _getNarrowMediaQuery(): MediaQueryList | null {
+    if (this._narrowMediaQuery) return this._narrowMediaQuery;
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       return null;
     }
-    this._mobileMediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
-    return this._mobileMediaQuery;
+    this._narrowMediaQuery = window.matchMedia(NARROW_BREAKPOINT_QUERY);
+    return this._narrowMediaQuery;
   }
 
-  private get _isMobileViewport(): boolean {
-    return this._getMobileMediaQuery()?.matches ?? false;
+  private get _isNarrowViewport(): boolean {
+    return this._getNarrowMediaQuery()?.matches ?? false;
   }
 
   private get _normalizedMaxItems(): number {
     const safeValue = Number.isFinite(this.maxItems) ? Math.trunc(this.maxItems) : 5;
-    const normalized = Math.max(1, safeValue);
-    if (this._isMobileViewport) {
-      return 3;
-    }
-    return normalized;
+    return Math.max(1, safeValue);
   }
 
   private get _sourceItemsForDesktop(): BreadcrumbItem[] {
@@ -254,33 +256,18 @@ export class Breadcrumbs extends LitElement {
     return [firstItem, { isEllipsis: true, hiddenItems }, ...middleItems, currentItem];
   }
 
-  private _createMobileDisplayItems(): DisplayItem[] {
-    if (this.items.length <= 2) {
-      return this.items;
-    }
-
-    const rootItem = this.items[0];
-    const currentItem = this.items[this.items.length - 1];
-    const hiddenItems = this.items.slice(1, -1);
-
-    if (!rootItem || !currentItem || hiddenItems.length === 0) {
-      return this.items;
-    }
-
-    return [rootItem, { isEllipsis: true, hiddenItems }, currentItem];
-  }
-
   private get _displayItems(): DisplayItem[] {
-    if (this._isMobileViewport) {
-      return this._createMobileDisplayItems();
-    }
     return this._createDesktopDisplayItems();
   }
 
   override render() {
+    if (this._isNarrowViewport) {
+      return nothing;
+    }
+
     const displayItems = this._displayItems;
     if (displayItems.length === 0) {
-      return html``;
+      return nothing;
     }
 
     const lastIndex = displayItems.length - 1;

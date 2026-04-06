@@ -96,7 +96,7 @@ describe('css structure contracts', () => {
     ]);
   });
 
-  it('breadcrumbs が collapse / motion / forced-colors / print の構造契約を保持すること', () => {
+  it('breadcrumbs が responsive visibility / motion / forced-colors / print の構造契約を保持すること', () => {
     const cssText = collectCssText(Breadcrumbs.styles);
 
     expectCssIncludes(cssText, [
@@ -106,6 +106,8 @@ describe('css structure contracts', () => {
       '.breadcrumb-current',
       '.breadcrumb-separator',
       '.breadcrumb-ellipsis-button',
+      '@media (max-width: 640px)',
+      'display: none !important',
       '@media (forced-colors: active)',
       'LinkText',
       'CanvasText',
