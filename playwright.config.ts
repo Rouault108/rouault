@@ -8,6 +8,7 @@ const crossBrowserFinalCheck = [
   '**/not-found-page.spec.ts',
   '**/router.spec.ts',
   '**/tag-page.spec.ts',
+  '**/toc-active-scroll.spec.ts',
   '**/toc-tabs.spec.ts',
 ];
 
