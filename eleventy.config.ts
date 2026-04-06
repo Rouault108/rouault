@@ -140,6 +140,9 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   });
 
   eleventyConfig.addPassthroughCopy({ 'src/assets': 'assets' });
+  eleventyConfig.addPassthroughCopy({
+    'node_modules/@fontsource-variable/noto-sans-jp/files': 'assets/fonts/noto-sans-jp',
+  });
   if (!hasExternalMediaBaseUrl()) {
     eleventyConfig.addPassthroughCopy({ '.generated/media/assets': 'media' });
   }
