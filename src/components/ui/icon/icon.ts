@@ -13,24 +13,24 @@ const BaseElement: UiIconBaseConstructor =
       } as unknown as UiIconBaseConstructor)
     : HTMLElement;
 
+const prepareGlyphElement = (glyph: HTMLElement): void => {
+  glyph.setAttribute('part', 'glyph');
+  glyph.style.inlineSize = '1em';
+  glyph.style.blockSize = '1em';
+  glyph.style.display = 'inline-block';
+  glyph.style.flexShrink = '0';
+};
+
 export class UiIcon extends BaseElement {
   static readonly observedAttributes = [NAME_ATTRIBUTE, ICON_ATTRIBUTE, ARIA_LABEL_ATTRIBUTE];
 
-  private readonly glyph = document.createElement('iconify-icon');
-  private readonly glyphRoot: ShadowRoot;
+  private glyph: HTMLElement = document.createElement('iconify-icon');
+  private glyphRoot: ShadowRoot | null = null;
   private collapsedDisplayBackup: string | null = null;
 
   constructor() {
     super();
-
-    const host = this as unknown as HTMLElement;
-    this.glyphRoot = host.attachShadow({ mode: 'open' });
-    this.glyph.setAttribute('part', 'glyph');
-    this.glyph.style.inlineSize = '1em';
-    this.glyph.style.blockSize = '1em';
-    this.glyph.style.display = 'inline-block';
-    this.glyph.style.flexShrink = '0';
-    this.glyphRoot.append(this.glyph);
+    prepareGlyphElement(this.glyph);
   }
 
   get name(): IconName | null {
@@ -71,11 +71,37 @@ export class UiIcon extends BaseElement {
   }
 
   connectedCallback(): void {
+    this.#ensureShadowRoot();
     this.#sync();
   }
 
   attributeChangedCallback(): void {
+    this.#ensureShadowRoot();
     this.#sync();
+  }
+
+  #ensureShadowRoot(): ShadowRoot {
+    const host = this as unknown as HTMLElement;
+
+    if (this.glyphRoot !== null) {
+      if (this.glyph.parentNode !== this.glyphRoot) {
+        this.glyphRoot.replaceChildren(this.glyph);
+      }
+      return this.glyphRoot;
+    }
+
+    const root = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
+    this.glyphRoot = root;
+
+    const existingGlyph = root.querySelector('iconify-icon');
+    if (existingGlyph instanceof HTMLElement) {
+      this.glyph = existingGlyph;
+      prepareGlyphElement(this.glyph);
+      return root;
+    }
+
+    root.replaceChildren(this.glyph);
+    return root;
   }
 
   #ensureHostPresentation(): void {
