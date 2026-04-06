@@ -97,7 +97,7 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
               { kind: 'leaf', id: note.slug, label: note.title, href: `/notes/${note.slug}` },
             ],
             heading: 'ナビゲーション',
-            fixedBreakpoint: '768',
+            fixedBreakpoint: '1024',
           },
         }
       : {}),

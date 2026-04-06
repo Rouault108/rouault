@@ -152,7 +152,7 @@ export class LayoutHeader extends LitElement {
       opacity: 0.78;
     }
 
-    @media (min-width: 768px) {
+    @media (min-width: 1024px) {
       :host([note-layout]) ui-header {
         --ui-header-center-start-inset: var(--sidebar-width, 272px);
         --ui-header-center-end-inset: var(--aside-width, 240px);
@@ -190,7 +190,7 @@ export class LayoutHeader extends LitElement {
     }
 
     this._themePreference = readStoredThemePreference();
-    this._mediaQuery = window.matchMedia('(min-width: 768px)');
+    this._mediaQuery = window.matchMedia('(min-width: 1024px)');
     this._syncFromMediaQuery();
     this._mediaQuery.addEventListener('change', this._onMediaQueryChange);
     window.addEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);

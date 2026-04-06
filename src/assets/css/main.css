@@ -2051,8 +2051,8 @@ app-router {
   color: var(--fg-muted);
 }
 
-/* Tablet: 2カラム（本文 + TOC） */
-@media (max-width: 767px) {
+/* Narrow desktop: 2カラム（本文 + TOC） */
+@media (max-width: 1023px) {
   .note-shell[data-sidebar-presence='present'] {
     grid-template-columns:
       0px
@@ -2066,6 +2066,13 @@ app-router {
       minmax(200px, 34vw);
   }
 
+  .layout-sidebar-col {
+    border-right: none;
+  }
+}
+
+/* Tablet: about / home の密度調整 */
+@media (max-width: 767px) {
   .about-shell {
     --about-toc-track: minmax(200px, 34vw);
   }
@@ -2077,10 +2084,6 @@ app-router {
   .home-entry {
     grid-template-columns: 1fr;
     gap: var(--space-2, 8px);
-  }
-
-  .layout-sidebar-col {
-    border-right: none;
   }
 }
 

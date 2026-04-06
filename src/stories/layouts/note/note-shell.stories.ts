@@ -62,7 +62,7 @@ const renderNoteShell = () =>
                       source-id="story-note-sidebar-source"
                       selected-id="story-shell"
                       heading="ナビゲーション"
-                      fixed-breakpoint="768"
+                      fixed-breakpoint="1024"
                     ></layout-sidebar>
                   </aside>
 
@@ -82,7 +82,7 @@ const renderNoteShell = () =>
                       <p>補助 UI には細い境界だけを与え、本文面は過剰に囲いません。</p>
                       <h3 id="layout">レイアウト契約</h3>
                       <p>
-                        desktop では 3 カラム、tablet では本文 + TOC、mobile
+                        desktop では 3 カラム、1024px 未満では本文 + TOC、mobile
                         では本文優先へ縮退します。
                       </p>
                       <h2 id="conclusion">まとめ</h2>

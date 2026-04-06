@@ -270,7 +270,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
             selectedId: input.navigation.selectedId ?? '',
             items: input.navigation.sidebarTree,
             heading: 'ナビゲーション',
-            fixedBreakpoint: '768',
+            fixedBreakpoint: '1024',
           },
         }
       : {}),

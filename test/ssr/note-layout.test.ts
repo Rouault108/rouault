@@ -12,7 +12,7 @@ const createProjection = (
     selectedId: 'note',
     items: [{ kind: 'leaf', id: 'note', label: 'Note', href: '/notes/note' }],
     heading: 'ナビゲーション',
-    fixedBreakpoint: '768',
+    fixedBreakpoint: '1024',
   };
 
   return {
@@ -81,7 +81,7 @@ describe('NoteLayout', () => {
           selectedId: 'note',
           items: [{ kind: 'leaf', id: 'note', label: '<Unsafe>', href: '/notes/note' }],
           heading: 'ナビゲーション',
-          fixedBreakpoint: '768',
+          fixedBreakpoint: '1024',
         },
         articleHeader: {
           heading: '"Danger"<tag>',

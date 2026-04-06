@@ -229,8 +229,8 @@ test.describe('No-JS baseline', () => {
     expect(Math.abs((sidebarAfter?.y ?? 0) - (sidebarBefore?.y ?? 0))).toBeLessThan(2);
   });
 
-  test('狭い画面では sidebar が折りたたまれて本文を覆わないこと', async ({ page }) => {
-    await page.setViewportSize({ width: 744, height: 900 });
+  test('1024px 未満では sidebar 領域が退化して本文を覆わないこと', async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 900 });
     await page.goto(sidebarSourcePath);
 
     const layoutState = await page.evaluate(() => {
@@ -246,6 +246,9 @@ test.describe('No-JS baseline', () => {
 
     expect(layoutState.hasMainArticle).toBe(true);
     expect(layoutState.hasSidebarColumn).toBe(true);
+    const sidebarBox = await page.locator('.layout-sidebar-col').boundingBox();
+    expect(sidebarBox).not.toBeNull();
+    expect(sidebarBox?.width ?? 0).toBeLessThanOrEqual(1);
     expect(layoutState.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 });
