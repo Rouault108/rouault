@@ -296,12 +296,6 @@ export class LayoutToc extends LitElement {
   private _tracker: TocActiveTracker | null = null;
   private _mobileController: TocMobileSummaryController | null = null;
   private _hydrationActivated = false;
-  private _ssrRootReset = false;
-
-  protected override performUpdate(): void {
-    this._resetSsrShadowRootIfNeeded();
-    super.performUpdate();
-  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -375,24 +369,6 @@ export class LayoutToc extends LitElement {
       : filterVisibleHeadings(contentRoot, scopedHeadings);
   }
 
-  private _resetSsrShadowRootIfNeeded(): void {
-    if (this._ssrRootReset || !this.hasAttribute('defer-hydration')) {
-      return;
-    }
-
-    if (this.renderRoot.childNodes.length === 0) {
-      this.removeAttribute('defer-hydration');
-      this._ssrRootReset = true;
-      return;
-    }
-
-    // SSR 済み layout-toc は hydration 中に ui-toc が重複しやすいため、
-    // 初回 client update 前に shadow root を空へ戻してから再描画する。
-    this.renderRoot.replaceChildren();
-    this.removeAttribute('defer-hydration');
-    this._ssrRootReset = true;
-  }
-
   private _loadHeadingsFromSource(): void {
     const inlineHeadings = parseJsonArray(this.headingsJson);
 
@@ -427,8 +403,6 @@ export class LayoutToc extends LitElement {
       return;
     }
 
-    // hydration 後の tracker 起動前にも、現在 DOM / URL / selected-value を使って
-    // いったん正しい見出し集合を反映しておく。
     this._applyVisibleHeadings(visibleHeadings);
     this._connectControllers();
   }
@@ -462,7 +436,6 @@ export class LayoutToc extends LitElement {
     });
     this._tracker.start();
 
-    // ui-tabs の upgrade / selected-value 反映直後にも追従させる。
     queueMicrotask(() => {
       this._tracker?.refresh();
     });
@@ -547,9 +520,6 @@ export class LayoutToc extends LitElement {
       this._onTocActiveChange as EventListener,
     );
 
-    // 未接続の custom element に applyHostState() を呼ぶと、
-    // ui-toc 側の refresh() が未初期化 renderRoot に触れて落ち得る。
-    // 先にプレーンな property だけを設定して接続し、接続後に同期 API を流す。
     replacement.headers = [...state.headers];
     replacement.activeId = state.activeId;
 
@@ -609,8 +579,6 @@ export class LayoutToc extends LitElement {
 
     this._upgradeNestedShadowHosts();
 
-    // SSR 起点の ui-toc は hydration 後に property 再注入が取りこぼされることがある。
-    // host state と child state の一致を明示検査し、差分が残る場合は新しい client-only 要素へ置換する。
     const state = this._createTocHostState(this._visibleHeadings);
     const tocs = this.renderRoot.querySelectorAll<SyncableTocElement>('ui-toc');
 
