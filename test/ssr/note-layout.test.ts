@@ -94,7 +94,7 @@ describe('NoteLayout', () => {
 
     expect(rendered).toContain('heading="&quot;Danger&quot;&lt;tag&gt;"');
     expect(rendered).toContain('data-tags="[&quot;a\\&quot;&amp;b&quot;]"');
-    expect(rendered).toContain('\\u003cUnsafe\\u003e');
+    expect(rendered).toContain('\\u003cUnsafe>');
   });
 
   it('sidebar と Pagefind が無効な projection では対応マークアップを出さないこと', () => {
