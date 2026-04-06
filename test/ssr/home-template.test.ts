@@ -23,8 +23,8 @@ describe('HomePageTemplate', () => {
     });
 
     expect(rendered).toContain('<section class="home-shell">');
-    expect(rendered).toContain('<h1 class="home-title">静かに入り、静かに読み進める。</h1>');
-    expect(rendered).toContain('公開している個人ノートの入口です。新しいものから辿れます。');
+    expect(rendered).toContain('<h1 class="home-title">調べたことと考えたことを、ここに置いています。</h1>');
+    expect(rendered).toContain('技術とその周辺についての個人ノートです。公開しているものを、新しい順に並べています。');
     expect(rendered).toContain('3件');
     expect(rendered).toContain('最新更新 <time datetime="2026-03-10">2026-03-10</time>');
     expect(rendered).toContain('<a class="home-meta-link" href="/about/">このサイトについて</a>');
