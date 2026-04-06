@@ -23,14 +23,6 @@ export interface UiTocActiveChangeDetail {
   total: number;
 }
 
-export interface UiTocHostState {
-  headers: Heading[];
-  activeId: string;
-}
-
-const hasSameHeadingIds = (left: readonly Heading[], right: readonly Heading[]): boolean =>
-  left.length === right.length && left.every((heading, index) => heading.id === right[index]?.id);
-
 @customElement('ui-toc')
 export class Toc extends LitElement {
   static override styles = css`
@@ -270,49 +262,6 @@ export class Toc extends LitElement {
 
   private _getQueryableRenderRoot(): ShadowRoot | null {
     return this.renderRoot instanceof ShadowRoot ? this.renderRoot : null;
-  }
-
-  refresh(): void {
-    if (!this._getQueryableRenderRoot()) {
-      return;
-    }
-
-    this._observeLabels();
-    this._scheduleTruncationSync();
-    this._syncActiveLinkVisibility();
-  }
-
-  applyHostState(state: UiTocHostState): void {
-    const nextHeaders = state.headers;
-    const nextActiveId = state.activeId;
-    const headersChanged = !hasSameHeadingIds(this.headers, nextHeaders);
-    const activeChanged = this.activeId !== nextActiveId;
-
-    if (!headersChanged && !activeChanged) {
-      this.refresh();
-      return;
-    }
-
-    if (headersChanged) {
-      this.headers = [...nextHeaders];
-    }
-
-    if (activeChanged) {
-      this.activeId = nextActiveId;
-      this._activeIdSource = 'scroll';
-    }
-
-    this.requestUpdate();
-    this.refresh();
-  }
-
-  matchesHostState(state: UiTocHostState): boolean {
-    return hasSameHeadingIds(this.headers, state.headers) && this.activeId === state.activeId;
-  }
-
-  renderedHeadingCount(): number {
-    const root = this._getQueryableRenderRoot();
-    return root?.querySelectorAll('.toc-link-label').length ?? 0;
   }
 
   private get _minLevel(): number {
