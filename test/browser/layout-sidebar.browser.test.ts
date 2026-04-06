@@ -103,9 +103,6 @@ const mockMatchMedia = (breakpointMatches: boolean): MatchMediaController => {
 const getSidebar = (host: LayoutSidebar): UiSidebar | null =>
   host.shadowRoot?.querySelector<UiSidebar>('ui-sidebar') ?? null;
 
-const getFloatingToggle = (host: LayoutSidebar): HTMLButtonElement | null =>
-  host.shadowRoot?.querySelector<HTMLButtonElement>('button.floating-toggle') ?? null;
-
 const flush = async (host: LayoutSidebar): Promise<void> => {
   await waitForLitUpdate(host);
   await nextAnimationFrame();
@@ -187,7 +184,6 @@ describe('layout-sidebar browser contract', () => {
       await flush(host);
 
       const sidebar = expectPresent(getSidebar(host), 'ui-sidebar');
-      const toggle = expectPresent(getFloatingToggle(host), 'floating toggle');
 
       expect(sidebar.mode).to.equal('overlay');
 
@@ -195,7 +191,6 @@ describe('layout-sidebar browser contract', () => {
       await flush(host);
 
       expect(sidebar.state).to.equal('expanded');
-      expect(toggle.getAttribute('aria-expanded')).to.equal('true');
 
       sidebar.dispatchEvent(
         new CustomEvent<UiSidebarSelectDetail>('ui-sidebar-select', {
@@ -211,7 +206,6 @@ describe('layout-sidebar browser contract', () => {
 
       expect(sidebar.mode).to.equal('overlay');
       expect(sidebar.state).to.equal('collapsed');
-      expect(toggle.getAttribute('aria-expanded')).to.equal('false');
     } finally {
       media.restore();
     }

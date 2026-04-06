@@ -117,48 +117,6 @@ export class LayoutSidebar extends LitElement {
       block-size: 100%;
       min-block-size: 0;
     }
-
-    .floating-toggle {
-      position: fixed;
-      left: var(--space-4, 16px);
-      bottom: var(--space-4, 16px);
-      z-index: var(--z-popover, 400);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      inline-size: 48px;
-      block-size: 48px;
-      border: var(--border-width, 1px) solid var(--border-default);
-      border-radius: var(--radius-full, 9999px);
-      background: var(--bg-surface-2);
-      color: var(--fg-default);
-      box-shadow: var(--shadow-md);
-      cursor: pointer;
-    }
-
-    .floating-toggle ui-icon {
-      font-size: 18px;
-    }
-
-    @media (min-width: 768px) {
-      .floating-toggle {
-        display: none;
-      }
-    }
-
-    @media (forced-colors: active) {
-      .floating-toggle {
-        border-color: CanvasText;
-        background: Canvas;
-        color: CanvasText;
-      }
-    }
-
-    @media print {
-      .floating-toggle {
-        display: none !important;
-      }
-    }
   `;
 
   @property({ type: String, attribute: 'source-id' })
@@ -408,7 +366,6 @@ export class LayoutSidebar extends LitElement {
   };
 
   override render() {
-    const isExpanded = this._state === 'expanded';
     const mergedExpandedIds = mergeLayoutSidebarTreeState(
       this._items,
       [...this._persistedExpandedIds],
@@ -428,17 +385,6 @@ export class LayoutSidebar extends LitElement {
         @ui-sidebar-toggle=${this._onSidebarToggle}
         @ui-sidebar-select=${this._onSidebarSelect}
       ></ui-sidebar>
-
-      <button
-        class="floating-toggle"
-        type="button"
-        aria-controls="layout-sidebar-panel"
-        aria-expanded=${String(isExpanded)}
-        aria-label="サイドバーを開閉"
-        @click=${this._onToggleButtonClick}
-      >
-        <ui-icon name="panel-left"></ui-icon>
-      </button>
     `;
   }
 }
