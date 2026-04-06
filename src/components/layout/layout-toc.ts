@@ -22,8 +22,6 @@ interface SyncableTocElement extends HTMLElement {
   refresh?: () => void;
   requestUpdate?: () => void;
   applyHostState?: (state: UiTocHostState) => void;
-  matchesHostState?: (state: UiTocHostState) => boolean;
-  renderedHeadingCount?: () => number;
 }
 
 const hasSameHeadingIds = (left: readonly Heading[], right: readonly Heading[]): boolean =>
@@ -296,6 +294,8 @@ export class LayoutToc extends LitElement {
   private _tracker: TocActiveTracker | null = null;
   private _mobileController: TocMobileSummaryController | null = null;
   private _hydrationActivated = false;
+  private _renderedTocSyncScheduled = false;
+  private _renderedTocSyncRetryCount = 0;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -321,7 +321,7 @@ export class LayoutToc extends LitElement {
       changedProperties.has('_activeId') ||
       changedProperties.has('_tocReady')
     ) {
-      this._syncRenderedTocProps();
+      this._scheduleRenderedTocSync();
     }
   }
 
@@ -353,6 +353,7 @@ export class LayoutToc extends LitElement {
     this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
 
     this._connectControllers();
+    this._scheduleRenderedTocSync();
   }
 
   private _resolveVisibleHeadings(headings: Heading[] = this._allHeadings): Heading[] {
@@ -415,8 +416,7 @@ export class LayoutToc extends LitElement {
   private _connectControllers(): void {
     this._disconnectControllers();
 
-    if (typeof window === 'undefined') {
-      this._applyVisibleHeadings(this._allHeadings);
+    if (!this._hydrationActivated || typeof window === 'undefined') {
       return;
     }
 
@@ -498,23 +498,13 @@ export class LayoutToc extends LitElement {
     }
 
     this._tocReady = true;
-
-    if (this.hasUpdated) {
-      queueMicrotask(() => {
-        this._syncRenderedTocProps();
-      });
-    }
+    this._scheduleRenderedTocSync();
   }
 
   private _applyActiveId(id: string): void {
     this._activeId = id;
     this._activeIndex = this._visibleHeadings.findIndex((heading) => heading.id === id);
-
-    if (this.hasUpdated) {
-      queueMicrotask(() => {
-        this._syncRenderedTocProps();
-      });
-    }
+    this._scheduleRenderedTocSync();
   }
 
   private _createTocHostState(headings: Heading[]): UiTocHostState {
@@ -524,8 +514,50 @@ export class LayoutToc extends LitElement {
     };
   }
 
+  private _scheduleRenderedTocSync(): void {
+    if (!this._hydrationActivated || typeof window === 'undefined') {
+      return;
+    }
+
+    if (this._renderedTocSyncScheduled) {
+      return;
+    }
+
+    this._renderedTocSyncScheduled = true;
+
+    void (async () => {
+      await this.updateComplete;
+      await customElements.whenDefined('ui-toc');
+      await Promise.resolve();
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => { resolve(); });
+      });
+
+      this._renderedTocSyncScheduled = false;
+      this._syncRenderedTocProps();
+    })();
+  }
+
+  private _collectSyncableTocs(): SyncableTocElement[] {
+    const renderRoot = this.renderRoot;
+    if (!(renderRoot instanceof ShadowRoot || renderRoot instanceof HTMLElement)) {
+      return [];
+    }
+
+    const tocs = Array.from(renderRoot.querySelectorAll<SyncableTocElement>('ui-toc'));
+    for (const toc of tocs) {
+      try {
+        customElements.upgrade(toc);
+      } catch {
+        // DSD subtree 全体ではなく対象要素だけを upgrade する。
+      }
+    }
+
+    return tocs;
+  }
+
   private _syncRenderedTocProps(): void {
-    if (!this.hasUpdated) {
+    if (!this._hydrationActivated) {
       return;
     }
 
@@ -537,11 +569,6 @@ export class LayoutToc extends LitElement {
       return;
     }
 
-    const renderRoot = this.renderRoot;
-    if (!(renderRoot instanceof ShadowRoot || renderRoot instanceof HTMLElement)) {
-      return;
-    }
-
     const resolvedHeadings = this._resolveVisibleHeadings(this._allHeadings);
     if (!hasSameHeadingIds(this._visibleHeadings, resolvedHeadings)) {
       this._applyVisibleHeadings(resolvedHeadings);
@@ -549,19 +576,42 @@ export class LayoutToc extends LitElement {
     }
 
     const state = this._createTocHostState(this._visibleHeadings);
-    const tocs = renderRoot.querySelectorAll<SyncableTocElement>('ui-toc');
+    const tocs = this._collectSyncableTocs();
+    if (tocs.length === 0) {
+      return;
+    }
+
+    let needsRetry = false;
 
     for (const toc of tocs) {
       if (typeof toc.applyHostState === 'function') {
         toc.applyHostState(state);
+      } else {
+        toc.headers = [...state.headers];
+        toc.activeId = state.activeId;
+        toc.setAttribute('active-id', state.activeId);
+        toc.requestUpdate?.();
+        toc.refresh?.();
+        needsRetry = true;
         continue;
       }
 
-      toc.headers = [...state.headers];
-      toc.activeId = state.activeId;
-      toc.requestUpdate?.();
-      toc.refresh?.();
+      if (toc.activeId !== state.activeId || toc.getAttribute('active-id') !== state.activeId) {
+        toc.activeId = state.activeId;
+        toc.setAttribute('active-id', state.activeId);
+        toc.requestUpdate?.();
+        toc.refresh?.();
+        needsRetry = true;
+      }
     }
+
+    if (needsRetry && this._renderedTocSyncRetryCount < 4) {
+      this._renderedTocSyncRetryCount += 1;
+      this._scheduleRenderedTocSync();
+      return;
+    }
+
+    this._renderedTocSyncRetryCount = 0;
   }
 
   private _onTocActiveChange = (event: CustomEvent<UiTocActiveChangeDetail>): void => {

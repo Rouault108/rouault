@@ -12,7 +12,6 @@ const headingsJson = JSON.stringify([
 
 interface LayoutTocInternals {
   _applyActiveId(id: string): void;
-  _syncRenderedTocProps(): void;
 }
 
 const flush = async (host: LayoutToc): Promise<void> => {
@@ -26,6 +25,7 @@ const flush = async (host: LayoutToc): Promise<void> => {
 
   await nextAnimationFrame();
   await waitForLitUpdate(host);
+  await nextAnimationFrame();
 };
 
 const queryDesktopToc = (host: LayoutToc): Toc | null =>
@@ -48,8 +48,8 @@ const appendArticleFixture = (): (() => void) => {
   };
 };
 
-describe('layout-toc reconciliation', () => {
-  it('host の activeId 変更を描画済み ui-toc へ反映できること', async () => {
+describe('layout-toc hydration reconciliation', () => {
+  it('hydrate 後に host の activeId 変更が ui-toc へ追従すること', async () => {
     const cleanup = appendArticleFixture();
 
     try {
@@ -67,7 +67,6 @@ describe('layout-toc reconciliation', () => {
 
       const internals = host as unknown as LayoutTocInternals;
       internals._applyActiveId('72-配列の要素の読み書き');
-      internals._syncRenderedTocProps();
       await flush(host);
 
       const desktopToc = queryDesktopToc(host);
@@ -87,25 +86,37 @@ describe('layout-toc reconciliation', () => {
     }
   });
 
-  it('初回 render 前に _syncRenderedTocProps() が走っても例外にならないこと', async () => {
+  it('hydrate 開始直後でも _applyActiveId による同期が失われないこと', async () => {
     const cleanup = appendArticleFixture();
 
     try {
-      const host = document.createElement('layout-toc') as LayoutToc;
-      host.setAttribute('headings-json', headingsJson);
-      host.setAttribute('content-root-id', 'note-content');
-      host.setAttribute('data-hydration-trigger', 'manual');
+      const host = await fixture<LayoutToc>(html`
+        <layout-toc
+          .headingsJson=${headingsJson}
+          content-root-id="note-content"
+          data-hydration-trigger="manual"
+        ></layout-toc>
+      `);
 
-      document.body.append(host);
+      host.activateHydration();
 
       const internals = host as unknown as LayoutTocInternals;
-      expect(() => {
-        internals._syncRenderedTocProps();
-      }).not.to.throw();
+      internals._applyActiveId('72-配列の要素の読み書き');
 
       await flush(host);
+
+      const desktopToc = queryDesktopToc(host);
+      if (!desktopToc) {
+        throw new Error('desktop ui-toc が見つかりません');
+      }
+
+      expect(desktopToc.activeId).to.equal('72-配列の要素の読み書き');
+      expect(
+        desktopToc.shadowRoot
+          ?.querySelector('a.toc-link.is-active .toc-link-label')
+          ?.textContent?.trim(),
+      ).to.equal('7.2 配列の要素の読み書き');
     } finally {
-      document.querySelectorAll('layout-toc').forEach((element) => element.remove());
       cleanup();
     }
   });

@@ -289,7 +289,9 @@ export class Toc extends LitElement {
     const activeChanged = this.activeId !== nextActiveId;
 
     if (!headersChanged && !activeChanged) {
-      this.refresh();
+      void this.updateComplete.then(() => {
+        this.refresh();
+      });
       return;
     }
 
@@ -299,20 +301,15 @@ export class Toc extends LitElement {
 
     if (activeChanged) {
       this.activeId = nextActiveId;
+      this.setAttribute('active-id', nextActiveId);
       this._activeIdSource = 'scroll';
     }
 
     this.requestUpdate();
-    this.refresh();
-  }
 
-  matchesHostState(state: UiTocHostState): boolean {
-    return hasSameHeadingIds(this.headers, state.headers) && this.activeId === state.activeId;
-  }
-
-  renderedHeadingCount(): number {
-    const root = this._getQueryableRenderRoot();
-    return root?.querySelectorAll('.toc-link-label').length ?? 0;
+    void this.updateComplete.then(() => {
+      this.refresh();
+    });
   }
 
   private get _minLevel(): number {
