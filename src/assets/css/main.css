@@ -1692,6 +1692,8 @@ app-router {
 }
 
 .note-shell {
+  /* メモ本文は補助カラム込みでも少し広く読めるようにする */
+  --note-reading-measure: calc(var(--reading-measure, var(--width-reading)) + 12rem);
   --note-toc-track: var(--aside-width);
   display: grid;
   align-items: start;
@@ -1699,6 +1701,14 @@ app-router {
   max-width: var(--bp-xl);
   margin-inline: auto;
   width: 100%;
+}
+
+.note-shell .container-reading {
+  max-width: min(100%, var(--note-reading-measure));
+}
+
+.note-shell .prose {
+  max-width: var(--note-reading-measure);
 }
 
 .note-shell[data-sidebar-presence='present'] {
