@@ -2,7 +2,7 @@ import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/layout/layout-toc.js';
 import '../../src/components/ui/toc/toc.js';
 import type { LayoutToc } from '../../src/components/layout/layout-toc.js';
-import type { Toc } from '../../src/components/ui/toc/toc.js';
+import type { Toc, UiTocHostState } from '../../src/components/ui/toc/toc.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const headingsJson = JSON.stringify([
@@ -12,7 +12,13 @@ const headingsJson = JSON.stringify([
 
 interface LayoutTocInternals {
   _applyActiveId(id: string): void;
+  _syncRenderedTocProps(): void;
 }
+
+type SyncableUiToc = Toc & {
+  applyHostState?(state: UiTocHostState): void;
+  matchesHostState?(state: UiTocHostState): boolean;
+};
 
 const flush = async (host: LayoutToc): Promise<void> => {
   await waitForLitUpdate(host);
@@ -27,8 +33,8 @@ const flush = async (host: LayoutToc): Promise<void> => {
   await waitForLitUpdate(host);
 };
 
-const queryDesktopToc = (host: LayoutToc): Toc | null =>
-  host.shadowRoot?.querySelector<Toc>('.desktop ui-toc') ?? null;
+const queryDesktopToc = (host: LayoutToc): SyncableUiToc | null =>
+  host.shadowRoot?.querySelector<SyncableUiToc>('.desktop ui-toc') ?? null;
 
 const appendArticleFixture = (): (() => void) => {
   const wrapper = document.createElement('div');
@@ -47,8 +53,8 @@ const appendArticleFixture = (): (() => void) => {
   };
 };
 
-describe('layout-toc hydration rendering', () => {
-  it('host の activeId 変更が通常の property binding で ui-toc へ反映されること', async () => {
+describe('layout-toc hydration reconciliation', () => {
+  it('host の activeId 変更を描画済み ui-toc へ反映できること', async () => {
     const cleanup = appendArticleFixture();
 
     try {
@@ -61,9 +67,12 @@ describe('layout-toc hydration rendering', () => {
       `);
 
       await flush(host);
+      host.activateHydration();
+      await flush(host);
 
       const internals = host as unknown as LayoutTocInternals;
       internals._applyActiveId('72-配列の要素の読み書き');
+      internals._syncRenderedTocProps();
       await flush(host);
 
       const desktopToc = queryDesktopToc(host);
@@ -83,54 +92,51 @@ describe('layout-toc hydration rendering', () => {
     }
   });
 
-  it('SSR 済み shadow root を初回 client update 前に空へ戻して再描画すること', async () => {
+  it('子 ui-toc が host state と不整合な場合でも再生成して activeId を復旧すること', async () => {
     const cleanup = appendArticleFixture();
 
     try {
-      const host = document.createElement('layout-toc') as LayoutToc;
-      host.setAttribute('headings-json', headingsJson);
-      host.setAttribute('content-root-id', 'note-content');
-      host.setAttribute('data-hydration-trigger', 'manual');
+      const host = await fixture<LayoutToc>(html`
+        <layout-toc
+          .headingsJson=${headingsJson}
+          content-root-id="note-content"
+          data-hydration-trigger="manual"
+        ></layout-toc>
+      `);
 
-      const shadowRoot = host.attachShadow({ mode: 'open' });
-      shadowRoot.innerHTML = `
-        <div class="desktop">
-          <ui-toc active-id="71-配列の生成">
-            <template shadowrootmode="open">
-              <nav>
-                <a class="toc-link is-active" href="#71-配列の生成">
-                  <span class="toc-link-label">stale</span>
-                </a>
-              </nav>
-            </template>
-          </ui-toc>
-        </div>
-      `;
-
-      document.body.append(host);
+      await flush(host);
+      host.activateHydration();
       await flush(host);
 
-      const desktopToc = queryDesktopToc(host);
-      if (!desktopToc) {
+      const internals = host as unknown as LayoutTocInternals;
+      const staleChild = queryDesktopToc(host);
+      if (!staleChild) {
         throw new Error('desktop ui-toc が見つかりません');
       }
 
-      expect(host.shadowRoot?.textContent ?? '').not.to.contain('stale');
-      expect(desktopToc.shadowRoot?.textContent ?? '').to.contain('7.1 配列の生成');
-      expect(desktopToc.shadowRoot?.textContent ?? '').to.contain('7.2 配列の要素の読み書き');
+      staleChild.applyHostState = () => undefined;
+      staleChild.matchesHostState = () => false;
+      staleChild.activeId = '71-配列の生成';
+      staleChild.setAttribute('active-id', '71-配列の生成');
 
-      const internals = host as unknown as LayoutTocInternals;
       internals._applyActiveId('72-配列の要素の読み書き');
+      internals._syncRenderedTocProps();
       await flush(host);
 
-      expect(desktopToc.activeId).to.equal('72-配列の要素の読み書き');
+      const repairedChild = queryDesktopToc(host);
+      if (!repairedChild) {
+        throw new Error('復旧後の desktop ui-toc が見つかりません');
+      }
+
+      expect(repairedChild).to.not.equal(staleChild);
+      expect(repairedChild.activeId).to.equal('72-配列の要素の読み書き');
+      expect(repairedChild.getAttribute('active-id')).to.equal('72-配列の要素の読み書き');
       expect(
-        desktopToc.shadowRoot
+        repairedChild.shadowRoot
           ?.querySelector('a.toc-link.is-active .toc-link-label')
           ?.textContent?.trim(),
       ).to.equal('7.2 配列の要素の読み書き');
     } finally {
-      document.querySelectorAll('layout-toc').forEach((element) => element.remove());
       cleanup();
     }
   });

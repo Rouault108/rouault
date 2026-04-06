@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import type { PropertyValues } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
 import {
@@ -13,7 +14,20 @@ import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
 import { TocMobileSummaryController } from '../../toc/toc-mobile-summary-controller.js';
 import { isHTMLElement } from '../../lib/dom.js';
 import '../ui/toc/toc.js';
-import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc.js';
+import type { Heading, UiTocActiveChangeDetail, UiTocHostState } from '../ui/toc/toc.js';
+
+interface SyncableTocElement extends HTMLElement {
+  headers: Heading[];
+  activeId: string;
+  refresh?: () => void;
+  requestUpdate?: () => void;
+  applyHostState?: (state: UiTocHostState) => void;
+  matchesHostState?: (state: UiTocHostState) => boolean;
+  renderedHeadingCount?: () => number;
+}
+
+const hasSameHeadingIds = (left: readonly Heading[], right: readonly Heading[]): boolean =>
+  left.length === right.length && left.every((heading, index) => heading.id === right[index]?.id);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -282,36 +296,14 @@ export class LayoutToc extends LitElement {
   private _tracker: TocActiveTracker | null = null;
   private _mobileController: TocMobileSummaryController | null = null;
   private _hydrationActivated = false;
-  private _ssrRootReset = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
     this._loadHeadingsFromSource();
+    this._connectControllers();
     if (!this.hasAttribute('data-hydration-trigger')) {
       this.activateHydration();
     }
-  }
-
-  protected override createRenderRoot(): ShadowRoot {
-    const existingRoot = this.shadowRoot;
-
-    if (existingRoot && !this._ssrRootReset) {
-      const hasMeaningfulChild = Array.from(existingRoot.childNodes).some((node) => {
-        if (node.nodeType !== Node.TEXT_NODE) {
-          return true;
-        }
-
-        return (node.textContent ?? '').trim().length > 0;
-      });
-
-      if (hasMeaningfulChild) {
-        existingRoot.replaceChildren();
-      }
-
-      this._ssrRootReset = true;
-    }
-
-    return super.createRenderRoot() as ShadowRoot;
   }
 
   override disconnectedCallback(): void {
@@ -319,6 +311,18 @@ export class LayoutToc extends LitElement {
     this._detachStickyFooterBoundary?.();
     this._detachStickyFooterBoundary = null;
     super.disconnectedCallback();
+  }
+
+  protected override updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+
+    if (
+      changedProperties.has('_visibleHeadings') ||
+      changedProperties.has('_activeId') ||
+      changedProperties.has('_tocReady')
+    ) {
+      this._syncRenderedTocProps();
+    }
   }
 
   protected override willUpdate(changedProperties: Map<string, unknown>): void {
@@ -343,10 +347,11 @@ export class LayoutToc extends LitElement {
     }
 
     this._hydrationActivated = true;
+    this._upgradeNestedShadowHosts();
     this._loadHeadingsFromSource();
     const stickyTarget = isHTMLElement(this.parentElement) ? this.parentElement : this;
     this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
-    this.requestUpdate();
+    this._connectControllers();
   }
 
   private _resolveVisibleHeadings(headings: Heading[] = this._allHeadings): Heading[] {
@@ -390,17 +395,23 @@ export class LayoutToc extends LitElement {
 
     this._allHeadings = nextHeadings;
     this._capabilities = normalizeCapabilities(parseJsonValue(this.capabilitiesJson));
-    this._applyVisibleHeadings(this._resolveVisibleHeadings(nextHeadings));
 
-    if (this._hydrationActivated && typeof window !== 'undefined') {
-      this._connectControllers();
+    const visibleHeadings = this._resolveVisibleHeadings(nextHeadings);
+
+    if (!this._hydrationActivated || typeof window === 'undefined') {
+      this._applyVisibleHeadings(visibleHeadings);
+      return;
     }
+
+    this._applyVisibleHeadings(visibleHeadings);
+    this._connectControllers();
   }
 
   private _connectControllers(): void {
     this._disconnectControllers();
 
-    if (!this._hydrationActivated || typeof window === 'undefined') {
+    if (typeof window === 'undefined') {
+      this._applyVisibleHeadings(this._allHeadings);
       return;
     }
 
@@ -482,11 +493,110 @@ export class LayoutToc extends LitElement {
     }
 
     this._tocReady = true;
+    queueMicrotask(() => {
+      this._syncRenderedTocProps();
+    });
   }
 
   private _applyActiveId(id: string): void {
     this._activeId = id;
     this._activeIndex = this._visibleHeadings.findIndex((heading) => heading.id === id);
+    queueMicrotask(() => {
+      this._syncRenderedTocProps();
+    });
+  }
+
+  private _createTocHostState(headings: Heading[]): UiTocHostState {
+    return {
+      headers: headings,
+      activeId: this._activeId,
+    };
+  }
+
+  private _replaceStaleToc(toc: SyncableTocElement, state: UiTocHostState): void {
+    const replacement = document.createElement('ui-toc') as SyncableTocElement;
+    replacement.addEventListener(
+      'ui-toc-active-change',
+      this._onTocActiveChange as EventListener,
+    );
+
+    replacement.headers = [...state.headers];
+    replacement.activeId = state.activeId;
+
+    toc.replaceWith(replacement);
+
+    queueMicrotask(() => {
+      if (!replacement.isConnected) {
+        return;
+      }
+
+      if (replacement.applyHostState) {
+        replacement.applyHostState(state);
+        return;
+      }
+
+      replacement.requestUpdate?.();
+      replacement.refresh?.();
+    });
+  }
+
+  private _isTocSynchronized(toc: SyncableTocElement, state: UiTocHostState): boolean {
+    const matchesState = toc.matchesHostState?.(state);
+    if (matchesState === false) {
+      return false;
+    }
+
+    const renderedHeadingCount =
+      toc.renderedHeadingCount?.() ??
+      toc.shadowRoot?.querySelectorAll('.toc-link-label').length ??
+      0;
+
+    if (renderedHeadingCount !== state.headers.length) {
+      return false;
+    }
+
+    if (matchesState === true) {
+      return true;
+    }
+
+    return hasSameHeadingIds(toc.headers, state.headers) && toc.activeId === state.activeId;
+  }
+
+  private _syncRenderedTocProps(): void {
+    if (!this._tocReady || this._visibleHeadings.length === 0) {
+      return;
+    }
+
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const resolvedHeadings = this._resolveVisibleHeadings(this._allHeadings);
+    if (!hasSameHeadingIds(this._visibleHeadings, resolvedHeadings)) {
+      this._applyVisibleHeadings(resolvedHeadings);
+      return;
+    }
+
+    this._upgradeNestedShadowHosts();
+
+    const state = this._createTocHostState(this._visibleHeadings);
+    const tocs = this.renderRoot.querySelectorAll<SyncableTocElement>('ui-toc');
+
+    for (const toc of tocs) {
+      if (toc.applyHostState) {
+        toc.applyHostState(state);
+      }
+      if (!toc.applyHostState) {
+        toc.headers = [...state.headers];
+        toc.activeId = state.activeId;
+        toc.requestUpdate?.();
+        toc.refresh?.();
+      }
+
+      if (!this._isTocSynchronized(toc, state)) {
+        this._replaceStaleToc(toc, state);
+      }
+    }
   }
 
   private _resolveContentRoot(): HTMLElement | null {
@@ -506,6 +616,14 @@ export class LayoutToc extends LitElement {
 
     const article = main.querySelector<HTMLElement>('article[id]');
     return article ?? main;
+  }
+
+  private _upgradeNestedShadowHosts(): void {
+    if (!(this.renderRoot instanceof ShadowRoot)) {
+      return;
+    }
+
+    customElements.upgrade(this.renderRoot);
   }
 
   private _onTocActiveChange = (event: CustomEvent<UiTocActiveChangeDetail>): void => {
