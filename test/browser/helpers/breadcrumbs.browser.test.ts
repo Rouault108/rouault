@@ -56,6 +56,36 @@ describe('ui-breadcrumbs browser contract', () => {
     expect(current?.textContent?.trim()).to.equal('設定');
   });
 
+  it('items-json attribute からも項目を復元できること', async () => {
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = createMatchMediaMock(false);
+
+    try {
+      const host = await fixture<Breadcrumbs>(html`
+        <ui-breadcrumbs
+          items-json='[{"label":"ホーム","href":"/"},{"label":"Program","href":"/notes/program"},{"label":"JavaScriptの配列"}]'
+          align="start"
+        ></ui-breadcrumbs>
+      `);
+      await waitForLitUpdate(host);
+
+      const nav = host.shadowRoot?.querySelector<HTMLElement>('nav');
+      const current = host.shadowRoot?.querySelector<HTMLElement>('[aria-current="page"]');
+      const firstLink = host.shadowRoot?.querySelector<HTMLAnchorElement>('.breadcrumb-link');
+
+      expect(nav).to.not.equal(null);
+      if (!nav) {
+        throw new Error('nav should be rendered');
+      }
+      expect(getComputedStyle(nav).justifyContent).to.equal('flex-start');
+      expect(firstLink?.textContent?.trim()).to.equal('ホーム');
+      expect(firstLink?.getAttribute('href')).to.equal('/');
+      expect(current?.textContent?.trim()).to.equal('JavaScriptの配列');
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
+  });
+
   it('desktop で maxItems を超えると ellipsis dropdown を挿入すること', async () => {
     const originalMatchMedia = window.matchMedia;
     window.matchMedia = createMatchMediaMock(false);

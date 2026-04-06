@@ -1,6 +1,6 @@
 import type { TreeNode } from '../../shared/navigation/tree-node.js';
 import { injectNoteContentProfiles } from '../../build/content/note-content-contracts.js';
-import type { NoteNavigationModel } from '../../shared/navigation/navigation-types.js';
+import type { BreadcrumbItem, NoteNavigationModel } from '../../shared/navigation/navigation-types.js';
 import type { PagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 import type { NoteStatus } from '../../src/types/article-status.js';
 import type { NoteContentKind } from '../../shared/note/note-kind.js';
@@ -57,6 +57,7 @@ export interface NotePageTocProjection {
 
 export interface NotePageArticleHeaderProjection {
   heading: string;
+  breadcrumbs?: BreadcrumbItem[];
   published?: string;
   updated?: string;
   status?: NoteStatus;
@@ -284,6 +285,9 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     },
     articleHeader: {
       heading: typeof input.note.title === 'string' ? input.note.title : '',
+      ...(input.navigation.breadcrumbs.length > 0
+        ? { breadcrumbs: input.navigation.breadcrumbs }
+        : {}),
       ...(typeof input.note.date === 'string' && input.note.date.length > 0
         ? { published: input.note.date }
         : {}),

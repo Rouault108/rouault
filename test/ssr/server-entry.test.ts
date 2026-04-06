@@ -81,6 +81,26 @@ describe('server-entry', () => {
     expect(rendered).toContain('data-tags="[');
   });
 
+  it('ui-article-header に breadcrumbs-json がある場合、SSR 時にパンくずを描画できること', async () => {
+    const rendered = await renderCustomElement(
+      'ui-article-header',
+      [
+        { name: 'heading', value: 'SSR Article Header' },
+        {
+          name: 'breadcrumbs-json',
+          value:
+            '[{"label":"Notes","href":"/"},{"label":"Program","href":"/notes/program"},{"label":"JavaScriptの配列"}]',
+        },
+      ],
+      '',
+    );
+
+    expect(rendered).toContain('shadowrootmode="open"');
+    expect(rendered).toContain('items-json="[{&quot;label&quot;:&quot;Notes&quot;');
+    expect(rendered).toContain('aria-label="現在の階層"');
+    expect(rendered).toContain('JavaScriptの配列');
+  });
+
   it('app-router に SSR 本文を渡して描画できること', async () => {
     const rendered = await renderCustomElement(
       'app-router',

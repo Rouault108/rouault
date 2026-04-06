@@ -70,6 +70,11 @@ const renderSidebar = (sidebar: NonNullable<NotePageProjection['sidebar']>): str
 const renderArticleHeader = (articleHeader: NotePageProjection['articleHeader']): string => {
   const articleHeaderAttributes = serializeHtmlAttributes([
     { name: 'heading', value: articleHeader.heading },
+    {
+      name: 'breadcrumbs-json',
+      value: articleHeader.breadcrumbs && articleHeader.breadcrumbs.length > 0 ? articleHeader.breadcrumbs : undefined,
+      kind: 'json',
+    },
     { name: 'published', value: articleHeader.published },
     { name: 'updated', value: articleHeader.updated },
     { name: 'status', value: articleHeader.status },

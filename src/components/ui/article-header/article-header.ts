@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import '../breadcrumbs/breadcrumbs.js';
 import '../tag/tag.js';
 import { linkTextStyles } from '../../../styles/contracts/link-styles.js';
 import type { ArticleStatus } from '../../../types/article-status.js';
@@ -9,6 +10,7 @@ import {
   parseArticleHeaderTagsAdapterValue,
 } from './article-header-tags-adapter.js';
 import type { IconName } from '../../../../shared/icons/icons-catalog.js';
+import type { BreadcrumbItem } from '../breadcrumbs/breadcrumbs.js';
 
 export type { ArticleStatus } from '../../../types/article-status.js';
 
@@ -46,6 +48,16 @@ export class ArticleHeader extends LitElement {
           --border-style-subtle,
           1px solid var(--border-default, oklch(20% 0 0 / 0.12))
         );
+      }
+
+      .breadcrumbs-row {
+        margin-block: 0 var(--space-2, 8px);
+      }
+
+      .breadcrumbs {
+        display: block;
+        inline-size: 100%;
+        min-inline-size: 0;
       }
 
       .heading {
@@ -163,7 +175,9 @@ export class ArticleHeader extends LitElement {
 
       /* heading または status-badge の直後（primary metadata なし）は余白を増やす */
       .heading + .tags-row,
-      .status-badge + .heading + .tags-row {
+      .status-badge + .heading + .tags-row,
+      .breadcrumbs-row + .heading + .tags-row,
+      .breadcrumbs-row + .status-badge + .heading + .tags-row {
         margin-top: var(--space-3, 12px);
       }
 
@@ -253,6 +267,9 @@ export class ArticleHeader extends LitElement {
   @property({ type: String })
   license = '';
 
+  @property({ type: String, attribute: 'breadcrumbs-json' })
+  breadcrumbsJson = '';
+
   private get _createdDate(): string {
     return formatArticleDate(this.created);
   }
@@ -286,6 +303,34 @@ export class ArticleHeader extends LitElement {
     return parseArticleHeaderTagsAdapterValue(
       this.getAttribute(ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE),
     );
+  }
+
+  private get _normalizedBreadcrumbs(): BreadcrumbItem[] {
+    const normalized = this.breadcrumbsJson.trim();
+    if (normalized.length === 0) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(normalized) as unknown;
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed.filter((item): item is BreadcrumbItem => {
+        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+          return false;
+        }
+
+        const candidate = item as Record<string, unknown>;
+        return (
+          typeof candidate['label'] === 'string' &&
+          (candidate['href'] === undefined || typeof candidate['href'] === 'string')
+        );
+      });
+    } catch {
+      return [];
+    }
   }
 
   private get _displayReadingTime(): number | null {
@@ -360,6 +405,26 @@ export class ArticleHeader extends LitElement {
       event.preventDefault();
     }
   };
+
+  private _renderBreadcrumbsRow(): TemplateResult | typeof nothing {
+    const breadcrumbs = this._normalizedBreadcrumbs;
+    if (breadcrumbs.length === 0) {
+      return nothing;
+    }
+
+    const breadcrumbsJson = JSON.stringify(breadcrumbs);
+
+    return html`
+      <div class="breadcrumbs-row">
+        <ui-breadcrumbs
+          class="breadcrumbs"
+          align="start"
+          items-json=${breadcrumbsJson}
+          aria-label="現在の階層"
+        ></ui-breadcrumbs>
+      </div>
+    `;
+  }
 
   private _renderDateItem(): TemplateResult | typeof nothing {
     const displayDate = this._displayDate;
@@ -471,7 +536,7 @@ export class ArticleHeader extends LitElement {
   override render() {
     return html`
       <header class="article-header">
-        ${this._renderStatusBadge()}
+        ${this._renderBreadcrumbsRow()} ${this._renderStatusBadge()}
         <h1 class="heading">${this.heading}</h1>
         ${this._hasPrimaryMetadata
           ? html`

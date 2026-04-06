@@ -83,6 +83,8 @@ const expectSampleJavascriptNoteChromeVisibleWithoutJs = async (page: Page): Pro
   expect(state.articleHeaderShadowRoot).toBe(true);
   expect(state.articleHeaderTemplateCount).toBe(0);
   expect(state.articleHeaderHeight).toBeGreaterThan(0);
+  expect(state.articleHeaderText).toContain('Notes');
+  expect(state.articleHeaderText).toContain('Program');
   expect(state.articleHeaderText).toContain('JavaScriptの配列');
   expect(state.articleHeaderText).toContain('javascript');
   expect(state.articleHeaderText).toContain('programming');

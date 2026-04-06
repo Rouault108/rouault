@@ -78,6 +78,8 @@ const readNoteChromeState = async (
 
 const expectSampleJavascriptNoteChrome = async (page: Page): Promise<void> => {
   await expect(page.locator('ui-article-header')).toHaveAttribute('heading', 'JavaScriptの配列');
+  await expect(page.locator('ui-article-header')).toContainText('Notes');
+  await expect(page.locator('ui-article-header')).toContainText('Program');
   await expect(page.locator('#main-content')).toContainText(
     'JavaScriptの配列には型はないため、配列の要素にはどの型の値でも格納できる。',
   );

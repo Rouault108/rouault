@@ -9,6 +9,8 @@ export interface BreadcrumbItem {
   href?: string;
 }
 
+export type BreadcrumbAlignment = 'start' | 'center';
+
 interface EllipsisItem {
   isEllipsis: true;
   hiddenItems: BreadcrumbItem[];
@@ -23,6 +25,10 @@ export class Breadcrumbs extends LitElement {
   static override styles = css`
     :host {
       display: block;
+    }
+
+    :host([align='start']) nav {
+      justify-content: flex-start;
     }
 
     nav {
@@ -79,7 +85,6 @@ export class Breadcrumbs extends LitElement {
       transition: color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
-    /* タッチ領域拡張はリンク本体の padding で担保する */
     .breadcrumb-link::after {
       content: none;
     }
@@ -165,6 +170,9 @@ export class Breadcrumbs extends LitElement {
   @property({ type: Array })
   items: BreadcrumbItem[] = [];
 
+  @property({ type: String, attribute: 'items-json' })
+  itemsJson = '';
+
   @property({ type: Number, attribute: 'max-items' })
   maxItems = 5;
 
@@ -173,6 +181,9 @@ export class Breadcrumbs extends LitElement {
 
   @property({ type: String, attribute: 'aria-label' })
   override ariaLabel = 'パンくずリスト';
+
+  @property({ type: String, reflect: true })
+  align: BreadcrumbAlignment = 'center';
 
   private _narrowMediaQuery: MediaQueryList | null = null;
 
@@ -188,6 +199,18 @@ export class Breadcrumbs extends LitElement {
     const mediaQuery = this._getNarrowMediaQuery();
     if (!mediaQuery) return;
     mediaQuery.removeEventListener('change', this._handleNarrowQueryChange);
+  }
+
+  protected override willUpdate(changedProperties: Map<PropertyKey, unknown>): void {
+    const rawAlign = this.getAttribute('align');
+    if (
+      changedProperties.has('align') &&
+      rawAlign !== null &&
+      rawAlign !== 'start' &&
+      rawAlign !== 'center'
+    ) {
+      this.align = 'center';
+    }
   }
 
   private readonly _handleNarrowQueryChange = (): void => {
@@ -212,11 +235,48 @@ export class Breadcrumbs extends LitElement {
     return Math.max(1, safeValue);
   }
 
-  private get _sourceItemsForDesktop(): BreadcrumbItem[] {
-    if (!this.omitRoot || this.items.length <= 1) {
-      return this.items;
+  private _normalizeItems(value: unknown): BreadcrumbItem[] {
+    if (!Array.isArray(value)) {
+      return [];
     }
-    return this.items.slice(1);
+
+    return value.filter((item): item is BreadcrumbItem => {
+      if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+        return false;
+      }
+
+      const candidate = item as Record<string, unknown>;
+      return (
+        typeof candidate['label'] === 'string' &&
+        (candidate['href'] === undefined || typeof candidate['href'] === 'string')
+      );
+    });
+  }
+
+  private get _resolvedItems(): BreadcrumbItem[] {
+    const propertyItems = this._normalizeItems(this.items);
+    if (propertyItems.length > 0) {
+      return propertyItems;
+    }
+
+    const normalized = this.itemsJson.trim();
+    if (normalized.length === 0) {
+      return [];
+    }
+
+    try {
+      return this._normalizeItems(JSON.parse(normalized) as unknown);
+    } catch {
+      return [];
+    }
+  }
+
+  private get _sourceItemsForDesktop(): BreadcrumbItem[] {
+    const items = this._resolvedItems;
+    if (!this.omitRoot || items.length <= 1) {
+      return items;
+    }
+    return items.slice(1);
   }
 
   private _createDesktopDisplayItems(): DisplayItem[] {

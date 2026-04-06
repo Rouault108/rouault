@@ -332,6 +332,7 @@ export class LayoutHeader extends LitElement {
     const corpusItems = this._corpusItems;
     const currentCorpusLabel = this._currentCorpusItem?.label ?? 'すべてのノート';
     const hasBreadcrumbs = breadcrumbs.length > 0;
+    const shouldRenderHeaderBreadcrumbs = hasBreadcrumbs && !this.noteLayout;
 
     return html`
       <ui-header .sidebarExpanded=${this._sidebarExpanded}>
@@ -365,12 +366,12 @@ export class LayoutHeader extends LitElement {
             )}
           </ui-dropdown>
         </div>
-        ${hasBreadcrumbs
+        ${shouldRenderHeaderBreadcrumbs
           ? html`
               <ui-breadcrumbs
                 slot="center"
                 class="breadcrumbs"
-                .items=${breadcrumbs}
+                items-json=${JSON.stringify(breadcrumbs)}
                 aria-label="現在の階層"
               ></ui-breadcrumbs>
             `
