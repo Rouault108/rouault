@@ -233,6 +233,9 @@ export class Toc extends LitElement {
   @property({ type: String, attribute: 'active-id', reflect: true })
   activeId = '';
 
+  @property({ type: Boolean, attribute: 'suppress-active-link-scroll' })
+  suppressActiveLinkScroll = false;
+
   @state() private _activeIdSource: 'scroll' | 'click' = 'scroll';
 
   private _truncatedHeadingIds = new Set<string>();
@@ -376,8 +379,12 @@ export class Toc extends LitElement {
   }
 
   private _syncActiveLinkVisibility(): void {
+    if (this.suppressActiveLinkScroll) {
+      return;
+    }
+
     const root = this._getQueryableRenderRoot();
-    if (!root) {
+    if (!root || !this._isAutoScrollContextVisible()) {
       return;
     }
 
@@ -391,15 +398,93 @@ export class Toc extends LitElement {
       return;
     }
 
+    if (
+      !this._isElementActuallyVisible(activeLink) ||
+      !this._isElementActuallyVisible(scrollContainer)
+    ) {
+      return;
+    }
+
+    if (!this._intersectsViewport(scrollContainer)) {
+      return;
+    }
+
     if (this._isFullyVisibleInContainer(activeLink, scrollContainer)) {
       return;
     }
 
-    activeLink.scrollIntoView({
+    scrollContainer.scrollTo({
+      top: this._resolveNextScrollTop(activeLink, scrollContainer),
       behavior: 'instant',
-      block: 'nearest',
-      inline: 'nearest',
     });
+  }
+
+  private _isAutoScrollContextVisible(): boolean {
+    if (!this.isConnected) {
+      return false;
+    }
+
+    return this._isElementActuallyVisible(this) && this._intersectsViewport(this);
+  }
+
+  private _isElementActuallyVisible(element: HTMLElement): boolean {
+    let current: HTMLElement | null = element;
+
+    while (current) {
+      if (current.hidden || current.hasAttribute('hidden') || current.hasAttribute('inert')) {
+        return false;
+      }
+
+      if (current.getAttribute('aria-hidden') === 'true') {
+        return false;
+      }
+
+      const style = getComputedStyle(current);
+      if (
+        style.display === 'none' ||
+        style.visibility === 'hidden' ||
+        style.visibility === 'collapse'
+      ) {
+        return false;
+      }
+
+      current = this._getComposedParentElement(current);
+    }
+
+    return true;
+  }
+
+  private _intersectsViewport(element: HTMLElement): boolean {
+    const rect = element.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return false;
+    }
+
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+    return (
+      rect.bottom > 0 &&
+      rect.right > 0 &&
+      rect.top < viewportHeight &&
+      rect.left < viewportWidth
+    );
+  }
+
+  private _resolveNextScrollTop(element: HTMLElement, container: HTMLElement): number {
+    const elementRect = element.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const currentScrollTop = container.scrollTop;
+
+    if (elementRect.top < containerRect.top) {
+      return currentScrollTop - (containerRect.top - elementRect.top);
+    }
+
+    if (elementRect.bottom > containerRect.bottom) {
+      return currentScrollTop + (elementRect.bottom - containerRect.bottom);
+    }
+
+    return currentScrollTop;
   }
 
   private _findScrollContainer(start: HTMLElement): HTMLElement | null {

@@ -760,7 +760,12 @@ export class LayoutToc extends LitElement {
           `
         : nothing}
 
-      <div class="mobile-panel" data-open=${String(this._panelOpen)}>
+      <div
+        class="mobile-panel"
+        data-open=${String(this._panelOpen)}
+        aria-hidden=${String(!this._panelOpen)}
+        ?inert=${!this._panelOpen}
+      >
         <div class="mobile-panel-header">
           <button class="close-button" type="button" @click=${this._closeMobilePanel}>
             <ui-icon name="x"></ui-icon>

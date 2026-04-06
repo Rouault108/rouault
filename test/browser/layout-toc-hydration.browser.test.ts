@@ -105,6 +105,11 @@ describe('layout-toc hydration reconciliation', () => {
 
       expect(desktopToc.activeId).to.equal('72-配列の要素の読み書き');
       expect(desktopToc.getAttribute('active-id')).to.equal('72-配列の要素の読み書き');
+
+      const mobilePanel = host.shadowRoot?.querySelector<HTMLElement>('.mobile-panel') ?? null;
+      expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
+      expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
+
       expect(
         desktopToc.shadowRoot
           ?.querySelector('a.toc-link.is-active .toc-link-label')
@@ -190,7 +195,7 @@ describe('layout-toc hydration reconciliation', () => {
                   </template>
                 </ui-toc>
               </div>
-              <div class="mobile-panel" data-open="false"></div>
+              <div class="mobile-panel" data-open="false" aria-hidden="true" inert></div>
             </template>
           </layout-toc>
         `,
@@ -218,6 +223,11 @@ describe('layout-toc hydration reconciliation', () => {
       expect(host.hasAttribute('defer-hydration')).to.equal(false);
       expect(desktopToc.activeId).to.equal('72-配列の要素の読み書き');
       expect(desktopToc.getAttribute('active-id')).to.equal('72-配列の要素の読み書き');
+
+      const mobilePanel = host.shadowRoot?.querySelector<HTMLElement>('.mobile-panel') ?? null;
+      expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
+      expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
+
       expect(
         desktopToc.shadowRoot
           ?.querySelector('a.toc-link.is-active .toc-link-label')
@@ -274,7 +284,7 @@ describe('layout-toc hydration reconciliation', () => {
                     </template>
                   </ui-toc>
                 </div>
-                <div class="mobile-panel" data-open="false"></div>
+                <div class="mobile-panel" data-open="false" aria-hidden="true" inert></div>
               </template>
             </layout-toc>
           </aside>
@@ -307,6 +317,11 @@ describe('layout-toc hydration reconciliation', () => {
 
       expect(desktopToc.activeId).to.equal('72-配列の要素の読み書き');
       expect(desktopToc.getAttribute('active-id')).to.equal('72-配列の要素の読み書き');
+
+      const mobilePanel = host.shadowRoot?.querySelector<HTMLElement>('.mobile-panel') ?? null;
+      expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
+      expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
+
       expect(
         desktopToc.shadowRoot
           ?.querySelector('a.toc-link.is-active .toc-link-label')
