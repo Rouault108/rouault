@@ -300,7 +300,7 @@ export class LayoutToc extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this._loadHeadingsFromSource();
-    this._connectControllers();
+
     if (!this.hasAttribute('data-hydration-trigger')) {
       this.activateHydration();
     }
@@ -347,10 +347,11 @@ export class LayoutToc extends LitElement {
     }
 
     this._hydrationActivated = true;
-    this._upgradeNestedShadowHosts();
     this._loadHeadingsFromSource();
+
     const stickyTarget = isHTMLElement(this.parentElement) ? this.parentElement : this;
     this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
+
     this._connectControllers();
   }
 
@@ -367,6 +368,10 @@ export class LayoutToc extends LitElement {
     return contentRoot === null
       ? scopedHeadings
       : filterVisibleHeadings(contentRoot, scopedHeadings);
+  }
+
+  private _resolveContentRoot(): HTMLElement | null {
+    return findContentRoot(this.contentRootId);
   }
 
   private _loadHeadingsFromSource(): void {
@@ -493,17 +498,23 @@ export class LayoutToc extends LitElement {
     }
 
     this._tocReady = true;
-    queueMicrotask(() => {
-      this._syncRenderedTocProps();
-    });
+
+    if (this.hasUpdated) {
+      queueMicrotask(() => {
+        this._syncRenderedTocProps();
+      });
+    }
   }
 
   private _applyActiveId(id: string): void {
     this._activeId = id;
     this._activeIndex = this._visibleHeadings.findIndex((heading) => heading.id === id);
-    queueMicrotask(() => {
-      this._syncRenderedTocProps();
-    });
+
+    if (this.hasUpdated) {
+      queueMicrotask(() => {
+        this._syncRenderedTocProps();
+      });
+    }
   }
 
   private _createTocHostState(headings: Heading[]): UiTocHostState {
@@ -513,61 +524,21 @@ export class LayoutToc extends LitElement {
     };
   }
 
-  private _replaceStaleToc(toc: SyncableTocElement, state: UiTocHostState): void {
-    const replacement = document.createElement('ui-toc') as SyncableTocElement;
-    replacement.addEventListener(
-      'ui-toc-active-change',
-      this._onTocActiveChange as EventListener,
-    );
-
-    replacement.headers = [...state.headers];
-    replacement.activeId = state.activeId;
-
-    toc.replaceWith(replacement);
-
-    queueMicrotask(() => {
-      if (!replacement.isConnected) {
-        return;
-      }
-
-      if (replacement.applyHostState) {
-        replacement.applyHostState(state);
-        return;
-      }
-
-      replacement.requestUpdate?.();
-      replacement.refresh?.();
-    });
-  }
-
-  private _isTocSynchronized(toc: SyncableTocElement, state: UiTocHostState): boolean {
-    const matchesState = toc.matchesHostState?.(state);
-    if (matchesState === false) {
-      return false;
-    }
-
-    const renderedHeadingCount =
-      toc.renderedHeadingCount?.() ??
-      toc.shadowRoot?.querySelectorAll('.toc-link-label').length ??
-      0;
-
-    if (renderedHeadingCount !== state.headers.length) {
-      return false;
-    }
-
-    if (matchesState === true) {
-      return true;
-    }
-
-    return hasSameHeadingIds(toc.headers, state.headers) && toc.activeId === state.activeId;
-  }
-
   private _syncRenderedTocProps(): void {
+    if (!this.hasUpdated) {
+      return;
+    }
+
     if (!this._tocReady || this._visibleHeadings.length === 0) {
       return;
     }
 
     if (typeof document === 'undefined') {
+      return;
+    }
+
+    const renderRoot = this.renderRoot;
+    if (!(renderRoot instanceof ShadowRoot || renderRoot instanceof HTMLElement)) {
       return;
     }
 
@@ -577,53 +548,20 @@ export class LayoutToc extends LitElement {
       return;
     }
 
-    this._upgradeNestedShadowHosts();
-
     const state = this._createTocHostState(this._visibleHeadings);
-    const tocs = this.renderRoot.querySelectorAll<SyncableTocElement>('ui-toc');
+    const tocs = renderRoot.querySelectorAll<SyncableTocElement>('ui-toc');
 
     for (const toc of tocs) {
-      if (toc.applyHostState) {
+      if (typeof toc.applyHostState === 'function') {
         toc.applyHostState(state);
-      }
-      if (!toc.applyHostState) {
-        toc.headers = [...state.headers];
-        toc.activeId = state.activeId;
-        toc.requestUpdate?.();
-        toc.refresh?.();
+        continue;
       }
 
-      if (!this._isTocSynchronized(toc, state)) {
-        this._replaceStaleToc(toc, state);
-      }
+      toc.headers = [...state.headers];
+      toc.activeId = state.activeId;
+      toc.requestUpdate?.();
+      toc.refresh?.();
     }
-  }
-
-  private _resolveContentRoot(): HTMLElement | null {
-    const explicitRoot = findContentRoot(this.contentRootId);
-    if (isHTMLElement(explicitRoot)) {
-      return explicitRoot;
-    }
-
-    if (typeof this.closest !== 'function') {
-      return null;
-    }
-
-    const main = this.closest('main');
-    if (!isHTMLElement(main)) {
-      return null;
-    }
-
-    const article = main.querySelector<HTMLElement>('article[id]');
-    return article ?? main;
-  }
-
-  private _upgradeNestedShadowHosts(): void {
-    if (!(this.renderRoot instanceof ShadowRoot)) {
-      return;
-    }
-
-    customElements.upgrade(this.renderRoot);
   }
 
   private _onTocActiveChange = (event: CustomEvent<UiTocActiveChangeDetail>): void => {
