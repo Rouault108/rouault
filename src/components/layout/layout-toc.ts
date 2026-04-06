@@ -375,7 +375,9 @@ export class LayoutToc extends LitElement {
     this._loadHeadingsFromSource();
 
     const stickyTarget = isHTMLElement(this.parentElement) ? this.parentElement : this;
-    this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
+    this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget, {
+      minWidth: 640,
+    });
 
     this._connectControllers();
     this._scheduleRenderedTocSync();

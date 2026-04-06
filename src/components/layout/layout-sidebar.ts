@@ -214,7 +214,9 @@ export class LayoutSidebar extends LitElement {
     this._state = this._resolveInitialState();
     this._loadItemsFromSource();
     const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
-    this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
+    this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget, {
+      minWidth: 640,
+    });
     this.requestUpdate();
   }
 

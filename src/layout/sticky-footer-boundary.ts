@@ -4,6 +4,10 @@ export interface StickyBoundaryMetrics {
   viewportHeight: number;
 }
 
+export interface StickyFooterBoundaryOptions {
+  minWidth?: number;
+}
+
 const clampToNonNegative = (value: number): number => {
   if (!Number.isFinite(value)) {
     return 0;
@@ -43,7 +47,10 @@ const readPxCustomProperty = (element: HTMLElement, propertyName: string): numbe
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-export const attachStickyFooterBoundary = (target: HTMLElement): (() => void) => {
+export const attachStickyFooterBoundary = (
+  target: HTMLElement,
+  options: StickyFooterBoundaryOptions = {},
+): (() => void) => {
   if (typeof window === 'undefined') {
     // SSR環境では何もしないクリーンアップ関数を返す
     return (): void => undefined;
@@ -51,7 +58,11 @@ export const attachStickyFooterBoundary = (target: HTMLElement): (() => void) =>
 
   let frameId = 0;
   let footerHost = resolveFooterHost();
-  const abortController = new AbortController();
+  let eventAbortController: AbortController | null = null;
+  const mediaQuery =
+    typeof options.minWidth === 'number'
+      ? window.matchMedia(`(min-width: ${String(options.minWidth)}px)`)
+      : null;
   const resizeObserver =
     typeof ResizeObserver === 'undefined'
       ? null
@@ -59,8 +70,20 @@ export const attachStickyFooterBoundary = (target: HTMLElement): (() => void) =>
           scheduleUpdate();
         });
 
+  const clearStickyStyles = (): void => {
+    target.style.removeProperty('--layout-sticky-max-block-size');
+    target.style.removeProperty('--layout-sticky-footer-offset');
+  };
+
+  const isEnabled = (): boolean => mediaQuery?.matches ?? true;
+
   const update = (): void => {
     frameId = 0;
+    if (!isEnabled()) {
+      clearStickyStyles();
+      return;
+    }
+
     footerHost ??= resolveFooterHost();
 
     const stickyTop = readPxCustomProperty(target, '--header-height');
@@ -87,29 +110,58 @@ export const attachStickyFooterBoundary = (target: HTMLElement): (() => void) =>
     frameId = window.requestAnimationFrame(update);
   };
 
-  window.addEventListener('scroll', scheduleUpdate, {
-    passive: true,
-    signal: abortController.signal,
-  });
-  window.addEventListener('resize', scheduleUpdate, {
-    passive: true,
-    signal: abortController.signal,
-  });
+  const detachWindowListeners = (): void => {
+    eventAbortController?.abort();
+    eventAbortController = null;
+  };
+
+  const attachWindowListeners = (): void => {
+    if (eventAbortController !== null) {
+      return;
+    }
+
+    eventAbortController = new AbortController();
+    window.addEventListener('scroll', scheduleUpdate, {
+      passive: true,
+      signal: eventAbortController.signal,
+    });
+    window.addEventListener('resize', scheduleUpdate, {
+      passive: true,
+      signal: eventAbortController.signal,
+    });
+  };
+
+  const syncActivation = (): void => {
+    if (!isEnabled()) {
+      detachWindowListeners();
+      if (frameId !== 0) {
+        window.cancelAnimationFrame(frameId);
+        frameId = 0;
+      }
+      clearStickyStyles();
+      return;
+    }
+
+    attachWindowListeners();
+    scheduleUpdate();
+  };
+
+  mediaQuery?.addEventListener('change', syncActivation);
 
   resizeObserver?.observe(document.documentElement);
   if (footerHost) {
     resizeObserver?.observe(footerHost);
   }
 
-  scheduleUpdate();
+  syncActivation();
 
   return () => {
-    abortController.abort();
+    detachWindowListeners();
+    mediaQuery?.removeEventListener('change', syncActivation);
     if (frameId !== 0) {
       window.cancelAnimationFrame(frameId);
     }
     resizeObserver?.disconnect();
-    target.style.removeProperty('--layout-sticky-max-block-size');
-    target.style.removeProperty('--layout-sticky-footer-offset');
+    clearStickyStyles();
   };
 };
