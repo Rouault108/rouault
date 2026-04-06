@@ -294,6 +294,7 @@ export class LayoutToc extends LitElement {
   private _tracker: TocActiveTracker | null = null;
   private _mobileController: TocMobileSummaryController | null = null;
   private _hydrationActivated = false;
+  private _ssrRootReset = false;
   private _renderedTocSyncScheduled = false;
   private _renderedTocSyncRetryCount = 0;
 
@@ -301,7 +302,10 @@ export class LayoutToc extends LitElement {
     super.connectedCallback();
     this._loadHeadingsFromSource();
 
-    if (!this.hasAttribute('data-hydration-trigger')) {
+    const hydrationTrigger = this.getAttribute('data-hydration-trigger')?.trim();
+    // layout-toc は initial trigger の時点で current state を維持できないと
+    // 初期 hash と scroll tracker の両方を取りこぼすため、upgrade 直後に自前で起動する。
+    if (hydrationTrigger === undefined || hydrationTrigger.length === 0 || hydrationTrigger === 'initial') {
       this.activateHydration();
     }
   }
@@ -311,6 +315,11 @@ export class LayoutToc extends LitElement {
     this._detachStickyFooterBoundary?.();
     this._detachStickyFooterBoundary = null;
     super.disconnectedCallback();
+  }
+
+  protected override performUpdate(): void {
+    this._resetSsrShadowRootIfNeeded();
+    super.performUpdate();
   }
 
   protected override updated(changedProperties: PropertyValues): void {
@@ -347,6 +356,8 @@ export class LayoutToc extends LitElement {
     }
 
     this._hydrationActivated = true;
+    this._upgradeNestedShadowHosts();
+    this._releaseDeferredHydrationIfNeeded();
     this._loadHeadingsFromSource();
 
     const stickyTarget = isHTMLElement(this.parentElement) ? this.parentElement : this;
@@ -354,6 +365,48 @@ export class LayoutToc extends LitElement {
 
     this._connectControllers();
     this._scheduleRenderedTocSync();
+    this.requestUpdate();
+  }
+
+  private _upgradeNestedShadowHosts(): void {
+    if (!(this.renderRoot instanceof ShadowRoot)) {
+      return;
+    }
+
+    customElements.upgrade(this.renderRoot);
+  }
+
+  private _resetSsrShadowRootIfNeeded(): void {
+    if (this._ssrRootReset || !this.hasAttribute('defer-hydration')) {
+      return;
+    }
+
+    if (this.renderRoot.childNodes.length === 0) {
+      this.removeAttribute('defer-hydration');
+      this._ssrRootReset = true;
+      return;
+    }
+
+    // SSR 済み layout-toc は host state と子 ui-toc の hydration 状態が分離しやすいため、
+    // 初回 client update 前に shadow root を空へ戻してから現在の state で再描画する。
+    this.renderRoot.replaceChildren();
+    this.removeAttribute('defer-hydration');
+    this._ssrRootReset = true;
+  }
+
+  private _releaseDeferredHydrationIfNeeded(): void {
+    if (this._ssrRootReset || !this.hasAttribute('defer-hydration')) {
+      return;
+    }
+
+    if (this.renderRoot.childNodes.length > 0) {
+      // SSR 済み host は stale な subtree を握ったままになりうるため、
+      // defer-hydration を外す前に shadow root を空へ戻して client state を正本にする。
+      this.renderRoot.replaceChildren();
+    }
+
+    this.removeAttribute('defer-hydration');
+    this._ssrRootReset = true;
   }
 
   private _resolveVisibleHeadings(headings: Heading[] = this._allHeadings): Heading[] {
