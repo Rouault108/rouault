@@ -16,11 +16,24 @@ export const escapeHtmlText = (value: string): string =>
 export const escapeHtmlAttribute = (value: string): string =>
   escapeHtmlText(value).replace(/"/g, '&quot;');
 
-export const escapeInlineScriptText = (value: string): string =>
+/**
+ * 実行用 inline script 向け。
+ * JavaScript の演算子や arrow function を壊さないことを最優先にする。
+ */
+export const escapeInlineExecutableScriptText = (value: string): string =>
   value
-    .replace(/&/g, '\\u0026')
+    .replace(/<\/script/gi, '<\\/script')
+    .replace(/<!--/g, '<\\!--')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+
+/**
+ * application/json script 向け。
+ * こちらは JSON 文字列として安全であることを優先する。
+ */
+export const escapeInlineJsonScriptText = (value: string): string =>
+  value
     .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029');
 
@@ -28,7 +41,7 @@ export const serializeJsonForHtmlAttribute = (value: unknown): string =>
   escapeHtmlAttribute(stringifyJson(value));
 
 export const serializeJsonForScriptTag = (value: unknown): string =>
-  escapeInlineScriptText(stringifyJson(value));
+  escapeInlineJsonScriptText(stringifyJson(value));
 
 const serializeHtmlAttribute = ({
   name,

@@ -15,7 +15,7 @@ import {
   RESOLVED_THEME_ATTRIBUTE,
 } from '../theme/theme-manager.js';
 import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
-import { escapeHtmlText, escapeInlineScriptText, serializeHtmlAttributes } from './html-output.js';
+import { escapeHtmlText, escapeInlineExecutableScriptText, serializeHtmlAttributes } from './html-output.js';
 
 export interface BaseLayoutData {
   title?: string;
@@ -105,7 +105,7 @@ export class BaseLayout {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtmlText(title)}</title>
   <meta name="description"${serializeHtmlAttributes([{ name: 'content', value: description }])}>
-  <script>${escapeInlineScriptText(themeBootstrapScript)}</script>
+  <script>${escapeInlineExecutableScriptText(themeBootstrapScript)}</script>
   <link rel="stylesheet" href="/assets/css/main.css">
   <script type="module"${serializeHtmlAttributes([{ name: 'src', value: clientScriptSrc }])}></script>
 </head>
