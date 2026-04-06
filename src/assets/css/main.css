@@ -66,6 +66,12 @@ html {
   scroll-padding-top: calc(var(--header-height) + var(--space-4));
   /* スクロールを滑らかに */
   scroll-behavior: smooth;
+
+  /* iOS Safari の text autosizing を抑止
+   * - コードブロックや表のような横スクロール要素だけ文字が肥大化する現象を防ぐ
+   * - 100% はユーザーのズーム挙動を阻害せず、著者指定サイズを基準にする */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* reduced-motion時は即座に移動 */
@@ -88,6 +94,10 @@ body {
   /* テキスト選択時の背景色 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Safari の自動文字拡大を body レベルでも抑止して再発を防ぐ */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body[data-ui-dialog-open] {
