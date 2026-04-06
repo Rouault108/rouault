@@ -17,12 +17,27 @@
   overflow-y: hidden;
   white-space: pre;
   scrollbar-gutter: stable;
+
+  /* iOS Safari:
+   * 横スクロールを伴うコード面で text inflation が起きるため、
+   * 実際のコード面で autosizing を無効化する */
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
 }
 
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) code {
   display: block;
   min-width: max-content;
   background: transparent !important;
+
+  /* pre 直下だけでなく code 自体にも明示して再解釈を防ぐ */
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line {
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
 }
 
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki > .line,

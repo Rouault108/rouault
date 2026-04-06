@@ -603,6 +603,11 @@ hr[data-divider-variant='layout'] {
   margin-inline: var(--ui-table-breakout-margin, var(--_table-breakout-margin-default));
   overflow-x: auto;
   overflow-y: visible;
+
+  /* iOS Safari:
+   * 横スクロール面を root 側でも固定し、表だけ文字が肥大化するのを防ぐ */
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
 }
 
 @media (min-width: 768px) {
@@ -626,6 +631,14 @@ hr[data-divider-variant='layout'] {
   :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]:focus-visible {
     animation: none;
   }
+}
+
+[data-table-root] > table,
+[data-table-root] > table > caption,
+[data-table-root] > table th,
+[data-table-root] > table td {
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
 }
 
 [data-table-root] > table {

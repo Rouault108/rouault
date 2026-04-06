@@ -19,6 +19,15 @@ export const DOCUMENT_CSS = `/* ================================================
    Shadow DOM の ::slotted() 制限を回避するためドキュメントに注入
    ============================================================ */
 
+ui-table,
+ui-table table,
+ui-table caption,
+ui-table th,
+ui-table td {
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
 /* ── テーブルベース ── */
 ui-table table {
   border-collapse: collapse;
@@ -238,6 +247,8 @@ export class Table extends LitElement {
     .table-container {
       overflow-x: auto;
       overflow-y: visible;
+      -webkit-text-size-adjust: none;
+      text-size-adjust: none;
     }
 
     /* ── フォーカスリング（Adaptive Focus） ── */

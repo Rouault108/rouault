@@ -136,6 +136,15 @@ export class CodeBlock extends LitElement {
         --ui-code-surface-breakout-margin,
         var(--ui-code-block-breakout-margin, var(--_ui-code-surface-breakout-margin-default))
       );
+
+      /* Shadow DOM 経由のコード面でも iOS Safari の text inflation を抑止 */
+      -webkit-text-size-adjust: none;
+      text-size-adjust: none;
+    }
+
+    ::slotted(pre[data-code-block]) {
+      -webkit-text-size-adjust: none;
+      text-size-adjust: none;
     }
 
     @media (min-width: 768px) {
