@@ -52,6 +52,14 @@ export class SearchTrigger extends LitElement {
     }
 
     ui-button::part(button) {
+      --search-trigger-rest-background: var(--bg-fill-muted, oklch(95% 0 0));
+      --search-trigger-rest-border-color: transparent;
+      --search-trigger-hover-background: var(--bg-fill-muted, oklch(95% 0 0));
+      --search-trigger-hover-border-color: var(--border-default, oklch(85% 0 0));
+      --search-trigger-focus-background: var(--bg-default, oklch(100% 0 0));
+      --search-trigger-focus-border-color: var(--border-default, oklch(85% 0 0));
+      --search-trigger-active-background: var(--bg-default, oklch(100% 0 0));
+      --search-trigger-active-border-color: var(--border-default, oklch(85% 0 0));
       display: inline-flex;
       align-items: center;
       justify-content: flex-start;
@@ -61,9 +69,9 @@ export class SearchTrigger extends LitElement {
       box-sizing: border-box;
       gap: var(--space-2, 8px);
       padding-inline: var(--search-trigger-padding-inline, var(--space-3, 12px));
-      border: var(--border-width, 1px) solid transparent;
+      border: var(--border-width, 1px) solid var(--search-trigger-rest-border-color);
       border-radius: var(--radius-md, 6px);
-      background: var(--bg-fill-muted, oklch(95% 0 0));
+      background: var(--search-trigger-rest-background);
       box-shadow: none;
       color: inherit;
       font: inherit;
@@ -77,21 +85,21 @@ export class SearchTrigger extends LitElement {
     }
 
     ui-button::part(button):hover:not(:disabled) {
-      border-color: var(--border-default, oklch(85% 0 0));
-      background: var(--bg-fill-muted, oklch(95% 0 0));
+      border-color: var(--search-trigger-hover-border-color);
+      background: var(--search-trigger-hover-background);
     }
 
     ui-button::part(button):focus-visible {
-      border-color: var(--border-default, oklch(85% 0 0));
-      background: var(--bg-default, oklch(100% 0 0));
+      border-color: var(--search-trigger-focus-border-color);
+      background: var(--search-trigger-focus-background);
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
       outline-offset: var(--focus-ring-offset, 2px);
       animation: var(--animation-focus, none);
     }
 
     ui-button::part(button):active:not(:disabled) {
-      border-color: var(--border-default, oklch(85% 0 0));
-      background: var(--bg-default, oklch(100% 0 0));
+      border-color: var(--search-trigger-active-border-color);
+      background: var(--search-trigger-active-background);
       transform: scale(var(--scale-pressed, 0.96));
     }
 
@@ -126,6 +134,14 @@ export class SearchTrigger extends LitElement {
     }
 
     ui-button[data-density='icon-only']::part(button) {
+      --search-trigger-rest-background: transparent;
+      --search-trigger-rest-border-color: transparent;
+      --search-trigger-hover-background: var(--bg-hover, oklch(0% 0 0 / 0.05));
+      --search-trigger-hover-border-color: transparent;
+      --search-trigger-focus-background: var(--bg-hover, oklch(0% 0 0 / 0.05));
+      --search-trigger-focus-border-color: transparent;
+      --search-trigger-active-background: var(--bg-hover, oklch(0% 0 0 / 0.05));
+      --search-trigger-active-border-color: transparent;
       justify-content: center;
       inline-size: max(
         var(--control-height-md, 32px),
@@ -147,6 +163,14 @@ export class SearchTrigger extends LitElement {
 
     @media (max-width: 639px) {
       ui-button[data-density='auto']::part(button) {
+        --search-trigger-rest-background: transparent;
+        --search-trigger-rest-border-color: transparent;
+        --search-trigger-hover-background: var(--bg-hover, oklch(0% 0 0 / 0.05));
+        --search-trigger-hover-border-color: transparent;
+        --search-trigger-focus-background: var(--bg-hover, oklch(0% 0 0 / 0.05));
+        --search-trigger-focus-border-color: transparent;
+        --search-trigger-active-background: var(--bg-hover, oklch(0% 0 0 / 0.05));
+        --search-trigger-active-border-color: transparent;
         justify-content: center;
         inline-size: max(
           var(--control-height-md, 32px),

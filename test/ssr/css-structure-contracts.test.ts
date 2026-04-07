@@ -688,6 +688,8 @@ describe('css structure contracts', () => {
     expectCssIncludes(cssText, [
       "ui-button[data-density='compact']::part(button)",
       "ui-button[data-density='icon-only']::part(button)",
+      '--search-trigger-rest-background',
+      '--search-trigger-hover-background',
       '@media (max-width: 960px)',
       '@media (max-width: 639px)',
       '@media (forced-colors: active)',
