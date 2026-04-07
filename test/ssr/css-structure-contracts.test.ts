@@ -689,7 +689,7 @@ describe('css structure contracts', () => {
       "button[data-density='compact']",
       "button[data-density='icon-only']",
       '@media (max-width: 960px)',
-      '@media (max-width: 640px)',
+      '@media (max-width: 639px)',
       '@media (forced-colors: active)',
       'CanvasText',
       'ButtonFace',

@@ -141,7 +141,7 @@ export class SearchTrigger extends LitElement {
       }
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 639px) {
       button[data-density='auto'] {
         justify-content: center;
         inline-size: max(
