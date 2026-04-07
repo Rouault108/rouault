@@ -1,4 +1,3 @@
-import type { ClientBundleData } from '../data/clientBundle.js';
 import {
   buildNoteNavigationModel,
   type NoteNavigationEntry,
@@ -26,7 +25,7 @@ export interface BaseLayoutData {
   corpusPages?: readonly CorpusPageEntry[];
   currentCorpusKey?: string;
   buildMetadata?: BuildMetadataData;
-  clientBundle?: ClientBundleData;
+  clientBundle?: unknown;
 }
 
 const buildThemeBootstrapScript = (): string =>
@@ -57,6 +56,34 @@ const buildThemeBootstrapScript = (): string =>
 })();
 `.trim();
 
+const DEFAULT_CLIENT_SCRIPT_SRC = '/src/client.ts';
+const DEFAULT_CLIENT_STYLE_SRCS = ['/src/assets/css/main.css'] as const;
+
+interface ClientBundleView {
+  scriptSrc?: string;
+  styleSrcs?: readonly string[];
+}
+
+const isStringArray = (value: unknown): value is readonly string[] =>
+  Array.isArray(value) && value.every((entry: unknown): entry is string => typeof entry === 'string');
+
+const normalizeClientBundle = (
+  value: unknown,
+): { scriptSrc: string; styleSrcs: readonly string[] } => {
+  const candidate: ClientBundleView =
+    typeof value === 'object' && value !== null ? (value as ClientBundleView) : {};
+
+  return {
+    scriptSrc:
+      typeof candidate.scriptSrc === 'string'
+        ? candidate.scriptSrc
+        : DEFAULT_CLIENT_SCRIPT_SRC,
+    styleSrcs: isStringArray(candidate.styleSrcs)
+      ? candidate.styleSrcs
+      : DEFAULT_CLIENT_STYLE_SRCS,
+  };
+};
+
 export class BaseLayout {
   data() {
     return {
@@ -67,7 +94,15 @@ export class BaseLayout {
   render(data: BaseLayoutData) {
     const title = data.title ? `${data.title} - Rouault` : 'Rouault';
     const description = data.description ?? '個人ノートを静かに読むためのWebアプリケーション';
-    const clientScriptSrc = data.clientBundle?.scriptSrc ?? '/src/client.ts';
+    const clientBundle = normalizeClientBundle(data.clientBundle);
+    const clientScriptSrc: string = clientBundle.scriptSrc;
+    const clientStyleSrcs: readonly string[] = clientBundle.styleSrcs;
+    const clientStyleLinks: string = clientStyleSrcs
+      .map(
+        (href: string): string =>
+          `<link rel="stylesheet"${serializeHtmlAttributes([{ name: 'href', value: href }])}>`,
+      )
+      .join('\n  ');
     const currentCorpusKey = resolveCurrentCorpusKey(data);
     const noteSurfacePolicy = resolveNoteSurfacePolicy(data.note?.kind);
     const corpora = buildCorpusNavigation(data.corpusPages ?? []);
@@ -106,7 +141,7 @@ export class BaseLayout {
   <title>${escapeHtmlText(title)}</title>
   <meta name="description"${serializeHtmlAttributes([{ name: 'content', value: description }])}>
   <script>${escapeInlineExecutableScriptText(themeBootstrapScript)}</script>
-  <link rel="stylesheet" href="/assets/css/main.css">
+  ${clientStyleLinks}
   <script type="module"${serializeHtmlAttributes([{ name: 'src', value: clientScriptSrc }])}></script>
 </head>
 <body${bodyAttributes}>

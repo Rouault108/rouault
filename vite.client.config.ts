@@ -22,11 +22,12 @@ export default defineConfig({
     rollupOptions: {
       input: {
         client: path.resolve(process.cwd(), 'src/client.ts'),
+        style: path.resolve(process.cwd(), 'src/assets/css/main.css'),
       },
       output: {
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash][extname]',
+        entryFileNames: 'client-assets/[name]-[hash].js',
+        chunkFileNames: 'client-assets/[name]-[hash].js',
+        assetFileNames: 'client-assets/[name]-[hash][extname]',
       },
     },
   },

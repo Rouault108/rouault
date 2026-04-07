@@ -149,7 +149,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   eleventyConfig.addPassthroughCopy({ 'examples/media': 'example-assets' });
 
   if (!isServing) {
-    eleventyConfig.addPassthroughCopy({ '.generated/client/assets': 'assets' });
+    eleventyConfig.addPassthroughCopy({ '.generated/client/client-assets': 'client-assets' });
   }
 
   // src 外にあるコンテンツを開発時の監視対象へ追加する。
