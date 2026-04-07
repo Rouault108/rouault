@@ -145,6 +145,11 @@ export class LayoutHeader extends LitElement {
       white-space: nowrap;
     }
 
+    .corpus-switcher {
+      display: inline-flex;
+      min-inline-size: 0;
+    }
+
     .theme-trigger-label {
       color: var(--fg-subtle, var(--fg-muted));
     }
@@ -174,6 +179,10 @@ export class LayoutHeader extends LitElement {
 
       :host([sidebar-enabled]) ui-header {
         --ui-header-center-start-inset: var(--sidebar-width, 272px);
+      }
+
+      :host([note-layout][sidebar-enabled]) .corpus-switcher {
+        margin-inline-start: clamp(var(--space-2, 8px), 2vw, var(--space-6, 24px));
       }
 
       .sidebar-toggle {
@@ -410,7 +419,7 @@ export class LayoutHeader extends LitElement {
                 </ui-button>
               `
             : null}
-          <ui-dropdown @menu-item-select=${this._handleCorpusSelect}>
+          <ui-dropdown class="corpus-switcher" @menu-item-select=${this._handleCorpusSelect}>
             <ui-button slot="trigger" variant="ghost">
               <span class="corpus-trigger-label">
                 <span class="corpus-trigger-text">${currentCorpusLabel}</span>
