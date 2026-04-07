@@ -2,6 +2,11 @@ import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import '../../src/components/layout/layout-header.js';
 import type { LayoutHeader } from '../../src/components/layout/layout-header.js';
 import type { MenuItem } from '../../src/components/ui/dropdown/dropdown.js';
+import {
+  LAYOUT_SIDEBAR_STATE_CHANGE_EVENT,
+  type LayoutSidebarStateChangeDetail,
+} from '../../src/components/layout/layout-sidebar.events.js';
+import type { UiHeader } from '../../src/components/ui/header/header.js';
 import { waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const expectPresent = <T>(value: T | null | undefined, name: string): T => {
@@ -61,6 +66,32 @@ describe('layout-header browser contract', () => {
     await waitForLitUpdate(header);
 
     expect(header.shadowRoot?.querySelector('[slot="compact-center"]')).to.equal(null);
+  });
+
+  it('overlay 展開時も ui-header に sidebar 幅を予約させず、toggle の aria-expanded のみ更新すること', async () => {
+    const header = await fixture<LayoutHeader>(
+      html`<layout-header note-layout sidebar-enabled></layout-header>`,
+    );
+    await waitForLitUpdate(header);
+
+    window.dispatchEvent(
+      new CustomEvent<LayoutSidebarStateChangeDetail>(LAYOUT_SIDEBAR_STATE_CHANGE_EVENT, {
+        detail: { state: 'expanded', mode: 'overlay' },
+      }),
+    );
+    await waitForLitUpdate(header);
+
+    const uiHeader = expectPresent(
+      header.shadowRoot?.querySelector<UiHeader>('ui-header'),
+      'uiHeader',
+    );
+    const toggleButton = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.sidebar-toggle'),
+      'toggleButton',
+    );
+
+    expect(uiHeader.sidebarExpanded).to.equal(false);
+    expect(toggleButton.getAttribute('aria-expanded')).to.equal('true');
   });
 
   it('sidebar-enabled が無い note-layout では sidebar toggle を描画しないこと', async () => {

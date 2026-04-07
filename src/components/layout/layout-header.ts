@@ -1,4 +1,4 @@
-import { css, html, LitElement, nothing } from 'lit';
+import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import '../ui/icon/icon.js';
 import '../ui/header/header.js';
@@ -198,7 +198,10 @@ export class LayoutHeader extends LitElement {
   sidebarEnabled = false;
 
   @state()
-  private _sidebarExpanded = true;
+  private _headerSidebarReserved = false;
+
+  @state()
+  private _sidebarOpen = false;
 
   @state()
   private _themePreference: ThemePreference = 'system';
@@ -225,6 +228,12 @@ export class LayoutHeader extends LitElement {
     );
   }
 
+  protected override updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has('sidebarEnabled')) {
+      this._syncFromMediaQuery();
+    }
+  }
+
   override disconnectedCallback(): void {
     this._mediaQuery?.removeEventListener('change', this._onMediaQueryChange);
     this._mediaQuery = null;
@@ -239,7 +248,9 @@ export class LayoutHeader extends LitElement {
   }
 
   private _syncFromMediaQuery(): void {
-    this._sidebarExpanded = this._mediaQuery?.matches ?? true;
+    const isFixedLayout = this._mediaQuery?.matches ?? true;
+    this._headerSidebarReserved = this.sidebarEnabled && isFixedLayout;
+    this._sidebarOpen = isFixedLayout;
   }
 
   private _onMediaQueryChange = (): void => {
@@ -253,11 +264,13 @@ export class LayoutHeader extends LitElement {
 
     const detail = event.detail as LayoutSidebarStateChangeDetail;
     if (detail.mode === 'fixed') {
-      this._sidebarExpanded = true;
+      this._headerSidebarReserved = this.sidebarEnabled;
+      this._sidebarOpen = true;
       return;
     }
 
-    this._sidebarExpanded = detail.state === 'expanded';
+    this._headerSidebarReserved = false;
+    this._sidebarOpen = detail.state === 'expanded';
   };
 
   private _handleSidebarToggleClick = (event: Event): void => {
@@ -373,7 +386,7 @@ export class LayoutHeader extends LitElement {
 
   override render() {
     const breadcrumbs = this._breadcrumbItems;
-    const sidebarToggleLabel = this._sidebarExpanded ? 'サイドバーを閉じる' : 'サイドバーを開く';
+    const sidebarToggleLabel = this._sidebarOpen ? 'サイドバーを閉じる' : 'サイドバーを開く';
     const currentThemeOption = THEME_OPTIONS[this._themePreference];
     const corpusItems = this._corpusItems;
     const currentCorpusLabel = this._currentCorpusItem?.label ?? 'すべてのノート';
@@ -381,7 +394,7 @@ export class LayoutHeader extends LitElement {
     const shouldRenderHeaderBreadcrumbs = hasBreadcrumbs && !this.noteLayout;
 
     return html`
-      <ui-header .sidebarExpanded=${this._sidebarExpanded}>
+      <ui-header .sidebarExpanded=${this._headerSidebarReserved}>
         <div slot="start" class="slot-group">
           ${this.sidebarEnabled
             ? html`
@@ -390,7 +403,7 @@ export class LayoutHeader extends LitElement {
                   variant="ghost"
                   icon-only
                   aria-label="${sidebarToggleLabel}"
-                  aria-expanded=${String(this._sidebarExpanded)}
+                  aria-expanded=${String(this._sidebarOpen)}
                   @click=${this._handleSidebarToggleClick}
                 >
                   <ui-icon name="panel-left" aria-hidden="true"></ui-icon>
