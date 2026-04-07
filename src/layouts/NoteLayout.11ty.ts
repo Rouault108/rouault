@@ -50,17 +50,20 @@ const renderPagefindMetadata = (pagefind: NonNullable<NotePageProjection['pagefi
 const buildSidebarAttributes = (
   sidebar: NonNullable<NotePageProjection['sidebar']>,
   presentation: SidebarPresentation,
-): string =>
-  serializeHtmlAttributes([
+): string => {
+  const heading = presentation === 'overlay' ? '' : sidebar.heading;
+
+  return serializeHtmlAttributes([
     { name: 'source-id', value: sidebar.sourceId },
     { name: 'selected-id', value: sidebar.selectedId },
     { name: 'items-json', value: sidebar.items, kind: 'json' },
-    { name: 'heading', value: sidebar.heading },
+    { name: 'heading', value: heading },
     { name: 'fixed-breakpoint', value: sidebar.fixedBreakpoint },
     { name: 'presentation', value: presentation },
     { name: 'data-hydration-capability', value: 'interactive' },
     { name: 'data-hydration-trigger', value: 'initial' },
   ]);
+};
 
 const renderFixedSidebar = (sidebar: NonNullable<NotePageProjection['sidebar']>): string => {
   const sidebarAttributes = buildSidebarAttributes(sidebar, 'fixed');
