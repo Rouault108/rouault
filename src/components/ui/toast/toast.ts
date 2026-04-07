@@ -532,7 +532,7 @@ export class UiToast extends LitElement {
       }
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 639px) {
       :host {
         inset-block-start: auto;
         inset-block-end: var(--space-4, 16px);

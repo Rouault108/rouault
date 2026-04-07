@@ -18,7 +18,7 @@ interface EllipsisItem {
 
 type DisplayItem = BreadcrumbItem | EllipsisItem;
 
-const NARROW_BREAKPOINT_QUERY = '(max-width: 640px)';
+const NARROW_BREAKPOINT_QUERY = '(max-width: 639px)';
 
 @customElement('ui-breadcrumbs')
 export class Breadcrumbs extends LitElement {
@@ -123,7 +123,7 @@ export class Breadcrumbs extends LitElement {
       height: var(--icon-base, 16px);
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 639px) {
       :host {
         display: none !important;
       }

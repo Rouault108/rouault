@@ -177,7 +177,7 @@ export const buildNotFoundPageMarkup = (options: BuildNotFoundPageMarkupOptions 
       }
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 639px) {
       .not-found-page-fallback {
         padding-inline: var(--space-3, 12px);
       }

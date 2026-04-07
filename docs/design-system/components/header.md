@@ -223,7 +223,7 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 利用者は、これらの dependency token を header 固有の public token と誤読してはなりません（MUST NOT）。header 側が長期安定を保証するのは `--ui-header-*` 系の public token であり、上表は app-shell または foundation 側の契約に従属する依存面です。
 
-狭幅条件の閾値も同様に app-shell 側の responsive policy に従属します。現行実装では `640px` を用いますが、これは header 私有の長期安定値ではありません。利用者は `640px` という数値そのものではなく、**狭幅では `center` が失われ得る**という挙動契約へ依存しなければなりません（MUST）。
+狭幅条件の閾値も同様に app-shell 側の responsive policy に従属します。現行実装では **639px 以下を狭幅、640px 以上を通常幅開始**として扱いますが、これは header 私有の長期安定値ではありません。利用者は境界値そのものではなく、**狭幅では `center` が失われ得る**という挙動契約へ依存しなければなりません（MUST）。
 
 ### 属性反映契約
 
@@ -416,7 +416,7 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 現行契約では、狭幅環境で通常幅向けのパンくず列をそのまま維持しません。`ui-breadcrumbs` は狭幅では描画を抑制し、`center` を非表示にしたうえで、必要な場合に限って `compact-center` に単一の現在地ラベルだけを置きます。これにより、狭幅環境では start / end の操作性を優先しつつ、本文の邪魔にならない最小限の文脈表示だけを残せます。
 
-ただし、公開契約として安定化するのは `640px` という数値そのものではなく、**狭幅では `center` が非表示になり、パンくず列は表示されず、`compact-center` が短い現在地ラベルの受け皿になり得る**という挙動です。閾値の最終所有者は header 単独ではなく、app-shell 側の responsive policy にあります。
+ただし、公開契約として安定化するのは `639px/640px` という数値そのものではなく、**狭幅では `center` が非表示になり、パンくず列は表示されず、`compact-center` が短い現在地ラベルの受け皿になり得る**という挙動です。閾値の最終所有者は header 単独ではなく、app-shell 側の responsive policy にあります。
 
 したがって、利用者は次を前提にしなければなりません。
 
@@ -447,7 +447,7 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 | zone ギャップ  | `--space-2`                           |
 | サイドバー幅   | `--sidebar-width`                     |
 
-`center` の狭幅時非表示は responsive policy に従属します。現行実装の閾値は `640px` ですが、将来的な breakpoint 再編は app-shell 側 policy によって行うべきであり、header 単独で私有 breakpoint を増やすべきではありません。
+`center` の狭幅時非表示は responsive policy に従属します。現行実装では **639px 以下で非表示、640px 以上で通常表示** ですが、将来的な breakpoint 再編は app-shell 側 policy によって行うべきであり、header 単独で私有 breakpoint を増やすべきではありません。
 
 また、利用者は dependency token の値体系を header 固有の public contract と誤読してはなりません（MUST NOT）。foundation 再編時は、まず外部依存の変更として扱うべきであり、header 自身の public token 変更と混同してはなりません。
 

@@ -138,8 +138,8 @@ export class UiHeader extends LitElement {
       margin-inline-start: auto;
     }
 
-    /* ── モバイル: Center Zone を非表示 (--bp-sm = 640px) ── */
-    @media (max-width: 640px) {
+    /* ── モバイル: 639px 以下では Center Zone を非表示（desktop 開始は 640px） ── */
+    @media (max-width: 639px) {
       .zone-center {
         display: none;
       }

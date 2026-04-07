@@ -106,7 +106,7 @@ describe('css structure contracts', () => {
       '.breadcrumb-current',
       '.breadcrumb-separator',
       '.breadcrumb-ellipsis-button',
-      '@media (max-width: 640px)',
+      '@media (max-width: 639px)',
       'display: none !important',
       '@media (forced-colors: active)',
       'LinkText',
