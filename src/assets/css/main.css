@@ -2150,6 +2150,7 @@ app-router {
 }
 
 /* Mobile: 1カラム（本文のみ） */
+/* Mobile: 1カラム（本文主体 + TOC mobile UI） */
 @media (max-width: 639px) {
   .note-shell[data-sidebar-presence='present'] {
     grid-template-columns:
@@ -2162,6 +2163,25 @@ app-router {
     grid-template-columns:
       minmax(0, 1fr)
       0px;
+  }
+
+  /* 1023px以下ルールで上書きした grid-column を、
+   * 639px以下ではモバイル用の配置として明示的に再定義する。
+   * これにより breakpoint 間の暗黙依存を断ち、本文 0px 化を防ぐ。 */
+  .note-shell[data-sidebar-presence='present'] .layout-main-col {
+    grid-column: 2;
+  }
+
+  .note-shell[data-sidebar-presence='present'] .layout-toc-col {
+    grid-column: 3;
+  }
+
+  .note-shell[data-sidebar-presence='absent'] .layout-main-col {
+    grid-column: 1;
+  }
+
+  .note-shell[data-sidebar-presence='absent'] .layout-toc-col {
+    grid-column: 2;
   }
 
   .about-shell {
