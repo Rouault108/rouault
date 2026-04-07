@@ -58,11 +58,16 @@ export const attachStickyFooterBoundary = (
 
   let frameId = 0;
   let footerHost = resolveFooterHost();
+  let observedFooterHost: HTMLElement | null = null;
   let eventAbortController: AbortController | null = null;
+  let lastAppliedMaxBlockSize: string | null = null;
+  let lastAppliedFooterOffset: string | null = null;
+
   const mediaQuery =
     typeof options.minWidth === 'number'
       ? window.matchMedia(`(min-width: ${String(options.minWidth)}px)`)
       : null;
+
   const resizeObserver =
     typeof ResizeObserver === 'undefined'
       ? null
@@ -73,18 +78,54 @@ export const attachStickyFooterBoundary = (
   const clearStickyStyles = (): void => {
     target.style.removeProperty('--layout-sticky-max-block-size');
     target.style.removeProperty('--layout-sticky-footer-offset');
+    lastAppliedMaxBlockSize = null;
+    lastAppliedFooterOffset = null;
+  };
+
+  const applyStickyStyles = (maxBlockSize: number, footerOffset: number): void => {
+    const nextMaxBlockSize = `${String(maxBlockSize)}px`;
+    const nextFooterOffset = `${String(footerOffset)}px`;
+
+    if (lastAppliedMaxBlockSize !== nextMaxBlockSize) {
+      target.style.setProperty('--layout-sticky-max-block-size', nextMaxBlockSize);
+      lastAppliedMaxBlockSize = nextMaxBlockSize;
+    }
+
+    if (lastAppliedFooterOffset !== nextFooterOffset) {
+      target.style.setProperty('--layout-sticky-footer-offset', nextFooterOffset);
+      lastAppliedFooterOffset = nextFooterOffset;
+    }
   };
 
   const isEnabled = (): boolean => mediaQuery?.matches ?? true;
 
+  const observeFooterHost = (): void => {
+    if (resizeObserver === null || footerHost === null) {
+      return;
+    }
+
+    if (observedFooterHost === footerHost) {
+      return;
+    }
+
+    if (observedFooterHost !== null) {
+      resizeObserver.unobserve(observedFooterHost);
+    }
+
+    resizeObserver.observe(footerHost);
+    observedFooterHost = footerHost;
+  };
+
   const update = (): void => {
     frameId = 0;
+
     if (!isEnabled()) {
       clearStickyStyles();
       return;
     }
 
     footerHost ??= resolveFooterHost();
+    observeFooterHost();
 
     const stickyTop = readPxCustomProperty(target, '--header-height');
     const footerTop = footerHost?.getBoundingClientRect().top ?? null;
@@ -98,8 +139,7 @@ export const attachStickyFooterBoundary = (
       viewportHeight: window.innerHeight,
     });
 
-    target.style.setProperty('--layout-sticky-max-block-size', `${String(maxBlockSize)}px`);
-    target.style.setProperty('--layout-sticky-footer-offset', `${String(footerOffset)}px`);
+    applyStickyStyles(maxBlockSize, footerOffset);
   };
 
   const scheduleUpdate = (): void => {
@@ -148,19 +188,24 @@ export const attachStickyFooterBoundary = (
 
   mediaQuery?.addEventListener('change', syncActivation);
 
-  resizeObserver?.observe(document.documentElement);
-  if (footerHost) {
-    resizeObserver?.observe(footerHost);
-  }
+  resizeObserver?.observe(target);
+  observeFooterHost();
 
   syncActivation();
 
   return () => {
     detachWindowListeners();
     mediaQuery?.removeEventListener('change', syncActivation);
+
     if (frameId !== 0) {
       window.cancelAnimationFrame(frameId);
+      frameId = 0;
     }
+
+    if (resizeObserver !== null && observedFooterHost !== null) {
+      resizeObserver.unobserve(observedFooterHost);
+    }
+
     resizeObserver?.disconnect();
     clearStickyStyles();
   };
