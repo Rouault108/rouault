@@ -10,15 +10,17 @@ const mainCssPath = path.resolve(dirname, '../../src/assets/css/main.css');
 const mainCss = readFileSync(mainCssPath, 'utf8');
 
 describe('table static css contracts', () => {
-  it('prose 内 table root が breakout / focus-visible / reduced-motion 契約を保持すること', () => {
+  it('prose 内 table root が static scroll container / focus-visible / reduced-motion 契約を保持すること', () => {
     expectCssIncludes(mainCss, [
-      '.prose > [data-table-root]',
       ':is(.prose, .about-prose) > [data-table-root]',
       ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]",
-      'max-width: none',
-      'width: var(--ui-table-breakout-width, var(--_table-breakout-width-default))',
-      'margin-inline: var(--ui-table-breakout-margin, var(--_table-breakout-margin-default))',
+      'width: 100%',
+      'margin-inline: 0',
+      'box-sizing: border-box',
       'overflow-x: auto',
+      'overflow-y: visible',
+      '-webkit-text-size-adjust: none',
+      'text-size-adjust: none',
       'outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color',
       'animation: var(--animation-focus)',
       '@media (prefers-reduced-motion: reduce)',
