@@ -562,10 +562,9 @@ hr[data-divider-variant='layout'] {
 }
 
 /* Proseコンテナ内のメディア要素はテキスト幅を超えて拡張 */
+/* Proseコンテナ内のメディア要素はテキスト幅を超えて拡張 */
 .prose > img,
 .prose > pre,
-.prose > table,
-.prose > [data-table-root],
 .prose > video {
   max-width: none;
 }
@@ -590,11 +589,6 @@ hr[data-divider-variant='layout'] {
   margin-inline: 0;
 }
 
-.prose > [data-table-root] {
-  --ui-table-breakout-width: 100%;
-  --ui-table-breakout-margin: 0;
-}
-
 .prose > ui-score {
   --ui-table-breakout-width: 100%;
   --ui-table-breakout-margin: 0;
@@ -607,10 +601,9 @@ hr[data-divider-variant='layout'] {
 
 :is(.prose, .about-prose) > [data-table-root],
 :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root] {
-  --_table-breakout-width-default: calc(100% + var(--space-8, 2rem));
-  --_table-breakout-margin-default: var(--space-n4, -1rem);
-  width: var(--ui-table-breakout-width, var(--_table-breakout-width-default));
-  margin-inline: var(--ui-table-breakout-margin, var(--_table-breakout-margin-default));
+  width: 100%;
+  margin-inline: 0;
+  box-sizing: border-box;
   overflow-x: auto;
   overflow-y: visible;
 
@@ -618,14 +611,6 @@ hr[data-divider-variant='layout'] {
    * 横スクロール面を root 側でも固定し、表だけ文字が肥大化するのを防ぐ */
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
-}
-
-@media (min-width: 768px) {
-  :is(.prose, .about-prose) > [data-table-root],
-  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root] {
-    --_table-breakout-width-default: calc(100% + var(--space-16, 4rem));
-    --_table-breakout-margin-default: var(--space-n8, -2rem);
-  }
 }
 
 :is(.prose, .about-prose) > [data-table-root]:focus-visible,
@@ -1021,8 +1006,6 @@ hr[data-divider-variant='layout'] {
   /* --bp-md */
   .prose > img,
   .prose > pre,
-  .prose > table,
-  .prose > [data-table-root],
   .prose > video {
     width: calc(100% + var(--space-8));
     margin-inline: var(--space-n4);
@@ -1034,8 +1017,6 @@ hr[data-divider-variant='layout'] {
   /* --bp-md */
   .prose > img,
   .prose > pre,
-  .prose > table,
-  .prose > [data-table-root],
   .prose > video {
     width: calc(100% + var(--space-16));
     margin-inline: var(--space-n8);
@@ -1699,7 +1680,7 @@ ui-list-item > [slot]:not([slot='actions']) a[href]:visited {
   max-width: min(100%, var(--reading-measure, var(--width-reading)));
   width: 100%;
   margin-inline: auto;
-  padding-inline: var(--space-4);
+  padding-inline: var(--space-6);
 }
 
 @media (min-width: 768px) {
