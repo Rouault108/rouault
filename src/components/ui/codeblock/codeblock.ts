@@ -145,6 +145,7 @@ export class CodeBlock extends LitElement {
     ::slotted(pre[data-code-block]) {
       -webkit-text-size-adjust: none;
       text-size-adjust: none;
+      border-radius: var(--radius-sm, 4px);
     }
 
     @media (min-width: 768px) {
@@ -180,6 +181,16 @@ export class CodeBlock extends LitElement {
           --ui-code-surface-radius-bottom,
           var(--ui-code-block-radius-bottom, var(--radius-md, 6px))
         );
+      transition:
+        box-shadow var(--duration-fast, 70ms)
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        border-color var(--duration-fast, 70ms)
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+    }
+
+    :host(:focus-within) .root {
+      box-shadow: inset 0 0 0 1px
+        color-mix(in oklch, var(--focus-ring-color, oklch(60% 0.15 250)) 40%, transparent);
     }
 
     :host([headless]) .root {
@@ -301,9 +312,20 @@ export class CodeBlock extends LitElement {
       }
     }
 
+    @media (prefers-reduced-motion: reduce) {
+      .root,
+      .copy-button-shell ui-copy-button {
+        transition-duration: var(--duration-instant, 0ms);
+      }
+    }
+
     @media (forced-colors: active) {
       .copy-button-shell {
         border: 1px solid ButtonText;
+      }
+
+      :host(:focus-within) .root {
+        box-shadow: inset 0 0 0 2px CanvasText;
       }
     }
 
