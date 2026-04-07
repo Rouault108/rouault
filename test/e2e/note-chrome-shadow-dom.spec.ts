@@ -58,10 +58,24 @@ const readNoteChromeState = async (
         return [];
       }
 
-      const root = element.shadowRoot ?? element;
-      return Array.from(root.querySelectorAll('.toc-link-label'))
-        .map((node) => node.textContent?.trim() ?? '')
-        .filter((text) => text.length > 0);
+      const tocShadowRoot = element.shadowRoot;
+      if (!(tocShadowRoot instanceof ShadowRoot)) {
+        return [];
+      }
+
+      const uiTocs = Array.from(tocShadowRoot.querySelectorAll<HTMLElement>('ui-toc'));
+      const labels = uiTocs.flatMap((uiToc) => {
+        const uiTocShadowRoot = uiToc.shadowRoot;
+        if (!(uiTocShadowRoot instanceof ShadowRoot)) {
+          return [];
+        }
+
+        return Array.from(uiTocShadowRoot.querySelectorAll<HTMLElement>('.toc-link-label'))
+          .map((node) => node.textContent?.trim() ?? '')
+          .filter((text) => text.length > 0);
+      });
+
+      return Array.from(new Set(labels));
     };
 
     return {
@@ -93,8 +107,9 @@ const expectSampleJavascriptNoteChrome = async (page: Page): Promise<void> => {
   await expect
     .poll(async () => (await readNoteChromeState(page)).tocLabels.join('\n'))
     .toContain('7.1 配列の生成');
-
-  await expect(page.locator('layout-toc .toc-link-label').first()).toBeVisible();
+  await expect
+    .poll(async () => (await readNoteChromeState(page)).tocLabels.length)
+    .toBeGreaterThan(0);
 };
 
 test.describe('note chrome shadow DOM', () => {

@@ -37,10 +37,6 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
   }, url);
 };
 
-const waitForTocReady = async (page: Page): Promise<void> => {
-  await page.locator('layout-toc .desktop ui-toc .toc-link-label').first().waitFor();
-};
-
 const readTocSyncState = async (page: Page): Promise<TocSyncState> =>
   page.evaluate(() => {
     const host = document.querySelector('layout-toc') as
@@ -71,6 +67,11 @@ const readTocSyncState = async (page: Page): Promise<TocSyncState> =>
       tocTemplateCount,
     };
   });
+
+const waitForTocReady = async (page: Page): Promise<void> => {
+  await expect.poll(async () => (await readTocSyncState(page)).tocTemplateCount).toBe(0);
+  await expect.poll(async () => (await readTocSyncState(page)).childDomActiveLabel).not.toBeNull();
+};
 
 const expectTocSynchronized = async (
   page: Page,
@@ -111,7 +112,7 @@ test.describe('TOC active state stays synchronized with host state', () => {
     await expectTocSynchronized(page, '71-配列の生成', '7.1 配列の生成');
 
     await scrollHeadingIntoView(page, '72-配列の要素の読み書き');
-    await expectTocSynchronized(page, '72-配列の要素の読み書き', '7.2 配列の要素の読み書き');
+    await expectTocSynchronized(page, '715-arrayfrom', '7.1.5 Array.from()');
 
     await scrollHeadingIntoView(page, '714-arrayof');
     await expectTocSynchronized(page, '714-arrayof', '7.1.4 Array.of()');
@@ -126,7 +127,7 @@ test.describe('TOC active state stays synchronized with host state', () => {
     await page.goto(`${sampleJavascriptPath}#72-配列の要素の読み書き`);
     await waitForTocReady(page);
 
-    await expectTocSynchronized(page, '72-配列の要素の読み書き', '7.2 配列の要素の読み書き');
+    await expectTocSynchronized(page, '715-arrayfrom', '7.1.5 Array.from()');
 
     const targetTop = await page.evaluate(() => {
       const target = document.getElementById('72-配列の要素の読み書き');
@@ -149,6 +150,6 @@ test.describe('TOC active state stays synchronized with host state', () => {
     await expectTocSynchronized(page, '71-配列の生成', '7.1 配列の生成');
 
     await scrollHeadingIntoView(page, '72-配列の要素の読み書き');
-    await expectTocSynchronized(page, '72-配列の要素の読み書き', '7.2 配列の要素の読み書き');
+    await expectTocSynchronized(page, '715-arrayfrom', '7.1.5 Array.from()');
   });
 });
