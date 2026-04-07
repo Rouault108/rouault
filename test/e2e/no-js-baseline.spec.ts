@@ -137,6 +137,42 @@ test.describe('No-JS baseline', () => {
     await expectSampleJavascriptNoteChromeVisibleWithoutJs(page);
   });
 
+  test('sample-javascript が狭幅でも article header を 1文字幅へ潰さないこと', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 900 });
+    await page.goto(sampleJavascriptPath);
+
+    const state = await page.evaluate(() => {
+      const host = document.querySelector('ui-article-header');
+      if (!(host instanceof HTMLElement)) {
+        return null;
+      }
+
+      const heading = host.shadowRoot?.querySelector('.heading');
+      if (!(heading instanceof HTMLElement)) {
+        return null;
+      }
+
+      return {
+        hostDisplay: window.getComputedStyle(host).display,
+        hostWidth: Math.round(host.getBoundingClientRect().width),
+        headingWidth: Math.round(heading.getBoundingClientRect().width),
+        headingHeight: Math.round(heading.getBoundingClientRect().height),
+      };
+    });
+
+    expect(state).not.toBeNull();
+    expect(state?.hostDisplay).toBe('block');
+    expect(state?.hostWidth ?? 0).toBeGreaterThan(240);
+    expect(state?.headingWidth ?? 0).toBeGreaterThan(240);
+    expect(state?.headingHeight ?? 0).toBeLessThan(160);
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'JavaScriptの配列' }).first(),
+    ).toBeVisible();
+  });
+
   test('ノートページが SSR シェルと本文を初期表示し、note chrome が inert host に退化していないこと', async ({
     page,
   }) => {

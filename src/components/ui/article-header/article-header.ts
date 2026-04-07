@@ -39,11 +39,15 @@ export class ArticleHeader extends LitElement {
     css`
       :host {
         display: block;
-        max-width: var(--width-reading, 72ch);
+        inline-size: 100%;
+        min-inline-size: 0;
+        max-inline-size: var(--width-reading, 72ch);
       }
 
       .article-header {
         display: block;
+        inline-size: 100%;
+        min-inline-size: 0;
         border-block-end: var(
           --border-style-subtle,
           1px solid var(--border-default, oklch(20% 0 0 / 0.12))
@@ -61,8 +65,11 @@ export class ArticleHeader extends LitElement {
       }
 
       .heading {
+        display: block;
+        inline-size: 100%;
+        min-inline-size: 0;
+        max-inline-size: 100%;
         margin-block: 0 var(--space-4, 16px);
-        max-width: var(--width-reading, 72ch);
         font-size: clamp(var(--text-2xl, 24px), 4vw + 1rem, var(--text-4xl, 36px));
         font-weight: 700;
         /* clamp + media query の不連続を解消。フォントサイズに追従する相対値で統一。 */
