@@ -24,23 +24,37 @@ const getInnerButton = (host: Button): HTMLButtonElement =>
   expectPresent(host.shadowRoot?.querySelector<HTMLButtonElement>('button'), 'button');
 
 describe('ui-button browser contract', () => {
-  it('icon-only 時のみ aria-label を内部 button へ反映すること', async () => {
+  it('icon-only では aria-label を、可視ラベル構成では accessible-name を内部 button へ反映すること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>
         <ui-button id="icon-only" icon-only aria-label="設定を開く">
           <span aria-hidden="true">⚙</span>
         </ui-button>
         <ui-button id="labeled" aria-label="内部へは出さない">保存</ui-button>
+        <ui-button id="explicit-name" accessible-name="検索ダイアログを開く">
+          <span aria-hidden="true">検索...</span>
+        </ui-button>
       </div>
     `);
 
     const iconOnly = expectPresent(wrapper.querySelector<Button>('#icon-only'), 'icon-only');
     const labeled = expectPresent(wrapper.querySelector<Button>('#labeled'), 'labeled');
+    const explicitName = expectPresent(
+      wrapper.querySelector<Button>('#explicit-name'),
+      'explicit-name',
+    );
 
-    await Promise.all([waitForLitUpdate(iconOnly), waitForLitUpdate(labeled)]);
+    await Promise.all([
+      waitForLitUpdate(iconOnly),
+      waitForLitUpdate(labeled),
+      waitForLitUpdate(explicitName),
+    ]);
 
     expect(getInnerButton(iconOnly).getAttribute('aria-label')).to.equal('設定を開く');
     expect(getInnerButton(labeled).getAttribute('aria-label')).to.equal(null);
+    expect(getInnerButton(explicitName).getAttribute('aria-label')).to.equal(
+      '検索ダイアログを開く',
+    );
   });
 
   it('loading / disabled は disabled と aria-busy を反映し、click を抑止すること', async () => {

@@ -506,6 +506,15 @@ export class Button extends LitElement {
   override ariaLabel: string | null = null;
 
   /**
+   * 可視ラベルとは独立して内部 button へ明示的に与えるアクセシブル名
+   *
+   * iconOnly=false でも使用できます。検索トリガーのように、可視ラベルを
+   * aria-hidden として扱い、アクセシブル名を別途固定したい wrapper が利用します。
+   */
+  @property({ type: String, attribute: 'accessible-name', reflect: true })
+  accessibleName: string | null = null;
+
+  /**
    * トグルボタンの押下状態
    * @type {boolean | undefined}
    * @default undefined
@@ -590,7 +599,11 @@ export class Button extends LitElement {
   }
 
   override willUpdate(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has('iconOnly') || changedProperties.has('ariaLabel')) {
+    if (
+      changedProperties.has('iconOnly') ||
+      changedProperties.has('ariaLabel') ||
+      changedProperties.has('accessibleName')
+    ) {
       this._validateAccessibilityContract();
       this._warnUnsupportedAriaLabelUsage();
     }
@@ -657,6 +670,26 @@ export class Button extends LitElement {
     }
   };
 
+  private _normalizeAccessibleLabel(value: string | null): string | null {
+    const normalized = value?.trim();
+
+    return normalized === undefined || normalized === '' ? null : normalized;
+  }
+
+  private get _resolvedAccessibleName(): string | null {
+    const explicitAccessibleName = this._normalizeAccessibleLabel(this.accessibleName);
+
+    if (explicitAccessibleName !== null) {
+      return explicitAccessibleName;
+    }
+
+    if (!this.iconOnly) {
+      return null;
+    }
+
+    return this._normalizeAccessibleLabel(this.ariaLabel);
+  }
+
   /**
    * icon-only と aria-label の契約を開発時に検証
    */
@@ -665,9 +698,9 @@ export class Button extends LitElement {
       return;
     }
 
-    if (this.iconOnly && !this.ariaLabel) {
+    if (this.iconOnly && this._resolvedAccessibleName === null) {
       console.error(
-        '[ui-button]: icon-only="true" の場合、aria-label は必須です。アクセシビリティのために代替テキストを提供してください。',
+        '[ui-button]: icon-only="true" の場合、aria-label または accessible-name は必須です。アクセシビリティのために代替テキストを提供してください。',
       );
     }
   }
@@ -717,7 +750,7 @@ export class Button extends LitElement {
         ?disabled=${this.disabled || this.loading}
         aria-busy="${ifDefined(this.loading ? 'true' : undefined)}"
         aria-pressed="${ifDefined(this.pressed !== undefined ? String(this.pressed) : undefined)}"
-        aria-label="${ifDefined(this.iconOnly ? (this.ariaLabel ?? undefined) : undefined)}"
+        aria-label="${ifDefined(this._resolvedAccessibleName ?? undefined)}"
         aria-expanded="${ifDefined(this.ariaExpanded ?? undefined)}"
         aria-controls="${ifDefined(this.ariaControls ?? undefined)}"
         aria-haspopup="${ifDefined(this.ariaHasPopup ?? undefined)}"

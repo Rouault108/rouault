@@ -1,6 +1,7 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import '../button/button.js';
 import '../icon/icon.js';
 
 export type SearchTriggerDensity = 'auto' | 'default' | 'compact' | 'icon-only';
@@ -42,36 +43,45 @@ export class SearchTrigger extends LitElement {
       inline-size: fit-content;
     }
 
-    button {
+    ui-button {
       display: inline-flex;
-      align-items: center;
-      position: relative;
-      gap: var(--space-2, 8px);
-      box-sizing: border-box;
-      min-block-size: var(--control-height-md, 32px);
+      inline-size: fit-content;
       min-inline-size: 0;
       max-inline-size: min(100%, 20rem);
+      color: inherit;
+    }
+
+    ui-button::part(button) {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+      inline-size: 100%;
+      min-inline-size: 0;
+      box-sizing: border-box;
+      gap: var(--space-2, 8px);
       padding-inline: var(--search-trigger-padding-inline, var(--space-3, 12px));
       border: var(--border-width, 1px) solid transparent;
       border-radius: var(--radius-md, 6px);
       background: var(--bg-fill-muted, oklch(95% 0 0));
+      box-shadow: none;
       color: inherit;
       font: inherit;
       line-height: 1;
-      cursor: pointer;
-      user-select: none;
       transition:
         background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        box-shadow var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         outline-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
-    button:hover:not(:disabled) {
+    ui-button::part(button):hover:not(:disabled) {
       border-color: var(--border-default, oklch(85% 0 0));
+      background: var(--bg-fill-muted, oklch(95% 0 0));
     }
 
-    button:focus-visible {
+    ui-button::part(button):focus-visible {
       border-color: var(--border-default, oklch(85% 0 0));
       background: var(--bg-default, oklch(100% 0 0));
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
@@ -79,16 +89,10 @@ export class SearchTrigger extends LitElement {
       animation: var(--animation-focus, none);
     }
 
-    button:active:not(:disabled) {
+    ui-button::part(button):active:not(:disabled) {
       border-color: var(--border-default, oklch(85% 0 0));
       background: var(--bg-default, oklch(100% 0 0));
       transform: scale(var(--scale-pressed, 0.96));
-    }
-
-    button:disabled {
-      opacity: var(--opacity-disabled, 0.5);
-      cursor: not-allowed;
-      pointer-events: none;
     }
 
     .icon {
@@ -115,13 +119,13 @@ export class SearchTrigger extends LitElement {
       text-overflow: ellipsis;
     }
 
-    button[data-density='auto'],
-    button[data-density='compact'] {
+    ui-button[data-density='auto']::part(button),
+    ui-button[data-density='compact']::part(button) {
       gap: var(--space-1, 4px);
       padding-inline: var(--space-2, 8px);
     }
 
-    button[data-density='icon-only'] {
+    ui-button[data-density='icon-only']::part(button) {
       justify-content: center;
       inline-size: max(
         var(--control-height-md, 32px),
@@ -130,19 +134,19 @@ export class SearchTrigger extends LitElement {
       padding-inline: 0;
     }
 
-    button[data-density='icon-only'] .placeholder {
+    ui-button[data-density='icon-only'] .placeholder {
       display: none;
     }
 
     @media (max-width: 960px) {
-      button[data-density='auto'] {
+      ui-button[data-density='auto']::part(button) {
         gap: var(--space-1, 4px);
         padding-inline: var(--space-2, 8px);
       }
     }
 
-    @media (max-width: 639px) {
-      button[data-density='auto'] {
+    @media (max-width: 640px) {
+      ui-button[data-density='auto']::part(button) {
         justify-content: center;
         inline-size: max(
           var(--control-height-md, 32px),
@@ -151,26 +155,26 @@ export class SearchTrigger extends LitElement {
         padding-inline: 0;
       }
 
-      button[data-density='auto'] .placeholder {
+      ui-button[data-density='auto'] .placeholder {
         display: none;
       }
     }
 
     @media (forced-colors: active) {
-      button {
+      ui-button::part(button) {
         border-color: CanvasText;
         background: Canvas;
       }
 
-      button:hover:not(:disabled) {
+      ui-button::part(button):hover:not(:disabled) {
         border-color: CanvasText;
       }
 
-      button:focus-visible {
+      ui-button::part(button):focus-visible {
         outline: 3px solid CanvasText;
       }
 
-      button:active:not(:disabled) {
+      ui-button::part(button):active:not(:disabled) {
         border-color: CanvasText;
         background: ButtonFace;
       }
@@ -182,16 +186,17 @@ export class SearchTrigger extends LitElement {
     }
 
     @media (prefers-reduced-motion: reduce) {
-      button {
+      ui-button::part(button) {
         animation: none;
         transition:
           background-color 0s,
           border-color 0s,
+          box-shadow 0s,
           transform 0s,
           outline-color 0s;
       }
 
-      button:active:not(:disabled) {
+      ui-button::part(button):active:not(:disabled) {
         transform: none;
       }
     }
@@ -215,8 +220,8 @@ export class SearchTrigger extends LitElement {
   @property({ attribute: 'aria-expanded', reflect: true })
   override ariaExpanded: string | null = null;
 
-  private get _button(): HTMLButtonElement | null {
-    return this.shadowRoot?.querySelector<HTMLButtonElement>('button') ?? null;
+  private get _button(): HTMLElement | null {
+    return this.shadowRoot?.querySelector<HTMLElement>('ui-button') ?? null;
   }
 
   private get _normalizedPlaceholder(): string {
@@ -256,12 +261,13 @@ export class SearchTrigger extends LitElement {
 
   override render() {
     return html`
-      <button
+      <ui-button
         part="button"
-        type="button"
+        variant="ghost"
+        size="md"
         data-density="${this.density}"
         .disabled=${this.disabled}
-        aria-label=${this._resolvedAriaLabel}
+        .accessibleName=${this._resolvedAriaLabel}
         aria-haspopup="dialog"
         aria-controls=${ifDefined(this.ariaControls ?? undefined)}
         aria-expanded=${ifDefined(this.ariaExpanded ?? undefined)}
@@ -273,7 +279,7 @@ export class SearchTrigger extends LitElement {
         <span class="placeholder" part="placeholder" aria-hidden="true"
           >${this._normalizedPlaceholder}</span
         >
-      </button>
+      </ui-button>
     `;
   }
 }

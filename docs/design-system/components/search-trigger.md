@@ -62,7 +62,7 @@
 
 ## 公開契約
 
-`ui-search-trigger` は、`placeholder` と `disabled` を公開入力として扱います。内部実装はネイティブ `<button>` ですが、利用者は `ui-search-trigger` を契約単位として扱います。
+`ui-search-trigger` は、`placeholder` と `disabled` を公開入力として扱います。内部実装は `ui-button` を用いますが、利用者は `ui-search-trigger` を契約単位として扱います。
 
 `placeholder` の既定値は `"検索..."` です。これは **視覚表示用のラベル** であり、アクセシブル名、検索対象スコープ、検索語初期値を兼ねません。アクセシブル名は button の `aria-label` により独立して与えます。
 
@@ -161,7 +161,7 @@
 
 | part 名       | 役割                     |
 | ------------- | ------------------------ |
-| `button`      | 内部ネイティブ button    |
+| `button`      | 内部 `ui-button` surface |
 | `icon`        | 検索アイコンのラッパー   |
 | `placeholder` | プレースホルダー表示領域 |
 
@@ -175,14 +175,14 @@
 - 子ノードの描画や透過表示
 - `name` `value` `form` などのフォーム参加属性
 - form-associated custom element としての振る舞い
-- 内部 button 以外の Shadow DOM 構造への依存
+- 内部 `ui-button` の Shadow DOM 詳細への依存
 - 内部 class 名や未公開 `part` への依存
 
 したがって、利用者は `ui-search-trigger` を **単一責務の検索起動ボタン** として扱い、入力コントロールやフォームコントロールとしては扱いません。
 
 ### 責務範囲
 
-責務範囲には、内部 button の描画、状態に応じた属性反映、検索 trigger としての視覚表現、アクティベーション時の `open-search-dialog` 発火、レスポンシブ時の icon-only 表示、および必要なアクセシビリティ属性の付与を含みます。
+責務範囲には、内部 `ui-button` の描画と制御、状態に応じた属性反映、検索 trigger としての視覚表現、アクティベーション時の `open-search-dialog` 発火、レスポンシブ時の icon-only 表示、および必要なアクセシビリティ属性の付与を含みます。
 
 一方で、検索ダイアログの開閉状態を保持すること、グローバルショートカットを監視すること、入力値を管理すること、検索結果を表示することは責務に含めません。フォーム送信、値の保持、バリデーション参加、候補提示も責務に含めません。
 
@@ -230,7 +230,7 @@
 
 狭い画面または狭い配置幅では、`density="auto"` の場合に `icon-only` へ縮退できます。これは対話状態ではなく、利用可能幅に応じた表示条件です。
 
-現行実装では `max-width: 639px` を契機としますが、公開契約の中心は特定の閾値そのものではなく、狭幅時に icon-only へ縮退できることにあります。
+現行実装では `max-width: 640px` を契機としますが、公開契約の中心は特定の閾値そのものではなく、狭幅時に icon-only へ縮退できることにあります。内部実装は `ui-button[data-density]` と `::part(button)` を介してこれを成立させます。
 
 ### 境界入力
 
@@ -504,7 +504,7 @@ Storybook は公開契約の検証手段です。個々の Story 名一覧その
 - `aria-keyshortcuts` を既定出力から外し、ショートカット有効化の責務を上位レイヤへ戻しています。
 - `open-search-dialog` を request event として扱い、「即座にモーダルを開く」という過剰な説明を除去しています。
 - `density="auto" | "default" | "compact" | "icon-only"` を公開入力として実装し、Storybook でも検証しています。
-- `aria-label`、`aria-controls`、`aria-expanded` をホストから内部 button へ委譲できるようにしています。
+- `aria-label`、`aria-controls`、`aria-expanded` をホストから内部 `ui-button` 経由で内部 button へ委譲できるようにしています。
 
 ### 2. 引き続き固定しない事項
 

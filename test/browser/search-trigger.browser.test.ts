@@ -20,35 +20,43 @@ const flush = async (host: SearchTrigger): Promise<void> => {
   await waitForLitUpdate(host);
 };
 
+const getUiButton = (host: SearchTrigger): HTMLElement =>
+  expectPresent(host.shadowRoot?.querySelector<HTMLElement>('ui-button'), 'ui-button');
+
 const getButton = (host: SearchTrigger): HTMLButtonElement =>
-  expectPresent(host.shadowRoot?.querySelector<HTMLButtonElement>('button'), 'button');
+  expectPresent(
+    getUiButton(host).shadowRoot?.querySelector<HTMLButtonElement>('button'),
+    'nested button',
+  );
 
 const getPlaceholder = (host: SearchTrigger): HTMLElement =>
   expectPresent(host.shadowRoot?.querySelector<HTMLElement>('.placeholder'), 'placeholder');
 
 describe('ui-search-trigger browser contract', () => {
-  it('既定状態で native button semantics と default aria を提供すること', async () => {
+  it('既定状態で ui-button を内部に用い、native button semantics と default aria を提供すること', async () => {
     const host = await fixture<SearchTrigger>(html`
       <ui-search-trigger placeholder="検索..."></ui-search-trigger>
     `);
 
     await flush(host);
 
+    const uiButton = getUiButton(host);
     const button = getButton(host);
     const placeholder = getPlaceholder(host);
     const icon = host.shadowRoot?.querySelector('ui-icon[name="search"]');
 
+    expect(uiButton.getAttribute('variant')).to.equal('ghost');
+    expect(uiButton.dataset['density']).to.equal('auto');
     expect(button.type).to.equal('button');
     expect(button.getAttribute('aria-label')).to.equal('検索ダイアログを開く');
     expect(button.getAttribute('aria-haspopup')).to.equal('dialog');
-    expect(button.dataset['density']).to.equal('auto');
     expect(button.hasAttribute('aria-keyshortcuts')).to.equal(false);
     expect(placeholder.textContent?.trim()).to.equal('検索...');
     expect(icon).to.not.equal(null);
 
     host.focus();
     await nextAnimationFrame();
-    expect(host.shadowRoot?.activeElement).to.equal(button);
+    expect(uiButton.shadowRoot?.activeElement).to.equal(button);
   });
 
   it('aria delegation と density 正規化と placeholder 正規化を行うこと', async () => {
@@ -64,11 +72,12 @@ describe('ui-search-trigger browser contract', () => {
 
     await flush(host);
 
+    const uiButton = getUiButton(host);
     const button = getButton(host);
     const placeholder = getPlaceholder(host);
 
     expect(host.density).to.equal('auto');
-    expect(button.dataset['density']).to.equal('auto');
+    expect(uiButton.dataset['density']).to.equal('auto');
     expect(button.getAttribute('aria-label')).to.equal('ノート内検索を開く');
     expect(button.getAttribute('aria-controls')).to.equal('global-search-dialog');
     expect(button.getAttribute('aria-expanded')).to.equal('true');
@@ -125,7 +134,7 @@ describe('ui-search-trigger browser contract', () => {
     expect(submitCount).to.equal(0);
   });
 
-  it('density の代表値を button[data-density] へ反映すること', async () => {
+  it('density の代表値を inner ui-button[data-density] へ反映すること', async () => {
     const auto = await fixture<SearchTrigger>(html`
       <ui-search-trigger density="auto"></ui-search-trigger>
     `);
@@ -144,9 +153,9 @@ describe('ui-search-trigger browser contract', () => {
     await flush(compact);
     await flush(iconOnly);
 
-    expect(getButton(auto).dataset['density']).to.equal('auto');
-    expect(getButton(defaultDensity).dataset['density']).to.equal('default');
-    expect(getButton(compact).dataset['density']).to.equal('compact');
-    expect(getButton(iconOnly).dataset['density']).to.equal('icon-only');
+    expect(getUiButton(auto).dataset['density']).to.equal('auto');
+    expect(getUiButton(defaultDensity).dataset['density']).to.equal('default');
+    expect(getUiButton(compact).dataset['density']).to.equal('compact');
+    expect(getUiButton(iconOnly).dataset['density']).to.equal('icon-only');
   });
 });

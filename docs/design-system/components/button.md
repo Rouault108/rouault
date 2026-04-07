@@ -46,11 +46,13 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 ## 公開契約
 
-`ui-button` は、`variant`、`size`、`iconOnly`、`ariaLabel`、`pressed`、`loading`、`disabled`、`type`、`form`、`ariaExpanded`、`ariaControls`、`ariaHasPopup`、`ariaDescribedBy` を公開入力として扱います。スロットは既定スロットと `spinner` スロットを持ちます。内部実装はネイティブ `<button>` ですが、利用者は `ui-button` を契約単位として扱います。
+`ui-button` は、`variant`、`size`、`iconOnly`、`ariaLabel`、`accessibleName`、`pressed`、`loading`、`disabled`、`type`、`form`、`ariaExpanded`、`ariaControls`、`ariaHasPopup`、`ariaDescribedBy` を公開入力として扱います。スロットは既定スロットと `spinner` スロットを持ちます。内部実装はネイティブ `<button>` ですが、利用者は `ui-button` を契約単位として扱います。
 
 `variant` の既定値は `secondary` です。`size` の既定値は `md` です。`type` の既定値は `button` です。これはネイティブ `<button>` の既定値とは異なるため、フォーム送信に用いる場合は `type="submit"` を明示しなければなりません（MUST）。
 
-`iconOnly` を `true` にする場合、既定スロットはアイコン単独入力のみを正規入力とし、アクセシブル名として `aria-label` を与えなければなりません（MUST）。実装上は開発時警告にとどまる箇所がありますが、公開契約としては必須です。
+`iconOnly` を `true` にする場合、既定スロットはアイコン単独入力のみを正規入力とし、アクセシブル名として `aria-label` または `accessible-name` を与えなければなりません（MUST）。実装上は開発時警告にとどまる箇所がありますが、公開契約としては必須です。
+
+`ariaLabel` は後方互換のために維持しますが、意味論上は `iconOnly=true` の場合にのみ用います。可視テキストを持つ通常の button のアクセシブル名は既定スロット内の可視ラベルから決定し、`ariaLabel` による上書き運用には依存しません。可視ラベルを持つ状態でアクセシブル名を明示したい場合は `accessibleName` を使用します。
 
 `ariaLabel` は `iconOnly=true` の場合にのみ用います。可視テキストを持つ通常の button のアクセシブル名は既定スロット内の可視ラベルから決定し、`ariaLabel` による上書き運用には依存しません。可視ラベルを持つ状態で `ariaLabel` を併用する構成はサポート対象外です。
 
@@ -64,8 +66,9 @@ Rouault における button は、操作要素であると同時に、**本文�
 | ----------------- | ----------------------------------------- | ------ | ---------------- | ---------------------------------------------------------------------------------------- |
 | `variant`         | property / attribute                      | いいえ | 視覚的強度       | `primary` / `secondary` / `outline` / `ghost` / `danger`                                 |
 | `size`            | property / attribute                      | いいえ | ボタンサイズ     | `sm` / `md` / `lg`。既定値は `md`、`lg` は非推奨です                                     |
-| `iconOnly`        | property / attribute (`icon-only`)        | いいえ | アイコンのみ表示 | `true` の場合、既定スロットはアイコン単独入力のみを正規入力とし、`aria-label` が必須です |
-| `ariaLabel`       | property / attribute (`aria-label`)       | いいえ | アクセシブル名   | `iconOnly=true` の場合にのみ使用します                                                   |
+| `iconOnly`        | property / attribute (`icon-only`)        | いいえ | アイコンのみ表示 | `true` の場合、既定スロットはアイコン単独入力のみを正規入力とし、`aria-label` または `accessible-name` が必須です |
+| `ariaLabel`       | property / attribute (`aria-label`)       | いいえ | アクセシブル名   | 後方互換のために維持します。`iconOnly=true` の場合にのみ使用します                      |
+| `accessibleName`  | property / attribute (`accessible-name`)  | いいえ | 明示アクセシブル名 | 可視ラベルとは独立して内部 button にアクセシブル名を与えたい場合に使用します            |
 | `pressed`         | property / attribute                      | いいえ | トグル押下状態   | 外部制御専用です。与えた場合のみ `aria-pressed` を出力し、自動反転は行いません           |
 | `loading`         | property / attribute                      | いいえ | 処理中状態       | `true` の場合は内部 button を非活性化し、`aria-busy="true"` を付与します                 |
 | `disabled`        | property / attribute                      | いいえ | 不活性状態       | `true` の場合は内部 button を非活性化します                                              |
@@ -101,14 +104,15 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 ### 属性反映契約
 
-公開入力のうち、`variant`、`size`、`iconOnly`、`ariaLabel`、`pressed`、`loading`、`disabled`、`type`、`form`、`ariaExpanded`、`ariaControls`、`ariaHasPopup`、`ariaDescribedBy` は property と attribute の両面から操作できます。`ariaLabel` の HTML 属性名は `aria-label`、`iconOnly` の HTML 属性名は `icon-only` です。boolean 値は attribute の有無で反映します。ARIA 関連属性は host に与えられた値を内部ネイティブ button に pass-through します。
+公開入力のうち、`variant`、`size`、`iconOnly`、`ariaLabel`、`accessibleName`、`pressed`、`loading`、`disabled`、`type`、`form`、`ariaExpanded`、`ariaControls`、`ariaHasPopup`、`ariaDescribedBy` は property と attribute の両面から操作できます。`ariaLabel` の HTML 属性名は `aria-label`、`accessibleName` の HTML 属性名は `accessible-name`、`iconOnly` の HTML 属性名は `icon-only` です。boolean 値は attribute の有無で反映します。ARIA 関連属性は host に与えられた値を内部ネイティブ button に pass-through します。
 
 | property          | attribute          | reflect | 備考                                   |
 | ----------------- | ------------------ | ------- | -------------------------------------- |
 | `variant`         | `variant`          | あり    | 列挙値以外は未サポートです             |
 | `size`            | `size`             | あり    | `lg` は非推奨です                      |
 | `iconOnly`        | `icon-only`        | あり    | boolean attribute として扱います       |
-| `ariaLabel`       | `aria-label`       | あり    | `iconOnly=true` の場合にのみ使用します |
+| `ariaLabel`       | `aria-label`       | あり    | 後方互換のために維持し、`iconOnly=true` の場合にのみ使用します |
+| `accessibleName`  | `accessible-name`  | あり    | 内部 button へ明示アクセシブル名を与えます                    |
 | `pressed`         | `pressed`          | あり    | 定義時のみ `aria-pressed` を出力します |
 | `loading`         | `loading`          | あり    | boolean attribute として扱います       |
 | `disabled`        | `disabled`         | あり    | boolean attribute として扱います       |
@@ -214,8 +218,8 @@ Enter は `keydown` で click に正規化します。Space は `keydown` で押
 アクセシビリティ上の重要点は次のとおりです。
 
 - 対話主体はネイティブ `<button>` です。
-- `iconOnly=true` の場合、既定スロットはアイコン単独入力のみを正規入力とし、アクセシブル名を `aria-label` で提供しなければなりません（MUST）。
-- 可視テキストを持つ通常の button では、アクセシブル名は可視ラベルから決定します。`aria-label` による上書き運用には依存しません。
+- `iconOnly=true` の場合、既定スロットはアイコン単独入力のみを正規入力とし、アクセシブル名を `aria-label` または `accessible-name` で提供しなければなりません（MUST）。
+- 可視テキストを持つ通常の button では、アクセシブル名は可視ラベルから決定します。可視ラベルとは別のアクセシブル名が必要な場合に限り `accessibleName` を使用します。`aria-label` による上書き運用には依存しません。
 - `loading=true` の場合、内部 button に `aria-busy="true"` を付与します。
 - `pressed` が定義される場合、内部 button に `aria-pressed` を付与します。
 - `aria-expanded`、`aria-controls`、`aria-haspopup`、`aria-describedby` が与えられた場合、内部 button にそのまま反映します。
@@ -376,7 +380,7 @@ button は可読本文より強く主張してはなりません。とくに art
 
 次の 2 点は開発時にのみ警告します。
 
-- `iconOnly=true` かつ `aria-label` 欠落
+- `iconOnly=true` かつ `aria-label` / `accessible-name` 欠落
 - `size="lg"` の使用
 
 ### 開発時警告と本番時保証
@@ -415,9 +419,9 @@ button は可読本文より強く主張してはなりません。とくに art
 
 `pressed` を定義した場合、`ui-button` は toggle button として扱います。ただし、状態更新は利用側責務であり、`ui-button` 自身は自動反転しません。
 
-### 8. 可視ラベルと `ariaLabel` の併用
+### 8. 可視ラベルと `ariaLabel` / `accessibleName`
 
-可視テキストを持つ状態で `ariaLabel` を併用する構成はサポート対象外です。アクセシブル名の決定は可視ラベルに一本化します。
+可視テキストを持つ状態で `ariaLabel` を併用する構成はサポート対象外です。アクセシブル名の決定は可視ラベルに一本化します。可視ラベルとは独立した明示アクセシブル名が必要な wrapper だけが `accessibleName` を使用できます。
 
 ### 9. 印刷時
 
@@ -479,11 +483,11 @@ button は可読本文より強く主張してはなりません。とくに art
 
 ### 1. `iconOnly` とアクセシブル名
 
-`iconOnly=true` かつ `aria-label` 欠落は契約違反です。実装は開発時に警告しますが、描画停止や例外送出は行いません。
+`iconOnly=true` かつ `aria-label` / `accessible-name` 欠落は契約違反です。実装は開発時に警告しますが、描画停止や例外送出は行いません。
 
-### 2. `ariaLabel` の利用範囲
+### 2. `ariaLabel` と `accessibleName` の利用範囲
 
-`ariaLabel` は `iconOnly=true` の場合にのみサポートします。可視ラベルを持つ通常 button で `ariaLabel` が与えられた場合、実装は開発時に警告し、内部 button には反映しません。
+`ariaLabel` は `iconOnly=true` の場合にのみサポートします。可視ラベルを持つ通常 button で `ariaLabel` が与えられた場合、実装は開発時に警告し、内部 button には反映しません。可視ラベルとは独立した明示アクセシブル名が必要な場合は `accessibleName` を使用します。
 
 ### 3. 非推奨サイズ
 
