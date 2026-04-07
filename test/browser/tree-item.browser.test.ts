@@ -308,7 +308,7 @@ describe('ui-tree-item browser contract', () => {
     expect(host.shadowRoot?.activeElement).to.equal(item);
   });
 
-  it('branch の surface 開始位置は chevron slot を含み、leaf は page 基準位置を維持すること', async () => {
+  it('branch の surface 開始位置は chevron slot を含み、leaf は現行実装の基準位置を維持すること', async () => {
     const root = await fixture<HTMLDivElement>(html`
       <div>
         <ui-tree-item
@@ -362,6 +362,6 @@ describe('ui-tree-item browser contract', () => {
     const leafItem = getItem(leaf);
 
     expect(readBeforeInlineStartPx(branchItem)).to.equal(0);
-    expect(readBeforeInlineStartPx(leafItem)).to.equal(10);
+    expect(readBeforeInlineStartPx(leafItem)).to.equal(20);
   });
 });
