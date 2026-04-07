@@ -143,6 +143,7 @@ export class BaseLayout {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="format-detection" content="telephone=no">
   <title>${escapeHtmlText(title)}</title>
   <meta name="description"${serializeHtmlAttributes([{ name: 'content', value: description }])}>
   <script>${escapeInlineExecutableScriptText(themeBootstrapScript)}</script>
