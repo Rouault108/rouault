@@ -2074,11 +2074,12 @@ app-router {
   color: var(--fg-muted);
 }
 
-/* Narrow desktop: 2カラム（本文 + TOC） */
+/* Narrow desktop: 2カラム（本文 + TOC）
+ * - fixed sidebar はレイアウト列から外し、overlay host を別レイヤーに置く
+ * - breakpoint は NOTE_SIDEBAR_FIXED_BREAKPOINT(1024) と同期 */
 @media (max-width: 1023px) {
   .note-shell[data-sidebar-presence='present'] {
     grid-template-columns:
-      0px
       minmax(0, 1fr)
       minmax(200px, 34vw);
   }
@@ -2089,9 +2090,37 @@ app-router {
       minmax(200px, 34vw);
   }
 
-  .layout-sidebar-col {
-    border-right: none;
+  .note-shell[data-sidebar-presence='present'] .layout-main-col {
+    grid-column: 1;
   }
+
+  .note-shell[data-sidebar-presence='present'] .layout-toc-col {
+    grid-column: 2;
+  }
+
+  .layout-sidebar-col {
+    display: none;
+  }
+
+  .layout-sidebar-overlay {
+    display: block;
+  }
+}
+
+.layout-sidebar-col {
+  position: sticky;
+  top: var(--header-height);
+  align-self: start;
+  max-block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
+  border-right: var(--border-width) solid var(--border-ghost);
+  overflow: visible;
+  transform: translateY(calc(var(--layout-sticky-footer-offset, 0px) * -1));
+}
+
+.layout-sidebar-overlay {
+  display: none;
+  block-size: 0;
+  min-block-size: 0;
 }
 
 /* Tablet: about / home の密度調整 */

@@ -231,16 +231,21 @@ test.describe('No-JS baseline', () => {
     expect(Math.abs((sidebarAfter?.y ?? 0) - (sidebarBefore?.y ?? 0))).toBeLessThan(2);
   });
 
-  test('1024px 未満では sidebar 領域が退化して本文を覆わないこと', async ({ page }) => {
+  test('1024px 未満では fixed sidebar 列を消し、overlay host を別レイヤーへ退避すること', async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 900 });
     await page.goto(sidebarSourcePath);
 
     const layoutState = await page.evaluate(() => {
       const main = document.querySelector('#main-content article');
       const sidebarColumn = document.querySelector('.layout-sidebar-col');
+      const overlayHost = document.querySelector('layout-sidebar.layout-sidebar-overlay');
+
       return {
         hasMainArticle: main instanceof HTMLElement,
         hasSidebarColumn: sidebarColumn instanceof HTMLElement,
+        hasOverlayHost: overlayHost instanceof HTMLElement,
+        sidebarDisplay:
+          sidebarColumn instanceof HTMLElement ? getComputedStyle(sidebarColumn).display : null,
         horizontalOverflow:
           document.documentElement.scrollWidth - document.documentElement.clientWidth,
       };
@@ -248,9 +253,8 @@ test.describe('No-JS baseline', () => {
 
     expect(layoutState.hasMainArticle).toBe(true);
     expect(layoutState.hasSidebarColumn).toBe(true);
-    const sidebarBox = await page.locator('.layout-sidebar-col').boundingBox();
-    expect(sidebarBox).not.toBeNull();
-    expect(sidebarBox?.width ?? 0).toBeLessThanOrEqual(1);
+    expect(layoutState.hasOverlayHost).toBe(true);
+    expect(layoutState.sidebarDisplay).toBe('none');
     expect(layoutState.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 });

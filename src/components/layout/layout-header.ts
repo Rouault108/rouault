@@ -7,6 +7,13 @@ import '../ui/breadcrumbs/breadcrumbs.js';
 import '../ui/button/button.js';
 import '../ui/dropdown/dropdown.js';
 import type { BreadcrumbItem } from '../ui/breadcrumbs/breadcrumbs.js';
+import { NOTE_SIDEBAR_FIXED_MEDIA_QUERY } from '../../layout/note-sidebar-breakpoint.js';
+import {
+  LAYOUT_SIDEBAR_STATE_CHANGE_EVENT,
+  LAYOUT_SIDEBAR_TOGGLE_REQUEST_EVENT,
+  type LayoutSidebarStateChangeDetail,
+  type LayoutSidebarToggleRequestDetail,
+} from './layout-sidebar.events.js';
 import { navigateToUrl } from '../../search/navigation.js';
 import {
   THEME_CHANGE_EVENT,
@@ -109,6 +116,10 @@ export class LayoutHeader extends LitElement {
       --ui-header-center-end-inset: max(200px, 34vw);
     }
 
+    .sidebar-toggle {
+      display: inline-flex;
+    }
+
     .theme-trigger-label,
     .theme-menu-label,
     .corpus-trigger-label {
@@ -157,6 +168,10 @@ export class LayoutHeader extends LitElement {
         --ui-header-center-start-inset: var(--sidebar-width, 272px);
         --ui-header-center-end-inset: var(--aside-width, 240px);
       }
+
+      .sidebar-toggle {
+        display: none;
+      }
     }
   `;
 
@@ -190,10 +205,14 @@ export class LayoutHeader extends LitElement {
     }
 
     this._themePreference = readStoredThemePreference();
-    this._mediaQuery = window.matchMedia('(min-width: 1024px)');
+    this._mediaQuery = window.matchMedia(NOTE_SIDEBAR_FIXED_MEDIA_QUERY);
     this._syncFromMediaQuery();
     this._mediaQuery.addEventListener('change', this._onMediaQueryChange);
     window.addEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);
+    window.addEventListener(
+      LAYOUT_SIDEBAR_STATE_CHANGE_EVENT,
+      this._handleSidebarStateChange as EventListener,
+    );
   }
 
   override disconnectedCallback(): void {
@@ -201,6 +220,10 @@ export class LayoutHeader extends LitElement {
     this._mediaQuery = null;
     if (typeof window !== 'undefined') {
       window.removeEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);
+      window.removeEventListener(
+        LAYOUT_SIDEBAR_STATE_CHANGE_EVENT,
+        this._handleSidebarStateChange as EventListener,
+      );
     }
     super.disconnectedCallback();
   }
@@ -213,15 +236,28 @@ export class LayoutHeader extends LitElement {
     this._syncFromMediaQuery();
   };
 
+  private _handleSidebarStateChange = (event: Event): void => {
+    if (!(event instanceof CustomEvent)) {
+      return;
+    }
+
+    const detail = event.detail as LayoutSidebarStateChangeDetail;
+    if (detail.mode === 'fixed') {
+      this._sidebarExpanded = true;
+      return;
+    }
+
+    this._sidebarExpanded = detail.state === 'expanded';
+  };
+
   private _handleSidebarToggleClick = (event: Event): void => {
     const trigger = event.currentTarget;
-    this._sidebarExpanded = !this._sidebarExpanded;
+    const detail: LayoutSidebarToggleRequestDetail =
+      trigger instanceof HTMLElement ? { trigger } : {};
 
     window.dispatchEvent(
-      new CustomEvent('layout-sidebar-toggle-request', {
-        detail: {
-          trigger: trigger instanceof HTMLElement ? trigger : undefined,
-        },
+      new CustomEvent<LayoutSidebarToggleRequestDetail>(LAYOUT_SIDEBAR_TOGGLE_REQUEST_EVENT, {
+        detail,
       }),
     );
   };
@@ -340,9 +376,11 @@ export class LayoutHeader extends LitElement {
           ${this.noteLayout
             ? html`
                 <ui-button
+                  class="sidebar-toggle"
                   variant="ghost"
                   icon-only
                   aria-label="${sidebarToggleLabel}"
+                  aria-expanded=${String(this._sidebarExpanded)}
                   @click=${this._handleSidebarToggleClick}
                 >
                   <ui-icon name="panel-left" aria-hidden="true"></ui-icon>

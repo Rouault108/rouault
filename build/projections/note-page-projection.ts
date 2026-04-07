@@ -5,6 +5,7 @@ import type { PagefindDocumentData } from '../../build/search/build-pagefind-doc
 import type { NoteStatus } from '../../src/types/article-status.js';
 import type { NoteContentKind } from '../../shared/note/note-kind.js';
 import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
+import { NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE } from '../../src/layout/note-sidebar-breakpoint.js';
 import {
   resolveNoteHydrationBudgetProfile,
   type NoteHydrationCounts,
@@ -271,7 +272,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
             selectedId: input.navigation.selectedId ?? '',
             items: input.navigation.sidebarTree,
             heading: 'ナビゲーション',
-            fixedBreakpoint: '1024',
+            fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE,
           },
         }
       : {}),

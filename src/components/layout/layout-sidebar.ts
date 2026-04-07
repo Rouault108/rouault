@@ -1,13 +1,21 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import '../ui/icon/icon.js';
 import '../ui/sidebar/sidebar.js';
 import type { TreeNode } from '../ui/file-tree/file-tree.js';
 import type { UiSidebar, UiSidebarToggleDetail } from '../ui/sidebar/sidebar.js';
-import type { UiSidebarStateChangeDetail } from '../ui/sidebar-shell/sidebar-shell.js';
 import type { IconName } from '../../../shared/icons/icons-catalog.js';
 import { isIconName } from '../../../shared/icons/icons-catalog.js';
 import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
+import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../layout/note-sidebar-breakpoint.js';
+import {
+  LAYOUT_SIDEBAR_STATE_CHANGE_EVENT,
+  LAYOUT_SIDEBAR_TOGGLE_REQUEST_EVENT,
+  LAYOUT_SIDEBAR_TREE_STATE_CHANGE_EVENT,
+  type LayoutSidebarStateChangeDetail,
+  type LayoutSidebarTreeStateChangeDetail,
+} from './layout-sidebar.events.js';
 import {
   mergeLayoutSidebarTreeState,
   readLayoutSidebarTreeState,
@@ -28,6 +36,21 @@ const toOptionalString = (value: unknown): string | undefined => {
 type BranchTreeNode = Extract<TreeNode, { kind: 'branch' }>;
 type LeafTreeNode = Extract<TreeNode, { kind: 'leaf' }>;
 type TreeIcon = IconName;
+type SidebarPresentation = 'auto' | 'fixed' | 'overlay';
+
+const normalizeExpandedIds = (expandedIds: Iterable<string>): string[] =>
+  [...new Set(expandedIds)].sort((left, right) => left.localeCompare(right));
+
+const sameExpandedIds = (left: Iterable<string>, right: Iterable<string>): boolean => {
+  const normalizedLeft = normalizeExpandedIds(left);
+  const normalizedRight = normalizeExpandedIds(right);
+
+  if (normalizedLeft.length !== normalizedRight.length) {
+    return false;
+  }
+
+  return normalizedLeft.every((value, index) => value === normalizedRight[index]);
+};
 
 const toOptionalTreeIcon = (value: unknown): TreeIcon | undefined => {
   const normalized = toOptionalString(value);
@@ -113,6 +136,10 @@ export class LayoutSidebar extends LitElement {
       overflow: visible;
     }
 
+    :host([presentation='overlay']) {
+      block-size: 0;
+    }
+
     ui-sidebar {
       block-size: 100%;
       min-block-size: 0;
@@ -132,7 +159,10 @@ export class LayoutSidebar extends LitElement {
   heading = 'ナビゲーション';
 
   @property({ type: Number, attribute: 'fixed-breakpoint' })
-  fixedBreakpoint = 768;
+  fixedBreakpoint = NOTE_SIDEBAR_FIXED_BREAKPOINT;
+
+  @property({ type: String, reflect: true })
+  presentation: SidebarPresentation = 'auto';
 
   @state()
   private _items: TreeNode[] = [];
@@ -160,7 +190,7 @@ export class LayoutSidebar extends LitElement {
     this._state = this._resolveInitialState();
     this._loadItemsFromSource();
     window.addEventListener(
-      'layout-sidebar-toggle-request',
+      LAYOUT_SIDEBAR_TOGGLE_REQUEST_EVENT,
       this._onToggleRequest as EventListener,
     );
 
@@ -176,8 +206,12 @@ export class LayoutSidebar extends LitElement {
 
   override disconnectedCallback(): void {
     window.removeEventListener(
-      'layout-sidebar-toggle-request',
+      LAYOUT_SIDEBAR_TOGGLE_REQUEST_EVENT,
       this._onToggleRequest as EventListener,
+    );
+    window.removeEventListener(
+      LAYOUT_SIDEBAR_TREE_STATE_CHANGE_EVENT,
+      this._onTreeStateSync as EventListener,
     );
     this._detachStickyFooterBoundary?.();
     this._detachStickyFooterBoundary = null;
@@ -185,7 +219,11 @@ export class LayoutSidebar extends LitElement {
   }
 
   protected override willUpdate(changedProperties: Map<string, unknown>): void {
-    if (!this.hasUpdated || changedProperties.has('fixedBreakpoint')) {
+    if (
+      !this.hasUpdated ||
+      changedProperties.has('fixedBreakpoint') ||
+      changedProperties.has('presentation')
+    ) {
       this._state = this._resolveInitialState();
     }
 
@@ -213,10 +251,14 @@ export class LayoutSidebar extends LitElement {
     this._storage = this._resolveStorage();
     this._state = this._resolveInitialState();
     this._loadItemsFromSource();
-    const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
-    this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget, {
-      minWidth: 640,
-    });
+
+    if (this.presentation !== 'overlay') {
+      const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
+      this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget, {
+        minWidth: 640,
+      });
+    }
+
     this.requestUpdate();
   }
 
@@ -316,6 +358,14 @@ export class LayoutSidebar extends LitElement {
   }
 
   private _resolveInitialState(): 'expanded' | 'collapsed' {
+    if (this.presentation === 'fixed') {
+      return 'expanded';
+    }
+
+    if (this.presentation === 'overlay') {
+      return 'collapsed';
+    }
+
     if (typeof window === 'undefined') {
       return this._state;
     }
@@ -325,18 +375,67 @@ export class LayoutSidebar extends LitElement {
     return window.matchMedia(mediaQuery).matches ? 'expanded' : 'collapsed';
   }
 
+  private _isOverlayMode(): boolean {
+    if (this.presentation === 'overlay') {
+      return true;
+    }
+
+    if (this.presentation === 'fixed') {
+      return false;
+    }
+
+    return this._sidebarElement?.mode === 'overlay';
+  }
+
+  private _dispatchOverlayStateChange(detail: LayoutSidebarStateChangeDetail): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent<LayoutSidebarStateChangeDetail>(LAYOUT_SIDEBAR_STATE_CHANGE_EVENT, {
+        detail,
+      }),
+    );
+  }
+
+  private _dispatchTreeStateChange(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent<LayoutSidebarTreeStateChangeDetail>(LAYOUT_SIDEBAR_TREE_STATE_CHANGE_EVENT, {
+        detail: {
+          selectedId: this.selectedId,
+          expandedIds: normalizeExpandedIds(this._persistedExpandedIds),
+        },
+      }),
+    );
+  }
+
   private _onToggleRequest = (event: Event): void => {
     if (!(event instanceof CustomEvent)) {
       return;
     }
-    const detail: unknown = event.detail;
-    const trigger =
-      isRecord(detail) && detail['trigger'] instanceof HTMLElement ? detail['trigger'] : undefined;
+
+    if (!this._isOverlayMode()) {
+      return;
+    }
+
+    const detail = isRecord(event.detail) ? event.detail : null;
+    const trigger = detail?.['trigger'] instanceof HTMLElement ? detail['trigger'] : undefined;
     this._sidebarElement?.toggle(trigger);
   };
 
-  private _onSidebarStateChange = (event: CustomEvent<UiSidebarStateChangeDetail>): void => {
+  private _onSidebarStateChange = (event: CustomEvent<LayoutSidebarStateChangeDetail>): void => {
     this._state = event.detail.state;
+
+    if (!this._isOverlayMode()) {
+      return;
+    }
+
+    this._dispatchOverlayStateChange(event.detail);
   };
 
   private _onSidebarToggle = (event: CustomEvent<UiSidebarToggleDetail>): void => {
@@ -354,11 +453,31 @@ export class LayoutSidebar extends LitElement {
       },
       this.selectedId,
     );
+
+    this._dispatchTreeStateChange();
+  };
+
+  private _onTreeStateSync = (event: Event): void => {
+    if (!(event instanceof CustomEvent)) {
+      return;
+    }
+
+    const detail = event.detail as LayoutSidebarTreeStateChangeDetail;
+    if (detail.selectedId !== this.selectedId) {
+      return;
+    }
+
+    if (sameExpandedIds(this._persistedExpandedIds, detail.expandedIds)) {
+      return;
+    }
+
+    this._persistedExpandedIds = new Set(detail.expandedIds);
+    this.requestUpdate();
   };
 
   private _onSidebarSelect = (): void => {
-    if (this._sidebarElement?.mode === 'overlay') {
-      this._sidebarElement.collapse();
+    if (this._isOverlayMode()) {
+      this._sidebarElement?.collapse();
     }
   };
 
@@ -368,10 +487,13 @@ export class LayoutSidebar extends LitElement {
       [...this._persistedExpandedIds],
       this.selectedId,
     );
+    const explicitMode = this.presentation === 'auto' ? undefined : this.presentation;
 
     return html`
       <ui-sidebar
         id="layout-sidebar-panel"
+        data-state=${this._state}
+        mode=${ifDefined(explicitMode)}
         .state=${this._state}
         .items=${this._items}
         .selectedId=${this.selectedId}

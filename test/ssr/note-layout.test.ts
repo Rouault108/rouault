@@ -62,6 +62,8 @@ describe('NoteLayout', () => {
 
     expect(rendered).toContain('data-hydration-scope="note-shell"');
     expect(rendered).toContain('data-hydration-scope="note-sidebar"');
+    expect(rendered).toContain('presentation="fixed"');
+    expect(rendered).toContain('presentation="overlay"');
     expect(rendered).toContain('data-hydration-scope="note-content"');
     expect(rendered).toContain('data-hydration-scope="note-toc"');
     expect(rendered).toContain('source-id="sidebar-source-note"');

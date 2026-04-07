@@ -167,6 +167,54 @@ describe('layout-sidebar browser contract', () => {
     }
   });
 
+  it('presentation を分離した場合、fixed 面は toggle request を無視し overlay 面だけが応答すること', async () => {
+    const media = mockMatchMedia(true);
+
+    try {
+      await ensureLayoutSidebarDefined();
+
+      const fixedHost = await fixture<LayoutSidebar>(html`
+        <layout-sidebar
+          presentation="fixed"
+          .itemsJson=${sampleItemsJson}
+          selected-id="music/classical/beethoven/symphony-9"
+        ></layout-sidebar>
+      `);
+
+      await flush(fixedHost);
+
+      const fixedSidebar = expectPresent(getSidebar(fixedHost), 'fixed ui-sidebar');
+      expect(fixedSidebar.mode).to.equal('fixed');
+      expect(fixedSidebar.state).to.equal('expanded');
+
+      window.dispatchEvent(new CustomEvent('layout-sidebar-toggle-request'));
+      await flush(fixedHost);
+
+      expect(fixedSidebar.state).to.equal('expanded');
+
+      const overlayHost = await fixture<LayoutSidebar>(html`
+        <layout-sidebar
+          presentation="overlay"
+          .itemsJson=${sampleItemsJson}
+          selected-id="music/classical/beethoven/symphony-9"
+        ></layout-sidebar>
+      `);
+
+      await flush(overlayHost);
+
+      const overlaySidebar = expectPresent(getSidebar(overlayHost), 'overlay ui-sidebar');
+      expect(overlaySidebar.mode).to.equal('overlay');
+      expect(overlaySidebar.state).to.equal('collapsed');
+
+      window.dispatchEvent(new CustomEvent('layout-sidebar-toggle-request'));
+      await flush(overlayHost);
+
+      expect(overlaySidebar.state).to.equal('expanded');
+    } finally {
+      media.restore();
+    }
+  });
+
   it('overlay では selection 後に sidebar を collapse すること', async () => {
     const media = mockMatchMedia(false);
 

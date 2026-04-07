@@ -71,12 +71,23 @@ export class UiSidebarShell extends LitElement {
       opacity: 0;
     }
 
-    /* ── Overlay Mode: 前景補助面 ── */
+    /* ── Overlay Mode: 画面上部から開く top sheet ── */
     :host([mode='overlay']) nav {
       position: fixed;
-      inset-block: 0;
-      inset-inline-start: 0;
-      inline-size: var(--sidebar-width, 240px);
+      inset-block-start: var(--header-height);
+      inset-block-end: auto;
+      inset-inline: 0;
+      inline-size: 100vw;
+      max-inline-size: 100vw;
+      block-size: auto;
+      max-block-size: min(
+        var(--sidebar-overlay-max-block-size, calc(100dvh - var(--header-height))),
+        72dvh
+      );
+      border-right: none;
+      border-bottom: var(--border-width, 1px) solid
+        var(--border-default, oklch(20% 0 0 / 0.12));
+      box-shadow: var(--shadow-lg, 0 24px 48px oklch(0% 0 0 / 0.18));
       z-index: var(--z-modal, 300);
     }
 
@@ -116,6 +127,10 @@ export class UiSidebarShell extends LitElement {
       transition: opacity var(--duration-normal, 150ms)
         var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
       z-index: var(--z-backdrop, 200);
+    }
+
+    :host([mode='overlay']) .scrim {
+      inset-block-start: var(--header-height);
     }
 
     :host([mode='overlay'][data-state='expanded']) .scrim {
