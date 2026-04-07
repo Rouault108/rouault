@@ -125,6 +125,24 @@ describe('ui-file-tree browser contract', () => {
     expect(fileTree.getAttribute('variant')).to.equal('card');
   });
 
+  it('selectedId の leaf が非表示になった場合は先頭の可視 item を active に戻すこと', async () => {
+    const fileTree = await fixture<FileTree>(html`
+      <ui-file-tree
+        .items=${cloneTree(sampleTree)}
+        .expandedIds=${new Set()}
+        selected-id="notes/design/file-tree"
+      ></ui-file-tree>
+    `);
+
+    await flush(fileTree);
+
+    expect(
+      fileTree.shadowRoot?.querySelector('ui-tree-item[data-id="notes/design/file-tree"]'),
+    ).to.equal(null);
+    expect(getTreeItemHost(fileTree, 'notes').getAttribute('tabindex')).to.equal('0');
+    expect(getTreeItemHost(fileTree, 'daily').getAttribute('tabindex')).to.equal('-1');
+  });
+
   it('loadingStrategy=retain は aria-busy のみを立て、replace は skeleton に置き換えること', async () => {
     const retainTree = await fixture<FileTree>(html`
       <ui-file-tree
