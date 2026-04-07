@@ -282,6 +282,8 @@ test.describe('No-JS baseline', () => {
         hasOverlayHost: overlayHost instanceof HTMLElement,
         sidebarDisplay:
           sidebarColumn instanceof HTMLElement ? getComputedStyle(sidebarColumn).display : null,
+        overlayDisplay:
+          overlayHost instanceof HTMLElement ? getComputedStyle(overlayHost).display : null,
         horizontalOverflow:
           document.documentElement.scrollWidth - document.documentElement.clientWidth,
       };
@@ -291,6 +293,7 @@ test.describe('No-JS baseline', () => {
     expect(layoutState.hasSidebarColumn).toBe(true);
     expect(layoutState.hasOverlayHost).toBe(true);
     expect(layoutState.sidebarDisplay).toBe('none');
+    expect(layoutState.overlayDisplay).toBe('block');
     expect(layoutState.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 });

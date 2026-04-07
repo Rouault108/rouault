@@ -2087,6 +2087,12 @@ app-router {
 /* Narrow desktop: 2カラム（本文 + TOC）
  * - fixed sidebar はレイアウト列から外し、overlay host を別レイヤーに置く
  * - breakpoint は NOTE_SIDEBAR_FIXED_BREAKPOINT(1024) と同期 */
+.layout-sidebar-overlay {
+  display: none;
+  block-size: 0;
+  min-block-size: 0;
+}
+
 @media (max-width: 1023px) {
   .note-shell[data-sidebar-presence='present'] {
     grid-template-columns:
