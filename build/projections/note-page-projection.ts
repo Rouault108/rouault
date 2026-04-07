@@ -1,6 +1,9 @@
 import type { TreeNode } from '../../shared/navigation/tree-node.js';
 import { injectNoteContentProfiles } from '../../build/content/note-content-contracts.js';
-import type { BreadcrumbItem, NoteNavigationModel } from '../../shared/navigation/navigation-types.js';
+import type {
+  BreadcrumbItem,
+  NoteNavigationModel,
+} from '../../shared/navigation/navigation-types.js';
 import type { PagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 import type { NoteStatus } from '../../src/types/article-status.js';
 import type { NoteContentKind } from '../../shared/note/note-kind.js';

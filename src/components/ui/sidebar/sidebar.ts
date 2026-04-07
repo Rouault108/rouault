@@ -313,42 +313,42 @@ export class UiSidebar extends LitElement {
     );
   };
 
-override render() {
-  const normalizedHeading = this.heading.trim();
-  const hasHeading = normalizedHeading.length > 0;
+  override render() {
+    const normalizedHeading = this.heading.trim();
+    const hasHeading = normalizedHeading.length > 0;
 
-  return html`
-    <ui-sidebar-shell
-      data-state=${this.state}
-      mode=${ifDefined(this.mode)}
-      .fixedBreakpoint=${this.fixedBreakpoint}
-      @ui-sidebar-state-change=${this._onShellStateChange}
-    >
-      ${hasHeading
-        ? html`
-            <div class="sidebar-head" slot="header">
-              <h2 class="heading">${normalizedHeading}</h2>
-              <slot name="header-actions"></slot>
-            </div>
-          `
-        : null}
+    return html`
+      <ui-sidebar-shell
+        data-state=${this.state}
+        mode=${ifDefined(this.mode)}
+        .fixedBreakpoint=${this.fixedBreakpoint}
+        @ui-sidebar-state-change=${this._onShellStateChange}
+      >
+        ${hasHeading
+          ? html`
+              <div class="sidebar-head" slot="header">
+                <h2 class="heading">${normalizedHeading}</h2>
+                <slot name="header-actions"></slot>
+              </div>
+            `
+          : null}
 
-      <div class="tree-wrap">
-        <ui-file-tree
-          .items=${this.items}
-          .loading=${this.loading}
-          .selectedId=${this.selectedId}
-          .expandedIds=${this.expandedIds}
-          .density=${this.density}
-          .variant=${this.variant}
-          @ui-tree-select=${this._onTreeSelect}
-          @ui-tree-toggle=${this._onTreeToggle}
-          @ui-tree-active-change=${this._onTreeActiveChange}
-        ></ui-file-tree>
-      </div>
-    </ui-sidebar-shell>
-  `;
-}
+        <div class="tree-wrap">
+          <ui-file-tree
+            .items=${this.items}
+            .loading=${this.loading}
+            .selectedId=${this.selectedId}
+            .expandedIds=${this.expandedIds}
+            .density=${this.density}
+            .variant=${this.variant}
+            @ui-tree-select=${this._onTreeSelect}
+            @ui-tree-toggle=${this._onTreeToggle}
+            @ui-tree-active-change=${this._onTreeActiveChange}
+          ></ui-file-tree>
+        </div>
+      </ui-sidebar-shell>
+    `;
+  }
 }
 
 declare global {

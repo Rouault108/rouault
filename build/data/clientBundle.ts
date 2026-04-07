@@ -23,10 +23,7 @@ const collectStyleSrcs = (
   scriptEntry: ViteManifestEntry | undefined,
   styleEntry: ViteManifestEntry | undefined,
 ): string[] => {
-  const candidates = [
-    ...(styleEntry?.file ? [styleEntry.file] : []),
-    ...(scriptEntry?.css ?? []),
-  ];
+  const candidates = [...(styleEntry?.file ? [styleEntry.file] : []), ...(scriptEntry?.css ?? [])];
 
   return [...new Set(candidates)].map(toPublicPath);
 };

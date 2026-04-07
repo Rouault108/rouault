@@ -62,22 +62,22 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 ### 入力契約
 
-| 名前              | 種別                                      | 必須   | 内容             | 契約                                                                                     |
-| ----------------- | ----------------------------------------- | ------ | ---------------- | ---------------------------------------------------------------------------------------- |
-| `variant`         | property / attribute                      | いいえ | 視覚的強度       | `primary` / `secondary` / `outline` / `ghost` / `danger`                                 |
-| `size`            | property / attribute                      | いいえ | ボタンサイズ     | `sm` / `md` / `lg`。既定値は `md`、`lg` は非推奨です                                     |
-| `iconOnly`        | property / attribute (`icon-only`)        | いいえ | アイコンのみ表示 | `true` の場合、既定スロットはアイコン単独入力のみを正規入力とし、`aria-label` または `accessible-name` が必須です |
-| `ariaLabel`       | property / attribute (`aria-label`)       | いいえ | アクセシブル名   | 後方互換のために維持します。`iconOnly=true` の場合にのみ使用します                      |
-| `accessibleName`  | property / attribute (`accessible-name`)  | いいえ | 明示アクセシブル名 | 可視ラベルとは独立して内部 button にアクセシブル名を与えたい場合に使用します            |
-| `pressed`         | property / attribute                      | いいえ | トグル押下状態   | 外部制御専用です。与えた場合のみ `aria-pressed` を出力し、自動反転は行いません           |
-| `loading`         | property / attribute                      | いいえ | 処理中状態       | `true` の場合は内部 button を非活性化し、`aria-busy="true"` を付与します                 |
-| `disabled`        | property / attribute                      | いいえ | 不活性状態       | `true` の場合は内部 button を非活性化します                                              |
-| `type`            | property / attribute                      | いいえ | フォーム動作種別 | `button` / `submit` / `reset`。既定値は `button` です                                    |
-| `form`            | property / attribute                      | いいえ | フォーム所有者   | フォーム外配置時に関連付けできます                                                       |
-| `ariaExpanded`    | property / attribute (`aria-expanded`)    | いいえ | 開閉状態         | trigger 用途の関係属性として内部 button に反映します                                     |
-| `ariaControls`    | property / attribute (`aria-controls`)    | いいえ | 関連要素 ID      | trigger 用途の関係属性として内部 button に反映します                                     |
-| `ariaHasPopup`    | property / attribute (`aria-haspopup`)    | いいえ | popup 種別       | trigger 用途の関係属性として内部 button に反映します                                     |
-| `ariaDescribedBy` | property / attribute (`aria-describedby`) | いいえ | 説明要素 ID      | trigger 用途の関係属性として内部 button に反映します                                     |
+| 名前              | 種別                                      | 必須   | 内容               | 契約                                                                                                              |
+| ----------------- | ----------------------------------------- | ------ | ------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `variant`         | property / attribute                      | いいえ | 視覚的強度         | `primary` / `secondary` / `outline` / `ghost` / `danger`                                                          |
+| `size`            | property / attribute                      | いいえ | ボタンサイズ       | `sm` / `md` / `lg`。既定値は `md`、`lg` は非推奨です                                                              |
+| `iconOnly`        | property / attribute (`icon-only`)        | いいえ | アイコンのみ表示   | `true` の場合、既定スロットはアイコン単独入力のみを正規入力とし、`aria-label` または `accessible-name` が必須です |
+| `ariaLabel`       | property / attribute (`aria-label`)       | いいえ | アクセシブル名     | 後方互換のために維持します。`iconOnly=true` の場合にのみ使用します                                                |
+| `accessibleName`  | property / attribute (`accessible-name`)  | いいえ | 明示アクセシブル名 | 可視ラベルとは独立して内部 button にアクセシブル名を与えたい場合に使用します                                      |
+| `pressed`         | property / attribute                      | いいえ | トグル押下状態     | 外部制御専用です。与えた場合のみ `aria-pressed` を出力し、自動反転は行いません                                    |
+| `loading`         | property / attribute                      | いいえ | 処理中状態         | `true` の場合は内部 button を非活性化し、`aria-busy="true"` を付与します                                          |
+| `disabled`        | property / attribute                      | いいえ | 不活性状態         | `true` の場合は内部 button を非活性化します                                                                       |
+| `type`            | property / attribute                      | いいえ | フォーム動作種別   | `button` / `submit` / `reset`。既定値は `button` です                                                             |
+| `form`            | property / attribute                      | いいえ | フォーム所有者     | フォーム外配置時に関連付けできます                                                                                |
+| `ariaExpanded`    | property / attribute (`aria-expanded`)    | いいえ | 開閉状態           | trigger 用途の関係属性として内部 button に反映します                                                              |
+| `ariaControls`    | property / attribute (`aria-controls`)    | いいえ | 関連要素 ID        | trigger 用途の関係属性として内部 button に反映します                                                              |
+| `ariaHasPopup`    | property / attribute (`aria-haspopup`)    | いいえ | popup 種別         | trigger 用途の関係属性として内部 button に反映します                                                              |
+| `ariaDescribedBy` | property / attribute (`aria-describedby`) | いいえ | 説明要素 ID        | trigger 用途の関係属性として内部 button に反映します                                                              |
 
 ### スロット契約
 
@@ -106,22 +106,22 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 公開入力のうち、`variant`、`size`、`iconOnly`、`ariaLabel`、`accessibleName`、`pressed`、`loading`、`disabled`、`type`、`form`、`ariaExpanded`、`ariaControls`、`ariaHasPopup`、`ariaDescribedBy` は property と attribute の両面から操作できます。`ariaLabel` の HTML 属性名は `aria-label`、`accessibleName` の HTML 属性名は `accessible-name`、`iconOnly` の HTML 属性名は `icon-only` です。boolean 値は attribute の有無で反映します。ARIA 関連属性は host に与えられた値を内部ネイティブ button に pass-through します。
 
-| property          | attribute          | reflect | 備考                                   |
-| ----------------- | ------------------ | ------- | -------------------------------------- |
-| `variant`         | `variant`          | あり    | 列挙値以外は未サポートです             |
-| `size`            | `size`             | あり    | `lg` は非推奨です                      |
-| `iconOnly`        | `icon-only`        | あり    | boolean attribute として扱います       |
+| property          | attribute          | reflect | 備考                                                           |
+| ----------------- | ------------------ | ------- | -------------------------------------------------------------- |
+| `variant`         | `variant`          | あり    | 列挙値以外は未サポートです                                     |
+| `size`            | `size`             | あり    | `lg` は非推奨です                                              |
+| `iconOnly`        | `icon-only`        | あり    | boolean attribute として扱います                               |
 | `ariaLabel`       | `aria-label`       | あり    | 後方互換のために維持し、`iconOnly=true` の場合にのみ使用します |
-| `accessibleName`  | `accessible-name`  | あり    | 内部 button へ明示アクセシブル名を与えます                    |
-| `pressed`         | `pressed`          | あり    | 定義時のみ `aria-pressed` を出力します |
-| `loading`         | `loading`          | あり    | boolean attribute として扱います       |
-| `disabled`        | `disabled`         | あり    | boolean attribute として扱います       |
-| `type`            | `type`             | あり    | 既定値は `button` です                 |
-| `form`            | `form`             | あり    | 外部フォーム所有者を指定できます       |
-| `ariaExpanded`    | `aria-expanded`    | あり    | 内部 button に pass-through します     |
-| `ariaControls`    | `aria-controls`    | あり    | 内部 button に pass-through します     |
-| `ariaHasPopup`    | `aria-haspopup`    | あり    | 内部 button に pass-through します     |
-| `ariaDescribedBy` | `aria-describedby` | あり    | 内部 button に pass-through します     |
+| `accessibleName`  | `accessible-name`  | あり    | 内部 button へ明示アクセシブル名を与えます                     |
+| `pressed`         | `pressed`          | あり    | 定義時のみ `aria-pressed` を出力します                         |
+| `loading`         | `loading`          | あり    | boolean attribute として扱います                               |
+| `disabled`        | `disabled`         | あり    | boolean attribute として扱います                               |
+| `type`            | `type`             | あり    | 既定値は `button` です                                         |
+| `form`            | `form`             | あり    | 外部フォーム所有者を指定できます                               |
+| `ariaExpanded`    | `aria-expanded`    | あり    | 内部 button に pass-through します                             |
+| `ariaControls`    | `aria-controls`    | あり    | 内部 button に pass-through します                             |
+| `ariaHasPopup`    | `aria-haspopup`    | あり    | 内部 button に pass-through します                             |
+| `ariaDescribedBy` | `aria-describedby` | あり    | 内部 button に pass-through します                             |
 
 ### 列挙外値・無効値の扱い
 

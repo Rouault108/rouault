@@ -602,11 +602,11 @@ header は固定高さであり、自動伸長しません。`start`、`center`�
 
 ### 公開契約試験
 
-| Story                                | 固定する契約                                                                                                  |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `DefaultExpanded`                    | 4 zone、4 slot、sticky header、`sidebarExpanded=true` の基本構造が成立すること                                |
-| `ZenModeCollapsed`                   | `sidebarExpanded=false` で start ゾーン幅が縮退すること                                                       |
-| `EmptySlots`                         | `center` と `compact-center` が空でもレイアウト構造が維持されること                                           |
+| Story              | 固定する契約                                                                   |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `DefaultExpanded`  | 4 zone、4 slot、sticky header、`sidebarExpanded=true` の基本構造が成立すること |
+| `ZenModeCollapsed` | `sidebarExpanded=false` で start ゾーン幅が縮退すること                        |
+| `EmptySlots`       | `center` と `compact-center` が空でもレイアウト構造が維持されること            |
 
 これらの Story は、現行実装が追従している公開面に対する契約試験です。削除または意味変更を行う場合は、対応する公開契約または実装の変更を先に明示しなければなりません（MUST）。
 
@@ -616,14 +616,14 @@ header は固定高さであり、自動伸長しません。`start`、`center`�
 
 本節に列挙する Story は、視覚破綻、環境差分、token 差し替え影響の検知を目的とする **回帰確認用 Story** です。公開契約試験の代替にはなりません。レビュー強度は高く保つべきですが、本文契約を直接成立させる根拠としては扱ってはなりません（MUST NOT）。
 
-| Story                        | 確認目的                                                                  |
-| ---------------------------- | ------------------------------------------------------------------------- |
-| `ResponsiveVisualComparison` | 異なる幅での start / center / end の見え方を比較すること                 |
-| `ForcedColorsMode`           | 強制カラー環境で header 構造と境界線が視認可能であること                  |
-| `ReducedMotion`              | reduced motion 環境で過度なモーションに依存せず描画が成立すること         |
-| `PrintStyles`                | 印刷時に非表示となること                                                  |
-| `DarkModeGlassmorphism`      | ダークモードで背景表現と境界の見え方が破綻しないこと                      |
-| `CustomBackdropSaturate`     | `--ui-header-backdrop-saturate` 上書き時の見え方を比較できること          |
+| Story                        | 確認目的                                                          |
+| ---------------------------- | ----------------------------------------------------------------- |
+| `ResponsiveVisualComparison` | 異なる幅での start / center / end の見え方を比較すること          |
+| `ForcedColorsMode`           | 強制カラー環境で header 構造と境界線が視認可能であること          |
+| `ReducedMotion`              | reduced motion 環境で過度なモーションに依存せず描画が成立すること |
+| `PrintStyles`                | 印刷時に非表示となること                                          |
+| `DarkModeGlassmorphism`      | ダークモードで背景表現と境界の見え方が破綻しないこと              |
+| `CustomBackdropSaturate`     | `--ui-header-backdrop-saturate` 上書き時の見え方を比較できること  |
 
 これらの Story は、視覚回帰や環境対応確認のために維持します。ただし、個々の見え方は foundation token や app-shell policy の変更に伴って更新され得ます。
 

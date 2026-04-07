@@ -464,10 +464,7 @@ export class Toc extends LitElement {
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
 
     return (
-      rect.bottom > 0 &&
-      rect.right > 0 &&
-      rect.top < viewportHeight &&
-      rect.left < viewportWidth
+      rect.bottom > 0 && rect.right > 0 && rect.top < viewportHeight && rect.left < viewportWidth
     );
   }
 

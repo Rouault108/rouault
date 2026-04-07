@@ -213,9 +213,7 @@ export class TocActiveTracker {
         const element = document.getElementById(heading.id);
         return element instanceof HTMLElement ? { heading, element } : null;
       })
-      .filter(
-        (entry): entry is { heading: Heading; element: HTMLElement } => entry !== null,
-      );
+      .filter((entry): entry is { heading: Heading; element: HTMLElement } => entry !== null);
 
     if (headingElements.length === 0) {
       return this._resolveInitialActiveId();

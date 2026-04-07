@@ -15,7 +15,7 @@ interface NoteChromeState {
   tocContentRootId: string;
   fixedSidebarExists: boolean;
   overlaySidebarExists: boolean;
-};
+}
 
 const readNoteChromeState = async (page: Page): Promise<NoteChromeState> =>
   page.evaluate(() => {
@@ -47,7 +47,8 @@ const readNoteChromeState = async (page: Page): Promise<NoteChromeState> =>
       tocExists: toc instanceof HTMLElement,
       tocTemplateCount: countDeclarativeShadowRootTemplates(toc),
       tocHasHeadingsJson: toc instanceof HTMLElement && toc.hasAttribute('headings-json'),
-      tocContentRootId: toc instanceof HTMLElement ? (toc.getAttribute('content-root-id') ?? '') : '',
+      tocContentRootId:
+        toc instanceof HTMLElement ? (toc.getAttribute('content-root-id') ?? '') : '',
       fixedSidebarExists: fixedSidebar instanceof HTMLElement,
       overlaySidebarExists: overlaySidebar instanceof HTMLElement,
     };
@@ -236,7 +237,9 @@ test.describe('No-JS baseline', () => {
     expect(Math.abs((sidebarAfter?.y ?? 0) - (sidebarBefore?.y ?? 0))).toBeLessThan(2);
   });
 
-  test('1024px 未満では fixed sidebar 列を消し、overlay host を別レイヤーへ退避すること', async ({ page }) => {
+  test('1024px 未満では fixed sidebar 列を消し、overlay host を別レイヤーへ退避すること', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1000, height: 900 });
     await page.goto(sidebarSourcePath);
 

@@ -14,7 +14,11 @@ import {
   RESOLVED_THEME_ATTRIBUTE,
 } from '../theme/theme-manager.js';
 import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
-import { escapeHtmlText, escapeInlineExecutableScriptText, serializeHtmlAttributes } from './html-output.js';
+import {
+  escapeHtmlText,
+  escapeInlineExecutableScriptText,
+  serializeHtmlAttributes,
+} from './html-output.js';
 
 export interface BaseLayoutData {
   title?: string;
@@ -65,7 +69,8 @@ interface ClientBundleView {
 }
 
 const isStringArray = (value: unknown): value is readonly string[] =>
-  Array.isArray(value) && value.every((entry: unknown): entry is string => typeof entry === 'string');
+  Array.isArray(value) &&
+  value.every((entry: unknown): entry is string => typeof entry === 'string');
 
 const normalizeClientBundle = (
   value: unknown,
@@ -75,12 +80,8 @@ const normalizeClientBundle = (
 
   return {
     scriptSrc:
-      typeof candidate.scriptSrc === 'string'
-        ? candidate.scriptSrc
-        : DEFAULT_CLIENT_SCRIPT_SRC,
-    styleSrcs: isStringArray(candidate.styleSrcs)
-      ? candidate.styleSrcs
-      : DEFAULT_CLIENT_STYLE_SRCS,
+      typeof candidate.scriptSrc === 'string' ? candidate.scriptSrc : DEFAULT_CLIENT_SCRIPT_SRC,
+    styleSrcs: isStringArray(candidate.styleSrcs) ? candidate.styleSrcs : DEFAULT_CLIENT_STYLE_SRCS,
   };
 };
 

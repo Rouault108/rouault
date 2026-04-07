@@ -48,10 +48,7 @@ const hydrateWithScheduler = async (root: HTMLElement): Promise<HydrationDiagnos
   );
 
   await scheduler.hydrateContent(root, { dispatchTarget: root });
-  await waitUntil(
-    () => diagnostics !== null,
-    'layout-toc の hydration diagnostics が発火すること',
-  );
+  await waitUntil(() => diagnostics !== null, 'layout-toc の hydration diagnostics が発火すること');
 
   if (diagnostics === null) {
     throw new Error('hydration diagnostics が取得できません');

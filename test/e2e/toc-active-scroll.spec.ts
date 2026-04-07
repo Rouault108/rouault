@@ -10,7 +10,7 @@ interface TocSyncState {
   childAttrActiveId: string | null;
   childDomActiveLabel: string | null;
   tocTemplateCount: number;
-};
+}
 
 const waitForAppRouterReady = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {

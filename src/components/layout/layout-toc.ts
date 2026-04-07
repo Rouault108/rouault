@@ -304,7 +304,11 @@ export class LayoutToc extends LitElement {
     const hydrationTrigger = this.getAttribute('data-hydration-trigger')?.trim();
     // layout-toc は initial trigger の時点で current state を維持できないと
     // 初期 hash と scroll tracker の両方を取りこぼすため、upgrade 直後に自前で起動する。
-    if (hydrationTrigger === undefined || hydrationTrigger.length === 0 || hydrationTrigger === 'initial') {
+    if (
+      hydrationTrigger === undefined ||
+      hydrationTrigger.length === 0 ||
+      hydrationTrigger === 'initial'
+    ) {
       void this.activateHydration();
     }
   }
@@ -587,7 +591,9 @@ export class LayoutToc extends LitElement {
       await customElements.whenDefined('ui-toc');
       await Promise.resolve();
       await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => { resolve(); });
+        requestAnimationFrame(() => {
+          resolve();
+        });
       });
 
       this._renderedTocSyncScheduled = false;

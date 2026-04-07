@@ -97,7 +97,10 @@ const renderArticleHeader = (articleHeader: NotePageProjection['articleHeader'])
     { name: 'heading', value: articleHeader.heading },
     {
       name: 'breadcrumbs-json',
-      value: articleHeader.breadcrumbs && articleHeader.breadcrumbs.length > 0 ? articleHeader.breadcrumbs : undefined,
+      value:
+        articleHeader.breadcrumbs && articleHeader.breadcrumbs.length > 0
+          ? articleHeader.breadcrumbs
+          : undefined,
       kind: 'json',
     },
     { name: 'published', value: articleHeader.published },
@@ -214,9 +217,11 @@ export class NoteLayout {
       </section>
       ${notePage.showSidebar && notePage.sidebar ? renderOverlaySidebar(notePage.sidebar) : ''}
       ${renderJsonScriptElement(notePage.toc.sourceId, notePage.toc.headings)}
-      ${notePage.showSidebar && notePage.sidebar
-        ? renderJsonScriptElement(notePage.sidebar.sourceId, notePage.sidebar.items)
-        : ''}
+      ${
+        notePage.showSidebar && notePage.sidebar
+          ? renderJsonScriptElement(notePage.sidebar.sourceId, notePage.sidebar.items)
+          : ''
+      }
     `.trim();
   }
 }

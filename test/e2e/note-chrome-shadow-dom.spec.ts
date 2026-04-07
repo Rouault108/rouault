@@ -48,8 +48,9 @@ const readNoteChromeState = async (
         return -1;
       }
 
-      return element.querySelectorAll(':scope > template[shadowrootmode], :scope > template[shadowroot]')
-        .length;
+      return element.querySelectorAll(
+        ':scope > template[shadowrootmode], :scope > template[shadowroot]',
+      ).length;
     };
 
     const readTocLabels = (element: Element | null): string[] => {

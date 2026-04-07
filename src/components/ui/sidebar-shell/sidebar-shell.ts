@@ -85,8 +85,7 @@ export class UiSidebarShell extends LitElement {
         72dvh
       );
       border-right: none;
-      border-bottom: var(--border-width, 1px) solid
-        var(--border-default, oklch(20% 0 0 / 0.12));
+      border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(20% 0 0 / 0.12));
       box-shadow: var(--shadow-lg, 0 24px 48px oklch(0% 0 0 / 0.18));
       z-index: var(--z-modal, 300);
     }

@@ -8,8 +8,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-0-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-0-wght-normal.woff2') format('woff2-variations');
   unicode-range:
     U+25ee8, U+25f23, U+25f5c, U+25fd4, U+25fe0, U+25ffb, U+2600c, U+26017, U+26060, U+260ed,
     U+26222, U+2626a, U+26270, U+26286, U+2634c, U+26402, U+2667e, U+266b0, U+2671d, U+268dd,
@@ -44,8 +43,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-1-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-1-wght-normal.woff2') format('woff2-variations');
   unicode-range:
     U+1f235-1f23b, U+1f240-1f248, U+1f250-1f251, U+2000b, U+20089-2008a, U+200a2, U+200a4, U+200b0,
     U+200f5, U+20158, U+201a2, U+20213, U+2032b, U+20371, U+20381, U+203f9, U+2044a, U+20509,
@@ -78,8 +76,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-2-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-2-wght-normal.woff2') format('woff2-variations');
   unicode-range:
     U+ffd7, U+ffda-ffdc, U+ffe0-ffe2, U+ffe4, U+ffe6, U+ffe8-ffee, U+1f100-1f10c, U+1f110-1f16c,
     U+1f170-1f1ac, U+1f200-1f202, U+1f210-1f234;
@@ -94,8 +91,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-3-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-3-wght-normal.woff2') format('woff2-variations');
   unicode-range:
     U+fa10, U+fa12-fa6d, U+fb00-fb04, U+fe10-fe19, U+fe30-fe42, U+fe44-fe52, U+fe54-fe66,
     U+fe68-fe6b, U+ff02, U+ff04, U+ff07, U+ff51, U+ff5b, U+ff5d, U+ff5f-ff60, U+ff66, U+ff69,
@@ -111,8 +107,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-4-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-4-wght-normal.woff2') format('woff2-variations');
   unicode-range: U+f92d-f959, U+f95b-f9f2, U+f9f4-fa0b, U+fa0e-fa0f;
 }
 
@@ -125,8 +120,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-5-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-5-wght-normal.woff2') format('woff2-variations');
   unicode-range:
     U+9e8b-9e8c, U+9e8e-9e8f, U+9e91-9e92, U+9e95-9e96, U+9e98, U+9e9b, U+9e9d-9e9e, U+9ea4-9ea5,
     U+9ea8-9eaa, U+9eac-9eb0, U+9eb3-9eb5, U+9eb8, U+9ebc-9ebf, U+9ec3, U+9ec6, U+9ec8, U+9ecb-9ecd,
@@ -147,8 +141,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-6-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-6-wght-normal.woff2') format('woff2-variations');
   unicode-range:
     U+9c3e, U+9c41, U+9c43-9c4a, U+9c4e-9c50, U+9c52-9c54, U+9c56, U+9c58, U+9c5a-9c61, U+9c63,
     U+9c65, U+9c67-9c6b, U+9c6d-9c6e, U+9c70, U+9c72, U+9c75-9c78, U+9c7a-9c7c, U+9ce6-9ce7,
@@ -172,8 +165,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-7-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-7-wght-normal.woff2') format('woff2-variations');
   unicode-range:
     U+9ae5-9ae7, U+9ae9, U+9aeb-9aec, U+9aee-9aef, U+9af1-9af5, U+9af7, U+9af9-9afb, U+9afd,
     U+9aff-9b06, U+9b08-9b09, U+9b0b-9b0e, U+9b10, U+9b12, U+9b16, U+9b18-9b1d, U+9b1f-9b20,
@@ -196,8 +188,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-8-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-8-wght-normal.woff2') format('woff2-variations');
   unicode-range:
     U+98eb, U+98ed-98ee, U+98f0-98f1, U+98f3, U+98f6, U+9902, U+9907-9909, U+9911-9912, U+9914-9918,
     U+991a-9922, U+9924, U+9926-9927, U+992b-992c, U+992e, U+9931-9935, U+9939-993e, U+9940-9942,
@@ -221,8 +212,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-9-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('/assets/fonts/noto-sans-jp/noto-sans-jp-9-wght-normal.woff2') format('woff2-variations');
   unicode-range:
     U+971d, U+9721-9724, U+9728, U+972a, U+9730-9731, U+9733, U+9736, U+9738-9739, U+973b,
     U+973d-973e, U+9741-9744, U+9746-974a, U+974d-974f, U+9751, U+9755, U+9757-9758, U+975a-975c,

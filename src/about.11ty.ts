@@ -85,7 +85,8 @@ const renderSection = (section: AboutSection): string => {
   `.trim();
 };
 
-const renderSections = (): string => ABOUT_SECTIONS.map((section) => renderSection(section)).join('\n');
+const renderSections = (): string =>
+  ABOUT_SECTIONS.map((section) => renderSection(section)).join('\n');
 
 export class AboutPageTemplate {
   data() {
