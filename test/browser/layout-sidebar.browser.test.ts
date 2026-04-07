@@ -103,6 +103,9 @@ const mockMatchMedia = (breakpointMatches: boolean): MatchMediaController => {
 const getSidebar = (host: LayoutSidebar): UiSidebar | null =>
   host.shadowRoot?.querySelector<UiSidebar>('ui-sidebar') ?? null;
 
+const getFileTree = (host: LayoutSidebar): HTMLElement | null =>
+  getSidebar(host)?.shadowRoot?.querySelector<HTMLElement>('ui-file-tree') ?? null;
+
 const flush = async (host: LayoutSidebar): Promise<void> => {
   await waitForLitUpdate(host);
   await nextAnimationFrame();
@@ -119,6 +122,69 @@ const flush = async (host: LayoutSidebar): Promise<void> => {
 describe('layout-sidebar browser contract', () => {
   afterEach(() => {
     localStorage.clear();
+  });
+
+  it('初回表示では現在位置の祖先を開き、その後は手動で閉じられること', async () => {
+    const media = mockMatchMedia(true);
+
+    try {
+      await ensureLayoutSidebarDefined();
+
+      const selectedId = 'music/classical/beethoven/symphony-9';
+      const storageKey = getLayoutSidebarTreeStateStorageKey(selectedId);
+
+      localStorage.removeItem(storageKey);
+
+      const host = await fixture<LayoutSidebar>(html`
+        <layout-sidebar
+          .itemsJson=${sampleItemsJson}
+          selected-id="${selectedId}"
+          heading="ナビゲーション"
+        ></layout-sidebar>
+      `);
+
+      await flush(host);
+
+      const initialFileTree = expectPresent(getFileTree(host), 'ui-file-tree');
+      await waitForLitUpdate(initialFileTree);
+
+      expect(
+        initialFileTree.shadowRoot?.querySelector(
+          'ui-tree-item[data-id="music/classical/beethoven/symphony-9"]',
+        ),
+      ).to.not.equal(null);
+
+      const sidebar = expectPresent(getSidebar(host), 'ui-sidebar');
+      sidebar.dispatchEvent(
+        new CustomEvent<UiSidebarToggleDetail>('ui-sidebar-toggle', {
+          bubbles: true,
+          composed: true,
+          detail: {
+            id: 'music/classical',
+            expanded: false,
+          },
+        }),
+      );
+
+      await flush(host);
+
+      const collapsedFileTree = expectPresent(getFileTree(host), 'ui-file-tree');
+      await waitForLitUpdate(collapsedFileTree);
+
+      expect(
+        collapsedFileTree.shadowRoot?.querySelector(
+          'ui-tree-item[data-id="music/classical/beethoven/symphony-9"]',
+        ),
+      ).to.equal(null);
+
+      const storedRaw = localStorage.getItem(storageKey);
+      expect(storedRaw).to.not.equal(null);
+
+      const stored = JSON.parse(storedRaw ?? '{}') as PersistedLayoutSidebarState;
+      expect(stored.expandedIds ?? []).to.not.include('music/classical');
+    } finally {
+      media.restore();
+    }
   });
 
   it('expandedIds を selectedId scope の localStorage へ永続化すること', async () => {
