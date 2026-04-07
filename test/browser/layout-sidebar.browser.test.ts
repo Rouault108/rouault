@@ -281,6 +281,71 @@ describe('layout-sidebar browser contract', () => {
     }
   });
 
+  it('fixed / overlay の二重 host でも branch toggle が即時同期されること', async () => {
+    const media = mockMatchMedia(true);
+
+    try {
+      await ensureLayoutSidebarDefined();
+
+      const selectedId = 'music/classical/beethoven/symphony-9';
+
+      const fixedHost = await fixture<LayoutSidebar>(html`
+        <layout-sidebar
+          presentation="fixed"
+          .itemsJson=${sampleItemsJson}
+          selected-id="${selectedId}"
+        ></layout-sidebar>
+      `);
+
+      const overlayHost = await fixture<LayoutSidebar>(html`
+        <layout-sidebar
+          presentation="overlay"
+          .itemsJson=${sampleItemsJson}
+          selected-id="${selectedId}"
+        ></layout-sidebar>
+      `);
+
+      await flush(fixedHost);
+      await flush(overlayHost);
+
+      const fixedSidebar = expectPresent(getSidebar(fixedHost), 'fixed ui-sidebar');
+
+      fixedSidebar.dispatchEvent(
+        new CustomEvent<UiSidebarToggleDetail>('ui-sidebar-toggle', {
+          bubbles: true,
+          composed: true,
+          detail: {
+            id: 'music/classical',
+            expanded: false,
+          },
+        }),
+      );
+
+      await flush(fixedHost);
+      await flush(overlayHost);
+
+      const fixedFileTree = expectPresent(getFileTree(fixedHost), 'fixed ui-file-tree');
+      const overlayFileTree = expectPresent(getFileTree(overlayHost), 'overlay ui-file-tree');
+
+      await waitForLitUpdate(fixedFileTree);
+      await waitForLitUpdate(overlayFileTree);
+
+      expect(
+        fixedFileTree.shadowRoot?.querySelector(
+          'ui-tree-item[data-id="music/classical/beethoven/symphony-9"]',
+        ),
+      ).to.equal(null);
+
+      expect(
+        overlayFileTree.shadowRoot?.querySelector(
+          'ui-tree-item[data-id="music/classical/beethoven/symphony-9"]',
+        ),
+      ).to.equal(null);
+    } finally {
+      media.restore();
+    }
+  });
+
   it('overlay では selection 後に sidebar を collapse すること', async () => {
     const media = mockMatchMedia(false);
 

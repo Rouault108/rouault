@@ -175,6 +175,7 @@ export class LayoutSidebar extends LitElement {
 
   private _storage: Storage | null = null;
 
+  @state()
   private _persistedExpandedIds = new Set<string>();
 
   private _detachStickyFooterBoundary: (() => void) | null = null;
@@ -192,6 +193,10 @@ export class LayoutSidebar extends LitElement {
     window.addEventListener(
       LAYOUT_SIDEBAR_TOGGLE_REQUEST_EVENT,
       this._onToggleRequest as EventListener,
+    );
+    window.addEventListener(
+      LAYOUT_SIDEBAR_TREE_STATE_CHANGE_EVENT,
+      this._onTreeStateSync as EventListener,
     );
 
     if (!this.hasAttribute('data-hydration-trigger')) {
@@ -333,7 +338,7 @@ export class LayoutSidebar extends LitElement {
       }
     }
 
-    this._persistedExpandedIds = nextExpandedIds;
+    this._setPersistedExpandedIds(nextExpandedIds);
   }
 
   private _parseItemsJson(value: string): TreeNode[] | null {
@@ -410,6 +415,16 @@ export class LayoutSidebar extends LitElement {
     );
   }
 
+  private _setPersistedExpandedIds(expandedIds: Iterable<string>): void {
+    const nextExpandedIds = new Set(normalizeExpandedIds(expandedIds));
+
+    if (sameExpandedIds(this._persistedExpandedIds, nextExpandedIds)) {
+      return;
+    }
+
+    this._persistedExpandedIds = nextExpandedIds;
+  }
+
   private _dispatchTreeStateChange(): void {
     if (typeof window === 'undefined') {
       return;
@@ -451,16 +466,20 @@ export class LayoutSidebar extends LitElement {
 
   private _onSidebarToggle = (event: CustomEvent<UiSidebarToggleDetail>): void => {
     const { id, expanded } = event.detail;
+    const nextExpandedIds = new Set(this._persistedExpandedIds);
+
     if (expanded) {
-      this._persistedExpandedIds.add(id);
+      nextExpandedIds.add(id);
     } else {
-      this._persistedExpandedIds.delete(id);
+      nextExpandedIds.delete(id);
     }
+
+    this._setPersistedExpandedIds(nextExpandedIds);
 
     writeLayoutSidebarTreeState(
       this._storage,
       {
-        expandedIds: [...this._persistedExpandedIds],
+        expandedIds: normalizeExpandedIds(nextExpandedIds),
       },
       this.selectedId,
     );
@@ -478,12 +497,7 @@ export class LayoutSidebar extends LitElement {
       return;
     }
 
-    if (sameExpandedIds(this._persistedExpandedIds, detail.expandedIds)) {
-      return;
-    }
-
-    this._persistedExpandedIds = new Set(detail.expandedIds);
-    this.requestUpdate();
+    this._setPersistedExpandedIds(detail.expandedIds);
   };
 
   private _onSidebarSelect = (): void => {
