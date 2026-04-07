@@ -7,7 +7,7 @@ import type {
   UiSidebarSelectDetail,
   UiSidebarToggleDetail,
 } from '../../src/components/ui/sidebar/sidebar.js';
-import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { type LitLikeElement, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 interface MatchMediaController {
   restore(): void;
@@ -15,6 +15,11 @@ interface MatchMediaController {
 
 interface PersistedLayoutSidebarState {
   expandedIds?: string[];
+}
+
+interface SidebarStateChangeDetail {
+  state: 'expanded' | 'collapsed';
+  mode: 'fixed' | 'overlay';
 }
 
 const sampleItemsJson = JSON.stringify([
@@ -74,7 +79,7 @@ const returnFalse = (): boolean => {
   return false;
 };
 
-const mockMatchMedia = (breakpointMatches: boolean): MatchMediaController => {
+const mockMatchMedia = (breakpointMatches = false): MatchMediaController => {
   const original = window.matchMedia.bind(window);
 
   window.matchMedia = ((query: string): MediaQueryList => {
@@ -103,20 +108,63 @@ const mockMatchMedia = (breakpointMatches: boolean): MatchMediaController => {
 const getSidebar = (host: LayoutSidebar): UiSidebar | null =>
   host.shadowRoot?.querySelector<UiSidebar>('ui-sidebar') ?? null;
 
-const getFileTree = (host: LayoutSidebar): HTMLElement | null =>
-  getSidebar(host)?.shadowRoot?.querySelector<HTMLElement>('ui-file-tree') ?? null;
+const getSidebarShell = (host: LayoutSidebar): LitLikeElement | null =>
+  getSidebar(host)?.shadowRoot?.querySelector<LitLikeElement>('ui-sidebar-shell') ?? null;
 
-const flush = async (host: LayoutSidebar): Promise<void> => {
+const getFileTree = (host: LayoutSidebar): LitLikeElement | null =>
+  getSidebar(host)?.shadowRoot?.querySelector<LitLikeElement>('ui-file-tree') ?? null;
+
+const settle = async (host: LayoutSidebar): Promise<void> => {
   await waitForLitUpdate(host);
-  await nextAnimationFrame();
 
   const sidebar = getSidebar(host);
   if (sidebar) {
     await waitForLitUpdate(sidebar);
   }
 
-  await nextAnimationFrame();
-  await waitForLitUpdate(host);
+  const shell = getSidebarShell(host);
+  if (shell) {
+    await waitForLitUpdate(shell);
+  }
+
+  const fileTree = getFileTree(host);
+  if (fileTree) {
+    await waitForLitUpdate(fileTree);
+  }
+
+  await Promise.resolve();
+  await Promise.resolve();
+};
+
+const onceCustomEvent = <T>(
+  target: EventTarget,
+  type: string,
+): Promise<CustomEvent<T>> =>
+  new Promise((resolve) => {
+    const listener: EventListener = (event) => {
+      resolve(event as CustomEvent<T>);
+    };
+
+    target.addEventListener(type, listener, { once: true });
+  });
+
+const waitForSidebarStateChange = async (
+  host: LayoutSidebar,
+  expectedState: SidebarStateChangeDetail['state'],
+  action: () => void | Promise<void>,
+): Promise<void> => {
+  const sidebar = expectPresent(getSidebar(host), 'ui-sidebar');
+  const stateChangePromise = onceCustomEvent<SidebarStateChangeDetail>(
+    sidebar,
+    'ui-sidebar-state-change',
+  );
+
+  await action();
+
+  const event = await stateChangePromise;
+  expect(event.detail.state).to.equal(expectedState);
+
+  await settle(host);
 };
 
 describe('layout-sidebar browser contract', () => {
@@ -125,7 +173,7 @@ describe('layout-sidebar browser contract', () => {
   });
 
   it('初回表示では現在位置の祖先を開き、その後は手動で閉じられること', async () => {
-    const media = mockMatchMedia(true);
+    const media = mockMatchMedia();
 
     try {
       await ensureLayoutSidebarDefined();
@@ -137,13 +185,14 @@ describe('layout-sidebar browser contract', () => {
 
       const host = await fixture<LayoutSidebar>(html`
         <layout-sidebar
+          presentation="overlay"
           .itemsJson=${sampleItemsJson}
           selected-id="${selectedId}"
           heading="ナビゲーション"
         ></layout-sidebar>
       `);
 
-      await flush(host);
+      await settle(host);
 
       const initialFileTree = expectPresent(getFileTree(host), 'ui-file-tree');
       await waitForLitUpdate(initialFileTree);
@@ -166,7 +215,7 @@ describe('layout-sidebar browser contract', () => {
         }),
       );
 
-      await flush(host);
+      await settle(host);
 
       const collapsedFileTree = expectPresent(getFileTree(host), 'ui-file-tree');
       await waitForLitUpdate(collapsedFileTree);
@@ -188,7 +237,7 @@ describe('layout-sidebar browser contract', () => {
   });
 
   it('expandedIds を selectedId scope の localStorage へ永続化すること', async () => {
-    const media = mockMatchMedia(true);
+    const media = mockMatchMedia();
 
     try {
       await ensureLayoutSidebarDefined();
@@ -200,13 +249,14 @@ describe('layout-sidebar browser contract', () => {
 
       const host = await fixture<LayoutSidebar>(html`
         <layout-sidebar
+          presentation="overlay"
           .itemsJson=${sampleItemsJson}
           selected-id="${selectedId}"
           heading="ナビゲーション"
         ></layout-sidebar>
       `);
 
-      await flush(host);
+      await settle(host);
 
       const sidebar = expectPresent(getSidebar(host), 'ui-sidebar');
 
@@ -221,7 +271,7 @@ describe('layout-sidebar browser contract', () => {
         }),
       );
 
-      await flush(host);
+      await settle(host);
 
       const storedRaw = localStorage.getItem(storageKey);
       expect(storedRaw).to.not.equal(null);
@@ -234,7 +284,7 @@ describe('layout-sidebar browser contract', () => {
   });
 
   it('presentation を分離した場合、fixed 面は toggle request を無視し overlay 面だけが応答すること', async () => {
-    const media = mockMatchMedia(true);
+    const media = mockMatchMedia();
 
     try {
       await ensureLayoutSidebarDefined();
@@ -247,14 +297,14 @@ describe('layout-sidebar browser contract', () => {
         ></layout-sidebar>
       `);
 
-      await flush(fixedHost);
+      await settle(fixedHost);
 
       const fixedSidebar = expectPresent(getSidebar(fixedHost), 'fixed ui-sidebar');
       expect(fixedSidebar.mode).to.equal('fixed');
       expect(fixedSidebar.state).to.equal('expanded');
 
       window.dispatchEvent(new CustomEvent('layout-sidebar-toggle-request'));
-      await flush(fixedHost);
+      await settle(fixedHost);
 
       expect(fixedSidebar.state).to.equal('expanded');
 
@@ -266,14 +316,15 @@ describe('layout-sidebar browser contract', () => {
         ></layout-sidebar>
       `);
 
-      await flush(overlayHost);
+      await settle(overlayHost);
 
       const overlaySidebar = expectPresent(getSidebar(overlayHost), 'overlay ui-sidebar');
       expect(overlaySidebar.mode).to.equal('overlay');
       expect(overlaySidebar.state).to.equal('collapsed');
 
-      window.dispatchEvent(new CustomEvent('layout-sidebar-toggle-request'));
-      await flush(overlayHost);
+      await waitForSidebarStateChange(overlayHost, 'expanded', () => {
+        window.dispatchEvent(new CustomEvent('layout-sidebar-toggle-request'));
+      });
 
       expect(overlaySidebar.state).to.equal('expanded');
     } finally {
@@ -282,7 +333,7 @@ describe('layout-sidebar browser contract', () => {
   });
 
   it('fixed / overlay の二重 host でも branch toggle が即時同期されること', async () => {
-    const media = mockMatchMedia(true);
+    const media = mockMatchMedia();
 
     try {
       await ensureLayoutSidebarDefined();
@@ -305,8 +356,8 @@ describe('layout-sidebar browser contract', () => {
         ></layout-sidebar>
       `);
 
-      await flush(fixedHost);
-      await flush(overlayHost);
+      await settle(fixedHost);
+      await settle(overlayHost);
 
       const fixedSidebar = expectPresent(getSidebar(fixedHost), 'fixed ui-sidebar');
 
@@ -321,8 +372,8 @@ describe('layout-sidebar browser contract', () => {
         }),
       );
 
-      await flush(fixedHost);
-      await flush(overlayHost);
+      await settle(fixedHost);
+      await settle(overlayHost);
 
       const fixedFileTree = expectPresent(getFileTree(fixedHost), 'fixed ui-file-tree');
       const overlayFileTree = expectPresent(getFileTree(overlayHost), 'overlay ui-file-tree');
@@ -347,41 +398,44 @@ describe('layout-sidebar browser contract', () => {
   });
 
   it('overlay では selection 後に sidebar を collapse すること', async () => {
-    const media = mockMatchMedia(false);
+    const media = mockMatchMedia();
 
     try {
       await ensureLayoutSidebarDefined();
 
       const host = await fixture<LayoutSidebar>(html`
         <layout-sidebar
+          presentation="overlay"
           .itemsJson=${sampleItemsJson}
           selected-id="music/classical/beethoven/symphony-9"
-          fixed-breakpoint="99999"
         ></layout-sidebar>
       `);
 
-      await flush(host);
+      await settle(host);
 
       const sidebar = expectPresent(getSidebar(host), 'ui-sidebar');
 
       expect(sidebar.mode).to.equal('overlay');
+      expect(sidebar.state).to.equal('collapsed');
 
-      sidebar.expand();
-      await flush(host);
+      await waitForSidebarStateChange(host, 'expanded', () => {
+        sidebar.expand();
+      });
 
+      expect(sidebar.mode).to.equal('overlay');
       expect(sidebar.state).to.equal('expanded');
 
-      sidebar.dispatchEvent(
-        new CustomEvent<UiSidebarSelectDetail>('ui-sidebar-select', {
-          bubbles: true,
-          composed: true,
-          detail: {
-            id: 'music/classical/tchaikovsky/the-nutcracker',
-          },
-        }),
-      );
-
-      await flush(host);
+      await waitForSidebarStateChange(host, 'collapsed', () => {
+        sidebar.dispatchEvent(
+          new CustomEvent<UiSidebarSelectDetail>('ui-sidebar-select', {
+            bubbles: true,
+            composed: true,
+            detail: {
+              id: 'music/classical/tchaikovsky/the-nutcracker',
+            },
+          }),
+        );
+      });
 
       expect(sidebar.mode).to.equal('overlay');
       expect(sidebar.state).to.equal('collapsed');
