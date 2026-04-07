@@ -129,23 +129,63 @@ export class LayoutToc extends LitElement {
       overflow-y: auto;
       overscroll-behavior: contain;
       padding: var(--space-3, 12px) var(--space-2, 8px);
+      scrollbar-gutter: stable;
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
     }
 
-    .mobile-bar {
+    .mobile-panel {
       position: fixed;
-      top: calc(var(--header-height) + var(--space-2, 8px));
-      left: var(--space-3, 12px);
-      right: var(--space-3, 12px);
-      z-index: var(--z-popover, 400);
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: var(--space-2, 8px);
-      align-items: center;
-      border: var(--border-width, 1px) solid var(--border-default);
-      border-radius: var(--radius-md, 8px);
-      background: var(--bg-surface-1);
-      box-shadow: var(--shadow-md);
-      padding: var(--space-2, 8px);
+      inset-inline: 0;
+      top: calc(var(--header-height) + 56px);
+      bottom: 0;
+      z-index: var(--z-modal, 300);
+      background: var(--bg-default);
+      border-top: var(--border-width, 1px) solid var(--border-default);
+      transform: translateY(100%);
+      transition: transform var(--duration-normal, 150ms)
+        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+      padding: var(--space-2, 8px) var(--space-3, 12px) var(--space-6, 24px);
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
+    }
+
+    .desktop:hover,
+    .desktop:focus-within,
+    .mobile-panel:hover,
+    .mobile-panel:focus-within {
+      scrollbar-color: var(--scrollbar-thumb, var(--fg-subtle, oklch(60% 0 0))) transparent;
+    }
+
+    .desktop::-webkit-scrollbar-track,
+    .desktop::-webkit-scrollbar-corner,
+    .mobile-panel::-webkit-scrollbar-track,
+    .mobile-panel::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+
+    .desktop::-webkit-scrollbar-thumb,
+    .mobile-panel::-webkit-scrollbar-thumb {
+      background-color: transparent;
+      border: 3px solid transparent;
+      background-clip: content-box;
+      border-radius: var(--radius-full, 999px);
+    }
+
+    .desktop:hover::-webkit-scrollbar-thumb,
+    .desktop:focus-within::-webkit-scrollbar-thumb,
+    .mobile-panel:hover::-webkit-scrollbar-thumb,
+    .mobile-panel:focus-within::-webkit-scrollbar-thumb {
+      background-color: var(--scrollbar-thumb, var(--fg-subtle, oklch(60% 0 0)));
+    }
+
+    .desktop:hover::-webkit-scrollbar-thumb:hover,
+    .desktop:focus-within::-webkit-scrollbar-thumb:hover,
+    .mobile-panel:hover::-webkit-scrollbar-thumb:hover,
+    .mobile-panel:focus-within::-webkit-scrollbar-thumb:hover {
+      background-color: var(--scrollbar-thumb-hover, var(--fg-muted, oklch(45% 0 0)));
     }
 
     .home-link {

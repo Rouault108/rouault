@@ -17,12 +17,47 @@
   overflow-y: hidden;
   white-space: pre;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 
   /* iOS Safari:
    * 横スクロールを伴うコード面で text inflation が起きるため、
    * 実際のコード面で autosizing を無効化する */
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):hover,
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):focus-visible,
+[data-code-block-root]:hover pre[data-code-block],
+[data-code-block-root]:focus-within pre[data-code-block] {
+  scrollbar-color: var(--scrollbar-thumb, var(--fg-subtle, oklch(60% 0 0))) transparent;
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])::-webkit-scrollbar-track,
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: var(--radius-full, 999px);
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):hover::-webkit-scrollbar-thumb,
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):focus-visible::-webkit-scrollbar-thumb,
+[data-code-block-root]:hover pre[data-code-block]::-webkit-scrollbar-thumb,
+[data-code-block-root]:focus-within pre[data-code-block]::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb, var(--fg-subtle, oklch(60% 0 0)));
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):hover::-webkit-scrollbar-thumb:hover,
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):focus-visible::-webkit-scrollbar-thumb:hover,
+[data-code-block-root]:hover pre[data-code-block]::-webkit-scrollbar-thumb:hover,
+[data-code-block-root]:focus-within pre[data-code-block]::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover, var(--fg-muted, oklch(45% 0 0)));
 }
 
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) code {
