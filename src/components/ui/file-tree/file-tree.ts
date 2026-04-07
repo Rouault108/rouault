@@ -412,7 +412,7 @@ export class FileTree extends LitElement {
 
   override focus(options?: FocusOptions): void {
     const targetId =
-      this._activeId ?? this._selectedLeafId ?? this._flattenedNodes[0]?.node.id ?? null;
+      this._activeId ?? this._visibleSelectedLeafId ?? this._flattenedNodes[0]?.node.id ?? null;
     if (targetId === null) {
       return;
     }
@@ -421,7 +421,7 @@ export class FileTree extends LitElement {
   }
 
   focusSelected(): void {
-    const targetId = this._selectedLeafId ?? this._flattenedNodes[0]?.node.id ?? null;
+    const targetId = this._visibleSelectedLeafId ?? this._flattenedNodes[0]?.node.id ?? null;
     if (targetId === null) {
       return;
     }
@@ -463,6 +463,17 @@ export class FileTree extends LitElement {
     return collectAncestorBranchIds(this._selectedLeafId, this._nodeIndex);
   }
 
+  private get _visibleSelectedLeafId(): string | null {
+    const selectedLeafId = this._selectedLeafId;
+    if (selectedLeafId === null) {
+      return null;
+    }
+
+    return this._flattenedNodes.some((item) => item.node.id === selectedLeafId)
+      ? selectedLeafId
+      : null;
+  }
+
   private get _baseExpandedIds(): ReadonlySet<string> {
     if (this._isControlledExpanded) {
       return toBranchIds(this.expandedIds ?? new Set(), this._nodeIndex);
@@ -473,10 +484,6 @@ export class FileTree extends LitElement {
 
   private get _effectiveExpandedIds(): ReadonlySet<string> {
     const result = cloneSet(this._baseExpandedIds);
-
-    for (const id of collectAncestorBranchIds(this._selectedLeafId, this._nodeIndex)) {
-      result.add(id);
-    }
 
     if (this._printExpanding) {
       for (const [id, indexedNode] of this._nodeIndex) {
@@ -512,7 +519,7 @@ export class FileTree extends LitElement {
       return;
     }
 
-    this._activeId = this._selectedLeafId ?? this._flattenedNodes[0]?.node.id ?? null;
+    this._activeId = this._visibleSelectedLeafId ?? this._flattenedNodes[0]?.node.id ?? null;
   }
 
   private _setActiveId(id: string, emitEvent: boolean): void {
@@ -768,7 +775,7 @@ export class FileTree extends LitElement {
   }
 
   private _scrollSelectedIntoView(): void {
-    const selectedId = this._selectedLeafId;
+    const selectedId = this._visibleSelectedLeafId;
     if (selectedId === null) {
       return;
     }

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { TreeNode } from '../../src/components/ui/file-tree/file-tree.js';
 import {
   LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY,
+  collectLayoutSidebarSelectedAncestorIds,
   getLayoutSidebarTreeStateStorageKey,
-  mergeLayoutSidebarTreeState,
   normalizeLayoutSidebarTreeState,
   readLayoutSidebarTreeState,
   writeLayoutSidebarTreeState,
@@ -78,7 +78,13 @@ describe('layout-sidebar-tree-state', () => {
     });
   });
 
-  it('保存済み expandedIds と現在位置の祖先 branch をマージすること', () => {
+  it('保存値が存在しない場合は null を返すこと', () => {
+    const storage = new MockStorage();
+
+    expect(readLayoutSidebarTreeState(storage)).to.equal(null);
+  });
+
+  it('現在位置の祖先 branch 群を列挙できること', () => {
     const nodes: readonly TreeNode[] = [
       {
         kind: 'branch',
@@ -122,15 +128,14 @@ describe('layout-sidebar-tree-state', () => {
       },
     ];
 
-    const merged = mergeLayoutSidebarTreeState(
+    const selectedAncestors = collectLayoutSidebarSelectedAncestorIds(
       nodes,
-      ['music/classical/tchaikovsky'],
       'music/classical/beethoven/symphony-9',
     );
 
-    expect(merged).to.include('music');
-    expect(merged).to.include('music/classical');
-    expect(merged).to.include('music/classical/beethoven');
-    expect(merged).to.include('music/classical/tchaikovsky');
+    expect(selectedAncestors).to.include('music');
+    expect(selectedAncestors).to.include('music/classical');
+    expect(selectedAncestors).to.include('music/classical/beethoven');
+    expect(selectedAncestors).to.not.include('music/classical/tchaikovsky');
   });
 });

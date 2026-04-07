@@ -17,7 +17,7 @@ import {
   type LayoutSidebarTreeStateChangeDetail,
 } from './layout-sidebar.events.js';
 import {
-  mergeLayoutSidebarTreeState,
+  collectLayoutSidebarSelectedAncestorIds,
   readLayoutSidebarTreeState,
   writeLayoutSidebarTreeState,
 } from './layout-sidebar-tree-state.js';
@@ -289,40 +289,51 @@ export class LayoutSidebar extends LitElement {
   }
 
   private _loadItemsFromSource(): void {
-    this._persistedExpandedIds = new Set(
-      readLayoutSidebarTreeState(this._storage, this.selectedId).expandedIds,
-    );
-
     const inlineItems = this._parseItemsJson(this.itemsJson);
     if (inlineItems !== null) {
-      this._items = inlineItems;
+      this._applyItems(inlineItems);
       return;
     }
 
     if (this.sourceId.length === 0) {
-      this._items = [];
+      this._applyItems([]);
       return;
     }
 
     const source = document.getElementById(this.sourceId);
     if (!(source instanceof HTMLScriptElement)) {
-      this._items = [];
+      this._applyItems([]);
       return;
     }
 
     try {
       const parsed: unknown = JSON.parse(source.textContent || '[]');
       if (!Array.isArray(parsed)) {
-        this._items = [];
+        this._applyItems([]);
         return;
       }
       const items = parsed
         .map((item) => toTreeNode(item))
         .filter((item): item is TreeNode => item !== null);
-      this._items = items;
+      this._applyItems(items);
     } catch {
-      this._items = [];
+      this._applyItems([]);
     }
+  }
+
+  private _applyItems(items: TreeNode[]): void {
+    this._items = items;
+
+    const persistedState = readLayoutSidebarTreeState(this._storage, this.selectedId);
+    const nextExpandedIds = new Set(persistedState?.expandedIds ?? []);
+
+    if (persistedState === null) {
+      for (const id of collectLayoutSidebarSelectedAncestorIds(items, this.selectedId)) {
+        nextExpandedIds.add(id);
+      }
+    }
+
+    this._persistedExpandedIds = nextExpandedIds;
   }
 
   private _parseItemsJson(value: string): TreeNode[] | null {
@@ -482,11 +493,6 @@ export class LayoutSidebar extends LitElement {
   };
 
   override render() {
-    const mergedExpandedIds = mergeLayoutSidebarTreeState(
-      this._items,
-      [...this._persistedExpandedIds],
-      this.selectedId,
-    );
     const explicitMode = this.presentation === 'auto' ? undefined : this.presentation;
 
     return html`
@@ -497,7 +503,7 @@ export class LayoutSidebar extends LitElement {
         .state=${this._state}
         .items=${this._items}
         .selectedId=${this.selectedId}
-        .expandedIds=${new Set(mergedExpandedIds)}
+        .expandedIds=${new Set(this._persistedExpandedIds)}
         .heading=${this.heading}
         .fixedBreakpoint=${this.fixedBreakpoint}
         @ui-sidebar-state-change=${this._onSidebarStateChange}

@@ -43,26 +43,26 @@ export const normalizeLayoutSidebarTreeState = (value: unknown): LayoutSidebarTr
 };
 
 /**
- * Storage から展開状態を読み出す。
+ * Storage から展開状態を読み出す。保存値が存在しない場合は null を返す。
  */
 export const readLayoutSidebarTreeState = (
   storage: Storage | null,
   scopeId: string | null = null,
-): LayoutSidebarTreeState => {
+): LayoutSidebarTreeState | null => {
   if (storage === null) {
-    return { expandedIds: [] };
+    return null;
   }
 
   try {
     const raw = storage.getItem(getLayoutSidebarTreeStateStorageKey(scopeId));
     if (typeof raw !== 'string' || raw.length === 0) {
-      return { expandedIds: [] };
+      return null;
     }
 
     const parsed: unknown = JSON.parse(raw);
     return normalizeLayoutSidebarTreeState(parsed);
   } catch {
-    return { expandedIds: [] };
+    return null;
   }
 };
 
@@ -112,6 +112,14 @@ const collectSelectedAncestors = (
 
   return null;
 };
+
+/**
+ * 現在位置 selectedId を辿る祖先 branch 群を列挙する。
+ */
+export const collectLayoutSidebarSelectedAncestorIds = (
+  nodes: readonly TreeNode[],
+  selectedId: string | null,
+): string[] => collectSelectedAncestors(nodes, selectedId) ?? [];
 
 /**
  * 保存済み expandedIds と現在地の祖先 branch 群を結合する。
