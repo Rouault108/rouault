@@ -348,6 +348,7 @@ describe('app-router', () => {
               <body>
                 <layout-header
                   note-layout
+                  sidebar-enabled
                   breadcrumbs-json='[{"label":"New Note","href":"/notes/new-note"}]'
                   corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]'
                   current-corpus-key="music"
@@ -378,6 +379,7 @@ describe('app-router', () => {
     );
 
     expect(header.hasAttribute('note-layout')).to.equal(true);
+    expect(header.hasAttribute('sidebar-enabled')).to.equal(true);
     expect(header.getAttribute('corpora-json')).to.equal(
       '[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]',
     );

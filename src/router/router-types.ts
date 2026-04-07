@@ -66,6 +66,7 @@ export interface HeaderShellSnapshot {
   }[];
   currentCorpusKey: string;
   noteLayout: boolean;
+  sidebarEnabled: boolean;
 }
 
 export interface DocumentShellSnapshot {

@@ -4,6 +4,39 @@ import { BaseLayout } from '../../src/layouts/BaseLayout.11ty.js';
 import { loadBuildMetadataData } from '../../src/data/buildMetadata.js';
 
 describe('BaseLayout', () => {
+  it('reader note では header に sidebar-enabled を出力すること', () => {
+    const layout = new BaseLayout();
+    const rendered = layout.render({
+      content: '<p>本文</p>',
+      note: {
+        slug: 'reader-note',
+        title: 'Reader Note',
+        permalink: '/notes/reader-note',
+        noteKind: 'leaf',
+        kind: 'reader',
+      },
+    });
+
+    expect(rendered).toContain('<layout-header note-layout sidebar-enabled');
+  });
+
+  it('testing note では header に sidebar-enabled を出力しないこと', () => {
+    const layout = new BaseLayout();
+    const rendered = layout.render({
+      content: '<p>本文</p>',
+      note: {
+        slug: 'testing-note',
+        title: 'Testing Note',
+        permalink: '/notes/testing-note',
+        noteKind: 'leaf',
+        kind: 'testing',
+      },
+    });
+
+    expect(rendered).toContain('<layout-header note-layout');
+    expect(rendered).not.toContain('<layout-header note-layout sidebar-enabled');
+  });
+
   it('breadcrumb 規則を note navigation model から受け取ること', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({

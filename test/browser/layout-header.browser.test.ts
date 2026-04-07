@@ -62,4 +62,20 @@ describe('layout-header browser contract', () => {
 
     expect(header.shadowRoot?.querySelector('[slot="compact-center"]')).to.equal(null);
   });
+
+  it('sidebar-enabled が無い note-layout では sidebar toggle を描画しないこと', async () => {
+    const header = await fixture<LayoutHeader>(html`<layout-header note-layout></layout-header>`);
+    await waitForLitUpdate(header);
+
+    expect(header.shadowRoot?.querySelector('.sidebar-toggle')).to.equal(null);
+  });
+
+  it('sidebar-enabled がある場合のみ sidebar toggle を描画すること', async () => {
+    const header = await fixture<LayoutHeader>(
+      html`<layout-header note-layout sidebar-enabled></layout-header>`,
+    );
+    await waitForLitUpdate(header);
+
+    expect(header.shadowRoot?.querySelector('.sidebar-toggle')).to.not.equal(null);
+  });
 });

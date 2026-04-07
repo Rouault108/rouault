@@ -686,8 +686,8 @@ describe('css structure contracts', () => {
     const cssText = collectCssText(SearchTrigger.styles);
 
     expectCssIncludes(cssText, [
-      "button[data-density='compact']",
-      "button[data-density='icon-only']",
+      "ui-button[data-density='compact']::part(button)",
+      "ui-button[data-density='icon-only']::part(button)",
       '@media (max-width: 960px)',
       '@media (max-width: 639px)',
       '@media (forced-colors: active)',

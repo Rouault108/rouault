@@ -53,7 +53,7 @@ const renderNoteShell = () =>
         html`
           <div class="foundation-stage" style="padding: 0; overflow: clip;">
             <div class="app-root">
-              <layout-header></layout-header>
+              <layout-header note-layout sidebar-enabled></layout-header>
               <main id="note-shell-main" tabindex="-1">
                 <section class="note-shell">
                   <aside class="layout-sidebar-col" aria-label="ナビゲーション">

@@ -125,6 +125,11 @@ export class BaseLayout {
     ]);
     const headerAttributes = serializeHtmlAttributes([
       { name: 'note-layout', value: Boolean(data.note), kind: 'boolean' },
+      {
+        name: 'sidebar-enabled',
+        value: Boolean(data.note && noteSurfacePolicy.sidebar),
+        kind: 'boolean',
+      },
       { name: 'breadcrumbs-json', value: breadcrumbs, kind: 'json' },
       { name: 'corpora-json', value: corpora, kind: 'json' },
       { name: 'current-corpus-key', value: currentCorpusKey },

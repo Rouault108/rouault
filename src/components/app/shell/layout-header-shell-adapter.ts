@@ -89,6 +89,7 @@ export const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
           return currentCorpusKey === '' ? 'all' : (currentCorpusKey ?? 'all');
         })(),
         noteLayout: nextHeader?.hasAttribute('note-layout') ?? false,
+        sidebarEnabled: nextHeader?.hasAttribute('sidebar-enabled') ?? false,
       },
     };
   },
@@ -102,5 +103,6 @@ export const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
     currentHeader.setAttribute('corpora-json', JSON.stringify(shell?.header.corpora ?? []));
     currentHeader.setAttribute('current-corpus-key', shell?.header.currentCorpusKey ?? 'all');
     currentHeader.toggleAttribute('note-layout', shell?.header.noteLayout ?? false);
+    currentHeader.toggleAttribute('sidebar-enabled', shell?.header.sidebarEnabled ?? false);
   },
 });

@@ -116,6 +116,10 @@ export class LayoutHeader extends LitElement {
       --ui-header-center-end-inset: max(200px, 34vw);
     }
 
+    :host([sidebar-enabled]) ui-header {
+      --ui-header-center-start-inset: 44px;
+    }
+
     .sidebar-toggle {
       display: inline-flex;
     }
@@ -165,8 +169,11 @@ export class LayoutHeader extends LitElement {
 
     @media (min-width: 1024px) {
       :host([note-layout]) ui-header {
-        --ui-header-center-start-inset: var(--sidebar-width, 272px);
         --ui-header-center-end-inset: var(--aside-width, 240px);
+      }
+
+      :host([sidebar-enabled]) ui-header {
+        --ui-header-center-start-inset: var(--sidebar-width, 272px);
       }
 
       .sidebar-toggle {
@@ -186,6 +193,9 @@ export class LayoutHeader extends LitElement {
 
   @property({ type: Boolean, reflect: true, attribute: 'note-layout' })
   noteLayout = false;
+
+  @property({ type: Boolean, reflect: true, attribute: 'sidebar-enabled' })
+  sidebarEnabled = false;
 
   @state()
   private _sidebarExpanded = true;
@@ -373,7 +383,7 @@ export class LayoutHeader extends LitElement {
     return html`
       <ui-header .sidebarExpanded=${this._sidebarExpanded}>
         <div slot="start" class="slot-group">
-          ${this.noteLayout
+          ${this.sidebarEnabled
             ? html`
                 <ui-button
                   class="sidebar-toggle"
