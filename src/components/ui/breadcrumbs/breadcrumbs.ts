@@ -18,8 +18,6 @@ interface EllipsisItem {
 
 type DisplayItem = BreadcrumbItem | EllipsisItem;
 
-const NARROW_BREAKPOINT_QUERY = '(max-width: 639px)';
-
 @customElement('ui-breadcrumbs')
 export class Breadcrumbs extends LitElement {
   static override styles = css`
@@ -124,8 +122,33 @@ export class Breadcrumbs extends LitElement {
     }
 
     @media (max-width: 639px) {
-      :host {
-        display: none !important;
+      nav {
+        padding-block: var(--space-1, 4px);
+        padding-inline: 0;
+        gap: var(--space-1, 4px);
+        font-size: var(--text-xs, 12px);
+      }
+
+      .breadcrumb-list {
+        inline-size: 100%;
+        gap: var(--space-1, 4px);
+      }
+
+      .breadcrumb-item {
+        gap: var(--space-1, 4px);
+      }
+
+      .breadcrumb-item:last-child {
+        flex: 1 1 auto;
+      }
+
+      .breadcrumb-link {
+        max-inline-size: min(12ch, 100%);
+        padding-inline: 2px;
+      }
+
+      .breadcrumb-current {
+        max-inline-size: 100%;
       }
     }
 
@@ -185,22 +208,6 @@ export class Breadcrumbs extends LitElement {
   @property({ type: String, reflect: true })
   align: BreadcrumbAlignment = 'center';
 
-  private _narrowMediaQuery: MediaQueryList | null = null;
-
-  override connectedCallback(): void {
-    super.connectedCallback();
-    const mediaQuery = this._getNarrowMediaQuery();
-    if (!mediaQuery) return;
-    mediaQuery.addEventListener('change', this._handleNarrowQueryChange);
-  }
-
-  override disconnectedCallback(): void {
-    super.disconnectedCallback();
-    const mediaQuery = this._getNarrowMediaQuery();
-    if (!mediaQuery) return;
-    mediaQuery.removeEventListener('change', this._handleNarrowQueryChange);
-  }
-
   protected override willUpdate(changedProperties: Map<PropertyKey, unknown>): void {
     const rawAlign = this.getAttribute('align');
     if (
@@ -211,23 +218,6 @@ export class Breadcrumbs extends LitElement {
     ) {
       this.align = 'center';
     }
-  }
-
-  private readonly _handleNarrowQueryChange = (): void => {
-    this.requestUpdate();
-  };
-
-  private _getNarrowMediaQuery(): MediaQueryList | null {
-    if (this._narrowMediaQuery) return this._narrowMediaQuery;
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return null;
-    }
-    this._narrowMediaQuery = window.matchMedia(NARROW_BREAKPOINT_QUERY);
-    return this._narrowMediaQuery;
-  }
-
-  private get _isNarrowViewport(): boolean {
-    return this._getNarrowMediaQuery()?.matches ?? false;
   }
 
   private get _normalizedMaxItems(): number {
@@ -321,10 +311,6 @@ export class Breadcrumbs extends LitElement {
   }
 
   override render() {
-    if (this._isNarrowViewport) {
-      return nothing;
-    }
-
     const displayItems = this._displayItems;
     if (displayItems.length === 0) {
       return nothing;
