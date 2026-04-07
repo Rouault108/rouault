@@ -41,6 +41,17 @@ export class TreeItem extends LitElement {
       --tree-item-selection-start-gap: 2px;
       --tree-item-selection-start: calc(var(--tree-item-depth, 1) * var(--tree-indent-step, 16px));
 
+      /*
+       * 選択インジケーター系の基準位置と、hover / selected の背景面の開始位置は
+       * 長期的には分離して扱う。
+       *
+       * - --tree-item-selection-start:
+       *   current indicator や page 選択面の基準位置
+       * - --tree-item-surface-inline-start:
+       *   hover / selected surface の描画開始位置
+       */
+      --tree-item-surface-inline-start: var(--tree-item-selection-start);
+
       --tree-item-active-surface-inset-block: var(
         --sidebar-item-active-surface-inset-block,
         var(--space-1, 4px)
@@ -121,7 +132,7 @@ export class TreeItem extends LitElement {
       content: '';
       position: absolute;
       inset-block: 0;
-      inset-inline-start: var(--tree-item-selection-start);
+      inset-inline-start: var(--tree-item-surface-inline-start);
       inset-inline-end: 0;
       background: transparent;
       transition: background-color var(--nav-item-transition-duration, var(--duration-fast, 70ms))
@@ -139,6 +150,18 @@ export class TreeItem extends LitElement {
     .item.is-branch {
       color: var(--sidebar-item-fg-branch, var(--fg-muted, oklch(45% 0 0)));
       font-weight: var(--sidebar-item-font-weight, 400);
+
+      /*
+       * branch は現在階層の leading slot に chevron を持つため、
+       * surface は selection 基準位置より 1 indent 分だけ左から開始する。
+       *
+       * これにより、hover / selected 背景が chevron を含む面になる。
+       * 一方で選択インジケーターの計算は --tree-item-selection-start 側に残るため、
+       * page 側の位置合わせには影響しない。
+       */
+      --tree-item-surface-inline-start: calc(
+        var(--tree-item-selection-start) - var(--tree-indent-step, 16px)
+      );
     }
 
     .item.is-branch:hover {

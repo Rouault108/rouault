@@ -307,4 +307,61 @@ describe('ui-tree-item browser contract', () => {
 
     expect(host.shadowRoot?.activeElement).to.equal(item);
   });
+
+  it('branch の surface 開始位置は chevron slot を含み、leaf は page 基準位置を維持すること', async () => {
+    const root = await fixture<HTMLDivElement>(html`
+      <div>
+        <ui-tree-item
+          id="branch"
+          label="src"
+          icon="folder"
+          style="
+            --tree-indent-step: 20px;
+            --tree-item-selection-start-gap: 0px;
+            --tree-item-selected-indicator-width: 0px;
+          "
+        >
+          <ui-tree-item slot="children" label="index.ts" icon="file-code"></ui-tree-item>
+        </ui-tree-item>
+
+        <ui-tree-item
+          id="leaf"
+          label="README.md"
+          icon="file-text"
+          href="/notes/readme"
+          style="
+            --tree-indent-step: 20px;
+            --tree-item-selection-start-gap: 0px;
+            --tree-item-selected-indicator-width: 0px;
+          "
+        ></ui-tree-item>
+      </div>
+    `);
+
+    const branch = expectPresent(root.querySelector<TreeItem>('#branch'), 'branch');
+    const leaf = expectPresent(root.querySelector<TreeItem>('#leaf'), 'leaf');
+
+    await flush(branch);
+    await flush(leaf);
+
+    const readBeforeInlineStartPx = (element: HTMLElement): number => {
+      const pseudoStyles = getComputedStyle(element, '::before');
+      const rawValue =
+        pseudoStyles.getPropertyValue('inset-inline-start').trim() ||
+        pseudoStyles.getPropertyValue('left').trim();
+
+      const parsed = Number.parseFloat(rawValue);
+      expect(Number.isFinite(parsed), `inline-start should resolve to px: ${rawValue}`).to.equal(
+        true,
+      );
+
+      return parsed;
+    };
+
+    const branchItem = getItem(branch);
+    const leafItem = getItem(leaf);
+
+    expect(readBeforeInlineStartPx(branchItem)).to.equal(0);
+    expect(readBeforeInlineStartPx(leafItem)).to.equal(10);
+  });
 });
