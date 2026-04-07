@@ -125,24 +125,25 @@ describe('ui-breadcrumbs browser contract', () => {
     }
   });
 
-  it('狭幅時はパンくずを描画しないこと', async () => {
+  it('狭幅相当でもパンくず DOM は描画され、縮約は CSS 契約に委ねること', async () => {
     const originalMatchMedia = window.matchMedia;
     window.matchMedia = createMatchMediaMock(true);
 
     try {
-      const mount = await fixture<HTMLDivElement>(html`<div id="mobile-host"></div>`);
-      const host = document.createElement('ui-breadcrumbs') as Breadcrumbs;
-      host.items = [...BASE_ITEMS];
-      mount.append(host);
+      const host = await fixture<Breadcrumbs>(html`
+        <ui-breadcrumbs .items=${BASE_ITEMS}></ui-breadcrumbs>
+      `);
       await waitForLitUpdate(host);
 
       const renderedItems = host.shadowRoot?.querySelectorAll('.breadcrumb-item');
       const nav = host.shadowRoot?.querySelector('nav');
       const dropdown = host.shadowRoot?.querySelector('ui-dropdown');
+      const current = host.shadowRoot?.querySelector<HTMLElement>('[aria-current="page"]');
 
-      expect(renderedItems?.length).to.equal(0);
-      expect(nav).to.equal(null);
-      expect(dropdown).to.equal(null);
+      expect(nav).to.not.equal(null);
+      expect(renderedItems?.length).to.equal(6);
+      expect(dropdown).to.not.equal(null);
+      expect(current?.textContent?.trim()).to.equal('ユーザー管理');
     } finally {
       window.matchMedia = originalMatchMedia;
     }
