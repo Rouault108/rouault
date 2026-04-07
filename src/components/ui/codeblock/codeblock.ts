@@ -193,6 +193,11 @@ export class CodeBlock extends LitElement {
         color-mix(in oklch, var(--focus-ring-color, oklch(60% 0.15 250)) 40%, transparent);
     }
 
+    :host(:has([part~='pre']:focus-visible)) .root {
+      box-shadow: inset 0 0 0 1px
+        color-mix(in oklch, var(--focus-ring-color, oklch(60% 0.15 250)) 18%, transparent);
+    }
+
     :host([headless]) .root {
       border: none;
       background: transparent;
@@ -326,6 +331,10 @@ export class CodeBlock extends LitElement {
 
       :host(:focus-within) .root {
         box-shadow: inset 0 0 0 2px CanvasText;
+      }
+
+      :host(:has([part~='pre']:focus-visible)) .root {
+        box-shadow: inset 0 0 0 1px GrayText;
       }
     }
 

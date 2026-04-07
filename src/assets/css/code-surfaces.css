@@ -160,6 +160,11 @@
     color-mix(in oklch, var(--focus-ring-color, oklch(60% 0.15 250)) 40%, transparent);
 }
 
+[data-code-block-root]:has(> pre[data-code-block]:focus-visible) {
+  box-shadow: inset 0 0 0 1px
+    color-mix(in oklch, var(--focus-ring-color, oklch(60% 0.15 250)) 18%, transparent);
+}
+
 [data-code-block-root] > .code-surface-caption {
   display: flex;
   align-items: center;
@@ -397,6 +402,10 @@ section[data-code-group] > [data-code-group-panel] > :where(pre[data-code-block]
 
   [data-code-block-root]:focus-within {
     box-shadow: inset 0 0 0 2px CanvasText;
+  }
+
+  [data-code-block-root]:has(> pre[data-code-block]:focus-visible) {
+    box-shadow: inset 0 0 0 1px GrayText;
   }
 
   section[data-code-group] {
