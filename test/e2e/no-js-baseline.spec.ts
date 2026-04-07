@@ -4,101 +4,77 @@ const sidebarSourcePath = '/notes/testing/sidebar-scroll/group-01/source/';
 const codePath = '/notes/testing/code/';
 const sampleJavascriptPath = '/notes/program/sample-javascript/';
 
-const readNoteChromeState = async (
-  page: Page,
-): Promise<{
+interface NoteChromeState {
   articleHeaderExists: boolean;
-  articleHeaderShadowRoot: boolean;
   articleHeaderTemplateCount: number;
-  articleHeaderHeight: number;
-  articleHeaderText: string;
+  articleHeaderHeading: string;
+  articleHeaderHasBreadcrumbsJson: boolean;
   tocExists: boolean;
-  tocShadowRoot: boolean;
   tocTemplateCount: number;
-  tocHeight: number;
-  tocLabels: string[];
-}> =>
+  tocHasHeadingsJson: boolean;
+  tocContentRootId: string;
+  fixedSidebarExists: boolean;
+  overlaySidebarExists: boolean;
+};
+
+const readNoteChromeState = async (page: Page): Promise<NoteChromeState> =>
   page.evaluate(() => {
     const articleHeader = document.querySelector('ui-article-header');
     const toc = document.querySelector('layout-toc');
+    const fixedSidebar = document.querySelector('.layout-sidebar-col layout-sidebar');
+    const overlaySidebar = document.querySelector('layout-sidebar.layout-sidebar-overlay');
 
-    const readShadowText = (element: Element | null): string => {
-      if (!(element instanceof HTMLElement)) {
-        return '';
+    const countDeclarativeShadowRootTemplates = (element: Element | null): number => {
+      if (!(element instanceof Element)) {
+        return -1;
       }
 
-      return (element.shadowRoot?.textContent ?? '').trim();
-    };
-
-    const readTocLabels = (element: Element | null): string[] => {
-      if (!(element instanceof HTMLElement)) {
-        return [];
-      }
-
-      const root = element.shadowRoot ?? element;
-
-      return Array.from(root.querySelectorAll('.toc-link-label'))
-        .map((node) => node.textContent?.trim() ?? '')
-        .filter((text) => text.length > 0);
+      return Array.from(element.children).filter((child) => {
+        return (
+          child instanceof HTMLTemplateElement &&
+          (child.hasAttribute('shadowrootmode') || child.hasAttribute('shadowroot'))
+        );
+      }).length;
     };
 
     return {
       articleHeaderExists: articleHeader instanceof HTMLElement,
-      articleHeaderShadowRoot:
-        articleHeader instanceof HTMLElement && articleHeader.shadowRoot !== null,
-      articleHeaderTemplateCount:
-        articleHeader instanceof Element
-          ? Array.from(articleHeader.children).filter((child) => {
-              return (
-                child instanceof HTMLTemplateElement &&
-                (child.hasAttribute('shadowrootmode') || child.hasAttribute('shadowroot'))
-              );
-            }).length
-          : -1,
-      articleHeaderHeight:
-        articleHeader instanceof HTMLElement
-          ? Math.round(articleHeader.getBoundingClientRect().height)
-          : -1,
-      articleHeaderText: readShadowText(articleHeader),
+      articleHeaderTemplateCount: countDeclarativeShadowRootTemplates(articleHeader),
+      articleHeaderHeading:
+        articleHeader instanceof HTMLElement ? (articleHeader.getAttribute('heading') ?? '') : '',
+      articleHeaderHasBreadcrumbsJson:
+        articleHeader instanceof HTMLElement && articleHeader.hasAttribute('breadcrumbs-json'),
       tocExists: toc instanceof HTMLElement,
-      tocShadowRoot: toc instanceof HTMLElement && toc.shadowRoot !== null,
-      tocTemplateCount:
-        toc instanceof Element
-          ? Array.from(toc.children).filter((child) => {
-              return (
-                child instanceof HTMLTemplateElement &&
-                (child.hasAttribute('shadowrootmode') || child.hasAttribute('shadowroot'))
-              );
-            }).length
-          : -1,
-      tocHeight: toc instanceof HTMLElement ? Math.round(toc.getBoundingClientRect().height) : -1,
-      tocLabels: readTocLabels(toc),
+      tocTemplateCount: countDeclarativeShadowRootTemplates(toc),
+      tocHasHeadingsJson: toc instanceof HTMLElement && toc.hasAttribute('headings-json'),
+      tocContentRootId: toc instanceof HTMLElement ? (toc.getAttribute('content-root-id') ?? '') : '',
+      fixedSidebarExists: fixedSidebar instanceof HTMLElement,
+      overlaySidebarExists: overlaySidebar instanceof HTMLElement,
     };
   });
 
-const expectSampleJavascriptNoteChromeVisibleWithoutJs = async (page: Page): Promise<void> => {
+const expectSampleJavascriptNoteChromeHostsWithoutJs = async (page: Page): Promise<void> => {
   const state = await readNoteChromeState(page);
 
   expect(state.articleHeaderExists).toBe(true);
-  expect(state.articleHeaderShadowRoot).toBe(true);
   expect(state.articleHeaderTemplateCount).toBe(0);
-  expect(state.articleHeaderHeight).toBeGreaterThan(0);
-  expect(state.articleHeaderText).toContain('Notes');
-  expect(state.articleHeaderText).toContain('Program');
-  expect(state.articleHeaderText).toContain('JavaScriptの配列');
-  expect(state.articleHeaderText).toContain('javascript');
-  expect(state.articleHeaderText).toContain('programming');
+  expect(state.articleHeaderHeading).toBe('JavaScriptの配列');
+  expect(state.articleHeaderHasBreadcrumbsJson).toBe(true);
 
   expect(state.tocExists).toBe(true);
-  expect(state.tocShadowRoot).toBe(true);
   expect(state.tocTemplateCount).toBe(0);
-  expect(state.tocHeight).toBeGreaterThan(0);
-  expect(state.tocLabels).toContain('7.1 配列の生成');
-  expect(state.tocLabels).toContain('7.2 配列の要素の読み書き');
+  expect(state.tocHasHeadingsJson).toBe(true);
+  expect(state.tocContentRootId).toBe('note-content-program-sample-javascript');
+
+  expect(state.fixedSidebarExists).toBe(true);
+  expect(state.overlaySidebarExists).toBe(true);
 
   await expect(page.locator('ui-article-header')).toHaveAttribute('heading', 'JavaScriptの配列');
-  await expect(page.locator('layout-toc .toc-link-label').first()).toBeVisible();
-  await expect(page.locator('layout-toc')).toContainText('7.1 配列の生成');
+  await expect(page.locator('layout-toc')).toHaveAttribute(
+    'content-root-id',
+    'note-content-program-sample-javascript',
+  );
+  await expect(page.locator('layout-toc')).toHaveAttribute('headings-json', /7\.1 配列の生成/);
 };
 
 test.describe('No-JS baseline', () => {
@@ -124,7 +100,7 @@ test.describe('No-JS baseline', () => {
     await expect(page).toHaveURL(sidebarSourcePath);
   });
 
-  test('sample-javascript が SSR 済みの front matter と TOC を初回表示すること', async ({
+  test('sample-javascript が No-JS でも article header / TOC host と属性ペイロードを初回出力すること', async ({
     page,
   }) => {
     await page.goto(sampleJavascriptPath);
@@ -134,61 +110,54 @@ test.describe('No-JS baseline', () => {
       'JavaScriptの配列には型はないため、配列の要素にはどの型の値でも格納できる。',
     );
 
-    await expectSampleJavascriptNoteChromeVisibleWithoutJs(page);
+    await expectSampleJavascriptNoteChromeHostsWithoutJs(page);
   });
 
-  test('sample-javascript が狭幅でも article header を 1文字幅へ潰さないこと', async ({
-    page,
-  }) => {
+  test('sample-javascript が狭幅でも本文列を 1文字幅へ潰さないこと', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 900 });
     await page.goto(sampleJavascriptPath);
 
     const state = await page.evaluate(() => {
-      const host = document.querySelector('ui-article-header');
-      if (!(host instanceof HTMLElement)) {
-        return null;
-      }
+      const article = document.querySelector('#main-content article');
+      const prose = article?.querySelector('.prose');
 
-      const heading = host.shadowRoot?.querySelector('.heading');
-      if (!(heading instanceof HTMLElement)) {
+      if (!(article instanceof HTMLElement) || !(prose instanceof HTMLElement)) {
         return null;
       }
 
       return {
-        hostDisplay: window.getComputedStyle(host).display,
-        hostWidth: Math.round(host.getBoundingClientRect().width),
-        headingWidth: Math.round(heading.getBoundingClientRect().width),
-        headingHeight: Math.round(heading.getBoundingClientRect().height),
+        articleWidth: Math.round(article.getBoundingClientRect().width),
+        proseWidth: Math.round(prose.getBoundingClientRect().width),
+        horizontalOverflow:
+          document.documentElement.scrollWidth - document.documentElement.clientWidth,
       };
     });
 
     expect(state).not.toBeNull();
-    expect(state?.hostDisplay).toBe('block');
-    expect(state?.hostWidth ?? 0).toBeGreaterThan(240);
-    expect(state?.headingWidth ?? 0).toBeGreaterThan(240);
-    expect(state?.headingHeight ?? 0).toBeLessThan(160);
+    expect(state?.articleWidth ?? 0).toBeGreaterThan(240);
+    expect(state?.proseWidth ?? 0).toBeGreaterThan(240);
+    expect(state?.horizontalOverflow ?? 0).toBeLessThanOrEqual(1);
 
-    await expect(
-      page.getByRole('heading', { level: 1, name: 'JavaScriptの配列' }).first(),
-    ).toBeVisible();
+    await expect(page.locator('#main-content')).toContainText(
+      'JavaScriptの配列には型はないため、配列の要素にはどの型の値でも格納できる。',
+    );
   });
 
-  test('ノートページが SSR シェルと本文を初期表示し、note chrome が inert host に退化していないこと', async ({
+  test('ノートページが SSR シェルと本文を初期表示し、fixed / overlay 両方の sidebar host を出力すること', async ({
     page,
   }) => {
     await page.goto(sampleJavascriptPath);
 
     await expect(page.locator('layout-header')).toHaveCount(1);
-    await expect(page.locator('layout-sidebar')).toHaveCount(1);
+    await expect(page.locator('.layout-sidebar-col layout-sidebar')).toHaveCount(1);
+    await expect(page.locator('layout-sidebar.layout-sidebar-overlay')).toHaveCount(1);
+    await expect(page.locator('layout-sidebar')).toHaveCount(2);
     await expect(page.locator('layout-toc')).toHaveCount(1);
     await expect(page.locator('ui-article-header')).toHaveCount(1);
 
-    const layoutHeaderText = await page
-      .locator('layout-header')
-      .evaluate((element) => element.shadowRoot?.textContent ?? '');
-    expect(layoutHeaderText.length).toBeGreaterThan(0);
+    await expect(page.locator('layout-header')).toHaveAttribute('current-corpus-key', 'program');
 
-    await expectSampleJavascriptNoteChromeVisibleWithoutJs(page);
+    await expectSampleJavascriptNoteChromeHostsWithoutJs(page);
   });
 
   test('コードブロックとテーブルが JavaScript 無効時も読めること', async ({ page }) => {
@@ -218,16 +187,16 @@ test.describe('No-JS baseline', () => {
     await expect(page.locator('#main-content search-page')).toHaveCount(1);
   });
 
-  test('ホームページではヘッダー中央ラベルを出さず、検索導線を少しコンパクトにすること', async ({
+  test('ホームページでは現行ヒーロー文言を初期表示し、ヘッダー中央ラベルを出さないこと', async ({
     page,
   }) => {
     await page.goto('/');
 
     await expect(page.locator('#main-content h1').first()).toHaveText(
-      '静かに入り、静かに読み進める。',
+      '調べたことと考えたことを、ここに置いています。',
     );
     await expect(page.locator('#main-content')).toContainText(
-      '公開している個人ノートの入口です。新しいものから辿れます。',
+      '技術とその周辺についての個人ノートです。公開しているものを、新しい順に並べています。',
     );
 
     const headerText = await page

@@ -2123,22 +2123,6 @@ app-router {
   }
 }
 
-.layout-sidebar-col {
-  position: sticky;
-  top: var(--header-height);
-  align-self: start;
-  max-block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
-  border-right: var(--border-width) solid var(--border-ghost);
-  overflow: visible;
-  transform: translateY(calc(var(--layout-sticky-footer-offset, 0px) * -1));
-}
-
-.layout-sidebar-overlay {
-  display: none;
-  block-size: 0;
-  min-block-size: 0;
-}
-
 /* Tablet: about / home の密度調整 */
 @media (max-width: 767px) {
   .about-shell {
