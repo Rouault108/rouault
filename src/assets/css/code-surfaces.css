@@ -65,6 +65,12 @@
   min-width: max-content;
   background: transparent !important;
 
+  /* UA の code { font-family: monospace; } を打ち消し、
+   * 親 pre に与えた --font-mono を確実に継承させる */
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+
   /* pre 直下だけでなく code 自体にも明示して再解釈を防ぐ */
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
