@@ -163,6 +163,60 @@ describe('transformHtmlWithLitSsr', () => {
     );
   });
 
+  it('既存の declarative shadow root host とその template 配下を再変換しない', async () => {
+    const renderCalls: string[] = [];
+
+    const html = `<!doctype html>
+      <html lang="ja">
+        <head></head>
+        <body>
+          <layout-sidebar heading="ナビゲーション">
+            <template shadowrootmode="open">
+              <ui-sidebar mode="fixed">
+                <template shadowrootmode="open">
+                  <div class="sidebar-head">head</div>
+                </template>
+              </ui-sidebar>
+            </template>
+          </layout-sidebar>
+        </body>
+      </html>`;
+
+    const transformed = await transformHtmlWithLitSsr(html, {
+      targetTagNames: ['layout-sidebar', 'ui-sidebar'],
+      renderCustomElement: (tagName: string, attributes: readonly SsrAttribute[]) => {
+        renderCalls.push(tagName);
+        return Promise.resolve(
+          `<${tagName}${serializeAttributes(attributes)}><template shadowrootmode="open"><div>SSR ${tagName}</div></template></${tagName}>`,
+        );
+      },
+      collectDocumentStylesForTags: (tagNames: ReadonlySet<string>) => {
+        const styles: DocumentStyleDefinition[] = [];
+
+        if (tagNames.has('layout-sidebar')) {
+          styles.push({
+            id: 'layout-sidebar-document-styles',
+            cssText: '.layout-sidebar{display:block;}',
+          });
+        }
+
+        if (tagNames.has('ui-sidebar')) {
+          styles.push({
+            id: 'ui-sidebar-document-styles',
+            cssText: '.ui-sidebar{display:block;}',
+          });
+        }
+
+        return styles;
+      },
+    });
+
+    expect(renderCalls).toEqual([]);
+    expect(transformed.match(/<template shadowrootmode="open">/g)).toHaveLength(2);
+    expect(transformed).toContain('id="layout-sidebar-document-styles"');
+    expect(transformed).not.toContain('id="ui-sidebar-document-styles"');
+  });
+
   it('document style を重複注入しない', async () => {
     const html = `<!doctype html>
       <html lang="ja">

@@ -34,6 +34,22 @@ export interface TransformHtmlWithLitSsrOptions {
 const isElementNode = (node: Parse5Node): node is Parse5Element =>
   'tagName' in node && typeof node.tagName === 'string' && Array.isArray(node.attrs);
 
+const isParentNode = (node: Parse5Node): node is Parse5ParentNode => {
+  const candidate = node as { childNodes?: unknown };
+  return Array.isArray(candidate.childNodes);
+};
+
+const hasAttribute = (node: Parse5Element, attributeName: string): boolean =>
+  node.attrs.some((attribute) => attribute.name === attributeName);
+
+const isDeclarativeShadowTemplate = (node: Parse5Node): node is Parse5Element =>
+  isElementNode(node) &&
+  node.tagName === 'template' &&
+  (hasAttribute(node, 'shadowrootmode') || hasAttribute(node, 'shadowroot'));
+
+const hasDeclarativeShadowRoot = (node: Parse5Element): boolean =>
+  node.childNodes.some((childNode) => isDeclarativeShadowTemplate(childNode));
+
 const createFragmentNode = (childNodes: Parse5ChildNode[]): Parse5DocumentFragment => ({
   nodeName: '#document-fragment',
   childNodes,
@@ -106,27 +122,51 @@ export const transformHtmlWithLitSsr = async (
 
   const visit = async (node: Parse5ParentNode): Promise<void> => {
     for (const childNode of [...node.childNodes]) {
-      if ('childNodes' in childNode && Array.isArray(childNode.childNodes)) {
-        await visit(childNode);
-      }
-
-      if (!isElementNode(childNode) || !targetTagNameSet.has(childNode.tagName)) {
+      /*
+       * Declarative shadow root の template 自体には潜らない。
+       * ここへ再帰で入ると、既存 SSR マークアップを再変換しうる。
+       */
+      if (isDeclarativeShadowTemplate(childNode)) {
         continue;
       }
 
-      const renderedHtml = await renderCustomElement(
-        childNode.tagName,
-        cloneAttributes(childNode.attrs),
-        serializeInnerHtml(childNode),
-      );
+      if (isElementNode(childNode)) {
+        const childElement: Parse5Element = childNode;
 
-      const insertedNodes = replaceNodeWithHtml(node, childNode, renderedHtml);
-      renderedTagNames.add(childNode.tagName);
-
-      for (const insertedNode of insertedNodes) {
-        if ('childNodes' in insertedNode && Array.isArray(insertedNode.childNodes)) {
-          await visit(insertedNode);
+        if (!targetTagNameSet.has(childElement.tagName)) {
+          await visit(childElement);
+          continue;
         }
+
+        /*
+         * 既存の declarative shadow root を直下に持つ host は、
+         * すでに SSR 済みとみなして再変換しない。
+         */
+        if (hasDeclarativeShadowRoot(childElement)) {
+          renderedTagNames.add(childElement.tagName);
+          continue;
+        }
+
+        const renderedHtml = await renderCustomElement(
+          childElement.tagName,
+          cloneAttributes(childElement.attrs),
+          serializeInnerHtml(childElement),
+        );
+
+        const insertedNodes = replaceNodeWithHtml(node, childElement, renderedHtml);
+        renderedTagNames.add(childElement.tagName);
+
+        for (const insertedNode of insertedNodes) {
+          if (isParentNode(insertedNode)) {
+            await visit(insertedNode);
+          }
+        }
+
+        continue;
+      }
+
+      if (isParentNode(childNode)) {
+        await visit(childNode);
       }
     }
   };
