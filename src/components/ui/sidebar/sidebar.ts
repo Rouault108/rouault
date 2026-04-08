@@ -134,10 +134,14 @@ export class UiSidebar extends LitElement {
   }
 
   protected override firstUpdated(): void {
+    this._activateShellHydration();
     this._attachShellObserver();
+    this._syncStateToShell();
   }
 
   protected override updated(changedProperties: PropertyValues<this>): void {
+    this._activateShellHydration();
+
     if (this._syncFromShellInProgress) {
       return;
     }
@@ -152,15 +156,22 @@ export class UiSidebar extends LitElement {
   }
 
   expand(trigger?: HTMLElement): void {
+    this._activateShellHydration();
     this._shellElement?.expand(trigger);
   }
 
   collapse(): void {
+    this._activateShellHydration();
     this._shellElement?.collapse();
   }
 
   toggle(trigger?: HTMLElement): void {
+    this._activateShellHydration();
     this._shellElement?.toggle(trigger);
+  }
+
+  private _activateShellHydration(): void {
+    this._shellElement?.activateHydration();
   }
 
   private _attachShellObserver(): void {
@@ -212,6 +223,8 @@ export class UiSidebar extends LitElement {
     if (!this._shellElement) {
       return;
     }
+
+    this._shellElement.activateHydration();
 
     if (this._shellElement.state !== this.state) {
       this._shellElement.state = this.state;

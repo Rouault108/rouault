@@ -46,8 +46,9 @@ export class UiSidebarShell extends LitElement {
       display: flex;
       flex-direction: column;
       opacity: 1;
-      transition: opacity var(--duration-normal, 150ms)
-        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+      pointer-events: auto;
+      transition:
+        opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
 
     /* ── Fixed Mode: 基本レイアウト ── */
@@ -61,14 +62,18 @@ export class UiSidebarShell extends LitElement {
     .sidebar-header,
     .sidebar-content {
       opacity: 1;
-      transition: opacity var(--duration-normal, 150ms)
-        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+      transition:
+        opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
 
     :host([data-state='collapsed']) nav,
     :host([data-state='collapsed']) .sidebar-header,
     :host([data-state='collapsed']) .sidebar-content {
       opacity: 0;
+    }
+
+    :host([data-state='collapsed']) nav {
+      pointer-events: none;
     }
 
     /* ── Overlay Mode: 画面上部から開く top sheet ── */
@@ -123,8 +128,8 @@ export class UiSidebarShell extends LitElement {
       background: oklch(0% 0 0 / var(--ui-sidebar-scrim-opacity));
       opacity: 0;
       pointer-events: none;
-      transition: opacity var(--duration-normal, 150ms)
-        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+      transition:
+        opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
       z-index: var(--z-backdrop, 200);
     }
 
@@ -209,6 +214,7 @@ export class UiSidebarShell extends LitElement {
     super.connectedCallback();
     this._restoreState();
     this._initMediaQuery();
+    this.activateHydration();
   }
 
   override disconnectedCallback(): void {
@@ -247,6 +253,38 @@ export class UiSidebarShell extends LitElement {
   /* ===================================================================
    * パブリック API
    * =================================================================== */
+
+  /**
+   * SSR / Declarative Shadow DOM 由来の defer-hydration を解放し、
+   * 現在 state に応じた visibility / inert を client 側で同期する。
+   */
+  activateHydration(): void {
+    if (this.hasAttribute('defer-hydration')) {
+      this.removeAttribute('defer-hydration');
+    }
+
+    this.requestUpdate();
+
+    void this.updateComplete.then(() => {
+      if (!this.isConnected) {
+        return;
+      }
+
+      const nav = this._navElement;
+      if (!(nav instanceof HTMLElement)) {
+        return;
+      }
+
+      if (this.state === 'collapsed') {
+        nav.inert = true;
+        nav.style.visibility = 'hidden';
+        return;
+      }
+
+      nav.inert = false;
+      nav.style.visibility = 'visible';
+    });
+  }
 
   /** サイドバーを展開する */
   expand(trigger?: HTMLElement): void {
@@ -341,7 +379,11 @@ export class UiSidebarShell extends LitElement {
     if (this.state === 'collapsed') {
       this._navElement.inert = true;
       this._navElement.style.visibility = 'hidden';
+      return;
     }
+
+    this._navElement.inert = false;
+    this._navElement.style.visibility = 'visible';
   }
 
   /* ===================================================================
