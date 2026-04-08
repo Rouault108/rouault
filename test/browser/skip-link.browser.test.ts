@@ -1,7 +1,7 @@
 import { expect, fixture, html } from '@open-wc/testing';
-import '../../../src/components/ui/skip-link/skip-link.js';
-import type { SkipLink } from '../../../src/components/ui/skip-link/skip-link.js';
-import { waitForLitUpdate } from './wait-for-lit.js';
+import '../../src/components/ui/skip-link/skip-link.js';
+import type { SkipLink } from '../../src/components/ui/skip-link/skip-link.js';
+import { waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const must = <T>(value: T | null | undefined, message: string): T => {
   if (value === null || value === undefined) {

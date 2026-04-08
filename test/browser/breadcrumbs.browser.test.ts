@@ -1,7 +1,7 @@
 import { expect, fixture, html } from '@open-wc/testing';
-import '../../../src/components/ui/breadcrumbs/breadcrumbs.js';
-import type { Breadcrumbs } from '../../../src/components/ui/breadcrumbs/breadcrumbs.js';
-import { waitForLitUpdate } from './wait-for-lit.js';
+import '../../src/components/ui/breadcrumbs/breadcrumbs.js';
+import type { Breadcrumbs } from '../../src/components/ui/breadcrumbs/breadcrumbs.js';
+import { waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const BASE_ITEMS = [
   { label: 'ホーム', href: '/' },

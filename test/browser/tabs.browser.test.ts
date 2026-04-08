@@ -1,13 +1,13 @@
 import { expect, fixture, html } from '@open-wc/testing';
-import '../../../src/components/ui/tabs/tabs.js';
-import type { Tabs } from '../../../src/components/ui/tabs/tabs.js';
-import type { UiTabChangeDetail } from '../../../src/components/ui/tabs/tabs.types.js';
+import '../../src/components/ui/tabs/tabs.js';
+import type { Tabs } from '../../src/components/ui/tabs/tabs.js';
+import type { UiTabChangeDetail } from '../../src/components/ui/tabs/tabs.types.js';
 import {
   clearTabsUrlSyncStrategy,
   registerTabsUrlSyncStrategy,
-} from '../../../src/components/ui/tabs/tabs-url-sync-strategy.js';
-import { primaryTabTabsUrlSyncStrategy } from '../../../src/components/app/navigation/primary-tab-url-state.js';
-import { dispatchKey, waitForLitUpdate } from './wait-for-lit.js';
+} from '../../src/components/ui/tabs/tabs-url-sync-strategy.js';
+import { primaryTabTabsUrlSyncStrategy } from '../../src/components/app/navigation/primary-tab-url-state.js';
+import { dispatchKey, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const must = <T>(value: T | null | undefined, message: string): T => {
   if (value === null || value === undefined) {

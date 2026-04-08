@@ -1,7 +1,7 @@
 import { expect, fixture, html } from '@open-wc/testing';
-import '../../../src/components/ui/file-tree/file-tree.js';
-import type { FileTree, TreeNode } from '../../../src/components/ui/file-tree/file-tree.js';
-import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './wait-for-lit.js';
+import '../../src/components/ui/file-tree/file-tree.js';
+import type { FileTree, TreeNode } from '../../src/components/ui/file-tree/file-tree.js';
+import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const must = <T>(value: T | null | undefined, message: string): T => {
   if (value === null || value === undefined) {
