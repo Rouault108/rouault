@@ -147,7 +147,7 @@ describe('css structure contracts', () => {
     ]);
   });
 
-  it('tag が media / interactive surface / forced-colors の構造契約を保持すること', () => {
+  it('tag が root token 参照 / interactive surface / forced-colors の構造契約を保持すること', () => {
     const cssText = collectCssText(Tag.styles);
 
     expectCssIncludes(cssText, [
@@ -157,11 +157,29 @@ describe('css structure contracts', () => {
       '.tag-remove-button',
       '.tag-link::after',
       '.tag-remove-button::after',
+      'var(--tag-surface-l',
+      'var(--tag-content-l',
+      'var(--tag-neutral-bg-chroma',
+      'var(--tag-neutral-fg-chroma',
+      'var(--tag-accent-bg-chroma',
+      'var(--tag-accent-fg-chroma',
+      'var(--tag-gold-bg-chroma',
+      'var(--tag-gold-fg-chroma',
+      'var(--tag-solid-surface-l',
+      'var(--tag-solid-neutral-surface-l',
+      'var(--tag-solid-fg',
       '@media (forced-colors: active)',
       'CanvasText',
       'LinkText',
       '@media (prefers-reduced-motion: reduce)',
       'transition-duration: 0.01ms',
+    ]);
+
+    expectCssExcludes(cssText, [
+      'prefers-color-scheme',
+      ':host-context([data-theme=',
+      ':host-context([data-theme=\'dark\'])',
+      ':host-context([data-theme="dark"])',
     ]);
   });
 

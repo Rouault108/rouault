@@ -145,6 +145,32 @@
   --focus-ring-radius: var(--radius-sm);
   --focus-ring-color: var(--primary);
 
+    /* =========================================================================
+   * Tag Recipe (Light Mode / Default)
+   * コンポーネント側で OS 判定を持たず、テーマ解決は root token に集約する
+   * ========================================================================= */
+  --tag-surface-l: 96%;
+  --tag-content-l: 45%;
+
+  --tag-neutral-bg-chroma: var(--chroma-neutral);
+  --tag-neutral-fg-chroma: var(--chroma-neutral);
+  --tag-neutral-delta-bg-l: 2%;
+  --tag-neutral-delta-fg-l: 0%;
+
+  --tag-accent-bg-chroma: var(--chroma-subtle);
+  --tag-accent-fg-chroma: var(--chroma-ui);
+  --tag-accent-delta-bg-l: 0%;
+  --tag-accent-delta-fg-l: 0%;
+
+  --tag-gold-bg-chroma: var(--chroma-subtle);
+  --tag-gold-fg-chroma: var(--chroma-ui);
+  --tag-gold-delta-bg-l: -3%;
+  --tag-gold-delta-fg-l: -15%;
+
+  --tag-solid-surface-l: 55%;
+  --tag-solid-neutral-surface-l: 55%;
+  --tag-solid-fg: var(--white);
+
   /* =========================================================================
    * Shared Navigation Grammar
    * current / hover / focus の共通語彙だけを置く
@@ -628,6 +654,31 @@
     --elevation-glow: var(--shadow-dark-glow);
 
     /* =========================================================================
+     * Tag Recipe (Dark Mode)
+     * ========================================================================= */
+    --tag-surface-l: 17%;
+    --tag-content-l: 90%;
+
+    --tag-neutral-bg-chroma: 0;
+    --tag-neutral-fg-chroma: 0;
+    --tag-neutral-delta-bg-l: 5%;
+    --tag-neutral-delta-fg-l: 0%;
+
+    --tag-accent-bg-chroma: 0.04;
+    --tag-accent-fg-chroma: 0.12;
+    --tag-accent-delta-bg-l: 5%;
+    --tag-accent-delta-fg-l: 0%;
+
+    --tag-gold-bg-chroma: 0.04;
+    --tag-gold-fg-chroma: 0.12;
+    --tag-gold-delta-bg-l: 5%;
+    --tag-gold-delta-fg-l: -5%;
+
+    --tag-solid-surface-l: 40%;
+    --tag-solid-neutral-surface-l: 30%;
+    --tag-solid-fg: var(--white);
+
+    /* =========================================================================
      * RGB Fallback (Dark Mode)
      * ========================================================================= */
     --bg-default-rgb: 28, 29, 33;
@@ -686,6 +737,28 @@
   --elevation-glow: var(--shadow-glow);
   --bg-default-rgb: 250, 250, 251;
   --bg-surface-2-rgb: 255, 255, 255;
+
+  --tag-surface-l: 96%;
+  --tag-content-l: 45%;
+
+  --tag-neutral-bg-chroma: var(--chroma-neutral);
+  --tag-neutral-fg-chroma: var(--chroma-neutral);
+  --tag-neutral-delta-bg-l: 2%;
+  --tag-neutral-delta-fg-l: 0%;
+
+  --tag-accent-bg-chroma: var(--chroma-subtle);
+  --tag-accent-fg-chroma: var(--chroma-ui);
+  --tag-accent-delta-bg-l: 0%;
+  --tag-accent-delta-fg-l: 0%;
+
+  --tag-gold-bg-chroma: var(--chroma-subtle);
+  --tag-gold-fg-chroma: var(--chroma-ui);
+  --tag-gold-delta-bg-l: -3%;
+  --tag-gold-delta-fg-l: -15%;
+
+  --tag-solid-surface-l: 55%;
+  --tag-solid-neutral-surface-l: 55%;
+  --tag-solid-fg: var(--white);
 }
 
 :root[data-theme='dark'] {
@@ -735,6 +808,28 @@
   --elevation-glow: var(--shadow-dark-glow);
   --bg-default-rgb: 28, 29, 33;
   --bg-surface-2-rgb: 40, 42, 47;
+
+  --tag-surface-l: 17%;
+  --tag-content-l: 90%;
+
+  --tag-neutral-bg-chroma: 0;
+  --tag-neutral-fg-chroma: 0;
+  --tag-neutral-delta-bg-l: 5%;
+  --tag-neutral-delta-fg-l: 0%;
+
+  --tag-accent-bg-chroma: 0.04;
+  --tag-accent-fg-chroma: 0.12;
+  --tag-accent-delta-bg-l: 5%;
+  --tag-accent-delta-fg-l: 0%;
+
+  --tag-gold-bg-chroma: 0.04;
+  --tag-gold-fg-chroma: 0.12;
+  --tag-gold-delta-bg-l: 5%;
+  --tag-gold-delta-fg-l: -5%;
+
+  --tag-solid-surface-l: 40%;
+  --tag-solid-neutral-surface-l: 30%;
+  --tag-solid-fg: var(--white);
 }
 
 /* =============================================================================

@@ -28,9 +28,39 @@ const getTagGroup = (tag: Tag): HTMLDivElement | null =>
 
 const text = (value: string | null | undefined): string => value?.replace(/\s+/g, ' ').trim() ?? '';
 
+const parseRgb = (value: string): [number, number, number] => {
+  const match = value.match(
+    /rgba?\(\s*([0-9]+(?:\.[0-9]+)?)\s*[,\s]\s*([0-9]+(?:\.[0-9]+)?)\s*[,\s]\s*([0-9]+(?:\.[0-9]+)?)/i,
+  );
+
+  if (!match) {
+    throw new Error(`RGB 形式の色を解釈できません: ${value}`);
+  }
+
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+};
+
+const channelSum = ([r, g, b]: [number, number, number]): number => r + g + b;
+
+const setRootTheme = (theme: 'light' | 'dark' | 'system'): void => {
+  document.documentElement.setAttribute('data-theme', theme);
+
+  if (theme === 'system') {
+    document.documentElement.style.colorScheme = 'light dark';
+    return;
+  }
+
+  document.documentElement.style.colorScheme = theme;
+};
+
 describe('ui-tag browser contract', () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute('data-theme');
+    document.documentElement.style.removeProperty('color-scheme');
+  });
+
   it('既定状態では span root の非インタラクティブ tag として描画されること', async () => {
-    const tag = await fixture<Tag>(html` <ui-tag id="default-tag">JavaScript</ui-tag> `);
+    const tag = await fixture<Tag>(html`<ui-tag id="default-tag">JavaScript</ui-tag>`);
 
     await waitForLitUpdate(tag);
 
@@ -65,7 +95,7 @@ describe('ui-tag browser contract', () => {
   });
 
   it('removable のみを与えた場合は span root + remove button を描画し ui-tag-remove を送出すること', async () => {
-    const tag = await fixture<Tag>(html` <ui-tag removable>Python</ui-tag> `);
+    const tag = await fixture<Tag>(html`<ui-tag removable>Python</ui-tag>`);
 
     await waitForLitUpdate(tag);
 
@@ -95,7 +125,7 @@ describe('ui-tag browser contract', () => {
   });
 
   it('href + removable の場合は group 内に link と remove button を並列配置すること', async () => {
-    const tag = await fixture<Tag>(html` <ui-tag href="/tags/rust" removable>Rust</ui-tag> `);
+    const tag = await fixture<Tag>(html`<ui-tag href="/tags/rust" removable>Rust</ui-tag>`);
 
     await waitForLitUpdate(tag);
 
@@ -166,5 +196,82 @@ describe('ui-tag browser contract', () => {
     expect(iconSlot).to.not.equal(null);
     expect(textSlot).to.not.equal(null);
     expect(text(tag.textContent)).to.equal('Literature');
+  });
+
+  it('data-theme=light では light token に従うこと', async () => {
+    setRootTheme('light');
+
+    const tag = await fixture<Tag>(html`<ui-tag color="blue">JavaScript</ui-tag>`);
+    await waitForLitUpdate(tag);
+
+    const style = getComputedStyle(tag);
+    const background = parseRgb(style.backgroundColor);
+    const foreground = parseRgb(style.color);
+
+    expect(channelSum(background)).to.be.greaterThan(channelSum(foreground));
+  });
+
+  it('data-theme=dark では dark token に従うこと', async () => {
+    setRootTheme('dark');
+
+    const tag = await fixture<Tag>(html`<ui-tag color="blue">JavaScript</ui-tag>`);
+    await waitForLitUpdate(tag);
+
+    const style = getComputedStyle(tag);
+    const background = parseRgb(style.backgroundColor);
+    const foreground = parseRgb(style.color);
+
+    expect(channelSum(background)).to.be.lessThan(channelSum(foreground));
+  });
+
+  it('同一タグでも data-theme の切り替えで computed style が変化すること', async () => {
+    setRootTheme('light');
+
+    const tag = await fixture<Tag>(html`<ui-tag color="violet">TypeScript</ui-tag>`);
+    await waitForLitUpdate(tag);
+
+    const lightBackground = getComputedStyle(tag).backgroundColor;
+    const lightForeground = getComputedStyle(tag).color;
+
+    setRootTheme('dark');
+    await waitForLitUpdate(tag);
+
+    const darkBackground = getComputedStyle(tag).backgroundColor;
+    const darkForeground = getComputedStyle(tag).color;
+
+    expect(darkBackground).to.not.equal(lightBackground);
+    expect(darkForeground).to.not.equal(lightForeground);
+  });
+
+  it('variant=solid でも data-theme 切り替えで computed background が変化すること', async () => {
+    setRootTheme('light');
+
+    const tag = await fixture<Tag>(html`
+      <ui-tag variant="solid" color="neutral">Solid Neutral</ui-tag>
+    `);
+    await waitForLitUpdate(tag);
+
+    const lightBackground = getComputedStyle(tag).backgroundColor;
+
+    setRootTheme('dark');
+    await waitForLitUpdate(tag);
+
+    const darkBackground = getComputedStyle(tag).backgroundColor;
+
+    expect(darkBackground).to.not.equal(lightBackground);
+  });
+
+  it('plain variant は data-theme 切り替え後も transparent background を維持すること', async () => {
+    setRootTheme('light');
+
+    const tag = await fixture<Tag>(html`<ui-tag variant="plain" color="gold">Plain</ui-tag>`);
+    await waitForLitUpdate(tag);
+
+    expect(getComputedStyle(tag).backgroundColor).to.equal('rgba(0, 0, 0, 0)');
+
+    setRootTheme('dark');
+    await waitForLitUpdate(tag);
+
+    expect(getComputedStyle(tag).backgroundColor).to.equal('rgba(0, 0, 0, 0)');
   });
 });

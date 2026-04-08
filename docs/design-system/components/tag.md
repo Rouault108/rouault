@@ -344,30 +344,43 @@
 
 本コンポーネントは、主として次の公開トークンに依存します。
 
-| 用途               | トークン                                                                                  |
-| ------------------ | ----------------------------------------------------------------------------------------- |
-| ベース色相         | `--hue-base`                                                                              |
-| Blue 色相          | `--hue-blue`                                                                              |
-| Violet 色相        | `--hue-violet`                                                                            |
-| Pink 色相          | `--hue-pink`                                                                              |
-| Gold 色相          | `--hue-gold`                                                                              |
-| Subtle 彩度        | `--chroma-subtle`                                                                         |
-| UI 彩度            | `--chroma-ui`                                                                             |
-| Neutral 彩度       | `--chroma-neutral`                                                                        |
-| High 彩度          | `--chroma-high`                                                                           |
-| 境界線幅           | `--border-width`                                                                          |
-| 既定ホバー境界線色 | `--border-default`                                                                        |
-| 余白               | `--space-1` / `--space-2`                                                                 |
-| 角丸               | `--radius-sm`                                                                             |
-| 文字サイズ         | `--text-xs`                                                                               |
-| フォントウェイト   | `--font-medium`                                                                           |
-| アイコンサイズ     | `--icon-xs`                                                                               |
-| 高さ               | `--control-height-xs` / `--control-height-sm`                                             |
-| 最小操作領域       | `--control-min-touch`                                                                     |
-| 無効時不透明度     | `--opacity-disabled`                                                                      |
-| フォーカスリング   | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| アニメーション     | `--duration-fast` / `--ease-out`                                                          |
-| `solid` の文字色   | `--white`                                                                                 |
+| 用途                     | トークン                                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| ベース色相               | `--hue-base`                                                                              |
+| Blue 色相                | `--hue-blue`                                                                              |
+| Violet 色相              | `--hue-violet`                                                                            |
+| Pink 色相                | `--hue-pink`                                                                              |
+| Gold 色相                | `--hue-gold`                                                                              |
+| タグ背景基準明度         | `--tag-surface-l`                                                                         |
+| タグ文字基準明度         | `--tag-content-l`                                                                         |
+| Neutral 背景彩度         | `--tag-neutral-bg-chroma`                                                                 |
+| Neutral 文字彩度         | `--tag-neutral-fg-chroma`                                                                 |
+| Neutral 背景明度補正     | `--tag-neutral-delta-bg-l`                                                                |
+| Neutral 文字明度補正     | `--tag-neutral-delta-fg-l`                                                                |
+| Accent 背景彩度          | `--tag-accent-bg-chroma`                                                                  |
+| Accent 文字彩度          | `--tag-accent-fg-chroma`                                                                  |
+| Accent 背景明度補正      | `--tag-accent-delta-bg-l`                                                                 |
+| Accent 文字明度補正      | `--tag-accent-delta-fg-l`                                                                 |
+| Gold 背景彩度            | `--tag-gold-bg-chroma`                                                                    |
+| Gold 文字彩度            | `--tag-gold-fg-chroma`                                                                    |
+| Gold 背景明度補正        | `--tag-gold-delta-bg-l`                                                                   |
+| Gold 文字明度補正        | `--tag-gold-delta-fg-l`                                                                   |
+| Solid 背景基準明度       | `--tag-solid-surface-l`                                                                   |
+| Solid Neutral 背景基準明度 | `--tag-solid-neutral-surface-l`                                                         |
+| Solid 文字色             | `--tag-solid-fg`                                                                          |
+| 高彩度塗り用彩度         | `--chroma-high`                                                                           |
+| 境界線幅                 | `--border-width`                                                                          |
+| 既定ホバー境界線色       | `--border-default`                                                                        |
+| 余白                     | `--space-1` / `--space-2`                                                                 |
+| 角丸                     | `--radius-sm`                                                                             |
+| 文字サイズ               | `--text-xs`                                                                               |
+| フォントウェイト         | `--font-medium`                                                                           |
+| アイコンサイズ           | `--icon-xs`                                                                               |
+| 高さ                     | `--control-height-xs` / `--control-height-sm`                                             |
+| 最小操作領域             | `--control-min-touch`                                                                     |
+| 無効時不透明度           | `--opacity-disabled`                                                                      |
+| フォーカスリング         | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| アニメーション           | `--duration-fast` / `--ease-out`                                                          |
 
 ---
 
@@ -375,7 +388,11 @@
 
 ### ダークモード
 
-`prefers-color-scheme: dark` および `:host-context([data-theme='dark'])` の双方に対応します。ダークモードでは背景明度と前景明度を入れ替え、彩度と明度差を再調整します。`gold` には暗背景向けの専用補正を適用します。
+`ui-tag` 自身はダークモード判定を行いません。テーマ解決は root のデザイントークン層に集約し、`ui-tag` は `--tag-*` 系の recipe token を参照して描画します。
+
+したがって、明暗の決定源は常にアプリケーションのテーマ状態です。`light` / `dark` / `system` の切り替えは root 側の責務であり、`ui-tag` は解決済みトークンに従うだけです。
+
+これにより、OS の `prefers-color-scheme` とアプリ内テーマ指定が競合しても、コンポーネント単位で表示が食い違うことはありません。`gold` の補正値も token 層で管理します。
 
 ### 強制色モード
 

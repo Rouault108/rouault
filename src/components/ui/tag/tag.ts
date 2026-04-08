@@ -94,28 +94,24 @@ import { customElement, property } from 'lit/decorators.js';
 export class Tag extends LitElement {
   static override styles = css`
     /* ──────────────────────────────────────────────
-       CSS カスタムプロパティ: カラーシステム
+       CSS カスタムプロパティ: Tag Recipe
+       テーマ解決は tokens.css 側に集約し、このコンポーネントは
+       root から供給される tag 専用 semantic token を読むだけにする。
     ────────────────────────────────────────────── */
     :host {
-      /* --- Default (Subtle) Configuration --- */
-      --bg-l: 96%;
-      --fg-l: 45%;
-
       /* Hue マッピング（上位から上書き可能） */
       --ui-tag-hue-blue: var(--hue-blue, 230);
       --ui-tag-hue-violet: var(--hue-violet, 280);
       --ui-tag-hue-pink: var(--hue-pink, 340);
       --ui-tag-hue-gold: var(--hue-gold, 85);
 
-      /* Chroma */
-      --chroma-bg: var(--chroma-neutral, 0);
-      --chroma-fg: var(--chroma-neutral, 0);
-
-      /* Delta L: 背景用・文字用を分離独立 */
-      --delta-l-bg: 0%;
-      --delta-l-fg: 0%;
-
-      /* Border */
+      /* Recipe defaults */
+      --tag-bg-l: var(--tag-surface-l, 96%);
+      --tag-fg-l: var(--tag-content-l, 45%);
+      --tag-bg-chroma: var(--tag-neutral-bg-chroma, 0);
+      --tag-fg-chroma: var(--tag-neutral-fg-chroma, 0);
+      --tag-delta-bg-l: var(--tag-neutral-delta-bg-l, 2%);
+      --tag-delta-fg-l: var(--tag-neutral-delta-fg-l, 0%);
       --border-color: transparent;
 
       /* Layout */
@@ -138,16 +134,25 @@ export class Tag extends LitElement {
 
       /* Final Color Calculation */
       background-color: oklch(
-        calc(var(--bg-l) + var(--delta-l-bg)) var(--chroma-bg) var(--tag-hue, var(--hue-base, 0))
+        calc(var(--tag-bg-l) + var(--tag-delta-bg-l))
+          var(--tag-bg-chroma)
+          var(--tag-hue, var(--hue-base, 0))
       );
       color: oklch(
-        calc(var(--fg-l) + var(--delta-l-fg)) var(--chroma-fg) var(--tag-hue, var(--hue-base, 0))
+        calc(var(--tag-fg-l) + var(--tag-delta-fg-l))
+          var(--tag-fg-chroma)
+          var(--tag-hue, var(--hue-base, 0))
       );
       border: var(--border-width, 1px) solid var(--border-color);
 
       /* Transition */
-      transition: border-color var(--duration-fast, 70ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition:
+        border-color var(--duration-fast, 70ms)
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        background-color var(--duration-fast, 70ms)
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        color var(--duration-fast, 70ms)
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     /* ── Size ── */
@@ -162,151 +167,78 @@ export class Tag extends LitElement {
     /* ── Color Mapping ── */
     :host([color='neutral']) {
       --tag-hue: var(--hue-base, 0);
-      --chroma-bg: var(--chroma-neutral, 0);
-      --chroma-fg: var(--chroma-neutral, 0);
-      --delta-l-bg: 2%;
+      --tag-bg-chroma: var(--tag-neutral-bg-chroma, 0);
+      --tag-fg-chroma: var(--tag-neutral-fg-chroma, 0);
+      --tag-delta-bg-l: var(--tag-neutral-delta-bg-l, 2%);
+      --tag-delta-fg-l: var(--tag-neutral-delta-fg-l, 0%);
     }
 
     :host([color='red']) {
       --tag-hue: var(--hue-base, 0);
-      --chroma-bg: var(--chroma-subtle, 0.02);
-      --chroma-fg: var(--chroma-ui, 0.05);
+      --tag-bg-chroma: var(--tag-accent-bg-chroma, var(--chroma-subtle, 0.02));
+      --tag-fg-chroma: var(--tag-accent-fg-chroma, var(--chroma-ui, 0.05));
+      --tag-delta-bg-l: var(--tag-accent-delta-bg-l, 0%);
+      --tag-delta-fg-l: var(--tag-accent-delta-fg-l, 0%);
     }
 
     :host([color='blue']) {
       --tag-hue: var(--ui-tag-hue-blue);
-      --chroma-bg: var(--chroma-subtle, 0.02);
-      --chroma-fg: var(--chroma-ui, 0.05);
+      --tag-bg-chroma: var(--tag-accent-bg-chroma, var(--chroma-subtle, 0.02));
+      --tag-fg-chroma: var(--tag-accent-fg-chroma, var(--chroma-ui, 0.05));
+      --tag-delta-bg-l: var(--tag-accent-delta-bg-l, 0%);
+      --tag-delta-fg-l: var(--tag-accent-delta-fg-l, 0%);
     }
 
     :host([color='violet']) {
       --tag-hue: var(--ui-tag-hue-violet);
-      --chroma-bg: var(--chroma-subtle, 0.02);
-      --chroma-fg: var(--chroma-ui, 0.05);
+      --tag-bg-chroma: var(--tag-accent-bg-chroma, var(--chroma-subtle, 0.02));
+      --tag-fg-chroma: var(--tag-accent-fg-chroma, var(--chroma-ui, 0.05));
+      --tag-delta-bg-l: var(--tag-accent-delta-bg-l, 0%);
+      --tag-delta-fg-l: var(--tag-accent-delta-fg-l, 0%);
     }
 
     :host([color='pink']) {
       --tag-hue: var(--ui-tag-hue-pink);
-      --chroma-bg: var(--chroma-subtle, 0.02);
-      --chroma-fg: var(--chroma-ui, 0.05);
+      --tag-bg-chroma: var(--tag-accent-bg-chroma, var(--chroma-subtle, 0.02));
+      --tag-fg-chroma: var(--tag-accent-fg-chroma, var(--chroma-ui, 0.05));
+      --tag-delta-bg-l: var(--tag-accent-delta-bg-l, 0%);
+      --tag-delta-fg-l: var(--tag-accent-delta-fg-l, 0%);
     }
 
-    /* Gold (Literature): 高明度背景での白飛び防止 */
     :host([color='gold']) {
       --tag-hue: var(--ui-tag-hue-gold);
-      --chroma-bg: var(--chroma-subtle, 0.02);
-      --chroma-fg: var(--chroma-ui, 0.05);
-      /* 背景: L96 では白飛びするため、わずかに暗くして黄色味を出す (-3%) */
-      --delta-l-bg: -3%;
-      /* 文字: 背景とのコントラストを稼ぐため、茶色方向へ大きく暗くする (-15%) */
-      --delta-l-fg: -15%;
-    }
-
-    /* ── Dark Mode ── */
-    /* OS設定のダークモード */
-    @media (prefers-color-scheme: dark) {
-      :host {
-        --bg-l: 17%;
-        --fg-l: 90%;
-      }
-
-      :host([color='neutral']) {
-        --chroma-bg: 0;
-        --chroma-fg: 0;
-        --delta-l-bg: 5%;
-        --delta-l-fg: 0%;
-      }
-
-      :host([color='red']),
-      :host([color='blue']),
-      :host([color='violet']),
-      :host([color='pink']) {
-        --chroma-bg: 0.04;
-        --chroma-fg: 0.12;
-        --delta-l-bg: 5%;
-        --delta-l-fg: 0%;
-      }
-
-      :host([color='gold']) {
-        --chroma-bg: 0.04;
-        --chroma-fg: 0.12;
-        --delta-l-bg: 5%;
-        --delta-l-fg: -5%;
-      }
-    }
-
-    /* サイト設定のダークモード */
-    :host-context([data-theme='dark']) {
-      --bg-l: 17%;
-      --fg-l: 90%;
-    }
-
-    :host-context([data-theme='dark'])[color='neutral'] {
-      --chroma-bg: 0;
-      --chroma-fg: 0;
-      --delta-l-bg: 5%;
-      --delta-l-fg: 0%;
-    }
-
-    :host-context([data-theme='dark'])[color='red'],
-    :host-context([data-theme='dark'])[color='blue'],
-    :host-context([data-theme='dark'])[color='violet'],
-    :host-context([data-theme='dark'])[color='pink'] {
-      --chroma-bg: 0.04;
-      --chroma-fg: 0.12;
-      --delta-l-bg: 5%;
-      --delta-l-fg: 0%;
-    }
-
-    :host-context([data-theme='dark'])[color='gold'] {
-      --chroma-bg: 0.04;
-      --chroma-fg: 0.12;
-      --delta-l-bg: 5%;
-      --delta-l-fg: -5%;
+      --tag-bg-chroma: var(--tag-gold-bg-chroma, var(--chroma-subtle, 0.02));
+      --tag-fg-chroma: var(--tag-gold-fg-chroma, var(--chroma-ui, 0.05));
+      --tag-delta-bg-l: var(--tag-gold-delta-bg-l, -3%);
+      --tag-delta-fg-l: var(--tag-gold-delta-fg-l, -15%);
     }
 
     /* ── Variant: Outline ── */
     :host([variant='outline']) {
       background-color: transparent;
       --border-color: oklch(
-        calc(var(--fg-l) + var(--delta-l-fg)) var(--chroma-fg) var(--tag-hue, var(--hue-base, 0))
+        calc(var(--tag-fg-l) + var(--tag-delta-fg-l))
+          var(--tag-fg-chroma)
+          var(--tag-hue, var(--hue-base, 0))
       );
     }
 
     /* ── Variant: Solid ── */
     :host([variant='solid']) {
-      --bg-l: 55%;
-      --chroma-bg: var(--chroma-high, 0.2);
+      --tag-bg-l: var(--tag-solid-surface-l, 55%);
+      --tag-bg-chroma: var(--chroma-high, 0.2);
       --border-color: transparent;
     }
 
     :host([variant='solid']) .tag-root,
     :host([variant='solid']) .tag-link,
     :host([variant='solid']) .tag-group {
-      color: var(--white, oklch(100% 0 0));
+      color: var(--tag-solid-fg, var(--white, oklch(100% 0 0)));
     }
 
-    /* Solid + Neutral: 濃いグレー背景 + 白文字で他の solid カラーと一貫性を保つ */
     :host([variant='solid'][color='neutral']) {
-      --chroma-bg: 0;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :host([variant='solid']) {
-        --bg-l: 40%;
-      }
-
-      :host([variant='solid'][color='neutral']) {
-        --bg-l: 30%;
-      }
-    }
-
-    :host-context([data-theme='dark'])[variant='solid'] {
-      --bg-l: 40%;
-    }
-
-    :host-context([data-theme='dark'])[variant='solid'][color='neutral'] {
-      --bg-l: 30%;
+      --tag-bg-l: var(--tag-solid-neutral-surface-l, var(--tag-solid-surface-l, 55%));
+      --tag-bg-chroma: 0;
     }
 
     /* ── Variant: Plain ── */
@@ -314,10 +246,10 @@ export class Tag extends LitElement {
       background-color: transparent;
       border-color: transparent;
       --tag-hue: var(--hue-base, 0);
-      --chroma-bg: var(--chroma-neutral, 0);
-      --chroma-fg: var(--chroma-neutral, 0);
-      --delta-l-bg: 0%;
-      --delta-l-fg: 0%;
+      --tag-bg-chroma: 0;
+      --tag-fg-chroma: 0;
+      --tag-delta-bg-l: 0%;
+      --tag-delta-fg-l: 0%;
     }
 
     /* ── Hover (Default / Outline のみ) ── */
@@ -336,7 +268,6 @@ export class Tag extends LitElement {
        内部レイアウト共通
     ────────────────────────────────────────────── */
 
-    /* ルート要素（非インタラクティブ） */
     .tag-root {
       display: inline-flex;
       align-items: center;
@@ -345,7 +276,6 @@ export class Tag extends LitElement {
       overflow: hidden;
     }
 
-    /* リンク要素 */
     .tag-link {
       display: inline-flex;
       align-items: center;
@@ -354,14 +284,11 @@ export class Tag extends LitElement {
       min-width: 0;
       overflow: hidden;
       color: inherit;
-      /* 例外許可: Tagはチップ型リンク。枠線・形状・フォーカスリングで識別する。 */
       text-decoration: none;
       border-radius: inherit;
       position: relative;
-      /* ボーダーはホスト側で管理するため、リンク自体は transparent */
     }
 
-    /* リンク側のタッチターゲット: 最低 44×44px を ::after で確保 (WCAG 2.5.5) */
     .tag-link::after {
       content: '';
       position: absolute;
@@ -372,7 +299,6 @@ export class Tag extends LitElement {
       height: max(100%, var(--control-min-touch, 24px));
     }
 
-    /* Link + Removable のグループコンテナ */
     .tag-group {
       display: inline-flex;
       align-items: center;
@@ -390,14 +316,12 @@ export class Tag extends LitElement {
       padding-right: var(--space-1, 4px);
     }
 
-    /* Link + Removable ではリンク領域と削除領域を重ねない */
     .tag-group .tag-link::after {
       left: 0;
       transform: translateY(-50%);
       width: 100%;
     }
 
-    /* ── アイコンスロット ── */
     .icon-slot {
       display: inline-flex;
       align-items: center;
@@ -413,7 +337,6 @@ export class Tag extends LitElement {
       height: var(--icon-xs, 12px);
     }
 
-    /* ── テキストスロット ── */
     .text-slot {
       overflow: hidden;
       text-overflow: ellipsis;
@@ -422,33 +345,27 @@ export class Tag extends LitElement {
       min-width: 0;
     }
 
-    /* ── 削除ボタン ── */
     .tag-remove-button {
-      /* Reset */
       appearance: none;
       background: none;
       border: none;
       padding: 0;
       margin: 0;
 
-      /* Layout */
       display: inline-flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       position: relative;
 
-      /* Size */
       width: var(--icon-xs, 12px);
       height: var(--icon-xs, 12px);
 
-      /* Style */
       color: currentColor;
       opacity: 0.5;
       cursor: pointer;
       border-radius: 2px;
 
-      /* Transition */
       transition: opacity var(--duration-fast, 70ms)
         var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
@@ -464,7 +381,6 @@ export class Tag extends LitElement {
       opacity: 1;
     }
 
-    /* タッチターゲット: 最低 44×44px を ::after で確保 (WCAG 2.5.5) */
     .tag-remove-button::after {
       content: '';
       position: absolute;
@@ -475,7 +391,6 @@ export class Tag extends LitElement {
       height: max(100%, var(--control-min-touch, 24px));
     }
 
-    /* Link + Removable: 右側に削除ターゲットを固定して誤タップを防ぐ */
     .tag-group .tag-remove-button {
       position: absolute;
       top: 50%;
@@ -497,14 +412,12 @@ export class Tag extends LitElement {
       height: 100%;
     }
 
-    /* ── リンクのフォーカスリング ── */
     .tag-link:focus-visible {
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
       outline-offset: var(--focus-ring-offset, 2px);
       animation: var(--animation-focus, none);
     }
 
-    /* ── Forced Colors Mode ── */
     @media (forced-colors: active) {
       :host {
         border: var(--border-width, 1px) solid CanvasText;
@@ -522,7 +435,6 @@ export class Tag extends LitElement {
       }
     }
 
-    /* ── Reduced Motion ── */
     @media (prefers-reduced-motion: reduce) {
       :host {
         transition-duration: 0.01ms;
