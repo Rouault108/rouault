@@ -2477,10 +2477,17 @@ a[data-footnote-ref].is-active-trigger {
 }
 
 [data-footnote-popover] {
+  position: fixed;
+  inset: auto;
+  right: auto;
+  bottom: auto;
+  margin: 0;
   z-index: var(--z-popover, 400);
   box-sizing: border-box;
-  max-width: min(90vw, 400px);
-  max-height: 60vh;
+  inline-size: max-content;
+  max-inline-size: min(90vw, 400px);
+  max-block-size: min(60vh, calc(100vh - 24px));
+  overflow-x: hidden;
   overflow-y: auto;
   padding: var(--space-3, 12px) var(--space-4, 16px);
   background: var(--bg-surface-2, oklch(100% 0 0));
