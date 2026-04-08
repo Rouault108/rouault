@@ -203,15 +203,21 @@ describe('ui-toast browser contract', () => {
     const hoverToast = findToastByVariantAndMessage(host, 'warning', '接続が不安定です');
 
     await waitMs(20);
-    hoverToast.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+    hoverToast.dispatchEvent(new MouseEvent('mouseenter'));
     await waitMs(60);
     await flush(host);
 
     expect(ToastManager.getSnapshot().length).to.equal(1);
 
-    hoverToast.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+    hoverToast.dispatchEvent(new MouseEvent('mouseleave'));
     await waitMs(TOAST_EXIT_DURATION_MS + 90);
     await flush(host);
+    await waitUntil(
+      () => ToastManager.getSnapshot().length === 0,
+      2000,
+      20,
+      'hover resume 後に toast が dismiss されません',
+    );
 
     expect(ToastManager.getSnapshot().length).to.equal(0);
   });

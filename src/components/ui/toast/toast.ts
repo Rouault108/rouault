@@ -58,12 +58,13 @@ export interface ToastItem {
   isExiting: boolean;
 }
 
+type ToastPauseReason = 'hover' | 'focus' | 'visibility';
+
 interface ToastTimerState {
   timeoutId: number | null;
   startedAt: number | null;
   remaining: number;
-  pausedByInteraction: boolean;
-  pausedByVisibility: boolean;
+  pauseReasons: Set<ToastPauseReason>;
 }
 
 type ToastSubscriber = (items: readonly ToastItem[]) => void;
@@ -181,36 +182,39 @@ class ToastStore {
     this._emit();
   }
 
-  pause(id: string): void {
+  pause(id: string, reason: ToastPauseReason): void {
     const timer = this._timers.get(id);
     if (!timer) return;
-    if (timer.pausedByInteraction) return;
+    if (timer.pauseReasons.has(reason)) return;
 
-    timer.pausedByInteraction = true;
-    this._pauseTimer(timer);
+    const wasPaused = this._isTimerPaused(timer);
+    timer.pauseReasons.add(reason);
+
+    if (!wasPaused) {
+      this._pauseTimer(timer);
+    }
   }
 
-  resume(id: string): void {
+  resume(id: string, reason: ToastPauseReason): void {
     const timer = this._timers.get(id);
     if (!timer) return;
-    if (!timer.pausedByInteraction) return;
+    if (!timer.pauseReasons.has(reason)) return;
 
-    timer.pausedByInteraction = false;
-    this._resumeTimer(id, timer);
+    timer.pauseReasons.delete(reason);
+
+    if (!this._isTimerPaused(timer)) {
+      this._resumeTimer(id, timer);
+    }
   }
 
   setVisibilityPaused(paused: boolean): void {
-    for (const [id, timer] of this._timers.entries()) {
+    for (const id of this._timers.keys()) {
       if (paused) {
-        if (timer.pausedByVisibility) continue;
-        timer.pausedByVisibility = true;
-        this._pauseTimer(timer);
+        this.pause(id, 'visibility');
         continue;
       }
 
-      if (!timer.pausedByVisibility) continue;
-      timer.pausedByVisibility = false;
-      this._resumeTimer(id, timer);
+      this.resume(id, 'visibility');
     }
   }
 
@@ -281,9 +285,12 @@ class ToastStore {
       timeoutId: null,
       startedAt: null,
       remaining: duration,
-      pausedByInteraction: false,
-      pausedByVisibility: this._isDocumentHidden(),
+      pauseReasons: new Set<ToastPauseReason>(),
     };
+
+    if (this._isDocumentHidden()) {
+      nextTimer.pauseReasons.add('visibility');
+    }
 
     this._timers.set(id, nextTimer);
     this._resumeTimer(id, nextTimer);
@@ -303,7 +310,7 @@ class ToastStore {
   }
 
   private _resumeTimer(id: string, timer: ToastTimerState): void {
-    if (timer.pausedByInteraction || timer.pausedByVisibility) return;
+    if (this._isTimerPaused(timer)) return;
     if (timer.timeoutId !== null) return;
 
     if (timer.remaining <= 0) {
@@ -323,6 +330,10 @@ class ToastStore {
     return typeof document !== 'undefined' && document.visibilityState === 'hidden';
   }
 
+  private _isTimerPaused(timer: ToastTimerState): boolean {
+    return timer.pauseReasons.size > 0;
+  }
+
   private _emit(): void {
     const snapshot = this.getSnapshot();
     for (const subscriber of this._subscribers) {
@@ -339,11 +350,11 @@ export const ToastManager = {
   clear: (): void => {
     toastStore.clear();
   },
-  pause: (id: string): void => {
-    toastStore.pause(id);
+  pause: (id: string, reason: ToastPauseReason): void => {
+    toastStore.pause(id, reason);
   },
-  resume: (id: string): void => {
-    toastStore.resume(id);
+  resume: (id: string, reason: ToastPauseReason): void => {
+    toastStore.resume(id, reason);
   },
   setVisibilityPaused: (paused: boolean): void => {
     toastStore.setVisibilityPaused(paused);
@@ -655,24 +666,22 @@ export class UiToast extends LitElement {
     ToastManager.setVisibilityPaused(document.visibilityState === 'hidden');
   };
 
-  private _onToastPointerEnter = (event: PointerEvent): void => {
-    if (event.pointerType === 'touch') return;
+  private _onToastMouseEnter = (event: MouseEvent): void => {
     const toastId = this._getToastId(event.currentTarget);
     if (!toastId) return;
-    ToastManager.pause(toastId);
+    ToastManager.pause(toastId, 'hover');
   };
 
-  private _onToastPointerLeave = (event: PointerEvent): void => {
-    if (event.pointerType === 'touch') return;
+  private _onToastMouseLeave = (event: MouseEvent): void => {
     const toastId = this._getToastId(event.currentTarget);
     if (!toastId) return;
-    ToastManager.resume(toastId);
+    ToastManager.resume(toastId, 'hover');
   };
 
   private _onToastFocusIn = (event: FocusEvent): void => {
     const toastId = this._getToastId(event.currentTarget);
     if (!toastId) return;
-    ToastManager.pause(toastId);
+    ToastManager.pause(toastId, 'focus');
   };
 
   private _onToastFocusOut = (event: FocusEvent): void => {
@@ -684,7 +693,7 @@ export class UiToast extends LitElement {
 
     const toastId = this._getToastId(current);
     if (!toastId) return;
-    ToastManager.resume(toastId);
+    ToastManager.resume(toastId, 'focus');
   };
 
   private _onDismissClick = (event: MouseEvent): void => {
@@ -712,8 +721,8 @@ export class UiToast extends LitElement {
               data-variant="${toast.variant}"
               data-toast-id="${toast.id}"
               data-exiting="${String(toast.isExiting)}"
-              @pointerenter="${this._onToastPointerEnter}"
-              @pointerleave="${this._onToastPointerLeave}"
+              @mouseenter="${this._onToastMouseEnter}"
+              @mouseleave="${this._onToastMouseLeave}"
               @focusin="${this._onToastFocusIn}"
               @focusout="${this._onToastFocusOut}"
             >
@@ -733,8 +742,6 @@ export class UiToast extends LitElement {
                       class="toast-close"
                       aria-label="${TOAST_CLOSE_LABEL}"
                       data-toast-id="${toast.id}"
-                      @focus="${this._onToastFocusIn}"
-                      @blur="${this._onToastFocusOut}"
                       @click="${this._onDismissClick}"
                     >
                       <ui-icon name="x" aria-hidden="true"></ui-icon>
