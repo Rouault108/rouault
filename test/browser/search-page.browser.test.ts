@@ -25,7 +25,6 @@ interface FilterOptionState {
   selected: boolean;
 }
 
-const SEARCH_PAGE_TEST_WAIT_MS = 220;
 const ORIGINAL_SEARCH = searchCore.search.bind(searchCore);
 
 const MOCK_ITEMS: readonly MockSearchItem[] = [
@@ -205,9 +204,26 @@ const flush = async (host: SearchPage): Promise<void> => {
   await waitForLitUpdate(host);
 };
 
-const settleSearch = async (host: SearchPage): Promise<void> => {
-  await waitMs(SEARCH_PAGE_TEST_WAIT_MS);
-  await flush(host);
+const waitForSearchCondition = async (
+  host: SearchPage,
+  predicate: () => boolean,
+  message: string,
+  timeoutMs = 1500,
+): Promise<void> => {
+  const deadline = performance.now() + timeoutMs;
+
+  while (performance.now() < deadline) {
+    await flush(host);
+
+    const isIdle = host.shadowRoot?.querySelector('.loading') === null;
+    if (isIdle && predicate()) {
+      return;
+    }
+
+    await waitMs(16);
+  }
+
+  throw new Error(message);
 };
 
 const getSearchInput = (field: SearchField | null | undefined): HTMLInputElement => {
@@ -313,7 +329,15 @@ describe('search-page browser contract', () => {
 
     input.value = 'router';
     input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-    await settleSearch(host);
+    await waitForSearchCondition(
+      host,
+      () => {
+        const resultLinks = host.shadowRoot?.querySelectorAll('.result-link') ?? [];
+        const currentUrl = new URL(window.location.href);
+        return resultLinks.length === 2 && currentUrl.searchParams.get('q') === 'router';
+      },
+      'query 入力後に URL と検索結果が同期すること',
+    );
 
     const resultLinks = host.shadowRoot?.querySelectorAll('.result-link') ?? [];
     const currentUrl = new URL(window.location.href);
@@ -323,7 +347,20 @@ describe('search-page browser contract', () => {
     expect(clearButton.hidden).to.equal(false);
 
     clearButton.click();
-    await settleSearch(host);
+    await waitForSearchCondition(
+      host,
+      () => {
+        const inputValue = input.value;
+        const metaRowText = host.shadowRoot?.querySelector('.meta-row')?.textContent ?? '';
+        const currentUrl = new URL(window.location.href);
+        return (
+          inputValue === '' &&
+          currentUrl.searchParams.get('q') === null &&
+          metaRowText.includes('0 件の結果')
+        );
+      },
+      'clear 後に URL と件数表示が同期すること',
+    );
 
     const metaRowText = host.shadowRoot?.querySelector('.meta-row')?.textContent ?? '';
     const clearedUrl = new URL(window.location.href);
@@ -387,7 +424,18 @@ describe('search-page browser contract', () => {
 
     const litCheckbox = getFilterCheckbox(searchPage, 'lit');
     await clickCheckboxLabel(litCheckbox);
-    await settleSearch(searchPage);
+    await waitForSearchCondition(
+      searchPage,
+      () => {
+        const url = new URL(window.location.href);
+        const resultLinks = searchPage.shadowRoot?.querySelectorAll('.result-link') ?? [];
+        return (
+          (url.pathname === '/tags/lit/' || url.searchParams.getAll('tag').includes('lit')) &&
+          resultLinks.length === 1
+        );
+      },
+      'tag 選択後に URL と検索結果が同期すること',
+    );
 
     const urlAfterTagSelect = new URL(window.location.href);
     const resultLinksAfterTagSelect = searchPage.shadowRoot?.querySelectorAll('.result-link') ?? [];
@@ -406,7 +454,24 @@ describe('search-page browser contract', () => {
 
     mainSearchInput.value = 'router';
     mainSearchInput.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-    await settleSearch(searchPage);
+    await waitForSearchCondition(
+      searchPage,
+      () => {
+        const url = new URL(window.location.href);
+        const litCheckbox = getFilterCheckbox(searchPage, 'lit');
+        const performanceCheckbox = getFilterCheckbox(searchPage, 'performance');
+        const selectedTag = searchPage.shadowRoot?.querySelector('.selected-tags ui-tag');
+
+        return (
+          url.searchParams.get('q') === 'router' &&
+          litCheckbox.checked === true &&
+          litCheckbox.disabled === false &&
+          performanceCheckbox.disabled === true &&
+          selectedTag !== null
+        );
+      },
+      '検索語入力後も選択タグと無効状態が維持されること',
+    );
 
     const urlAfterQuery = new URL(window.location.href);
     const litCheckboxAfterQuery = getFilterCheckbox(searchPage, 'lit');
@@ -428,7 +493,21 @@ describe('search-page browser contract', () => {
         detail: { value: 'lit' },
       }),
     );
-    await settleSearch(searchPage);
+    await waitForSearchCondition(
+      searchPage,
+      () => {
+        const url = new URL(window.location.href);
+        const resultLinks = searchPage.shadowRoot?.querySelectorAll('.result-link') ?? [];
+        const summary =
+          searchPage.shadowRoot?.querySelector('.filter-summary-state')?.textContent ?? '';
+        return (
+          url.searchParams.getAll('tag').includes('lit') === false &&
+          resultLinks.length === 2 &&
+          summary.includes('すべてのタグ')
+        );
+      },
+      'selected chip removal 後に tag URL と件数が戻ること',
+    );
 
     const urlAfterRemove = new URL(window.location.href);
     const resultLinksAfterRemove = searchPage.shadowRoot?.querySelectorAll('.result-link') ?? [];
@@ -459,7 +538,11 @@ describe('search-page browser contract', () => {
 
     const litCheckbox = getFilterCheckbox(searchPage, 'lit');
     await clickCheckboxLabel(litCheckbox);
-    await settleSearch(host);
+    await waitForSearchCondition(
+      searchPage,
+      () => getFilterOptionStates(searchPage)[0]?.label === 'lit',
+      'lit 選択後に selected tag が先頭へ移動すること',
+    );
 
     const statesAfterLitSelect = getFilterOptionStates(searchPage);
     expect(statesAfterLitSelect[0]?.label).to.equal('lit');
@@ -467,7 +550,14 @@ describe('search-page browser contract', () => {
 
     const architectureCheckbox = getFilterCheckbox(searchPage, 'architecture');
     await clickCheckboxLabel(architectureCheckbox);
-    await settleSearch(host);
+    await waitForSearchCondition(
+      searchPage,
+      () => {
+        const states = getFilterOptionStates(searchPage);
+        return states[0]?.label === 'architecture' && states[1]?.label === 'lit';
+      },
+      'architecture 選択後に selected tag の順序が更新されること',
+    );
 
     const statesAfterArchitectureSelect = getFilterOptionStates(searchPage);
     expect(statesAfterArchitectureSelect[0]?.label).to.equal('architecture');
@@ -476,7 +566,22 @@ describe('search-page browser contract', () => {
 
     const architectureCheckboxAtTop = getFilterCheckbox(searchPage, 'architecture');
     await clickCheckboxLabel(architectureCheckboxAtTop);
-    await settleSearch(host);
+    await waitForSearchCondition(
+      searchPage,
+      () => {
+        const states = getFilterOptionStates(searchPage);
+        const topState = states[0];
+        const architectureState = states.find((state) => state.label === 'architecture');
+        return (
+          topState?.label === 'lit' &&
+          topState.checked === true &&
+          topState.selected === true &&
+          architectureState?.checked === false &&
+          architectureState.selected === false
+        );
+      },
+      'architecture 解除後に checked と data-selected が整合すること',
+    );
 
     const statesAfterArchitectureRemove = getFilterOptionStates(searchPage);
     const topStateAfterRemove = expectPresent(statesAfterArchitectureRemove[0], 'top state');
