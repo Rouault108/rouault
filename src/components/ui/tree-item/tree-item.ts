@@ -596,6 +596,7 @@ export class TreeItem extends LitElement {
   private _labelResizeObserver?: ResizeObserver;
   private _childrenTransitionCleanup: (() => void) | undefined;
   private _childrenAnimationFrame = 0;
+  private _labelSyncAnimationFrame = 0;
   private _skipSyntheticAnchorClick = false;
   private _forwardingFocus = false;
 
@@ -647,12 +648,13 @@ export class TreeItem extends LitElement {
     const label = this.shadowRoot?.querySelector<HTMLElement>('.label');
     if (label) {
       this._labelResizeObserver = new ResizeObserver(() => {
-        this._syncLabelTruncation();
+        this._scheduleLabelTruncationSync();
       });
       this._labelResizeObserver.observe(label);
     }
 
     this._syncChildrenHeightImmediately();
+    this._scheduleLabelTruncationSync();
   }
 
   override disconnectedCallback(): void {
@@ -660,6 +662,7 @@ export class TreeItem extends LitElement {
     this._labelResizeObserver?.disconnect();
     this._childrenTransitionCleanup?.();
     cancelAnimationFrame(this._childrenAnimationFrame);
+    cancelAnimationFrame(this._labelSyncAnimationFrame);
     super.disconnectedCallback();
   }
 
@@ -673,9 +676,16 @@ export class TreeItem extends LitElement {
     this.setAttribute('aria-selected', String(this.selected));
     this.setAttribute('aria-level', String(this._getResolvedDepth()));
 
-    requestAnimationFrame(() => {
-      this._syncLabelTruncation();
-    });
+    if (
+      changedProperties.has('label') ||
+      changedProperties.has('icon') ||
+      changedProperties.has('selected') ||
+      changedProperties.has('density') ||
+      changedProperties.has('expanded') ||
+      changedProperties.has('hasChildren')
+    ) {
+      this._scheduleLabelTruncationSync();
+    }
 
     if (changedProperties.has('expanded')) {
       this._syncChildrenHeight();
@@ -838,6 +848,7 @@ export class TreeItem extends LitElement {
 
     if (this.hasCustomIcon !== nextHasCustomIcon) {
       this.hasCustomIcon = nextHasCustomIcon;
+      this._scheduleLabelTruncationSync();
     }
   }
 
@@ -1060,6 +1071,20 @@ export class TreeItem extends LitElement {
         </div>
       </div>
     `;
+  }
+
+  private _scheduleLabelTruncationSync(): void {
+    cancelAnimationFrame(this._labelSyncAnimationFrame);
+
+    this._labelSyncAnimationFrame = requestAnimationFrame(() => {
+      this._labelSyncAnimationFrame = 0;
+
+      if (!this.isConnected) {
+        return;
+      }
+
+      this._syncLabelTruncation();
+    });
   }
 
   private _syncLabelTruncation(): void {
