@@ -55,6 +55,12 @@ const flush = async (fileTree: FileTree): Promise<void> => {
   await waitForLitUpdate(fileTree);
 };
 
+const flushWithoutAnimationFrame = async (fileTree: FileTree): Promise<void> => {
+  await waitForLitUpdate(fileTree);
+  await Promise.resolve();
+  await waitForLitUpdate(fileTree);
+};
+
 const getContainer = (fileTree: FileTree): HTMLElement =>
   must(
     fileTree.shadowRoot?.querySelector<HTMLElement>('.container'),
@@ -71,6 +77,12 @@ const getTreeItemAction = (fileTree: FileTree, id: string): HTMLElement =>
   must(
     getTreeItemHost(fileTree, id).shadowRoot?.querySelector<HTMLElement>('.item'),
     `${id} の .item が見つかりません`,
+  );
+
+const getTreeItemChildrenPanel = (fileTree: FileTree, id: string): HTMLElement =>
+  must(
+    getTreeItemHost(fileTree, id).shadowRoot?.querySelector<HTMLElement>('.children'),
+    `${id} の .children が見つかりません`,
   );
 
 const preventLeafNavigation = (event: Event): void => {
@@ -136,9 +148,12 @@ describe('ui-file-tree browser contract', () => {
 
     await flush(fileTree);
 
-    expect(
-      fileTree.shadowRoot?.querySelector('ui-tree-item[data-id="notes/design/file-tree"]'),
-    ).to.equal(null);
+    const hiddenSelectedLeaf = getTreeItemHost(fileTree, 'notes/design/file-tree');
+    const collapsedBranchPanel = getTreeItemChildrenPanel(fileTree, 'notes/design');
+
+    expect(hiddenSelectedLeaf.getAttribute('tabindex')).to.equal('-1');
+    expect(collapsedBranchPanel.getAttribute('aria-hidden')).to.equal('true');
+    expect(collapsedBranchPanel.hasAttribute('inert')).to.equal(true);
     expect(getTreeItemHost(fileTree, 'notes').getAttribute('tabindex')).to.equal('0');
     expect(getTreeItemHost(fileTree, 'daily').getAttribute('tabindex')).to.equal('-1');
   });
@@ -384,13 +399,13 @@ describe('ui-file-tree browser contract', () => {
     expect(nestedLeaf.hasAttribute('print-mode')).to.equal(false);
 
     window.dispatchEvent(new Event('beforeprint'));
-    await flush(fileTree);
+    await flushWithoutAnimationFrame(fileTree);
 
     expect(nestedBranch.hasAttribute('expanded')).to.equal(true);
     expect(nestedLeaf.hasAttribute('print-mode')).to.equal(true);
 
     window.dispatchEvent(new Event('afterprint'));
-    await flush(fileTree);
+    await flushWithoutAnimationFrame(fileTree);
 
     expect(nestedBranch.hasAttribute('expanded')).to.equal(false);
     expect(nestedLeaf.hasAttribute('print-mode')).to.equal(false);
