@@ -114,6 +114,12 @@ const getSidebarShell = (host: LayoutSidebar): LitLikeElement | null =>
 const getFileTree = (host: LayoutSidebar): LitLikeElement | null =>
   getSidebar(host)?.shadowRoot?.querySelector<LitLikeElement>('ui-file-tree') ?? null;
 
+const getTreeItemHost = (fileTree: LitLikeElement, id: string): LitLikeElement | null =>
+  fileTree.shadowRoot?.querySelector<LitLikeElement>(`ui-tree-item[data-id="${id}"]`) ?? null;
+
+const getTreeItemChildrenPanel = (fileTree: LitLikeElement, id: string): HTMLElement | null =>
+  getTreeItemHost(fileTree, id)?.shadowRoot?.querySelector<HTMLElement>('.children') ?? null;
+
 const settle = async (host: LayoutSidebar): Promise<void> => {
   await waitForLitUpdate(host);
 
@@ -219,12 +225,13 @@ describe('layout-sidebar browser contract', () => {
 
       const collapsedFileTree = expectPresent(getFileTree(host), 'ui-file-tree');
       await waitForLitUpdate(collapsedFileTree);
+      const collapsedBranchPanel = expectPresent(
+        getTreeItemChildrenPanel(collapsedFileTree, 'music/classical'),
+        'music/classical children panel',
+      );
 
-      expect(
-        collapsedFileTree.shadowRoot?.querySelector(
-          'ui-tree-item[data-id="music/classical/beethoven/symphony-9"]',
-        ),
-      ).to.equal(null);
+      expect(collapsedBranchPanel.getAttribute('aria-hidden')).to.equal('true');
+      expect(collapsedBranchPanel.hasAttribute('inert')).to.equal(true);
 
       const storedRaw = localStorage.getItem(storageKey);
       expect(storedRaw).to.not.equal(null);
@@ -380,18 +387,19 @@ describe('layout-sidebar browser contract', () => {
 
       await waitForLitUpdate(fixedFileTree);
       await waitForLitUpdate(overlayFileTree);
+      const fixedCollapsedBranchPanel = expectPresent(
+        getTreeItemChildrenPanel(fixedFileTree, 'music/classical'),
+        'fixed music/classical children panel',
+      );
+      const overlayCollapsedBranchPanel = expectPresent(
+        getTreeItemChildrenPanel(overlayFileTree, 'music/classical'),
+        'overlay music/classical children panel',
+      );
 
-      expect(
-        fixedFileTree.shadowRoot?.querySelector(
-          'ui-tree-item[data-id="music/classical/beethoven/symphony-9"]',
-        ),
-      ).to.equal(null);
-
-      expect(
-        overlayFileTree.shadowRoot?.querySelector(
-          'ui-tree-item[data-id="music/classical/beethoven/symphony-9"]',
-        ),
-      ).to.equal(null);
+      expect(fixedCollapsedBranchPanel.getAttribute('aria-hidden')).to.equal('true');
+      expect(fixedCollapsedBranchPanel.hasAttribute('inert')).to.equal(true);
+      expect(overlayCollapsedBranchPanel.getAttribute('aria-hidden')).to.equal('true');
+      expect(overlayCollapsedBranchPanel.hasAttribute('inert')).to.equal(true);
     } finally {
       media.restore();
     }
