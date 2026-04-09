@@ -1,4 +1,9 @@
-import type { ShellAdapter } from '../../../router/router.js';
+import type {
+  DocumentShellSnapshot,
+  HeaderShellSnapshot,
+  PreparedShellUpdate,
+  ShellAdapter,
+} from '../../../router/router.js';
 
 interface BreadcrumbShellItem {
   label: string;
@@ -76,6 +81,32 @@ const parseCorpora = (value: string | null): CorpusShellItem[] => {
   }
 };
 
+const readCurrentCorpusKey = (header: Element): string => {
+  const currentCorpusKey = header.getAttribute('current-corpus-key')?.trim();
+  return currentCorpusKey === '' ? 'all' : (currentCorpusKey ?? 'all');
+};
+
+const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
+  breadcrumbs: parseBreadcrumbs(header.getAttribute('breadcrumbs-json') ?? null),
+  corpora: parseCorpora(header.getAttribute('corpora-json') ?? null),
+  currentCorpusKey: readCurrentCorpusKey(header),
+  noteLayout: header.hasAttribute('note-layout'),
+  sidebarEnabled: header.hasAttribute('sidebar-enabled'),
+});
+
+const applyHeaderSnapshot = (
+  header: HTMLElement,
+  shell: DocumentShellSnapshot | null,
+): void => {
+  const snapshot = shell?.header;
+
+  header.setAttribute('breadcrumbs-json', JSON.stringify(snapshot?.breadcrumbs ?? []));
+  header.setAttribute('corpora-json', JSON.stringify(snapshot?.corpora ?? []));
+  header.setAttribute('current-corpus-key', snapshot?.currentCorpusKey ?? 'all');
+  header.toggleAttribute('note-layout', snapshot?.noteLayout ?? false);
+  header.toggleAttribute('sidebar-enabled', snapshot?.sidebarEnabled ?? false);
+};
+
 export const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
   extract(documentSnapshot: Document) {
     const nextHeader = documentSnapshot.querySelector('layout-header');
@@ -93,16 +124,28 @@ export const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
       },
     };
   },
-  apply(shell) {
-    const currentHeader = document.querySelector('layout-header');
-    if (!(currentHeader instanceof HTMLElement)) {
-      return;
-    }
 
-    currentHeader.setAttribute('breadcrumbs-json', JSON.stringify(shell?.header.breadcrumbs ?? []));
-    currentHeader.setAttribute('corpora-json', JSON.stringify(shell?.header.corpora ?? []));
-    currentHeader.setAttribute('current-corpus-key', shell?.header.currentCorpusKey ?? 'all');
-    currentHeader.toggleAttribute('note-layout', shell?.header.noteLayout ?? false);
-    currentHeader.toggleAttribute('sidebar-enabled', shell?.header.sidebarEnabled ?? false);
+  prepare(update): PreparedShellUpdate {
+    const currentHeader = document.querySelector('layout-header');
+    const previousShell =
+      currentHeader instanceof HTMLElement ? { header: readHeaderSnapshot(currentHeader) } : null;
+    const nextShell = update.shell;
+
+    return {
+      commit: () => {
+        if (!(currentHeader instanceof HTMLElement)) {
+          return;
+        }
+
+        applyHeaderSnapshot(currentHeader, nextShell);
+      },
+      rollback: () => {
+        if (!(currentHeader instanceof HTMLElement)) {
+          return;
+        }
+
+        applyHeaderSnapshot(currentHeader, previousShell);
+      },
+    };
   },
 });

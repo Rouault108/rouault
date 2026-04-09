@@ -293,14 +293,81 @@ describe('Router', () => {
     expect(result.source).to.equal('none');
   });
 
-  it('shell/post-commit failure は completed + degraded に落とすこと', async () => {
+  it('shell failure は failed とし durable commit を rollback して post-commit を呼ばないこと', async () => {
+    document.title = 'Before Navigation';
+    mockHistoryState = {
+      __routerUrl: '/current',
+      __routerPath: '/current',
+    };
+
+    globalThis.fetch = () =>
+      Promise.resolve(
+        new Response(
+          `
+            <!doctype html>
+            <html>
+              <head><title>Shell Failure Candidate</title></head>
+              <body><main><h1>Shell Failure Candidate</h1></main></body>
+            </html>
+          `,
+          { status: 200 },
+        ),
+      );
+
+    let shellRollbackCalled = false;
+    let postCommitCalled = false;
+
     router = new Router(outlet, {
       skipInitialNavigation: true,
       shellAdapter: {
-        apply: () => {
-          throw new Error('shell failed');
+        prepare: () => ({
+          commit: () => {
+            throw new Error('shell failed');
+          },
+          rollback: () => {
+            shellRollbackCalled = true;
+          },
+        }),
+      },
+      postCommitController: {
+        run: () => {
+          postCommitCalled = true;
         },
       },
+    });
+    await router.start();
+
+    const errors: string[] = [];
+    router.on('error', ({ stage }) => {
+      errors.push(stage);
+    });
+
+    const result = await router.navigate({
+      url: '/shell-failed',
+      historyMode: 'push',
+    });
+
+    expect(result.outcome).to.equal('failed');
+    expect(result.committed).to.equal(false);
+    expect(result.renderedKind).to.equal(null);
+    expect(result.degraded).to.equal(false);
+    expect(result.issues).to.deep.equal([]);
+    expect(result.errorReason).to.equal('unexpected');
+    expect(errors).to.deep.equal(['commit']);
+    expect(shellRollbackCalled).to.equal(true);
+    expect(postCommitCalled).to.equal(false);
+    expect(outlet.textContent).to.contain('Initial Content');
+    expect(outlet.textContent).not.to.contain('Shell Failure Candidate');
+    expect(document.title).to.equal('Before Navigation');
+    expect(mockHistoryState).to.deep.equal({
+      __routerUrl: '/current',
+      __routerPath: '/current',
+    });
+  });
+
+  it('post-commit failure は completed + degraded に落とすこと', async () => {
+    router = new Router(outlet, {
+      skipInitialNavigation: true,
       postCommitController: {
         run: () => {
           throw new Error('post failed');
@@ -320,12 +387,10 @@ describe('Router', () => {
     });
 
     expect(result.outcome).to.equal('completed');
+    expect(result.committed).to.equal(true);
     expect(result.degraded).to.equal(true);
-    expect(result.issues.map((issue) => issue.code)).to.deep.equal([
-      'shell-sync-failed',
-      'post-commit-failed',
-    ]);
-    expect(errors).to.deep.equal(['shell', 'post-commit']);
+    expect(result.issues.map((issue) => issue.code)).to.deep.equal(['post-commit-failed']);
+    expect(errors).to.deep.equal(['post-commit']);
   });
 
   it('postCommitController 未指定時は追加後処理なしで full navigation が完了すること', async () => {

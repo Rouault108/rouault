@@ -1,7 +1,13 @@
 import { HeadManager } from './head-manager.js';
 import { replaceElementChildrenFromHtml } from './declarative-shadow-dom.js';
 import { LocationAdapter } from './location-adapter.js';
-import type { ContentUpdateAdapter, DocumentSnapshot, HistoryMode } from './router-types.js';
+import type {
+  ContentUpdateAdapter,
+  DocumentSnapshot,
+  HistoryMode,
+  PreparedShellUpdate,
+  ShellAdapter,
+} from './router-types.js';
 
 interface CommitRequest {
   snapshot: DocumentSnapshot;
@@ -15,6 +21,18 @@ interface PreparedMutation {
   rollback(): void | Promise<void>;
 }
 
+const createNoopMutation = (): PreparedMutation => ({
+  commit() {
+    // no-op
+  },
+  rollback() {
+    // no-op
+  },
+});
+
+const normalizeError = (error: unknown): Error =>
+  error instanceof Error ? error : new Error(String(error));
+
 export class ContentCommitter {
   private headManager = new HeadManager();
 
@@ -22,6 +40,7 @@ export class ContentCommitter {
     private outlet: HTMLElement,
     private location: LocationAdapter,
     private contentAdapter?: ContentUpdateAdapter,
+    private shellAdapter?: ShellAdapter,
   ) {}
 
   async commit(request: CommitRequest): Promise<void> {
@@ -30,25 +49,43 @@ export class ContentCommitter {
       document.querySelector('meta[name="description"]')?.getAttribute('content') ?? null;
     const previousUrl = this.location.readCurrentUrl();
     const previousHistoryState: unknown = history.state;
-    const preparedMutation = await this.prepareContentMutation(
+
+    const preparedContentMutation = await this.prepareContentMutation(
       request.snapshot,
       request.normalizedUrl,
     );
+    const preparedShellMutation = await this.prepareShellMutation(
+      request.snapshot,
+      request.normalizedUrl,
+    );
+
     let historyApplied = false;
 
     try {
+      await preparedContentMutation.commit();
+      await preparedShellMutation.commit();
+
       this.headManager.setTitle(request.snapshot.title);
       this.headManager.setMetaDescription(request.snapshot.metaDescription);
-      await preparedMutation.commit();
+
       this.applyHistory(request.historyMode, request.normalizedUrl, request.state);
       historyApplied = request.historyMode !== 'none';
     } catch (error) {
-      await preparedMutation.rollback();
-      this.headManager.setTitle(previousTitle);
-      this.headManager.setMetaDescription(previousMetaDescription);
+      const rollbackError = await this.rollbackCommit({
+        preparedContentMutation,
+        preparedShellMutation,
+        previousTitle,
+        previousMetaDescription,
+        previousUrl,
+        previousHistoryState,
+        historyApplied,
+      });
 
-      if (historyApplied) {
-        window.history.replaceState(previousHistoryState, '', previousUrl);
+      if (rollbackError) {
+        throw new AggregateError(
+          [normalizeError(error), rollbackError],
+          'commit に失敗し、rollback にも失敗しました。',
+        );
       }
 
       throw error;
@@ -74,9 +111,73 @@ export class ContentCommitter {
         replaceElementChildrenFromHtml(this.outlet, snapshot.html, this.outlet.ownerDocument);
       },
       rollback: () => {
-        this.outlet.innerHTML = previousHtml;
+        replaceElementChildrenFromHtml(this.outlet, previousHtml, this.outlet.ownerDocument);
       },
     };
+  }
+
+  private async prepareShellMutation(
+    snapshot: DocumentSnapshot,
+    normalizedUrl: string,
+  ): Promise<PreparedMutation> {
+    if (!this.shellAdapter?.prepare) {
+      return createNoopMutation();
+    }
+
+    const preparedShellUpdate: PreparedShellUpdate = await this.shellAdapter.prepare({
+      shell: snapshot.shell ?? null,
+      navigationUrl: normalizedUrl,
+    });
+
+    return {
+      commit: () => preparedShellUpdate.commit(),
+      rollback: () => preparedShellUpdate.rollback(),
+    };
+  }
+
+  private async rollbackCommit(args: {
+    preparedContentMutation: PreparedMutation;
+    preparedShellMutation: PreparedMutation;
+    previousTitle: string;
+    previousMetaDescription: string | null;
+    previousUrl: string;
+    previousHistoryState: unknown;
+    historyApplied: boolean;
+  }): Promise<Error | null> {
+    let rollbackError: Error | null = null;
+
+    const captureRollbackError = (error: unknown): void => {
+      rollbackError ??= normalizeError(error);
+    };
+
+    try {
+      if (args.historyApplied) {
+        window.history.replaceState(args.previousHistoryState, '', args.previousUrl);
+      }
+    } catch (error) {
+      captureRollbackError(error);
+    }
+
+    try {
+      this.headManager.setTitle(args.previousTitle);
+      this.headManager.setMetaDescription(args.previousMetaDescription);
+    } catch (error) {
+      captureRollbackError(error);
+    }
+
+    try {
+      await args.preparedShellMutation.rollback();
+    } catch (error) {
+      captureRollbackError(error);
+    }
+
+    try {
+      await args.preparedContentMutation.rollback();
+    } catch (error) {
+      captureRollbackError(error);
+    }
+
+    return rollbackError;
   }
 
   private applyHistory(

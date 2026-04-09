@@ -14,7 +14,7 @@ export type NavigationErrorReason =
   | 'not-started';
 
 export interface NavigationIssue {
-  code: 'shell-sync-failed' | 'post-commit-failed';
+  code: 'post-commit-failed';
   error?: Error | undefined;
 }
 
@@ -73,14 +73,21 @@ export interface DocumentShellSnapshot {
   header: HeaderShellSnapshot;
 }
 
+export interface ShellUpdatePayload {
+  shell: DocumentShellSnapshot | null;
+  navigationUrl: string;
+}
+
+export interface PreparedShellUpdate {
+  commit(): void | Promise<void>;
+  rollback(): void | Promise<void>;
+}
+
 export interface ShellAdapter {
   extract?(
     document: Document,
   ): DocumentShellSnapshot | null | Promise<DocumentShellSnapshot | null>;
-  apply?(
-    shell: DocumentShellSnapshot | null,
-    context: { navigationUrl: string },
-  ): void | Promise<void>;
+  prepare?(update: ShellUpdatePayload): PreparedShellUpdate | Promise<PreparedShellUpdate>;
 }
 
 export type UrlStateNavigationDecision =
@@ -102,7 +109,7 @@ export interface UrlStateNavigationPolicy {
 export interface PostCommitController {
   run(context: {
     outlet: HTMLElement;
-    previousUrl: string | null;
+    previousUrl: string;
     url: string;
     isInitial: boolean;
     stateOnly: boolean;
@@ -198,7 +205,7 @@ export interface RouterEventMap {
   };
   error: {
     error: Error;
-    stage: 'before-navigate' | 'load' | 'commit' | 'shell' | 'post-commit';
+    stage: 'before-navigate' | 'load' | 'commit' | 'post-commit';
   };
 }
 

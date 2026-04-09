@@ -1,5 +1,4 @@
-import { html, LitElement, nothing, type PropertyValues } from 'lit';
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { LitElement, nothing } from 'lit';
 import { RouterNotStartedError, type NavigationResult } from '../../router/router.js';
 import { RouterController } from '../../controllers/router-controller.js';
 import {
@@ -16,6 +15,14 @@ import { AppRouterPostRenderController } from './controllers/app-router-post-ren
 import { PrimaryTabNavigationPolicy } from './navigation/primary-tab-navigation-policy.js';
 import { primaryTabTabsUrlSyncStrategy } from './navigation/primary-tab-url-state.js';
 import { createLayoutHeaderShellAdapter } from './shell/layout-header-shell-adapter.js';
+
+const CONTENT_ROOT_ID = 'main-content';
+const CONTENT_ROOT_SELECTOR = `#${CONTENT_ROOT_ID}`;
+const ANNOUNCEMENT_SELECTOR = '[data-app-router-announcement]';
+
+export interface AppRouterContentRenderedDetail {
+  contentRoot: HTMLElement;
+}
 
 const createNotStartedResult = (url: string): NavigationResult => ({
   outcome: 'failed',
@@ -35,45 +42,17 @@ const createNotStartedResult = (url: string): NavigationResult => ({
 registerTabsUrlSyncStrategy(primaryTabTabsUrlSyncStrategy);
 
 export class AppRouter extends LitElement {
-  static override properties = {
-    _pageContent: { state: true },
-    _ariaAnnouncement: { state: true },
-  };
-
-  declare private _pageContent: RouterContentHtml | null;
-  declare private _ariaAnnouncement: string;
-  declare private _serverContent: RouterContentHtml | null;
-  private _manualDomMode = false;
-  private _allowClientRender = false;
+  private _serverContent: RouterContentHtml | null = null;
   private readonly _routerController: RouterController;
   private readonly _contentController: AppRouterContentController;
   private readonly _postRenderController: AppRouterPostRenderController;
 
-  override createRenderRoot(): this {
-    return this;
-  }
-
   constructor() {
     super();
-    this._pageContent = null;
-    this._ariaAnnouncement = '';
-    this._serverContent = null;
     this._routerController = new RouterController(this);
-    this._contentController = new AppRouterContentController(this, (html) => {
-      if (this._manualDomMode) {
-        this._syncMainContent(html);
-        return;
-      }
-
-      this._pageContent = html;
-    });
+    this._contentController = new AppRouterContentController(this);
     this._postRenderController = new AppRouterPostRenderController(this, (text) => {
-      if (this._manualDomMode) {
-        this._syncAnnouncement(text);
-        return;
-      }
-
-      this._ariaAnnouncement = text;
+      this._syncAnnouncement(text);
     });
   }
 
@@ -82,33 +61,49 @@ export class AppRouter extends LitElement {
   }
 
   set serverContent(value: RouterContentHtml | null) {
-    const previousValue = this._serverContent;
     this._serverContent = value;
-    this.requestUpdate('serverContent', previousValue);
+    if (value === null) {
+      return;
+    }
+
+    this._contentController.initialize(value);
+    if (this.isConnected) {
+      this._replaceContentRoot(value, true);
+    }
+  }
+
+  getContentRoot(): HTMLElement | null {
+    return this.querySelector<HTMLElement>(CONTENT_ROOT_SELECTOR);
   }
 
   override connectedCallback(): void {
-    const initialContent = this._contentController.captureInitialContent(this);
-    this._manualDomMode = this.querySelector('#main-content') instanceof HTMLElement;
-    this._allowClientRender = !this._manualDomMode;
-
-    if (!this._manualDomMode) {
-      this._serverContent = initialContent;
-      // SSR 由来の light DOM を残すと、Lit の描画結果と重複して main が二重化する。
-      this.replaceChildren();
-    } else {
-      const main = this.querySelector('#main-content');
-      if (main instanceof HTMLElement) {
-        promoteDeclarativeShadowRoots(main);
-      }
-    }
-
     super.connectedCallback();
+
+    const existingContentRoot = this._findExistingContentRoot();
+
+    // 先に content root を正規化して id を付ける。
+    // これより前に captureInitialContent() を呼ぶと、
+    // SSR 済み <main> が存在していても '#main-content' に一致せず空本文になる。
+    const contentRoot = this._ensureContentRoot(existingContentRoot);
+
+    const initialContent =
+      this._serverContent ??
+      this._contentController.captureInitialContent(this, CONTENT_ROOT_SELECTOR);
+    this._contentController.initialize(initialContent);
+
+    this._ensureAnnouncementRegion();
+    this._syncBusyState(this._routerController.isNavigating);
+
+    if (this._serverContent !== null) {
+      this._replaceContentRoot(this._serverContent, false);
+    } else {
+      promoteDeclarativeShadowRoots(contentRoot);
+    }
 
     const router = this._routerController.initRouter(this, {
       skipInitialNavigation: true,
-      contentAdapter: this._contentController.createContentAdapter(async () => {
-        await this.updateComplete;
+      contentAdapter: this._contentController.createContentAdapter((html) => {
+        this._replaceContentRoot(html, true);
       }),
       postCommitController: this._postRenderController.createPostCommitController(this),
       shellAdapter: createLayoutHeaderShellAdapter(),
@@ -116,39 +111,15 @@ export class AppRouter extends LitElement {
     });
 
     router.on('navigation:busy-change', ({ isNavigating }) => {
-      if (this._manualDomMode) {
-        this._syncBusyState(isNavigating);
-      }
+      this._syncBusyState(isNavigating);
     });
 
     void router.start();
-
-    if (this._manualDomMode) {
-      void this._postRenderController.restoreInitialHashScroll();
-    }
+    void this._postRenderController.restoreInitialHashScroll();
   }
 
-  protected override performUpdate(): void {
-    if (!this._allowClientRender) {
-      return;
-    }
-
-    super.performUpdate();
-  }
-
-  protected override updated(changedProperties: PropertyValues): void {
-    super.updated(changedProperties);
-
-    if (!changedProperties.has('_pageContent')) {
-      return;
-    }
-
-    const main = this.querySelector('#main-content');
-    if (main instanceof HTMLElement) {
-      promoteDeclarativeShadowRoots(main);
-    }
-
-    this._dispatchContentRendered();
+  override render() {
+    return nothing;
   }
 
   async navigate(url: string): Promise<NavigationResult> {
@@ -163,43 +134,74 @@ export class AppRouter extends LitElement {
     });
   }
 
-  override render() {
-    const pageContent = this._pageContent ?? this._serverContent;
-
-    return html`
-      <div aria-live="polite" aria-atomic="true" class="sr-only">${this._ariaAnnouncement}</div>
-
-      <main
-        id="main-content"
-        tabindex="-1"
-        aria-busy=${this._routerController.isNavigating ? 'true' : nothing}
-      >
-        ${pageContent ? unsafeHTML(unwrapRouterContentHtml(pageContent)) : nothing}
-      </main>
-    `;
-  }
-
-  private _syncMainContent(content: RouterContentHtml): void {
-    const main = this.querySelector('#main-content');
-    if (!(main instanceof HTMLElement)) {
-      return;
+  private _findExistingContentRoot(): HTMLElement | null {
+    const contentRoot = this.getContentRoot();
+    if (contentRoot instanceof HTMLElement) {
+      return contentRoot;
     }
 
-    replaceElementChildrenFromHtml(main, unwrapRouterContentHtml(content), main.ownerDocument);
-    this._dispatchContentRendered();
+    const main = this.querySelector('main');
+    return main instanceof HTMLElement ? main : null;
+  }
+
+  private _ensureContentRoot(existingRoot: HTMLElement | null): HTMLElement {
+    const contentRoot = existingRoot ?? this.ownerDocument.createElement('main');
+
+    if (!contentRoot.isConnected) {
+      this.append(contentRoot);
+    }
+
+    contentRoot.id = CONTENT_ROOT_ID;
+    contentRoot.tabIndex = -1;
+    return contentRoot;
+  }
+
+  private _ensureAnnouncementRegion(): HTMLElement {
+    const existingRegion = this.querySelector<HTMLElement>(ANNOUNCEMENT_SELECTOR);
+    if (existingRegion instanceof HTMLElement) {
+      existingRegion.setAttribute('aria-live', 'polite');
+      existingRegion.setAttribute('aria-atomic', 'true');
+      existingRegion.classList.add('sr-only');
+      return existingRegion;
+    }
+
+    const legacyRegion = this.querySelector<HTMLElement>('[aria-live="polite"]');
+    if (legacyRegion instanceof HTMLElement) {
+      legacyRegion.setAttribute('data-app-router-announcement', '');
+      legacyRegion.setAttribute('aria-atomic', 'true');
+      legacyRegion.classList.add('sr-only');
+      return legacyRegion;
+    }
+
+    const region = this.ownerDocument.createElement('div');
+    region.setAttribute('data-app-router-announcement', '');
+    region.setAttribute('aria-live', 'polite');
+    region.setAttribute('aria-atomic', 'true');
+    region.className = 'sr-only';
+    this.prepend(region);
+    return region;
+  }
+
+  private _replaceContentRoot(content: RouterContentHtml, dispatchRenderedEvent: boolean): void {
+    const contentRoot = this._ensureContentRoot(this._findExistingContentRoot());
+    replaceElementChildrenFromHtml(
+      contentRoot,
+      unwrapRouterContentHtml(content),
+      contentRoot.ownerDocument,
+    );
+
+    if (dispatchRenderedEvent) {
+      this._dispatchContentRendered(contentRoot);
+    }
   }
 
   private _syncAnnouncement(text: string): void {
-    const region = this.querySelector('[aria-live="polite"]');
-    if (!(region instanceof HTMLElement)) {
-      return;
-    }
-
+    const region = this._ensureAnnouncementRegion();
     region.textContent = text;
   }
 
   private _syncBusyState(isNavigating: boolean): void {
-    const main = this.querySelector('#main-content');
+    const main = this._findExistingContentRoot();
     if (!(main instanceof HTMLElement)) {
       return;
     }
@@ -212,9 +214,10 @@ export class AppRouter extends LitElement {
     main.removeAttribute('aria-busy');
   }
 
-  private _dispatchContentRendered(): void {
+  private _dispatchContentRendered(contentRoot: HTMLElement): void {
     this.dispatchEvent(
-      new CustomEvent('app-router:content-rendered', {
+      new CustomEvent<AppRouterContentRenderedDetail>('app-router:content-rendered', {
+        detail: { contentRoot },
         bubbles: true,
         composed: true,
       }),

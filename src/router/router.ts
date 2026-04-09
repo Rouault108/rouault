@@ -38,10 +38,12 @@ export type {
   NavigationResult,
   NavigationOutcome,
   PreparedContentUpdate,
+  PreparedShellUpdate,
   RoutePattern,
   RouterEventMap,
   RouterOptions,
   ShellAdapter,
+  ShellUpdatePayload,
   UrlStateNavigationDecision,
 } from './router-types.js';
 export type { PostCommitController, UrlStateNavigationPolicy } from './router-types.js';
@@ -85,7 +87,12 @@ export class Router {
     LIVE_ROUTER_OWNERS.set(document, this);
 
     this.loader = new ContentLoader(this.routeRegistry, this.location);
-    this.committer = new ContentCommitter(this.outlet, this.location, this.options.contentAdapter);
+    this.committer = new ContentCommitter(
+      this.outlet,
+      this.location,
+      this.options.contentAdapter,
+      this.options.shellAdapter,
+    );
 
     this.linkInterceptor = new BrowserLinkInterceptor(
       this.location,
@@ -266,16 +273,22 @@ export class Router {
         currentUrl,
         loadResult.snapshot,
       );
-      const finalResult = {
-        ...durableCommitResult,
-        source: loadResult.source,
-        error: loadResult.error,
-        errorReason: loadResult.errorReason,
-      };
 
-      if (loadResult.snapshot.kind === 'error') {
-        finalResult.errorReason = loadResult.errorReason;
-      }
+      const finalResult: NavigationResult =
+        durableCommitResult.outcome === 'failed'
+          ? {
+              ...durableCommitResult,
+              source: loadResult.source,
+            }
+          : {
+              ...durableCommitResult,
+              source: loadResult.source,
+              error: loadResult.error,
+              errorReason:
+                loadResult.snapshot.kind === 'error'
+                  ? loadResult.errorReason
+                  : durableCommitResult.errorReason,
+            };
 
       this.eventBus.emit('after:navigate', finalResult);
       return finalResult;
@@ -294,12 +307,20 @@ export class Router {
         error instanceof Error ? error : undefined,
         loadResult.errorReason,
       );
-      const finalResult = {
-        ...durableCommitResult,
-        source: 'fetch' as const,
-        error: loadResult.error ?? (error instanceof Error ? error : undefined),
-        errorReason: loadResult.errorReason,
-      };
+
+      const finalResult: NavigationResult =
+        durableCommitResult.outcome === 'failed'
+          ? {
+              ...durableCommitResult,
+              source: 'fetch',
+            }
+          : {
+              ...durableCommitResult,
+              source: 'fetch',
+              error: loadResult.error ?? (error instanceof Error ? error : undefined),
+              errorReason: loadResult.errorReason,
+            };
+
       this.eventBus.emit('error', {
         error: finalResult.error ?? new Error('navigation failed'),
         stage: 'load',
@@ -377,7 +398,6 @@ export class Router {
       isInitial,
     });
 
-    await this.applyShell(snapshot, request.normalizedUrl, result);
     await this.runPostCommit(
       previousUrl,
       request.normalizedUrl,
@@ -388,33 +408,6 @@ export class Router {
     );
 
     return result;
-  }
-
-  private async applyShell(
-    snapshot: DocumentSnapshot,
-    normalizedUrl: string,
-    result: NavigationResult,
-  ): Promise<void> {
-    if (!this.options.shellAdapter?.apply) {
-      return;
-    }
-
-    try {
-      await this.options.shellAdapter.apply(snapshot.shell ?? null, {
-        navigationUrl: normalizedUrl,
-      });
-    } catch (error) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error));
-      result.degraded = true;
-      result.issues.push({
-        code: 'shell-sync-failed',
-        error: normalizedError,
-      });
-      this.eventBus.emit('error', {
-        error: normalizedError,
-        stage: 'shell',
-      });
-    }
   }
 
   private async runPostCommit(

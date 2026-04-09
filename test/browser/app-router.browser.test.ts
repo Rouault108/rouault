@@ -1,5 +1,6 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import '../../src/components/app/app-router.js';
+import type { AppRouterContentRenderedDetail } from '../../src/components/app/app-router.js';
 import type { NavigationResult } from '../../src/router/router.js';
 import { createRouterContentHtml } from '../../src/router/router-content-html.js';
 import { PRIMARY_TAB_URL_STATE_CHANGE_EVENT } from '../../src/components/app/navigation/primary-tab-url-state.js';
@@ -7,6 +8,7 @@ import { PRIMARY_TAB_URL_STATE_CHANGE_EVENT } from '../../src/components/app/nav
 type AppRouterElement = HTMLElement & {
   updateComplete: Promise<unknown>;
   navigate(url: string): Promise<NavigationResult>;
+  getContentRoot?: () => HTMLElement | null;
 };
 
 describe('app-router', () => {
@@ -149,8 +151,8 @@ describe('app-router', () => {
     expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('SSR Body');
   });
 
-  it('navigate() は NavigationResult を返し main を更新すること', async () => {
-    let renderedCount = 0;
+  it('navigate() は NavigationResult を返し main を更新し content-rendered detail に contentRoot を含めること', async () => {
+    const renderedRoots: HTMLElement[] = [];
 
     globalThis.fetch = () =>
       Promise.resolve(
@@ -175,8 +177,11 @@ describe('app-router', () => {
 
     await appHost.updateComplete;
 
-    appHost.addEventListener('app-router:content-rendered', () => {
-      renderedCount += 1;
+    appHost.addEventListener('app-router:content-rendered', (event: Event) => {
+      const detail = (event as CustomEvent<AppRouterContentRenderedDetail>).detail;
+      if (detail?.contentRoot instanceof HTMLElement) {
+        renderedRoots.push(detail.contentRoot);
+      }
     });
 
     const result = await appHost.navigate('/client-page');
@@ -189,7 +194,10 @@ describe('app-router', () => {
     expect(result.outcome).to.equal('completed');
     expect(result.renderedKind).to.equal('page');
     expect(document.title).to.equal('Client Routed');
-    expect(renderedCount).to.be.greaterThan(0);
+    expect(renderedRoots.length).to.be.greaterThan(0);
+    expect(renderedRoots.at(-1)).to.equal(
+      appHost.getContentRoot?.() ?? appHost.querySelector('#main-content'),
+    );
   });
 
   it('SSR 済み app-router からでも navigate() で本文を差し替えられること', async () => {
@@ -384,6 +392,86 @@ describe('app-router', () => {
       '[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]',
     );
     expect(header.getAttribute('current-corpus-key')).to.equal('music');
+  });
+
+  it('shell commit failure では layout-header と本文を rollback して failed を返すこと', async () => {
+    document.title = 'Before Header Failure';
+
+    const header = await fixture<HTMLElement>(
+      html`<layout-header
+        breadcrumbs-json='[{"label":"Old","href":"/old"}]'
+        corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"}]'
+        current-corpus-key="all"
+      ></layout-header>`,
+    );
+
+    const originalSetAttribute = header.setAttribute.bind(header);
+    let shouldThrow = true;
+    Object.defineProperty(header, 'setAttribute', {
+      configurable: true,
+      value(name: string, value: string) {
+        if (shouldThrow && name === 'breadcrumbs-json') {
+          shouldThrow = false;
+          throw new Error('header commit failed');
+        }
+
+        originalSetAttribute(name, value);
+      },
+    });
+
+    globalThis.fetch = () =>
+      Promise.resolve(
+        new Response(
+          `
+            <!doctype html>
+            <html>
+              <head><title>Broken Header Sync</title></head>
+              <body>
+                <layout-header
+                  note-layout
+                  sidebar-enabled
+                  breadcrumbs-json='[{"label":"Broken Note","href":"/notes/broken-note"}]'
+                  corpora-json='[{"key":"music","label":"音楽","href":"/corpora/music/"}]'
+                  current-corpus-key="music"
+                ></layout-header>
+                <main><h1>Broken Header Synced</h1></main>
+              </body>
+            </html>
+          `,
+          { status: 200 },
+        ),
+      );
+
+    host = await fixture<AppRouterElement>(
+      html`<app-router
+        ><main><h1>SSR Title</h1></main></app-router
+      >`,
+    );
+    const appHost = host;
+    await appHost.updateComplete;
+
+    const result = await appHost.navigate('/notes/broken-note');
+
+    await waitUntil(() => {
+      const text = appHost.querySelector('#main-content')?.textContent ?? '';
+      return text.includes('SSR Title');
+    }, 'shell failure 後に本文が rollback されること');
+
+    expect(result.outcome).to.equal('failed');
+    expect(result.committed).to.equal(false);
+    expect(result.renderedKind).to.equal(null);
+    expect(result.degraded).to.equal(false);
+    expect(result.issues).to.deep.equal([]);
+    expect(header.getAttribute('breadcrumbs-json')).to.equal('[{"label":"Old","href":"/old"}]');
+    expect(header.getAttribute('corpora-json')).to.equal(
+      '[{"key":"all","label":"すべてのノート","href":"/corpora/"}]',
+    );
+    expect(header.getAttribute('current-corpus-key')).to.equal('all');
+    expect(header.hasAttribute('note-layout')).to.equal(false);
+    expect(header.hasAttribute('sidebar-enabled')).to.equal(false);
+    expect(appHost.querySelector('#main-content')?.textContent).to.contain('SSR Title');
+    expect(appHost.querySelector('#main-content')?.textContent).not.to.contain('Broken Header Synced');
+    expect(document.title).to.equal('Before Header Failure');
   });
 
   it('primary tab の state-only navigation で URL state 通知と hash scroll を行うこと', async () => {

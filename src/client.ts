@@ -1,10 +1,25 @@
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
+import type {
+  AppRouter,
+  AppRouterContentRenderedDetail,
+} from './components/app/app-router.js';
 import { HydrationScheduler } from './client/hydration/scheduler.js';
-import { promoteDeclarativeShadowRoots } from './router/declarative-shadow-dom.js';
 import { initSearch } from './search/bootstrap.js';
 import { initTheme } from './theme/theme-manager.js';
 
 const hydrationScheduler = new HydrationScheduler();
+
+const getAppRouter = (): AppRouter | null => document.querySelector<AppRouter>('app-router');
+
+const resolveCurrentContentRoot = (): HTMLElement | null => {
+  const appRouter = getAppRouter();
+  const routerContentRoot = appRouter?.getContentRoot();
+  if (routerContentRoot instanceof HTMLElement) {
+    return routerContentRoot;
+  }
+
+  return document.querySelector<HTMLElement>('#main-content');
+};
 
 const hydrateShellScopes = async (): Promise<void> => {
   const shellScopes = [
@@ -18,15 +33,13 @@ const hydrateShellScopes = async (): Promise<void> => {
   }
 };
 
-const hydrateCurrentContent = async (): Promise<void> => {
+const hydrateCurrentContent = async (contentRoot?: HTMLElement): Promise<void> => {
   await customElements.whenDefined('app-router');
 
-  const mainContent = document.querySelector<HTMLElement>('#main-content');
+  const mainContent = contentRoot ?? resolveCurrentContentRoot();
   if (!(mainContent instanceof HTMLElement)) {
     return;
   }
-
-  promoteDeclarativeShadowRoots(mainContent);
 
   const eagerLoaders: Promise<unknown>[] = [];
   if (mainContent.querySelector('search-page')) {
@@ -54,7 +67,7 @@ const hydrateCurrentContent = async (): Promise<void> => {
   await Promise.resolve();
 
   await hydrationScheduler.hydrateContent(mainContent, {
-    dispatchTarget: document.querySelector('app-router'),
+    dispatchTarget: getAppRouter(),
   });
 
   for (const sidebar of mainContent.querySelectorAll<
@@ -77,8 +90,10 @@ const bootstrapClient = async (): Promise<void> => {
   await hydrateCurrentContent();
 };
 
-document.addEventListener('app-router:content-rendered', () => {
-  void hydrateCurrentContent();
+document.addEventListener('app-router:content-rendered', (event: Event) => {
+  const detail = (event as CustomEvent<AppRouterContentRenderedDetail>).detail;
+  const contentRoot = detail.contentRoot;
+  void hydrateCurrentContent(contentRoot instanceof HTMLElement ? contentRoot : undefined);
 });
 
 void bootstrapClient();
