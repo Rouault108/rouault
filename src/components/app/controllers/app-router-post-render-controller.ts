@@ -32,9 +32,7 @@ export class AppRouterPostRenderController implements ReactiveController {
     return {
       run: async (context) => {
         if (context.stateOnly) {
-          if (context.previousUrl !== null) {
-            dispatchPrimaryTabUrlStateChange(context.previousUrl, context.url);
-          }
+          dispatchPrimaryTabUrlStateChange(context.previousUrl, context.url);
 
           await this.scrollToHash(context.url);
           return;

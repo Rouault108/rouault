@@ -5,7 +5,6 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import type { TemplateResult } from 'lit';
 import { html, unsafeStatic } from 'lit/static-html.js';
 
-import { AppRouter } from '../../src/components/app/app-router.js';
 import { LayoutFooter } from '../../src/components/layout/layout-footer.js';
 
 import '../../src/components/ui/icon/icon.js';
@@ -35,7 +34,6 @@ import {
   ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE,
   parseArticleHeaderTagsAdapterValue,
 } from '../../src/components/ui/article-header/article-header-tags-adapter.js';
-import { createRouterContentHtml } from '../../src/router/router-content-html.js';
 
 import { getAttributeValue, serializeAttributes, type SsrAttribute } from './attributes.js';
 import {
@@ -144,11 +142,12 @@ const renderAppRouterLightElement = async (
   attributes: readonly SsrAttribute[],
   innerHtml: string,
 ): Promise<string> => {
-  const router = new AppRouter();
-  router.serverContent = createRouterContentHtml(extractMainContent(innerHtml));
+  const mainContent = extractMainContent(innerHtml);
 
-  const rendered = await collectResult(renderThunked(router.render()));
-  return `<app-router${serializeAttributes(attributes)}>${rendered}</app-router>`;
+  return `<app-router${serializeAttributes(attributes)}>
+    <div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+    <main id="main-content" tabindex="-1">${mainContent}</main>
+  </app-router>`;
 };
 
 const renderLayoutFooterLightElement = async (
