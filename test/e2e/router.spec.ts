@@ -258,20 +258,48 @@ test.describe('Router Navigation', () => {
 
     const prose = page.locator('#note-content-testing-markdown-basic');
     const heading = prose.locator('h2').first();
+    const headingText = heading.locator('.heading-text');
     const headingPermalink = heading.locator('.heading-anchor');
 
     await expect(heading).toBeVisible();
+    await expect(headingText).toBeVisible();
 
-    const headingBox = await heading.boundingBox();
-    const permalinkBox = await headingPermalink.boundingBox();
-    if (!headingBox || !permalinkBox) {
-      throw new Error('本文見出しの位置情報を取得できませんでした');
-    }
+    const readPermalinkOpacity = async (): Promise<number> =>
+      headingPermalink.evaluate((element) => Number.parseFloat(getComputedStyle(element).opacity));
 
-    expect(permalinkBox.x).toBeGreaterThanOrEqual(headingBox.x);
-    expect(permalinkBox.x + permalinkBox.width).toBeLessThanOrEqual(
-      headingBox.x + headingBox.width,
-    );
+    const hoverPoints = await heading.evaluate((element) => {
+      const text = element.querySelector<HTMLElement>('.heading-text');
+      const anchor = element.querySelector<HTMLElement>('.heading-anchor');
+      if (!(text instanceof HTMLElement) || !(anchor instanceof HTMLElement)) {
+        throw new Error('本文見出しの hover 判定に必要な要素を取得できませんでした');
+      }
+
+      const headingRect = element.getBoundingClientRect();
+      const textRect = text.getBoundingClientRect();
+      const anchorRect = anchor.getBoundingClientRect();
+      const hoverY = textRect.top + textRect.height / 2;
+      const gapStart = textRect.right;
+      const gapEnd = anchorRect.left;
+      const outsideTextX =
+        gapEnd - gapStart >= 2
+          ? gapStart + (gapEnd - gapStart) / 2
+          : headingRect.left + Math.min(2, Math.max(headingRect.width - 1, 0));
+      const textCenterX = textRect.left + textRect.width / 2;
+
+      return {
+        outsideTextX,
+        textCenterX,
+        hoverY,
+      };
+    });
+
+    await expect.poll(readPermalinkOpacity).toBe(0);
+
+    await page.mouse.move(hoverPoints.outsideTextX, hoverPoints.hoverY);
+    await expect.poll(readPermalinkOpacity).toBe(0);
+
+    await headingText.hover({ force: true });
+    await expect.poll(readPermalinkOpacity).toBe(1);
   });
 
   test('未知のURLへ SPA 遷移したとき 404 ページへ切り替わること', async ({ page }) => {

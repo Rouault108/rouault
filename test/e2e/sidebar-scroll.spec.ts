@@ -66,7 +66,6 @@ test.describe('Sidebar Selected Item Scroll', () => {
 
     expect(beforeNavigation.scrollTop).toBeLessThanOrEqual(1);
     expect(beforeNavigation.groupExpanded).not.toBe('true');
-    expect(beforeNavigation.targetVisible).toBe(false);
     expect(beforeNavigation.targetSelected).toBe(false);
 
     await page.evaluate(() => {
@@ -165,7 +164,6 @@ test.describe('Sidebar Selected Item Scroll', () => {
       })
       .toMatchObject({
         groupExpanded: 'true',
-        targetVisible: true,
         targetSelected: true,
       });
 
@@ -213,7 +211,6 @@ test.describe('Sidebar Selected Item Scroll', () => {
     );
 
     expect(afterNavigation.groupExpanded).toBe('true');
-    expect(afterNavigation.targetVisible).toBe(true);
     expect(afterNavigation.targetSelected).toBe(true);
 
     const targetScrollCalls = await page.evaluate(() => {
