@@ -5,7 +5,6 @@ import {
   dispatchKey,
   nextAnimationFrame,
   waitForLitUpdate,
-  waitMs,
 } from './helpers/wait-for-lit.js';
 
 const FRUIT_OPTIONS: SelectOption[] = [
@@ -61,6 +60,64 @@ const getListbox = (): HTMLElement | null =>
 
 const getOptions = (): HTMLElement[] =>
   Array.from(document.querySelectorAll<HTMLElement>('[data-ui-select-option]'));
+
+type TimeoutHandle = ReturnType<typeof window.setTimeout>;
+
+const withControlledTimeout = async (
+  run: (controls: { fireLatestTimer: () => void }) => Promise<void>,
+): Promise<void> => {
+  const originalSetTimeout = window.setTimeout;
+  const originalClearTimeout = window.clearTimeout;
+  let nextId = 1;
+  const scheduled = new Map<number, () => void>();
+  let latestTimerId: number | null = null;
+
+  window.setTimeout = ((callback: TimerHandler, _delay?: number) => {
+    const id = nextId++;
+    scheduled.set(id, () => {
+      if (typeof callback === 'function') {
+        callback();
+        return;
+      }
+      throw new Error('文字列コールバックの setTimeout はこのテストでは扱いません');
+    });
+    latestTimerId = id;
+    return id as TimeoutHandle;
+  }) as typeof window.setTimeout;
+
+  window.clearTimeout = ((handle?: number | TimeoutHandle) => {
+    if (handle == null) return;
+    const numericHandle = Number(handle);
+    scheduled.delete(numericHandle);
+    if (latestTimerId === numericHandle) {
+      latestTimerId = null;
+    }
+  }) as typeof window.clearTimeout;
+
+  try {
+    await run({
+      fireLatestTimer: () => {
+        const timerId = latestTimerId;
+        if (timerId === null) {
+          throw new Error('typeahead timer が登録されていません');
+        }
+
+        const callback = scheduled.get(timerId);
+        scheduled.delete(timerId);
+        latestTimerId = null;
+
+        if (!callback) {
+          throw new Error('typeahead timer が clear 済みです');
+        }
+
+        callback();
+      },
+    });
+  } finally {
+    window.setTimeout = originalSetTimeout;
+    window.clearTimeout = originalClearTimeout;
+  }
+};
 
 describe('ui-select browser contract', () => {
   it('disabled / readonly を trigger の状態と開閉抑止へ反映すること', async () => {
@@ -341,23 +398,27 @@ describe('ui-select browser contract', () => {
     await flush(select);
 
     const trigger = getTrigger(select);
-    dispatchKey(trigger, 'c');
-    await flush(select);
-    dispatchKey(trigger, 'h');
-    await flush(select);
+    await withControlledTimeout(async ({ fireLatestTimer }) => {
+      dispatchKey(trigger, 'c');
+      await flush(select);
+      dispatchKey(trigger, 'h');
+      await flush(select);
 
-    expect(select.opened).to.equal(true);
-    let activeId = trigger.getAttribute('aria-activedescendant');
-    let active = activeId ? document.getElementById(activeId) : null;
-    expect(active?.textContent?.includes('Cherry')).to.equal(true);
+      expect(select.opened).to.equal(true);
+      let activeId = trigger.getAttribute('aria-activedescendant');
+      let active = activeId ? document.getElementById(activeId) : null;
+      expect(active?.textContent?.includes('Cherry')).to.equal(true);
 
-    await waitMs(1100);
-    dispatchKey(trigger, 'b');
-    await flush(select);
+      // 実時間待ちを避けつつ、typeahead の 1 秒リセット契約だけを直接進める。
+      fireLatestTimer();
 
-    activeId = trigger.getAttribute('aria-activedescendant');
-    active = activeId ? document.getElementById(activeId) : null;
-    expect(active?.textContent?.includes('Banana')).to.equal(true);
+      dispatchKey(trigger, 'b');
+      await flush(select);
+
+      activeId = trigger.getAttribute('aria-activedescendant');
+      active = activeId ? document.getElementById(activeId) : null;
+      expect(active?.textContent?.includes('Banana')).to.equal(true);
+    });
 
     dispatchKey(trigger, 'Escape');
     await flush(select);

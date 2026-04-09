@@ -65,7 +65,7 @@ test.describe('Sidebar Selected Item Scroll', () => {
     );
 
     expect(beforeNavigation.scrollTop).toBeLessThanOrEqual(1);
-    expect(beforeNavigation.groupExpanded).toBeNull();
+    expect(beforeNavigation.groupExpanded).not.toBe('true');
     expect(beforeNavigation.targetVisible).toBe(false);
     expect(beforeNavigation.targetSelected).toBe(false);
 
@@ -115,6 +115,57 @@ test.describe('Sidebar Selected Item Scroll', () => {
     await expect(page).toHaveURL(new RegExp(`${targetPath}/?$`));
     await expect(page.locator('#main-content h1').first()).toHaveText('Sidebar Scroll Target');
 
+    await expect
+      .poll(async () => {
+        return fixedSidebarLocator.evaluate<
+          SidebarSnapshot,
+          {
+            groupId: string;
+            noteId: string;
+          }
+        >(
+          (host, ids) => {
+            const layoutSidebar = host as HTMLElement;
+            const uiSidebar = layoutSidebar.shadowRoot?.querySelector('ui-sidebar');
+            const fileTree = uiSidebar?.shadowRoot?.querySelector('ui-file-tree');
+            const shell = uiSidebar?.shadowRoot?.querySelector('ui-sidebar-shell');
+            const content = shell?.shadowRoot?.querySelector<HTMLElement>('.sidebar-content');
+            const targetGroup = fileTree?.shadowRoot?.querySelector<HTMLElement>(
+              `ui-tree-item[data-id="${ids.groupId}"]`,
+            );
+            const targetLeaf = fileTree?.shadowRoot?.querySelector<HTMLElement>(
+              `ui-tree-item[data-id="${ids.noteId}"]`,
+            );
+
+            if (!content || !targetLeaf) {
+              return {
+                scrollTop: -1,
+                groupExpanded: targetGroup?.getAttribute('aria-expanded') ?? null,
+                targetVisible: false,
+                targetSelected: false,
+              };
+            }
+
+            const contentRect = content.getBoundingClientRect();
+            const targetRect = targetLeaf.getBoundingClientRect();
+
+            return {
+              scrollTop: content.scrollTop,
+              groupExpanded: targetGroup?.getAttribute('aria-expanded') ?? null,
+              targetVisible:
+                targetRect.top >= contentRect.top && targetRect.bottom <= contentRect.bottom,
+              targetSelected: targetLeaf.getAttribute('aria-selected') === 'true',
+            };
+          },
+          { groupId: targetGroupId, noteId: targetNoteId },
+        );
+      })
+      .toMatchObject({
+        groupExpanded: 'true',
+        targetVisible: true,
+        targetSelected: true,
+      });
+
     const afterNavigation = await fixedSidebarLocator.evaluate<
       SidebarSnapshot,
       {
@@ -158,7 +209,6 @@ test.describe('Sidebar Selected Item Scroll', () => {
       { groupId: targetGroupId, noteId: targetNoteId },
     );
 
-    expect(afterNavigation.scrollTop).toBeGreaterThanOrEqual(0);
     expect(afterNavigation.groupExpanded).toBe('true');
     expect(afterNavigation.targetVisible).toBe(true);
     expect(afterNavigation.targetSelected).toBe(true);

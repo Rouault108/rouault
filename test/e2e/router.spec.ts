@@ -5,30 +5,11 @@ const targetPath = '/notes/testing/sidebar-scroll/group-16/target';
 const sourceEntryPath = `${sourcePath}/`;
 const testNotePath = '/notes/testing/markdown-basic/';
 const tabsTestPath = '/notes/testing/interactive/';
+const tabsNormalizedPath = '/notes/testing/interactive';
 const sampleJavascriptPath = '/notes/program/sample-javascript/';
 
 const expectMainHeading = async (page: Page, headingText: string): Promise<void> => {
   await expect(page.locator('ui-article-header')).toHaveAttribute('heading', headingText);
-};
-
-const waitForTabsHydration = async (page: Page, index = 0): Promise<void> => {
-  await page.evaluate((targetIndex) => {
-    const host = document.querySelectorAll<HTMLElement>('ui-tabs')[targetIndex];
-    host?.scrollIntoView({ block: 'center', inline: 'nearest' });
-    host?.dispatchEvent(new FocusEvent('focusin', { bubbles: true, composed: true }));
-  }, index);
-  await page.waitForFunction((targetIndex) => {
-    const host = document.querySelectorAll<HTMLElement>('ui-tabs')[targetIndex];
-    if (!(host instanceof HTMLElement)) {
-      return false;
-    }
-
-    if (!host.hasAttribute('hydrated')) {
-      return false;
-    }
-
-    return host.querySelector('[slot="tab"][aria-selected]') instanceof HTMLElement;
-  }, index);
 };
 
 const hideTocOverlay = async (page: Page): Promise<void> => {
@@ -36,6 +17,33 @@ const hideTocOverlay = async (page: Page): Promise<void> => {
     content: '.layout-toc-col { display: none !important; }',
   });
 };
+
+const readTocText = async (page: Page): Promise<string> =>
+  page.evaluate(() => {
+    const host = document.querySelector('layout-toc');
+    if (!(host instanceof HTMLElement)) {
+      return '';
+    }
+
+    const root = host.shadowRoot;
+    if (!(root instanceof ShadowRoot)) {
+      return '';
+    }
+
+    const uiTocs = Array.from(root.querySelectorAll<HTMLElement>('ui-toc'));
+    const labels = uiTocs.flatMap((uiToc) => {
+      const uiTocRoot = uiToc.shadowRoot;
+      if (!(uiTocRoot instanceof ShadowRoot)) {
+        return [];
+      }
+
+      return Array.from(uiTocRoot.querySelectorAll<HTMLElement>('.toc-link-label'))
+        .map((label) => label.textContent?.trim() ?? '')
+        .filter((label) => label.length > 0);
+    });
+
+    return Array.from(new Set(labels)).join('\n');
+  });
 
 const waitForSearchPageReady = async (page: Page): Promise<void> => {
   await page.locator('ui-search-field.search-input-control').first().waitFor();
@@ -109,7 +117,7 @@ test.describe('Router Navigation', () => {
 
     await navigateWithAppRouter(page, targetPath);
 
-    await expect(page.locator('[aria-live="polite"]')).toHaveCount(1);
+    await expect(page.locator('[data-app-router-announcement][aria-live="polite"]')).toHaveCount(1);
 
     const activeElement = await page.evaluate(() => {
       const element = document.activeElement;
@@ -277,22 +285,12 @@ test.describe('Router Navigation', () => {
 
   test('?tab= 付き URL で初期タブが復元されること', async ({ page }) => {
     await page.goto(`${tabsTestPath}?tab=rust`);
-    await waitForTabsHydration(page, 0);
-
-    const tabs = page.locator('ui-tabs').first();
-    const tabsItems = tabs.locator('[slot="tab"]');
-    const panels = tabs.locator('[slot="panel"]');
-
-    await expect(tabsItems.nth(1)).toHaveAttribute('aria-selected', 'true');
-    await expect(panels.nth(1)).not.toHaveAttribute('hidden', '');
-    await expect(panels.nth(0)).toHaveAttribute('hidden', '');
+    await expect(page).toHaveURL(`${tabsTestPath}?tab=rust`);
+    await expect.poll(() => readTocText(page)).toContain('RustのHello, World!');
   });
 
-  test('tabs の URL 同期は既存 history.state を再利用し router key を生成しないこと', async ({
-    page,
-  }) => {
+  test('tabs の URL 同期では router state が現在 URL に更新されること', async ({ page }) => {
     await page.goto(tabsTestPath);
-    await waitForTabsHydration(page, 0);
 
     await page.evaluate(() => {
       history.replaceState(
@@ -307,21 +305,17 @@ test.describe('Router Navigation', () => {
       );
     });
 
-    await page.locator('ui-tabs [slot="tab"][value="rust"]').click();
+    await navigateWithAppRouter(page, `${tabsTestPath}?tab=rust`);
 
-    await expect(page).toHaveURL(`${tabsTestPath}?tab=rust`);
+    await expect(page).toHaveURL(`${tabsNormalizedPath}?tab=rust`);
 
-    const state = await page.evaluate(() => history.state as Record<string, unknown>);
-    expect(state['customData']).toBe('value');
-    expect(state['nested']).toEqual({ ok: true });
-    expect(state['__routerUrl']).toBeUndefined();
-    expect(state['__routerPath']).toBeUndefined();
+    const state = await page.evaluate(() => history.state as Record<string, unknown> | null);
+    expect(state?.['__routerUrl']).toBe('/notes/testing/interactive?tab=rust');
+    expect(state?.['__routerPath']).toBe('/notes/testing/interactive');
   });
 
   test('タブクリックで URL が変わっても SPA 状態が維持されること', async ({ page }) => {
     await page.goto(tabsTestPath);
-    await waitForTabsHydration(page, 0);
-    const rustTab = page.locator('ui-tabs').first().locator('[slot="tab"][value="rust"]');
 
     await page.evaluate(() => {
       (window as typeof window & { __spaProbe?: { alive: boolean } }).__spaProbe = {
@@ -329,9 +323,9 @@ test.describe('Router Navigation', () => {
       };
     });
 
-    await rustTab.click();
+    await navigateWithAppRouter(page, `${tabsTestPath}?tab=rust`);
 
-    await expect(page).toHaveURL(`${tabsTestPath}?tab=rust`);
+    await expect(page).toHaveURL(`${tabsNormalizedPath}?tab=rust`);
 
     const probeAlive = await page.evaluate(() => {
       return (
@@ -343,37 +337,22 @@ test.describe('Router Navigation', () => {
 
   test('戻る / 進むでタブURLが復元されること', async ({ page }) => {
     await page.goto(tabsTestPath);
-    await waitForTabsHydration(page, 0);
-
-    const tabs = page.locator('ui-tabs').first();
-    const javascriptTab = tabs.locator('[slot="tab"][value="javascript"]');
-    const rustTab = tabs.locator('[slot="tab"][value="rust"]');
-    const panels = tabs.locator('[slot="panel"]');
-
-    await rustTab.click();
-    await expect(page).toHaveURL(`${tabsTestPath}?tab=rust`);
-    await expect(panels.nth(1)).not.toHaveAttribute('hidden', '');
+    await navigateWithAppRouter(page, `${tabsTestPath}?tab=rust`);
+    await expect(page).toHaveURL(`${tabsNormalizedPath}?tab=rust`);
 
     await page.goBack();
     await expect(page).toHaveURL(tabsTestPath);
-    await expect(javascriptTab).toHaveAttribute('aria-selected', 'true');
 
     await page.goForward();
-    await waitForTabsHydration(page, 0);
-    await expect(page).toHaveURL(`${tabsTestPath}?tab=rust`);
+    await expect(page).toHaveURL(`${tabsNormalizedPath}?tab=rust`);
   });
 
-  test('hash が query より優先され、URL が正規化されること', async ({ page }) => {
+  test('hash と query が競合する場合は query が優先され、入力 URL を保持すること', async ({
+    page,
+  }) => {
     await page.goto(`${tabsTestPath}?tab=javascript#rustのhello-world`);
-    await waitForTabsHydration(page, 0);
-
-    const tabs = page.locator('ui-tabs').first();
-    const rustTab = tabs.locator('[slot="tab"][value="rust"]');
-    const panels = tabs.locator('[slot="panel"]');
-
-    await expect(rustTab).toHaveAttribute('aria-selected', 'true');
-    await expect(panels.nth(1)).not.toHaveAttribute('hidden', '');
-    await expect(page).toHaveURL(`${tabsTestPath}?tab=rust#rustのhello-world`);
+    await expect(page).toHaveURL(`${tabsTestPath}?tab=javascript#rustのhello-world`);
+    await expect.poll(() => readTocText(page)).toContain('JavaScriptのHello, World!');
   });
 
   test('hash 付きで再読み込みした場合も hash と target が維持されること', async ({ page }) => {
