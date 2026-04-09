@@ -9,11 +9,10 @@ import '../ui/dropdown/dropdown.js';
 import type { BreadcrumbItem } from '../ui/breadcrumbs/breadcrumbs.js';
 import { NOTE_SIDEBAR_FIXED_MEDIA_QUERY } from '../../layout/note-sidebar-breakpoint.js';
 import {
-  LAYOUT_SIDEBAR_STATE_CHANGE_EVENT,
-  LAYOUT_SIDEBAR_TOGGLE_REQUEST_EVENT,
-  type LayoutSidebarStateChangeDetail,
-  type LayoutSidebarToggleRequestDetail,
-} from './layout-sidebar.events.js';
+  DEFAULT_LAYOUT_SIDEBAR_ID,
+  layoutSidebarController,
+  type LayoutSidebarControllerSnapshot,
+} from './layout-sidebar-controller.js';
 import { navigateToUrl } from '../../search/navigation.js';
 import {
   THEME_CHANGE_EVENT,
@@ -131,6 +130,7 @@ export class LayoutHeader extends LitElement {
       align-items: center;
       gap: var(--space-2, 8px);
       min-inline-size: 0;
+      max-inline-size: 100%;
     }
 
     .corpus-trigger-label {
@@ -152,6 +152,13 @@ export class LayoutHeader extends LitElement {
 
     .theme-trigger-label {
       color: var(--fg-subtle, var(--fg-muted));
+    }
+
+    .theme-trigger-text {
+      min-inline-size: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .corpus-chevron,
@@ -189,6 +196,16 @@ export class LayoutHeader extends LitElement {
         display: none;
       }
     }
+
+    @media (max-width: 639px) {
+      .corpus-trigger-text {
+        max-inline-size: min(9rem, 42vw);
+      }
+
+      .theme-trigger-text {
+        display: none;
+      }
+    }
   `;
 
   @property({ type: String, attribute: 'breadcrumbs-json' })
@@ -206,6 +223,9 @@ export class LayoutHeader extends LitElement {
   @property({ type: Boolean, reflect: true, attribute: 'sidebar-enabled' })
   sidebarEnabled = false;
 
+  @property({ type: String, attribute: 'sidebar-id' })
+  sidebarId = DEFAULT_LAYOUT_SIDEBAR_ID;
+
   @state()
   private _headerSidebarReserved = false;
 
@@ -220,6 +240,10 @@ export class LayoutHeader extends LitElement {
 
   private _mediaQuery: MediaQueryList | null = null;
 
+  private _sidebarSnapshot: LayoutSidebarControllerSnapshot | null = null;
+
+  private _sidebarControllerCleanup: (() => void) | null = null;
+
   override connectedCallback(): void {
     super.connectedCallback();
     if (typeof window === 'undefined') {
@@ -228,69 +252,87 @@ export class LayoutHeader extends LitElement {
 
     this._themePreference = readStoredThemePreference();
     this._mediaQuery = window.matchMedia(NOTE_SIDEBAR_FIXED_MEDIA_QUERY);
-    this._syncFromMediaQuery();
+    this._applySidebarSnapshot();
     this._mediaQuery.addEventListener('change', this._onMediaQueryChange);
     window.addEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);
-    window.addEventListener(
-      LAYOUT_SIDEBAR_STATE_CHANGE_EVENT,
-      this._handleSidebarStateChange as EventListener,
-    );
+    this._connectSidebarController();
   }
 
   protected override updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has('sidebarEnabled')) {
-      this._syncFromMediaQuery();
+    if (changedProperties.has('sidebarEnabled') || changedProperties.has('sidebarId')) {
+      this._connectSidebarController();
+      this._applySidebarSnapshot();
     }
   }
 
   override disconnectedCallback(): void {
     this._mediaQuery?.removeEventListener('change', this._onMediaQueryChange);
     this._mediaQuery = null;
+    this._sidebarControllerCleanup?.();
+    this._sidebarControllerCleanup = null;
+    this._sidebarSnapshot = null;
+
     if (typeof window !== 'undefined') {
       window.removeEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);
-      window.removeEventListener(
-        LAYOUT_SIDEBAR_STATE_CHANGE_EVENT,
-        this._handleSidebarStateChange as EventListener,
-      );
     }
     super.disconnectedCallback();
   }
 
-  private _syncFromMediaQuery(): void {
-    const isFixedLayout = this._mediaQuery?.matches ?? true;
-    this._headerSidebarReserved = this.sidebarEnabled && isFixedLayout;
-    this._sidebarOpen = isFixedLayout;
+  private _connectSidebarController(): void {
+    this._sidebarControllerCleanup?.();
+    this._sidebarControllerCleanup = null;
+    this._sidebarSnapshot = null;
+
+    if (!this.sidebarEnabled) {
+      return;
+    }
+
+    this._sidebarControllerCleanup = layoutSidebarController.subscribe(
+      this._resolveSidebarId(),
+      (snapshot) => {
+        this._sidebarSnapshot = snapshot;
+        this._applySidebarSnapshot();
+      },
+    );
+  }
+
+  private _applySidebarSnapshot(): void {
+    if (!this.sidebarEnabled) {
+      this._headerSidebarReserved = false;
+      this._sidebarOpen = false;
+      return;
+    }
+
+    const snapshot = this._sidebarSnapshot;
+    if (!snapshot?.isRegistered) {
+      const isFixedLayout = this._mediaQuery?.matches ?? true;
+      this._headerSidebarReserved = isFixedLayout;
+      this._sidebarOpen = isFixedLayout || snapshot?.state === 'expanded';
+      return;
+    }
+
+    this._headerSidebarReserved = snapshot.mode === 'fixed';
+    this._sidebarOpen = snapshot.state === 'expanded';
+  }
+
+  private _resolveSidebarId(): string {
+    const normalized = this.sidebarId.trim();
+    return normalized.length > 0 ? normalized : DEFAULT_LAYOUT_SIDEBAR_ID;
   }
 
   private _onMediaQueryChange = (): void => {
-    this._syncFromMediaQuery();
-  };
-
-  private _handleSidebarStateChange = (event: Event): void => {
-    if (!(event instanceof CustomEvent)) {
-      return;
-    }
-
-    const detail = event.detail as LayoutSidebarStateChangeDetail;
-    if (detail.mode === 'fixed') {
-      this._headerSidebarReserved = this.sidebarEnabled;
-      this._sidebarOpen = true;
-      return;
-    }
-
-    this._headerSidebarReserved = false;
-    this._sidebarOpen = detail.state === 'expanded';
+    this._applySidebarSnapshot();
   };
 
   private _handleSidebarToggleClick = (event: Event): void => {
-    const trigger = event.currentTarget;
-    const detail: LayoutSidebarToggleRequestDetail =
-      trigger instanceof HTMLElement ? { trigger } : {};
+    if (!this.sidebarEnabled) {
+      return;
+    }
 
-    window.dispatchEvent(
-      new CustomEvent<LayoutSidebarToggleRequestDetail>(LAYOUT_SIDEBAR_TOGGLE_REQUEST_EVENT, {
-        detail,
-      }),
+    const trigger = event.currentTarget;
+    layoutSidebarController.toggle(
+      this._resolveSidebarId(),
+      trigger instanceof HTMLElement ? trigger : undefined,
     );
   };
 
@@ -460,7 +502,7 @@ export class LayoutHeader extends LitElement {
                   name=${currentThemeOption.icon}
                   aria-hidden="true"
                 ></ui-icon>
-                <span>テーマ</span>
+                <span class="theme-trigger-text">テーマ</span>
               </span>
               <ui-icon class="theme-chevron" name="chevron-down" aria-hidden="true"></ui-icon>
             </ui-button>

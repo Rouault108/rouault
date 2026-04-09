@@ -1,21 +1,22 @@
 import { css, html, LitElement } from 'lit';
-import { customElement, property, query, state } from 'lit/decorators.js';
-import { ifDefined } from 'lit/directives/if-defined.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import '../ui/icon/icon.js';
 import '../ui/sidebar/sidebar.js';
 import type { TreeNode } from '../ui/file-tree/file-tree.js';
-import type { UiSidebar, UiSidebarToggleDetail } from '../ui/sidebar/sidebar.js';
+import type { UiSidebarToggleDetail } from '../ui/sidebar/sidebar.js';
+import type {
+  SidebarMode,
+  SidebarState,
+  UiSidebarStateChangeDetail,
+} from '../ui/sidebar-shell/sidebar-shell.js';
 import type { IconName } from '../../../shared/icons/icons-catalog.js';
 import { isIconName } from '../../../shared/icons/icons-catalog.js';
 import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
 import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../layout/note-sidebar-breakpoint.js';
 import {
-  LAYOUT_SIDEBAR_STATE_CHANGE_EVENT,
-  LAYOUT_SIDEBAR_TOGGLE_REQUEST_EVENT,
-  LAYOUT_SIDEBAR_TREE_STATE_CHANGE_EVENT,
-  type LayoutSidebarStateChangeDetail,
-  type LayoutSidebarTreeStateChangeDetail,
-} from './layout-sidebar.events.js';
+  DEFAULT_LAYOUT_SIDEBAR_ID,
+  layoutSidebarController,
+} from './layout-sidebar-controller.js';
 import {
   collectLayoutSidebarSelectedAncestorIds,
   readLayoutSidebarTreeState,
@@ -136,11 +137,16 @@ export class LayoutSidebar extends LitElement {
       overflow: visible;
     }
 
-    :host([presentation='overlay']) {
+    :host([presentation='overlay']),
+    :host([data-mode='overlay']) {
+      inline-size: 0;
+      min-inline-size: 0;
       block-size: 0;
+      min-block-size: 0;
     }
 
     ui-sidebar {
+      display: block;
       block-size: 100%;
       min-block-size: 0;
     }
@@ -164,19 +170,25 @@ export class LayoutSidebar extends LitElement {
   @property({ type: String, reflect: true })
   presentation: SidebarPresentation = 'auto';
 
+  @property({ type: String, attribute: 'sidebar-id' })
+  sidebarId = DEFAULT_LAYOUT_SIDEBAR_ID;
+
   @state()
   private _items: TreeNode[] = [];
 
   @state()
-  private _state: 'expanded' | 'collapsed' = 'collapsed';
+  private _mode: SidebarMode = 'overlay';
 
-  @query('ui-sidebar')
-  private _sidebarElement!: UiSidebar | null;
-
-  private _storage: Storage | null = null;
+  @state()
+  private _state: SidebarState = 'collapsed';
 
   @state()
   private _persistedExpandedIds = new Set<string>();
+
+  @state()
+  private _returnFocusTarget: HTMLElement | null = null;
+
+  private _storage: Storage | null = null;
 
   private _detachStickyFooterBoundary: (() => void) | null = null;
 
@@ -184,20 +196,19 @@ export class LayoutSidebar extends LitElement {
 
   private _ssrRootReset = false;
 
+  private _mediaQuery: MediaQueryList | null = null;
+
+  private _controllerCleanup: (() => void) | null = null;
+
   override connectedCallback(): void {
     super.connectedCallback();
 
     this._storage = this._resolveStorage();
-    this._state = this._resolveInitialState();
     this._loadItemsFromSource();
-    window.addEventListener(
-      LAYOUT_SIDEBAR_TOGGLE_REQUEST_EVENT,
-      this._onToggleRequest as EventListener,
-    );
-    window.addEventListener(
-      LAYOUT_SIDEBAR_TREE_STATE_CHANGE_EVENT,
-      this._onTreeStateSync as EventListener,
-    );
+    this._initPresentationController();
+    this._registerController();
+    this._reflectModeAttribute();
+    this._reportController();
 
     if (!this.hasAttribute('data-hydration-trigger')) {
       this.activateHydration();
@@ -210,14 +221,9 @@ export class LayoutSidebar extends LitElement {
   }
 
   override disconnectedCallback(): void {
-    window.removeEventListener(
-      LAYOUT_SIDEBAR_TOGGLE_REQUEST_EVENT,
-      this._onToggleRequest as EventListener,
-    );
-    window.removeEventListener(
-      LAYOUT_SIDEBAR_TREE_STATE_CHANGE_EVENT,
-      this._onTreeStateSync as EventListener,
-    );
+    this._destroyMediaQuery();
+    this._controllerCleanup?.();
+    this._controllerCleanup = null;
     this._detachStickyFooterBoundary?.();
     this._detachStickyFooterBoundary = null;
     super.disconnectedCallback();
@@ -226,19 +232,31 @@ export class LayoutSidebar extends LitElement {
   protected override willUpdate(changedProperties: Map<string, unknown>): void {
     if (
       !this.hasUpdated ||
-      changedProperties.has('fixedBreakpoint') ||
-      changedProperties.has('presentation')
-    ) {
-      this._state = this._resolveInitialState();
-    }
-
-    if (
-      !this.hasUpdated ||
       changedProperties.has('sourceId') ||
       changedProperties.has('itemsJson') ||
       changedProperties.has('selectedId')
     ) {
       this._loadItemsFromSource();
+    }
+  }
+
+  protected override updated(changedProperties: Map<string, unknown>): void {
+    if (changedProperties.has('presentation') || changedProperties.has('fixedBreakpoint')) {
+      this._initPresentationController();
+    }
+
+    if (changedProperties.has('sidebarId')) {
+      this._registerController();
+      this._applyMode(this._mode);
+    }
+
+    if (changedProperties.has('_mode')) {
+      this._reflectModeAttribute();
+      this._syncStickyFooterBoundary();
+    }
+
+    if (changedProperties.has('_mode') || changedProperties.has('_state') || changedProperties.has('sidebarId')) {
+      this._reportController();
     }
   }
 
@@ -254,17 +272,52 @@ export class LayoutSidebar extends LitElement {
     this._hydrationActivated = true;
     this._upgradeNestedShadowHosts();
     this._storage = this._resolveStorage();
-    this._state = this._resolveInitialState();
     this._loadItemsFromSource();
+    this._syncStickyFooterBoundary();
+    this.requestUpdate();
+  }
 
-    if (this.presentation !== 'overlay') {
-      const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
-      this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget, {
-        minWidth: 640,
-      });
+  expand(trigger?: HTMLElement): void {
+    if (this._mode !== 'overlay') {
+      return;
     }
 
-    this.requestUpdate();
+    if (trigger instanceof HTMLElement) {
+      this._returnFocusTarget = trigger;
+    }
+
+    if (this._state === 'expanded') {
+      return;
+    }
+
+    this._state = 'expanded';
+    this._reportController();
+  }
+
+  collapse(): void {
+    if (this._mode !== 'overlay') {
+      return;
+    }
+
+    if (this._state === 'collapsed') {
+      return;
+    }
+
+    this._state = 'collapsed';
+    this._reportController();
+  }
+
+  toggle(trigger?: HTMLElement): void {
+    if (this._mode !== 'overlay') {
+      return;
+    }
+
+    if (this._state === 'expanded') {
+      this.collapse();
+      return;
+    }
+
+    this.expand(trigger);
   }
 
   private _upgradeNestedShadowHosts(): void {
@@ -292,6 +345,108 @@ export class LayoutSidebar extends LitElement {
     this.removeAttribute('defer-hydration');
     this._ssrRootReset = true;
   }
+
+  private _registerController(): void {
+    this._controllerCleanup?.();
+    this._controllerCleanup = null;
+
+    this._controllerCleanup = layoutSidebarController.register(this._resolveSidebarId(), {
+      applyOverlayState: (state, options) => {
+        if (this._mode !== 'overlay') {
+          return;
+        }
+
+        if (options?.trigger instanceof HTMLElement) {
+          this._returnFocusTarget = options.trigger;
+        }
+
+        if (this._state !== state) {
+          this._state = state;
+        }
+      },
+    });
+  }
+
+  private _reportController(): void {
+    layoutSidebarController.report(this._resolveSidebarId(), {
+      mode: this._mode,
+      state: this._state,
+    });
+  }
+
+  private _resolveSidebarId(): string {
+    const normalized = this.sidebarId.trim();
+    return normalized.length > 0 ? normalized : DEFAULT_LAYOUT_SIDEBAR_ID;
+  }
+
+  private _initPresentationController(): void {
+    this._destroyMediaQuery();
+
+    if (this.presentation === 'fixed') {
+      this._applyMode('fixed');
+      return;
+    }
+
+    if (this.presentation === 'overlay') {
+      this._applyMode('overlay');
+      return;
+    }
+
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      this._applyMode('overlay');
+      return;
+    }
+
+    this._mediaQuery = window.matchMedia(`(min-width: ${String(this.fixedBreakpoint)}px)`);
+    this._applyMode(this._mediaQuery.matches ? 'fixed' : 'overlay');
+    this._mediaQuery.addEventListener('change', this._onMediaQueryChange);
+  }
+
+  private _destroyMediaQuery(): void {
+    this._mediaQuery?.removeEventListener('change', this._onMediaQueryChange);
+    this._mediaQuery = null;
+  }
+
+  private _applyMode(nextMode: SidebarMode): void {
+    const nextState: SidebarState =
+      nextMode === 'fixed'
+        ? 'expanded'
+        : layoutSidebarController.getOverlayState(this._resolveSidebarId());
+
+    const modeChanged = this._mode !== nextMode;
+    const stateChanged = this._state !== nextState;
+
+    if (!modeChanged && !stateChanged) {
+      this._reflectModeAttribute();
+      return;
+    }
+
+    this._mode = nextMode;
+    this._state = nextState;
+    this._reflectModeAttribute();
+  }
+
+  private _reflectModeAttribute(): void {
+    this.setAttribute('data-mode', this._mode);
+  }
+
+  private _syncStickyFooterBoundary(): void {
+    this._detachStickyFooterBoundary?.();
+    this._detachStickyFooterBoundary = null;
+
+    if (!this._hydrationActivated || this._mode !== 'fixed') {
+      return;
+    }
+
+    const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
+    this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget, {
+      minWidth: 640,
+    });
+  }
+
+  private _onMediaQueryChange = (event: MediaQueryListEvent): void => {
+    this._applyMode(event.matches ? 'fixed' : 'overlay');
+  };
 
   private _loadItemsFromSource(): void {
     const inlineItems = this._parseItemsJson(this.itemsJson);
@@ -373,48 +528,6 @@ export class LayoutSidebar extends LitElement {
     }
   }
 
-  private _resolveInitialState(): 'expanded' | 'collapsed' {
-    if (this.presentation === 'fixed') {
-      return 'expanded';
-    }
-
-    if (this.presentation === 'overlay') {
-      return 'collapsed';
-    }
-
-    if (typeof window === 'undefined') {
-      return this._state;
-    }
-
-    const mediaQuery = `(min-width: ${String(this.fixedBreakpoint)}px)`;
-
-    return window.matchMedia(mediaQuery).matches ? 'expanded' : 'collapsed';
-  }
-
-  private _isOverlayMode(): boolean {
-    if (this.presentation === 'overlay') {
-      return true;
-    }
-
-    if (this.presentation === 'fixed') {
-      return false;
-    }
-
-    return this._sidebarElement?.mode === 'overlay';
-  }
-
-  private _dispatchOverlayStateChange(detail: LayoutSidebarStateChangeDetail): void {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    window.dispatchEvent(
-      new CustomEvent<LayoutSidebarStateChangeDetail>(LAYOUT_SIDEBAR_STATE_CHANGE_EVENT, {
-        detail,
-      }),
-    );
-  }
-
   private _setPersistedExpandedIds(expandedIds: Iterable<string>): void {
     const nextExpandedIds = new Set(normalizeExpandedIds(expandedIds));
 
@@ -425,43 +538,9 @@ export class LayoutSidebar extends LitElement {
     this._persistedExpandedIds = nextExpandedIds;
   }
 
-  private _dispatchTreeStateChange(): void {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    window.dispatchEvent(
-      new CustomEvent<LayoutSidebarTreeStateChangeDetail>(LAYOUT_SIDEBAR_TREE_STATE_CHANGE_EVENT, {
-        detail: {
-          selectedId: this.selectedId,
-          expandedIds: normalizeExpandedIds(this._persistedExpandedIds),
-        },
-      }),
-    );
-  }
-
-  private _onToggleRequest = (event: Event): void => {
-    if (!(event instanceof CustomEvent)) {
-      return;
-    }
-
-    if (!this._isOverlayMode()) {
-      return;
-    }
-
-    const detail = isRecord(event.detail) ? event.detail : null;
-    const trigger = detail?.['trigger'] instanceof HTMLElement ? detail['trigger'] : undefined;
-    this._sidebarElement?.toggle(trigger);
-  };
-
-  private _onSidebarStateChange = (event: CustomEvent<LayoutSidebarStateChangeDetail>): void => {
+  private _onSidebarStateChange = (event: CustomEvent<UiSidebarStateChangeDetail>): void => {
     this._state = event.detail.state;
-
-    if (!this._isOverlayMode()) {
-      return;
-    }
-
-    this._dispatchOverlayStateChange(event.detail);
+    this._mode = event.detail.mode;
   };
 
   private _onSidebarToggle = (event: CustomEvent<UiSidebarToggleDetail>): void => {
@@ -483,43 +562,31 @@ export class LayoutSidebar extends LitElement {
       },
       this.selectedId,
     );
-
-    this._dispatchTreeStateChange();
-  };
-
-  private _onTreeStateSync = (event: Event): void => {
-    if (!(event instanceof CustomEvent)) {
-      return;
-    }
-
-    const detail = event.detail as LayoutSidebarTreeStateChangeDetail;
-    if (detail.selectedId !== this.selectedId) {
-      return;
-    }
-
-    this._setPersistedExpandedIds(detail.expandedIds);
   };
 
   private _onSidebarSelect = (): void => {
-    if (this._isOverlayMode()) {
-      this._sidebarElement?.collapse();
+    if (this._mode !== 'overlay') {
+      return;
     }
+
+    this._state = 'collapsed';
+    this._reportController();
   };
 
   override render() {
-    const explicitMode = this.presentation === 'auto' ? undefined : this.presentation;
-
     return html`
       <ui-sidebar
         id="layout-sidebar-panel"
         data-state=${this._state}
-        mode=${ifDefined(explicitMode)}
+        mode=${this._mode}
         .state=${this._state}
+        .mode=${this._mode}
         .items=${this._items}
         .selectedId=${this.selectedId}
         .expandedIds=${new Set(this._persistedExpandedIds)}
         .heading=${this.heading}
         .fixedBreakpoint=${this.fixedBreakpoint}
+        .returnFocusTarget=${this._returnFocusTarget}
         @ui-sidebar-state-change=${this._onSidebarStateChange}
         @ui-sidebar-toggle=${this._onSidebarToggle}
         @ui-sidebar-select=${this._onSidebarSelect}

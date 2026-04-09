@@ -37,6 +37,8 @@ export class Dropdown extends LitElement {
 
     .panel {
       position: fixed;
+      inset-inline-start: 0;
+      inset-block-start: 0;
       min-width: 180px;
       max-width: 280px;
       padding: calc(var(--radius-md, 6px) - var(--radius-sm, 4px));
@@ -263,6 +265,8 @@ export class Dropdown extends LitElement {
   }
 
   private _onClose(): void {
+    const panel = this.shadowRoot?.querySelector<HTMLElement>('.panel');
+
     if (this._openFocusTimeoutId !== null) {
       clearTimeout(this._openFocusTimeoutId);
       this._openFocusTimeoutId = null;
@@ -272,6 +276,8 @@ export class Dropdown extends LitElement {
     this._cleanupClickOutside();
     this._cleanupScrollClose();
     this._updateTriggerAria(false);
+    panel?.style.setProperty('left', '0px');
+    panel?.style.setProperty('top', '0px');
 
     if (this._restoreFocusOnClose) {
       this._getTriggerElement()?.focus({ preventScroll: true });

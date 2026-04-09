@@ -92,8 +92,16 @@ export class UiHeader extends LitElement {
       display: flex;
       align-items: center;
       gap: var(--space-2, 0.5rem);
-      flex-shrink: 0;
+      flex-shrink: 1;
       min-inline-size: 0;
+      overflow: hidden;
+    }
+
+    slot[name='start'],
+    slot[name='end'] {
+      display: block;
+      min-inline-size: 0;
+      max-inline-size: 100%;
     }
 
     .zone-center {
@@ -133,9 +141,10 @@ export class UiHeader extends LitElement {
       align-items: center;
       justify-content: flex-end;
       gap: var(--space-2, 0.5rem);
-      flex-shrink: 0;
+      flex-shrink: 1;
       min-inline-size: 0;
       margin-inline-start: auto;
+      overflow: hidden;
     }
 
     /* ── モバイル: 639px 以下では Center Zone を非表示（desktop 開始は 640px） ── */

@@ -8,12 +8,6 @@ const NAV_LABEL = 'メインナビゲーション';
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/** Fixed/Overlay切替の最小許容値 */
-const MIN_BREAKPOINT = 320;
-
-/** LocalStorage 永続化キー */
-const STORAGE_KEY = 'rouault.sidebar.state';
-
 export type SidebarState = 'expanded' | 'collapsed';
 export type SidebarMode = 'fixed' | 'overlay';
 
@@ -25,18 +19,14 @@ export interface UiSidebarStateChangeDetail {
 @customElement('ui-sidebar-shell')
 export class UiSidebarShell extends LitElement {
   static override styles = css`
-    /* ── ホスト: Grid Item として機能 ── */
     :host {
       display: block;
       block-size: 100%;
       min-block-size: 0;
       overflow: visible;
-
-      /* パブリックトークン（外部からオーバーライド可能） */
       --ui-sidebar-scrim-opacity: var(--opacity-scrim, 0.6);
     }
 
-    /* ── ナビゲーション本体 ── */
     nav {
       box-sizing: border-box;
       block-size: 100%;
@@ -51,7 +41,6 @@ export class UiSidebarShell extends LitElement {
         opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
 
-    /* ── Fixed Mode: 基本レイアウト ── */
     :host([mode='fixed']) nav {
       position: sticky;
       top: var(--header-height);
@@ -76,7 +65,6 @@ export class UiSidebarShell extends LitElement {
       pointer-events: none;
     }
 
-    /* ── Overlay Mode: 画面上部から開く top sheet ── */
     :host([mode='overlay']) nav {
       position: fixed;
       inset-block-start: var(--header-height);
@@ -95,7 +83,6 @@ export class UiSidebarShell extends LitElement {
       z-index: var(--z-modal, 300);
     }
 
-    /* ── Header スロット: Fixed では非表示 ── */
     :host([mode='fixed']) .sidebar-header {
       display: none;
     }
@@ -106,13 +93,11 @@ export class UiSidebarShell extends LitElement {
       border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(20% 0 0 / 0.12));
     }
 
-    /* スロットが空の場合はヘッダーエリアを隠す */
     .sidebar-header:empty,
     .sidebar-header:not(:has(::slotted(*))) {
       display: none;
     }
 
-    /* ── コンテンツエリア ── */
     .sidebar-content {
       flex: 1 1 auto;
       overflow-y: auto;
@@ -121,7 +106,6 @@ export class UiSidebarShell extends LitElement {
       min-block-size: 0;
     }
 
-    /* ── スクリム（Overlay Mode 背景遮蔽） ── */
     .scrim {
       position: fixed;
       inset: 0;
@@ -142,19 +126,16 @@ export class UiSidebarShell extends LitElement {
       pointer-events: auto;
     }
 
-    /* Fixed Mode ではスクリムを完全非表示 */
     :host([mode='fixed']) .scrim {
       display: none;
     }
 
-    /* ── Dark Mode ── */
     @media (prefers-color-scheme: dark) {
       nav {
         border-color: var(--border-ghost, oklch(90% 0 0 / 0.04));
       }
     }
 
-    /* ── Forced Colors Mode ── */
     @media (forced-colors: active) {
       nav {
         background: Canvas;
@@ -167,7 +148,6 @@ export class UiSidebarShell extends LitElement {
       }
     }
 
-    /* ── Reduced Motion ── */
     @media (prefers-reduced-motion: reduce) {
       nav,
       .sidebar-content,
@@ -178,7 +158,6 @@ export class UiSidebarShell extends LitElement {
       }
     }
 
-    /* ── Print ── */
     @media print {
       :host {
         display: none !important;
@@ -195,69 +174,49 @@ export class UiSidebarShell extends LitElement {
   @property({ type: Number, reflect: true, attribute: 'fixed-breakpoint' })
   fixedBreakpoint = 1280;
 
+  @property({ attribute: false })
+  returnFocusTarget: HTMLElement | null = null;
+
   @query('nav')
   private _navElement!: HTMLElement;
 
-  /** メディアクエリリスナー */
-  private _mediaQuery: MediaQueryList | null = null;
-
-  /** フォーカス返却先のトリガー要素 */
-  private _triggerElement: HTMLElement | null = null;
-
-  /** 初回レンダリング完了フラグ（初期値でのイベント発火を防止） */
   private _hasRendered = false;
 
-  /** 順次実行キュー（dialogパターン） */
   private _operation: Promise<void> = Promise.resolve();
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this._restoreState();
-    this._initMediaQuery();
     this.activateHydration();
-  }
-
-  override disconnectedCallback(): void {
-    this._destroyMediaQuery();
-    super.disconnectedCallback();
   }
 
   protected override updated(changedProperties: PropertyValues<this>): void {
     if (!this._hasRendered) {
       this._hasRendered = true;
-      /* 初期状態に合わせて inert/visibility を同期 */
-      this._syncInitialVisibility();
+      this._syncVisibilityForCurrentState();
       return;
     }
 
-    if (changedProperties.has('fixedBreakpoint')) {
-      this._initMediaQuery();
+    if (changedProperties.has('mode') && !changedProperties.has('state')) {
+      this._syncVisibilityForCurrentState();
     }
 
     if (changedProperties.has('state')) {
       const previousState = changedProperties.get('state');
-      /* 同値の場合はスキップ */
-      if (previousState === this.state) return;
+      if (previousState === this.state) {
+        return;
+      }
 
-      this._persistState();
       this._enqueue(async () => {
         if (this.state === 'expanded') {
           await this._expandSidebar();
           return;
         }
+
         await this._collapseSidebar();
       });
     }
   }
 
-  /* ===================================================================
-   * パブリック API
-   * =================================================================== */
-
-  /**
-   * SSR / Declarative Shadow DOM 由来の defer-hydration を解放し、
-   * 現在 state に応じた visibility / inert を client 側で同期する。
-   */
   activateHydration(): void {
     if (this.hasAttribute('defer-hydration')) {
       this.removeAttribute('defer-hydration');
@@ -270,181 +229,95 @@ export class UiSidebarShell extends LitElement {
         return;
       }
 
-      const nav = this._navElement;
-      if (!(nav instanceof HTMLElement)) {
+      if (!(this._navElement instanceof HTMLElement)) {
         return;
       }
 
-      if (this.state === 'collapsed') {
-        nav.inert = true;
-        nav.style.visibility = 'hidden';
-        return;
-      }
-
-      nav.inert = false;
-      nav.style.visibility = 'visible';
+      this._syncVisibilityForCurrentState();
     });
   }
 
-  /** サイドバーを展開する */
   expand(trigger?: HTMLElement): void {
     this._captureTrigger(trigger);
-    if (this.state === 'expanded') return;
+    if (this.state === 'expanded') {
+      return;
+    }
     this.state = 'expanded';
   }
 
-  /** サイドバーを格納する */
-  collapse(): void {
-    if (this.state === 'collapsed') return;
+  collapse(trigger?: HTMLElement): void {
+    this._captureTrigger(trigger);
+    if (this.state === 'collapsed') {
+      return;
+    }
     this.state = 'collapsed';
   }
 
-  /** サイドバーの開閉をトグルする */
   toggle(trigger?: HTMLElement): void {
     if (this.state === 'expanded') {
-      this._captureTrigger(trigger);
-      this.collapse();
-    } else {
-      this.expand(trigger);
-    }
-  }
-
-  /* ===================================================================
-   * ライフサイクルヘルパー
-   * =================================================================== */
-
-  /** LocalStorage から状態を復元する */
-  private _restoreState(): void {
-    /* data-state 属性が明示的に指定されている場合は復元しない（親コンポーネントの意図を尊重） */
-    if (this.hasAttribute('data-state')) return;
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === 'expanded' || stored === 'collapsed') {
-        this.state = stored;
-      }
-    } catch {
-      /* localStorage アクセス不可（SSR / プライバシー設定等） */
-    }
-  }
-
-  /** 状態を LocalStorage に永続化する */
-  private _persistState(): void {
-    try {
-      localStorage.setItem(STORAGE_KEY, this.state);
-    } catch {
-      /* 永続化失敗時は無視 */
-    }
-  }
-
-  /** matchMedia を初期化しモードを自動判定する */
-  private _initMediaQuery(): void {
-    if (typeof window === 'undefined') return;
-    /* mode 属性が明示的に指定されている場合は自動判定しない */
-    if (this.hasAttribute('mode')) return;
-    this._destroyMediaQuery();
-
-    this._mediaQuery = window.matchMedia(this._buildMediaQuery());
-    this._applyModeFromMediaQuery(this._mediaQuery.matches);
-    this._mediaQuery.addEventListener('change', this._onMediaQueryChange);
-  }
-
-  /** matchMedia リスナーを解除する */
-  private _destroyMediaQuery(): void {
-    this._mediaQuery?.removeEventListener('change', this._onMediaQueryChange);
-    this._mediaQuery = null;
-  }
-
-  /** 現在の固定ブレークポイントから media query 文字列を組み立てる */
-  private _buildMediaQuery(): string {
-    const resolved = this._resolveFixedBreakpoint(this.fixedBreakpoint);
-    return `(min-width: ${String(resolved)}px)`;
-  }
-
-  /** 不正値を保護した固定ブレークポイントを返す */
-  private _resolveFixedBreakpoint(value: number): number {
-    if (!Number.isFinite(value)) {
-      return 1280;
-    }
-    const normalized = Math.trunc(value);
-    return normalized >= MIN_BREAKPOINT ? normalized : MIN_BREAKPOINT;
-  }
-
-  /** matchMedia の評価結果を mode に反映する */
-  private _applyModeFromMediaQuery(isFixed: boolean): void {
-    this.mode = isFixed ? 'fixed' : 'overlay';
-  }
-
-  /** 初回レンダリング時に collapsed なら即座に inert/visibility を同期 */
-  private _syncInitialVisibility(): void {
-    if (this.state === 'collapsed') {
-      this._navElement.inert = true;
-      this._navElement.style.visibility = 'hidden';
+      this.collapse(trigger);
       return;
     }
 
-    this._navElement.inert = false;
-    this._navElement.style.visibility = 'visible';
+    this.expand(trigger);
   }
 
-  /* ===================================================================
-   * オペレーションキュー（dialog パターン）
-   * =================================================================== */
+  private _syncVisibilityForCurrentState(): void {
+    const nav = this._navElement;
+    if (!(nav instanceof HTMLElement)) {
+      return;
+    }
+
+    if (this.state === 'collapsed') {
+      nav.inert = true;
+      nav.style.visibility = 'hidden';
+      return;
+    }
+
+    nav.inert = false;
+    nav.style.visibility = 'visible';
+  }
 
   private _enqueue(task: () => Promise<void>): void {
     this._operation = this._operation.then(task).catch((error: unknown) => {
-      console.error('[ui-sidebar] operation failed', error);
+      console.error('[ui-sidebar-shell] operation failed', error);
     });
   }
 
-  /** 展開処理 */
   private async _expandSidebar(): Promise<void> {
     const nav = this._navElement;
 
-    /* Step 1: visibility 復元 + inert 解除（アニメーション前） */
     nav.style.visibility = 'visible';
     nav.inert = false;
 
-    /* Step 2: アニメーション待機 */
     await this._waitForAnimations(nav);
 
-    /* Step 3: Overlay モードのみ — 先頭フォーカス可能要素へ移動 */
     if (this.mode === 'overlay') {
       this._focusFirstElement();
     }
 
-    /* Step 4: イベント発火 */
     this._dispatchStateChange();
   }
 
-  /** 格納処理 */
   private async _collapseSidebar(): Promise<void> {
     const nav = this._navElement;
 
-    /* Step 1: inert を即座に付与（アニメーション前にフォーカス無効化） */
     nav.inert = true;
-
-    /* Step 2: アニメーション待機 */
     await this._waitForAnimations(nav);
-
-    /* Step 3: アニメーション完了後に visibility: hidden */
     nav.style.visibility = 'hidden';
 
-    /* Step 4: Overlay モードのみ — トリガーへフォーカス返却 */
     if (this.mode === 'overlay') {
       this._restoreTriggerFocus();
     }
 
-    /* Step 5: イベント発火 */
     this._dispatchStateChange();
   }
 
-  /** 要素上のアニメーション（CSS transition / animation）完了を待機 */
   private async _waitForAnimations(element: Element): Promise<void> {
     if (this._prefersReducedMotion()) {
       return;
     }
 
-    /* ブラウザに transition 開始の機会を与える */
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -454,25 +327,27 @@ export class UiSidebarShell extends LitElement {
     });
 
     const animations = element.getAnimations();
-    if (animations.length === 0) return;
-    await Promise.allSettled(animations.map((a) => a.finished));
-  }
-
-  /* ===================================================================
-   * フォーカス管理
-   * =================================================================== */
-
-  /** トリガー要素をキャプチャする */
-  private _captureTrigger(trigger?: HTMLElement): void {
-    if (trigger instanceof HTMLElement) {
-      this._triggerElement = trigger;
+    if (animations.length === 0) {
       return;
     }
-    const active = this.ownerDocument.activeElement;
-    this._triggerElement = active instanceof HTMLElement ? active : null;
+
+    await Promise.allSettled(animations.map((animation) => animation.finished));
   }
 
-  /** サイドバー内の最初のフォーカス可能要素にフォーカスを移動する */
+  private _captureTrigger(trigger?: HTMLElement): void {
+    if (trigger instanceof HTMLElement) {
+      this.returnFocusTarget = trigger;
+      return;
+    }
+
+    if (this.returnFocusTarget instanceof HTMLElement && this.returnFocusTarget.isConnected) {
+      return;
+    }
+
+    const active = this.ownerDocument.activeElement;
+    this.returnFocusTarget = active instanceof HTMLElement ? active : null;
+  }
+
   private _focusFirstElement(): void {
     const target = this._resolveInitialFocusTarget();
     if (!target) {
@@ -489,28 +364,29 @@ export class UiSidebarShell extends LitElement {
     });
   }
 
-  /** トリガー要素へフォーカスを返却する */
   private _restoreTriggerFocus(): void {
-    const target = this._triggerElement;
-    if (!target?.isConnected) return;
+    const target = this.returnFocusTarget;
+    if (!target?.isConnected) {
+      return;
+    }
+
     target.focus({ preventScroll: true });
   }
 
-  /** 要素リストから最初のフォーカス可能要素を検索する */
   private _findFirstFocusable(elements: readonly Element[]): HTMLElement | null {
-    for (const el of elements) {
-      if (el instanceof HTMLElement && el.matches(FOCUSABLE_SELECTOR)) {
-        return el;
+    for (const element of elements) {
+      if (element instanceof HTMLElement && element.matches(FOCUSABLE_SELECTOR)) {
+        return element;
       }
-      const nested = el.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-      if (nested) return nested;
+      const nested = element.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+      if (nested) {
+        return nested;
+      }
     }
     return null;
   }
 
-  /** 初期フォーカス候補を解決する */
   private _resolveInitialFocusTarget(): HTMLElement | null {
-    /* header スロットの slotted 要素を優先的に探索 */
     const headerSlot = this.shadowRoot?.querySelector<HTMLSlotElement>(
       '.sidebar-header slot[name="header"]',
     );
@@ -520,7 +396,6 @@ export class UiSidebarShell extends LitElement {
       return headerFocusable;
     }
 
-    /* デフォルトスロットの slotted 要素を探索 */
     const defaultSlot = this.shadowRoot?.querySelector<HTMLSlotElement>(
       '.sidebar-content slot:not([name])',
     );
@@ -528,7 +403,6 @@ export class UiSidebarShell extends LitElement {
     return this._findFirstFocusable(defaultElements);
   }
 
-  /** reduced motion が有効かを判定する */
   private _prefersReducedMotion(): boolean {
     return (
       typeof window !== 'undefined' &&
@@ -537,11 +411,6 @@ export class UiSidebarShell extends LitElement {
     );
   }
 
-  /* ===================================================================
-   * イベント
-   * =================================================================== */
-
-  /** 状態変更イベントを発火する */
   private _dispatchStateChange(): void {
     this.dispatchEvent(
       new CustomEvent<UiSidebarStateChangeDetail>('ui-sidebar-state-change', {
@@ -552,32 +421,24 @@ export class UiSidebarShell extends LitElement {
     );
   }
 
-  /* ===================================================================
-   * イベントハンドラ
-   * =================================================================== */
-
-  /** メディアクエリ変更ハンドラ */
-  private _onMediaQueryChange = (event: MediaQueryListEvent): void => {
-    this._applyModeFromMediaQuery(event.matches);
-  };
-
-  /** スクリムクリックハンドラ */
   private _onScrimClick = (): void => {
     this.collapse();
   };
 
-  /** Esc キーハンドラ（Overlay モードのみ） */
   private _onKeydown = (event: KeyboardEvent): void => {
-    if (event.key !== 'Escape') return;
-    if (this.mode !== 'overlay') return;
-    if (this.state !== 'expanded') return;
+    if (event.key !== 'Escape') {
+      return;
+    }
+    if (this.mode !== 'overlay') {
+      return;
+    }
+    if (this.state !== 'expanded') {
+      return;
+    }
+
     event.preventDefault();
     this.collapse();
   };
-
-  /* ===================================================================
-   * レンダリング
-   * =================================================================== */
 
   override render() {
     return html`

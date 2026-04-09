@@ -13,7 +13,7 @@ interface NoteLayoutData {
   notePage?: NotePageProjection;
 }
 
-type SidebarPresentation = 'fixed' | 'overlay';
+const NOTE_LAYOUT_SIDEBAR_ID = 'note-primary';
 
 const renderPagefindGenreFilters = (genres: readonly string[]): string =>
   genres
@@ -47,48 +47,31 @@ const renderPagefindMetadata = (pagefind: NonNullable<NotePageProjection['pagefi
   `.trim();
 };
 
-const buildSidebarAttributes = (
-  sidebar: NonNullable<NotePageProjection['sidebar']>,
-  presentation: SidebarPresentation,
-): string => {
-  const heading = presentation === 'overlay' ? '' : sidebar.heading;
-
-  return serializeHtmlAttributes([
+const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar']>): string =>
+  serializeHtmlAttributes([
     { name: 'source-id', value: sidebar.sourceId },
     { name: 'selected-id', value: sidebar.selectedId },
     { name: 'items-json', value: sidebar.items, kind: 'json' },
-    { name: 'heading', value: heading },
+    { name: 'heading', value: sidebar.heading },
     { name: 'fixed-breakpoint', value: sidebar.fixedBreakpoint },
-    { name: 'presentation', value: presentation },
+    { name: 'presentation', value: 'auto' },
+    { name: 'sidebar-id', value: NOTE_LAYOUT_SIDEBAR_ID },
     { name: 'data-hydration-capability', value: 'interactive' },
     { name: 'data-hydration-trigger', value: 'initial' },
   ]);
-};
 
-const renderFixedSidebar = (sidebar: NonNullable<NotePageProjection['sidebar']>): string => {
-  const sidebarAttributes = buildSidebarAttributes(sidebar, 'fixed');
+const renderSidebar = (sidebar: NonNullable<NotePageProjection['sidebar']>): string => {
+  const sidebarAttributes = buildSidebarAttributes(sidebar);
 
   return `
     <aside
       class="layout-sidebar-col"
       aria-label="ナビゲーション"
       data-hydration-scope="note-sidebar"
-      data-sidebar-surface="fixed"
+      data-sidebar-surface="primary"
     >
       <layout-sidebar${sidebarAttributes}></layout-sidebar>
     </aside>
-  `.trim();
-};
-
-const renderOverlaySidebar = (sidebar: NonNullable<NotePageProjection['sidebar']>): string => {
-  const sidebarAttributes = buildSidebarAttributes(sidebar, 'overlay');
-
-  return `
-    <layout-sidebar
-      class="layout-sidebar-overlay"
-      data-sidebar-surface="overlay"
-      ${sidebarAttributes}
-    ></layout-sidebar>
   `.trim();
 };
 
@@ -200,7 +183,7 @@ export class NoteLayout {
 
     return `
       <section${shellAttributes}>
-        ${notePage.showSidebar && notePage.sidebar ? renderFixedSidebar(notePage.sidebar) : ''}
+        ${notePage.showSidebar && notePage.sidebar ? renderSidebar(notePage.sidebar) : ''}
 
         <article${article}>
           ${notePage.pagefind ? renderPagefindMetadata(notePage.pagefind) : ''}
@@ -215,7 +198,6 @@ export class NoteLayout {
 
         ${renderToc(notePage.toc)}
       </section>
-      ${notePage.showSidebar && notePage.sidebar ? renderOverlaySidebar(notePage.sidebar) : ''}
       ${renderJsonScriptElement(notePage.toc.sourceId, notePage.toc.headings)}
       ${
         notePage.showSidebar && notePage.sidebar

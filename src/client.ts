@@ -21,6 +21,26 @@ const resolveCurrentContentRoot = (): HTMLElement | null => {
   return document.querySelector<HTMLElement>('#main-content');
 };
 
+const preloadCriticalCustomElements = async (): Promise<void> => {
+  const eagerLoaders: Promise<unknown>[] = [];
+
+  if (document.querySelector('layout-sidebar')) {
+    eagerLoaders.push(import('./components/layout/layout-sidebar.js'));
+  }
+
+  if (document.querySelector('layout-toc')) {
+    eagerLoaders.push(import('./components/layout/layout-toc.js'));
+  }
+
+  if (document.querySelector('ui-article-header')) {
+    eagerLoaders.push(import('./components/ui/article-header/article-header.js'));
+  }
+
+  if (eagerLoaders.length > 0) {
+    await Promise.all(eagerLoaders);
+  }
+};
+
 const hydrateShellScopes = async (): Promise<void> => {
   const shellScopes = [
     document.querySelector<HTMLElement>('[data-hydration-scope="skip-link"]'),
@@ -35,9 +55,6 @@ const hydrateShellScopes = async (): Promise<void> => {
 
 const hydrateCurrentContent = async (contentRoot?: HTMLElement): Promise<void> => {
   await customElements.whenDefined('app-router');
-
-  const appRouter = getAppRouter();
-  await appRouter?.whenReady();
 
   const mainContent = contentRoot ?? resolveCurrentContentRoot();
   if (!(mainContent instanceof HTMLElement)) {
@@ -65,7 +82,6 @@ const hydrateCurrentContent = async (contentRoot?: HTMLElement): Promise<void> =
     await Promise.all(eagerLoaders);
   }
 
-  // SSR を保持した既存 host に対して、補助処理より前に upgrade を完了させる。
   customElements.upgrade(mainContent);
   await Promise.resolve();
 
@@ -88,6 +104,7 @@ const hydrateCurrentContent = async (contentRoot?: HTMLElement): Promise<void> =
 
 const bootstrapClient = async (): Promise<void> => {
   initTheme();
+  await preloadCriticalCustomElements();
   await hydrateShellScopes();
   initSearch();
   await hydrateCurrentContent();

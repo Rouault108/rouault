@@ -1,6 +1,5 @@
-import { css, html, LitElement, type PropertyValues } from 'lit';
+import { css, html, LitElement } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
-import { ifDefined } from 'lit/directives/if-defined.js';
 import '../file-tree/file-tree.js';
 import type { FileTreeVariant, TreeItemDensity, TreeNode } from '../file-tree/file-tree.js';
 import '../sidebar-shell/sidebar-shell.js';
@@ -10,9 +9,6 @@ import type {
   UiSidebarShell,
   UiSidebarStateChangeDetail,
 } from '../sidebar-shell/sidebar-shell.js';
-
-const STORAGE_KEY = 'rouault.sidebar.state';
-const MIN_BREAKPOINT = 320;
 
 export interface UiSidebarSelectDetail {
   id: string;
@@ -115,173 +111,64 @@ export class UiSidebar extends LitElement {
   @property({ type: Number, reflect: true, attribute: 'fixed-breakpoint' })
   fixedBreakpoint = 1280;
 
+  @property({ attribute: false })
+  returnFocusTarget: HTMLElement | null = null;
+
   @query('ui-sidebar-shell')
   private _shellElement!: UiSidebarShell | null;
 
-  private _syncFromShellInProgress = false;
-
-  private _shellObserver: MutationObserver | null = null;
-
-  override disconnectedCallback(): void {
-    this._detachShellObserver();
-    super.disconnectedCallback();
-  }
-
-  override connectedCallback(): void {
-    super.connectedCallback();
-    this._restoreState();
-    this._initModeFromMediaQuery();
-  }
-
   protected override firstUpdated(): void {
     this._activateShellHydration();
-    this._attachShellObserver();
-    this._syncStateToShell();
   }
 
-  protected override updated(changedProperties: PropertyValues<this>): void {
+  protected override updated(): void {
     this._activateShellHydration();
-
-    if (this._syncFromShellInProgress) {
-      return;
-    }
-
-    if (
-      changedProperties.has('state') ||
-      changedProperties.has('mode') ||
-      changedProperties.has('fixedBreakpoint')
-    ) {
-      this._syncStateToShell();
-    }
   }
 
   expand(trigger?: HTMLElement): void {
-    this._activateShellHydration();
-    this._shellElement?.expand(trigger);
+    if (trigger instanceof HTMLElement) {
+      this.returnFocusTarget = trigger;
+    }
+
+    if (this.state === 'expanded') {
+      return;
+    }
+
+    this.state = 'expanded';
   }
 
   collapse(): void {
-    this._activateShellHydration();
-    this._shellElement?.collapse();
+    if (this.state === 'collapsed') {
+      return;
+    }
+
+    this.state = 'collapsed';
   }
 
   toggle(trigger?: HTMLElement): void {
-    this._activateShellHydration();
-    this._shellElement?.toggle(trigger);
+    if (trigger instanceof HTMLElement) {
+      this.returnFocusTarget = trigger;
+    }
+
+    if (this.state === 'expanded') {
+      this.collapse();
+      return;
+    }
+
+    this.expand(trigger);
   }
 
   private _activateShellHydration(): void {
     this._shellElement?.activateHydration();
   }
 
-  private _attachShellObserver(): void {
-    this._detachShellObserver();
-
-    if (!this._shellElement) {
-      return;
-    }
-
-    this._shellObserver = new MutationObserver(() => {
-      this._syncStateFromShell();
-    });
-
-    this._shellObserver.observe(this._shellElement, {
-      attributes: true,
-      attributeFilter: ['mode', 'data-state', 'fixed-breakpoint'],
-    });
-  }
-
-  private _detachShellObserver(): void {
-    this._shellObserver?.disconnect();
-    this._shellObserver = null;
-  }
-
-  private _syncStateFromShell(): void {
-    if (!this._shellElement) {
-      return;
-    }
-
-    const shell = this._shellElement;
-    this._syncFromShellInProgress = true;
-
-    if (this.state !== shell.state) {
-      this.state = shell.state;
-    }
-
-    if (this.mode !== shell.mode) {
-      this.mode = shell.mode;
-    }
-
-    if (this.fixedBreakpoint !== shell.fixedBreakpoint) {
-      this.fixedBreakpoint = shell.fixedBreakpoint;
-    }
-
-    this._syncFromShellInProgress = false;
-  }
-
-  private _syncStateToShell(): void {
-    if (!this._shellElement) {
-      return;
-    }
-
-    this._shellElement.activateHydration();
-
-    if (this._shellElement.state !== this.state) {
-      this._shellElement.state = this.state;
-    }
-
-    if (this._shellElement.mode !== this.mode) {
-      this._shellElement.mode = this.mode;
-    }
-
-    if (this._shellElement.fixedBreakpoint !== this.fixedBreakpoint) {
-      this._shellElement.fixedBreakpoint = this.fixedBreakpoint;
-    }
-  }
-
-  private _restoreState(): void {
-    if (this.hasAttribute('data-state')) {
-      return;
-    }
-
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === 'expanded' || stored === 'collapsed') {
-        this.state = stored;
-      }
-    } catch {
-      /* localStorage が使えない環境では復元を諦める */
-    }
-  }
-
-  private _initModeFromMediaQuery(): void {
-    if (this.hasAttribute('mode')) {
-      return;
-    }
-
-    const resolvedBreakpoint = this._resolveFixedBreakpoint(this.fixedBreakpoint);
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return;
-    }
-
-    const isFixed = window.matchMedia(`(min-width: ${String(resolvedBreakpoint)}px)`).matches;
-    this.mode = isFixed ? 'fixed' : 'overlay';
-  }
-
-  private _resolveFixedBreakpoint(value: number): number {
-    if (!Number.isFinite(value)) {
-      return 1280;
-    }
-
-    const normalized = Math.trunc(value);
-    return normalized >= MIN_BREAKPOINT ? normalized : MIN_BREAKPOINT;
+  private _hasOverlayHeaderActions(): boolean {
+    return this.querySelector('[slot="header-actions"]') !== null;
   }
 
   private _onShellStateChange = (event: CustomEvent<UiSidebarStateChangeDetail>): void => {
-    this._syncFromShellInProgress = true;
     this.state = event.detail.state;
     this.mode = event.detail.mode;
-    this._syncFromShellInProgress = false;
 
     this.dispatchEvent(
       new CustomEvent<UiSidebarStateChangeDetail>('ui-sidebar-state-change', {
@@ -329,18 +216,22 @@ export class UiSidebar extends LitElement {
   override render() {
     const normalizedHeading = this.heading.trim();
     const hasHeading = normalizedHeading.length > 0;
+    const hasOverlayHeaderActions = this._hasOverlayHeaderActions();
 
     return html`
       <ui-sidebar-shell
         data-state=${this.state}
-        mode=${ifDefined(this.mode)}
+        mode=${this.mode}
+        .state=${this.state}
+        .mode=${this.mode}
         .fixedBreakpoint=${this.fixedBreakpoint}
+        .returnFocusTarget=${this.returnFocusTarget}
         @ui-sidebar-state-change=${this._onShellStateChange}
       >
-        ${hasHeading
+        ${hasOverlayHeaderActions
           ? html`
               <div class="sidebar-head" slot="header">
-                <h2 class="heading">${normalizedHeading}</h2>
+                ${hasHeading ? html`<h2 class="heading">${normalizedHeading}</h2>` : null}
                 <slot name="header-actions"></slot>
               </div>
             `

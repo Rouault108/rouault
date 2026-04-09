@@ -58,6 +58,9 @@ const getShell = (host: UiSidebar): UiSidebarShell | null =>
 const getTree = (host: UiSidebar): HTMLElement | null =>
   host.shadowRoot?.querySelector<HTMLElement>('ui-file-tree') ?? null;
 
+const getSidebarHead = (host: UiSidebar): HTMLElement | null =>
+  host.shadowRoot?.querySelector<HTMLElement>('.sidebar-head') ?? null;
+
 const flush = async (host: UiSidebar): Promise<void> => {
   await waitForLitUpdate(host);
   await nextAnimationFrame();
@@ -234,6 +237,45 @@ describe('ui-sidebar browser contract', () => {
 
     expect(tree.getAttribute('variant')).to.equal('default');
     expect(tree.getAttribute('density')).to.equal('normal');
+  });
+
+  it('overlay では header-actions がない限り見出しヘッダーを描画しないこと', async () => {
+    const host = await fixture<UiSidebar>(html`
+      <ui-sidebar
+        data-state="expanded"
+        mode="overlay"
+        heading="ナビゲーション"
+        .items=${cloneTree(sampleItems)}
+        .expandedIds=${new Set(['root'])}
+        selected-id="root/readme"
+      ></ui-sidebar>
+    `);
+
+    await flush(host);
+
+    expect(getSidebarHead(host)).to.equal(null);
+  });
+
+  it('header-actions がある場合に限り overlay 補助ヘッダーを描画すること', async () => {
+    const host = await fixture<UiSidebar>(html`
+      <ui-sidebar
+        data-state="expanded"
+        mode="overlay"
+        heading="ナビゲーション"
+        .items=${cloneTree(sampleItems)}
+        .expandedIds=${new Set(['root'])}
+        selected-id="root/readme"
+      >
+        <button slot="header-actions" type="button">閉じる</button>
+      </ui-sidebar>
+    `);
+
+    await flush(host);
+
+    const header = expectPresent(getSidebarHead(host), 'sidebar-head');
+    expect(header.textContent).to.contain('ナビゲーション');
+    const actionsSlot = header.querySelector<HTMLSlotElement>('slot[name="header-actions"]');
+    expect(actionsSlot).to.not.equal(null);
   });
 
   it('ui-tree-select を ui-sidebar-select として bubbles/composed 付きで再送出すること', async () => {

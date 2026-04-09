@@ -1,6 +1,10 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/sidebar/sidebar.js';
 import type { LayoutSidebar } from '../../src/components/layout/layout-sidebar.js';
+import {
+  DEFAULT_LAYOUT_SIDEBAR_ID,
+  layoutSidebarController,
+} from '../../src/components/layout/layout-sidebar-controller.js';
 import { getLayoutSidebarTreeStateStorageKey } from '../../src/components/layout/layout-sidebar-tree-state.js';
 import type {
   UiSidebar,
@@ -176,6 +180,7 @@ const waitForSidebarStateChange = async (
 describe('layout-sidebar browser contract', () => {
   afterEach(() => {
     localStorage.clear();
+    layoutSidebarController.reset();
   });
 
   it('初回表示では現在位置の祖先を開き、その後は手動で閉じられること', async () => {
@@ -290,116 +295,51 @@ describe('layout-sidebar browser contract', () => {
     }
   });
 
-  it('presentation を分離した場合、fixed 面は toggle request を無視し overlay 面だけが応答すること', async () => {
-    const media = mockMatchMedia();
+  it('presentation="auto" では広幅で fixed / expanded を解決すること', async () => {
+    const media = mockMatchMedia(true);
 
     try {
       await ensureLayoutSidebarDefined();
 
-      const fixedHost = await fixture<LayoutSidebar>(html`
+      const host = await fixture<LayoutSidebar>(html`
         <layout-sidebar
-          presentation="fixed"
+          presentation="auto"
           .itemsJson=${sampleItemsJson}
           selected-id="music/classical/beethoven/symphony-9"
         ></layout-sidebar>
       `);
 
-      await settle(fixedHost);
+      await settle(host);
 
-      const fixedSidebar = expectPresent(getSidebar(fixedHost), 'fixed ui-sidebar');
-      expect(fixedSidebar.mode).to.equal('fixed');
-      expect(fixedSidebar.state).to.equal('expanded');
-
-      window.dispatchEvent(new CustomEvent('layout-sidebar-toggle-request'));
-      await settle(fixedHost);
-
-      expect(fixedSidebar.state).to.equal('expanded');
-
-      const overlayHost = await fixture<LayoutSidebar>(html`
-        <layout-sidebar
-          presentation="overlay"
-          .itemsJson=${sampleItemsJson}
-          selected-id="music/classical/beethoven/symphony-9"
-        ></layout-sidebar>
-      `);
-
-      await settle(overlayHost);
-
-      const overlaySidebar = expectPresent(getSidebar(overlayHost), 'overlay ui-sidebar');
-      expect(overlaySidebar.mode).to.equal('overlay');
-      expect(overlaySidebar.state).to.equal('collapsed');
-
-      await waitForSidebarStateChange(overlayHost, 'expanded', () => {
-        window.dispatchEvent(new CustomEvent('layout-sidebar-toggle-request'));
-      });
-
-      expect(overlaySidebar.state).to.equal('expanded');
+      const sidebar = expectPresent(getSidebar(host), 'ui-sidebar');
+      expect(sidebar.mode).to.equal('fixed');
+      expect(sidebar.state).to.equal('expanded');
     } finally {
       media.restore();
     }
   });
 
-  it('fixed / overlay の二重 host でも branch toggle が即時同期されること', async () => {
-    const media = mockMatchMedia();
+  it('host 接続前の toggle request が失われず、overlay 初期状態へ反映されること', async () => {
+    const media = mockMatchMedia(false);
 
     try {
       await ensureLayoutSidebarDefined();
 
-      const selectedId = 'music/classical/beethoven/symphony-9';
+      layoutSidebarController.toggle(DEFAULT_LAYOUT_SIDEBAR_ID);
 
-      const fixedHost = await fixture<LayoutSidebar>(html`
+      const host = await fixture<LayoutSidebar>(html`
         <layout-sidebar
-          presentation="fixed"
+          presentation="auto"
           .itemsJson=${sampleItemsJson}
-          selected-id="${selectedId}"
+          selected-id="music/classical/beethoven/symphony-9"
         ></layout-sidebar>
       `);
 
-      const overlayHost = await fixture<LayoutSidebar>(html`
-        <layout-sidebar
-          presentation="overlay"
-          .itemsJson=${sampleItemsJson}
-          selected-id="${selectedId}"
-        ></layout-sidebar>
-      `);
+      await settle(host);
 
-      await settle(fixedHost);
-      await settle(overlayHost);
-
-      const fixedSidebar = expectPresent(getSidebar(fixedHost), 'fixed ui-sidebar');
-
-      fixedSidebar.dispatchEvent(
-        new CustomEvent<UiSidebarToggleDetail>('ui-sidebar-toggle', {
-          bubbles: true,
-          composed: true,
-          detail: {
-            id: 'music/classical',
-            expanded: false,
-          },
-        }),
-      );
-
-      await settle(fixedHost);
-      await settle(overlayHost);
-
-      const fixedFileTree = expectPresent(getFileTree(fixedHost), 'fixed ui-file-tree');
-      const overlayFileTree = expectPresent(getFileTree(overlayHost), 'overlay ui-file-tree');
-
-      await waitForLitUpdate(fixedFileTree);
-      await waitForLitUpdate(overlayFileTree);
-      const fixedCollapsedBranchPanel = expectPresent(
-        getTreeItemChildrenPanel(fixedFileTree, 'music/classical'),
-        'fixed music/classical children panel',
-      );
-      const overlayCollapsedBranchPanel = expectPresent(
-        getTreeItemChildrenPanel(overlayFileTree, 'music/classical'),
-        'overlay music/classical children panel',
-      );
-
-      expect(fixedCollapsedBranchPanel.getAttribute('aria-hidden')).to.equal('true');
-      expect(fixedCollapsedBranchPanel.hasAttribute('inert')).to.equal(true);
-      expect(overlayCollapsedBranchPanel.getAttribute('aria-hidden')).to.equal('true');
-      expect(overlayCollapsedBranchPanel.hasAttribute('inert')).to.equal(true);
+      const sidebar = expectPresent(getSidebar(host), 'ui-sidebar');
+      expect(sidebar.mode).to.equal('overlay');
+      expect(sidebar.state).to.equal('expanded');
     } finally {
       media.restore();
     }
