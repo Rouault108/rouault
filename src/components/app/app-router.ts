@@ -41,6 +41,10 @@ const createNotStartedResult = (url: string): NavigationResult => ({
 
 registerTabsUrlSyncStrategy(primaryTabTabsUrlSyncStrategy);
 
+/**
+ * `app-router` は Rouault の document-first 契約を保持する light DOM host です。
+ * SSR 初期本文と遷移後本文の双方を `main#main-content` に集約し、本文境界を増やしません。
+ */
 export class AppRouter extends HTMLElement {
   private _serverContent: RouterContentHtml | null = null;
   private _pendingInitialContent: RouterContentHtml | null = null;
@@ -87,6 +91,9 @@ export class AppRouter extends HTMLElement {
     this._applyContent(value, false);
   }
 
+  /**
+   * hydration 後に router の公開 API を安全に利用できる時点まで待機します。
+   */
   whenReady(): Promise<void> {
     return this.ready;
   }
@@ -206,6 +213,7 @@ export class AppRouter extends HTMLElement {
   }
 
   private _findExistingContentRoot(): HTMLElement | null {
+    // 旧来の `<main>` を残した文書があっても、公開契約上の本文 root は常に `main#main-content` を優先します。
     const contentRoot = this.getContentRoot();
     if (contentRoot instanceof HTMLElement) {
       return contentRoot;
@@ -283,6 +291,7 @@ export class AppRouter extends HTMLElement {
   }
 
   private _dispatchContentRendered(contentRoot: HTMLElement): void {
+    // 描画後連携は event detail 経由で現在の本文 root を受け取れることを契約にします。
     this.dispatchEvent(
       new CustomEvent<AppRouterContentRenderedDetail>('app-router:content-rendered', {
         detail: { contentRoot },

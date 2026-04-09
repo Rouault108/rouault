@@ -194,6 +194,22 @@ describe('app-router', () => {
     );
   });
 
+  it('main と main#main-content が共存しても本文 root は #main-content を優先すること', async () => {
+    host = await fixture<AppRouterElement>(
+      html`<app-router>
+        <main><h1>Legacy Main</h1></main>
+        <main id="main-content" tabindex="-1"><h1>Contract Main</h1></main>
+      </app-router>`,
+    );
+    const appHost = host;
+
+    await appHost.whenReady();
+
+    expect(appHost.getContentRoot()).to.equal(appHost.querySelector('main#main-content'));
+    expect(appHost.querySelector('main#main-content')?.textContent).to.contain('Contract Main');
+    expect(appHost.querySelector('main:not(#main-content)')?.textContent).to.contain('Legacy Main');
+  });
+
   it('ready と whenReady() を公開し、接続後に解決されること', async () => {
     host = await fixture<AppRouterElement>(
       html`<app-router><main><h1>SSR Title</h1></main></app-router>`,
