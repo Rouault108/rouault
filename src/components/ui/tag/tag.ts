@@ -134,25 +134,20 @@ export class Tag extends LitElement {
 
       /* Final Color Calculation */
       background-color: oklch(
-        calc(var(--tag-bg-l) + var(--tag-delta-bg-l))
-          var(--tag-bg-chroma)
+        calc(var(--tag-bg-l) + var(--tag-delta-bg-l)) var(--tag-bg-chroma)
           var(--tag-hue, var(--hue-base, 0))
       );
       color: oklch(
-        calc(var(--tag-fg-l) + var(--tag-delta-fg-l))
-          var(--tag-fg-chroma)
+        calc(var(--tag-fg-l) + var(--tag-delta-fg-l)) var(--tag-fg-chroma)
           var(--tag-hue, var(--hue-base, 0))
       );
       border: var(--border-width, 1px) solid var(--border-color);
 
       /* Transition */
       transition:
-        border-color var(--duration-fast, 70ms)
-          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        background-color var(--duration-fast, 70ms)
-          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        color var(--duration-fast, 70ms)
-          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     /* ── Size ── */
@@ -217,8 +212,7 @@ export class Tag extends LitElement {
     :host([variant='outline']) {
       background-color: transparent;
       --border-color: oklch(
-        calc(var(--tag-fg-l) + var(--tag-delta-fg-l))
-          var(--tag-fg-chroma)
+        calc(var(--tag-fg-l) + var(--tag-delta-fg-l)) var(--tag-fg-chroma)
           var(--tag-hue, var(--hue-base, 0))
       );
     }

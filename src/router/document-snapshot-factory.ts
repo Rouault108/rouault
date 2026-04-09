@@ -17,8 +17,7 @@ export class DocumentSnapshotFactory {
       html: contentRoot.innerHTML,
       title: documentSnapshot.title,
       metaDescription:
-        documentSnapshot.querySelector('meta[name="description"]')?.getAttribute('content') ??
-        null,
+        documentSnapshot.querySelector('meta[name="description"]')?.getAttribute('content') ?? null,
       shell,
       announcedTitle: documentSnapshot.title,
     };

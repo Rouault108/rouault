@@ -102,20 +102,20 @@ router が反映対象として扱う統一文書表現です。route 経路で�
 
 ## 全体構成
 
-| 要素                   | 主責務                                                                 |
-| ---------------------- | ---------------------------------------------------------------------- |
-| `Router`               | 公開 API、ライフサイクル、依存関係の組み立て                           |
-| Link Interceptor       | `document click` / `popstate` 監視と内部遷移化                         |
-| Location Adapter       | URL 正規化、履歴 state 生成、navigation URL と fetch target URL の差分吸収 |
-| Navigation Queue       | latest-wins の直列化制御                                               |
-| Navigation Runner      | 1 回の遷移実行、outcome 確定、イベント通知                             |
-| Before Navigate Hooks  | 遷移前フック登録・実行                                                 |
-| Route Registry         | document route 登録とマッチング                                        |
-| Content Loader         | fetch / route 実行と `DocumentSnapshot` 生成                           |
+| 要素                   | 主責務                                                                            |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| `Router`               | 公開 API、ライフサイクル、依存関係の組み立て                                      |
+| Link Interceptor       | `document click` / `popstate` 監視と内部遷移化                                    |
+| Location Adapter       | URL 正規化、履歴 state 生成、navigation URL と fetch target URL の差分吸収        |
+| Navigation Queue       | latest-wins の直列化制御                                                          |
+| Navigation Runner      | 1 回の遷移実行、outcome 確定、イベント通知                                        |
+| Before Navigate Hooks  | 遷移前フック登録・実行                                                            |
+| Route Registry         | document route 登録とマッチング                                                   |
+| Content Loader         | fetch / route 実行と `DocumentSnapshot` 生成                                      |
 | Content Committer      | title / meta description / content / shell / history の durable commit を担当する |
-| Shell Adapter          | shell snapshot の抽出および 2 相 commit 統合を担う任意 adapter         |
-| URL State Policy       | state-only navigation 判定を担う任意統合                               |
-| Post Commit Controller | 描画後後処理を担う任意統合                                             |
+| Shell Adapter          | shell snapshot の抽出および 2 相 commit 統合を担う任意 adapter                    |
+| URL State Policy       | state-only navigation 判定を担う任意統合                                          |
+| Post Commit Controller | 描画後後処理を担う任意統合                                                        |
 
 ### 構成原則
 
@@ -171,9 +171,7 @@ interface ShellAdapter {
     document: Document,
   ): DocumentShellSnapshot | null | Promise<DocumentShellSnapshot | null>;
 
-  prepare?(
-    update: ShellUpdatePayload,
-  ): PreparedShellUpdate | Promise<PreparedShellUpdate>;
+  prepare?(update: ShellUpdatePayload): PreparedShellUpdate | Promise<PreparedShellUpdate>;
 }
 
 type UrlStateNavigationDecision =
@@ -213,14 +211,14 @@ interface RouterOptions {
 }
 ```
 
-| 項目                         | 既定          | 意味                                                                            |
-| -------------------------- | ----------- | ----------------------------------------------------------------------------- |
-| `contentAdapter`           | `undefined` | 本文描画を外側へ委譲する 2 相 adapter です。未指定時、router は outlet を直接更新します。                    |
+| 項目                       | 既定        | 意味                                                                                                       |
+| -------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------- |
+| `contentAdapter`           | `undefined` | 本文描画を外側へ委譲する 2 相 adapter です。未指定時、router は outlet を直接更新します。                  |
 | `shellAdapter`             | `undefined` | shell snapshot の抽出および 2 相 commit 統合を行う任意 adapter です。未指定時、shell commit は行いません。 |
-| `urlStateNavigationPolicy` | `undefined` | state-only navigation 判定を行う任意 policy です。未指定時、すべて full navigation とします。        |
-| `postCommitController`     | `undefined` | 描画後後処理を行う任意 controller です。未指定時、router core は後処理を行いません。                        |
-| `skipInitialNavigation`    | `false`     | `start()` 時の初回 `historyMode: 'none'` 遷移を抑止します。SSR 初期本文を保持する統合構成で用います。         |
-| `navigationTimeoutMs`      | `null`      | 1 件の navigation の上限時間です。`null` は timeout 無効を意味します。                            |
+| `urlStateNavigationPolicy` | `undefined` | state-only navigation 判定を行う任意 policy です。未指定時、すべて full navigation とします。              |
+| `postCommitController`     | `undefined` | 描画後後処理を行う任意 controller です。未指定時、router core は後処理を行いません。                       |
+| `skipInitialNavigation`    | `false`     | `start()` 時の初回 `historyMode: 'none'` 遷移を抑止します。SSR 初期本文を保持する統合構成で用います。      |
+| `navigationTimeoutMs`      | `null`      | 1 件の navigation の上限時間です。`null` は timeout 無効を意味します。                                     |
 
 ## ライフサイクル API
 
@@ -318,67 +316,65 @@ interface NavigationResult {
 
 #### 契約
 
-* `navigate()` は **当該要求自身の結果** を返します。
-* `navigate()` は started 状態でのみ通常動作します。
-* `start()` 前の `navigate()` は、同期例外を送出してはなりません。
-* `start()` 前の `navigate()` は、`outcome = 'failed'`、`committed = false`、`degraded = false`、`issues = []`、`source = 'none'`、`renderedKind = null` の結果を返し、`error` に `RouterNotStartedError`、`errorReason` に `'not-started'` を設定しなければなりません。
-* `completed` は、**durable commit point に到達したこと** を意味します。これは「正常文書であったこと」を意味しません。
-* `cancelled` は、`BeforeNavigateHook` により中止されたことを意味します。
-* `superseded` は、latest-wins により後続要求へ上書きされたことを意味します。
-* `failed` は、durable commit point に到達しなかったことを意味します。
-* `not-found` または `error` 表示を正常に commit できた場合、`outcome` は `completed` です。
-* `renderedKind` は、その要求が最終的に commit した表示種別を表します。
-* `degraded` は、durable commit 自体は成立したが、**post-commit 後処理** の一部に失敗があったことを表します。
-* `issues` は、`degraded = true` の原因となった post-commit failure を列挙します。
+- `navigate()` は **当該要求自身の結果** を返します。
+- `navigate()` は started 状態でのみ通常動作します。
+- `start()` 前の `navigate()` は、同期例外を送出してはなりません。
+- `start()` 前の `navigate()` は、`outcome = 'failed'`、`committed = false`、`degraded = false`、`issues = []`、`source = 'none'`、`renderedKind = null` の結果を返し、`error` に `RouterNotStartedError`、`errorReason` に `'not-started'` を設定しなければなりません。
+- `completed` は、**durable commit point に到達したこと** を意味します。これは「正常文書であったこと」を意味しません。
+- `cancelled` は、`BeforeNavigateHook` により中止されたことを意味します。
+- `superseded` は、latest-wins により後続要求へ上書きされたことを意味します。
+- `failed` は、durable commit point に到達しなかったことを意味します。
+- `not-found` または `error` 表示を正常に commit できた場合、`outcome` は `completed` です。
+- `renderedKind` は、その要求が最終的に commit した表示種別を表します。
+- `degraded` は、durable commit 自体は成立したが、**post-commit 後処理** の一部に失敗があったことを表します。
+- `issues` は、`degraded = true` の原因となった post-commit failure を列挙します。
 
 ### `NavigationResult.committed` の定義
 
 `committed` は、この要求が **router core の durable commit point に到達したか** を表します。
 
-* `committed = true` となるのは次の場合のみです。
+- `committed = true` となるのは次の場合のみです。
+  - full navigation で title / meta description / content / shell / history の commit が完了した場合
+  - state-only navigation で URL state 更新が確定した場合
 
-  * full navigation で title / meta description / content / shell / history の commit が完了した場合
-  * state-only navigation で URL state 更新が確定した場合
-
-* `committed = false` となるのは次の場合です。
-
-  * `cancelled`
-  * `superseded`
-  * durable commit 前に終了した `failed`
+- `committed = false` となるのは次の場合です。
+  - `cancelled`
+  - `superseded`
+  - durable commit 前に終了した `failed`
 
 ### `renderedKind` / `error` / `errorReason` の関係
 
-* `renderedKind = 'page'` かつ正常遷移であれば `error` / `errorReason` は設定しません。
-* `renderedKind = 'not-found'` で `completed` の場合、`error` / `errorReason` は通常設定しません。
-* `renderedKind = 'error'` で `completed` の場合、`errorReason` は必須です。`error` は原因となった基底例外を可能な限り設定します。
-* `renderedKind = null` の場合、いかなる表示も commit されていません。`failed` であるなら `errorReason` は必須です。
+- `renderedKind = 'page'` かつ正常遷移であれば `error` / `errorReason` は設定しません。
+- `renderedKind = 'not-found'` で `completed` の場合、`error` / `errorReason` は通常設定しません。
+- `renderedKind = 'error'` で `completed` の場合、`errorReason` は必須です。`error` は原因となった基底例外を可能な限り設定します。
+- `renderedKind = null` の場合、いかなる表示も commit されていません。`failed` であるなら `errorReason` は必須です。
 
 ### `outcome` と `committed` の対応
 
-| outcome      | committed | 意味                                 |
-| ------------ | --------- | ---------------------------------- |
-| `completed`  | `true`    | durable commit が成立した               |
-| `cancelled`  | `false`   | hook により中止された                      |
+| outcome      | committed | 意味                                                  |
+| ------------ | --------- | ----------------------------------------------------- |
+| `completed`  | `true`    | durable commit が成立した                             |
+| `cancelled`  | `false`   | hook により中止された                                 |
 | `superseded` | `false`   | 後続要求に上書きされ、durable commit に到達しなかった |
-| `failed`     | `false`   | durable commit に到達しなかった            |
+| `failed`     | `false`   | durable commit に到達しなかった                       |
 
 ### `degraded` の定義
 
-* `degraded = true` となるのは、`completed` のうち、post-commit 後処理に失敗した場合のみです。
-* `degraded = false` となるのは、post-commit failure が存在しない場合です。
-* `failed` / `cancelled` / `superseded` では `degraded = false` とします。
+- `degraded = true` となるのは、`completed` のうち、post-commit 後処理に失敗した場合のみです。
+- `degraded = false` となるのは、post-commit failure が存在しない場合です。
+- `failed` / `cancelled` / `superseded` では `degraded = false` とします。
 
 ### `source` と `committed` の整合
 
-* `source = 'document-route'` / `'fetch'` / `'state-only'` のとき、`completed` であれば `committed` は必ず `true` です。
-* `source = 'none'` は、commit 経路に入らず終了した要求にのみ用います。したがって `committed` は常に `false` です。
+- `source = 'document-route'` / `'fetch'` / `'state-only'` のとき、`completed` であれば `committed` は必ず `true` です。
+- `source = 'none'` は、commit 経路に入らず終了した要求にのみ用います。したがって `committed` は常に `false` です。
 
 ### `navigate()` の戻り値と `after:navigate` の役割分担
 
-* `navigate()` の戻り値は、**その呼び出し自身** の完了結果を受け取るための API です。
-* `after:navigate` は、router が処理した **すべての遷移要求** を外部が受動的に観測するためのイベントです。
-* imperative call の呼び出し元は、自身の遷移完了判定に `after:navigate` を使ってはなりません。必ず `navigate()` の戻り値を用います。
-* `after:navigate` は、リンク横取り、`popstate`、他コンポーネント起点の遷移も含めた横断的観測のためにのみ用います。
+- `navigate()` の戻り値は、**その呼び出し自身** の完了結果を受け取るための API です。
+- `after:navigate` は、router が処理した **すべての遷移要求** を外部が受動的に観測するためのイベントです。
+- imperative call の呼び出し元は、自身の遷移完了判定に `after:navigate` を使ってはなりません。必ず `navigate()` の戻り値を用います。
+- `after:navigate` は、リンク横取り、`popstate`、他コンポーネント起点の遷移も含めた横断的観測のためにのみ用います。
 
 ## エラー型
 
@@ -886,38 +882,38 @@ interface RouterEventMap {
 
 ### 発火規則
 
-| イベント名                    | 発火タイミング                                 | payload                           |
-| ------------------------ | --------------------------------------- | --------------------------------- |
-| `navigation:busy-change` | `isNavigating()` の値が変化した時               | `{ isNavigating }`                |
-| `content:load`           | durable commit 完了後                      | `{ previousUrl, url, isInitial }` |
-| `after:navigate`         | 要求単位の結果確定後                              | `NavigationResult`                |
-| `ui-url-state-change`    | state-only navigation 確定時               | `{ previousUrl, url }`            |
+| イベント名               | 発火タイミング                              | payload                           |
+| ------------------------ | ------------------------------------------- | --------------------------------- |
+| `navigation:busy-change` | `isNavigating()` の値が変化した時           | `{ isNavigating }`                |
+| `content:load`           | durable commit 完了後                       | `{ previousUrl, url, isInitial }` |
+| `after:navigate`         | 要求単位の結果確定後                        | `NavigationResult`                |
+| `ui-url-state-change`    | state-only navigation 確定時                | `{ previousUrl, url }`            |
 | `error`                  | hook / load / commit / post-commit の失敗時 | `{ error, stage }`                |
 
 ### 順序保証
 
 router は、**同一要求の内部順序** についてのみ次を保証します。
 
-* `after:navigate` は、当該要求の最終 `NavigationResult` が確定した後に 1 回だけ発火します。
-* `content:load` が発火する場合、それは同一要求の `after:navigate` より前です。
-* `ui-url-state-change` は state-only navigation でのみ発火し、同一要求の `after:navigate` より前です。
-* `navigation:busy-change` は `isNavigating()` の値変化と 1 対 1 に対応します。
+- `after:navigate` は、当該要求の最終 `NavigationResult` が確定した後に 1 回だけ発火します。
+- `content:load` が発火する場合、それは同一要求の `after:navigate` より前です。
+- `ui-url-state-change` は state-only navigation でのみ発火し、同一要求の `after:navigate` より前です。
+- `navigation:busy-change` は `isNavigating()` の値変化と 1 対 1 に対応します。
 
 router は、**異なる要求どうしの完全な全順序** を公開契約として保証しません。利用側は、複数要求にまたがる厳密なイベント順序へ依存してはなりません。
 
 ### `navigation:busy-change` の発火規則
 
-* `navigation:busy-change` は `isNavigating()` の返値が変化したときだけ発火します。
-* full navigation 開始時、`false → true` の遷移が起きた場合にだけ `{ isNavigating: true }` を発火します。
-* full navigation 終了時、保留中・実行中の full navigation が 0 件になった場合にだけ `{ isNavigating: false }` を発火します。
-* state-only navigation では発火しません。
+- `navigation:busy-change` は `isNavigating()` の返値が変化したときだけ発火します。
+- full navigation 開始時、`false → true` の遷移が起きた場合にだけ `{ isNavigating: true }` を発火します。
+- full navigation 終了時、保留中・実行中の full navigation が 0 件になった場合にだけ `{ isNavigating: false }` を発火します。
+- state-only navigation では発火しません。
 
 ### `after:navigate` の発火規則
 
-* `after:navigate` は、router が受理した各遷移要求について **ちょうど 1 回** 発火します。
-* payload は常に、その要求自身の `NavigationResult` です。
-* `completed` / `cancelled` / `superseded` / `failed` のいずれでも発火します。
-* `after:navigate` は **要求単位の結果通知** であり、本文反映イベントでも busy 状態イベントでもありません。
+- `after:navigate` は、router が受理した各遷移要求について **ちょうど 1 回** 発火します。
+- payload は常に、その要求自身の `NavigationResult` です。
+- `completed` / `cancelled` / `superseded` / `failed` のいずれでも発火します。
+- `after:navigate` は **要求単位の結果通知** であり、本文反映イベントでも busy 状態イベントでもありません。
 
 ## 履歴と観測
 

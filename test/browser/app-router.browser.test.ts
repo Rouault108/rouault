@@ -189,9 +189,7 @@ describe('app-router', () => {
 
     expect(appHost.getContentRoot()).to.equal(appHost.querySelector('main#main-content'));
     expect(appHost.querySelectorAll('main#main-content').length).to.equal(1);
-    expect(appHost.querySelector('main#main-content')?.textContent).to.contain(
-      'SSR Contract Root',
-    );
+    expect(appHost.querySelector('main#main-content')?.textContent).to.contain('SSR Contract Root');
   });
 
   it('main と main#main-content が共存しても本文 root は #main-content を優先すること', async () => {
@@ -212,7 +210,9 @@ describe('app-router', () => {
 
   it('ready と whenReady() を公開し、接続後に解決されること', async () => {
     host = await fixture<AppRouterElement>(
-      html`<app-router><main><h1>SSR Title</h1></main></app-router>`,
+      html`<app-router
+        ><main><h1>SSR Title</h1></main></app-router
+      >`,
     );
     const appHost = host;
 
@@ -549,7 +549,9 @@ describe('app-router', () => {
     expect(header.hasAttribute('sidebar-enabled')).to.equal(false);
     expect(appHost.querySelectorAll('main').length).to.equal(1);
     expect(appHost.querySelector('#main-content')?.textContent).to.contain('SSR Title');
-    expect(appHost.querySelector('#main-content')?.textContent).not.to.contain('Broken Header Synced');
+    expect(appHost.querySelector('#main-content')?.textContent).not.to.contain(
+      'Broken Header Synced',
+    );
     expect(document.title).to.equal('Before Header Failure');
   });
 

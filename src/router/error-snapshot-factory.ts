@@ -3,7 +3,11 @@ import {
   NOT_FOUND_PAGE_META_DESCRIPTION,
   NOT_FOUND_PAGE_TITLE,
 } from '../components/not-found/not-found-page.js';
-import type { DocumentSnapshot, LoadDocumentResult, NavigationErrorReason } from './router-types.js';
+import type {
+  DocumentSnapshot,
+  LoadDocumentResult,
+  NavigationErrorReason,
+} from './router-types.js';
 import { DocumentContractViolationError } from './document-snapshot-factory.js';
 
 const SITE_TITLE = 'Rouault';

@@ -146,10 +146,7 @@ const settle = async (host: LayoutSidebar): Promise<void> => {
   await Promise.resolve();
 };
 
-const onceCustomEvent = <T>(
-  target: EventTarget,
-  type: string,
-): Promise<CustomEvent<T>> =>
+const onceCustomEvent = <T>(target: EventTarget, type: string): Promise<CustomEvent<T>> =>
   new Promise((resolve) => {
     const listener: EventListener = (event) => {
       resolve(event as CustomEvent<T>);

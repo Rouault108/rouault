@@ -88,7 +88,10 @@ const placePopover = (anchor: HTMLElement, popover: HTMLElement): void => {
   const aboveTop = anchorRect.top - POPOVER_OFFSET - popoverRect.height;
 
   let top = belowTop;
-  if (belowTop + popoverRect.height > viewportHeight - POPOVER_MARGIN && aboveTop >= POPOVER_MARGIN) {
+  if (
+    belowTop + popoverRect.height > viewportHeight - POPOVER_MARGIN &&
+    aboveTop >= POPOVER_MARGIN
+  ) {
     top = aboveTop;
   }
 

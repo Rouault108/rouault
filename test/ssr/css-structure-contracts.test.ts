@@ -178,7 +178,7 @@ describe('css structure contracts', () => {
     expectCssExcludes(cssText, [
       'prefers-color-scheme',
       ':host-context([data-theme=',
-      ':host-context([data-theme=\'dark\'])',
+      ":host-context([data-theme='dark'])",
       ':host-context([data-theme="dark"])',
     ]);
   });

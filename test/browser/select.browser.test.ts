@@ -1,11 +1,7 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/select/select.js';
 import type { Select, SelectOption } from '../../src/components/ui/select/select.js';
-import {
-  dispatchKey,
-  nextAnimationFrame,
-  waitForLitUpdate,
-} from './helpers/wait-for-lit.js';
+import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const FRUIT_OPTIONS: SelectOption[] = [
   { value: 'apple', label: 'Apple' },

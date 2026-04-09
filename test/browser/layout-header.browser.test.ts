@@ -54,9 +54,13 @@ describe('layout-header browser contract', () => {
         wrapperScrollWidth: header.scrollWidth,
         layoutHeaderWidth: Math.round(layoutHeader.getBoundingClientRect().width),
         shadowHeaderWidth:
-          shadowHeader instanceof HTMLElement ? Math.round(shadowHeader.getBoundingClientRect().width) : -1,
-        innerWidth: inner instanceof HTMLElement ? Math.round(inner.getBoundingClientRect().width) : -1,
-        startWidth: start instanceof HTMLElement ? Math.round(start.getBoundingClientRect().width) : -1,
+          shadowHeader instanceof HTMLElement
+            ? Math.round(shadowHeader.getBoundingClientRect().width)
+            : -1,
+        innerWidth:
+          inner instanceof HTMLElement ? Math.round(inner.getBoundingClientRect().width) : -1,
+        startWidth:
+          start instanceof HTMLElement ? Math.round(start.getBoundingClientRect().width) : -1,
         endWidth: end instanceof HTMLElement ? Math.round(end.getBoundingClientRect().width) : -1,
       };
     })();

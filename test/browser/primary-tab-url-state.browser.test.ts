@@ -45,7 +45,10 @@ describe('primary-tab-url-state', () => {
       ),
     ).to.equal(false);
     expect(
-      isPrimaryTabOnlyNavigation('/notes/testing?tab=overview&tab=details', '/notes/testing?tab=details'),
+      isPrimaryTabOnlyNavigation(
+        '/notes/testing?tab=overview&tab=details',
+        '/notes/testing?tab=details',
+      ),
     ).to.equal(false);
     expect(isPrimaryTabStateOnlyScope('/notes/testing?tab=overview')).to.equal(true);
     expect(isPrimaryTabStateOnlyScope('/archives/abc123?tab=overview')).to.equal(false);

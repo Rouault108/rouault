@@ -30,7 +30,10 @@ export class DocumentLoader {
       };
     }
 
-    const response = await this.fetcher.fetch(this.location.resolveContentUrl(normalizedUrl), signal);
+    const response = await this.fetcher.fetch(
+      this.location.resolveContentUrl(normalizedUrl),
+      signal,
+    );
     if (!response.ok) {
       return this.errorSnapshotFactory.createHttpErrorResult(response.status, normalizedUrl);
     }

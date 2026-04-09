@@ -182,10 +182,8 @@ export class CodeBlock extends LitElement {
           var(--ui-code-block-radius-bottom, var(--radius-md, 6px))
         );
       transition:
-        box-shadow var(--duration-fast, 70ms)
-          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        border-color var(--duration-fast, 70ms)
-          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+        box-shadow var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     :host(:focus-within) .root {

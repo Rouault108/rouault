@@ -105,8 +105,7 @@ class LayoutSidebarController {
       return;
     }
 
-    const nextState: SidebarState =
-      entry.overlayState === 'expanded' ? 'collapsed' : 'expanded';
+    const nextState: SidebarState = entry.overlayState === 'expanded' ? 'collapsed' : 'expanded';
 
     entry.overlayState = nextState;
     if (trigger instanceof HTMLElement) {

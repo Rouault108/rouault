@@ -13,7 +13,9 @@ const ensureTokensCssLoaded = async (): Promise<void> => {
   const response = await fetch(new URL('../../src/assets/css/tokens.css', import.meta.url).href);
 
   if (!response.ok) {
-    throw new Error(`tokens.css の読み込みに失敗しました: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `tokens.css の読み込みに失敗しました: ${response.status} ${response.statusText}`,
+    );
   }
 
   const cssText = await response.text();

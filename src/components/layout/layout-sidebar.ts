@@ -13,10 +13,7 @@ import type { IconName } from '../../../shared/icons/icons-catalog.js';
 import { isIconName } from '../../../shared/icons/icons-catalog.js';
 import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
 import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../layout/note-sidebar-breakpoint.js';
-import {
-  DEFAULT_LAYOUT_SIDEBAR_ID,
-  layoutSidebarController,
-} from './layout-sidebar-controller.js';
+import { DEFAULT_LAYOUT_SIDEBAR_ID, layoutSidebarController } from './layout-sidebar-controller.js';
 import {
   collectLayoutSidebarSelectedAncestorIds,
   readLayoutSidebarTreeState,
@@ -255,7 +252,11 @@ export class LayoutSidebar extends LitElement {
       this._syncStickyFooterBoundary();
     }
 
-    if (changedProperties.has('_mode') || changedProperties.has('_state') || changedProperties.has('sidebarId')) {
+    if (
+      changedProperties.has('_mode') ||
+      changedProperties.has('_state') ||
+      changedProperties.has('sidebarId')
+    ) {
       this._reportController();
     }
   }

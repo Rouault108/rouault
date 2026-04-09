@@ -94,10 +94,7 @@ const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
   sidebarEnabled: header.hasAttribute('sidebar-enabled'),
 });
 
-const applyHeaderSnapshot = (
-  header: HTMLElement,
-  shell: DocumentShellSnapshot | null,
-): void => {
+const applyHeaderSnapshot = (header: HTMLElement, shell: DocumentShellSnapshot | null): void => {
   const snapshot = shell?.header;
 
   header.setAttribute('breadcrumbs-json', JSON.stringify(snapshot?.breadcrumbs ?? []));

@@ -110,7 +110,10 @@ test.describe('Sidebar Selected Item Scroll', () => {
       });
     });
 
-    await page.locator('#main-content').getByRole('link', { name: 'Sidebar Scroll Target' }).click();
+    await page
+      .locator('#main-content')
+      .getByRole('link', { name: 'Sidebar Scroll Target' })
+      .click();
 
     await expect(page).toHaveURL(new RegExp(`${targetPath}/?$`));
     await expect(page.locator('#main-content h1').first()).toHaveText('Sidebar Scroll Target');

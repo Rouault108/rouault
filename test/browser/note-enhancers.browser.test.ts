@@ -130,12 +130,7 @@ const clickPrimary = (target: HTMLElement): MouseEvent => {
 
 const setClientRect = (
   element: Element,
-  {
-    left,
-    top,
-    width,
-    height,
-  }: { left: number; top: number; width: number; height: number },
+  { left, top, width, height }: { left: number; top: number; width: number; height: number },
 ): void => {
   Object.defineProperty(element, 'getBoundingClientRect', {
     configurable: true,
@@ -161,10 +156,7 @@ const clampExpectedTop = ({
   const aboveTop = anchorTop - popoverOffset - popoverHeight;
 
   let top = belowTop;
-  if (
-    belowTop + popoverHeight > viewportHeight - popoverMargin &&
-    aboveTop >= popoverMargin
-  ) {
+  if (belowTop + popoverHeight > viewportHeight - popoverMargin && aboveTop >= popoverMargin) {
     top = aboveTop;
   }
 
@@ -217,37 +209,37 @@ describe('note progressive enhancers', () => {
     expect(document.activeElement).to.equal(anchor);
   });
 
-it('footnote popover enhancer が fixed 配置の初期化を inline style に反映すること', () => {
-  const root = createFootnoteRoot();
-  document.body.append(root);
+  it('footnote popover enhancer が fixed 配置の初期化を inline style に反映すること', () => {
+    const root = createFootnoteRoot();
+    document.body.append(root);
 
-  enhanceFootnotePopovers(root);
+    enhanceFootnotePopovers(root);
 
-  const anchor = expectPresent(
-    root.querySelector<HTMLElement>('a[data-footnote-ref]'),
-    'footnote anchor',
-  );
-  const popover = expectPresent(getEnhancedPopover(anchor), 'footnote popover');
+    const anchor = expectPresent(
+      root.querySelector<HTMLElement>('a[data-footnote-ref]'),
+      'footnote anchor',
+    );
+    const popover = expectPresent(getEnhancedPopover(anchor), 'footnote popover');
 
-  setClientRect(anchor, { left: 120, top: 160, width: 10, height: 16 });
-  setClientRect(popover, { left: 0, top: 0, width: 180, height: 90 });
+    setClientRect(anchor, { left: 120, top: 160, width: 10, height: 16 });
+    setClientRect(popover, { left: 0, top: 0, width: 180, height: 90 });
 
-  clickPrimary(anchor);
+    clickPrimary(anchor);
 
-  expect(popover.hidden).to.equal(false);
-  expect(popover.parentElement).to.equal(document.body);
-  expect(popover.style.position).to.equal('fixed');
+    expect(popover.hidden).to.equal(false);
+    expect(popover.parentElement).to.equal(document.body);
+    expect(popover.style.position).to.equal('fixed');
 
-  // shorthand の inset は left/top 設定後に再シリアライズされるため、
-  // 常に "auto" のままではない。
-  expect(popover.style.inset).to.equal('184px auto auto 120px');
+    // shorthand の inset は left/top 設定後に再シリアライズされるため、
+    // 常に "auto" のままではない。
+    expect(popover.style.inset).to.equal('184px auto auto 120px');
 
-  expect(popover.style.right).to.equal('auto');
-  expect(popover.style.bottom).to.equal('auto');
-  expect(popover.style.margin).to.match(/^0(px)?$/);
-  expect(popover.style.left).to.equal('120px');
-  expect(popover.style.top).to.equal('184px');
-});
+    expect(popover.style.right).to.equal('auto');
+    expect(popover.style.bottom).to.equal('auto');
+    expect(popover.style.margin).to.match(/^0(px)?$/);
+    expect(popover.style.left).to.equal('120px');
+    expect(popover.style.top).to.equal('184px');
+  });
 
   it('footnote popover enhancer が viewport 端で横方向 clamp と上側反転を行うこと', () => {
     const root = createFootnoteRoot();
@@ -287,10 +279,7 @@ it('footnote popover enhancer が fixed 配置の初期化を inline style に�
     clickPrimary(anchor);
 
     const expectedLeft = Math.round(
-      Math.min(
-        Math.max(12, anchorLeft),
-        Math.max(12, viewportWidth - 12 - popoverWidth),
-      ),
+      Math.min(Math.max(12, anchorLeft), Math.max(12, viewportWidth - 12 - popoverWidth)),
     );
     const expectedTop = clampExpectedTop({
       anchorTop,

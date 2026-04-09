@@ -27,18 +27,12 @@ interface CreateRouterRuntimeOptions {
   options: RouterOptions;
   getCurrentUrl(): string;
   requestNavigation(request: InterceptorRequest): Promise<NavigationResult>;
-  runNavigation(
-    request: QueuedNavigationRequest,
-    signal: AbortSignal,
-  ): Promise<NavigationResult>;
+  runNavigation(request: QueuedNavigationRequest, signal: AbortSignal): Promise<NavigationResult>;
   createSupersededResult(request: QueuedNavigationRequest): NavigationResult;
 }
 
 export const createRouterRuntime = (runtimeOptions: CreateRouterRuntimeOptions): RouterRuntime => {
-  const {
-    outlet,
-    options,
-  } = runtimeOptions;
+  const { outlet, options } = runtimeOptions;
   const eventBus = new RouterEventBus();
   const location = new LocationAdapter();
   const routeRegistry = new RouteRegistry();

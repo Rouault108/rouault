@@ -1,8 +1,5 @@
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
-import type {
-  AppRouter,
-  AppRouterContentRenderedDetail,
-} from './components/app/app-router.js';
+import type { AppRouter, AppRouterContentRenderedDetail } from './components/app/app-router.js';
 import { HydrationScheduler } from './client/hydration/scheduler.js';
 import { initSearch } from './search/bootstrap.js';
 import { initTheme } from './theme/theme-manager.js';

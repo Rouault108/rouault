@@ -43,8 +43,8 @@ export class UiSidebarShell extends LitElement {
       flex-direction: column;
       opacity: 1;
       pointer-events: auto;
-      transition:
-        opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+      transition: opacity var(--duration-normal, 150ms)
+        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
 
     :host([mode='fixed']) nav {
@@ -57,8 +57,8 @@ export class UiSidebarShell extends LitElement {
     .sidebar-header,
     .sidebar-content {
       opacity: 1;
-      transition:
-        opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+      transition: opacity var(--duration-normal, 150ms)
+        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
 
     :host([data-state='collapsed']) nav,
@@ -118,8 +118,8 @@ export class UiSidebarShell extends LitElement {
       background: oklch(0% 0 0 / var(--ui-sidebar-scrim-opacity));
       opacity: 0;
       pointer-events: none;
-      transition:
-        opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+      transition: opacity var(--duration-normal, 150ms)
+        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
       z-index: var(--z-backdrop, 200);
     }
 

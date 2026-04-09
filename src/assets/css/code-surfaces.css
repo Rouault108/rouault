@@ -35,7 +35,10 @@
 }
 
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block])::-webkit-scrollbar-track,
-:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])::-webkit-scrollbar-corner {
+:where(
+  pre[data-code-block],
+  [data-code-block-root] pre[data-code-block]
+)::-webkit-scrollbar-corner {
   background: transparent;
 }
 
@@ -46,15 +49,27 @@
   border-radius: var(--radius-full, 999px);
 }
 
-:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):hover::-webkit-scrollbar-thumb,
-:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):focus-visible::-webkit-scrollbar-thumb,
+:where(
+    pre[data-code-block],
+    [data-code-block-root] pre[data-code-block]
+  ):hover::-webkit-scrollbar-thumb,
+:where(
+    pre[data-code-block],
+    [data-code-block-root] pre[data-code-block]
+  ):focus-visible::-webkit-scrollbar-thumb,
 [data-code-block-root]:hover pre[data-code-block]::-webkit-scrollbar-thumb,
 [data-code-block-root]:focus-within pre[data-code-block]::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb, var(--fg-subtle, oklch(60% 0 0)));
 }
 
-:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):hover::-webkit-scrollbar-thumb:hover,
-:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):focus-visible::-webkit-scrollbar-thumb:hover,
+:where(
+    pre[data-code-block],
+    [data-code-block-root] pre[data-code-block]
+  ):hover::-webkit-scrollbar-thumb:hover,
+:where(
+    pre[data-code-block],
+    [data-code-block-root] pre[data-code-block]
+  ):focus-visible::-webkit-scrollbar-thumb:hover,
 [data-code-block-root]:hover pre[data-code-block]::-webkit-scrollbar-thumb:hover,
 [data-code-block-root]:focus-within pre[data-code-block]::-webkit-scrollbar-thumb:hover {
   background-color: var(--scrollbar-thumb-hover, var(--fg-muted, oklch(45% 0 0)));
@@ -130,14 +145,9 @@
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):focus-visible {
   outline: none;
   box-shadow:
-    inset 0 0 0 var(--focus-ring-width, 2px)
-      var(--focus-ring-color, oklch(60% 0.15 250)),
+    inset 0 0 0 var(--focus-ring-width, 2px) var(--focus-ring-color, oklch(60% 0.15 250)),
     inset 0 0 0 calc(var(--focus-ring-width, 2px) + 1px)
-      color-mix(
-        in oklch,
-        var(--focus-ring-color, oklch(60% 0.15 250)) 16%,
-        transparent
-      );
+      color-mix(in oklch, var(--focus-ring-color, oklch(60% 0.15 250)) 16%, transparent);
   border-radius: var(--radius-sm, 4px);
   animation: var(--animation-focus);
 }
