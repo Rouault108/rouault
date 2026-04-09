@@ -36,6 +36,9 @@ const hydrateShellScopes = async (): Promise<void> => {
 const hydrateCurrentContent = async (contentRoot?: HTMLElement): Promise<void> => {
   await customElements.whenDefined('app-router');
 
+  const appRouter = getAppRouter();
+  await appRouter?.whenReady();
+
   const mainContent = contentRoot ?? resolveCurrentContentRoot();
   if (!(mainContent instanceof HTMLElement)) {
     return;
