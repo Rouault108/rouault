@@ -3,6 +3,28 @@ import '../../src/components/ui/tag/tag.js';
 import type { Tag } from '../../src/components/ui/tag/tag.js';
 import { waitForLitUpdate } from './helpers/wait-for-lit.js';
 
+const TOKENS_STYLE_ID = 'test-global-tokens-css';
+
+const ensureTokensCssLoaded = async (): Promise<void> => {
+  if (document.getElementById(TOKENS_STYLE_ID)) {
+    return;
+  }
+
+  const response = await fetch(new URL('../../src/assets/css/tokens.css', import.meta.url).href);
+
+  if (!response.ok) {
+    throw new Error(`tokens.css の読み込みに失敗しました: ${response.status} ${response.statusText}`);
+  }
+
+  const cssText = await response.text();
+  const style = document.createElement('style');
+  style.id = TOKENS_STYLE_ID;
+  style.textContent = cssText;
+  document.head.append(style);
+
+  await waitForStyleRecalc();
+};
+
 const expectPresent = <T>(value: T | null | undefined, name: string): T => {
   expect(value, `${name} should exist`).to.not.equal(null);
   expect(value, `${name} should exist`).to.not.equal(undefined);
@@ -28,19 +50,59 @@ const getTagGroup = (tag: Tag): HTMLDivElement | null =>
 
 const text = (value: string | null | undefined): string => value?.replace(/\s+/g, ' ').trim() ?? '';
 
-const parseRgb = (value: string): [number, number, number] => {
+const parseRgbLightness = (value: string): number | null => {
   const match = value.match(
-    /rgba?\(\s*([0-9]+(?:\.[0-9]+)?)\s*[,\s]\s*([0-9]+(?:\.[0-9]+)?)\s*[,\s]\s*([0-9]+(?:\.[0-9]+)?)/i,
+    /rgba?\(\s*([0-9]+(?:\.[0-9]+)?)\s*[, ]\s*([0-9]+(?:\.[0-9]+)?)\s*[, ]\s*([0-9]+(?:\.[0-9]+)?)/i,
   );
 
   if (!match) {
-    throw new Error(`RGB 形式の色を解釈できません: ${value}`);
+    return null;
   }
 
-  return [Number(match[1]), Number(match[2]), Number(match[3])];
+  const r = Number(match[1]);
+  const g = Number(match[2]);
+  const b = Number(match[3]);
+
+  return (r + g + b) / (255 * 3);
 };
 
-const channelSum = ([r, g, b]: [number, number, number]): number => r + g + b;
+const parseOklchLightness = (value: string): number | null => {
+  const match = value.match(/oklch\(\s*([0-9]+(?:\.[0-9]+)?%?)(?:\s+|,)[^)]+/i);
+
+  if (!match || !match[1]) {
+    return null;
+  }
+
+  const raw = match[1].trim();
+
+  if (raw.endsWith('%')) {
+    return Number(raw.slice(0, -1)) / 100;
+  }
+
+  return Number(raw);
+};
+
+const parsePerceivedLightness = (value: string): number => {
+  const rgb = parseRgbLightness(value);
+  if (rgb !== null) {
+    return rgb;
+  }
+
+  const oklch = parseOklchLightness(value);
+  if (oklch !== null) {
+    return oklch;
+  }
+
+  throw new Error(`解釈できない色形式です: ${value}`);
+};
+
+const waitForStyleRecalc = async (): Promise<void> => {
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve());
+    });
+  });
+};
 
 const setRootTheme = (theme: 'light' | 'dark' | 'system'): void => {
   document.documentElement.setAttribute('data-theme', theme);
@@ -53,10 +115,18 @@ const setRootTheme = (theme: 'light' | 'dark' | 'system'): void => {
   document.documentElement.style.colorScheme = theme;
 };
 
+const getRootToken = (name: string): string =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
 describe('ui-tag browser contract', () => {
-  afterEach(() => {
+  before(async () => {
+    await ensureTokensCssLoaded();
+  });
+
+  afterEach(async () => {
     document.documentElement.removeAttribute('data-theme');
     document.documentElement.style.removeProperty('color-scheme');
+    await waitForStyleRecalc();
   });
 
   it('既定状態では span root の非インタラクティブ tag として描画されること', async () => {
@@ -200,77 +270,96 @@ describe('ui-tag browser contract', () => {
 
   it('data-theme=light では light token に従うこと', async () => {
     setRootTheme('light');
+    await waitForStyleRecalc();
 
     const tag = await fixture<Tag>(html`<ui-tag color="blue">JavaScript</ui-tag>`);
     await waitForLitUpdate(tag);
+    await waitForStyleRecalc();
+
+    expect(getRootToken('--tag-surface-l')).to.equal('96%');
+    expect(getRootToken('--tag-content-l')).to.equal('45%');
 
     const style = getComputedStyle(tag);
-    const background = parseRgb(style.backgroundColor);
-    const foreground = parseRgb(style.color);
+    const background = parsePerceivedLightness(style.backgroundColor);
+    const foreground = parsePerceivedLightness(style.color);
 
-    expect(channelSum(background)).to.be.greaterThan(channelSum(foreground));
+    expect(background).to.be.greaterThan(foreground);
   });
 
   it('data-theme=dark では dark token に従うこと', async () => {
     setRootTheme('dark');
+    await waitForStyleRecalc();
 
     const tag = await fixture<Tag>(html`<ui-tag color="blue">JavaScript</ui-tag>`);
     await waitForLitUpdate(tag);
+    await waitForStyleRecalc();
+
+    expect(getRootToken('--tag-surface-l')).to.equal('17%');
+    expect(getRootToken('--tag-content-l')).to.equal('90%');
 
     const style = getComputedStyle(tag);
-    const background = parseRgb(style.backgroundColor);
-    const foreground = parseRgb(style.color);
+    const background = parsePerceivedLightness(style.backgroundColor);
+    const foreground = parsePerceivedLightness(style.color);
 
-    expect(channelSum(background)).to.be.lessThan(channelSum(foreground));
+    expect(background).to.be.lessThan(foreground);
   });
 
   it('同一タグでも data-theme の切り替えで computed style が変化すること', async () => {
     setRootTheme('light');
+    await waitForStyleRecalc();
 
     const tag = await fixture<Tag>(html`<ui-tag color="violet">TypeScript</ui-tag>`);
     await waitForLitUpdate(tag);
+    await waitForStyleRecalc();
 
     const lightBackground = getComputedStyle(tag).backgroundColor;
     const lightForeground = getComputedStyle(tag).color;
 
     setRootTheme('dark');
-    await waitForLitUpdate(tag);
+    await waitForStyleRecalc();
 
     const darkBackground = getComputedStyle(tag).backgroundColor;
     const darkForeground = getComputedStyle(tag).color;
 
+    expect(getRootToken('--tag-surface-l')).to.equal('17%');
+    expect(getRootToken('--tag-content-l')).to.equal('90%');
     expect(darkBackground).to.not.equal(lightBackground);
     expect(darkForeground).to.not.equal(lightForeground);
   });
 
   it('variant=solid でも data-theme 切り替えで computed background が変化すること', async () => {
     setRootTheme('light');
+    await waitForStyleRecalc();
 
     const tag = await fixture<Tag>(html`
       <ui-tag variant="solid" color="neutral">Solid Neutral</ui-tag>
     `);
     await waitForLitUpdate(tag);
+    await waitForStyleRecalc();
 
     const lightBackground = getComputedStyle(tag).backgroundColor;
 
     setRootTheme('dark');
-    await waitForLitUpdate(tag);
+    await waitForStyleRecalc();
 
     const darkBackground = getComputedStyle(tag).backgroundColor;
 
+    expect(getRootToken('--tag-solid-neutral-surface-l')).to.equal('30%');
     expect(darkBackground).to.not.equal(lightBackground);
   });
 
   it('plain variant は data-theme 切り替え後も transparent background を維持すること', async () => {
     setRootTheme('light');
+    await waitForStyleRecalc();
 
     const tag = await fixture<Tag>(html`<ui-tag variant="plain" color="gold">Plain</ui-tag>`);
     await waitForLitUpdate(tag);
+    await waitForStyleRecalc();
 
     expect(getComputedStyle(tag).backgroundColor).to.equal('rgba(0, 0, 0, 0)');
 
     setRootTheme('dark');
-    await waitForLitUpdate(tag);
+    await waitForStyleRecalc();
 
     expect(getComputedStyle(tag).backgroundColor).to.equal('rgba(0, 0, 0, 0)');
   });
