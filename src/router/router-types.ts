@@ -103,6 +103,7 @@ export interface UrlStateNavigationPolicy {
     requestedUrl: string;
     normalizedUrl: string;
     historyMode: HistoryMode;
+    outlet: HTMLElement;
   }): UrlStateNavigationDecision | Promise<UrlStateNavigationDecision>;
 }
 
@@ -124,6 +125,15 @@ export interface RouterOptions {
   postCommitController?: PostCommitController | undefined;
   skipInitialNavigation?: boolean | undefined;
   navigationTimeoutMs?: number | null | undefined;
+}
+
+export type LoadDocumentSource = 'document-route' | 'fetch';
+
+export interface LoadDocumentResult {
+  snapshot: DocumentSnapshot;
+  source: LoadDocumentSource;
+  error?: Error | undefined;
+  errorReason?: Exclude<NavigationErrorReason, 'destroyed' | 'not-started'> | undefined;
 }
 
 export interface DocumentRouteContext {

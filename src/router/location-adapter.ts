@@ -1,10 +1,8 @@
-export class LocationAdapter {
-  private static readonly CORPORA_ROOT_PATH = '/corpora';
-  private static readonly ABOUT_ROOT_PATH = '/about';
+import { RouaultUrlPolicy } from './rouault-url-policy.js';
+import type { UrlPolicy } from './url-policy.js';
 
-  private sanitizeUrl(url: URL): void {
-    url.searchParams.delete('wtr-session-id');
-  }
+export class LocationAdapter {
+  constructor(private readonly policy: UrlPolicy = new RouaultUrlPolicy()) {}
 
   private toUrl(input?: string | URL): URL {
     if (input instanceof URL) {
@@ -55,41 +53,13 @@ export class LocationAdapter {
 
   normalizeUrl(url: string): string {
     const normalized = this.toUrl(url);
-    this.sanitizeUrl(normalized);
-    normalized.pathname = this.normalizePathname(normalized.pathname);
+    this.policy.sanitizeSearchParams(normalized);
+    normalized.pathname = this.policy.normalizePathname(normalized.pathname);
     return `${normalized.pathname}${normalized.search}${normalized.hash}`;
   }
 
   normalizePathname(pathname: string): string {
-    if (pathname === '/') {
-      return pathname;
-    }
-
-    if (pathname === '/search/' || pathname === '/search') {
-      return '/search';
-    }
-
-    if (pathname === LocationAdapter.ABOUT_ROOT_PATH) {
-      return '/about/';
-    }
-
-    if (pathname.startsWith('/about/')) {
-      return pathname.endsWith('/') ? pathname : `${pathname}/`;
-    }
-
-    if (pathname === LocationAdapter.CORPORA_ROOT_PATH) {
-      return '/corpora/';
-    }
-
-    if (pathname.startsWith('/corpora/')) {
-      return pathname.endsWith('/') ? pathname : `${pathname}/`;
-    }
-
-    if (/^\/tags\/[^/]+\/$/u.test(pathname)) {
-      return pathname;
-    }
-
-    return pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+    return this.policy.normalizePathname(pathname);
   }
 
   getPath(url: string): string {
@@ -111,12 +81,7 @@ export class LocationAdapter {
 
   resolveContentUrl(url: string): string {
     const normalized = this.toUrl(url);
-    const pathname = normalized.pathname;
-    const lastSegment = pathname.split('/').pop() ?? '';
-
-    if (pathname !== '/' && !pathname.endsWith('/') && !lastSegment.includes('.')) {
-      normalized.pathname = `${pathname}/`;
-    }
+    normalized.pathname = this.policy.resolveContentPath(normalized.pathname);
 
     return `${normalized.pathname}${normalized.search}`;
   }

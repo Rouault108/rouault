@@ -1,39 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { LocationAdapter } from '../../src/router/location-adapter.js';
+import type { UrlPolicy } from '../../src/router/url-policy.js';
 
 describe('LocationAdapter', () => {
-  it('/search は trailing slash なしへ正規化すること', () => {
-    const adapter = new LocationAdapter();
+  it('pathname 正規化を UrlPolicy に委譲すること', () => {
+    let receivedPathname: string | null = null;
+    const policy: UrlPolicy = {
+      normalizePathname(pathname) {
+        receivedPathname = pathname;
+        return '/normalized';
+      },
+      sanitizeSearchParams() {
+        // no-op
+      },
+      resolveContentPath(pathname) {
+        return pathname;
+      },
+    };
 
-    expect(adapter.normalizePathname('/search')).to.equal('/search');
-    expect(adapter.normalizePathname('/search/')).to.equal('/search');
-  });
+    const adapter = new LocationAdapter(policy);
 
-  it('/about は trailing slash 付きへ正規化すること', () => {
-    const adapter = new LocationAdapter();
-
-    expect(adapter.normalizePathname('/about')).to.equal('/about/');
-    expect(adapter.normalizePathname('/about/')).to.equal('/about/');
-  });
-
-  it('/corpora は trailing slash 付きへ正規化すること', () => {
-    const adapter = new LocationAdapter();
-
-    expect(adapter.normalizePathname('/corpora')).to.equal('/corpora/');
-    expect(adapter.normalizePathname('/corpora/')).to.equal('/corpora/');
-    expect(adapter.normalizePathname('/corpora/music')).to.equal('/corpora/music/');
-    expect(adapter.normalizePathname('/corpora/music/')).to.equal('/corpora/music/');
-  });
-
-  it('/tags/<tag>/ は trailing slash を保持すること', () => {
-    const adapter = new LocationAdapter();
-
-    expect(adapter.normalizePathname('/tags/music/')).to.equal('/tags/music/');
-  });
-
-  it('通常ページは trailing slash を除去すること', () => {
-    const adapter = new LocationAdapter();
-
-    expect(adapter.normalizePathname('/notes/example/')).to.equal('/notes/example');
+    expect(adapter.normalizePathname('/notes/example/')).to.equal('/normalized');
+    expect(receivedPathname).to.equal('/notes/example/');
   });
 });

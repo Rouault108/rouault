@@ -529,9 +529,12 @@ hash または既存 `?tab=` から active tab が確定したあとは、`norma
 
 判定条件は概ね次のとおりです。
 
+- 適用範囲は通常 note URL (`/notes/...`) に限定する
+- `/archives/{hash}` や `/search` など note 以外の URL では適用しない
 - `pathname` が同一
 - `tab` 以外の query が同一
 - `tab` の値だけが異なる
+- `tab` parameter が複数回出現しない
 
 このとき URL を push / replace した上で、必要なら hash 位置へ scroll します。
 

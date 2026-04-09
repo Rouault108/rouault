@@ -110,17 +110,20 @@ const applyHeaderSnapshot = (
 export const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
   extract(documentSnapshot: Document) {
     const nextHeader = documentSnapshot.querySelector('layout-header');
+    if (!(nextHeader instanceof Element)) {
+      return null;
+    }
 
     return {
       header: {
-        breadcrumbs: parseBreadcrumbs(nextHeader?.getAttribute('breadcrumbs-json') ?? null),
-        corpora: parseCorpora(nextHeader?.getAttribute('corpora-json') ?? null),
+        breadcrumbs: parseBreadcrumbs(nextHeader.getAttribute('breadcrumbs-json') ?? null),
+        corpora: parseCorpora(nextHeader.getAttribute('corpora-json') ?? null),
         currentCorpusKey: (() => {
-          const currentCorpusKey = nextHeader?.getAttribute('current-corpus-key')?.trim();
+          const currentCorpusKey = nextHeader.getAttribute('current-corpus-key')?.trim();
           return currentCorpusKey === '' ? 'all' : (currentCorpusKey ?? 'all');
         })(),
-        noteLayout: nextHeader?.hasAttribute('note-layout') ?? false,
-        sidebarEnabled: nextHeader?.hasAttribute('sidebar-enabled') ?? false,
+        noteLayout: nextHeader.hasAttribute('note-layout'),
+        sidebarEnabled: nextHeader.hasAttribute('sidebar-enabled'),
       },
     };
   },

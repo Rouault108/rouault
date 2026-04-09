@@ -1,6 +1,7 @@
 import { BrowserLinkInterceptor } from './browser-link-interceptor.js';
 import { ContentCommitter } from './content-committer.js';
-import { ContentLoader } from './content-loader.js';
+import { createRouterRuntime } from './create-router-runtime.js';
+import { DocumentLoader } from './document-loader.js';
 import { LocationAdapter } from './location-adapter.js';
 import { NavigationQueue, type QueuedNavigationRequest } from './navigation-queue.js';
 import { RouteRegistry } from './route-registry.js';
@@ -29,6 +30,7 @@ export type {
   DocumentRouteHandler,
   DocumentShellSnapshot,
   DocumentSnapshot,
+  LoadDocumentResult,
   ErrorSnapshotReason,
   HeaderShellSnapshot,
   HistoryMode,
@@ -52,6 +54,7 @@ export {
   RouterNotStartedError,
   RouterOwnershipError,
 } from './router-types.js';
+export type { UrlPolicy } from './url-policy.js';
 
 const LIVE_ROUTER_OWNERS = new WeakMap<Document, Router>();
 
@@ -61,48 +64,49 @@ const isAbortError = (error: unknown): boolean =>
   error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError');
 
 export class Router {
-  private eventBus = new RouterEventBus();
-  private location = new LocationAdapter();
-  private routeRegistry = new RouteRegistry();
-  private loader: ContentLoader;
-  private committer: ContentCommitter;
-  private beforeNavigateHooks = new Set<BeforeNavigateHook>();
-  private linkInterceptor: BrowserLinkInterceptor;
-  private queue: NavigationQueue;
+  private readonly outlet: HTMLElement;
+  private readonly options: RouterOptions;
+  private readonly eventBus: RouterEventBus;
+  private readonly location: LocationAdapter;
+  private readonly routeRegistry: RouteRegistry;
+  private readonly loader: DocumentLoader;
+  private readonly committer: ContentCommitter;
+  private readonly beforeNavigateHooks = new Set<BeforeNavigateHook>();
+  private readonly linkInterceptor: BrowserLinkInterceptor;
+  private readonly queue: NavigationQueue;
   private started = false;
   private destroyed = false;
   private isBusy = false;
-  private currentUrl = this.location.readCurrentUrl();
+  private currentUrl = '';
   private hasCommittedNavigation = false;
 
-  constructor(
-    private outlet: HTMLElement,
-    private options: RouterOptions = {},
-  ) {
+  constructor(outlet: HTMLElement, options: RouterOptions = {}) {
     const currentOwner = LIVE_ROUTER_OWNERS.get(document);
     if (currentOwner && !currentOwner.destroyed) {
       throw new RouterOwnershipError('document ごとに live Router は 1 つだけです。');
     }
 
     LIVE_ROUTER_OWNERS.set(document, this);
+    this.outlet = outlet;
+    this.options = options;
 
-    this.loader = new ContentLoader(this.routeRegistry, this.location);
-    this.committer = new ContentCommitter(
-      this.outlet,
-      this.location,
-      this.options.contentAdapter,
-      this.options.shellAdapter,
-    );
+    const runtime = createRouterRuntime({
+      outlet: this.outlet,
+      options: this.options,
+      getCurrentUrl: () => this.currentUrl,
+      requestNavigation: async (request) => this.navigate(request),
+      runNavigation: async (request, signal) => this.runNavigation(request, signal),
+      createSupersededResult: (request) => this.createSupersededResult(request),
+    });
 
-    this.linkInterceptor = new BrowserLinkInterceptor(
-      this.location,
-      () => this.currentUrl,
-      async (request) => this.navigate(request),
-    );
-    this.queue = new NavigationQueue(
-      async (request, signal) => this.runNavigation(request, signal),
-      (request) => this.createSupersededResult(request),
-    );
+    this.eventBus = runtime.eventBus;
+    this.location = runtime.location;
+    this.routeRegistry = runtime.routeRegistry;
+    this.loader = runtime.loader;
+    this.committer = runtime.committer;
+    this.linkInterceptor = runtime.linkInterceptor;
+    this.queue = runtime.queue;
+    this.currentUrl = this.location.readCurrentUrl();
   }
 
   async start(): Promise<NavigationResult | null> {
@@ -232,6 +236,7 @@ export class Router {
           requestedUrl: request.requestedUrl,
           normalizedUrl: request.normalizedUrl,
           historyMode: request.historyMode,
+          outlet: this.outlet,
         })
       : { kind: 'full' as const };
 

@@ -17,7 +17,7 @@ import { primaryTabTabsUrlSyncStrategy } from './navigation/primary-tab-url-stat
 import { createLayoutHeaderShellAdapter } from './shell/layout-header-shell-adapter.js';
 
 const CONTENT_ROOT_ID = 'main-content';
-const CONTENT_ROOT_SELECTOR = `#${CONTENT_ROOT_ID}`;
+const CONTENT_ROOT_SELECTOR = `main#${CONTENT_ROOT_ID}`;
 const ANNOUNCEMENT_SELECTOR = '[data-app-router-announcement]';
 
 export interface AppRouterContentRenderedDetail {
@@ -91,6 +91,10 @@ export class AppRouter extends HTMLElement {
     return this.ready;
   }
 
+  /**
+   * 現在の本文 root を返します。
+   * Rouault では SSR 初期表示と遷移後更新の双方で `main#main-content` を唯一の更新先に固定します。
+   */
   getContentRoot(): HTMLElement | null {
     return this.querySelector<HTMLElement>(CONTENT_ROOT_SELECTOR);
   }

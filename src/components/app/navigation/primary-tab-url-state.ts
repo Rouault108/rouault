@@ -3,6 +3,8 @@ import type { TabsUrlSyncStrategy } from '../../ui/tabs/tabs-url-sync-strategy.j
 export const PRIMARY_TAB_QUERY_PARAM = 'tab';
 export const PRIMARY_TAB_URL_STATE_CHANGE_EVENT = 'ui-url-state-change';
 const FALLBACK_URL_ORIGIN = 'http://localhost';
+const NOTE_ROUTE_PREFIX = '/notes/';
+const ARCHIVE_ROUTE_PREFIX = '/archives/';
 
 export interface PrimaryTabUrlStateChangeDetail {
   previousUrl: string;
@@ -30,6 +32,14 @@ const normalizeComparableParams = (url: URL): string[] => {
     .sort();
 };
 
+const hasSinglePrimaryTabValue = (url: URL): boolean =>
+  url.searchParams.getAll(PRIMARY_TAB_QUERY_PARAM).length <= 1;
+
+export const isPrimaryTabStateOnlyScope = (input?: string | URL): boolean => {
+  const pathname = toUrl(input).pathname;
+  return pathname.startsWith(NOTE_ROUTE_PREFIX) && !pathname.startsWith(ARCHIVE_ROUTE_PREFIX);
+};
+
 export const readPrimaryTabValue = (input?: string | URL): string | null => {
   const url = toUrl(input);
   const raw = url.searchParams.get(PRIMARY_TAB_QUERY_PARAM)?.trim() ?? '';
@@ -52,6 +62,10 @@ export const writePrimaryTabValue = (input: string | URL, value: string | null):
 export const isPrimaryTabOnlyNavigation = (currentUrl: string, nextUrl: string): boolean => {
   const current = toUrl(currentUrl);
   const next = toUrl(nextUrl);
+
+  if (!hasSinglePrimaryTabValue(current) || !hasSinglePrimaryTabValue(next)) {
+    return false;
+  }
 
   if (current.pathname !== next.pathname) {
     return false;

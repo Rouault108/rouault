@@ -9,7 +9,7 @@ type AppRouterElement = HTMLElement & {
   ready: Promise<void>;
   whenReady(): Promise<void>;
   navigate(url: string): Promise<NavigationResult>;
-  getContentRoot?: () => HTMLElement | null;
+  getContentRoot(): HTMLElement | null;
   serverContent?: unknown;
 };
 
@@ -175,18 +175,37 @@ describe('app-router', () => {
     expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('SSR Body');
   });
 
-it('ready と whenReady() を公開し、接続後に解決されること', async () => {
-  host = await fixture<AppRouterElement>(
-    html`<app-router><main><h1>SSR Title</h1></main></app-router>`,
-  );
-  const appHost = host;
+  it('既存の main#main-content を public contract の本文 root として再利用すること', async () => {
+    host = await fixture<AppRouterElement>(
+      html`<app-router
+        ><main id="main-content" tabindex="-1">
+          <h1>SSR Contract Root</h1>
+        </main></app-router
+      >`,
+    );
+    const appHost = host;
 
-  expect(appHost.whenReady).to.be.a('function');
-  expect(appHost.ready).to.be.instanceOf(Promise);
+    await appHost.whenReady();
 
-  await appHost.whenReady();
-  await appHost.ready;
-});
+    expect(appHost.getContentRoot()).to.equal(appHost.querySelector('main#main-content'));
+    expect(appHost.querySelectorAll('main#main-content').length).to.equal(1);
+    expect(appHost.querySelector('main#main-content')?.textContent).to.contain(
+      'SSR Contract Root',
+    );
+  });
+
+  it('ready と whenReady() を公開し、接続後に解決されること', async () => {
+    host = await fixture<AppRouterElement>(
+      html`<app-router><main><h1>SSR Title</h1></main></app-router>`,
+    );
+    const appHost = host;
+
+    expect(appHost.whenReady).to.be.a('function');
+    expect(appHost.ready).to.be.instanceOf(Promise);
+
+    await appHost.whenReady();
+    await appHost.ready;
+  });
 
   it('navigate() は NavigationResult を返し main を更新し content-rendered detail に contentRoot を含めること', async () => {
     const renderedRoots: HTMLElement[] = [];

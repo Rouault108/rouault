@@ -62,6 +62,8 @@ const buildThemeBootstrapScript = (): string =>
 
 const DEFAULT_CLIENT_SCRIPT_SRC = '/src/client.ts';
 const DEFAULT_CLIENT_STYLE_SRCS = ['/src/assets/css/main.css'] as const;
+const MAIN_CONTENT_ID = 'main-content';
+const MAIN_CONTENT_TARGET = `#${MAIN_CONTENT_ID}`;
 
 interface ClientBundleView {
   scriptSrc?: string;
@@ -153,7 +155,7 @@ export class BaseLayout {
 </head>
 <body${bodyAttributes}>
   <ui-skip-link
-    href="#main-content"
+    href="${MAIN_CONTENT_TARGET}"
     label="メインコンテンツへ移動"
     data-hydration-scope="skip-link"
     data-hydration-capability="interactive"
@@ -165,7 +167,7 @@ export class BaseLayout {
       data-hydration-capability="interactive"
       data-hydration-trigger="initial"
     >
-      <main id="main-content" tabindex="-1">
+      <main id="${MAIN_CONTENT_ID}" tabindex="-1">
         ${data.content}
       </main>
     </app-router>

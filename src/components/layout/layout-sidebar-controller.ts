@@ -61,9 +61,7 @@ class LayoutSidebarController {
         return;
       }
 
-      if (current.adapter === null && current.listeners.size === 0) {
-        this._entries.delete(resolvedId);
-      }
+      this._cleanupIfUnobserved(resolvedId, current);
     };
   }
 
@@ -135,9 +133,20 @@ class LayoutSidebarController {
       listener(snapshot);
     }
 
-    if (entry.adapter === null && entry.listeners.size === 0) {
-      this._entries.delete(resolvedId);
+    this._cleanupIfUnobserved(resolvedId, entry);
+  }
+
+  private _cleanupIfUnobserved(resolvedId: string, entry: Entry): void {
+    if (entry.adapter !== null || entry.listeners.size > 0) {
+      return;
     }
+
+    if (entry.overlayState === 'collapsed') {
+      this._entries.delete(resolvedId);
+      return;
+    }
+
+    entry.mode = 'overlay';
   }
 
   private _ensure(id?: string): Entry {
