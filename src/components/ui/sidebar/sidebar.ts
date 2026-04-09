@@ -163,7 +163,12 @@ export class UiSidebar extends LitElement {
   }
 
   private _hasOverlayHeaderActions(): boolean {
-    return this.querySelector('[slot="header-actions"]') !== null;
+    const lightDomChildren =
+      'children' in this
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children)
+        : [];
+
+    return lightDomChildren.some((child) => child.getAttribute('slot') === 'header-actions');
   }
 
   private _onShellStateChange = (event: CustomEvent<UiSidebarStateChangeDetail>): void => {
