@@ -17,13 +17,12 @@ const withStubbedWindow = (run: () => void): void => {
   } finally {
     if (originalWindow === undefined) {
       Reflect.deleteProperty(globalThis, 'window');
-      return;
+    } else {
+      Object.defineProperty(globalThis, 'window', {
+        configurable: true,
+        value: originalWindow,
+      });
     }
-
-    Object.defineProperty(globalThis, 'window', {
-      configurable: true,
-      value: originalWindow,
-    });
   }
 };
 

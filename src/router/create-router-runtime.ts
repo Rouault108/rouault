@@ -34,14 +34,11 @@ interface CreateRouterRuntimeOptions {
   createSupersededResult(request: QueuedNavigationRequest): NavigationResult;
 }
 
-export const createRouterRuntime = ({
-  outlet,
-  options,
-  getCurrentUrl,
-  requestNavigation,
-  runNavigation,
-  createSupersededResult,
-}: CreateRouterRuntimeOptions): RouterRuntime => {
+export const createRouterRuntime = (runtimeOptions: CreateRouterRuntimeOptions): RouterRuntime => {
+  const {
+    outlet,
+    options,
+  } = runtimeOptions;
   const eventBus = new RouterEventBus();
   const location = new LocationAdapter();
   const routeRegistry = new RouteRegistry();
@@ -52,8 +49,15 @@ export const createRouterRuntime = ({
     options.contentAdapter,
     options.shellAdapter,
   );
-  const linkInterceptor = new BrowserLinkInterceptor(location, getCurrentUrl, requestNavigation);
-  const queue = new NavigationQueue(runNavigation, createSupersededResult);
+  const linkInterceptor = new BrowserLinkInterceptor(
+    location,
+    () => runtimeOptions.getCurrentUrl(),
+    (request) => runtimeOptions.requestNavigation(request),
+  );
+  const queue = new NavigationQueue(
+    (request, signal) => runtimeOptions.runNavigation(request, signal),
+    (request) => runtimeOptions.createSupersededResult(request),
+  );
 
   return {
     eventBus,

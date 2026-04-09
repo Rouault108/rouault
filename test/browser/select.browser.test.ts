@@ -85,7 +85,7 @@ const withControlledTimeout = async (
   window.setTimeout = controlledSetTimeout;
 
   const controlledClearTimeout = ((handle?: number) => {
-    if (handle == null) return;
+    if (handle === null || handle === undefined) return;
     scheduled.delete(handle);
     if (latestTimerId === handle) {
       latestTimerId = null;
