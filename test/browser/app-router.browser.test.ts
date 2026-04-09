@@ -6,9 +6,11 @@ import { createRouterContentHtml } from '../../src/router/router-content-html.js
 import { PRIMARY_TAB_URL_STATE_CHANGE_EVENT } from '../../src/components/app/navigation/primary-tab-url-state.js';
 
 type AppRouterElement = HTMLElement & {
-  updateComplete: Promise<unknown>;
+  ready: Promise<void>;
+  whenReady(): Promise<void>;
   navigate(url: string): Promise<NavigationResult>;
   getContentRoot?: () => HTMLElement | null;
+  serverContent?: unknown;
 };
 
 describe('app-router', () => {
@@ -122,6 +124,26 @@ describe('app-router', () => {
     }
   });
 
+  it('shadowRoot を持たず、本文 root は light DOM の #main-content のみであること', async () => {
+    host = await fixture<AppRouterElement>(
+      html`<app-router
+        ><main>
+          <h1>SSR Title</h1>
+          <p>SSR Body</p>
+        </main></app-router
+      >`,
+    );
+    const appHost = host;
+
+    await appHost.whenReady();
+
+    expect(appHost.shadowRoot).to.equal(null);
+    expect(appHost.querySelectorAll('main').length).to.equal(1);
+    expect(appHost.querySelectorAll('#main-content').length).to.equal(1);
+    expect(appHost.getContentRoot?.()).to.equal(appHost.querySelector('#main-content'));
+    expect(appHost.querySelector('#main-content')?.parentElement).to.equal(appHost);
+  });
+
   it('SSR された main の内容を保持し、初回 fetch を行わないこと', async () => {
     let fetchCalled = false;
     globalThis.fetch = () => {
@@ -143,13 +165,28 @@ describe('app-router', () => {
     );
 
     const appHost = host;
-    await appHost.updateComplete;
+    await appHost.whenReady();
 
     expect(fetchCalled).to.equal(false);
+    expect(appHost.shadowRoot).to.equal(null);
     expect(appHost.querySelectorAll('main').length).to.equal(1);
+    expect(appHost.querySelectorAll('#main-content').length).to.equal(1);
     expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('SSR Title');
     expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('SSR Body');
   });
+
+it('ready と whenReady() を公開し、接続後に解決されること', async () => {
+  host = await fixture<AppRouterElement>(
+    html`<app-router><main><h1>SSR Title</h1></main></app-router>`,
+  );
+  const appHost = host;
+
+  expect(appHost.whenReady).to.be.a('function');
+  expect(appHost.ready).to.be.instanceOf(Promise);
+
+  await appHost.whenReady();
+  await appHost.ready;
+});
 
   it('navigate() は NavigationResult を返し main を更新し content-rendered detail に contentRoot を含めること', async () => {
     const renderedRoots: HTMLElement[] = [];
@@ -175,7 +212,7 @@ describe('app-router', () => {
     );
     const appHost = host;
 
-    await appHost.updateComplete;
+    await appHost.whenReady();
 
     appHost.addEventListener('app-router:content-rendered', (event: Event) => {
       const detail = (event as CustomEvent<AppRouterContentRenderedDetail>).detail;
@@ -194,6 +231,8 @@ describe('app-router', () => {
     expect(result.outcome).to.equal('completed');
     expect(result.renderedKind).to.equal('page');
     expect(document.title).to.equal('Client Routed');
+    expect(appHost.querySelectorAll('main').length).to.equal(1);
+    expect(appHost.querySelectorAll('#main-content').length).to.equal(1);
     expect(renderedRoots.length).to.be.greaterThan(0);
     expect(renderedRoots.at(-1)).to.equal(
       appHost.getContentRoot?.() ?? appHost.querySelector('#main-content'),
@@ -225,7 +264,7 @@ describe('app-router', () => {
     );
     const appHost = host;
 
-    await appHost.updateComplete;
+    await appHost.whenReady();
 
     const result = await appHost.navigate('/hydrated-client-page');
 
@@ -237,6 +276,8 @@ describe('app-router', () => {
     expect(result.outcome).to.equal('completed');
     expect(result.renderedKind).to.equal('page');
     expect(document.title).to.equal('Hydrated Client Routed');
+    expect(appHost.querySelectorAll('main').length).to.equal(1);
+    expect(appHost.querySelectorAll('#main-content').length).to.equal(1);
   });
 
   it('post-commit controller が aria-live と main への focus を担うこと', async () => {
@@ -273,7 +314,7 @@ describe('app-router', () => {
     );
     const appHost = host;
 
-    await appHost.updateComplete;
+    await appHost.whenReady();
 
     await appHost.navigate('/focused-page');
 
@@ -288,6 +329,7 @@ describe('app-router', () => {
     );
 
     expect(appHost.querySelectorAll('[aria-live="polite"]').length).to.equal(1);
+    expect(appHost.querySelectorAll('main').length).to.equal(1);
     expect(focusOptions).to.deep.equal({ preventScroll: true });
   });
 
@@ -305,7 +347,7 @@ describe('app-router', () => {
       >`,
     );
     const appHost = host;
-    await appHost.updateComplete;
+    await appHost.whenReady();
 
     const navigationPromise = appHost.navigate('/slow-page');
 
@@ -334,6 +376,7 @@ describe('app-router', () => {
       '完了後は aria-busy が外れること',
     );
 
+    expect(appHost.querySelectorAll('main').length).to.equal(1);
     expect(appHost.querySelector('#main-content')?.hasAttribute('aria-busy')).to.equal(false);
   });
 
@@ -375,7 +418,7 @@ describe('app-router', () => {
       >`,
     );
     const appHost = host;
-    await appHost.updateComplete;
+    await appHost.whenReady();
 
     await appHost.navigate('/notes/new-note');
 
@@ -448,7 +491,7 @@ describe('app-router', () => {
       >`,
     );
     const appHost = host;
-    await appHost.updateComplete;
+    await appHost.whenReady();
 
     const result = await appHost.navigate('/notes/broken-note');
 
@@ -469,6 +512,7 @@ describe('app-router', () => {
     expect(header.getAttribute('current-corpus-key')).to.equal('all');
     expect(header.hasAttribute('note-layout')).to.equal(false);
     expect(header.hasAttribute('sidebar-enabled')).to.equal(false);
+    expect(appHost.querySelectorAll('main').length).to.equal(1);
     expect(appHost.querySelector('#main-content')?.textContent).to.contain('SSR Title');
     expect(appHost.querySelector('#main-content')?.textContent).not.to.contain('Broken Header Synced');
     expect(document.title).to.equal('Before Header Failure');
@@ -497,7 +541,7 @@ describe('app-router', () => {
       >`,
     );
     const appHost = host;
-    await appHost.updateComplete;
+    await appHost.whenReady();
 
     let eventDetail:
       | {
@@ -576,7 +620,7 @@ describe('app-router', () => {
       >`,
     );
     const appHost = host;
-    await appHost.updateComplete;
+    await appHost.whenReady();
 
     const result = await appHost.navigate('/hash-target#details-heading');
 
@@ -590,13 +634,22 @@ describe('app-router', () => {
     expect(scrollToCalled).to.equal(false);
   });
 
-  it('serverContent に branded 本文を与えた場合も描画できること', async () => {
-    host = await fixture<AppRouterElement>(html`<app-router></app-router>`);
-    const appHost = host as AppRouterElement & { serverContent: unknown };
+  it('serverContent に branded 本文を与えた場合も #main-content を唯一の更新先として描画できること', async () => {
+    host = await fixture<AppRouterElement>(
+      html`<app-router>
+        <main><h1>Initial SSR</h1></main>
+      </app-router>`,
+    );
+    const appHost = host;
+
+    await appHost.whenReady();
 
     appHost.serverContent = createRouterContentHtml('<h1>SSR Branded</h1><p>Body</p>');
-    await appHost.updateComplete;
 
+    expect(appHost.shadowRoot).to.equal(null);
+    expect(appHost.querySelectorAll('main').length).to.equal(1);
+    expect(appHost.querySelectorAll('#main-content').length).to.equal(1);
     expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('SSR Branded');
+    expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('Body');
   });
 });

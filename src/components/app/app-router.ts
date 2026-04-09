@@ -1,16 +1,16 @@
-import { LitElement, nothing } from 'lit';
-import { RouterNotStartedError, type NavigationResult } from '../../router/router.js';
-import { RouterController } from '../../controllers/router-controller.js';
 import {
+  Router,
+  RouterNotStartedError,
+  type ContentUpdateAdapter,
+  type NavigationResult,
+} from '../../router/router.js';
+import {
+  createRouterContentHtml,
   type RouterContentHtml,
   unwrapRouterContentHtml,
 } from '../../router/router-content-html.js';
-import {
-  promoteDeclarativeShadowRoots,
-  replaceElementChildrenFromHtml,
-} from '../../router/declarative-shadow-dom.js';
+import { replaceElementChildrenFromHtml } from '../../router/declarative-shadow-dom.js';
 import { registerTabsUrlSyncStrategy } from '../ui/tabs/tabs-url-sync-strategy.js';
-import { AppRouterContentController } from './controllers/app-router-content-controller.js';
 import { AppRouterPostRenderController } from './controllers/app-router-post-render-controller.js';
 import { PrimaryTabNavigationPolicy } from './navigation/primary-tab-navigation-policy.js';
 import { primaryTabTabsUrlSyncStrategy } from './navigation/primary-tab-url-state.js';
@@ -41,18 +41,28 @@ const createNotStartedResult = (url: string): NavigationResult => ({
 
 registerTabsUrlSyncStrategy(primaryTabTabsUrlSyncStrategy);
 
-export class AppRouter extends LitElement {
+export class AppRouter extends HTMLElement {
   private _serverContent: RouterContentHtml | null = null;
-  private readonly _routerController: RouterController;
-  private readonly _contentController: AppRouterContentController;
+  private _pendingInitialContent: RouterContentHtml | null = null;
+  private _currentContent: RouterContentHtml = createRouterContentHtml('');
+  private _router: Router | null = null;
+  private _bootstrapped = false;
+  private _isNavigating = false;
   private readonly _postRenderController: AppRouterPostRenderController;
+  private _resolveReady: (() => void) | null = null;
+  private _readyResolved = false;
+
+  readonly ready: Promise<void>;
 
   constructor() {
     super();
-    this._routerController = new RouterController(this);
-    this._contentController = new AppRouterContentController(this);
-    this._postRenderController = new AppRouterPostRenderController(this, (text) => {
+
+    this._postRenderController = new AppRouterPostRenderController((text) => {
       this._syncAnnouncement(text);
+    });
+
+    this.ready = new Promise<void>((resolve) => {
+      this._resolveReady = resolve;
     });
   }
 
@@ -62,68 +72,91 @@ export class AppRouter extends LitElement {
 
   set serverContent(value: RouterContentHtml | null) {
     this._serverContent = value;
+
+    if (!this._bootstrapped) {
+      this._pendingInitialContent = value;
+      return;
+    }
+
     if (value === null) {
       return;
     }
 
-    this._contentController.initialize(value);
-    if (this.isConnected) {
-      this._replaceContentRoot(value, true);
-    }
+    this._pendingInitialContent = null;
+    this._currentContent = value;
+    this._applyContent(value, false);
+  }
+
+  whenReady(): Promise<void> {
+    return this.ready;
   }
 
   getContentRoot(): HTMLElement | null {
     return this.querySelector<HTMLElement>(CONTENT_ROOT_SELECTOR);
   }
 
-  override connectedCallback(): void {
-    super.connectedCallback();
-
-    const existingContentRoot = this._findExistingContentRoot();
-
-    // 先に content root を正規化して id を付ける。
-    // これより前に captureInitialContent() を呼ぶと、
-    // SSR 済み <main> が存在していても '#main-content' に一致せず空本文になる。
-    const contentRoot = this._ensureContentRoot(existingContentRoot);
-
-    const initialContent =
-      this._serverContent ??
-      this._contentController.captureInitialContent(this, CONTENT_ROOT_SELECTOR);
-    this._contentController.initialize(initialContent);
-
-    this._ensureAnnouncementRegion();
-    this._syncBusyState(this._routerController.isNavigating);
-
-    if (this._serverContent !== null) {
-      this._replaceContentRoot(this._serverContent, false);
-    } else {
-      promoteDeclarativeShadowRoots(contentRoot);
+  connectedCallback(): void {
+    if (this._router) {
+      this._markReady();
+      return;
     }
 
-    const router = this._routerController.initRouter(this, {
+    const existingContentRoot = this._findExistingContentRoot();
+    const contentRoot = this._ensureContentRoot(existingContentRoot);
+    const isInitialBoot = !this._bootstrapped;
+
+    if (isInitialBoot) {
+      this._bootstrapped = true;
+
+      const initialContent =
+        this._pendingInitialContent ??
+        this._serverContent ??
+        createRouterContentHtml(contentRoot.innerHTML);
+
+      this._currentContent = initialContent;
+      this._pendingInitialContent = null;
+
+      this._ensureAnnouncementRegion();
+      this._syncBusyState(false);
+      this._applyContent(initialContent, false);
+    } else {
+      this._ensureAnnouncementRegion();
+      this._syncBusyState(this._isNavigating);
+    }
+
+    const router = new Router(this, {
       skipInitialNavigation: true,
-      contentAdapter: this._contentController.createContentAdapter((html) => {
-        this._replaceContentRoot(html, true);
-      }),
+      contentAdapter: this._createContentAdapter(),
       postCommitController: this._postRenderController.createPostCommitController(this),
       shellAdapter: createLayoutHeaderShellAdapter(),
       urlStateNavigationPolicy: new PrimaryTabNavigationPolicy(),
     });
 
     router.on('navigation:busy-change', ({ isNavigating }) => {
+      this._isNavigating = isNavigating;
       this._syncBusyState(isNavigating);
     });
 
+    this._router = router;
+
     void router.start();
-    void this._postRenderController.restoreInitialHashScroll();
+
+    if (isInitialBoot) {
+      void this._postRenderController.restoreInitialHashScroll();
+    }
+
+    this._markReady();
   }
 
-  override render() {
-    return nothing;
+  disconnectedCallback(): void {
+    this._router?.destroy();
+    this._router = null;
+    this._isNavigating = false;
+    this._postRenderController.dispose();
   }
 
   async navigate(url: string): Promise<NavigationResult> {
-    const router = this._routerController.router;
+    const router = this._router;
     if (!router) {
       return createNotStartedResult(url);
     }
@@ -132,6 +165,40 @@ export class AppRouter extends LitElement {
       url,
       historyMode: 'push',
     });
+  }
+
+  private _markReady(): void {
+    if (this._readyResolved) {
+      return;
+    }
+
+    this._readyResolved = true;
+    this._resolveReady?.();
+    this._resolveReady = null;
+  }
+
+  private _createContentAdapter(): ContentUpdateAdapter {
+    if (!this._bootstrapped) {
+      throw new Error('SSR 初期化前に content adapter が生成されました。');
+    }
+
+    return {
+      prepare: ({ html }) => {
+        const previousContent = this._currentContent;
+        const nextContent = createRouterContentHtml(html);
+
+        return {
+          commit: () => {
+            this._currentContent = nextContent;
+            this._applyContent(nextContent, true);
+          },
+          rollback: () => {
+            this._currentContent = previousContent;
+            this._applyContent(previousContent, true);
+          },
+        };
+      },
+    };
   }
 
   private _findExistingContentRoot(): HTMLElement | null {
@@ -182,7 +249,7 @@ export class AppRouter extends LitElement {
     return region;
   }
 
-  private _replaceContentRoot(content: RouterContentHtml, dispatchRenderedEvent: boolean): void {
+  private _applyContent(content: RouterContentHtml, dispatchRenderedEvent: boolean): void {
     const contentRoot = this._ensureContentRoot(this._findExistingContentRoot());
     replaceElementChildrenFromHtml(
       contentRoot,
@@ -201,10 +268,7 @@ export class AppRouter extends LitElement {
   }
 
   private _syncBusyState(isNavigating: boolean): void {
-    const main = this._findExistingContentRoot();
-    if (!(main instanceof HTMLElement)) {
-      return;
-    }
+    const main = this._ensureContentRoot(this._findExistingContentRoot());
 
     if (isNavigating) {
       main.setAttribute('aria-busy', 'true');

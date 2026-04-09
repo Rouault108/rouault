@@ -1,4 +1,3 @@
-import type { ReactiveController, ReactiveControllerHost } from 'lit';
 import { FocusManager } from '../../../router/focus-manager.js';
 import type { PostCommitController } from '../../../router/router.js';
 import {
@@ -6,22 +5,13 @@ import {
   readDecodedHash,
 } from '../navigation/primary-tab-url-state.js';
 
-export class AppRouterPostRenderController implements ReactiveController {
-  private focusManager = new FocusManager();
+export class AppRouterPostRenderController {
+  private readonly focusManager = new FocusManager();
   private clearTimer: number | null = null;
 
-  constructor(
-    host: ReactiveControllerHost,
-    private setAnnouncement: (text: string) => void,
-  ) {
-    host.addController(this);
-  }
+  constructor(private readonly setAnnouncement: (text: string) => void) {}
 
-  hostConnected(): void {
-    // no-op
-  }
-
-  hostDisconnected(): void {
+  dispose(): void {
     if (this.clearTimer !== null) {
       window.clearTimeout(this.clearTimer);
       this.clearTimer = null;
