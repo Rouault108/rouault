@@ -8,9 +8,7 @@ const withStubbedWindow = (run: () => void): void => {
   Object.defineProperty(globalThis, 'window', {
     configurable: true,
     value: {
-      location: {
-        origin: 'https://example.com',
-      },
+      location: new URL('https://example.com/') as unknown as Location,
     } satisfies Pick<Window, 'location'>,
   });
 

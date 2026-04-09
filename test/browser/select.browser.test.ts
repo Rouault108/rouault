@@ -61,8 +61,6 @@ const getListbox = (): HTMLElement | null =>
 const getOptions = (): HTMLElement[] =>
   Array.from(document.querySelectorAll<HTMLElement>('[data-ui-select-option]'));
 
-type TimeoutHandle = ReturnType<typeof window.setTimeout>;
-
 const withControlledTimeout = async (
   run: (controls: { fireLatestTimer: () => void }) => Promise<void>,
 ): Promise<void> => {
@@ -72,7 +70,7 @@ const withControlledTimeout = async (
   const scheduled = new Map<number, () => void>();
   let latestTimerId: number | null = null;
 
-  window.setTimeout = ((callback: TimerHandler, _delay?: number) => {
+  const controlledSetTimeout = ((callback: TimerHandler, _delay?: number) => {
     const id = nextId++;
     scheduled.set(id, () => {
       if (typeof callback === 'function') {
@@ -82,17 +80,18 @@ const withControlledTimeout = async (
       throw new Error('文字列コールバックの setTimeout はこのテストでは扱いません');
     });
     latestTimerId = id;
-    return id as TimeoutHandle;
-  }) as typeof window.setTimeout;
+    return id;
+  }) as unknown as typeof window.setTimeout;
+  window.setTimeout = controlledSetTimeout;
 
-  window.clearTimeout = ((handle?: number | TimeoutHandle) => {
+  const controlledClearTimeout = ((handle?: number) => {
     if (handle == null) return;
-    const numericHandle = Number(handle);
-    scheduled.delete(numericHandle);
-    if (latestTimerId === numericHandle) {
+    scheduled.delete(handle);
+    if (latestTimerId === handle) {
       latestTimerId = null;
     }
-  }) as typeof window.clearTimeout;
+  }) as unknown as typeof window.clearTimeout;
+  window.clearTimeout = controlledClearTimeout;
 
   try {
     await run({
