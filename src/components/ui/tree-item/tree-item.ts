@@ -175,9 +175,21 @@ export class TreeItem extends LitElement {
     .item.is-page {
       color: var(--sidebar-item-fg-page, var(--fg-muted, oklch(45% 0 0)));
       font-weight: var(--sidebar-item-font-weight, 400);
+
       --tree-item-selection-start: calc(
         (var(--tree-item-active-slot-index, 0) * var(--tree-indent-step, 16px)) +
           (var(--tree-indent-step, 16px) / 2) +
+          (var(--tree-item-selected-indicator-width, 2px) / 2) +
+          var(--tree-item-selection-start-gap, 0px)
+      );
+
+      /*
+       * 背景面の開始位置は depth に依存させない。
+       * これにより、通常位置とネスト位置で hover / selected surface の左端を揃える。
+       * 選択インジケーター位置は --tree-item-selection-start 側に残す。
+       */
+      --tree-item-surface-inline-start: calc(
+        (var(--tree-indent-step, 16px) / 2) +
           (var(--tree-item-selected-indicator-width, 2px) / 2) +
           var(--tree-item-selection-start-gap, 0px)
       );
