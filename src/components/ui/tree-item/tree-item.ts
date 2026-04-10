@@ -38,20 +38,6 @@ export class TreeItem extends LitElement {
         var(--radius-full, 9999px)
       );
 
-      --tree-item-selection-start-gap: 2px;
-      --tree-item-selection-start: calc(var(--tree-item-depth, 1) * var(--tree-indent-step, 16px));
-
-      /*
-       * 選択インジケーター系の基準位置と、hover / selected の背景面の開始位置は
-       * 長期的には分離して扱う。
-       *
-       * - --tree-item-selection-start:
-       *   current indicator や page 選択面の基準位置
-       * - --tree-item-surface-inline-start:
-       *   hover / selected surface の描画開始位置
-       */
-      --tree-item-surface-inline-start: var(--tree-item-selection-start);
-
       --tree-item-active-surface-inset-block: var(
         --sidebar-item-active-surface-inset-block,
         var(--space-1, 4px)
@@ -106,8 +92,8 @@ export class TreeItem extends LitElement {
       z-index: 1;
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
-      align-items: center;
-      column-gap: var(--tree-item-content-gap, 4px);
+      align-items: stretch;
+      column-gap: 0;
       inline-size: 100%;
       min-inline-size: 0;
       box-sizing: border-box;
@@ -128,82 +114,19 @@ export class TreeItem extends LitElement {
         var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
-    .item::before {
-      content: '';
-      position: absolute;
-      inset-block: 0;
-      inset-inline-start: var(--tree-item-surface-inline-start);
-      inset-inline-end: 0;
-      background: transparent;
-      transition: background-color var(--nav-item-transition-duration, var(--duration-fast, 70ms))
-        var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
-    }
-
-    .item::after {
-      content: none;
-    }
-
-    .item.has-content-icon {
-      grid-template-columns: auto 16px minmax(0, 1fr);
-    }
-
     .item.is-branch {
       color: var(--sidebar-item-fg-branch, var(--fg-muted, oklch(45% 0 0)));
       font-weight: var(--sidebar-item-font-weight, 400);
-
-      /*
-       * branch は現在階層の leading slot に chevron を持つため、
-       * surface は selection 基準位置より 1 indent 分だけ左から開始する。
-       *
-       * これにより、hover / selected 背景が chevron を含む面になる。
-       * 一方で選択インジケーターの計算は --tree-item-selection-start 側に残るため、
-       * page 側の位置合わせには影響しない。
-       */
-      --tree-item-surface-inline-start: calc(
-        var(--tree-item-selection-start) - var(--tree-indent-step, 16px)
-      );
-    }
-
-    .item.is-branch:hover {
-      color: var(--sidebar-item-fg-hover, var(--fg-default, oklch(20% 0 0)));
-    }
-
-    .item.is-branch:hover::before {
-      background: var(--sidebar-item-branch-hover-bg, oklch(from var(--fg-default) l c h / 0.022));
     }
 
     .item.is-page {
       color: var(--sidebar-item-fg-page, var(--fg-muted, oklch(45% 0 0)));
       font-weight: var(--sidebar-item-font-weight, 400);
-
-      --tree-item-selection-start: calc(
-        (var(--tree-item-active-slot-index, 0) * var(--tree-indent-step, 16px)) +
-          (var(--tree-indent-step, 16px) / 2) +
-          (var(--tree-item-selected-indicator-width, 2px) / 2) +
-          var(--tree-item-selection-start-gap, 0px)
-      );
-
-      /*
-       * 背景面の開始位置は depth に依存させない。
-       * これにより、通常位置とネスト位置で hover / selected surface の左端を揃える。
-       * 選択インジケーター位置は --tree-item-selection-start 側に残す。
-       */
-      --tree-item-surface-inline-start: calc(
-        (var(--tree-indent-step, 16px) / 2) +
-          (var(--tree-item-selected-indicator-width, 2px) / 2) +
-          var(--tree-item-selection-start-gap, 0px)
-      );
     }
 
+    .item.is-branch:hover,
     .item.is-page:hover {
       color: var(--sidebar-item-fg-hover, var(--fg-default, oklch(20% 0 0)));
-    }
-
-    .item.is-page:hover::before {
-      background: var(
-        --sidebar-item-hover-bg,
-        var(--bg-hover, oklch(from var(--fg-default) l c h / 0.05))
-      );
     }
 
     :host([selected]) .item {
@@ -211,35 +134,16 @@ export class TreeItem extends LitElement {
       font-weight: var(--sidebar-item-font-weight-active, var(--font-medium, 500));
     }
 
-    :host([selected]) .item::before,
-    :host([selected]) .item:hover::before {
-      inset-block: var(--tree-item-active-surface-inset-block);
-      background: var(--tree-item-selected-bg);
-      border-radius: var(--sidebar-item-active-radius, var(--radius-sm, 4px));
-    }
-
-    :host([selected]) .leading-slot.is-indicator-host .current-slot-indicator {
-      opacity: 1;
-    }
-
-    .leading {
+    .ancestor-rails {
       position: relative;
       display: flex;
       align-self: stretch;
-      flex: 0 0 auto;
-      min-inline-size: 0;
+      inline-size: calc(var(--tree-item-ancestor-rail-count, 0) * var(--tree-indent-step, 16px));
+      min-inline-size: calc(var(--tree-item-ancestor-rail-count, 0) * var(--tree-indent-step, 16px));
+      flex: 0 0 calc(var(--tree-item-ancestor-rail-count, 0) * var(--tree-indent-step, 16px));
     }
 
-    .leading-rails {
-      position: relative;
-      display: flex;
-      align-self: stretch;
-      inline-size: calc(var(--tree-item-leading-slot-count, 1) * var(--tree-indent-step, 16px));
-      min-inline-size: calc(var(--tree-item-leading-slot-count, 1) * var(--tree-indent-step, 16px));
-      flex: 0 0 calc(var(--tree-item-leading-slot-count, 1) * var(--tree-indent-step, 16px));
-    }
-
-    .leading-slot {
+    .ancestor-rail {
       position: relative;
       display: flex;
       align-items: center;
@@ -252,8 +156,80 @@ export class TreeItem extends LitElement {
       box-sizing: border-box;
     }
 
-    .leading-slot.is-current {
+    .surface {
+      position: relative;
+      display: grid;
+      grid-template-columns: var(--tree-indent-step, 16px) minmax(0, 1fr);
+      align-items: center;
+      inline-size: 100%;
+      min-inline-size: 0;
+      block-size: 100%;
+      min-block-size: 100%;
+      box-sizing: border-box;
+    }
+
+    .item.has-content-icon .surface {
+      grid-template-columns: var(--tree-indent-step, 16px) 16px minmax(0, 1fr);
+    }
+
+    .surface::before {
+      content: '';
+      position: absolute;
+      inset-block: 0;
+      inset-inline: 0;
+      background: transparent;
+      pointer-events: none;
+      transition: background-color var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+        var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
+    }
+
+    .item.is-branch:hover .surface::before {
+      background: var(--sidebar-item-branch-hover-bg, oklch(from var(--fg-default) l c h / 0.022));
+    }
+
+    .item.is-page:hover .surface::before {
+      background: var(
+        --sidebar-item-hover-bg,
+        var(--bg-hover, oklch(from var(--fg-default) l c h / 0.05))
+      );
+    }
+
+    :host([selected]) .surface::before,
+    :host([selected]) .item:hover .surface::before {
+      inset-block: var(--tree-item-active-surface-inset-block);
+      background: var(--tree-item-selected-bg);
+      border-radius: var(--sidebar-item-active-radius, var(--radius-sm, 4px));
+    }
+
+    .current-slot,
+    .content-icon,
+    .label-cell {
+      position: relative;
+      z-index: 1;
+      min-inline-size: 0;
+    }
+
+    .current-slot {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      inline-size: var(--tree-indent-step, 16px);
+      min-inline-size: var(--tree-indent-step, 16px);
+      block-size: 100%;
+      min-block-size: 100%;
+      flex: 0 0 var(--tree-indent-step, 16px);
+      box-sizing: border-box;
+      grid-column: 1;
+    }
+
+    .current-slot.is-branch {
       color: var(--sidebar-item-fg-branch, var(--fg-muted, oklch(45% 0 0)));
+    }
+
+    :host([selected]) .current-slot.is-branch {
+      color: var(--sidebar-item-fg-active, var(--fg-default, oklch(20% 0 0)));
+      font-weight: var(--sidebar-item-font-weight-active, var(--font-medium, 500));
     }
 
     .guide-line {
@@ -311,15 +287,12 @@ export class TreeItem extends LitElement {
           var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
-    :host([selected]) .leading-slot.is-current {
-      color: var(--sidebar-item-fg-active, var(--fg-default, oklch(20% 0 0)));
-      font-weight: var(--sidebar-item-font-weight-active, var(--font-medium, 500));
+    :host([selected]) .current-slot.is-leaf .current-slot-indicator {
+      opacity: 1;
     }
 
     .expand-icon,
     .content-icon {
-      position: relative;
-      z-index: 1;
       inline-size: 16px;
       min-inline-size: 16px;
       max-inline-size: 16px;
@@ -354,30 +327,11 @@ export class TreeItem extends LitElement {
       animation: var(--animation-focus);
     }
 
-    .label-cell,
-    .end-cell {
-      position: relative;
-      z-index: 1;
-      min-inline-size: 0;
-    }
-
     .content-icon {
       grid-column: 2;
     }
 
-    .item:not(.has-content-icon) .label-cell {
-      grid-column: 2;
-    }
-
-    .item.has-content-icon .label-cell {
-      grid-column: 3;
-    }
-
     .content-icon.hidden {
-      display: none;
-    }
-
-    .expand-icon.hidden {
       display: none;
     }
 
@@ -407,17 +361,20 @@ export class TreeItem extends LitElement {
       overflow: hidden;
     }
 
-    .label-cell {
+    .item:not(.has-content-icon) .label-cell {
       grid-column: 2;
+    }
+
+    .item.has-content-icon .label-cell {
+      grid-column: 3;
+    }
+
+    .label-cell {
       display: flex;
       align-items: center;
       inline-size: 100%;
       min-inline-size: 0;
       justify-self: stretch;
-    }
-
-    .item.has-content-icon .label-cell {
-      grid-column: 3;
     }
 
     .label-tooltip {
@@ -439,6 +396,9 @@ export class TreeItem extends LitElement {
     }
 
     .end-cell {
+      position: relative;
+      z-index: 1;
+      min-inline-size: 0;
       grid-column: 2;
       display: flex;
       align-items: center;
@@ -490,7 +450,7 @@ export class TreeItem extends LitElement {
 
     @media (prefers-reduced-motion: reduce) {
       .item,
-      .item::before,
+      .surface::before,
       .current-slot-line,
       .current-slot-indicator,
       .expand-glyph,
@@ -514,11 +474,11 @@ export class TreeItem extends LitElement {
         outline-offset: -1px;
       }
 
-      :host([selected]) .item::before {
+      :host([selected]) .surface::before {
         background: Highlight;
       }
 
-      :host([selected]) .leading-slot.is-indicator-host .current-slot-indicator {
+      :host([selected]) .current-slot.is-leaf .current-slot-indicator {
         background: CanvasText;
         opacity: 1;
       }
@@ -771,14 +731,6 @@ export class TreeItem extends LitElement {
 
     this._handleSelect();
 
-    /**
-     * link leaf は native anchor click をそのまま BrowserLinkInterceptor に渡す。
-     * ここで preventDefault() すると document 側の interceptor が
-     * event.defaultPrevented を見て遷移を中断してしまう。
-     *
-     * 一方、button leaf など anchor 起点でない経路では、
-     * 既存どおり synthetic click で anchor navigation を起動する。
-     */
     if (!clickedAnchor) {
       this._triggerAnchorNavigation();
     }
@@ -951,9 +903,11 @@ export class TreeItem extends LitElement {
     const isBranch = this.hasChildren;
     const isLinkLeaf = !isBranch && Boolean(this.href);
     const resolvedDepth = this._getResolvedDepth();
+
     const classes = {
       [`density-${this.density}`]: true,
     };
+
     const controlClasses = {
       item: true,
       'has-children': isBranch,
@@ -961,84 +915,84 @@ export class TreeItem extends LitElement {
       'is-branch': isBranch,
       'is-page': !isBranch,
     };
+
     const rowClasses = {
       'item-row': true,
       'is-branch': isBranch,
       'is-page': !isBranch,
     };
-    const leadingSlotCount = isBranch ? Math.max(resolvedDepth, 1) : Math.max(resolvedDepth - 1, 1);
-    const currentSlotIndex = Math.max(leadingSlotCount - 1, 0);
+
+    const ancestorRailCount = isBranch
+      ? Math.max(resolvedDepth - 1, 0)
+      : Math.max(resolvedDepth - 2, 0);
+
     const rowStyle = [
       `--tree-item-depth: ${resolvedDepth.toString()};`,
-      `--tree-item-leading-slot-count: ${leadingSlotCount.toString()};`,
-      `--tree-item-active-slot-index: ${currentSlotIndex.toString()};`,
+      `--tree-item-ancestor-rail-count: ${ancestorRailCount.toString()};`,
     ].join(' ');
+
     const tabIndex = this.getAttribute('tabindex') ?? '0';
     const childrenHidden = !this.hasChildren;
 
-    const leadingSlots = Array.from({ length: leadingSlotCount }, (_, index) => {
-      const isCurrentSlot = index === currentSlotIndex;
-      const shouldRenderGuideLine = !isCurrentSlot || !isBranch;
-
+    const ancestorRails = Array.from({ length: ancestorRailCount }, () => {
       return html`
-        <span
-          class=${classMap({
-            'leading-slot': true,
-            'is-rail': !isCurrentSlot,
-            'is-current': isCurrentSlot,
-            'is-indicator-host': !isBranch && isCurrentSlot,
-          })}
-          aria-hidden="true"
-        >
-          ${shouldRenderGuideLine
-            ? html`<span class="guide-line" aria-hidden="true"></span>`
-            : null}
-          ${isCurrentSlot && isBranch
-            ? html`
-                <span class="current-slot-line"></span>
-                <span class="expand-icon">
-                  <span class="expand-glyph">
-                    <ui-icon name="chevron-right"></ui-icon>
-                  </span>
-                </span>
-              `
-            : null}
-          ${isCurrentSlot && !isBranch ? html`<span class="current-slot-indicator"></span>` : null}
+        <span class="ancestor-rail" aria-hidden="true">
+          <span class="guide-line"></span>
         </span>
       `;
     });
 
+    const currentSlot = isBranch
+      ? html`
+          <span class="current-slot is-branch" aria-hidden="true">
+            <span class="current-slot-line"></span>
+            <span class="expand-icon">
+              <span class="expand-glyph">
+                <ui-icon name="chevron-right"></ui-icon>
+              </span>
+            </span>
+          </span>
+        `
+      : html`
+          <span class="current-slot is-leaf" aria-hidden="true">
+            <span class="guide-line"></span>
+            <span class="current-slot-indicator"></span>
+          </span>
+        `;
+
     const controlContent = html`
-      <span class="leading">
-        <span class="leading-rails"> ${leadingSlots} </span>
-      </span>
+      <span class="ancestor-rails" aria-hidden="true">${ancestorRails}</span>
 
-      <span
-        class=${classMap({
-          'content-icon': true,
-          hidden: !showContentIcon,
-        })}
-        aria-hidden="true"
-      >
-        ${this.icon
-          ? html`<ui-icon name=${this.icon}></ui-icon>`
-          : html`<slot
-              class="content-icon-slot"
-              name="icon"
-              @slotchange=${this._iconSlotChangeHandler}
-            ></slot>`}
-      </span>
+      <span class="surface">
+        ${currentSlot}
 
-      <span class="label-cell">
-        <ui-tooltip
-          class="label-tooltip"
-          .text=${this.label}
-          variant="subtle"
-          placement="bottom-start"
-          .disabled=${!this.isLabelTruncated}
+        <span
+          class=${classMap({
+            'content-icon': true,
+            hidden: !showContentIcon,
+          })}
+          aria-hidden="true"
         >
-          <span class="label">${this.label}</span>
-        </ui-tooltip>
+          ${this.icon
+            ? html`<ui-icon name=${this.icon}></ui-icon>`
+            : html`<slot
+                class="content-icon-slot"
+                name="icon"
+                @slotchange=${this._iconSlotChangeHandler}
+              ></slot>`}
+        </span>
+
+        <span class="label-cell">
+          <ui-tooltip
+            class="label-tooltip"
+            .text=${this.label}
+            variant="subtle"
+            placement="bottom-start"
+            .disabled=${!this.isLabelTruncated}
+          >
+            <span class="label">${this.label}</span>
+          </ui-tooltip>
+        </span>
       </span>
     `;
 

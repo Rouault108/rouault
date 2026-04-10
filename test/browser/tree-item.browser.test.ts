@@ -40,6 +40,12 @@ const getTooltipHost = (host: TreeItem): HTMLElement & { disabled?: boolean } =>
 const getContentIcon = (host: TreeItem): HTMLElement =>
   expectPresent(host.shadowRoot?.querySelector<HTMLElement>('.content-icon'), 'content icon');
 
+const getSurface = (host: TreeItem): HTMLElement =>
+  expectPresent(host.shadowRoot?.querySelector<HTMLElement>('.surface'), 'surface');
+
+const getAncestorRails = (host: TreeItem): HTMLElement =>
+  expectPresent(host.shadowRoot?.querySelector<HTMLElement>('.ancestor-rails'), 'ancestor rails');
+
 const waitForTooltipPanel = async (
   tooltipHost: HTMLElement,
   ownerDocument: Document,
@@ -57,6 +63,30 @@ const waitForTooltipPanel = async (
   }
 
   throw new Error('tooltip panel が見つかりません');
+};
+
+const parsePx = (rawValue: string, name: string): number => {
+  const parsed = Number.parseFloat(rawValue);
+  expect(Number.isFinite(parsed), `${name} should resolve to px: ${rawValue}`).to.equal(true);
+
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${name} が px に解決されません: ${rawValue}`);
+  }
+
+  return parsed;
+};
+
+const readPseudoInlineStartPx = (element: HTMLElement, pseudo: string): number => {
+  const pseudoStyles = getComputedStyle(element, pseudo);
+  const rawValue =
+    pseudoStyles.getPropertyValue('inset-inline-start').trim() ||
+    pseudoStyles.getPropertyValue('left').trim();
+
+  return parsePx(rawValue, `pseudo inline-start ${pseudo}`);
+};
+
+const readWidthPx = (element: HTMLElement, name: string): number => {
+  return parsePx(getComputedStyle(element).width, name);
 };
 
 describe('ui-tree-item browser contract', () => {
@@ -341,60 +371,75 @@ describe('ui-tree-item browser contract', () => {
     expect(host.shadowRoot?.activeElement).to.equal(item);
   });
 
-  it('branch の surface 開始位置は chevron slot を含み、leaf は現行実装の基準位置を維持すること', async () => {
+  it('背景面は surface に限定され、ancestor rails と分離されること', async () => {
     const root = await fixture<HTMLDivElement>(html`
       <div>
         <ui-tree-item
-          id="branch"
-          label="src"
+          id="root-branch"
+          label="Collection"
           icon="folder"
+          expanded
           style="
             --tree-indent-step: 20px;
-            --tree-item-selection-start-gap: 0px;
-            --tree-item-selected-indicator-width: 0px;
+            --tree-item-selected-indicator-width: 2px;
           "
         >
-          <ui-tree-item slot="children" label="index.ts" icon="file-code"></ui-tree-item>
+          <ui-tree-item
+            id="nested-branch"
+            slot="children"
+            label="Program"
+            icon="folder"
+            expanded
+            style="
+              --tree-indent-step: 20px;
+              --tree-item-selected-indicator-width: 2px;
+            "
+          >
+            <ui-tree-item
+              id="nested-leaf"
+              slot="children"
+              label="JavaScriptの配列"
+              icon="file-text"
+              href="/notes/javascript/array"
+              selected
+              style="
+                --tree-indent-step: 20px;
+                --tree-item-selected-indicator-width: 2px;
+              "
+            ></ui-tree-item>
+          </ui-tree-item>
         </ui-tree-item>
-
-        <ui-tree-item
-          id="leaf"
-          label="README.md"
-          icon="file-text"
-          href="/notes/readme"
-          style="
-            --tree-indent-step: 20px;
-            --tree-item-selection-start-gap: 0px;
-            --tree-item-selected-indicator-width: 0px;
-          "
-        ></ui-tree-item>
       </div>
     `);
 
-    const branch = expectPresent(root.querySelector<TreeItem>('#branch'), 'branch');
-    const leaf = expectPresent(root.querySelector<TreeItem>('#leaf'), 'leaf');
+    const rootBranch = expectPresent(
+      root.querySelector<TreeItem>('#root-branch'),
+      'root branch item',
+    );
+    const nestedBranch = expectPresent(
+      root.querySelector<TreeItem>('#nested-branch'),
+      'nested branch item',
+    );
+    const nestedLeaf = expectPresent(root.querySelector<TreeItem>('#nested-leaf'), 'nested leaf item');
 
-    await flush(branch);
-    await flush(leaf);
+    await flush(rootBranch);
+    await flush(nestedBranch);
+    await flush(nestedLeaf);
 
-    const readBeforeInlineStartPx = (element: HTMLElement): number => {
-      const pseudoStyles = getComputedStyle(element, '::before');
-      const rawValue =
-        pseudoStyles.getPropertyValue('inset-inline-start').trim() ||
-        pseudoStyles.getPropertyValue('left').trim();
+    const rootBranchAncestorRails = getAncestorRails(rootBranch);
+    const nestedBranchAncestorRails = getAncestorRails(nestedBranch);
+    const nestedLeafAncestorRails = getAncestorRails(nestedLeaf);
 
-      const parsed = Number.parseFloat(rawValue);
-      expect(Number.isFinite(parsed), `inline-start should resolve to px: ${rawValue}`).to.equal(
-        true,
-      );
+    expect(rootBranch.shadowRoot?.querySelectorAll('.ancestor-rail').length).to.equal(0);
+    expect(nestedBranch.shadowRoot?.querySelectorAll('.ancestor-rail').length).to.equal(1);
+    expect(nestedLeaf.shadowRoot?.querySelectorAll('.ancestor-rail').length).to.equal(1);
 
-      return parsed;
-    };
+    expect(readWidthPx(rootBranchAncestorRails, 'root branch ancestor rails width')).to.equal(0);
+    expect(readWidthPx(nestedBranchAncestorRails, 'nested branch ancestor rails width')).to.equal(20);
+    expect(readWidthPx(nestedLeafAncestorRails, 'nested leaf ancestor rails width')).to.equal(20);
 
-    const branchItem = getItem(branch);
-    const leafItem = getItem(leaf);
-
-    expect(readBeforeInlineStartPx(branchItem)).to.equal(0);
-    expect(readBeforeInlineStartPx(leafItem)).to.equal(20);
+    expect(readPseudoInlineStartPx(getSurface(rootBranch), '::before')).to.equal(0);
+    expect(readPseudoInlineStartPx(getSurface(nestedBranch), '::before')).to.equal(0);
+    expect(readPseudoInlineStartPx(getSurface(nestedLeaf), '::before')).to.equal(0);
   });
 });
