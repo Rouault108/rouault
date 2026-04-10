@@ -3,8 +3,8 @@ title: 'JavaScriptの配列'
 description: "配列について O'Reilly の『JavaScript 第７版』を踏まえたメモ"
 date: 2026-03-14
 genre:
-  - javascript
-  - programming
+  - JavaScript
+  - Programming
 ---
 
 JavaScriptの配列には型はないため、配列の要素にはどの型の値でも格納できる。つまり、配列の要素にオブジェクトやほかの配列を格納することも可能。
