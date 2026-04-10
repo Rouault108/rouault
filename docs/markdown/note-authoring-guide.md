@@ -56,7 +56,7 @@ sidebarIcon: file-text
 
 frontmatter はファイル先頭の `---` で囲まれた領域に書きます。YAML 形式で記述してください。
 
-### 3.1 最低限おすすめの項目
+### 3.1 最低限の項目
 
 ```yaml
 ---
@@ -69,51 +69,92 @@ genre:
 ---
 ```
 
-### 3.2 よく使う項目
+### 3.2 書ける項目と許容値
 
-| 項目          | 目安     | 内容                              |
-| ------------- | -------- | --------------------------------- |
-| `title`       | 必須     | ノートタイトル                    |
-| `description` | 推奨     | 一覧、検索、OG などで使う短い説明 |
-| `date`        | 推奨     | 作成日。`YYYY-MM-DD` 形式         |
-| `updated`     | 任意     | 更新日。`YYYY-MM-DD` 形式         |
-| `genre`       | 任意     | 分類用の文字列配列                |
-| `sidebarIcon` | 任意     | サイドバーで使うアイコン名        |
-| `cover`       | 任意     | カバー画像のパスまたは URL        |
-| `license`     | 任意     | ライセンス名                      |
-| `licenseNote` | 任意     | ライセンスに関する補足            |
-| `status`      | 任意     | 公開状態                          |
-| `kind`        | 任意     | ノートの公開面種別                |
-| `testingArea` | 条件付き | `kind: testing` の責務区分        |
+| 項目                     | 必須     | 許容値                                                                                      | 主な制約・補足                                                                                 |
+| ------------------------ | -------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `title`                  | 必須     | YAML 文字列                                                                                 | 実質的なタイトルです。空文字運用は避けます。本文の先頭見出しと揃えると管理しやすくなります。 |
+| `description`            | 任意     | YAML 文字列                                                                                 | 一覧、検索、メタ説明に使われます。1 文程度の短い要約を推奨します。                            |
+| `date`                   | 任意     | `YYYY-MM-DD` 形式の ISO 日付                                                                | 初出日です。`2026-03-14` のように書きます。                                                   |
+| `updated`                | 任意     | `YYYY-MM-DD` 形式の ISO 日付                                                                | 更新日です。`date` と同じ形式だけを書きます。                                                 |
+| `genre`                  | 任意     | 文字列配列                                                                                  | 分類用です。検索 UI ではタグとして扱われます。空文字や重複は避けます。                        |
+| `sidebarIcon`            | 任意     | `file-text` のような bare icon 名                                                           | `lucide:` 接頭辞は使えません。`none` も使えます。省略時は `_config.json` 側の設定を継承します。 |
+| `cover`                  | 任意     | `content/_assets/...` または `examples/media/...` 配下のローカル画像パス                   | 現行実装では外部 URL は使えません。manifest に存在しない画像は build で失敗する場合があります。 |
+| `source`                 | 任意     | 文字列                                                                                      | 記事ヘッダーでの表示対象は `http:` / `https:` の単一 URL のみです。                            |
+| `license`                | 任意     | 文字列                                                                                      | 表示用のライセンス名です。前後空白のみの値は意味を持ちません。                                 |
+| `licenseNote`            | 任意     | 文字列                                                                                      | ライセンス補足です。構造化データではなく単純な文字列だけを書きます。                           |
+| `status`                 | 任意     | `draft` / `archived` / `wip` / `deprecated`                                                 | `draft` は公開ノート集合から除外されます。省略時は通常公開扱いです。                           |
+| `kind`                   | 任意     | `reader` / `testing` / `demo`                                                               | 省略時は `reader` として扱われます。公開面を変える項目です。                                   |
+| `testingArea`            | 条件付き | `index` / `markdown-basic` / `media` / `code` / `interactive` / `sandbox`                  | `kind: testing` のときだけ必須です。`kind` が `testing` 以外なら書けません。                   |
+| `hydrationBudgetProfile` | 任意     | `reader-shell-canary` / `testing-interactive-canary` / `testing-sandbox-canary` / `testing-code-canary` | hydration budget を明示したい canary note 専用です。通常ノートでは不要です。                   |
 
 ### 3.3 各項目の書き方
 
 - `title`
-  本文の先頭見出しと揃えておくと管理しやすくなります。
+  YAML 文字列で書きます。必須です。実装上の識別子ではなく表示用の題名なので、`slug` の代わりにはしません。
 
 - `description`
-  1 文で簡潔に書きます。本文の導入をそのまま貼るより、検索で見分けやすい要約にします。
+  YAML 文字列で書きます。本文冒頭の貼り付けではなく、一覧や検索で見分けやすい短い要約にします。
 
 - `date`
-  ノートの初出日です。並び順や表示日付の基準になります。
+  `YYYY-MM-DD` 形式だけを書きます。日時や `03/14/2026` のような別形式は書きません。
 
 - `updated`
-  後から大きく更新した日です。更新の追跡に使います。
+  `date` と同じく `YYYY-MM-DD` 形式です。大きな更新を追跡したいときだけ追加します。
 
 - `genre`
-  分類用の配列です。空文字は入れません。
+  YAML 配列で書きます。各要素は文字列です。
+
+  ```yaml
+  genre:
+    - architecture
+    - router
+  ```
 
 - `sidebarIcon`
-  たとえば `file-text` のように書きます。必要なければ省略します。
+  bare icon 名を書きます。たとえば `file-text`、`book-open`、`music` のように書きます。`lucide:file-text` のような prefix 付き値は使えません。消したい場合は `none` を使えます。
 
-- `kind`
-  通常ノートでは省略して構いません。testing 用ノートだけ `testing` を明示します。
+- `cover`
+  ローカル画像パスだけを書きます。通常ノートでは `content/_assets/...` 配下の画像を使います。
 
-- `testingArea`
-  `kind: testing` のときだけ必須です。`index | markdown-basic | media | code | interactive | sandbox` のいずれかを書きます。
+  ```yaml
+  cover: 'content/_assets/covers/router-overview.png'
+  ```
+
+- `source`
+  単一の出典 URL を文字列で書きます。現行 UI で安定して扱う前提は `http:` / `https:` のみです。
+
+- `license`
+  表示用の短い文字列を書きます。たとえば `CC BY 4.0` のように書きます。
+
+- `licenseNote`
+  補足説明を文字列で書きます。リンク先やラベルを分離した構造は持てません。
 
 - `status`
-  状態が明確な場合だけ書きます。迷う場合は省略しても構いません。
+  記事状態が必要なときだけ書きます。使える値は `draft` / `archived` / `wip` / `deprecated` だけです。
+
+  - `draft`: 公開ノート集合から除外されます
+  - `archived`: 公開はするがアーカイブ扱いです
+  - `wip`: 作業中ノートとして表示します
+  - `deprecated`: 非推奨ノートとして表示します
+
+- `kind`
+  公開面を切り替える項目です。
+
+  - `reader`: 通常ノートです。省略時の既定値です
+  - `testing`: テスト用ノートです。`testingArea` が必須になります
+  - `demo`: デモ用ノートです。通常の読者向け面には載せません
+
+- `testingArea`
+  `kind: testing` のときだけ書きます。許可値は `index` / `markdown-basic` / `media` / `code` / `interactive` / `sandbox` です。
+
+- `hydrationBudgetProfile`
+  canary note で hydration budget を固定したいときだけ書きます。通常ノートでは省略します。
+
+  - `reader-shell-canary`
+  - `testing-interactive-canary`
+  - `testing-sandbox-canary`
+  - `testing-code-canary`
 
 testing 用ノートの最小例:
 
@@ -143,6 +184,9 @@ testingArea: 'interactive'
 
 - 日付は `2026-03-14` のように書く
 - `genre` は YAML 配列で書く
+- `testingArea` は `kind: testing` のときだけ書く
+- `cover` はローカル画像パスだけを書く
+- `sidebarIcon` は bare icon 名で書き、`lucide:` 接頭辞を付けない
 - 未定義の項目は追加しない
 - 値が無い項目は無理に書かない
 
