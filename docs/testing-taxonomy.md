@@ -330,3 +330,39 @@ CSS 契約は、**構造の存在**と**表示結果**を同じ場所で扱い�
 - browser contract は `test/browser/**`、pure logic / policy / parser は `test/node/**` を正本とします。
 - E2E は no-JS baseline と主要統合導線の最終確認面に限定します。
 - Storybook は docs / smoke / metadata に限定します。
+
+## 13. Sidebar / Hydration の配置規則
+
+sidebar と hydration は、次の責務境界で固定します。
+
+### 13.1 `test/node/**`
+
+- sidebar presentation store state machine
+- breakpoint から `fixed` / `overlay` への mode 遷移
+- overlay state persistence
+- route-select collapse policy
+
+### 13.2 `test/browser/**`
+
+- header toggle から store 経由で sidebar が開閉すること
+- scrim click / Escape close
+- return focus
+- `layout-toc` の hydration 後同期
+- component の observable state change
+
+### 13.3 `test/ssr/**`
+
+- `NoteLayout` が sidebar host を 1 個だけ出力すること
+- overlay 専用 DOM surface が存在しないこと
+- hydration hook と scope が stable に出力されること
+
+### 13.4 `test/e2e/**`
+
+- no-JS baseline で閲覧が成立すること
+- narrow/mobile で横スクロールが増えないこと
+- route 遷移後も sidebar / toc が壊れないこと
+
+### 13.5 Storybook
+
+- docs / smoke / manual-only に限定する
+- hydration timing や private activation API を Story で正当化しない

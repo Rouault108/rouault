@@ -54,7 +54,7 @@ const meta: Meta<UiSidebarShell> = {
 
 この story ファイルは **docs / smoke / 手動確認** に限定します。  
 focus movement、trigger restore、scrim click、Escape close、state change event、
-LocalStorage 永続化、属性/プロパティ同期、mode 自動判定は
+属性/プロパティ同期は
 \`test/browser/sidebar-shell.browser.test.ts\` を正本とします。
         `,
       },
@@ -141,49 +141,6 @@ export const OverlayCollapsed: Story = {
       header: true,
       bodyLabel: 'Overlay / Collapsed の代表表示です。',
     }),
-};
-
-export const PersistenceReference: Story = {
-  parameters: {
-    docs: {
-      description: {
-        story:
-          '永続化を伴う UI surface の見本です。LocalStorage の合否は Storybook ではなく test/browser/sidebar-shell.browser.test.ts を正本とします。',
-      },
-    },
-  },
-  render: () => html`
-    <div style="min-height: 320px;">
-      <ui-sidebar-shell mode="fixed" data-state="expanded">
-        <div role="tree" aria-label="ナビゲーション">
-          <a href="/notes" role="treeitem" tabindex="0" aria-selected="true">ノート</a>
-        </div>
-      </ui-sidebar-shell>
-    </div>
-  `,
-};
-
-export const BreakpointReference: Story = {
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'fixed-breakpoint による mode 分岐の見本です。自動判定の合否は Storybook ではなく browser test を正本とします。',
-      },
-    },
-  },
-  render: () => html`
-    <div style="min-height: 320px;">
-      <ui-sidebar-shell fixed-breakpoint="960">
-        <button slot="header">現在のジャンル</button>
-
-        <div role="tree" aria-label="ナビゲーション">
-          <a href="/notes" role="treeitem" tabindex="0" aria-selected="true">ノート</a>
-          <a href="/music" role="treeitem" tabindex="-1" aria-selected="false">音楽</a>
-        </div>
-      </ui-sidebar-shell>
-    </div>
-  `,
 };
 
 export const HeaderSlotModes: Story = {

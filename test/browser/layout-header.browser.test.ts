@@ -117,36 +117,31 @@ describe('layout-header browser contract', () => {
   });
 
   it('overlay 展開時も ui-header に sidebar 幅を予約させず、toggle の aria-expanded のみ更新すること', async () => {
-    const unregister = layoutSidebarController.register(DEFAULT_LAYOUT_SIDEBAR_ID, {
-      applyOverlayState: () => undefined,
+    layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+      presentation: 'overlay',
+      fixedBreakpoint: 1024,
+      storage: null,
     });
 
-    try {
-      const header = await fixture<LayoutHeader>(
-        html`<layout-header note-layout sidebar-enabled></layout-header>`,
-      );
-      await waitForLitUpdate(header);
+    const header = await fixture<LayoutHeader>(
+      html`<layout-header note-layout sidebar-enabled></layout-header>`,
+    );
+    await waitForLitUpdate(header);
 
-      layoutSidebarController.report(DEFAULT_LAYOUT_SIDEBAR_ID, {
-        state: 'expanded',
-        mode: 'overlay',
-      });
-      await waitForLitUpdate(header);
+    layoutSidebarController.open(DEFAULT_LAYOUT_SIDEBAR_ID);
+    await waitForLitUpdate(header);
 
-      const uiHeader = expectPresent(
-        header.shadowRoot?.querySelector<UiHeader>('ui-header'),
-        'uiHeader',
-      );
-      const toggleButton = expectPresent(
-        header.shadowRoot?.querySelector<HTMLElement>('.sidebar-toggle'),
-        'toggleButton',
-      );
+    const uiHeader = expectPresent(
+      header.shadowRoot?.querySelector<UiHeader>('ui-header'),
+      'uiHeader',
+    );
+    const toggleButton = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.sidebar-toggle'),
+      'toggleButton',
+    );
 
-      expect(uiHeader.sidebarExpanded).to.equal(false);
-      expect(toggleButton.getAttribute('aria-expanded')).to.equal('true');
-    } finally {
-      unregister();
-    }
+    expect(uiHeader.sidebarExpanded).to.equal(false);
+    expect(toggleButton.getAttribute('aria-expanded')).to.equal('true');
   });
 
   it('sidebar-enabled が無い note-layout では sidebar toggle を描画しないこと', async () => {

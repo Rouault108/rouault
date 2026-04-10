@@ -143,28 +143,14 @@ test.describe('Router Navigation', () => {
     await page.goto('/tags/testing/');
     await waitForSearchPageReady(page);
 
-    await page.waitForFunction(() => {
-      const host = document.querySelector('#main-content search-page');
-      const links = host?.shadowRoot?.querySelectorAll<HTMLAnchorElement>('a.result-link') ?? [];
-      return links.length > 0;
-    });
+    const resultLinks = page.locator('#main-content a.result-link');
+    await expect(resultLinks.first()).toBeVisible();
 
     await page.evaluate(() => {
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
     });
 
-    await page.evaluate(() => {
-      const host = document.querySelector('#main-content search-page');
-      const links = Array.from(
-        host?.shadowRoot?.querySelectorAll<HTMLAnchorElement>('a.result-link') ?? [],
-      );
-      const target = links[links.length - 1] ?? null;
-      if (!(target instanceof HTMLAnchorElement)) {
-        throw new Error('検索結果リンクが見つかりません');
-      }
-
-      target.click();
-    });
+    await resultLinks.last().click();
     await expect(page).not.toHaveURL('/tags/testing/');
     await expect(page.locator('#main-content article')).toBeVisible();
 

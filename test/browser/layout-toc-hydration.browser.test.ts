@@ -4,6 +4,7 @@ import { HydrationScheduler } from '../../src/client/hydration/scheduler.js';
 import '../../src/components/layout/layout-toc.js';
 import '../../src/components/ui/toc/toc.js';
 import type { LayoutToc } from '../../src/components/layout/layout-toc.js';
+import { activateLayoutToc } from '../../src/components/layout/layout-toc.js';
 import type { Toc } from '../../src/components/ui/toc/toc.js';
 import type { HydrationDiagnostics } from '../../src/client/hydration/types.js';
 import { replaceElementChildrenFromHtml } from '../../src/router/declarative-shadow-dom.js';
@@ -88,7 +89,7 @@ describe('layout-toc hydration reconciliation', () => {
       `);
 
       await flush(host);
-      host.activateHydration();
+      activateLayoutToc(host);
       await flush(host);
 
       const internals = host as unknown as LayoutTocInternals;
@@ -129,7 +130,7 @@ describe('layout-toc hydration reconciliation', () => {
         ></layout-toc>
       `);
 
-      host.activateHydration();
+      activateLayoutToc(host);
 
       const internals = host as unknown as LayoutTocInternals;
       internals._applyActiveId('72-配列の要素の読み書き');
@@ -152,7 +153,7 @@ describe('layout-toc hydration reconciliation', () => {
     }
   });
 
-  it('SSR の DSD / defer-hydration 経路でも stale な ui-toc を張り直して同期できること', async () => {
+  it('SSR の DSD 経路でも stale な ui-toc を張り直して同期できること', async () => {
     const cleanup = appendArticleFixture();
 
     try {
@@ -165,11 +166,10 @@ describe('layout-toc hydration reconciliation', () => {
             headings-json='${headingsJson}'
             content-root-id="note-content"
             data-hydration-trigger="manual"
-            defer-hydration
           >
             <template shadowrootmode="open">
               <div class="desktop">
-                <ui-toc active-id="71-配列の生成" defer-hydration>
+                <ui-toc active-id="71-配列の生成">
                   <template shadowrootmode="open">
                     <nav aria-label="Table of Contents">
                       <ul>
@@ -205,7 +205,7 @@ describe('layout-toc hydration reconciliation', () => {
       }
 
       await flush(host);
-      host.activateHydration();
+      activateLayoutToc(host);
       await flush(host);
 
       const internals = host as unknown as LayoutTocInternals;
@@ -217,7 +217,6 @@ describe('layout-toc hydration reconciliation', () => {
         throw new Error('desktop ui-toc が見つかりません');
       }
 
-      expect(host.hasAttribute('defer-hydration')).to.equal(false);
       expect(desktopToc.activeId).to.equal('72-配列の要素の読み書き');
       expect(desktopToc.getAttribute('active-id')).to.equal('72-配列の要素の読み書き');
 
@@ -254,11 +253,10 @@ describe('layout-toc hydration reconciliation', () => {
               content-root-id="note-content"
               data-hydration-capability="interactive"
               data-hydration-trigger="initial"
-              defer-hydration
             >
               <template shadowrootmode="open">
                 <div class="desktop">
-                  <ui-toc active-id="71-配列の生成" defer-hydration>
+                  <ui-toc active-id="71-配列の生成">
                     <template shadowrootmode="open">
                       <nav aria-label="Table of Contents">
                         <ul>
@@ -301,8 +299,6 @@ describe('layout-toc hydration reconciliation', () => {
       expect(diagnostics.plannedCount).to.equal(1);
       expect(diagnostics.failedCount).to.equal(0);
       expect(diagnostics.activatedCount).to.equal(1);
-      expect(host.hasAttribute('defer-hydration')).to.equal(false);
-
       const internals = host as unknown as LayoutTocInternals;
       internals._applyActiveId('72-配列の要素の読み書き');
       await flush(host);

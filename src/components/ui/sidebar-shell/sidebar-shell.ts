@@ -8,18 +8,16 @@ const NAV_LABEL = 'メインナビゲーション';
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/** Fixed/Overlay 切替の最小許容値 */
-const MIN_BREAKPOINT = 320;
-
-/** LocalStorage 永続化キー */
-const STORAGE_KEY = 'rouault.sidebar.state';
-
 export type SidebarState = 'expanded' | 'collapsed';
 export type SidebarMode = 'fixed' | 'overlay';
 
 export interface UiSidebarStateChangeDetail {
   state: SidebarState;
   mode: SidebarMode;
+}
+
+export interface UiSidebarRequestCloseDetail {
+  reason: 'scrim' | 'escape';
 }
 
 @customElement('ui-sidebar-shell')
@@ -177,9 +175,6 @@ export class UiSidebarShell extends LitElement {
   @property({ reflect: true })
   mode: SidebarMode = 'fixed';
 
-  @property({ type: Number, reflect: true, attribute: 'fixed-breakpoint' })
-  fixedBreakpoint = 1280;
-
   @property({ attribute: false })
   returnFocusTarget: HTMLElement | null = null;
 
@@ -190,32 +185,11 @@ export class UiSidebarShell extends LitElement {
 
   private _operation: Promise<void> = Promise.resolve();
 
-  private _mediaQuery: MediaQueryList | null = null;
-
-  private _usesAutoMode = false;
-
-  override connectedCallback(): void {
-    this._usesAutoMode = !this.hasAttribute('mode');
-    super.connectedCallback();
-    this._restoreState();
-    this._initMediaQuery();
-    this.activateHydration();
-  }
-
-  override disconnectedCallback(): void {
-    this._destroyMediaQuery();
-    super.disconnectedCallback();
-  }
-
   protected override updated(changedProperties: PropertyValues<this>): void {
     if (!this._hasRendered) {
       this._hasRendered = true;
       this._syncVisibilityForCurrentState();
       return;
-    }
-
-    if (changedProperties.has('fixedBreakpoint')) {
-      this._initMediaQuery();
     }
 
     if (changedProperties.has('mode') && !changedProperties.has('state')) {
@@ -228,7 +202,6 @@ export class UiSidebarShell extends LitElement {
         return;
       }
 
-      this._persistState();
       this._enqueue(async () => {
         if (this.state === 'expanded') {
           await this._expandSidebar();
@@ -238,26 +211,6 @@ export class UiSidebarShell extends LitElement {
         await this._collapseSidebar();
       });
     }
-  }
-
-  activateHydration(): void {
-    if (this.hasAttribute('defer-hydration')) {
-      this.removeAttribute('defer-hydration');
-    }
-
-    this.requestUpdate();
-
-    void this.updateComplete.then(() => {
-      if (!this.isConnected) {
-        return;
-      }
-
-      if (!(this._navElement instanceof HTMLElement)) {
-        return;
-      }
-
-      this._syncVisibilityForCurrentState();
-    });
   }
 
   expand(trigger?: HTMLElement): void {
@@ -283,68 +236,6 @@ export class UiSidebarShell extends LitElement {
     }
 
     this.expand(trigger);
-  }
-
-  private _restoreState(): void {
-    if (this.hasAttribute('data-state')) {
-      return;
-    }
-
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored === 'expanded' || stored === 'collapsed') {
-        this.state = stored;
-      }
-    } catch {
-      // localStorage が使えない環境では永続化を無視する。
-    }
-  }
-
-  private _persistState(): void {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, this.state);
-    } catch {
-      // localStorage が使えない環境では永続化を無視する。
-    }
-  }
-
-  private _initMediaQuery(): void {
-    this._destroyMediaQuery();
-
-    if (!this._usesAutoMode) {
-      return;
-    }
-
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return;
-    }
-
-    this._mediaQuery = window.matchMedia(this._buildMediaQuery());
-    this._applyModeFromMediaQuery(this._mediaQuery.matches);
-    this._mediaQuery.addEventListener('change', this._onMediaQueryChange);
-  }
-
-  private _destroyMediaQuery(): void {
-    this._mediaQuery?.removeEventListener('change', this._onMediaQueryChange);
-    this._mediaQuery = null;
-  }
-
-  private _buildMediaQuery(): string {
-    const resolvedBreakpoint = this._resolveFixedBreakpoint(this.fixedBreakpoint);
-    return `(min-width: ${String(resolvedBreakpoint)}px)`;
-  }
-
-  private _resolveFixedBreakpoint(value: number): number {
-    if (!Number.isFinite(value)) {
-      return 1280;
-    }
-
-    const normalized = Math.trunc(value);
-    return normalized >= MIN_BREAKPOINT ? normalized : MIN_BREAKPOINT;
-  }
-
-  private _applyModeFromMediaQuery(matches: boolean): void {
-    this.mode = matches ? 'fixed' : 'overlay';
   }
 
   private _syncVisibilityForCurrentState(): void {
@@ -506,12 +397,8 @@ export class UiSidebarShell extends LitElement {
     );
   }
 
-  private _onMediaQueryChange = (event: MediaQueryListEvent): void => {
-    this._applyModeFromMediaQuery(event.matches);
-  };
-
   private _onScrimClick = (): void => {
-    this.collapse();
+    this._dispatchRequestClose('scrim');
   };
 
   private _onKeydown = (event: KeyboardEvent): void => {
@@ -526,8 +413,18 @@ export class UiSidebarShell extends LitElement {
     }
 
     event.preventDefault();
-    this.collapse();
+    this._dispatchRequestClose('escape');
   };
+
+  private _dispatchRequestClose(reason: UiSidebarRequestCloseDetail['reason']): void {
+    this.dispatchEvent(
+      new CustomEvent<UiSidebarRequestCloseDetail>('ui-sidebar-request-close', {
+        bubbles: false,
+        composed: false,
+        detail: { reason },
+      }),
+    );
+  }
 
   override render() {
     return html`

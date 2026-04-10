@@ -2040,13 +2040,9 @@ app-router {
 }
 
 /* Narrow desktop: 2カラム（本文 + TOC）
- * - fixed sidebar 列は hidden にし、overlay host 側を別レイヤーとして残す
+ * - sidebar host 自体は残しつつ、grid track を 0px へ畳む
+ * - overlay surface は layout-sidebar 内の shell が担当する
  * - breakpoint は NOTE_SIDEBAR_FIXED_BREAKPOINT(1024) と同期 */
-.layout-sidebar-overlay {
-  display: none;
-  block-size: 0;
-  min-block-size: 0;
-}
 
 @media (max-width: 1023px) {
   .note-shell[data-sidebar-presence='present'] {
@@ -2064,11 +2060,9 @@ app-router {
 
   .note-shell[data-sidebar-presence='present'] .layout-sidebar-col {
     grid-column: 1;
-    display: none;
-  }
-
-  .layout-sidebar-overlay {
-    display: block;
+    border-right: none;
+    inline-size: 0;
+    min-inline-size: 0;
   }
 
   .note-shell[data-sidebar-presence='present'] .layout-main-col {
@@ -2113,11 +2107,9 @@ app-router {
 
   .note-shell[data-sidebar-presence='present'] .layout-sidebar-col {
     grid-column: 1;
-    display: none;
-  }
-
-  .layout-sidebar-overlay {
-    display: block;
+    border-right: none;
+    inline-size: 0;
+    min-inline-size: 0;
   }
 
   .note-shell[data-sidebar-presence='present'] .layout-main-col {

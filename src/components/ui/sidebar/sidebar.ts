@@ -1,12 +1,12 @@
 import { css, html, LitElement } from 'lit';
-import { customElement, property, query } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import '../file-tree/file-tree.js';
 import type { FileTreeVariant, TreeItemDensity, TreeNode } from '../file-tree/file-tree.js';
 import '../sidebar-shell/sidebar-shell.js';
 import type {
   SidebarMode,
   SidebarState,
-  UiSidebarShell,
+  UiSidebarRequestCloseDetail,
   UiSidebarStateChangeDetail,
 } from '../sidebar-shell/sidebar-shell.js';
 
@@ -21,6 +21,10 @@ export interface UiSidebarToggleDetail {
 
 export interface UiSidebarActiveChangeDetail {
   id: string;
+}
+
+export interface UiSidebarRequestCloseEventDetail {
+  reason: UiSidebarRequestCloseDetail['reason'];
 }
 
 @customElement('ui-sidebar')
@@ -108,22 +112,8 @@ export class UiSidebar extends LitElement {
   @property({ type: String })
   heading = 'ナビゲーション';
 
-  @property({ type: Number, reflect: true, attribute: 'fixed-breakpoint' })
-  fixedBreakpoint = 1280;
-
   @property({ attribute: false })
   returnFocusTarget: HTMLElement | null = null;
-
-  @query('ui-sidebar-shell')
-  private _shellElement!: UiSidebarShell | null;
-
-  protected override firstUpdated(): void {
-    this._activateShellHydration();
-  }
-
-  protected override updated(): void {
-    this._activateShellHydration();
-  }
 
   expand(trigger?: HTMLElement): void {
     if (trigger instanceof HTMLElement) {
@@ -158,10 +148,6 @@ export class UiSidebar extends LitElement {
     this.expand(trigger);
   }
 
-  private _activateShellHydration(): void {
-    this._shellElement?.activateHydration();
-  }
-
   private _hasOverlayHeaderActions(): boolean {
     const lightDomChildren =
       'children' in this
@@ -172,9 +158,6 @@ export class UiSidebar extends LitElement {
   }
 
   private _onShellStateChange = (event: CustomEvent<UiSidebarStateChangeDetail>): void => {
-    this.state = event.detail.state;
-    this.mode = event.detail.mode;
-
     this.dispatchEvent(
       new CustomEvent<UiSidebarStateChangeDetail>('ui-sidebar-state-change', {
         bubbles: false,
@@ -183,6 +166,18 @@ export class UiSidebar extends LitElement {
           state: event.detail.state,
           mode: event.detail.mode,
         },
+      }),
+    );
+  };
+
+  private _onShellRequestClose = (
+    event: CustomEvent<UiSidebarRequestCloseEventDetail>,
+  ): void => {
+    this.dispatchEvent(
+      new CustomEvent<UiSidebarRequestCloseEventDetail>('ui-sidebar-request-close', {
+        bubbles: true,
+        composed: true,
+        detail: event.detail,
       }),
     );
   };
@@ -229,9 +224,9 @@ export class UiSidebar extends LitElement {
         mode=${this.mode}
         .state=${this.state}
         .mode=${this.mode}
-        .fixedBreakpoint=${this.fixedBreakpoint}
         .returnFocusTarget=${this.returnFocusTarget}
         @ui-sidebar-state-change=${this._onShellStateChange}
+        @ui-sidebar-request-close=${this._onShellRequestClose}
       >
         ${hasOverlayHeaderActions
           ? html`

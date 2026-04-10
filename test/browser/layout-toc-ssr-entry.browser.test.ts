@@ -1,5 +1,6 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
+import { HydrationScheduler } from '../../src/client/hydration/scheduler.js';
 import { replaceElementChildrenFromHtml } from '../../src/router/declarative-shadow-dom.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
@@ -10,7 +11,6 @@ const headingsJson = JSON.stringify([
 
 interface LayoutTocLike extends HTMLElement {
   _activeId?: string;
-  activateHydration?: () => void;
   updateComplete?: Promise<unknown>;
 }
 
@@ -70,11 +70,10 @@ describe('layout-toc SSR entry hydration', () => {
               content-root-id="note-content"
               data-hydration-capability="interactive"
               data-hydration-trigger="initial"
-              defer-hydration
             >
               <template shadowrootmode="open">
                 <div class="desktop">
-                  <ui-toc active-id="71-配列の生成" defer-hydration>
+                  <ui-toc active-id="71-配列の生成">
                     <template shadowrootmode="open">
                       <nav aria-label="Table of Contents">
                         <ul>
@@ -114,10 +113,10 @@ describe('layout-toc SSR entry hydration', () => {
         throw new Error('layout-toc が見つかりません');
       }
 
+      const scheduler = new HydrationScheduler();
+      await scheduler.hydrateContent(root, { dispatchTarget: root });
       await flush(host);
 
-      expect(typeof host.activateHydration).to.equal('function');
-      expect(host.hasAttribute('defer-hydration')).to.equal(false);
       expect(host._activeId).to.equal('71-配列の生成');
 
       const desktopToc = host.shadowRoot?.querySelector<UiTocLike>('.desktop ui-toc') ?? null;

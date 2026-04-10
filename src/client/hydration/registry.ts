@@ -49,6 +49,11 @@ const activateFootnotePopovers = ({ root }: HydrationActivationContext): void =>
   enhanceFootnotePopovers(root);
 };
 
+const activateLayoutToc = async ({ element }: HydrationActivationContext): Promise<void> => {
+  const module = await import('../../components/layout/layout-toc.js');
+  await module.activateLayoutToc(element);
+};
+
 export const HYDRATION_REGISTRY = [
   {
     tag: 'ui-skip-link',
@@ -102,12 +107,11 @@ export const HYDRATION_REGISTRY = [
   {
     tag: 'layout-sidebar',
     loader: () => import('../../components/layout/layout-sidebar.js'),
-    activate: activateElementMethod,
   },
   {
     tag: 'layout-toc',
     loader: () => import('../../components/layout/layout-toc.js'),
-    activate: activateElementMethod,
+    activate: activateLayoutToc,
   },
   {
     tag: 'code-block-enhancer',

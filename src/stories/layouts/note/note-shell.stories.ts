@@ -103,15 +103,6 @@ const renderNoteShell = () =>
                   </aside>
                 </section>
 
-                <layout-sidebar
-                  class="layout-sidebar-overlay"
-                  source-id="story-note-sidebar-source"
-                  selected-id="story-shell"
-                  heading="ナビゲーション"
-                  fixed-breakpoint="1024"
-                  presentation="overlay"
-                ></layout-sidebar>
-
                 <script type="application/json" id="story-note-sidebar-source">
                   ${JSON.stringify(sidebarSource)}
                 </script>

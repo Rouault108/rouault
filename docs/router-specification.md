@@ -1061,3 +1061,13 @@ await router.start();
 - 外部描画統合は単発 callback ではなく 2 相 commit で扱う
 - DOM 後処理の責務位置は、描画の主体に一致させる
 - outcome を伴わない曖昧な完了判定を導入しない
+
+## sidebar route-select policy
+
+note 遷移時の sidebar collapse policy は presentation mode に従います。
+
+- overlay mode では note 選択後に collapse してよい
+- fixed mode では note 選択後も expanded のまま維持する
+
+この policy は router 自身が sidebar state を所有することを意味しません。
+router は route commit を行い、sidebar 側はその結果として route-select を解釈します。

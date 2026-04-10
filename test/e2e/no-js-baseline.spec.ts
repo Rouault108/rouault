@@ -13,16 +13,14 @@ interface NoteChromeState {
   tocTemplateCount: number;
   tocHasHeadingsJson: boolean;
   tocContentRootId: string;
-  fixedSidebarExists: boolean;
-  overlaySidebarExists: boolean;
+  sidebarHostCount: number;
 }
 
 const readNoteChromeState = async (page: Page): Promise<NoteChromeState> =>
   page.evaluate(() => {
     const articleHeader = document.querySelector('ui-article-header');
     const toc = document.querySelector('layout-toc');
-    const fixedSidebar = document.querySelector('.layout-sidebar-col layout-sidebar');
-    const overlaySidebar = document.querySelector('layout-sidebar.layout-sidebar-overlay');
+    const sidebarHosts = document.querySelectorAll('.layout-sidebar-col layout-sidebar');
 
     const countDeclarativeShadowRootTemplates = (element: Element | null): number => {
       if (!(element instanceof Element)) {
@@ -49,8 +47,7 @@ const readNoteChromeState = async (page: Page): Promise<NoteChromeState> =>
       tocHasHeadingsJson: toc instanceof HTMLElement && toc.hasAttribute('headings-json'),
       tocContentRootId:
         toc instanceof HTMLElement ? (toc.getAttribute('content-root-id') ?? '') : '',
-      fixedSidebarExists: fixedSidebar instanceof HTMLElement,
-      overlaySidebarExists: overlaySidebar instanceof HTMLElement,
+      sidebarHostCount: sidebarHosts.length,
     };
   });
 
@@ -67,8 +64,7 @@ const expectSampleJavascriptNoteChromeHostsWithoutJs = async (page: Page): Promi
   expect(state.tocHasHeadingsJson).toBe(true);
   expect(state.tocContentRootId).toBe('note-content-program-sample-javascript');
 
-  expect(state.fixedSidebarExists).toBe(true);
-  expect(state.overlaySidebarExists).toBe(true);
+  expect(state.sidebarHostCount).toBe(1);
 
   await expect(page.locator('ui-article-header')).toHaveAttribute('heading', 'JavaScriptの配列');
   await expect(page.locator('layout-toc')).toHaveAttribute(
@@ -144,15 +140,14 @@ test.describe('No-JS baseline', () => {
     );
   });
 
-  test('ノートページが SSR シェルと本文を初期表示し、fixed / overlay 両方の sidebar host を出力すること', async ({
+  test('ノートページが SSR シェルと本文を初期表示し、sidebar host を 1 個だけ出力すること', async ({
     page,
   }) => {
     await page.goto(sampleJavascriptPath);
 
     await expect(page.locator('layout-header')).toHaveCount(1);
     await expect(page.locator('.layout-sidebar-col layout-sidebar')).toHaveCount(1);
-    await expect(page.locator('layout-sidebar.layout-sidebar-overlay')).toHaveCount(1);
-    await expect(page.locator('layout-sidebar')).toHaveCount(2);
+    await expect(page.locator('layout-sidebar')).toHaveCount(1);
     await expect(page.locator('layout-toc')).toHaveCount(1);
     await expect(page.locator('ui-article-header')).toHaveCount(1);
 
@@ -237,7 +232,7 @@ test.describe('No-JS baseline', () => {
     expect(Math.abs((sidebarAfter?.y ?? 0) - (sidebarBefore?.y ?? 0))).toBeLessThan(2);
   });
 
-  test('1024px 未満では fixed sidebar 列を消し、overlay host を別レイヤーへ退避すること', async ({
+  test('1024px 未満では sidebar 列を 0px へ畳み、横スクロールを出さないこと', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1000, height: 900 });
@@ -246,16 +241,16 @@ test.describe('No-JS baseline', () => {
     const layoutState = await page.evaluate(() => {
       const main = document.querySelector('#main-content article');
       const sidebarColumn = document.querySelector('.layout-sidebar-col');
-      const overlayHost = document.querySelector('layout-sidebar.layout-sidebar-overlay');
+      const sidebarHost = document.querySelector('.layout-sidebar-col layout-sidebar');
 
       return {
         hasMainArticle: main instanceof HTMLElement,
         hasSidebarColumn: sidebarColumn instanceof HTMLElement,
-        hasOverlayHost: overlayHost instanceof HTMLElement,
-        sidebarDisplay:
-          sidebarColumn instanceof HTMLElement ? getComputedStyle(sidebarColumn).display : null,
-        overlayDisplay:
-          overlayHost instanceof HTMLElement ? getComputedStyle(overlayHost).display : null,
+        hasSidebarHost: sidebarHost instanceof HTMLElement,
+        sidebarWidth:
+          sidebarColumn instanceof HTMLElement
+            ? Math.round(sidebarColumn.getBoundingClientRect().width)
+            : null,
         horizontalOverflow:
           document.documentElement.scrollWidth - document.documentElement.clientWidth,
       };
@@ -263,9 +258,8 @@ test.describe('No-JS baseline', () => {
 
     expect(layoutState.hasMainArticle).toBe(true);
     expect(layoutState.hasSidebarColumn).toBe(true);
-    expect(layoutState.hasOverlayHost).toBe(true);
-    expect(layoutState.sidebarDisplay).toBe('none');
-    expect(layoutState.overlayDisplay).toBe('block');
+    expect(layoutState.hasSidebarHost).toBe(true);
+    expect(layoutState.sidebarWidth).toBe(0);
     expect(layoutState.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 });

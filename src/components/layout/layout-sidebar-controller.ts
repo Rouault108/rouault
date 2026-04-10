@@ -2,45 +2,81 @@ import type { SidebarMode, SidebarState } from '../ui/sidebar-shell/sidebar-shel
 
 export const DEFAULT_LAYOUT_SIDEBAR_ID = 'note-primary';
 
+const OVERLAY_STATE_STORAGE_KEY = 'rouault.note-sidebar.overlay-state';
+const MIN_BREAKPOINT = 320;
+
+export type LayoutSidebarPresentation = 'auto' | 'fixed' | 'overlay';
+
 export interface LayoutSidebarControllerSnapshot {
   readonly mode: SidebarMode;
   readonly state: SidebarState;
-  readonly isRegistered: boolean;
+  readonly returnFocusTarget: HTMLElement | null;
 }
 
-export interface LayoutSidebarControllerAdapter {
-  applyOverlayState(state: SidebarState, options?: { trigger?: HTMLElement }): void;
+export interface LayoutSidebarStoreInitializeOptions {
+  readonly presentation: LayoutSidebarPresentation;
+  readonly fixedBreakpoint: number;
+  readonly storage?: Storage | null;
 }
 
 interface Entry {
+  presentation: LayoutSidebarPresentation;
+  fixedBreakpoint: number;
   mode: SidebarMode;
   overlayState: SidebarState;
-  adapter: LayoutSidebarControllerAdapter | null;
+  returnFocusTarget: HTMLElement | null;
   listeners: Set<(snapshot: LayoutSidebarControllerSnapshot) => void>;
+  mediaQuery: MediaQueryList | null;
+  mediaQueryListener: ((event: MediaQueryListEvent) => void) | null;
+  storage: Storage | null;
 }
 
+type PersistedOverlayStateMap = Record<string, SidebarState>;
+
 const createEntry = (): Entry => ({
+  presentation: 'overlay',
+  fixedBreakpoint: 1024,
   mode: 'overlay',
   overlayState: 'collapsed',
-  adapter: null,
+  returnFocusTarget: null,
   listeners: new Set(),
+  mediaQuery: null,
+  mediaQueryListener: null,
+  storage: null,
 });
 
 const toSnapshot = (entry: Entry): LayoutSidebarControllerSnapshot => ({
   mode: entry.mode,
   state: entry.mode === 'fixed' ? 'expanded' : entry.overlayState,
-  isRegistered: entry.adapter !== null,
+  returnFocusTarget:
+    entry.returnFocusTarget instanceof HTMLElement && entry.returnFocusTarget.isConnected
+      ? entry.returnFocusTarget
+      : null,
 });
+
+const normalizeFixedBreakpoint = (value: number): number => {
+  if (!Number.isFinite(value)) {
+    return 1024;
+  }
+
+  const normalized = Math.trunc(value);
+  return normalized >= MIN_BREAKPOINT ? normalized : MIN_BREAKPOINT;
+};
 
 class LayoutSidebarController {
   private _entries = new Map<string, Entry>();
 
-  getSnapshot(id?: string): LayoutSidebarControllerSnapshot {
-    return toSnapshot(this._ensure(id));
-  }
+  initialize(id: string | undefined, options: LayoutSidebarStoreInitializeOptions): void {
+    const resolvedId = this._resolveId(id);
+    const entry = this._ensure(resolvedId);
 
-  getOverlayState(id?: string): SidebarState {
-    return this._ensure(id).overlayState;
+    entry.presentation = options.presentation;
+    entry.fixedBreakpoint = normalizeFixedBreakpoint(options.fixedBreakpoint);
+    entry.storage = options.storage ?? null;
+
+    this.restorePersistedOverlayState(resolvedId);
+    this._initMediaQuery(resolvedId, entry);
+    this._emit(resolvedId, entry);
   }
 
   subscribe(
@@ -65,34 +101,61 @@ class LayoutSidebarController {
     };
   }
 
-  register(id: string | undefined, adapter: LayoutSidebarControllerAdapter): () => void {
-    const resolvedId = this._resolveId(id);
-    const entry = this._ensure(resolvedId);
-
-    entry.adapter = adapter;
-    adapter.applyOverlayState(entry.overlayState);
-    this._emit(resolvedId, entry);
-
-    return () => {
-      const current = this._entries.get(resolvedId);
-      if (current?.adapter !== adapter) {
-        return;
-      }
-
-      current.adapter = null;
-      this._emit(resolvedId, current);
-    };
+  getSnapshot(id?: string): LayoutSidebarControllerSnapshot {
+    return toSnapshot(this._ensure(id));
   }
 
-  report(id: string | undefined, snapshot: { mode: SidebarMode; state: SidebarState }): void {
+  setViewportMode(id: string | undefined, mode: SidebarMode): void {
     const resolvedId = this._resolveId(id);
     const entry = this._ensure(resolvedId);
 
-    entry.mode = snapshot.mode;
-    if (snapshot.mode === 'overlay') {
-      entry.overlayState = snapshot.state;
+    if (entry.mode === mode) {
+      return;
     }
 
+    entry.mode = mode;
+    this._emit(resolvedId, entry);
+  }
+
+  open(id: string | undefined, trigger?: HTMLElement): void {
+    const resolvedId = this._resolveId(id);
+    const entry = this._ensure(resolvedId);
+
+    if (entry.mode !== 'overlay') {
+      this._emit(resolvedId, entry);
+      return;
+    }
+
+    if (trigger instanceof HTMLElement) {
+      entry.returnFocusTarget = trigger;
+    }
+
+    if (entry.overlayState === 'expanded') {
+      this._emit(resolvedId, entry);
+      return;
+    }
+
+    entry.overlayState = 'expanded';
+    this._persistOverlayState(resolvedId, entry);
+    this._emit(resolvedId, entry);
+  }
+
+  close(id: string | undefined): void {
+    const resolvedId = this._resolveId(id);
+    const entry = this._ensure(resolvedId);
+
+    if (entry.mode !== 'overlay') {
+      this._emit(resolvedId, entry);
+      return;
+    }
+
+    if (entry.overlayState === 'collapsed') {
+      this._emit(resolvedId, entry);
+      return;
+    }
+
+    entry.overlayState = 'collapsed';
+    this._persistOverlayState(resolvedId, entry);
     this._emit(resolvedId, entry);
   }
 
@@ -100,29 +163,62 @@ class LayoutSidebarController {
     const resolvedId = this._resolveId(id);
     const entry = this._ensure(resolvedId);
 
-    if (entry.mode === 'fixed') {
+    if (entry.mode !== 'overlay') {
       this._emit(resolvedId, entry);
       return;
     }
 
-    const nextState: SidebarState = entry.overlayState === 'expanded' ? 'collapsed' : 'expanded';
-
-    entry.overlayState = nextState;
-    if (trigger instanceof HTMLElement) {
-      entry.adapter?.applyOverlayState(nextState, { trigger });
-    } else {
-      entry.adapter?.applyOverlayState(nextState);
+    if (entry.overlayState === 'expanded') {
+      this.close(resolvedId);
+      return;
     }
-    this._emit(resolvedId, entry);
+
+    this.open(resolvedId, trigger);
+  }
+
+  restorePersistedOverlayState(id?: string): void {
+    const resolvedId = this._resolveId(id);
+    const entry = this._ensure(resolvedId);
+    const storage = entry.storage;
+    if (storage === null) {
+      return;
+    }
+
+    try {
+      const raw = storage.getItem(OVERLAY_STATE_STORAGE_KEY);
+      if (raw === null) {
+        return;
+      }
+
+      const parsed: unknown = JSON.parse(raw);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        return;
+      }
+
+      const state = (parsed as PersistedOverlayStateMap)[resolvedId];
+      if (state === 'expanded' || state === 'collapsed') {
+        entry.overlayState = state;
+      }
+    } catch {
+      // localStorage が使えない環境では永続化を無視する。
+    }
   }
 
   reset(id?: string): void {
     if (id === undefined) {
+      for (const entry of this._entries.values()) {
+        this._destroyMediaQuery(entry);
+      }
       this._entries.clear();
       return;
     }
 
-    this._entries.delete(this._resolveId(id));
+    const resolvedId = this._resolveId(id);
+    const entry = this._entries.get(resolvedId);
+    if (entry) {
+      this._destroyMediaQuery(entry);
+    }
+    this._entries.delete(resolvedId);
   }
 
   private _emit(resolvedId: string, entry: Entry): void {
@@ -136,16 +232,8 @@ class LayoutSidebarController {
   }
 
   private _cleanupIfUnobserved(resolvedId: string, entry: Entry): void {
-    if (entry.adapter !== null || entry.listeners.size > 0) {
-      return;
-    }
-
-    if (entry.overlayState === 'collapsed') {
-      this._entries.delete(resolvedId);
-      return;
-    }
-
-    entry.mode = 'overlay';
+    void resolvedId;
+    void entry;
   }
 
   private _ensure(id?: string): Entry {
@@ -163,6 +251,65 @@ class LayoutSidebarController {
   private _resolveId(id?: string): string {
     const normalized = id?.trim();
     return normalized && normalized.length > 0 ? normalized : DEFAULT_LAYOUT_SIDEBAR_ID;
+  }
+
+  private _initMediaQuery(resolvedId: string, entry: Entry): void {
+    this._destroyMediaQuery(entry);
+
+    if (entry.presentation === 'fixed') {
+      entry.mode = 'fixed';
+      return;
+    }
+
+    if (entry.presentation === 'overlay') {
+      entry.mode = 'overlay';
+      return;
+    }
+
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      entry.mode = 'overlay';
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(`(min-width: ${String(entry.fixedBreakpoint)}px)`);
+    const listener = (event: MediaQueryListEvent): void => {
+      this.setViewportMode(resolvedId, event.matches ? 'fixed' : 'overlay');
+    };
+
+    entry.mediaQuery = mediaQuery;
+    entry.mediaQueryListener = listener;
+    entry.mode = mediaQuery.matches ? 'fixed' : 'overlay';
+    mediaQuery.addEventListener('change', listener);
+  }
+
+  private _destroyMediaQuery(entry: Entry): void {
+    if (entry.mediaQuery && entry.mediaQueryListener) {
+      entry.mediaQuery.removeEventListener('change', entry.mediaQueryListener);
+    }
+
+    entry.mediaQuery = null;
+    entry.mediaQueryListener = null;
+  }
+
+  private _persistOverlayState(resolvedId: string, entry: Entry): void {
+    const storage = entry.storage;
+    if (storage === null) {
+      return;
+    }
+
+    try {
+      const raw = storage.getItem(OVERLAY_STATE_STORAGE_KEY);
+      const parsed: unknown = raw === null ? {} : JSON.parse(raw);
+      const nextValue: PersistedOverlayStateMap =
+        typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+          ? { ...(parsed as PersistedOverlayStateMap) }
+          : {};
+
+      nextValue[resolvedId] = entry.overlayState;
+      storage.setItem(OVERLAY_STATE_STORAGE_KEY, JSON.stringify(nextValue));
+    } catch {
+      // localStorage が使えない環境では永続化を無視する。
+    }
   }
 }
 

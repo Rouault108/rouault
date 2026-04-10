@@ -85,18 +85,6 @@ const hydrateCurrentContent = async (contentRoot?: HTMLElement): Promise<void> =
   await hydrationScheduler.hydrateContent(mainContent, {
     dispatchTarget: getAppRouter(),
   });
-
-  for (const sidebar of mainContent.querySelectorAll<
-    HTMLElement & { activateHydration?: () => void }
-  >('layout-sidebar')) {
-    sidebar.activateHydration?.();
-  }
-
-  for (const toc of mainContent.querySelectorAll<HTMLElement & { activateHydration?: () => void }>(
-    'layout-toc',
-  )) {
-    toc.activateHydration?.();
-  }
 };
 
 const bootstrapClient = async (): Promise<void> => {

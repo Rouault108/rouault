@@ -7,11 +7,9 @@ import '../ui/breadcrumbs/breadcrumbs.js';
 import '../ui/button/button.js';
 import '../ui/dropdown/dropdown.js';
 import type { BreadcrumbItem } from '../ui/breadcrumbs/breadcrumbs.js';
-import { NOTE_SIDEBAR_FIXED_MEDIA_QUERY } from '../../layout/note-sidebar-breakpoint.js';
 import {
   DEFAULT_LAYOUT_SIDEBAR_ID,
   layoutSidebarController,
-  type LayoutSidebarControllerSnapshot,
 } from './layout-sidebar-controller.js';
 import { navigateToUrl } from '../../search/navigation.js';
 import {
@@ -238,10 +236,6 @@ export class LayoutHeader extends LitElement {
   @query('[data-dropdown="theme"]')
   private _themeDropdownElement!: HTMLElement | null;
 
-  private _mediaQuery: MediaQueryList | null = null;
-
-  private _sidebarSnapshot: LayoutSidebarControllerSnapshot | null = null;
-
   private _sidebarControllerCleanup: (() => void) | null = null;
 
   override connectedCallback(): void {
@@ -251,9 +245,6 @@ export class LayoutHeader extends LitElement {
     }
 
     this._themePreference = readStoredThemePreference();
-    this._mediaQuery = window.matchMedia(NOTE_SIDEBAR_FIXED_MEDIA_QUERY);
-    this._applySidebarSnapshot();
-    this._mediaQuery.addEventListener('change', this._onMediaQueryChange);
     window.addEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);
     this._connectSidebarController();
   }
@@ -261,16 +252,12 @@ export class LayoutHeader extends LitElement {
   protected override updated(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has('sidebarEnabled') || changedProperties.has('sidebarId')) {
       this._connectSidebarController();
-      this._applySidebarSnapshot();
     }
   }
 
   override disconnectedCallback(): void {
-    this._mediaQuery?.removeEventListener('change', this._onMediaQueryChange);
-    this._mediaQuery = null;
     this._sidebarControllerCleanup?.();
     this._sidebarControllerCleanup = null;
-    this._sidebarSnapshot = null;
 
     if (typeof window !== 'undefined') {
       window.removeEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);
@@ -281,48 +268,26 @@ export class LayoutHeader extends LitElement {
   private _connectSidebarController(): void {
     this._sidebarControllerCleanup?.();
     this._sidebarControllerCleanup = null;
-    this._sidebarSnapshot = null;
 
-    if (!this.sidebarEnabled) {
-      return;
-    }
-
-    this._sidebarControllerCleanup = layoutSidebarController.subscribe(
-      this._resolveSidebarId(),
-      (snapshot) => {
-        this._sidebarSnapshot = snapshot;
-        this._applySidebarSnapshot();
-      },
-    );
-  }
-
-  private _applySidebarSnapshot(): void {
     if (!this.sidebarEnabled) {
       this._headerSidebarReserved = false;
       this._sidebarOpen = false;
       return;
     }
 
-    const snapshot = this._sidebarSnapshot;
-    if (!snapshot?.isRegistered) {
-      const isFixedLayout = this._mediaQuery?.matches ?? true;
-      this._headerSidebarReserved = isFixedLayout;
-      this._sidebarOpen = isFixedLayout || snapshot?.state === 'expanded';
-      return;
-    }
-
-    this._headerSidebarReserved = snapshot.mode === 'fixed';
-    this._sidebarOpen = snapshot.state === 'expanded';
+    this._sidebarControllerCleanup = layoutSidebarController.subscribe(
+      this._resolveSidebarId(),
+      (snapshot) => {
+        this._headerSidebarReserved = snapshot.mode === 'fixed';
+        this._sidebarOpen = snapshot.state === 'expanded';
+      },
+    );
   }
 
   private _resolveSidebarId(): string {
     const normalized = this.sidebarId.trim();
     return normalized.length > 0 ? normalized : DEFAULT_LAYOUT_SIDEBAR_ID;
   }
-
-  private _onMediaQueryChange = (): void => {
-    this._applySidebarSnapshot();
-  };
 
   private _handleSidebarToggleClick = (event: Event): void => {
     if (!this.sidebarEnabled) {

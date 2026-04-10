@@ -24,11 +24,11 @@ export const NOTE_HYDRATION_BUDGET_PROFILES = {
   'reader-shell-canary': {
     name: 'reader-shell-canary',
     budget: {
-      initial: 3,
+      initial: 2,
       postCommit: 0,
       visible: 0,
       interaction: 0,
-      total: 3,
+      total: 2,
     },
   },
   'testing-interactive-canary': {

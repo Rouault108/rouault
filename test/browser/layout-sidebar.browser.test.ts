@@ -364,23 +364,22 @@ describe('layout-sidebar browser contract', () => {
       expect(sidebar.state).to.equal('collapsed');
 
       await waitForSidebarStateChange(host, 'expanded', () => {
-        sidebar.expand();
+        host.expand();
       });
 
       expect(sidebar.mode).to.equal('overlay');
       expect(sidebar.state).to.equal('expanded');
 
-      await waitForSidebarStateChange(host, 'collapsed', () => {
-        sidebar.dispatchEvent(
-          new CustomEvent<UiSidebarSelectDetail>('ui-sidebar-select', {
-            bubbles: true,
-            composed: true,
-            detail: {
-              id: 'music/classical/tchaikovsky/the-nutcracker',
-            },
-          }),
-        );
-      });
+      sidebar.dispatchEvent(
+        new CustomEvent<UiSidebarSelectDetail>('ui-sidebar-select', {
+          bubbles: true,
+          composed: true,
+          detail: {
+            id: 'music/classical/tchaikovsky/the-nutcracker',
+          },
+        }),
+      );
+      await settle(host);
 
       expect(sidebar.mode).to.equal('overlay');
       expect(sidebar.state).to.equal('collapsed');

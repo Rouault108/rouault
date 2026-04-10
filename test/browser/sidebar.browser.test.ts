@@ -4,6 +4,7 @@ import type { TreeNode } from '../../src/components/ui/file-tree/file-tree.js';
 import type {
   UiSidebar,
   UiSidebarActiveChangeDetail,
+  UiSidebarRequestCloseEventDetail,
   UiSidebarSelectDetail,
   UiSidebarToggleDetail,
 } from '../../src/components/ui/sidebar/sidebar.js';
@@ -133,12 +134,11 @@ const waitForSidebarActiveChange = (
   });
 
 describe('ui-sidebar browser contract', () => {
-  it('state / mode / fixedBreakpoint の property と attribute を shell と同期すること', async () => {
+  it('state / mode の property と attribute を shell と同期すること', async () => {
     const host = await fixture<UiSidebar>(html`
       <ui-sidebar
         data-state="expanded"
         mode="fixed"
-        fixed-breakpoint="960"
         .items=${cloneTree(sampleItems)}
         .expandedIds=${new Set(['root'])}
         selected-id="root/readme"
@@ -151,34 +151,26 @@ describe('ui-sidebar browser contract', () => {
 
     expect(host.state).to.equal('expanded');
     expect(host.mode).to.equal('fixed');
-    expect(host.fixedBreakpoint).to.equal(960);
 
     expect(host.getAttribute('data-state')).to.equal('expanded');
     expect(host.getAttribute('mode')).to.equal('fixed');
-    expect(host.getAttribute('fixed-breakpoint')).to.equal('960');
 
     expect(shell.state).to.equal('expanded');
     expect(shell.mode).to.equal('fixed');
-    expect(shell.fixedBreakpoint).to.equal(960);
     expect(shell.getAttribute('data-state')).to.equal('expanded');
     expect(shell.getAttribute('mode')).to.equal('fixed');
-    expect(shell.getAttribute('fixed-breakpoint')).to.equal('960');
 
     host.state = 'collapsed';
     host.mode = 'overlay';
-    host.fixedBreakpoint = 640;
     await flush(host);
 
     expect(host.getAttribute('data-state')).to.equal('collapsed');
     expect(host.getAttribute('mode')).to.equal('overlay');
-    expect(host.getAttribute('fixed-breakpoint')).to.equal('640');
 
     expect(shell.state).to.equal('collapsed');
     expect(shell.mode).to.equal('overlay');
-    expect(shell.fixedBreakpoint).to.equal(640);
     expect(shell.getAttribute('data-state')).to.equal('collapsed');
     expect(shell.getAttribute('mode')).to.equal('overlay');
-    expect(shell.getAttribute('fixed-breakpoint')).to.equal('640');
   });
 
   it('collapse() が shell を経由して host state-change を再送出すること', async () => {
@@ -276,6 +268,41 @@ describe('ui-sidebar browser contract', () => {
     expect(header.textContent).to.contain('ナビゲーション');
     const actionsSlot = header.querySelector<HTMLSlotElement>('slot[name="header-actions"]');
     expect(actionsSlot).to.not.equal(null);
+  });
+
+  it('shell の close request を ui-sidebar-request-close として再送出すること', async () => {
+    const host = await fixture<UiSidebar>(html`
+      <ui-sidebar
+        data-state="expanded"
+        mode="overlay"
+        .items=${cloneTree(sampleItems)}
+        .expandedIds=${new Set(['root'])}
+        selected-id="root/readme"
+      ></ui-sidebar>
+    `);
+
+    await flush(host);
+
+    const shell = expectPresent(getShell(host), 'shell');
+    const requestClose = new Promise<UiSidebarRequestCloseEventDetail>((resolve) => {
+      host.addEventListener(
+        'ui-sidebar-request-close',
+        ((event: Event) => {
+          resolve((event as CustomEvent<UiSidebarRequestCloseEventDetail>).detail);
+        }) as EventListener,
+        { once: true },
+      );
+    });
+
+    shell.dispatchEvent(
+      new CustomEvent<UiSidebarRequestCloseEventDetail>('ui-sidebar-request-close', {
+        bubbles: false,
+        composed: false,
+        detail: { reason: 'scrim' },
+      }),
+    );
+
+    expect(await requestClose).to.deep.equal({ reason: 'scrim' });
   });
 
   it('ui-tree-select を ui-sidebar-select として bubbles/composed 付きで再送出すること', async () => {

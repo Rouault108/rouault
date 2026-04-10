@@ -9,17 +9,41 @@ const navigateToMissingRoute = async (page: Page, url: string) => {
     );
   });
 
-  return page.evaluate(async (targetUrl) => {
+  await page.evaluate((targetUrl) => {
     const router = document.querySelector('app-router') as
       | (HTMLElement & { navigate: (nextUrl: string) => Promise<unknown> })
       | null;
+    const globalWindow = window as typeof window & {
+      __lastNotFoundNavigationResult?: unknown;
+    };
 
     if (!router || typeof router.navigate !== 'function') {
       throw new Error('app-router.navigate() が利用できません');
     }
 
-    return router.navigate(targetUrl);
+    delete globalWindow.__lastNotFoundNavigationResult;
+    void router.navigate(targetUrl).then((result) => {
+      globalWindow.__lastNotFoundNavigationResult = result;
+    });
   }, url);
+
+  await page.waitForFunction(() => {
+    return (
+      typeof (
+        window as typeof window & {
+          __lastNotFoundNavigationResult?: unknown;
+        }
+      ).__lastNotFoundNavigationResult !== 'undefined'
+    );
+  });
+
+  return page.evaluate(() => {
+    return (
+      window as typeof window & {
+        __lastNotFoundNavigationResult?: unknown;
+      }
+    ).__lastNotFoundNavigationResult;
+  });
 };
 
 const tabUntilFocused = async (page: Page, expectedLabel: string): Promise<void> => {
@@ -69,9 +93,7 @@ test.describe('not-found page', () => {
 
     await navigateToMissingRoute(page, '/__playwright_missing_route__?from=e2e#section-x');
 
-    await expect(
-      page.getByRole('heading', { level: 1, name: 'このページは見つかりませんでした' }),
-    ).toBeVisible();
+    await expect(page.locator('[data-not-found-fallback]')).toBeVisible();
     await expect(page.locator('dt', { hasText: '要求されたパス' })).toBeVisible();
     await expect(page.locator('dd code')).toHaveText(
       '/__playwright_missing_route__?from=e2e#section-x',

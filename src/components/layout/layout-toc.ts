@@ -334,35 +334,14 @@ export class LayoutToc extends LitElement {
   private _tracker: TocActiveTracker | null = null;
   private _mobileController: TocMobileSummaryController | null = null;
   private _hydrationActivated = false;
-  private _ssrRootReset = false;
   private _renderedTocSyncScheduled = false;
   private _renderedTocSyncRetryCount = 0;
-
-  override connectedCallback(): void {
-    super.connectedCallback();
-
-    const hydrationTrigger = this.getAttribute('data-hydration-trigger')?.trim();
-    // layout-toc は initial trigger の時点で current state を維持できないと
-    // 初期 hash と scroll tracker の両方を取りこぼすため、upgrade 直後に自前で起動する。
-    if (
-      hydrationTrigger === undefined ||
-      hydrationTrigger.length === 0 ||
-      hydrationTrigger === 'initial'
-    ) {
-      void this.activateHydration();
-    }
-  }
 
   override disconnectedCallback(): void {
     this._disconnectControllers();
     this._detachStickyFooterBoundary?.();
     this._detachStickyFooterBoundary = null;
     super.disconnectedCallback();
-  }
-
-  protected override performUpdate(): void {
-    this._resetSsrShadowRootIfNeeded();
-    super.performUpdate();
   }
 
   protected override updated(changedProperties: PropertyValues): void {
@@ -400,7 +379,6 @@ export class LayoutToc extends LitElement {
 
     this._hydrationActivated = true;
     this._upgradeNestedShadowHosts();
-    this._releaseDeferredHydrationIfNeeded();
 
     if (!this.hasUpdated) {
       return this.updateComplete.then(() => {
@@ -434,24 +412,6 @@ export class LayoutToc extends LitElement {
     }
 
     customElements.upgrade(this.renderRoot);
-  }
-
-  private _resetSsrShadowRootIfNeeded(): void {
-    if (this._ssrRootReset || !this.hasAttribute('defer-hydration')) {
-      return;
-    }
-
-    this.removeAttribute('defer-hydration');
-    this._ssrRootReset = true;
-  }
-
-  private _releaseDeferredHydrationIfNeeded(): void {
-    if (this._ssrRootReset || !this.hasAttribute('defer-hydration')) {
-      return;
-    }
-
-    this.removeAttribute('defer-hydration');
-    this._ssrRootReset = true;
   }
 
   private _resolveVisibleHeadings(headings: Heading[] = this._allHeadings): Heading[] {
@@ -837,3 +797,15 @@ declare global {
     'layout-toc': LayoutToc;
   }
 }
+
+/**
+ * hydration timing は scheduler / registry が決定する。
+ * component 自身に timing 判定を持たせないため、外部からの起動入口だけを残す。
+ */
+export const activateLayoutToc = (element: HTMLElement): Promise<void> | void => {
+  if (!(element instanceof LayoutToc)) {
+    return;
+  }
+
+  return element.activateHydration();
+};

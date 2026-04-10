@@ -24,7 +24,7 @@ test.describe('Sidebar Selected Item Scroll', () => {
     await page.setViewportSize({ width: 1280, height: 480 });
     await page.goto(`${sourcePath}/`);
 
-    const fixedSidebarLocator = page.locator('layout-sidebar[presentation="fixed"]').first();
+    const fixedSidebarLocator = page.locator('.layout-sidebar-col layout-sidebar').first();
 
     const beforeNavigation = await fixedSidebarLocator.evaluate<
       SidebarSnapshot,

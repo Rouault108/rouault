@@ -54,7 +54,7 @@ const meta: Meta<UiSidebar> = {
 sidebar は file-tree と sidebar-shell を束ねる host です。
 
 この story ファイルは **docs / smoke / 手動確認** に限定します。  
-state / mode / fixedBreakpoint の shell 同期、variant の file-tree 伝播、
+state / mode の shell 同期、variant の file-tree 伝播、
 ui-tree-* から ui-sidebar-* への event bridge は
 \`test/browser/sidebar.browser.test.ts\` を正本として検査します。
         `,

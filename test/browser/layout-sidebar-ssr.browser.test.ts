@@ -90,8 +90,8 @@ const flush = async (host: LayoutSidebar): Promise<void> => {
   await waitForLitUpdate(host);
 };
 
-describe('layout-sidebar hydration activation contract', () => {
-  it('activateHydration() を複数回呼んでも再描画が破綻しないこと', async () => {
+describe('layout-sidebar hydration contract', () => {
+  it('manual activation なしでも初回描画が成立すること', async () => {
     const media = mockMatchMedia(true);
 
     try {
@@ -103,12 +103,6 @@ describe('layout-sidebar hydration activation contract', () => {
         ></layout-sidebar>
       `);
 
-      await flush(host);
-
-      host.activateHydration();
-      await flush(host);
-
-      host.activateHydration();
       await flush(host);
 
       expect(getSidebar(host)).to.not.equal(null);
