@@ -166,6 +166,39 @@ describe('ui-tree-item browser contract', () => {
     expect(anchorClickCount).to.equal(1);
   });
 
+  it('link leaf の mouse click は default を抑止せず、router へ委譲できること', async () => {
+    const host = await fixture<TreeItem>(html`
+      <ui-tree-item label="README.md" icon="file-text" href="/notes/readme"></ui-tree-item>
+    `);
+
+    await flush(host);
+
+    const item = getItem(host) as HTMLAnchorElement;
+
+    let selectedEventCount = 0;
+    let defaultPreventedAtAnchor: boolean | undefined;
+
+    host.addEventListener('selected-change', () => {
+      selectedEventCount += 1;
+    });
+
+    item.addEventListener('click', (event) => {
+      defaultPreventedAtAnchor = event.defaultPrevented;
+
+      // テスト中の実ナビゲーションだけ抑止する。
+      // ここで観測したいのは、component 自身が先に preventDefault() していないこと。
+      event.preventDefault();
+    });
+
+    item.click();
+    await flush(host);
+
+    expect(host.selected).to.equal(true);
+    expect(host.getAttribute('aria-selected')).to.equal('true');
+    expect(selectedEventCount).to.equal(1);
+    expect(defaultPreventedAtAnchor).to.equal(false);
+  });
+
   it('branch は ArrowRight/ArrowLeft で展開収縮し、境界では委譲イベントを送出すること', async () => {
     const host = await fixture<TreeItem>(html`
       <ui-tree-item label="components" icon="folder">

@@ -748,10 +748,6 @@ export class TreeItem extends LitElement {
       return;
     }
 
-    if (clickedAnchor) {
-      e.preventDefault();
-    }
-
     if (this.hasChildren) {
       if (!this._requestExpanded(!this.expanded)) {
         return;
@@ -763,6 +759,14 @@ export class TreeItem extends LitElement {
 
     this._handleSelect();
 
+    /**
+     * link leaf は native anchor click をそのまま BrowserLinkInterceptor に渡す。
+     * ここで preventDefault() すると document 側の interceptor が
+     * event.defaultPrevented を見て遷移を中断してしまう。
+     *
+     * 一方、button leaf など anchor 起点でない経路では、
+     * 既存どおり synthetic click で anchor navigation を起動する。
+     */
     if (!clickedAnchor) {
       this._triggerAnchorNavigation();
     }
