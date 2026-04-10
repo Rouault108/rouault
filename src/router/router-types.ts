@@ -69,8 +69,20 @@ export interface HeaderShellSnapshot {
   sidebarEnabled: boolean;
 }
 
+export interface SidebarShellSnapshot {
+  present: boolean;
+  sidebarId: string;
+  sourceId: string;
+  selectedId: string | null;
+  heading: string;
+  fixedBreakpoint: number;
+  itemsJson: string;
+  presentation: 'auto' | 'fixed' | 'overlay';
+}
+
 export interface DocumentShellSnapshot {
   header: HeaderShellSnapshot;
+  sidebar: SidebarShellSnapshot | null;
 }
 
 export interface ShellUpdatePayload {

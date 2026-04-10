@@ -14,7 +14,7 @@ import { registerTabsUrlSyncStrategy } from '../ui/tabs/tabs-url-sync-strategy.j
 import { AppRouterPostRenderController } from './controllers/app-router-post-render-controller.js';
 import { PrimaryTabNavigationPolicy } from './navigation/primary-tab-navigation-policy.js';
 import { primaryTabTabsUrlSyncStrategy } from './navigation/primary-tab-url-state.js';
-import { createLayoutHeaderShellAdapter } from './shell/layout-header-shell-adapter.js';
+import { createAppShellAdapter } from './shell/app-shell-adapter.js';
 
 const CONTENT_ROOT_ID = 'main-content';
 const CONTENT_ROOT_SELECTOR = `main#${CONTENT_ROOT_ID}`;
@@ -139,7 +139,7 @@ export class AppRouter extends HTMLElement {
       skipInitialNavigation: true,
       contentAdapter: this._createContentAdapter(),
       postCommitController: this._postRenderController.createPostCommitController(this),
-      shellAdapter: createLayoutHeaderShellAdapter(),
+      shellAdapter: createAppShellAdapter(),
       urlStateNavigationPolicy: new PrimaryTabNavigationPolicy(),
     });
 

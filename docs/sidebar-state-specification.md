@@ -104,9 +104,10 @@ tree expanded state は別 key / 別モジュールで扱います。presentatio
 
 ## 6. DOM 契約
 
-NoteLayout 上の sidebar host は 1 実体だけです。
+app shell 上の sidebar host は 1 実体だけです。
 
-- `NoteLayout` に `<layout-sidebar>` は 1 個だけ出力する
+- persistent host は `BaseLayout` / `app-router` 直下に 1 個だけ配置する
+- `NoteLayout` は本文と TOC のみを描画し、`<layout-sidebar>` を本文内へ出力しない
 - fixed / overlay の二重 custom element を出力しない
 - `.layout-sidebar-col` は DOM 上に常に 1 本だけ存在する
 

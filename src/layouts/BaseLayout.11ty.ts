@@ -19,11 +19,13 @@ import {
   escapeInlineExecutableScriptText,
   serializeHtmlAttributes,
 } from './html-output.js';
+import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 
 export interface BaseLayoutData {
   title?: string;
   description?: string;
   content: string;
+  notePage?: NotePageProjection;
   note?: NoteNavigationEntry;
   notes?: NoteNavigationEntry[];
   corpusPages?: readonly CorpusPageEntry[];
@@ -64,6 +66,7 @@ const DEFAULT_CLIENT_SCRIPT_SRC = '/src/client.ts';
 const DEFAULT_CLIENT_STYLE_SRCS = ['/src/assets/css/main.css'] as const;
 const MAIN_CONTENT_ID = 'main-content';
 const MAIN_CONTENT_TARGET = `#${MAIN_CONTENT_ID}`;
+const NOTE_LAYOUT_SIDEBAR_ID = 'note-primary';
 
 interface ClientBundleView {
   scriptSrc?: string;
@@ -86,6 +89,19 @@ const normalizeClientBundle = (
     styleSrcs: isStringArray(candidate.styleSrcs) ? candidate.styleSrcs : DEFAULT_CLIENT_STYLE_SRCS,
   };
 };
+
+const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar']>): string =>
+  serializeHtmlAttributes([
+    { name: 'source-id', value: sidebar.sourceId },
+    { name: 'selected-id', value: sidebar.selectedId },
+    { name: 'items-json', value: sidebar.items, kind: 'json' },
+    { name: 'heading', value: sidebar.heading },
+    { name: 'fixed-breakpoint', value: sidebar.fixedBreakpoint },
+    { name: 'sidebar-id', value: NOTE_LAYOUT_SIDEBAR_ID },
+    { name: 'presentation', value: 'auto' },
+    { name: 'data-hydration-capability', value: 'interactive' },
+    { name: 'data-hydration-trigger', value: 'initial' },
+  ]);
 
 export class BaseLayout {
   data() {
@@ -139,6 +155,8 @@ export class BaseLayout {
       { name: 'data-hydration-capability', value: 'interactive' },
       { name: 'data-hydration-trigger', value: 'initial' },
     ]);
+    const sidebarPresence =
+      data.notePage?.showSidebar && data.notePage.sidebar ? 'present' : 'absent';
 
     return `
 <!DOCTYPE html>
@@ -164,9 +182,31 @@ export class BaseLayout {
   <div id="app" class="app-root" data-hydration-scope="app-shell">
     <layout-header${headerAttributes}></layout-header>
     <app-router
+      data-sidebar-presence="${sidebarPresence}"
       data-hydration-capability="interactive"
       data-hydration-trigger="initial"
     >
+      <aside
+        class="layout-sidebar-col"
+        aria-label="ナビゲーション"
+        data-app-shell-sidebar-host
+        ${sidebarPresence === 'absent' ? 'hidden' : ''}
+      >
+        <layout-sidebar
+          ${sidebarPresence === 'absent' ? 'hidden' : ''}
+          ${
+            data.notePage?.showSidebar && data.notePage.sidebar
+              ? buildSidebarAttributes(data.notePage.sidebar)
+              : serializeHtmlAttributes([
+                  { name: 'sidebar-id', value: NOTE_LAYOUT_SIDEBAR_ID },
+                  { name: 'presentation', value: 'auto' },
+                  { name: 'heading', value: 'ナビゲーション' },
+                  { name: 'data-hydration-capability', value: 'interactive' },
+                  { name: 'data-hydration-trigger', value: 'initial' },
+                ])
+          }
+        ></layout-sidebar>
+      </aside>
       <main id="${MAIN_CONTENT_ID}" tabindex="-1">
         ${data.content}
       </main>

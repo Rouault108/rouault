@@ -46,6 +46,7 @@ export type {
   RouterOptions,
   ShellAdapter,
   ShellUpdatePayload,
+  SidebarShellSnapshot,
   UrlStateNavigationDecision,
 } from './router-types.js';
 export type { PostCommitController, UrlStateNavigationPolicy } from './router-types.js';

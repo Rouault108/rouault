@@ -13,6 +13,12 @@ type AppRouterElement = HTMLElement & {
   serverContent?: unknown;
 };
 
+const getPersistentSidebarHost = (root: ParentNode): HTMLElement | null =>
+  root.querySelector<HTMLElement>('[data-app-shell-sidebar-host] layout-sidebar');
+
+const getPersistentSidebarColumn = (root: ParentNode): HTMLElement | null =>
+  root.querySelector<HTMLElement>('[data-app-shell-sidebar-host]');
+
 describe('app-router', () => {
   let host: AppRouterElement | null = null;
 
@@ -470,6 +476,254 @@ describe('app-router', () => {
       '[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]',
     );
     expect(header.getAttribute('current-corpus-key')).to.equal('music');
+  });
+
+  it('同一 sidebar host を維持したまま selectedId と本文だけを更新すること', async () => {
+    const shell = await fixture<HTMLElement>(html`
+      <div>
+        <layout-header current-corpus-key="all"></layout-header>
+        <app-router data-sidebar-presence="present">
+          <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
+            <layout-sidebar
+              source-id="source-a"
+              selected-id="notes/old"
+              items-json='[{"kind":"leaf","id":"notes/old","label":"Old","href":"/notes/old"}]'
+              heading="ナビゲーション"
+              fixed-breakpoint="1024"
+              sidebar-id="note-primary"
+              presentation="auto"
+            ></layout-sidebar>
+          </aside>
+          <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
+        </app-router>
+      </div>
+    `);
+    host = shell.querySelector<AppRouterElement>('app-router');
+    const appHost = host;
+
+    if (!appHost) {
+      throw new Error('app-router が見つかりません');
+    }
+
+    const initialSidebar = getPersistentSidebarHost(shell);
+    await appHost.whenReady();
+
+    globalThis.fetch = () =>
+      Promise.resolve(
+        new Response(
+          `
+            <!doctype html>
+            <html>
+              <head><title>Sidebar Sync</title></head>
+              <body>
+                <layout-header current-corpus-key="music"></layout-header>
+                <app-router data-sidebar-presence="present">
+                  <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
+                    <layout-sidebar
+                      source-id="source-a"
+                      selected-id="notes/new"
+                      items-json='[{"kind":"leaf","id":"notes/new","label":"New","href":"/notes/new"}]'
+                      heading="新しいナビゲーション"
+                      fixed-breakpoint="1440"
+                      sidebar-id="note-primary"
+                      presentation="fixed"
+                    ></layout-sidebar>
+                  </aside>
+                  <main id="main-content"><h1>Sidebar Synced</h1></main>
+                </app-router>
+              </body>
+            </html>
+          `,
+          { status: 200 },
+        ),
+      );
+
+    await appHost.navigate('/notes/new');
+
+    await waitUntil(
+      () => appHost.querySelector('#main-content')?.textContent?.includes('Sidebar Synced') ?? false,
+      '本文が更新されること',
+    );
+
+    const currentSidebar = getPersistentSidebarHost(shell);
+    expect(currentSidebar).to.equal(initialSidebar);
+    expect(currentSidebar?.getAttribute('selected-id')).to.equal('notes/new');
+    expect(currentSidebar?.getAttribute('source-id')).to.equal('source-a');
+    expect(currentSidebar?.getAttribute('heading')).to.equal('新しいナビゲーション');
+    expect(currentSidebar?.getAttribute('fixed-breakpoint')).to.equal('1440');
+    expect(currentSidebar?.getAttribute('presentation')).to.equal('fixed');
+    expect(appHost.getAttribute('data-sidebar-presence')).to.equal('present');
+  });
+
+  it('sidebar を持たない遷移先では persistent host を hidden にすること', async () => {
+    const shell = await fixture<HTMLElement>(html`
+      <div>
+        <layout-header current-corpus-key="all"></layout-header>
+        <app-router data-sidebar-presence="present">
+          <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
+            <layout-sidebar
+              source-id="source-a"
+              selected-id="notes/old"
+              items-json='[{"kind":"leaf","id":"notes/old","label":"Old","href":"/notes/old"}]'
+              heading="ナビゲーション"
+              fixed-breakpoint="1024"
+              sidebar-id="note-primary"
+              presentation="auto"
+            ></layout-sidebar>
+          </aside>
+          <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
+        </app-router>
+      </div>
+    `);
+    host = shell.querySelector<AppRouterElement>('app-router');
+    const appHost = host;
+
+    if (!appHost) {
+      throw new Error('app-router が見つかりません');
+    }
+
+    await appHost.whenReady();
+
+    globalThis.fetch = () =>
+      Promise.resolve(
+        new Response(
+          `
+            <!doctype html>
+            <html>
+              <head><title>No Sidebar</title></head>
+              <body>
+                <layout-header current-corpus-key="all"></layout-header>
+                <app-router data-sidebar-presence="absent">
+                  <aside class="layout-sidebar-col" data-app-shell-sidebar-host hidden>
+                    <layout-sidebar hidden sidebar-id="note-primary" presentation="auto"></layout-sidebar>
+                  </aside>
+                  <main id="main-content"><h1>No Sidebar Content</h1></main>
+                </app-router>
+              </body>
+            </html>
+          `,
+          { status: 200 },
+        ),
+      );
+
+    await appHost.navigate('/standalone-page');
+
+    await waitUntil(
+      () =>
+        appHost.querySelector('#main-content')?.textContent?.includes('No Sidebar Content') ?? false,
+      '本文が更新されること',
+    );
+
+    const sidebarColumn = getPersistentSidebarColumn(shell);
+    const sidebar = getPersistentSidebarHost(shell);
+    expect(appHost.getAttribute('data-sidebar-presence')).to.equal('absent');
+    expect(sidebarColumn?.hidden).to.equal(true);
+    expect(sidebar?.hidden).to.equal(true);
+  });
+
+  it('sidebar shell commit failure では sidebar 属性と本文を rollback すること', async () => {
+    document.title = 'Before Sidebar Failure';
+
+    const shell = await fixture<HTMLElement>(html`
+      <div>
+        <layout-header current-corpus-key="all"></layout-header>
+        <app-router data-sidebar-presence="present">
+          <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
+            <layout-sidebar
+              source-id="source-a"
+              selected-id="notes/old"
+              items-json='[{"kind":"leaf","id":"notes/old","label":"Old","href":"/notes/old"}]'
+              heading="古いナビゲーション"
+              fixed-breakpoint="1024"
+              sidebar-id="note-primary"
+              presentation="auto"
+            ></layout-sidebar>
+          </aside>
+          <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
+        </app-router>
+      </div>
+    `);
+    host = shell.querySelector<AppRouterElement>('app-router');
+    const appHost = host;
+
+    if (!appHost) {
+      throw new Error('app-router が見つかりません');
+    }
+
+    const sidebar = getPersistentSidebarHost(shell);
+    if (!sidebar) {
+      throw new Error('layout-sidebar が見つかりません');
+    }
+
+    await appHost.whenReady();
+
+    const originalSetAttribute = sidebar.setAttribute.bind(sidebar);
+    let shouldThrow = true;
+    Object.defineProperty(sidebar, 'setAttribute', {
+      configurable: true,
+      value(name: string, value: string) {
+        if (shouldThrow && name === 'source-id') {
+          shouldThrow = false;
+          throw new Error('sidebar commit failed');
+        }
+
+        originalSetAttribute(name, value);
+      },
+    });
+
+    globalThis.fetch = () =>
+      Promise.resolve(
+        new Response(
+          `
+            <!doctype html>
+            <html>
+              <head><title>Broken Sidebar Sync</title></head>
+              <body>
+                <layout-header current-corpus-key="music"></layout-header>
+                <app-router data-sidebar-presence="present">
+                  <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
+                    <layout-sidebar
+                      source-id="source-b"
+                      selected-id="notes/new"
+                      items-json='[{"kind":"leaf","id":"notes/new","label":"New","href":"/notes/new"}]'
+                      heading="新しいナビゲーション"
+                      fixed-breakpoint="1440"
+                      sidebar-id="note-primary"
+                      presentation="fixed"
+                    ></layout-sidebar>
+                  </aside>
+                  <main id="main-content"><h1>Broken Sidebar Content</h1></main>
+                </app-router>
+              </body>
+            </html>
+          `,
+          { status: 200 },
+        ),
+      );
+
+    const result = await appHost.navigate('/broken-sidebar');
+
+    await waitUntil(
+      () => appHost.querySelector('#main-content')?.textContent?.includes('SSR Title') ?? false,
+      'rollback 後に本文が戻ること',
+    );
+
+    const currentSidebar = getPersistentSidebarHost(shell);
+    const currentSidebarColumn = getPersistentSidebarColumn(shell);
+    expect(result.outcome).to.equal('failed');
+    expect(result.committed).to.equal(false);
+    expect(result.renderedKind).to.equal(null);
+    expect(appHost.getAttribute('data-sidebar-presence')).to.equal('present');
+    expect(currentSidebarColumn?.hidden).to.equal(false);
+    expect(currentSidebar?.getAttribute('source-id')).to.equal('source-a');
+    expect(currentSidebar?.getAttribute('selected-id')).to.equal('notes/old');
+    expect(currentSidebar?.getAttribute('items-json')).to.equal(
+      '[{"kind":"leaf","id":"notes/old","label":"Old","href":"/notes/old"}]',
+    );
+    expect(currentSidebar?.getAttribute('heading')).to.equal('古いナビゲーション');
+    expect(currentSidebar?.getAttribute('fixed-breakpoint')).to.equal('1024');
+    expect(currentSidebar?.getAttribute('presentation')).to.equal('auto');
+    expect(document.title).to.equal('Before Sidebar Failure');
   });
 
   it('shell commit failure では layout-header と本文を rollback して failed を返すこと', async () => {

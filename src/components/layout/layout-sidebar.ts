@@ -18,7 +18,7 @@ import {
   type LayoutSidebarPresentation,
 } from './layout-sidebar-controller.js';
 import {
-  collectLayoutSidebarSelectedAncestorIds,
+  mergeLayoutSidebarTreeState,
   readLayoutSidebarTreeState,
   writeLayoutSidebarTreeState,
 } from './layout-sidebar-tree-state.js';
@@ -341,15 +341,11 @@ export class LayoutSidebar extends LitElement {
   private _applyItems(items: TreeNode[]): void {
     this._items = items;
 
-    const persistedState = readLayoutSidebarTreeState(this._storage, this.selectedId);
+    const persistedState = readLayoutSidebarTreeState(this._storage, {
+      sidebarId: this._resolveSidebarId(),
+      sourceId: this.sourceId,
+    });
     const nextExpandedIds = new Set(persistedState?.expandedIds ?? []);
-
-    if (persistedState === null) {
-      for (const id of collectLayoutSidebarSelectedAncestorIds(items, this.selectedId)) {
-        nextExpandedIds.add(id);
-      }
-    }
-
     this._setPersistedExpandedIds(nextExpandedIds);
   }
 
@@ -418,7 +414,10 @@ export class LayoutSidebar extends LitElement {
       {
         expandedIds: normalizeExpandedIds(nextExpandedIds),
       },
-      this.selectedId,
+      {
+        sidebarId: this._resolveSidebarId(),
+        sourceId: this.sourceId,
+      },
     );
   };
 
@@ -440,7 +439,13 @@ export class LayoutSidebar extends LitElement {
         .mode=${this._sidebarSnapshot.mode}
         .items=${this._items}
         .selectedId=${this.selectedId}
-        .expandedIds=${new Set(this._persistedExpandedIds)}
+        .expandedIds=${new Set(
+          mergeLayoutSidebarTreeState(
+            this._items,
+            normalizeExpandedIds(this._persistedExpandedIds),
+            this.selectedId,
+          ),
+        )}
         .heading=${this.heading}
         .returnFocusTarget=${this._sidebarSnapshot.returnFocusTarget}
         @ui-sidebar-request-close=${this._onSidebarRequestClose}

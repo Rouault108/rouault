@@ -1676,7 +1676,19 @@ ui-list-item > [slot]:not([slot='actions']) a[href]:visited {
 
 app-router {
   flex: 1 1 auto;
-  display: block;
+  display: grid;
+  align-items: start;
+  min-height: calc(100vh - var(--header-height));
+}
+
+app-router[data-sidebar-presence='present'] {
+  grid-template-columns:
+    var(--sidebar-width)
+    minmax(0, 1fr);
+}
+
+app-router[data-sidebar-presence='absent'] {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .note-shell {
@@ -1685,10 +1697,12 @@ app-router {
   --note-toc-track: var(--aside-width);
   display: grid;
   align-items: start;
-  min-height: calc(100vh - var(--header-height));
   max-width: var(--bp-xl);
   margin-inline: auto;
   width: 100%;
+  grid-template-columns:
+    minmax(0, 1fr)
+    var(--note-toc-track);
 }
 
 .note-shell .container-reading {
@@ -1697,19 +1711,6 @@ app-router {
 
 .note-shell .prose {
   max-width: var(--note-reading-measure);
-}
-
-.note-shell[data-sidebar-presence='present'] {
-  grid-template-columns:
-    var(--sidebar-width)
-    minmax(0, 1fr)
-    var(--note-toc-track);
-}
-
-.note-shell[data-sidebar-presence='absent'] {
-  grid-template-columns:
-    minmax(0, 1fr)
-    var(--note-toc-track);
 }
 
 .about-shell {
@@ -1730,23 +1731,23 @@ app-router {
   min-inline-size: 0;
 }
 
-.note-shell[data-sidebar-presence='present'] .layout-sidebar-col {
+app-router[data-sidebar-presence='present'] .layout-sidebar-col {
   grid-column: 1;
 }
 
-.note-shell[data-sidebar-presence='present'] .layout-main-col {
+app-router[data-sidebar-presence='present'] > main#main-content {
   grid-column: 2;
 }
 
-.note-shell[data-sidebar-presence='present'] .layout-toc-col {
-  grid-column: 3;
-}
-
-.note-shell[data-sidebar-presence='absent'] .layout-main-col {
+app-router[data-sidebar-presence='absent'] > main#main-content {
   grid-column: 1;
 }
 
-.note-shell[data-sidebar-presence='absent'] .layout-toc-col {
+.note-shell .layout-main-col {
+  grid-column: 1;
+}
+
+.note-shell .layout-toc-col {
   grid-column: 2;
 }
 
@@ -2045,32 +2046,23 @@ app-router {
  * - breakpoint は NOTE_SIDEBAR_FIXED_BREAKPOINT(1024) と同期 */
 
 @media (max-width: 1023px) {
-  .note-shell[data-sidebar-presence='present'] {
+  app-router[data-sidebar-presence='present'] {
     grid-template-columns:
       0px
-      minmax(0, 1fr)
-      minmax(200px, 34vw);
+      minmax(0, 1fr);
   }
 
-  .note-shell[data-sidebar-presence='absent'] {
+  .note-shell {
     grid-template-columns:
       minmax(0, 1fr)
       minmax(200px, 34vw);
   }
 
-  .note-shell[data-sidebar-presence='present'] .layout-sidebar-col {
+  app-router[data-sidebar-presence='present'] .layout-sidebar-col {
     grid-column: 1;
     border-right: none;
     inline-size: 0;
     min-inline-size: 0;
-  }
-
-  .note-shell[data-sidebar-presence='present'] .layout-main-col {
-    grid-column: 2;
-  }
-
-  .note-shell[data-sidebar-presence='present'] .layout-toc-col {
-    grid-column: 3;
   }
 }
 
@@ -2092,40 +2084,23 @@ app-router {
 
 /* Mobile: 1カラム（本文主体 + TOC mobile UI） */
 @media (max-width: 639px) {
-  .note-shell[data-sidebar-presence='present'] {
+  app-router[data-sidebar-presence='present'] {
     grid-template-columns:
       0px
-      minmax(0, 1fr)
-      0px;
+      minmax(0, 1fr);
   }
 
-  .note-shell[data-sidebar-presence='absent'] {
+  .note-shell {
     grid-template-columns:
       minmax(0, 1fr)
       0px;
   }
 
-  .note-shell[data-sidebar-presence='present'] .layout-sidebar-col {
+  app-router[data-sidebar-presence='present'] .layout-sidebar-col {
     grid-column: 1;
     border-right: none;
     inline-size: 0;
     min-inline-size: 0;
-  }
-
-  .note-shell[data-sidebar-presence='present'] .layout-main-col {
-    grid-column: 2;
-  }
-
-  .note-shell[data-sidebar-presence='present'] .layout-toc-col {
-    grid-column: 3;
-  }
-
-  .note-shell[data-sidebar-presence='absent'] .layout-main-col {
-    grid-column: 1;
-  }
-
-  .note-shell[data-sidebar-presence='absent'] .layout-toc-col {
-    grid-column: 2;
   }
 
   .about-shell {

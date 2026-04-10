@@ -1,18 +1,32 @@
 import type { TreeNode } from '../ui/file-tree/file-tree.js';
 
 export const LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY = 'rouault.sidebar.tree-state.v1';
+export const LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V2 = 'rouault.sidebar.tree-state.v2';
 
 export interface LayoutSidebarTreeState {
   expandedIds: string[];
 }
 
-export const getLayoutSidebarTreeStateStorageKey = (scopeId: string | null = null): string => {
-  const normalized = typeof scopeId === 'string' ? scopeId.trim() : '';
-  if (normalized.length === 0) {
-    return LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY;
+export interface LayoutSidebarTreeStateScope {
+  sidebarId?: string | null;
+  sourceId?: string | null;
+}
+
+const normalizeScopePart = (value: string | null | undefined, fallback: string): string => {
+  if (typeof value !== 'string') {
+    return fallback;
   }
 
-  return `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY}:${normalized}`;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : fallback;
+};
+
+export const getLayoutSidebarTreeStateStorageKey = (
+  scope: LayoutSidebarTreeStateScope = {},
+): string => {
+  const sidebarId = normalizeScopePart(scope.sidebarId, 'default');
+  const sourceId = normalizeScopePart(scope.sourceId, 'global');
+  return `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V2}:${sidebarId}:${sourceId}`;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -47,14 +61,14 @@ export const normalizeLayoutSidebarTreeState = (value: unknown): LayoutSidebarTr
  */
 export const readLayoutSidebarTreeState = (
   storage: Storage | null,
-  scopeId: string | null = null,
+  scope: LayoutSidebarTreeStateScope = {},
 ): LayoutSidebarTreeState | null => {
   if (storage === null) {
     return null;
   }
 
   try {
-    const raw = storage.getItem(getLayoutSidebarTreeStateStorageKey(scopeId));
+    const raw = storage.getItem(getLayoutSidebarTreeStateStorageKey(scope));
     if (typeof raw !== 'string' || raw.length === 0) {
       return null;
     }
@@ -72,7 +86,7 @@ export const readLayoutSidebarTreeState = (
 export const writeLayoutSidebarTreeState = (
   storage: Storage | null,
   state: LayoutSidebarTreeState,
-  scopeId: string | null = null,
+  scope: LayoutSidebarTreeStateScope = {},
 ): void => {
   if (storage === null) {
     return;
@@ -81,7 +95,7 @@ export const writeLayoutSidebarTreeState = (
   const normalized = normalizeLayoutSidebarTreeState(state);
 
   try {
-    storage.setItem(getLayoutSidebarTreeStateStorageKey(scopeId), JSON.stringify(normalized));
+    storage.setItem(getLayoutSidebarTreeStateStorageKey(scope), JSON.stringify(normalized));
   } catch {
     /* localStorage へ書き込めない環境では黙って無視する */
   }

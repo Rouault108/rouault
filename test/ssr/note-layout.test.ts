@@ -61,14 +61,12 @@ describe('NoteLayout', () => {
     });
 
     expect(rendered).toContain('data-hydration-scope="note-shell"');
-    expect(rendered).toContain('data-hydration-scope="note-sidebar"');
-    expect(rendered).toContain('<aside\n                  class="layout-sidebar-col"');
-    expect(rendered.match(/<layout-sidebar\b/g)?.length ?? 0).to.equal(1);
+    expect(rendered).not.toContain('data-hydration-scope="note-sidebar"');
+    expect(rendered.match(/<layout-sidebar\b/g)?.length ?? 0).to.equal(0);
     expect(rendered).not.toContain('data-sidebar-surface=');
     expect(rendered).not.toContain('layout-sidebar-overlay');
     expect(rendered).toContain('data-hydration-scope="note-content"');
     expect(rendered).toContain('data-hydration-scope="note-toc"');
-    expect(rendered).toContain('source-id="sidebar-source-note"');
     expect(rendered).toContain('data-pagefind-sort="date:2026-02-01"');
     expect(rendered).toContain('<span data-pagefind-weight="10">見出し</span>');
     expect(rendered).not.toContain('<span data-pagefind-weight="8">見出し</span>');
@@ -98,7 +96,6 @@ describe('NoteLayout', () => {
 
     expect(rendered).toContain('heading="&quot;Danger&quot;&lt;tag&gt;"');
     expect(rendered).toContain('data-tags="[&quot;a\\&quot;&amp;b&quot;]"');
-    expect(rendered).toContain('\\u003cUnsafe>');
   });
 
   it('sidebar と Pagefind が無効な projection では対応マークアップを出さないこと', () => {

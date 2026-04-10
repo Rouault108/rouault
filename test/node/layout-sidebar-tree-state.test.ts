@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { TreeNode } from '../../src/components/ui/file-tree/file-tree.js';
 import {
-  LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY,
+  LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V2,
   collectLayoutSidebarSelectedAncestorIds,
   getLayoutSidebarTreeStateStorageKey,
   normalizeLayoutSidebarTreeState,
@@ -47,33 +47,44 @@ describe('layout-sidebar-tree-state', () => {
 
   it('Storage へ expandedIds を保存できること', () => {
     const storage = new MockStorage();
+    const scope = { sidebarId: 'note-primary', sourceId: 'notes/program' };
 
-    writeLayoutSidebarTreeState(storage, {
-      expandedIds: ['music', 'music/classical'],
-    });
+    writeLayoutSidebarTreeState(
+      storage,
+      {
+        expandedIds: ['music', 'music/classical'],
+      },
+      scope,
+    );
 
-    expect(storage.getItem(LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY)).to.equal(
+    expect(storage.getItem(getLayoutSidebarTreeStateStorageKey(scope))).to.equal(
       JSON.stringify({
         expandedIds: ['music', 'music/classical'],
       }),
     );
   });
 
-  it('scopeId ごとに保存キーを分離できること', () => {
-    expect(getLayoutSidebarTreeStateStorageKey()).to.equal(LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY);
-    expect(getLayoutSidebarTreeStateStorageKey('notes/program')).to.equal(
-      `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY}:notes/program`,
+  it('sidebarId と sourceId ごとに保存キーを分離できること', () => {
+    expect(getLayoutSidebarTreeStateStorageKey()).to.equal(
+      `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V2}:default:global`,
     );
+    expect(
+      getLayoutSidebarTreeStateStorageKey({
+        sidebarId: 'note-primary',
+        sourceId: 'notes/program',
+      }),
+    ).to.equal(`${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V2}:note-primary:notes/program`);
   });
 
   it('Storage から expandedIds を復元できること', () => {
     const storage = new MockStorage();
+    const scope = { sidebarId: 'note-primary', sourceId: 'notes/program' };
     storage.setItem(
-      LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY,
+      getLayoutSidebarTreeStateStorageKey(scope),
       JSON.stringify({ expandedIds: ['music', 'music/classical'] }),
     );
 
-    expect(readLayoutSidebarTreeState(storage)).to.deep.equal({
+    expect(readLayoutSidebarTreeState(storage, scope)).to.deep.equal({
       expandedIds: ['music', 'music/classical'],
     });
   });

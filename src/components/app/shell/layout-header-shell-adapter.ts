@@ -86,7 +86,7 @@ const readCurrentCorpusKey = (header: Element): string => {
   return currentCorpusKey === '' ? 'all' : (currentCorpusKey ?? 'all');
 };
 
-const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
+export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
   breadcrumbs: parseBreadcrumbs(header.getAttribute('breadcrumbs-json') ?? null),
   corpora: parseCorpora(header.getAttribute('corpora-json') ?? null),
   currentCorpusKey: readCurrentCorpusKey(header),
@@ -94,7 +94,21 @@ const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
   sidebarEnabled: header.hasAttribute('sidebar-enabled'),
 });
 
-const applyHeaderSnapshot = (header: HTMLElement, shell: DocumentShellSnapshot | null): void => {
+export const extractHeaderShellSnapshot = (
+  documentSnapshot: Document,
+): HeaderShellSnapshot | null => {
+  const nextHeader = documentSnapshot.querySelector('layout-header');
+  if (!(nextHeader instanceof Element)) {
+    return null;
+  }
+
+  return readHeaderSnapshot(nextHeader);
+};
+
+export const applyHeaderSnapshot = (
+  header: HTMLElement,
+  shell: DocumentShellSnapshot | null,
+): void => {
   const snapshot = shell?.header;
 
   header.setAttribute('breadcrumbs-json', JSON.stringify(snapshot?.breadcrumbs ?? []));
@@ -106,29 +120,23 @@ const applyHeaderSnapshot = (header: HTMLElement, shell: DocumentShellSnapshot |
 
 export const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
   extract(documentSnapshot: Document) {
-    const nextHeader = documentSnapshot.querySelector('layout-header');
-    if (!(nextHeader instanceof Element)) {
+    const headerSnapshot = extractHeaderShellSnapshot(documentSnapshot);
+    if (headerSnapshot === null) {
       return null;
     }
 
     return {
-      header: {
-        breadcrumbs: parseBreadcrumbs(nextHeader.getAttribute('breadcrumbs-json') ?? null),
-        corpora: parseCorpora(nextHeader.getAttribute('corpora-json') ?? null),
-        currentCorpusKey: (() => {
-          const currentCorpusKey = nextHeader.getAttribute('current-corpus-key')?.trim();
-          return currentCorpusKey === '' ? 'all' : (currentCorpusKey ?? 'all');
-        })(),
-        noteLayout: nextHeader.hasAttribute('note-layout'),
-        sidebarEnabled: nextHeader.hasAttribute('sidebar-enabled'),
-      },
+      header: headerSnapshot,
+      sidebar: null,
     };
   },
 
   prepare(update): PreparedShellUpdate {
     const currentHeader = document.querySelector('layout-header');
     const previousShell =
-      currentHeader instanceof HTMLElement ? { header: readHeaderSnapshot(currentHeader) } : null;
+      currentHeader instanceof HTMLElement
+        ? { header: readHeaderSnapshot(currentHeader), sidebar: null }
+        : null;
     const nextShell = update.shell;
 
     return {

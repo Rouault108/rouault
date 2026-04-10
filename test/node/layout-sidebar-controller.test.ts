@@ -5,9 +5,13 @@ import {
 } from '../../src/components/layout/layout-sidebar-controller.js';
 
 if (typeof globalThis.HTMLElement === 'undefined') {
+  function MockHTMLElement(this: unknown) {
+    void this;
+  }
+
   Object.defineProperty(globalThis, 'HTMLElement', {
     configurable: true,
-    value: class MockHTMLElement {},
+    value: MockHTMLElement,
   });
 }
 
@@ -79,7 +83,9 @@ const installMatchMediaMock = (initialMatches: boolean): MatchMediaMockControlle
   });
   Object.defineProperty(globalThis, 'HTMLElement', {
     configurable: true,
-    value: class MockHTMLElement {},
+    value: function MockHTMLElement(this: unknown) {
+      void this;
+    },
   });
 
   return {

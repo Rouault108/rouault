@@ -13,8 +13,6 @@ interface NoteLayoutData {
   notePage?: NotePageProjection;
 }
 
-const NOTE_LAYOUT_SIDEBAR_ID = 'note-primary';
-
 const renderPagefindGenreFilters = (genres: readonly string[]): string =>
   genres
     .map(
@@ -46,18 +44,6 @@ const renderPagefindMetadata = (pagefind: NonNullable<NotePageProjection['pagefi
     </div>
   `.trim();
 };
-
-const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar']>): string =>
-  serializeHtmlAttributes([
-    { name: 'source-id', value: sidebar.sourceId },
-    { name: 'selected-id', value: sidebar.selectedId },
-    { name: 'items-json', value: sidebar.items, kind: 'json' },
-    { name: 'heading', value: sidebar.heading },
-    { name: 'fixed-breakpoint', value: sidebar.fixedBreakpoint },
-    { name: 'sidebar-id', value: NOTE_LAYOUT_SIDEBAR_ID },
-    { name: 'data-hydration-capability', value: 'interactive' },
-    { name: 'data-hydration-trigger', value: 'initial' },
-  ]);
 
 const renderArticleHeader = (articleHeader: NotePageProjection['articleHeader']): string => {
   const articleHeaderAttributes = serializeHtmlAttributes([
@@ -167,20 +153,6 @@ export class NoteLayout {
 
     return `
       <section${shellAttributes}>
-        ${
-          notePage.showSidebar && notePage.sidebar
-            ? `
-                <aside
-                  class="layout-sidebar-col"
-                  aria-label="ナビゲーション"
-                  data-hydration-scope="note-sidebar"
-                >
-                  <layout-sidebar${buildSidebarAttributes(notePage.sidebar)}></layout-sidebar>
-                </aside>
-              `.trim()
-            : ''
-        }
-
         <article${article}>
           ${notePage.pagefind ? renderPagefindMetadata(notePage.pagefind) : ''}
           ${renderArticleHeader(notePage.articleHeader)}
@@ -195,11 +167,6 @@ export class NoteLayout {
         ${renderToc(notePage.toc)}
       </section>
       ${renderJsonScriptElement(notePage.toc.sourceId, notePage.toc.headings)}
-      ${
-        notePage.showSidebar && notePage.sidebar
-          ? renderJsonScriptElement(notePage.sidebar.sourceId, notePage.sidebar.items)
-          : ''
-      }
     `.trim();
   }
 }
