@@ -11,3 +11,5 @@ custom-elements.json
 *.log
 .DS_Store
 storybook-static
+
+docs/temporary/*
