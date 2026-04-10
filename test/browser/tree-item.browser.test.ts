@@ -108,7 +108,7 @@ describe('ui-tree-item browser contract', () => {
     expect(item.getAttribute('tabindex')).to.equal('0');
   });
 
-  it('branch は click で expanded を切り替え、children aria と inert を同期すること', async () => {
+  it('branch 行クリックは primary-action-request を通知し、expand icon クリックは expanded-request のみを通知すること', async () => {
     const host = await fixture<TreeItem>(html`
       <ui-tree-item label="src" icon="folder">
         <ui-tree-item slot="children" label="components" icon="folder"></ui-tree-item>
@@ -120,15 +120,22 @@ describe('ui-tree-item browser contract', () => {
 
     const item = getItem(host);
     const children = getChildrenContainer(host);
+    const expandIcon = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('.expand-icon'),
+      'expand icon',
+    );
 
+    let primaryActionCount = 0;
     let expandedEventCount = 0;
-    let selectedEventCount = 0;
+    let lastExpanded: boolean | null = null;
 
-    host.addEventListener('expanded-change', () => {
-      expandedEventCount += 1;
+    host.addEventListener('tree-item-primary-action-request', (event: Event) => {
+      primaryActionCount += 1;
+      expect((event as CustomEvent<{ hasChildren: boolean }>).detail.hasChildren).to.equal(true);
     });
-    host.addEventListener('selected-change', () => {
-      selectedEventCount += 1;
+    host.addEventListener('tree-item-expanded-request', (event: Event) => {
+      expandedEventCount += 1;
+      lastExpanded = (event as CustomEvent<{ expanded: boolean }>).detail.expanded;
     });
 
     expect(host.querySelectorAll('[slot="children"]').length).to.equal(2);
@@ -140,23 +147,23 @@ describe('ui-tree-item browser contract', () => {
     item.click();
     await flush(host);
 
-    expect(expandedEventCount).to.equal(1);
-    expect(selectedEventCount).to.equal(0);
-    expect(host.expanded).to.equal(true);
-    expect(host.getAttribute('aria-expanded')).to.equal('true');
-    expect(children.getAttribute('aria-hidden')).to.equal('false');
-    expect(children.hasAttribute('inert')).to.equal(false);
+    expect(primaryActionCount).to.equal(1);
+    expect(expandedEventCount).to.equal(0);
+    expect(host.expanded).to.equal(false);
 
-    item.click();
+    expandIcon.click();
     await flush(host);
 
-    expect(expandedEventCount).to.equal(2);
+    expect(primaryActionCount).to.equal(1);
+    expect(expandedEventCount).to.equal(1);
+    expect(lastExpanded).to.equal(true);
     expect(host.expanded).to.equal(false);
+    expect(host.getAttribute('aria-expanded')).to.equal('false');
     expect(children.getAttribute('aria-hidden')).to.equal('true');
     expect(children.hasAttribute('inert')).to.equal(true);
   });
 
-  it('link leaf は Enter/Space で selected-change を発火し、Enter は anchor click を伴うこと', async () => {
+  it('link leaf は Enter/Space で primary-action-request を発火し、内部 selected や synthetic click を起こさないこと', async () => {
     const host = await fixture<TreeItem>(html`
       <ui-tree-item label="README.md" icon="file-text" href="/notes/readme"></ui-tree-item>
     `);
@@ -165,11 +172,14 @@ describe('ui-tree-item browser contract', () => {
 
     const item = getItem(host) as HTMLAnchorElement;
 
-    let selectedEventCount = 0;
+    let primaryActionCount = 0;
     let anchorClickCount = 0;
 
-    host.addEventListener('selected-change', () => {
-      selectedEventCount += 1;
+    host.addEventListener('tree-item-primary-action-request', (event: Event) => {
+      primaryActionCount += 1;
+      const detail = (event as CustomEvent<{ hasChildren: boolean; href?: string }>).detail;
+      expect(detail.hasChildren).to.equal(false);
+      expect(detail.href).to.equal('/notes/readme');
     });
 
     item.addEventListener('click', (event) => {
@@ -180,23 +190,20 @@ describe('ui-tree-item browser contract', () => {
     dispatchKey(item, 'Enter');
     await flush(host);
 
-    expect(host.selected).to.equal(true);
-    expect(host.getAttribute('aria-selected')).to.equal('true');
-    expect(selectedEventCount).to.equal(1);
-    expect(anchorClickCount).to.equal(1);
-
-    host.selected = false;
-    await flush(host);
+    expect(host.selected).to.equal(false);
+    expect(host.getAttribute('aria-selected')).to.equal('false');
+    expect(primaryActionCount).to.equal(1);
+    expect(anchorClickCount).to.equal(0);
 
     dispatchKey(item, ' ');
     await flush(host);
 
-    expect(host.selected).to.equal(true);
-    expect(selectedEventCount).to.equal(2);
-    expect(anchorClickCount).to.equal(1);
+    expect(host.selected).to.equal(false);
+    expect(primaryActionCount).to.equal(2);
+    expect(anchorClickCount).to.equal(0);
   });
 
-  it('link leaf の mouse click は default を抑止せず、router へ委譲できること', async () => {
+  it('link leaf の mouse click は default を抑止せず、primary-action-request を通知すること', async () => {
     const host = await fixture<TreeItem>(html`
       <ui-tree-item label="README.md" icon="file-text" href="/notes/readme"></ui-tree-item>
     `);
@@ -205,11 +212,11 @@ describe('ui-tree-item browser contract', () => {
 
     const item = getItem(host) as HTMLAnchorElement;
 
-    let selectedEventCount = 0;
+    let primaryActionCount = 0;
     let defaultPreventedAtAnchor: boolean | undefined;
 
-    host.addEventListener('selected-change', () => {
-      selectedEventCount += 1;
+    host.addEventListener('tree-item-primary-action-request', () => {
+      primaryActionCount += 1;
     });
 
     item.addEventListener('click', (event) => {
@@ -223,13 +230,13 @@ describe('ui-tree-item browser contract', () => {
     item.click();
     await flush(host);
 
-    expect(host.selected).to.equal(true);
-    expect(host.getAttribute('aria-selected')).to.equal('true');
-    expect(selectedEventCount).to.equal(1);
+    expect(host.selected).to.equal(false);
+    expect(host.getAttribute('aria-selected')).to.equal('false');
+    expect(primaryActionCount).to.equal(1);
     expect(defaultPreventedAtAnchor).to.equal(false);
   });
 
-  it('branch は ArrowRight/ArrowLeft で展開収縮し、境界では委譲イベントを送出すること', async () => {
+  it('branch は ArrowRight/ArrowLeft で request event を通知し、内部 expanded を変更しないこと', async () => {
     const host = await fixture<TreeItem>(html`
       <ui-tree-item label="components" icon="folder">
         <ui-tree-item slot="children" label="button.ts" icon="file-code"></ui-tree-item>
@@ -241,41 +248,51 @@ describe('ui-tree-item browser contract', () => {
     const item = getItem(host);
 
     let expandedEventCount = 0;
-    let arrowRightDelegated = 0;
-    let arrowLeftDelegated = 0;
+    let focusFirstChildCount = 0;
+    let focusParentCount = 0;
+    const expandedStates: boolean[] = [];
 
-    host.addEventListener('expanded-change', () => {
+    host.addEventListener('tree-item-expanded-request', (event: Event) => {
       expandedEventCount += 1;
+      expandedStates.push((event as CustomEvent<{ expanded: boolean }>).detail.expanded);
     });
-    host.addEventListener('tree-item-arrow-right', () => {
-      arrowRightDelegated += 1;
+    host.addEventListener('tree-item-focus-first-child-request', () => {
+      focusFirstChildCount += 1;
     });
-    host.addEventListener('tree-item-arrow-left', () => {
-      arrowLeftDelegated += 1;
+    host.addEventListener('tree-item-focus-parent-request', () => {
+      focusParentCount += 1;
     });
 
     dispatchKey(item, 'ArrowRight');
-    await flush(host);
-
-    expect(host.expanded).to.equal(true);
-    expect(expandedEventCount).to.equal(1);
-
-    dispatchKey(item, 'ArrowRight');
-    await flush(host);
-
-    expect(arrowRightDelegated).to.equal(1);
-    expect(host.expanded).to.equal(true);
-
-    dispatchKey(item, 'ArrowLeft');
     await flush(host);
 
     expect(host.expanded).to.equal(false);
-    expect(expandedEventCount).to.equal(2);
+    expect(expandedEventCount).to.equal(1);
+    expect(expandedStates).to.deep.equal([true]);
+
+    host.expanded = true;
+    await flush(host);
+
+    dispatchKey(item, 'ArrowRight');
+    await flush(host);
+
+    expect(focusFirstChildCount).to.equal(1);
+    expect(host.expanded).to.equal(true);
 
     dispatchKey(item, 'ArrowLeft');
     await flush(host);
 
-    expect(arrowLeftDelegated).to.equal(1);
+    expect(expandedEventCount).to.equal(2);
+    expect(expandedStates).to.deep.equal([true, false]);
+    expect(host.expanded).to.equal(true);
+
+    host.expanded = false;
+    await flush(host);
+
+    dispatchKey(item, 'ArrowLeft');
+    await flush(host);
+
+    expect(focusParentCount).to.equal(1);
     expect(host.expanded).to.equal(false);
   });
 

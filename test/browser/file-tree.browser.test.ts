@@ -137,25 +137,71 @@ describe('ui-file-tree browser contract', () => {
     expect(fileTree.getAttribute('variant')).to.equal('card');
   });
 
-  it('selectedId の leaf が非表示になった場合は先頭の可視 item を active に戻すこと', async () => {
+  it('selectedId の祖先 branch は補助展開され、selected leaf を可視化したうえで active に採用すること', async () => {
+    const controlledExpandedIds = new Set<string>();
     const fileTree = await fixture<FileTree>(html`
       <ui-file-tree
         .items=${cloneTree(sampleTree)}
-        .expandedIds=${new Set()}
+        .expandedIds=${controlledExpandedIds}
         selected-id="notes/design/file-tree"
       ></ui-file-tree>
     `);
 
     await flush(fileTree);
 
-    const hiddenSelectedLeaf = getTreeItemHost(fileTree, 'notes/design/file-tree');
+    const selectedLeaf = getTreeItemHost(fileTree, 'notes/design/file-tree');
+    const notesBranch = getTreeItemHost(fileTree, 'notes');
+    const designBranch = getTreeItemHost(fileTree, 'notes/design');
     const collapsedBranchPanel = getTreeItemChildrenPanel(fileTree, 'notes/design');
 
-    expect(hiddenSelectedLeaf.getAttribute('tabindex')).to.equal('-1');
-    expect(collapsedBranchPanel.getAttribute('aria-hidden')).to.equal('true');
-    expect(collapsedBranchPanel.hasAttribute('inert')).to.equal(true);
-    expect(getTreeItemHost(fileTree, 'notes').getAttribute('tabindex')).to.equal('0');
+    expect(notesBranch.hasAttribute('expanded')).to.equal(true);
+    expect(designBranch.hasAttribute('expanded')).to.equal(true);
+    expect(selectedLeaf.hasAttribute('selected')).to.equal(true);
+    expect(selectedLeaf.getAttribute('tabindex')).to.equal('0');
+    expect(collapsedBranchPanel.getAttribute('aria-hidden')).to.equal('false');
+    expect(collapsedBranchPanel.hasAttribute('inert')).to.equal(false);
+    expect(fileTree.activeId).to.equal('notes/design/file-tree');
+    expect([...controlledExpandedIds]).to.deep.equal([]);
     expect(getTreeItemHost(fileTree, 'daily').getAttribute('tabindex')).to.equal('-1');
+  });
+
+  it('tree-item の focus request を bridge し、activeId を親子間で移動すること', async () => {
+    const fileTree = await fixture<FileTree>(html`
+      <ui-file-tree
+        .items=${cloneTree(sampleTree)}
+        .defaultExpandedIds=${new Set(['notes', 'notes/design'])}
+      ></ui-file-tree>
+    `);
+
+    await flush(fileTree);
+
+    const activeIds: string[] = [];
+    fileTree.addEventListener('ui-tree-active-change', (event: Event) => {
+      activeIds.push((event as CustomEvent<{ id: string }>).detail.id);
+    });
+
+    const notesBranch = getTreeItemHost(fileTree, 'notes');
+    notesBranch.dispatchEvent(
+      new CustomEvent('tree-item-focus-first-child-request', {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    await flush(fileTree);
+
+    expect(fileTree.activeId).to.equal('notes/index');
+
+    const selectedLeaf = getTreeItemHost(fileTree, 'notes/design/file-tree');
+    selectedLeaf.dispatchEvent(
+      new CustomEvent('tree-item-focus-parent-request', {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    await flush(fileTree);
+
+    expect(fileTree.activeId).to.equal('notes/design');
+    expect(activeIds).to.deep.equal(['notes/index', 'notes/design']);
   });
 
   it('loadingStrategy=retain は aria-busy のみを立て、replace は skeleton に置き換えること', async () => {
@@ -368,18 +414,62 @@ describe('ui-file-tree browser contract', () => {
     await flush(fileTree);
 
     expect(selectedId).to.equal('notes/design/file-tree');
+    expect(fileTree.activeId).to.equal('notes/design/file-tree');
 
     getTreeItemAction(fileTree, 'notes/design').click();
     await flush(fileTree);
 
     expect(toggledId).to.equal('notes/design');
     expect(toggledExpanded).to.equal(false);
+    expect(fileTree.activeId).to.equal('notes/design');
 
     const container = getContainer(fileTree);
     dispatchKey(container, 'End');
     await flush(fileTree);
 
     expect(activeId).to.equal('daily');
+  });
+
+  it('可視ノード更新で既存 activeId が無効になった場合、selectedId と先頭可視ノードへ順に補正すること', async () => {
+    const fileTree = await fixture<FileTree>(html`
+      <ui-file-tree
+        .items=${cloneTree(sampleTree)}
+        .defaultExpandedIds=${new Set(['notes', 'notes/design'])}
+        selected-id="notes/design/file-tree"
+      ></ui-file-tree>
+    `);
+
+    await flush(fileTree);
+
+    fileTree.focusFirst();
+    await flush(fileTree);
+    expect(fileTree.activeId).to.equal('notes');
+
+    fileTree.items = [
+      createBranch('archive', 'Archive', [
+        createLeaf('archive/index', 'Index.md', '/archive/index'),
+      ]),
+    ];
+    await flush(fileTree);
+
+    expect(fileTree.activeId).to.equal('archive');
+
+    fileTree.items = cloneTree(sampleTree);
+    fileTree.selectedId = 'notes/design/tree-item';
+    await flush(fileTree);
+
+    expect(fileTree.activeId).to.equal('notes/design/tree-item');
+
+    fileTree.items = [
+      createBranch('notes', 'Notes', [
+        createBranch('notes/design', 'Design', [
+          createLeaf('notes/design/appendix', 'Appendix.md', '/notes/design/appendix'),
+        ]),
+      ]),
+    ];
+    await flush(fileTree);
+
+    expect(fileTree.activeId).to.equal('notes');
   });
 
   it('printable=true では beforeprint で全 branch を展開し afterprint で元に戻すこと', async () => {

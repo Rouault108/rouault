@@ -66,7 +66,7 @@ const meta: Meta<FileTree> = {
 この story ファイルは **docs / smoke / 手動確認** に限定します。  
 controlled / uncontrolled の選択・展開、request / commit event、keyboard navigation、
 type-ahead、Escape による外部フォーカス復帰、loading retain/replace、printable の挙動は
-\`test/browser/helpers/file-tree.browser.test.ts\` を正本とします。  
+\`test/browser/file-tree.browser.test.ts\` を正本とします。  
 motion / forced-colors / print の CSS 構造契約は
 \`test/ssr/css-structure-contracts.test.ts\` を正本とします。
         `,
@@ -127,7 +127,7 @@ export const ControlledCardSelection: Story = {
     docs: {
       description: {
         story:
-          'controlled selection / expansion と card variant の見え方を手で確認するための manual-only story です。DOM 反映の合否は `test/browser/helpers/file-tree.browser.test.ts` を正本とします。',
+          'controlled selection / expansion と card variant の見え方を手で確認するための manual-only story です。DOM 反映の合否は `test/browser/file-tree.browser.test.ts` を正本とします。',
       },
     },
   },
@@ -234,7 +234,7 @@ export const KeyboardNavigationManual: Story = {
 - Escape で外部要素へ戻ること
 - selected / active の視覚差
 
-合否は Storybook ではなく \`test/browser/helpers/file-tree.browser.test.ts\` を正本とします。
+合否は Storybook ではなく \`test/browser/file-tree.browser.test.ts\` を正本とします。
         `,
       },
     },
@@ -264,7 +264,7 @@ export const PrintableManual: Story = {
 - card variant の印刷時縮退
 
 beforeprint / afterprint による全 branch 展開の合否は Storybook ではなく
-\`test/browser/helpers/file-tree.browser.test.ts\` を正本とします。
+\`test/browser/file-tree.browser.test.ts\` を正本とします。
         `,
       },
     },

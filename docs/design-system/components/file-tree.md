@@ -670,124 +670,17 @@ Storybook は見本集ではなく、契約確認のための検証面を提供�
 
 ---
 
-## 現行実装との差分
+## 実装追従メモ
 
-本節は、現行の `file-tree.ts` および `file-tree.stories.ts` と本書の正規契約との差分を、**実装優先度順**に並べたものです。ここでいう優先度は、見た目の差分量ではなく、**後続の設計整理を可能にする土台であるか**、**他の差分の前提になるか**を基準に定めます。
+2026-04 時点で、`ui-file-tree` の主要移行項目は本書へ追従済みです。
 
-### 優先度 1: 構造モデルと状態モデルの分離
+- `selectedId` / `expandedIds` / `activeId` の主導権は分離されています。
+- `selectedId` 可視化のための補助展開は、controlled `expandedIds` を破壊せずに内部導出されます。
+- `ui-tree-item` からは `tree-item-primary-action-request` / `tree-item-expanded-request` / focus request を受け、`ui-file-tree` が root 公開イベントへ橋渡しします。
+- `activeId` は内部状態として保持され、可視ノード更新時には妥当な可視ノードへ補正されます。
+- `focus()` / `focusSelected()` / `focusFirst()`、`loadingStrategy="retain" | "replace"`、`printable` の契約は実装と browser test により固定されています。
 
-#### 構造入力の可変性
-
-現行実装は `items` 内の `selected` と `expanded` をインプレースで更新します。本書では、構造入力を不変とし、UI 状態を外部または内部 state に分離します。
-
-#### ノード種別
-
-現行実装の `TreeNode` は `href`、`children`、`selected`、`expanded` を optional field として同居させています。本書では `branch` / `leaf` の discriminated union を正とします。
-
-#### `href` と `children` の両立
-
-現行実装は `href` と `children` の同居を許容します。本書では誤操作を避けるため、両立を不正入力とします。
-
-#### `items` の必須性
-
-現行実装は `items` を省略可能な property として持ち、既定値 `[]` を用います。本書では、構造入力を常に明示的に与える前提で `items` を必須入力として扱います。
-
-#### `branch` の空配列子
-
-現行実装および現行 Storybook では、`children=[]` の `branch` を許容し得ます。本書では、`branch` は 1 件以上の子ノードを持つものとして定義し、空配列 branch は不正入力とします。
-
-### 優先度 2: 選択・展開・アクティブ状態の主導権整理
-
-#### `activeId` の扱い
-
-現行実装は `activeId` を半制御入力として公開します。本書では `activeId` を内部状態とし、公開入力から外します。
-
-#### 選択とフォーカスの関係
-
-現行実装は選択時に `activeId` も同時更新します。本書では `selectedId` と `activeId` を別概念として分離します。
-
-#### 選択状態のアクセシビリティ表現
-
-現行実装では、`selectedId` が現在位置を表すことと、tree item 側での `aria-selected` 表現との対応が文書上で十分に明文化されていません。本書では、`selectedId` に一致する項目のみが選択状態として扱われ、`activeId` とは独立に `aria-selected` と視覚強調へ反映される前提です。
-
-#### 葉ノード専用選択の未強制
-
-現行実装は `selected-change` を受けたノードをそのまま選択状態にするため、`branch` を選択対象から除外していません。本書では、選択対象は `leaf` のみとし、`branch` の主操作は展開 / 収縮に限定します。
-
-#### `activeId` の妥当性補正
-
-現行実装は、`items` 更新時に `activeId` が空文字列である場合のみ selected 項目または先頭可視項目を採用します。既存の `activeId` が新しい可視ノード集合に存在しない場合でも、自動補正は行いません。本書では、内部 `activeId` は妥当な可視ノードへ補正される前提です。
-
-#### 選択項目可視化のための補助展開集合
-
-現行実装では、`selectedId` を可視化するための親パス展開と、controlled な `expandedIds` との関係が十分に明文化されていません。本書では、controlled 利用時であっても、外部の `expandedIds` 自体は変更せず、必要に応じて内部の補助的な可視化用展開集合を導出して可視ノード列へ反映する前提です。
-
-### 優先度 3: イベント設計と責務分界の整理
-
-#### イベント設計
-
-現行実装は状態更新後の通知イベントを中心とし、一部で実ノード参照を detail に含みます。本書では request / commit を分離し、detail は最小 snapshot に限定します。
-
-#### `ui-tree-focus-change` の発火条件
-
-現行実装の `ui-tree-focus-change` は、主として root 側のキーボード移動で `_moveFocus()` が呼ばれた時にのみ発火します。選択操作に伴う `activeId` 更新、初期化時の `activeId` 決定、外部からの `activeId` 変更では、同等の通知を必ずしも行いません。本書では、アクティブ状態変更の通知意味論を一貫させる前提です。
-
-#### キーボード責務の分離
-
-現行実装は、上下移動・Home / End・Escape・type-ahead を `ui-file-tree` 側で処理し、展開 / 収縮および Enter / Space に伴う選択確定の一部を `ui-tree-item` 側のイベントに依存しています。本書では、最終的な意味決定を `ui-file-tree` 側へより明確に集約する前提です。
-
-#### `integration event` と root 公開イベントの橋渡し
-
-現行実装は、`ui-tree-item` 側の通知イベントと `ui-file-tree` 側の公開イベントの対応関係を文書上で十分に固定していません。本書では、`ui-tree-item` は low-level な integration event を通知し、`ui-file-tree` が request / commit の root 公開イベントへ橋渡しする前提です。
-
-### 優先度 4: 公開操作面と可視化挙動の整理
-
-#### フォーカス API
-
-現行実装は専用の公開フォーカスメソッドを持ちません。本書では `focus()`、`focusSelected()`、`focusFirst()` を公開します。
-
-#### ローディング戦略
-
-現行実装は 500ms 閾値を持つ skeleton 置換中心です。本書では `retain` を既定戦略とし、読書体験に合わせて既存 tree の可視性維持を優先します。
-
-#### ローディング閾値未満の表示
-
-現行実装は、ローディング中でも 500ms の閾値を超えるまでは通常描画パスを通ります。したがって、`items` が存在すれば tree を描画し、`items=[]` であれば Empty State を描画します。閾値未満のローディング専用表示は持ちません。本書では、`retain` / `replace` を意味契約として明確に分離します。
-
-#### `aria-busy` の付与条件
-
-現行実装は、`aria-busy` をローディング中常時ではなく、`showSkeleton=true` の時にのみ `true` として付与します。短時間ローディングでは `loading=true` であっても `aria-busy="false"` のままです。本書では、ローディング戦略に応じた busy 意味論をより明示的に扱います。
-
-#### 印刷契約
-
-現行実装は `variant="card"` と `data-printable="true"` の組み合わせに印刷可否を結び付けています。本書では `printable` を独立した意味契約として扱います。
-
-#### `data-printable` の真偽値意味
-
-現行実装は `data-printable` の属性値そのものではなく、属性の存在のみを見て印刷対象かどうかを判定します。したがって、`data-printable="false"` のような値であっても、属性が存在する限り printable とみなされます。本書では、`printable` を明示的な boolean 契約として扱います。
-
-### 優先度 5: 開発時安全性と検証
-
-#### 開発時検証
-
-現行実装は `id` 重複や不正ノード形状を実行時に厳密検証しません。本書では、少なくとも開発時には検出・警告する方向を推奨します。
-
-### 優先度 6: 契約追従のための Storybook 更新
-
-#### Storybook カバレッジ
-
-現行 Storybook は、可変 `TreeNode`、`activeId` 公開、`ui-tree-select` / `ui-tree-expand` / `ui-tree-focus-change` といった現行契約を前提に構成されています。本書で想定する `selectedId` / `expandedIds`、request / commit 系イベント、公開フォーカスメソッド、`loadingStrategy="retain"` / `"replace"` といった正規契約に対応した Story は、まだ整備されていません。
-
-### 優先度 7: 契約外事項の非採用整理
-
-#### 契約外事項の扱い
-
-本書で適用範囲外とした事項は、現行実装に存在しなくても差分不足とはみなしません。
-
-対象外事項の例:
-
-- `reveal(id)` / `revealSelected()` のような可視化専用公開 API
-- `expandAll()` / `collapseAll()` のような一括補助操作
+この節の役割は未完了差分の管理ではなく、実装が本書へ追従していることの確認にあります。将来差分が発生した場合は、ここへ暫定 TODO を蓄積するのではなく、browser test と該当契約節を先に更新してください。
 - 遅延展開 / 非同期 branch ロード
 - 印刷時の追加オプション入力
 - 複数選択

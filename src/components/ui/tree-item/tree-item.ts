@@ -569,7 +569,6 @@ export class TreeItem extends LitElement {
   private _childrenTransitionCleanup: (() => void) | undefined;
   private _childrenAnimationFrame = 0;
   private _labelSyncAnimationFrame = 0;
-  private _skipSyntheticAnchorClick = false;
   private _forwardingFocus = false;
 
   private _computeAriaLevel(): number {
@@ -668,129 +667,93 @@ export class TreeItem extends LitElement {
     switch (e.key) {
       case 'Enter':
         e.preventDefault();
-        this._activateItem();
+        this._requestPrimaryAction();
         break;
 
       case ' ':
         e.preventDefault();
-        this._handleSelect();
+        this._requestPrimaryAction();
         break;
 
       case 'ArrowRight':
         e.preventDefault();
         if (this.hasChildren && !this.expanded) {
-          if (!this._requestExpanded(true)) {
-            return;
-          }
-
-          this._toggleExpanded();
+          this._requestExpanded(true);
         } else {
-          this.dispatchEvent(
-            new CustomEvent('tree-item-arrow-right', {
-              bubbles: true,
-              composed: true,
-            }),
-          );
+          this._requestFocusFirstChild();
         }
         break;
 
       case 'ArrowLeft':
         e.preventDefault();
         if (this.hasChildren && this.expanded) {
-          if (!this._requestExpanded(false)) {
-            return;
-          }
-
-          this._toggleExpanded();
+          this._requestExpanded(false);
         } else {
-          this.dispatchEvent(
-            new CustomEvent('tree-item-arrow-left', {
-              bubbles: true,
-              composed: true,
-            }),
-          );
+          this._requestFocusParent();
         }
         break;
     }
   };
 
   private _handleClick = (e: MouseEvent): void => {
-    const clickedAnchor = this._isAnchorEvent(e);
-    if (clickedAnchor && this._skipSyntheticAnchorClick) {
+    if (this.hasChildren && this._isExpandControlEvent(e)) {
+      this._requestExpanded(!this.expanded);
       return;
     }
 
-    if (this.hasChildren) {
-      if (!this._requestExpanded(!this.expanded)) {
-        return;
-      }
-
-      this._toggleExpanded();
-      return;
-    }
-
-    this._handleSelect();
-
-    if (!clickedAnchor) {
-      this._triggerAnchorNavigation();
-    }
+    this._requestPrimaryAction();
   };
 
-  private _activateItem(): void {
-    this._handleSelect();
-    this._triggerAnchorNavigation();
-  }
+  private _requestPrimaryAction(): void {
+    const detail = this.href
+      ? { hasChildren: this.hasChildren, href: this.href }
+      : { hasChildren: this.hasChildren };
 
-  private _handleSelect(): void {
-    this.selected = true;
     this.dispatchEvent(
-      new CustomEvent('selected-change', {
-        detail: { selected: this.selected },
+      new CustomEvent<{ hasChildren: boolean; href?: string }>('tree-item-primary-action-request', {
+        detail,
         bubbles: true,
         composed: true,
       }),
     );
   }
 
-  private _requestExpanded(expanded: boolean): boolean {
-    return this.dispatchEvent(
-      new CustomEvent('tree-item-expanded-request', {
+  private _requestExpanded(expanded: boolean): void {
+    this.dispatchEvent(
+      new CustomEvent<{ expanded: boolean }>('tree-item-expanded-request', {
         detail: { expanded },
         bubbles: true,
         composed: true,
-        cancelable: true,
       }),
     );
   }
 
-  private _triggerAnchorNavigation(): void {
-    const anchor = this.shadowRoot?.querySelector<HTMLAnchorElement>('a.item');
-    if (!anchor || !this.href) {
-      return;
-    }
-
-    this._skipSyntheticAnchorClick = true;
-    anchor.click();
-    queueMicrotask(() => {
-      this._skipSyntheticAnchorClick = false;
-    });
-  }
-
-  private _isAnchorEvent(event: Event): boolean {
-    return event.composedPath().some((target) => target instanceof HTMLAnchorElement);
-  }
-
-  private _toggleExpanded(): void {
-    if (!this.hasChildren) return;
-
-    this.expanded = !this.expanded;
+  private _requestFocusFirstChild(): void {
     this.dispatchEvent(
-      new CustomEvent('expanded-change', {
-        detail: { expanded: this.expanded },
+      new CustomEvent('tree-item-focus-first-child-request', {
         bubbles: true,
         composed: true,
       }),
     );
+  }
+
+  private _requestFocusParent(): void {
+    this.dispatchEvent(
+      new CustomEvent('tree-item-focus-parent-request', {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private _isExpandControlEvent(event: Event): boolean {
+    return event.composedPath().some((target) => {
+      if (!(target instanceof HTMLElement)) {
+        return false;
+      }
+
+      return target.classList.contains('expand-icon') || target.classList.contains('expand-glyph');
+    });
   }
 
   private _getChildrenContainer(): HTMLElement | null {

@@ -485,6 +485,10 @@ export class FileTree extends LitElement {
   private get _effectiveExpandedIds(): ReadonlySet<string> {
     const result = cloneSet(this._baseExpandedIds);
 
+    for (const id of this._selectedAncestorBranchIds) {
+      result.add(id);
+    }
+
     if (this._printExpanding) {
       for (const [id, indexedNode] of this._nodeIndex) {
         if (isBranchNode(indexedNode.node)) {
@@ -519,7 +523,25 @@ export class FileTree extends LitElement {
       return;
     }
 
-    this._activeId = this._visibleSelectedLeafId ?? this._flattenedNodes[0]?.node.id ?? null;
+    this._activeId = this._resolveFallbackActiveId();
+  }
+
+  private _resolveFallbackActiveId(): string | null {
+    const visibleSelectedLeafId = this._visibleSelectedLeafId;
+    if (visibleSelectedLeafId !== null) {
+      return visibleSelectedLeafId;
+    }
+
+    let currentParentId = this._nodeIndex.get(this.selectedId ?? '')?.parentId ?? null;
+    while (currentParentId !== null) {
+      if (this._flattenedNodes.some((item) => item.node.id === currentParentId)) {
+        return currentParentId;
+      }
+
+      currentParentId = this._nodeIndex.get(currentParentId)?.parentId ?? null;
+    }
+
+    return this._flattenedNodes[0]?.node.id ?? null;
   }
 
   private _setActiveId(id: string, emitEvent: boolean): void {
@@ -681,9 +703,9 @@ export class FileTree extends LitElement {
 
   private _handleBranchToggle(event: CustomEvent<{ expanded: boolean }>, node: BranchNode): void {
     event.stopPropagation();
-    event.preventDefault();
 
     const expanded = event.detail.expanded;
+    this._setActiveId(node.id, true);
     const requestEvent = new CustomEvent<{ id: string; expanded: boolean }>(
       'ui-tree-request-toggle',
       {
@@ -719,53 +741,56 @@ export class FileTree extends LitElement {
     );
   }
 
-  private _handleArrowRight = (event: CustomEvent): void => {
+  private _handlePrimaryAction(
+    event: CustomEvent<{ hasChildren: boolean; href?: string }>,
+    node: TreeNode,
+  ): void {
     event.stopPropagation();
-    if (this._activeId === null) {
+
+    if (isLeafNode(node)) {
+      this._handleLeafSelect(event, node);
       return;
     }
 
-    const currentIndex = this._flattenedNodes.findIndex((item) => item.node.id === this._activeId);
-    if (currentIndex === -1) {
+    this._handleBranchToggle(
+      new CustomEvent<{ expanded: boolean }>('tree-item-expanded-request', {
+        detail: { expanded: !this._effectiveExpandedIds.has(node.id) },
+      }),
+      node,
+    );
+  }
+
+  private _focusFirstChild(node: BranchNode): void {
+    const firstChild = node.children[0];
+    if (!firstChild) {
       return;
     }
 
-    const currentItem = this._flattenedNodes[currentIndex];
-    if (!currentItem || !isBranchNode(currentItem.node)) {
+    this._setActiveId(firstChild.id, true);
+    this._focusItem(firstChild.id);
+    this._scrollItemIntoView(firstChild.id);
+  }
+
+  private _focusParent(node: TreeNode): void {
+    const parentId = this._nodeIndex.get(node.id)?.parentId ?? null;
+    if (parentId === null) {
       return;
     }
 
-    if (!this._effectiveExpandedIds.has(currentItem.node.id)) {
-      return;
-    }
+    this._setActiveId(parentId, true);
+    this._focusItem(parentId);
+    this._scrollItemIntoView(parentId);
+  }
 
-    this._moveFocusByIndex(currentIndex + 1);
-  };
-
-  private _handleArrowLeft = (event: CustomEvent): void => {
+  private _handleFocusFirstChildRequest(event: CustomEvent, node: BranchNode): void {
     event.stopPropagation();
-    if (this._activeId === null) {
-      return;
-    }
+    this._focusFirstChild(node);
+  }
 
-    const currentIndex = this._flattenedNodes.findIndex((item) => item.node.id === this._activeId);
-    if (currentIndex === -1) {
-      return;
-    }
-
-    const currentItem = this._flattenedNodes[currentIndex];
-    if (!currentItem) {
-      return;
-    }
-
-    for (let index = currentIndex - 1; index >= 0; index -= 1) {
-      const parentItem = this._flattenedNodes[index];
-      if (parentItem && parentItem.depth < currentItem.depth) {
-        this._moveFocusByIndex(index);
-        return;
-      }
-    }
-  };
+  private _handleFocusParentRequest(event: CustomEvent, node: TreeNode): void {
+    event.stopPropagation();
+    this._focusParent(node);
+  }
 
   private _focusItem(nodeId: string, options?: FocusOptions): void {
     const treeItem = this.shadowRoot?.querySelector<HTMLElement>(
@@ -908,18 +933,24 @@ export class FileTree extends LitElement {
           tabindex=${String(tabindex)}
           .density=${this.density}
           density=${this.density}
-          @selected-change=${(event: CustomEvent) => {
-            if (isLeafNode(node)) {
-              this._handleLeafSelect(event, node);
-            }
+          @tree-item-primary-action-request=${(
+            event: CustomEvent<{ hasChildren: boolean; href?: string }>,
+          ) => {
+            this._handlePrimaryAction(event, node);
           }}
           @tree-item-expanded-request=${(event: CustomEvent<{ expanded: boolean }>) => {
             if (isBranchNode(node)) {
               this._handleBranchToggle(event, node);
             }
           }}
-          @tree-item-arrow-right=${this._handleArrowRight}
-          @tree-item-arrow-left=${this._handleArrowLeft}
+          @tree-item-focus-first-child-request=${(event: CustomEvent) => {
+            if (isBranchNode(node)) {
+              this._handleFocusFirstChildRequest(event, node);
+            }
+          }}
+          @tree-item-focus-parent-request=${(event: CustomEvent) => {
+            this._handleFocusParentRequest(event, node);
+          }}
         >
           ${isBranchNode(node)
             ? this._renderTreeItems(node.children, { depth: depth + 1, slotName: 'children' })
