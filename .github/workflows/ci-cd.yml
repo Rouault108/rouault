@@ -15,9 +15,109 @@ env:
   NODE_VERSION: 24.14.1
 
 jobs:
+  detect-changes:
+    name: detect-changes
+    runs-on: ubuntu-latest
+    outputs:
+      content: ${{ steps.classify.outputs.content }}
+      app: ${{ steps.classify.outputs.app }}
+      build: ${{ steps.classify.outputs.build }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - id: classify
+        name: classify changed files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "manual dispatch: force full run"
+            {
+              echo "content=true"
+              echo "app=true"
+              echo "build=true"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+          fi
+
+          if [[ -z "${BASE_SHA}" || "${BASE_SHA}" == "0000000000000000000000000000000000000000" ]]; then
+            BASE_SHA="$(git rev-list --max-parents=0 "${HEAD_SHA}" | tail -n 1)"
+          fi
+
+          git diff -z --name-only "${BASE_SHA}" "${HEAD_SHA}" | sort -zu > changed_files.txt
+
+          echo "Changed files:"
+          if [[ -s changed_files.txt ]]; then
+            python3 - <<'PY'
+          from pathlib import Path
+
+          data = Path("changed_files.txt").read_bytes().split(b"\0")
+          for raw in data:
+              if raw:
+                  print(raw.decode("utf-8", errors="replace"))
+          PY
+          else
+            echo "(none)"
+          fi
+
+          content=false
+          app=false
+          build=false
+
+          while IFS= read -r -d '' file; do
+            [[ -z "${file}" ]] && continue
+
+            case "${file}" in
+              content/*)
+                content=true
+                build=true
+                ;;
+            esac
+
+            case "${file}" in
+              src/*|build/*|shared/*|types/*|scripts/*|test/*|.storybook/*|.github/workflows/*|.github/actions/*|package.json|pnpm-lock.yaml|tsconfig*.json|*.config.ts|*.config.mjs|.node-version|.npmrc)
+                app=true
+                build=true
+                ;;
+            esac
+
+            case "${file}" in
+              eleventy.config.ts|velite.config.ts)
+                content=true
+                app=true
+                build=true
+                ;;
+            esac
+
+            case "${file}" in
+              _headers|_redirects|wrangler.jsonc)
+                build=true
+                ;;
+            esac
+          done < changed_files.txt
+
+          {
+            echo "content=${content}"
+            echo "app=${app}"
+            echo "build=${build}"
+          } >> "$GITHUB_OUTPUT"
+
   lint:
     name: lint
     runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.app == 'true'
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v5
@@ -32,6 +132,8 @@ jobs:
   typecheck-app:
     name: typecheck-app
     runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.app == 'true'
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v5
@@ -46,6 +148,8 @@ jobs:
   typecheck-node:
     name: typecheck-node
     runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.app == 'true'
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v5
@@ -57,9 +161,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck:node
 
-  test-core:
-    name: test-core
+  test-node:
+    name: test-node
     runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.app == 'true'
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v5
@@ -70,12 +176,28 @@ jobs:
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm run test:node
+
+  test-ssr:
+    name: test-ssr
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.build == 'true'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
       - run: pnpm run test:ssr
-      - run: pnpm run test:storybook:meta
 
   test-browser:
     name: test-browser
     runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.app == 'true'
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v5
@@ -88,11 +210,69 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm run test:browser
 
+  test-storybook-meta:
+    name: test-storybook-meta
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.app == 'true'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test:storybook:meta
+
+  prebuild-gate:
+    name: prebuild-gate
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs:
+      - detect-changes
+      - lint
+      - typecheck-app
+      - typecheck-node
+      - test-node
+      - test-ssr
+      - test-browser
+      - test-storybook-meta
+    steps:
+      - name: validate prerequisite results
+        env:
+          NEEDS_JSON: ${{ toJson(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          needs = json.loads(os.environ["NEEDS_JSON"])
+          allowed = {"success", "skipped"}
+          bad = {
+              name: meta["result"]
+              for name, meta in needs.items()
+              if meta["result"] not in allowed
+          }
+
+          if bad:
+              print("Blocking job results detected:")
+              for name, result in bad.items():
+                  print(f"- {name}: {result}")
+              sys.exit(1)
+
+          print("All prerequisite jobs are success or skipped.")
+          PY
+
   test-extended:
     name: test-extended
     runs-on: ubuntu-latest
-    needs: [lint, typecheck-app, typecheck-node, test-core, test-browser]
-    if: github.event_name == 'push' || github.base_ref == 'main'
+    needs:
+      - detect-changes
+      - prebuild-gate
+    if: needs.detect-changes.outputs.app == 'true' && (github.event_name == 'push' || github.base_ref == 'main')
     env:
       ROUAULT_MEDIA_BASE_URL: ${{ vars.ROUAULT_MEDIA_BASE_URL }}
     steps:
@@ -106,12 +286,15 @@ jobs:
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps
-      - run: pnpm test:extended
+      - run: pnpm run test:extended
 
   build-production:
     name: build-production
     runs-on: ubuntu-latest
-    needs: [lint, typecheck-app, typecheck-node, test-core, test-browser]
+    needs:
+      - detect-changes
+      - prebuild-gate
+    if: needs.detect-changes.outputs.build == 'true'
     env:
       ROUAULT_MEDIA_BASE_URL: ${{ vars.ROUAULT_MEDIA_BASE_URL }}
     steps:
@@ -133,11 +316,49 @@ jobs:
             .generated/media
           include-hidden-files: true
 
+  ci-required:
+    name: ci-required
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs:
+      - detect-changes
+      - prebuild-gate
+      - build-production
+    steps:
+      - name: validate required results
+        env:
+          NEEDS_JSON: ${{ toJson(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          needs = json.loads(os.environ["NEEDS_JSON"])
+          allowed = {"success", "skipped"}
+          bad = {
+              name: meta["result"]
+              for name, meta in needs.items()
+              if meta["result"] not in allowed
+          }
+
+          if bad:
+              print("Required job results detected:")
+              for name, result in bad.items():
+                  print(f"- {name}: {result}")
+              sys.exit(1)
+
+          print("Required CI passed.")
+          PY
+
   deploy-production:
     name: deploy-production
     runs-on: ubuntu-latest
-    needs: [build-production]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - detect-changes
+      - build-production
+      - ci-required
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.build == 'true'
     concurrency:
       group: deploy-production
       cancel-in-progress: true
@@ -162,7 +383,6 @@ jobs:
           name: rouault-dist
           path: .
       - run: pnpm exec tsx scripts/upload-r2-media.ts
-      # test-extended は本番 deploy の必須前提にせず、別系統の品質シグナルとして維持する。
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
