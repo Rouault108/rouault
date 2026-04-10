@@ -72,7 +72,7 @@ export interface HeaderShellSnapshot {
 export interface SidebarShellSnapshot {
   present: boolean;
   sidebarId: string;
-  sourceId: string;
+  stateScopeId: string;
   selectedId: string | null;
   heading: string;
   fixedBreakpoint: number;

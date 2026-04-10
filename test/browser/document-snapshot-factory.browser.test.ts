@@ -83,7 +83,7 @@ describe('DocumentSnapshotFactory', () => {
             <app-router data-sidebar-presence="present">
               <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
                 <layout-sidebar
-                  source-id="sidebar-source-note"
+                  state-scope-id="note-navigation"
                   selected-id="notes/example"
                   items-json='[{"kind":"leaf","id":"notes/example","label":"Example","href":"/notes/example"}]'
                   heading="ナビゲーション"
@@ -111,7 +111,7 @@ describe('DocumentSnapshotFactory', () => {
       sidebar: {
         present: true,
         sidebarId: 'note-primary',
-        sourceId: 'sidebar-source-note',
+        stateScopeId: 'note-navigation',
         selectedId: 'notes/example',
         heading: 'ナビゲーション',
         fixedBreakpoint: 1024,

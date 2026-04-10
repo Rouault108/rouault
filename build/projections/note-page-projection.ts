@@ -39,7 +39,7 @@ export interface NotePageProjectionInput {
 }
 
 export interface NotePageSidebarProjection {
-  sourceId: string;
+  stateScopeId: string;
   selectedId: string;
   items: TreeNode[];
   heading: string;
@@ -249,7 +249,6 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const showSidebar = surfacePolicy.sidebar;
   const slug = typeof input.note.slug === 'string' ? input.note.slug : '';
   const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
-  const sidebarSourceId = `sidebar-source-${dataIdBase}`;
   const tocSourceId = `toc-source-${dataIdBase}`;
   const contentRootId = `note-content-${dataIdBase}`;
   const headings = normalizeHeadings(input.note.tocHeadings);
@@ -271,7 +270,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     ...(showSidebar
       ? {
           sidebar: {
-            sourceId: sidebarSourceId,
+            stateScopeId: 'note-navigation',
             selectedId: input.navigation.selectedId ?? '',
             items: input.navigation.sidebarTree,
             heading: 'ナビゲーション',

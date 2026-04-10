@@ -189,7 +189,7 @@ describe('layout-sidebar browser contract', () => {
       const selectedId = 'music/classical/beethoven/symphony-9';
       const storageKey = getLayoutSidebarTreeStateStorageKey({
         sidebarId: DEFAULT_LAYOUT_SIDEBAR_ID,
-        sourceId: 'music-library',
+        stateScopeId: 'note-navigation',
       });
 
       localStorage.removeItem(storageKey);
@@ -197,7 +197,7 @@ describe('layout-sidebar browser contract', () => {
       const host = await fixture<LayoutSidebar>(html`
         <layout-sidebar
           presentation="overlay"
-          source-id="music-library"
+          state-scope-id="note-navigation"
           .itemsJson=${sampleItemsJson}
           selected-id="${selectedId}"
           heading="ナビゲーション"
@@ -249,7 +249,7 @@ describe('layout-sidebar browser contract', () => {
     }
   });
 
-  it('expandedIds を sidebarId + sourceId scope の localStorage へ永続化すること', async () => {
+  it('expandedIds を sidebarId + stateScopeId scope の localStorage へ永続化すること', async () => {
     const media = mockMatchMedia();
 
     try {
@@ -257,7 +257,7 @@ describe('layout-sidebar browser contract', () => {
 
       const storageKey = getLayoutSidebarTreeStateStorageKey({
         sidebarId: DEFAULT_LAYOUT_SIDEBAR_ID,
-        sourceId: 'music-library',
+        stateScopeId: 'note-navigation',
       });
 
       localStorage.removeItem(storageKey);
@@ -265,7 +265,7 @@ describe('layout-sidebar browser contract', () => {
       const host = await fixture<LayoutSidebar>(html`
         <layout-sidebar
           presentation="overlay"
-          source-id="music-library"
+          state-scope-id="note-navigation"
           .itemsJson=${sampleItemsJson}
           selected-id="music/classical/beethoven/symphony-9"
           heading="ナビゲーション"
@@ -299,29 +299,65 @@ describe('layout-sidebar browser contract', () => {
     }
   });
 
-  it('selectedId だけが変わっても同一 sourceId の展開状態を引き継ぐこと', async () => {
+  it('selectedId だけが変わっても persisted state を再読込しないこと', async () => {
     const media = mockMatchMedia();
 
     try {
       await ensureLayoutSidebarDefined();
 
+      const itemsJson = JSON.stringify([
+        {
+          kind: 'branch',
+          id: 'music',
+          label: 'Music',
+          children: [
+            {
+              kind: 'branch',
+              id: 'music/classical',
+              label: 'Classical',
+              children: [
+                {
+                  kind: 'leaf',
+                  id: 'music/classical/beethoven/symphony-9',
+                  label: '交響曲第9番 ニ短調',
+                  href: '/notes/music/classical/beethoven/symphony-9',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          kind: 'branch',
+          id: 'essay',
+          label: 'Essay',
+          children: [
+            {
+              kind: 'leaf',
+              id: 'essay/reading-notes',
+              label: 'Reading Notes',
+              href: '/notes/essay/reading-notes',
+            },
+          ],
+        },
+      ]);
+
       const storageKey = getLayoutSidebarTreeStateStorageKey({
         sidebarId: DEFAULT_LAYOUT_SIDEBAR_ID,
-        sourceId: 'music-library',
+        stateScopeId: 'note-navigation',
       });
 
       localStorage.setItem(
         storageKey,
         JSON.stringify({
-          expandedIds: ['music/classical'],
+          expandedIds: ['essay'],
         } satisfies PersistedLayoutSidebarState),
       );
 
       const host = await fixture<LayoutSidebar>(html`
         <layout-sidebar
           presentation="overlay"
-          source-id="music-library"
-          .itemsJson=${sampleItemsJson}
+          state-scope-id="note-navigation"
+          .itemsJson=${itemsJson}
           selected-id="music/classical/tchaikovsky/the-nutcracker"
           heading="ナビゲーション"
         ></layout-sidebar>
@@ -330,19 +366,36 @@ describe('layout-sidebar browser contract', () => {
       await settle(host);
 
       const fileTree = expectPresent(getFileTree(host), 'ui-file-tree');
-      const branchPanel = expectPresent(
-        getTreeItemChildrenPanel(fileTree, 'music/classical'),
-        'music/classical children panel',
+      const essayPanel = expectPresent(
+        getTreeItemChildrenPanel(fileTree, 'essay'),
+        'essay children panel',
       );
 
-      expect(branchPanel.getAttribute('aria-hidden')).to.equal('false');
-      expect(branchPanel.hasAttribute('inert')).to.equal(false);
+      expect(essayPanel.getAttribute('aria-hidden')).to.equal('false');
+      expect(essayPanel.hasAttribute('inert')).to.equal(false);
+
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          expandedIds: [],
+        } satisfies PersistedLayoutSidebarState),
+      );
+
+      host.selectedId = 'music/classical/beethoven/symphony-9';
+      await settle(host);
+
+      const essayPanelAfterSelection = expectPresent(
+        getTreeItemChildrenPanel(expectPresent(getFileTree(host), 'ui-file-tree'), 'essay'),
+        'essay children panel after selection',
+      );
+      expect(essayPanelAfterSelection.getAttribute('aria-hidden')).to.equal('false');
+      expect(essayPanelAfterSelection.hasAttribute('inert')).to.equal(false);
     } finally {
       media.restore();
     }
   });
 
-  it('sourceId が変わると別 scope の展開状態を読むこと', async () => {
+  it('stateScopeId が変わると別 scope の展開状態を読むこと', async () => {
     const media = mockMatchMedia();
 
     try {
@@ -351,7 +404,7 @@ describe('layout-sidebar browser contract', () => {
       localStorage.setItem(
         getLayoutSidebarTreeStateStorageKey({
           sidebarId: DEFAULT_LAYOUT_SIDEBAR_ID,
-          sourceId: 'music-library-a',
+          stateScopeId: 'note-navigation',
         }),
         JSON.stringify({
           expandedIds: ['music/classical'],
@@ -360,7 +413,7 @@ describe('layout-sidebar browser contract', () => {
       localStorage.setItem(
         getLayoutSidebarTreeStateStorageKey({
           sidebarId: DEFAULT_LAYOUT_SIDEBAR_ID,
-          sourceId: 'music-library-b',
+          stateScopeId: 'reference-navigation',
         }),
         JSON.stringify({
           expandedIds: [],
@@ -370,7 +423,7 @@ describe('layout-sidebar browser contract', () => {
       const host = await fixture<LayoutSidebar>(html`
         <layout-sidebar
           presentation="overlay"
-          source-id="music-library-b"
+          state-scope-id="reference-navigation"
           .itemsJson=${sampleItemsJson}
           selected-id="music/classical/tchaikovsky/the-nutcracker"
           heading="ナビゲーション"
@@ -385,17 +438,81 @@ describe('layout-sidebar browser contract', () => {
         'music/classical children panel',
       );
 
-      // sourceId ごとの persisted state を分離しつつ、現在位置の祖先は表示上つねに開く。
+      // stateScopeId ごとの persisted state を分離しつつ、現在位置の祖先は表示上つねに開く。
       expect(branchPanel.getAttribute('aria-hidden')).to.equal('false');
       expect(branchPanel.hasAttribute('inert')).to.equal(false);
 
       const storedRaw = localStorage.getItem(
         getLayoutSidebarTreeStateStorageKey({
           sidebarId: DEFAULT_LAYOUT_SIDEBAR_ID,
-          sourceId: 'music-library-b',
+          stateScopeId: 'reference-navigation',
         }),
       );
       expect(storedRaw).to.equal(JSON.stringify({ expandedIds: [] }));
+    } finally {
+      media.restore();
+    }
+  });
+
+  it('itemsJson が差し替わっても共通 branch id の展開状態を維持すること', async () => {
+    const media = mockMatchMedia();
+
+    try {
+      await ensureLayoutSidebarDefined();
+
+      localStorage.setItem(
+        getLayoutSidebarTreeStateStorageKey({
+          sidebarId: DEFAULT_LAYOUT_SIDEBAR_ID,
+          stateScopeId: 'note-navigation',
+        }),
+        JSON.stringify({
+          expandedIds: ['music/classical'],
+        } satisfies PersistedLayoutSidebarState),
+      );
+
+      const host = await fixture<LayoutSidebar>(html`
+        <layout-sidebar
+          presentation="overlay"
+          state-scope-id="note-navigation"
+          .itemsJson=${sampleItemsJson}
+          selected-id="music/classical/tchaikovsky/the-nutcracker"
+          heading="ナビゲーション"
+        ></layout-sidebar>
+      `);
+
+      await settle(host);
+
+      host.itemsJson = JSON.stringify([
+        {
+          kind: 'branch',
+          id: 'music',
+          label: 'Music',
+          children: [
+            {
+              kind: 'branch',
+              id: 'music/classical',
+              label: 'Classical',
+              children: [
+                {
+                  kind: 'leaf',
+                  id: 'music/classical/mozart/requiem',
+                  label: 'Requiem',
+                  href: '/notes/music/classical/mozart/requiem',
+                },
+              ],
+            },
+          ],
+        },
+      ]);
+      host.selectedId = 'music/classical/mozart/requiem';
+      await settle(host);
+
+      const branchPanel = expectPresent(
+        getTreeItemChildrenPanel(expectPresent(getFileTree(host), 'ui-file-tree'), 'music/classical'),
+        'music/classical children panel after itemsJson swap',
+      );
+      expect(branchPanel.getAttribute('aria-hidden')).to.equal('false');
+      expect(branchPanel.hasAttribute('inert')).to.equal(false);
     } finally {
       media.restore();
     }

@@ -59,7 +59,8 @@ const renderNoteShell = () =>
                   <aside class="layout-sidebar-col" aria-label="ナビゲーション">
                     <layout-sidebar
                       id="story-note-sidebar"
-                      source-id="story-note-sidebar-source"
+                      state-scope-id="note-navigation"
+                      .itemsJson=${JSON.stringify(sidebarSource)}
                       selected-id="story-shell"
                       heading="ナビゲーション"
                       fixed-breakpoint="1024"
@@ -103,9 +104,6 @@ const renderNoteShell = () =>
                   </aside>
                 </section>
 
-                <script type="application/json" id="story-note-sidebar-source">
-                  ${JSON.stringify(sidebarSource)}
-                </script>
                 <script type="application/json" id="story-note-toc-source">
                   ${JSON.stringify(tocSource)}
                 </script>

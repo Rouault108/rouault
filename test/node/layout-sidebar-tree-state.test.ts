@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { TreeNode } from '../../src/components/ui/file-tree/file-tree.js';
 import {
   LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V2,
+  LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V3,
   collectLayoutSidebarSelectedAncestorIds,
   getLayoutSidebarTreeStateStorageKey,
+  mergeLayoutSidebarTreeState,
   normalizeLayoutSidebarTreeState,
   readLayoutSidebarTreeState,
   writeLayoutSidebarTreeState,
@@ -47,7 +49,7 @@ describe('layout-sidebar-tree-state', () => {
 
   it('Storage へ expandedIds を保存できること', () => {
     const storage = new MockStorage();
-    const scope = { sidebarId: 'note-primary', sourceId: 'notes/program' };
+    const scope = { sidebarId: 'note-primary', stateScopeId: 'note-navigation' };
 
     writeLayoutSidebarTreeState(
       storage,
@@ -64,21 +66,21 @@ describe('layout-sidebar-tree-state', () => {
     );
   });
 
-  it('sidebarId と sourceId ごとに保存キーを分離できること', () => {
+  it('sidebarId と stateScopeId ごとに保存キーを分離できること', () => {
     expect(getLayoutSidebarTreeStateStorageKey()).to.equal(
-      `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V2}:default:global`,
+      `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V3}:default:global`,
     );
     expect(
       getLayoutSidebarTreeStateStorageKey({
         sidebarId: 'note-primary',
-        sourceId: 'notes/program',
+        stateScopeId: 'note-navigation',
       }),
-    ).to.equal(`${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V2}:note-primary:notes/program`);
+    ).to.equal(`${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V3}:note-primary:note-navigation`);
   });
 
   it('Storage から expandedIds を復元できること', () => {
     const storage = new MockStorage();
-    const scope = { sidebarId: 'note-primary', sourceId: 'notes/program' };
+    const scope = { sidebarId: 'note-primary', stateScopeId: 'note-navigation' };
     storage.setItem(
       getLayoutSidebarTreeStateStorageKey(scope),
       JSON.stringify({ expandedIds: ['music', 'music/classical'] }),
@@ -87,6 +89,21 @@ describe('layout-sidebar-tree-state', () => {
     expect(readLayoutSidebarTreeState(storage, scope)).to.deep.equal({
       expandedIds: ['music', 'music/classical'],
     });
+  });
+
+  it('旧 v2 storage key は読まないこと', () => {
+    const storage = new MockStorage();
+    storage.setItem(
+      `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V2}:note-primary:legacy-scope`,
+      JSON.stringify({ expandedIds: ['legacy'] }),
+    );
+
+    expect(
+      readLayoutSidebarTreeState(storage, {
+        sidebarId: 'note-primary',
+        stateScopeId: 'legacy-scope',
+      }),
+    ).to.equal(null);
   });
 
   it('保存値が存在しない場合は null を返すこと', () => {
@@ -148,5 +165,37 @@ describe('layout-sidebar-tree-state', () => {
     expect(selectedAncestors).to.include('music/classical');
     expect(selectedAncestors).to.include('music/classical/beethoven');
     expect(selectedAncestors).to.not.include('music/classical/tchaikovsky');
+  });
+
+  it('selected ancestor の auto-expand は persisted state へ書き戻さないこと', () => {
+    const nodes: readonly TreeNode[] = [
+      {
+        kind: 'branch',
+        id: 'music',
+        label: 'Music',
+        children: [
+          {
+            kind: 'branch',
+            id: 'music/classical',
+            label: 'Classical',
+            children: [
+              {
+                kind: 'leaf',
+                id: 'music/classical/mozart',
+                label: 'Mozart',
+                href: '/notes/music/classical/mozart',
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const persistedExpandedIds: string[] = [];
+    const merged = mergeLayoutSidebarTreeState(nodes, persistedExpandedIds, 'music/classical/mozart');
+
+    expect(merged).to.include('music');
+    expect(merged).to.include('music/classical');
+    expect(persistedExpandedIds).to.deep.equal([]);
   });
 });

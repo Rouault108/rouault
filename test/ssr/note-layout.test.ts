@@ -8,7 +8,7 @@ const createProjection = (
 ): NotePageProjection => {
   const { sidebar, ...rest } = overrides;
   const defaultSidebar: NonNullable<NotePageProjection['sidebar']> = {
-    sourceId: 'sidebar-source-note',
+    stateScopeId: 'note-navigation',
     selectedId: 'note',
     items: [{ kind: 'leaf', id: 'note', label: 'Note', href: '/notes/note' }],
     heading: 'ナビゲーション',
@@ -79,7 +79,7 @@ describe('NoteLayout', () => {
       notePage: createProjection({
         contentHtml: '<p>本文</p><script>console.log("unsafe")</script>',
         sidebar: {
-          sourceId: 'sidebar-source-note',
+          stateScopeId: 'note-navigation',
           selectedId: 'note',
           items: [{ kind: 'leaf', id: 'note', label: '<Unsafe>', href: '/notes/note' }],
           heading: 'ナビゲーション',

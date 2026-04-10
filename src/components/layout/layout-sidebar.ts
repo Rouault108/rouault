@@ -148,8 +148,8 @@ export class LayoutSidebar extends LitElement {
     }
   `;
 
-  @property({ type: String, attribute: 'source-id' })
-  sourceId = '';
+  @property({ type: String, attribute: 'state-scope-id' })
+  stateScopeId = '';
 
   @property({ type: String, attribute: 'selected-id' })
   selectedId: string | null = null;
@@ -187,7 +187,8 @@ export class LayoutSidebar extends LitElement {
     super.connectedCallback();
 
     this._storage = this._resolveStorage();
-    this._loadItemsFromSource();
+    this._reloadItemsFromItemsJson();
+    this._restorePersistedExpandedIds();
     this._initializePresentationStore();
     this._connectPresentationStore();
     this._reflectModeAttribute();
@@ -203,13 +204,16 @@ export class LayoutSidebar extends LitElement {
   }
 
   protected override willUpdate(changedProperties: Map<string, unknown>): void {
+    if (!this.hasUpdated || changedProperties.has('itemsJson')) {
+      this._reloadItemsFromItemsJson();
+    }
+
     if (
       !this.hasUpdated ||
-      changedProperties.has('sourceId') ||
-      changedProperties.has('itemsJson') ||
-      changedProperties.has('selectedId')
+      changedProperties.has('sidebarId') ||
+      changedProperties.has('stateScopeId')
     ) {
-      this._loadItemsFromSource();
+      this._restorePersistedExpandedIds();
     }
   }
 
@@ -305,54 +309,23 @@ export class LayoutSidebar extends LitElement {
     });
   }
 
-  private _loadItemsFromSource(): void {
-    const inlineItems = this._parseItemsJson(this.itemsJson);
-    if (inlineItems !== null) {
-      this._applyItems(inlineItems);
-      return;
-    }
-
-    if (this.sourceId.length === 0) {
-      this._applyItems([]);
-      return;
-    }
-
-    const source = document.getElementById(this.sourceId);
-    if (!(source instanceof HTMLScriptElement)) {
-      this._applyItems([]);
-      return;
-    }
-
-    try {
-      const parsed: unknown = JSON.parse(source.textContent || '[]');
-      if (!Array.isArray(parsed)) {
-        this._applyItems([]);
-        return;
-      }
-      const items = parsed
-        .map((item) => toTreeNode(item))
-        .filter((item): item is TreeNode => item !== null);
-      this._applyItems(items);
-    } catch {
-      this._applyItems([]);
-    }
+  private _reloadItemsFromItemsJson(): void {
+    this._items = this._parseItemsJson(this.itemsJson);
   }
 
-  private _applyItems(items: TreeNode[]): void {
-    this._items = items;
-
+  private _restorePersistedExpandedIds(): void {
     const persistedState = readLayoutSidebarTreeState(this._storage, {
       sidebarId: this._resolveSidebarId(),
-      sourceId: this.sourceId,
+      stateScopeId: this._resolveStateScopeId(),
     });
     const nextExpandedIds = new Set(persistedState?.expandedIds ?? []);
     this._setPersistedExpandedIds(nextExpandedIds);
   }
 
-  private _parseItemsJson(value: string): TreeNode[] | null {
+  private _parseItemsJson(value: string): TreeNode[] {
     const normalized = value.trim();
     if (normalized.length === 0) {
-      return null;
+      return [];
     }
 
     try {
@@ -367,6 +340,11 @@ export class LayoutSidebar extends LitElement {
     } catch {
       return [];
     }
+  }
+
+  private _resolveStateScopeId(): string {
+    const normalized = this.stateScopeId.trim();
+    return normalized.length > 0 ? normalized : 'global';
   }
 
   private _resolveStorage(): Storage | null {
@@ -416,7 +394,7 @@ export class LayoutSidebar extends LitElement {
       },
       {
         sidebarId: this._resolveSidebarId(),
-        sourceId: this.sourceId,
+        stateScopeId: this._resolveStateScopeId(),
       },
     );
   };

@@ -36,7 +36,7 @@ const toNumber = (value: string | null, fallback: number): number => {
 export const readSidebarShellSnapshot = (sidebar: Element): SidebarShellSnapshot => ({
   present: true,
   sidebarId: toTrimmedString(sidebar.getAttribute('sidebar-id'), DEFAULT_LAYOUT_SIDEBAR_ID),
-  sourceId: toTrimmedString(sidebar.getAttribute('source-id')),
+  stateScopeId: toTrimmedString(sidebar.getAttribute('state-scope-id')),
   selectedId: toOptionalString(sidebar.getAttribute('selected-id')),
   heading: toTrimmedString(sidebar.getAttribute('heading'), 'ナビゲーション'),
   fixedBreakpoint: toNumber(sidebar.getAttribute('fixed-breakpoint'), 1024),
@@ -88,7 +88,7 @@ export const applySidebarSnapshot = (
     return;
   }
 
-  currentSidebar.setAttribute('source-id', snapshot.sourceId);
+  currentSidebar.setAttribute('state-scope-id', snapshot.stateScopeId);
 
   if (snapshot.selectedId === null) {
     currentSidebar.removeAttribute('selected-id');

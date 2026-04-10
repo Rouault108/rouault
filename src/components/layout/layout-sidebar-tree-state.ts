@@ -2,6 +2,7 @@ import type { TreeNode } from '../ui/file-tree/file-tree.js';
 
 export const LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY = 'rouault.sidebar.tree-state.v1';
 export const LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V2 = 'rouault.sidebar.tree-state.v2';
+export const LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V3 = 'rouault.sidebar.tree-state.v3';
 
 export interface LayoutSidebarTreeState {
   expandedIds: string[];
@@ -9,7 +10,7 @@ export interface LayoutSidebarTreeState {
 
 export interface LayoutSidebarTreeStateScope {
   sidebarId?: string | null;
-  sourceId?: string | null;
+  stateScopeId?: string | null;
 }
 
 const normalizeScopePart = (value: string | null | undefined, fallback: string): string => {
@@ -25,8 +26,8 @@ export const getLayoutSidebarTreeStateStorageKey = (
   scope: LayoutSidebarTreeStateScope = {},
 ): string => {
   const sidebarId = normalizeScopePart(scope.sidebarId, 'default');
-  const sourceId = normalizeScopePart(scope.sourceId, 'global');
-  return `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V2}:${sidebarId}:${sourceId}`;
+  const stateScopeId = normalizeScopePart(scope.stateScopeId, 'global');
+  return `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V3}:${sidebarId}:${stateScopeId}`;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

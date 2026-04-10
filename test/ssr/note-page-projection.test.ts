@@ -128,6 +128,7 @@ describe('buildNotePageProjection', () => {
     ]);
 
     expect(projection.sidebar?.selectedId).toBe('music/classical/mozart');
+    expect(projection.sidebar?.stateScopeId).toBe('note-navigation');
     expect(JSON.stringify(projection.sidebar?.items ?? [])).toContain(
       '"id":"music","label":"Music","icon":"book-open"',
     );

@@ -91,7 +91,7 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
     ...(showSidebar
       ? {
           sidebar: {
-            sourceId: `sidebar-source-${dataId}`,
+            stateScopeId: 'note-navigation',
             selectedId: note.slug,
             items: [
               { kind: 'leaf', id: note.slug, label: note.title, href: `/notes/${note.slug}` },

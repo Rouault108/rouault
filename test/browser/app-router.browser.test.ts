@@ -485,7 +485,7 @@ describe('app-router', () => {
         <app-router data-sidebar-presence="present">
           <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
             <layout-sidebar
-              source-id="source-a"
+              state-scope-id="note-navigation"
               selected-id="notes/old"
               items-json='[{"kind":"leaf","id":"notes/old","label":"Old","href":"/notes/old"}]'
               heading="ナビゲーション"
@@ -520,7 +520,7 @@ describe('app-router', () => {
                 <app-router data-sidebar-presence="present">
                   <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
                     <layout-sidebar
-                      source-id="source-a"
+                      state-scope-id="note-navigation"
                       selected-id="notes/new"
                       items-json='[{"kind":"leaf","id":"notes/new","label":"New","href":"/notes/new"}]'
                       heading="新しいナビゲーション"
@@ -548,7 +548,7 @@ describe('app-router', () => {
     const currentSidebar = getPersistentSidebarHost(shell);
     expect(currentSidebar).to.equal(initialSidebar);
     expect(currentSidebar?.getAttribute('selected-id')).to.equal('notes/new');
-    expect(currentSidebar?.getAttribute('source-id')).to.equal('source-a');
+    expect(currentSidebar?.getAttribute('state-scope-id')).to.equal('note-navigation');
     expect(currentSidebar?.getAttribute('heading')).to.equal('新しいナビゲーション');
     expect(currentSidebar?.getAttribute('fixed-breakpoint')).to.equal('1440');
     expect(currentSidebar?.getAttribute('presentation')).to.equal('fixed');
@@ -562,7 +562,7 @@ describe('app-router', () => {
         <app-router data-sidebar-presence="present">
           <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
             <layout-sidebar
-              source-id="source-a"
+              state-scope-id="note-navigation"
               selected-id="notes/old"
               items-json='[{"kind":"leaf","id":"notes/old","label":"Old","href":"/notes/old"}]'
               heading="ナビゲーション"
@@ -630,7 +630,7 @@ describe('app-router', () => {
         <app-router data-sidebar-presence="present">
           <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
             <layout-sidebar
-              source-id="source-a"
+              state-scope-id="note-navigation"
               selected-id="notes/old"
               items-json='[{"kind":"leaf","id":"notes/old","label":"Old","href":"/notes/old"}]'
               heading="古いナビゲーション"
@@ -662,7 +662,7 @@ describe('app-router', () => {
     Object.defineProperty(sidebar, 'setAttribute', {
       configurable: true,
       value(name: string, value: string) {
-        if (shouldThrow && name === 'source-id') {
+        if (shouldThrow && name === 'state-scope-id') {
           shouldThrow = false;
           throw new Error('sidebar commit failed');
         }
@@ -683,7 +683,7 @@ describe('app-router', () => {
                 <app-router data-sidebar-presence="present">
                   <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
                     <layout-sidebar
-                      source-id="source-b"
+                      state-scope-id="reference-navigation"
                       selected-id="notes/new"
                       items-json='[{"kind":"leaf","id":"notes/new","label":"New","href":"/notes/new"}]'
                       heading="新しいナビゲーション"
@@ -715,7 +715,7 @@ describe('app-router', () => {
     expect(result.renderedKind).to.equal(null);
     expect(appHost.getAttribute('data-sidebar-presence')).to.equal('present');
     expect(currentSidebarColumn?.hidden).to.equal(false);
-    expect(currentSidebar?.getAttribute('source-id')).to.equal('source-a');
+    expect(currentSidebar?.getAttribute('state-scope-id')).to.equal('note-navigation');
     expect(currentSidebar?.getAttribute('selected-id')).to.equal('notes/old');
     expect(currentSidebar?.getAttribute('items-json')).to.equal(
       '[{"kind":"leaf","id":"notes/old","label":"Old","href":"/notes/old"}]',

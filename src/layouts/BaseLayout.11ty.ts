@@ -92,7 +92,7 @@ const normalizeClientBundle = (
 
 const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar']>): string =>
   serializeHtmlAttributes([
-    { name: 'source-id', value: sidebar.sourceId },
+    { name: 'state-scope-id', value: sidebar.stateScopeId },
     { name: 'selected-id', value: sidebar.selectedId },
     { name: 'items-json', value: sidebar.items, kind: 'json' },
     { name: 'heading', value: sidebar.heading },

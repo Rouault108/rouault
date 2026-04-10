@@ -39,9 +39,15 @@ tree state の source of truth は
 
 この state が所有するもの:
 
-- `expandedIds`
-- selected note の ancestor 展開
+- 手動操作で確定した `expandedIds`
+- `selectedId` から導く ancestor 展開
 - tree 展開状態の永続化
+
+この state の内部原則:
+
+- persisted state の scope は `sidebarId + stateScopeId`
+- note sidebar の items 供給源は `items-json` のみ
+- `selectedId` の ancestor 展開は render 時の導出値であり、persisted state へ書き戻さない
 
 ## 3. ownership boundary
 
@@ -68,8 +74,9 @@ tree state の source of truth は
 
 持ってよい責務:
 
-- items 読み込み
-- tree state の読み書き
+- `items-json` からの items 読み込み
+- `state-scope-id` に基づく tree state の読み書き
+- `selectedId` 変更時の ancestor auto-expand 導出
 - presentation store snapshot の反映
 
 持ってはいけない責務:
@@ -77,6 +84,7 @@ tree state の source of truth は
 - overlay state の ownership
 - breakpoint 判定ロジック
 - header 相当の open / close policy の決定
+- `selectedId` 変更時の localStorage 再読込
 
 ### 3.3 `ui-sidebar` / `ui-sidebar-shell`
 
@@ -110,6 +118,24 @@ app shell 上の sidebar host は 1 実体だけです。
 - `NoteLayout` は本文と TOC のみを描画し、`<layout-sidebar>` を本文内へ出力しない
 - fixed / overlay の二重 custom element を出力しない
 - `.layout-sidebar-col` は DOM 上に常に 1 本だけ存在する
+
+note sidebar の public DOM 契約は次を正本とします。
+
+- `items-json`
+- `state-scope-id`
+- `selected-id`
+- `sidebar-id`
+- `heading`
+- `fixed-breakpoint`
+- `presentation`
+
+`source-id` は note sidebar の public contract に含めません。
+
+補足:
+
+- note 間遷移では `state-scope-id="note-navigation"` を維持する
+- route 遷移で変わるのは `selected-id` と `items-json` を主とする現在位置・表示内容だけである
+- sidebar host の DOM 実体は app shell 上で再生成しない
 
 ## 7. 受け入れ条件
 
