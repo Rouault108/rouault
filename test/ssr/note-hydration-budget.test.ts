@@ -141,7 +141,11 @@ const renderNotePage = (slug: string): CountedNotePage => {
     throw new Error(`note "${slug}" が見つかりません`);
   }
 
-  const rendered = layout.render({ notePage: buildProjection(note) });
+  const notePage = buildProjection(note);
+  const sidebar = notePage.showSidebar && notePage.sidebar
+    ? '<layout-sidebar data-hydration-capability="interactive" data-hydration-trigger="initial"></layout-sidebar>'
+    : '';
+  const rendered = `${sidebar}${layout.render({ notePage })}`;
   return {
     slug,
     counts: countHydrationTriggers(rendered),
