@@ -22,6 +22,7 @@ interface SyncableTocElement extends HTMLElement {
   refresh?: () => void;
   requestUpdate?: () => void;
   applyHostState?: (state: UiTocHostState) => void;
+  updateComplete?: Promise<unknown>;
 }
 
 const hasSameHeadingIds = (left: readonly Heading[], right: readonly Heading[]): boolean =>
@@ -596,6 +597,9 @@ export class LayoutToc extends LitElement {
         });
       });
 
+      const tocs = this._collectSyncableTocs();
+      await this._awaitSyncableTocsUpdateComplete(tocs);
+
       this._renderedTocSyncScheduled = false;
       this._syncRenderedTocProps();
     })();
@@ -619,6 +623,42 @@ export class LayoutToc extends LitElement {
     return tocs;
   }
 
+  private async _awaitSyncableTocsUpdateComplete(
+    tocs: readonly SyncableTocElement[],
+  ): Promise<void> {
+    await Promise.all(
+      tocs.map(async (toc) => {
+        try {
+          await toc.updateComplete;
+        } catch {
+          // child 側の updateComplete 非対応や例外は retry 側で吸収する
+        }
+      }),
+    );
+  }
+
+  private _hasRenderedActiveDom(
+    toc: SyncableTocElement,
+    expectedActiveId: string,
+  ): boolean {
+    if (expectedActiveId.length === 0) {
+      return true;
+    }
+
+    const root = toc.shadowRoot;
+    if (!(root instanceof ShadowRoot)) {
+      return false;
+    }
+
+    const activeLink = root.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
+    if (!(activeLink instanceof HTMLAnchorElement)) {
+      return false;
+    }
+
+    const label = activeLink.querySelector<HTMLElement>('.toc-link-label');
+    return (label?.textContent.trim().length ?? 0) > 0;
+  }
+
   private _syncRenderedTocProps(): void {
     if (!this._hydrationActivated) {
       return;
@@ -640,7 +680,12 @@ export class LayoutToc extends LitElement {
 
     const state = this._createTocHostState(this._visibleHeadings);
     const tocs = this._collectSyncableTocs();
+
     if (tocs.length === 0) {
+      if (this._renderedTocSyncRetryCount < 8) {
+        this._renderedTocSyncRetryCount += 1;
+        this._scheduleRenderedTocSync();
+      }
       return;
     }
 
@@ -666,9 +711,15 @@ export class LayoutToc extends LitElement {
         toc.refresh?.();
         needsRetry = true;
       }
+
+      if (!this._hasRenderedActiveDom(toc, state.activeId)) {
+        toc.requestUpdate?.();
+        toc.refresh?.();
+        needsRetry = true;
+      }
     }
 
-    if (needsRetry && this._renderedTocSyncRetryCount < 4) {
+    if (needsRetry && this._renderedTocSyncRetryCount < 8) {
       this._renderedTocSyncRetryCount += 1;
       this._scheduleRenderedTocSync();
       return;

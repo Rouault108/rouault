@@ -192,8 +192,8 @@ const collectReferencedSourcePaths = async (): Promise<string[]> => {
   return [...references].sort();
 };
 
-const buildPlaceholder = async (sourcePath: string): Promise<string | undefined> => {
-  const pixel = await sharp(sourcePath).resize(1, 1, { fit: 'cover' }).raw().toBuffer();
+const buildPlaceholder = async (fileBuffer: Buffer): Promise<string | undefined> => {
+  const pixel = await sharp(fileBuffer).resize(1, 1, { fit: 'cover' }).raw().toBuffer();
   if (pixel.length < 3) {
     return undefined;
   }
@@ -203,7 +203,7 @@ const buildPlaceholder = async (sourcePath: string): Promise<string | undefined>
 };
 
 const createVariantOutputs = async (
-  sourcePath: string,
+  fileBuffer: Buffer,
   hash: string,
   variantName: VariantName,
   definition: VariantDefinition,
@@ -216,17 +216,17 @@ const createVariantOutputs = async (
   for (const format of definition.formats) {
     const outputFileName = `${variantName}.${EXTENSION_BY_FORMAT[format]}`;
     const outputPath = path.join(variantDirectory, outputFileName);
-    const pipeline = sharp(sourcePath).rotate().resize({
+    const pipeline = sharp(fileBuffer).rotate().resize({
       width: definition.width,
       withoutEnlargement: true,
     });
 
     if (format === 'avif') {
-      await pipeline.avif({ quality: 50 }).toFile(outputPath);
+      await pipeline.avif({ quality: 50, effort: 0 }).toFile(outputPath);
     } else if (format === 'webp') {
-      await pipeline.webp({ quality: 72 }).toFile(outputPath);
+      await pipeline.webp({ quality: 72, effort: 0 }).toFile(outputPath);
     } else {
-      await pipeline.jpeg({ quality: 80, mozjpeg: true }).toFile(outputPath);
+      await pipeline.jpeg({ quality: 80 }).toFile(outputPath);
     }
 
     const outputStat = await stat(outputPath);
@@ -254,14 +254,14 @@ const buildManifestItem = async (
     throw new Error(`[media] 画像サイズを取得できません: ${sourcePath}`);
   }
 
-  const placeholder = await buildPlaceholder(absolutePath);
+  const placeholder = await buildPlaceholder(fileBuffer);
   const variants = await Promise.all(
     (Object.entries(VARIANT_DEFINITIONS) as [VariantName, VariantDefinition][]).map(
       async ([variantName, definition]): Promise<[VariantName, MediaVariantEntry]> => [
         variantName,
         {
           outputs: await createVariantOutputs(
-            absolutePath,
+            fileBuffer,
             hash,
             variantName,
             definition,

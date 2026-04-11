@@ -171,4 +171,60 @@ describe('TocActiveTracker', () => {
     tracker.destroy();
     document.documentElement.style.removeProperty('--header-height');
   });
+
+  it('静的 TOC では mutation 中の一時的な heading 不在で visible headings を空に戻さないこと', async () => {
+    document.body.innerHTML = `
+      <article id="content-root">
+        <h2 id="section-1">Section 1</h2>
+        <h2 id="section-2">Section 2</h2>
+      </article>
+    `;
+
+    const contentRoot = document.getElementById('content-root');
+    if (!(contentRoot instanceof HTMLElement)) {
+      throw new Error('content-root の fixture 構築に失敗しました。');
+    }
+
+    const headings: Heading[] = [
+      { id: 'section-1', text: 'Section 1', level: 2 },
+      { id: 'section-2', text: 'Section 2', level: 2 },
+    ];
+
+    const snapshots: string[][] = [];
+    const tracker = new TocActiveTracker({
+      contentRootId: 'content-root',
+      headings,
+      capabilities: {
+        activeTracking: false,
+        dynamicScopes: false,
+        mobileSummary: false,
+      },
+      getActiveId: () => 'section-1',
+      onVisibleHeadingsChange: (visibleHeadings) => {
+        snapshots.push(visibleHeadings.map((heading) => heading.id));
+      },
+      onActiveIdChange: () => undefined,
+    });
+
+    tracker.start();
+    expect(snapshots.at(-1)).to.deep.equal(['section-1', 'section-2']);
+
+    contentRoot.replaceChildren(document.createElement('p'));
+    await waitForRefresh();
+
+    expect(snapshots.at(-1)).to.deep.equal(['section-1', 'section-2']);
+
+    const restoredFirstHeading = document.createElement('h2');
+    restoredFirstHeading.id = 'section-1';
+    restoredFirstHeading.textContent = 'Section 1';
+    const restoredSecondHeading = document.createElement('h2');
+    restoredSecondHeading.id = 'section-2';
+    restoredSecondHeading.textContent = 'Section 2';
+    contentRoot.replaceChildren(restoredFirstHeading, restoredSecondHeading);
+
+    await waitForRefresh();
+    expect(snapshots.at(-1)).to.deep.equal(['section-1', 'section-2']);
+
+    tracker.destroy();
+  });
 });

@@ -53,6 +53,7 @@ export class TocActiveTracker {
   private _viewportSyncScheduled = false;
   private _initialRefreshTimer: number | null = null;
   private _initialViewportSyncFrame: number | null = null;
+  private _pendingEmptyVisibleHeadingsTimer: number | null = null;
 
   constructor(options: TocActiveTrackerOptions) {
     this._contentRootId = options.contentRootId;
@@ -129,6 +130,11 @@ export class TocActiveTracker {
       cancelAnimationFrame(this._initialViewportSyncFrame);
       this._initialViewportSyncFrame = null;
     }
+
+    if (this._pendingEmptyVisibleHeadingsTimer !== null) {
+      clearTimeout(this._pendingEmptyVisibleHeadingsTimer);
+      this._pendingEmptyVisibleHeadingsTimer = null;
+    }
   }
 
   refresh(): void {
@@ -146,10 +152,40 @@ export class TocActiveTracker {
         ? filterHeadingsByScopeSelections(this._allHeadings, readTocScopeSelectionMap(contentRoot))
         : this._allHeadings;
 
-    this._visibleHeadings = contentRoot
+    const nextVisibleHeadings = contentRoot
       ? filterVisibleHeadings(contentRoot, scopedHeadings)
       : scopedHeadings;
-    this._onVisibleHeadingsChange(this._visibleHeadings);
+
+    if (
+      contentRoot &&
+      !this._capabilities.dynamicScopes &&
+      nextVisibleHeadings.length === 0 &&
+      this._visibleHeadings.length > 0 &&
+      scopedHeadings.length > 0
+    ) {
+      /*
+       * hydration / post-commit 中は heading 要素が一瞬だけ差し替えられ、
+       * filterVisibleHeadings() が空配列を返すことがある。
+       * ここで TOC を即座に空描画へ戻すと current 同期が途切れるため、
+       * 静的 heading 集合では短時間だけ直前値を維持し、空状態の確定を遅延させる。
+       */
+      this._pendingEmptyVisibleHeadingsTimer ??= window.setTimeout(() => {
+        this._pendingEmptyVisibleHeadingsTimer = null;
+        this._visibleHeadings = [];
+        this._onVisibleHeadingsChange([]);
+        if (this._getActiveId().length > 0) {
+          this._onActiveIdChange('');
+        }
+      }, 80);
+      return;
+    } else {
+      if (this._pendingEmptyVisibleHeadingsTimer !== null) {
+        clearTimeout(this._pendingEmptyVisibleHeadingsTimer);
+        this._pendingEmptyVisibleHeadingsTimer = null;
+      }
+      this._visibleHeadings = nextVisibleHeadings;
+      this._onVisibleHeadingsChange(this._visibleHeadings);
+    }
 
     const currentActiveId = this._getActiveId();
     if (currentActiveId.length === 0) {

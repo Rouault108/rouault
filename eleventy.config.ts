@@ -10,11 +10,7 @@ import { loadHomeData } from './src/data/home.js';
 import { loadClientBundleData } from './src/data/clientBundle.js';
 import { loadBuildMetadataData } from './src/data/buildMetadata.js';
 import { createStaticDirectoryMiddleware } from './build/dev/dev-static-directory.js';
-import { emitNavigationArtifacts } from './build/navigation/emit-navigation-artifacts.js';
-import {
-  emitSearchArtifacts,
-  renderSearchCatalogArtifact,
-} from './build/search/emit-search-artifacts.js';
+import { renderSearchCatalogArtifact } from './build/search/emit-search-artifacts.js';
 import { hasExternalMediaBaseUrl } from './build/media/media-base-url.js';
 import { resolveBuildLabel } from './build/metadata/build-metadata.js';
 import { resolveTrailingSlashRewrite } from './shared/navigation/trailing-slash-rewrite.js';
@@ -115,6 +111,15 @@ const registerSearchCatalogMiddleware = (server: ViteDevServer): void => {
   });
 };
 
+const copyStaticHostingArtifacts = async (): Promise<void> => {
+  const distDir = path.resolve(process.cwd(), 'dist');
+
+  await Promise.all([
+    copyFile(path.resolve(process.cwd(), '_headers'), path.join(distDir, '_headers')),
+    copyFile(path.resolve(process.cwd(), '_redirects'), path.join(distDir, '_redirects')),
+  ]);
+};
+
 /**
  * Velite と Vite を組み合わせた 11ty の設定。
  */
@@ -175,22 +180,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   });
 
   eleventyConfig.on('eleventy.after', async () => {
-    for (const [source, target] of [
-      ['_redirects', 'dist/_redirects'],
-      ['_headers', 'dist/_headers'],
-    ] as const) {
-      await copyFile(path.resolve(process.cwd(), source), path.resolve(process.cwd(), target));
-    }
-
-    await emitNavigationArtifacts({
-      outputDir: path.resolve(process.cwd(), 'dist'),
-      buildId: resolveBuildLabel(),
-    });
-
-    await emitSearchArtifacts({
-      notes: loadNotesData(),
-      outputDir: path.resolve(process.cwd(), 'dist'),
-    });
+    await copyStaticHostingArtifacts();
   });
 
   if (isServing) {

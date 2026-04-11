@@ -5,6 +5,10 @@
    ============================================================ */
 
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) {
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  box-sizing: border-box;
   margin: 0;
   border: none;
   background: transparent !important;
@@ -78,6 +82,7 @@
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) code {
   display: inline-block;
   min-inline-size: 100%;
+  max-inline-size: none;
   background: transparent !important;
 
   /* UA の code { font-family: monospace; } を打ち消し、

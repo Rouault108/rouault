@@ -285,6 +285,102 @@ export const buildNotesCollection = (
   notes: readonly SourceNote[],
   contentRoot: string,
 ): IntrinsicNotesCollection => {
+  const configCache = new Map<string, NoteDirectoryConfig | null>();
+  const fileExistenceCache = new Map<string, boolean>();
+
+  // 同一投影中に同じディレクトリ設定を繰り返し参照するため、同期 I/O を局所的にメモ化する。
+  const readCachedConfig = (dirPath: string): NoteDirectoryConfig | undefined => {
+    const cached = configCache.get(dirPath);
+    if (cached !== undefined) {
+      return cached === null ? undefined : cached;
+    }
+
+    const loaded = readConfig(dirPath);
+    configCache.set(dirPath, loaded ?? null);
+    return loaded;
+  };
+
+  // slug 正規化や sidebar 解決で同じパスの存在確認を繰り返すため、投影中だけ共有する。
+  const hasFile = (filePath: string): boolean => {
+    const cached = fileExistenceCache.get(filePath);
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    const exists = existsSync(filePath);
+    fileExistenceCache.set(filePath, exists);
+    return exists;
+  };
+
+  const calculateCachedSortIndex = (slug: string): number => {
+    const parts = slug.split('/');
+    const fileName = `${parts[parts.length - 1] ?? ''}.md`;
+    const dirParts = parts.slice(0, -1);
+    let sortIndex = 0;
+
+    for (let depth = 0; depth <= dirParts.length; depth += 1) {
+      const currentDirParts = dirParts.slice(0, depth);
+      const currentDir = join(contentRoot, ...currentDirParts);
+      const config = readCachedConfig(currentDir);
+      const targetName = depth < dirParts.length ? dirParts[depth] : fileName;
+      const order = config?.order ?? [];
+      const orderIndex = typeof targetName === 'string' ? order.indexOf(targetName) : -1;
+
+      sortIndex = orderIndex >= 0 ? sortIndex * 1000 + orderIndex : sortIndex * 1000 + 500;
+    }
+
+    return sortIndex;
+  };
+
+  const collectCachedSidebarScopeRules = (slug: string): SidebarScopeRule[] => {
+    const parts = slug.split('/');
+    const dirParts = parts.slice(0, -1);
+    const rules: SidebarScopeRule[] = [];
+
+    for (let depth = 0; depth <= dirParts.length; depth += 1) {
+      const currentDirParts = dirParts.slice(0, depth);
+      const currentDir = join(contentRoot, ...currentDirParts);
+      const scope = readCachedConfig(currentDir)?.sidebar?.scope;
+
+      if (scope === 'global' || scope === 'self') {
+        rules.push({
+          directoryPath: currentDirParts.join('/'),
+          scope: scope as SidebarScope,
+        });
+      }
+    }
+
+    return rules;
+  };
+
+  const resolveCachedSidebarIconContext = (
+    slug: string,
+  ): { directoryIcons: Record<string, IconName> } => {
+    const parts = slug.split('/');
+    const dirParts = parts.slice(0, -1);
+    const directoryIcons: Record<string, IconName> = {};
+    let inheritedSetting: SidebarIconSetting | undefined =
+      readCachedConfig(contentRoot)?.sidebar?.icon;
+
+    for (let depth = 0; depth < dirParts.length; depth += 1) {
+      const currentDirParts = dirParts.slice(0, depth + 1);
+      const currentDir = join(contentRoot, ...currentDirParts);
+      const currentPath = currentDirParts.join('/');
+      const configuredSetting = readCachedConfig(currentDir)?.sidebar?.icon;
+
+      if (configuredSetting !== undefined) {
+        inheritedSetting = configuredSetting;
+      }
+
+      const resolvedIcon = resolveDirectorySidebarIcon(inheritedSetting);
+      if (resolvedIcon !== undefined) {
+        directoryIcons[currentPath] = resolvedIcon;
+      }
+    }
+
+    return { directoryIcons };
+  };
+
   const enriched = notes
     .filter((note): note is SourceNote & { slug: string } => {
       return typeof note.slug === 'string' && note.slug.trim().length > 0;
@@ -294,17 +390,17 @@ export const buildNotesCollection = (
       const normalizedSlug = inputSlug.replace(/^\/+|\/+$/gu, '');
       const pathInfo = normalizeNotePath({
         requestedSlug: inputSlug,
-        hasLeaf: existsSync(join(contentRoot, `${normalizedSlug}.md`)),
-        hasDirectoryIndex: existsSync(join(contentRoot, normalizedSlug, 'index.md')),
+        hasLeaf: hasFile(join(contentRoot, `${normalizedSlug}.md`)),
+        hasDirectoryIndex: hasFile(join(contentRoot, normalizedSlug, 'index.md')),
       });
       const sourceSlug = pathInfo.rawSlug;
       const kind = normalizeNoteContentKind(note.kind);
       const testingArea = normalizeTestingArea(note.testingArea);
       const preparedToc = prepareTocHtml(typeof note.content === 'string' ? note.content : '');
 
-      const sidebarRoot = resolveSidebarRoot(collectSidebarScopeRules(sourceSlug, contentRoot));
+      const sidebarRoot = resolveSidebarRoot(collectCachedSidebarScopeRules(sourceSlug));
       const sidebarIconSetting = note.sidebarIcon;
-      const sidebarIconContext = resolveSidebarIconContext(sourceSlug, contentRoot);
+      const sidebarIconContext = resolveCachedSidebarIconContext(sourceSlug);
 
       const inheritedDirectoryIcon = (() => {
         const values = Object.values(sidebarIconContext.directoryIcons);
@@ -326,7 +422,7 @@ export const buildNotesCollection = (
         permalink: pathInfo.permalink,
         noteKind: pathInfo.kind,
         ...(pathInfo.directoryPath !== undefined ? { directoryPath: pathInfo.directoryPath } : {}),
-        sortIndex: calculateSortIndex(sourceSlug, contentRoot),
+        sortIndex: calculateCachedSortIndex(sourceSlug),
         tocHeadings: preparedToc.headings,
         tocCapabilities: inferTocCapabilities(preparedToc.headings, kind),
         ...(sidebarRoot !== undefined ? { sidebarRoot } : {}),
