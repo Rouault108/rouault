@@ -1,4 +1,5 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
+import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
 import {
   Router,
   RouterDestroyedError,
@@ -30,6 +31,41 @@ function simulateClick(element: HTMLElement, options: MouseEventInit = {}): void
   tempSpan?.remove();
 }
 
+function createNavigationEnvelopeResponse({
+  html,
+  title,
+  description = null,
+  renderedKind = 'page',
+}: {
+  html: string;
+  title: string;
+  description?: string | null;
+  renderedKind?: 'page' | 'not-found' | 'error';
+}): Response {
+  return new Response(
+    JSON.stringify({
+      schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
+      buildId: null,
+      generatedAt: null,
+      document: {
+        html,
+        title,
+        description,
+        renderedKind,
+        announcedTitle: title,
+      },
+      shellProjection: null,
+      hydrationPlan: null,
+    }),
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    },
+  );
+}
+
 describe('Router', () => {
   let outlet: HTMLElement;
   let router: Router | null = null;
@@ -48,12 +84,10 @@ describe('Router', () => {
     originalFetch = globalThis.fetch;
     globalThis.fetch = () =>
       Promise.resolve(
-        new Response(
-          '<html><head><title>Default</title></head><body><main>Default Mock</main></body></html>',
-          {
-            status: 200,
-          },
-        ),
+        createNavigationEnvelopeResponse({
+          title: 'Default',
+          html: '<main>Default Mock</main>',
+        }),
       );
 
     originalPushState = history.pushState.bind(history);
@@ -128,14 +162,7 @@ describe('Router', () => {
     let fetchCount = 0;
     globalThis.fetch = () => {
       fetchCount += 1;
-      return Promise.resolve(
-        new Response(
-          '<html><head><title>Init</title></head><body><main>Init</main></body></html>',
-          {
-            status: 200,
-          },
-        ),
-      );
+      return Promise.resolve(createNavigationEnvelopeResponse({ title: 'Init', html: '<main>Init</main>' }));
     };
 
     router = new Router(outlet);
@@ -228,11 +255,7 @@ describe('Router', () => {
     let observedSearchValues: string[] = [];
     globalThis.fetch = () => {
       fetchCalled = true;
-      return Promise.resolve(
-        new Response('<html><body><main>Fetched</main></body></html>', {
-          status: 200,
-        }),
-      );
+      return Promise.resolve(createNavigationEnvelopeResponse({ title: 'Fetched', html: '<main>Fetched</main>' }));
     };
 
     router = new Router(outlet, { skipInitialNavigation: true });
@@ -302,16 +325,10 @@ describe('Router', () => {
 
     globalThis.fetch = () =>
       Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head><title>Shell Failure Candidate</title></head>
-              <body><main><h1>Shell Failure Candidate</h1></main></body>
-            </html>
-          `,
-          { status: 200 },
-        ),
+        createNavigationEnvelopeResponse({
+          title: 'Shell Failure Candidate',
+          html: '<main><h1>Shell Failure Candidate</h1></main>',
+        }),
       );
 
     let shellRollbackCalled = false;
@@ -421,8 +438,9 @@ describe('Router', () => {
     globalThis.fetch = () => {
       fetchCalled = true;
       return Promise.resolve(
-        new Response('<html><body><main>Should Not Fetch</main></body></html>', {
-          status: 200,
+        createNavigationEnvelopeResponse({
+          title: 'Should Not Fetch',
+          html: '<main>Should Not Fetch</main>',
         }),
       );
     };
@@ -518,8 +536,9 @@ describe('Router', () => {
 
     await waitUntil(() => busyStates.length > 0, 'busy 状態が true になること');
     resolveResponse?.(
-      new Response('<html><head><title>Slow</title></head><body><main>Slow</main></body></html>', {
-        status: 200,
+      createNavigationEnvelopeResponse({
+        title: 'Slow',
+        html: '<main>Slow</main>',
       }),
     );
     await navigationPromise;
