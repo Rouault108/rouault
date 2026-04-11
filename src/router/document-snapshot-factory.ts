@@ -8,7 +8,7 @@ export class DocumentContractViolationError extends Error {
 }
 
 export class DocumentSnapshotFactory {
-  async create(documentSnapshot: Document): Promise<DocumentSnapshot> {
+  create(documentSnapshot: Document): DocumentSnapshot {
     const contentRoot = this.resolveContentRoot(documentSnapshot);
 
     return {

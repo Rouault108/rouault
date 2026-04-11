@@ -153,17 +153,17 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
     schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
     buildId:
       value['buildId'] === undefined || value['buildId'] === null || isString(value['buildId'])
-        ? (value['buildId'] as string | null | undefined)
+        ? (value['buildId'])
         : null,
     generatedAt:
       value['generatedAt'] === undefined ||
       value['generatedAt'] === null ||
       isString(value['generatedAt'])
-        ? (value['generatedAt'] as string | null | undefined)
+        ? (value['generatedAt'])
         : null,
     document: value['document'],
     shellProjection: (value['shellProjection'] as ShellProjectionSnapshot | null | undefined) ?? null,
     hydrationPlan:
-      (value['hydrationPlan'] as HydrationPlan | null | undefined) ?? null,
+      (value['hydrationPlan']) ?? null,
   };
 };
