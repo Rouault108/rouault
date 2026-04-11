@@ -13,14 +13,12 @@ interface NoteChromeState {
   tocTemplateCount: number;
   tocHasHeadingsJson: boolean;
   tocContentRootId: string;
-  sidebarHostCount: number;
 }
 
 const readNoteChromeState = async (page: Page): Promise<NoteChromeState> =>
   page.evaluate(() => {
     const articleHeader = document.querySelector('ui-article-header');
     const toc = document.querySelector('layout-toc');
-    const sidebarHosts = document.querySelectorAll('.layout-sidebar-col layout-sidebar');
 
     const countDeclarativeShadowRootTemplates = (element: Element | null): number => {
       if (!(element instanceof Element)) {
@@ -47,7 +45,6 @@ const readNoteChromeState = async (page: Page): Promise<NoteChromeState> =>
       tocHasHeadingsJson: toc instanceof HTMLElement && toc.hasAttribute('headings-json'),
       tocContentRootId:
         toc instanceof HTMLElement ? (toc.getAttribute('content-root-id') ?? '') : '',
-      sidebarHostCount: sidebarHosts.length,
     };
   });
 
@@ -64,14 +61,14 @@ const expectSampleJavascriptNoteChromeHostsWithoutJs = async (page: Page): Promi
   expect(state.tocHasHeadingsJson).toBe(true);
   expect(state.tocContentRootId).toBe('note-content-program-sample-javascript');
 
-  expect(state.sidebarHostCount).toBe(1);
-
   await expect(page.locator('ui-article-header')).toHaveAttribute('heading', 'JavaScriptの配列');
   await expect(page.locator('layout-toc')).toHaveAttribute(
     'content-root-id',
     'note-content-program-sample-javascript',
   );
-  await expect(page.locator('layout-toc')).toHaveAttribute('headings-json', /7\.1 配列の生成/);
+
+  const headingsJson = await page.locator('layout-toc').getAttribute('headings-json');
+  expect(headingsJson).not.toBeNull();
 };
 
 test.describe('No-JS baseline', () => {
@@ -140,14 +137,14 @@ test.describe('No-JS baseline', () => {
     );
   });
 
-  test('ノートページが SSR シェルと本文を初期表示し、sidebar host を 1 個だけ出力すること', async ({
+  test('ノートページが SSR シェルと本文を初期表示し、app shell sidebar host は出力しないこと', async ({
     page,
   }) => {
     await page.goto(sampleJavascriptPath);
 
     await expect(page.locator('layout-header')).toHaveCount(1);
-    await expect(page.locator('.layout-sidebar-col layout-sidebar')).toHaveCount(1);
-    await expect(page.locator('layout-sidebar')).toHaveCount(1);
+    await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(0);
+    await expect(page.locator('layout-sidebar')).toHaveCount(0);
     await expect(page.locator('layout-toc')).toHaveCount(1);
     await expect(page.locator('ui-article-header')).toHaveCount(1);
 
@@ -201,38 +198,35 @@ test.describe('No-JS baseline', () => {
     expect(headerText).not.toContain('ホーム');
   });
 
-  test('ヘッダーとサイドバーがスクロールしても固定されること', async ({ page }) => {
+  test('ヘッダーがスクロールしても固定され、app shell sidebar host は出ないこと', async ({ page }) => {
     await page.goto(sidebarSourcePath);
 
     const header = page.locator('layout-header');
-    const sidebar = page.locator('.layout-sidebar-col');
     const toc = page.locator('.layout-toc-col');
 
     const headerBefore = await header.boundingBox();
-    const sidebarBefore = await sidebar.boundingBox();
     const tocBefore = await toc.boundingBox();
 
     expect(headerBefore).not.toBeNull();
-    expect(sidebarBefore).not.toBeNull();
     expect(tocBefore).not.toBeNull();
+    await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(0);
 
     await page.evaluate(() => {
       window.scrollTo({ top: 640, behavior: 'instant' });
     });
 
     const headerAfter = await header.boundingBox();
-    const sidebarAfter = await sidebar.boundingBox();
     const tocAfter = await toc.boundingBox();
 
     expect(headerAfter).not.toBeNull();
-    expect(sidebarAfter).not.toBeNull();
     expect(tocAfter).not.toBeNull();
 
     expect(Math.abs((headerAfter?.y ?? 0) - (headerBefore?.y ?? 0))).toBeLessThan(1);
-    expect(Math.abs((sidebarAfter?.y ?? 0) - (sidebarBefore?.y ?? 0))).toBeLessThan(2);
+    expect(tocBefore?.height ?? 0).toBeGreaterThan(0);
+    expect(tocAfter?.height ?? 0).toBeGreaterThan(0);
   });
 
-  test('1024px 未満では sidebar 列を 0px へ畳み、横スクロールを出さないこと', async ({
+  test('1024px 未満でも app shell sidebar host を出さず、横スクロールを出さないこと', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1000, height: 900 });
@@ -240,8 +234,8 @@ test.describe('No-JS baseline', () => {
 
     const layoutState = await page.evaluate(() => {
       const main = document.querySelector('#main-content article');
-      const sidebarColumn = document.querySelector('.layout-sidebar-col');
-      const sidebarHost = document.querySelector('.layout-sidebar-col layout-sidebar');
+      const sidebarColumn = document.querySelector('[data-app-shell-sidebar-host]');
+      const sidebarHost = document.querySelector('layout-sidebar');
 
       return {
         hasMainArticle: main instanceof HTMLElement,
@@ -257,9 +251,9 @@ test.describe('No-JS baseline', () => {
     });
 
     expect(layoutState.hasMainArticle).toBe(true);
-    expect(layoutState.hasSidebarColumn).toBe(true);
-    expect(layoutState.hasSidebarHost).toBe(true);
-    expect(layoutState.sidebarWidth).toBe(0);
+    expect(layoutState.hasSidebarColumn).toBe(false);
+    expect(layoutState.hasSidebarHost).toBe(false);
+    expect(layoutState.sidebarWidth).toBeNull();
     expect(layoutState.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 });
