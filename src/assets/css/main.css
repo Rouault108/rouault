@@ -1760,6 +1760,19 @@ app-router[data-sidebar-presence='absent'] > main#main-content {
   max-block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
   border-right: var(--border-width) solid var(--border-ghost);
   overflow: visible;
+}
+
+/*
+ * overlay sidebar の nav は ui-sidebar-shell 内で
+ * position: fixed / inline-size: 100vw を使う。
+ *
+ * 祖先の .layout-sidebar-col に transform があると、
+ * fixed の containing block が viewport ではなく sidebar column になり、
+ * wide viewport で横スクロールを発生させる。
+ *
+ * footer boundary による押し上げは、fixed mode の実体にだけ適用する。
+ */
+.layout-sidebar-col > layout-sidebar[data-mode='fixed'] {
   transform: translateY(calc(var(--layout-sticky-footer-offset, 0px) * -1));
 }
 
