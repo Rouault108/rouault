@@ -9,7 +9,10 @@ interface NoteWideFrameSnapshot {
   appRouterWidth: number | null;
   appRouterLeft: number | null;
   sidebarColumnLeft: number | null;
+  sidebarColumnWidth: number | null;
   noteShellWidth: number | null;
+  tocColumnWidth: number | null;
+  articleWidth: number | null;
   headerInnerWidth: number | null;
   headerInnerLeft: number | null;
   horizontalOverflow: number;
@@ -33,6 +36,8 @@ const readNoteWideFrameSnapshot = async (page: Page): Promise<NoteWideFrameSnaps
     );
     const sidebarColumn = document.querySelector<HTMLElement>('[data-app-shell-sidebar-host]');
     const noteShell = document.querySelector<HTMLElement>('.note-shell');
+    const tocColumn = document.querySelector<HTMLElement>('.note-shell .layout-toc-col');
+    const article = document.querySelector<HTMLElement>('.note-shell .layout-main-col');
     const layoutHeader = document.querySelector<HTMLElement>('layout-header');
 
     const uiHeader = layoutHeader?.shadowRoot?.querySelector<HTMLElement>('ui-header');
@@ -49,7 +54,10 @@ const readNoteWideFrameSnapshot = async (page: Page): Promise<NoteWideFrameSnaps
       appRouterWidth: round(appRouter?.getBoundingClientRect().width ?? null),
       appRouterLeft: round(appRouter?.getBoundingClientRect().left ?? null),
       sidebarColumnLeft: round(sidebarColumn?.getBoundingClientRect().left ?? null),
+      sidebarColumnWidth: round(sidebarColumn?.getBoundingClientRect().width ?? null),
       noteShellWidth: round(noteShell?.getBoundingClientRect().width ?? null),
+      tocColumnWidth: round(tocColumn?.getBoundingClientRect().width ?? null),
+      articleWidth: round(article?.getBoundingClientRect().width ?? null),
       headerInnerWidth: round(headerInner?.getBoundingClientRect().width ?? null),
       headerInnerLeft: round(headerInner?.getBoundingClientRect().left ?? null),
       horizontalOverflow:
@@ -71,16 +79,22 @@ test.describe('note frame balance', () => {
     expect(wide.hasNoteShell).toBe(true);
     expect(wide.hasHeaderInner).toBe(true);
 
-    expect(wide.appRouterWidth).toBeGreaterThanOrEqual(1438);
-    expect(wide.appRouterWidth).toBeLessThanOrEqual(1442);
+    expect(wide.appRouterWidth).toBeGreaterThanOrEqual(1358);
+    expect(wide.appRouterWidth).toBeLessThanOrEqual(1362);
 
-    expect(wide.headerInnerWidth).toBeGreaterThanOrEqual(1300);
-    expect(wide.headerInnerWidth).toBeLessThanOrEqual(1320);
+    expect(wide.headerInnerWidth).toBeGreaterThanOrEqual(1358);
+    expect(wide.headerInnerWidth).toBeLessThanOrEqual(1362);
     expect((wide.headerInnerWidth ?? 0) <= (wide.appRouterWidth ?? 0)).toBe(true);
     expect(wide.sidebarColumnLeft).not.toBeNull();
+    expect(wide.sidebarColumnWidth).toBeGreaterThanOrEqual(246);
+    expect(wide.sidebarColumnWidth).toBeLessThanOrEqual(250);
 
     expect(wide.noteShellWidth).not.toBeNull();
-    expect((wide.noteShellWidth ?? 0) <= 1282).toBe(true);
+    expect((wide.noteShellWidth ?? 0) <= 1116).toBe(true);
+    expect(wide.tocColumnWidth).toBeGreaterThanOrEqual(214);
+    expect(wide.tocColumnWidth).toBeLessThanOrEqual(218);
+    expect(wide.articleWidth).toBeGreaterThanOrEqual(820);
+    expect((wide.articleWidth ?? 0) > (wide.tocColumnWidth ?? 0)).toBe(true);
 
     expect(wide.horizontalOverflow).toBeLessThanOrEqual(1);
 
@@ -89,10 +103,10 @@ test.describe('note frame balance', () => {
 
     const wider = await readNoteWideFrameSnapshot(page);
 
-    expect(wider.appRouterWidth).toBeGreaterThanOrEqual(1438);
-    expect(wider.appRouterWidth).toBeLessThanOrEqual(1442);
-    expect(wider.headerInnerWidth).toBeGreaterThanOrEqual(1300);
-    expect(wider.headerInnerWidth).toBeLessThanOrEqual(1320);
+    expect(wider.appRouterWidth).toBeGreaterThanOrEqual(1358);
+    expect(wider.appRouterWidth).toBeLessThanOrEqual(1362);
+    expect(wider.headerInnerWidth).toBeGreaterThanOrEqual(1358);
+    expect(wider.headerInnerWidth).toBeLessThanOrEqual(1362);
 
     expect(Math.abs((wider.appRouterWidth ?? 0) - (wide.appRouterWidth ?? 0))).toBeLessThanOrEqual(
       1,
@@ -103,6 +117,11 @@ test.describe('note frame balance', () => {
 
     expect((wider.headerInnerWidth ?? 0) <= (wider.appRouterWidth ?? 0)).toBe(true);
     expect(wider.sidebarColumnLeft).not.toBeNull();
+    expect(wider.sidebarColumnWidth).toBeGreaterThanOrEqual(246);
+    expect(wider.sidebarColumnWidth).toBeLessThanOrEqual(250);
+    expect(wider.tocColumnWidth).toBeGreaterThanOrEqual(214);
+    expect(wider.tocColumnWidth).toBeLessThanOrEqual(218);
+    expect((wider.articleWidth ?? 0) > (wider.tocColumnWidth ?? 0)).toBe(true);
 
     expect(wider.horizontalOverflow).toBeLessThanOrEqual(1);
   });

@@ -65,6 +65,8 @@ export class LayoutHeader extends LitElement {
       position: sticky;
       top: 0;
       z-index: var(--z-fixed, 100);
+      container-type: inline-size;
+      container-name: layout-header-shell;
     }
 
     .brand {
@@ -113,7 +115,14 @@ export class LayoutHeader extends LitElement {
     }
 
     :host([note-layout]) ui-header {
-      --ui-header-center-end-inset: max(200px, 34vw);
+      --ui-header-center-end-inset: clamp(
+        184px,
+        24vw,
+        calc(
+          var(--note-toc-width, 216px) +
+            var(--note-shell-column-gap, var(--space-8, 32px))
+        )
+      );
     }
 
     :host([sidebar-enabled]) ui-header {
@@ -121,7 +130,12 @@ export class LayoutHeader extends LitElement {
     }
 
     :host([note-layout][sidebar-enabled]) ui-header {
-      --ui-header-max-inline-size-with-sidebar: var(--note-fixed-frame-max-width, 1440px);
+      /* fixed sidebar でも header 自体の外形は note frame と揃える。
+       * sidebarExpanded は start zone の予約可否だけを表し、max width の契約とは切り離す */
+      --ui-header-max-inline-size: calc(
+        var(--note-fixed-frame-max-width, 1440px) - (var(--space-4, 16px) * 2)
+      );
+      --ui-header-max-inline-size-with-sidebar: var(--ui-header-max-inline-size);
     }
 
     .sidebar-toggle {
@@ -184,13 +198,16 @@ export class LayoutHeader extends LitElement {
       opacity: 0.78;
     }
 
-    @media (min-width: 1024px) {
+    @container layout-header-shell (min-width: 1024px) {
       :host([note-layout]) ui-header {
-        --ui-header-center-end-inset: var(--aside-width, 240px);
+        --ui-header-center-end-inset: calc(
+          var(--note-toc-width, 216px) +
+            var(--note-shell-column-gap, var(--space-8, 32px))
+        );
       }
 
       :host([sidebar-enabled]) ui-header {
-        --ui-header-center-start-inset: var(--sidebar-width, 272px);
+        --ui-header-center-start-inset: var(--note-sidebar-width, 248px);
       }
 
       :host([note-layout][sidebar-enabled]) .corpus-switcher {
@@ -202,7 +219,7 @@ export class LayoutHeader extends LitElement {
       }
     }
 
-    @media (max-width: 639px) {
+    @container layout-header-shell (max-width: 639px) {
       .corpus-trigger-text {
         max-inline-size: min(9rem, 42vw);
       }

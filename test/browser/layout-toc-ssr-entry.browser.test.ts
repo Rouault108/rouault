@@ -49,6 +49,15 @@ const flush = async (host: LayoutTocLike): Promise<void> => {
   await nextAnimationFrame();
 };
 
+const getDesktopToc = (host: LayoutTocLike): UiTocLike => {
+  const desktopToc = host.shadowRoot?.querySelector<UiTocLike>('.desktop ui-toc') ?? null;
+  if (!(desktopToc instanceof HTMLElement)) {
+    throw new Error('desktop ui-toc が見つかりません');
+  }
+
+  return desktopToc;
+};
+
 describe('layout-toc SSR entry hydration', () => {
   it('未定義 host を scheduler が upgrade した後も activeId の同期を維持すること', async () => {
     const cleanup = appendArticleFixture();
@@ -119,31 +128,30 @@ describe('layout-toc SSR entry hydration', () => {
 
       expect(host._activeId).to.equal('71-配列の生成');
 
-      const desktopToc = host.shadowRoot?.querySelector<UiTocLike>('.desktop ui-toc') ?? null;
-      if (!(desktopToc instanceof HTMLElement)) {
-        throw new Error('desktop ui-toc が見つかりません');
-      }
-
       await waitUntil(
-        () => desktopToc.activeId === '71-配列の生成',
+        () => getDesktopToc(host).activeId === '71-配列の生成',
         '初期 activeId が host と一致すること',
       );
+
+      const desktopToc = getDesktopToc(host);
 
       (host as LayoutTocLike & { _applyActiveId?: (id: string) => void })._applyActiveId?.(
         '72-配列の要素の読み書き',
       );
       await flush(host);
 
+      const syncedDesktopToc = getDesktopToc(host);
+
       expect(host._activeId).to.equal('72-配列の要素の読み書き');
-      expect(desktopToc.activeId).to.equal('72-配列の要素の読み書き');
-      expect(desktopToc.getAttribute('active-id')).to.equal('72-配列の要素の読み書き');
+      expect(syncedDesktopToc.activeId).to.equal('72-配列の要素の読み書き');
+      expect(syncedDesktopToc.getAttribute('active-id')).to.equal('72-配列の要素の読み書き');
 
       const mobilePanel = host.shadowRoot?.querySelector<HTMLElement>('.mobile-panel') ?? null;
       expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
       expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
 
       expect(
-        desktopToc.shadowRoot
+        syncedDesktopToc.shadowRoot
           ?.querySelector('a.toc-link.is-active .toc-link-label')
           ?.textContent?.trim(),
       ).to.equal('7.2 配列の要素の読み書き');

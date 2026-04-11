@@ -501,16 +501,20 @@
   /* レイアウト最大幅は breakpoint token と分離して管理する */
   --layout-chrome-max-width: 1280px;
 
-  /* note 本文 + TOC の shell 最大幅
-   * 現状の読み味は維持し、outer frame だけを別に調整できるようにする
+  /* note layout 専用寸法
+   * 「静かに読む」ため、本文主体の比率へ再配分する。
+   * header / sidebar / toc を同じ token 系から導出し、調整点を一箇所へ集約する。
    */
-  --note-shell-max-width: 1280px;
-
-  /* fixed sidebar を含む note page 全体フレームの最大幅
-   * 1552px (= 1280 + 272) は広すぎるため、header を含む全体バランスを優先して
-   * 1440px で頭打ちにする
-   */
-  --note-fixed-frame-max-width: 1440px;
+  --note-sidebar-width: 248px;
+  --note-toc-width: 216px;
+  --note-shell-column-gap: 32px;
+  /* wide viewport では本文 + TOC + sidebar を 1360px 前後で頭打ちにし、
+   * header と note frame の外形契約を揃える */
+  --note-reading-max-inline-size: 54rem;
+  --note-shell-max-width: calc(
+    var(--note-reading-max-inline-size) + var(--note-toc-width) + var(--note-shell-column-gap)
+  );
+  --note-fixed-frame-max-width: calc(var(--note-sidebar-width) + var(--note-shell-max-width));
 
   /* 単一カラムのトップレベルページで共有する外枠 */
   --page-shell-max-width: 72rem;

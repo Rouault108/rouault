@@ -1685,7 +1685,7 @@ app-router[data-sidebar-presence='present'] {
   width: min(100%, var(--note-fixed-frame-max-width, 1440px));
   margin-inline: auto;
   grid-template-columns:
-    var(--sidebar-width)
+    var(--note-sidebar-width, var(--sidebar-width))
     minmax(0, 1fr);
 }
 
@@ -1694,12 +1694,12 @@ app-router[data-sidebar-presence='absent'] {
 }
 
 .note-shell {
-  /* メモ本文は補助カラム込みでも少し広く読めるようにする */
-  --note-reading-measure: calc(var(--reading-measure, var(--width-reading)) + 12rem);
-  --note-toc-track: var(--aside-width);
+  --note-reading-measure: var(--note-reading-max-inline-size);
+  --note-toc-track: var(--note-toc-width, var(--aside-width));
   display: grid;
   align-items: start;
-  max-width: var(--note-shell-max-width, 1280px);
+  column-gap: var(--note-shell-column-gap, var(--space-8, 32px));
+  max-width: min(100%, var(--note-shell-max-width, 1280px));
   margin-inline: auto;
   width: 100%;
   grid-template-columns:
@@ -1758,7 +1758,8 @@ app-router[data-sidebar-presence='absent'] > main#main-content {
   top: var(--header-height);
   align-self: start;
   max-block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
-  border-right: var(--border-width) solid var(--border-ghost);
+  border-right: var(--border-width) solid
+    color-mix(in oklab, var(--border-ghost) 72%, transparent);
   overflow: visible;
 }
 
@@ -1786,10 +1787,12 @@ app-router[data-sidebar-presence='absent'] > main#main-content {
   align-self: start;
   block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
   max-block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
-  border-left: var(--border-width) solid color-mix(in oklab, var(--border-ghost) 62%, transparent);
+  border-left: var(--border-width) solid
+    color-mix(in oklab, var(--border-ghost) 48%, transparent);
   overflow: hidden;
-  padding-block: var(--space-6);
-  padding-inline-start: var(--space-4);
+  padding-block: var(--space-5, 20px);
+  padding-inline-start: var(--space-3, 12px);
+  padding-inline-end: var(--space-2, 8px);
   transform: translateY(calc(var(--layout-sticky-footer-offset, 0px) * -1));
 }
 
@@ -2106,9 +2109,8 @@ app-router[data-sidebar-presence='absent'] > main#main-content {
   }
 
   .note-shell {
-    grid-template-columns:
-      minmax(0, 1fr)
-      0px;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-6, 24px);
   }
 
   app-router[data-sidebar-presence='present'] .layout-sidebar-col {
@@ -2119,11 +2121,19 @@ app-router[data-sidebar-presence='absent'] > main#main-content {
   }
 
   .about-shell {
-    --about-toc-track: 0px;
+    --about-toc-track: clamp(184px, 24vw, calc(var(--aside-width) + var(--space-2, 8px)));
   }
 
   .home-shell {
     padding-inline: var(--space-3, 12px);
+  }
+
+  .note-shell .layout-toc-col {
+    grid-column: 1;
+    position: static;
+    block-size: auto;
+    max-block-size: none;
+    transform: none;
   }
 
   .layout-toc-col {

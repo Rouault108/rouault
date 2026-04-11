@@ -164,6 +164,33 @@ describe('layout-header browser contract', () => {
     expect(uiHeader.sidebarExpanded).to.equal(false);
   });
 
+  it('desktop の note-layout では center zone が note 専用の左右 reserve 幅を使うこと', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1440px;">
+        <layout-header note-layout sidebar-enabled></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
+    await waitForLitUpdate(header);
+
+    const uiHeader = expectPresent(
+      header.shadowRoot?.querySelector<UiHeader>('ui-header'),
+      'uiHeader',
+    );
+    const zoneCenter = expectPresent(
+      uiHeader.shadowRoot?.querySelector<HTMLElement>('.zone-center'),
+      'zoneCenter',
+    );
+
+    const styles = getComputedStyle(zoneCenter);
+    expect(styles.left).to.equal('248px');
+    expect(styles.right).to.equal('248px');
+  });
+
   it('sidebar-enabled が無い note-layout では sidebar toggle を描画しないこと', async () => {
     const header = await fixture<LayoutHeader>(html`<layout-header note-layout></layout-header>`);
     await waitForLitUpdate(header);
