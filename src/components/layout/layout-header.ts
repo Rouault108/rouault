@@ -20,6 +20,7 @@ import {
   type ThemePreference,
 } from '../../theme/theme-manager.js';
 import type { IconName } from '../../../shared/icons/icons-catalog.js';
+import type { HeaderShellProjection } from '../../../shared/navigation/shell-projection.js';
 
 interface CorpusNavigationItem {
   key: string;
@@ -237,6 +238,25 @@ export class LayoutHeader extends LitElement {
   private _themeDropdownElement!: HTMLElement | null;
 
   private _sidebarControllerCleanup: (() => void) | null = null;
+
+  applyShellProjection(snapshot: HeaderShellProjection): void {
+    // router は route 由来表示値のみを注入し、toggle 状態などの一時 UI 状態は component が保持する。
+    this.breadcrumbsJson = JSON.stringify(snapshot.breadcrumbs);
+    this.corporaJson = JSON.stringify(snapshot.corpora);
+    this.currentCorpusKey = snapshot.currentCorpusKey;
+    this.noteLayout = snapshot.noteLayout;
+    this.sidebarEnabled = snapshot.sidebarEnabled;
+  }
+
+  readShellProjection(): HeaderShellProjection {
+    return {
+      breadcrumbs: this._breadcrumbItems,
+      corpora: this._corpusItems,
+      currentCorpusKey: this.currentCorpusKey.trim() || 'all',
+      noteLayout: this.noteLayout,
+      sidebarEnabled: this.sidebarEnabled,
+    };
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();

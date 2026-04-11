@@ -1,13 +1,17 @@
 import { HtmlDocumentFetcher } from './html-document-fetcher.js';
-import { DocumentSnapshotFactory } from './document-snapshot-factory.js';
+import { documentSnapshotToEnvelope } from './document-snapshot-to-envelope.js';
 import { ErrorSnapshotFactory } from './error-snapshot-factory.js';
 import { LocationAdapter } from './location-adapter.js';
+import {
+  NavigationEnvelopeBuildMismatchError,
+  NavigationEnvelopeContractError,
+} from './navigation-envelope-errors.js';
+import { validateNavigationEnvelope } from './navigation-envelope-validator.js';
 import { RouteRegistry } from './route-registry.js';
-import type { DocumentRouteContext, LoadDocumentResult, ShellAdapter } from './router-types.js';
+import type { DocumentRouteContext, LoadDocumentResult } from './router-types.js';
 
 export class DocumentLoader {
   private readonly fetcher = new HtmlDocumentFetcher();
-  private readonly snapshotFactory = new DocumentSnapshotFactory();
   private readonly errorSnapshotFactory = new ErrorSnapshotFactory();
 
   constructor(
@@ -18,38 +22,33 @@ export class DocumentLoader {
   async load(
     normalizedUrl: string,
     signal: AbortSignal,
-    shellAdapter?: ShellAdapter,
   ): Promise<LoadDocumentResult> {
     const routeContext = this.createRouteContext(normalizedUrl, signal);
     const routeSnapshot = await this.routeRegistry.execute(routeContext);
     if (routeSnapshot !== null) {
       return {
-        snapshot: routeSnapshot,
+        envelope: documentSnapshotToEnvelope(routeSnapshot),
         source: 'document-route',
         errorReason: routeSnapshot.kind === 'error' ? routeSnapshot.reason : undefined,
       };
     }
 
-    const response = await this.fetcher.fetch(
-      this.location.resolveContentUrl(normalizedUrl),
-      signal,
-    );
-    if (!response.ok) {
-      return this.errorSnapshotFactory.createHttpErrorResult(response.status, normalizedUrl);
+    const snapshotUrl = this.location.resolveSnapshotUrl(normalizedUrl);
+    const snapshotResponse = await this.fetcher.fetch(snapshotUrl, signal);
+    if (snapshotResponse.ok) {
+      try {
+        const responseText = await snapshotResponse.text();
+        const envelope = this.decodeSnapshotResponse(responseText, normalizedUrl);
+        return {
+          envelope,
+          source: 'fetch',
+        };
+      } catch (error) {
+        return this.errorSnapshotFactory.createExceptionResult(error);
+      }
     }
 
-    const text = await response.text();
-    const documentSnapshot = this.parseHtmlDocument(text);
-
-    try {
-      const snapshot = await this.snapshotFactory.create(documentSnapshot, shellAdapter);
-      return {
-        snapshot,
-        source: 'fetch',
-      };
-    } catch (error) {
-      return this.errorSnapshotFactory.createExceptionResult(error);
-    }
+    return this.errorSnapshotFactory.createHttpErrorResult(snapshotResponse.status, normalizedUrl);
   }
 
   createExceptionResult(error: unknown): LoadDocumentResult {
@@ -69,8 +68,62 @@ export class DocumentLoader {
     };
   }
 
-  private parseHtmlDocument(text: string): Document {
-    const parser = new DOMParser();
-    return parser.parseFromString(text, 'text/html');
+  private decodeSnapshotResponse(
+    text: string,
+    normalizedUrl: string,
+  ): LoadDocumentResult['envelope'] {
+    const trimmed = text.trimStart();
+    if (trimmed.startsWith('<')) {
+      throw new NavigationEnvelopeContractError(
+        'router artifact は JSON NavigationEnvelope である必要があります。',
+      );
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch (error) {
+      throw new NavigationEnvelopeContractError(
+        error instanceof Error
+          ? `router artifact JSON の decode に失敗しました: ${error.message}`
+          : 'router artifact JSON の decode に失敗しました。',
+      );
+    }
+
+    const envelope = validateNavigationEnvelope(parsed);
+    this.assertBuildIdMatches(envelope.buildId, normalizedUrl);
+    return envelope;
+  }
+
+  private assertBuildIdMatches(
+    envelopeBuildId: string | null | undefined,
+    normalizedUrl: string,
+  ): void {
+    const currentBuildId = this.readCurrentBuildId();
+    if (!currentBuildId || !envelopeBuildId || currentBuildId === envelopeBuildId) {
+      return;
+    }
+
+    throw new NavigationEnvelopeBuildMismatchError({
+      currentBuildId,
+      envelopeBuildId,
+      normalizedUrl,
+    });
+  }
+
+  private readCurrentBuildId(): string | null {
+    const metaBuildId = document
+      .querySelector('meta[name="rouault-build-id"]')
+      ?.getAttribute('content')
+      ?.trim();
+    if (metaBuildId) {
+      return metaBuildId;
+    }
+
+    const footerBuildId = document
+      .querySelector('layout-footer[build-label]')
+      ?.getAttribute('build-label')
+      ?.trim();
+    return footerBuildId && footerBuildId.length > 0 ? footerBuildId : null;
   }
 }

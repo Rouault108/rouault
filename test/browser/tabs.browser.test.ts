@@ -209,4 +209,62 @@ describe('ui-tabs browser contract', () => {
       restore();
     }
   });
+
+  it('url-sync は hash より query を優先し、hash 単独では既定 tab を崩さないこと', async () => {
+    const conflictRestore = replaceUrl('/?tab=details#overview-heading');
+
+    try {
+      const tabs = await fixture<Tabs>(html`
+        <ui-tabs url-sync>
+          <button slot="tab" value="overview">概要</button>
+          <div slot="panel"><h3 id="overview-heading">概要見出し</h3></div>
+          <button slot="tab" value="details">詳細</button>
+          <div slot="panel"><h3 id="details-heading">詳細見出し</h3></div>
+        </ui-tabs>
+      `);
+      await waitForLitUpdate(tabs);
+
+      const overviewTab = must(
+        tabs.querySelector<HTMLElement>('[slot="tab"][value="overview"]'),
+        'overview tab が見つかりません',
+      );
+      const detailTab = must(
+        tabs.querySelector<HTMLElement>('[slot="tab"][value="details"]'),
+        'details tab が見つかりません',
+      );
+
+      expect(detailTab.getAttribute('aria-selected')).to.equal('true');
+      expect(overviewTab.getAttribute('aria-selected')).to.equal('false');
+    } finally {
+      conflictRestore();
+    }
+
+    const hashOnlyRestore = replaceUrl('/#details-heading');
+
+    try {
+      const tabs = await fixture<Tabs>(html`
+        <ui-tabs url-sync>
+          <button slot="tab" value="overview">概要</button>
+          <div slot="panel"><h3 id="overview-heading">概要見出し</h3></div>
+          <button slot="tab" value="details">詳細</button>
+          <div slot="panel"><h3 id="details-heading">詳細見出し</h3></div>
+        </ui-tabs>
+      `);
+      await waitForLitUpdate(tabs);
+
+      const overviewTab = must(
+        tabs.querySelector<HTMLElement>('[slot="tab"][value="overview"]'),
+        'overview tab が見つかりません',
+      );
+      const detailTab = must(
+        tabs.querySelector<HTMLElement>('[slot="tab"][value="details"]'),
+        'details tab が見つかりません',
+      );
+
+      expect(overviewTab.getAttribute('aria-selected')).to.equal('true');
+      expect(detailTab.getAttribute('aria-selected')).to.equal('false');
+    } finally {
+      hashOnlyRestore();
+    }
+  });
 });

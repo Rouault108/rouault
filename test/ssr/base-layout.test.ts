@@ -113,5 +113,6 @@ describe('BaseLayout', () => {
     expect(rendered).toContain(
       '<layout-footer build-label="build abcdef1" data-hydration-capability="static" data-hydration-trigger="initial"></layout-footer>',
     );
+    expect(rendered).toContain('<meta name="rouault-build-id" content="build abcdef1">');
   });
 });

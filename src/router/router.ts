@@ -6,10 +6,10 @@ import { LocationAdapter } from './location-adapter.js';
 import { NavigationQueue, type QueuedNavigationRequest } from './navigation-queue.js';
 import { RouteRegistry } from './route-registry.js';
 import { RouterEventBus } from './router-event-bus.js';
+import type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
 import type {
   BeforeNavigateContext,
   BeforeNavigateHook,
-  DocumentSnapshot,
   NavigateRequest,
   NavigationResult,
   RouterEventMap,
@@ -30,11 +30,14 @@ export type {
   DocumentRouteHandler,
   DocumentShellSnapshot,
   DocumentSnapshot,
+  LegacyDocumentSnapshot,
   LoadDocumentResult,
   ErrorSnapshotReason,
   HeaderShellSnapshot,
   HistoryMode,
   NavigateRequest,
+  RouterDocumentRenderSnapshot,
+  RouterHydrationPlan,
   NavigationErrorReason,
   NavigationIssue,
   NavigationResult,
@@ -50,6 +53,7 @@ export type {
   UrlStateNavigationDecision,
 } from './router-types.js';
 export type { PostCommitController, UrlStateNavigationPolicy } from './router-types.js';
+export type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
 export {
   RouterDestroyedError,
   RouterNotStartedError,
@@ -267,7 +271,6 @@ export class Router {
       const loadResult = await this.loader.load(
         request.normalizedUrl,
         executionController.signal,
-        this.options.shellAdapter,
       );
 
       if (executionController.signal.aborted && externalSignal.aborted) {
@@ -277,7 +280,7 @@ export class Router {
       const durableCommitResult = await this.commitLoadedSnapshot(
         request,
         currentUrl,
-        loadResult.snapshot,
+        loadResult.envelope,
       );
 
       const finalResult: NavigationResult =
@@ -291,7 +294,7 @@ export class Router {
               source: loadResult.source,
               error: loadResult.error,
               errorReason:
-                loadResult.snapshot.kind === 'error'
+                loadResult.envelope.document.renderedKind === 'error'
                   ? loadResult.errorReason
                   : durableCommitResult.errorReason,
             };
@@ -309,7 +312,7 @@ export class Router {
       const durableCommitResult = await this.commitLoadedSnapshot(
         request,
         currentUrl,
-        loadResult.snapshot,
+        loadResult.envelope,
         error instanceof Error ? error : undefined,
         loadResult.errorReason,
       );
@@ -345,13 +348,13 @@ export class Router {
   private async commitLoadedSnapshot(
     request: NormalizedNavigationRequest,
     previousUrl: string,
-    snapshot: DocumentSnapshot,
+    envelope: NavigationEnvelope,
     baseError?: Error,
     baseErrorReason?: NavigationResult['errorReason'],
   ): Promise<NavigationResult> {
     try {
       await this.committer.commit({
-        snapshot,
+        envelope,
         normalizedUrl: request.normalizedUrl,
         historyMode: request.historyMode,
         state: request.state,
@@ -393,9 +396,9 @@ export class Router {
       degraded: false,
       issues: [],
       source: 'none',
-      renderedKind: snapshot.kind,
-      error: snapshot.kind === 'error' ? baseError : undefined,
-      errorReason: snapshot.kind === 'error' ? baseErrorReason : undefined,
+      renderedKind: envelope.document.renderedKind,
+      error: envelope.document.renderedKind === 'error' ? baseError : undefined,
+      errorReason: envelope.document.renderedKind === 'error' ? baseErrorReason : undefined,
     };
 
     this.eventBus.emit('content:load', {
@@ -408,7 +411,7 @@ export class Router {
       previousUrl,
       request.normalizedUrl,
       isInitial,
-      snapshot.kind,
+      envelope.document.renderedKind,
       false,
       result,
     );

@@ -135,6 +135,12 @@ export class BaseLayout {
       { name: 'data-hydration-trigger', value: 'initial' },
     ]);
     const themeBootstrapScript = buildThemeBootstrapScript();
+    const buildIdMeta =
+      typeof data.buildMetadata?.buildLabel === 'string' && data.buildMetadata.buildLabel.length > 0
+        ? `<meta name="rouault-build-id"${serializeHtmlAttributes([
+            { name: 'content', value: data.buildMetadata.buildLabel },
+          ])}>`
+        : '';
     const bodyAttributes = serializeHtmlAttributes([
       {
         name: 'data-pagefind-ignore',
@@ -167,6 +173,7 @@ export class BaseLayout {
   <meta name="format-detection" content="telephone=no">
   <title>${escapeHtmlText(title)}</title>
   <meta name="description"${serializeHtmlAttributes([{ name: 'content', value: description }])}>
+  ${buildIdMeta}
   <script>${escapeInlineExecutableScriptText(themeBootstrapScript)}</script>
   ${clientStyleLinks}
   <script type="module"${serializeHtmlAttributes([{ name: 'src', value: clientScriptSrc }])}></script>

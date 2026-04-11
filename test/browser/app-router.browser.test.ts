@@ -1,4 +1,9 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
+import {
+  NAVIGATION_ENVELOPE_SCHEMA_VERSION,
+  type NavigationEnvelope,
+} from '../../shared/navigation/navigation-envelope.js';
+import type { ShellProjectionSnapshot } from '../../shared/navigation/shell-projection.js';
 import '../../src/components/app/app-router.js';
 import type { AppRouterContentRenderedDetail } from '../../src/components/app/app-router.js';
 import type { NavigationResult } from '../../src/router/router.js';
@@ -19,6 +24,36 @@ const getPersistentSidebarHost = (root: ParentNode): HTMLElement | null =>
 const getPersistentSidebarColumn = (root: ParentNode): HTMLElement | null =>
   root.querySelector<HTMLElement>('[data-app-shell-sidebar-host]');
 
+const createEnvelopeResponse = (options?: {
+  html?: string;
+  title?: string;
+  description?: string | null;
+  renderedKind?: NavigationEnvelope['document']['renderedKind'];
+  announcedTitle?: string | null;
+  shellProjection?: ShellProjectionSnapshot | null;
+}): Response =>
+  new Response(
+    JSON.stringify({
+      schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
+      buildId: null,
+      document: {
+        html: options?.html ?? '<h1>Default App Router Mock</h1>',
+        title: options?.title ?? 'Default App Router Mock - Rouault',
+        description: options?.description ?? 'default app router mock',
+        renderedKind: options?.renderedKind ?? 'page',
+        announcedTitle: options?.announcedTitle,
+      },
+      shellProjection: options?.shellProjection ?? null,
+      hydrationPlan: null,
+    } satisfies NavigationEnvelope),
+    {
+      status: 200,
+      headers: {
+        'content-type': 'application/json',
+      },
+    },
+  );
+
 describe('app-router', () => {
   let host: AppRouterElement | null = null;
 
@@ -35,11 +70,7 @@ describe('app-router', () => {
   beforeEach(() => {
     originalFetch = globalThis.fetch;
     globalThis.fetch = () =>
-      Promise.resolve(
-        new Response('<html><body><main>Default App Router Mock</main></body></html>', {
-          status: 200,
-        }),
-      );
+      Promise.resolve(createEnvelopeResponse());
 
     originalPushState = history.pushState.bind(history);
     originalReplaceState = history.replaceState.bind(history);
@@ -155,8 +186,10 @@ describe('app-router', () => {
     globalThis.fetch = () => {
       fetchCalled = true;
       return Promise.resolve(
-        new Response('<html><body><main>Should Not Load</main></body></html>', {
-          status: 200,
+        createEnvelopeResponse({
+          html: '<h1>Should Not Load</h1>',
+          title: 'Should Not Load - Rouault',
+          description: 'should not load',
         }),
       );
     };
@@ -234,16 +267,11 @@ describe('app-router', () => {
 
     globalThis.fetch = () =>
       Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head><title>Client Routed</title></head>
-              <body><main><h1>Client Page</h1></main></body>
-            </html>
-          `,
-          { status: 200 },
-        ),
+        createEnvelopeResponse({
+          html: '<h1>Client Page</h1>',
+          title: 'Client Routed',
+          description: 'client routed',
+        }),
       );
 
     host = await fixture<AppRouterElement>(
@@ -283,16 +311,11 @@ describe('app-router', () => {
   it('SSR 済み app-router からでも navigate() で本文を差し替えられること', async () => {
     globalThis.fetch = () =>
       Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head><title>Hydrated Client Routed</title></head>
-              <body><main><h1>Hydrated Client Page</h1></main></body>
-            </html>
-          `,
-          { status: 200 },
-        ),
+        createEnvelopeResponse({
+          html: '<h1>Hydrated Client Page</h1>',
+          title: 'Hydrated Client Routed',
+          description: 'hydrated client routed',
+        }),
       );
 
     host = await fixture<AppRouterElement>(
@@ -336,16 +359,11 @@ describe('app-router', () => {
 
     globalThis.fetch = () =>
       Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head><title>Focused Page</title></head>
-              <body><main><h1>Focused Heading</h1></main></body>
-            </html>
-          `,
-          { status: 200 },
-        ),
+        createEnvelopeResponse({
+          html: '<h1>Focused Heading</h1>',
+          title: 'Focused Page',
+          description: 'focused page',
+        }),
       );
 
     host = await fixture<AppRouterElement>(
@@ -398,16 +416,11 @@ describe('app-router', () => {
     );
 
     resolveResponse?.(
-      new Response(
-        `
-          <!doctype html>
-          <html>
-            <head><title>Slow Page</title></head>
-            <body><main><h1>Slow Content</h1></main></body>
-          </html>
-        `,
-        { status: 200 },
-      ),
+      createEnvelopeResponse({
+        html: '<h1>Slow Content</h1>',
+        title: 'Slow Page',
+        description: 'slow page',
+      }),
     );
 
     await navigationPromise;
@@ -432,25 +445,24 @@ describe('app-router', () => {
 
     globalThis.fetch = () =>
       Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head><title>Header Sync</title></head>
-              <body>
-                <layout-header
-                  note-layout
-                  sidebar-enabled
-                  breadcrumbs-json='[{"label":"New Note","href":"/notes/new-note"}]'
-                  corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]'
-                  current-corpus-key="music"
-                ></layout-header>
-                <main><h1>Header Synced</h1></main>
-              </body>
-            </html>
-          `,
-          { status: 200 },
-        ),
+        createEnvelopeResponse({
+          html: '<h1>Header Synced</h1>',
+          title: 'Header Sync',
+          description: 'header sync',
+          shellProjection: {
+            header: {
+              breadcrumbs: [{ label: 'New Note', href: '/notes/new-note' }],
+              corpora: [
+                { key: 'all', label: 'すべてのノート', href: '/corpora/' },
+                { key: 'music', label: '音楽', href: '/corpora/music/' },
+              ],
+              currentCorpusKey: 'music',
+              noteLayout: true,
+              sidebarEnabled: true,
+            },
+            sidebar: null,
+          },
+        }),
       );
 
     host = await fixture<AppRouterElement>(
@@ -510,32 +522,31 @@ describe('app-router', () => {
 
     globalThis.fetch = () =>
       Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head><title>Sidebar Sync</title></head>
-              <body>
-                <layout-header current-corpus-key="music"></layout-header>
-                <app-router data-sidebar-presence="present">
-                  <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
-                    <layout-sidebar
-                      state-scope-id="note-navigation"
-                      selected-id="notes/new"
-                      items-json='[{"kind":"leaf","id":"notes/new","label":"New","href":"/notes/new"}]'
-                      heading="新しいナビゲーション"
-                      fixed-breakpoint="1440"
-                      sidebar-id="note-primary"
-                      presentation="fixed"
-                    ></layout-sidebar>
-                  </aside>
-                  <main id="main-content"><h1>Sidebar Synced</h1></main>
-                </app-router>
-              </body>
-            </html>
-          `,
-          { status: 200 },
-        ),
+        createEnvelopeResponse({
+          html: '<h1>Sidebar Synced</h1>',
+          title: 'Sidebar Sync',
+          description: 'sidebar sync',
+          shellProjection: {
+            header: {
+              breadcrumbs: [],
+              corpora: [],
+              currentCorpusKey: 'music',
+              noteLayout: false,
+              sidebarEnabled: true,
+            },
+            sidebar: {
+              present: true,
+              stateScopeId: 'note-navigation',
+              selectedId: 'notes/new',
+              itemsJson:
+                '[{"kind":"leaf","id":"notes/new","label":"New","href":"/notes/new"}]',
+              heading: '新しいナビゲーション',
+              fixedBreakpoint: 1440,
+              sidebarId: 'note-primary',
+              presentation: 'fixed',
+            },
+          },
+        }),
       );
 
     await appHost.navigate('/notes/new');
@@ -586,24 +597,21 @@ describe('app-router', () => {
 
     globalThis.fetch = () =>
       Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head><title>No Sidebar</title></head>
-              <body>
-                <layout-header current-corpus-key="all"></layout-header>
-                <app-router data-sidebar-presence="absent">
-                  <aside class="layout-sidebar-col" data-app-shell-sidebar-host hidden>
-                    <layout-sidebar hidden sidebar-id="note-primary" presentation="auto"></layout-sidebar>
-                  </aside>
-                  <main id="main-content"><h1>No Sidebar Content</h1></main>
-                </app-router>
-              </body>
-            </html>
-          `,
-          { status: 200 },
-        ),
+        createEnvelopeResponse({
+          html: '<h1>No Sidebar Content</h1>',
+          title: 'No Sidebar',
+          description: 'no sidebar',
+          shellProjection: {
+            header: {
+              breadcrumbs: [],
+              corpora: [],
+              currentCorpusKey: 'all',
+              noteLayout: false,
+              sidebarEnabled: false,
+            },
+            sidebar: null,
+          },
+        }),
       );
 
     await appHost.navigate('/standalone-page');
@@ -673,32 +681,31 @@ describe('app-router', () => {
 
     globalThis.fetch = () =>
       Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head><title>Broken Sidebar Sync</title></head>
-              <body>
-                <layout-header current-corpus-key="music"></layout-header>
-                <app-router data-sidebar-presence="present">
-                  <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
-                    <layout-sidebar
-                      state-scope-id="reference-navigation"
-                      selected-id="notes/new"
-                      items-json='[{"kind":"leaf","id":"notes/new","label":"New","href":"/notes/new"}]'
-                      heading="新しいナビゲーション"
-                      fixed-breakpoint="1440"
-                      sidebar-id="note-primary"
-                      presentation="fixed"
-                    ></layout-sidebar>
-                  </aside>
-                  <main id="main-content"><h1>Broken Sidebar Content</h1></main>
-                </app-router>
-              </body>
-            </html>
-          `,
-          { status: 200 },
-        ),
+        createEnvelopeResponse({
+          html: '<h1>Broken Sidebar Content</h1>',
+          title: 'Broken Sidebar Sync',
+          description: 'broken sidebar sync',
+          shellProjection: {
+            header: {
+              breadcrumbs: [],
+              corpora: [],
+              currentCorpusKey: 'music',
+              noteLayout: false,
+              sidebarEnabled: true,
+            },
+            sidebar: {
+              present: true,
+              stateScopeId: 'reference-navigation',
+              selectedId: 'notes/new',
+              itemsJson:
+                '[{"kind":"leaf","id":"notes/new","label":"New","href":"/notes/new"}]',
+              heading: '新しいナビゲーション',
+              fixedBreakpoint: 1440,
+              sidebarId: 'note-primary',
+              presentation: 'fixed',
+            },
+          },
+        }),
       );
 
     const result = await appHost.navigate('/broken-sidebar');
@@ -753,25 +760,21 @@ describe('app-router', () => {
 
     globalThis.fetch = () =>
       Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head><title>Broken Header Sync</title></head>
-              <body>
-                <layout-header
-                  note-layout
-                  sidebar-enabled
-                  breadcrumbs-json='[{"label":"Broken Note","href":"/notes/broken-note"}]'
-                  corpora-json='[{"key":"music","label":"音楽","href":"/corpora/music/"}]'
-                  current-corpus-key="music"
-                ></layout-header>
-                <main><h1>Broken Header Synced</h1></main>
-              </body>
-            </html>
-          `,
-          { status: 200 },
-        ),
+        createEnvelopeResponse({
+          html: '<h1>Broken Header Synced</h1>',
+          title: 'Broken Header Sync',
+          description: 'broken header sync',
+          shellProjection: {
+            header: {
+              breadcrumbs: [{ label: 'Broken Note', href: '/notes/broken-note' }],
+              corpora: [{ key: 'music', label: '音楽', href: '/corpora/music/' }],
+              currentCorpusKey: 'music',
+              noteLayout: true,
+              sidebarEnabled: true,
+            },
+            sidebar: null,
+          },
+        }),
       );
 
     host = await fixture<AppRouterElement>(
@@ -887,22 +890,15 @@ describe('app-router', () => {
 
     globalThis.fetch = () =>
       Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head><title>Hash Target Page</title></head>
-              <body>
-                <main>
-                  <h1>Hash Target Page</h1>
-                  <section style="height: 1200px"></section>
-                  <h2 id="details-heading">Details</h2>
-                </main>
-              </body>
-            </html>
+        createEnvelopeResponse({
+          html: `
+            <h1>Hash Target Page</h1>
+            <section style="height: 1200px"></section>
+            <h2 id="details-heading">Details</h2>
           `,
-          { status: 200 },
-        ),
+          title: 'Hash Target Page',
+          description: 'hash target page',
+        }),
       );
 
     host = await fixture<AppRouterElement>(

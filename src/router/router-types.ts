@@ -1,3 +1,12 @@
+import type { DocumentRenderSnapshot } from '../../shared/navigation/document-render-snapshot.js';
+import type { HydrationPlan } from '../../shared/navigation/hydration-plan.js';
+import type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
+import type {
+  HeaderShellProjection,
+  ShellProjectionSnapshot,
+  SidebarShellProjection,
+} from '../../shared/navigation/shell-projection.js';
+
 export type HistoryMode = 'none' | 'push' | 'replace';
 
 export type NavigationOutcome = 'completed' | 'cancelled' | 'superseded' | 'failed';
@@ -54,36 +63,11 @@ export interface ContentUpdateAdapter {
   prepare(update: ContentUpdatePayload): PreparedContentUpdate | Promise<PreparedContentUpdate>;
 }
 
-export interface HeaderShellSnapshot {
-  breadcrumbs: {
-    label: string;
-    href?: string;
-  }[];
-  corpora: {
-    key: string;
-    label: string;
-    href: string;
-  }[];
-  currentCorpusKey: string;
-  noteLayout: boolean;
-  sidebarEnabled: boolean;
-}
+export type HeaderShellSnapshot = HeaderShellProjection;
 
-export interface SidebarShellSnapshot {
-  present: boolean;
-  sidebarId: string;
-  stateScopeId: string;
-  selectedId: string | null;
-  heading: string;
-  fixedBreakpoint: number;
-  itemsJson: string;
-  presentation: 'auto' | 'fixed' | 'overlay';
-}
+export type SidebarShellSnapshot = SidebarShellProjection;
 
-export interface DocumentShellSnapshot {
-  header: HeaderShellSnapshot;
-  sidebar: SidebarShellSnapshot | null;
-}
+export type DocumentShellSnapshot = ShellProjectionSnapshot;
 
 export interface ShellUpdatePayload {
   shell: DocumentShellSnapshot | null;
@@ -96,9 +80,6 @@ export interface PreparedShellUpdate {
 }
 
 export interface ShellAdapter {
-  extract?(
-    document: Document,
-  ): DocumentShellSnapshot | null | Promise<DocumentShellSnapshot | null>;
   prepare?(update: ShellUpdatePayload): PreparedShellUpdate | Promise<PreparedShellUpdate>;
 }
 
@@ -142,7 +123,7 @@ export interface RouterOptions {
 export type LoadDocumentSource = 'document-route' | 'fetch';
 
 export interface LoadDocumentResult {
-  snapshot: DocumentSnapshot;
+  envelope: NavigationEnvelope;
   source: LoadDocumentSource;
   error?: Error | undefined;
   errorReason?: Exclude<NavigationErrorReason, 'destroyed' | 'not-started'> | undefined;
@@ -193,6 +174,12 @@ export type DocumentSnapshot =
       shell?: DocumentShellSnapshot | null | undefined;
       announcedTitle?: string | null | undefined;
     };
+
+export type LegacyDocumentSnapshot = DocumentSnapshot;
+
+export type RouterDocumentRenderSnapshot = DocumentRenderSnapshot;
+
+export type RouterHydrationPlan = HydrationPlan;
 
 export type RoutePattern = string | RegExp;
 

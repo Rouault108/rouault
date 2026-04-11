@@ -17,6 +17,7 @@ hydration trigger の決定は scheduler / registry が正本です。
 - trigger の判定は `data-hydration-scope` / `data-hydration-capability` / `data-hydration-trigger`
 - 起動順は scheduler が決定する
 - component 自身が connected 時に hydration timing を自己決定しない
+- router の `NavigationEnvelope.hydrationPlan` は route 由来 planning 情報であり、trigger 正本ではない
 
 ## 3. 実装規則
 

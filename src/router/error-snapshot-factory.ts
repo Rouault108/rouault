@@ -9,6 +9,11 @@ import type {
   NavigationErrorReason,
 } from './router-types.js';
 import { DocumentContractViolationError } from './document-snapshot-factory.js';
+import {
+  NavigationEnvelopeBuildMismatchError,
+  NavigationEnvelopeContractError,
+} from './navigation-envelope-errors.js';
+import { documentSnapshotToEnvelope } from './document-snapshot-to-envelope.js';
 
 const SITE_TITLE = 'Rouault';
 
@@ -69,6 +74,16 @@ export class ErrorSnapshotFactory {
       );
     }
 
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      return this.createErrorResult(
+        'ネットワークエラー',
+        'ネットワーク接続を確認してください。',
+        'network',
+        undefined,
+        error,
+      );
+    }
+
     if (error instanceof DocumentContractViolationError) {
       return this.createErrorResult(
         '文書契約エラー',
@@ -79,11 +94,21 @@ export class ErrorSnapshotFactory {
       );
     }
 
-    if (error instanceof TypeError && error.message.includes('fetch')) {
+    if (error instanceof NavigationEnvelopeBuildMismatchError) {
       return this.createErrorResult(
-        'ネットワークエラー',
-        'ネットワーク接続を確認してください。',
-        'network',
+        'ビルド不整合',
+        '表示中の文書と取得した router artifact の buildId が一致しません。再読み込みしてください。',
+        'unexpected',
+        undefined,
+        error,
+      );
+    }
+
+    if (error instanceof NavigationEnvelopeContractError) {
+      return this.createErrorResult(
+        'router artifact 契約エラー',
+        '取得した router artifact が NavigationEnvelope 契約を満たしていません。',
+        'unexpected',
         undefined,
         error,
       );
@@ -99,8 +124,9 @@ export class ErrorSnapshotFactory {
   }
 
   private createNotFoundResult(normalizedUrl: string): LoadDocumentResult {
+    const snapshot = this.createNotFoundSnapshot(normalizedUrl);
     return {
-      snapshot: this.createNotFoundSnapshot(normalizedUrl),
+      envelope: documentSnapshotToEnvelope(snapshot),
       source: 'fetch',
     };
   }
@@ -125,22 +151,24 @@ export class ErrorSnapshotFactory {
     statusCode?: number,
     error?: Error,
   ): LoadDocumentResult {
-    return {
-      snapshot: {
-        kind: 'error',
-        reason,
-        statusCode,
-        title: buildDocumentTitle(title),
-        metaDescription: message,
-        html: `
+    const snapshot: DocumentSnapshot = {
+      kind: 'error',
+      reason,
+      statusCode,
+      title: buildDocumentTitle(title),
+      metaDescription: message,
+      html: `
           <div class="error-page" role="alert" aria-live="assertive">
             <h1>${escapeHtml(title)}</h1>
             <p>${escapeHtml(message)}</p>
           </div>
         `.trim(),
-        shell: null,
-        announcedTitle: title,
-      },
+      shell: null,
+      announcedTitle: title,
+    };
+
+    return {
+      envelope: documentSnapshotToEnvelope(snapshot),
       source: 'fetch',
       error,
       errorReason: reason,

@@ -9,6 +9,7 @@ import type {
 } from '../ui/sidebar/sidebar.js';
 import type { IconName } from '../../../shared/icons/icons-catalog.js';
 import { isIconName } from '../../../shared/icons/icons-catalog.js';
+import type { SidebarShellProjection } from '../../../shared/navigation/shell-projection.js';
 import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
 import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../layout/note-sidebar-breakpoint.js';
 import {
@@ -182,6 +183,35 @@ export class LayoutSidebar extends LitElement {
 
   private _detachStickyFooterBoundary: (() => void) | null = null;
   private _storeCleanup: (() => void) | null = null;
+
+  applyShellProjection(snapshot: SidebarShellProjection | null): void {
+    if (snapshot === null) {
+      return;
+    }
+
+    // router は route 由来の tree / selectedId / presentation だけを更新し、
+    // 開閉状態や expanded state の継続は controller と localStorage に委ねる。
+    this.stateScopeId = snapshot.stateScopeId;
+    this.selectedId = snapshot.selectedId;
+    this.itemsJson = snapshot.itemsJson;
+    this.heading = snapshot.heading;
+    this.fixedBreakpoint = snapshot.fixedBreakpoint;
+    this.sidebarId = snapshot.sidebarId;
+    this.presentation = snapshot.presentation;
+  }
+
+  readShellProjection(): SidebarShellProjection {
+    return {
+      present: !this.hidden,
+      sidebarId: this._resolveSidebarId(),
+      stateScopeId: this._resolveStateScopeId(),
+      selectedId: this.selectedId,
+      heading: this.heading,
+      fixedBreakpoint: this.fixedBreakpoint,
+      itemsJson: this.itemsJson,
+      presentation: this.presentation,
+    };
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();

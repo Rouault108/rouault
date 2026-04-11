@@ -10,6 +10,7 @@ import { loadHomeData } from './src/data/home.js';
 import { loadClientBundleData } from './src/data/clientBundle.js';
 import { loadBuildMetadataData } from './src/data/buildMetadata.js';
 import { createStaticDirectoryMiddleware } from './build/dev/dev-static-directory.js';
+import { emitNavigationArtifacts } from './build/navigation/emit-navigation-artifacts.js';
 import {
   emitSearchArtifacts,
   renderSearchCatalogArtifact,
@@ -180,6 +181,11 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
     ] as const) {
       await copyFile(path.resolve(process.cwd(), source), path.resolve(process.cwd(), target));
     }
+
+    await emitNavigationArtifacts({
+      outputDir: path.resolve(process.cwd(), 'dist'),
+      buildId: resolveBuildLabel(),
+    });
 
     await emitSearchArtifacts({
       notes: loadNotesData(),

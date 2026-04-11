@@ -1,16 +1,16 @@
 import { HeadManager } from './head-manager.js';
 import { replaceElementChildrenFromHtml } from './declarative-shadow-dom.js';
 import { LocationAdapter } from './location-adapter.js';
+import type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
 import type {
   ContentUpdateAdapter,
-  DocumentSnapshot,
   HistoryMode,
   PreparedShellUpdate,
   ShellAdapter,
 } from './router-types.js';
 
 interface CommitRequest {
-  snapshot: DocumentSnapshot;
+  envelope: NavigationEnvelope;
   normalizedUrl: string;
   historyMode: HistoryMode;
   state: Record<string, unknown> | undefined;
@@ -51,11 +51,11 @@ export class ContentCommitter {
     const previousHistoryState: unknown = history.state;
 
     const preparedContentMutation = await this.prepareContentMutation(
-      request.snapshot,
+      request.envelope,
       request.normalizedUrl,
     );
     const preparedShellMutation = await this.prepareShellMutation(
-      request.snapshot,
+      request.envelope,
       request.normalizedUrl,
     );
 
@@ -65,8 +65,8 @@ export class ContentCommitter {
       await preparedContentMutation.commit();
       await preparedShellMutation.commit();
 
-      this.headManager.setTitle(request.snapshot.title);
-      this.headManager.setMetaDescription(request.snapshot.metaDescription);
+      this.headManager.setTitle(request.envelope.document.title);
+      this.headManager.setMetaDescription(request.envelope.document.description);
 
       this.applyHistory(request.historyMode, request.normalizedUrl, request.state);
       historyApplied = request.historyMode !== 'none';
@@ -93,13 +93,13 @@ export class ContentCommitter {
   }
 
   private async prepareContentMutation(
-    snapshot: DocumentSnapshot,
+    envelope: NavigationEnvelope,
     normalizedUrl: string,
   ): Promise<PreparedMutation> {
     if (this.contentAdapter) {
       return this.contentAdapter.prepare({
-        html: snapshot.html,
-        renderedKind: snapshot.kind,
+        html: envelope.document.html,
+        renderedKind: envelope.document.renderedKind,
         navigationUrl: normalizedUrl,
       });
     }
@@ -108,7 +108,11 @@ export class ContentCommitter {
 
     return {
       commit: () => {
-        replaceElementChildrenFromHtml(this.outlet, snapshot.html, this.outlet.ownerDocument);
+        replaceElementChildrenFromHtml(
+          this.outlet,
+          envelope.document.html,
+          this.outlet.ownerDocument,
+        );
       },
       rollback: () => {
         replaceElementChildrenFromHtml(this.outlet, previousHtml, this.outlet.ownerDocument);
@@ -117,7 +121,7 @@ export class ContentCommitter {
   }
 
   private async prepareShellMutation(
-    snapshot: DocumentSnapshot,
+    envelope: NavigationEnvelope,
     normalizedUrl: string,
   ): Promise<PreparedMutation> {
     if (!this.shellAdapter?.prepare) {
@@ -125,7 +129,7 @@ export class ContentCommitter {
     }
 
     const preparedShellUpdate: PreparedShellUpdate = await this.shellAdapter.prepare({
-      shell: snapshot.shell ?? null,
+      shell: envelope.shellProjection ?? null,
       navigationUrl: normalizedUrl,
     });
 

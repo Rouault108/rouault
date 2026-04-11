@@ -10,6 +10,11 @@ const APP_ROUTER_SELECTOR = 'app-router';
 const SIDEBAR_COLUMN_SELECTOR = '[data-app-shell-sidebar-host]';
 const SIDEBAR_HOST_SELECTOR = `${SIDEBAR_COLUMN_SELECTOR} layout-sidebar`;
 
+interface SidebarProjectionHost extends HTMLElement {
+  applyShellProjection?(snapshot: SidebarShellSnapshot | null): void;
+  readShellProjection?(): SidebarShellSnapshot;
+}
+
 const toTrimmedString = (value: string | null, fallback = ''): string => {
   if (typeof value !== 'string') {
     return fallback;
@@ -48,22 +53,6 @@ export const readSidebarShellSnapshot = (sidebar: Element): SidebarShellSnapshot
       : 'auto',
 });
 
-export const extractSidebarShellSnapshot = (
-  documentSnapshot: Document,
-): SidebarShellSnapshot | null => {
-  const sidebar = documentSnapshot.querySelector(SIDEBAR_HOST_SELECTOR);
-  if (!(sidebar instanceof Element)) {
-    return null;
-  }
-
-  const host = sidebar.closest(SIDEBAR_COLUMN_SELECTOR);
-  if (host instanceof HTMLElement && host.hidden) {
-    return null;
-  }
-
-  return readSidebarShellSnapshot(sidebar);
-};
-
 export const applySidebarSnapshot = (
   shell: DocumentShellSnapshot | null,
   currentRouter: HTMLElement | null,
@@ -88,30 +77,31 @@ export const applySidebarSnapshot = (
     return;
   }
 
-  currentSidebar.setAttribute('state-scope-id', snapshot.stateScopeId);
-
-  if (snapshot.selectedId === null) {
-    currentSidebar.removeAttribute('selected-id');
+  const projectionSidebar = currentSidebar as SidebarProjectionHost;
+  if (typeof projectionSidebar.applyShellProjection === 'function') {
+    projectionSidebar.applyShellProjection(snapshot);
   } else {
-    currentSidebar.setAttribute('selected-id', snapshot.selectedId);
-  }
+    currentSidebar.setAttribute('state-scope-id', snapshot.stateScopeId);
 
-  currentSidebar.setAttribute('items-json', snapshot.itemsJson);
-  currentSidebar.setAttribute('heading', snapshot.heading);
-  currentSidebar.setAttribute('fixed-breakpoint', String(snapshot.fixedBreakpoint));
-  currentSidebar.setAttribute('sidebar-id', snapshot.sidebarId);
-  currentSidebar.setAttribute('presentation', snapshot.presentation);
+    if (snapshot.selectedId === null) {
+      currentSidebar.removeAttribute('selected-id');
+    } else {
+      currentSidebar.setAttribute('selected-id', snapshot.selectedId);
+    }
+
+    currentSidebar.setAttribute('items-json', snapshot.itemsJson);
+    currentSidebar.setAttribute('heading', snapshot.heading);
+    currentSidebar.setAttribute('fixed-breakpoint', String(snapshot.fixedBreakpoint));
+    currentSidebar.setAttribute('sidebar-id', snapshot.sidebarId);
+    currentSidebar.setAttribute('presentation', snapshot.presentation);
+  }
 };
 
 export const createLayoutSidebarShellAdapter = (): ShellAdapter => ({
-  extract(_documentSnapshot: Document) {
-    return null;
-  },
-
   prepare(update): PreparedShellUpdate {
     const currentRouter = document.querySelector<HTMLElement>(APP_ROUTER_SELECTOR);
     const currentSidebarColumn = document.querySelector<HTMLElement>(SIDEBAR_COLUMN_SELECTOR);
-    const currentSidebar = document.querySelector<HTMLElement>(SIDEBAR_HOST_SELECTOR);
+    const currentSidebar = document.querySelector<SidebarProjectionHost>(SIDEBAR_HOST_SELECTOR);
     const previousShell: DocumentShellSnapshot | null =
       currentSidebar instanceof HTMLElement
         ? {
@@ -124,7 +114,9 @@ export const createLayoutSidebarShellAdapter = (): ShellAdapter => ({
             },
             sidebar:
               currentSidebarColumn instanceof HTMLElement && !currentSidebarColumn.hidden
-                ? readSidebarShellSnapshot(currentSidebar)
+                ? typeof currentSidebar.readShellProjection === 'function'
+                  ? currentSidebar.readShellProjection()
+                  : readSidebarShellSnapshot(currentSidebar)
                 : null,
           }
         : null;

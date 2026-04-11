@@ -1,9 +1,4 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
-import {
-  findHeadingElement,
-  revealHeadingInTabs,
-  resolveTabValueForDescendant,
-} from '../../../toc/filter-visible-headings.js';
 import { getTabsUrlSyncStrategy } from './tabs-url-sync-strategy.js';
 import type { TabsUrlSource, UrlHistoryMode } from './tabs.types.js';
 
@@ -75,14 +70,6 @@ export class TabsUrlSyncController implements ReactiveController {
       };
     }
 
-    const hashValue = this.resolveValueFromHash();
-    if (hashValue !== null) {
-      return {
-        value: hashValue,
-        source: 'hash',
-      };
-    }
-
     const queryValue = getTabsUrlSyncStrategy()?.readValue(window.location.href) ?? null;
     if (queryValue !== null) {
       return {
@@ -142,27 +129,6 @@ export class TabsUrlSyncController implements ReactiveController {
     const nextUrl = strategy.writeValue(currentUrl, value);
 
     this.writeUrlStateInternal(nextUrl, historyMode);
-  }
-
-  private resolveValueFromHash(): string | null {
-    if (typeof window === 'undefined') {
-      return null;
-    }
-
-    const hash = getTabsUrlSyncStrategy()?.readHash(window.location.href) ?? '';
-    if (hash.length === 0) {
-      return null;
-    }
-
-    const hostEl = this.host.getHostElement();
-    const target = findHeadingElement(hostEl, hash);
-
-    if (!(target instanceof HTMLElement)) {
-      return null;
-    }
-
-    revealHeadingInTabs(hostEl, target);
-    return resolveTabValueForDescendant(hostEl, target);
   }
 
   private writeUrlStateInternal(nextUrl: string, historyMode: UrlHistoryMode): void {

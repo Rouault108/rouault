@@ -8,20 +8,21 @@
 
 ## 概要
 
-`router` は、Rouault における SPA ナビゲーションを司る **Rouault 専用 router core** です。責務は、内部リンクの横取り、履歴同期、URL 正規化、文書取得、`DocumentSnapshot` の決定、`<main>` 本文・`document.title`・`meta[name="description"]`・履歴 state の確定反映、および遷移結果通知に限定します。
+`router` は、Rouault における SPA ナビゲーションを司る **Rouault 専用 router core** です。責務は、内部リンクの横取り、履歴同期、URL 正規化、文書取得、`NavigationEnvelope` の決定、`<main>` 本文・`document.title`・`meta[name="description"]`・履歴 state の確定反映、および遷移結果通知に限定します。
 
 本 router は、汎用ルーティング基盤ではありません。ただし同時に、**特定 shell コンポーネントの属性形式、描画後 DOM 後処理、読み上げ通知、個別 UI 状態最適化を router core の必須責務に含めません**。それらは必要に応じて adapter / controller に委譲します。
 
-この仕様書が定義する中心概念は次の 3 点です。
+この仕様書が定義する中心概念は次の 4 点です。
 
-1. route 経路と fetch 経路を `DocumentSnapshot` へ正規化して同一に扱うこと
+1. route 経路と fetch 経路を `NavigationEnvelope` へ正規化して同一に扱うこと
 2. durable commit point を **本文・shell・文書メタデータ・履歴 state が整合して確定した時点** として明示すること
 3. 描画後後処理の失敗を、router core の commit 失敗と機械的に同一視しないこと
+4. hydration planning は envelope に含めても、trigger 正本は scheduler / registry に残すこと
 
 ## 目的
 
 - **MPA 的な URL / 履歴 / 文書メタデータ / shell 整合** を保ちつつ、本文更新を SPA として行うこと
-- route 経路と fetch 経路の差を loader 内部へ閉じ込め、公開契約では `DocumentSnapshot` と `NavigationResult` に統一すること
+- route 経路と fetch 経路の差を loader 内部へ閉じ込め、公開契約では `NavigationEnvelope` と `NavigationResult` に統一すること
 - router core の責務を **URL・文書・shell・履歴・結果通知の commit 規則** に絞り、描画後後処理との時間的・構造的結合を下げること
 - 遷移結果を `outcome` と `renderedKind` で分離して観測可能にし、`not-found` / `error` 表示時の意味論を明確化すること
 - 高頻度遷移、latest-wins、post-commit failure を含む場合でも、利用側が安定して分岐できる結果モデルを提供すること
@@ -88,9 +89,13 @@ router 外部へ本文描画または shell 更新を委譲する場合は、単
 
 feature-local URL state の意味論、復元、履歴更新、`popstate` 再同期は、その機能の仕様書と実装が単一に所有しなければなりません。router core はこれを汎用的に解釈してはなりません。
 
+### NavigationEnvelope
+
+router が反映対象として扱う統一遷移表現です。route 経路でも fetch 経路でも最終的にこの形へ正規化します。
+
 ### DocumentSnapshot
 
-router が反映対象として扱う統一文書表現です。route 経路でも fetch 経路でも最終的にこの形へ正規化します。
+互換フェーズでのみ使用する legacy 文書表現です。document route などが旧契約を返す場合、router 入口で `NavigationEnvelope` へ変換します。
 
 ### NavigationOutcome
 
@@ -111,9 +116,9 @@ router が反映対象として扱う統一文書表現です。route 経路で�
 | Navigation Runner      | 1 回の遷移実行、outcome 確定、イベント通知                                        |
 | Before Navigate Hooks  | 遷移前フック登録・実行                                                            |
 | Route Registry         | document route 登録とマッチング                                                   |
-| Content Loader         | fetch / route 実行と `DocumentSnapshot` 生成                                      |
+| Content Loader         | fetch / route 実行と `NavigationEnvelope` 正規化                                  |
 | Content Committer      | title / meta description / content / shell / history の durable commit を担当する |
-| Shell Adapter          | shell snapshot の抽出および 2 相 commit 統合を担う任意 adapter                    |
+| Shell Adapter          | shell projection の 2 相 commit 統合を担う任意 adapter                            |
 | URL State Policy       | state-only navigation 判定を担う任意統合                                          |
 | Post Commit Controller | 描画後後処理を担う任意統合                                                        |
 
@@ -167,10 +172,6 @@ interface PreparedShellUpdate {
 }
 
 interface ShellAdapter {
-  extract?(
-    document: Document,
-  ): DocumentShellSnapshot | null | Promise<DocumentShellSnapshot | null>;
-
   prepare?(update: ShellUpdatePayload): PreparedShellUpdate | Promise<PreparedShellUpdate>;
 }
 
@@ -214,7 +215,7 @@ interface RouterOptions {
 | 項目                       | 既定        | 意味                                                                                                       |
 | -------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------- |
 | `contentAdapter`           | `undefined` | 本文描画を外側へ委譲する 2 相 adapter です。未指定時、router は outlet を直接更新します。                  |
-| `shellAdapter`             | `undefined` | shell snapshot の抽出および 2 相 commit 統合を行う任意 adapter です。未指定時、shell commit は行いません。 |
+| `shellAdapter`             | `undefined` | shell projection の 2 相 commit 統合を行う任意 adapter です。未指定時、shell commit は行いません。         |
 | `urlStateNavigationPolicy` | `undefined` | state-only navigation 判定を行う任意 policy です。未指定時、すべて full navigation とします。              |
 | `postCommitController`     | `undefined` | 描画後後処理を行う任意 controller です。未指定時、router core は後処理を行いません。                       |
 | `skipInitialNavigation`    | `false`     | `start()` 時の初回 `historyMode: 'none'` 遷移を抑止します。SSR 初期本文を保持する統合構成で用います。      |
@@ -671,17 +672,12 @@ router は `history.state` に次を保存します。
 
 ### fetch 経路
 
-fetch 成功時は HTML を解析し、少なくとも次を snapshot へ格納します。
+fetch 成功時は `index.router.json` を decode / validate し、`NavigationEnvelope` を返します。
 
-- `html`: `<main>` の `innerHTML`
-- `title`: 遷移先文書の `title`
-- `metaDescription`: `meta[name="description"]` の `content` または `null`
-
-router core は、fetch 経路において **特定 shell コンポーネントの属性形式を固定契約として抽出してはなりません**。
-
-- shell 情報が必要であり、かつ `shellAdapter.extract()` が提供される場合に限り、取得文書から shell snapshot を導出してよいものとします。
-- `shellAdapter.extract()` が未提供である場合、fetch 経路の `shell` は `null` として扱います。
-- shell 導出の不在は、それ自体を fetch failure や commit failure として扱ってはなりません。
+- fetch 経路は HTML parse fallback を持ちません。
+- router core は fetched HTML から shell を抽出してはなりません。
+- shell は `NavigationEnvelope.shellProjection` だけを commit 入力として扱います。
+- SSR HTML が持つ current buildId と fetched envelope の `buildId` が不一致な場合、router は error snapshot へ縮退し、取得した envelope を正規経路として commit してはなりません。
 
 ### HTTP ステータスと例外
 

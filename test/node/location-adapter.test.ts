@@ -100,4 +100,27 @@ describe('LocationAdapter', () => {
       expect(receivedPathname).to.equal('/notes/example');
     });
   });
+
+  it('router artifact URL は content URL から index.router.json を解決すること', () => {
+    const policy: UrlPolicy = {
+      normalizePathname(pathname) {
+        return pathname;
+      },
+      sanitizeSearchParams() {
+        // no-op
+      },
+      resolveContentPath(pathname) {
+        return pathname.endsWith('/') ? pathname : `${pathname}/`;
+      },
+    };
+
+    const adapter = new LocationAdapter(policy);
+
+    withStubbedWindow(() => {
+      expect(adapter.resolveSnapshotUrl('/notes/example?tab=overview')).to.equal(
+        '/notes/example/index.router.json?tab=overview',
+      );
+      expect(adapter.resolveSnapshotUrl('/')).to.equal('/index.router.json');
+    });
+  });
 });

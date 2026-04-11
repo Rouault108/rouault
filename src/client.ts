@@ -18,24 +18,15 @@ const resolveCurrentContentRoot = (): HTMLElement | null => {
   return document.querySelector<HTMLElement>('#main-content');
 };
 
-const preloadCriticalCustomElements = async (): Promise<void> => {
-  const eagerLoaders: Promise<unknown>[] = [];
+const waitForAppRouterReady = async (): Promise<AppRouter | null> => {
+  await customElements.whenDefined('app-router');
 
-  if (document.querySelector('layout-sidebar')) {
-    eagerLoaders.push(import('./components/layout/layout-sidebar.js'));
+  const appRouter = getAppRouter();
+  if (appRouter && typeof appRouter.whenReady === 'function') {
+    await appRouter.whenReady();
   }
 
-  if (document.querySelector('layout-toc')) {
-    eagerLoaders.push(import('./components/layout/layout-toc.js'));
-  }
-
-  if (document.querySelector('ui-article-header')) {
-    eagerLoaders.push(import('./components/ui/article-header/article-header.js'));
-  }
-
-  if (eagerLoaders.length > 0) {
-    await Promise.all(eagerLoaders);
-  }
+  return appRouter;
 };
 
 const hydrateShellScopes = async (): Promise<void> => {
@@ -51,45 +42,26 @@ const hydrateShellScopes = async (): Promise<void> => {
 };
 
 const hydrateCurrentContent = async (contentRoot?: HTMLElement): Promise<void> => {
-  await customElements.whenDefined('app-router');
+  const appRouter = await waitForAppRouterReady();
 
-  const mainContent = contentRoot ?? resolveCurrentContentRoot();
+  const mainContent =
+    contentRoot ??
+    (appRouter?.getContentRoot() instanceof HTMLElement ? appRouter.getContentRoot() : null) ??
+    resolveCurrentContentRoot();
   if (!(mainContent instanceof HTMLElement)) {
     return;
-  }
-
-  const eagerLoaders: Promise<unknown>[] = [];
-  if (mainContent.querySelector('search-page')) {
-    eagerLoaders.push(import('./components/search/search-page.js'));
-  }
-  if (mainContent.querySelector('ui-article-header')) {
-    eagerLoaders.push(import('./components/ui/article-header/article-header.js'));
-  }
-  if (mainContent.querySelector('layout-sidebar')) {
-    eagerLoaders.push(import('./components/layout/layout-sidebar.js'));
-  }
-  if (mainContent.querySelector('layout-toc')) {
-    eagerLoaders.push(import('./components/layout/layout-toc.js'));
-  }
-  if (mainContent.querySelector('ui-tabs')) {
-    eagerLoaders.push(import('./components/ui/tabs/tabs.js'));
-  }
-
-  if (eagerLoaders.length > 0) {
-    await Promise.all(eagerLoaders);
   }
 
   customElements.upgrade(mainContent);
   await Promise.resolve();
 
   await hydrationScheduler.hydrateContent(mainContent, {
-    dispatchTarget: getAppRouter(),
+    dispatchTarget: appRouter,
   });
 };
 
 const bootstrapClient = async (): Promise<void> => {
   initTheme();
-  await preloadCriticalCustomElements();
   await hydrateShellScopes();
   initSearch();
   await hydrateCurrentContent();

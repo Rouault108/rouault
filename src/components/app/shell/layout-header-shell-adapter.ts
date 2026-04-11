@@ -16,6 +16,11 @@ interface CorpusShellItem {
   href: string;
 }
 
+interface HeaderProjectionHost extends HTMLElement {
+  applyShellProjection?(snapshot: HeaderShellSnapshot): void;
+  readShellProjection?(): HeaderShellSnapshot;
+}
+
 const parseBreadcrumbs = (value: string | null): BreadcrumbShellItem[] => {
   if (typeof value !== 'string' || value.trim().length === 0) {
     return [];
@@ -94,22 +99,17 @@ export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
   sidebarEnabled: header.hasAttribute('sidebar-enabled'),
 });
 
-export const extractHeaderShellSnapshot = (
-  documentSnapshot: Document,
-): HeaderShellSnapshot | null => {
-  const nextHeader = documentSnapshot.querySelector('layout-header');
-  if (!(nextHeader instanceof Element)) {
-    return null;
-  }
-
-  return readHeaderSnapshot(nextHeader);
-};
-
 export const applyHeaderSnapshot = (
   header: HTMLElement,
   shell: DocumentShellSnapshot | null,
 ): void => {
   const snapshot = shell?.header;
+  const projectionHeader = header as HeaderProjectionHost;
+
+  if (snapshot && typeof projectionHeader.applyShellProjection === 'function') {
+    projectionHeader.applyShellProjection(snapshot);
+    return;
+  }
 
   header.setAttribute('breadcrumbs-json', JSON.stringify(snapshot?.breadcrumbs ?? []));
   header.setAttribute('corpora-json', JSON.stringify(snapshot?.corpora ?? []));
@@ -119,23 +119,17 @@ export const applyHeaderSnapshot = (
 };
 
 export const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
-  extract(documentSnapshot: Document) {
-    const headerSnapshot = extractHeaderShellSnapshot(documentSnapshot);
-    if (headerSnapshot === null) {
-      return null;
-    }
-
-    return {
-      header: headerSnapshot,
-      sidebar: null,
-    };
-  },
-
   prepare(update): PreparedShellUpdate {
-    const currentHeader = document.querySelector('layout-header');
+    const currentHeader = document.querySelector<HeaderProjectionHost>('layout-header');
     const previousShell =
       currentHeader instanceof HTMLElement
-        ? { header: readHeaderSnapshot(currentHeader), sidebar: null }
+        ? {
+            header:
+              typeof currentHeader.readShellProjection === 'function'
+                ? currentHeader.readShellProjection()
+                : readHeaderSnapshot(currentHeader),
+            sidebar: null,
+          }
         : null;
     const nextShell = update.shell;
 

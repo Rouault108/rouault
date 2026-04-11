@@ -86,6 +86,18 @@ export class LocationAdapter {
     return `${normalized.pathname}${normalized.search}`;
   }
 
+  resolveSnapshotUrl(url: string): string {
+    const contentUrl = this.resolveContentUrl(url);
+    const parsed = this.toUrl(contentUrl);
+    const normalizedPathname = parsed.pathname.endsWith('/')
+      ? parsed.pathname
+      : `${parsed.pathname}/`;
+    const snapshotPathname =
+      normalizedPathname === '/' ? '/index.router.json' : `${normalizedPathname}index.router.json`;
+
+    return `${snapshotPathname}${parsed.search}`;
+  }
+
   push(normalizedUrl: string, state?: Record<string, unknown>): void {
     window.history.pushState(this.createHistoryState(state, normalizedUrl), '', normalizedUrl);
   }
