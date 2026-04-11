@@ -231,20 +231,17 @@ describe('app-router', () => {
     expect(appHost.querySelector('main#main-content')?.textContent).to.contain('SSR Contract Root');
   });
 
-  it('main と main#main-content が共存しても本文 root は #main-content を優先すること', async () => {
+  it('旧来の main だけがある場合も暫定互換として canonical root に昇格すること', async () => {
     host = await fixture<AppRouterElement>(
-      html`<app-router>
-        <main><h1>Legacy Main</h1></main>
-        <main id="main-content" tabindex="-1"><h1>Contract Main</h1></main>
-      </app-router>`,
+      html`<app-router><main><h1>Legacy Main</h1></main></app-router>`,
     );
     const appHost = host;
 
     await appHost.whenReady();
 
     expect(appHost.getContentRoot()).to.equal(appHost.querySelector('main#main-content'));
-    expect(appHost.querySelector('main#main-content')?.textContent).to.contain('Contract Main');
-    expect(appHost.querySelector('main:not(#main-content)')?.textContent).to.contain('Legacy Main');
+    expect(appHost.querySelectorAll('main').length).to.equal(1);
+    expect(appHost.querySelector('main#main-content')?.textContent).to.contain('Legacy Main');
   });
 
   it('ready と whenReady() を公開し、接続後に解決されること', async () => {

@@ -2,6 +2,7 @@ import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
+import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.js';
 import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
 
 import {
@@ -21,7 +22,6 @@ type Parse5Document = DefaultTreeAdapterMap['document'];
 type Parse5DocumentFragment = DefaultTreeAdapterMap['documentFragment'];
 type Parse5Element = DefaultTreeAdapterMap['element'];
 
-const MAIN_CONTENT_SELECTOR_ID = 'main-content';
 const FALLBACK_CURRENT_CORPUS_KEY = 'all';
 const FALLBACK_SIDEBAR_ID = 'note-primary';
 const FALLBACK_SIDEBAR_HEADING = 'ナビゲーション';
@@ -248,13 +248,13 @@ export const createNavigationEnvelopeFromHtml = (
     document,
     (candidate) =>
       candidate.tagName === 'main' &&
-      (getAttribute(candidate, 'id') === MAIN_CONTENT_SELECTOR_ID ||
+      (getAttribute(candidate, 'id') === MAIN_CONTENT_ID ||
         getAttribute(candidate, 'id') === null),
   );
 
   if (main === null) {
     throw new Error(
-      `[navigation-artifact] ${htmlFilePath} に main#${MAIN_CONTENT_SELECTOR_ID} または main がありません。`,
+      `[navigation-artifact] ${htmlFilePath} に main#${MAIN_CONTENT_ID} または main がありません。`,
     );
   }
 

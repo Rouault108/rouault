@@ -1,5 +1,6 @@
 import { FocusManager } from '../../../router/focus-manager.js';
 import type { PostCommitController } from '../../../router/router.js';
+import { MAIN_CONTENT_SELECTOR } from '../../../../shared/navigation/main-landmark-contract.js';
 import {
   dispatchPrimaryTabUrlStateChange,
   readDecodedHash,
@@ -42,7 +43,7 @@ export class AppRouterPostRenderController {
           window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         }
 
-        const main = hostElement.querySelector('#main-content');
+        const main = hostElement.querySelector(MAIN_CONTENT_SELECTOR);
         if (main instanceof HTMLElement) {
           this.focusManager.focusMainContent(main);
         }

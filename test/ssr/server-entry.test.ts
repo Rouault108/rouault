@@ -101,20 +101,37 @@ describe('server-entry', () => {
     expect(rendered).toContain('JavaScriptの配列');
   });
 
-  it('app-router に SSR 本文を渡して描画できること', async () => {
+  it('app-router は raw content を canonical main に包んで SSR 描画すること', async () => {
+    const rendered = await renderCustomElement('app-router', [], '<h1>SSR App Router</h1><p>Body</p>');
+
+    expect(rendered).toContain('data-app-router-announcement');
+    expect(rendered).toContain('<main id="main-content" tabindex="-1"><h1>SSR App Router</h1><p>Body</p></main>');
+  });
+
+  it('app-router は既存 main を canonical main に昇格すること', async () => {
     const rendered = await renderCustomElement(
       'app-router',
       [],
       '<main><h1>SSR App Router</h1><p>Body</p></main>',
     );
 
-    expect(rendered).toContain('SSR App Router');
-    expect(rendered).toContain('<main><h1>SSR App Router</h1><p>Body</p></main>');
+    expect(rendered).toContain('<main id="main-content" tabindex="-1"><h1>SSR App Router</h1><p>Body</p></main>');
     expect(rendered).toContain('data-app-router-announcement');
-    expect(rendered).not.toContain('id="main-content"');
   });
 
-  it('app-router SSR が sidebar host を保持すること', async () => {
+  it('app-router は既存 main の属性を保持したまま canonical 化すること', async () => {
+    const rendered = await renderCustomElement(
+      'app-router',
+      [],
+      '<main class="page-body" data-view="article" aria-label="本文"><h1>SSR App Router</h1></main>',
+    );
+
+    expect(rendered).toContain(
+      '<main class="page-body" data-view="article" aria-label="本文" id="main-content" tabindex="-1"><h1>SSR App Router</h1></main>',
+    );
+  });
+
+  it('app-router SSR が sidebar host を保持し sibling 順序も維持すること', async () => {
     const rendered = await renderCustomElement(
       'app-router',
       [{ name: 'data-sidebar-presence', value: 'present' }],
@@ -128,7 +145,47 @@ describe('server-entry', () => {
 
     expect(rendered).toContain('data-app-shell-sidebar-host');
     expect(rendered).toContain('<layout-sidebar heading="Navigation">');
-    expect(rendered).toContain('<main id="main-content"><h1>SSR App Router</h1></main>');
+    expect(rendered).toContain('<main id="main-content" tabindex="-1"><h1>SSR App Router</h1></main>');
     expect(rendered).toContain('data-app-router-announcement');
+    expect(rendered.indexOf('data-app-shell-sidebar-host')).toBeLessThan(
+      rendered.indexOf('<main id="main-content" tabindex="-1">'),
+    );
+  });
+
+  it('app-router は announcement region を再利用して重複生成しないこと', async () => {
+    const rendered = await renderCustomElement(
+      'app-router',
+      [],
+      [
+        '<div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>',
+        '<main><h1>SSR App Router</h1></main>',
+      ].join(''),
+    );
+
+    expect(rendered.match(/data-app-router-announcement/g)?.length ?? 0).toBe(1);
+  });
+
+  it('app-router は direct child の main が複数ある場合に失敗すること', async () => {
+    await expect(
+      renderCustomElement(
+        'app-router',
+        [],
+        '<main><h1>First</h1></main><main><h1>Second</h1></main>',
+      ),
+    ).rejects.toThrow(/direct child の <main>/);
+  });
+
+  it('app-router は announcement region が複数ある場合に失敗すること', async () => {
+    await expect(
+      renderCustomElement(
+        'app-router',
+        [],
+        [
+          '<div data-app-router-announcement="" aria-live="polite"></div>',
+          '<div data-app-router-announcement="" aria-live="polite"></div>',
+          '<main><h1>Body</h1></main>',
+        ].join(''),
+      ),
+    ).rejects.toThrow(/announcement region/);
   });
 });

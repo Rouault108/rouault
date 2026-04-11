@@ -91,6 +91,8 @@ test.describe('No-JS baseline', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: 'Sidebar Scroll Source' }).first(),
     ).toBeVisible();
+    await expect(page.locator('app-router > #main-content')).toHaveCount(1);
+    await expect(page.locator('app-router > [data-app-router-announcement]')).toHaveCount(1);
     await expect(page).toHaveURL(sidebarSourcePath);
   });
 
@@ -142,6 +144,8 @@ test.describe('No-JS baseline', () => {
   }) => {
     await page.goto(sampleJavascriptPath);
 
+    await expect(page.locator('app-router > #main-content')).toHaveCount(1);
+    await expect(page.locator('app-router > [data-app-router-announcement]')).toHaveCount(1);
     await expect(page.locator('layout-header')).toHaveCount(1);
     await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
     await expect(page.locator('layout-sidebar')).toHaveCount(1);

@@ -1,0 +1,5 @@
+export const APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE = 'data-app-router-announcement';
+export const APP_ROUTER_ANNOUNCEMENT_SELECTOR = `[${APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE}]`;
+export const APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE = 'polite';
+export const APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC = 'true';
+export const APP_ROUTER_ANNOUNCEMENT_CLASS_NAME = 'sr-only';

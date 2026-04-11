@@ -13,6 +13,7 @@ import {
   THEME_STORAGE_KEY,
   RESOLVED_THEME_ATTRIBUTE,
 } from '../theme/theme-manager.js';
+import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.js';
 import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
 import {
   escapeHtmlText,
@@ -64,7 +65,6 @@ const buildThemeBootstrapScript = (): string =>
 
 const DEFAULT_CLIENT_SCRIPT_SRC = '/src/client.ts';
 const DEFAULT_CLIENT_STYLE_SRCS = ['/src/assets/css/main.css'] as const;
-const MAIN_CONTENT_ID = 'main-content';
 const MAIN_CONTENT_TARGET = `#${MAIN_CONTENT_ID}`;
 const NOTE_LAYOUT_SIDEBAR_ID = 'note-primary';
 

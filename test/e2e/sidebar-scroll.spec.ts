@@ -11,6 +11,7 @@ test.describe('Sidebar Selected Item Scroll', () => {
     await page.goto(`${sourcePath}/`);
     await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
     await expect(page.locator('layout-sidebar')).toHaveCount(1);
+    await expect(page.locator('app-router > #main-content')).toHaveCount(1);
     await expect(page.locator('#main-content h1').first()).toHaveText('Sidebar Scroll Source');
 
     await page
@@ -22,5 +23,6 @@ test.describe('Sidebar Selected Item Scroll', () => {
     await expect(page.locator('#main-content h1').first()).toHaveText('Sidebar Scroll Target');
     await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
     await expect(page.locator('layout-sidebar')).toHaveCount(1);
+    await expect(page.locator('app-router > #main-content')).toHaveCount(1);
   });
 });

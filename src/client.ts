@@ -1,4 +1,5 @@
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
+import { MAIN_CONTENT_SELECTOR } from '../shared/navigation/main-landmark-contract.js';
 import type { AppRouter, AppRouterContentRenderedDetail } from './components/app/app-router.js';
 import { HydrationScheduler } from './client/hydration/scheduler.js';
 import { initSearch } from './search/bootstrap.js';
@@ -15,7 +16,7 @@ const resolveCurrentContentRoot = (): HTMLElement | null => {
     return routerContentRoot;
   }
 
-  return document.querySelector<HTMLElement>('#main-content');
+  return document.querySelector<HTMLElement>(MAIN_CONTENT_SELECTOR);
 };
 
 const waitForAppRouterReady = async (): Promise<AppRouter | null> => {

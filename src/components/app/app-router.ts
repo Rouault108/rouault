@@ -10,15 +10,19 @@ import {
   unwrapRouterContentHtml,
 } from '../../router/router-content-html.js';
 import { replaceElementChildrenFromHtml } from '../../router/declarative-shadow-dom.js';
+import {
+  APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC,
+  APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE,
+  APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE,
+  APP_ROUTER_ANNOUNCEMENT_CLASS_NAME,
+  APP_ROUTER_ANNOUNCEMENT_SELECTOR,
+} from '../../../shared/app-router/app-router-announcement-contract.js';
+import { MAIN_CONTENT_ID, MAIN_CONTENT_SELECTOR } from '../../../shared/navigation/main-landmark-contract.js';
 import { registerTabsUrlSyncStrategy } from '../ui/tabs/tabs-url-sync-strategy.js';
 import { AppRouterPostRenderController } from './controllers/app-router-post-render-controller.js';
 import { PrimaryTabNavigationPolicy } from './navigation/primary-tab-navigation-policy.js';
 import { primaryTabTabsUrlSyncStrategy } from './navigation/primary-tab-url-state.js';
 import { createAppShellAdapter } from './shell/app-shell-adapter.js';
-
-const CONTENT_ROOT_ID = 'main-content';
-const CONTENT_ROOT_SELECTOR = `main#${CONTENT_ROOT_ID}`;
-const ANNOUNCEMENT_SELECTOR = '[data-app-router-announcement]';
 
 export interface AppRouterContentRenderedDetail {
   contentRoot: HTMLElement;
@@ -103,7 +107,7 @@ export class AppRouter extends HTMLElement {
    * Rouault では SSR 初期表示と遷移後更新の双方で `main#main-content` を唯一の更新先に固定します。
    */
   getContentRoot(): HTMLElement | null {
-    return this.querySelector<HTMLElement>(CONTENT_ROOT_SELECTOR);
+    return this.querySelector<HTMLElement>(MAIN_CONTENT_SELECTOR);
   }
 
   connectedCallback(): void {
@@ -213,7 +217,7 @@ export class AppRouter extends HTMLElement {
   }
 
   private _findExistingContentRoot(): HTMLElement | null {
-    // 旧来の `<main>` を残した文書があっても、公開契約上の本文 root は常に `main#main-content` を優先します。
+    // SSR strict 化後も旧来の `<main>` を読む必要がある間だけ残す暫定互換経路です。
     const contentRoot = this.getContentRoot();
     if (contentRoot instanceof HTMLElement) {
       return contentRoot;
@@ -230,33 +234,35 @@ export class AppRouter extends HTMLElement {
       this.append(contentRoot);
     }
 
-    contentRoot.id = CONTENT_ROOT_ID;
+    contentRoot.id = MAIN_CONTENT_ID;
     contentRoot.tabIndex = -1;
     return contentRoot;
   }
 
   private _ensureAnnouncementRegion(): HTMLElement {
-    const existingRegion = this.querySelector<HTMLElement>(ANNOUNCEMENT_SELECTOR);
+    const existingRegion = this.querySelector<HTMLElement>(APP_ROUTER_ANNOUNCEMENT_SELECTOR);
     if (existingRegion instanceof HTMLElement) {
-      existingRegion.setAttribute('aria-live', 'polite');
-      existingRegion.setAttribute('aria-atomic', 'true');
-      existingRegion.classList.add('sr-only');
+      existingRegion.setAttribute('aria-live', APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE);
+      existingRegion.setAttribute('aria-atomic', APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC);
+      existingRegion.classList.add(APP_ROUTER_ANNOUNCEMENT_CLASS_NAME);
       return existingRegion;
     }
 
+    // SSR 出力は data attribute を正本とし、aria-live だけの探索は移行期互換に留めます。
     const legacyRegion = this.querySelector<HTMLElement>('[aria-live="polite"]');
     if (legacyRegion instanceof HTMLElement) {
-      legacyRegion.setAttribute('data-app-router-announcement', '');
-      legacyRegion.setAttribute('aria-atomic', 'true');
-      legacyRegion.classList.add('sr-only');
+      legacyRegion.setAttribute(APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE, '');
+      legacyRegion.setAttribute('aria-live', APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE);
+      legacyRegion.setAttribute('aria-atomic', APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC);
+      legacyRegion.classList.add(APP_ROUTER_ANNOUNCEMENT_CLASS_NAME);
       return legacyRegion;
     }
 
     const region = this.ownerDocument.createElement('div');
-    region.setAttribute('data-app-router-announcement', '');
-    region.setAttribute('aria-live', 'polite');
-    region.setAttribute('aria-atomic', 'true');
-    region.className = 'sr-only';
+    region.setAttribute(APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE, '');
+    region.setAttribute('aria-live', APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE);
+    region.setAttribute('aria-atomic', APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC);
+    region.className = APP_ROUTER_ANNOUNCEMENT_CLASS_NAME;
     this.prepend(region);
     return region;
   }
