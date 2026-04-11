@@ -187,47 +187,6 @@ const readNotesFile = (filePath: string): SourceNote[] => {
   return Array.isArray(parsed) ? parsed.filter(isSourceNote) : [];
 };
 
-const calculateSortIndex = (slug: string, contentRoot: string): number => {
-  const parts = slug.split('/');
-  const fileName = `${parts[parts.length - 1] ?? ''}.md`;
-  const dirParts = parts.slice(0, -1);
-  let sortIndex = 0;
-
-  for (let depth = 0; depth <= dirParts.length; depth += 1) {
-    const currentDirParts = dirParts.slice(0, depth);
-    const currentDir = join(contentRoot, ...currentDirParts);
-    const config = readConfig(currentDir);
-    const targetName = depth < dirParts.length ? dirParts[depth] : fileName;
-    const order = config?.order ?? [];
-    const orderIndex = typeof targetName === 'string' ? order.indexOf(targetName) : -1;
-
-    sortIndex = orderIndex >= 0 ? sortIndex * 1000 + orderIndex : sortIndex * 1000 + 500;
-  }
-
-  return sortIndex;
-};
-
-const collectSidebarScopeRules = (slug: string, contentRoot: string): SidebarScopeRule[] => {
-  const parts = slug.split('/');
-  const dirParts = parts.slice(0, -1);
-  const rules: SidebarScopeRule[] = [];
-
-  for (let depth = 0; depth <= dirParts.length; depth += 1) {
-    const currentDirParts = dirParts.slice(0, depth);
-    const currentDir = join(contentRoot, ...currentDirParts);
-    const scope = readConfig(currentDir)?.sidebar?.scope;
-
-    if (scope === 'global' || scope === 'self') {
-      rules.push({
-        directoryPath: currentDirParts.join('/'),
-        scope: scope as SidebarScope,
-      });
-    }
-  }
-
-  return rules;
-};
-
 const resolveDirectorySidebarIcon = (
   value: SidebarIconSetting | undefined,
 ): IconName | undefined => {
@@ -251,34 +210,6 @@ const resolveNoteSidebarIcon = (
   }
 
   return value;
-};
-
-const resolveSidebarIconContext = (
-  slug: string,
-  contentRoot: string,
-): { directoryIcons: Record<string, IconName> } => {
-  const parts = slug.split('/');
-  const dirParts = parts.slice(0, -1);
-  const directoryIcons: Record<string, IconName> = {};
-  let inheritedSetting: SidebarIconSetting | undefined = readConfig(contentRoot)?.sidebar?.icon;
-
-  for (let depth = 0; depth < dirParts.length; depth += 1) {
-    const currentDirParts = dirParts.slice(0, depth + 1);
-    const currentDir = join(contentRoot, ...currentDirParts);
-    const currentPath = currentDirParts.join('/');
-    const configuredSetting = readConfig(currentDir)?.sidebar?.icon;
-
-    if (configuredSetting !== undefined) {
-      inheritedSetting = configuredSetting;
-    }
-
-    const resolvedIcon = resolveDirectorySidebarIcon(inheritedSetting);
-    if (resolvedIcon !== undefined) {
-      directoryIcons[currentPath] = resolvedIcon;
-    }
-  }
-
-  return { directoryIcons };
 };
 
 export const buildNotesCollection = (

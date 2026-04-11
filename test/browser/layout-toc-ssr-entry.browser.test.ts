@@ -133,8 +133,6 @@ describe('layout-toc SSR entry hydration', () => {
         '初期 activeId が host と一致すること',
       );
 
-      const desktopToc = getDesktopToc(host);
-
       (host as LayoutTocLike & { _applyActiveId?: (id: string) => void })._applyActiveId?.(
         '72-配列の要素の読み書き',
       );
