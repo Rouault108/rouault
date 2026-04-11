@@ -109,6 +109,26 @@ describe('server-entry', () => {
     );
 
     expect(rendered).toContain('SSR App Router');
-    expect(rendered).toContain('main-content');
+    expect(rendered).toContain('<main><h1>SSR App Router</h1><p>Body</p></main>');
+    expect(rendered).toContain('data-app-router-announcement');
+    expect(rendered).not.toContain('id="main-content"');
+  });
+
+  it('app-router SSR が sidebar host を保持すること', async () => {
+    const rendered = await renderCustomElement(
+      'app-router',
+      [{ name: 'data-sidebar-presence', value: 'present' }],
+      `
+        <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
+          <layout-sidebar heading="Navigation"></layout-sidebar>
+        </aside>
+        <main id="main-content"><h1>SSR App Router</h1></main>
+      `.trim(),
+    );
+
+    expect(rendered).toContain('data-app-shell-sidebar-host');
+    expect(rendered).toContain('<layout-sidebar heading="Navigation">');
+    expect(rendered).toContain('<main id="main-content"><h1>SSR App Router</h1></main>');
+    expect(rendered).toContain('data-app-router-announcement');
   });
 });

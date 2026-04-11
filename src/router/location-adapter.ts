@@ -1,3 +1,4 @@
+import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
 import { RouaultUrlPolicy } from './rouault-url-policy.js';
 import type { UrlPolicy } from './url-policy.js';
 
@@ -89,11 +90,7 @@ export class LocationAdapter {
   resolveSnapshotUrl(url: string): string {
     const contentUrl = this.resolveContentUrl(url);
     const parsed = this.toUrl(contentUrl);
-    const normalizedPathname = parsed.pathname.endsWith('/')
-      ? parsed.pathname
-      : `${parsed.pathname}/`;
-    const snapshotPathname =
-      normalizedPathname === '/' ? '/index.router.json' : `${normalizedPathname}index.router.json`;
+    const snapshotPathname = resolveRouterArtifactPathname(parsed.pathname);
 
     return `${snapshotPathname}${parsed.search}`;
   }

@@ -93,10 +93,16 @@ const buildShadowTemplate = (
   return html`<${staticTagName}${staticAttributes}>${unsafeHTML(innerHtml)}</${staticTagName}>`;
 };
 
-const extractMainContent = (innerHtml: string): string => {
-  const matched = /<main\b[^>]*>([\s\S]*)<\/main>/i.exec(innerHtml);
-  return matched?.[1] ?? innerHtml;
-};
+const APP_ROUTER_MAIN_HTML_PATTERN = /<main\b/i;
+const APP_ROUTER_ANNOUNCEMENT_PATTERN =
+  /data-app-router-announcement\b|aria-live\s*=\s*['"]polite['"]/i;
+const APP_ROUTER_ANNOUNCEMENT_HTML =
+  '<div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>';
+
+const ensureAppRouterMainContent = (innerHtml: string): string =>
+  APP_ROUTER_MAIN_HTML_PATTERN.test(innerHtml)
+    ? innerHtml
+    : `<main id="main-content" tabindex="-1">${innerHtml}</main>`;
 
 const renderArticleHeaderShadowElement = async (
   attributes: readonly SsrAttribute[],
@@ -142,11 +148,14 @@ const renderAppRouterLightElement = async (
   attributes: readonly SsrAttribute[],
   innerHtml: string,
 ): Promise<string> => {
-  const mainContent = extractMainContent(innerHtml);
+  const structuredInnerHtml = ensureAppRouterMainContent(innerHtml);
+  const renderedInnerHtml = APP_ROUTER_ANNOUNCEMENT_PATTERN.test(structuredInnerHtml)
+    ? structuredInnerHtml
+    : `${APP_ROUTER_ANNOUNCEMENT_HTML}
+    ${structuredInnerHtml}`;
 
   return `<app-router${serializeAttributes(attributes)}>
-    <div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>
-    <main id="main-content" tabindex="-1">${mainContent}</main>
+    ${renderedInnerHtml}
   </app-router>`;
 };
 

@@ -57,7 +57,7 @@ describe('DocumentLoader', () => {
     const loader = new DocumentLoader(new RouteRegistry(), new LocationAdapter());
     const result = await loader.load('/notes/example', new AbortController().signal);
 
-    expect(requestedUrls).to.deep.equal(['/notes/example/index.router.json']);
+    expect(requestedUrls).to.deep.equal(['/__router/notes/example/index.router.json']);
     expect(result.envelope.document.renderedKind).to.equal('not-found');
     expect(result.source).to.equal('fetch');
   });

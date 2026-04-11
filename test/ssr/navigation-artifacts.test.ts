@@ -107,7 +107,10 @@ describe('navigation artifacts', () => {
       });
 
       const artifact = JSON.parse(
-        await readFile(path.join(routeDir, 'index.router.json'), 'utf8'),
+        await readFile(
+          path.join(outputDir, '__router', 'notes', 'example', 'index.router.json'),
+          'utf8',
+        ),
       ) as {
         buildId: string;
         document: { html: string; title: string };

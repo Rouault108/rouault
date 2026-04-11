@@ -144,6 +144,26 @@ describe('layout-header browser contract', () => {
     expect(toggleButton.getAttribute('aria-expanded')).to.equal('true');
   });
 
+  it('fixed sidebar な note-layout でも ui-header に sidebar 幅を予約しないこと', async () => {
+    layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+      presentation: 'fixed',
+      fixedBreakpoint: 1024,
+      storage: null,
+    });
+
+    const header = await fixture<LayoutHeader>(
+      html`<layout-header note-layout sidebar-enabled></layout-header>`,
+    );
+    await waitForLitUpdate(header);
+
+    const uiHeader = expectPresent(
+      header.shadowRoot?.querySelector<UiHeader>('ui-header'),
+      'uiHeader',
+    );
+
+    expect(uiHeader.sidebarExpanded).to.equal(false);
+  });
+
   it('sidebar-enabled が無い note-layout では sidebar toggle を描画しないこと', async () => {
     const header = await fixture<LayoutHeader>(html`<layout-header note-layout></layout-header>`);
     await waitForLitUpdate(header);

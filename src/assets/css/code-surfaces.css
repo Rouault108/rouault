@@ -76,8 +76,8 @@
 }
 
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) code {
-  display: block;
-  min-width: max-content;
+  display: inline-block;
+  min-inline-size: 100%;
   background: transparent !important;
 
   /* UA の code { font-family: monospace; } を打ち消し、

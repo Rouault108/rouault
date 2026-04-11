@@ -137,14 +137,14 @@ test.describe('No-JS baseline', () => {
     );
   });
 
-  test('ノートページが SSR シェルと本文を初期表示し、app shell sidebar host は出力しないこと', async ({
+  test('ノートページが SSR シェルと本文を初期表示し、app shell sidebar host も出力すること', async ({
     page,
   }) => {
     await page.goto(sampleJavascriptPath);
 
     await expect(page.locator('layout-header')).toHaveCount(1);
-    await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(0);
-    await expect(page.locator('layout-sidebar')).toHaveCount(0);
+    await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
+    await expect(page.locator('layout-sidebar')).toHaveCount(1);
     await expect(page.locator('layout-toc')).toHaveCount(1);
     await expect(page.locator('ui-article-header')).toHaveCount(1);
 
@@ -198,7 +198,7 @@ test.describe('No-JS baseline', () => {
     expect(headerText).not.toContain('ホーム');
   });
 
-  test('ヘッダーがスクロールしても固定され、app shell sidebar host は出ないこと', async ({ page }) => {
+  test('ヘッダーがスクロールしても固定され、app shell sidebar host が存在しても崩れないこと', async ({ page }) => {
     await page.goto(sidebarSourcePath);
 
     const header = page.locator('layout-header');
@@ -209,7 +209,7 @@ test.describe('No-JS baseline', () => {
 
     expect(headerBefore).not.toBeNull();
     expect(tocBefore).not.toBeNull();
-    await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(0);
+    await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
 
     await page.evaluate(() => {
       window.scrollTo({ top: 640, behavior: 'instant' });
@@ -226,7 +226,7 @@ test.describe('No-JS baseline', () => {
     expect(tocAfter?.height ?? 0).toBeGreaterThan(0);
   });
 
-  test('1024px 未満でも app shell sidebar host を出さず、横スクロールを出さないこと', async ({
+  test('1024px 未満でも app shell sidebar host を保持しつつ、横スクロールを出さないこと', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1000, height: 900 });
@@ -251,9 +251,9 @@ test.describe('No-JS baseline', () => {
     });
 
     expect(layoutState.hasMainArticle).toBe(true);
-    expect(layoutState.hasSidebarColumn).toBe(false);
-    expect(layoutState.hasSidebarHost).toBe(false);
-    expect(layoutState.sidebarWidth).toBeNull();
+    expect(layoutState.hasSidebarColumn).toBe(true);
+    expect(layoutState.hasSidebarHost).toBe(true);
+    expect(layoutState.sidebarWidth).toBe(0);
     expect(layoutState.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 });

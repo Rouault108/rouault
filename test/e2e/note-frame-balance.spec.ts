@@ -66,9 +66,8 @@ test.describe('note frame balance', () => {
     await settleLayout(page);
 
     const wide = await readNoteWideFrameSnapshot(page);
-
     expect(wide.hasAppRouter).toBe(true);
-    expect(wide.hasSidebarColumn).toBe(false);
+    expect(wide.hasSidebarColumn).toBe(true);
     expect(wide.hasNoteShell).toBe(true);
     expect(wide.hasHeaderInner).toBe(true);
 
@@ -78,7 +77,7 @@ test.describe('note frame balance', () => {
     expect(wide.headerInnerWidth).toBeGreaterThanOrEqual(1300);
     expect(wide.headerInnerWidth).toBeLessThanOrEqual(1320);
     expect((wide.headerInnerWidth ?? 0) <= (wide.appRouterWidth ?? 0)).toBe(true);
-    expect(wide.sidebarColumnLeft).toBeNull();
+    expect(wide.sidebarColumnLeft).not.toBeNull();
 
     expect(wide.noteShellWidth).not.toBeNull();
     expect((wide.noteShellWidth ?? 0) <= 1282).toBe(true);
@@ -103,7 +102,7 @@ test.describe('note frame balance', () => {
     ).toBeLessThanOrEqual(1);
 
     expect((wider.headerInnerWidth ?? 0) <= (wider.appRouterWidth ?? 0)).toBe(true);
-    expect(wider.sidebarColumnLeft).toBeNull();
+    expect(wider.sidebarColumnLeft).not.toBeNull();
 
     expect(wider.horizontalOverflow).toBeLessThanOrEqual(1);
   });

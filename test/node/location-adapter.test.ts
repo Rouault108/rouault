@@ -118,9 +118,9 @@ describe('LocationAdapter', () => {
 
     withStubbedWindow(() => {
       expect(adapter.resolveSnapshotUrl('/notes/example?tab=overview')).to.equal(
-        '/notes/example/index.router.json?tab=overview',
+        '/__router/notes/example/index.router.json?tab=overview',
       );
-      expect(adapter.resolveSnapshotUrl('/')).to.equal('/index.router.json');
+      expect(adapter.resolveSnapshotUrl('/')).to.equal('/__router/index.router.json');
     });
   });
 });

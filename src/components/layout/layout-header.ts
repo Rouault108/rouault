@@ -304,7 +304,9 @@ export class LayoutHeader extends LitElement {
     this._sidebarControllerCleanup = layoutSidebarController.subscribe(
       this._resolveSidebarId(),
       (snapshot) => {
-        this._headerSidebarReserved = snapshot.mode === 'fixed';
+        // note layout では本文列と header 内部幅を同じ上限で止め、
+        // fixed sidebar であっても header 側に追加の幅予約を持ち込まない。
+        this._headerSidebarReserved = !this.noteLayout && snapshot.mode === 'fixed';
         this._sidebarOpen = snapshot.state === 'expanded';
       },
     );

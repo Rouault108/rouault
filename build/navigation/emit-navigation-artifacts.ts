@@ -2,6 +2,7 @@ import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
+import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
 
 import {
   NAVIGATION_ENVELOPE_SCHEMA_VERSION,
@@ -288,17 +289,30 @@ export const createNavigationEnvelopeFromHtml = (
   };
 };
 
-const resolveArtifactPath = (htmlFilePath: string): string => {
-  const directory = path.dirname(htmlFilePath);
-  const filename = path.basename(htmlFilePath);
+const normalizeRelativePath = (value: string): string => value.split(path.sep).join('/');
 
-  if (filename === 'index.html') {
-    return path.join(directory, 'index.router.json');
+const resolveContentPathnameFromHtmlFile = (outputDir: string, htmlFilePath: string): string => {
+  const relativeHtmlPath = normalizeRelativePath(path.relative(outputDir, htmlFilePath));
+
+  if (relativeHtmlPath === 'index.html') {
+    return '/';
   }
 
-  const extension = path.extname(filename);
-  const basename = path.basename(filename, extension);
-  return path.join(directory, `${basename}.router.json`);
+  if (relativeHtmlPath.endsWith('/index.html')) {
+    return `/${relativeHtmlPath.slice(0, -'/index.html'.length)}/`;
+  }
+
+  const extension = path.extname(relativeHtmlPath);
+  const basename =
+    extension.length > 0 ? relativeHtmlPath.slice(0, -extension.length) : relativeHtmlPath;
+
+  return `/${basename}`;
+};
+
+const resolveArtifactPath = (outputDir: string, htmlFilePath: string): string => {
+  const contentPathname = resolveContentPathnameFromHtmlFile(outputDir, htmlFilePath);
+  const artifactPathname = resolveRouterArtifactPathname(contentPathname);
+  return path.join(outputDir, artifactPathname.slice(1));
 };
 
 const collectHtmlFiles = async (rootDirectory: string): Promise<string[]> => {
@@ -336,7 +350,7 @@ export const emitNavigationArtifacts = async (options: {
         buildId: options.buildId,
         generatedAt,
       });
-      const artifactPath = resolveArtifactPath(htmlFilePath);
+      const artifactPath = resolveArtifactPath(options.outputDir, htmlFilePath);
       await mkdir(path.dirname(artifactPath), { recursive: true });
       await writeFile(`${artifactPath}`, `${JSON.stringify(envelope, null, 2)}\n`, 'utf8');
     }),
