@@ -1682,6 +1682,8 @@ app-router {
 }
 
 app-router[data-sidebar-presence='present'] {
+  width: min(100%, var(--note-fixed-frame-max-width, 1440px));
+  margin-inline: auto;
   grid-template-columns:
     var(--sidebar-width)
     minmax(0, 1fr);
@@ -1697,7 +1699,7 @@ app-router[data-sidebar-presence='absent'] {
   --note-toc-track: var(--aside-width);
   display: grid;
   align-items: start;
-  max-width: var(--bp-xl);
+  max-width: var(--note-shell-max-width, 1280px);
   margin-inline: auto;
   width: 100%;
   grid-template-columns:

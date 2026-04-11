@@ -15,6 +15,8 @@ export class UiHeader extends LitElement {
       --ui-header-backdrop-saturate: 0.5;
       --ui-header-center-start-inset: 0px;
       --ui-header-center-end-inset: 0px;
+      --ui-header-max-inline-size: var(--layout-chrome-max-width, 1280px);
+      --ui-header-max-inline-size-with-sidebar: var(--ui-header-max-inline-size);
 
       /* コンポーネントローカルトークン */
       --ui-header-edge-highlight: oklch(100% 0 0 / 0.06);
@@ -79,9 +81,13 @@ export class UiHeader extends LitElement {
       display: flex;
       align-items: center;
       block-size: 100%;
-      max-inline-size: var(--bp-xl, 1280px);
+      max-inline-size: var(--ui-header-max-inline-size);
       margin-inline: auto;
       padding-inline: var(--space-4, 1rem);
+    }
+
+    :host([sidebar-expanded]) .inner {
+      max-inline-size: var(--ui-header-max-inline-size-with-sidebar);
     }
 
     :host([sidebar-expanded]) .zone-start {

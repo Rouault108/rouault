@@ -498,6 +498,20 @@
   --sidebar-width: 272px;
   --aside-width: 240px;
 
+  /* レイアウト最大幅は breakpoint token と分離して管理する */
+  --layout-chrome-max-width: 1280px;
+
+  /* note 本文 + TOC の shell 最大幅
+   * 現状の読み味は維持し、outer frame だけを別に調整できるようにする
+   */
+  --note-shell-max-width: 1280px;
+
+  /* fixed sidebar を含む note page 全体フレームの最大幅
+   * 1552px (= 1280 + 272) は広すぎるため、header を含む全体バランスを優先して
+   * 1440px で頭打ちにする
+   */
+  --note-fixed-frame-max-width: 1440px;
+
   /* 単一カラムのトップレベルページで共有する外枠 */
   --page-shell-max-width: 72rem;
   --page-shell-padding-inline: clamp(var(--space-4), 2vw, var(--space-6));
