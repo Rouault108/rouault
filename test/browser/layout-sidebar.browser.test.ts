@@ -563,6 +563,33 @@ describe('layout-sidebar browser contract', () => {
     }
   });
 
+it('fallback nav の branch button は disclosure icon を描画すること', async () => {
+  const media = mockMatchMedia(true);
+
+  try {
+    await ensureLayoutSidebarDefined();
+
+    const host = await fixture<LayoutSidebar>(html`
+      <layout-sidebar
+        presentation="fixed"
+        .itemsJson=${sampleItemsJson}
+        selected-id="music/classical/beethoven/symphony-9"
+      ></layout-sidebar>
+    `);
+
+    await settle(host);
+
+    const musicToggle = expectPresent(getControl(host, 'music'), 'music toggle');
+    expect(musicToggle instanceof HTMLButtonElement).to.equal(true);
+
+    const disclosure = musicToggle.querySelector('[data-sidebar-nav-disclosure]');
+    expect(disclosure).to.not.equal(null);
+    expect(musicToggle.textContent).to.contain('Music');
+  } finally {
+    media.restore();
+  }
+});
+
   it('server nav がある場合は itemsJson fallback へ戻らず、そのまま正規経路として扱うこと', async () => {
     const media = mockMatchMedia(true);
 

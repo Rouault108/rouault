@@ -32,6 +32,15 @@ const escapeHtml = (value: string): string =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
+const renderDisclosureIcon = (): string =>
+  [
+    '<span data-sidebar-nav-disclosure aria-hidden="true">',
+    '<svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">',
+    '<path d="M6 3.5L10.5 8L6 12.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>',
+    '</svg>',
+    '</span>',
+  ].join('');
+
 const getItemId = (item: Element): string =>
   item.getAttribute('data-node-id')?.trim() ?? '';
 
@@ -60,8 +69,17 @@ const getParentItem = (item: Element): HTMLLIElement | null => {
   return parentItem instanceof HTMLLIElement ? parentItem : null;
 };
 
-const getItemLabel = (item: Element): string =>
-  getItemControl(item)?.textContent.trim() ?? item.textContent.trim();
+const getItemLabel = (item: Element): string => {
+  const explicitLabel = item.querySelector(
+    ':scope > button > [data-sidebar-nav-label], :scope > a > [data-sidebar-nav-label]',
+  );
+
+  if (explicitLabel instanceof HTMLElement) {
+    return explicitLabel.textContent.trim();
+  }
+
+  return getItemControl(item)?.textContent.trim() ?? item.textContent.trim();
+};
 
 const isBranchVisible = (item: Element): boolean => {
   let current: Element | null = item;
@@ -177,7 +195,10 @@ const renderFallbackRows = (
 
       return [
         `<li ${baseAttributes}>`,
-        `<button type="button" aria-expanded="${expanded ? 'true' : 'false'}" aria-controls="${escapeHtml(groupId)}">${escapeHtml(node.label)}</button>`,
+        `<button type="button" aria-expanded="${expanded ? 'true' : 'false'}" aria-controls="${escapeHtml(groupId)}">`,
+        `<span data-sidebar-nav-label>${escapeHtml(node.label)}</span>`,
+        renderDisclosureIcon(),
+        `</button>`,
         `<ul id="${escapeHtml(groupId)}"${expanded ? '' : ' hidden'}>${renderFallbackRows(node.children, {
           ...options,
           depth: options.depth + 1,

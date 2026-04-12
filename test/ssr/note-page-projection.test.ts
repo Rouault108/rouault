@@ -132,6 +132,7 @@ describe('buildNotePageProjection', () => {
     expect(projection.sidebar?.structuralExpandedIds).toEqual(['music', 'music/classical']);
     expect(projection.sidebar?.rows[0]?.children[0]?.isStructuralExpanded).toBe(true);
     expect(projection.sidebar?.navHtml).toContain('data-sidebar-nav');
+    expect(projection.sidebar?.navHtml).toContain('data-sidebar-nav-disclosure');
     expect(projection.sidebar?.navHtml).toContain('aria-current="page"');
     expect(JSON.stringify(projection.sidebar?.items ?? [])).toContain(
       '"id":"music","label":"Music","icon":"book-open"',

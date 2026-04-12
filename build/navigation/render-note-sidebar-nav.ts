@@ -7,6 +7,15 @@ const escapeHtml = (value: string): string =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
+const renderDisclosureIcon = (): string =>
+  [
+    '<span data-sidebar-nav-disclosure aria-hidden="true">',
+    '<svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">',
+    '<path d="M6 3.5L10.5 8L6 12.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>',
+    '</svg>',
+    '</span>',
+  ].join('');
+
 const renderRows = (rows: readonly SidebarNavRow[]): string => {
   if (rows.length === 0) {
     return '';
@@ -32,7 +41,10 @@ const renderRow = (row: SidebarNavRow): string => {
 
   return [
     `<li ${baseAttributes}>`,
-    `<button type="button" aria-expanded="${expanded ? 'true' : 'false'}" aria-controls="${escapeHtml(groupId)}">${escapeHtml(row.label)}</button>`,
+    `<button type="button" aria-expanded="${expanded ? 'true' : 'false'}" aria-controls="${escapeHtml(groupId)}">`,
+    `<span data-sidebar-nav-label>${escapeHtml(row.label)}</span>`,
+    renderDisclosureIcon(),
+    `</button>`,
     `<ul id="${escapeHtml(groupId)}"${expanded ? '' : ' hidden'}>${row.children.map((child) => renderRow(child)).join('')}</ul>`,
     `</li>`,
   ].join('');
