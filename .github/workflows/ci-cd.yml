@@ -200,6 +200,7 @@ jobs:
           cache: pnpm
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm run test:storybook:smoke
 
   test-e2e-production:
