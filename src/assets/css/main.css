@@ -1823,6 +1823,28 @@ layout-sidebar [data-sidebar-nav] li[data-node-kind='branch'] > button {
   align-items: center;
   column-gap: var(--space-2, 8px);
   font-weight: var(--font-medium, 500);
+  transition:
+    background-color var(--duration-fast, 70ms)
+      var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+    color var(--duration-fast, 70ms)
+      var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  layout-sidebar [data-sidebar-nav] li[data-node-kind='branch'] > button:hover {
+    background: var(
+      --sidebar-item-branch-hover-bg,
+      oklch(from var(--fg-default) l c h / 0.022)
+    );
+  }
+
+  layout-sidebar
+    [data-sidebar-nav]
+    li[data-node-kind='branch']
+    > button:hover
+    [data-sidebar-nav-disclosure] {
+    color: var(--fg-default);
+  }
 }
 
 layout-sidebar [data-sidebar-nav] [data-sidebar-nav-label] {
