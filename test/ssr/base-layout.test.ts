@@ -8,6 +8,53 @@ describe('BaseLayout', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({
       content: '<p>本文</p>',
+      notePage: {
+        noteKind: 'reader',
+        noteShellSidebarPresence: 'present',
+        showSidebar: true,
+        contentHtml: '<p>本文</p>',
+        sidebar: {
+          stateScopeId: 'note-navigation',
+          selectedId: 'reader-note',
+          items: [{ kind: 'leaf', id: 'reader-note', label: 'Reader Note', href: '/notes/reader-note' }],
+          rows: [
+            {
+              id: 'reader-note',
+              label: 'Reader Note',
+              kind: 'leaf',
+              href: '/notes/reader-note',
+              depth: 0,
+              isCurrent: true,
+              isStructuralExpanded: false,
+              children: [],
+            },
+          ],
+          structuralExpandedIds: [],
+          topologyRevision: 'reader-note-topology',
+          navHtml:
+            '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="reader-note-topology"><ul><li data-node-id="reader-note" data-node-kind="leaf" data-node-depth="0"><a href="/notes/reader-note" aria-current="page">Reader Note</a></li></ul></nav>',
+          heading: 'ナビゲーション',
+          fixedBreakpoint: '1024',
+        },
+        toc: {
+          sourceId: 'toc-source-reader-note',
+          headings: [],
+          capabilities: {
+            activeTracking: false,
+            dynamicScopes: false,
+            mobileSummary: false,
+          },
+          contentRootId: 'note-content-reader-note',
+          homeHref: '/',
+          shouldHydrate: false,
+        },
+        articleHeader: {
+          heading: 'Reader Note',
+          genres: [],
+          shouldHydrateTags: false,
+        },
+        pagefind: null,
+      },
       note: {
         slug: 'reader-note',
         title: 'Reader Note',
@@ -18,6 +65,9 @@ describe('BaseLayout', () => {
     });
 
     expect(rendered).toContain('<layout-header note-layout sidebar-enabled');
+    expect(rendered).toContain('structural-expanded-ids="[]"');
+    expect(rendered).toContain('topology-revision="reader-note-topology"');
+    expect(rendered).toContain('<nav data-sidebar-nav');
   });
 
   it('testing note では header に sidebar-enabled を出力しないこと', () => {

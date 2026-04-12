@@ -4,6 +4,8 @@
 
 本書は、`ui-tree-item` の `ui-file-tree` と整合する安定契約を定義するものです。
 
+ただし、2026-04 の note sidebar 移行以降、note sidebar の正本は `ui-file-tree` compound child 構造ではありません。`ui-tree-item` は引き続き design-system component として扱いますが、note sidebar の server-first navigation 契約とは切り分けて解釈します。
+
 `ui-tree-item` は、階層化された情報を探索するための**行単位コンポーネント**です。ただし、それ単体で tree 全体の意味論を完結させるものではありません。長期的な正規契約としては、`ui-tree-item` は `ui-file-tree` の compound child であり、**表示状態の受け取り**と**低レベルな操作要求の通知**を担います。
 
 したがって、`ui-tree-item` は次を担当します。

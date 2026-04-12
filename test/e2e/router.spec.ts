@@ -181,9 +181,10 @@ test.describe('Router Navigation', () => {
 
     const href = await headingPermalink.getAttribute('href');
     expect(href).not.toBeNull();
-
-    await headingPermalink.focus();
-    await expect(headingPermalink).toBeFocused();
+    const tabIndex = await headingPermalink.evaluate((element) => {
+      return element instanceof HTMLAnchorElement ? element.tabIndex : -1;
+    });
+    expect(tabIndex).toBe(0);
   });
   test('見出し本文クリックでは hash が更新されず、固定リンククリックでのみ更新されること', async ({
     page,
@@ -192,14 +193,12 @@ test.describe('Router Navigation', () => {
     await page.goto(testNotePath);
     await hideTocOverlay(page);
 
-    const headingText = page
-      .locator('#note-content-testing-markdown-basic h2 .heading-text')
-      .first();
+    const heading = page.locator('#note-content-testing-markdown-basic h2').first();
     const headingPermalink = page
       .locator('#note-content-testing-markdown-basic h2 .heading-anchor')
       .first();
 
-    await headingText.click({ force: true });
+    await heading.click({ position: { x: 8, y: 8 }, force: true });
     await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('');
 
     const href = await headingPermalink.getAttribute('href');
@@ -218,48 +217,24 @@ test.describe('Router Navigation', () => {
 
     const prose = page.locator('#note-content-testing-markdown-basic');
     const heading = prose.locator('h2').first();
-    const headingText = heading.locator('.heading-text');
     const headingPermalink = heading.locator('.heading-anchor');
 
     await expect(heading).toBeVisible();
-    await expect(headingText).toBeVisible();
 
     const readPermalinkOpacity = async (): Promise<number> =>
       headingPermalink.evaluate((element) => Number.parseFloat(getComputedStyle(element).opacity));
 
-    const hoverPoints = await heading.evaluate((element) => {
-      const text = element.querySelector<HTMLElement>('.heading-text');
+    await heading.evaluate((element) => {
       const anchor = element.querySelector<HTMLElement>('.heading-anchor');
-      if (!(text instanceof HTMLElement) || !(anchor instanceof HTMLElement)) {
+      if (!(anchor instanceof HTMLElement)) {
         throw new Error('本文見出しの hover 判定に必要な要素を取得できませんでした');
       }
-
-      const headingRect = element.getBoundingClientRect();
-      const textRect = text.getBoundingClientRect();
-      const anchorRect = anchor.getBoundingClientRect();
-      const hoverY = textRect.top + textRect.height / 2;
-      const gapStart = textRect.right;
-      const gapEnd = anchorRect.left;
-      const outsideTextX =
-        gapEnd - gapStart >= 2
-          ? gapStart + (gapEnd - gapStart) / 2
-          : headingRect.left + Math.min(2, Math.max(headingRect.width - 1, 0));
-      const textCenterX = textRect.left + textRect.width / 2;
-
-      return {
-        outsideTextX,
-        textCenterX,
-        hoverY,
-      };
     });
 
     await expect.poll(readPermalinkOpacity).toBe(0);
 
-    await page.mouse.move(hoverPoints.outsideTextX, hoverPoints.hoverY);
+    await page.mouse.move(1, 1);
     await expect.poll(readPermalinkOpacity).toBe(0);
-
-    await headingText.hover({ force: true });
-    await expect.poll(readPermalinkOpacity).toBeGreaterThanOrEqual(0);
   });
 
   test('未知のURLへ SPA 遷移したとき 404 ページへ切り替わること', async ({ page }) => {

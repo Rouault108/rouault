@@ -116,9 +116,9 @@ export const SSR_COMPONENT_DEFINITIONS = [
   },
   {
     tag: 'layout-sidebar',
-    ssr: 'shadow',
+    ssr: 'none',
     profiles: ['note'],
-    adapterKind: 'shadow-default',
+    adapterKind: 'none',
   },
   {
     tag: 'layout-toc',

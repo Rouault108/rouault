@@ -5,6 +5,9 @@
 `ui-sidebar` は `ui-sidebar-shell` と `ui-file-tree` を束ねる sidebar host です。
 責務は、sidebar という公開面に必要な最小限の統合に限定します。
 
+Rouault の note sidebar 正本は `layout-sidebar` 配下の server-first light DOM navigation です。
+したがって `ui-sidebar` は note sidebar の correctness を所有せず、汎用 sidebar host として扱います。
+
 担うもの:
 
 - shell への state / mode 反映

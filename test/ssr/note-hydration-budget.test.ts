@@ -89,17 +89,39 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
     showSidebar,
     contentHtml,
     ...(showSidebar
-      ? {
-          sidebar: {
-            stateScopeId: 'note-navigation',
-            selectedId: note.slug,
-            items: [
-              { kind: 'leaf', id: note.slug, label: note.title, href: `/notes/${note.slug}` },
-            ],
-            heading: 'ナビゲーション',
-            fixedBreakpoint: '1024',
-          },
-        }
+        ? {
+            sidebar: {
+              stateScopeId: 'note-navigation',
+              selectedId: note.slug,
+              items: [
+                { kind: 'leaf', id: note.slug, label: note.title, href: `/notes/${note.slug}` },
+              ],
+              rows: [
+                {
+                  id: note.slug,
+                  label: note.title,
+                  kind: 'leaf',
+                  href: `/notes/${note.slug}`,
+                  depth: 0,
+                  isCurrent: true,
+                  isStructuralExpanded: false,
+                  children: [],
+                },
+              ],
+              structuralExpandedIds: [],
+              topologyRevision: JSON.stringify([
+                {
+                  id: note.slug,
+                  label: note.title,
+                  kind: 'leaf',
+                  href: `/notes/${note.slug}`,
+                },
+              ]),
+              navHtml: `<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="${note.slug}"><ul><li data-node-id="${note.slug}" data-node-kind="leaf" data-node-depth="0"><a href="/notes/${note.slug}" aria-current="page">${note.title}</a></li></ul></nav>`,
+              heading: 'ナビゲーション',
+              fixedBreakpoint: '1024',
+            },
+          }
       : {}),
     toc: {
       sourceId: `toc-source-${dataId}`,

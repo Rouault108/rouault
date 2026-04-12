@@ -10,6 +10,15 @@ import type {
   SidebarShellProjection,
 } from '../../shared/navigation/shell-projection.js';
 
+type SidebarShellProjectionInput = Omit<
+  SidebarShellProjection,
+  'structuralExpandedIds' | 'topologyRevision' | 'navHtml'
+> & {
+  structuralExpandedIds?: string[];
+  topologyRevision?: string | null;
+  navHtml?: string | null;
+};
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -37,7 +46,7 @@ const isHeaderShellProjection = (value: unknown): value is HeaderShellProjection
 const isSidebarPresentation = (value: unknown): value is SidebarShellProjection['presentation'] =>
   value === 'auto' || value === 'fixed' || value === 'overlay';
 
-const isSidebarShellProjection = (value: unknown): value is SidebarShellProjection => {
+const isSidebarShellProjection = (value: unknown): value is SidebarShellProjectionInput => {
   if (!isRecord(value)) {
     return false;
   }
@@ -47,12 +56,35 @@ const isSidebarShellProjection = (value: unknown): value is SidebarShellProjecti
     isString(value['sidebarId']) &&
     isString(value['stateScopeId']) &&
     (value['selectedId'] === null || isString(value['selectedId'])) &&
+    (value['structuralExpandedIds'] === undefined ||
+      (Array.isArray(value['structuralExpandedIds']) &&
+        value['structuralExpandedIds'].every((entry: unknown) => isString(entry)))) &&
+    (value['topologyRevision'] === undefined ||
+      value['topologyRevision'] === null ||
+      isString(value['topologyRevision'])) &&
+    (value['navHtml'] === undefined || value['navHtml'] === null || isString(value['navHtml'])) &&
     isString(value['heading']) &&
     typeof value['fixedBreakpoint'] === 'number' &&
     isString(value['itemsJson']) &&
     isSidebarPresentation(value['presentation'])
   );
 };
+
+const normalizeSidebarShellProjection = (
+  value: SidebarShellProjectionInput,
+): SidebarShellProjection => ({
+  present: value.present,
+  sidebarId: value.sidebarId,
+  stateScopeId: value.stateScopeId,
+  selectedId: value.selectedId,
+  structuralExpandedIds: value.structuralExpandedIds ?? [],
+  topologyRevision: value.topologyRevision ?? null,
+  navHtml: value.navHtml ?? null,
+  heading: value.heading,
+  fixedBreakpoint: value.fixedBreakpoint,
+  itemsJson: value.itemsJson,
+  presentation: value.presentation,
+});
 
 const isShellProjectionSnapshot = (value: unknown): value is ShellProjectionSnapshot => {
   if (!isRecord(value)) {
@@ -149,6 +181,8 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
     }
   }
 
+  const shellProjection = value['shellProjection'];
+
   return {
     schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
     buildId:
@@ -162,8 +196,16 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
         ? (value['generatedAt'])
         : null,
     document: value['document'],
-    shellProjection: (value['shellProjection'] as ShellProjectionSnapshot | null | undefined) ?? null,
-    hydrationPlan:
-      (value['hydrationPlan']) ?? null,
+    shellProjection:
+      shellProjection === null
+        ? null
+        : {
+            header: shellProjection.header,
+            sidebar:
+              shellProjection.sidebar === null
+                ? null
+                : normalizeSidebarShellProjection(shellProjection.sidebar),
+          },
+    hydrationPlan: value['hydrationPlan'] ?? null,
   };
 };

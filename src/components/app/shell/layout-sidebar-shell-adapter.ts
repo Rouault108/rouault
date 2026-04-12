@@ -38,11 +38,29 @@ const toNumber = (value: string | null, fallback: number): number => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const parseStringArrayAttribute = (value: string | null): string[] => {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return [];
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((entry): entry is string => typeof entry === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+};
+
 export const readSidebarShellSnapshot = (sidebar: Element): SidebarShellSnapshot => ({
   present: true,
   sidebarId: toTrimmedString(sidebar.getAttribute('sidebar-id'), DEFAULT_LAYOUT_SIDEBAR_ID),
   stateScopeId: toTrimmedString(sidebar.getAttribute('state-scope-id')),
   selectedId: toOptionalString(sidebar.getAttribute('selected-id')),
+  structuralExpandedIds: parseStringArrayAttribute(sidebar.getAttribute('structural-expanded-ids')),
+  topologyRevision: toOptionalString(sidebar.getAttribute('topology-revision')),
+  navHtml: sidebar.innerHTML.trim() || null,
   heading: toTrimmedString(sidebar.getAttribute('heading'), 'ナビゲーション'),
   fixedBreakpoint: toNumber(sidebar.getAttribute('fixed-breakpoint'), 1024),
   itemsJson: sidebar.getAttribute('items-json') ?? '',
@@ -89,11 +107,26 @@ export const applySidebarSnapshot = (
       currentSidebar.setAttribute('selected-id', snapshot.selectedId);
     }
 
+    currentSidebar.setAttribute(
+      'structural-expanded-ids',
+      JSON.stringify(snapshot.structuralExpandedIds),
+    );
+
+    if (snapshot.topologyRevision === null) {
+      currentSidebar.removeAttribute('topology-revision');
+    } else {
+      currentSidebar.setAttribute('topology-revision', snapshot.topologyRevision);
+    }
+
     currentSidebar.setAttribute('items-json', snapshot.itemsJson);
     currentSidebar.setAttribute('heading', snapshot.heading);
     currentSidebar.setAttribute('fixed-breakpoint', String(snapshot.fixedBreakpoint));
     currentSidebar.setAttribute('sidebar-id', snapshot.sidebarId);
     currentSidebar.setAttribute('presentation', snapshot.presentation);
+
+    if (typeof snapshot.navHtml === 'string') {
+      currentSidebar.innerHTML = snapshot.navHtml;
+    }
   }
 };
 

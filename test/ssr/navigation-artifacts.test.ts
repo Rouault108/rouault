@@ -32,12 +32,14 @@ describe('navigation artifacts', () => {
         <layout-sidebar
           state-scope-id="note-navigation"
           selected-id="notes/example"
+          structural-expanded-ids='["notes"]'
+          topology-revision="topology:example"
           items-json='[{"id":"notes/example","label":"Example"}]'
           heading="ナビゲーション"
           fixed-breakpoint="1024"
           sidebar-id="note-primary"
           presentation="auto"
-        ></layout-sidebar>
+        ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:example"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a href="/notes/example" aria-current="page">Example</a></li></ul></nav></layout-sidebar>
       </aside>
       <main id="main-content"><article data-hydration-scope="note-content"><h1>Example</h1></article></main>
     </app-router>
@@ -59,6 +61,9 @@ describe('navigation artifacts', () => {
     expect(envelope.document.html).to.contain('<article data-hydration-scope="note-content">');
     expect(envelope.shellProjection?.header.currentCorpusKey).to.equal('all');
     expect(envelope.shellProjection?.sidebar?.selectedId).to.equal('notes/example');
+    expect(envelope.shellProjection?.sidebar?.structuralExpandedIds).to.deep.equal(['notes']);
+    expect(envelope.shellProjection?.sidebar?.topologyRevision).to.equal('topology:example');
+    expect(envelope.shellProjection?.sidebar?.navHtml).to.contain('data-sidebar-nav');
     expect(envelope.hydrationPlan?.scopes).to.deep.equal([
       {
         scope: 'skip-link',

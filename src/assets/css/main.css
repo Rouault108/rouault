@@ -1777,6 +1777,60 @@ app-router[data-sidebar-presence='absent'] > main#main-content {
   transform: translateY(calc(var(--layout-sticky-footer-offset, 0px) * -1));
 }
 
+layout-sidebar [data-sidebar-nav] {
+  display: block;
+  min-block-size: 0;
+  padding: var(--space-3, 12px) 0;
+  color: var(--fg-default);
+}
+
+layout-sidebar [data-sidebar-nav] ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+layout-sidebar [data-sidebar-nav] li {
+  margin: 0;
+}
+
+layout-sidebar [data-sidebar-nav] button,
+layout-sidebar [data-sidebar-nav] a {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  inline-size: 100%;
+  min-block-size: 36px;
+  padding-block: var(--space-2, 8px);
+  padding-inline: var(--space-3, 12px) var(--space-4, 16px);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  border-radius: 0;
+}
+
+layout-sidebar [data-sidebar-nav] li > ul {
+  padding-inline-start: var(--space-4, 16px);
+}
+
+layout-sidebar [data-sidebar-nav] li[data-node-kind='branch'] > button {
+  font-weight: var(--font-medium, 500);
+}
+
+layout-sidebar [data-sidebar-nav] li[data-node-kind='leaf'] > a[aria-current='page'] {
+  color: var(--fg-strong, var(--fg-default));
+  background: color-mix(in oklab, var(--accent-soft, oklch(96% 0.02 240)) 72%, transparent);
+}
+
+layout-sidebar [data-sidebar-nav] button:focus-visible,
+layout-sidebar [data-sidebar-nav] a:focus-visible {
+  outline: 2px solid var(--focus-ring, oklch(62% 0.19 254));
+  outline-offset: -2px;
+}
+
 .layout-main-col {
   padding-block: var(--space-8);
 }

@@ -94,6 +94,8 @@ const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar
   serializeHtmlAttributes([
     { name: 'state-scope-id', value: sidebar.stateScopeId },
     { name: 'selected-id', value: sidebar.selectedId },
+    { name: 'structural-expanded-ids', value: sidebar.structuralExpandedIds, kind: 'json' },
+    { name: 'topology-revision', value: sidebar.topologyRevision },
     { name: 'items-json', value: sidebar.items, kind: 'json' },
     { name: 'heading', value: sidebar.heading },
     { name: 'fixed-breakpoint', value: sidebar.fixedBreakpoint },
@@ -212,7 +214,7 @@ export class BaseLayout {
                   { name: 'data-hydration-trigger', value: 'initial' },
                 ])
           }
-        ></layout-sidebar>
+        >${data.notePage?.showSidebar && data.notePage.sidebar ? data.notePage.sidebar.navHtml : ''}</layout-sidebar>
       </aside>
       <main id="${MAIN_CONTENT_ID}" tabindex="-1">
         ${data.content}

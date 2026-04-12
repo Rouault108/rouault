@@ -11,6 +11,22 @@ const createProjection = (
     stateScopeId: 'note-navigation',
     selectedId: 'note',
     items: [{ kind: 'leaf', id: 'note', label: 'Note', href: '/notes/note' }],
+    rows: [
+      {
+        id: 'note',
+        label: 'Note',
+        kind: 'leaf',
+        href: '/notes/note',
+        depth: 0,
+        isCurrent: true,
+        isStructuralExpanded: false,
+        children: [],
+      },
+    ],
+    structuralExpandedIds: [],
+    topologyRevision: '[{"id":"note","kind":"leaf","label":"Note","href":"/notes/note"}]',
+    navHtml:
+      '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="[{&quot;id&quot;:&quot;note&quot;,&quot;kind&quot;:&quot;leaf&quot;,&quot;label&quot;:&quot;Note&quot;,&quot;href&quot;:&quot;/notes/note&quot;}]"><ul><li data-node-id="note" data-node-kind="leaf" data-node-depth="0"><a href="/notes/note" aria-current="page">Note</a></li></ul></nav>',
     heading: 'ナビゲーション',
     fixedBreakpoint: '1024',
   };
@@ -82,6 +98,23 @@ describe('NoteLayout', () => {
           stateScopeId: 'note-navigation',
           selectedId: 'note',
           items: [{ kind: 'leaf', id: 'note', label: '<Unsafe>', href: '/notes/note' }],
+          rows: [
+            {
+              id: 'note',
+              label: '<Unsafe>',
+              kind: 'leaf',
+              href: '/notes/note',
+              depth: 0,
+              isCurrent: true,
+              isStructuralExpanded: false,
+              children: [],
+            },
+          ],
+          structuralExpandedIds: [],
+          topologyRevision:
+            '[{"id":"note","kind":"leaf","label":"<Unsafe>","href":"/notes/note"}]',
+          navHtml:
+            '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="unsafe"><ul><li data-node-id="note" data-node-kind="leaf" data-node-depth="0"><a href="/notes/note" aria-current="page">&lt;Unsafe&gt;</a></li></ul></nav>',
           heading: 'ナビゲーション',
           fixedBreakpoint: '1024',
         },

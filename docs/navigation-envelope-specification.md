@@ -34,6 +34,20 @@
 
 component の open / closed、media query 由来 mode、focus などの一時状態は含みません。
 
+sidebar projection は `itemsJson` 単独ではなく、少なくとも次を表現できなければなりません。
+
+- `selectedId`
+- `structuralExpandedIds`
+- `topologyRevision`
+- `navHtml`
+- `sidebarId`
+- `stateScopeId`
+- `heading`
+- `fixedBreakpoint`
+- `presentation`
+
+`itemsJson` は移行期間の compat field として保持して構いませんが、唯一正本として扱ってはなりません。
+
 ### `hydrationPlan`
 
 - route 由来の hydration planning 情報だけを持ちます
@@ -44,6 +58,7 @@ component の open / closed、media query 由来 mode、focus などの一時状
 - document route が旧 `DocumentSnapshot` を返す間は adapter で envelope へ変換します
 - fetch 経路は `index.router.json` の JSON `NavigationEnvelope` のみを受理します
 - fetched HTML の `layout-header` / `layout-sidebar` 属性形式は router protocol ではありません
+- ただし build で抽出された `navHtml` は `NavigationEnvelope.shellProjection.sidebar` の正規 payload として扱います
 
 ## buildId 整合
 

@@ -3,12 +3,14 @@ import { injectNoteContentProfiles } from '../../build/content/note-content-cont
 import type {
   BreadcrumbItem,
   NoteNavigationModel,
+  SidebarNavRow,
 } from '../../shared/navigation/navigation-types.js';
 import type { PagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 import type { NoteStatus } from '../../src/types/article-status.js';
 import type { NoteContentKind } from '../../shared/note/note-kind.js';
 import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
 import { NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE } from '../../src/layout/note-sidebar-breakpoint.js';
+import { renderNoteSidebarNav } from '../navigation/render-note-sidebar-nav.js';
 import {
   resolveNoteHydrationBudgetProfile,
   type NoteHydrationCounts,
@@ -42,6 +44,10 @@ export interface NotePageSidebarProjection {
   stateScopeId: string;
   selectedId: string;
   items: TreeNode[];
+  rows: readonly SidebarNavRow[];
+  structuralExpandedIds: readonly string[];
+  topologyRevision: string;
+  navHtml: string;
   heading: string;
   fixedBreakpoint: string;
 }
@@ -273,6 +279,13 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
             stateScopeId: 'note-navigation',
             selectedId: input.navigation.selectedId ?? '',
             items: input.navigation.sidebarTree,
+            rows: input.navigation.sidebarRows,
+            structuralExpandedIds: input.navigation.structuralExpandedIds,
+            topologyRevision: input.navigation.topologyRevision,
+            navHtml: renderNoteSidebarNav(input.navigation.sidebarRows, {
+              ariaLabel: 'ノートナビゲーション',
+              topologyRevision: input.navigation.topologyRevision,
+            }),
             heading: 'ナビゲーション',
             fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE,
           },

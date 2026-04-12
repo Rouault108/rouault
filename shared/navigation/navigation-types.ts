@@ -41,9 +41,24 @@ export interface BreadcrumbItem {
   href?: string;
 }
 
+export interface SidebarNavRow {
+  id: string;
+  label: string;
+  kind: TreeNode['kind'];
+  href?: string;
+  icon?: IconName;
+  depth: number;
+  isCurrent: boolean;
+  isStructuralExpanded: boolean;
+  children: readonly SidebarNavRow[];
+}
+
 export interface NoteNavigationModel {
   sidebarTree: TreeNode[];
+  sidebarRows: readonly SidebarNavRow[];
   selectedId: string | null;
+  structuralExpandedIds: readonly string[];
+  topologyRevision: string;
   breadcrumbs: BreadcrumbItem[];
 }
 

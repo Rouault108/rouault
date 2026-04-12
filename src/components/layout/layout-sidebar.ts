@@ -1,12 +1,9 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import '../ui/icon/icon.js';
-import '../ui/sidebar/sidebar.js';
-import type { TreeNode } from '../ui/file-tree/file-tree.js';
-import type {
-  UiSidebarRequestCloseEventDetail,
-  UiSidebarToggleDetail,
-} from '../ui/sidebar/sidebar.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import '../ui/sidebar-shell/sidebar-shell.js';
+import type { UiSidebarRequestCloseDetail } from '../ui/sidebar-shell/sidebar-shell.js';
+import type { TreeNode } from '../../../shared/navigation/tree-node.js';
 import type { IconName } from '../../../shared/icons/icons-catalog.js';
 import { isIconName } from '../../../shared/icons/icons-catalog.js';
 import type { SidebarShellProjection } from '../../../shared/navigation/shell-projection.js';
@@ -23,6 +20,12 @@ import {
   readLayoutSidebarTreeState,
   writeLayoutSidebarTreeState,
 } from './layout-sidebar-tree-state.js';
+import {
+  findLayoutSidebarNav,
+  LayoutSidebarNavInteractionController,
+  renderLayoutSidebarFallbackNav,
+  syncLayoutSidebarNav,
+} from './layout-sidebar-nav.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -33,15 +36,6 @@ const toOptionalString = (value: unknown): string | undefined => {
   }
   const normalized = value.trim();
   return normalized.length > 0 ? normalized : undefined;
-};
-
-type BranchTreeNode = Extract<TreeNode, { kind: 'branch' }>;
-type LeafTreeNode = Extract<TreeNode, { kind: 'leaf' }>;
-type TreeIcon = IconName;
-const DEFAULT_SIDEBAR_SNAPSHOT: LayoutSidebarControllerSnapshot = {
-  mode: 'overlay',
-  state: 'collapsed',
-  returnFocusTarget: null,
 };
 
 const normalizeExpandedIds = (expandedIds: Iterable<string>): string[] =>
@@ -58,7 +52,7 @@ const sameExpandedIds = (left: Iterable<string>, right: Iterable<string>): boole
   return normalizedLeft.every((value, index) => value === normalizedRight[index]);
 };
 
-const toOptionalTreeIcon = (value: unknown): TreeIcon | undefined => {
+const toOptionalTreeIcon = (value: unknown): IconName | undefined => {
   const normalized = toOptionalString(value);
   if (normalized === undefined) {
     return undefined;
@@ -104,32 +98,32 @@ const toTreeNode = (value: unknown): TreeNode | null => {
   }
 
   if (children.length > 0) {
-    const node: BranchTreeNode = {
+    return {
       kind: 'branch',
       id,
       label,
       children,
+      ...(icon ? { icon } : {}),
     };
-    if (icon !== undefined) {
-      node.icon = icon;
-    }
-    return node;
   }
 
   if (!href) {
     return null;
   }
 
-  const node: LeafTreeNode = {
+  return {
     kind: 'leaf',
     id,
     label,
     href,
+    ...(icon ? { icon } : {}),
   };
-  if (icon !== undefined) {
-    node.icon = icon;
-  }
-  return node;
+};
+
+const DEFAULT_SIDEBAR_SNAPSHOT: LayoutSidebarControllerSnapshot = {
+  mode: 'overlay',
+  state: 'collapsed',
+  returnFocusTarget: null,
 };
 
 @customElement('layout-sidebar')
@@ -142,10 +136,30 @@ export class LayoutSidebar extends LitElement {
       overflow: visible;
     }
 
-    ui-sidebar {
+    ui-sidebar-shell {
       display: block;
       block-size: 100%;
       min-block-size: 0;
+    }
+
+    .sidebar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2, 8px);
+      min-block-size: var(--control-height-lg, 40px);
+      padding: var(--space-2, 8px) var(--space-4, 16px);
+      border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(20% 0 0 / 0.12));
+      background: var(--bg-surface-2, oklch(100% 0 0));
+    }
+
+    .heading {
+      margin: 0;
+      font-family: var(--font-sans);
+      font-size: var(--text-sm, 13px);
+      font-weight: var(--font-medium, 500);
+      letter-spacing: 0.01em;
+      color: var(--fg-muted, oklch(42% 0 0));
     }
   `;
 
@@ -157,6 +171,12 @@ export class LayoutSidebar extends LitElement {
 
   @property({ type: String, attribute: 'items-json' })
   itemsJson = '';
+
+  @property({ type: String, attribute: 'structural-expanded-ids' })
+  structuralExpandedIdsJson = '[]';
+
+  @property({ type: String, attribute: 'topology-revision' })
+  topologyRevision: string | null = null;
 
   @property({ type: String })
   heading = 'ナビゲーション';
@@ -174,30 +194,83 @@ export class LayoutSidebar extends LitElement {
   private _items: TreeNode[] = [];
 
   @state()
+  private _navMarkup = '';
+
+  @state()
   private _sidebarSnapshot: LayoutSidebarControllerSnapshot = DEFAULT_SIDEBAR_SNAPSHOT;
 
   @state()
   private _persistedExpandedIds = new Set<string>();
 
-  private _storage: Storage | null = null;
+  private _activeId: string | null = null;
 
+  private _storage: Storage | null = null;
   private _detachStickyFooterBoundary: (() => void) | null = null;
   private _storeCleanup: (() => void) | null = null;
+  private _navInteraction = new LayoutSidebarNavInteractionController(this, {
+    onToggle: (id, expanded) => {
+      this._handleNavToggle(id, expanded);
+    },
+    onSelect: (id) => {
+      this._handleNavSelect(id);
+    },
+    onActiveChange: (id) => {
+      this._setActiveId(id);
+    },
+  });
+  private _bootstrappedMarkup = false;
+  private _navMode: 'server' | 'fallback' = 'fallback';
+
+  protected override createRenderRoot(): HTMLElement {
+    return this;
+  }
 
   applyShellProjection(snapshot: SidebarShellProjection | null): void {
     if (snapshot === null) {
       return;
     }
 
-    // router は route 由来の tree / selectedId / presentation だけを更新し、
+    // router は route 由来の tree / selectedId / nav subtree だけを更新し、
     // 開閉状態や expanded state の継続は controller と localStorage に委ねる。
     this.stateScopeId = snapshot.stateScopeId;
     this.selectedId = snapshot.selectedId;
+    this.structuralExpandedIdsJson = JSON.stringify(snapshot.structuralExpandedIds);
+    this.topologyRevision = snapshot.topologyRevision;
     this.itemsJson = snapshot.itemsJson;
     this.heading = snapshot.heading;
     this.fixedBreakpoint = snapshot.fixedBreakpoint;
     this.sidebarId = snapshot.sidebarId;
     this.presentation = snapshot.presentation;
+    this.setAttribute('state-scope-id', snapshot.stateScopeId);
+
+    if (snapshot.selectedId === null) {
+      this.removeAttribute('selected-id');
+    } else {
+      this.setAttribute('selected-id', snapshot.selectedId);
+    }
+
+    this.setAttribute('structural-expanded-ids', JSON.stringify(snapshot.structuralExpandedIds));
+
+    if (snapshot.topologyRevision === null) {
+      this.removeAttribute('topology-revision');
+    } else {
+      this.setAttribute('topology-revision', snapshot.topologyRevision);
+    }
+
+    this.setAttribute('items-json', snapshot.itemsJson);
+    this.setAttribute('heading', snapshot.heading);
+    this.setAttribute('fixed-breakpoint', String(snapshot.fixedBreakpoint));
+    this.setAttribute('sidebar-id', snapshot.sidebarId);
+    this.setAttribute('presentation', snapshot.presentation);
+
+    if (typeof snapshot.navHtml === 'string' && snapshot.navHtml.trim().length > 0) {
+      this._navMode = 'server';
+      this._navMarkup = snapshot.navHtml;
+      this._activeId = null;
+      return;
+    }
+
+    this._refreshFallbackNavMarkup();
   }
 
   readShellProjection(): SidebarShellProjection {
@@ -206,6 +279,9 @@ export class LayoutSidebar extends LitElement {
       sidebarId: this._resolveSidebarId(),
       stateScopeId: this._resolveStateScopeId(),
       selectedId: this.selectedId,
+      structuralExpandedIds: this._parseStructuralExpandedIds(this.structuralExpandedIdsJson),
+      topologyRevision: this.topologyRevision,
+      navHtml: this._readServerNavMarkup(),
       heading: this.heading,
       fixedBreakpoint: this.fixedBreakpoint,
       itemsJson: this.itemsJson,
@@ -214,11 +290,22 @@ export class LayoutSidebar extends LitElement {
   }
 
   override connectedCallback(): void {
+    if (!this._bootstrappedMarkup) {
+      const initialMarkup = this.innerHTML.trim();
+      if (initialMarkup.length > 0) {
+        this._navMarkup = initialMarkup;
+        this._navMode = 'server';
+      }
+      this._bootstrappedMarkup = true;
+      this.innerHTML = '';
+    }
+
     super.connectedCallback();
 
     this._storage = this._resolveStorage();
     this._reloadItemsFromItemsJson();
     this._restorePersistedExpandedIds();
+    this._ensureRenderableNavMarkup();
     this._initializePresentationStore();
     this._connectPresentationStore();
     this._reflectModeAttribute();
@@ -226,6 +313,7 @@ export class LayoutSidebar extends LitElement {
   }
 
   override disconnectedCallback(): void {
+    this._navInteraction.disconnect();
     this._storeCleanup?.();
     this._storeCleanup = null;
     this._detachStickyFooterBoundary?.();
@@ -236,6 +324,9 @@ export class LayoutSidebar extends LitElement {
   protected override willUpdate(changedProperties: Map<string, unknown>): void {
     if (!this.hasUpdated || changedProperties.has('itemsJson')) {
       this._reloadItemsFromItemsJson();
+      if (this._navMode === 'fallback') {
+        this._refreshFallbackNavMarkup();
+      }
     }
 
     if (
@@ -244,6 +335,9 @@ export class LayoutSidebar extends LitElement {
       changedProperties.has('stateScopeId')
     ) {
       this._restorePersistedExpandedIds();
+      if (this._navMode === 'fallback') {
+        this._refreshFallbackNavMarkup();
+      }
     }
   }
 
@@ -267,13 +361,15 @@ export class LayoutSidebar extends LitElement {
       this._reflectModeAttribute();
       this._syncStickyFooterBoundary();
     }
+
+    this._connectNavInteraction();
+    this._syncRenderedNav();
   }
 
   expand(trigger?: HTMLElement): void {
     if (this._sidebarSnapshot.mode !== 'overlay') {
       return;
     }
-
     layoutSidebarController.open(this._resolveSidebarId(), trigger);
   }
 
@@ -281,7 +377,6 @@ export class LayoutSidebar extends LitElement {
     if (this._sidebarSnapshot.mode !== 'overlay') {
       return;
     }
-
     layoutSidebarController.close(this._resolveSidebarId());
   }
 
@@ -289,7 +384,6 @@ export class LayoutSidebar extends LitElement {
     if (this._sidebarSnapshot.mode !== 'overlay') {
       return;
     }
-
     layoutSidebarController.toggle(this._resolveSidebarId(), trigger);
   }
 
@@ -341,6 +435,34 @@ export class LayoutSidebar extends LitElement {
 
   private _reloadItemsFromItemsJson(): void {
     this._items = this._parseItemsJson(this.itemsJson);
+  }
+
+  private _readServerNavMarkup(): string | null {
+    const nav = findLayoutSidebarNav(this);
+    if (nav instanceof HTMLElement) {
+      return nav.outerHTML;
+    }
+
+    const markup = this._navMarkup.trim();
+    return markup.length > 0 ? markup : null;
+  }
+
+  private _parseStructuralExpandedIds(value: string): string[] {
+    const normalized = value.trim();
+    if (normalized.length === 0) {
+      return [];
+    }
+
+    try {
+      const parsed: unknown = JSON.parse(normalized);
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed.filter((item): item is string => typeof item === 'string');
+    } catch {
+      return [];
+    }
   }
 
   private _restorePersistedExpandedIds(): void {
@@ -399,14 +521,63 @@ export class LayoutSidebar extends LitElement {
     this._persistedExpandedIds = nextExpandedIds;
   }
 
-  private _onSidebarRequestClose = (
-    _event: CustomEvent<UiSidebarRequestCloseEventDetail>,
-  ): void => {
-    layoutSidebarController.close(this._resolveSidebarId());
-  };
+  private _setActiveId(id: string | null): void {
+    const normalized = id?.trim() ?? null;
+    if (this._activeId === normalized) {
+      return;
+    }
 
-  private _onSidebarToggle = (event: CustomEvent<UiSidebarToggleDetail>): void => {
-    const { id, expanded } = event.detail;
+    this._activeId = normalized;
+  }
+
+  private _getMergedExpandedIds(): Set<string> {
+    return new Set(
+      mergeLayoutSidebarTreeState(
+        this._items,
+        normalizeExpandedIds(this._persistedExpandedIds),
+        this.selectedId,
+      ),
+    );
+  }
+
+  private _refreshFallbackNavMarkup(): void {
+    this._navMode = 'fallback';
+    this._navMarkup = renderLayoutSidebarFallbackNav(this._items, {
+      ariaLabel: this.heading,
+      selectedId: this.selectedId,
+      expandedIds: this._getMergedExpandedIds(),
+      topologyRevision: this.topologyRevision,
+    });
+  }
+
+  private _ensureRenderableNavMarkup(): void {
+    if (this._navMode === 'server' && this._navMarkup.trim().length > 0) {
+      return;
+    }
+
+    this._refreshFallbackNavMarkup();
+  }
+
+  private _connectNavInteraction(): void {
+    this._navInteraction.connect(findLayoutSidebarNav(this));
+  }
+
+  private _syncRenderedNav(): void {
+    const nav = findLayoutSidebarNav(this);
+    if (!(nav instanceof HTMLElement)) {
+      return;
+    }
+
+    const nextActiveId = syncLayoutSidebarNav(nav, {
+      selectedId: this.selectedId,
+      expandedIds: this._getMergedExpandedIds(),
+      activeId: this._activeId,
+    });
+
+    this._setActiveId(nextActiveId);
+  }
+
+  private _handleNavToggle(id: string, expanded: boolean): void {
     const nextExpandedIds = new Set(this._persistedExpandedIds);
 
     if (expanded) {
@@ -427,39 +598,43 @@ export class LayoutSidebar extends LitElement {
         stateScopeId: this._resolveStateScopeId(),
       },
     );
-  };
 
-  private _onSidebarSelect = (): void => {
+    this.requestUpdate();
+  }
+
+  private _handleNavSelect(id: string): void {
+    this._setActiveId(id);
+
     if (this._sidebarSnapshot.mode !== 'overlay') {
       return;
     }
 
     layoutSidebarController.close(this._resolveSidebarId());
+  }
+
+  private _onSidebarRequestClose = (
+    _event: CustomEvent<UiSidebarRequestCloseDetail>,
+  ): void => {
+    layoutSidebarController.close(this._resolveSidebarId());
   };
 
   override render() {
+    const normalizedHeading = this.heading.trim();
+
     return html`
-      <ui-sidebar
-        id="layout-sidebar-panel"
+      <ui-sidebar-shell
         data-state=${this._sidebarSnapshot.state}
         mode=${this._sidebarSnapshot.mode}
         .state=${this._sidebarSnapshot.state}
         .mode=${this._sidebarSnapshot.mode}
-        .items=${this._items}
-        .selectedId=${this.selectedId}
-        .expandedIds=${new Set(
-          mergeLayoutSidebarTreeState(
-            this._items,
-            normalizeExpandedIds(this._persistedExpandedIds),
-            this.selectedId,
-          ),
-        )}
-        .heading=${this.heading}
         .returnFocusTarget=${this._sidebarSnapshot.returnFocusTarget}
         @ui-sidebar-request-close=${this._onSidebarRequestClose}
-        @ui-sidebar-toggle=${this._onSidebarToggle}
-        @ui-sidebar-select=${this._onSidebarSelect}
-      ></ui-sidebar>
+      >
+        <div class="sidebar-head" slot="header">
+          <h2 class="heading">${normalizedHeading}</h2>
+        </div>
+        ${unsafeHTML(this._navMarkup)}
+      </ui-sidebar-shell>
     `;
   }
 }

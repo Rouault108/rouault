@@ -535,6 +535,10 @@ describe('app-router', () => {
               present: true,
               stateScopeId: 'note-navigation',
               selectedId: 'notes/new',
+              structuralExpandedIds: [],
+              topologyRevision: 'topology:new',
+              navHtml:
+                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a href="/notes/new" aria-current="page">New</a></li></ul></nav>',
               itemsJson:
                 '[{"kind":"leaf","id":"notes/new","label":"New","href":"/notes/new"}]',
               heading: '新しいナビゲーション',
@@ -662,19 +666,19 @@ describe('app-router', () => {
 
     await appHost.whenReady();
 
-    const originalSetAttribute = sidebar.setAttribute.bind(sidebar);
+    const projectionSidebar = sidebar as HTMLElement & {
+      applyShellProjection?: (snapshot: unknown) => void;
+    };
+    const originalApplyShellProjection = projectionSidebar.applyShellProjection?.bind(projectionSidebar);
     let shouldThrow = true;
-    Object.defineProperty(sidebar, 'setAttribute', {
-      configurable: true,
-      value(name: string, value: string) {
-        if (shouldThrow && name === 'state-scope-id') {
-          shouldThrow = false;
-          throw new Error('sidebar commit failed');
-        }
+    projectionSidebar.applyShellProjection = (snapshot: unknown): void => {
+      if (shouldThrow) {
+        shouldThrow = false;
+        throw new Error('sidebar commit failed');
+      }
 
-        originalSetAttribute(name, value);
-      },
-    });
+      originalApplyShellProjection?.(snapshot);
+    };
 
     globalThis.fetch = () =>
       Promise.resolve(
@@ -694,6 +698,10 @@ describe('app-router', () => {
               present: true,
               stateScopeId: 'reference-navigation',
               selectedId: 'notes/new',
+              structuralExpandedIds: [],
+              topologyRevision: 'topology:new',
+              navHtml:
+                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a href="/notes/new" aria-current="page">New</a></li></ul></nav>',
               itemsJson:
                 '[{"kind":"leaf","id":"notes/new","label":"New","href":"/notes/new"}]',
               heading: '新しいナビゲーション',

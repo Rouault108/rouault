@@ -7,39 +7,6 @@ interface MatchMediaController {
   restore(): void;
 }
 
-const sampleItemsJson = JSON.stringify([
-  {
-    kind: 'branch',
-    id: 'music',
-    label: 'Music',
-    icon: 'folder',
-    children: [
-      {
-        kind: 'branch',
-        id: 'music/classical',
-        label: 'Classical',
-        icon: 'folder',
-        children: [
-          {
-            kind: 'leaf',
-            id: 'music/classical/beethoven/symphony-9',
-            label: '交響曲第9番 ニ短調',
-            href: '/notes/music/classical/beethoven/symphony-9',
-            icon: 'file-text',
-          },
-          {
-            kind: 'leaf',
-            id: 'music/classical/tchaikovsky/the-nutcracker',
-            label: 'くるみ割り人形',
-            href: '/notes/music/classical/tchaikovsky/the-nutcracker',
-            icon: 'file-text',
-          },
-        ],
-      },
-    ],
-  },
-]);
-
 const noop = (): void => {
   return undefined;
 };
@@ -74,16 +41,15 @@ const mockMatchMedia = (breakpointMatches: boolean): MatchMediaController => {
   };
 };
 
-const getSidebar = (host: LayoutSidebar): HTMLElement | null =>
-  host.shadowRoot?.querySelector('ui-sidebar') ?? null;
-
 const flush = async (host: LayoutSidebar): Promise<void> => {
   await waitForLitUpdate(host);
   await nextAnimationFrame();
 
-  const sidebar = getSidebar(host) as (HTMLElement & { updateComplete?: Promise<unknown> }) | null;
-  if (sidebar?.updateComplete) {
-    await sidebar.updateComplete;
+  const shell = host.querySelector('ui-sidebar-shell') as
+    | (HTMLElement & { updateComplete?: Promise<unknown> })
+    | null;
+  if (shell?.updateComplete) {
+    await shell.updateComplete;
   }
 
   await nextAnimationFrame();
@@ -91,21 +57,32 @@ const flush = async (host: LayoutSidebar): Promise<void> => {
 };
 
 describe('layout-sidebar hydration contract', () => {
-  it('manual activation なしでも初回描画が成立すること', async () => {
+  it('manual activation なしでも server nav を保持したまま shell を接続できること', async () => {
     const media = mockMatchMedia(true);
 
     try {
       const host = await fixture<LayoutSidebar>(html`
-        <layout-sidebar
-          .itemsJson=${sampleItemsJson}
-          selected-id="music/classical/beethoven/symphony-9"
-          data-hydration-trigger="manual"
-        ></layout-sidebar>
+        <layout-sidebar selected-id="music/classical/beethoven/symphony-9" data-hydration-trigger="manual">
+          <nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:manual">
+            <ul>
+              <li data-node-id="music" data-node-kind="branch" data-node-depth="0">
+                <button type="button" aria-expanded="true" aria-controls="sidebar-group-music">Music</button>
+                <ul id="sidebar-group-music">
+                  <li data-node-id="music/classical/beethoven/symphony-9" data-node-kind="leaf" data-node-depth="1">
+                    <a href="/notes/music/classical/beethoven/symphony-9" aria-current="page">交響曲第9番 ニ短調</a>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </nav>
+        </layout-sidebar>
       `);
 
       await flush(host);
 
-      expect(getSidebar(host)).to.not.equal(null);
+      expect(host.querySelector('ui-sidebar-shell')).to.not.equal(null);
+      expect(host.querySelector('nav[data-sidebar-nav]')).to.not.equal(null);
+      expect(host.querySelector('a[aria-current="page"]')?.textContent).to.equal('交響曲第9番 ニ短調');
     } finally {
       media.restore();
     }

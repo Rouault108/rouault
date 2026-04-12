@@ -16,6 +16,7 @@ import type {
   BuildNoteNavigationModelInput,
   NoteNavigationEntry,
   NoteNavigationModel,
+  SidebarNavRow,
 } from '../../shared/navigation/navigation-types.js';
 
 interface SidebarBranchNode {
@@ -71,6 +72,77 @@ const findNodeById = (nodes: TreeNode[], id: string): TreeNode | null => {
 
   return null;
 };
+
+const collectSelectedAncestors = (
+  nodes: readonly TreeNode[],
+  selectedId: string | null,
+  path: readonly string[] = [],
+): string[] | null => {
+  if (selectedId === null) {
+    return null;
+  }
+
+  for (const node of nodes) {
+    if (node.id === selectedId) {
+      return [...path];
+    }
+
+    if (node.kind !== 'branch') {
+      continue;
+    }
+
+    const nextPath = [...path, node.id];
+    const result = collectSelectedAncestors(node.children, selectedId, nextPath);
+    if (result !== null) {
+      return result;
+    }
+  }
+
+  return null;
+};
+
+const buildSidebarRows = (
+  nodes: readonly TreeNode[],
+  options: {
+    selectedId: string | null;
+    structuralExpandedIds: ReadonlySet<string>;
+    depth?: number;
+  },
+): SidebarNavRow[] => {
+  const depth = options.depth ?? 0;
+
+  return nodes.map((node) => ({
+    id: node.id,
+    label: node.label,
+    kind: node.kind,
+    ...(node.kind === 'leaf' ? { href: node.href } : {}),
+    ...(typeof node.icon === 'string' ? { icon: node.icon } : {}),
+    depth,
+    isCurrent: node.id === options.selectedId,
+    isStructuralExpanded:
+      node.kind === 'branch' ? options.structuralExpandedIds.has(node.id) : false,
+    children:
+      node.kind === 'branch'
+        ? buildSidebarRows(node.children, {
+            selectedId: options.selectedId,
+            structuralExpandedIds: options.structuralExpandedIds,
+            depth: depth + 1,
+          })
+        : [],
+  }));
+};
+
+const toTopologySnapshot = (nodes: readonly TreeNode[]): unknown[] =>
+  nodes.map((node) => ({
+    id: node.id,
+    label: node.label,
+    kind: node.kind,
+    ...(typeof node.icon === 'string' ? { icon: node.icon } : {}),
+    ...(node.kind === 'leaf' ? { href: node.href } : { children: toTopologySnapshot(node.children) }),
+  }));
+
+const createTopologyRevision = (nodes: readonly TreeNode[]): string =>
+  JSON.stringify(toTopologySnapshot(nodes));
 
 const ensureDirectoryNode = (
   nodes: TreeNode[],
@@ -410,10 +482,20 @@ export const buildNoteNavigationModel = ({
 }: BuildNoteNavigationModelInput): NoteNavigationModel => {
   const sidebarNotes = mergeCurrentNoteIntoSidebarNotes(currentNote, notes);
   const rootSlug = toTrimmedString(currentNote?.sidebarRoot);
+  const sidebarTree = buildSidebarTree(sidebarNotes, rootSlug);
+  const selectedId = resolveSelectedSidebarNodeId(currentNote);
+  const structuralExpandedIds = collectSelectedAncestors(sidebarTree, selectedId) ?? [];
+  const structuralExpandedSet = new Set(structuralExpandedIds);
 
   return {
-    sidebarTree: buildSidebarTree(sidebarNotes, rootSlug),
-    selectedId: resolveSelectedSidebarNodeId(currentNote),
+    sidebarTree,
+    sidebarRows: buildSidebarRows(sidebarTree, {
+      selectedId,
+      structuralExpandedIds: structuralExpandedSet,
+    }),
+    selectedId,
+    structuralExpandedIds,
+    topologyRevision: createTopologyRevision(sidebarTree),
     breadcrumbs: buildBreadcrumbs(currentNote, notes),
   };
 };

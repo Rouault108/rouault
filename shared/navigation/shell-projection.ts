@@ -18,6 +18,9 @@ export interface SidebarShellProjection {
   sidebarId: string;
   stateScopeId: string;
   selectedId: string | null;
+  structuralExpandedIds: string[];
+  topologyRevision: string | null;
+  navHtml: string | null;
   heading: string;
   fixedBreakpoint: number;
   itemsJson: string;

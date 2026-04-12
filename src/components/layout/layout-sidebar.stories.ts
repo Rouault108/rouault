@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './layout-sidebar';
 import type { LayoutSidebar } from './layout-sidebar';
-import type { TreeNode } from '../ui/file-tree/file-tree';
+import type { TreeNode } from '../../../shared/navigation/tree-node.js';
 
 const sampleItems: readonly TreeNode[] = [
   {

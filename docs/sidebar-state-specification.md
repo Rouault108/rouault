@@ -4,6 +4,10 @@
 
 本書は、Rouault の note sidebar における state ownership と DOM 契約を固定するための仕様です。
 
+2026-04 の移行以降、note sidebar の正本は `layout-sidebar` の light DOM に置かれる
+server-first navigation とします。`items-json` は互換経路として維持しますが、
+note sidebar の唯一正本ではありません。
+
 対象は `layout-header` / `layout-sidebar` / `ui-sidebar` / `ui-sidebar-shell` と、
 それらを接続する presentation store です。
 
@@ -46,7 +50,8 @@ tree state の source of truth は
 この state の内部原則:
 
 - persisted state の scope は `sidebarId + stateScopeId`
-- note sidebar の items 供給源は `items-json` のみ
+- note sidebar の tree 入力は `items-json` 互換経路を維持する
+- note sidebar の初回 HTML は server-first nav を正本とする
 - `selectedId` の ancestor 展開は render 時の導出値であり、persisted state へ書き戻さない
 
 ## 3. ownership boundary
@@ -70,11 +75,12 @@ tree state の source of truth は
 ### 3.2 `layout-sidebar`
 
 [`src/components/layout/layout-sidebar.ts`](/Users/ruo/Desktop/Programing/rouault/src/components/layout/layout-sidebar.ts)
-は render host + data adapter です。
+は persistent coordinator host です。
 
 持ってよい責務:
 
-- `items-json` からの items 読み込み
+- server nav light DOM の保持と route ごとの差し替え
+- `items-json` 互換経路からの items 読み込み
 - `state-scope-id` に基づく tree state の読み書き
 - `selectedId` 変更時の ancestor auto-expand 導出
 - presentation store snapshot の反映
@@ -121,20 +127,27 @@ app shell 上の sidebar host は 1 実体だけです。
 
 note sidebar の public DOM 契約は次を正本とします。
 
-- `items-json`
+- `layout-sidebar` host の恒久 identity
+- host 内 light DOM の server-first nav 実体
 - `state-scope-id`
 - `selected-id`
+- `structural-expanded-ids`
+- `topology-revision`
 - `sidebar-id`
 - `heading`
 - `fixed-breakpoint`
 - `presentation`
+
+互換経路として次を維持します。
+
+- `items-json`
 
 `source-id` は note sidebar の public contract に含めません。
 
 補足:
 
 - note 間遷移では `state-scope-id="note-navigation"` を維持する
-- route 遷移で変わるのは `selected-id` と `items-json` を主とする現在位置・表示内容だけである
+- route 遷移では host を再生成せず、必要時のみ nav subtree と route 由来属性を更新する
 - sidebar host の DOM 実体は app shell 上で再生成しない
 
 ## 7. 受け入れ条件
