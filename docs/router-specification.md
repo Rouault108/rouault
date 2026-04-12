@@ -68,8 +68,7 @@ router 外部へ本文描画または shell 更新を委譲する場合は、単
 ## 用語
 
 ### navigation URL
-
-遷移要求およびブラウザ表示に用いる正規化済み URL です。Rouault では、`wtr-session-id` を除去した pathname + search + hash を指します。pathname は通常ルート `/` を除き末尾 `/` を持ちませんが、検索仕様の例外として `/tags/<tag>/` は trailing slash を保持し、`/search/` は `/search` へ正規化します。
+遷移要求およびブラウザ表示に用いる正規化済み URL です。Rouault では、`wtr-session-id` を除去した pathname + search + hash を指します。pathname は通常ルート `/` を除き末尾 `/` を持ちませんが、検索仕様の例外として `/about/`、`/corpora/`、`/corpora/<slug>/`、`/search/`、`/tags/<tag>/` は trailing slash を保持します。
 
 ### fetch target URL
 

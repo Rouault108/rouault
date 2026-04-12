@@ -156,12 +156,12 @@ test.describe('Tag Page', () => {
     expect(probeAlive).toBe(true);
   });
 
-  test('タグページで検索語を入力すると /search へ遷移すること', async ({ page }) => {
+  test('タグページで検索語を入力すると /search/ へ遷移すること', async ({ page }) => {
     await page.goto(testingTagPagePath);
 
     await inputSearchQuery(page, 'Target');
 
-    await expect(page).toHaveURL(/\/search\?/);
+    await expect(page).toHaveURL(/\/search\/\?/);
     await expect
       .poll(() =>
         page.evaluate(() => {
@@ -174,20 +174,20 @@ test.describe('Tag Page', () => {
         }),
       )
       .toEqual({
-        pathname: '/search',
+        pathname: '/search/',
         q: 'target',
         tags: ['testing'],
       });
     await expect(page.locator('#main-content h1').first()).toHaveText('検索');
   });
 
-  test('タグページで追加タグを選ぶと /search へ遷移すること', async ({ page }) => {
+  test('タグページで追加タグを選ぶと /search/ へ遷移すること', async ({ page }) => {
     await page.goto(testingTagPagePath);
     await openTagFilter(page);
 
     await toggleFilterCheckbox(page, 'e2e');
 
-    await expect(page).toHaveURL(/\/search\?/);
+    await expect(page).toHaveURL(/\/search\/\?/);
     await expect
       .poll(() =>
         page.evaluate(() => {
@@ -199,21 +199,21 @@ test.describe('Tag Page', () => {
         }),
       )
       .toEqual({
-        pathname: '/search',
+        pathname: '/search/',
         tags: ['e2e', 'testing'],
       });
     await expect(page.locator('#main-content h1').first()).toHaveText('検索');
   });
 
-  test('タグページでタグ演算子や並び順を変えると /search へ遷移すること', async ({ page }) => {
+  test('タグページでタグ演算子や並び順を変えると /search/ へ遷移すること', async ({ page }) => {
     await page.goto(testingTagPagePath);
 
     await changeSearchSelect(page, 0, 'and');
-    await expect(page).toHaveURL('/search?tag=testing&tagMode=and');
+    await expect(page).toHaveURL('/search/?tag=testing&tagMode=and');
 
     await page.goto(testingTagPagePath);
 
     await changeSearchSelect(page, 1, 'date-desc');
-    await expect(page).toHaveURL('/search?tag=testing&sort=date-desc');
+    await expect(page).toHaveURL('/search/?tag=testing&sort=date-desc');
   });
 });

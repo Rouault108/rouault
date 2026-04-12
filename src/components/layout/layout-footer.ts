@@ -13,7 +13,7 @@ const DEFAULT_SITE_URL = '/';
 const DEFAULT_NAV_LABEL = '補助ナビゲーション';
 
 const DEFAULT_LINKS: readonly FooterLinkItem[] = [
-  { href: '/search', label: '検索' },
+  { href: '/search/', label: '検索' },
   { href: '/about/', label: 'このサイトについて' },
 ];
 

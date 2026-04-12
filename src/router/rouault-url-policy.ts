@@ -1,7 +1,12 @@
 import type { UrlPolicy } from './url-policy.js';
 
-const CORPORA_ROOT_PATH = '/corpora';
-const ABOUT_ROOT_PATH = '/about';
+const TRAILING_SLASH_CANONICAL_PREFIXES = ['/about', '/corpora', '/search'] as const;
+const TAG_PAGE_PATH_PATTERN = /^\/tags\/[^/]+\/$/u;
+
+const hasTrailingSlashCanonicalPrefix = (pathname: string): boolean =>
+  TRAILING_SLASH_CANONICAL_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 
 export class RouaultUrlPolicy implements UrlPolicy {
   normalizePathname(pathname: string): string {
@@ -9,27 +14,11 @@ export class RouaultUrlPolicy implements UrlPolicy {
       return pathname;
     }
 
-    if (pathname === '/search/' || pathname === '/search') {
-      return '/search';
-    }
-
-    if (pathname === ABOUT_ROOT_PATH) {
-      return '/about/';
-    }
-
-    if (pathname.startsWith('/about/')) {
+    if (hasTrailingSlashCanonicalPrefix(pathname)) {
       return pathname.endsWith('/') ? pathname : `${pathname}/`;
     }
 
-    if (pathname === CORPORA_ROOT_PATH) {
-      return '/corpora/';
-    }
-
-    if (pathname.startsWith('/corpora/')) {
-      return pathname.endsWith('/') ? pathname : `${pathname}/`;
-    }
-
-    if (/^\/tags\/[^/]+\/$/u.test(pathname)) {
+    if (TAG_PAGE_PATH_PATTERN.test(pathname)) {
       return pathname;
     }
 

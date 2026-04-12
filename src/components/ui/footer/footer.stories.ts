@@ -11,7 +11,7 @@ const DEFAULT_OPTIONS: FooterRenderOptions = {
     buildLabel: 'build 4a2b9f1',
   },
   links: [
-    { href: '/search', label: '検索' },
+    { href: '/search/', label: '検索' },
     { href: '/about/', label: 'このサイトについて' },
   ],
 };

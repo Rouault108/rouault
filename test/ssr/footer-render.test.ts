@@ -21,7 +21,7 @@ describe('renderFooter', () => {
         buildLabel: 'build 4a2b9f1',
       },
       links: [
-        { href: '/search', label: '検索' },
+        { href: '/search/', label: '検索' },
         { href: '/about/', label: 'このサイトについて' },
       ],
     });
@@ -39,7 +39,7 @@ describe('renderFooter', () => {
     expect(rendered).toContain('>Rouault<');
     expect(rendered).toContain('© 2026 Ruo Miyata. CC BY 4.0.');
     expect(rendered).toContain('build 4a2b9f1');
-    expect(rendered).toContain('href="/search"');
+    expect(rendered).toContain('href="/search/"');
     expect(rendered).toContain('href="/about/"');
   });
 

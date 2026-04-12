@@ -53,9 +53,9 @@ describe('PrimaryTabNavigationPolicy', () => {
     const policy = new PrimaryTabNavigationPolicy();
 
     const result = policy.evaluate({
-      currentUrl: '/search?tab=overview',
-      requestedUrl: '/search?tab=details',
-      normalizedUrl: '/search?tab=details',
+      currentUrl: '/search/?tab=overview',
+      requestedUrl: '/search/?tab=details',
+      normalizedUrl: '/search/?tab=details',
       historyMode: 'push',
       outlet,
     });

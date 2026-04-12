@@ -20,7 +20,7 @@ test.describe('Static pages', () => {
   });
 
   test('search ページが主要見出しまで表示されること', async ({ page }) => {
-    await page.goto('/search?tag=music');
+    await page.goto('/search/?tag=music');
 
     await expect(page.locator('#main-content h1').first()).toHaveText('検索');
     await expect(page.locator('#main-content')).toContainText(

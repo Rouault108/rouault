@@ -1,6 +1,6 @@
 import { escapeHtmlText, serializeHtmlAttributes } from '../../../src/layouts/html-output.js';
 
-export const SEARCH_PAGE_HREF = '/search';
+export const SEARCH_PAGE_HREF = '/search/';
 export const ABOUT_PAGE_HREF = '/about/';
 
 export const NOT_FOUND_PAGE_TITLE = 'このページは見つかりませんでした';

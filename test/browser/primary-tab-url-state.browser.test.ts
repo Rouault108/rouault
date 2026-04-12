@@ -52,7 +52,7 @@ describe('primary-tab-url-state', () => {
     ).to.equal(false);
     expect(isPrimaryTabStateOnlyScope('/notes/testing?tab=overview')).to.equal(true);
     expect(isPrimaryTabStateOnlyScope('/archives/abc123?tab=overview')).to.equal(false);
-    expect(isPrimaryTabStateOnlyScope('/search?tab=overview')).to.equal(false);
+    expect(isPrimaryTabStateOnlyScope('/search/?tab=overview')).to.equal(false);
   });
 
   it('hash を decode し URL state change event を dispatch すること', async () => {

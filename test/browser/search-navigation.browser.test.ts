@@ -14,9 +14,9 @@ describe('search-navigation', () => {
       return Promise.resolve();
     };
 
-    await navigateToUrl('/search?q=router');
+    await navigateToUrl('/search/?q=router');
 
-    expect(navigatedUrl).to.equal('/search?q=router');
+    expect(navigatedUrl).to.equal('/search/?q=router');
     host.remove();
   });
 

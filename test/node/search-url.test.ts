@@ -62,7 +62,7 @@ describe('search-url', () => {
     });
   });
 
-  it('SearchStateUrl は常に /search を生成すること', () => {
+  it('SearchStateUrl は常に /search/ を生成すること', () => {
     expect(
       buildSearchStateUrl({
         q: 'Rouault Search',
@@ -70,7 +70,7 @@ describe('search-url', () => {
         tagMode: 'and',
         sort: 'date-desc',
       }),
-    ).to.equal('/search?q=rouault+search&tag=jazz&tag=music&tagMode=and&sort=date-desc');
+    ).to.equal('/search/?q=rouault+search&tag=jazz&tag=music&tagMode=and&sort=date-desc');
     expect(
       buildSearchStateUrl({
         q: '',
@@ -78,7 +78,7 @@ describe('search-url', () => {
         tagMode: 'or',
         sort: 'relevance',
       }),
-    ).to.equal('/search?tag=music');
+    ).to.equal('/search/?tag=music');
   });
 
   it('タグページ URL 生成は別 helper に分離されること', () => {
@@ -98,13 +98,13 @@ describe('search-url', () => {
         tagMode: 'or',
         sort: 'relevance',
       }),
-    ).to.equal('/search?q=beethoven&tag=classical');
+    ).to.equal('/search/?q=beethoven&tag=classical');
   });
 
   it('SearchStateUrl の正規化は /search のみを対象にすること', () => {
     expect(
       normalizeSearchStateUrl('https://example.com/search/?q=Rouault%20Search&tag=music#hash'),
-    ).to.equal('/search?q=rouault+search&tag=music');
+    ).to.equal('/search/?q=rouault+search&tag=music');
     expect(normalizeSearchStateUrl('https://example.com/tags/music/')).to.equal('/tags/music/');
   });
 });

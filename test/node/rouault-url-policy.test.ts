@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { RouaultUrlPolicy } from '../../src/router/rouault-url-policy.js';
 
 describe('RouaultUrlPolicy', () => {
-  it('/search は trailing slash なしへ正規化すること', () => {
+  it('/search は trailing slash 付きへ正規化すること', () => {
     const policy = new RouaultUrlPolicy();
 
-    expect(policy.normalizePathname('/search')).to.equal('/search');
-    expect(policy.normalizePathname('/search/')).to.equal('/search');
+    expect(policy.normalizePathname('/search')).to.equal('/search/');
+    expect(policy.normalizePathname('/search/')).to.equal('/search/');
   });
 
   it('/about は trailing slash 付きへ正規化すること', () => {

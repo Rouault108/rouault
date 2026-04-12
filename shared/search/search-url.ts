@@ -5,6 +5,7 @@ export type { SearchSortMode, SearchState, SearchTagMode } from './search-types.
 
 export const DEFAULT_SEARCH_SORT_MODE: SearchSortMode = 'relevance';
 export const DEFAULT_SEARCH_TAG_MODE: SearchTagMode = 'or';
+const SEARCH_PAGE_PATH = '/search/';
 
 function parseUrl(input: string | URL): URL {
   return input instanceof URL
@@ -107,7 +108,7 @@ export function buildSearchStateUrl(state: SearchState): SearchStateUrl {
   }
 
   const search = params.toString();
-  return search.length > 0 ? `/search?${search}` : '/search';
+  return search.length > 0 ? `${SEARCH_PAGE_PATH}?${search}` : SEARCH_PAGE_PATH;
 }
 
 export function buildTagPageUrl(tag: string): string {
@@ -150,7 +151,7 @@ export function buildUrlForSearchState(state: SearchState): string {
 
   if (isSingleTagDefaultState(normalizedState)) {
     const [tag] = normalizedState.tags;
-    return tag ? buildTagPageUrl(tag) : '/search';
+    return tag ? buildTagPageUrl(tag) : SEARCH_PAGE_PATH;
   }
 
   return buildSearchStateUrl(normalizedState);
@@ -161,7 +162,7 @@ export function normalizeSearchStateUrl(input: string | URL): SearchStateUrl {
 
   if (url.pathname.startsWith('/tags/')) {
     const tags = parseTagFromPathname(url.pathname);
-    return tags.length > 0 ? buildTagPageUrl(tags[0] ?? '') : '/search';
+    return tags.length > 0 ? buildTagPageUrl(tags[0] ?? '') : SEARCH_PAGE_PATH;
   }
 
   const state = parseSearchStateFromUrl(url);
