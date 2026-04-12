@@ -28,19 +28,32 @@ describe('production build entrypoint contract', () => {
     );
   });
 
-  it('build-production と test-extended が同じ media base URL と build label 経路を使うこと', () => {
+  it('build-production と dev/prod e2e jobs が同じ media base URL と build label 経路を使うこと', () => {
     const workflow = readFileSync(workflowPath, 'utf8');
-    const testExtendedJob = sliceWorkflowJob(workflow, 'test-extended', 'build-production');
-    const buildProductionJob = sliceWorkflowJob(workflow, 'build-production', 'deploy-production');
+    const testE2eProductionJob = sliceWorkflowJob(
+      workflow,
+      'test-e2e-production',
+      'test-e2e-dev',
+    );
+    const testE2eDevJob = sliceWorkflowJob(workflow, 'test-e2e-dev', 'build-production');
+    const buildProductionJob = sliceWorkflowJob(workflow, 'build-production', 'ci-required');
     const mediaBaseUrlPattern = /ROUAULT_MEDIA_BASE_URL: \$\{\{ vars\.ROUAULT_MEDIA_BASE_URL \}\}/g;
     const buildLabelPattern = /echo "ROUAULT_BUILD_LABEL=\$\{GITHUB_SHA::7\}" >> "\$GITHUB_ENV"/g;
 
-    expect(workflow).toContain('test-extended:');
+    expect(workflow).toContain('test-e2e-production:');
+    expect(workflow).toContain('test-e2e-dev:');
     expect(workflow).toContain('build-production:');
-    expect(testExtendedJob.match(mediaBaseUrlPattern) ?? []).toHaveLength(1);
+
+    expect(testE2eProductionJob.match(mediaBaseUrlPattern) ?? []).toHaveLength(1);
+    expect(testE2eDevJob.match(mediaBaseUrlPattern) ?? []).toHaveLength(1);
     expect(buildProductionJob.match(mediaBaseUrlPattern) ?? []).toHaveLength(1);
-    expect(testExtendedJob.match(buildLabelPattern) ?? []).toHaveLength(1);
+
+    expect(testE2eProductionJob.match(buildLabelPattern) ?? []).toHaveLength(1);
+    expect(testE2eDevJob.match(buildLabelPattern) ?? []).toHaveLength(1);
     expect(buildProductionJob.match(buildLabelPattern) ?? []).toHaveLength(1);
+
+    expect(workflow).toContain('- run: pnpm run test:e2e:production');
+    expect(workflow).toContain('- run: pnpm run test:e2e:dev');
     expect(workflow).toContain('- run: pnpm build:production');
   });
 });

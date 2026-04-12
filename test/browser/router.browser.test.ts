@@ -545,4 +545,40 @@ describe('Router', () => {
 
     expect(busyStates).to.deep.equal([true, false]);
   });
+
+  it('内部リンククリックでは router artifact URL を fetch すること', async () => {
+    const fetchedUrls: string[] = [];
+
+    globalThis.fetch = ((input: RequestInfo | URL): Promise<Response> => {
+      const resolvedUrl =
+        input instanceof Request
+          ? input.url
+          : input instanceof URL
+            ? input.toString()
+            : String(input);
+
+      const parsed = new URL(resolvedUrl, window.location.origin);
+      fetchedUrls.push(`${parsed.pathname}${parsed.search}`);
+
+      return Promise.resolve(
+        createNavigationEnvelopeResponse({
+          title: 'About - Rouault',
+          html: '<main><h1>About</h1><p>Body</p></main>',
+        }),
+      );
+    }) as typeof globalThis.fetch;
+
+    router = new Router(outlet, { skipInitialNavigation: true });
+    await router.start();
+
+    const link = await fixture<HTMLAnchorElement>(html`<a href="/about/">About</a>`);
+
+    simulateClick(link);
+
+    await waitUntil(() => fetchedUrls.length === 1, 'router artifact fetch が行われること');
+
+    expect(fetchedUrls).to.deep.equal(['/__router/about/index.router.json']);
+    expect(document.title).to.equal('About - Rouault');
+    expect(outlet.textContent).to.contain('About');
+  });
 });

@@ -10,6 +10,7 @@ import { loadHomeData } from './src/data/home.js';
 import { loadClientBundleData } from './src/data/clientBundle.js';
 import { loadBuildMetadataData } from './src/data/buildMetadata.js';
 import { createStaticDirectoryMiddleware } from './build/dev/dev-static-directory.js';
+import { createDevelopmentRouterArtifactMiddleware } from './build/dev/dev-router-artifact-middleware.js';
 import { renderSearchCatalogArtifact } from './build/search/emit-search-artifacts.js';
 import { hasExternalMediaBaseUrl } from './build/media/media-base-url.js';
 import { resolveBuildLabel } from './build/metadata/build-metadata.js';
@@ -95,6 +96,15 @@ const registerDevelopmentStaticDirectories = (server: ViteDevServer): void => {
       '/example-assets/',
       path.resolve(process.cwd(), 'examples', 'media'),
     ),
+  );
+};
+
+const registerDevelopmentRouterArtifacts = (server: ViteDevServer): void => {
+  server.middlewares.use(
+    createDevelopmentRouterArtifactMiddleware({
+      outputDirectory: path.resolve(process.cwd(), 'dist'),
+      buildId: resolveBuildLabel(),
+    }),
   );
 };
 
@@ -193,11 +203,13 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
             configureServer(server: ViteDevServer) {
               registerDevelopmentStaticDirectories(server);
               registerSearchCatalogMiddleware(server);
+              registerDevelopmentRouterArtifacts(server);
               registerTrailingSlashRewrite(server);
             },
             configurePreviewServer(server: ViteDevServer) {
               registerDevelopmentStaticDirectories(server);
               registerSearchCatalogMiddleware(server);
+              registerDevelopmentRouterArtifacts(server);
               registerTrailingSlashRewrite(server);
             },
           },

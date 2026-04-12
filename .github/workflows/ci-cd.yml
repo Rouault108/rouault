@@ -182,8 +182,28 @@ jobs:
           CI_GATE_SUCCESS: 'All prerequisite jobs are success or skipped.'
         run: python3 scripts/ci/validate_needs.py
 
-  test-extended:
-    name: test-extended
+  test-storybook-smoke:
+    name: test-storybook-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs:
+      - detect-changes
+      - prebuild-gate
+    if: needs.detect-changes.outputs.app == 'true' && (github.event_name == 'push' || github.base_ref == 'main')
+    steps:
+      - uses: actions/checkout@v5
+      - run: echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test:storybook:smoke
+
+  test-e2e-production:
+    name: test-e2e-production
     runs-on: ubuntu-latest
     timeout-minutes: 35
     needs:
@@ -203,7 +223,30 @@ jobs:
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps
-      - run: pnpm run test:extended
+      - run: pnpm run test:e2e:production
+
+  test-e2e-dev:
+    name: test-e2e-dev
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    needs:
+      - detect-changes
+      - prebuild-gate
+    if: needs.detect-changes.outputs.app == 'true' && (github.event_name == 'push' || github.base_ref == 'main')
+    env:
+      ROUAULT_MEDIA_BASE_URL: ${{ vars.ROUAULT_MEDIA_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v5
+      - run: echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm run test:e2e:dev
 
   build-production:
     name: build-production
@@ -242,7 +285,9 @@ jobs:
     needs:
       - detect-changes
       - prebuild-gate
-      - test-extended
+      - test-storybook-smoke
+      - test-e2e-production
+      - test-e2e-dev
       - build-production
     steps:
       - uses: actions/checkout@v5

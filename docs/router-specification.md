@@ -678,6 +678,14 @@ fetch 成功時は `index.router.json` を decode / validate し、`NavigationEn
 - shell は `NavigationEnvelope.shellProjection` だけを commit 入力として扱います。
 - SSR HTML が持つ current buildId と fetched envelope の `buildId` が不一致な場合、router は error snapshot へ縮退し、取得した envelope を正規経路として commit してはなりません。
 
+### 開発サーバーにおける router artifact 契約
+
+- 開発サーバーは production と同じ URL 形 `GET /__router/.../index.router.json` を提供しなければなりません。
+- 開発時だけ HTML fallback や client 側特例へ切り替えてはなりません。
+- 開発サーバーは `dist` 内の HTML 出力から `NavigationEnvelope` を動的生成してよいものとします。
+- ただし返却物は production build が生成する router artifact と同一の `schemaVersion` / `buildId` / `document.renderedKind` / `shellProjection` 契約を満たさなければなりません。
+- これにより、開発環境と production 環境で router の load 経路を分岐させてはなりません。
+
 ### HTTP ステータスと例外
 
 | 事象                          | kind        | reason                | 変換先                      |
