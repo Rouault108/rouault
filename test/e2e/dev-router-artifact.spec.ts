@@ -2,11 +2,30 @@ import { expect, test } from '@playwright/test';
 
 const sourcePath = '/notes/program/sample-javascript/';
 
+const waitForAppRouterReady = async (
+  page: import('@playwright/test').Page,
+): Promise<void> => {
+  await page.waitForFunction(async () => {
+    await customElements.whenDefined('app-router');
+
+    const router = document.querySelector('app-router') as
+      | (HTMLElement & { whenReady?: () => Promise<void> })
+      | null;
+    if (!router || typeof router.whenReady !== 'function') {
+      return false;
+    }
+
+    await router.whenReady();
+    return true;
+  });
+};
+
 test.describe('dev router artifact', () => {
   test('開発サーバーでも footer の About 遷移が router artifact を 200 で返すこと', async ({
     page,
   }) => {
     await page.goto(sourcePath);
+    await waitForAppRouterReady(page);
 
     const aboutLink = page.locator('layout-footer a[href="/about/"]').first();
     await expect(aboutLink).toBeVisible();
@@ -26,6 +45,8 @@ test.describe('dev router artifact', () => {
       'このページは見つかりませんでした',
     );
 
-    await expect(page.locator('#main-content')).toContainText('このサイトについて');
+    await expect(page.locator('#main-content')).toContainText(
+      '個人ノートを、静かに読むためのアプリケーション',
+    );
   });
 });

@@ -92,8 +92,8 @@ test.describe('No-JS baseline', () => {
       page.getByRole('heading', { level: 1, name: 'Sidebar Scroll Source' }).first(),
     ).toBeVisible();
     await expect(page.locator('app-router > #main-content')).toHaveCount(1);
-    // aria-live region は app-router の初期化時に生成されるため、No-JS では SSR 正本に含めない。
-    await expect(page.locator('app-router > [data-app-router-announcement]')).toHaveCount(0);
+    // app-router の SSR 正本は announcement region を含む。
+    await expect(page.locator('app-router > [data-app-router-announcement]')).toHaveCount(1);
     await expect(page).toHaveURL(sidebarSourcePath);
   });
 
@@ -146,8 +146,8 @@ test.describe('No-JS baseline', () => {
     await page.goto(sampleJavascriptPath);
 
     await expect(page.locator('app-router > #main-content')).toHaveCount(1);
-    // aria-live region は app-router の初期化時に生成されるため、No-JS では SSR 正本に含めない。
-    await expect(page.locator('app-router > [data-app-router-announcement]')).toHaveCount(0);
+    // app-router の SSR 正本は announcement region を含む。
+    await expect(page.locator('app-router > [data-app-router-announcement]')).toHaveCount(1);
     await expect(page.locator('layout-header')).toHaveCount(1);
     await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
     await expect(page.locator('layout-sidebar')).toHaveCount(1);
