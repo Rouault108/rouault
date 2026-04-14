@@ -211,7 +211,52 @@ describe('buildNotePageProjection', () => {
       dynamicScopes: false,
       mobileSummary: true,
     });
+    expect(projection.tocPresence).toBe('present');
     expect(projection.toc.shouldHydrate).toBe(true);
+  });
+
+  it('headings 0 件では tocPresence を absent にすること', () => {
+    const projection = buildProjection({
+      rawSlug: 'music/without-toc',
+      slug: 'music/without-toc',
+      permalink: '/notes/music/without-toc',
+      noteKind: 'leaf',
+      sortIndex: 0,
+      tocHeadings: [],
+      tocCapabilities: {
+        activeTracking: true,
+        dynamicScopes: true,
+        mobileSummary: true,
+      },
+      kind: 'reader',
+      title: 'Without TOC',
+      content: '<p>本文だけ</p>',
+    });
+
+    expect(projection.tocPresence).toBe('absent');
+    expect(projection.toc.shouldHydrate).toBe(true);
+  });
+
+  it('headings があり capability が静的なら tocPresence=present と shouldHydrate=false を両立すること', () => {
+    const projection = buildProjection({
+      rawSlug: 'music/present-static',
+      slug: 'music/present-static',
+      permalink: '/notes/music/present-static',
+      noteKind: 'leaf',
+      sortIndex: 0,
+      tocHeadings: [{ id: 'intro', text: 'Intro', level: 2 }],
+      tocCapabilities: {
+        activeTracking: false,
+        dynamicScopes: false,
+        mobileSummary: false,
+      },
+      kind: 'reader',
+      title: 'Present Static',
+      content: '<h2 id="intro">Intro</h2>',
+    });
+
+    expect(projection.tocPresence).toBe('present');
+    expect(projection.toc.shouldHydrate).toBe(false);
   });
 
   it('genre と reader content を article header / content projection に反映すること', () => {

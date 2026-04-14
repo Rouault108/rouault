@@ -9,6 +9,7 @@ import type { PagefindDocumentData } from '../../build/search/build-pagefind-doc
 import type { NoteStatus } from '../../src/types/article-status.js';
 import type { NoteContentKind } from '../../shared/note/note-kind.js';
 import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
+import type { TocPresence } from '../../shared/note/toc-presence.js';
 import { NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE } from '../../src/layout/note-sidebar-breakpoint.js';
 import { renderNoteSidebarNav } from '../navigation/render-note-sidebar-nav.js';
 import {
@@ -90,6 +91,7 @@ export interface NotePagePagefindProjection {
 export interface NotePageProjection {
   noteKind: NoteContentKind;
   noteShellSidebarPresence: 'present' | 'absent';
+  tocPresence: TocPresence;
   showSidebar: boolean;
   contentHtml: string;
   sidebar?: NotePageSidebarProjection | null;
@@ -189,7 +191,10 @@ function countHydrationTriggers(value: string): NoteHydrationCounts {
 
 function validateNoteHydrationBudget(
   note: IntrinsicNote,
-  projection: Pick<NotePageProjection, 'contentHtml' | 'showSidebar' | 'toc' | 'articleHeader'>,
+  projection: Pick<
+    NotePageProjection,
+    'contentHtml' | 'showSidebar' | 'toc' | 'tocPresence' | 'articleHeader'
+  >,
 ): void {
   const profile = resolveNoteHydrationBudgetProfile(note);
 
@@ -209,7 +214,7 @@ function validateNoteHydrationBudget(
     shellCounts.initial += 1;
   }
 
-  if (projection.toc.shouldHydrate) {
+  if (projection.tocPresence === 'present' && projection.toc.shouldHydrate) {
     shellCounts.initial += 1;
   }
 
@@ -258,6 +263,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const tocSourceId = `toc-source-${dataIdBase}`;
   const contentRootId = `note-content-${dataIdBase}`;
   const headings = normalizeHeadings(input.note.tocHeadings);
+  const tocPresence: TocPresence = headings.length > 0 ? 'present' : 'absent';
   const tocCapabilities = normalizeTocCapabilities(input.note.tocCapabilities);
   const shouldHydrateToc =
     tocCapabilities.activeTracking ||
@@ -271,6 +277,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const projection: NotePageProjection = {
     noteKind,
     noteShellSidebarPresence: showSidebar ? 'present' : 'absent',
+    tocPresence,
     showSidebar,
     contentHtml,
     ...(showSidebar

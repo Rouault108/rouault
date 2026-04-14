@@ -1,3 +1,5 @@
+import type { TocPresence } from '../note/toc-presence.js';
+
 export interface HeaderShellProjection {
   breadcrumbs: {
     label: string;
@@ -11,6 +13,7 @@ export interface HeaderShellProjection {
   currentCorpusKey: string;
   noteLayout: boolean;
   sidebarEnabled: boolean;
+  tocPresence: TocPresence;
 }
 
 export interface SidebarShellProjection {

@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 const sidebarSourcePath = '/notes/testing/sidebar-scroll/group-01/source/';
 const codePath = '/notes/testing/code/';
 const sampleJavascriptPath = '/notes/program/sample-javascript/';
+const tocAbsentPath = '/notes/testing/toc-absent/';
 
 interface NoteChromeState {
   articleHeaderExists: boolean;
@@ -110,6 +111,16 @@ test.describe('No-JS baseline', () => {
     await expectSampleJavascriptNoteChromeHostsWithoutJs(page);
   });
 
+  test('toc-absent fixture では No-JS でも空の TOC landmark を出力しないこと', async ({ page }) => {
+    await page.goto(tocAbsentPath);
+
+    await expect(page.locator('ui-article-header')).toHaveAttribute('heading', 'TOC Absent');
+    await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'absent');
+    await expect(page.locator('.layout-toc-col')).toHaveCount(0);
+    await expect(page.locator('layout-toc')).toHaveCount(0);
+    await expect(page.locator('aside[aria-label="目次"]')).toHaveCount(0);
+  });
+
   test('sample-javascript が狭幅でも本文列を 1文字幅へ潰さないこと', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 900 });
     await page.goto(sampleJavascriptPath);
@@ -205,7 +216,7 @@ test.describe('No-JS baseline', () => {
   });
 
   test('ヘッダーがスクロールしても固定され、app shell sidebar host が存在しても崩れないこと', async ({ page }) => {
-    await page.goto(sidebarSourcePath);
+    await page.goto(sampleJavascriptPath);
 
     const header = page.locator('layout-header');
     const toc = page.locator('.layout-toc-col');

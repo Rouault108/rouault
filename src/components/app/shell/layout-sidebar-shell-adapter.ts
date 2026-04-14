@@ -144,6 +144,7 @@ export const createLayoutSidebarShellAdapter = (): ShellAdapter => ({
               currentCorpusKey: 'all',
               noteLayout: false,
               sidebarEnabled: false,
+              tocPresence: 'absent',
             },
             sidebar:
               currentSidebarColumn instanceof HTMLElement && !currentSidebarColumn.hidden

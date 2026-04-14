@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 const sampleJavascriptPath = '/notes/program/sample-javascript/';
+const tocAbsentPath = '/notes/testing/toc-absent/';
 
 interface NoteWideFrameSnapshot {
   hasAppRouter: boolean;
@@ -102,5 +103,34 @@ test.describe('note frame balance', () => {
     expect((wider.articleWidth ?? 0) > (wider.tocColumnWidth ?? 0)).toBe(true);
 
     expect(wider.horizontalOverflow).toBeLessThanOrEqual(1);
+  });
+
+  test('TOC absent note は wide viewport でも 1 カラム契約を維持して横スクロールを出さないこと', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await page.goto(tocAbsentPath);
+    await settleLayout(page);
+
+    const state = await page.evaluate(() => {
+      const noteShell = document.querySelector<HTMLElement>('.note-shell');
+      const article = document.querySelector<HTMLElement>('.note-shell .layout-main-col');
+      const tocColumn = document.querySelector<HTMLElement>('.note-shell .layout-toc-col');
+
+      return {
+        tocPresence: noteShell?.getAttribute('data-toc-presence') ?? null,
+        noteShellWidth: Math.round(noteShell?.getBoundingClientRect().width ?? 0),
+        articleWidth: Math.round(article?.getBoundingClientRect().width ?? 0),
+        tocColumnExists: tocColumn instanceof HTMLElement,
+        horizontalOverflow:
+          document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+
+    expect(state.tocPresence).toBe('absent');
+    expect(state.tocColumnExists).toBe(false);
+    expect(state.noteShellWidth).toBeGreaterThan(0);
+    expect(state.articleWidth).toBeGreaterThan(0);
+    expect(state.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 });

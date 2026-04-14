@@ -86,6 +86,7 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
   return {
     noteKind: note.kind ?? 'reader',
     noteShellSidebarPresence: showSidebar ? 'present' : 'absent',
+    tocPresence: hasHeadings ? 'present' : 'absent',
     showSidebar,
     contentHtml,
     ...(showSidebar

@@ -105,6 +105,7 @@ Rouault では、次の設計前提を採用します。
 - projection / serialization
 - hydration budget
 - selector / hook / token 参照の存在
+- TOC absent 時の DOM 正規化
 - `@media print` / `@media (forced-colors: active)` / reduced-motion rule の存在
 
 ここで検査しないもの:
@@ -130,6 +131,7 @@ Rouault では、次の設計前提を採用します。
 - ページ全体の統合挙動
 - no-JS baseline の破綻有無
 - 主要導線の end-to-end 成立
+- TOC present / absent fixture と SPA 遷移の shell 同期
 - 壊れた場合の影響が大きい媒体 outcome
 
 ここで検査しないもの:
@@ -241,6 +243,7 @@ Rouault において、note 本文は特別扱いします。
 - markdown output contract
 - hydration budget
 - projection / serialization
+- TOC absent fixture における TOC host / script / hydration scope の不在
 
 ### 6.3 `test/browser/**` に置くべき note 契約
 
@@ -250,6 +253,7 @@ Rouault において、note 本文は特別扱いします。
 - copy interaction
 - tab / panel interaction
 - pointer / keyboard / focus
+- header reserve の `tocPresence` 切り替え
 
 ## 7. CSS / media / token 契約の分離
 

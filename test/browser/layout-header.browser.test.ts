@@ -167,7 +167,7 @@ describe('layout-header browser contract', () => {
   it('desktop の note-layout では center zone が note 専用の左右 reserve 幅を使うこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 1440px;">
-        <layout-header note-layout sidebar-enabled></layout-header>
+        <layout-header note-layout sidebar-enabled toc-presence="present"></layout-header>
       </div>
     `);
 
@@ -189,6 +189,53 @@ describe('layout-header browser contract', () => {
     const styles = getComputedStyle(zoneCenter);
     expect(styles.left).to.equal('248px');
     expect(styles.right).to.equal('248px');
+  });
+
+  it('toc-presence=absent の note-layout では right reserve を 0px にすること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1440px;">
+        <layout-header note-layout sidebar-enabled toc-presence="absent"></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
+    await waitForLitUpdate(header);
+
+    const uiHeader = expectPresent(
+      header.shadowRoot?.querySelector<UiHeader>('ui-header'),
+      'uiHeader',
+    );
+    const zoneCenter = expectPresent(
+      uiHeader.shadowRoot?.querySelector<HTMLElement>('.zone-center'),
+      'zoneCenter',
+    );
+
+    const styles = getComputedStyle(zoneCenter);
+    expect(styles.left).to.equal('248px');
+    expect(styles.right).to.equal('0px');
+  });
+
+  it('shell projection に tocPresence を round-trip すること', async () => {
+    const header = await fixture<LayoutHeader>(
+      html`<layout-header toc-presence="present"></layout-header>`,
+    );
+    await waitForLitUpdate(header);
+
+    header.applyShellProjection({
+      breadcrumbs: [],
+      corpora: [],
+      currentCorpusKey: 'all',
+      noteLayout: true,
+      sidebarEnabled: true,
+      tocPresence: 'absent',
+    });
+    await waitForLitUpdate(header);
+
+    expect(header.getAttribute('toc-presence')).to.equal('absent');
+    expect(header.readShellProjection().tocPresence).to.equal('absent');
   });
 
   it('sidebar-enabled が無い note-layout では sidebar toggle を描画しないこと', async () => {

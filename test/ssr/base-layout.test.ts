@@ -11,6 +11,7 @@ describe('BaseLayout', () => {
       notePage: {
         noteKind: 'reader',
         noteShellSidebarPresence: 'present',
+        tocPresence: 'absent',
         showSidebar: true,
         contentHtml: '<p>本文</p>',
         sidebar: {
@@ -65,6 +66,7 @@ describe('BaseLayout', () => {
     });
 
     expect(rendered).toContain('<layout-header note-layout sidebar-enabled');
+    expect(rendered).toContain('toc-presence="absent"');
     expect(rendered).toContain('structural-expanded-ids="[]"');
     expect(rendered).toContain('topology-revision="reader-note-topology"');
     expect(rendered).toContain('<nav data-sidebar-nav');
@@ -84,6 +86,7 @@ describe('BaseLayout', () => {
     });
 
     expect(rendered).toContain('<layout-header note-layout');
+    expect(rendered).toContain('toc-presence="absent"');
     expect(rendered).not.toContain('<layout-header note-layout sidebar-enabled');
   });
 

@@ -456,6 +456,7 @@ describe('app-router', () => {
               currentCorpusKey: 'music',
               noteLayout: true,
               sidebarEnabled: true,
+              tocPresence: 'present',
             },
             sidebar: null,
           },
@@ -481,6 +482,7 @@ describe('app-router', () => {
 
     expect(header.hasAttribute('note-layout')).to.equal(true);
     expect(header.hasAttribute('sidebar-enabled')).to.equal(true);
+    expect(header.getAttribute('toc-presence')).to.equal('present');
     expect(header.getAttribute('corpora-json')).to.equal(
       '[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]',
     );
@@ -530,6 +532,7 @@ describe('app-router', () => {
               currentCorpusKey: 'music',
               noteLayout: false,
               sidebarEnabled: true,
+              tocPresence: 'absent',
             },
             sidebar: {
               present: true,
@@ -609,6 +612,7 @@ describe('app-router', () => {
               currentCorpusKey: 'all',
               noteLayout: false,
               sidebarEnabled: false,
+              tocPresence: 'absent',
             },
             sidebar: null,
           },
@@ -693,6 +697,7 @@ describe('app-router', () => {
               currentCorpusKey: 'music',
               noteLayout: false,
               sidebarEnabled: true,
+              tocPresence: 'absent',
             },
             sidebar: {
               present: true,
@@ -776,6 +781,7 @@ describe('app-router', () => {
               currentCorpusKey: 'music',
               noteLayout: true,
               sidebarEnabled: true,
+              tocPresence: 'present',
             },
             sidebar: null,
           },
@@ -809,6 +815,7 @@ describe('app-router', () => {
     expect(header.getAttribute('current-corpus-key')).to.equal('all');
     expect(header.hasAttribute('note-layout')).to.equal(false);
     expect(header.hasAttribute('sidebar-enabled')).to.equal(false);
+    expect(header.getAttribute('toc-presence')).to.equal('absent');
     expect(appHost.querySelectorAll('main').length).to.equal(1);
     expect(appHost.querySelector('#main-content')?.textContent).to.contain('SSR Title');
     expect(appHost.querySelector('#main-content')?.textContent).not.to.contain(

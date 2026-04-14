@@ -23,6 +23,7 @@ describe('navigation artifacts', () => {
     <layout-header
       note-layout
       sidebar-enabled
+      toc-presence="present"
       breadcrumbs-json='[{"label":"Notes","href":"/"}]'
       corpora-json='[{"key":"all","label":"All","href":"/corpora/"}]'
       current-corpus-key="all"
@@ -60,6 +61,7 @@ describe('navigation artifacts', () => {
     expect(envelope.document.renderedKind).to.equal('page');
     expect(envelope.document.html).to.contain('<article data-hydration-scope="note-content">');
     expect(envelope.shellProjection?.header.currentCorpusKey).to.equal('all');
+    expect(envelope.shellProjection?.header.tocPresence).to.equal('present');
     expect(envelope.shellProjection?.sidebar?.selectedId).to.equal('notes/example');
     expect(envelope.shellProjection?.sidebar?.structuralExpandedIds).to.deep.equal(['notes']);
     expect(envelope.shellProjection?.sidebar?.topologyRevision).to.equal('topology:example');
@@ -95,7 +97,7 @@ describe('navigation artifacts', () => {
   <meta name="description" content="description">
 </head>
 <body>
-  <layout-header current-corpus-key="all" breadcrumbs-json="[]" corpora-json="[]"></layout-header>
+  <layout-header current-corpus-key="all" toc-presence="absent" breadcrumbs-json="[]" corpora-json="[]"></layout-header>
   <app-router>
     <main id="main-content"><p>body</p></main>
   </app-router>
@@ -119,13 +121,14 @@ describe('navigation artifacts', () => {
       ) as {
         buildId: string;
         document: { html: string; title: string };
-        shellProjection: { header: { currentCorpusKey: string } } | null;
+        shellProjection: { header: { currentCorpusKey: string; tocPresence: string } } | null;
       };
 
       expect(artifact.buildId).to.equal('build 1234567');
       expect(artifact.document.title).to.equal('Example - Rouault');
       expect(artifact.document.html).to.equal('<p>body</p>');
       expect(artifact.shellProjection?.header.currentCorpusKey).to.equal('all');
+      expect(artifact.shellProjection?.header.tocPresence).to.equal('absent');
     } finally {
       await rm(outputDir, { recursive: true, force: true });
     }

@@ -144,6 +144,7 @@ export class NoteLayout {
       { name: 'data-hydration-scope', value: 'note-shell' },
       { name: 'data-note-kind', value: notePage.noteKind },
       { name: 'data-sidebar-presence', value: notePage.noteShellSidebarPresence },
+      { name: 'data-toc-presence', value: notePage.tocPresence },
       {
         name: 'data-pagefind-ignore',
         value: !notePage.pagefind,
@@ -164,9 +165,13 @@ export class NoteLayout {
           </div>
         </article>
 
-        ${renderToc(notePage.toc)}
+        ${notePage.tocPresence === 'present' ? renderToc(notePage.toc) : ''}
       </section>
-      ${renderJsonScriptElement(notePage.toc.sourceId, notePage.toc.headings)}
+      ${
+        notePage.tocPresence === 'present'
+          ? renderJsonScriptElement(notePage.toc.sourceId, notePage.toc.headings)
+          : ''
+      }
     `.trim();
   }
 }

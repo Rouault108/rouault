@@ -4,6 +4,8 @@
 
 本書は、`ui-header` の公開契約、状態モデル、アクセシビリティ、および視覚契約を整理するものです。
 
+`layout-header` は `ui-header` の上位 adapter として、reader note shell の reserve 契約を受け持ちます。特に note page では `toc-presence="present|absent"` を受け、本文側の TOC 列契約と同じ presence 信号で center-end reserve を切り替えなければなりません。
+
 `ui-header` は、アプリケーションシェル上部に配置するヘッダーコンポーネントです。単にヘッダーらしい見た目を描画するのではなく、**アプリ全体のナビゲーション開始点をどこに置くか**、**文脈表示をどの位置に固定するか**、**`sidebarExpanded` という現名称の layout 同期入力を start 幅予約へどう反映するか**、**その状態変化をどのイベント面で通知するか**を公開契約として固定します。
 
 また、`ui-header` は `display: contents` により外側のアプリシェルレイアウトへ透過的に参加します。そのため、本コンポーネントの契約は、単体の箱として完結することよりも、**アプリシェル内での位置づけを崩さないこと**を優先します。
@@ -186,6 +188,12 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 | `--ui-header-backdrop-saturate`  | `0.5`  | Glassmorphism 背景の `saturate()` 強度 |
 | `--ui-header-center-start-inset` | `0px`  | center ゾーンの開始側インセット        |
 | `--ui-header-center-end-inset`   | `0px`  | center ゾーンの終了側インセット        |
+
+### `layout-header` の note shell 契約
+
+- `layout-header[note-layout][toc-presence='present']` は TOC 列幅に応じた `--ui-header-center-end-inset` を与える
+- `layout-header[note-layout][toc-presence='absent']` は `--ui-header-center-end-inset: 0px` とする
+- start 側 reserve は従来どおり `sidebar-enabled` で決め、TOC presence と混在させない
 
 これらは **header 自身が安定公開する拡張面**です。一方で、`--ui-header-edge-highlight` はコンポーネントローカルトークンであり、公開契約には含めません。
 

@@ -1702,9 +1702,16 @@ app-router[data-sidebar-presence='absent'] {
   max-width: min(100%, var(--note-shell-max-width, 1280px));
   margin-inline: auto;
   width: 100%;
+}
+
+.note-shell[data-toc-presence='present'] {
   grid-template-columns:
     minmax(0, 1fr)
     var(--note-toc-track);
+}
+
+.note-shell[data-toc-presence='absent'] {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .note-shell .container-reading {
@@ -1749,7 +1756,7 @@ app-router[data-sidebar-presence='absent'] > main#main-content {
   grid-column: 1;
 }
 
-.note-shell .layout-toc-col {
+.note-shell[data-toc-presence='present'] .layout-toc-col {
   grid-column: 2;
 }
 
@@ -2192,7 +2199,7 @@ layout-sidebar [data-sidebar-nav] a:focus-visible {
       minmax(0, 1fr);
   }
 
-  .note-shell {
+  .note-shell[data-toc-presence='present'] {
     grid-template-columns:
       minmax(0, 1fr)
       minmax(200px, 34vw);
@@ -2230,7 +2237,9 @@ layout-sidebar [data-sidebar-nav] a:focus-visible {
       minmax(0, 1fr);
   }
 
-  .note-shell {
+  .note-shell,
+  .note-shell[data-toc-presence='present'],
+  .note-shell[data-toc-presence='absent'] {
     grid-template-columns: minmax(0, 1fr);
     row-gap: var(--space-6, 24px);
   }
@@ -2250,7 +2259,7 @@ layout-sidebar [data-sidebar-nav] a:focus-visible {
     padding-inline: var(--space-3, 12px);
   }
 
-  .note-shell .layout-toc-col {
+  .note-shell[data-toc-presence='present'] .layout-toc-col {
     grid-column: 1;
     position: static;
     block-size: auto;

@@ -7,6 +7,8 @@ const testNotePath = '/notes/testing/markdown-basic/';
 const tabsTestPath = '/notes/testing/interactive/';
 const tabsNormalizedPath = '/notes/testing/interactive';
 const sampleJavascriptPath = '/notes/program/sample-javascript/';
+const sampleJavascriptNormalizedPath = '/notes/program/sample-javascript';
+const tocAbsentNormalizedPath = '/notes/testing/toc-absent';
 
 const expectMainHeading = async (page: Page, headingText: string): Promise<void> => {
   await expect(page.locator('ui-article-header')).toHaveAttribute('heading', headingText);
@@ -364,5 +366,35 @@ test.describe('Router Navigation', () => {
     expect(result).not.toBeNull();
     expect(result?.hash).toBe('#711-まとめ');
     expect(result?.tagName).toBe('H2');
+  });
+
+  test('TOC present -> absent -> present の SPA 遷移で header と body の契約が同期すること', async ({
+    page,
+  }) => {
+    await page.goto(sampleJavascriptPath);
+
+    await expect(page.locator('layout-header')).toHaveAttribute('toc-presence', 'present');
+    await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'present');
+    await expect(page.locator('layout-toc')).toHaveCount(1);
+
+    await navigateWithAppRouter(page, tocAbsentNormalizedPath);
+
+    await expect(page).toHaveURL(tocAbsentNormalizedPath);
+    await expect(page.locator('layout-header')).toHaveAttribute('toc-presence', 'absent');
+    await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'absent');
+    await expect(page.locator('.layout-toc-col')).toHaveCount(0);
+    await expect(page.locator('layout-toc')).toHaveCount(0);
+
+    const absentOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(absentOverflow).toBeLessThanOrEqual(1);
+
+    await navigateWithAppRouter(page, sampleJavascriptNormalizedPath);
+
+    await expect(page).toHaveURL(sampleJavascriptNormalizedPath);
+    await expect(page.locator('layout-header')).toHaveAttribute('toc-presence', 'present');
+    await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'present');
+    await expect(page.locator('layout-toc')).toHaveCount(1);
   });
 });

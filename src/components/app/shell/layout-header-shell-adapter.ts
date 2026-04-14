@@ -16,6 +16,8 @@ interface CorpusShellItem {
   href: string;
 }
 
+type TocPresence = 'present' | 'absent';
+
 interface HeaderProjectionHost extends HTMLElement {
   applyShellProjection?(snapshot: HeaderShellSnapshot): void;
   readShellProjection?(): HeaderShellSnapshot;
@@ -91,12 +93,16 @@ const readCurrentCorpusKey = (header: Element): string => {
   return currentCorpusKey === '' ? 'all' : (currentCorpusKey ?? 'all');
 };
 
+const readTocPresence = (header: Element): TocPresence =>
+  header.getAttribute('toc-presence') === 'present' ? 'present' : 'absent';
+
 export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
   breadcrumbs: parseBreadcrumbs(header.getAttribute('breadcrumbs-json') ?? null),
   corpora: parseCorpora(header.getAttribute('corpora-json') ?? null),
   currentCorpusKey: readCurrentCorpusKey(header),
   noteLayout: header.hasAttribute('note-layout'),
   sidebarEnabled: header.hasAttribute('sidebar-enabled'),
+  tocPresence: readTocPresence(header),
 });
 
 export const applyHeaderSnapshot = (
@@ -116,6 +122,7 @@ export const applyHeaderSnapshot = (
   header.setAttribute('current-corpus-key', snapshot?.currentCorpusKey ?? 'all');
   header.toggleAttribute('note-layout', snapshot?.noteLayout ?? false);
   header.toggleAttribute('sidebar-enabled', snapshot?.sidebarEnabled ?? false);
+  header.setAttribute('toc-presence', snapshot?.tocPresence ?? 'absent');
 };
 
 export const createLayoutHeaderShellAdapter = (): ShellAdapter => ({

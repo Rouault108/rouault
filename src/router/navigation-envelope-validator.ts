@@ -9,6 +9,7 @@ import type {
   ShellProjectionSnapshot,
   SidebarShellProjection,
 } from '../../shared/navigation/shell-projection.js';
+import type { TocPresence } from '../../shared/note/toc-presence.js';
 
 type SidebarShellProjectionInput = Omit<
   SidebarShellProjection,
@@ -25,6 +26,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isString = (value: unknown): value is string => typeof value === 'string';
 
 const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
+const isTocPresence = (value: unknown): value is TocPresence =>
+  value === 'present' || value === 'absent';
 
 const isRenderedKind = (value: unknown): value is DocumentRenderSnapshot['renderedKind'] =>
   value === 'page' || value === 'not-found' || value === 'error';
@@ -39,7 +42,8 @@ const isHeaderShellProjection = (value: unknown): value is HeaderShellProjection
     Array.isArray(value['corpora']) &&
     isString(value['currentCorpusKey']) &&
     isBoolean(value['noteLayout']) &&
-    isBoolean(value['sidebarEnabled'])
+    isBoolean(value['sidebarEnabled']) &&
+    isTocPresence(value['tocPresence'])
   );
 };
 

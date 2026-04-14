@@ -15,6 +15,7 @@ import {
 } from '../theme/theme-manager.js';
 import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.js';
 import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
+import type { TocPresence } from '../../shared/note/toc-presence.js';
 import {
   escapeHtmlText,
   escapeInlineExecutableScriptText,
@@ -150,6 +151,7 @@ export class BaseLayout {
         kind: 'boolean',
       },
     ]);
+    const tocPresence: TocPresence = data.notePage?.tocPresence ?? 'absent';
     const headerAttributes = serializeHtmlAttributes([
       { name: 'note-layout', value: Boolean(data.note), kind: 'boolean' },
       {
@@ -157,6 +159,9 @@ export class BaseLayout {
         value: Boolean(data.note && noteSurfacePolicy.sidebar),
         kind: 'boolean',
       },
+      // note page chrome の判断源が一部 data.note / data.notePage に分かれている。
+      // TOC presence は reserve 契約の正本として明示的に data.notePage から伝搬する。
+      { name: 'toc-presence', value: tocPresence },
       { name: 'breadcrumbs-json', value: breadcrumbs, kind: 'json' },
       { name: 'corpora-json', value: corpora, kind: 'json' },
       { name: 'current-corpus-key', value: currentCorpusKey },

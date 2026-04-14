@@ -14,6 +14,7 @@ import type {
   HeaderShellProjection,
   SidebarShellProjection,
 } from '../../shared/navigation/shell-projection.js';
+import type { TocPresence } from '../../shared/note/toc-presence.js';
 
 type Parse5Node = DefaultTreeAdapterMap['node'];
 type Parse5ChildNode = DefaultTreeAdapterMap['childNode'];
@@ -145,6 +146,9 @@ const toNumber = (value: string | null, fallback: number): number => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const toTocPresence = (value: string | null): TocPresence =>
+  value === 'present' ? 'present' : 'absent';
+
 const collectHydrationPlan = (document: Parse5Document): HydrationPlanScope[] => {
   const scopes = findAllElements(document, (candidate) => getAttribute(candidate, 'data-hydration-scope') !== null);
   const seen = new Set<string>();
@@ -197,6 +201,7 @@ const extractHeaderProjection = (document: Parse5Document): HeaderShellProjectio
     ),
     noteLayout: hasAttribute(header, 'note-layout'),
     sidebarEnabled: hasAttribute(header, 'sidebar-enabled'),
+    tocPresence: toTocPresence(getAttribute(header, 'toc-presence')),
   };
 };
 

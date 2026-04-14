@@ -94,9 +94,17 @@ build-time で決定し、`layout-toc[capabilities-json]` へ渡します。
 
 契約:
 
+- TOC presence は note page projection の `tocPresence` で決まり、`headings.length === 0` のときは `absent` とする
+- `tocPresence='absent'` の note page では TOC DOM、TOC JSON script、`data-hydration-scope="note-toc"` を出力しない
 - `layout-toc` は `capabilities-json` を持つ
 - `activeTracking` / `dynamicScopes` / `mobileSummary` のいずれかが true の場合だけ hydration directive を持つ
 - static-only TOC は SSR 出力だけで成立させる
+
+presence と hydration は分離する。
+
+- `absent`: headings 0 件。TOC host 自体を出さない
+- `present-static`: headings 1 件以上かつ interactive capability なし。SSR のみで成立
+- `present-interactive`: headings 1 件以上かつ interactive capability あり。SSR 後に hydrate する
 
 ---
 
@@ -117,4 +125,5 @@ runtime 契約:
 - `ui-toc` が `activeId` だけで表示を更新すること
 - scoped heading が build-time で抽出されること
 - `layout-toc` が capability ありのときだけ hydrate すること
+- `tocPresence='absent'` では TOC DOM と hydration scope が出ないこと
 - mobile summary controller が `mobileSummary=true` のときだけ動くこと

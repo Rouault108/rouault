@@ -34,6 +34,7 @@ const createProjection = (
   return {
     noteKind: 'reader',
     noteShellSidebarPresence: 'present',
+    tocPresence: 'present',
     showSidebar: true,
     contentHtml: '<p>本文</p>',
     ...(sidebar === undefined ? { sidebar: defaultSidebar } : { sidebar }),
@@ -77,6 +78,7 @@ describe('NoteLayout', () => {
     });
 
     expect(rendered).toContain('data-hydration-scope="note-shell"');
+    expect(rendered).toContain('data-toc-presence="present"');
     expect(rendered).not.toContain('data-hydration-scope="note-sidebar"');
     expect(rendered.match(/<layout-sidebar\b/g)?.length ?? 0).to.equal(0);
     expect(rendered).not.toContain('data-sidebar-surface=');
@@ -87,6 +89,33 @@ describe('NoteLayout', () => {
     expect(rendered).toContain('<span data-pagefind-weight="10">見出し</span>');
     expect(rendered).not.toContain('<span data-pagefind-weight="8">見出し</span>');
     expect(rendered).toContain('content-root-id="note-content-note"');
+  });
+
+  it('tocPresence=absent では TOC host / script / hydration scope を出力しないこと', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      notePage: createProjection({
+        tocPresence: 'absent',
+        toc: {
+          sourceId: 'toc-source-note',
+          headings: [],
+          capabilities: {
+            activeTracking: true,
+            dynamicScopes: true,
+            mobileSummary: true,
+          },
+          contentRootId: 'note-content-note',
+          homeHref: '/',
+          shouldHydrate: true,
+        },
+      }),
+    });
+
+    expect(rendered).toContain('data-toc-presence="absent"');
+    expect(rendered).not.toContain('class="layout-toc-col"');
+    expect(rendered).not.toContain('<layout-toc');
+    expect(rendered).not.toContain('data-hydration-scope="note-toc"');
+    expect(rendered).not.toContain('<script id="toc-source-note" type="application/json">');
   });
 
   it('projection 値を安全に escape すること', () => {
