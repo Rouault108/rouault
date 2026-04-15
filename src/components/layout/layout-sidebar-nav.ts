@@ -58,7 +58,7 @@ const getItemLabel = (item: Element): string => {
     return explicitLabel.textContent.trim();
   }
 
-  return getItemControl(item)?.textContent.trim() ?? item.textContent.trim();
+  return '';
 };
 
 const isBranchVisible = (item: Element): boolean => {
