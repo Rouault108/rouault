@@ -233,9 +233,7 @@ const extractSidebarProjection = (document: Parse5Document): SidebarShellProject
     sidebarId: toTrimmedString(getAttribute(sidebar, 'sidebar-id'), FALLBACK_SIDEBAR_ID),
     stateScopeId: toTrimmedString(getAttribute(sidebar, 'state-scope-id'), ''),
     selectedId: toOptionalString(getAttribute(sidebar, 'selected-id')),
-    structuralExpandedIds: parseStringArrayAttribute(
-      getAttribute(sidebar, 'structural-expanded-ids'),
-    ),
+    initialExpandedIds: parseStringArrayAttribute(getAttribute(sidebar, 'initial-expanded-ids')),
     topologyRevision: toOptionalString(getAttribute(sidebar, 'topology-revision')),
     navHtml: serializeInnerHtml(sidebar).trim() || null,
     heading: toTrimmedString(getAttribute(sidebar, 'heading'), FALLBACK_SIDEBAR_HEADING),

@@ -58,7 +58,7 @@ export const readSidebarShellSnapshot = (sidebar: Element): SidebarShellSnapshot
   sidebarId: toTrimmedString(sidebar.getAttribute('sidebar-id'), DEFAULT_LAYOUT_SIDEBAR_ID),
   stateScopeId: toTrimmedString(sidebar.getAttribute('state-scope-id')),
   selectedId: toOptionalString(sidebar.getAttribute('selected-id')),
-  structuralExpandedIds: parseStringArrayAttribute(sidebar.getAttribute('structural-expanded-ids')),
+  initialExpandedIds: parseStringArrayAttribute(sidebar.getAttribute('initial-expanded-ids')),
   topologyRevision: toOptionalString(sidebar.getAttribute('topology-revision')),
   navHtml: sidebar.innerHTML.trim() || null,
   heading: toTrimmedString(sidebar.getAttribute('heading'), 'ナビゲーション'),
@@ -106,10 +106,7 @@ export const applySidebarSnapshot = (
       currentSidebar.setAttribute('selected-id', snapshot.selectedId);
     }
 
-    currentSidebar.setAttribute(
-      'structural-expanded-ids',
-      JSON.stringify(snapshot.structuralExpandedIds),
-    );
+    currentSidebar.setAttribute('initial-expanded-ids', JSON.stringify(snapshot.initialExpandedIds));
 
     if (snapshot.topologyRevision === null) {
       currentSidebar.removeAttribute('topology-revision');

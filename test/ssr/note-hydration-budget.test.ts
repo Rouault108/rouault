@@ -94,7 +94,7 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
           sidebar: {
             stateScopeId: 'note-navigation',
             selectedId: note.slug,
-            structuralExpandedIds: [],
+            initialExpandedIds: [],
             topologyRevision: JSON.stringify([
               {
                 id: note.slug,

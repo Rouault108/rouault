@@ -20,7 +20,8 @@ describe('sidebar nav explicit contract', () => {
         kind: 'branch',
         depth: 0,
         isCurrent: false,
-        isStructuralExpanded: true,
+        hasCurrentDescendant: true,
+        isInitiallyExpanded: true,
         children: [
           {
             id: 'music/mozart',
@@ -29,7 +30,8 @@ describe('sidebar nav explicit contract', () => {
             href: '/notes/music/mozart',
             depth: 1,
             isCurrent: true,
-            isStructuralExpanded: false,
+            hasCurrentDescendant: false,
+            isInitiallyExpanded: false,
             children: [],
           },
         ],
@@ -45,6 +47,7 @@ describe('sidebar nav explicit contract', () => {
     expect(markup).toContain('data-sidebar-nav-link');
     expect(markup).toContain('data-sidebar-nav-label');
     expect(markup).toContain('aria-current="page"');
+    expect(markup).toContain('data-current-branch="true"');
     expect(markup).not.toContain('<a href="/notes/music/mozart" aria-current="page">Mozart</a>');
     expect(markup).not.toContain('<button type="button" aria-expanded="true"');
   });
@@ -54,6 +57,7 @@ describe('sidebar nav explicit contract', () => {
       '[data-sidebar-nav] [data-sidebar-nav-control]',
       '[data-sidebar-nav] [data-sidebar-nav-branch-control]',
       '[data-sidebar-nav] [data-sidebar-nav-link][aria-current=',
+      "li[data-current-branch='true']",
       '[data-sidebar-nav] [data-sidebar-nav-control]:focus-visible',
     ]);
 

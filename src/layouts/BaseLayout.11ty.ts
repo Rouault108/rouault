@@ -101,7 +101,7 @@ const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar
   serializeHtmlAttributes([
     { name: 'state-scope-id', value: sidebar.stateScopeId },
     { name: 'selected-id', value: sidebar.selectedId },
-    { name: 'structural-expanded-ids', value: sidebar.structuralExpandedIds, kind: 'json' },
+    { name: 'initial-expanded-ids', value: sidebar.initialExpandedIds, kind: 'json' },
     { name: 'topology-revision', value: sidebar.topologyRevision },
     { name: 'heading', value: sidebar.heading },
     { name: 'fixed-breakpoint', value: sidebar.fixedBreakpoint },

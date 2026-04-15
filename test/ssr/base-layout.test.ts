@@ -17,7 +17,7 @@ describe('BaseLayout', () => {
         sidebar: {
           stateScopeId: 'note-navigation',
           selectedId: 'reader-note',
-          structuralExpandedIds: [],
+          initialExpandedIds: [],
           topologyRevision: 'reader-note-topology',
           navHtml:
             '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="reader-note-topology"><ul><li data-node-id="reader-note" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/reader-note" aria-current="page"><span data-sidebar-nav-label>Reader Note</span></a></li></ul></nav>',
@@ -54,7 +54,7 @@ describe('BaseLayout', () => {
 
     expect(rendered).toContain('<layout-header note-layout sidebar-enabled');
     expect(rendered).toContain('toc-presence="absent"');
-    expect(rendered).toContain('structural-expanded-ids="[]"');
+    expect(rendered).toContain('initial-expanded-ids="[]"');
     expect(rendered).toContain('topology-revision="reader-note-topology"');
     expect(rendered).toContain('<nav data-sidebar-nav');
   });

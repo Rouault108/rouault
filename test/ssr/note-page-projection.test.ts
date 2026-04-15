@@ -129,7 +129,7 @@ describe('buildNotePageProjection', () => {
 
     expect(projection.sidebar?.selectedId).toBe('music/classical/mozart');
     expect(projection.sidebar?.stateScopeId).toBe('note-navigation');
-    expect(projection.sidebar?.structuralExpandedIds).toEqual(['music', 'music/classical']);
+    expect(projection.sidebar?.initialExpandedIds).toEqual(['music', 'music/classical']);
     expect(projection.sidebar?.navHtml).toContain('data-sidebar-nav');
     expect(projection.sidebar?.navHtml).toContain('data-sidebar-nav-control');
     expect(projection.sidebar?.navHtml).toContain('data-sidebar-nav-link');
@@ -138,6 +138,7 @@ describe('buildNotePageProjection', () => {
     expect(projection.sidebar?.navHtml).toContain('aria-current="page"');
     expect(projection.sidebar?.navHtml).toContain('data-node-id="music"');
     expect(projection.sidebar?.navHtml).toContain('data-node-id="music/classical"');
+    expect(projection.sidebar?.navHtml).toContain('data-current-branch="true"');
     expect(projection.sidebar?.navHtml).toContain('&quot;icon&quot;:&quot;book-open&quot;');
     expect(projection.sidebar?.navHtml).toContain('&quot;icon&quot;:&quot;folder-open&quot;');
     expect(projection.sidebar?.navHtml).toContain('&quot;icon&quot;:&quot;music&quot;');
@@ -180,7 +181,7 @@ describe('buildNotePageProjection', () => {
     ]);
 
     expect(projection.sidebar?.selectedId).toBe('music/__index__');
-    expect(projection.sidebar?.structuralExpandedIds).toEqual(['music']);
+    expect(projection.sidebar?.initialExpandedIds).toEqual(['music']);
     expect(projection.sidebar?.navHtml).toContain('/notes/music');
     expect(projection.sidebar?.navHtml).toContain('data-node-id="music/__index__"');
     expect(projection.sidebar?.navHtml).toContain('href="/notes/music"');

@@ -25,13 +25,13 @@ interface SidebarStateChangeDetail {
 const sampleNavMarkup = `
   <nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:sample">
     <ul>
-      <li data-node-id="music" data-node-kind="branch" data-node-depth="0">
+      <li data-node-id="music" data-node-kind="branch" data-node-depth="0" data-current-branch="true">
         <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="sidebar-group-music">
           <span data-sidebar-nav-label>Music</span>
           <span data-sidebar-nav-disclosure aria-hidden="true"></span>
         </button>
         <ul id="sidebar-group-music">
-          <li data-node-id="music/classical" data-node-kind="branch" data-node-depth="1">
+          <li data-node-id="music/classical" data-node-kind="branch" data-node-depth="1" data-current-branch="true">
             <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="sidebar-group-classical">
               <span data-sidebar-nav-label>Classical</span>
               <span data-sidebar-nav-disclosure aria-hidden="true"></span>
@@ -65,13 +65,13 @@ const sampleNavMarkup = `
 const sampleNavMarkupWithoutClassical = `
   <nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:sample-v2">
     <ul>
-      <li data-node-id="music" data-node-kind="branch" data-node-depth="0">
+      <li data-node-id="music" data-node-kind="branch" data-node-depth="0" data-current-branch="true">
         <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="sidebar-group-music-v2">
           <span data-sidebar-nav-label>Music</span>
           <span data-sidebar-nav-disclosure aria-hidden="true"></span>
         </button>
         <ul id="sidebar-group-music-v2">
-          <li data-node-id="music/classical" data-node-kind="branch" data-node-depth="1">
+          <li data-node-id="music/classical" data-node-kind="branch" data-node-depth="1" data-current-branch="true">
             <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="sidebar-group-classical-v2">
               <span data-sidebar-nav-label>Classical</span>
               <span data-sidebar-nav-disclosure aria-hidden="true"></span>
@@ -205,14 +205,14 @@ const renderSidebarFixture = (options: {
   presentation?: 'auto' | 'fixed' | 'overlay';
   stateScopeId?: string;
   selectedId?: string;
-  structuralExpandedIds?: string;
+  initialExpandedIds?: string;
   markup?: string;
 }) => html`
   <layout-sidebar
     presentation="${options.presentation ?? 'overlay'}"
     state-scope-id="${options.stateScopeId ?? 'note-navigation'}"
     selected-id="${options.selectedId ?? 'music/classical/beethoven/symphony-9'}"
-    structural-expanded-ids="${options.structuralExpandedIds ?? '["music","music/classical"]'}"
+    initial-expanded-ids="${options.initialExpandedIds ?? '["music","music/classical"]'}"
     heading="ナビゲーション"
   >
     ${unsafeHTML(options.markup ?? sampleNavMarkup)}
@@ -225,7 +225,7 @@ describe('layout-sidebar browser contract', () => {
     layoutSidebarController.reset();
   });
 
-  it('初回表示では structuralExpandedIds と現在位置を元に server nav を開くこと', async () => {
+  it('初回表示では initialExpandedIds と現在位置を元に server nav を開くこと', async () => {
     const media = mockMatchMedia();
 
     try {
@@ -261,7 +261,7 @@ describe('layout-sidebar browser contract', () => {
 
       const host = await fixture<LayoutSidebar>(
         renderSidebarFixture({
-          structuralExpandedIds: '["music"]',
+          initialExpandedIds: '["music"]',
           selectedId: 'essay/reading-notes',
         }),
       );
@@ -281,7 +281,7 @@ describe('layout-sidebar browser contract', () => {
     }
   });
 
-  it('selectedId だけが変わっても persisted state を再読込しないこと', async () => {
+  it('selectedId だけが変わってもユーザーが閉じた branch を再展開しないこと', async () => {
     const media = mockMatchMedia();
 
     try {
@@ -301,15 +301,22 @@ describe('layout-sidebar browser contract', () => {
 
       const host = await fixture<LayoutSidebar>(
         renderSidebarFixture({
-          structuralExpandedIds: '["music"]',
+          initialExpandedIds: '["music","music/classical"]',
           selectedId: 'music/classical/tchaikovsky/the-nutcracker',
         }),
       );
 
       await settle(host);
 
-      const essayGroup = expectPresent(getBranchGroup(host, 'essay'), 'essay group');
-      expect(essayGroup.hidden).to.equal(false);
+      const classicalButton = expectPresent(
+        getControl(host, 'music/classical'),
+        'music/classical toggle',
+      ) as HTMLButtonElement;
+      classicalButton.click();
+      await settle(host);
+
+      const classicalGroup = expectPresent(getBranchGroup(host, 'music/classical'), 'classical group');
+      expect(classicalGroup.hidden).to.equal(true);
 
       localStorage.setItem(
         storageKey,
@@ -321,7 +328,13 @@ describe('layout-sidebar browser contract', () => {
       host.selectedId = 'music/classical/beethoven/symphony-9';
       await settle(host);
 
-      expect(essayGroup.hidden).to.equal(false);
+      expect(classicalGroup.hidden).to.equal(true);
+      expect(
+        expectPresent(
+          host.querySelector<HTMLElement>('li[data-node-id="music/classical"]'),
+          'music/classical row',
+        ).getAttribute('data-current-branch'),
+      ).to.equal('true');
     } finally {
       media.restore();
     }
@@ -355,7 +368,7 @@ describe('layout-sidebar browser contract', () => {
       const host = await fixture<LayoutSidebar>(
         renderSidebarFixture({
           stateScopeId: 'reference-navigation',
-          structuralExpandedIds: '[]',
+          initialExpandedIds: '[]',
           selectedId: 'essay/reading-notes',
         }),
       );
@@ -371,6 +384,37 @@ describe('layout-sidebar browser contract', () => {
       expect(
         expectPresent(getBranchGroup(host, 'music'), 'music group after scope change').hidden,
       ).to.equal(false);
+    } finally {
+      media.restore();
+    }
+  });
+
+
+  it('selected leaf を含む parent branch でも閉じられ、current branch marker が残ること', async () => {
+    const media = mockMatchMedia();
+
+    try {
+      await ensureLayoutSidebarDefined();
+
+      const host = await fixture<LayoutSidebar>(renderSidebarFixture({}));
+      await settle(host);
+
+      const classicalButton = expectPresent(
+        getControl(host, 'music/classical'),
+        'music/classical toggle',
+      ) as HTMLButtonElement;
+      classicalButton.click();
+      await settle(host);
+
+      expect(
+        expectPresent(getBranchGroup(host, 'music/classical'), 'music/classical group').hidden,
+      ).to.equal(true);
+      expect(
+        expectPresent(
+          host.querySelector<HTMLElement>('li[data-node-id="music/classical"]'),
+          'music/classical row',
+        ).getAttribute('data-current-branch'),
+      ).to.equal('true');
     } finally {
       media.restore();
     }
@@ -399,7 +443,7 @@ describe('layout-sidebar browser contract', () => {
         present: true,
         stateScopeId: 'note-navigation',
         selectedId: 'music/classical/mozart/requiem',
-        structuralExpandedIds: ['music', 'music/classical'],
+        initialExpandedIds: ['music', 'music/classical'],
         topologyRevision: 'topology:sample-v2',
         navHtml: sampleNavMarkupWithoutClassical,
         heading: 'ナビゲーション',

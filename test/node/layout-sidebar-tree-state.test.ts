@@ -5,7 +5,6 @@ import {
   LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V3,
   collectLayoutSidebarSelectedAncestorIds,
   getLayoutSidebarTreeStateStorageKey,
-  mergeLayoutSidebarTreeState,
   normalizeLayoutSidebarTreeState,
   readLayoutSidebarTreeState,
   writeLayoutSidebarTreeState,
@@ -167,39 +166,20 @@ describe('layout-sidebar-tree-state', () => {
     expect(selectedAncestors).to.not.include('music/classical/tchaikovsky');
   });
 
-  it('selected ancestor の auto-expand は persisted state へ書き戻さないこと', () => {
-    const nodes: readonly TreeNode[] = [
-      {
-        kind: 'branch',
-        id: 'music',
-        label: 'Music',
-        children: [
-          {
-            kind: 'branch',
-            id: 'music/classical',
-            label: 'Classical',
-            children: [
-              {
-                kind: 'leaf',
-                id: 'music/classical/mozart',
-                label: 'Mozart',
-                href: '/notes/music/classical/mozart',
-              },
-            ],
-          },
-        ],
-      },
-    ];
+  it('空 expandedIds を持つ保存状態を欠損と区別できること', () => {
+    const storage = new MockStorage();
+    const scope = { sidebarId: 'note-primary', stateScopeId: 'note-navigation' };
 
-    const persistedExpandedIds: string[] = [];
-    const merged = mergeLayoutSidebarTreeState(
-      nodes,
-      persistedExpandedIds,
-      'music/classical/mozart',
+    writeLayoutSidebarTreeState(
+      storage,
+      {
+        expandedIds: [],
+      },
+      scope,
     );
 
-    expect(merged).to.include('music');
-    expect(merged).to.include('music/classical');
-    expect(persistedExpandedIds).to.deep.equal([]);
+    expect(readLayoutSidebarTreeState(storage, scope)).to.deep.equal({
+      expandedIds: [],
+    });
   });
 });

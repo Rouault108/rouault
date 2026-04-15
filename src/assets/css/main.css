@@ -1892,6 +1892,35 @@ layout-sidebar [data-sidebar-nav] [data-sidebar-nav-link][aria-current='page'] {
   background: color-mix(in oklab, var(--accent-soft, oklch(96% 0.02 240)) 72%, transparent);
 }
 
+layout-sidebar
+  [data-sidebar-nav]
+  li[data-current-branch='true']
+  > [data-sidebar-nav-control]:not([aria-current='page']) {
+  position: relative;
+  font-weight: 600;
+}
+
+layout-sidebar
+  [data-sidebar-nav]
+  li[data-current-branch='true']
+  > [data-sidebar-nav-control]:not([aria-current='page'])::before {
+  content: '';
+  position: absolute;
+  inset-block: 6px;
+  inset-inline-start: 0;
+  inline-size: 2px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--fg-default) 24%, transparent);
+}
+
+layout-sidebar
+  [data-sidebar-nav]
+  li[data-current-branch='true']
+  > [data-sidebar-nav-control]:not([aria-current='page'])
+  [data-sidebar-nav-disclosure] {
+  color: var(--fg-default);
+}
+
 layout-sidebar [data-sidebar-nav] [data-sidebar-nav-control]:focus-visible {
   outline: 2px solid var(--focus-ring, oklch(62% 0.19 254));
   outline-offset: -2px;

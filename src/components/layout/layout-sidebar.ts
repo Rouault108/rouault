@@ -85,8 +85,8 @@ export class LayoutSidebar extends LitElement {
   @property({ type: String, attribute: 'selected-id' })
   selectedId: string | null = null;
 
-  @property({ type: String, attribute: 'structural-expanded-ids' })
-  structuralExpandedIdsJson = '[]';
+  @property({ type: String, attribute: 'initial-expanded-ids' })
+  initialExpandedIdsJson = '[]';
 
   @property({ type: String, attribute: 'topology-revision' })
   topologyRevision: string | null = null;
@@ -110,7 +110,10 @@ export class LayoutSidebar extends LitElement {
   private _sidebarSnapshot: LayoutSidebarControllerSnapshot = DEFAULT_SIDEBAR_SNAPSHOT;
 
   @state()
-  private _persistedExpandedIds = new Set<string>();
+  private _expandedIds = new Set<string>();
+
+  @state()
+  private _hasStoredExpandedState = false;
 
   private _activeId: string | null = null;
   private _storage: Storage | null = null;
@@ -141,7 +144,7 @@ export class LayoutSidebar extends LitElement {
     // server nav subtree を唯一正本として差し替え、開閉状態の継続だけを localStorage へ委ねる。
     this.stateScopeId = snapshot.stateScopeId;
     this.selectedId = snapshot.selectedId;
-    this.structuralExpandedIdsJson = JSON.stringify(snapshot.structuralExpandedIds);
+    this.initialExpandedIdsJson = JSON.stringify(snapshot.initialExpandedIds);
     this.topologyRevision = snapshot.topologyRevision;
     this.heading = snapshot.heading;
     this.fixedBreakpoint = snapshot.fixedBreakpoint;
@@ -155,7 +158,7 @@ export class LayoutSidebar extends LitElement {
       this.setAttribute('selected-id', snapshot.selectedId);
     }
 
-    this.setAttribute('structural-expanded-ids', JSON.stringify(snapshot.structuralExpandedIds));
+    this.setAttribute('initial-expanded-ids', JSON.stringify(snapshot.initialExpandedIds));
 
     if (snapshot.topologyRevision === null) {
       this.removeAttribute('topology-revision');
@@ -177,7 +180,7 @@ export class LayoutSidebar extends LitElement {
       sidebarId: this._resolveSidebarId(),
       stateScopeId: this._resolveStateScopeId(),
       selectedId: this.selectedId,
-      structuralExpandedIds: this._parseStructuralExpandedIds(this.structuralExpandedIdsJson),
+      initialExpandedIds: this._parseInitialExpandedIds(this.initialExpandedIdsJson),
       topologyRevision: this.topologyRevision,
       navHtml: this._readServerNavMarkup(),
       heading: this.heading,
@@ -196,7 +199,7 @@ export class LayoutSidebar extends LitElement {
     super.connectedCallback();
 
     this._storage = this._resolveStorage();
-    this._restorePersistedExpandedIds();
+    this._restoreExpandedIds();
     this._initializePresentationStore();
     this._connectPresentationStore();
     this._reflectModeAttribute();
@@ -218,7 +221,7 @@ export class LayoutSidebar extends LitElement {
       changedProperties.has('sidebarId') ||
       changedProperties.has('stateScopeId')
     ) {
-      this._restorePersistedExpandedIds();
+      this._restoreExpandedIds();
     }
   }
 
@@ -324,7 +327,7 @@ export class LayoutSidebar extends LitElement {
     return markup.length > 0 ? markup : null;
   }
 
-  private _parseStructuralExpandedIds(value: string): string[] {
+  private _parseInitialExpandedIds(value: string): string[] {
     const normalized = value.trim();
     if (normalized.length === 0) {
       return [];
@@ -342,13 +345,22 @@ export class LayoutSidebar extends LitElement {
     }
   }
 
-  private _restorePersistedExpandedIds(): void {
+  private _restoreExpandedIds(): void {
+    const initialExpandedIds = this._parseInitialExpandedIds(this.initialExpandedIdsJson);
     const persistedState = readLayoutSidebarTreeState(this._storage, {
       sidebarId: this._resolveSidebarId(),
       stateScopeId: this._resolveStateScopeId(),
     });
-    const nextExpandedIds = new Set(persistedState?.expandedIds ?? []);
-    this._setPersistedExpandedIds(nextExpandedIds);
+
+    if (persistedState !== null) {
+      this._hasStoredExpandedState = true;
+      // 初期表示では server projection が要求する可視祖先を保ち、以後の閉じ操作は runtime state 側で優先する。
+      this._setExpandedIds([...persistedState.expandedIds, ...initialExpandedIds]);
+      return;
+    }
+
+    this._hasStoredExpandedState = false;
+    this._setExpandedIds(initialExpandedIds);
   }
 
   private _resolveStateScopeId(): string {
@@ -368,14 +380,14 @@ export class LayoutSidebar extends LitElement {
     }
   }
 
-  private _setPersistedExpandedIds(expandedIds: Iterable<string>): void {
+  private _setExpandedIds(expandedIds: Iterable<string>): void {
     const nextExpandedIds = new Set(normalizeExpandedIds(expandedIds));
 
-    if (sameExpandedIds(this._persistedExpandedIds, nextExpandedIds)) {
+    if (sameExpandedIds(this._expandedIds, nextExpandedIds)) {
       return;
     }
 
-    this._persistedExpandedIds = nextExpandedIds;
+    this._expandedIds = nextExpandedIds;
   }
 
   private _setActiveId(id: string | null): void {
@@ -387,11 +399,40 @@ export class LayoutSidebar extends LitElement {
     this._activeId = normalized;
   }
 
-  private _getMergedExpandedIds(): Set<string> {
-    return new Set([
-      ...this._parseStructuralExpandedIds(this.structuralExpandedIdsJson),
-      ...normalizeExpandedIds(this._persistedExpandedIds),
-    ]);
+  private _collectAvailableBranchIds(nav: HTMLElement): Set<string> {
+    return new Set(
+      Array.from(nav.querySelectorAll<HTMLLIElement>('li[data-node-kind="branch"][data-node-id]'))
+        .map((row) => row.getAttribute('data-node-id')?.trim() ?? '')
+        .filter((id) => id.length > 0),
+    );
+  }
+
+  private _pruneExpandedIds(nav: HTMLElement): void {
+    const availableBranchIds = this._collectAvailableBranchIds(nav);
+    const nextExpandedIds = normalizeExpandedIds(this._expandedIds).filter((id) =>
+      availableBranchIds.has(id),
+    );
+
+    if (sameExpandedIds(this._expandedIds, nextExpandedIds)) {
+      return;
+    }
+
+    this._setExpandedIds(nextExpandedIds);
+
+    if (!this._hasStoredExpandedState) {
+      return;
+    }
+
+    writeLayoutSidebarTreeState(
+      this._storage,
+      {
+        expandedIds: nextExpandedIds,
+      },
+      {
+        sidebarId: this._resolveSidebarId(),
+        stateScopeId: this._resolveStateScopeId(),
+      },
+    );
   }
 
   private _connectNavInteraction(): void {
@@ -404,9 +445,11 @@ export class LayoutSidebar extends LitElement {
       return;
     }
 
+    this._pruneExpandedIds(nav);
+
     const nextActiveId = syncLayoutSidebarNav(nav, {
       selectedId: this.selectedId,
-      expandedIds: this._getMergedExpandedIds(),
+      expandedIds: this._expandedIds,
       activeId: this._activeId,
     });
 
@@ -414,7 +457,7 @@ export class LayoutSidebar extends LitElement {
   }
 
   private _handleNavToggle(id: string, expanded: boolean): void {
-    const nextExpandedIds = new Set(this._persistedExpandedIds);
+    const nextExpandedIds = new Set(this._expandedIds);
 
     if (expanded) {
       nextExpandedIds.add(id);
@@ -422,7 +465,8 @@ export class LayoutSidebar extends LitElement {
       nextExpandedIds.delete(id);
     }
 
-    this._setPersistedExpandedIds(nextExpandedIds);
+    this._setExpandedIds(nextExpandedIds);
+    this._hasStoredExpandedState = true;
 
     writeLayoutSidebarTreeState(
       this._storage,

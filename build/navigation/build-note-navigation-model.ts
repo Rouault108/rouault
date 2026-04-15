@@ -105,7 +105,8 @@ const buildSidebarRows = (
   nodes: readonly TreeNode[],
   options: {
     selectedId: string | null;
-    structuralExpandedIds: ReadonlySet<string>;
+    currentAncestorIds: ReadonlySet<string>;
+    initialExpandedIds: ReadonlySet<string>;
     depth?: number;
   },
 ): SidebarNavRow[] => {
@@ -119,13 +120,16 @@ const buildSidebarRows = (
     ...(typeof node.icon === 'string' ? { icon: node.icon } : {}),
     depth,
     isCurrent: node.id === options.selectedId,
-    isStructuralExpanded:
-      node.kind === 'branch' ? options.structuralExpandedIds.has(node.id) : false,
+    hasCurrentDescendant:
+      node.kind === 'branch' ? options.currentAncestorIds.has(node.id) : false,
+    isInitiallyExpanded:
+      node.kind === 'branch' ? options.initialExpandedIds.has(node.id) : false,
     children:
       node.kind === 'branch'
         ? buildSidebarRows(node.children, {
             selectedId: options.selectedId,
-            structuralExpandedIds: options.structuralExpandedIds,
+            currentAncestorIds: options.currentAncestorIds,
+            initialExpandedIds: options.initialExpandedIds,
             depth: depth + 1,
           })
         : [],
@@ -486,17 +490,19 @@ export const buildNoteNavigationModel = ({
   const rootSlug = toTrimmedString(currentNote?.sidebarRoot);
   const sidebarTree = buildSidebarTree(sidebarNotes, rootSlug);
   const selectedId = resolveSelectedSidebarNodeId(currentNote);
-  const structuralExpandedIds = collectSelectedAncestors(sidebarTree, selectedId) ?? [];
-  const structuralExpandedSet = new Set(structuralExpandedIds);
+  const initialExpandedIds = collectSelectedAncestors(sidebarTree, selectedId) ?? [];
+  const currentAncestorSet = new Set(initialExpandedIds);
+  const initialExpandedSet = new Set(initialExpandedIds);
 
   return {
     sidebarTree,
     sidebarRows: buildSidebarRows(sidebarTree, {
       selectedId,
-      structuralExpandedIds: structuralExpandedSet,
+      currentAncestorIds: currentAncestorSet,
+      initialExpandedIds: initialExpandedSet,
     }),
     selectedId,
-    structuralExpandedIds,
+    initialExpandedIds,
     topologyRevision: createTopologyRevision(sidebarTree),
     breadcrumbs: buildBreadcrumbs(currentNote, notes),
   };

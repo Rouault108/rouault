@@ -135,21 +135,3 @@ export const collectLayoutSidebarSelectedAncestorIds = (
   nodes: readonly TreeNode[],
   selectedId: string | null,
 ): string[] => collectSelectedAncestors(nodes, selectedId) ?? [];
-
-/**
- * 保存済み expandedIds と現在地の祖先 branch 群を結合する。
- */
-export const mergeLayoutSidebarTreeState = (
-  nodes: readonly TreeNode[],
-  expandedIds: readonly string[],
-  selectedId: string | null,
-): string[] => {
-  const merged = new Set(expandedIds);
-  const selectedAncestors = collectSelectedAncestors(nodes, selectedId) ?? [];
-
-  for (const id of selectedAncestors) {
-    merged.add(id);
-  }
-
-  return [...merged];
-};

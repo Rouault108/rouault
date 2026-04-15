@@ -9,6 +9,8 @@ interface LayoutSidebarNavItem {
   row: HTMLLIElement;
   control: HTMLButtonElement | HTMLAnchorElement;
   parentId: string | null;
+  depth: number;
+  hasCurrentDescendant: boolean;
 }
 
 export interface LayoutSidebarNavSyncOptions {
@@ -49,6 +51,15 @@ const getParentItem = (item: Element): HTMLLIElement | null => {
   const parentItem = parentList.closest<HTMLLIElement>(ITEM_SELECTOR);
   return parentItem instanceof HTMLLIElement ? parentItem : null;
 };
+
+const getItemDepth = (item: Element): number => {
+  const rawDepth = item.getAttribute('data-node-depth');
+  const parsedDepth = rawDepth === null ? Number.NaN : Number.parseInt(rawDepth, 10);
+  return Number.isFinite(parsedDepth) ? parsedDepth : 0;
+};
+
+const hasCurrentDescendant = (item: Element): boolean =>
+  item.getAttribute('data-current-branch') === 'true';
 
 const getItemLabel = (item: Element): string => {
   const explicitLabel = item.querySelector(
@@ -98,6 +109,8 @@ const toVisibleItems = (nav: HTMLElement): LayoutSidebarNavItem[] =>
         row,
         control,
         parentId: parentItem ? getItemId(parentItem) : null,
+        depth: getItemDepth(row),
+        hasCurrentDescendant: hasCurrentDescendant(row),
       } satisfies LayoutSidebarNavItem;
     })
     .filter((item): item is LayoutSidebarNavItem => item !== null && item.id.length > 0);
@@ -134,6 +147,13 @@ const resolveNextActiveId = (
     if (selectedItem) {
       return selectedItem.id;
     }
+  }
+
+  const deepestCurrentBranch = visibleItems
+    .filter((item) => item.kind === 'branch' && item.hasCurrentDescendant)
+    .sort((left, right) => right.depth - left.depth)[0];
+  if (deepestCurrentBranch) {
+    return deepestCurrentBranch.id;
   }
 
   return visibleItems[0]?.id ?? null;

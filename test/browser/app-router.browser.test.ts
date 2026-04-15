@@ -557,7 +557,7 @@ describe('app-router', () => {
               present: true,
               stateScopeId: 'note-navigation',
               selectedId: 'notes/new',
-              structuralExpandedIds: [],
+              initialExpandedIds: [],
               topologyRevision: 'topology:new',
               navHtml:
                 '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
@@ -755,7 +755,7 @@ describe('app-router', () => {
               present: true,
               stateScopeId: 'reference-navigation',
               selectedId: 'notes/new',
-              structuralExpandedIds: [],
+              initialExpandedIds: [],
               topologyRevision: 'topology:new',
               navHtml:
                 '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',

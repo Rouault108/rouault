@@ -41,8 +41,8 @@ export interface NotePageProjectionInput {
 
 export interface NotePageSidebarProjection {
   stateScopeId: string;
-  selectedId: string;
-  structuralExpandedIds: readonly string[];
+  selectedId: string | null;
+  initialExpandedIds: readonly string[];
   topologyRevision: string;
   navHtml: string;
   heading: string;
@@ -280,8 +280,8 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
       ? {
           sidebar: {
             stateScopeId: 'note-navigation',
-            selectedId: input.navigation.selectedId ?? '',
-            structuralExpandedIds: input.navigation.structuralExpandedIds,
+            selectedId: input.navigation.selectedId,
+            initialExpandedIds: input.navigation.initialExpandedIds,
             topologyRevision: input.navigation.topologyRevision,
             navHtml: renderNoteSidebarNav(input.navigation.sidebarRows, {
               ariaLabel: 'ノートナビゲーション',

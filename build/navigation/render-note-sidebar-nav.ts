@@ -25,6 +25,7 @@ const renderRow = (row: SidebarNavRow): string => {
     `data-node-id="${escapeHtml(row.id)}"`,
     `data-node-kind="${escapeHtml(row.kind)}"`,
     `data-node-depth="${String(row.depth)}"`,
+    ...(row.kind === 'branch' && row.hasCurrentDescendant ? ['data-current-branch="true"'] : []),
   ].join(' ');
 
   if (row.kind === 'leaf') {
@@ -38,7 +39,7 @@ const renderRow = (row: SidebarNavRow): string => {
     ].join('');
   }
 
-  const expanded = row.isStructuralExpanded;
+  const expanded = row.isInitiallyExpanded;
   const groupId = `sidebar-group-${row.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
 
   return [

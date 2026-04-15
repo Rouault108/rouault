@@ -13,9 +13,9 @@ import type { TocPresence } from '../../shared/note/toc-presence.js';
 
 type SidebarShellProjectionInput = Omit<
   SidebarShellProjection,
-  'structuralExpandedIds' | 'topologyRevision' | 'navHtml'
+  'initialExpandedIds' | 'topologyRevision' | 'navHtml'
 > & {
-  structuralExpandedIds?: string[];
+  initialExpandedIds?: string[];
   topologyRevision?: string | null;
   navHtml?: string | null;
 };
@@ -60,9 +60,9 @@ const isSidebarShellProjection = (value: unknown): value is SidebarShellProjecti
     isString(value['sidebarId']) &&
     isString(value['stateScopeId']) &&
     (value['selectedId'] === null || isString(value['selectedId'])) &&
-    (value['structuralExpandedIds'] === undefined ||
-      (Array.isArray(value['structuralExpandedIds']) &&
-        value['structuralExpandedIds'].every((entry: unknown) => isString(entry)))) &&
+    (value['initialExpandedIds'] === undefined ||
+      (Array.isArray(value['initialExpandedIds']) &&
+        value['initialExpandedIds'].every((entry: unknown) => isString(entry)))) &&
     (value['topologyRevision'] === undefined ||
       value['topologyRevision'] === null ||
       isString(value['topologyRevision'])) &&
@@ -80,7 +80,7 @@ const normalizeSidebarShellProjection = (
   sidebarId: value.sidebarId,
   stateScopeId: value.stateScopeId,
   selectedId: value.selectedId,
-  structuralExpandedIds: value.structuralExpandedIds ?? [],
+  initialExpandedIds: value.initialExpandedIds ?? [],
   topologyRevision: value.topologyRevision ?? null,
   navHtml: value.navHtml ?? null,
   heading: value.heading,

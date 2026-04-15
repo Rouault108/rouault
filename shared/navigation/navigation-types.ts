@@ -49,7 +49,8 @@ export interface SidebarNavRow {
   icon?: IconName;
   depth: number;
   isCurrent: boolean;
-  isStructuralExpanded: boolean;
+  hasCurrentDescendant: boolean;
+  isInitiallyExpanded: boolean;
   children: readonly SidebarNavRow[];
 }
 
@@ -57,7 +58,7 @@ export interface NoteNavigationModel {
   sidebarTree: TreeNode[];
   sidebarRows: readonly SidebarNavRow[];
   selectedId: string | null;
-  structuralExpandedIds: readonly string[];
+  initialExpandedIds: readonly string[];
   topologyRevision: string;
   breadcrumbs: BreadcrumbItem[];
 }
