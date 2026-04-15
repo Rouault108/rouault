@@ -58,6 +58,34 @@ const getDesktopToc = (host: LayoutTocLike): UiTocLike => {
   return desktopToc;
 };
 
+const getActiveLabel = (toc: UiTocLike): string | null =>
+  toc.shadowRoot
+    ?.querySelector<HTMLElement>('a.toc-link.is-active .toc-link-label')
+    ?.textContent?.trim() ?? null;
+
+const waitForDesktopTocSync = async (
+  host: LayoutTocLike,
+  expectedActiveId: string,
+  expectedLabel: string,
+): Promise<void> => {
+  await waitUntil(
+    async () => {
+      const toc = getDesktopToc(host);
+      await waitForLitUpdate(toc);
+      await nextAnimationFrame();
+
+      return (
+        toc.activeId === expectedActiveId &&
+        toc.getAttribute('active-id') === expectedActiveId &&
+        getActiveLabel(toc) === expectedLabel
+      );
+    },
+    4000,
+    50,
+    `desktop ui-toc が ${expectedActiveId} / ${expectedLabel} へ同期すること`,
+  );
+};
+
 describe('layout-toc SSR entry hydration', () => {
   it('未定義 host を scheduler が upgrade した後も activeId の同期を維持すること', async () => {
     const cleanup = appendArticleFixture();
@@ -128,15 +156,13 @@ describe('layout-toc SSR entry hydration', () => {
 
       expect(host._activeId).to.equal('71-配列の生成');
 
-      await waitUntil(
-        () => getDesktopToc(host).activeId === '71-配列の生成',
-        '初期 activeId が host と一致すること',
-      );
+      await waitForDesktopTocSync(host, '71-配列の生成', '7.1 配列の生成');
 
       (host as LayoutTocLike & { _applyActiveId?: (id: string) => void })._applyActiveId?.(
         '72-配列の要素の読み書き',
       );
       await flush(host);
+      await waitForDesktopTocSync(host, '72-配列の要素の読み書き', '7.2 配列の要素の読み書き');
 
       const syncedDesktopToc = getDesktopToc(host);
 
@@ -148,11 +174,7 @@ describe('layout-toc SSR entry hydration', () => {
       expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
       expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
 
-      expect(
-        syncedDesktopToc.shadowRoot
-          ?.querySelector('a.toc-link.is-active .toc-link-label')
-          ?.textContent?.trim(),
-      ).to.equal('7.2 配列の要素の読み書き');
+      expect(getActiveLabel(syncedDesktopToc)).to.equal('7.2 配列の要素の読み書き');
     } finally {
       cleanup();
     }
