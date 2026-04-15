@@ -200,7 +200,6 @@ export class LayoutSidebarNavInteractionController {
   private typeaheadResetTimer: number | null = null;
 
   constructor(
-    private readonly host: HTMLElement,
     private readonly callbacks: LayoutSidebarNavInteractionCallbacks,
   ) {}
 
@@ -327,7 +326,7 @@ export class LayoutSidebarNavInteractionController {
         visibleItems[Math.max(currentIndex - 1, 0)]?.control.focus();
         return;
       case 'ArrowRight':
-        if (currentItem.kind === 'branch' && currentItem.control instanceof HTMLButtonElement) {
+        if (currentItem?.kind === 'branch' && currentItem.control instanceof HTMLButtonElement) {
           event.preventDefault();
           if (currentItem.control.getAttribute('aria-expanded') !== 'true') {
             this.callbacks.onToggle(currentItem.id, true);
@@ -339,14 +338,14 @@ export class LayoutSidebarNavInteractionController {
         }
         return;
       case 'ArrowLeft':
-        if (currentItem.kind === 'branch' && currentItem.control instanceof HTMLButtonElement) {
+        if (currentItem?.kind === 'branch' && currentItem.control instanceof HTMLButtonElement) {
           if (currentItem.control.getAttribute('aria-expanded') === 'true') {
             event.preventDefault();
             this.callbacks.onToggle(currentItem.id, false);
             return;
           }
         }
-        if (currentItem.parentId) {
+        if (currentItem?.parentId) {
           event.preventDefault();
           findVisibleItem(nav, currentItem.parentId)?.control.focus();
         }
@@ -361,7 +360,7 @@ export class LayoutSidebarNavInteractionController {
         return;
       case 'Enter':
       case ' ':
-        if (currentItem.control instanceof HTMLButtonElement) {
+        if (currentItem?.control instanceof HTMLButtonElement) {
           event.preventDefault();
           this.callbacks.onToggle(
             currentItem.id,

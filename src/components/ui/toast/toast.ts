@@ -575,7 +575,7 @@ export class UiToast extends LitElement {
   `;
 
   @property({ type: String, reflect: true })
-  variant: ToastVariantInput = 'info';
+  variant: ToastVariant = 'info';
 
   @property({ type: Number, reflect: true })
   duration = DEFAULT_TOAST_DURATION_MS;

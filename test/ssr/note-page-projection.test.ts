@@ -130,17 +130,14 @@ describe('buildNotePageProjection', () => {
     expect(projection.sidebar?.selectedId).toBe('music/classical/mozart');
     expect(projection.sidebar?.stateScopeId).toBe('note-navigation');
     expect(projection.sidebar?.structuralExpandedIds).toEqual(['music', 'music/classical']);
-    expect(projection.sidebar?.rows[0]?.children[0]?.isStructuralExpanded).toBe(true);
     expect(projection.sidebar?.navHtml).toContain('data-sidebar-nav');
     expect(projection.sidebar?.navHtml).toContain('data-sidebar-nav-disclosure');
     expect(projection.sidebar?.navHtml).toContain('aria-current="page"');
-    expect(JSON.stringify(projection.sidebar?.items ?? [])).toContain(
-      '"id":"music","label":"Music","icon":"book-open"',
-    );
-    expect(JSON.stringify(projection.sidebar?.items ?? [])).toContain(
-      '"id":"music/classical","label":"Classical","icon":"folder-open"',
-    );
-    expect(JSON.stringify(projection.sidebar?.items ?? [])).toContain('"icon":"music"');
+    expect(projection.sidebar?.navHtml).toContain('data-node-id="music"');
+    expect(projection.sidebar?.navHtml).toContain('data-node-id="music/classical"');
+    expect(projection.sidebar?.navHtml).toContain('&quot;icon&quot;:&quot;book-open&quot;');
+    expect(projection.sidebar?.navHtml).toContain('&quot;icon&quot;:&quot;folder-open&quot;');
+    expect(projection.sidebar?.navHtml).toContain('&quot;icon&quot;:&quot;music&quot;');
   });
 
   it('directory-index の current note を含む sidebar model を受け渡すこと', () => {
@@ -182,8 +179,8 @@ describe('buildNotePageProjection', () => {
     expect(projection.sidebar?.selectedId).toBe('music/__index__');
     expect(projection.sidebar?.structuralExpandedIds).toEqual(['music']);
     expect(projection.sidebar?.navHtml).toContain('/notes/music');
-    expect(JSON.stringify(projection.sidebar?.items ?? [])).toContain('"id":"music/__index__"');
-    expect(JSON.stringify(projection.sidebar?.items ?? [])).toContain('"href":"/notes/music"');
+    expect(projection.sidebar?.navHtml).toContain('data-node-id="music/__index__"');
+    expect(projection.sidebar?.navHtml).toContain('href="/notes/music"');
   });
 
   it('TOC payload と hydration 判定を投影すること', () => {

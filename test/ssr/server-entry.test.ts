@@ -101,11 +101,10 @@ describe('server-entry', () => {
     expect(rendered).toContain('JavaScriptの配列');
   });
 
-  it('app-router は raw content を canonical main に包んで SSR 描画すること', async () => {
-    const rendered = await renderCustomElement('app-router', [], '<h1>SSR App Router</h1><p>Body</p>');
-
-    expect(rendered).toContain('data-app-router-announcement');
-    expect(rendered).toContain('<main id="main-content" tabindex="-1"><h1>SSR App Router</h1><p>Body</p></main>');
+  it('app-router は main#main-content を持たない raw content を strict contract violation として拒否すること', async () => {
+    await expect(
+      renderCustomElement('app-router', [], '<h1>SSR App Router</h1><p>Body</p>'),
+    ).rejects.toThrow(/main#main-content/);
   });
 
   it('app-router は既存 canonical main の属性を保持したまま strict 化すること', async () => {

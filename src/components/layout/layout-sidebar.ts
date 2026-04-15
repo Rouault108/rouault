@@ -117,7 +117,7 @@ export class LayoutSidebar extends LitElement {
   private _detachStickyFooterBoundary: (() => void) | null = null;
   private _storeCleanup: (() => void) | null = null;
   private _bootstrappedMarkup = false;
-  private _navInteraction = new LayoutSidebarNavInteractionController(this, {
+  private _navInteraction = new LayoutSidebarNavInteractionController({
     onToggle: (id, expanded) => {
       this._handleNavToggle(id, expanded);
     },
