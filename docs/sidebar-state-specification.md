@@ -13,7 +13,7 @@ server nav subtree を唯一正本とします。
 
 ## 2. source of truth
 
-Rouault の sidebar state は 1 系統ではなく、次の 2 系統に分離します。
+Rouault の sidebar state は 1 系統ではなく、次の 3 系統に分離します。
 
 ### 2.1 presentation state
 
@@ -44,14 +44,14 @@ tree state の source of truth は
 この state が所有するもの:
 
 - 手動操作で確定した `expandedIds`
-- `selectedId` から導く ancestor 展開
 - tree 展開状態の永続化
 
 この state の内部原則:
 
 - persisted state の scope は `sidebarId + stateScopeId`
 - note sidebar の初回 HTML は server-first nav を正本とする
-- route 由来の祖先展開は `structural-expanded-ids` として受け取り、persisted state へ書き戻さない
+- route 由来の祖先展開は `initial-expanded-ids` として受け取り、保存済み state が存在しない初回だけ seed として使う
+- current path の表示は `data-current-branch="true"` で表し、expanded state と混同しない
 
 ## 3. ownership boundary
 
@@ -80,7 +80,8 @@ tree state の source of truth は
 
 - server nav light DOM の保持と route ごとの差し替え
 - `state-scope-id` に基づく tree state の読み書き
-- `structural-expanded-ids` と persisted state の合成
+- 保存済み state が無い場合に限った `initial-expanded-ids` の seed 適用
+- `data-current-branch` を含む server nav subtree の差し替え
 - presentation store snapshot の反映
 
 持ってはいけない責務:
@@ -129,7 +130,7 @@ note sidebar の public DOM 契約は次を正本とします。
 - host 内 light DOM の server-first nav 実体
 - `state-scope-id`
 - `selected-id`
-- `structural-expanded-ids`
+- `initial-expanded-ids`
 - `topology-revision`
 - `sidebar-id`
 - `heading`
