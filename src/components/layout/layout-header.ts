@@ -112,16 +112,12 @@ export class LayoutHeader extends LitElement {
       --ui-header-max-inline-size-with-sidebar: var(--ui-header-max-inline-size);
     }
 
-    :host([note-layout][toc-presence='present']) ui-header {
+    :host([note-layout]) ui-header {
       --ui-header-center-end-inset: clamp(
         184px,
         24vw,
         calc(var(--note-toc-width, 216px) + var(--note-shell-column-gap, var(--space-8, 32px)))
       );
-    }
-
-    :host([note-layout][toc-presence='absent']) ui-header {
-      --ui-header-center-end-inset: 0px;
     }
 
     :host([sidebar-enabled]) ui-header {
@@ -198,7 +194,7 @@ export class LayoutHeader extends LitElement {
     }
 
     @container layout-header-shell (min-width: 1024px) {
-      :host([note-layout][toc-presence='present']) ui-header {
+      :host([note-layout]) ui-header {
         --ui-header-center-end-inset: calc(
           var(--note-toc-width, 216px) + var(--note-shell-column-gap, var(--space-8, 32px))
         );

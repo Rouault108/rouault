@@ -107,7 +107,7 @@ test.describe('note frame balance', () => {
     expect(wider.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 
-  test('TOC absent note では desktop で TOC reserve を残さず note shell 自体を縮めること', async ({
+  test('TOC absent note でも desktop では note shell の外形と本文開始位置を present 基準で維持すること', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1600, height: 900 });
@@ -143,12 +143,10 @@ test.describe('note frame balance', () => {
     expect(state.noteShellWidth).toBeGreaterThan(0);
     expect(state.articleWidth).toBeGreaterThan(0);
 
-    expect((present.noteShellWidth ?? 0) - state.noteShellWidth).toBeGreaterThanOrEqual(100);
+    expect(Math.abs(state.noteShellWidth - (present.noteShellWidth ?? 0))).toBeLessThanOrEqual(1);
 
-    const articleWidthDelta = state.articleWidth - (present.articleWidth ?? 0);
-    expect(Math.abs(articleWidthDelta - state.noteShellColumnGap)).toBeLessThanOrEqual(1);
-
-    expect(state.articleLeft).toBeGreaterThan(present.articleLeft ?? 0);
+    expect(Math.abs(state.articleWidth - (present.articleWidth ?? 0))).toBeLessThanOrEqual(1);
+    expect(Math.abs(state.articleLeft - (present.articleLeft ?? 0))).toBeLessThanOrEqual(1);
     expect(state.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 });

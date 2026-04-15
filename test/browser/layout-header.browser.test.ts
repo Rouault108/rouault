@@ -191,7 +191,7 @@ describe('layout-header browser contract', () => {
     expect(styles.right).to.equal('248px');
   });
 
-  it('toc-presence=absent の note-layout では desktop でも right reserve を解除すること', async () => {
+  it('toc-presence=absent の note-layout でも desktop では present と同じ right reserve を維持すること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 1440px; --note-sidebar-main-gap: 32px;">
         <layout-header note-layout sidebar-enabled toc-presence="absent"></layout-header>
@@ -215,7 +215,7 @@ describe('layout-header browser contract', () => {
 
     const styles = getComputedStyle(zoneCenter);
     expect(styles.left).to.equal('280px');
-    expect(styles.right).to.equal('0px');
+    expect(styles.right).to.equal('248px');
   });
 
   it('toc-presence=absent の note-layout でも mobile では right reserve を解除すること', async () => {

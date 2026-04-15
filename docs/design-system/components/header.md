@@ -192,7 +192,7 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 ### `layout-header` の note shell 契約
 
 - `layout-header[note-layout][toc-presence='present']` は TOC 列幅に応じた `--ui-header-center-end-inset` を与える
-- `layout-header[note-layout][toc-presence='absent']` は `--ui-header-center-end-inset: 0px` とする
+- `layout-header[note-layout]` は desktop では `toc-presence` にかかわらず `present` と同じ `--ui-header-center-end-inset` を維持し、note shell の外形契約と揃える
 - start 側 reserve は従来どおり `sidebar-enabled` で決め、TOC presence と混在させない
 
 これらは **header 自身が安定公開する拡張面**です。一方で、`--ui-header-edge-highlight` はコンポーネントローカルトークンであり、公開契約には含めません。

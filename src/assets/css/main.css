@@ -1708,24 +1708,14 @@ app-router[data-sidebar-presence='absent'] {
 
 /*
  * TOC ありは 2 カラム、TOC なしは 1 カラムへ明示的に分岐する。
- * absent ページでは TOC reserve を残さず、
- * note shell 自体の外形も本文主体の幅へ縮める。
+ * ただし note shell の外形は TOC presence にかかわらず固定し、
+ * 本文開始位置を sidebar 基準で揃える。
  */
-.note-shell[data-toc-presence='present'] {
+.note-shell[data-toc-presence='present'],
+.note-shell[data-toc-presence='absent'] {
   grid-template-columns:
     minmax(0, 1fr)
     var(--note-toc-track);
-}
-
-.note-shell[data-toc-presence='absent'] {
-  grid-template-columns: minmax(0, 1fr);
-  max-width: min(
-    100%,
-    var(
-      --note-shell-max-width-no-toc,
-      calc(var(--note-reading-max-inline-size) + (var(--space-8, 32px) * 2))
-    )
-  );
 }
 
 .note-shell .container-reading {
@@ -2209,7 +2199,9 @@ layout-sidebar [data-sidebar-nav] [data-sidebar-nav-control]:focus-visible {
   }
 
   .note-shell[data-toc-presence='absent'] {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(200px, 34vw);
   }
 
   app-router[data-sidebar-presence='present'] .layout-sidebar-col {

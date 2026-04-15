@@ -514,9 +514,6 @@
   --note-shell-max-width: calc(
     var(--note-reading-max-inline-size) + var(--note-toc-width) + var(--note-shell-column-gap)
   );
-  --note-shell-max-width-no-toc: calc(
-    var(--note-reading-max-inline-size) + (var(--space-8) * 2)
-  );
   --note-fixed-frame-max-width: calc(var(--note-sidebar-width) + var(--note-shell-max-width));
 
   /* 単一カラムのトップレベルページで共有する外枠 */
