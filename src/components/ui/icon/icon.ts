@@ -40,6 +40,7 @@ export class UiIcon extends BaseElement {
       return value as IconName;
     }
 
+    // `icon` は deprecated alias だが、既存 markup 吸収のため当面は維持する。
     const legacyValue = host.getAttribute(ICON_ATTRIBUTE)?.trim();
     return legacyValue ? (legacyValue as IconName) : null;
   }
@@ -130,6 +131,7 @@ export class UiIcon extends BaseElement {
       return canonicalName as IconName;
     }
 
+    // `name` 未指定時だけ legacy alias を見る。
     const legacyName = host.getAttribute(ICON_ATTRIBUTE)?.trim();
     return legacyName ? (legacyName as IconName) : null;
   }

@@ -254,7 +254,7 @@ status は現行契約では単一の読者向け注意状態として扱いま�
 
 ```text
 <header class="article-header">
-  [div.status.status-badge]
+  [div.status-badge]
   <h1 class="heading">...</h1>
   [ul.metadata-list.metadata-list--primary]
   [nav.tags-nav > ul.tag-list > li > ui-tag*]

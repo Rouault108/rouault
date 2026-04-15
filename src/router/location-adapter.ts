@@ -37,6 +37,7 @@ export class LocationAdapter {
   ): Record<string, unknown> {
     const parsed = this.toUrl(normalizedUrl);
     const currentState = this.isHistoryStateObject(state) ? state : {};
+    // 旧履歴 state を再書込みしないため、legacy key は read-path でだけ吸収する。
     const { __routerPath: _legacyRouterPath, ...restState } = currentState;
 
     return {

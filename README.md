@@ -19,6 +19,7 @@ READMEは入口文書です。
 - `docs/sidebar-state-specification.md`
 - `docs/search-specification.md`
 - `docs/testing-taxonomy.md`
+- `docs/compatibility-inventory.md`
 
 ## 何を目指すプロダクトか
 

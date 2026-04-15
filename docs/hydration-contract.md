@@ -59,7 +59,6 @@ component は hydration timing を自己決定しません。
 
 - SSR/client DOM 差分は reset で隠蔽しない
 - workaround が残る場合でも、scheduler 主導の contract を壊してはならない
-- `defer-hydration` は恒久仕様ではなく、撤去対象の移行措置として扱う
 
 ## 5. テスト責務
 

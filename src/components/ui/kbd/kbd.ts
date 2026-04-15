@@ -179,6 +179,7 @@ export class Kbd extends LitElement {
   /**
    * 表示する互換文字列入力。
    * 例: `Esc`, `Ctrl + K`, `⌘ + K`
+   * 新規実装では `tokens` を優先し、この経路は増やさない。
    */
   @property({ type: String })
   keys = '';

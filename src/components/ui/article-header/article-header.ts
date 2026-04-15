@@ -531,9 +531,8 @@ export class ArticleHeader extends LitElement {
     if (!status) return nothing;
 
     // メタデータリストとは独立した信頼性シグナル。
-    // `.status` クラスは既存の play() テストとの互換性のため保持。
     return html`
-      <div class="status status-badge ${status.toneClass}" aria-label="ステータス: ${status.label}">
+      <div class="status-badge ${status.toneClass}" aria-label="ステータス: ${status.label}">
         <ui-icon class="meta-icon" name="${status.icon}" aria-hidden="true"></ui-icon>
         <span>${status.label}</span>
       </div>
