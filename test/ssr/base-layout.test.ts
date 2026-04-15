@@ -117,7 +117,7 @@ describe('BaseLayout', () => {
     });
 
     expect(rendered).toContain('<ui-skip-link');
-    expect(rendered).toContain('href="#main-content"');
+    expect(rendered).toContain('target-id="main-content"');
     expect(rendered).toContain('label="メインコンテンツへ移動"');
     expect(rendered).toContain('data-hydration-scope="skip-link"');
 

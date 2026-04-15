@@ -66,7 +66,7 @@ BaseLayout 相当のアプリケーションシェルを Storybook 上で確認�
 このファイルは **docs / smoke / 手動確認** に限定します。  
 app shell の静的構造は \`test/ssr/base-layout.test.ts\`、  
 最初の Tab 停留点と skip link の実ページ挙動は \`test/e2e/app-shell.spec.ts\`、  
-skip link 自体の browser contract は \`test/browser/helpers/skip-link.browser.test.ts\` を正本とします。
+skip link 自体の browser contract は \`test/browser/skip-link.browser.test.ts\` を正本とします。
         `,
       },
     },

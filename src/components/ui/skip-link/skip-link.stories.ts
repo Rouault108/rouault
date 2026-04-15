@@ -16,18 +16,26 @@ const meta: Meta<SkipLink> = {
 
 この story ファイルは **docs / 手動確認** に限定します。  
 shadow DOM 内の anchor 反映、click による focus 移動、focus() 委譲などの browser contract は
-\`test/browser/helpers/skip-link.browser.test.ts\` を正本として検査します。
+\`test/browser/skip-link.browser.test.ts\` を正本として検査します。
         `,
       },
     },
   },
   argTypes: {
-    href: {
+    targetId: {
       control: 'text',
-      description: 'スキップ先の ID セレクタ',
+      description: '正規入力のターゲット要素 ID',
       table: {
         type: { summary: 'string' },
-        defaultValue: { summary: '#main-content' },
+        defaultValue: { summary: 'main-content' },
+      },
+    },
+    href: {
+      control: 'text',
+      description: '互換入力のハッシュ形式ターゲット',
+      table: {
+        type: { summary: 'string' },
+        defaultValue: { summary: '' },
       },
     },
     label: {
@@ -45,12 +53,14 @@ export default meta;
 type Story = StoryObj<SkipLink>;
 
 const renderDemo = ({
+  targetId,
   href,
   label,
   mainId,
   heading,
   body,
 }: {
+  targetId: string;
   href: string;
   label: string;
   mainId: string;
@@ -107,7 +117,7 @@ const renderDemo = ({
   </style>
 
   <div class="demo-container">
-    <ui-skip-link href="${href}" label="${label}"></ui-skip-link>
+    <ui-skip-link target-id="${targetId}" href="${href}" label="${label}"></ui-skip-link>
 
     <div class="demo-header">
       <h1>サイトヘッダー</h1>
@@ -130,11 +140,13 @@ const renderDemo = ({
 
 export const Default: Story = {
   args: {
-    href: '#main-content',
+    targetId: 'main-content',
+    href: '',
     label: 'メインコンテンツへスキップ',
   },
   render: (args) =>
     renderDemo({
+      targetId: args.targetId,
       href: args.href,
       label: args.label,
       mainId: 'main-content',
@@ -145,19 +157,21 @@ export const Default: Story = {
 
 export const CustomTarget: Story = {
   args: {
-    href: '#content',
+    targetId: 'content',
+    href: '',
     label: '本文へ移動',
   },
   parameters: {
     docs: {
       description: {
         story:
-          'href と label を変えた利用例です。属性反映そのものの合否は browser test 側で判定します。',
+          'target-id と label を変えた利用例です。href は互換入力としてのみ残します。',
       },
     },
   },
   render: (args) =>
     renderDemo({
+      targetId: args.targetId,
       href: args.href,
       label: args.label,
       mainId: 'content',
@@ -179,14 +193,15 @@ export const FocusAppearanceManual: Story = {
 - focus 時に視覚的に表示されること
 - Enter でターゲット要素へ移動すること
 
-挙動の合否は \`test/browser/helpers/skip-link.browser.test.ts\` を正本とします。
+挙動の合否は \`test/browser/skip-link.browser.test.ts\` を正本とします。
         `,
       },
     },
   },
   render: () =>
     renderDemo({
-      href: '#focus-target',
+      targetId: 'focus-target',
+      href: '',
       label: 'メインコンテンツへスキップ',
       mainId: 'focus-target',
       heading: 'フォーカス確認用コンテンツ',
@@ -221,7 +236,7 @@ export const LabelBoundariesManual: Story = {
 
     <div class="demo-container">
       <section class="label-case">
-        <ui-skip-link href="#short-label-content" label="移動"></ui-skip-link>
+        <ui-skip-link target-id="short-label-content" label="移動"></ui-skip-link>
         <main id="short-label-content" tabindex="-1">
           <h2>短いラベル</h2>
           <p>短いラベルの見た目です。</p>
@@ -230,7 +245,7 @@ export const LabelBoundariesManual: Story = {
 
       <section class="label-case">
         <ui-skip-link
-          href="#long-label-content"
+          target-id="long-label-content"
           label="メインコンテンツ（記事本文と補足情報を含む領域）へスキップして、ナビゲーションを省略する"
         ></ui-skip-link>
         <main id="long-label-content" tabindex="-1">
@@ -277,7 +292,7 @@ warning の有無は Storybook の合否条件にしません。
 
     <div class="demo-container">
       <ui-skip-link
-        href="#non-existent-target"
+        target-id="non-existent-target"
         label="存在しないターゲットへスキップ"
       ></ui-skip-link>
 

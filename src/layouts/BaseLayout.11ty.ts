@@ -192,7 +192,7 @@ export class BaseLayout {
 </head>
 <body${bodyAttributes}>
   <ui-skip-link
-    href="${MAIN_CONTENT_TARGET}"
+    target-id="${MAIN_CONTENT_TARGET.slice(1)}"
     label="メインコンテンツへ移動"
     data-hydration-scope="skip-link"
     data-hydration-capability="interactive"

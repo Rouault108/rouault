@@ -24,8 +24,7 @@
 | `ui-icon[icon]` 属性 | `src/components/ui/icon/icon.ts`、`docs/design-system/components/icon.md` | `deprecated 維持` | 現行の正規入力は `name`。`icon` は既存 markup 吸収のため残すが、新規利用は禁止する |
 | `ui-kbd[keys]` 属性 | `src/components/ui/kbd/kbd.ts`、`docs/design-system/components/kbd.md` | `deprecated 維持` | 現行の正規入力は `tokens`。`keys` は文字列入力互換としてのみ維持する |
 | `ui-kbd` のホストテキスト入力 | `src/components/ui/kbd/kbd.ts`、`docs/design-system/components/kbd.md` | `deprecated 維持` | light DOM 文字列の吸収は維持するが、正規 authoring / 実装経路には含めない |
-| `ui-article-header` の `.status` class | `src/components/ui/article-header/article-header.ts`、`docs/design-system/components/article-header.md` | `即時削除` | 旧 `play()` テスト互換の残骸であり、現行 repo では依存箇所がないため削除する |
-| `defer-hydration` 記述 | `docs/hydration-contract.md` | `即時削除` | 実装上の active path が存在せず、移行メモだけが残っているため正本契約から除去する |
+| `ui-skip-link[href]` 属性 | `src/components/ui/skip-link/skip-link.ts`、`test/browser/skip-link.browser.test.ts`、`docs/design-system/components/skip-link.md` | `deprecated 維持` | 現行の正規入力は `targetId`。`href` は既存 markup を壊さないためのハッシュ入力としてのみ維持する |
 
 ## 項目別メモ
 
@@ -62,17 +61,37 @@
 - repo 内 examples / stories / call sites が `tokens` 主体へ揃ったとき
 - 文字列入力を維持する理由がなくなったとき
 
-### 4. `.status` class
+### 4. `ui-skip-link[href]`
+
+- `targetId` が正規入力です。
+- `href` は `#main-content` のような既存 markup を吸収するためだけに残します。
+- `targetId` と `href` が競合する場合は `targetId` を優先します。
+
+出口条件:
+
+- repo 内の skip-link 利用と Storybook 例を `targetId` 主体へ揃えたあと
+- 外部利用で `href` 互換が不要と判断できるとき
+
+## 完了済みの削除項目
+
+次の項目は本計画の cleanup 対象だったが、すでに repo から除去済みです。
+
+| 項目 | 状態 |
+| --- | --- |
+| `ui-article-header` の `.status` class | `status-badge` / `status-*` 系へ収束済み |
+| `defer-hydration` 記述 | `docs/hydration-contract.md` から除去済み |
+
+### 5. `.status` class
 
 - `status-badge` が現行の意味的 class です。
 - `.status` は旧テスト互換の残骸であり、現行 repo 内の依存を持ちません。
-- 本フェーズで削除します。
+- 本フェーズで削除済みです。
 
-### 5. `defer-hydration`
+### 6. `defer-hydration`
 
 - 現行の hydration 契約は scheduler / registry 主導で固定済みです。
 - 実装上に `defer-hydration` の active path はありません。
-- したがって、正本文書に移行措置として残し続ける理由はありません。
+- したがって、正本文書に移行措置として残し続ける理由はなく、すでに除去済みです。
 
 ## compatibility API ではない現行契約
 

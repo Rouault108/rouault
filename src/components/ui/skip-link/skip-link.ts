@@ -79,10 +79,18 @@ export class SkipLink extends LitElement {
   `;
 
   /**
-   * スキップ先のIDセレクタ
+   * スキップ先の要素 ID。
+   *
+   * `href` は互換入力として残すが、正規入力は `targetId` とする。
+   */
+  @property({ attribute: 'target-id', type: String })
+  targetId = 'main-content';
+
+  /**
+   * 互換用のハッシュ入力。
    */
   @property({ attribute: 'href', type: String })
-  href = '#main-content';
+  href = '';
 
   /**
    * 表示ラベル
@@ -98,8 +106,9 @@ export class SkipLink extends LitElement {
   }
 
   override render() {
+    const resolvedHref = this.getResolvedHref();
     return html`
-      <a href="${this.href}" part="link" @click="${this.handleLinkClick}"> ${this.label} </a>
+      <a href="${resolvedHref}" part="link" @click="${this.handleLinkClick}"> ${this.label} </a>
     `;
   }
 
@@ -108,7 +117,7 @@ export class SkipLink extends LitElement {
     if (changedProperties.has('label')) {
       this.setAttribute('aria-label', this.label);
     }
-    if (!changedProperties.has('href')) {
+    if (!changedProperties.has('href') && !changedProperties.has('targetId')) {
       return;
     }
     this.validateTargetConfiguration();
@@ -136,7 +145,7 @@ export class SkipLink extends LitElement {
    * 開発時に設定不備を検出しやすくするための検証
    */
   private validateTargetConfiguration(): void {
-    const targetId = this.getTargetIdFromHref();
+    const targetId = this.getResolvedTargetId();
     if (!targetId) {
       return;
     }
@@ -144,16 +153,35 @@ export class SkipLink extends LitElement {
     const targetElement = this.ownerDocument.getElementById(targetId);
     if (!targetElement) {
       this.warnConfiguration(
-        `[ui-skip-link]: Target element with selector '${this.href}' not found in the document.`,
+        `[ui-skip-link]: Target element '${this.getResolvedHref()}' not found in the document.`,
       );
       return;
     }
 
     if (targetElement.getAttribute('tabindex') !== '-1') {
       this.warnConfiguration(
-        `[ui-skip-link]: Target element '${this.href}' should have tabindex="-1" to guarantee programmatic focus.`,
+        `[ui-skip-link]: Target element '${this.getResolvedHref()}' should have tabindex="-1" to guarantee programmatic focus.`,
       );
     }
+  }
+
+  private getResolvedTargetId(): string | null {
+    const normalizedTargetId = this.targetId.trim();
+    if (normalizedTargetId.length > 0) {
+      const hrefTargetId = this.getTargetIdFromHref();
+      if (
+        hrefTargetId !== null &&
+        hrefTargetId.length > 0 &&
+        hrefTargetId !== normalizedTargetId
+      ) {
+        this.warnConfiguration(
+          `[ui-skip-link]: target-id="${normalizedTargetId}" と href="${this.href}" が競合しています。target-id を優先します。`,
+        );
+      }
+      return normalizedTargetId;
+    }
+
+    return this.getTargetIdFromHref();
   }
 
   private getTargetIdFromHref(): string | null {
@@ -162,15 +190,16 @@ export class SkipLink extends LitElement {
     }
 
     const targetId = this.href.slice(1).trim();
-    if (!targetId) {
-      return null;
-    }
+    return targetId.length > 0 ? targetId : null;
+  }
 
-    return targetId;
+  private getResolvedHref(): string {
+    const targetId = this.getResolvedTargetId();
+    return targetId === null ? this.href : `#${targetId}`;
   }
 
   private getTargetElementFromHref(): HTMLElement | null {
-    const targetId = this.getTargetIdFromHref();
+    const targetId = this.getResolvedTargetId();
     if (!targetId) {
       return null;
     }
