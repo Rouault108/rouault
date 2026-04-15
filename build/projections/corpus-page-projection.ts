@@ -115,16 +115,32 @@ function compareNoteSummaries(left: CorpusPageNoteSummary, right: CorpusPageNote
   return left.permalink.localeCompare(right.permalink, 'ja');
 }
 
+function resolveCorpusLabelSourcePath(note: CorpusPageSourceNote): string {
+  return normalizeString(note.directoryPath) || normalizeString(note.slug);
+}
+
+function isTopLevelCorpusDirectoryIndex(note: CorpusPageSourceNote): boolean {
+  if (note.noteKind !== 'directory-index') {
+    return false;
+  }
+
+  const path = resolveCorpusLabelSourcePath(note);
+  if (path.length === 0) {
+    return false;
+  }
+
+  return path === getCorpusKeyFromSlug(path);
+}
+
 function resolveCorpusLabels(notes: readonly CorpusPageSourceNote[]): Map<string, string> {
   const labels = new Map<string, string>();
 
   for (const note of notes) {
-    if (note.noteKind !== 'directory-index') {
+    if (!isTopLevelCorpusDirectoryIndex(note)) {
       continue;
     }
 
-    const directoryPath = normalizeString(note.directoryPath) || normalizeString(note.slug);
-    const corpusKey = getCorpusKeyFromSlug(directoryPath);
+    const corpusKey = getCorpusKeyFromSlug(resolveCorpusLabelSourcePath(note));
     const title = normalizeString(note.title);
 
     if (corpusKey.length === 0 || title.length === 0 || labels.has(corpusKey)) {

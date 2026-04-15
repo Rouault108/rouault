@@ -152,6 +152,54 @@ describe('buildCorpusPageProjection', () => {
       },
     ]);
   });
+
+  it('下位 directory-index の title をトップレベル corpus label に誤採用しないこと', () => {
+    const notes: CorpusPageSourceNote[] = [
+      createCorpusNote({
+        title: 'C#',
+        permalink: '/notes/program/csharp/',
+        slug: 'program/csharp',
+        noteKind: 'directory-index',
+        directoryPath: 'program/csharp',
+        date: '2026-03-01',
+      }),
+      createCorpusNote({
+        title: 'JavaScriptの配列',
+        permalink: '/notes/program/sample-javascript/',
+        slug: 'program/sample-javascript',
+        updated: '2026-03-10',
+        genre: ['JavaScript', 'Programming'],
+      }),
+    ];
+
+    expect(buildCorpusPageProjection(notes)).toEqual([
+      {
+        key: 'program',
+        label: 'Program',
+        href: '/corpora/program/',
+        noteCount: 2,
+        latestUpdatedDate: '2026-03-10',
+        notes: [
+          {
+            title: 'JavaScriptの配列',
+            permalink: '/notes/program/sample-javascript/',
+            description: '',
+            date: '2026-03-10',
+            slug: 'program/sample-javascript',
+            genres: ['JavaScript', 'Programming'],
+          },
+          {
+            title: 'C#',
+            permalink: '/notes/program/csharp/',
+            description: '',
+            date: '2026-03-01',
+            slug: 'program/csharp',
+            genres: [],
+          },
+        ],
+      },
+    ]);
+  });
 });
 
 describe('buildCorpusNavigation', () => {
