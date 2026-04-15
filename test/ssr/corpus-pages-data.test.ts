@@ -120,6 +120,38 @@ describe('buildCorpusPageProjection', () => {
       },
     ]);
   });
+
+  it('ISO 8601 の updated を YYYY-MM-DD に正規化すること', () => {
+    const notes: CorpusPageSourceNote[] = [
+      createCorpusNote({
+        title: 'C#',
+        permalink: '/notes/program/csharp/',
+        slug: 'program/csharp',
+        updated: '2026-04-15T00:00:00.000Z',
+        genre: ['programming'],
+      }),
+    ];
+
+    expect(buildCorpusPageProjection(notes)).toEqual([
+      {
+        key: 'program',
+        label: 'Program',
+        href: '/corpora/program/',
+        noteCount: 1,
+        latestUpdatedDate: '2026-04-15',
+        notes: [
+          {
+            title: 'C#',
+            permalink: '/notes/program/csharp/',
+            description: '',
+            date: '2026-04-15',
+            slug: 'program/csharp',
+            genres: ['programming'],
+          },
+        ],
+      },
+    ]);
+  });
 });
 
 describe('buildCorpusNavigation', () => {

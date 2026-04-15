@@ -1,10 +1,9 @@
+import { normalizeNoteDate } from './normalize-note-date.js';
 import {
   filterNotesBySurface,
   type IntrinsicNote,
   type IntrinsicNotesCollection,
 } from '../../build/data/notes.js';
-
-const VALID_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/u;
 
 export type HomeSourceNote = IntrinsicNote;
 
@@ -54,24 +53,6 @@ const normalizeStringArray = (value: unknown): string[] => {
   }
 
   return [...unique.values()];
-};
-
-const normalizeDate = (value: string | undefined): string | null => {
-  const normalized = normalizeText(value);
-  if (normalized.length === 0) {
-    return null;
-  }
-
-  if (VALID_DAY_PATTERN.test(normalized)) {
-    return normalized;
-  }
-
-  const timestamp = Date.parse(normalized);
-  if (!Number.isFinite(timestamp)) {
-    return null;
-  }
-
-  return new Date(timestamp).toISOString().slice(0, 10);
 };
 
 const getCorpusKeyFromSlug = (slug: string): string => {
@@ -149,7 +130,7 @@ export const buildHomePageProjection = (
       return [];
     }
 
-    const effectiveDate = normalizeDate(normalizeText(note.updated) || normalizeText(note.date));
+    const effectiveDate = normalizeNoteDate(normalizeText(note.updated) || normalizeText(note.date));
 
     return [
       {

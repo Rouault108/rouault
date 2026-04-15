@@ -1,3 +1,4 @@
+import { normalizeNoteDate } from './normalize-note-date.js';
 import {
   filterNotesBySurface,
   type IntrinsicNote,
@@ -93,7 +94,7 @@ function toCorpusPageNoteSummary(note: CorpusPageSourceNote): CorpusPageNoteSumm
     title,
     permalink,
     description: normalizeString(note.description),
-    date: normalizeString(note.updated) || normalizeString(note.date),
+    date: normalizeNoteDate(normalizeString(note.updated) || normalizeString(note.date)) ?? '',
     slug,
     genres: normalizeGenres(note.genre),
   };
