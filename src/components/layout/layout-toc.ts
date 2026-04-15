@@ -637,10 +637,7 @@ export class LayoutToc extends LitElement {
     );
   }
 
-  private _hasRenderedActiveDom(
-    toc: SyncableTocElement,
-    expectedActiveId: string,
-  ): boolean {
+  private _hasRenderedActiveDom(toc: SyncableTocElement, expectedActiveId: string): boolean {
     if (expectedActiveId.length === 0) {
       return true;
     }

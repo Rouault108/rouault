@@ -29,25 +29,25 @@ state ownership の正本は
 
 ## 公開入力
 
-| 名前 | 公開面 | 既定値 | 内容 |
-| --- | --- | --- | --- |
-| `state` | property / attribute (`data-state`) | `expanded` | shell へ渡す開閉状態 |
-| `mode` | property / attribute | `fixed` | shell へ渡す表示モード |
-| `items` | property | `[]` | file tree 項目 |
-| `loading` | property / attribute | `false` | file tree 読み込み状態 |
-| `selectedId` | property / attribute (`selected-id`) | `null` | 現在選択中の項目 ID |
-| `expandedIds` | property | `new Set()` | 展開中 branch の ID 集合 |
-| `density` | property / attribute | `normal` | file tree 密度 |
-| `variant` | property / attribute | `default` | file tree 見た目 |
-| `heading` | property / attribute | `ナビゲーション` | overlay 補助ヘッダーの見出し |
-| `returnFocusTarget` | property | `null` | shell へ渡す focus return 先 |
+| 名前                | 公開面                               | 既定値           | 内容                         |
+| ------------------- | ------------------------------------ | ---------------- | ---------------------------- |
+| `state`             | property / attribute (`data-state`)  | `expanded`       | shell へ渡す開閉状態         |
+| `mode`              | property / attribute                 | `fixed`          | shell へ渡す表示モード       |
+| `items`             | property                             | `[]`             | file tree 項目               |
+| `loading`           | property / attribute                 | `false`          | file tree 読み込み状態       |
+| `selectedId`        | property / attribute (`selected-id`) | `null`           | 現在選択中の項目 ID          |
+| `expandedIds`       | property                             | `new Set()`      | 展開中 branch の ID 集合     |
+| `density`           | property / attribute                 | `normal`         | file tree 密度               |
+| `variant`           | property / attribute                 | `default`        | file tree 見た目             |
+| `heading`           | property / attribute                 | `ナビゲーション` | overlay 補助ヘッダーの見出し |
+| `returnFocusTarget` | property                             | `null`           | shell へ渡す focus return 先 |
 
 `fixedBreakpoint`、`focusedId`、`headingLevel`、`label`、`closable`、`mode="auto"` は現行契約に含めません。
 
 ## スロット
 
-| 名前 | 内容 |
-| --- | --- |
+| 名前             | 内容                           |
+| ---------------- | ------------------------------ |
 | `header-actions` | overlay ヘッダー右側の補助操作 |
 
 - `header-actions` がある場合に限り overlay 補助ヘッダーを描画します
@@ -55,21 +55,21 @@ state ownership の正本は
 
 ## 公開メソッド
 
-| 名前 | 契約 |
-| --- | --- |
-| `expand(trigger?)` | `state` を `expanded` に更新する |
-| `collapse()` | `state` を `collapsed` に更新する |
+| 名前               | 契約                                |
+| ------------------ | ----------------------------------- |
+| `expand(trigger?)` | `state` を `expanded` に更新する    |
+| `collapse()`       | `state` を `collapsed` に更新する   |
 | `toggle(trigger?)` | 現在 state に応じて開閉を切り替える |
 
 ## 公開イベント
 
-| 名前 | detail | bubbles | composed | 内容 |
-| --- | --- | --- | --- | --- |
-| `ui-sidebar-state-change` | `{ state, mode }` | `false` | `false` | shell state-change の再送出 |
-| `ui-sidebar-request-close` | `{ reason }` | `true` | `true` | shell close request の再送出 |
-| `ui-sidebar-select` | `{ id }` | `true` | `true` | tree 選択通知 |
-| `ui-sidebar-toggle` | `{ id, expanded }` | `true` | `true` | tree 展開変更通知 |
-| `ui-sidebar-active-change` | `{ id }` | `true` | `true` | tree active item 変更通知 |
+| 名前                       | detail             | bubbles | composed | 内容                         |
+| -------------------------- | ------------------ | ------- | -------- | ---------------------------- |
+| `ui-sidebar-state-change`  | `{ state, mode }`  | `false` | `false`  | shell state-change の再送出  |
+| `ui-sidebar-request-close` | `{ reason }`       | `true`  | `true`   | shell close request の再送出 |
+| `ui-sidebar-select`        | `{ id }`           | `true`  | `true`   | tree 選択通知                |
+| `ui-sidebar-toggle`        | `{ id, expanded }` | `true`  | `true`   | tree 展開変更通知            |
+| `ui-sidebar-active-change` | `{ id }`           | `true`  | `true`   | tree active item 変更通知    |
 
 `ui-sidebar-mode-change`、`ui-sidebar-expand`、`ui-sidebar-focus-change` は現行契約に含めません。
 

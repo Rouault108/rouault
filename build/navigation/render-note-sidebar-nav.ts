@@ -1,11 +1,7 @@
 import type { SidebarNavRow } from '../../shared/navigation/navigation-types.js';
 
 const escapeHtml = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const renderDisclosureIcon = (): string =>
   [

@@ -139,7 +139,9 @@ export class TreeItem extends LitElement {
       display: flex;
       align-self: stretch;
       inline-size: calc(var(--tree-item-ancestor-rail-count, 0) * var(--tree-indent-step, 16px));
-      min-inline-size: calc(var(--tree-item-ancestor-rail-count, 0) * var(--tree-indent-step, 16px));
+      min-inline-size: calc(
+        var(--tree-item-ancestor-rail-count, 0) * var(--tree-indent-step, 16px)
+      );
       flex: 0 0 calc(var(--tree-item-ancestor-rail-count, 0) * var(--tree-indent-step, 16px));
     }
 

@@ -939,6 +939,7 @@ interface SearchState {
 `buildSearchStateUrl(state)` は、汎用検索結果ページの canonical な状態 URL として、常に `/search/` または `/search/?...` 形式を返さなければいけません。
 
 規則:
+
 1. path は常に `/search/` とする
 2. `q`、`tag`、`tagMode`、`sort` を 15 章の契約に従って query へ符号化する
 3. `tags` は正規化後、**タグ名の昇順**で安定ソートしなければいけません

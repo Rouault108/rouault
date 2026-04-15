@@ -437,7 +437,10 @@ describe('ui-tree-item browser contract', () => {
       root.querySelector<TreeItem>('#nested-branch'),
       'nested branch item',
     );
-    const nestedLeaf = expectPresent(root.querySelector<TreeItem>('#nested-leaf'), 'nested leaf item');
+    const nestedLeaf = expectPresent(
+      root.querySelector<TreeItem>('#nested-leaf'),
+      'nested leaf item',
+    );
 
     await flush(rootBranch);
     await flush(nestedBranch);
@@ -452,7 +455,9 @@ describe('ui-tree-item browser contract', () => {
     expect(nestedLeaf.shadowRoot?.querySelectorAll('.ancestor-rail').length).to.equal(1);
 
     expect(readWidthPx(rootBranchAncestorRails, 'root branch ancestor rails width')).to.equal(0);
-    expect(readWidthPx(nestedBranchAncestorRails, 'nested branch ancestor rails width')).to.equal(20);
+    expect(readWidthPx(nestedBranchAncestorRails, 'nested branch ancestor rails width')).to.equal(
+      20,
+    );
     expect(readWidthPx(nestedLeafAncestorRails, 'nested leaf ancestor rails width')).to.equal(20);
 
     expect(readPseudoInlineStartPx(getSurface(rootBranch), '::before')).to.equal(0);

@@ -192,7 +192,11 @@ describe('layout-sidebar-tree-state', () => {
     ];
 
     const persistedExpandedIds: string[] = [];
-    const merged = mergeLayoutSidebarTreeState(nodes, persistedExpandedIds, 'music/classical/mozart');
+    const merged = mergeLayoutSidebarTreeState(
+      nodes,
+      persistedExpandedIds,
+      'music/classical/mozart',
+    );
 
     expect(merged).to.include('music');
     expect(merged).to.include('music/classical');

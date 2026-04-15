@@ -150,7 +150,10 @@ const toTocPresence = (value: string | null): TocPresence =>
   value === 'present' ? 'present' : 'absent';
 
 const collectHydrationPlan = (document: Parse5Document): HydrationPlanScope[] => {
-  const scopes = findAllElements(document, (candidate) => getAttribute(candidate, 'data-hydration-scope') !== null);
+  const scopes = findAllElements(
+    document,
+    (candidate) => getAttribute(candidate, 'data-hydration-scope') !== null,
+  );
   const seen = new Set<string>();
   const plan: HydrationPlanScope[] = [];
 
@@ -215,7 +218,10 @@ const extractSidebarProjection = (document: Parse5Document): SidebarShellProject
     return null;
   }
 
-  const sidebar = findFirstElement(sidebarHost, (candidate) => candidate.tagName === 'layout-sidebar');
+  const sidebar = findFirstElement(
+    sidebarHost,
+    (candidate) => candidate.tagName === 'layout-sidebar',
+  );
   if (sidebar === null || hasAttribute(sidebar, 'hidden')) {
     return null;
   }
@@ -237,17 +243,22 @@ const extractSidebarProjection = (document: Parse5Document): SidebarShellProject
       getAttribute(sidebar, 'fixed-breakpoint'),
       FALLBACK_SIDEBAR_BREAKPOINT,
     ),
-    presentation:
-      presentation === 'fixed' || presentation === 'overlay' ? presentation : 'auto',
+    presentation: presentation === 'fixed' || presentation === 'overlay' ? presentation : 'auto',
   };
 };
 
-const inferRenderedKind = (document: Parse5Document, htmlFilePath: string): 'page' | 'not-found' => {
+const inferRenderedKind = (
+  document: Parse5Document,
+  htmlFilePath: string,
+): 'page' | 'not-found' => {
   if (path.basename(htmlFilePath) === '404.html') {
     return 'not-found';
   }
 
-  const notFoundPage = findFirstElement(document, (candidate) => candidate.tagName === 'not-found-page');
+  const notFoundPage = findFirstElement(
+    document,
+    (candidate) => candidate.tagName === 'not-found-page',
+  );
   return notFoundPage === null ? 'page' : 'not-found';
 };
 
@@ -262,11 +273,14 @@ export const createNavigationEnvelopeFromHtml = (
   const document = parse5.parse(html);
   const main = findFirstElement(
     document,
-    (candidate) => candidate.tagName === 'main' && getAttribute(candidate, 'id') === MAIN_CONTENT_ID,
+    (candidate) =>
+      candidate.tagName === 'main' && getAttribute(candidate, 'id') === MAIN_CONTENT_ID,
   );
 
   if (main === null) {
-    throw new Error(`[navigation-artifact] ${htmlFilePath} に main#${MAIN_CONTENT_ID} がありません。`);
+    throw new Error(
+      `[navigation-artifact] ${htmlFilePath} に main#${MAIN_CONTENT_ID} がありません。`,
+    );
   }
 
   const titleElement = findFirstElement(document, (candidate) => candidate.tagName === 'title');

@@ -2,9 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const sourcePath = '/notes/program/sample-javascript/';
 
-const waitForAppRouterReady = async (
-  page: import('@playwright/test').Page,
-): Promise<void> => {
+const waitForAppRouterReady = async (page: import('@playwright/test').Page): Promise<void> => {
   await page.waitForFunction(async () => {
     await customElements.whenDefined('app-router');
 

@@ -169,11 +169,7 @@ export class SkipLink extends LitElement {
     const normalizedTargetId = this.targetId.trim();
     if (normalizedTargetId.length > 0) {
       const hrefTargetId = this.getTargetIdFromHref();
-      if (
-        hrefTargetId !== null &&
-        hrefTargetId.length > 0 &&
-        hrefTargetId !== normalizedTargetId
-      ) {
+      if (hrefTargetId !== null && hrefTargetId.length > 0 && hrefTargetId !== normalizedTargetId) {
         this.warnConfiguration(
           `[ui-skip-link]: target-id="${normalizedTargetId}" と href="${this.href}" が競合しています。target-id を優先します。`,
         );

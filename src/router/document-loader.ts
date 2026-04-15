@@ -18,10 +18,7 @@ export class DocumentLoader {
     private readonly location: LocationAdapter,
   ) {}
 
-  async load(
-    normalizedUrl: string,
-    signal: AbortSignal,
-  ): Promise<LoadDocumentResult> {
+  async load(normalizedUrl: string, signal: AbortSignal): Promise<LoadDocumentResult> {
     const routeContext = this.createRouteContext(normalizedUrl, signal);
     const routeEnvelope = await this.routeRegistry.execute(routeContext);
     if (routeEnvelope !== null) {

@@ -29,41 +29,41 @@ sidebar state の ownership は
 
 ## 公開入力
 
-| 名前 | 公開面 | 既定値 | 内容 |
-| --- | --- | --- | --- |
-| `state` | property / attribute (`data-state`) | `expanded` | 表示状態。`expanded` / `collapsed` |
-| `mode` | property / attribute | `fixed` | 表示モード。`fixed` / `overlay` |
-| `returnFocusTarget` | property | `null` | overlay 格納時に focus を戻す対象 |
+| 名前                | 公開面                              | 既定値     | 内容                               |
+| ------------------- | ----------------------------------- | ---------- | ---------------------------------- |
+| `state`             | property / attribute (`data-state`) | `expanded` | 表示状態。`expanded` / `collapsed` |
+| `mode`              | property / attribute                | `fixed`    | 表示モード。`fixed` / `overlay`    |
+| `returnFocusTarget` | property                            | `null`     | overlay 格納時に focus を戻す対象  |
 
 `mode="auto"`、`fixedBreakpoint`、永続化関連入力は現行契約に含めません。
 
 ## スロット
 
-| 名前 | 内容 |
-| --- | --- |
-| 既定スロット | ナビゲーション本文 |
-| `header` | overlay 時の補助ヘッダー |
+| 名前         | 内容                     |
+| ------------ | ------------------------ |
+| 既定スロット | ナビゲーション本文       |
+| `header`     | overlay 時の補助ヘッダー |
 
 - `header` は overlay 時にだけ表示対象です
 - fixed 時は `header` を描画対象に含めません
 
 ## 公開メソッド
 
-| 名前 | 契約 |
-| --- | --- |
-| `expand(trigger?)` | `state` を `expanded` へ更新する |
-| `collapse(trigger?)` | `state` を `collapsed` へ更新する |
-| `toggle(trigger?)` | 現在 state に応じて開閉を切り替える |
+| 名前                 | 契約                                |
+| -------------------- | ----------------------------------- |
+| `expand(trigger?)`   | `state` を `expanded` へ更新する    |
+| `collapse(trigger?)` | `state` を `collapsed` へ更新する   |
+| `toggle(trigger?)`   | 現在 state に応じて開閉を切り替える |
 
 - `trigger` は focus return 候補の記録に使います
 - state が変わらない no-op では追加の state-change を発火しません
 
 ## 公開イベント
 
-| 名前 | detail | bubbles | composed | 内容 |
-| --- | --- | --- | --- | --- |
-| `ui-sidebar-state-change` | `{ state, mode }` | `false` | `false` | shell 内 state が確定したこと |
-| `ui-sidebar-request-close` | `{ reason }` | `false` | `false` | 利用者操作による close request |
+| 名前                       | detail            | bubbles | composed | 内容                           |
+| -------------------------- | ----------------- | ------- | -------- | ------------------------------ |
+| `ui-sidebar-state-change`  | `{ state, mode }` | `false` | `false`  | shell 内 state が確定したこと  |
+| `ui-sidebar-request-close` | `{ reason }`      | `false` | `false`  | 利用者操作による close request |
 
 `reason` は `scrim` または `escape` です。
 

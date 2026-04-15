@@ -68,6 +68,7 @@ router 外部へ本文描画または shell 更新を委譲する場合は、単
 ## 用語
 
 ### navigation URL
+
 遷移要求およびブラウザ表示に用いる正規化済み URL です。Rouault では、`wtr-session-id` を除去した pathname + search + hash を指します。pathname は通常ルート `/` を除き末尾 `/` を持ちませんが、検索仕様の例外として `/about/`、`/corpora/`、`/corpora/<slug>/`、`/search/`、`/tags/<tag>/` は trailing slash を保持します。
 
 ### fetch target URL
@@ -208,14 +209,14 @@ interface RouterOptions {
 }
 ```
 
-| 項目                       | 既定        | 意味                                                                                                       |
-| -------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------- |
-| `contentAdapter`           | `undefined` | 本文描画を外側へ委譲する 2 相 adapter です。未指定時、router は outlet を直接更新します。                  |
-| `shellAdapter`             | `undefined` | shell projection の 2 相 commit 統合を行う任意 adapter です。未指定時、shell commit は行いません。         |
-| `urlStateNavigationPolicy` | `undefined` | state-only navigation 判定を行う任意 policy です。未指定時、すべて full navigation とします。              |
-| `postCommitController`     | `undefined` | 描画後後処理を行う任意 controller です。未指定時、router core は後処理を行いません。                       |
-| `skipInitialNavigation`    | `false`     | `start()` 時の初回 `historyMode: 'none'` 遷移を抑止します。SSR 初期本文を保持する統合構成で用います。      |
-| `navigationTimeoutMs`      | `null`      | 1 件の navigation の上限時間です。`null` は timeout 無効を意味します。                                     |
+| 項目                       | 既定        | 意味                                                                                                  |
+| -------------------------- | ----------- | ----------------------------------------------------------------------------------------------------- |
+| `contentAdapter`           | `undefined` | 本文描画を外側へ委譲する 2 相 adapter です。未指定時、router は outlet を直接更新します。             |
+| `shellAdapter`             | `undefined` | shell projection の 2 相 commit 統合を行う任意 adapter です。未指定時、shell commit は行いません。    |
+| `urlStateNavigationPolicy` | `undefined` | state-only navigation 判定を行う任意 policy です。未指定時、すべて full navigation とします。         |
+| `postCommitController`     | `undefined` | 描画後後処理を行う任意 controller です。未指定時、router core は後処理を行いません。                  |
+| `skipInitialNavigation`    | `false`     | `start()` 時の初回 `historyMode: 'none'` 遷移を抑止します。SSR 初期本文を保持する統合構成で用います。 |
+| `navigationTimeoutMs`      | `null`      | 1 件の navigation の上限時間です。`null` は timeout 無効を意味します。                                |
 
 ## ライフサイクル API
 

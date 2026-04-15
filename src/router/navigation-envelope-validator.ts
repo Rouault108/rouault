@@ -111,11 +111,7 @@ const isHydrationPlan = (value: unknown): value is HydrationPlan => {
 
     if (scope['capability'] !== undefined) {
       const capability = scope['capability'];
-      if (
-        capability !== 'static' &&
-        capability !== 'progressive' &&
-        capability !== 'interactive'
-      ) {
+      if (capability !== 'static' && capability !== 'progressive' && capability !== 'interactive') {
         return false;
       }
     }
@@ -158,7 +154,9 @@ export class NavigationEnvelopeValidationError extends Error {
 
 export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope => {
   if (!isRecord(value)) {
-    throw new NavigationEnvelopeValidationError('navigation envelope は object である必要があります。');
+    throw new NavigationEnvelopeValidationError(
+      'navigation envelope は object である必要があります。',
+    );
   }
 
   if (value['schemaVersion'] !== NAVIGATION_ENVELOPE_SCHEMA_VERSION) {
@@ -172,9 +170,7 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
   }
 
   if (value['shellProjection'] !== null && !isShellProjectionSnapshot(value['shellProjection'])) {
-    throw new NavigationEnvelopeValidationError(
-      'navigation envelope shellProjection が不正です。',
-    );
+    throw new NavigationEnvelopeValidationError('navigation envelope shellProjection が不正です。');
   }
 
   if (value['hydrationPlan'] !== undefined && value['hydrationPlan'] !== null) {
@@ -189,13 +185,13 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
     schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
     buildId:
       value['buildId'] === undefined || value['buildId'] === null || isString(value['buildId'])
-        ? (value['buildId'])
+        ? value['buildId']
         : null,
     generatedAt:
       value['generatedAt'] === undefined ||
       value['generatedAt'] === null ||
       isString(value['generatedAt'])
-        ? (value['generatedAt'])
+        ? value['generatedAt']
         : null,
     document: value['document'],
     shellProjection:

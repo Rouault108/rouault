@@ -42,18 +42,16 @@ const queryDesktopToc = (host: LayoutToc): Toc | null =>
   host.shadowRoot?.querySelector<Toc>('.desktop ui-toc') ?? null;
 
 const readActiveLabel = (toc: Toc | null): string | null =>
-  toc?.shadowRoot?.querySelector<HTMLElement>('a.toc-link.is-active .toc-link-label')?.textContent?.trim() ??
-  null;
+  toc?.shadowRoot
+    ?.querySelector<HTMLElement>('a.toc-link.is-active .toc-link-label')
+    ?.textContent?.trim() ?? null;
 
 const waitForActiveDom = async (toc: Toc, expected: string): Promise<void> => {
-  await waitUntil(
-    async () => {
-      await waitForLitUpdate(toc);
-      await nextAnimationFrame();
-      return readActiveLabel(toc) === expected;
-    },
-    `active DOM label が ${expected} へ同期すること`,
-  );
+  await waitUntil(async () => {
+    await waitForLitUpdate(toc);
+    await nextAnimationFrame();
+    return readActiveLabel(toc) === expected;
+  }, `active DOM label が ${expected} へ同期すること`);
 };
 
 const hydrateWithScheduler = async (root: HTMLElement): Promise<HydrationDiagnostics> => {
@@ -387,21 +385,18 @@ describe('layout-toc hydration reconciliation', () => {
 
       internals._applyActiveId(secondHeadingId);
 
-      await waitUntil(
-        async () => {
-          await flush(host);
+      await waitUntil(async () => {
+        await flush(host);
 
-          const desktopToc = queryDesktopToc(host);
-          if (!desktopToc) {
-            return false;
-          }
+        const desktopToc = queryDesktopToc(host);
+        if (!desktopToc) {
+          return false;
+        }
 
-          return (
-            remainingEmptyCollections === 0 && readActiveLabel(desktopToc) === secondHeadingLabel
-          );
-        },
-        'collect 対象 0 件の一時状態から active DOM が回復すること',
-      );
+        return (
+          remainingEmptyCollections === 0 && readActiveLabel(desktopToc) === secondHeadingLabel
+        );
+      }, 'collect 対象 0 件の一時状態から active DOM が回復すること');
 
       const desktopToc = queryDesktopToc(host);
       if (!desktopToc) {

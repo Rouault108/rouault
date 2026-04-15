@@ -18,13 +18,13 @@
 
 ## 棚卸し結果
 
-| 項目 | 主な所在 | 区分 | 判断 |
-| --- | --- | --- | --- |
-| legacy router history path key の strip-only 互換 | `src/router/location-adapter.ts`、`test/node/location-adapter.test.ts`、`test/browser/router.browser.test.ts`、`test/e2e/router.spec.ts` | `将来削除` | stale history entry を再訪したときだけ吸収し、新規書込みは行わない。次の履歴 state schema 改訂時に除去候補とする |
-| `ui-icon[icon]` 属性 | `src/components/ui/icon/icon.ts`、`docs/design-system/components/icon.md` | `deprecated 維持` | 現行の正規入力は `name`。`icon` は既存 markup 吸収のため残すが、新規利用は禁止する |
-| `ui-kbd[keys]` 属性 | `src/components/ui/kbd/kbd.ts`、`docs/design-system/components/kbd.md` | `deprecated 維持` | 現行の正規入力は `tokens`。`keys` は文字列入力互換としてのみ維持する |
-| `ui-kbd` のホストテキスト入力 | `src/components/ui/kbd/kbd.ts`、`docs/design-system/components/kbd.md` | `deprecated 維持` | light DOM 文字列の吸収は維持するが、正規 authoring / 実装経路には含めない |
-| `ui-skip-link[href]` 属性 | `src/components/ui/skip-link/skip-link.ts`、`test/browser/skip-link.browser.test.ts`、`docs/design-system/components/skip-link.md` | `deprecated 維持` | 現行の正規入力は `targetId`。`href` は既存 markup を壊さないためのハッシュ入力としてのみ維持する |
+| 項目                                              | 主な所在                                                                                                                                 | 区分              | 判断                                                                                                             |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------- |
+| legacy router history path key の strip-only 互換 | `src/router/location-adapter.ts`、`test/node/location-adapter.test.ts`、`test/browser/router.browser.test.ts`、`test/e2e/router.spec.ts` | `将来削除`        | stale history entry を再訪したときだけ吸収し、新規書込みは行わない。次の履歴 state schema 改訂時に除去候補とする |
+| `ui-icon[icon]` 属性                              | `src/components/ui/icon/icon.ts`、`docs/design-system/components/icon.md`                                                                | `deprecated 維持` | 現行の正規入力は `name`。`icon` は既存 markup 吸収のため残すが、新規利用は禁止する                               |
+| `ui-kbd[keys]` 属性                               | `src/components/ui/kbd/kbd.ts`、`docs/design-system/components/kbd.md`                                                                   | `deprecated 維持` | 現行の正規入力は `tokens`。`keys` は文字列入力互換としてのみ維持する                                             |
+| `ui-kbd` のホストテキスト入力                     | `src/components/ui/kbd/kbd.ts`、`docs/design-system/components/kbd.md`                                                                   | `deprecated 維持` | light DOM 文字列の吸収は維持するが、正規 authoring / 実装経路には含めない                                        |
+| `ui-skip-link[href]` 属性                         | `src/components/ui/skip-link/skip-link.ts`、`test/browser/skip-link.browser.test.ts`、`docs/design-system/components/skip-link.md`       | `deprecated 維持` | 現行の正規入力は `targetId`。`href` は既存 markup を壊さないためのハッシュ入力としてのみ維持する                 |
 
 ## 項目別メモ
 
@@ -76,10 +76,10 @@
 
 次の項目は本計画の cleanup 対象だったが、すでに repo から除去済みです。
 
-| 項目 | 状態 |
-| --- | --- |
-| `ui-article-header` の `.status` class | `status-badge` / `status-*` 系へ収束済み |
-| `defer-hydration` 記述 | `docs/hydration-contract.md` から除去済み |
+| 項目                                   | 状態                                      |
+| -------------------------------------- | ----------------------------------------- |
+| `ui-article-header` の `.status` class | `status-badge` / `status-*` 系へ収束済み  |
+| `defer-hydration` 記述                 | `docs/hydration-contract.md` から除去済み |
 
 ### 5. `.status` class
 
@@ -97,11 +97,11 @@
 
 次の項目は棚卸し対象として確認したが、deprecated / compatibility API には分類しません。
 
-| 項目 | 理由 |
-| --- | --- |
-| `ui-breadcrumbs[items-json]` | SSR / declarative markup から配列入力を渡すための現行公開入力。`items` property と用途が異なる |
-| `ui-article-header[breadcrumbs-json]` | article header の公開入力であり、deprecated alias ではない |
-| `layout-toc[source-id]` | TOC source script と runtime 解決を結ぶ現行入力であり、sidebar の旧 `source-id` とは別契約 |
+| 項目                                  | 理由                                                                                           |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `ui-breadcrumbs[items-json]`          | SSR / declarative markup から配列入力を渡すための現行公開入力。`items` property と用途が異なる |
+| `ui-article-header[breadcrumbs-json]` | article header の公開入力であり、deprecated alias ではない                                     |
+| `layout-toc[source-id]`               | TOC source script と runtime 解決を結ぶ現行入力であり、sidebar の旧 `source-id` とは別契約     |
 
 ## 運用ルール
 

@@ -164,8 +164,7 @@ export const CustomTarget: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'target-id と label を変えた利用例です。href は互換入力としてのみ残します。',
+        story: 'target-id と label を変えた利用例です。href は互換入力としてのみ残します。',
       },
     },
   },

@@ -62,14 +62,39 @@ describe('layout-sidebar hydration contract', () => {
 
     try {
       const host = await fixture<LayoutSidebar>(html`
-        <layout-sidebar selected-id="music/classical/beethoven/symphony-9" data-hydration-trigger="manual">
-          <nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:manual">
+        <layout-sidebar
+          selected-id="music/classical/beethoven/symphony-9"
+          data-hydration-trigger="manual"
+        >
+          <nav
+            data-sidebar-nav
+            aria-label="ノートナビゲーション"
+            data-topology-revision="topology:manual"
+          >
             <ul>
               <li data-node-id="music" data-node-kind="branch" data-node-depth="0">
-                <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="sidebar-group-music"><span data-sidebar-nav-label>Music</span></button>
+                <button
+                  type="button"
+                  data-sidebar-nav-control
+                  data-sidebar-nav-branch-control
+                  aria-expanded="true"
+                  aria-controls="sidebar-group-music"
+                >
+                  <span data-sidebar-nav-label>Music</span>
+                </button>
                 <ul id="sidebar-group-music">
-                  <li data-node-id="music/classical/beethoven/symphony-9" data-node-kind="leaf" data-node-depth="1">
-                    <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/beethoven/symphony-9" aria-current="page"><span data-sidebar-nav-label>交響曲第9番 ニ短調</span></a>
+                  <li
+                    data-node-id="music/classical/beethoven/symphony-9"
+                    data-node-kind="leaf"
+                    data-node-depth="1"
+                  >
+                    <a
+                      data-sidebar-nav-control
+                      data-sidebar-nav-link
+                      href="/notes/music/classical/beethoven/symphony-9"
+                      aria-current="page"
+                      ><span data-sidebar-nav-label>交響曲第9番 ニ短調</span></a
+                    >
                   </li>
                 </ul>
               </li>
@@ -82,7 +107,9 @@ describe('layout-sidebar hydration contract', () => {
 
       expect(host.querySelector('ui-sidebar-shell')).to.not.equal(null);
       expect(host.querySelector('nav[data-sidebar-nav]')).to.not.equal(null);
-      expect(host.querySelector('a[aria-current="page"]')?.textContent).to.equal('交響曲第9番 ニ短調');
+      expect(host.querySelector('a[aria-current="page"]')?.textContent).to.equal(
+        '交響曲第9番 ニ短調',
+      );
     } finally {
       media.restore();
     }

@@ -14,10 +14,7 @@ describe('ui-skip-link browser contract', () => {
   it('target-id 正規入力から shadow DOM 内の anchor href を構成すること', async () => {
     const mount = await fixture<HTMLElement>(html`
       <div>
-        <ui-skip-link
-          target-id="main-content"
-          label="メインコンテンツへスキップ"
-        ></ui-skip-link>
+        <ui-skip-link target-id="main-content" label="メインコンテンツへスキップ"></ui-skip-link>
         <main id="main-content" tabindex="-1">main</main>
       </div>
     `);
@@ -75,11 +72,7 @@ describe('ui-skip-link browser contract', () => {
   it('target-id と href が競合する場合は target-id を優先すること', async () => {
     const mount = await fixture<HTMLElement>(html`
       <div>
-        <ui-skip-link
-          target-id="content"
-          href="#other-content"
-          label="本文へ移動"
-        ></ui-skip-link>
+        <ui-skip-link target-id="content" href="#other-content" label="本文へ移動"></ui-skip-link>
         <main id="content" tabindex="-1">content</main>
         <main id="other-content" tabindex="-1">other</main>
       </div>

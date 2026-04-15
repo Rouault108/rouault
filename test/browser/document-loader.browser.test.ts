@@ -41,9 +41,7 @@ describe('DocumentLoader', () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
-    document.head
-      .querySelector('meta[name="rouault-build-id"]')
-      ?.remove();
+    document.head.querySelector('meta[name="rouault-build-id"]')?.remove();
   });
 
   it('snapshot 404 時は content URL を再取得せず not-found envelope を返すこと', async () => {
@@ -63,7 +61,8 @@ describe('DocumentLoader', () => {
   });
 
   it('HTML parse fallback を使わず JSON 契約エラーへ縮退すること', async () => {
-    globalThis.fetch = (async () => new Response('<!DOCTYPE html><html></html>', { status: 200 })) as typeof globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response('<!DOCTYPE html><html></html>', { status: 200 })) as typeof globalThis.fetch;
 
     const loader = new DocumentLoader(new RouteRegistry(), new LocationAdapter());
     const result = await loader.load('/notes/example', new AbortController().signal);

@@ -265,10 +265,7 @@ export class Router {
     }
 
     try {
-      const loadResult = await this.loader.load(
-        request.normalizedUrl,
-        executionController.signal,
-      );
+      const loadResult = await this.loader.load(request.normalizedUrl, executionController.signal);
 
       if (executionController.signal.aborted && externalSignal.aborted) {
         return this.createSupersededResult(request);

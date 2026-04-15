@@ -114,8 +114,7 @@ describe('NoteLayout', () => {
           stateScopeId: 'note-navigation',
           selectedId: 'note',
           structuralExpandedIds: [],
-          topologyRevision:
-            '[{"id":"note","kind":"leaf","label":"<Unsafe>","href":"/notes/note"}]',
+          topologyRevision: '[{"id":"note","kind":"leaf","label":"<Unsafe>","href":"/notes/note"}]',
           navHtml:
             '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="unsafe"><ul><li data-node-id="note" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/note" aria-current="page"><span data-sidebar-nav-label>&lt;Unsafe&gt;</span></a></li></ul></nav>',
           heading: 'ナビゲーション',

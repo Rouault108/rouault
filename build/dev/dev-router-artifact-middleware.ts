@@ -52,17 +52,11 @@ export function resolveHtmlFilePathFromRouterArtifactRequest(
   const artifactPrefix = `${ROUTER_ARTIFACT_ROOT_PATHNAME}/`;
   const artifactSuffix = `/${ROUTER_ARTIFACT_FILE_NAME}`;
 
-  if (
-    !decodedPathname.startsWith(artifactPrefix) ||
-    !decodedPathname.endsWith(artifactSuffix)
-  ) {
+  if (!decodedPathname.startsWith(artifactPrefix) || !decodedPathname.endsWith(artifactSuffix)) {
     return null;
   }
 
-  const relativeContentPath = decodedPathname.slice(
-    artifactPrefix.length,
-    -artifactSuffix.length,
-  );
+  const relativeContentPath = decodedPathname.slice(artifactPrefix.length, -artifactSuffix.length);
 
   const normalizedRelativeContentPath = path.posix
     .normalize(relativeContentPath)
@@ -109,10 +103,7 @@ export function createDevelopmentRouterArtifactMiddleware(options: {
       return;
     }
 
-    const htmlFilePath = resolveHtmlFilePathFromRouterArtifactRequest(
-      request.url,
-      outputDirectory,
-    );
+    const htmlFilePath = resolveHtmlFilePathFromRouterArtifactRequest(request.url, outputDirectory);
 
     if (htmlFilePath === null) {
       next();

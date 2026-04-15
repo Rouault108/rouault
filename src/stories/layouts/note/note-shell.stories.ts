@@ -65,7 +65,8 @@ const renderNoteShell = () =>
                       selected-id="story-shell"
                       heading="ナビゲーション"
                       fixed-breakpoint="1024"
-                    >${unsafeHTML(sidebarNavMarkup)}</layout-sidebar>
+                      >${unsafeHTML(sidebarNavMarkup)}</layout-sidebar
+                    >
                   </aside>
 
                   <article class="layout-main-col container-reading">

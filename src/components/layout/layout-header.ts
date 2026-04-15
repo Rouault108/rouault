@@ -7,10 +7,7 @@ import '../ui/breadcrumbs/breadcrumbs.js';
 import '../ui/button/button.js';
 import '../ui/dropdown/dropdown.js';
 import type { BreadcrumbItem } from '../ui/breadcrumbs/breadcrumbs.js';
-import {
-  DEFAULT_LAYOUT_SIDEBAR_ID,
-  layoutSidebarController,
-} from './layout-sidebar-controller.js';
+import { DEFAULT_LAYOUT_SIDEBAR_ID, layoutSidebarController } from './layout-sidebar-controller.js';
 import { navigateToUrl } from '../../search/navigation.js';
 import {
   THEME_CHANGE_EVENT,
@@ -119,10 +116,7 @@ export class LayoutHeader extends LitElement {
       --ui-header-center-end-inset: clamp(
         184px,
         24vw,
-        calc(
-          var(--note-toc-width, 216px) +
-            var(--note-shell-column-gap, var(--space-8, 32px))
-        )
+        calc(var(--note-toc-width, 216px) + var(--note-shell-column-gap, var(--space-8, 32px)))
       );
     }
 
@@ -206,8 +200,7 @@ export class LayoutHeader extends LitElement {
     @container layout-header-shell (min-width: 1024px) {
       :host([note-layout][toc-presence='present']) ui-header {
         --ui-header-center-end-inset: calc(
-          var(--note-toc-width, 216px) +
-            var(--note-shell-column-gap, var(--space-8, 32px))
+          var(--note-toc-width, 216px) + var(--note-shell-column-gap, var(--space-8, 32px))
         );
       }
 

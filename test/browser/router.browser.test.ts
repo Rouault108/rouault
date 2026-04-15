@@ -163,7 +163,9 @@ describe('Router', () => {
     let fetchCount = 0;
     globalThis.fetch = () => {
       fetchCount += 1;
-      return Promise.resolve(createNavigationEnvelopeResponse({ title: 'Init', html: '<main>Init</main>' }));
+      return Promise.resolve(
+        createNavigationEnvelopeResponse({ title: 'Init', html: '<main>Init</main>' }),
+      );
     };
 
     router = new Router(outlet);
@@ -256,7 +258,9 @@ describe('Router', () => {
     let observedSearchValues: string[] = [];
     globalThis.fetch = () => {
       fetchCalled = true;
-      return Promise.resolve(createNavigationEnvelopeResponse({ title: 'Fetched', html: '<main>Fetched</main>' }));
+      return Promise.resolve(
+        createNavigationEnvelopeResponse({ title: 'Fetched', html: '<main>Fetched</main>' }),
+      );
     };
 
     router = new Router(outlet, { skipInitialNavigation: true });

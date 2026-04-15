@@ -30,11 +30,7 @@ describe('production build entrypoint contract', () => {
 
   it('build-production と dev/prod e2e jobs が同じ media base URL と build label 経路を使うこと', () => {
     const workflow = readFileSync(workflowPath, 'utf8');
-    const testE2eProductionJob = sliceWorkflowJob(
-      workflow,
-      'test-e2e-production',
-      'test-e2e-dev',
-    );
+    const testE2eProductionJob = sliceWorkflowJob(workflow, 'test-e2e-production', 'test-e2e-dev');
     const testE2eDevJob = sliceWorkflowJob(workflow, 'test-e2e-dev', 'build-production');
     const buildProductionJob = sliceWorkflowJob(workflow, 'build-production', 'ci-required');
     const mediaBaseUrlPattern = /ROUAULT_MEDIA_BASE_URL: \$\{\{ vars\.ROUAULT_MEDIA_BASE_URL \}\}/g;

@@ -50,7 +50,8 @@ const renderSidebar = ({
       selected-id="${selectedId}"
       heading="${heading}"
       ${fixedBreakpoint === undefined ? '' : html`fixed-breakpoint="${String(fixedBreakpoint)}"`}
-    >${unsafeHTML(sampleNavMarkup)}</layout-sidebar>
+      >${unsafeHTML(sampleNavMarkup)}</layout-sidebar
+    >
   </div>
 `;
 

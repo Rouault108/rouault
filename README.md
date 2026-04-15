@@ -145,7 +145,6 @@ production条件つきのビルド入口は `pnpm build:production`です。
 Rouaultは、**何を保証するか** でテストの置き場を分けています。
 
 - `test/node/`
-
   - pure logic
   - normalization
   - URL / path / router policy
@@ -153,7 +152,6 @@ Rouaultは、**何を保証するか** でテストの置き場を分けてい�
   - browser実体を必要としないhelper
 
 - `test/browser/`
-
   - custom elementのpublic DOM contract
   - shadow DOM
   - keyboard / pointer / focus
@@ -161,7 +159,6 @@ Rouaultは、**何を保証するか** でテストの置き場を分けてい�
   - enhancer behavior
 
 - `test/ssr/`
-
   - Markdown / rehype / remark / build-time transform
   - note final DOM contract
   - projection / serialization
@@ -170,7 +167,6 @@ Rouaultは、**何を保証するか** でテストの置き場を分けてい�
   - CSS structure contract
 
 - `test/e2e/`
-
   - app shell integration
   - no-JS baseline
   - router / history / search
@@ -178,7 +174,6 @@ Rouaultは、**何を保証するか** でテストの置き場を分けてい�
   - 主要UXの最終確認
 
 - `test/storybook/`
-
   - story metadata validation
   - import boundary
   - smoke allowlistの健全性確認

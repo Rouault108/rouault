@@ -150,7 +150,9 @@ const getControl = (
 ): HTMLButtonElement | HTMLAnchorElement | null => {
   const row = host.querySelector<HTMLElement>(`li[data-node-id="${id}"]`);
   const control = row?.querySelector(':scope > [data-sidebar-nav-control]');
-  return control instanceof HTMLButtonElement || control instanceof HTMLAnchorElement ? control : null;
+  return control instanceof HTMLButtonElement || control instanceof HTMLAnchorElement
+    ? control
+    : null;
 };
 
 const getBranchGroup = (host: LayoutSidebar, id: string): HTMLUListElement | null => {
@@ -210,7 +212,7 @@ const renderSidebarFixture = (options: {
     presentation="${options.presentation ?? 'overlay'}"
     state-scope-id="${options.stateScopeId ?? 'note-navigation'}"
     selected-id="${options.selectedId ?? 'music/classical/beethoven/symphony-9'}"
-    structural-expanded-ids='${options.structuralExpandedIds ?? '["music","music/classical"]'}'
+    structural-expanded-ids="${options.structuralExpandedIds ?? '["music","music/classical"]'}"
     heading="ナビゲーション"
   >
     ${unsafeHTML(options.markup ?? sampleNavMarkup)}
@@ -236,9 +238,9 @@ describe('layout-sidebar browser contract', () => {
       expect(
         expectPresent(getBranchGroup(host, 'music/classical'), 'music/classical group').hidden,
       ).to.equal(false);
-      expect(getControl(host, 'music/classical/beethoven/symphony-9')?.getAttribute('aria-current')).to.equal(
-        'page',
-      );
+      expect(
+        getControl(host, 'music/classical/beethoven/symphony-9')?.getAttribute('aria-current'),
+      ).to.equal('page');
     } finally {
       media.restore();
     }
@@ -257,10 +259,12 @@ describe('layout-sidebar browser contract', () => {
 
       localStorage.removeItem(storageKey);
 
-      const host = await fixture<LayoutSidebar>(renderSidebarFixture({
-        structuralExpandedIds: '["music"]',
-        selectedId: 'essay/reading-notes',
-      }));
+      const host = await fixture<LayoutSidebar>(
+        renderSidebarFixture({
+          structuralExpandedIds: '["music"]',
+          selectedId: 'essay/reading-notes',
+        }),
+      );
 
       await settle(host);
 
@@ -295,10 +299,12 @@ describe('layout-sidebar browser contract', () => {
         } satisfies PersistedLayoutSidebarState),
       );
 
-      const host = await fixture<LayoutSidebar>(renderSidebarFixture({
-        structuralExpandedIds: '["music"]',
-        selectedId: 'music/classical/tchaikovsky/the-nutcracker',
-      }));
+      const host = await fixture<LayoutSidebar>(
+        renderSidebarFixture({
+          structuralExpandedIds: '["music"]',
+          selectedId: 'music/classical/tchaikovsky/the-nutcracker',
+        }),
+      );
 
       await settle(host);
 
@@ -346,11 +352,13 @@ describe('layout-sidebar browser contract', () => {
         } satisfies PersistedLayoutSidebarState),
       );
 
-      const host = await fixture<LayoutSidebar>(renderSidebarFixture({
-        stateScopeId: 'reference-navigation',
-        structuralExpandedIds: '[]',
-        selectedId: 'essay/reading-notes',
-      }));
+      const host = await fixture<LayoutSidebar>(
+        renderSidebarFixture({
+          stateScopeId: 'reference-navigation',
+          structuralExpandedIds: '[]',
+          selectedId: 'essay/reading-notes',
+        }),
+      );
 
       await settle(host);
 
@@ -360,9 +368,9 @@ describe('layout-sidebar browser contract', () => {
       host.stateScopeId = 'note-navigation';
       await settle(host);
 
-      expect(expectPresent(getBranchGroup(host, 'music'), 'music group after scope change').hidden).to.equal(
-        false,
-      );
+      expect(
+        expectPresent(getBranchGroup(host, 'music'), 'music group after scope change').hidden,
+      ).to.equal(false);
     } finally {
       media.restore();
     }

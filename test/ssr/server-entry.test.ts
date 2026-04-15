@@ -135,7 +135,9 @@ describe('server-entry', () => {
 
     expect(rendered).toContain('data-app-shell-sidebar-host');
     expect(rendered).toContain('<layout-sidebar heading="Navigation">');
-    expect(rendered).toContain('<main id="main-content" tabindex="-1"><h1>SSR App Router</h1></main>');
+    expect(rendered).toContain(
+      '<main id="main-content" tabindex="-1"><h1>SSR App Router</h1></main>',
+    );
     expect(rendered).toContain('data-app-router-announcement');
     expect(rendered.indexOf('data-app-shell-sidebar-host')).toBeLessThan(
       rendered.indexOf('<main id="main-content" tabindex="-1">'),
@@ -166,7 +168,9 @@ describe('server-entry', () => {
     );
 
     expect(rendered.match(/data-app-router-announcement/g)?.length ?? 0).toBe(1);
-    expect(rendered).toContain('<div aria-live="polite" aria-atomic="true" class="sr-only">generic</div>');
+    expect(rendered).toContain(
+      '<div aria-live="polite" aria-atomic="true" class="sr-only">generic</div>',
+    );
   });
 
   it('layout-sidebar は app-router 内でも shadow SSR を持たず light DOM host のまま保持されること', async () => {
@@ -186,18 +190,12 @@ describe('server-entry', () => {
     expect(rendered).toContain('<layout-sidebar heading="Navigation">');
     expect(rendered).toContain('<nav data-sidebar-nav="" aria-label="Navigation"></nav>');
     expect(rendered).not.toContain('shadowrootmode="open"');
-    expect(rendered).not.toMatch(
-      /<layout-sidebar[\s\S]*?<template\s+shadowroot(?:mode)?=/,
-    );
+    expect(rendered).not.toMatch(/<layout-sidebar[\s\S]*?<template\s+shadowroot(?:mode)?=/);
   });
 
   it('app-router は bare main を strict contract violation として拒否すること', async () => {
     await expect(
-      renderCustomElement(
-        'app-router',
-        [],
-        '<main><h1>SSR App Router</h1><p>Body</p></main>',
-      ),
+      renderCustomElement('app-router', [], '<main><h1>SSR App Router</h1><p>Body</p></main>'),
     ).rejects.toThrow(/id="main-content"/);
   });
 

@@ -23,8 +23,7 @@ export interface LayoutSidebarNavInteractionCallbacks {
   onActiveChange(id: string | null): void;
 }
 
-const getItemId = (item: Element): string =>
-  item.getAttribute('data-node-id')?.trim() ?? '';
+const getItemId = (item: Element): string => item.getAttribute('data-node-id')?.trim() ?? '';
 
 const getItemKind = (item: Element): 'branch' | 'leaf' =>
   item.getAttribute('data-node-kind') === 'branch' ? 'branch' : 'leaf';
@@ -52,7 +51,9 @@ const getParentItem = (item: Element): HTMLLIElement | null => {
 };
 
 const getItemLabel = (item: Element): string => {
-  const explicitLabel = item.querySelector(':scope > [data-sidebar-nav-control] > [data-sidebar-nav-label]');
+  const explicitLabel = item.querySelector(
+    ':scope > [data-sidebar-nav-control] > [data-sidebar-nav-label]',
+  );
 
   if (explicitLabel instanceof HTMLElement) {
     return explicitLabel.textContent.trim();
@@ -197,9 +198,7 @@ export class LayoutSidebarNavInteractionController {
   private typeaheadBuffer = '';
   private typeaheadResetTimer: number | null = null;
 
-  constructor(
-    private readonly callbacks: LayoutSidebarNavInteractionCallbacks,
-  ) {}
+  constructor(private readonly callbacks: LayoutSidebarNavInteractionCallbacks) {}
 
   connect(nav: HTMLElement | null): void {
     if (this.nav === nav) {
@@ -336,7 +335,9 @@ export class LayoutSidebarNavInteractionController {
             this.callbacks.onToggle(currentItem.id, true);
           } else {
             const group = getBranchGroup(currentItem.row);
-            const firstChild = group ? toVisibleItems(nav).find((item) => item.parentId === currentItem.id) : null;
+            const firstChild = group
+              ? toVisibleItems(nav).find((item) => item.parentId === currentItem.id)
+              : null;
             firstChild?.control.focus();
           }
         }

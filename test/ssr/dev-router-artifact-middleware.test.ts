@@ -80,10 +80,7 @@ describe('dev-router-artifact-middleware', () => {
     const outputDirectory = '/tmp/rouault/dist';
 
     expect(
-      resolveHtmlFilePathFromRouterArtifactRequest(
-        '/__router/index.router.json',
-        outputDirectory,
-      ),
+      resolveHtmlFilePathFromRouterArtifactRequest('/__router/index.router.json', outputDirectory),
     ).toBe(path.resolve(outputDirectory, 'index.html'));
 
     expect(

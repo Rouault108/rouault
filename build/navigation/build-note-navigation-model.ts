@@ -138,7 +138,9 @@ const toTopologySnapshot = (nodes: readonly TreeNode[]): unknown[] =>
     label: node.label,
     kind: node.kind,
     ...(typeof node.icon === 'string' ? { icon: node.icon } : {}),
-    ...(node.kind === 'leaf' ? { href: node.href } : { children: toTopologySnapshot(node.children) }),
+    ...(node.kind === 'leaf'
+      ? { href: node.href }
+      : { children: toTopologySnapshot(node.children) }),
   }));
 
 const createTopologyRevision = (nodes: readonly TreeNode[]): string =>

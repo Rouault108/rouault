@@ -4,9 +4,7 @@ const sourcePath = '/notes/testing/sidebar-scroll/group-01/source';
 const targetPath = '/notes/testing/sidebar-scroll/group-16/target';
 
 test.describe('Sidebar Selected Item Scroll', () => {
-  test('sidebar host を保持したままルート遷移しても破綻しないこと', async ({
-    page,
-  }) => {
+  test('sidebar host を保持したままルート遷移しても破綻しないこと', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 480 });
     await page.goto(`${sourcePath}/`);
     await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);

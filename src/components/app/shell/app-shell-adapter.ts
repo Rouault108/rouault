@@ -3,14 +3,8 @@ import type {
   PreparedShellUpdate,
   ShellAdapter,
 } from '../../../router/router.js';
-import {
-  applyHeaderSnapshot,
-  readHeaderSnapshot,
-} from './layout-header-shell-adapter.js';
-import {
-  applySidebarSnapshot,
-  readSidebarShellSnapshot,
-} from './layout-sidebar-shell-adapter.js';
+import { applyHeaderSnapshot, readHeaderSnapshot } from './layout-header-shell-adapter.js';
+import { applySidebarSnapshot, readSidebarShellSnapshot } from './layout-sidebar-shell-adapter.js';
 
 const HEADER_SELECTOR = 'layout-header';
 const APP_ROUTER_SELECTOR = 'app-router';

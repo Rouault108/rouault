@@ -215,7 +215,9 @@ test.describe('No-JS baseline', () => {
     expect(headerText).not.toContain('ホーム');
   });
 
-  test('ヘッダーがスクロールしても固定され、app shell sidebar host が存在しても崩れないこと', async ({ page }) => {
+  test('ヘッダーがスクロールしても固定され、app shell sidebar host が存在しても崩れないこと', async ({
+    page,
+  }) => {
     await page.goto(sampleJavascriptPath);
 
     const header = page.locator('layout-header');

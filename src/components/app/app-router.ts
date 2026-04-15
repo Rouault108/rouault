@@ -17,7 +17,10 @@ import {
   APP_ROUTER_ANNOUNCEMENT_CLASS_NAME,
   APP_ROUTER_ANNOUNCEMENT_SELECTOR,
 } from '../../../shared/app-router/app-router-announcement-contract.js';
-import { MAIN_CONTENT_ID, MAIN_CONTENT_SELECTOR } from '../../../shared/navigation/main-landmark-contract.js';
+import {
+  MAIN_CONTENT_ID,
+  MAIN_CONTENT_SELECTOR,
+} from '../../../shared/navigation/main-landmark-contract.js';
 import { registerTabsUrlSyncStrategy } from '../ui/tabs/tabs-url-sync-strategy.js';
 import { AppRouterPostRenderController } from './controllers/app-router-post-render-controller.js';
 import { PrimaryTabNavigationPolicy } from './navigation/primary-tab-navigation-policy.js';

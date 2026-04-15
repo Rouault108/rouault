@@ -683,6 +683,7 @@ Storybook は見本集ではなく、契約確認のための検証面を提供�
 - `focus()` / `focusSelected()` / `focusFirst()`、`loadingStrategy="retain" | "replace"`、`printable` の契約は実装と browser test により固定されています。
 
 この節の役割は未完了差分の管理ではなく、実装が本書へ追従していることの確認にあります。将来差分が発生した場合は、ここへ暫定 TODO を蓄積するのではなく、browser test と該当契約節を先に更新してください。
+
 - 遅延展開 / 非同期 branch ロード
 - 印刷時の追加オプション入力
 - 複数選択

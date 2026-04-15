@@ -440,7 +440,6 @@ export class UiPopover extends LitElement {
     if (this._controlMode === 'controlled' && this.defaultOpened) {
       this._warn('opened と defaultOpened の同時指定は契約違反です。opened を優先します。');
     }
-
   }
 
   private _warn(message: string): void {

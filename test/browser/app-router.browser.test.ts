@@ -69,8 +69,7 @@ describe('app-router', () => {
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
-    globalThis.fetch = () =>
-      Promise.resolve(createEnvelopeResponse());
+    globalThis.fetch = () => Promise.resolve(createEnvelopeResponse());
 
     originalPushState = history.pushState.bind(history);
     originalReplaceState = history.replaceState.bind(history);
@@ -316,7 +315,12 @@ describe('app-router', () => {
 
     host = await fixture<AppRouterElement>(
       html`<app-router>
-        <div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+        <div
+          data-app-router-announcement=""
+          aria-live="polite"
+          aria-atomic="true"
+          class="sr-only"
+        ></div>
         <main id="main-content" tabindex="-1">
           <h1>SSR Title</h1>
         </main>
@@ -501,7 +505,24 @@ describe('app-router', () => {
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
               presentation="auto"
-            ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:old"><ul><li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/old" aria-current="page"><span data-sidebar-nav-label>Old</span></a></li></ul></nav></layout-sidebar>
+              ><nav
+                data-sidebar-nav
+                aria-label="ノートナビゲーション"
+                data-topology-revision="topology:old"
+              >
+                <ul>
+                  <li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0">
+                    <a
+                      data-sidebar-nav-control
+                      data-sidebar-nav-link
+                      href="/notes/old"
+                      aria-current="page"
+                      ><span data-sidebar-nav-label>Old</span></a
+                    >
+                  </li>
+                </ul>
+              </nav></layout-sidebar
+            >
           </aside>
           <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
         </app-router>
@@ -552,7 +573,8 @@ describe('app-router', () => {
     await appHost.navigate('/notes/new');
 
     await waitUntil(
-      () => appHost.querySelector('#main-content')?.textContent?.includes('Sidebar Synced') ?? false,
+      () =>
+        appHost.querySelector('#main-content')?.textContent?.includes('Sidebar Synced') ?? false,
       '本文が更新されること',
     );
 
@@ -579,7 +601,24 @@ describe('app-router', () => {
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
               presentation="auto"
-            ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:old"><ul><li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/old" aria-current="page"><span data-sidebar-nav-label>Old</span></a></li></ul></nav></layout-sidebar>
+              ><nav
+                data-sidebar-nav
+                aria-label="ノートナビゲーション"
+                data-topology-revision="topology:old"
+              >
+                <ul>
+                  <li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0">
+                    <a
+                      data-sidebar-nav-control
+                      data-sidebar-nav-link
+                      href="/notes/old"
+                      aria-current="page"
+                      ><span data-sidebar-nav-label>Old</span></a
+                    >
+                  </li>
+                </ul>
+              </nav></layout-sidebar
+            >
           </aside>
           <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
         </app-router>
@@ -618,7 +657,8 @@ describe('app-router', () => {
 
     await waitUntil(
       () =>
-        appHost.querySelector('#main-content')?.textContent?.includes('No Sidebar Content') ?? false,
+        appHost.querySelector('#main-content')?.textContent?.includes('No Sidebar Content') ??
+        false,
       '本文が更新されること',
     );
 
@@ -644,7 +684,24 @@ describe('app-router', () => {
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
               presentation="auto"
-            ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:old"><ul><li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/old" aria-current="page"><span data-sidebar-nav-label>Old</span></a></li></ul></nav></layout-sidebar>
+              ><nav
+                data-sidebar-nav
+                aria-label="ノートナビゲーション"
+                data-topology-revision="topology:old"
+              >
+                <ul>
+                  <li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0">
+                    <a
+                      data-sidebar-nav-control
+                      data-sidebar-nav-link
+                      href="/notes/old"
+                      aria-current="page"
+                      ><span data-sidebar-nav-label>Old</span></a
+                    >
+                  </li>
+                </ul>
+              </nav></layout-sidebar
+            >
           </aside>
           <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
         </app-router>
@@ -667,7 +724,8 @@ describe('app-router', () => {
     const projectionSidebar = sidebar as HTMLElement & {
       applyShellProjection?: (snapshot: unknown) => void;
     };
-    const originalApplyShellProjection = projectionSidebar.applyShellProjection?.bind(projectionSidebar);
+    const originalApplyShellProjection =
+      projectionSidebar.applyShellProjection?.bind(projectionSidebar);
     let shouldThrow = true;
     projectionSidebar.applyShellProjection = (snapshot: unknown): void => {
       if (shouldThrow) {

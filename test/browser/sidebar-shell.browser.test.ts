@@ -49,10 +49,7 @@ describe('ui-sidebar-shell browser contract', () => {
       </div>
     `);
 
-    const trigger = expectPresent(
-      wrapper.querySelector<HTMLButtonElement>('#trigger'),
-      'trigger',
-    );
+    const trigger = expectPresent(wrapper.querySelector<HTMLButtonElement>('#trigger'), 'trigger');
     const shell = expectPresent(wrapper.querySelector<UiSidebarShell>('#shell'), 'shell');
     const headerButton = expectPresent(
       wrapper.querySelector<HTMLButtonElement>('#inside-header'),

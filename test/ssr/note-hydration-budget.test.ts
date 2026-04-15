@@ -90,24 +90,24 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
     showSidebar,
     contentHtml,
     ...(showSidebar
-        ? {
-            sidebar: {
-              stateScopeId: 'note-navigation',
-              selectedId: note.slug,
-              structuralExpandedIds: [],
-              topologyRevision: JSON.stringify([
-                {
-                  id: note.slug,
-                  label: note.title,
-                  kind: 'leaf',
-                  href: `/notes/${note.slug}`,
-                },
-              ]),
-              navHtml: `<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="${note.slug}"><ul><li data-node-id="${note.slug}" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/${note.slug}" aria-current="page"><span data-sidebar-nav-label>${note.title}</span></a></li></ul></nav>`,
-              heading: 'ナビゲーション',
-              fixedBreakpoint: '1024',
-            },
-          }
+      ? {
+          sidebar: {
+            stateScopeId: 'note-navigation',
+            selectedId: note.slug,
+            structuralExpandedIds: [],
+            topologyRevision: JSON.stringify([
+              {
+                id: note.slug,
+                label: note.title,
+                kind: 'leaf',
+                href: `/notes/${note.slug}`,
+              },
+            ]),
+            navHtml: `<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="${note.slug}"><ul><li data-node-id="${note.slug}" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/${note.slug}" aria-current="page"><span data-sidebar-nav-label>${note.title}</span></a></li></ul></nav>`,
+            heading: 'ナビゲーション',
+            fixedBreakpoint: '1024',
+          },
+        }
       : {}),
     toc: {
       sourceId: `toc-source-${dataId}`,
@@ -150,9 +150,10 @@ const renderNotePage = (slug: string): CountedNotePage => {
   }
 
   const notePage = buildProjection(note);
-  const sidebar = notePage.showSidebar && notePage.sidebar
-    ? '<layout-sidebar data-hydration-capability="interactive" data-hydration-trigger="initial"></layout-sidebar>'
-    : '';
+  const sidebar =
+    notePage.showSidebar && notePage.sidebar
+      ? '<layout-sidebar data-hydration-capability="interactive" data-hydration-trigger="initial"></layout-sidebar>'
+      : '';
   const rendered = `${sidebar}${layout.render({ notePage })}`;
   return {
     slug,

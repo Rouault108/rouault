@@ -448,9 +448,7 @@ export class LayoutSidebar extends LitElement {
     layoutSidebarController.close(this._resolveSidebarId());
   }
 
-  private _onSidebarRequestClose = (
-    _event: CustomEvent<UiSidebarRequestCloseDetail>,
-  ): void => {
+  private _onSidebarRequestClose = (_event: CustomEvent<UiSidebarRequestCloseDetail>): void => {
     layoutSidebarController.close(this._resolveSidebarId());
   };
 

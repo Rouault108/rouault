@@ -170,9 +170,7 @@ export class UiSidebar extends LitElement {
     );
   };
 
-  private _onShellRequestClose = (
-    event: CustomEvent<UiSidebarRequestCloseEventDetail>,
-  ): void => {
+  private _onShellRequestClose = (event: CustomEvent<UiSidebarRequestCloseEventDetail>): void => {
     this.dispatchEvent(
       new CustomEvent<UiSidebarRequestCloseEventDetail>('ui-sidebar-request-close', {
         bubbles: true,
