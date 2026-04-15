@@ -155,6 +155,42 @@ describe('server-entry', () => {
     expect(rendered.match(/data-app-router-announcement/g)?.length ?? 0).toBe(1);
   });
 
+  it('app-router は generic aria-live 領域を announcement fallback として再利用しないこと', async () => {
+    const rendered = await renderCustomElement(
+      'app-router',
+      [],
+      [
+        '<div aria-live="polite" aria-atomic="true" class="sr-only">generic</div>',
+        '<main id="main-content"><h1>SSR App Router</h1></main>',
+      ].join(''),
+    );
+
+    expect(rendered.match(/data-app-router-announcement/g)?.length ?? 0).toBe(1);
+    expect(rendered).toContain('<div aria-live="polite" aria-atomic="true" class="sr-only">generic</div>');
+  });
+
+  it('layout-sidebar は app-router 内でも shadow SSR を持たず light DOM host のまま保持されること', async () => {
+    const rendered = await renderCustomElement(
+      'app-router',
+      [],
+      `
+        <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
+          <layout-sidebar heading="Navigation">
+            <nav data-sidebar-nav aria-label="Navigation"></nav>
+          </layout-sidebar>
+        </aside>
+        <main id="main-content"><h1>SSR App Router</h1></main>
+      `.trim(),
+    );
+
+    expect(rendered).toContain('<layout-sidebar heading="Navigation">');
+    expect(rendered).toContain('<nav data-sidebar-nav="" aria-label="Navigation"></nav>');
+    expect(rendered).not.toContain('shadowrootmode="open"');
+    expect(rendered).not.toMatch(
+      /<layout-sidebar[\s\S]*?<template\s+shadowroot(?:mode)?=/,
+    );
+  });
+
   it('app-router は bare main を strict contract violation として拒否すること', async () => {
     await expect(
       renderCustomElement(

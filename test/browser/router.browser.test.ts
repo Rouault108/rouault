@@ -522,6 +522,10 @@ describe('Router', () => {
     router = new Router(outlet, { skipInitialNavigation: true });
     await router.start();
 
+    mockHistoryState = {
+      __routerPath: '/legacy/history-path',
+    };
+
     await router.navigate({
       url: '/history-write-only?tab=details',
       historyMode: 'push',

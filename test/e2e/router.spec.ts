@@ -376,6 +376,7 @@ test.describe('Router Navigation', () => {
     await expect(page.locator('layout-header')).toHaveAttribute('toc-presence', 'present');
     await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'present');
     await expect(page.locator('layout-toc')).toHaveCount(1);
+    await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
 
     await navigateWithAppRouter(page, tocAbsentNormalizedPath);
 
@@ -384,6 +385,7 @@ test.describe('Router Navigation', () => {
     await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'absent');
     await expect(page.locator('.layout-toc-col')).toHaveCount(0);
     await expect(page.locator('layout-toc')).toHaveCount(0);
+    await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
 
     const absentOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -396,5 +398,6 @@ test.describe('Router Navigation', () => {
     await expect(page.locator('layout-header')).toHaveAttribute('toc-presence', 'present');
     await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'present');
     await expect(page.locator('layout-toc')).toHaveCount(1);
+    await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
   });
 });
