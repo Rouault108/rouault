@@ -3,8 +3,7 @@
 ## 文書の位置付け
 
 本書は、Rouault の client navigation における新しい正規契約を定義します。
-`DocumentSnapshot` は互換層として残りますが、router core の正規入力は
-`NavigationEnvelope` とします。
+router core の正規入力は `NavigationEnvelope` のみです。
 
 ## 中心契約
 
@@ -34,7 +33,7 @@
 
 component の open / closed、media query 由来 mode、focus などの一時状態は含みません。
 
-sidebar projection は `itemsJson` 単独ではなく、少なくとも次を表現できなければなりません。
+sidebar projection は server nav subtree を正本として、少なくとも次を表現できなければなりません。
 
 - `selectedId`
 - `structuralExpandedIds`
@@ -46,8 +45,6 @@ sidebar projection は `itemsJson` 単独ではなく、少なくとも次を表
 - `fixedBreakpoint`
 - `presentation`
 
-`itemsJson` は移行期間の compat field として保持して構いませんが、唯一正本として扱ってはなりません。
-
 ### `hydrationPlan`
 
 - route 由来の hydration planning 情報だけを持ちます
@@ -55,7 +52,7 @@ sidebar projection は `itemsJson` 単独ではなく、少なくとも次を表
 
 ## 互換方針
 
-- document route が旧 `DocumentSnapshot` を返す間は adapter で envelope へ変換します
+- document route も fetch 経路も `NavigationEnvelope` を直接返します
 - fetch 経路は `index.router.json` の JSON `NavigationEnvelope` のみを受理します
 - fetched HTML の `layout-header` / `layout-sidebar` 属性形式は router protocol ではありません
 - ただし build で抽出された `navHtml` は `NavigationEnvelope.shellProjection.sidebar` の正規 payload として扱います
@@ -63,5 +60,5 @@ sidebar projection は `itemsJson` 単独ではなく、少なくとも次を表
 ## buildId 整合
 
 - SSR HTML は `meta[name="rouault-build-id"]` に current buildId を保持します
-- fetched `NavigationEnvelope.buildId` と current buildId が不一致な場合、router は error snapshot へ縮退します
+- fetched `NavigationEnvelope.buildId` と current buildId が不一致な場合、router は error envelope へ縮退します
 - buildId 不整合時に fetched envelope を正規経路として commit してはなりません

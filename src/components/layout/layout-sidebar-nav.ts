@@ -1,5 +1,3 @@
-import type { TreeNode } from '../../../shared/navigation/tree-node.js';
-
 const NAV_SELECTOR = 'nav[data-sidebar-nav]';
 const ITEM_SELECTOR = 'li[data-node-id]';
 const TYPEAHEAD_RESET_MS = 1000;
@@ -24,22 +22,6 @@ export interface LayoutSidebarNavInteractionCallbacks {
   onSelect(id: string): void;
   onActiveChange(id: string | null): void;
 }
-
-const escapeHtml = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-
-const renderDisclosureIcon = (): string =>
-  [
-    '<span data-sidebar-nav-disclosure aria-hidden="true">',
-    '<svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">',
-    '<path d="M6 3.5L10.5 8L6 12.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>',
-    '</svg>',
-    '</span>',
-  ].join('');
 
 const getItemId = (item: Element): string =>
   item.getAttribute('data-node-id')?.trim() ?? '';
@@ -169,64 +151,6 @@ const setActiveControl = (nav: HTMLElement, activeId: string | null): void => {
   }
 };
 
-const renderFallbackRows = (
-  nodes: readonly TreeNode[],
-  options: {
-    selectedId: string | null;
-    expandedIds: ReadonlySet<string>;
-    depth: number;
-  },
-): string => {
-  return nodes
-    .map((node) => {
-      const baseAttributes = [
-        `data-node-id="${escapeHtml(node.id)}"`,
-        `data-node-kind="${node.kind}"`,
-        `data-node-depth="${String(options.depth)}"`,
-      ].join(' ');
-
-      if (node.kind === 'leaf') {
-        const currentAttribute = node.id === options.selectedId ? ' aria-current="page"' : '';
-        return `<li ${baseAttributes}><a href="${escapeHtml(node.href)}"${currentAttribute}>${escapeHtml(node.label)}</a></li>`;
-      }
-
-      const expanded = options.expandedIds.has(node.id);
-      const groupId = `sidebar-group-${node.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
-
-      return [
-        `<li ${baseAttributes}>`,
-        `<button type="button" aria-expanded="${expanded ? 'true' : 'false'}" aria-controls="${escapeHtml(groupId)}">`,
-        `<span data-sidebar-nav-label>${escapeHtml(node.label)}</span>`,
-        renderDisclosureIcon(),
-        `</button>`,
-        `<ul id="${escapeHtml(groupId)}"${expanded ? '' : ' hidden'}>${renderFallbackRows(node.children, {
-          ...options,
-          depth: options.depth + 1,
-        })}</ul>`,
-        `</li>`,
-      ].join('');
-    })
-    .join('');
-};
-
-export const renderLayoutSidebarFallbackNav = (
-  nodes: readonly TreeNode[],
-  options: {
-    ariaLabel?: string;
-    selectedId: string | null;
-    expandedIds: ReadonlySet<string>;
-    topologyRevision?: string | null;
-  },
-): string => {
-  const ariaLabel = options.ariaLabel?.trim() ?? 'ノートナビゲーション';
-  const revision = options.topologyRevision?.trim() ?? 'compat:items-json';
-  return `<nav data-sidebar-nav aria-label="${escapeHtml(ariaLabel)}" data-topology-revision="${escapeHtml(revision)}"><ul>${renderFallbackRows(nodes, {
-    selectedId: options.selectedId,
-    expandedIds: options.expandedIds,
-    depth: 0,
-  })}</ul></nav>`;
-};
-
 export const findLayoutSidebarNav = (root: ParentNode): HTMLElement | null => {
   const nav = root.querySelector(NAV_SELECTOR);
   return nav instanceof HTMLElement ? nav : null;
@@ -271,64 +195,60 @@ export const syncLayoutSidebarNav = (
 };
 
 export class LayoutSidebarNavInteractionController {
-  private readonly _callbacks: LayoutSidebarNavInteractionCallbacks;
+  private nav: HTMLElement | null = null;
+  private typeaheadBuffer = '';
+  private typeaheadResetTimer: number | null = null;
 
-  private _nav: HTMLElement | null = null;
-  private _typeaheadBuffer = '';
-  private _typeaheadTimer: number | null = null;
-
-  constructor(host: HTMLElement, callbacks: LayoutSidebarNavInteractionCallbacks) {
-    void host;
-    this._callbacks = callbacks;
-  }
+  constructor(
+    private readonly host: HTMLElement,
+    private readonly callbacks: LayoutSidebarNavInteractionCallbacks,
+  ) {}
 
   connect(nav: HTMLElement | null): void {
-    if (this._nav === nav) {
+    if (this.nav === nav) {
       return;
     }
 
     this.disconnect();
-    this._nav = nav;
+    this.nav = nav;
 
     if (!(nav instanceof HTMLElement)) {
       return;
     }
 
-    nav.addEventListener('click', this._onClick);
-    nav.addEventListener('keydown', this._onKeydown);
-    nav.addEventListener('focusin', this._onFocusIn);
+    nav.addEventListener('click', this.handleClick);
+    nav.addEventListener('keydown', this.handleKeydown);
+    nav.addEventListener('focusin', this.handleFocusIn);
   }
 
   disconnect(): void {
-    if (this._nav instanceof HTMLElement) {
-      this._nav.removeEventListener('click', this._onClick);
-      this._nav.removeEventListener('keydown', this._onKeydown);
-      this._nav.removeEventListener('focusin', this._onFocusIn);
+    if (this.nav instanceof HTMLElement) {
+      this.nav.removeEventListener('click', this.handleClick);
+      this.nav.removeEventListener('keydown', this.handleKeydown);
+      this.nav.removeEventListener('focusin', this.handleFocusIn);
     }
 
-    this._nav = null;
-    this._clearTypeahead();
+    this.nav = null;
+
+    if (this.typeaheadResetTimer !== null) {
+      window.clearTimeout(this.typeaheadResetTimer);
+      this.typeaheadResetTimer = null;
+    }
+    this.typeaheadBuffer = '';
   }
 
-  focusItem(id: string | null): void {
-    const nav = this._nav;
-    const item = nav ? findVisibleItem(nav, id) : null;
-    item?.control.focus({ preventScroll: true });
-  }
-
-  private _onClick = (event: Event): void => {
-    const nav = this._nav;
+  private readonly handleClick = (event: Event): void => {
+    const nav = this.nav;
     if (!(nav instanceof HTMLElement)) {
       return;
     }
 
-    const target = event.target instanceof Element ? event.target : null;
-    const control = target?.closest('button, a');
-    if (!(control instanceof HTMLButtonElement || control instanceof HTMLAnchorElement)) {
+    const target = event.target;
+    if (!(target instanceof Element)) {
       return;
     }
 
-    const row = control.closest<HTMLLIElement>(ITEM_SELECTOR);
+    const row = target.closest<HTMLLIElement>(ITEM_SELECTOR);
     if (!(row instanceof HTMLLIElement)) {
       return;
     }
@@ -338,162 +258,140 @@ export class LayoutSidebarNavInteractionController {
       return;
     }
 
-    if (control instanceof HTMLButtonElement) {
-      event.preventDefault();
+    const control = getItemControl(row);
+    if (control instanceof HTMLButtonElement && target.closest('button') === control) {
       const expanded = control.getAttribute('aria-expanded') !== 'true';
-      this._callbacks.onToggle(id, expanded);
+      this.callbacks.onToggle(id, expanded);
       return;
     }
 
-    this._callbacks.onSelect(id);
+    if (control instanceof HTMLAnchorElement && target.closest('a') === control) {
+      this.callbacks.onSelect(id);
+    }
   };
 
-  private _onFocusIn = (event: FocusEvent): void => {
-    const target = event.target instanceof Element ? event.target : null;
-    const row = target?.closest<HTMLLIElement>(ITEM_SELECTOR);
+  private readonly handleFocusIn = (event: FocusEvent): void => {
+    const nav = this.nav;
+    if (!(nav instanceof HTMLElement)) {
+      return;
+    }
+
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    const row = target.closest<HTMLLIElement>(ITEM_SELECTOR);
     if (!(row instanceof HTMLLIElement)) {
       return;
     }
 
     const id = getItemId(row);
-    this._callbacks.onActiveChange(id.length > 0 ? id : null);
+    if (id.length > 0) {
+      this.callbacks.onActiveChange(id);
+    }
   };
 
-  private _onKeydown = (event: KeyboardEvent): void => {
-    const nav = this._nav;
+  private readonly handleKeydown = (event: KeyboardEvent): void => {
+    const nav = this.nav;
     if (!(nav instanceof HTMLElement)) {
       return;
     }
 
-    const target = event.target instanceof Element ? event.target : null;
-    const row = target?.closest<HTMLLIElement>(ITEM_SELECTOR);
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    const row = target.closest<HTMLLIElement>(ITEM_SELECTOR);
     if (!(row instanceof HTMLLIElement)) {
       return;
     }
 
+    const id = getItemId(row);
     const visibleItems = toVisibleItems(nav);
-    const currentId = getItemId(row);
-    const currentIndex = visibleItems.findIndex((item) => item.id === currentId);
-    const currentItem = currentIndex >= 0 ? visibleItems[currentIndex] : null;
-    if (!currentItem) {
+    const currentIndex = visibleItems.findIndex((item) => item.id === id);
+    if (currentIndex < 0) {
       return;
     }
+
+    const currentItem = visibleItems[currentIndex];
 
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        this._focusByIndex(visibleItems, currentIndex + 1 >= visibleItems.length ? 0 : currentIndex + 1);
+        visibleItems[Math.min(currentIndex + 1, visibleItems.length - 1)]?.control.focus();
         return;
-
       case 'ArrowUp':
         event.preventDefault();
-        this._focusByIndex(visibleItems, currentIndex - 1 < 0 ? visibleItems.length - 1 : currentIndex - 1);
+        visibleItems[Math.max(currentIndex - 1, 0)]?.control.focus();
         return;
-
+      case 'ArrowRight':
+        if (currentItem.kind === 'branch' && currentItem.control instanceof HTMLButtonElement) {
+          event.preventDefault();
+          if (currentItem.control.getAttribute('aria-expanded') !== 'true') {
+            this.callbacks.onToggle(currentItem.id, true);
+          } else {
+            const group = getBranchGroup(currentItem.row);
+            const firstChild = group ? toVisibleItems(nav).find((item) => item.parentId === currentItem.id) : null;
+            firstChild?.control.focus();
+          }
+        }
+        return;
+      case 'ArrowLeft':
+        if (currentItem.kind === 'branch' && currentItem.control instanceof HTMLButtonElement) {
+          if (currentItem.control.getAttribute('aria-expanded') === 'true') {
+            event.preventDefault();
+            this.callbacks.onToggle(currentItem.id, false);
+            return;
+          }
+        }
+        if (currentItem.parentId) {
+          event.preventDefault();
+          findVisibleItem(nav, currentItem.parentId)?.control.focus();
+        }
+        return;
       case 'Home':
         event.preventDefault();
-        this._focusByIndex(visibleItems, 0);
+        visibleItems[0]?.control.focus();
         return;
-
       case 'End':
         event.preventDefault();
-        this._focusByIndex(visibleItems, visibleItems.length - 1);
+        visibleItems.at(-1)?.control.focus();
         return;
-
-      case 'ArrowRight':
-        event.preventDefault();
-        this._handleArrowRight(visibleItems, currentItem);
-        return;
-
-      case 'ArrowLeft':
-        event.preventDefault();
-        this._handleArrowLeft(currentItem);
-        return;
-
       case 'Enter':
+      case ' ':
         if (currentItem.control instanceof HTMLButtonElement) {
           event.preventDefault();
-          currentItem.control.click();
+          this.callbacks.onToggle(
+            currentItem.id,
+            currentItem.control.getAttribute('aria-expanded') !== 'true',
+          );
         }
         return;
-
-      case ' ':
-        event.preventDefault();
-        currentItem.control.click();
-        return;
-
       default:
-        if (event.key.length === 1 && !event.altKey && !event.ctrlKey && !event.metaKey) {
-          this._handleTypeahead(visibleItems, currentIndex, event.key);
-        }
+        break;
+    }
+
+    if (event.key.length !== 1 || event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+
+    this.typeaheadBuffer = `${this.typeaheadBuffer}${event.key.toLowerCase()}`;
+    if (this.typeaheadResetTimer !== null) {
+      window.clearTimeout(this.typeaheadResetTimer);
+    }
+    this.typeaheadResetTimer = window.setTimeout(() => {
+      this.typeaheadBuffer = '';
+      this.typeaheadResetTimer = null;
+    }, TYPEAHEAD_RESET_MS);
+
+    const match = visibleItems.find((item) =>
+      item.label.trim().toLowerCase().startsWith(this.typeaheadBuffer),
+    );
+    if (match) {
+      event.preventDefault();
+      match.control.focus();
     }
   };
-
-  private _handleArrowRight(
-    visibleItems: readonly LayoutSidebarNavItem[],
-    currentItem: LayoutSidebarNavItem,
-  ): void {
-    if (currentItem.kind === 'leaf') {
-      return;
-    }
-
-    const expanded = currentItem.control.getAttribute('aria-expanded') === 'true';
-    if (!expanded) {
-      this._callbacks.onToggle(currentItem.id, true);
-      return;
-    }
-
-    const child = visibleItems.find((item) => item.parentId === currentItem.id);
-    child?.control.focus({ preventScroll: true });
-  }
-
-  private _handleArrowLeft(currentItem: LayoutSidebarNavItem): void {
-    if (currentItem.kind === 'branch') {
-      const expanded = currentItem.control.getAttribute('aria-expanded') === 'true';
-      if (expanded) {
-        this._callbacks.onToggle(currentItem.id, false);
-        return;
-      }
-    }
-
-    if (currentItem.parentId) {
-      this.focusItem(currentItem.parentId);
-    }
-  }
-
-  private _handleTypeahead(
-    visibleItems: readonly LayoutSidebarNavItem[],
-    currentIndex: number,
-    key: string,
-  ): void {
-    this._typeaheadBuffer += key.toLowerCase();
-    this._resetTypeaheadTimer();
-
-    const candidates = [...visibleItems.slice(currentIndex + 1), ...visibleItems.slice(0, currentIndex + 1)];
-    const match = candidates.find((item) =>
-      item.label.toLowerCase().startsWith(this._typeaheadBuffer),
-    );
-
-    match?.control.focus({ preventScroll: true });
-  }
-
-  private _focusByIndex(items: readonly LayoutSidebarNavItem[], index: number): void {
-    items[index]?.control.focus({ preventScroll: true });
-  }
-
-  private _resetTypeaheadTimer(): void {
-    this._clearTypeahead();
-    this._typeaheadTimer = window.setTimeout(() => {
-      this._typeaheadBuffer = '';
-      this._typeaheadTimer = null;
-    }, TYPEAHEAD_RESET_MS);
-  }
-
-  private _clearTypeahead(): void {
-    this._typeaheadBuffer = '';
-    if (this._typeaheadTimer !== null) {
-      window.clearTimeout(this._typeaheadTimer);
-      this._typeaheadTimer = null;
-    }
-  }
 }

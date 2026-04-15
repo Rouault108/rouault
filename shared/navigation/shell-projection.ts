@@ -26,7 +26,6 @@ export interface SidebarShellProjection {
   navHtml: string | null;
   heading: string;
   fixedBreakpoint: number;
-  itemsJson: string;
   presentation: 'auto' | 'fixed' | 'overlay';
 }
 

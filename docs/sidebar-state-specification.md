@@ -5,8 +5,8 @@
 本書は、Rouault の note sidebar における state ownership と DOM 契約を固定するための仕様です。
 
 2026-04 の移行以降、note sidebar の正本は `layout-sidebar` の light DOM に置かれる
-server-first navigation とします。`items-json` は互換経路として維持しますが、
-note sidebar の唯一正本ではありません。
+server-first navigation とします。note sidebar は `items-json` に依存せず、
+server nav subtree を唯一正本とします。
 
 対象は `layout-header` / `layout-sidebar` / `ui-sidebar` / `ui-sidebar-shell` と、
 それらを接続する presentation store です。
@@ -50,9 +50,8 @@ tree state の source of truth は
 この state の内部原則:
 
 - persisted state の scope は `sidebarId + stateScopeId`
-- note sidebar の tree 入力は `items-json` 互換経路を維持する
 - note sidebar の初回 HTML は server-first nav を正本とする
-- `selectedId` の ancestor 展開は render 時の導出値であり、persisted state へ書き戻さない
+- route 由来の祖先展開は `structural-expanded-ids` として受け取り、persisted state へ書き戻さない
 
 ## 3. ownership boundary
 
@@ -80,9 +79,8 @@ tree state の source of truth は
 持ってよい責務:
 
 - server nav light DOM の保持と route ごとの差し替え
-- `items-json` 互換経路からの items 読み込み
 - `state-scope-id` に基づく tree state の読み書き
-- `selectedId` 変更時の ancestor auto-expand 導出
+- `structural-expanded-ids` と persisted state の合成
 - presentation store snapshot の反映
 
 持ってはいけない責務:
@@ -137,10 +135,6 @@ note sidebar の public DOM 契約は次を正本とします。
 - `heading`
 - `fixed-breakpoint`
 - `presentation`
-
-互換経路として次を維持します。
-
-- `items-json`
 
 `source-id` は note sidebar の public contract に含めません。
 

@@ -3,9 +3,6 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import '../ui/sidebar-shell/sidebar-shell.js';
 import type { UiSidebarRequestCloseDetail } from '../ui/sidebar-shell/sidebar-shell.js';
-import type { TreeNode } from '../../../shared/navigation/tree-node.js';
-import type { IconName } from '../../../shared/icons/icons-catalog.js';
-import { isIconName } from '../../../shared/icons/icons-catalog.js';
 import type { SidebarShellProjection } from '../../../shared/navigation/shell-projection.js';
 import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
 import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../layout/note-sidebar-breakpoint.js';
@@ -16,27 +13,14 @@ import {
   type LayoutSidebarPresentation,
 } from './layout-sidebar-controller.js';
 import {
-  mergeLayoutSidebarTreeState,
   readLayoutSidebarTreeState,
   writeLayoutSidebarTreeState,
 } from './layout-sidebar-tree-state.js';
 import {
   findLayoutSidebarNav,
   LayoutSidebarNavInteractionController,
-  renderLayoutSidebarFallbackNav,
   syncLayoutSidebarNav,
 } from './layout-sidebar-nav.js';
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const toOptionalString = (value: unknown): string | undefined => {
-  if (typeof value !== 'string') {
-    return undefined;
-  }
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : undefined;
-};
 
 const normalizeExpandedIds = (expandedIds: Iterable<string>): string[] =>
   [...new Set(expandedIds)].sort((left, right) => left.localeCompare(right));
@@ -50,74 +34,6 @@ const sameExpandedIds = (left: Iterable<string>, right: Iterable<string>): boole
   }
 
   return normalizedLeft.every((value, index) => value === normalizedRight[index]);
-};
-
-const toOptionalTreeIcon = (value: unknown): IconName | undefined => {
-  const normalized = toOptionalString(value);
-  if (normalized === undefined) {
-    return undefined;
-  }
-
-  if (normalized.startsWith('lucide:')) {
-    console.warn(
-      `[layout-sidebar] Invalid icon name "${normalized}". Do not use the "lucide:" prefix. Use a bare icon name.`,
-    );
-    return undefined;
-  }
-
-  if (!isIconName(normalized)) {
-    console.warn(`[layout-sidebar] Unknown icon name: ${normalized}`);
-    return undefined;
-  }
-
-  return normalized;
-};
-
-const toTreeNode = (value: unknown): TreeNode | null => {
-  if (!isRecord(value)) {
-    return null;
-  }
-
-  const id = toOptionalString(value['id']);
-  const label = toOptionalString(value['label']);
-  if (!id || !label) {
-    return null;
-  }
-
-  const childrenValue = value['children'];
-  const children: TreeNode[] = Array.isArray(childrenValue)
-    ? childrenValue
-        .map((item: unknown) => toTreeNode(item))
-        .filter((item): item is TreeNode => item !== null)
-    : [];
-  const icon = toOptionalTreeIcon(value['icon']);
-  const href = toOptionalString(value['href']);
-
-  if (children.length > 0 && href) {
-    return null;
-  }
-
-  if (children.length > 0) {
-    return {
-      kind: 'branch',
-      id,
-      label,
-      children,
-      ...(icon ? { icon } : {}),
-    };
-  }
-
-  if (!href) {
-    return null;
-  }
-
-  return {
-    kind: 'leaf',
-    id,
-    label,
-    href,
-    ...(icon ? { icon } : {}),
-  };
 };
 
 const DEFAULT_SIDEBAR_SNAPSHOT: LayoutSidebarControllerSnapshot = {
@@ -169,9 +85,6 @@ export class LayoutSidebar extends LitElement {
   @property({ type: String, attribute: 'selected-id' })
   selectedId: string | null = null;
 
-  @property({ type: String, attribute: 'items-json' })
-  itemsJson = '';
-
   @property({ type: String, attribute: 'structural-expanded-ids' })
   structuralExpandedIdsJson = '[]';
 
@@ -191,9 +104,6 @@ export class LayoutSidebar extends LitElement {
   sidebarId = DEFAULT_LAYOUT_SIDEBAR_ID;
 
   @state()
-  private _items: TreeNode[] = [];
-
-  @state()
   private _navMarkup = '';
 
   @state()
@@ -203,10 +113,10 @@ export class LayoutSidebar extends LitElement {
   private _persistedExpandedIds = new Set<string>();
 
   private _activeId: string | null = null;
-
   private _storage: Storage | null = null;
   private _detachStickyFooterBoundary: (() => void) | null = null;
   private _storeCleanup: (() => void) | null = null;
+  private _bootstrappedMarkup = false;
   private _navInteraction = new LayoutSidebarNavInteractionController(this, {
     onToggle: (id, expanded) => {
       this._handleNavToggle(id, expanded);
@@ -218,8 +128,6 @@ export class LayoutSidebar extends LitElement {
       this._setActiveId(id);
     },
   });
-  private _bootstrappedMarkup = false;
-  private _navMode: 'server' | 'fallback' = 'fallback';
 
   protected override createRenderRoot(): HTMLElement {
     return this;
@@ -230,13 +138,11 @@ export class LayoutSidebar extends LitElement {
       return;
     }
 
-    // router は route 由来の tree / selectedId / nav subtree だけを更新し、
-    // 開閉状態や expanded state の継続は controller と localStorage に委ねる。
+    // server nav subtree を唯一正本として差し替え、開閉状態の継続だけを localStorage へ委ねる。
     this.stateScopeId = snapshot.stateScopeId;
     this.selectedId = snapshot.selectedId;
     this.structuralExpandedIdsJson = JSON.stringify(snapshot.structuralExpandedIds);
     this.topologyRevision = snapshot.topologyRevision;
-    this.itemsJson = snapshot.itemsJson;
     this.heading = snapshot.heading;
     this.fixedBreakpoint = snapshot.fixedBreakpoint;
     this.sidebarId = snapshot.sidebarId;
@@ -257,20 +163,12 @@ export class LayoutSidebar extends LitElement {
       this.setAttribute('topology-revision', snapshot.topologyRevision);
     }
 
-    this.setAttribute('items-json', snapshot.itemsJson);
     this.setAttribute('heading', snapshot.heading);
     this.setAttribute('fixed-breakpoint', String(snapshot.fixedBreakpoint));
     this.setAttribute('sidebar-id', snapshot.sidebarId);
     this.setAttribute('presentation', snapshot.presentation);
-
-    if (typeof snapshot.navHtml === 'string' && snapshot.navHtml.trim().length > 0) {
-      this._navMode = 'server';
-      this._navMarkup = snapshot.navHtml;
-      this._activeId = null;
-      return;
-    }
-
-    this._refreshFallbackNavMarkup();
+    this._navMarkup = snapshot.navHtml?.trim() ?? '';
+    this._activeId = null;
   }
 
   readShellProjection(): SidebarShellProjection {
@@ -284,18 +182,13 @@ export class LayoutSidebar extends LitElement {
       navHtml: this._readServerNavMarkup(),
       heading: this.heading,
       fixedBreakpoint: this.fixedBreakpoint,
-      itemsJson: this.itemsJson,
       presentation: this.presentation,
     };
   }
 
   override connectedCallback(): void {
     if (!this._bootstrappedMarkup) {
-      const initialMarkup = this.innerHTML.trim();
-      if (initialMarkup.length > 0) {
-        this._navMarkup = initialMarkup;
-        this._navMode = 'server';
-      }
+      this._navMarkup = this.innerHTML.trim();
       this._bootstrappedMarkup = true;
       this.innerHTML = '';
     }
@@ -303,9 +196,7 @@ export class LayoutSidebar extends LitElement {
     super.connectedCallback();
 
     this._storage = this._resolveStorage();
-    this._reloadItemsFromItemsJson();
     this._restorePersistedExpandedIds();
-    this._ensureRenderableNavMarkup();
     this._initializePresentationStore();
     this._connectPresentationStore();
     this._reflectModeAttribute();
@@ -322,22 +213,12 @@ export class LayoutSidebar extends LitElement {
   }
 
   protected override willUpdate(changedProperties: Map<string, unknown>): void {
-    if (!this.hasUpdated || changedProperties.has('itemsJson')) {
-      this._reloadItemsFromItemsJson();
-      if (this._navMode === 'fallback') {
-        this._refreshFallbackNavMarkup();
-      }
-    }
-
     if (
       !this.hasUpdated ||
       changedProperties.has('sidebarId') ||
       changedProperties.has('stateScopeId')
     ) {
       this._restorePersistedExpandedIds();
-      if (this._navMode === 'fallback') {
-        this._refreshFallbackNavMarkup();
-      }
     }
   }
 
@@ -433,10 +314,6 @@ export class LayoutSidebar extends LitElement {
     });
   }
 
-  private _reloadItemsFromItemsJson(): void {
-    this._items = this._parseItemsJson(this.itemsJson);
-  }
-
   private _readServerNavMarkup(): string | null {
     const nav = findLayoutSidebarNav(this);
     if (nav instanceof HTMLElement) {
@@ -472,26 +349,6 @@ export class LayoutSidebar extends LitElement {
     });
     const nextExpandedIds = new Set(persistedState?.expandedIds ?? []);
     this._setPersistedExpandedIds(nextExpandedIds);
-  }
-
-  private _parseItemsJson(value: string): TreeNode[] {
-    const normalized = value.trim();
-    if (normalized.length === 0) {
-      return [];
-    }
-
-    try {
-      const parsed: unknown = JSON.parse(normalized);
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-
-      return parsed
-        .map((item) => toTreeNode(item))
-        .filter((item): item is TreeNode => item !== null);
-    } catch {
-      return [];
-    }
   }
 
   private _resolveStateScopeId(): string {
@@ -531,31 +388,10 @@ export class LayoutSidebar extends LitElement {
   }
 
   private _getMergedExpandedIds(): Set<string> {
-    return new Set(
-      mergeLayoutSidebarTreeState(
-        this._items,
-        normalizeExpandedIds(this._persistedExpandedIds),
-        this.selectedId,
-      ),
-    );
-  }
-
-  private _refreshFallbackNavMarkup(): void {
-    this._navMode = 'fallback';
-    this._navMarkup = renderLayoutSidebarFallbackNav(this._items, {
-      ariaLabel: this.heading,
-      selectedId: this.selectedId,
-      expandedIds: this._getMergedExpandedIds(),
-      topologyRevision: this.topologyRevision,
-    });
-  }
-
-  private _ensureRenderableNavMarkup(): void {
-    if (this._navMode === 'server' && this._navMarkup.trim().length > 0) {
-      return;
-    }
-
-    this._refreshFallbackNavMarkup();
+    return new Set([
+      ...this._parseStructuralExpandedIds(this.structuralExpandedIdsJson),
+      ...normalizeExpandedIds(this._persistedExpandedIds),
+    ]);
   }
 
   private _connectNavInteraction(): void {

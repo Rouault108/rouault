@@ -1,9 +1,7 @@
-import type { TreeNode } from '../../shared/navigation/tree-node.js';
 import { injectNoteContentProfiles } from '../../build/content/note-content-contracts.js';
 import type {
   BreadcrumbItem,
   NoteNavigationModel,
-  SidebarNavRow,
 } from '../../shared/navigation/navigation-types.js';
 import type { PagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 import type { NoteStatus } from '../../src/types/article-status.js';
@@ -44,8 +42,6 @@ export interface NotePageProjectionInput {
 export interface NotePageSidebarProjection {
   stateScopeId: string;
   selectedId: string;
-  items: TreeNode[];
-  rows: readonly SidebarNavRow[];
   structuralExpandedIds: readonly string[];
   topologyRevision: string;
   navHtml: string;
@@ -285,8 +281,6 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
           sidebar: {
             stateScopeId: 'note-navigation',
             selectedId: input.navigation.selectedId ?? '',
-            items: input.navigation.sidebarTree,
-            rows: input.navigation.sidebarRows,
             structuralExpandedIds: input.navigation.structuralExpandedIds,
             topologyRevision: input.navigation.topologyRevision,
             navHtml: renderNoteSidebarNav(input.navigation.sidebarRows, {

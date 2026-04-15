@@ -63,7 +63,6 @@ export const readSidebarShellSnapshot = (sidebar: Element): SidebarShellSnapshot
   navHtml: sidebar.innerHTML.trim() || null,
   heading: toTrimmedString(sidebar.getAttribute('heading'), 'ナビゲーション'),
   fixedBreakpoint: toNumber(sidebar.getAttribute('fixed-breakpoint'), 1024),
-  itemsJson: sidebar.getAttribute('items-json') ?? '',
   presentation:
     sidebar.getAttribute('presentation') === 'fixed' ||
     sidebar.getAttribute('presentation') === 'overlay'
@@ -118,7 +117,6 @@ export const applySidebarSnapshot = (
       currentSidebar.setAttribute('topology-revision', snapshot.topologyRevision);
     }
 
-    currentSidebar.setAttribute('items-json', snapshot.itemsJson);
     currentSidebar.setAttribute('heading', snapshot.heading);
     currentSidebar.setAttribute('fixed-breakpoint', String(snapshot.fixedBreakpoint));
     currentSidebar.setAttribute('sidebar-id', snapshot.sidebarId);

@@ -10,19 +10,6 @@ const createProjection = (
   const defaultSidebar: NonNullable<NotePageProjection['sidebar']> = {
     stateScopeId: 'note-navigation',
     selectedId: 'note',
-    items: [{ kind: 'leaf', id: 'note', label: 'Note', href: '/notes/note' }],
-    rows: [
-      {
-        id: 'note',
-        label: 'Note',
-        kind: 'leaf',
-        href: '/notes/note',
-        depth: 0,
-        isCurrent: true,
-        isStructuralExpanded: false,
-        children: [],
-      },
-    ],
     structuralExpandedIds: [],
     topologyRevision: '[{"id":"note","kind":"leaf","label":"Note","href":"/notes/note"}]',
     navHtml:
@@ -126,19 +113,6 @@ describe('NoteLayout', () => {
         sidebar: {
           stateScopeId: 'note-navigation',
           selectedId: 'note',
-          items: [{ kind: 'leaf', id: 'note', label: '<Unsafe>', href: '/notes/note' }],
-          rows: [
-            {
-              id: 'note',
-              label: '<Unsafe>',
-              kind: 'leaf',
-              href: '/notes/note',
-              depth: 0,
-              isCurrent: true,
-              isStructuralExpanded: false,
-              children: [],
-            },
-          ],
           structuralExpandedIds: [],
           topologyRevision:
             '[{"id":"note","kind":"leaf","label":"<Unsafe>","href":"/notes/note"}]',

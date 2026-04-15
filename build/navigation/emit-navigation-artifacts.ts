@@ -237,7 +237,6 @@ const extractSidebarProjection = (document: Parse5Document): SidebarShellProject
       getAttribute(sidebar, 'fixed-breakpoint'),
       FALLBACK_SIDEBAR_BREAKPOINT,
     ),
-    itemsJson: getAttribute(sidebar, 'items-json') ?? '',
     presentation:
       presentation === 'fixed' || presentation === 'overlay' ? presentation : 'auto',
   };

@@ -94,21 +94,6 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
             sidebar: {
               stateScopeId: 'note-navigation',
               selectedId: note.slug,
-              items: [
-                { kind: 'leaf', id: note.slug, label: note.title, href: `/notes/${note.slug}` },
-              ],
-              rows: [
-                {
-                  id: note.slug,
-                  label: note.title,
-                  kind: 'leaf',
-                  href: `/notes/${note.slug}`,
-                  depth: 0,
-                  isCurrent: true,
-                  isStructuralExpanded: false,
-                  children: [],
-                },
-              ],
               structuralExpandedIds: [],
               topologyRevision: JSON.stringify([
                 {

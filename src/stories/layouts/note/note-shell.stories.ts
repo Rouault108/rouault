@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import '../../../components/layout/layout-header';
 import '../../../components/layout/layout-footer';
 import '../../../components/layout/layout-sidebar';
@@ -10,28 +11,29 @@ import {
   renderFoundationSection,
 } from '../../shared/foundation-story-helpers';
 
-const sidebarSource = [
-  {
-    kind: 'branch',
-    id: 'notes',
-    label: 'Notes',
-    children: [
-      {
-        kind: 'leaf',
-        id: 'intro-reading',
-        label: 'Serene Reading',
-        href: '/notes/serene-reading',
-      },
-      {
-        kind: 'leaf',
-        id: 'story-shell',
-        label: 'Storybook Shell',
-        href: '/notes/story-shell',
-      },
-      { kind: 'leaf', id: 'router-notes', label: 'Router Notes', href: '/notes/router-notes' },
-    ],
-  },
-];
+const sidebarNavMarkup = `
+<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="story:note-shell">
+  <ul>
+    <li data-node-id="notes" data-node-kind="branch" data-node-depth="0">
+      <button type="button" aria-expanded="true" aria-controls="story-note-shell-notes">
+        <span data-sidebar-nav-label>Notes</span>
+        <span data-sidebar-nav-disclosure aria-hidden="true"></span>
+      </button>
+      <ul id="story-note-shell-notes">
+        <li data-node-id="intro-reading" data-node-kind="leaf" data-node-depth="1">
+          <a href="/notes/serene-reading">Serene Reading</a>
+        </li>
+        <li data-node-id="story-shell" data-node-kind="leaf" data-node-depth="1">
+          <a href="/notes/story-shell" aria-current="page">Storybook Shell</a>
+        </li>
+        <li data-node-id="router-notes" data-node-kind="leaf" data-node-depth="1">
+          <a href="/notes/router-notes">Router Notes</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+`.trim();
 
 const tocSource = [
   { id: 'intro', text: 'はじめに', level: 2 },
@@ -60,11 +62,10 @@ const renderNoteShell = () =>
                     <layout-sidebar
                       id="story-note-sidebar"
                       state-scope-id="note-navigation"
-                      .itemsJson=${JSON.stringify(sidebarSource)}
                       selected-id="story-shell"
                       heading="ナビゲーション"
                       fixed-breakpoint="1024"
-                    ></layout-sidebar>
+                    >${unsafeHTML(sidebarNavMarkup)}</layout-sidebar>
                   </aside>
 
                   <article class="layout-main-col container-reading">

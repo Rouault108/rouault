@@ -36,7 +36,6 @@ describe('navigation artifacts', () => {
           selected-id="notes/example"
           structural-expanded-ids='["notes"]'
           topology-revision="topology:example"
-          items-json='[{"id":"notes/example","label":"Example"}]'
           heading="ナビゲーション"
           fixed-breakpoint="1024"
           sidebar-id="note-primary"

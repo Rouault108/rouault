@@ -497,12 +497,11 @@ describe('app-router', () => {
             <layout-sidebar
               state-scope-id="note-navigation"
               selected-id="notes/old"
-              items-json='[{"kind":"leaf","id":"notes/old","label":"Old","href":"/notes/old"}]'
               heading="ナビゲーション"
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
               presentation="auto"
-            ></layout-sidebar>
+            ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:old"><ul><li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0"><a href="/notes/old" aria-current="page">Old</a></li></ul></nav></layout-sidebar>
           </aside>
           <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
         </app-router>
@@ -541,8 +540,6 @@ describe('app-router', () => {
               topologyRevision: 'topology:new',
               navHtml:
                 '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a href="/notes/new" aria-current="page">New</a></li></ul></nav>',
-              itemsJson:
-                '[{"kind":"leaf","id":"notes/new","label":"New","href":"/notes/new"}]',
               heading: '新しいナビゲーション',
               fixedBreakpoint: 1440,
               sidebarId: 'note-primary',
@@ -578,12 +575,11 @@ describe('app-router', () => {
             <layout-sidebar
               state-scope-id="note-navigation"
               selected-id="notes/old"
-              items-json='[{"kind":"leaf","id":"notes/old","label":"Old","href":"/notes/old"}]'
               heading="ナビゲーション"
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
               presentation="auto"
-            ></layout-sidebar>
+            ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:old"><ul><li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0"><a href="/notes/old" aria-current="page">Old</a></li></ul></nav></layout-sidebar>
           </aside>
           <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
         </app-router>
@@ -644,12 +640,11 @@ describe('app-router', () => {
             <layout-sidebar
               state-scope-id="note-navigation"
               selected-id="notes/old"
-              items-json='[{"kind":"leaf","id":"notes/old","label":"Old","href":"/notes/old"}]'
               heading="古いナビゲーション"
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
               presentation="auto"
-            ></layout-sidebar>
+            ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:old"><ul><li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0"><a href="/notes/old" aria-current="page">Old</a></li></ul></nav></layout-sidebar>
           </aside>
           <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
         </app-router>
@@ -706,8 +701,6 @@ describe('app-router', () => {
               topologyRevision: 'topology:new',
               navHtml:
                 '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a href="/notes/new" aria-current="page">New</a></li></ul></nav>',
-              itemsJson:
-                '[{"kind":"leaf","id":"notes/new","label":"New","href":"/notes/new"}]',
               heading: '新しいナビゲーション',
               fixedBreakpoint: 1440,
               sidebarId: 'note-primary',
@@ -733,9 +726,6 @@ describe('app-router', () => {
     expect(currentSidebarColumn?.hidden).to.equal(false);
     expect(currentSidebar?.getAttribute('state-scope-id')).to.equal('note-navigation');
     expect(currentSidebar?.getAttribute('selected-id')).to.equal('notes/old');
-    expect(currentSidebar?.getAttribute('items-json')).to.equal(
-      '[{"kind":"leaf","id":"notes/old","label":"Old","href":"/notes/old"}]',
-    );
     expect(currentSidebar?.getAttribute('heading')).to.equal('古いナビゲーション');
     expect(currentSidebar?.getAttribute('fixed-breakpoint')).to.equal('1024');
     expect(currentSidebar?.getAttribute('presentation')).to.equal('auto');

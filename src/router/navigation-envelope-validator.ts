@@ -69,7 +69,6 @@ const isSidebarShellProjection = (value: unknown): value is SidebarShellProjecti
     (value['navHtml'] === undefined || value['navHtml'] === null || isString(value['navHtml'])) &&
     isString(value['heading']) &&
     typeof value['fixedBreakpoint'] === 'number' &&
-    isString(value['itemsJson']) &&
     isSidebarPresentation(value['presentation'])
   );
 };
@@ -86,7 +85,6 @@ const normalizeSidebarShellProjection = (
   navHtml: value.navHtml ?? null,
   heading: value.heading,
   fixedBreakpoint: value.fixedBreakpoint,
-  itemsJson: value.itemsJson,
   presentation: value.presentation,
 });
 

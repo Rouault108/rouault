@@ -103,7 +103,6 @@ const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar
     { name: 'selected-id', value: sidebar.selectedId },
     { name: 'structural-expanded-ids', value: sidebar.structuralExpandedIds, kind: 'json' },
     { name: 'topology-revision', value: sidebar.topologyRevision },
-    { name: 'items-json', value: sidebar.items, kind: 'json' },
     { name: 'heading', value: sidebar.heading },
     { name: 'fixed-breakpoint', value: sidebar.fixedBreakpoint },
     { name: 'sidebar-id', value: NOTE_LAYOUT_SIDEBAR_ID },

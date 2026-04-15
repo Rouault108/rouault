@@ -1,4 +1,5 @@
 import { expect, fixture, html } from '@open-wc/testing';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import type { LayoutSidebar } from '../../src/components/layout/layout-sidebar.js';
 import {
   DEFAULT_LAYOUT_SIDEBAR_ID,
@@ -21,47 +22,79 @@ interface SidebarStateChangeDetail {
   mode: 'fixed' | 'overlay';
 }
 
-const sampleItemsJson = JSON.stringify([
-  {
-    kind: 'branch',
-    id: 'music',
-    label: 'Music',
-    children: [
-      {
-        kind: 'branch',
-        id: 'music/classical',
-        label: 'Classical',
-        children: [
-          {
-            kind: 'leaf',
-            id: 'music/classical/beethoven/symphony-9',
-            label: '交響曲第9番 ニ短調',
-            href: '/notes/music/classical/beethoven/symphony-9',
-          },
-          {
-            kind: 'leaf',
-            id: 'music/classical/tchaikovsky/the-nutcracker',
-            label: 'くるみ割り人形',
-            href: '/notes/music/classical/tchaikovsky/the-nutcracker',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    kind: 'branch',
-    id: 'essay',
-    label: 'Essay',
-    children: [
-      {
-        kind: 'leaf',
-        id: 'essay/reading-notes',
-        label: 'Reading Notes',
-        href: '/notes/essay/reading-notes',
-      },
-    ],
-  },
-]);
+const sampleNavMarkup = `
+  <nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:sample">
+    <ul>
+      <li data-node-id="music" data-node-kind="branch" data-node-depth="0">
+        <button type="button" aria-expanded="true" aria-controls="sidebar-group-music">
+          <span data-sidebar-nav-label>Music</span>
+          <span data-sidebar-nav-disclosure aria-hidden="true"></span>
+        </button>
+        <ul id="sidebar-group-music">
+          <li data-node-id="music/classical" data-node-kind="branch" data-node-depth="1">
+            <button type="button" aria-expanded="true" aria-controls="sidebar-group-classical">
+              <span data-sidebar-nav-label>Classical</span>
+              <span data-sidebar-nav-disclosure aria-hidden="true"></span>
+            </button>
+            <ul id="sidebar-group-classical">
+              <li data-node-id="music/classical/beethoven/symphony-9" data-node-kind="leaf" data-node-depth="2">
+                <a href="/notes/music/classical/beethoven/symphony-9" aria-current="page">交響曲第9番 ニ短調</a>
+              </li>
+              <li data-node-id="music/classical/tchaikovsky/the-nutcracker" data-node-kind="leaf" data-node-depth="2">
+                <a href="/notes/music/classical/tchaikovsky/the-nutcracker">くるみ割り人形</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li data-node-id="essay" data-node-kind="branch" data-node-depth="0">
+        <button type="button" aria-expanded="false" aria-controls="sidebar-group-essay">
+          <span data-sidebar-nav-label>Essay</span>
+          <span data-sidebar-nav-disclosure aria-hidden="true"></span>
+        </button>
+        <ul id="sidebar-group-essay" hidden>
+          <li data-node-id="essay/reading-notes" data-node-kind="leaf" data-node-depth="1">
+            <a href="/notes/essay/reading-notes">Reading Notes</a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+`.trim();
+
+const sampleNavMarkupWithoutClassical = `
+  <nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:sample-v2">
+    <ul>
+      <li data-node-id="music" data-node-kind="branch" data-node-depth="0">
+        <button type="button" aria-expanded="true" aria-controls="sidebar-group-music-v2">
+          <span data-sidebar-nav-label>Music</span>
+          <span data-sidebar-nav-disclosure aria-hidden="true"></span>
+        </button>
+        <ul id="sidebar-group-music-v2">
+          <li data-node-id="music/classical" data-node-kind="branch" data-node-depth="1">
+            <button type="button" aria-expanded="true" aria-controls="sidebar-group-classical-v2">
+              <span data-sidebar-nav-label>Classical</span>
+              <span data-sidebar-nav-disclosure aria-hidden="true"></span>
+            </button>
+            <ul id="sidebar-group-classical-v2">
+              <li data-node-id="music/classical/mozart/requiem" data-node-kind="leaf" data-node-depth="2">
+                <a href="/notes/music/classical/mozart/requiem" aria-current="page">Requiem</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+`.trim();
+
+const noop = (): void => {
+  return undefined;
+};
+
+const returnFalse = (): boolean => {
+  return false;
+};
 
 const ensureLayoutSidebarDefined = async (): Promise<void> => {
   await import('../../src/components/layout/layout-sidebar.js');
@@ -77,14 +110,6 @@ const expectPresent = <T>(value: T | null | undefined, name: string): T => {
   }
 
   return value;
-};
-
-const noop = (): void => {
-  return undefined;
-};
-
-const returnFalse = (): boolean => {
-  return false;
 };
 
 const mockMatchMedia = (breakpointMatches = false): MatchMediaController => {
@@ -174,57 +199,46 @@ const waitForSidebarStateChange = async (
   await settle(host);
 };
 
+const renderSidebarFixture = (options: {
+  presentation?: 'auto' | 'fixed' | 'overlay';
+  stateScopeId?: string;
+  selectedId?: string;
+  structuralExpandedIds?: string;
+  markup?: string;
+}) => html`
+  <layout-sidebar
+    presentation="${options.presentation ?? 'overlay'}"
+    state-scope-id="${options.stateScopeId ?? 'note-navigation'}"
+    selected-id="${options.selectedId ?? 'music/classical/beethoven/symphony-9'}"
+    structural-expanded-ids='${options.structuralExpandedIds ?? '["music","music/classical"]'}'
+    heading="ナビゲーション"
+  >
+    ${unsafeHTML(options.markup ?? sampleNavMarkup)}
+  </layout-sidebar>
+`;
+
 describe('layout-sidebar browser contract', () => {
   afterEach(() => {
     localStorage.clear();
     layoutSidebarController.reset();
   });
 
-  it('初回表示では現在位置の祖先を開き、その後の閉じ要求は persisted state にだけ反映すること', async () => {
+  it('初回表示では structuralExpandedIds と現在位置を元に server nav を開くこと', async () => {
     const media = mockMatchMedia();
 
     try {
       await ensureLayoutSidebarDefined();
 
-      const selectedId = 'music/classical/beethoven/symphony-9';
-      const storageKey = getLayoutSidebarTreeStateStorageKey({
-        sidebarId: DEFAULT_LAYOUT_SIDEBAR_ID,
-        stateScopeId: 'note-navigation',
-      });
-
-      localStorage.removeItem(storageKey);
-
-      const host = await fixture<LayoutSidebar>(html`
-        <layout-sidebar
-          presentation="overlay"
-          state-scope-id="note-navigation"
-          .itemsJson=${sampleItemsJson}
-          selected-id="${selectedId}"
-          heading="ナビゲーション"
-        ></layout-sidebar>
-      `);
-
+      const host = await fixture<LayoutSidebar>(renderSidebarFixture({}));
       await settle(host);
 
-      const group = expectPresent(
-        getBranchGroup(host, 'music/classical'),
-        'music/classical children group',
+      expect(expectPresent(getBranchGroup(host, 'music'), 'music group').hidden).to.equal(false);
+      expect(
+        expectPresent(getBranchGroup(host, 'music/classical'), 'music/classical group').hidden,
+      ).to.equal(false);
+      expect(getControl(host, 'music/classical/beethoven/symphony-9')?.getAttribute('aria-current')).to.equal(
+        'page',
       );
-      expect(group.hidden).to.equal(false);
-
-      const button = expectPresent(
-        getControl(host, 'music/classical'),
-        'music/classical toggle',
-      ) as HTMLButtonElement;
-      button.click();
-      await settle(host);
-
-      expect(group.hidden).to.equal(false);
-
-      const stored = JSON.parse(
-        localStorage.getItem(storageKey) ?? '{}',
-      ) as PersistedLayoutSidebarState;
-      expect(stored.expandedIds ?? []).to.not.include('music/classical');
     } finally {
       media.restore();
     }
@@ -243,26 +257,21 @@ describe('layout-sidebar browser contract', () => {
 
       localStorage.removeItem(storageKey);
 
-      const host = await fixture<LayoutSidebar>(html`
-        <layout-sidebar
-          presentation="overlay"
-          state-scope-id="note-navigation"
-          .itemsJson=${sampleItemsJson}
-          selected-id="essay/reading-notes"
-          heading="ナビゲーション"
-        ></layout-sidebar>
-      `);
+      const host = await fixture<LayoutSidebar>(renderSidebarFixture({
+        structuralExpandedIds: '["music"]',
+        selectedId: 'essay/reading-notes',
+      }));
 
       await settle(host);
 
-      const button = expectPresent(getControl(host, 'music'), 'music toggle') as HTMLButtonElement;
+      const button = expectPresent(getControl(host, 'essay'), 'essay toggle') as HTMLButtonElement;
       button.click();
       await settle(host);
 
       const stored = JSON.parse(
         localStorage.getItem(storageKey) ?? '{}',
       ) as PersistedLayoutSidebarState;
-      expect(stored.expandedIds ?? []).to.include('music');
+      expect(stored.expandedIds ?? []).to.include('essay');
     } finally {
       media.restore();
     }
@@ -286,15 +295,10 @@ describe('layout-sidebar browser contract', () => {
         } satisfies PersistedLayoutSidebarState),
       );
 
-      const host = await fixture<LayoutSidebar>(html`
-        <layout-sidebar
-          presentation="overlay"
-          state-scope-id="note-navigation"
-          .itemsJson=${sampleItemsJson}
-          selected-id="music/classical/tchaikovsky/the-nutcracker"
-          heading="ナビゲーション"
-        ></layout-sidebar>
-      `);
+      const host = await fixture<LayoutSidebar>(renderSidebarFixture({
+        structuralExpandedIds: '["music"]',
+        selectedId: 'music/classical/tchaikovsky/the-nutcracker',
+      }));
 
       await settle(host);
 
@@ -342,15 +346,11 @@ describe('layout-sidebar browser contract', () => {
         } satisfies PersistedLayoutSidebarState),
       );
 
-      const host = await fixture<LayoutSidebar>(html`
-        <layout-sidebar
-          presentation="overlay"
-          state-scope-id="reference-navigation"
-          .itemsJson=${sampleItemsJson}
-          selected-id="essay/reading-notes"
-          heading="ナビゲーション"
-        ></layout-sidebar>
-      `);
+      const host = await fixture<LayoutSidebar>(renderSidebarFixture({
+        stateScopeId: 'reference-navigation',
+        structuralExpandedIds: '[]',
+        selectedId: 'essay/reading-notes',
+      }));
 
       await settle(host);
 
@@ -368,7 +368,7 @@ describe('layout-sidebar browser contract', () => {
     }
   });
 
-  it('itemsJson が差し替わっても共通 branch id の展開状態を維持すること', async () => {
+  it('server nav markup が差し替わっても共通 branch id の展開状態を維持すること', async () => {
     const media = mockMatchMedia();
 
     try {
@@ -384,46 +384,26 @@ describe('layout-sidebar browser contract', () => {
         } satisfies PersistedLayoutSidebarState),
       );
 
-      const host = await fixture<LayoutSidebar>(html`
-        <layout-sidebar
-          presentation="overlay"
-          state-scope-id="note-navigation"
-          .itemsJson=${sampleItemsJson}
-          selected-id="music/classical/tchaikovsky/the-nutcracker"
-          heading="ナビゲーション"
-        ></layout-sidebar>
-      `);
-
+      const host = await fixture<LayoutSidebar>(renderSidebarFixture({}));
       await settle(host);
 
-      host.itemsJson = JSON.stringify([
-        {
-          kind: 'branch',
-          id: 'music',
-          label: 'Music',
-          children: [
-            {
-              kind: 'branch',
-              id: 'music/classical',
-              label: 'Classical',
-              children: [
-                {
-                  kind: 'leaf',
-                  id: 'music/classical/mozart/requiem',
-                  label: 'Requiem',
-                  href: '/notes/music/classical/mozart/requiem',
-                },
-              ],
-            },
-          ],
-        },
-      ]);
-      host.selectedId = 'music/classical/mozart/requiem';
+      host.applyShellProjection?.({
+        present: true,
+        stateScopeId: 'note-navigation',
+        selectedId: 'music/classical/mozart/requiem',
+        structuralExpandedIds: ['music', 'music/classical'],
+        topologyRevision: 'topology:sample-v2',
+        navHtml: sampleNavMarkupWithoutClassical,
+        heading: 'ナビゲーション',
+        fixedBreakpoint: 1024,
+        sidebarId: 'note-primary',
+        presentation: 'overlay',
+      });
       await settle(host);
 
       const branchGroup = expectPresent(
         getBranchGroup(host, 'music/classical'),
-        'music/classical group after itemsJson swap',
+        'music/classical group after nav swap',
       );
       expect(branchGroup.hidden).to.equal(false);
     } finally {
@@ -437,14 +417,7 @@ describe('layout-sidebar browser contract', () => {
     try {
       await ensureLayoutSidebarDefined();
 
-      const host = await fixture<LayoutSidebar>(html`
-        <layout-sidebar
-          presentation="auto"
-          .itemsJson=${sampleItemsJson}
-          selected-id="music/classical/beethoven/symphony-9"
-        ></layout-sidebar>
-      `);
-
+      const host = await fixture<LayoutSidebar>(renderSidebarFixture({ presentation: 'auto' }));
       await settle(host);
 
       const shell = expectPresent(getSidebarShell(host), 'ui-sidebar-shell');
@@ -463,14 +436,7 @@ describe('layout-sidebar browser contract', () => {
 
       layoutSidebarController.toggle(DEFAULT_LAYOUT_SIDEBAR_ID);
 
-      const host = await fixture<LayoutSidebar>(html`
-        <layout-sidebar
-          presentation="auto"
-          .itemsJson=${sampleItemsJson}
-          selected-id="music/classical/beethoven/symphony-9"
-        ></layout-sidebar>
-      `);
-
+      const host = await fixture<LayoutSidebar>(renderSidebarFixture({ presentation: 'auto' }));
       await settle(host);
 
       const shell = expectPresent(getSidebarShell(host), 'ui-sidebar-shell');
@@ -487,18 +453,10 @@ describe('layout-sidebar browser contract', () => {
     try {
       await ensureLayoutSidebarDefined();
 
-      const host = await fixture<LayoutSidebar>(html`
-        <layout-sidebar
-          presentation="overlay"
-          .itemsJson=${sampleItemsJson}
-          selected-id="music/classical/beethoven/symphony-9"
-        ></layout-sidebar>
-      `);
-
+      const host = await fixture<LayoutSidebar>(renderSidebarFixture({ presentation: 'overlay' }));
       await settle(host);
 
       const shell = expectPresent(getSidebarShell(host), 'ui-sidebar-shell');
-
       expect(shell.mode).to.equal('overlay');
       expect(shell.state).to.equal('collapsed');
 
@@ -522,20 +480,13 @@ describe('layout-sidebar browser contract', () => {
     }
   });
 
-  it('Arrow key と typeahead が light DOM nav 上で成立すること', async () => {
+  it('Arrow key と typeahead が server nav 上で成立すること', async () => {
     const media = mockMatchMedia(true);
 
     try {
       await ensureLayoutSidebarDefined();
 
-      const host = await fixture<LayoutSidebar>(html`
-        <layout-sidebar
-          presentation="fixed"
-          .itemsJson=${sampleItemsJson}
-          selected-id="music/classical/beethoven/symphony-9"
-        ></layout-sidebar>
-      `);
-
+      const host = await fixture<LayoutSidebar>(renderSidebarFixture({ presentation: 'fixed' }));
       await settle(host);
 
       const selected = expectPresent(
@@ -563,57 +514,20 @@ describe('layout-sidebar browser contract', () => {
     }
   });
 
-it('fallback nav の branch button は disclosure icon を描画すること', async () => {
-  const media = mockMatchMedia(true);
-
-  try {
-    await ensureLayoutSidebarDefined();
-
-    const host = await fixture<LayoutSidebar>(html`
-      <layout-sidebar
-        presentation="fixed"
-        .itemsJson=${sampleItemsJson}
-        selected-id="music/classical/beethoven/symphony-9"
-      ></layout-sidebar>
-    `);
-
-    await settle(host);
-
-    const musicToggle = expectPresent(getControl(host, 'music'), 'music toggle');
-    expect(musicToggle instanceof HTMLButtonElement).to.equal(true);
-
-    const disclosure = musicToggle.querySelector('[data-sidebar-nav-disclosure]');
-    expect(disclosure).to.not.equal(null);
-    expect(musicToggle.textContent).to.contain('Music');
-  } finally {
-    media.restore();
-  }
-});
-
-  it('server nav がある場合は itemsJson fallback へ戻らず、そのまま正規経路として扱うこと', async () => {
+  it('server nav を唯一の正規経路として扱うこと', async () => {
     const media = mockMatchMedia(true);
 
     try {
       await ensureLayoutSidebarDefined();
 
-      const host = await fixture<LayoutSidebar>(html`
-        <layout-sidebar selected-id="notes/example">
-          <nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:example">
-            <ul>
-              <li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0">
-                <a href="/notes/example" aria-current="page">Example</a>
-              </li>
-            </ul>
-          </nav>
-        </layout-sidebar>
-      `);
-
+      const host = await fixture<LayoutSidebar>(renderSidebarFixture({}));
       await settle(host);
 
-      expect(getNav(host)?.getAttribute('data-topology-revision')).to.equal('topology:example');
+      expect(getNav(host)?.getAttribute('data-topology-revision')).to.equal('topology:sample');
       expect(host.querySelectorAll('nav[data-sidebar-nav]').length).to.equal(1);
       expect(host.innerHTML).to.contain('ui-sidebar-shell');
-      expect(host.innerHTML).to.contain('Example');
+      expect(host.innerHTML).to.contain('交響曲第9番');
+      expect(host.hasAttribute('items-json')).to.equal(false);
     } finally {
       media.restore();
     }

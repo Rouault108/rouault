@@ -1,43 +1,37 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import './layout-sidebar';
 import type { LayoutSidebar } from './layout-sidebar';
-import type { TreeNode } from '../../../shared/navigation/tree-node.js';
 
-const sampleItems: readonly TreeNode[] = [
-  {
-    kind: 'branch',
-    id: 'music',
-    label: 'Music',
-    icon: 'folder',
-    children: [
-      {
-        kind: 'branch',
-        id: 'music/classical',
-        label: 'Classical',
-        icon: 'folder',
-        children: [
-          {
-            kind: 'leaf',
-            id: 'music/classical/beethoven/symphony-9',
-            label: '交響曲第9番 ニ短調',
-            href: '/notes/music/classical/beethoven/symphony-9',
-            icon: 'file-text',
-          },
-          {
-            kind: 'leaf',
-            id: 'music/classical/tchaikovsky/the-nutcracker',
-            label: 'くるみ割り人形',
-            href: '/notes/music/classical/tchaikovsky/the-nutcracker',
-            icon: 'file-text',
-          },
-        ],
-      },
-    ],
-  },
-];
-
-const sampleItemsJson = JSON.stringify(sampleItems);
+const sampleNavMarkup = `
+<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="story:layout-sidebar">
+  <ul>
+    <li data-node-id="music" data-node-kind="branch" data-node-depth="0">
+      <button type="button" aria-expanded="true" aria-controls="story-sidebar-music">
+        <span data-sidebar-nav-label>Music</span>
+        <span data-sidebar-nav-disclosure aria-hidden="true"></span>
+      </button>
+      <ul id="story-sidebar-music">
+        <li data-node-id="music/classical" data-node-kind="branch" data-node-depth="1">
+          <button type="button" aria-expanded="true" aria-controls="story-sidebar-classical">
+            <span data-sidebar-nav-label>Classical</span>
+            <span data-sidebar-nav-disclosure aria-hidden="true"></span>
+          </button>
+          <ul id="story-sidebar-classical">
+            <li data-node-id="music/classical/beethoven/symphony-9" data-node-kind="leaf" data-node-depth="2">
+              <a href="/notes/music/classical/beethoven/symphony-9" aria-current="page">交響曲第9番 ニ短調</a>
+            </li>
+            <li data-node-id="music/classical/tchaikovsky/the-nutcracker" data-node-kind="leaf" data-node-depth="2">
+              <a href="/notes/music/classical/tchaikovsky/the-nutcracker">くるみ割り人形</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+`.trim();
 
 const renderSidebar = ({
   id,
@@ -53,11 +47,10 @@ const renderSidebar = ({
   <div style="min-height: 420px;">
     <layout-sidebar
       id="${id}"
-      .itemsJson=${sampleItemsJson}
       selected-id="${selectedId}"
       heading="${heading}"
       ${fixedBreakpoint === undefined ? '' : html`fixed-breakpoint="${String(fixedBreakpoint)}"`}
-    ></layout-sidebar>
+    >${unsafeHTML(sampleNavMarkup)}</layout-sidebar>
   </div>
 `;
 

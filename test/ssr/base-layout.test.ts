@@ -17,19 +17,6 @@ describe('BaseLayout', () => {
         sidebar: {
           stateScopeId: 'note-navigation',
           selectedId: 'reader-note',
-          items: [{ kind: 'leaf', id: 'reader-note', label: 'Reader Note', href: '/notes/reader-note' }],
-          rows: [
-            {
-              id: 'reader-note',
-              label: 'Reader Note',
-              kind: 'leaf',
-              href: '/notes/reader-note',
-              depth: 0,
-              isCurrent: true,
-              isStructuralExpanded: false,
-              children: [],
-            },
-          ],
           structuralExpandedIds: [],
           topologyRevision: 'reader-note-topology',
           navHtml:
