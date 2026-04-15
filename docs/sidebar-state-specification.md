@@ -18,7 +18,7 @@ Rouault の sidebar state は 1 系統ではなく、次の 2 系統に分離し
 ### 2.1 presentation state
 
 presentation state の source of truth は
-[`src/components/layout/layout-sidebar-controller.ts`](/Users/ruo/Desktop/Programing/rouault/src/components/layout/layout-sidebar-controller.ts)
+[`src/components/layout/layout-sidebar-controller.ts`](../src/components/layout/layout-sidebar-controller.ts)
 のみです。
 
 この state が所有するもの:
@@ -38,7 +38,7 @@ presentation state の source of truth は
 ### 2.2 tree state
 
 tree state の source of truth は
-[`src/components/layout/layout-sidebar-tree-state.ts`](/Users/ruo/Desktop/Programing/rouault/src/components/layout/layout-sidebar-tree-state.ts)
+[`src/components/layout/layout-sidebar-tree-state.ts`](../src/components/layout/layout-sidebar-tree-state.ts)
 です。
 
 この state が所有するもの:
@@ -57,7 +57,7 @@ tree state の source of truth は
 
 ### 3.1 `layout-header`
 
-[`src/components/layout/layout-header.ts`](/Users/ruo/Desktop/Programing/rouault/src/components/layout/layout-header.ts)
+[`src/components/layout/layout-header.ts`](../src/components/layout/layout-header.ts)
 は command sender + snapshot consumer です。
 
 持ってよい責務:
@@ -73,7 +73,7 @@ tree state の source of truth は
 
 ### 3.2 `layout-sidebar`
 
-[`src/components/layout/layout-sidebar.ts`](/Users/ruo/Desktop/Programing/rouault/src/components/layout/layout-sidebar.ts)
+[`src/components/layout/layout-sidebar.ts`](../src/components/layout/layout-sidebar.ts)
 は persistent coordinator host です。
 
 持ってよい責務:
@@ -92,9 +92,9 @@ tree state の source of truth は
 
 ### 3.3 `ui-sidebar` / `ui-sidebar-shell`
 
-[`src/components/ui/sidebar/sidebar.ts`](/Users/ruo/Desktop/Programing/rouault/src/components/ui/sidebar/sidebar.ts)
+[`src/components/ui/sidebar/sidebar.ts`](../src/components/ui/sidebar/sidebar.ts)
 と
-[`src/components/ui/sidebar-shell/sidebar-shell.ts`](/Users/ruo/Desktop/Programing/rouault/src/components/ui/sidebar-shell/sidebar-shell.ts)
+[`src/components/ui/sidebar-shell/sidebar-shell.ts`](../src/components/ui/sidebar-shell/sidebar-shell.ts)
 は表示・対話部品です。
 
 `ui-sidebar-shell` は Rouault 内部 primitive として扱います。public 汎用部品としての後方互換は優先しません。

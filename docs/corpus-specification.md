@@ -6,11 +6,11 @@
 
 現行実装の主な参照点は次のとおり。
 
-- [`src/data/corpusPages.ts`](/Users/ruo/Desktop/Programing/rouault/src/data/corpusPages.ts)
-- [`src/corpora.11ty.ts`](/Users/ruo/Desktop/Programing/rouault/src/corpora.11ty.ts)
-- [`src/components/corpus/corpus-page.ts`](/Users/ruo/Desktop/Programing/rouault/src/components/corpus/corpus-page.ts)
-- [`src/components/layout/layout-header.ts`](/Users/ruo/Desktop/Programing/rouault/src/components/layout/layout-header.ts)
-- [`src/layouts/BaseLayout.11ty.ts`](/Users/ruo/Desktop/Programing/rouault/src/layouts/BaseLayout.11ty.ts)
+- [`src/data/corpusPages.ts`](../src/data/corpusPages.ts)
+- [`src/corpora.11ty.ts`](../src/corpora.11ty.ts)
+- [`src/components/corpus/corpus-page.ts`](../src/components/corpus/corpus-page.ts)
+- [`src/components/layout/layout-header.ts`](../src/components/layout/layout-header.ts)
+- [`src/layouts/BaseLayout.11ty.ts`](../src/layouts/BaseLayout.11ty.ts)
 
 ## 1. 目的
 

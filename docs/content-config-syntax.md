@@ -2,7 +2,7 @@
 
 ## この文書の位置づけ
 
-この文書は、`content` 配下の各ディレクトリに置く `_config.json` の書き方をまとめた実用ガイドである。実装上の SoT は [`src/data/notes.ts`](/Users/ruo/Desktop/Programing/Rouault/src/data/notes.ts) と [`lib/content/ordering.ts`](/Users/ruo/Desktop/Programing/Rouault/lib/content/ordering.ts) にあるが、ここでは著者が安全に設定を書くための要点に絞る。
+この文書は、`content` 配下の各ディレクトリに置く `_config.json` の書き方をまとめた実用ガイドである。実装上の SoT は [`src/data/notes.ts`](../src/data/notes.ts) と [`build/content/ordering.ts`](../build/content/ordering.ts) にあるが、ここでは著者が安全に設定を書くための要点に絞る。
 
 ## まず押さえる方針
 

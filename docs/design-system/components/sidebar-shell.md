@@ -24,7 +24,7 @@
 - state source of truth
 
 sidebar state の ownership は
-[`docs/sidebar-state-specification.md`](/Users/ruo/Desktop/Programing/rouault/docs/sidebar-state-specification.md)
+[`docs/sidebar-state-specification.md`](../../sidebar-state-specification.md)
 を正本とします。
 
 ## 公開入力
@@ -80,8 +80,8 @@ sidebar state の ownership は
 ## テスト正本
 
 - browser contract:
-  [`test/browser/sidebar-shell.browser.test.ts`](/Users/ruo/Desktop/Programing/rouault/test/browser/sidebar-shell.browser.test.ts)
+  [`test/browser/sidebar-shell.browser.test.ts`](../../../test/browser/sidebar-shell.browser.test.ts)
 - Storybook docs:
-  [`src/components/ui/sidebar-shell/sidebar-shell.stories.ts`](/Users/ruo/Desktop/Programing/rouault/src/components/ui/sidebar-shell/sidebar-shell.stories.ts)
+  [`src/components/ui/sidebar-shell/sidebar-shell.stories.ts`](../../../src/components/ui/sidebar-shell/sidebar-shell.stories.ts)
 
 Storybook は表示見本に限定し、契約の正本にはしません。

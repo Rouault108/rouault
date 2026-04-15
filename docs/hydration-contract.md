@@ -5,9 +5,9 @@
 本書は、Rouault における hydration timing と ownership を固定するための仕様です。
 
 対象は
-[`src/client.ts`](/Users/ruo/Desktop/Programing/rouault/src/client.ts),
-[`src/client/hydration/scheduler.ts`](/Users/ruo/Desktop/Programing/rouault/src/client/hydration/scheduler.ts),
-[`src/client/hydration/registry.ts`](/Users/ruo/Desktop/Programing/rouault/src/client/hydration/registry.ts)
+[`src/client.ts`](../src/client.ts),
+[`src/client/hydration/scheduler.ts`](../src/client/hydration/scheduler.ts),
+[`src/client/hydration/registry.ts`](../src/client/hydration/registry.ts)
 および hydration 対象 component です。
 
 ## 2. source of truth
@@ -23,7 +23,7 @@ hydration trigger の決定は scheduler / registry が正本です。
 
 ### 3.1 `src/client.ts`
 
-[`src/client.ts`](/Users/ruo/Desktop/Programing/rouault/src/client.ts)
+[`src/client.ts`](../src/client.ts)
 は bootstrap と scheduler 呼び出しだけを持ちます。
 
 持ってはいけない責務:
@@ -33,7 +33,7 @@ hydration trigger の決定は scheduler / registry が正本です。
 
 ### 3.2 `registry.ts`
 
-[`src/client/hydration/registry.ts`](/Users/ruo/Desktop/Programing/rouault/src/client/hydration/registry.ts)
+[`src/client/hydration/registry.ts`](../src/client/hydration/registry.ts)
 は hydration contract の正本です。
 
 - plain DOM enhancer は registry entry の `activate` で起動する

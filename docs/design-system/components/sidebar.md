@@ -24,7 +24,7 @@ Rouault の note sidebar 正本は `layout-sidebar` 配下の server-first light
 - overlay state の source of truth
 
 state ownership の正本は
-[`docs/sidebar-state-specification.md`](/Users/ruo/Desktop/Programing/rouault/docs/sidebar-state-specification.md)
+[`docs/sidebar-state-specification.md`](../../sidebar-state-specification.md)
 です。
 
 ## 公開入力
@@ -83,10 +83,10 @@ state ownership の正本は
 ## テスト正本
 
 - browser contract:
-  [`test/browser/sidebar.browser.test.ts`](/Users/ruo/Desktop/Programing/rouault/test/browser/sidebar.browser.test.ts)
+  [`test/browser/sidebar.browser.test.ts`](../../../test/browser/sidebar.browser.test.ts)
 - shell 連携:
-  [`test/browser/sidebar-shell.browser.test.ts`](/Users/ruo/Desktop/Programing/rouault/test/browser/sidebar-shell.browser.test.ts)
+  [`test/browser/sidebar-shell.browser.test.ts`](../../../test/browser/sidebar-shell.browser.test.ts)
 - Storybook docs:
-  [`src/components/ui/sidebar/sidebar.stories.ts`](/Users/ruo/Desktop/Programing/rouault/src/components/ui/sidebar/sidebar.stories.ts)
+  [`src/components/ui/sidebar/sidebar.stories.ts`](../../../src/components/ui/sidebar/sidebar.stories.ts)
 
 Storybook は docs / smoke / manual-only に限定し、契約の正本にはしません。
