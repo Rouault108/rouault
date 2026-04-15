@@ -37,9 +37,10 @@ export class LocationAdapter {
   ): Record<string, unknown> {
     const parsed = this.toUrl(normalizedUrl);
     const currentState = this.isHistoryStateObject(state) ? state : {};
+    const { __routerPath: _legacyRouterPath, ...restState } = currentState;
 
     return {
-      ...currentState,
+      ...restState,
       __routerUrl: `${parsed.pathname}${parsed.search}${parsed.hash}`,
     };
   }
