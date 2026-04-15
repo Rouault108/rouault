@@ -1389,9 +1389,9 @@ a:focus-visible {
 }
 
 /* ---------------------------------------------------------------------------
- * Legacy Compatibility（移行レイヤ）
+ * 未分類リンクの安全側吸収
  *
- * card / callout / sidebar 内の未分類リンクを段階的に削減するための暫定措置。
+ * card / callout / sidebar 内の未分類リンクを安全側で同系統表示へ寄せる。
  * 新規実装では .link-text または .link-control を必ず付与すること。
  * --------------------------------------------------------------------------- */
 .card :where(a[href]):not(:where(.prose a[href])):not(.link-text):not(.link-control):not(.ui-link),

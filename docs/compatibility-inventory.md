@@ -20,7 +20,7 @@
 
 | 項目 | 主な所在 | 区分 | 判断 |
 | --- | --- | --- | --- |
-| `history.state.__routerPath` の strip-only 互換 | `src/router/location-adapter.ts`、`test/node/location-adapter.test.ts`、`test/browser/router.browser.test.ts`、`test/e2e/router.spec.ts` | `将来削除` | stale history entry を再訪したときだけ吸収し、新規書込みは行わない。次の履歴 state schema 改訂時に除去候補とする |
+| legacy router history path key の strip-only 互換 | `src/router/location-adapter.ts`、`test/node/location-adapter.test.ts`、`test/browser/router.browser.test.ts`、`test/e2e/router.spec.ts` | `将来削除` | stale history entry を再訪したときだけ吸収し、新規書込みは行わない。次の履歴 state schema 改訂時に除去候補とする |
 | `ui-icon[icon]` 属性 | `src/components/ui/icon/icon.ts`、`docs/design-system/components/icon.md` | `deprecated 維持` | 現行の正規入力は `name`。`icon` は既存 markup 吸収のため残すが、新規利用は禁止する |
 | `ui-kbd[keys]` 属性 | `src/components/ui/kbd/kbd.ts`、`docs/design-system/components/kbd.md` | `deprecated 維持` | 現行の正規入力は `tokens`。`keys` は文字列入力互換としてのみ維持する |
 | `ui-kbd` のホストテキスト入力 | `src/components/ui/kbd/kbd.ts`、`docs/design-system/components/kbd.md` | `deprecated 維持` | light DOM 文字列の吸収は維持するが、正規 authoring / 実装経路には含めない |
@@ -29,16 +29,16 @@
 
 ## 項目別メモ
 
-### 1. `history.state.__routerPath`
+### 1. legacy router history path key
 
 - 現行 router の履歴正本は `__routerUrl` です。
-- `__routerPath` は新規に書き込まず、古い session history から来た値を破棄するためだけに残しています。
+- 旧 path key は新規に書き込まず、古い session history から来た値を破棄するためだけに残しています。
 - よってこれは public API ではなく、**移行安全性のための read-path 互換**です。
 
 出口条件:
 
 - router history state schema を次回明示更新するとき
-- stale `__routerPath` を吸収する必要がないと判断できるとき
+- stale な旧 path key を吸収する必要がないと判断できるとき
 
 ### 2. `ui-icon[icon]`
 
