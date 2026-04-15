@@ -80,9 +80,8 @@ const waitForDesktopTocSync = async (
         getActiveLabel(toc) === expectedLabel
       );
     },
-    4000,
-    50,
     `desktop ui-toc が ${expectedActiveId} / ${expectedLabel} へ同期すること`,
+    { timeout: 4000, interval: 50 },
   );
 };
 
