@@ -20,7 +20,7 @@ describe('BaseLayout', () => {
           structuralExpandedIds: [],
           topologyRevision: 'reader-note-topology',
           navHtml:
-            '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="reader-note-topology"><ul><li data-node-id="reader-note" data-node-kind="leaf" data-node-depth="0"><a href="/notes/reader-note" aria-current="page">Reader Note</a></li></ul></nav>',
+            '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="reader-note-topology"><ul><li data-node-id="reader-note" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/reader-note" aria-current="page"><span data-sidebar-nav-label>Reader Note</span></a></li></ul></nav>',
           heading: 'ナビゲーション',
           fixedBreakpoint: '1024',
         },

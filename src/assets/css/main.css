@@ -1801,8 +1801,7 @@ layout-sidebar [data-sidebar-nav] li {
   margin: 0;
 }
 
-layout-sidebar [data-sidebar-nav] button,
-layout-sidebar [data-sidebar-nav] a {
+layout-sidebar [data-sidebar-nav] [data-sidebar-nav-control] {
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -1824,7 +1823,7 @@ layout-sidebar [data-sidebar-nav] li > ul {
   padding-inline-start: var(--space-4, 16px);
 }
 
-layout-sidebar [data-sidebar-nav] li[data-node-kind='branch'] > button {
+layout-sidebar [data-sidebar-nav] [data-sidebar-nav-branch-control] {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 16px;
   align-items: center;
@@ -1838,7 +1837,7 @@ layout-sidebar [data-sidebar-nav] li[data-node-kind='branch'] > button {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  layout-sidebar [data-sidebar-nav] li[data-node-kind='branch'] > button:hover {
+  layout-sidebar [data-sidebar-nav] [data-sidebar-nav-branch-control]:hover {
     background: var(
       --sidebar-item-branch-hover-bg,
       oklch(from var(--fg-default) l c h / 0.022)
@@ -1847,8 +1846,7 @@ layout-sidebar [data-sidebar-nav] li[data-node-kind='branch'] > button {
 
   layout-sidebar
     [data-sidebar-nav]
-    li[data-node-kind='branch']
-    > button:hover
+    [data-sidebar-nav-branch-control]:hover
     [data-sidebar-nav-disclosure] {
     color: var(--fg-default);
   }
@@ -1884,19 +1882,17 @@ layout-sidebar [data-sidebar-nav] [data-sidebar-nav-disclosure] svg {
 
 layout-sidebar
   [data-sidebar-nav]
-  li[data-node-kind='branch']
-  > button[aria-expanded='true']
+  [data-sidebar-nav-branch-control][aria-expanded='true']
   [data-sidebar-nav-disclosure] {
   transform: rotate(90deg);
 }
 
-layout-sidebar [data-sidebar-nav] li[data-node-kind='leaf'] > a[aria-current='page'] {
+layout-sidebar [data-sidebar-nav] [data-sidebar-nav-link][aria-current='page'] {
   color: var(--fg-strong, var(--fg-default));
   background: color-mix(in oklab, var(--accent-soft, oklch(96% 0.02 240)) 72%, transparent);
 }
 
-layout-sidebar [data-sidebar-nav] button:focus-visible,
-layout-sidebar [data-sidebar-nav] a:focus-visible {
+layout-sidebar [data-sidebar-nav] [data-sidebar-nav-control]:focus-visible {
   outline: 2px solid var(--focus-ring, oklch(62% 0.19 254));
   outline-offset: -2px;
 }

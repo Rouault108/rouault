@@ -40,7 +40,7 @@ describe('navigation artifacts', () => {
           fixed-breakpoint="1024"
           sidebar-id="note-primary"
           presentation="auto"
-        ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:example"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a href="/notes/example" aria-current="page">Example</a></li></ul></nav></layout-sidebar>
+        ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:example"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></nav></layout-sidebar>
       </aside>
       <main id="main-content"><article data-hydration-scope="note-content"><h1>Example</h1></article></main>
     </app-router>

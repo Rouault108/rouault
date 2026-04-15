@@ -103,7 +103,7 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
                   href: `/notes/${note.slug}`,
                 },
               ]),
-              navHtml: `<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="${note.slug}"><ul><li data-node-id="${note.slug}" data-node-kind="leaf" data-node-depth="0"><a href="/notes/${note.slug}" aria-current="page">${note.title}</a></li></ul></nav>`,
+              navHtml: `<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="${note.slug}"><ul><li data-node-id="${note.slug}" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/${note.slug}" aria-current="page"><span data-sidebar-nav-label>${note.title}</span></a></li></ul></nav>`,
               heading: 'ナビゲーション',
               fixedBreakpoint: '1024',
             },

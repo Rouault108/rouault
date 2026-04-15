@@ -66,10 +66,10 @@ describe('layout-sidebar hydration contract', () => {
           <nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:manual">
             <ul>
               <li data-node-id="music" data-node-kind="branch" data-node-depth="0">
-                <button type="button" aria-expanded="true" aria-controls="sidebar-group-music">Music</button>
+                <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="sidebar-group-music"><span data-sidebar-nav-label>Music</span></button>
                 <ul id="sidebar-group-music">
                   <li data-node-id="music/classical/beethoven/symphony-9" data-node-kind="leaf" data-node-depth="1">
-                    <a href="/notes/music/classical/beethoven/symphony-9" aria-current="page">交響曲第9番 ニ短調</a>
+                    <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/beethoven/symphony-9" aria-current="page"><span data-sidebar-nav-label>交響曲第9番 ニ短調</span></a>
                   </li>
                 </ul>
               </li>

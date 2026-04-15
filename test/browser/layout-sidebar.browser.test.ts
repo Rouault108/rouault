@@ -26,35 +26,35 @@ const sampleNavMarkup = `
   <nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:sample">
     <ul>
       <li data-node-id="music" data-node-kind="branch" data-node-depth="0">
-        <button type="button" aria-expanded="true" aria-controls="sidebar-group-music">
+        <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="sidebar-group-music">
           <span data-sidebar-nav-label>Music</span>
           <span data-sidebar-nav-disclosure aria-hidden="true"></span>
         </button>
         <ul id="sidebar-group-music">
           <li data-node-id="music/classical" data-node-kind="branch" data-node-depth="1">
-            <button type="button" aria-expanded="true" aria-controls="sidebar-group-classical">
+            <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="sidebar-group-classical">
               <span data-sidebar-nav-label>Classical</span>
               <span data-sidebar-nav-disclosure aria-hidden="true"></span>
             </button>
             <ul id="sidebar-group-classical">
               <li data-node-id="music/classical/beethoven/symphony-9" data-node-kind="leaf" data-node-depth="2">
-                <a href="/notes/music/classical/beethoven/symphony-9" aria-current="page">交響曲第9番 ニ短調</a>
+                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/beethoven/symphony-9" aria-current="page"><span data-sidebar-nav-label>交響曲第9番 ニ短調</span></a>
               </li>
               <li data-node-id="music/classical/tchaikovsky/the-nutcracker" data-node-kind="leaf" data-node-depth="2">
-                <a href="/notes/music/classical/tchaikovsky/the-nutcracker">くるみ割り人形</a>
+                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/tchaikovsky/the-nutcracker"><span data-sidebar-nav-label>くるみ割り人形</span></a>
               </li>
             </ul>
           </li>
         </ul>
       </li>
       <li data-node-id="essay" data-node-kind="branch" data-node-depth="0">
-        <button type="button" aria-expanded="false" aria-controls="sidebar-group-essay">
+        <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="false" aria-controls="sidebar-group-essay">
           <span data-sidebar-nav-label>Essay</span>
           <span data-sidebar-nav-disclosure aria-hidden="true"></span>
         </button>
         <ul id="sidebar-group-essay" hidden>
           <li data-node-id="essay/reading-notes" data-node-kind="leaf" data-node-depth="1">
-            <a href="/notes/essay/reading-notes">Reading Notes</a>
+            <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/essay/reading-notes"><span data-sidebar-nav-label>Reading Notes</span></a>
           </li>
         </ul>
       </li>
@@ -66,19 +66,19 @@ const sampleNavMarkupWithoutClassical = `
   <nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:sample-v2">
     <ul>
       <li data-node-id="music" data-node-kind="branch" data-node-depth="0">
-        <button type="button" aria-expanded="true" aria-controls="sidebar-group-music-v2">
+        <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="sidebar-group-music-v2">
           <span data-sidebar-nav-label>Music</span>
           <span data-sidebar-nav-disclosure aria-hidden="true"></span>
         </button>
         <ul id="sidebar-group-music-v2">
           <li data-node-id="music/classical" data-node-kind="branch" data-node-depth="1">
-            <button type="button" aria-expanded="true" aria-controls="sidebar-group-classical-v2">
+            <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="sidebar-group-classical-v2">
               <span data-sidebar-nav-label>Classical</span>
               <span data-sidebar-nav-disclosure aria-hidden="true"></span>
             </button>
             <ul id="sidebar-group-classical-v2">
               <li data-node-id="music/classical/mozart/requiem" data-node-kind="leaf" data-node-depth="2">
-                <a href="/notes/music/classical/mozart/requiem" aria-current="page">Requiem</a>
+                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/mozart/requiem" aria-current="page"><span data-sidebar-nav-label>Requiem</span></a>
               </li>
             </ul>
           </li>
@@ -149,7 +149,7 @@ const getControl = (
   id: string,
 ): HTMLButtonElement | HTMLAnchorElement | null => {
   const row = host.querySelector<HTMLElement>(`li[data-node-id="${id}"]`);
-  const control = row?.querySelector(':scope > button, :scope > a');
+  const control = row?.querySelector(':scope > [data-sidebar-nav-control]');
   return control instanceof HTMLButtonElement || control instanceof HTMLAnchorElement ? control : null;
 };
 

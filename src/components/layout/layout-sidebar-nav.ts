@@ -33,7 +33,7 @@ const getBranchGroup = (item: Element): HTMLUListElement | null =>
   item.querySelector(':scope > ul');
 
 const getItemControl = (item: Element): HTMLButtonElement | HTMLAnchorElement | null => {
-  const control = item.querySelector(':scope > button, :scope > a');
+  const control = item.querySelector(':scope > [data-sidebar-nav-control]');
   if (control instanceof HTMLButtonElement || control instanceof HTMLAnchorElement) {
     return control;
   }
@@ -52,9 +52,7 @@ const getParentItem = (item: Element): HTMLLIElement | null => {
 };
 
 const getItemLabel = (item: Element): string => {
-  const explicitLabel = item.querySelector(
-    ':scope > button > [data-sidebar-nav-label], :scope > a > [data-sidebar-nav-label]',
-  );
+  const explicitLabel = item.querySelector(':scope > [data-sidebar-nav-control] > [data-sidebar-nav-label]');
 
   if (explicitLabel instanceof HTMLElement) {
     return explicitLabel.textContent.trim();
@@ -258,13 +256,19 @@ export class LayoutSidebarNavInteractionController {
     }
 
     const control = getItemControl(row);
-    if (control instanceof HTMLButtonElement && target.closest('button') === control) {
+    if (
+      control instanceof HTMLButtonElement &&
+      target.closest('[data-sidebar-nav-control]') === control
+    ) {
       const expanded = control.getAttribute('aria-expanded') !== 'true';
       this.callbacks.onToggle(id, expanded);
       return;
     }
 
-    if (control instanceof HTMLAnchorElement && target.closest('a') === control) {
+    if (
+      control instanceof HTMLAnchorElement &&
+      target.closest('[data-sidebar-nav-control]') === control
+    ) {
       this.callbacks.onSelect(id);
     }
   };

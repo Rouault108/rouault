@@ -33,7 +33,13 @@ const renderRow = (row: SidebarNavRow): string => {
 
   if (row.kind === 'leaf') {
     const currentAttribute = row.isCurrent ? ' aria-current="page"' : '';
-    return `<li ${baseAttributes}><a href="${escapeHtml(row.href ?? '')}"${currentAttribute}>${escapeHtml(row.label)}</a></li>`;
+    return [
+      `<li ${baseAttributes}>`,
+      `<a data-sidebar-nav-control data-sidebar-nav-link href="${escapeHtml(row.href ?? '')}"${currentAttribute}>`,
+      `<span data-sidebar-nav-label>${escapeHtml(row.label)}</span>`,
+      `</a>`,
+      `</li>`,
+    ].join('');
   }
 
   const expanded = row.isStructuralExpanded;
@@ -41,7 +47,7 @@ const renderRow = (row: SidebarNavRow): string => {
 
   return [
     `<li ${baseAttributes}>`,
-    `<button type="button" aria-expanded="${expanded ? 'true' : 'false'}" aria-controls="${escapeHtml(groupId)}">`,
+    `<button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="${expanded ? 'true' : 'false'}" aria-controls="${escapeHtml(groupId)}">`,
     `<span data-sidebar-nav-label>${escapeHtml(row.label)}</span>`,
     renderDisclosureIcon(),
     `</button>`,

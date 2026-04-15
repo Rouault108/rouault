@@ -501,7 +501,7 @@ describe('app-router', () => {
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
               presentation="auto"
-            ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:old"><ul><li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0"><a href="/notes/old" aria-current="page">Old</a></li></ul></nav></layout-sidebar>
+            ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:old"><ul><li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/old" aria-current="page"><span data-sidebar-nav-label>Old</span></a></li></ul></nav></layout-sidebar>
           </aside>
           <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
         </app-router>
@@ -539,7 +539,7 @@ describe('app-router', () => {
               structuralExpandedIds: [],
               topologyRevision: 'topology:new',
               navHtml:
-                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a href="/notes/new" aria-current="page">New</a></li></ul></nav>',
+                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
               heading: '新しいナビゲーション',
               fixedBreakpoint: 1440,
               sidebarId: 'note-primary',
@@ -579,7 +579,7 @@ describe('app-router', () => {
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
               presentation="auto"
-            ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:old"><ul><li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0"><a href="/notes/old" aria-current="page">Old</a></li></ul></nav></layout-sidebar>
+            ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:old"><ul><li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/old" aria-current="page"><span data-sidebar-nav-label>Old</span></a></li></ul></nav></layout-sidebar>
           </aside>
           <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
         </app-router>
@@ -644,7 +644,7 @@ describe('app-router', () => {
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
               presentation="auto"
-            ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:old"><ul><li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0"><a href="/notes/old" aria-current="page">Old</a></li></ul></nav></layout-sidebar>
+            ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:old"><ul><li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/old" aria-current="page"><span data-sidebar-nav-label>Old</span></a></li></ul></nav></layout-sidebar>
           </aside>
           <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
         </app-router>
@@ -700,7 +700,7 @@ describe('app-router', () => {
               structuralExpandedIds: [],
               topologyRevision: 'topology:new',
               navHtml:
-                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a href="/notes/new" aria-current="page">New</a></li></ul></nav>',
+                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
               heading: '新しいナビゲーション',
               fixedBreakpoint: 1440,
               sidebarId: 'note-primary',

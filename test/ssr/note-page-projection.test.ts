@@ -131,6 +131,9 @@ describe('buildNotePageProjection', () => {
     expect(projection.sidebar?.stateScopeId).toBe('note-navigation');
     expect(projection.sidebar?.structuralExpandedIds).toEqual(['music', 'music/classical']);
     expect(projection.sidebar?.navHtml).toContain('data-sidebar-nav');
+    expect(projection.sidebar?.navHtml).toContain('data-sidebar-nav-control');
+    expect(projection.sidebar?.navHtml).toContain('data-sidebar-nav-link');
+    expect(projection.sidebar?.navHtml).toContain('data-sidebar-nav-branch-control');
     expect(projection.sidebar?.navHtml).toContain('data-sidebar-nav-disclosure');
     expect(projection.sidebar?.navHtml).toContain('aria-current="page"');
     expect(projection.sidebar?.navHtml).toContain('data-node-id="music"');

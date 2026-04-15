@@ -15,19 +15,19 @@ const sidebarNavMarkup = `
 <nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="story:note-shell">
   <ul>
     <li data-node-id="notes" data-node-kind="branch" data-node-depth="0">
-      <button type="button" aria-expanded="true" aria-controls="story-note-shell-notes">
+      <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="story-note-shell-notes">
         <span data-sidebar-nav-label>Notes</span>
         <span data-sidebar-nav-disclosure aria-hidden="true"></span>
       </button>
       <ul id="story-note-shell-notes">
         <li data-node-id="intro-reading" data-node-kind="leaf" data-node-depth="1">
-          <a href="/notes/serene-reading">Serene Reading</a>
+          <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/serene-reading"><span data-sidebar-nav-label>Serene Reading</span></a>
         </li>
         <li data-node-id="story-shell" data-node-kind="leaf" data-node-depth="1">
-          <a href="/notes/story-shell" aria-current="page">Storybook Shell</a>
+          <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/story-shell" aria-current="page"><span data-sidebar-nav-label>Storybook Shell</span></a>
         </li>
         <li data-node-id="router-notes" data-node-kind="leaf" data-node-depth="1">
-          <a href="/notes/router-notes">Router Notes</a>
+          <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/router-notes"><span data-sidebar-nav-label>Router Notes</span></a>
         </li>
       </ul>
     </li>
