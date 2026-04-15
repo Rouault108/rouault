@@ -816,7 +816,6 @@ describe('app-router', () => {
   it('primary tab の state-only navigation で URL state 通知と hash scroll を行うこと', async () => {
     mockHistoryState = {
       __routerUrl: '/notes/testing?tab=overview',
-      __routerPath: '/notes/testing',
     };
 
     let scrollTargetId = '';

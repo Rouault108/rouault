@@ -24,14 +24,6 @@ export class LocationAdapter {
       if (typeof historyUrl === 'string' && historyUrl.length > 0) {
         return this.normalizeUrl(historyUrl);
       }
-
-      // 既存タブの履歴を壊さないため、read 側だけ暫定互換を残します。
-      const historyPath = currentState['__routerPath'];
-      if (typeof historyPath === 'string' && historyPath.length > 0) {
-        const resolved = this.toUrl();
-        resolved.pathname = historyPath;
-        return this.normalizeUrl(`${resolved.pathname}${resolved.search}${resolved.hash}`);
-      }
     }
 
     return this.normalizeUrl(

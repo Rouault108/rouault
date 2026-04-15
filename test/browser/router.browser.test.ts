@@ -327,7 +327,6 @@ describe('Router', () => {
     document.title = 'Before Navigation';
     mockHistoryState = {
       __routerUrl: '/current',
-      __routerPath: '/current',
     };
 
     globalThis.fetch = () =>
@@ -385,7 +384,6 @@ describe('Router', () => {
     expect(document.title).to.equal('Before Navigation');
     expect(mockHistoryState).to.deep.equal({
       __routerUrl: '/current',
-      __routerPath: '/current',
     });
   });
 
@@ -454,7 +452,6 @@ describe('Router', () => {
 
     mockHistoryState = {
       __routerUrl: '/notes/testing?tab=overview',
-      __routerPath: '/notes/testing',
     };
 
     router = new Router(outlet, {

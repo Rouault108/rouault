@@ -173,7 +173,7 @@ describe('LocationAdapter', () => {
     });
   });
 
-  it('readCurrentUrl() は __routerPath のみの旧 state も暫定互換として読めること', () => {
+  it('readCurrentUrl() は __routerUrl が無ければ window.location から現在 URL を組み立てること', () => {
     const policy: UrlPolicy = {
       normalizePathname(pathname) {
         return pathname;
@@ -199,7 +199,7 @@ describe('LocationAdapter', () => {
       });
 
       withStubbedHistory({ __routerPath: '/notes/example' }, () => {
-        expect(adapter.readCurrentUrl()).to.equal('/notes/example?tab=overview#details');
+        expect(adapter.readCurrentUrl()).to.equal('/current?tab=overview#details');
       });
     });
   });
