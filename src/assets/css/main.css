@@ -1707,17 +1707,25 @@ app-router[data-sidebar-presence='absent'] {
 }
 
 /*
- * TOC の有無で note frame の外形を変えない。
- * absent でも desktop / tablet では TOC 分の終端 reserve を残し、
- * 本文列の左端を present ページと一致させる。
- *
- * TOC host 自体は SSR で出力しないため、空の aside は生成されない。
+ * TOC ありは 2 カラム、TOC なしは 1 カラムへ明示的に分岐する。
+ * absent ページでは TOC reserve を残さず、
+ * note shell 自体の外形も本文主体の幅へ縮める。
  */
-.note-shell[data-toc-presence='present'],
-.note-shell[data-toc-presence='absent'] {
+.note-shell[data-toc-presence='present'] {
   grid-template-columns:
     minmax(0, 1fr)
     var(--note-toc-track);
+}
+
+.note-shell[data-toc-presence='absent'] {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: min(
+    100%,
+    var(
+      --note-shell-max-width-no-toc,
+      calc(var(--note-reading-max-inline-size) + (var(--space-8, 32px) * 2))
+    )
+  );
 }
 
 .note-shell .container-reading {
@@ -2194,11 +2202,14 @@ layout-sidebar [data-sidebar-nav] [data-sidebar-nav-control]:focus-visible {
       minmax(0, 1fr);
   }
 
-  .note-shell[data-toc-presence='present'],
-  .note-shell[data-toc-presence='absent'] {
+  .note-shell[data-toc-presence='present'] {
     grid-template-columns:
       minmax(0, 1fr)
       minmax(200px, 34vw);
+  }
+
+  .note-shell[data-toc-presence='absent'] {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   app-router[data-sidebar-presence='present'] .layout-sidebar-col {

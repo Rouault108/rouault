@@ -107,7 +107,7 @@ test.describe('note frame balance', () => {
     expect(wider.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 
-  test('TOC absent note でも desktop では本文列の左端を TOC present note と揃えること', async ({
+  test('TOC absent note では desktop で TOC reserve を残さず note shell 自体を縮めること', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1600, height: 900 });
@@ -123,6 +123,8 @@ test.describe('note frame balance', () => {
       const noteShell = document.querySelector<HTMLElement>('.note-shell');
       const article = document.querySelector<HTMLElement>('.note-shell .layout-main-col');
       const tocColumn = document.querySelector<HTMLElement>('.note-shell .layout-toc-col');
+      const noteShellStyles = noteShell ? getComputedStyle(noteShell) : null;
+      const noteShellColumnGap = Number.parseFloat(noteShellStyles?.columnGap ?? '0');
 
       return {
         tocPresence: noteShell?.getAttribute('data-toc-presence') ?? null,
@@ -130,6 +132,7 @@ test.describe('note frame balance', () => {
         articleWidth: Math.round(article?.getBoundingClientRect().width ?? 0),
         articleLeft: Math.round(article?.getBoundingClientRect().left ?? 0),
         tocColumnExists: tocColumn instanceof HTMLElement,
+        noteShellColumnGap: Number.isFinite(noteShellColumnGap) ? Math.round(noteShellColumnGap) : 0,
         horizontalOverflow:
           document.documentElement.scrollWidth - document.documentElement.clientWidth,
       };
@@ -139,7 +142,13 @@ test.describe('note frame balance', () => {
     expect(state.tocColumnExists).toBe(false);
     expect(state.noteShellWidth).toBeGreaterThan(0);
     expect(state.articleWidth).toBeGreaterThan(0);
-    expect(Math.abs(state.articleLeft - (present.articleLeft ?? 0))).toBeLessThanOrEqual(1);
+
+    expect((present.noteShellWidth ?? 0) - state.noteShellWidth).toBeGreaterThanOrEqual(100);
+
+    const articleWidthDelta = state.articleWidth - (present.articleWidth ?? 0);
+    expect(Math.abs(articleWidthDelta - state.noteShellColumnGap)).toBeLessThanOrEqual(1);
+
+    expect(state.articleLeft).toBeGreaterThan(present.articleLeft ?? 0);
     expect(state.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 });
