@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { documentSnapshotToEnvelope } from '../../src/router/document-snapshot-to-envelope.js';
 import {
   NavigationEnvelopeValidationError,
   validateNavigationEnvelope,
@@ -7,52 +6,6 @@ import {
 import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
 
 describe('navigation envelope', () => {
-  it('legacy DocumentSnapshot を NavigationEnvelope へ正規化すること', () => {
-    const envelope = documentSnapshotToEnvelope({
-      kind: 'page',
-      html: '<h1>Example</h1>',
-      title: 'Example - Rouault',
-      metaDescription: 'description',
-      shell: {
-        header: {
-          breadcrumbs: [{ label: 'Top', href: '/' }],
-          corpora: [],
-          currentCorpusKey: 'all',
-          noteLayout: false,
-          sidebarEnabled: false,
-          tocPresence: 'absent',
-        },
-        sidebar: null,
-      },
-      announcedTitle: 'Example',
-    });
-
-    expect(envelope).to.deep.equal({
-      schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
-      buildId: undefined,
-      generatedAt: undefined,
-      document: {
-        html: '<h1>Example</h1>',
-        title: 'Example - Rouault',
-        description: 'description',
-        renderedKind: 'page',
-        announcedTitle: 'Example',
-      },
-      shellProjection: {
-        header: {
-          breadcrumbs: [{ label: 'Top', href: '/' }],
-          corpora: [],
-          currentCorpusKey: 'all',
-          noteLayout: false,
-          sidebarEnabled: false,
-          tocPresence: 'absent',
-        },
-        sidebar: null,
-      },
-      hydrationPlan: null,
-    });
-  });
-
   it('schemaVersion と最小構造が正しい envelope を受理すること', () => {
     const envelope = validateNavigationEnvelope({
       schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,

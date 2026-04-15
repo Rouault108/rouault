@@ -5,7 +5,6 @@ Rouault の router は document-first を前提にします。ここでいう文
 ## 必須契約
 
 - 遷移対象文書は `main#main-content` を持たなければなりません。
-- `DocumentSnapshotFactory` は `main#main-content` のみを受理します。
 - `app-router` は light DOM で動作し、本文更新先は常に `#main-content` です。
 - `app-router` は `data-app-router-announcement` を持つ announcement region を 1 つだけ持たなければなりません。
 - `app-router:content-rendered` は本文差し替え完了後に発火し、`detail.contentRoot` に現在の本文 root を含めます。
@@ -20,4 +19,4 @@ Rouault の router は document-first を前提にします。ここでいう文
 
 - `BaseLayout` は `app-router > [data-app-router-announcement]` と `app-router > main#main-content` を SSR で出力します。
 - `AppRouter` は SSR 初期本文と遷移後本文の双方を同じ `main#main-content` に反映します。
-- fetch 経由で取得した HTML は `DocumentSnapshotFactory` で `DocumentSnapshot` へ正規化し、`main#main-content` が存在しない場合は not-found ではなく error として扱います。
+- fetch 経由では router artifact の `NavigationEnvelope` を取得し、build 側で固定された本文契約をそのまま commit します。

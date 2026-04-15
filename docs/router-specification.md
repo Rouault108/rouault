@@ -92,10 +92,6 @@ feature-local URL state の意味論、復元、履歴更新、`popstate` 再同
 
 router が反映対象として扱う統一遷移表現です。route 経路でも fetch 経路でも最終的にこの形へ正規化します。
 
-### DocumentSnapshot
-
-互換フェーズでのみ使用する legacy 文書表現です。document route などが旧契約を返す場合、router 入口で `NavigationEnvelope` へ変換します。
-
 ### NavigationOutcome
 
 個々の遷移要求の結果です。`completed` / `cancelled` / `superseded` / `failed` を取ります。
@@ -115,7 +111,7 @@ router が反映対象として扱う統一遷移表現です。route 経路で�
 | Navigation Runner      | 1 回の遷移実行、outcome 確定、イベント通知                                        |
 | Before Navigate Hooks  | 遷移前フック登録・実行                                                            |
 | Route Registry         | document route 登録とマッチング                                                   |
-| Content Loader         | fetch / route 実行と `NavigationEnvelope` 正規化                                  |
+| Content Loader         | fetch / route 実行と `NavigationEnvelope` 決定                                    |
 | Content Committer      | title / meta description / content / shell / history の durable commit を担当する |
 | Shell Adapter          | shell projection の 2 相 commit 統合を担う任意 adapter                            |
 | URL State Policy       | state-only navigation 判定を担う任意統合                                          |
@@ -450,58 +446,22 @@ interface DocumentShellSnapshot {
   header: HeaderShellSnapshot;
 }
 
-type ErrorSnapshotReason =
-  | 'auth'
-  | 'forbidden'
-  | 'timeout'
-  | 'network'
-  | 'server'
-  | 'service-unavailable'
-  | 'unexpected';
-
-type DocumentSnapshot =
-  | {
-      kind: 'page';
-      html: string;
-      title: string;
-      metaDescription: string | null;
-      shell?: DocumentShellSnapshot | null;
-      announcedTitle?: string | null;
-    }
-  | {
-      kind: 'not-found';
-      html: string;
-      title: string;
-      metaDescription: string;
-      shell?: DocumentShellSnapshot | null;
-      announcedTitle?: string | null;
-    }
-  | {
-      kind: 'error';
-      reason: ErrorSnapshotReason;
-      statusCode?: number;
-      html: string;
-      title: string;
-      metaDescription: string;
-      shell?: DocumentShellSnapshot | null;
-      announcedTitle?: string | null;
-    };
-
 type DocumentRouteHandler = (
   context: DocumentRouteContext,
-) => DocumentSnapshot | Promise<DocumentSnapshot>;
+) => NavigationEnvelope | Promise<NavigationEnvelope>;
 ```
 
 #### 契約
 
-- `handler` は `DocumentSnapshot` を返します。
+- `handler` は `NavigationEnvelope` を返します。
 - `handler` は `url` / `normalizedUrl` / `pathname` / `searchParams` / `hash` / `signal` を受け取ります。
 - route 経路でも fetch 経路と同一の durable commit 規則を適用します。
 - `handler` へ渡す `searchParams` は **防御的コピー** です。mutation は router 内部状態へ影響しません。
 - `handler` は `AbortSignal` を尊重すべきです。
-- `shell` は **任意** とします。router core は `shell` の不在を失敗理由として扱ってはなりません。
-- `shell` を返す場合、`DocumentShellSnapshot` は **閉じた意味モデル** とし、任意属性 bag や `Record<string, unknown>` として拡張してはなりません。
-- `shell` の拡張は、将来必要になったときに明示的なサブ snapshot 追加として行います。既存フィールドの意味変更や型変更は認めません。
+- `NavigationEnvelope.shellProjection` は **任意** とします。router core はその不在を失敗理由として扱ってはなりません。
+- `shellProjection` を返す場合、`DocumentShellSnapshot` は **閉じた意味モデル** とし、任意属性 bag や `Record<string, unknown>` として拡張してはなりません。
+- `shellProjection` の拡張は、将来必要になったときに明示的なサブ snapshot 追加として行います。既存フィールドの意味変更や型変更は認めません。
+- `NavigationEnvelope.document.renderedKind` は `page` / `not-found` / `error` のいずれかでなければなりません。
 
 ### `addDocumentRoute()` の呼び出し時期
 
@@ -511,37 +471,7 @@ type DocumentRouteHandler = (
 - 実行中 navigation の route 解決結果へ後から影響を与えてはなりません。
 - `destroy()` 後の `addDocumentRoute()` は `RouterDestroyedError` を同期送出してよい API です。
 
-### `DocumentSnapshot.kind` ごとの必須差分
-
-#### `kind: 'page'`
-
-- 正常に解決された文書本文を表します。
-- 404 画面、権限エラー画面、通信失敗画面を `page` として返してはなりません。
-- `metaDescription` は `null` を許容します。
-- `html` は遷移先本文そのものを表し、エラー代替 UI であってはなりません。
-
-#### `kind: 'not-found'`
-
-- 文書が存在しない、または `<main>` を含む有効文書として解決できないことを表します。
-- `404`、route 未一致、`<main>` 欠落は `not-found` を返します。
-- `metaDescription` は必須です。`null` は認めません。
-- `html` は not-found 専用 UI を表し、通常文書本文として再利用してはなりません。
-
-#### `kind: 'error'`
-
-- `not-found` 以外の異常系を表します。
-- `reason` は必須です。
-- `401`、`403`、`500`、`503`、timeout、network error、unexpected exception は `error` を返します。
-- `metaDescription` は必須です。`null` は認めません。
-- `html` は error 専用 UI を表し、通常文書本文や not-found UI と混用してはなりません。
-
-### `kind` の選択規則
-
-- 正常文書なら `page`
-- 存在しない、または本文として成立しないなら `not-found`
-- それ以外の異常は `error`
-
-`NavigationResult.outcome` は `kind` ではなく **commit 成否** により決まります。したがって `not-found` / `error` snapshot であっても、正常に commit できた場合は `outcome = 'completed'` です。
+`NavigationResult.outcome` は `renderedKind` ではなく **commit 成否** により決まります。したがって `not-found` / `error` envelope であっても、正常に commit できた場合は `outcome = 'completed'` です。
 
 ## 補助 API
 
@@ -653,11 +583,10 @@ router は `history.state` に次を保存します。
 ### 解決順序
 
 1. `addDocumentRoute()` 登録ルートを試行する
-2. 一致すれば `DocumentSnapshot` を採用する
-3. 一致しなければ fetch して HTML を取得する
-4. HTML から `<main>`、`title`、`meta[name="description"]`、shell 同期情報を抽出する
-5. 抽出結果を `DocumentSnapshot` へ正規化する
-6. `<main>` を得られなければ `not-found` snapshot とする
+2. 一致すればその `NavigationEnvelope` を採用する
+3. 一致しなければ fetch して `index.router.json` を取得する
+4. JSON を decode / validate して `NavigationEnvelope` を得る
+5. 不正な payload や build 不整合は `error` envelope へ縮退する
 
 ### pattern 契約
 
@@ -676,7 +605,7 @@ fetch 成功時は `index.router.json` を decode / validate し、`NavigationEn
 - fetch 経路は HTML parse fallback を持ちません。
 - router core は fetched HTML から shell を抽出してはなりません。
 - shell は `NavigationEnvelope.shellProjection` だけを commit 入力として扱います。
-- SSR HTML が持つ current buildId と fetched envelope の `buildId` が不一致な場合、router は error snapshot へ縮退し、取得した envelope を正規経路として commit してはなりません。
+- SSR HTML が持つ current buildId と fetched envelope の `buildId` が不一致な場合、router は `error` envelope へ縮退し、取得した envelope を正規経路として commit してはなりません。
 
 ### 開発サーバーにおける router artifact 契約
 
@@ -690,20 +619,20 @@ fetch 成功時は `index.router.json` を decode / validate し、`NavigationEn
 
 | 事象                          | kind        | reason                | 変換先                      |
 | ----------------------------- | ----------- | --------------------- | --------------------------- |
-| `401`                         | `error`     | `auth`                | 認証エラー snapshot         |
-| `403`                         | `error`     | `forbidden`           | 権限エラー snapshot         |
-| `404`                         | `not-found` | なし                  | not-found snapshot          |
-| `500`                         | `error`     | `server`              | サーバーエラー snapshot     |
-| `503`                         | `error`     | `service-unavailable` | サービス利用不可 snapshot   |
-| `AbortError` / `TimeoutError` | `error`     | `timeout`             | タイムアウト snapshot       |
-| `fetch` を含む `TypeError`    | `error`     | `network`             | ネットワークエラー snapshot |
-| その他                        | `error`     | `unexpected`          | 汎用エラー snapshot         |
+| `401`                         | `error`     | `auth`                | 認証エラー envelope         |
+| `403`                         | `error`     | `forbidden`           | 権限エラー envelope         |
+| `404`                         | `not-found` | なし                  | not-found envelope          |
+| `500`                         | `error`     | `server`              | サーバーエラー envelope     |
+| `503`                         | `error`     | `service-unavailable` | サービス利用不可 envelope   |
+| `AbortError` / `TimeoutError` | `error`     | `timeout`             | タイムアウト envelope       |
+| `fetch` を含む `TypeError`    | `error`     | `network`             | ネットワークエラー envelope |
+| その他                        | `error`     | `unexpected`          | 汎用エラー envelope         |
 
 #### 契約
 
-- 表示可能な `error` snapshot または `not-found` snapshot を組み立てられた場合、遷移 `outcome` は `completed` とします。
+- 表示可能な `error` envelope または `not-found` envelope を組み立てられた場合、遷移 `outcome` は `completed` とします。
 - このとき、異常原因が存在するなら `NavigationResult.error` と `NavigationResult.errorReason` を設定すべきです。
-- snapshot 自体の生成、あるいは durable commit ができなかった場合のみ `failed` とします。
+- envelope 自体の生成、あるいは durable commit ができなかった場合のみ `failed` とします。
 
 ## コミット仕様
 
@@ -719,7 +648,7 @@ router における **durable commit point** は、次が整合した状態と�
 
 ### commit の段階
 
-1. `DocumentSnapshot` を確定する
+1. `NavigationEnvelope` を確定する
 2. 必要であれば `contentAdapter.prepare()` を行う
 3. 必要であれば `shellAdapter.prepare()` を行う
 4. title / meta description / content / shell / history を durable commit する
@@ -948,10 +877,10 @@ router は、**異なる要求どうしの完全な全順序** を公開契約�
 - `destroy()` 後の `navigate()` は `RouterDestroyedError` を含む失敗結果を返し、副作用を起こさない
 - `start()` 前の `navigate()` は `RouterNotStartedError` を含む失敗結果を返し、副作用を起こさない
 - `skipInitialNavigation: true` のとき、`start()` は初回 fetch を行わない
-- route 経路と fetch 経路は commit 直前に同一 `DocumentSnapshot` へ正規化される
+- route 経路と fetch 経路は commit 直前に同一 `NavigationEnvelope` として扱われる
 - `BeforeNavigateHook` は同期・非同期のどちらでもよい
 - `BeforeNavigateHook` の `false` は `cancelled`、例外または reject は `failed` を意味する
-- `DocumentSnapshot.kind` は `page` / `not-found` / `error` のいずれか 1 つに一意に分類される
+- `NavigationEnvelope.document.renderedKind` は `page` / `not-found` / `error` のいずれか 1 つに一意に分類される
 - `NavigationResult.renderedKind` は commit された表示種別を表し、`outcome` と同義ではない
 - `completed` と `committed = true` は常に同時に成立する
 - `cancelled` / `superseded` / `failed` では `committed = false` である

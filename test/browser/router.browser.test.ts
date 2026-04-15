@@ -1,5 +1,8 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
-import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
+import {
+  NAVIGATION_ENVELOPE_SCHEMA_VERSION,
+  type NavigationEnvelope,
+} from '../../shared/navigation/navigation-envelope.js';
 import {
   Router,
   RouterDestroyedError,
@@ -262,12 +265,18 @@ describe('Router', () => {
       searchParams.append('tag', 'mutated');
 
       return {
-        kind: 'page',
-        html: `<section><h1>From Handler</h1><p>${normalizedUrl}</p></section>`,
-        title: 'Virtual - Rouault',
-        metaDescription: 'virtual route',
-        shell: null,
-      };
+        schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
+        buildId: null,
+        generatedAt: null,
+        document: {
+          html: `<section><h1>From Handler</h1><p>${normalizedUrl}</p></section>`,
+          title: 'Virtual - Rouault',
+          description: 'virtual route',
+          renderedKind: 'page',
+        },
+        shellProjection: null,
+        hydrationPlan: null,
+      } satisfies NavigationEnvelope;
     });
 
     await router.start();

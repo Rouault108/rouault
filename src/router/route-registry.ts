@@ -1,9 +1,5 @@
-import type {
-  DocumentRouteContext,
-  DocumentRouteHandler,
-  DocumentSnapshot,
-  RoutePattern,
-} from './router-types.js';
+import type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
+import type { DocumentRouteContext, DocumentRouteHandler, RoutePattern } from './router-types.js';
 
 interface RouteDefinition {
   pattern: RoutePattern;
@@ -17,7 +13,7 @@ export class RouteRegistry {
     this.routes.push({ pattern, handler });
   }
 
-  async execute(context: DocumentRouteContext): Promise<DocumentSnapshot | null> {
+  async execute(context: DocumentRouteContext): Promise<NavigationEnvelope | null> {
     for (const route of this.routes) {
       if (!this.matches(route.pattern, context.pathname)) {
         continue;

@@ -1,6 +1,5 @@
 import { HtmlDocumentFetcher } from './html-document-fetcher.js';
-import { documentSnapshotToEnvelope } from './document-snapshot-to-envelope.js';
-import { ErrorSnapshotFactory } from './error-snapshot-factory.js';
+import { ErrorEnvelopeFactory } from './error-envelope-factory.js';
 import { LocationAdapter } from './location-adapter.js';
 import {
   NavigationEnvelopeBuildMismatchError,
@@ -12,7 +11,7 @@ import type { DocumentRouteContext, LoadDocumentResult } from './router-types.js
 
 export class DocumentLoader {
   private readonly fetcher = new HtmlDocumentFetcher();
-  private readonly errorSnapshotFactory = new ErrorSnapshotFactory();
+  private readonly errorEnvelopeFactory = new ErrorEnvelopeFactory();
 
   constructor(
     private readonly routeRegistry: RouteRegistry,
@@ -24,12 +23,11 @@ export class DocumentLoader {
     signal: AbortSignal,
   ): Promise<LoadDocumentResult> {
     const routeContext = this.createRouteContext(normalizedUrl, signal);
-    const routeSnapshot = await this.routeRegistry.execute(routeContext);
-    if (routeSnapshot !== null) {
+    const routeEnvelope = await this.routeRegistry.execute(routeContext);
+    if (routeEnvelope !== null) {
       return {
-        envelope: documentSnapshotToEnvelope(routeSnapshot),
+        envelope: routeEnvelope,
         source: 'document-route',
-        errorReason: routeSnapshot.kind === 'error' ? routeSnapshot.reason : undefined,
       };
     }
 
@@ -44,15 +42,15 @@ export class DocumentLoader {
           source: 'fetch',
         };
       } catch (error) {
-        return this.errorSnapshotFactory.createExceptionResult(error);
+        return this.errorEnvelopeFactory.createExceptionResult(error);
       }
     }
 
-    return this.errorSnapshotFactory.createHttpErrorResult(snapshotResponse.status, normalizedUrl);
+    return this.errorEnvelopeFactory.createHttpErrorResult(snapshotResponse.status, normalizedUrl);
   }
 
   createExceptionResult(error: unknown): LoadDocumentResult {
-    return this.errorSnapshotFactory.createExceptionResult(error);
+    return this.errorEnvelopeFactory.createExceptionResult(error);
   }
 
   private createRouteContext(normalizedUrl: string, signal: AbortSignal): DocumentRouteContext {

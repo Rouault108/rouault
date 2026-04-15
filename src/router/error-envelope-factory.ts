@@ -3,17 +3,15 @@ import {
   NOT_FOUND_PAGE_META_DESCRIPTION,
   NOT_FOUND_PAGE_TITLE,
 } from '../components/not-found/not-found-page.js';
-import type {
-  DocumentSnapshot,
-  LoadDocumentResult,
-  NavigationErrorReason,
-} from './router-types.js';
-import { DocumentContractViolationError } from './document-snapshot-factory.js';
+import {
+  NAVIGATION_ENVELOPE_SCHEMA_VERSION,
+  type NavigationEnvelope,
+} from '../../shared/navigation/navigation-envelope.js';
+import type { LoadDocumentResult, NavigationErrorReason } from './router-types.js';
 import {
   NavigationEnvelopeBuildMismatchError,
   NavigationEnvelopeContractError,
 } from './navigation-envelope-errors.js';
-import { documentSnapshotToEnvelope } from './document-snapshot-to-envelope.js';
 
 const SITE_TITLE = 'Rouault';
 
@@ -25,7 +23,16 @@ const buildDocumentTitle = (pageTitle: string): string => {
   return normalized.length > 0 ? `${normalized} - ${SITE_TITLE}` : SITE_TITLE;
 };
 
-export class ErrorSnapshotFactory {
+const createEnvelope = (document: NavigationEnvelope['document']): NavigationEnvelope => ({
+  schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
+  buildId: undefined,
+  generatedAt: undefined,
+  document,
+  shellProjection: null,
+  hydrationPlan: null,
+});
+
+export class ErrorEnvelopeFactory {
   createHttpErrorResult(status: number, normalizedUrl: string): LoadDocumentResult {
     switch (status) {
       case 401:
@@ -84,16 +91,6 @@ export class ErrorSnapshotFactory {
       );
     }
 
-    if (error instanceof DocumentContractViolationError) {
-      return this.createErrorResult(
-        '文書契約エラー',
-        'ページ構造が router の文書契約を満たしていません。',
-        'unexpected',
-        undefined,
-        error,
-      );
-    }
-
     if (error instanceof NavigationEnvelopeBuildMismatchError) {
       return this.createErrorResult(
         'ビルド不整合',
@@ -124,23 +121,17 @@ export class ErrorSnapshotFactory {
   }
 
   private createNotFoundResult(normalizedUrl: string): LoadDocumentResult {
-    const snapshot = this.createNotFoundSnapshot(normalizedUrl);
     return {
-      envelope: documentSnapshotToEnvelope(snapshot),
-      source: 'fetch',
-    };
-  }
-
-  private createNotFoundSnapshot(normalizedUrl: string): DocumentSnapshot {
-    return {
-      kind: 'not-found',
-      title: buildDocumentTitle(NOT_FOUND_PAGE_TITLE),
-      metaDescription: NOT_FOUND_PAGE_META_DESCRIPTION,
-      html: buildNotFoundPageMarkup({
-        requestedPath: normalizedUrl,
+      envelope: createEnvelope({
+        html: buildNotFoundPageMarkup({
+          requestedPath: normalizedUrl,
+        }),
+        title: buildDocumentTitle(NOT_FOUND_PAGE_TITLE),
+        description: NOT_FOUND_PAGE_META_DESCRIPTION,
+        renderedKind: 'not-found',
+        announcedTitle: NOT_FOUND_PAGE_TITLE,
       }),
-      shell: null,
-      announcedTitle: NOT_FOUND_PAGE_TITLE,
+      source: 'fetch',
     };
   }
 
@@ -148,27 +139,22 @@ export class ErrorSnapshotFactory {
     title: string,
     message: string,
     reason: Exclude<NavigationErrorReason, 'destroyed' | 'not-started'>,
-    statusCode?: number,
+    _statusCode?: number,
     error?: Error,
   ): LoadDocumentResult {
-    const snapshot: DocumentSnapshot = {
-      kind: 'error',
-      reason,
-      statusCode,
-      title: buildDocumentTitle(title),
-      metaDescription: message,
-      html: `
+    return {
+      envelope: createEnvelope({
+        html: `
           <div class="error-page" role="alert" aria-live="assertive">
             <h1>${escapeHtml(title)}</h1>
             <p>${escapeHtml(message)}</p>
           </div>
         `.trim(),
-      shell: null,
-      announcedTitle: title,
-    };
-
-    return {
-      envelope: documentSnapshotToEnvelope(snapshot),
+        title: buildDocumentTitle(title),
+        description: message,
+        renderedKind: 'error',
+        announcedTitle: title,
+      }),
       source: 'fetch',
       error,
       errorReason: reason,

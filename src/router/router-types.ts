@@ -138,45 +138,6 @@ export interface DocumentRouteContext {
   signal: AbortSignal;
 }
 
-export type ErrorSnapshotReason =
-  | 'auth'
-  | 'forbidden'
-  | 'timeout'
-  | 'network'
-  | 'server'
-  | 'service-unavailable'
-  | 'unexpected';
-
-export type DocumentSnapshot =
-  | {
-      kind: 'page';
-      html: string;
-      title: string;
-      metaDescription: string | null;
-      shell?: DocumentShellSnapshot | null | undefined;
-      announcedTitle?: string | null | undefined;
-    }
-  | {
-      kind: 'not-found';
-      html: string;
-      title: string;
-      metaDescription: string;
-      shell?: DocumentShellSnapshot | null | undefined;
-      announcedTitle?: string | null | undefined;
-    }
-  | {
-      kind: 'error';
-      reason: ErrorSnapshotReason;
-      statusCode?: number | undefined;
-      html: string;
-      title: string;
-      metaDescription: string;
-      shell?: DocumentShellSnapshot | null | undefined;
-      announcedTitle?: string | null | undefined;
-    };
-
-export type LegacyDocumentSnapshot = DocumentSnapshot;
-
 export type RouterDocumentRenderSnapshot = DocumentRenderSnapshot;
 
 export type RouterHydrationPlan = HydrationPlan;
@@ -185,7 +146,7 @@ export type RoutePattern = string | RegExp;
 
 export type DocumentRouteHandler = (
   context: DocumentRouteContext,
-) => DocumentSnapshot | Promise<DocumentSnapshot>;
+) => NavigationEnvelope | Promise<NavigationEnvelope>;
 
 export interface BeforeNavigateContext {
   currentUrl: string;
