@@ -26,6 +26,30 @@ const withStubbedWindow = (run: () => void): void => {
   }
 };
 
+const withStubbedHistory = (state: unknown, run: () => void): void => {
+  const originalHistory = globalThis.history;
+
+  Object.defineProperty(globalThis, 'history', {
+    configurable: true,
+    value: {
+      state,
+    } satisfies Pick<History, 'state'>,
+  });
+
+  try {
+    run();
+  } finally {
+    if (originalHistory === undefined) {
+      Reflect.deleteProperty(globalThis, 'history');
+    } else {
+      Object.defineProperty(globalThis, 'history', {
+        configurable: true,
+        value: originalHistory,
+      });
+    }
+  }
+};
+
 describe('LocationAdapter', () => {
   it('pathname 正規化を UrlPolicy に委譲すること', () => {
     let receivedPathname: string | null = null;
@@ -121,6 +145,62 @@ describe('LocationAdapter', () => {
         '/__router/notes/example/index.router.json?tab=overview',
       );
       expect(adapter.resolveSnapshotUrl('/')).to.equal('/__router/index.router.json');
+    });
+  });
+
+  it('createHistoryState() は __routerUrl だけを書き込むこと', () => {
+    const policy: UrlPolicy = {
+      normalizePathname(pathname) {
+        return pathname;
+      },
+      sanitizeSearchParams() {
+        // no-op
+      },
+      resolveContentPath(pathname) {
+        return pathname;
+      },
+    };
+
+    const adapter = new LocationAdapter(policy);
+
+    withStubbedWindow(() => {
+      expect(
+        adapter.createHistoryState({ custom: 'value' }, '/notes/example?tab=overview#heading'),
+      ).to.deep.equal({
+        custom: 'value',
+        __routerUrl: '/notes/example?tab=overview#heading',
+      });
+    });
+  });
+
+  it('readCurrentUrl() は __routerPath のみの旧 state も暫定互換として読めること', () => {
+    const policy: UrlPolicy = {
+      normalizePathname(pathname) {
+        return pathname;
+      },
+      sanitizeSearchParams() {
+        // no-op
+      },
+      resolveContentPath(pathname) {
+        return pathname;
+      },
+    };
+
+    const adapter = new LocationAdapter(policy);
+
+    withStubbedWindow(() => {
+      Object.defineProperty(globalThis, 'window', {
+        configurable: true,
+        value: {
+          location: new URL(
+            'https://example.com/current?tab=overview#details',
+          ) as unknown as Location,
+        } satisfies Pick<Window, 'location'>,
+      });
+
+      withStubbedHistory({ __routerPath: '/notes/example' }, () => {
+        expect(adapter.readCurrentUrl()).to.equal('/notes/example?tab=overview#details');
+      });
     });
   });
 });

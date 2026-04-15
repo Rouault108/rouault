@@ -98,7 +98,6 @@ describe('app-router', () => {
       mockHistoryState = {
         ...(data && typeof data === 'object' ? data : {}),
         __routerUrl: `${target.pathname}${target.search}${target.hash}`,
-        __routerPath: target.pathname,
       };
     }) as typeof history.pushState;
 
@@ -111,7 +110,6 @@ describe('app-router', () => {
       mockHistoryState = {
         ...(data && typeof data === 'object' ? data : {}),
         __routerUrl: `${target.pathname}${target.search}${target.hash}`,
-        __routerPath: target.pathname,
       };
     }) as typeof history.replaceState;
 

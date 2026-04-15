@@ -111,7 +111,6 @@ describe('Router', () => {
       mockHistoryState = {
         ...(data && typeof data === 'object' ? data : {}),
         __routerUrl: `${target.pathname}${target.search}${target.hash}`,
-        __routerPath: target.pathname,
       };
     }) as typeof history.pushState;
 
@@ -124,7 +123,6 @@ describe('Router', () => {
       mockHistoryState = {
         ...(data && typeof data === 'object' ? data : {}),
         __routerUrl: `${target.pathname}${target.search}${target.hash}`,
-        __routerPath: target.pathname,
       };
     }) as typeof history.replaceState;
 
@@ -512,6 +510,20 @@ describe('Router', () => {
       renderedKind: null,
     });
     expect(postCommitContext?.outlet).to.equal(outlet);
+  });
+
+  it('新規履歴書込みは __routerUrl のみに統一し、__routerPath は含めないこと', async () => {
+    router = new Router(outlet, { skipInitialNavigation: true });
+    await router.start();
+
+    await router.navigate({
+      url: '/history-write-only?tab=details',
+      historyMode: 'push',
+    });
+
+    expect(mockHistoryState).to.deep.equal({
+      __routerUrl: '/history-write-only?tab=details',
+    });
   });
 
   it('navigation:busy-change は full navigation の開始と終了でだけ発火すること', async () => {

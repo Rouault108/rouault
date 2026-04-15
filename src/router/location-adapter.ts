@@ -25,6 +25,7 @@ export class LocationAdapter {
         return this.normalizeUrl(historyUrl);
       }
 
+      // 既存タブの履歴を壊さないため、read 側だけ暫定互換を残します。
       const historyPath = currentState['__routerPath'];
       if (typeof historyPath === 'string' && historyPath.length > 0) {
         const resolved = this.toUrl();
@@ -48,7 +49,6 @@ export class LocationAdapter {
     return {
       ...currentState,
       __routerUrl: `${parsed.pathname}${parsed.search}${parsed.hash}`,
-      __routerPath: parsed.pathname,
     };
   }
 

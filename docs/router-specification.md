@@ -643,11 +643,10 @@ getCurrentPath(): string
 router は `history.state` に次を保存します。
 
 - `__routerUrl`: 正規化済み navigation URL
-- `__routerPath`: pathname
 
 この state shape は router core の所有物であり、feature-local な URL 同期ヘルパーは新しい router key を合成してはなりません。ヘルパーは既存の `history.state` を opaque に再利用するか、router 経由の API に委譲します。
 
-`readCurrentUrl()` は、まず `history.state` を参照し、なければ `window.location` から組み立てます。
+`readCurrentUrl()` は、まず `history.state.__routerUrl` を参照し、移行期互換として `__routerPath` のみを読む fallback を持ちます。どちらも無ければ `window.location` から組み立てます。
 
 ## ルート解決
 

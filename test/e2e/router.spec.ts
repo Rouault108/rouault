@@ -276,7 +276,7 @@ test.describe('Router Navigation', () => {
 
     const state = await page.evaluate(() => history.state as Record<string, unknown> | null);
     expect(state?.['__routerUrl']).toBe('/notes/testing/interactive?tab=rust');
-    expect(state?.['__routerPath']).toBe('/notes/testing/interactive');
+    expect(state?.['__routerPath']).toBeUndefined();
     await expectInteractiveCanaryContent(page);
   });
 
