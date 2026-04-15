@@ -164,9 +164,9 @@ describe('layout-header browser contract', () => {
     expect(uiHeader.sidebarExpanded).to.equal(false);
   });
 
-  it('desktop の note-layout では center zone が note 専用の左右 reserve 幅を使うこと', async () => {
+  it('desktop の note-layout では sidebar-main gap を含む start reserve と TOC reserve を使うこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
-      <div style="inline-size: 1440px;">
+      <div style="inline-size: 1440px; --note-sidebar-main-gap: 32px;">
         <layout-header note-layout sidebar-enabled toc-presence="present"></layout-header>
       </div>
     `);
@@ -187,13 +187,13 @@ describe('layout-header browser contract', () => {
     );
 
     const styles = getComputedStyle(zoneCenter);
-    expect(styles.left).to.equal('248px');
+    expect(styles.left).to.equal('280px');
     expect(styles.right).to.equal('248px');
   });
 
-  it('toc-presence=absent の note-layout では right reserve を 0px にすること', async () => {
+  it('toc-presence=absent の note-layout でも desktop では sidebar-main gap を含む note reserve を維持すること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
-      <div style="inline-size: 1440px;">
+      <div style="inline-size: 1440px; --note-sidebar-main-gap: 32px;">
         <layout-header note-layout sidebar-enabled toc-presence="absent"></layout-header>
       </div>
     `);
@@ -214,7 +214,33 @@ describe('layout-header browser contract', () => {
     );
 
     const styles = getComputedStyle(zoneCenter);
-    expect(styles.left).to.equal('248px');
+    expect(styles.left).to.equal('280px');
+    expect(styles.right).to.equal('248px');
+  });
+
+  it('toc-presence=absent の note-layout でも mobile では right reserve を解除すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 375px;">
+        <layout-header note-layout sidebar-enabled toc-presence="absent"></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
+    await waitForLitUpdate(header);
+
+    const uiHeader = expectPresent(
+      header.shadowRoot?.querySelector<UiHeader>('ui-header'),
+      'uiHeader',
+    );
+    const zoneCenter = expectPresent(
+      uiHeader.shadowRoot?.querySelector<HTMLElement>('.zone-center'),
+      'zoneCenter',
+    );
+
+    const styles = getComputedStyle(zoneCenter);
     expect(styles.right).to.equal('0px');
   });
 

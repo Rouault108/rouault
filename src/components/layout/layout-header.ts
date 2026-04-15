@@ -112,7 +112,7 @@ export class LayoutHeader extends LitElement {
       --ui-header-max-inline-size-with-sidebar: var(--ui-header-max-inline-size);
     }
 
-    :host([note-layout][toc-presence='present']) ui-header {
+    :host([note-layout]) ui-header {
       --ui-header-center-end-inset: clamp(
         184px,
         24vw,
@@ -122,10 +122,6 @@ export class LayoutHeader extends LitElement {
 
     :host([sidebar-enabled]) ui-header {
       --ui-header-center-start-inset: 44px;
-    }
-
-    :host([note-layout][toc-presence='absent']) ui-header {
-      --ui-header-center-end-inset: 0px;
     }
 
     :host([note-layout][sidebar-enabled]) ui-header {
@@ -198,14 +194,16 @@ export class LayoutHeader extends LitElement {
     }
 
     @container layout-header-shell (min-width: 1024px) {
-      :host([note-layout][toc-presence='present']) ui-header {
+      :host([note-layout]) ui-header {
         --ui-header-center-end-inset: calc(
           var(--note-toc-width, 216px) + var(--note-shell-column-gap, var(--space-8, 32px))
         );
       }
 
       :host([sidebar-enabled]) ui-header {
-        --ui-header-center-start-inset: var(--note-sidebar-width, 248px);
+        --ui-header-center-start-inset: calc(
+          var(--note-sidebar-width, 248px) + var(--note-sidebar-main-gap, 0px)
+        );
       }
 
       :host([note-layout][sidebar-enabled]) .corpus-switcher {
@@ -218,6 +216,10 @@ export class LayoutHeader extends LitElement {
     }
 
     @container layout-header-shell (max-width: 639px) {
+      :host([note-layout]) ui-header {
+        --ui-header-center-end-inset: 0px;
+      }
+
       .corpus-trigger-text {
         max-inline-size: min(9rem, 42vw);
       }

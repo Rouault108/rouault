@@ -1669,6 +1669,7 @@ ui-list-item > [slot]:not([slot='actions']) a[href]:visited {
  * =========================================================================== */
 
 .app-root {
+  --note-sidebar-main-gap: clamp(24px, 2vw, 40px);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -1684,6 +1685,7 @@ app-router {
 app-router[data-sidebar-presence='present'] {
   width: min(100%, var(--note-fixed-frame-max-width, 1440px));
   margin-inline: auto;
+  column-gap: var(--note-sidebar-main-gap, 0px);
   grid-template-columns:
     var(--note-sidebar-width, var(--sidebar-width))
     minmax(0, 1fr);
@@ -1704,14 +1706,18 @@ app-router[data-sidebar-presence='absent'] {
   width: 100%;
 }
 
-.note-shell[data-toc-presence='present'] {
+/*
+ * TOC の有無で note frame の外形を変えない。
+ * absent でも desktop / tablet では TOC 分の終端 reserve を残し、
+ * 本文列の左端を present ページと一致させる。
+ *
+ * TOC host 自体は SSR で出力しないため、空の aside は生成されない。
+ */
+.note-shell[data-toc-presence='present'],
+.note-shell[data-toc-presence='absent'] {
   grid-template-columns:
     minmax(0, 1fr)
     var(--note-toc-track);
-}
-
-.note-shell[data-toc-presence='absent'] {
-  grid-template-columns: minmax(0, 1fr);
 }
 
 .note-shell .container-reading {
@@ -1733,13 +1739,6 @@ app-router[data-sidebar-presence='absent'] {
   width: 100%;
 }
 
-.layout-sidebar-col,
-.layout-main-col,
-.layout-toc-col {
-  box-sizing: border-box;
-  min-inline-size: 0;
-}
-
 app-router[data-sidebar-presence='present'] .layout-sidebar-col {
   grid-column: 1;
 }
@@ -1750,6 +1749,17 @@ app-router[data-sidebar-presence='present'] > main#main-content {
 
 app-router[data-sidebar-presence='absent'] > main#main-content {
   grid-column: 1;
+}
+
+.layout-main-col {
+  padding-block: var(--space-8);
+}
+
+.layout-sidebar-col,
+.layout-main-col,
+.layout-toc-col {
+  box-sizing: border-box;
+  min-inline-size: 0;
 }
 
 .note-shell .layout-main-col {
@@ -1893,10 +1903,6 @@ layout-sidebar [data-sidebar-nav] [data-sidebar-nav-control]:focus-visible {
   layout-sidebar [data-sidebar-nav] [data-sidebar-nav-disclosure] {
     transition-duration: 0.01ms;
   }
-}
-
-.layout-main-col {
-  padding-block: var(--space-8);
 }
 
 .layout-toc-col {
@@ -2182,12 +2188,14 @@ layout-sidebar [data-sidebar-nav] [data-sidebar-nav-control]:focus-visible {
 
 @media (max-width: 1023px) {
   app-router[data-sidebar-presence='present'] {
+    column-gap: 0;
     grid-template-columns:
       0px
       minmax(0, 1fr);
   }
 
-  .note-shell[data-toc-presence='present'] {
+  .note-shell[data-toc-presence='present'],
+  .note-shell[data-toc-presence='absent'] {
     grid-template-columns:
       minmax(0, 1fr)
       minmax(200px, 34vw);
