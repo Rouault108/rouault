@@ -71,7 +71,7 @@ export const StatesAndSizes: Story = {
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
         <ui-button size="sm">Small</ui-button>
         <ui-button>Default</ui-button>
-        <ui-button size="lg">Large</ui-button>
+        <ui-button variant="primary">Primary emphasis</ui-button>
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
         <ui-button loading>保存中...</ui-button>

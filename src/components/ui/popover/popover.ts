@@ -247,10 +247,6 @@ export class UiPopover extends LitElement {
   @property({ type: Boolean, reflect: true })
   disabled = false;
 
-  // 互換維持用。公開契約には含めない。
-  @property({ type: Boolean, attribute: 'keep-link-fallback', reflect: true })
-  keepLinkFallback = false;
-
   @query('slot[name="trigger"]')
   private _triggerSlot?: HTMLSlotElement;
 
@@ -445,11 +441,6 @@ export class UiPopover extends LitElement {
       this._warn('opened と defaultOpened の同時指定は契約違反です。opened を優先します。');
     }
 
-    if (this.keepLinkFallback) {
-      this._warn(
-        'keep-link-fallback は互換維持用です。link fallback は semantic wrapper 側へ移行してください。',
-      );
-    }
   }
 
   private _warn(message: string): void {
@@ -958,14 +949,6 @@ export class UiPopover extends LitElement {
     const trigger = event.currentTarget;
     if (!(trigger instanceof HTMLElement)) return;
     if (!this._validateTrigger(trigger, 'trigger click')) return;
-
-    if (
-      this.keepLinkFallback &&
-      !this._supportsPopoverApi &&
-      trigger instanceof HTMLAnchorElement
-    ) {
-      return;
-    }
 
     event.preventDefault();
     this.toggleForTrigger(trigger);

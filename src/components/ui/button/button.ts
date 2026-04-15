@@ -4,7 +4,7 @@ import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-type ButtonSize = 'sm' | 'md' | 'lg';
+type ButtonSize = 'sm' | 'md';
 type ButtonType = 'button' | 'submit' | 'reset';
 type ButtonPressedState = boolean | undefined;
 
@@ -24,9 +24,6 @@ const pressedAttributeConverter = {
     return value ? '' : 'false';
   },
 };
-
-/** @deprecated size="lg" は非推奨です。デザインレビュー承認済みケースでのみ使用してください。 */
-export const BUTTON_SIZE_LG_DEPRECATED = 'lg' as const;
 
 interface IconOnlyA11yRequired {
   iconOnly: true;
@@ -220,20 +217,6 @@ export class Button extends LitElement {
 
     .size-md.icon-only {
       width: var(--control-height-md);
-      padding: 0;
-    }
-
-    /* Large (Deprecated) */
-    .size-lg {
-      --button-icon-size: var(--icon-md);
-      height: var(--control-height-lg);
-      padding: 0 var(--space-4);
-      font-size: var(--text-base);
-      gap: var(--space-2);
-    }
-
-    .size-lg.icon-only {
-      width: var(--control-height-lg);
       padding: 0;
     }
 
@@ -483,7 +466,7 @@ export class Button extends LitElement {
 
   /**
    * ボタンのサイズ
-   * @type {'sm' | 'md' | 'lg'}
+   * @type {'sm' | 'md'}
    * @default 'md'
    */
   @property({ type: String, reflect: true })
@@ -595,7 +578,6 @@ export class Button extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this._warnDeprecatedSizeUsage();
   }
 
   override willUpdate(changedProperties: PropertyValues<this>): void {
@@ -608,7 +590,7 @@ export class Button extends LitElement {
       this._warnUnsupportedAriaLabelUsage();
     }
     if (changedProperties.has('size')) {
-      this._warnDeprecatedSizeUsage();
+      this.size = this._normalizeSize(this.size);
     }
   }
 
@@ -720,19 +702,8 @@ export class Button extends LitElement {
     }
   }
 
-  /**
-   * 非推奨サイズの使用を開発時に警告
-   */
-  private _warnDeprecatedSizeUsage(): void {
-    if (!this._isDevelopment) {
-      return;
-    }
-
-    if (this.size === 'lg') {
-      console.warn(
-        '[ui-button]: size="lg" は非推奨です。デザインレビューなしでの使用を禁止します。md サイズに variant="primary" を組み合わせることを検討してください。',
-      );
-    }
+  private _normalizeSize(size: string): ButtonSize {
+    return size === 'sm' ? 'sm' : 'md';
   }
 
   override render() {

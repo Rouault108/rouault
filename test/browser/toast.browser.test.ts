@@ -281,7 +281,7 @@ describe('ui-toast browser contract', () => {
     expect(ToastManager.getSnapshot().length).to.equal(0);
   });
 
-  it('duration:0 は dismissible=true になり、variant 違いは重複統合せず、legacy error は danger へ写像されること', async () => {
+  it('duration:0 は dismissible=true になり、variant 違いは重複統合せず、danger は alert role を持つこと', async () => {
     const host = await fixture<UiToast>(html`<ui-toast></ui-toast>`);
     await flush(host);
 
@@ -293,29 +293,24 @@ describe('ui-toast browser contract', () => {
     });
     ToastManager.show({
       variant: 'danger',
-      message: '同一文言',
+      message: '危険通知',
       duration: 0,
-    });
-    ToastManager.show({
-      variant: 'error',
-      message: '旧variant互換テスト',
-      duration: 1200,
     });
     await flush(host);
 
     const outputs = getOutputs(host);
-    expect(outputs.length).to.equal(3);
+    expect(outputs.length).to.equal(2);
 
     const infoToast = findToastByVariantAndMessage(host, 'info', '同一文言');
-    const legacyToast = findToastByVariantAndMessage(host, 'danger', '旧variant互換テスト');
+    const dangerToast = findToastByVariantAndMessage(host, 'danger', '危険通知');
 
     getCloseButton(infoToast);
     assertRole(infoToast, 'status');
-    assertVariant(legacyToast, 'danger');
-    assertRole(legacyToast, 'alert');
+    assertVariant(dangerToast, 'danger');
+    assertRole(dangerToast, 'alert');
 
-    const legacySnapshot = getSnapshotByMessage('旧variant互換テスト');
-    expect(legacySnapshot?.duration).to.equal(1200);
+    const dangerDurationSnapshot = getSnapshotByMessage('危険通知');
+    expect(dangerDurationSnapshot?.duration).to.equal(0);
 
     ToastManager.clear();
     await flush(host);

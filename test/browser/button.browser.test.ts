@@ -120,6 +120,27 @@ describe('ui-button browser contract', () => {
     expect(button.getAttribute('aria-describedby')).to.equal('help-id');
   });
 
+  it('size は sm / md のみを受理し、未対応値は md へ正規化すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div>
+        <ui-button id="small" size="sm">Small</ui-button>
+        <ui-button id="fallback" size="lg">Fallback</ui-button>
+      </div>
+    `);
+
+    const small = expectPresent(wrapper.querySelector<Button>('#small'), 'small');
+    const fallback = expectPresent(wrapper.querySelector<Button>('#fallback'), 'fallback');
+
+    await flush(small);
+    await flush(fallback);
+
+    expect(small.size).to.equal('sm');
+    expect(getInnerButton(small).classList.contains('size-sm')).to.equal(true);
+    expect(fallback.size).to.equal('md');
+    expect(getInnerButton(fallback).classList.contains('size-md')).to.equal(true);
+    expect(getInnerButton(fallback).classList.contains('size-lg')).to.equal(false);
+  });
+
   it('submit / reset を Shadow DOM 境界越しにフォームオーナーへ委譲すること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>

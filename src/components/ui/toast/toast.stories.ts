@@ -277,31 +277,30 @@ export const TimingPauseManual: Story = {
   },
 };
 
-export const LegacyVariantManual: Story = {
+export const DangerManual: Story = {
   tags: ['manual-only'],
   render: () =>
     renderToastDemo(
-      'toast-legacy-variant',
+      'toast-danger-variant',
       html`
         <button
           type="button"
           @click=${() => {
             ToastManager.show({
-              variant: 'error',
-              message: '旧variant互換テスト',
+              variant: 'danger',
+              message: '危険通知テスト',
               duration: 1200,
             });
           }}
         >
-          legacy error を表示
+          danger toast を表示
         </button>
       `,
     ),
   parameters: {
     docs: {
       description: {
-        story:
-          'legacy variant="error" の互換確認用 story です。danger への内部写像の合否は test/browser/toast.browser.test.ts を正本とします。',
+        story: 'danger variant の表示と duration を手動確認する story です。',
       },
     },
   },

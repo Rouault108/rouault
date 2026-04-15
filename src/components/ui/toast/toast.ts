@@ -3,8 +3,6 @@ import { customElement, property, state } from 'lit/decorators.js';
 import '../icon/icon.js';
 
 export type ToastVariant = 'success' | 'warning' | 'danger' | 'info';
-type LegacyToastVariant = 'error';
-type ToastVariantInput = ToastVariant | LegacyToastVariant;
 type ToastRole = 'status' | 'alert';
 
 export const TOAST_VARIANTS = [
@@ -35,15 +33,9 @@ const TOAST_ICON_BY_VARIANT: Record<ToastVariant, string> = {
   danger: 'alert-octagon',
 };
 
-interface ImportMetaEnvLike {
-  DEV?: boolean;
-}
-
-const IS_DEVELOPMENT = (import.meta as ImportMeta & { env?: ImportMetaEnvLike }).env?.DEV ?? true;
-
 export interface ToastShowOptions {
   message: string;
-  variant?: ToastVariantInput;
+  variant?: ToastVariant;
   duration?: number;
   dismissible?: boolean;
 }
@@ -86,7 +78,6 @@ class ToastStore {
   private readonly _exitTimers = new Map<string, number>();
   private _toasts: ToastItem[] = [];
   private _sequence = 0;
-  private _didWarnLegacyError = false;
 
   subscribe(subscriber: ToastSubscriber): () => void {
     this._subscribers.add(subscriber);
@@ -218,17 +209,7 @@ class ToastStore {
     }
   }
 
-  private _resolveVariant(variant: ToastVariantInput | undefined): ToastVariant {
-    if (variant === 'error') {
-      if (IS_DEVELOPMENT && !this._didWarnLegacyError) {
-        this._didWarnLegacyError = true;
-        console.warn(
-          '[ui-toast]: variant="error" は非推奨です。variant="danger" を使用してください。',
-        );
-      }
-      return 'danger';
-    }
-
+  private _resolveVariant(variant: string | undefined): ToastVariant {
     if (
       variant === 'success' ||
       variant === 'warning' ||

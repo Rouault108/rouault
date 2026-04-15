@@ -651,7 +651,6 @@ export class Footnote extends LitElement {
         data-part="popover-host"
         placement="bottom-start"
         .offset=${8}
-        keep-link-fallback
       >
         ${this._renderTriggerTemplate(false)}
         <div

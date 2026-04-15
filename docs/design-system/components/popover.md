@@ -617,16 +617,12 @@ content は `overflow-y: auto` と `max-height` により、viewport を超え�
 - `ui-popover-toggle` / `ui-popover-opened` / `ui-popover-closed`
   - 既存利用側の移行猶予として発火を継続します。
   - 新規利用は `ui-popover-open-change-request` / `ui-popover-open-change` を使用しなければなりません（MUST）。
-- `keep-link-fallback`
-  - 脚注系 wrapper の移行が完了するまでの互換レイヤです。
-  - `ui-popover` の公開契約には含めず、開発時 warning 対象とします。
 
 ### 今後の残課題
 
 本書との整合をさらに高める上で、残る課題は次です。
 
-1. `keep-link-fallback` 依存を脚注・注釈用 wrapper 側へ完全移管すること。
-2. 旧イベント群への依存を段階的に削除し、新イベントへ集約すること。
-3. document 単位 style 供給を overlay foundation または stylesheet provider へ切り出すこと。
+1. 旧イベント群への依存を段階的に削除し、新イベントへ集約すること。
+2. document 単位 style 供給を overlay foundation または stylesheet provider へ切り出すこと。
 
 これらは本体 shell の責務を増やすためではなく、**公開契約をさらに明確化し、互換レイヤを縮退させるための整理**として扱います。

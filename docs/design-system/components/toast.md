@@ -122,9 +122,7 @@ Rouault における toast は、読書や閲覧を遮断せず、必要な変�
 | `warning` | 注意喚起       | `alert`     |
 | `danger`  | 失敗・重大警告 | `alert`     |
 
-後方互換値として `error` を受理しますが、公開契約上は非推奨です。利用者は `danger` を使用しなければなりません（SHOULD）。
-
-`error` 以外の未知値または無効値は、表示不能にせず `info` にフォールバックします。ただし、未知値の扱いそのものは公開契約ではありません。利用者は列挙外値の挙動へ依存してはなりません（MUST NOT）。
+未知値または無効値は、表示不能にせず `info` にフォールバックします。ただし、未知値の扱いそのものは公開契約ではありません。利用者は列挙外値の挙動へ依存してはなりません（MUST NOT）。
 
 ### 4.6 寿命ポリシー契約
 
@@ -295,12 +293,6 @@ Rouault における toast は、読書や閲覧を遮断せず、必要な変�
 ### 5.9 文書可視性状態
 
 host 接続中、`document.visibilitychange` を監視します。文書が hidden の間は全タイマーを停止し、visible に戻ると再開します。
-
-### 5.10 後方互換状態
-
-`variant = 'error'` は内部で `danger` に正規化されます。開発時には非推奨警告を出し得ますが、描画は継続します。
-
----
 
 ## 6. DOM / Accessibility
 
@@ -558,7 +550,6 @@ toast 内部でフォーカス移動している限りタイマーは再開し�
 | `VisibilityPauseAndResumeTimer`  | hidden 中はタイマー停止、visible 復帰後に再開すること                                                                                                                                           |
 | `DuplicateKeyRespectsVariant`    | `dedupeKey` 未指定時は、同一本文でも variant が異なれば統合しないこと                                                                                                                           |
 | `DarkModeAndStyleContracts`      | dark mode で背景・文字・境界線の識別可能性が維持されること。forced-colors でシステム色により可読性が保たれること。reduced-motion で過大な移動モーションを用いないこと。print で非表示になること |
-| `LegacyErrorVariantMapping`      | `variant="error"` が `danger` に内部マッピングされ、`role="alert"` になること                                                                                                                   |
 
 ### 10.2 追加予定の確認点
 

@@ -58,14 +58,12 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 `ariaExpanded`、`ariaControls`、`ariaHasPopup`、`ariaDescribedBy` は、button を trigger として使用する場合の関係属性です。これらは内部ネイティブ button に反映しますが、属性の存在だけで独自アイコン、独自アニメーション、独自配置変更を自動的に発生させません。
 
-`size="lg"` は非推奨です。実装は受理しますが、デザインレビュー承認済みのケースに限定して扱います（SHOULD）。
-
 ### 入力契約
 
 | 名前              | 種別                                      | 必須   | 内容               | 契約                                                                                                              |
 | ----------------- | ----------------------------------------- | ------ | ------------------ | ----------------------------------------------------------------------------------------------------------------- |
 | `variant`         | property / attribute                      | いいえ | 視覚的強度         | `primary` / `secondary` / `outline` / `ghost` / `danger`                                                          |
-| `size`            | property / attribute                      | いいえ | ボタンサイズ       | `sm` / `md` / `lg`。既定値は `md`、`lg` は非推奨です                                                              |
+| `size`            | property / attribute                      | いいえ | ボタンサイズ       | `sm` / `md`。既定値は `md` です                                                                                   |
 | `iconOnly`        | property / attribute (`icon-only`)        | いいえ | アイコンのみ表示   | `true` の場合、既定スロットはアイコン単独入力のみを正規入力とし、`aria-label` または `accessible-name` が必須です |
 | `ariaLabel`       | property / attribute (`aria-label`)       | いいえ | アクセシブル名     | 後方互換のために維持します。`iconOnly=true` の場合にのみ使用します                                                |
 | `accessibleName`  | property / attribute (`accessible-name`)  | いいえ | 明示アクセシブル名 | 可視ラベルとは独立して内部 button にアクセシブル名を与えたい場合に使用します                                      |
@@ -381,7 +379,6 @@ button は可読本文より強く主張してはなりません。とくに art
 次の 2 点は開発時にのみ警告します。
 
 - `iconOnly=true` かつ `aria-label` / `accessible-name` 欠落
-- `size="lg"` の使用
 
 ### 開発時警告と本番時保証
 
@@ -437,7 +434,7 @@ button は可読本文より強く主張してはなりません。とくに art
 | -------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `Default`                  | 既定 `variant` が `secondary`、既定 `type` が `button` であること                                       |
 | `AllVariants`              | 5 つの視覚バリアントが存在すること                                                                      |
-| `AllSizes`                 | `sm` / `md` / `lg` を描画できること                                                                     |
+| `AllSizes`                 | `sm` / `md` を描画できること                                                                            |
 | `Primary`                  | 主要操作用の強い視覚重量を持つこと                                                                      |
 | `Outline`                  | `secondary` より軽い補助操作として成立すること                                                          |
 | `Ghost`                    | 高密度 UI 向けの最小主張スタイルを持つこと                                                              |
@@ -454,7 +451,6 @@ button は可読本文より強く主張してはなりません。とくに art
 | `CardExample`              | `outline` / `ghost` がカード内補助操作として成立すること                                                |
 | `FocusState`               | 公開 `focus()` が内部 button に到達すること                                                             |
 | `IconOnlyWithoutAriaLabel` | 契約違反例を明示できること                                                                              |
-| `DeprecatedLargeSize`      | `lg` が受理されるが非推奨であること                                                                     |
 | `ForcedColorsMode`         | 強制カラー環境で構造が維持されること                                                                    |
 | `DarkMode`                 | ダークモードで `secondary` の edge highlight を確認できること                                           |
 | `ReducedMotion`            | reduced motion でアニメーションが抑制されること                                                         |
@@ -489,10 +485,6 @@ button は可読本文より強く主張してはなりません。とくに art
 
 `ariaLabel` は `iconOnly=true` の場合にのみサポートします。可視ラベルを持つ通常 button で `ariaLabel` が与えられた場合、実装は開発時に警告し、内部 button には反映しません。可視ラベルとは独立した明示アクセシブル名が必要な場合は `accessibleName` を使用します。
 
-### 3. 非推奨サイズ
-
-`size="lg"` は実装上は受理しますが非推奨です。開発時に警告し、運用上はデザインレビュー承認済みケースに限定します。
-
-### 4. slot 内容の厳格強制
+### 3. slot 内容の厳格強制
 
 `iconOnly=true` でテキストを併置する構成は契約違反ですが、現時点では slot 内容を実行時に厳格検証しません。利用側は Storybook とレビューで契約を守らなければなりません。
