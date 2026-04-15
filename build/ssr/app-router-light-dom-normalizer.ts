@@ -79,21 +79,6 @@ const createAnnouncementRegion = (): Parse5Element => {
   return region;
 };
 
-const createCanonicalMain = (contentNodes: readonly Parse5ChildNode[]): Parse5Element => {
-  const mainFragment = parse5.parseFragment('<main></main>');
-  const main = mainFragment.childNodes[0];
-  if (main === undefined || !isElementNode(main) || main.tagName !== 'main') {
-    throw new Error('app-router canonical main を生成できませんでした。');
-  }
-
-  main.childNodes = [...contentNodes];
-  for (const childNode of main.childNodes) {
-    childNode.parentNode = main;
-  }
-
-  return main;
-};
-
 const ensureCanonicalMainAttributes = (main: Parse5Element): void => {
   setAttribute(main, 'id', MAIN_CONTENT_ID);
   setAttribute(main, 'tabindex', MAIN_CONTENT_TABINDEX);
@@ -137,22 +122,26 @@ export const normalizeAppRouterLightDom = (innerHtml: string): string => {
     );
   }
 
+  const main = directChildCanonicalMains[0];
+  if (main === undefined) {
+    throw createContractViolationError(
+      `app-router SSR は direct child に main#${MAIN_CONTENT_ID} を要求します。`,
+      innerHtml,
+    );
+  }
+
   const announcementRegion = announcementRegions[0] ?? createAnnouncementRegion();
   setAttribute(announcementRegion, APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE, '');
   setAttribute(announcementRegion, 'aria-live', APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE);
   setAttribute(announcementRegion, 'aria-atomic', APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC);
   appendClassName(announcementRegion, APP_ROUTER_ANNOUNCEMENT_CLASS_NAME);
-
-  const main =
-    directChildCanonicalMains[0] ??
-    createCanonicalMain(fragment.childNodes.filter((node) => node !== announcementRegion));
   ensureCanonicalMainAttributes(main);
 
   const nextChildren = directChildMains[0]
     ? announcementRegions[0]
       ? [...fragment.childNodes]
       : [announcementRegion, ...fragment.childNodes]
-    : [announcementRegion, main];
+    : [announcementRegion, ...fragment.childNodes];
 
   fragment.childNodes = nextChildren;
   for (const childNode of fragment.childNodes) {
