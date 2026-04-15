@@ -263,16 +263,11 @@ export const createNavigationEnvelopeFromHtml = (
   const document = parse5.parse(html);
   const main = findFirstElement(
     document,
-    (candidate) =>
-      candidate.tagName === 'main' &&
-      (getAttribute(candidate, 'id') === MAIN_CONTENT_ID ||
-        getAttribute(candidate, 'id') === null),
+    (candidate) => candidate.tagName === 'main' && getAttribute(candidate, 'id') === MAIN_CONTENT_ID,
   );
 
   if (main === null) {
-    throw new Error(
-      `[navigation-artifact] ${htmlFilePath} に main#${MAIN_CONTENT_ID} または main がありません。`,
-    );
+    throw new Error(`[navigation-artifact] ${htmlFilePath} に main#${MAIN_CONTENT_ID} がありません。`);
   }
 
   const titleElement = findFirstElement(document, (candidate) => candidate.tagName === 'title');

@@ -1,8 +1,6 @@
 import type { DocumentSnapshot } from './router-types.js';
 import { MAIN_CONTENT_SELECTOR } from '../../shared/navigation/main-landmark-contract.js';
 
-const FALLBACK_MAIN_SELECTOR = 'main';
-
 export class DocumentContractViolationError extends Error {
   override name = 'DocumentContractViolationError' as const;
 }
@@ -23,17 +21,12 @@ export class DocumentSnapshotFactory {
   }
 
   private resolveContentRoot(documentSnapshot: Document): Element {
-    // SSR strict 化後も旧来の `main` だけを返す文書を吸収するための暫定互換です。
-    const preferredRoot =
-      documentSnapshot.querySelector(MAIN_CONTENT_SELECTOR) ??
-      documentSnapshot.querySelector(FALLBACK_MAIN_SELECTOR);
+    const contentRoot = documentSnapshot.querySelector(MAIN_CONTENT_SELECTOR);
 
-    if (preferredRoot instanceof Element) {
-      return preferredRoot;
+    if (contentRoot instanceof Element) {
+      return contentRoot;
     }
 
-    throw new DocumentContractViolationError(
-      '遷移対象文書が `main#main-content` または `main` を持っていません。',
-    );
+    throw new DocumentContractViolationError('遷移対象文書が `main#main-content` を持っていません。');
   }
 }

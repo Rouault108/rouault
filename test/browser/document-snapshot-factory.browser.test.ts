@@ -58,20 +58,23 @@ describe('DocumentSnapshotFactory', () => {
     expect(snapshot.shell).to.equal(null);
   });
 
-  it('main のみを持つ文書も暫定互換として snapshot を組み立てること', async () => {
+  it('main#main-content を持たない文書は contract violation にすること', async () => {
     const factory = new DocumentSnapshotFactory();
-    const snapshot = await factory.create(
-      parseDocument(`
-        <!doctype html>
-        <html>
-          <head><title>Legacy Main Only</title></head>
-          <body><main><h1>Legacy Content</h1></main></body>
-        </html>
-      `),
-    );
 
-    expect(snapshot.kind).to.equal('page');
-    expect(snapshot.html).to.contain('Legacy Content');
+    try {
+      await factory.create(
+        parseDocument(`
+          <!doctype html>
+          <html>
+            <head><title>Broken</title></head>
+            <body><main><h1>Legacy Content</h1></main></body>
+          </html>
+        `),
+      );
+      expect.fail('DocumentContractViolationError が投げられる必要があります。');
+    } catch (error) {
+      expect(error).to.be.instanceOf(DocumentContractViolationError);
+    }
   });
 
   it('main を持たない文書は contract violation にすること', async () => {

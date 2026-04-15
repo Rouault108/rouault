@@ -29,6 +29,7 @@ describe('navigation artifacts', () => {
       current-corpus-key="all"
     ></layout-header>
     <app-router data-sidebar-presence="present">
+      <div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>
       <aside data-app-shell-sidebar-host>
         <layout-sidebar
           state-scope-id="note-navigation"
@@ -99,6 +100,7 @@ describe('navigation artifacts', () => {
 <body>
   <layout-header current-corpus-key="all" toc-presence="absent" breadcrumbs-json="[]" corpora-json="[]"></layout-header>
   <app-router>
+    <div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>
     <main id="main-content"><p>body</p></main>
   </app-router>
 </body>
@@ -132,5 +134,23 @@ describe('navigation artifacts', () => {
     } finally {
       await rm(outputDir, { recursive: true, force: true });
     }
+  });
+
+  it('main#main-content を持たない HTML は artifact 化を失敗させること', () => {
+    const html = `
+<!DOCTYPE html>
+<html lang="ja">
+<head><title>Broken</title></head>
+<body>
+  <app-router>
+    <main><p>body</p></main>
+  </app-router>
+</body>
+</html>
+    `.trim();
+
+    expect(() => createNavigationEnvelopeFromHtml(html, '/tmp/broken/index.html')).toThrow(
+      /main#main-content/,
+    );
   });
 });

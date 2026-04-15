@@ -111,6 +111,9 @@ export const normalizeAppRouterLightDom = (innerHtml: string): string => {
   const fragment = parse5.parseFragment(innerHtml);
   const directChildElements = fragment.childNodes.filter((node) => isElementNode(node));
   const directChildMains = directChildElements.filter((node) => node.tagName === 'main');
+  const directChildCanonicalMains = directChildMains.filter(
+    (node) => getAttributeValue(node, 'id') === MAIN_CONTENT_ID,
+  );
   const announcementRegions = directChildElements.filter(isAnnouncementRegion);
 
   if (directChildMains.length > 1) {
@@ -127,6 +130,13 @@ export const normalizeAppRouterLightDom = (innerHtml: string): string => {
     );
   }
 
+  if (directChildMains.length === 1 && directChildCanonicalMains.length === 0) {
+    throw createContractViolationError(
+      `app-router SSR は direct child の <main> に id="${MAIN_CONTENT_ID}" を要求します。`,
+      innerHtml,
+    );
+  }
+
   const announcementRegion = announcementRegions[0] ?? createAnnouncementRegion();
   setAttribute(announcementRegion, APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE, '');
   setAttribute(announcementRegion, 'aria-live', APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE);
@@ -134,7 +144,7 @@ export const normalizeAppRouterLightDom = (innerHtml: string): string => {
   appendClassName(announcementRegion, APP_ROUTER_ANNOUNCEMENT_CLASS_NAME);
 
   const main =
-    directChildMains[0] ??
+    directChildCanonicalMains[0] ??
     createCanonicalMain(fragment.childNodes.filter((node) => node !== announcementRegion));
   ensureCanonicalMainAttributes(main);
 

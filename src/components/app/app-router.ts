@@ -217,14 +217,7 @@ export class AppRouter extends HTMLElement {
   }
 
   private _findExistingContentRoot(): HTMLElement | null {
-    // SSR strict 化後も旧来の `<main>` を読む必要がある間だけ残す暫定互換経路です。
-    const contentRoot = this.getContentRoot();
-    if (contentRoot instanceof HTMLElement) {
-      return contentRoot;
-    }
-
-    const main = this.querySelector('main');
-    return main instanceof HTMLElement ? main : null;
+    return this.getContentRoot();
   }
 
   private _ensureContentRoot(existingRoot: HTMLElement | null): HTMLElement {
@@ -246,16 +239,6 @@ export class AppRouter extends HTMLElement {
       existingRegion.setAttribute('aria-atomic', APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC);
       existingRegion.classList.add(APP_ROUTER_ANNOUNCEMENT_CLASS_NAME);
       return existingRegion;
-    }
-
-    // SSR 出力は data attribute を正本とし、aria-live だけの探索は移行期互換に留めます。
-    const legacyRegion = this.querySelector<HTMLElement>('[aria-live="polite"]');
-    if (legacyRegion instanceof HTMLElement) {
-      legacyRegion.setAttribute(APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE, '');
-      legacyRegion.setAttribute('aria-live', APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE);
-      legacyRegion.setAttribute('aria-atomic', APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC);
-      legacyRegion.classList.add(APP_ROUTER_ANNOUNCEMENT_CLASS_NAME);
-      return legacyRegion;
     }
 
     const region = this.ownerDocument.createElement('div');

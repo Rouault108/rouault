@@ -13,6 +13,12 @@ import {
   THEME_STORAGE_KEY,
   RESOLVED_THEME_ATTRIBUTE,
 } from '../theme/theme-manager.js';
+import {
+  APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC,
+  APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE,
+  APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE,
+  APP_ROUTER_ANNOUNCEMENT_CLASS_NAME,
+} from '../../shared/app-router/app-router-announcement-contract.js';
 import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.js';
 import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
@@ -200,6 +206,12 @@ export class BaseLayout {
       data-hydration-capability="interactive"
       data-hydration-trigger="initial"
     >
+      <div
+        ${APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE}
+        aria-live="${APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE}"
+        aria-atomic="${APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC}"
+        class="${APP_ROUTER_ANNOUNCEMENT_CLASS_NAME}"
+      ></div>
       <aside
         class="layout-sidebar-col"
         aria-label="ナビゲーション"

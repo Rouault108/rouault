@@ -164,7 +164,7 @@ describe('app-router', () => {
   it('shadowRoot を持たず、本文 root は light DOM の #main-content のみであること', async () => {
     host = await fixture<AppRouterElement>(
       html`<app-router
-        ><main>
+        ><main id="main-content" tabindex="-1">
           <h1>SSR Title</h1>
           <p>SSR Body</p>
         </main></app-router
@@ -196,7 +196,7 @@ describe('app-router', () => {
 
     host = await fixture<AppRouterElement>(
       html`<app-router
-        ><main>
+        ><main id="main-content" tabindex="-1">
           <h1>SSR Title</h1>
           <p>SSR Body</p>
         </main></app-router
@@ -231,9 +231,9 @@ describe('app-router', () => {
     expect(appHost.querySelector('main#main-content')?.textContent).to.contain('SSR Contract Root');
   });
 
-  it('旧来の main だけがある場合も暫定互換として canonical root に昇格すること', async () => {
+  it('main#main-content が無い場合は新しい canonical root を作成し既存 sibling を保持すること', async () => {
     host = await fixture<AppRouterElement>(
-      html`<app-router><main><h1>Legacy Main</h1></main></app-router>`,
+      html`<app-router><aside data-app-shell-sidebar-host></aside></app-router>`,
     );
     const appHost = host;
 
@@ -241,13 +241,14 @@ describe('app-router', () => {
 
     expect(appHost.getContentRoot()).to.equal(appHost.querySelector('main#main-content'));
     expect(appHost.querySelectorAll('main').length).to.equal(1);
-    expect(appHost.querySelector('main#main-content')?.textContent).to.contain('Legacy Main');
+    expect(appHost.querySelector('main#main-content')?.textContent).to.equal('');
+    expect(appHost.querySelector('[data-app-shell-sidebar-host]')).to.be.instanceOf(HTMLElement);
   });
 
   it('ready と whenReady() を公開し、接続後に解決されること', async () => {
     host = await fixture<AppRouterElement>(
       html`<app-router
-        ><main><h1>SSR Title</h1></main></app-router
+        ><main id="main-content" tabindex="-1"><h1>SSR Title</h1></main></app-router
       >`,
     );
     const appHost = host;
@@ -273,7 +274,7 @@ describe('app-router', () => {
 
     host = await fixture<AppRouterElement>(
       html`<app-router
-        ><main><h1>SSR Title</h1></main></app-router
+        ><main id="main-content" tabindex="-1"><h1>SSR Title</h1></main></app-router
       >`,
     );
     const appHost = host;
@@ -317,7 +318,7 @@ describe('app-router', () => {
 
     host = await fixture<AppRouterElement>(
       html`<app-router>
-        <div aria-live="polite" aria-atomic="true" class="sr-only"></div>
+        <div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>
         <main id="main-content" tabindex="-1">
           <h1>SSR Title</h1>
         </main>
@@ -365,7 +366,7 @@ describe('app-router', () => {
 
     host = await fixture<AppRouterElement>(
       html`<app-router
-        ><main><h1>SSR Title</h1></main></app-router
+        ><main id="main-content" tabindex="-1"><h1>SSR Title</h1></main></app-router
       >`,
     );
     const appHost = host;
@@ -377,14 +378,14 @@ describe('app-router', () => {
     await waitUntil(
       () =>
         (appHost
-          .querySelector('[aria-live="polite"]')
+          .querySelector('[data-app-router-announcement]')
           ?.textContent.includes('ページが読み込まれました') ??
           false) &&
         focusedTagName === 'MAIN',
       'aria-live と main への focus が更新されること',
     );
 
-    expect(appHost.querySelectorAll('[aria-live="polite"]').length).to.equal(1);
+    expect(appHost.querySelectorAll('[data-app-router-announcement]').length).to.equal(1);
     expect(appHost.querySelectorAll('main').length).to.equal(1);
     expect(focusOptions).to.deep.equal({ preventScroll: true });
   });
@@ -399,7 +400,7 @@ describe('app-router', () => {
 
     host = await fixture<AppRouterElement>(
       html`<app-router
-        ><main><h1>SSR Title</h1></main></app-router
+        ><main id="main-content" tabindex="-1"><h1>SSR Title</h1></main></app-router
       >`,
     );
     const appHost = host;
@@ -465,7 +466,7 @@ describe('app-router', () => {
 
     host = await fixture<AppRouterElement>(
       html`<app-router
-        ><main><h1>SSR Title</h1></main></app-router
+        ><main id="main-content" tabindex="-1"><h1>SSR Title</h1></main></app-router
       >`,
     );
     const appHost = host;
@@ -790,7 +791,7 @@ describe('app-router', () => {
 
     host = await fixture<AppRouterElement>(
       html`<app-router
-        ><main><h1>SSR Title</h1></main></app-router
+        ><main id="main-content" tabindex="-1"><h1>SSR Title</h1></main></app-router
       >`,
     );
     const appHost = host;
@@ -843,7 +844,7 @@ describe('app-router', () => {
 
     host = await fixture<AppRouterElement>(
       html`<app-router
-        ><main><h1>SSR Title</h1></main></app-router
+        ><main id="main-content" tabindex="-1"><h1>SSR Title</h1></main></app-router
       >`,
     );
     const appHost = host;
@@ -915,7 +916,7 @@ describe('app-router', () => {
 
     host = await fixture<AppRouterElement>(
       html`<app-router
-        ><main><h1>SSR Title</h1></main></app-router
+        ><main id="main-content" tabindex="-1"><h1>SSR Title</h1></main></app-router
       >`,
     );
     const appHost = host;
@@ -936,7 +937,7 @@ describe('app-router', () => {
   it('serverContent に branded 本文を与えた場合も #main-content を唯一の更新先として描画できること', async () => {
     host = await fixture<AppRouterElement>(
       html`<app-router>
-        <main><h1>Initial SSR</h1></main>
+        <main id="main-content" tabindex="-1"><h1>Initial SSR</h1></main>
       </app-router>`,
     );
     const appHost = host;

@@ -137,6 +137,10 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('<div id="app" class="app-root" data-hydration-scope="app-shell">');
     expect(rendered).toContain('<layout-header');
     expect(rendered).toContain('<app-router');
+    expect(rendered).toContain('data-app-router-announcement');
+    expect(rendered).toContain('aria-live="polite"');
+    expect(rendered).toContain('aria-atomic="true"');
+    expect(rendered).toContain('class="sr-only"');
     expect(rendered).toContain('<main id="main-content" tabindex="-1">');
     expect(rendered).toContain(
       '<layout-footer data-hydration-capability="static" data-hydration-trigger="initial"></layout-footer>',

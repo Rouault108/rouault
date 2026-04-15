@@ -108,27 +108,18 @@ describe('server-entry', () => {
     expect(rendered).toContain('<main id="main-content" tabindex="-1"><h1>SSR App Router</h1><p>Body</p></main>');
   });
 
-  it('app-router は既存 main を canonical main に昇格すること', async () => {
+  it('app-router は既存 canonical main の属性を保持したまま strict 化すること', async () => {
     const rendered = await renderCustomElement(
       'app-router',
       [],
-      '<main><h1>SSR App Router</h1><p>Body</p></main>',
+      '<main id="main-content" class="page-body" data-view="article" aria-label="本文"><h1>SSR App Router</h1></main>',
     );
 
-    expect(rendered).toContain('<main id="main-content" tabindex="-1"><h1>SSR App Router</h1><p>Body</p></main>');
-    expect(rendered).toContain('data-app-router-announcement');
-  });
-
-  it('app-router は既存 main の属性を保持したまま canonical 化すること', async () => {
-    const rendered = await renderCustomElement(
-      'app-router',
-      [],
-      '<main class="page-body" data-view="article" aria-label="本文"><h1>SSR App Router</h1></main>',
-    );
-
-    expect(rendered).toContain(
-      '<main class="page-body" data-view="article" aria-label="本文" id="main-content" tabindex="-1"><h1>SSR App Router</h1></main>',
-    );
+    expect(rendered).toContain('<main id="main-content"');
+    expect(rendered).toContain('class="page-body"');
+    expect(rendered).toContain('data-view="article"');
+    expect(rendered).toContain('aria-label="本文"');
+    expect(rendered).toContain('tabindex="-1"');
   });
 
   it('app-router SSR が sidebar host を保持し sibling 順序も維持すること', async () => {
@@ -158,11 +149,21 @@ describe('server-entry', () => {
       [],
       [
         '<div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>',
-        '<main><h1>SSR App Router</h1></main>',
+        '<main id="main-content"><h1>SSR App Router</h1></main>',
       ].join(''),
     );
 
     expect(rendered.match(/data-app-router-announcement/g)?.length ?? 0).toBe(1);
+  });
+
+  it('app-router は bare main を strict contract violation として拒否すること', async () => {
+    await expect(
+      renderCustomElement(
+        'app-router',
+        [],
+        '<main><h1>SSR App Router</h1><p>Body</p></main>',
+      ),
+    ).rejects.toThrow(/id="main-content"/);
   });
 
   it('app-router は direct child の main が複数ある場合に失敗すること', async () => {
