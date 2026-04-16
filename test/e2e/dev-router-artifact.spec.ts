@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-const sourcePath = '/notes/program/sample-javascript/';
+import { e2eNoteFixtures } from './support/note-fixtures.js';
+
+const sourcePath = e2eNoteFixtures.sampleJavascript.directPath;
 
 const waitForAppRouterReady = async (page: import('@playwright/test').Page): Promise<void> => {
   await page.waitForFunction(async () => {

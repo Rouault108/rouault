@@ -1,7 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const notePath = '/notes/testing/sidebar-scroll/group-16/target';
-const noteCanonicalPath = '/notes/testing/sidebar-scroll/group-16/target/';
+import { e2eNoteFixtures } from './support/note-fixtures.js';
+
+const notePath = e2eNoteFixtures.sidebarScrollTarget.normalizedPath;
+const noteCanonicalPath = e2eNoteFixtures.sidebarScrollTarget.directPath;
 const testingTagPagePath = '/tags/testing/';
 const targetTitle = 'Sidebar Scroll Target';
 

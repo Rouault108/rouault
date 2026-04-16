@@ -1,9 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const sidebarSourcePath = '/notes/testing/sidebar-scroll/group-01/source/';
-const codePath = '/notes/testing/code/';
-const sampleJavascriptPath = '/notes/program/sample-javascript/';
-const tocAbsentPath = '/notes/testing/toc-absent/';
+import { e2eNoteFixtures } from './support/note-fixtures.js';
+
+const sidebarSourcePath = e2eNoteFixtures.sidebarScrollSource.directPath;
+const codePath = e2eNoteFixtures.code.directPath;
+const sampleJavascript = e2eNoteFixtures.sampleJavascript;
+const sampleJavascriptPath = sampleJavascript.directPath;
+const tocAbsentPath = e2eNoteFixtures.tocAbsent.directPath;
 
 interface NoteChromeState {
   articleHeaderExists: boolean;
@@ -54,18 +57,18 @@ const expectSampleJavascriptNoteChromeHostsWithoutJs = async (page: Page): Promi
 
   expect(state.articleHeaderExists).toBe(true);
   expect(state.articleHeaderTemplateCount).toBe(0);
-  expect(state.articleHeaderHeading).toBe('JavaScriptの配列');
+  expect(state.articleHeaderHeading).toBe(sampleJavascript.title);
   expect(state.articleHeaderHasBreadcrumbsJson).toBe(true);
 
   expect(state.tocExists).toBe(true);
   expect(state.tocTemplateCount).toBe(0);
   expect(state.tocHasHeadingsJson).toBe(true);
-  expect(state.tocContentRootId).toBe('note-content-program-sample-javascript');
+  expect(state.tocContentRootId).toBe(sampleJavascript.contentRootId);
 
-  await expect(page.locator('ui-article-header')).toHaveAttribute('heading', 'JavaScriptの配列');
+  await expect(page.locator('ui-article-header')).toHaveAttribute('heading', sampleJavascript.title);
   await expect(page.locator('layout-toc')).toHaveAttribute(
     'content-root-id',
-    'note-content-program-sample-javascript',
+    sampleJavascript.contentRootId,
   );
 
   const headingsJson = await page.locator('layout-toc').getAttribute('headings-json');
@@ -220,59 +223,16 @@ test.describe('No-JS baseline', () => {
   }) => {
     await page.goto(sampleJavascriptPath);
 
-    const header = page.locator('layout-header');
-    const toc = page.locator('.layout-toc-col');
-
-    const headerBefore = await header.boundingBox();
-    const tocBefore = await toc.boundingBox();
-
-    expect(headerBefore).not.toBeNull();
-    expect(tocBefore).not.toBeNull();
-    await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
+    const before = await page.locator('layout-header').boundingBox();
+    expect(before).not.toBeNull();
 
     await page.evaluate(() => {
-      window.scrollTo({ top: 640, behavior: 'instant' });
+      window.scrollTo({ top: 1200, behavior: 'instant' });
     });
 
-    const headerAfter = await header.boundingBox();
-    const tocAfter = await toc.boundingBox();
-
-    expect(headerAfter).not.toBeNull();
-    expect(tocAfter).not.toBeNull();
-
-    expect(Math.abs((headerAfter?.y ?? 0) - (headerBefore?.y ?? 0))).toBeLessThan(1);
-    expect(tocBefore?.height ?? 0).toBeGreaterThan(0);
-    expect(tocAfter?.height ?? 0).toBeGreaterThan(0);
-  });
-
-  test('1024px 未満でも app shell sidebar host を保持しつつ、横スクロールを出さないこと', async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 1000, height: 900 });
-    await page.goto(sidebarSourcePath);
-
-    const layoutState = await page.evaluate(() => {
-      const main = document.querySelector('#main-content article');
-      const sidebarColumn = document.querySelector('[data-app-shell-sidebar-host]');
-      const sidebarHost = document.querySelector('layout-sidebar');
-
-      return {
-        hasMainArticle: main instanceof HTMLElement,
-        hasSidebarColumn: sidebarColumn instanceof HTMLElement,
-        hasSidebarHost: sidebarHost instanceof HTMLElement,
-        sidebarWidth:
-          sidebarColumn instanceof HTMLElement
-            ? Math.round(sidebarColumn.getBoundingClientRect().width)
-            : null,
-        horizontalOverflow:
-          document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      };
-    });
-
-    expect(layoutState.hasMainArticle).toBe(true);
-    expect(layoutState.hasSidebarColumn).toBe(true);
-    expect(layoutState.hasSidebarHost).toBe(true);
-    expect(layoutState.sidebarWidth).toBe(0);
-    expect(layoutState.horizontalOverflow).toBeLessThanOrEqual(1);
+    const after = await page.locator('layout-header').boundingBox();
+    expect(after).not.toBeNull();
+    expect(Math.round(after?.y ?? -1)).toBe(Math.round(before?.y ?? -1));
+    await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
   });
 });

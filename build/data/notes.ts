@@ -48,6 +48,7 @@ export interface SourceNote {
   kind?: NoteContentKind;
   testingArea?: TestingArea;
   hydrationBudgetProfile?: NoteHydrationBudgetProfileName;
+  e2eFixtureId?: string;
   genre?: string[];
   sidebarIcon?: SidebarIconSetting;
   [key: string]: unknown;
@@ -73,6 +74,7 @@ export interface IntrinsicNote extends SourceNote {
   kind: NoteContentKind;
   testingArea?: TestingArea;
   hydrationBudgetProfile?: NoteHydrationBudgetProfileName;
+  e2eFixtureId?: string;
 }
 
 export type IntrinsicNotesCollection = IntrinsicNote[];
@@ -328,6 +330,10 @@ export const buildNotesCollection = (
       const kind = normalizeNoteContentKind(note.kind);
       const testingArea = normalizeTestingArea(note.testingArea);
       const preparedToc = prepareTocHtml(typeof note.content === 'string' ? note.content : '');
+      const e2eFixtureId =
+        typeof note.e2eFixtureId === 'string' && note.e2eFixtureId.trim().length > 0
+          ? note.e2eFixtureId.trim()
+          : undefined;
 
       const sidebarRoot = resolveSidebarRoot(collectCachedSidebarScopeRules(sourceSlug));
       const sidebarIconSetting = note.sidebarIcon;
@@ -348,6 +354,7 @@ export const buildNotesCollection = (
         ...(typeof note.content === 'string' ? { content: preparedToc.html } : {}),
         kind,
         ...(testingArea !== undefined ? { testingArea } : {}),
+        ...(e2eFixtureId !== undefined ? { e2eFixtureId } : {}),
         rawSlug: sourceSlug,
         slug: pathInfo.slug,
         permalink: pathInfo.permalink,

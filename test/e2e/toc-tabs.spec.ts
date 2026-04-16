@@ -1,6 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const path = '/notes/testing/interactive/';
+import { e2eNoteFixtures } from './support/note-fixtures.js';
+
+const path = e2eNoteFixtures.interactive.directPath;
 
 const expectInteractiveCanaryContent = async (page: Page): Promise<void> => {
   await expect(page.locator('#main-content')).toContainText('JavaScriptのHello, World!');

@@ -7,6 +7,7 @@ kind: 'testing'
 testingArea: 'interactive'
 hydrationBudgetProfile: 'testing-interactive-canary'
 status: 'wip'
+e2eFixtureId: 'note.interactive'
 ---
 
 ::example-include{ref="interactive/callout-details"}

@@ -5,6 +5,7 @@ date: 2026-04-14
 updated: 2026-04-14
 kind: 'reader'
 status: 'wip'
+e2eFixtureId: 'note.toc-absent'
 ---
 
 このノートは TOC が存在しない reader note 用 fixture です。

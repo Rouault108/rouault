@@ -2,6 +2,7 @@
 title: 'JavaScriptの配列'
 description: "配列について O'Reilly の『JavaScript 第７版』を踏まえたメモ"
 date: 2026-03-14
+e2eFixtureId: 'note.sample-javascript'
 genre:
   - JavaScript
   - Programming

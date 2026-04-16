@@ -1,6 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
-const sampleJavascriptPath = '/notes/program/sample-javascript/';
-const tocAbsentPath = '/notes/testing/toc-absent/';
+
+import { e2eNoteFixtures } from './support/note-fixtures.js';
+
+const sampleJavascriptPath = e2eNoteFixtures.sampleJavascript.directPath;
+const tocAbsentPath = e2eNoteFixtures.tocAbsent.directPath;
 
 interface NoteWideFrameSnapshot {
   hasAppRouter: boolean;

@@ -16,8 +16,10 @@ describe('velite config', () => {
 
     expect(source).toContain('kind: s.enum(NOTE_CONTENT_KINDS).optional(),');
     expect(source).toContain('testingArea: s.enum(TESTING_AREAS).optional(),');
+    expect(source).toContain('e2eFixtureId: s.string().optional(),');
     expect(source).toContain('const kind = normalizeNoteContentKind(data.kind);');
     expect(source).toContain('const testingArea = normalizeTestingArea(data.testingArea);');
+    expect(source).toContain("const e2eFixtureId =");
     expect(source).toContain(
       'const normalizedContent = normalizeRouaultStaticSurfaceHtml(data.content);',
     );

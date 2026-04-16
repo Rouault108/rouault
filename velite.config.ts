@@ -49,6 +49,7 @@ const notes = defineCollection({
       kind: s.enum(NOTE_CONTENT_KINDS).optional(),
       testingArea: s.enum(TESTING_AREAS).optional(),
       hydrationBudgetProfile: s.enum(NOTE_HYDRATION_BUDGET_PROFILE_NAMES).optional(),
+      e2eFixtureId: s.string().optional(),
       content: s.markdown(),
       excerpt: s.excerpt().optional(),
       toc: s.toc().optional(),
@@ -60,6 +61,10 @@ const notes = defineCollection({
         data.hydrationBudgetProfile,
       );
       const normalizedContent = normalizeRouaultStaticSurfaceHtml(data.content);
+      const e2eFixtureId =
+        typeof data.e2eFixtureId === 'string' && data.e2eFixtureId.trim().length > 0
+          ? data.e2eFixtureId.trim()
+          : undefined;
 
       validateNoteMetadataContracts(kind, testingArea, data.slug);
       validateNoteContentContracts(kind, normalizedContent, data.slug, testingArea);
@@ -70,6 +75,7 @@ const notes = defineCollection({
         kind,
         ...(testingArea !== undefined ? { testingArea } : {}),
         ...(hydrationBudgetProfile !== undefined ? { hydrationBudgetProfile } : {}),
+        ...(e2eFixtureId !== undefined ? { e2eFixtureId } : {}),
         status: data.status ?? '',
       };
     }),

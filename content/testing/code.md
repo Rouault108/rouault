@@ -7,6 +7,7 @@ kind: 'testing'
 testingArea: 'code'
 hydrationBudgetProfile: 'testing-code-canary'
 status: 'wip'
+e2eFixtureId: 'note.code'
 ---
 
 ::example-include{ref="code/core"}

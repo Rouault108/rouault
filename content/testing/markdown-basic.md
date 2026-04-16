@@ -6,6 +6,7 @@ updated: 2026-03-29
 kind: 'testing'
 testingArea: 'markdown-basic'
 status: 'wip'
+e2eFixtureId: 'note.markdown-basic'
 ---
 
 ::example-include{ref="markdown-basic/core"}

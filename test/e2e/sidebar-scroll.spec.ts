@@ -1,12 +1,14 @@
 import { expect, test } from '@playwright/test';
 
-const sourcePath = '/notes/testing/sidebar-scroll/group-01/source';
-const targetPath = '/notes/testing/sidebar-scroll/group-16/target';
+import { e2eNoteFixtures } from './support/note-fixtures.js';
+
+const sourceEntryPath = e2eNoteFixtures.sidebarScrollSource.directPath;
+const targetPath = e2eNoteFixtures.sidebarScrollTarget.normalizedPath;
 
 test.describe('Sidebar Selected Item Scroll', () => {
   test('sidebar host を保持したままルート遷移しても破綻しないこと', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 480 });
-    await page.goto(`${sourcePath}/`);
+    await page.goto(sourceEntryPath);
     await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
     await expect(page.locator('layout-sidebar')).toHaveCount(1);
     await expect(page.locator('app-router > #main-content')).toHaveCount(1);

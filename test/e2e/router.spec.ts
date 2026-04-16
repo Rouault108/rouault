@@ -1,14 +1,17 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const sourcePath = '/notes/testing/sidebar-scroll/group-01/source';
-const targetPath = '/notes/testing/sidebar-scroll/group-16/target';
-const sourceEntryPath = `${sourcePath}/`;
-const testNotePath = '/notes/testing/markdown-basic/';
-const tabsTestPath = '/notes/testing/interactive/';
-const tabsNormalizedPath = '/notes/testing/interactive';
-const sampleJavascriptPath = '/notes/program/sample-javascript/';
-const sampleJavascriptNormalizedPath = '/notes/program/sample-javascript';
-const tocAbsentNormalizedPath = '/notes/testing/toc-absent';
+import { e2eNoteFixtures } from './support/note-fixtures.js';
+
+const targetPath = e2eNoteFixtures.sidebarScrollTarget.normalizedPath;
+const sourceEntryPath = e2eNoteFixtures.sidebarScrollSource.directPath;
+const testNote = e2eNoteFixtures.markdownBasic;
+const testNotePath = testNote.directPath;
+const tabsNote = e2eNoteFixtures.interactive;
+const tabsTestPath = tabsNote.directPath;
+const tabsNormalizedPath = tabsNote.normalizedPath;
+const sampleJavascriptPath = e2eNoteFixtures.sampleJavascript.directPath;
+const sampleJavascriptNormalizedPath = e2eNoteFixtures.sampleJavascript.normalizedPath;
+const tocAbsentNormalizedPath = e2eNoteFixtures.tocAbsent.normalizedPath;
 
 const expectMainHeading = async (page: Page, headingText: string): Promise<void> => {
   await expect(page.locator('ui-article-header')).toHaveAttribute('heading', headingText);
@@ -141,7 +144,7 @@ test.describe('Router Navigation', () => {
   test('hash なしで再読み込みしてもトップ位置のままであること', async ({ page }) => {
     await page.goto(testNotePath);
 
-    await expect(page.locator('#note-content-testing-markdown-basic')).toHaveCount(1);
+    await expect(page.locator(`#${testNote.contentRootId}`)).toHaveCount(1);
     await page.evaluate(
       () =>
         new Promise<void>((resolve) => {
@@ -155,7 +158,7 @@ test.describe('Router Navigation', () => {
 
     await page.reload();
 
-    await expect(page.locator('#note-content-testing-markdown-basic')).toHaveCount(1);
+    await expect(page.locator(`#${testNote.contentRootId}`)).toHaveCount(1);
     await page.evaluate(
       () =>
         new Promise<void>((resolve) => {
@@ -177,7 +180,7 @@ test.describe('Router Navigation', () => {
     await hideTocOverlay(page);
 
     const headingPermalink = page
-      .locator('#note-content-testing-markdown-basic h2 .heading-anchor')
+      .locator(`#${testNote.contentRootId} h2 .heading-anchor`)
       .first();
     await expect(headingPermalink).toBeVisible();
 
@@ -195,9 +198,9 @@ test.describe('Router Navigation', () => {
     await page.goto(testNotePath);
     await hideTocOverlay(page);
 
-    const heading = page.locator('#note-content-testing-markdown-basic h2').first();
+    const heading = page.locator(`#${testNote.contentRootId} h2`).first();
     const headingPermalink = page
-      .locator('#note-content-testing-markdown-basic h2 .heading-anchor')
+      .locator(`#${testNote.contentRootId} h2 .heading-anchor`)
       .first();
 
     await heading.click({ position: { x: 8, y: 8 }, force: true });
@@ -217,7 +220,7 @@ test.describe('Router Navigation', () => {
     await page.goto(testNotePath);
     await hideTocOverlay(page);
 
-    const prose = page.locator('#note-content-testing-markdown-basic');
+    const prose = page.locator(`#${testNote.contentRootId}`);
     const heading = prose.locator('h2').first();
     const headingPermalink = heading.locator('.heading-anchor');
 
@@ -275,7 +278,7 @@ test.describe('Router Navigation', () => {
     await expect(page).toHaveURL(`${tabsNormalizedPath}?tab=rust`);
 
     const state = await page.evaluate(() => history.state as Record<string, unknown> | null);
-    expect(state?.['__routerUrl']).toBe('/notes/testing/interactive?tab=rust');
+    expect(state?.['__routerUrl']).toBe(`${tabsNormalizedPath}?tab=rust`);
     expect(state?.['__routerPath']).toBeUndefined();
     await expectInteractiveCanaryContent(page);
   });

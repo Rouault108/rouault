@@ -1,8 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const sourcePath = '/notes/testing/markdown-basic/';
-const sampleJavascriptPath = '/notes/program/sample-javascript/';
-const sampleJavascriptSpaPath = '/notes/program/sample-javascript';
+import { e2eNoteFixtures } from './support/note-fixtures.js';
+
+const sourcePath = e2eNoteFixtures.markdownBasic.directPath;
+const sampleJavascriptPath = e2eNoteFixtures.sampleJavascript.directPath;
+const sampleJavascriptSpaPath = e2eNoteFixtures.sampleJavascript.normalizedPath;
 
 interface TocSyncState {
   hostActiveId: string | null;
