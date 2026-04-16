@@ -1,3 +1,7 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -56,18 +60,98 @@ describe('buildE2ENoteFixtureManifest', () => {
 
   it('required fixture id が欠けている場合は失敗すること', () => {
     expect(() =>
-      buildE2ENoteFixtureManifest([
+      buildE2ENoteFixtureManifest(
+        [
+          {
+            title: 'Layout Rich',
+            slug: 'e2e/layout-rich',
+            permalink: '/notes/e2e/layout-rich',
+            e2eFixtureId: 'note.layout-rich',
+          },
+        ],
         {
-          title: 'Layout Rich',
-          slug: 'e2e/layout-rich',
-          permalink: '/notes/e2e/layout-rich',
-          e2eFixtureId: 'note.layout-rich',
+          fallbackSourceRoots: [],
         },
-      ]),
+      ),
     ).toThrowError(
       `Missing required e2e fixture ids: ${REQUIRED_E2E_NOTE_FIXTURE_IDS.filter((fixtureId) => fixtureId !== 'note.layout-rich')
         .sort()
         .join(', ')}.`,
     );
+  });
+
+  it('stale な .velite 入力でも source markdown から required fixture を補完できること', () => {
+    const fixtureRoot = mkdtempSync(join(tmpdir(), 'rouault-e2e-fixture-manifest-'));
+
+    try {
+      const fallbackRoot = join(fixtureRoot, 'test-fixtures');
+      const fallbackDir = join(fallbackRoot, 'e2e');
+      mkdirSync(fallbackDir, { recursive: true });
+      writeFileSync(
+        join(fallbackDir, 'layout-rich.md'),
+        `---
+title: 'Layout Rich'
+e2eFixtureId: 'note.layout-rich'
+---
+
+# fixture
+`,
+        'utf8',
+      );
+
+      const manifest = buildE2ENoteFixtureManifest(
+        [
+          {
+            title: 'Code',
+            slug: 'testing/code',
+            permalink: '/notes/testing/code',
+            e2eFixtureId: 'note.code',
+          },
+          {
+            title: 'Interactive',
+            slug: 'testing/interactive',
+            permalink: '/notes/testing/interactive',
+            e2eFixtureId: 'note.interactive',
+          },
+          {
+            title: 'Markdown Basic',
+            slug: 'testing/markdown-basic',
+            permalink: '/notes/testing/markdown-basic',
+            e2eFixtureId: 'note.markdown-basic',
+          },
+          {
+            title: 'Sidebar Scroll Source',
+            slug: 'testing/sidebar-scroll-source',
+            permalink: '/notes/testing/sidebar-scroll-source',
+            e2eFixtureId: 'note.sidebar-scroll-source',
+          },
+          {
+            title: 'Sidebar Scroll Target',
+            slug: 'testing/sidebar-scroll-target',
+            permalink: '/notes/testing/sidebar-scroll-target',
+            e2eFixtureId: 'note.sidebar-scroll-target',
+          },
+          {
+            title: 'TOC Absent',
+            slug: 'testing/toc-absent',
+            permalink: '/notes/testing/toc-absent',
+            e2eFixtureId: 'note.toc-absent',
+          },
+        ],
+        {
+          fallbackSourceRoots: [fallbackRoot],
+        },
+      );
+
+      expect(manifest['note.layout-rich']).toEqual({
+        fixtureId: 'note.layout-rich',
+        title: 'Layout Rich',
+        slug: 'e2e/layout-rich',
+        permalink: '/notes/e2e/layout-rich',
+        contentRootId: 'note-content-e2e-layout-rich',
+      });
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
   });
 });
