@@ -164,6 +164,53 @@ describe('dev-router-artifact-middleware', () => {
     expect(envelope.document.html).toContain('<h1>About</h1>');
   });
 
+  it('html に埋め込まれた buildId を router artifact の正本として優先すること', async () => {
+    const outputDirectory = await mkdtemp(path.join(tmpdir(), 'rouault-dev-router-artifact-'));
+    temporaryDirectories.push(outputDirectory);
+
+    const aboutDirectory = path.join(outputDirectory, 'about');
+    await mkdir(aboutDirectory, { recursive: true });
+    await writeFile(
+      path.join(aboutDirectory, 'index.html'),
+      [
+        '<!doctype html>',
+        '<html lang="ja">',
+        '  <head>',
+        '    <meta charset="utf-8">',
+        '    <meta name="rouault-build-id" content="dist-build">',
+        '    <title>About - Rouault</title>',
+        '  </head>',
+        '  <body>',
+        '    <main id="main-content"><h1>About</h1></main>',
+        '    <layout-footer build-label="dist-build"></layout-footer>',
+        '  </body>',
+        '</html>',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const middleware = createDevelopmentRouterArtifactMiddleware({
+      outputDirectory,
+      buildId: 'dev-build',
+    });
+
+    const request = {
+      method: 'GET',
+      url: '/__router/about/index.router.json',
+    } satisfies Partial<IncomingMessage>;
+    const { response, state } = createMockResponse();
+
+    middleware(request as IncomingMessage, response, () => {
+      throw new Error('next should not be called');
+    });
+
+    const envelope = JSON.parse(state.body.toString('utf8')) as {
+      buildId: string | null;
+    };
+
+    expect(envelope.buildId).toBe('dist-build');
+  });
+
   it('対応する html が存在しない場合は次の middleware へ渡すこと', async () => {
     const outputDirectory = await mkdtemp(path.join(tmpdir(), 'rouault-dev-router-artifact-'));
     temporaryDirectories.push(outputDirectory);

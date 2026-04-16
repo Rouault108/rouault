@@ -9,6 +9,30 @@ const ROUTER_ARTIFACT_ROOT_PATHNAME = '/__router';
 const ROUTER_ARTIFACT_FILE_NAME = 'index.router.json';
 const ROOT_ROUTER_ARTIFACT_PATHNAME = `${ROUTER_ARTIFACT_ROOT_PATHNAME}/${ROUTER_ARTIFACT_FILE_NAME}`;
 
+function readEmbeddedBuildIdFromHtml(html: string): string | undefined {
+  const metaMatch = html.match(
+    /<meta\s+[^>]*name=(['"])rouault-build-id\1[^>]*content=(['"])(.*?)\2[^>]*>/iu,
+  );
+  if (typeof metaMatch?.[3] === 'string') {
+    const buildId = metaMatch[3].trim();
+    if (buildId.length > 0) {
+      return buildId;
+    }
+  }
+
+  const footerMatch = html.match(
+    /<layout-footer\b[^>]*\sbuild-label=(['"])(.*?)\1[^>]*>/iu,
+  );
+  if (typeof footerMatch?.[2] === 'string') {
+    const buildId = footerMatch[2].trim();
+    if (buildId.length > 0) {
+      return buildId;
+    }
+  }
+
+  return undefined;
+}
+
 function isSafeResolvedPath(rootDirectory: string, candidatePath: string): boolean {
   const resolvedRoot = path.resolve(rootDirectory);
   const resolvedCandidate = path.resolve(candidatePath);
@@ -112,8 +136,9 @@ export function createDevelopmentRouterArtifactMiddleware(options: {
 
     try {
       const html = readFileSync(htmlFilePath, 'utf8');
+      const embeddedBuildId = readEmbeddedBuildIdFromHtml(html);
       const envelope = createNavigationEnvelopeFromHtml(html, htmlFilePath, {
-        buildId,
+        buildId: embeddedBuildId ?? buildId,
         generatedAt: new Date().toISOString(),
       });
       const body = `${JSON.stringify(envelope, null, 2)}\n`;

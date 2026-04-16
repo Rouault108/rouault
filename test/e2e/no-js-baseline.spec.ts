@@ -210,21 +210,39 @@ test.describe('No-JS baseline', () => {
     expect(headerText).not.toContain('ホーム');
   });
 
-  test('ヘッダーがスクロールしても固定され、app shell sidebar host が存在しても崩れないこと', async ({
+  test('ヘッダーがスクロール後も上端に残り、app shell sidebar host が存在しても崩れないこと', async ({
     page,
   }) => {
     await page.goto(layoutRichPath);
 
-    const before = await page.locator('layout-header').boundingBox();
-    expect(before).not.toBeNull();
+    const readHeaderVisibilityState = async (): Promise<{
+      top: number | null;
+      sticky: string | null;
+      visibleAtViewportTop: boolean;
+    }> =>
+      await page.locator('layout-header').evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const topElement = document.elementFromPoint(window.innerWidth / 2, 12);
+        return {
+          top: Number.isFinite(rect.top) ? rect.top : null,
+          sticky: getComputedStyle(element).position,
+          visibleAtViewportTop:
+            topElement instanceof Element && topElement.closest('layout-header') === element,
+        };
+      });
+
+    const before = await readHeaderVisibilityState();
+    expect(before.top).not.toBeNull();
+    expect(before.sticky).toBe('sticky');
 
     await page.evaluate(() => {
       window.scrollTo({ top: 1200, behavior: 'instant' });
     });
 
-    const after = await page.locator('layout-header').boundingBox();
-    expect(after).not.toBeNull();
-    expect(Math.round(after?.y ?? -1)).toBe(Math.round(before?.y ?? -1));
+    const after = await readHeaderVisibilityState();
+    expect(after.top).not.toBeNull();
+    expect(after.sticky).toBe('sticky');
+    expect(after.visibleAtViewportTop).toBe(true);
     await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
   });
 });

@@ -77,6 +77,7 @@ export class TocActiveTracker {
   private _viewportSyncScheduled = false;
   private _initialRefreshTimer: number | null = null;
   private _initialViewportSyncFrame: number | null = null;
+  private _initialHashStabilizationTimer: number | null = null;
   private _pendingEmptyVisibleHeadingsTimer: number | null = null;
 
   constructor(options: TocActiveTrackerOptions) {
@@ -128,6 +129,15 @@ export class TocActiveTracker {
       }
       this._syncActiveHeadingFromViewport();
     });
+
+    this._initialHashStabilizationTimer = window.setTimeout(() => {
+      this._initialHashStabilizationTimer = null;
+      if (!this._started) {
+        return;
+      }
+
+      this._syncInitialHashActiveId();
+    }, 120);
   }
 
   destroy(): void {
@@ -153,6 +163,11 @@ export class TocActiveTracker {
     if (this._initialViewportSyncFrame !== null) {
       cancelAnimationFrame(this._initialViewportSyncFrame);
       this._initialViewportSyncFrame = null;
+    }
+
+    if (this._initialHashStabilizationTimer !== null) {
+      clearTimeout(this._initialHashStabilizationTimer);
+      this._initialHashStabilizationTimer = null;
     }
 
     if (this._pendingEmptyVisibleHeadingsTimer !== null) {
@@ -261,6 +276,36 @@ export class TocActiveTracker {
     if (this._visibleHeadings.some((heading) => heading.id === hash)) {
       this._onActiveIdChange(hash);
     }
+  }
+
+  private _syncInitialHashActiveId(): void {
+    const hash = decodeHash(window.location.hash);
+    if (hash.length === 0 || this._getActiveId() === hash) {
+      return;
+    }
+
+    if (!this._visibleHeadings.some((heading) => heading.id === hash)) {
+      return;
+    }
+
+    const target = document.getElementById(hash);
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const rect = target.getBoundingClientRect();
+    if (rect.bottom <= 0 || rect.top >= window.innerHeight) {
+      return;
+    }
+
+    /*
+     * 初回 hash 直アクセスでは、router 側の hash scroll と
+     * TOC hydration の開始順がブラウザ差で前後し得る。
+     * scroll 後に対象見出しが viewport 内へ入っているなら、
+     * 初期 current は hash を正本に戻してから通常の viewport 同期へ委ねる。
+     */
+    this._onActiveIdChange(hash);
+    this._scheduleViewportSync();
   }
 
   private _resolveActiveHeadingFromViewport(): string {

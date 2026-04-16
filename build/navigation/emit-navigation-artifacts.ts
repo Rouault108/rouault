@@ -149,6 +149,21 @@ const toNumber = (value: string | null, fallback: number): number => {
 const toTocPresence = (value: string | null): TocPresence =>
   value === 'present' ? 'present' : 'absent';
 
+const readEmbeddedBuildId = (document: Parse5Document): string | undefined => {
+  const buildIdMeta = findFirstElement(
+    document,
+    (candidate) =>
+      candidate.tagName === 'meta' && getAttribute(candidate, 'name') === 'rouault-build-id',
+  );
+  const metaBuildId = toOptionalString(buildIdMeta ? getAttribute(buildIdMeta, 'content') : null);
+  if (metaBuildId) {
+    return metaBuildId;
+  }
+
+  const footer = findFirstElement(document, (candidate) => candidate.tagName === 'layout-footer');
+  return toOptionalString(footer ? getAttribute(footer, 'build-label') : null) ?? undefined;
+};
+
 const collectHydrationPlan = (document: Parse5Document): HydrationPlanScope[] => {
   const scopes = findAllElements(
     document,
@@ -269,6 +284,7 @@ export const createNavigationEnvelopeFromHtml = (
   } = {},
 ): NavigationEnvelope => {
   const document = parse5.parse(html);
+  const embeddedBuildId = readEmbeddedBuildId(document);
   const main = findFirstElement(
     document,
     (candidate) =>
@@ -292,7 +308,7 @@ export const createNavigationEnvelopeFromHtml = (
 
   return {
     schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
-    buildId: options.buildId,
+    buildId: embeddedBuildId ?? options.buildId,
     generatedAt: options.generatedAt,
     document: {
       html: serializeInnerHtml(main),
