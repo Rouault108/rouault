@@ -1,4 +1,4 @@
-import { css, html, LitElement } from 'lit';
+import { html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import '../ui/sidebar-shell/sidebar-shell.js';
@@ -10,41 +10,6 @@ import type {
 
 @customElement('layout-sidebar-surface')
 export class LayoutSidebarSurface extends LitElement {
-  static override styles = css`
-    :host {
-      display: block;
-      block-size: 100%;
-      min-block-size: 0;
-      overflow: visible;
-    }
-
-    ui-sidebar-shell {
-      display: block;
-      block-size: 100%;
-      min-block-size: 0;
-    }
-
-    .sidebar-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--space-2, 8px);
-      min-block-size: var(--control-height-lg, 40px);
-      padding: var(--space-2, 8px) var(--space-4, 16px);
-      border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(20% 0 0 / 0.12));
-      background: var(--bg-surface-2, oklch(100% 0 0));
-    }
-
-    .heading {
-      margin: 0;
-      font-family: var(--font-sans);
-      font-size: var(--text-sm, 13px);
-      font-weight: var(--font-medium, 500);
-      letter-spacing: 0.01em;
-      color: var(--fg-muted, oklch(42% 0 0));
-    }
-  `;
-
   @property({ type: String })
   heading = 'ナビゲーション';
 
@@ -60,6 +25,10 @@ export class LayoutSidebarSurface extends LitElement {
   @property({ attribute: false })
   returnFocusTarget: HTMLElement | null = null;
 
+  /**
+   * overlay layer へ portal される light DOM surface。
+   * 見た目の規約は global CSS（main.css）で管理する。
+   */
   protected override createRenderRoot(): HTMLElement {
     return this;
   }

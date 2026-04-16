@@ -1,4 +1,4 @@
-import { css, LitElement, nothing } from 'lit';
+import { css, html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { SidebarShellProjection } from '../../../shared/navigation/shell-projection.js';
 import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
@@ -52,6 +52,10 @@ export class LayoutSidebar extends LitElement {
       block-size: 100%;
       min-block-size: 0;
       overflow: visible;
+    }
+
+    slot {
+      display: contents;
     }
   `;
 
@@ -570,7 +574,7 @@ export class LayoutSidebar extends LitElement {
   };
 
   protected override render() {
-    return nothing;
+    return html`<slot></slot>`;
   }
 }
 

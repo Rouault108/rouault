@@ -1787,31 +1787,67 @@ app-router[data-sidebar-presence='absent'] > main#main-content {
 /*
  * overlay sidebar の surface は app shell overlay layer へ portal する。
  *
- * そのため .layout-sidebar-col 側で sticky / footer boundary の影響を受けるのは
- * fixed mode の実体だけでよい。
+ * fixed mode では layout-sidebar の light DOM child として投影され、
+ * overlay mode では layout-sidebar-surface 自体が overlay layer へ移る。
+ *
+ * そのため sidebar nav / overlay header の見た目は、
+ * layout-sidebar と layout-sidebar-surface の両方へ同じ契約を適用する。
  */
 .layout-sidebar-col > layout-sidebar[data-mode='fixed'] {
   transform: translateY(calc(var(--layout-sticky-footer-offset, 0px) * -1));
 }
 
-layout-sidebar [data-sidebar-nav] {
+layout-sidebar-surface {
+  display: block;
+  block-size: 100%;
+  min-block-size: 0;
+  overflow: visible;
+}
+
+layout-sidebar-surface > ui-sidebar-shell {
+  display: block;
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+layout-sidebar-surface .sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2, 8px);
+  min-block-size: var(--control-height-lg, 40px);
+  padding: var(--space-2, 8px) var(--space-4, 16px);
+  border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(20% 0 0 / 0.12));
+  background: var(--bg-surface-2, oklch(100% 0 0));
+}
+
+layout-sidebar-surface .heading {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm, 13px);
+  font-weight: var(--font-medium, 500);
+  letter-spacing: 0.01em;
+  color: var(--fg-muted, oklch(42% 0 0));
+}
+
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] {
   display: block;
   min-block-size: 0;
   padding: var(--space-3, 12px) 0;
   color: var(--fg-default);
 }
 
-layout-sidebar [data-sidebar-nav] ul {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] ul {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-layout-sidebar [data-sidebar-nav] li {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] li {
   margin: 0;
 }
 
-layout-sidebar [data-sidebar-nav] [data-sidebar-nav-control] {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-control] {
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -1829,11 +1865,11 @@ layout-sidebar [data-sidebar-nav] [data-sidebar-nav-control] {
   border-radius: 0;
 }
 
-layout-sidebar [data-sidebar-nav] li > ul {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] li > ul {
   padding-inline-start: var(--space-4, 16px);
 }
 
-layout-sidebar [data-sidebar-nav] [data-sidebar-nav-branch-control] {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-branch-control] {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 16px;
   align-items: center;
@@ -1845,11 +1881,11 @@ layout-sidebar [data-sidebar-nav] [data-sidebar-nav-branch-control] {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  layout-sidebar [data-sidebar-nav] [data-sidebar-nav-branch-control]:hover {
+  :is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-branch-control]:hover {
     background: var(--sidebar-item-branch-hover-bg, oklch(from var(--fg-default) l c h / 0.022));
   }
 
-  layout-sidebar
+  :is(layout-sidebar, layout-sidebar-surface)
     [data-sidebar-nav]
     [data-sidebar-nav-branch-control]:hover
     [data-sidebar-nav-disclosure] {
@@ -1857,13 +1893,13 @@ layout-sidebar [data-sidebar-nav] [data-sidebar-nav-branch-control] {
   }
 }
 
-layout-sidebar [data-sidebar-nav] [data-sidebar-nav-label] {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-label] {
   display: block;
   min-inline-size: 0;
   padding-inline-start: var(--space-2, 8px);
 }
 
-layout-sidebar [data-sidebar-nav] [data-sidebar-nav-disclosure] {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-disclosure] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1877,25 +1913,25 @@ layout-sidebar [data-sidebar-nav] [data-sidebar-nav-disclosure] {
     color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
 }
 
-layout-sidebar [data-sidebar-nav] [data-sidebar-nav-disclosure] svg {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-disclosure] svg {
   display: block;
   inline-size: 16px;
   block-size: 16px;
 }
 
-layout-sidebar
+:is(layout-sidebar, layout-sidebar-surface)
   [data-sidebar-nav]
   [data-sidebar-nav-branch-control][aria-expanded='true']
   [data-sidebar-nav-disclosure] {
   transform: rotate(90deg);
 }
 
-layout-sidebar [data-sidebar-nav] [data-sidebar-nav-link][aria-current='page'] {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-link][aria-current='page'] {
   color: var(--fg-strong, var(--fg-default));
   background: color-mix(in oklab, var(--accent-soft, oklch(96% 0.02 240)) 72%, transparent);
 }
 
-layout-sidebar
+:is(layout-sidebar, layout-sidebar-surface)
   [data-sidebar-nav]
   li[data-current-branch='true']
   > [data-sidebar-nav-control]:not([aria-current='page']) {
@@ -1903,7 +1939,7 @@ layout-sidebar
   font-weight: 600;
 }
 
-layout-sidebar
+:is(layout-sidebar, layout-sidebar-surface)
   [data-sidebar-nav]
   li[data-current-branch='true']
   > [data-sidebar-nav-control]:not([aria-current='page'])::before {
@@ -1916,7 +1952,7 @@ layout-sidebar
   background: color-mix(in oklab, var(--fg-default) 24%, transparent);
 }
 
-layout-sidebar
+:is(layout-sidebar, layout-sidebar-surface)
   [data-sidebar-nav]
   li[data-current-branch='true']
   > [data-sidebar-nav-control]:not([aria-current='page'])
@@ -1924,13 +1960,13 @@ layout-sidebar
   color: var(--fg-default);
 }
 
-layout-sidebar [data-sidebar-nav] [data-sidebar-nav-control]:focus-visible {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-control]:focus-visible {
   outline: 2px solid var(--focus-ring, oklch(62% 0.19 254));
   outline-offset: -2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  layout-sidebar [data-sidebar-nav] [data-sidebar-nav-disclosure] {
+  :is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-disclosure] {
     transition-duration: 0.01ms;
   }
 }
