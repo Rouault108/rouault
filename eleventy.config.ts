@@ -16,8 +16,6 @@ import { hasExternalMediaBaseUrl } from './build/media/media-base-url.js';
 import { resolveBuildLabel } from './build/metadata/build-metadata.js';
 import { resolveTrailingSlashRewrite } from './shared/navigation/trailing-slash-rewrite.js';
 
-let veliteWatchStartupPromise: Promise<void> | null = null;
-
 const formatErrorForConsole = (error: unknown): string => {
   if (error instanceof Error) {
     return error.stack ?? `${error.name}: ${error.message}`;
@@ -35,27 +33,13 @@ const formatErrorForConsole = (error: unknown): string => {
 };
 
 const ensureVeliteBuild = async (isServing: boolean): Promise<void> => {
-  if (!isServing) {
-    await build({
-      clean: true,
-      watch: false,
-    });
-    return;
-  }
-
-  if (veliteWatchStartupPromise === null) {
-    veliteWatchStartupPromise = build({
-      clean: false,
-      watch: true,
-    })
-      .then(() => undefined)
-      .catch((error: unknown) => {
-        veliteWatchStartupPromise = null;
-        throw error;
-      });
-  }
-
-  await veliteWatchStartupPromise;
+  await build({
+    clean: !isServing,
+    // Velite 0.3.1 は watch 時に root 全体を再帰監視するため、
+    // root='.' では node_modules 配下まで監視して EMFILE を起こしやすい。
+    // 開発時の再実行は Eleventy 側の watch と eleventy.before に委譲する。
+    watch: false,
+  });
 };
 
 const registerTrailingSlashRewrite = (server: ViteDevServer): void => {

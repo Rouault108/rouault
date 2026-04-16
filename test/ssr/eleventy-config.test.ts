@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import type { UserConfig } from '@11ty/eleventy';
@@ -47,6 +47,15 @@ const createConfigCapture = () => {
 };
 
 describe('eleventy config', () => {
+  it('開発時の Velite は Eleventy 側の watch に委譲し、内部 watch を起動しないこと', () => {
+    const configPath = new URL('../../eleventy.config.ts', import.meta.url);
+    const source = readFileSync(configPath, 'utf8');
+
+    expect(source).toContain('watch: false,');
+    expect(source).not.toContain('watch: true,');
+    expect(source).toContain('開発時の再実行は Eleventy 側の watch と eleventy.before に委譲する。');
+  });
+
   it('tagPages グローバルデータを遅延 import で登録できること', async () => {
     const { config, globalData, passthroughCopies } = createConfigCapture();
 
