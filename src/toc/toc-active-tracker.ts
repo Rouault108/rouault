@@ -38,6 +38,30 @@ const readHeaderOffset = (): number => {
   return (Number.isFinite(headerHeight) ? headerHeight : 48) + 32;
 };
 
+const shouldPreserveHashActiveId = (activeId: string): boolean => {
+  const hash = decodeHash(window.location.hash);
+  if (hash.length === 0 || hash !== activeId) {
+    return false;
+  }
+
+  const target = document.getElementById(hash);
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  const rect = target.getBoundingClientRect();
+  const viewportTop = readHeaderOffset();
+  const viewportBottom = window.innerHeight;
+
+  /*
+   * hash 直アクセス直後は、対象見出しが viewport 内に見えていても
+   * active zone へ到達する前の余白位置に配置されることがある。
+   * この瞬間に幾何学再計算を優先すると 1 つ前の見出しへ巻き戻るため、
+   * hash 対象が画面内に残っている間は現在値を維持する。
+   */
+  return rect.top > viewportTop && rect.top < viewportBottom && rect.bottom > 0;
+};
+
 export class TocActiveTracker {
   private readonly _contentRootId: string;
   private readonly _capabilities: TocCapabilities;
@@ -272,6 +296,10 @@ export class TocActiveTracker {
 
   private _syncActiveHeadingFromViewport(): void {
     if (!this._started || !this._capabilities.activeTracking) {
+      return;
+    }
+
+    if (shouldPreserveHashActiveId(this._getActiveId())) {
       return;
     }
 

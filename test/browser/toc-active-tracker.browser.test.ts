@@ -172,6 +172,100 @@ describe('TocActiveTracker', () => {
     document.documentElement.style.removeProperty('--header-height');
   });
 
+  it('hash 対象が viewport 内に見えている間は初期 current を 1 つ前の見出しへ巻き戻さないこと', async () => {
+    document.body.innerHTML = `
+      <article id="content-root">
+        <h2 id="section-1">Section 1</h2>
+        <h2 id="section-2">Section 2</h2>
+        <h2 id="section-3">Section 3</h2>
+      </article>
+    `;
+
+    document.documentElement.style.setProperty('--header-height', '48px');
+    window.history.replaceState(null, '', '#section-2');
+
+    const headings: Heading[] = [
+      { id: 'section-1', text: 'Section 1', level: 2 },
+      { id: 'section-2', text: 'Section 2', level: 2 },
+      { id: 'section-3', text: 'Section 3', level: 2 },
+    ];
+
+    const topById = new Map<string, number>([
+      ['section-1', -120],
+      ['section-2', 160],
+      ['section-3', 520],
+    ]);
+
+    for (const heading of headings) {
+      const element = document.getElementById(heading.id);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`${heading.id} の fixture 構築に失敗しました。`);
+      }
+
+      Object.defineProperty(element, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => {
+          const top = topById.get(heading.id) ?? 0;
+          return {
+            x: 0,
+            y: top,
+            top,
+            left: 0,
+            right: 800,
+            bottom: top + 32,
+            width: 800,
+            height: 32,
+            toJSON: () => undefined,
+          } satisfies DOMRect;
+        },
+      });
+    }
+
+    let activeId = '';
+    const snapshots: string[] = [];
+    const tracker = new TocActiveTracker({
+      contentRootId: 'content-root',
+      headings,
+      capabilities: {
+        activeTracking: true,
+        dynamicScopes: false,
+        mobileSummary: false,
+      },
+      getActiveId: () => activeId,
+      onVisibleHeadingsChange: () => undefined,
+      onActiveIdChange: (id) => {
+        activeId = id;
+        snapshots.push(id);
+      },
+    });
+
+    tracker.start();
+    await waitForRefresh();
+    expect(activeId).to.equal('section-2');
+
+    window.dispatchEvent(new Event('scroll'));
+    await waitForRefresh();
+    expect(activeId).to.equal('section-2');
+
+    topById.set('section-2', 40);
+    window.dispatchEvent(new Event('scroll'));
+    await waitForRefresh();
+    expect(activeId).to.equal('section-2');
+
+    topById.set('section-2', -120);
+    topById.set('section-3', 24);
+    window.dispatchEvent(new Event('scroll'));
+    await waitForRefresh();
+    expect(activeId).to.equal('section-3');
+
+    expect(snapshots[0]).to.equal('section-2');
+    expect(snapshots.at(-1)).to.equal('section-3');
+
+    tracker.destroy();
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    document.documentElement.style.removeProperty('--header-height');
+  });
+
   it('静的 TOC では mutation 中の一時的な heading 不在で visible headings を空に戻さないこと', async () => {
     document.body.innerHTML = `
       <article id="content-root">

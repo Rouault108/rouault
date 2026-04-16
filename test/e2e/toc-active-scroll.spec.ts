@@ -92,6 +92,11 @@ const waitForTocReady = async (page: Page): Promise<void> => {
   await expect.poll(async () => (await readTocSyncState(page)).childDomActiveLabel).not.toBeNull();
 };
 
+const waitForTocSettled = async (page: Page): Promise<void> => {
+  await waitForTocReady(page);
+  await expectTocSynchronizedToViewport(page);
+};
+
 const expectTocSynchronized = async (
   page: Page,
   expectedId: string,
@@ -238,7 +243,7 @@ test.describe('TOC active state stays synchronized with host state', () => {
     page,
   }) => {
     await page.goto(layoutRichPath);
-    await waitForTocReady(page);
+    await waitForTocSettled(page);
 
     const intro = await readHeadingByText(page, '1. 導入');
     const stateSync = await readHeadingByText(page, '2. 状態同期');
@@ -265,7 +270,7 @@ test.describe('TOC active state stays synchronized with host state', () => {
 
     await page.goto(`${layoutRichPath}#${encodeURIComponent(target.id)}`);
     await waitForTocReady(page);
-    await expectTocSynchronizedToViewport(page);
+    await expectTocSynchronized(page, target.id, target.label);
 
     const position = await readHeadingViewportPosition(page, target.id);
 
@@ -282,7 +287,7 @@ test.describe('TOC active state stays synchronized with host state', () => {
     await navigateWithAppRouter(page, layoutRichSpaPath);
 
     await expect(page).toHaveURL(layoutRichSpaPath);
-    await waitForTocReady(page);
+    await waitForTocSettled(page);
 
     const intro = await readHeadingByText(page, '1. 導入');
     const stateSync = await readHeadingByText(page, '2. 状態同期');
@@ -290,6 +295,6 @@ test.describe('TOC active state stays synchronized with host state', () => {
     await expectTocSynchronized(page, intro.id, intro.label);
 
     await scrollHeadingToActiveZone(page, stateSync.id);
-    await expectTocSynchronized(page, stateSync.id, stateSync.label);
+    await expectTocSynchronizedToViewport(page);
   });
 });
