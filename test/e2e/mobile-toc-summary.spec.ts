@@ -41,22 +41,6 @@ const waitForMobileBar = async (page: Page): Promise<void> => {
     .toBe(true);
 };
 
-const scrollFooterIntoView = async (page: Page): Promise<void> => {
-  await page.evaluate(() => {
-    const footer = document.querySelector('footer');
-    if (footer instanceof HTMLElement) {
-      footer.scrollIntoView({ block: 'end', inline: 'nearest' });
-      return;
-    }
-
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      left: 0,
-      behavior: 'instant',
-    });
-  });
-};
-
 const readMobileSummaryState = async (page: Page): Promise<MobileSummaryState> =>
   await page.evaluate(() => {
     const toc = document.querySelector('layout-toc');
@@ -81,6 +65,51 @@ const readMobileSummaryState = async (page: Page): Promise<MobileSummaryState> =
       title: title instanceof HTMLElement ? (title.textContent?.trim() ?? '') : null,
     };
   });
+
+const waitForFooterVisible = async (page: Page): Promise<void> => {
+  await expect
+    .poll(async () => {
+      const state = await readMobileSummaryState(page);
+      return state.footerTop !== null && state.footerTop < state.viewportHeight;
+    })
+    .toBe(true);
+};
+
+const scrollFooterIntoView = async (page: Page): Promise<void> => {
+  await page.evaluate(() => {
+    const footer = document.querySelector('footer');
+    if (footer instanceof HTMLElement) {
+      const rect = footer.getBoundingClientRect();
+      const nextTop = Math.max(0, window.scrollY + rect.bottom - window.innerHeight);
+
+      window.scrollTo({
+        top: nextTop,
+        left: 0,
+        behavior: 'instant',
+      });
+      return;
+    }
+
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      left: 0,
+      behavior: 'instant',
+    });
+  });
+
+  await waitForFooterVisible(page);
+
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            resolve();
+          });
+        });
+      }),
+  );
+};
 
 test.describe('mobile TOC summary UX', () => {
   test.beforeEach(async ({ page }) => {
