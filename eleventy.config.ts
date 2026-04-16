@@ -170,6 +170,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
 
   // src 外にあるコンテンツを開発時の監視対象へ追加する。
   eleventyConfig.addWatchTarget?.('./content/**/*');
+  eleventyConfig.addWatchTarget?.('./test/fixtures/content/**/*');
 
   eleventyConfig.addLayoutAlias('base', 'BaseLayout.11ty.ts');
   eleventyConfig.addLayoutAlias('note', 'NoteLayout.11ty.ts');

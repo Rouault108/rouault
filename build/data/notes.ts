@@ -22,6 +22,10 @@ import {
 } from '../../shared/note/note-surface-policy.js';
 import { type TestingArea, normalizeTestingArea } from '../../shared/note/testing-area.js';
 import type { NoteHydrationBudgetProfileName } from '../../src/types/note-hydration-budget-profile.js';
+import {
+  normalizeNoteSourceRoot,
+  type NoteSourceRoot,
+} from '../../shared/note/note-source-root.js';
 
 type SidebarIconSetting = IconName | 'none';
 
@@ -33,6 +37,10 @@ interface NoteSidebarConfig {
 interface NoteDirectoryConfig {
   order?: string[];
   sidebar?: NoteSidebarConfig;
+}
+
+interface BuildNotesCollectionOptions {
+  sourceRoots?: Partial<Record<NoteSourceRoot, string>>;
 }
 
 export interface SourceNote {
@@ -48,6 +56,7 @@ export interface SourceNote {
   kind?: NoteContentKind;
   testingArea?: TestingArea;
   hydrationBudgetProfile?: NoteHydrationBudgetProfileName;
+  sourceRoot?: NoteSourceRoot;
   e2eFixtureId?: string;
   genre?: string[];
   sidebarIcon?: SidebarIconSetting;
@@ -74,6 +83,7 @@ export interface IntrinsicNote extends SourceNote {
   kind: NoteContentKind;
   testingArea?: TestingArea;
   hydrationBudgetProfile?: NoteHydrationBudgetProfileName;
+  sourceRoot?: NoteSourceRoot;
   e2eFixtureId?: string;
 }
 
@@ -217,9 +227,21 @@ const resolveNoteSidebarIcon = (
 export const buildNotesCollection = (
   notes: readonly SourceNote[],
   contentRoot: string,
+  options: BuildNotesCollectionOptions = {},
 ): IntrinsicNotesCollection => {
   const configCache = new Map<string, NoteDirectoryConfig | null>();
   const fileExistenceCache = new Map<string, boolean>();
+  const sourceRoots = options.sourceRoots ?? {};
+
+  const resolveSourceRootPath = (note: SourceNote): string => {
+    const normalizedSourceRoot = normalizeNoteSourceRoot(note.sourceRoot);
+
+    if (normalizedSourceRoot === undefined || normalizedSourceRoot === 'content') {
+      return sourceRoots['content'] ?? contentRoot;
+    }
+
+    return sourceRoots[normalizedSourceRoot] ?? join(process.cwd(), normalizedSourceRoot);
+  };
 
   // 同一投影中に同じディレクトリ設定を繰り返し参照するため、同期 I/O を局所的にメモ化する。
   const readCachedConfig = (dirPath: string): NoteDirectoryConfig | undefined => {
@@ -245,7 +267,7 @@ export const buildNotesCollection = (
     return exists;
   };
 
-  const calculateCachedSortIndex = (slug: string): number => {
+  const calculateCachedSortIndex = (slug: string, sourceRootPath: string): number => {
     const parts = slug.split('/');
     const fileName = `${parts[parts.length - 1] ?? ''}.md`;
     const dirParts = parts.slice(0, -1);
@@ -253,7 +275,7 @@ export const buildNotesCollection = (
 
     for (let depth = 0; depth <= dirParts.length; depth += 1) {
       const currentDirParts = dirParts.slice(0, depth);
-      const currentDir = join(contentRoot, ...currentDirParts);
+      const currentDir = join(sourceRootPath, ...currentDirParts);
       const config = readCachedConfig(currentDir);
       const targetName = depth < dirParts.length ? dirParts[depth] : fileName;
       const order = config?.order ?? [];
@@ -265,14 +287,14 @@ export const buildNotesCollection = (
     return sortIndex;
   };
 
-  const collectCachedSidebarScopeRules = (slug: string): SidebarScopeRule[] => {
+  const collectCachedSidebarScopeRules = (slug: string, sourceRootPath: string): SidebarScopeRule[] => {
     const parts = slug.split('/');
     const dirParts = parts.slice(0, -1);
     const rules: SidebarScopeRule[] = [];
 
     for (let depth = 0; depth <= dirParts.length; depth += 1) {
       const currentDirParts = dirParts.slice(0, depth);
-      const currentDir = join(contentRoot, ...currentDirParts);
+      const currentDir = join(sourceRootPath, ...currentDirParts);
       const scope = readCachedConfig(currentDir)?.sidebar?.scope;
 
       if (scope === 'global' || scope === 'self') {
@@ -288,16 +310,17 @@ export const buildNotesCollection = (
 
   const resolveCachedSidebarIconContext = (
     slug: string,
+    sourceRootPath: string,
   ): { directoryIcons: Record<string, IconName> } => {
     const parts = slug.split('/');
     const dirParts = parts.slice(0, -1);
     const directoryIcons: Record<string, IconName> = {};
     let inheritedSetting: SidebarIconSetting | undefined =
-      readCachedConfig(contentRoot)?.sidebar?.icon;
+      readCachedConfig(sourceRootPath)?.sidebar?.icon;
 
     for (let depth = 0; depth < dirParts.length; depth += 1) {
       const currentDirParts = dirParts.slice(0, depth + 1);
-      const currentDir = join(contentRoot, ...currentDirParts);
+      const currentDir = join(sourceRootPath, ...currentDirParts);
       const currentPath = currentDirParts.join('/');
       const configuredSetting = readCachedConfig(currentDir)?.sidebar?.icon;
 
@@ -321,10 +344,11 @@ export const buildNotesCollection = (
     .map((note): IntrinsicNote => {
       const inputSlug = note.slug.trim();
       const normalizedSlug = inputSlug.replace(/^\/+|\/+$/gu, '');
+      const sourceRootPath = resolveSourceRootPath(note);
       const pathInfo = normalizeNotePath({
         requestedSlug: inputSlug,
-        hasLeaf: hasFile(join(contentRoot, `${normalizedSlug}.md`)),
-        hasDirectoryIndex: hasFile(join(contentRoot, normalizedSlug, 'index.md')),
+        hasLeaf: hasFile(join(sourceRootPath, `${normalizedSlug}.md`)),
+        hasDirectoryIndex: hasFile(join(sourceRootPath, normalizedSlug, 'index.md')),
       });
       const sourceSlug = pathInfo.rawSlug;
       const kind = normalizeNoteContentKind(note.kind);
@@ -335,9 +359,11 @@ export const buildNotesCollection = (
           ? note.e2eFixtureId.trim()
           : undefined;
 
-      const sidebarRoot = resolveSidebarRoot(collectCachedSidebarScopeRules(sourceSlug));
+      const sidebarRoot = resolveSidebarRoot(
+        collectCachedSidebarScopeRules(sourceSlug, sourceRootPath),
+      );
       const sidebarIconSetting = note.sidebarIcon;
-      const sidebarIconContext = resolveCachedSidebarIconContext(sourceSlug);
+      const sidebarIconContext = resolveCachedSidebarIconContext(sourceSlug, sourceRootPath);
 
       const inheritedDirectoryIcon = (() => {
         const values = Object.values(sidebarIconContext.directoryIcons);
@@ -360,7 +386,7 @@ export const buildNotesCollection = (
         permalink: pathInfo.permalink,
         noteKind: pathInfo.kind,
         ...(pathInfo.directoryPath !== undefined ? { directoryPath: pathInfo.directoryPath } : {}),
-        sortIndex: calculateCachedSortIndex(sourceSlug),
+        sortIndex: calculateCachedSortIndex(sourceSlug, sourceRootPath),
         tocHeadings: preparedToc.headings,
         tocCapabilities: inferTocCapabilities(preparedToc.headings, kind),
         ...(sidebarRoot !== undefined ? { sidebarRoot } : {}),
@@ -420,7 +446,12 @@ export const loadNotesData = (): IntrinsicNotesCollection => {
 
   const notes = readNotesFile(velitePath);
   const contentRoot = join(process.cwd(), 'content');
-  const enriched = buildNotesCollection(notes, contentRoot);
+  const enriched = buildNotesCollection(notes, contentRoot, {
+    sourceRoots: {
+      content: contentRoot,
+      'test/fixtures/content': join(process.cwd(), 'test/fixtures/content'),
+    },
+  });
 
   return filterPublicNotes(enriched);
 };

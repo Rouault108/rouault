@@ -28,10 +28,11 @@ import {
 } from './src/types/note-hydration-budget-profile.js';
 import { NOTE_CONTENT_KINDS, normalizeNoteContentKind } from './shared/note/note-kind.js';
 import { TESTING_AREAS, normalizeTestingArea } from './shared/note/testing-area.js';
+import { resolveNoteSourceLocation } from './shared/note/note-source-root.js';
 
 const notes = defineCollection({
   name: 'Note',
-  pattern: '**/*.md',
+  pattern: ['content/**/*.md', 'test/fixtures/content/**/*.md'],
   schema: s
     .object({
       title: s.string(),
@@ -55,6 +56,8 @@ const notes = defineCollection({
       toc: s.toc().optional(),
     })
     .transform((data) => {
+      const sourcePath = typeof data.slug === 'string' ? data.slug : '';
+      const { sourceRoot, slug } = resolveNoteSourceLocation(sourcePath);
       const kind = normalizeNoteContentKind(data.kind);
       const testingArea = normalizeTestingArea(data.testingArea);
       const hydrationBudgetProfile = normalizeNoteHydrationBudgetProfileName(
@@ -66,11 +69,13 @@ const notes = defineCollection({
           ? data.e2eFixtureId.trim()
           : undefined;
 
-      validateNoteMetadataContracts(kind, testingArea, data.slug);
-      validateNoteContentContracts(kind, normalizedContent, data.slug, testingArea);
+      validateNoteMetadataContracts(kind, testingArea, sourcePath);
+      validateNoteContentContracts(kind, normalizedContent, sourcePath, testingArea);
 
       return {
         ...data,
+        slug,
+        sourceRoot,
         content: normalizedContent,
         kind,
         ...(testingArea !== undefined ? { testingArea } : {}),
@@ -82,7 +87,7 @@ const notes = defineCollection({
 });
 
 export default defineConfig({
-  root: 'content',
+  root: '.',
   output: {
     data: '.velite',
     assets: 'dist/static',

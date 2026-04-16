@@ -10,17 +10,35 @@ export interface E2ENoteFixtureManifestEntry {
 
 export type E2ENoteFixtureManifest = Readonly<Record<string, E2ENoteFixtureManifestEntry>>;
 
+export const REQUIRED_E2E_NOTE_FIXTURE_IDS = [
+  'note.code',
+  'note.interactive',
+  'note.markdown-basic',
+  'note.sample-javascript',
+  'note.sidebar-scroll-source',
+  'note.sidebar-scroll-target',
+  'note.toc-absent',
+] as const;
+
+export type RequiredE2ENoteFixtureId = (typeof REQUIRED_E2E_NOTE_FIXTURE_IDS)[number];
+
 type FixtureSourceNote = Pick<
   IntrinsicNote,
   'title' | 'slug' | 'permalink' | 'e2eFixtureId'
 >;
 
+interface BuildE2ENoteFixtureManifestOptions {
+  requiredFixtureIds?: readonly string[];
+}
+
 const toSafeDataId = (slug: string): string => slug.replace(/[^a-zA-Z0-9_-]/g, '-');
 
 export const buildE2ENoteFixtureManifest = (
   notes: readonly FixtureSourceNote[],
+  options: BuildE2ENoteFixtureManifestOptions = {},
 ): E2ENoteFixtureManifest => {
   const manifest: Record<string, E2ENoteFixtureManifestEntry> = {};
+  const requiredFixtureIds = options.requiredFixtureIds ?? REQUIRED_E2E_NOTE_FIXTURE_IDS;
 
   for (const note of notes) {
     const fixtureId = typeof note.e2eFixtureId === 'string' ? note.e2eFixtureId.trim() : '';
@@ -47,6 +65,13 @@ export const buildE2ENoteFixtureManifest = (
       permalink,
       contentRootId: `note-content-${toSafeDataId(slug)}`,
     };
+  }
+
+  const missingFixtureIds = requiredFixtureIds.filter((fixtureId) => manifest[fixtureId] === undefined);
+  if (missingFixtureIds.length > 0) {
+    throw new Error(
+      `Missing required e2e fixture ids: ${missingFixtureIds.sort().join(', ')}.`,
+    );
   }
 
   return manifest;

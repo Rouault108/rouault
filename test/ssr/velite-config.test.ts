@@ -10,6 +10,18 @@ describe('velite config', () => {
     expect(source).not.toContain('title: s.string().optional(),');
   });
 
+  it('content と test fixture content の両方を入力対象にし、sourceRoot と slug を正規化すること', () => {
+    const configPath = new URL('../../velite.config.ts', import.meta.url);
+    const source = readFileSync(configPath, 'utf8');
+
+    expect(source).toContain("pattern: ['content/**/*.md', 'test/fixtures/content/**/*.md'],");
+    expect(source).toContain("import { resolveNoteSourceLocation } from './shared/note/note-source-root.js';");
+    expect(source).toContain("const sourcePath = typeof data.slug === 'string' ? data.slug : '';");
+    expect(source).toContain('const { sourceRoot, slug } = resolveNoteSourceLocation(sourcePath);');
+    expect(source).toContain('slug,');
+    expect(source).toContain('sourceRoot,');
+  });
+
   it('ノートの frontmatter で kind を受け付け、保存前に surface HTML へ正規化してから契約検証すること', () => {
     const configPath = new URL('../../velite.config.ts', import.meta.url);
     const source = readFileSync(configPath, 'utf8');
@@ -19,13 +31,13 @@ describe('velite config', () => {
     expect(source).toContain('e2eFixtureId: s.string().optional(),');
     expect(source).toContain('const kind = normalizeNoteContentKind(data.kind);');
     expect(source).toContain('const testingArea = normalizeTestingArea(data.testingArea);');
-    expect(source).toContain("const e2eFixtureId =");
+    expect(source).toContain('const e2eFixtureId =');
     expect(source).toContain(
       'const normalizedContent = normalizeRouaultStaticSurfaceHtml(data.content);',
     );
-    expect(source).toContain('validateNoteMetadataContracts(kind, testingArea, data.slug);');
+    expect(source).toContain('validateNoteMetadataContracts(kind, testingArea, sourcePath);');
     expect(source).toContain(
-      'validateNoteContentContracts(kind, normalizedContent, data.slug, testingArea);',
+      'validateNoteContentContracts(kind, normalizedContent, sourcePath, testingArea);',
     );
     expect(source).toContain('content: normalizedContent,');
   });

@@ -347,6 +347,52 @@ describe('buildNotesCollection', () => {
       ),
     ).toThrow(/Ambiguous note source/);
   });
+
+
+  it('sourceRoot ごとに別の content root と _config.json を参照できる', async () => {
+    const contentRoot = await createContentRoot();
+    const fixtureRoot = await mkdtemp(path.join(os.tmpdir(), 'rouault-note-fixtures-'));
+    tempDirs.push(fixtureRoot);
+
+    await mkdir(path.join(fixtureRoot, 'program', 'javascript'), { recursive: true });
+    await writeFile(
+      path.join(fixtureRoot, 'program', 'javascript', '_config.json'),
+      JSON.stringify({ sidebar: { scope: 'self' }, order: ['sample-javascript.md'] }),
+      'utf8',
+    );
+    await writeFile(
+      path.join(fixtureRoot, 'program', 'javascript', 'sample-javascript.md'),
+      '# fixture',
+      'utf8',
+    );
+
+    const collection = buildNotesCollection(
+      [
+        {
+          slug: 'program/javascript/sample-javascript',
+          title: 'JavaScriptの配列',
+          sourceRoot: 'test/fixtures/content',
+          content: '<h2 id="overview">概要</h2>',
+        },
+      ],
+      contentRoot,
+      {
+        sourceRoots: {
+          content: contentRoot,
+          'test/fixtures/content': fixtureRoot,
+        },
+      },
+    );
+
+    expect(collection[0]).toMatchObject({
+      rawSlug: 'program/javascript/sample-javascript',
+      slug: 'program/javascript/sample-javascript',
+      permalink: '/notes/program/javascript/sample-javascript',
+      sidebarRoot: 'program/javascript',
+      sortIndex: 500500000,
+      sourceRoot: 'test/fixtures/content',
+    });
+  });
 });
 
 describe('filterPublicNotes', () => {

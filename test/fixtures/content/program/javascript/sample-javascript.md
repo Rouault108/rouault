@@ -847,3 +847,21 @@ Array.prototype.join.call(s, '-'); // "t-e-s-t": 文字列に対してjoin()メ�
 |          |                                          toSorted                                          | 配列をソートした新しい配列を返します（元の配列は変更されません）。         |
 |          |                                         toSpliced                                          | 配列を指定範囲で操作した新しい配列を返します（元の配列は変更されません）。 |
 |          |                                            with                                            | 指定したインデックスの要素を置き換えた新しい配列を返します。               |
+```
+
+### `test/fixtures/content/testing/code.md`
+
+```md
+---
+title: 'Code'
+description: 'fenced code、filename、code-group の出力契約を確認します。'
+date: 2026-03-29
+updated: 2026-03-31
+kind: 'testing'
+testingArea: 'code'
+hydrationBudgetProfile: 'testing-code-canary'
+status: 'wip'
+e2eFixtureId: 'note.code'
+---
+
+::example-include{ref="code/core"}
