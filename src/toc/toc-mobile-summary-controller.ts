@@ -29,6 +29,8 @@ export class TocMobileSummaryController {
     this._mediaQuery = window.matchMedia('(max-width: 639px)');
     this._mediaQuery.addEventListener('change', this._onStateChange);
     window.addEventListener('scroll', this._onStateChange, { passive: true });
+    window.addEventListener('resize', this._onStateChange, { passive: true });
+    window.addEventListener('orientationchange', this._onStateChange);
     this.refresh();
   }
 
@@ -43,6 +45,8 @@ export class TocMobileSummaryController {
 
     if (typeof window !== 'undefined') {
       window.removeEventListener('scroll', this._onStateChange);
+      window.removeEventListener('resize', this._onStateChange);
+      window.removeEventListener('orientationchange', this._onStateChange);
     }
   }
 

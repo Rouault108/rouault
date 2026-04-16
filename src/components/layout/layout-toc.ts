@@ -122,6 +122,7 @@ export class LayoutToc extends LitElement {
       display: block;
       block-size: 100%;
       min-block-size: 0;
+      --layout-toc-mobile-bar-height: 56px;
     }
 
     .desktop {
@@ -189,23 +190,52 @@ export class LayoutToc extends LitElement {
       background-color: var(--scrollbar-thumb-hover, var(--fg-muted, oklch(45% 0 0)));
     }
 
+    .mobile-bar {
+      position: fixed;
+      inset-inline: 0;
+      top: var(--header-height);
+      z-index: var(--z-popover, 400);
+      padding:
+        var(--space-2, 8px)
+        max(var(--space-3, 12px), env(safe-area-inset-right))
+        var(--space-2, 8px)
+        max(var(--space-3, 12px), env(safe-area-inset-left));
+      border-bottom: var(--border-width, 1px) solid var(--border-default);
+      background: oklch(from var(--bg-default) l c h / 0.92);
+      backdrop-filter: blur(var(--blur-md, 12px));
+      -webkit-backdrop-filter: blur(var(--blur-md, 12px));
+    }
+
+    .mobile-bar-inner {
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      gap: var(--space-3, 12px);
+      width: min(100%, var(--note-shell-max-width, var(--bp-xl, 1280px)));
+      min-block-size: 40px;
+      margin-inline: auto;
+    }
+
     .home-link {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      inline-size: 36px;
-      block-size: 36px;
+      inline-size: 40px;
+      block-size: 40px;
       border-radius: var(--radius-sm, 4px);
       color: var(--fg-default);
       text-decoration: none;
+      flex: 0 0 auto;
     }
 
     .mobile-summary {
       display: flex;
+      flex: 1 1 auto;
       align-items: center;
       justify-content: space-between;
-      gap: var(--space-2, 8px);
+      gap: var(--space-3, 12px);
       min-inline-size: 0;
+      min-block-size: 40px;
       border: none;
       background: transparent;
       color: var(--fg-default);
@@ -250,7 +280,7 @@ export class LayoutToc extends LitElement {
     .mobile-panel {
       position: fixed;
       inset-inline: 0;
-      top: calc(var(--header-height) + 56px);
+      top: calc(var(--header-height) + var(--layout-toc-mobile-bar-height));
       bottom: 0;
       z-index: var(--z-modal, 300);
       background: var(--bg-default);
@@ -258,8 +288,15 @@ export class LayoutToc extends LitElement {
       transform: translateY(100%);
       transition: transform var(--duration-normal, 150ms)
         var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
-      padding: var(--space-2, 8px) var(--space-3, 12px) var(--space-6, 24px);
+      padding:
+        var(--space-2, 8px)
+        max(var(--space-3, 12px), env(safe-area-inset-right))
+        var(--space-6, 24px)
+        max(var(--space-3, 12px), env(safe-area-inset-left));
       overflow-y: auto;
+      scrollbar-gutter: stable;
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
     }
 
     .mobile-panel[data-open='true'] {
@@ -788,28 +825,30 @@ export class LayoutToc extends LitElement {
       ${this._showMobileBar
         ? html`
             <div class="mobile-bar">
-              <a class="home-link" href=${this.homeHref} aria-label="ホームへ移動">
-                <ui-icon name="house"></ui-icon>
-              </a>
-              <button
-                class="mobile-summary"
-                type="button"
-                aria-expanded=${String(this._panelOpen)}
-                aria-label="目次を開閉"
-                @click=${this._toggleMobilePanel}
-              >
-                <span class="mobile-title">${label}</span>
-                <svg class="progress-ring" viewBox="0 0 20 20" aria-hidden="true">
-                  <circle class="track" cx="10" cy="10" r="8"></circle>
-                  <circle
-                    class="indicator"
-                    cx="10"
-                    cy="10"
-                    r="8"
-                    style="stroke-dasharray: ${circumference}; stroke-dashoffset: ${dashOffset};"
-                  ></circle>
-                </svg>
-              </button>
+              <div class="mobile-bar-inner">
+                <a class="home-link" href=${this.homeHref} aria-label="ホームへ移動">
+                  <ui-icon name="house"></ui-icon>
+                </a>
+                <button
+                  class="mobile-summary"
+                  type="button"
+                  aria-expanded=${String(this._panelOpen)}
+                  aria-label="目次を開閉"
+                  @click=${this._toggleMobilePanel}
+                >
+                  <span class="mobile-title">${label}</span>
+                  <svg class="progress-ring" viewBox="0 0 20 20" aria-hidden="true">
+                    <circle class="track" cx="10" cy="10" r="8"></circle>
+                    <circle
+                      class="indicator"
+                      cx="10"
+                      cy="10"
+                      r="8"
+                      style="stroke-dasharray: ${circumference}; stroke-dashoffset: ${dashOffset};"
+                    ></circle>
+                  </svg>
+                </button>
+              </div>
             </div>
           `
         : nothing}

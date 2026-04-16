@@ -38,8 +38,19 @@ static-first 再設計後の `ui-toc` は純粋な view です。見出し抽出
 
 ### 2.4 `TocMobileSummaryController`
 
-- mobile condensed bar の表示制御
-- mobile summary 用 scroll 監視
+- header 直下に出る mobile summary bar の表示制御
+- mobile summary 用 scroll / resize 監視
+- footer 直前のインライン配置へ依存しない
+
+### 2.5 mobile summary UX contract
+
+mobile summary を有効にするページでは、次を満たすこと。
+
+- `max-width: 639px` では desktop TOC を隠す
+- hydration 後、一定量 scroll したら `layout-toc` が header 直下に viewport 固定の summary bar を出す
+- summary bar は `.layout-toc-col` の通常フロー上の block position に依存しない
+- footer が viewport に入っても summary bar は footer 直前へ落ちない
+- summary を開いた panel は summary bar の直下から開き、header を覆わない
 
 ---
 
@@ -127,3 +138,6 @@ runtime 契約:
 - `layout-toc` が capability ありのときだけ hydrate すること
 - `tocPresence='absent'` では TOC DOM と hydration scope が出ないこと
 - mobile summary controller が `mobileSummary=true` のときだけ動くこと
+- mobile summary bar が hydration 後に header 直下の fixed UI として出ること
+- footer が見える長スクロールでも mobile summary bar が footer 直前へ落ちないこと
+- mobile panel が summary bar の直下から開くこと

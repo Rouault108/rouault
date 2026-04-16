@@ -2306,9 +2306,10 @@ layout-sidebar-surface .heading {
 
   .note-shell,
   .note-shell[data-toc-presence='present'],
-  .note-shell[data-toc-presence='absent'] {
+  .note-shell[data-toc-presence='absent'],
+  .about-shell {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: var(--space-6, 24px);
+    row-gap: 0;
   }
 
   app-router[data-sidebar-presence='present'] .layout-sidebar-col {
@@ -2318,19 +2319,18 @@ layout-sidebar-surface .heading {
     min-inline-size: 0;
   }
 
-  .about-shell {
-    --about-toc-track: clamp(184px, 24vw, calc(var(--aside-width) + var(--space-2, 8px)));
-  }
-
   .home-shell {
     padding-inline: var(--space-3, 12px);
   }
 
-  .note-shell[data-toc-presence='present'] .layout-toc-col {
+  .note-shell[data-toc-presence='present'] .layout-toc-col,
+  .about-shell .layout-toc-col {
     grid-column: 1;
     position: static;
-    block-size: auto;
+    block-size: 0;
+    min-block-size: 0;
     max-block-size: none;
+    overflow: visible;
     transform: none;
   }
 

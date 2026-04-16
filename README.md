@@ -21,6 +21,7 @@ READMEは入口文書です。
 - `docs/testing-taxonomy.md`
 - `docs/compatibility-inventory.md`
 
+
 ## 何を目指すプロダクトか
 
 Rouaultは、次の用途を想定した個人向け読書アプリです。
@@ -214,6 +215,7 @@ Rouaultは、**何を保証するか** でテストの置き場を分けてい�
 - `docs/design-system/foundations.md`
 - `docs/design-system/accessibility.md`
 - `docs/design-system/patterns.md`
+- `docs/design-system/components/toc.md`
 - `docs/design-system/components/`
 
 ## 開発原則

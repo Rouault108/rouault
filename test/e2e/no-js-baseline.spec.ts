@@ -7,6 +7,7 @@ const codePath = e2eNoteFixtures.code.directPath;
 const layoutRich = e2eNoteFixtures.layoutRich;
 const layoutRichPath = layoutRich.directPath;
 const tocAbsentPath = e2eNoteFixtures.tocAbsent.directPath;
+const aboutPath = '/about/';
 
 interface NoteChromeState {
   articleHeaderExists: boolean;
@@ -115,6 +116,56 @@ test.describe('No-JS baseline', () => {
     await expect(page.locator('.layout-toc-col')).toHaveCount(0);
     await expect(page.locator('layout-toc')).toHaveCount(0);
     await expect(page.locator('aside[aria-label="目次"]')).toHaveCount(0);
+  });
+
+  test('about ページが狭幅では SSR 時点で 1 カラムとなり TOC を右カラムへ残さないこと', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 900 });
+    await page.goto(aboutPath);
+
+    const state = await page.evaluate(() => {
+      const shell = document.querySelector('.about-shell');
+      const tocCol = shell?.querySelector(':scope > .layout-toc-col');
+      const tocHost = tocCol?.querySelector('layout-toc');
+
+      if (!(shell instanceof HTMLElement)) {
+        return null;
+      }
+      if (!(tocCol instanceof HTMLElement)) {
+        return null;
+      }
+      if (!(tocHost instanceof HTMLElement)) {
+        return null;
+      }
+
+      const gridTemplateColumns = getComputedStyle(shell).gridTemplateColumns.trim();
+      const trackCount = gridTemplateColumns.length === 0 ? 0 : gridTemplateColumns.split(/\s+/u).length;
+      const tocColRect = tocCol.getBoundingClientRect();
+      const tocHostRect = tocHost.getBoundingClientRect();
+
+      return {
+        trackCount,
+        tocColPosition: getComputedStyle(tocCol).position,
+        tocColLeft: Math.round(tocColRect.left),
+        tocColWidth: Math.round(tocColRect.width),
+        tocHostWidth: Math.round(tocHostRect.width),
+        horizontalOverflow:
+          document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+
+    expect(state).not.toBeNull();
+    expect(state?.trackCount).toBe(1);
+    expect(state?.tocColPosition).toBe('static');
+    expect(state?.tocColLeft ?? Number.POSITIVE_INFINITY).toBeLessThan(80);
+    expect(state?.tocColWidth ?? 0).toBeGreaterThan(240);
+    expect(state?.tocHostWidth ?? 0).toBeGreaterThan(240);
+    expect(state?.horizontalOverflow ?? 0).toBeLessThanOrEqual(1);
+
+    await expect(page.locator('.about-shell')).toHaveCount(1);
+    await expect(page.locator('.about-shell > .layout-toc-col')).toHaveCount(1);
+    await expect(page.locator('.about-shell layout-toc')).toHaveCount(1);
   });
 
   test('layout-rich が狭幅でも本文列を 1文字幅へ潰さないこと', async ({ page }) => {
