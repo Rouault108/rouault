@@ -145,6 +145,24 @@ note sidebar の public DOM 契約は次を正本とします。
 - route 遷移では host を再生成せず、必要時のみ nav subtree と route 由来属性を更新する
 - sidebar host の DOM 実体は app shell 上で再生成しない
 
+### 6.1 overlay layering 契約
+
+狭幅 viewport で note sidebar が `overlay` mode の場合、sidebar surface は本文カラムより前面に描画されなければならない。
+
+この契約で固定する事項:
+
+- overlay sidebar surface は `main#main-content` より前面に出る
+- overlay scrim は本文および補助カラムより前面に出る
+- overlay surface / scrim の重なり順は、sidebar shell 単体の `z-index` だけに依存してはならない
+- overlay surface を保持する host 側の stacking context も含めて、本文より前面になることを保証しなければならない
+- narrow viewport で `.layout-sidebar-col` を 0px track へ畳む場合でも、overlay surface の前面表示契約は維持されなければならない
+
+禁止事項:
+
+- overlay sidebar surface が `main#main-content` の内容に視覚的に貫通されること
+- sticky / transform / containing block の副作用により、overlay surface が viewport overlay として振る舞わなくなること
+- mobile overlay の成立を偶然の DOM 順序に依存させること
+
 ## 7. 受け入れ条件
 
 次を満たすとき、本仕様は守られているとみなします。
@@ -154,3 +172,5 @@ note sidebar の public DOM 契約は次を正本とします。
 3. `layout-sidebar` が overlay state を所有しない
 4. tree expanded state が別責務として維持される
 5. SSR 出力に sidebar host が 1 個だけ存在する
+6. narrow viewport で sidebar が `overlay` mode のとき、sidebar surface と scrim が `main#main-content` より前面に描画される
+7. mobile で sidebar を開いたとき、本文見出し・本文ブロック・TOC が overlay sidebar surface の上に視覚的に重ならない

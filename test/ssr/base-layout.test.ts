@@ -124,6 +124,7 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('<div id="app" class="app-root" data-hydration-scope="app-shell">');
     expect(rendered).toContain('<layout-header');
     expect(rendered).toContain('<app-router');
+    expect(rendered).toContain('data-app-shell-sidebar-overlay-layer');
     expect(rendered).toContain('data-app-router-announcement');
     expect(rendered).toContain('aria-live="polite"');
     expect(rendered).toContain('aria-atomic="true"');

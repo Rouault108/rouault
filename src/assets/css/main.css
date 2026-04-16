@@ -1675,6 +1675,13 @@ ui-list-item > [slot]:not([slot='actions']) a[href]:visited {
   flex-direction: column;
 }
 
+.layout-sidebar-overlay-layer {
+  position: relative;
+  inline-size: 0;
+  block-size: 0;
+  overflow: visible;
+}
+
 app-router {
   flex: 1 1 auto;
   display: grid;
@@ -1778,14 +1785,10 @@ app-router[data-sidebar-presence='absent'] > main#main-content {
 }
 
 /*
- * overlay sidebar の nav は ui-sidebar-shell 内で
- * position: fixed / inline-size: 100vw を使う。
+ * overlay sidebar の surface は app shell overlay layer へ portal する。
  *
- * 祖先の .layout-sidebar-col に transform があると、
- * fixed の containing block が viewport ではなく sidebar column になり、
- * wide viewport で横スクロールを発生させる。
- *
- * footer boundary による押し上げは、fixed mode の実体にだけ適用する。
+ * そのため .layout-sidebar-col 側で sticky / footer boundary の影響を受けるのは
+ * fixed mode の実体だけでよい。
  */
 .layout-sidebar-col > layout-sidebar[data-mode='fixed'] {
   transform: translateY(calc(var(--layout-sticky-footer-offset, 0px) * -1));

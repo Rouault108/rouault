@@ -236,6 +236,7 @@ export class BaseLayout {
         ${data.content}
       </main>
     </app-router>
+    <div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer></div>
     <layout-footer${footerAttributes}></layout-footer>
   </div>
   <ui-search-dialog

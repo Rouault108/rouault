@@ -1,8 +1,5 @@
-import { css, html, LitElement } from 'lit';
+import { css, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import '../ui/sidebar-shell/sidebar-shell.js';
-import type { UiSidebarRequestCloseDetail } from '../ui/sidebar-shell/sidebar-shell.js';
 import type { SidebarShellProjection } from '../../../shared/navigation/shell-projection.js';
 import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
 import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../layout/note-sidebar-breakpoint.js';
@@ -21,6 +18,11 @@ import {
   LayoutSidebarNavInteractionController,
   syncLayoutSidebarNav,
 } from './layout-sidebar-nav.js';
+import {
+  ensureLayoutSidebarOverlayLayer,
+} from './layout-sidebar-overlay-layer.js';
+import './layout-sidebar-surface.js';
+import type { LayoutSidebarSurface } from './layout-sidebar-surface.js';
 
 const normalizeExpandedIds = (expandedIds: Iterable<string>): string[] =>
   [...new Set(expandedIds)].sort((left, right) => left.localeCompare(right));
@@ -50,32 +52,6 @@ export class LayoutSidebar extends LitElement {
       block-size: 100%;
       min-block-size: 0;
       overflow: visible;
-    }
-
-    ui-sidebar-shell {
-      display: block;
-      block-size: 100%;
-      min-block-size: 0;
-    }
-
-    .sidebar-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--space-2, 8px);
-      min-block-size: var(--control-height-lg, 40px);
-      padding: var(--space-2, 8px) var(--space-4, 16px);
-      border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(20% 0 0 / 0.12));
-      background: var(--bg-surface-2, oklch(100% 0 0));
-    }
-
-    .heading {
-      margin: 0;
-      font-family: var(--font-sans);
-      font-size: var(--text-sm, 13px);
-      font-weight: var(--font-medium, 500);
-      letter-spacing: 0.01em;
-      color: var(--fg-muted, oklch(42% 0 0));
     }
   `;
 
@@ -120,6 +96,9 @@ export class LayoutSidebar extends LitElement {
   private _detachStickyFooterBoundary: (() => void) | null = null;
   private _storeCleanup: (() => void) | null = null;
   private _bootstrappedMarkup = false;
+  private _surface: LayoutSidebarSurface | null = null;
+  private _surfaceSyncRequest = 0;
+
   private _navInteraction = new LayoutSidebarNavInteractionController({
     onToggle: (id, expanded) => {
       this._handleNavToggle(id, expanded);
@@ -132,12 +111,13 @@ export class LayoutSidebar extends LitElement {
     },
   });
 
-  protected override createRenderRoot(): HTMLElement {
-    return this;
-  }
-
   applyShellProjection(snapshot: SidebarShellProjection | null): void {
     if (snapshot === null) {
+      this.hidden = true;
+      layoutSidebarController.close(this._resolveSidebarId());
+      this._syncSurfaceMount();
+      this._syncSurfaceProps();
+      void this._syncSurfaceTree();
       return;
     }
 
@@ -150,6 +130,7 @@ export class LayoutSidebar extends LitElement {
     this.fixedBreakpoint = snapshot.fixedBreakpoint;
     this.sidebarId = snapshot.sidebarId;
     this.presentation = snapshot.presentation;
+    this.hidden = !snapshot.present;
     this.setAttribute('state-scope-id', snapshot.stateScopeId);
 
     if (snapshot.selectedId === null) {
@@ -172,6 +153,10 @@ export class LayoutSidebar extends LitElement {
     this.setAttribute('presentation', snapshot.presentation);
     this._navMarkup = snapshot.navHtml?.trim() ?? '';
     this._activeId = null;
+
+    this._syncSurfaceMount();
+    this._syncSurfaceProps();
+    void this._syncSurfaceTree();
   }
 
   readShellProjection(): SidebarShellProjection {
@@ -204,6 +189,10 @@ export class LayoutSidebar extends LitElement {
     this._connectPresentationStore();
     this._reflectModeAttribute();
     this._syncStickyFooterBoundary();
+    this._ensureSurface();
+    this._syncSurfaceMount();
+    this._syncSurfaceProps();
+    void this._syncSurfaceTree();
   }
 
   override disconnectedCallback(): void {
@@ -212,6 +201,7 @@ export class LayoutSidebar extends LitElement {
     this._storeCleanup = null;
     this._detachStickyFooterBoundary?.();
     this._detachStickyFooterBoundary = null;
+    this._removeSurface();
     super.disconnectedCallback();
   }
 
@@ -246,8 +236,10 @@ export class LayoutSidebar extends LitElement {
       this._syncStickyFooterBoundary();
     }
 
-    this._connectNavInteraction();
-    this._syncRenderedNav();
+    this._ensureSurface();
+    this._syncSurfaceMount();
+    this._syncSurfaceProps();
+    void this._syncSurfaceTree();
   }
 
   expand(trigger?: HTMLElement): void {
@@ -318,7 +310,9 @@ export class LayoutSidebar extends LitElement {
   }
 
   private _readServerNavMarkup(): string | null {
-    const nav = findLayoutSidebarNav(this);
+    const nav =
+      (this._surface ? findLayoutSidebarNav(this._surface) : null) ?? findLayoutSidebarNav(this);
+
     if (nav instanceof HTMLElement) {
       return nav.outerHTML;
     }
@@ -436,11 +430,12 @@ export class LayoutSidebar extends LitElement {
   }
 
   private _connectNavInteraction(): void {
-    this._navInteraction.connect(findLayoutSidebarNav(this));
+    const nav = this._surface ? findLayoutSidebarNav(this._surface) : findLayoutSidebarNav(this);
+    this._navInteraction.connect(nav);
   }
 
   private _syncRenderedNav(): void {
-    const nav = findLayoutSidebarNav(this);
+    const nav = this._surface ? findLayoutSidebarNav(this._surface) : findLayoutSidebarNav(this);
     if (!(nav instanceof HTMLElement)) {
       return;
     }
@@ -492,28 +487,90 @@ export class LayoutSidebar extends LitElement {
     layoutSidebarController.close(this._resolveSidebarId());
   }
 
-  private _onSidebarRequestClose = (_event: CustomEvent<UiSidebarRequestCloseDetail>): void => {
+  private _ensureSurface(): LayoutSidebarSurface {
+    if (this._surface) {
+      return this._surface;
+    }
+
+    const surface = this.ownerDocument.createElement('layout-sidebar-surface');
+
+    surface.addEventListener(
+      'layout-sidebar-surface-request-close',
+      this._onSurfaceRequestClose as EventListener,
+    );
+
+    this._surface = surface;
+    return surface;
+  }
+
+  private _removeSurface(): void {
+    if (!this._surface) {
+      return;
+    }
+
+    this._surface.removeEventListener(
+      'layout-sidebar-surface-request-close',
+      this._onSurfaceRequestClose as EventListener,
+    );
+    this._surface.remove();
+    this._surface = null;
+  }
+
+  private _resolveSurfaceMountTarget(): HTMLElement {
+    if (this.hidden || this._sidebarSnapshot.mode !== 'overlay') {
+      return this;
+    }
+
+    return ensureLayoutSidebarOverlayLayer(this.ownerDocument);
+  }
+
+  private _syncSurfaceMount(): void {
+    const surface = this._ensureSurface();
+    const mountTarget = this._resolveSurfaceMountTarget();
+
+    if (surface.parentElement !== mountTarget) {
+      mountTarget.append(surface);
+    }
+  }
+
+  private _syncSurfaceProps(): void {
+    const surface = this._surface;
+    if (!surface) {
+      return;
+    }
+
+    surface.heading = this.heading;
+    surface.navMarkup = this._navMarkup;
+    surface.state = this._sidebarSnapshot.state;
+    surface.mode = this._sidebarSnapshot.mode;
+    surface.returnFocusTarget = this._sidebarSnapshot.returnFocusTarget;
+    surface.hidden = this.hidden;
+  }
+
+  private async _syncSurfaceTree(): Promise<void> {
+    const requestId = ++this._surfaceSyncRequest;
+    const surface = this._surface;
+
+    if (!surface) {
+      return;
+    }
+
+    await surface.updateComplete;
+
+    if (requestId !== this._surfaceSyncRequest || surface !== this._surface) {
+      return;
+    }
+
+    this._connectNavInteraction();
+    this._syncRenderedNav();
+  }
+
+  private _onSurfaceRequestClose = (): void => {
     layoutSidebarController.close(this._resolveSidebarId());
   };
 
-  override render() {
-    const normalizedHeading = this.heading.trim();
-
-    return html`
-      <ui-sidebar-shell
-        data-state=${this._sidebarSnapshot.state}
-        mode=${this._sidebarSnapshot.mode}
-        .state=${this._sidebarSnapshot.state}
-        .mode=${this._sidebarSnapshot.mode}
-        .returnFocusTarget=${this._sidebarSnapshot.returnFocusTarget}
-        @ui-sidebar-request-close=${this._onSidebarRequestClose}
-      >
-        <div class="sidebar-head" slot="header">
-          <h2 class="heading">${normalizedHeading}</h2>
-        </div>
-        ${unsafeHTML(this._navMarkup)}
-      </ui-sidebar-shell>
-    `;
+  protected override render() {
+    return nothing;
   }
 }
 

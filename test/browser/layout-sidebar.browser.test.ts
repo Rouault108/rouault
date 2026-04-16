@@ -138,17 +138,28 @@ const mockMatchMedia = (breakpointMatches = false): MatchMediaController => {
   };
 };
 
+const OVERLAY_LAYER_SELECTOR = '[data-app-shell-sidebar-overlay-layer]';
+
+const getSidebarDomRoot = (host: LayoutSidebar): ParentNode => {
+  const hostShell = host.querySelector('ui-sidebar-shell');
+  if (hostShell instanceof HTMLElement) {
+    return host;
+  }
+
+  return document.querySelector<HTMLElement>(OVERLAY_LAYER_SELECTOR) ?? host;
+};
+
 const getSidebarShell = (host: LayoutSidebar): (LitLikeElement & UiSidebarShell) | null =>
-  host.querySelector<LitLikeElement & UiSidebarShell>('ui-sidebar-shell');
+  getSidebarDomRoot(host).querySelector<LitLikeElement & UiSidebarShell>('ui-sidebar-shell');
 
 const getNav = (host: LayoutSidebar): HTMLElement | null =>
-  host.querySelector<HTMLElement>('nav[data-sidebar-nav]');
+  getSidebarDomRoot(host).querySelector<HTMLElement>('nav[data-sidebar-nav]');
 
 const getControl = (
   host: LayoutSidebar,
   id: string,
 ): HTMLButtonElement | HTMLAnchorElement | null => {
-  const row = host.querySelector<HTMLElement>(`li[data-node-id="${id}"]`);
+  const row = getSidebarDomRoot(host).querySelector<HTMLElement>(`li[data-node-id="${id}"]`);
   const control = row?.querySelector(':scope > [data-sidebar-nav-control]');
   return control instanceof HTMLButtonElement || control instanceof HTMLAnchorElement
     ? control
@@ -156,7 +167,7 @@ const getControl = (
 };
 
 const getBranchGroup = (host: LayoutSidebar, id: string): HTMLUListElement | null => {
-  const row = host.querySelector<HTMLElement>(`li[data-node-id="${id}"]`);
+  const row = getSidebarDomRoot(host).querySelector<HTMLElement>(`li[data-node-id="${id}"]`);
   const group = row?.querySelector(':scope > ul');
   return group instanceof HTMLUListElement ? group : null;
 };
@@ -223,6 +234,7 @@ describe('layout-sidebar browser contract', () => {
   afterEach(() => {
     localStorage.clear();
     layoutSidebarController.reset();
+    document.querySelectorAll(OVERLAY_LAYER_SELECTOR).forEach((element) => element.remove());
   });
 
   it('初回表示では initialExpandedIds と現在位置を元に server nav を開くこと', async () => {
@@ -480,6 +492,74 @@ describe('layout-sidebar browser contract', () => {
     }
   });
 
+  it('overlay surface を app shell overlay layer へ portal すること', async () => {
+    const media = mockMatchMedia(false);
+
+    try {
+      await ensureLayoutSidebarDefined();
+
+      const shell = await fixture<HTMLElement>(html`
+        <div id="app">
+          <div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer></div>
+          ${renderSidebarFixture({ presentation: 'overlay' })}
+        </div>
+      `);
+
+      const host = expectPresent(
+        shell.querySelector<LayoutSidebar>('layout-sidebar'),
+        'layout-sidebar',
+      );
+      await settle(host);
+
+      const overlayLayer = expectPresent(
+        document.querySelector<HTMLElement>(OVERLAY_LAYER_SELECTOR),
+        'overlay layer',
+      );
+
+      expect(overlayLayer.querySelector('ui-sidebar-shell')).to.not.equal(null);
+      expect(host.querySelector('ui-sidebar-shell')).to.equal(null);
+    } finally {
+      media.restore();
+    }
+  });
+
+  it('snapshot null では overlay surface を portal layer から退避させること', async () => {
+    const media = mockMatchMedia(false);
+
+    try {
+      await ensureLayoutSidebarDefined();
+
+      const shell = await fixture<HTMLElement>(html`
+        <div id="app">
+          <div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer></div>
+          ${renderSidebarFixture({ presentation: 'overlay' })}
+        </div>
+      `);
+
+      const host = expectPresent(
+        shell.querySelector<LayoutSidebar>('layout-sidebar'),
+        'layout-sidebar',
+      );
+      await settle(host);
+
+      const overlayLayer = expectPresent(
+        document.querySelector<HTMLElement>(OVERLAY_LAYER_SELECTOR),
+        'overlay layer',
+      );
+
+      expect(overlayLayer.querySelector('ui-sidebar-shell')).to.not.equal(null);
+
+      host.applyShellProjection?.(null);
+      await settle(host);
+
+      expect(host.hidden).to.equal(true);
+      expect(overlayLayer.querySelector('ui-sidebar-shell')).to.equal(null);
+      expect(host.querySelector('ui-sidebar-shell')).to.not.equal(null);
+    } finally {
+      media.restore();
+    }
+  });
+
   it('host 接続前の toggle request が失われず、overlay 初期状態へ反映されること', async () => {
     const media = mockMatchMedia(false);
 
@@ -576,9 +656,9 @@ describe('layout-sidebar browser contract', () => {
       await settle(host);
 
       expect(getNav(host)?.getAttribute('data-topology-revision')).to.equal('topology:sample');
-      expect(host.querySelectorAll('nav[data-sidebar-nav]').length).to.equal(1);
-      expect(host.innerHTML).to.contain('ui-sidebar-shell');
-      expect(host.innerHTML).to.contain('交響曲第9番');
+      expect(document.querySelectorAll('nav[data-sidebar-nav]').length).to.equal(1);
+      expect(document.querySelectorAll('ui-sidebar-shell').length).to.equal(1);
+      expect(getNav(host)?.textContent).to.contain('交響曲第9番');
       expect(host.hasAttribute('items-json')).to.equal(false);
     } finally {
       media.restore();

@@ -90,38 +90,39 @@ export const applySidebarSnapshot = (
   currentSidebarColumn.hidden = !isPresent;
   currentSidebar.hidden = !isPresent;
 
+  const projectionSidebar = currentSidebar as SidebarProjectionHost;
+  if (typeof projectionSidebar.applyShellProjection === 'function') {
+    projectionSidebar.applyShellProjection(snapshot ?? null);
+    return;
+  }
+
   if (!snapshot) {
     return;
   }
 
-  const projectionSidebar = currentSidebar as SidebarProjectionHost;
-  if (typeof projectionSidebar.applyShellProjection === 'function') {
-    projectionSidebar.applyShellProjection(snapshot);
+  currentSidebar.setAttribute('state-scope-id', snapshot.stateScopeId);
+
+  if (snapshot.selectedId === null) {
+    currentSidebar.removeAttribute('selected-id');
   } else {
-    currentSidebar.setAttribute('state-scope-id', snapshot.stateScopeId);
+    currentSidebar.setAttribute('selected-id', snapshot.selectedId);
+  }
 
-    if (snapshot.selectedId === null) {
-      currentSidebar.removeAttribute('selected-id');
-    } else {
-      currentSidebar.setAttribute('selected-id', snapshot.selectedId);
-    }
+  currentSidebar.setAttribute('initial-expanded-ids', JSON.stringify(snapshot.initialExpandedIds));
 
-    currentSidebar.setAttribute('initial-expanded-ids', JSON.stringify(snapshot.initialExpandedIds));
+  if (snapshot.topologyRevision === null) {
+    currentSidebar.removeAttribute('topology-revision');
+  } else {
+    currentSidebar.setAttribute('topology-revision', snapshot.topologyRevision);
+  }
 
-    if (snapshot.topologyRevision === null) {
-      currentSidebar.removeAttribute('topology-revision');
-    } else {
-      currentSidebar.setAttribute('topology-revision', snapshot.topologyRevision);
-    }
+  currentSidebar.setAttribute('heading', snapshot.heading);
+  currentSidebar.setAttribute('fixed-breakpoint', String(snapshot.fixedBreakpoint));
+  currentSidebar.setAttribute('sidebar-id', snapshot.sidebarId);
+  currentSidebar.setAttribute('presentation', snapshot.presentation);
 
-    currentSidebar.setAttribute('heading', snapshot.heading);
-    currentSidebar.setAttribute('fixed-breakpoint', String(snapshot.fixedBreakpoint));
-    currentSidebar.setAttribute('sidebar-id', snapshot.sidebarId);
-    currentSidebar.setAttribute('presentation', snapshot.presentation);
-
-    if (typeof snapshot.navHtml === 'string') {
-      currentSidebar.innerHTML = snapshot.navHtml;
-    }
+  if (typeof snapshot.navHtml === 'string') {
+    currentSidebar.innerHTML = snapshot.navHtml;
   }
 };
 

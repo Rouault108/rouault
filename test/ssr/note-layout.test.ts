@@ -69,7 +69,7 @@ describe('NoteLayout', () => {
     expect(rendered).not.toContain('data-hydration-scope="note-sidebar"');
     expect(rendered.match(/<layout-sidebar\b/g)?.length ?? 0).to.equal(0);
     expect(rendered).not.toContain('data-sidebar-surface=');
-    expect(rendered).not.toContain('layout-sidebar-overlay');
+    expect(rendered).not.toContain('data-app-shell-sidebar-overlay-layer');
     expect(rendered).toContain('data-hydration-scope="note-content"');
     expect(rendered).toContain('data-hydration-scope="note-toc"');
     expect(rendered).toContain('data-pagefind-sort="date:2026-02-01"');
