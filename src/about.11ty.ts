@@ -94,6 +94,7 @@ export class AboutPageTemplate {
       layout: 'base',
       title: 'About',
       permalink: '/about/index.html',
+      headerTocPresence: 'present',
     };
   }
 

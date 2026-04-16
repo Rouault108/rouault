@@ -5,6 +5,8 @@ import { e2eNoteFixtures } from './support/note-fixtures.js';
 const aboutPath = '/about/';
 const layoutRichPath = e2eNoteFixtures.layoutRich.directPath;
 
+type HeaderDropdownKind = 'corpus' | 'theme';
+
 interface MobileSummaryState {
   barExists: boolean;
   barPosition: string | null;
@@ -16,6 +18,25 @@ interface MobileSummaryState {
   viewportHeight: number;
   title: string | null;
 }
+
+interface HeaderDropdownPaintState {
+  panelOpen: boolean;
+  panelTop: number | null;
+  panelBottom: number | null;
+  barTop: number | null;
+  barBottom: number | null;
+  samplePoint: { x: number; y: number } | null;
+  topmostInsidePanel: boolean;
+  topmostInsideBar: boolean;
+  topmostTag: string | null;
+}
+
+const waitForLayoutHeaderHydrated = async (page: Page): Promise<void> => {
+  await page.waitForFunction(() => {
+    const header = document.querySelector('layout-header');
+    return header instanceof HTMLElement && header.shadowRoot instanceof ShadowRoot;
+  });
+};
 
 const waitForLayoutTocHydrated = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
@@ -65,6 +86,68 @@ const readMobileSummaryState = async (page: Page): Promise<MobileSummaryState> =
       title: title instanceof HTMLElement ? (title.textContent?.trim() ?? '') : null,
     };
   });
+
+const readHeaderDropdownPaintState = async (
+  page: Page,
+  kind: HeaderDropdownKind,
+): Promise<HeaderDropdownPaintState> =>
+  await page.evaluate((dropdownKind) => {
+    const header = document.querySelector('layout-header');
+    const toc = document.querySelector('layout-toc');
+
+    const dropdownSelector =
+      dropdownKind === 'corpus' ? '.corpus-switcher' : '[data-dropdown="theme"]';
+
+    const dropdown = header?.shadowRoot?.querySelector<HTMLElement>(dropdownSelector);
+    const panel = dropdown?.shadowRoot?.querySelector<HTMLElement>('.panel');
+    const bar = toc?.shadowRoot?.querySelector<HTMLElement>('.mobile-bar');
+
+    const panelRect = panel instanceof HTMLElement ? panel.getBoundingClientRect() : null;
+    const barRect = bar instanceof HTMLElement ? bar.getBoundingClientRect() : null;
+
+    const samplePoint = panelRect
+      ? {
+          x: Math.round(panelRect.left + panelRect.width / 2),
+          y: Math.round(Math.min(panelRect.bottom - 8, panelRect.top + 12)),
+        }
+      : null;
+
+    const topmost = samplePoint ? document.elementFromPoint(samplePoint.x, samplePoint.y) : null;
+
+    return {
+      panelOpen: dropdown instanceof HTMLElement && dropdown.hasAttribute('opened'),
+      panelTop: panelRect ? Math.round(panelRect.top) : null,
+      panelBottom: panelRect ? Math.round(panelRect.bottom) : null,
+      barTop: barRect ? Math.round(barRect.top) : null,
+      barBottom: barRect ? Math.round(barRect.bottom) : null,
+      samplePoint,
+      topmostInsidePanel: panel instanceof HTMLElement && topmost instanceof Node && panel.contains(topmost),
+      topmostInsideBar: bar instanceof HTMLElement && topmost instanceof Node && bar.contains(topmost),
+      topmostTag: topmost instanceof HTMLElement ? topmost.tagName.toLowerCase() : null,
+    };
+  }, kind);
+
+const openHeaderDropdown = async (page: Page, kind: HeaderDropdownKind): Promise<void> => {
+  await page.evaluate((dropdownKind) => {
+    const header = document.querySelector('layout-header');
+    const dropdownSelector =
+      dropdownKind === 'corpus' ? '.corpus-switcher' : '[data-dropdown="theme"]';
+    const dropdown = header?.shadowRoot?.querySelector<HTMLElement>(dropdownSelector);
+    const trigger = dropdown?.querySelector<HTMLElement>('[slot="trigger"]');
+
+    if (!(trigger instanceof HTMLElement)) {
+      throw new Error(`header dropdown trigger が見つかりません: ${dropdownKind}`);
+    }
+
+    trigger.click();
+  }, kind);
+
+  await expect
+    .poll(async () => {
+      return (await readHeaderDropdownPaintState(page, kind)).panelOpen;
+    })
+    .toBe(true);
+};
 
 const waitForFooterVisible = async (page: Page): Promise<void> => {
   await expect
@@ -186,5 +269,41 @@ test.describe('mobile TOC summary UX', () => {
     expect(after.barPosition).toBe('fixed');
     expect(after.footerTop ?? Number.POSITIVE_INFINITY).toBeLessThan(after.viewportHeight);
     expect(Math.abs((after.barTop ?? -1) - (before.barTop ?? -1))).toBeLessThanOrEqual(1);
+  });
+
+  test('about ページで corpus dropdown が mobile TOC bar より前面に描画されること', async ({
+    page,
+  }) => {
+    await page.goto(aboutPath);
+    await waitForLayoutHeaderHydrated(page);
+    await waitForLayoutTocHydrated(page);
+    await revealMobileBar(page);
+    await waitForMobileBar(page);
+
+    await openHeaderDropdown(page, 'corpus');
+
+    const state = await readHeaderDropdownPaintState(page, 'corpus');
+    expect(state.panelOpen, JSON.stringify(state)).toBe(true);
+    expect(state.samplePoint, JSON.stringify(state)).not.toBeNull();
+    expect(state.topmostInsidePanel, JSON.stringify(state)).toBe(true);
+    expect(state.topmostInsideBar, JSON.stringify(state)).toBe(false);
+  });
+
+  test('about ページで theme dropdown が mobile TOC bar より前面に描画されること', async ({
+    page,
+  }) => {
+    await page.goto(aboutPath);
+    await waitForLayoutHeaderHydrated(page);
+    await waitForLayoutTocHydrated(page);
+    await revealMobileBar(page);
+    await waitForMobileBar(page);
+
+    await openHeaderDropdown(page, 'theme');
+
+    const state = await readHeaderDropdownPaintState(page, 'theme');
+    expect(state.panelOpen, JSON.stringify(state)).toBe(true);
+    expect(state.samplePoint, JSON.stringify(state)).not.toBeNull();
+    expect(state.topmostInsidePanel, JSON.stringify(state)).toBe(true);
+    expect(state.topmostInsideBar, JSON.stringify(state)).toBe(false);
   });
 });

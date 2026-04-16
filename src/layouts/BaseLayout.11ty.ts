@@ -40,6 +40,7 @@ export interface BaseLayoutData {
   currentCorpusKey?: string;
   buildMetadata?: BuildMetadataData;
   clientBundle?: unknown;
+  headerTocPresence?: TocPresence;
 }
 
 const buildThemeBootstrapScript = (): string =>
@@ -156,7 +157,7 @@ export class BaseLayout {
         kind: 'boolean',
       },
     ]);
-    const tocPresence: TocPresence = data.notePage?.tocPresence ?? 'absent';
+    const tocPresence: TocPresence = data.notePage?.tocPresence ?? data.headerTocPresence ?? 'absent';
     const headerAttributes = serializeHtmlAttributes([
       { name: 'note-layout', value: Boolean(data.note), kind: 'boolean' },
       {

@@ -215,19 +215,28 @@ export class LayoutHeader extends LitElement {
       }
     }
 
-    @container layout-header-shell (max-width: 639px) {
-      :host([note-layout]) ui-header {
-        --ui-header-center-end-inset: 0px;
-      }
-
-      .corpus-trigger-text {
-        max-inline-size: min(9rem, 42vw);
-      }
-
-      .theme-trigger-text {
-        display: none;
-      }
+  @container layout-header-shell (max-width: 639px) {
+    :host([toc-presence='present']) {
+      /*
+       * mobile TOC summary bar / panel より header 配下の dropdown を前面に出す。
+       * 判定軸は note-layout ではなく、header chrome に対して
+       * TOC が存在するかどうかに置く。
+       */
+      z-index: calc(var(--z-popover, 400) + 1);
     }
+
+    :host([note-layout]) ui-header {
+      --ui-header-center-end-inset: 0px;
+    }
+
+    .corpus-trigger-text {
+      max-inline-size: min(9rem, 42vw);
+    }
+
+    .theme-trigger-text {
+      display: none;
+    }
+  }
   `;
 
   @property({ type: String, attribute: 'breadcrumbs-json' })
