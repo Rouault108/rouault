@@ -155,6 +155,9 @@ const getSidebarShell = (host: LayoutSidebar): (LitLikeElement & UiSidebarShell)
 const getNav = (host: LayoutSidebar): HTMLElement | null =>
   getSidebarDomRoot(host).querySelector<HTMLElement>('nav[data-sidebar-nav]');
 
+const getRow = (host: LayoutSidebar, id: string): HTMLLIElement | null =>
+  getSidebarDomRoot(host).querySelector<HTMLLIElement>(`li[data-node-id="${id}"]`);
+
 const getControl = (
   host: LayoutSidebar,
   id: string,
@@ -342,10 +345,9 @@ describe('layout-sidebar browser contract', () => {
 
       expect(classicalGroup.hidden).to.equal(true);
       expect(
-        expectPresent(
-          host.querySelector<HTMLElement>('li[data-node-id="music/classical"]'),
-          'music/classical row',
-        ).getAttribute('data-current-branch'),
+        expectPresent(getRow(host, 'music/classical'), 'music/classical row').getAttribute(
+          'data-current-branch',
+        ),
       ).to.equal('true');
     } finally {
       media.restore();
@@ -422,10 +424,9 @@ describe('layout-sidebar browser contract', () => {
         expectPresent(getBranchGroup(host, 'music/classical'), 'music/classical group').hidden,
       ).to.equal(true);
       expect(
-        expectPresent(
-          host.querySelector<HTMLElement>('li[data-node-id="music/classical"]'),
-          'music/classical row',
-        ).getAttribute('data-current-branch'),
+        expectPresent(getRow(host, 'music/classical'), 'music/classical row').getAttribute(
+          'data-current-branch',
+        ),
       ).to.equal('true');
     } finally {
       media.restore();
