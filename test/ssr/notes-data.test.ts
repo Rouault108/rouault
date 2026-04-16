@@ -354,23 +354,24 @@ describe('buildNotesCollection', () => {
     const fixtureRoot = await mkdtemp(path.join(os.tmpdir(), 'rouault-note-fixtures-'));
     tempDirs.push(fixtureRoot);
 
-    await mkdir(path.join(fixtureRoot, 'program', 'javascript'), { recursive: true });
+    await mkdir(path.join(fixtureRoot, 'e2e'), { recursive: true });
     await writeFile(
-      path.join(fixtureRoot, 'program', 'javascript', '_config.json'),
-      JSON.stringify({ sidebar: { scope: 'self' }, order: ['sample-javascript.md'] }),
+      path.join(fixtureRoot, '_config.json'),
+      JSON.stringify({ order: ['e2e'] }),
       'utf8',
     );
     await writeFile(
-      path.join(fixtureRoot, 'program', 'javascript', 'sample-javascript.md'),
-      '# fixture',
+      path.join(fixtureRoot, 'e2e', '_config.json'),
+      JSON.stringify({ sidebar: { scope: 'self' }, order: ['layout-rich.md'] }),
       'utf8',
     );
+    await writeFile(path.join(fixtureRoot, 'e2e', 'layout-rich.md'), '# fixture', 'utf8');
 
     const collection = buildNotesCollection(
       [
         {
-          slug: 'program/javascript/sample-javascript',
-          title: 'JavaScriptの配列',
+          slug: 'e2e/layout-rich',
+          title: 'Layout Rich',
           sourceRoot: 'test/fixtures/content',
           content: '<h2 id="overview">概要</h2>',
         },
@@ -385,11 +386,11 @@ describe('buildNotesCollection', () => {
     );
 
     expect(collection[0]).toMatchObject({
-      rawSlug: 'program/javascript/sample-javascript',
-      slug: 'program/javascript/sample-javascript',
-      permalink: '/notes/program/javascript/sample-javascript',
-      sidebarRoot: 'program/javascript',
-      sortIndex: 500500000,
+      rawSlug: 'e2e/layout-rich',
+      slug: 'e2e/layout-rich',
+      permalink: '/notes/e2e/layout-rich',
+      sidebarRoot: 'e2e',
+      sortIndex: 0,
       sourceRoot: 'test/fixtures/content',
     });
   });

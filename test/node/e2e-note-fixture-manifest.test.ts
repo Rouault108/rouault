@@ -10,10 +10,10 @@ describe('buildE2ENoteFixtureManifest', () => {
     const manifest = buildE2ENoteFixtureManifest(
       [
         {
-          title: 'JavaScriptの配列',
-          slug: 'program/sample-javascript',
-          permalink: '/notes/program/sample-javascript',
-          e2eFixtureId: 'note.sample-javascript',
+          title: 'Layout Rich',
+          slug: 'e2e/layout-rich',
+          permalink: '/notes/e2e/layout-rich',
+          e2eFixtureId: 'note.layout-rich',
         },
       ],
       {
@@ -21,12 +21,12 @@ describe('buildE2ENoteFixtureManifest', () => {
       },
     );
 
-    expect(manifest['note.sample-javascript']).toEqual({
-      fixtureId: 'note.sample-javascript',
-      title: 'JavaScriptの配列',
-      slug: 'program/sample-javascript',
-      permalink: '/notes/program/sample-javascript',
-      contentRootId: 'note-content-program-sample-javascript',
+    expect(manifest['note.layout-rich']).toEqual({
+      fixtureId: 'note.layout-rich',
+      title: 'Layout Rich',
+      slug: 'e2e/layout-rich',
+      permalink: '/notes/e2e/layout-rich',
+      contentRootId: 'note-content-e2e-layout-rich',
     });
   });
 
@@ -58,14 +58,14 @@ describe('buildE2ENoteFixtureManifest', () => {
     expect(() =>
       buildE2ENoteFixtureManifest([
         {
-          title: 'JavaScriptの配列',
-          slug: 'program/sample-javascript',
-          permalink: '/notes/program/sample-javascript',
-          e2eFixtureId: 'note.sample-javascript',
+          title: 'Layout Rich',
+          slug: 'e2e/layout-rich',
+          permalink: '/notes/e2e/layout-rich',
+          e2eFixtureId: 'note.layout-rich',
         },
       ]),
     ).toThrowError(
-      `Missing required e2e fixture ids: ${REQUIRED_E2E_NOTE_FIXTURE_IDS.filter((fixtureId) => fixtureId !== 'note.sample-javascript')
+      `Missing required e2e fixture ids: ${REQUIRED_E2E_NOTE_FIXTURE_IDS.filter((fixtureId) => fixtureId !== 'note.layout-rich')
         .sort()
         .join(', ')}.`,
     );

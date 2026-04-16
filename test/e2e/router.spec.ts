@@ -9,8 +9,9 @@ const testNotePath = testNote.directPath;
 const tabsNote = e2eNoteFixtures.interactive;
 const tabsTestPath = tabsNote.directPath;
 const tabsNormalizedPath = tabsNote.normalizedPath;
-const sampleJavascriptPath = e2eNoteFixtures.sampleJavascript.directPath;
-const sampleJavascriptNormalizedPath = e2eNoteFixtures.sampleJavascript.normalizedPath;
+const layoutRich = e2eNoteFixtures.layoutRich;
+const layoutRichPath = layoutRich.directPath;
+const layoutRichNormalizedPath = layoutRich.normalizedPath;
 const tocAbsentNormalizedPath = e2eNoteFixtures.tocAbsent.normalizedPath;
 
 const expectMainHeading = async (page: Page, headingText: string): Promise<void> => {
@@ -21,6 +22,24 @@ const hideTocOverlay = async (page: Page): Promise<void> => {
   await page.addStyleTag({
     content: '.layout-toc-col { display: none !important; }',
   });
+};
+
+const readHeadingIdByText = async (page: Page, expectedText: string): Promise<string> => {
+  return await page.evaluate((text) => {
+    const headings = Array.from(
+      document.querySelectorAll<HTMLElement>('article h2[id], article h3[id], article h4[id]'),
+    );
+    const match = headings.find((heading) => {
+      const label = heading.textContent?.replace(/「.*?」への固定リンク/g, '').trim() ?? '';
+      return label === text;
+    });
+
+    if (!(match instanceof HTMLElement) || match.id.length === 0) {
+      throw new Error(`heading not found: ${text}`);
+    }
+
+    return match.id;
+  }, expectedText);
 };
 
 const expectInteractiveCanaryContent = async (page: Page): Promise<void> => {
@@ -326,9 +345,13 @@ test.describe('Router Navigation', () => {
 
   test('hash 付きで再読み込みした場合も hash と target が維持されること', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
-    await page.goto(`${sampleJavascriptPath}#711-%E3%81%BE%E3%81%A8%E3%82%81`);
+    await page.goto(layoutRichPath);
 
-    await expect(page.locator('[id="711-まとめ"]')).toHaveCount(1);
+    const summaryId = await readHeadingIdByText(page, '3. まとめ');
+
+    await page.goto(`${layoutRichPath}#${encodeURIComponent(summaryId)}`);
+
+    await expect(page.locator(`[id="${summaryId}"]`)).toHaveCount(1);
     await page.evaluate(
       () =>
         new Promise<void>((resolve) => {
@@ -342,7 +365,7 @@ test.describe('Router Navigation', () => {
 
     await page.reload();
 
-    await expect(page.locator('[id="711-まとめ"]')).toHaveCount(1);
+    await expect(page.locator(`[id="${summaryId}"]`)).toHaveCount(1);
     await page.evaluate(
       () =>
         new Promise<void>((resolve) => {
@@ -354,8 +377,8 @@ test.describe('Router Navigation', () => {
         }),
     );
 
-    const result = await page.evaluate(() => {
-      const target = document.getElementById('711-まとめ');
+    const result = await page.evaluate((id) => {
+      const target = document.getElementById(id);
       if (!(target instanceof HTMLElement)) {
         return null;
       }
@@ -364,17 +387,17 @@ test.describe('Router Navigation', () => {
         hash: decodeURIComponent(window.location.hash),
         tagName: target.tagName,
       };
-    });
+    }, summaryId);
 
     expect(result).not.toBeNull();
-    expect(result?.hash).toBe('#711-まとめ');
+    expect(result?.hash).toBe(`#${summaryId}`);
     expect(result?.tagName).toBe('H2');
   });
 
   test('TOC present -> absent -> present の SPA 遷移で header と body の契約が同期すること', async ({
     page,
   }) => {
-    await page.goto(sampleJavascriptPath);
+    await page.goto(layoutRichPath);
 
     await expect(page.locator('layout-header')).toHaveAttribute('toc-presence', 'present');
     await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'present');
@@ -395,9 +418,9 @@ test.describe('Router Navigation', () => {
     );
     expect(absentOverflow).toBeLessThanOrEqual(1);
 
-    await navigateWithAppRouter(page, sampleJavascriptNormalizedPath);
+    await navigateWithAppRouter(page, layoutRichNormalizedPath);
 
-    await expect(page).toHaveURL(sampleJavascriptNormalizedPath);
+    await expect(page).toHaveURL(layoutRichNormalizedPath);
     await expect(page.locator('layout-header')).toHaveAttribute('toc-presence', 'present');
     await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'present');
     await expect(page.locator('layout-toc')).toHaveCount(1);

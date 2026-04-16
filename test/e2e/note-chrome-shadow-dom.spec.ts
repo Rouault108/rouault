@@ -3,8 +3,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { e2eNoteFixtures } from './support/note-fixtures.js';
 
 const sourcePath = e2eNoteFixtures.markdownBasic.directPath;
-const sampleJavascriptDirectPath = e2eNoteFixtures.sampleJavascript.directPath;
-const sampleJavascriptSpaPath = e2eNoteFixtures.sampleJavascript.normalizedPath;
+const layoutRich = e2eNoteFixtures.layoutRich;
+const layoutRichDirectPath = layoutRich.directPath;
+const layoutRichSpaPath = layoutRich.normalizedPath;
 
 const waitForAppRouterReady = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
@@ -50,9 +51,7 @@ const readNoteChromeState = async (
         return -1;
       }
 
-      return element.querySelectorAll(
-        ':scope > template[shadowrootmode], :scope > template[shadowroot]',
-      ).length;
+      return element.querySelectorAll(':scope > template[shadowrootmode], :scope > template[shadowroot]').length;
     };
 
     const readTocLabels = (element: Element | null): string[] => {
@@ -93,37 +92,30 @@ const readNoteChromeState = async (
     };
   });
 
-const expectSampleJavascriptNoteChrome = async (page: Page): Promise<void> => {
-  await expect(page.locator('ui-article-header')).toHaveAttribute('heading', 'JavaScriptの配列');
+const expectLayoutRichNoteChrome = async (page: Page): Promise<void> => {
+  await expect(page.locator('ui-article-header')).toHaveAttribute('heading', layoutRich.title);
   await expect(page.locator('ui-article-header')).toContainText('Notes');
-  await expect(page.locator('ui-article-header')).toContainText('Program');
-  await expect(page.locator('#main-content')).toContainText(
-    'JavaScriptの配列には型はないため、配列の要素にはどの型の値でも格納できる。',
-  );
+  await expect(page.locator('#main-content')).toContainText('このノートは e2e 専用 fixture です。');
 
   await expect.poll(async () => (await readNoteChromeState(page)).headerShadowRoot).toBe(true);
   await expect.poll(async () => (await readNoteChromeState(page)).tocShadowRoot).toBe(true);
   await expect.poll(async () => (await readNoteChromeState(page)).headerTemplateCount).toBe(0);
   await expect.poll(async () => (await readNoteChromeState(page)).tocTemplateCount).toBe(0);
   await expect.poll(async () => (await readNoteChromeState(page)).headerHeight).toBeGreaterThan(0);
-  await expect
-    .poll(async () => (await readNoteChromeState(page)).tocLabels.join('\n'))
-    .toContain('7.1 配列の生成');
-  await expect
-    .poll(async () => (await readNoteChromeState(page)).tocLabels.length)
-    .toBeGreaterThan(0);
+  await expect.poll(async () => (await readNoteChromeState(page)).tocLabels.join('\n')).toContain('1. 導入');
+  await expect.poll(async () => (await readNoteChromeState(page)).tocLabels.length).toBeGreaterThan(0);
 };
 
 test.describe('note chrome shadow DOM', () => {
-  test('sample-javascript 直アクセス時に front matter と TOC が初回表示で見えること', async ({
+  test('layout-rich 直アクセス時に front matter と TOC が初回表示で見えること', async ({
     page,
   }) => {
-    await page.goto(sampleJavascriptDirectPath);
+    await page.goto(layoutRichDirectPath);
 
-    await expectSampleJavascriptNoteChrome(page);
+    await expectLayoutRichNoteChrome(page);
   });
 
-  test('SPA 遷移で sample-javascript を開いても front matter と TOC が見えること', async ({
+  test('SPA 遷移で layout-rich を開いても front matter と TOC が見えること', async ({
     page,
   }) => {
     await page.goto(sourcePath);
@@ -134,10 +126,10 @@ test.describe('note chrome shadow DOM', () => {
       };
     });
 
-    await navigateWithAppRouter(page, sampleJavascriptSpaPath);
+    await navigateWithAppRouter(page, layoutRichSpaPath);
 
-    await expect(page).toHaveURL(sampleJavascriptSpaPath);
-    await expectSampleJavascriptNoteChrome(page);
+    await expect(page).toHaveURL(layoutRichSpaPath);
+    await expectLayoutRichNoteChrome(page);
 
     const probeAlive = await page.evaluate(() => {
       return (

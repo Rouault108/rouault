@@ -4,8 +4,8 @@ import { e2eNoteFixtures } from './support/note-fixtures.js';
 
 const sidebarSourcePath = e2eNoteFixtures.sidebarScrollSource.directPath;
 const codePath = e2eNoteFixtures.code.directPath;
-const sampleJavascript = e2eNoteFixtures.sampleJavascript;
-const sampleJavascriptPath = sampleJavascript.directPath;
+const layoutRich = e2eNoteFixtures.layoutRich;
+const layoutRichPath = layoutRich.directPath;
 const tocAbsentPath = e2eNoteFixtures.tocAbsent.directPath;
 
 interface NoteChromeState {
@@ -47,29 +47,25 @@ const readNoteChromeState = async (page: Page): Promise<NoteChromeState> =>
       tocExists: toc instanceof HTMLElement,
       tocTemplateCount: countDeclarativeShadowRootTemplates(toc),
       tocHasHeadingsJson: toc instanceof HTMLElement && toc.hasAttribute('headings-json'),
-      tocContentRootId:
-        toc instanceof HTMLElement ? (toc.getAttribute('content-root-id') ?? '') : '',
+      tocContentRootId: toc instanceof HTMLElement ? (toc.getAttribute('content-root-id') ?? '') : '',
     };
   });
 
-const expectSampleJavascriptNoteChromeHostsWithoutJs = async (page: Page): Promise<void> => {
+const expectLayoutRichNoteChromeHostsWithoutJs = async (page: Page): Promise<void> => {
   const state = await readNoteChromeState(page);
 
   expect(state.articleHeaderExists).toBe(true);
   expect(state.articleHeaderTemplateCount).toBe(0);
-  expect(state.articleHeaderHeading).toBe(sampleJavascript.title);
+  expect(state.articleHeaderHeading).toBe(layoutRich.title);
   expect(state.articleHeaderHasBreadcrumbsJson).toBe(true);
 
   expect(state.tocExists).toBe(true);
   expect(state.tocTemplateCount).toBe(0);
   expect(state.tocHasHeadingsJson).toBe(true);
-  expect(state.tocContentRootId).toBe(sampleJavascript.contentRootId);
+  expect(state.tocContentRootId).toBe(layoutRich.contentRootId);
 
-  await expect(page.locator('ui-article-header')).toHaveAttribute('heading', sampleJavascript.title);
-  await expect(page.locator('layout-toc')).toHaveAttribute(
-    'content-root-id',
-    sampleJavascript.contentRootId,
-  );
+  await expect(page.locator('ui-article-header')).toHaveAttribute('heading', layoutRich.title);
+  await expect(page.locator('layout-toc')).toHaveAttribute('content-root-id', layoutRich.contentRootId);
 
   const headingsJson = await page.locator('layout-toc').getAttribute('headings-json');
   expect(headingsJson).not.toBeNull();
@@ -96,22 +92,19 @@ test.describe('No-JS baseline', () => {
       page.getByRole('heading', { level: 1, name: 'Sidebar Scroll Source' }).first(),
     ).toBeVisible();
     await expect(page.locator('app-router > #main-content')).toHaveCount(1);
-    // app-router の SSR 正本は announcement region を含む。
     await expect(page.locator('app-router > [data-app-router-announcement]')).toHaveCount(1);
     await expect(page).toHaveURL(sidebarSourcePath);
   });
 
-  test('sample-javascript が No-JS でも article header / TOC host と属性ペイロードを初回出力すること', async ({
+  test('layout-rich が No-JS でも article header / TOC host と属性ペイロードを初回出力すること', async ({
     page,
   }) => {
-    await page.goto(sampleJavascriptPath);
+    await page.goto(layoutRichPath);
 
-    await expect(page).toHaveURL(sampleJavascriptPath);
-    await expect(page.locator('#main-content')).toContainText(
-      'JavaScriptの配列には型はないため、配列の要素にはどの型の値でも格納できる。',
-    );
+    await expect(page).toHaveURL(layoutRichPath);
+    await expect(page.locator('#main-content')).toContainText('このノートは e2e 専用 fixture です。');
 
-    await expectSampleJavascriptNoteChromeHostsWithoutJs(page);
+    await expectLayoutRichNoteChromeHostsWithoutJs(page);
   });
 
   test('toc-absent fixture では No-JS でも空の TOC landmark を出力しないこと', async ({ page }) => {
@@ -124,9 +117,9 @@ test.describe('No-JS baseline', () => {
     await expect(page.locator('aside[aria-label="目次"]')).toHaveCount(0);
   });
 
-  test('sample-javascript が狭幅でも本文列を 1文字幅へ潰さないこと', async ({ page }) => {
+  test('layout-rich が狭幅でも本文列を 1文字幅へ潰さないこと', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 900 });
-    await page.goto(sampleJavascriptPath);
+    await page.goto(layoutRichPath);
 
     const state = await page.evaluate(() => {
       const article = document.querySelector('#main-content article');
@@ -149,18 +142,15 @@ test.describe('No-JS baseline', () => {
     expect(state?.proseWidth ?? 0).toBeGreaterThan(240);
     expect(state?.horizontalOverflow ?? 0).toBeLessThanOrEqual(1);
 
-    await expect(page.locator('#main-content')).toContainText(
-      'JavaScriptの配列には型はないため、配列の要素にはどの型の値でも格納できる。',
-    );
+    await expect(page.locator('#main-content')).toContainText('front matter、TOC、code block、table');
   });
 
   test('ノートページが SSR シェルと本文を初期表示し、app shell sidebar host も出力すること', async ({
     page,
   }) => {
-    await page.goto(sampleJavascriptPath);
+    await page.goto(layoutRichPath);
 
     await expect(page.locator('app-router > #main-content')).toHaveCount(1);
-    // app-router の SSR 正本は announcement region を含む。
     await expect(page.locator('app-router > [data-app-router-announcement]')).toHaveCount(1);
     await expect(page.locator('layout-header')).toHaveCount(1);
     await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
@@ -168,15 +158,17 @@ test.describe('No-JS baseline', () => {
     await expect(page.locator('layout-toc')).toHaveCount(1);
     await expect(page.locator('ui-article-header')).toHaveCount(1);
 
-    await expect(page.locator('layout-header')).toHaveAttribute('current-corpus-key', 'program');
+    const currentCorpusKey = await page.locator('layout-header').getAttribute('current-corpus-key');
+    expect(typeof currentCorpusKey).toBe('string');
+    expect(currentCorpusKey?.length ?? 0).toBeGreaterThan(0);
 
-    await expectSampleJavascriptNoteChromeHostsWithoutJs(page);
+    await expectLayoutRichNoteChromeHostsWithoutJs(page);
   });
 
   test('コードブロックとテーブルが JavaScript 無効時も読めること', async ({ page }) => {
-    await page.goto(sampleJavascriptPath);
+    await page.goto(layoutRichPath);
 
-    await expect(page.locator('code').first()).toContainText('let empty = []');
+    await expect(page.locator('code').first()).toContainText('const values = [1, 2, 3];');
     await expect(page.locator('[data-table-root]').first()).toBeVisible();
     await expect(page.locator('[data-table-root] table').first()).toContainText('分類');
 
@@ -221,7 +213,7 @@ test.describe('No-JS baseline', () => {
   test('ヘッダーがスクロールしても固定され、app shell sidebar host が存在しても崩れないこと', async ({
     page,
   }) => {
-    await page.goto(sampleJavascriptPath);
+    await page.goto(layoutRichPath);
 
     const before = await page.locator('layout-header').boundingBox();
     expect(before).not.toBeNull();

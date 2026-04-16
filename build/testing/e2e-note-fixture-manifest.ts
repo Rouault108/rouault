@@ -13,8 +13,8 @@ export type E2ENoteFixtureManifest = Readonly<Record<string, E2ENoteFixtureManif
 export const REQUIRED_E2E_NOTE_FIXTURE_IDS = [
   'note.code',
   'note.interactive',
+  'note.layout-rich',
   'note.markdown-basic',
-  'note.sample-javascript',
   'note.sidebar-scroll-source',
   'note.sidebar-scroll-target',
   'note.toc-absent',
@@ -22,10 +22,7 @@ export const REQUIRED_E2E_NOTE_FIXTURE_IDS = [
 
 export type RequiredE2ENoteFixtureId = (typeof REQUIRED_E2E_NOTE_FIXTURE_IDS)[number];
 
-type FixtureSourceNote = Pick<
-  IntrinsicNote,
-  'title' | 'slug' | 'permalink' | 'e2eFixtureId'
->;
+type FixtureSourceNote = Pick<IntrinsicNote, 'title' | 'slug' | 'permalink' | 'e2eFixtureId'>;
 
 interface BuildE2ENoteFixtureManifestOptions {
   requiredFixtureIds?: readonly string[];
@@ -69,9 +66,7 @@ export const buildE2ENoteFixtureManifest = (
 
   const missingFixtureIds = requiredFixtureIds.filter((fixtureId) => manifest[fixtureId] === undefined);
   if (missingFixtureIds.length > 0) {
-    throw new Error(
-      `Missing required e2e fixture ids: ${missingFixtureIds.sort().join(', ')}.`,
-    );
+    throw new Error(`Missing required e2e fixture ids: ${missingFixtureIds.sort().join(', ')}.`);
   }
 
   return manifest;

@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { e2eNoteFixtures } from './support/note-fixtures.js';
 
-const sampleJavascriptPath = e2eNoteFixtures.sampleJavascript.directPath;
+const layoutRichPath = e2eNoteFixtures.layoutRich.directPath;
 const tocAbsentPath = e2eNoteFixtures.tocAbsent.directPath;
 
 interface NoteWideFrameSnapshot {
@@ -66,7 +66,7 @@ test.describe('note frame balance', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1600, height: 900 });
-    await page.goto(sampleJavascriptPath);
+    await page.goto(layoutRichPath);
     await settleLayout(page);
 
     const wide = await readNoteWideFrameSnapshot(page);
@@ -115,7 +115,7 @@ test.describe('note frame balance', () => {
   }) => {
     await page.setViewportSize({ width: 1600, height: 900 });
 
-    await page.goto(sampleJavascriptPath);
+    await page.goto(layoutRichPath);
     await settleLayout(page);
     const present = await readNoteWideFrameSnapshot(page);
 

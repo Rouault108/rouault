@@ -7,8 +7,8 @@ import {
 export type E2ENoteFixtureId =
   | 'note.code'
   | 'note.interactive'
+  | 'note.layout-rich'
   | 'note.markdown-basic'
-  | 'note.sample-javascript'
   | 'note.sidebar-scroll-source'
   | 'note.sidebar-scroll-target'
   | 'note.toc-absent';
@@ -55,11 +55,11 @@ export const e2eNoteFixtures = {
   get interactive(): E2ENoteFixture {
     return getE2ENoteFixture('note.interactive');
   },
+  get layoutRich(): E2ENoteFixture {
+    return getE2ENoteFixture('note.layout-rich');
+  },
   get markdownBasic(): E2ENoteFixture {
     return getE2ENoteFixture('note.markdown-basic');
-  },
-  get sampleJavascript(): E2ENoteFixture {
-    return getE2ENoteFixture('note.sample-javascript');
   },
   get sidebarScrollSource(): E2ENoteFixture {
     return getE2ENoteFixture('note.sidebar-scroll-source');

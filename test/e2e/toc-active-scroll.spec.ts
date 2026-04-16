@@ -3,8 +3,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { e2eNoteFixtures } from './support/note-fixtures.js';
 
 const sourcePath = e2eNoteFixtures.markdownBasic.directPath;
-const sampleJavascriptPath = e2eNoteFixtures.sampleJavascript.directPath;
-const sampleJavascriptSpaPath = e2eNoteFixtures.sampleJavascript.normalizedPath;
+const layoutRich = e2eNoteFixtures.layoutRich;
+const layoutRichPath = layoutRich.directPath;
+const layoutRichSpaPath = layoutRich.normalizedPath;
 
 interface TocSyncState {
   hostActiveId: string | null;
@@ -23,6 +24,11 @@ interface ViewportPosition {
 interface ExpectedActiveHeading {
   id: string | null;
   label: string | null;
+}
+
+interface NamedHeading {
+  id: string;
+  label: string;
 }
 
 const waitForAppRouterReady = async (page: Page): Promise<void> => {
@@ -137,6 +143,26 @@ const readExpectedActiveHeadingFromViewport = async (page: Page): Promise<Expect
     };
   });
 
+const readHeadingByText = async (page: Page, expectedText: string): Promise<NamedHeading> =>
+  page.evaluate((text) => {
+    const headings = Array.from(
+      document.querySelectorAll<HTMLElement>('article h2[id], article h3[id], article h4[id]'),
+    );
+    const match = headings.find((heading) => {
+      const label = heading.textContent?.replace(/「.*?」への固定リンク/g, '').trim() ?? '';
+      return label === text;
+    });
+
+    if (!(match instanceof HTMLElement) || match.id.length === 0) {
+      throw new Error(`heading not found: ${text}`);
+    }
+
+    return {
+      id: match.id,
+      label: match.textContent?.replace(/「.*?」への固定リンク/g, '').trim() ?? '',
+    };
+  }, expectedText);
+
 const expectTocSynchronizedToViewport = async (page: Page): Promise<void> => {
   const expected = await readExpectedActiveHeadingFromViewport(page);
   expect(expected.id).not.toBeNull();
@@ -164,8 +190,6 @@ const scrollHeadingToActiveZone = async (page: Page, headingId: string): Promise
         });
       });
 
-    // WebKit では instant scroll 後でも数 px ずれることがあるため、
-    // レイアウト確定を挟みつつ active 判定閾値を確実に跨ぐまで補正する。
     for (let attempt = 0; attempt < 4; attempt += 1) {
       const currentTop = target.getBoundingClientRect().top;
       if (currentTop <= headerOffset - 8) {
@@ -210,35 +234,40 @@ const readHeadingViewportPosition = async (
   }, headingId);
 
 test.describe('TOC active state stays synchronized with host state', () => {
-  test('sample-javascript 直アクセス時に scroll で host / child / DOM の current が同期して更新されること', async ({
+  test('layout-rich 直アクセス時に scroll で host / child / DOM の current が同期して更新されること', async ({
     page,
   }) => {
-    await page.goto(sampleJavascriptPath);
+    await page.goto(layoutRichPath);
     await waitForTocReady(page);
 
-    await expectTocSynchronized(page, '71-配列の生成', '7.1 配列の生成');
+    const intro = await readHeadingByText(page, '1. 導入');
+    const stateSync = await readHeadingByText(page, '2. 状態同期');
+    const scroll = await readHeadingByText(page, '2.1 スクロール');
+    const hash = await readHeadingByText(page, '2.2 ハッシュ遷移');
 
-    await scrollHeadingToActiveZone(page, '72-配列の要素の読み書き');
+    await expectTocSynchronized(page, intro.id, intro.label);
+
+    await scrollHeadingToActiveZone(page, stateSync.id);
     await expectTocSynchronizedToViewport(page);
 
-    await scrollHeadingToActiveZone(page, '714-arrayof');
+    await scrollHeadingToActiveZone(page, scroll.id);
     await expectTocSynchronizedToViewport(page);
 
-    await scrollHeadingToActiveZone(page, '715-arrayfrom');
+    await scrollHeadingToActiveZone(page, hash.id);
     await expectTocSynchronizedToViewport(page);
   });
 
   test('hash 直アクセス時に初回表示から host / child / DOM の current が一致すること', async ({
     page,
   }) => {
-    await page.goto(`${sampleJavascriptPath}#72-配列の要素の読み書き`);
+    await page.goto(layoutRichPath);
+    const target = await readHeadingByText(page, '2. 状態同期');
+
+    await page.goto(`${layoutRichPath}#${encodeURIComponent(target.id)}`);
     await waitForTocReady(page);
+    await expectTocSynchronizedToViewport(page);
 
-    // 現実装では hash ターゲット自体は可視範囲に入るが、
-    // current は viewport 上端閾値を通過済みの最後の見出し（7.1.5）になる。
-    await expectTocSynchronized(page, '715-arrayfrom', '7.1.5 Array.from()');
-
-    const position = await readHeadingViewportPosition(page, '72-配列の要素の読み書き');
+    const position = await readHeadingViewportPosition(page, target.id);
 
     expect(position.top).not.toBeNull();
     expect(position.bottom).not.toBeNull();
@@ -246,18 +275,21 @@ test.describe('TOC active state stays synchronized with host state', () => {
     expect(position.bottom ?? Number.NEGATIVE_INFINITY).toBeGreaterThan(0);
   });
 
-  test('SPA 遷移で sample-javascript を開いた後も scroll に応じて host / child / DOM の current が同期すること', async ({
+  test('SPA 遷移で layout-rich を開いた後も scroll に応じて host / child / DOM の current が同期すること', async ({
     page,
   }) => {
     await page.goto(sourcePath);
-    await navigateWithAppRouter(page, sampleJavascriptSpaPath);
+    await navigateWithAppRouter(page, layoutRichSpaPath);
 
-    await expect(page).toHaveURL(sampleJavascriptSpaPath);
+    await expect(page).toHaveURL(layoutRichSpaPath);
     await waitForTocReady(page);
 
-    await expectTocSynchronized(page, '71-配列の生成', '7.1 配列の生成');
+    const intro = await readHeadingByText(page, '1. 導入');
+    const stateSync = await readHeadingByText(page, '2. 状態同期');
 
-    await scrollHeadingToActiveZone(page, '72-配列の要素の読み書き');
-    await expectTocSynchronized(page, '72-配列の要素の読み書き', '7.2 配列の要素の読み書き');
+    await expectTocSynchronized(page, intro.id, intro.label);
+
+    await scrollHeadingToActiveZone(page, stateSync.id);
+    await expectTocSynchronized(page, stateSync.id, stateSync.label);
   });
 });
