@@ -86,7 +86,11 @@ const waitForDesktopTocSync = async (
 };
 
 describe('layout-toc SSR entry hydration', () => {
-  it('未定義 host を scheduler が upgrade した後も activeId の同期を維持すること', async () => {
+  it('未定義 host を scheduler が upgrade した後も activeId の同期を維持すること', async function () {
+    // Firefox では scheduler 経由の upgrade と post-render 同期が 2s を超える回があり、
+    // waitUntil の個別 timeout より先に Mocha 側 timeout が発火し得る。
+    this.timeout(7000);
+
     const cleanup = appendArticleFixture();
 
     try {

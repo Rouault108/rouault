@@ -309,14 +309,21 @@ export class Toc extends LitElement {
   private _runPostRenderWork(): void {
     this._observeLabels();
     this._scheduleTruncationSync();
-    this._syncActiveLinkVisibility();
 
     if (this._ensureRenderedActiveState()) {
+      this._syncActiveLinkVisibility();
+      this._renderedActiveRetryCount = 0;
+      return;
+    }
+
+    if (this._reconcileRenderedActiveState() && this._ensureRenderedActiveState()) {
+      this._syncActiveLinkVisibility();
       this._renderedActiveRetryCount = 0;
       return;
     }
 
     if (this._renderedActiveRetryCount >= this._maxRenderedActiveRetries) {
+      this._syncActiveLinkVisibility();
       this._renderedActiveRetryCount = 0;
       return;
     }
@@ -324,6 +331,15 @@ export class Toc extends LitElement {
     this._renderedActiveRetryCount += 1;
     this.requestUpdate();
     this._schedulePostRenderWork();
+  }
+
+  private _resolveRenderedHeadingId(link: HTMLAnchorElement): string {
+    const label = link.querySelector<HTMLElement>('.toc-link-label');
+    return (
+      label?.dataset['headingId']?.trim() ??
+      link.getAttribute('href')?.replace(/^#/, '').trim() ??
+      ''
+    );
   }
 
   private _ensureRenderedActiveState(): boolean {
@@ -342,12 +358,52 @@ export class Toc extends LitElement {
     }
 
     const label = activeLink.querySelector<HTMLElement>('.toc-link-label');
-    const renderedHeadingId =
-      label?.dataset['headingId']?.trim() ??
-      activeLink.getAttribute('href')?.replace(/^#/, '').trim() ??
-      '';
+    const renderedHeadingId = this._resolveRenderedHeadingId(activeLink);
 
     return renderedHeadingId === this.activeId && (label?.textContent.trim().length ?? 0) > 0;
+  }
+
+  private _reconcileRenderedActiveState(): boolean {
+    const root = this._getQueryableRenderRoot();
+    if (!root) {
+      return false;
+    }
+
+    const links = Array.from(root.querySelectorAll<HTMLAnchorElement>('a.toc-link'));
+    if (links.length === 0) {
+      return false;
+    }
+
+    let matched = false;
+
+    for (const link of links) {
+      const headingId = this._resolveRenderedHeadingId(link);
+      const isActive = this.activeId.length > 0 && headingId === this.activeId;
+      matched ||= isActive;
+
+      link.classList.toggle('is-active', isActive);
+      link.classList.toggle('is-scroll', isActive && this._activeIdSource === 'scroll');
+      link.classList.toggle('is-click', isActive && this._activeIdSource === 'click');
+
+      if (isActive) {
+        link.setAttribute('aria-current', 'location');
+      } else {
+        link.removeAttribute('aria-current');
+      }
+
+      const tooltip = link.closest('ui-tooltip');
+      if (tooltip instanceof HTMLElement) {
+        const shouldDisableTooltip = isActive || !this._truncatedHeadingIds.has(headingId);
+        tooltip.toggleAttribute('disabled', shouldDisableTooltip);
+      }
+    }
+
+    /*
+     * Firefox の hydration 直後は property/attribute だけ先に更新され、
+     * SSR 由来の active class が残る回がある。ui-toc が所有する current DOM は
+     * render 完了待ちに依存しすぎず、最終的に公開 state と整合させる。
+     */
+    return matched || this.activeId.length === 0;
   }
 
   private get _minLevel(): number {
