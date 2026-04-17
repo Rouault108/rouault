@@ -399,9 +399,14 @@ export class Toc extends LitElement {
     }
 
     /*
-     * Firefox の hydration 直後は property/attribute だけ先に更新され、
-     * SSR 由来の active class が残る回がある。ui-toc が所有する current DOM は
-     * render 完了待ちに依存しすぎず、最終的に公開 state と整合させる。
+     * 根因:
+     * - `layout-toc` 配下の nested SSR hydration では、親から渡る `activeId` の
+     *   property / attribute 反映が先に観測されても、child shadow 内の
+     *   `classMap` / `aria-current` 反映が同じ tick で取り切れない回がある
+     * - 特に hash 直アクセスの初回表示で Firefox が取りこぼしやすい
+     *
+     * そのため、`ui-toc` 自身が ownership を持つ current DOM は、
+     * 親からの declarative state 伝播だけに依存せず最終整合させる。
      */
     return matched || this.activeId.length === 0;
   }
