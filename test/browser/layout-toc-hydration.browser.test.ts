@@ -5,7 +5,7 @@ import '../../src/components/layout/layout-toc.js';
 import '../../src/components/ui/toc/toc.js';
 import type { LayoutToc } from '../../src/components/layout/layout-toc.js';
 import { activateLayoutToc } from '../../src/components/layout/layout-toc.js';
-import type { Toc, UiTocHostState } from '../../src/components/ui/toc/toc.js';
+import type { Toc } from '../../src/components/ui/toc/toc.js';
 import type { HydrationDiagnostics } from '../../src/client/hydration/types.js';
 import { replaceElementChildrenFromHtml } from '../../src/router/declarative-shadow-dom.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
@@ -18,11 +18,6 @@ const headings = [
 const headingsJson = JSON.stringify(headings);
 const secondHeadingId = '72-配列の要素の読み書き';
 const secondHeadingLabel = '7.2 配列の要素の読み書き';
-
-interface LayoutTocInternals {
-  _applyActiveId(id: string): void;
-  _collectSyncableTocs(): Toc[];
-}
 
 const flush = async (host: LayoutToc): Promise<void> => {
   await waitForLitUpdate(host);
@@ -52,6 +47,16 @@ const waitForActiveDom = async (toc: Toc, expected: string): Promise<void> => {
     await nextAnimationFrame();
     return readActiveLabel(toc) === expected;
   }, `active DOM label が ${expected} へ同期すること`);
+};
+
+const withLocationHash = (nextId: string | null): (() => void) => {
+  const previousUrl = window.location.href;
+  const nextUrl = new URL(previousUrl);
+  nextUrl.hash = nextId ? `#${encodeURIComponent(nextId)}` : '';
+  window.history.replaceState({}, '', nextUrl.toString());
+  return () => {
+    window.history.replaceState({}, '', previousUrl);
+  };
 };
 
 const hydrateWithScheduler = async (root: HTMLElement): Promise<HydrationDiagnostics> => {
@@ -154,8 +159,9 @@ const renderStaleSsrLayoutToc = async (
 };
 
 describe('layout-toc hydration reconciliation', () => {
-  it('hydrate 後に host の activeId 変更が ui-toc へ追従すること', async () => {
+  it('hydrate 後に location hash と ui-toc の active DOM が一致すること', async () => {
     const cleanup = appendArticleFixture();
+    const restoreHash = withLocationHash(secondHeadingId);
 
     try {
       const host = await fixture<LayoutToc>(html`
@@ -167,11 +173,7 @@ describe('layout-toc hydration reconciliation', () => {
       `);
 
       await flush(host);
-      activateLayoutToc(host);
-      await flush(host);
-
-      const internals = host as unknown as LayoutTocInternals;
-      internals._applyActiveId(secondHeadingId);
+      await activateLayoutToc(host);
       await flush(host);
 
       const desktopToc = queryDesktopToc(host);
@@ -186,14 +188,17 @@ describe('layout-toc hydration reconciliation', () => {
       expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
       expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
 
+      await waitForActiveDom(desktopToc, secondHeadingLabel);
       expect(readActiveLabel(desktopToc)).to.equal(secondHeadingLabel);
     } finally {
+      restoreHash();
       cleanup();
     }
   });
 
-  it('hydrate 開始直後でも _applyActiveId による同期が失われないこと', async () => {
+  it('hydrate 開始直後でも location hash の active が失われないこと', async () => {
     const cleanup = appendArticleFixture();
+    const restoreHash = withLocationHash(secondHeadingId);
 
     try {
       const host = await fixture<LayoutToc>(html`
@@ -204,11 +209,7 @@ describe('layout-toc hydration reconciliation', () => {
         ></layout-toc>
       `);
 
-      activateLayoutToc(host);
-
-      const internals = host as unknown as LayoutTocInternals;
-      internals._applyActiveId(secondHeadingId);
-
+      await activateLayoutToc(host);
       await flush(host);
 
       const desktopToc = queryDesktopToc(host);
@@ -217,13 +218,15 @@ describe('layout-toc hydration reconciliation', () => {
       }
 
       expect(desktopToc.activeId).to.equal(secondHeadingId);
+      await waitForActiveDom(desktopToc, secondHeadingLabel);
       expect(readActiveLabel(desktopToc)).to.equal(secondHeadingLabel);
     } finally {
+      restoreHash();
       cleanup();
     }
   });
 
-  it('ui-toc は applyHostState 後に updateComplete をまたいでも active DOM が非 null のままであること', async () => {
+  it('ui-toc は activeId prop 更新後に updateComplete をまたいでも active DOM が非 null のままであること', async () => {
     const toc = await fixture<Toc>(html`
       <ui-toc .headers=${[...headings]} active-id="71-配列の生成"></ui-toc>
     `);
@@ -231,12 +234,7 @@ describe('layout-toc hydration reconciliation', () => {
     await waitForLitUpdate(toc);
     await nextAnimationFrame();
 
-    const nextState: UiTocHostState = {
-      headers: [...headings],
-      activeId: secondHeadingId,
-    };
-
-    toc.applyHostState(nextState);
+    toc.activeId = secondHeadingId;
     await toc.updateComplete;
     await nextAnimationFrame();
     await toc.updateComplete;
@@ -249,8 +247,9 @@ describe('layout-toc hydration reconciliation', () => {
     expect(readActiveLabel(toc)).to.equal(secondHeadingLabel);
   });
 
-  it('SSR の DSD 経路でも stale な ui-toc を張り直して同期できること', async () => {
+  it('SSR の DSD 経路でも stale な ui-toc が hydrate 後に hash と同期できること', async () => {
     const cleanup = appendArticleFixture();
+    const restoreHash = withLocationHash(secondHeadingId);
 
     try {
       const root = await fixture<HTMLElement>(html`<main></main>`);
@@ -301,11 +300,7 @@ describe('layout-toc hydration reconciliation', () => {
       }
 
       await flush(host);
-      activateLayoutToc(host);
-      await flush(host);
-
-      const internals = host as unknown as LayoutTocInternals;
-      internals._applyActiveId(secondHeadingId);
+      await activateLayoutToc(host);
       await flush(host);
 
       const desktopToc = queryDesktopToc(host);
@@ -320,14 +315,17 @@ describe('layout-toc hydration reconciliation', () => {
       expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
       expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
 
+      await waitForActiveDom(desktopToc, secondHeadingLabel);
       expect(readActiveLabel(desktopToc)).to.equal(secondHeadingLabel);
     } finally {
+      restoreHash();
       cleanup();
     }
   });
 
-  it('HydrationScheduler の SSR 経路でも stale な ui-toc を張り直して同期できること', async () => {
+  it('HydrationScheduler の SSR 経路でも stale な ui-toc が hydrate 後に hash と同期できること', async () => {
     const cleanup = appendArticleFixture();
+    const restoreHash = withLocationHash(secondHeadingId);
 
     try {
       const { root, host } = await renderStaleSsrLayoutToc('initial');
@@ -340,10 +338,6 @@ describe('layout-toc hydration reconciliation', () => {
       expect(diagnostics.failedCount).to.equal(0);
       expect(diagnostics.activatedCount).to.equal(1);
 
-      const internals = host as unknown as LayoutTocInternals;
-      internals._applyActiveId(secondHeadingId);
-      await flush(host);
-
       const desktopToc = queryDesktopToc(host);
       if (!desktopToc) {
         throw new Error('desktop ui-toc が見つかりません');
@@ -356,56 +350,10 @@ describe('layout-toc hydration reconciliation', () => {
       expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
       expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
 
+      await waitForActiveDom(desktopToc, secondHeadingLabel);
       expect(readActiveLabel(desktopToc)).to.equal(secondHeadingLabel);
     } finally {
-      cleanup();
-    }
-  });
-
-  it('SSR hydrate 中に collect 対象が一時的に 0 件でも retry で active DOM が回復すること', async () => {
-    const cleanup = appendArticleFixture();
-
-    try {
-      const { host } = await renderStaleSsrLayoutToc();
-
-      const internals = host as unknown as LayoutTocInternals;
-      const originalCollect = internals._collectSyncableTocs.bind(internals);
-      let remainingEmptyCollections = 2;
-
-      internals._collectSyncableTocs = () => {
-        if (remainingEmptyCollections > 0) {
-          remainingEmptyCollections -= 1;
-          return [];
-        }
-        return originalCollect();
-      };
-
-      await flush(host);
-      activateLayoutToc(host);
-
-      internals._applyActiveId(secondHeadingId);
-
-      await waitUntil(async () => {
-        await flush(host);
-
-        const desktopToc = queryDesktopToc(host);
-        if (!desktopToc) {
-          return false;
-        }
-
-        return (
-          remainingEmptyCollections === 0 && readActiveLabel(desktopToc) === secondHeadingLabel
-        );
-      }, 'collect 対象 0 件の一時状態から active DOM が回復すること');
-
-      const desktopToc = queryDesktopToc(host);
-      if (!desktopToc) {
-        throw new Error('desktop ui-toc が見つかりません');
-      }
-
-      expect(desktopToc.activeId).to.equal(secondHeadingId);
-      expect(readActiveLabel(desktopToc)).to.equal(secondHeadingLabel);
-    } finally {
+      restoreHash();
       cleanup();
     }
   });

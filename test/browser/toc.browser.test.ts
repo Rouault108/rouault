@@ -128,7 +128,7 @@ describe('ui-toc active link scroll contract', () => {
 
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="overflow-y: auto; max-height: 40px;">
-        <ui-toc .headers=${headers} active-id="72-配列の要素の読み書き"></ui-toc>
+        <ui-toc .headers=${headers} active-id="71-配列の生成"></ui-toc>
       </div>
     `);
 
@@ -139,11 +139,6 @@ describe('ui-toc active link scroll contract', () => {
 
     await flush(toc);
 
-    const activeLink = toc.shadowRoot?.querySelector<HTMLElement>('a.toc-link.is-active');
-    if (!activeLink) {
-      throw new Error('active link が見つかりません');
-    }
-
     setBoxMetrics(wrapper, {
       rect: createRect({ top: 0, height: 40 }),
       scrollHeight: 120,
@@ -153,9 +148,6 @@ describe('ui-toc active link scroll contract', () => {
     setBoxMetrics(toc, {
       rect: createRect({ top: 0, height: 40 }),
     });
-    setBoxMetrics(activeLink, {
-      rect: createRect({ top: 48, height: 24 }),
-    });
 
     Object.defineProperty(wrapper, 'scrollTo', {
       configurable: true,
@@ -164,7 +156,18 @@ describe('ui-toc active link scroll contract', () => {
       },
     });
 
-    toc.refresh();
+    const nextActiveLink = toc.shadowRoot?.querySelector<HTMLElement>(
+      'a.toc-link[href="#72-配列の要素の読み書き"]',
+    );
+    if (!nextActiveLink) {
+      throw new Error('next active link が見つかりません');
+    }
+
+    setBoxMetrics(nextActiveLink, {
+      rect: createRect({ top: 48, height: 24 }),
+    });
+
+    toc.activeId = '72-配列の要素の読み書き';
     await flush(toc);
 
     expect(scrollIntoViewCalls).to.equal(0);
@@ -189,7 +192,7 @@ describe('ui-toc active link scroll contract', () => {
       <div style="overflow-y: auto; max-height: 40px;">
         <ui-toc
           .headers=${headers}
-          active-id="72-配列の要素の読み書き"
+          active-id="71-配列の生成"
           suppress-active-link-scroll
         ></ui-toc>
       </div>
@@ -202,11 +205,6 @@ describe('ui-toc active link scroll contract', () => {
 
     await flush(toc);
 
-    const activeLink = toc.shadowRoot?.querySelector<HTMLElement>('a.toc-link.is-active');
-    if (!activeLink) {
-      throw new Error('active link が見つかりません');
-    }
-
     setBoxMetrics(wrapper, {
       rect: createRect({ top: 0, height: 40 }),
       scrollHeight: 120,
@@ -216,9 +214,6 @@ describe('ui-toc active link scroll contract', () => {
     setBoxMetrics(toc, {
       rect: createRect({ top: 0, height: 40 }),
     });
-    setBoxMetrics(activeLink, {
-      rect: createRect({ top: 48, height: 24 }),
-    });
 
     Object.defineProperty(wrapper, 'scrollTo', {
       configurable: true,
@@ -227,7 +222,18 @@ describe('ui-toc active link scroll contract', () => {
       },
     });
 
-    toc.refresh();
+    const nextActiveLink = toc.shadowRoot?.querySelector<HTMLElement>(
+      'a.toc-link[href="#72-配列の要素の読み書き"]',
+    );
+    if (!nextActiveLink) {
+      throw new Error('next active link が見つかりません');
+    }
+
+    setBoxMetrics(nextActiveLink, {
+      rect: createRect({ top: 48, height: 24 }),
+    });
+
+    toc.activeId = '72-配列の要素の読み書き';
     await flush(toc);
 
     expect(scrollIntoViewCalls).to.equal(0);

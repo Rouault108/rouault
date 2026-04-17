@@ -1,155 +1,273 @@
 import { expect, fixture, html } from '@open-wc/testing';
-import type { LayoutToc } from '../../src/components/layout/layout-toc.js';
-import { activateLayoutToc } from '../../src/components/layout/layout-toc.js';
+import '../../src/components/ui/toc/toc.js';
+import type { Toc } from '../../src/components/ui/toc/toc.js';
+import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
-interface MatchMediaController {
-  restore(): void;
-}
+const headers = [
+  { id: '71-配列の生成', text: '7.1 配列の生成', level: 2 },
+  { id: '72-配列の要素の読み書き', text: '7.2 配列の要素の読み書き', level: 2 },
+];
 
-interface ScrollController {
-  setY(nextY: number): void;
-  restore(): void;
-}
+const createRect = ({
+  top,
+  left = 0,
+  width = 240,
+  height = 24,
+}: {
+  top: number;
+  left?: number;
+  width?: number;
+  height?: number;
+}): DOMRect =>
+  ({
+    x: left,
+    y: top,
+    top,
+    left,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+    toJSON: () => ({}),
+  }) as DOMRect;
 
-const headingsJson = JSON.stringify([
-  { id: 'overview', text: 'Overview', level: 2 },
-  { id: 'details', text: 'Details', level: 2 },
-]);
-
-const capabilitiesJson = JSON.stringify({
-  activeTracking: false,
-  dynamicScopes: false,
-  mobileSummary: true,
-});
-
-const ensureLayoutTocDefined = async (): Promise<void> => {
-  await import('../../src/components/layout/layout-toc.js');
-  await customElements.whenDefined('layout-toc');
-};
-
-const mockMatchMedia = (): MatchMediaController => {
-  const original = window.matchMedia.bind(window);
-
-  window.matchMedia = ((query: string): MediaQueryList => {
-    return {
-      matches: query === '(max-width: 639px)',
-      media: query,
-      onchange: null,
-      addEventListener: () => undefined,
-      removeEventListener: () => undefined,
-      addListener: () => undefined,
-      removeListener: () => undefined,
-      dispatchEvent: () => false,
-    } as MediaQueryList;
-  }) as typeof window.matchMedia;
-
-  return {
-    restore(): void {
-      window.matchMedia = original;
+const createRectList = (rect: DOMRect): DOMRectList =>
+  ({
+    0: rect,
+    length: 1,
+    item: (index: number) => (index === 0 ? rect : null),
+    [Symbol.iterator]: function* () {
+      yield rect;
     },
-  };
-};
+  }) as unknown as DOMRectList;
 
-const mockScroll = (): ScrollController => {
-  const originalDescriptor = Object.getOwnPropertyDescriptor(window, 'scrollY');
-  const originalScrollTo = window.scrollTo.bind(window);
-  let currentY = 0;
-
-  Object.defineProperty(window, 'scrollY', {
+const setBoxMetrics = (
+  element: HTMLElement,
+  {
+    rect,
+    scrollHeight,
+    clientHeight,
+    scrollTop,
+  }: {
+    rect: DOMRect;
+    scrollHeight?: number;
+    clientHeight?: number;
+    scrollTop?: number;
+  },
+): void => {
+  Object.defineProperty(element, 'getBoundingClientRect', {
     configurable: true,
-    get: () => currentY,
+    value: () => rect,
+  });
+  Object.defineProperty(element, 'getClientRects', {
+    configurable: true,
+    value: () => createRectList(rect),
   });
 
-  window.scrollTo = (((options?: ScrollToOptions | number, y?: number): void => {
-    if (typeof options === 'number') {
-      currentY = typeof y === 'number' ? y : currentY;
-    } else if (options && typeof options.top === 'number') {
-      currentY = options.top;
-    }
-    window.dispatchEvent(new Event('scroll'));
-  }) as unknown) as typeof window.scrollTo;
+  if (scrollHeight !== undefined) {
+    Object.defineProperty(element, 'scrollHeight', {
+      configurable: true,
+      value: scrollHeight,
+    });
+  }
 
-  return {
-    setY(nextY: number): void {
-      currentY = nextY;
-      window.dispatchEvent(new Event('scroll'));
-    },
-    restore(): void {
-      if (originalDescriptor) {
-        Object.defineProperty(window, 'scrollY', originalDescriptor);
-      } else {
-        Reflect.deleteProperty(window, 'scrollY');
-      }
-      window.scrollTo = originalScrollTo;
-    },
-  };
+  if (clientHeight !== undefined) {
+    Object.defineProperty(element, 'clientHeight', {
+      configurable: true,
+      value: clientHeight,
+    });
+  }
+
+  if (scrollTop !== undefined) {
+    Object.defineProperty(element, 'scrollTop', {
+      configurable: true,
+      writable: true,
+      value: scrollTop,
+    });
+  }
 };
 
-const settle = async (host: LayoutToc): Promise<void> => {
-  await host.updateComplete;
-  await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => resolve());
-  });
-  await host.updateComplete;
+const flush = async (toc: Toc): Promise<void> => {
+  await waitForLitUpdate(toc);
+  await nextAnimationFrame();
+  await waitForLitUpdate(toc);
 };
 
-describe('layout-toc mobile summary contract', () => {
+describe('ui-toc active link scroll contract', () => {
+  let originalScrollIntoViewDescriptor: PropertyDescriptor | undefined;
+
   beforeEach(() => {
-    document.documentElement.style.setProperty('--header-height', '56px');
+    originalScrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollIntoView',
+    );
   });
 
   afterEach(() => {
-    document.documentElement.style.removeProperty('--header-height');
+    if (originalScrollIntoViewDescriptor) {
+      Object.defineProperty(
+        HTMLElement.prototype,
+        'scrollIntoView',
+        originalScrollIntoViewDescriptor,
+      );
+    } else {
+      Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
+    }
   });
 
-  it('mobile summary bar is fixed below the header after hydration and scroll', async () => {
-    const media = mockMatchMedia();
-    const scroll = mockScroll();
+  it('active link の追従は scrollIntoView ではなく scroll container の scrollTo を使うこと', async () => {
+    let scrollIntoViewCalls = 0;
+    let scrollToOptions: ScrollToOptions | null = null;
 
-    try {
-      await ensureLayoutTocDefined();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: () => {
+        scrollIntoViewCalls += 1;
+      },
+    });
 
-      const shell = await fixture<HTMLElement>(html`
-        <div>
-          <article id="content-root">
-            <h2 id="overview">Overview</h2>
-            <h2 id="details">Details</h2>
-          </article>
-          <layout-toc
-            headings-json=${headingsJson}
-            capabilities-json=${capabilitiesJson}
-            content-root-id="content-root"
-          ></layout-toc>
-        </div>
-      `);
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="overflow-y: auto; max-height: 40px;">
+        <ui-toc .headers=${headers} active-id="71-配列の生成"></ui-toc>
+      </div>
+    `);
 
-      const host = shell.querySelector<LayoutToc>('layout-toc');
-      expect(host).to.not.equal(null);
-
-      if (!(host instanceof HTMLElement)) {
-        throw new Error('layout-toc が見つかりません');
-      }
-
-      activateLayoutToc(host);
-      await settle(host as LayoutToc);
-
-      expect(host.shadowRoot?.querySelector('.mobile-bar')).to.equal(null);
-
-      scroll.setY(120);
-      await settle(host as LayoutToc);
-
-      const bar = host.shadowRoot?.querySelector<HTMLElement>('.mobile-bar');
-      const title = host.shadowRoot?.querySelector<HTMLElement>('.mobile-title');
-
-      expect(bar).to.not.equal(null);
-      expect(title?.textContent?.trim()).to.equal('Overview');
-
-      const style = bar ? getComputedStyle(bar) : null;
-      expect(style?.position).to.equal('fixed');
-      expect(style?.top).to.equal('56px');
-    } finally {
-      media.restore();
-      scroll.restore();
+    const toc = wrapper.querySelector<Toc>('ui-toc');
+    if (!toc) {
+      throw new Error('ui-toc が見つかりません');
     }
+
+    await flush(toc);
+
+    setBoxMetrics(wrapper, {
+      rect: createRect({ top: 0, height: 40 }),
+      scrollHeight: 120,
+      clientHeight: 40,
+      scrollTop: 0,
+    });
+    setBoxMetrics(toc, {
+      rect: createRect({ top: 0, height: 40 }),
+    });
+
+    Object.defineProperty(wrapper, 'scrollTo', {
+      configurable: true,
+      value: (options: ScrollToOptions) => {
+        scrollToOptions = options;
+      },
+    });
+
+    const nextActiveLink = toc.shadowRoot?.querySelector<HTMLElement>(
+      'a.toc-link[href="#72-配列の要素の読み書き"]',
+    );
+    if (!nextActiveLink) {
+      throw new Error('next active link が見つかりません');
+    }
+
+    setBoxMetrics(nextActiveLink, {
+      rect: createRect({ top: 48, height: 24 }),
+    });
+
+    toc.activeId = '72-配列の要素の読み書き';
+    await flush(toc);
+
+    expect(scrollIntoViewCalls).to.equal(0);
+    expect(scrollToOptions).to.deep.equal({
+      top: 32,
+      behavior: 'instant',
+    });
+  });
+
+  it('suppress-active-link-scroll 指定時は active link 追従スクロールを抑止すること', async () => {
+    let scrollIntoViewCalls = 0;
+    let scrollToCalls = 0;
+
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: () => {
+        scrollIntoViewCalls += 1;
+      },
+    });
+
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="overflow-y: auto; max-height: 40px;">
+        <ui-toc
+          .headers=${headers}
+          active-id="71-配列の生成"
+          suppress-active-link-scroll
+        ></ui-toc>
+      </div>
+    `);
+
+    const toc = wrapper.querySelector<Toc>('ui-toc');
+    if (!toc) {
+      throw new Error('ui-toc が見つかりません');
+    }
+
+    await flush(toc);
+
+    setBoxMetrics(wrapper, {
+      rect: createRect({ top: 0, height: 40 }),
+      scrollHeight: 120,
+      clientHeight: 40,
+      scrollTop: 0,
+    });
+    setBoxMetrics(toc, {
+      rect: createRect({ top: 0, height: 40 }),
+    });
+
+    Object.defineProperty(wrapper, 'scrollTo', {
+      configurable: true,
+      value: () => {
+        scrollToCalls += 1;
+      },
+    });
+
+    const nextActiveLink = toc.shadowRoot?.querySelector<HTMLElement>(
+      'a.toc-link[href="#72-配列の要素の読み書き"]',
+    );
+    if (!nextActiveLink) {
+      throw new Error('next active link が見つかりません');
+    }
+
+    setBoxMetrics(nextActiveLink, {
+      rect: createRect({ top: 48, height: 24 }),
+    });
+
+    toc.activeId = '72-配列の要素の読み書き';
+    await flush(toc);
+
+    expect(scrollIntoViewCalls).to.equal(0);
+    expect(scrollToCalls).to.equal(0);
+  });
+
+  it('外部 activeId 更新時は active source 表現が scroll 側へ正規化されること', async () => {
+    const toc = await fixture<Toc>(html`
+      <ui-toc .headers=${headers} active-id="71-配列の生成"></ui-toc>
+    `);
+
+    await flush(toc);
+
+    const clickedLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>(
+      'a.toc-link[href="#72-配列の要素の読み書き"]',
+    );
+    if (!clickedLink) {
+      throw new Error('click target が見つかりません');
+    }
+
+    clickedLink.click();
+    await flush(toc);
+
+    const clickActiveLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
+    expect(clickActiveLink?.classList.contains('is-click')).to.equal(true);
+    expect(clickActiveLink?.classList.contains('is-scroll')).to.equal(false);
+
+    toc.activeId = '71-配列の生成';
+    await flush(toc);
+
+    const scrollActiveLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>(
+      'a.toc-link.is-active',
+    );
+    expect(scrollActiveLink?.classList.contains('is-scroll')).to.equal(true);
+    expect(scrollActiveLink?.classList.contains('is-click')).to.equal(false);
   });
 });

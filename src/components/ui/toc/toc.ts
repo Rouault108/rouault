@@ -23,14 +23,6 @@ export interface UiTocActiveChangeDetail {
   total: number;
 }
 
-export interface UiTocHostState {
-  headers: Heading[];
-  activeId: string;
-}
-
-const hasSameHeadingIds = (left: readonly Heading[], right: readonly Heading[]): boolean =>
-  left.length === right.length && left.every((heading, index) => heading.id === right[index]?.id);
-
 @customElement('ui-toc')
 export class Toc extends LitElement {
   static override styles = css`
@@ -241,19 +233,27 @@ export class Toc extends LitElement {
   private _truncatedHeadingIds = new Set<string>();
   private _labelResizeObserver: ResizeObserver | null = null;
   private _truncationSyncFrame: number | null = null;
+  private _postRenderFrame: number | null = null;
+  private _pendingClickActiveId: string | null = null;
+  private _renderedActiveRetryCount = 0;
+  private readonly _maxRenderedActiveRetries = 2;
 
   override firstUpdated(): void {
     this._labelResizeObserver = new ResizeObserver(() => {
       this._scheduleTruncationSync();
     });
-    this._observeLabels();
-    this._scheduleTruncationSync();
+    this._schedulePostRenderWork({ resetRetryCount: true });
   }
 
   override disconnectedCallback(): void {
     if (this._truncationSyncFrame !== null) {
       cancelAnimationFrame(this._truncationSyncFrame);
       this._truncationSyncFrame = null;
+    }
+
+    if (this._postRenderFrame !== null) {
+      cancelAnimationFrame(this._postRenderFrame);
+      this._postRenderFrame = null;
     }
 
     this._labelResizeObserver?.disconnect();
@@ -264,55 +264,90 @@ export class Toc extends LitElement {
   override updated(changedProperties: PropertyValues<this>): void {
     super.updated(changedProperties);
 
-    if (changedProperties.has('headers') || changedProperties.has('activeId')) {
-      this._observeLabels();
-      this._scheduleTruncationSync();
-      this._syncActiveLinkVisibility();
+    if (!changedProperties.has('headers') && !changedProperties.has('activeId')) {
+      return;
     }
+
+    if (changedProperties.has('activeId')) {
+      this._normalizeActiveIdSource();
+    }
+
+    this._schedulePostRenderWork({ resetRetryCount: true });
   }
 
   private _getQueryableRenderRoot(): ShadowRoot | null {
     return this.renderRoot instanceof ShadowRoot ? this.renderRoot : null;
   }
 
-  refresh(): void {
-    if (!this._getQueryableRenderRoot()) {
+  private _normalizeActiveIdSource(): void {
+    if (this._pendingClickActiveId === this.activeId) {
+      this._pendingClickActiveId = null;
       return;
     }
 
+    this._pendingClickActiveId = null;
+    if (this._activeIdSource !== 'scroll') {
+      this._activeIdSource = 'scroll';
+    }
+  }
+
+  private _schedulePostRenderWork(options: { resetRetryCount?: boolean } = {}): void {
+    if (options.resetRetryCount === true) {
+      this._renderedActiveRetryCount = 0;
+    }
+
+    if (this._postRenderFrame !== null) {
+      return;
+    }
+
+    this._postRenderFrame = requestAnimationFrame(() => {
+      this._postRenderFrame = null;
+      this._runPostRenderWork();
+    });
+  }
+
+  private _runPostRenderWork(): void {
     this._observeLabels();
     this._scheduleTruncationSync();
     this._syncActiveLinkVisibility();
-  }
 
-  applyHostState(state: UiTocHostState): void {
-    const nextHeaders = state.headers;
-    const nextActiveId = state.activeId;
-    const headersChanged = !hasSameHeadingIds(this.headers, nextHeaders);
-    const activeChanged = this.activeId !== nextActiveId;
-
-    if (!headersChanged && !activeChanged) {
-      void this.updateComplete.then(() => {
-        this.refresh();
-      });
+    if (this._ensureRenderedActiveState()) {
+      this._renderedActiveRetryCount = 0;
       return;
     }
 
-    if (headersChanged) {
-      this.headers = [...nextHeaders];
+    if (this._renderedActiveRetryCount >= this._maxRenderedActiveRetries) {
+      this._renderedActiveRetryCount = 0;
+      return;
     }
 
-    if (activeChanged) {
-      this.activeId = nextActiveId;
-      this.setAttribute('active-id', nextActiveId);
-      this._activeIdSource = 'scroll';
-    }
-
+    this._renderedActiveRetryCount += 1;
     this.requestUpdate();
+    this._schedulePostRenderWork();
+  }
 
-    void this.updateComplete.then(() => {
-      this.refresh();
-    });
+  private _ensureRenderedActiveState(): boolean {
+    const root = this._getQueryableRenderRoot();
+    if (!root) {
+      return true;
+    }
+
+    const activeLink = root.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
+    if (this.activeId.length === 0) {
+      return activeLink === null;
+    }
+
+    if (!(activeLink instanceof HTMLAnchorElement)) {
+      return false;
+    }
+
+    const label = activeLink.querySelector<HTMLElement>('.toc-link-label');
+    const renderedHeadingId =
+      label?.dataset['headingId']?.trim() ??
+      activeLink.getAttribute('href')?.replace(/^#/, '').trim() ??
+      '';
+
+    return renderedHeadingId === this.activeId && (label?.textContent.trim().length ?? 0) > 0;
   }
 
   private get _minLevel(): number {
@@ -547,6 +582,7 @@ export class Toc extends LitElement {
   private async _handleLinkClick(event: Event, headingId: string): Promise<void> {
     event.preventDefault();
 
+    this._pendingClickActiveId = headingId;
     this._activeIdSource = 'click';
     this.activeId = headingId;
     this._emitActiveChange('click', headingId);

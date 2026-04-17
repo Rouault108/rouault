@@ -8,7 +8,6 @@ const layoutRichPath = layoutRich.directPath;
 const layoutRichSpaPath = layoutRich.normalizedPath;
 
 interface TocSyncState {
-  hostActiveId: string | null;
   childPropActiveId: string | null;
   childAttrActiveId: string | null;
   childDomActiveLabel: string | null;
@@ -58,9 +57,7 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
 
 const readTocSyncState = async (page: Page): Promise<TocSyncState> =>
   page.evaluate(() => {
-    const host = document.querySelector('layout-toc') as
-      | (HTMLElement & { _activeId?: string })
-      | null;
+    const host = document.querySelector('layout-toc');
     const ui = host?.shadowRoot?.querySelector('ui-toc') as
       | (HTMLElement & { activeId?: string })
       | null;
@@ -76,7 +73,6 @@ const readTocSyncState = async (page: Page): Promise<TocSyncState> =>
         : -1;
 
     return {
-      hostActiveId: host?._activeId ?? null,
       childPropActiveId: typeof ui?.activeId === 'string' ? ui.activeId : null,
       childAttrActiveId: ui?.getAttribute('active-id') ?? null,
       childDomActiveLabel:
@@ -107,7 +103,6 @@ const expectTocSynchronized = async (
       return await readTocSyncState(page);
     })
     .toEqual({
-      hostActiveId: expectedId,
       childPropActiveId: expectedId,
       childAttrActiveId: expectedId,
       childDomActiveLabel: expectedLabel,
@@ -238,8 +233,8 @@ const readHeadingViewportPosition = async (
     };
   }, headingId);
 
-test.describe('TOC active state stays synchronized with host state', () => {
-  test('layout-rich 直アクセス時に scroll で host / child / DOM の current が同期して更新されること', async ({
+test.describe('TOC active state stays synchronized with rendered contract', () => {
+  test('layout-rich 直アクセス時に scroll で child prop / attribute / DOM の current が同期して更新されること', async ({
     page,
   }) => {
     await page.goto(layoutRichPath);
@@ -262,7 +257,7 @@ test.describe('TOC active state stays synchronized with host state', () => {
     await expectTocSynchronizedToViewport(page);
   });
 
-  test('hash 直アクセス時に初回表示から host / child / DOM の current が一致すること', async ({
+  test('hash 直アクセス時に初回表示から child prop / attribute / DOM の current が一致すること', async ({
     page,
   }) => {
     await page.goto(layoutRichPath);
@@ -280,7 +275,7 @@ test.describe('TOC active state stays synchronized with host state', () => {
     expect(position.bottom ?? Number.NEGATIVE_INFINITY).toBeGreaterThan(0);
   });
 
-  test('SPA 遷移で layout-rich を開いた後も scroll に応じて host / child / DOM の current が同期すること', async ({
+  test('SPA 遷移で layout-rich を開いた後も scroll に応じて child prop / attribute / DOM の current が同期すること', async ({
     page,
   }) => {
     await page.goto(sourcePath);
