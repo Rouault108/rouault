@@ -25,10 +25,12 @@ interface HeaderDropdownPaintState {
   panelBottom: number | null;
   barTop: number | null;
   barBottom: number | null;
+  hasOverlapWithBar: boolean;
   samplePoint: { x: number; y: number } | null;
   topmostInsidePanel: boolean;
   topmostInsideBar: boolean;
   topmostTag: string | null;
+  topmostPathTags: string[];
 }
 
 const waitForLayoutHeaderHydrated = async (page: Page): Promise<void> => {
@@ -43,6 +45,38 @@ const waitForLayoutTocHydrated = async (page: Page): Promise<void> => {
     const toc = document.querySelector('layout-toc');
     return toc instanceof HTMLElement && toc.shadowRoot instanceof ShadowRoot;
   });
+};
+
+const waitForHeaderDropdownInteractive = async (
+  page: Page,
+  kind: HeaderDropdownKind,
+): Promise<void> => {
+  await expect
+    .poll(async () => {
+      return await page.evaluate((dropdownKind) => {
+        const header = document.querySelector('layout-header');
+        if (!(header instanceof HTMLElement) || !(header.shadowRoot instanceof ShadowRoot)) {
+          return false;
+        }
+
+        const dropdownSelector =
+          dropdownKind === 'corpus' ? '.corpus-switcher' : '[data-dropdown="theme"]';
+        const dropdown = header.shadowRoot.querySelector<HTMLElement>(dropdownSelector);
+        const trigger = dropdown?.querySelector<HTMLElement>('[slot="trigger"]');
+        const panel = dropdown?.shadowRoot?.querySelector<HTMLElement>('.panel');
+        const openMethod = dropdown
+          ? (dropdown as HTMLElement & { open?: () => void }).open
+          : undefined;
+
+        return (
+          dropdown instanceof HTMLElement &&
+          trigger instanceof HTMLElement &&
+          panel instanceof HTMLElement &&
+          typeof openMethod === 'function'
+        );
+      }, kind);
+    })
+    .toBe(true);
 };
 
 const revealMobileBar = async (page: Page): Promise<void> => {
@@ -105,14 +139,127 @@ const readHeaderDropdownPaintState = async (
     const panelRect = panel instanceof HTMLElement ? panel.getBoundingClientRect() : null;
     const barRect = bar instanceof HTMLElement ? bar.getBoundingClientRect() : null;
 
+    const overlapTop =
+      panelRect && barRect ? Math.max(panelRect.top, barRect.top) : Number.NaN;
+    const overlapBottom =
+      panelRect && barRect ? Math.min(panelRect.bottom, barRect.bottom) : Number.NaN;
+    const hasOverlapWithBar =
+      Number.isFinite(overlapTop) &&
+      Number.isFinite(overlapBottom) &&
+      overlapBottom - overlapTop >= 8;
+
     const samplePoint = panelRect
-      ? {
-          x: Math.round(panelRect.left + panelRect.width / 2),
-          y: Math.round(Math.min(panelRect.bottom - 8, panelRect.top + 12)),
-        }
+      ? (() => {
+          const x = Math.round(panelRect.left + panelRect.width / 2);
+
+          if (hasOverlapWithBar) {
+            return {
+              x,
+              y: Math.round((overlapTop + overlapBottom) / 2),
+            };
+          }
+
+          return {
+            x,
+            y: Math.round(
+              Math.min(
+                panelRect.bottom - 16,
+                Math.max(panelRect.top + 24, panelRect.top + panelRect.height / 2),
+              ),
+            ),
+          };
+        })()
       : null;
 
-    const topmost = samplePoint ? document.elementFromPoint(samplePoint.x, samplePoint.y) : null;
+    const deepestElementFromPoint = (
+      root: Document | ShadowRoot,
+      x: number,
+      y: number,
+    ): Element | null => {
+      const hit = root.elementFromPoint(x, y);
+      if (!(hit instanceof Element)) {
+        return null;
+      }
+
+      if (hit.shadowRoot instanceof ShadowRoot) {
+        const inner = deepestElementFromPoint(hit.shadowRoot, x, y);
+        return inner ?? hit;
+      }
+
+      return hit;
+    };
+
+    const composedContains = (container: HTMLElement, node: Node | null): boolean => {
+      const visited = new Set<Node>();
+      let current: Node | null = node;
+
+      while (current && !visited.has(current)) {
+        visited.add(current);
+
+        if (current === container) {
+          return true;
+        }
+
+        const assignedSlot = current instanceof Element ? current.assignedSlot : null;
+        if (assignedSlot instanceof HTMLSlotElement) {
+          current = assignedSlot;
+          continue;
+        }
+
+        const parent = current.parentNode;
+        if (parent) {
+          current = parent;
+          continue;
+        }
+
+        const root = current.getRootNode();
+        if (root instanceof ShadowRoot) {
+          current = root.host;
+          continue;
+        }
+
+        current = null;
+      }
+
+      return false;
+    };
+
+    const topmost =
+      samplePoint !== null ? deepestElementFromPoint(document, samplePoint.x, samplePoint.y) : null;
+
+    const topmostPathTags: string[] = [];
+    {
+      const visited = new Set<Node>();
+      let current: Node | null = topmost;
+
+      while (current && !visited.has(current)) {
+        visited.add(current);
+
+        if (current instanceof HTMLElement) {
+          topmostPathTags.push(current.tagName.toLowerCase());
+        }
+
+        const assignedSlot = current instanceof Element ? current.assignedSlot : null;
+        if (assignedSlot instanceof HTMLSlotElement) {
+          current = assignedSlot;
+          continue;
+        }
+
+        const parent = current.parentNode;
+        if (parent) {
+          current = parent;
+          continue;
+        }
+
+        const root = current.getRootNode();
+        if (root instanceof ShadowRoot) {
+          current = root.host;
+          continue;
+        }
+
+        current = null;
+      }
+    }
 
     return {
       panelOpen: dropdown instanceof HTMLElement && dropdown.hasAttribute('opened'),
@@ -120,31 +267,52 @@ const readHeaderDropdownPaintState = async (
       panelBottom: panelRect ? Math.round(panelRect.bottom) : null,
       barTop: barRect ? Math.round(barRect.top) : null,
       barBottom: barRect ? Math.round(barRect.bottom) : null,
+      hasOverlapWithBar,
       samplePoint,
-      topmostInsidePanel: panel instanceof HTMLElement && topmost instanceof Node && panel.contains(topmost),
-      topmostInsideBar: bar instanceof HTMLElement && topmost instanceof Node && bar.contains(topmost),
+      topmostInsidePanel:
+        panel instanceof HTMLElement && topmost instanceof Node && composedContains(panel, topmost),
+      topmostInsideBar:
+        bar instanceof HTMLElement && topmost instanceof Node && composedContains(bar, topmost),
       topmostTag: topmost instanceof HTMLElement ? topmost.tagName.toLowerCase() : null,
+      topmostPathTags,
     };
   }, kind);
 
 const openHeaderDropdown = async (page: Page, kind: HeaderDropdownKind): Promise<void> => {
-  await page.evaluate((dropdownKind) => {
-    const header = document.querySelector('layout-header');
-    const dropdownSelector =
-      dropdownKind === 'corpus' ? '.corpus-switcher' : '[data-dropdown="theme"]';
-    const dropdown = header?.shadowRoot?.querySelector<HTMLElement>(dropdownSelector);
-    const trigger = dropdown?.querySelector<HTMLElement>('[slot="trigger"]');
-
-    if (!(trigger instanceof HTMLElement)) {
-      throw new Error(`header dropdown trigger が見つかりません: ${dropdownKind}`);
-    }
-
-    trigger.click();
-  }, kind);
+  await waitForHeaderDropdownInteractive(page, kind);
 
   await expect
     .poll(async () => {
-      return (await readHeaderDropdownPaintState(page, kind)).panelOpen;
+      return await page.evaluate((dropdownKind) => {
+        const header = document.querySelector('layout-header');
+        if (!(header instanceof HTMLElement) || !(header.shadowRoot instanceof ShadowRoot)) {
+          return false;
+        }
+
+        const dropdownSelector =
+          dropdownKind === 'corpus' ? '.corpus-switcher' : '[data-dropdown="theme"]';
+        const dropdown = header.shadowRoot.querySelector<HTMLElement>(dropdownSelector);
+
+        if (!(dropdown instanceof HTMLElement)) {
+          return false;
+        }
+
+        if (dropdown.hasAttribute('opened')) {
+          return true;
+        }
+
+        const openMethod = (dropdown as HTMLElement & { open?: () => void }).open;
+        if (typeof openMethod === 'function') {
+          openMethod.call(dropdown);
+        } else {
+          const trigger = dropdown.querySelector<HTMLElement>('[slot="trigger"]');
+          if (trigger instanceof HTMLElement) {
+            trigger.click();
+          }
+        }
+
+        return dropdown.hasAttribute('opened');
+      }, kind);
     })
     .toBe(true);
 };
@@ -284,6 +452,7 @@ test.describe('mobile TOC summary UX', () => {
 
     const state = await readHeaderDropdownPaintState(page, 'corpus');
     expect(state.panelOpen, JSON.stringify(state)).toBe(true);
+    expect(state.hasOverlapWithBar, JSON.stringify(state)).toBe(true);
     expect(state.samplePoint, JSON.stringify(state)).not.toBeNull();
     expect(state.topmostInsidePanel, JSON.stringify(state)).toBe(true);
     expect(state.topmostInsideBar, JSON.stringify(state)).toBe(false);
@@ -302,6 +471,45 @@ test.describe('mobile TOC summary UX', () => {
 
     const state = await readHeaderDropdownPaintState(page, 'theme');
     expect(state.panelOpen, JSON.stringify(state)).toBe(true);
+    expect(state.hasOverlapWithBar, JSON.stringify(state)).toBe(true);
+    expect(state.samplePoint, JSON.stringify(state)).not.toBeNull();
+    expect(state.topmostInsidePanel, JSON.stringify(state)).toBe(true);
+    expect(state.topmostInsideBar, JSON.stringify(state)).toBe(false);
+  });
+
+  test('note ページで corpus dropdown が mobile TOC bar より前面に描画されること', async ({
+    page,
+  }) => {
+    await page.goto(layoutRichPath);
+    await waitForLayoutHeaderHydrated(page);
+    await waitForLayoutTocHydrated(page);
+    await revealMobileBar(page);
+    await waitForMobileBar(page);
+
+    await openHeaderDropdown(page, 'corpus');
+
+    const state = await readHeaderDropdownPaintState(page, 'corpus');
+    expect(state.panelOpen, JSON.stringify(state)).toBe(true);
+    expect(state.hasOverlapWithBar, JSON.stringify(state)).toBe(true);
+    expect(state.samplePoint, JSON.stringify(state)).not.toBeNull();
+    expect(state.topmostInsidePanel, JSON.stringify(state)).toBe(true);
+    expect(state.topmostInsideBar, JSON.stringify(state)).toBe(false);
+  });
+
+  test('note ページで theme dropdown が mobile TOC bar より前面に描画されること', async ({
+    page,
+  }) => {
+    await page.goto(layoutRichPath);
+    await waitForLayoutHeaderHydrated(page);
+    await waitForLayoutTocHydrated(page);
+    await revealMobileBar(page);
+    await waitForMobileBar(page);
+
+    await openHeaderDropdown(page, 'theme');
+
+    const state = await readHeaderDropdownPaintState(page, 'theme');
+    expect(state.panelOpen, JSON.stringify(state)).toBe(true);
+    expect(state.hasOverlapWithBar, JSON.stringify(state)).toBe(true);
     expect(state.samplePoint, JSON.stringify(state)).not.toBeNull();
     expect(state.topmostInsidePanel, JSON.stringify(state)).toBe(true);
     expect(state.topmostInsideBar, JSON.stringify(state)).toBe(false);
