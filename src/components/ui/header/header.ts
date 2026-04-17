@@ -155,12 +155,23 @@ export class UiHeader extends LitElement {
 
     /* ── モバイル: 639px 以下では Center Zone を非表示（desktop 開始は 640px） ── */
     @media (max-width: 639px) {
+      header {
+        z-index: var(--z-anchored-overlay, var(--z-popover, 400));
+      }
+
       .zone-center {
         display: none;
       }
 
       .zone-compact-center {
         display: flex;
+      }
+
+      .zone-end {
+        /* mobile header の dropdown panel は zone-end の外へ張り出す。
+         * ここを hidden のままにすると fixed panel が塗りつぶし段階で切られ、
+         * mobile TOC bar より前面に出せない。 */
+        overflow: visible;
       }
     }
 

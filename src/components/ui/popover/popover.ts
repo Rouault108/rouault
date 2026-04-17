@@ -1,13 +1,10 @@
-import {
-  autoUpdate,
-  computePosition,
-  flip,
-  offset as applyOffset,
-  shift,
-  type Placement,
-} from '@floating-ui/dom';
+import { type Placement } from '@floating-ui/dom';
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
+import {
+  AnchoredOverlayController,
+  type AnchoredOverlayDismissReason,
+} from '../overlay/internal/anchored-overlay-controller.js';
 
 interface ImportMetaEnvLike {
   DEV?: boolean;
@@ -63,7 +60,6 @@ export interface UiPopoverClosedDetail {
 export const DOCUMENT_STYLE_ID = 'ui-popover-document-styles';
 
 const DEFAULT_OFFSET = 8;
-const EDGE_PADDING = 8;
 const FALLBACK_POPUP_ID_PREFIX = 'ui-popover-content-';
 
 const VALID_VARIANTS = new Set<UiPopoverVariant>(['default', 'subtle', 'inverse']);
@@ -91,7 +87,7 @@ ui-popover [data-ui-popover-content] {
   bottom: auto;
   margin: 0;
   box-sizing: border-box;
-  z-index: var(--z-popover, 400);
+  z-index: var(--z-anchored-overlay, var(--z-popover, 400));
   max-width: var(--ui-popover-max-width, min(90vw, 28rem));
   max-height: var(--ui-popover-max-height, 60vh);
   overflow-y: auto;
@@ -264,9 +260,7 @@ export class UiPopover extends LitElement {
   private _isReflectingOpened = false;
   private _pendingOpenChange: PendingOpenChange | null = null;
   private _dismissReasonHint: UiPopoverOpenChangeReason | null = null;
-  private _cleanupAutoUpdate: (() => void) | null = null;
-  private _cleanupOutsidePointerListeners: (() => void) | null = null;
-  private _cleanupDocumentKeydownListener: (() => void) | null = null;
+  private _overlayController: AnchoredOverlayController | null = null;
   private _contentObserver: MutationObserver | null = null;
 
   override connectedCallback(): void {
@@ -280,7 +274,6 @@ export class UiPopover extends LitElement {
   override disconnectedCallback(): void {
     this._requestStateChange(false, 'disconnected', this._activeTrigger, { returnFocus: false });
     this._teardownFloating();
-    this._cleanupGlobalDismissListeners();
     this._detachTriggerListeners(this._ownerTrigger);
     this._detachContentListeners(this._contentElement);
     this._observeContentId(null);
@@ -838,7 +831,6 @@ export class UiPopover extends LitElement {
       this._syncOpenedProperty(true);
       this._syncTriggerRelationships();
       this._startFloating();
-      this._setupGlobalDismissListeners();
       const activeTrigger = this._activeTrigger;
       this._dispatchOpenChange(true, reason, activeTrigger, returnFocus);
       this._dispatchLegacyEvents(true, activeTrigger, returnFocus);
@@ -848,7 +840,6 @@ export class UiPopover extends LitElement {
 
     const activeTrigger = closingTrigger ?? this._activeTrigger;
     this._teardownFloating();
-    this._cleanupGlobalDismissListeners();
     this._syncOpenedProperty(false);
     this._openState = false;
     this._clearTriggerRelationship(this._activeTrigger);
@@ -865,7 +856,7 @@ export class UiPopover extends LitElement {
     }
   }
 
-  private _resolveToggleState(event: Event, content: PopoverElement): PopoverToggleState {
+    private _resolveToggleState(event: Event, content: PopoverElement): PopoverToggleState {
     const toggleEvent = event as PopoverToggleEvent;
     if (toggleEvent.newState === 'open' || toggleEvent.newState === 'closed') {
       return toggleEvent.newState;
@@ -880,6 +871,41 @@ export class UiPopover extends LitElement {
       return false;
     }
   }
+
+  private _onContentToggle = (event: Event): void => {
+    const content = event.currentTarget;
+    if (!(content instanceof HTMLElement)) return;
+    if (!this._supportsPopoverApi) return;
+
+    const state = this._resolveToggleState(event, content as PopoverElement);
+
+    if (state === 'open') {
+      if (!this._openState) {
+        const pending = this._pendingOpenChange;
+        const nextTrigger = pending?.trigger ?? this._activeTrigger ?? this._ownerTrigger;
+        if (!nextTrigger) return;
+
+        this._setActiveTrigger(nextTrigger);
+        this._commitOpenState(
+          true,
+          pending?.reason ?? 'programmatic',
+          pending?.returnFocus ?? false,
+        );
+      }
+      return;
+    }
+
+    if (this._openState) {
+      const pending = this._pendingOpenChange;
+      const reason = pending?.reason ?? this._dismissReasonHint ?? 'outside-pointer';
+      const returnFocus = pending?.returnFocus ?? this._getDefaultReturnFocus(reason, undefined);
+      const trigger = pending?.trigger ?? this._activeTrigger;
+
+      this._commitOpenState(false, reason, returnFocus, trigger);
+    }
+
+    this._dismissReasonHint = null;
+  };
 
   private _attachTriggerListeners(trigger: HTMLElement | null): void {
     if (!trigger) return;
@@ -963,90 +989,62 @@ export class UiPopover extends LitElement {
     this._requestStateChange(false, 'escape', this._activeTrigger, { returnFocus: true });
   };
 
-  private _onDocumentKeyDown = (event: KeyboardEvent): void => {
-    if (!this._openState) return;
-    if (event.key !== 'Escape') return;
-    if (event.defaultPrevented) return;
-
-    this._dismissReasonHint = 'escape';
-    event.preventDefault();
-    this._requestStateChange(false, 'escape', this._activeTrigger, { returnFocus: true });
-  };
-
-  private _onDocumentPointerDown = (event: PointerEvent): void => {
-    if (!this._openState) return;
-    if (event.defaultPrevented) return;
-    if (typeof event.button === 'number' && event.button !== 0) return;
-
-    const content = this._contentElement;
-    const activeTrigger = this._activeTrigger;
-    const path = event.composedPath();
-    if (content && path.includes(content)) return;
-    if (activeTrigger && path.includes(activeTrigger)) return;
-
-    this._dismissReasonHint = 'outside-pointer';
-    this._requestStateChange(false, 'outside-pointer', activeTrigger, { returnFocus: false });
-  };
-
-  private _onContentToggle = (event: Event): void => {
-    const content = event.currentTarget;
-    if (!(content instanceof HTMLElement)) return;
-    if (!this._supportsPopoverApi) return;
-
-    const state = this._resolveToggleState(event, content as PopoverElement);
-    if (state === 'open') {
-      if (!this._openState) {
-        const pending = this._pendingOpenChange;
-        const nextTrigger = pending?.trigger ?? this._activeTrigger ?? this._ownerTrigger;
-        if (!nextTrigger) return;
-        this._setActiveTrigger(nextTrigger);
-        this._commitOpenState(
-          true,
-          pending?.reason ?? 'programmatic',
-          pending?.returnFocus ?? false,
-        );
-      }
+  private _onOverlayDismissRequest(reason: AnchoredOverlayDismissReason, event: Event): void {
+    if (!this._openState) {
       return;
     }
 
-    if (this._openState) {
-      const pending = this._pendingOpenChange;
-      const reason = pending?.reason ?? this._dismissReasonHint ?? 'outside-pointer';
-      const returnFocus = pending?.returnFocus ?? this._getDefaultReturnFocus(reason, undefined);
-      const trigger = pending?.trigger ?? this._activeTrigger;
-      this._commitOpenState(false, reason, returnFocus, trigger);
+    switch (reason) {
+      case 'escape': {
+        if (event instanceof KeyboardEvent) {
+          event.preventDefault();
+        }
+        this._dismissReasonHint = 'escape';
+        this._requestStateChange(false, 'escape', this._activeTrigger, { returnFocus: true });
+        return;
+      }
+      case 'outside-pointer': {
+        this._dismissReasonHint = 'outside-pointer';
+        this._requestStateChange(false, 'outside-pointer', this._activeTrigger, {
+          returnFocus: false,
+        });
+        return;
+      }
+      case 'scroll': {
+        this._dismissReasonHint = 'outside-pointer';
+        this._requestStateChange(false, 'outside-pointer', this._activeTrigger, {
+          returnFocus: false,
+        });
+        return;
+      }
     }
-
-    this._dismissReasonHint = null;
-  };
-
-  private _setupGlobalDismissListeners(): void {
-    if (this._cleanupOutsidePointerListeners || this._cleanupDocumentKeydownListener) return;
-
-    const ownerDocument = this.ownerDocument;
-
-    ownerDocument.addEventListener('pointerdown', this._onDocumentPointerDown, true);
-    ownerDocument.addEventListener('keydown', this._onDocumentKeyDown);
-
-    this._cleanupOutsidePointerListeners = (): void => {
-      ownerDocument.removeEventListener('pointerdown', this._onDocumentPointerDown, true);
-      this._cleanupOutsidePointerListeners = null;
-    };
-
-    this._cleanupDocumentKeydownListener = (): void => {
-      ownerDocument.removeEventListener('keydown', this._onDocumentKeyDown);
-      this._cleanupDocumentKeydownListener = null;
-    };
   }
 
-  private _cleanupGlobalDismissListeners(): void {
-    this._cleanupOutsidePointerListeners?.();
-    this._cleanupDocumentKeydownListener?.();
+  private _ensureOverlayController(): AnchoredOverlayController {
+    if (this._overlayController !== null) {
+      return this._overlayController;
+    }
+
+    this._overlayController = new AnchoredOverlayController({
+      ownerDocument: this.ownerDocument,
+      getReference: () => this._activeTrigger ?? this._ownerTrigger,
+      getFloating: () => this._contentElement,
+      getOpen: () => this._openState,
+      getPlacement: () => this._resolvedPlacement,
+      getOffset: () => this._resolvedOffset,
+      outsidePointerDismiss: true,
+      escapeDismiss: true,
+      scrollStrategy: 'ignore',
+      onDismissRequest: (reason, event) => {
+        this._onOverlayDismissRequest(reason, event);
+      },
+    });
+
+    return this._overlayController;
   }
 
   private _teardownFloating(): void {
-    this._cleanupAutoUpdate?.();
-    this._cleanupAutoUpdate = null;
+    this._overlayController?.syncOpenState(false);
   }
 
   private _startFloating(): void {
@@ -1054,28 +1052,11 @@ export class UiPopover extends LitElement {
     const content = this._contentElement;
     if (!trigger || !content || !this._openState) return;
 
-    const updatePosition = (): void => {
-      void this._updateFloatingPosition(trigger, content);
-    };
-
-    this._teardownFloating();
-    updatePosition();
-    this._cleanupAutoUpdate = autoUpdate(trigger, content, updatePosition);
+    this._ensureOverlayController().syncOpenState(true);
   }
 
-  private async _updateFloatingPosition(trigger: HTMLElement, content: HTMLElement): Promise<void> {
-    const result = await computePosition(trigger, content, {
-      strategy: 'fixed',
-      placement: this._resolvedPlacement,
-      middleware: [
-        applyOffset(this._resolvedOffset),
-        flip({ padding: EDGE_PADDING }),
-        shift({ padding: EDGE_PADDING }),
-      ],
-    });
-
-    content.style.left = `${String(Math.round(result.x))}px`;
-    content.style.top = `${String(Math.round(result.y))}px`;
+  getContentElement(): HTMLElement | null {
+    return this._contentElement;
   }
 
   override render(): TemplateResult {

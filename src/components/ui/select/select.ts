@@ -2,34 +2,14 @@ import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
-import {
-  autoUpdate,
-  computePosition,
-  flip,
-  offset,
-  shift,
-  size,
-  type ComputePositionReturn,
-} from '@floating-ui/dom';
+import { AnchoredOverlayController, type AnchoredOverlayDismissReason } from '../overlay/internal/anchored-overlay-controller.js';
 import '../icon/icon.js';
 
-// ============================================================
-// 型定義
-// ============================================================
-
-/** セレクトの選択肢 */
 export interface SelectOption {
-  /** 送信値・内部値 */
   value: string | number;
-  /** 表示ラベル */
   label: string;
-  /** 無効化フラグ */
   disabled?: boolean;
 }
-
-// ============================================================
-// セレクトボックス (Select) コンポーネント
-// ============================================================
 
 /**
  * セレクトボックス (Select) コンポーネント
@@ -336,61 +316,44 @@ export class Select extends LitElement {
   // プロパティ定義
   // ============================================================
 
-  /** 入力ラベル（必須） */
   @property({ type: String, reflect: true })
   label = '';
 
-  /** ラベルを視覚的に非表示（aria-label には常に反映） */
   @property({ type: Boolean, attribute: 'hide-label', reflect: true })
   hideLabel = false;
 
-  /** フォーム送信時のフィールド名 */
   @property({ type: String, reflect: true })
   name = '';
 
-  /** 選択された値 */
   @property({ attribute: 'model-value', reflect: true })
   modelValue: string | number = '';
 
-  /** 未選択時に表示するテキスト */
   @property({ type: String, reflect: true })
   placeholder = '';
 
-  /** リストボックスの開閉状態 */
   @property({ type: Boolean, reflect: true })
   opened = false;
 
-  /** 補助テキスト */
   @property({ type: String, attribute: 'help-text', reflect: true })
   helpText = '';
 
-  /** エラーメッセージ */
   @property({ type: String, attribute: 'error-message', reflect: true })
   errorMessage = '';
 
-  /** エラー状態の強制 */
   @property({ type: Boolean, reflect: true })
   error = false;
 
-  /** 操作無効化 */
   @property({ type: Boolean, reflect: true })
   disabled = false;
 
-  /** 読み取り専用モード */
   @property({ type: Boolean, reflect: true })
   readonly = false;
 
-  /** 外観バリアント */
   @property({ type: String, reflect: true })
   variant: 'filled' | 'outline' = 'filled';
 
-  /** 選択肢の配列 */
   @property({ type: Array })
   options: SelectOption[] = [];
-
-  // ============================================================
-  // 内部状態
-  // ============================================================
 
   /** キーボードフォーカス中のオプションインデックス（-1 = なし） */
   @state()
@@ -404,11 +367,8 @@ export class Select extends LitElement {
   /** Floating UI で生成したリストボックス要素（Portal） */
   private _listboxEl: HTMLElement | null = null;
 
-  /** Click Outside ハンドラの参照（removeEventListener 用） */
-  private _handleClickOutside: ((e: MouseEvent) => void) | null = null;
-
-  /** Scroll Close ハンドラの参照 */
-  private _handleScrollClose: ((e: Event) => void) | null = null;
+  /** 共通 anchored overlay controller */
+  private _overlayController: AnchoredOverlayController | null = null;
 
   /** Type-ahead バッファ */
   private _typeaheadBuffer = '';
@@ -416,15 +376,9 @@ export class Select extends LitElement {
   /** Type-ahead タイマーID */
   private _typeaheadTimer: ReturnType<typeof setTimeout> | null = null;
 
-  /** autoUpdate のクリーンアップ関数 */
-  private _cleanupAutoUpdate: (() => void) | null = null;
-
   /** Portal 用のグローバルスタイルを一度だけ注入 */
   private static _portalStylesInjected = false;
 
-  // ============================================================
-  // 一意なID生成（レンダリング毎の再生成を防止）
-  // ============================================================
   private readonly _selectId = `select-${Math.random().toString(36).substring(2, 11)}`;
   private readonly _listboxId = `listbox-${Math.random().toString(36).substring(2, 11)}`;
   private readonly _errorId = `error-${Math.random().toString(36).substring(2, 11)}`;
@@ -451,7 +405,6 @@ export class Select extends LitElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    // クリーンアップ
     this._closeListbox();
     this._destroyListbox();
   }
@@ -495,10 +448,6 @@ export class Select extends LitElement {
       this._scrollActiveIntoView();
     }
   }
-
-  // ============================================================
-  // レンダリング
-  // ============================================================
 
   override render() {
     const hasError = this.error;
@@ -598,10 +547,6 @@ export class Select extends LitElement {
     `;
   }
 
-  // ============================================================
-  // イベントハンドラ
-  // ============================================================
-
   private _handleTriggerClick = (): void => {
     if (this.disabled || this.readonly) return;
     this._toggleListbox();
@@ -687,10 +632,6 @@ export class Select extends LitElement {
     }
   };
 
-  // ============================================================
-  // リストボックス開閉制御
-  // ============================================================
-
   private _toggleListbox(): void {
     if (this.opened) {
       this.opened = false;
@@ -713,20 +654,13 @@ export class Select extends LitElement {
     this._activeIndex = this._findLastEnabledIndex();
   }
 
-  // ============================================================
-  // リストボックス DOM 操作（Portal）
-  // ============================================================
-
   private _openListbox(): void {
     this._createListbox();
-    void this._positionListbox();
-    this._setupAutoUpdate();
-    this._attachOutsideListeners();
+    this._startOverlay();
   }
 
   private _closeListbox(): void {
-    this._cleanupAutoUpdatePositioning();
-    this._detachOutsideListeners();
+    this._stopOverlay();
     this._destroyListbox();
     this._clearTypeahead();
   }
@@ -739,11 +673,12 @@ export class Select extends LitElement {
     listbox.setAttribute('id', this._listboxId);
     listbox.setAttribute('aria-label', this.label);
     listbox.setAttribute('data-ui-select-listbox', '');
+    listbox.setAttribute('data-ui-overlay-surface', 'select-listbox');
 
     // スタイル適用
     Object.assign(listbox.style, {
       position: 'fixed',
-      zIndex: 'var(--z-popover, 400)',
+      zIndex: 'var(--z-anchored-overlay, var(--z-popover, 400))',
       background: 'var(--bg-surface-2, oklch(97% 0 0))',
       border: 'var(--border-width, 1px) solid var(--border-default, oklch(90% 0 0 / 0.12))',
       borderRadius: 'var(--radius-md, 6px)',
@@ -882,44 +817,64 @@ export class Select extends LitElement {
     }
   }
 
-  private async _positionListbox(): Promise<void> {
-    const listboxEl = this._listboxEl;
-    // shadowRoot 経由で取得（@query は firstUpdated 前は null の可能性がある）
-    const trigger = this.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
-    if (!listboxEl || !trigger) return;
+  private _ensureOverlayController(): AnchoredOverlayController {
+    if (this._overlayController !== null) {
+      return this._overlayController;
+    }
 
-    const triggerRect = trigger.getBoundingClientRect();
-
-    const result: ComputePositionReturn = await computePosition(trigger, listboxEl, {
-      placement: 'bottom-start',
-      middleware: [
-        offset(4),
-        flip(),
-        shift({ padding: 8 }),
-        size({
-          apply({ rects, elements }) {
-            // トリガーと同じ幅を最小幅として設定
-            Object.assign(elements.floating.style, {
-              minWidth: `${rects.reference.width.toString()}px`,
-            });
-          },
-        }),
-      ],
+    this._overlayController = new AnchoredOverlayController({
+      ownerDocument: this.ownerDocument,
+      getReference: () => this.getTriggerElement(),
+      getFloating: () => this.getListboxElement(),
+      getOpen: () => this.opened,
+      getPlacement: () => 'bottom-start',
+      getOffset: () => 4,
+      outsidePointerDismiss: true,
+      escapeDismiss: true,
+      scrollStrategy: 'close',
+      shouldDismissOnScroll: (event) => {
+        const target = event.target;
+        if (target instanceof Node) {
+          if (this.contains(target)) return false;
+          if (this._listboxEl?.contains(target) ?? false) return false;
+        }
+        return true;
+      },
+      onDismissRequest: (reason, event) => {
+        this._handleOverlayDismiss(reason, event);
+      },
+      onPosition: ({ reference, floating }) => {
+        floating.style.minWidth = `${String(Math.round(reference.getBoundingClientRect().width))}px`;
+      },
     });
 
-    // await 後に listboxEl が破棄されている可能性があるため再チェック
-    if (!this._listboxEl) return;
-
-    Object.assign(this._listboxEl.style, {
-      left: `${result.x.toString()}px`,
-      top: `${result.y.toString()}px`,
-      minWidth: `${triggerRect.width.toString()}px`,
-    });
+    return this._overlayController;
   }
 
-  // ============================================================
-  // アクティブ状態管理
-  // ============================================================
+  private _startOverlay(): void {
+    this._ensureOverlayController().syncOpenState(true);
+  }
+
+  private _stopOverlay(): void {
+    this._overlayController?.syncOpenState(false);
+  }
+
+  private _handleOverlayDismiss(reason: AnchoredOverlayDismissReason, event: Event): void {
+    if (!this.opened) {
+      return;
+    }
+
+    if (reason === 'escape' && event instanceof KeyboardEvent) {
+      event.preventDefault();
+      this.opened = false;
+      this._trigger.focus();
+      return;
+    }
+
+    if (reason === 'outside-pointer' || reason === 'scroll') {
+      this.opened = false;
+    }
+  }
 
   private _updateActiveDescendant(): void {
     if (!this._listboxEl) return;
@@ -957,10 +912,6 @@ export class Select extends LitElement {
     activeItem?.scrollIntoView({ block: 'nearest' });
   }
 
-  // ============================================================
-  // 選択操作
-  // ============================================================
-
   private _selectActiveOption(): void {
     if (this._activeIndex < 0) return;
     const opt = this.options[this._activeIndex];
@@ -985,10 +936,6 @@ export class Select extends LitElement {
       );
     }
   }
-
-  // ============================================================
-  // インデックス移動
-  // ============================================================
 
   private _moveActiveIndex(delta: number): void {
     const enabledIndices = this.options
@@ -1022,10 +969,6 @@ export class Select extends LitElement {
     }
     return -1;
   }
-
-  // ============================================================
-  // Type-ahead
-  // ============================================================
 
   private _handleTypeahead(char: string): void {
     if (!this.opened) {
@@ -1072,74 +1015,8 @@ export class Select extends LitElement {
     }
   }
 
-  // ============================================================
-  // Click Outside / Scroll Close
-  // ============================================================
-
-  private _attachOutsideListeners(): void {
-    this._handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (!this.contains(target) && !(this._listboxEl?.contains(target) ?? false)) {
-        this.opened = false;
-      }
-    };
-
-    this._handleScrollClose = (e: Event) => {
-      const target = e.target;
-      if (target instanceof Node) {
-        if (this.contains(target)) return;
-        if (this._listboxEl?.contains(target) ?? false) return;
-      }
-      this.opened = false;
-    };
-
-    const clickHandler = this._handleClickOutside;
-    const scrollHandler = this._handleScrollClose;
-
-    // 次フレームで登録（現在のクリックイベントを無視するため）
-    requestAnimationFrame(() => {
-      document.addEventListener('mousedown', clickHandler);
-      window.addEventListener('scroll', scrollHandler, {
-        capture: true,
-        passive: true,
-      });
-    });
-  }
-
-  private _detachOutsideListeners(): void {
-    if (this._handleClickOutside) {
-      document.removeEventListener('mousedown', this._handleClickOutside);
-      this._handleClickOutside = null;
-    }
-    if (this._handleScrollClose) {
-      window.removeEventListener('scroll', this._handleScrollClose, { capture: true });
-      this._handleScrollClose = null;
-    }
-  }
-
-  // ============================================================
-  // ユーティリティ
-  // ============================================================
-
   private _getOptionId(index: number): string {
     return `${this._selectId}-option-${index.toString()}`;
-  }
-
-  private _setupAutoUpdate(): void {
-    const trigger = this.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
-    const listbox = this._listboxEl;
-    if (!trigger || !listbox) return;
-    this._cleanupAutoUpdatePositioning();
-    this._cleanupAutoUpdate = autoUpdate(trigger, listbox, () => {
-      void this._positionListbox();
-    });
-  }
-
-  private _cleanupAutoUpdatePositioning(): void {
-    if (this._cleanupAutoUpdate) {
-      this._cleanupAutoUpdate();
-      this._cleanupAutoUpdate = null;
-    }
   }
 
   private _getListboxShadow(): string {
@@ -1190,9 +1067,13 @@ export class Select extends LitElement {
     return this.options.find((opt) => opt.value === value);
   }
 
-  // ============================================================
-  // 公開 API
-  // ============================================================
+  getTriggerElement(): HTMLInputElement {
+    return this._trigger;
+  }
+
+  getListboxElement(): HTMLElement | null {
+    return this._listboxEl;
+  }
 
   /** フォーカスをトリガーに当てる */
   override focus(options?: FocusOptions): void {

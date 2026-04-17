@@ -62,7 +62,7 @@ export class LayoutHeader extends LitElement {
       display: block;
       position: sticky;
       top: 0;
-      z-index: var(--z-fixed, 100);
+      z-index: var(--z-page-chrome, var(--z-fixed, 100));
       container-type: inline-size;
       container-name: layout-header-shell;
     }
@@ -215,18 +215,14 @@ export class LayoutHeader extends LitElement {
       }
     }
 
-    @media (max-width: 639px) {
-      :host([toc-presence='present']) {
-        /*
-         * mobile TOC summary bar / panel より header 配下の dropdown を前面に出す。
-         * 判定軸は note-layout ではなく、header chrome に対して
-         * TOC が存在するかどうかに置く。
-         */
-        z-index: calc(var(--z-popover, 400) + 1);
-      }
-    }
-
     @container layout-header-shell (max-width: 639px) {
+      :host {
+        /* mobile TOC bar と同じ page chrome 層に置くと、
+         * shadow 内の dropdown が sibling stacking context を越えられない。
+         * mobile 時だけ host 自体を anchored overlay 層へ上げて前後関係を固定する。 */
+        z-index: var(--z-anchored-overlay, var(--z-popover, 400));
+      }
+
       :host([note-layout]) ui-header {
         --ui-header-center-end-inset: 0px;
       }

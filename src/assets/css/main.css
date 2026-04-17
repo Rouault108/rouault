@@ -1733,6 +1733,23 @@ app-router[data-sidebar-presence='absent'] {
   max-width: var(--note-reading-measure);
 }
 
+layout-header:not(:defined) {
+  display: block;
+  position: sticky;
+  top: 0;
+  inline-size: 100%;
+  min-block-size: var(--header-height);
+  z-index: var(--z-page-chrome, var(--z-fixed, 100));
+  background: var(--glass-panel, var(--bg-default));
+  border-bottom: var(--border-width, 1px) solid var(--border-default);
+}
+
+layout-toc:not(:defined) {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
 .about-shell {
   --about-toc-track: var(--aside-width);
   display: grid;

@@ -63,7 +63,10 @@ const waitForHeaderDropdownInteractive = async (
           dropdownKind === 'corpus' ? '.corpus-switcher' : '[data-dropdown="theme"]';
         const dropdown = header.shadowRoot.querySelector<HTMLElement>(dropdownSelector);
         const trigger = dropdown?.querySelector<HTMLElement>('[slot="trigger"]');
-        const panel = dropdown?.shadowRoot?.querySelector<HTMLElement>('.panel');
+        const panel =
+          dropdown instanceof HTMLElement && typeof (dropdown as HTMLElement & { getMenuElement?: () => HTMLElement | null }).getMenuElement === 'function'
+            ? (dropdown as HTMLElement & { getMenuElement: () => HTMLElement | null }).getMenuElement()
+            : null;
         const openMethod = dropdown
           ? (dropdown as HTMLElement & { open?: () => void }).open
           : undefined;
@@ -133,7 +136,10 @@ const readHeaderDropdownPaintState = async (
       dropdownKind === 'corpus' ? '.corpus-switcher' : '[data-dropdown="theme"]';
 
     const dropdown = header?.shadowRoot?.querySelector<HTMLElement>(dropdownSelector);
-    const panel = dropdown?.shadowRoot?.querySelector<HTMLElement>('.panel');
+    const panel =
+      dropdown instanceof HTMLElement && typeof (dropdown as HTMLElement & { getMenuElement?: () => HTMLElement | null }).getMenuElement === 'function'
+        ? (dropdown as HTMLElement & { getMenuElement: () => HTMLElement | null }).getMenuElement()
+        : null;
     const bar = toc?.shadowRoot?.querySelector<HTMLElement>('.mobile-bar');
 
     const panelRect = panel instanceof HTMLElement ? panel.getBoundingClientRect() : null;

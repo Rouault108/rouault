@@ -3,12 +3,7 @@ import '../../src/components/ui/tooltip/tooltip.js';
 import type { UiTooltip } from '../../src/components/ui/tooltip/tooltip.js';
 import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
-const getTooltipId = (host: UiTooltip): string => host.dataset['tooltipId'] ?? '';
-
-const getTooltipElement = (host: UiTooltip): HTMLElement | null => {
-  const id = getTooltipId(host);
-  return id === '' ? null : document.getElementById(id);
-};
+const getTooltipElement = (host: UiTooltip): HTMLElement | null => host.getTooltipElement();
 
 const expectPresent = <T>(value: T | null | undefined, name: string): T => {
   expect(value, `${name} should exist`).to.not.equal(null);
@@ -40,6 +35,7 @@ describe('ui-tooltip browser contract', () => {
 
     const tooltipElement = expectPresent(getTooltipElement(tooltip), 'tooltipElement');
     expect(tooltipElement.getAttribute('role')).to.equal('tooltip');
+    expect(tooltipElement.getAttribute('data-ui-overlay-surface')).to.equal('tooltip');
     expect(tooltipElement.dataset['open']).to.equal('true');
     expect(trigger.getAttribute('aria-describedby')).to.contain(tooltipElement.id);
 
@@ -68,6 +64,7 @@ describe('ui-tooltip browser contract', () => {
     await nextAnimationFrame();
 
     const tooltipElement = expectPresent(getTooltipElement(tooltip), 'tooltipElement');
+    expect(tooltipElement.getAttribute('data-ui-overlay-surface')).to.equal('tooltip');
     expect(tooltipElement.dataset['variant']).to.equal('inverse');
     expect(tooltipElement.dataset['open']).to.equal('true');
 

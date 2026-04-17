@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'vitest';
 import { buildNotFoundPageMarkup } from '../../src/components/not-found/not-found-page.js';
 import { ArticleHeader } from '../../src/components/ui/article-header/article-header.js';
@@ -16,6 +17,7 @@ import { Dropdown, MenuItem, MenuSeparator } from '../../src/components/ui/dropd
 import { DOCUMENT_CSS as FOOTNOTE_DOCUMENT_CSS } from '../../src/components/ui/footnote/footnote.js';
 import { InfoBox } from '../../src/components/ui/info-box/info-box.js';
 import { DOCUMENT_CSS as POPOVER_DOCUMENT_CSS } from '../../src/components/ui/popover/popover.js';
+import { Select } from '../../src/components/ui/select/select.js';
 import { SearchField } from '../../src/components/ui/search-field/search-field.js';
 import { searchDialogStyles } from '../../src/components/ui/search-dialog/search-dialog.styles.js';
 import { SearchTrigger } from '../../src/components/ui/search-trigger/search-trigger.js';
@@ -34,6 +36,8 @@ import { UiScore } from '../../src/components/ui/score/score.js';
 import { DOCUMENT_CSS as SYNTAX_FIELD_DOCUMENT_CSS } from '../../src/components/ui/syntax-field/syntax-field.js';
 import { DOCUMENT_CSS as TABLE_DOCUMENT_CSS } from '../../src/components/ui/table/table.js';
 import { UiToast } from '../../src/components/ui/toast/toast.js';
+import { DOCUMENT_CSS as TOOLTIP_DOCUMENT_CSS } from '../../src/components/ui/tooltip/tooltip.js';
+import { DOCUMENT_CSS as TRANSLATION_DOCUMENT_CSS } from '../../src/components/ui/translation/translation.js';
 import { TreeItem } from '../../src/components/ui/tree-item/tree-item.js';
 import { DOCUMENT_CSS as UL_DOCUMENT_CSS } from '../../src/components/ui/ul/ul.js';
 import { UiVideo } from '../../src/components/ui/video/video.js';
@@ -551,6 +555,47 @@ describe('css structure contracts', () => {
       'outline: 2px solid CanvasText',
       '@media print',
       'display: none',
+    ]);
+  });
+
+  it('tooltip / select / translation が overlay 関連の CSS token 契約を保持すること', () => {
+    const selectSource = readFileSync(
+      new URL('../../src/components/ui/select/select.ts', import.meta.url),
+      'utf8',
+    );
+    const selectCssText = collectCssText(Select.styles);
+
+    expectCssIncludes(TOOLTIP_DOCUMENT_CSS, [
+      'data-ui-tooltip-content',
+      'var(--z-anchored-overlay',
+      '@media (forced-colors: active)',
+      '@media print',
+    ]);
+
+    expectCssIncludes(selectCssText, [
+      '.trigger',
+      '.icon-chevron',
+      '@media (forced-colors: active)',
+      '@media print',
+    ]);
+
+    expectCssIncludes(selectSource, [
+      'data-ui-select-listbox',
+      'data-ui-overlay-surface',
+      'var(--z-anchored-overlay',
+      'AnchoredOverlayController',
+    ]);
+
+    expectCssIncludes(TRANSLATION_DOCUMENT_CSS, [
+      "[data-surface='popover']",
+      "[data-surface='drawer']",
+      'var(--z-anchored-overlay',
+      'var(--z-non-modal-panel',
+    ]);
+
+    expectCssExcludes(TRANSLATION_DOCUMENT_CSS, [
+      '--ui-translation-popover-left',
+      '--ui-translation-popover-top',
     ]);
   });
 

@@ -51,8 +51,7 @@ const flush = async (select: Select): Promise<void> => {
 const getTrigger = (select: Select): HTMLInputElement =>
   expectPresent(select.shadowRoot?.querySelector<HTMLInputElement>('[role="combobox"]'), 'trigger');
 
-const getListbox = (): HTMLElement | null =>
-  document.querySelector<HTMLElement>('[data-ui-select-listbox]');
+const getListbox = (select: Select): HTMLElement | null => select.getListboxElement();
 
 const getOptions = (): HTMLElement[] =>
   Array.from(document.querySelectorAll<HTMLElement>('[data-ui-select-option]'));
@@ -336,7 +335,7 @@ describe('ui-select browser contract', () => {
     const active = activeId ? document.getElementById(activeId) : null;
     expect(active?.getAttribute('data-index')).to.equal('12');
 
-    const listbox = expectPresent(getListbox(), 'listbox');
+    const listbox = expectPresent(getListbox(select), 'listbox');
     listbox.scrollTop = listbox.scrollHeight;
     listbox.dispatchEvent(new Event('scroll', { bubbles: true }));
     await flush(select);

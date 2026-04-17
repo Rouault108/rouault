@@ -1,6 +1,10 @@
 import { html, LitElement, nothing, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import {
+  AnchoredOverlayController,
+  type AnchoredOverlayDismissReason,
+} from '../overlay/internal/anchored-overlay-controller.js';
 import { initTranslationOverlayOrchestrator } from './translation-orchestrator.js';
 
 export type TranslationOverlaySurface = 'popover' | 'drawer';
@@ -9,7 +13,7 @@ const VALID_SURFACES = new Set<TranslationOverlaySurface>(['popover', 'drawer'])
 const DOCUMENT_STYLE_ID = 'ui-translation-document-styles';
 const MAX_TRIGGER_TEXT_LENGTH = 150;
 
-const DOCUMENT_CSS = `
+export const DOCUMENT_CSS = `
 ui-translation {
   display: inline;
   position: relative;
@@ -85,7 +89,6 @@ ui-translation [data-part='content'] {
   color: var(--fg-default, oklch(20% 0 0));
   font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif);
   line-height: var(--line-height-relaxed, 1.75);
-  z-index: var(--z-popover, 400);
   max-width: min(90vw, 40rem);
   padding: var(--space-3, 12px) var(--space-4, 16px);
   border: var(--border-width, 1px) solid var(--border-default, oklch(86% 0 0));
@@ -99,8 +102,9 @@ ui-translation [data-part='content'] {
 
 ui-translation [data-part='content'][data-surface='popover'] {
   position: fixed;
-  left: var(--ui-translation-popover-left, 0px);
-  top: var(--ui-translation-popover-top, 0px);
+  left: 0;
+  top: 0;
+  z-index: var(--z-anchored-overlay, var(--z-popover, 400));
 }
 
 ui-translation [data-part='content'][data-surface='drawer'] {
@@ -111,6 +115,7 @@ ui-translation [data-part='content'][data-surface='drawer'] {
   width: min(36rem, calc(100vw - var(--space-8, 32px)));
   max-height: calc(100vh - var(--space-16, 64px));
   overflow-y: auto;
+  z-index: var(--z-non-modal-panel, var(--z-modal, 300));
 }
 
 ui-translation [data-part='content'][hidden] {
@@ -192,6 +197,9 @@ export class UiTranslation extends LitElement {
   private _didWarnMissingLang = false;
   private _didWarnMissingTargetLang = false;
   private _hydrationActivated = false;
+  private _overlayController: AnchoredOverlayController | null = null;
+  private _cleanupDrawerPointerDown: (() => void) | null = null;
+  private _cleanupDrawerKeyDown: (() => void) | null = null;
 
   override createRenderRoot(): this {
     return this;
@@ -206,6 +214,12 @@ export class UiTranslation extends LitElement {
     if (!this.hasAttribute('data-hydration-trigger')) {
       this.activateHydration();
     }
+  }
+
+  override disconnectedCallback(): void {
+    this._stopPopoverOverlay();
+    this._detachDrawerDismissListeners();
+    super.disconnectedCallback();
   }
 
   activateHydration(): void {
@@ -241,6 +255,14 @@ export class UiTranslation extends LitElement {
     }
     if (changedProperties.has('targetLang')) {
       this._warnMissingTargetLangIfNeeded();
+    }
+
+    if (
+      changedProperties.has('open') ||
+      changedProperties.has('surface') ||
+      changedProperties.has('translated')
+    ) {
+      this._syncSurfaceBehavior();
     }
   }
 
@@ -390,16 +412,148 @@ export class UiTranslation extends LitElement {
     this.getTriggerElement()?.focus();
   };
 
+  private _ensurePopoverOverlayController(): AnchoredOverlayController {
+    if (this._overlayController !== null) {
+      return this._overlayController;
+    }
+
+    this._overlayController = new AnchoredOverlayController({
+      ownerDocument: this.ownerDocument,
+      getReference: () => this.getTriggerElement(),
+      getFloating: () =>
+        this._resolvedSurface === 'popover' ? this.getContentElement() : null,
+      getOpen: () => this.open && this._resolvedSurface === 'popover',
+      getPlacement: () => 'bottom-start',
+      getOffset: () => 8,
+      outsidePointerDismiss: true,
+      escapeDismiss: true,
+      scrollStrategy: 'ignore',
+      onDismissRequest: (reason, event) => {
+        this._handlePopoverDismiss(reason, event);
+      },
+    });
+
+    return this._overlayController;
+  }
+
+  private _handlePopoverDismiss(reason: AnchoredOverlayDismissReason, event: Event): void {
+    if (!this.open || this._resolvedSurface !== 'popover') {
+      return;
+    }
+
+    if (reason === 'escape' && event instanceof KeyboardEvent) {
+      event.preventDefault();
+      this.closeTranslation();
+      this.getTriggerElement()?.focus();
+      return;
+    }
+
+    if (reason === 'outside-pointer') {
+      this.closeTranslation();
+    }
+  }
+
+  private _startPopoverOverlay(): void {
+    this._ensurePopoverOverlayController().syncOpenState(true);
+  }
+
+  private _stopPopoverOverlay(): void {
+    this._overlayController?.syncOpenState(false);
+  }
+
+  private _attachDrawerDismissListeners(): void {
+    if (this._cleanupDrawerPointerDown !== null || this._cleanupDrawerKeyDown !== null) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent): void => {
+      if (!this.open || this._resolvedSurface !== 'drawer') {
+        return;
+      }
+      if (event.defaultPrevented) {
+        return;
+      }
+      if (typeof event.button === 'number' && event.button !== 0) {
+        return;
+      }
+
+      const path = event.composedPath();
+      const trigger = this.getTriggerElement();
+      const content = this.getContentElement();
+      if (trigger && path.includes(trigger)) {
+        return;
+      }
+      if (content && path.includes(content)) {
+        return;
+      }
+
+      this.closeTranslation();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (!this.open || this._resolvedSurface !== 'drawer' || event.key !== 'Escape') {
+        return;
+      }
+      if (event.defaultPrevented) {
+        return;
+      }
+
+      event.preventDefault();
+      this.closeTranslation();
+      this.getTriggerElement()?.focus();
+    };
+
+    this.ownerDocument.addEventListener('pointerdown', handlePointerDown, true);
+    this.ownerDocument.addEventListener('keydown', handleKeyDown);
+
+    this._cleanupDrawerPointerDown = (): void => {
+      this.ownerDocument.removeEventListener('pointerdown', handlePointerDown, true);
+      this._cleanupDrawerPointerDown = null;
+    };
+
+    this._cleanupDrawerKeyDown = (): void => {
+      this.ownerDocument.removeEventListener('keydown', handleKeyDown);
+      this._cleanupDrawerKeyDown = null;
+    };
+  }
+
+  private _detachDrawerDismissListeners(): void {
+    this._cleanupDrawerPointerDown?.();
+    this._cleanupDrawerKeyDown?.();
+  }
+
+  private _syncSurfaceBehavior(): void {
+    if (!this._hasTranslation || !this.open) {
+      this._stopPopoverOverlay();
+      this._detachDrawerDismissListeners();
+      return;
+    }
+
+    if (this._resolvedSurface === 'popover') {
+      this._detachDrawerDismissListeners();
+      this._startPopoverOverlay();
+      return;
+    }
+
+    this._stopPopoverOverlay();
+    this._attachDrawerDismissListeners();
+  }
+
   private _renderContent(): TemplateResult | typeof nothing {
     if (!this._hasTranslation) {
       return nothing;
     }
 
+    const resolvedSurface = this._resolvedSurface;
+
     return html`
       <div
         id=${this._contentId}
         data-part="content"
-        data-surface=${this._resolvedSurface}
+        data-surface=${resolvedSurface}
+        data-ui-overlay-surface=${resolvedSurface === 'popover'
+          ? 'translation-popover'
+          : 'translation-drawer'}
         role="dialog"
         aria-modal="false"
         lang=${this._resolvedTargetLang}

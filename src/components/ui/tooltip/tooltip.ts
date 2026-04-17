@@ -1,13 +1,7 @@
-import {
-  autoUpdate,
-  computePosition,
-  flip,
-  offset as applyOffset,
-  shift,
-  type Placement,
-} from '@floating-ui/dom';
+import { type Placement } from '@floating-ui/dom';
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import { AnchoredOverlayController } from '../overlay/internal/anchored-overlay-controller.js';
 
 export type UiTooltipVariant = 'default' | 'subtle' | 'inverse';
 export type UiTooltipPlacement = Placement;
@@ -32,7 +26,7 @@ const DEFAULT_OFFSET = 8;
 const DOCUMENT_STYLE_ID = 'ui-tooltip-document-styles';
 const HIT_SLOP = 10;
 
-const DOCUMENT_CSS = `
+export const DOCUMENT_CSS = `
 [data-ui-tooltip-content] {
   position: fixed;
   left: 0;
@@ -46,7 +40,7 @@ const DOCUMENT_CSS = `
   border-radius: 0;
   box-shadow: none;
   max-inline-size: min(42ch, calc(100vw - var(--space-4, 16px)));
-  z-index: var(--z-popover, 400);
+  z-index: var(--z-anchored-overlay, var(--z-popover, 400));
   pointer-events: auto;
   opacity: 0;
   visibility: hidden;
@@ -195,7 +189,7 @@ export class UiTooltip extends LitElement {
   private _triggerElement: HTMLElement | null = null;
   private _tooltipElement: HTMLElement | null = null;
   private _tooltipSurfaceElement: HTMLElement | null = null;
-  private _cleanupAutoUpdate: (() => void) | null = null;
+  private _overlayController: AnchoredOverlayController | null = null;
   private _openTimer: ReturnType<typeof setTimeout> | null = null;
   private _closeTimer: ReturnType<typeof setTimeout> | null = null;
   private _hoveringTrigger = false;
@@ -277,8 +271,16 @@ export class UiTooltip extends LitElement {
     }
 
     if ((changedProperties.has('placement') || changedProperties.has('offset')) && this._open) {
-      void this._positionTooltip();
+      this._overlayController?.refreshPosition();
     }
+  }
+
+  getTriggerElement(): HTMLElement | null {
+    return this._triggerElement;
+  }
+
+  getTooltipElement(): HTMLElement | null {
+    return this._tooltipElement;
   }
 
   private get _resolvedOffset(): number {
@@ -314,6 +316,7 @@ export class UiTooltip extends LitElement {
     tooltip.setAttribute('role', 'tooltip');
     tooltip.setAttribute('aria-hidden', 'true');
     tooltip.setAttribute('data-ui-tooltip-content', '');
+    tooltip.setAttribute('data-ui-overlay-surface', 'tooltip');
     tooltip.dataset['open'] = 'false';
     tooltip.dataset['side'] = getPlacementSide(this._resolvedPlacement);
     tooltip.dataset['variant'] = this._resolvedVariant;
@@ -332,6 +335,7 @@ export class UiTooltip extends LitElement {
 
   private _destroyTooltipElement(): void {
     if (!this._tooltipElement) return;
+    this._teardownFloating();
     this._tooltipElement.removeEventListener('mouseenter', this._onTooltipMouseEnter);
     this._tooltipElement.removeEventListener('mouseleave', this._onTooltipMouseLeave);
     this._tooltipElement.remove();
@@ -458,7 +462,7 @@ export class UiTooltip extends LitElement {
     }
 
     if (this._open) {
-      void this._positionTooltip();
+      this._overlayController?.refreshPosition();
       return;
     }
 
@@ -546,36 +550,37 @@ export class UiTooltip extends LitElement {
     trigger.setAttribute('aria-describedby', tokens.join(' '));
   }
 
-  private _setupFloating(): void {
-    const trigger = this._triggerElement;
-    const tooltip = this._tooltipElement;
-    if (!trigger || !tooltip) return;
+  private _ensureOverlayController(): AnchoredOverlayController {
+    if (this._overlayController !== null) {
+      return this._overlayController;
+    }
 
-    this._teardownFloating();
-    this._cleanupAutoUpdate = autoUpdate(trigger, tooltip, () => {
-      void this._positionTooltip();
+    this._overlayController = new AnchoredOverlayController({
+      ownerDocument: this.ownerDocument,
+      getReference: () => this._triggerElement,
+      getFloating: () => this._tooltipElement,
+      getOpen: () => this._open,
+      getPlacement: () => this._resolvedPlacement,
+      getOffset: () => this._resolvedOffset,
+      outsidePointerDismiss: false,
+      escapeDismiss: false,
+      scrollStrategy: 'ignore',
+      onPosition: ({ placement }) => {
+        if (this._tooltipElement) {
+          this._tooltipElement.dataset['side'] = getPlacementSide(placement);
+        }
+      },
     });
+
+    return this._overlayController;
+  }
+
+  private _setupFloating(): void {
+    this._ensureOverlayController().syncOpenState(true);
   }
 
   private _teardownFloating(): void {
-    if (!this._cleanupAutoUpdate) return;
-    this._cleanupAutoUpdate();
-    this._cleanupAutoUpdate = null;
-  }
-
-  private async _positionTooltip(): Promise<void> {
-    const trigger = this._triggerElement;
-    const tooltip = this._tooltipElement;
-    if (!trigger || !tooltip) return;
-
-    const result = await computePosition(trigger, tooltip, {
-      placement: this._resolvedPlacement,
-      strategy: 'fixed',
-      middleware: [applyOffset(this._resolvedOffset), flip({ padding: 8 }), shift({ padding: 8 })],
-    });
-    tooltip.dataset['side'] = getPlacementSide(result.placement);
-    tooltip.style.left = `${String(Math.round(result.x))}px`;
-    tooltip.style.top = `${String(Math.round(result.y))}px`;
+    this._overlayController?.syncOpenState(false);
   }
 
   private async _openTooltip(): Promise<void> {
@@ -587,7 +592,6 @@ export class UiTooltip extends LitElement {
 
     this._syncTooltipElement();
     this._applyAriaDescribedBy();
-    await this._positionTooltip();
     this._setupFloating();
   }
 

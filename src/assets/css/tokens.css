@@ -539,15 +539,32 @@
 
   /* =========================================================================
    * Z-index Scale
+   * 責務単位で管理する。modal / dialog は native top layer を前提とし、
+   * 通常の numeric ladder は fallback / 周辺 surface のためだけに使う。
    * ========================================================================= */
   --z-negative: -1;
   --z-base: 0;
-  --z-fixed: 100;
-  --z-backdrop: 200;
-  --z-modal: 300;
-  --z-popover: 400;
+
+  /* page chrome */
+  --z-page-chrome: 100;
+
+  /* blocking layer / scrim */
+  --z-blocking-layer: 200;
+
+  /* non-modal panel / sheet */
+  --z-non-modal-panel: 300;
+
+  /* anchored overlay fallback */
+  --z-anchored-overlay: 400;
+
   --z-toast: 500;
+  --z-modal: 600;
   --z-max: 1000;
+
+  /* legacy aliases */
+  --z-fixed: var(--z-page-chrome);
+  --z-backdrop: var(--z-blocking-layer);
+  --z-popover: var(--z-anchored-overlay);
 
   /* =========================================================================
    * Skeleton UI

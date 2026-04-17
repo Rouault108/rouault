@@ -128,7 +128,7 @@ export class LayoutToc extends LitElement {
       inset-inline: 0;
       top: calc(var(--header-height) + 56px);
       bottom: 0;
-      z-index: var(--z-modal, 300);
+      z-index: var(--z-non-modal-panel, var(--z-modal, 300));
       background: var(--bg-default);
       border-top: var(--border-width, 1px) solid var(--border-default);
       transform: translateY(100%);
@@ -181,7 +181,7 @@ export class LayoutToc extends LitElement {
       position: fixed;
       inset-inline: 0;
       top: var(--header-height);
-      z-index: var(--z-popover, 400);
+      z-index: var(--z-page-chrome, var(--z-fixed, 100));
       padding:
         var(--space-2, 8px)
         max(var(--space-3, 12px), env(safe-area-inset-right))
@@ -269,7 +269,7 @@ export class LayoutToc extends LitElement {
       inset-inline: 0;
       top: calc(var(--header-height) + var(--layout-toc-mobile-bar-height));
       bottom: 0;
-      z-index: var(--z-modal, 300);
+      z-index: var(--z-non-modal-panel, var(--z-modal, 300));
       background: var(--bg-default);
       border-top: var(--border-width, 1px) solid var(--border-default);
       transform: translateY(100%);

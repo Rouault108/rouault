@@ -12,8 +12,7 @@ interface MenuItemSelectDetail {
 const getTrigger = (dropdown: Dropdown): HTMLElement | null =>
   dropdown.querySelector<HTMLElement>('[slot="trigger"]');
 
-const getPanel = (dropdown: Dropdown): HTMLElement | null =>
-  dropdown.shadowRoot?.querySelector<HTMLElement>('.panel') ?? null;
+const getPanel = (dropdown: Dropdown): HTMLElement | null => dropdown.getMenuElement();
 
 const getMenuItems = (dropdown: Dropdown): MenuItem[] =>
   Array.from(dropdown.querySelectorAll<MenuItem>('ui-menu-item'));

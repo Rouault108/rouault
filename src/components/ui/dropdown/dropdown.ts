@@ -1,6 +1,10 @@
 import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, queryAssignedElements, state } from 'lit/decorators.js';
-import { autoUpdate, computePosition, flip, offset, shift, type Placement } from '@floating-ui/dom';
+import { type Placement } from '@floating-ui/dom';
+import {
+  AnchoredOverlayController,
+  type AnchoredOverlayDismissReason,
+} from '../overlay/internal/anchored-overlay-controller.js';
 
 export type DropdownSide = 'top' | 'right' | 'bottom' | 'left';
 export type DropdownAlign = 'start' | 'center' | 'end';
@@ -39,6 +43,9 @@ export class Dropdown extends LitElement {
       position: fixed;
       inset-inline-start: 0;
       inset-block-start: 0;
+      right: auto;
+      bottom: auto;
+      margin: 0;
       min-width: 180px;
       max-width: 280px;
       padding: calc(var(--radius-md, 6px) - var(--radius-sm, 4px));
@@ -48,7 +55,7 @@ export class Dropdown extends LitElement {
       box-shadow:
         var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12)),
         inset 0 1px 0 0 oklch(100% 0 0 / 0.05);
-      z-index: var(--z-popover, 400);
+      z-index: var(--z-anchored-overlay, var(--z-popover, 400));
       max-height: calc(var(--control-height-md, 32px) * 10);
       overflow-y: auto;
       scrollbar-width: thin;
@@ -59,6 +66,12 @@ export class Dropdown extends LitElement {
       transition:
         opacity var(--duration-instant, 0ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         transform var(--duration-instant, 0ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+    }
+
+    .panel[popover],
+    .panel[popover]:popover-open {
+      inset: auto auto auto auto;
+      margin: 0;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -135,9 +148,7 @@ export class Dropdown extends LitElement {
   @queryAssignedElements({ slot: 'trigger' })
   private _triggerElements!: HTMLElement[];
 
-  private _floatingCleanup: (() => void) | null = null;
-  private _clickOutsideCleanup: (() => void) | null = null;
-  private _scrollCloseCleanup: (() => void) | null = null;
+  private _overlayController: AnchoredOverlayController | null = null;
   private _typeaheadBuffer = '';
   private _typeaheadTimer: ReturnType<typeof setTimeout> | null = null;
   private _openFocusTarget: 'first' | 'last' = 'first';
@@ -149,6 +160,13 @@ export class Dropdown extends LitElement {
   private _resolvedTriggerId = this._triggerId;
   private _boundTriggerElement: HTMLElement | null = null;
 
+  private get _supportsPopoverApi(): boolean {
+    if (typeof HTMLElement === 'undefined') {
+      return false;
+    }
+    return 'showPopover' in HTMLElement.prototype && 'hidePopover' in HTMLElement.prototype;
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener('menu-item-click', this._handleMenuItemClick as EventListener);
@@ -159,9 +177,7 @@ export class Dropdown extends LitElement {
     this.removeEventListener('menu-item-click', this._handleMenuItemClick as EventListener);
     this._detachTriggerListeners(this._boundTriggerElement);
     this._boundTriggerElement = null;
-    this._cleanupFloating();
-    this._cleanupClickOutside();
-    this._cleanupScrollClose();
+    this._overlayController?.destroy();
 
     if (this._typeaheadTimer !== null) {
       clearTimeout(this._typeaheadTimer);
@@ -203,7 +219,7 @@ export class Dropdown extends LitElement {
 
     if (changedProperties.has('side') || changedProperties.has('align')) {
       if (this.opened) {
-        this._setupFloating();
+        this._startOverlay();
       }
     }
 
@@ -241,9 +257,8 @@ export class Dropdown extends LitElement {
   }
 
   private _onOpen(): void {
-    this._setupFloating();
-    this._setupClickOutside();
-    this._setupScrollClose();
+    this._syncPanelPopoverState(true);
+    this._startOverlay();
     this._updateTriggerAria(true);
 
     const focusTarget = this._openFocusTarget;
@@ -272,9 +287,8 @@ export class Dropdown extends LitElement {
       this._openFocusTimeoutId = null;
     }
 
-    this._cleanupFloating();
-    this._cleanupClickOutside();
-    this._cleanupScrollClose();
+    this._stopOverlay();
+    this._syncPanelPopoverState(false);
     this._updateTriggerAria(false);
     panel?.style.setProperty('left', '0px');
     panel?.style.setProperty('top', '0px');
@@ -316,72 +330,93 @@ export class Dropdown extends LitElement {
     this._updateTriggerAria(this.opened);
   }
 
-  private _setupFloating(): void {
-    const trigger = this._getTriggerElement();
-    const panel = this.shadowRoot?.querySelector<HTMLElement>('.panel');
+  private _ensureOverlayController(): AnchoredOverlayController {
+    if (this._overlayController !== null) {
+      return this._overlayController;
+    }
 
-    if (!trigger || !panel) {
+    this._overlayController = new AnchoredOverlayController({
+      ownerDocument: this.ownerDocument,
+      getReference: () => this._getTriggerElement(),
+      getFloating: () => this.getMenuElement(),
+      getOpen: () => this.opened,
+      getPlacement: () => this._resolvePlacement(),
+      getOffset: () => 4,
+      outsidePointerDismiss: true,
+      escapeDismiss: true,
+      scrollStrategy: 'close',
+      onDismissRequest: (reason, event) => {
+        this._handleOverlayDismissRequest(reason, event);
+      },
+    });
+
+    return this._overlayController;
+  }
+
+  private _startOverlay(): void {
+    this._ensureOverlayController().syncOpenState(true);
+  }
+
+  private _stopOverlay(): void {
+    this._overlayController?.syncOpenState(false);
+  }
+
+  private _handleOverlayDismissRequest(reason: AnchoredOverlayDismissReason, event: Event): void {
+    if (!this.opened) {
       return;
     }
 
-    this._cleanupFloating();
+    if (reason === 'escape' && event instanceof KeyboardEvent) {
+      event.preventDefault();
+      this.close(true);
+      return;
+    }
 
-    const update = (): void => {
-      void computePosition(trigger, panel, {
-        strategy: 'fixed',
-        placement: this._resolvePlacement(),
-        middleware: [offset(4), flip(), shift({ padding: 8 })],
-      }).then(({ x, y }) => {
-        Object.assign(panel.style, {
-          left: `${String(x)}px`,
-          top: `${String(y)}px`,
-        });
-      });
-    };
-
-    update();
-    this._floatingCleanup = autoUpdate(trigger, panel, update);
+    if (reason === 'outside-pointer' || reason === 'scroll') {
+      this.close(false);
+    }
   }
 
-  private _cleanupFloating(): void {
-    this._floatingCleanup?.();
-    this._floatingCleanup = null;
+  getMenuElement(): HTMLElement | null {
+    return this.shadowRoot?.querySelector<HTMLElement>('[data-ui-dropdown-panel]') ?? null;
   }
 
-  private _setupClickOutside(): void {
-    const handler = (event: MouseEvent): void => {
-      if (!event.composedPath().includes(this)) {
-        this.close(false);
+  private _syncPanelPopoverState(open: boolean): void {
+    const panel = this.getMenuElement() as
+      | (HTMLElement & { showPopover?: () => void; hidePopover?: () => void })
+      | null;
+
+    if (!panel) {
+      return;
+    }
+
+    if (!this._supportsPopoverApi) {
+      panel.removeAttribute('popover');
+      return;
+    }
+
+    panel.setAttribute('popover', 'manual');
+
+    const isOpen = (() => {
+      try {
+        return panel.matches(':popover-open');
+      } catch {
+        return false;
       }
-    };
+    })();
 
-    document.addEventListener('mousedown', handler, { capture: true });
-    this._clickOutsideCleanup = () => {
-      document.removeEventListener('mousedown', handler, { capture: true });
-    };
+    if (open && !isOpen && typeof panel.showPopover === 'function') {
+      panel.showPopover();
+      return;
+    }
+
+    if (!open && isOpen && typeof panel.hidePopover === 'function') {
+      panel.hidePopover();
+    }
   }
 
-  private _cleanupClickOutside(): void {
-    this._clickOutsideCleanup?.();
-    this._clickOutsideCleanup = null;
-  }
-
-  private _setupScrollClose(): void {
-    const handler = (): void => {
-      if (this.opened) {
-        this.close(false);
-      }
-    };
-
-    window.addEventListener('scroll', handler, { capture: true, passive: true });
-    this._scrollCloseCleanup = () => {
-      window.removeEventListener('scroll', handler, { capture: true });
-    };
-  }
-
-  private _cleanupScrollClose(): void {
-    this._scrollCloseCleanup?.();
-    this._scrollCloseCleanup = null;
+  getTriggerElement(): HTMLElement | null {
+    return this._getTriggerElement();
   }
 
   private _updateTriggerAria(expanded: boolean): void {
@@ -666,6 +701,8 @@ export class Dropdown extends LitElement {
 
       <div
         class="panel"
+        data-ui-dropdown-panel
+        data-ui-overlay-surface="dropdown"
         role="menu"
         id="${this._menuId}"
         aria-labelledby="${this._resolvedTriggerId}"
