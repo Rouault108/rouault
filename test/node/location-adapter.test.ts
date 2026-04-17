@@ -173,34 +173,6 @@ describe('LocationAdapter', () => {
     });
   });
 
-  it('createHistoryState() は legacy __routerPath を再書込みしないこと', () => {
-    const policy: UrlPolicy = {
-      normalizePathname(pathname) {
-        return pathname;
-      },
-      sanitizeSearchParams() {
-        // no-op
-      },
-      resolveContentPath(pathname) {
-        return pathname;
-      },
-    };
-
-    const adapter = new LocationAdapter(policy);
-
-    withStubbedWindow(() => {
-      expect(
-        adapter.createHistoryState(
-          { custom: 'value', __routerPath: '/legacy/path' },
-          '/notes/example?tab=overview#heading',
-        ),
-      ).to.deep.equal({
-        custom: 'value',
-        __routerUrl: '/notes/example?tab=overview#heading',
-      });
-    });
-  });
-
   it('readCurrentUrl() は __routerUrl が無ければ window.location から現在 URL を組み立てること', () => {
     const policy: UrlPolicy = {
       normalizePathname(pathname) {
@@ -226,7 +198,7 @@ describe('LocationAdapter', () => {
         } satisfies Pick<Window, 'location'>,
       });
 
-      withStubbedHistory({ __routerPath: '/notes/example' }, () => {
+      withStubbedHistory({ custom: 'value' }, () => {
         expect(adapter.readCurrentUrl()).to.equal('/current?tab=overview#details');
       });
     });

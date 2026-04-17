@@ -773,7 +773,7 @@ export class Select extends LitElement {
         justify-content: center;
         color: var(--primary, oklch(60% 0.15 250));
       `;
-      checkIcon.innerHTML = '<ui-icon icon="check" aria-hidden="true"></ui-icon>';
+      checkIcon.innerHTML = '<ui-icon name="check" aria-hidden="true"></ui-icon>';
       const checkGlyph = checkIcon.querySelector<HTMLElement>('ui-icon');
       if (checkGlyph) {
         Object.assign(checkGlyph.style, {

@@ -134,7 +134,7 @@ const ensureHeadingPermalink = (node: HastNode, id: string, text: string): void 
       },
       [
         createElement('ui-icon', {
-          icon: 'link',
+          name: 'link',
           'aria-hidden': 'true',
         }),
       ],

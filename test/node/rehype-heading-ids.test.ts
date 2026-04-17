@@ -83,7 +83,7 @@ describe('rehypeHeadingIds', () => {
     const icon = anchor.children?.[0];
     if (!icon) return;
     expect(icon.tagName).to.equal('ui-icon');
-    expect(icon.properties?.['icon']).to.equal('link');
+    expect(icon.properties?.['name']).to.equal('link');
 
     const h1Children = h1.children ?? [];
     expect(h1Children).to.have.length(1);

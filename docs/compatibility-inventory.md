@@ -20,57 +20,11 @@
 
 | 項目                                              | 主な所在                                                                                                                                 | 区分              | 判断                                                                                                             |
 | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------- |
-| legacy router history path key の strip-only 互換 | `src/router/location-adapter.ts`、`test/node/location-adapter.test.ts`、`test/browser/router.browser.test.ts`、`test/e2e/router.spec.ts` | `将来削除`        | stale history entry を再訪したときだけ吸収し、新規書込みは行わない。次の履歴 state schema 改訂時に除去候補とする |
-| `ui-icon[icon]` 属性                              | `src/components/ui/icon/icon.ts`、`docs/design-system/components/icon.md`                                                                | `deprecated 維持` | 現行の正規入力は `name`。`icon` は既存 markup 吸収のため残すが、新規利用は禁止する                               |
-| `ui-kbd[keys]` 属性                               | `src/components/ui/kbd/kbd.ts`、`docs/design-system/components/kbd.md`                                                                   | `deprecated 維持` | 現行の正規入力は `tokens`。`keys` は文字列入力互換としてのみ維持する                                             |
-| `ui-kbd` のホストテキスト入力                     | `src/components/ui/kbd/kbd.ts`、`docs/design-system/components/kbd.md`                                                                   | `deprecated 維持` | light DOM 文字列の吸収は維持するが、正規 authoring / 実装経路には含めない                                        |
-| `ui-skip-link[href]` 属性                         | `src/components/ui/skip-link/skip-link.ts`、`test/browser/skip-link.browser.test.ts`、`docs/design-system/components/skip-link.md`       | `deprecated 維持` | 現行の正規入力は `targetId`。`href` は既存 markup を壊さないためのハッシュ入力としてのみ維持する                 |
+| 該当なし                                          | -                                                                                                                                        | -                 | 2026-04-17 時点で棚卸し対象の互換経路は repo から除去済み                                                        |
 
 ## 項目別メモ
 
-### 1. legacy router history path key
-
-- 現行 router の履歴正本は `__routerUrl` です。
-- 旧 path key は新規に書き込まず、古い session history から来た値を破棄するためだけに残しています。
-- よってこれは public API ではなく、**移行安全性のための read-path 互換**です。
-
-出口条件:
-
-- router history state schema を次回明示更新するとき
-- stale な旧 path key を吸収する必要がないと判断できるとき
-
-### 2. `ui-icon[icon]`
-
-- `name` が正規入力です。
-- `icon` は既存 markup の吸収経路としてのみ残します。
-- 新規実装、Storybook、新規 docs 例では `name` を使います。
-
-出口条件:
-
-- repo 内利用と外部利用想定を監査し、`icon` 属性利用を解消したとき
-- design-system の breaking change を許容できるタイミング
-
-### 3. `ui-kbd[keys]` / ホストテキスト
-
-- `tokens` が唯一の正規入力です。
-- `keys` とホストテキストは、正規入力へ寄せるための互換レイヤです。
-- 新規 authoring と component 利用では `tokens` を優先します。
-
-出口条件:
-
-- repo 内 examples / stories / call sites が `tokens` 主体へ揃ったとき
-- 文字列入力を維持する理由がなくなったとき
-
-### 4. `ui-skip-link[href]`
-
-- `targetId` が正規入力です。
-- `href` は `#main-content` のような既存 markup を吸収するためだけに残します。
-- `targetId` と `href` が競合する場合は `targetId` を優先します。
-
-出口条件:
-
-- repo 内の skip-link 利用と Storybook 例を `targetId` 主体へ揃えたあと
-- 外部利用で `href` 互換が不要と判断できるとき
+現時点で active な compatibility API はありません。新たな互換経路を導入する場合のみ、本節へ項目を追加してください。
 
 ## 完了済みの削除項目
 
@@ -78,16 +32,51 @@
 
 | 項目                                   | 状態                                      |
 | -------------------------------------- | ----------------------------------------- |
+| legacy router history path key         | `__routerUrl` 正本へ収束し、`__routerPath` 特例を除去済み |
+| `ui-icon[icon]` 属性                   | `name` 正規入力へ収束し、deprecated alias を除去済み |
+| `ui-kbd[keys]` 属性                    | `tokens` 正規入力へ収束し、互換文字列入力を除去済み |
+| `ui-kbd` のホストテキスト入力          | 単体キー補助 slot のみに整理し、文字列再解釈経路を除去済み |
+| 未分類リンクフェイルセーフ             | `.card` / `.callout` / `.sidebar` 向け legacy 吸収を除去済み |
+| `ui-skip-link[href]` 属性              | `targetId` 正規入力へ収束し、互換入力を除去済み |
 | `ui-article-header` の `.status` class | `status-badge` / `status-*` 系へ収束済み  |
 | `defer-hydration` 記述                 | `docs/hydration-contract.md` から除去済み |
 
-### 5. `.status` class
+### 1. legacy router history path key
+
+- 現行 router の履歴正本は `__routerUrl` です。
+- `__routerPath` 向けの特例処理は削除済みです。
+- browser / node / e2e の履歴検証も `__routerUrl` 契約へ揃えています。
+
+### 2. `ui-icon[icon]`
+
+- `name` が唯一の公開入力です。
+- `icon` deprecated alias は削除済みです。
+- build 生成経路、Storybook、runtime self-consumption も `name` へ揃えています。
+
+### 3. `ui-kbd[keys]` / ホストテキスト
+
+- `tokens` が唯一の正規入力です。
+- `keys` と host text の文字列再解釈経路は削除済みです。
+- docs / Storybook / browser test も `tokens` と単体キー補助 slot 契約へ揃えています。
+
+### 4. 未分類リンクフェイルセーフ
+
+- `.card` / `.callout` / `.sidebar` 配下の未分類リンク吸収は削除済みです。
+- patterns / CSS / Storybook 例は明示的な `link-text` または `link-control` 契約へ揃えています。
+
+### 5. `ui-skip-link[href]`
+
+- `targetId` が正規入力です。
+- `href` 互換入力は削除済みです。
+- Storybook / browser test / app shell の利用箇所も `targetId` 主体へ揃えています。
+
+### 6. `.status` class
 
 - `status-badge` が現行の意味的 class です。
 - `.status` は旧テスト互換の残骸であり、現行 repo 内の依存を持ちません。
 - 本フェーズで削除済みです。
 
-### 6. `defer-hydration`
+### 7. `defer-hydration`
 
 - 現行の hydration 契約は scheduler / registry 主導で固定済みです。
 - 実装上に `defer-hydration` の active path はありません。

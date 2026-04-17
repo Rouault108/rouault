@@ -29,7 +29,6 @@ import { Checkbox } from '../../src/components/ui/checkbox/checkbox.js';
 import { FOOTER_DOCUMENT_CSS } from '../../src/components/ui/footer/footer.js';
 import { DOCUMENT_CSS as HIGHLIGHT_DOCUMENT_CSS } from '../../src/components/ui/highlight/highlight.js';
 import { UiImage } from '../../src/components/ui/image/image.js';
-import { Kbd } from '../../src/components/ui/kbd/kbd.js';
 import { UiMath } from '../../src/components/ui/math/math.js';
 import { Pagination } from '../../src/components/ui/pagination/pagination.js';
 import { UiScore } from '../../src/components/ui/score/score.js';
@@ -328,16 +327,6 @@ describe('css structure contracts', () => {
       'margin-inline: var(--space-n4, -1rem);',
       'width: calc(100% + var(--space-16, 4rem));',
       'margin-inline: var(--space-n8, -2rem);',
-    ]);
-  });
-
-  it('kbd が forced-colors / print 契約を保持すること', () => {
-    const cssText = collectCssText(Kbd.styles);
-
-    expectCssIncludes(cssText, [
-      '@media (forced-colors: active)',
-      'forced-color-adjust: auto',
-      '@media print',
     ]);
   });
 

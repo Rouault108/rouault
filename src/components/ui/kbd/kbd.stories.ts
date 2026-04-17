@@ -7,7 +7,7 @@ import { Kbd } from './kbd';
  * ## キーボード入力 (Keyboard Input) `<ui-kbd>`
  *
  * `ui-kbd` はキーボードショートカットや入力指示を、ネイティブ `<kbd>` を基礎に静かに可視化するコンポーネントです。
- * 正準入力は `tokens` property であり、`keys` とホストテキストは互換入力、既定スロットは単体キー補助に限定されます。
+ * 正準入力は `tokens` property であり、既定スロットは単体キー補助に限定されます。
  */
 const meta: Meta<Kbd> = {
   title: 'Components/Kbd',
@@ -23,14 +23,11 @@ const meta: Meta<Kbd> = {
 
 \`\`\`html
 <!-- 正準入力 -->
-<ui-kbd></ui-kbd>
+<ui-kbd id="kbd-example"></ui-kbd>
 <script type="module">
-  const kbd = document.querySelector('ui-kbd');
+  const kbd = document.querySelector('#kbd-example');
   kbd.tokens = ['Ctrl', 'K'];
 </script>
-
-<!-- 互換文字列入力 -->
-<ui-kbd keys="Ctrl + K"></ui-kbd>
 
 <!-- 単体キーの補助スロット -->
 <ui-kbd>
@@ -41,10 +38,11 @@ const meta: Meta<Kbd> = {
 
 ## 契約
 
+- 正準入力は \`tokens\` です。
 - 単体キー / 複合キーの意味論は正規化後トークン数で決まります。
 - 複合キー外枠は中立要素であり、各キー片だけがネイティブ \`<kbd>\` です。
 - 区切り記号は独立した \`part="separator"\` として公開されます。
-- \`keys\` は \`+\` 区切りの互換入力です。literal plus は \`tokens\` を使います。
+- 既定スロットは単体キーの補助表現に限定されます。
         `,
       },
     },
@@ -58,14 +56,6 @@ const meta: Meta<Kbd> = {
         defaultValue: { summary: 'undefined' },
       },
     },
-    keys: {
-      control: 'text',
-      description: '互換文字列入力（例: "Ctrl + K"）',
-      table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: "''" },
-      },
-    },
   },
 };
 
@@ -75,38 +65,34 @@ type Story = StoryObj<Kbd>;
 /**
  * 正準入力 `tokens` による単体キー描画の基本例です。
  */
-
 export const Default: Story = {
   args: {
     tokens: ['Esc'],
-    keys: '',
   },
-  render: (args) =>
-    html`<ui-kbd id="kbd-default" .tokens=${args.tokens} .keys=${args.keys}></ui-kbd>`,
+  render: (args) => html`<ui-kbd id="kbd-default" .tokens=${args.tokens}></ui-kbd>`,
 };
 
 /**
- * `tokens`・`keys`・ホストテキスト・スロット補助の優先順位と責務を確認します。
+ * 単体キーと複合キーの正規入力例を確認します。
  */
-
-export const InputPriorityAndModes: Story = {
+export const SupportedInputModes: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
       <div>
-        <span style="display: inline-block; width: 11rem;">Tokens Priority</span>
-        <ui-kbd id="priority-tokens" keys="Ctrl + Shift + Enter"></ui-kbd>
+        <span style="display: inline-block; width: 11rem;">Single Key</span>
+        <ui-kbd id="mode-single" .tokens=${['Esc']}></ui-kbd>
       </div>
       <div>
-        <span style="display: inline-block; width: 11rem;">Keys Fallback</span>
-        <ui-kbd id="priority-keys" keys="Ctrl + K"></ui-kbd>
+        <span style="display: inline-block; width: 11rem;">Combo Keys</span>
+        <ui-kbd id="mode-combo" .tokens=${['Ctrl', 'K']}></ui-kbd>
       </div>
       <div>
-        <span style="display: inline-block; width: 11rem;">Text Fallback</span>
-        <ui-kbd id="priority-text">Ctrl + K</ui-kbd>
+        <span style="display: inline-block; width: 11rem;">Command Symbol</span>
+        <ui-kbd id="mode-command" .tokens=${['⌘', 'K']}></ui-kbd>
       </div>
       <div>
         <span style="display: inline-block; width: 11rem;">Slot Assist</span>
-        <ui-kbd id="priority-slot">
+        <ui-kbd id="mode-slot">
           <span class="sr-only">コマンド</span>
           <span aria-hidden="true">⌘</span>
         </ui-kbd>
@@ -116,9 +102,8 @@ export const InputPriorityAndModes: Story = {
 };
 
 /**
- * 複合キーで `part="combo"` と `part="separator"` が公開されることを確認します。
+ * 小さい親フォント環境でもキー表記が判読可能であることを確認します。
  */
-
 export const SmallTextHardLimit: Story = {
   render: () => html`
     <div
@@ -132,9 +117,8 @@ export const SmallTextHardLimit: Story = {
 };
 
 /**
- * 複合キーが途中改行せず、意味のまとまりを保つことを確認します。
+ * 暗色トークンへの追従を手動確認します。
  */
-
 export const DarkModeManual: Story = {
   tags: ['manual-only'],
   render: () => html`
@@ -154,7 +138,7 @@ export const DarkModeManual: Story = {
         border-radius: 8px;
       "
     >
-      <ui-kbd id="dark-mode-kbd" .tokens=${['Esc']}></ui-kbd>
+      <ui-kbd id="dark-mode-kbd" .tokens=${['Ctrl', 'K']}></ui-kbd>
     </div>
   `,
   parameters: {
@@ -168,12 +152,11 @@ export const DarkModeManual: Story = {
 };
 
 /**
- * 空入力時に空のキートップを出力しないことを確認します。
+ * forced-colors / print の CSS 構造契約を手動確認します。
  */
-
 export const MediaModeManual: Story = {
   tags: ['manual-only'],
-  render: () => html`<ui-kbd id="media-contract-kbd" .tokens=${['Esc']}></ui-kbd>`,
+  render: () => html`<ui-kbd id="media-contract-kbd" .tokens=${['Ctrl', 'K']}></ui-kbd>`,
   parameters: {
     docs: {
       description: {

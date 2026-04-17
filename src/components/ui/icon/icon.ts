@@ -2,7 +2,6 @@ import '../../../icons/register.js';
 import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 
 const NAME_ATTRIBUTE = 'name';
-const ICON_ATTRIBUTE = 'icon';
 const ARIA_LABEL_ATTRIBUTE = 'aria-label';
 type UiIconBaseConstructor = new () => HTMLElement;
 
@@ -22,7 +21,7 @@ const prepareGlyphElement = (glyph: HTMLElement): void => {
 };
 
 export class UiIcon extends BaseElement {
-  static readonly observedAttributes = [NAME_ATTRIBUTE, ICON_ATTRIBUTE, ARIA_LABEL_ATTRIBUTE];
+  static readonly observedAttributes = [NAME_ATTRIBUTE, ARIA_LABEL_ATTRIBUTE];
 
   private glyph: HTMLElement = document.createElement('iconify-icon');
   private glyphRoot: ShadowRoot | null = null;
@@ -36,13 +35,7 @@ export class UiIcon extends BaseElement {
   get name(): IconName | null {
     const host = this as unknown as HTMLElement;
     const value = host.getAttribute(NAME_ATTRIBUTE)?.trim();
-    if (value) {
-      return value as IconName;
-    }
-
-    // `icon` は deprecated alias だが、既存 markup 吸収のため当面は維持する。
-    const legacyValue = host.getAttribute(ICON_ATTRIBUTE)?.trim();
-    return legacyValue ? (legacyValue as IconName) : null;
+    return value ? (value as IconName) : null;
   }
 
   set name(value: IconName | null) {
@@ -53,22 +46,6 @@ export class UiIcon extends BaseElement {
     }
 
     host.setAttribute(NAME_ATTRIBUTE, value);
-  }
-
-  get icon(): IconName | null {
-    const host = this as unknown as HTMLElement;
-    const value = host.getAttribute(ICON_ATTRIBUTE)?.trim();
-    return value ? (value as IconName) : null;
-  }
-
-  set icon(value: IconName | null) {
-    const host = this as unknown as HTMLElement;
-    if (value === null) {
-      host.removeAttribute(ICON_ATTRIBUTE);
-      return;
-    }
-
-    host.setAttribute(ICON_ATTRIBUTE, value);
   }
 
   connectedCallback(): void {
@@ -126,14 +103,8 @@ export class UiIcon extends BaseElement {
 
   #getResolvedName(): IconName | null {
     const host = this as unknown as HTMLElement;
-    const canonicalName = host.getAttribute(NAME_ATTRIBUTE)?.trim();
-    if (canonicalName) {
-      return canonicalName as IconName;
-    }
-
-    // `name` 未指定時だけ legacy alias を見る。
-    const legacyName = host.getAttribute(ICON_ATTRIBUTE)?.trim();
-    return legacyName ? (legacyName as IconName) : null;
+    const value = host.getAttribute(NAME_ATTRIBUTE)?.trim();
+    return value ? (value as IconName) : null;
   }
 
   #collapseHost(): void {

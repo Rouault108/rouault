@@ -80,17 +80,9 @@ export class SkipLink extends LitElement {
 
   /**
    * スキップ先の要素 ID。
-   *
-   * `href` は互換入力として残すが、正規入力は `targetId` とする。
    */
   @property({ attribute: 'target-id', type: String })
   targetId = 'main-content';
-
-  /**
-   * 互換用のハッシュ入力。
-   */
-  @property({ attribute: 'href', type: String })
-  href = '';
 
   /**
    * 表示ラベル
@@ -106,9 +98,10 @@ export class SkipLink extends LitElement {
   }
 
   override render() {
-    const resolvedHref = this.getResolvedHref();
     return html`
-      <a href="${resolvedHref}" part="link" @click="${this.handleLinkClick}"> ${this.label} </a>
+      <a href="${this.getResolvedHref()}" part="link" @click="${this.handleLinkClick}">
+        ${this.label}
+      </a>
     `;
   }
 
@@ -117,7 +110,7 @@ export class SkipLink extends LitElement {
     if (changedProperties.has('label')) {
       this.setAttribute('aria-label', this.label);
     }
-    if (!changedProperties.has('href') && !changedProperties.has('targetId')) {
+    if (!changedProperties.has('targetId')) {
       return;
     }
     this.validateTargetConfiguration();
@@ -132,7 +125,7 @@ export class SkipLink extends LitElement {
       return;
     }
 
-    const targetElement = this.getTargetElementFromHref();
+    const targetElement = this.getTargetElement();
     if (!targetElement) {
       return;
     }
@@ -168,33 +161,19 @@ export class SkipLink extends LitElement {
   private getResolvedTargetId(): string | null {
     const normalizedTargetId = this.targetId.trim();
     if (normalizedTargetId.length > 0) {
-      const hrefTargetId = this.getTargetIdFromHref();
-      if (hrefTargetId !== null && hrefTargetId.length > 0 && hrefTargetId !== normalizedTargetId) {
-        this.warnConfiguration(
-          `[ui-skip-link]: target-id="${normalizedTargetId}" と href="${this.href}" が競合しています。target-id を優先します。`,
-        );
-      }
       return normalizedTargetId;
     }
 
-    return this.getTargetIdFromHref();
-  }
-
-  private getTargetIdFromHref(): string | null {
-    if (!this.href.startsWith('#')) {
-      return null;
-    }
-
-    const targetId = this.href.slice(1).trim();
-    return targetId.length > 0 ? targetId : null;
+    this.warnConfiguration('[ui-skip-link]: target-id には空でない要素 ID を指定してください。');
+    return null;
   }
 
   private getResolvedHref(): string {
     const targetId = this.getResolvedTargetId();
-    return targetId === null ? this.href : `#${targetId}`;
+    return targetId === null ? '#main-content' : `#${targetId}`;
   }
 
-  private getTargetElementFromHref(): HTMLElement | null {
+  private getTargetElement(): HTMLElement | null {
     const targetId = this.getResolvedTargetId();
     if (!targetId) {
       return null;

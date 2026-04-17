@@ -21,9 +21,8 @@
    - [既存バリアント](#14-既存バリアント)
    - [Sidebar 専用の扱い](#15-sidebar-専用の扱い)
    - [current 表示と Link の関係](#16-current-表示と-link-の関係)
-   - [Legacy 互換レイヤ](#17-legacy-互換レイヤ)
-   - [Block Link](#18-block-link)
-   - [Router との境界](#19-router-との境界)
+   - [Block Link](#17-block-link)
+   - [Router との境界](#18-router-との境界)
 2. [selected / current / active / focused の使い分け](#2-selected--current--active--focused-の使い分け)
    - [基本整理](#21-基本整理)
    - [Tabs](#22-tabs)
@@ -188,13 +187,7 @@ Control Link 系で current を表す条件は、次のとおりです。
 
 つまり Rouault では、**current は色だけでなく物理的な左インジケータを持つ**ことが基準です。
 
-### 1.7 Legacy 互換レイヤ
-
-現状では完全移行前のため、`.card` / `.callout` / `.sidebar` 配下の未分類リンクに対して暫定フェイルセーフが残っています。
-
-ただし、これは**移行レイヤ**であり、新規実装の基準ではありません。新規実装では、**`link-text` または `link-control` を必ず明示する**のが正です。
-
-### 1.8 Block Link
+### 1.7 Block Link
 
 Rouault には `card-link` による **Stretched Link** パターンがあります。
 
@@ -209,7 +202,7 @@ Rouault には `card-link` による **Stretched Link** パターンがありま
 
 したがって、Rouault の Block Link は「面リンク」であっても、**フォーカスの責務はカード側に持たせる**設計です。
 
-### 1.9 Router との境界
+### 1.8 Router との境界
 
 リンクが内部遷移として扱われるのは、`browser-link-interceptor.ts` の条件を満たす場合だけです。
 

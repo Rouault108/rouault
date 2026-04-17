@@ -1388,25 +1388,6 @@ a:focus-visible {
   }
 }
 
-/* ---------------------------------------------------------------------------
- * 未分類リンクの安全側吸収
- *
- * card / callout / sidebar 内の未分類リンクを安全側で同系統表示へ寄せる。
- * 新規実装では .link-text または .link-control を必ず付与すること。
- * --------------------------------------------------------------------------- */
-.card :where(a[href]):not(:where(.prose a[href])):not(.link-text):not(.link-control):not(.ui-link),
-.callout
-  :where(a[href]):not(:where(.prose a[href])):not(.link-text):not(.link-control):not(.ui-link),
-.sidebar
-  :where(a[href]):not(:where(.prose a[href])):not(.link-text):not(.link-control):not(.ui-link) {
-  color: var(--fg-default);
-}
-
-.sidebar
-  :where(a[href]):not(:where(.prose a[href])):not(.link-text):not(.link-control):not(.ui-link) {
-  color: var(--fg-muted);
-}
-
 /* ui-list-item 内のリンクは、本文リンクや touch 強調リンクとは分離し、
    索引・一覧向けの静かな下線として扱う */
 ui-list-item > a[slot][href]:not([slot='actions']),

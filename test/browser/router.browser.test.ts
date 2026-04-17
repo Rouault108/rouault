@@ -522,13 +522,9 @@ describe('Router', () => {
     expect(postCommitContext?.outlet).to.equal(outlet);
   });
 
-  it('新規履歴書込みは __routerUrl のみに統一し、__routerPath は含めないこと', async () => {
+  it('新規履歴書込みは __routerUrl を現在 URL へ更新すること', async () => {
     router = new Router(outlet, { skipInitialNavigation: true });
     await router.start();
-
-    mockHistoryState = {
-      __routerPath: '/legacy/history-path',
-    };
 
     await router.navigate({
       url: '/history-write-only?tab=details',

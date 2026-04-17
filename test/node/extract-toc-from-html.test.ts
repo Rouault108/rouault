@@ -27,7 +27,7 @@ describe('extractTocFromHtml', () => {
       <h2 id="intro">
         <span class="heading-text">はじめに</span>
         <a class="heading-anchor" href="#intro" aria-label="「はじめに」への固定リンク">
-          <ui-icon icon="link" aria-hidden="true"></ui-icon>
+          <ui-icon name="link" aria-hidden="true"></ui-icon>
         </a>
       </h2>
     `;

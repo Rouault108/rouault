@@ -2,8 +2,6 @@ import { resolveRouterArtifactPathname } from '../../shared/navigation/router-ar
 import { RouaultUrlPolicy } from './rouault-url-policy.js';
 import type { UrlPolicy } from './url-policy.js';
 
-const LEGACY_HISTORY_PATH_KEY = '__routerPath';
-
 export class LocationAdapter {
   constructor(private readonly policy: UrlPolicy = new RouaultUrlPolicy()) {}
 
@@ -39,12 +37,9 @@ export class LocationAdapter {
   ): Record<string, unknown> {
     const parsed = this.toUrl(normalizedUrl);
     const currentState = this.isHistoryStateObject(state) ? state : {};
-    const restState = Object.fromEntries(
-      Object.entries(currentState).filter(([key]) => key !== LEGACY_HISTORY_PATH_KEY),
-    );
 
     return {
-      ...restState,
+      ...currentState,
       __routerUrl: `${parsed.pathname}${parsed.search}${parsed.hash}`,
     };
   }

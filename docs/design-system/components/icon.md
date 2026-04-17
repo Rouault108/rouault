@@ -114,6 +114,20 @@ Rouault の現行アイコン戦略は、次のように整理できます。
 
 これにより、アイコン単体でも周辺テキストと自然に揃います。
 
+## 公開入力
+
+- `name`: 表示するアイコン名
+- `aria-label`: 装飾目的ではない場合のアクセシブル名
+
+`ui-icon` は `name` のみを受け付けます。旧 `icon` 属性はサポートしません。
+
+### 例
+
+```html
+<ui-icon name="calendar-clock" aria-hidden="true"></ui-icon>
+<ui-icon name="link" aria-label="固定リンク"></ui-icon>
+```
+
 ---
 
 ## 使い分け

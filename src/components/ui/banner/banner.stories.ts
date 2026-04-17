@@ -99,7 +99,7 @@ export const SlotExamples: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-banner variant="info">
-        <ui-icon name="icon" icon="calendar-clock" aria-hidden="true"></ui-icon>
+        <ui-icon name="calendar-clock" aria-hidden="true"></ui-icon>
         計画メンテナンスは明日0時に開始します。
       </ui-banner>
 

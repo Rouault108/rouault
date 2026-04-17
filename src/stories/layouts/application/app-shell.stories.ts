@@ -23,7 +23,7 @@ const renderAppShell = () =>
             <div class="app-root" id="app-shell-root">
               <ui-skip-link
                 id="app-shell-skip-link"
-                href="#app-shell-main"
+                target-id="app-shell-main"
                 label="メインコンテンツへ移動"
               ></ui-skip-link>
               <layout-header></layout-header>

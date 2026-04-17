@@ -30,14 +30,6 @@ shadow DOM 内の anchor 反映、click による focus 移動、focus() 委譲�
         defaultValue: { summary: 'main-content' },
       },
     },
-    href: {
-      control: 'text',
-      description: '互換入力のハッシュ形式ターゲット',
-      table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: '' },
-      },
-    },
     label: {
       control: 'text',
       description: '表示ラベル',
@@ -54,14 +46,12 @@ type Story = StoryObj<SkipLink>;
 
 const renderDemo = ({
   targetId,
-  href,
   label,
   mainId,
   heading,
   body,
 }: {
   targetId: string;
-  href: string;
   label: string;
   mainId: string;
   heading: string;
@@ -117,7 +107,7 @@ const renderDemo = ({
   </style>
 
   <div class="demo-container">
-    <ui-skip-link target-id="${targetId}" href="${href}" label="${label}"></ui-skip-link>
+    <ui-skip-link target-id="${targetId}" label="${label}"></ui-skip-link>
 
     <div class="demo-header">
       <h1>サイトヘッダー</h1>
@@ -141,13 +131,11 @@ const renderDemo = ({
 export const Default: Story = {
   args: {
     targetId: 'main-content',
-    href: '',
     label: 'メインコンテンツへスキップ',
   },
   render: (args) =>
     renderDemo({
       targetId: args.targetId,
-      href: args.href,
       label: args.label,
       mainId: 'main-content',
       heading: 'メインコンテンツ',
@@ -158,20 +146,18 @@ export const Default: Story = {
 export const CustomTarget: Story = {
   args: {
     targetId: 'content',
-    href: '',
     label: '本文へ移動',
   },
   parameters: {
     docs: {
       description: {
-        story: 'target-id と label を変えた利用例です。href は互換入力としてのみ残します。',
+        story: 'target-id と label を変えた利用例です。',
       },
     },
   },
   render: (args) =>
     renderDemo({
       targetId: args.targetId,
-      href: args.href,
       label: args.label,
       mainId: 'content',
       heading: '本文',
@@ -200,7 +186,6 @@ export const FocusAppearanceManual: Story = {
   render: () =>
     renderDemo({
       targetId: 'focus-target',
-      href: '',
       label: 'メインコンテンツへスキップ',
       mainId: 'focus-target',
       heading: 'フォーカス確認用コンテンツ',

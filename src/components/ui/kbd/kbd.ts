@@ -35,7 +35,7 @@ const KEY_READING_MAP: Readonly<Record<string, string>> = {
 
 type ResolvedInput =
   | {
-      source: 'tokens' | 'keys' | 'text';
+      source: 'tokens';
       tokens: string[];
     }
   | {
@@ -54,6 +54,8 @@ type ResolvedInput =
  * - 単体キー / 複合キーの意味論は正規化後トークン数で決まります。
  * - 複合キー外枠は中立要素を使い、各キー片だけに Native `<kbd>` を使います。
  * - `⌘` は読み上げ一貫性のために SR 専用テキストを同梱します。
+ * - 旧 `keys` 入力および host text のトークン再解釈はサポートしません。
+ * - slot は単独キー表示の補助入力としてのみ扱います。
  */
 @customElement('ui-kbd')
 export class Kbd extends LitElement {
@@ -132,7 +134,6 @@ export class Kbd extends LitElement {
       border: 0;
     }
 
-    /* スロット経由で渡された読み上げ補助要素にも同じ不可視化ルールを適用する */
     ::slotted(.sr-only) {
       position: absolute;
       width: 1px;
@@ -176,14 +177,6 @@ export class Kbd extends LitElement {
   @property({ attribute: false })
   tokens: string[] | undefined = undefined;
 
-  /**
-   * 表示する互換文字列入力。
-   * 例: `Esc`, `Ctrl + K`, `⌘ + K`
-   * 新規実装では `tokens` を優先し、この経路は増やさない。
-   */
-  @property({ type: String })
-  keys = '';
-
   private _normalizeToken(token: string | null | undefined): string | undefined {
     const normalized = token?.trim();
     if (!normalized) {
@@ -198,16 +191,18 @@ export class Kbd extends LitElement {
       .filter((token): token is string => token !== undefined);
   }
 
-  private _tokenizeKeys(raw: string): string[] {
-    return raw
-      .trim()
-      .split('+')
-      .map((token) => this._normalizeToken(token))
-      .filter((token): token is string => token !== undefined);
-  }
+  private _hasSlottedContent(): boolean {
+    return Array.from(this.childNodes).some((node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        return true;
+      }
 
-  private _getHostText(): string {
-    return this.textContent.replace(/\s+/g, ' ').trim();
+      if (node.nodeType === Node.TEXT_NODE) {
+        return (node.textContent ?? '').trim().length > 0;
+      }
+
+      return false;
+    });
   }
 
   private _resolveInput(): ResolvedInput {
@@ -218,25 +213,10 @@ export class Kbd extends LitElement {
       };
     }
 
-    if (this.keys.trim() !== '') {
-      return {
-        source: 'keys',
-        tokens: this._tokenizeKeys(this.keys),
-      };
-    }
-
-    if (this.childElementCount > 0) {
+    if (this._hasSlottedContent()) {
       return {
         source: 'slot',
         tokens: [],
-      };
-    }
-
-    const hostText = this._getHostText();
-    if (hostText !== '') {
-      return {
-        source: 'text',
-        tokens: this._tokenizeKeys(hostText),
       };
     }
 
@@ -250,11 +230,7 @@ export class Kbd extends LitElement {
     return KEY_READING_MAP[token.trim().toLowerCase()];
   }
 
-  private _renderKeyToken(token: string, useSlot = false): TemplateResult {
-    if (useSlot) {
-      return html`<kbd class="kbd-key" part="key"><slot></slot></kbd>`;
-    }
-
+  private _renderTokenKey(token: string): TemplateResult {
     const reading = this._getReading(token);
     const isCommandSymbol = token === '⌘';
 
@@ -267,7 +243,17 @@ export class Kbd extends LitElement {
       `;
     }
 
-    return html` <kbd class="kbd-key" part="key" aria-label=${ifDefined(reading)}>${token}</kbd> `;
+    return html`
+      <kbd class="kbd-key" part="key" aria-label=${ifDefined(reading)}>${token}</kbd>
+    `;
+  }
+
+  private _renderSlotKey(): TemplateResult {
+    return html`
+      <kbd class="kbd-key" part="key">
+        <slot></slot>
+      </kbd>
+    `;
   }
 
   private _renderSeparator(): TemplateResult {
@@ -282,7 +268,7 @@ export class Kbd extends LitElement {
     }
 
     if (resolved.source === 'slot') {
-      return this._renderKeyToken('', true);
+      return this._renderSlotKey();
     }
 
     if (resolved.tokens.length === 0) {
@@ -294,13 +280,13 @@ export class Kbd extends LitElement {
         <span class="kbd-combo" part="combo">
           ${resolved.tokens.map(
             (token, index) =>
-              html`${index > 0 ? this._renderSeparator() : nothing}${this._renderKeyToken(token)}`,
+              html`${index > 0 ? this._renderSeparator() : nothing}${this._renderTokenKey(token)}`,
           )}
         </span>
       `;
     }
 
-    return this._renderKeyToken(resolved.tokens[0] ?? '');
+    return this._renderTokenKey(resolved.tokens[0] ?? '');
   }
 }
 

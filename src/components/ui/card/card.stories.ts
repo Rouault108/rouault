@@ -109,7 +109,7 @@ export const LinkCardSurface: Story = {
       <p style="margin: 0 0 0.75rem; color: var(--fg-muted); font-size: var(--text-sm);">
         カード内の主要リンクへ委譲される前提の表示例です。
       </p>
-      <a href="/notes/card-link">詳細を見る</a>
+      <a class="link-control" href="/notes/card-link">詳細を見る</a>
       <time slot="footer" datetime="2026-04-01">2026-04-01</time>
     </ui-card>
   `,
@@ -140,7 +140,7 @@ export const ManualInteractiveReview: Story = {
         <p style="margin: 0 0 0.75rem; color: var(--fg-muted); font-size: var(--text-sm);">
           クリック委譲・selection guard の最終合否は手動ではなく browser test に寄せてください。
         </p>
-        <a href="/notes/manual-card">主要リンク</a>
+        <a class="link-control" href="/notes/manual-card">主要リンク</a>
         <time slot="footer" datetime="2026-04-01">footer</time>
       </ui-card>
       <ui-card variant="ghost" clickable>
