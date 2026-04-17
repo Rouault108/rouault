@@ -52,12 +52,13 @@
 - `name` が唯一の公開入力です。
 - `icon` deprecated alias は削除済みです。
 - build 生成経路、Storybook、runtime self-consumption も `name` へ揃えています。
+- removed API が効かないことを固定する負の回帰テストに限って、`icon` 属性を明示的に参照する場合があります。
 
 ### 3. `ui-kbd[keys]` / ホストテキスト
 
 - `tokens` が唯一の正規入力です。
 - `keys` と host text の文字列再解釈経路は削除済みです。
-- docs / Storybook / browser test も `tokens` と単体キー補助 slot 契約へ揃えています。
+- docs / Storybook の通常導線と browser contract は `tokens` と単体キー補助 slot 契約へ揃えています。
 
 ### 4. 未分類リンクフェイルセーフ
 
