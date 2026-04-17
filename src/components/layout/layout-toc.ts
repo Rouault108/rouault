@@ -690,6 +690,15 @@ export class LayoutToc extends LitElement {
     }
 
     const label = activeLink.querySelector<HTMLElement>('.toc-link-label');
+    const renderedHeadingId =
+      label?.dataset['headingId']?.trim() ??
+      activeLink.getAttribute('href')?.replace(/^#/, '').trim() ??
+      '';
+
+    if (renderedHeadingId !== expectedActiveId) {
+      return false;
+    }
+
     return (label?.textContent.trim().length ?? 0) > 0;
   }
 
