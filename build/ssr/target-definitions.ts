@@ -6,12 +6,17 @@ import {
   DOCUMENT_CSS as HIGHLIGHT_DOCUMENT_CSS,
   DOCUMENT_STYLE_ID as HIGHLIGHT_DOCUMENT_STYLE_ID,
 } from '../../src/components/ui/highlight/highlight.js';
+import {
+  DOCUMENT_CSS as SYNTAX_FIELD_DOCUMENT_CSS,
+  DOCUMENT_STYLE_ID as SYNTAX_FIELD_DOCUMENT_STYLE_ID,
+} from '../../src/components/ui/syntax-field/syntax-field.js';
 
 export type SsrComponentProfile = 'shell' | 'note' | 'page';
 export type SsrComponentMode = 'shadow' | 'light' | 'none';
 
 export type SsrAdapterKind =
   | 'none'
+  | 'light-host-passthrough'
   | 'shadow-default'
   | 'shadow-article-header'
   | 'light-app-router'
@@ -165,6 +170,28 @@ export const SSR_COMPONENT_DEFINITIONS = [
     ssr: 'shadow',
     profiles: ['note'],
     adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'ui-syntax-card',
+    ssr: 'light',
+    profiles: ['note'],
+    adapterKind: 'light-host-passthrough',
+  },
+  {
+    tag: 'ui-syntax-section',
+    ssr: 'light',
+    profiles: ['note'],
+    adapterKind: 'light-host-passthrough',
+  },
+  {
+    tag: 'ui-syntax-field',
+    ssr: 'light',
+    profiles: ['note'],
+    adapterKind: 'light-host-passthrough',
+    documentStyle: {
+      id: SYNTAX_FIELD_DOCUMENT_STYLE_ID,
+      cssText: SYNTAX_FIELD_DOCUMENT_CSS,
+    },
   },
   {
     tag: 'ui-tabs',

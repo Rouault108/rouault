@@ -14,6 +14,9 @@ const REQUIRED_NOTE_CONTENT_TAGS: readonly string[] = [
   'ui-preview-sandbox',
   'ui-details',
   'ui-score',
+  'ui-syntax-card',
+  'ui-syntax-section',
+  'ui-syntax-field',
   'ui-tabs',
   'ui-translation',
 ] as const;
@@ -36,6 +39,86 @@ describe('component manifest / ssr targets', () => {
     for (const tagName of REQUIRED_NOTE_CONTENT_TAGS) {
       expect(SSR_TARGET_TAGS).toContain(tagName);
     }
+  });
+
+  it('syntax-card family を SSR component definitions に登録すること', () => {
+    const syntaxCardDefinition = SSR_COMPONENT_DEFINITIONS.find(
+      (definition: (typeof SSR_COMPONENT_DEFINITIONS)[number]) => definition.tag === 'ui-syntax-card',
+    );
+    const syntaxSectionDefinition = SSR_COMPONENT_DEFINITIONS.find(
+      (definition: (typeof SSR_COMPONENT_DEFINITIONS)[number]) =>
+        definition.tag === 'ui-syntax-section',
+    );
+    const syntaxFieldDefinition = SSR_COMPONENT_DEFINITIONS.find(
+      (definition: (typeof SSR_COMPONENT_DEFINITIONS)[number]) =>
+        definition.tag === 'ui-syntax-field',
+    );
+
+    expect(syntaxCardDefinition).toBeDefined();
+    expect(syntaxCardDefinition?.profiles).toContain('note');
+    expect(syntaxCardDefinition?.ssr).toBe('light');
+    expect(syntaxCardDefinition?.adapterKind).toBe('light-host-passthrough');
+
+    expect(syntaxSectionDefinition).toBeDefined();
+    expect(syntaxSectionDefinition?.profiles).toContain('note');
+    expect(syntaxSectionDefinition?.ssr).toBe('light');
+    expect(syntaxSectionDefinition?.adapterKind).toBe('light-host-passthrough');
+
+    expect(syntaxFieldDefinition).toBeDefined();
+    expect(syntaxFieldDefinition?.profiles).toContain('note');
+    expect(syntaxFieldDefinition?.ssr).toBe('light');
+    expect(syntaxFieldDefinition?.adapterKind).toBe('light-host-passthrough');
+    expect(syntaxFieldDefinition?.documentStyle?.id).toBe('ui-syntax-field-document-styles');
+    expect(syntaxFieldDefinition?.documentStyle?.cssText).toContain('ui-syntax-field');
+  });
+
+  it('syntax-card family の SSR が host と light DOM children を保つこと', async () => {
+    const cardRendered = await renderCustomElement(
+      'ui-syntax-card',
+      [
+        { name: 'kind', value: 'Method' },
+        { name: 'name', value: 'useEffect' },
+      ],
+      '<pre slot="signature">function useEffect(): void</pre><ui-syntax-section label="概要"><p>説明です。</p></ui-syntax-section>',
+    );
+    const rendered = await renderCustomElement(
+      'ui-syntax-field',
+      [
+        { name: 'name', value: 'effect' },
+        { name: 'type', value: '() => void' },
+        { name: 'required', value: '' },
+      ],
+      '<p>副作用本体です。</p>',
+    );
+
+    expect(cardRendered).toContain('<ui-syntax-card');
+    expect(cardRendered).not.toContain('shadowrootmode="open"');
+    expect(cardRendered).toContain('<ui-syntax-section');
+
+    expect(rendered).toContain('<ui-syntax-field');
+    expect(rendered).not.toContain('shadowrootmode="open"');
+    expect(rendered).toContain('副作用本体です。');
+  });
+
+  it('ui-syntax-card の SSR passthrough が plain pre signature を保持すること', async () => {
+    const rendered = await renderCustomElement(
+      'ui-syntax-card',
+      [
+        { name: 'kind', value: 'Method' },
+        { name: 'name', value: 'useEffect' },
+        { name: 'data-lang', value: 'ts' },
+        { name: 'heading-level', value: '3' },
+      ],
+      [
+        '<pre slot="signature" data-syntax-signature="true">function useEffect(): void</pre>',
+        '<ui-syntax-section label="戻り値"><p>void。</p></ui-syntax-section>',
+      ].join(''),
+    );
+
+    expect(rendered).toContain('<ui-syntax-card');
+    expect(rendered).not.toContain('shadowrootmode="open"');
+    expect(rendered).toContain('slot="signature"');
+    expect(rendered).toContain('data-syntax-signature="true"');
   });
 
   it('静的 code surface 化したため ui-code-block / ui-code-group を SSR target へ含めないこと', () => {

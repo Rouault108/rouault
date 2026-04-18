@@ -26,6 +26,7 @@ import '../../src/components/ui/preview-sandbox/preview-sandbox.js';
 import '../../src/components/ui/details/details.js';
 import '../../src/components/ui/highlight/highlight.js';
 import '../../src/components/ui/score/score.js';
+import '../../src/components/ui/syntax-card/syntax-card.js';
 import '../../src/components/ui/tabs/tabs.js';
 import '../../src/components/ui/translation/translation.js';
 import '../../src/components/not-found/not-found-page.js';
@@ -145,6 +146,14 @@ const renderAppRouterLightElement = async (
   </app-router>`;
 };
 
+const renderLightHostPassthroughElement = async (
+  tagName: string,
+  attributes: readonly SsrAttribute[],
+  innerHtml: string,
+): Promise<string> => {
+  return `<${tagName}${serializeAttributes(attributes)}>${innerHtml}</${tagName}>`;
+};
+
 const renderLayoutFooterLightElement = async (
   attributes: readonly SsrAttribute[],
 ): Promise<string> => {
@@ -185,6 +194,13 @@ const createSsrTargetAdapter = (definition: SsrComponentDefinition): SsrTargetAd
       return createSsrTargetAdapterResult(
         tag,
         renderArticleHeaderShadowElement,
+        definition.documentStyle,
+      );
+
+    case 'light-host-passthrough':
+      return createSsrTargetAdapterResult(
+        tag,
+        (attributes, innerHtml) => renderLightHostPassthroughElement(tag, attributes, innerHtml),
         definition.documentStyle,
       );
 

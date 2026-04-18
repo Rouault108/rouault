@@ -177,6 +177,18 @@ export const HYDRATION_REGISTRY = [
     activate: activateElementMethod,
   },
   {
+    tag: 'ui-syntax-card',
+    loader: () => import('../../components/ui/syntax-card/syntax-card.js'),
+  },
+  {
+    tag: 'ui-syntax-section',
+    loader: () => import('../../components/ui/syntax-card/syntax-section.js'),
+  },
+  {
+    tag: 'ui-syntax-field',
+    loader: () => import('../../components/ui/syntax-field/syntax-field.js'),
+  },
+  {
     tag: 'ui-tabs',
     loader: () => import('../../components/ui/tabs/tabs.js'),
   },

@@ -1,7 +1,7 @@
 ﻿import { html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 
-const DOCUMENT_STYLE_ID = 'ui-syntax-field-document-styles';
+export const DOCUMENT_STYLE_ID = 'ui-syntax-field-document-styles';
 
 export const DOCUMENT_CSS = `
 ui-syntax-field {

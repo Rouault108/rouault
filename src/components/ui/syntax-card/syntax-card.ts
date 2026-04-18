@@ -1,6 +1,7 @@
 ﻿import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import '../copy-button/copy-button';
+import '../syntax-field/syntax-field';
 import './syntax-section';
 
 type HeadingLevel = 2 | 3 | 4 | 5 | 6;

@@ -1,6 +1,7 @@
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import { MAIN_CONTENT_SELECTOR } from '../shared/navigation/main-landmark-contract.js';
 import type { AppRouter, AppRouterContentRenderedDetail } from './components/app/app-router.js';
+import './components/ui/syntax-card/syntax-card.js';
 import { HydrationScheduler } from './client/hydration/scheduler.js';
 import { initSearch } from './search/bootstrap.js';
 import { initTheme } from './theme/theme-manager.js';
