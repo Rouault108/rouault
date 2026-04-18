@@ -45,6 +45,12 @@ sidebar projection は server nav subtree を正本として、少なくとも�
 - `fixedBreakpoint`
 - `presentation`
 
+補足:
+
+- `heading` は表示用オプションです
+- 正規化後の `NavigationEnvelope.shellProjection.sidebar.heading` は `string | null` とします
+- note sidebar では `heading: null` を正規状態として許容し、landmark 名は `aria-label` 側で保持します
+
 ### `hydrationPlan`
 
 - route 由来の hydration planning 情報だけを持ちます

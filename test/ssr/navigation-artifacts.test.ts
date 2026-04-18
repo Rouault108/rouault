@@ -9,7 +9,7 @@ import {
 } from '../../build/navigation/emit-navigation-artifacts.js';
 
 describe('navigation artifacts', () => {
-  it('HTML から NavigationEnvelope を抽出できること', () => {
+  it('heading attribute が無い HTML からも NavigationEnvelope を抽出できること', () => {
     const html = `
 <!DOCTYPE html>
 <html lang="ja">
@@ -36,7 +36,6 @@ describe('navigation artifacts', () => {
           selected-id="notes/example"
           initial-expanded-ids='["notes"]'
           topology-revision="topology:example"
-          heading="ナビゲーション"
           fixed-breakpoint="1024"
           sidebar-id="note-primary"
           presentation="auto"
@@ -67,6 +66,7 @@ describe('navigation artifacts', () => {
     expect(envelope.shellProjection?.sidebar?.topologyRevision).to.equal('topology:example');
     expect(envelope.shellProjection?.sidebar?.navHtml).to.contain('data-sidebar-nav');
     expect(envelope.shellProjection?.sidebar?.navHtml).to.contain('data-current-branch="true"');
+    expect(envelope.shellProjection?.sidebar?.heading).to.equal(null);
     expect(envelope.hydrationPlan?.scopes).to.deep.equal([
       {
         scope: 'skip-link',
@@ -80,6 +80,45 @@ describe('navigation artifacts', () => {
         scope: 'note-content',
       },
     ]);
+  });
+
+  it('空白 heading attribute は artifact 抽出時に null へ正規化すること', () => {
+    const html = `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <title>Whitespace Heading - Rouault</title>
+</head>
+<body>
+  <div id="app">
+    <layout-header
+      note-layout
+      sidebar-enabled
+      toc-presence="absent"
+      breadcrumbs-json="[]"
+      corpora-json="[]"
+      current-corpus-key="all"
+    ></layout-header>
+    <app-router data-sidebar-presence="present">
+      <aside data-app-shell-sidebar-host>
+        <layout-sidebar
+          state-scope-id="note-navigation"
+          heading="   "
+          fixed-breakpoint="1024"
+          sidebar-id="note-primary"
+          presentation="auto"
+        ><nav data-sidebar-nav aria-label="ノートナビゲーション"><ul></ul></nav></layout-sidebar>
+      </aside>
+      <main id="main-content"><p>body</p></main>
+    </app-router>
+  </div>
+</body>
+</html>
+    `.trim();
+
+    const envelope = createNavigationEnvelopeFromHtml(html, '/tmp/example/index.html');
+
+    expect(envelope.shellProjection?.sidebar?.heading).to.equal(null);
   });
 
   it('dist 配下の HTML に対応する router artifact を出力すること', async () => {

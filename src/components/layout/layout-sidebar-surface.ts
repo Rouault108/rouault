@@ -11,7 +11,7 @@ import type {
 @customElement('layout-sidebar-surface')
 export class LayoutSidebarSurface extends LitElement {
   @property({ type: String })
-  heading = 'ナビゲーション';
+  heading = '';
 
   @property({ attribute: false })
   navMarkup = '';
@@ -46,7 +46,7 @@ export class LayoutSidebarSurface extends LitElement {
   };
 
   override render() {
-    const normalizedHeading = this.heading.trim();
+    const normalizedHeading = (this.heading).trim();
 
     return html`
       <ui-sidebar-shell
@@ -57,9 +57,13 @@ export class LayoutSidebarSurface extends LitElement {
         .returnFocusTarget=${this.returnFocusTarget}
         @ui-sidebar-request-close=${this._onSidebarRequestClose}
       >
-        <div class="sidebar-head" slot="header">
-          <h2 class="heading">${normalizedHeading}</h2>
-        </div>
+        ${normalizedHeading.length > 0
+          ? html`
+              <div class="sidebar-head" slot="header">
+                <h2 class="heading">${normalizedHeading}</h2>
+              </div>
+            `
+          : null}
         ${unsafeHTML(this.navMarkup)}
       </ui-sidebar-shell>
     `;

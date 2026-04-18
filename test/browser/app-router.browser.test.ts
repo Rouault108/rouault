@@ -5,6 +5,7 @@ import {
 } from '../../shared/navigation/navigation-envelope.js';
 import type { ShellProjectionSnapshot } from '../../shared/navigation/shell-projection.js';
 import '../../src/components/app/app-router.js';
+import '../../src/components/layout/layout-sidebar.js';
 import type { AppRouterContentRenderedDetail } from '../../src/components/app/app-router.js';
 import type { NavigationResult } from '../../src/router/router.js';
 import { createRouterContentHtml } from '../../src/router/router-content-html.js';
@@ -501,7 +502,6 @@ describe('app-router', () => {
             <layout-sidebar
               state-scope-id="note-navigation"
               selected-id="notes/old"
-              heading="ナビゲーション"
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
               presentation="auto"
@@ -588,6 +588,98 @@ describe('app-router', () => {
     expect(appHost.getAttribute('data-sidebar-presence')).to.equal('present');
   });
 
+  it('heading ありの sidebar から heading なしの projection へ遷移すると heading attribute を除去すること', async () => {
+    const shell = await fixture<HTMLElement>(html`
+      <div>
+        <layout-header current-corpus-key="all"></layout-header>
+        <app-router data-sidebar-presence="present">
+          <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
+            <layout-sidebar
+              state-scope-id="note-navigation"
+              selected-id="notes/old"
+              heading="古い見出し"
+              fixed-breakpoint="1024"
+              sidebar-id="note-primary"
+              presentation="fixed"
+              ><nav
+                data-sidebar-nav
+                aria-label="ノートナビゲーション"
+                data-topology-revision="topology:old"
+              >
+                <ul>
+                  <li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0">
+                    <a
+                      data-sidebar-nav-control
+                      data-sidebar-nav-link
+                      href="/notes/old"
+                      aria-current="page"
+                      ><span data-sidebar-nav-label>Old</span></a
+                    >
+                  </li>
+                </ul>
+              </nav></layout-sidebar
+            >
+          </aside>
+          <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
+        </app-router>
+      </div>
+    `);
+    host = shell.querySelector<AppRouterElement>('app-router');
+    const appHost = host;
+
+    if (!appHost) {
+      throw new Error('app-router が見つかりません');
+    }
+
+    await appHost.whenReady();
+
+    globalThis.fetch = () =>
+      Promise.resolve(
+        createEnvelopeResponse({
+          html: '<h1>Heading Removed</h1>',
+          title: 'Heading Removed',
+          description: 'heading removed',
+          shellProjection: {
+            header: {
+              breadcrumbs: [],
+              corpora: [],
+              currentCorpusKey: 'all',
+              noteLayout: false,
+              sidebarEnabled: true,
+              tocPresence: 'absent',
+            },
+            sidebar: {
+              present: true,
+              stateScopeId: 'note-navigation',
+              selectedId: 'notes/new',
+              initialExpandedIds: [],
+              topologyRevision: 'topology:new',
+              navHtml:
+                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
+              heading: null,
+              fixedBreakpoint: 1024,
+              sidebarId: 'note-primary',
+              presentation: 'fixed',
+            },
+          },
+        }),
+      );
+
+    await appHost.navigate('/notes/new');
+
+    await waitUntil(
+      () =>
+        appHost.querySelector('#main-content')?.textContent?.includes('Heading Removed') ?? false,
+      '本文が更新されること',
+    );
+
+    const currentSidebar = getPersistentSidebarHost(shell) as
+      | (HTMLElement & { readShellProjection?: () => { heading: string | null } })
+      | null;
+    expect(currentSidebar?.hasAttribute('heading')).to.equal(false);
+    expect(currentSidebar?.readShellProjection?.().heading).to.equal(null);
+  });
+
   it('sidebar を持たない遷移先では persistent host を hidden にすること', async () => {
     const shell = await fixture<HTMLElement>(html`
       <div>
@@ -597,7 +689,6 @@ describe('app-router', () => {
             <layout-sidebar
               state-scope-id="note-navigation"
               selected-id="notes/old"
-              heading="ナビゲーション"
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
               presentation="auto"

@@ -25,7 +25,6 @@ type Parse5Element = DefaultTreeAdapterMap['element'];
 
 const FALLBACK_CURRENT_CORPUS_KEY = 'all';
 const FALLBACK_SIDEBAR_ID = 'note-primary';
-const FALLBACK_SIDEBAR_HEADING = 'ナビゲーション';
 const FALLBACK_SIDEBAR_BREAKPOINT = 1024;
 
 const isElementNode = (node: Parse5Node): node is Parse5Element =>
@@ -251,7 +250,7 @@ const extractSidebarProjection = (document: Parse5Document): SidebarShellProject
     initialExpandedIds: parseStringArrayAttribute(getAttribute(sidebar, 'initial-expanded-ids')),
     topologyRevision: toOptionalString(getAttribute(sidebar, 'topology-revision')),
     navHtml: serializeInnerHtml(sidebar).trim() || null,
-    heading: toTrimmedString(getAttribute(sidebar, 'heading'), FALLBACK_SIDEBAR_HEADING),
+    heading: toOptionalString(getAttribute(sidebar, 'heading')),
     fixedBreakpoint: toNumber(
       getAttribute(sidebar, 'fixed-breakpoint'),
       FALLBACK_SIDEBAR_BREAKPOINT,

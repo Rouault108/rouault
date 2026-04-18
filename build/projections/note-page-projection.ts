@@ -45,7 +45,7 @@ export interface NotePageSidebarProjection {
   initialExpandedIds: readonly string[];
   topologyRevision: string;
   navHtml: string;
-  heading: string;
+  heading: string | null;
   fixedBreakpoint: string;
 }
 
@@ -287,7 +287,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
               ariaLabel: 'ノートナビゲーション',
               topologyRevision: input.navigation.topologyRevision,
             }),
-            heading: 'ナビゲーション',
+            heading: null,
             fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE,
           },
         }

@@ -133,7 +133,7 @@ note sidebar の public DOM 契約は次を正本とします。
 - `initial-expanded-ids`
 - `topology-revision`
 - `sidebar-id`
-- `heading`
+- `heading`（optional。未指定時は visible heading を描画しない）
 - `fixed-breakpoint`
 - `presentation`
 
@@ -141,6 +141,9 @@ note sidebar の public DOM 契約は次を正本とします。
 
 補足:
 
+- note sidebar では `heading` を省略してよい。省略時、landmark 名は `aria-label` 側を正本とし、visible heading は描画しない
+- `heading` は表示用オプションであり、navigation artifact / shell projection では `null` を許容する
+- DOM attribute 境界では `null` / `undefined` を attribute absence として扱い、component 内部では必要に応じて空文字へ正規化する
 - note 間遷移では `state-scope-id="note-navigation"` を維持する
 - route 遷移では host を再生成せず、必要時のみ nav subtree と route 由来属性を更新する
 - sidebar host の DOM 実体は app shell 上で再生成しない

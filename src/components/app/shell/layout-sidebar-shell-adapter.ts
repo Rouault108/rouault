@@ -61,7 +61,7 @@ export const readSidebarShellSnapshot = (sidebar: Element): SidebarShellSnapshot
   initialExpandedIds: parseStringArrayAttribute(sidebar.getAttribute('initial-expanded-ids')),
   topologyRevision: toOptionalString(sidebar.getAttribute('topology-revision')),
   navHtml: sidebar.innerHTML.trim() || null,
-  heading: toTrimmedString(sidebar.getAttribute('heading'), 'ナビゲーション'),
+  heading: toOptionalString(sidebar.getAttribute('heading')),
   fixedBreakpoint: toNumber(sidebar.getAttribute('fixed-breakpoint'), 1024),
   presentation:
     sidebar.getAttribute('presentation') === 'fixed' ||
@@ -116,14 +116,16 @@ export const applySidebarSnapshot = (
     currentSidebar.setAttribute('topology-revision', snapshot.topologyRevision);
   }
 
-  currentSidebar.setAttribute('heading', snapshot.heading);
+  if (snapshot.heading === null) {
+    currentSidebar.removeAttribute('heading');
+  } else {
+    currentSidebar.setAttribute('heading', snapshot.heading);
+  }
   currentSidebar.setAttribute('fixed-breakpoint', String(snapshot.fixedBreakpoint));
   currentSidebar.setAttribute('sidebar-id', snapshot.sidebarId);
   currentSidebar.setAttribute('presentation', snapshot.presentation);
 
-  if (typeof snapshot.navHtml === 'string') {
-    currentSidebar.innerHTML = snapshot.navHtml;
-  }
+  currentSidebar.innerHTML = typeof snapshot.navHtml === 'string' ? snapshot.navHtml : '';
 };
 
 export const createLayoutSidebarShellAdapter = (): ShellAdapter => ({

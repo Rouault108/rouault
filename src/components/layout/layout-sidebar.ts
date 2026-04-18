@@ -72,7 +72,7 @@ export class LayoutSidebar extends LitElement {
   topologyRevision: string | null = null;
 
   @property({ type: String })
-  heading = 'ナビゲーション';
+  heading = '';
 
   @property({ type: Number, attribute: 'fixed-breakpoint' })
   fixedBreakpoint = NOTE_SIDEBAR_FIXED_BREAKPOINT;
@@ -118,6 +118,9 @@ export class LayoutSidebar extends LitElement {
   applyShellProjection(snapshot: SidebarShellProjection | null): void {
     if (snapshot === null) {
       this.hidden = true;
+      this.heading = '';
+      this.removeAttribute('heading');
+      this._navMarkup = '';
       layoutSidebarController.close(this._resolveSidebarId());
       this._syncSurfaceMount();
       this._syncSurfaceProps();
@@ -130,7 +133,7 @@ export class LayoutSidebar extends LitElement {
     this.selectedId = snapshot.selectedId;
     this.initialExpandedIdsJson = JSON.stringify(snapshot.initialExpandedIds);
     this.topologyRevision = snapshot.topologyRevision;
-    this.heading = snapshot.heading;
+    this.heading = this._normalizeHeading(snapshot.heading);
     this.fixedBreakpoint = snapshot.fixedBreakpoint;
     this.sidebarId = snapshot.sidebarId;
     this.presentation = snapshot.presentation;
@@ -151,7 +154,11 @@ export class LayoutSidebar extends LitElement {
       this.setAttribute('topology-revision', snapshot.topologyRevision);
     }
 
-    this.setAttribute('heading', snapshot.heading);
+    if (snapshot.heading === null) {
+      this.removeAttribute('heading');
+    } else {
+      this.setAttribute('heading', snapshot.heading);
+    }
     this.setAttribute('fixed-breakpoint', String(snapshot.fixedBreakpoint));
     this.setAttribute('sidebar-id', snapshot.sidebarId);
     this.setAttribute('presentation', snapshot.presentation);
@@ -172,7 +179,7 @@ export class LayoutSidebar extends LitElement {
       initialExpandedIds: this._parseInitialExpandedIds(this.initialExpandedIdsJson),
       topologyRevision: this.topologyRevision,
       navHtml: this._readServerNavMarkup(),
-      heading: this.heading,
+      heading: this._readHeadingProjection(),
       fixedBreakpoint: this.fixedBreakpoint,
       presentation: this.presentation,
     };
@@ -366,6 +373,16 @@ export class LayoutSidebar extends LitElement {
     return normalized.length > 0 ? normalized : 'global';
   }
 
+  private _normalizeHeading(value: string | null | undefined): string {
+    const normalized = value?.trim() ?? '';
+    return normalized.length > 0 ? normalized : '';
+  }
+
+  private _readHeadingProjection(): string | null {
+    const normalized = this._normalizeHeading(this.heading);
+    return normalized.length > 0 ? normalized : null;
+  }
+
   private _resolveStorage(): Storage | null {
     if (typeof window === 'undefined') {
       return null;
@@ -543,7 +560,7 @@ export class LayoutSidebar extends LitElement {
       return;
     }
 
-    surface.heading = this.heading;
+    surface.heading = this._normalizeHeading(this.heading);
     surface.navMarkup = this._navMarkup;
     surface.state = this._sidebarSnapshot.state;
     surface.mode = this._sidebarSnapshot.mode;

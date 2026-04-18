@@ -13,11 +13,12 @@ import type { TocPresence } from '../../shared/note/toc-presence.js';
 
 type SidebarShellProjectionInput = Omit<
   SidebarShellProjection,
-  'initialExpandedIds' | 'topologyRevision' | 'navHtml'
+  'initialExpandedIds' | 'topologyRevision' | 'navHtml' | 'heading'
 > & {
   initialExpandedIds?: string[];
   topologyRevision?: string | null;
   navHtml?: string | null;
+  heading?: string | null;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -50,6 +51,15 @@ const isHeaderShellProjection = (value: unknown): value is HeaderShellProjection
 const isSidebarPresentation = (value: unknown): value is SidebarShellProjection['presentation'] =>
   value === 'auto' || value === 'fixed' || value === 'overlay';
 
+const normalizeOptionalString = (value: string | null | undefined): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+};
+
 const isSidebarShellProjection = (value: unknown): value is SidebarShellProjectionInput => {
   if (!isRecord(value)) {
     return false;
@@ -67,7 +77,7 @@ const isSidebarShellProjection = (value: unknown): value is SidebarShellProjecti
       value['topologyRevision'] === null ||
       isString(value['topologyRevision'])) &&
     (value['navHtml'] === undefined || value['navHtml'] === null || isString(value['navHtml'])) &&
-    isString(value['heading']) &&
+    (value['heading'] === undefined || value['heading'] === null || isString(value['heading'])) &&
     typeof value['fixedBreakpoint'] === 'number' &&
     isSidebarPresentation(value['presentation'])
   );
@@ -81,9 +91,9 @@ const normalizeSidebarShellProjection = (
   stateScopeId: value.stateScopeId,
   selectedId: value.selectedId,
   initialExpandedIds: value.initialExpandedIds ?? [],
-  topologyRevision: value.topologyRevision ?? null,
-  navHtml: value.navHtml ?? null,
-  heading: value.heading,
+  topologyRevision: normalizeOptionalString(value.topologyRevision),
+  navHtml: normalizeOptionalString(value.navHtml),
+  heading: normalizeOptionalString(value.heading),
   fixedBreakpoint: value.fixedBreakpoint,
   presentation: value.presentation,
 });

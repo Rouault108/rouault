@@ -226,7 +226,6 @@ export class BaseLayout {
               : serializeHtmlAttributes([
                   { name: 'sidebar-id', value: NOTE_LAYOUT_SIDEBAR_ID },
                   { name: 'presentation', value: 'auto' },
-                  { name: 'heading', value: 'ナビゲーション' },
                   { name: 'data-hydration-capability', value: 'interactive' },
                   { name: 'data-hydration-trigger', value: 'initial' },
                 ])

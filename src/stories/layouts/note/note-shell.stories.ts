@@ -63,7 +63,6 @@ const renderNoteShell = () =>
                       id="story-note-sidebar"
                       state-scope-id="note-navigation"
                       selected-id="story-shell"
-                      heading="ナビゲーション"
                       fixed-breakpoint="1024"
                       >${unsafeHTML(sidebarNavMarkup)}</layout-sidebar
                     >
@@ -128,6 +127,8 @@ const meta: Meta = {
       description: {
         component: `
 NoteLayout 相当の 3 カラム構造を Storybook 上で確認するための story です。
+
+note sidebar は visible heading を持たず、landmark 名は nav / aside 側のラベルで保持します。
 
 このファイルは **docs / smoke / 手動確認** に限定します。  
 note shell の SSR 構造は \`test/ssr/note-layout.test.ts\`、  

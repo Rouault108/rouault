@@ -24,7 +24,7 @@ export interface SidebarShellProjection {
   initialExpandedIds: string[];
   topologyRevision: string | null;
   navHtml: string | null;
-  heading: string;
+  heading: string | null;
   fixedBreakpoint: number;
   presentation: 'auto' | 'fixed' | 'overlay';
 }

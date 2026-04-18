@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import './layout-sidebar';
 import type { LayoutSidebar } from './layout-sidebar';
 
@@ -36,19 +37,19 @@ const sampleNavMarkup = `
 const renderSidebar = ({
   id,
   selectedId,
-  heading = 'ナビゲーション',
+  heading,
   fixedBreakpoint,
 }: {
   id: string;
   selectedId: string;
-  heading?: string;
+  heading?: string | null;
   fixedBreakpoint?: number;
 }) => html`
   <div style="min-height: 420px;">
     <layout-sidebar
       id="${id}"
       selected-id="${selectedId}"
-      heading="${heading}"
+      heading=${ifDefined(heading ?? undefined)}
       ${fixedBreakpoint === undefined ? '' : html`fixed-breakpoint="${String(fixedBreakpoint)}"`}
       >${unsafeHTML(sampleNavMarkup)}</layout-sidebar
     >
@@ -65,6 +66,8 @@ const meta: Meta<LayoutSidebar> = {
       description: {
         component: `
 layout-sidebar の docs / 手動確認用 story です。
+
+note sidebar は visible heading を既定で持ちません。必要な場合だけ \`heading\` を明示します。
 
 このファイルは **Storybook 上で contract を判定しません**。  
 expandedIds の永続化と overlay での selection collapse は
@@ -109,7 +112,29 @@ expandedIds の保存そのものの合否は \`test/browser/layout-sidebar.brow
     renderSidebar({
       id: 'layout-sidebar-persist',
       selectedId: 'music/classical/beethoven/symphony-9',
-      heading: 'ナビゲーション',
+    }),
+};
+
+export const HeadingOptInManual: Story = {
+  tags: ['manual-only'],
+  parameters: {
+    docs: {
+      description: {
+        story: `
+手動確認用 story です。
+
+確認内容:
+- \`heading\` を明示した場合のみ補助ヘッダーが描画されること
+- heading を省略した既定状態と見え方の責務差分が明確であること
+        `,
+      },
+    },
+  },
+  render: () =>
+    renderSidebar({
+      id: 'layout-sidebar-heading-opt-in',
+      selectedId: 'music/classical/beethoven/symphony-9',
+      heading: '現在地',
     }),
 };
 

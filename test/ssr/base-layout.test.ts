@@ -4,7 +4,7 @@ import { BaseLayout } from '../../src/layouts/BaseLayout.11ty.js';
 import { loadBuildMetadataData } from '../../src/data/buildMetadata.js';
 
 describe('BaseLayout', () => {
-  it('reader note では header に sidebar-enabled を出力すること', () => {
+  it('reader note では header に sidebar-enabled を出力し、既定 heading を注入しないこと', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({
       content: '<p>本文</p>',
@@ -21,7 +21,7 @@ describe('BaseLayout', () => {
           topologyRevision: 'reader-note-topology',
           navHtml:
             '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="reader-note-topology"><ul><li data-node-id="reader-note" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/reader-note" aria-current="page"><span data-sidebar-nav-label>Reader Note</span></a></li></ul></nav>',
-          heading: 'ナビゲーション',
+          heading: null,
           fixedBreakpoint: '1024',
         },
         toc: {
@@ -57,6 +57,7 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('initial-expanded-ids="[]"');
     expect(rendered).toContain('topology-revision="reader-note-topology"');
     expect(rendered).toContain('<nav data-sidebar-nav');
+    expect(rendered).not.toContain('heading="ナビゲーション"');
   });
 
   it('testing note では header に sidebar-enabled を出力しないこと', () => {

@@ -1,5 +1,6 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import type { LayoutSidebar } from '../../src/components/layout/layout-sidebar.js';
 import {
   DEFAULT_LAYOUT_SIDEBAR_ID,
@@ -215,23 +216,31 @@ const waitForSidebarStateChange = async (
   await settle(host);
 };
 
+const getSidebarHeader = (host: LayoutSidebar): HTMLElement | null =>
+  getSidebarDomRoot(host).querySelector<HTMLElement>('.sidebar-head');
+
 const renderSidebarFixture = (options: {
   presentation?: 'auto' | 'fixed' | 'overlay';
   stateScopeId?: string;
   selectedId?: string;
   initialExpandedIds?: string;
   markup?: string;
-}) => html`
-  <layout-sidebar
-    presentation="${options.presentation ?? 'overlay'}"
-    state-scope-id="${options.stateScopeId ?? 'note-navigation'}"
-    selected-id="${options.selectedId ?? 'music/classical/beethoven/symphony-9'}"
-    initial-expanded-ids="${options.initialExpandedIds ?? '["music","music/classical"]'}"
-    heading="ナビゲーション"
-  >
-    ${unsafeHTML(options.markup ?? sampleNavMarkup)}
-  </layout-sidebar>
-`;
+  heading?: string | null;
+}) => {
+  const heading = options.heading ?? undefined;
+
+  return html`
+    <layout-sidebar
+      presentation="${options.presentation ?? 'overlay'}"
+      state-scope-id="${options.stateScopeId ?? 'note-navigation'}"
+      selected-id="${options.selectedId ?? 'music/classical/beethoven/symphony-9'}"
+      initial-expanded-ids="${options.initialExpandedIds ?? '["music","music/classical"]'}"
+      heading=${ifDefined(heading)}
+    >
+      ${unsafeHTML(options.markup ?? sampleNavMarkup)}
+    </layout-sidebar>
+  `;
+};
 
 describe('layout-sidebar browser contract', () => {
   afterEach(() => {
@@ -256,6 +265,25 @@ describe('layout-sidebar browser contract', () => {
       expect(
         getControl(host, 'music/classical/beethoven/symphony-9')?.getAttribute('aria-current'),
       ).to.equal('page');
+    } finally {
+      media.restore();
+    }
+  });
+
+  it('heading 未指定では header slot を描画せず、projection でも null を返すこと', async () => {
+    const media = mockMatchMedia(true);
+
+    try {
+      await ensureLayoutSidebarDefined();
+
+      const host = await fixture<LayoutSidebar>(
+        renderSidebarFixture({ presentation: 'fixed', heading: null }),
+      );
+      await settle(host);
+
+      expect(host.hasAttribute('heading')).to.equal(false);
+      expect(host.readShellProjection().heading).to.equal(null);
+      expect(getSidebarHeader(host)).to.equal(null);
     } finally {
       media.restore();
     }
@@ -459,7 +487,7 @@ describe('layout-sidebar browser contract', () => {
         initialExpandedIds: ['music', 'music/classical'],
         topologyRevision: 'topology:sample-v2',
         navHtml: sampleNavMarkupWithoutClassical,
-        heading: 'ナビゲーション',
+        heading: null,
         fixedBreakpoint: 1024,
         sidebarId: 'note-primary',
         presentation: 'overlay',
@@ -471,6 +499,46 @@ describe('layout-sidebar browser contract', () => {
         'music/classical group after nav swap',
       );
       expect(branchGroup.hidden).to.equal(false);
+      expect(host.hasAttribute('heading')).to.equal(false);
+      expect(host.readShellProjection().heading).to.equal(null);
+      expect(getSidebarHeader(host)).to.equal(null);
+    } finally {
+      media.restore();
+    }
+  });
+
+  it('applyShellProjection で heading:null を受けると heading attribute と header DOM を除去すること', async () => {
+    const media = mockMatchMedia(true);
+
+    try {
+      await ensureLayoutSidebarDefined();
+
+      const host = await fixture<LayoutSidebar>(
+        renderSidebarFixture({ presentation: 'fixed', heading: '既存見出し' }),
+      );
+      await settle(host);
+
+      expect(host.getAttribute('heading')).to.equal('既存見出し');
+      expect(host.readShellProjection().heading).to.equal('既存見出し');
+      expect(getSidebarHeader(host)?.textContent).to.contain('既存見出し');
+
+      host.applyShellProjection?.({
+        present: true,
+        stateScopeId: 'note-navigation',
+        selectedId: 'music/classical/beethoven/symphony-9',
+        initialExpandedIds: ['music', 'music/classical'],
+        topologyRevision: 'topology:sample',
+        navHtml: sampleNavMarkup,
+        heading: null,
+        fixedBreakpoint: 1024,
+        sidebarId: 'note-primary',
+        presentation: 'fixed',
+      });
+      await settle(host);
+
+      expect(host.hasAttribute('heading')).to.equal(false);
+      expect(host.readShellProjection().heading).to.equal(null);
+      expect(getSidebarHeader(host)).to.equal(null);
     } finally {
       media.restore();
     }

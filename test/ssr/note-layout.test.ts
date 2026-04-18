@@ -14,7 +14,7 @@ const createProjection = (
     topologyRevision: '[{"id":"note","kind":"leaf","label":"Note","href":"/notes/note"}]',
     navHtml:
       '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="[{&quot;id&quot;:&quot;note&quot;,&quot;kind&quot;:&quot;leaf&quot;,&quot;label&quot;:&quot;Note&quot;,&quot;href&quot;:&quot;/notes/note&quot;}]"><ul><li data-node-id="note" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/note" aria-current="page"><span data-sidebar-nav-label>Note</span></a></li></ul></nav>',
-    heading: 'ナビゲーション',
+    heading: null,
     fixedBreakpoint: '1024',
   };
 
@@ -117,7 +117,7 @@ describe('NoteLayout', () => {
           topologyRevision: '[{"id":"note","kind":"leaf","label":"<Unsafe>","href":"/notes/note"}]',
           navHtml:
             '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="unsafe"><ul><li data-node-id="note" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/note" aria-current="page"><span data-sidebar-nav-label>&lt;Unsafe&gt;</span></a></li></ul></nav>',
-          heading: 'ナビゲーション',
+          heading: null,
           fixedBreakpoint: '1024',
         },
         articleHeader: {
