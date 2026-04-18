@@ -506,6 +506,84 @@ frontmatter metadata には次の制約を適用します。
 - 未登録 `ref` と循環参照は build-time error とします。
 - 現状の shared example source は `examples/snippets/**` と `examples/manifests/testing-examples.ts` により管理します。
 
+### 5.18 `::syntax-card`
+
+`syntax-card` family は、構文シグネチャと補足説明節を authoring 上で明示的に表現する compound directive family です。
+
+導入対象は次の 5 要素です。
+
+- `::syntax-card`
+- `::syntax-signature`
+- `::syntax-section`
+- `::syntax-fields`
+- `::syntax-field`
+
+#### `::syntax-card`
+
+許可属性:
+
+- `kind`
+- `name`
+- `lang`
+- `heading-level`
+
+規則:
+
+- `name` は必須です。
+- `heading-level` は 2〜6 の整数のみ許可します。
+- 直下には `syntax-signature` ちょうど 1 個と `syntax-section` 0 個以上のみを許可します。
+- paragraph / list / blockquote / table / 他 directive の直置きは許可しません。
+
+#### `::syntax-signature`
+
+規則:
+
+- `syntax-card` 直下でのみ使用できます。
+- 子は fenced code block ちょうど 1 個のみ許可します。
+- fenced code block の `meta` は v1 では禁止します。
+- `syntax-card.lang` が未指定なら fenced code の `lang` を card 側 `data-lang` 解決に用います。
+- 両方が指定され、正規化後の値が不一致なら build-time error とします。
+
+#### `::syntax-section`
+
+許可属性:
+
+- `label`
+
+規則:
+
+- `label` は必須です。
+- `syntax-card` 直下でのみ使用できます。
+- 通常 Markdown block を含めてよいものとします。
+- `syntax-fields` を含めてよいものとします。
+- `syntax-field` の直置きは許可しません。
+
+#### `::syntax-fields`
+
+規則:
+
+- `syntax-section` 直下でのみ使用できます。
+- 子は `syntax-field` 1 個以上のみ許可します。
+- paragraph / list / 他 directive の混在は許可しません。
+
+#### `::syntax-field`
+
+許可属性:
+
+- `name`
+- `type`
+- `required`
+- `default`
+
+規則:
+
+- `name` は必須です。
+- `required` は `true | false` のみ許可します。
+- `type` と `default` は trim 後空文字なら未指定として扱います。
+- v1 では `required="true"` と `default` の併用を禁止します。
+- `syntax-fields` 直下でのみ使用できます。
+- 子には説明文として通常 Markdown block を許可します。
+
 ---
 
 ## 6. link-card metadata 解決規則

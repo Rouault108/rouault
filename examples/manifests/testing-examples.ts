@@ -186,6 +186,11 @@ export const TESTING_EXAMPLES = {
     markdownPath: 'examples/snippets/code/core.md',
     testingArea: 'code',
   },
+  'code/syntax-card': {
+    kind: 'markdown-file',
+    markdownPath: 'examples/snippets/code/syntax-card.md',
+    testingArea: 'code',
+  },
   'interactive/callout-details': {
     kind: 'markdown-file',
     markdownPath: 'examples/snippets/interactive/callout-details.md',

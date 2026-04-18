@@ -82,11 +82,25 @@
 
 `ui-syntax-card` の正規入力は、`signature` スロットに単一の `<pre>` を置き、既定スロットに `ui-syntax-section` を 0 件以上置く構成です。ここでいう「正規入力」は、執筆時およびレビュー時に満たすべき authoring contract を指します。
 
-`signature` スロットの標準構造は `<pre><code>...</code></pre>` です。コピー値は `<code>` の `textContent` を優先し、`<code>` がない場合は `<pre>` 自身の `textContent` を使用します。
+`signature` スロットの正規入力は単一の `<pre>` です。Markdown directive family からの正規出力も `<pre slot="signature" data-syntax-signature="true">...</pre>` とします。コピー値は `<code>` 子があればその `textContent` を優先し、無ければ `<pre>` 自身の `textContent` を使用します。
 
 現行実装は、不正構成に対して例外を送出せず、安全側に縮退します。`signature` スロットに `<pre>` が 0 件、複数件、または空白のみのコードしか存在しない場合、コピーは無効化されます。既定スロットに `ui-syntax-section` 以外の要素が混在していても、それらは詳細領域の正規入力としては扱われません。
 
 したがって、利用者は不正構成が実行時に自動修正または強制排除されることを期待してはなりません（MUST NOT）。本コンポーネントが保証するのは、正規入力の意味と、不正入力に対する安全側縮退までです。
+
+#### Markdown authoring grammar との関係
+
+`ui-syntax-card` の canonical authoring input は raw custom element ではなく、`syntax-card` / `syntax-signature` / `syntax-section` / `syntax-fields` / `syntax-field` から成る directive family です。
+
+この family の最終出力契約は次のとおりです。
+
+- `syntax-card` → `ui-syntax-card`
+- `syntax-signature` → `pre[slot="signature"][data-syntax-signature="true"]`
+- `syntax-section` → `ui-syntax-section`
+- `syntax-fields` → `dl`
+- `syntax-field` → `ui-syntax-field`
+
+v1 では `syntax-signature` は通常 code block ではなく、syntax family の一部として扱います。したがって、signature 領域には Shiki ハイライトや standalone code surface を適用しません。
 
 ### 派生状態契約
 

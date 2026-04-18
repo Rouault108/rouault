@@ -139,6 +139,31 @@ export interface TranslationOverlayPayload {
   readonly surface: TranslationOverlaySurface;
 }
 
+export interface SyntaxCardPayload {
+  readonly kind: 'syntax-card';
+  readonly cardKind?: string | undefined;
+  readonly name: string;
+  readonly lang?: string | undefined;
+  readonly headingLevel?: number | undefined;
+}
+
+export interface SyntaxSectionPayload {
+  readonly kind: 'syntax-section';
+  readonly label: string;
+}
+
+export interface SyntaxFieldsPayload {
+  readonly kind: 'syntax-fields';
+}
+
+export interface SyntaxFieldPayload {
+  readonly kind: 'syntax-field';
+  readonly name: string;
+  readonly type?: string | undefined;
+  readonly required: boolean;
+  readonly defaultValue?: string | undefined;
+}
+
 export type DirectivePayload =
   | CalloutPayload
   | CodeGroupPayload
@@ -154,7 +179,11 @@ export type DirectivePayload =
   | TabPayload
   | PanelPayload
   | TranslationPayload
-  | TranslationOverlayPayload;
+  | TranslationOverlayPayload
+  | SyntaxCardPayload
+  | SyntaxSectionPayload
+  | SyntaxFieldsPayload
+  | SyntaxFieldPayload;
 
 export interface CodeBlockPayload {
   readonly filename?: string | undefined;

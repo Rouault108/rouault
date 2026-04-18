@@ -157,6 +157,46 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(secondStandalone?.properties?.['data-hydration-trigger']).toBeUndefined();
   });
 
+it('syntax-signature 用の plain pre[data-syntax-signature] は通常 code surface へ変換しないこと', async () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-syntax-card',
+          properties: {},
+          children: [
+            {
+              type: 'element',
+              tagName: 'pre',
+              properties: {
+                slot: 'signature',
+                'data-syntax-signature': 'true',
+              },
+              children: [{ type: 'text', value: 'function useEffect(): void' }],
+            },
+          ],
+        },
+        createCodeFence('language-ts', 'const standalone = 1;'),
+      ],
+    };
+
+    await rehypeShikiCodeBlocks()(tree);
+
+    const syntaxCard = tree.children?.[0];
+    const signaturePre = syntaxCard?.children?.[0];
+    expect(syntaxCard?.tagName).toBe('ui-syntax-card');
+    expect(signaturePre?.tagName).toBe('pre');
+    expect(signaturePre?.properties?.['data-syntax-signature']).toBe('true');
+    expect(signaturePre?.properties?.['data-code-block']).toBeUndefined();
+    expect(readNodeClassList(signaturePre)).not.toContain('shiki');
+    expect(signaturePre?.children?.[0]?.value).toBe('function useEffect(): void');
+
+    const standaloneRoot = tree.children?.[1];
+    expect(standaloneRoot?.tagName).toBe('div');
+    expect(standaloneRoot?.properties?.['data-code-block-root']).toBe('true');
+  });
+
   it('未知言語は text へフォールバックする', async () => {
     const tree: HastNode = {
       type: 'root',

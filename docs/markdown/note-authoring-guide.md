@@ -765,6 +765,56 @@ x^2^
 ::preview-sandbox{title="古い書き方" allow-js="true" height="160"}
 ```
 
+## 9.7 `syntax-card` の書き方
+
+API リファレンスや構文メモのように、代表シグネチャと説明節を分けて見せたい場合は `syntax-card` family を使います。
+
+最小例:
+
+````md
+::syntax-card{name="useEffect" kind="Method" lang="ts" heading-level="3"}
+::syntax-signature
+```ts
+function useEffect(effect: () => void | (() => void), deps?: readonly unknown[]): void
+```
+::
+
+::syntax-section{label="説明"}
+React の副作用を宣言します。
+::
+::
+````
+
+field を併用する例:
+
+````md
+::syntax-card{name="useEffect" kind="Method" lang="ts"}
+::syntax-signature
+```ts
+function useEffect(effect: () => void | (() => void), deps?: readonly unknown[]): void
+```
+::
+
+::syntax-section{label="パラメータ"}
+::syntax-fields
+::syntax-field{name="effect" type="() => void | (() => void)" required="true"}
+副作用本体。
+::
+
+::syntax-field{name="deps" type="readonly unknown[]" default="[]"}
+依存配列。
+::
+::
+::
+````
+
+注意点:
+
+- `syntax-signature` の中には fenced code block を 1 個だけ書きます。
+- signature の code fence に `meta` は書けません。
+- `syntax-field` は必ず `syntax-fields` の中に入れます。
+- `syntax-card.lang` と signature fence の `lang` を両方書く場合は一致していなければなりません。
+
 ---
 
 ## 10. 書き分けの目安

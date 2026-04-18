@@ -11,7 +11,7 @@ type HeadingLevel = 2 | 3 | 4 | 5 | 6;
  * Signature（コード）と Members（詳細）を分離し、
  * 多様な言語要素を統一レイアウトで提示します。
  *
- * signature スロットには素の <pre><code> を直接配置します。
+ * signature スロットには素の <pre> を直接配置します。
  */
 @customElement('ui-syntax-card')
 export class SyntaxCard extends LitElement {

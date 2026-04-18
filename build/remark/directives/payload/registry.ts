@@ -5,6 +5,7 @@ import { attachImagePayloads } from './normalize-image-payload.js';
 import { assertAllowedAttributes } from './normalize-helpers.js';
 import { normalizePreviewPayload } from './normalize-preview-registry.js';
 import { normalizeSurfacePayload } from './normalize-surface-registry.js';
+import { normalizeSyntaxPayloadByNode } from './normalize-syntax-payload.js';
 import { normalizeTabsPayloadByNode } from './normalize-tabs-registry.js';
 import { normalizeTranslationPayloadByNode } from './normalize-translation-registry.js';
 import type { DirectivePayload } from './payload-types.js';
@@ -37,7 +38,8 @@ const normalizeDirectivePayload = (
       node.children ?? [],
       node,
       file,
-    )
+    ) ??
+    normalizeSyntaxPayloadByNode(directiveState.name, directiveState.rawAttributes, node, file)
   );
 };
 

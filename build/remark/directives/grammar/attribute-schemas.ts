@@ -76,4 +76,20 @@ export const directiveAttributeSchemas: Record<DirectiveName, DirectiveAttribute
   panel: {
     allowedKeys: [],
   },
+
+  'syntax-card': {
+    allowedKeys: ['kind', 'name', 'lang', 'heading-level'],
+  },
+  'syntax-signature': {
+    allowedKeys: [],
+  },
+  'syntax-section': {
+    allowedKeys: ['label'],
+  },
+  'syntax-fields': {
+    allowedKeys: [],
+  },
+  'syntax-field': {
+    allowedKeys: ['name', 'type', 'required', 'default'],
+  },
 };

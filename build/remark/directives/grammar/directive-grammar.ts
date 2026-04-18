@@ -119,6 +119,42 @@ export const directiveGrammar: Record<DirectiveName, DirectiveGrammarDescriptor>
     attributeSchema: directiveAttributeSchemas.panel,
     structuralRule: directiveStructuralRules.panel,
   },
+
+  'syntax-card': {
+    name: 'syntax-card',
+    kind: 'container',
+    nodeType: 'rouaultDirectiveSyntaxCard',
+    attributeSchema: directiveAttributeSchemas['syntax-card'],
+    structuralRule: directiveStructuralRules['syntax-card'],
+  },
+  'syntax-signature': {
+    name: 'syntax-signature',
+    kind: 'container',
+    nodeType: 'rouaultDirectiveSyntaxSignature',
+    attributeSchema: directiveAttributeSchemas['syntax-signature'],
+    structuralRule: directiveStructuralRules['syntax-signature'],
+  },
+  'syntax-section': {
+    name: 'syntax-section',
+    kind: 'container',
+    nodeType: 'rouaultDirectiveSyntaxSection',
+    attributeSchema: directiveAttributeSchemas['syntax-section'],
+    structuralRule: directiveStructuralRules['syntax-section'],
+  },
+  'syntax-fields': {
+    name: 'syntax-fields',
+    kind: 'container',
+    nodeType: 'rouaultDirectiveSyntaxFields',
+    attributeSchema: directiveAttributeSchemas['syntax-fields'],
+    structuralRule: directiveStructuralRules['syntax-fields'],
+  },
+  'syntax-field': {
+    name: 'syntax-field',
+    kind: 'container',
+    nodeType: 'rouaultDirectiveSyntaxField',
+    attributeSchema: directiveAttributeSchemas['syntax-field'],
+    structuralRule: directiveStructuralRules['syntax-field'],
+  },
 };
 
 export const supportedDirectiveNames = Object.keys(directiveGrammar) as DirectiveName[];

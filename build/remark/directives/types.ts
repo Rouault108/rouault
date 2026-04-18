@@ -56,7 +56,12 @@ export type DirectiveName =
   | 'preview'
   | 'toolbar'
   | 'tab'
-  | 'panel';
+  | 'panel'
+  | 'syntax-card'
+  | 'syntax-signature'
+  | 'syntax-section'
+  | 'syntax-fields'
+  | 'syntax-field';
 
 export interface DirectiveMarker {
   readonly name: DirectiveName;

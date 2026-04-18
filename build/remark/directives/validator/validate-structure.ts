@@ -1,6 +1,15 @@
+import { pickOptional } from '../parser-core/parse-attributes.js';
 import { getDirectiveDescriptor, getDirectiveNameFromNode } from '../grammar/directive-grammar.js';
 import { getDirectivePayload } from '../payload/registry.js';
-import type { PreviewSandboxPayload, TabPayload, TabsPayload } from '../payload/payload-types.js';
+import type {
+  PreviewSandboxPayload,
+  SyntaxCardPayload,
+  SyntaxFieldPayload,
+  SyntaxFieldsPayload,
+  SyntaxSectionPayload,
+  TabPayload,
+  TabsPayload,
+} from '../payload/payload-types.js';
 import { toError } from '../shared/errors.js';
 import type { DirectiveName, MdastNode, VFileLike } from '../types.js';
 
@@ -17,6 +26,11 @@ const countChildDirectives = (children: MdastNode[]): Map<DirectiveName, number>
   }
 
   return counts;
+};
+
+const normalizeLang = (value: string | undefined): string | undefined => {
+  const normalized = value?.trim().toLowerCase();
+  return normalized && normalized.length > 0 ? normalized : undefined;
 };
 
 const validateDirectiveParentConstraint = (
@@ -276,6 +290,131 @@ const validateTabsStructure = (node: MdastNode, payload: TabsPayload, file?: VFi
   }
 };
 
+const readSyntaxSignatureCodeNodes = (node: MdastNode): MdastNode[] =>
+  (node.children ?? []).filter((child) => child.type === 'code');
+
+export const resolveSyntaxCardLang = (
+  node: MdastNode,
+  payload: SyntaxCardPayload,
+  file?: VFileLike,
+): string | undefined => {
+  const signatureNode = (node.children ?? []).find(
+    (child) => getDirectiveNameFromNode(child) === 'syntax-signature',
+  );
+  const signatureCode = signatureNode ? readSyntaxSignatureCodeNodes(signatureNode)[0] : undefined;
+  const cardLang = payload.lang;
+  const signatureLang = normalizeLang(signatureCode?.lang);
+
+  if (cardLang && signatureLang && cardLang !== signatureLang) {
+    throw toError(
+      file,
+      signatureNode ?? node,
+      'syntax-card の lang と syntax-signature の code lang が一致していません',
+    );
+  }
+
+  return cardLang ?? signatureLang;
+};
+
+const validateSyntaxSignatureStructure = (node: MdastNode, file?: VFileLike): void => {
+  const children = node.children ?? [];
+  const codeChildren = readSyntaxSignatureCodeNodes(node);
+
+  if (codeChildren.length === 0) {
+    throw toError(file, node, 'syntax-signature には fenced code block 1 個が必須です');
+  }
+
+  if (codeChildren.length !== 1 || children.length !== 1) {
+    throw toError(file, node, 'syntax-signature には fenced code block 1 個のみ配置できます');
+  }
+
+  const [codeChild] = codeChildren;
+  if (codeChild && pickOptional(codeChild.meta)) {
+    throw toError(
+      file,
+      codeChild,
+      'syntax-signature の fenced code block では meta を指定できません',
+    );
+  }
+};
+
+const validateSyntaxCardStructure = (
+  node: MdastNode,
+  payload: SyntaxCardPayload,
+  file?: VFileLike,
+): void => {
+  const children = node.children ?? [];
+  const signatureChildren = children.filter(
+    (child) => getDirectiveNameFromNode(child) === 'syntax-signature',
+  );
+
+  if (signatureChildren.length === 0) {
+    throw toError(file, node, 'syntax-card には syntax-signature が必須です');
+  }
+
+  if (signatureChildren.length > 1) {
+    throw toError(file, node, 'syntax-card には syntax-signature を 1 つだけ配置できます');
+  }
+
+  for (const child of children) {
+    const directiveName = getDirectiveNameFromNode(child);
+    if (directiveName !== 'syntax-signature' && directiveName !== 'syntax-section') {
+      throw toError(
+        file,
+        child,
+        'syntax-card の直下には syntax-signature または syntax-section のみ配置できます',
+      );
+    }
+  }
+
+  resolveSyntaxCardLang(node, payload, file);
+};
+
+const validateSyntaxSectionStructure = (
+  node: MdastNode,
+  _payload: SyntaxSectionPayload,
+  file?: VFileLike,
+): void => {
+  for (const child of node.children ?? []) {
+    if (getDirectiveNameFromNode(child) === 'syntax-field') {
+      throw toError(
+        file,
+        child,
+        'syntax-field は syntax-fields を介さず syntax-section 直下へ配置できません',
+      );
+    }
+  }
+};
+
+const validateSyntaxFieldsStructure = (
+  node: MdastNode,
+  _payload: SyntaxFieldsPayload,
+  file?: VFileLike,
+): void => {
+  const children = node.children ?? [];
+
+  if (children.length === 0) {
+    throw toError(file, node, 'syntax-fields には少なくとも 1 つの syntax-field が必要です');
+  }
+
+  for (const child of children) {
+    if (getDirectiveNameFromNode(child) !== 'syntax-field') {
+      throw toError(file, child, 'syntax-fields の直下には syntax-field のみ配置できます');
+    }
+  }
+};
+
+const validateSyntaxFieldStructure = (
+  node: MdastNode,
+  payload: SyntaxFieldPayload,
+  file?: VFileLike,
+): void => {
+  // 構造制約は親の syntax-fields 側で担保しており、ここでは validator の契約だけを維持する。
+  void node;
+  void payload;
+  void file;
+};
+
 export const validateTabsUrlSyncConstraint = (nodes: MdastNode[], file?: VFileLike): void => {
   let primaryTabsNode: MdastNode | null = null;
 
@@ -348,6 +487,41 @@ export const validateStructure = (
     }
     if (directiveName === 'tab') {
       validateTabStructure(node, getDirectivePayload<TabPayload>(node), file);
+    }
+    if (directiveName === 'syntax-card') {
+      const payload = getDirectivePayload<SyntaxCardPayload>(node);
+      if (!payload) {
+        throw toError(file, node, 'syntax-card の payload が見つかりません');
+      }
+
+      validateSyntaxCardStructure(node, payload, file);
+    }
+    if (directiveName === 'syntax-signature') {
+      validateSyntaxSignatureStructure(node, file);
+    }
+    if (directiveName === 'syntax-section') {
+      const payload = getDirectivePayload<SyntaxSectionPayload>(node);
+      if (!payload) {
+        throw toError(file, node, 'syntax-section の payload が見つかりません');
+      }
+
+      validateSyntaxSectionStructure(node, payload, file);
+    }
+    if (directiveName === 'syntax-fields') {
+      const payload = getDirectivePayload<SyntaxFieldsPayload>(node);
+      if (!payload) {
+        throw toError(file, node, 'syntax-fields の payload が見つかりません');
+      }
+
+      validateSyntaxFieldsStructure(node, payload, file);
+    }
+    if (directiveName === 'syntax-field') {
+      const payload = getDirectivePayload<SyntaxFieldPayload>(node);
+      if (!payload) {
+        throw toError(file, node, 'syntax-field の payload が見つかりません');
+      }
+
+      validateSyntaxFieldStructure(node, payload, file);
     }
 
     if (Array.isArray(node.children) && node.children.length > 0) {

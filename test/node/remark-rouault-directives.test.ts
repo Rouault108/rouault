@@ -2414,4 +2414,321 @@ describe('remarkRouaultDirectives', () => {
       '[markdown] preview-sandbox を使う code-preview では手書きの code area を併用できません',
     );
   });
+
+it('syntax-card family を ui-syntax-card / ui-syntax-section / ui-syntax-field 構造へ変換すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value: '::syntax-card{name="useEffect" kind="Method" heading-level="3"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-signature' }],
+        },
+        {
+          type: 'code',
+          lang: 'ts',
+          value: 'function useEffect(effect: () => void, deps?: readonly unknown[]): void',
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-section{label="パラメータ"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '副作用フックです。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-fields' }],
+        },
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value: '::syntax-field{name="effect" type="() => void" required="true"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '副作用本体。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value:
+                '::syntax-field{name="deps" type="readonly unknown[]" required="false" default="[]"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '依存配列。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    expect(tree.children).to.have.length(1);
+    const syntaxCard = tree.children?.[0];
+    expect(syntaxCard?.data?.hName).to.equal('ui-syntax-card');
+    expect(syntaxCard?.data?.hProperties?.['kind']).to.equal('Method');
+    expect(syntaxCard?.data?.hProperties?.['name']).to.equal('useEffect');
+    expect(syntaxCard?.data?.hProperties?.['data-lang']).to.equal('ts');
+    expect(syntaxCard?.data?.hProperties?.['heading-level']).to.equal('3');
+
+    const signature = syntaxCard?.children?.[0];
+    expect(signature?.data?.hName).to.equal('pre');
+    expect(signature?.data?.hProperties?.['slot']).to.equal('signature');
+    expect(signature?.data?.hProperties?.['data-syntax-signature']).to.equal('true');
+    expect(signature?.children?.[0]?.value).to.equal(
+      'function useEffect(effect: () => void, deps?: readonly unknown[]): void',
+    );
+
+    const section = syntaxCard?.children?.[1];
+    expect(section?.data?.hName).to.equal('ui-syntax-section');
+    expect(section?.data?.hProperties?.['label']).to.equal('パラメータ');
+
+    const fields = section?.children?.[1];
+    expect(fields?.data?.hName).to.equal('dl');
+    const firstField = fields?.children?.[0];
+    const secondField = fields?.children?.[1];
+    expect(firstField?.data?.hName).to.equal('ui-syntax-field');
+    expect(firstField?.data?.hProperties?.['name']).to.equal('effect');
+    expect(firstField?.data?.hProperties?.['required']).to.equal(true);
+    expect(secondField?.data?.hName).to.equal('ui-syntax-field');
+    expect(secondField?.data?.hProperties?.['name']).to.equal('deps');
+    expect(secondField?.data?.hProperties?.['default']).to.equal('[]');
+    expect(secondField?.data?.hProperties?.['required']).to.equal(undefined);
+  });
+
+  it('syntax-card の lang が未指定なら syntax-signature の code lang から data-lang を解決すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-card{name="memo"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-signature' }],
+        },
+        {
+          type: 'code',
+          lang: 'Bash',
+          value: 'echo "hello"',
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const syntaxCard = tree.children?.[0];
+    expect(syntaxCard?.data?.hProperties?.['data-lang']).to.equal('bash');
+  });
+
+  it('syntax-card に syntax-signature がない場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-card{name="useEffect"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-section{label="説明"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '本文。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] syntax-card には syntax-signature が必須です');
+  });
+
+  it('syntax-signature に code block がない場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-card{name="useEffect"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-signature' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: 'function useEffect() {}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] syntax-signature には fenced code block 1 個が必須です');
+  });
+
+  it('syntax-card.lang と syntax-signature の code lang が不一致な場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-card{name="useEffect" lang="ts"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-signature' }],
+        },
+        {
+          type: 'code',
+          lang: 'js',
+          value: 'function useEffect() {}',
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw(
+      '[markdown] syntax-card の lang と syntax-signature の code lang が一致していません',
+    );
+  });
+
+  it('syntax-fields の直下に syntax-field 以外がある場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-card{name="useEffect"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-signature' }],
+        },
+        {
+          type: 'code',
+          lang: 'ts',
+          value: 'function useEffect() {}',
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-section{label="パラメータ"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::syntax-fields' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '説明文' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] syntax-fields の直下には syntax-field のみ配置できます');
+  });
 });

@@ -351,6 +351,31 @@ footnote は、本文側の `a[data-footnote-ref][role="doc-noteref"]` と endno
 - note 本文で補助表示を付与する場合は、`data-hydration-key="footnote-popover-enhancer"`、`data-hydration-capability="progressive"`、`data-hydration-trigger="post-commit"` を付与してよいものとします。
 - note 本文の最終 DOM に `ui-footnote` を残してはなりません。
 
+## 6.4 `syntax-card` family 出力契約
+
+`syntax-card` family は、authoring 上は compound directive family ですが、最終出力では次へ正規化しなければなりません。
+
+- `syntax-card` → `ui-syntax-card`
+- `syntax-signature` → `pre[slot="signature"][data-syntax-signature="true"]`
+- `syntax-section` → `ui-syntax-section`
+- `syntax-fields` → `dl`
+- `syntax-field` → `ui-syntax-field`
+
+### 6.4.1 signature の非 code-surface 契約
+
+`syntax-signature` の最終出力は plain `pre` であり、`pre > code` にしてはなりません。
+
+規則:
+
+- `pre[slot="signature"][data-syntax-signature]` は通常の standalone code block として扱ってはなりません。
+- `rehypeShikiCodeBlocks()` はこの領域に Shiki 変換、copy button 注入、hydration root 注入を行ってはなりません。
+- `data-code-block`
+- `.code-surface-root`
+- standalone code surface 用 `ui-copy-button`
+- `data-hydration-key="code-block-enhancer"`
+
+を signature 領域に出力してはなりません。
+
 ---
 
 ## 7. preview-sandbox 出力契約

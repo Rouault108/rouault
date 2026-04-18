@@ -65,4 +65,25 @@ export const directiveStructuralRules: Record<DirectiveName, DirectiveStructural
     allowsChildren: true,
     allowedParentDirectives: ['tabs'],
   },
+
+  'syntax-card': {
+    allowsChildren: true,
+  },
+  'syntax-signature': {
+    allowsChildren: true,
+    allowedParentDirectives: ['syntax-card'],
+    maxOccurrencesWithinParent: 1,
+  },
+  'syntax-section': {
+    allowsChildren: true,
+    allowedParentDirectives: ['syntax-card'],
+  },
+  'syntax-fields': {
+    allowsChildren: true,
+    allowedParentDirectives: ['syntax-section'],
+  },
+  'syntax-field': {
+    allowsChildren: true,
+    allowedParentDirectives: ['syntax-fields'],
+  },
 };
