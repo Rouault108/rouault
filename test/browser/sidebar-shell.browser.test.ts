@@ -37,7 +37,7 @@ const waitForStateChange = (host: UiSidebarShell): Promise<UiSidebarStateChangeD
   });
 
 describe('ui-sidebar-shell browser contract', () => {
-  it('overlay では expand / collapse に伴って focus を移し、trigger へ返すこと', async () => {
+  it('overlay では expand / collapse に伴って focus を移し、scrim も表示/非表示が同期すること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>
         <button id="trigger">開く</button>
@@ -59,8 +59,12 @@ describe('ui-sidebar-shell browser contract', () => {
     await waitForLitUpdate(shell);
 
     const nav = expectPresent(getNav(shell), 'nav');
+    const scrim = expectPresent(getScrim(shell), 'scrim');
+
     expect(nav.inert).to.equal(true);
     expect(nav.style.visibility).to.equal('hidden');
+    expect(getComputedStyle(scrim).visibility).to.equal('hidden');
+    expect(getComputedStyle(scrim).pointerEvents).to.equal('none');
 
     trigger.focus();
 
@@ -73,6 +77,9 @@ describe('ui-sidebar-shell browser contract', () => {
     expect(expandDetail.mode).to.equal('overlay');
     expect(nav.inert).to.equal(false);
     expect(nav.style.visibility).to.equal('visible');
+    expect(getComputedStyle(scrim).visibility).to.equal('visible');
+    expect(getComputedStyle(scrim).pointerEvents).to.equal('auto');
+
     await waitUntil(
       () => document.activeElement === headerButton,
       'overlay expand 後に header の先頭 focusable へ focus が移ること',
@@ -87,6 +94,8 @@ describe('ui-sidebar-shell browser contract', () => {
     expect(collapseDetail.mode).to.equal('overlay');
     expect(nav.inert).to.equal(true);
     expect(nav.style.visibility).to.equal('hidden');
+    expect(getComputedStyle(scrim).visibility).to.equal('hidden');
+    expect(getComputedStyle(scrim).pointerEvents).to.equal('none');
     expect(document.activeElement).to.equal(trigger);
   });
 

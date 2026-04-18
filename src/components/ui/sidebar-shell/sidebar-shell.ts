@@ -115,9 +115,12 @@ export class UiSidebarShell extends LitElement {
       inset: 0;
       background: oklch(0% 0 0 / var(--ui-sidebar-scrim-opacity));
       opacity: 0;
+      visibility: hidden;
       pointer-events: none;
-      transition: opacity var(--duration-normal, 150ms)
-        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+      transition:
+        opacity var(--duration-normal, 150ms)
+          var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
+        visibility 0s linear var(--duration-normal, 150ms);
       z-index: var(--z-backdrop, 200);
     }
 
@@ -127,7 +130,12 @@ export class UiSidebarShell extends LitElement {
 
     :host([mode='overlay'][data-state='expanded']) .scrim {
       opacity: 1;
+      visibility: visible;
       pointer-events: auto;
+      transition:
+        opacity var(--duration-normal, 150ms)
+          var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
+        visibility 0s linear 0s;
     }
 
     :host([mode='fixed']) .scrim {
