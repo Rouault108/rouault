@@ -159,6 +159,18 @@ export class UiHeader extends LitElement {
         z-index: var(--z-anchored-overlay, var(--z-popover, 400));
       }
 
+      :host([overlay-sidebar-open]) header {
+        /*
+         * iPhone Safari では sticky header 上の backdrop-filter と
+         * overlay/scrim/dynamic viewport の再合成が競合しやすい。
+         * mobile overlay open 中だけ blur 系を停止して描画負荷を下げる。
+         */
+        background: var(--bg-default);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+      }
+
       .zone-center {
         display: none;
       }
@@ -210,6 +222,9 @@ export class UiHeader extends LitElement {
 
   @property({ type: Boolean, reflect: true, attribute: 'sidebar-expanded' })
   sidebarExpanded = true;
+
+  @property({ type: Boolean, reflect: true, attribute: 'overlay-sidebar-open' })
+  overlaySidebarOpen = false;
 
   /** 初回レンダリング完了フラグ（初期値でのイベント発火を防止） */
   private _hasRendered = false;

@@ -64,6 +64,30 @@ describe('ui-header browser contract', () => {
     expect(header.sidebarExpanded).to.equal(true);
   });
 
+  it('overlaySidebarOpen は reflect するが ui-header-sidebar-toggle を発火しないこと', async () => {
+    const header = await fixture<UiHeader>(html`<ui-header sidebar-expanded></ui-header>`);
+    await waitForLitUpdate(header);
+
+    let toggleCount = 0;
+    header.addEventListener('ui-header-sidebar-toggle', () => {
+      toggleCount += 1;
+    });
+
+    expect(header.hasAttribute('overlay-sidebar-open')).to.equal(false);
+
+    header.overlaySidebarOpen = true;
+    await waitForLitUpdate(header);
+
+    expect(header.hasAttribute('overlay-sidebar-open')).to.equal(true);
+    expect(toggleCount).to.equal(0);
+
+    header.removeAttribute('overlay-sidebar-open');
+    await waitForLitUpdate(header);
+
+    expect(header.overlaySidebarOpen).to.equal(false);
+    expect(toggleCount).to.equal(0);
+  });
+
   it('start / center / compact-center / end の 4 slot を公開すること', async () => {
     const header = await fixture<UiHeader>(html`
       <ui-header>

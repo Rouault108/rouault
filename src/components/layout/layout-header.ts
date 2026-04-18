@@ -265,6 +265,9 @@ export class LayoutHeader extends LitElement {
   private _sidebarOpen = false;
 
   @state()
+  private _overlaySidebarOpen = false;
+
+  @state()
   private _themePreference: ThemePreference = 'system';
 
   @query('[data-dropdown="theme"]')
@@ -327,6 +330,7 @@ export class LayoutHeader extends LitElement {
     if (!this.sidebarEnabled) {
       this._headerSidebarReserved = false;
       this._sidebarOpen = false;
+      this._overlaySidebarOpen = false;
       return;
     }
 
@@ -336,7 +340,14 @@ export class LayoutHeader extends LitElement {
         // note layout では本文列と header 内部幅を同じ上限で止め、
         // fixed sidebar であっても header 側に追加の幅予約を持ち込まない。
         this._headerSidebarReserved = !this.noteLayout && snapshot.mode === 'fixed';
+
+        // aria-expanded は sidebar の見かけ上の開閉状態を表す。
         this._sidebarOpen = snapshot.state === 'expanded';
+
+        // overlaySidebarOpen は描画軽量化専用フラグであり、
+        // fixed mode の expanded と意味を混同しない。
+        this._overlaySidebarOpen =
+          snapshot.mode === 'overlay' && snapshot.state === 'expanded';
       },
     );
   }
@@ -467,7 +478,10 @@ export class LayoutHeader extends LitElement {
     const shouldRenderHeaderBreadcrumbs = hasBreadcrumbs && !this.noteLayout;
 
     return html`
-      <ui-header .sidebarExpanded=${this._headerSidebarReserved}>
+      <ui-header
+        .sidebarExpanded=${this._headerSidebarReserved}
+        .overlaySidebarOpen=${this._overlaySidebarOpen}
+      >
         <div slot="start" class="slot-group">
           ${this.sidebarEnabled
             ? html`

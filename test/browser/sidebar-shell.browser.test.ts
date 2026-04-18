@@ -135,6 +135,43 @@ describe('ui-sidebar-shell browser contract', () => {
     expect(shell.getAttribute('data-state')).to.equal('expanded');
   });
 
+  it('overlay では safe area padding を .sidebar-content に追加し、fixed には持ち込まないこと', async () => {
+    const overlay = await fixture<UiSidebarShell>(html`
+      <ui-sidebar-shell
+        mode="overlay"
+        data-state="expanded"
+        style="--ui-sidebar-overlay-safe-area-block-end: 24px;"
+      >
+        <a href="#note-a">ノート A</a>
+      </ui-sidebar-shell>
+    `);
+
+    const fixed = await fixture<UiSidebarShell>(html`
+      <ui-sidebar-shell
+        mode="fixed"
+        data-state="expanded"
+        style="--ui-sidebar-overlay-safe-area-block-end: 24px;"
+      >
+        <a href="#note-a">ノート A</a>
+      </ui-sidebar-shell>
+    `);
+
+    await waitForLitUpdate(overlay);
+    await waitForLitUpdate(fixed);
+
+    const overlayContent = expectPresent(
+      overlay.shadowRoot?.querySelector<HTMLElement>('.sidebar-content'),
+      'overlayContent',
+    );
+    const fixedContent = expectPresent(
+      fixed.shadowRoot?.querySelector<HTMLElement>('.sidebar-content'),
+      'fixedContent',
+    );
+
+    expect(getComputedStyle(overlayContent).paddingBottom).to.equal('24px');
+    expect(getComputedStyle(fixedContent).paddingBottom).to.equal('0px');
+  });
+
   it('overlay では Escape で close request を出すが、fixed では無視すること', async () => {
     const overlay = await fixture<UiSidebarShell>(html`
       <ui-sidebar-shell mode="overlay" data-state="expanded">

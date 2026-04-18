@@ -29,6 +29,7 @@ export class UiSidebarShell extends LitElement {
       min-block-size: 0;
       overflow: visible;
       --ui-sidebar-scrim-opacity: var(--opacity-scrim, 0.6);
+      --ui-sidebar-overlay-safe-area-block-end: env(safe-area-inset-bottom, 0px);
     }
 
     nav {
@@ -78,8 +79,8 @@ export class UiSidebarShell extends LitElement {
       max-inline-size: 100vw;
       block-size: auto;
       max-block-size: min(
-        var(--sidebar-overlay-max-block-size, calc(100dvh - var(--header-height))),
-        72dvh
+        var(--sidebar-overlay-max-block-size, calc(100svh - var(--header-height))),
+        72svh
       );
       border-right: none;
       border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(20% 0 0 / 0.12));
@@ -108,6 +109,15 @@ export class UiSidebarShell extends LitElement {
       overflow-x: hidden;
       overscroll-behavior: contain;
       min-block-size: 0;
+    }
+
+    :host([mode='overlay']) .sidebar-content {
+      /*
+       * fixed / overlay 共用要素なので safe area padding は overlay 限定で入れる。
+       * 既定値は env(safe-area-inset-bottom) だが、browser test では
+       * カスタムプロパティで上書きできるようにしておく。
+       */
+      padding-block-end: var(--ui-sidebar-overlay-safe-area-block-end);
     }
 
     .scrim {

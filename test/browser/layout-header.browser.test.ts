@@ -116,7 +116,7 @@ describe('layout-header browser contract', () => {
     expect(header.shadowRoot?.querySelector('[slot="compact-center"]')).to.equal(null);
   });
 
-  it('overlay 展開時も ui-header に sidebar 幅を予約させず、toggle の aria-expanded のみ更新すること', async () => {
+  it('overlay 展開時は ui-header に overlaySidebarOpen だけを渡し、sidebar 幅は予約しないこと', async () => {
     layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
       presentation: 'overlay',
       fixedBreakpoint: 1024,
@@ -127,6 +127,13 @@ describe('layout-header browser contract', () => {
       html`<layout-header note-layout sidebar-enabled></layout-header>`,
     );
     await waitForLitUpdate(header);
+
+    const uiHeaderBefore = expectPresent(
+      header.shadowRoot?.querySelector<UiHeader>('ui-header'),
+      'uiHeaderBefore',
+    );
+    expect(uiHeaderBefore.overlaySidebarOpen).to.equal(false);
+    expect(uiHeaderBefore.hasAttribute('overlay-sidebar-open')).to.equal(false);
 
     layoutSidebarController.open(DEFAULT_LAYOUT_SIDEBAR_ID);
     await waitForLitUpdate(header);
@@ -141,10 +148,12 @@ describe('layout-header browser contract', () => {
     );
 
     expect(uiHeader.sidebarExpanded).to.equal(false);
+    expect(uiHeader.overlaySidebarOpen).to.equal(true);
+    expect(uiHeader.hasAttribute('overlay-sidebar-open')).to.equal(true);
     expect(toggleButton.getAttribute('aria-expanded')).to.equal('true');
   });
 
-  it('fixed sidebar な note-layout でも ui-header に sidebar 幅を予約しないこと', async () => {
+  it('fixed sidebar の expanded snapshot を overlaySidebarOpen と誤認しないこと', async () => {
     layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
       presentation: 'fixed',
       fixedBreakpoint: 1024,
@@ -162,6 +171,8 @@ describe('layout-header browser contract', () => {
     );
 
     expect(uiHeader.sidebarExpanded).to.equal(false);
+    expect(uiHeader.overlaySidebarOpen).to.equal(false);
+    expect(uiHeader.hasAttribute('overlay-sidebar-open')).to.equal(false);
   });
 
   it('desktop の note-layout では sidebar-main gap を含む start reserve と TOC reserve を使うこと', async () => {
