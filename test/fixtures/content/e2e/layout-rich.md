@@ -27,11 +27,11 @@ console.log(doubled);
 
 ### 1.2 一覧
 
-| 分類 | 内容 |
-| --- | --- |
-| note shell | 本文と TOC の外形契約 |
+| 分類           | 内容                               |
+| -------------- | ---------------------------------- |
+| note shell     | 本文と TOC の外形契約              |
 | article header | heading と breadcrumbs の SSR 出力 |
-| toc | headings-json と active state 同期 |
+| toc            | headings-json と active state 同期 |
 
 ## 2. 状態同期
 

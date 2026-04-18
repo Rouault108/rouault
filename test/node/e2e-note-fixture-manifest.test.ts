@@ -74,7 +74,9 @@ describe('buildE2ENoteFixtureManifest', () => {
         },
       ),
     ).toThrowError(
-      `Missing required e2e fixture ids: ${REQUIRED_E2E_NOTE_FIXTURE_IDS.filter((fixtureId) => fixtureId !== 'note.layout-rich')
+      `Missing required e2e fixture ids: ${REQUIRED_E2E_NOTE_FIXTURE_IDS.filter(
+        (fixtureId) => fixtureId !== 'note.layout-rich',
+      )
         .sort()
         .join(', ')}.`,
     );

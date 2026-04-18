@@ -4,12 +4,11 @@
 
 ::syntax-card{name="useEffect" kind="Method" lang="ts" heading-level="3"}
 ::syntax-signature
+
 ```ts
-function useEffect(
-  effect: () => void | (() => void),
-  deps?: readonly unknown[]
-): void
+function useEffect(effect: () => void | (() => void), deps?: readonly unknown[]): void;
 ```
+
 ::
 
 ::syntax-section{label="概要"}
@@ -46,9 +45,11 @@ React の副作用を宣言する Hook です。
 
 ::syntax-card{name="identity" kind="Function" heading-level="3"}
 ::syntax-signature
+
 ```ts
 const identity = <T>(value: T): T => value;
 ```
+
 ::
 
 ::syntax-section{label="戻り値"}

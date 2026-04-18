@@ -348,7 +348,6 @@ describe('buildNotesCollection', () => {
     ).toThrow(/Ambiguous note source/);
   });
 
-
   it('sourceRoot ごとに別の content root と _config.json を参照できる', async () => {
     const contentRoot = await createContentRoot();
     const fixtureRoot = await mkdtemp(path.join(os.tmpdir(), 'rouault-note-fixtures-'));

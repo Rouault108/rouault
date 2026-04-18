@@ -346,8 +346,7 @@ export class LayoutHeader extends LitElement {
 
         // overlaySidebarOpen は描画軽量化専用フラグであり、
         // fixed mode の expanded と意味を混同しない。
-        this._overlaySidebarOpen =
-          snapshot.mode === 'overlay' && snapshot.state === 'expanded';
+        this._overlaySidebarOpen = snapshot.mode === 'overlay' && snapshot.state === 'expanded';
       },
     );
   }

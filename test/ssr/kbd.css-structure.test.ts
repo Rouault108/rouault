@@ -1,6 +1,10 @@
 import { describe, it } from 'vitest';
 import { Kbd } from '../../src/components/ui/kbd/kbd.js';
-import { collectCssText, expectCssExcludes, expectCssIncludes } from './css-contract-test-helpers.js';
+import {
+  collectCssText,
+  expectCssExcludes,
+  expectCssIncludes,
+} from './css-contract-test-helpers.js';
 
 describe('ui-kbd css structure contract', () => {
   it('single / combo / media / token 契約を保持すること', () => {
@@ -29,9 +33,6 @@ describe('ui-kbd css structure contract', () => {
       'box-shadow: none !important',
     ]);
 
-    expectCssExcludes(cssText, [
-      '@media (prefers-color-scheme: dark)',
-      'prefers-color-scheme',
-    ]);
+    expectCssExcludes(cssText, ['@media (prefers-color-scheme: dark)', 'prefers-color-scheme']);
   });
 });

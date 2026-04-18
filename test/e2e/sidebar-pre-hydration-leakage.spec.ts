@@ -17,8 +17,11 @@ test.describe('sidebar pre-hydration leakage', () => {
     await page.addInitScript(() => {
       const registry = window.customElements;
       const realDefine = registry.define.bind(registry);
-      const heldDefinitions: [string, CustomElementConstructor, ElementDefinitionOptions | undefined][] =
-        [];
+      const heldDefinitions: [
+        string,
+        CustomElementConstructor,
+        ElementDefinitionOptions | undefined,
+      ][] = [];
       const heldTagNames = new Set(['layout-sidebar']);
 
       (

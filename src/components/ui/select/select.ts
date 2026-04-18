@@ -2,7 +2,10 @@ import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
-import { AnchoredOverlayController, type AnchoredOverlayDismissReason } from '../overlay/internal/anchored-overlay-controller.js';
+import {
+  AnchoredOverlayController,
+  type AnchoredOverlayDismissReason,
+} from '../overlay/internal/anchored-overlay-controller.js';
 import '../icon/icon.js';
 
 export interface SelectOption {

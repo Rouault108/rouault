@@ -64,8 +64,12 @@ const waitForHeaderDropdownInteractive = async (
         const dropdown = header.shadowRoot.querySelector<HTMLElement>(dropdownSelector);
         const trigger = dropdown?.querySelector<HTMLElement>('[slot="trigger"]');
         const panel =
-          dropdown instanceof HTMLElement && typeof (dropdown as HTMLElement & { getMenuElement?: () => HTMLElement | null }).getMenuElement === 'function'
-            ? (dropdown as HTMLElement & { getMenuElement: () => HTMLElement | null }).getMenuElement()
+          dropdown instanceof HTMLElement &&
+          typeof (dropdown as HTMLElement & { getMenuElement?: () => HTMLElement | null })
+            .getMenuElement === 'function'
+            ? (
+                dropdown as HTMLElement & { getMenuElement: () => HTMLElement | null }
+              ).getMenuElement()
             : null;
         const openMethod = dropdown
           ? (dropdown as HTMLElement & { open?: () => void }).open
@@ -137,7 +141,9 @@ const readHeaderDropdownPaintState = async (
 
     const dropdown = header?.shadowRoot?.querySelector<HTMLElement>(dropdownSelector);
     const panel =
-      dropdown instanceof HTMLElement && typeof (dropdown as HTMLElement & { getMenuElement?: () => HTMLElement | null }).getMenuElement === 'function'
+      dropdown instanceof HTMLElement &&
+      typeof (dropdown as HTMLElement & { getMenuElement?: () => HTMLElement | null })
+        .getMenuElement === 'function'
         ? (dropdown as HTMLElement & { getMenuElement: () => HTMLElement | null }).getMenuElement()
         : null;
     const bar = toc?.shadowRoot?.querySelector<HTMLElement>('.mobile-bar');
@@ -145,8 +151,7 @@ const readHeaderDropdownPaintState = async (
     const panelRect = panel instanceof HTMLElement ? panel.getBoundingClientRect() : null;
     const barRect = bar instanceof HTMLElement ? bar.getBoundingClientRect() : null;
 
-    const overlapTop =
-      panelRect && barRect ? Math.max(panelRect.top, barRect.top) : Number.NaN;
+    const overlapTop = panelRect && barRect ? Math.max(panelRect.top, barRect.top) : Number.NaN;
     const overlapBottom =
       panelRect && barRect ? Math.min(panelRect.bottom, barRect.bottom) : Number.NaN;
     const hasOverlapWithBar =
@@ -432,7 +437,7 @@ test.describe('mobile TOC summary UX', () => {
     const opened = await readMobileSummaryState(page);
     expect(opened.panelOpen).toBe(true);
     expect(opened.panelTop).not.toBeNull();
-    expect((opened.panelTop ?? Number.NEGATIVE_INFINITY)).toBeGreaterThanOrEqual(
+    expect(opened.panelTop ?? Number.NEGATIVE_INFINITY).toBeGreaterThanOrEqual(
       (opened.barBottom ?? 0) - 1,
     );
 

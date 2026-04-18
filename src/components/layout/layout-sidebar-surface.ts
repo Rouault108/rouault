@@ -46,7 +46,7 @@ export class LayoutSidebarSurface extends LitElement {
   };
 
   override render() {
-    const normalizedHeading = (this.heading).trim();
+    const normalizedHeading = this.heading.trim();
 
     return html`
       <ui-sidebar-shell

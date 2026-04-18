@@ -1,6 +1,6 @@
 ---
 title: 'C#'
-description: "C#の概要"
+description: 'C#の概要'
 date: 2026-04-15
 genre:
   - C#
@@ -9,4 +9,3 @@ status: wip
 ---
 
 ## 変数
-

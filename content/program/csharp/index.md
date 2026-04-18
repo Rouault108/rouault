@@ -1,6 +1,6 @@
 ---
 title: 'C#'
-description: "C#の概要"
+description: 'C#の概要'
 date: 2026-04-15
 genre:
   - C#
@@ -51,20 +51,20 @@ CLI の観点から見た場合、C#は多言語実行環境を構成する諸�
 
 ## 注および参考文献
 
-[^1]: Ecma International, *ECMA-334: C#language specification*, 7th ed., December 2023. Available from: [https://ecma-international.org/publications-and-standards/standards/ecma-334/](https://ecma-international.org/publications-and-standards/standards/ecma-334/). 
+[^1]: Ecma International, _ECMA-334: C#language specification_, 7th ed., December 2023. Available from: [https://ecma-international.org/publications-and-standards/standards/ecma-334/](https://ecma-international.org/publications-and-standards/standards/ecma-334/).
 
-[^2]: Ecma International, *ECMA-335: Common Language Infrastructure (CLI)*, 6th ed., June 2012. Available from: [https://ecma-international.org/publications-and-standards/standards/ecma-335/](https://ecma-international.org/publications-and-standards/standards/ecma-335/). 
+[^2]: Ecma International, _ECMA-335: Common Language Infrastructure (CLI)_, 6th ed., June 2012. Available from: [https://ecma-international.org/publications-and-standards/standards/ecma-335/](https://ecma-international.org/publications-and-standards/standards/ecma-335/).
 
-[^3]: Microsoft Learn, *Introduction - C#language specification*. Available from: [https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/introduction](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/introduction). 
+[^3]: Microsoft Learn, _Introduction - C#language specification_. Available from: [https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/introduction](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/introduction).
 
-[^4]: Microsoft Learn, *C#standard specification*. Available from: [https://learn.microsoft.com/en-us/dotnet/csharp/specification/overview](https://learn.microsoft.com/en-us/dotnet/csharp/specification/overview). 
+[^4]: Microsoft Learn, _C#standard specification_. Available from: [https://learn.microsoft.com/en-us/dotnet/csharp/specification/overview](https://learn.microsoft.com/en-us/dotnet/csharp/specification/overview).
 
-[^5]: Microsoft Learn, *Managed Execution Process - .NET*. Available from: [https://learn.microsoft.com/en-us/dotnet/standard/managed-execution-process](https://learn.microsoft.com/en-us/dotnet/standard/managed-execution-process). 
+[^5]: Microsoft Learn, _Managed Execution Process - .NET_. Available from: [https://learn.microsoft.com/en-us/dotnet/standard/managed-execution-process](https://learn.microsoft.com/en-us/dotnet/standard/managed-execution-process).
 
-[^6]: Microsoft Learn, *Metadata and Self-Describing Components - .NET*. Available from: [https://learn.microsoft.com/en-us/dotnet/standard/metadata-and-self-describing-components](https://learn.microsoft.com/en-us/dotnet/standard/metadata-and-self-describing-components). 
+[^6]: Microsoft Learn, _Metadata and Self-Describing Components - .NET_. Available from: [https://learn.microsoft.com/en-us/dotnet/standard/metadata-and-self-describing-components](https://learn.microsoft.com/en-us/dotnet/standard/metadata-and-self-describing-components).
 
-[^7]: Microsoft Learn, *Assemblies in .NET*. Available from: [https://learn.microsoft.com/en-us/dotnet/standard/assembly/](https://learn.microsoft.com/en-us/dotnet/standard/assembly/). 
+[^7]: Microsoft Learn, _Assemblies in .NET_. Available from: [https://learn.microsoft.com/en-us/dotnet/standard/assembly/](https://learn.microsoft.com/en-us/dotnet/standard/assembly/).
 
-[^8]: Microsoft Learn, *Assembly contents - .NET*. Available from: [https://learn.microsoft.com/en-us/dotnet/standard/assembly/contents](https://learn.microsoft.com/en-us/dotnet/standard/assembly/contents). 
+[^8]: Microsoft Learn, _Assembly contents - .NET_. Available from: [https://learn.microsoft.com/en-us/dotnet/standard/assembly/contents](https://learn.microsoft.com/en-us/dotnet/standard/assembly/contents).
 
-[^9]: dotnet/csharplang, *Language-Version-History.md*. Available from: [https://github.com/dotnet/csharplang/blob/main/Language-Version-History.md](https://github.com/dotnet/csharplang/blob/main/Language-Version-History.md). 
+[^9]: dotnet/csharplang, _Language-Version-History.md_. Available from: [https://github.com/dotnet/csharplang/blob/main/Language-Version-History.md](https://github.com/dotnet/csharplang/blob/main/Language-Version-History.md).

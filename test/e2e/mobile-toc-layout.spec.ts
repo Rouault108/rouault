@@ -72,7 +72,8 @@ const readMobileTocLayoutState = async (
 
     const tocColRect = tocCol.getBoundingClientRect();
     const tocHostRect = tocHost.getBoundingClientRect();
-    const mobileBarRect = mobileBar instanceof HTMLElement ? mobileBar.getBoundingClientRect() : null;
+    const mobileBarRect =
+      mobileBar instanceof HTMLElement ? mobileBar.getBoundingClientRect() : null;
 
     return {
       shellTrackCount,
@@ -133,9 +134,7 @@ test.describe('mobile TOC layout contract', () => {
     expect(state.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 
-  test('about と note の mobile TOC summary が同じカラム契約に載ること', async ({
-    page,
-  }) => {
+  test('about と note の mobile TOC summary が同じカラム契約に載ること', async ({ page }) => {
     const noteState = await openMobileTocState(page, layoutRichPath, '.note-shell');
     const aboutState = await openMobileTocState(page, aboutPath, '.about-shell');
 

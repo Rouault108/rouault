@@ -190,11 +190,7 @@ describe('ui-toc active link scroll contract', () => {
 
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="overflow-y: auto; max-height: 40px;">
-        <ui-toc
-          .headers=${headers}
-          active-id="71-配列の生成"
-          suppress-active-link-scroll
-        ></ui-toc>
+        <ui-toc .headers=${headers} active-id="71-配列の生成" suppress-active-link-scroll></ui-toc>
       </div>
     `);
 

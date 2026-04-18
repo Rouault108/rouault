@@ -123,7 +123,10 @@ describe('ui-kbd browser contract', () => {
     const root = must(kbd.shadowRoot, 'shadowRoot が見つかりません');
     const key = must(root.querySelector('kbd'), '単体キーの <kbd> が見つかりません');
     const srOnly = must(key.querySelector<HTMLElement>('.sr-only'), '.sr-only が見つかりません');
-    const visual = must(key.querySelector<HTMLElement>('[aria-hidden="true"]'), '可視表記が見つかりません');
+    const visual = must(
+      key.querySelector<HTMLElement>('[aria-hidden="true"]'),
+      '可視表記が見つかりません',
+    );
 
     expect(srOnly.textContent?.trim()).to.equal('コマンド');
     expect(visual.textContent?.trim()).to.equal('⌘');

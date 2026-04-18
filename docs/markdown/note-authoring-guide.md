@@ -774,9 +774,11 @@ API リファレンスや構文メモのように、代表シグネチャと説�
 ````md
 ::syntax-card{name="useEffect" kind="Method" lang="ts" heading-level="3"}
 ::syntax-signature
+
 ```ts
-function useEffect(effect: () => void | (() => void), deps?: readonly unknown[]): void
+function useEffect(effect: () => void | (() => void), deps?: readonly unknown[]): void;
 ```
+
 ::
 
 ::syntax-section{label="説明"}
@@ -790,9 +792,11 @@ field を併用する例:
 ````md
 ::syntax-card{name="useEffect" kind="Method" lang="ts"}
 ::syntax-signature
+
 ```ts
-function useEffect(effect: () => void | (() => void), deps?: readonly unknown[]): void
+function useEffect(effect: () => void | (() => void), deps?: readonly unknown[]): void;
 ```
+
 ::
 
 ::syntax-section{label="パラメータ"}

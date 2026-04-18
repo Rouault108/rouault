@@ -135,7 +135,9 @@ test.describe('note frame balance', () => {
         articleWidth: Math.round(article?.getBoundingClientRect().width ?? 0),
         articleLeft: Math.round(article?.getBoundingClientRect().left ?? 0),
         tocColumnExists: tocColumn instanceof HTMLElement,
-        noteShellColumnGap: Number.isFinite(noteShellColumnGap) ? Math.round(noteShellColumnGap) : 0,
+        noteShellColumnGap: Number.isFinite(noteShellColumnGap)
+          ? Math.round(noteShellColumnGap)
+          : 0,
         horizontalOverflow:
           document.documentElement.scrollWidth - document.documentElement.clientWidth,
       };

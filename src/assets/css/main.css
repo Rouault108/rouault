@@ -1879,7 +1879,9 @@ layout-sidebar-surface .heading {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  :is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-branch-control]:hover {
+  :is(layout-sidebar, layout-sidebar-surface)
+    [data-sidebar-nav]
+    [data-sidebar-nav-branch-control]:hover {
     background: var(--sidebar-item-branch-hover-bg, oklch(from var(--fg-default) l c h / 0.022));
   }
 
@@ -1924,7 +1926,9 @@ layout-sidebar-surface .heading {
   transform: rotate(90deg);
 }
 
-:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-link][aria-current='page'] {
+:is(layout-sidebar, layout-sidebar-surface)
+  [data-sidebar-nav]
+  [data-sidebar-nav-link][aria-current='page'] {
   color: var(--fg-strong, var(--fg-default));
   background: color-mix(in oklab, var(--accent-soft, oklch(96% 0.02 240)) 72%, transparent);
 }
@@ -1958,7 +1962,9 @@ layout-sidebar-surface .heading {
   color: var(--fg-default);
 }
 
-:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-control]:focus-visible {
+:is(layout-sidebar, layout-sidebar-surface)
+  [data-sidebar-nav]
+  [data-sidebar-nav-control]:focus-visible {
   outline: 2px solid var(--focus-ring, oklch(62% 0.19 254));
   outline-offset: -2px;
 }

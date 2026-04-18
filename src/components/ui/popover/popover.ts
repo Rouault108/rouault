@@ -856,7 +856,7 @@ export class UiPopover extends LitElement {
     }
   }
 
-    private _resolveToggleState(event: Event, content: PopoverElement): PopoverToggleState {
+  private _resolveToggleState(event: Event, content: PopoverElement): PopoverToggleState {
     const toggleEvent = event as PopoverToggleEvent;
     if (toggleEvent.newState === 'open' || toggleEvent.newState === 'closed') {
       return toggleEvent.newState;

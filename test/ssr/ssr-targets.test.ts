@@ -43,7 +43,8 @@ describe('component manifest / ssr targets', () => {
 
   it('syntax-card family を SSR component definitions に登録すること', () => {
     const syntaxCardDefinition = SSR_COMPONENT_DEFINITIONS.find(
-      (definition: (typeof SSR_COMPONENT_DEFINITIONS)[number]) => definition.tag === 'ui-syntax-card',
+      (definition: (typeof SSR_COMPONENT_DEFINITIONS)[number]) =>
+        definition.tag === 'ui-syntax-card',
     );
     const syntaxSectionDefinition = SSR_COMPONENT_DEFINITIONS.find(
       (definition: (typeof SSR_COMPONENT_DEFINITIONS)[number]) =>

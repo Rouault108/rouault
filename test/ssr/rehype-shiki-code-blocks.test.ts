@@ -157,7 +157,7 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(secondStandalone?.properties?.['data-hydration-trigger']).toBeUndefined();
   });
 
-it('syntax-signature 用の plain pre[data-syntax-signature] は通常 code surface へ変換しないこと', async () => {
+  it('syntax-signature 用の plain pre[data-syntax-signature] は通常 code surface へ変換しないこと', async () => {
     const tree: HastNode = {
       type: 'root',
       children: [

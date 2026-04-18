@@ -190,11 +190,7 @@ describe('ui-toc active link scroll contract', () => {
 
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="overflow-y: auto; max-height: 40px;">
-        <ui-toc
-          .headers=${headers}
-          active-id="71-配列の生成"
-          suppress-active-link-scroll
-        ></ui-toc>
+        <ui-toc .headers=${headers} active-id="71-配列の生成" suppress-active-link-scroll></ui-toc>
       </div>
     `);
 
@@ -257,16 +253,16 @@ describe('ui-toc active link scroll contract', () => {
     clickedLink.click();
     await flush(toc);
 
-    const clickActiveLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
+    const clickActiveLink =
+      toc.shadowRoot?.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
     expect(clickActiveLink?.classList.contains('is-click')).to.equal(true);
     expect(clickActiveLink?.classList.contains('is-scroll')).to.equal(false);
 
     toc.activeId = '71-配列の生成';
     await flush(toc);
 
-    const scrollActiveLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>(
-      'a.toc-link.is-active',
-    );
+    const scrollActiveLink =
+      toc.shadowRoot?.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
     expect(scrollActiveLink?.classList.contains('is-scroll')).to.equal(true);
     expect(scrollActiveLink?.classList.contains('is-click')).to.equal(false);
   });

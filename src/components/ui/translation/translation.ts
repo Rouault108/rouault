@@ -420,8 +420,7 @@ export class UiTranslation extends LitElement {
     this._overlayController = new AnchoredOverlayController({
       ownerDocument: this.ownerDocument,
       getReference: () => this.getTriggerElement(),
-      getFloating: () =>
-        this._resolvedSurface === 'popover' ? this.getContentElement() : null,
+      getFloating: () => (this._resolvedSurface === 'popover' ? this.getContentElement() : null),
       getOpen: () => this.open && this._resolvedSurface === 'popover',
       getPlacement: () => 'bottom-start',
       getOffset: () => 8,

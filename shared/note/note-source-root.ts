@@ -3,7 +3,11 @@ export const NOTE_SOURCE_ROOTS = ['content', 'test/fixtures/content'] as const;
 export type NoteSourceRoot = (typeof NOTE_SOURCE_ROOTS)[number];
 
 const normalizePathLike = (value: string): string =>
-  value.trim().replace(/\\/gu, '/').replace(/^\.\//u, '').replace(/^\/+|\/+$/gu, '');
+  value
+    .trim()
+    .replace(/\\/gu, '/')
+    .replace(/^\.\//u, '')
+    .replace(/^\/+|\/+$/gu, '');
 
 export const normalizeNoteSourceRoot = (value: unknown): NoteSourceRoot | undefined => {
   if (typeof value !== 'string') {

@@ -48,7 +48,8 @@ const readNoteChromeState = async (page: Page): Promise<NoteChromeState> =>
       tocExists: toc instanceof HTMLElement,
       tocTemplateCount: countDeclarativeShadowRootTemplates(toc),
       tocHasHeadingsJson: toc instanceof HTMLElement && toc.hasAttribute('headings-json'),
-      tocContentRootId: toc instanceof HTMLElement ? (toc.getAttribute('content-root-id') ?? '') : '',
+      tocContentRootId:
+        toc instanceof HTMLElement ? (toc.getAttribute('content-root-id') ?? '') : '',
     };
   });
 
@@ -66,7 +67,10 @@ const expectLayoutRichNoteChromeHostsWithoutJs = async (page: Page): Promise<voi
   expect(state.tocContentRootId).toBe(layoutRich.contentRootId);
 
   await expect(page.locator('ui-article-header')).toHaveAttribute('heading', layoutRich.title);
-  await expect(page.locator('layout-toc')).toHaveAttribute('content-root-id', layoutRich.contentRootId);
+  await expect(page.locator('layout-toc')).toHaveAttribute(
+    'content-root-id',
+    layoutRich.contentRootId,
+  );
 
   const headingsJson = await page.locator('layout-toc').getAttribute('headings-json');
   expect(headingsJson).not.toBeNull();
@@ -103,7 +107,9 @@ test.describe('No-JS baseline', () => {
     await page.goto(layoutRichPath);
 
     await expect(page).toHaveURL(layoutRichPath);
-    await expect(page.locator('#main-content')).toContainText('このノートは e2e 専用 fixture です。');
+    await expect(page.locator('#main-content')).toContainText(
+      'このノートは e2e 専用 fixture です。',
+    );
 
     await expectLayoutRichNoteChromeHostsWithoutJs(page);
   });
@@ -191,7 +197,8 @@ test.describe('No-JS baseline', () => {
       }
 
       const gridTemplateColumns = getComputedStyle(shell).gridTemplateColumns.trim();
-      const trackCount = gridTemplateColumns.length === 0 ? 0 : gridTemplateColumns.split(/\s+/u).length;
+      const trackCount =
+        gridTemplateColumns.length === 0 ? 0 : gridTemplateColumns.split(/\s+/u).length;
       const tocColRect = tocCol.getBoundingClientRect();
       const tocHostRect = tocHost.getBoundingClientRect();
 
@@ -244,7 +251,9 @@ test.describe('No-JS baseline', () => {
     expect(state?.proseWidth ?? 0).toBeGreaterThan(240);
     expect(state?.horizontalOverflow ?? 0).toBeLessThanOrEqual(1);
 
-    await expect(page.locator('#main-content')).toContainText('front matter、TOC、code block、table');
+    await expect(page.locator('#main-content')).toContainText(
+      'front matter、TOC、code block、table',
+    );
   });
 
   test('ノートページが SSR シェルと本文を初期表示し、app shell sidebar host も出力すること', async ({

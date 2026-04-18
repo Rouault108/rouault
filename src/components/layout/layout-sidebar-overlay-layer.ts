@@ -1,8 +1,6 @@
-export const APP_SHELL_SIDEBAR_OVERLAY_LAYER_ATTRIBUTE =
-  'data-app-shell-sidebar-overlay-layer';
+export const APP_SHELL_SIDEBAR_OVERLAY_LAYER_ATTRIBUTE = 'data-app-shell-sidebar-overlay-layer';
 
-export const APP_SHELL_SIDEBAR_OVERLAY_LAYER_SELECTOR =
-  `[${APP_SHELL_SIDEBAR_OVERLAY_LAYER_ATTRIBUTE}]`;
+export const APP_SHELL_SIDEBAR_OVERLAY_LAYER_SELECTOR = `[${APP_SHELL_SIDEBAR_OVERLAY_LAYER_ATTRIBUTE}]`;
 
 const APP_ROOT_SELECTOR = '#app';
 const FOOTER_SELECTOR = 'layout-footer';

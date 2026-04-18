@@ -358,7 +358,10 @@ describe('layout-sidebar browser contract', () => {
       classicalButton.click();
       await settle(host);
 
-      const classicalGroup = expectPresent(getBranchGroup(host, 'music/classical'), 'classical group');
+      const classicalGroup = expectPresent(
+        getBranchGroup(host, 'music/classical'),
+        'classical group',
+      );
       expect(classicalGroup.hidden).to.equal(true);
 
       localStorage.setItem(
@@ -430,7 +433,6 @@ describe('layout-sidebar browser contract', () => {
       media.restore();
     }
   });
-
 
   it('selected leaf を含む parent branch でも閉じられ、current branch marker が残ること', async () => {
     const media = mockMatchMedia();

@@ -347,13 +347,13 @@ Rouault では、`active` が DOM focus を意味しない箇所が多くあり�
 
 Rouault には Overlay が1種類ではなく、少なくとも次の4系統があります。
 
-| 種別                | 主実装                             | モーダル性               | 主用途                   |
-| ------------------- | ---------------------------------- | ------------------------ | ------------------------ |
-| **Dialog**          | `ui-dialog`                        | modal / non-modal 切替可 | 確認、設定、入力         |
-| **Search Dialog**   | `ui-search-dialog`                 | modal                    | グローバル検索           |
-| **Popover**         | `ui-popover`                       | non-modal                | 補助情報、軽量な詳細表示 |
-| **Sidebar Overlay** | `ui-sidebar-shell[mode="overlay"]` | 画面上は半モーダル       | モバイルナビゲーション   |
-| **TOC Mobile Panel** | `layout-toc` | non-modal / page-local overlay | mobile 見出しナビゲーション |
+| 種別                 | 主実装                             | モーダル性                     | 主用途                      |
+| -------------------- | ---------------------------------- | ------------------------------ | --------------------------- |
+| **Dialog**           | `ui-dialog`                        | modal / non-modal 切替可       | 確認、設定、入力            |
+| **Search Dialog**    | `ui-search-dialog`                 | modal                          | グローバル検索              |
+| **Popover**          | `ui-popover`                       | non-modal                      | 補助情報、軽量な詳細表示    |
+| **Sidebar Overlay**  | `ui-sidebar-shell[mode="overlay"]` | 画面上は半モーダル             | モバイルナビゲーション      |
+| **TOC Mobile Panel** | `layout-toc`                       | non-modal / page-local overlay | mobile 見出しナビゲーション |
 
 Rouault ではこれらを一律に扱わず、**フォーカス拘束の強さ**と**URLを持つべきかどうか**で分けています。
 TOC の mobile UI は、header 直下の fixed summary bar と、その直下から開く page-local overlay panel の組で扱います。
@@ -465,12 +465,12 @@ Popover は Dialog と違い、**body をロックしない**ことが本質で�
 
 ### 3.8 実務ルール
 
-| 要件                       | 採用すべき Overlay         |
-| -------------------------- | -------------------------- |
-| 操作フローを止める         | `ui-dialog`                |
-| 検索UI                     | `ui-search-dialog`         |
-| 補助情報、軽量な詳細       | `ui-popover`               |
-| モバイルのナビゲーション面 | `ui-sidebar-shell` overlay |
+| 要件                                   | 採用すべき Overlay                  |
+| -------------------------------------- | ----------------------------------- |
+| 操作フローを止める                     | `ui-dialog`                         |
+| 検索UI                                 | `ui-search-dialog`                  |
+| 補助情報、軽量な詳細                   | `ui-popover`                        |
+| モバイルのナビゲーション面             | `ui-sidebar-shell` overlay          |
 | モバイルのページ内見出しナビゲーション | `layout-toc` mobile summary / panel |
 
 body scroll lock が必要なら Dialog 系、不要なら Popover 系、という切り分けが基本です。

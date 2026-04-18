@@ -243,9 +243,7 @@ export class Kbd extends LitElement {
       `;
     }
 
-    return html`
-      <kbd class="kbd-key" part="key" aria-label=${ifDefined(reading)}>${token}</kbd>
-    `;
+    return html` <kbd class="kbd-key" part="key" aria-label=${ifDefined(reading)}>${token}</kbd> `;
   }
 
   private _renderSlotKey(): TemplateResult {

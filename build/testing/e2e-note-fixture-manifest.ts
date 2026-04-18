@@ -59,7 +59,10 @@ const collectMarkdownFiles = (rootPath: string): string[] => {
   return markdownFiles;
 };
 
-const parseFrontmatterValue = (frontmatter: string, fieldName: 'title' | 'e2eFixtureId'): string => {
+const parseFrontmatterValue = (
+  frontmatter: string,
+  fieldName: 'title' | 'e2eFixtureId',
+): string => {
   const pattern = new RegExp(`^${fieldName}:\\s*(.+)$`, 'mu');
   const matched = frontmatter.match(pattern);
   if (matched === null) {
@@ -162,7 +165,9 @@ export const buildE2ENoteFixtureManifest = (
     };
   }
 
-  const missingFixtureIds = requiredFixtureIds.filter((fixtureId) => manifest[fixtureId] === undefined);
+  const missingFixtureIds = requiredFixtureIds.filter(
+    (fixtureId) => manifest[fixtureId] === undefined,
+  );
   if (missingFixtureIds.length > 0) {
     // e2e 実行時は .velite が stale なことがあるため、source markdown から不足 fixture だけ補完する。
     const fallbackManifest = collectFallbackFixtureEntries(
@@ -177,7 +182,9 @@ export const buildE2ENoteFixtureManifest = (
     }
   }
 
-  const unresolvedFixtureIds = requiredFixtureIds.filter((fixtureId) => manifest[fixtureId] === undefined);
+  const unresolvedFixtureIds = requiredFixtureIds.filter(
+    (fixtureId) => manifest[fixtureId] === undefined,
+  );
   if (unresolvedFixtureIds.length > 0) {
     throw new Error(`Missing required e2e fixture ids: ${unresolvedFixtureIds.sort().join(', ')}.`);
   }

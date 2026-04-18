@@ -51,7 +51,9 @@ const readNoteChromeState = async (
         return -1;
       }
 
-      return element.querySelectorAll(':scope > template[shadowrootmode], :scope > template[shadowroot]').length;
+      return element.querySelectorAll(
+        ':scope > template[shadowrootmode], :scope > template[shadowroot]',
+      ).length;
     };
 
     const readTocLabels = (element: Element | null): string[] => {
@@ -102,8 +104,12 @@ const expectLayoutRichNoteChrome = async (page: Page): Promise<void> => {
   await expect.poll(async () => (await readNoteChromeState(page)).headerTemplateCount).toBe(0);
   await expect.poll(async () => (await readNoteChromeState(page)).tocTemplateCount).toBe(0);
   await expect.poll(async () => (await readNoteChromeState(page)).headerHeight).toBeGreaterThan(0);
-  await expect.poll(async () => (await readNoteChromeState(page)).tocLabels.join('\n')).toContain('1. 導入');
-  await expect.poll(async () => (await readNoteChromeState(page)).tocLabels.length).toBeGreaterThan(0);
+  await expect
+    .poll(async () => (await readNoteChromeState(page)).tocLabels.join('\n'))
+    .toContain('1. 導入');
+  await expect
+    .poll(async () => (await readNoteChromeState(page)).tocLabels.length)
+    .toBeGreaterThan(0);
 };
 
 test.describe('note chrome shadow DOM', () => {
@@ -115,9 +121,7 @@ test.describe('note chrome shadow DOM', () => {
     await expectLayoutRichNoteChrome(page);
   });
 
-  test('SPA 遷移で layout-rich を開いても front matter と TOC が見えること', async ({
-    page,
-  }) => {
+  test('SPA 遷移で layout-rich を開いても front matter と TOC が見えること', async ({ page }) => {
     await page.goto(sourcePath);
 
     await page.evaluate(() => {

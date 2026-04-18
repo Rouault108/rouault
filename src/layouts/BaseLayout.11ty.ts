@@ -158,7 +158,8 @@ export class BaseLayout {
         kind: 'boolean',
       },
     ]);
-    const tocPresence: TocPresence = data.notePage?.tocPresence ?? data.headerTocPresence ?? 'absent';
+    const tocPresence: TocPresence =
+      data.notePage?.tocPresence ?? data.headerTocPresence ?? 'absent';
     const headerAttributes = serializeHtmlAttributes([
       { name: 'note-layout', value: Boolean(data.note), kind: 'boolean' },
       {

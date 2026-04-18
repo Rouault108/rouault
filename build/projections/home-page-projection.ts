@@ -130,7 +130,9 @@ export const buildHomePageProjection = (
       return [];
     }
 
-    const effectiveDate = normalizeNoteDate(normalizeText(note.updated) || normalizeText(note.date));
+    const effectiveDate = normalizeNoteDate(
+      normalizeText(note.updated) || normalizeText(note.date),
+    );
 
     return [
       {

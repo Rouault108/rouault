@@ -29,9 +29,15 @@ const renderShell = ({
         : null}
 
       <div role="tree" aria-label="ナビゲーション">
-        <a class="link-control" href="/notes" role="treeitem" tabindex="0" aria-selected="true">ノート</a>
-        <a class="link-control" href="/music" role="treeitem" tabindex="-1" aria-selected="false">音楽</a>
-        <a class="link-control" href="/art" role="treeitem" tabindex="-1" aria-selected="false">美術</a>
+        <a class="link-control" href="/notes" role="treeitem" tabindex="0" aria-selected="true"
+          >ノート</a
+        >
+        <a class="link-control" href="/music" role="treeitem" tabindex="-1" aria-selected="false"
+          >音楽</a
+        >
+        <a class="link-control" href="/art" role="treeitem" tabindex="-1" aria-selected="false"
+          >美術</a
+        >
       </div>
     </ui-sidebar-shell>
 
@@ -98,7 +104,9 @@ export const FixedCollapsedZenMode: Story = {
     >
       <ui-sidebar-shell mode="fixed" data-state="collapsed">
         <div role="tree" aria-label="ナビゲーション">
-          <a class="link-control" href="/notes" role="treeitem" tabindex="0" aria-selected="true">ノート</a>
+          <a class="link-control" href="/notes" role="treeitem" tabindex="0" aria-selected="true"
+            >ノート</a
+          >
         </div>
       </ui-sidebar-shell>
 
@@ -157,14 +165,18 @@ export const HeaderSlotModes: Story = {
       <ui-sidebar-shell mode="fixed" data-state="expanded">
         <button slot="header">Fixed Header</button>
         <div role="tree" aria-label="固定ナビゲーション">
-          <a class="link-control" href="/notes" role="treeitem" aria-selected="true" tabindex="0">ノート</a>
+          <a class="link-control" href="/notes" role="treeitem" aria-selected="true" tabindex="0"
+            >ノート</a
+          >
         </div>
       </ui-sidebar-shell>
 
       <ui-sidebar-shell mode="overlay" data-state="expanded">
         <button slot="header">Overlay Header</button>
         <div role="tree" aria-label="オーバーレイナビゲーション">
-          <a class="link-control" href="/music" role="treeitem" aria-selected="false" tabindex="-1">音楽</a>
+          <a class="link-control" href="/music" role="treeitem" aria-selected="false" tabindex="-1"
+            >音楽</a
+          >
         </div>
       </ui-sidebar-shell>
     </div>
@@ -198,9 +210,15 @@ export const ManualOverlayReview: Story = {
         <button slot="header">現在のジャンル</button>
 
         <div role="tree" aria-label="ナビゲーション">
-          <a class="link-control" href="/notes" role="treeitem" tabindex="0" aria-selected="true">ノート</a>
-          <a class="link-control" href="/music" role="treeitem" tabindex="-1" aria-selected="false">音楽</a>
-          <a class="link-control" href="/art" role="treeitem" tabindex="-1" aria-selected="false">美術</a>
+          <a class="link-control" href="/notes" role="treeitem" tabindex="0" aria-selected="true"
+            >ノート</a
+          >
+          <a class="link-control" href="/music" role="treeitem" tabindex="-1" aria-selected="false"
+            >音楽</a
+          >
+          <a class="link-control" href="/art" role="treeitem" tabindex="-1" aria-selected="false"
+            >美術</a
+          >
         </div>
       </ui-sidebar-shell>
 

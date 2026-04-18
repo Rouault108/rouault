@@ -287,7 +287,10 @@ export const buildNotesCollection = (
     return sortIndex;
   };
 
-  const collectCachedSidebarScopeRules = (slug: string, sourceRootPath: string): SidebarScopeRule[] => {
+  const collectCachedSidebarScopeRules = (
+    slug: string,
+    sourceRootPath: string,
+  ): SidebarScopeRule[] => {
     const parts = slug.split('/');
     const dirParts = parts.slice(0, -1);
     const rules: SidebarScopeRule[] = [];

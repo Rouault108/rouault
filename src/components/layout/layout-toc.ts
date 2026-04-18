@@ -182,11 +182,8 @@ export class LayoutToc extends LitElement {
       inset-inline: 0;
       top: var(--header-height);
       z-index: var(--z-page-chrome, var(--z-fixed, 100));
-      padding:
-        var(--space-2, 8px)
-        max(var(--space-3, 12px), env(safe-area-inset-right))
-        var(--space-2, 8px)
-        max(var(--space-3, 12px), env(safe-area-inset-left));
+      padding: var(--space-2, 8px) max(var(--space-3, 12px), env(safe-area-inset-right))
+        var(--space-2, 8px) max(var(--space-3, 12px), env(safe-area-inset-left));
       border-bottom: var(--border-width, 1px) solid var(--border-default);
       background: oklch(from var(--bg-default) l c h / 0.92);
       backdrop-filter: blur(var(--blur-md, 12px));
@@ -275,11 +272,8 @@ export class LayoutToc extends LitElement {
       transform: translateY(100%);
       transition: transform var(--duration-normal, 150ms)
         var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
-      padding:
-        var(--space-2, 8px)
-        max(var(--space-3, 12px), env(safe-area-inset-right))
-        var(--space-6, 24px)
-        max(var(--space-3, 12px), env(safe-area-inset-left));
+      padding: var(--space-2, 8px) max(var(--space-3, 12px), env(safe-area-inset-right))
+        var(--space-6, 24px) max(var(--space-3, 12px), env(safe-area-inset-left));
       overflow-y: auto;
       scrollbar-gutter: stable;
       scrollbar-width: thin;

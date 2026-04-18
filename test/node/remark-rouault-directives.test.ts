@@ -2415,7 +2415,7 @@ describe('remarkRouaultDirectives', () => {
     );
   });
 
-it('syntax-card family を ui-syntax-card / ui-syntax-section / ui-syntax-field 構造へ変換すること', () => {
+  it('syntax-card family を ui-syntax-card / ui-syntax-section / ui-syntax-field 構造へ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [

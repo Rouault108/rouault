@@ -20,9 +20,7 @@ function readEmbeddedBuildIdFromHtml(html: string): string | undefined {
     }
   }
 
-  const footerMatch = html.match(
-    /<layout-footer\b[^>]*\sbuild-label=(['"])(.*?)\1[^>]*>/iu,
-  );
+  const footerMatch = html.match(/<layout-footer\b[^>]*\sbuild-label=(['"])(.*?)\1[^>]*>/iu);
   if (typeof footerMatch?.[2] === 'string') {
     const buildId = footerMatch[2].trim();
     if (buildId.length > 0) {

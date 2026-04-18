@@ -53,7 +53,9 @@ describe('eleventy config', () => {
 
     expect(source).toContain('watch: false,');
     expect(source).not.toContain('watch: true,');
-    expect(source).toContain('開発時の再実行は Eleventy 側の watch と eleventy.before に委譲する。');
+    expect(source).toContain(
+      '開発時の再実行は Eleventy 側の watch と eleventy.before に委譲する。',
+    );
   });
 
   it('tagPages グローバルデータを遅延 import で登録できること', async () => {

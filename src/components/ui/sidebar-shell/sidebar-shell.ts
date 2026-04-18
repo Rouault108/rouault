@@ -128,8 +128,7 @@ export class UiSidebarShell extends LitElement {
       visibility: hidden;
       pointer-events: none;
       transition:
-        opacity var(--duration-normal, 150ms)
-          var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
+        opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
         visibility 0s linear var(--duration-normal, 150ms);
       z-index: var(--z-backdrop, 200);
     }
@@ -143,8 +142,7 @@ export class UiSidebarShell extends LitElement {
       visibility: visible;
       pointer-events: auto;
       transition:
-        opacity var(--duration-normal, 150ms)
-          var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
+        opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
         visibility 0s linear 0s;
     }
 

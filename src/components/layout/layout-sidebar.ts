@@ -18,9 +18,7 @@ import {
   LayoutSidebarNavInteractionController,
   syncLayoutSidebarNav,
 } from './layout-sidebar-nav.js';
-import {
-  ensureLayoutSidebarOverlayLayer,
-} from './layout-sidebar-overlay-layer.js';
+import { ensureLayoutSidebarOverlayLayer } from './layout-sidebar-overlay-layer.js';
 import './layout-sidebar-surface.js';
 import type { LayoutSidebarSurface } from './layout-sidebar-surface.js';
 

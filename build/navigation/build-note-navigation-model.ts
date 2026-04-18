@@ -120,10 +120,8 @@ const buildSidebarRows = (
     ...(typeof node.icon === 'string' ? { icon: node.icon } : {}),
     depth,
     isCurrent: node.id === options.selectedId,
-    hasCurrentDescendant:
-      node.kind === 'branch' ? options.currentAncestorIds.has(node.id) : false,
-    isInitiallyExpanded:
-      node.kind === 'branch' ? options.initialExpandedIds.has(node.id) : false,
+    hasCurrentDescendant: node.kind === 'branch' ? options.currentAncestorIds.has(node.id) : false,
+    isInitiallyExpanded: node.kind === 'branch' ? options.initialExpandedIds.has(node.id) : false,
     children:
       node.kind === 'branch'
         ? buildSidebarRows(node.children, {
