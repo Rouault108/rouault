@@ -57,6 +57,7 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('initial-expanded-ids="[]"');
     expect(rendered).toContain('topology-revision="reader-note-topology"');
     expect(rendered).toContain('<nav data-sidebar-nav');
+    expect(rendered).toContain('data-sidebar-boot-state="ssr"');
     expect(rendered).not.toContain('heading="ナビゲーション"');
   });
 

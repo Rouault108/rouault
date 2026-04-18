@@ -10,6 +10,7 @@ const crossBrowserFinalCheck = [
   '**/tag-page.spec.ts',
   '**/toc-active-scroll.spec.ts',
   '**/toc-tabs.spec.ts',
+  '**/sidebar-pre-hydration-leakage.spec.ts',
 ];
 
 const isCI = !!process.env['CI'];

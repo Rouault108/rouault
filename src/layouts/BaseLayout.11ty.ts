@@ -108,6 +108,7 @@ const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar
     { name: 'fixed-breakpoint', value: sidebar.fixedBreakpoint },
     { name: 'sidebar-id', value: NOTE_LAYOUT_SIDEBAR_ID },
     { name: 'presentation', value: 'auto' },
+    { name: 'data-sidebar-boot-state', value: 'ssr' },
     { name: 'data-hydration-capability', value: 'interactive' },
     { name: 'data-hydration-trigger', value: 'initial' },
   ]);

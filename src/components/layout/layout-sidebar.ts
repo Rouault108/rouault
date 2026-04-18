@@ -189,7 +189,11 @@ export class LayoutSidebar extends LitElement {
     if (!this._bootstrappedMarkup) {
       this._navMarkup = this.innerHTML.trim();
       this._bootstrappedMarkup = true;
+
+      // pre-hydration raw DOM leakage を防ぐため、SSR light DOM を先に除去してから
+      // boot marker を外す。順序が逆だと marker 解除から再描画までの race が残る。
       this.innerHTML = '';
+      this.removeAttribute('data-sidebar-boot-state');
     }
 
     super.connectedCallback();

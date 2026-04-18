@@ -181,6 +181,75 @@ describe('HydrationScheduler', () => {
     expect(currentDiagnostics.failedCount).to.equal(0);
   });
 
+  it('layout-sidebar の SSR boot marker を hydration 完了時に解除すること', async () => {
+    const root = await fixture<HTMLElement>(html`<main></main>`);
+    root.innerHTML = `
+      <section data-hydration-scope="note-sidebar">
+        <layout-sidebar
+          data-sidebar-boot-state="ssr"
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+          state-scope-id="note-navigation"
+          selected-id="music/classical/beethoven/symphony-9"
+          initial-expanded-ids='["music","music/classical"]'
+          presentation="overlay"
+        >
+          <nav data-sidebar-nav aria-label="ノートナビゲーション">
+            <ul>
+              <li data-node-id="music" data-node-kind="branch" data-node-depth="0">
+                <button
+                  type="button"
+                  data-sidebar-nav-control
+                  data-sidebar-nav-branch-control
+                  aria-expanded="true"
+                  aria-controls="sidebar-group-music"
+                >
+                  <span data-sidebar-nav-label>Music</span>
+                </button>
+                <ul id="sidebar-group-music">
+                  <li
+                    data-node-id="music/classical/beethoven/symphony-9"
+                    data-node-kind="leaf"
+                    data-node-depth="1"
+                  >
+                    <a
+                      data-sidebar-nav-control
+                      data-sidebar-nav-link
+                      href="/notes/music/classical/beethoven/symphony-9"
+                      aria-current="page"
+                    >
+                      <span data-sidebar-nav-label>交響曲第9番 ニ短調</span>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </nav>
+        </layout-sidebar>
+      </section>
+    `;
+
+    const scheduler = new HydrationScheduler();
+    let diagnostics: HydrationDiagnostics | null = null;
+    root.addEventListener(
+      'app-router:hydration-diagnostics',
+      (event: Event) => {
+        diagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
+      },
+      { once: true },
+    );
+
+    const sidebar = root.querySelector<HTMLElement>('layout-sidebar');
+    if (!(sidebar instanceof HTMLElement)) {
+      throw new Error('layout-sidebar が見つかりません');
+    }
+
+    await scheduler.hydrateContent(root, { dispatchTarget: root });
+
+    await waitUntil(() => diagnostics !== null, 'layout-sidebar の diagnostics が発火すること');
+    expect(sidebar.getAttribute('data-sidebar-boot-state')).to.equal(null);
+  });
+
   it('新しい route が始まったら旧 session の diagnostics を commit しないこと', async () => {
     const visibleTag = 'x-hydration-abort-visible';
     const initialTag = 'x-hydration-abort-initial';

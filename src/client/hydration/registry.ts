@@ -49,6 +49,18 @@ const activateFootnotePopovers = ({ root }: HydrationActivationContext): void =>
   enhanceFootnotePopovers(root);
 };
 
+const activateLayoutSidebar = ({ element }: HydrationActivationContext): void => {
+  if (!element.isConnected) {
+    return;
+  }
+
+  // Safari 系で upgrade 後も SSR boot marker が残る揺らぎを吸収し、
+  // pre-hydration guard を hydration 完了後へ持ち越さない。
+  if (element.getAttribute('data-sidebar-boot-state') === 'ssr') {
+    element.removeAttribute('data-sidebar-boot-state');
+  }
+};
+
 const activateLayoutToc = async ({ element }: HydrationActivationContext): Promise<void> => {
   const module = await import('../../components/layout/layout-toc.js');
   await module.activateLayoutToc(element);
@@ -107,6 +119,7 @@ export const HYDRATION_REGISTRY = [
   {
     tag: 'layout-sidebar',
     loader: () => import('../../components/layout/layout-sidebar.js'),
+    activate: activateLayoutSidebar,
   },
   {
     tag: 'layout-toc',

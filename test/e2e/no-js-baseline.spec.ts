@@ -108,6 +108,57 @@ test.describe('No-JS baseline', () => {
     await expectLayoutRichNoteChromeHostsWithoutJs(page);
   });
 
+  test('layout-rich は狭幅 No-JS では sidebar raw nav を paint しないこと', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 900 });
+    await page.goto(layoutRichPath);
+
+    const state = await page.evaluate(() => {
+      const sidebarColumn = document.querySelector<HTMLElement>('[data-app-shell-sidebar-host]');
+      const sidebarHost = document.querySelector<HTMLElement>(
+        'layout-sidebar[data-sidebar-boot-state="ssr"]',
+      );
+      const rawNav = sidebarHost?.querySelector<HTMLElement>('[data-sidebar-nav]');
+
+      if (
+        !(sidebarColumn instanceof HTMLElement) ||
+        !(sidebarHost instanceof HTMLElement) ||
+        !(rawNav instanceof HTMLElement)
+      ) {
+        return null;
+      }
+
+      const sidebarColumnStyle = getComputedStyle(sidebarColumn);
+      const sidebarHostStyle = getComputedStyle(sidebarHost);
+
+      return {
+        bootState: sidebarHost.getAttribute('data-sidebar-boot-state'),
+        hostVisibility: sidebarHostStyle.visibility,
+        hostPointerEvents: sidebarHostStyle.pointerEvents,
+        columnOverflowX: sidebarColumnStyle.overflowX,
+        columnOverflowY: sidebarColumnStyle.overflowY,
+        columnWidth: Math.round(sidebarColumn.getBoundingClientRect().width),
+        hostWidth: Math.round(sidebarHost.getBoundingClientRect().width),
+        horizontalOverflow:
+          document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+
+    expect(state).not.toBeNull();
+    expect(state?.bootState).toBe('ssr');
+    expect(state?.hostVisibility).toBe('hidden');
+    expect(state?.hostPointerEvents).toBe('none');
+    expect(state?.columnOverflowX).toBe('hidden');
+    expect(state?.columnOverflowY).toBe('hidden');
+    expect(state?.columnWidth ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(1);
+    expect(state?.hostWidth ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(1);
+    expect(state?.horizontalOverflow ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(1);
+
+    await expect(page.locator('layout-sidebar[data-sidebar-boot-state="ssr"]')).toHaveCount(1);
+    await expect(
+      page.locator('layout-sidebar[data-sidebar-boot-state="ssr"] [data-sidebar-nav]'),
+    ).toBeHidden();
+  });
+
   test('toc-absent fixture では No-JS でも空の TOC landmark を出力しないこと', async ({ page }) => {
     await page.goto(tocAbsentPath);
 
