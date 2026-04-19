@@ -2,7 +2,7 @@
 
 ## この文書の位置づけ
 
-この文書は、Rouault でノートを書く人のための実用ガイドです。ここでは「著者がどう書くか」に絞って説明します。
+この文書は、Rouaultでノートを書く人のための実用ガイドです。ここでは「著者がどう書くか」に絞って説明します。
 
 実装上・仕様上の正本は次にあります。
 
@@ -18,19 +18,19 @@
 
 ## 1. まず押さえる方針
 
-1. ふだんの本文は標準的な Markdown で書く
-2. 補足 UI が必要なときだけ Rouault 独自ディレクティブを使う
-3. 生 HTML は書かない
-4. frontmatter には必要なメタデータだけを書く
+1. 基本的に本文は標準的なMarkdownで書く
+2. 補足UIが必要なときだけRouault独自ディレクティブを使う
+3. 生HTMLは書かない（書いてもエラーとなる）
+4. frontmatterには必要なメタデータだけを書く
 5. 迷ったら簡潔な書き方を選ぶ
-6. 属性の完全一覧や厳密な受理規則は `docs/markdown-authoring-specification.md` を参照する
-7. Rouault のディレクティブは独自 parser を正本とし、`remark-directive` AST 互換は前提にしない
+6. 属性の完全一覧や厳密な受理規則は `docs/markdown-authoring-specification.md`を参照する
+7. Rouaultのディレクティブは独自parserを正本とし、`remark-directive` AST互換は前提にしない
 
 ---
 
 ## 2. 基本のファイル構成
 
-1 つのノートは、frontmatter と本文で構成します。
+1つのノートは、frontmatter と本文で構成します。
 
 ```markdown
 ---
@@ -52,9 +52,9 @@ sidebarIcon: file-text
 
 ---
 
-## 3. Frontmatter の書き方
+## 3. Frontmatterの書き方
 
-frontmatter はファイル先頭の `---` で囲まれた領域に書きます。YAML 形式で記述してください。
+frontmatterはファイル先頭の`---`で囲まれた領域に書きます。YAML形式で記述してください。
 
 ### 3.1 最低限の項目
 
@@ -74,36 +74,36 @@ genre:
 | 項目                     | 必須     | 許容値                                                                                                  | 主な制約・補足                                                                                  |
 | ------------------------ | -------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `title`                  | 必須     | YAML 文字列                                                                                             | 実質的なタイトルです。空文字運用は避けます。本文の先頭見出しと揃えると管理しやすくなります。    |
-| `description`            | 任意     | YAML 文字列                                                                                             | 一覧、検索、メタ説明に使われます。1 文程度の短い要約を推奨します。                              |
-| `date`                   | 任意     | `YYYY-MM-DD` 形式の ISO 日付                                                                            | 初出日です。`2026-03-14` のように書きます。                                                     |
-| `updated`                | 任意     | `YYYY-MM-DD` 形式の ISO 日付                                                                            | 更新日です。`date` と同じ形式だけを書きます。                                                   |
-| `genre`                  | 任意     | 文字列配列                                                                                              | 分類用です。検索 UI ではタグとして扱われます。空文字や重複は避けます。                          |
-| `sidebarIcon`            | 任意     | `file-text` のような bare icon 名                                                                       | `lucide:` 接頭辞は使えません。`none` も使えます。省略時は `_config.json` 側の設定を継承します。 |
-| `cover`                  | 任意     | `content/_assets/...` または `examples/media/...` 配下のローカル画像パス                                | 現行実装では外部 URL は使えません。manifest に存在しない画像は build で失敗する場合があります。 |
-| `source`                 | 任意     | 文字列                                                                                                  | 記事ヘッダーでの表示対象は `http:` / `https:` の単一 URL のみです。                             |
+| `description`            | 任意     | YAML 文字列                                                                                             | 一覧、検索、メタ説明に使われます。1文程度の短い要約を推奨します。                              |
+| `date`                   | 任意     | `YYYY-MM-DD` 形式の ISO 日付                                                                            | 初出日です。`2026-03-14`のように書きます。                                                      |
+| `updated`                | 任意     | `YYYY-MM-DD` 形式の ISO 日付                                                                            | 更新日です。`date`と同じ形式だけを書きます。                                                    |
+| `genre`                  | 任意     | 文字列配列                                                                                              | 分類用です。検索UIではタグとして扱われます。空文字や重複は避けます。                            |
+| `sidebarIcon`            | 任意     | `file-text` のような bare icon 名                                                                       | `lucide:`接頭辞は使えません。`none`も使えます。省略時は `_config.json`側の設定を継承します。   |
+| `cover`                  | 任意     | `content/_assets/...` または `examples/media/...` 配下のローカル画像パス                                | 現行実装では外部URLは使えません。manifestに存在しない画像はbuildで失敗する場合があります。      |
+| `source`                 | 任意     | 文字列                                                                                                  | 記事ヘッダーでの表示対象は `http:` / `https:`の単一URLのみです。                                |
 | `license`                | 任意     | 文字列                                                                                                  | 表示用のライセンス名です。前後空白のみの値は意味を持ちません。                                  |
 | `licenseNote`            | 任意     | 文字列                                                                                                  | ライセンス補足です。構造化データではなく単純な文字列だけを書きます。                            |
 | `status`                 | 任意     | `draft` / `archived` / `wip` / `deprecated`                                                             | `draft` は公開ノート集合から除外されます。省略時は通常公開扱いです。                            |
-| `kind`                   | 任意     | `reader` / `testing` / `demo`                                                                           | 省略時は `reader` として扱われます。公開面を変える項目です。                                    |
+| `kind`                   | 任意     | `reader` / `testing` / `demo`                                                                           | 省略時は `reader`として扱われます。公開面を変える項目です。                                     |
 | `testingArea`            | 条件付き | `index` / `markdown-basic` / `media` / `code` / `interactive` / `sandbox`                               | `kind: testing` のときだけ必須です。`kind` が `testing` 以外なら書けません。                    |
 | `hydrationBudgetProfile` | 任意     | `reader-shell-canary` / `testing-interactive-canary` / `testing-sandbox-canary` / `testing-code-canary` | hydration budget を明示したい canary note 専用です。通常ノートでは不要です。                    |
 
 ### 3.3 各項目の書き方
 
 - `title`
-  YAML 文字列で書きます。必須です。実装上の識別子ではなく表示用の題名なので、`slug` の代わりにはしません。
+  YAML文字列で書きます。必須です。実装上の識別子ではなく表示用の題名なので、`slug`の代わりにはしません。
 
 - `description`
-  YAML 文字列で書きます。本文冒頭の貼り付けではなく、一覧や検索で見分けやすい短い要約にします。
+  YAML文字列で書きます。本文冒頭の貼り付けではなく、一覧や検索で見分けやすい短い要約にします。
 
 - `date`
-  `YYYY-MM-DD` 形式だけを書きます。日時や `03/14/2026` のような別形式は書きません。
+  `YYYY-MM-DD`形式だけを書きます。日時や`03/14/2026`のような別形式は書きません。
 
 - `updated`
-  `date` と同じく `YYYY-MM-DD` 形式です。大きな更新を追跡したいときだけ追加します。
+  `date`と同じく`YYYY-MM-DD`形式です。大きな更新を追跡したいときだけ追加します。
 
 - `genre`
-  YAML 配列で書きます。各要素は文字列です。
+  YAML配列で書きます。各要素は文字列です。
 
   ```yaml
   genre:
@@ -112,7 +112,7 @@ genre:
   ```
 
 - `sidebarIcon`
-  bare icon 名を書きます。たとえば `file-text`、`book-open`、`music` のように書きます。`lucide:file-text` のような prefix 付き値は使えません。消したい場合は `none` を使えます。
+  bare icon名を書きます。たとえば`file-text`、`book-open`、`music`のように書きます。`lucide:file-text`のようなprefix付き値は使えません。消したい場合は`none`を使えます。
 
 - `cover`
   ローカル画像パスだけを書きます。通常ノートでは `content/_assets/...` 配下の画像を使います。
@@ -122,7 +122,7 @@ genre:
   ```
 
 - `source`
-  単一の出典 URL を文字列で書きます。現行 UI で安定して扱う前提は `http:` / `https:` のみです。
+  単一の出典URLを文字列で書きます。現行UIで安定して扱う前提は`http:` / `https:`のみです。
 
 - `license`
   表示用の短い文字列を書きます。たとえば `CC BY 4.0` のように書きます。
@@ -131,7 +131,7 @@ genre:
   補足説明を文字列で書きます。リンク先やラベルを分離した構造は持てません。
 
 - `status`
-  記事状態が必要なときだけ書きます。使える値は `draft` / `archived` / `wip` / `deprecated` だけです。
+  記事状態が必要なときだけ書きます。使える値は`draft` / `archived` / `wip` / `deprecated`だけです。
   - `draft`: 公開ノート集合から除外されます
   - `archived`: 公開はするがアーカイブ扱いです
   - `wip`: 作業中ノートとして表示します
@@ -147,13 +147,13 @@ genre:
   `kind: testing` のときだけ書きます。許可値は `index` / `markdown-basic` / `media` / `code` / `interactive` / `sandbox` です。
 
 - `hydrationBudgetProfile`
-  canary note で hydration budget を固定したいときだけ書きます。通常ノートでは省略します。
+  canary noteでhydration budgetを固定したいときだけ書きます。通常ノートでは省略します。
   - `reader-shell-canary`
   - `testing-interactive-canary`
   - `testing-sandbox-canary`
   - `testing-code-canary`
 
-testing 用ノートの最小例:
+testing用ノートの最小例:
 
 ```yaml
 ---
@@ -167,7 +167,7 @@ testingArea: 'interactive'
 
 ### 3.4 書かない項目
 
-次は通常、frontmatter に書きません。
+次は通常、frontmatterに書きません。
 
 - `slug`
 - `content`
@@ -177,13 +177,13 @@ testingArea: 'interactive'
 
 これらはシステム側で決まる前提です。
 
-### 3.5 Frontmatter の注意
+### 3.5 Frontmatterの注意
 
 - 日付は `2026-03-14` のように書く
 - `genre` は YAML 配列で書く
 - `testingArea` は `kind: testing` のときだけ書く
 - `cover` はローカル画像パスだけを書く
-- `sidebarIcon` は bare icon 名で書き、`lucide:` 接頭辞を付けない
+- `sidebarIcon` はbare icon名で書き、`lucide:`接頭辞を付けない
 - 未定義の項目は追加しない
 - 値が無い項目は無理に書かない
 
@@ -247,11 +247,11 @@ _イタリック_
 - `loading` は `lazy` または `eager`
 - `width` / `height` は整数で書く
 - 通常ノートでは `content/_assets/...` を使う
-- shared testing media を使うときだけ `examples/media/...` を使える
+- shared testing mediaを使うときだけ`examples/media/...`を使える
 
 ### 4.3.1 Shared Example Include
 
-shared example source を本文へ展開したいときに使います。現状は主に `testing` ノートで使います。
+shared example sourceを本文へ展開したいときに使います。現状は主に`testing`ノートで使います。
 
 ```markdown
 ::example-include{ref="interactive/tabs-url-sync"}
@@ -259,13 +259,13 @@ shared example source を本文へ展開したいときに使います。現状�
 
 覚えておくこと:
 
-- `ref` は登録済み logical id だけ使える
-- path を直接書かない
-- 未登録 `ref` や `..` を含む参照は build-time error になる
+- `ref` は登録済みlogical idだけ使える
+- pathを直接書かない
+- 未登録の`ref`や`..`を含む参照はbuild-time errorになる
 
 ### 4.4 自動リンクカード
 
-外部リンクを 1 行だけ書いた段落は、自動でリンクカードになります。
+外部リンクを1行だけ書いた段落は、自動でリンクカードになります。
 
 ```markdown
 https://example.com/article
@@ -287,7 +287,7 @@ https://example.com/article
 
 ```markdown
 > 引用文
-> 2 行目
+> 2行目
 ```
 
 ### 4.7 コードブロック
@@ -310,11 +310,11 @@ $$
 
 ---
 
-## 5. Rouault 独自ブロックの使い方
+## 5. Rouault独自ブロックの使い方
 
-標準 Markdown だけでは足りないときに、Rouault 独自ディレクティブを使います。これは Rouault 固有 parser を正本とする契約です。
+標準Markdownだけでは足りないときに、Rouault独自ディレクティブを使います。これはRouault固有parserを正本とする契約です。
 
-`remark-directive` ベースの一般的な directive AST 互換は前提にしません。詳細な受理規則は `docs/markdown-authoring-specification.md` を参照してください。
+`remark-directive`ベースの一般的なdirective AST互換は前提にしません。詳細な受理規則は`docs/markdown-authoring-specification.md`を参照してください。
 
 基本形:
 
@@ -330,9 +330,9 @@ $$
 - 終了行は必ず `::`
 - 属性は `key="value"` 形式
 - 未対応属性を書くとビルドエラーになります
-- 生 HTML の代わりとして使います
+- 生HTMLの代わりとして使います
 - 属性の完全一覧は `docs/markdown-authoring-specification.md` を参照してください
-- このガイドの例は作法の説明であり、一般的な directive AST 互換の説明ではありません
+- このガイドの例は作法の説明であり、一般的なdirective AST互換の説明ではありません
 
 ### 5.1 Callout
 
@@ -374,7 +374,7 @@ const value = '1';
 
 - 正しい例 / 誤り例の比較
 - 言語別実装の並列表示
-- API の複数パターン提示
+- APIの複数パターン提示
 
 ### 5.3 Code Preview
 
@@ -395,12 +395,12 @@ const value = '1';
 
 使う場面:
 
-- UI 部品の見た目をコードと一緒に見せたいとき
+- UI部品の見た目をコードと一緒に見せたいとき
 - コンポーネントの使用例を短く示したいとき
 
 ### 5.4 Sandbox Preview
 
-HTML / CSS / JavaScript から sandbox を自動生成したい場合に使います。
+HTML / CSS / JavaScriptからsandboxを自動生成したい場合に使います。
 
 ````markdown
 ::code-preview{heading="ボタン例" controls="viewport"}
@@ -430,7 +430,7 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 - `preview-html` は必須
 - `preview-css` / `preview-js` は必要な場合だけ追加する
 - `preview-js` を使うときは `allow-js="true"` を付ける
-- `preview-sandbox` を使うときは、手書きの `::preview` や通常 code block を併用しない
+- `preview-sandbox` を使うときは、手書きの`::preview`や通常のcode blockを併用しない
 - 属性名は `title` ではなく `iframe-title` を使う
 
 ### 5.5 Details
@@ -487,7 +487,7 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 
 使い分けの目安:
 
-- URL をそのまま 1 行だけ置けばよい
+- URLをそのまま1行だけ置けばよい
   → 自動リンクカード化
 - タイトルや画像を明示したい
   → `::link-card`
@@ -503,12 +503,12 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 
 使う場面:
 
-- 譜例や図版を専用 UI で見せたいとき
+- 譜例や図版を専用UIで見せたいとき
 - キャプションや説明を併記したいとき
 
 ### 5.9 Tabs
 
-タブ UI を構成します。
+タブUIを構成します。
 
 ```markdown
 ::tabs{url-sync="true" default-selected-value="overview" orientation="horizontal"}
@@ -545,11 +545,11 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 - `selected-value` / `default-selected-value` は実在する `tab.value` を指す
 - `url-sync` は主タブにだけ使う
 - 同一文書内で `url-sync` を持つ `tabs` は 1 系統だけにする
-- 不整合は build-time で拒否される
+- 不整合はbuild-timeで拒否される
 
 ### 5.10 Translation
 
-原文と訳文を **plain-text の対**として示します。
+原文と訳文を**plain-textの対**として示します。
 
 正規の書き方:
 
@@ -558,14 +558,14 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 ::
 ```
 
-overlay で参照させる正規の書き方:
+overlayで参照させる正規の書き方:
 
 ```markdown
 ::translation-overlay{lang="fr" target-lang="ja" surface="drawer" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}
 ::
 ```
 
-本文 2 段落から拾わせる書き方（縮退入力）:
+本文2段落から拾わせる書き方（縮退入力）:
 
 ```markdown
 ::translation{lang="fr" target-lang="ja"}
@@ -577,10 +577,10 @@ Je pense, donc je suis.
 
 注意:
 
-- `translation` / `translation-overlay` が保持するのは plain-text 2 片だけです。
-- 本文入力を使う場合も、取り出されるのは 1 段落目と 2 段落目のプレーンテキスト相当だけです。
+- `translation` / `translation-overlay` が保持するのはplain-textの2片だけです。
+- 本文入力を使う場合も、取り出されるのは 1段落目と2段落目のプレーンテキスト相当だけです。
 - 強調、脚注、リンク、ルビなどの構造は保持されません。
-- rich な対訳本文を表現したい場合は、この directive family を使わず、別 directive を検討してください。
+- richな対訳本文を表現したい場合は、このdirective familyを使わず、別directiveを検討してください。
 
 使い分けの目安:
 
@@ -588,14 +588,14 @@ Je pense, donc je suis.
   → `translation`
 - クリック時だけ開きたい
   → `translation-overlay`
-- 属性へ直接書きたくない plain-text 2 片を簡便入力したい
-  → `translation` の本文 2 段落
+- 属性へ直接書きたくないplain-text 2片を簡便入力したい
+  → `translation`の本文2段落
 
 ---
 
 ## 6. 親ディレクティブ内で使う記法
 
-次は単独 UI ではなく、親ディレクティブ内で使う補助記法です。
+次は単独UIではなく、親ディレクティブ内で使う補助記法です。
 
 ### 6.1 Preview
 
@@ -673,7 +673,7 @@ x^2^
 :sparkles:
 ```
 
-よく使う shortcode:
+よく使うshortcode:
 
 - `smile`
 - `thinking`
@@ -692,7 +692,7 @@ x^2^
 
 ## 8. 真偽値の書き方
 
-真偽値属性は、実装上は複数の表記を受け付ける場合がありますが、--このガイドでは `true` / `false` に統一--することを勧めます。
+真偽値属性は、実装上は複数の表記を受け付ける場合がありますが、--このガイドでは`true` / `false`に統一--することを勧めます。
 
 例:
 
@@ -712,13 +712,13 @@ x^2^
 
 ## 9. エラーになりやすい書き方
 
-### 9.1 生 HTML を書く
+### 9.1 生HTMLを書く
 
 ```markdown
 <div>これは不可</div>
 ```
 
-生 HTML は書きません。
+生HTMLは書きません。
 
 ### 9.2 未対応属性を書く
 
@@ -739,7 +739,7 @@ x^2^
 
 終了行が無いとエラーになります。
 
-### 9.4 enum の値を間違える
+### 9.4 enumの値を間違える
 
 ```markdown
 ::details{summary="補足" variant="outline"}
@@ -767,7 +767,7 @@ x^2^
 
 ## 9.7 `syntax-card` の書き方
 
-API リファレンスや構文メモのように、代表シグネチャと説明節を分けて見せたい場合は `syntax-card` family を使います。
+APIリファレンスや構文メモのように、代表シグネチャと説明節を分けて見せたい場合は`syntax-card` familyを使います。
 
 最小例:
 
@@ -787,7 +787,7 @@ React の副作用を宣言します。
 ::
 ````
 
-field を併用する例:
+fieldを併用する例:
 
 ````md
 ::syntax-card{name="useEffect" kind="Method" lang="ts"}
@@ -814,20 +814,20 @@ function useEffect(effect: () => void | (() => void), deps?: readonly unknown[])
 
 注意点:
 
-- `syntax-signature` の中には fenced code block を 1 個だけ書きます。
-- signature の code fence に `meta` は書けません。
-- `syntax-field` は必ず `syntax-fields` の中に入れます。
-- `syntax-card.lang` と signature fence の `lang` を両方書く場合は一致していなければなりません。
+- `syntax-signature` の中にはfenced code blockを1個だけ書きます。
+- signatureのcode fenceに`meta`は書けません。
+- `syntax-field` は必ず`syntax-fields`の中に入れます。
+- `syntax-card.lang`とsignature fenceの`lang`を両方書く場合は一致していなければなりません。
 
 ---
 
 ## 10. 書き分けの目安
 
-1. 文章中心なら通常 Markdown を使う
-2. まず frontmatter に `title` `description` `date` を書く
+1. 文章中心なら通常Markdownを使う
+2. まずfrontmatterに`title` `description` `date`を書く
 3. 注意喚起や補足なら `callout` `details` `info-box`
 4. 複数コード比較なら `code-group`
-5. UI 例とコードを一緒に見せるなら `code-preview`
+5. UI例とコードを一緒に見せるなら`code-preview`
 6. 構造化された比較なら `tabs`
 7. 原文と訳文なら `translation`
 8. 単なる外部リンクなら通常リンク、自動カード化で足りなければ `::link-card`
