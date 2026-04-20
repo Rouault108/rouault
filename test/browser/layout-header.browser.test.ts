@@ -34,20 +34,6 @@ const isVisible = (element: HTMLElement): boolean => {
   );
 };
 
-const readCompactZoneInsets = (header: LayoutHeader) => {
-  const uiHeader = expectPresent(header.shadowRoot?.querySelector<UiHeader>('ui-header'), 'uiHeader');
-  const zoneCompactCenter = expectPresent(
-    uiHeader.shadowRoot?.querySelector<HTMLElement>('.zone-compact-center'),
-    'zoneCompactCenter',
-  );
-  const styles = getComputedStyle(zoneCompactCenter);
-
-  return {
-    left: styles.left,
-    right: styles.right,
-  };
-};
-
 describe('layout-header browser contract', () => {
   afterEach(() => {
     layoutSidebarController.reset();
@@ -134,7 +120,7 @@ describe('layout-header browser contract', () => {
     expect(document.activeElement).to.not.equal(themeTrigger);
   });
 
-  it('mobile note では breadcrumb 末尾を compact-center の現在位置ラベルとして表示すること', async () => {
+  it('mobile note では compact-center を描画しないこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px;">
         <layout-header
@@ -147,13 +133,7 @@ describe('layout-header browser contract', () => {
     const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
     await waitForLitUpdate(header);
 
-    const compactLabel = expectPresent(
-      header.shadowRoot?.querySelector<HTMLElement>('.compact-note-label'),
-      'compactLabel',
-    );
-
-    expect(compactLabel.getAttribute('slot')).to.equal('compact-center');
-    expect(compactLabel.textContent?.trim()).to.equal('Current');
+    expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
   });
 
   it('mobile note かつ sidebar-enabled=true では corpus-switcher を隠し、theme chevron を描画しないこと', async () => {
@@ -169,6 +149,11 @@ describe('layout-header browser contract', () => {
     const corpusSwitcher = expectPresent(
       header.shadowRoot?.querySelector<HTMLElement>('.corpus-switcher'),
       'corpusSwitcher',
+    );
+
+    await waitUntil(
+      () => header.shadowRoot?.querySelector('.theme-chevron') === null,
+      'mobile note では theme chevron を描画しないこと',
     );
 
     expect(getComputedStyle(corpusSwitcher).display).to.equal('none');
@@ -198,30 +183,6 @@ describe('layout-header browser contract', () => {
     await waitForLitUpdate(header);
 
     expect(header.shadowRoot?.querySelector('.theme-chevron')).to.not.equal(null);
-  });
-
-  it('compact-center の現在位置ラベルが非インタラクティブであること', async () => {
-    const wrapper = await fixture<HTMLDivElement>(html`
-      <div style="inline-size: 375px;">
-        <layout-header
-          note-layout
-          breadcrumbs-json='[{"label":"Notes","href":"/"},{"label":"Section","href":"/notes/section"},{"label":"Current"}]'
-        ></layout-header>
-      </div>
-    `);
-
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
-    await waitForLitUpdate(header);
-
-    const compactLabel = expectPresent(
-      header.shadowRoot?.querySelector<HTMLElement>('.compact-note-label'),
-      'compactLabel',
-    );
-
-    expect(compactLabel.tagName).to.equal('DIV');
-    expect(compactLabel.getAttribute('aria-expanded')).to.equal(null);
-    expect(compactLabel.getAttribute('aria-controls')).to.equal(null);
-    expect(getComputedStyle(compactLabel).pointerEvents).to.equal('none');
   });
 
   it('overlay 展開時は ui-header に overlaySidebarOpen だけを渡し、sidebar 幅は予約しないこと', async () => {
@@ -331,64 +292,6 @@ describe('layout-header browser contract', () => {
     expect(styles.right).to.equal('248px');
   });
 
-  it('mobile note の compact-center inset が 375px / sidebar-enabled=true で left=44px, right=136px になること', async () => {
-    const wrapper = await fixture<HTMLDivElement>(html`
-      <div style="inline-size: 375px;">
-        <layout-header note-layout sidebar-enabled toc-presence="absent"></layout-header>
-      </div>
-    `);
-
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
-    await waitForLitUpdate(header);
-
-    const insets = readCompactZoneInsets(header);
-    expect(insets.left).to.equal('44px');
-    expect(insets.right).to.equal('136px');
-  });
-
-  it('mobile note の compact-center inset が 375px / sidebar-enabled=false で left=0px, right=136px になること', async () => {
-    const wrapper = await fixture<HTMLDivElement>(html`
-      <div style="inline-size: 375px;">
-        <layout-header note-layout toc-presence="absent"></layout-header>
-      </div>
-    `);
-
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
-    await waitForLitUpdate(header);
-
-    const insets = readCompactZoneInsets(header);
-    expect(insets.left).to.equal('0px');
-    expect(insets.right).to.equal('136px');
-  });
-
-  it('mobile note の compact-center inset が 430px で right=232px になること', async () => {
-    const wrapper = await fixture<HTMLDivElement>(html`
-      <div style="inline-size: 430px;">
-        <layout-header note-layout toc-presence="absent"></layout-header>
-      </div>
-    `);
-
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
-    await waitForLitUpdate(header);
-
-    const insets = readCompactZoneInsets(header);
-    expect(insets.right).to.equal('232px');
-  });
-
-  it('mobile note の compact-center inset が 520px で right=272px になること', async () => {
-    const wrapper = await fixture<HTMLDivElement>(html`
-      <div style="inline-size: 520px;">
-        <layout-header note-layout toc-presence="absent"></layout-header>
-      </div>
-    `);
-
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
-    await waitForLitUpdate(header);
-
-    const insets = readCompactZoneInsets(header);
-    expect(insets.right).to.equal('272px');
-  });
-
   it('shell projection に tocPresence を round-trip すること', async () => {
     const header = await fixture<LayoutHeader>(
       html`<layout-header toc-presence="present"></layout-header>`,
@@ -409,17 +312,15 @@ describe('layout-header browser contract', () => {
     expect(header.readShellProjection().tocPresence).to.equal('absent');
   });
 
-  it('toc runtime snapshot が ready 後にだけ mobile trigger を表示すること', async () => {
-    const header = await fixture<LayoutHeader>(html`
-      <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+  it('375px の mobile note では TOC trigger が icon only になること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 375px;">
+        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      </div>
     `);
-    await waitForLitUpdate(header);
 
-    const triggerBefore = expectPresent(
-      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
-      'tocTriggerBefore',
-    );
-    expect(triggerBefore.getAttribute('data-visible')).to.equal('false');
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
 
     layoutTocRuntimeStore.publish('test-toc', {
       ready: true,
@@ -431,20 +332,91 @@ describe('layout-header browser contract', () => {
     });
     await waitForLitUpdate(header);
 
-    const triggerAfter = expectPresent(
+    const trigger = expectPresent(
       header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
-      'tocTriggerAfter',
+      'tocTrigger',
     );
-    const compactLabel = expectPresent(
-      header.shadowRoot?.querySelector<HTMLElement>('.compact-note-label'),
-      'compactLabel',
+    const triggerText = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
+      'tocTriggerText',
+    );
+    const triggerProgress = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-progress'),
+      'tocTriggerProgress',
     );
 
-    expect(triggerAfter.getAttribute('data-visible')).to.equal('true');
-    expect(triggerAfter.getAttribute('aria-controls')).to.equal('layout-toc-panel-test-toc');
-    expect(triggerAfter.textContent).to.contain('2. 状態同期');
-    expect(triggerAfter.textContent).to.contain('2/5');
-    expect(compactLabel.textContent?.trim()).to.equal('2. 状態同期');
+    expect(trigger.getAttribute('data-visible')).to.equal('true');
+    expect(getComputedStyle(triggerText).display).to.equal('none');
+    expect(getComputedStyle(triggerProgress).display).to.equal('none');
+    expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
+  });
+
+  it('430px の mobile note では TOC trigger が text のみになること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 430px;">
+        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
+
+    layoutTocRuntimeStore.publish('test-toc', {
+      ready: true,
+      hasVisibleHeadings: true,
+      currentLabel: '2. 状態同期',
+      activeId: 'state-sync',
+      activeIndex: 2,
+      activeTotal: 5,
+    });
+    await waitForLitUpdate(header);
+
+    const triggerText = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
+      'tocTriggerText',
+    );
+    const triggerProgress = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-progress'),
+      'tocTriggerProgress',
+    );
+
+    expect(getComputedStyle(triggerText).display).to.not.equal('none');
+    expect(getComputedStyle(triggerProgress).display).to.equal('none');
+    expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
+  });
+
+  it('520px の mobile note では TOC trigger が text + progress になること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 520px;">
+        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
+
+    layoutTocRuntimeStore.publish('test-toc', {
+      ready: true,
+      hasVisibleHeadings: true,
+      currentLabel: '2. 状態同期',
+      activeId: 'state-sync',
+      activeIndex: 2,
+      activeTotal: 5,
+    });
+    await waitForLitUpdate(header);
+
+    const triggerText = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
+      'tocTriggerText',
+    );
+    const triggerProgress = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-progress'),
+      'tocTriggerProgress',
+    );
+
+    expect(getComputedStyle(triggerText).display).to.not.equal('none');
+    expect(getComputedStyle(triggerProgress).display).to.not.equal('none');
+    expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
   });
 
   it('toc mobile controller snapshot を aria-expanded へ反映すること', async () => {

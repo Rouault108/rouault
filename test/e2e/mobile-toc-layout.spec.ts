@@ -17,27 +17,6 @@ const waitForHeaderTrigger = async (page: Page): Promise<void> => {
     .toBe(true);
 };
 
-const waitForCompactCenterLabel = async (page: Page): Promise<void> => {
-  await expect
-    .poll(async () => {
-      return await page.evaluate(() => {
-        const header = document.querySelector('layout-header');
-        const label = header?.shadowRoot?.querySelector<HTMLElement>('.compact-note-label');
-        if (!(label instanceof HTMLElement)) {
-          return false;
-        }
-
-        const style = getComputedStyle(label);
-        return (
-          style.display !== 'none' &&
-          style.visibility !== 'hidden' &&
-          (label.textContent?.trim().length ?? 0) > 0
-        );
-      });
-    })
-    .toBe(true);
-};
-
 const readLayoutState = async (page: Page, shellSelector: string) =>
   await page.evaluate((selector) => {
     const shell = document.querySelector(selector);
@@ -45,6 +24,9 @@ const readLayoutState = async (page: Page, shellSelector: string) =>
     const toc = document.querySelector('layout-toc');
     const uiHeader = header?.shadowRoot?.querySelector('ui-header');
     const trigger = header?.shadowRoot?.querySelector<HTMLElement>('.toc-trigger') ?? null;
+    const triggerText = header?.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text') ?? null;
+    const triggerProgress =
+      header?.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-progress') ?? null;
     const compactLabel =
       header?.shadowRoot?.querySelector<HTMLElement>('.compact-note-label') ?? null;
     const corpusSwitcher =
@@ -89,43 +71,25 @@ const readLayoutState = async (page: Page, shellSelector: string) =>
       };
     };
 
-    const overlaps = (
-      a: ReturnType<typeof toRect>,
-      b: ReturnType<typeof toRect>,
-    ): boolean => {
-      if (a === null || b === null) {
-        return false;
-      }
-
-      return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-    };
-
     const shellColumns = getComputedStyle(shell).gridTemplateColumns.trim();
     const shellTrackCount = shellColumns.length === 0 ? 0 : shellColumns.split(/\s+/u).length;
     const triggerRect = toRect(trigger);
-    const compactLabelRect = toRect(compactLabel);
-    const zoneStartRect = toRect(zoneStart);
-    const zoneEndRect = toRect(zoneEnd);
 
     return {
       shellTrackCount,
       horizontalOverflow:
         document.documentElement.scrollWidth - document.documentElement.clientWidth,
       triggerExists: trigger instanceof HTMLElement,
-      triggerLeft: triggerRect ? triggerRect.left : null,
       triggerRight: triggerRect ? triggerRect.right : null,
       viewportWidth: window.innerWidth,
       mobileBarExists: mobileBar instanceof HTMLElement,
       compactLabelExists: compactLabel instanceof HTMLElement,
-      compactLabelVisible: isVisible(compactLabel),
-      compactLabelText:
-        compactLabel instanceof HTMLElement ? (compactLabel.textContent?.trim() ?? '') : null,
-      compactLabelPointerEvents:
-        compactLabel instanceof HTMLElement ? getComputedStyle(compactLabel).pointerEvents : null,
       corpusSwitcherVisible: isVisible(corpusSwitcher),
-      themeChevronVisible: isVisible(themeChevron),
-      compactLabelOverlapsStart: overlaps(compactLabelRect, zoneStartRect),
-      compactLabelOverlapsEnd: overlaps(compactLabelRect, zoneEndRect),
+      themeChevronExists: themeChevron instanceof HTMLElement,
+      triggerTextVisible: isVisible(triggerText),
+      triggerProgressVisible: isVisible(triggerProgress),
+      zoneStartExists: zoneStart instanceof HTMLElement,
+      zoneEndExists: zoneEnd instanceof HTMLElement,
     };
   }, shellSelector);
 
@@ -134,27 +98,25 @@ test.describe('mobile TOC layout contract after header integration', () => {
     await page.setViewportSize({ width: 375, height: 900 });
   });
 
-  test('note ページが mobile で compact-center ラベルを表示し、end/start と重ならず、corpus を後退させること', async ({
+  test('note ページが mobile で compact-center を出さず、icon-only TOC と corpus 後退を使うこと', async ({
     page,
   }) => {
     await page.goto(layoutRichPath);
     await waitForHeaderTrigger(page);
-    await waitForCompactCenterLabel(page);
 
     const state = await readLayoutState(page, '.note-shell');
     expect(state).not.toBeNull();
     expect(state?.shellTrackCount).toBe(1);
     expect(state?.horizontalOverflow).toBeLessThanOrEqual(1);
     expect(state?.triggerExists).toBe(true);
-    expect(state?.compactLabelExists).toBe(true);
-    expect(state?.compactLabelVisible).toBe(true);
-    expect((state?.compactLabelText ?? '').length).toBeGreaterThan(0);
-    expect(state?.compactLabelPointerEvents).toBe('none');
+    expect(state?.triggerTextVisible).toBe(false);
+    expect(state?.triggerProgressVisible).toBe(false);
+    expect(state?.compactLabelExists).toBe(false);
     expect(state?.corpusSwitcherVisible).toBe(false);
-    expect(state?.themeChevronVisible).toBe(false);
-    expect(state?.compactLabelOverlapsStart).toBe(false);
-    expect(state?.compactLabelOverlapsEnd).toBe(false);
+    expect(state?.themeChevronExists).toBe(false);
     expect(state?.mobileBarExists).toBe(false);
+    expect(state?.zoneStartExists).toBe(true);
+    expect(state?.zoneEndExists).toBe(true);
     expect(state?.triggerRight ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(
       (state?.viewportWidth ?? 0) + 1,
     );
