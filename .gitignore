@@ -12,4 +12,4 @@ custom-elements.json
 .DS_Store
 storybook-static
 
-docs/temporary/*
+temporary/
