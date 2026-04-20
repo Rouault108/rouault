@@ -62,8 +62,48 @@ const hydrateCurrentContent = async (contentRoot?: HTMLElement): Promise<void> =
   });
 };
 
+const preloadLayoutSidebarDefinition = (): void => {
+  if (!(document.querySelector('layout-sidebar') instanceof HTMLElement)) {
+    return;
+  }
+
+  /*
+   * WebKit の pre-hydration leakage 回帰試験では、
+   * layout-sidebar の define 解決が shell hydration より後ろへずれると
+   * boot marker cleanup の完了が不安定になることがある。
+   * 先に module load を開始して、define 解決を前倒しする。
+   */
+  void import('./components/layout/layout-sidebar.js');
+};
+
+const installLayoutSidebarDefinitionGuard = (): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  void customElements.whenDefined('layout-sidebar').then(() => {
+    queueMicrotask(() => {
+      for (const element of document.querySelectorAll<HTMLElement>(
+        'layout-sidebar[data-sidebar-boot-state="ssr"]',
+      )) {
+        customElements.upgrade(element);
+
+        /*
+         * connectedCallback / hydration activation 後も marker が残る場合の
+         * 最終保険。pre-hydration guard を通常表示へ持ち越さない。
+         */
+        if (element.isConnected && element.getAttribute('data-sidebar-boot-state') === 'ssr') {
+          element.removeAttribute('data-sidebar-boot-state');
+        }
+      }
+    });
+  });
+};
+
 const bootstrapClient = async (): Promise<void> => {
   initTheme();
+  preloadLayoutSidebarDefinition();
+  installLayoutSidebarDefinitionGuard();
   await hydrateShellScopes();
   initSearch();
   await hydrateCurrentContent();

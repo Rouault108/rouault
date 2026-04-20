@@ -51,6 +51,10 @@ export class AppRouterPostRenderController {
     };
   }
 
+  restoreInitialHashScrollImmediately(url: string): boolean {
+    return this.scrollToHashImmediately(url);
+  }
+
   async restoreInitialHashScroll(): Promise<void> {
     const waitForLoad = async (): Promise<void> => {
       if (document.readyState === 'complete') {
@@ -115,6 +119,26 @@ export class AppRouterPostRenderController {
       return false;
     }
 
+    target.scrollIntoView({ block: 'start', inline: 'nearest' });
+    return true;
+  }
+
+  private scrollToHashImmediately(url: string): boolean {
+    const hash = readDecodedHash(url);
+    if (hash.length === 0) {
+      return false;
+    }
+
+    const target = document.getElementById(hash);
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+
+    /*
+     * 初回 boot では TOC current 同期が先に進みやすいため、
+     * 最低限の hash 到達だけは同期的に済ませて viewport 契約を先に成立させる。
+     * その後の restoreInitialHashScroll() が load 後の再整列を担当する。
+     */
     target.scrollIntoView({ block: 'start', inline: 'nearest' });
     return true;
   }

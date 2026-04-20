@@ -160,6 +160,7 @@ export class AppRouter extends HTMLElement {
     void router.start();
 
     if (isInitialBoot) {
+      this._postRenderController.restoreInitialHashScrollImmediately(window.location.href);
       void this._postRenderController.restoreInitialHashScroll();
     }
 

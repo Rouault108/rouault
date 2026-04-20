@@ -134,9 +134,13 @@ export class LayoutToc extends LitElement {
       z-index: var(--z-non-modal-panel, var(--z-modal, 300));
       background: var(--bg-default);
       border-top: var(--border-width, 1px) solid var(--border-default);
-      transform: translateY(100%);
-      transition: transform var(--duration-normal, 150ms)
-        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition:
+        opacity var(--duration-normal, 150ms)
+          var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
+        visibility 0s linear var(--duration-normal, 150ms);
       padding: var(--space-2, 8px) max(var(--space-3, 12px), env(safe-area-inset-right))
         var(--space-6, 24px) max(var(--space-3, 12px), env(safe-area-inset-left));
       overflow-y: auto;
@@ -183,7 +187,10 @@ export class LayoutToc extends LitElement {
     }
 
     .mobile-panel[data-open='true'] {
-      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition-delay: 0s;
     }
 
     .mobile-panel-header {
