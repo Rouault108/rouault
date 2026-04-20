@@ -147,6 +147,31 @@ describe('layout-header browser contract', () => {
     expect(horizontalOverflow, JSON.stringify(metrics)).to.be.lessThanOrEqual(1);
   });
 
+  it('640px 境界の長い corpus label でも header が右方向へはみ出さず、corpus chevron を表示すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 640px; overflow: auto;">
+        <layout-header
+          current-corpus-key="program"
+          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for boundary verification","href":"/corpora/program/"}]'
+        ></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
+
+    const corpusChevron = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>(
+        '.corpus-switcher [slot="trigger"] ui-icon[name="chevron-down"]',
+      ),
+      'corpusChevron',
+    );
+
+    const horizontalOverflow = wrapper.scrollWidth - wrapper.clientWidth;
+    expect(horizontalOverflow).to.be.lessThanOrEqual(1);
+    expect(getComputedStyle(corpusChevron).display).to.not.equal('none');
+  });
+
   it('テーマ変更後の再描画で theme dropdown trigger に focus を残さないこと', async () => {
     const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
     await waitForLitUpdate(header);
@@ -195,7 +220,7 @@ describe('layout-header browser contract', () => {
     expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
   });
 
-  it('mobile note かつ sidebar-enabled=true では corpus-switcher を隠し、header dropdown chevron を描画しないこと', async () => {
+  it('mobile note かつ sidebar-enabled=true では corpus-switcher を隠し、theme trigger に chevron-down を含まないこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px;">
         <layout-header note-layout sidebar-enabled></layout-header>
@@ -210,12 +235,15 @@ describe('layout-header browser contract', () => {
       'corpusSwitcher',
     );
 
+    const themeChevron = header.shadowRoot?.querySelector<HTMLElement>(
+      '[data-dropdown="theme"] [slot="trigger"] ui-icon[name="chevron-down"]',
+    );
+
     expect(getComputedStyle(corpusSwitcher).display).to.equal('none');
-    expect(header.shadowRoot?.querySelector('.theme-chevron')).to.equal(null);
-    expect(header.shadowRoot?.querySelector('.corpus-chevron')).to.equal(null);
+    expect(themeChevron).to.equal(null);
   });
 
-  it('mobile note かつ sidebar-enabled=false では corpus-switcher を維持すること', async () => {
+  it('mobile note かつ sidebar-enabled=false では corpus-switcher を維持し、corpus chevron は CSS で非表示であること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px;">
         <layout-header note-layout></layout-header>
@@ -229,16 +257,64 @@ describe('layout-header browser contract', () => {
       header.shadowRoot?.querySelector<HTMLElement>('.corpus-switcher'),
       'corpusSwitcher',
     );
+    const corpusChevron = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>(
+        '.corpus-switcher [slot="trigger"] ui-icon[name="chevron-down"]',
+      ),
+      'corpusChevron',
+    );
 
     expect(isVisible(corpusSwitcher)).to.equal(true);
+    expect(getComputedStyle(corpusChevron).display).to.equal('none');
   });
 
-  it('non-note でも header dropdown chevron を描画しないこと', async () => {
-    const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
+  it('wide 非 note では corpus chevron を表示し、theme trigger に chevron は無いこと', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 768px;">
+        <layout-header></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
     await waitForLitUpdate(header);
 
-    expect(header.shadowRoot?.querySelector('.theme-chevron')).to.equal(null);
-    expect(header.shadowRoot?.querySelector('.corpus-chevron')).to.equal(null);
+    const corpusChevron = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>(
+        '.corpus-switcher [slot="trigger"] ui-icon[name="chevron-down"]',
+      ),
+      'corpusChevron',
+    );
+    const themeChevron = header.shadowRoot?.querySelector<HTMLElement>(
+      '[data-dropdown="theme"] [slot="trigger"] ui-icon[name="chevron-down"]',
+    );
+
+    expect(getComputedStyle(corpusChevron).display).to.not.equal('none');
+    expect(themeChevron).to.equal(null);
+  });
+
+  it('desktop note かつ sidebar-enabled=true では corpus-switcher が visible のとき corpus chevron も visible であること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1024px;">
+        <layout-header note-layout sidebar-enabled></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
+
+    const corpusSwitcher = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.corpus-switcher'),
+      'corpusSwitcher',
+    );
+    const corpusChevron = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>(
+        '.corpus-switcher [slot="trigger"] ui-icon[name="chevron-down"]',
+      ),
+      'corpusChevron',
+    );
+
+    expect(isVisible(corpusSwitcher)).to.equal(true);
+    expect(getComputedStyle(corpusChevron).display).to.not.equal('none');
   });
 
   it('narrow 幅で theme trigger text が非表示でも theme dropdown trigger の内部 button にアクセシブル名が入ること', async () => {

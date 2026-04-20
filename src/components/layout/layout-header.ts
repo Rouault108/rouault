@@ -181,7 +181,8 @@ export class LayoutHeader extends LitElement {
 
     .theme-menu-icon,
     .theme-trigger-icon,
-    .toc-trigger-icon {
+    .toc-trigger-icon,
+    .corpus-trigger-icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -192,6 +193,11 @@ export class LayoutHeader extends LitElement {
 
     .theme-trigger-icon {
       opacity: 0.78;
+    }
+
+    .corpus-trigger-icon {
+      color: var(--fg-muted);
+      opacity: 0.72;
     }
 
     .toc-trigger {
@@ -271,6 +277,10 @@ export class LayoutHeader extends LitElement {
 
       .corpus-trigger-text {
         max-inline-size: min(9rem, 42vw);
+      }
+
+      .corpus-trigger-icon {
+        display: none;
       }
 
       .theme-trigger-text {
@@ -654,6 +664,11 @@ export class LayoutHeader extends LitElement {
             <ui-button slot="trigger" variant="ghost">
               <span class="corpus-trigger-label">
                 <span class="corpus-trigger-text">${currentCorpusLabel}</span>
+                <ui-icon
+                  class="corpus-trigger-icon"
+                  name="chevron-down"
+                  aria-hidden="true"
+                ></ui-icon>
               </span>
             </ui-button>
             ${corpusItems.map(
