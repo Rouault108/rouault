@@ -89,11 +89,24 @@ describe('buildE2ENoteFixtureManifest', () => {
       const fallbackRoot = join(fixtureRoot, 'test-fixtures');
       const fallbackDir = join(fallbackRoot, 'e2e');
       mkdirSync(fallbackDir, { recursive: true });
+
       writeFileSync(
         join(fallbackDir, 'layout-rich.md'),
         `---
 title: 'Layout Rich'
 e2eFixtureId: 'note.layout-rich'
+---
+
+# fixture
+`,
+        'utf8',
+      );
+
+      writeFileSync(
+        join(fallbackDir, 'footnote-long-url.md'),
+        `---
+title: 'Footnote Long URL'
+e2eFixtureId: 'note.footnote-long-url'
 ---
 
 # fixture
@@ -151,6 +164,14 @@ e2eFixtureId: 'note.layout-rich'
         slug: 'e2e/layout-rich',
         permalink: '/notes/e2e/layout-rich',
         contentRootId: 'note-content-e2e-layout-rich',
+      });
+
+      expect(manifest['note.footnote-long-url']).toEqual({
+        fixtureId: 'note.footnote-long-url',
+        title: 'Footnote Long URL',
+        slug: 'e2e/footnote-long-url',
+        permalink: '/notes/e2e/footnote-long-url',
+        contentRootId: 'note-content-e2e-footnote-long-url',
       });
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });

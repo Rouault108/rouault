@@ -15,6 +15,7 @@ export type E2ENoteFixtureManifest = Readonly<Record<string, E2ENoteFixtureManif
 
 export const REQUIRED_E2E_NOTE_FIXTURE_IDS = [
   'note.code',
+  'note.footnote-long-url',
   'note.interactive',
   'note.layout-rich',
   'note.markdown-basic',

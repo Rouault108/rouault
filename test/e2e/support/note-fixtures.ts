@@ -6,6 +6,7 @@ import {
 
 export type E2ENoteFixtureId =
   | 'note.code'
+  | 'note.footnote-long-url'
   | 'note.interactive'
   | 'note.layout-rich'
   | 'note.markdown-basic'
@@ -51,6 +52,9 @@ export const getE2ENoteFixture = (fixtureId: E2ENoteFixtureId): E2ENoteFixture =
 export const e2eNoteFixtures = {
   get code(): E2ENoteFixture {
     return getE2ENoteFixture('note.code');
+  },
+  get footnoteLongUrl(): E2ENoteFixture {
+    return getE2ENoteFixture('note.footnote-long-url');
   },
   get interactive(): E2ENoteFixture {
     return getE2ENoteFixture('note.interactive');

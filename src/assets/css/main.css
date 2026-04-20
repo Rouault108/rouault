@@ -1080,6 +1080,9 @@ a:focus-visible {
   text-decoration: underline;
   text-underline-offset: 0.15em; /* Noto Sans JPのベースラインに最適化 */
 
+  /* 長い URL / 英数字列が読書面の幅を押し広げないようにする */
+  overflow-wrap: anywhere;
+
   /* Baseline: Relative Color Syntax 非対応ブラウザ向けの安全なフォールバック */
   text-decoration-color: var(--primary);
 
