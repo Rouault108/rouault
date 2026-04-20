@@ -198,7 +198,7 @@ describe('layout-header browser contract', () => {
     expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
   });
 
-  it('mobile note かつ sidebar-enabled=true では corpus-switcher を隠し、theme chevron を描画しないこと', async () => {
+  it('mobile note かつ sidebar-enabled=true では corpus-switcher を隠し、header dropdown chevron を描画しないこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px;">
         <layout-header note-layout sidebar-enabled></layout-header>
@@ -213,13 +213,9 @@ describe('layout-header browser contract', () => {
       'corpusSwitcher',
     );
 
-    await waitUntil(
-      () => header.shadowRoot?.querySelector('.theme-chevron') === null,
-      'mobile note では theme chevron を描画しないこと',
-    );
-
     expect(getComputedStyle(corpusSwitcher).display).to.equal('none');
     expect(header.shadowRoot?.querySelector('.theme-chevron')).to.equal(null);
+    expect(header.shadowRoot?.querySelector('.corpus-chevron')).to.equal(null);
   });
 
   it('mobile note かつ sidebar-enabled=false では corpus-switcher を維持すること', async () => {
@@ -240,11 +236,43 @@ describe('layout-header browser contract', () => {
     expect(isVisible(corpusSwitcher)).to.equal(true);
   });
 
-  it('non-note では theme chevron を描画すること', async () => {
+  it('non-note でも header dropdown chevron を描画しないこと', async () => {
     const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
     await waitForLitUpdate(header);
 
-    expect(header.shadowRoot?.querySelector('.theme-chevron')).to.not.equal(null);
+    expect(header.shadowRoot?.querySelector('.theme-chevron')).to.equal(null);
+    expect(header.shadowRoot?.querySelector('.corpus-chevron')).to.equal(null);
+  });
+
+  it('narrow 幅で theme trigger text が非表示でも theme dropdown trigger の内部 button にアクセシブル名が入ること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 375px;">
+        <layout-header note-layout sidebar-enabled></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
+
+    const themeTriggerText = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.theme-trigger-text'),
+      'themeTriggerText',
+    );
+    const themeDropdown = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('[data-dropdown="theme"]'),
+      'themeDropdown',
+    );
+    const themeTrigger = expectPresent(
+      themeDropdown.querySelector<HTMLElement>('ui-button[slot="trigger"]'),
+      'themeTrigger',
+    );
+    const themeTriggerButton = expectPresent(
+      themeTrigger.shadowRoot?.querySelector<HTMLButtonElement>('button'),
+      'themeTriggerButton',
+    );
+
+    expect(getComputedStyle(themeTriggerText).display).to.equal('none');
+    expect(themeTriggerButton.getAttribute('aria-label')).to.equal('テーマ');
   });
 
   it('overlay 展開時は ui-header に overlaySidebarOpen だけを渡し、sidebar 幅は予約しないこと', async () => {

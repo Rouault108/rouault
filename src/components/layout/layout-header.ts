@@ -187,10 +187,8 @@ export class LayoutHeader extends LitElement {
       white-space: nowrap;
     }
 
-    .corpus-chevron,
     .theme-menu-icon,
     .theme-trigger-icon,
-    .theme-chevron,
     .toc-trigger-icon {
       display: inline-flex;
       align-items: center;
@@ -200,9 +198,7 @@ export class LayoutHeader extends LitElement {
       flex-shrink: 0;
     }
 
-    .theme-trigger-icon,
-    .corpus-chevron,
-    .theme-chevron {
+    .theme-trigger-icon {
       opacity: 0.78;
     }
 
@@ -659,10 +655,6 @@ export class LayoutHeader extends LitElement {
     return `${String(activeIndex)}/${String(activeTotal)}`;
   }
 
-  private _shouldRenderThemeChevron(): boolean {
-    return !(this.noteLayout && this._isNarrowLayout);
-  }
-
   private _readTocPanelId(): string | null {
     const runtimeId = this._readTocRuntimeId();
     return runtimeId ? `layout-toc-panel-${runtimeId}` : null;
@@ -707,12 +699,6 @@ export class LayoutHeader extends LitElement {
               <span class="corpus-trigger-label">
                 <span class="corpus-trigger-text">${currentCorpusLabel}</span>
               </span>
-              <ui-icon
-                class="corpus-chevron"
-                name="chevron-down"
-                aria-hidden="true"
-                style="width:14px;height:14px;"
-              ></ui-icon>
             </ui-button>
             ${corpusItems.map(
               (item) => html`<ui-menu-item value=${item.href}>${item.label}</ui-menu-item>`,
@@ -755,7 +741,7 @@ export class LayoutHeader extends LitElement {
             align="end"
             @menu-item-select=${this._handleThemeSelect}
           >
-            <ui-button slot="trigger" variant="ghost">
+            <ui-button slot="trigger" variant="ghost" accessible-name="テーマ">
               <span class="theme-trigger-label">
                 <ui-icon
                   class="theme-trigger-icon"
@@ -764,33 +750,7 @@ export class LayoutHeader extends LitElement {
                 ></ui-icon>
                 <span class="theme-trigger-text">テーマ</span>
               </span>
-              ${this._shouldRenderThemeChevron()
-                ? html`<ui-icon
-                    class="theme-chevron"
-                    name="chevron-down"
-                    aria-hidden="true"
-                  ></ui-icon>`
-                : nothing}
             </ui-button>
-            ${(
-              Object.entries(THEME_OPTIONS) as [
-                ThemePreference,
-                (typeof THEME_OPTIONS)[ThemePreference],
-              ][]
-            ).map(
-              ([value, option]) => html`
-                <ui-menu-item value=${value}>
-                  <span class="theme-menu-label">
-                    <ui-icon
-                      class="theme-menu-icon"
-                      name=${option.icon}
-                      aria-hidden="true"
-                    ></ui-icon>
-                    <span>${option.label}</span>
-                  </span>
-                </ui-menu-item>
-              `,
-            )}
           </ui-dropdown>
         </div>
       </ui-header>

@@ -2,37 +2,38 @@
 
 ## 文書の目的
 
-本書は、Rouault における現行のアイコン戦略を、実装を根拠に整理するものです。
+本書は、Rouault における現行のアイコン契約を、実装に合わせて整理するものです。
 
-この文書が扱うのは、次の 3 点です。
+本書が扱うのは次の 3 点です。
 
 - どのアイコン資産を正規ルートとして使うか
-- `ui-icon` がどのようにアイコン名を解決し、アクセシビリティを扱うか
-- どのケースで `ui-icon` ではなく inline SVG を使うか
+- `ui-icon` が何を責務として持つか
+- `ui-icon` を使う場面と inline SVG を使う場面の境界
 
-本書は将来の理想論ではなく、**現在のコードベースで成立している契約**を優先します。
+本書は理想論ではなく、**現在のコードベースで成立している契約**を正本として記述します。
 
 ---
 
 ## 現行戦略の要約
 
-Rouault の現行アイコン戦略は、次のように整理できます。
+Rouault の現行アイコン戦略は次のとおりです。
 
 1. **標準アイコンは Lucide に統一する**
-   - 利用可能な名前は `src/icons/catalog.ts` で定義します。
-   - 実体は `@iconify-json/lucide` から生成した subset を使います。
+   - 利用可能な名前は `shared/icons/icons-catalog.ts` を正本とします。
+   - 実体は生成済み subset を `iconify-icon` へ登録して使います。
 
-2. **描画は `ui-icon` に集約する**
-   - `ui-icon` は `iconify-icon` を内部で使うラッパーです。
-   - 利用側は `name` だけを与えるのを基本とします。
+2. **再利用する glyph は `ui-icon` に集約する**
+   - `ui-icon` は `iconify-icon` を内部で使う薄いラッパーです。
+   - 利用側は `name` を与えるだけでよい構造にします。
 
-3. **重い分岐や意味の強い装飾は文字列カタログではなくコンポーネント側で持つ**
-   - たとえば `ui-checkbox` のチェックマークのような固定 glyph は inline SVG を使います。
-   - この種の glyph は、再利用性よりも self-contained な描画と制御の単純さを優先します。
+3. **`ui-icon` は glyph renderer + 最小限の a11y 反映に責務を限定する**
+   - 親レイアウトの hide/show 判断は持ちません。
+   - breakpoint ごとの UI policy も持ちません。
+   - host presentation は CSS で与えます。
 
-4. **ノート由来のアイコン指定は bare name に限定する**
-   - `lucide:` プレフィックスは受け付けません。
-   - `none` は明示的な無効値として扱います。
+4. **固定 glyph や局所的な装飾は inline SVG を使ってよい**
+   - あるコンポーネントにしか存在しない glyph は inline SVG の方が単純です。
+   - たとえば control 専用の固定マークはこの対象です。
 
 ---
 
@@ -40,91 +41,153 @@ Rouault の現行アイコン戦略は、次のように整理できます。
 
 ### 1. アイコン名カタログ
 
-`src/icons/catalog.ts` は、プロジェクトで許可する Lucide アイコン名の単一ソースです。
+`shared/icons/icons-catalog.ts` は、プロジェクトで許可するアイコン名の単一ソースです。
 
-- `ICON_NAMES` は `as const` の配列です。
-- `IconName` は `ICON_NAMES` から導出されます。
-- `isIconName()` は実行時の検証に使います。
-
-このカタログに存在しない名前は、原則としてプロダクト内で使用しません。
+- `IconName` はここから導出されます。
+- 実装側はこの型を正規入力として使います。
+- このカタログにない名前は、原則としてプロダクト内で使用しません。
 
 ### 2. 生成済み subset
 
-`scripts/generate-icon-subset.ts` が `@iconify-json/lucide` から必要分だけを抽出し、`src/generated/lucide-subset.ts` を生成します。
+Lucide の必要分だけを抽出した生成物を登録して利用します。
 
-この仕組みにより、実行時に必要な Lucide データを絞り込み、不要なアイコン資産を持ち込まない構造にしています。
+- subset は自動生成物です
+- 手編集しません
+- カタログ変更後は再生成します
 
 ### 3. 登録層
 
-`src/icons/register.ts` は、`iconify-icon` のコレクション登録を 1 回だけ行います。
+`src/icons/register.ts` は `iconify-icon` への登録を 1 回だけ行う副作用層です。
 
-- `iconify-icon` 本体を読み込みます。
-- 生成済み subset を `addCollection()` に渡します。
-- `globalThis` 上のフラグで多重登録を防ぎます。
-
-この層は副作用専用です。利用者が直接触るべき API ではありません。
+- 利用者が直接触る API ではありません
+- `ui-icon` はここを import して glyph 解決に必要な登録を済ませます
 
 ---
 
-## `ui-icon` の契約
+## `ui-icon` の公開契約
 
 `src/components/ui/icon/icon.ts` が `ui-icon` の実装本体です。
 
 ### 入力
 
-`ui-icon` は次の属性を受け付けます。
+`ui-icon` が公開入力として受け付けるのは次だけです。
 
 - `name`
-- `icon`
 - `aria-label`
 
-`name` が正規の入力です。`icon` は後方互換のための deprecated エイリアスです。新規実装では `name` を使ってください。
+**`icon` 属性はサポートしません。**
+`name` が唯一の正規入力です。
 
-### 解決規則
+### 解釈
 
-1. `name` があればそれを使います。
-2. `name` がなければ `icon` を参照します。
-3. どちらもない場合、要素は非表示になります。
+- `name` が未指定または空文字なら、`ui-icon` は表示しません
+- `name` が非空なら、内部 glyph に `lucide:${name}` を設定します
+- `aria-label` があれば semantic icon として扱います
+- `aria-label` がなければ decorative icon として扱います
 
-実装上は、解決後の名前に `lucide:` プレフィックスを付けて `iconify-icon` に渡します。
+---
 
-### アクセシビリティ
+## empty / invalid state の契約
 
-`aria-label` が与えられた場合のみ、`ui-icon` は意味を持つ画像として振る舞います。
+`name` が未指定または空文字のとき、`ui-icon` は host に empty state を反映します。  
+`name` が非空でも `shared/icons/icons-catalog.ts` に存在しない場合、`ui-icon` は invalid state を反映します。
 
-- `role="img"` を付与します。
-- 内部 glyph の `aria-hidden` を解除します。
-- `aria-label` を glyph に設定します。
+### 観測可能状態
 
-`aria-label` がない場合は、装飾的なアイコンとして扱います。
+実装は host に次のいずれかを反映します。
 
-- `role` は付けません。
-- 内部 glyph は `aria-hidden="true"` になります。
+- `data-icon-state="empty"`
+- `data-icon-state="invalid"`
 
-### ホスト表示
+### 表示
 
-`name` が空の場合、ホストは `display: none` に折り畳まれます。
+empty state では host は CSS により非表示になります。
 
-`name` がある場合は、ホストに次の既定表示を与えます。
+```css
+:host([hidden]),
+:host([data-icon-state='empty']) {
+  display: none;
+}
+```
 
-- `display: inline-flex`
-- `align-items: center`
-- `justify-content: center`
-- `line-height: 1`
+### a11y cleanup
 
-これにより、アイコン単体でも周辺テキストと自然に揃います。
+empty state では、単に非表示にするだけではなく、意味を持つ画像として露出しないように正規化します。
 
-## 公開入力
+* host から `role` を外します
+* glyph から `icon` を外します
+* glyph に `aria-hidden="true"` を付けます
+* glyph の `aria-label` を外します
 
-- `name`: 表示するアイコン名
-- `aria-label`: 装飾目的ではない場合のアクセシブル名
+---
 
-`ui-icon` は `name` のみを受け付けます。旧 `icon` 属性はサポートしません。
+## host presentation の契約
 
-### 例
+`ui-icon` の host presentation は CSS で与えます。
+
+```css
+:host {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+```
+
+### 重要
+
+* JS から host の `style.display` を直書きしません
+* JS から `align-items` / `justify-content` / `line-height` を直書きしません
+* host の inline / block size は固定しません
+
+したがって、サイズ責務は利用側コンポーネントで持てます。
+
+---
+
+## アクセシビリティ
+
+### semantic icon
+
+`aria-label` がある場合、`ui-icon` は意味を持つ画像として扱います。
+
+* host に `role="img"` を付けます
+* glyph に `aria-hidden="false"` を付けます
+* glyph に `aria-label` を付けます
+
+### decorative icon
+
+`aria-label` がない場合、`ui-icon` は装飾目的として扱います。
+
+* host に `role` は付けません
+* glyph は `aria-hidden="true"` です
+* glyph に `aria-label` は付きません
+
+---
+
+## 責務と非責務
+
+### `ui-icon` が担当すること
+
+* `name` を glyph 名として内部 glyph に反映すること
+* decorative / semantic の a11y state を反映すること
+* host の最小標準 presentation を提供すること
+* empty state を reflected state として表すこと
+
+### `ui-icon` が担当しないこと
+
+* parent layout の制御
+* responsive hide/show の主導
+* ornament の要否判断
+* breakpoint ごとの affordance policy
+* parent 側の render omission 判断
+
+---
+
+## 例
 
 ```html
-<ui-icon name="calendar-clock" aria-hidden="true"></ui-icon>
+<ui-icon name="calendar-clock"></ui-icon>
 <ui-icon name="link" aria-label="固定リンク"></ui-icon>
 ```
 
@@ -136,88 +199,54 @@ Rouault の現行アイコン戦略は、次のように整理できます。
 
 次のようなケースでは `ui-icon` を使います。
 
-- ナビゲーション
-- 状態表示
-- ボタン内部の補助 glyph
-- 一覧・メタ情報・見出し補助
-- 同じアイコンを複数コンポーネントで再利用する場合
-
-この層では、見た目の一貫性と運用の単純さを優先します。
+* ナビゲーション
+* 状態表示
+* ボタン内部の補助 glyph
+* 一覧や見出しの補助
+* 複数箇所で再利用する icon
 
 ### inline SVG を使う場面
 
-次のようなケースでは inline SVG が適します。
+次のようなケースでは inline SVG を使ってよいです。
 
-- あるコンポーネントにしか存在しない固定 glyph
-- 実体の変更が少ない control glyph
-- 外部登録を経由せずに描画を完結させたい場合
-
-現行実装では `ui-checkbox` のチェックマークがこのパターンです。
-
-### 使わない場面
-
-次のような使い方は避けます。
-
-- 文字列のまま意味を推測させる
-- `lucide:` プレフィックスを利用者側で直接書く
-- `ui-icon` を空要素のまま意味付きで残す
-- アイコンだけで必須情報を伝える
-
----
-
-## コンテンツ側のアイコン
-
-ノートや sidebar 由来のアイコン設定は、`src/data/notes.ts` で検証されます。
-
-- 許可値は `IconName` または `none` です。
-- `lucide:` プレフィックスはエラーになります。
-- 設定がない場合は、継承結果または未指定として扱います。
-
-このため、コンテンツ編集者は `src/icons/catalog.ts` にある bare name だけを使います。
-
----
-
-## 実装上の境界
-
-### 1. 直接 import の境界
-
-`ui-icon` は登録層で定義された custom element です。
-
-テストでは、`ui-icon` を直接 import する旧来の経路や、`src/lib/icons.ts` 系のレガシー runtime を残さないことを確認しています。
-
-### 2. SSR の境界
-
-`ui-icon` は component manifest 上で `ssr: none` として扱われます。
-
-つまり、アイコンは SSR の主経路ではなく、クライアント側で登録・描画される前提です。
-
-### 3. 生成資産の境界
-
-`src/generated/lucide-subset.ts` は自動生成物です。
-
-- 手編集しません
-- カタログ変更後は生成をやり直します
-- 生成結果はリポジトリに含めます
+* あるコンポーネントにしか存在しない固定 glyph
+* 外部登録を経由せず閉じた描画にしたい場合
+* geometry を強く制御したい control glyph
 
 ---
 
 ## 運用ルール
 
-| 項目           | ルール                                             |
-| -------------- | -------------------------------------------------- |
-| 標準アイコン   | Lucide を使う                                      |
-| 許可名         | `src/icons/catalog.ts` にある `IconName` を使う    |
-| 利用部位       | 再利用する glyph は `ui-icon` に集約する           |
-| 固定 glyph     | コンポーネント内に閉じるなら inline SVG を検討する |
-| 装飾/意味      | 意味を持たせる場合は `aria-label` を与える         |
-| コンテンツ設定 | bare name のみを受け付ける                         |
-| 非表示         | 名前がないアイコンは描画しない                     |
-| 生成物         | subset は自動生成で維持する                        |
+| 項目           | ルール                                |
+| ------------ | ---------------------------------- |
+| 正規入力         | `name` のみを使う                       |
+| 非推奨ではなく非対応   | `icon` 属性はサポートしない                  |
+| semantic 化   | 意味を持たせる場合だけ `aria-label` を与える      |
+| 非表示          | `name` が無い場合は empty state として描画しない |
+| presentation | host presentation は CSS で与える       |
+| サイズ          | `ui-icon` 自身は固定しない。利用側で必要に応じて与える   |
+| 再利用 glyph    | `ui-icon` に集約する                    |
+| 固定 glyph     | inline SVG を検討してよい                 |
 
 ---
 
-## 既知の現状
+## 親コンポーネント側の原則
 
-README には技術ロゴとして Devicon / Simple Icons の記述がありますが、現行の実装ではそこへ接続する runtime はまだありません。
+`ui-icon` は empty / invalid を吸収して collapse できます。  
+ただし、親コンポーネントが optional な icon を持つ場合は、**`<ui-icon>` を常に描画して吸収させるのではなく、親側で render omission する** ことを原則とします。
 
-したがって、**現在の実装上の正規ルートは Lucide + `ui-icon` + 必要箇所の inline SVG** です。
+推奨形は次です。
+
+```ts
+${icon ? html`<ui-icon name=${icon}></ui-icon>` : nothing}
+```
+
+この原則により、親が可視性責務を持ち、`ui-icon` は glyph renderer としての責務に留まります。
+
+---
+
+## 既知の境界
+
+* `ui-icon` は現時点では `HTMLElement` ベースの custom element です
+* 本契約は LitElement 化を前提にしません
+* 実装詳細ではなく、観測可能な DOM / a11y / CSS 契約を優先します
