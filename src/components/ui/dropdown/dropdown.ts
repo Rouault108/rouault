@@ -243,9 +243,6 @@ export class Dropdown extends LitElement {
       }
     }
 
-    if (changedProperties.has('_positionPhase')) {
-      this._syncPanelAccessibility();
-    }
   }
 
   open(): void {

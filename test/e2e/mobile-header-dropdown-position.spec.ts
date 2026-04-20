@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 const aboutPath = '/about/';
 
-type DropdownSnapshot = {
+interface DropdownSnapshot {
   phase: string | null;
   visibility: string | null;
   ariaHidden: string | null;

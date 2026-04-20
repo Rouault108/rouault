@@ -271,7 +271,7 @@ export class UiTooltip extends LitElement {
     }
 
     if ((changedProperties.has('placement') || changedProperties.has('offset')) && this._open) {
-      this._overlayController?.refreshPosition();
+      void this._overlayController?.refreshPosition();
     }
   }
 
@@ -462,7 +462,7 @@ export class UiTooltip extends LitElement {
     }
 
     if (this._open) {
-      this._overlayController?.refreshPosition();
+      void this._overlayController?.refreshPosition();
       return;
     }
 
