@@ -55,8 +55,6 @@ C#の理解において、ECMA-334とECMA-335の混同は避けなければな�
 
 以後の章では、型システム、名前束縛、ジェネリクス、nullability、非同期、メモリ制御、メタデータを、この区分に従って扱う。仕様上の事実、実装上の観察、設計上の含意を混同しないことが、本書全体の基本方針である。[^1][^6][^9]
 
----
-
 [^1]: 【一次資料／規格】Ecma International, *ECMA-334: C# Language Specification*, 7th ed., December 2023, Foreword; §1 Scope; §5 Conformance. C#プログラムの表現、構文、意味規則、適合実装の制約を与える規範的標準。[https://ecma-international.org/publications-and-standards/standards/ecma-334/](https://ecma-international.org/publications-and-standards/standards/ecma-334/)
 
 [^2]: 【一次資料／規格】Ecma International, *ECMA-335: Common Language Infrastructure (CLI)*, 6th ed., June 2012, Partition I: Concepts and Architecture. CLI、CTS、CLS、VESおよびメタデータの規範的定義。[https://ecma-international.org/publications-and-standards/standards/ecma-335/](https://ecma-international.org/publications-and-standards/standards/ecma-335/)
