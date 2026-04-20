@@ -1,6 +1,20 @@
 import { esbuildPlugin } from '@web/dev-server-esbuild';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
+const renderTestRunnerHtml = testFramework => `<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <script>
+      globalThis.litIssuedWarnings ??= new Set();
+      globalThis.litIssuedWarnings.add('dev-mode');
+    </script>
+    <script type="module" src="${testFramework}"></script>
+  </body>
+</html>`;
+
 const config = {
   files: ['test/browser/**/*.test.ts'],
   nodeResolve: {
@@ -24,6 +38,7 @@ const config = {
       timeout: '2000',
     },
   },
+  testRunnerHtml: testFramework => renderTestRunnerHtml(testFramework),
 };
 
 export default config;
