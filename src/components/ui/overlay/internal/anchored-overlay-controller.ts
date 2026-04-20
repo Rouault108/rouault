@@ -49,7 +49,7 @@ export class AnchoredOverlayController {
 
   syncOpenState(open: boolean): void {
     if (open) {
-      this.refreshPosition();
+      void this.refreshPosition();
       this._setupDismissListeners();
       return;
     }
@@ -58,16 +58,16 @@ export class AnchoredOverlayController {
     this._teardownDismissListeners();
   }
 
-  refreshPosition(): void {
+  async recomputePosition(): Promise<boolean> {
     const reference = this._config.getReference();
     const floating = this._config.getFloating();
 
     if (!reference || !floating || !this._config.getOpen()) {
-      return;
+      return false;
     }
 
-    const updatePosition = (): void => {
-      void computePosition(reference, floating, {
+    try {
+      const { x, y, placement } = await computePosition(reference, floating, {
         strategy: 'fixed',
         placement: this._config.getPlacement(),
         middleware: [
@@ -75,24 +75,44 @@ export class AnchoredOverlayController {
           flip({ padding: this._config.edgePadding ?? DEFAULT_EDGE_PADDING }),
           shift({ padding: this._config.edgePadding ?? DEFAULT_EDGE_PADDING }),
         ],
-      }).then(({ x, y, placement }) => {
-        const roundedX = Math.round(x);
-        const roundedY = Math.round(y);
-        floating.style.left = `${String(roundedX)}px`;
-        floating.style.top = `${String(roundedY)}px`;
-        this._config.onPosition?.({
-          x: roundedX,
-          y: roundedY,
-          placement,
-          reference,
-          floating,
-        });
       });
-    };
+
+      const roundedX = Math.round(x);
+      const roundedY = Math.round(y);
+      floating.style.left = `${String(roundedX)}px`;
+      floating.style.top = `${String(roundedY)}px`;
+      this._config.onPosition?.({
+        x: roundedX,
+        y: roundedY,
+        placement,
+        reference,
+        floating,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async refreshPosition(): Promise<boolean> {
+    const reference = this._config.getReference();
+    const floating = this._config.getFloating();
+
+    if (!reference || !floating || !this._config.getOpen()) {
+      return false;
+    }
 
     this._teardownPositioning();
-    updatePosition();
-    this._cleanupAutoUpdate = autoUpdate(reference, floating, updatePosition);
+    const positioned = await this.recomputePosition();
+
+    if (!positioned) {
+      return false;
+    }
+
+    this._cleanupAutoUpdate = autoUpdate(reference, floating, () => {
+      void this.recomputePosition();
+    });
+    return true;
   }
 
   destroy(): void {

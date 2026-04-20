@@ -13,6 +13,9 @@ const crossBrowserFinalCheck = [
   '**/sidebar-pre-hydration-leakage.spec.ts',
 ];
 
+
+const mobileWebkitFinalCheck = ['**/mobile-header-dropdown-position.spec.ts'];
+
 const isCI = !!process.env['CI'];
 
 const withNodeOption = (currentValue: string | undefined, option: string): string => {
@@ -65,6 +68,11 @@ export default defineConfig({
       name: 'webkit-final-check',
       testMatch: crossBrowserFinalCheck,
       use: { ...devices['Desktop Safari'] },
+    },
+    {
+      name: 'webkit-mobile-final-check',
+      testMatch: mobileWebkitFinalCheck,
+      use: { ...devices['iPhone 14'] },
     },
   ],
 

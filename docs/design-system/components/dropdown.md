@@ -71,19 +71,21 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 #### `ui-dropdown`
 
-| 名前               | 発火条件                                        | `detail`                           |
-| ------------------ | ----------------------------------------------- | ---------------------------------- |
-| `menu-item-select` | `ui-menu-item` が選択されたとき                 | `{ value: string, label: string }` |
-| `open`             | 実効開状態が `false` から `true` へ変わったとき | なし                               |
-| `close`            | 実効開状態が `true` から `false` へ変わったとき | なし                               |
+| 名前               | 発火条件                                         | `detail`                           |
+| ------------------ | ------------------------------------------------ | ---------------------------------- |
+| `menu-item-select` | `ui-menu-item` が選択されたとき                  | `{ value: string, label: string }` |
+| `open`             | public open state が `false` から `true` へ入る | なし                               |
+| `close`            | public open state が `true` から `false` へ戻る | なし                               |
 
 `menu-item-select` は、クリック選択または Enter / Space による選択で発火します。
 
-`open` と `close` は、**状態遷移通知**です。これらは「開閉状態が変わった」という事実を通知するものであり、配置計算、フォーカス移動、スクロール監視の確立または解除までが完了したことを意味しません。
+`open` と `close` は、**public state の遷移通知**です。これらは「開閉状態が変わった」という事実を通知するものであり、配置確定、初期フォーカス、キーボード到達可能化までが完了したことを意味しません。
 
-したがって、`open` / `close` を完了通知として扱ってはなりません（MUST NOT）。開閉後の副作用を観測したい場合は、必要に応じて次の更新サイクルまたは利用側の後続処理で扱います。
+したがって、`open` / `close` を ready 完了通知として扱ってはなりません（MUST NOT）。開閉後の副作用を観測したい場合は、必要に応じて利用側の後続処理で扱います。
 
-また、`open` / `close` は **状態変更の入口に依存せず**、`opened` の変更、`open()` / `close()` / `toggle()`、選択、Escape、Tab / Shift+Tab、外側クリック、scroll などにより実効状態が変化した場合に同一意味で発火します。
+また、`open` / `close` は **状態変更の入口に依存せず**、`opened` の変更、`open()` / `close()` / `toggle()`、選択、Escape、Tab / Shift+Tab、外側クリック、scroll、または failure path による強制 close でも同一意味で発火します。
+
+特に `open` は interaction-ready の完了通知ではありません。`opened=true` の直後に component が internal `settling` 相へ入り、その後に `ready` へ到達する構成を許容します。したがって、**`open` の直後に `close` が連続発火し得ます**。これは異常ではなく、open attempt が ready に到達できず closed へ畳まれた結果として扱います。
 
 ### イベント伝播契約
 
@@ -117,10 +119,22 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 `ui-dropdown` の開閉状態は `opened` によって表し、**`opened` が唯一の公開状態値**です。`open()` / `close()` / `toggle()` は、この公開状態値を規則どおりに遷移させるための補助 API です。
 
-- `opened=true` は開状態、`opened=false` は閉状態を表します。
+- `opened=true` は **transitional open を含み得る public open state**、`opened=false` は閉状態を表します。
 - `open()` / `close()` / `toggle()` は、`opened` を正規規則に従って変更します。
-- `opened` を外部から変更した場合も、実効開閉状態の変更として扱います。
-- `open` / `close` は、状態遷移の入口ではなく、**実効状態変化そのもの**に対応して発火します。
+- `opened` を外部から変更した場合も、public state の変更として扱います。
+- `open` / `close` は、状態遷移の入口ではなく、**public state change そのもの**に対応して発火します。
+
+内部的には少なくとも `idle` / `settling` / `ready` の相を持つことを許容します。`settling` は `opened=true` だが配置未確定、`ready` は配置確定済みで対話可能な相です。
+
+したがって、`opened=true` であっても次を必ずしも保証しません。
+
+- trigger `aria-expanded="true"`
+- panel `aria-hidden="false"`
+- panel `inert=false`
+- 初期フォーカス完了
+- roving focus / type-ahead / item 選択の有効化
+
+これらは **`ready` 到達後にのみ保証**します。
 
 したがって、本コンポーネントにおいて `opened` とメソッド群は矛盾する二重 API ではありません。利用側は宣言的には `opened` を、命令的には `open()` / `close()` / `toggle()` を用いてよく、どちらを入口にしても公開状態機械は同一です。
 
@@ -192,15 +206,28 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 `ui-dropdown` 群の主要状態は、単なる見た目差分ではなく、**開閉可能か、選択可能か、フォーカスがどこへ遷移するか**によって整理します。
 
-### 閉状態
+### 閉状態 (`idle`)
 
 既定状態は `opened=false` です。この状態では panel は非表示であり、`aria-hidden="true"` かつ `inert` です。panel は DOM から除去されず、非対話状態として保持されます。
 
-### 開状態
+### 遷移開状態 (`settling`)
 
-`opened=true` の場合、panel は可視化され、`aria-hidden="false"` となります。開く際には、初期フォーカス規則に従って最初または最後の有効項目へフォーカスを移します。
+`opened=true` の直後、component は内部的に `settling` 相へ入ることがあります。この状態では配置確定前の panel を保持しますが、**不可視・非対話・非公開**のままにしなければなりません（MUST）。
+
+- panel は `aria-hidden="true"` かつ `inert`
+- trigger は `aria-expanded="false"`
+- 初期フォーカスはまだ移しません
+- roving focus / type-ahead / item selection はまだ有効化しません
+
+### 開状態 (`ready`)
+
+`opened=true` かつ内部相が `ready` の場合、panel は可視化され、`aria-hidden="false"` となります。開く際には、初期フォーカス規則に従って最初または最後の有効項目へフォーカスを移します。
 
 通常の展開では最初の有効項目へ、`ArrowUp` 起点の展開では最後の有効項目へフォーカスします。
+
+### 失敗時の遷移
+
+`showPopover()` 失敗、positioning failure、stale settle、`disabled=true` 遷移、disconnect などで `ready` に到達できない場合、component は `settling` を放置せず closed へ畳まなければなりません（MUST）。
 
 ### Dropdown 無効状態
 
@@ -389,10 +416,15 @@ panel は次の視覚条件を持ちます。
 - `position: fixed` による浮動 panel です。
 - `min-width: 180px`、`max-width: 280px` を持ちます。
 - 最大高さは `calc(var(--control-height-md) * 10)` です。
-- 開状態では opacity と scale で穏やかに入ります。
+- `ready` 到達後にのみ可視化されます。
+- `settling` 中は `visibility: hidden`、`opacity: 0`、`pointer-events: none` を保ちます。
+- `settling` 中の panel を視覚的に露出してはなりません（MUST NOT）。
+- `settling` 中の panel を accessibility tree や keyboard navigation に露出してはなりません（MUST NOT）。
 - 閉状態では非表示かつ `pointer-events: none` です。
 
 panel は画面上に一時的に現れる補助面であり、恒常的な card や本文 box の代替ではありません。
+
+なお、本件の契約では close animation の継続を保証しません。close は即時に不可視相へ畳まれてよいものとします。
 
 ### Menu Item 契約
 
@@ -464,7 +496,9 @@ panel は画面上に一時的に現れる補助面であり、恒常的な card
 - `open()` は `disabled` または既開状態では何もしません。
 - `close()` は既閉状態では何もしません。
 - `toggle()` は現在状態を反転します。
-- `opened` の直接書き換えは見た目制御には使えますが、イベント整合までを保証しません。
+- `opened` の直接書き換えも public state change として扱います。
+- `opened=true` は interaction-ready を直ちに保証しません。
+- `open` は ready 完了通知ではなく、failure path では `open` の直後に `close` が起こり得ます。
 
 ### 選択契約
 
@@ -487,6 +521,11 @@ panel は画面上に一時的に現れる補助面であり、恒常的な card
 - window scroll
 - `opened=false` への状態変更
 - `close()` または `toggle()` による閉鎖
+- `showPopover()` 失敗
+- positioning failure
+- stale settle
+- `disabled=true` への遷移
+- disconnect
 
 ただし、閉鎖後のフォーカス復帰は契機ごとに同一ではありません。キーボードによる項目選択、Escape、`close(true)` では trigger への復帰を試みますが、ポインターによる項目選択、Tab 移動、外側クリック、scroll ではユーザーの次操作を優先し、trigger への復帰を保証しません。
 
@@ -559,9 +598,9 @@ trigger slot に複数要素を与えた場合、その構成自体が契約外�
 
 ---
 
-## Storybook 契約
+## Storybook / Test 契約
 
-各 Story は見本ではなく、契約確認点として扱います。将来変更時には、少なくとも次の契約を維持します。
+各 Story と browser / e2e test は見本ではなく、契約確認点として扱います。将来変更時には、少なくとも次の契約を維持します。
 
 | Story                        | 固定する契約                                                         |
 | ---------------------------- | -------------------------------------------------------------------- |
@@ -591,6 +630,14 @@ trigger slot に複数要素を与えた場合、その構成自体が契約外�
 | `NonButtonTriggerAria`       | 非 button trigger に `role="button"` と `aria-disabled` を補えること |
 | `DarkModeSurface`            | 暗背景上で panel の可読性を維持できること                            |
 | `EmptyMenu`                  | 空メニューの境界状態でも破綻しないこと                               |
+
+加えて browser / e2e では、少なくとも次を固定します。
+
+- `open()` 直後の `settling` では panel が不可視・`aria-hidden="true"`・`inert=true` であること
+- `ready` 到達後にのみ trigger `aria-expanded="true"`、panel `aria-hidden="false"`、初期フォーカスが成立すること
+- mobile WebKit で theme / corpus dropdown の初回 open 時に panel が viewport 左上へ露出しないこと
+- Popover API 非対応経路でも `ready` に到達できること
+- `showPopover()` 失敗や `recomputePosition()` 失敗で永続 `settling` にならないこと
 
 `NavigationExample` は command menu family の公開契約から外します。ナビゲーション用途を示す Story は別 family に移すか、参考例から削除します。
 
@@ -656,9 +703,7 @@ trigger slot に複数要素が入った場合、現行実装は最初の 1 要�
 
 ### 開状態で `disabled=true` へ遷移した場合の扱い
 
-現行実装では、`disabled` 変更時に trigger ARIA は更新されますが、開状態から強制的に閉じる規則はありません。したがって、**開いた menu がそのまま残った状態で dropdown だけが disabled になる遷移**を取り得ます。
-
-本書では disabled を開閉無効化契約として整理していますが、開状態から disabled へ入るときの状態遷移規則はまだ固定していません。
+本書では、`idle` 以外で `disabled=true` へ遷移した場合は **即時 close して `idle` へ戻す**ことを契約に含めます。したがって、開いた menu が残留したまま dropdown だけが disabled になる遷移は許容しません。
 
 ### 開状態での trigger 差し替え
 

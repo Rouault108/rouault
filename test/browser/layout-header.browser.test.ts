@@ -1,7 +1,7 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import '../../src/components/layout/layout-header.js';
 import type { LayoutHeader } from '../../src/components/layout/layout-header.js';
-import type { MenuItem } from '../../src/components/ui/dropdown/dropdown.js';
+import type { Dropdown, MenuItem } from '../../src/components/ui/dropdown/dropdown.js';
 import {
   DEFAULT_LAYOUT_SIDEBAR_ID,
   layoutSidebarController,
@@ -31,6 +31,68 @@ const isVisible = (element: HTMLElement): boolean => {
     style.visibility !== 'hidden' &&
     rect.width > 0 &&
     rect.height > 0
+  );
+};
+
+const getPanelPhase = (panel: HTMLElement): 'idle' | 'settling' | 'ready' => {
+  const phase = panel.dataset['positionPhase'];
+  if (phase === 'idle' || phase === 'settling' || phase === 'ready') {
+    return phase;
+  }
+
+  throw new Error(`unknown dropdown phase: ${String(phase)}`);
+};
+
+const waitForAnimationFrames = async (count: number): Promise<void> => {
+  for (let index = 0; index < count; index += 1) {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+  }
+};
+
+const readInlinePx = (value: string | null): number => {
+  const parsed = Number.parseFloat(value ?? '0');
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const waitForDropdownReady = async (dropdown: Dropdown): Promise<HTMLElement> => {
+  await waitUntil(
+    () => {
+      const panel = dropdown.getMenuElement();
+      if (!(panel instanceof HTMLElement)) {
+        return false;
+      }
+
+      const style = getComputedStyle(panel);
+      return (
+        getPanelPhase(panel) === 'ready' &&
+        style.visibility === 'visible' &&
+        style.pointerEvents === 'auto'
+      );
+    },
+    'dropdown が ready state へ遷移しません',
+  );
+
+  // WebKit では ready commit 直後も transform transition 中の rect を返すことがあるため、
+  // paint を数フレーム待ってから座標を読む。
+  await waitForAnimationFrames(3);
+
+  const panel = dropdown.getMenuElement();
+  if (!(panel instanceof HTMLElement)) {
+    throw new Error('dropdown panel が見つかりません');
+  }
+
+  return panel;
+};
+
+const waitForDropdownIdle = async (dropdown: Dropdown): Promise<void> => {
+  await waitUntil(
+    () => {
+      const panel = dropdown.getMenuElement();
+      return panel instanceof HTMLElement && getPanelPhase(panel) === 'idle';
+    },
+    'dropdown が idle state へ戻りません',
   );
 };
 
@@ -463,5 +525,110 @@ describe('layout-header browser contract', () => {
     await waitForLitUpdate(header);
 
     expect(header.shadowRoot?.querySelector('.sidebar-toggle')).to.not.equal(null);
+  });
+
+  it('mobile 幅の theme dropdown 初回 open で settling 中は不可視、ready 後は非原点へ配置されること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 375px;">
+        <layout-header note-layout sidebar-enabled></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
+
+    const themeDropdown = expectPresent(
+      header.shadowRoot?.querySelector<Dropdown>('[data-dropdown="theme"]'),
+      'themeDropdown',
+    );
+    const trigger = expectPresent(
+      themeDropdown.querySelector<HTMLElement>('[slot="trigger"]'),
+      'themeTrigger',
+    );
+
+    trigger.click();
+    await waitForLitUpdate(header);
+
+    const settlingPanel = expectPresent(themeDropdown.getMenuElement(), 'settlingPanel');
+    expect(getPanelPhase(settlingPanel)).to.equal('settling');
+    expect(getComputedStyle(settlingPanel).visibility).to.equal('hidden');
+    expect(getComputedStyle(settlingPanel).pointerEvents).to.equal('none');
+
+    const panel = await waitForDropdownReady(themeDropdown);
+    const panelRect = panel.getBoundingClientRect();
+    const triggerRect = trigger.getBoundingClientRect();
+    const panelLeft = readInlinePx(panel.style.left);
+    const panelTop = readInlinePx(panel.style.top);
+
+    expect(getPanelPhase(panel)).to.equal('ready');
+    expect(getComputedStyle(panel).visibility).to.equal('visible');
+    expect(getComputedStyle(panel).pointerEvents).to.equal('auto');
+
+    // 原点 (0, 0) 固着のまま ready になっていないことを検証する。
+    expect(panelLeft).to.not.equal(0);
+    expect(panelTop).to.not.equal(0);
+
+    expect(panelRect.width).to.be.greaterThan(0);
+    expect(panelRect.height).to.be.greaterThan(0);
+    expect(panelRect.top).to.be.greaterThan(0);
+
+    // trigger 近傍に出ていることだけを緩やかに確認する。
+    expect(Math.abs(panelTop - triggerRect.bottom)).to.be.lessThan(160);
+  });
+
+  it('mobile 幅の corpus dropdown 初回 open で settling 中は不可視、再 open でも非原点配置を維持すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 375px;">
+        <layout-header
+          note-layout
+          current-corpus-key="program"
+          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus","href":"/corpora/program/"}]'
+        ></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
+
+    const corpusDropdown = expectPresent(
+      header.shadowRoot?.querySelector<Dropdown>('.corpus-switcher'),
+      'corpusDropdown',
+    );
+    const trigger = expectPresent(
+      corpusDropdown.querySelector<HTMLElement>('[slot="trigger"]'),
+      'corpusTrigger',
+    );
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      trigger.click();
+      await waitForLitUpdate(header);
+
+      const settlingPanel = expectPresent(corpusDropdown.getMenuElement(), 'settlingPanel');
+      expect(getPanelPhase(settlingPanel)).to.equal('settling');
+      expect(getComputedStyle(settlingPanel).visibility).to.equal('hidden');
+      expect(getComputedStyle(settlingPanel).pointerEvents).to.equal('none');
+
+      const panel = await waitForDropdownReady(corpusDropdown);
+      const rect = panel.getBoundingClientRect();
+      const triggerRect = trigger.getBoundingClientRect();
+      const panelLeft = readInlinePx(panel.style.left);
+      const panelTop = readInlinePx(panel.style.top);
+
+      expect(getPanelPhase(panel)).to.equal('ready');
+      expect(getComputedStyle(panel).visibility).to.equal('visible');
+      expect(getComputedStyle(panel).pointerEvents).to.equal('auto');
+
+      expect(panelLeft).to.not.equal(0);
+      expect(panelTop).to.not.equal(0);
+
+      expect(rect.width).to.be.greaterThan(0);
+      expect(rect.height).to.be.greaterThan(0);
+      expect(rect.top).to.be.greaterThan(0);
+      expect(Math.abs(panelTop - triggerRect.bottom)).to.be.lessThan(160);
+
+      corpusDropdown.close(false);
+      await waitForLitUpdate(header);
+      await waitForDropdownIdle(corpusDropdown);
+    }
   });
 });

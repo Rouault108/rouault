@@ -10,6 +10,10 @@ export type DropdownSide = 'top' | 'right' | 'bottom' | 'left';
 export type DropdownAlign = 'start' | 'center' | 'end';
 export type MenuItemVariant = 'default' | 'danger';
 
+type PositionPhase = 'idle' | 'settling' | 'ready';
+
+const OPEN_SETTLE_WATCHDOG_MS = 180;
+
 /**
  * command menu を一時的に提示する dropdown です。
  *
@@ -21,8 +25,8 @@ export type MenuItemVariant = 'default' | 'danger';
  * @property {DropdownAlign} align - panel の整列
  * @property {boolean} disabled - 開閉操作を無効化
  *
- * @fires open - 実効開状態が true へ変わったとき
- * @fires close - 実効開状態が false へ変わったとき
+ * @fires open - 公開 open state が true へ変わったとき
+ * @fires close - 公開 open state が false へ変わったとき
  * @fires menu-item-select - 項目選択時。detail: { value: string, label: string }
  */
 @customElement('ui-dropdown')
@@ -61,11 +65,13 @@ export class Dropdown extends LitElement {
       scrollbar-width: thin;
       scrollbar-color: oklch(0% 0 0 / 0.2) transparent;
       opacity: 0;
+      visibility: hidden;
       transform: scale(var(--scale-enter, 0.97));
       pointer-events: none;
       transition:
         opacity var(--duration-instant, 0ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        transform var(--duration-instant, 0ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+        transform var(--duration-instant, 0ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        visibility 0s linear var(--duration-instant, 0ms);
     }
 
     .panel[popover],
@@ -82,18 +88,20 @@ export class Dropdown extends LitElement {
       }
     }
 
-    :host([opened]) .panel {
+    .panel[data-position-phase='ready'] {
       opacity: 1;
+      visibility: visible;
       transform: scale(1);
       pointer-events: auto;
       transition:
         opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        transform var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+        transform var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        visibility 0s;
     }
 
     @media (prefers-reduced-motion: reduce) {
       .panel,
-      :host([opened]) .panel {
+      .panel[data-position-phase='ready'] {
         transition-duration: 0.01ms;
       }
     }
@@ -151,14 +159,19 @@ export class Dropdown extends LitElement {
   private _overlayController: AnchoredOverlayController | null = null;
   private _typeaheadBuffer = '';
   private _typeaheadTimer: ReturnType<typeof setTimeout> | null = null;
-  private _openFocusTarget: 'first' | 'last' = 'first';
-  private _openFocusTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private _restoreFocusOnClose = true;
   private readonly _menuId = `dropdown-menu-${Math.random().toString(36).slice(2, 11)}`;
   private readonly _triggerId = `dropdown-trigger-${Math.random().toString(36).slice(2, 11)}`;
   @state()
   private _resolvedTriggerId = this._triggerId;
   private _boundTriggerElement: HTMLElement | null = null;
+  @state()
+  private _positionPhase: PositionPhase = 'idle';
+  private _positionSettleToken = 0;
+  private _positionSettleRafIds: number[] = [];
+  private _panelToggleAbortController: AbortController | null = null;
+  private _positionWatchdogTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private _pendingOpenFocusTarget: 'first' | 'last' = 'first';
 
   private get _supportsPopoverApi(): boolean {
     if (typeof HTMLElement === 'undefined') {
@@ -177,19 +190,18 @@ export class Dropdown extends LitElement {
     this.removeEventListener('menu-item-click', this._handleMenuItemClick as EventListener);
     this._detachTriggerListeners(this._boundTriggerElement);
     this._boundTriggerElement = null;
+    this._cancelPendingPositionSettle({ invalidateToken: true });
     this._overlayController?.destroy();
 
     if (this._typeaheadTimer !== null) {
       clearTimeout(this._typeaheadTimer);
-    }
-
-    if (this._openFocusTimeoutId !== null) {
-      clearTimeout(this._openFocusTimeoutId);
+      this._typeaheadTimer = null;
     }
   }
 
   override firstUpdated(): void {
     this._syncTriggerElement();
+    this._syncPanelAccessibility();
   }
 
   override updated(changedProperties: PropertyValues<this>): void {
@@ -219,12 +231,20 @@ export class Dropdown extends LitElement {
 
     if (changedProperties.has('side') || changedProperties.has('align')) {
       if (this.opened) {
-        this._startOverlay();
+        void this._overlayController?.refreshPosition();
       }
     }
 
     if (changedProperties.has('disabled')) {
-      this._updateTriggerAria(this.opened);
+      if (this.disabled && this.opened) {
+        this.close(false);
+      } else {
+        this._syncTriggerElement();
+      }
+    }
+
+    if (changedProperties.has('_positionPhase')) {
+      this._syncPanelAccessibility();
     }
   }
 
@@ -256,40 +276,54 @@ export class Dropdown extends LitElement {
     this.open();
   }
 
+  getMenuElement(): HTMLElement | null {
+    return this.shadowRoot?.querySelector<HTMLElement>('[data-ui-dropdown-panel]') ?? null;
+  }
+
+  getTriggerElement(): HTMLElement | null {
+    return this._getTriggerElement();
+  }
+
   private _onOpen(): void {
-    this._syncPanelPopoverState(true);
-    this._startOverlay();
-    this._updateTriggerAria(true);
+    this._cancelPendingPositionSettle({ invalidateToken: true });
+    this._positionPhase = 'settling';
+    this._syncPanelAccessibility();
 
-    const focusTarget = this._openFocusTarget;
-    this._openFocusTarget = 'first';
+    const token = ++this._positionSettleToken;
+    const focusTarget = this._pendingOpenFocusTarget;
+    this._pendingOpenFocusTarget = 'first';
 
-    if (this._openFocusTimeoutId !== null) {
-      clearTimeout(this._openFocusTimeoutId);
+    this._installPanelOpenObserver(token, focusTarget);
+
+    try {
+      this._syncPanelPopoverState(true);
+    } catch {
+      this._failOpen(token);
+      return;
     }
 
-    this._openFocusTimeoutId = setTimeout(() => {
-      this._openFocusTimeoutId = null;
-      const items = this._getMenuItems();
-      const target =
-        focusTarget === 'last'
-          ? [...items].reverse().find((item) => !item.disabled)
-          : items.find((item) => !item.disabled);
-      this._focusItem(target ?? null);
-    }, 0);
+    this._startOverlay();
+    this._armPositionWatchdog(token, focusTarget);
+
+    if (!this._supportsPopoverApi) {
+      this._beginPositionSettle(token, focusTarget);
+    }
   }
 
   private _onClose(): void {
-    const panel = this.shadowRoot?.querySelector<HTMLElement>('.panel');
+    const panel = this.getMenuElement();
 
-    if (this._openFocusTimeoutId !== null) {
-      clearTimeout(this._openFocusTimeoutId);
-      this._openFocusTimeoutId = null;
+    this._cancelPendingPositionSettle({ invalidateToken: true });
+    this._positionPhase = 'idle';
+    this._syncPanelAccessibility();
+    this._stopOverlay();
+
+    try {
+      this._syncPanelPopoverState(false);
+    } catch {
+      // close 経路では popover cleanup failure を外へ漏らさない
     }
 
-    this._stopOverlay();
-    this._syncPanelPopoverState(false);
-    this._updateTriggerAria(false);
     panel?.style.setProperty('left', '0px');
     panel?.style.setProperty('top', '0px');
 
@@ -327,7 +361,7 @@ export class Dropdown extends LitElement {
       this._attachTriggerListeners(this._boundTriggerElement);
     }
 
-    this._updateTriggerAria(this.opened);
+    this._updateTriggerAria(this._positionPhase === 'ready');
   }
 
   private _ensureOverlayController(): AnchoredOverlayController {
@@ -377,10 +411,6 @@ export class Dropdown extends LitElement {
     }
   }
 
-  getMenuElement(): HTMLElement | null {
-    return this.shadowRoot?.querySelector<HTMLElement>('[data-ui-dropdown-panel]') ?? null;
-  }
-
   private _syncPanelPopoverState(open: boolean): void {
     const panel = this.getMenuElement() as
       | (HTMLElement & { showPopover?: () => void; hidePopover?: () => void })
@@ -415,8 +445,194 @@ export class Dropdown extends LitElement {
     }
   }
 
-  getTriggerElement(): HTMLElement | null {
-    return this._getTriggerElement();
+  private _syncPanelAccessibility(): void {
+    const panel = this.getMenuElement();
+    const isReady = this._positionPhase === 'ready';
+
+    this._updateTriggerAria(isReady);
+
+    if (!panel) {
+      return;
+    }
+
+    panel.dataset['positionPhase'] = this._positionPhase;
+    panel.setAttribute('aria-hidden', isReady ? 'false' : 'true');
+
+    if (isReady) {
+      panel.removeAttribute('inert');
+    } else {
+      panel.setAttribute('inert', '');
+    }
+  }
+
+  private _installPanelOpenObserver(
+    token: number,
+    focusTarget: 'first' | 'last',
+  ): void {
+    if (!this._supportsPopoverApi) {
+      return;
+    }
+
+    const panel = this.getMenuElement();
+    if (!panel) {
+      return;
+    }
+
+    this._panelToggleAbortController?.abort();
+    const controller = new AbortController();
+    this._panelToggleAbortController = controller;
+
+    panel.addEventListener(
+      'toggle',
+      (event: Event) => {
+        const toggleState = (event as Event & { newState?: string }).newState;
+        if (toggleState !== 'open') {
+          return;
+        }
+
+        this._beginPositionSettle(token, focusTarget);
+      },
+      { once: true, signal: controller.signal },
+    );
+  }
+
+  private _armPositionWatchdog(token: number, focusTarget: 'first' | 'last'): void {
+    this._clearPositionWatchdog();
+    this._positionWatchdogTimeoutId = setTimeout(() => {
+      this._positionWatchdogTimeoutId = null;
+      if (!this._isActiveSettleToken(token)) {
+        return;
+      }
+      this._beginPositionSettle(token, focusTarget);
+    }, OPEN_SETTLE_WATCHDOG_MS);
+  }
+
+  private _beginPositionSettle(token: number, focusTarget: 'first' | 'last'): void {
+    if (!this._isActiveSettleToken(token)) {
+      return;
+    }
+
+    this._clearPositionWatchdog();
+    this._panelToggleAbortController?.abort();
+    this._panelToggleAbortController = null;
+    this._clearPendingPositionSettleRafs();
+
+    const firstRafId = requestAnimationFrame(() => {
+      this._dropPositionSettleRafId(firstRafId);
+      void this._runPositionSettleSequence(token, focusTarget);
+    });
+    this._positionSettleRafIds.push(firstRafId);
+  }
+
+  private async _runPositionSettleSequence(
+    token: number,
+    focusTarget: 'first' | 'last',
+  ): Promise<void> {
+    if (!this._isActiveSettleToken(token)) {
+      return;
+    }
+
+    const overlay = this._overlayController;
+    if (!overlay) {
+      this._failOpen(token);
+      return;
+    }
+
+    const firstPass = await overlay.recomputePosition();
+    if (!this._isActiveSettleToken(token)) {
+      return;
+    }
+
+    await this._waitForAnimationFrame(token);
+    if (!this._isActiveSettleToken(token)) {
+      return;
+    }
+
+    const secondPass = await overlay.recomputePosition();
+    if (!this._isActiveSettleToken(token)) {
+      return;
+    }
+
+    if (!firstPass && !secondPass) {
+      this._failOpen(token);
+      return;
+    }
+
+    this._commitReadyState(token, focusTarget);
+  }
+
+  private _commitReadyState(token: number, focusTarget: 'first' | 'last'): void {
+    if (!this._isActiveSettleToken(token)) {
+      return;
+    }
+
+    this._positionPhase = 'ready';
+    this._syncPanelAccessibility();
+    this._focusInitialItem(focusTarget);
+  }
+
+  private _focusInitialItem(focusTarget: 'first' | 'last'): void {
+    const items = this._getMenuItems();
+    const target =
+      focusTarget === 'last'
+        ? [...items].reverse().find((item) => !item.disabled)
+        : items.find((item) => !item.disabled);
+    this._focusItem(target ?? null);
+  }
+
+  private _failOpen(token: number): void {
+    if (token !== this._positionSettleToken || !this.opened) {
+      return;
+    }
+
+    this.close(false);
+  }
+
+  private _waitForAnimationFrame(token: number): Promise<void> {
+    return new Promise((resolve) => {
+      const rafId = requestAnimationFrame(() => {
+        this._dropPositionSettleRafId(rafId);
+        if (token !== this._positionSettleToken) {
+          resolve();
+          return;
+        }
+        resolve();
+      });
+      this._positionSettleRafIds.push(rafId);
+    });
+  }
+
+  private _cancelPendingPositionSettle(options?: { invalidateToken?: boolean }): void {
+    if (options?.invalidateToken) {
+      this._positionSettleToken += 1;
+    }
+
+    this._clearPendingPositionSettleRafs();
+    this._clearPositionWatchdog();
+    this._panelToggleAbortController?.abort();
+    this._panelToggleAbortController = null;
+  }
+
+  private _clearPendingPositionSettleRafs(): void {
+    for (const rafId of this._positionSettleRafIds) {
+      cancelAnimationFrame(rafId);
+    }
+    this._positionSettleRafIds = [];
+  }
+
+  private _dropPositionSettleRafId(rafId: number): void {
+    this._positionSettleRafIds = this._positionSettleRafIds.filter((currentId) => currentId !== rafId);
+  }
+
+  private _clearPositionWatchdog(): void {
+    if (this._positionWatchdogTimeoutId !== null) {
+      clearTimeout(this._positionWatchdogTimeoutId);
+      this._positionWatchdogTimeoutId = null;
+    }
+  }
+
+  private _isActiveSettleToken(token: number): boolean {
+    return token === this._positionSettleToken && this.opened && this._positionPhase === 'settling';
   }
 
   private _updateTriggerAria(expanded: boolean): void {
@@ -509,14 +725,14 @@ export class Dropdown extends LitElement {
       case 'Enter':
       case ' ': {
         event.preventDefault();
-        this._openFocusTarget = 'first';
+        this._pendingOpenFocusTarget = 'first';
         this.toggle();
         break;
       }
       case 'ArrowDown': {
         event.preventDefault();
         if (!this.opened) {
-          this._openFocusTarget = 'first';
+          this._pendingOpenFocusTarget = 'first';
           this.open();
         }
         break;
@@ -524,7 +740,7 @@ export class Dropdown extends LitElement {
       case 'ArrowUp': {
         event.preventDefault();
         if (!this.opened) {
-          this._openFocusTarget = 'last';
+          this._pendingOpenFocusTarget = 'last';
           this.open();
         }
         break;
@@ -533,6 +749,14 @@ export class Dropdown extends LitElement {
   };
 
   private _handleMenuKeyDown = (event: KeyboardEvent): void => {
+    if (this._positionPhase !== 'ready') {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.close(true);
+      }
+      return;
+    }
+
     const items = this._getMenuItems();
     const currentItem = this._getFocusedItem(items);
     const currentIndex = currentItem ? items.indexOf(currentItem) : -1;
@@ -610,6 +834,10 @@ export class Dropdown extends LitElement {
   }
 
   private _handleTypeahead(char: string, items: MenuItem[], currentIndex: number): void {
+    if (this._positionPhase !== 'ready') {
+      return;
+    }
+
     this._typeaheadBuffer += char.toLowerCase();
 
     if (this._typeaheadTimer !== null) {
@@ -644,6 +872,10 @@ export class Dropdown extends LitElement {
   }
 
   private _selectItem(item: MenuItem): void {
+    if (this._positionPhase !== 'ready') {
+      return;
+    }
+
     this.dispatchEvent(
       new CustomEvent('menu-item-select', {
         bubbles: true,
@@ -658,6 +890,11 @@ export class Dropdown extends LitElement {
   }
 
   private _handleMenuItemClick = (event: CustomEvent<{ value: string; label: string }>): void => {
+    if (this._positionPhase !== 'ready') {
+      event.stopPropagation();
+      return;
+    }
+
     event.stopPropagation();
     this.dispatchEvent(
       new CustomEvent('menu-item-select', {
@@ -666,7 +903,6 @@ export class Dropdown extends LitElement {
         detail: event.detail,
       }),
     );
-    // ポインター選択後は trigger へフォーカスを戻さず、不要な focus ring の残留を避ける。
     this.close(false);
     this._blurTriggerIfActive();
   };
@@ -693,6 +929,7 @@ export class Dropdown extends LitElement {
 
   private _onTriggerSlotChange = (): void => {
     this._syncTriggerElement();
+    this._syncPanelAccessibility();
   };
 
   override render() {
@@ -703,11 +940,12 @@ export class Dropdown extends LitElement {
         class="panel"
         data-ui-dropdown-panel
         data-ui-overlay-surface="dropdown"
+        data-position-phase="${this._positionPhase}"
         role="menu"
         id="${this._menuId}"
         aria-labelledby="${this._resolvedTriggerId}"
-        aria-hidden="${this.opened ? 'false' : 'true'}"
-        ?inert=${!this.opened}
+        aria-hidden="${this._positionPhase === 'ready' ? 'false' : 'true'}"
+        ?inert=${this._positionPhase !== 'ready'}
         @keydown="${this._handleMenuKeyDown}"
       >
         <slot class="menu-slot"></slot>
@@ -716,16 +954,6 @@ export class Dropdown extends LitElement {
   }
 }
 
-/**
- * command item 専用の menu item です。
- *
- * @slot - 表示ラベル
- *
- * @property {string} value - 機械可読な意味値
- * @property {MenuItemVariant} variant - 表示バリアント
- * @property {boolean} disabled - 選択不可
- * @property {string} textValue - type-ahead とラベル正規化に使う文字列
- */
 @customElement('ui-menu-item')
 export class MenuItem extends LitElement {
   static override styles = css`
