@@ -176,6 +176,60 @@ describe('rehypeRouaultComponents', () => {
     expect(infoBox?.children?.every((child) => child.tagName === 'div')).to.equal(true);
   });
 
+  it('footnotes section heading を脚注へ正規化すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'section',
+          properties: {
+            className: ['footnotes'],
+            'data-footnotes': 'true',
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'h2',
+              properties: { id: 'footnote-label' },
+              children: [{ type: 'text', value: 'Footnotes' }],
+            },
+            {
+              type: 'element',
+              tagName: 'ol',
+              children: [
+                {
+                  type: 'element',
+                  tagName: 'li',
+                  properties: { id: 'fn-1' },
+                  children: [
+                    {
+                      type: 'element',
+                      tagName: 'p',
+                      children: [{ type: 'text', value: '脚注本文' }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const section = tree.children?.[0];
+    const heading = section?.children?.[0];
+
+    expect(section?.tagName).to.equal('section');
+    expect(section?.properties?.['role']).to.equal('doc-endnotes');
+    expect(heading?.tagName).to.equal('h2');
+    expect(heading?.properties?.['id']).to.equal('footnote-label');
+    expect(heading?.properties?.['className']).to.deep.equal(['sr-only']);
+    expect(heading?.children?.[0]?.value).to.equal('脚注');
+  });
+
   it('HTML 断片を保存前 surface HTML に正規化できること', () => {
     const html = `
       <aside data-callout="true" data-callout-kind="warning" data-callout-heading="注意">

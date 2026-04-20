@@ -212,6 +212,9 @@ const CALLOUT_KIND_CONFIG = {
 
 type CalloutKind = keyof typeof CALLOUT_KIND_CONFIG;
 
+const FOOTNOTES_SECTION_LABEL = '脚注';
+const FOOTNOTES_SECTION_HEADING_ID = 'footnote-label';
+
 const normalizeCalloutKind = (value: unknown): CalloutKind => {
   const normalized = String(value ?? '')
     .trim()
@@ -1122,6 +1125,42 @@ const isFootnotesSection = (node: HastNode): boolean => {
   );
 };
 
+const isHeadingElement = (node: HastNode): boolean =>
+  isElement(node) && typeof node.tagName === 'string' && /^h[1-6]$/.test(node.tagName);
+
+const normalizeFootnotesSectionHeading = (node: HastNode): void => {
+  const children = Array.isArray(node.children) ? node.children : [];
+  const headingNode = children.find((child) => isHeadingElement(child));
+
+  if (headingNode) {
+    const properties = headingNode.properties ?? {};
+    const classList = getClassList(properties['className']);
+    if (!classList.includes('sr-only')) {
+      properties['className'] = [...classList, 'sr-only'];
+    } else if (Array.isArray(properties['className'])) {
+      properties['className'] = classList;
+    }
+    if (!pickOptionalString(properties['id'])) {
+      properties['id'] = FOOTNOTES_SECTION_HEADING_ID;
+    }
+    headingNode.properties = properties;
+    headingNode.children = [createTextNode(FOOTNOTES_SECTION_LABEL)];
+    return;
+  }
+
+  node.children = [
+    createElement(
+      'h2',
+      {
+        id: FOOTNOTES_SECTION_HEADING_ID,
+        className: ['sr-only'],
+      },
+      [createTextNode(FOOTNOTES_SECTION_LABEL)],
+    ),
+    ...children,
+  ];
+};
+
 const collectFootnoteDefinitions = (
   node: HastNode,
   definitions: Map<string, FootnoteDefinition>,
@@ -1131,6 +1170,7 @@ const collectFootnoteDefinitions = (
     if (!pickOptionalString(node.properties['role'])) {
       node.properties['role'] = 'doc-endnotes';
     }
+    normalizeFootnotesSectionHeading(node);
 
     const listNode =
       (node.children ?? []).find((child): child is HastNode => isElement(child, 'ol')) ?? null;
