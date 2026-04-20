@@ -142,6 +142,10 @@ export class UiHeader extends LitElement {
       pointer-events: auto;
     }
 
+    slot[name='compact-center']::slotted(.compact-note-label) {
+      pointer-events: none;
+    }
+
     .zone-end {
       display: flex;
       align-items: center;

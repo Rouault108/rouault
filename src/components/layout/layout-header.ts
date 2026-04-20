@@ -112,6 +112,28 @@ export class LayoutHeader extends LitElement {
       min-inline-size: 0;
     }
 
+    .compact-note-label {
+      display: inline-flex;
+      align-items: center;
+      min-inline-size: 0;
+      max-inline-size: 100%;
+      block-size: var(--control-height-md, 36px);
+      padding-inline: var(--space-2, 8px);
+      border-radius: var(--radius-md, 8px);
+      background: transparent;
+      color: var(--fg-default);
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .compact-note-label-text {
+      min-inline-size: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: var(--text-sm, 13px);
+    }
+
     .slot-group {
       display: flex;
       align-items: center;
@@ -190,8 +212,16 @@ export class LayoutHeader extends LitElement {
     .corpus-chevron,
     .theme-menu-icon,
     .theme-trigger-icon,
-    .theme-chevron,
     .toc-trigger-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--icon-base, 16px);
+      height: var(--icon-base, 16px);
+      flex-shrink: 0;
+    }
+
+    .theme-chevron {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -276,7 +306,20 @@ export class LayoutHeader extends LitElement {
       }
 
       :host([note-layout]) ui-header {
-        --ui-header-center-end-inset: 0px;
+        --ui-header-center-start-inset: 0px;
+        --ui-header-center-end-inset: 272px;
+      }
+
+      :host([note-layout][sidebar-enabled]) ui-header {
+        --ui-header-center-start-inset: 44px;
+      }
+
+      :host([note-layout][sidebar-enabled]) .corpus-switcher {
+        display: none;
+      }
+
+      :host([note-layout]) .toc-trigger {
+        max-inline-size: min(11rem, 32vw);
       }
 
       .corpus-trigger-text {
@@ -293,8 +336,16 @@ export class LayoutHeader extends LitElement {
     }
 
     @container layout-header-shell (max-width: 479px) {
+      :host([note-layout]) ui-header {
+        --ui-header-center-end-inset: 232px;
+      }
+
       .toc-trigger {
         max-inline-size: min(12rem, 34vw);
+      }
+
+      :host([note-layout]) .toc-trigger {
+        max-inline-size: min(9rem, 30vw);
       }
 
       .toc-trigger-progress {
@@ -303,6 +354,10 @@ export class LayoutHeader extends LitElement {
     }
 
     @container layout-header-shell (max-width: 399px) {
+      :host([note-layout]) ui-header {
+        --ui-header-center-end-inset: 136px;
+      }
+
       .toc-trigger-text {
         display: none;
       }
@@ -604,6 +659,21 @@ export class LayoutHeader extends LitElement {
     return label && label.length > 0 ? label : '目次';
   }
 
+  private _readCompactCenterLabel(): string | null {
+    const tocLabel = this._tocRuntimeView.currentLabel?.trim();
+    if (tocLabel && tocLabel.length > 0) {
+      return tocLabel;
+    }
+
+    const lastBreadcrumb = this._breadcrumbItems.at(-1);
+    const breadcrumbLabel = lastBreadcrumb ? lastBreadcrumb.label.trim() : null;
+    if (breadcrumbLabel && breadcrumbLabel.length > 0) {
+      return breadcrumbLabel;
+    }
+
+    return null;
+  }
+
   private _readTocProgressLabel(): string | null {
     const { activeIndex, activeTotal } = this._tocRuntimeView;
     if (typeof activeIndex !== 'number' || typeof activeTotal !== 'number') {
@@ -615,6 +685,10 @@ export class LayoutHeader extends LitElement {
     }
 
     return `${String(activeIndex)}/${String(activeTotal)}`;
+  }
+
+  private _shouldRenderThemeChevron(): boolean {
+    return !this.noteLayout;
   }
 
   private _readTocPanelId(): string | null {
@@ -632,6 +706,7 @@ export class LayoutHeader extends LitElement {
     const shouldRenderHeaderBreadcrumbs = hasBreadcrumbs && !this.noteLayout;
     const shouldRenderTocTrigger = this._shouldRenderMobileTocTrigger();
     const tocTriggerLabel = this._readTocTriggerLabel();
+    const compactCenterLabel = this.noteLayout ? this._readCompactCenterLabel() : null;
     const tocProgressLabel = this._readTocProgressLabel();
     const tocPanelId = this._readTocPanelId();
     const tocTriggerAriaLabel = this._tocPanelOpen ? '目次を閉じる' : '目次を開く';
@@ -673,6 +748,7 @@ export class LayoutHeader extends LitElement {
             )}
           </ui-dropdown>
         </div>
+
         ${shouldRenderHeaderBreadcrumbs
           ? html`
               <ui-breadcrumbs
@@ -683,6 +759,15 @@ export class LayoutHeader extends LitElement {
               ></ui-breadcrumbs>
             `
           : nothing}
+
+        ${compactCenterLabel
+          ? html`
+              <div slot="compact-center" class="compact-note-label">
+                <span class="compact-note-label-text">${compactCenterLabel}</span>
+              </div>
+            `
+          : nothing}
+
         <div slot="end" class="slot-group">
           <button
             class="toc-trigger"
@@ -699,7 +784,9 @@ export class LayoutHeader extends LitElement {
               ? html`<span class="toc-trigger-progress">${tocProgressLabel}</span>`
               : nothing}
           </button>
+
           <ui-search-trigger density="auto"></ui-search-trigger>
+
           <ui-dropdown
             data-dropdown="theme"
             align="end"
@@ -714,7 +801,13 @@ export class LayoutHeader extends LitElement {
                 ></ui-icon>
                 <span class="theme-trigger-text">テーマ</span>
               </span>
-              <ui-icon class="theme-chevron" name="chevron-down" aria-hidden="true"></ui-icon>
+              ${this._shouldRenderThemeChevron()
+                ? html`<ui-icon
+                    class="theme-chevron"
+                    name="chevron-down"
+                    aria-hidden="true"
+                  ></ui-icon>`
+                : nothing}
             </ui-button>
             ${(
               Object.entries(THEME_OPTIONS) as [
