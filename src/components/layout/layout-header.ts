@@ -751,6 +751,25 @@ export class LayoutHeader extends LitElement {
                 <span class="theme-trigger-text">テーマ</span>
               </span>
             </ui-button>
+            ${(
+              Object.entries(THEME_OPTIONS) as [
+                ThemePreference,
+                (typeof THEME_OPTIONS)[ThemePreference],
+              ][]
+            ).map(
+              ([value, option]) => html`
+                <ui-menu-item value=${value}>
+                  <span class="theme-menu-label">
+                    <ui-icon
+                      class="theme-menu-icon"
+                      name=${option.icon}
+                      aria-hidden="true"
+                    ></ui-icon>
+                    <span>${option.label}</span>
+                  </span>
+                </ui-menu-item>
+              `,
+            )}
           </ui-dropdown>
         </div>
       </ui-header>
