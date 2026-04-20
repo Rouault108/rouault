@@ -44,7 +44,8 @@ const isHeaderShellProjection = (value: unknown): value is HeaderShellProjection
     isString(value['currentCorpusKey']) &&
     isBoolean(value['noteLayout']) &&
     isBoolean(value['sidebarEnabled']) &&
-    isTocPresence(value['tocPresence'])
+    isTocPresence(value['tocPresence']) &&
+    (value['tocRuntimeId'] === undefined || value['tocRuntimeId'] === null || isString(value['tocRuntimeId']))
   );
 };
 

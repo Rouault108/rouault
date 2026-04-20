@@ -76,6 +76,7 @@ describe('NoteLayout', () => {
     expect(rendered).toContain('<span data-pagefind-weight="10">見出し</span>');
     expect(rendered).not.toContain('<span data-pagefind-weight="8">見出し</span>');
     expect(rendered).toContain('content-root-id="note-content-note"');
+    expect(rendered).toContain('toc-runtime-id="toc-source-note"');
   });
 
   it('tocPresence=absent では TOC host / script / hydration scope を出力しないこと', () => {

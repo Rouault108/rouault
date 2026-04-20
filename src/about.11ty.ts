@@ -55,6 +55,8 @@ const ABOUT_HEADINGS = ABOUT_SECTIONS.map((section) => ({
   level: 2,
 }));
 
+const ABOUT_TOC_RUNTIME_ID = 'about-page-toc';
+
 const ABOUT_TOC_CAPABILITIES = {
   activeTracking: true,
   dynamicScopes: false,
@@ -95,12 +97,14 @@ export class AboutPageTemplate {
       title: 'About',
       permalink: '/about/index.html',
       headerTocPresence: 'present',
+      headerTocRuntimeId: ABOUT_TOC_RUNTIME_ID,
     };
   }
 
   render() {
     const tocAttributes = serializeHtmlAttributes([
       { name: 'headings-json', value: ABOUT_HEADINGS, kind: 'json' },
+      { name: 'toc-runtime-id', value: ABOUT_TOC_RUNTIME_ID },
       { name: 'capabilities-json', value: ABOUT_TOC_CAPABILITIES, kind: 'json' },
       { name: 'content-root-id', value: 'about-page-content' },
       { name: 'home-href', value: '/' },

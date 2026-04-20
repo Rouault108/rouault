@@ -6,6 +6,8 @@ import {
   DEFAULT_LAYOUT_SIDEBAR_ID,
   layoutSidebarController,
 } from '../../src/components/layout/layout-sidebar-controller.js';
+import { layoutTocMobileController } from '../../src/components/layout/layout-toc-mobile-controller.js';
+import { layoutTocRuntimeStore } from '../../src/components/layout/layout-toc-runtime-store.js';
 import type { UiHeader } from '../../src/components/ui/header/header.js';
 import { waitForLitUpdate } from './helpers/wait-for-lit.js';
 
@@ -23,6 +25,8 @@ const expectPresent = <T>(value: T | null | undefined, name: string): T => {
 describe('layout-header browser contract', () => {
   afterEach(() => {
     layoutSidebarController.reset();
+    layoutTocRuntimeStore.reset();
+    layoutTocMobileController.reset();
   });
 
   it('狭幅コンテナでも header が右方向へはみ出さないこと', async () => {
@@ -273,6 +277,70 @@ describe('layout-header browser contract', () => {
 
     expect(header.getAttribute('toc-presence')).to.equal('absent');
     expect(header.readShellProjection().tocPresence).to.equal('absent');
+  });
+
+
+
+  it('toc runtime snapshot が ready 後にだけ mobile trigger を表示すること', async () => {
+    const header = await fixture<LayoutHeader>(html`
+      <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+    `);
+    await waitForLitUpdate(header);
+
+    const triggerBefore = expectPresent(
+      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
+      'tocTriggerBefore',
+    );
+    expect(triggerBefore.getAttribute('data-visible')).to.equal('false');
+
+    layoutTocRuntimeStore.publish('test-toc', {
+      ready: true,
+      hasVisibleHeadings: true,
+      currentLabel: '2. 状態同期',
+      activeId: 'state-sync',
+      activeIndex: 2,
+      activeTotal: 5,
+    });
+    await waitForLitUpdate(header);
+
+    const triggerAfter = expectPresent(
+      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
+      'tocTriggerAfter',
+    );
+    expect(triggerAfter.getAttribute('data-visible')).to.equal('true');
+    expect(triggerAfter.getAttribute('aria-controls')).to.equal('layout-toc-panel-test-toc');
+    expect(triggerAfter.textContent).to.contain('2. 状態同期');
+    expect(triggerAfter.textContent).to.contain('2/5');
+  });
+
+  it('toc mobile controller snapshot を aria-expanded へ反映すること', async () => {
+    const header = await fixture<LayoutHeader>(html`
+      <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+    `);
+
+    layoutTocRuntimeStore.publish('test-toc', {
+      ready: true,
+      hasVisibleHeadings: true,
+      currentLabel: '目次',
+      activeId: 'intro',
+      activeIndex: 1,
+      activeTotal: 3,
+    });
+    await waitForLitUpdate(header);
+
+    const trigger = expectPresent(
+      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
+      'tocTrigger',
+    );
+    expect(trigger.getAttribute('aria-expanded')).to.equal('false');
+
+    layoutTocMobileController.open('test-toc', trigger);
+    await waitForLitUpdate(header);
+    expect(trigger.getAttribute('aria-expanded')).to.equal('true');
+
+    layoutTocMobileController.close('test-toc');
+    await waitForLitUpdate(header);
+    expect(trigger.getAttribute('aria-expanded')).to.equal('false');
   });
 
   it('sidebar-enabled が無い note-layout では sidebar toggle を描画しないこと', async () => {

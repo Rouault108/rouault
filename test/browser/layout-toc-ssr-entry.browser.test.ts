@@ -176,6 +176,7 @@ describe('layout-toc SSR entry hydration', () => {
       const mobilePanel = host.shadowRoot?.querySelector<HTMLElement>('.mobile-panel') ?? null;
       expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
       expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
+      expect(host.shadowRoot?.querySelector('.mobile-bar')).to.equal(null);
 
       expect(getActiveLabel(syncedDesktopToc)).to.equal('7.2 配列の要素の読み書き');
     } finally {

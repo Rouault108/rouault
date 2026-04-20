@@ -4,7 +4,6 @@
  * BaseLayout を layout chain で継承し、
  * サイドバー + 本文 + TOC の3カラム構成を提供する。
  */
-
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import { ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE } from '../components/ui/article-header/article-header-tags-adapter.js';
 import { escapeHtmlText, renderJsonScriptElement, serializeHtmlAttributes } from './html-output.js';
@@ -82,6 +81,7 @@ const renderArticleHeader = (articleHeader: NotePageProjection['articleHeader'])
 const renderToc = (toc: NotePageProjection['toc']): string => {
   const tocAttributes = serializeHtmlAttributes([
     { name: 'source-id', value: toc.sourceId },
+    { name: 'toc-runtime-id', value: toc.sourceId },
     { name: 'headings-json', value: toc.headings, kind: 'json' },
     { name: 'capabilities-json', value: toc.capabilities, kind: 'json' },
     { name: 'content-root-id', value: toc.contentRootId },

@@ -54,6 +54,7 @@ describe('BaseLayout', () => {
 
     expect(rendered).toContain('<layout-header note-layout sidebar-enabled');
     expect(rendered).toContain('toc-presence="absent"');
+    expect(rendered).toContain('toc-runtime-id=""');
     expect(rendered).toContain('initial-expanded-ids="[]"');
     expect(rendered).toContain('topology-revision="reader-note-topology"');
     expect(rendered).toContain('<nav data-sidebar-nav');
@@ -76,6 +77,7 @@ describe('BaseLayout', () => {
 
     expect(rendered).toContain('<layout-header note-layout');
     expect(rendered).toContain('toc-presence="absent"');
+    expect(rendered).toContain('toc-runtime-id=""');
     expect(rendered).not.toContain('<layout-header note-layout sidebar-enabled');
   });
 

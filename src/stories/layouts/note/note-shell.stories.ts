@@ -55,7 +55,7 @@ const renderNoteShell = () =>
         html`
           <div class="foundation-stage" style="padding: 0; overflow: clip;">
             <div class="app-root">
-              <layout-header note-layout sidebar-enabled></layout-header>
+              <layout-header note-layout sidebar-enabled toc-presence="present" toc-runtime-id="story-note-toc-source"></layout-header>
               <main id="note-shell-main" tabindex="-1">
                 <section class="note-shell">
                   <aside class="layout-sidebar-col" aria-label="ナビゲーション">
@@ -99,6 +99,7 @@ const renderNoteShell = () =>
                     <layout-toc
                       id="story-note-toc"
                       source-id="story-note-toc-source"
+                      toc-runtime-id="story-note-toc-source"
                       content-root-id="story-note-content"
                       home-href="/"
                     ></layout-toc>

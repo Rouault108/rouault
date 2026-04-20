@@ -1,4 +1,4 @@
-import { css, html, LitElement, nothing } from 'lit';
+import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { keyed } from 'lit/directives/keyed.js';
 import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
@@ -10,10 +10,14 @@ import {
   type TocCapabilities,
 } from '../../toc/filter-visible-headings.js';
 import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
-import { TocMobileSummaryController } from '../../toc/toc-mobile-summary-controller.js';
 import { isHTMLElement } from '../../lib/dom.js';
+import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
+import { layoutTocRuntimeStore, type LayoutTocRuntimeSnapshot } from './layout-toc-runtime-store.js';
+import '../ui/icon/icon.js';
 import '../ui/toc/toc.js';
 import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc.js';
+
+const DEFAULT_LAYOUT_TOC_RUNTIME_ID = 'page-toc';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -109,7 +113,6 @@ export class LayoutToc extends LitElement {
       display: block;
       block-size: 100%;
       min-block-size: 0;
-      --layout-toc-mobile-bar-height: 56px;
     }
 
     .desktop {
@@ -126,7 +129,7 @@ export class LayoutToc extends LitElement {
     .mobile-panel {
       position: fixed;
       inset-inline: 0;
-      top: calc(var(--header-height) + 56px);
+      top: var(--header-height);
       bottom: 0;
       z-index: var(--z-non-modal-panel, var(--z-modal, 300));
       background: var(--bg-default);
@@ -134,8 +137,10 @@ export class LayoutToc extends LitElement {
       transform: translateY(100%);
       transition: transform var(--duration-normal, 150ms)
         var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
-      padding: var(--space-2, 8px) var(--space-3, 12px) var(--space-6, 24px);
+      padding: var(--space-2, 8px) max(var(--space-3, 12px), env(safe-area-inset-right))
+        var(--space-6, 24px) max(var(--space-3, 12px), env(safe-area-inset-left));
       overflow-y: auto;
+      overscroll-behavior: contain;
       scrollbar-gutter: stable;
       scrollbar-width: thin;
       scrollbar-color: transparent transparent;
@@ -177,130 +182,43 @@ export class LayoutToc extends LitElement {
       background-color: var(--scrollbar-thumb-hover, var(--fg-muted, oklch(45% 0 0)));
     }
 
-    .mobile-bar {
-      position: fixed;
-      inset-inline: 0;
-      top: var(--header-height);
-      z-index: var(--z-page-chrome, var(--z-fixed, 100));
-      padding: var(--space-2, 8px) max(var(--space-3, 12px), env(safe-area-inset-right))
-        var(--space-2, 8px) max(var(--space-3, 12px), env(safe-area-inset-left));
-      border-bottom: var(--border-width, 1px) solid var(--border-default);
-      background: oklch(from var(--bg-default) l c h / 0.92);
-      backdrop-filter: blur(var(--blur-md, 12px));
-      -webkit-backdrop-filter: blur(var(--blur-md, 12px));
-    }
-
-    .mobile-bar-inner {
-      box-sizing: border-box;
-      display: flex;
-      align-items: center;
-      gap: var(--space-3, 12px);
-      width: min(100%, var(--note-shell-max-width, var(--bp-xl, 1280px)));
-      min-block-size: 40px;
-      margin-inline: auto;
-    }
-
-    .home-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      inline-size: 40px;
-      block-size: 40px;
-      border-radius: var(--radius-sm, 4px);
-      color: var(--fg-default);
-      text-decoration: none;
-      flex: 0 0 auto;
-    }
-
-    .mobile-summary {
-      display: flex;
-      flex: 1 1 auto;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--space-3, 12px);
-      min-inline-size: 0;
-      min-block-size: 40px;
-      border: none;
-      background: transparent;
-      color: var(--fg-default);
-      padding: 0;
-      cursor: pointer;
-      font: inherit;
-      text-align: left;
-    }
-
-    .mobile-title {
-      min-inline-size: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: var(--text-sm, 13px);
-      color: var(--fg-default);
-    }
-
-    .progress-ring {
-      inline-size: 24px;
-      block-size: 24px;
-      flex-shrink: 0;
-    }
-
-    .progress-ring .track {
-      fill: none;
-      stroke: var(--border-default);
-      stroke-width: 2;
-    }
-
-    .progress-ring .indicator {
-      fill: none;
-      stroke: var(--primary);
-      stroke-width: 2;
-      stroke-linecap: round;
-      transform: rotate(-90deg);
-      transform-origin: 50% 50%;
-      transition: stroke-dashoffset var(--duration-fast, 70ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-    }
-
-    .mobile-panel {
-      position: fixed;
-      inset-inline: 0;
-      top: calc(var(--header-height) + var(--layout-toc-mobile-bar-height));
-      bottom: 0;
-      z-index: var(--z-non-modal-panel, var(--z-modal, 300));
-      background: var(--bg-default);
-      border-top: var(--border-width, 1px) solid var(--border-default);
-      transform: translateY(100%);
-      transition: transform var(--duration-normal, 150ms)
-        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
-      padding: var(--space-2, 8px) max(var(--space-3, 12px), env(safe-area-inset-right))
-        var(--space-6, 24px) max(var(--space-3, 12px), env(safe-area-inset-left));
-      overflow-y: auto;
-      scrollbar-gutter: stable;
-      scrollbar-width: thin;
-      scrollbar-color: transparent transparent;
-    }
-
     .mobile-panel[data-open='true'] {
       transform: translateY(0);
     }
 
     .mobile-panel-header {
       display: flex;
-      justify-content: flex-end;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2, 8px);
       padding-bottom: var(--space-2, 8px);
     }
 
+    .mobile-panel-title {
+      font-size: var(--text-sm, 13px);
+      color: var(--fg-muted);
+    }
+
     .close-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      inline-size: 32px;
+      block-size: 32px;
       border: none;
       background: transparent;
       color: var(--fg-default);
       cursor: pointer;
-      padding: var(--space-1, 4px);
+      padding: 0;
       border-radius: var(--radius-sm, 4px);
     }
 
+    .close-button:focus-visible {
+      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+      outline-offset: var(--focus-ring-offset, 2px);
+    }
+
     @media (min-width: 640px) {
-      .mobile-bar,
       .mobile-panel {
         display: none;
       }
@@ -313,7 +231,6 @@ export class LayoutToc extends LitElement {
     }
 
     @media (forced-colors: active) {
-      .mobile-bar,
       .mobile-panel {
         border-color: CanvasText;
       }
@@ -322,6 +239,9 @@ export class LayoutToc extends LitElement {
 
   @property({ type: String, attribute: 'source-id' })
   sourceId = '';
+
+  @property({ type: String, attribute: 'toc-runtime-id' })
+  tocRuntimeId = '';
 
   @property({ type: String, attribute: 'home-href' })
   homeHref = '/';
@@ -345,17 +265,25 @@ export class LayoutToc extends LitElement {
   @state() private _activeId = '';
   @state() private _activeIndex = -1;
   @state() private _activeTotal = 0;
-  @state() private _showMobileBar = false;
   @state() private _panelOpen = false;
-  @state() private _tocReady = true;
+  @state() private _tocReady = false;
 
   private _detachStickyFooterBoundary: (() => void) | null = null;
   private _tracker: TocActiveTracker | null = null;
-  private _mobileController: TocMobileSummaryController | null = null;
   private _hydrationActivated = false;
+  private _mobileControllerCleanup: (() => void) | null = null;
+  private _panelDocumentListenersAttached = false;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this._connectMobileController();
+  }
 
   override disconnectedCallback(): void {
     this._disconnectControllers();
+    this._mobileControllerCleanup?.();
+    this._mobileControllerCleanup = null;
+    this._detachPanelDocumentListeners();
     this._detachStickyFooterBoundary?.();
     this._detachStickyFooterBoundary = null;
     super.disconnectedCallback();
@@ -370,6 +298,29 @@ export class LayoutToc extends LitElement {
       changedProperties.has('contentRootId')
     ) {
       this._loadHeadingsFromSource();
+    }
+
+    if (changedProperties.has('tocRuntimeId') || changedProperties.has('sourceId')) {
+      this._connectMobileController();
+      this._publishRuntimeSnapshot();
+    }
+  }
+
+  protected override updated(changedProperties: PropertyValues): void {
+    if (changedProperties.has('_panelOpen')) {
+      if (this._panelOpen) {
+        this._attachPanelDocumentListeners();
+        return;
+      }
+
+      this._detachPanelDocumentListeners();
+      const previousValue: unknown = changedProperties.get('_panelOpen');
+      if (previousValue === true) {
+        const returnFocusTarget = layoutTocMobileController.consumeReturnFocusTarget(
+          this._getRuntimeId(),
+        );
+        returnFocusTarget?.focus();
+      }
     }
   }
 
@@ -406,7 +357,7 @@ export class LayoutToc extends LitElement {
       minWidth: 640,
     });
 
-    this._connectControllers();
+    this._connectTracker();
     this.requestUpdate();
   }
 
@@ -465,21 +416,21 @@ export class LayoutToc extends LitElement {
     this._capabilities = normalizeCapabilities(parseJsonValue(this.capabilitiesJson));
 
     const visibleHeadings = this._resolveVisibleHeadings(nextHeadings);
+    this._applyVisibleHeadings(visibleHeadings);
 
     if (!this._hydrationActivated || typeof window === 'undefined') {
-      this._applyVisibleHeadings(visibleHeadings);
       return;
     }
 
-    this._applyVisibleHeadings(visibleHeadings);
     if (this._tracker !== null) {
       this._tracker.setHeadings(nextHeadings);
       this._tracker.refresh();
     }
   }
 
-  private _connectControllers(): void {
-    this._disconnectControllers();
+  private _connectTracker(): void {
+    this._tracker?.destroy();
+    this._tracker = null;
 
     if (!this._hydrationActivated || typeof window === 'undefined') {
       return;
@@ -512,24 +463,21 @@ export class LayoutToc extends LitElement {
     requestAnimationFrame(() => {
       this._tracker?.refresh();
     });
+  }
 
-    this._mobileController = new TocMobileSummaryController({
-      enabled: this._capabilities.mobileSummary,
-      onVisibilityChange: (visible) => {
-        this._showMobileBar = visible;
-        if (!visible) {
-          this._panelOpen = false;
-        }
+  private _connectMobileController(): void {
+    this._mobileControllerCleanup?.();
+    this._mobileControllerCleanup = layoutTocMobileController.subscribe(
+      this._getRuntimeId(),
+      (snapshot) => {
+        this._panelOpen = snapshot.panelOpen;
       },
-    });
-    this._mobileController.start();
+    );
   }
 
   private _disconnectControllers(): void {
     this._tracker?.destroy();
     this._tracker = null;
-    this._mobileController?.destroy();
-    this._mobileController = null;
   }
 
   private _readLocationHash(): string {
@@ -563,58 +511,142 @@ export class LayoutToc extends LitElement {
     }
 
     this._tocReady = true;
+    this._publishRuntimeSnapshot();
   }
 
   private _applyActiveId(id: string): void {
     this._activeId = id;
     this._activeIndex = this._visibleHeadings.findIndex((heading) => heading.id === id);
+    this._publishRuntimeSnapshot();
+  }
+
+  private _publishRuntimeSnapshot(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    layoutTocRuntimeStore.publish(this._getRuntimeId(), this._buildRuntimeSnapshot());
+  }
+
+  private _buildRuntimeSnapshot(): LayoutTocRuntimeSnapshot {
+    return {
+      ready: this._tocReady,
+      hasVisibleHeadings: this._visibleHeadings.length > 0,
+      currentLabel: this._getCurrentHeadingLabel(),
+      activeId: this._activeId.length > 0 ? this._activeId : null,
+      activeIndex: this._activeIndex >= 0 ? this._activeIndex + 1 : null,
+      activeTotal: this._activeTotal > 0 ? this._activeTotal : null,
+    };
   }
 
   private _onTocActiveChange = (event: CustomEvent<UiTocActiveChangeDetail>): void => {
     this._applyActiveId(event.detail.id);
     this._activeTotal = event.detail.total;
+    this._publishRuntimeSnapshot();
 
     if (event.detail.source === 'click') {
-      this._panelOpen = false;
+      layoutTocMobileController.close(this._getRuntimeId());
     }
-  };
-
-  private _toggleMobilePanel = (): void => {
-    this._panelOpen = !this._panelOpen;
   };
 
   private _closeMobilePanel = (): void => {
-    this._panelOpen = false;
+    layoutTocMobileController.close(this._getRuntimeId());
   };
 
-  private _getProgressOffset(): number {
-    const radius = 8;
-    const circumference = 2 * Math.PI * radius;
-    if (this._activeTotal <= 0 || this._activeIndex < 0) {
-      return circumference;
-    }
-
-    const ratio = (this._activeIndex + 1) / this._activeTotal;
-    return circumference * (1 - ratio);
-  }
-
-  private _getCurrentHeadingLabel(): string {
+  private _getCurrentHeadingLabel(): string | null {
     if (this._activeIndex >= 0 && this._activeIndex < this._visibleHeadings.length) {
-      return this._visibleHeadings[this._activeIndex]?.text ?? '';
+      return this._visibleHeadings[this._activeIndex]?.text ?? null;
     }
 
-    return this._visibleHeadings[0]?.text ?? '';
+    return this._visibleHeadings[0]?.text ?? null;
   }
+
+  private _getRuntimeId(): string {
+    const explicitRuntimeId = this.tocRuntimeId.trim();
+    if (explicitRuntimeId.length > 0) {
+      return explicitRuntimeId;
+    }
+
+    const sourceId = this.sourceId.trim();
+    if (sourceId.length > 0) {
+      return sourceId;
+    }
+
+    const contentRootId = this.contentRootId.trim();
+    if (contentRootId.length > 0) {
+      return contentRootId;
+    }
+
+    return DEFAULT_LAYOUT_TOC_RUNTIME_ID;
+  }
+
+  private _getPanelId(): string {
+    return `layout-toc-panel-${this._getRuntimeId()}`;
+  }
+
+  private _attachPanelDocumentListeners(): void {
+    if (this._panelDocumentListenersAttached || typeof document === 'undefined') {
+      return;
+    }
+
+    document.addEventListener('keydown', this._handleDocumentKeydown);
+    document.addEventListener('pointerdown', this._handleDocumentPointerDown, true);
+    this._panelDocumentListenersAttached = true;
+  }
+
+  private _detachPanelDocumentListeners(): void {
+    if (!this._panelDocumentListenersAttached || typeof document === 'undefined') {
+      return;
+    }
+
+    document.removeEventListener('keydown', this._handleDocumentKeydown);
+    document.removeEventListener('pointerdown', this._handleDocumentPointerDown, true);
+    this._panelDocumentListenersAttached = false;
+  }
+
+  private _handleDocumentKeydown = (event: KeyboardEvent): void => {
+    if (!this._panelOpen) {
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      layoutTocMobileController.close(this._getRuntimeId());
+    }
+  };
+
+  private _handleDocumentPointerDown = (event: PointerEvent): void => {
+    if (!this._panelOpen) {
+      return;
+    }
+
+    const path = event.composedPath();
+    const panel = this.shadowRoot?.querySelector<HTMLElement>('.mobile-panel');
+    if (panel instanceof HTMLElement && path.includes(panel)) {
+      return;
+    }
+
+    const panelId = this._getPanelId();
+    if (
+      path.some(
+        (node) =>
+          node instanceof HTMLElement && node.getAttribute('aria-controls') === panelId,
+      )
+    ) {
+      return;
+    }
+
+    layoutTocMobileController.close(this._getRuntimeId());
+  };
 
   override render() {
     if (!this._tocReady || this._visibleHeadings.length === 0) {
       return nothing;
     }
 
-    const circumference = 2 * Math.PI * 8;
-    const dashOffset = this._getProgressOffset();
-    const label = this._getCurrentHeadingLabel();
     const tocKey = this._visibleHeadings.map((heading) => heading.id).join('|');
+    const currentLabel = this._getCurrentHeadingLabel() ?? '目次';
+    const panelId = this._getPanelId();
 
     return html`
       <div class="desktop">
@@ -630,46 +662,22 @@ export class LayoutToc extends LitElement {
         )}
       </div>
 
-      ${this._showMobileBar
-        ? html`
-            <div class="mobile-bar">
-              <div class="mobile-bar-inner">
-                <a class="home-link" href=${this.homeHref} aria-label="ホームへ移動">
-                  <ui-icon name="house"></ui-icon>
-                </a>
-                <button
-                  class="mobile-summary"
-                  type="button"
-                  aria-expanded=${String(this._panelOpen)}
-                  aria-label="目次を開閉"
-                  @click=${this._toggleMobilePanel}
-                >
-                  <span class="mobile-title">${label}</span>
-                  <svg class="progress-ring" viewBox="0 0 20 20" aria-hidden="true">
-                    <circle class="track" cx="10" cy="10" r="8"></circle>
-                    <circle
-                      class="indicator"
-                      cx="10"
-                      cy="10"
-                      r="8"
-                      style="stroke-dasharray: ${circumference}; stroke-dashoffset: ${dashOffset};"
-                    ></circle>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          `
-        : nothing}
-
       <div
+        id=${panelId}
         class="mobile-panel"
         data-open=${String(this._panelOpen)}
         aria-hidden=${String(!this._panelOpen)}
         ?inert=${!this._panelOpen}
       >
         <div class="mobile-panel-header">
-          <button class="close-button" type="button" @click=${this._closeMobilePanel}>
-            <ui-icon name="x"></ui-icon>
+          <div class="mobile-panel-title">${currentLabel}</div>
+          <button
+            class="close-button"
+            type="button"
+            aria-label="目次を閉じる"
+            @click=${this._closeMobilePanel}
+          >
+            <ui-icon name="x" aria-hidden="true"></ui-icon>
           </button>
         </div>
         ${keyed(

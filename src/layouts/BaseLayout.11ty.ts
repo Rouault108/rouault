@@ -41,6 +41,7 @@ export interface BaseLayoutData {
   buildMetadata?: BuildMetadataData;
   clientBundle?: unknown;
   headerTocPresence?: TocPresence;
+  headerTocRuntimeId?: string;
 }
 
 const buildThemeBootstrapScript = (): string =>
@@ -160,6 +161,10 @@ export class BaseLayout {
     ]);
     const tocPresence: TocPresence =
       data.notePage?.tocPresence ?? data.headerTocPresence ?? 'absent';
+    const tocRuntimeId =
+      data.notePage?.tocPresence === 'present'
+        ? data.notePage.toc.sourceId
+        : data.headerTocRuntimeId ?? '';
     const headerAttributes = serializeHtmlAttributes([
       { name: 'note-layout', value: Boolean(data.note), kind: 'boolean' },
       {
@@ -170,6 +175,7 @@ export class BaseLayout {
       // note page chrome の判断源が一部 data.note / data.notePage に分かれている。
       // TOC presence は reserve 契約の正本として明示的に data.notePage から伝搬する。
       { name: 'toc-presence', value: tocPresence },
+      { name: 'toc-runtime-id', value: tocRuntimeId },
       { name: 'breadcrumbs-json', value: breadcrumbs, kind: 'json' },
       { name: 'corpora-json', value: corpora, kind: 'json' },
       { name: 'current-corpus-key', value: currentCorpusKey },

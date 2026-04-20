@@ -353,7 +353,8 @@ sidebar と hydration は、次の責務境界で固定します。
 - return focus
 - `layout-toc` の hydration 後同期
 - component の observable state change
-- `layout-toc` の mobile summary bar が hydration 後に `position: fixed` で header 直下へ出ること
+- `layout-header` が TOC runtime snapshot を購読して mobile trigger を描画すること
+- `layout-header` の trigger と `layout-toc` の panel open state が controller 経由で同期すること
 
 ### 13.3 `test/ssr/**`
 
@@ -366,8 +367,10 @@ sidebar と hydration は、次の責務境界で固定します。
 - no-JS baseline で閲覧が成立すること
 - narrow/mobile で横スクロールが増えないこと
 - route 遷移後も sidebar / toc が壊れないこと
-- footer を含む長スクロールでも mobile summary bar が footer 直前へ落ちないこと
-- mobile TOC panel が summary bar の直下から開くこと
+- mobile で旧 TOC summary bar を描画しないこと
+- mobile TOC trigger が header 内に表示されること
+- mobile TOC panel が header 直下から開くこと
+- 長スクロール後も panel の開位置が header 直下で安定すること
 
 ### 13.5 Storybook
 

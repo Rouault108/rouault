@@ -8,6 +8,11 @@ import '../ui/button/button.js';
 import '../ui/dropdown/dropdown.js';
 import type { BreadcrumbItem } from '../ui/breadcrumbs/breadcrumbs.js';
 import { DEFAULT_LAYOUT_SIDEBAR_ID, layoutSidebarController } from './layout-sidebar-controller.js';
+import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
+import {
+  layoutTocRuntimeStore,
+  type LayoutTocRuntimeSnapshot,
+} from './layout-toc-runtime-store.js';
 import { navigateToUrl } from '../../search/navigation.js';
 import {
   THEME_CHANGE_EVENT,
@@ -53,6 +58,15 @@ const THEME_OPTIONS: Record<
     icon: 'monitor',
     label: 'OSテーマ',
   },
+};
+
+const DEFAULT_TOC_RUNTIME_VIEW: LayoutTocRuntimeSnapshot = {
+  ready: false,
+  hasVisibleHeadings: false,
+  currentLabel: null,
+  activeId: null,
+  activeIndex: null,
+  activeTotal: null,
 };
 
 @customElement('layout-header')
@@ -125,8 +139,6 @@ export class LayoutHeader extends LitElement {
     }
 
     :host([note-layout][sidebar-enabled]) ui-header {
-      /* fixed sidebar でも header 自体の外形は note frame と揃える。
-       * sidebarExpanded は start zone の予約可否だけを表し、max width の契約とは切り離す */
       --ui-header-max-inline-size: calc(
         var(--note-fixed-frame-max-width, 1440px) - (var(--space-4, 16px) * 2)
       );
@@ -178,7 +190,8 @@ export class LayoutHeader extends LitElement {
     .corpus-chevron,
     .theme-menu-icon,
     .theme-trigger-icon,
-    .theme-chevron {
+    .theme-chevron,
+    .toc-trigger-icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -191,6 +204,46 @@ export class LayoutHeader extends LitElement {
     .corpus-chevron,
     .theme-chevron {
       opacity: 0.78;
+    }
+
+    .toc-trigger {
+      display: none;
+      align-items: center;
+      gap: var(--space-2, 8px);
+      min-inline-size: 0;
+      max-inline-size: min(16rem, 42vw);
+      block-size: var(--control-height-md, 36px);
+      padding-inline: var(--space-2, 8px);
+      border: none;
+      background: transparent;
+      color: var(--fg-default);
+      border-radius: var(--radius-md, 8px);
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .toc-trigger:hover {
+      background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%));
+    }
+
+    .toc-trigger:focus-visible {
+      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+      outline-offset: var(--focus-ring-offset, 2px);
+    }
+
+    .toc-trigger-text {
+      min-inline-size: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: var(--text-sm, 13px);
+    }
+
+    .toc-trigger-progress {
+      flex: 0 0 auto;
+      color: var(--fg-muted);
+      font-size: var(--text-xs, 12px);
+      white-space: nowrap;
     }
 
     @container layout-header-shell (min-width: 1024px) {
@@ -217,9 +270,8 @@ export class LayoutHeader extends LitElement {
 
     @container layout-header-shell (max-width: 639px) {
       :host {
-        /* mobile TOC bar と同じ page chrome 層に置くと、
-         * shadow 内の dropdown が sibling stacking context を越えられない。
-         * mobile 時だけ host 自体を anchored overlay 層へ上げて前後関係を固定する。 */
+        /* mobile overlay / dropdown / TOC panel の前後関係を安定させるため、
+         * host 自体を anchored overlay 層へ上げる。 */
         z-index: var(--z-anchored-overlay, var(--z-popover, 400));
       }
 
@@ -232,6 +284,26 @@ export class LayoutHeader extends LitElement {
       }
 
       .theme-trigger-text {
+        display: none;
+      }
+
+      .toc-trigger[data-visible='true'] {
+        display: inline-flex;
+      }
+    }
+
+    @container layout-header-shell (max-width: 479px) {
+      .toc-trigger {
+        max-inline-size: min(12rem, 34vw);
+      }
+
+      .toc-trigger-progress {
+        display: none;
+      }
+    }
+
+    @container layout-header-shell (max-width: 399px) {
+      .toc-trigger-text {
         display: none;
       }
     }
@@ -255,6 +327,9 @@ export class LayoutHeader extends LitElement {
   @property({ type: String, reflect: true, attribute: 'toc-presence' })
   tocPresence: TocPresence = 'absent';
 
+  @property({ type: String, attribute: 'toc-runtime-id' })
+  tocRuntimeId = '';
+
   @property({ type: String, attribute: 'sidebar-id' })
   sidebarId = DEFAULT_LAYOUT_SIDEBAR_ID;
 
@@ -270,19 +345,30 @@ export class LayoutHeader extends LitElement {
   @state()
   private _themePreference: ThemePreference = 'system';
 
+  @state()
+  private _tocRuntimeView: LayoutTocRuntimeSnapshot = DEFAULT_TOC_RUNTIME_VIEW;
+
+  @state()
+  private _tocPanelOpen = false;
+
   @query('[data-dropdown="theme"]')
   private _themeDropdownElement!: HTMLElement | null;
 
+  @query('.toc-trigger')
+  private _tocTriggerElement!: HTMLButtonElement | null;
+
   private _sidebarControllerCleanup: (() => void) | null = null;
+  private _tocRuntimeCleanup: (() => void) | null = null;
+  private _tocMobileCleanup: (() => void) | null = null;
 
   applyShellProjection(snapshot: HeaderShellProjection): void {
-    // router は route 由来表示値のみを注入し、toggle 状態などの一時 UI 状態は component が保持する。
     this.breadcrumbsJson = JSON.stringify(snapshot.breadcrumbs);
     this.corporaJson = JSON.stringify(snapshot.corpora);
     this.currentCorpusKey = snapshot.currentCorpusKey;
     this.noteLayout = snapshot.noteLayout;
     this.sidebarEnabled = snapshot.sidebarEnabled;
     this.tocPresence = snapshot.tocPresence;
+    this.tocRuntimeId = snapshot.tocRuntimeId ?? '';
   }
 
   readShellProjection(): HeaderShellProjection {
@@ -293,6 +379,7 @@ export class LayoutHeader extends LitElement {
       noteLayout: this.noteLayout,
       sidebarEnabled: this.sidebarEnabled,
       tocPresence: this.tocPresence,
+      tocRuntimeId: this._readTocRuntimeId(),
     };
   }
 
@@ -305,17 +392,26 @@ export class LayoutHeader extends LitElement {
     this._themePreference = readStoredThemePreference();
     window.addEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);
     this._connectSidebarController();
+    this._connectTocControllers();
   }
 
   protected override updated(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has('sidebarEnabled') || changedProperties.has('sidebarId')) {
       this._connectSidebarController();
     }
+
+    if (changedProperties.has('tocRuntimeId') || changedProperties.has('tocPresence')) {
+      this._connectTocControllers();
+    }
   }
 
   override disconnectedCallback(): void {
     this._sidebarControllerCleanup?.();
     this._sidebarControllerCleanup = null;
+    this._tocRuntimeCleanup?.();
+    this._tocRuntimeCleanup = null;
+    this._tocMobileCleanup?.();
+    this._tocMobileCleanup = null;
 
     if (typeof window !== 'undefined') {
       window.removeEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);
@@ -337,18 +433,37 @@ export class LayoutHeader extends LitElement {
     this._sidebarControllerCleanup = layoutSidebarController.subscribe(
       this._resolveSidebarId(),
       (snapshot) => {
-        // note layout では本文列と header 内部幅を同じ上限で止め、
-        // fixed sidebar であっても header 側に追加の幅予約を持ち込まない。
         this._headerSidebarReserved = !this.noteLayout && snapshot.mode === 'fixed';
-
-        // aria-expanded は sidebar の見かけ上の開閉状態を表す。
         this._sidebarOpen = snapshot.state === 'expanded';
-
-        // overlaySidebarOpen は描画軽量化専用フラグであり、
-        // fixed mode の expanded と意味を混同しない。
         this._overlaySidebarOpen = snapshot.mode === 'overlay' && snapshot.state === 'expanded';
       },
     );
+  }
+
+  private _connectTocControllers(): void {
+    this._tocRuntimeCleanup?.();
+    this._tocRuntimeCleanup = null;
+    this._tocMobileCleanup?.();
+    this._tocMobileCleanup = null;
+
+    const runtimeId = this._readTocRuntimeId();
+    if (runtimeId === null || this.tocPresence !== 'present') {
+      this._tocRuntimeView = DEFAULT_TOC_RUNTIME_VIEW;
+      this._tocPanelOpen = false;
+      return;
+    }
+
+    this._tocRuntimeCleanup = layoutTocRuntimeStore.subscribe(runtimeId, (snapshot) => {
+      this._tocRuntimeView = snapshot;
+    });
+    this._tocMobileCleanup = layoutTocMobileController.subscribe(runtimeId, (snapshot) => {
+      this._tocPanelOpen = snapshot.panelOpen;
+    });
+  }
+
+  private _readTocRuntimeId(): string | null {
+    const normalized = this.tocRuntimeId.trim();
+    return normalized.length > 0 ? normalized : null;
   }
 
   private _resolveSidebarId(): string {
@@ -366,6 +481,15 @@ export class LayoutHeader extends LitElement {
       this._resolveSidebarId(),
       trigger instanceof HTMLElement ? trigger : undefined,
     );
+  };
+
+  private _handleTocTriggerClick = (): void => {
+    const runtimeId = this._readTocRuntimeId();
+    if (runtimeId === null) {
+      return;
+    }
+
+    layoutTocMobileController.toggle(runtimeId, this._tocTriggerElement ?? undefined);
   };
 
   private _handleCorpusSelect = (event: CustomEvent<{ value: string }>): void => {
@@ -467,6 +591,37 @@ export class LayoutHeader extends LitElement {
     return this._corpusItems.find((item) => item.key === currentKey) ?? null;
   }
 
+  private _shouldRenderMobileTocTrigger(): boolean {
+    return (
+      this.tocPresence === 'present' &&
+      this._tocRuntimeView.ready &&
+      this._tocRuntimeView.hasVisibleHeadings
+    );
+  }
+
+  private _readTocTriggerLabel(): string {
+    const label = this._tocRuntimeView.currentLabel?.trim();
+    return label && label.length > 0 ? label : '目次';
+  }
+
+  private _readTocProgressLabel(): string | null {
+    const { activeIndex, activeTotal } = this._tocRuntimeView;
+    if (typeof activeIndex !== 'number' || typeof activeTotal !== 'number') {
+      return null;
+    }
+
+    if (activeIndex < 1 || activeTotal < 1) {
+      return null;
+    }
+
+    return `${String(activeIndex)}/${String(activeTotal)}`;
+  }
+
+  private _readTocPanelId(): string | null {
+    const runtimeId = this._readTocRuntimeId();
+    return runtimeId ? `layout-toc-panel-${runtimeId}` : null;
+  }
+
   override render() {
     const breadcrumbs = this._breadcrumbItems;
     const sidebarToggleLabel = this._sidebarOpen ? 'サイドバーを閉じる' : 'サイドバーを開く';
@@ -475,6 +630,11 @@ export class LayoutHeader extends LitElement {
     const currentCorpusLabel = this._currentCorpusItem?.label ?? 'すべてのノート';
     const hasBreadcrumbs = breadcrumbs.length > 0;
     const shouldRenderHeaderBreadcrumbs = hasBreadcrumbs && !this.noteLayout;
+    const shouldRenderTocTrigger = this._shouldRenderMobileTocTrigger();
+    const tocTriggerLabel = this._readTocTriggerLabel();
+    const tocProgressLabel = this._readTocProgressLabel();
+    const tocPanelId = this._readTocPanelId();
+    const tocTriggerAriaLabel = this._tocPanelOpen ? '目次を閉じる' : '目次を開く';
 
     return html`
       <ui-header
@@ -524,6 +684,21 @@ export class LayoutHeader extends LitElement {
             `
           : nothing}
         <div slot="end" class="slot-group">
+          <button
+            class="toc-trigger"
+            type="button"
+            data-visible=${String(shouldRenderTocTrigger)}
+            aria-label=${tocTriggerAriaLabel}
+            aria-expanded=${String(this._tocPanelOpen)}
+            aria-controls=${tocPanelId ?? nothing}
+            @click=${this._handleTocTriggerClick}
+          >
+            <ui-icon class="toc-trigger-icon" name="menu" aria-hidden="true"></ui-icon>
+            <span class="toc-trigger-text">${tocTriggerLabel}</span>
+            ${tocProgressLabel
+              ? html`<span class="toc-trigger-progress">${tocProgressLabel}</span>`
+              : nothing}
+          </button>
           <ui-search-trigger density="auto"></ui-search-trigger>
           <ui-dropdown
             data-dropdown="theme"

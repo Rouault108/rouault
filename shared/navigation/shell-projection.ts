@@ -14,6 +14,7 @@ export interface HeaderShellProjection {
   noteLayout: boolean;
   sidebarEnabled: boolean;
   tocPresence: TocPresence;
+  tocRuntimeId?: string | null;
 }
 
 export interface SidebarShellProjection {

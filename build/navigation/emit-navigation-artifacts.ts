@@ -219,6 +219,7 @@ const extractHeaderProjection = (document: Parse5Document): HeaderShellProjectio
     noteLayout: hasAttribute(header, 'note-layout'),
     sidebarEnabled: hasAttribute(header, 'sidebar-enabled'),
     tocPresence: toTocPresence(getAttribute(header, 'toc-presence')),
+    tocRuntimeId: toOptionalString(getAttribute(header, 'toc-runtime-id')),
   };
 };
 

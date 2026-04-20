@@ -96,6 +96,11 @@ const readCurrentCorpusKey = (header: Element): string => {
 const readTocPresence = (header: Element): TocPresence =>
   header.getAttribute('toc-presence') === 'present' ? 'present' : 'absent';
 
+const readTocRuntimeId = (header: Element): string | null => {
+  const tocRuntimeId = header.getAttribute('toc-runtime-id')?.trim();
+  return tocRuntimeId && tocRuntimeId.length > 0 ? tocRuntimeId : null;
+};
+
 export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
   breadcrumbs: parseBreadcrumbs(header.getAttribute('breadcrumbs-json') ?? null),
   corpora: parseCorpora(header.getAttribute('corpora-json') ?? null),
@@ -103,6 +108,7 @@ export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
   noteLayout: header.hasAttribute('note-layout'),
   sidebarEnabled: header.hasAttribute('sidebar-enabled'),
   tocPresence: readTocPresence(header),
+  tocRuntimeId: readTocRuntimeId(header),
 });
 
 export const applyHeaderSnapshot = (
@@ -123,6 +129,13 @@ export const applyHeaderSnapshot = (
   header.toggleAttribute('note-layout', snapshot?.noteLayout ?? false);
   header.toggleAttribute('sidebar-enabled', snapshot?.sidebarEnabled ?? false);
   header.setAttribute('toc-presence', snapshot?.tocPresence ?? 'absent');
+
+  const tocRuntimeId = snapshot?.tocRuntimeId?.trim();
+  if (tocRuntimeId && tocRuntimeId.length > 0) {
+    header.setAttribute('toc-runtime-id', tocRuntimeId);
+  } else {
+    header.removeAttribute('toc-runtime-id');
+  }
 };
 
 export const createLayoutHeaderShellAdapter = (): ShellAdapter => ({

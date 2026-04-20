@@ -2,55 +2,41 @@
 
 ## 1. 概要
 
-本書は、`ui-toc`、`layout-toc`、`TocActiveTracker`、`TocMobileSummaryController` の責務分担を定義します。
+本書は、`ui-toc`、`layout-toc`、`TocActiveTracker`、`layout-toc-runtime-store`、`layout-toc-mobile-controller` の責務分担を定義します。
 
-static-first 再設計後の `ui-toc` は純粋な view です。見出し抽出、tab scope 推論、現在地追跡、mobile condensed UI は別レイヤで扱います。
-
----
+static-first 再設計後の `ui-toc` は純粋な view です。見出し抽出、現在地追跡、header 側への runtime state 共有、mobile panel 開閉は別レイヤで扱います。
 
 ## 2. 責務分担
-
-### 2.1 `ui-toc`
-
-- `headers` と `activeId` を受けて anchor list を描画する
-- click 時に `ui-toc-active-change` を通知する
-- truncation 計測と tooltip 有効化を局所的に行う
-
-`ui-toc` 自身は次を行いません。
-
-- DOM からの見出し抽出
-- `IntersectionObserver` による現在地追跡
-- `MutationObserver` による本文監視
-- tab DOM からの scope 推論
 
 ### 2.2 `layout-toc`
 
 - `headings-json` / `capabilities-json` を decode する
-- desktop TOC と mobile summary shell を描画する
-- tracker / controller を接続する
+- desktop TOC と mobile panel 本体を描画する
+- tracker を接続する
+- header 向け runtime snapshot を publish する
 
-### 2.3 `TocActiveTracker`
+### 2.4 `layout-toc-runtime-store`
 
-- `IntersectionObserver`
-- `hashchange`
-- `ui-tab-change`
-- precomputed `scopeSelections` による visible heading subset 決定
+- `layout-toc` が算出した runtime snapshot を `layout-header` へ共有する
+- `ready` / `hasVisibleHeadings` / `currentLabel` / `activeIndex` / `activeTotal` を伝える
 
-### 2.4 `TocMobileSummaryController`
+### 2.5 `layout-toc-mobile-controller`
 
-- header 直下に出る mobile summary bar の表示制御
-- mobile summary 用 scroll / resize 監視
-- footer 直前のインライン配置へ依存しない
+- mobile panel の open / close / toggle を管理する
+- return focus target を保持する
+- TOC 内容そのものは保持しない
 
-### 2.5 mobile summary UX contract
+### 2.6 mobile TOC UX contract
 
-mobile summary を有効にするページでは、次を満たすこと。
+mobile TOC を有効にするページでは、次を満たすこと。
 
 - `max-width: 639px` では desktop TOC を隠す
-- hydration 後、一定量 scroll したら `layout-toc` が header 直下に viewport 固定の summary bar を出す
-- summary bar は `.layout-toc-col` の通常フロー上の block position に依存しない
-- footer が viewport に入っても summary bar は footer 直前へ落ちない
-- summary を開いた panel は summary bar の直下から開き、header を覆わない
+- 旧 fixed summary bar は描画しない
+- `layout-header` 内に trigger を描画する
+- trigger は `layout-toc` が publish した runtime snapshot を使って現在見出しと進捗を表示する
+- trigger 押下で `layout-toc` の mobile panel が header 直下から開く
+- panel は header を覆わない
+- close 後に trigger へ focus return できる
 
 ---
 
