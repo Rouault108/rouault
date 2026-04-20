@@ -657,7 +657,7 @@ describe('css structure contracts', () => {
 
     expectCssIncludes(dropdownCssText, [
       '.panel',
-      ':host([opened]) .panel',
+      ".panel[data-position-phase='ready']",
       '@media (prefers-color-scheme: dark)',
       '@media (prefers-reduced-motion: reduce)',
       'transition-duration: 0.01ms',
