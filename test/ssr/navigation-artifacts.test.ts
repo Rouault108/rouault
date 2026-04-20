@@ -24,7 +24,6 @@ describe('navigation artifacts', () => {
       note-layout
       sidebar-enabled
       toc-presence="present"
-      breadcrumbs-json='[{"label":"Notes","href":"/"}]'
       corpora-json='[{"key":"all","label":"All","href":"/corpora/"}]'
       current-corpus-key="all"
       toc-runtime-id="toc-source-example"
@@ -97,7 +96,6 @@ describe('navigation artifacts', () => {
       note-layout
       sidebar-enabled
       toc-presence="absent"
-      breadcrumbs-json="[]"
       corpora-json="[]"
       current-corpus-key="all"
       toc-runtime-id="toc-source-example"
@@ -140,7 +138,7 @@ describe('navigation artifacts', () => {
   <meta name="description" content="description">
 </head>
 <body>
-  <layout-header current-corpus-key="all" toc-presence="absent" toc-runtime-id="" breadcrumbs-json="[]" corpora-json="[]"></layout-header>
+  <layout-header current-corpus-key="all" toc-presence="absent" toc-runtime-id="" corpora-json="[]"></layout-header>
   <app-router>
     <div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>
     <main id="main-content"><p>body</p></main>

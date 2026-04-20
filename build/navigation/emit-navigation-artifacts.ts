@@ -210,7 +210,6 @@ const extractHeaderProjection = (document: Parse5Document): HeaderShellProjectio
   }
 
   return {
-    breadcrumbs: parseJsonAttribute(getAttribute(header, 'breadcrumbs-json'), []),
     corpora: parseJsonAttribute(getAttribute(header, 'corpora-json'), []),
     currentCorpusKey: toTrimmedString(
       getAttribute(header, 'current-corpus-key'),

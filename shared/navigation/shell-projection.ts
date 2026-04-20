@@ -1,10 +1,6 @@
 import type { TocPresence } from '../note/toc-presence.js';
 
 export interface HeaderShellProjection {
-  breadcrumbs: {
-    label: string;
-    href?: string;
-  }[];
   corpora: {
     key: string;
     label: string;

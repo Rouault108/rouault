@@ -3,10 +3,8 @@ import { customElement, property, query, state } from 'lit/decorators.js';
 import '../ui/icon/icon.js';
 import '../ui/header/header.js';
 import '../ui/search-trigger/search-trigger.js';
-import '../ui/breadcrumbs/breadcrumbs.js';
 import '../ui/button/button.js';
 import '../ui/dropdown/dropdown.js';
-import type { BreadcrumbItem } from '../ui/breadcrumbs/breadcrumbs.js';
 import { DEFAULT_LAYOUT_SIDEBAR_ID, layoutSidebarController } from './layout-sidebar-controller.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
 import {
@@ -104,12 +102,6 @@ export class LayoutHeader extends LitElement {
       font-size: var(--text-xs, 12px);
       letter-spacing: var(--tracking-wide, 0.05em);
       text-transform: uppercase;
-    }
-
-    .breadcrumbs {
-      inline-size: 100%;
-      max-inline-size: 100%;
-      min-inline-size: 0;
     }
 
     .slot-group {
@@ -311,9 +303,6 @@ export class LayoutHeader extends LitElement {
     }
   `;
 
-  @property({ type: String, attribute: 'breadcrumbs-json' })
-  breadcrumbsJson = '';
-
   @property({ type: String, attribute: 'corpora-json' })
   corporaJson = '';
 
@@ -368,7 +357,6 @@ export class LayoutHeader extends LitElement {
   private _resizeObserver: ResizeObserver | null = null;
 
   applyShellProjection(snapshot: HeaderShellProjection): void {
-    this.breadcrumbsJson = JSON.stringify(snapshot.breadcrumbs);
     this.corporaJson = JSON.stringify(snapshot.corpora);
     this.currentCorpusKey = snapshot.currentCorpusKey;
     this.noteLayout = snapshot.noteLayout;
@@ -379,7 +367,6 @@ export class LayoutHeader extends LitElement {
 
   readShellProjection(): HeaderShellProjection {
     return {
-      breadcrumbs: this._breadcrumbItems,
       corpora: this._corpusItems,
       currentCorpusKey: this.currentCorpusKey.trim() || 'all',
       noteLayout: this.noteLayout,
@@ -565,34 +552,6 @@ export class LayoutHeader extends LitElement {
     trigger?.blur();
   }
 
-  private get _breadcrumbItems(): BreadcrumbItem[] {
-    const normalized = this.breadcrumbsJson.trim();
-    if (normalized.length === 0) {
-      return [];
-    }
-
-    try {
-      const parsed = JSON.parse(normalized) as unknown;
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-
-      return parsed.filter((item): item is BreadcrumbItem => {
-        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
-          return false;
-        }
-
-        const candidate = item as Record<string, unknown>;
-        return (
-          typeof candidate['label'] === 'string' &&
-          (candidate['href'] === undefined || typeof candidate['href'] === 'string')
-        );
-      });
-    } catch {
-      return [];
-    }
-  }
-
   private get _corpusItems(): CorpusNavigationItem[] {
     const normalized = this.corporaJson.trim();
     if (normalized.length === 0) {
@@ -661,13 +620,10 @@ export class LayoutHeader extends LitElement {
   }
 
   override render() {
-    const breadcrumbs = this._breadcrumbItems;
     const sidebarToggleLabel = this._sidebarOpen ? 'サイドバーを閉じる' : 'サイドバーを開く';
     const currentThemeOption = THEME_OPTIONS[this._themePreference];
     const corpusItems = this._corpusItems;
     const currentCorpusLabel = this._currentCorpusItem?.label ?? 'すべてのノート';
-    const hasBreadcrumbs = breadcrumbs.length > 0;
-    const shouldRenderHeaderBreadcrumbs = hasBreadcrumbs && !this.noteLayout;
     const shouldRenderTocTrigger = this._shouldRenderMobileTocTrigger();
     const tocTriggerLabel = this._readTocTriggerLabel();
     const tocProgressLabel = this._readTocProgressLabel();
@@ -705,17 +661,6 @@ export class LayoutHeader extends LitElement {
             )}
           </ui-dropdown>
         </div>
-
-        ${shouldRenderHeaderBreadcrumbs
-          ? html`
-              <ui-breadcrumbs
-                slot="center"
-                class="breadcrumbs"
-                items-json=${JSON.stringify(breadcrumbs)}
-                aria-label="現在の階層"
-              ></ui-breadcrumbs>
-            `
-          : nothing}
 
         <div slot="end" class="slot-group">
           <button

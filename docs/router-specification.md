@@ -436,11 +436,16 @@ interface DocumentRouteContext {
 }
 
 interface HeaderShellSnapshot {
-  breadcrumbs: Array<{
+  corpora: Array<{
+    key: string;
     label: string;
-    href?: string;
+    href: string;
   }>;
+  currentCorpusKey: string;
   noteLayout: boolean;
+  sidebarEnabled: boolean;
+  tocPresence: 'present' | 'absent';
+  tocRuntimeId?: string | null;
 }
 
 interface DocumentShellSnapshot {
@@ -922,8 +927,12 @@ router.addDocumentRoute('/virtual-route', ({ normalizedUrl }) => {
     metaDescription: 'virtual route',
     shell: {
       header: {
-        breadcrumbs: [],
+        corpora: [],
+        currentCorpusKey: 'all',
         noteLayout: false,
+        sidebarEnabled: false,
+        tocPresence: 'absent',
+        tocRuntimeId: null,
       },
     },
   };

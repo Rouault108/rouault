@@ -438,7 +438,6 @@ describe('app-router', () => {
   it('shell adapter 経由で layout-header を同期すること', async () => {
     const header = await fixture<HTMLElement>(
       html`<layout-header
-        breadcrumbs-json='[{"label":"Old","href":"/old"}]'
         corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"}]'
         current-corpus-key="all"
       ></layout-header>`,
@@ -452,7 +451,6 @@ describe('app-router', () => {
           description: 'header sync',
           shellProjection: {
             header: {
-              breadcrumbs: [{ label: 'New Note', href: '/notes/new-note' }],
               corpora: [
                 { key: 'all', label: 'すべてのノート', href: '/corpora/' },
                 { key: 'music', label: '音楽', href: '/corpora/music/' },
@@ -478,10 +476,8 @@ describe('app-router', () => {
     await appHost.navigate('/notes/new-note');
 
     await waitUntil(
-      () =>
-        header.getAttribute('breadcrumbs-json') ===
-        '[{"label":"New Note","href":"/notes/new-note"}]',
-      'breadcrumbs-json が同期されること',
+      () => header.getAttribute('current-corpus-key') === 'music',
+      'current-corpus-key が同期されること',
     );
 
     expect(header.hasAttribute('note-layout')).to.equal(true);
@@ -546,7 +542,6 @@ describe('app-router', () => {
           description: 'sidebar sync',
           shellProjection: {
             header: {
-              breadcrumbs: [],
               corpora: [],
               currentCorpusKey: 'music',
               noteLayout: false,
@@ -641,7 +636,6 @@ describe('app-router', () => {
           description: 'heading removed',
           shellProjection: {
             header: {
-              breadcrumbs: [],
               corpora: [],
               currentCorpusKey: 'all',
               noteLayout: false,
@@ -732,7 +726,6 @@ describe('app-router', () => {
           description: 'no sidebar',
           shellProjection: {
             header: {
-              breadcrumbs: [],
               corpora: [],
               currentCorpusKey: 'all',
               noteLayout: false,
@@ -835,7 +828,6 @@ describe('app-router', () => {
           description: 'broken sidebar sync',
           shellProjection: {
             header: {
-              breadcrumbs: [],
               corpora: [],
               currentCorpusKey: 'music',
               noteLayout: false,
@@ -886,7 +878,6 @@ describe('app-router', () => {
 
     const header = await fixture<HTMLElement>(
       html`<layout-header
-        breadcrumbs-json='[{"label":"Old","href":"/old"}]'
         corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"}]'
         current-corpus-key="all"
       ></layout-header>`,
@@ -897,7 +888,7 @@ describe('app-router', () => {
     Object.defineProperty(header, 'setAttribute', {
       configurable: true,
       value(name: string, value: string) {
-        if (shouldThrow && name === 'breadcrumbs-json') {
+        if (shouldThrow && name === 'corpora-json') {
           shouldThrow = false;
           throw new Error('header commit failed');
         }
@@ -914,7 +905,6 @@ describe('app-router', () => {
           description: 'broken header sync',
           shellProjection: {
             header: {
-              breadcrumbs: [{ label: 'Broken Note', href: '/notes/broken-note' }],
               corpora: [{ key: 'music', label: '音楽', href: '/corpora/music/' }],
               currentCorpusKey: 'music',
               noteLayout: true,
@@ -946,7 +936,6 @@ describe('app-router', () => {
     expect(result.renderedKind).to.equal(null);
     expect(result.degraded).to.equal(false);
     expect(result.issues).to.deep.equal([]);
-    expect(header.getAttribute('breadcrumbs-json')).to.equal('[{"label":"Old","href":"/old"}]');
     expect(header.getAttribute('corpora-json')).to.equal(
       '[{"key":"all","label":"すべてのノート","href":"/corpora/"}]',
     );

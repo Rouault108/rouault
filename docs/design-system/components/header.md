@@ -4,7 +4,9 @@
 
 本書は、`ui-header` の公開契約、状態モデル、アクセシビリティ、および視覚契約を整理するものです。
 
-`layout-header` は `ui-header` の上位 adapter として、reader note shell の reserve 契約を受け持ちます。特に note page では `toc-presence="present|absent"` を受け、本文側の TOC 列契約と同じ presence 信号で center-end reserve を切り替えなければなりません。
+`layout-header` は `ui-header` の上位 adapter として、Rouault の page chrome に必要な start / end 領域を供給します。特に note page では `toc-presence="present|absent"` を受け、本文側の TOC 列契約と同じ presence 信号で center-end reserve を切り替えます。
+
+ただし、Rouault の現在の `layout-header` は breadcrumb を所有しません。note 文脈の breadcrumb 正本は本文先頭の `ui-article-header` が所有し、`layout-header` は移動・補助操作・TOC トリガー・corpus 切替・theme 切替に専念します。
 
 `ui-header` は、アプリケーションシェル上部に配置するヘッダーコンポーネントです。単にヘッダーらしい見た目を描画するのではなく、**アプリ全体のナビゲーション開始点をどこに置くか**、**文脈表示をどの位置に固定するか**、**`sidebarExpanded` という現名称の layout 同期入力を start 幅予約へどう反映するか**、**その状態変化をどのイベント面で通知するか**を公開契約として固定します。
 
@@ -191,11 +193,15 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 ### `layout-header` の note shell 契約
 
-- `layout-header[note-layout][toc-presence='present']` は TOC 列幅に応じた `--ui-header-center-end-inset` を与える
-- `layout-header[note-layout]` は desktop では `toc-presence` にかかわらず `present` と同じ `--ui-header-center-end-inset` を維持し、note shell の外形契約と揃える
-- start 側 reserve は従来どおり `sidebar-enabled` で決め、TOC presence と混在させない
+- `layout-header` は `ui-header` の上位 adapter です
+- `layout-header[note-layout][toc-presence='present']` は TOC 列幅に応じた `--ui-header-center-end-inset` を与えます
+- `layout-header[note-layout]` は desktop では `toc-presence` にかかわらず `present` と同じ `--ui-header-center-end-inset` を維持し、note shell の外形契約とそろえます
+- start 側 reserve は従来どおり `sidebar-enabled` で決め、TOC presence と混在させません
+- Rouault の `layout-header` は breadcrumb を所有しません
+- note 文脈の breadcrumb は `ui-article-header` が所有します
+- Rouault の `layout-header` は現在 `center` / `compact-center` を使いません
 
-これらは **header 自身が安定公開する拡張面**です。一方で、`--ui-header-edge-highlight` はコンポーネントローカルトークンであり、公開契約には含めません。
+これらは、`ui-header` の 4 slot 公開契約を削減するものではありません。`center` / `compact-center` は `ui-header` の汎用公開面として維持されますが、Rouault アプリケーションの `layout-header` は現行運用としてそれらへ本文文脈表示を供給しません。
 
 ### 公開トークンの値域と無効値
 
@@ -420,18 +426,11 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 ダークモードでは境界線色を `--ui-header-edge-highlight` へ寄せ、`backdrop-filter` 対応環境では inset shadow を強めます。これは暗背景でヘッダー境界が沈み込みすぎないようにするためです。
 
-### モバイル時の簡素化
+#### モバイル時の簡素化
 
-現行契約では、狭幅環境で通常幅向けのパンくず列をそのまま維持しません。`ui-breadcrumbs` は狭幅では描画を抑制し、`center` を非表示にしたうえで、必要な場合に限って `compact-center` に単一の現在地ラベルだけを置きます。これにより、狭幅環境では start / end の操作性を優先しつつ、本文の邪魔にならない最小限の文脈表示だけを残せます。
+狭幅環境では、`ui-header` の一般契約として `center` が非表示になり得ます。ただし、これは `ui-header` 自体の汎用レイアウト契約であり、Rouault の `layout-header` が狭幅時に `compact-center` へ breadcrumb を退避することを意味しません。
 
-ただし、公開契約として安定化するのは `639px/640px` という数値そのものではなく、**狭幅では `center` が非表示になり、パンくず列は表示されず、`compact-center` が短い現在地ラベルの受け皿になり得る**という挙動です。閾値の最終所有者は header 単独ではなく、app-shell 側の responsive policy にあります。
-
-したがって、利用者は次を前提にしなければなりません。
-
-- `center` に、狭幅で失われては困る主操作を置いてはなりません（MUST NOT）。
-- `compact-center` は、狭幅時の簡略文脈表示に限定して用いなければなりません（MUST）。
-- `compact-center` を、主操作や高密度ツールバーの退避先として用いてはなりません（MUST NOT）。
-- 将来的な breakpoint 再編は app-shell 側 policy によって行うべきであり、header 単独で私有 breakpoint を増やしてはなりません（MUST NOT）。
+Rouault の現行 `layout-header` は、mobile note で compact breadcrumb を表示しません。代わりに、start / end の操作性と TOC trigger の縮退を優先します。したがって、狭幅で note 文脈を保持する責務は本文先頭の `ui-article-header` が担い、header 側は page chrome と補助操作に専念します。
 
 ### 視覚仕様上の注意
 

@@ -137,7 +137,6 @@ export const createLayoutSidebarShellAdapter = (): ShellAdapter => ({
       currentSidebar instanceof HTMLElement
         ? {
             header: {
-              breadcrumbs: [],
               corpora: [],
               currentCorpusKey: 'all',
               noteLayout: false,

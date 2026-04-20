@@ -182,13 +182,10 @@ describe('layout-header browser contract', () => {
     expect(document.activeElement).to.not.equal(themeTrigger);
   });
 
-  it('mobile note では compact-center を描画しないこと', async () => {
+  it('mobile note でも layout-header は compact-center slot を使わないこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px;">
-        <layout-header
-          note-layout
-          breadcrumbs-json='[{"label":"Notes","href":"/"},{"label":"Section","href":"/notes/section"},{"label":"Current"}]'
-        ></layout-header>
+        <layout-header note-layout></layout-header>
       </div>
     `);
 
@@ -389,7 +386,6 @@ describe('layout-header browser contract', () => {
     await waitForLitUpdate(header);
 
     header.applyShellProjection({
-      breadcrumbs: [],
       corpora: [],
       currentCorpusKey: 'all',
       noteLayout: true,

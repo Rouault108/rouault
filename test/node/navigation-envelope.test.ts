@@ -39,7 +39,6 @@ describe('navigation envelope', () => {
       },
       shellProjection: {
         header: {
-          breadcrumbs: [],
           corpora: [],
           currentCorpusKey: 'all',
           noteLayout: true,
@@ -76,7 +75,6 @@ describe('navigation envelope', () => {
       },
       shellProjection: {
         header: {
-          breadcrumbs: [],
           corpora: [],
           currentCorpusKey: 'all',
           noteLayout: true,

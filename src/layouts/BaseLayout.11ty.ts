@@ -1,8 +1,4 @@
 import {
-  buildNoteNavigationModel,
-  type NoteNavigationEntry,
-} from '../../build/navigation/index.js';
-import {
   buildCorpusNavigation,
   resolveCurrentCorpusKey,
   type CorpusPageEntry,
@@ -28,6 +24,7 @@ import {
   serializeHtmlAttributes,
 } from './html-output.js';
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
+import type { NoteNavigationEntry } from '../../build/navigation/index.js';
 
 export interface BaseLayoutData {
   title?: string;
@@ -136,10 +133,6 @@ export class BaseLayout {
     const currentCorpusKey = resolveCurrentCorpusKey(data);
     const noteSurfacePolicy = resolveNoteSurfacePolicy(data.note?.kind);
     const corpora = buildCorpusNavigation(data.corpusPages ?? []);
-    const breadcrumbs = buildNoteNavigationModel({
-      currentNote: data.note,
-      notes: data.notes ?? [],
-    }).breadcrumbs;
     const footerAttributes = serializeHtmlAttributes([
       { name: 'build-label', value: data.buildMetadata?.buildLabel },
       { name: 'data-hydration-capability', value: 'static' },
@@ -172,11 +165,8 @@ export class BaseLayout {
         value: Boolean(data.note && noteSurfacePolicy.sidebar),
         kind: 'boolean',
       },
-      // note page chrome の判断源が一部 data.note / data.notePage に分かれている。
-      // TOC presence は reserve 契約の正本として明示的に data.notePage から伝搬する。
       { name: 'toc-presence', value: tocPresence },
       { name: 'toc-runtime-id', value: tocRuntimeId },
-      { name: 'breadcrumbs-json', value: breadcrumbs, kind: 'json' },
       { name: 'corpora-json', value: corpora, kind: 'json' },
       { name: 'current-corpus-key', value: currentCorpusKey },
       { name: 'data-hydration-capability', value: 'interactive' },

@@ -81,7 +81,7 @@ describe('BaseLayout', () => {
     expect(rendered).not.toContain('<layout-header note-layout sidebar-enabled');
   });
 
-  it('breadcrumb 規則を note navigation model から受け取ること', () => {
+  it('BaseLayout は layout-header へ breadcrumbs-json を出力しないこと', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({
       content: '<p>本文</p>',
@@ -107,11 +107,13 @@ describe('BaseLayout', () => {
           directoryPath: 'computer-science/algorithms',
         },
       ],
+      currentCorpusKey: 'all',
     });
 
-    expect(rendered).toContain(
-      'breadcrumbs-json="[{&quot;label&quot;:&quot;Notes&quot;,&quot;href&quot;:&quot;/&quot;},{&quot;label&quot;:&quot;計算機科学&quot;,&quot;href&quot;:&quot;/notes/computer-science&quot;},{&quot;label&quot;:&quot;アルゴリズム&quot;,&quot;href&quot;:&quot;/notes/computer-science/algorithms&quot;},{&quot;label&quot;:&quot;ソートアルゴリズム比較&quot;}]"',
-    );
+    expect(rendered).toContain('<layout-header note-layout');
+    expect(rendered).toContain('corpora-json=');
+    expect(rendered).toContain('current-corpus-key="all"');
+    expect(rendered).not.toContain('breadcrumbs-json=');
   });
 
   it('app shell の骨格として skip link / app root / main / footer を出力すること', () => {

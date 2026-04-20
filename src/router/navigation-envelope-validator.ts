@@ -33,19 +33,35 @@ const isTocPresence = (value: unknown): value is TocPresence =>
 const isRenderedKind = (value: unknown): value is DocumentRenderSnapshot['renderedKind'] =>
   value === 'page' || value === 'not-found' || value === 'error';
 
+const isHeaderCorpusItem = (
+  value: unknown,
+): value is HeaderShellProjection['corpora'][number] => {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    isString(value['key']) &&
+    isString(value['label']) &&
+    isString(value['href'])
+  );
+};
+
 const isHeaderShellProjection = (value: unknown): value is HeaderShellProjection => {
   if (!isRecord(value)) {
     return false;
   }
 
   return (
-    Array.isArray(value['breadcrumbs']) &&
     Array.isArray(value['corpora']) &&
+    value['corpora'].every(isHeaderCorpusItem) &&
     isString(value['currentCorpusKey']) &&
     isBoolean(value['noteLayout']) &&
     isBoolean(value['sidebarEnabled']) &&
     isTocPresence(value['tocPresence']) &&
-    (value['tocRuntimeId'] === undefined || value['tocRuntimeId'] === null || isString(value['tocRuntimeId']))
+    (value['tocRuntimeId'] === undefined ||
+      value['tocRuntimeId'] === null ||
+      isString(value['tocRuntimeId']))
   );
 };
 
