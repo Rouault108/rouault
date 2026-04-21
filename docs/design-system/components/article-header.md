@@ -333,7 +333,9 @@ status は現行契約では単一の読者向け注意状態として扱いま�
 ### 4.2 レイアウト契約
 
 - `:host` は `display: block` とします。
-- 最大幅は `var(--width-reading, 72ch)` とします。
+- 最大幅は `var(--reading-measure, var(--width-reading, 72ch))` とします。
+- `ui-article-header` 自身は文脈固有の読書幅を固定せず、親レイヤが与える `--reading-measure` に追従します。
+- 親レイヤが `--reading-measure` を与えない場合は、`var(--width-reading, 72ch)` を fallback とします。
 - ルート下端には本文との境界として `border-block-end` を設けます。
 - 主要メタデータ行と補助メタデータ行では `flex-wrap: wrap` を許容します。
 - メタデータ項目間の区切り文字には `・` を使用します。
@@ -365,7 +367,8 @@ status は現行契約では単一の読者向け注意状態として扱いま�
 | 補助メタデータ色 / セパレータ色 | `--fg-subtle`                          |
 | 作業中ステータス                | `--fg-warning`                         |
 | 非推奨ステータス                | `--fg-danger`                          |
-| 読書幅                          | `--width-reading`                      |
+| 文脈注入される読書面 measure    | `--reading-measure`                    |
+| 既定の読書幅 fallback           | `--width-reading`                      |
 | 余白                            | `--space-*`                            |
 | フォントサイズ                  | `--text-*`                             |
 | 行高                            | `--line-height-tight`                  |

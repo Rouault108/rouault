@@ -38,12 +38,15 @@ const readNoteChromeState = async (
   headerShadowRoot: boolean;
   headerTemplateCount: number;
   headerHeight: number;
+  headerWidth: number;
+  proseWidth: number;
   tocShadowRoot: boolean;
   tocTemplateCount: number;
   tocLabels: string[];
 }> =>
   page.evaluate(() => {
     const articleHeader = document.querySelector('ui-article-header');
+    const prose = document.querySelector('.prose');
     const toc = document.querySelector('layout-toc');
 
     const readDirectTemplateCount = (element: Element | null): number => {
@@ -81,6 +84,14 @@ const readNoteChromeState = async (
       return Array.from(new Set(labels));
     };
 
+    const roundWidth = (element: Element | null): number => {
+      if (!(element instanceof HTMLElement)) {
+        return -1;
+      }
+
+      return Math.round(element.getBoundingClientRect().width * 100) / 100;
+    };
+
     return {
       headerShadowRoot: articleHeader instanceof HTMLElement && articleHeader.shadowRoot !== null,
       headerTemplateCount: readDirectTemplateCount(articleHeader),
@@ -88,6 +99,8 @@ const readNoteChromeState = async (
         articleHeader instanceof HTMLElement
           ? Math.round(articleHeader.getBoundingClientRect().height)
           : -1,
+      headerWidth: roundWidth(articleHeader),
+      proseWidth: roundWidth(prose),
       tocShadowRoot: toc instanceof HTMLElement && toc.shadowRoot !== null,
       tocTemplateCount: readDirectTemplateCount(toc),
       tocLabels: readTocLabels(toc),
@@ -110,6 +123,16 @@ const expectLayoutRichNoteChrome = async (page: Page): Promise<void> => {
   await expect
     .poll(async () => (await readNoteChromeState(page)).tocLabels.length)
     .toBeGreaterThan(0);
+  await expect
+    .poll(async () => {
+      const { headerWidth, proseWidth } = await readNoteChromeState(page);
+      if (headerWidth < 0 || proseWidth < 0) {
+        return Number.POSITIVE_INFINITY;
+      }
+
+      return Math.abs(headerWidth - proseWidth);
+    })
+    .toBeLessThanOrEqual(1);
 };
 
 test.describe('note chrome shadow DOM', () => {

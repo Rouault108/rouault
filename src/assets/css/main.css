@@ -210,7 +210,6 @@ ui-article-header {
   display: block;
   inline-size: 100%;
   min-inline-size: 0;
-  max-inline-size: var(--width-reading, 72ch);
 }
 
 ui-article-header + .prose {
@@ -1687,7 +1686,18 @@ app-router[data-sidebar-presence='absent'] {
 }
 
 .note-shell {
-  --note-reading-measure: var(--note-reading-max-inline-size);
+  --reading-measure: var(--note-reading-max-inline-size);
+  --note-toc-track: var(--note-toc-width, var(--aside-width));
+  display: grid;
+  align-items: start;
+  column-gap: var(--note-shell-column-gap, var(--space-8, 32px));
+  max-width: min(100%, var(--note-shell-max-width, 1280px));
+  margin-inline: auto;
+  width: 100%;
+}
+
+.note-shell {
+  --reading-measure: var(--note-reading-max-inline-size);
   --note-toc-track: var(--note-toc-width, var(--aside-width));
   display: grid;
   align-items: start;
@@ -1710,11 +1720,11 @@ app-router[data-sidebar-presence='absent'] {
 }
 
 .note-shell .container-reading {
-  max-width: min(100%, var(--note-reading-measure));
+  max-width: min(100%, var(--reading-measure));
 }
 
 .note-shell .prose {
-  max-width: var(--note-reading-measure);
+  max-width: var(--reading-measure);
 }
 
 layout-header:not(:defined) {

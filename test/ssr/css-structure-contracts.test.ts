@@ -74,6 +74,7 @@ describe('css structure contracts', () => {
       'var(--fg-muted',
       'var(--fg-subtle',
       'var(--focus-ring-color',
+      'var(--reading-measure',
     ]);
   });
 

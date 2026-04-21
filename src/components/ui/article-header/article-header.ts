@@ -41,7 +41,7 @@ export class ArticleHeader extends LitElement {
         display: block;
         inline-size: 100%;
         min-inline-size: 0;
-        max-inline-size: var(--width-reading, 72ch);
+        max-inline-size: var(--reading-measure, var(--width-reading, 72ch));
       }
 
       .article-header {
