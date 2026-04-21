@@ -14,6 +14,7 @@ import {
   resolveNoteHydrationBudgetProfile,
   type NoteHydrationCounts,
 } from './note-hydration-profile.js';
+import { normalizeNoteDate } from './normalize-note-date.js';
 import type { IntrinsicNote } from '../../build/data/notes.js';
 
 interface NotePageTocScopeSelection {
@@ -270,6 +271,9 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     typeof input.note.content === 'string' ? input.note.content : '',
     noteKind,
   );
+  const normalizedPublished = normalizeNoteDate(input.note.date);
+  const normalizedUpdated = normalizeNoteDate(input.note.updated);
+
   const projection: NotePageProjection = {
     noteKind,
     noteShellSidebarPresence: showSidebar ? 'present' : 'absent',
@@ -305,12 +309,8 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
       ...(input.navigation.breadcrumbs.length > 0
         ? { breadcrumbs: input.navigation.breadcrumbs }
         : {}),
-      ...(typeof input.note.date === 'string' && input.note.date.length > 0
-        ? { published: input.note.date }
-        : {}),
-      ...(typeof input.note.updated === 'string' && input.note.updated.length > 0
-        ? { updated: input.note.updated }
-        : {}),
+      ...(normalizedPublished !== null ? { published: normalizedPublished } : {}),
+      ...(normalizedUpdated !== null ? { updated: normalizedUpdated } : {}),
       ...(typeof input.note.status === 'string' && input.note.status.length > 0
         ? { status: input.note.status }
         : {}),

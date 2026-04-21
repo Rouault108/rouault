@@ -84,6 +84,74 @@ describe('buildNotePageProjection', () => {
     expect(projection.pagefind?.sortDate).toBe('0000-00-00');
   });
 
+  it('articleHeader の published に ISO 日時を渡しても YYYY-MM-DD に正規化すること', () => {
+    const projection = buildProjection({
+      rawSlug: 'music/published-iso',
+      slug: 'music/published-iso',
+      permalink: '/notes/music/published-iso',
+      noteKind: 'leaf',
+      sortIndex: 0,
+      tocHeadings: [],
+      tocCapabilities: {
+        activeTracking: false,
+        dynamicScopes: false,
+        mobileSummary: false,
+      },
+      kind: 'reader',
+      title: 'Published ISO',
+      date: '2026-04-19T00:00:00.000Z',
+    });
+
+    expect(projection.articleHeader.published).toBe('2026-04-19');
+    expect(projection.articleHeader.updated).toBeUndefined();
+  });
+
+  it('articleHeader の updated に ISO 日時を渡しても YYYY-MM-DD に正規化すること', () => {
+    const projection = buildProjection({
+      rawSlug: 'music/updated-iso',
+      slug: 'music/updated-iso',
+      permalink: '/notes/music/updated-iso',
+      noteKind: 'leaf',
+      sortIndex: 0,
+      tocHeadings: [],
+      tocCapabilities: {
+        activeTracking: false,
+        dynamicScopes: false,
+        mobileSummary: false,
+      },
+      kind: 'reader',
+      title: 'Updated ISO',
+      date: '2026-04-19T00:00:00.000Z',
+      updated: '2026-04-20T12:34:56.000Z',
+    });
+
+    expect(projection.articleHeader.published).toBe('2026-04-19');
+    expect(projection.articleHeader.updated).toBe('2026-04-20');
+  });
+
+  it('articleHeader には不正な日付文字列を載せないこと', () => {
+    const projection = buildProjection({
+      rawSlug: 'music/invalid-date',
+      slug: 'music/invalid-date',
+      permalink: '/notes/music/invalid-date',
+      noteKind: 'leaf',
+      sortIndex: 0,
+      tocHeadings: [],
+      tocCapabilities: {
+        activeTracking: false,
+        dynamicScopes: false,
+        mobileSummary: false,
+      },
+      kind: 'reader',
+      title: 'Invalid Date',
+      date: 'not-a-date',
+      updated: '',
+    });
+
+    expect(projection.articleHeader.published).toBeUndefined();
+    expect(projection.articleHeader.updated).toBeUndefined();
+  });
+
   it('sidebar の selected id と icon 付き tree を受け渡すこと', () => {
     const note: IntrinsicNote = {
       rawSlug: 'music/classical/mozart',
