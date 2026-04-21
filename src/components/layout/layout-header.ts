@@ -178,6 +178,7 @@ export class LayoutHeader extends LitElement {
 
     .theme-menu-icon,
     .theme-trigger-icon,
+    .theme-trigger-chevron,
     .toc-trigger-icon,
     .corpus-trigger-icon {
       display: inline-flex;
@@ -190,6 +191,11 @@ export class LayoutHeader extends LitElement {
 
     .theme-trigger-icon {
       opacity: 0.78;
+    }
+
+    .theme-trigger-chevron {
+      color: var(--fg-muted);
+      opacity: 0.72;
     }
 
     .corpus-trigger-icon {
@@ -667,6 +673,11 @@ export class LayoutHeader extends LitElement {
                   aria-hidden="true"
                 ></ui-icon>
                 <span class="theme-trigger-text">テーマ</span>
+                <ui-icon
+                  class="theme-trigger-chevron"
+                  name="chevron-down"
+                  aria-hidden="true"
+                ></ui-icon>
               </span>
             </ui-button>
             ${(

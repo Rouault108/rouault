@@ -231,7 +231,7 @@ describe('layout-header browser contract', () => {
     expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
   });
 
-  it('mobile note かつ sidebar-enabled=true では corpus-switcher を隠し、theme trigger に chevron-down を含まないこと', async () => {
+  it('mobile note かつ sidebar-enabled=true では corpus-switcher を隠し、theme trigger に chevron-down を表示すること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px;">
         <layout-header note-layout sidebar-enabled></layout-header>
@@ -246,12 +246,15 @@ describe('layout-header browser contract', () => {
       'corpusSwitcher',
     );
 
-    const themeChevron = header.shadowRoot?.querySelector<HTMLElement>(
-      '[data-dropdown="theme"] [slot="trigger"] ui-icon[name="chevron-down"]',
+    const themeChevron = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>(
+        '[data-dropdown="theme"] [slot="trigger"] .theme-trigger-chevron',
+      ),
+      'themeChevron',
     );
 
     expect(getComputedStyle(corpusSwitcher).display).to.equal('none');
-    expect(themeChevron).to.equal(null);
+    expect(isVisible(themeChevron)).to.equal(true);
   });
 
   it('mobile note かつ sidebar-enabled=false では corpus-switcher を維持し、corpus chevron は CSS で非表示であること', async () => {
@@ -279,7 +282,7 @@ describe('layout-header browser contract', () => {
     expect(getComputedStyle(corpusChevron).display).to.equal('none');
   });
 
-  it('wide 非 note では corpus chevron を表示し、theme trigger に chevron は無いこと', async () => {
+  it('wide 非 note では corpus chevron と theme chevron を表示すること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 768px;">
         <layout-header></layout-header>
@@ -295,12 +298,15 @@ describe('layout-header browser contract', () => {
       ),
       'corpusChevron',
     );
-    const themeChevron = header.shadowRoot?.querySelector<HTMLElement>(
-      '[data-dropdown="theme"] [slot="trigger"] ui-icon[name="chevron-down"]',
+    const themeChevron = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>(
+        '[data-dropdown="theme"] [slot="trigger"] .theme-trigger-chevron',
+      ),
+      'themeChevron',
     );
 
     expect(getComputedStyle(corpusChevron).display).to.not.equal('none');
-    expect(themeChevron).to.equal(null);
+    expect(isVisible(themeChevron)).to.equal(true);
   });
 
   it('desktop note かつ sidebar-enabled=true では corpus-switcher が visible のとき corpus chevron も visible であること', async () => {
