@@ -17,12 +17,33 @@ interface DropdownSnapshot {
 const waitForHeaderDropdown = async (page: Page, selector: string): Promise<void> => {
   await expect
     .poll(async () => {
-      return await page.evaluate((dropdownSelector) => {
-        const header = document.querySelector('layout-header');
-        const dropdown = header?.shadowRoot?.querySelector<HTMLElement>(dropdownSelector);
-        const trigger = dropdown?.querySelector<HTMLElement>('[slot="trigger"]');
+      return await page.evaluate(async (dropdownSelector) => {
+        await customElements.whenDefined('layout-header');
+        await customElements.whenDefined('ui-dropdown');
 
-        return dropdown instanceof HTMLElement && trigger instanceof HTMLElement;
+        const header = document.querySelector('layout-header');
+        const maybeHeader = header as HTMLElement & { updateComplete?: Promise<unknown> };
+        if (maybeHeader.updateComplete instanceof Promise) {
+          await maybeHeader.updateComplete;
+        }
+
+        const dropdown = header?.shadowRoot?.querySelector<
+          HTMLElement & { getMenuElement?: () => HTMLElement | null; updateComplete?: Promise<unknown> }
+        >(dropdownSelector);
+        if (dropdown?.updateComplete instanceof Promise) {
+          await dropdown.updateComplete;
+        }
+
+        const trigger = dropdown?.querySelector<HTMLElement>('[slot="trigger"]');
+        const panel = dropdown?.getMenuElement?.() ?? null;
+
+        return (
+          dropdown instanceof HTMLElement &&
+          dropdown.shadowRoot instanceof ShadowRoot &&
+          typeof dropdown.getMenuElement === 'function' &&
+          trigger instanceof HTMLElement &&
+          panel instanceof HTMLElement
+        );
       }, selector);
     })
     .toBe(true);
