@@ -13,6 +13,11 @@ const crossBrowserFinalCheck = [
   '**/sidebar-pre-hydration-leakage.spec.ts',
 ];
 
+const webkitFinalCheck = [
+  ...crossBrowserFinalCheck,
+  '**/footnote-endnotes-layout.spec.ts',
+  '**/footnote-long-url-overflow.spec.ts',
+];
 
 const mobileWebkitFinalCheck = ['**/mobile-header-dropdown-position.spec.ts'];
 
@@ -66,7 +71,7 @@ export default defineConfig({
     },
     {
       name: 'webkit-final-check',
-      testMatch: crossBrowserFinalCheck,
+      testMatch: webkitFinalCheck,
       use: { ...devices['Desktop Safari'] },
     },
     {

@@ -185,6 +185,8 @@ note 本文の脚注スタイルは、`ui-footnote` selector ではなく、少�
 
 component 側 document style に依存して note 本文を成立させてはなりません。
 
+note 本文の本番正本 CSS は `src/assets/css/main.css` です。`src/components/ui/footnote/footnote.ts` の `DOCUMENT_CSS` は、互換レイヤおよび document CSS 契約の維持のために追随させるものであり、本番面を成立させる主担当として扱ってはなりません。
+
 ## endnotes レイアウト契約
 
 endnotes のレイアウト主語は `section[role="doc-endnotes"]` とします。`section.footnotes` は互換 selector として残り得ますが、新規実装・新規文書・新規テストは `section[role="doc-endnotes"]` を正本として扱います。
@@ -215,6 +217,7 @@ endnotes のレイアウト主語は `section[role="doc-endnotes"]` とします
 - Escape で閉じること
 - outside click で閉じること
 - JS 無効でも endnotes へ到達できること
+- endnotes レイアウト E2E は Chromium に加えて WebKit でも実測されること
 
 ---
 
