@@ -113,7 +113,7 @@ test.describe('footnote endnotes layout contract', () => {
         throw new Error('layout-toc headings-json が見つかりません');
       }
 
-      const headings = JSON.parse(headingsJson) as Array<{ text?: string; id?: string }>;
+      const headings = JSON.parse(headingsJson) as { text?: string; id?: string }[];
       return headings.find((heading) => heading?.id === 'footnote-label') ?? null;
     });
 
