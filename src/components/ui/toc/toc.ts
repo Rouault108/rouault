@@ -225,6 +225,9 @@ export class Toc extends LitElement {
   @property({ type: String, attribute: 'active-id', reflect: true })
   activeId = '';
 
+  @property({ type: String, attribute: 'navigation-label' })
+  navigationLabel = '目次';
+
   @property({ type: Boolean, attribute: 'suppress-active-link-scroll' })
   suppressActiveLinkScroll = false;
 
@@ -709,7 +712,7 @@ export class Toc extends LitElement {
     }
 
     return html`
-      <nav aria-label="Table of Contents">
+      <nav aria-label=${this.navigationLabel}>
         <ul>
           ${map(this.headers, (heading) => {
             const isActive = heading.id === this.activeId;

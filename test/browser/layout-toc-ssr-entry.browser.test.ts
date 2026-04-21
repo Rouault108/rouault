@@ -115,7 +115,7 @@ describe('layout-toc SSR entry hydration', () => {
                 <div class="desktop">
                   <ui-toc active-id="71-配列の生成">
                     <template shadowrootmode="open">
-                      <nav aria-label="Table of Contents">
+                      <nav aria-label="目次">
                         <ul>
                           <li>
                             <a class="toc-link is-active is-scroll" href="#71-配列の生成">

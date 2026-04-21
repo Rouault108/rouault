@@ -40,8 +40,14 @@ const queryDesktopToc = (host: LayoutToc): Toc | null =>
 const queryMobileToc = (host: LayoutToc): Toc | null =>
   host.shadowRoot?.querySelector<Toc>('.mobile-panel ui-toc') ?? null;
 
-const readMobilePanelTitle = (host: LayoutToc): string | null =>
-  host.shadowRoot?.querySelector<HTMLElement>('.mobile-panel-title')?.textContent?.trim() ?? null;
+const hasMobilePanelTitle = (host: LayoutToc): boolean =>
+  (host.shadowRoot?.querySelector('.mobile-panel-title') ?? null) !== null;
+
+const queryMobilePanelCloseButton = (host: LayoutToc): HTMLButtonElement | null =>
+  host.shadowRoot?.querySelector<HTMLButtonElement>('.mobile-panel .close-button') ?? null;
+
+const readTocNavigationLabel = (toc: Toc | null): string | null =>
+  toc?.shadowRoot?.querySelector<HTMLElement>('nav')?.getAttribute('aria-label') ?? null;
 
 const readActiveLabel = (toc: Toc | null): string | null =>
   toc?.shadowRoot
@@ -128,7 +134,7 @@ const renderStaleSsrLayoutToc = async (
             <div class="desktop">
               <ui-toc active-id="71-配列の生成">
                 <template shadowrootmode="open">
-                  <nav aria-label="Table of Contents">
+                  <nav aria-label="目次">
                     <ul>
                       <li>
                         <a class="toc-link is-active is-scroll" href="#71-配列の生成">
@@ -277,7 +283,7 @@ describe('layout-toc hydration reconciliation', () => {
               <div class="desktop">
                 <ui-toc active-id="71-配列の生成">
                   <template shadowrootmode="open">
-                    <nav aria-label="Table of Contents">
+                    <nav aria-label="目次">
                       <ul>
                         <li>
                           <a class="toc-link is-active is-scroll" href="#71-配列の生成">
@@ -369,7 +375,7 @@ describe('layout-toc hydration reconciliation', () => {
     }
   });
 
-  it('mobile panel header は active heading に関係なく常に固定タイトルの 目次 を表示すること', async () => {
+  it('mobile panel header は視覚タイトルを持たず close-only で、目次ラベルは ui-toc が保持すること', async () => {
     const cleanup = appendArticleFixture();
     const restoreHash = withLocationHash(secondHeadingId);
 
@@ -386,18 +392,21 @@ describe('layout-toc hydration reconciliation', () => {
       await activateLayoutToc(host);
       await flush(host);
 
-      expect(readMobilePanelTitle(host)).to.equal('目次');
+      expect(hasMobilePanelTitle(host)).to.equal(false);
+      expect(queryMobilePanelCloseButton(host)).to.be.instanceOf(HTMLButtonElement);
 
       layoutTocMobileController.open('test-toc');
       await flush(host);
 
-      expect(readMobilePanelTitle(host)).to.equal('目次');
+      expect(hasMobilePanelTitle(host)).to.equal(false);
+      expect(queryMobilePanelCloseButton(host)?.getAttribute('aria-label')).to.equal('目次を閉じる');
 
       const mobileToc = queryMobileToc(host);
       if (!mobileToc) {
         throw new Error('mobile ui-toc が見つかりません');
       }
 
+      expect(readTocNavigationLabel(mobileToc)).to.equal('目次');
       expect(mobileToc.activeId).to.equal(secondHeadingId);
       await waitForActiveDom(mobileToc, secondHeadingLabel);
       expect(readActiveLabel(mobileToc)).to.equal(secondHeadingLabel);

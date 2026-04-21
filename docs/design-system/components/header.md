@@ -435,7 +435,7 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 Rouault の現行 `layout-header` は、mobile note で compact breadcrumb を表示しません。代わりに、start / end の操作性と TOC trigger の縮退を優先します。したがって、狭幅で note 文脈を保持する責務は本文先頭の `ui-article-header` が担い、header 側は page chrome と補助操作に専念します。
 
-また、Rouault の TOC trigger は現在見出しや進捗を header 上へ持ち込みません。mobile TOC panel header は固定タイトル `目次` とし、current heading は `ui-toc` の active item 強調で把握します。header 側は安定した開閉導線に限定します。
+また、Rouault の TOC trigger は現在見出しや進捗を header 上へ持ち込みません。mobile TOC panel header は視覚上 close-only とし、current heading は `ui-toc` の active item 強調で把握します。`目次` という意味付けは `ui-toc` の navigation label が保持し、header 側は安定した開閉導線に限定します。
 
 ### 視覚仕様上の注意
 

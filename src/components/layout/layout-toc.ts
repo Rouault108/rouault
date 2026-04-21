@@ -196,14 +196,9 @@ export class LayoutToc extends LitElement {
     .mobile-panel-header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: var(--space-2, 8px);
-      padding-bottom: var(--space-2, 8px);
-    }
-
-    .mobile-panel-title {
-      font-size: var(--text-sm, 13px);
-      color: var(--fg-muted);
+      justify-content: flex-end;
+      min-block-size: 32px;
+      margin-block-end: var(--space-1, 4px);
     }
 
     .close-button {
@@ -657,7 +652,6 @@ export class LayoutToc extends LitElement {
         ?inert=${!this._panelOpen}
       >
         <div class="mobile-panel-header">
-          <div class="mobile-panel-title">目次</div>
           <button
             class="close-button"
             type="button"

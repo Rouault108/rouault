@@ -235,4 +235,26 @@ describe('ui-toc active link scroll contract', () => {
     expect(scrollIntoViewCalls).to.equal(0);
     expect(scrollToCalls).to.equal(0);
   });
+
+  it('navigation label は既定で 目次 を内部 nav へ設定すること', async () => {
+    const toc = await fixture<Toc>(html`
+      <ui-toc .headers=${headers}></ui-toc>
+    `);
+
+    await flush(toc);
+
+    const nav = toc.shadowRoot?.querySelector<HTMLElement>('nav');
+    expect(nav?.getAttribute('aria-label')).to.equal('目次');
+  });
+
+  it('navigation-label attribute で内部 nav の accessible name を上書きできること', async () => {
+    const toc = await fixture<Toc>(html`
+      <ui-toc .headers=${headers} navigation-label="Sections"></ui-toc>
+    `);
+
+    await flush(toc);
+
+    const nav = toc.shadowRoot?.querySelector<HTMLElement>('nav');
+    expect(nav?.getAttribute('aria-label')).to.equal('Sections');
+  });
 });
