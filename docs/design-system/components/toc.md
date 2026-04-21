@@ -18,7 +18,7 @@ static-first 再設計後の `ui-toc` は純粋な view です。見出し抽出
 ### 2.4 `layout-toc-runtime-store`
 
 - `layout-toc` が算出した runtime snapshot を `layout-header` へ共有する
-- `ready` / `hasVisibleHeadings` / `currentLabel` / `activeId` を伝える
+- `ready` / `hasVisibleHeadings` / `activeId` を伝える
 
 ### 2.5 `layout-toc-mobile-controller`
 
@@ -37,7 +37,8 @@ mobile TOC を有効にするページでは、次を満たすこと。
 - trigger の可視文言は固定の `目次` とし、399px 以下では icon-only へ縮退する
 - trigger 押下で `layout-toc` の mobile panel が header 直下から開く
 - panel は header を覆わない
-- 現在見出し把握は panel header と active item 強調で成立させる
+- mobile panel header のタイトルは固定の `目次` とする
+- 現在見出し把握は active item 強調で成立させる
 - close 後に trigger へ focus return できる
 
 ---
@@ -127,6 +128,7 @@ runtime 契約:
 - `layout-toc` が capability ありのときだけ hydrate すること
 - `tocPresence='absent'` では TOC DOM と hydration scope が出ないこと
 - mobile TOC trigger が 639px 以下でのみ現れ、固定ラベル `目次` または icon-only を表示すること
-- current heading は panel header と active item 強調で把握できること
+- mobile panel header が固定タイトル `目次` を表示すること
+- current heading は active item 強調で把握できること
 - mobile panel が header の直下から開くこと
 - close 後に trigger へ focus return できること

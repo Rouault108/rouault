@@ -57,13 +57,11 @@ const readInlinePx = (value: string | null): number => {
 };
 
 const publishReadyTocRuntime = (runtimeId: string, overrides: Partial<{
-  currentLabel: string | null;
   activeId: string | null;
 }> = {}): void => {
   layoutTocRuntimeStore.publish(runtimeId, {
     ready: true,
     hasVisibleHeadings: true,
-    currentLabel: '2. 状態同期',
     activeId: 'state-sync',
     ...overrides,
   });
@@ -617,7 +615,7 @@ describe('layout-header browser contract', () => {
     expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
   });
 
-  it('currentLabel を publish しても header TOC trigger の可視文言は固定の 目次 であること', async () => {
+  it('runtime activeId が変化しても header TOC trigger の可視文言は固定の 目次 であること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 430px;">
         <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
@@ -627,9 +625,7 @@ describe('layout-header browser contract', () => {
     const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
     await waitForLitUpdate(header);
 
-    publishReadyTocRuntime('test-toc', {
-      currentLabel: '3. とても長い現在見出しラベル',
-    });
+    publishReadyTocRuntime('test-toc', { activeId: 'deep-section' });
     await waitForLitUpdate(header);
 
     const triggerText = expectPresent(
@@ -708,7 +704,6 @@ describe('layout-header browser contract', () => {
     layoutTocRuntimeStore.publish('test-toc', {
       ready: true,
       hasVisibleHeadings: true,
-      currentLabel: '目次',
       activeId: 'intro',
     });
     await waitForLitUpdate(header);

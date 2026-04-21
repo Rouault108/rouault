@@ -61,7 +61,6 @@ const THEME_OPTIONS: Record<
 const DEFAULT_TOC_RUNTIME_VIEW: LayoutTocRuntimeSnapshot = {
   ready: false,
   hasVisibleHeadings: false,
-  currentLabel: null,
   activeId: null,
 };
 

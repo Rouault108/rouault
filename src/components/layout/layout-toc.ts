@@ -270,7 +270,6 @@ export class LayoutToc extends LitElement {
     mobilePanel: false,
   };
   @state() private _activeId = '';
-  @state() private _activeIndex = -1;
   @state() private _panelOpen = false;
   @state() private _tocReady = false;
 
@@ -511,8 +510,6 @@ export class LayoutToc extends LitElement {
       this._applyActiveId(hash);
     } else if (!headings.some((heading) => heading.id === this._activeId)) {
       this._applyActiveId(headings[0]?.id ?? '');
-    } else {
-      this._activeIndex = headings.findIndex((heading) => heading.id === this._activeId);
     }
 
     this._tocReady = true;
@@ -521,7 +518,6 @@ export class LayoutToc extends LitElement {
 
   private _applyActiveId(id: string): void {
     this._activeId = id;
-    this._activeIndex = this._visibleHeadings.findIndex((heading) => heading.id === id);
     this._publishRuntimeSnapshot();
   }
 
@@ -537,7 +533,6 @@ export class LayoutToc extends LitElement {
     return {
       ready: this._tocReady,
       hasVisibleHeadings: this._visibleHeadings.length > 0,
-      currentLabel: this._getCurrentHeadingLabel(),
       activeId: this._activeId.length > 0 ? this._activeId : null,
     };
   }
@@ -553,14 +548,6 @@ export class LayoutToc extends LitElement {
   private _closeMobilePanel = (): void => {
     layoutTocMobileController.close(this._getRuntimeId());
   };
-
-  private _getCurrentHeadingLabel(): string | null {
-    if (this._activeIndex >= 0 && this._activeIndex < this._visibleHeadings.length) {
-      return this._visibleHeadings[this._activeIndex]?.text ?? null;
-    }
-
-    return this._visibleHeadings[0]?.text ?? null;
-  }
 
   private _getRuntimeId(): string {
     const explicitRuntimeId = this.tocRuntimeId.trim();
@@ -646,7 +633,6 @@ export class LayoutToc extends LitElement {
     }
 
     const tocKey = this._visibleHeadings.map((heading) => heading.id).join('|');
-    const currentLabel = this._getCurrentHeadingLabel() ?? '目次';
     const panelId = this._getPanelId();
 
     return html`
@@ -671,7 +657,7 @@ export class LayoutToc extends LitElement {
         ?inert=${!this._panelOpen}
       >
         <div class="mobile-panel-header">
-          <div class="mobile-panel-title">${currentLabel}</div>
+          <div class="mobile-panel-title">目次</div>
           <button
             class="close-button"
             type="button"

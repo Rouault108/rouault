@@ -1,7 +1,6 @@
 export interface LayoutTocRuntimeSnapshot {
   readonly ready: boolean;
   readonly hasVisibleHeadings: boolean;
-  readonly currentLabel: string | null;
   readonly activeId: string | null;
 }
 
@@ -15,7 +14,6 @@ interface Entry {
 const createDefaultSnapshot = (): LayoutTocRuntimeSnapshot => ({
   ready: false,
   hasVisibleHeadings: false,
-  currentLabel: null,
   activeId: null,
 });
 

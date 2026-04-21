@@ -5,6 +5,7 @@ import '../../src/components/layout/layout-toc.js';
 import '../../src/components/ui/toc/toc.js';
 import type { LayoutToc } from '../../src/components/layout/layout-toc.js';
 import { activateLayoutToc } from '../../src/components/layout/layout-toc.js';
+import { layoutTocMobileController } from '../../src/components/layout/layout-toc-mobile-controller.js';
 import type { Toc } from '../../src/components/ui/toc/toc.js';
 import type { HydrationDiagnostics } from '../../src/client/hydration/types.js';
 import { replaceElementChildrenFromHtml } from '../../src/router/declarative-shadow-dom.js';
@@ -35,6 +36,12 @@ const flush = async (host: LayoutToc): Promise<void> => {
 
 const queryDesktopToc = (host: LayoutToc): Toc | null =>
   host.shadowRoot?.querySelector<Toc>('.desktop ui-toc') ?? null;
+
+const queryMobileToc = (host: LayoutToc): Toc | null =>
+  host.shadowRoot?.querySelector<Toc>('.mobile-panel ui-toc') ?? null;
+
+const readMobilePanelTitle = (host: LayoutToc): string | null =>
+  host.shadowRoot?.querySelector<HTMLElement>('.mobile-panel-title')?.textContent?.trim() ?? null;
 
 const readActiveLabel = (toc: Toc | null): string | null =>
   toc?.shadowRoot
@@ -159,6 +166,10 @@ const renderStaleSsrLayoutToc = async (
 };
 
 describe('layout-toc hydration reconciliation', () => {
+  afterEach(() => {
+    layoutTocMobileController.reset();
+  });
+
   it('hydrate 後に location hash と ui-toc の active DOM が一致すること', async () => {
     const cleanup = appendArticleFixture();
     const restoreHash = withLocationHash(secondHeadingId);
@@ -352,6 +363,44 @@ describe('layout-toc hydration reconciliation', () => {
 
       await waitForActiveDom(desktopToc, secondHeadingLabel);
       expect(readActiveLabel(desktopToc)).to.equal(secondHeadingLabel);
+    } finally {
+      restoreHash();
+      cleanup();
+    }
+  });
+
+  it('mobile panel header は active heading に関係なく常に固定タイトルの 目次 を表示すること', async () => {
+    const cleanup = appendArticleFixture();
+    const restoreHash = withLocationHash(secondHeadingId);
+
+    try {
+      const host = await fixture<LayoutToc>(html`
+        <layout-toc
+          .headingsJson=${headingsJson}
+          content-root-id="note-content"
+          toc-runtime-id="test-toc"
+          data-hydration-trigger="manual"
+        ></layout-toc>
+      `);
+
+      await activateLayoutToc(host);
+      await flush(host);
+
+      expect(readMobilePanelTitle(host)).to.equal('目次');
+
+      layoutTocMobileController.open('test-toc');
+      await flush(host);
+
+      expect(readMobilePanelTitle(host)).to.equal('目次');
+
+      const mobileToc = queryMobileToc(host);
+      if (!mobileToc) {
+        throw new Error('mobile ui-toc が見つかりません');
+      }
+
+      expect(mobileToc.activeId).to.equal(secondHeadingId);
+      await waitForActiveDom(mobileToc, secondHeadingLabel);
+      expect(readActiveLabel(mobileToc)).to.equal(secondHeadingLabel);
     } finally {
       restoreHash();
       cleanup();
