@@ -94,9 +94,19 @@ export class ArticleHeader extends LitElement {
         color: var(--fg-muted, oklch(48% 0 0));
       }
 
+      /*
+       * 主見出しに対する視覚整列を優先する。
+       * 先頭に装飾アイコンを含むメタデータ行は、ボックス左端の完全一致ではなく
+       * 小さな開始インセットで光学補正する。
+       */
+      .metadata-list--primary {
+        padding-inline-start: var(--space-1, 4px);
+      }
+
       /* セカンダリメタデータ（出典・ライセンス）: 補助情報として控えめに */
       .metadata-list--secondary {
         margin-top: var(--space-3, 12px);
+        padding-inline-start: var(--space-1, 4px);
         font-size: var(--text-xs, 12px);
         color: var(--fg-subtle, oklch(60% 0 0));
       }
