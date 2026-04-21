@@ -275,10 +275,6 @@ export class LayoutHeader extends LitElement {
         max-inline-size: min(9rem, 42vw);
       }
 
-      .corpus-trigger-icon {
-        display: none;
-      }
-
       .theme-trigger-text {
         display: none;
       }

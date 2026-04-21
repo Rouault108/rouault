@@ -180,7 +180,7 @@ describe('layout-header browser contract', () => {
 
     const horizontalOverflow = wrapper.scrollWidth - wrapper.clientWidth;
     expect(horizontalOverflow).to.be.lessThanOrEqual(1);
-    expect(getComputedStyle(corpusChevron).display).to.not.equal('none');
+    expect(isVisible(corpusChevron)).to.equal(true);
   });
 
   it('テーマ変更後の再描画で theme dropdown trigger に focus を残さないこと', async () => {
@@ -257,7 +257,7 @@ describe('layout-header browser contract', () => {
     expect(isVisible(themeChevron)).to.equal(true);
   });
 
-  it('mobile note かつ sidebar-enabled=false では corpus-switcher を維持し、corpus chevron は CSS で非表示であること', async () => {
+  it('mobile note かつ sidebar-enabled=false では corpus-switcher を維持し、corpus chevron も visible であること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px;">
         <layout-header note-layout></layout-header>
@@ -279,7 +279,7 @@ describe('layout-header browser contract', () => {
     );
 
     expect(isVisible(corpusSwitcher)).to.equal(true);
-    expect(getComputedStyle(corpusChevron).display).to.equal('none');
+    expect(isVisible(corpusChevron)).to.equal(true);
   });
 
   it('wide 非 note では corpus chevron と theme chevron を表示すること', async () => {
@@ -305,7 +305,7 @@ describe('layout-header browser contract', () => {
       'themeChevron',
     );
 
-    expect(getComputedStyle(corpusChevron).display).to.not.equal('none');
+    expect(isVisible(corpusChevron)).to.equal(true);
     expect(isVisible(themeChevron)).to.equal(true);
   });
 
@@ -331,7 +331,7 @@ describe('layout-header browser contract', () => {
     );
 
     expect(isVisible(corpusSwitcher)).to.equal(true);
-    expect(getComputedStyle(corpusChevron).display).to.not.equal('none');
+    expect(isVisible(corpusChevron)).to.equal(true);
   });
 
   it('narrow 幅で theme trigger text が非表示でも theme dropdown trigger の内部 button にアクセシブル名が入ること', async () => {
@@ -519,10 +519,16 @@ describe('layout-header browser contract', () => {
     expect(triggerText.textContent?.trim()).to.equal('目次');
   });
 
-  it('639px の mobile note では TOC trigger が icon と固定ラベルを表示すること', async () => {
+  it('639px の mobile note では corpus chevron と TOC trigger が visible で、header が右方向へはみ出さないこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
-      <div style="inline-size: 639px;">
-        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      <div style="inline-size: 639px; overflow: auto;">
+        <layout-header
+          note-layout
+          current-corpus-key="program"
+          toc-presence="present"
+          toc-runtime-id="test-toc"
+          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for 639px boundary verification","href":"/corpora/program/"}]'
+        ></layout-header>
       </div>
     `);
 
@@ -540,9 +546,18 @@ describe('layout-header browser contract', () => {
       header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
       'tocTriggerText',
     );
+    const corpusChevron = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>(
+        '.corpus-switcher [slot="trigger"] ui-icon[name="chevron-down"]',
+      ),
+      'corpusChevron',
+    );
+    const horizontalOverflow = wrapper.scrollWidth - wrapper.clientWidth;
 
     expect(getComputedStyle(trigger).display).to.not.equal('none');
     expect(getComputedStyle(triggerText).display).to.not.equal('none');
+    expect(isVisible(corpusChevron)).to.equal(true);
+    expect(horizontalOverflow).to.be.lessThanOrEqual(1);
     expect(triggerText.textContent?.trim()).to.equal('目次');
     expect(header.shadowRoot?.querySelector('.toc-trigger-progress')).to.equal(null);
   });
@@ -643,7 +658,7 @@ describe('layout-header browser contract', () => {
     expect(triggerText.textContent?.trim()).to.equal('目次');
   });
 
-  it('400px 台の過密幅でも TOC trigger と corpus/theme/search が競合して header が右方向へはみ出さないこと', async () => {
+  it('400px 台の過密幅でも corpus chevron と TOC trigger を維持しつつ header が右方向へはみ出さないこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 410px; overflow: auto;">
         <layout-header
@@ -667,9 +682,21 @@ describe('layout-header browser contract', () => {
       header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
       'tocTriggerText',
     );
+    const corpusSwitcher = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.corpus-switcher'),
+      'corpusSwitcher',
+    );
+    const corpusChevron = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>(
+        '.corpus-switcher [slot="trigger"] ui-icon[name="chevron-down"]',
+      ),
+      'corpusChevron',
+    );
 
     expect(horizontalOverflow).to.be.lessThanOrEqual(1);
     expect(getComputedStyle(triggerText).display).to.not.equal('none');
+    expect(isVisible(corpusSwitcher)).to.equal(true);
+    expect(isVisible(corpusChevron)).to.equal(true);
     expect(triggerText.textContent?.trim()).to.equal('目次');
   });
 

@@ -204,7 +204,7 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 - TOC trigger の幅契約は viewport ではなく `layout-header` host の container inline-size で決まります
 - TOC trigger は 640px 以上で非表示、400px 以上 639px 以下で `目次`、399px 以下で icon-only とします
 - Rouault の `layout-header` では、corpus trigger と theme trigger の両方に dropdown affordance として chevron を表示します
-- 狭幅では corpus 側の chevron は非表示化され得ますが、theme trigger は現在テーマ icon と chevron を維持します
+- `corpus-switcher` が表示される場合、狭幅でも corpus 側の chevron を維持します
 
 これらは、`ui-header` の 4 slot 公開契約を削減するものではありません。`center` / `compact-center` は `ui-header` の汎用公開面として維持されますが、Rouault アプリケーションの `layout-header` は現行運用としてそれらへ本文文脈表示を供給しません。
 
