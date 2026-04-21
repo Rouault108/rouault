@@ -3,8 +3,6 @@ export interface LayoutTocRuntimeSnapshot {
   readonly hasVisibleHeadings: boolean;
   readonly currentLabel: string | null;
   readonly activeId: string | null;
-  readonly activeIndex: number | null;
-  readonly activeTotal: number | null;
 }
 
 const DEFAULT_LAYOUT_TOC_RUNTIME_ID = 'page-toc';
@@ -19,8 +17,6 @@ const createDefaultSnapshot = (): LayoutTocRuntimeSnapshot => ({
   hasVisibleHeadings: false,
   currentLabel: null,
   activeId: null,
-  activeIndex: null,
-  activeTotal: null,
 });
 
 const createEntry = (): Entry => ({

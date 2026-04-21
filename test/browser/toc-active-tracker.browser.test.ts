@@ -50,7 +50,7 @@ describe('TocActiveTracker', () => {
       capabilities: {
         activeTracking: false,
         dynamicScopes: true,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       getActiveId: () => '',
       onVisibleHeadingsChange: (visibleHeadings) => {
@@ -138,7 +138,7 @@ describe('TocActiveTracker', () => {
       capabilities: {
         activeTracking: true,
         dynamicScopes: false,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       getActiveId: () => activeId,
       onVisibleHeadingsChange: () => undefined,
@@ -229,7 +229,7 @@ describe('TocActiveTracker', () => {
       capabilities: {
         activeTracking: true,
         dynamicScopes: false,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       getActiveId: () => activeId,
       onVisibleHeadingsChange: () => undefined,
@@ -291,7 +291,7 @@ describe('TocActiveTracker', () => {
       capabilities: {
         activeTracking: false,
         dynamicScopes: false,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       getActiveId: () => 'section-1',
       onVisibleHeadingsChange: (visibleHeadings) => {

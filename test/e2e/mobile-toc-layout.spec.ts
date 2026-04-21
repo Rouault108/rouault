@@ -25,8 +25,6 @@ const readLayoutState = async (page: Page, shellSelector: string) =>
     const uiHeader = header?.shadowRoot?.querySelector('ui-header');
     const trigger = header?.shadowRoot?.querySelector<HTMLElement>('.toc-trigger') ?? null;
     const triggerText = header?.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text') ?? null;
-    const triggerProgress =
-      header?.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-progress') ?? null;
     const compactLabel =
       header?.shadowRoot?.querySelector<HTMLElement>('.compact-note-label') ?? null;
     const corpusSwitcher =
@@ -87,7 +85,9 @@ const readLayoutState = async (page: Page, shellSelector: string) =>
       corpusSwitcherVisible: isVisible(corpusSwitcher),
       themeChevronExists: themeChevron instanceof HTMLElement,
       triggerTextVisible: isVisible(triggerText),
-      triggerProgressVisible: isVisible(triggerProgress),
+      triggerProgressExists:
+        header?.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-progress') instanceof
+        HTMLElement,
       zoneStartExists: zoneStart instanceof HTMLElement,
       zoneEndExists: zoneEnd instanceof HTMLElement,
     };
@@ -110,7 +110,7 @@ test.describe('mobile TOC layout contract after header integration', () => {
     expect(state?.horizontalOverflow).toBeLessThanOrEqual(1);
     expect(state?.triggerExists).toBe(true);
     expect(state?.triggerTextVisible).toBe(false);
-    expect(state?.triggerProgressVisible).toBe(false);
+    expect(state?.triggerProgressExists).toBe(false);
     expect(state?.compactLabelExists).toBe(false);
     expect(state?.corpusSwitcherVisible).toBe(false);
     expect(state?.themeChevronExists).toBe(false);

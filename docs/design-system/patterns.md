@@ -470,7 +470,7 @@ Popover は Dialog と違い、**body をロックしない**ことが本質で�
 | 検索UI                                 | `ui-search-dialog`                  |
 | 補助情報、軽量な詳細                   | `ui-popover`                        |
 | モバイルのナビゲーション面             | `ui-sidebar-shell` overlay          |
-| モバイルのページ内見出しナビゲーション | `layout-toc` mobile summary / panel |
+| モバイルのページ内見出しナビゲーション | `layout-toc` mobile panel |
 
 body scroll lock が必要なら Dialog 系、不要なら Popover 系、という切り分けが基本です。
 

@@ -31,7 +31,7 @@ const createProjection = (
       capabilities: {
         activeTracking: true,
         dynamicScopes: false,
-        mobileSummary: true,
+        mobilePanel: true,
       },
       contentRootId: 'note-content-note',
       homeHref: '/',
@@ -90,7 +90,7 @@ describe('NoteLayout', () => {
           capabilities: {
             activeTracking: true,
             dynamicScopes: true,
-            mobileSummary: true,
+            mobilePanel: true,
           },
           contentRootId: 'note-content-note',
           homeHref: '/',

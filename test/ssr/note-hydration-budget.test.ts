@@ -115,7 +115,7 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
       capabilities: {
         activeTracking: hasHeadings,
         dynamicScopes: false,
-        mobileSummary: note.kind === 'reader' && hasHeadings,
+        mobilePanel: note.kind === 'reader' && hasHeadings,
       },
       contentRootId: `note-content-${dataId}`,
       homeHref: '/',

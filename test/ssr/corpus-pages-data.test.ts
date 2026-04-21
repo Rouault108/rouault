@@ -21,7 +21,7 @@ const createCorpusNote = (
     tocCapabilities: {
       activeTracking: false,
       dynamicScopes: false,
-      mobileSummary: false,
+      mobilePanel: false,
     },
     kind: 'reader',
     ...rest,

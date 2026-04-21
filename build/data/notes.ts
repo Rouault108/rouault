@@ -74,7 +74,7 @@ export interface IntrinsicNote extends SourceNote {
   tocCapabilities: {
     activeTracking: boolean;
     dynamicScopes: boolean;
-    mobileSummary: boolean;
+    mobilePanel: boolean;
   };
   sidebarRoot?: string;
   sidebarResolvedIcon?: IconName;
@@ -97,7 +97,7 @@ const inferTocCapabilities = (
   dynamicScopes: headings.some(
     (heading) => Array.isArray(heading.scopeSelections) && heading.scopeSelections.length > 0,
   ),
-  mobileSummary: kind === 'reader' && headings.length > 0,
+  mobilePanel: kind === 'reader' && headings.length > 0,
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

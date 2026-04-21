@@ -30,7 +30,7 @@ describe('BaseLayout', () => {
           capabilities: {
             activeTracking: false,
             dynamicScopes: false,
-            mobileSummary: false,
+            mobilePanel: false,
           },
           contentRootId: 'note-content-reader-note',
           homeHref: '/',

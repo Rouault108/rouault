@@ -162,7 +162,7 @@ describe('component manifest / ssr targets', () => {
         { name: 'headings-json', value: '[{"id":"intro","text":"Intro","level":2}]' },
         {
           name: 'capabilities-json',
-          value: '{"activeTracking":false,"dynamicScopes":false,"mobileSummary":false}',
+          value: '{"activeTracking":false,"dynamicScopes":false,"mobilePanel":false}',
         },
         { name: 'content-root-id', value: 'note-content-intro' },
         { name: 'data-hydration-trigger', value: '' },

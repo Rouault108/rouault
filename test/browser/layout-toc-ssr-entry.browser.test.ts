@@ -106,7 +106,7 @@ describe('layout-toc SSR entry hydration', () => {
           >
             <layout-toc
               headings-json='${headingsJson}'
-              capabilities-json='{"activeTracking":false,"dynamicScopes":false,"mobileSummary":false}'
+              capabilities-json='{"activeTracking":false,"dynamicScopes":false,"mobilePanel":false}'
               content-root-id="note-content"
               data-hydration-capability="interactive"
               data-hydration-trigger="initial"

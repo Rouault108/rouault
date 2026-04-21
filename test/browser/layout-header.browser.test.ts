@@ -56,6 +56,19 @@ const readInlinePx = (value: string | null): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const publishReadyTocRuntime = (runtimeId: string, overrides: Partial<{
+  currentLabel: string | null;
+  activeId: string | null;
+}> = {}): void => {
+  layoutTocRuntimeStore.publish(runtimeId, {
+    ready: true,
+    hasVisibleHeadings: true,
+    currentLabel: '2. 状態同期',
+    activeId: 'state-sync',
+    ...overrides,
+  });
+};
+
 const waitForDropdownReady = async (dropdown: Dropdown): Promise<HTMLElement> => {
   await waitUntil(
     () => {
@@ -474,9 +487,9 @@ describe('layout-header browser contract', () => {
     expect(header.readShellProjection().tocPresence).to.equal('absent');
   });
 
-  it('375px の mobile note では TOC trigger が icon only になること', async () => {
+  it('640px では TOC trigger が非表示であること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
-      <div style="inline-size: 375px;">
+      <div style="inline-size: 640px;">
         <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
       </div>
     `);
@@ -484,14 +497,7 @@ describe('layout-header browser contract', () => {
     const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
     await waitForLitUpdate(header);
 
-    layoutTocRuntimeStore.publish('test-toc', {
-      ready: true,
-      hasVisibleHeadings: true,
-      currentLabel: '2. 状態同期',
-      activeId: 'state-sync',
-      activeIndex: 2,
-      activeTotal: 5,
-    });
+    publishReadyTocRuntime('test-toc');
     await waitForLitUpdate(header);
 
     const trigger = expectPresent(
@@ -502,18 +508,116 @@ describe('layout-header browser contract', () => {
       header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
       'tocTriggerText',
     );
-    const triggerProgress = expectPresent(
-      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-progress'),
-      'tocTriggerProgress',
+
+    expect(trigger.getAttribute('data-visible')).to.equal('true');
+    expect(getComputedStyle(trigger).display).to.equal('none');
+    expect(getComputedStyle(triggerText).display).to.not.equal('none');
+    expect(triggerText.textContent?.trim()).to.equal('目次');
+  });
+
+  it('639px の mobile note では TOC trigger が icon と固定ラベルを表示すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 639px;">
+        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
+
+    publishReadyTocRuntime('test-toc');
+    await waitForLitUpdate(header);
+
+    const trigger = expectPresent(
+      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
+      'tocTrigger',
+    );
+    const triggerText = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
+      'tocTriggerText',
+    );
+
+    expect(getComputedStyle(trigger).display).to.not.equal('none');
+    expect(getComputedStyle(triggerText).display).to.not.equal('none');
+    expect(triggerText.textContent?.trim()).to.equal('目次');
+    expect(header.shadowRoot?.querySelector('.toc-trigger-progress')).to.equal(null);
+  });
+
+  it('400px の mobile note では TOC trigger が icon と固定ラベルを表示すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 400px;">
+        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
+
+    publishReadyTocRuntime('test-toc');
+    await waitForLitUpdate(header);
+
+    const triggerText = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
+      'tocTriggerText',
+    );
+
+    expect(getComputedStyle(triggerText).display).to.not.equal('none');
+    expect(triggerText.textContent?.trim()).to.equal('目次');
+    expect(header.shadowRoot?.querySelector('.toc-trigger-progress')).to.equal(null);
+    expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
+  });
+
+  it('399px の mobile note では TOC trigger が icon only になること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 399px;">
+        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
+
+    publishReadyTocRuntime('test-toc');
+    await waitForLitUpdate(header);
+
+    const triggerText = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
+      'tocTriggerText',
+    );
+
+    expect(getComputedStyle(triggerText).display).to.equal('none');
+    expect(header.shadowRoot?.querySelector('.toc-trigger-progress')).to.equal(null);
+  });
+
+  it('375px の mobile note では TOC trigger が icon only になること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 375px;">
+        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
+
+    publishReadyTocRuntime('test-toc');
+    await waitForLitUpdate(header);
+
+    const trigger = expectPresent(
+      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
+      'tocTrigger',
+    );
+    const triggerText = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
+      'tocTriggerText',
     );
 
     expect(trigger.getAttribute('data-visible')).to.equal('true');
     expect(getComputedStyle(triggerText).display).to.equal('none');
-    expect(getComputedStyle(triggerProgress).display).to.equal('none');
+    expect(header.shadowRoot?.querySelector('.toc-trigger-progress')).to.equal(null);
     expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
   });
 
-  it('430px の mobile note では TOC trigger が text のみになること', async () => {
+  it('currentLabel を publish しても header TOC trigger の可視文言は固定の 目次 であること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 430px;">
         <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
@@ -523,13 +627,8 @@ describe('layout-header browser contract', () => {
     const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
     await waitForLitUpdate(header);
 
-    layoutTocRuntimeStore.publish('test-toc', {
-      ready: true,
-      hasVisibleHeadings: true,
-      currentLabel: '2. 状態同期',
-      activeId: 'state-sync',
-      activeIndex: 2,
-      activeTotal: 5,
+    publishReadyTocRuntime('test-toc', {
+      currentLabel: '3. とても長い現在見出しラベル',
     });
     await waitForLitUpdate(header);
 
@@ -537,47 +636,67 @@ describe('layout-header browser contract', () => {
       header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
       'tocTriggerText',
     );
-    const triggerProgress = expectPresent(
-      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-progress'),
-      'tocTriggerProgress',
-    );
 
     expect(getComputedStyle(triggerText).display).to.not.equal('none');
-    expect(getComputedStyle(triggerProgress).display).to.equal('none');
-    expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
+    expect(triggerText.textContent?.trim()).to.equal('目次');
   });
 
-  it('520px の mobile note では TOC trigger が text + progress になること', async () => {
+  it('400px 台の過密幅でも TOC trigger と corpus/theme/search が競合して header が右方向へはみ出さないこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
-      <div style="inline-size: 520px;">
-        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      <div style="inline-size: 410px; overflow: auto;">
+        <layout-header
+          note-layout
+          current-corpus-key="program"
+          toc-presence="present"
+          toc-runtime-id="test-toc"
+          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for packed-width verification","href":"/corpora/program/"}]'
+        ></layout-header>
       </div>
     `);
 
     const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
     await waitForLitUpdate(header);
 
-    layoutTocRuntimeStore.publish('test-toc', {
-      ready: true,
-      hasVisibleHeadings: true,
-      currentLabel: '2. 状態同期',
-      activeId: 'state-sync',
-      activeIndex: 2,
-      activeTotal: 5,
-    });
+    publishReadyTocRuntime('test-toc');
     await waitForLitUpdate(header);
 
+    const horizontalOverflow = wrapper.scrollWidth - wrapper.clientWidth;
     const triggerText = expectPresent(
       header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
       'tocTriggerText',
     );
-    const triggerProgress = expectPresent(
-      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-progress'),
-      'tocTriggerProgress',
+
+    expect(horizontalOverflow).to.be.lessThanOrEqual(1);
+    expect(getComputedStyle(triggerText).display).to.not.equal('none');
+    expect(triggerText.textContent?.trim()).to.equal('目次');
+  });
+
+  it('non-note の TOC page でも 639px で同じ TOC trigger 契約が成立すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 639px;">
+        <layout-header toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
+
+    publishReadyTocRuntime('test-toc');
+    await waitForLitUpdate(header);
+
+    const trigger = expectPresent(
+      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
+      'tocTrigger',
+    );
+    const triggerText = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
+      'tocTriggerText',
     );
 
+    expect(getComputedStyle(trigger).display).to.not.equal('none');
     expect(getComputedStyle(triggerText).display).to.not.equal('none');
-    expect(getComputedStyle(triggerProgress).display).to.not.equal('none');
+    expect(triggerText.textContent?.trim()).to.equal('目次');
+    expect(header.shadowRoot?.querySelector('.toc-trigger-progress')).to.equal(null);
     expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
   });
 
@@ -591,8 +710,6 @@ describe('layout-header browser contract', () => {
       hasVisibleHeadings: true,
       currentLabel: '目次',
       activeId: 'intro',
-      activeIndex: 1,
-      activeTotal: 3,
     });
     await waitForLitUpdate(header);
 

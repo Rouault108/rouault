@@ -56,7 +56,7 @@ export interface NotePageTocProjection {
   capabilities: {
     activeTracking: boolean;
     dynamicScopes: boolean;
-    mobileSummary: boolean;
+    mobilePanel: boolean;
   };
   contentRootId: string;
   homeHref: string;
@@ -143,7 +143,7 @@ function normalizeTocCapabilities(value: IntrinsicNote['tocCapabilities']) {
   return {
     activeTracking: value.activeTracking,
     dynamicScopes: value.dynamicScopes,
-    mobileSummary: value.mobileSummary,
+    mobilePanel: value.mobilePanel,
   };
 }
 
@@ -265,7 +265,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const shouldHydrateToc =
     tocCapabilities.activeTracking ||
     tocCapabilities.dynamicScopes ||
-    tocCapabilities.mobileSummary;
+    tocCapabilities.mobilePanel;
   const genres = normalizeGenres(input.note.genre);
   const contentHtml = injectNoteContentProfiles(
     typeof input.note.content === 'string' ? input.note.content : '',

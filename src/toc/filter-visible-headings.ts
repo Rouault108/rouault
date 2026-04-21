@@ -16,7 +16,7 @@ type TabsLike = HTMLElement & {
 export interface TocCapabilities {
   activeTracking: boolean;
   dynamicScopes: boolean;
-  mobileSummary: boolean;
+  mobilePanel: boolean;
 }
 
 export type TocScopeSelection = NonNullable<Heading['scopeSelections']>[number];

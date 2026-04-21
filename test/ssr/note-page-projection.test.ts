@@ -43,7 +43,7 @@ describe('buildNotePageProjection', () => {
       tocCapabilities: {
         activeTracking: false,
         dynamicScopes: false,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       kind: 'reader',
       title: 'ジャズ理論の基礎',
@@ -75,7 +75,7 @@ describe('buildNotePageProjection', () => {
       tocCapabilities: {
         activeTracking: false,
         dynamicScopes: false,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       kind: 'reader',
       title: '日付なし',
@@ -95,7 +95,7 @@ describe('buildNotePageProjection', () => {
       tocCapabilities: {
         activeTracking: false,
         dynamicScopes: false,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       kind: 'reader',
       title: 'Published ISO',
@@ -117,7 +117,7 @@ describe('buildNotePageProjection', () => {
       tocCapabilities: {
         activeTracking: false,
         dynamicScopes: false,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       kind: 'reader',
       title: 'Updated ISO',
@@ -140,7 +140,7 @@ describe('buildNotePageProjection', () => {
       tocCapabilities: {
         activeTracking: false,
         dynamicScopes: false,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       kind: 'reader',
       title: 'Invalid Date',
@@ -163,7 +163,7 @@ describe('buildNotePageProjection', () => {
       tocCapabilities: {
         activeTracking: false,
         dynamicScopes: false,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       kind: 'reader',
       title: 'モーツァルト',
@@ -188,7 +188,7 @@ describe('buildNotePageProjection', () => {
         tocCapabilities: {
           activeTracking: false,
           dynamicScopes: false,
-          mobileSummary: false,
+          mobilePanel: false,
         },
         kind: 'reader',
         title: 'Kind of Blue',
@@ -224,7 +224,7 @@ describe('buildNotePageProjection', () => {
       tocCapabilities: {
         activeTracking: false,
         dynamicScopes: false,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       kind: 'reader',
       title: '音楽',
@@ -241,7 +241,7 @@ describe('buildNotePageProjection', () => {
         tocCapabilities: {
           activeTracking: false,
           dynamicScopes: false,
-          mobileSummary: false,
+          mobilePanel: false,
         },
         kind: 'reader',
         title: 'モーツァルト',
@@ -266,7 +266,7 @@ describe('buildNotePageProjection', () => {
       tocCapabilities: {
         activeTracking: true,
         dynamicScopes: false,
-        mobileSummary: true,
+        mobilePanel: true,
       },
       kind: 'reader',
       title: 'With TOC',
@@ -278,7 +278,7 @@ describe('buildNotePageProjection', () => {
     expect(projection.toc.capabilities).toEqual({
       activeTracking: true,
       dynamicScopes: false,
-      mobileSummary: true,
+      mobilePanel: true,
     });
     expect(projection.tocPresence).toBe('present');
     expect(projection.toc.shouldHydrate).toBe(true);
@@ -295,7 +295,7 @@ describe('buildNotePageProjection', () => {
       tocCapabilities: {
         activeTracking: true,
         dynamicScopes: true,
-        mobileSummary: true,
+        mobilePanel: true,
       },
       kind: 'reader',
       title: 'Without TOC',
@@ -317,7 +317,7 @@ describe('buildNotePageProjection', () => {
       tocCapabilities: {
         activeTracking: false,
         dynamicScopes: false,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       kind: 'reader',
       title: 'Present Static',
@@ -339,7 +339,7 @@ describe('buildNotePageProjection', () => {
       tocCapabilities: {
         activeTracking: false,
         dynamicScopes: false,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       kind: 'reader',
       title: 'Example',
@@ -365,7 +365,7 @@ describe('buildNotePageProjection', () => {
       tocCapabilities: {
         activeTracking: false,
         dynamicScopes: false,
-        mobileSummary: false,
+        mobilePanel: false,
       },
       kind: 'testing',
       title: 'Example',
@@ -391,7 +391,7 @@ describe('buildNotePageProjection', () => {
         tocCapabilities: {
           activeTracking: true,
           dynamicScopes: false,
-          mobileSummary: true,
+          mobilePanel: true,
         },
         kind: 'reader',
         title: 'Sample JavaScript',
@@ -417,7 +417,7 @@ describe('buildNotePageProjection', () => {
         tocCapabilities: {
           activeTracking: true,
           dynamicScopes: false,
-          mobileSummary: true,
+          mobilePanel: true,
         },
         kind: 'reader',
         title: 'Sample JavaScript',

@@ -200,6 +200,9 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 - Rouault の `layout-header` は breadcrumb を所有しません
 - note 文脈の breadcrumb は `ui-article-header` が所有します
 - Rouault の `layout-header` は現在 `center` / `compact-center` を使いません
+- TOC trigger は `end` slot の補助導線であり、現在位置表示要素ではありません
+- TOC trigger の幅契約は viewport ではなく `layout-header` host の container inline-size で決まります
+- TOC trigger は 640px 以上で非表示、400px 以上 639px 以下で `目次`、399px 以下で icon-only とします
 
 これらは、`ui-header` の 4 slot 公開契約を削減するものではありません。`center` / `compact-center` は `ui-header` の汎用公開面として維持されますが、Rouault アプリケーションの `layout-header` は現行運用としてそれらへ本文文脈表示を供給しません。
 
@@ -431,6 +434,8 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 狭幅環境では、`ui-header` の一般契約として `center` が非表示になり得ます。ただし、これは `ui-header` 自体の汎用レイアウト契約であり、Rouault の `layout-header` が狭幅時に `compact-center` へ breadcrumb を退避することを意味しません。
 
 Rouault の現行 `layout-header` は、mobile note で compact breadcrumb を表示しません。代わりに、start / end の操作性と TOC trigger の縮退を優先します。したがって、狭幅で note 文脈を保持する責務は本文先頭の `ui-article-header` が担い、header 側は page chrome と補助操作に専念します。
+
+また、Rouault の TOC trigger は現在見出しや進捗を header 上へ持ち込みません。current heading は `layout-toc` の panel header と active item 強調で把握し、header 側は安定した開閉導線に限定します。
 
 ### 視覚仕様上の注意
 

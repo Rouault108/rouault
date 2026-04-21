@@ -60,7 +60,7 @@ const ABOUT_TOC_RUNTIME_ID = 'about-page-toc';
 const ABOUT_TOC_CAPABILITIES = {
   activeTracking: true,
   dynamicScopes: false,
-  mobileSummary: true,
+  mobilePanel: true,
 } as const;
 
 const renderSummaryItems = (): string =>

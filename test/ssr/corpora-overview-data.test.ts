@@ -20,7 +20,7 @@ const createOverviewNote = (
     tocCapabilities: {
       activeTracking: false,
       dynamicScopes: false,
-      mobileSummary: false,
+      mobilePanel: false,
     },
     kind: 'reader',
     ...rest,

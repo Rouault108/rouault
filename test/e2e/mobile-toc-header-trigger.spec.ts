@@ -45,6 +45,7 @@ const readMobilePanelState = async (page: Page) =>
     const header = document.querySelector('layout-header');
     const toc = document.querySelector('layout-toc');
     const trigger = header?.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger');
+    const triggerText = header?.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text');
     const panel = toc?.shadowRoot?.querySelector<HTMLElement>('.mobile-panel');
     const mobileBar = toc?.shadowRoot?.querySelector('.mobile-bar');
     const headerHost = header instanceof HTMLElement ? header : null;
@@ -58,7 +59,11 @@ const readMobilePanelState = async (page: Page) =>
       triggerVisible: trigger instanceof HTMLElement ? getComputedStyle(trigger).display !== 'none' : false,
       triggerExpanded: trigger instanceof HTMLElement ? trigger.getAttribute('aria-expanded') : null,
       triggerControls: trigger instanceof HTMLElement ? trigger.getAttribute('aria-controls') : null,
-      triggerText: trigger instanceof HTMLElement ? (trigger.textContent?.trim() ?? '') : null,
+      triggerAriaLabel: trigger instanceof HTMLElement ? trigger.getAttribute('aria-label') : null,
+      triggerTextContent:
+        triggerText instanceof HTMLElement ? (triggerText.textContent?.trim() ?? '') : null,
+      triggerTextVisible:
+        triggerText instanceof HTMLElement ? getComputedStyle(triggerText).display !== 'none' : false,
       panelExists: panel instanceof HTMLElement,
       panelOpen: panel instanceof HTMLElement ? panel.getAttribute('data-open') === 'true' : false,
       panelAriaHidden: panel instanceof HTMLElement ? panel.getAttribute('aria-hidden') : null,
@@ -70,14 +75,16 @@ const readMobilePanelState = async (page: Page) =>
   });
 
 test.describe('mobile TOC header trigger contract', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 900 });
-  });
-
-  for (const path of [layoutRichPath, aboutPath]) {
-    test(`${path} で mobile TOC trigger が header に現れ、旧 mobile bar を描画しないこと`, async ({
+  for (const [path, width, expectedTextVisible] of [
+    [layoutRichPath, 375, false],
+    [layoutRichPath, 400, true],
+    [aboutPath, 375, false],
+    [aboutPath, 400, true],
+  ] as const) {
+    test(`${path} で ${width}px 契約の mobile TOC trigger が成立し、旧 mobile bar を描画しないこと`, async ({
       page,
     }) => {
+      await page.setViewportSize({ width, height: 900 });
       await page.goto(path);
       await waitForTocHydrated(page);
       await waitForHeaderTrigger(page);
@@ -88,13 +95,16 @@ test.describe('mobile TOC header trigger contract', () => {
       expect(state.panelExists).toBe(true);
       expect(state.mobileBarExists).toBe(false);
       expect(state.triggerExpanded).toBe('false');
+      expect(state.triggerAriaLabel).toBe('目次を開く');
       expect(state.panelAriaHidden).toBe('true');
-      expect((state.triggerText ?? '').length).toBeGreaterThan(0);
+      expect(state.triggerTextContent).toBe('目次');
+      expect(state.triggerTextVisible).toBe(expectedTextVisible);
       expect(state.triggerControls).toMatch(/^layout-toc-panel-/);
     });
   }
 
   test('note ページで header trigger 押下により panel が header 直下から開閉すること', async ({ page }) => {
+    await page.setViewportSize({ width: 400, height: 900 });
     await page.goto(layoutRichPath);
     await waitForTocHydrated(page);
     await waitForHeaderTrigger(page);
@@ -106,6 +116,7 @@ test.describe('mobile TOC header trigger contract', () => {
 
     let state = await readMobilePanelState(page);
     expect(state.triggerExpanded).toBe('true');
+    expect(state.triggerAriaLabel).toBe('目次を閉じる');
     expect(state.panelAriaHidden).toBe('false');
     expect(Math.abs((state.panelTop ?? 0) - (state.headerBottom ?? 0))).toBeLessThanOrEqual(1);
 
@@ -116,10 +127,12 @@ test.describe('mobile TOC header trigger contract', () => {
 
     state = await readMobilePanelState(page);
     expect(state.triggerExpanded).toBe('false');
+    expect(state.triggerAriaLabel).toBe('目次を開く');
     expect(state.panelAriaHidden).toBe('true');
   });
 
   test('長スクロール後でも panel 開閉位置が header 直下で安定すること', async ({ page }) => {
+    await page.setViewportSize({ width: 400, height: 900 });
     await page.goto(aboutPath);
     await waitForTocHydrated(page);
     await waitForHeaderTrigger(page);

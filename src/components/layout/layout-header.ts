@@ -63,8 +63,6 @@ const DEFAULT_TOC_RUNTIME_VIEW: LayoutTocRuntimeSnapshot = {
   hasVisibleHeadings: false,
   currentLabel: null,
   activeId: null,
-  activeIndex: null,
-  activeTotal: null,
 };
 
 @customElement('layout-header')
@@ -233,13 +231,6 @@ export class LayoutHeader extends LitElement {
       font-size: var(--text-sm, 13px);
     }
 
-    .toc-trigger-progress {
-      flex: 0 0 auto;
-      color: var(--fg-muted);
-      font-size: var(--text-xs, 12px);
-      white-space: nowrap;
-    }
-
     @container layout-header-shell (min-width: 1024px) {
       :host([note-layout]) ui-header {
         --ui-header-center-end-inset: calc(
@@ -289,20 +280,6 @@ export class LayoutHeader extends LitElement {
 
       .toc-trigger[data-visible='true'] {
         display: inline-flex;
-      }
-    }
-
-    @container layout-header-shell (max-width: 479px) {
-      .toc-trigger {
-        max-inline-size: min(12rem, 34vw);
-      }
-
-      :host([note-layout]) .toc-trigger {
-        max-inline-size: min(9rem, 30vw);
-      }
-
-      .toc-trigger-progress {
-        display: none;
       }
     }
 
@@ -607,21 +584,7 @@ export class LayoutHeader extends LitElement {
   }
 
   private _readTocTriggerLabel(): string {
-    const label = this._tocRuntimeView.currentLabel?.trim();
-    return label && label.length > 0 ? label : '目次';
-  }
-
-  private _readTocProgressLabel(): string | null {
-    const { activeIndex, activeTotal } = this._tocRuntimeView;
-    if (typeof activeIndex !== 'number' || typeof activeTotal !== 'number') {
-      return null;
-    }
-
-    if (activeIndex < 1 || activeTotal < 1) {
-      return null;
-    }
-
-    return `${String(activeIndex)}/${String(activeTotal)}`;
+    return '目次';
   }
 
   private _readTocPanelId(): string | null {
@@ -636,7 +599,6 @@ export class LayoutHeader extends LitElement {
     const currentCorpusLabel = this._currentCorpusItem?.label ?? 'すべてのノート';
     const shouldRenderTocTrigger = this._shouldRenderMobileTocTrigger();
     const tocTriggerLabel = this._readTocTriggerLabel();
-    const tocProgressLabel = this._readTocProgressLabel();
     const tocPanelId = this._readTocPanelId();
     const tocTriggerAriaLabel = this._tocPanelOpen ? '目次を閉じる' : '目次を開く';
 
@@ -689,9 +651,6 @@ export class LayoutHeader extends LitElement {
           >
             <ui-icon class="toc-trigger-icon" name="menu" aria-hidden="true"></ui-icon>
             <span class="toc-trigger-text">${tocTriggerLabel}</span>
-            ${tocProgressLabel
-              ? html`<span class="toc-trigger-progress">${tocProgressLabel}</span>`
-              : nothing}
           </button>
 
           <ui-search-trigger density="auto"></ui-search-trigger>

@@ -108,7 +108,7 @@ const createProjection = () => {
     tocCapabilities: {
       activeTracking: false,
       dynamicScopes: false,
-      mobileSummary: false,
+      mobilePanel: false,
     },
     kind: 'reader',
     title: 'Static Contract',

@@ -70,7 +70,7 @@ describe('buildNotesCollection', () => {
     expect(collection[0]?.tocCapabilities).toEqual({
       activeTracking: true,
       dynamicScopes: false,
-      mobileSummary: true,
+      mobilePanel: true,
     });
   });
 
@@ -117,7 +117,7 @@ describe('buildNotesCollection', () => {
     expect(collection[0]?.tocCapabilities).toEqual({
       activeTracking: true,
       dynamicScopes: true,
-      mobileSummary: true,
+      mobilePanel: true,
     });
   });
 

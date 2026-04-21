@@ -95,14 +95,14 @@ const normalizeCapabilities = (value: unknown): TocCapabilities => {
     return {
       activeTracking: false,
       dynamicScopes: false,
-      mobileSummary: false,
+      mobilePanel: false,
     };
   }
 
   return {
     activeTracking: value['activeTracking'] === true,
     dynamicScopes: value['dynamicScopes'] === true,
-    mobileSummary: value['mobileSummary'] === true,
+    mobilePanel: value['mobilePanel'] === true,
   };
 };
 
@@ -267,11 +267,10 @@ export class LayoutToc extends LitElement {
   @state() private _capabilities: TocCapabilities = {
     activeTracking: false,
     dynamicScopes: false,
-    mobileSummary: false,
+    mobilePanel: false,
   };
   @state() private _activeId = '';
   @state() private _activeIndex = -1;
-  @state() private _activeTotal = 0;
   @state() private _panelOpen = false;
   @state() private _tocReady = false;
 
@@ -506,7 +505,6 @@ export class LayoutToc extends LitElement {
 
   private _applyVisibleHeadings(headings: Heading[]): void {
     this._visibleHeadings = headings;
-    this._activeTotal = headings.length;
 
     const hash = this._readLocationHash();
     if (hash.length > 0 && headings.some((heading) => heading.id === hash)) {
@@ -541,15 +539,11 @@ export class LayoutToc extends LitElement {
       hasVisibleHeadings: this._visibleHeadings.length > 0,
       currentLabel: this._getCurrentHeadingLabel(),
       activeId: this._activeId.length > 0 ? this._activeId : null,
-      activeIndex: this._activeIndex >= 0 ? this._activeIndex + 1 : null,
-      activeTotal: this._activeTotal > 0 ? this._activeTotal : null,
     };
   }
 
   private _onTocActiveChange = (event: CustomEvent<UiTocActiveChangeDetail>): void => {
     this._applyActiveId(event.detail.id);
-    this._activeTotal = event.detail.total;
-    this._publishRuntimeSnapshot();
 
     if (event.detail.source === 'click') {
       layoutTocMobileController.close(this._getRuntimeId());

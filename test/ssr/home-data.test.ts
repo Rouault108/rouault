@@ -18,7 +18,7 @@ const createHomeNote = (overrides: Partial<HomeSourceNote> & { slug: string }): 
     tocCapabilities: {
       activeTracking: false,
       dynamicScopes: false,
-      mobileSummary: false,
+      mobilePanel: false,
     },
     kind: 'reader',
     ...rest,

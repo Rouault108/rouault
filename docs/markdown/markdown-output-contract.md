@@ -281,7 +281,8 @@ note 本文の標準マッピングは次のとおりです。
 
 補足規則:
 
-- `layout-toc` は `capabilities-json` に `activeTracking` / `dynamicScopes` / `mobileSummary` のいずれかがある場合にだけ directive を持ちます。
+- `layout-toc` は `capabilities-json` に `activeTracking` / `dynamicScopes` / `mobilePanel` のいずれかがある場合にだけ directive を持ちます。
+- `mobilePanel` は mobile TOC interactive surface の必要性を表します。
 - `ui-image[zoomable="false"]` には directive を付与してはなりません。
 - standalone code block は要素単位で hydrate してはなりません。必要な場合に限り、scope 内の code surface を一括強化する代表 root にだけ `code-block-enhancer` 用 directive を付与しなければなりません。
 - `ui-code-preview` は `controls` も `toolbar` もない場合、directive を付与してはなりません。
