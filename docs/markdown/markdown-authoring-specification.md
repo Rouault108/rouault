@@ -98,7 +98,8 @@
 frontmatter metadata には次の制約を適用します。
 
 - `kind`: `reader | testing | demo`
-- `testingArea`: `index | markdown-basic | media | code | interactive | sandbox`
+- `chromeProfile`: `reader | plain`
+- `testingArea`: `index | markdown-basic | media | code | interactive | sandbox | layout | navigation | typography`
 
 #### 4.4.1 基本原則
 
@@ -107,6 +108,9 @@ frontmatter metadata には次の制約を適用します。
 
 `testingArea` は `testing` note の検証主題を分類する補助ラベルです。  
 `testingArea` は `testing` をさらに別 content kind へ分割する代替手段として扱ってはなりません。
+
+`chromeProfile` は note page の shell 構成を表す metadata です。  
+`kind` が公開面 policy と authoring policy を担うのに対し、`chromeProfile` は sidebar、breadcrumb、TOC mobile panel のような note chrome だけを担います。
 
 #### 4.4.2 `kind` ごとの意味
 
@@ -156,6 +160,9 @@ frontmatter metadata には次の制約を適用します。
 - `code`
 - `interactive`
 - `sandbox`
+- `layout`
+- `navigation`
+- `typography`
 
 規則:
 
@@ -164,7 +171,23 @@ frontmatter metadata には次の制約を適用します。
 - `testingArea` により公開面 policy を追加分岐させてはなりません。
 - `testingArea` により content kind を増やしたものとして扱ってはなりません。
 
-#### 4.4.4 authoring 機能との関係
+#### 4.4.4 `chromeProfile`
+
+`chromeProfile` は note shell 構成を表します。
+
+値域:
+
+- `reader`
+- `plain`
+
+規則:
+
+- `kind: reader` では省略時に `reader` として扱います。
+- `kind: testing` では省略時に `plain` として扱います。
+- reader shell 契約の検証が必要な testing fixture では `chromeProfile: reader` を指定してよいものとします。
+- `kind: demo` では `chromeProfile: reader` を指定してはなりません。
+
+#### 4.4.5 authoring 機能との関係
 
 `kind` は公開面だけでなく、許可される authoring 機能にも影響します。
 

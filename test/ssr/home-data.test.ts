@@ -76,7 +76,8 @@ describe('buildHomePageProjection', () => {
         slug: 'testing/reader-basic',
         description: 'reader note in testing corpus',
         date: '2026-03-12',
-        kind: 'reader',
+        kind: 'testing',
+        chromeProfile: 'reader',
       }),
       ...Array.from({ length: 11 }, (_value, index) => {
         const noteNumber = index + 4;

@@ -11,6 +11,7 @@ interface VeliteNoteFixture {
   slug: string;
   title: string;
   kind?: 'reader' | 'testing';
+  chromeProfile?: 'reader' | 'plain';
   date?: string;
   updated?: string;
   description?: string;
@@ -80,7 +81,7 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
         (genre): genre is string => typeof genre === 'string' && genre.trim().length > 0,
       )
     : [];
-  const showSidebar = note.kind === 'reader';
+  const showSidebar = note.chromeProfile === 'reader' || (note.chromeProfile === undefined && note.kind === 'reader');
   const dataId = slugToId(note.slug);
 
   return {
@@ -115,7 +116,7 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
       capabilities: {
         activeTracking: hasHeadings,
         dynamicScopes: false,
-        mobilePanel: note.kind === 'reader' && hasHeadings,
+        mobilePanel: showSidebar && hasHeadings,
       },
       contentRootId: `note-content-${dataId}`,
       homeHref: '/',

@@ -3,7 +3,9 @@ title: 'TOC Absent'
 description: 'TOC 不在時の note shell 契約を確認します。'
 date: 2026-04-14
 updated: 2026-04-14
-kind: 'reader'
+kind: 'testing'
+testingArea: 'navigation'
+chromeProfile: 'reader'
 status: 'wip'
 e2eFixtureId: 'note.toc-absent'
 ---

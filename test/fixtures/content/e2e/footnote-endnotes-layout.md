@@ -2,7 +2,9 @@
 title: 'Footnote Endnotes Layout'
 description: '脚注 endnotes が番号右側から開始し、2 桁番号でも hanging indent を保つことを確認する e2e 専用 fixture'
 date: 2026-04-21
-kind: 'reader'
+kind: 'testing'
+testingArea: 'typography'
+chromeProfile: 'plain'
 e2eFixtureId: 'note.footnote-endnotes-layout'
 genre:
   - testing

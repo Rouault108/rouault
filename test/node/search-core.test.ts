@@ -181,7 +181,7 @@ describe('search-core', () => {
     expect(response.total).to.equal(25);
   });
 
-  it('testing 配下のコンテンツは検索結果から除外すること', async () => {
+  it('runtime 検索は /notes/testing/ のような path 名特例で結果を捨てないこと', async () => {
     const core = createSearchCore({
       loadPagefind: () =>
         Promise.resolve({
@@ -256,8 +256,8 @@ describe('search-core', () => {
     });
 
     expect(response.mode).to.equal('explore');
-    expect(response.items.some((item) => item.url.startsWith('/notes/testing/'))).to.equal(false);
-    expect(response.items.map((item) => item.title)).to.deep.equal(['ジャズ理論の基礎']);
+    expect(response.items.some((item) => item.url.startsWith('/notes/testing/'))).to.equal(true);
+    expect(response.items.map((item) => item.title)).to.include('Testing Jazz Fixture');
   });
 
   it('全 source 失敗時は all-sources-failed を返すこと', async () => {

@@ -1,5 +1,7 @@
 import type { TreeNode } from '../../shared/navigation/tree-node.js';
-import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
+import { normalizeNoteContentKind } from '../../shared/note/note-kind.js';
+import { resolveEffectiveNoteChromeProfile } from '../../shared/note/note-chrome-profile.js';
+import { resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
 import { normalizeNoteNavigationUrl } from '../../shared/navigation/normalize-note-navigation-url.js';
 import {
   buildDirectoryLabelMap,
@@ -201,41 +203,19 @@ const upsertLeafNode = (
 };
 
 const isSidebarVisible = (note: NoteNavigationEntry): boolean =>
-  resolveNoteSurfacePolicy(note.kind).sidebar;
+  resolveNoteChromePolicy(resolveEffectiveNoteChromeProfile(note.kind, note.chromeProfile)).sidebar;
 
 const isBreadcrumbVisible = (note: NoteNavigationEntry): boolean =>
-  resolveNoteSurfacePolicy(note.kind).breadcrumb;
-
-const resolveTopLevelCorpusKey = (slug: string): string => {
-  const [firstSegment] = slug.split('/').filter((segment) => segment.length > 0);
-  return firstSegment ?? '';
-};
-
-const shouldSuppressSidebarCorpus = (
-  note: NoteNavigationEntry,
-  currentNote: NoteNavigationEntry | null | undefined,
-): boolean => {
-  const noteSlug = toTrimmedString(note.slug);
-  if (noteSlug.length === 0) {
-    return false;
-  }
-
-  const noteCorpusKey = resolveTopLevelCorpusKey(noteSlug);
-  if (noteCorpusKey !== 'testing') {
-    return false;
-  }
-
-  const currentSlug = toTrimmedString(currentNote?.slug);
-  const currentCorpusKey = resolveTopLevelCorpusKey(currentSlug);
-  return currentCorpusKey !== 'testing';
-};
+  resolveNoteChromePolicy(resolveEffectiveNoteChromeProfile(note.kind, note.chromeProfile))
+    .breadcrumb;
 
 const mergeCurrentNoteIntoSidebarNotes = (
   currentNote: NoteNavigationEntry | null | undefined,
   notes: readonly NoteNavigationEntry[],
 ): NoteNavigationEntry[] => {
+  const currentKind = normalizeNoteContentKind(currentNote?.kind);
   const base = notes.filter(
-    (note) => isSidebarVisible(note) && !shouldSuppressSidebarCorpus(note, currentNote),
+    (note) => isSidebarVisible(note) && normalizeNoteContentKind(note.kind) === currentKind,
   );
 
   if (!currentNote || !isSidebarVisible(currentNote)) {
@@ -268,6 +248,7 @@ const mergeCurrentNoteIntoSidebarNotes = (
       ? { sidebarDirectoryIcons: currentNote.sidebarDirectoryIcons }
       : {}),
     ...(currentNote.kind !== undefined ? { kind: currentNote.kind } : {}),
+    ...(currentNote.chromeProfile !== undefined ? { chromeProfile: currentNote.chromeProfile } : {}),
   };
 
   const alreadyIncluded = base.some((note) => {

@@ -178,7 +178,7 @@ describe('buildNoteNavigationModel', () => {
     ).to.equal('music');
   });
 
-  it('通常 reader note の sidebar には testing corpus を混在させないこと', () => {
+  it('sidebar 候補は current note と同じ kind に限定すること', () => {
     const model = buildNoteNavigationModel({
       currentNote: {
         slug: 'music/classical/mozart',
@@ -200,7 +200,8 @@ describe('buildNoteNavigationModel', () => {
           title: 'Reader Basic',
           permalink: '/notes/testing/reader-basic',
           noteKind: 'leaf',
-          kind: 'reader',
+          kind: 'testing',
+          chromeProfile: 'reader',
         },
         {
           slug: 'testing',
@@ -209,6 +210,7 @@ describe('buildNoteNavigationModel', () => {
           noteKind: 'directory-index',
           directoryPath: 'testing',
           kind: 'testing',
+          chromeProfile: 'reader',
         },
       ],
     });

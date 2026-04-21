@@ -55,16 +55,6 @@ const normalizeStringArray = (value: unknown): string[] => {
   return [...unique.values()];
 };
 
-const getCorpusKeyFromSlug = (slug: string): string => {
-  const normalized = normalizeText(slug).replace(/^\/+|\/+$/gu, '');
-  if (normalized.length === 0) {
-    return '';
-  }
-
-  const [firstSegment] = normalized.split('/');
-  return firstSegment?.trim() ?? '';
-};
-
 const buildQuietPathLabel = (slug: string): string => {
   const segments = slug
     .split('/')
@@ -117,9 +107,7 @@ const compareHomeNotes = (left: IndexedHomeNote, right: IndexedHomeNote): number
 export const buildHomePageProjection = (
   notes: IntrinsicNotesCollection | readonly HomeSourceNote[],
 ): HomePageData => {
-  const visibleNotes = filterNotesBySurface(notes, 'home').filter((note) => {
-    return getCorpusKeyFromSlug(normalizeText(note.slug)) !== 'testing';
-  });
+  const visibleNotes = filterNotesBySurface(notes, 'home');
 
   const indexedNotes = visibleNotes.flatMap((note: HomeSourceNote, sourceIndex: number) => {
     const title = normalizeText(note.title);

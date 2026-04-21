@@ -2,7 +2,9 @@
 title: 'Layout Rich'
 description: 'front matter、TOC、code block、table、hash navigation を検証する e2e 専用 fixture'
 date: 2026-04-16
-kind: 'reader'
+kind: 'testing'
+testingArea: 'layout'
+chromeProfile: 'reader'
 e2eFixtureId: 'note.layout-rich'
 genre:
   - testing

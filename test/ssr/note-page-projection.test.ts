@@ -354,7 +354,7 @@ describe('buildNotePageProjection', () => {
     expect(projection.showSidebar).toBe(true);
   });
 
-  it('testing note では reader sidebar と Pagefind を抑止すること', () => {
+  it('testing note かつ chromeProfile=plain では reader sidebar と Pagefind を抑止すること', () => {
     const projection = buildProjection({
       rawSlug: 'testing/example',
       slug: 'testing/example',
@@ -368,6 +368,7 @@ describe('buildNotePageProjection', () => {
         mobilePanel: false,
       },
       kind: 'testing',
+      chromeProfile: 'plain',
       title: 'Example',
       content: '<ui-code-preview heading="例"></ui-code-preview>',
     });
@@ -377,6 +378,54 @@ describe('buildNotePageProjection', () => {
     expect(projection.showSidebar).toBe(false);
     expect(projection.sidebar).toBeUndefined();
     expect(projection.noteShellSidebarPresence).toBe('absent');
+  });
+
+  it('testing note でも chromeProfile=reader なら sidebar を持てること', () => {
+    const projection = buildProjection({
+      rawSlug: 'testing/example',
+      slug: 'testing/example',
+      permalink: '/notes/testing/example',
+      noteKind: 'leaf',
+      sortIndex: 0,
+      tocHeadings: [],
+      tocCapabilities: {
+        activeTracking: false,
+        dynamicScopes: false,
+        mobilePanel: false,
+      },
+      kind: 'testing',
+      chromeProfile: 'reader',
+      title: 'Example',
+      content: '<p>fixture</p>',
+    });
+
+    expect(projection.pagefind).toBeNull();
+    expect(projection.showSidebar).toBe(true);
+    expect(projection.noteShellSidebarPresence).toBe('present');
+  });
+
+  it('testing note では genre を持っていても tags surface への導線を出さないこと', () => {
+    const projection = buildProjection({
+      rawSlug: 'testing/example',
+      slug: 'testing/example',
+      permalink: '/notes/testing/example',
+      noteKind: 'leaf',
+      sortIndex: 0,
+      tocHeadings: [],
+      tocCapabilities: {
+        activeTracking: false,
+        dynamicScopes: false,
+        mobilePanel: false,
+      },
+      kind: 'testing',
+      chromeProfile: 'reader',
+      title: 'Example',
+      genre: ['testing', 'e2e'],
+      content: '<p>fixture</p>',
+    });
+
+    expect(projection.articleHeader.genres).toEqual([]);
+    expect(projection.articleHeader.shouldHydrateTags).toBe(false);
   });
 
   it('profile 未指定 note は budget 超過相当の workload でも hard fail しないこと', () => {

@@ -5,6 +5,9 @@ export const TESTING_AREAS = [
   'code',
   'interactive',
   'sandbox',
+  'layout',
+  'navigation',
+  'typography',
 ] as const;
 
 export type TestingArea = (typeof TESTING_AREAS)[number];

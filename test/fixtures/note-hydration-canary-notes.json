@@ -20,7 +20,8 @@
   {
     "slug": "testing/reader-basic",
     "title": "Reader Basic",
-    "kind": "reader",
+    "kind": "testing",
+    "chromeProfile": "reader",
     "date": "2026-03-31T00:00:00.000Z",
     "updated": "2026-03-31T00:00:00.000Z",
     "description": "reader shell の最小 hydration 契約を確認します。",

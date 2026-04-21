@@ -85,7 +85,8 @@ genre:
 | `licenseNote`            | 任意     | 文字列                                                                                                  | ライセンス補足です。構造化データではなく単純な文字列だけを書きます。                            |
 | `status`                 | 任意     | `draft` / `archived` / `wip` / `deprecated`                                                             | `draft` は公開ノート集合から除外されます。省略時は通常公開扱いです。                            |
 | `kind`                   | 任意     | `reader` / `testing` / `demo`                                                                           | 省略時は `reader`として扱われます。公開面を変える項目です。                                     |
-| `testingArea`            | 条件付き | `index` / `markdown-basic` / `media` / `code` / `interactive` / `sandbox`                               | `kind: testing` のときだけ必須です。`kind` が `testing` 以外なら書けません。                    |
+| `chromeProfile`          | 任意     | `reader` / `plain`                                                                                      | note shell の構成です。`kind: reader` の既定値は `reader`、`kind: testing` の既定値は `plain` です。 |
+| `testingArea`            | 条件付き | `index` / `markdown-basic` / `media` / `code` / `interactive` / `sandbox` / `layout` / `navigation` / `typography` | `kind: testing` のときだけ必須です。`kind` が `testing` 以外なら書けません。                    |
 | `hydrationBudgetProfile` | 任意     | `reader-shell-canary` / `testing-interactive-canary` / `testing-sandbox-canary` / `testing-code-canary` | hydration budget を明示したい canary note 専用です。通常ノートでは不要です。                    |
 
 ### 3.3 各項目の書き方
@@ -138,13 +139,19 @@ genre:
   - `deprecated`: 非推奨ノートとして表示します
 
 - `kind`
-  公開面を切り替える項目です。
+  公開面と authoring policy を切り替える項目です。
   - `reader`: 通常ノートです。省略時の既定値です
   - `testing`: テスト用ノートです。`testingArea` が必須になります
   - `demo`: デモ用ノートです。通常の読者向け面には載せません
 
+- `chromeProfile`
+  note shell を切り替える項目です。
+  - `reader`: reader shell を使います
+  - `plain`: sidebar を持たない簡素な shell を使います
+  testing note でも reader shell の契約を検証したい場合は `chromeProfile: 'reader'` を指定します。
+
 - `testingArea`
-  `kind: testing` のときだけ書きます。許可値は `index` / `markdown-basic` / `media` / `code` / `interactive` / `sandbox` です。
+  `kind: testing` のときだけ書きます。許可値は `index` / `markdown-basic` / `media` / `code` / `interactive` / `sandbox` / `layout` / `navigation` / `typography` です。
 
 - `hydrationBudgetProfile`
   canary noteでhydration budgetを固定したいときだけ書きます。通常ノートでは省略します。
@@ -165,6 +172,19 @@ testingArea: 'interactive'
 ---
 ```
 
+reader shell を使う testing fixture の例:
+
+```yaml
+---
+title: 'Reader Shell Canary'
+description: 'sidebar と TOC を検証する fixture'
+date: 2026-03-31
+kind: 'testing'
+testingArea: 'layout'
+chromeProfile: 'reader'
+---
+```
+
 ### 3.4 書かない項目
 
 次は通常、frontmatterに書きません。
@@ -182,6 +202,7 @@ testingArea: 'interactive'
 - 日付は `2026-03-14` のように書く
 - `genre` は YAML 配列で書く
 - `testingArea` は `kind: testing` のときだけ書く
+- reader shell が必要な testing note では `chromeProfile: 'reader'` を明示する
 - `cover` はローカル画像パスだけを書く
 - `sidebarIcon` はbare icon名で書き、`lucide:`接頭辞を付けない
 - 未定義の項目は追加しない

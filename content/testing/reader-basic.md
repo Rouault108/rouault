@@ -3,7 +3,9 @@ title: 'Reader Basic'
 description: 'reader shell の最小 hydration 契約を確認します。'
 date: 2026-03-31
 updated: 2026-03-31
-kind: 'reader'
+kind: 'testing'
+testingArea: 'layout'
+chromeProfile: 'reader'
 hydrationBudgetProfile: 'reader-shell-canary'
 status: 'wip'
 ---

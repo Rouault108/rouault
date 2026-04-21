@@ -2,7 +2,9 @@
 title: 'Footnote Long URL'
 description: '脚注内の長い URL リンクが mobile viewport を押し広げないことを確認する e2e 専用 fixture'
 date: 2026-04-20
-kind: 'reader'
+kind: 'testing'
+testingArea: 'typography'
+chromeProfile: 'plain'
 e2eFixtureId: 'note.footnote-long-url'
 genre:
   - testing

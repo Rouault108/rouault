@@ -1,6 +1,7 @@
 import type { TreeNode } from './tree-node.js';
 import type { IconName } from '../icons/icons-catalog.js';
 import type { NoteContentKind } from '../note/note-kind.js';
+import type { NoteChromeProfile } from '../note/note-chrome-profile.js';
 
 export type NoteNavigationKind = 'leaf' | 'directory-index';
 export type SidebarScope = 'global' | 'self';
@@ -34,6 +35,7 @@ export interface NoteNavigationEntry {
   sidebarResolvedIcon?: IconName;
   sidebarDirectoryIcons?: Record<string, IconName>;
   kind?: NoteContentKind;
+  chromeProfile?: NoteChromeProfile;
 }
 
 export interface BreadcrumbItem {

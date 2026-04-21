@@ -1,12 +1,6 @@
 import { normalizeDocumentCanonicalUrl } from './document-url.js';
 
-const TESTING_NOTE_ROOT = '/notes/testing/';
-
 export function isSearchVisibleCanonicalUrl(value: string): boolean {
-  const canonicalUrl = normalizeDocumentCanonicalUrl(value);
-  if (canonicalUrl === null) {
-    return false;
-  }
-
-  return !canonicalUrl.startsWith(TESTING_NOTE_ROOT);
+  // 公開面の可否は build-time の publication policy で確定し、URL 接頭辞の特例を持ち込まない。
+  return normalizeDocumentCanonicalUrl(value) !== null;
 }

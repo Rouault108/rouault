@@ -6,7 +6,9 @@ import type {
 import type { PagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 import type { NoteStatus } from '../../src/types/article-status.js';
 import type { NoteContentKind } from '../../shared/note/note-kind.js';
-import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
+import { resolveEffectiveNoteChromeProfile } from '../../shared/note/note-chrome-profile.js';
+import { resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
+import { resolveNotePublicationPolicy } from '../../shared/note/note-publication-policy.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import { NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE } from '../../src/layout/note-sidebar-breakpoint.js';
 import { renderNoteSidebarNav } from '../navigation/render-note-sidebar-nav.js';
@@ -253,8 +255,10 @@ function validateNoteHydrationBudget(
 
 export function buildNotePageProjection(input: NotePageProjectionInput): NotePageProjection {
   const noteKind = input.note.kind;
-  const surfacePolicy = resolveNoteSurfacePolicy(noteKind);
-  const showSidebar = surfacePolicy.sidebar;
+  const chromeProfile = resolveEffectiveNoteChromeProfile(noteKind, input.note.chromeProfile);
+  const chromePolicy = resolveNoteChromePolicy(chromeProfile);
+  const publicationPolicy = resolveNotePublicationPolicy(noteKind);
+  const showSidebar = chromePolicy.sidebar;
   const slug = typeof input.note.slug === 'string' ? input.note.slug : '';
   const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
   const tocSourceId = `toc-source-${dataIdBase}`;
@@ -266,7 +270,8 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     tocCapabilities.activeTracking ||
     tocCapabilities.dynamicScopes ||
     tocCapabilities.mobilePanel;
-  const genres = normalizeGenres(input.note.genre);
+  // 非公開 note から tags surface への導線を出さないため、genre の表示は publication policy に従う。
+  const genres = publicationPolicy.tags ? normalizeGenres(input.note.genre) : [];
   const contentHtml = injectNoteContentProfiles(
     typeof input.note.content === 'string' ? input.note.content : '',
     noteKind,
@@ -323,7 +328,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
       genres,
       shouldHydrateTags: genres.length > 0,
     },
-    pagefind: surfacePolicy.pagefind
+    pagefind: publicationPolicy.pagefind
       ? {
           sortDate: input.pagefindDocument.sortDate,
           title: input.pagefindDocument.title,

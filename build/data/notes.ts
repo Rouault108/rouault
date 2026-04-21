@@ -17,9 +17,14 @@ import {
   normalizeNoteContentKind,
 } from '../../shared/note/note-kind.js';
 import {
-  type NoteSurfacePolicy,
-  resolveNoteSurfacePolicy,
-} from '../../shared/note/note-surface-policy.js';
+  resolveEffectiveNoteChromeProfile,
+  type NoteChromeProfile,
+} from '../../shared/note/note-chrome-profile.js';
+import { type NoteChromePolicy, resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
+import {
+  type NotePublicationPolicy,
+  resolveNotePublicationPolicy,
+} from '../../shared/note/note-publication-policy.js';
 import { type TestingArea, normalizeTestingArea } from '../../shared/note/testing-area.js';
 import type { NoteHydrationBudgetProfileName } from '../../src/types/note-hydration-budget-profile.js';
 import {
@@ -54,6 +59,7 @@ export interface SourceNote {
   license?: string;
   status?: NoteStatus;
   kind?: NoteContentKind;
+  chromeProfile?: NoteChromeProfile;
   testingArea?: TestingArea;
   hydrationBudgetProfile?: NoteHydrationBudgetProfileName;
   sourceRoot?: NoteSourceRoot;
@@ -81,6 +87,7 @@ export interface IntrinsicNote extends SourceNote {
   sidebarDirectoryIcons?: Record<string, IconName>;
   resolvedCover?: ResolvedImageAsset;
   kind: NoteContentKind;
+  chromeProfile?: NoteChromeProfile;
   testingArea?: TestingArea;
   hydrationBudgetProfile?: NoteHydrationBudgetProfileName;
   sourceRoot?: NoteSourceRoot;
@@ -91,13 +98,13 @@ export type IntrinsicNotesCollection = IntrinsicNote[];
 
 const inferTocCapabilities = (
   headings: readonly TocHeading[],
-  kind: NoteContentKind,
+  chromePolicy: NoteChromePolicy,
 ): IntrinsicNote['tocCapabilities'] => ({
   activeTracking: headings.length > 0,
   dynamicScopes: headings.some(
     (heading) => Array.isArray(heading.scopeSelections) && heading.scopeSelections.length > 0,
   ),
-  mobilePanel: kind === 'reader' && headings.length > 0,
+  mobilePanel: chromePolicy.tocMobilePanel && headings.length > 0,
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -355,6 +362,7 @@ export const buildNotesCollection = (
       });
       const sourceSlug = pathInfo.rawSlug;
       const kind = normalizeNoteContentKind(note.kind);
+      const chromeProfile = resolveEffectiveNoteChromeProfile(kind, note.chromeProfile);
       const testingArea = normalizeTestingArea(note.testingArea);
       const preparedToc = prepareTocHtml(typeof note.content === 'string' ? note.content : '');
       const e2eFixtureId =
@@ -378,10 +386,13 @@ export const buildNotesCollection = (
         inheritedDirectoryIcon,
       );
 
+      const chromePolicy = resolveNoteChromePolicy(chromeProfile);
+
       return {
         ...note,
         ...(typeof note.content === 'string' ? { content: preparedToc.html } : {}),
         kind,
+        chromeProfile,
         ...(testingArea !== undefined ? { testingArea } : {}),
         ...(e2eFixtureId !== undefined ? { e2eFixtureId } : {}),
         rawSlug: sourceSlug,
@@ -391,7 +402,7 @@ export const buildNotesCollection = (
         ...(pathInfo.directoryPath !== undefined ? { directoryPath: pathInfo.directoryPath } : {}),
         sortIndex: calculateCachedSortIndex(sourceSlug, sourceRootPath),
         tocHeadings: preparedToc.headings,
-        tocCapabilities: inferTocCapabilities(preparedToc.headings, kind),
+        tocCapabilities: inferTocCapabilities(preparedToc.headings, chromePolicy),
         ...(sidebarRoot !== undefined ? { sidebarRoot } : {}),
         ...(sidebarResolvedIcon !== undefined ? { sidebarResolvedIcon } : {}),
         ...(Object.keys(sidebarIconContext.directoryIcons).length > 0
@@ -433,12 +444,12 @@ export const filterReaderFacingNotes = <T extends SourceNote>(notes: readonly T[
 
 export const isNoteVisibleInSurface = (
   note: SourceNote,
-  surface: keyof NoteSurfacePolicy,
-): boolean => isPublicNote(note) && resolveNoteSurfacePolicy(note.kind)[surface];
+  surface: keyof NotePublicationPolicy,
+): boolean => isPublicNote(note) && resolveNotePublicationPolicy(note.kind)[surface];
 
 export const filterNotesBySurface = <T extends SourceNote>(
   notes: readonly T[],
-  surface: keyof NoteSurfacePolicy,
+  surface: keyof NotePublicationPolicy,
 ): T[] => notes.filter((note) => isNoteVisibleInSurface(note, surface));
 
 export const loadNotesData = (): IntrinsicNotesCollection => {

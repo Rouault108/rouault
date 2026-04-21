@@ -1,11 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { e2eNoteFixtures } from './support/note-fixtures.js';
-
-const notePath = e2eNoteFixtures.sidebarScrollTarget.normalizedPath;
-const noteCanonicalPath = e2eNoteFixtures.sidebarScrollTarget.directPath;
-const testingTagPagePath = '/tags/testing/';
-const targetTitle = 'Sidebar Scroll Target';
+const notePath = '/notes/program/csharp';
+const noteCanonicalPath = '/notes/program/csharp/';
+const publicTagPagePath = '/tags/Programming/';
+const targetTitle = 'C#とは何か';
 
 const waitForAppRouterReady = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
@@ -118,10 +116,10 @@ test.describe('Tag Page', () => {
       };
     });
 
-    await clickArticleHeaderTag(page, '/tags/testing/');
+    await clickArticleHeaderTag(page, publicTagPagePath);
 
-    await expect(page).toHaveURL(testingTagPagePath);
-    await expect(page.locator('#main-content h1').first()).toHaveText('#testing');
+    await expect(page).toHaveURL(publicTagPagePath);
+    await expect(page.locator('#main-content h1').first()).toHaveText('#Programming');
     await expect(page.locator('#main-content')).toContainText(
       'このタグに属するノートを起点に、検索語や追加タグで探索を広げられます。',
     );
@@ -136,7 +134,7 @@ test.describe('Tag Page', () => {
   });
 
   test('タグページのカード内リンクからノートへ遷移できること', async ({ page }) => {
-    await page.goto(testingTagPagePath);
+    await page.goto(publicTagPagePath);
 
     await page.evaluate(() => {
       (window as typeof window & { __tagCardProbe?: { alive: boolean } }).__tagCardProbe = {
@@ -159,7 +157,7 @@ test.describe('Tag Page', () => {
   });
 
   test('タグページで検索語を入力すると /search/ へ遷移すること', async ({ page }) => {
-    await page.goto(testingTagPagePath);
+    await page.goto(publicTagPagePath);
 
     await inputSearchQuery(page, 'Target');
 
@@ -175,19 +173,19 @@ test.describe('Tag Page', () => {
           };
         }),
       )
-      .toEqual({
+        .toEqual({
         pathname: '/search/',
         q: 'target',
-        tags: ['testing'],
+        tags: ['Programming'],
       });
     await expect(page.locator('#main-content h1').first()).toHaveText('検索');
   });
 
   test('タグページで追加タグを選ぶと /search/ へ遷移すること', async ({ page }) => {
-    await page.goto(testingTagPagePath);
+    await page.goto(publicTagPagePath);
     await openTagFilter(page);
 
-    await toggleFilterCheckbox(page, 'e2e');
+    await toggleFilterCheckbox(page, 'c#');
 
     await expect(page).toHaveURL(/\/search\/\?/);
     await expect
@@ -200,22 +198,22 @@ test.describe('Tag Page', () => {
           };
         }),
       )
-      .toEqual({
+        .toEqual({
         pathname: '/search/',
-        tags: ['e2e', 'testing'],
+        tags: ['c#', 'Programming'],
       });
     await expect(page.locator('#main-content h1').first()).toHaveText('検索');
   });
 
   test('タグページでタグ演算子や並び順を変えると /search/ へ遷移すること', async ({ page }) => {
-    await page.goto(testingTagPagePath);
+    await page.goto(publicTagPagePath);
 
     await changeSearchSelect(page, 0, 'and');
-    await expect(page).toHaveURL('/search/?tag=testing&tagMode=and');
+    await expect(page).toHaveURL('/search/?tag=Programming&tagMode=and');
 
-    await page.goto(testingTagPagePath);
+    await page.goto(publicTagPagePath);
 
     await changeSearchSelect(page, 1, 'date-desc');
-    await expect(page).toHaveURL('/search/?tag=testing&sort=date-desc');
+    await expect(page).toHaveURL('/search/?tag=Programming&sort=date-desc');
   });
 });

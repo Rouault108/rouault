@@ -62,7 +62,7 @@ describe('BaseLayout', () => {
     expect(rendered).not.toContain('heading="ナビゲーション"');
   });
 
-  it('testing note では header に sidebar-enabled を出力しないこと', () => {
+  it('testing note でも chromeProfile=reader なら header に sidebar-enabled を出力すること', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({
       content: '<p>本文</p>',
@@ -72,6 +72,24 @@ describe('BaseLayout', () => {
         permalink: '/notes/testing-note',
         noteKind: 'leaf',
         kind: 'testing',
+        chromeProfile: 'reader',
+      },
+    });
+
+    expect(rendered).toContain('<layout-header note-layout sidebar-enabled');
+  });
+
+  it('testing note かつ chromeProfile=plain では header に sidebar-enabled を出力しないこと', () => {
+    const layout = new BaseLayout();
+    const rendered = layout.render({
+      content: '<p>本文</p>',
+      note: {
+        slug: 'testing-note',
+        title: 'Testing Note',
+        permalink: '/notes/testing-note',
+        noteKind: 'leaf',
+        kind: 'testing',
+        chromeProfile: 'plain',
       },
     });
 

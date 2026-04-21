@@ -58,7 +58,8 @@ describe('buildCorporaOverviewProjection', () => {
         permalink: '/notes/testing/reader-basic/',
         slug: 'testing/reader-basic',
         date: '2026-03-12',
-        kind: 'reader',
+        kind: 'testing',
+        chromeProfile: 'reader',
       }),
     ];
 

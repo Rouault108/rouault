@@ -16,7 +16,9 @@ import {
   APP_ROUTER_ANNOUNCEMENT_CLASS_NAME,
 } from '../../shared/app-router/app-router-announcement-contract.js';
 import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.js';
-import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
+import { resolveEffectiveNoteChromeProfile } from '../../shared/note/note-chrome-profile.js';
+import { resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
+import { resolveNotePublicationPolicy } from '../../shared/note/note-publication-policy.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import {
   escapeHtmlText,
@@ -131,7 +133,10 @@ export class BaseLayout {
       )
       .join('\n  ');
     const currentCorpusKey = resolveCurrentCorpusKey(data);
-    const noteSurfacePolicy = resolveNoteSurfacePolicy(data.note?.kind);
+    const noteChromePolicy = resolveNoteChromePolicy(
+      resolveEffectiveNoteChromeProfile(data.note?.kind, data.note?.chromeProfile),
+    );
+    const notePublicationPolicy = resolveNotePublicationPolicy(data.note?.kind);
     const corpora = buildCorpusNavigation(data.corpusPages ?? []);
     const footerAttributes = serializeHtmlAttributes([
       { name: 'build-label', value: data.buildMetadata?.buildLabel },
@@ -148,7 +153,7 @@ export class BaseLayout {
     const bodyAttributes = serializeHtmlAttributes([
       {
         name: 'data-pagefind-ignore',
-        value: Boolean(data.note && !noteSurfacePolicy.pagefind),
+        value: Boolean(data.note && !notePublicationPolicy.pagefind),
         kind: 'boolean',
       },
     ]);
@@ -162,7 +167,7 @@ export class BaseLayout {
       { name: 'note-layout', value: Boolean(data.note), kind: 'boolean' },
       {
         name: 'sidebar-enabled',
-        value: Boolean(data.note && noteSurfacePolicy.sidebar),
+        value: Boolean(data.note && noteChromePolicy.sidebar),
         kind: 'boolean',
       },
       { name: 'toc-presence', value: tocPresence },

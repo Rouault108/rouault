@@ -27,6 +27,11 @@ import {
   normalizeNoteHydrationBudgetProfileName,
 } from './src/types/note-hydration-budget-profile.js';
 import { NOTE_CONTENT_KINDS, normalizeNoteContentKind } from './shared/note/note-kind.js';
+import {
+  NOTE_CHROME_PROFILES,
+  normalizeNoteChromeProfile,
+  resolveEffectiveNoteChromeProfile,
+} from './shared/note/note-chrome-profile.js';
 import { TESTING_AREAS, normalizeTestingArea } from './shared/note/testing-area.js';
 import { resolveNoteSourceLocation } from './shared/note/note-source-root.js';
 
@@ -48,6 +53,7 @@ const notes = defineCollection({
       licenseNote: s.string().optional(),
       status: s.enum(ARTICLE_STATUSES).optional(),
       kind: s.enum(NOTE_CONTENT_KINDS).optional(),
+      chromeProfile: s.enum(NOTE_CHROME_PROFILES).optional(),
       testingArea: s.enum(TESTING_AREAS).optional(),
       hydrationBudgetProfile: s.enum(NOTE_HYDRATION_BUDGET_PROFILE_NAMES).optional(),
       e2eFixtureId: s.string().optional(),
@@ -59,6 +65,7 @@ const notes = defineCollection({
       const sourcePath = typeof data.slug === 'string' ? data.slug : '';
       const { sourceRoot, slug } = resolveNoteSourceLocation(sourcePath);
       const kind = normalizeNoteContentKind(data.kind);
+      const chromeProfile = normalizeNoteChromeProfile(data.chromeProfile);
       const testingArea = normalizeTestingArea(data.testingArea);
       const hydrationBudgetProfile = normalizeNoteHydrationBudgetProfileName(
         data.hydrationBudgetProfile,
@@ -69,7 +76,7 @@ const notes = defineCollection({
           ? data.e2eFixtureId.trim()
           : undefined;
 
-      validateNoteMetadataContracts(kind, testingArea, sourcePath);
+      validateNoteMetadataContracts(kind, chromeProfile, testingArea, sourcePath);
       validateNoteContentContracts(kind, normalizedContent, sourcePath, testingArea);
 
       return {
@@ -78,6 +85,7 @@ const notes = defineCollection({
         sourceRoot,
         content: normalizedContent,
         kind,
+        chromeProfile: resolveEffectiveNoteChromeProfile(kind, chromeProfile),
         ...(testingArea !== undefined ? { testingArea } : {}),
         ...(hydrationBudgetProfile !== undefined ? { hydrationBudgetProfile } : {}),
         ...(e2eFixtureId !== undefined ? { e2eFixtureId } : {}),

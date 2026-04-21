@@ -142,7 +142,7 @@ test.describe('Router Navigation', () => {
 
   test('検索ページ下端から記事へ遷移してもスクロール位置が先頭に戻ること', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 480 });
-    await page.goto('/tags/testing/');
+    await page.goto('/tags/Programming/');
     await waitForSearchPageReady(page);
 
     const resultLinks = page.locator('#main-content a.result-link');
@@ -153,7 +153,7 @@ test.describe('Router Navigation', () => {
     });
 
     await resultLinks.last().click();
-    await expect(page).not.toHaveURL('/tags/testing/');
+    await expect(page).not.toHaveURL('/tags/Programming/');
     await expect(page.locator('#main-content article')).toBeVisible();
 
     const scrollY = await page.evaluate(() => window.scrollY);

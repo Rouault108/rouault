@@ -2,7 +2,9 @@
 title: 'Sidebar Scroll Source'
 description: 'サイドバーのルート遷移スクロール検証用の遷移元ノート'
 date: 2026-03-14
-kind: 'reader'
+kind: 'testing'
+testingArea: 'navigation'
+chromeProfile: 'reader'
 e2eFixtureId: 'note.sidebar-scroll-source'
 genre:
   - testing
