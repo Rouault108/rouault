@@ -2752,25 +2752,21 @@ a[data-footnote-ref].is-active-trigger {
   text-decoration: underline;
 }
 
-section[role='doc-endnotes'] .sr-only,
-section.footnotes .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  border: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 section[role='doc-endnotes'],
 section.footnotes {
   margin-block-start: var(--space-16, 64px);
   padding-block-start: var(--space-8, 32px);
   border-block-start: var(--border-width, 1px) solid var(--border-default, oklch(86% 0 0));
+}
+
+section[role='doc-endnotes'] > h2#footnote-label,
+section.footnotes > h2#footnote-label {
+  margin: 0;
+  margin-block-end: var(--space-4, 16px);
+  font-size: var(--reading-h3-size);
+  font-weight: var(--reading-h3-weight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-muted, var(--reading-h3-color));
 }
 
 section[role='doc-endnotes'] ol,

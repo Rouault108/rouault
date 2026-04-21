@@ -93,7 +93,7 @@ note 本文の脚注参照は、次の要素へ正規化します。
 
 ```html
 <section class="footnotes" role="doc-endnotes">
-  <h2 id="footnote-label" class="sr-only">脚注</h2>
+  <h2 id="footnote-label">脚注</h2>
   <ol>
     <li id="fn-3">
       <p>脚注本文… <a href="#fn-3-ref-1" data-footnote-backref="true">↩</a></p>
@@ -103,7 +103,8 @@ note 本文の脚注参照は、次の要素へ正規化します。
 ```
 
 `section[role="doc-endnotes"]` の見出しテキストは、生成系では `脚注` に正規化します。
-この見出しは本文中では `sr-only` で保持し、TOC では `脚注` として表示されます。
+この見出しは本文末尾でも可視の `h2#footnote-label` として保持し、TOC では `脚注` として表示されます。
+heading permalink は一般見出し契約に従って付与され、`href="#footnote-label"` を向きます。
 
 許容される実装差分は次の範囲に限ります。
 

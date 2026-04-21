@@ -596,6 +596,7 @@ describe('css structure contracts', () => {
       '@media print',
       `section[role='doc-endnotes']`,
       'section.footnotes',
+      '> h2#footnote-label',
       'list-style-position: outside',
       'padding-inline-start',
       'li > :first-child',
@@ -618,6 +619,8 @@ describe('css structure contracts', () => {
     ) {
       throw new Error('endnotes section を非表示にする契約違反があります');
     }
+
+    expectCssExcludes(FOOTNOTE_DOCUMENT_CSS, ["section[role='doc-endnotes'] .sr-only"]);
   });
 
   it('info-box が forced-colors / semantic token / density / print 契約を保持すること', () => {

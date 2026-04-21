@@ -29,11 +29,11 @@ describe('markdown plugin order', () => {
       {
         "rehype": [
           "rehypeKatex",
+          "rehypeRouaultComponents",
           "rehypeHeadingIds",
           "rehypePreviewSandbox",
           "rehypeShikiCodeBlocks",
           "rehypeStaticCodeGroups",
-          "rehypeRouaultComponents",
           "rehypeAnnotateLinkKinds()",
           "rehypeInlineCodeTranslateNo",
           "rehypeOrderedListContracts",
@@ -73,16 +73,15 @@ describe('markdown plugin order', () => {
       6. \`remarkLinkCards\`
       7. \`remark-rehype\`
       8. \`rehypeKatex\`
-      9. \`rehypeHeadingIds\`
-      10. \`rehypePreviewSandbox\`
-      11. \`rehypeShikiCodeBlocks\`
-      12. \`rehypeStaticCodeGroups\`
-      13. \`rehypeRouaultComponents\`
+      9. \`rehypeRouaultComponents\`
+      10. \`rehypeHeadingIds\`
+      11. \`rehypePreviewSandbox\`
+      12. \`rehypeShikiCodeBlocks\`
+      13. \`rehypeStaticCodeGroups\`
       14. \`rehypeAnnotateLinkKinds\`
       15. \`rehypeInlineCodeTranslateNo\`
       16. \`rehypeOrderedListContracts\`
       17. \`rehypeDisallowDangerousProps\`
-      18. \`rehypeDisallowStaticMark\`
 
       規則:
 

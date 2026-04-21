@@ -100,6 +100,38 @@ test.describe('footnote endnotes layout contract', () => {
     expect(doubleDigit.targetBackgroundColor).not.toBe('rgba(0, 0, 0, 0)');
   });
 
+  test('TOC の脚注項目と endnotes 冒頭の脚注見出しが h2#footnote-label で一致すること', async ({
+    page,
+  }) => {
+    await page.goto(footnoteEndnotesLayoutPath);
+    await page.locator('article').waitFor();
+
+    const footnoteHeadingEntry = await page.evaluate(() => {
+      const toc = document.querySelector('layout-toc');
+      const headingsJson = toc?.getAttribute('headings-json');
+      if (typeof headingsJson !== 'string' || headingsJson.length === 0) {
+        throw new Error('layout-toc headings-json が見つかりません');
+      }
+
+      const headings = JSON.parse(headingsJson) as Array<{ text?: string; id?: string }>;
+      return headings.find((heading) => heading?.id === 'footnote-label') ?? null;
+    });
+
+    expect(footnoteHeadingEntry).toEqual(
+      expect.objectContaining({
+        id: 'footnote-label',
+        text: '脚注',
+      }),
+    );
+
+    const heading = page.locator('section[role="doc-endnotes"] > h2#footnote-label');
+    await expect(heading).toHaveText('脚注');
+    await expect(heading).toBeVisible();
+
+    const permalink = heading.locator(':scope > a.heading-anchor');
+    await expect(permalink).toHaveAttribute('href', '#footnote-label');
+  });
+
   test('長い URL を含んでも endnotes が mobile viewport を横方向に押し広げないこと', async ({
     page,
   }) => {

@@ -69,7 +69,7 @@ describe('velite config', () => {
     expect(source).toContain('[remarkGfm, { singleTilde: false }]');
   });
 
-  it('rehypeAnnotateLinkKinds が rehypeRouaultComponents の直後に挿入されていること', () => {
+  it('rehypeAnnotateLinkKinds が heading/permalink 系処理の後段に配置されていること', () => {
     const configPath = new URL('../../velite.config.ts', import.meta.url);
     const source = readFileSync(configPath, 'utf8');
 
@@ -82,18 +82,35 @@ describe('velite config', () => {
 
     const shikiCodeBlocksIndex = source.indexOf('rehypeShikiCodeBlocks,');
     const rouaultComponentsImportIndex = source.indexOf('rehypeRouaultComponents,');
+    const headingIdsIndex = source.lastIndexOf('rehypeHeadingIds,');
     const staticCodeGroupsIndex = source.lastIndexOf('rehypeStaticCodeGroups,');
     const rouaultComponentsIndex = source.lastIndexOf('rehypeRouaultComponents,');
     const annotateLinkKindsIndex = source.indexOf('rehypeAnnotateLinkKinds(),');
     const inlineCodeTranslateNoIndex = source.indexOf('rehypeInlineCodeTranslateNo,');
 
     expect(shikiCodeBlocksIndex).toBeGreaterThan(-1);
-    expect(staticCodeGroupsIndex).toBeGreaterThan(shikiCodeBlocksIndex);
     expect(rouaultComponentsImportIndex).toBeGreaterThan(-1);
+    expect(headingIdsIndex).toBeGreaterThan(-1);
     expect(rouaultComponentsIndex).toBeGreaterThan(-1);
-    expect(rouaultComponentsIndex).toBeGreaterThan(staticCodeGroupsIndex);
+    expect(rouaultComponentsIndex).toBeLessThan(headingIdsIndex);
+    expect(staticCodeGroupsIndex).toBeGreaterThan(shikiCodeBlocksIndex);
+    expect(rouaultComponentsIndex).toBeGreaterThan(-1);
+    expect(staticCodeGroupsIndex).toBeGreaterThan(headingIdsIndex);
     expect(annotateLinkKindsIndex).toBeGreaterThan(rouaultComponentsIndex);
+    expect(annotateLinkKindsIndex).toBeGreaterThan(staticCodeGroupsIndex);
     expect(inlineCodeTranslateNoIndex).toBeGreaterThan(annotateLinkKindsIndex);
+  });
+
+  it('脚注見出し正規化のため rehypeRouaultComponents が rehypeHeadingIds より前に配置されていること', () => {
+    const configPath = new URL('../../velite.config.ts', import.meta.url);
+    const source = readFileSync(configPath, 'utf8');
+
+    const rouaultComponentsIndex = source.lastIndexOf('rehypeRouaultComponents,');
+    const headingIdsIndex = source.lastIndexOf('rehypeHeadingIds,');
+
+    expect(rouaultComponentsIndex).toBeGreaterThan(-1);
+    expect(headingIdsIndex).toBeGreaterThan(-1);
+    expect(rouaultComponentsIndex).toBeLessThan(headingIdsIndex);
   });
 
   it('Velite の linked files 自動コピーを無効化して Rouault 側の画像解決に委ねること', () => {

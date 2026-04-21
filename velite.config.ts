@@ -108,11 +108,11 @@ export default defineConfig({
     ],
     rehypePlugins: [
       rehypeKatex,
+      rehypeRouaultComponents,
       rehypeHeadingIds,
       rehypePreviewSandbox,
       rehypeShikiCodeBlocks,
       rehypeStaticCodeGroups,
-      rehypeRouaultComponents,
       rehypeAnnotateLinkKinds(),
       rehypeInlineCodeTranslateNo,
       rehypeOrderedListContracts,

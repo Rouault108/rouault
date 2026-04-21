@@ -85,7 +85,7 @@ describe('ui-footnote browser contract', () => {
           </p>
 
           <section class="footnotes" role="doc-endnotes">
-            <h2 class="sr-only">脚注</h2>
+            <h2 id="footnote-label">脚注</h2>
             <ol>
               <li id="fn-1">
                 補足: 本文に集中できる設計は、補助情報へのアクセス経路を明確に定義する。
@@ -129,6 +129,12 @@ describe('ui-footnote browser contract', () => {
 
     expect(footerLink.getAttribute('href')).to.equal('#fn-1');
     expect(backlink.getAttribute('href')).to.equal('#fn-1-ref-1');
+    const endnotesHeading = expectPresent(
+      wrapper.querySelector<HTMLElement>('section.footnotes > h2#footnote-label'),
+      'endnotesHeading',
+    );
+    expect(endnotesHeading.textContent?.trim()).to.equal('脚注');
+    expect(endnotesHeading.classList.contains('sr-only')).to.equal(false);
   });
 
   it('shared secondary reference は自前 Popover を持たず、修飾クリックではネイティブリンクを維持すること', async () => {
@@ -151,7 +157,7 @@ describe('ui-footnote browser contract', () => {
           </p>
 
           <section class="footnotes" role="doc-endnotes">
-            <h2 class="sr-only">脚注</h2>
+            <h2 id="footnote-label">脚注</h2>
             <ol>
               <li id="fn-11">
                 共有本文は primary reference が 1 つだけ保持する。
@@ -241,7 +247,7 @@ describe('ui-footnote browser contract', () => {
           </p>
 
           <section class="footnotes" role="doc-endnotes">
-            <h2 class="sr-only">脚注</h2>
+            <h2 id="footnote-label">脚注</h2>
             <ol>
               <li id="fn-40">
                 読書フローの継続を妨げないキーボード契約。
@@ -345,7 +351,7 @@ describe('ui-footnote browser contract', () => {
           </div>
 
           <section class="footnotes" role="doc-endnotes">
-            <h2 class="sr-only">脚注</h2>
+            <h2 id="footnote-label">脚注</h2>
             <ol>
               <li id="fn-60">
                 SSR で埋め込まれた脚注本文。

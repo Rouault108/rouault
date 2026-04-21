@@ -91,7 +91,7 @@ export const Default: Story = {
       </p>
 
       <section class="footnotes" role="doc-endnotes">
-        <h2 class="sr-only">脚注</h2>
+        <h2 id="footnote-label">脚注</h2>
         <ol>
           <li id="fn-1">
             補足: 本文に集中できる設計は、補助情報へのアクセス経路を明確に定義する。
@@ -119,7 +119,7 @@ export const VariantStateMatrix: Story = {
           <ui-footnote ref-id="fn-11" index="11" ref-instance="2" shared></ui-footnote>
         </p>
         <section class="footnotes" role="doc-endnotes">
-          <h2 class="sr-only">脚注</h2>
+          <h2 id="footnote-label">脚注</h2>
           <ol>
             <li id="fn-11">
               共有本文は primary reference が 1 つだけ保持する。
@@ -138,7 +138,7 @@ export const VariantStateMatrix: Story = {
           </ui-footnote>
         </p>
         <section class="footnotes" role="doc-endnotes">
-          <h2 class="sr-only">脚注</h2>
+          <h2 id="footnote-label">脚注</h2>
           <ol>
             <li id="fn-11">
               scope が異なれば同じ refId でも独立して解決される。
@@ -164,7 +164,7 @@ export const DualAccessContract: Story = {
         </ui-footnote>
       </p>
       <section class="footnotes" role="doc-endnotes">
-        <h2 class="sr-only">脚注</h2>
+        <h2 id="footnote-label">脚注</h2>
         <ol>
           <li id="fn-20">
             Popover は補助経路であり、脚注一覧は正規経路である。
@@ -190,7 +190,7 @@ export const KeyboardAndFocusContract: Story = {
         <a href="#after-footnote" id="after-footnote">次のリンク</a>
       </p>
       <section class="footnotes" role="doc-endnotes">
-        <h2 class="sr-only">脚注</h2>
+        <h2 id="footnote-label">脚注</h2>
         <ol>
           <li id="fn-40">
             読書フローの継続を妨げないキーボード契約。
@@ -215,7 +215,7 @@ export const SsrHydrationContract: Story = {
         </ui-footnote>
       </div>
       <section class="footnotes" role="doc-endnotes">
-        <h2 class="sr-only">脚注</h2>
+        <h2 id="footnote-label">脚注</h2>
         <ol>
           <li id="fn-60">
             SSR で埋め込まれた脚注本文。
@@ -258,7 +258,7 @@ export const BoundaryConditions: Story = {
         </p>
 
         <section class="footnotes" role="doc-endnotes">
-          <h2 class="sr-only">脚注</h2>
+          <h2 id="footnote-label">脚注</h2>
           <ol>
             <li id="fn-31">
               small text 本文。
@@ -289,7 +289,7 @@ export const VisualModeContracts: Story = {
         </ui-footnote>
       </p>
       <section class="footnotes" role="doc-endnotes">
-        <h2 class="sr-only">脚注</h2>
+        <h2 id="footnote-label">脚注</h2>
         <ol>
           <li id="fn-50">
             表示モード契約の検証用本文。

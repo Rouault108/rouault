@@ -1130,21 +1130,30 @@ const isHeadingElement = (node: HastNode): boolean =>
 
 const normalizeFootnotesSectionHeading = (node: HastNode): void => {
   const children = Array.isArray(node.children) ? node.children : [];
-  const headingNode = children.find((child) => isHeadingElement(child));
+  const headingIndex = children.findIndex((child) => isHeadingElement(child));
+  const headingNode = headingIndex >= 0 ? children[headingIndex] : undefined;
 
   if (headingNode) {
     const properties = headingNode.properties ?? {};
-    const classList = getClassList(properties['className']);
-    if (!classList.includes('sr-only')) {
-      properties['className'] = [...classList, 'sr-only'];
-    } else if (Array.isArray(properties['className'])) {
+    const classList = getClassList(properties['className']).filter(
+      (className) => className !== 'sr-only',
+    );
+
+    if (classList.length > 0) {
       properties['className'] = classList;
+    } else {
+      delete properties['className'];
     }
-    if (!pickOptionalString(properties['id'])) {
-      properties['id'] = FOOTNOTES_SECTION_HEADING_ID;
-    }
+
+    headingNode.tagName = 'h2';
+    properties['id'] = FOOTNOTES_SECTION_HEADING_ID;
     headingNode.properties = properties;
     headingNode.children = [createTextNode(FOOTNOTES_SECTION_LABEL)];
+
+    node.children = [
+      headingNode,
+      ...children.filter((_, index) => index !== headingIndex),
+    ];
     return;
   }
 
@@ -1153,7 +1162,6 @@ const normalizeFootnotesSectionHeading = (node: HastNode): void => {
       'h2',
       {
         id: FOOTNOTES_SECTION_HEADING_ID,
-        className: ['sr-only'],
       },
       [createTextNode(FOOTNOTES_SECTION_LABEL)],
     ),

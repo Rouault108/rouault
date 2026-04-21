@@ -190,12 +190,6 @@ describe('rehypeRouaultComponents', () => {
           children: [
             {
               type: 'element',
-              tagName: 'h2',
-              properties: { id: 'footnote-label' },
-              children: [{ type: 'text', value: 'Footnotes' }],
-            },
-            {
-              type: 'element',
               tagName: 'ol',
               children: [
                 {
@@ -212,6 +206,12 @@ describe('rehypeRouaultComponents', () => {
                 },
               ],
             },
+            {
+              type: 'element',
+              tagName: 'h3',
+              properties: { id: 'legacy-footnotes', className: ['sr-only', 'legacy-heading'] },
+              children: [{ type: 'text', value: 'Footnotes' }],
+            },
           ],
         },
       ],
@@ -226,7 +226,42 @@ describe('rehypeRouaultComponents', () => {
     expect(section?.properties?.['role']).to.equal('doc-endnotes');
     expect(heading?.tagName).to.equal('h2');
     expect(heading?.properties?.['id']).to.equal('footnote-label');
-    expect(heading?.properties?.['className']).to.deep.equal(['sr-only']);
+    expect(heading?.properties?.['className']).to.deep.equal(['legacy-heading']);
+    expect(heading?.children?.[0]?.value).to.equal('脚注');
+    expect(section?.children?.[1]?.tagName).to.equal('ol');
+  });
+
+  it('footnotes section heading が無ければ直下先頭へ h2#footnote-label を挿入すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'section',
+          properties: {
+            className: ['footnotes'],
+            'data-footnotes': 'true',
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'ol',
+              children: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const section = tree.children?.[0];
+    const heading = section?.children?.[0];
+
+    expect(section?.properties?.['role']).to.equal('doc-endnotes');
+    expect(heading?.tagName).to.equal('h2');
+    expect(heading?.properties?.['id']).to.equal('footnote-label');
+    expect(heading?.properties?.['className']).to.equal(undefined);
     expect(heading?.children?.[0]?.value).to.equal('脚注');
   });
 
