@@ -594,7 +594,12 @@ describe('css structure contracts', () => {
       '@media (prefers-reduced-motion: reduce)',
       '@media (forced-colors: active)',
       '@media print',
+      `section[role='doc-endnotes']`,
       'section.footnotes',
+      'list-style-position: outside',
+      'padding-inline-start',
+      'li > :first-child',
+      'li > :last-child',
       'data-footnote-backref',
       'var(--primary',
     ]);
@@ -606,8 +611,12 @@ describe('css structure contracts', () => {
       'var(--z-popover',
     ]);
 
-    if (/section\.footnotes\s*\{[^}]*display\s*:\s*none/i.test(FOOTNOTE_DOCUMENT_CSS)) {
-      throw new Error('section.footnotes を非表示にする契約違反があります');
+    if (
+      /section(?:\[role=['"]doc-endnotes['"]\]|\.footnotes)\s*\{[^}]*display\s*:\s*none/i.test(
+        FOOTNOTE_DOCUMENT_CSS,
+      )
+    ) {
+      throw new Error('endnotes section を非表示にする契約違反があります');
     }
   });
 

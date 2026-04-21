@@ -6,6 +6,7 @@ import {
 
 export type E2ENoteFixtureId =
   | 'note.code'
+  | 'note.footnote-endnotes-layout'
   | 'note.footnote-long-url'
   | 'note.interactive'
   | 'note.layout-rich'
@@ -55,6 +56,9 @@ export const e2eNoteFixtures = {
   },
   get footnoteLongUrl(): E2ENoteFixture {
     return getE2ENoteFixture('note.footnote-long-url');
+  },
+  get footnoteEndnotesLayout(): E2ENoteFixture {
+    return getE2ENoteFixture('note.footnote-endnotes-layout');
   },
   get interactive(): E2ENoteFixture {
     return getE2ENoteFixture('note.interactive');

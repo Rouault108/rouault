@@ -26,7 +26,7 @@ test.describe('footnote long url overflow contract', () => {
       const docEl = document.documentElement;
       const scrollingElement = document.scrollingElement;
       const footnoteLink = document.querySelector(
-        'section.footnotes a[href^="https://example.com/footnote-overflow-check/"]',
+        'section[role="doc-endnotes"] a[href^="https://example.com/footnote-overflow-check/"]',
       ) as HTMLAnchorElement | null;
       const computed = footnoteLink ? getComputedStyle(footnoteLink) : null;
 

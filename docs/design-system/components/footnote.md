@@ -185,6 +185,18 @@ note 本文の脚注スタイルは、`ui-footnote` selector ではなく、少�
 
 component 側 document style に依存して note 本文を成立させてはなりません。
 
+## endnotes レイアウト契約
+
+endnotes のレイアウト主語は `section[role="doc-endnotes"]` とします。`section.footnotes` は互換 selector として残り得ますが、新規実装・新規文書・新規テストは `section[role="doc-endnotes"]` を正本として扱います。
+
+- 脚注番号は本文左側の marker として扱わなければなりません
+- 脚注本文は番号の右側から開始しなければなりません
+- 折り返し後の行頭は本文開始位置にそろわなければなりません
+- 番号だけが独立行に落ちる見え方を採ってはなりません
+- 1 桁番号だけでなく 2 桁番号でも hanging indent が破綻してはなりません
+
+`ol` のレイアウトは `list-style-position: outside` を前提とし、本文開始位置の安定化のため `padding-inline-start` を明示します。`li` 直下ブロックの先頭・末尾余白は、marker と本文の対応関係を崩さないように制御します。
+
 ---
 
 ## テストで固定すること

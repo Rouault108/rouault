@@ -2752,6 +2752,7 @@ a[data-footnote-ref].is-active-trigger {
   text-decoration: underline;
 }
 
+section[role='doc-endnotes'] .sr-only,
 section.footnotes .sr-only {
   position: absolute;
   width: 1px;
@@ -2765,33 +2766,51 @@ section.footnotes .sr-only {
   white-space: nowrap;
 }
 
+section[role='doc-endnotes'],
 section.footnotes {
   margin-block-start: var(--space-16, 64px);
   padding-block-start: var(--space-8, 32px);
   border-block-start: var(--border-width, 1px) solid var(--border-default, oklch(86% 0 0));
 }
 
+section[role='doc-endnotes'] ol,
 section.footnotes ol {
-  list-style-position: inside;
-  padding-inline-start: 0;
+  list-style-position: outside;
+  margin: 0;
+  padding-inline-start: max(var(--space-5, 20px), 2.5ch);
 }
 
+section[role='doc-endnotes'] li,
 section.footnotes li {
   margin-block-end: var(--space-3, 12px);
   color: var(--fg-default, oklch(20% 0 0));
   font-size: var(--text-sm, 13px);
 }
 
+section[role='doc-endnotes'] li > :first-child,
+section.footnotes li > :first-child {
+  margin-block-start: 0;
+}
+
+section[role='doc-endnotes'] li > :last-child,
+section.footnotes li > :last-child {
+  margin-block-end: 0;
+}
+
+section[role='doc-endnotes'] li:target,
 section.footnotes li:target {
   background: var(--bg-active, oklch(95% 0 0));
   border-radius: var(--radius-sm, 4px);
 }
 
+section[role='doc-endnotes'] a[data-footnote-backref],
 section.footnotes a[data-footnote-backref] {
   color: var(--fg-muted, oklch(48% 0 0));
   text-decoration: none;
 }
 
+section[role='doc-endnotes'] a[data-footnote-backref]:hover,
+section[role='doc-endnotes'] a[data-footnote-backref]:focus-visible,
 section.footnotes a[data-footnote-backref]:hover,
 section.footnotes a[data-footnote-backref]:focus-visible {
   color: var(--primary, oklch(56% 0.16 252));
@@ -2813,6 +2832,7 @@ section.footnotes a[data-footnote-backref]:focus-visible {
     box-shadow: none;
   }
 
+  section[role='doc-endnotes'],
   section.footnotes {
     border-block-start: 1px solid CanvasText;
   }

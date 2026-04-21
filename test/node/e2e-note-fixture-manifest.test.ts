@@ -103,6 +103,18 @@ e2eFixtureId: 'note.layout-rich'
       );
 
       writeFileSync(
+        join(fallbackDir, 'footnote-endnotes-layout.md'),
+        `---
+title: 'Footnote Endnotes Layout'
+e2eFixtureId: 'note.footnote-endnotes-layout'
+---
+
+# fixture
+`,
+        'utf8',
+      );
+
+      writeFileSync(
         join(fallbackDir, 'footnote-long-url.md'),
         `---
 title: 'Footnote Long URL'
@@ -121,6 +133,12 @@ e2eFixtureId: 'note.footnote-long-url'
             slug: 'testing/code',
             permalink: '/notes/testing/code',
             e2eFixtureId: 'note.code',
+          },
+          {
+            title: 'Footnote Endnotes Layout',
+            slug: 'testing/footnote-endnotes-layout',
+            permalink: '/notes/testing/footnote-endnotes-layout',
+            e2eFixtureId: 'note.footnote-endnotes-layout',
           },
           {
             title: 'Interactive',
@@ -164,6 +182,14 @@ e2eFixtureId: 'note.footnote-long-url'
         slug: 'e2e/layout-rich',
         permalink: '/notes/e2e/layout-rich',
         contentRootId: 'note-content-e2e-layout-rich',
+      });
+
+      expect(manifest['note.footnote-endnotes-layout']).toEqual({
+        fixtureId: 'note.footnote-endnotes-layout',
+        title: 'Footnote Endnotes Layout',
+        slug: 'testing/footnote-endnotes-layout',
+        permalink: '/notes/testing/footnote-endnotes-layout',
+        contentRootId: 'note-content-testing-footnote-endnotes-layout',
       });
 
       expect(manifest['note.footnote-long-url']).toEqual({
