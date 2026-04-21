@@ -117,6 +117,7 @@ export class SearchTrigger extends LitElement {
       display: block;
       inline-size: 100%;
       block-size: 100%;
+      font-size: var(--icon-base, 16px);
     }
 
     .placeholder {

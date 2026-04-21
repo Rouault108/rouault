@@ -755,6 +755,8 @@ describe('css structure contracts', () => {
       "ui-button[data-density='icon-only']::part(button)",
       '--search-trigger-rest-background',
       '--search-trigger-hover-background',
+      '.icon ui-icon',
+      'font-size: var(--icon-base, 16px)',
       '@media (max-width: 960px)',
       '@media (max-width: 639px)',
       '@media (forced-colors: active)',

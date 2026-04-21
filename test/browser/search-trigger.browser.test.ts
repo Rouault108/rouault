@@ -32,6 +32,12 @@ const getButton = (host: SearchTrigger): HTMLButtonElement =>
 const getPlaceholder = (host: SearchTrigger): HTMLElement =>
   expectPresent(host.shadowRoot?.querySelector<HTMLElement>('.placeholder'), 'placeholder');
 
+const getIconSlot = (host: SearchTrigger): HTMLElement =>
+  expectPresent(host.shadowRoot?.querySelector<HTMLElement>('.icon'), 'icon slot');
+
+const getUiIcon = (host: SearchTrigger): HTMLElement =>
+  expectPresent(host.shadowRoot?.querySelector<HTMLElement>('.icon ui-icon'), 'ui-icon');
+
 describe('ui-search-trigger browser contract', () => {
   it('既定状態で ui-button を内部に用い、native button semantics と default aria を提供すること', async () => {
     const host = await fixture<SearchTrigger>(html`
@@ -157,5 +163,24 @@ describe('ui-search-trigger browser contract', () => {
     expect(getUiButton(defaultDensity).dataset['density']).to.equal('default');
     expect(getUiButton(compact).dataset['density']).to.equal('compact');
     expect(getUiButton(iconOnly).dataset['density']).to.equal('icon-only');
+  });
+
+  it('アイコン枠寸法と ui-icon の描画基準寸法を --icon-base に揃えること', async () => {
+    const host = await fixture<SearchTrigger>(html`
+      <ui-search-trigger></ui-search-trigger>
+    `);
+
+    await flush(host);
+
+    const iconSlot = getIconSlot(host);
+    const uiIcon = getUiIcon(host);
+    const iconSlotStyle = getComputedStyle(iconSlot);
+    const uiIconStyle = getComputedStyle(uiIcon);
+    const resolvedIconBase = iconSlotStyle.inlineSize;
+
+    expect(resolvedIconBase).to.not.equal('');
+    expect(uiIconStyle.fontSize).to.equal(resolvedIconBase);
+    expect(uiIconStyle.inlineSize).to.equal(resolvedIconBase);
+    expect(uiIconStyle.blockSize).to.equal(iconSlotStyle.blockSize);
   });
 });
