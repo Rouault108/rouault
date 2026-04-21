@@ -231,6 +231,7 @@ Rouault における主要フローは、キーボードのみで完結可能で
 - `outline: none` を代替手段なしに用いてはなりません。
 - フォーカスリングが切断されるレイアウトを採用してはなりません。
 - `overflow: hidden` によりリングが欠ける場合、余白、`outline-offset`、またはラッパー構造を調整しなければなりません。
+- Rouault 固有の `main#main-content` は router-document 契約で管理する論理フォーカス到達先であり、この節のインタラクティブ要素向け focus-visible 契約の例外です。
 
 #### 実装例
 

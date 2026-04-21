@@ -10,6 +10,7 @@ import type { AppRouterContentRenderedDetail } from '../../src/components/app/ap
 import type { NavigationResult } from '../../src/router/router.js';
 import { createRouterContentHtml } from '../../src/router/router-content-html.js';
 import { PRIMARY_TAB_URL_STATE_CHANGE_EVENT } from '../../src/components/app/navigation/primary-tab-url-state.js';
+import { ensureMainCssLoaded } from './helpers/load-main-css.js';
 
 type AppRouterElement = HTMLElement & {
   ready: Promise<void>;
@@ -391,6 +392,48 @@ describe('app-router', () => {
     expect(appHost.querySelectorAll('[data-app-router-announcement]').length).to.equal(1);
     expect(appHost.querySelectorAll('main').length).to.equal(1);
     expect(focusOptions).to.deep.equal({ preventScroll: true });
+  });
+
+  it('client-side navigation 後は main#main-content に論理フォーカスを移しつつ可視リングを出さないこと', async () => {
+    await ensureMainCssLoaded();
+
+    globalThis.fetch = () =>
+      Promise.resolve(
+        createEnvelopeResponse({
+          html: '<h1>Focused Main</h1><p><a href="/next">Next</a></p>',
+          title: 'Focused Main',
+          description: 'focused main',
+        }),
+      );
+
+    host = await fixture<AppRouterElement>(
+      html`<app-router
+        ><main id="main-content" tabindex="-1"><h1>SSR Title</h1></main></app-router
+      >`,
+    );
+    const appHost = host;
+
+    await appHost.whenReady();
+    await appHost.navigate('/focused-main');
+
+    await waitUntil(() => {
+      const main = appHost.querySelector<HTMLElement>('main#main-content');
+      return (
+        main instanceof HTMLElement &&
+        document.activeElement === main &&
+        (main.textContent?.includes('Focused Main') ?? false)
+      );
+    }, '遷移後に main#main-content が activeElement になること');
+
+    const main = appHost.querySelector<HTMLElement>('main#main-content');
+    if (!(main instanceof HTMLElement)) {
+      throw new Error('main#main-content が見つかりません');
+    }
+
+    const style = getComputedStyle(main);
+    expect(document.activeElement).to.equal(main);
+    expect(style.boxShadow).to.equal('none');
+    expect(style.animationName).to.equal('none');
   });
 
   it('navigation:busy-change に応じて aria-busy を切り替えること', async () => {

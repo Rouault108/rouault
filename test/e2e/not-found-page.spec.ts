@@ -47,14 +47,19 @@ const navigateToMissingRoute = async (page: Page, url: string) => {
 };
 
 const tabUntilFocused = async (page: Page, expectedLabel: string): Promise<void> => {
-  for (let index = 0; index < 8; index += 1) {
+  for (let index = 0; index < 20; index += 1) {
     await page.keyboard.press('Tab');
-    const focusedText = await page.evaluate(() => {
+    const focusedState = await page.evaluate(() => {
       const active = document.activeElement;
-      return active?.textContent?.trim() ?? '';
+      return {
+        text: active?.textContent?.trim() ?? '',
+        isFocusable:
+          active instanceof HTMLElement &&
+          active.matches('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+      };
     });
 
-    if (focusedText.includes(expectedLabel)) {
+    if (focusedState.isFocusable && focusedState.text.includes(expectedLabel)) {
       return;
     }
   }
@@ -100,7 +105,63 @@ test.describe('not-found page', () => {
     );
   });
 
-  test('keyboard navigation can reach fallback links', async ({ page }) => {
+  test('404 への SPA 遷移後は main に論理フォーカスを移しつつ fallback link の可視フォーカスを維持すること', async ({
+    page,
+    browserName,
+  }) => {
+    await page.goto('/search/');
+
+    await navigateToMissingRoute(page, '/__playwright_missing_route__');
+    await expect(page.locator('[data-not-found-fallback]')).toBeVisible();
+
+    const mainFocusState = await page.evaluate(() => {
+      const main = document.querySelector<HTMLElement>('main#main-content');
+      const active = document.activeElement;
+      const style = main ? getComputedStyle(main) : null;
+
+      return {
+        activeId: active?.id ?? '',
+        activeTagName: active?.tagName ?? '',
+        outlineStyle: style?.outlineStyle ?? '',
+        outlineWidth: style?.outlineWidth ?? '',
+        boxShadow: style?.boxShadow ?? '',
+      };
+    });
+
+    expect(mainFocusState.activeId).toBe('main-content');
+    expect(mainFocusState.activeTagName).toBe('MAIN');
+    expect(mainFocusState.outlineStyle).toBe('none');
+    expect(mainFocusState.outlineWidth).toBe('0px');
+    expect(mainFocusState.boxShadow).toBe('none');
+
+    if (browserName === 'webkit') {
+      return;
+    }
+
+    await tabUntilFocused(page, '検索ページへ');
+    const linkFocusState = await page.evaluate(() => {
+      const active = document.activeElement;
+      const style = active ? getComputedStyle(active) : null;
+      return {
+        activeText: active?.textContent?.trim() ?? '',
+        activeTagName: active?.tagName ?? '',
+        outlineStyle: style?.outlineStyle ?? '',
+        outlineWidth: style?.outlineWidth ?? '',
+      };
+    });
+
+    expect(linkFocusState.activeTagName).toBe('A');
+    expect(linkFocusState.activeText).toContain('検索ページへ');
+    expect(linkFocusState.outlineStyle).not.toBe('none');
+    expect(linkFocusState.outlineWidth).not.toBe('0px');
+  });
+
+  test('keyboard navigation can reach fallback links', async ({ page, browserName }) => {
+    test.skip(
+      browserName === 'webkit',
+      'WebKit は環境設定次第で Tab によるリンク到達可否が変わる',
+    );
+
     await page.goto('/404.html');
 
     await tabUntilFocused(page, '検索ページへ');

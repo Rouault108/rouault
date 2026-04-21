@@ -443,6 +443,8 @@ Rouault の Accessibility は、後付けの調整ではなく foundation 層に
 | 半径             | 要素形状に合わせて focus-ring-radius を使う        |
 | クリッピング     | overflow により ring が切れないようにする          |
 
+Rouault 固有の例外として、router-document 契約で定義された `main#main-content` は論理フォーカス到達先のみを担い、可視 focus ring は持ちません。この例外を一般要素へ拡張してはなりません。
+
 ### 5.3 Reduced Motion
 
 | 条件                             | 動作                                              | 意図                  |

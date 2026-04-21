@@ -1540,6 +1540,18 @@ ui-list-item > [slot]:not([slot='actions']) a[href]:visited {
   animation: var(--animation-focus);
 }
 
+/* router の canonical な本文到達先は論理フォーカスのみを担い、
+ * 操作 affordance としての可視リングは持たせない。 */
+main#main-content:focus,
+main#main-content:focus-visible {
+  outline-style: none;
+  outline-width: 0;
+  outline-color: transparent;
+  outline-offset: 0;
+  box-shadow: none;
+  animation: none;
+}
+
 /* ===========================================================================
  * Utility Classes
  * =========================================================================== */

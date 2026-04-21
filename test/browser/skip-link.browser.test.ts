@@ -2,6 +2,7 @@ import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/skip-link/skip-link.js';
 import type { SkipLink } from '../../src/components/ui/skip-link/skip-link.js';
 import { waitForLitUpdate } from './helpers/wait-for-lit.js';
+import { ensureMainCssLoaded } from './helpers/load-main-css.js';
 
 const must = <T>(value: T | null | undefined, message: string): T => {
   if (value === null || value === undefined) {
@@ -96,6 +97,50 @@ describe('ui-skip-link browser contract', () => {
     expect(clickEvent.defaultPrevented).to.equal(true);
     expect(window.location.href).to.equal(originalUrl);
     expect(document.activeElement).to.equal(target);
+  });
+
+  it('main#main-content への skip link 到達では論理フォーカスのみを与え、可視リングは出さないこと', async () => {
+    await ensureMainCssLoaded();
+
+    const mount = await fixture<HTMLElement>(html`
+      <div>
+        <ui-skip-link target-id="main-content" label="本文へ移動"></ui-skip-link>
+        <main id="main-content" tabindex="-1">
+          <a href="/next">次へ</a>
+        </main>
+      </div>
+    `);
+
+    const skipLink = must(
+      mount.querySelector<SkipLink>('ui-skip-link'),
+      'ui-skip-link が見つかりません',
+    );
+    await waitForLitUpdate(skipLink);
+
+    const anchor = must(
+      skipLink.shadowRoot?.querySelector<HTMLAnchorElement>('a'),
+      'shadow DOM 内の anchor が見つかりません',
+    );
+    const target = must(
+      mount.querySelector<HTMLElement>('main#main-content'),
+      'main#main-content が見つかりません',
+    );
+
+    anchor.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+        button: 0,
+      }),
+    );
+    await Promise.resolve();
+
+    const style = getComputedStyle(target);
+    expect(document.activeElement).to.equal(target);
+    expect(style.outlineStyle === 'none' || style.outlineWidth === '0px').to.equal(true);
+    expect(style.boxShadow).to.equal('none');
+    expect(style.animationName).to.equal('none');
   });
 
   it('focus() が内部 anchor へ委譲されること', async () => {
