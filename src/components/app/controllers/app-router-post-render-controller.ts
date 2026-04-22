@@ -90,7 +90,7 @@ export class AppRouterPostRenderController {
     const hash = readDecodedHash(window.location.href);
     if (hash.length === 0) {
       await this.waitForStableLayout();
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      this.scrollToTopIfNeeded();
       return;
     }
 
@@ -132,7 +132,7 @@ export class AppRouterPostRenderController {
       return;
     }
 
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    this.scrollToTopIfNeeded();
   }
 
   private async waitForStableLayout(): Promise<void> {
@@ -166,6 +166,18 @@ export class AppRouterPostRenderController {
      */
     target.scrollIntoView({ block: 'start', inline: 'nearest' });
     return true;
+  }
+
+  private scrollToTopIfNeeded(): void {
+    /*
+     * 初期 SSR 文書ではブラウザ自身が先頭位置を保持していることがある。
+     * その状態で同じ先頭座標へ再度 scrollTo すると、hash 遷移テストや履歴復元の観測を汚すため抑止する。
+     */
+    if (window.scrollX === 0 && window.scrollY === 0) {
+      return;
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }
 
   private clearHashTarget(): void {
