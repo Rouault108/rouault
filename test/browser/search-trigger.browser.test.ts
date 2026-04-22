@@ -183,4 +183,17 @@ describe('ui-search-trigger browser contract', () => {
     expect(uiIconStyle.inlineSize).to.equal(resolvedIconBase);
     expect(uiIconStyle.blockSize).to.equal(iconSlotStyle.blockSize);
   });
+
+  it('アイコン色をプレースホルダーと同じ subtle tone に揃えること', async () => {
+    const host = await fixture<SearchTrigger>(html`
+      <ui-search-trigger placeholder="検索..."></ui-search-trigger>
+    `);
+
+    await flush(host);
+
+    const iconSlot = getIconSlot(host);
+    const placeholder = getPlaceholder(host);
+
+    expect(getComputedStyle(iconSlot).color).to.equal(getComputedStyle(placeholder).color);
+  });
 });

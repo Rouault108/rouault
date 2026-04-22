@@ -110,7 +110,7 @@ export class SearchTrigger extends LitElement {
       flex: none;
       inline-size: var(--icon-base, 16px);
       block-size: var(--icon-base, 16px);
-      color: var(--fg-muted, oklch(48% 0 0));
+      color: var(--fg-subtle, oklch(65% 0 0));
     }
 
     .icon ui-icon {

@@ -358,7 +358,7 @@
 | 角丸                  | `--radius-md`                                                                             |
 | 余白                  | `--space-2` / `--space-3`                                                                 |
 | アイコンサイズ        | `--icon-base`                                                                             |
-| アイコン色            | `--fg-muted`                                                                              |
+| アイコン色            | `--fg-subtle`                                                                             |
 | プレースホルダー色    | `--fg-subtle`                                                                             |
 | フォントサイズ        | `--text-base`                                                                             |
 | フォントウェイト      | `--font-normal`                                                                           |
