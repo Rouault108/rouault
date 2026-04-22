@@ -9,7 +9,7 @@ genre:
 
 C#は、ECMA-334によって規定されるプログラミング言語である。実務では通常、.NETを対象として用いられるため、C#の理解には言語仕様だけでなく、共通実行基盤、ライブラリ、コンパイラおよびランタイム実装との関係も含めて捉える必要がある。[^1][^5]
 
-本ページでは、C#をまず言語として位置付け、次に.NET上の主要言語としての性格を整理する。あわせて、言語標準、共通基盤、公式ドキュメント、現行実装、設計途上の資料がそれぞれどのような根拠を与えるかを区別し、本書全体の前提を定める。[^1][^2][^4][^6][^9]
+本ページでは、C#をまず言語として位置付け、次に.NET上の主要言語としての性格を整理する。あわせて、言語標準、共通基盤、公式ドキュメント、現行実装、設計途上の資料がそれぞれどのような根拠を与えるかを区別し、文書全体の前提を定める。[^1][^2][^4][^6][^9]
 
 ## 1.1 C#を「言語」として見る
 
@@ -35,7 +35,7 @@ C#が他の.NET言語と相互運用可能である理由も、この共通基�
 
 C#の理解において、ECMA-334とECMA-335の混同は避けなければならない。ECMA-334はC#言語そのものの標準であり、プログラムの表現、構文、意味規則、適合実装の制約を定める。ECMA-335はCLIの標準であり、共通型システム、メタデータ、仮想実行系、言語間相互運用の基盤を定める。前者はC#ソースコードの適格性と意味を扱い、後者はその結果が置かれる共通基盤の表現と実行を扱う。[^1][^2]
 
-ただし、現代のC#は標準文書だけで完結しているわけではない。本書では、少なくとも次の四つの層を区別して扱う。[^1][^2][^4][^7][^8][^9]
+ただし、現代のC#は標準文書だけで完結しているわけではない。本文書では、少なくとも次の四つの層を区別して扱う。[^1][^2][^4][^7][^8][^9]
 
 第一に、**規範的根拠としての標準**がある。安定した言語規則はECMA-334に、共通実行基盤およびメタデータの規則はECMA-335に求める。これらは、仕様上の事実を確認する際の第一の参照先である。[^1][^2]
 
@@ -47,30 +47,30 @@ C#の理解において、ECMA-334とECMA-335の混同は避けなければな�
 
 これらの層は、同一の規範性や安定性を持たない。標準、公式ドキュメント、現行実装、設計途上の提案は、それぞれ参照目的が異なる。C#のように継続的に進化する言語では、この区別を保ったまま読むことが前提になる。[^1][^4][^6][^9]
 
-## 1.4 本書の立場
+## 1.4 記述方針
 
-本書は、基本構文の解説を圧縮し、型、束縛、変換、評価、実行モデルを中核に置く。関心の中心は、`if`や`for`の表面的な記法そのものではなく、ある式がどの型を持つか、どの名前に束縛されるか、どの変換が適用されるか、どのようなCILとメタデータが生成されるか、実行時にどのような制約やコストが現れるかにある。[^1][^2][^5][^7][^8]
+本文書は、基本構文の解説を圧縮し、型、束縛、変換、評価、実行モデルを中核に置く。関心の中心は、`if`や`for`の表面的な記法そのものではなく、ある式がどの型を持つか、どの名前に束縛されるか、どの変換が適用されるか、どのようなCILとメタデータが生成されるか、実行時にどのような制約やコストが現れるかにある。[^1][^2][^5][^7][^8]
 
-この立場では、コードが書けることと、そのコードがどの規則に従って解釈されるかを追跡できることとを区別する。型、オーバーロード解決、boxing、状態機械変換、メタデータ表現、実行時コストは、いずれも表面構文の背後にある規則の問題である。本書は、各論点について、言語仕様、CLI/.NET実装、.NETライブラリ群という層の違いを意識しながら記述する。[^1][^2][^5][^7][^8]
+この立場では、コードが書けることと、そのコードがどの規則に従って解釈されるかを追跡できることとを区別する。型、オーバーロード解決、boxing、状態機械変換、メタデータ表現、実行時コストは、いずれも表面構文の背後にある規則の問題である。本ページは、各論点について、言語仕様、CLI/.NET実装、.NETライブラリ群という層の違いを意識しながら記述する。[^1][^2][^5][^7][^8]
 
-以後の章では、型システム、名前束縛、ジェネリクス、nullability、非同期、メモリ制御、メタデータを、この区分に従って扱う。仕様上の事実、実装上の観察、設計上の含意を混同しないことが、本書全体の基本方針である。[^1][^6][^9]
+以後の章では、型システム、名前束縛、ジェネリクス、nullability、非同期、メモリ制御、メタデータを、この区分に従って扱う。仕様上の事実、実装上の観察、設計上の含意を混同しないことが、本文書全体の基本方針である。[^1][^6][^9]
 
-[^1]: 【一次資料／規格】Ecma International, *ECMA-334: C# Language Specification*, 7th ed., December 2023, Foreword; §1 Scope; §5 Conformance. C#プログラムの表現、構文、意味規則、適合実装の制約を与える規範的標準。[https://ecma-international.org/publications-and-standards/standards/ecma-334/](https://ecma-international.org/publications-and-standards/standards/ecma-334/)
+[^1]: Ecma International, *ECMA-334: C# Language Specification*, 7th ed., December 2023, Foreword; §1 Scope; §5 Conformance. C#プログラムの表現、構文、意味規則、適合実装の制約を与える規範的標準。[https://ecma-international.org/publications-and-standards/standards/ecma-334/](https://ecma-international.org/publications-and-standards/standards/ecma-334/)
 
-[^2]: 【一次資料／規格】Ecma International, *ECMA-335: Common Language Infrastructure (CLI)*, 6th ed., June 2012, Partition I: Concepts and Architecture. CLI、CTS、CLS、VESおよびメタデータの規範的定義。[https://ecma-international.org/publications-and-standards/standards/ecma-335/](https://ecma-international.org/publications-and-standards/standards/ecma-335/)
+[^2]: Ecma International, *ECMA-335: Common Language Infrastructure (CLI)*, 6th ed., June 2012, Partition I: Concepts and Architecture. CLI、CTS、CLS、VESおよびメタデータの規範的定義。[https://ecma-international.org/publications-and-standards/standards/ecma-335/](https://ecma-international.org/publications-and-standards/standards/ecma-335/)
 
-[^3]: 【一次資料／公式文書】Microsoft Learn, *Introduction - C# language specification*, 2025-09-12更新. C#の設計目標を説明する公式導入文書。[https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/introduction](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/introduction)
+[^3]: Microsoft Learn, *Introduction - C# language specification*, 2025-09-12更新. C#の設計目標を説明する公式導入文書。[https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/introduction](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/introduction)
 
-[^4]: 【一次資料／公式文書】Microsoft Learn, *C# language reference*; *Table of contents - C# language specification*. 説明的な言語リファレンスと、規範的仕様本文への導線としての仕様書目次。[https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/) ; [https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/readme](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/readme)
+[^4]: Microsoft Learn, *C# language reference*; *Table of contents - C# language specification*. 説明的な言語リファレンスと、規範的仕様本文への導線としての仕様書目次。[https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/) ; [https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/readme](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/readme)
 
-[^5]: 【一次資料／公式文書】Microsoft Learn, *Introduction to .NET*; *Managed execution process*; *Common Language Runtime (CLR) overview*; *Core .NET libraries overview*. .NETを複数言語基盤として捉える公式概説、実行過程、CLR、ライブラリ群の役割。[https://learn.microsoft.com/en-us/dotnet/core/introduction](https://learn.microsoft.com/en-us/dotnet/core/introduction) ; [https://learn.microsoft.com/en-us/dotnet/standard/managed-execution-process](https://learn.microsoft.com/en-us/dotnet/standard/managed-execution-process) ; [https://learn.microsoft.com/en-us/dotnet/standard/clr](https://learn.microsoft.com/en-us/dotnet/standard/clr) ; [https://learn.microsoft.com/en-us/dotnet/standard/class-library-overview](https://learn.microsoft.com/en-us/dotnet/standard/class-library-overview)
+[^5]: Microsoft Learn, *Introduction to .NET*; *Managed execution process*; *Common Language Runtime (CLR) overview*; *Core .NET libraries overview*. .NETを複数言語基盤として捉える公式概説、実行過程、CLR、ライブラリ群の役割。[https://learn.microsoft.com/en-us/dotnet/core/introduction](https://learn.microsoft.com/en-us/dotnet/core/introduction) ; [https://learn.microsoft.com/en-us/dotnet/standard/managed-execution-process](https://learn.microsoft.com/en-us/dotnet/standard/managed-execution-process) ; [https://learn.microsoft.com/en-us/dotnet/standard/clr](https://learn.microsoft.com/en-us/dotnet/standard/clr) ; [https://learn.microsoft.com/en-us/dotnet/standard/class-library-overview](https://learn.microsoft.com/en-us/dotnet/standard/class-library-overview)
 
-[^6]: 【一次資料／公式文書】Microsoft Learn, *Feature specifications - C#*. ECMA標準未反映または時点差のある機能について、機能仕様と標準仕様の関係を整理する公式文書。[https://learn.microsoft.com/en-us/dotnet/csharp/specification/feature-spec-overview](https://learn.microsoft.com/en-us/dotnet/csharp/specification/feature-spec-overview)
+[^6]: Microsoft Learn, *Feature specifications - C#*. ECMA標準未反映または時点差のある機能について、機能仕様と標準仕様の関係を整理する公式文書。[https://learn.microsoft.com/en-us/dotnet/csharp/specification/feature-spec-overview](https://learn.microsoft.com/en-us/dotnet/csharp/specification/feature-spec-overview)
 
-[^7]: 【一次資料／公式実装】GitHub, *dotnet/roslyn*. C#およびVisual Basicコンパイラの公式実装リポジトリ。受理される構文、診断、生成物の観察対象。[https://github.com/dotnet/roslyn](https://github.com/dotnet/roslyn)
+[^7]: GitHub, *dotnet/roslyn*. C#およびVisual Basicコンパイラの公式実装リポジトリ。受理される構文、診断、生成物の観察対象。[https://github.com/dotnet/roslyn](https://github.com/dotnet/roslyn)
 
-[^8]: 【一次資料／公式実装】GitHub, *dotnet/runtime*. .NETランタイムおよび主要ライブラリ群の公式実装リポジトリ。実行時挙動、ライブラリ実装、生成コード観察の参照先。[https://github.com/dotnet/runtime](https://github.com/dotnet/runtime)
+[^8]: GitHub, *dotnet/runtime*. .NETランタイムおよび主要ライブラリ群の公式実装リポジトリ。実行時挙動、ライブラリ実装、生成コード観察の参照先。[https://github.com/dotnet/runtime](https://github.com/dotnet/runtime)
 
-[^9]: 【一次資料／公式設計資料】GitHub, *dotnet/csharplang*. C#言語設計の公式リポジトリ。提案、議論、仕様化の中心。[https://github.com/dotnet/csharplang](https://github.com/dotnet/csharplang)
+[^9]: GitHub, *dotnet/csharplang*. C#言語設計の公式リポジトリ。提案、議論、仕様化の中心。[https://github.com/dotnet/csharplang](https://github.com/dotnet/csharplang)
 
-[^10]: 【一次資料／公式設計資料】GitHub, *C# Language Design Meetings*. 言語設計会議記録への導線。設計判断と仕様化過程の追跡に用いる。[https://github.com/dotnet/csharplang/blob/main/meetings/README.md](https://github.com/dotnet/csharplang/blob/main/meetings/README.md)
+[^10]: GitHub, *C# Language Design Meetings*. 言語設計会議記録への導線。設計判断と仕様化過程の追跡に用いる。[https://github.com/dotnet/csharplang/blob/main/meetings/README.md](https://github.com/dotnet/csharplang/blob/main/meetings/README.md)
