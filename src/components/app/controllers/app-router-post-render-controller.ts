@@ -9,6 +9,7 @@ import {
 export class AppRouterPostRenderController {
   private readonly focusManager = new FocusManager();
   private clearTimer: number | null = null;
+  private currentHashTarget: HTMLElement | null = null;
 
   constructor(private readonly setAnnouncement: (text: string) => void) {}
 
@@ -17,6 +18,7 @@ export class AppRouterPostRenderController {
       window.clearTimeout(this.clearTimer);
       this.clearTimer = null;
     }
+    this.clearHashTarget();
   }
 
   createPostCommitController(hostElement: HTMLElement): PostCommitController {
@@ -98,6 +100,7 @@ export class AppRouterPostRenderController {
     }
 
     await this.waitForStableLayout();
+    this.setHashTarget(target);
 
     const absoluteTop = target.getBoundingClientRect().top + window.scrollY;
     window.scrollTo({ top: absoluteTop, left: 0, behavior: 'instant' });
@@ -106,6 +109,7 @@ export class AppRouterPostRenderController {
   private async scrollToHash(url: string): Promise<boolean> {
     const hash = readDecodedHash(url);
     if (hash.length === 0) {
+      this.clearHashTarget();
       return false;
     }
 
@@ -113,9 +117,11 @@ export class AppRouterPostRenderController {
 
     const target = document.getElementById(hash);
     if (!(target instanceof HTMLElement)) {
+      this.clearHashTarget();
       return false;
     }
 
+    this.setHashTarget(target);
     target.scrollIntoView({ block: 'start', inline: 'nearest' });
     return true;
   }
@@ -142,14 +148,17 @@ export class AppRouterPostRenderController {
   private scrollToHashImmediately(url: string): boolean {
     const hash = readDecodedHash(url);
     if (hash.length === 0) {
+      this.clearHashTarget();
       return false;
     }
 
     const target = document.getElementById(hash);
     if (!(target instanceof HTMLElement)) {
+      this.clearHashTarget();
       return false;
     }
 
+    this.setHashTarget(target);
     /*
      * 初回 boot では TOC current 同期が先に進みやすいため、
      * 最低限の hash 到達だけは同期的に済ませて viewport 契約を先に成立させる。
@@ -157,5 +166,24 @@ export class AppRouterPostRenderController {
      */
     target.scrollIntoView({ block: 'start', inline: 'nearest' });
     return true;
+  }
+
+  private clearHashTarget(): void {
+    if (this.currentHashTarget === null) {
+      return;
+    }
+    this.currentHashTarget.removeAttribute('data-router-hash-target');
+    this.currentHashTarget = null;
+  }
+
+  private setHashTarget(target: HTMLElement): void {
+    if (this.currentHashTarget === target) {
+      target.setAttribute('data-router-hash-target', 'true');
+      return;
+    }
+
+    this.clearHashTarget();
+    target.setAttribute('data-router-hash-target', 'true');
+    this.currentHashTarget = target;
   }
 }

@@ -167,6 +167,8 @@ section.footnotes li > :last-child {
 }
 
 section[role='doc-endnotes'] li:target,
+section[role='doc-endnotes'] li[data-router-hash-target='true'],
+section.footnotes li[data-router-hash-target='true'],
 section.footnotes li:target {
   background-color: var(--bg-highlight-subtle, oklch(96% 0.04 65));
   border-radius: var(--radius-sm, 4px);
