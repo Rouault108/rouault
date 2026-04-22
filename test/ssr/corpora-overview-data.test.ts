@@ -37,6 +37,11 @@ describe('buildCorporaOverviewProjection', () => {
         noteKind: 'directory-index',
         directoryPath: 'music',
         date: '2026-03-01',
+        navigationDirectoryPresentation: {
+          music: {
+            label: '音楽',
+          },
+        },
       }),
       createOverviewNote({
         title: '和声のメモ',
