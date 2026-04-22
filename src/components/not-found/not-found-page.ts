@@ -145,6 +145,16 @@ export const buildNotFoundPageMarkup = (options: BuildNotFoundPageMarkupOptions 
         color var(--duration-fast, 120ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
     }
 
+    .not-found-page-fallback__link[href] {
+      color: var(--fg-default);
+      text-decoration: none;
+      text-decoration-line: none;
+    }
+
+    .not-found-page-fallback__link[href]:visited {
+      color: var(--fg-default);
+    }
+
     .not-found-page-fallback__link:hover {
       background: var(--bg-surface-1);
       border-color: var(--border-default);

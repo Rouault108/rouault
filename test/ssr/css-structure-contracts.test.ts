@@ -48,10 +48,12 @@ import {
 } from './css-contract-test-helpers.js';
 
 describe('css structure contracts', () => {
-  it('not-found-page fallback markup が a11y/media rule を保持すること', () => {
+  it('not-found-page fallback markup が link override / a11y / media rule を保持すること', () => {
     const cssText = extractStyleTagCss(buildNotFoundPageMarkup({ requestedPath: '/missing' }));
 
     expectCssIncludes(cssText, [
+      '.not-found-page-fallback__link[href]',
+      'text-decoration-line: none',
       ':focus-visible',
       '@media (prefers-reduced-motion: reduce)',
       '@media (forced-colors: active)',

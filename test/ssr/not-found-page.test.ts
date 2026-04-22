@@ -24,6 +24,14 @@ describe('buildNotFoundPageMarkup', () => {
     expect(rendered).not.toContain('<button');
   });
 
+  it('404 fallback link styles が本文リンク下線を局所で打ち消すこと', () => {
+    const rendered = buildNotFoundPageMarkup();
+
+    expect(rendered).toContain('.not-found-page-fallback__link[href]');
+    expect(rendered).toContain('text-decoration-line: none');
+    expect(rendered).toContain('.not-found-page-fallback__link[href]:visited');
+  });
+
   it('requestedPath がある場合は meta row と code を出力すること', () => {
     const requestedPath = '/notes/missing-entry?tab=outline#section-2';
     const rendered = buildNotFoundPageMarkup({ requestedPath });
