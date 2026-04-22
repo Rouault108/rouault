@@ -236,6 +236,22 @@ describe('layout-header browser contract', () => {
     expect(document.activeElement).to.not.equal(themeTrigger);
   });
 
+  it('theme dropdown item は親 shadow CSS に依存しない平坦構造と text-value を持つこと', async () => {
+    const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
+    await waitForLitUpdate(header);
+
+    const lightItem = expectPresent(
+      header.shadowRoot?.querySelector<MenuItem>('[data-dropdown="theme"] ui-menu-item[value="light"]'),
+      'lightItem',
+    );
+    const lightIcon = expectPresent(lightItem.querySelector<HTMLElement>('ui-icon'), 'lightIcon');
+
+    expect(lightItem.getAttribute('text-value')).to.equal('ライト');
+    expect(lightItem.querySelector('.theme-menu-label')).to.equal(null);
+    expect(lightIcon.getAttribute('name')).to.equal('sun');
+    expect(lightItem.textContent?.trim()).to.equal('ライト');
+  });
+
   it('mobile note でも layout-header は compact-center slot を使わないこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px;">

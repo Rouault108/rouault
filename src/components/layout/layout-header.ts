@@ -171,14 +171,6 @@ export class LayoutHeader extends LitElement {
       max-inline-size: 100%;
     }
 
-    .theme-menu-label {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-2, 8px);
-      min-inline-size: 0;
-      max-inline-size: 100%;
-    }
-
     .theme-trigger-main,
     .corpus-trigger-main {
       display: inline-flex;
@@ -226,7 +218,6 @@ export class LayoutHeader extends LitElement {
       white-space: nowrap;
     }
 
-    .theme-menu-icon,
     .theme-trigger-icon,
     .theme-trigger-chevron,
     .toc-trigger-icon,
@@ -754,15 +745,9 @@ export class LayoutHeader extends LitElement {
               ][]
             ).map(
               ([value, option]) => html`
-                <ui-menu-item value=${value}>
-                  <span class="theme-menu-label">
-                    <ui-icon
-                      class="theme-menu-icon"
-                      name=${option.icon}
-                      aria-hidden="true"
-                    ></ui-icon>
-                    <span>${option.label}</span>
-                  </span>
+                <ui-menu-item value=${value} text-value=${option.label}>
+                  <ui-icon name=${option.icon} aria-hidden="true"></ui-icon>
+                  ${option.label}
                 </ui-menu-item>
               `,
             )}
