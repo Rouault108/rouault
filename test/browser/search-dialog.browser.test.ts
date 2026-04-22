@@ -1,6 +1,7 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/search-dialog/search-dialog.js';
 import type { UiSearchDialog } from '../../src/components/ui/search-dialog/search-dialog.js';
+import type { InteractionModality } from '../../src/components/ui/search-dialog/internals/interaction-modality.js';
 import type {
   UiSearchDialogCloseRequestedDetail,
   UiSearchDialogItem,
@@ -133,9 +134,47 @@ const attachControlledContract = (dialog: UiSearchDialog): void => {
   });
 };
 
-const requestOpen = async (root: ParentNode): Promise<UiSearchDialog> => {
+const getSoftFocusOverride = (
+  dialog: UiSearchDialog,
+): {
+  width: string;
+  offset: string;
+  animation: string;
+  color: string;
+} => {
+  const searchField = getSearchField(dialog);
+  return {
+    width: searchField.style.getPropertyValue('--focus-ring-width'),
+    offset: searchField.style.getPropertyValue('--focus-ring-offset'),
+    animation: searchField.style.getPropertyValue('--animation-focus'),
+    color: searchField.style.getPropertyValue('--ui-search-field-focus-ring-color'),
+  };
+};
+
+const expectSoftFocusOverride = (dialog: UiSearchDialog, expected: boolean): void => {
+  const override = getSoftFocusOverride(dialog);
+
+  if (expected) {
+    expect(override.width).to.equal('1px');
+    expect(override.offset).to.equal('1px');
+    expect(override.animation).to.equal('none');
+    expect(override.color).to.contain('--ui-search-dialog-soft-focus-ring-color');
+    return;
+  }
+
+  expect(override.width).to.equal('');
+  expect(override.offset).to.equal('');
+  expect(override.animation).to.equal('');
+  expect(override.color).to.equal('');
+};
+
+const requestOpen = async (
+  root: ParentNode,
+  modality?: InteractionModality,
+): Promise<UiSearchDialog> => {
   const dialog = getDialog(root);
   attachControlledContract(dialog);
+  dialog.captureOpenModality(modality);
   dialog.requestOpen(getTrigger(root));
 
   await waitUntil(() => dialog.opened === true, 1500, 20, 'dialog did not open');
@@ -249,6 +288,181 @@ describe('ui-search-dialog browser contract', () => {
     expect(nativeDialog.open).to.equal(false);
     expect(document.body.hasAttribute(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE)).to.equal(false);
     expect(document.activeElement).to.equal(trigger);
+  });
+
+  it('pointer 起動では自動 focus を維持しつつ初回 focus 強調を soft 表示にすること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div>
+        <button data-testid="trigger" type="button">検索を開く</button>
+        <ui-search-dialog .items=${FIXTURE_ITEMS}></ui-search-dialog>
+      </div>
+    `);
+
+    const dialog = await requestOpen(wrapper, 'pointer');
+    const input = getSearchInput(dialog);
+
+    expect(dialog.opened).to.equal(true);
+    expect(dialog.shadowRoot?.activeElement).to.equal(getSearchField(dialog));
+    expect(input.selectionStart).to.equal(dialog.query.length);
+    expect(input.selectionEnd).to.equal(dialog.query.length);
+    expectSoftFocusOverride(dialog, true);
+  });
+
+  it('keyboard 起動では初回 focus 強調を通常表示のまま維持すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div>
+        <button data-testid="trigger" type="button">検索を開く</button>
+        <ui-search-dialog .items=${FIXTURE_ITEMS}></ui-search-dialog>
+      </div>
+    `);
+
+    const dialog = await requestOpen(wrapper, 'keyboard');
+    const input = getSearchInput(dialog);
+
+    expect(dialog.shadowRoot?.activeElement).to.equal(getSearchField(dialog));
+    expect(input.selectionStart).to.equal(dialog.query.length);
+    expectSoftFocusOverride(dialog, false);
+  });
+
+  it('pointer 起動後の最初の keydown で soft focus override を解除すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div>
+        <button data-testid="trigger" type="button">検索を開く</button>
+        <ui-search-dialog .items=${FIXTURE_ITEMS}></ui-search-dialog>
+      </div>
+    `);
+
+    const dialog = await requestOpen(wrapper, 'pointer');
+    const searchField = getSearchField(dialog);
+
+    expectSoftFocusOverride(dialog, true);
+
+    searchField.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true, composed: true }));
+    await nextAnimationFrame();
+
+    expectSoftFocusOverride(dialog, false);
+  });
+
+  it('pointer 起動後の focusout で soft focus override を解除すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div>
+        <button data-testid="trigger" type="button">検索を開く</button>
+        <ui-search-dialog .items=${FIXTURE_ITEMS}></ui-search-dialog>
+      </div>
+    `);
+
+    const dialog = await requestOpen(wrapper, 'pointer');
+    const searchField = getSearchField(dialog);
+
+    expectSoftFocusOverride(dialog, true);
+
+    searchField.dispatchEvent(new FocusEvent('focusout', { bubbles: true, composed: true }));
+    await nextAnimationFrame();
+
+    expectSoftFocusOverride(dialog, false);
+  });
+
+  it('pointer 起動後に閉じて再 open しても soft focus override を持ち越さないこと', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div>
+        <button data-testid="trigger" type="button">検索を開く</button>
+        <ui-search-dialog .items=${FIXTURE_ITEMS}></ui-search-dialog>
+      </div>
+    `);
+
+    const dialog = await requestOpen(wrapper, 'pointer');
+    const nativeDialog = getNativeDialog(dialog);
+
+    expectSoftFocusOverride(dialog, true);
+
+    dialog.requestClose('programmatic');
+    await waitUntil(() => nativeDialog.open === false, 1500, 20, 'native dialog did not close');
+    expectSoftFocusOverride(dialog, false);
+
+    dialog.captureOpenModality('keyboard');
+    dialog.requestOpen(getTrigger(wrapper));
+    await waitUntil(() => dialog.opened === true, 1500, 20, 'dialog did not reopen');
+    await waitForLitUpdate(dialog);
+    await nextAnimationFrame();
+
+    expectSoftFocusOverride(dialog, false);
+  });
+
+  it('capture した起動モダリティは次回 open にだけ適用され、未指定の再 open へ持ち越さないこと', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div>
+        <button data-testid="trigger" type="button">検索を開く</button>
+        <ui-search-dialog .items=${FIXTURE_ITEMS}></ui-search-dialog>
+      </div>
+    `);
+
+    const dialog = await requestOpen(wrapper, 'pointer');
+    const nativeDialog = getNativeDialog(dialog);
+
+    expectSoftFocusOverride(dialog, true);
+
+    dialog.requestClose('programmatic');
+    await waitUntil(() => nativeDialog.open === false, 1500, 20, 'native dialog did not close');
+    expectSoftFocusOverride(dialog, false);
+
+    dialog.requestOpen(getTrigger(wrapper));
+    await waitUntil(() => dialog.opened === true, 1500, 20, 'dialog did not reopen');
+    await waitForLitUpdate(dialog);
+    await nextAnimationFrame();
+
+    expectSoftFocusOverride(dialog, false);
+  });
+
+  it('open の直後に close しても stale focus callback が override を残さないこと', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div>
+        <button data-testid="trigger" type="button">検索を開く</button>
+        <ui-search-dialog .items=${FIXTURE_ITEMS}></ui-search-dialog>
+      </div>
+    `);
+
+    const dialog = getDialog(wrapper);
+    attachControlledContract(dialog);
+    dialog.captureOpenModality('pointer');
+    dialog.requestOpen(getTrigger(wrapper));
+    dialog.requestClose('programmatic');
+
+    await waitForLitUpdate(dialog);
+    await nextAnimationFrame();
+    await nextAnimationFrame();
+
+    expect(dialog.opened).to.equal(false);
+    expect(getNativeDialog(dialog).open).to.equal(false);
+    expectSoftFocusOverride(dialog, false);
+  });
+
+  it('close と再 open が競合しても古い generation の callback が新しい open 状態を壊さないこと', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div>
+        <button data-testid="trigger" type="button">検索を開く</button>
+        <ui-search-dialog .items=${FIXTURE_ITEMS}></ui-search-dialog>
+      </div>
+    `);
+
+    const dialog = getDialog(wrapper);
+    const trigger = getTrigger(wrapper);
+    attachControlledContract(dialog);
+
+    dialog.captureOpenModality('pointer');
+    dialog.requestOpen(trigger);
+    dialog.requestClose('programmatic');
+    dialog.captureOpenModality('keyboard');
+    dialog.requestOpen(trigger);
+
+    await waitUntil(() => dialog.opened === true, 1500, 20, 'dialog did not settle opened');
+    await waitForLitUpdate(dialog);
+    await nextAnimationFrame();
+    await nextAnimationFrame();
+
+    expect(dialog.opened).to.equal(true);
+    expect(getNativeDialog(dialog).open).to.equal(true);
+    expectSoftFocusOverride(dialog, false);
+    expect(dialog.shadowRoot?.activeElement).to.equal(getSearchField(dialog));
   });
 
   it('選択時に selected -> close-requested -> closed の順で発火すること', async () => {

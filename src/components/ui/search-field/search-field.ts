@@ -166,7 +166,9 @@ export class SearchField extends LitElement {
     }
 
     input:focus-visible {
-      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+      outline:
+        var(--focus-ring-width, 2px) solid
+        var(--ui-search-field-focus-ring-color, var(--focus-ring-color, oklch(60% 0.15 250)));
       outline-offset: var(--focus-ring-offset, 2px);
       animation: var(--animation-focus, none);
       border-radius: var(--radius-sm, 6px);
@@ -219,7 +221,9 @@ export class SearchField extends LitElement {
     }
 
     .clear-button:focus-visible {
-      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+      outline:
+        var(--focus-ring-width, 2px) solid
+        var(--ui-search-field-focus-ring-color, var(--focus-ring-color, oklch(60% 0.15 250)));
       outline-offset: var(--focus-ring-offset, 2px);
       animation: var(--animation-focus, none);
     }

@@ -301,7 +301,7 @@ input と clear button のフォーカスリングは `outline` と `outline-off
 | 文字色            | `--fg-default` / `--fg-muted` / `--fg-subtle`                                             |
 | hover 背景        | `--bg-hover`                                                                              |
 | muted 背景        | `--bg-fill-muted`                                                                         |
-| focus ring        | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| focus ring        | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` / `--ui-search-field-focus-ring-color` |
 | touch target      | `--control-min-touch`                                                                     |
 | opacity           | `--opacity-disabled`                                                                      |
 | アイコンサイズ    | `--icon-sm` / `--icon-md`                                                                 |
@@ -388,6 +388,15 @@ clear 操作は、単なる見た目の消去ではなく、**状態更新と再
 
 利用者は `--ui-search-field-*` 系トークンおよび基盤トークンを通じて背景、境界線、影、寸法、色を調整できます。一方で、内部 class 名、Shadow DOM 構造、`.field`、`.icon`、`.clear-button` などの内部実装識別子には依存しません。
 
+追加で、focus ring 関連の次のトークンは integrator が一時的に上書きしてよい公開面とします。
+
+- `--focus-ring-width`
+- `--focus-ring-offset`
+- `--animation-focus`
+- `--ui-search-field-focus-ring-color`
+
+`--ui-search-field-focus-ring-color` は focus 意味論の色トークンであり、前景色トークンの代用ではありません。soft focus を導入する場合も、`--ui-search-dialog-soft-focus-ring-color` のような focus 用 semantic token を経由して供給しなければいけません。
+
 本コンポーネントは slot を公開しません。検索アイコンと clear アイコンも現行契約では差し替え面を持ちません。したがって、任意コンテンツの差し込み、内部装飾ノードの交換、内部レイアウトの再編成は公開拡張面に含めません。
 
 ### `ui-search-dialog` 統合契約
@@ -402,6 +411,8 @@ clear 操作は、単なる見た目の消去ではなく、**状態更新と再
 - `focus()` は検索入力への focus 委譲 API として利用できます。
 - `focusClearButton()` は `clearButtonVisible === true` の場合のみ利用可能です。
 - `clearButtonVisible` は clear 操作の可用性判定に用いてよく、内部 button ノードの存在判定には用いません。
+- dialog 統合時には、初回 programmatic focus の視覚強度調整のために focus ring 関連トークンを一時上書きしてよいものとします。
+- この統合は CSS トークンで成立させ、JavaScript 公開 API は増やしません。
 
 したがって、`ui-search-field` は自己管理型 primitive でありながら、上位の controlled state と接続可能な入力面として利用できます。
 

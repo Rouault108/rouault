@@ -1,10 +1,12 @@
 import type { UiSearchDialogItem } from '../components/ui/search-dialog/search-dialog.types.js';
 import { navigateToUrl } from './navigation.js';
 import { searchCore } from './search-core.js';
+import type { InteractionModality } from '../components/ui/search-dialog/internals/interaction-modality.js';
 
 interface SearchDialogElement extends HTMLElement {
   opened: boolean;
   query: string;
+  captureOpenModality(modality?: InteractionModality): void;
   requestOpen(trigger?: HTMLElement): void;
   searcher?: (context: {
     query: string;
@@ -51,6 +53,7 @@ export function initSearch(): void {
 
   document.addEventListener('open-search-dialog', (event) => {
     const trigger = event.target instanceof HTMLElement ? event.target : undefined;
+    dialog.captureOpenModality();
     dialog.requestOpen(trigger);
   });
 
@@ -99,6 +102,7 @@ export function initSearch(): void {
     event.preventDefault();
     const trigger =
       document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+    dialog.captureOpenModality('keyboard');
     dialog.requestOpen(trigger);
   });
 }

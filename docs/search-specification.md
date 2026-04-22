@@ -1640,6 +1640,15 @@ score =
 
 上位統合層は、必要に応じて起動元要素を保持し、`opened` の更新、重複表示抑止、close 後の focus return に利用しなければいけません。
 
+追加で、検索ダイアログ起動時の focus 表示は次を満たさなければいけません。
+
+- 検索入力への自動 focus 自体は維持すること
+- pointer 起動では、初回 programmatic focus の視覚強調を soft 表示へ弱めてよいこと
+- keyboard 起動では、初回 focus を通常表示のまま維持すること
+- 起動モダリティが `unknown` の場合は安全側として通常表示へ倒すこと
+- 起動モダリティは focus 実行時の現在値ではなく、open request 時点の snapshot を採用すること
+- open / close 競合時に stale な focus callback を採用してはいけないこと
+
 ### 17.3 起動抑止
 
 フォーカス対象が以下のいずれかである場合、ショートカット起動してはいけません。

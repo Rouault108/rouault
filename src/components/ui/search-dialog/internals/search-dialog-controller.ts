@@ -7,6 +7,11 @@ import {
 } from '../../dialog/dialog-helpers.js';
 import type { SearchField } from '../../search-field/search-field.js';
 import { BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE } from '../search-dialog.constants.js';
+import {
+  createInteractionModalityTracker,
+  type InteractionModality,
+  type InteractionModalityTracker,
+} from './interaction-modality.js';
 import type {
   UiSearchDialogCloseReason,
   UiSearchDialogClosedDetail,
@@ -35,11 +40,21 @@ export class SearchDialogController {
   private _operation: Promise<void> = Promise.resolve();
   private _hasBodyScrollLock = false;
   private _closeReason: UiSearchDialogCloseReason = 'programmatic';
+  private readonly _modalityTracker: InteractionModalityTracker;
+  private _pendingOpenModality: InteractionModality | null = null;
+  private _focusAppearanceGeneration = 0;
+  private _clearSoftFocusAppearance: ((force?: boolean) => void) | null = null;
 
-  constructor(private readonly _host: SearchDialogControllerHost) {}
+  constructor(private readonly _host: SearchDialogControllerHost) {
+    this._modalityTracker = createInteractionModalityTracker(this._host.getOwnerDocument());
+  }
 
   captureTrigger(trigger?: HTMLElement): void {
     this._triggerElement = captureTrigger(this._host.getOwnerDocument(), trigger);
+  }
+
+  captureOpenModality(modality?: InteractionModality): void {
+    this._pendingOpenModality = modality ?? this._modalityTracker.getSnapshot();
   }
 
   syncOpened(opened: boolean): void {
@@ -54,6 +69,8 @@ export class SearchDialogController {
   }
 
   destroy(): void {
+    this._invalidateFocusAppearance();
+    this._modalityTracker.destroy();
     this._unlockBodyScroll();
   }
 
@@ -141,12 +158,14 @@ export class SearchDialogController {
     if (!dialog) return;
 
     if (!dialog.open) {
+      this._invalidateFocusAppearance();
       this._unlockBodyScroll();
       return;
     }
 
     if (this._isClosing) return;
 
+    this._invalidateFocusAppearance();
     this._host.cancelScheduledSearch();
     this._isClosing = true;
     this._closeReason = this._host.isOpened() ? this._closeReason : 'programmatic';
@@ -158,7 +177,25 @@ export class SearchDialogController {
   }
 
   private _focusInput(): void {
+    this._clearSoftFocusAppearance?.();
+    this._clearSoftFocusAppearance = null;
+
+    const generation = ++this._focusAppearanceGeneration;
+    const modality = this._pendingOpenModality ?? 'unknown';
+    this._pendingOpenModality = null;
+    const searchField = this._host.getSearchFieldElement();
+
+    if (modality === 'pointer' && searchField) {
+      this._applySoftFocusAppearance(searchField, generation);
+    }
+
     requestAnimationFrame(() => {
+      if (generation !== this._focusAppearanceGeneration) return;
+      if (!this._host.isOpened()) return;
+
+      const dialog = this._host.getDialogElement();
+      if (!dialog?.open) return;
+
       const searchField = this._host.getSearchFieldElement();
       const query = this._host.getQuery();
 
@@ -185,5 +222,48 @@ export class SearchDialogController {
     if (!this._hasBodyScrollLock) return;
     searchDialogBodyScrollLock.unlock();
     this._hasBodyScrollLock = false;
+  }
+
+  private _invalidateFocusAppearance(): void {
+    this._focusAppearanceGeneration += 1;
+    this._clearSoftFocusAppearance?.(true);
+    this._clearSoftFocusAppearance = null;
+  }
+
+  private _applySoftFocusAppearance(searchField: SearchField, generation: number): void {
+    searchField.style.setProperty('--focus-ring-width', '1px');
+    searchField.style.setProperty('--focus-ring-offset', '1px');
+    searchField.style.setProperty('--animation-focus', 'none');
+    searchField.style.setProperty(
+      '--ui-search-field-focus-ring-color',
+      'var(--ui-search-dialog-soft-focus-ring-color, var(--focus-ring-color, oklch(60% 0.15 250)))',
+    );
+
+    const clear = (force = false): void => {
+      if (!force && generation !== this._focusAppearanceGeneration) return;
+
+      searchField.style.removeProperty('--focus-ring-width');
+      searchField.style.removeProperty('--focus-ring-offset');
+      searchField.style.removeProperty('--animation-focus');
+      searchField.style.removeProperty('--ui-search-field-focus-ring-color');
+      searchField.removeEventListener('keydown', handleKeydown);
+      searchField.removeEventListener('focusout', handleFocusOut);
+
+      if (this._clearSoftFocusAppearance === clear) {
+        this._clearSoftFocusAppearance = null;
+      }
+    };
+
+    const handleKeydown = (): void => {
+      clear();
+    };
+
+    const handleFocusOut = (): void => {
+      clear();
+    };
+
+    searchField.addEventListener('keydown', handleKeydown);
+    searchField.addEventListener('focusout', handleFocusOut);
+    this._clearSoftFocusAppearance = clear;
   }
 }

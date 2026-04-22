@@ -6,6 +6,7 @@ import '../spinner/spinner.js';
 import type { SearchField } from '../search-field/search-field.js';
 import { searchDialogStyles } from './search-dialog.styles.js';
 import { SearchDialogController } from './internals/search-dialog-controller.js';
+import type { InteractionModality } from './internals/interaction-modality.js';
 import {
   renderSearchDialogHighlightedText,
   resolveSearchDialogItemPath,
@@ -240,6 +241,10 @@ export class UiSearchDialog extends LitElement {
         composed: true,
       }),
     );
+  }
+
+  captureOpenModality(modality?: InteractionModality): void {
+    this._controller.captureOpenModality(modality);
   }
 
   requestClose(reason: UiSearchDialogCloseReason = 'programmatic'): void {

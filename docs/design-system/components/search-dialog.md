@@ -254,6 +254,7 @@ interface UiSearchDialogSelectedDetail {
 
 | 名前                    | 種別   | 契約                                                                                              |
 | ----------------------- | ------ | ------------------------------------------------------------------------------------------------- |
+| `captureOpenModality()` | method | 次回 open 用の起動モダリティ snapshot を保持します。引数省略時はその時点の tracker snapshot を採用します。`requestOpen()` の payload は拡張しません。 |
 | `focusInput()`          | method | 検索入力へフォーカスを移します。内部的には `ui-search-field.focus()` に委譲します。               |
 | `focusClearButton()`    | method | clear button が利用可能な場合のみ、clear button へフォーカスを移します。利用不能時は no-op です。 |
 | `requestOpen(trigger?)` | method | 開く要求を通知します。`trigger` を与えた場合、その参照を open request の detail に含めます。      |
@@ -530,6 +531,11 @@ search dialog が `ui-search-field` に依存してよいのは、内部 DOM で
 - `inputAriaActivedescendant`
 - `inputAriaBusy`
 - `inputAriaDescribedby`
+- `--focus-ring-width`
+- `--focus-ring-offset`
+- `--animation-focus`
+- `--ui-search-field-focus-ring-color`
+- `--ui-search-dialog-soft-focus-ring-color`
 
 依存先コンポーネントの内部 DOM、内部 button ノード、内部 input ノード、class 名、Shadow DOM 階層には直接依存しません。
 
@@ -544,6 +550,14 @@ search dialog が `ui-search-field` に依存してよいのは、内部 DOM で
 5. 更新後の `query` が `ui-search-dialog` から `ui-search-field.value` へ再反映される
 
 したがって、`ui-search-field` の自己管理は primitive 単体時の所有モデルであり、`ui-search-dialog` 統合時の controlled query 契約と矛盾しません。
+
+追加で、open 時の focus 表示は次を固定します。
+
+- `ui-search-dialog` は open 時に検索入力へ主 focus を置きます
+- pointer 起動では、初回 programmatic focus の強調を一時的に soft 表示へ弱めてよいものとします
+- keyboard 起動では、従来どおり明確な可視 focus を維持しなければいけません
+- 起動モダリティは focus 実行直前の現在値ではなく、**open request 時点の snapshot** を使わなければいけません
+- `requestAnimationFrame` 遅延中に close または再 open が起きても、古い callback を採用してはいけません
 
 ---
 
@@ -600,6 +614,8 @@ dialog は画面上部寄りに配置し、中央へ寄せます。最大幅は�
 - 強い発光や脈動
 - 自動 preview 展開
 - loading 中の派手な演出
+
+検索入力の初回 focus 表示もこの方針に含みます。pointer 起動時は入力可能性を失わない範囲で初回強調だけを弱めてよく、keyboard 起動時は可視 focus を弱めてはいけません。
 
 ### デザイントークンとの関係
 
@@ -702,21 +718,25 @@ trim 後 query が空なら検索は行わず、状態は `idle` です。empty 
 - empty と error を分離すること
 - 結果項目を安定 ID で扱うこと
 - 仮想化しても意味論を変えないこと
-- close 後の focus return を維持すること
+- open 時の自動 focus と close 後の focus return を維持すること
+- pointer 起動時のみ初回 focus 強調を soft 表示へ弱め、keyboard / unknown 起動では通常表示を維持すること
 
 将来拡張は、本文契約を壊さない範囲でのみ扱います。拡張案がある場合でも、まず本文契約へ吸収できるかを検討し、吸収できないものだけを別文書で管理します。
 
 ---
 
-## 実装整合メモ（2026-03-24）
+## 実装整合メモ（2026-04-21）
 
-2026-03-24 時点で、`ui-search-dialog` は以下の点で本文契約へ追従しています。
+2026-04-21 時点で、`ui-search-dialog` は以下の点で本文契約へ追従しています。
 
 - `opened` / `query` を controlled state として扱い、`ui-search-dialog-open-requested` / `ui-search-dialog-close-requested` / `ui-search-dialog-query-changed` を送出します。
 - 公開メソッドは `requestOpen()` / `requestClose()` / `focusInput()` / `focusClearButton()` を中心とし、強制開閉 API から離れています。
 - `UiSearchDialogItem` は `id` を必須とし、重複除去・active option・選択 detail を ID 基準で扱います。
 - `searcher` は `AbortSignal` を含む context を受け取り、構造化 `SearchResult` と `error` を扱います。
 - `empty` と `error` を分離し、`ui-search-dialog-selected` / `ui-search-dialog-closed` の detail も仕様書に沿って拡張しています。
+- open request 時点の起動モダリティ snapshot を保持し、pointer 起動時のみ `ui-search-field` ホストの公開トークンを一時上書きして初回 focus 強調を弱めます。
+- 起動モダリティ snapshot は次回 open operation にだけ適用する one-shot 値として扱い、未指定の再 open へ持ち越しません。
+- focus は引き続き自動で検索入力へ置きますが、stale な `requestAnimationFrame` callback は generation 管理で破棄します。
 - Storybook と unit test は controlled 契約、close reason、error state、選択順序、仮想化意味論を固定対象に含めます。
 
 現時点で残る主な注意点は次のとおりです。

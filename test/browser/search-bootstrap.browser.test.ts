@@ -2,10 +2,12 @@ import { expect } from '@open-wc/testing';
 
 import { initSearch } from '../../src/search/bootstrap.js';
 import { searchCore } from '../../src/search/search-core.js';
+import type { InteractionModality } from '../../src/components/ui/search-dialog/internals/interaction-modality.js';
 
 interface TestSearchDialogElement extends HTMLElement {
   opened: boolean;
   query: string;
+  captureOpenModality(modality?: InteractionModality): void;
   requestOpen(trigger?: HTMLElement): void;
   searcher?: (context: {
     query: string;
@@ -14,10 +16,11 @@ interface TestSearchDialogElement extends HTMLElement {
 }
 
 describe('search-bootstrap', () => {
-  it('dialog searcher と open request を searchCore に接続すること', async () => {
+  it('dialog searcher と open request を searchCore に接続し、起動モダリティ snapshot を引き渡すこと', async () => {
     const originalSearch = searchCore.search.bind(searchCore);
     const requests: unknown[] = [];
-    let openedWith: HTMLElement | undefined;
+    const openedWith: Array<HTMLElement | undefined> = [];
+    const capturedModalities: Array<InteractionModality | undefined> = [];
 
     searchCore.search = (request) => {
       requests.push(request);
@@ -54,8 +57,11 @@ describe('search-bootstrap', () => {
     dialog.id = 'global-search-dialog';
     dialog.opened = false;
     dialog.query = '';
+    dialog.captureOpenModality = (modality?: InteractionModality) => {
+      capturedModalities.push(modality);
+    };
     dialog.requestOpen = (trigger?: HTMLElement) => {
-      openedWith = trigger;
+      openedWith.push(trigger);
     };
     document.body.append(dialog);
 
@@ -71,7 +77,35 @@ describe('search-bootstrap', () => {
         }),
       );
 
-      expect(openedWith).to.equal(trigger);
+      expect(capturedModalities).to.deep.equal([undefined]);
+      expect(openedWith).to.deep.equal([trigger]);
+
+      trigger.focus();
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'k',
+          metaKey: true,
+          bubbles: true,
+          composed: true,
+          cancelable: true,
+        }),
+      );
+
+      expect(capturedModalities).to.deep.equal([undefined, 'keyboard']);
+      expect(openedWith).to.deep.equal([trigger, trigger]);
+
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'k',
+          ctrlKey: true,
+          bubbles: true,
+          composed: true,
+          cancelable: true,
+        }),
+      );
+
+      expect(capturedModalities).to.deep.equal([undefined, 'keyboard', 'keyboard']);
+      expect(openedWith).to.deep.equal([trigger, trigger, trigger]);
       const result = await dialog.searcher?.({
         query: 'router',
         signal: new AbortController().signal,
