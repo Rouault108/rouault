@@ -44,6 +44,14 @@ const clampToRange = (value: number, min: number, max: number): number => {
   return Math.min(Math.max(value, min), max);
 };
 
+const roundViewportCorrection = (delta: number): number => {
+  if (!Number.isFinite(delta) || delta === 0) {
+    return 0;
+  }
+
+  return delta > 0 ? Math.ceil(delta) : Math.floor(delta);
+};
+
 export class AnchoredOverlayController {
   private readonly _config: AnchoredOverlayControllerConfig;
   private _cleanupAutoUpdate: (() => void) | null = null;
@@ -106,13 +114,45 @@ export class AnchoredOverlayController {
       const minY = viewportTop + edgePadding;
       const maxX = viewportLeft + viewportWidth - floatingRect.width - edgePadding;
       const maxY = viewportTop + viewportHeight - floatingRect.height - edgePadding;
-      const roundedX = Math.round(clampToRange(x, minX, maxX));
-      const roundedY = Math.round(clampToRange(y, minY, maxY));
-      floating.style.left = `${String(roundedX)}px`;
-      floating.style.top = `${String(roundedY)}px`;
+      let resolvedX = Math.round(clampToRange(x, minX, maxX));
+      let resolvedY = Math.round(clampToRange(y, minY, maxY));
+      floating.style.left = `${String(resolvedX)}px`;
+      floating.style.top = `${String(resolvedY)}px`;
+
+      /*
+       * WebKit の popover/top-layer 合成では、style 上の fixed 座標と最終 rect が
+       * ずれることがある。実測 rect を再 clamp して edge padding 契約を維持する。
+       */
+      const actualRect = floating.getBoundingClientRect();
+      const viewportRight = viewportLeft + viewportWidth;
+      const viewportBottom = viewportTop + viewportHeight;
+      const overflowLeft = minX - actualRect.left;
+      const overflowTop = minY - actualRect.top;
+      const overflowRight = actualRect.right - (viewportRight - edgePadding);
+      const overflowBottom = actualRect.bottom - (viewportBottom - edgePadding);
+
+      if (overflowLeft > 0) {
+        resolvedX += roundViewportCorrection(overflowLeft);
+      }
+      if (overflowTop > 0) {
+        resolvedY += roundViewportCorrection(overflowTop);
+      }
+      if (overflowRight > 0) {
+        resolvedX -= roundViewportCorrection(overflowRight);
+      }
+      if (overflowBottom > 0) {
+        resolvedY -= roundViewportCorrection(overflowBottom);
+      }
+
+      const correctedMaxX = viewportRight - actualRect.width - edgePadding;
+      const correctedMaxY = viewportBottom - actualRect.height - edgePadding;
+      resolvedX = Math.round(clampToRange(resolvedX, minX, correctedMaxX));
+      resolvedY = Math.round(clampToRange(resolvedY, minY, correctedMaxY));
+      floating.style.left = `${String(resolvedX)}px`;
+      floating.style.top = `${String(resolvedY)}px`;
       this._config.onPosition?.({
-        x: roundedX,
-        y: roundedY,
+        x: resolvedX,
+        y: resolvedY,
         placement,
         reference,
         floating,
