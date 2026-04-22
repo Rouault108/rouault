@@ -215,6 +215,10 @@ export class LayoutHeader extends LitElement {
       color: var(--fg-subtle, var(--fg-muted));
     }
 
+    [data-dropdown='theme'] {
+      --ui-dropdown-max-inline-size: 240px;
+    }
+
     .theme-trigger-text {
       min-inline-size: 0;
       overflow: hidden;

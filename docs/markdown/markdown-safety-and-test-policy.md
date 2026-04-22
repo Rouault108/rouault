@@ -355,10 +355,10 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 
 - `buildNotePageProjection()` が hydration budget を **profile 単位**で評価すること
 - build-time error を適用する対象が **`hydrationBudgetProfile` 明示 note** に限定されること
-- `testing/reader-basic` の full note page が `reader-shell-canary` として `initial=2 / post-commit=0 / visible=0 / interaction=0 / total=2` であること
-- `testing/interactive` の full note page が `testing-interactive-canary` として `initial=6 / post-commit=0 / visible=1 / interaction=0 / total=7` であること
+- `testing/reader-basic` の full note page が `reader-shell-canary` として `initial=2 / post-commit=1 / visible=0 / interaction=0 / total=3` であること
+- `testing/interactive` の full note page が `testing-interactive-canary` として `initial=6 / post-commit=1 / visible=1 / interaction=0 / total=8` であること
 - `testing/sandbox` の full note page が `testing-sandbox-canary` として `initial=0 / post-commit=1 / visible=2 / interaction=1 / total=4` であること
-- `testing/code` の full note page が `testing-code-canary` として `initial=1 / post-commit=1 / visible=2 / interaction=0 / total=4` であること
+- `testing/code` の full note page が `testing-code-canary` として `initial=1 / post-commit=2 / visible=2 / interaction=0 / total=5` であること
 - `HydrationScheduler` の warning は観測用であり、budget gate の代替でないこと
 
 ---

@@ -302,19 +302,19 @@ note ページの hydration budget は **profile 単位**で build-time の正�
 
 | profile                      | initial | post-commit | visible | interaction | total |
 | ---------------------------- | ------- | ----------- | ------- | ----------- | ----- |
-| `reader-shell-canary`        | 2       | 0           | 0       | 0           | 2     |
-| `testing-interactive-canary` | 6       | 0           | 1       | 0           | 7     |
+| `reader-shell-canary`        | 2       | 1           | 0       | 0           | 3     |
+| `testing-interactive-canary` | 6       | 1           | 1       | 0           | 8     |
 | `testing-sandbox-canary`     | 0       | 1           | 2       | 1           | 4     |
-| `testing-code-canary`        | 1       | 1           | 2       | 0           | 4     |
+| `testing-code-canary`        | 1       | 2           | 2       | 0           | 5     |
 
 現在の代表 canary は次の 4 つです。
 
 | canary note            | profile                      | initial | post-commit | visible | interaction | total |
 | ---------------------- | ---------------------------- | ------- | ----------- | ------- | ----------- | ----- |
-| `testing/reader-basic` | `reader-shell-canary`        | 2       | 0           | 0       | 0           | 2     |
-| `testing/interactive`  | `testing-interactive-canary` | 6       | 0           | 1       | 0           | 7     |
+| `testing/reader-basic` | `reader-shell-canary`        | 2       | 1           | 0       | 0           | 3     |
+| `testing/interactive`  | `testing-interactive-canary` | 6       | 1           | 1       | 0           | 8     |
 | `testing/sandbox`      | `testing-sandbox-canary`     | 0       | 1           | 2       | 1           | 4     |
-| `testing/code`         | `testing-code-canary`        | 1       | 1           | 2       | 0           | 4     |
+| `testing/code`         | `testing-code-canary`        | 1       | 2           | 2       | 0           | 5     |
 
 規則:
 

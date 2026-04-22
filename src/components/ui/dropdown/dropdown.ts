@@ -50,8 +50,8 @@ export class Dropdown extends LitElement {
       right: auto;
       bottom: auto;
       margin: 0;
-      min-width: 180px;
-      max-width: 280px;
+      min-width: var(--ui-dropdown-min-inline-size, 180px);
+      max-width: var(--ui-dropdown-max-inline-size, 280px);
       padding: calc(var(--radius-md, 6px) - var(--radius-sm, 4px));
       background: var(--bg-surface-2, oklch(97% 0 0));
       border: var(--border-width, 1px) solid var(--border-default, oklch(90% 0 0 / 0.12));

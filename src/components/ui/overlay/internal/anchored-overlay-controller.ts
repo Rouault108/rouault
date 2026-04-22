@@ -34,7 +34,15 @@ export interface AnchoredOverlayControllerConfig {
   onPosition?: (context: AnchoredOverlayPositionContext) => void;
 }
 
-const DEFAULT_EDGE_PADDING = 8;
+const DEFAULT_EDGE_PADDING = 12;
+
+const clampToRange = (value: number, min: number, max: number): number => {
+  if (max < min) {
+    return min;
+  }
+
+  return Math.min(Math.max(value, min), max);
+};
 
 export class AnchoredOverlayController {
   private readonly _config: AnchoredOverlayControllerConfig;
@@ -85,8 +93,21 @@ export class AnchoredOverlayController {
         ],
       });
 
-      const roundedX = Math.round(x);
-      const roundedY = Math.round(y);
+      const edgePadding = this._config.edgePadding ?? DEFAULT_EDGE_PADDING;
+      const visualViewport = this._config.ownerDocument.defaultView?.visualViewport;
+      const viewportLeft = visualViewport?.offsetLeft ?? 0;
+      const viewportTop = visualViewport?.offsetTop ?? 0;
+      const viewportWidth =
+        visualViewport?.width ?? this._config.ownerDocument.documentElement.clientWidth;
+      const viewportHeight =
+        visualViewport?.height ?? this._config.ownerDocument.documentElement.clientHeight;
+      const floatingRect = floating.getBoundingClientRect();
+      const minX = viewportLeft + edgePadding;
+      const minY = viewportTop + edgePadding;
+      const maxX = viewportLeft + viewportWidth - floatingRect.width - edgePadding;
+      const maxY = viewportTop + viewportHeight - floatingRect.height - edgePadding;
+      const roundedX = Math.round(clampToRange(x, minX, maxX));
+      const roundedY = Math.round(clampToRange(y, minY, maxY));
       floating.style.left = `${String(roundedX)}px`;
       floating.style.top = `${String(roundedY)}px`;
       this._config.onPosition?.({

@@ -217,9 +217,7 @@ function validateNoteHydrationBudget(
     shellCounts.initial += 1;
   }
 
-  if (projection.articleHeader.shouldHydrateTags) {
-    shellCounts.postCommit += 1;
-  }
+  shellCounts.postCommit += 1;
 
   const counts: NoteHydrationCounts = {
     initial: contentCounts.initial + shellCounts.initial,

@@ -67,11 +67,11 @@ const renderArticleHeader = (articleHeader: NotePageProjection['articleHeader'])
     },
     {
       name: 'data-hydration-capability',
-      value: articleHeader.shouldHydrateTags ? 'progressive' : undefined,
+      value: 'progressive',
     },
     {
       name: 'data-hydration-trigger',
-      value: articleHeader.shouldHydrateTags ? 'post-commit' : undefined,
+      value: 'post-commit',
     },
   ]);
 
