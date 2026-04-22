@@ -45,9 +45,11 @@ export class ArticleHeader extends LitElement {
       }
 
       .article-header {
+        --article-header-stack-end-space: var(--space-3, 12px);
         display: block;
         inline-size: 100%;
         min-inline-size: 0;
+        padding-block-end: var(--article-header-stack-end-space);
         border-block-end: var(
           --border-style-subtle,
           1px solid var(--border-default, oklch(20% 0 0 / 0.12))

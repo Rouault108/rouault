@@ -26,6 +26,12 @@ const measureVerticalGap = (upper: Element, lower: Element): number => {
   return lowerRect.top - upperRect.bottom;
 };
 
+const measureContainerEndGap = (container: Element, lastChild: Element): number => {
+  const containerRect = container.getBoundingClientRect();
+  const lastChildRect = lastChild.getBoundingClientRect();
+  return containerRect.bottom - lastChildRect.bottom;
+};
+
 describe('ui-article-header browser contract', () => {
   it('主要メタデータ行と補助メタデータ行が主見出しに対して小さな開始インセットで光学整列されること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
@@ -112,10 +118,15 @@ describe('ui-article-header browser contract', () => {
       host.shadowRoot?.querySelector<HTMLElement>('.metadata-list--secondary'),
       'secondary',
     );
+    const header = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('.article-header'),
+      'header',
+    );
 
     const titleToPrimary = measureVerticalGap(heading, primary);
     const primaryToTags = measureVerticalGap(primary, tags);
     const tagsToSecondary = measureVerticalGap(tags, secondary);
+    const secondaryToHeaderEnd = measureContainerEndGap(header, secondary);
 
     expect(titleToPrimary).to.be.at.least(18);
     expect(titleToPrimary).to.be.at.most(22);
@@ -126,10 +137,13 @@ describe('ui-article-header browser contract', () => {
     expect(tagsToSecondary).to.be.at.least(10);
     expect(tagsToSecondary).to.be.at.most(14);
 
+    expect(secondaryToHeaderEnd).to.be.at.least(11);
+    expect(secondaryToHeaderEnd).to.be.at.most(14);
+
     expect(titleToPrimary).to.be.greaterThan(primaryToTags);
   });
 
-  it('主要メタデータがない場合はタイトルとタグの間が16px前後になること', async () => {
+  it('主要メタデータがない場合はタイトルとタグの間が16px前後になり、タグと下端罫線の距離が12px前後になること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 720px;">
         <ui-article-header
@@ -153,14 +167,22 @@ describe('ui-article-header browser contract', () => {
       host.shadowRoot?.querySelector<HTMLElement>('.tags-row'),
       'tags',
     );
+    const header = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('.article-header'),
+      'header',
+    );
 
     const headingToTags = measureVerticalGap(heading, tags);
+    const tagsToHeaderEnd = measureContainerEndGap(header, tags);
 
     expect(headingToTags).to.be.at.least(14);
     expect(headingToTags).to.be.at.most(18);
+
+    expect(tagsToHeaderEnd).to.be.at.least(11);
+    expect(tagsToHeaderEnd).to.be.at.most(14);
   });
 
-  it('主要メタデータもタグもない場合はタイトルと補助メタデータの間が16px前後になること', async () => {
+  it('主要メタデータもタグもない場合はタイトルと補助メタデータの間が16px前後になり、補助メタデータと下端罫線の距離が12px前後になること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 720px;">
         <ui-article-header
@@ -185,14 +207,22 @@ describe('ui-article-header browser contract', () => {
       host.shadowRoot?.querySelector<HTMLElement>('.metadata-list--secondary'),
       'secondary',
     );
+    const header = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('.article-header'),
+      'header',
+    );
 
     const headingToSecondary = measureVerticalGap(heading, secondary);
+    const secondaryToHeaderEnd = measureContainerEndGap(header, secondary);
 
     expect(headingToSecondary).to.be.at.least(14);
     expect(headingToSecondary).to.be.at.most(18);
+
+    expect(secondaryToHeaderEnd).to.be.at.least(11);
+    expect(secondaryToHeaderEnd).to.be.at.most(14);
   });
 
-  it('タグがない場合もタイトル直下の主要メタデータだけが一段広く、補助メタデータとの間は12px前後になること', async () => {
+  it('タグがない場合もタイトル直下の主要メタデータだけが一段広く、補助メタデータとの間は12px前後で、末尾の下端距離も12px前後になること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 720px;">
         <ui-article-header
@@ -223,15 +253,23 @@ describe('ui-article-header browser contract', () => {
       host.shadowRoot?.querySelector<HTMLElement>('.metadata-list--secondary'),
       'secondary',
     );
+    const header = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('.article-header'),
+      'header',
+    );
 
     const titleToPrimary = measureVerticalGap(heading, primary);
     const primaryToSecondary = measureVerticalGap(primary, secondary);
+    const secondaryToHeaderEnd = measureContainerEndGap(header, secondary);
 
     expect(titleToPrimary).to.be.at.least(18);
     expect(titleToPrimary).to.be.at.most(22);
 
     expect(primaryToSecondary).to.be.at.least(10);
     expect(primaryToSecondary).to.be.at.most(14);
+
+    expect(secondaryToHeaderEnd).to.be.at.least(11);
+    expect(secondaryToHeaderEnd).to.be.at.most(14);
 
     expect(titleToPrimary).to.be.greaterThan(primaryToSecondary);
   });
