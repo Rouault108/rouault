@@ -19,8 +19,8 @@ describe('search-bootstrap', () => {
   it('dialog searcher と open request を searchCore に接続し、起動モダリティ snapshot を引き渡すこと', async () => {
     const originalSearch = searchCore.search.bind(searchCore);
     const requests: unknown[] = [];
-    const openedWith: Array<HTMLElement | undefined> = [];
-    const capturedModalities: Array<InteractionModality | undefined> = [];
+    const openedWith: (HTMLElement | undefined)[] = [];
+    const capturedModalities: (InteractionModality | undefined)[] = [];
 
     searchCore.search = (request) => {
       requests.push(request);
