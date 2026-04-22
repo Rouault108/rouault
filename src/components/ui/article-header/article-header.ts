@@ -69,7 +69,7 @@ export class ArticleHeader extends LitElement {
         inline-size: 100%;
         min-inline-size: 0;
         max-inline-size: 100%;
-        margin-block: 0 var(--space-4, 16px);
+        margin: 0;
         font-size: clamp(var(--text-2xl, 24px), 4vw + 1rem, var(--text-4xl, 36px));
         font-weight: 700;
         /* clamp + media query の不連続を解消。フォントサイズに追従する相対値で統一。 */
@@ -86,7 +86,7 @@ export class ArticleHeader extends LitElement {
         flex-wrap: wrap;
         align-items: center;
         list-style: none;
-        margin-block: var(--space-3, 12px);
+        margin: 0;
         padding: 0;
         gap: 0;
         font-size: var(--text-xs, 12px);
@@ -105,7 +105,7 @@ export class ArticleHeader extends LitElement {
 
       /* セカンダリメタデータ（出典・ライセンス）: 補助情報として控えめに */
       .metadata-list--secondary {
-        margin-top: var(--space-3, 12px);
+        margin-top: 0;
         padding-inline-start: var(--space-1, 4px);
         font-size: var(--text-xs, 12px);
         color: var(--fg-subtle, oklch(60% 0 0));
@@ -168,7 +168,7 @@ export class ArticleHeader extends LitElement {
       }
 
       .tags-row {
-        margin-block: var(--space-3, 12px);
+        margin: 0;
       }
 
       .tags-nav {
@@ -190,12 +190,35 @@ export class ArticleHeader extends LitElement {
         display: inline-flex;
       }
 
-      /* heading または status-badge の直後（primary metadata なし）は余白を増やす */
-      .heading + .tags-row,
-      .status-badge + .heading + .tags-row,
-      .breadcrumbs-row + .heading + .tags-row,
-      .breadcrumbs-row + .status-badge + .heading + .tags-row {
-        margin-top: var(--space-3, 12px);
+      /* heading 以降の metadata/tag stack は隣接要素間で段間を制御する */
+      /* タイトル → 主要メタデータ */
+      .heading + .metadata-list--primary {
+        margin-block-start: var(--space-5, 20px);
+      }
+
+      /* タイトル → タグ（主要メタデータなし） */
+      .heading + .tags-row {
+        margin-block-start: var(--space-4, 16px);
+      }
+
+      /* タイトル → 補助メタデータ（主要メタデータもタグもない場合） */
+      .heading + .metadata-list--secondary {
+        margin-block-start: var(--space-4, 16px);
+      }
+
+      /* 主要メタデータ → タグ */
+      .metadata-list--primary + .tags-row {
+        margin-block-start: var(--space-3, 12px);
+      }
+
+      /* 主要メタデータ → 補助メタデータ */
+      .metadata-list--primary + .metadata-list--secondary {
+        margin-block-start: var(--space-3, 12px);
+      }
+
+      /* タグ → 補助メタデータ */
+      .tags-row + .metadata-list--secondary {
+        margin-block-start: var(--space-3, 12px);
       }
 
       /* ステータスバッジ: 見出し上部の信頼性シグナル。メタデータリストとは独立して配置。 */
