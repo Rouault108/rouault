@@ -252,7 +252,7 @@ test.describe('No-JS baseline', () => {
     expect(state?.horizontalOverflow ?? 0).toBeLessThanOrEqual(1);
 
     await expect(page.locator('#main-content')).toContainText(
-      'front matter、TOC、code block、table',
+      'note shell / front matter / TOC / hash navigation / code block / table',
     );
   });
 
