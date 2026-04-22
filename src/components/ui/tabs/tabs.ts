@@ -266,6 +266,9 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
     }
 
     void this.updateComplete.then(() => {
+      if (!this.isConnected) {
+        return;
+      }
       this.indicatorController.scheduleReposition();
       this.scrollActiveTabIntoView();
     });
@@ -374,6 +377,9 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
     }
 
     void this.updateComplete.then(() => {
+      if (!this.isConnected) {
+        return;
+      }
       this.indicatorController.scheduleReposition();
       this.scrollActiveTabIntoView();
     });

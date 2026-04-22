@@ -19,6 +19,8 @@ export class TabsUrlSyncController implements ReactiveController {
   private readonly host: ReactiveControllerHost & TabsUrlSyncHost;
   private suppressWrite = false;
   private changeEventName: string | null = null;
+  private locationSyncGeneration = 0;
+  private locationSyncRafId: number | null = null;
 
   constructor(host: ReactiveControllerHost & TabsUrlSyncHost) {
     this.host = host;
@@ -45,11 +47,16 @@ export class TabsUrlSyncController implements ReactiveController {
       return;
     }
 
+    this.locationSyncGeneration += 1;
     window.removeEventListener('popstate', this.onLocationStateChange);
     window.removeEventListener('hashchange', this.onLocationStateChange);
     if (this.changeEventName !== null) {
       window.removeEventListener(this.changeEventName, this.onLocationStateChange as EventListener);
       this.changeEventName = null;
+    }
+    if (this.locationSyncRafId !== null) {
+      cancelAnimationFrame(this.locationSyncRafId);
+      this.locationSyncRafId = null;
     }
   }
 
@@ -181,15 +188,30 @@ export class TabsUrlSyncController implements ReactiveController {
       return;
     }
 
+    const syncGeneration = ++this.locationSyncGeneration;
+
     queueMicrotask(() => {
-      if (!this.host.isUrlSyncEnabled()) {
+      if (
+        syncGeneration !== this.locationSyncGeneration ||
+        !this.host.getHostElement().isConnected ||
+        !this.host.isUrlSyncEnabled()
+      ) {
         return;
       }
       this.syncFromLocationState();
     });
 
-    window.requestAnimationFrame(() => {
-      if (!this.host.isUrlSyncEnabled()) {
+    if (this.locationSyncRafId !== null) {
+      cancelAnimationFrame(this.locationSyncRafId);
+    }
+
+    this.locationSyncRafId = window.requestAnimationFrame(() => {
+      this.locationSyncRafId = null;
+      if (
+        syncGeneration !== this.locationSyncGeneration ||
+        !this.host.getHostElement().isConnected ||
+        !this.host.isUrlSyncEnabled()
+      ) {
         return;
       }
       this.syncFromLocationState();
