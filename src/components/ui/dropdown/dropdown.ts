@@ -162,8 +162,6 @@ export class Dropdown extends LitElement {
   private _restoreFocusOnClose = true;
   private readonly _menuId = `dropdown-menu-${Math.random().toString(36).slice(2, 11)}`;
   private readonly _triggerId = `dropdown-trigger-${Math.random().toString(36).slice(2, 11)}`;
-  @state()
-  private _resolvedTriggerId = this._triggerId;
   private _boundTriggerElement: HTMLElement | null = null;
   @state()
   private _positionPhase: PositionPhase = 'idle';
@@ -230,7 +228,7 @@ export class Dropdown extends LitElement {
     }
 
     if (changedProperties.has('side') || changedProperties.has('align')) {
-      if (this.opened) {
+      if (this.opened && this._positionPhase === 'ready') {
         void this._overlayController?.refreshPosition();
       }
     }
@@ -242,13 +240,16 @@ export class Dropdown extends LitElement {
         this._syncTriggerElement();
       }
     }
-
   }
 
   open(): void {
     if (this.disabled || this.opened) {
       return;
     }
+
+    this._cancelPendingPositionSettle({ invalidateToken: true });
+    this._positionPhase = 'settling';
+    this._syncPanelAccessibility();
     this.opened = true;
   }
 
@@ -256,7 +257,11 @@ export class Dropdown extends LitElement {
     if (!this.opened) {
       return;
     }
+
     this._restoreFocusOnClose = restoreFocus;
+    this._cancelPendingPositionSettle({ invalidateToken: true });
+    this._positionPhase = 'idle';
+    this._syncPanelAccessibility();
     this.opened = false;
   }
 
@@ -282,14 +287,11 @@ export class Dropdown extends LitElement {
   }
 
   private _onOpen(): void {
-    this._cancelPendingPositionSettle({ invalidateToken: true });
-    this._positionPhase = 'settling';
-    this._syncPanelAccessibility();
-
     const token = ++this._positionSettleToken;
     const focusTarget = this._pendingOpenFocusTarget;
     this._pendingOpenFocusTarget = 'first';
 
+    this._syncPanelAccessibility();
     this._installPanelOpenObserver(token, focusTarget);
 
     try {
@@ -310,8 +312,6 @@ export class Dropdown extends LitElement {
   private _onClose(): void {
     const panel = this.getMenuElement();
 
-    this._cancelPendingPositionSettle({ invalidateToken: true });
-    this._positionPhase = 'idle';
     this._syncPanelAccessibility();
     this._stopOverlay();
 
@@ -385,11 +385,11 @@ export class Dropdown extends LitElement {
   }
 
   private _startOverlay(): void {
-    this._ensureOverlayController().syncOpenState(true);
+    this._ensureOverlayController().activate();
   }
 
   private _stopOverlay(): void {
-    this._overlayController?.syncOpenState(false);
+    this._overlayController?.deactivate();
   }
 
   private _handleOverlayDismissRequest(reason: AnchoredOverlayDismissReason, event: Event): void {
@@ -454,6 +454,7 @@ export class Dropdown extends LitElement {
 
     panel.dataset['positionPhase'] = this._positionPhase;
     panel.setAttribute('aria-hidden', isReady ? 'false' : 'true');
+    panel.setAttribute('aria-labelledby', this._getTriggerElement()?.id ?? this._triggerId);
 
     if (isReady) {
       panel.removeAttribute('inert');
@@ -535,27 +536,98 @@ export class Dropdown extends LitElement {
       return;
     }
 
-    const firstPass = await overlay.recomputePosition();
-    if (!this._isActiveSettleToken(token)) {
-      return;
+    const deadline = this._getMonotonicNow() + OPEN_SETTLE_WATCHDOG_MS;
+    let hadSuccessfulRecompute = false;
+
+    while (this._isActiveSettleToken(token)) {
+      const positioned = await overlay.recomputePosition();
+      if (!this._isActiveSettleToken(token)) {
+        return;
+      }
+
+      hadSuccessfulRecompute ||= positioned;
+
+      if (positioned && this._hasStablePanelGeometry()) {
+        this._commitReadyState(token, focusTarget);
+        return;
+      }
+
+      if (this._getMonotonicNow() >= deadline) {
+        break;
+      }
+
+      await this._waitForAnimationFrame(token);
+      if (!this._isActiveSettleToken(token)) {
+        return;
+      }
     }
 
-    await this._waitForAnimationFrame(token);
-    if (!this._isActiveSettleToken(token)) {
-      return;
-    }
-
-    const secondPass = await overlay.recomputePosition();
-    if (!this._isActiveSettleToken(token)) {
-      return;
-    }
-
-    if (!firstPass && !secondPass) {
+    if (!hadSuccessfulRecompute || !this._hasStablePanelGeometry()) {
       this._failOpen(token);
       return;
     }
 
     this._commitReadyState(token, focusTarget);
+  }
+
+  private _readInlinePx(value: string | null): number {
+    const parsed = Number.parseFloat(value ?? '0');
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private _hasStablePanelGeometry(): boolean {
+    const panel = this.getMenuElement();
+    const trigger = this._getTriggerElement();
+
+    if (!panel || !trigger) {
+      return false;
+    }
+
+    const left = this._readInlinePx(panel.style.left);
+    const top = this._readInlinePx(panel.style.top);
+    const panelRect = panel.getBoundingClientRect();
+    const triggerRect = trigger.getBoundingClientRect();
+
+    if (!Number.isFinite(left) || !Number.isFinite(top)) {
+      return false;
+    }
+
+    if (left === 0 && top === 0) {
+      return false;
+    }
+
+    if (panelRect.width <= 0 || panelRect.height <= 0) {
+      return false;
+    }
+
+    if (panelRect.top <= 0) {
+      return false;
+    }
+
+    return this._isPanelNearTrigger(panelRect, triggerRect);
+  }
+
+  private _isPanelNearTrigger(panelRect: DOMRect, triggerRect: DOMRect): boolean {
+    const proximityThreshold = 160;
+
+    switch (this.side) {
+      case 'top':
+        return Math.abs(panelRect.bottom - triggerRect.top) < proximityThreshold;
+      case 'right':
+        return Math.abs(panelRect.left - triggerRect.right) < proximityThreshold;
+      case 'left':
+        return Math.abs(panelRect.right - triggerRect.left) < proximityThreshold;
+      case 'bottom':
+      default:
+        return Math.abs(panelRect.top - triggerRect.bottom) < proximityThreshold;
+    }
+  }
+
+  private _getMonotonicNow(): number {
+    if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+      return performance.now();
+    }
+    return Date.now();
   }
 
   private _commitReadyState(token: number, focusTarget: 'first' | 'last'): void {
@@ -565,6 +637,7 @@ export class Dropdown extends LitElement {
 
     this._positionPhase = 'ready';
     this._syncPanelAccessibility();
+    this._overlayController?.startAutoUpdate();
     this._focusInitialItem(focusTarget);
   }
 
@@ -634,6 +707,7 @@ export class Dropdown extends LitElement {
 
   private _updateTriggerAria(expanded: boolean): void {
     const trigger = this._getTriggerElement();
+    const panel = this.getMenuElement();
 
     if (!trigger) {
       return;
@@ -662,7 +736,7 @@ export class Dropdown extends LitElement {
       trigger.id = this._triggerId;
     }
 
-    this._resolvedTriggerId = trigger.id;
+    panel?.setAttribute('aria-labelledby', trigger.id);
   }
 
   private _getMenuItems(): MenuItem[] {
@@ -940,7 +1014,7 @@ export class Dropdown extends LitElement {
         data-position-phase="${this._positionPhase}"
         role="menu"
         id="${this._menuId}"
-        aria-labelledby="${this._resolvedTriggerId}"
+        aria-labelledby="${this._triggerId}"
         aria-hidden="${this._positionPhase === 'ready' ? 'false' : 'true'}"
         ?inert=${this._positionPhase !== 'ready'}
         @keydown="${this._handleMenuKeyDown}"

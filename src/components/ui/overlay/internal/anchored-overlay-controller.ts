@@ -49,12 +49,20 @@ export class AnchoredOverlayController {
 
   syncOpenState(open: boolean): void {
     if (open) {
+      this.activate();
       void this.refreshPosition();
-      this._setupDismissListeners();
       return;
     }
 
-    this._teardownPositioning();
+    this.deactivate();
+  }
+
+  activate(): void {
+    this._setupDismissListeners();
+  }
+
+  deactivate(): void {
+    this.stopAutoUpdate();
     this._teardownDismissListeners();
   }
 
@@ -95,18 +103,28 @@ export class AnchoredOverlayController {
   }
 
   async refreshPosition(): Promise<boolean> {
+    const positioned = await this.recomputePosition();
+
+    if (!positioned) {
+      this.stopAutoUpdate();
+      return false;
+    }
+
+    this.startAutoUpdate();
+    return true;
+  }
+
+  startAutoUpdate(): boolean {
     const reference = this._config.getReference();
     const floating = this._config.getFloating();
 
     if (!reference || !floating || !this._config.getOpen()) {
+      this.stopAutoUpdate();
       return false;
     }
 
-    this._teardownPositioning();
-    const positioned = await this.recomputePosition();
-
-    if (!positioned) {
-      return false;
+    if (this._cleanupAutoUpdate !== null) {
+      return true;
     }
 
     this._cleanupAutoUpdate = autoUpdate(reference, floating, () => {
@@ -115,8 +133,13 @@ export class AnchoredOverlayController {
     return true;
   }
 
+  stopAutoUpdate(): void {
+    this._cleanupAutoUpdate?.();
+    this._cleanupAutoUpdate = null;
+  }
+
   destroy(): void {
-    this.syncOpenState(false);
+    this.deactivate();
   }
 
   private _setupDismissListeners(): void {
@@ -194,11 +217,6 @@ export class AnchoredOverlayController {
         this._cleanupScrollListener = null;
       };
     }
-  }
-
-  private _teardownPositioning(): void {
-    this._cleanupAutoUpdate?.();
-    this._cleanupAutoUpdate = null;
   }
 
   private _teardownDismissListeners(): void {

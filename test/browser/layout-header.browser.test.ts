@@ -839,6 +839,35 @@ describe('layout-header browser contract', () => {
     expect(Math.abs(panelTop - triggerRect.bottom)).to.be.lessThan(160);
   });
 
+  it('mobile 幅の theme dropdown は ready 前に trigger aria-expanded を true にしないこと', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 375px;">
+        <layout-header note-layout sidebar-enabled></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    await waitForLitUpdate(header);
+
+    const themeDropdown = expectPresent(
+      header.shadowRoot?.querySelector<Dropdown>('[data-dropdown="theme"]'),
+      'themeDropdown',
+    );
+    const trigger = expectPresent(
+      themeDropdown.querySelector<HTMLElement>('[slot="trigger"]'),
+      'themeTrigger',
+    );
+
+    trigger.click();
+    await waitForLitUpdate(header);
+
+    expect(trigger.getAttribute('aria-expanded')).to.equal('false');
+
+    const panel = await waitForDropdownReady(themeDropdown);
+    expect(getPanelPhase(panel)).to.equal('ready');
+    expect(trigger.getAttribute('aria-expanded')).to.equal('true');
+  });
+
   it('mobile 幅の corpus dropdown 初回 open で settling 中は不可視、再 open でも非原点配置を維持すること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px;">
