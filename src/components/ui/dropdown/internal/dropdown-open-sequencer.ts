@@ -21,8 +21,9 @@ const DEFAULT_WATCHDOG_MS = 180;
 const NEAR_TRIGGER_THRESHOLD = 160;
 const DEFAULT_REQUEST_ANIMATION_FRAME: typeof requestAnimationFrame = (...args) =>
   window.requestAnimationFrame(...args);
-const DEFAULT_CANCEL_ANIMATION_FRAME: typeof cancelAnimationFrame = (...args) =>
+const DEFAULT_CANCEL_ANIMATION_FRAME: typeof cancelAnimationFrame = (...args) => {
   window.cancelAnimationFrame(...args);
+};
 
 const getPlacementSide = (placement: string): 'top' | 'right' | 'bottom' | 'left' => {
   if (placement.startsWith('top')) {
