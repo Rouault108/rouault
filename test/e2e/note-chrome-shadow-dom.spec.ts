@@ -40,6 +40,7 @@ const readNoteChromeState = async (
   headerHeight: number;
   headerWidth: number;
   proseWidth: number;
+  headerBreadcrumbLabels: string[];
   tocShadowRoot: boolean;
   tocTemplateCount: number;
   tocLabels: string[];
@@ -57,6 +58,37 @@ const readNoteChromeState = async (
       return element.querySelectorAll(
         ':scope > template[shadowrootmode], :scope > template[shadowroot]',
       ).length;
+    };
+
+    const readHeaderBreadcrumbLabels = (element: Element | null): string[] => {
+      if (!(element instanceof HTMLElement)) {
+        return [];
+      }
+
+      const headerShadowRoot = element.shadowRoot;
+      if (!(headerShadowRoot instanceof ShadowRoot)) {
+        return [];
+      }
+
+      const breadcrumbs = headerShadowRoot.querySelector<HTMLElement>('ui-breadcrumbs');
+      if (!(breadcrumbs instanceof HTMLElement)) {
+        return [];
+      }
+
+      const breadcrumbsShadowRoot = breadcrumbs.shadowRoot;
+      if (!(breadcrumbsShadowRoot instanceof ShadowRoot)) {
+        return [];
+      }
+
+      const labels = Array.from(
+        breadcrumbsShadowRoot.querySelectorAll<HTMLElement>(
+          '.breadcrumb-link, .breadcrumb-current',
+        ),
+      )
+        .map((node) => node.textContent?.trim() ?? '')
+        .filter((text) => text.length > 0);
+
+      return Array.from(new Set(labels));
     };
 
     const readTocLabels = (element: Element | null): string[] => {
@@ -101,6 +133,7 @@ const readNoteChromeState = async (
           : -1,
       headerWidth: roundWidth(articleHeader),
       proseWidth: roundWidth(prose),
+      headerBreadcrumbLabels: readHeaderBreadcrumbLabels(articleHeader),
       tocShadowRoot: toc instanceof HTMLElement && toc.shadowRoot !== null,
       tocTemplateCount: readDirectTemplateCount(toc),
       tocLabels: readTocLabels(toc),
@@ -109,10 +142,12 @@ const readNoteChromeState = async (
 
 const expectLayoutRichNoteChrome = async (page: Page): Promise<void> => {
   await expect(page.locator('ui-article-header')).toHaveAttribute('heading', layoutRich.title);
-  await expect(page.locator('ui-article-header')).toContainText('Notes');
   await expect(page.locator('#main-content')).toContainText('このノートは e2e 専用 fixture です。');
 
   await expect.poll(async () => (await readNoteChromeState(page)).headerShadowRoot).toBe(true);
+  await expect
+    .poll(async () => (await readNoteChromeState(page)).headerBreadcrumbLabels.join('\n'))
+    .toContain('Notes');
   await expect.poll(async () => (await readNoteChromeState(page)).tocShadowRoot).toBe(true);
   await expect.poll(async () => (await readNoteChromeState(page)).headerTemplateCount).toBe(0);
   await expect.poll(async () => (await readNoteChromeState(page)).tocTemplateCount).toBe(0);

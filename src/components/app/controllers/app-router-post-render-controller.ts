@@ -51,11 +51,17 @@ export class AppRouterPostRenderController {
     };
   }
 
-  restoreInitialHashScrollImmediately(url: string): boolean {
-    return this.scrollToHashImmediately(url);
+  restoreInitialScrollImmediately(url: string): boolean {
+    const didScroll = this.scrollToHashImmediately(url);
+    if (didScroll) {
+      return true;
+    }
+
+    this.scrollToTopImmediately(url);
+    return false;
   }
 
-  async restoreInitialHashScroll(): Promise<void> {
+  async restoreInitialScroll(): Promise<void> {
     const waitForLoad = async (): Promise<void> => {
       if (document.readyState === 'complete') {
         return;
@@ -73,6 +79,7 @@ export class AppRouterPostRenderController {
     };
 
     await waitForLoad();
+
     const didScroll = await this.scrollToHash(window.location.href);
     if (didScroll) {
       return;
@@ -80,6 +87,8 @@ export class AppRouterPostRenderController {
 
     const hash = readDecodedHash(window.location.href);
     if (hash.length === 0) {
+      await this.waitForStableLayout();
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       return;
     }
 
@@ -88,13 +97,7 @@ export class AppRouterPostRenderController {
       return;
     }
 
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          resolve();
-        });
-      });
-    });
+    await this.waitForStableLayout();
 
     const absoluteTop = target.getBoundingClientRect().top + window.scrollY;
     window.scrollTo({ top: absoluteTop, left: 0, behavior: 'instant' });
@@ -106,13 +109,7 @@ export class AppRouterPostRenderController {
       return false;
     }
 
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          resolve();
-        });
-      });
-    });
+    await this.waitForStableLayout();
 
     const target = document.getElementById(hash);
     if (!(target instanceof HTMLElement)) {
@@ -121,6 +118,25 @@ export class AppRouterPostRenderController {
 
     target.scrollIntoView({ block: 'start', inline: 'nearest' });
     return true;
+  }
+
+  private scrollToTopImmediately(url: string): void {
+    const hash = readDecodedHash(url);
+    if (hash.length > 0) {
+      return;
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }
+
+  private async waitForStableLayout(): Promise<void> {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          resolve();
+        });
+      });
+    });
   }
 
   private scrollToHashImmediately(url: string): boolean {
@@ -137,7 +153,7 @@ export class AppRouterPostRenderController {
     /*
      * 初回 boot では TOC current 同期が先に進みやすいため、
      * 最低限の hash 到達だけは同期的に済ませて viewport 契約を先に成立させる。
-     * その後の restoreInitialHashScroll() が load 後の再整列を担当する。
+     * その後の restoreInitialScroll() が load 後の再整列を担当する。
      */
     target.scrollIntoView({ block: 'start', inline: 'nearest' });
     return true;

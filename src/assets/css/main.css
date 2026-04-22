@@ -2807,7 +2807,7 @@ section.footnotes li > :last-child {
 
 section[role='doc-endnotes'] li:target,
 section.footnotes li:target {
-  background: var(--bg-active, oklch(95% 0 0));
+  background-color: var(--bg-highlight-subtle, oklch(96% 0.04 65));
   border-radius: var(--radius-sm, 4px);
 }
 
