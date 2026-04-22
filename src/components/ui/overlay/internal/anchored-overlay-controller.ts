@@ -18,6 +18,17 @@ export interface AnchoredOverlayPositionContext {
   floating: HTMLElement;
 }
 
+export interface AnchoredOverlayCommitSnapshot {
+  x: number;
+  y: number;
+  placement: Placement;
+  reference: HTMLElement;
+  floating: HTMLElement;
+  referenceRect: DOMRectReadOnly;
+  floatingWidth: number;
+  floatingHeight: number;
+}
+
 export interface AnchoredOverlayControllerConfig {
   ownerDocument: Document;
   getReference: () => HTMLElement | null;
@@ -32,6 +43,7 @@ export interface AnchoredOverlayControllerConfig {
   shouldDismissOnScroll?: (event: Event) => boolean;
   onDismissRequest?: (reason: AnchoredOverlayDismissReason, event: Event) => void;
   onPosition?: (context: AnchoredOverlayPositionContext) => void;
+  onCommit?: (snapshot: AnchoredOverlayCommitSnapshot) => void;
 }
 
 const DEFAULT_EDGE_PADDING = 12;
@@ -54,6 +66,7 @@ const roundViewportCorrection = (delta: number): number => {
 
 export class AnchoredOverlayController {
   private readonly _config: AnchoredOverlayControllerConfig;
+  private _lastCommitSnapshot: AnchoredOverlayCommitSnapshot | null = null;
   private _cleanupAutoUpdate: (() => void) | null = null;
   private _cleanupOutsidePointerListener: (() => void) | null = null;
   private _cleanupKeydownListener: (() => void) | null = null;
@@ -80,6 +93,10 @@ export class AnchoredOverlayController {
   deactivate(): void {
     this.stopAutoUpdate();
     this._teardownDismissListeners();
+  }
+
+  getLastCommitSnapshot(): AnchoredOverlayCommitSnapshot | null {
+    return this._lastCommitSnapshot;
   }
 
   async recomputePosition(): Promise<boolean> {
@@ -150,6 +167,23 @@ export class AnchoredOverlayController {
       resolvedY = Math.round(clampToRange(resolvedY, minY, correctedMaxY));
       floating.style.left = `${String(resolvedX)}px`;
       floating.style.top = `${String(resolvedY)}px`;
+      const referenceRect = reference.getBoundingClientRect();
+      const commitSnapshot: AnchoredOverlayCommitSnapshot = {
+        x: resolvedX,
+        y: resolvedY,
+        placement,
+        reference,
+        floating,
+        referenceRect: new DOMRectReadOnly(
+          referenceRect.x,
+          referenceRect.y,
+          referenceRect.width,
+          referenceRect.height,
+        ),
+        floatingWidth: actualRect.width,
+        floatingHeight: actualRect.height,
+      };
+      this._lastCommitSnapshot = commitSnapshot;
       this._config.onPosition?.({
         x: resolvedX,
         y: resolvedY,
@@ -157,6 +191,7 @@ export class AnchoredOverlayController {
         reference,
         floating,
       });
+      this._config.onCommit?.(commitSnapshot);
       return true;
     } catch {
       return false;

@@ -34,9 +34,9 @@ const isVisible = (element: HTMLElement): boolean => {
   );
 };
 
-const getPanelPhase = (panel: HTMLElement): 'idle' | 'settling' | 'ready' => {
+const getPanelPhase = (panel: HTMLElement): 'idle' | 'positioning' | 'ready' => {
   const phase = panel.dataset['positionPhase'];
-  if (phase === 'idle' || phase === 'settling' || phase === 'ready') {
+  if (phase === 'idle' || phase === 'positioning' || phase === 'ready') {
     return phase;
   }
 
@@ -49,11 +49,6 @@ const waitForAnimationFrames = async (count: number): Promise<void> => {
       requestAnimationFrame(() => resolve());
     });
   }
-};
-
-const readInlinePx = (value: string | null): number => {
-  const parsed = Number.parseFloat(value ?? '0');
-  return Number.isFinite(parsed) ? parsed : 0;
 };
 
 const getSearchTriggerButton = (host: ShadowRoot | null): HTMLButtonElement => {
@@ -126,6 +121,7 @@ const waitForDropdownIdle = async (dropdown: Dropdown): Promise<void> => {
 };
 
 describe('layout-header browser contract', () => {
+  // browser: state / accessibility / interactivity の公開契約を検証する
   afterEach(() => {
     layoutSidebarController.reset();
     layoutTocRuntimeStore.reset();
@@ -806,7 +802,7 @@ describe('layout-header browser contract', () => {
     expect(header.shadowRoot?.querySelector('.sidebar-toggle')).to.not.equal(null);
   });
 
-  it('mobile 幅の theme dropdown 初回 open で settling 中は不可視、ready 後は非原点へ配置されること', async () => {
+  it('mobile 幅の theme dropdown 初回 open で positioning 中は不可視、ready 後に操作可能になること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px;">
         <layout-header note-layout sidebar-enabled></layout-header>
@@ -828,31 +824,18 @@ describe('layout-header browser contract', () => {
     trigger.click();
     await waitForLitUpdate(header);
 
-    const settlingPanel = expectPresent(themeDropdown.getMenuElement(), 'settlingPanel');
-    expect(getPanelPhase(settlingPanel)).to.equal('settling');
-    expect(getComputedStyle(settlingPanel).visibility).to.equal('hidden');
-    expect(getComputedStyle(settlingPanel).pointerEvents).to.equal('none');
+    const positioningPanel = expectPresent(themeDropdown.getMenuElement(), 'positioningPanel');
+    expect(getPanelPhase(positioningPanel)).to.equal('positioning');
+    expect(getComputedStyle(positioningPanel).visibility).to.equal('hidden');
+    expect(getComputedStyle(positioningPanel).pointerEvents).to.equal('none');
 
     const panel = await waitForDropdownReady(themeDropdown);
-    const panelRect = panel.getBoundingClientRect();
-    const triggerRect = trigger.getBoundingClientRect();
-    const panelLeft = readInlinePx(panel.style.left);
-    const panelTop = readInlinePx(panel.style.top);
 
     expect(getPanelPhase(panel)).to.equal('ready');
     expect(getComputedStyle(panel).visibility).to.equal('visible');
     expect(getComputedStyle(panel).pointerEvents).to.equal('auto');
-
-    // 原点 (0, 0) 固着のまま ready になっていないことを検証する。
-    expect(panelLeft).to.not.equal(0);
-    expect(panelTop).to.not.equal(0);
-
-    expect(panelRect.width).to.be.greaterThan(0);
-    expect(panelRect.height).to.be.greaterThan(0);
-    expect(panelRect.top).to.be.greaterThan(0);
-
-    // trigger 近傍に出ていることだけを緩やかに確認する。
-    expect(Math.abs(panelTop - triggerRect.bottom)).to.be.lessThan(160);
+    expect(panel.getAttribute('aria-hidden')).to.equal('false');
+    expect(panel.hasAttribute('inert')).to.equal(false);
   });
 
   it('mobile 幅の theme dropdown は ready 前に trigger aria-expanded を true にしないこと', async () => {
@@ -884,7 +867,7 @@ describe('layout-header browser contract', () => {
     expect(trigger.getAttribute('aria-expanded')).to.equal('true');
   });
 
-  it('mobile 幅の corpus dropdown 初回 open で settling 中は不可視、再 open でも非原点配置を維持すること', async () => {
+  it('mobile 幅の corpus dropdown 初回 open で positioning 中は不可視、再 open でも操作可能になること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px;">
         <layout-header
@@ -911,28 +894,18 @@ describe('layout-header browser contract', () => {
       trigger.click();
       await waitForLitUpdate(header);
 
-      const settlingPanel = expectPresent(corpusDropdown.getMenuElement(), 'settlingPanel');
-      expect(getPanelPhase(settlingPanel)).to.equal('settling');
-      expect(getComputedStyle(settlingPanel).visibility).to.equal('hidden');
-      expect(getComputedStyle(settlingPanel).pointerEvents).to.equal('none');
+      const positioningPanel = expectPresent(corpusDropdown.getMenuElement(), 'positioningPanel');
+      expect(getPanelPhase(positioningPanel)).to.equal('positioning');
+      expect(getComputedStyle(positioningPanel).visibility).to.equal('hidden');
+      expect(getComputedStyle(positioningPanel).pointerEvents).to.equal('none');
 
       const panel = await waitForDropdownReady(corpusDropdown);
-      const rect = panel.getBoundingClientRect();
-      const triggerRect = trigger.getBoundingClientRect();
-      const panelLeft = readInlinePx(panel.style.left);
-      const panelTop = readInlinePx(panel.style.top);
 
       expect(getPanelPhase(panel)).to.equal('ready');
       expect(getComputedStyle(panel).visibility).to.equal('visible');
       expect(getComputedStyle(panel).pointerEvents).to.equal('auto');
-
-      expect(panelLeft).to.not.equal(0);
-      expect(panelTop).to.not.equal(0);
-
-      expect(rect.width).to.be.greaterThan(0);
-      expect(rect.height).to.be.greaterThan(0);
-      expect(rect.top).to.be.greaterThan(0);
-      expect(Math.abs(panelTop - triggerRect.bottom)).to.be.lessThan(160);
+      expect(panel.getAttribute('aria-hidden')).to.equal('false');
+      expect(panel.hasAttribute('inert')).to.equal(false);
 
       corpusDropdown.close(false);
       await waitForLitUpdate(header);

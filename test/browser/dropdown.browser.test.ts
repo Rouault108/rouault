@@ -9,7 +9,7 @@ interface MenuItemSelectDetail {
   label: string;
 }
 
-type DropdownPanelPhase = 'idle' | 'settling' | 'ready';
+type DropdownPanelPhase = 'idle' | 'positioning' | 'ready';
 
 const getTrigger = (dropdown: Dropdown): HTMLElement | null =>
   dropdown.querySelector<HTMLElement>('[slot="trigger"]');
@@ -24,7 +24,7 @@ const getItemButton = (item: MenuItem): HTMLButtonElement | null =>
 
 const getPanelPhase = (panel: HTMLElement): DropdownPanelPhase => {
   const phase = panel.dataset['positionPhase'];
-  if (phase === 'idle' || phase === 'settling' || phase === 'ready') {
+  if (phase === 'idle' || phase === 'positioning' || phase === 'ready') {
     return phase;
   }
 
@@ -167,7 +167,7 @@ describe('ui-dropdown browser contract', () => {
     }
   });
 
-  it('open 直後は settling を公開し、ready 後にのみ interaction-ready へ遷移すること', async () => {
+  it('open 直後は positioning を公開し、ready 後にのみ interaction-ready へ遷移すること', async () => {
     const dropdown = await fixture<Dropdown>(html`
       <ui-dropdown side="bottom" align="start">
         <button slot="trigger" type="button">メニュー</button>
@@ -192,7 +192,7 @@ describe('ui-dropdown browser contract', () => {
     await waitForLitUpdate(dropdown);
 
     expect(dropdown.opened).to.equal(true);
-    expect(getPanelPhase(panel)).to.equal('settling');
+    expect(getPanelPhase(panel)).to.equal('positioning');
     expect(trigger.getAttribute('aria-expanded')).to.equal('false');
     expect(panel.getAttribute('aria-hidden')).to.equal('true');
     expect(panel.hasAttribute('inert')).to.equal(true);
@@ -232,7 +232,7 @@ describe('ui-dropdown browser contract', () => {
     dispatchKey(trigger, 'ArrowDown');
     await waitForLitUpdate(dropdown);
 
-    expect(getPanelPhase(panel)).to.equal('settling');
+    expect(getPanelPhase(panel)).to.equal('positioning');
     expect(getFocusedValue(dropdown)).to.equal(null);
 
     await waitUntilReadyState(dropdown, trigger, panel);
@@ -280,7 +280,7 @@ describe('ui-dropdown browser contract', () => {
     dispatchKey(trigger, 'ArrowUp');
     await waitForLitUpdate(dropdown);
 
-    expect(getPanelPhase(panel)).to.equal('settling');
+    expect(getPanelPhase(panel)).to.equal('positioning');
     expect(getFocusedValue(dropdown)).to.equal(null);
 
     await waitUntilReadyState(dropdown, trigger, panel);
@@ -339,7 +339,7 @@ describe('ui-dropdown browser contract', () => {
     dropdown.open();
     await waitForLitUpdate(dropdown);
 
-    expect(getPanelPhase(panel)).to.equal('settling');
+    expect(getPanelPhase(panel)).to.equal('positioning');
 
     dropdown.disabled = true;
     await waitForLitUpdate(dropdown);

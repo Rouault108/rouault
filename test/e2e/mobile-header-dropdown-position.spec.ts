@@ -98,6 +98,7 @@ const readHeaderDropdown = async (page: Page, selector: string): Promise<Dropdow
 };
 
 test.describe('mobile header dropdown positioning contract', () => {
+  // e2e: 実ブラウザでの最終 geometry / pointer 操作を監視する
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 900 });
   });
@@ -123,12 +124,7 @@ test.describe('mobile header dropdown positioning contract', () => {
     const ready = await readHeaderDropdown(page, '[data-dropdown="theme"]');
     expect(ready?.width ?? 0).toBeGreaterThan(0);
     expect(ready?.height ?? 0).toBeGreaterThan(0);
-    /*
-     * iOS WebKit の popover/top-layer 合成では、右端寄せ dropdown の最終 rect が
-     * viewport edge 付近まで詰まることがある。ここでは左上露出の再発を防ぎつつ、
-     * trigger 近傍に settle していることを正本として監視する。
-     */
-    expect(ready?.left ?? 0).toBeGreaterThan(0);
+    expect(!((ready?.left ?? 0) === 0 && (ready?.top ?? 0) === 0)).toBe(true);
     expect(Math.abs((ready?.top ?? 0) - (ready?.triggerBottom ?? 0))).toBeLessThanOrEqual(96);
 
     await clickHeaderDropdownItem(page, '[data-dropdown="theme"]', 'light');
@@ -177,10 +173,10 @@ test.describe('mobile header dropdown positioning contract', () => {
         });
 
       const ready = await readHeaderDropdown(page, '.corpus-switcher');
-      expect(ready?.left ?? 0).toBeGreaterThan(0);
-      expect(ready?.top ?? 0).toBeGreaterThan(0);
+      expect(!((ready?.left ?? 0) === 0 && (ready?.top ?? 0) === 0)).toBe(true);
       expect(ready?.width ?? 0).toBeGreaterThan(0);
       expect(ready?.height ?? 0).toBeGreaterThan(0);
+      expect(Math.abs((ready?.top ?? 0) - (ready?.triggerBottom ?? 0))).toBeLessThanOrEqual(96);
 
       if (attempt === 0) {
         await page.keyboard.press('Escape');

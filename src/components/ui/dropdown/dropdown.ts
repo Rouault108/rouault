@@ -3,16 +3,16 @@ import { customElement, property, queryAssignedElements, state } from 'lit/decor
 import { type Placement } from '@floating-ui/dom';
 import {
   AnchoredOverlayController,
+  type AnchoredOverlayCommitSnapshot,
   type AnchoredOverlayDismissReason,
 } from '../overlay/internal/anchored-overlay-controller.js';
+import { DropdownOpenSequencer } from './internal/dropdown-open-sequencer.js';
 
 export type DropdownSide = 'top' | 'right' | 'bottom' | 'left';
 export type DropdownAlign = 'start' | 'center' | 'end';
 export type MenuItemVariant = 'default' | 'danger';
 
-type PositionPhase = 'idle' | 'settling' | 'ready';
-
-const OPEN_SETTLE_WATCHDOG_MS = 180;
+type PositionPhase = 'idle' | 'positioning' | 'ready';
 
 /**
  * command menu を一時的に提示する dropdown です。
@@ -72,12 +72,6 @@ export class Dropdown extends LitElement {
         opacity var(--duration-instant, 0ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         transform var(--duration-instant, 0ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         visibility 0s linear var(--duration-instant, 0ms);
-    }
-
-    .panel[popover],
-    .panel[popover]:popover-open {
-      inset: auto auto auto auto;
-      margin: 0;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -162,21 +156,12 @@ export class Dropdown extends LitElement {
   private _restoreFocusOnClose = true;
   private readonly _menuId = `dropdown-menu-${Math.random().toString(36).slice(2, 11)}`;
   private readonly _triggerId = `dropdown-trigger-${Math.random().toString(36).slice(2, 11)}`;
+  private readonly _openSequencer = new DropdownOpenSequencer();
   private _boundTriggerElement: HTMLElement | null = null;
   @state()
   private _positionPhase: PositionPhase = 'idle';
-  private _positionSettleToken = 0;
-  private _positionSettleRafIds: number[] = [];
-  private _panelToggleAbortController: AbortController | null = null;
-  private _positionWatchdogTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private _lastCommitSnapshot: AnchoredOverlayCommitSnapshot | null = null;
   private _pendingOpenFocusTarget: 'first' | 'last' = 'first';
-
-  private get _supportsPopoverApi(): boolean {
-    if (typeof HTMLElement === 'undefined') {
-      return false;
-    }
-    return 'showPopover' in HTMLElement.prototype && 'hidePopover' in HTMLElement.prototype;
-  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -188,7 +173,7 @@ export class Dropdown extends LitElement {
     this.removeEventListener('menu-item-click', this._handleMenuItemClick as EventListener);
     this._detachTriggerListeners(this._boundTriggerElement);
     this._boundTriggerElement = null;
-    this._cancelPendingPositionSettle({ invalidateToken: true });
+    this._cancelOpenSequencing();
     this._overlayController?.destroy();
 
     if (this._typeaheadTimer !== null) {
@@ -247,8 +232,8 @@ export class Dropdown extends LitElement {
       return;
     }
 
-    this._cancelPendingPositionSettle({ invalidateToken: true });
-    this._positionPhase = 'settling';
+    this._cancelOpenSequencing();
+    this._positionPhase = 'positioning';
     this._syncPanelAccessibility();
     this.opened = true;
   }
@@ -259,7 +244,7 @@ export class Dropdown extends LitElement {
     }
 
     this._restoreFocusOnClose = restoreFocus;
-    this._cancelPendingPositionSettle({ invalidateToken: true });
+    this._cancelOpenSequencing();
     this._positionPhase = 'idle';
     this._syncPanelAccessibility();
     this.opened = false;
@@ -287,42 +272,19 @@ export class Dropdown extends LitElement {
   }
 
   private _onOpen(): void {
-    const token = ++this._positionSettleToken;
     const focusTarget = this._pendingOpenFocusTarget;
     this._pendingOpenFocusTarget = 'first';
 
+    this._lastCommitSnapshot = null;
     this._syncPanelAccessibility();
-    this._installPanelOpenObserver(token, focusTarget);
-
-    try {
-      this._syncPanelPopoverState(true);
-    } catch {
-      this._failOpen(token);
-      return;
-    }
-
     this._startOverlay();
-    this._armPositionWatchdog(token, focusTarget);
-
-    if (!this._supportsPopoverApi) {
-      this._beginPositionSettle(token, focusTarget);
-    }
+    this._beginPositioning(focusTarget);
   }
 
   private _onClose(): void {
-    const panel = this.getMenuElement();
-
+    this._lastCommitSnapshot = null;
     this._syncPanelAccessibility();
     this._stopOverlay();
-
-    try {
-      this._syncPanelPopoverState(false);
-    } catch {
-      // close 経路では popover cleanup failure を外へ漏らさない
-    }
-
-    panel?.style.setProperty('left', '0px');
-    panel?.style.setProperty('top', '0px');
 
     if (this._restoreFocusOnClose) {
       this._getTriggerElement()?.focus({ preventScroll: true });
@@ -379,6 +341,9 @@ export class Dropdown extends LitElement {
       onDismissRequest: (reason, event) => {
         this._handleOverlayDismissRequest(reason, event);
       },
+      onCommit: (snapshot) => {
+        this._lastCommitSnapshot = snapshot;
+      },
     });
 
     return this._overlayController;
@@ -408,40 +373,6 @@ export class Dropdown extends LitElement {
     }
   }
 
-  private _syncPanelPopoverState(open: boolean): void {
-    const panel = this.getMenuElement() as
-      | (HTMLElement & { showPopover?: () => void; hidePopover?: () => void })
-      | null;
-
-    if (!panel) {
-      return;
-    }
-
-    if (!this._supportsPopoverApi) {
-      panel.removeAttribute('popover');
-      return;
-    }
-
-    panel.setAttribute('popover', 'manual');
-
-    const isOpen = (() => {
-      try {
-        return panel.matches(':popover-open');
-      } catch {
-        return false;
-      }
-    })();
-
-    if (open && !isOpen && typeof panel.showPopover === 'function') {
-      panel.showPopover();
-      return;
-    }
-
-    if (!open && isOpen && typeof panel.hidePopover === 'function') {
-      panel.hidePopover();
-    }
-  }
-
   private _syncPanelAccessibility(): void {
     const panel = this.getMenuElement();
     const isReady = this._positionPhase === 'ready';
@@ -463,175 +394,28 @@ export class Dropdown extends LitElement {
     }
   }
 
-  private _installPanelOpenObserver(
-    token: number,
-    focusTarget: 'first' | 'last',
-  ): void {
-    if (!this._supportsPopoverApi) {
-      return;
-    }
-
-    const panel = this.getMenuElement();
-    if (!panel) {
-      return;
-    }
-
-    this._panelToggleAbortController?.abort();
-    const controller = new AbortController();
-    this._panelToggleAbortController = controller;
-
-    panel.addEventListener(
-      'toggle',
-      (event: Event) => {
-        const toggleState = (event as Event & { newState?: string }).newState;
-        if (toggleState !== 'open') {
-          return;
-        }
-
-        this._beginPositionSettle(token, focusTarget);
-      },
-      { once: true, signal: controller.signal },
-    );
-  }
-
-  private _armPositionWatchdog(token: number, focusTarget: 'first' | 'last'): void {
-    this._clearPositionWatchdog();
-    this._positionWatchdogTimeoutId = setTimeout(() => {
-      this._positionWatchdogTimeoutId = null;
-      if (!this._isActiveSettleToken(token)) {
-        return;
-      }
-      this._beginPositionSettle(token, focusTarget);
-    }, OPEN_SETTLE_WATCHDOG_MS);
-  }
-
-  private _beginPositionSettle(token: number, focusTarget: 'first' | 'last'): void {
-    if (!this._isActiveSettleToken(token)) {
-      return;
-    }
-
-    this._clearPositionWatchdog();
-    this._panelToggleAbortController?.abort();
-    this._panelToggleAbortController = null;
-    this._clearPendingPositionSettleRafs();
-
-    const firstRafId = requestAnimationFrame(() => {
-      this._dropPositionSettleRafId(firstRafId);
-      void this._runPositionSettleSequence(token, focusTarget);
-    });
-    this._positionSettleRafIds.push(firstRafId);
-  }
-
-  private async _runPositionSettleSequence(
-    token: number,
-    focusTarget: 'first' | 'last',
-  ): Promise<void> {
-    if (!this._isActiveSettleToken(token)) {
-      return;
-    }
-
+  private _beginPositioning(focusTarget: 'first' | 'last'): void {
     const overlay = this._overlayController;
     if (!overlay) {
-      this._failOpen(token);
+      this._failOpen();
       return;
     }
 
-    const deadline = this._getMonotonicNow() + OPEN_SETTLE_WATCHDOG_MS;
-    let hadSuccessfulRecompute = false;
-
-    while (this._isActiveSettleToken(token)) {
-      const positioned = await overlay.recomputePosition();
-      if (!this._isActiveSettleToken(token)) {
-        return;
-      }
-
-      hadSuccessfulRecompute ||= positioned;
-
-      if (positioned && this._hasStablePanelGeometry()) {
-        this._commitReadyState(token, focusTarget);
-        return;
-      }
-
-      if (this._getMonotonicNow() >= deadline) {
-        break;
-      }
-
-      await this._waitForAnimationFrame(token);
-      if (!this._isActiveSettleToken(token)) {
-        return;
-      }
-    }
-
-    if (!hadSuccessfulRecompute || !this._hasStablePanelGeometry()) {
-      this._failOpen(token);
-      return;
-    }
-
-    this._commitReadyState(token, focusTarget);
+    this._openSequencer.begin({
+      recomputePosition: () => overlay.recomputePosition(),
+      isStillOpen: () => this.opened && this._positionPhase === 'positioning',
+      getLastCommitSnapshot: () => this._lastCommitSnapshot,
+      onReady: () => {
+        this._commitReadyState(focusTarget);
+      },
+      onFail: () => {
+        this._failOpen();
+      },
+    });
   }
 
-  private _readInlinePx(value: string | null): number {
-    const parsed = Number.parseFloat(value ?? '0');
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-
-  private _hasStablePanelGeometry(): boolean {
-    const panel = this.getMenuElement();
-    const trigger = this._getTriggerElement();
-
-    if (!panel || !trigger) {
-      return false;
-    }
-
-    const left = this._readInlinePx(panel.style.left);
-    const top = this._readInlinePx(panel.style.top);
-    const panelRect = panel.getBoundingClientRect();
-    const triggerRect = trigger.getBoundingClientRect();
-
-    if (!Number.isFinite(left) || !Number.isFinite(top)) {
-      return false;
-    }
-
-    if (left === 0 && top === 0) {
-      return false;
-    }
-
-    if (panelRect.width <= 0 || panelRect.height <= 0) {
-      return false;
-    }
-
-    if (panelRect.top <= 0) {
-      return false;
-    }
-
-    return this._isPanelNearTrigger(panelRect, triggerRect);
-  }
-
-  private _isPanelNearTrigger(panelRect: DOMRect, triggerRect: DOMRect): boolean {
-    const proximityThreshold = 160;
-
-    switch (this.side) {
-      case 'top':
-        return Math.abs(panelRect.bottom - triggerRect.top) < proximityThreshold;
-      case 'right':
-        return Math.abs(panelRect.left - triggerRect.right) < proximityThreshold;
-      case 'left':
-        return Math.abs(panelRect.right - triggerRect.left) < proximityThreshold;
-      case 'bottom':
-      default:
-        return Math.abs(panelRect.top - triggerRect.bottom) < proximityThreshold;
-    }
-  }
-
-  private _getMonotonicNow(): number {
-    if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
-      return performance.now();
-    }
-    return Date.now();
-  }
-
-  private _commitReadyState(token: number, focusTarget: 'first' | 'last'): void {
-    if (!this._isActiveSettleToken(token)) {
+  private _commitReadyState(focusTarget: 'first' | 'last'): void {
+    if (!this.opened || this._positionPhase !== 'positioning') {
       return;
     }
 
@@ -650,59 +434,16 @@ export class Dropdown extends LitElement {
     this._focusItem(target ?? null);
   }
 
-  private _failOpen(token: number): void {
-    if (token !== this._positionSettleToken || !this.opened) {
+  private _failOpen(): void {
+    if (!this.opened) {
       return;
     }
 
     this.close(false);
   }
 
-  private _waitForAnimationFrame(token: number): Promise<void> {
-    return new Promise((resolve) => {
-      const rafId = requestAnimationFrame(() => {
-        this._dropPositionSettleRafId(rafId);
-        if (token !== this._positionSettleToken) {
-          resolve();
-          return;
-        }
-        resolve();
-      });
-      this._positionSettleRafIds.push(rafId);
-    });
-  }
-
-  private _cancelPendingPositionSettle(options?: { invalidateToken?: boolean }): void {
-    if (options?.invalidateToken) {
-      this._positionSettleToken += 1;
-    }
-
-    this._clearPendingPositionSettleRafs();
-    this._clearPositionWatchdog();
-    this._panelToggleAbortController?.abort();
-    this._panelToggleAbortController = null;
-  }
-
-  private _clearPendingPositionSettleRafs(): void {
-    for (const rafId of this._positionSettleRafIds) {
-      cancelAnimationFrame(rafId);
-    }
-    this._positionSettleRafIds = [];
-  }
-
-  private _dropPositionSettleRafId(rafId: number): void {
-    this._positionSettleRafIds = this._positionSettleRafIds.filter((currentId) => currentId !== rafId);
-  }
-
-  private _clearPositionWatchdog(): void {
-    if (this._positionWatchdogTimeoutId !== null) {
-      clearTimeout(this._positionWatchdogTimeoutId);
-      this._positionWatchdogTimeoutId = null;
-    }
-  }
-
-  private _isActiveSettleToken(token: number): boolean {
-    return token === this._positionSettleToken && this.opened && this._positionPhase === 'settling';
+  private _cancelOpenSequencing(): void {
+    this._openSequencer.cancel();
   }
 
   private _updateTriggerAria(expanded: boolean): void {
