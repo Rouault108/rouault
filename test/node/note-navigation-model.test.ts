@@ -90,16 +90,26 @@ describe('buildNoteNavigationModel', () => {
     const model = buildNoteNavigationModel({
       currentNote: {
         slug: 'music',
-        title: '音楽',
+        title: '音楽とは何か',
         noteKind: 'directory-index',
         directoryPath: 'music',
         permalink: '/notes/music',
+        navigationDirectoryPresentation: {
+          music: {
+            label: '音楽',
+          },
+        },
       },
       notes: [
         {
           slug: 'music/classical/mozart',
           title: 'モーツァルト',
           permalink: '/notes/music/classical/mozart',
+          navigationDirectoryPresentation: {
+            music: {
+              label: '音楽',
+            },
+          },
         },
       ],
     });
@@ -110,6 +120,7 @@ describe('buildNoteNavigationModel', () => {
     expect(root).to.not.equal(null);
     expect(root?.label).to.equal('音楽');
     expect(root?.href).to.equal(undefined);
+    expect(indexNode?.label).to.equal('音楽とは何か');
     expect(indexNode?.href).to.equal('/notes/music');
     expect(model.selectedId).to.equal('music/__index__');
   });
@@ -125,17 +136,30 @@ describe('buildNoteNavigationModel', () => {
       notes: [
         {
           slug: 'computer-science',
-          title: '計算機科学',
+          title: '計算機科学とは',
           permalink: '/notes/computer-science',
           noteKind: 'directory-index',
           directoryPath: 'computer-science',
+          navigationDirectoryPresentation: {
+            'computer-science': {
+              label: '計算機科学',
+            },
+          },
         },
         {
           slug: 'computer-science/algorithms',
-          title: 'アルゴリズム',
+          title: 'アルゴリズム入門',
           permalink: '/notes/computer-science/algorithms',
           noteKind: 'directory-index',
           directoryPath: 'computer-science/algorithms',
+          navigationDirectoryPresentation: {
+            'computer-science': {
+              label: '計算機科学',
+            },
+            'computer-science/algorithms': {
+              label: 'アルゴリズム',
+            },
+          },
         },
       ],
     });
@@ -148,6 +172,46 @@ describe('buildNoteNavigationModel', () => {
     ]);
   });
 
+  it('directory-index current page の breadcrumb は directory label で終わること', () => {
+    const model = buildNoteNavigationModel({
+      currentNote: {
+        slug: 'program/csharp',
+        title: 'C#とは何か',
+        permalink: '/notes/program/csharp',
+        noteKind: 'directory-index',
+        directoryPath: 'program/csharp',
+        navigationDirectoryPresentation: {
+          program: {
+            label: 'Program',
+          },
+          'program/csharp': {
+            label: 'C#',
+          },
+        },
+      },
+      notes: [
+        {
+          slug: 'program',
+          title: 'Program とは',
+          permalink: '/notes/program',
+          noteKind: 'directory-index',
+          directoryPath: 'program',
+          navigationDirectoryPresentation: {
+            program: {
+              label: 'Program',
+            },
+          },
+        },
+      ],
+    });
+
+    expect(model.breadcrumbs).to.deep.equal([
+      { label: 'Notes', href: '/' },
+      { label: 'Program', href: '/notes/program' },
+      { label: 'C#' },
+    ]);
+  });
+
   it('sidebar icon の継承結果を tree へ反映すること', () => {
     const model = buildNoteNavigationModel({
       notes: [
@@ -156,9 +220,13 @@ describe('buildNoteNavigationModel', () => {
           title: 'モーツァルト',
           permalink: '/notes/music/classical/mozart',
           sidebarResolvedIcon: 'music',
-          sidebarDirectoryIcons: {
-            music: 'folder',
-            'music/classical': 'folder-open',
+          navigationDirectoryPresentation: {
+            music: {
+              icon: 'folder',
+            },
+            'music/classical': {
+              icon: 'folder-open',
+            },
           },
         },
         {

@@ -173,9 +173,13 @@ describe('buildNotePageProjection', () => {
       {
         ...note,
         sidebarResolvedIcon: 'music',
-        sidebarDirectoryIcons: {
-          music: 'book-open',
-          'music/classical': 'folder-open',
+        navigationDirectoryPresentation: {
+          music: {
+            icon: 'book-open',
+          },
+          'music/classical': {
+            icon: 'folder-open',
+          },
         },
       },
       {
@@ -227,7 +231,12 @@ describe('buildNotePageProjection', () => {
         mobilePanel: false,
       },
       kind: 'reader',
-      title: '音楽',
+      title: '音楽とは何か',
+      navigationDirectoryPresentation: {
+        music: {
+          label: '音楽',
+        },
+      },
     };
 
     const projection = buildProjection(note, [
@@ -245,6 +254,11 @@ describe('buildNotePageProjection', () => {
         },
         kind: 'reader',
         title: 'モーツァルト',
+        navigationDirectoryPresentation: {
+          music: {
+            label: '音楽',
+          },
+        },
       },
     ]);
 
@@ -253,6 +267,8 @@ describe('buildNotePageProjection', () => {
     expect(projection.sidebar?.navHtml).toContain('/notes/music');
     expect(projection.sidebar?.navHtml).toContain('data-node-id="music/__index__"');
     expect(projection.sidebar?.navHtml).toContain('href="/notes/music"');
+    expect(projection.sidebar?.navHtml).toContain('>音楽<');
+    expect(projection.sidebar?.navHtml).toContain('>音楽とは何か<');
   });
 
   it('TOC payload と hydration 判定を投影すること', () => {

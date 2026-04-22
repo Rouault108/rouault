@@ -35,12 +35,12 @@
 
 コーパスの表示ラベルは次の優先順位で決める。
 
-1. `content/<corpus>/index.md` の `title`
+1. `content/<corpus>/_config.json` の `label`
 2. 同名コーパスの表示に使えるディレクトリ名から導出したラベル
 
-`content/music/index.md` のような directory-index がある場合、その `title` を `music` コーパスのラベルとして採用する。
+`content/music/index.md` のような directory-index がある場合、その `title` はコーパスページ自体の題名として扱う。
 
-directory-index がないコーパスは、ディレクトリ名を整形したラベルを使う。
+`_config.json.label` がないコーパスは、ディレクトリ名を整形したラベルを使う。
 
 ## 4. コーパスページ
 
@@ -107,5 +107,6 @@ directory-index がないコーパスは、ディレクトリ名を整形した�
 ## 10. 運用メモ
 
 - コーパス追加は、まず `content/{corpusKey}/...` にノートを置くことで発生する
-- コーパス名を見やすくしたい場合は、`content/{corpusKey}/index.md` を置いて `title` を定義する
+- コーパス名を見やすくしたい場合は、`content/{corpusKey}/_config.json` に `label` を定義する
+- `content/{corpusKey}/index.md` の `title` は、コーパスページの題名として別途設計する
 - 既存の `genre` 追加は、コーパス追加とは別の変更として扱う

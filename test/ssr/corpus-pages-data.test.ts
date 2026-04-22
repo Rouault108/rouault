@@ -32,12 +32,17 @@ describe('buildCorpusPageProjection', () => {
   it('公開ノートをトップレベルのコーパス単位に束ねること', () => {
     const notes: CorpusPageSourceNote[] = [
       createCorpusNote({
-        title: '音楽',
+        title: '音楽とは何か',
         permalink: '/notes/music/',
         slug: 'music',
         noteKind: 'directory-index',
         directoryPath: 'music',
         date: '2026-03-01',
+        navigationDirectoryPresentation: {
+          music: {
+            label: '音楽',
+          },
+        },
       }),
       createCorpusNote({
         title: '和声のメモ',
@@ -110,7 +115,7 @@ describe('buildCorpusPageProjection', () => {
             genres: ['music'],
           },
           {
-            title: '音楽',
+            title: '音楽とは何か',
             permalink: '/notes/music/',
             description: '',
             date: '2026-03-01',
@@ -157,12 +162,20 @@ describe('buildCorpusPageProjection', () => {
   it('下位 directory-index の title をトップレベル corpus label に誤採用しないこと', () => {
     const notes: CorpusPageSourceNote[] = [
       createCorpusNote({
-        title: 'C#',
+        title: 'C#とは何か',
         permalink: '/notes/program/csharp/',
         slug: 'program/csharp',
         noteKind: 'directory-index',
         directoryPath: 'program/csharp',
         date: '2026-03-01',
+        navigationDirectoryPresentation: {
+          program: {
+            label: 'Program',
+          },
+          'program/csharp': {
+            label: 'C#',
+          },
+        },
       }),
       createCorpusNote({
         title: 'JavaScriptの配列',
@@ -190,7 +203,7 @@ describe('buildCorpusPageProjection', () => {
             genres: ['JavaScript', 'Programming'],
           },
           {
-            title: 'C#',
+            title: 'C#とは何か',
             permalink: '/notes/program/csharp/',
             description: '',
             date: '2026-03-01',

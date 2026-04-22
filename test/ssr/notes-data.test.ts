@@ -226,7 +226,7 @@ describe('buildNotesCollection', () => {
     ).toBeUndefined();
   });
 
-  it('sidebarIcon 未指定時は none を既定値としてサイドバー用 icon 情報を付与する', async () => {
+  it('label と sidebar icon を navigationDirectoryPresentation に統合する', async () => {
     const contentRoot = await createContentRoot();
     await mkdir(path.join(contentRoot, 'category', 'section-a', 'item-alpha'), { recursive: true });
     await writeFile(
@@ -240,6 +240,7 @@ describe('buildNotesCollection', () => {
     await writeFile(
       path.join(contentRoot, 'category', '_config.json'),
       JSON.stringify({
+        label: 'カテゴリ',
         order: ['section-a'],
         sidebar: { icon: 'folder' },
       }),
@@ -248,6 +249,7 @@ describe('buildNotesCollection', () => {
     await writeFile(
       path.join(contentRoot, 'category', 'section-a', '_config.json'),
       JSON.stringify({
+        label: 'セクションA',
         order: ['item-alpha', 'item-beta.md'],
         sidebar: { icon: 'music' },
       }),
@@ -292,20 +294,37 @@ describe('buildNotesCollection', () => {
     const pageFour = collection.find((note) => note.slug === 'category/section-b/page-four');
 
     expect(itemBeta?.sidebarResolvedIcon).toBe('file');
-    expect(itemBeta?.sidebarDirectoryIcons).toEqual({
-      category: 'folder',
-      'category/section-a': 'music',
+    expect(itemBeta?.navigationDirectoryPresentation).toEqual({
+      category: {
+        label: 'カテゴリ',
+        icon: 'folder',
+      },
+      'category/section-a': {
+        label: 'セクションA',
+        icon: 'music',
+      },
     });
     expect(pageTwo?.sidebarResolvedIcon).toBe('music');
-    expect(pageTwo?.sidebarDirectoryIcons).toEqual({
-      category: 'folder',
-      'category/section-a': 'music',
+    expect(pageTwo?.navigationDirectoryPresentation).toEqual({
+      category: {
+        label: 'カテゴリ',
+        icon: 'folder',
+      },
+      'category/section-a': {
+        label: 'セクションA',
+        icon: 'music',
+      },
     });
     expect(pageThree?.sidebarResolvedIcon).toBe('music');
     expect(pageFour?.sidebarResolvedIcon).toBeUndefined();
-    expect(pageFour?.sidebarDirectoryIcons).toEqual({
-      category: 'folder',
-      'category/section-b': 'folder',
+    expect(pageFour?.navigationDirectoryPresentation).toEqual({
+      category: {
+        label: 'カテゴリ',
+        icon: 'folder',
+      },
+      'category/section-b': {
+        icon: 'folder',
+      },
     });
   });
 

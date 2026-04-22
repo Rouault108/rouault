@@ -25,6 +25,13 @@ export interface SidebarScopeRule {
   scope: SidebarScope;
 }
 
+export interface NavigationDirectoryPresentation {
+  label?: string;
+  icon?: IconName;
+}
+
+export type NavigationDirectoryPresentationMap = Record<string, NavigationDirectoryPresentation>;
+
 export interface NoteNavigationEntry {
   slug?: string;
   title?: string;
@@ -33,7 +40,7 @@ export interface NoteNavigationEntry {
   directoryPath?: string;
   sidebarRoot?: string;
   sidebarResolvedIcon?: IconName;
-  sidebarDirectoryIcons?: Record<string, IconName>;
+  navigationDirectoryPresentation?: NavigationDirectoryPresentationMap;
   kind?: NoteContentKind;
   chromeProfile?: NoteChromeProfile;
 }

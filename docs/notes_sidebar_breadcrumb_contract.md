@@ -183,10 +183,11 @@ sidebar UI の内部状態管理に用いる stable ID。
 
 #### 7.5.1 基本原則
 
-1. sidebar と breadcrumb の表示ラベル解決規則は共有されなければならない。
-2. 同一の directory path に対して、sidebar と breadcrumb が異なる source of truth を用いてはならない。
-3. path segment 由来ラベルは表示ラベルの最終 source of truth ではなく、フォールバック手段である。
-4. 表示ラベルの解決規則は、内部識別子である `slug`、`rawSlug`、`TreeNode.id` の生成規則と独立に定義されなければならない。
+1. directory label と page title は別概念として扱わなければならない。
+2. sidebar の branch と breadcrumb の directory crumb は、同一の directory label source of truth を共有しなければならない。
+3. page node と breadcrumb 最終 crumb は、同一の page title source of truth を共有しなければならない。
+4. path segment 由来ラベルは表示ラベルの最終 source of truth ではなく、フォールバック手段である。
+5. 表示ラベルの解決規則は、内部識別子である `slug`、`rawSlug`、`TreeNode.id` の生成規則と独立に定義されなければならない。
 
 #### 7.5.2 通常 note の表示ラベル
 
@@ -195,23 +196,26 @@ sidebar UI の内部状態管理に用いる stable ID。
 
 #### 7.5.3 `directory-index` が存在するディレクトリの表示ラベル
 
-1. あるディレクトリ path に対応する `directory-index` が存在する場合、そのディレクトリを表す表示ラベルの source of truth は当該 `directory-index` の `note.title` とする。
-2. sidebar 上の `directory-index` ページノードの表示ラベルは、当該 `directory-index` の `note.title` を用いなければならない。
-3. breadcrumb において当該ディレクトリを表す crumb の表示ラベルは、当該 `directory-index` の `note.title` を用いなければならない。
-4. 当該 `directory-index` 自身が現在位置である場合、breadcrumb 最終 crumb の表示ラベルも当該 `directory-index` の `note.title` とする。
-5. `directory-index` の存在時に path segment 由来ラベルを優先してはならない。
+1. あるディレクトリ path に対応する directory label の source of truth は `content/<dir>/_config.json.label` とする。
+2. sidebar 上の branch ノードの表示ラベルは directory label を用いなければならない。
+3. breadcrumb において当該ディレクトリを表す crumb の表示ラベルは directory label を用いなければならない。
+4. sidebar 上の `directory-index` ページノードの表示ラベルは、当該 `directory-index` の `note.title` を用いなければならない。
+5. `directory-index` 自身が現在位置である場合、breadcrumb は当該ディレクトリ crumb で終えなければならず、`note.title` を最終 crumb として追加してはならない。
+6. `directory-index` の存在時に path segment 由来ラベルを directory label より優先してはならない。
 
 #### 7.5.4 `directory-index` が存在しないディレクトリの表示ラベル
 
-1. 対応する `directory-index` が存在しないディレクトリについては、path segment から導出した正規化ラベルを表示ラベルとして用いてよい。
-2. この場合、breadcrumb と sidebar は同一のラベル解決規則を用いなければならない。
+1. `_config.json.label` が存在しないディレクトリについては、path segment から導出した正規化ラベルを directory label として用いてよい。
+2. この場合、breadcrumb と sidebar branch は同一のラベル解決規則を用いなければならない。
 3. path segment からのラベル導出規則を複数実装で別々に持ってはならない。
 
 #### 7.5.5 一貫性原則
 
-1. 記事ヘッダー、sidebar 上のページノード、breadcrumb 上の現在位置が同一 note 実体を指す場合、それらの表示ラベルは同一の `note.title` に収束しなければならない。
-2. `directory-index` を持つディレクトリについて、記事ヘッダーでは `note.title` を表示しつつ、sidebar または breadcrumb では path segment 由来ラベルを表示することを禁止する。
-3. 内部識別子の安定性確保を理由として、表示ラベルの source of truth を path segment に固定してはならない。
+1. 記事ヘッダー、sidebar 上のページノード、breadcrumb 上の通常 leaf 現在位置が同一 note 実体を指す場合、それらの表示ラベルは同一の `note.title` に収束しなければならない。
+2. `directory-index` を持つディレクトリについて、記事ヘッダーでは `note.title` を表示しつつ、sidebar branch または breadcrumb では directory label を表示してよい。これは責務差による仕様である。
+3. breadcrumb の directory crumb は、対応する `directory-index` が存在する場合、その page へリンクしなければならない。
+4. `index.md` は directory landing / overview page として運用することを推奨する。
+5. 内部識別子の安定性確保を理由として、表示ラベルの source of truth を path segment に固定してはならない。
 
 ---
 

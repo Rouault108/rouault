@@ -6,6 +6,9 @@ import {
   type SidebarScope,
   type SidebarScopeRule,
 } from '../../build/navigation/index.js';
+import type {
+  NavigationDirectoryPresentationMap,
+} from '../../shared/navigation/navigation-types.js';
 import { resolveSidebarRoot } from '../../build/navigation/resolve-sidebar-root.js';
 import { prepareTocHtml, type TocHeading } from '../../build/content/extract-toc-from-html.js';
 import { resolveCoverAsset, type ResolvedImageAsset } from '../../build/media/image-resolver.js';
@@ -40,6 +43,7 @@ interface NoteSidebarConfig {
 }
 
 interface NoteDirectoryConfig {
+  label?: string;
   order?: string[];
   sidebar?: NoteSidebarConfig;
 }
@@ -84,7 +88,7 @@ export interface IntrinsicNote extends SourceNote {
   };
   sidebarRoot?: string;
   sidebarResolvedIcon?: IconName;
-  sidebarDirectoryIcons?: Record<string, IconName>;
+  navigationDirectoryPresentation?: NavigationDirectoryPresentationMap;
   resolvedCover?: ResolvedImageAsset;
   kind: NoteContentKind;
   chromeProfile?: NoteChromeProfile;
@@ -123,6 +127,15 @@ const toOptionalStringArray = (value: unknown): string[] | undefined => {
     .filter((item) => item.length > 0);
 
   return normalized;
+};
+
+const toOptionalLabel = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
 };
 
 const toOptionalSidebarScope = (value: unknown): SidebarScope | undefined => {
@@ -167,6 +180,7 @@ const toDirectoryConfig = (value: unknown): NoteDirectoryConfig | undefined => {
   }
 
   const order = toOptionalStringArray(value['order']);
+  const label = toOptionalLabel(value['label']);
   const sidebarValue = value['sidebar'];
   const sidebarScope = isRecord(sidebarValue)
     ? toOptionalSidebarScope(sidebarValue['scope'])
@@ -176,6 +190,7 @@ const toDirectoryConfig = (value: unknown): NoteDirectoryConfig | undefined => {
     : undefined;
 
   return {
+    ...(label !== undefined ? { label } : {}),
     ...(order !== undefined ? { order } : {}),
     ...(sidebarScope !== undefined || sidebarIcon !== undefined
       ? {
@@ -318,13 +333,13 @@ export const buildNotesCollection = (
     return rules;
   };
 
-  const resolveCachedSidebarIconContext = (
+  const resolveCachedDirectoryPresentationContext = (
     slug: string,
     sourceRootPath: string,
-  ): { directoryIcons: Record<string, IconName> } => {
+  ): { presentation: NavigationDirectoryPresentationMap } => {
     const parts = slug.split('/');
     const dirParts = parts.slice(0, -1);
-    const directoryIcons: Record<string, IconName> = {};
+    const presentation: NavigationDirectoryPresentationMap = {};
     let inheritedSetting: SidebarIconSetting | undefined =
       readCachedConfig(sourceRootPath)?.sidebar?.icon;
 
@@ -332,19 +347,23 @@ export const buildNotesCollection = (
       const currentDirParts = dirParts.slice(0, depth + 1);
       const currentDir = join(sourceRootPath, ...currentDirParts);
       const currentPath = currentDirParts.join('/');
-      const configuredSetting = readCachedConfig(currentDir)?.sidebar?.icon;
+      const config = readCachedConfig(currentDir);
+      const configuredSetting = config?.sidebar?.icon;
 
       if (configuredSetting !== undefined) {
         inheritedSetting = configuredSetting;
       }
 
       const resolvedIcon = resolveDirectorySidebarIcon(inheritedSetting);
-      if (resolvedIcon !== undefined) {
-        directoryIcons[currentPath] = resolvedIcon;
+      if (config?.label !== undefined || resolvedIcon !== undefined) {
+        presentation[currentPath] = {
+          ...(config?.label !== undefined ? { label: config.label } : {}),
+          ...(resolvedIcon !== undefined ? { icon: resolvedIcon } : {}),
+        };
       }
     }
 
-    return { directoryIcons };
+    return { presentation };
   };
 
   const enriched = notes
@@ -374,11 +393,20 @@ export const buildNotesCollection = (
         collectCachedSidebarScopeRules(sourceSlug, sourceRootPath),
       );
       const sidebarIconSetting = note.sidebarIcon;
-      const sidebarIconContext = resolveCachedSidebarIconContext(sourceSlug, sourceRootPath);
+      const directoryPresentation = resolveCachedDirectoryPresentationContext(
+        sourceSlug,
+        sourceRootPath,
+      );
 
       const inheritedDirectoryIcon = (() => {
-        const values = Object.values(sidebarIconContext.directoryIcons);
-        return values.length > 0 ? values[values.length - 1] : undefined;
+        const entries = Object.values(directoryPresentation.presentation);
+        for (let index = entries.length - 1; index >= 0; index -= 1) {
+          const icon = entries[index]?.icon;
+          if (icon !== undefined) {
+            return icon;
+          }
+        }
+        return undefined;
       })();
 
       const sidebarResolvedIcon = resolveNoteSidebarIcon(
@@ -405,8 +433,8 @@ export const buildNotesCollection = (
         tocCapabilities: inferTocCapabilities(preparedToc.headings, chromePolicy),
         ...(sidebarRoot !== undefined ? { sidebarRoot } : {}),
         ...(sidebarResolvedIcon !== undefined ? { sidebarResolvedIcon } : {}),
-        ...(Object.keys(sidebarIconContext.directoryIcons).length > 0
-          ? { sidebarDirectoryIcons: sidebarIconContext.directoryIcons }
+        ...(Object.keys(directoryPresentation.presentation).length > 0
+          ? { navigationDirectoryPresentation: directoryPresentation.presentation }
           : {}),
         ...(typeof note['cover'] === 'string' && note['cover'].trim().length > 0
           ? { resolvedCover: resolveCoverAsset(note['cover']) }

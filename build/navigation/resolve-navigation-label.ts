@@ -13,37 +13,33 @@ const getLastSegment = (path: string): string => {
   return segments[segments.length - 1] ?? path;
 };
 
-const resolveDirectoryPath = (
-  note: Pick<NoteNavigationEntry, 'slug' | 'directoryPath'>,
-): string => {
-  const directoryPath = toTrimmedString(note.directoryPath);
-  if (directoryPath.length > 0) {
-    return directoryPath;
-  }
-
-  return toTrimmedString(note.slug);
-};
-
 export const fallbackDirectoryLabel = (directoryPath: string): string =>
   normalizeSegmentLabel(getLastSegment(directoryPath));
 
 export const buildDirectoryLabelMap = (
-  notes: readonly Pick<NoteNavigationEntry, 'slug' | 'title' | 'noteKind' | 'directoryPath'>[],
+  notes: readonly Pick<
+    NoteNavigationEntry,
+    'slug' | 'noteKind' | 'directoryPath' | 'navigationDirectoryPresentation'
+  >[],
 ): Map<string, string> => {
   const map = new Map<string, string>();
 
   for (const note of notes) {
-    if (note.noteKind !== 'directory-index') {
+    const presentation = note.navigationDirectoryPresentation;
+    if (presentation === undefined) {
       continue;
     }
 
-    const directoryPath = resolveDirectoryPath(note);
-    if (directoryPath.length === 0) {
-      continue;
-    }
+    for (const [directoryPath, value] of Object.entries(presentation)) {
+      if (map.has(directoryPath)) {
+        continue;
+      }
 
-    const title = toTrimmedString(note.title);
-    map.set(directoryPath, title.length > 0 ? title : fallbackDirectoryLabel(directoryPath));
+      const label = toTrimmedString(value.label);
+      if (label.length > 0) {
+        map.set(directoryPath, label);
+      }
+    }
   }
 
   return map;
@@ -54,14 +50,9 @@ export const resolveDirectoryLabel = (
   directoryLabelMap: ReadonlyMap<string, string>,
 ): string => directoryLabelMap.get(directoryPath) ?? fallbackDirectoryLabel(directoryPath);
 
-export const resolveNoteLabel = (
-  note: Pick<NoteNavigationEntry, 'slug' | 'title' | 'noteKind' | 'directoryPath'>,
-  directoryLabelMap: ReadonlyMap<string, string>,
+export const resolvePageLabel = (
+  note: Pick<NoteNavigationEntry, 'slug' | 'title'>,
 ): string => {
-  if (note.noteKind === 'directory-index') {
-    return resolveDirectoryLabel(resolveDirectoryPath(note), directoryLabelMap);
-  }
-
   const title = toTrimmedString(note.title);
   if (title.length > 0) {
     return title;

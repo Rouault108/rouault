@@ -111,39 +111,27 @@ function compareNoteSummaries(left: CorpusPageNoteSummary, right: CorpusPageNote
   return left.permalink.localeCompare(right.permalink, 'ja');
 }
 
-function resolveCorpusLabelSourcePath(note: CorpusPageSourceNote): string {
-  return normalizeString(note.directoryPath) || normalizeString(note.slug);
-}
-
-function isTopLevelCorpusDirectoryIndex(note: CorpusPageSourceNote): boolean {
-  if (note.noteKind !== 'directory-index') {
-    return false;
-  }
-
-  const path = resolveCorpusLabelSourcePath(note);
-  if (path.length === 0) {
-    return false;
-  }
-
-  return path === getCorpusKeyFromSlug(path);
-}
-
 function resolveCorpusLabels(notes: readonly CorpusPageSourceNote[]): Map<string, string> {
   const labels = new Map<string, string>();
 
   for (const note of notes) {
-    if (!isTopLevelCorpusDirectoryIndex(note)) {
+    const presentation = note.navigationDirectoryPresentation;
+    if (presentation === undefined) {
       continue;
     }
 
-    const corpusKey = getCorpusKeyFromSlug(resolveCorpusLabelSourcePath(note));
-    const title = normalizeString(note.title);
+    for (const [directoryPath, value] of Object.entries(presentation)) {
+      const corpusKey = getCorpusKeyFromSlug(directoryPath);
+      const label = normalizeString(value.label);
 
-    if (corpusKey.length === 0 || title.length === 0 || labels.has(corpusKey)) {
-      continue;
+      if (corpusKey.length === 0 || corpusKey !== directoryPath || label.length === 0) {
+        continue;
+      }
+
+      if (!labels.has(corpusKey)) {
+        labels.set(corpusKey, label);
+      }
     }
-
-    labels.set(corpusKey, title);
   }
 
   return labels;

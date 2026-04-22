@@ -7,7 +7,7 @@ import {
   buildDirectoryLabelMap,
   normalizeSegmentLabel,
   resolveDirectoryLabel,
-  resolveNoteLabel,
+  resolvePageLabel,
 } from './resolve-navigation-label.js';
 import {
   createDirectoryIndexNodeId,
@@ -244,8 +244,8 @@ const mergeCurrentNoteIntoSidebarNotes = (
     ...(typeof currentNote.sidebarResolvedIcon === 'string'
       ? { sidebarResolvedIcon: currentNote.sidebarResolvedIcon }
       : {}),
-    ...(currentNote.sidebarDirectoryIcons !== undefined
-      ? { sidebarDirectoryIcons: currentNote.sidebarDirectoryIcons }
+    ...(currentNote.navigationDirectoryPresentation !== undefined
+      ? { navigationDirectoryPresentation: currentNote.navigationDirectoryPresentation }
       : {}),
     ...(currentNote.kind !== undefined ? { kind: currentNote.kind } : {}),
     ...(currentNote.chromeProfile !== undefined ? { chromeProfile: currentNote.chromeProfile } : {}),
@@ -281,7 +281,7 @@ const buildSidebarTree = (notes: readonly NoteNavigationEntry[], rootSlug: strin
       continue;
     }
 
-    const candidateTitle = resolveNoteLabel(note, directoryLabelMap);
+    const candidateTitle = resolvePageLabel(note);
 
     if (note.noteKind === 'directory-index') {
       const directoryPath = toTrimmedString(note.directoryPath) || slug;
@@ -295,7 +295,7 @@ const buildSidebarTree = (notes: readonly NoteNavigationEntry[], rootSlug: strin
 
       for (const segment of segments) {
         const currentPath = parentPath.length > 0 ? `${parentPath}/${segment}` : segment;
-        const directoryIcon = note.sidebarDirectoryIcons?.[currentPath];
+        const directoryIcon = note.navigationDirectoryPresentation?.[currentPath]?.icon;
         const node = ensureDirectoryNode(
           currentChildren,
           currentPath,
@@ -310,7 +310,7 @@ const buildSidebarTree = (notes: readonly NoteNavigationEntry[], rootSlug: strin
       upsertLeafNode(
         currentChildren,
         createDirectoryIndexNodeId(directoryPath),
-        resolveDirectoryLabel(directoryPath, directoryLabelMap),
+        resolvePageLabel(note),
         href,
         note.sidebarResolvedIcon,
       );
@@ -334,7 +334,7 @@ const buildSidebarTree = (notes: readonly NoteNavigationEntry[], rootSlug: strin
       const currentPath = parentPath.length > 0 ? `${parentPath}/${segment}` : segment;
       const isLeaf = index === segments.length - 1;
       if (!isLeaf) {
-        const directoryIcon = note.sidebarDirectoryIcons?.[currentPath];
+        const directoryIcon = note.navigationDirectoryPresentation?.[currentPath]?.icon;
         const node = ensureDirectoryNode(
           currentChildren,
           currentPath,
@@ -439,9 +439,8 @@ const buildBreadcrumbs = (
         continue;
       }
 
-      const title = toTrimmedString(currentNote.title);
       breadcrumbs.push({
-        label: title.length > 0 ? title : normalizeSegmentLabel(segment),
+        label: resolvePageLabel(currentNote),
       });
       continue;
     }

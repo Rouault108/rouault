@@ -1,4 +1,5 @@
 {
+  "label": "C#",
   "sidebar": {
     "scope": "self",
     "order": ["index.md", "source-code-to-execution.md"]
