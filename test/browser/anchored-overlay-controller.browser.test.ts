@@ -65,16 +65,16 @@ describe('anchored-overlay-controller browser contract', () => {
       const lastSnapshot = controller.getLastCommitSnapshot();
 
       expect(lastSnapshot).to.equal(snapshot);
-      expect(snapshot.reference).to.equal(reference);
-      expect(snapshot.floating).to.equal(floating);
-      expect(snapshot.referenceRect.left).to.equal(40);
-      expect(snapshot.referenceRect.top).to.equal(24);
-      expect(snapshot.referenceRect.width).to.equal(96);
-      expect(snapshot.referenceRect.height).to.equal(32);
-      expect(snapshot.floatingWidth).to.equal(160);
-      expect(snapshot.floatingHeight).to.equal(48);
-      expect(Number.isFinite(snapshot.x)).to.equal(true);
-      expect(Number.isFinite(snapshot.y)).to.equal(true);
+      expect(snapshot?.reference).to.equal(reference);
+      expect(snapshot?.floating).to.equal(floating);
+      expect(snapshot?.referenceRect.left).to.equal(40);
+      expect(snapshot?.referenceRect.top).to.equal(24);
+      expect(snapshot?.referenceRect.width).to.equal(96);
+      expect(snapshot?.referenceRect.height).to.equal(32);
+      expect(snapshot?.floatingWidth).to.equal(160);
+      expect(snapshot?.floatingHeight).to.equal(48);
+      expect(Number.isFinite(snapshot?.x)).to.equal(true);
+      expect(Number.isFinite(snapshot?.y)).to.equal(true);
     } finally {
       open = false;
       controller.destroy();
@@ -120,10 +120,10 @@ describe('anchored-overlay-controller browser contract', () => {
       expect(latestSnapshot).to.equal(commits[1]);
       expect(latestSnapshot).to.not.equal(firstSnapshot);
 
-      expect(firstSnapshot.referenceRect.left).to.equal(32);
-      expect(firstSnapshot.referenceRect.top).to.equal(20);
-      expect(firstSnapshot.referenceRect.width).to.equal(80);
-      expect(firstSnapshot.referenceRect.height).to.equal(28);
+      expect(firstSnapshot?.referenceRect.left).to.equal(32);
+      expect(firstSnapshot?.referenceRect.top).to.equal(20);
+      expect(firstSnapshot?.referenceRect.width).to.equal(80);
+      expect(firstSnapshot?.referenceRect.height).to.equal(28);
 
       expect(latestSnapshot?.referenceRect.left).to.equal(180);
       expect(latestSnapshot?.referenceRect.top).to.equal(96);
