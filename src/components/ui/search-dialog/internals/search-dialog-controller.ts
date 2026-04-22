@@ -40,12 +40,15 @@ export class SearchDialogController {
   private _operation: Promise<void> = Promise.resolve();
   private _hasBodyScrollLock = false;
   private _closeReason: UiSearchDialogCloseReason = 'programmatic';
-  private readonly _modalityTracker: InteractionModalityTracker;
+  private _modalityTracker: InteractionModalityTracker | null = null;
   private _pendingOpenModality: InteractionModality | null = null;
   private _focusAppearanceGeneration = 0;
   private _clearSoftFocusAppearance: ((force?: boolean) => void) | null = null;
 
-  constructor(private readonly _host: SearchDialogControllerHost) {
+  constructor(private readonly _host: SearchDialogControllerHost) {}
+
+  connect(): void {
+    if (this._modalityTracker) return;
     this._modalityTracker = createInteractionModalityTracker(this._host.getOwnerDocument());
   }
 
@@ -54,7 +57,7 @@ export class SearchDialogController {
   }
 
   captureOpenModality(modality?: InteractionModality): void {
-    this._pendingOpenModality = modality ?? this._modalityTracker.getSnapshot();
+    this._pendingOpenModality = modality ?? this._modalityTracker?.getSnapshot() ?? 'unknown';
   }
 
   syncOpened(opened: boolean): void {
@@ -70,7 +73,8 @@ export class SearchDialogController {
 
   destroy(): void {
     this._invalidateFocusAppearance();
-    this._modalityTracker.destroy();
+    this._modalityTracker?.destroy();
+    this._modalityTracker = null;
     this._unlockBodyScroll();
   }
 

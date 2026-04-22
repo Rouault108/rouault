@@ -204,6 +204,11 @@ export class UiSearchDialog extends LitElement {
     );
   }
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this._controller.connect();
+  }
+
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this._controller.destroy();
