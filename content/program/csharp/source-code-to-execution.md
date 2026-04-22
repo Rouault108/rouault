@@ -103,12 +103,12 @@ Console.WriteLine("Hello, World!");
 
 [^11]: Microsoft Learn, *Reference assemblies - .NET*. 実装アセンブリと参照アセンブリの区別。[https://learn.microsoft.com/en-us/dotnet/standard/assembly/reference-assemblies](https://learn.microsoft.com/en-us/dotnet/standard/assembly/reference-assemblies)。
 
-[^12]: 【一次資料／公式実装】GitHub, *Roslyn Overview*. RoslynのAPI層と従来型コンパイラパイプラインとの対応、構文木・意味解析・診断の位置付け。[https://github.com/dotnet/roslyn/blob/main/docs/wiki/Roslyn-Overview.md](https://github.com/dotnet/roslyn/blob/main/docs/wiki/Roslyn-Overview.md)。
+[^12]: GitHub, *Roslyn Overview*. RoslynのAPI層と従来型コンパイラパイプラインとの対応、構文木・意味解析・診断の位置付け。[https://github.com/dotnet/roslyn/blob/main/docs/wiki/Roslyn-Overview.md](https://github.com/dotnet/roslyn/blob/main/docs/wiki/Roslyn-Overview.md)。
 
 [^13]: Microsoft Learn, *Top-level statements - programs without Main methods - C#*; *General structure of a C# program*. トップレベルステートメント、入口点規則、暗黙の`Program`に関する整理。[https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/top-level-statements](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/top-level-statements) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/)。
 
 [^14]: Microsoft Learn, *How to: View assembly contents*; *Ildasm.exe (IL Disassembler)*. ILDASMによるCILおよびアセンブリマニフェストの観察。[https://learn.microsoft.com/en-us/dotnet/standard/assembly/view-contents](https://learn.microsoft.com/en-us/dotnet/standard/assembly/view-contents) ; [https://learn.microsoft.com/en-us/dotnet/framework/tools/ildasm-exe-il-disassembler](https://learn.microsoft.com/en-us/dotnet/framework/tools/ildasm-exe-il-disassembler)。
 
-[^15]: 【一次に準ずる資料／公式リポジトリ】GitHub, *icsharpcode/ILSpy*. .NETアセンブリブラウザ兼デコンパイラとしての外部観察ツール。[https://github.com/icsharpcode/ilspy](https://github.com/icsharpcode/ilspy)。
+[^15]: GitHub, *icsharpcode/ILSpy*. .NETアセンブリブラウザ兼デコンパイラとしての外部観察ツール。[https://github.com/icsharpcode/ilspy](https://github.com/icsharpcode/ilspy)。
 
 [^16]: Microsoft Learn, *Resolve errors and warnings related to a program entry point*; *Main() and command-line arguments - C#*. 入口点シグネチャ、`Main`、`StartupObject`、トップレベルステートメントと入口点の関係。[https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/entry-point-errors](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/entry-point-errors) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/main-command-line](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/main-command-line)。
