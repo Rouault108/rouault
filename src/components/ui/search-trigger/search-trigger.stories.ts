@@ -151,3 +151,32 @@ export const ForcedColorsAndMotionManual: Story = {
     },
   },
 };
+
+export const HeaderRhythmOverride: Story = {
+  tags: ['manual-only'],
+  render: () => html`
+    <div
+      style="
+        display: grid;
+        gap: 1rem;
+        max-width: 24rem;
+        --search-trigger-gap: 10px;
+        --search-trigger-gap-compact: 6px;
+        --search-trigger-padding-inline: 14px;
+        --search-trigger-padding-inline-compact: 9px;
+      "
+    >
+      <ui-search-trigger density="default"></ui-search-trigger>
+      <ui-search-trigger density="compact"></ui-search-trigger>
+      <ui-search-trigger density="icon-only"></ui-search-trigger>
+    </div>
+  `,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '親から --search-trigger-gap / --search-trigger-gap-compact / --search-trigger-padding-inline / --search-trigger-padding-inline-compact を注入したときの参照 story です。default と compact の rhythm が追従し、icon-only の契約は維持されます。auto は viewport 条件に従うため、この story では明示 density のみを示します。',
+      },
+    },
+  },
+};

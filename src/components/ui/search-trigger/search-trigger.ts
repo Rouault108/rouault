@@ -67,7 +67,7 @@ export class SearchTrigger extends LitElement {
       inline-size: 100%;
       min-inline-size: 0;
       box-sizing: border-box;
-      gap: var(--space-2, 8px);
+      gap: var(--search-trigger-gap, var(--space-2, 8px));
       padding-inline: var(--search-trigger-padding-inline, var(--space-3, 12px));
       border: var(--border-width, 1px) solid var(--search-trigger-rest-border-color);
       border-radius: var(--radius-md, 6px);
@@ -128,10 +128,9 @@ export class SearchTrigger extends LitElement {
       text-overflow: ellipsis;
     }
 
-    ui-button[data-density='auto']::part(button),
     ui-button[data-density='compact']::part(button) {
-      gap: var(--space-1, 4px);
-      padding-inline: var(--space-2, 8px);
+      gap: var(--search-trigger-gap-compact, var(--space-1, 4px));
+      padding-inline: var(--search-trigger-padding-inline-compact, var(--space-2, 8px));
     }
 
     ui-button[data-density='icon-only']::part(button) {
@@ -157,8 +156,8 @@ export class SearchTrigger extends LitElement {
 
     @media (max-width: 960px) {
       ui-button[data-density='auto']::part(button) {
-        gap: var(--space-1, 4px);
-        padding-inline: var(--space-2, 8px);
+        gap: var(--search-trigger-gap-compact, var(--space-1, 4px));
+        padding-inline: var(--search-trigger-padding-inline-compact, var(--space-2, 8px));
       }
     }
 

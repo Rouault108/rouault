@@ -57,6 +57,7 @@
 - `open-search-dialog` は request event とし、ダイアログ表示そのものは上位レイヤが担います。
 - `placeholder` は視覚表示専用の文字列とし、アクセシブル名、検索語初期値、検索スコープとしては解釈しません。
 - Input-like な外形は visual idiom であり、意味論の中心ではありません。
+- 親レイアウトの局所事情は直接読まず、必要な composition 調整は公開 style input で受け取ります。
 
 ---
 
@@ -167,6 +168,21 @@
 
 利用者は `::part(...)` に対して装飾調整を行えます。ただし、意味を変更するための display 構造破壊、button 性の喪失、アクセシビリティ属性の破壊は行いません。
 
+### 公開 Style Input 契約
+
+`ui-search-trigger` は、親文脈から次の custom property を受け付けます。
+
+| 名前                                     | 役割 |
+| ---------------------------------------- | ---- |
+| `--search-trigger-gap`                   | default 時の icon と placeholder の距離 |
+| `--search-trigger-gap-compact`           | compact 相当時の icon と placeholder の距離 |
+| `--search-trigger-padding-inline`        | default 時の左右余白 |
+| `--search-trigger-padding-inline-compact` | compact 相当時の左右余白 |
+
+これらは `ui-search-trigger` 自身の公開 style input です。`layout-header` のような親 adapter はこの入力へ値を注入できますが、`ui-search-trigger` 自身は親専用 token を直接読みません。
+
+したがって、header 文脈で rhythm をそろえる場合も、surface の意味論や launcher としての責務は `ui-search-trigger` 側に残り、composition の調整だけを外部から行います。
+
 ### 非対応公開面契約
 
 次のものは、現行の公開契約に含めません。
@@ -230,7 +246,7 @@
 
 狭い画面または狭い配置幅では、`density="auto"` の場合に `icon-only` へ縮退できます。これは対話状態ではなく、利用可能幅に応じた表示条件です。
 
-現行実装では `max-width: 640px` を契機としますが、公開契約の中心は特定の閾値そのものではなく、狭幅時に icon-only へ縮退できることにあります。内部実装は `ui-button[data-density]` と `::part(button)` を介してこれを成立させます。
+現行実装では `max-width: 639px` を契機としますが、公開契約の中心は特定の閾値そのものではなく、狭幅時に icon-only へ縮退できることにあります。内部実装は `ui-button[data-density]` と `::part(button)` を介してこれを成立させます。
 
 ### 境界入力
 

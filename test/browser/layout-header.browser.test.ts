@@ -56,6 +56,24 @@ const readInlinePx = (value: string | null): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const getSearchTriggerButton = (host: ShadowRoot | null): HTMLButtonElement => {
+  const searchTrigger = expectPresent(
+    host?.querySelector<HTMLElement>('ui-search-trigger'),
+    'ui-search-trigger',
+  );
+  const searchUiButton = expectPresent(
+    searchTrigger.shadowRoot?.querySelector<HTMLElement>('ui-button'),
+    'ui-search-trigger ui-button',
+  );
+  return expectPresent(
+    searchUiButton.shadowRoot?.querySelector<HTMLButtonElement>('button'),
+    'ui-search-trigger button',
+  );
+};
+
+const getSearchTriggerHost = (host: ShadowRoot | null): HTMLElement =>
+  expectPresent(host?.querySelector<HTMLElement>('ui-search-trigger'), 'ui-search-trigger');
+
 const publishReadyTocRuntime = (runtimeId: string, overrides: Partial<{
   activeId: string | null;
 }> = {}): void => {
@@ -875,5 +893,180 @@ describe('layout-header browser contract', () => {
       await waitForLitUpdate(header);
       await waitForDropdownIdle(corpusDropdown);
     }
+  });
+
+  it('header family の token 注入で theme / corpus / TOC と search-trigger の公開 style input を分離制御できること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div
+        style="
+          inline-size: 1024px;
+          --layout-header-trigger-content-gap-default: 10px;
+          --layout-header-trigger-content-gap-compact: 6px;
+          --layout-header-trigger-affordance-gap-default: 8px;
+          --layout-header-trigger-affordance-gap-compact: 4px;
+          --layout-header-trigger-padding-inline-default: 14px;
+          --layout-header-trigger-padding-inline-compact: 9px;
+        "
+      >
+        <layout-header
+          note-layout
+          current-corpus-key="program"
+          toc-presence="present"
+          toc-runtime-id="test-toc"
+          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus","href":"/corpora/program/"}]'
+        ></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    publishReadyTocRuntime('test-toc');
+    await waitForLitUpdate(header);
+
+    const themeMain = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.theme-trigger-main'),
+      'themeTriggerMain',
+    );
+    const corpusLabel = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.corpus-trigger-label'),
+      'corpusTriggerLabel',
+    );
+    const tocTrigger = expectPresent(
+      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
+      'tocTrigger',
+    );
+    const searchTrigger = getSearchTriggerHost(header.shadowRoot);
+    const searchButton = getSearchTriggerButton(header.shadowRoot);
+
+    expect(getComputedStyle(themeMain).gap).to.equal('10px');
+    expect(getComputedStyle(corpusLabel).gap).to.equal('8px');
+    expect(getComputedStyle(tocTrigger).gap).to.equal('6px');
+    expect(getComputedStyle(tocTrigger).paddingLeft).to.equal('9px');
+    expect(getComputedStyle(tocTrigger).paddingRight).to.equal('9px');
+    expect(getComputedStyle(searchTrigger).getPropertyValue('--search-trigger-gap').trim()).to.equal(
+      '10px',
+    );
+    expect(
+      getComputedStyle(searchTrigger).getPropertyValue('--search-trigger-gap-compact').trim(),
+    ).to.equal('6px');
+    expect(
+      getComputedStyle(searchTrigger).getPropertyValue('--search-trigger-padding-inline').trim(),
+    ).to.equal('14px');
+    expect(
+      getComputedStyle(searchTrigger)
+        .getPropertyValue('--search-trigger-padding-inline-compact')
+        .trim(),
+    ).to.equal('9px');
+
+    const buttonStyle = getComputedStyle(searchButton);
+
+    if (window.matchMedia('(max-width: 639px)').matches) {
+      expect(buttonStyle.paddingLeft).to.equal('0px');
+      expect(buttonStyle.paddingRight).to.equal('0px');
+    } else if (window.matchMedia('(max-width: 960px)').matches) {
+      expect(buttonStyle.gap).to.equal('6px');
+      expect(buttonStyle.paddingLeft).to.equal('9px');
+      expect(buttonStyle.paddingRight).to.equal('9px');
+    } else {
+      expect(buttonStyle.gap).to.equal('10px');
+      expect(buttonStyle.paddingLeft).to.equal('14px');
+      expect(buttonStyle.paddingRight).to.equal('14px');
+    }
+  });
+
+  it('狭幅では TOC に compact token が反映され、search-trigger は auto 縮退規則を壊さないこと', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div
+        style="
+          inline-size: 375px;
+          --layout-header-trigger-content-gap-default: 10px;
+          --layout-header-trigger-content-gap-compact: 6px;
+          --layout-header-trigger-affordance-gap-default: 8px;
+          --layout-header-trigger-affordance-gap-compact: 4px;
+          --layout-header-trigger-padding-inline-default: 14px;
+          --layout-header-trigger-padding-inline-compact: 9px;
+        "
+      >
+        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    publishReadyTocRuntime('test-toc');
+    await waitForLitUpdate(header);
+
+    const tocTrigger = expectPresent(
+      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
+      'tocTrigger',
+    );
+    const searchTrigger = getSearchTriggerHost(header.shadowRoot);
+    const searchButton = getSearchTriggerButton(header.shadowRoot);
+
+    expect(getComputedStyle(tocTrigger).gap).to.equal('6px');
+    expect(getComputedStyle(tocTrigger).paddingLeft).to.equal('9px');
+    expect(getComputedStyle(tocTrigger).paddingRight).to.equal('9px');
+    expect(getComputedStyle(searchTrigger).getPropertyValue('--search-trigger-gap-compact').trim()).to.equal(
+      '6px',
+    );
+    expect(
+      getComputedStyle(searchTrigger)
+        .getPropertyValue('--search-trigger-padding-inline-compact')
+        .trim(),
+    ).to.equal('9px');
+
+    const buttonStyle = getComputedStyle(searchButton);
+    const searchPlaceholder = expectPresent(
+      searchTrigger.shadowRoot?.querySelector<HTMLElement>('.placeholder'),
+      'searchPlaceholder',
+    );
+
+    if (window.matchMedia('(max-width: 639px)').matches) {
+      expect(buttonStyle.justifyContent).to.equal('center');
+      expect(buttonStyle.paddingLeft).to.equal('0px');
+      expect(buttonStyle.paddingRight).to.equal('0px');
+      expect(getComputedStyle(searchPlaceholder).display).to.equal('none');
+      return;
+    }
+
+    if (window.matchMedia('(max-width: 960px)').matches) {
+      expect(buttonStyle.gap).to.equal('6px');
+      expect(buttonStyle.paddingLeft).to.equal('9px');
+      expect(buttonStyle.paddingRight).to.equal('9px');
+      return;
+    }
+
+    expect(buttonStyle.gap).to.equal('10px');
+    expect(buttonStyle.paddingLeft).to.equal('14px');
+    expect(buttonStyle.paddingRight).to.equal('14px');
+  });
+
+  it('長い corpus label でも truncate を維持しつつ chevron を消さないこと', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 410px; overflow: auto;">
+        <layout-header
+          note-layout
+          current-corpus-key="program"
+          toc-presence="present"
+          toc-runtime-id="test-toc"
+          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for truncate verification across a packed mobile header","href":"/corpora/program/"}]'
+        ></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    publishReadyTocRuntime('test-toc');
+    await waitForLitUpdate(header);
+
+    const corpusText = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.corpus-trigger-text'),
+      'corpusTriggerText',
+    );
+    const corpusChevron = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.corpus-trigger-icon'),
+      'corpusChevron',
+    );
+
+    expect(wrapper.scrollWidth - wrapper.clientWidth).to.be.lessThanOrEqual(1);
+    expect(corpusText.scrollWidth).to.be.greaterThan(corpusText.clientWidth);
+    expect(isVisible(corpusChevron)).to.equal(true);
   });
 });

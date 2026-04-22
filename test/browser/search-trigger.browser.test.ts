@@ -38,6 +38,9 @@ const getIconSlot = (host: SearchTrigger): HTMLElement =>
 const getUiIcon = (host: SearchTrigger): HTMLElement =>
   expectPresent(host.shadowRoot?.querySelector<HTMLElement>('.icon ui-icon'), 'ui-icon');
 
+const getComputedButtonStyle = (host: SearchTrigger): CSSStyleDeclaration =>
+  getComputedStyle(getButton(host));
+
 describe('ui-search-trigger browser contract', () => {
   it('既定状態で ui-button を内部に用い、native button semantics と default aria を提供すること', async () => {
     const host = await fixture<SearchTrigger>(html`
@@ -195,5 +198,104 @@ describe('ui-search-trigger browser contract', () => {
     const placeholder = getPlaceholder(host);
 
     expect(getComputedStyle(iconSlot).color).to.equal(getComputedStyle(placeholder).color);
+  });
+
+  it('default density で公開 token により gap と padding-inline を上書きできること', async () => {
+    const host = await fixture<SearchTrigger>(html`
+      <ui-search-trigger
+        density="default"
+        style="--search-trigger-gap: 10px; --search-trigger-padding-inline: 14px;"
+      ></ui-search-trigger>
+    `);
+
+    await flush(host);
+
+    const buttonStyle = getComputedButtonStyle(host);
+    expect(buttonStyle.gap).to.equal('10px');
+    expect(buttonStyle.paddingLeft).to.equal('14px');
+    expect(buttonStyle.paddingRight).to.equal('14px');
+  });
+
+  it('compact density で compact 用公開 token により gap と padding-inline を上書きできること', async () => {
+    const host = await fixture<SearchTrigger>(html`
+      <ui-search-trigger
+        density="compact"
+        style="--search-trigger-gap-compact: 6px; --search-trigger-padding-inline-compact: 9px;"
+      ></ui-search-trigger>
+    `);
+
+    await flush(host);
+
+    const buttonStyle = getComputedButtonStyle(host);
+    expect(buttonStyle.gap).to.equal('6px');
+    expect(buttonStyle.paddingLeft).to.equal('9px');
+    expect(buttonStyle.paddingRight).to.equal('9px');
+  });
+
+  it('auto density は viewport 条件に応じて default / compact / icon-only を切り替えること', async () => {
+    const host = await fixture<SearchTrigger>(html`
+      <ui-search-trigger
+        density="auto"
+        style="
+          --search-trigger-gap: 10px;
+          --search-trigger-gap-compact: 6px;
+          --search-trigger-padding-inline: 14px;
+          --search-trigger-padding-inline-compact: 9px;
+        "
+      ></ui-search-trigger>
+    `);
+
+    await flush(host);
+
+    const buttonStyle = getComputedButtonStyle(host);
+    const placeholder = getPlaceholder(host);
+
+    if (window.matchMedia('(max-width: 639px)').matches) {
+      expect(buttonStyle.justifyContent).to.equal('center');
+      expect(buttonStyle.paddingLeft).to.equal('0px');
+      expect(buttonStyle.paddingRight).to.equal('0px');
+      expect(getComputedStyle(placeholder).display).to.equal('none');
+      return;
+    }
+
+    if (window.matchMedia('(max-width: 960px)').matches) {
+      expect(buttonStyle.gap).to.equal('6px');
+      expect(buttonStyle.paddingLeft).to.equal('9px');
+      expect(buttonStyle.paddingRight).to.equal('9px');
+      expect(getComputedStyle(placeholder).display).to.not.equal('none');
+      return;
+    }
+
+    expect(buttonStyle.gap).to.equal('10px');
+    expect(buttonStyle.paddingLeft).to.equal('14px');
+    expect(buttonStyle.paddingRight).to.equal('14px');
+    expect(getComputedStyle(placeholder).display).to.not.equal('none');
+  });
+
+  it('icon-only density では公開 token を与えても placeholder 非表示と中央寄せを維持すること', async () => {
+    const host = await fixture<SearchTrigger>(html`
+      <ui-search-trigger
+        density="icon-only"
+        style="
+          --search-trigger-gap: 24px;
+          --search-trigger-gap-compact: 12px;
+          --search-trigger-padding-inline: 20px;
+          --search-trigger-padding-inline-compact: 16px;
+        "
+      ></ui-search-trigger>
+    `);
+
+    await flush(host);
+
+    const button = getButton(host);
+    const buttonStyle = getComputedStyle(button);
+    const placeholder = getPlaceholder(host);
+
+    expect(buttonStyle.justifyContent).to.equal('center');
+    expect(buttonStyle.paddingLeft).to.equal('0px');
+    expect(buttonStyle.paddingRight).to.equal('0px');
+    expect(getComputedStyle(placeholder).display).to.equal('none');
+    expect(button.getBoundingClientRect().width).to.be.greaterThan(0);
+    expect(button.getBoundingClientRect().height).to.be.greaterThan(0);
   });
 });

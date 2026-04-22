@@ -74,6 +74,30 @@ export class LayoutHeader extends LitElement {
       z-index: var(--z-page-chrome, var(--z-fixed, 100));
       container-type: inline-size;
       container-name: layout-header-shell;
+      --_layout-header-trigger-content-gap-default: var(
+        --layout-header-trigger-content-gap-default,
+        var(--space-2, 8px)
+      );
+      --_layout-header-trigger-content-gap-compact: var(
+        --layout-header-trigger-content-gap-compact,
+        var(--space-1, 4px)
+      );
+      --_layout-header-trigger-affordance-gap-default: var(
+        --layout-header-trigger-affordance-gap-default,
+        var(--space-2, 8px)
+      );
+      --_layout-header-trigger-affordance-gap-compact: var(
+        --layout-header-trigger-affordance-gap-compact,
+        var(--space-1, 4px)
+      );
+      --_layout-header-trigger-padding-inline-default: var(
+        --layout-header-trigger-padding-inline-default,
+        var(--space-3, 12px)
+      );
+      --_layout-header-trigger-padding-inline-compact: var(
+        --layout-header-trigger-padding-inline-compact,
+        var(--space-2, 8px)
+      );
     }
 
     .brand {
@@ -139,11 +163,27 @@ export class LayoutHeader extends LitElement {
     }
 
     .theme-trigger-label,
-    .theme-menu-label,
     .corpus-trigger-label {
       display: inline-flex;
       align-items: center;
+      gap: var(--_layout-header-trigger-affordance-gap-default);
+      min-inline-size: 0;
+      max-inline-size: 100%;
+    }
+
+    .theme-menu-label {
+      display: inline-flex;
+      align-items: center;
       gap: var(--space-2, 8px);
+      min-inline-size: 0;
+      max-inline-size: 100%;
+    }
+
+    .theme-trigger-main,
+    .corpus-trigger-main {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--_layout-header-trigger-content-gap-default);
       min-inline-size: 0;
       max-inline-size: 100%;
     }
@@ -152,8 +192,14 @@ export class LayoutHeader extends LitElement {
       color: var(--fg-default);
     }
 
+    .corpus-trigger-main,
+    .theme-trigger-main {
+      min-inline-size: 0;
+    }
+
     .corpus-trigger-text {
       display: inline-block;
+      min-inline-size: 0;
       max-inline-size: min(13rem, 28vw);
       overflow: hidden;
       text-overflow: ellipsis;
@@ -206,11 +252,11 @@ export class LayoutHeader extends LitElement {
     .toc-trigger {
       display: none;
       align-items: center;
-      gap: var(--space-2, 8px);
+      gap: var(--_layout-header-trigger-content-gap-compact);
       min-inline-size: 0;
       max-inline-size: min(16rem, 42vw);
       block-size: var(--control-height-md, 36px);
-      padding-inline: var(--space-2, 8px);
+      padding-inline: var(--_layout-header-trigger-padding-inline-compact);
       border: none;
       background: transparent;
       color: var(--fg-default);
@@ -234,6 +280,13 @@ export class LayoutHeader extends LitElement {
       text-overflow: ellipsis;
       white-space: nowrap;
       font-size: var(--text-sm, 13px);
+    }
+
+    ui-search-trigger {
+      --search-trigger-gap: var(--_layout-header-trigger-content-gap-default);
+      --search-trigger-gap-compact: var(--_layout-header-trigger-content-gap-compact);
+      --search-trigger-padding-inline: var(--_layout-header-trigger-padding-inline-default);
+      --search-trigger-padding-inline-compact: var(--_layout-header-trigger-padding-inline-compact);
     }
 
     @container layout-header-shell (min-width: 1024px) {
@@ -277,6 +330,16 @@ export class LayoutHeader extends LitElement {
 
       .theme-trigger-text {
         display: none;
+      }
+
+      .theme-trigger-label,
+      .corpus-trigger-label {
+        gap: var(--_layout-header-trigger-affordance-gap-compact);
+      }
+
+      .theme-trigger-main,
+      .corpus-trigger-main {
+        gap: var(--_layout-header-trigger-content-gap-compact);
       }
 
       .toc-trigger[data-visible='true'] {
@@ -626,7 +689,9 @@ export class LayoutHeader extends LitElement {
           <ui-dropdown class="corpus-switcher" @menu-item-select=${this._handleCorpusSelect}>
             <ui-button slot="trigger" variant="ghost">
               <span class="corpus-trigger-label">
-                <span class="corpus-trigger-text">${currentCorpusLabel}</span>
+                <span class="corpus-trigger-main">
+                  <span class="corpus-trigger-text">${currentCorpusLabel}</span>
+                </span>
                 <ui-icon
                   class="corpus-trigger-icon"
                   name="chevron-down"
@@ -663,12 +728,14 @@ export class LayoutHeader extends LitElement {
           >
             <ui-button slot="trigger" variant="ghost" accessible-name="テーマ">
               <span class="theme-trigger-label">
-                <ui-icon
-                  class="theme-trigger-icon"
-                  name=${currentThemeOption.icon}
-                  aria-hidden="true"
-                ></ui-icon>
-                <span class="theme-trigger-text">テーマ</span>
+                <span class="theme-trigger-main">
+                  <ui-icon
+                    class="theme-trigger-icon"
+                    name=${currentThemeOption.icon}
+                    aria-hidden="true"
+                  ></ui-icon>
+                  <span class="theme-trigger-text">テーマ</span>
+                </span>
                 <ui-icon
                   class="theme-trigger-chevron"
                   name="chevron-down"
