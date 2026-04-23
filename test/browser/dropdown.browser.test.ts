@@ -93,7 +93,7 @@ const waitUntilReadyState = async (
       trigger.getAttribute('aria-expanded') === 'true' &&
       panel.getAttribute('aria-hidden') === 'false' &&
       panel.hasAttribute('inert') === false,
-    2000,
+    1200,
     20,
     'dropdown が ready state へ遷移しません',
   );
@@ -111,7 +111,7 @@ const waitUntilClosedState = async (
       trigger.getAttribute('aria-expanded') === 'false' &&
       panel.getAttribute('aria-hidden') === 'true' &&
       panel.hasAttribute('inert') === true,
-    2000,
+    1200,
     20,
     'dropdown が閉状態へ遷移しません',
   );
@@ -120,7 +120,7 @@ const waitUntilClosedState = async (
 const waitUntilFocusedValue = async (dropdown: Dropdown, value: string): Promise<void> => {
   await waitUntil(
     () => getFocusedValue(dropdown) === value,
-    2000,
+    1200,
     20,
     `focus が ${value} へ移動しません`,
   );
@@ -251,7 +251,7 @@ describe('ui-dropdown browser contract', () => {
     await waitForLitUpdate(dropdown);
     await waitUntil(
       () => dropdown.opened === false && document.activeElement === trigger,
-      2000,
+      1200,
       20,
       'dropdown が閉じず trigger へ focus が戻りません',
     );

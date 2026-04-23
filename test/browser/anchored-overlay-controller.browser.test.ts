@@ -34,7 +34,7 @@ const setFloatingRectFromStyle = (
 
 describe('anchored-overlay-controller browser contract', () => {
   // browser: immutable commit snapshot を含む内部 geometry 契約を検証する
-  it('commit 時の referenceRect / floating size を immutable snapshot として保持すること', async () => {
+  it('commit 時の referenceRect / measuredRect を immutable snapshot として保持すること', async () => {
     const reference = document.createElement('button');
     const floating = document.createElement('div');
     document.body.append(reference, floating);
@@ -73,6 +73,11 @@ describe('anchored-overlay-controller browser contract', () => {
       expect(snapshot?.referenceRect.height).to.equal(32);
       expect(snapshot?.floatingWidth).to.equal(160);
       expect(snapshot?.floatingHeight).to.equal(48);
+      expect(snapshot?.measuredRect.left).to.equal(snapshot?.x);
+      expect(snapshot?.measuredRect.top).to.equal(snapshot?.y);
+      expect(snapshot?.measuredRect.width).to.equal(160);
+      expect(snapshot?.measuredRect.height).to.equal(48);
+      expect(snapshot?.viewportCorrected).to.equal(false);
       expect(Number.isFinite(snapshot?.x)).to.equal(true);
       expect(Number.isFinite(snapshot?.y)).to.equal(true);
     } finally {
@@ -129,6 +134,8 @@ describe('anchored-overlay-controller browser contract', () => {
       expect(latestSnapshot?.referenceRect.top).to.equal(96);
       expect(latestSnapshot?.referenceRect.width).to.equal(120);
       expect(latestSnapshot?.referenceRect.height).to.equal(40);
+      expect(firstSnapshot?.measuredRect.width).to.equal(140);
+      expect(firstSnapshot?.measuredRect.height).to.equal(44);
     } finally {
       open = false;
       controller.destroy();
@@ -136,4 +143,5 @@ describe('anchored-overlay-controller browser contract', () => {
       floating.remove();
     }
   });
+
 });

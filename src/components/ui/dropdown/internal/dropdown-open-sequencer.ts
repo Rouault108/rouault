@@ -12,18 +12,24 @@ export interface DropdownOpenSequencerDeps {
 
 export interface DropdownOpenSequencerConfig {
   watchdogMs?: number;
+  fallbackDelayMs?: number;
   now?: () => number;
   requestAnimationFrame?: typeof requestAnimationFrame;
   cancelAnimationFrame?: typeof cancelAnimationFrame;
+  setTimeout?: typeof window.setTimeout;
+  clearTimeout?: typeof window.clearTimeout;
 }
 
-const DEFAULT_WATCHDOG_MS = 180;
+const DEFAULT_WATCHDOG_MS = 320;
+const DEFAULT_FALLBACK_DELAY_MS = 32;
 const NEAR_TRIGGER_THRESHOLD = 160;
 const DEFAULT_REQUEST_ANIMATION_FRAME: typeof requestAnimationFrame = (...args) =>
   window.requestAnimationFrame(...args);
 const DEFAULT_CANCEL_ANIMATION_FRAME: typeof cancelAnimationFrame = (...args) => {
   window.cancelAnimationFrame(...args);
 };
+const DEFAULT_SET_TIMEOUT: typeof window.setTimeout = (...args) => window.setTimeout(...args);
+const DEFAULT_CLEAR_TIMEOUT: typeof window.clearTimeout = (...args) => window.clearTimeout(...args);
 
 const getPlacementSide = (placement: string): 'top' | 'right' | 'bottom' | 'left' => {
   if (placement.startsWith('top')) {
@@ -39,19 +45,19 @@ const getPlacementSide = (placement: string): 'top' | 'right' | 'bottom' | 'left
 };
 
 const isNearTrigger = (snapshot: AnchoredOverlayCommitSnapshot): boolean => {
-  const { x, y, placement, referenceRect, floatingWidth, floatingHeight } = snapshot;
+  const { placement, referenceRect, measuredRect } = snapshot;
   const side = getPlacementSide(placement);
 
   switch (side) {
     case 'top':
-      return Math.abs(y + floatingHeight - referenceRect.top) < NEAR_TRIGGER_THRESHOLD;
+      return Math.abs(measuredRect.bottom - referenceRect.top) < NEAR_TRIGGER_THRESHOLD;
     case 'right':
-      return Math.abs(x - referenceRect.right) < NEAR_TRIGGER_THRESHOLD;
+      return Math.abs(measuredRect.left - referenceRect.right) < NEAR_TRIGGER_THRESHOLD;
     case 'left':
-      return Math.abs(x + floatingWidth - referenceRect.left) < NEAR_TRIGGER_THRESHOLD;
+      return Math.abs(measuredRect.right - referenceRect.left) < NEAR_TRIGGER_THRESHOLD;
     case 'bottom':
     default:
-      return Math.abs(y - referenceRect.bottom) < NEAR_TRIGGER_THRESHOLD;
+      return Math.abs(measuredRect.top - referenceRect.bottom) < NEAR_TRIGGER_THRESHOLD;
   }
 };
 
@@ -64,7 +70,7 @@ const isReadySnapshot = (snapshot: AnchoredOverlayCommitSnapshot | null): boolea
     return false;
   }
 
-  if (snapshot.floatingWidth <= 0 || snapshot.floatingHeight <= 0) {
+  if (snapshot.measuredRect.width <= 0 || snapshot.measuredRect.height <= 0) {
     return false;
   }
 
@@ -73,14 +79,19 @@ const isReadySnapshot = (snapshot: AnchoredOverlayCommitSnapshot | null): boolea
 
 export class DropdownOpenSequencer {
   private readonly _watchdogMs: number;
+  private readonly _fallbackDelayMs: number;
   private readonly _now: () => number;
   private readonly _requestAnimationFrame: typeof requestAnimationFrame;
   private readonly _cancelAnimationFrame: typeof cancelAnimationFrame;
+  private readonly _setTimeout: typeof window.setTimeout;
+  private readonly _clearTimeout: typeof window.clearTimeout;
   private _token = 0;
   private _pendingRafId: number | null = null;
+  private _pendingTimeoutId: ReturnType<typeof window.setTimeout> | null = null;
 
   constructor(config: DropdownOpenSequencerConfig = {}) {
     this._watchdogMs = config.watchdogMs ?? DEFAULT_WATCHDOG_MS;
+    this._fallbackDelayMs = config.fallbackDelayMs ?? DEFAULT_FALLBACK_DELAY_MS;
     this._now =
       config.now ??
       (() => {
@@ -91,6 +102,8 @@ export class DropdownOpenSequencer {
       });
     this._requestAnimationFrame = config.requestAnimationFrame ?? DEFAULT_REQUEST_ANIMATION_FRAME;
     this._cancelAnimationFrame = config.cancelAnimationFrame ?? DEFAULT_CANCEL_ANIMATION_FRAME;
+    this._setTimeout = config.setTimeout ?? DEFAULT_SET_TIMEOUT;
+    this._clearTimeout = config.clearTimeout ?? DEFAULT_CLEAR_TIMEOUT;
   }
 
   begin(deps: DropdownOpenSequencerDeps): void {
@@ -101,10 +114,7 @@ export class DropdownOpenSequencer {
 
   cancel(): void {
     this._token += 1;
-    if (this._pendingRafId !== null) {
-      this._cancelAnimationFrame(this._pendingRafId);
-      this._pendingRafId = null;
-    }
+    this._clearPendingTick();
   }
 
   private async _run(token: number, deps: DropdownOpenSequencerDeps): Promise<void> {
@@ -121,7 +131,7 @@ export class DropdownOpenSequencer {
 
       const latestSnapshot = deps.getLastCommitSnapshot();
       if (positioned && isReadySnapshot(latestSnapshot)) {
-        await this._waitForAnimationFrame(token);
+        await this._waitForNextTick(token);
         if (!this._isActive(token, deps)) {
           return;
         }
@@ -136,7 +146,7 @@ export class DropdownOpenSequencer {
         break;
       }
 
-      await this._waitForAnimationFrame(token);
+      await this._waitForNextTick(token);
     }
 
     if (this._isActive(token, deps) && !hadSuccessfulRecompute) {
@@ -153,19 +163,50 @@ export class DropdownOpenSequencer {
     return token === this._token && deps.isStillOpen();
   }
 
-  private _waitForAnimationFrame(token: number): Promise<void> {
+  private _waitForNextTick(token: number): Promise<void> {
     return new Promise((resolve) => {
-      const rafId = this._requestAnimationFrame(() => {
-        if (this._pendingRafId === rafId) {
-          this._pendingRafId = null;
-        }
-        if (token !== this._token) {
-          resolve();
+      let settled = false;
+      const settle = (): void => {
+        if (settled) {
           return;
         }
+
+        settled = true;
+        this._clearPendingTick();
         resolve();
+      };
+
+      const rafId = this._requestAnimationFrame(() => {
+        if (token !== this._token) {
+          settle();
+          return;
+        }
+
+        settle();
       });
+      const timeoutId = this._setTimeout(() => {
+        if (token !== this._token) {
+          settle();
+          return;
+        }
+
+        settle();
+      }, this._fallbackDelayMs);
+
       this._pendingRafId = rafId;
+      this._pendingTimeoutId = timeoutId;
     });
+  }
+
+  private _clearPendingTick(): void {
+    if (this._pendingRafId !== null) {
+      this._cancelAnimationFrame(this._pendingRafId);
+      this._pendingRafId = null;
+    }
+
+    if (this._pendingTimeoutId !== null) {
+      this._clearTimeout(this._pendingTimeoutId);
+      this._pendingTimeoutId = null;
+    }
   }
 }

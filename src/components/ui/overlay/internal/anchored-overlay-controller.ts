@@ -27,6 +27,8 @@ export interface AnchoredOverlayCommitSnapshot {
   referenceRect: DOMRectReadOnly;
   floatingWidth: number;
   floatingHeight: number;
+  measuredRect: DOMRectReadOnly;
+  viewportCorrected: boolean;
 }
 
 export interface AnchoredOverlayControllerConfig {
@@ -147,6 +149,8 @@ export class AnchoredOverlayController {
       const overflowTop = minY - actualRect.top;
       const overflowRight = actualRect.right - (viewportRight - edgePadding);
       const overflowBottom = actualRect.bottom - (viewportBottom - edgePadding);
+      const viewportCorrected =
+        overflowLeft > 0 || overflowTop > 0 || overflowRight > 0 || overflowBottom > 0;
 
       if (overflowLeft > 0) {
         resolvedX += roundViewportCorrection(overflowLeft);
@@ -167,6 +171,13 @@ export class AnchoredOverlayController {
       resolvedY = Math.round(clampToRange(resolvedY, minY, correctedMaxY));
       floating.style.left = `${String(resolvedX)}px`;
       floating.style.top = `${String(resolvedY)}px`;
+      const measuredRectSource = viewportCorrected ? floating.getBoundingClientRect() : actualRect;
+      const measuredRect = new DOMRectReadOnly(
+        measuredRectSource.x,
+        measuredRectSource.y,
+        measuredRectSource.width,
+        measuredRectSource.height,
+      );
       const referenceRect = reference.getBoundingClientRect();
       const commitSnapshot: AnchoredOverlayCommitSnapshot = {
         x: resolvedX,
@@ -180,8 +191,10 @@ export class AnchoredOverlayController {
           referenceRect.width,
           referenceRect.height,
         ),
-        floatingWidth: actualRect.width,
-        floatingHeight: actualRect.height,
+        floatingWidth: measuredRect.width,
+        floatingHeight: measuredRect.height,
+        measuredRect,
+        viewportCorrected,
       };
       this._lastCommitSnapshot = commitSnapshot;
       this._config.onPosition?.({

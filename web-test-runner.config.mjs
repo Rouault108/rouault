@@ -35,7 +35,7 @@ const config = {
   testFramework: {
     config: {
       ui: 'bdd',
-      timeout: '2000',
+      timeout: '4000',
     },
   },
   testRunnerHtml: testFramework => renderTestRunnerHtml(testFramework),
