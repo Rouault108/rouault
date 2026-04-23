@@ -368,10 +368,10 @@ describe('dropdown-open-sequencer browser contract', () => {
       cancelAnimationFrame: (id) => {
         cancelledRafIds.push(id);
       },
-      setTimeout: (() => {
+      setTimeout: () => {
         timeoutId += 1;
-        return timeoutId as ReturnType<typeof window.setTimeout>;
-      }) as typeof window.setTimeout,
+        return timeoutId;
+      },
       clearTimeout: (id) => {
         clearedTimeoutIds.push(Number(id));
       },

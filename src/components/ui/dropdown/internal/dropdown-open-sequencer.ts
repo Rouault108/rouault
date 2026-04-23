@@ -11,11 +11,12 @@ export interface DropdownOpenSequencerDeps {
 }
 
 type DropdownTimeoutHandler = () => void;
+type DropdownTimeoutId = number;
 type DropdownSetTimeout = (
   handler: DropdownTimeoutHandler,
   timeout?: number,
-) => ReturnType<typeof window.setTimeout>;
-type DropdownClearTimeout = (timeoutId: ReturnType<typeof window.setTimeout>) => void;
+) => DropdownTimeoutId;
+type DropdownClearTimeout = (timeoutId: DropdownTimeoutId) => void;
 
 export interface DropdownOpenSequencerConfig {
   watchdogMs?: number;
@@ -97,7 +98,7 @@ export class DropdownOpenSequencer {
   private readonly _clearTimeout: DropdownClearTimeout;
   private _token = 0;
   private _pendingRafId: number | null = null;
-  private _pendingTimeoutId: ReturnType<typeof window.setTimeout> | null = null;
+  private _pendingTimeoutId: DropdownTimeoutId | null = null;
 
   constructor(config: DropdownOpenSequencerConfig = {}) {
     this._watchdogMs = config.watchdogMs ?? DEFAULT_WATCHDOG_MS;
