@@ -108,8 +108,10 @@ describe('css structure contracts', () => {
     expectCssIncludes(cssText, [
       '.breadcrumb-list',
       '.breadcrumb-item',
+      '.breadcrumb-node',
       '.breadcrumb-link',
       '.breadcrumb-current',
+      '.breadcrumb-static',
       '.breadcrumb-separator',
       '.breadcrumb-ellipsis-button',
       '@media (max-width: 639px)',

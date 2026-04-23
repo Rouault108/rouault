@@ -212,6 +212,61 @@ describe('buildNoteNavigationModel', () => {
     ]);
   });
 
+  it('directory-index 配下の子ページでは中間 directory crumb を link として維持すること', () => {
+    const model = buildNoteNavigationModel({
+      currentNote: {
+        slug: 'program/csharp/source-code-to-execution',
+        title: 'ソースコードから実行まで',
+        permalink: '/notes/program/csharp/source-code-to-execution',
+        noteKind: 'leaf',
+        navigationDirectoryPresentation: {
+          program: {
+            label: 'Program',
+          },
+          'program/csharp': {
+            label: 'C#',
+          },
+        },
+      },
+      notes: [
+        {
+          slug: 'program',
+          title: 'Program とは',
+          permalink: '/notes/program',
+          noteKind: 'directory-index',
+          directoryPath: 'program',
+          navigationDirectoryPresentation: {
+            program: {
+              label: 'Program',
+            },
+          },
+        },
+        {
+          slug: 'program/csharp',
+          title: 'C#とは何か',
+          permalink: '/notes/program/csharp',
+          noteKind: 'directory-index',
+          directoryPath: 'program/csharp',
+          navigationDirectoryPresentation: {
+            program: {
+              label: 'Program',
+            },
+            'program/csharp': {
+              label: 'C#',
+            },
+          },
+        },
+      ],
+    });
+
+    expect(model.breadcrumbs).to.deep.equal([
+      { label: 'Notes', href: '/' },
+      { label: 'Program', href: '/notes/program' },
+      { label: 'C#', href: '/notes/program/csharp' },
+      { label: 'ソースコードから実行まで' },
+    ]);
+  });
+
   it('sidebar icon の継承結果を tree へ反映すること', () => {
     const model = buildNoteNavigationModel({
       notes: [

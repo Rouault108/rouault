@@ -278,9 +278,16 @@ Breadcrumbs は、最後の項目を current として扱います。
 
 現状実装では、最後の要素はリンクではなく、次の形になります。
 
-- `<span class="breadcrumb-current" aria-current="page">...`
+- `<span class="breadcrumb-node breadcrumb-current" aria-current="page">...`
 
 中間項目は `href` がある場合だけリンクです。したがって Breadcrumbs では、**current は非リンクの終端要素**として表現されます。
+
+また、視覚トークンは `.breadcrumb-node` に集約し、
+
+- link: `<a class="breadcrumb-node breadcrumb-link" href="...">...`
+- non-link intermediate: `<span class="breadcrumb-node breadcrumb-static">...`
+
+のように role ごとの差分を上乗せします。
 
 ### 2.5 Sidebar / File Tree
 

@@ -81,9 +81,7 @@ const readNoteChromeState = async (
       }
 
       const labels = Array.from(
-        breadcrumbsShadowRoot.querySelectorAll<HTMLElement>(
-          '.breadcrumb-link, .breadcrumb-current',
-        ),
+        breadcrumbsShadowRoot.querySelectorAll<HTMLElement>('.breadcrumb-node'),
       )
         .map((node) => node.textContent?.trim() ?? '')
         .filter((text) => text.length > 0);

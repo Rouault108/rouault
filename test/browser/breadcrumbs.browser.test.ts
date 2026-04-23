@@ -29,9 +29,7 @@ const createMatchMediaMock = (matches: boolean) => {
 
 const getRenderedLabels = (host: Breadcrumbs): string[] =>
   Array.from(
-    host.shadowRoot?.querySelectorAll<HTMLElement>(
-      '.breadcrumb-item .breadcrumb-link, .breadcrumb-item .breadcrumb-current',
-    ) ?? [],
+    host.shadowRoot?.querySelectorAll<HTMLElement>('.breadcrumb-item .breadcrumb-node') ?? [],
   ).map((element) => element.textContent?.trim() ?? '');
 
 describe('ui-breadcrumbs browser contract', () => {
@@ -189,5 +187,99 @@ describe('ui-breadcrumbs browser contract', () => {
     } finally {
       window.matchMedia = originalMatchMedia;
     }
+  });
+
+  it('crumb role ごとに breadcrumb-node 基底と適切な class を持つこと', async () => {
+    const host = await fixture<Breadcrumbs>(html`
+      <ui-breadcrumbs
+        .items=${[
+          { label: 'Notes', href: '/' },
+          { label: 'Program', href: '/notes/program' },
+          { label: 'C#' },
+          { label: 'ソースコードから実行まで' },
+        ]}
+      ></ui-breadcrumbs>
+    `);
+    await waitForLitUpdate(host);
+
+    const nodes = Array.from(
+      host.shadowRoot?.querySelectorAll<HTMLElement>('.breadcrumb-item .breadcrumb-node') ?? [],
+    );
+
+    expect(nodes.map((node) => node.textContent?.trim())).to.deep.equal([
+      'Notes',
+      'Program',
+      'C#',
+      'ソースコードから実行まで',
+    ]);
+    expect(nodes[0]?.tagName).to.equal('A');
+    expect(nodes[0]?.classList.contains('breadcrumb-link')).to.equal(true);
+    expect(nodes[1]?.tagName).to.equal('A');
+    expect(nodes[1]?.classList.contains('breadcrumb-link')).to.equal(true);
+    expect(nodes[2]?.tagName).to.equal('SPAN');
+    expect(nodes[2]?.classList.contains('breadcrumb-static')).to.equal(true);
+    expect(nodes[2]?.classList.contains('breadcrumb-link')).to.equal(false);
+    expect(nodes[3]?.tagName).to.equal('SPAN');
+    expect(nodes[3]?.classList.contains('breadcrumb-current')).to.equal(true);
+    expect(nodes[3]?.getAttribute('aria-current')).to.equal('page');
+  });
+
+  it('同じラベルでも role 差で開始位置がずれないこと', async () => {
+    const container = await fixture<HTMLDivElement>(html`
+      <div>
+        <ui-breadcrumbs
+          id="current"
+          .items=${[
+            { label: 'Notes', href: '/' },
+            { label: 'Program', href: '/notes/program' },
+            { label: 'C#' },
+          ]}
+        ></ui-breadcrumbs>
+        <ui-breadcrumbs
+          id="link"
+          .items=${[
+            { label: 'Notes', href: '/' },
+            { label: 'Program', href: '/notes/program' },
+            { label: 'C#', href: '/notes/program/csharp' },
+            { label: 'ソースコードから実行まで' },
+          ]}
+        ></ui-breadcrumbs>
+      </div>
+    `);
+
+    const currentHost = container.querySelector<Breadcrumbs>('#current');
+    const linkHost = container.querySelector<Breadcrumbs>('#link');
+
+    expect(currentHost).to.not.equal(null);
+    expect(linkHost).to.not.equal(null);
+    if (!currentHost || !linkHost) {
+      throw new Error('comparison hosts should be rendered');
+    }
+
+    await waitForLitUpdate(currentHost);
+    await waitForLitUpdate(linkHost);
+
+    const readRelativeLeft = (host: Breadcrumbs, label: string): number => {
+      const nodes = Array.from(
+        host.shadowRoot?.querySelectorAll<HTMLElement>('.breadcrumb-item .breadcrumb-node') ?? [],
+      );
+      const node = nodes.find((candidate) => candidate.textContent?.trim() === label);
+      const item = node?.closest<HTMLElement>('.breadcrumb-item');
+
+      expect(node).to.not.equal(undefined);
+      expect(item).to.not.equal(null);
+      if (!node || !item) {
+        throw new Error(`breadcrumb node for ${label} should exist`);
+      }
+
+      const nodeRect = node.getBoundingClientRect();
+      const itemRect = item.getBoundingClientRect();
+      return nodeRect.left - itemRect.left;
+    };
+
+    const currentOffset = readRelativeLeft(currentHost, 'C#');
+    const linkOffset = readRelativeLeft(linkHost, 'C#');
+
+    expect(Math.abs(currentOffset - linkOffset)).to.be.lessThanOrEqual(0.5);
   });
 });

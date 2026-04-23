@@ -66,20 +66,25 @@ export class Breadcrumbs extends LitElement {
       overflow: visible;
     }
 
-    .breadcrumb-link {
+    .breadcrumb-node {
       display: inline-flex;
       align-items: center;
       position: relative;
-      color: inherit;
-      text-decoration: none;
       border-radius: var(--radius-sm, 4px);
       padding-block: 1px;
       padding-inline: var(--space-1, 4px);
-      max-inline-size: min(18ch, 100%);
       min-inline-size: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      box-sizing: border-box;
+      max-inline-size: var(--breadcrumb-node-max-inline-size, 100%);
+    }
+
+    .breadcrumb-link {
+      color: inherit;
+      text-decoration: none;
+      --breadcrumb-node-max-inline-size: min(18ch, 100%);
       transition: color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
@@ -98,14 +103,14 @@ export class Breadcrumbs extends LitElement {
     }
 
     .breadcrumb-current {
-      display: block;
+      --breadcrumb-node-max-inline-size: 100%;
       color: var(--fg-default, oklch(20% 0 0));
       font-weight: var(--font-medium, 500);
-      max-inline-size: 100%;
-      min-inline-size: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    }
+
+    .breadcrumb-static {
+      --breadcrumb-node-max-inline-size: min(18ch, 100%);
+      color: inherit;
     }
 
     .breadcrumb-separator {
@@ -142,13 +147,13 @@ export class Breadcrumbs extends LitElement {
         flex: 1 1 auto;
       }
 
-      .breadcrumb-link {
-        max-inline-size: min(12ch, 100%);
+      .breadcrumb-node {
         padding-inline: 2px;
       }
 
-      .breadcrumb-current {
-        max-inline-size: 100%;
+      .breadcrumb-link,
+      .breadcrumb-static {
+        --breadcrumb-node-max-inline-size: min(12ch, 100%);
       }
     }
 
@@ -161,8 +166,12 @@ export class Breadcrumbs extends LitElement {
         outline: var(--focus-ring-width, 2px) solid LinkText !important;
       }
 
-      .breadcrumb-current {
+      .breadcrumb-current,
+      .breadcrumb-static {
         color: CanvasText !important;
+      }
+
+      .breadcrumb-current {
         font-weight: var(--font-bold, 700);
       }
 
@@ -349,14 +358,18 @@ export class Breadcrumbs extends LitElement {
     }
 
     if (isLast) {
-      return html`<span class="breadcrumb-current" aria-current="page">${item.label}</span>`;
+      return html`<span class="breadcrumb-node breadcrumb-current" aria-current="page"
+        >${item.label}</span
+      >`;
     }
 
     if (item.href) {
-      return html`<a class="breadcrumb-link" href="${item.href}">${item.label}</a>`;
+      return html`<a class="breadcrumb-node breadcrumb-link" href="${item.href}"
+        >${item.label}</a
+      >`;
     }
 
-    return html`<span class="breadcrumb-link">${item.label}</span>`;
+    return html`<span class="breadcrumb-node breadcrumb-static">${item.label}</span>`;
   }
 
   private _renderEllipsisDropdown(hiddenItems: BreadcrumbItem[]) {
