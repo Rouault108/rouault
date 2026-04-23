@@ -10,14 +10,21 @@ export interface DropdownOpenSequencerDeps {
   onFail: () => void;
 }
 
+type DropdownTimeoutHandler = () => void;
+type DropdownSetTimeout = (
+  handler: DropdownTimeoutHandler,
+  timeout?: number,
+) => ReturnType<typeof window.setTimeout>;
+type DropdownClearTimeout = (timeoutId: ReturnType<typeof window.setTimeout>) => void;
+
 export interface DropdownOpenSequencerConfig {
   watchdogMs?: number;
   fallbackDelayMs?: number;
   now?: () => number;
   requestAnimationFrame?: typeof requestAnimationFrame;
   cancelAnimationFrame?: typeof cancelAnimationFrame;
-  setTimeout?: typeof window.setTimeout;
-  clearTimeout?: typeof window.clearTimeout;
+  setTimeout?: DropdownSetTimeout;
+  clearTimeout?: DropdownClearTimeout;
 }
 
 const DEFAULT_WATCHDOG_MS = 320;
@@ -28,8 +35,11 @@ const DEFAULT_REQUEST_ANIMATION_FRAME: typeof requestAnimationFrame = (...args) 
 const DEFAULT_CANCEL_ANIMATION_FRAME: typeof cancelAnimationFrame = (...args) => {
   window.cancelAnimationFrame(...args);
 };
-const DEFAULT_SET_TIMEOUT: typeof window.setTimeout = (...args) => window.setTimeout(...args);
-const DEFAULT_CLEAR_TIMEOUT: typeof window.clearTimeout = (...args) => window.clearTimeout(...args);
+const DEFAULT_SET_TIMEOUT: DropdownSetTimeout = (handler, timeout) =>
+  window.setTimeout(handler, timeout);
+const DEFAULT_CLEAR_TIMEOUT: DropdownClearTimeout = (timeoutId) => {
+  window.clearTimeout(timeoutId);
+};
 
 const getPlacementSide = (placement: string): 'top' | 'right' | 'bottom' | 'left' => {
   if (placement.startsWith('top')) {
@@ -83,8 +93,8 @@ export class DropdownOpenSequencer {
   private readonly _now: () => number;
   private readonly _requestAnimationFrame: typeof requestAnimationFrame;
   private readonly _cancelAnimationFrame: typeof cancelAnimationFrame;
-  private readonly _setTimeout: typeof window.setTimeout;
-  private readonly _clearTimeout: typeof window.clearTimeout;
+  private readonly _setTimeout: DropdownSetTimeout;
+  private readonly _clearTimeout: DropdownClearTimeout;
   private _token = 0;
   private _pendingRafId: number | null = null;
   private _pendingTimeoutId: ReturnType<typeof window.setTimeout> | null = null;
