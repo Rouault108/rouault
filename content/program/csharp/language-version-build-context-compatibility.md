@@ -8,6 +8,7 @@ genre:
 ---
 
 前ページで見たように、C#プログラムの意味はソースコードだけではなく、コンパイル単位、参照、アセンブリ、実行基盤との関係の中で定まる。本章では、そのうち言語版、TFM、SDK、ビルド設定がどのように受理可能な構文と実行可能性を制約するかを整理する。
+
 C#のコードがどの規則で受理され、どの機能が利用可能であり、どこで互換性上の制約が現れるかは、単一の要因では決まらない。少なくとも、選択された言語バージョン、対象とするターゲットフレームワーク（TFM）、SDKとコンパイラの版、プロジェクトファイルで与えられるコンパイル設定、前処理ディレクティブ、nullable文脈、およびソースが生成コードとして扱われるか否かの組み合わせとして決まる。したがって、ある構文が「C#として書ける」ことと、その構文が実際のビルド文脈で安全かつ再現可能に利用できることとは区別しなければならない。[^1][^2][^3][^4][^5]
 
 本ページでは、まず`LangVersion`が何を制御し、何を制御しないかを明らかにする。次に、TFMとライブラリ・ランタイム要件との関係を整理し、前処理ディレクティブを字句構造およびビルド文脈の一部として位置付ける。さらに、`#nullable`とプロジェクト設定・生成コードの関係、C#のバージョン史を読む際の観点、本文書における版差の扱いを定める。対象はIDEの操作手順ではなく、版管理と互換性判断の前提となる概念区分である。[^1][^3][^4][^6][^7][^8]
@@ -86,32 +87,34 @@ C# 9.0〜14では、records、top-level statements、global using、file-scoped 
 
 最後に、互換性の議論では、常に次の三区分を保つ。第一に、どの言語版で構文および意味規則が受理されるか。第二に、どのTFMとライブラリ集合でその機能が実用上成立するか。第三に、どのSDK・ビルド設定でその結果が再現可能か。この三区分を保つことにより、以後の章で型、束縛、変換、パターン、非同期、低水準制御を扱う際にも、版差と実装差を混同せずに記述できる。[^1][^2][^4][^8]
 
-[^1]: Microsoft Learn, *Language versioning - C# reference*, updated 2026-02-04, “Defaults”, “C# language version reference”. TFMごとの既定言語版、対応するC#版、およびTFMより新しい言語版のunsupported扱いの整理。【情報取得日: 2026年04月23日】
+[^1]: Microsoft Learn, *Language versioning - C# reference*, updated 2026-02-04, “Defaults”, “C# language version reference”. TFMごとの既定言語版、対応するC#版、およびTFMより新しい言語版のunsupported扱いの整理。
 
-[^2]: Microsoft Learn, *Configure language version - C# reference*, updated 2026-01-20, “Edit the project file”, “C# language version reference”. `LangVersion`の設定方法、`latest`非推奨、`#error version`、TFMと既定版の対応関係。【情報取得日: 2026年04月23日】
+[^2]: Microsoft Learn, *Configure language version - C# reference*, updated 2026-01-20, “Edit the project file”, “C# language version reference”. `LangVersion`の設定方法、`latest`非推奨、`#error version`、TFMと既定版の対応関係。
 
-[^3]: Microsoft Learn, *Compiler Options - language feature rules - C# reference*, updated 2024-09-27, “DefineConstants”, “LangVersion”, “Nullable”. `latest`、`default`、数値指定、`DefineConstants`、`Nullable`各値、生成コードにおけるnullable文脈の例外。【情報取得日: 2026年04月23日】
+[^3]: Microsoft Learn, *Compiler Options - language feature rules - C# reference*, updated 2024-09-27, “DefineConstants”, “LangVersion”, “Nullable”. `latest`、`default`、数値指定、`DefineConstants`、`Nullable`各値、生成コードにおけるnullable文脈の例外。
 
-[^4]: Microsoft Learn, *global.json overview - .NET CLI*, updated 2026-03-09, “global.json schema”, “Matching rules”. SDK選択がランタイム対象指定とは独立であること、CIにおける固定とroll-forwardの考え方。【情報取得日: 2026年04月23日】
+[^4]: Microsoft Learn, *global.json overview - .NET CLI*, updated 2026-03-09, “global.json schema”, “Matching rules”. SDK選択がランタイム対象指定とは独立であること、CIにおける固定とroll-forwardの考え方。
 
-[^5]: Microsoft Learn, *Target frameworks in SDK-style projects - .NET*, updated 2026-04-17, “Target frameworks”, “OS-specific TFMs”. TFMの意味、API集合、OS固有TFM、マルチターゲット時の基本的な見方。【情報取得日: 2026年04月23日】
+[^5]: Microsoft Learn, *Target frameworks in SDK-style projects - .NET*, updated 2026-04-17, “Target frameworks”, “OS-specific TFMs”. TFMの意味、API集合、OS固有TFM、マルチターゲット時の基本的な見方。
 
-[^6]: Microsoft Learn, *Preprocessor directives - C# reference*, updated 2026-01-20, “File-based apps”, “Nullable context”, “#if”, “#define”, “#line”, “#pragma warning”. 条件付きコンパイル、file-based apps向けディレクティブ、nullable文脈、診断制御の整理。【情報取得日: 2026年04月23日】
+[^6]: Microsoft Learn, *Preprocessor directives - C# reference*, updated 2026-01-20, “File-based apps”, “Nullable context”, “#if”, “#define”, “#line”, “#pragma warning”. 条件付きコンパイル、file-based apps向けディレクティブ、nullable文脈、診断制御の整理。
 
-[^7]: Microsoft Learn, *Lexical structure - C# language specification*, updated 2025-12-09, §6.5.1 General. 前処理ディレクティブが独立した前処理段階ではなく字句解析の一部として処理されることの確認。【情報取得日: 2026年04月23日】
+[^7]: Microsoft Learn, *Lexical structure - C# language specification*, updated 2025-12-09, §6.5.1 General. 前処理ディレクティブが独立した前処理段階ではなく字句解析の一部として処理されることの確認。
 
-[^8]: Microsoft Learn, *The history of C#*, accessed 2026-04-23, sections for C# 8 through C# 14. 版史の整理と、C# 8以降で顕在化したCLR・ライブラリ依存、およびC# 9〜14の主要機能群。【情報取得日: 2026年04月23日】
+[^8]: Microsoft Learn, *The history of C#*, accessed 2026-04-23, sections for C# 8 through C# 14. 版史の整理と、C# 8以降で顕在化したCLR・ライブラリ依存、およびC# 9〜14の主要機能群。
 
-[^9]: Microsoft Learn, *Target frameworks in SDK-style projects - .NET*, updated 2026-04-17; *Preprocessor directives - C# reference*, updated 2026-01-20, “Target framework symbols”. TFMとSDKが供給する条件付きコンパイル記号との差異、`NET10_0_OR_GREATER`等の位置付け。【情報取得日: 2026年04月23日】
+[^9]: Microsoft Learn, *Target frameworks in SDK-style projects - .NET*, updated 2026-04-17; *Preprocessor directives - C# reference*, updated 2026-01-20, “Target framework symbols”. TFMとSDKが供給する条件付きコンパイル記号との差異、`NET10_0_OR_GREATER`等の位置付け。
 
-[^10]: Microsoft Learn, *The history of C#*, accessed 2026-04-23, C# 8.0 section. default interface members、ranges・indices、asynchronous streams、nullable reference typesと実行基盤・ライブラリとの関係。【情報取得日: 2026年04月23日】
+[^10]: Microsoft Learn, *The history of C#*, accessed 2026-04-23, C# 8.0 section. default interface members、ranges・indices、asynchronous streams、nullable reference typesと実行基盤・ライブラリとの関係。
 
-[^11]: Microsoft Learn, *Types - C# language specification*, updated 2025-09-12, §8.9.3–§8.9.5. nullable reference types、nullable context、診断と実行時挙動の関係。【情報取得日: 2026年04月23日】
+[^11]: Microsoft Learn, *Types - C# language specification*, updated 2025-09-12, §8.9.3–§8.9.5. nullable reference types、nullable context、診断と実行時挙動の関係。
 
-[^12]: Microsoft Learn, *Preprocessor directives - C# reference*, updated 2026-01-20, “Nullable context”; *Compiler Options - language feature rules - C# reference*, updated 2024-09-27, “Nullable”. `#nullable`の優先関係、`restore`の意味、`<Nullable>`の各値と既定値。【情報取得日: 2026年04月23日】
+[^12]: Microsoft Learn, *Preprocessor directives - C# reference*, updated 2026-01-20, “Nullable context”; *Compiler Options - language feature rules - C# reference*, updated 2024-09-27, “Nullable”. `#nullable`の優先関係、`restore`の意味、`<Nullable>`の各値と既定値。
 
-[^13]: Microsoft Learn, *Attributes interpreted by the compiler: Nullable static analysis*, updated 2026-01-14. nullableフロー解析と属性注釈の関係。【情報取得日: 2026年04月23日】
+[^13]: Microsoft Learn, *Attributes interpreted by the compiler: Nullable static analysis*, updated 2026-01-14. nullableフロー解析と属性注釈の関係。
 
-[^14]: Microsoft Learn, C# feature specifications pages, for example *Lambda improvements - C# feature specifications* and *User-defined compound assignment operators - C# feature specifications*. feature specificationが設計文書であり、実装との差異がLDMノートに記録されうることの説明。【情報取得日: 2026年04月23日】
+[^14]: Microsoft Learn, C# feature specifications pages, for example *Lambda improvements - C# feature specifications* and *User-defined compound assignment operators - C# feature specifications*. feature specificationが設計文書であり、実装との差異がLDMノートに記録されうることの説明。
 
-[^15]: GitHub, *dotnet/csharplang* repository. C#言語設計の公式リポジトリであり、LDMノートおよびproposalの参照先。【情報取得日: 2026年04月23日】
+[^15]: GitHub, *dotnet/csharplang* repository. C#言語設計の公式リポジトリであり、LDMノートおよびproposalの参照先。
+
+[^16]: Microsoft Learn, *What's new in .NET 11*, updated 2026-04-14, “This article describes new features in .NET 11. It was last updated for Preview 3.”, “.NET 11 is currently in preview. The final release is expected in November 2026.” .NET 11が2026年04月24日現在preview段階であることの確認。【情報取得日: 2026年04月24日】
