@@ -102,6 +102,24 @@ e2eFixtureId: 'note.layout-rich'
         'utf8',
       );
 
+      const articleHeaderFixtureDir = join(
+        fallbackDir,
+        'article-header-static-layout',
+        'extraordinarily-long-intermediate-breadcrumb-label-for-mobile-overflow-verification',
+      );
+      mkdirSync(articleHeaderFixtureDir, { recursive: true });
+      writeFileSync(
+        join(articleHeaderFixtureDir, 'very-long-breadcrumb-label.md'),
+        `---
+title: 'Very Long Current Title For Static Article Header Layout Overflow Verification'
+e2eFixtureId: 'note.article-header-static-layout'
+---
+
+# fixture
+`,
+        'utf8',
+      );
+
       writeFileSync(
         join(fallbackDir, 'footnote-endnotes-layout.md'),
         `---
@@ -198,6 +216,16 @@ e2eFixtureId: 'note.footnote-long-url'
         slug: 'e2e/footnote-long-url',
         permalink: '/notes/e2e/footnote-long-url',
         contentRootId: 'note-content-e2e-footnote-long-url',
+      });
+
+      expect(manifest['note.article-header-static-layout']).toEqual({
+        fixtureId: 'note.article-header-static-layout',
+        title: 'Very Long Current Title For Static Article Header Layout Overflow Verification',
+        slug: 'e2e/article-header-static-layout/extraordinarily-long-intermediate-breadcrumb-label-for-mobile-overflow-verification/very-long-breadcrumb-label',
+        permalink:
+          '/notes/e2e/article-header-static-layout/extraordinarily-long-intermediate-breadcrumb-label-for-mobile-overflow-verification/very-long-breadcrumb-label',
+        contentRootId:
+          'note-content-e2e-article-header-static-layout-extraordinarily-long-intermediate-breadcrumb-label-for-mobile-overflow-verification-very-long-breadcrumb-label',
       });
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });

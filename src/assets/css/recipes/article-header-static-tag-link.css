@@ -1,0 +1,86 @@
+.article-header__tag-list,
+.article-header__tag-item,
+.article-header__tag-link,
+.article-header__tag-label {
+  box-sizing: border-box;
+  min-inline-size: 0;
+}
+
+.article-header__tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  inline-size: 100%;
+  max-inline-size: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.article-header__tag-item {
+  display: inline-flex;
+  max-inline-size: 100%;
+}
+
+.article-header__tag-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-inline-size: 100%;
+  overflow: visible;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--tag-border-color, var(--border-default, oklch(20% 0 0 / 0.12)));
+  border-radius: var(--tag-radius, var(--radius-full, 999px));
+  color: var(--tag-fg, var(--fg-muted, oklch(48% 0 0)));
+  background: var(--tag-bg, transparent);
+  font-size: var(--text-xs, 12px);
+  line-height: var(--line-height-snug, 1.35);
+  text-decoration: none;
+  text-underline-offset: 0.18em;
+  transition:
+    color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+    border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+.article-header__tag-link::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+
+.article-header__tag-label {
+  display: inline-block;
+  max-inline-size: min(28ch, 100%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.article-header__tag-link:hover {
+  color: var(--fg-default, oklch(20% 0 0));
+  border-color: var(--border-strong, var(--fg-muted, oklch(48% 0 0)));
+}
+
+.article-header__tag-link:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+  outline-offset: var(--focus-ring-offset, 2px);
+  animation: var(--animation-focus, none);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .article-header__tag-link {
+    transition-duration: 0.01ms;
+  }
+}
+
+@media (forced-colors: active) {
+  .article-header__tag-link {
+    color: LinkText;
+    border-color: GrayText;
+  }
+
+  .article-header__tag-link:focus-visible {
+    outline-color: Highlight;
+  }
+}

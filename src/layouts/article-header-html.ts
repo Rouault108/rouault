@@ -1,52 +1,45 @@
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
-import type { NoteStatus } from '../types/article-status.js';
+import {
+  getArticleHeaderStatusPresentation,
+  normalizeArticleHeaderBreadcrumbs,
+  normalizeArticleHeaderLicense,
+  normalizeArticleHeaderTag,
+  toArticleHeaderTagHref,
+  toSafeArticleHeaderSourceHref,
+} from '../article-header/article-header-contract.js';
+import { renderStaticArticleHeaderIconHtml } from './article-header-icon-html.js';
 import { escapeHtmlAttribute, escapeHtmlText } from './html-output.js';
 
 type ArticleHeaderProjection = NotePageProjection['articleHeader'];
-
-const STATUS_LABELS: Partial<Record<NoteStatus, string>> = {
-  draft: '下書き',
-  archived: 'アーカイブ',
-  wip: '作業中',
-  deprecated: '非推奨',
-};
-
-const toTagHref = (tag: string): string => `/tags/${encodeURIComponent(tag)}/`;
-
-const toSafeSourceHref = (value: string | undefined): string | null => {
-  const normalized = value?.trim() ?? '';
-  if (normalized.length === 0) {
-    return null;
-  }
-
-  try {
-    const url = new URL(normalized);
-    if (url.protocol === 'http:' || url.protocol === 'https:') {
-      return url.toString();
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-};
 
 const renderBreadcrumbs = (breadcrumbs: ArticleHeaderProjection['breadcrumbs']): string => {
   if (!breadcrumbs || breadcrumbs.length === 0) {
     return '';
   }
 
-  const lastIndex = breadcrumbs.length - 1;
-  const items = breadcrumbs
+  const normalizedBreadcrumbs = normalizeArticleHeaderBreadcrumbs(breadcrumbs);
+  if (normalizedBreadcrumbs.length === 0) {
+    return '';
+  }
+
+  const lastIndex = normalizedBreadcrumbs.length - 1;
+  const items = normalizedBreadcrumbs
     .map((item, index) => {
       const label = escapeHtmlText(item.label);
-      const href = typeof item.href === 'string' ? item.href.trim() : '';
-      const content =
-        index === lastIndex || href.length === 0
-          ? `<span class="article-header__breadcrumb-current" aria-current="page">${label}</span>`
-          : `<a class="article-header__breadcrumb-link" href="${escapeHtmlAttribute(href)}">${label}</a>`;
+      const isLast = index === lastIndex;
+      const content = isLast
+        ? `<span class="article-header__breadcrumb-node article-header__breadcrumb-current" aria-current="page">${label}</span>`
+        : item.href
+          ? `<a class="article-header__breadcrumb-node article-header__breadcrumb-link" href="${escapeHtmlAttribute(item.href)}">${label}</a>`
+          : `<span class="article-header__breadcrumb-node article-header__breadcrumb-static">${label}</span>`;
+      const separator = !isLast
+        ? `<span class="article-header__breadcrumb-separator" aria-hidden="true">${renderStaticArticleHeaderIconHtml(
+            'chevron-right',
+            'article-header__breadcrumb-separator-icon',
+          )}</span>`
+        : '';
 
-      return `<li class="article-header__breadcrumb-item">${content}</li>`;
+      return `<li class="article-header__breadcrumb-item">${content}${separator}</li>`;
     })
     .join('');
 
@@ -57,21 +50,19 @@ const renderBreadcrumbs = (breadcrumbs: ArticleHeaderProjection['breadcrumbs']):
   `.trim();
 };
 
-const renderStatus = (status: NoteStatus | undefined): string => {
-  if (!status || !(status in STATUS_LABELS)) {
+const renderStatus = (status: ArticleHeaderProjection['status']): string => {
+  const presentation = getArticleHeaderStatusPresentation(status);
+  if (presentation === null) {
     return '';
   }
 
-  const label = STATUS_LABELS[status];
-  if (!label) {
-    return '';
-  }
   return `
     <div
-      class="article-header__status article-header__status--${escapeHtmlAttribute(status)}"
-      aria-label="ステータス: ${escapeHtmlAttribute(label)}"
+      class="article-header__status article-header__status--${escapeHtmlAttribute(presentation.tone)}"
+      aria-label="ステータス: ${escapeHtmlAttribute(presentation.label)}"
     >
-      <span class="article-header__status-label">${escapeHtmlText(label)}</span>
+      ${renderStaticArticleHeaderIconHtml(presentation.icon, 'article-header__metadata-icon')}
+      <span class="article-header__status-label">${escapeHtmlText(presentation.label)}</span>
     </div>
   `.trim();
 };
@@ -85,10 +76,13 @@ const renderPrimaryMetadata = (articleHeader: ArticleHeaderProjection): string =
   const dateLabel = articleHeader.updated?.trim() ? '最終更新日' : '公開日';
   const created = articleHeader.created?.trim() ?? '';
   const ariaLabel =
-    created.length > 0 ? `${dateLabel}: ${displayDate}、作成日: ${created}` : `${dateLabel}: ${displayDate}`;
+    created.length > 0
+      ? `${dateLabel}: ${displayDate}、作成日: ${created}`
+      : `${dateLabel}: ${displayDate}`;
   return `
     <ul class="article-header__metadata article-header__metadata--primary" aria-label="記事メタデータ">
       <li class="article-header__metadata-item article-header__metadata-item--date">
+        ${renderStaticArticleHeaderIconHtml('history', 'article-header__metadata-icon')}
         <time datetime="${escapeHtmlAttribute(displayDate)}" aria-label="${escapeHtmlAttribute(ariaLabel)}">
           ${escapeHtmlText(displayDate)}
         </time>
@@ -98,20 +92,33 @@ const renderPrimaryMetadata = (articleHeader: ArticleHeaderProjection): string =
 };
 
 const renderTags = (genres: readonly string[]): string => {
-  if (genres.length === 0) {
-    return '';
-  }
-
   const items = genres
     .map((genre) => {
-      const href = toTagHref(genre);
+      const normalizedGenre = normalizeArticleHeaderTag(genre);
+      if (normalizedGenre === null) {
+        return '';
+      }
+
+      const href = toArticleHeaderTagHref(normalizedGenre);
       return `
         <li class="article-header__tag-item">
-          <a class="article-header__tag-link" href="${escapeHtmlAttribute(href)}" rel="tag">${escapeHtmlText(genre)}</a>
+          <a
+            class="article-header__tag-link"
+            href="${escapeHtmlAttribute(href)}"
+            rel="tag"
+            aria-label="タグ: ${escapeHtmlAttribute(normalizedGenre)}"
+          >
+            <span class="article-header__tag-label">${escapeHtmlText(normalizedGenre)}</span>
+          </a>
         </li>
       `.trim();
     })
+    .filter((item) => item.length > 0)
     .join('');
+
+  if (items.length === 0) {
+    return '';
+  }
 
   return `
     <nav class="article-header__tags" aria-label="タグ">
@@ -122,11 +129,13 @@ const renderTags = (genres: readonly string[]): string => {
 
 const renderSecondaryMetadata = (articleHeader: ArticleHeaderProjection): string => {
   const items: string[] = [];
-  const sourceHref = toSafeSourceHref(articleHeader.source);
+  const sourceHref = toSafeArticleHeaderSourceHref(articleHeader.source);
 
   if (sourceHref) {
-    items.push(`
+    items.push(
+      `
       <li class="article-header__metadata-item article-header__metadata-item--source">
+        ${renderStaticArticleHeaderIconHtml('link', 'article-header__metadata-icon')}
         <a
           class="article-header__source-link"
           href="${escapeHtmlAttribute(sourceHref)}"
@@ -137,16 +146,20 @@ const renderSecondaryMetadata = (articleHeader: ArticleHeaderProjection): string
           出典
         </a>
       </li>
-    `.trim());
+    `.trim(),
+    );
   }
 
-  const license = articleHeader.license?.trim() ?? '';
-  if (license.length > 0) {
-    items.push(`
+  const license = normalizeArticleHeaderLicense(articleHeader.license);
+  if (license !== null) {
+    items.push(
+      `
       <li class="article-header__metadata-item article-header__metadata-item--license">
+        ${renderStaticArticleHeaderIconHtml('scale', 'article-header__metadata-icon')}
         <span>${escapeHtmlText(license)}</span>
       </li>
-    `.trim());
+    `.trim(),
+    );
   }
 
   if (items.length === 0) {

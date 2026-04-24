@@ -14,6 +14,7 @@ export interface E2ENoteFixtureManifestEntry {
 export type E2ENoteFixtureManifest = Readonly<Record<string, E2ENoteFixtureManifestEntry>>;
 
 export const REQUIRED_E2E_NOTE_FIXTURE_IDS = [
+  'note.article-header-static-layout',
   'note.code',
   'note.footnote-endnotes-layout',
   'note.footnote-long-url',

@@ -5,6 +5,7 @@ import {
 } from '../../../build/testing/e2e-note-fixture-manifest.js';
 
 export type E2ENoteFixtureId =
+  | 'note.article-header-static-layout'
   | 'note.code'
   | 'note.footnote-endnotes-layout'
   | 'note.footnote-long-url'
@@ -51,6 +52,9 @@ export const getE2ENoteFixture = (fixtureId: E2ENoteFixtureId): E2ENoteFixture =
 };
 
 export const e2eNoteFixtures = {
+  get articleHeaderStaticLayout(): E2ENoteFixture {
+    return getE2ENoteFixture('note.article-header-static-layout');
+  },
   get code(): E2ENoteFixture {
     return getE2ENoteFixture('note.code');
   },

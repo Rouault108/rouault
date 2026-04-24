@@ -80,7 +80,7 @@ describe('NoteLayout', () => {
     expect(rendered).not.toContain('<span data-pagefind-weight="8">見出し</span>');
     expect(rendered).toContain('<header class="article-header" data-article-header>');
     expect(rendered).toContain('<h1 class="article-header__heading">見出し</h1>');
-    expect(rendered).toContain('aria-current="page"');
+    expect(rendered.match(/aria-current="page"/gu)?.length ?? 0).toBeGreaterThanOrEqual(1);
     expect(rendered).toContain('<nav class="layout-toc" aria-label="目次" data-layout-toc-nav>');
     expect(rendered).toContain('data-heading-level="2"');
     expect(rendered).toContain('data-heading-depth="0"');
@@ -111,7 +111,9 @@ describe('NoteLayout', () => {
 
     expect(rendered).toContain('href="https://example.com/source"');
     expect(rendered).toContain('aria-label="公開日: 2026-01-01、作成日: 2025-12-31"');
-    expect(rendered).toContain('<span class="article-header__breadcrumb-current" aria-current="page">見出し</span>');
+    expect(rendered).toContain(
+      '<span class="article-header__breadcrumb-node article-header__breadcrumb-current" aria-current="page">見出し</span>',
+    );
   });
 
   it('tocPresence=absent では TOC host / script / hydration scope を出力しないこと', () => {

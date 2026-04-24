@@ -4,7 +4,7 @@
 
 本書は、`ui-article-header` の公開契約、状態モデル、DOM / アクセシビリティ契約、表示契約、イベント契約、および Storybook 契約を定義します。
 
-production の note page では `ui-article-header` を描画主体に使いません。`NoteLayout` は SSR light DOM の `<header class="article-header">` を正本として出力し、`ui-article-header` は isolated component / Storybook / SSR target 検証用の互換面として扱います。
+production の note page では `ui-article-header` を描画主体に使いません。`NoteLayout` は SSR light DOM の `<header class="article-header" data-article-header>` を正本として出力し、`ui-article-header` は isolated component / Storybook / design-system 検証用の互換面として扱います。production header では `<ui-tag>` / `<ui-icon>` を直接出力せず、静的 `<a rel="tag">` と static inline SVG を使います。
 
 `ui-article-header` は、記事冒頭における **識別情報**、**時間情報**、**分類情報**、**帰属情報** を提示するヘッダーコンポーネントです。本コンポーネントでは、見出しを主情報、日付と読了時間を主要メタデータ、タグを分類情報、出典とライセンスを補助メタデータとして段階化して扱います。
 
@@ -16,6 +16,7 @@ production の note page では `ui-article-header` を描画主体に使いま�
 - `created` は可視テキストとしては表示せず、日付の補助文脈としてのみ扱います。
 - タグは独立行で表示する周辺ナビゲーションとして扱います。
 - 出典とライセンスは帰属情報として扱い、表示前に必要な正規化を行います。
+- static production header と `ui-article-header` は、status、tag、breadcrumb、source、license、reading time の意味論的 contract を `src/article-header/article-header-contract.ts` で共有します。
 
 配色、モーション、高コントラスト対応は、コンポーネント固有のモード分岐ではなく、トークン契約およびメディアクエリにより成立させます。
 
@@ -81,9 +82,9 @@ production の note page では `ui-article-header` を描画主体に使いま�
 - `heading` が空文字または空白のみ文字列である場合は、契約上の正常入力とはみなしません。
 - `published`、`created`、`updatedDate` は `YYYY-MM-DD` 形式の正規値のみ受理します。
 - 正規値でない日付文字列は無効値として扱い、日付項目の候補に含めません。
-- `readingTime` が `null`、`NaN`、または四捨五入後に 0 以下となる場合は、無効値として扱います。
+- `readingTime` が `null`、`NaN`、`Infinity`、`-Infinity`、または四捨五入後に 0 以下となる場合は、無効値として扱います。
 - `status` が未知値である場合は、非表示とします。
-- `source` が `http:` / `https:` 以外である場合は、無効値として扱います。
+- `source` が `http:` / `https:` 以外、credentials 付き、raw / percent-encoded unsafe code point、backslash、malformed percent encoding を含む場合は、無効値として扱います。
 - `license` は trim 後に空文字列となる場合は、無効値として扱います。
 
 ### 1.3 責務境界
@@ -170,6 +171,7 @@ production の note page では `ui-article-header` を描画主体に使いま�
 
 - `readingTime === null` である場合は、非表示とします。
 - `Number.isNaN(readingTime)` である場合は、非表示とします。
+- `Number.isFinite(readingTime)` が `false` である場合は、非表示とします。
 - `Math.round(readingTime) <= 0` である場合は、非表示とします。
 - それ以外の場合は、`読了目安 N分` として表示します。
 
@@ -199,6 +201,8 @@ production の note page では `ui-article-header` を描画主体に使いま�
 - `new URL()` により解釈可能である場合は、評価対象とします。
 - `protocol` が `http:` または `https:` である場合は、表示します。
 - `protocol` が `http:` または `https:` 以外である場合は、存在しないものとして扱います。
+- credentials、raw / percent-encoded unsafe code point、backslash、malformed percent encoding を含む URL は存在しないものとして扱います。
+- 出典リンクは外部導線として通常状態で underline を持ちます。
 
 `license` は表示専用文字列として扱います。
 
@@ -209,6 +213,17 @@ production の note page では `ui-article-header` を描画主体に使いま�
 `source` と `license` の両方が空である場合は、補助メタデータ行を表示しません。
 
 帰属情報の拡張が必要になった場合は、`sourceLabel` や `licenseHref` のような個別 prop を追加しません。表示ラベル、遷移先、種別、必要に応じて複数件を保持できる構造化帰属情報モデルとして扱います。それまでは現行の単純入力契約を維持します。
+
+### 2.5.1 production static breadcrumb
+
+production static header の breadcrumb は `ui-breadcrumbs` の完全移植ではなく、意味論と基本視覚の parity に限定します。
+
+- label は trim 後に空であれば item ごと除外します。
+- href は same-origin path のみを許可します。
+- raw / percent-encoded control character、backslash、malformed percent encoding、dot segment、encoded slash を含む href は link 化せず static item として残します。
+- `aria-current="page"` は最後の item のみに付与します。
+- separator は CSS `content: '/'` ではなく static inline SVG の chevron とします。
+- wrapper、list、item、node は mobile 幅で本文列を押し広げない overflow contract を持ちます。
 
 ### 2.6 ステータス
 

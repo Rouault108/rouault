@@ -9,20 +9,23 @@ import {
   ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE,
   parseArticleHeaderTagsAdapterValue,
 } from './article-header-tags-adapter.js';
-import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 import type { BreadcrumbItem } from '../breadcrumbs/breadcrumbs.js';
+import {
+  getArticleHeaderStatusPresentation,
+  normalizeArticleHeaderBreadcrumbs,
+  normalizeArticleHeaderLicense,
+  normalizeArticleHeaderReadingTime,
+  normalizeArticleHeaderTag,
+  toArticleHeaderTagHref,
+  toSafeArticleHeaderSourceHref,
+  type ArticleHeaderStatusPresentation,
+} from '../../../article-header/article-header-contract.js';
 
 export type { ArticleStatus } from '../../../types/article-status.js';
 
 export interface TagClickDetail {
   tag: string;
   href: string;
-}
-
-interface StatusPresentation {
-  label: string;
-  icon: IconName;
-  toneClass: string;
 }
 
 /**
@@ -337,7 +340,10 @@ export class ArticleHeader extends LitElement {
   }
 
   private get _normalizedTags(): string[] {
-    const propertyTags = this.tags.map((tag) => tag.trim()).filter((tag) => tag.length > 0);
+    const propertyTags = this.tags.flatMap((tag) => {
+      const normalizedTag = normalizeArticleHeaderTag(tag);
+      return normalizedTag === null ? [] : [normalizedTag];
+    });
     if (propertyTags.length > 0) {
       return propertyTags;
     }
@@ -359,16 +365,31 @@ export class ArticleHeader extends LitElement {
         return [];
       }
 
-      return parsed.filter((item): item is BreadcrumbItem => {
+      const candidates = parsed.flatMap((item) => {
         if (typeof item !== 'object' || item === null || Array.isArray(item)) {
-          return false;
+          return [];
         }
 
         const candidate = item as Record<string, unknown>;
-        return (
-          typeof candidate['label'] === 'string' &&
-          (candidate['href'] === undefined || typeof candidate['href'] === 'string')
-        );
+        if (
+          typeof candidate['label'] !== 'string' ||
+          (candidate['href'] !== undefined && typeof candidate['href'] !== 'string')
+        ) {
+          return [];
+        }
+
+        return [
+          {
+            label: candidate['label'],
+            ...(typeof candidate['href'] === 'string' ? { href: candidate['href'] } : {}),
+          },
+        ];
+      });
+
+      return normalizeArticleHeaderBreadcrumbs(candidates).map((item): BreadcrumbItem => {
+        return item.href === undefined
+          ? { label: item.label }
+          : { label: item.label, href: item.href };
       });
     } catch {
       return [];
@@ -376,27 +397,11 @@ export class ArticleHeader extends LitElement {
   }
 
   private get _displayReadingTime(): number | null {
-    if (this.readingTime === null || Number.isNaN(this.readingTime)) {
-      return null;
-    }
-
-    const rounded = Math.round(this.readingTime);
-    return rounded > 0 ? rounded : null;
+    return normalizeArticleHeaderReadingTime(this.readingTime);
   }
 
-  private get _statusPresentation(): StatusPresentation | null {
-    switch (this.status) {
-      case 'draft':
-        return { label: '下書き', icon: 'file-pen', toneClass: 'status-draft' };
-      case 'archived':
-        return { label: 'アーカイブ', icon: 'archive', toneClass: 'status-archived' };
-      case 'wip':
-        return { label: '作業中', icon: 'construction', toneClass: 'status-wip' };
-      case 'deprecated':
-        return { label: '非推奨', icon: 'alert-triangle', toneClass: 'status-deprecated' };
-      default:
-        return null;
-    }
+  private get _statusPresentation(): ArticleHeaderStatusPresentation | null {
+    return getArticleHeaderStatusPresentation(this.status);
   }
 
   // 主要メタデータ（日付・読了時間）: 時間的コンテキスト。タグとは独立して管理。
@@ -410,27 +415,15 @@ export class ArticleHeader extends LitElement {
   }
 
   private get _safeSourceHref(): string | null {
-    const rawSource = this.source.trim();
-    if (rawSource.length === 0) return null;
-
-    try {
-      const parsed = new URL(rawSource);
-      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-        return parsed.toString();
-      }
-      return null;
-    } catch {
-      return null;
-    }
+    return toSafeArticleHeaderSourceHref(this.source);
   }
 
   private get _normalizedLicense(): string | null {
-    const normalized = this.license.trim();
-    return normalized.length > 0 ? normalized : null;
+    return normalizeArticleHeaderLicense(this.license);
   }
 
   private _buildTagHref(tag: string): string {
-    return `/tags/${encodeURIComponent(tag)}/`;
+    return toArticleHeaderTagHref(tag);
   }
 
   private _handleTagClick = (event: MouseEvent, tag: string): void => {
@@ -567,7 +560,7 @@ export class ArticleHeader extends LitElement {
 
     // メタデータリストとは独立した信頼性シグナル。
     return html`
-      <div class="status-badge ${status.toneClass}" aria-label="ステータス: ${status.label}">
+      <div class="status-badge status-${status.tone}" aria-label="ステータス: ${status.label}">
         <ui-icon class="meta-icon" name="${status.icon}" aria-hidden="true"></ui-icon>
         <span>${status.label}</span>
       </div>

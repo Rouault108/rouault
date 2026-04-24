@@ -13,13 +13,19 @@ const crossBrowserFinalCheck = [
   '**/sidebar-pre-hydration-leakage.spec.ts',
 ];
 
+const articleHeaderStaticLayoutCheck = '**/article-header-static-layout.spec.ts';
+
 const webkitFinalCheck = [
   ...crossBrowserFinalCheck,
+  articleHeaderStaticLayoutCheck,
   '**/footnote-endnotes-layout.spec.ts',
   '**/footnote-long-url-overflow.spec.ts',
 ];
 
-const mobileWebkitFinalCheck = ['**/mobile-header-dropdown-position.spec.ts'];
+const mobileWebkitFinalCheck = [
+  '**/mobile-header-dropdown-position.spec.ts',
+  articleHeaderStaticLayoutCheck,
+];
 
 const isCI = !!process.env['CI'];
 

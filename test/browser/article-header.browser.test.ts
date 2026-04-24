@@ -110,10 +110,7 @@ describe('ui-article-header browser contract', () => {
       host.shadowRoot?.querySelector<HTMLElement>('.metadata-list--primary'),
       'primary',
     );
-    const tags = expectPresent(
-      host.shadowRoot?.querySelector<HTMLElement>('.tags-row'),
-      'tags',
-    );
+    const tags = expectPresent(host.shadowRoot?.querySelector<HTMLElement>('.tags-row'), 'tags');
     const secondary = expectPresent(
       host.shadowRoot?.querySelector<HTMLElement>('.metadata-list--secondary'),
       'secondary',
@@ -146,10 +143,7 @@ describe('ui-article-header browser contract', () => {
   it('主要メタデータがない場合はタイトルとタグの間が16px前後になり、タグと下端罫線の距離が12px前後になること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 720px;">
-        <ui-article-header
-          heading="タグのみのケース"
-          .tags=${['設計', 'UI']}
-        ></ui-article-header>
+        <ui-article-header heading="タグのみのケース" .tags=${['設計', 'UI']}></ui-article-header>
       </div>
     `);
 
@@ -163,10 +157,7 @@ describe('ui-article-header browser contract', () => {
       host.shadowRoot?.querySelector<HTMLElement>('.heading'),
       'heading',
     );
-    const tags = expectPresent(
-      host.shadowRoot?.querySelector<HTMLElement>('.tags-row'),
-      'tags',
-    );
+    const tags = expectPresent(host.shadowRoot?.querySelector<HTMLElement>('.tags-row'), 'tags');
     const header = expectPresent(
       host.shadowRoot?.querySelector<HTMLElement>('.article-header'),
       'header',
@@ -272,5 +263,103 @@ describe('ui-article-header browser contract', () => {
     expect(secondaryToHeaderEnd).to.be.at.most(14);
 
     expect(titleToPrimary).to.be.greaterThan(primaryToSecondary);
+  });
+
+  it('shared contract に従って tag/status/reading-time を描画すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 720px;">
+        <ui-article-header
+          heading="Shared contract"
+          status="wip"
+          .tags=${['  C#  ', '   ']}
+          .readingTime=${Number.POSITIVE_INFINITY}
+        ></ui-article-header>
+      </div>
+    `);
+
+    const host = expectPresent(
+      wrapper.querySelector<ArticleHeader>('ui-article-header'),
+      'articleHeader',
+    );
+    await flush(host);
+
+    const status = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('.status-badge'),
+      'status',
+    );
+    const tag = expectPresent(host.shadowRoot?.querySelector<HTMLElement>('ui-tag'), 'tag');
+
+    expect(status.classList.contains('status-wip')).to.equal(true);
+    expect(status.textContent?.trim()).to.contain('作業中');
+    expect(tag.getAttribute('href')).to.equal('/tags/C%23/');
+    expect(tag.textContent?.trim()).to.equal('C#');
+    expect(host.shadowRoot?.querySelector('.reading-time')).to.equal(null);
+  });
+
+  it('unsafe breadcrumb href と空 label を ui-breadcrumbs に渡さないこと', async () => {
+    const breadcrumbs = JSON.stringify([
+      { label: ' Notes ', href: '/notes/' },
+      { label: 'Unsafe', href: '/notes/%00' },
+      { label: 'Query Unsafe', href: '/notes/foo?x=%00' },
+      { label: 'Dot', href: '/notes/../secret' },
+      { label: 'Encoded Slash', href: '/notes/foo%2Fbar' },
+      { label: '   ', href: '/notes/empty' },
+      { label: 'Current', href: '/notes/current/' },
+    ]);
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 720px;">
+        <ui-article-header
+          heading="Shared contract"
+          breadcrumbs-json=${breadcrumbs}
+        ></ui-article-header>
+      </div>
+    `);
+
+    const host = expectPresent(
+      wrapper.querySelector<ArticleHeader>('ui-article-header'),
+      'articleHeader',
+    );
+    await flush(host);
+
+    const breadcrumbsElement = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('ui-breadcrumbs'),
+      'breadcrumbs',
+    );
+    const items = JSON.parse(breadcrumbsElement.getAttribute('items-json') ?? '[]') as Array<{
+      label: string;
+      href?: string;
+    }>;
+
+    expect(items).to.deep.equal([
+      { label: 'Notes', href: '/notes/' },
+      { label: 'Unsafe' },
+      { label: 'Query Unsafe' },
+      { label: 'Dot' },
+      { label: 'Encoded Slash' },
+      { label: 'Current', href: '/notes/current/' },
+    ]);
+  });
+
+  it('source sanitizer と license normalize を shared contract と一致させること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 720px;">
+        <ui-article-header
+          heading="Shared contract"
+          source="https://user@example.com/source"
+          license="  CC BY 4.0  "
+        ></ui-article-header>
+      </div>
+    `);
+
+    const host = expectPresent(
+      wrapper.querySelector<ArticleHeader>('ui-article-header'),
+      'articleHeader',
+    );
+    await flush(host);
+
+    expect(host.shadowRoot?.querySelector('.source-link')).to.equal(null);
+    expect(host.shadowRoot?.querySelector('.metadata-license')?.textContent?.trim()).to.equal(
+      'CC BY 4.0',
+    );
   });
 });
