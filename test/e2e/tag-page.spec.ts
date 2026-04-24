@@ -16,7 +16,7 @@ const waitForAppRouterReady = async (page: Page): Promise<void> => {
 };
 
 const expectNoteHeading = async (page: Page, headingText: string): Promise<void> => {
-  await expect(page.locator('ui-article-header')).toHaveAttribute('heading', headingText);
+  await expect(page.locator('.article-header .article-header__heading')).toHaveText(headingText);
 };
 
 const changeSearchSelect = async (
@@ -73,7 +73,7 @@ const openTagFilter = async (page: Page): Promise<void> => {
 
 const clickArticleHeaderTag = async (page: Page, href: string): Promise<void> => {
   await waitForAppRouterReady(page);
-  const link = page.locator(`ui-article-header ui-tag[href="${href}"] a.tag-link`).first();
+  const link = page.locator(`.article-header a.article-header__tag-link[href="${href}"]`).first();
   await expect(link).toBeVisible();
   await link.click();
 };
