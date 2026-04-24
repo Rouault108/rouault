@@ -9,7 +9,7 @@ Rouaultは、個人的なノートを静かに読むための Webアプリケー
 
 READMEは入口文書です。  
 仕様・契約・設計判断は `docs/`を正本とし、実装事実は `package.json`、設定ファイル、`build/`、`src/`、`shared/`、`test/` を正本とします。
-`docs/temporary/` と `docs/old/` は履歴資料として扱い、現行契約の正本には含めません。
+`docs/temporary/` や `docs/old/` のような履歴資料ディレクトリを置く場合、それらは現行契約の正本には含めません。
 
 特に重要な文書は次のとおりです。
 
@@ -198,6 +198,8 @@ Rouaultは、**何を保証するか** でテストの置き場を分けてい�
 - `docs/sidebar-state-specification.md`
 - `docs/search-specification.md`
 - `docs/testing-taxonomy.md`
+- `docs/architecture/router-document-contract.md`
+- `docs/notes_sidebar_breadcrumb_contract.md`
 
 コンテンツ / Markdown:
 
