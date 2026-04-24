@@ -56,7 +56,7 @@ const activateLayoutTocController = async ({
   element,
 }: HydrationActivationContext): Promise<void> => {
   const module = await import('../../components/layout/layout-toc-controller.js');
-  await module.activateLayoutTocController(element);
+  module.activateLayoutTocController(element);
 };
 
 export const HYDRATION_REGISTRY = [

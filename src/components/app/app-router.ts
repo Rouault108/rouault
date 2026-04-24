@@ -57,7 +57,6 @@ registerTabsUrlSyncStrategy(primaryTabTabsUrlSyncStrategy);
  */
 export class AppRouter extends HTMLElement {
   private _serverContent: RouterContentHtml | null = null;
-  private _pendingInitialContent: RouterContentHtml | null = null;
   private _currentContent: RouterContentHtml = createRouterContentHtml('');
   private _router: Router | null = null;
   private _bootstrapped = false;
@@ -86,11 +85,6 @@ export class AppRouter extends HTMLElement {
 
   set serverContent(value: RouterContentHtml | null) {
     this._serverContent = value;
-
-    if (!this._bootstrapped) {
-      this._pendingInitialContent = value;
-      return;
-    }
   }
 
   /**
@@ -224,7 +218,6 @@ export class AppRouter extends HTMLElement {
     promoteDeclarativeShadowRoots(contentRoot);
 
     this._currentContent = createRouterContentHtml(contentRoot.innerHTML);
-    this._pendingInitialContent = null;
 
     this._ensureAnnouncementRegion();
     this._syncBusyState(false);
