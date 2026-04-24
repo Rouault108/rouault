@@ -1,0 +1,72 @@
+import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
+import { escapeHtmlAttribute, escapeHtmlText, serializeHtmlAttributes } from './html-output.js';
+
+type TocProjection = NotePageProjection['toc'];
+
+const readMinimumLevel = (headings: TocProjection['headings']): number =>
+  headings.reduce((minimum, heading) => Math.min(minimum, heading.level), Number.POSITIVE_INFINITY);
+
+const renderHeadingItems = (headings: TocProjection['headings']): string => {
+  if (headings.length === 0) {
+    return '';
+  }
+
+  const minimumLevel = readMinimumLevel(headings);
+
+  return headings
+    .map((heading) => {
+      const depth = Math.max(0, heading.level - minimumLevel);
+      const headingId = escapeHtmlAttribute(heading.id);
+      return `
+        <li
+          class="layout-toc__item"
+          data-heading-id="${headingId}"
+          data-heading-level="${String(heading.level)}"
+          data-heading-depth="${String(depth)}"
+          style="--level: ${String(depth)}"
+        >
+          <a
+            class="layout-toc__link"
+            href="#${headingId}"
+            data-toc-link
+            data-heading-id="${headingId}"
+            data-heading-level="${String(heading.level)}"
+          >
+            <span class="layout-toc__link-label">${escapeHtmlText(heading.text)}</span>
+          </a>
+        </li>
+      `.trim();
+    })
+    .join('');
+};
+
+export const renderTocHtml = (toc: TocProjection): string => {
+  const controllerAttributes = serializeHtmlAttributes([
+    { name: 'source-id', value: toc.sourceId },
+    { name: 'toc-runtime-id', value: toc.sourceId },
+    { name: 'capabilities-json', value: toc.capabilities, kind: 'json' },
+    { name: 'content-root-id', value: toc.contentRootId },
+    {
+      name: 'data-hydration-capability',
+      value: toc.shouldHydrate ? 'interactive' : undefined,
+    },
+    {
+      name: 'data-hydration-trigger',
+      value: toc.shouldHydrate ? 'initial' : undefined,
+    },
+  ]);
+
+  return `
+    <aside
+      class="layout-toc-col"
+      aria-label="目次"
+      data-layout-toc-root
+      data-hydration-scope="note-toc"
+    >
+      <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
+        <ol class="layout-toc__list">${renderHeadingItems(toc.headings)}</ol>
+      </nav>
+      <layout-toc-controller${controllerAttributes}></layout-toc-controller>
+    </aside>
+  `.trim();
+};

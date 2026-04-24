@@ -39,7 +39,6 @@ describe('BaseLayout', () => {
         articleHeader: {
           heading: 'Reader Note',
           genres: [],
-          shouldHydrateTags: false,
         },
         pagefind: null,
       },

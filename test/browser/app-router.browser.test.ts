@@ -213,6 +213,61 @@ describe('app-router', () => {
     expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('SSR Body');
   });
 
+  it('初期 boot では本文要素の identity を維持し、content-rendered を発火しないこと', async () => {
+    let renderedCount = 0;
+
+    host = await fixture<AppRouterElement>(
+      html`<app-router>
+        <main id="main-content" tabindex="-1">
+          <header class="article-header"><h1>SSR Title</h1></header>
+          <p>SSR Body</p>
+        </main>
+      </app-router>`,
+    );
+    const appHost = host;
+    const main = appHost.querySelector<HTMLElement>('#main-content');
+    const articleHeader = appHost.querySelector<HTMLElement>('.article-header');
+
+    appHost.addEventListener('app-router:content-rendered', () => {
+      renderedCount += 1;
+    });
+
+    await appHost.whenReady();
+
+    expect(appHost.querySelector('#main-content')).to.equal(main);
+    expect(appHost.querySelector('.article-header')).to.equal(articleHeader);
+    expect(renderedCount).to.equal(0);
+  });
+
+  it('初期 boot では SSR 済み TOC nav の identity も維持すること', async () => {
+    host = await fixture<AppRouterElement>(
+      html`<app-router>
+        <main id="main-content" tabindex="-1">
+          <article>
+            <header class="article-header"><h1>SSR Title</h1></header>
+            <aside class="layout-toc-col" data-layout-toc-root>
+              <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
+                <ol class="layout-toc__list">
+                  <li class="layout-toc__item" data-heading-id="intro">
+                    <a class="layout-toc__link" href="#intro" data-toc-link data-heading-id="intro">
+                      <span class="layout-toc__link-label">Intro</span>
+                    </a>
+                  </li>
+                </ol>
+              </nav>
+            </aside>
+          </article>
+        </main>
+      </app-router>`,
+    );
+    const appHost = host;
+    const tocNav = appHost.querySelector<HTMLElement>('.layout-toc');
+
+    await appHost.whenReady();
+
+    expect(appHost.querySelector('.layout-toc')).to.equal(tocNav);
+  });
+
   it('既存の main#main-content を public contract の本文 root として再利用すること', async () => {
     host = await fixture<AppRouterElement>(
       html`<app-router
@@ -1102,7 +1157,7 @@ describe('app-router', () => {
     expect(scrollToCalled).to.equal(false);
   });
 
-  it('serverContent に branded 本文を与えた場合も #main-content を唯一の更新先として描画できること', async () => {
+  it('boot 後の serverContent setter では採用済み SSR DOM を自動置換しないこと', async () => {
     host = await fixture<AppRouterElement>(
       html`<app-router>
         <main id="main-content" tabindex="-1"><h1>Initial SSR</h1></main>
@@ -1117,7 +1172,25 @@ describe('app-router', () => {
     expect(appHost.shadowRoot).to.equal(null);
     expect(appHost.querySelectorAll('main').length).to.equal(1);
     expect(appHost.querySelectorAll('#main-content').length).to.equal(1);
-    expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('SSR Branded');
-    expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('Body');
+    expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('Initial SSR');
+    expect(appHost.querySelector('#main-content')?.innerHTML).not.to.contain('SSR Branded');
+  });
+
+  it('pre-boot の serverContent setter があっても接続時は既存 SSR DOM を採用すること', async () => {
+    const element = document.createElement('app-router') as AppRouterElement;
+    element.serverContent = createRouterContentHtml('<h1>Preboot Server Content</h1>');
+    element.innerHTML = '<main id="main-content" tabindex="-1"><h1>Existing SSR</h1></main>';
+
+    document.body.append(element);
+    host = element;
+
+    await element.whenReady();
+
+    expect(element.querySelectorAll('main').length).to.equal(1);
+    expect(element.querySelectorAll('#main-content').length).to.equal(1);
+    expect(element.querySelector('#main-content')?.innerHTML).to.contain('Existing SSR');
+    expect(element.querySelector('#main-content')?.innerHTML).not.to.contain(
+      'Preboot Server Content',
+    );
   });
 });

@@ -2,22 +2,23 @@
 
 ## 1. 概要
 
-本書は、`ui-toc`、`layout-toc`、`TocActiveTracker`、`layout-toc-runtime-store`、`layout-toc-mobile-controller` の責務分担を定義します。
+本書は、`ui-toc`、`layout-toc`、`layout-toc-controller`、`TocActiveTracker`、`layout-toc-runtime-store`、`layout-toc-mobile-controller` の責務分担を定義します。
 
 static-first 再設計後の `ui-toc` は純粋な view です。見出し抽出、現在地追跡、header 側への runtime state 共有、mobile panel 開閉は別レイヤで扱います。
 
 ## 2. 責務分担
 
-### 2.2 `layout-toc`
+### 2.2 `layout-toc-controller`
 
-- `headings-json` / `capabilities-json` を decode する
-- desktop TOC と mobile panel 本体を描画する
+- SSR 済み desktop TOC nav を取得する
+- `source-id` / `capabilities-json` を decode する
 - tracker を接続する
 - header 向け runtime snapshot を publish する
+- mobile panel 用 clone nav を生成する
 
 ### 2.4 `layout-toc-runtime-store`
 
-- `layout-toc` が算出した runtime snapshot を `layout-header` へ共有する
+- `layout-toc-controller` が算出した runtime snapshot を `layout-header` へ共有する
 - `ready` / `hasVisibleHeadings` / `activeId` を伝える
 
 ### 2.5 `layout-toc-mobile-controller`
@@ -35,7 +36,7 @@ mobile TOC を有効にするページでは、次を満たすこと。
 - `layout-header` 内に trigger を描画する
 - trigger は mobile TOC panel を開閉する導線として扱う
 - trigger の可視文言は固定の `目次` とし、399px 以下では icon-only へ縮退する
-- trigger 押下で `layout-toc` の mobile panel が header 直下から開く
+- trigger 押下で `layout-toc-controller` の mobile panel が header 直下から開く
 - panel は header を覆わない
 - mobile panel header は視覚上 close button のみを持つ最小ヘッダーとする
 - 現在見出し把握は active item 強調で成立させる
@@ -63,7 +64,7 @@ mobile TOC を有効にするページでは、次を満たすこと。
 | `dynamicScopes`  | `boolean` | tab scope 連動が必要か      |
 | `mobilePanel`   | `boolean` | mobile TOC interactive surface を要するか |
 
-build-time で決定し、`layout-toc[capabilities-json]` へ渡します。
+build-time で決定し、`layout-toc-controller[capabilities-json]` へ渡します。
 `mobilePanel` は mobile TOC panel の interactive capability を表し、旧 summary bar の再導入根拠にはしてはなりません。
 
 ---
@@ -92,13 +93,14 @@ build-time で決定し、`layout-toc[capabilities-json]` へ渡します。
 
 ---
 
-## 5. `layout-toc` と hydration
+## 5. note TOC と hydration
 
 契約:
 
 - TOC presence は note page projection の `tocPresence` で決まり、`headings.length === 0` のときは `absent` とする
 - `tocPresence='absent'` の note page では TOC DOM、TOC JSON script、`data-hydration-scope="note-toc"` を出力しない
-- `layout-toc` は `capabilities-json` を持つ
+- note page では SSR の `<nav class="layout-toc">` を正本にする
+- `layout-toc-controller` は `capabilities-json` を持つ
 - `activeTracking` / `dynamicScopes` / `mobilePanel` のいずれかが true の場合だけ hydration directive を持つ
 - static-only TOC は SSR 出力だけで成立させる
 
@@ -106,7 +108,7 @@ presence と hydration は分離する。
 
 - `absent`: headings 0 件。TOC host 自体を出さない
 - `present-static`: headings 1 件以上かつ interactive capability なし。SSR のみで成立
-- `present-interactive`: headings 1 件以上かつ interactive capability あり。SSR 後に hydrate する
+- `present-interactive`: headings 1 件以上かつ interactive capability あり。SSR nav 後に `layout-toc-controller` を hydrate する
 
 ---
 
@@ -126,7 +128,7 @@ runtime 契約:
 
 - `ui-toc` が `activeId` だけで表示を更新すること
 - scoped heading が build-time で抽出されること
-- `layout-toc` が capability ありのときだけ hydrate すること
+- `layout-toc-controller` が capability ありのときだけ hydrate すること
 - `tocPresence='absent'` では TOC DOM と hydration scope が出ないこと
 - mobile TOC trigger が 639px 以下でのみ現れ、固定ラベル `目次` または icon-only を表示すること
 - mobile panel header が視覚タイトルを持たず close-only であること

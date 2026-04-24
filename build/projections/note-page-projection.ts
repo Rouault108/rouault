@@ -69,12 +69,12 @@ export interface NotePageArticleHeaderProjection {
   heading: string;
   breadcrumbs?: BreadcrumbItem[];
   published?: string;
+  created?: string;
   updated?: string;
   status?: NoteStatus;
   source?: string;
   license?: string;
   genres: string[];
-  shouldHydrateTags: boolean;
 }
 
 export interface NotePagePagefindProjection {
@@ -217,8 +217,6 @@ function validateNoteHydrationBudget(
     shellCounts.initial += 1;
   }
 
-  shellCounts.postCommit += 1;
-
   const counts: NoteHydrationCounts = {
     initial: contentCounts.initial + shellCounts.initial,
     postCommit: contentCounts.postCommit + shellCounts.postCommit,
@@ -275,6 +273,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     noteKind,
   );
   const normalizedPublished = normalizeNoteDate(input.note.date);
+  const normalizedCreated = normalizeNoteDate(input.note.created);
   const normalizedUpdated = normalizeNoteDate(input.note.updated);
 
   const projection: NotePageProjection = {
@@ -313,6 +312,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
         ? { breadcrumbs: input.navigation.breadcrumbs }
         : {}),
       ...(normalizedPublished !== null ? { published: normalizedPublished } : {}),
+      ...(normalizedCreated !== null ? { created: normalizedCreated } : {}),
       ...(normalizedUpdated !== null ? { updated: normalizedUpdated } : {}),
       ...(typeof input.note.status === 'string' && input.note.status.length > 0
         ? { status: input.note.status }
@@ -324,7 +324,6 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
         ? { license: input.note.license }
         : {}),
       genres,
-      shouldHydrateTags: genres.length > 0,
     },
     pagefind: publicationPolicy.pagefind
       ? {

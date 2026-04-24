@@ -8,10 +8,11 @@ const layoutRichPath = layoutRich.directPath;
 const layoutRichSpaPath = layoutRich.normalizedPath;
 
 interface TocSyncState {
-  childPropActiveId: string | null;
-  childAttrActiveId: string | null;
-  childDomActiveLabel: string | null;
-  tocTemplateCount: number;
+  controllerExists: boolean;
+  desktopActiveId: string | null;
+  desktopActiveLabel: string | null;
+  mobileActiveId: string | null;
+  mobileActiveLabel: string | null;
 }
 
 interface ViewportPosition {
@@ -57,35 +58,31 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
 
 const readTocSyncState = async (page: Page): Promise<TocSyncState> =>
   page.evaluate(() => {
-    const host = document.querySelector('layout-toc');
-    const ui = host?.shadowRoot?.querySelector('ui-toc') as
-      | (HTMLElement & { activeId?: string })
-      | null;
-
-    const tocTemplateCount =
-      host instanceof Element
-        ? Array.from(host.children).filter((child) => {
-            return (
-              child instanceof HTMLTemplateElement &&
-              (child.hasAttribute('shadowrootmode') || child.hasAttribute('shadowroot'))
-            );
-          }).length
-        : -1;
+    const controller = document.querySelector('layout-toc-controller');
+    const desktopActiveLink = document.querySelector<HTMLAnchorElement>(
+      '[data-layout-toc-nav] [data-toc-link][aria-current="location"]',
+    );
+    const mobileActiveLink = document.querySelector<HTMLAnchorElement>(
+      '[data-layout-toc-mobile-nav] [data-toc-link][aria-current="location"]',
+    );
 
     return {
-      childPropActiveId: typeof ui?.activeId === 'string' ? ui.activeId : null,
-      childAttrActiveId: ui?.getAttribute('active-id') ?? null,
-      childDomActiveLabel:
-        ui?.shadowRoot
-          ?.querySelector('a.toc-link.is-active .toc-link-label')
-          ?.textContent?.trim() ?? null,
-      tocTemplateCount,
+      controllerExists: controller instanceof HTMLElement,
+      desktopActiveId: desktopActiveLink?.getAttribute('data-heading-id') ?? null,
+      desktopActiveLabel:
+        desktopActiveLink?.querySelector<HTMLElement>('.layout-toc__link-label')?.textContent?.trim() ??
+        null,
+      mobileActiveId: mobileActiveLink?.getAttribute('data-heading-id') ?? null,
+      mobileActiveLabel:
+        mobileActiveLink?.querySelector<HTMLElement>('.layout-toc__link-label')?.textContent?.trim() ??
+        null,
     };
   });
 
 const waitForTocReady = async (page: Page): Promise<void> => {
-  await expect.poll(async () => (await readTocSyncState(page)).tocTemplateCount).toBe(0);
-  await expect.poll(async () => (await readTocSyncState(page)).childDomActiveLabel).not.toBeNull();
+  await expect.poll(async () => (await readTocSyncState(page)).controllerExists).toBe(true);
+  await expect.poll(async () => (await readTocSyncState(page)).desktopActiveLabel).not.toBeNull();
+  await expect.poll(async () => (await readTocSyncState(page)).mobileActiveLabel).not.toBeNull();
 };
 
 const waitForTocSettled = async (page: Page): Promise<void> => {
@@ -103,10 +100,11 @@ const expectTocSynchronized = async (
       return await readTocSyncState(page);
     })
     .toEqual({
-      childPropActiveId: expectedId,
-      childAttrActiveId: expectedId,
-      childDomActiveLabel: expectedLabel,
-      tocTemplateCount: 0,
+      controllerExists: true,
+      desktopActiveId: expectedId,
+      desktopActiveLabel: expectedLabel,
+      mobileActiveId: expectedId,
+      mobileActiveLabel: expectedLabel,
     });
 };
 

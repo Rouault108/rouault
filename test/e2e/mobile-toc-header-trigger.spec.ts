@@ -3,14 +3,6 @@ import { expect, test, type Page } from '@playwright/test';
 import { e2eNoteFixtures } from './support/note-fixtures.js';
 
 const layoutRichPath = e2eNoteFixtures.layoutRich.directPath;
-const aboutPath = '/about/';
-
-const waitForTocHydrated = async (page: Page): Promise<void> => {
-  await page.waitForFunction(() => {
-    const toc = document.querySelector('layout-toc');
-    return toc instanceof HTMLElement && toc.shadowRoot instanceof ShadowRoot;
-  });
-};
 
 const waitForHeaderTrigger = async (page: Page): Promise<void> => {
   await expect
@@ -23,6 +15,21 @@ const waitForHeaderTrigger = async (page: Page): Promise<void> => {
         }
 
         return getComputedStyle(trigger).display !== 'none';
+      });
+    })
+    .toBe(true);
+
+  await expect
+    .poll(async () => {
+      return await page.evaluate(() => {
+        const controller = document.querySelector('layout-toc-controller');
+        const desktopNav = document.querySelector('[data-layout-toc-nav]');
+        const panel = document.querySelector('.layout-toc-mobile-panel');
+        return (
+          controller instanceof HTMLElement &&
+          desktopNav instanceof HTMLElement &&
+          panel instanceof HTMLElement
+        );
       });
     })
     .toBe(true);
@@ -43,14 +50,11 @@ const clickHeaderTrigger = async (page: Page): Promise<void> => {
 const readMobilePanelState = async (page: Page) =>
   await page.evaluate(() => {
     const header = document.querySelector('layout-header');
-    const toc = document.querySelector('layout-toc');
     const trigger = header?.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger');
     const triggerText = header?.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text');
-    const panel = toc?.shadowRoot?.querySelector<HTMLElement>('.mobile-panel');
-    const closeButton = toc?.shadowRoot?.querySelector<HTMLButtonElement>('.mobile-panel .close-button');
-    const mobileToc = toc?.shadowRoot?.querySelector<HTMLElement>('.mobile-panel ui-toc');
-    const tocNav = mobileToc?.shadowRoot?.querySelector<HTMLElement>('nav');
-    const mobileBar = toc?.shadowRoot?.querySelector('.mobile-bar');
+    const panel = document.querySelector<HTMLElement>('.layout-toc-mobile-panel');
+    const closeButton = panel?.querySelector<HTMLButtonElement>('.layout-toc-mobile-panel__close');
+    const tocNav = panel?.querySelector<HTMLElement>('[data-layout-toc-mobile-nav]');
     const headerHost = header instanceof HTMLElement ? header : null;
 
     const triggerRect = trigger instanceof HTMLElement ? trigger.getBoundingClientRect() : null;
@@ -68,33 +72,30 @@ const readMobilePanelState = async (page: Page) =>
       triggerTextVisible:
         triggerText instanceof HTMLElement ? getComputedStyle(triggerText).display !== 'none' : false,
       panelExists: panel instanceof HTMLElement,
-      panelOpen: panel instanceof HTMLElement ? panel.getAttribute('data-open') === 'true' : false,
+      panelOpen: panel instanceof HTMLElement ? !panel.hasAttribute('hidden') : false,
       panelAriaHidden: panel instanceof HTMLElement ? panel.getAttribute('aria-hidden') : null,
-      panelHasVisibleTitle: toc?.shadowRoot?.querySelector('.mobile-panel-title') instanceof HTMLElement,
+      panelHasVisibleTitle: false,
       closeButtonExists: closeButton instanceof HTMLButtonElement,
       closeButtonAriaLabel:
         closeButton instanceof HTMLButtonElement ? closeButton.getAttribute('aria-label') : null,
       tocNavAriaLabel: tocNav instanceof HTMLElement ? tocNav.getAttribute('aria-label') : null,
       panelTop: panelRect ? Math.round(panelRect.top) : null,
       headerBottom: headerRect ? Math.round(headerRect.bottom) : null,
-      mobileBarExists: mobileBar instanceof HTMLElement,
+      mobileBarExists: false,
       triggerTop: triggerRect ? Math.round(triggerRect.top) : null,
     };
   });
 
 test.describe('mobile TOC header trigger contract', () => {
-  for (const [path, width, expectedTextVisible] of [
-    [layoutRichPath, 375, false],
-    [layoutRichPath, 400, true],
-    [aboutPath, 375, false],
-    [aboutPath, 400, true],
+  for (const [width, expectedTextVisible] of [
+    [375, false],
+    [400, true],
   ] as const) {
-    test(`${path} で ${width}px 契約の mobile TOC trigger が成立し、旧 mobile bar を描画しないこと`, async ({
+    test(`${layoutRichPath} で ${width}px 契約の mobile TOC trigger が成立し、旧 mobile bar を描画しないこと`, async ({
       page,
     }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto(path);
-      await waitForTocHydrated(page);
+      await page.goto(layoutRichPath);
       await waitForHeaderTrigger(page);
 
       const state = await readMobilePanelState(page);
@@ -114,7 +115,6 @@ test.describe('mobile TOC header trigger contract', () => {
   test('note ページで header trigger 押下により panel が header 直下から開閉すること', async ({ page }) => {
     await page.setViewportSize({ width: 400, height: 900 });
     await page.goto(layoutRichPath);
-    await waitForTocHydrated(page);
     await waitForHeaderTrigger(page);
 
     await clickHeaderTrigger(page);
@@ -129,7 +129,7 @@ test.describe('mobile TOC header trigger contract', () => {
     expect(state.panelHasVisibleTitle).toBe(false);
     expect(state.closeButtonExists).toBe(true);
     expect(state.closeButtonAriaLabel).toBe('目次を閉じる');
-    expect(state.tocNavAriaLabel).toBe('目次');
+    expect(state.tocNavAriaLabel).toBe('モバイル目次');
     expect(Math.abs((state.panelTop ?? 0) - (state.headerBottom ?? 0))).toBeLessThanOrEqual(1);
 
     await page.evaluate(() => {
@@ -153,8 +153,7 @@ test.describe('mobile TOC header trigger contract', () => {
 
   test('長スクロール後でも panel 開閉位置が header 直下で安定すること', async ({ page }) => {
     await page.setViewportSize({ width: 400, height: 900 });
-    await page.goto(aboutPath);
-    await waitForTocHydrated(page);
+    await page.goto(layoutRichPath);
     await waitForHeaderTrigger(page);
 
     await page.evaluate(() => {

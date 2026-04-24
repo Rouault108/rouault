@@ -58,6 +58,7 @@ export interface SourceNote {
   content?: string;
   description?: string;
   date?: string;
+  created?: string;
   updated?: string;
   source?: string;
   license?: string;

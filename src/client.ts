@@ -3,6 +3,7 @@ import { MAIN_CONTENT_SELECTOR } from '../shared/navigation/main-landmark-contra
 import type { AppRouter, AppRouterContentRenderedDetail } from './components/app/app-router.js';
 import './components/ui/syntax-card/syntax-card.js';
 import { HydrationScheduler } from './client/hydration/scheduler.js';
+import { promoteDeclarativeShadowRoots } from './router/declarative-shadow-dom.js';
 import { initSearch } from './search/bootstrap.js';
 import { initTheme } from './theme/theme-manager.js';
 
@@ -54,6 +55,7 @@ const hydrateCurrentContent = async (contentRoot?: HTMLElement): Promise<void> =
     return;
   }
 
+  promoteDeclarativeShadowRoots(mainContent);
   customElements.upgrade(mainContent);
   await Promise.resolve();
 

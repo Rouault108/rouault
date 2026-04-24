@@ -39,10 +39,13 @@ const createProjection = (
     },
     articleHeader: {
       heading: '見出し',
+      breadcrumbs: [
+        { label: 'Program', href: '/program/' },
+        { label: '見出し', href: '/program/example/' },
+      ],
       published: '2026-01-01',
       updated: '2026-02-01',
       genres: ['music'],
-      shouldHydrateTags: true,
     },
     pagefind: {
       sortDate: '2026-02-01',
@@ -75,8 +78,40 @@ describe('NoteLayout', () => {
     expect(rendered).toContain('data-pagefind-sort="date:2026-02-01"');
     expect(rendered).toContain('<span data-pagefind-weight="10">見出し</span>');
     expect(rendered).not.toContain('<span data-pagefind-weight="8">見出し</span>');
+    expect(rendered).toContain('<header class="article-header" data-article-header>');
+    expect(rendered).toContain('<h1 class="article-header__heading">見出し</h1>');
+    expect(rendered).toContain('aria-current="page"');
+    expect(rendered).toContain('<nav class="layout-toc" aria-label="目次" data-layout-toc-nav>');
+    expect(rendered).toContain('data-heading-level="2"');
+    expect(rendered).toContain('data-heading-depth="0"');
     expect(rendered).toContain('content-root-id="note-content-note"');
     expect(rendered).toContain('toc-runtime-id="toc-source-note"');
+    expect(rendered).toContain('<layout-toc-controller');
+    expect(rendered).not.toContain('<ui-article-header');
+    expect(rendered).not.toContain('<layout-toc ');
+  });
+
+  it('article-header の source を http/https のみリンク化し、created を aria-label へ含めること', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      notePage: createProjection({
+        articleHeader: {
+          heading: '見出し',
+          breadcrumbs: [
+            { label: 'Program', href: '/program/' },
+            { label: '見出し', href: '/program/example/' },
+          ],
+          published: '2026-01-01',
+          created: '2025-12-31',
+          source: 'https://example.com/source',
+          genres: ['music'],
+        },
+      }),
+    });
+
+    expect(rendered).toContain('href="https://example.com/source"');
+    expect(rendered).toContain('aria-label="公開日: 2026-01-01、作成日: 2025-12-31"');
+    expect(rendered).toContain('<span class="article-header__breadcrumb-current" aria-current="page">見出し</span>');
   });
 
   it('tocPresence=absent では TOC host / script / hydration scope を出力しないこと', () => {
@@ -102,6 +137,7 @@ describe('NoteLayout', () => {
     expect(rendered).toContain('data-toc-presence="absent"');
     expect(rendered).not.toContain('class="layout-toc-col"');
     expect(rendered).not.toContain('<layout-toc');
+    expect(rendered).not.toContain('<layout-toc-controller');
     expect(rendered).not.toContain('data-hydration-scope="note-toc"');
     expect(rendered).not.toContain('<script id="toc-source-note" type="application/json">');
   });
@@ -125,13 +161,14 @@ describe('NoteLayout', () => {
           heading: '"Danger"<tag>',
           published: '2026-01-01',
           genres: ['a"&b'],
-          shouldHydrateTags: true,
+          source: 'javascript:alert(1)',
         },
       }),
     });
 
-    expect(rendered).toContain('heading="&quot;Danger&quot;&lt;tag&gt;"');
-    expect(rendered).toContain('data-tags="[&quot;a\\&quot;&amp;b&quot;]"');
+    expect(rendered).toContain('"Danger"&lt;tag&gt;');
+    expect(rendered).toContain('href="/tags/a%22%26b/"');
+    expect(rendered).not.toContain('javascript:alert(1)');
   });
 
   it('sidebar と Pagefind が無効な projection では対応マークアップを出さないこと', () => {

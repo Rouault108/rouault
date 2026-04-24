@@ -11,45 +11,31 @@ const aboutPath = '/about/';
 
 interface NoteChromeState {
   articleHeaderExists: boolean;
-  articleHeaderTemplateCount: number;
   articleHeaderHeading: string;
-  articleHeaderHasBreadcrumbsJson: boolean;
+  breadcrumbLabels: string[];
   tocExists: boolean;
-  tocTemplateCount: number;
-  tocHasHeadingsJson: boolean;
-  tocContentRootId: string;
+  tocLabels: string[];
 }
 
 const readNoteChromeState = async (page: Page): Promise<NoteChromeState> =>
   page.evaluate(() => {
-    const articleHeader = document.querySelector('ui-article-header');
-    const toc = document.querySelector('layout-toc');
-
-    const countDeclarativeShadowRootTemplates = (element: Element | null): number => {
-      if (!(element instanceof Element)) {
-        return -1;
-      }
-
-      return Array.from(element.children).filter((child) => {
-        return (
-          child instanceof HTMLTemplateElement &&
-          (child.hasAttribute('shadowrootmode') || child.hasAttribute('shadowroot'))
-        );
-      }).length;
-    };
+    const articleHeader = document.querySelector<HTMLElement>('.article-header');
+    const toc = document.querySelector<HTMLElement>('.layout-toc');
 
     return {
       articleHeaderExists: articleHeader instanceof HTMLElement,
-      articleHeaderTemplateCount: countDeclarativeShadowRootTemplates(articleHeader),
       articleHeaderHeading:
-        articleHeader instanceof HTMLElement ? (articleHeader.getAttribute('heading') ?? '') : '',
-      articleHeaderHasBreadcrumbsJson:
-        articleHeader instanceof HTMLElement && articleHeader.hasAttribute('breadcrumbs-json'),
+        articleHeader?.querySelector<HTMLElement>('.article-header__heading')?.textContent?.trim() ??
+        '',
+      breadcrumbLabels: Array.from(
+        articleHeader?.querySelectorAll<HTMLElement>('.article-header__breadcrumb-item') ?? [],
+      )
+        .map((element) => element.textContent?.trim() ?? '')
+        .filter((text) => text.length > 0),
       tocExists: toc instanceof HTMLElement,
-      tocTemplateCount: countDeclarativeShadowRootTemplates(toc),
-      tocHasHeadingsJson: toc instanceof HTMLElement && toc.hasAttribute('headings-json'),
-      tocContentRootId:
-        toc instanceof HTMLElement ? (toc.getAttribute('content-root-id') ?? '') : '',
+      tocLabels: Array.from(toc?.querySelectorAll<HTMLElement>('.layout-toc__link-label') ?? [])
+        .map((element) => element.textContent?.trim() ?? '')
+        .filter((text) => text.length > 0),
     };
   });
 
@@ -57,23 +43,16 @@ const expectLayoutRichNoteChromeHostsWithoutJs = async (page: Page): Promise<voi
   const state = await readNoteChromeState(page);
 
   expect(state.articleHeaderExists).toBe(true);
-  expect(state.articleHeaderTemplateCount).toBe(0);
   expect(state.articleHeaderHeading).toBe(layoutRich.title);
-  expect(state.articleHeaderHasBreadcrumbsJson).toBe(true);
+  expect(state.breadcrumbLabels.join('\n')).toContain('Notes');
 
   expect(state.tocExists).toBe(true);
-  expect(state.tocTemplateCount).toBe(0);
-  expect(state.tocHasHeadingsJson).toBe(true);
-  expect(state.tocContentRootId).toBe(layoutRich.contentRootId);
+  expect(state.tocLabels.join('\n')).toContain('1. 導入');
 
-  await expect(page.locator('ui-article-header')).toHaveAttribute('heading', layoutRich.title);
-  await expect(page.locator('layout-toc')).toHaveAttribute(
-    'content-root-id',
-    layoutRich.contentRootId,
-  );
-
-  const headingsJson = await page.locator('layout-toc').getAttribute('headings-json');
-  expect(headingsJson).not.toBeNull();
+  await expect(page.locator('.article-header__heading')).toHaveText(layoutRich.title);
+  await expect
+    .poll(async () => await page.locator('.layout-toc [data-toc-link]').count())
+    .toBeGreaterThan(0);
 };
 
 test.describe('No-JS baseline', () => {
@@ -168,10 +147,10 @@ test.describe('No-JS baseline', () => {
   test('toc-absent fixture では No-JS でも空の TOC landmark を出力しないこと', async ({ page }) => {
     await page.goto(tocAbsentPath);
 
-    await expect(page.locator('ui-article-header')).toHaveAttribute('heading', 'TOC Absent');
+    await expect(page.locator('.article-header__heading')).toHaveText('TOC Absent');
     await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'absent');
     await expect(page.locator('.layout-toc-col')).toHaveCount(0);
-    await expect(page.locator('layout-toc')).toHaveCount(0);
+    await expect(page.locator('[data-layout-toc-nav]')).toHaveCount(0);
     await expect(page.locator('aside[aria-label="目次"]')).toHaveCount(0);
   });
 
@@ -266,8 +245,8 @@ test.describe('No-JS baseline', () => {
     await expect(page.locator('layout-header')).toHaveCount(1);
     await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
     await expect(page.locator('layout-sidebar')).toHaveCount(1);
-    await expect(page.locator('layout-toc')).toHaveCount(1);
-    await expect(page.locator('ui-article-header')).toHaveCount(1);
+    await expect(page.locator('[data-layout-toc-nav]')).toHaveCount(1);
+    await expect(page.locator('.article-header')).toHaveCount(1);
 
     const currentCorpusKey = await page.locator('layout-header').getAttribute('current-corpus-key');
     expect(typeof currentCorpusKey).toBe('string');

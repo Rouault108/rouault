@@ -5,8 +5,9 @@
  * サイドバー + 本文 + TOC の3カラム構成を提供する。
  */
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
-import { ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE } from '../components/ui/article-header/article-header-tags-adapter.js';
 import { escapeHtmlText, renderJsonScriptElement, serializeHtmlAttributes } from './html-output.js';
+import { renderArticleHeaderHtml } from './article-header-html.js';
+import { renderTocHtml } from './toc-html.js';
 
 interface NoteLayoutData {
   notePage?: NotePageProjection;
@@ -44,67 +45,8 @@ const renderPagefindMetadata = (pagefind: NonNullable<NotePageProjection['pagefi
   `.trim();
 };
 
-const renderArticleHeader = (articleHeader: NotePageProjection['articleHeader']): string => {
-  const articleHeaderAttributes = serializeHtmlAttributes([
-    { name: 'heading', value: articleHeader.heading },
-    {
-      name: 'breadcrumbs-json',
-      value:
-        articleHeader.breadcrumbs && articleHeader.breadcrumbs.length > 0
-          ? articleHeader.breadcrumbs
-          : undefined,
-      kind: 'json',
-    },
-    { name: 'published', value: articleHeader.published },
-    { name: 'updated', value: articleHeader.updated },
-    { name: 'status', value: articleHeader.status },
-    { name: 'source', value: articleHeader.source },
-    { name: 'license', value: articleHeader.license },
-    {
-      name: ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE,
-      value: articleHeader.genres.length > 0 ? articleHeader.genres : undefined,
-      kind: 'json',
-    },
-    {
-      name: 'data-hydration-capability',
-      value: 'progressive',
-    },
-    {
-      name: 'data-hydration-trigger',
-      value: 'post-commit',
-    },
-  ]);
-
-  return `<ui-article-header${articleHeaderAttributes}></ui-article-header>`;
-};
-
 const renderToc = (toc: NotePageProjection['toc']): string => {
-  const tocAttributes = serializeHtmlAttributes([
-    { name: 'source-id', value: toc.sourceId },
-    { name: 'toc-runtime-id', value: toc.sourceId },
-    { name: 'headings-json', value: toc.headings, kind: 'json' },
-    { name: 'capabilities-json', value: toc.capabilities, kind: 'json' },
-    { name: 'content-root-id', value: toc.contentRootId },
-    { name: 'home-href', value: toc.homeHref },
-    {
-      name: 'data-hydration-capability',
-      value: toc.shouldHydrate ? 'interactive' : undefined,
-    },
-    {
-      name: 'data-hydration-trigger',
-      value: toc.shouldHydrate ? 'initial' : undefined,
-    },
-  ]);
-
-  return `
-    <aside
-      class="layout-toc-col"
-      aria-label="目次"
-      data-hydration-scope="note-toc"
-    >
-      <layout-toc${tocAttributes}></layout-toc>
-    </aside>
-  `.trim();
+  return renderTocHtml(toc);
 };
 
 export class NoteLayout {
@@ -156,7 +98,7 @@ export class NoteLayout {
       <section${shellAttributes}>
         <article${article}>
           ${notePage.pagefind ? renderPagefindMetadata(notePage.pagefind) : ''}
-          ${renderArticleHeader(notePage.articleHeader)}
+          ${renderArticleHeaderHtml(notePage.articleHeader)}
           <div${serializeHtmlAttributes([
             { name: 'id', value: notePage.toc.contentRootId },
             { name: 'class', value: 'prose' },

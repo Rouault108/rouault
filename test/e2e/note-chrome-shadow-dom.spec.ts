@@ -35,54 +35,25 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
 const readNoteChromeState = async (
   page: Page,
 ): Promise<{
-  headerShadowRoot: boolean;
-  headerTemplateCount: number;
+  headerExists: boolean;
   headerHeight: number;
   headerWidth: number;
   proseWidth: number;
   headerBreadcrumbLabels: string[];
-  tocShadowRoot: boolean;
-  tocTemplateCount: number;
+  tocExists: boolean;
   tocLabels: string[];
 }> =>
   page.evaluate(() => {
-    const articleHeader = document.querySelector('ui-article-header');
+    const articleHeader = document.querySelector<HTMLElement>('.article-header');
     const prose = document.querySelector('.prose');
-    const toc = document.querySelector('layout-toc');
-
-    const readDirectTemplateCount = (element: Element | null): number => {
-      if (!(element instanceof Element)) {
-        return -1;
-      }
-
-      return element.querySelectorAll(
-        ':scope > template[shadowrootmode], :scope > template[shadowroot]',
-      ).length;
-    };
+    const toc = document.querySelector<HTMLElement>('.layout-toc');
 
     const readHeaderBreadcrumbLabels = (element: Element | null): string[] => {
       if (!(element instanceof HTMLElement)) {
         return [];
       }
 
-      const headerShadowRoot = element.shadowRoot;
-      if (!(headerShadowRoot instanceof ShadowRoot)) {
-        return [];
-      }
-
-      const breadcrumbs = headerShadowRoot.querySelector<HTMLElement>('ui-breadcrumbs');
-      if (!(breadcrumbs instanceof HTMLElement)) {
-        return [];
-      }
-
-      const breadcrumbsShadowRoot = breadcrumbs.shadowRoot;
-      if (!(breadcrumbsShadowRoot instanceof ShadowRoot)) {
-        return [];
-      }
-
-      const labels = Array.from(
-        breadcrumbsShadowRoot.querySelectorAll<HTMLElement>('.breadcrumb-node'),
-      )
+      const labels = Array.from(element.querySelectorAll<HTMLElement>('.article-header__breadcrumb-item'))
         .map((node) => node.textContent?.trim() ?? '')
         .filter((text) => text.length > 0);
 
@@ -94,22 +65,9 @@ const readNoteChromeState = async (
         return [];
       }
 
-      const tocShadowRoot = element.shadowRoot;
-      if (!(tocShadowRoot instanceof ShadowRoot)) {
-        return [];
-      }
-
-      const uiTocs = Array.from(tocShadowRoot.querySelectorAll<HTMLElement>('ui-toc'));
-      const labels = uiTocs.flatMap((uiToc) => {
-        const uiTocShadowRoot = uiToc.shadowRoot;
-        if (!(uiTocShadowRoot instanceof ShadowRoot)) {
-          return [];
-        }
-
-        return Array.from(uiTocShadowRoot.querySelectorAll<HTMLElement>('.toc-link-label'))
-          .map((node) => node.textContent?.trim() ?? '')
-          .filter((text) => text.length > 0);
-      });
+      const labels = Array.from(element.querySelectorAll<HTMLElement>('.layout-toc__link-label'))
+        .map((node) => node.textContent?.trim() ?? '')
+        .filter((text) => text.length > 0);
 
       return Array.from(new Set(labels));
     };
@@ -123,8 +81,7 @@ const readNoteChromeState = async (
     };
 
     return {
-      headerShadowRoot: articleHeader instanceof HTMLElement && articleHeader.shadowRoot !== null,
-      headerTemplateCount: readDirectTemplateCount(articleHeader),
+      headerExists: articleHeader instanceof HTMLElement,
       headerHeight:
         articleHeader instanceof HTMLElement
           ? Math.round(articleHeader.getBoundingClientRect().height)
@@ -132,23 +89,20 @@ const readNoteChromeState = async (
       headerWidth: roundWidth(articleHeader),
       proseWidth: roundWidth(prose),
       headerBreadcrumbLabels: readHeaderBreadcrumbLabels(articleHeader),
-      tocShadowRoot: toc instanceof HTMLElement && toc.shadowRoot !== null,
-      tocTemplateCount: readDirectTemplateCount(toc),
+      tocExists: toc instanceof HTMLElement,
       tocLabels: readTocLabels(toc),
     };
   });
 
 const expectLayoutRichNoteChrome = async (page: Page): Promise<void> => {
-  await expect(page.locator('ui-article-header')).toHaveAttribute('heading', layoutRich.title);
+  await expect(page.locator('.article-header__heading')).toHaveText(layoutRich.title);
   await expect(page.locator('#main-content')).toContainText('このノートは e2e 専用 fixture です。');
 
-  await expect.poll(async () => (await readNoteChromeState(page)).headerShadowRoot).toBe(true);
+  await expect.poll(async () => (await readNoteChromeState(page)).headerExists).toBe(true);
   await expect
     .poll(async () => (await readNoteChromeState(page)).headerBreadcrumbLabels.join('\n'))
     .toContain('Notes');
-  await expect.poll(async () => (await readNoteChromeState(page)).tocShadowRoot).toBe(true);
-  await expect.poll(async () => (await readNoteChromeState(page)).headerTemplateCount).toBe(0);
-  await expect.poll(async () => (await readNoteChromeState(page)).tocTemplateCount).toBe(0);
+  await expect.poll(async () => (await readNoteChromeState(page)).tocExists).toBe(true);
   await expect.poll(async () => (await readNoteChromeState(page)).headerHeight).toBeGreaterThan(0);
   await expect
     .poll(async () => (await readNoteChromeState(page)).tocLabels.join('\n'))

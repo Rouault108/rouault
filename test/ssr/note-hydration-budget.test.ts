@@ -127,7 +127,6 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
       ...(typeof note.date === 'string' ? { published: note.date } : {}),
       ...(typeof note.updated === 'string' ? { updated: note.updated } : {}),
       genres,
-      shouldHydrateTags: genres.length > 0,
     },
     pagefind:
       note.kind === 'reader'

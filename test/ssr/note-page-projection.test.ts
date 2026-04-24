@@ -129,6 +129,27 @@ describe('buildNotePageProjection', () => {
     expect(projection.articleHeader.updated).toBe('2026-04-20');
   });
 
+  it('articleHeader の created に ISO 日時を渡しても YYYY-MM-DD に正規化すること', () => {
+    const projection = buildProjection({
+      rawSlug: 'music/created-iso',
+      slug: 'music/created-iso',
+      permalink: '/notes/music/created-iso',
+      noteKind: 'leaf',
+      sortIndex: 0,
+      tocHeadings: [],
+      tocCapabilities: {
+        activeTracking: false,
+        dynamicScopes: false,
+        mobilePanel: false,
+      },
+      kind: 'reader',
+      title: 'Created ISO',
+      created: '2026-04-18T12:34:56.000Z',
+    });
+
+    expect(projection.articleHeader.created).toBe('2026-04-18');
+  });
+
   it('articleHeader には不正な日付文字列を載せないこと', () => {
     const projection = buildProjection({
       rawSlug: 'music/invalid-date',
@@ -364,7 +385,6 @@ describe('buildNotePageProjection', () => {
     });
 
     expect(projection.articleHeader.genres).toEqual(['testing']);
-    expect(projection.articleHeader.shouldHydrateTags).toBe(true);
     expect(projection.contentHtml).toContain('preview-profile="reader"');
     expect(projection.pagefind).not.toBeNull();
     expect(projection.showSidebar).toBe(true);
@@ -441,7 +461,6 @@ describe('buildNotePageProjection', () => {
     });
 
     expect(projection.articleHeader.genres).toEqual([]);
-    expect(projection.articleHeader.shouldHydrateTags).toBe(false);
   });
 
   it('profile 未指定 note は budget 超過相当の workload でも hard fail しないこと', () => {

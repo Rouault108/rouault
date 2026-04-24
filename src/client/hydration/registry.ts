@@ -1,4 +1,3 @@
-import { hydrateArticleHeaderTags } from '../post-hydrate/article-header-tags.js';
 import { enhanceCodeBlocks } from '../post-hydrate/code-block-enhancer.js';
 import { enhanceCodeGroups } from '../post-hydrate/code-group-enhancer.js';
 import { enhanceFootnotePopovers } from '../post-hydrate/footnote-popover-enhancer.js';
@@ -23,14 +22,6 @@ interface ActivatableElement extends HTMLElement {
 
 const activateElementMethod = ({ element }: HydrationActivationContext): void | Promise<void> => {
   return (element as ActivatableElement).activateHydration?.();
-};
-
-const activateArticleHeaderTags = ({ root, element }: HydrationActivationContext): void => {
-  if (!root.contains(element)) {
-    return;
-  }
-
-  hydrateArticleHeaderTags(root);
 };
 
 const activateCodeBlocks = ({ root }: HydrationActivationContext): void => {
@@ -61,9 +52,11 @@ const activateLayoutSidebar = ({ element }: HydrationActivationContext): void =>
   }
 };
 
-const activateLayoutToc = async ({ element }: HydrationActivationContext): Promise<void> => {
-  const module = await import('../../components/layout/layout-toc.js');
-  await module.activateLayoutToc(element);
+const activateLayoutTocController = async ({
+  element,
+}: HydrationActivationContext): Promise<void> => {
+  const module = await import('../../components/layout/layout-toc-controller.js');
+  await module.activateLayoutTocController(element);
 };
 
 export const HYDRATION_REGISTRY = [
@@ -112,19 +105,14 @@ export const HYDRATION_REGISTRY = [
     loader: () => import('../../components/not-found/not-found-page.js'),
   },
   {
-    tag: 'ui-article-header',
-    loader: () => import('../../components/ui/article-header/article-header.js'),
-    activate: activateArticleHeaderTags,
-  },
-  {
     tag: 'layout-sidebar',
     loader: () => import('../../components/layout/layout-sidebar.js'),
     activate: activateLayoutSidebar,
   },
   {
-    tag: 'layout-toc',
-    loader: () => import('../../components/layout/layout-toc.js'),
-    activate: activateLayoutToc,
+    tag: 'layout-toc-controller',
+    loader: () => import('../../components/layout/layout-toc-controller.js'),
+    activate: activateLayoutTocController,
   },
   {
     tag: 'code-block-enhancer',

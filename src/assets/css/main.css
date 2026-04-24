@@ -20,6 +20,8 @@
 @import './tokens.css';
 
 @import './code-surfaces.css';
+@import './article-header.css';
+@import './layout-toc.css';
 
 /* ===========================================================================
  * View Transitions API サポート
@@ -201,19 +203,6 @@ dd {
 /* リンク文脈でもインラインコードの可読性を維持 */
 a > code {
   color: var(--fg-default);
-}
-
-/* カスタム要素 host の基本レイアウト契約。
- * - 未定義状態 / SSR / DSD / hydration 境界でも inline 既定値へ落とさない
- * - 狭幅で見出しだけが min-content まで縮む崩れを防ぐ */
-ui-article-header {
-  display: block;
-  inline-size: 100%;
-  min-inline-size: 0;
-}
-
-ui-article-header + .prose {
-  margin-top: var(--space-6);
 }
 
 /* Reading surfaces（記事本文 / About本文） */

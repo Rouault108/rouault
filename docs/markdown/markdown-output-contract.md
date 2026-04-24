@@ -266,8 +266,7 @@ note 本文の標準マッピングは次のとおりです。
 | ノード                                                                 | capability    | trigger       |
 | ---------------------------------------------------------------------- | ------------- | ------------- |
 | `layout-sidebar`                                                       | `interactive` | `initial`     |
-| `layout-toc[runtime capability あり]`                                  | `interactive` | `initial`     |
-| `ui-article-header[data-tags]`                                         | `progressive` | `post-commit` |
+| `layout-toc-controller[runtime capability あり]`                       | `interactive` | `initial`     |
 | `figure[data-image][data-hydration-key="image-lightbox-enhancer"]`     | `progressive` | `visible`     |
 | `a[data-footnote-ref][data-hydration-key="footnote-popover-enhancer"]` | `progressive` | `post-commit` |
 | `pre[data-code-block][data-hydration-key="code-block-enhancer"]`       | `progressive` | `post-commit` |
@@ -281,7 +280,8 @@ note 本文の標準マッピングは次のとおりです。
 
 補足規則:
 
-- `layout-toc` は `capabilities-json` に `activeTracking` / `dynamicScopes` / `mobilePanel` のいずれかがある場合にだけ directive を持ちます。
+- note page の `article-header` は SSR light DOM を正本とし、production path では hydration directive を付与してはなりません。
+- `layout-toc-controller` は `capabilities-json` に `activeTracking` / `dynamicScopes` / `mobilePanel` のいずれかがある場合にだけ directive を持ちます。
 - `mobilePanel` は mobile TOC interactive surface の必要性を表します。
 - `ui-image[zoomable="false"]` には directive を付与してはなりません。
 - standalone code block は要素単位で hydrate してはなりません。必要な場合に限り、scope 内の code surface を一括強化する代表 root にだけ `code-block-enhancer` 用 directive を付与しなければなりません。
@@ -302,19 +302,19 @@ note ページの hydration budget は **profile 単位**で build-time の正�
 
 | profile                      | initial | post-commit | visible | interaction | total |
 | ---------------------------- | ------- | ----------- | ------- | ----------- | ----- |
-| `reader-shell-canary`        | 2       | 1           | 0       | 0           | 3     |
-| `testing-interactive-canary` | 6       | 1           | 1       | 0           | 8     |
-| `testing-sandbox-canary`     | 0       | 1           | 2       | 1           | 4     |
-| `testing-code-canary`        | 1       | 2           | 2       | 0           | 5     |
+| `reader-shell-canary`        | 2       | 0           | 0       | 0           | 2     |
+| `testing-interactive-canary` | 4       | 0           | 1       | 0           | 5     |
+| `testing-sandbox-canary`     | 0       | 0           | 2       | 1           | 3     |
+| `testing-code-canary`        | 1       | 1           | 2       | 0           | 4     |
 
 現在の代表 canary は次の 4 つです。
 
 | canary note            | profile                      | initial | post-commit | visible | interaction | total |
 | ---------------------- | ---------------------------- | ------- | ----------- | ------- | ----------- | ----- |
-| `testing/reader-basic` | `reader-shell-canary`        | 2       | 1           | 0       | 0           | 3     |
-| `testing/interactive`  | `testing-interactive-canary` | 6       | 1           | 1       | 0           | 8     |
-| `testing/sandbox`      | `testing-sandbox-canary`     | 0       | 1           | 2       | 1           | 4     |
-| `testing/code`         | `testing-code-canary`        | 1       | 2           | 2       | 0           | 5     |
+| `testing/reader-basic` | `reader-shell-canary`        | 2       | 0           | 0       | 0           | 2     |
+| `testing/interactive`  | `testing-interactive-canary` | 4       | 0           | 1       | 0           | 5     |
+| `testing/sandbox`      | `testing-sandbox-canary`     | 0       | 0           | 2       | 1           | 3     |
+| `testing/code`         | `testing-code-canary`        | 1       | 1           | 2       | 0           | 4     |
 
 規則:
 

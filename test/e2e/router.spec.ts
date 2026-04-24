@@ -15,7 +15,7 @@ const layoutRichNormalizedPath = layoutRich.normalizedPath;
 const tocAbsentNormalizedPath = e2eNoteFixtures.tocAbsent.normalizedPath;
 
 const expectMainHeading = async (page: Page, headingText: string): Promise<void> => {
-  await expect(page.locator('ui-article-header')).toHaveAttribute('heading', headingText);
+  await expect(page.locator('.article-header__heading')).toHaveText(headingText);
 };
 
 const hideTocOverlay = async (page: Page): Promise<void> => {
@@ -397,7 +397,7 @@ test.describe('Router Navigation', () => {
 
     await expect(page.locator('layout-header')).toHaveAttribute('toc-presence', 'present');
     await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'present');
-    await expect(page.locator('layout-toc')).toHaveCount(1);
+    await expect(page.locator('[data-layout-toc-nav]')).toHaveCount(1);
     await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
 
     await navigateWithAppRouter(page, tocAbsentNormalizedPath);
@@ -406,7 +406,7 @@ test.describe('Router Navigation', () => {
     await expect(page.locator('layout-header')).toHaveAttribute('toc-presence', 'absent');
     await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'absent');
     await expect(page.locator('.layout-toc-col')).toHaveCount(0);
-    await expect(page.locator('layout-toc')).toHaveCount(0);
+    await expect(page.locator('[data-layout-toc-nav]')).toHaveCount(0);
     await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
 
     const absentOverflow = await page.evaluate(
@@ -419,7 +419,7 @@ test.describe('Router Navigation', () => {
     await expect(page).toHaveURL(layoutRichNormalizedPath);
     await expect(page.locator('layout-header')).toHaveAttribute('toc-presence', 'present');
     await expect(page.locator('.note-shell')).toHaveAttribute('data-toc-presence', 'present');
-    await expect(page.locator('layout-toc')).toHaveCount(1);
+    await expect(page.locator('[data-layout-toc-nav]')).toHaveCount(1);
     await expect(page.locator('[data-app-shell-sidebar-host]')).toHaveCount(1);
   });
 });

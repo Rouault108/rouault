@@ -25,20 +25,20 @@ export const NOTE_HYDRATION_BUDGET_PROFILES = {
     name: 'reader-shell-canary',
     budget: {
       initial: 2,
-      postCommit: 1,
+      postCommit: 0,
       visible: 0,
       interaction: 0,
-      total: 3,
+      total: 2,
     },
   },
   'testing-interactive-canary': {
     name: 'testing-interactive-canary',
     budget: {
       initial: 4,
-      postCommit: 1,
+      postCommit: 0,
       visible: 1,
       interaction: 0,
-      total: 6,
+      total: 5,
     },
   },
   /**
@@ -51,20 +51,20 @@ export const NOTE_HYDRATION_BUDGET_PROFILES = {
     name: 'testing-sandbox-canary',
     budget: {
       initial: 0,
-      postCommit: 1,
+      postCommit: 0,
       visible: 2,
       interaction: 1,
-      total: 4,
+      total: 3,
     },
   },
   'testing-code-canary': {
     name: 'testing-code-canary',
     budget: {
       initial: 1,
-      postCommit: 2,
+      postCommit: 1,
       visible: 2,
       interaction: 0,
-      total: 5,
+      total: 4,
     },
   },
 } as const satisfies Record<NoteHydrationBudgetProfileName, NoteHydrationBudgetProfile>;

@@ -39,7 +39,7 @@ hydration trigger の決定は scheduler / registry が正本です。
 - plain DOM enhancer は registry entry の `activate` で起動する
 - component 固有の起動が必要なら、generic な element method 依存ではなく registry 側で明示する
 - `layout-sidebar` は manual activation を不要とする
-- `layout-toc` は registry が timing を決めて起動する
+- `layout-toc-controller` は registry が timing を決めて起動する
 
 ### 3.3 component 側
 
@@ -73,5 +73,5 @@ component は hydration timing を自己決定しません。
 
 1. `src/client.ts` が component 個別の manual activation を持たない
 2. `layout-sidebar` が manual activation を要求しない
-3. `layout-toc` の起動 timing を scheduler / registry が決定する
+3. `layout-toc-controller` の起動 timing を scheduler / registry が決定する
 4. hydration 後の observable behavior が browser test で固定される

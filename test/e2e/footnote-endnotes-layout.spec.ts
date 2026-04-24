@@ -106,23 +106,11 @@ test.describe('footnote endnotes layout contract', () => {
     await page.goto(footnoteEndnotesLayoutPath);
     await page.locator('article').waitFor();
 
-    const footnoteHeadingEntry = await page.evaluate(() => {
-      const toc = document.querySelector('layout-toc');
-      const headingsJson = toc?.getAttribute('headings-json');
-      if (typeof headingsJson !== 'string' || headingsJson.length === 0) {
-        throw new Error('layout-toc headings-json が見つかりません');
-      }
-
-      const headings = JSON.parse(headingsJson) as { text?: string; id?: string }[];
-      return headings.find((heading) => heading?.id === 'footnote-label') ?? null;
-    });
-
-    expect(footnoteHeadingEntry).toEqual(
-      expect.objectContaining({
-        id: 'footnote-label',
-        text: '脚注',
-      }),
+    const tocLink = page.locator(
+      '[data-layout-toc-nav] a[data-toc-link][data-heading-id="footnote-label"]',
     );
+    await expect(tocLink).toHaveAttribute('href', '#footnote-label');
+    await expect(tocLink.locator('.layout-toc__link-label')).toHaveText('脚注');
 
     const heading = page.locator('section[role="doc-endnotes"] > h2#footnote-label');
     await expect(heading).toHaveText('脚注');

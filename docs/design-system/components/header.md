@@ -6,7 +6,7 @@
 
 `layout-header` は `ui-header` の上位 adapter として、Rouault の page chrome に必要な start / end 領域を供給します。特に note page では `toc-presence="present|absent"` を受け、本文側の TOC 列契約と同じ presence 信号で center-end reserve を切り替えます。
 
-ただし、Rouault の現在の `layout-header` は breadcrumb を所有しません。note 文脈の breadcrumb 正本は本文先頭の `ui-article-header` が所有し、`layout-header` は移動・補助操作・TOC トリガー・corpus 切替・theme 切替に専念します。
+ただし、Rouault の現在の `layout-header` は breadcrumb を所有しません。note 文脈の breadcrumb 正本は本文先頭の SSR light DOM `header.article-header` が所有し、`layout-header` は移動・補助操作・TOC トリガー・corpus 切替・theme 切替に専念します。
 
 `ui-header` は、アプリケーションシェル上部に配置するヘッダーコンポーネントです。単にヘッダーらしい見た目を描画するのではなく、**アプリ全体のナビゲーション開始点をどこに置くか**、**文脈表示をどの位置に固定するか**、**`sidebarExpanded` という現名称の layout 同期入力を start 幅予約へどう反映するか**、**その状態変化をどのイベント面で通知するか**を公開契約として固定します。
 
@@ -198,7 +198,7 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 - `layout-header[note-layout]` は desktop では `toc-presence` にかかわらず `present` と同じ `--ui-header-center-end-inset` を維持し、note shell の外形契約とそろえます
 - start 側 reserve は従来どおり `sidebar-enabled` で決め、TOC presence と混在させません
 - Rouault の `layout-header` は breadcrumb を所有しません
-- note 文脈の breadcrumb は `ui-article-header` が所有します
+- note 文脈の breadcrumb は SSR light DOM `header.article-header` が所有します
 - Rouault の `layout-header` は現在 `center` / `compact-center` を使いません
 - TOC trigger は `end` slot の補助導線であり、現在位置表示要素ではありません
 - TOC trigger の幅契約は viewport ではなく `layout-header` host の container inline-size で決まります
@@ -435,7 +435,7 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 狭幅環境では、`ui-header` の一般契約として `center` が非表示になり得ます。ただし、これは `ui-header` 自体の汎用レイアウト契約であり、Rouault の `layout-header` が狭幅時に `compact-center` へ breadcrumb を退避することを意味しません。
 
-Rouault の現行 `layout-header` は、mobile note で compact breadcrumb を表示しません。代わりに、start / end の操作性と TOC trigger の縮退を優先します。したがって、狭幅で note 文脈を保持する責務は本文先頭の `ui-article-header` が担い、header 側は page chrome と補助操作に専念します。
+Rouault の現行 `layout-header` は、mobile note で compact breadcrumb を表示しません。代わりに、start / end の操作性と TOC trigger の縮退を優先します。したがって、狭幅で note 文脈を保持する責務は本文先頭の SSR light DOM `header.article-header` が担い、header 側は page chrome と補助操作に専念します。
 
 また、Rouault の TOC trigger は現在見出しや進捗を header 上へ持ち込みません。mobile TOC panel header は視覚上 close-only とし、current heading は `ui-toc` の active item 強調で把握します。`目次` という意味付けは `ui-toc` の navigation label が保持し、header 側は安定した開閉導線に限定します。
 

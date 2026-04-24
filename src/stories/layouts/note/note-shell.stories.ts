@@ -4,8 +4,9 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import '../../../components/layout/layout-header';
 import '../../../components/layout/layout-footer';
 import '../../../components/layout/layout-sidebar';
-import '../../../components/layout/layout-toc';
-import '../../../components/ui/article-header/article-header';
+import '../../../components/layout/layout-toc-controller';
+import { renderArticleHeaderHtml } from '../../../layouts/article-header-html.js';
+import { renderTocHtml } from '../../../layouts/toc-html.js';
 import {
   renderFoundationFrame,
   renderFoundationSection,
@@ -42,6 +43,30 @@ const tocSource = [
   { id: 'conclusion', text: 'まとめ', level: 2 },
 ];
 
+const articleHeaderMarkup = renderArticleHeaderHtml({
+  heading: 'Storybook で読むページ骨格',
+  breadcrumbs: [
+    { label: 'Notes', href: '/notes/' },
+    { label: 'Storybook Shell', href: '/notes/story-shell/' },
+  ],
+  published: '2026-03-10',
+  updated: '2026-03-10',
+  genres: ['Storybook', 'Reading UI'],
+});
+
+const tocMarkup = renderTocHtml({
+  sourceId: 'story-note-toc-source',
+  headings: tocSource,
+  capabilities: {
+    activeTracking: true,
+    dynamicScopes: false,
+    mobilePanel: true,
+  },
+  contentRootId: 'story-note-content',
+  homeHref: '/',
+  shouldHydrate: true,
+});
+
 const renderNoteShell = () =>
   renderFoundationFrame(
     {
@@ -69,11 +94,7 @@ const renderNoteShell = () =>
                   </aside>
 
                   <article class="layout-main-col container-reading">
-                    <ui-article-header
-                      heading="Storybook で読むページ骨格"
-                      published="2026-03-10"
-                      updated="2026-03-10"
-                    ></ui-article-header>
+                    ${unsafeHTML(articleHeaderMarkup)}
                     <div id="story-note-content" class="prose">
                       <h2 id="intro">はじめに</h2>
                       <p>
@@ -95,15 +116,7 @@ const renderNoteShell = () =>
                     </div>
                   </article>
 
-                  <aside class="layout-toc-col" aria-label="目次">
-                    <layout-toc
-                      id="story-note-toc"
-                      source-id="story-note-toc-source"
-                      toc-runtime-id="story-note-toc-source"
-                      content-root-id="story-note-content"
-                      home-href="/"
-                    ></layout-toc>
-                  </aside>
+                  ${unsafeHTML(tocMarkup)}
                 </section>
 
                 <script type="application/json" id="story-note-toc-source">
@@ -114,7 +127,7 @@ const renderNoteShell = () =>
             </div>
           </div>
         `,
-        'sidebar / article / toc を production component そのままで組み合わせます。',
+        'sidebar / article / toc を production の SSR light DOM 契約に寄せて組み合わせます。',
       )}
     `,
   );
@@ -133,7 +146,7 @@ note sidebar は visible heading を持たず、landmark 名は nav / aside 側�
 
 このファイルは **docs / smoke / 手動確認** に限定します。  
 note shell の SSR 構造は \`test/ssr/note-layout.test.ts\`、  
-実ページ上での sidebar / toc / 読書フローは \`test/e2e/ssr.spec.ts\` と \`test/e2e/toc-tabs.spec.ts\` を正本とします。
+実ページ上での sidebar / toc / 読書フローは \`test/e2e/no-js-baseline.spec.ts\` と \`test/e2e/router.spec.ts\` を正本とします。
         `,
       },
     },
@@ -161,7 +174,7 @@ export const ResponsiveObservationManual: Story = {
 - sidebar / article / toc の視覚的な均衡
 - 幅変更時の見え方
 
-layout-sidebar や layout-toc の合否判定は Storybook ではなく、SSR / E2E 側を正本とします。
+layout-sidebar や layout-toc-controller の合否判定は Storybook ではなく、SSR / E2E 側を正本とします。
         `,
       },
     },

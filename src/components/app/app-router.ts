@@ -9,7 +9,10 @@ import {
   type RouterContentHtml,
   unwrapRouterContentHtml,
 } from '../../router/router-content-html.js';
-import { replaceElementChildrenFromHtml } from '../../router/declarative-shadow-dom.js';
+import {
+  promoteDeclarativeShadowRoots,
+  replaceElementChildrenFromHtml,
+} from '../../router/declarative-shadow-dom.js';
 import {
   APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC,
   APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE,
@@ -88,14 +91,6 @@ export class AppRouter extends HTMLElement {
       this._pendingInitialContent = value;
       return;
     }
-
-    if (value === null) {
-      return;
-    }
-
-    this._pendingInitialContent = null;
-    this._currentContent = value;
-    this._applyContent(value, false);
   }
 
   /**
@@ -125,18 +120,7 @@ export class AppRouter extends HTMLElement {
 
     if (isInitialBoot) {
       this._bootstrapped = true;
-
-      const initialContent =
-        this._pendingInitialContent ??
-        this._serverContent ??
-        createRouterContentHtml(contentRoot.innerHTML);
-
-      this._currentContent = initialContent;
-      this._pendingInitialContent = null;
-
-      this._ensureAnnouncementRegion();
-      this._syncBusyState(false);
-      this._applyContent(initialContent, false);
+      this._adoptInitialContent(contentRoot);
     } else {
       this._ensureAnnouncementRegion();
       this._syncBusyState(this._isNavigating);
@@ -209,11 +193,11 @@ export class AppRouter extends HTMLElement {
         return {
           commit: () => {
             this._currentContent = nextContent;
-            this._applyContent(nextContent, true);
+            this._replaceContent(nextContent, { dispatchRenderedEvent: true });
           },
           rollback: () => {
             this._currentContent = previousContent;
-            this._applyContent(previousContent, true);
+            this._replaceContent(previousContent, { dispatchRenderedEvent: true });
           },
         };
       },
@@ -236,6 +220,16 @@ export class AppRouter extends HTMLElement {
     return contentRoot;
   }
 
+  private _adoptInitialContent(contentRoot: HTMLElement): void {
+    promoteDeclarativeShadowRoots(contentRoot);
+
+    this._currentContent = createRouterContentHtml(contentRoot.innerHTML);
+    this._pendingInitialContent = null;
+
+    this._ensureAnnouncementRegion();
+    this._syncBusyState(false);
+  }
+
   private _ensureAnnouncementRegion(): HTMLElement {
     const existingRegion = this.querySelector<HTMLElement>(APP_ROUTER_ANNOUNCEMENT_SELECTOR);
     if (existingRegion instanceof HTMLElement) {
@@ -254,7 +248,10 @@ export class AppRouter extends HTMLElement {
     return region;
   }
 
-  private _applyContent(content: RouterContentHtml, dispatchRenderedEvent: boolean): void {
+  private _replaceContent(
+    content: RouterContentHtml,
+    options: { dispatchRenderedEvent: boolean },
+  ): void {
     const contentRoot = this._ensureContentRoot(this._findExistingContentRoot());
     replaceElementChildrenFromHtml(
       contentRoot,
@@ -262,7 +259,7 @@ export class AppRouter extends HTMLElement {
       contentRoot.ownerDocument,
     );
 
-    if (dispatchRenderedEvent) {
+    if (options.dispatchRenderedEvent) {
       this._dispatchContentRendered(contentRoot);
     }
   }

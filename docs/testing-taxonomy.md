@@ -351,10 +351,10 @@ sidebar と hydration は、次の責務境界で固定します。
 - header toggle から store 経由で sidebar が開閉すること
 - scrim click / Escape close
 - return focus
-- `layout-toc` の hydration 後同期
+- `layout-toc-controller` の hydration 後同期
 - component の observable state change
 - `layout-header` が TOC runtime snapshot を購読して mobile trigger を描画すること
-- `layout-header` の trigger と `layout-toc` の panel open state が controller 経由で同期すること
+- `layout-header` の trigger と `layout-toc-controller` の panel open state が controller 経由で同期すること
 
 ### 13.3 `test/ssr/**`
 

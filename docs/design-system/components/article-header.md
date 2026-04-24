@@ -4,6 +4,8 @@
 
 本書は、`ui-article-header` の公開契約、状態モデル、DOM / アクセシビリティ契約、表示契約、イベント契約、および Storybook 契約を定義します。
 
+production の note page では `ui-article-header` を描画主体に使いません。`NoteLayout` は SSR light DOM の `<header class="article-header">` を正本として出力し、`ui-article-header` は isolated component / Storybook / SSR target 検証用の互換面として扱います。
+
 `ui-article-header` は、記事冒頭における **識別情報**、**時間情報**、**分類情報**、**帰属情報** を提示するヘッダーコンポーネントです。本コンポーネントでは、見出しを主情報、日付と読了時間を主要メタデータ、タグを分類情報、出典とライセンスを補助メタデータとして段階化して扱います。
 
 本コンポーネントの中核契約は次のとおりです。

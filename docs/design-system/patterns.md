@@ -360,7 +360,7 @@ Rouault には Overlay が1種類ではなく、少なくとも次の4系統が�
 | **Search Dialog**    | `ui-search-dialog`                 | modal                          | グローバル検索              |
 | **Popover**          | `ui-popover`                       | non-modal                      | 補助情報、軽量な詳細表示    |
 | **Sidebar Overlay**  | `ui-sidebar-shell[mode="overlay"]` | 画面上は半モーダル             | モバイルナビゲーション      |
-| **TOC Mobile Panel** | `layout-toc` + `layout-header`        | non-modal / page-local overlay | mobile 見出しナビゲーション |
+| **TOC Mobile Panel** | `layout-toc-controller` + `layout-header` | non-modal / page-local overlay | mobile 見出しナビゲーション |
 
 TOC の mobile UI は、header 内 trigger と、header 直下から開く page-local overlay panel の組で扱います。
 旧 summary bar は採用しません。
@@ -477,7 +477,7 @@ Popover は Dialog と違い、**body をロックしない**ことが本質で�
 | 検索UI                                 | `ui-search-dialog`                  |
 | 補助情報、軽量な詳細                   | `ui-popover`                        |
 | モバイルのナビゲーション面             | `ui-sidebar-shell` overlay          |
-| モバイルのページ内見出しナビゲーション | `layout-toc` mobile panel |
+| モバイルのページ内見出しナビゲーション | `layout-toc-controller` mobile panel |
 
 body scroll lock が必要なら Dialog 系、不要なら Popover 系、という切り分けが基本です。
 
