@@ -2,6 +2,7 @@
 title: '言語バージョン・ビルド文脈・互換性'
 description: '本ページは、C#の言語バージョン選択、TFM、SDK選択、前処理ディレクティブ、nullable文脈、バージョン史の読み方を、仕様・ビルド設定・実装上の制約の区分に従って整理する。LangVersionとTFMの関係、global.jsonによるSDK選択と再現性、条件付きコンパイルと生成コード、nullable警告文脈の制御原則を明確にし、以後の章で版差や互換性を読むための前提を与える。'
 date: 2026-04-23
+updated: 2026-04-24
 genre:
   - C#
   - Programming
