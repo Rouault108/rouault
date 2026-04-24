@@ -16,7 +16,7 @@ const appendContentFixture = (): (() => void) => {
   wrapper.innerHTML = `
     <article id="note-content-test">
       <h2 id="section-1">Section 1</h2>
-      <p>first</p>
+      <p style="min-height: 160px">first</p>
       <h3 id="section-2">Section 2</h3>
       <p>second</p>
     </article>
@@ -50,9 +50,10 @@ describe('layout-toc-controller', () => {
   it('hydrate 後に SSR nav の active state と runtime snapshot を同期すること', async () => {
     const cleanup = appendContentFixture();
     const restoreHash = withLocationHash('section-2');
+    let root: HTMLElement | null = null;
 
     try {
-      const root = await fixture<HTMLElement>(html`
+      const currentRoot = await fixture<HTMLElement>(html`
         <aside data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
@@ -76,8 +77,9 @@ describe('layout-toc-controller', () => {
           ></layout-toc-controller>
         </aside>
       `);
+      root = currentRoot;
 
-      const controller = root.querySelector<LayoutTocController>('layout-toc-controller');
+      const controller = currentRoot.querySelector<LayoutTocController>('layout-toc-controller');
       if (!(controller instanceof HTMLElement)) {
         throw new Error('layout-toc-controller が見つかりません');
       }
@@ -86,9 +88,9 @@ describe('layout-toc-controller', () => {
 
       await waitUntil(() => {
         return (
-          root.querySelector<HTMLAnchorElement>('[data-toc-link][data-heading-id="section-2"]')?.getAttribute(
-            'aria-current',
-          ) === 'location'
+          currentRoot
+            .querySelector<HTMLAnchorElement>('[data-toc-link][data-heading-id="section-2"]')
+            ?.getAttribute('aria-current') === 'location'
         );
       }, 'active link が hash と同期すること');
 
@@ -97,6 +99,7 @@ describe('layout-toc-controller', () => {
       expect(snapshot.hasVisibleHeadings).to.equal(true);
       expect(snapshot.activeId).to.equal('section-2');
     } finally {
+      root?.remove();
       restoreHash();
       cleanup();
     }
@@ -104,14 +107,16 @@ describe('layout-toc-controller', () => {
 
   it('mobile panel を body 直下へ生成し、リンク押下で閉じて focus を戻すこと', async () => {
     const cleanup = appendContentFixture();
+    let root: HTMLElement | null = null;
+    let trigger: HTMLButtonElement | null = null;
 
     try {
-      const trigger = document.createElement('button');
+      trigger = document.createElement('button');
       trigger.type = 'button';
       trigger.textContent = 'toc';
       document.body.append(trigger);
 
-      const root = await fixture<HTMLElement>(html`
+      const currentRoot = await fixture<HTMLElement>(html`
         <aside data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
@@ -130,8 +135,9 @@ describe('layout-toc-controller', () => {
           ></layout-toc-controller>
         </aside>
       `);
+      root = currentRoot;
 
-      const controller = root.querySelector<LayoutTocController>('layout-toc-controller');
+      const controller = currentRoot.querySelector<LayoutTocController>('layout-toc-controller');
       if (!(controller instanceof HTMLElement)) {
         throw new Error('layout-toc-controller が見つかりません');
       }
@@ -139,30 +145,26 @@ describe('layout-toc-controller', () => {
       activateLayoutTocController(controller);
       layoutTocMobileController.open('toc-source-test', trigger);
 
-      await waitUntil(() => {
-        return !document
-          .querySelector<HTMLElement>('#layout-toc-panel-toc-source-test')
-          ?.hasAttribute('hidden');
-      }, 'mobile panel が開くこと');
-
       const panel = document.querySelector<HTMLElement>('#layout-toc-panel-toc-source-test');
       const link = panel?.querySelector<HTMLAnchorElement>('[data-toc-link][data-heading-id="section-1"]');
       if (!(panel instanceof HTMLElement) || !(link instanceof HTMLAnchorElement)) {
         throw new Error('mobile panel link が見つかりません');
       }
 
+      expect(panel.hasAttribute('hidden')).to.equal(false);
       expect(panel.parentElement).to.equal(document.body);
       expect(panel.querySelector('[data-layout-toc-mobile-nav]')?.getAttribute('aria-label')).to.equal(
         'モバイル目次',
       );
 
-      link.click();
+      link.addEventListener('click', (event) => event.preventDefault(), { once: true });
+      link.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true, cancelable: true }));
 
-      await waitUntil(() => panel.hasAttribute('hidden'), 'link click 後に panel が閉じること');
+      expect(panel.hasAttribute('hidden')).to.equal(true);
       expect(document.activeElement).to.equal(trigger);
-
-      trigger.remove();
     } finally {
+      root?.remove();
+      trigger?.remove();
       cleanup();
     }
   });
