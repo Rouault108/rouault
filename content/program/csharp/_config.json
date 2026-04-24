@@ -2,6 +2,10 @@
   "label": "C#",
   "sidebar": {
     "scope": "self",
-    "order": ["index.md", "source-code-to-execution.md"]
+    "order": [
+      "index.md",
+      "source-code-to-execution.md",
+      "language-version-build-context-compatibility.md"
+    ]
   }
 }
