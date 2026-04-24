@@ -10,6 +10,7 @@ from change_detection import (
     ALL_ZERO_SHA,
     EMPTY_TREE_SHA,
     DiffRange,
+    changed_files,
     classification_outputs,
     classify_files,
     ensure_object_available,
@@ -187,7 +188,41 @@ class ObjectAvailabilityTest(unittest.TestCase):
         run_git.assert_not_called()
 
 
+class ChangedFilesTest(unittest.TestCase):
+    def test_changed_files_reads_null_delimited_diff_and_sorts_paths(self) -> None:
+        diff_output = b"src/z.ts\0README.md\0content/a.md\0"
+
+        with patch.object(change_detection, "run_git", return_value=diff_output) as run_git:
+            self.assertEqual(
+                changed_files("base-sha", "head-sha"),
+                ["README.md", "content/a.md", "src/z.ts"],
+            )
+
+        run_git.assert_called_once_with(
+            "diff",
+            "-z",
+            "--name-only",
+            "base-sha",
+            "head-sha",
+            text=False,
+        )
+
+
 class EntryPointAvailabilityTest(unittest.TestCase):
+    def test_workflow_dispatch_returns_full_run_outputs(self) -> None:
+        with patch.dict("os.environ", {"GITHUB_EVENT_NAME": "workflow_dispatch"}, clear=True):
+            with patch.object(classify_changes, "write_outputs") as write_outputs:
+                with patch.object(classify_changes, "log"):
+                    self.assertEqual(classify_changes.main(), 0)
+
+        write_outputs.assert_called_once_with(
+            {
+                "content": True,
+                "app": True,
+                "build": True,
+            }
+        )
+
     def test_head_object_missing_returns_error(self) -> None:
         diff_range = DiffRange(base="base-sha", head="head-sha")
 

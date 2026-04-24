@@ -52,4 +52,26 @@ describe('production build entrypoint contract', () => {
     expect(workflow).toContain('- run: pnpm run test:e2e:dev');
     expect(workflow).toContain('- run: pnpm build:production');
   });
+
+  it('workflow_dispatch は full run 対象に含め、deploy は push main のみに限定すること', () => {
+    const workflow = readFileSync(workflowPath, 'utf8');
+    const storybookSmokeJob = sliceWorkflowJob(
+      workflow,
+      'test-storybook-smoke',
+      'test-e2e-production',
+    );
+    const testE2eProductionJob = sliceWorkflowJob(workflow, 'test-e2e-production', 'test-e2e-dev');
+    const testE2eDevJob = sliceWorkflowJob(workflow, 'test-e2e-dev', 'build-production');
+    const deployProductionJob = workflow.slice(workflow.indexOf('deploy-production:'));
+    const fullRunCondition =
+      "if: needs.detect-changes.outputs.app == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.base_ref == 'main')";
+
+    expect(storybookSmokeJob).toContain(fullRunCondition);
+    expect(testE2eProductionJob).toContain(fullRunCondition);
+    expect(testE2eDevJob).toContain(fullRunCondition);
+    expect(deployProductionJob).toContain(
+      "if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.build == 'true'",
+    );
+    expect(deployProductionJob).not.toContain("github.event_name == 'workflow_dispatch'");
+  });
 });
