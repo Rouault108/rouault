@@ -2,6 +2,7 @@
 title: 'C#とは何か'
 description: '本ページは、C#を言語仕様と.NET実行基盤の両面から位置付け、標準・実装・設計資料の役割を区別しながら、全体の前提を示す。'
 date: 2026-04-19
+updated: 2026-04-24
 genre:
   - C#
   - Programming
