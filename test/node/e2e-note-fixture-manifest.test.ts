@@ -8,6 +8,7 @@ import {
   REQUIRED_E2E_NOTE_FIXTURE_IDS,
   buildE2ENoteFixtureManifest,
 } from '../../build/testing/e2e-note-fixture-manifest.js';
+import { e2eNoteFixtures } from '../e2e/support/note-fixtures.js';
 
 describe('buildE2ENoteFixtureManifest', () => {
   it('e2e fixture id から permalink と content root id を引けること', () => {
@@ -230,5 +231,16 @@ e2eFixtureId: 'note.footnote-long-url'
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }
+  });
+
+  it('article-header static layout fixture の directPath と normalizedPath を区別すること', () => {
+    const fixture = e2eNoteFixtures.articleHeaderStaticLayout;
+
+    expect(fixture.normalizedPath).toBe(
+      '/notes/e2e/article-header-static-layout/extraordinarily-long-intermediate-breadcrumb-label-for-mobile-overflow-verification/very-long-breadcrumb-label',
+    );
+    expect(fixture.directPath).toBe(
+      '/notes/e2e/article-header-static-layout/extraordinarily-long-intermediate-breadcrumb-label-for-mobile-overflow-verification/very-long-breadcrumb-label/',
+    );
   });
 });
