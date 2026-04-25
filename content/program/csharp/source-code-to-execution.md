@@ -18,6 +18,8 @@ C#コンパイラは、ソーステキストを字句要素として扱い、そ
 
 言語仕様が与えるのは、プログラムの適格性、意味規則、診断対象となる条件である。これに対して、内部表現、処理順、段階分割はコンパイラ実装の問題に属する。したがって、字句解析、構文解析、意味解析、ローワリング（lowering）、出力（emit）といった段階名は、実装上の観察を表す語であり、そのまま仕様の章立てに対応するものではない。[^1][^12]
 
+コンパイル時の診断は、一様ではない。言語仕様上の不適格性に由来するエラー、コンパイラが生成する警告、nullable文脈やフロー解析に基づく警告、アナライザによる診断、MSBuildやSDKによるビルド診断は、発生主体と根拠が異なる。本章では、C#プログラムとして成立しない条件を言語仕様上の問題として扱い、警告やアナライザ診断は、コンパイル文脈およびツールチェーンの問題として区別する。
+
 Roslynの実装では、ソースコードは構文木とシンボル表現へ整理され、式や文に対する意味付けを経て、反復子、非同期、パターンマッチング、補間文字列、トップレベルステートメント（top-level statements）などの高水準構文が、より基本的な内部表現へ変換されたうえで出力段階へ渡される。この変換はローワリングと呼ばれる。ローワリングの位置付けは、表面上の高水準構文を、生成物として出力しやすい内部表現へ整理する内部変換にある。[^12]
 
 この過程の主要な成果物は、ILとメタデータである。メタデータは、型、メンバー、参照、属性、ジェネリックパラメーター、制約などについての記述であり、ILはその操作列である。ソースコード上の型やメソッドは、テキストとしてではなく、メタデータとILの組としてアセンブリ内に格納される。コンパイル時に固定されるのは、C#の意味論のうちCLI上の表現へ外部化される部分である。[^2][^5]
@@ -82,6 +84,10 @@ Console.WriteLine("Hello, World!");
 
 この最小例を逆アセンブルした結果には、アセンブリマニフェスト、型定義、メソッド定義、ローカル変数情報、IL命令列、必要に応じたPDB上の対応情報が含まれる。最小プログラムの観察は、以後の章で扱う型、束縛、変換、非同期、メタデータ、状態機械変換を読むための最初の足場として位置付けられる。[^10][^14]
 
+ファイルベースアプリは、トップレベルステートメントによる低儀式的な入口記述を、.NET SDKの実行モデルへ接続する機能である。これは、単一のC#ソースファイルを、明示的なプロジェクトファイルなしに`dotnet`ホストからビルドおよび実行する形態であり、C#言語の構文規則だけで完結する機能ではない。ソースファイルは通常のC#プログラムとして扱われるが、プロジェクトファイルに相当する設定の一部は、SDK側で生成または解釈される。
+
+C# 14以降のファイルベースアプリでは、Unix系環境での直接実行に用いる`#!`、およびパッケージ、SDK、プロパティなどを指定する`#:`系ディレクティブが導入される。これらはC#の通常の前処理ディレクティブとは同列ではなく、ファイルベースアプリにおいてビルドシステムが扱う指示として位置付けられる。したがって、トップレベルステートメントは言語上の入口記述であり、ファイルベースアプリは.NET SDKによる実行形態である、という区別が必要である。[^17]
+
 以後の議論では、短いソースの背後にも、コンパイル単位、アセンブリ、メタデータ、IL、入口点、実行時コンパイル、ホスト構成という複数の層があることを前提とする。本C#メモ全体の出発点は、C#を表面構文だけで読むのではなく、どの段階でどの情報が固定され、どの段階でどの責務が現れるかを追跡することにある。[^1][^2][^3]
 
 [^1]: Ecma International, *ECMA-334: C# Language Specification*, 7th ed., December 2023. C#言語の適格性、意味規則、コンパイル単位、名前空間、型宣言などの規範的定義。[https://ecma-international.org/wp-content/uploads/ECMA-334_7th_edition_december_2023.pdf](https://ecma-international.org/wp-content/uploads/ECMA-334_7th_edition_december_2023.pdf)。
@@ -115,3 +121,5 @@ Console.WriteLine("Hello, World!");
 [^15]: GitHub, *icsharpcode/ILSpy*. .NETアセンブリブラウザ兼デコンパイラとしての外部観察ツール。[https://github.com/icsharpcode/ilspy](https://github.com/icsharpcode/ilspy)。
 
 [^16]: Microsoft Learn, *Resolve errors and warnings related to a program entry point*; *Main() and command-line arguments - C#*. 入口点シグネチャ、`Main`、`StartupObject`、トップレベルステートメントと入口点の関係。[https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/entry-point-errors](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/entry-point-errors) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/main-command-line](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/main-command-line)。
+
+[^17]: Microsoft Learn, *File-based apps - .NET*; *Preprocessor directives - C# reference*; *Tutorial: Build file-based C# programs*. ファイルベースアプリ、`#!`、`#:`系ディレクティブ、および.NET SDKによる単一C#ファイル実行モデルの整理。
