@@ -1,6 +1,6 @@
 ---
 title: 'ソースコードから実行まで'
-description: '本ノートは、C#のソースコードがコンパイルによってアセンブリ、CIL、メタデータへ変換され、CLRによってロード、検証、JITコンパイル、実行に至るまでの全体像を整理する。あわせて、コンパイル単位とプロジェクトの関係、実行ファイルの構造、dotnet build・MSBuild・Roslynから成るツールチェーン、top-level statementsを用いた最小プログラムの実行モデルを通じて、C#プログラムをソースから実行までの連続した過程として把握する視点を与える。'
+description: '本ノートは、C#のソースコードがコンパイルによってアセンブリ、IL、メタデータへ変換され、CLRによってロード、検証、JITコンパイル、実行に至るまでの全体像を整理する。あわせて、コンパイル単位とプロジェクトの関係、実行ファイルの構造、dotnet build・MSBuild・Roslynから成るツールチェーン、top-level statementsを用いた最小プログラムの実行モデルを通じて、C#プログラムをソースから実行までの連続した過程として把握する視点を与える。'
 date: 2026-04-19
 updated: 2026-04-24
 genre:
@@ -8,7 +8,7 @@ genre:
   - Programming
 ---
 
-C#のソースコードは、コンパイラによって字句列、構文木、意味情報として処理され、最終的にアセンブリへ変換される。生成されるアセンブリには、型やメンバーを記述するメタデータと、メソッド本体を表すCILが格納される。必要に応じて、これとは別にデバッグや診断のためのシンボル情報も生成される。生成されたアセンブリは、CLR（Common Language Runtime、共通言語ランタイム）によるロード、検証、JITコンパイル、実行の対象となる。C#プログラムの記述、変換、実行は、ソースコード、コンパイル単位、アセンブリ、実行基盤への受け渡しから成る連続した過程として位置付けられる。[^1][^2][^3]
+C#のソースコードは、コンパイラによって字句列、構文木、意味情報として処理され、最終的にアセンブリへ変換される。生成されるアセンブリには、型やメンバーを記述するメタデータと、メソッド本体を表すILが格納される。必要に応じて、これとは別にデバッグや診断のためのシンボル情報も生成される。生成されたアセンブリは、CLR（Common Language Runtime、共通言語ランタイム）によるロード、検証、JITコンパイル、実行の対象となる。C#プログラムの記述、変換、実行は、ソースコード、コンパイル単位、アセンブリ、実行基盤への受け渡しから成る連続した過程として位置付けられる。[^1][^2][^3]
 
 本ノートの対象は、C#のソースコードがコンパイル単位として扱われ、ビルド文脈の下でアセンブリおよび関連ファイルへ変換され、実行基盤へ受け渡されるまでの構造である。対象はIDEやCLIの操作手順ではなく、ソースコードがどの表現へ落ち、どの主体が何を決めるかという区分である。[^2][^8]
 
@@ -20,9 +20,9 @@ C#コンパイラは、ソーステキストを字句要素として扱い、そ
 
 Roslynの実装では、ソースコードは構文木とシンボル表現へ整理され、式や文に対する意味付けを経て、反復子、非同期、パターンマッチング、補間文字列、トップレベルステートメント（top-level statements）などの高水準構文が、より基本的な内部表現へ変換されたうえで出力段階へ渡される。この変換はローワリングと呼ばれる。ローワリングの位置付けは、表面上の高水準構文を、生成物として出力しやすい内部表現へ整理する内部変換にある。[^12]
 
-この過程の主要な成果物は、CILとメタデータである。メタデータは、型、メンバー、参照、属性、ジェネリックパラメーター、制約などについての記述であり、CILはその操作列である。ソースコード上の型やメソッドは、テキストとしてではなく、メタデータとCILの組としてアセンブリ内に格納される。コンパイル時に固定されるのは、C#の意味論のうちCLI上の表現へ外部化される部分である。[^2][^5]
+この過程の主要な成果物は、ILとメタデータである。メタデータは、型、メンバー、参照、属性、ジェネリックパラメーター、制約などについての記述であり、ILはその操作列である。ソースコード上の型やメソッドは、テキストとしてではなく、メタデータとILの組としてアセンブリ内に格納される。コンパイル時に固定されるのは、C#の意味論のうちCLI上の表現へ外部化される部分である。[^2][^5]
 
-実行時には、CLRがアセンブリを読み込み、必要なメタデータを参照しながらメソッド本体をJITコンパイルし、プロセッサ固有のコードへ変換する。ここに属するのは、ロード、型解決、検証、JIT最適化、ガベージコレクション管理などである。名前束縛やオーバーロード解決のようなC#言語固有の問題は、この段階には属さない。したがって、「C#ソース→CILとメタデータ→実行時コンパイル→実行」という連鎖において、前者は言語仕様とコンパイラの問題、後者は実行基盤の問題として区分される。[^2][^3][^6]
+実行時には、CLRがアセンブリを読み込み、必要なメタデータを参照しながらメソッド本体をJITコンパイルし、プロセッサ固有のコードへ変換する。ここに属するのは、ロード、型解決、検証、JIT最適化、ガベージコレクション管理などである。名前束縛やオーバーロード解決のようなC#言語固有の問題は、この段階には属さない。したがって、「C#ソース→ILとメタデータ→実行時コンパイル→実行」という連鎖において、前者は言語仕様とコンパイラの問題、後者は実行基盤の問題として区分される。[^2][^3][^6]
 
 本ノートでは、管理実行における典型的な経路として、アセンブリのロード後にJITコンパイルを経て実行へ至る流れを基準に記述する。配布形態や実行形態によっては、事前コンパイル済みコードを伴う場合もあるが、それらは後続のページまたは補足で扱う。
 
@@ -40,13 +40,13 @@ C#プログラムは、一つ以上のコンパイル単位から成る。各コ
 
 ## 2.3 実行ファイルの構造
 
-C#のビルド結果として得られるアセンブリは、型とリソースの論理単位であり、配置、再利用、バージョン管理、参照解決の基本単位でもある。アセンブリには、少なくともアセンブリマニフェスト、型メタデータ、CIL、必要に応じてマニフェストリソースが含まれる。マニフェストは、アセンブリ名、バージョン、カルチャ、公開鍵、参照先アセンブリ、エントリポイントなどを記述するメタデータである。[^2][^5]
+C#のビルド結果として得られるアセンブリは、型とリソースの論理単位であり、配置、再利用、バージョン管理、参照解決の基本単位でもある。アセンブリには、少なくともアセンブリマニフェスト、型メタデータ、IL、必要に応じてマニフェストリソースが含まれる。マニフェストは、アセンブリ名、バージョン、カルチャ、公開鍵、参照先アセンブリ、エントリポイントなどを記述するメタデータである。[^2][^5]
 
 ここでのアセンブリは論理単位であり、物理ファイル形式そのものではない。実際の出力は通常、Portable Executable（PE）形式のファイルにCLIヘッダーとメタデータストリームを持つ。したがって、PEはホスト形式、CLIは共通基盤上の実装形式、アセンブリは論理単位という区分で捉えられる。[^2][^5]
 
 メタデータは、型名やメンバー名の一覧にとどまらない。型の継承関係、インターフェイス実装、メソッドシグネチャ、フィールド、属性、ジェネリックパラメーター、制約、参照先アセンブリ、カスタム属性、リソース記述など、後続の検証、ロード、リフレクション、ツール解析に必要な情報を格納する。CLIでは、これらの情報はメタデータ表として構成され、型やメソッドの定義だけでなく、相互参照のための索引構造を伴って保持される。[^2][^5]
 
-これに対してCILは、メソッド本体の操作列として位置付けられる。ローカル変数、引数、評価スタック、分岐、例外ハンドラー、メソッド呼び出し、ボックス化、アンボックス化などは、最終的にCIL命令列として表現される。アセンブリの実行可能性は、自己記述的なデータとしてのメタデータと、操作列としてのCILとの結合によって成立する。[^2][^5]
+これに対してILは、メソッド本体の操作列として位置付けられる。ローカル変数、引数、評価スタック、分岐、例外ハンドラー、メソッド呼び出し、ボックス化、アンボックス化などは、最終的にIL命令列として表現される。アセンブリの実行可能性は、自己記述的なデータとしてのメタデータと、操作列としてのILとの結合によって成立する。[^2][^5]
 
 PDB（Program Database）は、これとは別にデバッグや診断のためのシンボル情報を保持する。今日の.NETではPortable PDBが標準的であり、ソース行との対応、ローカル変数名、シーケンスポイント、非同期メソッドや反復子の対応関係などの情報をデバッガや各種ツールへ提供する。PDBの位置付けはプログラム意味論の本体ではなく、生成コードをソースへ引き戻して観察するための補助情報にある。したがって、アセンブリ本体とPDBとは区別して扱われる。[^10]
 
@@ -60,7 +60,7 @@ PDB（Program Database）は、これとは別にデバッグや診断のため�
 
 `dotnet run`、`dotnet publish`、`dotnet test`は、ビルドと実行・配置・テストを異なる目的で包んだ操作であり、生成される成果物の形も異なり得る。たとえば、publishでは、開発用ビルドとは異なる依存関係の取り込みやホストの配置が行われる。したがって、観察対象がコンパイル結果なのか、配布物なのかという区別が必要である。[^8]
 
-生成物の観察には、ILDASMのような公式ツールが用いられる。ILDASMはPEファイル中のCILとメタデータを表示し、アセンブリマニフェストや参照関係の確認のための手段である。実務ではILSpyのような外部デコンパイラも広く用いられるが、これらの位置付けは生成物を観察する道具であって、言語仕様そのものではない。逆アセンブル結果や逆コンパイル結果は、コンパイル結果を読むための観察資料として扱われる。[^14][^15]
+生成物の観察には、ILDASMのような公式ツールが用いられる。ILDASMはPEファイル中のILとメタデータを表示し、アセンブリマニフェストや参照関係の確認のための手段である。実務ではILSpyのような外部デコンパイラも広く用いられるが、これらの位置付けは生成物を観察する道具であって、言語仕様そのものではない。逆アセンブル結果や逆コンパイル結果は、コンパイル結果を読むための観察資料として扱われる。[^14][^15]
 
 さらに、RoslynのAPIやアナライザ基盤の利用対象には、構文木、シンボル、型情報、フロー解析結果などが属する。ここで成立するのは、テキストの読解だけではなく、生成物観察とコンパイラ情報観察という二つの経路である。前者は生成されたアセンブリの観察、後者はコンパイラ実装の観察として区別される。[^12]
 
@@ -74,21 +74,21 @@ Console.WriteLine("Hello, World!");
 
 この記法はトップレベルステートメント（top-level statements）によるものであり、明示的な`Program`クラスや`Main`メソッドを書かなくても、実行可能プロジェクトとしての入口を表現する。ここで与えられるのは、実行入口の省略ではなく、その簡略な記述様式である。コンパイラは、これを入口点を持つ形へ変換し、ソース上の簡潔さを生成物側で吸収する。[^13]
 
-この最小形は、少なくとも三つの層へ分解される。第一に、ソース上には`Console.WriteLine`という文だけが現れる。第二に、コンパイラはそれを暗黙の型と入口点を持つ実行可能アセンブリとして編成し、必要なメタデータとCILを生成する。第三に、実行時にはCLRがそのアセンブリを読み込み、入口から実行を開始する。トップレベルステートメントの位置付けは、既存の実行モデルに対する簡略記法にある。[^3][^13]
+この最小形は、少なくとも三つの層へ分解される。第一に、ソース上には`Console.WriteLine`という文だけが現れる。第二に、コンパイラはそれを暗黙の型と入口点を持つ実行可能アセンブリとして編成し、必要なメタデータとILを生成する。第三に、実行時にはCLRがそのアセンブリを読み込み、入口から実行を開始する。トップレベルステートメントの位置付けは、既存の実行モデルに対する簡略記法にある。[^3][^13]
 
 トップレベルステートメントは、明示的な`Program`クラスや`Main`メソッドをソース上に書かずに、実行可能プロジェクトの入口を記述する構文である。コンパイラは、トップレベルステートメントを含むコンパイル対象に対して、実行入口となるメソッドを生成する。そのシグネチャは、`await`および`return`の有無に応じて変化する。[^13][^16]
 
 トップレベルステートメントを含められるコンパイル単位はプロジェクト内で一つだけであり、同時に明示的な`Main`を持っていても、トップレベルステートメントが存在する場合にはそちらが入口点として優先される。ここでの制約は、実行開始位置の一意性を保つためのものである。暗黙の`Program`型は、ソース上のAPI面ではなく、入口点を保持するためのコンパイラ生成の器として位置付けられる。[^13][^16]
 
-この最小例を逆アセンブルした結果には、アセンブリマニフェスト、型定義、メソッド定義、ローカル変数情報、CIL命令列、必要に応じたPDB上の対応情報が含まれる。最小プログラムの観察は、以後の章で扱う型、束縛、変換、非同期、メタデータ、状態機械変換を読むための最初の足場として位置付けられる。[^10][^14]
+この最小例を逆アセンブルした結果には、アセンブリマニフェスト、型定義、メソッド定義、ローカル変数情報、IL命令列、必要に応じたPDB上の対応情報が含まれる。最小プログラムの観察は、以後の章で扱う型、束縛、変換、非同期、メタデータ、状態機械変換を読むための最初の足場として位置付けられる。[^10][^14]
 
-以後の議論では、短いソースの背後にも、コンパイル単位、アセンブリ、メタデータ、CIL、入口点、実行時コンパイル、ホスト構成という複数の層があることを前提とする。本C#メモ全体の出発点は、C#を表面構文だけで読むのではなく、どの段階でどの情報が固定され、どの段階でどの責務が現れるかを追跡することにある。[^1][^2][^3]
+以後の議論では、短いソースの背後にも、コンパイル単位、アセンブリ、メタデータ、IL、入口点、実行時コンパイル、ホスト構成という複数の層があることを前提とする。本C#メモ全体の出発点は、C#を表面構文だけで読むのではなく、どの段階でどの情報が固定され、どの段階でどの責務が現れるかを追跡することにある。[^1][^2][^3]
 
 [^1]: Ecma International, *ECMA-334: C# Language Specification*, 7th ed., December 2023. C#言語の適格性、意味規則、コンパイル単位、名前空間、型宣言などの規範的定義。[https://ecma-international.org/wp-content/uploads/ECMA-334_7th_edition_december_2023.pdf](https://ecma-international.org/wp-content/uploads/ECMA-334_7th_edition_december_2023.pdf)。
 
-[^2]: Ecma International, *ECMA-335: Common Language Infrastructure (CLI)*, 6th ed., June 2012, Partition I–III. CLI、CIL、メタデータ、アセンブリ、PE上のCLI表現に関する規範的定義。[https://ecma-international.org/wp-content/uploads/ECMA-335_6th_edition_june_2012.pdf](https://ecma-international.org/wp-content/uploads/ECMA-335_6th_edition_june_2012.pdf)。
+[^2]: Ecma International, *ECMA-335: Common Language Infrastructure (CLI)*, 6th ed., June 2012, Partition I–III. CLI、IL、メタデータ、アセンブリ、PE上のCLI表現に関する規範的定義。[https://ecma-international.org/wp-content/uploads/ECMA-335_6th_edition_june_2012.pdf](https://ecma-international.org/wp-content/uploads/ECMA-335_6th_edition_june_2012.pdf)。
 
-[^3]: Microsoft Learn, *Managed Execution Process*. コンパイルからCIL生成、JITコンパイル、実行までの管理実行過程の整理。[https://learn.microsoft.com/en-us/dotnet/standard/managed-execution-process](https://learn.microsoft.com/en-us/dotnet/standard/managed-execution-process)。
+[^3]: Microsoft Learn, *Managed Execution Process*. コンパイルからIL生成、JITコンパイル、実行までの管理実行過程の整理。[https://learn.microsoft.com/en-us/dotnet/standard/managed-execution-process](https://learn.microsoft.com/en-us/dotnet/standard/managed-execution-process)。
 
 [^4]: Microsoft Learn, *6 Lexical structure - C# language specification*; *Namespaces - C# language specification*. 字句構造、前処理ディレクティブ、コンパイル単位、`using`、名前空間に関する仕様準拠文書。[https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/lexical-structure](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/lexical-structure) ; [https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/namespaces](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/namespaces)。
 
@@ -110,7 +110,7 @@ Console.WriteLine("Hello, World!");
 
 [^13]: Microsoft Learn, *Top-level statements - programs without Main methods - C#*; *General structure of a C# program*. トップレベルステートメント、入口点規則、暗黙の`Program`に関する整理。[https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/top-level-statements](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/top-level-statements) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/)。
 
-[^14]: Microsoft Learn, *How to: View assembly contents*; *Ildasm.exe (IL Disassembler)*. ILDASMによるCILおよびアセンブリマニフェストの観察。[https://learn.microsoft.com/en-us/dotnet/standard/assembly/view-contents](https://learn.microsoft.com/en-us/dotnet/standard/assembly/view-contents) ; [https://learn.microsoft.com/en-us/dotnet/framework/tools/ildasm-exe-il-disassembler](https://learn.microsoft.com/en-us/dotnet/framework/tools/ildasm-exe-il-disassembler)。
+[^14]: Microsoft Learn, *How to: View assembly contents*; *Ildasm.exe (IL Disassembler)*. ILDASMによるILおよびアセンブリマニフェストの観察。[https://learn.microsoft.com/en-us/dotnet/standard/assembly/view-contents](https://learn.microsoft.com/en-us/dotnet/standard/assembly/view-contents) ; [https://learn.microsoft.com/en-us/dotnet/framework/tools/ildasm-exe-il-disassembler](https://learn.microsoft.com/en-us/dotnet/framework/tools/ildasm-exe-il-disassembler)。
 
 [^15]: GitHub, *icsharpcode/ILSpy*. .NETアセンブリブラウザ兼デコンパイラとしての外部観察ツール。[https://github.com/icsharpcode/ilspy](https://github.com/icsharpcode/ilspy)。
 
