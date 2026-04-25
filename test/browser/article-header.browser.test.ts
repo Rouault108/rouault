@@ -325,10 +325,10 @@ describe('ui-article-header browser contract', () => {
       host.shadowRoot?.querySelector<HTMLElement>('ui-breadcrumbs'),
       'breadcrumbs',
     );
-    const items = JSON.parse(breadcrumbsElement.getAttribute('items-json') ?? '[]') as Array<{
+    const items = JSON.parse(breadcrumbsElement.getAttribute('items-json') ?? '[]') as {
       label: string;
       href?: string;
-    }>;
+    }[];
 
     expect(items).to.deep.equal([
       { label: 'Notes', href: '/notes/' },

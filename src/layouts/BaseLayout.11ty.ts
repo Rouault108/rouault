@@ -136,8 +136,7 @@ export class BaseLayout {
       resolveEffectiveNoteChromeProfile(data.note?.kind, data.note?.chromeProfile),
     );
     const isNotePage = data.note !== undefined;
-    const shouldIgnorePagefind =
-      isNotePage && (data.notePage === undefined || data.notePage.pagefind === null);
+    const shouldIgnorePagefind = isNotePage && (data.notePage?.pagefind ?? null) === null;
     const corpora = buildCorpusNavigation(data.corpusPages ?? []);
     const footerAttributes = serializeHtmlAttributes([
       { name: 'build-label', value: data.buildMetadata?.buildLabel },

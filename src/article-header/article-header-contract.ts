@@ -41,12 +41,22 @@ const STATUS_PRESENTATIONS: Readonly<Partial<Record<NoteStatus, ArticleHeaderSta
     deprecated: { label: '非推奨', icon: 'alert-triangle', tone: 'deprecated' },
   };
 
-const ASCII_CONTROL_OR_DELETE = /[\u0000-\u001F\u007F]/u;
 const MALFORMED_PERCENT_ENCODING = /%(?![0-9A-Fa-f]{2})/u;
 const ENCODED_SLASH = /%2f/iu;
 
+const hasAsciiControlOrDelete = (value: string): boolean => {
+  for (const character of value) {
+    const codePoint = character.codePointAt(0);
+    if (codePoint !== undefined && (codePoint <= 0x1f || codePoint === 0x7f)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 const hasUnsafeRawCodePoint = (value: string): boolean =>
-  ASCII_CONTROL_OR_DELETE.test(value) || value.includes('\\');
+  hasAsciiControlOrDelete(value) || value.includes('\\');
 
 const decodePercentEncoded = (value: string): string | null => {
   if (MALFORMED_PERCENT_ENCODING.test(value)) {
