@@ -3,6 +3,11 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import {
+  hasDeclarationForSelector,
+  hasDeclarationTokenForSelector,
+} from './support/css-contract.js';
+
 const articleHeaderCssPath = resolve('src/assets/css/article-header.css');
 const tagRecipeCssPath = resolve('src/assets/css/recipes/article-header-static-tag-link.css');
 const mainCssPath = resolve('src/assets/css/main.css');
@@ -76,5 +81,123 @@ describe('static article-header css contract', () => {
     expect(articleHeaderCss).not.toMatch(
       /\.article-header__tag-link\s*\{[\s\S]*?border:\s*1px solid/u,
     );
+  });
+
+  it('breadcrumb and tag links explicitly opt out from underline in screen scope', () => {
+    expect(
+      hasDeclarationForSelector(
+        articleHeaderCss,
+        '.article-header__breadcrumb-link[href]',
+        'text-decoration',
+        'none',
+        { scope: 'screen' },
+      ),
+    ).toBe(true);
+
+    expect(
+      hasDeclarationForSelector(
+        tagRecipeCss,
+        '.article-header__tag-link[href]',
+        'text-decoration',
+        'none',
+        { scope: 'screen' },
+      ),
+    ).toBe(true);
+  });
+
+  it('keeps breadcrumb and tag links without underline on hover and focus-visible in screen scope', () => {
+    expect(
+      hasDeclarationForSelector(
+        articleHeaderCss,
+        '.article-header__breadcrumb-link:hover',
+        'text-decoration',
+        'none',
+        { scope: 'screen' },
+      ),
+    ).toBe(true);
+
+    expect(
+      hasDeclarationForSelector(
+        articleHeaderCss,
+        '.article-header__breadcrumb-link:focus-visible',
+        'text-decoration',
+        'none',
+        { scope: 'screen' },
+      ),
+    ).toBe(true);
+
+    expect(
+      hasDeclarationForSelector(
+        tagRecipeCss,
+        '.article-header__tag-link:hover',
+        'text-decoration',
+        'none',
+        { scope: 'screen' },
+      ),
+    ).toBe(true);
+
+    expect(
+      hasDeclarationForSelector(
+        tagRecipeCss,
+        '.article-header__tag-link:focus-visible',
+        'text-decoration',
+        'none',
+        { scope: 'screen' },
+      ),
+    ).toBe(true);
+  });
+
+  it('keeps source link as a reference link with underline in screen scope', () => {
+    expect(
+      hasDeclarationTokenForSelector(
+        articleHeaderCss,
+        '.article-header__source-link',
+        'text-decoration',
+        'underline',
+        { scope: 'screen' },
+      ),
+    ).toBe(true);
+
+    expect(
+      hasDeclarationTokenForSelector(
+        articleHeaderCss,
+        '.article-header__source-link[href]',
+        'text-decoration',
+        'underline',
+        { scope: 'screen' },
+      ),
+    ).toBe(true);
+  });
+
+  it('keeps forced-colors breadcrumb without underline and source with underline at href specificity', () => {
+    expect(
+      hasDeclarationForSelector(
+        articleHeaderCss,
+        '.article-header__breadcrumb-link[href]',
+        'text-decoration',
+        'none',
+        { scope: 'forced-colors' },
+      ),
+    ).toBe(true);
+
+    expect(
+      hasDeclarationTokenForSelector(
+        articleHeaderCss,
+        '.article-header__source-link[href]',
+        'text-decoration',
+        'underline',
+        { scope: 'forced-colors' },
+      ),
+    ).toBe(true);
+
+    expect(
+      hasDeclarationForSelector(
+        tagRecipeCss,
+        '.article-header__tag-link[href]',
+        'text-decoration',
+        'none',
+        { scope: 'forced-colors' },
+      ),
+    ).toBe(true);
   });
 });

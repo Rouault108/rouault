@@ -416,6 +416,16 @@ status は現行契約では単一の読者向け注意状態として扱いま�
 
 出典リンクのクラスは `.link-text.source-link` です。リンクは既定状態で下線を持ちます。`hover` および `focus-visible` では、文字色とフォーカスリングにより可視性を補強します。
 
+production note page では、SSR light DOM の `<header class="article-header" data-article-header>` を正本として使います。この経路では、パンくず中間リンク `.article-header__breadcrumb-link` は Structural Nav Link、タグリンク `.article-header__tag-link` は Chip Link、出典リンク `.article-header__source-link` は Source / Reference Link として扱います。
+
+| 対象               | class                              | 分類                    | 非 forced-colors 通常状態の下線 | hover / focus 時の下線 |
+| ------------------ | ---------------------------------- | ----------------------- | ------------------------------: | ---------------------: |
+| パンくず中間リンク | `.article-header__breadcrumb-link` | Structural Nav Link     |                            なし |                   なし |
+| タグリンク         | `.article-header__tag-link`        | Chip Link               |                            なし |                   なし |
+| 出典リンク         | `.article-header__source-link`     | Source / Reference Link |                            あり |                   あり |
+
+Storybook や isolated component 経路では、Shadow DOM 内の `ui-article-header` を使います。この経路では、出典リンクの Text Link 契約は `src/styles/contracts/link-styles.ts` の `linkTextStyles` により提供します。Light DOM の `.link-text[href]` 契約は Shadow DOM 内へ自動適用されません。
+
 ---
 
 ## 5. イベント契約

@@ -6,9 +6,7 @@ import {
   type SidebarScope,
   type SidebarScopeRule,
 } from '../../build/navigation/index.js';
-import type {
-  NavigationDirectoryPresentationMap,
-} from '../../shared/navigation/navigation-types.js';
+import type { NavigationDirectoryPresentationMap } from '../../shared/navigation/navigation-types.js';
 import { resolveSidebarRoot } from '../../build/navigation/resolve-sidebar-root.js';
 import { prepareTocHtml, type TocHeading } from '../../build/content/extract-toc-from-html.js';
 import { resolveCoverAsset, type ResolvedImageAsset } from '../../build/media/image-resolver.js';
@@ -23,10 +21,13 @@ import {
   resolveEffectiveNoteChromeProfile,
   type NoteChromeProfile,
 } from '../../shared/note/note-chrome-profile.js';
-import { type NoteChromePolicy, resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
+import {
+  type NoteChromePolicy,
+  resolveNoteChromePolicy,
+} from '../../shared/note/note-chrome-policy.js';
 import {
   type NotePublicationPolicy,
-  resolveNotePublicationPolicy,
+  resolveEffectiveNotePublicationPolicy,
 } from '../../shared/note/note-publication-policy.js';
 import { type TestingArea, normalizeTestingArea } from '../../shared/note/testing-area.js';
 import type { NoteHydrationBudgetProfileName } from '../../src/types/note-hydration-budget-profile.js';
@@ -69,6 +70,7 @@ export interface SourceNote {
   hydrationBudgetProfile?: NoteHydrationBudgetProfileName;
   sourceRoot?: NoteSourceRoot;
   e2eFixtureId?: string;
+  excludeFromPublicationSurfaces?: boolean;
   genre?: string[];
   sidebarIcon?: SidebarIconSetting;
   [key: string]: unknown;
@@ -474,7 +476,7 @@ export const filterReaderFacingNotes = <T extends SourceNote>(notes: readonly T[
 export const isNoteVisibleInSurface = (
   note: SourceNote,
   surface: keyof NotePublicationPolicy,
-): boolean => isPublicNote(note) && resolveNotePublicationPolicy(note.kind)[surface];
+): boolean => isPublicNote(note) && resolveEffectiveNotePublicationPolicy(note)[surface];
 
 export const filterNotesBySurface = <T extends SourceNote>(
   notes: readonly T[],

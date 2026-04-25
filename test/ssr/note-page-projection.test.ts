@@ -463,6 +463,32 @@ describe('buildNotePageProjection', () => {
     expect(projection.articleHeader.genres).toEqual([]);
   });
 
+  it('excludeFromPublicationSurfaces=true の reader fixture は Pagefind 除外と article-header tags 表示を両立すること', () => {
+    const projection = buildProjection({
+      rawSlug: 'e2e/article-header-link-decoration',
+      slug: 'e2e/article-header-link-decoration',
+      permalink: '/notes/e2e/article-header-link-decoration',
+      noteKind: 'leaf',
+      sortIndex: 0,
+      tocHeadings: [{ id: 'toc-link-anchor', text: 'TOC Link Anchor', level: 2 }],
+      tocCapabilities: {
+        activeTracking: true,
+        dynamicScopes: false,
+        mobilePanel: true,
+      },
+      kind: 'reader',
+      chromeProfile: 'plain',
+      title: 'Article Header Link Decoration Fixture',
+      genre: ['ui', 'layout'],
+      excludeFromPublicationSurfaces: true,
+      content: '<h2 id="toc-link-anchor">TOC Link Anchor</h2>',
+    });
+
+    expect(projection.pagefind).toBeNull();
+    expect(projection.articleHeader.genres).toEqual(['ui', 'layout']);
+    expect(projection.showSidebar).toBe(false);
+  });
+
   it('profile 未指定 note は budget 超過相当の workload でも hard fail しないこと', () => {
     expect(() =>
       buildProjection({

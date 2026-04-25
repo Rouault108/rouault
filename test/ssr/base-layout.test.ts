@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { BaseLayout } from '../../src/layouts/BaseLayout.11ty.js';
 import { loadBuildMetadataData } from '../../src/data/buildMetadata.js';
 
+const getBodyTag = (html: string): string => html.match(/<body[^>]*>/u)?.[0] ?? '';
+
 describe('BaseLayout', () => {
   it('reader note では header に sidebar-enabled を出力し、既定 heading を注入しないこと', () => {
     const layout = new BaseLayout();
@@ -59,6 +61,107 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('<nav data-sidebar-nav');
     expect(rendered).toContain('data-sidebar-boot-state="ssr"');
     expect(rendered).not.toContain('heading="ナビゲーション"');
+  });
+
+  it('body pagefind ignore は notePage.pagefind を正本にすること', () => {
+    const rendered = new BaseLayout().render({
+      content: '<article>Fixture</article>',
+      note: {
+        slug: 'fixture-reader',
+        title: 'Fixture Reader',
+        permalink: '/notes/fixture-reader',
+        noteKind: 'leaf',
+        kind: 'reader',
+      },
+      notePage: {
+        noteKind: 'reader',
+        noteShellSidebarPresence: 'absent',
+        tocPresence: 'absent',
+        showSidebar: false,
+        contentHtml: '<article>Fixture</article>',
+        toc: {
+          sourceId: 'toc-source-fixture-reader',
+          headings: [],
+          capabilities: {
+            activeTracking: false,
+            dynamicScopes: false,
+            mobilePanel: false,
+          },
+          contentRootId: 'note-content-fixture-reader',
+          homeHref: '/',
+          shouldHydrate: false,
+        },
+        articleHeader: {
+          heading: 'Fixture Reader',
+          genres: [],
+        },
+        pagefind: null,
+      },
+    });
+
+    expect(getBodyTag(rendered)).toContain('data-pagefind-ignore');
+  });
+
+  it('note data があるのに notePage projection がない場合は body を Pagefind 除外にすること', () => {
+    const rendered = new BaseLayout().render({
+      content: '<article>Broken note input</article>',
+      note: {
+        slug: 'broken-note-input',
+        title: 'Broken note input',
+        permalink: '/notes/broken-note-input',
+        noteKind: 'leaf',
+        kind: 'reader',
+      },
+    });
+
+    expect(getBodyTag(rendered)).toContain('data-pagefind-ignore');
+  });
+
+  it('notePage.pagefind がある場合は body に Pagefind 除外を出さないこと', () => {
+    const rendered = new BaseLayout().render({
+      content: '<article>Reader</article>',
+      note: {
+        slug: 'reader',
+        title: 'Reader',
+        permalink: '/notes/reader',
+        noteKind: 'leaf',
+        kind: 'reader',
+      },
+      notePage: {
+        noteKind: 'reader',
+        noteShellSidebarPresence: 'absent',
+        tocPresence: 'absent',
+        showSidebar: false,
+        contentHtml: '<article>Reader</article>',
+        toc: {
+          sourceId: 'toc-source-reader',
+          headings: [],
+          capabilities: {
+            activeTracking: false,
+            dynamicScopes: false,
+            mobilePanel: false,
+          },
+          contentRootId: 'note-content-reader',
+          homeHref: '/',
+          shouldHydrate: false,
+        },
+        articleHeader: {
+          heading: 'Reader',
+          genres: [],
+        },
+        pagefind: {
+          sortDate: '2026-04-25',
+          title: 'Reader',
+          tokenizedTitle: 'Reader',
+          description: '',
+          tokenizedDescription: '',
+          date: '2026-04-25',
+          tags: [],
+        },
+      },
+    });
+
+    expect(getBodyTag(rendered)).not.toContain('data-pagefind-ignore');
   });
 
   it('testing note でも chromeProfile=reader なら header に sidebar-enabled を出力すること', () => {

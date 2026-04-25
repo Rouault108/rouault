@@ -57,11 +57,13 @@ const notes = defineCollection({
       testingArea: s.enum(TESTING_AREAS).optional(),
       hydrationBudgetProfile: s.enum(NOTE_HYDRATION_BUDGET_PROFILE_NAMES).optional(),
       e2eFixtureId: s.string().optional(),
+      excludeFromPublicationSurfaces: s.boolean().optional(),
       content: s.markdown(),
       excerpt: s.excerpt().optional(),
       toc: s.toc().optional(),
     })
     .transform((data) => {
+      const { excludeFromPublicationSurfaces, ...rest } = data;
       const sourcePath = typeof data.slug === 'string' ? data.slug : '';
       const { sourceRoot, slug } = resolveNoteSourceLocation(sourcePath);
       const kind = normalizeNoteContentKind(data.kind);
@@ -80,12 +82,15 @@ const notes = defineCollection({
       validateNoteContentContracts(kind, normalizedContent, sourcePath, testingArea);
 
       return {
-        ...data,
+        ...rest,
         slug,
         sourceRoot,
         content: normalizedContent,
         kind,
         chromeProfile: resolveEffectiveNoteChromeProfile(kind, chromeProfile),
+        ...(excludeFromPublicationSurfaces === true
+          ? { excludeFromPublicationSurfaces: true }
+          : {}),
         ...(testingArea !== undefined ? { testingArea } : {}),
         ...(hydrationBudgetProfile !== undefined ? { hydrationBudgetProfile } : {}),
         ...(e2eFixtureId !== undefined ? { e2eFixtureId } : {}),

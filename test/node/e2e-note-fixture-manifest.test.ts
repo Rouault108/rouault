@@ -122,6 +122,18 @@ e2eFixtureId: 'note.article-header-static-layout'
       );
 
       writeFileSync(
+        join(fallbackDir, 'article-header-link-decoration.md'),
+        `---
+title: 'Article Header Link Decoration Fixture'
+e2eFixtureId: 'note.article-header-link-decoration'
+---
+
+# fixture
+`,
+        'utf8',
+      );
+
+      writeFileSync(
         join(fallbackDir, 'footnote-endnotes-layout.md'),
         `---
 title: 'Footnote Endnotes Layout'
@@ -201,6 +213,14 @@ e2eFixtureId: 'note.footnote-long-url'
         slug: 'e2e/layout-rich',
         permalink: '/notes/e2e/layout-rich',
         contentRootId: 'note-content-e2e-layout-rich',
+      });
+
+      expect(manifest['note.article-header-link-decoration']).toEqual({
+        fixtureId: 'note.article-header-link-decoration',
+        title: 'Article Header Link Decoration Fixture',
+        slug: 'e2e/article-header-link-decoration',
+        permalink: '/notes/e2e/article-header-link-decoration',
+        contentRootId: 'note-content-e2e-article-header-link-decoration',
       });
 
       expect(manifest['note.footnote-endnotes-layout']).toEqual({

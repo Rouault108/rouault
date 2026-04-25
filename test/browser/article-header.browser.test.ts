@@ -362,4 +362,29 @@ describe('ui-article-header browser contract', () => {
       'CC BY 4.0',
     );
   });
+
+  it('source link は Shadow DOM 内でも Text Link として下線を持つこと', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 720px;">
+        <ui-article-header
+          heading="Source Link Contract"
+          source="https://example.com/source"
+          license="CC BY 4.0"
+        ></ui-article-header>
+      </div>
+    `);
+
+    const host = expectPresent(
+      wrapper.querySelector<ArticleHeader>('ui-article-header'),
+      'articleHeader',
+    );
+    await flush(host);
+
+    const sourceLink = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('.link-text.source-link'),
+      'sourceLink',
+    );
+
+    expect(getComputedStyle(sourceLink).textDecorationLine).to.equal('underline');
+  });
 });

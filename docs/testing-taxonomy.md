@@ -132,13 +132,23 @@ Rouault では、次の設計前提を採用します。
 - no-JS baseline の破綻有無
 - 主要導線の end-to-end 成立
 - TOC present / absent fixture と SPA 遷移の shell 同期
+- production static CSS の computed style
 - 壊れた場合の影響が大きい媒体 outcome
 
 ここで検査しないもの:
 
 - pure function の細粒度境界
 - component 単体の全 interaction 網羅
+- CSS source-level contract の網羅
 - Storybook taxonomy
+
+### fixture note と publication surface
+
+`test/fixtures/content` 配下の note は、e2e 用 note page route には残します。ただし、publication surface から除外したい fixture は frontmatter で `excludeFromPublicationSurfaces: true` を明示します。
+
+`test/fixtures/content` 全体を sourceRoot だけで search / home / tags / corpora / pagefind から機械的に除外しません。将来、publication surface 自体を検証する fixture が必要になる可能性があるためです。
+
+リンク装飾専用 fixture は `kind: reader`、`chromeProfile: plain`、`excludeFromPublicationSurfaces: true` を併用します。これにより、article-header tag display policy には乗せつつ、note page 上の reader sidebar chrome は表示せず、publication surface にも混入させません。
 
 ### 3.5 `test/storybook/**`
 

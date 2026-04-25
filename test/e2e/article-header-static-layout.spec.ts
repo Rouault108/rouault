@@ -3,6 +3,7 @@ import { expect, test, type Locator } from '@playwright/test';
 import { e2eNoteFixtures } from './support/note-fixtures.js';
 
 const articleHeaderStaticLayoutPath = e2eNoteFixtures.articleHeaderStaticLayout.directPath;
+const articleHeaderLinkDecorationPath = e2eNoteFixtures.articleHeaderLinkDecoration.directPath;
 
 const horizontalOverflow = async (locator: Locator): Promise<number> => {
   return locator.evaluate((element) => element.scrollWidth - element.clientWidth);
@@ -67,4 +68,47 @@ test('static article-header の source link focus-visible が keyboard focus で
   });
 
   expect(outlineWidth).not.toBe('0px');
+});
+
+test('static structural links are not underlined while prose and source links are underlined', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(articleHeaderLinkDecorationPath);
+
+  const breadcrumbLink = page.locator('.article-header__breadcrumb-link').first();
+  const tagLink = page.locator('.article-header__tag-link').first();
+  const tocLink = page.locator('[data-layout-toc-nav] .layout-toc__link').first();
+  const sourceLink = page.locator('.article-header__source-link').first();
+  const proseLink = page.locator('.prose a[href]:not(.heading-anchor)').first();
+
+  await expect(breadcrumbLink).toBeVisible();
+  await expect(tagLink).toBeVisible();
+  await expect(tocLink).toBeVisible();
+  await expect(sourceLink).toBeVisible();
+  await expect(proseLink).toBeVisible();
+
+  await expect(breadcrumbLink).toHaveCSS('text-decoration-line', 'none');
+  await expect(tagLink).toHaveCSS('text-decoration-line', 'none');
+  await expect(tocLink).toHaveCSS('text-decoration-line', 'none');
+  await expect(sourceLink).toHaveCSS('text-decoration-line', 'underline');
+  await expect(proseLink).toHaveCSS('text-decoration-line', 'underline');
+});
+
+test('static structural links stay not underlined on hover', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(articleHeaderLinkDecorationPath);
+
+  const breadcrumbLink = page.locator('.article-header__breadcrumb-link').first();
+  const tagLink = page.locator('.article-header__tag-link').first();
+  const tocLink = page.locator('[data-layout-toc-nav] .layout-toc__link').first();
+
+  await breadcrumbLink.hover();
+  await expect(breadcrumbLink).toHaveCSS('text-decoration-line', 'none');
+
+  await tagLink.hover();
+  await expect(tagLink).toHaveCSS('text-decoration-line', 'none');
+
+  await tocLink.hover();
+  await expect(tocLink).toHaveCSS('text-decoration-line', 'none');
 });

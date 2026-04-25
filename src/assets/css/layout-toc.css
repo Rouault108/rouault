@@ -38,10 +38,15 @@
   border-radius: var(--radius-sm, 4px);
 }
 
+.layout-toc__link[href] {
+  text-decoration: none;
+}
+
 .layout-toc__link:hover,
 .layout-toc__link:focus-visible {
   color: var(--fg-default, oklch(20% 0 0));
   background: color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%);
+  text-decoration: none;
 }
 
 .layout-toc__link.is-active,
@@ -69,11 +74,8 @@ layout-toc-controller {
   z-index: var(--z-non-modal-panel, var(--z-modal, 300));
   background: var(--bg-default);
   border-top: var(--border-width, 1px) solid var(--border-default);
-  padding:
-    var(--space-2, 8px)
-    max(var(--space-3, 12px), env(safe-area-inset-right))
-    var(--space-6, 24px)
-    max(var(--space-3, 12px), env(safe-area-inset-left));
+  padding: var(--space-2, 8px) max(var(--space-3, 12px), env(safe-area-inset-right))
+    var(--space-6, 24px) max(var(--space-3, 12px), env(safe-area-inset-left));
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -123,5 +125,14 @@ layout-toc-controller {
 
   .layout-toc__link {
     color: LinkText;
+  }
+
+  .layout-toc__link[href] {
+    text-decoration: none;
+  }
+
+  .layout-toc__link:hover,
+  .layout-toc__link:focus-visible {
+    text-decoration: none;
   }
 }

@@ -8,7 +8,10 @@ import type { NoteStatus } from '../../src/types/article-status.js';
 import type { NoteContentKind } from '../../shared/note/note-kind.js';
 import { resolveEffectiveNoteChromeProfile } from '../../shared/note/note-chrome-profile.js';
 import { resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
-import { resolveNotePublicationPolicy } from '../../shared/note/note-publication-policy.js';
+import {
+  resolveEffectiveNotePublicationPolicy,
+  shouldRenderArticleHeaderTags,
+} from '../../shared/note/note-publication-policy.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import { NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE } from '../../src/layout/note-sidebar-breakpoint.js';
 import { renderNoteSidebarNav } from '../navigation/render-note-sidebar-nav.js';
@@ -253,7 +256,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const noteKind = input.note.kind;
   const chromeProfile = resolveEffectiveNoteChromeProfile(noteKind, input.note.chromeProfile);
   const chromePolicy = resolveNoteChromePolicy(chromeProfile);
-  const publicationPolicy = resolveNotePublicationPolicy(noteKind);
+  const publicationPolicy = resolveEffectiveNotePublicationPolicy(input.note);
   const showSidebar = chromePolicy.sidebar;
   const slug = typeof input.note.slug === 'string' ? input.note.slug : '';
   const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
@@ -263,11 +266,8 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const tocPresence: TocPresence = headings.length > 0 ? 'present' : 'absent';
   const tocCapabilities = normalizeTocCapabilities(input.note.tocCapabilities);
   const shouldHydrateToc =
-    tocCapabilities.activeTracking ||
-    tocCapabilities.dynamicScopes ||
-    tocCapabilities.mobilePanel;
-  // 非公開 note から tags surface への導線を出さないため、genre の表示は publication policy に従う。
-  const genres = publicationPolicy.tags ? normalizeGenres(input.note.genre) : [];
+    tocCapabilities.activeTracking || tocCapabilities.dynamicScopes || tocCapabilities.mobilePanel;
+  const genres = shouldRenderArticleHeaderTags(input.note) ? normalizeGenres(input.note.genre) : [];
   const contentHtml = injectNoteContentProfiles(
     typeof input.note.content === 'string' ? input.note.content : '',
     noteKind,

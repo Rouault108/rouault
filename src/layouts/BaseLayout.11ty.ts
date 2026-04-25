@@ -18,7 +18,6 @@ import {
 import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.js';
 import { resolveEffectiveNoteChromeProfile } from '../../shared/note/note-chrome-profile.js';
 import { resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
-import { resolveNotePublicationPolicy } from '../../shared/note/note-publication-policy.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import {
   escapeHtmlText,
@@ -136,7 +135,9 @@ export class BaseLayout {
     const noteChromePolicy = resolveNoteChromePolicy(
       resolveEffectiveNoteChromeProfile(data.note?.kind, data.note?.chromeProfile),
     );
-    const notePublicationPolicy = resolveNotePublicationPolicy(data.note?.kind);
+    const isNotePage = data.note !== undefined;
+    const shouldIgnorePagefind =
+      isNotePage && (data.notePage === undefined || data.notePage.pagefind === null);
     const corpora = buildCorpusNavigation(data.corpusPages ?? []);
     const footerAttributes = serializeHtmlAttributes([
       { name: 'build-label', value: data.buildMetadata?.buildLabel },
@@ -153,7 +154,7 @@ export class BaseLayout {
     const bodyAttributes = serializeHtmlAttributes([
       {
         name: 'data-pagefind-ignore',
-        value: Boolean(data.note && !notePublicationPolicy.pagefind),
+        value: shouldIgnorePagefind,
         kind: 'boolean',
       },
     ]);
@@ -162,7 +163,7 @@ export class BaseLayout {
     const tocRuntimeId =
       data.notePage?.tocPresence === 'present'
         ? data.notePage.toc.sourceId
-        : data.headerTocRuntimeId ?? '';
+        : (data.headerTocRuntimeId ?? '');
     const headerAttributes = serializeHtmlAttributes([
       { name: 'note-layout', value: Boolean(data.note), kind: 'boolean' },
       {

@@ -130,6 +130,16 @@ Text Link は、次の契約を持ちます。
 
 現状では `.prose a[href]:not(.heading-anchor)` も同契約で扱われます。つまり、本文中では明示クラスがなくても Text Link 契約が自動適用されます。
 
+### 1.2.1 グローバル `a[href]` 装飾の禁止
+
+Rouault では、`a[href]` という HTML 要素種別だけでリンクの視覚表現を決めません。
+
+本文リンクは `.link-text[href]` または `.prose a[href]` / `.about-prose a[href]` により Text Link として扱い、通常状態で常時下線を持ちます。ただし、`.prose a[href]` / `.about-prose a[href]` は Markdown 生成済み本文との互換のために維持する暫定契約です。
+
+一方、TOC、production static article-header のパンくず、production static article-header のタグは、それぞれ Structural Nav Link / Chip Link として扱い、通常状態および hover / focus 時に下線を出しません。
+
+構造 UI リンクの source-level opt-out は `text-decoration: none` に統一します。`.ui-link` / `.link-control` / `.link-subtle` など Control Link 全体の hover underline 方針は、この契約では変更しません。
+
 ### 1.3 Control Link
 
 Control Link は**構造型リンク**です。常時下線は必須ではありません。
@@ -354,12 +364,12 @@ Rouault では、`active` が DOM focus を意味しない箇所が多くあり�
 
 Rouault には Overlay が1種類ではなく、少なくとも次の4系統があります。
 
-| 種別                 | 主実装                             | モーダル性                     | 主用途                      |
-| -------------------- | ---------------------------------- | ------------------------------ | --------------------------- |
-| **Dialog**           | `ui-dialog`                        | modal / non-modal 切替可       | 確認、設定、入力            |
-| **Search Dialog**    | `ui-search-dialog`                 | modal                          | グローバル検索              |
-| **Popover**          | `ui-popover`                       | non-modal                      | 補助情報、軽量な詳細表示    |
-| **Sidebar Overlay**  | `ui-sidebar-shell[mode="overlay"]` | 画面上は半モーダル             | モバイルナビゲーション      |
+| 種別                 | 主実装                                    | モーダル性                     | 主用途                      |
+| -------------------- | ----------------------------------------- | ------------------------------ | --------------------------- |
+| **Dialog**           | `ui-dialog`                               | modal / non-modal 切替可       | 確認、設定、入力            |
+| **Search Dialog**    | `ui-search-dialog`                        | modal                          | グローバル検索              |
+| **Popover**          | `ui-popover`                              | non-modal                      | 補助情報、軽量な詳細表示    |
+| **Sidebar Overlay**  | `ui-sidebar-shell[mode="overlay"]`        | 画面上は半モーダル             | モバイルナビゲーション      |
 | **TOC Mobile Panel** | `layout-toc-controller` + `layout-header` | non-modal / page-local overlay | mobile 見出しナビゲーション |
 
 TOC の mobile UI は、header 内 trigger と、header 直下から開く page-local overlay panel の組で扱います。
@@ -471,12 +481,12 @@ Popover は Dialog と違い、**body をロックしない**ことが本質で�
 
 ### 3.8 実務ルール
 
-| 要件                                   | 採用すべき Overlay                  |
-| -------------------------------------- | ----------------------------------- |
-| 操作フローを止める                     | `ui-dialog`                         |
-| 検索UI                                 | `ui-search-dialog`                  |
-| 補助情報、軽量な詳細                   | `ui-popover`                        |
-| モバイルのナビゲーション面             | `ui-sidebar-shell` overlay          |
+| 要件                                   | 採用すべき Overlay                   |
+| -------------------------------------- | ------------------------------------ |
+| 操作フローを止める                     | `ui-dialog`                          |
+| 検索UI                                 | `ui-search-dialog`                   |
+| 補助情報、軽量な詳細                   | `ui-popover`                         |
+| モバイルのナビゲーション面             | `ui-sidebar-shell` overlay           |
 | モバイルのページ内見出しナビゲーション | `layout-toc-controller` mobile panel |
 
 body scroll lock が必要なら Dialog 系、不要なら Popover 系、という切り分けが基本です。

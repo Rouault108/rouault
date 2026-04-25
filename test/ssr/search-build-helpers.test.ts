@@ -9,6 +9,7 @@ import {
   buildStaticExploreResponse,
   buildStaticSearchState,
 } from '../../build/search/build-static-explore-response.js';
+import { buildSearchCatalog } from '../../build/search/build-search-catalog.js';
 import { emitSearchArtifacts } from '../../build/search/emit-search-artifacts.js';
 
 describe('search build helpers', () => {
@@ -86,5 +87,23 @@ describe('search build helpers', () => {
     } finally {
       await rm(outputDir, { recursive: true, force: true });
     }
+  });
+
+  it('excludeFromPublicationSurfaces=true の reader fixture を search catalog に出さないこと', () => {
+    expect(
+      buildSearchCatalog([
+        {
+          title: 'Fixture Reader',
+          slug: 'e2e/fixture-reader',
+          permalink: '/notes/e2e/fixture-reader/',
+          description: 'Fixture reader note',
+          date: '2026-04-25',
+          kind: 'reader',
+          chromeProfile: 'plain',
+          sourceRoot: 'test/fixtures/content',
+          excludeFromPublicationSurfaces: true,
+        },
+      ]),
+    ).toEqual([]);
   });
 });

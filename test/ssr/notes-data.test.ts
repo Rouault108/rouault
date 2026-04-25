@@ -7,8 +7,10 @@ import {
   buildNotesCollection,
   filterPublicNotes,
   filterReaderFacingNotes,
+  isNoteVisibleInSurface,
   type SourceNote,
 } from '../../build/data/notes.js';
+import { resolveEffectiveNotePublicationPolicy } from '../../shared/note/note-publication-policy.js';
 
 const tempDirs: string[] = [];
 
@@ -410,6 +412,33 @@ describe('buildNotesCollection', () => {
       sidebarRoot: 'e2e',
       sortIndex: 0,
       sourceRoot: 'test/fixtures/content',
+    });
+  });
+});
+
+describe('publication surface policy', () => {
+  it('excludeFromPublicationSurfaces=true の reader note を公開面から除外する', () => {
+    const fixtureReaderNote: SourceNote = {
+      title: 'Fixture Reader',
+      slug: 'e2e/fixture-reader',
+      kind: 'reader',
+      chromeProfile: 'plain',
+      sourceRoot: 'test/fixtures/content',
+      excludeFromPublicationSurfaces: true,
+    };
+
+    expect(isNoteVisibleInSurface(fixtureReaderNote, 'search')).toBe(false);
+    expect(isNoteVisibleInSurface(fixtureReaderNote, 'home')).toBe(false);
+    expect(isNoteVisibleInSurface(fixtureReaderNote, 'tags')).toBe(false);
+    expect(isNoteVisibleInSurface(fixtureReaderNote, 'corpora')).toBe(false);
+    expect(isNoteVisibleInSurface(fixtureReaderNote, 'pagefind')).toBe(false);
+
+    expect(resolveEffectiveNotePublicationPolicy(fixtureReaderNote)).toEqual({
+      search: false,
+      home: false,
+      tags: false,
+      corpora: false,
+      pagefind: false,
     });
   });
 });

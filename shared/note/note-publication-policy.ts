@@ -8,6 +8,11 @@ export interface NotePublicationPolicy {
   readonly pagefind: boolean;
 }
 
+export interface NotePublicationPolicyInput {
+  readonly kind?: unknown;
+  readonly excludeFromPublicationSurfaces?: unknown;
+}
+
 const READER_POLICY: NotePublicationPolicy = {
   search: true,
   home: true,
@@ -16,7 +21,7 @@ const READER_POLICY: NotePublicationPolicy = {
   pagefind: true,
 };
 
-const NON_PUBLIC_POLICY: NotePublicationPolicy = {
+export const NON_PUBLIC_NOTE_PUBLICATION_POLICY: NotePublicationPolicy = {
   search: false,
   home: false,
   tags: false,
@@ -30,9 +35,22 @@ export const resolveNotePublicationPolicy = (kind: unknown): NotePublicationPoli
       return READER_POLICY;
     case 'testing':
     case 'demo':
-      return NON_PUBLIC_POLICY;
+      return NON_PUBLIC_NOTE_PUBLICATION_POLICY;
   }
 };
+
+export const shouldExcludeFromPublicationSurfaces = (note: NotePublicationPolicyInput): boolean =>
+  note.excludeFromPublicationSurfaces === true;
+
+export const resolveEffectiveNotePublicationPolicy = (
+  note: NotePublicationPolicyInput,
+): NotePublicationPolicy =>
+  shouldExcludeFromPublicationSurfaces(note)
+    ? NON_PUBLIC_NOTE_PUBLICATION_POLICY
+    : resolveNotePublicationPolicy(note.kind);
+
+export const shouldRenderArticleHeaderTags = (note: NotePublicationPolicyInput): boolean =>
+  normalizeNoteContentKind(note.kind) === 'reader';
 
 export const isPublicationSurfaceEnabledForNoteKind = (
   kind: unknown,
