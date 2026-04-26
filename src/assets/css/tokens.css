@@ -202,6 +202,7 @@
   --toc-item-active-bg: oklch(from var(--primary) l c h / 0.028);
   --toc-item-active-radius: var(--radius-sm);
   --toc-item-active-inset-block: 2px;
+  --toc-item-surface-bleed-inline-start: 2px;
 
   --toc-item-indicator-color: var(--nav-item-indicator-color);
   --toc-item-indicator-width: var(--nav-item-indicator-width);

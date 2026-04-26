@@ -66,6 +66,7 @@ export class Toc extends LitElement {
       --_toc-level-offset: calc(var(--level, 0) * var(--_toc-indent-step));
       --_toc-padding-inline-end: var(--toc-item-padding-inline-end, var(--space-2, 8px));
       --_toc-active-inset-block: var(--toc-item-active-inset-block, 2px);
+      --_toc-active-surface-bleed-inline-start: var(--toc-item-surface-bleed-inline-start, 2px);
 
       position: relative;
       isolation: isolate;
@@ -82,8 +83,8 @@ export class Toc extends LitElement {
       );
       padding-inline-end: var(--_toc-padding-inline-end);
       font-size: var(--toc-item-font-size, var(--text-sm, 13px));
-      font-weight: var(--toc-item-font-weight, 400);
-      line-height: var(--toc-item-line-height, 1.5);
+      font-weight: var(--toc-item-font-weight, var(--font-normal, 400));
+      line-height: var(--toc-item-line-height, var(--line-height-normal, 1.5));
       color: var(--toc-item-fg, var(--fg-muted, oklch(48% 0 0)));
       text-decoration: none;
       background-color: transparent;
@@ -98,7 +99,7 @@ export class Toc extends LitElement {
       inset-block: var(--_toc-active-inset-block);
       inset-inline-start: calc(
         var(--_toc-rail-offset-inline) + var(--_toc-level-offset) + var(--_toc-indicator-width) +
-          var(--_toc-rail-gap) - 2px
+          var(--_toc-rail-gap) - var(--_toc-active-surface-bleed-inline-start)
       );
       inset-inline-end: 0;
       border-radius: var(--toc-item-active-radius, var(--radius-sm, 4px));
@@ -153,16 +154,24 @@ export class Toc extends LitElement {
       background-color: var(--toc-item-hover-bg, transparent);
     }
 
+    .toc-link:focus-visible::after {
+      background-color: var(--toc-item-hover-bg, transparent);
+    }
+
     .toc-link:focus-visible {
+      color: var(--toc-item-fg-hover, var(--fg-default, oklch(20% 0 0)));
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
       outline-offset: var(--focus-ring-offset, 2px);
-      border-radius: var(--focus-ring-radius, 4px);
+      border-radius: var(--focus-ring-radius, var(--radius-sm, 4px));
       animation: var(--animation-focus, none);
     }
 
     .toc-link.is-active {
       color: var(--toc-item-fg-active, var(--fg-default, oklch(20% 0 0)));
-      font-weight: var(--toc-item-font-weight-active, var(--toc-item-font-weight, 400));
+      font-weight: var(
+        --toc-item-font-weight-active,
+        var(--toc-item-font-weight, var(--font-normal, 400))
+      );
     }
 
     .toc-link.is-active::after {
@@ -173,6 +182,7 @@ export class Toc extends LitElement {
       content: '';
       position: absolute;
       z-index: 1;
+      box-sizing: border-box;
       inset-inline-start: calc(var(--_toc-rail-offset-inline) + var(--_toc-level-offset));
       inset-block-start: 50%;
       inline-size: var(--_toc-indicator-width);
@@ -194,18 +204,36 @@ export class Toc extends LitElement {
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .toc-link {
+      .toc-link,
+      .toc-link::before,
+      .toc-link::after {
         transition-duration: 0.01ms;
+      }
+
+      .toc-link:focus-visible {
+        animation: none;
       }
     }
 
     @media (forced-colors: active) {
       .toc-link {
-        color: GrayText;
+        color: CanvasText;
       }
 
-      .toc-link:hover {
+      .toc-link:hover,
+      .toc-link:focus-visible {
         color: CanvasText;
+      }
+
+      .toc-link:focus-visible {
+        outline-color: Highlight;
+      }
+
+      .toc-link::after,
+      .toc-link:hover::after,
+      .toc-link:focus-visible::after,
+      .toc-link.is-active::after {
+        background-color: transparent;
       }
 
       .toc-link.is-active {
@@ -214,7 +242,7 @@ export class Toc extends LitElement {
 
       .toc-link.is-active::before {
         background-color: transparent;
-        border: var(--border-width-thick, 2px) solid Highlight;
+        border: var(--border-width, 1px) solid Highlight;
       }
     }
   `;

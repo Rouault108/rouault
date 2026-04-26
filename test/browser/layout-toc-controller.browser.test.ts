@@ -58,12 +58,22 @@ describe('layout-toc-controller', () => {
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
               <li class="layout-toc__item" data-heading-id="section-1">
-                <a class="layout-toc__link" href="#section-1" data-toc-link data-heading-id="section-1">
+                <a
+                  class="layout-toc__link"
+                  href="#section-1"
+                  data-toc-link
+                  data-heading-id="section-1"
+                >
                   <span class="layout-toc__link-label">Section 1</span>
                 </a>
               </li>
               <li class="layout-toc__item" data-heading-id="section-2">
-                <a class="layout-toc__link" href="#section-2" data-toc-link data-heading-id="section-2">
+                <a
+                  class="layout-toc__link"
+                  href="#section-2"
+                  data-toc-link
+                  data-heading-id="section-2"
+                >
                   <span class="layout-toc__link-label">Section 2</span>
                 </a>
               </li>
@@ -94,10 +104,276 @@ describe('layout-toc-controller', () => {
         );
       }, 'active link が hash と同期すること');
 
+      const activeLink = currentRoot.querySelector<HTMLAnchorElement>(
+        '[data-toc-link][data-heading-id="section-2"]',
+      );
+      const inactiveLink = currentRoot.querySelector<HTMLAnchorElement>(
+        '[data-toc-link][data-heading-id="section-1"]',
+      );
+      const mobilePanel = document.querySelector<HTMLElement>('#layout-toc-panel-toc-source-test');
+      const mobileActiveLink = mobilePanel?.querySelector<HTMLAnchorElement>(
+        '[data-layout-toc-mobile-nav] [data-toc-link][data-heading-id="section-2"]',
+      );
+
+      expect(activeLink?.classList.contains('is-active')).to.equal(true);
+      expect(activeLink?.getAttribute('data-active')).to.equal('true');
+      expect(activeLink?.getAttribute('aria-current')).to.equal('location');
+      expect(inactiveLink?.classList.contains('is-active')).to.equal(false);
+      expect(inactiveLink?.hasAttribute('data-active')).to.equal(false);
+      expect(inactiveLink?.hasAttribute('aria-current')).to.equal(false);
+      expect(mobileActiveLink?.classList.contains('is-active')).to.equal(true);
+      expect(mobileActiveLink?.getAttribute('data-active')).to.equal('true');
+      expect(mobileActiveLink?.getAttribute('aria-current')).to.equal('location');
+
       const snapshot = layoutTocRuntimeStore.getSnapshot('toc-source-test');
       expect(snapshot.ready).to.equal(true);
       expect(snapshot.hasVisibleHeadings).to.equal(true);
       expect(snapshot.activeId).to.equal('section-2');
+    } finally {
+      root?.remove();
+      restoreHash();
+      cleanup();
+    }
+  });
+
+  it('visible headings が空になったとき stale current state を desktop / mobile から削除すること', async () => {
+    const cleanup = appendContentFixture();
+    const restoreHash = withLocationHash('section-2');
+    let root: HTMLElement | null = null;
+
+    try {
+      const currentRoot = await fixture<HTMLElement>(html`
+        <aside data-layout-toc-root>
+          <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
+            <ol class="layout-toc__list">
+              <li class="layout-toc__item" data-heading-id="section-1">
+                <a
+                  class="layout-toc__link"
+                  href="#section-1"
+                  data-toc-link
+                  data-heading-id="section-1"
+                >
+                  <span class="layout-toc__link-label">Section 1</span>
+                </a>
+              </li>
+              <li class="layout-toc__item" data-heading-id="section-2">
+                <a
+                  class="layout-toc__link"
+                  href="#section-2"
+                  data-toc-link
+                  data-heading-id="section-2"
+                >
+                  <span class="layout-toc__link-label">Section 2</span>
+                </a>
+              </li>
+            </ol>
+          </nav>
+          <layout-toc-controller
+            source-id="toc-source-test"
+            toc-runtime-id="toc-source-test"
+            content-root-id="note-content-test"
+            capabilities-json='{"activeTracking":true,"dynamicScopes":false,"mobilePanel":true}'
+          ></layout-toc-controller>
+        </aside>
+      `);
+      root = currentRoot;
+
+      const controller = currentRoot.querySelector<LayoutTocController>('layout-toc-controller');
+      if (!(controller instanceof HTMLElement)) {
+        throw new Error('layout-toc-controller が見つかりません');
+      }
+
+      activateLayoutTocController(controller);
+
+      await waitUntil(
+        () => currentRoot.querySelector('[data-toc-link][aria-current="location"]') !== null,
+        '事前に current state が同期されること',
+      );
+
+      document.querySelector('#section-1')?.remove();
+      document.querySelector('#section-2')?.remove();
+
+      await waitUntil(() => {
+        const snapshot = layoutTocRuntimeStore.getSnapshot('toc-source-test');
+        return snapshot.ready && !snapshot.hasVisibleHeadings && snapshot.activeId === null;
+      }, 'visible headings 空状態が snapshot に反映されること');
+
+      const mobilePanel = document.querySelector<HTMLElement>('#layout-toc-panel-toc-source-test');
+      expect(currentRoot.querySelector('.is-active')).to.equal(null);
+      expect(currentRoot.querySelector('[data-active]')).to.equal(null);
+      expect(currentRoot.querySelector('[aria-current]')).to.equal(null);
+      expect(mobilePanel?.querySelector('.is-active')).to.equal(null);
+      expect(mobilePanel?.querySelector('[data-active]')).to.equal(null);
+      expect(mobilePanel?.querySelector('[aria-current]')).to.equal(null);
+    } finally {
+      root?.remove();
+      restoreHash();
+      cleanup();
+    }
+  });
+
+  it('active id 対応 link がない nav では seeded stale current state を削除すること', async () => {
+    const cleanup = appendContentFixture();
+    const restoreHash = withLocationHash('section-2');
+    let root: HTMLElement | null = null;
+
+    try {
+      const currentRoot = await fixture<HTMLElement>(html`
+        <aside data-layout-toc-root>
+          <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
+            <ol class="layout-toc__list">
+              <li class="layout-toc__item" data-heading-id="section-1">
+                <a
+                  class="layout-toc__link"
+                  href="#section-1"
+                  data-toc-link
+                  data-heading-id="section-1"
+                >
+                  <span class="layout-toc__link-label">Section 1</span>
+                </a>
+              </li>
+              <li class="layout-toc__item" data-heading-id="section-2">
+                <a
+                  class="layout-toc__link"
+                  href="#section-2"
+                  data-toc-link
+                  data-heading-id="section-2"
+                >
+                  <span class="layout-toc__link-label">Section 2</span>
+                </a>
+              </li>
+            </ol>
+          </nav>
+          <layout-toc-controller
+            source-id="toc-source-test"
+            toc-runtime-id="toc-source-test"
+            content-root-id="note-content-test"
+            capabilities-json='{"activeTracking":true,"dynamicScopes":false,"mobilePanel":true}'
+          ></layout-toc-controller>
+        </aside>
+      `);
+      root = currentRoot;
+
+      const controller = currentRoot.querySelector<LayoutTocController>('layout-toc-controller');
+      if (!(controller instanceof HTMLElement)) {
+        throw new Error('layout-toc-controller が見つかりません');
+      }
+
+      activateLayoutTocController(controller);
+
+      await waitUntil(
+        () =>
+          currentRoot.querySelector('[data-toc-link][data-heading-id="section-2"].is-active') !==
+          null,
+        'desktop nav の current state が同期されること',
+      );
+
+      const mobilePanel = document.querySelector<HTMLElement>('#layout-toc-panel-toc-source-test');
+      const mobileNav = mobilePanel?.querySelector<HTMLElement>('[data-layout-toc-mobile-nav]');
+      const mobileSection2Item = mobileNav
+        ?.querySelector<HTMLAnchorElement>('[data-toc-link][data-heading-id="section-2"]')
+        ?.closest('.layout-toc__item');
+      const staleLink = mobileNav?.querySelector<HTMLAnchorElement>(
+        '[data-toc-link][data-heading-id="section-1"]',
+      );
+      if (!(mobileNav instanceof HTMLElement) || !(staleLink instanceof HTMLAnchorElement)) {
+        throw new Error('mobile nav の stale seed 対象が見つかりません');
+      }
+
+      mobileSection2Item?.remove();
+      staleLink.classList.add('is-active');
+      staleLink.setAttribute('data-active', 'true');
+      staleLink.setAttribute('aria-current', 'location');
+
+      currentRoot
+        .querySelector<HTMLAnchorElement>('[data-toc-link][data-heading-id="section-2"]')
+        ?.dispatchEvent(
+          new MouseEvent('click', { bubbles: true, composed: true, cancelable: true }),
+        );
+
+      expect(mobileNav.querySelector('.is-active')).to.equal(null);
+      expect(mobileNav.querySelector('[data-active]')).to.equal(null);
+      expect(mobileNav.querySelector('[aria-current]')).to.equal(null);
+      expect(
+        currentRoot
+          .querySelector('[data-toc-link][data-heading-id="section-2"]')
+          ?.getAttribute('aria-current'),
+      ).to.equal('location');
+    } finally {
+      root?.remove();
+      restoreHash();
+      cleanup();
+    }
+  });
+
+  it('hash 対象が visible headings 外なら先頭 visible heading へ fallback すること', async () => {
+    const cleanup = appendContentFixture();
+    const restoreHash = withLocationHash('section-2');
+    let root: HTMLElement | null = null;
+
+    try {
+      const hiddenPanel = document.createElement('section');
+      hiddenPanel.setAttribute('role', 'tabpanel');
+      hiddenPanel.setAttribute('hidden', '');
+      const section2 = document.getElementById('section-2');
+      if (!(section2 instanceof HTMLElement)) {
+        throw new Error('section-2 heading が見つかりません');
+      }
+      section2.before(hiddenPanel);
+      hiddenPanel.append(section2);
+
+      const currentRoot = await fixture<HTMLElement>(html`
+        <aside data-layout-toc-root>
+          <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
+            <ol class="layout-toc__list">
+              <li class="layout-toc__item" data-heading-id="section-1">
+                <a
+                  class="layout-toc__link"
+                  href="#section-1"
+                  data-toc-link
+                  data-heading-id="section-1"
+                >
+                  <span class="layout-toc__link-label">Section 1</span>
+                </a>
+              </li>
+              <li class="layout-toc__item" data-heading-id="section-2">
+                <a
+                  class="layout-toc__link"
+                  href="#section-2"
+                  data-toc-link
+                  data-heading-id="section-2"
+                >
+                  <span class="layout-toc__link-label">Section 2</span>
+                </a>
+              </li>
+            </ol>
+          </nav>
+          <layout-toc-controller
+            source-id="toc-source-test"
+            toc-runtime-id="toc-source-test"
+            content-root-id="note-content-test"
+            capabilities-json='{"activeTracking":false,"dynamicScopes":false,"mobilePanel":false}'
+          ></layout-toc-controller>
+        </aside>
+      `);
+      root = currentRoot;
+
+      const controller = currentRoot.querySelector<LayoutTocController>('layout-toc-controller');
+      if (!(controller instanceof HTMLElement)) {
+        throw new Error('layout-toc-controller が見つかりません');
+      }
+
+      activateLayoutTocController(controller);
+
+      await waitUntil(() => {
+        return (
+          currentRoot
+            .querySelector<HTMLAnchorElement>('[data-toc-link][data-heading-id="section-1"]')
+            ?.getAttribute('aria-current') === 'location'
+        );
+      }, 'visible headings 外の hash が先頭 visible heading へ fallback すること');
+
+      expect(layoutTocRuntimeStore.getSnapshot('toc-source-test').activeId).to.equal('section-1');
     } finally {
       root?.remove();
       restoreHash();
@@ -121,7 +397,12 @@ describe('layout-toc-controller', () => {
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
               <li class="layout-toc__item" data-heading-id="section-1">
-                <a class="layout-toc__link" href="#section-1" data-toc-link data-heading-id="section-1">
+                <a
+                  class="layout-toc__link"
+                  href="#section-1"
+                  data-toc-link
+                  data-heading-id="section-1"
+                >
                   <span class="layout-toc__link-label">Section 1</span>
                 </a>
               </li>
@@ -146,19 +427,23 @@ describe('layout-toc-controller', () => {
       layoutTocMobileController.open('toc-source-test', trigger);
 
       const panel = document.querySelector<HTMLElement>('#layout-toc-panel-toc-source-test');
-      const link = panel?.querySelector<HTMLAnchorElement>('[data-toc-link][data-heading-id="section-1"]');
+      const link = panel?.querySelector<HTMLAnchorElement>(
+        '[data-toc-link][data-heading-id="section-1"]',
+      );
       if (!(panel instanceof HTMLElement) || !(link instanceof HTMLAnchorElement)) {
         throw new Error('mobile panel link が見つかりません');
       }
 
       expect(panel.hasAttribute('hidden')).to.equal(false);
       expect(panel.parentElement).to.equal(document.body);
-      expect(panel.querySelector('[data-layout-toc-mobile-nav]')?.getAttribute('aria-label')).to.equal(
-        'モバイル目次',
-      );
+      expect(
+        panel.querySelector('[data-layout-toc-mobile-nav]')?.getAttribute('aria-label'),
+      ).to.equal('モバイル目次');
 
       link.addEventListener('click', (event) => event.preventDefault(), { once: true });
-      link.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true, cancelable: true }));
+      link.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, composed: true, cancelable: true }),
+      );
 
       expect(panel.hasAttribute('hidden')).to.equal(true);
       expect(document.activeElement).to.equal(trigger);
