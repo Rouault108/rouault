@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: ci-cd-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -181,9 +181,7 @@ jobs:
       - name: validate prerequisite results
         env:
           NEEDS_JSON: ${{ toJson(needs) }}
-          CI_GATE_PREFIX: 'Blocking job results detected:'
-          CI_GATE_SUCCESS: 'All prerequisite jobs are success or skipped.'
-        run: python3 scripts/ci/validate_needs.py
+        run: python3 scripts/ci/validate_prebuild_needs.py
 
   test-storybook-smoke:
     name: test-storybook-smoke
@@ -192,7 +190,7 @@ jobs:
     needs:
       - detect-changes
       - prebuild-gate
-    if: needs.detect-changes.outputs.app == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.base_ref == 'main')
+    if: needs.detect-changes.outputs.app == 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || github.base_ref == 'main')
     steps:
       - uses: actions/checkout@v5
       - run: echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
@@ -213,7 +211,7 @@ jobs:
     needs:
       - detect-changes
       - prebuild-gate
-    if: needs.detect-changes.outputs.app == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.base_ref == 'main')
+    if: needs.detect-changes.outputs.app == 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || github.base_ref == 'main')
     env:
       ROUAULT_MEDIA_BASE_URL: ${{ vars.ROUAULT_MEDIA_BASE_URL }}
     steps:
@@ -236,7 +234,7 @@ jobs:
     needs:
       - detect-changes
       - prebuild-gate
-    if: needs.detect-changes.outputs.app == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.base_ref == 'main')
+    if: needs.detect-changes.outputs.app == 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || github.base_ref == 'main')
     env:
       ROUAULT_MEDIA_BASE_URL: ${{ vars.ROUAULT_MEDIA_BASE_URL }}
     steps:
@@ -298,9 +296,10 @@ jobs:
       - name: validate required results
         env:
           NEEDS_JSON: ${{ toJson(needs) }}
-          CI_GATE_PREFIX: 'Required job results detected:'
-          CI_GATE_SUCCESS: 'Required CI passed.'
-        run: python3 scripts/ci/validate_needs.py
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: python3 scripts/ci/validate_required_needs.py
 
   deploy-production:
     name: deploy-production
@@ -311,18 +310,25 @@ jobs:
       - build-production
       - ci-required
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.build == 'true'
+    environment: production
     concurrency:
       group: deploy-production
-      cancel-in-progress: true
+      cancel-in-progress: false
     env:
       ROUAULT_MEDIA_BASE_URL: ${{ vars.ROUAULT_MEDIA_BASE_URL }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
     steps:
       - uses: actions/checkout@v5
       - run: echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+      - name: print deployment provenance
+        run: |
+          echo "GITHUB_SHA=${GITHUB_SHA}"
+          echo "GITHUB_REF=${GITHUB_REF}"
+          echo "GITHUB_REF_NAME=${GITHUB_REF_NAME}"
+          echo "ROUAULT_BUILD_LABEL=${ROUAULT_BUILD_LABEL}"
       - uses: pnpm/action-setup@v5
       - uses: actions/setup-node@v5
         with:
@@ -335,8 +341,46 @@ jobs:
           name: rouault-dist
           path: .
       - run: pnpm exec tsx scripts/upload-r2-media.ts
-      - uses: cloudflare/wrangler-action@v3
+      - id: deploy-cloudflare-pages
+        name: deploy Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=${{ vars.CF_PAGES_PROJECT }} --branch=${{ github.ref_name }}
+      - name: record deployment summary
+        env:
+          WRANGLER_COMMAND_OUTPUT: ${{ steps.deploy-cloudflare-pages.outputs.command-output }}
+        run: |
+          DEPLOYMENT_URL="$(printf '%s\n' "${WRANGLER_COMMAND_OUTPUT}" | grep -Eo 'https://[^[:space:]]+' | head -n 1 || true)"
+          {
+            echo "## Production deployment"
+            echo ""
+            echo "- GITHUB_SHA: ${GITHUB_SHA}"
+            echo "- GITHUB_REF: ${GITHUB_REF}"
+            echo "- GITHUB_REF_NAME: ${GITHUB_REF_NAME}"
+            echo "- ROUAULT_BUILD_LABEL: ${ROUAULT_BUILD_LABEL}"
+            echo "- Cloudflare deployment URL: ${DEPLOYMENT_URL:-not found in Wrangler command output}"
+            echo "- Wrangler command output:"
+            echo '```'
+            printf '%s\n' "${WRANGLER_COMMAND_OUTPUT:-See deploy Cloudflare Pages step logs.}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  verify-production-deployment:
+    name: verify-production-deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs:
+      - detect-changes
+      - ci-required
+      - deploy-production
+    steps:
+      - uses: actions/checkout@v5
+      - name: validate deployment result
+        env:
+          NEEDS_JSON: ${{ toJson(needs) }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
+        run: python3 scripts/ci/validate_deployment_needs.py

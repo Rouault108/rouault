@@ -64,7 +64,7 @@ describe('production build entrypoint contract', () => {
     const testE2eDevJob = sliceWorkflowJob(workflow, 'test-e2e-dev', 'build-production');
     const deployProductionJob = workflow.slice(workflow.indexOf('deploy-production:'));
     const fullRunCondition =
-      "if: needs.detect-changes.outputs.app == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.base_ref == 'main')";
+      "if: needs.detect-changes.outputs.app == 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || github.base_ref == 'main')";
 
     expect(storybookSmokeJob).toContain(fullRunCondition);
     expect(testE2eProductionJob).toContain(fullRunCondition);
