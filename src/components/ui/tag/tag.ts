@@ -15,10 +15,11 @@ import { customElement, property } from 'lit/decorators.js';
  * - **Link + Removable**: `<div role="group">` + `<a>` + `<button>` の並列配置
  *   （HTML 仕様: Interactive content nesting 禁止に準拠）
  *
- * ## タッチターゲット (WCAG 2.5.5)
+ * ## 補助ターゲット
  *
  * タグ自体のサイズが小さい（xs: 20px / sm: 24px）ため、
- * すべてのインタラクティブ要素に `::after` 疑似要素で最小 44×44px を確保します。
+ * すべてのインタラクティブ要素に `::after` 疑似要素で最小 24×24px を確保します。
+ * タッチ主体の配置では、周辺レイアウト側で 44×44px 相当の余白確保を推奨します。
  *
  * @property {'default' | 'outline' | 'solid' | 'plain'} variant - スタイルバリアント
  * @property {'xs' | 'sm'} size - サイズ

@@ -194,6 +194,38 @@ describe('ui-tag browser contract', () => {
     expect(event.detail.value).to.equal('Python');
     expect(event.bubbles).to.equal(true);
     expect(event.composed).to.equal(true);
+    expect(event.cancelable).to.equal(false);
+  });
+
+  it('ui-tag-remove は可視ラベル trim 結果とイベント伝播契約を公開すること', async () => {
+    const tag = await fixture<Tag>(html`<ui-tag removable> TypeScript </ui-tag>`);
+
+    await waitForLitUpdate(tag);
+
+    const removeButton = expectPresent(getTagRemoveButton(tag), 'remove button');
+    const removeEventPromise = new Promise<CustomEvent<{ value: string }>>((resolve) => {
+      document.body.addEventListener(
+        'ui-tag-remove',
+        (event) => {
+          resolve(event as CustomEvent<{ value: string }>);
+        },
+        { once: true },
+      );
+    });
+
+    removeButton.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      }),
+    );
+
+    const event = await removeEventPromise;
+    expect(event.detail.value).to.equal('TypeScript');
+    expect(event.bubbles).to.equal(true);
+    expect(event.composed).to.equal(true);
+    expect(event.cancelable).to.equal(false);
   });
 
   it('href + removable の場合は group 内に link と remove button を並列配置すること', async () => {

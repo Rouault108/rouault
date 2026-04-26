@@ -292,8 +292,61 @@ describe('ui-article-header browser contract', () => {
     expect(status.classList.contains('status-wip')).to.equal(true);
     expect(status.textContent?.trim()).to.contain('作業中');
     expect(tag.getAttribute('href')).to.equal('/tags/C%23/');
+    expect(tag.getAttribute('variant')).to.equal('default');
+    expect(tag.getAttribute('size')).to.equal('xs');
+    expect(tag.getAttribute('color')).to.equal('neutral');
+    expect(tag.hasAttribute('aria-label')).to.equal(false);
     expect(tag.textContent?.trim()).to.equal('C#');
     expect(host.shadowRoot?.querySelector('.reading-time')).to.equal(null);
+  });
+
+  it('tag-click は ui-tag 内部 link の起動だけで発火すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 720px;">
+        <ui-article-header heading="Tag click" .tags=${['C#']}></ui-article-header>
+      </div>
+    `);
+
+    const host = expectPresent(
+      wrapper.querySelector<ArticleHeader>('ui-article-header'),
+      'articleHeader',
+    );
+    await flush(host);
+
+    const tag = expectPresent(host.shadowRoot?.querySelector<HTMLElement>('ui-tag'), 'tag');
+    const link = expectPresent(
+      tag.shadowRoot?.querySelector<HTMLAnchorElement>('.tag-link'),
+      'tagInternalLink',
+    );
+
+    const events: CustomEvent[] = [];
+    host.addEventListener('tag-click', (event) => {
+      events.push(event as CustomEvent);
+      event.preventDefault();
+    });
+
+    const hostClick = new MouseEvent('click', {
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+    });
+    tag.dispatchEvent(hostClick);
+    expect(events.length).to.equal(0);
+    expect(hostClick.defaultPrevented).to.equal(false);
+
+    const linkClick = new MouseEvent('click', {
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+    });
+    link.dispatchEvent(linkClick);
+
+    expect(events.length).to.equal(1);
+    expect(events[0]?.detail).to.deep.equal({ tag: 'C#', href: '/tags/C%23/' });
+    expect(events[0]?.bubbles).to.equal(true);
+    expect(events[0]?.composed).to.equal(true);
+    expect(events[0]?.cancelable).to.equal(true);
+    expect(linkClick.defaultPrevented).to.equal(true);
   });
 
   it('unsafe breadcrumb href と空 label を ui-breadcrumbs に渡さないこと', async () => {

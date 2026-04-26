@@ -297,7 +297,7 @@ status は現行契約では単一の読者向け注意状態として扱いま�
 
 ### 3.4 タグのアクセシビリティ契約
 
-現行の文字列タグ契約では、各タグは `ui-tag` として描画し、論理上の `key` と `label` は同一の文字列として扱います。`aria-label` は `タグ: {label}` です。
+現行の文字列タグ契約では、各タグは `ui-tag` として描画し、論理上の `key` と `label` は同一の文字列として扱います。`ui-article-header` 側では `ui-tag` host に `aria-label` を付与せず、内部 link の accessible name は可視ラベル由来とします。
 
 `href` は現行互換の標準形として `/tags/${encodeURIComponent(key)}/` を用います。タグ群は周辺ナビゲーションとして扱い、`nav` と list semantics の内部に配置します。
 
@@ -437,7 +437,8 @@ Storybook や isolated component 経路では、Shadow DOM 内の `ui-article-he
 tag-click は現行イベント名を維持しつつ、意味論上はタグ activation を契機として発火します。発火条件は次のとおりです。
 
 - タグ要素が描画されている場合にのみ発火します。
-- クリック対象が当該タグリンクである場合にのみ発火します。
+- `ui-tag` host より内側の内部 link が起動された場合にのみ発火します。
+- composed path 全体から `<a>` を探さず、`event.currentTarget` である `<ui-tag>` host より内側だけを検査します。
 - 1 回の activation に対して 1 回のみ発火します。
 
 本イベントは hover、focus、pointerenter 等では発火しません。pointer と keyboard の双方による activation を対象とします。
@@ -456,6 +457,8 @@ tag-click は現行イベント名を維持しつつ、意味論上はタグ act
 | `cancelable`  | `true`                                                                             |
 
 親側が `preventDefault()` を呼び出した場合は、内部の click handler が元のクリックイベントに対して `event.preventDefault()` を実行し、ネイティブ遷移を中止します。
+
+`event.currentTarget` が `<ui-tag>` host と確認できない場合、または composed path 内に host が存在しない場合は、`tag-click` を発火しません。この defensive branch は実装契約として扱い、browser test では内部 link 起動と host click 非発火を中心に検査します。
 
 `detail.href` は現行の文字列タグ契約における基準情報です。タグ遷移先は `/tags/${encodeURIComponent(detail.tag)}/` を標準形としますが、これは互換目的の標準値であり、最終的な URL 規則は親側で置き換えられます。
 

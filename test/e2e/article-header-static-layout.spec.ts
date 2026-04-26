@@ -95,6 +95,47 @@ test('static structural links are not underlined while prose and source links ar
   await expect(proseLink).toHaveCSS('text-decoration-line', 'underline');
 });
 
+test('static article-header tag uses subtle filled chip contract', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(articleHeaderLinkDecorationPath);
+
+  const tagLink = page.locator('.article-header__tag-link').first();
+  await expect(tagLink).toBeVisible();
+
+  const beforeHover = await tagLink.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      backgroundColor: style.backgroundColor,
+      color: style.color,
+      borderTopLeftRadius: style.borderTopLeftRadius,
+      borderTopRightRadius: style.borderTopRightRadius,
+      borderBottomRightRadius: style.borderBottomRightRadius,
+      borderBottomLeftRadius: style.borderBottomLeftRadius,
+      minBlockSize: style.minBlockSize,
+    };
+  });
+
+  expect(beforeHover.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+  expect(beforeHover.borderTopLeftRadius).toBe('4px');
+  expect(beforeHover.borderTopRightRadius).toBe('4px');
+  expect(beforeHover.borderBottomRightRadius).toBe('4px');
+  expect(beforeHover.borderBottomLeftRadius).toBe('4px');
+  expect(beforeHover.minBlockSize).toBe('20px');
+
+  await tagLink.hover();
+
+  const afterHover = await tagLink.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      backgroundColor: style.backgroundColor,
+      color: style.color,
+    };
+  });
+
+  expect(afterHover.backgroundColor).toBe(beforeHover.backgroundColor);
+  expect(afterHover.color).toBe(beforeHover.color);
+});
+
 test('static structural links stay not underlined on hover', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(articleHeaderLinkDecorationPath);

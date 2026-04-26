@@ -4,7 +4,7 @@
 
 `ui-tag` は、**単一のタグ項目**を表現するコンポーネントです。タグ項目は静的表示に加えて、必要に応じて **開く操作** と **除去操作** を持てます。ただし、これらはタグ項目そのものの意味論を増やすものではなく、**同一項目に付随する補助操作**として扱います。
 
-本契約は、`ui-tag` をバッジ、ボタン、チェックボックス、フィルターチップの代替として拡張するのではなく、**情報の識別、軽量な操作、可読性維持**を両立するための境界を定義します。特に、`href + removable` を一対象二操作モデルとして扱うこと、`value` を安定識別子として位置付けること、`plain` を無彩色の最小表現として固定することを中核方針とします。
+本契約は、`ui-tag` をバッジ、ボタン、チェックボックス、フィルターチップの代替として拡張するのではなく、**情報の識別、軽量な操作、可読性維持**を両立するための境界を定義します。特に、`href + removable` を一対象二操作モデルとして扱うこと、除去イベントの値は現行実装では可視ラベルから導出されること、`plain` を無彩色の最小表現として固定することを中核方針とします。
 
 ---
 
@@ -82,28 +82,24 @@
 
 ## 公開契約
 
-`ui-tag` は、`variant`、`size`、`color`、`href`、`removable`、`disabled`、`value`、`removeLabel`、`groupLabel` を公開入力として扱います。スロットは既定スロットと `icon` スロットを持ちます。内部実装は Lit による Shadow DOM コンポーネントですが、利用者は `ui-tag` を契約単位として扱います。
+`ui-tag` は、`variant`、`size`、`color`、`href`、`removable`、`disabled` を公開入力として扱います。スロットは既定スロットと `icon` スロットを持ちます。内部実装は Lit による Shadow DOM コンポーネントですが、利用者は `ui-tag` を契約単位として扱います。
 
 `variant` の既定値は `default` です。`size` の既定値は `xs` です。`color` の既定値は `neutral` です。`href` が未指定または空文字列の場合、タグはリンクとして扱いません。`removable=true` の場合、除去操作を提供します。
 
 ### 入力契約
 
-| 名前          | 種別                 | 必須     | 内容                              | 契約                                                        |
-| ------------- | -------------------- | -------- | --------------------------------- | ----------------------------------------------------------- |
-| `variant`     | property / attribute | いいえ   | 視覚バリアント                    | `default` / `outline` / `solid` / `plain`                   |
-| `size`        | property / attribute | いいえ   | サイズ                            | `xs` / `sm`                                                 |
-| `color`       | property / attribute | いいえ   | 意味的カラー                      | `neutral` / `red` / `blue` / `violet` / `pink` / `gold`     |
-| `href`        | property / attribute | いいえ   | 遷移先 URL                        | 非空文字列の場合、開く操作を提供します                      |
-| `removable`   | property / attribute | いいえ   | 除去可能状態                      | `true` の場合、除去操作を提供します                         |
-| `disabled`    | property / attribute | いいえ   | 非活性状態                        | 開く操作または除去操作を無効化します                        |
-| `value`       | property / attribute | 条件付き | 安定識別子                        | `removable=true` の場合は必須です                           |
-| `removeLabel` | property / attribute | 条件付き | 除去操作用アクセシブル名          | `removable=true` かつ自動生成文言で不足する場合に指定します |
-| `groupLabel`  | property / attribute | 条件付き | `href + removable` 時のグループ名 | `href + removable` で自動生成文言を使わない場合に指定します |
+| 名前        | 種別                 | 必須   | 内容           | 契約                                                    |
+| ----------- | -------------------- | ------ | -------------- | ------------------------------------------------------- |
+| `variant`   | property / attribute | いいえ | 視覚バリアント | `default` / `outline` / `solid` / `plain`               |
+| `size`      | property / attribute | いいえ | サイズ         | `xs` / `sm`                                             |
+| `color`     | property / attribute | いいえ | 意味的カラー   | `neutral` / `red` / `blue` / `violet` / `pink` / `gold` |
+| `href`      | property / attribute | いいえ | 遷移先 URL     | 非空文字列の場合、開く操作を提供します                  |
+| `removable` | property / attribute | いいえ | 除去可能状態   | `true` の場合、除去操作を提供します                     |
+| `disabled`  | property / attribute | いいえ | 非活性状態     | 開く操作または除去操作を無効化します                    |
 
 ### 入力の意味制約
 
-- `value` は表示文字列とは独立した **安定識別子** です。
-- `removable=true` の場合、`value` を省略してはなりません（MUST NOT）。
+- 除去イベントの `detail.value` は、現行実装では既定スロットの可視ラベルを trim した値です。
 - `disabled` は開く操作または除去操作を持つ状態に対してのみ意味を持ちます。静的タグに `disabled` を与えた場合の表示および動作は正規契約に含めません。
 - `variant="plain"` の場合、`color` は意味を持ちません。`plain` は常に最小強度の無彩色表現として扱います。
 
@@ -132,7 +128,7 @@
 | --------------- | ---------------- | ------------------- | ------- | -------- | ---------- |
 | `ui-tag-remove` | 除去ボタン起動時 | `{ value: string }` | `true`  | `true`   | `false`    |
 
-`detail.value` には、常に公開入力 `value` の値を返します。表示ラベル、DOM 構造、スロット内容の変化によって変動してはなりません（MUST NOT）。
+`detail.value` は現行実装では可視ラベルの trim 結果です。公開入力 `value` 由来ではありません。
 
 ### イベント伝播契約
 
@@ -144,17 +140,14 @@
 
 公開入力は property と attribute の両面から操作できます。boolean 値は attribute の有無で反映します。
 
-| property      | attribute      | reflect | 備考                             |
-| ------------- | -------------- | ------- | -------------------------------- |
-| `variant`     | `variant`      | あり    | 列挙値以外は未サポートです       |
-| `size`        | `size`         | あり    | `xs` / `sm` を受理します         |
-| `color`       | `color`        | あり    | `plain` では意味を持ちません     |
-| `href`        | `href`         | あり    | 空文字列はリンクとして扱いません |
-| `removable`   | `removable`    | あり    | boolean attribute として扱います |
-| `disabled`    | `disabled`     | あり    | 静的タグでは使用しません         |
-| `value`       | `value`        | あり    | 除去識別子です                   |
-| `removeLabel` | `remove-label` | あり    | 除去ボタンのアクセシブル名です   |
-| `groupLabel`  | `group-label`  | あり    | 複合状態のグループ名です         |
+| property    | attribute   | reflect | 備考                             |
+| ----------- | ----------- | ------- | -------------------------------- |
+| `variant`   | `variant`   | あり    | 列挙値以外は未サポートです       |
+| `size`      | `size`      | あり    | `xs` / `sm` を受理します         |
+| `color`     | `color`     | あり    | `plain` では意味を持ちません     |
+| `href`      | `href`      | あり    | 空文字列はリンクとして扱いません |
+| `removable` | `removable` | あり    | boolean attribute として扱います |
+| `disabled`  | `disabled`  | あり    | 静的タグでは使用しません         |
 
 ### 列挙外値・無効値の扱い
 
@@ -250,7 +243,7 @@
 ### 3. 除去操作のみ
 
 ```text
-<ui-tag removable value="...">
+<ui-tag removable>
   #shadow-root
     <span class="tag-root">
       [span.icon-slot]
@@ -263,7 +256,7 @@
 ### 4. 開く操作 + 除去操作
 
 ```text
-<ui-tag href="..." removable value="...">
+<ui-tag href="..." removable>
   #shadow-root
     <div class="tag-group" role="group" aria-label="...">
       <a class="tag-link" href="..."></a>
@@ -276,8 +269,8 @@
 
 - 対話主体は常にネイティブ要素です。開く操作はネイティブな `<a>`、除去操作はネイティブな `<button>` を用います。
 - `href` と `removable` を併用する場合、`<a>` と `<button>` は並列配置し、`interactive content` の不正な入れ子を作りません。
-- 除去ボタンはアクセシブル名を持ちます。`removeLabel` が指定されている場合はそれを使用し、未指定時は表示ラベルに基づく内部生成文言を使用します。
-- 開く操作 + 除去操作の構成では、グループ全体に `role="group"` とアクセシブル名を付与します。`groupLabel` が指定されている場合はそれを使用し、未指定時は内部生成文言を使用します。
+- 除去ボタンは、表示ラベルに基づく内部生成文言をアクセシブル名として持ちます。
+- 開く操作 + 除去操作の構成では、グループ全体に `role="group"` と表示ラベルに基づくアクセシブル名を付与します。
 - `disabled=true` のリンクは `aria-disabled="true"` と `tabindex="-1"` を持ちます。
 - `disabled=true` の除去ボタンは `disabled`、`aria-disabled="true"`、`tabindex="-1"` を持ちます。
 - 長いラベルは 1 行に固定し、省略表示します。
@@ -285,9 +278,7 @@
 
 ### アクセシブル名・ローカライズ契約
 
-`removeLabel` および `groupLabel` は、将来候補ではなく、公開契約に含まれるアクセシブル名上書き入力です。多言語化、用語統一、文脈依存の読み上げ最適化が必要な場合、利用者はこれらを指定できます。
-
-内部生成文言はフォールバックにすぎません。利用者が依存してよいのは、**対話主体が常にアクセシブル名を持つこと**、および **`removeLabel` / `groupLabel` を指定した場合はそれが優先して使われること**であり、内部生成文言の逐語的内容そのものではありません。
+現行実装はアクセシブル名上書き用の公開入力を持ちません。利用者が依存してよいのは、**対話主体が常にアクセシブル名を持つこと**です。文言の多言語化や文脈依存の読み上げ最適化が必要な場合は、別途公開 API を設計します。
 
 ### キーボード操作契約
 
@@ -426,9 +417,7 @@
 
 ### ラベル値契約
 
-可視ラベルはスロットで表現しますが、除去識別子契約は `value` によって固定します。`value` は表示文字列とは独立した正規の安定識別子です。
-
-除去対象を識別する場合、利用者は可視ラベルではなく `value` を使用します。可視ラベルの変更、多言語化、装飾テキスト混入、DOM 構造変化によって除去識別が変動してはなりません（MUST NOT）。
+可視ラベルはスロットで表現します。除去イベントの `detail.value` は、現行実装では可視ラベルの trim 結果です。これは公開入力由来の安定識別子ではないため、永続 ID、検索キー、厳密一致用データとして扱ってはなりません（MUST NOT）。
 
 ### テキスト正規化契約
 
@@ -446,9 +435,9 @@
 
 `href=""` はリンクとして扱いません。構造は開く操作状態にならず、静的タグまたは除去操作状態になります。
 
-### 3. `removable` と `value` の関係
+### 3. `removable` と除去イベント値の関係
 
-`removable=true` の場合、`value` を指定しなければなりません（MUST）。`value` を持たない除去操作状態は正規契約に含めません。
+`removable=true` の場合、除去操作は可視ラベルの trim 結果を `ui-tag-remove.detail.value` として公開します。安定識別子が必要な場合は、親レイヤで表示ラベルとは別に対応表を持ちます。
 
 ### 4. `href + removable`
 
@@ -490,80 +479,53 @@
 
 各 Story は見本ではなく、**契約確認点**として扱います。Storybook はデモではなく実行可能な契約の一部とし、契約書の記述と矛盾してはなりません（MUST NOT）。
 
-| Story                     | 固定する契約                                                                               |
-| ------------------------- | ------------------------------------------------------------------------------------------ |
-| `Default`                 | 既定状態が `default` / `xs` / `neutral` の静的タグであること                               |
-| `VariantColorMatrix`      | `default` / `outline` / `solid` の色差、および `plain` が無彩色最小表現であること          |
-| `Sizes`                   | `xs` と `sm` の高さ差が成立すること                                                        |
-| `WithLink`                | `href` 指定時にネイティブ `<a>` が描画されること                                           |
-| `Removable`               | `value` を伴う除去操作状態が成立し、`ui-tag-remove.detail.value` が `value` と一致すること |
-| `LinkAndRemovable`        | `href + removable` が `role="group"` + 並列配置になり、一対象二操作モデルを満たすこと      |
-| `DisabledVariants`        | disabled が視覚状態だけでなく開く操作 / 除去操作の抑止も伴うこと                           |
-| `DisabledNoEvent`         | disabled 時に `ui-tag-remove` が発火しないこと                                             |
-| `LinkRemovableNesting`    | `interactive content` の不正な入れ子を作らないこと                                         |
-| `LongTextTruncation`      | 長いラベルがレイアウト崩壊せず省略されること                                               |
-| `AccessibleNameOverrides` | `removeLabel` / `groupLabel` が指定時に優先して使われること                                |
+| Story                  | 固定する契約                                                                              |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `Default`              | 既定状態が `default` / `xs` / `neutral` の静的タグであること                              |
+| `VariantColorMatrix`   | `default` / `outline` / `solid` の色差、および `plain` が無彩色最小表現であること         |
+| `Sizes`                | `xs` と `sm` の高さ差が成立すること                                                       |
+| `WithLink`             | `href` 指定時にネイティブ `<a>` が描画されること                                          |
+| `Removable`            | 除去操作状態が成立し、`ui-tag-remove.detail.value` が可視ラベルの trim 結果と一致すること |
+| `LinkAndRemovable`     | `href + removable` が `role="group"` + 並列配置になり、一対象二操作モデルを満たすこと     |
+| `DisabledVariants`     | disabled が視覚状態だけでなく開く操作 / 除去操作の抑止も伴うこと                          |
+| `DisabledNoEvent`      | disabled 時に `ui-tag-remove` が発火しないこと                                            |
+| `LinkRemovableNesting` | `interactive content` の不正な入れ子を作らないこと                                        |
+| `LongTextTruncation`   | 長いラベルがレイアウト崩壊せず省略されること                                              |
 
 ---
 
 ## 現行実装で未対応の事項
 
-本節は、現行の `tag.ts` および `tag.stories.ts` を基準として、**本書ですでに確定している公開契約に対して未実装、未強制、または未整合である事項**を整理するものです。
+本節は、現行の `tag.ts` および `tag.stories.ts` を基準として、公開契約との未整合を整理するものです。
 
-ここに挙げる項目は将来拡張候補ではなく、公開契約と実装・検証面を一致させるための追従項目です。特に `value` による安定識別と、`removeLabel` / `groupLabel` によるアクセシブル名上書きは、本契約の中核に属します。
-
-### 1. `value` 入力の未実装
-
-本契約では `removable=true` の場合に `value` を必須としますが、現行実装は除去識別子を `textContent.trim()` に依存しています。したがって、安定識別子契約に未対応です。
-
-### 2. `removeLabel` / `groupLabel` 入力の未実装
-
-本契約ではアクセシブル名の上書きを公開入力として定義していますが、現行実装は内部生成文言のみを用いており、外部から差し替えできません。
-
-### 3. `disabled` の適用範囲未強制
+### 1. `disabled` の適用範囲未強制
 
 本契約では `disabled` を対話状態にのみ許容しますが、現行実装は静的タグに対しても視覚的に適用可能です。したがって、意味制約が未強制です。
 
-### 4. `plain` と `color` の契約未整合
+### 2. `plain` と `color` の契約未整合
 
 本契約では `plain` を無彩色最小表現として固定しますが、現行 Storybook の controls は `plain` に対しても全 `color` を選択可能に見えます。したがって、文書と検証面が未整合です。
 
-### 5. タッチターゲット説明の未整合
+### 3. タッチターゲット説明の未整合
 
-本契約では最小保証値 24 px、推奨値 44 px の二層契約に固定しますが、現行のコードコメントおよび Storybook 説明はこの区別を明示していません。
+本契約では最小保証値 24 px、推奨値 44 px の二層契約に固定します。説明文を追加する場合は、この区別を維持します。
 
-### 6. `icon-only` 対話構成の防止未実装
+### 4. `icon-only` 対話構成の防止未実装
 
 本契約では開く操作または除去操作を伴う `icon-only` タグを禁止しますが、現行実装はこの制約を明示的には強制していません。
 
-### 7. Storybook 契約の未整合
+### 5. Storybook 契約の未整合
 
 `VariantColorMatrix` の描画と検証内容、表記ゆれなどに未整合が残っています。Storybook を実行可能な契約とするには、契約書に合わせた再整理が必要です。
 
-### 8. Autodocs / argTypes の未追従
-
-本契約で追加した `value`、`removeLabel`、`groupLabel` は、現行の `argTypes` に公開入力として現れていません。そのため、Storybook 上の操作面と契約書の公開入力面が一致していません。
-
-あわせて、現行の controls は `plain` に対する `color` や、静的タグに対する `disabled` を操作可能に見せており、契約上は無効または禁止である組み合わせを正規入力のように提示しています。
-
-### 9. 既存 Story のイベント契約が旧仕様依存
-
-`Removable` は `detail.value` が string 型であることまでしか確認しておらず、契約で要求している「`value` と一致すること」を検証していません。`EventFiring` は `detail.value` がタグのテキスト内容であることを前提にしており、現行契約と正面から衝突しています。
-
-また、`LinkAndRemovable` は group の `aria-label` に `"タグ"` が含まれることを前提にしていますが、本契約では内部生成文言の逐語内容そのものには依存しません。したがって、イベント値およびアクセシブル名に関する Story の検証観点が旧仕様のままです。
-
-### 10. 既存 Story の構成例が新契約に未追従
+### 6. 既存 Story の構成例の未整合
 
 `DisabledVariants` および `AllStates` には、静的タグに `disabled` を付与した構成例が含まれています。本契約ではこれは無効な組み合わせです。
 
-同様に、`Removable`、`AllStates`、`EventFiring`、`DisabledNoEvent`、`LinkAndRemovable` などの除去操作を持つ構成例は、契約上必須とした `value` を与えていません。したがって、構成例そのものが新契約に未追従です。
+### 7. JSDoc / Docs サンプルの未整合
 
-### 11. JSDoc / Docs サンプルの未整合
+`tag.stories.ts` の Docs サンプルには、`<ui-tag variant="plain" color="blue">Muted</ui-tag>` のような、現行契約と整合しない例が残っている可能性があります。
 
-`tag.ts` の JSDoc および `tag.stories.ts` の Docs サンプルには、`<ui-tag removable>Python</ui-tag>` や `<ui-tag variant="plain" color="blue">Muted</ui-tag>` のような、現行契約と整合しない例が残っています。
-
-また、`ui-tag-remove.detail.value` をタグのテキスト内容とみなす説明も残っており、識別子契約の固定方針と一致していません。公開ドキュメント面も、実装と同時に更新する必要があります。
-
-### 12. 本節の扱い
+### 8. 本節の扱い
 
 本節に記載した事項は、現行公開実装として利用者が依存してよいものではありません。これらを採用または修正する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未整合のまま公開契約へ昇格させません。

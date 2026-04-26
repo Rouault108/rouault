@@ -1,10 +1,10 @@
 /* ===========================================================================
  * Rouault Design System - Design Tokens
  * 
- * このファイルは index.md で定義された全てのデザイントークンを含みます。
+ * このファイルは Foundations で定義されたデザイントークンを含みます。
  * Primitive Tokens (基礎値) と Semantic Tokens (意味論的トークン) を定義します。
  * 
- * @see docs/design-system/index.md
+ * @see docs/design-system/foundations.md
  * =========================================================================== */
 
 :root {
@@ -323,6 +323,7 @@
    * ========================================================================= */
   --line-height-none: 1;
   --line-height-tight: 1.25;
+  --line-height-snug: 1.35;
   --line-height-normal: 1.5;
   --line-height-relaxed: 1.75;
   --line-height-code: 1;

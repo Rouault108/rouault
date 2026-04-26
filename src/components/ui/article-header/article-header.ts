@@ -426,7 +426,49 @@ export class ArticleHeader extends LitElement {
     return toArticleHeaderTagHref(tag);
   }
 
+  private _hasHtmlElementIdentity(value: EventTarget | null, localName: string): boolean {
+    if (typeof value !== 'object' || value === null) {
+      return false;
+    }
+
+    if (!('localName' in value) || !('namespaceURI' in value)) {
+      return false;
+    }
+
+    const elementIdentity = value as {
+      readonly localName: unknown;
+      readonly namespaceURI: unknown;
+    };
+    return (
+      elementIdentity.localName === localName &&
+      elementIdentity.namespaceURI === 'http://www.w3.org/1999/xhtml'
+    );
+  }
+
+  private _eventStartedFromTagInternalLink(event: MouseEvent): boolean {
+    const currentTarget = event.currentTarget;
+    if (currentTarget === null) {
+      return false;
+    }
+
+    if (!this._hasHtmlElementIdentity(currentTarget, 'ui-tag')) {
+      return false;
+    }
+
+    const path = event.composedPath();
+    const hostIndex = path.indexOf(currentTarget);
+    if (hostIndex < 0) {
+      return false;
+    }
+
+    return path.slice(0, hostIndex).some((node) => this._hasHtmlElementIdentity(node, 'a'));
+  }
+
   private _handleTagClick = (event: MouseEvent, tag: string): void => {
+    if (!this._eventStartedFromTagInternalLink(event)) {
+      return;
+    }
+
     const href = this._buildTagHref(tag);
     const tagClickEvent = new CustomEvent<TagClickDetail>('tag-click', {
       detail: { tag, href },
@@ -492,8 +534,10 @@ export class ArticleHeader extends LitElement {
               <li class="tag-item">
                 <ui-tag
                   class="tag-link"
+                  variant="default"
+                  size="xs"
+                  color="neutral"
                   href="${href}"
-                  aria-label="タグ: ${tag}"
                   @click="${(event: MouseEvent) => {
                     this._handleTagClick(event, tag);
                   }}"

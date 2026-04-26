@@ -292,6 +292,7 @@ Rouault の Typography は、**UI 用の密度管理**と**長文読書面の可
 | `--tracking-wider`      | `0.03em`   | 強いラベル感   | badge, overline          |
 | `--line-height-none`    | `1`        | 詰まった表示   | 大見出し限定             |
 | `--line-height-tight`   | `1.25`     | 密度高め       | 見出し                   |
+| `--line-height-snug`    | `1.35`     | 小型 UI 用     | tag / badge / metadata   |
 | `--line-height-normal`  | `1.5`      | 標準本文       | UI 本文                  |
 | `--line-height-relaxed` | `1.75`     | 読みやすさ重視 | 長文、説明文             |
 | `--line-height-code`    | `1.35`     | 等幅コード用   | code block / inline code |
