@@ -8,7 +8,6 @@ import {
   hasDeclarationForAllSelectors,
   hasDeclarationForSelector,
   hasDeclarationValueIncluding,
-  hasDeclarationValueIncludingForAllSelectors,
   hasDeclarationValueNotIncludingForAllSelectors,
 } from './support/css-contract.js';
 
