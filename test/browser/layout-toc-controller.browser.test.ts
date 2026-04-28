@@ -381,6 +381,106 @@ describe('layout-toc-controller', () => {
     }
   });
 
+  it('mobile panel 無効時も desktop SSR TOC click を navigation owner へ渡すこと', async () => {
+    const cleanup = appendContentFixture();
+    const previousUrl = window.location.href;
+    let root: HTMLElement | null = null;
+
+    try {
+      const section2 = document.getElementById('section-2');
+      if (!(section2 instanceof HTMLElement)) {
+        throw new Error('section-2 heading が見つかりません');
+      }
+
+      document.documentElement.style.scrollPaddingTop = '0px';
+      section2.style.scrollMarginTop = '0px';
+      Object.defineProperty(section2, 'getBoundingClientRect', {
+        configurable: true,
+        value: () =>
+          ({
+            x: 0,
+            y: 0,
+            top: 0,
+            left: 0,
+            right: 800,
+            bottom: 32,
+            width: 800,
+            height: 32,
+            toJSON: () => undefined,
+          }) satisfies DOMRect,
+      });
+
+      const currentRoot = await fixture<HTMLElement>(html`
+        <aside data-layout-toc-root>
+          <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
+            <ol class="layout-toc__list">
+              <li class="layout-toc__item" data-heading-id="section-1">
+                <a
+                  class="layout-toc__link"
+                  href="#section-1"
+                  data-toc-link
+                  data-heading-id="section-1"
+                >
+                  <span class="layout-toc__link-label">Section 1</span>
+                </a>
+              </li>
+              <li class="layout-toc__item" data-heading-id="section-2">
+                <a
+                  class="layout-toc__link"
+                  href="#section-2"
+                  data-toc-link
+                  data-heading-id="section-2"
+                >
+                  <span class="layout-toc__link-label">Section 2</span>
+                </a>
+              </li>
+            </ol>
+          </nav>
+          <layout-toc-controller
+            source-id="toc-source-test"
+            toc-runtime-id="toc-source-test"
+            content-root-id="note-content-test"
+            capabilities-json='{"activeTracking":false,"dynamicScopes":false,"mobilePanel":false}'
+          ></layout-toc-controller>
+        </aside>
+      `);
+      root = currentRoot;
+
+      const controller = currentRoot.querySelector<LayoutTocController>('layout-toc-controller');
+      const link = currentRoot.querySelector<HTMLAnchorElement>(
+        '[data-toc-link][data-heading-id="section-2"]',
+      );
+      if (!(controller instanceof HTMLElement) || !(link instanceof HTMLAnchorElement)) {
+        throw new Error('layout TOC fixture の構築に失敗しました');
+      }
+
+      activateLayoutTocController(controller);
+      await waitUntil(
+        () => layoutTocRuntimeStore.getSnapshot('toc-source-test').ready,
+        'runtime snapshot が ready になること',
+      );
+
+      const clickEvent = new MouseEvent('click', {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+        button: 0,
+      });
+      link.dispatchEvent(clickEvent);
+
+      expect(clickEvent.defaultPrevented).to.equal(true);
+      expect(link.getAttribute('aria-current')).to.equal('location');
+      expect(layoutTocRuntimeStore.getSnapshot('toc-source-test').activeId).to.equal('section-2');
+      expect(window.location.hash).to.equal('#section-2');
+      expect(document.querySelector('#layout-toc-panel-toc-source-test')).to.equal(null);
+    } finally {
+      root?.remove();
+      document.documentElement.style.scrollPaddingTop = '';
+      window.history.replaceState({}, '', previousUrl);
+      cleanup();
+    }
+  });
+
   it('mobile panel を body 直下へ生成し、リンク押下で閉じて focus を戻すこと', async () => {
     const cleanup = appendContentFixture();
     let root: HTMLElement | null = null;

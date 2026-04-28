@@ -110,6 +110,7 @@ export class LayoutTocController extends HTMLElement {
   private _panelNav: HTMLElement | null = null;
   private _panelOpen = false;
   private _documentListenersAttached = false;
+  private _desktopNavClickAttached = false;
   private _ready = false;
   private _activeId = '';
   private _allHeadings: Heading[] = [];
@@ -157,6 +158,7 @@ export class LayoutTocController extends HTMLElement {
     this._capabilities = normalizeCapabilities(parseJsonValue(this.capabilitiesJson));
 
     this._connectMobileController();
+    this._attachDesktopNavClickListener();
     this._ensureMobilePanel();
     this._applyVisibleHeadings(this._resolveVisibleHeadings(this._allHeadings));
     this._connectTracker();
@@ -359,17 +361,31 @@ export class LayoutTocController extends HTMLElement {
     panel.append(header, mobileNav);
     document.body.append(panel);
 
-    const desktopNavElement = this._resolveDesktopNav();
-    desktopNavElement?.addEventListener('click', this._handleNavClick);
-
     this._panelRoot = panel;
     this._panelNav = mobileNav;
     this._syncHeadingVisibility(this._panelNav, new Set(this._visibleHeadings.map((heading) => heading.id)));
     this._syncActiveLinks(this._panelNav);
   }
 
+  private _attachDesktopNavClickListener(): void {
+    if (this._desktopNavClickAttached) {
+      return;
+    }
+
+    const desktopNavElement = this._resolveDesktopNav();
+    if (!(desktopNavElement instanceof HTMLElement)) {
+      return;
+    }
+
+    desktopNavElement.addEventListener('click', this._handleNavClick);
+    this._desktopNavClickAttached = true;
+  }
+
   private _removeMobilePanel(): void {
-    this._resolveDesktopNav()?.removeEventListener('click', this._handleNavClick);
+    if (this._desktopNavClickAttached) {
+      this._resolveDesktopNav()?.removeEventListener('click', this._handleNavClick);
+      this._desktopNavClickAttached = false;
+    }
     this._panelNav?.removeEventListener('click', this._handleNavClick);
     this._panelRoot?.remove();
     this._panelRoot = null;
