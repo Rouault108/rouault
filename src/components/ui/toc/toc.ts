@@ -3,7 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { map } from 'lit/directives/map.js';
 import { styleMap } from 'lit/directives/style-map.js';
-import { updateHashInCurrentUrl } from '../../../router/url-hash.js';
+import { buildHashHrefFromId } from '../../../router/url-hash.js';
 import '../tooltip/tooltip';
 
 export interface Heading {
@@ -365,12 +365,12 @@ export class Toc extends LitElement {
   }
 
   private _resolveRenderedHeadingId(link: HTMLAnchorElement): string {
-    const label = link.querySelector<HTMLElement>('.toc-link-label');
-    return (
-      label?.dataset['headingId']?.trim() ??
-      link.getAttribute('href')?.replace(/^#/, '').trim() ??
-      ''
-    );
+    const linkHeadingId = link.dataset['headingId'];
+    if (linkHeadingId !== undefined) {
+      return linkHeadingId;
+    }
+
+    return link.querySelector<HTMLElement>('.toc-link-label')?.dataset['headingId'] ?? '';
   }
 
   private _ensureRenderedActiveState(): boolean {
@@ -655,85 +655,6 @@ export class Toc extends LitElement {
     );
   }
 
-  private _emitActiveChange(source: 'scroll' | 'click', id: string): void {
-    const index = this.headers.findIndex((heading) => heading.id === id);
-    this.dispatchEvent(
-      new CustomEvent<UiTocActiveChangeDetail>('ui-toc-active-change', {
-        bubbles: true,
-        composed: true,
-        detail: {
-          id,
-          source,
-          index,
-          total: this.headers.length,
-        },
-      }),
-    );
-  }
-
-  private async _handleLinkClick(event: Event, headingId: string): Promise<void> {
-    event.preventDefault();
-
-    this._pendingClickActiveId = headingId;
-    this._activeIdSource = 'click';
-    this.activeId = headingId;
-    this._emitActiveChange('click', headingId);
-
-    const target = document.getElementById(headingId);
-    if (!target) {
-      return;
-    }
-
-    updateHashInCurrentUrl(headingId, 'push');
-    await this._smoothScrollTo(target);
-  }
-
-  private _smoothScrollTo(target: HTMLElement): Promise<void> {
-    return new Promise<void>((resolve) => {
-      const headerHeightRaw = getComputedStyle(document.documentElement)
-        .getPropertyValue('--header-height')
-        .trim();
-      const headerHeight = headerHeightRaw ? parseFloat(headerHeightRaw) : 0;
-      const extraPadding = 32;
-      const targetTop = target.getBoundingClientRect().top + window.scrollY;
-      const targetY = Math.max(0, targetTop - headerHeight - extraPadding);
-
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        window.scrollTo(0, targetY);
-        resolve();
-        return;
-      }
-
-      const startY = window.scrollY;
-      const distance = Math.abs(targetY - startY);
-      if (distance < 1) {
-        resolve();
-        return;
-      }
-
-      const maxDuration = 300;
-      const duration = Math.min(maxDuration, distance * 0.5);
-      const startTime = performance.now();
-
-      const animate = (currentTime: number): void => {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-
-        window.scrollTo(0, startY + (targetY - startY) * eased);
-
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-          return;
-        }
-
-        resolve();
-      };
-
-      requestAnimationFrame(animate);
-    });
-  }
-
   override render(): TemplateResult {
     if (this.headers.length === 0) {
       return html``;
@@ -763,10 +684,11 @@ export class Toc extends LitElement {
                       'is-scroll': isActive && this._activeIdSource === 'scroll',
                       'is-click': isActive && this._activeIdSource === 'click',
                     })}
-                    href=${`#${heading.id}`}
+                    href=${buildHashHrefFromId(heading.id)}
+                    data-toc-link
+                    data-heading-id=${heading.id}
                     data-heading-level=${String(heading.level)}
                     aria-current=${isActive ? 'location' : undefined}
-                    @click=${(event: Event) => void this._handleLinkClick(event, heading.id)}
                   >
                     <span class="toc-link-label" data-heading-id=${heading.id}
                       >${heading.text}</span

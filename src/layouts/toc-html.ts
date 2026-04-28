@@ -1,4 +1,5 @@
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
+import { buildHashHrefFromId } from '../router/url-hash.js';
 import { escapeHtmlAttribute, escapeHtmlText, serializeHtmlAttributes } from './html-output.js';
 
 type TocProjection = NotePageProjection['toc'];
@@ -17,6 +18,7 @@ const renderHeadingItems = (headings: TocProjection['headings']): string => {
     .map((heading) => {
       const depth = Math.max(0, heading.level - minimumLevel);
       const headingId = escapeHtmlAttribute(heading.id);
+      const headingHref = escapeHtmlAttribute(buildHashHrefFromId(heading.id));
       return `
         <li
           class="layout-toc__item"
@@ -27,7 +29,7 @@ const renderHeadingItems = (headings: TocProjection['headings']): string => {
         >
           <a
             class="layout-toc__link"
-            href="#${headingId}"
+            href="${headingHref}"
             data-toc-link
             data-heading-id="${headingId}"
             data-heading-level="${String(heading.level)}"

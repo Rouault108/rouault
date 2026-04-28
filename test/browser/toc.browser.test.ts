@@ -157,7 +157,7 @@ describe('ui-toc active link scroll contract', () => {
     });
 
     const nextActiveLink = toc.shadowRoot?.querySelector<HTMLElement>(
-      'a.toc-link[href="#72-配列の要素の読み書き"]',
+      'a.toc-link[data-heading-id="72-配列の要素の読み書き"]',
     );
     if (!nextActiveLink) {
       throw new Error('next active link が見つかりません');
@@ -219,7 +219,7 @@ describe('ui-toc active link scroll contract', () => {
     });
 
     const nextActiveLink = toc.shadowRoot?.querySelector<HTMLElement>(
-      'a.toc-link[href="#72-配列の要素の読み書き"]',
+      'a.toc-link[data-heading-id="72-配列の要素の読み書き"]',
     );
     if (!nextActiveLink) {
       throw new Error('next active link が見つかりません');
@@ -256,5 +256,31 @@ describe('ui-toc active link scroll contract', () => {
 
     const nav = toc.shadowRoot?.querySelector<HTMLElement>('nav');
     expect(nav?.getAttribute('aria-label')).to.equal('Sections');
+  });
+
+  it('active DOM の再照合は encoded href ではなく raw data-heading-id を使うこと', async () => {
+    const toc = await fixture<Toc>(html`
+      <ui-toc
+        .headers=${[{ id: 'a b', text: 'A B', level: 2 }]}
+        active-id="a b"
+      ></ui-toc>
+    `);
+
+    await flush(toc);
+
+    const link = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a.toc-link');
+    if (!(link instanceof HTMLAnchorElement)) {
+      throw new Error('TOC link が見つかりません。');
+    }
+
+    link.href = '#wrong';
+    link.classList.remove('is-active');
+    link.removeAttribute('aria-current');
+
+    const internals = toc as unknown as { _reconcileRenderedActiveState: () => boolean };
+    expect(internals._reconcileRenderedActiveState()).to.equal(true);
+
+    expect(link.classList.contains('is-active')).to.equal(true);
+    expect(link.getAttribute('aria-current')).to.equal('location');
   });
 });

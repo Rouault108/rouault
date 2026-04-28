@@ -499,6 +499,7 @@
   --header-height: 48px;
   --sidebar-width: 272px;
   --aside-width: 240px;
+  --toc-heading-scroll-margin-top: var(--space-8, 32px);
 
   /* レイアウト最大幅は breakpoint token と分離して管理する */
   --layout-chrome-max-width: 1280px;

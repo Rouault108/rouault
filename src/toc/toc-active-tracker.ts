@@ -1,4 +1,6 @@
 import type { Heading } from '../components/ui/toc/toc.js';
+import { decodeHashFragment } from '../router/url-hash.js';
+import { readRootScrollY } from '../router/root-scroll.js';
 import {
   applyTocScopeSelections,
   filterHeadingsByScopeSelections,
@@ -7,6 +9,25 @@ import {
   type TocCapabilities,
   readTocScopeSelectionMap,
 } from './filter-visible-headings.js';
+import {
+  hasHeadingPassedTocActivationLine,
+  isHeadingIntersectingViewport,
+  resolveTocActivationOffset,
+  type TocScrollMetrics,
+  TOC_SCROLL_POSITION_TOLERANCE_PX,
+} from './toc-scroll-contract.js';
+
+const SCROLL_KEYS = new Set([
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowUp',
+  'End',
+  'Home',
+  'PageDown',
+  'PageUp',
+  ' ',
+]);
 
 export interface TocActiveTrackerOptions {
   contentRootId: string;
@@ -17,26 +38,25 @@ export interface TocActiveTrackerOptions {
   onActiveIdChange: (id: string) => void;
 }
 
-const decodeHash = (hash: string): string => {
-  const normalized = hash.replace(/^#/, '').trim();
-  if (normalized.length === 0) {
-    return '';
-  }
+export type TocNavigationCancelReason =
+  | 'new-navigation'
+  | 'user-scroll'
+  | 'popstate'
+  | 'hashchange'
+  | 'resize'
+  | 'target-missing'
+  | 'timeout'
+  | 'destroy';
 
-  try {
-    return decodeURIComponent(normalized).trim();
-  } catch {
-    return normalized;
-  }
-};
+export interface TocProgrammaticNavigation {
+  targetId: string;
+  metrics: TocScrollMetrics;
+  startedAtScrollY: number;
+  targetY: number;
+  phase: 'scrolling' | 'settled-hold';
+}
 
-const readHeaderOffset = (): number => {
-  const headerHeightRaw = getComputedStyle(document.documentElement)
-    .getPropertyValue('--header-height')
-    .trim();
-  const headerHeight = headerHeightRaw ? Number.parseFloat(headerHeightRaw) : Number.NaN;
-  return (Number.isFinite(headerHeight) ? headerHeight : 48) + 32;
-};
+const decodeHash = (hash: string): string => decodeHashFragment(hash) ?? '';
 
 const shouldPreserveHashActiveId = (activeId: string): boolean => {
   const hash = decodeHash(window.location.hash);
@@ -50,7 +70,7 @@ const shouldPreserveHashActiveId = (activeId: string): boolean => {
   }
 
   const rect = target.getBoundingClientRect();
-  const viewportTop = readHeaderOffset();
+  const viewportTop = resolveTocActivationOffset(target);
   const viewportBottom = window.innerHeight;
 
   /*
@@ -60,6 +80,19 @@ const shouldPreserveHashActiveId = (activeId: string): boolean => {
    * hash 対象が画面内に残っている間は現在値を維持する。
    */
   return rect.top > viewportTop && rect.top < viewportBottom && rect.bottom > 0;
+};
+
+const isElementRenderable = (element: HTMLElement): boolean => {
+  if (element.getClientRects().length === 0) {
+    return false;
+  }
+
+  const style = getComputedStyle(element);
+  return (
+    style.display !== 'none' &&
+    style.visibility !== 'hidden' &&
+    style.visibility !== 'collapse'
+  );
 };
 
 export class TocActiveTracker {
@@ -79,6 +112,7 @@ export class TocActiveTracker {
   private _initialViewportSyncFrame: number | null = null;
   private _initialHashStabilizationTimer: number | null = null;
   private _pendingEmptyVisibleHeadingsTimer: number | null = null;
+  private _programmaticNavigation: TocProgrammaticNavigation | null = null;
 
   constructor(options: TocActiveTrackerOptions) {
     this._contentRootId = options.contentRootId;
@@ -105,8 +139,12 @@ export class TocActiveTracker {
 
     this._started = true;
     window.addEventListener('hashchange', this._onHashChange);
+    window.addEventListener('popstate', this._onPopState);
     window.addEventListener('scroll', this._onViewportChange, { passive: true });
-    window.addEventListener('resize', this._onViewportChange);
+    window.addEventListener('wheel', this._onUserScrollIntent, { passive: true });
+    window.addEventListener('touchmove', this._onUserScrollIntent, { passive: true });
+    window.addEventListener('keydown', this._onKeydown);
+    window.addEventListener('resize', this._onResize);
     window.addEventListener('pageshow', this._onViewportChange);
     document.addEventListener('ui-tab-change', this._onTabChange as EventListener);
 
@@ -147,8 +185,12 @@ export class TocActiveTracker {
 
     this._started = false;
     window.removeEventListener('hashchange', this._onHashChange);
+    window.removeEventListener('popstate', this._onPopState);
     window.removeEventListener('scroll', this._onViewportChange);
-    window.removeEventListener('resize', this._onViewportChange);
+    window.removeEventListener('wheel', this._onUserScrollIntent);
+    window.removeEventListener('touchmove', this._onUserScrollIntent);
+    window.removeEventListener('keydown', this._onKeydown);
+    window.removeEventListener('resize', this._onResize);
     window.removeEventListener('pageshow', this._onViewportChange);
     document.removeEventListener('ui-tab-change', this._onTabChange as EventListener);
     this._teardownMutationObserver();
@@ -174,6 +216,50 @@ export class TocActiveTracker {
       clearTimeout(this._pendingEmptyVisibleHeadingsTimer);
       this._pendingEmptyVisibleHeadingsTimer = null;
     }
+    this.cancelProgrammaticNavigation('destroy');
+  }
+
+  beginProgrammaticNavigation(targetId: string, metrics: TocScrollMetrics): void {
+    this._programmaticNavigation = {
+      targetId,
+      metrics,
+      startedAtScrollY: readRootScrollY(),
+      targetY: metrics.targetY,
+      phase: 'scrolling',
+    };
+  }
+
+  finishProgrammaticNavigation(targetId: string): void {
+    if (this._programmaticNavigation?.targetId !== targetId) {
+      return;
+    }
+
+    this._programmaticNavigation = null;
+  }
+
+  beginPostSettlementHold(targetId: string, metrics: TocScrollMetrics): void {
+    this._programmaticNavigation = {
+      targetId,
+      metrics,
+      startedAtScrollY: readRootScrollY(),
+      targetY: metrics.targetY,
+      phase: 'settled-hold',
+    };
+  }
+
+  cancelProgrammaticNavigation(_reason: TocNavigationCancelReason): void {
+    this._programmaticNavigation = null;
+  }
+
+  canHoldProgrammaticTarget(targetId: string, target: HTMLElement): boolean {
+    const contentRoot = this._contentRoot;
+    return (
+      contentRoot !== null &&
+      contentRoot.contains(target) &&
+      this._visibleHeadings.some((heading) => heading.id === targetId) &&
+      isElementRenderable(target) &&
+      isHeadingIntersectingViewport(target)
+    );
   }
 
   refresh(): void {
@@ -315,7 +401,7 @@ export class TocActiveTracker {
 
     const headingElements = this._visibleHeadings
       .map((heading) => {
-        const element = document.getElementById(heading.id);
+        const element = this._resolveHeadingElement(heading.id);
         return element instanceof HTMLElement ? { heading, element } : null;
       })
       .filter((entry): entry is { heading: Heading; element: HTMLElement } => entry !== null);
@@ -324,12 +410,10 @@ export class TocActiveTracker {
       return this._resolveInitialActiveId();
     }
 
-    const viewportTop = readHeaderOffset();
     let candidateId = headingElements[0]?.heading.id ?? '';
 
     for (const { heading, element } of headingElements) {
-      const top = element.getBoundingClientRect().top;
-      if (top <= viewportTop) {
+      if (hasHeadingPassedTocActivationLine(element)) {
         candidateId = heading.id;
         continue;
       }
@@ -340,7 +424,19 @@ export class TocActiveTracker {
   }
 
   private _syncActiveHeadingFromViewport(): void {
-    if (!this._started || !this._capabilities.activeTracking) {
+    if (!this._started) {
+      return;
+    }
+
+    const forcedId = this._resolveProgrammaticActiveId();
+    if (forcedId.length > 0) {
+      if (forcedId !== this._getActiveId()) {
+        this._onActiveIdChange(forcedId);
+      }
+      return;
+    }
+
+    if (!this._capabilities.activeTracking) {
       return;
     }
 
@@ -433,8 +529,36 @@ export class TocActiveTracker {
   }
 
   private _onHashChange = (): void => {
+    this.cancelProgrammaticNavigation('hashchange');
     this._syncActiveHeadingFromHash();
     this._scheduleViewportSync();
+  };
+
+  private _onPopState = (): void => {
+    this.cancelProgrammaticNavigation('popstate');
+    this._scheduleViewportSync();
+  };
+
+  private _onResize = (): void => {
+    this.cancelProgrammaticNavigation('resize');
+    this._scheduleViewportSync();
+  };
+
+  private _onUserScrollIntent = (): void => {
+    if (this._programmaticNavigation?.phase !== 'settled-hold') {
+      return;
+    }
+
+    this.cancelProgrammaticNavigation('user-scroll');
+    this._scheduleViewportSync();
+  };
+
+  private _onKeydown = (event: KeyboardEvent): void => {
+    if (!SCROLL_KEYS.has(event.key)) {
+      return;
+    }
+
+    this._onUserScrollIntent();
   };
 
   private _onTabChange = (event: Event): void => {
@@ -449,6 +573,48 @@ export class TocActiveTracker {
   };
 
   private _onViewportChange = (): void => {
+    if (this._programmaticNavigation?.phase === 'settled-hold') {
+      const distance = Math.abs(readRootScrollY() - this._programmaticNavigation.startedAtScrollY);
+      if (distance > TOC_SCROLL_POSITION_TOLERANCE_PX) {
+        this.cancelProgrammaticNavigation('user-scroll');
+      }
+    }
     this._scheduleViewportSync();
   };
+
+  private _resolveProgrammaticActiveId(): string {
+    const navigation = this._programmaticNavigation;
+    if (navigation === null) {
+      return '';
+    }
+
+    if (navigation.phase === 'scrolling') {
+      return navigation.targetId;
+    }
+
+    const target = this._resolveHeadingElement(navigation.targetId);
+    if (
+      !(target instanceof HTMLElement) ||
+      !this.canHoldProgrammaticTarget(navigation.targetId, target)
+    ) {
+      this.cancelProgrammaticNavigation('target-missing');
+      return '';
+    }
+
+    const distance = Math.abs(readRootScrollY() - navigation.startedAtScrollY);
+    if (distance > TOC_SCROLL_POSITION_TOLERANCE_PX) {
+      this.cancelProgrammaticNavigation('user-scroll');
+      return '';
+    }
+
+    return navigation.targetId;
+  }
+
+  private _resolveHeadingElement(id: string): HTMLElement | null {
+    const root = this._contentRoot;
+    const matches = Array.from(
+      (root ?? document).querySelectorAll<HTMLElement>('[id]'),
+    ).filter((element) => element.id === id);
+    return matches.length === 1 ? (matches[0] ?? null) : null;
+  }
 }

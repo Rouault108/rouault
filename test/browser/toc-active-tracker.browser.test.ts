@@ -91,7 +91,7 @@ describe('TocActiveTracker', () => {
       </article>
     `;
 
-    document.documentElement.style.setProperty('--header-height', '48px');
+    document.documentElement.style.scrollPaddingTop = '80px';
 
     const headings: Heading[] = [
       { id: 'section-1', text: 'Section 1', level: 2 },
@@ -169,7 +169,7 @@ describe('TocActiveTracker', () => {
     expect(snapshots).to.deep.equal(['section-1', 'section-2', 'section-3']);
 
     tracker.destroy();
-    document.documentElement.style.removeProperty('--header-height');
+    document.documentElement.style.scrollPaddingTop = '';
   });
 
   it('hash 対象が viewport 内に見えている間は初期 current を 1 つ前の見出しへ巻き戻さないこと', async () => {
@@ -181,7 +181,7 @@ describe('TocActiveTracker', () => {
       </article>
     `;
 
-    document.documentElement.style.setProperty('--header-height', '48px');
+    document.documentElement.style.scrollPaddingTop = '80px';
     window.history.replaceState(null, '', '#section-2');
 
     const headings: Heading[] = [
@@ -263,7 +263,7 @@ describe('TocActiveTracker', () => {
 
     tracker.destroy();
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    document.documentElement.style.removeProperty('--header-height');
+    document.documentElement.style.scrollPaddingTop = '';
   });
 
   it('静的 TOC では mutation 中の一時的な heading 不在で visible headings を空に戻さないこと', async () => {
@@ -320,5 +320,97 @@ describe('TocActiveTracker', () => {
     expect(snapshots.at(-1)).to.deep.equal(['section-1', 'section-2']);
 
     tracker.destroy();
+  });
+
+  it('target-end hold 中の wheel 入力で hold を解除し viewport resolver に戻すこと', async () => {
+    document.body.innerHTML = `
+      <article id="content-root">
+        <h2 id="section-1">Section 1</h2>
+        <h2 id="section-2">Section 2</h2>
+      </article>
+    `;
+
+    document.documentElement.style.scrollPaddingTop = '80px';
+
+    const headings: Heading[] = [
+      { id: 'section-1', text: 'Section 1', level: 2 },
+      { id: 'section-2', text: 'Section 2', level: 2 },
+    ];
+
+    const topById = new Map<string, number>([
+      ['section-1', -120],
+      ['section-2', 160],
+    ]);
+
+    for (const heading of headings) {
+      const element = document.getElementById(heading.id);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`${heading.id} の fixture 構築に失敗しました。`);
+      }
+
+      Object.defineProperty(element, 'getClientRects', {
+        configurable: true,
+        value: () => [{ top: topById.get(heading.id) ?? 0, bottom: 32, width: 800, height: 32 }],
+      });
+      Object.defineProperty(element, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => {
+          const top = topById.get(heading.id) ?? 0;
+          return {
+            x: 0,
+            y: top,
+            top,
+            left: 0,
+            right: 800,
+            bottom: top + 32,
+            width: 800,
+            height: 32,
+            toJSON: () => undefined,
+          } satisfies DOMRect;
+        },
+      });
+    }
+
+    let activeId = '';
+    const tracker = new TocActiveTracker({
+      contentRootId: 'content-root',
+      headings,
+      capabilities: {
+        activeTracking: true,
+        dynamicScopes: false,
+        mobilePanel: false,
+      },
+      getActiveId: () => activeId,
+      onVisibleHeadingsChange: () => undefined,
+      onActiveIdChange: (id) => {
+        activeId = id;
+      },
+    });
+
+    tracker.start();
+    await waitForRefresh();
+    expect(activeId).to.equal('section-1');
+
+    tracker.beginPostSettlementHold('section-2', {
+      idealTargetY: 100,
+      targetY: 100,
+      activationOffset: 112,
+      scrollPaddingTop: 80,
+      scrollMarginTop: 32,
+      currentScrollY: 100,
+      maxScrollY: 100,
+      isTargetStartClamped: false,
+      isTargetEndClamped: true,
+    });
+    window.dispatchEvent(new Event('scroll'));
+    await waitForRefresh();
+    expect(activeId).to.equal('section-2');
+
+    window.dispatchEvent(new WheelEvent('wheel'));
+    await waitForRefresh();
+    expect(activeId).to.equal('section-1');
+
+    tracker.destroy();
+    document.documentElement.style.scrollPaddingTop = '';
   });
 });

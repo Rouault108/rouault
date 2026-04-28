@@ -7,6 +7,8 @@ import {
   type TocCapabilities,
 } from '../../toc/filter-visible-headings.js';
 import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
+import { TocNavigationController } from '../../toc/toc-navigation-controller.js';
+import { decodeHashFragment } from '../../router/url-hash.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
 import { layoutTocRuntimeStore, type LayoutTocRuntimeSnapshot } from './layout-toc-runtime-store.js';
 
@@ -20,7 +22,7 @@ const toHeading = (value: unknown): Heading | null => {
     return null;
   }
 
-  const id = typeof value['id'] === 'string' ? value['id'].trim() : '';
+  const id = typeof value['id'] === 'string' ? value['id'] : '';
   const text = typeof value['text'] === 'string' ? value['text'].trim() : '';
   const level = typeof value['level'] === 'number' ? Math.trunc(value['level']) : Number.NaN;
   if (id.length === 0 || text.length === 0 || !Number.isFinite(level) || level < 2 || level > 6) {
@@ -89,16 +91,7 @@ const readLocationHash = (): string => {
     return '';
   }
 
-  const normalized = window.location.hash.replace(/^#/, '').trim();
-  if (normalized.length === 0) {
-    return '';
-  }
-
-  try {
-    return decodeURIComponent(normalized).trim();
-  } catch {
-    return normalized;
-  }
+  return decodeHashFragment(window.location.hash) ?? '';
 };
 
 const removeIdsFromTree = (root: ParentNode): void => {
@@ -112,6 +105,7 @@ export class LayoutTocController extends HTMLElement {
   private _hydrationActivated = false;
   private _tracker: TocActiveTracker | null = null;
   private _mobileCleanup: (() => void) | null = null;
+  private _navigationController: TocNavigationController | null = null;
   private _panelRoot: HTMLElement | null = null;
   private _panelNav: HTMLElement | null = null;
   private _panelOpen = false;
@@ -145,6 +139,8 @@ export class LayoutTocController extends HTMLElement {
   disconnectedCallback(): void {
     this._mobileCleanup?.();
     this._mobileCleanup = null;
+    this._navigationController?.destroy();
+    this._navigationController = null;
     this._tracker?.destroy();
     this._tracker = null;
     this._detachPanelDocumentListeners();
@@ -275,7 +271,7 @@ export class LayoutTocController extends HTMLElement {
 
     const items = nav.querySelectorAll<HTMLElement>('.layout-toc__item[data-heading-id]');
     for (const item of items) {
-      const headingId = item.getAttribute('data-heading-id')?.trim() ?? '';
+      const headingId = item.getAttribute('data-heading-id') ?? '';
       const visible = headingId.length > 0 && visibleIds.has(headingId);
       item.hidden = !visible;
       item.setAttribute('aria-hidden', visible ? 'false' : 'true');
@@ -289,7 +285,7 @@ export class LayoutTocController extends HTMLElement {
 
     const links = nav.querySelectorAll<HTMLAnchorElement>('[data-toc-link][data-heading-id]');
     for (const link of links) {
-      const headingId = link.getAttribute('data-heading-id')?.trim() ?? '';
+      const headingId = link.getAttribute('data-heading-id') ?? '';
       const active = headingId.length > 0 && headingId === this._activeId;
       if (active) {
         link.setAttribute('aria-current', 'location');
@@ -464,23 +460,25 @@ export class LayoutTocController extends HTMLElement {
   };
 
   private _handleNavClick = (event: Event): void => {
-    const path = event.composedPath();
-    const link = path.find(
-      (node): node is HTMLAnchorElement =>
-        node instanceof HTMLAnchorElement && node.hasAttribute('data-toc-link'),
-    );
-    if (!link) {
+    if (!(event instanceof MouseEvent) || this._tracker === null) {
       return;
     }
 
-    const headingId = link.getAttribute('data-heading-id')?.trim() ?? '';
-    if (headingId.length === 0) {
+    const contentRoot = this._resolveContentRoot();
+    if (contentRoot === null) {
       return;
     }
 
-    this._applyActiveId(headingId);
+    this._navigationController ??= new TocNavigationController();
+    const result = this._navigationController.handleTocLinkClick(event, {
+      tocRuntimeId: this._getRuntimeId(),
+      contentRoot,
+      tracker: this._tracker,
+      getActiveId: () => this._activeId,
+      applyActiveId: (id) => this._applyActiveId(id),
+    });
 
-    if (this._panelNav?.contains(link)) {
+    if (result.owned && this._panelNav?.contains(result.link)) {
       layoutTocMobileController.close(this._getRuntimeId());
     }
   };

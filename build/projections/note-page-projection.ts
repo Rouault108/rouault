@@ -109,7 +109,7 @@ function normalizeHeadings(value: IntrinsicNote['tocHeadings']): NotePageTocHead
 
   return value
     .map((item) => {
-      const id = typeof item.id === 'string' ? item.id.trim() : '';
+      const id = typeof item.id === 'string' ? item.id : '';
       const text = typeof item.text === 'string' ? item.text.trim() : '';
       const level = typeof item.level === 'number' ? Math.trunc(item.level) : Number.NaN;
 

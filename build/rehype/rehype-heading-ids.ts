@@ -153,7 +153,7 @@ const assignHeadingIds = (node: HastNode, counters: Map<string, number>): void =
       properties['id'] = createUniqueSlug(baseSlug, counters);
     }
 
-    const id = typeof properties['id'] === 'string' ? properties['id'].trim() : '';
+    const id = typeof properties['id'] === 'string' ? properties['id'] : '';
     const text = getTextContent(node).trim();
 
     if (id.length > 0 && text.length > 0) {

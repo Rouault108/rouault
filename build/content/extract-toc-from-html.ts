@@ -112,7 +112,7 @@ const visitNode = (
   counters: { scope: number },
 ): void => {
   if (isHeadingElement(node)) {
-    const id = getAttributeValue(node, 'id')?.trim() ?? '';
+    const id = getAttributeValue(node, 'id') ?? '';
     const text = normalizeText(getTextContent(node));
     const level = Number.parseInt(node.tagName.slice(1), 10);
 

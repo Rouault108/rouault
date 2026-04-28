@@ -10,12 +10,14 @@ import {
   type TocCapabilities,
 } from '../../toc/filter-visible-headings.js';
 import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
+import { TocNavigationController } from '../../toc/toc-navigation-controller.js';
+import { decodeHashFragment } from '../../router/url-hash.js';
 import { isHTMLElement } from '../../lib/dom.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
 import { layoutTocRuntimeStore, type LayoutTocRuntimeSnapshot } from './layout-toc-runtime-store.js';
 import '../ui/icon/icon.js';
 import '../ui/toc/toc.js';
-import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc.js';
+import type { Heading } from '../ui/toc/toc.js';
 
 const DEFAULT_LAYOUT_TOC_RUNTIME_ID = 'page-toc';
 
@@ -27,7 +29,7 @@ const toHeading = (value: unknown): Heading | null => {
     return null;
   }
 
-  const id = typeof value['id'] === 'string' ? value['id'].trim() : '';
+  const id = typeof value['id'] === 'string' ? value['id'] : '';
   const text = typeof value['text'] === 'string' ? value['text'].trim() : '';
   const level = typeof value['level'] === 'number' ? Math.trunc(value['level']) : Number.NaN;
   if (id.length === 0 || text.length === 0) {
@@ -270,6 +272,7 @@ export class LayoutToc extends LitElement {
 
   private _detachStickyFooterBoundary: (() => void) | null = null;
   private _tracker: TocActiveTracker | null = null;
+  private _navigationController: TocNavigationController | null = null;
   private _hydrationActivated = false;
   private _mobileControllerCleanup: (() => void) | null = null;
   private _panelDocumentListenersAttached = false;
@@ -476,6 +479,8 @@ export class LayoutToc extends LitElement {
   }
 
   private _disconnectControllers(): void {
+    this._navigationController?.destroy();
+    this._navigationController = null;
     this._tracker?.destroy();
     this._tracker = null;
   }
@@ -485,16 +490,7 @@ export class LayoutToc extends LitElement {
       return '';
     }
 
-    const rawHash = window.location.hash.replace(/^#/, '').trim();
-    if (rawHash.length === 0) {
-      return '';
-    }
-
-    try {
-      return decodeURIComponent(rawHash).trim();
-    } catch {
-      return rawHash;
-    }
+    return decodeHashFragment(window.location.hash) ?? '';
   }
 
   private _applyVisibleHeadings(headings: Heading[]): void {
@@ -532,16 +528,33 @@ export class LayoutToc extends LitElement {
     };
   }
 
-  private _onTocActiveChange = (event: CustomEvent<UiTocActiveChangeDetail>): void => {
-    this._applyActiveId(event.detail.id);
-
-    if (event.detail.source === 'click') {
-      layoutTocMobileController.close(this._getRuntimeId());
-    }
-  };
-
   private _closeMobilePanel = (): void => {
     layoutTocMobileController.close(this._getRuntimeId());
+  };
+
+  private _handleTocClick = (event: Event): void => {
+    if (!(event instanceof MouseEvent) || this._tracker === null) {
+      return;
+    }
+
+    const contentRoot = this._resolveContentRoot();
+    if (contentRoot === null) {
+      return;
+    }
+
+    this._navigationController ??= new TocNavigationController();
+    const result = this._navigationController.handleTocLinkClick(event, {
+      tocRuntimeId: this._getRuntimeId(),
+      contentRoot,
+      tracker: this._tracker,
+      getActiveId: () => this._activeId,
+      applyActiveId: (id) => this._applyActiveId(id),
+    });
+
+    const panel = this.shadowRoot?.querySelector<HTMLElement>('.mobile-panel');
+    if (result.owned && panel instanceof HTMLElement && panel.contains(result.link)) {
+      layoutTocMobileController.close(this._getRuntimeId());
+    }
   };
 
   private _getRuntimeId(): string {
@@ -631,14 +644,13 @@ export class LayoutToc extends LitElement {
     const panelId = this._getPanelId();
 
     return html`
-      <div class="desktop">
+      <div class="desktop" @click=${this._handleTocClick}>
         ${keyed(
           `desktop:${tocKey}`,
           html`
             <ui-toc
               .headers=${this._visibleHeadings}
               .activeId=${this._activeId}
-              @ui-toc-active-change=${this._onTocActiveChange}
             ></ui-toc>
           `,
         )}
@@ -650,6 +662,7 @@ export class LayoutToc extends LitElement {
         data-open=${String(this._panelOpen)}
         aria-hidden=${String(!this._panelOpen)}
         ?inert=${!this._panelOpen}
+        @click=${this._handleTocClick}
       >
         <div class="mobile-panel-header">
           <button
@@ -667,7 +680,6 @@ export class LayoutToc extends LitElement {
             <ui-toc
               .headers=${this._visibleHeadings}
               .activeId=${this._activeId}
-              @ui-toc-active-change=${this._onTocActiveChange}
             ></ui-toc>
           `,
         )}

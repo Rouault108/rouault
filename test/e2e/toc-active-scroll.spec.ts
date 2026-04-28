@@ -115,11 +115,13 @@ const readExpectedActiveHeadingFromViewport = async (page: Page): Promise<Expect
       return { id: null, label: null };
     }
 
-    const headerHeightRaw = getComputedStyle(document.documentElement)
-      .getPropertyValue('--header-height')
-      .trim();
-    const headerHeight = headerHeightRaw ? Number.parseFloat(headerHeightRaw) : Number.NaN;
-    const headerOffset = (Number.isFinite(headerHeight) ? headerHeight : 48) + 32;
+    const readComputedPx = (value: string): number => {
+      const parsed = Number.parseFloat(value);
+      return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+    };
+    const resolveActivationOffset = (heading: HTMLElement): number =>
+      readComputedPx(getComputedStyle(document.documentElement).scrollPaddingTop) +
+      readComputedPx(getComputedStyle(heading).scrollMarginTop);
 
     const headings = Array.from(article.querySelectorAll<HTMLElement>('h2[id], h3[id], h4[id]'));
     if (headings.length === 0) {
@@ -128,7 +130,7 @@ const readExpectedActiveHeadingFromViewport = async (page: Page): Promise<Expect
 
     let current = headings[0] ?? null;
     for (const heading of headings) {
-      if (heading.getBoundingClientRect().top <= headerOffset) {
+      if (heading.getBoundingClientRect().top <= resolveActivationOffset(heading)) {
         current = heading;
         continue;
       }
@@ -175,12 +177,14 @@ const scrollHeadingToActiveZone = async (page: Page, headingId: string): Promise
       throw new Error(`heading not found: ${id}`);
     }
 
-    const headerHeightRaw = getComputedStyle(document.documentElement)
-      .getPropertyValue('--header-height')
-      .trim();
-    const headerHeight = headerHeightRaw ? Number.parseFloat(headerHeightRaw) : Number.NaN;
-    const headerOffset = (Number.isFinite(headerHeight) ? headerHeight : 48) + 32;
-    const desiredTop = headerOffset - 24;
+    const readComputedPx = (value: string): number => {
+      const parsed = Number.parseFloat(value);
+      return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+    };
+    const activationOffset =
+      readComputedPx(getComputedStyle(document.documentElement).scrollPaddingTop) +
+      readComputedPx(getComputedStyle(target).scrollMarginTop);
+    const desiredTop = activationOffset - 24;
     const waitForFrame = async (): Promise<void> =>
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => {
@@ -190,7 +194,7 @@ const scrollHeadingToActiveZone = async (page: Page, headingId: string): Promise
 
     for (let attempt = 0; attempt < 4; attempt += 1) {
       const currentTop = target.getBoundingClientRect().top;
-      if (currentTop <= headerOffset - 8) {
+      if (currentTop <= activationOffset - 8) {
         break;
       }
 

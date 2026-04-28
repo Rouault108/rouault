@@ -157,7 +157,7 @@ describe('ui-toc active link scroll contract', () => {
     });
 
     const nextActiveLink = toc.shadowRoot?.querySelector<HTMLElement>(
-      'a.toc-link[href="#72-配列の要素の読み書き"]',
+      'a.toc-link[data-heading-id="72-配列の要素の読み書き"]',
     );
     if (!nextActiveLink) {
       throw new Error('next active link が見つかりません');
@@ -219,7 +219,7 @@ describe('ui-toc active link scroll contract', () => {
     });
 
     const nextActiveLink = toc.shadowRoot?.querySelector<HTMLElement>(
-      'a.toc-link[href="#72-配列の要素の読み書き"]',
+      'a.toc-link[data-heading-id="72-配列の要素の読み書き"]',
     );
     if (!nextActiveLink) {
       throw new Error('next active link が見つかりません');
@@ -236,7 +236,7 @@ describe('ui-toc active link scroll contract', () => {
     expect(scrollToCalls).to.equal(0);
   });
 
-  it('外部 activeId 更新時は active source 表現が scroll 側へ正規化されること', async () => {
+  it('ui-toc 単体では click を所有せず active source を変更しないこと', async () => {
     const toc = await fixture<Toc>(html`
       <ui-toc .headers=${headers} active-id="71-配列の生成"></ui-toc>
     `);
@@ -244,7 +244,7 @@ describe('ui-toc active link scroll contract', () => {
     await flush(toc);
 
     const clickedLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>(
-      'a.toc-link[href="#72-配列の要素の読み書き"]',
+      'a.toc-link[data-heading-id="72-配列の要素の読み書き"]',
     );
     if (!clickedLink) {
       throw new Error('click target が見つかりません');
@@ -253,16 +253,17 @@ describe('ui-toc active link scroll contract', () => {
     clickedLink.click();
     await flush(toc);
 
-    const clickActiveLink =
-      toc.shadowRoot?.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
-    expect(clickActiveLink?.classList.contains('is-click')).to.equal(true);
-    expect(clickActiveLink?.classList.contains('is-scroll')).to.equal(false);
+    const activeLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
+    expect(activeLink?.getAttribute('data-heading-id')).to.equal('71-配列の生成');
+    expect(activeLink?.classList.contains('is-click')).to.equal(false);
+    expect(activeLink?.classList.contains('is-scroll')).to.equal(true);
 
-    toc.activeId = '71-配列の生成';
+    toc.activeId = '72-配列の要素の読み書き';
     await flush(toc);
 
     const scrollActiveLink =
       toc.shadowRoot?.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
+    expect(scrollActiveLink?.getAttribute('data-heading-id')).to.equal('72-配列の要素の読み書き');
     expect(scrollActiveLink?.classList.contains('is-scroll')).to.equal(true);
     expect(scrollActiveLink?.classList.contains('is-click')).to.equal(false);
   });
