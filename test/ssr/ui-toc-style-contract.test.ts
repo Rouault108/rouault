@@ -93,6 +93,85 @@ describe('ui-toc style contract', () => {
     ).toBe(true);
   });
 
+  it('keeps long label display contract depth based', () => {
+    const inactiveUpperSelector = '.toc-link:not(.is-active) .toc-link-label';
+    const inactiveLowerSelector =
+      ".toc-link:not(.is-active):is([data-heading-depth='2'],[data-heading-depth='3'],[data-heading-depth='4']) .toc-link-label";
+
+    expect(hasDeclarationForSelector(tocCss, '.toc-link-label', 'overflow', 'hidden')).toBe(true);
+    expect(hasDeclarationForSelector(tocCss, inactiveUpperSelector, 'display', '-webkit-box')).toBe(
+      true,
+    );
+    expect(
+      hasDeclarationForSelector(
+        tocCss,
+        inactiveUpperSelector,
+        '-webkit-line-clamp',
+        'var(--toc-item-inactive-upper-max-lines, 2)',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tocCss,
+        inactiveUpperSelector,
+        'line-clamp',
+        'var(--toc-item-inactive-upper-max-lines, 2)',
+      ),
+    ).toBe(true);
+    expect(hasDeclarationForSelector(tocCss, inactiveLowerSelector, 'display', 'block')).toBe(true);
+    expect(
+      hasDeclarationForSelector(tocCss, inactiveLowerSelector, '-webkit-line-clamp', 'unset'),
+    ).toBe(true);
+    expect(hasDeclarationForSelector(tocCss, inactiveLowerSelector, 'line-clamp', 'unset')).toBe(
+      true,
+    );
+    expect(hasDeclarationForSelector(tocCss, inactiveLowerSelector, 'white-space', 'nowrap')).toBe(
+      true,
+    );
+    expect(
+      hasDeclarationForSelector(tocCss, inactiveLowerSelector, 'text-overflow', 'ellipsis'),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tocCss,
+        '.toc-link.is-active .toc-link-label',
+        '-webkit-line-clamp',
+        'var(--toc-item-active-max-lines, 3)',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tocCss,
+        '.toc-link.is-active .toc-link-label',
+        'line-clamp',
+        'var(--toc-item-active-max-lines, 3)',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(tocCss, '.toc-link.is-active .toc-link-label', 'overflow', 'hidden'),
+    ).toBe(true);
+  });
+
+  it('keeps current rail stretched to the active item block size', () => {
+    expect(
+      hasDeclarationForSelector(
+        tocCss,
+        '.toc-link.is-active::before',
+        'inset-block',
+        'var(--_toc-active-inset-block)',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(tocCss, '.toc-link.is-active::before', 'block-size', 'auto'),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(tocCss, '.toc-link.is-active::before', 'transform', 'none'),
+    ).toBe(true);
+    expect(hasDeclarationForSelector(tocCss, '.toc-link.is-active::before', 'opacity', '1')).toBe(
+      true,
+    );
+  });
+
   it('keeps active foreground and current surface preferred over hover and focus-visible', () => {
     const activeForegroundOrder = findLastDeclarationRuleOrderForSelector(
       tocCss,
