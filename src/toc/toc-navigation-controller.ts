@@ -107,7 +107,12 @@ const resolveHeadingInContentRootWithReason = (
     return { status: 'not-unique' };
   }
 
-  return { status: 'found', target: matches[0] as HTMLElement };
+  const target = matches[0];
+  if (target === undefined) {
+    return { status: 'not-found' };
+  }
+
+  return { status: 'found', target };
 };
 
 export class TocNavigationController {
@@ -297,10 +302,18 @@ export class TocNavigationController {
   private _attachUserInterventionListeners(): void {
     this._cleanupUserInterventionListeners?.();
 
-    const cancelForUserScroll = (): void => this.cancelNavigation('user-scroll');
-    const cancelForPopstate = (): void => this.cancelNavigation('popstate');
-    const cancelForHashchange = (): void => this.cancelNavigation('hashchange');
-    const cancelForResize = (): void => this.cancelNavigation('resize');
+    const cancelForUserScroll = (): void => {
+      this.cancelNavigation('user-scroll');
+    };
+    const cancelForPopstate = (): void => {
+      this.cancelNavigation('popstate');
+    };
+    const cancelForHashchange = (): void => {
+      this.cancelNavigation('hashchange');
+    };
+    const cancelForResize = (): void => {
+      this.cancelNavigation('resize');
+    };
     const cancelForKeydown = (event: KeyboardEvent): void => {
       if (SCROLL_KEYS.has(event.key)) {
         this.cancelNavigation('user-scroll');

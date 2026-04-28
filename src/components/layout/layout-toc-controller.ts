@@ -491,7 +491,9 @@ export class LayoutTocController extends HTMLElement {
       contentRoot,
       tracker: this._tracker,
       getActiveId: () => this._activeId,
-      applyActiveId: (id) => this._applyActiveId(id),
+      applyActiveId: (id) => {
+        this._applyActiveId(id);
+      },
     });
 
     if (result.owned && this._panelNav?.contains(result.link)) {

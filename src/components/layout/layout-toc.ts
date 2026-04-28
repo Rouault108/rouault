@@ -548,7 +548,9 @@ export class LayoutToc extends LitElement {
       contentRoot,
       tracker: this._tracker,
       getActiveId: () => this._activeId,
-      applyActiveId: (id) => this._applyActiveId(id),
+      applyActiveId: (id) => {
+        this._applyActiveId(id);
+      },
     });
 
     const panel = this.shadowRoot?.querySelector<HTMLElement>('.mobile-panel');
@@ -644,13 +646,14 @@ export class LayoutToc extends LitElement {
     const panelId = this._getPanelId();
 
     return html`
-      <div class="desktop" @click=${this._handleTocClick}>
+      <div class="desktop">
         ${keyed(
           `desktop:${tocKey}`,
           html`
             <ui-toc
               .headers=${this._visibleHeadings}
               .activeId=${this._activeId}
+              @click=${this._handleTocClick}
             ></ui-toc>
           `,
         )}
@@ -680,6 +683,7 @@ export class LayoutToc extends LitElement {
             <ui-toc
               .headers=${this._visibleHeadings}
               .activeId=${this._activeId}
+              @click=${this._handleTocClick}
             ></ui-toc>
           `,
         )}

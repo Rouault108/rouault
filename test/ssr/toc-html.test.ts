@@ -7,7 +7,9 @@ import type { NotePageProjection } from '../../build/projections/note-page-proje
 
 type ChildNode = DefaultTreeAdapterMap['childNode'];
 type ElementNode = DefaultTreeAdapterMap['element'];
-type ParentLike = { childNodes: ChildNode[] };
+interface ParentLike {
+  childNodes: ChildNode[];
+}
 
 const isElementNode = (node: ChildNode): node is ElementNode => 'tagName' in node;
 
