@@ -120,28 +120,33 @@ export class Toc extends LitElement {
       word-break: break-word;
     }
 
-    .toc-link:not(.is-active)[data-heading-level='3'] .toc-link-label {
+    .toc-link:not(.is-active) .toc-link-label {
       display: -webkit-box;
       -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-      line-clamp: 2;
+      -webkit-line-clamp: var(--toc-item-inactive-upper-max-lines, 2);
+      line-clamp: var(--toc-item-inactive-upper-max-lines, 2);
+      white-space: normal;
     }
 
     .toc-link:not(.is-active):is(
-        [data-heading-level='4'],
-        [data-heading-level='5'],
-        [data-heading-level='6']
+        [data-heading-depth='2'],
+        [data-heading-depth='3'],
+        [data-heading-depth='4']
       )
       .toc-link-label {
+      display: block;
+      -webkit-line-clamp: unset;
+      line-clamp: unset;
       white-space: nowrap;
       text-overflow: ellipsis;
     }
 
     .toc-link.is-active .toc-link-label {
-      display: block;
-      overflow: visible;
-      -webkit-line-clamp: unset;
-      line-clamp: unset;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: var(--toc-item-active-max-lines, 3);
+      line-clamp: var(--toc-item-active-max-lines, 3);
+      overflow: hidden;
       white-space: normal;
       text-overflow: clip;
     }
@@ -200,6 +205,9 @@ export class Toc extends LitElement {
     }
 
     .toc-link.is-active::before {
+      inset-block: var(--_toc-active-inset-block);
+      block-size: auto;
+      transform: none;
       opacity: 1;
     }
 
@@ -424,7 +432,7 @@ export class Toc extends LitElement {
 
       const tooltip = link.closest('ui-tooltip');
       if (tooltip instanceof HTMLElement) {
-        const shouldDisableTooltip = isActive || !this._truncatedHeadingIds.has(headingId);
+        const shouldDisableTooltip = !this._truncatedHeadingIds.has(headingId);
         tooltip.toggleAttribute('disabled', shouldDisableTooltip);
       }
     }
@@ -490,7 +498,7 @@ export class Toc extends LitElement {
 
     for (const label of labels) {
       const headingId = label.dataset['headingId'];
-      if (!headingId || headingId === this.activeId) {
+      if (!headingId) {
         continue;
       }
 
@@ -501,8 +509,26 @@ export class Toc extends LitElement {
       }
     }
 
+    if (this._areSetsEqual(this._truncatedHeadingIds, nextTruncatedIds)) {
+      return;
+    }
+
     this._truncatedHeadingIds = nextTruncatedIds;
     this.requestUpdate();
+  }
+
+  private _areSetsEqual(a: Set<string>, b: Set<string>): boolean {
+    if (a.size !== b.size) {
+      return false;
+    }
+
+    for (const value of a) {
+      if (!b.has(value)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private _syncActiveLinkVisibility(): void {
@@ -666,6 +692,7 @@ export class Toc extends LitElement {
           ${map(this.headers, (heading) => {
             const isActive = heading.id === this.activeId;
             const normalizedLevel = this._normalizedLevel(heading);
+            const isTruncated = this._truncatedHeadingIds.has(heading.id);
 
             return html`
               <li style=${styleMap({ '--level': String(normalizedLevel) })}>
@@ -675,7 +702,7 @@ export class Toc extends LitElement {
                   variant="subtle"
                   placement="right-start"
                   data-heading-id=${heading.id}
-                  ?disabled=${isActive || !this._truncatedHeadingIds.has(heading.id)}
+                  ?disabled=${!isTruncated}
                 >
                   <a
                     class=${classMap({
@@ -688,6 +715,7 @@ export class Toc extends LitElement {
                     data-toc-link
                     data-heading-id=${heading.id}
                     data-heading-level=${String(heading.level)}
+                    data-heading-depth=${String(normalizedLevel)}
                     aria-current=${isActive ? 'location' : undefined}
                   >
                     <span class="toc-link-label" data-heading-id=${heading.id}

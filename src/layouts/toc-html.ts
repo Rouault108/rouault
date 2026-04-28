@@ -19,6 +19,8 @@ const renderHeadingItems = (headings: TocProjection['headings']): string => {
       const depth = Math.max(0, heading.level - minimumLevel);
       const headingId = escapeHtmlAttribute(heading.id);
       const headingHref = escapeHtmlAttribute(buildHashHrefFromId(heading.id));
+      const headingTitle = escapeHtmlAttribute(heading.text);
+      const headingLabel = escapeHtmlText(heading.text);
       return `
         <li
           class="layout-toc__item"
@@ -33,8 +35,10 @@ const renderHeadingItems = (headings: TocProjection['headings']): string => {
             data-toc-link
             data-heading-id="${headingId}"
             data-heading-level="${String(heading.level)}"
+            data-heading-depth="${String(depth)}"
+            title="${headingTitle}"
           >
-            <span class="layout-toc__link-label">${escapeHtmlText(heading.text)}</span>
+            <span class="layout-toc__link-label">${headingLabel}</span>
           </a>
         </li>
       `.trim();

@@ -110,8 +110,30 @@
   display: block;
   flex: 1 1 auto;
   min-inline-size: 0;
+  overflow: hidden;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.layout-toc__link:not(.is-active):not([data-active='true']) .layout-toc__link-label {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--toc-item-inactive-upper-max-lines, 2);
+  line-clamp: var(--toc-item-inactive-upper-max-lines, 2);
+  white-space: normal;
+}
+
+.layout-toc__link:not(.is-active):not([data-active='true']):is(
+    [data-heading-depth='2'],
+    [data-heading-depth='3'],
+    [data-heading-depth='4']
+  )
+  .layout-toc__link-label {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .layout-toc__link:hover {
@@ -136,6 +158,17 @@
   );
 }
 
+.layout-toc__link.is-active .layout-toc__link-label,
+.layout-toc__link[data-active='true'] .layout-toc__link-label {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--toc-item-active-max-lines, 3);
+  line-clamp: var(--toc-item-active-max-lines, 3);
+  overflow: hidden;
+  white-space: normal;
+  text-overflow: clip;
+}
+
 .layout-toc__link:hover::after {
   background-color: var(--toc-item-hover-bg, transparent);
 }
@@ -146,6 +179,9 @@
 
 .layout-toc__link.is-active::before,
 .layout-toc__link[data-active='true']::before {
+  inset-block: var(--_toc-active-inset-block);
+  block-size: auto;
+  transform: none;
   opacity: 1;
 }
 

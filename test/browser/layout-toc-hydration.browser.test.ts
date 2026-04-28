@@ -55,6 +55,12 @@ const readActiveLabel = (toc: Toc | null): string | null =>
     ?.querySelector<HTMLElement>('a.toc-link.is-active .toc-link-label')
     ?.textContent?.trim() ?? null;
 
+const queryActiveTocLink = (toc: Toc | null): HTMLAnchorElement | null =>
+  toc?.shadowRoot?.querySelector<HTMLAnchorElement>('a.toc-link.is-active') ?? null;
+
+const queryActiveTocTooltip = (toc: Toc | null): HTMLElement | null =>
+  queryActiveTocLink(toc)?.closest<HTMLElement>('ui-tooltip') ?? null;
+
 const readActiveControllerLabel = (root: ParentNode): string | null =>
   root
     .querySelector<HTMLElement>(
@@ -100,6 +106,67 @@ const hydrateWithScheduler = async (root: HTMLElement): Promise<HydrationDiagnos
   }
 
   return diagnostics;
+};
+
+const withTruncatedTocLabels = (): (() => void) => {
+  const scrollWidthDescriptor = Object.getOwnPropertyDescriptor(
+    HTMLElement.prototype,
+    'scrollWidth',
+  );
+  const clientWidthDescriptor = Object.getOwnPropertyDescriptor(
+    HTMLElement.prototype,
+    'clientWidth',
+  );
+  const scrollHeightDescriptor = Object.getOwnPropertyDescriptor(
+    HTMLElement.prototype,
+    'scrollHeight',
+  );
+  const clientHeightDescriptor = Object.getOwnPropertyDescriptor(
+    HTMLElement.prototype,
+    'clientHeight',
+  );
+
+  Object.defineProperties(HTMLElement.prototype, {
+    scrollWidth: {
+      configurable: true,
+      get() {
+        return this instanceof HTMLElement && this.classList.contains('toc-link-label') ? 320 : 0;
+      },
+    },
+    clientWidth: {
+      configurable: true,
+      get() {
+        return this instanceof HTMLElement && this.classList.contains('toc-link-label') ? 120 : 0;
+      },
+    },
+    scrollHeight: {
+      configurable: true,
+      get() {
+        return this instanceof HTMLElement && this.classList.contains('toc-link-label') ? 72 : 0;
+      },
+    },
+    clientHeight: {
+      configurable: true,
+      get() {
+        return this instanceof HTMLElement && this.classList.contains('toc-link-label') ? 48 : 0;
+      },
+    },
+  });
+
+  return () => {
+    for (const [property, descriptor] of [
+      ['scrollWidth', scrollWidthDescriptor],
+      ['clientWidth', clientWidthDescriptor],
+      ['scrollHeight', scrollHeightDescriptor],
+      ['clientHeight', clientHeightDescriptor],
+    ] as const) {
+      if (descriptor) {
+        Object.defineProperty(HTMLElement.prototype, property, descriptor);
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, property);
+      }
+    }
+  };
 };
 
 const appendArticleFixture = (): (() => void) => {
@@ -277,6 +344,48 @@ describe('layout-toc hydration reconciliation', () => {
     expect(readActiveLabel(toc)).to.equal(secondHeadingLabel);
   });
 
+  it('ui-toc は truncated な active 項目の tooltip を有効にし、native title を付与しないこと', async () => {
+    const restoreMetrics = withTruncatedTocLabels();
+    const longHeadingLabel = '3.3 前処理ディレクティブとビルド文脈における長い見出し表示の検証項目';
+
+    try {
+      const toc = await fixture<Toc>(html`
+        <ui-toc
+          .headers=${[
+            { id: 'long-current', text: longHeadingLabel, level: 2 },
+            { id: 'long-next', text: '次の見出し', level: 4 },
+          ]}
+          active-id="long-current"
+        ></ui-toc>
+      `);
+
+      await waitUntil(async () => {
+        await waitForLitUpdate(toc);
+        await nextAnimationFrame();
+        return queryActiveTocTooltip(toc)?.hasAttribute('disabled') === false;
+      }, 'truncated な active tooltip が有効化されること');
+
+      const activeLink = queryActiveTocLink(toc);
+      expect(activeLink?.getAttribute('title')).to.equal(null);
+      expect(activeLink?.getAttribute('data-heading-depth')).to.equal('0');
+      expect(readActiveLabel(toc)).to.equal(longHeadingLabel);
+      expect(queryActiveTocTooltip(toc)?.hasAttribute('disabled')).to.equal(false);
+
+      toc.activeId = 'long-next';
+      await waitUntil(async () => {
+        await waitForLitUpdate(toc);
+        await nextAnimationFrame();
+        return readActiveLabel(toc) === '次の見出し';
+      }, 'active DOM が更新後の見出しへ同期すること');
+
+      expect(queryActiveTocTooltip(toc)?.hasAttribute('disabled')).to.equal(false);
+      expect(queryActiveTocLink(toc)?.getAttribute('title')).to.equal(null);
+      expect(queryActiveTocLink(toc)?.getAttribute('data-heading-depth')).to.equal('2');
+    } finally {
+      restoreMetrics();
+    }
+  });
+
   it('SSR の DSD 経路でも stale な ui-toc が hydrate 後に hash と同期できること', async () => {
     const cleanup = appendArticleFixture();
     const restoreHash = withLocationHash(secondHeadingId);
@@ -410,7 +519,9 @@ describe('layout-toc hydration reconciliation', () => {
       await flush(host);
 
       expect(hasMobilePanelTitle(host)).to.equal(false);
-      expect(queryMobilePanelCloseButton(host)?.getAttribute('aria-label')).to.equal('目次を閉じる');
+      expect(queryMobilePanelCloseButton(host)?.getAttribute('aria-label')).to.equal(
+        '目次を閉じる',
+      );
 
       const mobileToc = queryMobileToc(host);
       if (!mobileToc) {

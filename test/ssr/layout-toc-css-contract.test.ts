@@ -85,6 +85,30 @@ describe('layout toc css contract', () => {
       hasDeclarationForAllSelectors(
         layoutTocCss,
         ['.layout-toc__link.is-active::before', ".layout-toc__link[data-active='true']::before"],
+        'inset-block',
+        'var(--_toc-active-inset-block)',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForAllSelectors(
+        layoutTocCss,
+        ['.layout-toc__link.is-active::before', ".layout-toc__link[data-active='true']::before"],
+        'block-size',
+        'auto',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForAllSelectors(
+        layoutTocCss,
+        ['.layout-toc__link.is-active::before', ".layout-toc__link[data-active='true']::before"],
+        'transform',
+        'none',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForAllSelectors(
+        layoutTocCss,
+        ['.layout-toc__link.is-active::before', ".layout-toc__link[data-active='true']::before"],
         'opacity',
         '1',
       ),
@@ -121,6 +145,74 @@ describe('layout toc css contract', () => {
         '--toc-item-hover-bg',
       ),
     ).toBe(true);
+  });
+
+  it('keeps long label display contract depth based in screen scope', () => {
+    const inactiveUpperSelector =
+      ".layout-toc__link:not(.is-active):not([data-active='true']) .layout-toc__link-label";
+    const inactiveLowerSelector =
+      ".layout-toc__link:not(.is-active):not([data-active='true']):is([data-heading-depth='2'],[data-heading-depth='3'],[data-heading-depth='4']) .layout-toc__link-label";
+    const activeSelectors = [
+      '.layout-toc__link.is-active .layout-toc__link-label',
+      ".layout-toc__link[data-active='true'] .layout-toc__link-label",
+    ];
+
+    expect(
+      hasDeclarationForSelector(layoutTocCss, '.layout-toc__link-label', 'overflow', 'hidden'),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(layoutTocCss, inactiveUpperSelector, 'display', '-webkit-box'),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        layoutTocCss,
+        inactiveUpperSelector,
+        '-webkit-line-clamp',
+        'var(--toc-item-inactive-upper-max-lines, 2)',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        layoutTocCss,
+        inactiveUpperSelector,
+        'line-clamp',
+        'var(--toc-item-inactive-upper-max-lines, 2)',
+      ),
+    ).toBe(true);
+    expect(hasDeclarationForSelector(layoutTocCss, inactiveLowerSelector, 'display', 'block')).toBe(
+      true,
+    );
+    expect(
+      hasDeclarationForSelector(layoutTocCss, inactiveLowerSelector, '-webkit-line-clamp', 'unset'),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(layoutTocCss, inactiveLowerSelector, 'line-clamp', 'unset'),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(layoutTocCss, inactiveLowerSelector, 'white-space', 'nowrap'),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(layoutTocCss, inactiveLowerSelector, 'text-overflow', 'ellipsis'),
+    ).toBe(true);
+    expect(
+      hasDeclarationForAllSelectors(
+        layoutTocCss,
+        activeSelectors,
+        '-webkit-line-clamp',
+        'var(--toc-item-active-max-lines, 3)',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForAllSelectors(
+        layoutTocCss,
+        activeSelectors,
+        'line-clamp',
+        'var(--toc-item-active-max-lines, 3)',
+      ),
+    ).toBe(true);
+    expect(hasDeclarationForAllSelectors(layoutTocCss, activeSelectors, 'overflow', 'hidden')).toBe(
+      true,
+    );
   });
 
   it('keeps active font weight and base typography on token fallback recipe', () => {
