@@ -72,8 +72,9 @@ const buildThemeBootstrapScript = (): string =>
 
 const DEFAULT_CLIENT_SCRIPT_SRC = '/src/client.ts';
 const DEFAULT_CLIENT_STYLE_SRCS = ['/src/assets/css/main.css'] as const;
-const MAIN_CONTENT_TARGET = `#${MAIN_CONTENT_ID}`;
 const NOTE_LAYOUT_SIDEBAR_ID = 'note-primary';
+const SKIP_LINK_LABEL = 'メインコンテンツへ移動';
+const SKIP_LINK_HREF = `#${MAIN_CONTENT_ID}`;
 
 interface ClientBundleView {
   scriptSrc?: string;
@@ -157,6 +158,10 @@ export class BaseLayout {
         kind: 'boolean',
       },
     ]);
+    const skipLinkAttributes = serializeHtmlAttributes([
+      { name: 'class', value: 'skip-link' },
+      { name: 'href', value: SKIP_LINK_HREF },
+    ]);
     const tocPresence: TocPresence =
       data.notePage?.tocPresence ?? data.headerTocPresence ?? 'absent';
     const tocRuntimeId =
@@ -195,13 +200,7 @@ export class BaseLayout {
   <script type="module"${serializeHtmlAttributes([{ name: 'src', value: clientScriptSrc }])}></script>
 </head>
 <body${bodyAttributes}>
-  <ui-skip-link
-    target-id="${MAIN_CONTENT_TARGET.slice(1)}"
-    label="メインコンテンツへ移動"
-    data-hydration-scope="skip-link"
-    data-hydration-capability="interactive"
-    data-hydration-trigger="initial"
-  ></ui-skip-link>
+  <a${skipLinkAttributes}>${escapeHtmlText(SKIP_LINK_LABEL)}</a>
   <div id="app" class="app-root" data-hydration-scope="app-shell">
     <layout-header${headerAttributes}></layout-header>
     <app-router

@@ -1,0 +1,64 @@
+/* ===========================================================================
+ * Skip Link
+ * =========================================================================== */
+
+.skip-link {
+  position: fixed;
+  top: var(--space-2, 8px);
+  left: 50%;
+  z-index: var(--z-max, 1000);
+
+  transform: translate(-50%, -120%);
+  opacity: 0;
+
+  max-inline-size: calc(100vw - var(--space-4, 16px));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  padding: var(--space-2, 8px) var(--space-4, 16px);
+  border: var(--border-width, 1px) solid var(--border-on-inverted);
+  border-radius: var(--radius-full, 9999px);
+
+  background: var(--fg-default);
+  color: var(--bg-default);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm, 13px);
+  font-weight: var(--font-medium, 500);
+  line-height: var(--line-height-normal, 1.5);
+  text-decoration: none;
+
+  transition: none;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateX(-50%);
+  opacity: 1;
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, currentColor);
+  outline-offset: var(--focus-ring-offset, 2px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .skip-link {
+    box-shadow: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .skip-link:focus,
+  .skip-link:focus-visible {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    outline: 3px solid CanvasText;
+    forced-color-adjust: auto;
+  }
+}
+
+@media print {
+  .skip-link {
+    display: none;
+  }
+}

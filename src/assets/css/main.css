@@ -19,6 +19,7 @@
 
 @import './tokens.css';
 
+@import './skip-link.css';
 @import './code-surfaces.css';
 @import './article-header.css';
 @import './layout-toc.css';

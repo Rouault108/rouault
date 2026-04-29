@@ -242,10 +242,26 @@ describe('BaseLayout', () => {
       content: '<article><h1>本文</h1><p>静かな本文です。</p></article>',
     });
 
-    expect(rendered).toContain('<ui-skip-link');
-    expect(rendered).toContain('target-id="main-content"');
-    expect(rendered).toContain('label="メインコンテンツへ移動"');
-    expect(rendered).toContain('data-hydration-scope="skip-link"');
+    const skipLinkHtml = '<a class="skip-link" href="#main-content">メインコンテンツへ移動</a>';
+    const skipLinkIndex = rendered.indexOf(skipLinkHtml);
+    const appRootIndex = rendered.indexOf(
+      '<div id="app" class="app-root" data-hydration-scope="app-shell">',
+    );
+    const renderedSkipLinkHtml = rendered.slice(
+      skipLinkIndex,
+      rendered.indexOf('</a>', skipLinkIndex) + 4,
+    );
+
+    expect(rendered).toContain(skipLinkHtml);
+    expect(rendered).not.toContain('<ui-skip-link');
+    expect(
+      rendered.match(/<a class="skip-link" href="#main-content">メインコンテンツへ移動<\/a>/g)
+        ?.length ?? 0,
+    ).to.equal(1);
+    expect(skipLinkIndex).toBeGreaterThanOrEqual(0);
+    expect(appRootIndex).toBeGreaterThanOrEqual(0);
+    expect(skipLinkIndex).toBeLessThan(appRootIndex);
+    expect(renderedSkipLinkHtml).not.toContain('data-hydration-');
 
     expect(rendered).toContain('<div id="app" class="app-root" data-hydration-scope="app-shell">');
     expect(rendered).toContain('<layout-header');
