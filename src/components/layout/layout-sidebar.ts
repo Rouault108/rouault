@@ -114,7 +114,7 @@ export class LayoutSidebar extends LitElement {
   });
 
   applyShellProjection(snapshot: SidebarShellProjection | null): void {
-    if (snapshot === null || snapshot.present === false) {
+    if (!snapshot?.present) {
       this._applyAbsentShellProjection();
       return;
     }
