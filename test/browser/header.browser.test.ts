@@ -161,4 +161,50 @@ describe('ui-header browser contract', () => {
     expect(endZone).to.not.equal(null);
     expect(header.hasAttribute('sidebar-expanded')).to.equal(true);
   });
+
+  it('header zones do not clip focus rings', async () => {
+    const header = await fixture<UiHeader>(html`
+      <ui-header>
+        <button slot="start" type="button">Program</button>
+        <button slot="end" type="button">検索</button>
+      </ui-header>
+    `);
+
+    await waitForLitUpdate(header);
+
+    const startZone = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.zone-start'),
+      'startZone',
+    );
+    const endZone = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.zone-end'),
+      'endZone',
+    );
+
+    expect(getComputedStyle(startZone).overflowX).to.equal('visible');
+    expect(getComputedStyle(startZone).overflowY).to.equal('visible');
+    expect(getComputedStyle(endZone).overflowX).to.equal('visible');
+    expect(getComputedStyle(endZone).overflowY).to.equal('visible');
+  });
+
+  it('header inner reserves deterministic focus ring bleed without clipping', async () => {
+    const header = await fixture<UiHeader>(html`
+      <ui-header style="--space-4: 16px; --focus-ring-width: 2px; --focus-ring-offset: 2px;">
+        <button slot="start" type="button">Program</button>
+        <button slot="end" type="button">検索</button>
+      </ui-header>
+    `);
+
+    await waitForLitUpdate(header);
+
+    const inner = expectPresent(header.shadowRoot?.querySelector<HTMLElement>('.inner'), 'inner');
+
+    const styles = getComputedStyle(inner);
+
+    expect(styles.boxSizing).to.equal('border-box');
+    expect(styles.overflowX).to.equal('visible');
+    expect(styles.overflowY).to.equal('visible');
+    expect(styles.paddingInlineStart).to.equal('20px');
+    expect(styles.paddingInlineEnd).to.equal('20px');
+  });
 });

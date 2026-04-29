@@ -27,10 +27,7 @@ const isVisible = (element: HTMLElement): boolean => {
   const rect = element.getBoundingClientRect();
 
   return (
-    style.display !== 'none' &&
-    style.visibility !== 'hidden' &&
-    rect.width > 0 &&
-    rect.height > 0
+    style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
   );
 };
 
@@ -69,9 +66,24 @@ const getSearchTriggerButton = (host: ShadowRoot | null): HTMLButtonElement => {
 const getSearchTriggerHost = (host: ShadowRoot | null): HTMLElement =>
   expectPresent(host?.querySelector<HTMLElement>('ui-search-trigger'), 'ui-search-trigger');
 
-const publishReadyTocRuntime = (runtimeId: string, overrides: Partial<{
-  activeId: string | null;
-}> = {}): void => {
+const expectFocusedHeaderItemRaised = async (
+  header: LayoutHeader,
+  item: HTMLElement,
+): Promise<void> => {
+  await waitForLitUpdate(header);
+  await waitForAnimationFrames(1);
+
+  const styles = getComputedStyle(item);
+  expect(styles.position).to.equal('relative');
+  expect(styles.zIndex).to.equal('1');
+};
+
+const publishReadyTocRuntime = (
+  runtimeId: string,
+  overrides: Partial<{
+    activeId: string | null;
+  }> = {},
+): void => {
   layoutTocRuntimeStore.publish(runtimeId, {
     ready: true,
     hasVisibleHeadings: true,
@@ -81,22 +93,19 @@ const publishReadyTocRuntime = (runtimeId: string, overrides: Partial<{
 };
 
 const waitForDropdownReady = async (dropdown: Dropdown): Promise<HTMLElement> => {
-  await waitUntil(
-    () => {
-      const panel = dropdown.getMenuElement();
-      if (!(panel instanceof HTMLElement)) {
-        return false;
-      }
+  await waitUntil(() => {
+    const panel = dropdown.getMenuElement();
+    if (!(panel instanceof HTMLElement)) {
+      return false;
+    }
 
-      const style = getComputedStyle(panel);
-      return (
-        getPanelPhase(panel) === 'ready' &&
-        style.visibility === 'visible' &&
-        style.pointerEvents === 'auto'
-      );
-    },
-    'dropdown が ready state へ遷移しません',
-  );
+    const style = getComputedStyle(panel);
+    return (
+      getPanelPhase(panel) === 'ready' &&
+      style.visibility === 'visible' &&
+      style.pointerEvents === 'auto'
+    );
+  }, 'dropdown が ready state へ遷移しません');
 
   // WebKit では ready commit 直後も transform transition 中の rect を返すことがあるため、
   // paint を数フレーム待ってから座標を読む。
@@ -111,13 +120,10 @@ const waitForDropdownReady = async (dropdown: Dropdown): Promise<HTMLElement> =>
 };
 
 const waitForDropdownIdle = async (dropdown: Dropdown): Promise<void> => {
-  await waitUntil(
-    () => {
-      const panel = dropdown.getMenuElement();
-      return panel instanceof HTMLElement && getPanelPhase(panel) === 'idle';
-    },
-    'dropdown が idle state へ戻りません',
-  );
+  await waitUntil(() => {
+    const panel = dropdown.getMenuElement();
+    return panel instanceof HTMLElement && getPanelPhase(panel) === 'idle';
+  }, 'dropdown が idle state へ戻りません');
 };
 
 describe('layout-header browser contract', () => {
@@ -182,7 +188,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     const corpusChevron = expectPresent(
@@ -195,6 +204,64 @@ describe('layout-header browser contract', () => {
     const horizontalOverflow = wrapper.scrollWidth - wrapper.clientWidth;
     expect(horizontalOverflow).to.be.lessThanOrEqual(1);
     expect(isVisible(corpusChevron)).to.equal(true);
+  });
+
+  it('slot groups do not clip focused header controls', async () => {
+    const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
+    await waitForLitUpdate(header);
+
+    const groups = [...(header.shadowRoot?.querySelectorAll<HTMLElement>('.slot-group') ?? [])];
+    expect(groups.length).to.be.greaterThan(0);
+
+    for (const group of groups) {
+      const styles = getComputedStyle(group);
+      expect(styles.overflowX).to.equal('visible');
+      expect(styles.overflowY).to.equal('visible');
+    }
+  });
+
+  it('focused corpus dropdown host is raised above adjacent controls', async () => {
+    const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
+    await waitForLitUpdate(header);
+
+    const corpusSwitcher = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.corpus-switcher'),
+      'corpusSwitcher',
+    );
+    const corpusTrigger = expectPresent(
+      corpusSwitcher.querySelector<HTMLElement>('ui-button[slot="trigger"]'),
+      'corpusTrigger',
+    );
+
+    corpusTrigger.focus();
+    await expectFocusedHeaderItemRaised(header, corpusSwitcher);
+  });
+
+  it('focused search trigger host is raised above adjacent controls', async () => {
+    const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
+    await waitForLitUpdate(header);
+
+    const searchTrigger = getSearchTriggerHost(header.shadowRoot);
+
+    searchTrigger.focus();
+    await expectFocusedHeaderItemRaised(header, searchTrigger);
+  });
+
+  it('focused theme dropdown host is raised above adjacent controls', async () => {
+    const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
+    await waitForLitUpdate(header);
+
+    const themeDropdown = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('[data-dropdown="theme"]'),
+      'themeDropdown',
+    );
+    const themeTrigger = expectPresent(
+      themeDropdown.querySelector<HTMLElement>('ui-button[slot="trigger"]'),
+      'themeTrigger',
+    );
+
+    themeTrigger.focus();
+    await expectFocusedHeaderItemRaised(header, themeDropdown);
   });
 
   it('テーマ変更後の再描画で theme dropdown trigger に focus を残さないこと', async () => {
@@ -237,7 +304,9 @@ describe('layout-header browser contract', () => {
     await waitForLitUpdate(header);
 
     const lightItem = expectPresent(
-      header.shadowRoot?.querySelector<MenuItem>('[data-dropdown="theme"] ui-menu-item[value="light"]'),
+      header.shadowRoot?.querySelector<MenuItem>(
+        '[data-dropdown="theme"] ui-menu-item[value="light"]',
+      ),
       'lightItem',
     );
     const lightIcon = expectPresent(lightItem.querySelector<HTMLElement>('ui-icon'), 'lightIcon');
@@ -255,7 +324,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
@@ -268,7 +340,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     const corpusSwitcher = expectPresent(
@@ -294,7 +369,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     const corpusSwitcher = expectPresent(
@@ -319,7 +397,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     const corpusChevron = expectPresent(
@@ -346,7 +427,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     const corpusSwitcher = expectPresent(
@@ -371,7 +455,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     const themeTriggerText = expectPresent(
@@ -461,7 +548,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     const uiHeader = expectPresent(
@@ -485,7 +575,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     const uiHeader = expectPresent(
@@ -528,7 +621,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     publishReadyTocRuntime('test-toc');
@@ -562,7 +658,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     publishReadyTocRuntime('test-toc');
@@ -599,7 +698,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     publishReadyTocRuntime('test-toc');
@@ -623,7 +725,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     publishReadyTocRuntime('test-toc');
@@ -640,12 +745,21 @@ describe('layout-header browser contract', () => {
 
   it('375px の mobile note では TOC trigger が icon only になること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
-      <div style="inline-size: 375px;">
-        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      <div style="inline-size: 375px; overflow: auto;">
+        <layout-header
+          note-layout
+          current-corpus-key="program"
+          toc-presence="present"
+          toc-runtime-id="test-toc"
+          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for mobile overflow verification","href":"/corpora/program/"}]'
+        ></layout-header>
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     publishReadyTocRuntime('test-toc');
@@ -662,8 +776,59 @@ describe('layout-header browser contract', () => {
 
     expect(trigger.getAttribute('data-visible')).to.equal('true');
     expect(getComputedStyle(triggerText).display).to.equal('none');
+    expect(wrapper.scrollWidth - wrapper.clientWidth).to.be.lessThanOrEqual(1);
     expect(header.shadowRoot?.querySelector('.toc-trigger-progress')).to.equal(null);
     expect(header.shadowRoot?.querySelector('.compact-note-label')).to.equal(null);
+  });
+
+  it('focused mobile TOC trigger is raised without adding horizontal overflow', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 375px; overflow: auto;">
+        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
+    await waitForLitUpdate(header);
+
+    publishReadyTocRuntime('test-toc');
+    await waitForLitUpdate(header);
+
+    const trigger = expectPresent(
+      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
+      'tocTrigger',
+    );
+
+    expect(getComputedStyle(trigger).display).to.not.equal('none');
+
+    trigger.focus();
+    await expectFocusedHeaderItemRaised(header, trigger);
+    expect(wrapper.scrollWidth - wrapper.clientWidth).to.be.lessThanOrEqual(1);
+  });
+
+  it('desktop note with sidebar reserve does not overflow while focus bleed is allowed', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1024px; overflow: auto;">
+        <layout-header
+          note-layout
+          sidebar-enabled
+          current-corpus-key="program"
+          toc-presence="present"
+          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for desktop sidebar verification","href":"/corpora/program/"}]'
+        ></layout-header>
+      </div>
+    `);
+
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
+    await waitForLitUpdate(header);
+
+    expect(wrapper.scrollWidth - wrapper.clientWidth).to.be.lessThanOrEqual(1);
   });
 
   it('runtime activeId が変化しても header TOC trigger の可視文言は固定の 目次 であること', async () => {
@@ -673,7 +838,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     publishReadyTocRuntime('test-toc', { activeId: 'deep-section' });
@@ -701,7 +869,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     publishReadyTocRuntime('test-toc');
@@ -737,7 +908,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     publishReadyTocRuntime('test-toc');
@@ -809,7 +983,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     const themeDropdown = expectPresent(
@@ -845,7 +1022,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     const themeDropdown = expectPresent(
@@ -878,7 +1058,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     await waitForLitUpdate(header);
 
     const corpusDropdown = expectPresent(
@@ -936,7 +1119,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     publishReadyTocRuntime('test-toc');
     await waitForLitUpdate(header);
 
@@ -960,9 +1146,9 @@ describe('layout-header browser contract', () => {
     expect(getComputedStyle(tocTrigger).gap).to.equal('6px');
     expect(getComputedStyle(tocTrigger).paddingLeft).to.equal('9px');
     expect(getComputedStyle(tocTrigger).paddingRight).to.equal('9px');
-    expect(getComputedStyle(searchTrigger).getPropertyValue('--search-trigger-gap').trim()).to.equal(
-      '10px',
-    );
+    expect(
+      getComputedStyle(searchTrigger).getPropertyValue('--search-trigger-gap').trim(),
+    ).to.equal('10px');
     expect(
       getComputedStyle(searchTrigger).getPropertyValue('--search-trigger-gap-compact').trim(),
     ).to.equal('6px');
@@ -1008,7 +1194,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     publishReadyTocRuntime('test-toc');
     await waitForLitUpdate(header);
 
@@ -1022,9 +1211,9 @@ describe('layout-header browser contract', () => {
     expect(getComputedStyle(tocTrigger).gap).to.equal('6px');
     expect(getComputedStyle(tocTrigger).paddingLeft).to.equal('9px');
     expect(getComputedStyle(tocTrigger).paddingRight).to.equal('9px');
-    expect(getComputedStyle(searchTrigger).getPropertyValue('--search-trigger-gap-compact').trim()).to.equal(
-      '6px',
-    );
+    expect(
+      getComputedStyle(searchTrigger).getPropertyValue('--search-trigger-gap-compact').trim(),
+    ).to.equal('6px');
     expect(
       getComputedStyle(searchTrigger)
         .getPropertyValue('--search-trigger-padding-inline-compact')
@@ -1070,7 +1259,10 @@ describe('layout-header browser contract', () => {
       </div>
     `);
 
-    const header = expectPresent(wrapper.querySelector<LayoutHeader>('layout-header'), 'layoutHeader');
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
     publishReadyTocRuntime('test-toc');
     await waitForLitUpdate(header);
 

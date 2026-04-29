@@ -20,6 +20,7 @@ export class UiHeader extends LitElement {
 
       /* コンポーネントローカルトークン */
       --ui-header-edge-highlight: oklch(100% 0 0 / 0.06);
+      --ui-header-focus-bleed: calc(var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px));
     }
 
     /* ── ヘッダー本体 ── */
@@ -29,6 +30,7 @@ export class UiHeader extends LitElement {
       z-index: var(--z-fixed, 100);
       grid-column: 1 / -1;
       block-size: var(--header-height, 48px);
+      overflow: visible;
 
       /* 背景: Baseline（backdrop-filter非対応環境用フォールバック） */
       background: var(--glass-panel, var(--bg-default));
@@ -72,18 +74,23 @@ export class UiHeader extends LitElement {
 
     .inner {
       /*
-			 * position: relative は .zone-center の絶対配置基点として必須。
-			 * grid を廃止し flex に変更することで、start/end ゾーンを
-			 * 自然なコンテンツ幅で配置しつつ、center を全幅に絶対配置して
-			 * ヘッダーの視覚的中央に固定する。
-			 */
+       * position: relative は .zone-center の絶対配置基点として必須。
+       * grid を廃止し flex に変更することで、start/end ゾーンを
+       * 自然なコンテンツ幅で配置しつつ、center を全幅に絶対配置して
+       * ヘッダーの視覚的中央に固定する。
+       *
+       * ui-button / ui-search-trigger は外側 outline を使うため、
+       * padding-inline に focus ring bleed を含めて端部の描画余白を予約する。
+       */
       position: relative;
       display: flex;
       align-items: center;
       block-size: 100%;
+      box-sizing: border-box;
       max-inline-size: var(--ui-header-max-inline-size);
       margin-inline: auto;
-      padding-inline: var(--space-4, 1rem);
+      padding-inline: calc(var(--space-4, 1rem) + var(--ui-header-focus-bleed));
+      overflow: visible;
     }
 
     :host([sidebar-expanded]) .inner {
@@ -100,7 +107,7 @@ export class UiHeader extends LitElement {
       gap: var(--space-2, 0.5rem);
       flex-shrink: 1;
       min-inline-size: 0;
-      overflow: hidden;
+      overflow: visible;
     }
 
     slot[name='start'],
@@ -154,7 +161,7 @@ export class UiHeader extends LitElement {
       flex-shrink: 1;
       min-inline-size: 0;
       margin-inline-start: auto;
-      overflow: hidden;
+      overflow: visible;
     }
 
     /* ── モバイル: 639px 以下では Center Zone を非表示（desktop 開始は 640px） ── */
@@ -184,9 +191,10 @@ export class UiHeader extends LitElement {
       }
 
       .zone-end {
-        /* mobile header の dropdown panel は zone-end の外へ張り出す。
-         * ここを hidden のままにすると fixed panel が塗りつぶし段階で切られ、
-         * mobile TOC bar より前面に出せない。 */
+        /*
+         * モバイルでも dropdown panel と focus ring が zone-end の外へ張り出すため、
+         * clipping container にしない。
+         */
         overflow: visible;
       }
     }

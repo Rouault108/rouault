@@ -130,6 +130,12 @@ export class LayoutHeader extends LitElement {
       align-items: center;
       gap: var(--space-2, 8px);
       min-inline-size: 0;
+      overflow: visible;
+    }
+
+    .slot-group > :focus-within {
+      position: relative;
+      z-index: 1;
     }
 
     ui-header {
