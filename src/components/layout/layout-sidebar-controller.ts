@@ -1,4 +1,5 @@
 import type { SidebarMode, SidebarState } from '../ui/sidebar-shell/sidebar-shell.js';
+import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../layout/note-sidebar-breakpoint.js';
 
 export const DEFAULT_LAYOUT_SIDEBAR_ID = 'note-primary';
 
@@ -29,13 +30,16 @@ interface Entry {
   mediaQuery: MediaQueryList | null;
   mediaQueryListener: ((event: MediaQueryListEvent) => void) | null;
   storage: Storage | null;
+  hasRuntimeOverlayState: boolean;
+  hasHadSubscriber: boolean;
+  cleanupScheduled: boolean;
 }
 
 type PersistedOverlayStateMap = Record<string, SidebarState>;
 
 const createEntry = (): Entry => ({
   presentation: 'overlay',
-  fixedBreakpoint: 1024,
+  fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
   mode: 'overlay',
   overlayState: 'collapsed',
   returnFocusTarget: null,
@@ -43,6 +47,9 @@ const createEntry = (): Entry => ({
   mediaQuery: null,
   mediaQueryListener: null,
   storage: null,
+  hasRuntimeOverlayState: false,
+  hasHadSubscriber: false,
+  cleanupScheduled: false,
 });
 
 const toSnapshot = (entry: Entry): LayoutSidebarControllerSnapshot => ({
@@ -56,7 +63,7 @@ const toSnapshot = (entry: Entry): LayoutSidebarControllerSnapshot => ({
 
 const normalizeFixedBreakpoint = (value: number): number => {
   if (!Number.isFinite(value)) {
-    return 1024;
+    return NOTE_SIDEBAR_FIXED_BREAKPOINT;
   }
 
   const normalized = Math.trunc(value);
@@ -74,7 +81,11 @@ class LayoutSidebarController {
     entry.fixedBreakpoint = normalizeFixedBreakpoint(options.fixedBreakpoint);
     entry.storage = options.storage ?? null;
 
-    this.restorePersistedOverlayState(resolvedId);
+    if (entry.hasRuntimeOverlayState) {
+      this._persistOverlayState(resolvedId, entry);
+    } else {
+      this.restorePersistedOverlayState(resolvedId);
+    }
     this._initMediaQuery(resolvedId, entry);
     this._emit(resolvedId, entry);
   }
@@ -87,6 +98,7 @@ class LayoutSidebarController {
     const entry = this._ensure(resolvedId);
 
     entry.listeners.add(listener);
+    entry.hasHadSubscriber = true;
     listener(toSnapshot(entry));
 
     return () => {
@@ -130,7 +142,10 @@ class LayoutSidebarController {
       entry.returnFocusTarget = trigger;
     }
 
+    entry.hasRuntimeOverlayState = true;
+
     if (entry.overlayState === 'expanded') {
+      this._persistOverlayState(resolvedId, entry);
       this._emit(resolvedId, entry);
       return;
     }
@@ -149,7 +164,10 @@ class LayoutSidebarController {
       return;
     }
 
+    entry.hasRuntimeOverlayState = true;
+
     if (entry.overlayState === 'collapsed') {
+      this._persistOverlayState(resolvedId, entry);
       this._emit(resolvedId, entry);
       return;
     }
@@ -168,12 +186,22 @@ class LayoutSidebarController {
       return;
     }
 
+    entry.hasRuntimeOverlayState = true;
+
     if (entry.overlayState === 'expanded') {
-      this.close(resolvedId);
+      entry.overlayState = 'collapsed';
+      this._persistOverlayState(resolvedId, entry);
+      this._emit(resolvedId, entry);
       return;
     }
 
-    this.open(resolvedId, trigger);
+    if (trigger instanceof HTMLElement) {
+      entry.returnFocusTarget = trigger;
+    }
+
+    entry.overlayState = 'expanded';
+    this._persistOverlayState(resolvedId, entry);
+    this._emit(resolvedId, entry);
   }
 
   restorePersistedOverlayState(id?: string): void {
@@ -228,12 +256,40 @@ class LayoutSidebarController {
       listener(snapshot);
     }
 
-    this._cleanupIfUnobserved(resolvedId, entry);
+    this._scheduleCleanupIfUnobserved(resolvedId, entry);
   }
 
   private _cleanupIfUnobserved(resolvedId: string, entry: Entry): void {
-    void resolvedId;
-    void entry;
+    if (entry.listeners.size > 0) {
+      return;
+    }
+
+    if (!entry.hasHadSubscriber && entry.hasRuntimeOverlayState) {
+      return;
+    }
+
+    if (!entry.hasHadSubscriber && entry.mediaQuery === null) {
+      return;
+    }
+
+    this._destroyMediaQuery(entry);
+    this._entries.delete(resolvedId);
+  }
+
+  private _scheduleCleanupIfUnobserved(resolvedId: string, entry: Entry): void {
+    if (entry.cleanupScheduled) {
+      return;
+    }
+
+    entry.cleanupScheduled = true;
+    queueMicrotask(() => {
+      entry.cleanupScheduled = false;
+      if (this._entries.get(resolvedId) !== entry) {
+        return;
+      }
+
+      this._cleanupIfUnobserved(resolvedId, entry);
+    });
   }
 
   private _ensure(id?: string): Entry {

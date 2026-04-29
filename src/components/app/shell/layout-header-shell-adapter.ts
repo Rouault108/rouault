@@ -18,6 +18,15 @@ interface HeaderProjectionHost extends HTMLElement {
   readShellProjection?(): HeaderShellSnapshot;
 }
 
+export const SAFE_FALLBACK_HEADER_SHELL_PROJECTION: HeaderShellSnapshot = {
+  corpora: [],
+  currentCorpusKey: 'all',
+  noteLayout: false,
+  sidebarEnabled: false,
+  tocPresence: 'absent',
+  tocRuntimeId: null,
+};
+
 const parseCorpora = (value: string | null): CorpusShellItem[] => {
   if (typeof value !== 'string' || value.trim().length === 0) {
     return [];
@@ -77,21 +86,21 @@ export const applyHeaderSnapshot = (
   header: HTMLElement,
   shell: DocumentShellSnapshot | null,
 ): void => {
-  const snapshot = shell?.header;
+  const snapshot = shell?.header ?? SAFE_FALLBACK_HEADER_SHELL_PROJECTION;
   const projectionHeader = header as HeaderProjectionHost;
 
-  if (snapshot && typeof projectionHeader.applyShellProjection === 'function') {
+  if (typeof projectionHeader.applyShellProjection === 'function') {
     projectionHeader.applyShellProjection(snapshot);
     return;
   }
 
-  header.setAttribute('corpora-json', JSON.stringify(snapshot?.corpora ?? []));
-  header.setAttribute('current-corpus-key', snapshot?.currentCorpusKey ?? 'all');
-  header.toggleAttribute('note-layout', snapshot?.noteLayout ?? false);
-  header.toggleAttribute('sidebar-enabled', snapshot?.sidebarEnabled ?? false);
-  header.setAttribute('toc-presence', snapshot?.tocPresence ?? 'absent');
+  header.setAttribute('corpora-json', JSON.stringify(snapshot.corpora));
+  header.setAttribute('current-corpus-key', snapshot.currentCorpusKey);
+  header.toggleAttribute('note-layout', snapshot.noteLayout);
+  header.toggleAttribute('sidebar-enabled', snapshot.sidebarEnabled);
+  header.setAttribute('toc-presence', snapshot.tocPresence);
 
-  const tocRuntimeId = snapshot?.tocRuntimeId?.trim();
+  const tocRuntimeId = snapshot.tocRuntimeId?.trim();
   if (tocRuntimeId && tocRuntimeId.length > 0) {
     header.setAttribute('toc-runtime-id', tocRuntimeId);
   } else {

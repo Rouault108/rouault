@@ -6,6 +6,7 @@ import {
   DEFAULT_LAYOUT_SIDEBAR_ID,
   layoutSidebarController,
 } from '../../src/components/layout/layout-sidebar-controller.js';
+import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../src/layout/note-sidebar-breakpoint.js';
 import { getLayoutSidebarTreeStateStorageKey } from '../../src/components/layout/layout-sidebar-tree-state.js';
 import type { UiSidebarShell } from '../../src/components/ui/sidebar-shell/sidebar-shell.js';
 import { type LitLikeElement, waitForLitUpdate } from './helpers/wait-for-lit.js';
@@ -624,6 +625,15 @@ describe('layout-sidebar browser contract', () => {
       await settle(host);
 
       expect(host.hidden).to.equal(true);
+      expect(host.stateScopeId).to.equal('');
+      expect(host.selectedId).to.equal(null);
+      expect(host.initialExpandedIdsJson).to.equal('[]');
+      expect(host.topologyRevision).to.equal(null);
+      expect(host.heading).to.equal('');
+      expect(host.presentation).to.equal('auto');
+      expect(host.fixedBreakpoint).to.equal(NOTE_SIDEBAR_FIXED_BREAKPOINT);
+      expect(host.innerHTML).not.to.contain('nav data-sidebar-nav');
+      expect(host.readShellProjection().present).to.equal(false);
       expect(overlayLayer.querySelector('ui-sidebar-shell')).to.equal(null);
       expect(host.querySelector('ui-sidebar-shell')).to.not.equal(null);
     } finally {

@@ -3,7 +3,11 @@ import type {
   PreparedShellUpdate,
   ShellAdapter,
 } from '../../../router/router.js';
-import { applyHeaderSnapshot, readHeaderSnapshot } from './layout-header-shell-adapter.js';
+import {
+  applyHeaderSnapshot,
+  readHeaderSnapshot,
+  SAFE_FALLBACK_HEADER_SHELL_PROJECTION,
+} from './layout-header-shell-adapter.js';
 import { applySidebarSnapshot, readSidebarShellSnapshot } from './layout-sidebar-shell-adapter.js';
 
 const HEADER_SELECTOR = 'layout-header';
@@ -26,21 +30,26 @@ export const createAppShellAdapter = (): ShellAdapter => ({
     const currentSidebarColumn = document.querySelector<HTMLElement>(SIDEBAR_COLUMN_SELECTOR);
     const currentSidebar = document.querySelector<SidebarProjectionHost>(SIDEBAR_HOST_SELECTOR);
 
-    const previousShell: DocumentShellSnapshot | null =
+    const previousHeader =
       currentHeader instanceof HTMLElement
+        ? typeof currentHeader.readShellProjection === 'function'
+          ? currentHeader.readShellProjection()
+          : readHeaderSnapshot(currentHeader)
+        : SAFE_FALLBACK_HEADER_SHELL_PROJECTION;
+    const previousSidebar =
+      currentSidebar instanceof HTMLElement &&
+      currentSidebarColumn instanceof HTMLElement &&
+      !currentSidebarColumn.hidden &&
+      !currentSidebar.hidden
+        ? typeof currentSidebar.readShellProjection === 'function'
+          ? currentSidebar.readShellProjection()
+          : readSidebarShellSnapshot(currentSidebar)
+        : null;
+    const previousShell: DocumentShellSnapshot | null =
+      currentHeader instanceof HTMLElement || currentSidebar instanceof HTMLElement
         ? {
-            header:
-              typeof currentHeader.readShellProjection === 'function'
-                ? currentHeader.readShellProjection()
-                : readHeaderSnapshot(currentHeader),
-            sidebar:
-              currentSidebar instanceof HTMLElement &&
-              currentSidebarColumn instanceof HTMLElement &&
-              !currentSidebarColumn.hidden
-                ? typeof currentSidebar.readShellProjection === 'function'
-                  ? currentSidebar.readShellProjection()
-                  : readSidebarShellSnapshot(currentSidebar)
-                : null,
+            header: previousHeader,
+            sidebar: previousSidebar,
           }
         : null;
 

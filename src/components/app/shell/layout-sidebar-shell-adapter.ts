@@ -5,10 +5,21 @@ import type {
   SidebarShellSnapshot,
 } from '../../../router/router.js';
 import { DEFAULT_LAYOUT_SIDEBAR_ID } from '../../layout/layout-sidebar-controller.js';
+import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../../layout/note-sidebar-breakpoint.js';
+import { SAFE_FALLBACK_HEADER_SHELL_PROJECTION } from './layout-header-shell-adapter.js';
 
 const APP_ROUTER_SELECTOR = 'app-router';
 const SIDEBAR_COLUMN_SELECTOR = '[data-app-shell-sidebar-host]';
 const SIDEBAR_HOST_SELECTOR = `${SIDEBAR_COLUMN_SELECTOR} layout-sidebar`;
+const SIDEBAR_PROJECTION_ATTRIBUTES = [
+  'state-scope-id',
+  'selected-id',
+  'initial-expanded-ids',
+  'topology-revision',
+  'heading',
+  'fixed-breakpoint',
+  'presentation',
+] as const;
 
 interface SidebarProjectionHost extends HTMLElement {
   applyShellProjection?(snapshot: SidebarShellSnapshot | null): void;
@@ -54,15 +65,19 @@ const parseStringArrayAttribute = (value: string | null): string[] => {
 };
 
 export const readSidebarShellSnapshot = (sidebar: Element): SidebarShellSnapshot => ({
-  present: true,
+  present: !(sidebar instanceof HTMLElement && sidebar.hidden),
   sidebarId: toTrimmedString(sidebar.getAttribute('sidebar-id'), DEFAULT_LAYOUT_SIDEBAR_ID),
   stateScopeId: toTrimmedString(sidebar.getAttribute('state-scope-id')),
   selectedId: toOptionalString(sidebar.getAttribute('selected-id')),
   initialExpandedIds: parseStringArrayAttribute(sidebar.getAttribute('initial-expanded-ids')),
   topologyRevision: toOptionalString(sidebar.getAttribute('topology-revision')),
+  // fallback 読み取りは SSR / projection 由来 DOM の rollback 復元に限定する。
   navHtml: sidebar.innerHTML.trim() || null,
   heading: toOptionalString(sidebar.getAttribute('heading')),
-  fixedBreakpoint: toNumber(sidebar.getAttribute('fixed-breakpoint'), 1024),
+  fixedBreakpoint: toNumber(
+    sidebar.getAttribute('fixed-breakpoint'),
+    NOTE_SIDEBAR_FIXED_BREAKPOINT,
+  ),
   presentation:
     sidebar.getAttribute('presentation') === 'fixed' ||
     sidebar.getAttribute('presentation') === 'overlay'
@@ -77,7 +92,8 @@ export const applySidebarSnapshot = (
   currentSidebar: HTMLElement | null,
 ): void => {
   const snapshot = shell?.sidebar;
-  const isPresent = snapshot?.present ?? false;
+  const normalizedSnapshot = snapshot === null || snapshot?.present === false ? null : snapshot;
+  const isPresent = normalizedSnapshot !== null && normalizedSnapshot !== undefined;
 
   if (currentRouter instanceof HTMLElement) {
     currentRouter.setAttribute('data-sidebar-presence', isPresent ? 'present' : 'absent');
@@ -92,40 +108,55 @@ export const applySidebarSnapshot = (
 
   const projectionSidebar = currentSidebar as SidebarProjectionHost;
   if (typeof projectionSidebar.applyShellProjection === 'function') {
-    projectionSidebar.applyShellProjection(snapshot ?? null);
+    projectionSidebar.applyShellProjection(normalizedSnapshot ?? null);
     return;
   }
 
-  if (!snapshot) {
+  if (!normalizedSnapshot) {
+    for (const attributeName of SIDEBAR_PROJECTION_ATTRIBUTES) {
+      currentSidebar.removeAttribute(attributeName);
+    }
+    if ('presentation' in currentSidebar) {
+      (currentSidebar as { presentation?: unknown }).presentation = 'auto';
+    }
+    if ('fixedBreakpoint' in currentSidebar) {
+      (currentSidebar as { fixedBreakpoint?: unknown }).fixedBreakpoint =
+        NOTE_SIDEBAR_FIXED_BREAKPOINT;
+    }
+    currentSidebar.innerHTML = '';
     return;
   }
 
-  currentSidebar.setAttribute('state-scope-id', snapshot.stateScopeId);
+  currentSidebar.setAttribute('state-scope-id', normalizedSnapshot.stateScopeId);
 
-  if (snapshot.selectedId === null) {
+  if (normalizedSnapshot.selectedId === null) {
     currentSidebar.removeAttribute('selected-id');
   } else {
-    currentSidebar.setAttribute('selected-id', snapshot.selectedId);
+    currentSidebar.setAttribute('selected-id', normalizedSnapshot.selectedId);
   }
 
-  currentSidebar.setAttribute('initial-expanded-ids', JSON.stringify(snapshot.initialExpandedIds));
+  currentSidebar.setAttribute(
+    'initial-expanded-ids',
+    JSON.stringify(normalizedSnapshot.initialExpandedIds),
+  );
 
-  if (snapshot.topologyRevision === null) {
+  if (normalizedSnapshot.topologyRevision === null) {
     currentSidebar.removeAttribute('topology-revision');
   } else {
-    currentSidebar.setAttribute('topology-revision', snapshot.topologyRevision);
+    currentSidebar.setAttribute('topology-revision', normalizedSnapshot.topologyRevision);
   }
 
-  if (snapshot.heading === null) {
+  if (normalizedSnapshot.heading === null) {
     currentSidebar.removeAttribute('heading');
   } else {
-    currentSidebar.setAttribute('heading', snapshot.heading);
+    currentSidebar.setAttribute('heading', normalizedSnapshot.heading);
   }
-  currentSidebar.setAttribute('fixed-breakpoint', String(snapshot.fixedBreakpoint));
-  currentSidebar.setAttribute('sidebar-id', snapshot.sidebarId);
-  currentSidebar.setAttribute('presentation', snapshot.presentation);
+  currentSidebar.setAttribute('fixed-breakpoint', String(normalizedSnapshot.fixedBreakpoint));
+  currentSidebar.setAttribute('sidebar-id', normalizedSnapshot.sidebarId);
+  currentSidebar.setAttribute('presentation', normalizedSnapshot.presentation);
 
-  currentSidebar.innerHTML = typeof snapshot.navHtml === 'string' ? snapshot.navHtml : '';
+  currentSidebar.innerHTML =
+    typeof normalizedSnapshot.navHtml === 'string' ? normalizedSnapshot.navHtml : '';
 };
 
 export const createLayoutSidebarShellAdapter = (): ShellAdapter => ({
@@ -136,15 +167,11 @@ export const createLayoutSidebarShellAdapter = (): ShellAdapter => ({
     const previousShell: DocumentShellSnapshot | null =
       currentSidebar instanceof HTMLElement
         ? {
-            header: {
-              corpora: [],
-              currentCorpusKey: 'all',
-              noteLayout: false,
-              sidebarEnabled: false,
-              tocPresence: 'absent',
-            },
+            header: SAFE_FALLBACK_HEADER_SHELL_PROJECTION,
             sidebar:
-              currentSidebarColumn instanceof HTMLElement && !currentSidebarColumn.hidden
+              currentSidebarColumn instanceof HTMLElement &&
+              !currentSidebarColumn.hidden &&
+              !currentSidebar.hidden
                 ? typeof currentSidebar.readShellProjection === 'function'
                   ? currentSidebar.readShellProjection()
                   : readSidebarShellSnapshot(currentSidebar)

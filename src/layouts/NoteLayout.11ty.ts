@@ -2,7 +2,8 @@
  * ノート用レイアウト。
  *
  * BaseLayout を layout chain で継承し、
- * サイドバー + 本文 + TOC の3カラム構成を提供する。
+ * 本文、記事ヘッダー、TOC、TOC JSON、Pagefind metadata だけを出力する。
+ * app shell 上の sidebar host は BaseLayout が所有する。
  */
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import { escapeHtmlText, renderJsonScriptElement, serializeHtmlAttributes } from './html-output.js';

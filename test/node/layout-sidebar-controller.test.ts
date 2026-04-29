@@ -3,6 +3,7 @@ import {
   DEFAULT_LAYOUT_SIDEBAR_ID,
   layoutSidebarController,
 } from '../../src/components/layout/layout-sidebar-controller.js';
+import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../src/layout/note-sidebar-breakpoint.js';
 
 if (typeof globalThis.HTMLElement === 'undefined') {
   function MockHTMLElement(this: unknown) {
@@ -45,6 +46,7 @@ class MockStorage implements Storage {
 
 interface MatchMediaMockController {
   dispatch(matches: boolean): void;
+  listenerCount(): number;
   restore(): void;
 }
 
@@ -94,6 +96,9 @@ const installMatchMediaMock = (initialMatches: boolean): MatchMediaMockControlle
         listener({ matches } as MediaQueryListEvent);
       }
     },
+    listenerCount(): number {
+      return listeners.size;
+    },
     restore(): void {
       Object.defineProperty(globalThis, 'window', {
         configurable: true,
@@ -118,7 +123,7 @@ describe('layout-sidebar-controller', () => {
     try {
       layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
         presentation: 'auto',
-        fixedBreakpoint: 1024,
+        fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
         storage: null,
       });
 
@@ -143,7 +148,7 @@ describe('layout-sidebar-controller', () => {
 
     layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
       presentation: 'overlay',
-      fixedBreakpoint: 1024,
+      fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
       storage,
     });
 
@@ -152,7 +157,7 @@ describe('layout-sidebar-controller', () => {
 
     layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
       presentation: 'overlay',
-      fixedBreakpoint: 1024,
+      fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
       storage,
     });
 
@@ -165,7 +170,7 @@ describe('layout-sidebar-controller', () => {
   it('overlay で route select 相当の close を行うと collapse へ戻ること', () => {
     layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
       presentation: 'overlay',
-      fixedBreakpoint: 1024,
+      fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
       storage: null,
     });
 
@@ -176,5 +181,96 @@ describe('layout-sidebar-controller', () => {
       mode: 'overlay',
       state: 'collapsed',
     });
+  });
+
+  it('host 接続前 toggle は persisted collapsed に上書きされないこと', () => {
+    const storage = new MockStorage();
+    storage.setItem(
+      'rouault.note-sidebar.overlay-state',
+      JSON.stringify({ [DEFAULT_LAYOUT_SIDEBAR_ID]: 'collapsed' }),
+    );
+
+    layoutSidebarController.toggle(DEFAULT_LAYOUT_SIDEBAR_ID);
+    layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+      presentation: 'overlay',
+      fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
+      storage,
+    });
+
+    expect(layoutSidebarController.getSnapshot(DEFAULT_LAYOUT_SIDEBAR_ID)).toMatchObject({
+      mode: 'overlay',
+      state: 'expanded',
+    });
+    expect(storage.getItem('rouault.note-sidebar.overlay-state')).to.contain('expanded');
+  });
+
+  it('host 接続前 close は persisted expanded に上書きされないこと', () => {
+    const storage = new MockStorage();
+    storage.setItem(
+      'rouault.note-sidebar.overlay-state',
+      JSON.stringify({ [DEFAULT_LAYOUT_SIDEBAR_ID]: 'expanded' }),
+    );
+
+    layoutSidebarController.close(DEFAULT_LAYOUT_SIDEBAR_ID);
+    layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+      presentation: 'overlay',
+      fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
+      storage,
+    });
+
+    expect(layoutSidebarController.getSnapshot(DEFAULT_LAYOUT_SIDEBAR_ID)).toMatchObject({
+      mode: 'overlay',
+      state: 'collapsed',
+    });
+    expect(storage.getItem('rouault.note-sidebar.overlay-state')).to.contain('collapsed');
+  });
+
+  it('fixed mode の command は persisted overlay state 復元を妨げないこと', () => {
+    const storage = new MockStorage();
+    storage.setItem(
+      'rouault.note-sidebar.overlay-state',
+      JSON.stringify({ [DEFAULT_LAYOUT_SIDEBAR_ID]: 'expanded' }),
+    );
+
+    layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+      presentation: 'fixed',
+      fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
+      storage,
+    });
+    layoutSidebarController.close(DEFAULT_LAYOUT_SIDEBAR_ID);
+    layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+      presentation: 'overlay',
+      fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
+      storage,
+    });
+
+    expect(layoutSidebarController.getSnapshot(DEFAULT_LAYOUT_SIDEBAR_ID)).toMatchObject({
+      mode: 'overlay',
+      state: 'expanded',
+    });
+  });
+
+  it('最後の subscriber 解除で media query listener を解放すること', async () => {
+    const media = installMatchMediaMock(true);
+
+    try {
+      layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+        presentation: 'auto',
+        fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
+        storage: null,
+      });
+      const unsubscribe = layoutSidebarController.subscribe(DEFAULT_LAYOUT_SIDEBAR_ID, () => {
+        /* noop */
+      });
+
+      expect(media.listenerCount()).toBe(1);
+
+      unsubscribe();
+      await Promise.resolve();
+
+      expect(media.listenerCount()).toBe(0);
+    } finally {
+      media.restore();
+    }
   });
 });

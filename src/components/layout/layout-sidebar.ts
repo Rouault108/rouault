@@ -114,15 +114,8 @@ export class LayoutSidebar extends LitElement {
   });
 
   applyShellProjection(snapshot: SidebarShellProjection | null): void {
-    if (snapshot === null) {
-      this.hidden = true;
-      this.heading = '';
-      this.removeAttribute('heading');
-      this._navMarkup = '';
-      layoutSidebarController.close(this._resolveSidebarId());
-      this._syncSurfaceMount();
-      this._syncSurfaceProps();
-      void this._syncSurfaceTree();
+    if (snapshot === null || snapshot.present === false) {
+      this._applyAbsentShellProjection();
       return;
     }
 
@@ -163,6 +156,35 @@ export class LayoutSidebar extends LitElement {
     this._navMarkup = snapshot.navHtml?.trim() ?? '';
     this._activeId = null;
 
+    this._syncSurfaceMount();
+    this._syncSurfaceProps();
+    void this._syncSurfaceTree();
+  }
+
+  private _applyAbsentShellProjection(): void {
+    this.hidden = true;
+
+    this.removeAttribute('state-scope-id');
+    this.removeAttribute('selected-id');
+    this.removeAttribute('initial-expanded-ids');
+    this.removeAttribute('topology-revision');
+    this.removeAttribute('heading');
+    this.removeAttribute('fixed-breakpoint');
+
+    this.stateScopeId = '';
+    this.selectedId = null;
+    this.initialExpandedIdsJson = '[]';
+    this.topologyRevision = null;
+    this.heading = '';
+    this.fixedBreakpoint = NOTE_SIDEBAR_FIXED_BREAKPOINT;
+    this.presentation = 'auto';
+    this._navMarkup = '';
+    this._activeId = null;
+
+    // absent projection は stale な SSR/projection light DOM も投影状態として破棄する。
+    this.innerHTML = '';
+
+    layoutSidebarController.close(this._resolveSidebarId());
     this._syncSurfaceMount();
     this._syncSurfaceProps();
     void this._syncSurfaceTree();
@@ -234,14 +256,14 @@ export class LayoutSidebar extends LitElement {
     }
 
     if (changedProperties.has('sidebarId')) {
-      const previousSidebarId = changedProperties.get('sidebarId');
       this._storeCleanup?.();
       this._storeCleanup = null;
-      if (typeof previousSidebarId === 'string') {
-        layoutSidebarController.reset(previousSidebarId);
-      }
       this._initializePresentationStore();
       this._connectPresentationStore();
+    }
+
+    if (changedProperties.has('selectedId')) {
+      this._activeId = null;
     }
 
     if (changedProperties.has('_sidebarSnapshot')) {
@@ -334,8 +356,8 @@ export class LayoutSidebar extends LitElement {
     return markup.length > 0 ? markup : null;
   }
 
-  private _parseInitialExpandedIds(value: string): string[] {
-    const normalized = value.trim();
+  private _parseInitialExpandedIds(value: string | null | undefined): string[] {
+    const normalized = value?.trim() ?? '';
     if (normalized.length === 0) {
       return [];
     }
