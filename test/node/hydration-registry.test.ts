@@ -16,6 +16,7 @@ describe('hydration registry', () => {
     expect(HYDRATION_REGISTRY_BY_TAG.has('image-lightbox-enhancer')).toBe(true);
     expect(HYDRATION_REGISTRY_BY_TAG.has('footnote-popover-enhancer')).toBe(true);
     expect(HYDRATION_REGISTRY_BY_TAG.has('layout-toc-controller')).toBe(true);
+    expect(HYDRATION_REGISTRY_BY_TAG.has('layout-toc')).toBe(true);
     expect(HYDRATION_REGISTRY_BY_TAG.has('ui-article-header')).toBe(false);
 
     const removedTags: readonly string[] = [

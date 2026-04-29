@@ -10,6 +10,8 @@ describe('AboutPageTemplate', () => {
     expect(data.layout).toBe('base');
     expect(data.title).toBe('About');
     expect(data.permalink).toBe('/about/index.html');
+    expect(data.headerTocPresence).toBe('present');
+    expect(data.headerTocRuntimeId).toBe('about-page-toc');
   });
 
   it('about を静的 HTML として描画し、TOC を独立して hydration 可能にすること', () => {

@@ -59,6 +59,11 @@ const activateLayoutTocController = async ({
   module.activateLayoutTocController(element);
 };
 
+const activateLayoutToc = async ({ element }: HydrationActivationContext): Promise<void> => {
+  const module = await import('../../components/layout/layout-toc.js');
+  await module.activateLayoutToc(element);
+};
+
 export const HYDRATION_REGISTRY = [
   {
     tag: 'ui-skip-link',
@@ -113,6 +118,11 @@ export const HYDRATION_REGISTRY = [
     tag: 'layout-toc-controller',
     loader: () => import('../../components/layout/layout-toc-controller.js'),
     activate: activateLayoutTocController,
+  },
+  {
+    tag: 'layout-toc',
+    loader: () => import('../../components/layout/layout-toc.js'),
+    activate: activateLayoutToc,
   },
   {
     tag: 'code-block-enhancer',

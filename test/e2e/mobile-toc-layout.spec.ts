@@ -126,6 +126,7 @@ test.describe('mobile TOC layout contract after header integration', () => {
     page,
   }) => {
     await page.goto(aboutPath);
+    await waitForHeaderTrigger(page);
 
     const state = await readLayoutState(page, '.about-shell');
     expect(state).not.toBeNull();
@@ -144,6 +145,7 @@ test.describe('mobile TOC layout contract after header integration', () => {
     const noteState = await readLayoutState(page, '.note-shell');
 
     await page.goto(aboutPath);
+    await waitForHeaderTrigger(page);
     const aboutState = await readLayoutState(page, '.about-shell');
 
     expect(noteState).not.toBeNull();
