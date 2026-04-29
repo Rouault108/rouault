@@ -80,7 +80,12 @@ const renderNoteShell = () =>
         html`
           <div class="foundation-stage" style="padding: 0; overflow: clip;">
             <div class="app-root">
-              <layout-header note-layout sidebar-enabled toc-presence="present" toc-runtime-id="story-note-toc-source"></layout-header>
+              <layout-header
+                note-layout
+                sidebar-enabled
+                toc-presence="present"
+                toc-runtime-id="story-note-toc-source"
+              ></layout-header>
               <main id="note-shell-main" tabindex="-1">
                 <section class="note-shell">
                   <aside class="layout-sidebar-col" aria-label="ナビゲーション">
@@ -140,12 +145,12 @@ const meta: Meta = {
     docs: {
       description: {
         component: `
-NoteLayout 相当の 3 カラム構造を Storybook 上で確認するための story です。
+NoteLayout 相当の本文構造と周辺 chrome を Storybook 上で確認するための story です。
 
-note sidebar は visible heading を持たず、landmark 名は nav / aside 側のラベルで保持します。
+production の sidebar host は BaseLayout の app shell が所有します。この story は本文 / sidebar / TOC を同時に眺める docs / smoke 用の合成表示です。
 
 このファイルは **docs / smoke / 手動確認** に限定します。  
-note shell の SSR 構造は \`test/ssr/note-layout.test.ts\`、  
+NoteLayout の SSR 構造は \`test/ssr/note-layout.test.ts\`、app shell の sidebar host 契約は \`test/ssr/base-layout.test.ts\`、  
 実ページ上での sidebar / toc / 読書フローは \`test/e2e/no-js-baseline.spec.ts\` と \`test/e2e/router.spec.ts\` を正本とします。
         `,
       },

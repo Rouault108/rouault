@@ -261,6 +261,52 @@ describe('BaseLayout', () => {
     );
   });
 
+  it('app shell sidebar host と overlay layer を単一実体として出力すること', () => {
+    const rendered = new BaseLayout().render({
+      content: '<article><h1>本文</h1></article>',
+    });
+
+    expect(rendered.match(/data-app-shell-sidebar-host/g)?.length ?? 0).to.equal(1);
+    expect(rendered.match(/<layout-sidebar\b/g)?.length ?? 0).to.equal(1);
+    expect(rendered.match(/data-app-shell-sidebar-overlay-layer/g)?.length ?? 0).to.equal(1);
+  });
+
+  it('sidebar absent でも app shell structure を維持し host を hidden にすること', () => {
+    const rendered = new BaseLayout().render({
+      content: '<article><h1>本文</h1></article>',
+      notePage: {
+        noteKind: 'testing',
+        noteShellSidebarPresence: 'absent',
+        tocPresence: 'absent',
+        showSidebar: false,
+        contentHtml: '<article><h1>本文</h1></article>',
+        toc: {
+          sourceId: 'toc-source-plain',
+          headings: [],
+          capabilities: {
+            activeTracking: false,
+            dynamicScopes: false,
+            mobilePanel: false,
+          },
+          contentRootId: 'note-content-plain',
+          homeHref: '/',
+          shouldHydrate: false,
+        },
+        articleHeader: {
+          heading: 'Plain',
+          genres: [],
+        },
+        pagefind: null,
+      },
+    });
+
+    expect(rendered).toContain('data-sidebar-presence="absent"');
+    expect(rendered).toContain('data-app-shell-sidebar-host\n        hidden');
+    expect(rendered).toContain('<layout-sidebar\n          hidden');
+    expect(rendered.match(/<main id="main-content" tabindex="-1">/g)?.length ?? 0).to.equal(1);
+    expect(rendered.match(/data-app-shell-sidebar-overlay-layer/g)?.length ?? 0).to.equal(1);
+  });
+
   it('footer を shell hydration の初期計画へ含めること', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({

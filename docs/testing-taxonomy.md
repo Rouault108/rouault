@@ -368,7 +368,8 @@ sidebar と hydration は、次の責務境界で固定します。
 
 ### 13.3 `test/ssr/**`
 
-- `NoteLayout` が sidebar host を 1 個だけ出力すること
+- `BaseLayout` が app shell 上に sidebar host を 1 個だけ出力すること
+- `NoteLayout` が sidebar host を出力しないこと
 - overlay 専用 DOM surface が存在しないこと
 - hydration hook と scope が stable に出力されること
 

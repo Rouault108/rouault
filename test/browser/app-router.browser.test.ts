@@ -849,6 +849,101 @@ describe('app-router', () => {
     expect(appHost.getAttribute('data-sidebar-presence')).to.equal('absent');
     expect(sidebarColumn?.hidden).to.equal(true);
     expect(sidebar?.hidden).to.equal(true);
+    expect(sidebar?.hasAttribute('state-scope-id')).to.equal(false);
+    expect(sidebar?.hasAttribute('selected-id')).to.equal(false);
+    expect(sidebar?.hasAttribute('fixed-breakpoint')).to.equal(false);
+    expect(sidebar?.getAttribute('presentation')).to.equal('auto');
+    expect(sidebar?.innerHTML).not.to.contain('data-sidebar-nav');
+  });
+
+  it('sidebar.present=false は defensive absent として stale projection を clear すること', async () => {
+    const shell = await fixture<HTMLElement>(html`
+      <div>
+        <layout-header current-corpus-key="all"></layout-header>
+        <app-router data-sidebar-presence="present">
+          <aside class="layout-sidebar-col" data-app-shell-sidebar-host>
+            <layout-sidebar
+              state-scope-id="note-navigation"
+              selected-id="notes/old"
+              heading="古い見出し"
+              fixed-breakpoint="1440"
+              sidebar-id="note-primary"
+              presentation="fixed"
+              ><nav data-sidebar-nav aria-label="ノートナビゲーション">
+                <ul>
+                  <li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0">
+                    <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/old">
+                      <span data-sidebar-nav-label>Old</span>
+                    </a>
+                  </li>
+                </ul>
+              </nav></layout-sidebar
+            >
+          </aside>
+          <main id="main-content" tabindex="-1"><h1>SSR Title</h1></main>
+        </app-router>
+      </div>
+    `);
+    host = shell.querySelector<AppRouterElement>('app-router');
+    const appHost = host;
+
+    if (!appHost) {
+      throw new Error('app-router が見つかりません');
+    }
+
+    await appHost.whenReady();
+
+    globalThis.fetch = () =>
+      Promise.resolve(
+        createEnvelopeResponse({
+          html: '<h1>Defensive Absent</h1>',
+          title: 'Defensive Absent',
+          description: 'defensive absent',
+          shellProjection: {
+            header: {
+              corpora: [],
+              currentCorpusKey: 'all',
+              noteLayout: false,
+              sidebarEnabled: false,
+              tocPresence: 'absent',
+            },
+            sidebar: {
+              present: false,
+              stateScopeId: 'must-not-survive',
+              selectedId: 'must-not-survive',
+              initialExpandedIds: ['must-not-survive'],
+              topologyRevision: 'must-not-survive',
+              navHtml: '<nav data-sidebar-nav><span>Must not survive</span></nav>',
+              heading: 'Must not survive',
+              fixedBreakpoint: 1440,
+              sidebarId: 'note-primary',
+              presentation: 'fixed',
+            },
+          },
+        }),
+      );
+
+    await appHost.navigate('/standalone-page');
+
+    await waitUntil(
+      () =>
+        appHost.querySelector('#main-content')?.textContent?.includes('Defensive Absent') ?? false,
+      '本文が更新されること',
+    );
+
+    const sidebarColumn = getPersistentSidebarColumn(shell);
+    const sidebar = getPersistentSidebarHost(shell);
+    expect(appHost.getAttribute('data-sidebar-presence')).to.equal('absent');
+    expect(sidebarColumn?.hidden).to.equal(true);
+    expect(sidebar?.hidden).to.equal(true);
+    expect(sidebar?.hasAttribute('state-scope-id')).to.equal(false);
+    expect(sidebar?.hasAttribute('selected-id')).to.equal(false);
+    expect(sidebar?.hasAttribute('initial-expanded-ids')).to.equal(false);
+    expect(sidebar?.hasAttribute('topology-revision')).to.equal(false);
+    expect(sidebar?.hasAttribute('heading')).to.equal(false);
+    expect(sidebar?.hasAttribute('fixed-breakpoint')).to.equal(false);
+    expect(sidebar?.getAttribute('presentation')).to.equal('auto');
+    expect(sidebar?.innerHTML).not.to.contain('data-sidebar-nav');
   });
 
   it('sidebar shell commit failure では sidebar 属性と本文を rollback すること', async () => {

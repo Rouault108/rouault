@@ -273,4 +273,121 @@ describe('layout-sidebar-controller', () => {
       media.restore();
     }
   });
+
+  it('reset(id) は対象 entry の media query listener を解放すること', () => {
+    const media = installMatchMediaMock(true);
+
+    try {
+      layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+        presentation: 'auto',
+        fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
+        storage: null,
+      });
+
+      expect(media.listenerCount()).toBe(1);
+
+      layoutSidebarController.reset(DEFAULT_LAYOUT_SIDEBAR_ID);
+
+      expect(media.listenerCount()).toBe(0);
+    } finally {
+      media.restore();
+    }
+  });
+
+  it('initialize のみで作成された auto entry は subscriber なしで listener を保持し続けないこと', async () => {
+    const media = installMatchMediaMock(true);
+
+    try {
+      layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+        presentation: 'auto',
+        fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
+        storage: null,
+      });
+
+      expect(media.listenerCount()).toBe(1);
+
+      await Promise.resolve();
+
+      expect(media.listenerCount()).toBe(0);
+    } finally {
+      media.restore();
+    }
+  });
+
+  it('壊れた persisted overlay state を読んでも例外を投げないこと', () => {
+    const storage = new MockStorage();
+    storage.setItem('rouault.note-sidebar.overlay-state', '{broken json');
+
+    expect(() => {
+      layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+        presentation: 'overlay',
+        fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
+        storage,
+      });
+    }).not.toThrow();
+
+    expect(layoutSidebarController.getSnapshot(DEFAULT_LAYOUT_SIDEBAR_ID)).toMatchObject({
+      mode: 'overlay',
+      state: 'collapsed',
+    });
+  });
+
+  it('overlay command が現 state と同じ結果でも persisted state より優先され続けること', () => {
+    const storage = new MockStorage();
+    storage.setItem(
+      'rouault.note-sidebar.overlay-state',
+      JSON.stringify({ [DEFAULT_LAYOUT_SIDEBAR_ID]: 'expanded' }),
+    );
+
+    layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+      presentation: 'overlay',
+      fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
+      storage,
+    });
+    layoutSidebarController.open(DEFAULT_LAYOUT_SIDEBAR_ID);
+    storage.setItem(
+      'rouault.note-sidebar.overlay-state',
+      JSON.stringify({ [DEFAULT_LAYOUT_SIDEBAR_ID]: 'collapsed' }),
+    );
+    layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+      presentation: 'overlay',
+      fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
+      storage,
+    });
+
+    expect(layoutSidebarController.getSnapshot(DEFAULT_LAYOUT_SIDEBAR_ID)).toMatchObject({
+      mode: 'overlay',
+      state: 'expanded',
+    });
+  });
+
+  it('setViewportMode だけでは persisted overlay state 復元を抑止しないこと', () => {
+    const storage = new MockStorage();
+    storage.setItem(
+      'rouault.note-sidebar.overlay-state',
+      JSON.stringify({ [DEFAULT_LAYOUT_SIDEBAR_ID]: 'expanded' }),
+    );
+
+    layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+      presentation: 'overlay',
+      fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
+      storage,
+    });
+    layoutSidebarController.setViewportMode(DEFAULT_LAYOUT_SIDEBAR_ID, 'fixed');
+    layoutSidebarController.setViewportMode(DEFAULT_LAYOUT_SIDEBAR_ID, 'overlay');
+    storage.setItem(
+      'rouault.note-sidebar.overlay-state',
+      JSON.stringify({ [DEFAULT_LAYOUT_SIDEBAR_ID]: 'collapsed' }),
+    );
+    layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+      presentation: 'overlay',
+      fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT,
+      storage,
+    });
+
+    expect(layoutSidebarController.getSnapshot(DEFAULT_LAYOUT_SIDEBAR_ID)).toMatchObject({
+      mode: 'overlay',
+      state: 'collapsed',
+    });
+  });
 });
