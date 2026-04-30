@@ -38,7 +38,7 @@ export class Dropdown extends LitElement {
     }
 
     :host([disabled]) ::slotted([slot='trigger']) {
-      opacity: var(--opacity-disabled, 0.5);
+      color: var(--fg-disabled);
       cursor: not-allowed;
       pointer-events: none;
     }
@@ -63,7 +63,7 @@ export class Dropdown extends LitElement {
       max-height: calc(var(--control-height-md, 32px) * 10);
       overflow-y: auto;
       scrollbar-width: thin;
-      scrollbar-color: oklch(0% 0 0 / 0.2) transparent;
+      scrollbar-color: var(--scrollbar-thumb, var(--fg-control-affordance)) transparent;
       opacity: 0;
       visibility: hidden;
       transform: scale(var(--scale-enter, 0.97));
@@ -821,7 +821,7 @@ export class MenuItem extends LitElement {
     }
 
     button:disabled {
-      color: var(--fg-subtle, oklch(48% 0 0));
+      color: var(--fg-disabled);
       cursor: default;
       pointer-events: none;
     }

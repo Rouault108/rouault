@@ -49,12 +49,12 @@ export class SearchField extends LitElement {
       inline-size: 100%;
       --ui-search-field-height: 44px;
       --ui-search-field-radius: var(--radius-sm, 4px);
-      --ui-search-field-bg: var(--bg-fill-muted, oklch(95% 0 0));
+      --ui-search-field-bg: var(--bg-control-muted, var(--bg-fill-muted, oklch(95% 0 0)));
       --ui-search-field-border-width: 0px;
       --ui-search-field-border-color: transparent;
       --ui-search-field-shadow: none;
       --ui-search-field-font-size: var(--text-xl, 18px);
-      --ui-search-field-icon-color: var(--fg-muted, oklch(48% 0 0));
+      --ui-search-field-icon-color: var(--fg-control-affordance, var(--fg-subtle));
     }
 
     [hidden] {
@@ -146,7 +146,8 @@ export class SearchField extends LitElement {
     }
 
     input::placeholder {
-      color: var(--fg-subtle, oklch(65% 0 0));
+      color: var(--fg-placeholder, var(--fg-muted));
+      opacity: 1;
     }
 
     input::-webkit-search-cancel-button,
@@ -166,8 +167,7 @@ export class SearchField extends LitElement {
     }
 
     input:focus-visible {
-      outline:
-        var(--focus-ring-width, 2px) solid
+      outline: var(--focus-ring-width, 2px) solid
         var(--ui-search-field-focus-ring-color, var(--focus-ring-color, oklch(60% 0.15 250)));
       outline-offset: var(--focus-ring-offset, 2px);
       animation: var(--animation-focus, none);
@@ -175,12 +175,11 @@ export class SearchField extends LitElement {
     }
 
     input:disabled {
-      color: var(--fg-subtle, oklch(48% 0 0));
+      color: var(--fg-disabled);
       cursor: not-allowed;
-      opacity: var(--opacity-disabled, 0.5);
     }
 
-    input:read-only {
+    input:read-only:not(:disabled) {
       cursor: default;
     }
 
@@ -197,7 +196,7 @@ export class SearchField extends LitElement {
       border: none;
       border-radius: var(--radius-sm, 6px);
       background: transparent;
-      color: var(--fg-muted, oklch(48% 0 0));
+      color: var(--fg-control-affordance, var(--fg-subtle));
       cursor: pointer;
       padding: 0;
       transition:
@@ -221,8 +220,7 @@ export class SearchField extends LitElement {
     }
 
     .clear-button:focus-visible {
-      outline:
-        var(--focus-ring-width, 2px) solid
+      outline: var(--focus-ring-width, 2px) solid
         var(--ui-search-field-focus-ring-color, var(--focus-ring-color, oklch(60% 0.15 250)));
       outline-offset: var(--focus-ring-offset, 2px);
       animation: var(--animation-focus, none);
@@ -251,10 +249,18 @@ export class SearchField extends LitElement {
         color: FieldText;
       }
 
+      input:disabled {
+        color: GrayText;
+      }
+
       .clear-button {
         border: var(--border-width, 1px) solid ButtonText;
         color: ButtonText;
       }
+    }
+
+    :host([disabled]) {
+      --ui-search-field-icon-color: var(--fg-disabled);
     }
   `;
 

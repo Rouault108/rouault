@@ -14,7 +14,7 @@
 .layout-toc:focus-within,
 .layout-toc-mobile-panel:hover,
 .layout-toc-mobile-panel:focus-within {
-  scrollbar-color: var(--scrollbar-thumb, var(--fg-subtle, oklch(60% 0 0))) transparent;
+  scrollbar-color: var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0))) transparent;
 }
 
 .layout-toc__list {

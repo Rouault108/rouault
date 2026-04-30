@@ -419,12 +419,13 @@ disabled 状態では、少なくとも次を満たします。
 
 | 用途             | トークン                                                                                  |
 | ---------------- | ----------------------------------------------------------------------------------------- |
-| デフォルト背景   | `--bg-fill-muted`                                                                         |
+| デフォルト背景   | `--bg-control-muted`                                                                      |
 | フォーカス背景   | `--bg-default`                                                                            |
 | エラー背景       | `--bg-danger-subtle`                                                                      |
 | 既定文字色       | `--fg-default`                                                                            |
 | 補助文字色       | `--fg-muted`                                                                              |
-| 無効前景色       | `--fg-subtle`                                                                             |
+| placeholder 色   | `--fg-placeholder`                                                                        |
+| 無効前景色       | `--fg-disabled`                                                                           |
 | エラー文字色     | `--fg-danger`                                                                             |
 | 既定境界線       | `--border-default`                                                                        |
 | エラー境界線     | `--border-danger`                                                                         |

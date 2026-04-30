@@ -114,7 +114,7 @@ export class Select extends LitElement {
       font-size: var(--text-base, 14px);
       text-align: left;
 
-      background: var(--bg-fill-muted, oklch(95% 0 0));
+      background: var(--bg-control-muted, var(--bg-fill-muted, oklch(95% 0 0)));
       color: var(--fg-default, oklch(20% 0 0));
 
       cursor: pointer;
@@ -135,7 +135,12 @@ export class Select extends LitElement {
     }
 
     .trigger--placeholder {
-      color: var(--fg-subtle, oklch(48% 0 0));
+      color: var(--fg-control-label, var(--fg-muted));
+    }
+
+    .trigger::placeholder {
+      color: var(--fg-control-label, var(--fg-muted));
+      opacity: 1;
     }
 
     .trigger:hover:not(:disabled):not(:focus) {
@@ -154,8 +159,10 @@ export class Select extends LitElement {
       animation: var(--animation-focus);
     }
 
-    .trigger--opened {
-      background: var(--bg-active, oklch(93% 0 0));
+    .trigger--opened:not(:disabled) {
+      background:
+        linear-gradient(var(--bg-active), var(--bg-active)),
+        var(--bg-control-muted, var(--bg-fill-muted, oklch(95% 0 0)));
       border-color: var(--border-default, oklch(90% 0 0 / 0.12));
     }
 
@@ -163,8 +170,9 @@ export class Select extends LitElement {
       background: var(--bg-default, oklch(100% 0 0));
     }
 
-    :host([variant='outline']) .trigger--opened {
-      background: var(--bg-default, oklch(100% 0 0));
+    :host([variant='outline']) .trigger--opened:not(:disabled) {
+      background:
+        linear-gradient(var(--bg-active), var(--bg-active)), var(--bg-default, oklch(100% 0 0));
       border-color: var(--border-default, oklch(90% 0 0 / 0.18));
     }
 
@@ -176,19 +184,31 @@ export class Select extends LitElement {
     .trigger:disabled,
     :host([disabled]) .trigger {
       border-color: var(--border-default, oklch(90% 0 0 / 0.12));
-      opacity: var(--opacity-disabled, 0.5);
       cursor: not-allowed;
-      color: var(--fg-subtle, oklch(48% 0 0));
+      color: var(--fg-disabled);
     }
 
-    :host([readonly]) .trigger {
+    :host([disabled]) .trigger::placeholder {
+      color: var(--fg-disabled);
+      opacity: 1;
+    }
+
+    :host([readonly]:not([disabled])) .trigger,
+    :host([readonly]:not([disabled])) .trigger--opened {
       border-color: var(--border-default, oklch(90% 0 0 / 0.12));
-      background: var(--bg-fill-muted, oklch(95% 0 0));
+      background: var(--bg-control-muted, var(--bg-fill-muted, oklch(95% 0 0)));
       cursor: default;
     }
 
-    :host([variant='outline'][readonly]) .trigger {
+    :host([variant='outline'][readonly]:not([disabled])) .trigger,
+    :host([variant='outline'][readonly]:not([disabled])) .trigger--opened {
       background: var(--bg-default, oklch(100% 0 0));
+    }
+
+    :host([disabled]) .trigger,
+    :host([disabled]) .trigger--opened {
+      color: var(--fg-disabled);
+      cursor: not-allowed;
     }
 
     /* ============================================================
@@ -204,7 +224,7 @@ export class Select extends LitElement {
       line-height: 1;
       width: var(--icon-base, 16px);
       height: var(--icon-base, 16px);
-      color: var(--fg-muted, oklch(48% 0 0));
+      color: var(--fg-control-affordance, var(--fg-subtle));
       pointer-events: none;
       flex-shrink: 0;
       transition:
@@ -222,6 +242,13 @@ export class Select extends LitElement {
     .icon-chevron--opened {
       transform: translateY(-50%) rotate(180deg);
       color: var(--fg-default, oklch(20% 0 0));
+    }
+
+    :host([disabled]) .icon-chevron,
+    :host([disabled]) .trigger:hover ~ .icon-chevron,
+    :host([disabled]) .trigger:focus ~ .icon-chevron,
+    :host([disabled]) .icon-chevron--opened {
+      color: var(--fg-disabled);
     }
 
     /* ============================================================
@@ -276,14 +303,33 @@ export class Select extends LitElement {
         box-shadow: none;
       }
 
-      :host([disabled]) .trigger,
-      :host([readonly]) .trigger {
-        border-color: GrayText;
+      .trigger::placeholder {
+        color: CanvasText;
         opacity: 1;
       }
 
       .icon-chevron {
+        color: CanvasText;
         stroke: CanvasText;
+      }
+
+      :host([readonly]:not([disabled])) .trigger {
+        color: CanvasText !important;
+      }
+
+      :host([disabled]) .trigger,
+      :host([disabled]) .trigger::placeholder {
+        color: GrayText !important;
+        border-color: GrayText !important;
+        opacity: 1;
+      }
+
+      :host([disabled]) .icon-chevron,
+      :host([disabled]) .trigger:hover ~ .icon-chevron,
+      :host([disabled]) .trigger:focus ~ .icon-chevron,
+      :host([disabled]) .icon-chevron--opened {
+        color: GrayText;
+        stroke: GrayText;
       }
     }
 
@@ -692,7 +738,7 @@ export class Select extends LitElement {
       padding: 'calc(var(--radius-md, 6px) - var(--radius-sm, 4px))',
       // スクロールバー: 物理幅 12px、視覚的には 4px のみ
       scrollbarWidth: 'thin',
-      scrollbarColor: 'var(--border-default, oklch(90% 0 0 / 0.12)) transparent',
+      scrollbarColor: 'var(--scrollbar-thumb, var(--fg-control-affordance)) transparent',
       // Enter アニメーション
       opacity: '0',
       transform: 'scale(var(--scale-enter, 0.97))',
@@ -743,11 +789,7 @@ export class Select extends LitElement {
       borderRadius: 'var(--radius-sm, 4px)',
       fontSize: 'var(--text-base, 14px)',
       cursor: opt.disabled === true ? 'not-allowed' : 'pointer',
-      opacity: opt.disabled === true ? 'var(--opacity-disabled, 0.5)' : '1',
-      color:
-        opt.value === this.modelValue
-          ? 'var(--primary, oklch(60% 0.15 250))'
-          : 'var(--fg-default, oklch(20% 0 0))',
+      color: this._resolveOptionColor(opt),
       fontWeight:
         opt.value === this.modelValue ? 'var(--font-medium, 500)' : 'var(--font-normal, 400)',
       background: 'transparent',
@@ -774,7 +816,9 @@ export class Select extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--primary, oklch(60% 0.15 250));
+        color: ${
+          opt.disabled === true ? 'var(--fg-disabled)' : 'var(--primary, oklch(60% 0.15 250))'
+        };
       `;
       checkIcon.innerHTML = '<ui-icon name="check" aria-hidden="true"></ui-icon>';
       const checkGlyph = checkIcon.querySelector<HTMLElement>('ui-icon');
@@ -899,12 +943,11 @@ export class Select extends LitElement {
     const opt = this.options[index];
     if (!opt) return;
 
-    const isSelected = opt.value === this.modelValue;
+    const isDisabled = opt.disabled === true;
 
-    item.style.background = isActive ? 'var(--bg-surface-active, oklch(93% 0 0))' : 'transparent';
-    item.style.color = isSelected
-      ? 'var(--primary, oklch(60% 0.15 250))'
-      : 'var(--fg-default, oklch(20% 0 0))';
+    item.style.background =
+      isActive && !isDisabled ? 'var(--bg-surface-active, oklch(93% 0 0))' : 'transparent';
+    item.style.color = this._resolveOptionColor(opt);
   }
 
   private _scrollActiveIntoView(): void {
@@ -1022,6 +1065,16 @@ export class Select extends LitElement {
     return `${this._selectId}-option-${index.toString()}`;
   }
 
+  private _resolveOptionColor(opt: SelectOption): string {
+    if (opt.disabled === true) {
+      return 'var(--fg-disabled)';
+    }
+
+    return opt.value === this.modelValue
+      ? 'var(--primary, oklch(60% 0.15 250))'
+      : 'var(--fg-default, oklch(20% 0 0))';
+  }
+
   private _getListboxShadow(): string {
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const highlight = isDark
@@ -1042,17 +1095,29 @@ export class Select extends LitElement {
           box-shadow: none !important;
         }
 
-        [data-ui-select-option][aria-selected="true"] {
+        [data-ui-select-option][aria-selected="true"]:not([aria-disabled="true"]) {
           background: Highlight !important;
           color: HighlightText !important;
           outline: 2px solid CanvasText;
           outline-offset: -2px;
         }
 
-        [data-ui-select-option]:hover,
-        [data-ui-select-option][data-active="true"] {
+        [data-ui-select-option]:hover:not([aria-disabled="true"]),
+        [data-ui-select-option][data-active="true"]:not([aria-disabled="true"]) {
           background: Highlight !important;
           color: HighlightText !important;
+        }
+
+        [data-ui-select-option][aria-disabled="true"] {
+          color: GrayText !important;
+          background: transparent !important;
+        }
+
+        [data-ui-select-option][aria-selected="true"][aria-disabled="true"] {
+          color: GrayText !important;
+          background: transparent !important;
+          outline: 2px solid GrayText;
+          outline-offset: -2px;
         }
       }
 

@@ -52,9 +52,15 @@ export class SearchTrigger extends LitElement {
     }
 
     ui-button::part(button) {
-      --search-trigger-rest-background: var(--bg-fill-muted, oklch(95% 0 0));
+      --search-trigger-rest-background: var(
+        --bg-control-muted,
+        var(--bg-fill-muted, oklch(95% 0 0))
+      );
       --search-trigger-rest-border-color: transparent;
-      --search-trigger-hover-background: var(--bg-fill-muted, oklch(95% 0 0));
+      --search-trigger-hover-background: var(
+        --bg-control-muted,
+        var(--bg-fill-muted, oklch(95% 0 0))
+      );
       --search-trigger-hover-border-color: var(--border-default, oklch(85% 0 0));
       --search-trigger-focus-background: var(--bg-default, oklch(100% 0 0));
       --search-trigger-focus-border-color: var(--border-default, oklch(85% 0 0));
@@ -110,7 +116,7 @@ export class SearchTrigger extends LitElement {
       flex: none;
       inline-size: var(--icon-base, 16px);
       block-size: var(--icon-base, 16px);
-      color: var(--fg-subtle, oklch(65% 0 0));
+      color: var(--fg-control-affordance, var(--fg-subtle));
     }
 
     .icon ui-icon {
@@ -122,7 +128,7 @@ export class SearchTrigger extends LitElement {
 
     .placeholder {
       min-inline-size: 0;
-      color: var(--fg-subtle, oklch(65% 0 0));
+      color: var(--fg-control-label, var(--fg-muted));
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -148,6 +154,11 @@ export class SearchTrigger extends LitElement {
         var(--control-min-touch, var(--control-height-md, 32px))
       );
       padding-inline: 0;
+    }
+
+    :host([disabled]) .icon,
+    :host([disabled]) .placeholder {
+      color: var(--fg-disabled);
     }
 
     ui-button[data-density='icon-only'] .placeholder {
@@ -206,6 +217,11 @@ export class SearchTrigger extends LitElement {
       .icon,
       .placeholder {
         color: CanvasText;
+      }
+
+      :host([disabled]) .icon,
+      :host([disabled]) .placeholder {
+        color: GrayText;
       }
     }
 

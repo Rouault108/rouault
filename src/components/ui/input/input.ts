@@ -93,7 +93,7 @@ export class Input extends LitElement {
       border: var(--border-width, 1px) solid transparent;
       font-family: inherit;
       font-size: var(--text-base, 14px);
-      background: var(--bg-fill-muted, oklch(95% 0 0));
+      background: var(--bg-control-muted, var(--bg-fill-muted, oklch(95% 0 0)));
       color: var(--fg-default, oklch(20% 0 0));
       transition:
         background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
@@ -105,6 +105,11 @@ export class Input extends LitElement {
       outline: none;
       background: var(--bg-default, oklch(100% 0 0));
       border-color: var(--border-default, oklch(90% 0 0 / 0.12));
+    }
+
+    input::placeholder {
+      color: var(--fg-placeholder, var(--fg-muted));
+      opacity: 1;
     }
 
     input:hover:not(:disabled):not(:focus) {
@@ -124,17 +129,16 @@ export class Input extends LitElement {
 
     input:disabled {
       border-color: var(--border-default, oklch(90% 0 0 / 0.12));
-      opacity: var(--opacity-disabled, 0.5);
       cursor: not-allowed;
-      color: var(--fg-subtle, oklch(48% 0 0));
+      color: var(--fg-disabled);
     }
 
-    input:read-only {
-      background: var(--bg-fill-muted, oklch(95% 0 0));
+    input:read-only:not(:disabled) {
+      background: var(--bg-control-muted, var(--bg-fill-muted, oklch(95% 0 0)));
       cursor: default;
     }
 
-    :host([variant='outline']) input:read-only {
+    :host([variant='outline']) input:read-only:not(:disabled) {
       background: var(--bg-default, oklch(100% 0 0));
     }
 

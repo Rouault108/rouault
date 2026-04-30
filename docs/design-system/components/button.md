@@ -271,30 +271,31 @@ button は可読本文より強く主張してはなりません。とくに art
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途                 | トークン                                                                                  |
-| -------------------- | ----------------------------------------------------------------------------------------- |
-| Primary 背景         | `--primary`                                                                               |
-| Primary hover        | `--primary-hover`                                                                         |
-| Primary 文字色       | `--on-primary`                                                                            |
-| Secondary 背景       | `--bg-surface-2`                                                                          |
-| Secondary hover 背景 | `--bg-fill-muted`                                                                         |
-| Ghost hover 背景     | `--bg-hover`                                                                              |
-| Danger 背景          | `--bg-danger-subtle`                                                                      |
-| Danger 境界線        | `--border-danger`                                                                         |
-| Danger 文字色        | `--danger`                                                                                |
-| Danger hover 文字色  | `--on-danger`                                                                             |
-| 既定境界線           | `--border-default`                                                                        |
-| 既定文字色           | `--fg-default`                                                                            |
-| 控えめ文字色         | `--fg-muted`                                                                              |
-| 角丸                 | `--radius-md`                                                                             |
-| 高さ                 | `--control-height-sm` / `--control-height-md` / `--control-height-lg`                     |
-| 余白                 | `--space-*`                                                                               |
-| アイコンサイズ       | `--icon-sm` / `--icon-base` / `--icon-md`                                                 |
-| 影                   | `--elevation-sm` / `--elevation-md`                                                       |
-| 遷移時間             | `--duration-fast`                                                                         |
-| イージング           | `--ease-out`                                                                              |
-| 押下スケール         | `--scale-pressed`                                                                         |
-| フォーカスリング     | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| 用途                   | トークン                                                                                  |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| Primary 背景           | `--primary`                                                                               |
+| Primary hover          | `--primary-hover`                                                                         |
+| Primary 文字色         | `--on-primary`                                                                            |
+| Secondary 背景         | `--bg-surface-2`                                                                          |
+| Secondary hover 背景   | `--bg-hover` を `--bg-surface-2` へ合成                                                   |
+| Secondary pressed 背景 | `--bg-active` を `--bg-surface-2` へ合成                                                  |
+| Ghost hover 背景       | `--bg-hover`                                                                              |
+| Danger 背景            | `--bg-danger-subtle`                                                                      |
+| Danger 境界線          | `--border-danger`                                                                         |
+| Danger 文字色          | `--danger`                                                                                |
+| Danger hover 文字色    | `--on-danger`                                                                             |
+| 既定境界線             | `--border-default`                                                                        |
+| 既定文字色             | `--fg-default`                                                                            |
+| 控えめ文字色           | `--fg-muted`                                                                              |
+| 角丸                   | `--radius-md`                                                                             |
+| 高さ                   | `--control-height-sm` / `--control-height-md` / `--control-height-lg`                     |
+| 余白                   | `--space-*`                                                                               |
+| アイコンサイズ         | `--icon-sm` / `--icon-base` / `--icon-md`                                                 |
+| 影                     | `--elevation-sm` / `--elevation-md`                                                       |
+| 遷移時間               | `--duration-fast`                                                                         |
+| イージング             | `--ease-out`                                                                              |
+| 押下スケール           | `--scale-pressed`                                                                         |
+| フォーカスリング       | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
 
 ---
 

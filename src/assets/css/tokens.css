@@ -85,6 +85,7 @@
    * ========================================================================= */
   --bg-fill-muted: oklch(96% 0 0);
   --bg-fill-neutral: oklch(from var(--fg-default) l c h / 0.12);
+  --bg-control-muted: oklch(95% 0 0);
 
   /* =========================================================================
    * Semantic Tokens - Interaction (Light Mode)
@@ -109,7 +110,12 @@
    * ========================================================================= */
   --fg-default: oklch(20% 0 0);
   --fg-muted: oklch(45% 0 0);
-  --fg-subtle: oklch(60% 0 0);
+  --fg-subtle: oklch(53% 0 0);
+  --fg-placeholder: var(--fg-muted);
+  --fg-control-label: var(--fg-muted);
+  --fg-control-affordance: var(--fg-subtle);
+  --fg-decorative: oklch(60% 0 0);
+  --fg-disabled: oklch(70% 0 0);
   --fg-on-primary: var(--on-primary);
 
   /* =========================================================================
@@ -433,7 +439,7 @@
    * ========================================================================= */
   --scrollbar-width: 12px;
   --scrollbar-track: transparent;
-  --scrollbar-thumb: var(--fg-subtle);
+  --scrollbar-thumb: var(--fg-control-affordance);
   --scrollbar-thumb-hover: var(--fg-muted);
 
   /* =========================================================================
@@ -626,6 +632,7 @@
      * Semantic Tokens - Fill (Dark Mode)
      * ========================================================================= */
     --bg-fill-muted: oklch(9% 0 0);
+    --bg-control-muted: var(--bg-surface-2);
     /* --bg-fill-neutral: oklch(from var(--fg-default) l c h / 0.12); */
     /* 上記は Light と同じ相対色構文を使用 */
 
@@ -653,7 +660,12 @@
      * ========================================================================= */
     --fg-default: oklch(90% 0 0);
     --fg-muted: oklch(65% 0 0);
-    --fg-subtle: oklch(50% 0 0);
+    --fg-subtle: oklch(62% 0 0);
+    --fg-placeholder: var(--fg-muted);
+    --fg-control-label: var(--fg-muted);
+    --fg-control-affordance: var(--fg-subtle);
+    --fg-decorative: oklch(55% 0 0);
+    --fg-disabled: oklch(45% 0 0);
     --fg-on-primary: var(--on-primary);
 
     /* =========================================================================
@@ -745,6 +757,7 @@
   --bg-surface-3: oklch(100% 0 0);
   --bg-score-paper: oklch(100% 0 0);
   --bg-fill-muted: oklch(96% 0 0);
+  --bg-control-muted: oklch(95% 0 0);
   --bg-active: oklch(from var(--primary) l c h / 0.08);
   --bg-surface-active: var(--bg-active);
   --focus-ring-color-subtle: oklch(65% 0.12 var(--hue-primary));
@@ -757,7 +770,12 @@
   --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08);
   --fg-default: oklch(20% 0 0);
   --fg-muted: oklch(45% 0 0);
-  --fg-subtle: oklch(60% 0 0);
+  --fg-subtle: oklch(53% 0 0);
+  --fg-placeholder: var(--fg-muted);
+  --fg-control-label: var(--fg-muted);
+  --fg-control-affordance: var(--fg-subtle);
+  --fg-decorative: oklch(60% 0 0);
+  --fg-disabled: oklch(70% 0 0);
   --fg-on-primary: var(--on-primary);
   --fg-warning: oklch(55% 0.16 85);
   --fg-success: var(--success);
@@ -816,6 +834,7 @@
   --bg-surface-3: oklch(22% 0 0);
   --bg-score-paper: oklch(100% 0 0);
   --bg-fill-muted: oklch(9% 0 0);
+  --bg-control-muted: var(--bg-surface-2);
   --bg-active: oklch(from var(--primary) l c h / 0.15);
   --bg-surface-active: var(--bg-active);
   --focus-ring-color-subtle: oklch(53% 0.12 var(--hue-primary));
@@ -828,7 +847,12 @@
   --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08);
   --fg-default: oklch(90% 0 0);
   --fg-muted: oklch(65% 0 0);
-  --fg-subtle: oklch(50% 0 0);
+  --fg-subtle: oklch(62% 0 0);
+  --fg-placeholder: var(--fg-muted);
+  --fg-control-label: var(--fg-muted);
+  --fg-control-affordance: var(--fg-subtle);
+  --fg-decorative: oklch(55% 0 0);
+  --fg-disabled: oklch(45% 0 0);
   --fg-on-primary: var(--on-primary);
   --fg-warning: oklch(85% 0.16 85);
   --fg-success: var(--success);
@@ -878,12 +902,19 @@
   :root {
     /* システムカラーにマッピング */
     --fg-default: CanvasText;
+    --fg-muted: CanvasText;
+    --fg-subtle: CanvasText;
+    --fg-placeholder: GrayText;
+    --fg-control-label: CanvasText;
+    --fg-control-affordance: CanvasText;
+    --fg-decorative: GrayText;
+    --fg-disabled: GrayText;
     --bg-default: Canvas;
+    --bg-control-muted: Canvas;
     --primary: Highlight;
     --primary-hover: Highlight;
     --on-primary: HighlightText;
     --border-default: CanvasText;
-    --fg-muted: GrayText;
     --border-muted: GrayText;
     --danger: CanvasText;
     --on-danger: Canvas;

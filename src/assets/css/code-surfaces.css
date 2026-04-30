@@ -35,7 +35,7 @@
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):focus-visible,
 [data-code-block-root]:hover pre[data-code-block],
 [data-code-block-root]:focus-within pre[data-code-block] {
-  scrollbar-color: var(--scrollbar-thumb, var(--fg-subtle, oklch(60% 0 0))) transparent;
+  scrollbar-color: var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0))) transparent;
 }
 
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block])::-webkit-scrollbar-track,
@@ -63,7 +63,7 @@
   ):focus-visible::-webkit-scrollbar-thumb,
 [data-code-block-root]:hover pre[data-code-block]::-webkit-scrollbar-thumb,
 [data-code-block-root]:focus-within pre[data-code-block]::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar-thumb, var(--fg-subtle, oklch(60% 0 0)));
+  background-color: var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0)));
 }
 
 :where(

@@ -164,30 +164,36 @@ Rouault の色設計は、**知覚的一様性、テーマ切替耐性、状態�
 
 #### 2.3.2 Background / Surface Hierarchy
 
-| トークン              | 具体値                  | 役割           | 階層解釈                       |
-| --------------------- | ----------------------- | -------------- | ------------------------------ |
-| `--bg-default`        | `oklch(0.99 0.005 250)` | ページ既定背景 | 最下層                         |
-| `--bg-surface-1`      | `oklch(0.97 0.01 250)`  | 軽い面分離     | カード、軽量コンテナ           |
-| `--bg-surface-2`      | `oklch(0.94 0.012 250)` | 中程度の面分離 | パネル、入力領域               |
-| `--bg-surface-3`      | `oklch(0.91 0.014 250)` | 強い面分離     | 浮遊面、強調面                 |
-| `--bg-score-paper`    | `oklch(0.965 0.02 95)`  | 紙面風背景     | 読書・楽譜・特殊面             |
-| `--bg-fill-muted`     | `oklch(0.95 0.01 250)`  | 弱い fill      | 小さな背景強調                 |
-| `--bg-fill-neutral`   | `oklch(0.92 0.01 250)`  | 中立 fill      | neutral button, tag            |
-| `--bg-hover`          | `oklch(0.93 0.02 250)`  | hover 背景     | 一時状態                       |
-| `--bg-active`         | `oklch(0.89 0.025 250)` | active 背景    | pressed, selected              |
-| `--bg-surface-active` | `oklch(0.88 0.03 250)`  | active な面    | 選択された面、アクティブ panel |
+| トークン              | 具体値                  | 役割            | 階層解釈                       |
+| --------------------- | ----------------------- | --------------- | ------------------------------ |
+| `--bg-default`        | `oklch(0.99 0.005 250)` | ページ既定背景  | 最下層                         |
+| `--bg-surface-1`      | `oklch(0.97 0.01 250)`  | 軽い面分離      | カード、軽量コンテナ           |
+| `--bg-surface-2`      | `oklch(0.94 0.012 250)` | 中程度の面分離  | パネル、入力領域               |
+| `--bg-surface-3`      | `oklch(0.91 0.014 250)` | 強い面分離      | 浮遊面、強調面                 |
+| `--bg-score-paper`    | `oklch(0.965 0.02 95)`  | 紙面風背景      | 読書・楽譜・特殊面             |
+| `--bg-fill-muted`     | `oklch(0.95 0.01 250)`  | 弱い fill       | 小さな背景強調                 |
+| `--bg-control-muted`  | `oklch(0.95 0 0)`       | control surface | input / select / search field  |
+| `--bg-fill-neutral`   | `oklch(0.92 0.01 250)`  | 中立 fill       | neutral button, tag            |
+| `--bg-hover`          | `oklch(0.93 0.02 250)`  | hover 背景      | 一時状態                       |
+| `--bg-active`         | `oklch(0.89 0.025 250)` | active 背景     | pressed, selected              |
+| `--bg-surface-active` | `oklch(0.88 0.03 250)`  | active な面     | 選択された面、アクティブ panel |
 
 #### 2.3.3 Foreground
 
-| トークン       | 具体値                  | 役割           | 使用文脈           |
-| -------------- | ----------------------- | -------------- | ------------------ |
-| `--fg-default` | `oklch(0.24 0.02 250)`  | 基本文字色     | 本文、主要ラベル   |
-| `--fg-muted`   | `oklch(0.42 0.015 250)` | 補助前景       | 補助文、説明       |
-| `--fg-subtle`  | `oklch(0.55 0.012 250)` | さらに弱い前景 | メタ情報、二次注記 |
-| `--fg-info`    | `oklch(0.42 0.09 250)`  | 情報状態       | info text          |
-| `--fg-success` | `oklch(0.46 0.11 150)`  | success 状態   | success text       |
-| `--fg-warning` | `oklch(0.45 0.11 85)`   | warning 状態   | caution text       |
-| `--fg-danger`  | `oklch(0.48 0.14 27)`   | danger 状態    | error text         |
+| トークン                  | 具体値                  | 役割                   | 使用文脈                               |
+| ------------------------- | ----------------------- | ---------------------- | -------------------------------------- |
+| `--fg-default`            | `oklch(0.24 0.02 250)`  | 基本文字色             | 本文、主要ラベル                       |
+| `--fg-muted`              | `oklch(0.42 0.015 250)` | 補助前景               | 補助文、説明                           |
+| `--fg-subtle`             | `oklch(0.53 0 0)`       | readable tertiary text | caption、metadata                      |
+| `--fg-placeholder`        | `var(--fg-muted)`       | 実 placeholder         | input / textarea / search-field        |
+| `--fg-control-label`      | `var(--fg-muted)`       | 操作 UI の可視ラベル   | trigger label、select 未選択表示       |
+| `--fg-control-affordance` | `var(--fg-subtle)`      | non-text affordance    | enabled icon、chevron、scrollbar thumb |
+| `--fg-decorative`         | `oklch(0.60 0 0)`       | 装飾前景               | 読めなくても意味が失われない要素       |
+| `--fg-disabled`           | `oklch(0.70 0 0)`       | disabled 前景          | disabled text / icon / affordance      |
+| `--fg-info`               | `oklch(0.42 0.09 250)`  | 情報状態               | info text                              |
+| `--fg-success`            | `oklch(0.46 0.11 150)`  | success 状態           | success text                           |
+| `--fg-warning`            | `oklch(0.45 0.11 85)`   | warning 状態           | caution text                           |
+| `--fg-danger`             | `oklch(0.48 0.14 27)`   | danger 状態            | error text                             |
 
 #### 2.3.4 Border / Decoration
 
@@ -214,6 +220,19 @@ Rouault の色設計は、**知覚的一様性、テーマ切替耐性、状態�
 | `--on-warning` | `oklch(0.18 0.02 85)`  | warning 背景上前景 | `--warning` と対 |
 
 ### 2.4 Theme Variants
+
+`--bg-control-muted` は control surface 用の semantic token であり、Light mode でも `--bg-fill-muted` への単純 alias にしない。
+`--bg-fill-muted` は小さな装飾 fill のために維持し、通常テキストや操作ラベルを載せる field / trigger surface の第一候補にはしない。
+
+`ui-input` / `ui-select` の outline base surface および outline readonly surface は `--bg-default` を維持する。filled / default の field surface と readonly surface は `--bg-control-muted` を第一候補にする。
+
+`--bg-hover` / `--bg-active` は interaction overlay として使う場合がある。secondary button の hover / pressed surface と `ui-select` の `.trigger--opened` は、alpha overlay を base surface へ合成するか、専用 readable state token を使う。
+
+`ui-select` の `.trigger--opened` は enabled かつ readonly でない状態の readable interaction surface として扱う。disabled または readonly が同時成立する場合は、disabled / readonly の surface・cursor・text contract を優先する。select option の disabled text と selected disabled check icon は `--fg-disabled` に追従する。
+
+button の pressed rule は全 variant で disabled / loading に漏れないようにする。loading は native disabled による操作抑制を使っても disabled 視覚とは分離し、button 本体に `pointer-events: none` を置かない。
+
+scrollbar thumb は decorative ではなく non-text UI affordance として扱い、`--scrollbar-thumb` は `--fg-control-affordance` に接続する。public token を override する場合、override 側が contrast を保証する。
 
 #### 2.4.1 Light / Dark
 

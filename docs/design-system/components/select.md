@@ -453,11 +453,16 @@ Popup listbox は overlay layer に描画されます。overlay layer は設計�
 - `filled` は淡い面を持つ既定入力です。
 - `outline` は境界を主とする軽量入力です。
 - placeholder は選択済み値と視覚的に区別されなければなりません。
+- 未選択表示は実 placeholder ではなく trigger label として扱い、`--fg-control-label` を使います。
 - hover、focus、opened は、それぞれ既定状態と識別可能な差分を持たなければなりません。
 - focus 表現は色だけに依存してはなりません。
 - opened 状態は Chevron の回転だけに依存してはなりません。
+- opened trigger は enabled かつ readonly でない readable interaction surface です。readonly / disabled が同時成立する場合は readonly / disabled の surface、cursor、text を優先します。
+- filled trigger / filled readonly trigger は `--bg-control-muted` を第一候補にし、outline trigger / outline readonly trigger は `--bg-default` を維持します。
+- enabled chevron は `--fg-control-affordance`、disabled chevron は `--fg-disabled` を使います。
 - error は danger 系トークンで示し、`errorMessage` と意味的に対応していなければなりません。
 - disabled は操作不能であることを示しつつ、値または placeholder の可読性を不必要に損なってはなりません。
+- disabled option は `--fg-disabled` を主表現にし、selected disabled option では text と check icon の両方を disabled 色へ追従させます。
 
 ### Popup 表現
 

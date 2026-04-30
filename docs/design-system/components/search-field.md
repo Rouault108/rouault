@@ -287,25 +287,25 @@ input と clear button のフォーカスリングは `outline` と `outline-off
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途              | トークン                                                                                  |
-| ----------------- | ----------------------------------------------------------------------------------------- |
-| 高さ              | `--ui-search-field-height`                                                                |
-| 角丸              | `--ui-search-field-radius`                                                                |
-| 背景              | `--ui-search-field-bg`                                                                    |
-| 境界線幅          | `--ui-search-field-border-width`                                                          |
-| 境界線色          | `--ui-search-field-border-color`                                                          |
-| 影                | `--ui-search-field-shadow`                                                                |
-| 入力文字サイズ    | `--ui-search-field-font-size`                                                             |
-| アイコン色        | `--ui-search-field-icon-color`                                                            |
-| 間隔              | `--space-*`                                                                               |
-| 文字色            | `--fg-default` / `--fg-muted` / `--fg-subtle`                                             |
-| hover 背景        | `--bg-hover`                                                                              |
-| muted 背景        | `--bg-fill-muted`                                                                         |
+| 用途              | トークン                                                                                                                         |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 高さ              | `--ui-search-field-height`                                                                                                       |
+| 角丸              | `--ui-search-field-radius`                                                                                                       |
+| 背景              | `--ui-search-field-bg`                                                                                                           |
+| 境界線幅          | `--ui-search-field-border-width`                                                                                                 |
+| 境界線色          | `--ui-search-field-border-color`                                                                                                 |
+| 影                | `--ui-search-field-shadow`                                                                                                       |
+| 入力文字サイズ    | `--ui-search-field-font-size`                                                                                                    |
+| アイコン色        | `--ui-search-field-icon-color`                                                                                                   |
+| 間隔              | `--space-*`                                                                                                                      |
+| 文字色            | `--fg-default` / `--fg-placeholder` / `--fg-control-affordance` / `--fg-disabled`                                                |
+| hover 背景        | `--bg-hover`                                                                                                                     |
+| muted 背景        | `--bg-control-muted`                                                                                                             |
 | focus ring        | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` / `--ui-search-field-focus-ring-color` |
-| touch target      | `--control-min-touch`                                                                     |
-| opacity           | `--opacity-disabled`                                                                      |
-| アイコンサイズ    | `--icon-sm` / `--icon-md`                                                                 |
-| duration / easing | `--duration-fast` / `--ease-out`                                                          |
+| touch target      | `--control-min-touch`                                                                                                            |
+| disabled 前景     | `--fg-disabled`                                                                                                                  |
+| アイコンサイズ    | `--icon-sm` / `--icon-md`                                                                                                        |
+| duration / easing | `--duration-fast` / `--ease-out`                                                                                                 |
 
 ---
 

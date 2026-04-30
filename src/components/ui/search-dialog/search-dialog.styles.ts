@@ -79,9 +79,9 @@ export const searchDialogStyles = css`
   .search-field {
     --ui-search-field-height: 44px;
     --ui-search-field-radius: var(--radius-md);
-    --ui-search-field-bg: var(--bg-fill-muted);
+    --ui-search-field-bg: var(--bg-control-muted);
     --ui-search-field-font-size: var(--text-xl, 18px);
-    --ui-search-field-icon-color: var(--fg-muted);
+    --ui-search-field-icon-color: var(--fg-control-affordance);
   }
 
   .close-button {
@@ -93,24 +93,20 @@ export const searchDialogStyles = css`
     border: none;
     border-radius: var(--radius-md);
     background: transparent;
-    color: var(--fg-muted);
-    opacity: 0.72;
+    color: var(--fg-control-affordance);
     cursor: pointer;
     padding: 0;
     transition:
-      opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
       color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
       background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
   }
 
   .close-button:hover {
-    opacity: 1;
     color: var(--fg-default);
     background: var(--bg-hover);
   }
 
   .close-button:focus-visible {
-    opacity: 1;
     color: var(--fg-default);
     background: var(--bg-hover);
     outline: var(--focus-ring-width) solid var(--focus-ring-color);

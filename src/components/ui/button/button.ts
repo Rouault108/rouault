@@ -69,8 +69,8 @@ export const defineButtonA11yContract = <T extends ButtonA11yContract>(contract:
  * @cssprop --primary-hover - プライマリカラーのホバー状態
  * @cssprop --on-primary - プライマリカラー上のテキスト色
  * @cssprop --bg-surface-2 - セカンダリ背景色
- * @cssprop --bg-fill-muted - ホバー時の背景色
- * @cssprop --bg-hover - ゴーストホバー時の背景色
+ * @cssprop --bg-hover - hover interaction overlay
+ * @cssprop --bg-active - pressed interaction overlay
  * @cssprop --bg-danger-subtle - Danger背景色
  * @cssprop --border-default - デフォルト境界線色
  * @cssprop --border-danger - Danger境界線色
@@ -183,10 +183,18 @@ export class Button extends LitElement {
       animation: var(--animation-focus);
     }
 
-    /* Disabled State */
-    button:disabled {
-      opacity: var(--opacity-disabled);
+    /* Disabled / Loading State */
+    :host([disabled]) button:disabled {
+      color: var(--fg-disabled);
       cursor: not-allowed;
+    }
+
+    :host([loading]:not([disabled])) button:disabled {
+      cursor: wait;
+      opacity: 1;
+    }
+
+    button:disabled::after {
       pointer-events: none;
     }
 
@@ -244,7 +252,7 @@ export class Button extends LitElement {
     }
 
     .variant-secondary:hover:not(:disabled) {
-      background: var(--bg-fill-muted);
+      background: linear-gradient(var(--bg-hover), var(--bg-hover)), var(--bg-surface-2);
     }
 
     /* Dark Mode: Edge Highlight for Secondary */
@@ -291,34 +299,36 @@ export class Button extends LitElement {
 
     /* --- Pressed State --- */
 
-    button[aria-pressed='true'].variant-secondary {
-      background: var(--bg-fill-muted);
+    button[aria-pressed='true']:not(:disabled).variant-secondary {
+      background:
+        linear-gradient(var(--bg-active, var(--bg-hover)), var(--bg-active, var(--bg-hover))),
+        var(--bg-surface-2);
       border-color: var(--fg-muted);
       box-shadow:
         inset 0 1px 0 0 oklch(0% 0 0 / 0.08),
         var(--elevation-sm);
     }
 
-    button[aria-pressed='true'].variant-outline {
+    button[aria-pressed='true']:not(:disabled).variant-outline {
       background: var(--bg-hover);
       border-color: var(--fg-muted);
       color: var(--fg-default);
     }
 
-    button[aria-pressed='true'].variant-ghost {
+    button[aria-pressed='true']:not(:disabled).variant-ghost {
       background: oklch(from var(--bg-hover) l c h / 0.95);
       color: var(--fg-default);
       box-shadow: inset 0 0 0 1px oklch(from var(--border-default) l c h / 0.7);
     }
 
-    button[aria-pressed='true'].variant-primary {
+    button[aria-pressed='true']:not(:disabled).variant-primary {
       box-shadow:
         inset 0 0 0 1px oklch(0% 0 0 / 0.12),
         inset 0 1px 0 0 oklch(100% 0 0 / 0.15),
         var(--elevation-md);
     }
 
-    button[aria-pressed='true'].variant-danger {
+    button[aria-pressed='true']:not(:disabled).variant-danger {
       box-shadow: inset 0 0 0 1px oklch(0% 0 0 / 0.12);
     }
 
@@ -422,7 +432,7 @@ export class Button extends LitElement {
         box-shadow: none;
       }
 
-      button[aria-pressed='true'] {
+      button[aria-pressed='true']:not(:disabled) {
         background: CanvasText;
         color: Canvas;
         border-color: CanvasText;
@@ -430,8 +440,8 @@ export class Button extends LitElement {
         outline-offset: -2px;
       }
 
-      button[aria-pressed='true'].variant-primary,
-      button[aria-pressed='true'].variant-danger {
+      button[aria-pressed='true']:not(:disabled).variant-primary,
+      button[aria-pressed='true']:not(:disabled).variant-danger {
         outline-width: 1px;
       }
     }

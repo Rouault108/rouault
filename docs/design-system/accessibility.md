@@ -314,9 +314,23 @@ Rouault における主要フローは、キーボードのみで完結可能で
 #### 運用要件
 
 - 本文には、保証済みの Foreground / Background 組み合わせのみを使用します。
-- `--fg-subtle` を通常本文に用いてはなりません。
+- 読める必要があるテキストに `--fg-decorative` を用いてはなりません。
+- `--fg-subtle` は readable tertiary text 用であり、通常本文や操作 UI の可視ラベルには用いません。
+- `--fg-placeholder` は実 input / textarea / search-field placeholder 用であり、操作 UI の可視ラベルには用いません。
+- select / combobox trigger の未選択表示は `--fg-control-label`、disabled select placeholder は `--fg-disabled` を用います。
+- enabled icon / chevron / scrollbar thumb は `--fg-control-affordance`、disabled icon / chevron / control affordance は `--fg-disabled` を用います。
 - 選択状態およびエラー状態は、背景色のみで表現してはなりません。
 - タッチ環境において hover のみに依存した発見可能性を設計してはなりません。
+
+#### Control Color Contract
+
+- Forced Colors Mode で disabled な search trigger の `.icon` / `.placeholder` は `GrayText` にします。
+- `ui-input` / `ui-select` の outline base surface と outline readonly surface は `--bg-default` を維持します。
+- `ui-select` の `.trigger--opened` は readonly / disabled surface を上書きしてはなりません。
+- select disabled option は `--fg-disabled` を主表現にし、selected disabled option では text と check icon の両方を `--fg-disabled` に追従させます。
+- button の loading では cursor を維持するため、button 本体に `pointer-events: none` を指定しません。
+- button pressed rule は全 variant で disabled / loading に漏れないようにします。
+- public token override 時の contrast は override 側が保証します。
 
 #### 状態表示の例
 
@@ -651,10 +665,10 @@ Forced Colors Mode または高コントラスト環境において、背景色�
 
 ### 参照する代表トークン
 
-| 分類       | 代表トークン                                                                                   |
-| ---------- | ---------------------------------------------------------------------------------------------- |
-| フォーカス | `--focus-ring-width`, `--focus-ring-offset`, `--focus-ring-color`, `--focus-ring-color-subtle` |
-| 色         | `--fg-default`, `--fg-muted`, `--bg-default`, `--primary`, `--danger`                          |
-| サイズ     | `--control-min-touch`, `--icon-*`, `--text-*`                                                  |
-| モーション | `--duration-*`, `--ease-*`                                                                     |
-| 境界       | `--border-default`, `--border-muted`                                                           |
+| 分類       | 代表トークン                                                                                                                                                                                     |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| フォーカス | `--focus-ring-width`, `--focus-ring-offset`, `--focus-ring-color`, `--focus-ring-color-subtle`                                                                                                   |
+| 色         | `--fg-default`, `--fg-muted`, `--fg-subtle`, `--fg-placeholder`, `--fg-control-label`, `--fg-control-affordance`, `--fg-disabled`, `--bg-default`, `--bg-control-muted`, `--primary`, `--danger` |
+| サイズ     | `--control-min-touch`, `--icon-*`, `--text-*`                                                                                                                                                    |
+| モーション | `--duration-*`, `--ease-*`                                                                                                                                                                       |
+| 境界       | `--border-default`, `--border-muted`                                                                                                                                                             |

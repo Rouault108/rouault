@@ -13,7 +13,7 @@ import { live } from 'lit/directives/live.js';
  * ## デザイン哲学
  *
  * - **Flow State**: Auto Grow により入力に対して即応（0ms）し、キャレット位置を安定させます
- * - **Universal Clarity**: `--bg-fill-muted` で入力領域を静かに明示します
+ * - **Universal Clarity**: `--bg-control-muted` で入力領域を静かに明示します
  * - **Clear Canvas**: フォーカス時は白地に戻し、執筆に集中させます
  *
  * ## バリアント
@@ -43,11 +43,11 @@ import { live } from 'lit/directives/live.js';
  * @fires focus - フォーカスが当たった時
  * @fires blur - フォーカスが外れた時
  *
- * @cssprop --bg-fill-muted - デフォルト背景色
+ * @cssprop --bg-control-muted - 入力領域の背景色
  * @cssprop --bg-default - フォーカス時の背景色
  * @cssprop --bg-danger-subtle - エラー時の背景色
  * @cssprop --fg-default - デフォルトテキスト色
- * @cssprop --fg-subtle - Disabled 時のテキスト色
+ * @cssprop --fg-disabled - Disabled 時のテキスト色
  * @cssprop --fg-muted - Help Text のテキスト色
  * @cssprop --fg-danger - エラーメッセージのテキスト色
  * @cssprop --border-default - デフォルトボーダー色
@@ -136,7 +136,7 @@ export class Textarea extends LitElement {
       border: var(--border-width, 1px) solid transparent;
 
       /* Default State: Universal Clarity */
-      background: var(--bg-fill-muted, oklch(95% 0 0));
+      background: var(--bg-control-muted, var(--bg-fill-muted, oklch(95% 0 0)));
       color: var(--fg-default, oklch(20% 0 0));
 
       /* Typography (default variant) */
@@ -198,17 +198,22 @@ export class Textarea extends LitElement {
       outline-color: var(--border-danger, oklch(55% 0.2 28));
     }
 
+    textarea::placeholder {
+      color: var(--fg-placeholder, var(--fg-muted));
+      opacity: 1;
+    }
+
     /* Disabled State */
     textarea:disabled {
       border-color: var(--border-default, oklch(85% 0 0));
       cursor: not-allowed;
-      color: var(--fg-subtle, oklch(48% 0 0));
+      color: var(--fg-disabled);
       resize: none;
     }
 
     /* Readonly State */
-    textarea:read-only {
-      background: var(--bg-fill-muted, oklch(95% 0 0));
+    textarea:read-only:not(:disabled) {
+      background: var(--bg-control-muted, var(--bg-fill-muted, oklch(95% 0 0)));
       cursor: default;
       resize: none;
     }

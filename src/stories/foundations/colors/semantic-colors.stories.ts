@@ -65,7 +65,90 @@ export const Default: Story = {
                 border: 'var(--border-width) solid var(--border-muted)',
               },
             },
+            {
+              label: 'Foreground Subtle',
+              token: '--fg-subtle',
+              previewText: 'Readable tertiary text',
+              previewStyle: {
+                background: 'var(--bg-surface-2)',
+                color: 'var(--fg-subtle)',
+                border: 'var(--border-width) solid var(--border-muted)',
+              },
+              note: 'Readable tertiary text / caption / metadata 用。',
+            },
+            {
+              label: 'Placeholder',
+              token: '--fg-placeholder',
+              previewText: '実 placeholder',
+              previewStyle: {
+                background: 'var(--bg-control-muted)',
+                color: 'var(--fg-placeholder)',
+                border: 'var(--border-width) solid var(--border-default)',
+              },
+              note: '実 input / textarea / search-field placeholder 用。',
+            },
+            {
+              label: 'Control Label',
+              token: '--fg-control-label',
+              previewText: 'Trigger label',
+              previewStyle: {
+                background: 'var(--bg-control-muted)',
+                color: 'var(--fg-control-label)',
+                border: 'var(--border-width) solid var(--border-default)',
+              },
+              note: 'trigger label / 操作 UI の可視ラベル / select trigger の未選択表示用。',
+            },
+            {
+              label: 'Control Affordance',
+              token: '--fg-control-affordance',
+              previewText: 'Icon / chevron',
+              previewStyle: {
+                background: 'var(--bg-control-muted)',
+                color: 'var(--fg-control-affordance)',
+                border: 'var(--border-width) solid var(--border-default)',
+              },
+              note: 'enabled icon / chevron / scrollbar thumb などの non-text UI affordance 用。',
+            },
+            {
+              label: 'Decorative',
+              token: '--fg-decorative',
+              previewText: 'Decorative',
+              previewStyle: {
+                background: 'var(--bg-surface-2)',
+                color: 'var(--fg-decorative)',
+                border: 'var(--border-width) solid var(--border-muted)',
+              },
+              note: '読めなくても意味が失われない装飾用。',
+            },
+            {
+              label: 'Disabled',
+              token: '--fg-disabled',
+              previewText: 'Disabled',
+              previewStyle: {
+                background: 'var(--bg-control-muted)',
+                color: 'var(--fg-disabled)',
+                border: 'var(--border-width) solid var(--border-default)',
+              },
+              note: 'disabled text / disabled affordance 用。',
+            },
           ]),
+        )}
+        ${renderFoundationSection(
+          'Control Surface',
+          renderTokenSwatchGrid([
+            {
+              label: 'Control Muted',
+              token: '--bg-control-muted',
+              previewText: 'Control surface',
+              previewStyle: {
+                background: 'var(--bg-control-muted)',
+                color: 'var(--fg-control-label)',
+                border: 'var(--border-width) solid var(--border-default)',
+              },
+              note: 'control surface 用。Light mode でも --bg-fill-muted への単純 alias にはしません。',
+            },
+          ]),
+          'secondary button hover / pressed と select opened trigger は alpha overlay を base surface に合成するか、専用 readable state token を使います。readonly / disabled の surface を opened state が上書きしてはいけません。',
         )}
         ${renderFoundationSection(
           'Status Colors',
@@ -109,6 +192,12 @@ export const Default: Story = {
             { label: 'FG default', token: '--fg-default' },
             { label: 'FG muted', token: '--fg-muted' },
             { label: 'FG subtle', token: '--fg-subtle' },
+            { label: 'FG placeholder', token: '--fg-placeholder' },
+            { label: 'FG control label', token: '--fg-control-label' },
+            { label: 'FG control affordance', token: '--fg-control-affordance' },
+            { label: 'FG decorative', token: '--fg-decorative' },
+            { label: 'FG disabled', token: '--fg-disabled' },
+            { label: 'BG control muted', token: '--bg-control-muted' },
           ]),
         )}
       `,

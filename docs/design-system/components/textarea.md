@@ -331,6 +331,8 @@ Auto Grow は装飾ではなく入力継続性の契約です。したがって�
 - 行間
 - スクロールバー
 
+default / prose の入力面と readonly 面は `--bg-control-muted` を第一候補にします。実 placeholder は `--fg-placeholder`、disabled text は `--fg-disabled`、scrollbar thumb は `--scrollbar-thumb` を介して `--fg-control-affordance` に追従します。
+
 個別トークン名は、実装と同時に保守される参照資料で管理し、本節では視覚契約そのものを優先します。
 
 ---
@@ -535,7 +537,7 @@ Storybook は公開契約の確認面であり、内部 class、Shadow DOM の�
 
 ### 12. スタイルトークン記述のずれ
 
-現行ソースには `--opacity-disabled` が JSDoc 上の公開トークン候補として現れますが、実装 CSS はこのトークンを消費していません。逆に、`--tracking-normal`、`--radius-full`、`--border-width`、`--border-width-thick`、`--font-medium` は実装で参照されているため、契約書側で明示しておく必要があります。
+現行ソースは disabled text を `--fg-disabled` で表現し、`--opacity-disabled` のみに依存しません。`--tracking-normal`、`--radius-full`、`--border-width`、`--border-width-thick`、`--font-medium` は実装で参照されているため、契約書側で明示しておく必要があります。
 
 ### 13. Storybook 内の旧前提
 

@@ -172,12 +172,12 @@
 
 `ui-search-trigger` は、親文脈から次の custom property を受け付けます。
 
-| 名前                                     | 役割 |
-| ---------------------------------------- | ---- |
-| `--search-trigger-gap`                   | default 時の icon と placeholder の距離 |
-| `--search-trigger-gap-compact`           | compact 相当時の icon と placeholder の距離 |
-| `--search-trigger-padding-inline`        | default 時の左右余白 |
-| `--search-trigger-padding-inline-compact` | compact 相当時の左右余白 |
+| 名前                                      | 役割                                        |
+| ----------------------------------------- | ------------------------------------------- |
+| `--search-trigger-gap`                    | default 時の icon と placeholder の距離     |
+| `--search-trigger-gap-compact`            | compact 相当時の icon と placeholder の距離 |
+| `--search-trigger-padding-inline`         | default 時の左右余白                        |
+| `--search-trigger-padding-inline-compact` | compact 相当時の左右余白                    |
 
 これらは `ui-search-trigger` 自身の公開 style input です。`layout-header` のような親 adapter はこの入力へ値を注入できますが、`ui-search-trigger` 自身は親専用 token を直接読みません。
 
@@ -366,7 +366,7 @@
 
 | 用途                  | トークン                                                                                  |
 | --------------------- | ----------------------------------------------------------------------------------------- |
-| 通常背景              | `--bg-fill-muted`                                                                         |
+| 通常背景              | `--bg-control-muted`                                                                      |
 | フォーカス / 押下背景 | `--bg-default`                                                                            |
 | 境界線幅              | `--border-width`                                                                          |
 | 境界線色              | `--border-default`                                                                        |
@@ -374,15 +374,15 @@
 | 角丸                  | `--radius-md`                                                                             |
 | 余白                  | `--space-2` / `--space-3`                                                                 |
 | アイコンサイズ        | `--icon-base`                                                                             |
-| アイコン色            | `--fg-subtle`                                                                             |
-| プレースホルダー色    | `--fg-subtle`                                                                             |
+| アイコン色            | `--fg-control-affordance`                                                                 |
+| 可視ラベル色          | `--fg-control-label`                                                                      |
 | フォントサイズ        | `--text-base`                                                                             |
 | フォントウェイト      | `--font-normal`                                                                           |
 | 押下スケール          | `--scale-pressed`                                                                         |
 | 遷移時間              | `--duration-fast`                                                                         |
 | イージング            | `--ease-out`                                                                              |
 | フォーカスリング      | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| 無効時不透明度        | `--opacity-disabled`                                                                      |
+| 無効時前景色          | `--fg-disabled`                                                                           |
 | 最低タッチサイズ      | `--control-min-touch`                                                                     |
 
 ---

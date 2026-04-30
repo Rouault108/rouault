@@ -210,7 +210,7 @@ export class LayoutHeader extends LitElement {
     }
 
     .theme-trigger-label {
-      color: var(--fg-subtle, var(--fg-muted));
+      color: var(--fg-control-label, var(--fg-muted));
     }
 
     [data-dropdown='theme'] {
@@ -237,17 +237,15 @@ export class LayoutHeader extends LitElement {
     }
 
     .theme-trigger-icon {
-      opacity: 0.78;
+      color: var(--fg-control-affordance, var(--fg-subtle));
     }
 
     .theme-trigger-chevron {
-      color: var(--fg-muted);
-      opacity: 0.72;
+      color: var(--fg-control-affordance, var(--fg-subtle));
     }
 
     .corpus-trigger-icon {
-      color: var(--fg-muted);
-      opacity: 0.72;
+      color: var(--fg-control-affordance, var(--fg-subtle));
     }
 
     .toc-trigger {

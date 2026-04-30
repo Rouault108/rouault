@@ -14,7 +14,10 @@ import { TocNavigationController } from '../../toc/toc-navigation-controller.js'
 import { decodeHashFragment } from '../../router/url-hash.js';
 import { isHTMLElement } from '../../lib/dom.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
-import { layoutTocRuntimeStore, type LayoutTocRuntimeSnapshot } from './layout-toc-runtime-store.js';
+import {
+  layoutTocRuntimeStore,
+  type LayoutTocRuntimeSnapshot,
+} from './layout-toc-runtime-store.js';
 import '../ui/icon/icon.js';
 import '../ui/toc/toc.js';
 import type { Heading } from '../ui/toc/toc.js';
@@ -140,8 +143,7 @@ export class LayoutToc extends LitElement {
       visibility: hidden;
       pointer-events: none;
       transition:
-        opacity var(--duration-normal, 150ms)
-          var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
+        opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
         visibility 0s linear var(--duration-normal, 150ms);
       padding: var(--space-2, 8px) max(var(--space-3, 12px), env(safe-area-inset-right))
         var(--space-6, 24px) max(var(--space-3, 12px), env(safe-area-inset-left));
@@ -156,7 +158,8 @@ export class LayoutToc extends LitElement {
     .desktop:focus-within,
     .mobile-panel:hover,
     .mobile-panel:focus-within {
-      scrollbar-color: var(--scrollbar-thumb, var(--fg-subtle, oklch(60% 0 0))) transparent;
+      scrollbar-color: var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0)))
+        transparent;
     }
 
     .desktop::-webkit-scrollbar-track,
@@ -178,7 +181,7 @@ export class LayoutToc extends LitElement {
     .desktop:focus-within::-webkit-scrollbar-thumb,
     .mobile-panel:hover::-webkit-scrollbar-thumb,
     .mobile-panel:focus-within::-webkit-scrollbar-thumb {
-      background-color: var(--scrollbar-thumb, var(--fg-subtle, oklch(60% 0 0)));
+      background-color: var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0)));
     }
 
     .desktop:hover::-webkit-scrollbar-thumb:hover,
@@ -627,8 +630,7 @@ export class LayoutToc extends LitElement {
     const panelId = this._getPanelId();
     if (
       path.some(
-        (node) =>
-          node instanceof HTMLElement && node.getAttribute('aria-controls') === panelId,
+        (node) => node instanceof HTMLElement && node.getAttribute('aria-controls') === panelId,
       )
     ) {
       return;
