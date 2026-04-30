@@ -19,6 +19,7 @@ import {
   searchCore,
   type SearchCore,
   type SearchCoreDependencies,
+  type SearchExecutionOptions,
 } from './core/search-core.js';
 
 export type {
@@ -29,5 +30,6 @@ export type {
   PagefindSearchResult,
   SearchCore,
   SearchCoreDependencies,
+  SearchExecutionOptions,
 };
 export { createDefaultPagefindLoader, createSearchCore, searchCore };

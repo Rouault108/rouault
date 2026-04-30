@@ -1,4 +1,5 @@
 import { addFailure, finalizeDiagnostics } from '../diagnostics.js';
+import { throwIfAborted } from '../abort.js';
 import { createDefaultPagefindLoader } from '../sources/pagefind-source.js';
 import { getSearchCatalog, type SearchCatalogItem } from '../../../shared/search/search-catalog.js';
 import type { SearchRequest, SearchResponse } from '../../../shared/search/search-types.js';
@@ -23,8 +24,12 @@ export interface SearchCoreDependencies {
   now?: () => number;
 }
 
+export interface SearchExecutionOptions {
+  signal?: AbortSignal | undefined;
+}
+
 export interface SearchCore {
-  search(request: SearchRequest): Promise<SearchResponse>;
+  search(request: SearchRequest, options?: SearchExecutionOptions): Promise<SearchResponse>;
 }
 
 export function createSearchCore(dependencies: SearchCoreDependencies = {}): SearchCore {
@@ -32,19 +37,40 @@ export function createSearchCore(dependencies: SearchCoreDependencies = {}): Sea
   const loadSearchCatalog = dependencies.loadSearchCatalog ?? getSearchCatalog;
   const now = dependencies.now ?? (() => Date.now());
 
+  let pagefindApi: PagefindApi | null = null;
   let pagefindPromise: Promise<PagefindApi> | null = null;
 
   const memoizedPagefindLoader: PagefindLoader = async () => {
-    pagefindPromise ??= loadPagefind();
+    if (pagefindApi !== null) {
+      return pagefindApi;
+    }
+
+    pagefindPromise ??= loadPagefind()
+      .then((api) => {
+        pagefindApi = api;
+        return api;
+      })
+      .catch((error: unknown) => {
+        pagefindPromise = null;
+        throw error;
+      });
     return pagefindPromise;
   };
 
   return {
-    async search(request: SearchRequest): Promise<SearchResponse> {
+    async search(
+      request: SearchRequest,
+      options: SearchExecutionOptions = {},
+    ): Promise<SearchResponse> {
+      const { signal } = options;
+      throwIfAborted(signal);
+
       const queryPreparation = runQueryPreparationStage({
         request,
         nowUtcMs: now(),
       });
+
+      throwIfAborted(signal);
 
       if (
         queryPreparation.preparedQuery.normalizedQuery.length === 0 &&
@@ -60,8 +86,12 @@ export function createSearchCore(dependencies: SearchCoreDependencies = {}): Sea
         ...queryPreparation,
         loadPagefind: memoizedPagefindLoader,
         loadSearchCatalog,
+        signal,
       });
+      throwIfAborted(signal);
+
       const candidateValidation = runCandidateValidationStage(sourceFederation);
+      throwIfAborted(signal);
 
       if (candidateValidation.activeBatches.length === 0) {
         addFailure(candidateValidation.diagnostics, 'all-sources-failed');
@@ -72,8 +102,11 @@ export function createSearchCore(dependencies: SearchCoreDependencies = {}): Sea
       }
 
       const candidateMerge = runCandidateMergeStage(candidateValidation);
+      throwIfAborted(signal);
       const rankingAndSorting = runRankingAndSortingStage(candidateMerge);
+      throwIfAborted(signal);
       const countsAndDiagnostics = runCountsAndDiagnosticsStage(rankingAndSorting);
+      throwIfAborted(signal);
 
       return countsAndDiagnostics.response;
     },

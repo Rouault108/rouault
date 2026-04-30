@@ -5,6 +5,7 @@ import {
   createCandidateRef,
   type MutableDiagnostics,
 } from '../diagnostics.js';
+import { isAbortError, throwIfAborted } from '../abort.js';
 import {
   derivePathLabel,
   normalizeDocumentCanonicalUrl,
@@ -264,12 +265,21 @@ export async function loadPagefindSourceBatch(input: {
   request: SearchRequest;
   preparedQuery: PreparedSearchQuery;
   diagnostics: MutableDiagnostics;
+  signal?: AbortSignal | undefined;
 }): Promise<SearchSourceBatch> {
   let pagefind: PagefindApi;
 
+  throwIfAborted(input.signal);
+
   try {
     pagefind = await input.loadPagefind();
-  } catch {
+  } catch (error: unknown) {
+    if (isAbortError(error)) {
+      throw error;
+    }
+
+    throwIfAborted(input.signal);
+
     addFailure(input.diagnostics, 'pagefind-load-failed');
     addIssue(input.diagnostics, {
       code: 'source-failed',
@@ -285,14 +295,23 @@ export async function loadPagefindSourceBatch(input: {
     };
   }
 
+  throwIfAborted(input.signal);
+
   let response: PagefindSearchResponse;
 
   try {
+    throwIfAborted(input.signal);
     response = await pagefind.search(
       input.preparedQuery.segmentedQuery.length > 0 ? input.preparedQuery.segmentedQuery : null,
       {},
     );
-  } catch {
+  } catch (error: unknown) {
+    if (isAbortError(error)) {
+      throw error;
+    }
+
+    throwIfAborted(input.signal);
+
     addFailure(input.diagnostics, 'pagefind-search-failed');
     addIssue(input.diagnostics, {
       code: 'source-failed',
@@ -308,11 +327,47 @@ export async function loadPagefindSourceBatch(input: {
     };
   }
 
-  const rawResults = await Promise.all(response.results.map((result) => result.data()));
-  const candidates = rawResults.flatMap((result) => {
+  throwIfAborted(input.signal);
+
+  let rawResults: PagefindFragmentData[];
+
+  try {
+    throwIfAborted(input.signal);
+    rawResults = await Promise.all(response.results.map((result) => result.data()));
+    throwIfAborted(input.signal);
+  } catch (error: unknown) {
+    if (isAbortError(error)) {
+      throw error;
+    }
+
+    throwIfAborted(input.signal);
+
+    addFailure(input.diagnostics, 'pagefind-search-failed');
+    addIssue(input.diagnostics, {
+      code: 'source-failed',
+      stage: 'fetch',
+      source: 'pagefind',
+    });
+    return {
+      source: 'pagefind',
+      status: 'failed',
+      failure: 'pagefind-search-failed',
+      capabilities: pagefindCapabilities,
+      candidates: [],
+    };
+  }
+
+  const candidates: SearchCandidate[] = [];
+
+  for (const [index, result] of rawResults.entries()) {
+    if (index % 64 === 0) {
+      throwIfAborted(input.signal);
+    }
+
     const candidate = createPagefindCandidate(result);
     if (candidate !== null) {
-      return [candidate];
+      candidates.push(candidate);
+      continue;
     }
 
     const stableInput = normalizeString(result.url) || JSON.stringify(result.meta ?? {});
@@ -322,12 +377,15 @@ export async function loadPagefindSourceBatch(input: {
       source: 'pagefind',
       candidateRef: createCandidateRef('pagefind', stableInput),
     });
-    return [];
-  });
+  }
+
+  throwIfAborted(input.signal);
 
   let countMap: SearchCountMap | null | undefined = undefined;
   if (input.request.mode === 'explore') {
+    throwIfAborted(input.signal);
     countMap = normalizeCountMap(response.totalFilters?.['genre']);
+    throwIfAborted(input.signal);
 
     if (candidates.length > 0 && countMap === null) {
       addFailure(input.diagnostics, 'pagefind-filter-read-failed');

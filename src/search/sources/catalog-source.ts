@@ -5,6 +5,7 @@ import {
   createCandidateRef,
   type MutableDiagnostics,
 } from '../diagnostics.js';
+import { isAbortError, throwIfAborted } from '../abort.js';
 import {
   derivePathLabel,
   normalizeDocumentCanonicalUrl,
@@ -16,7 +17,7 @@ import type {
   SearchCatalogItem,
   SearchCatalogLoadError,
 } from '../../../shared/search/search-catalog.js';
-import type { SearchSourceBatch } from '../../../shared/search/search-types.js';
+import type { SearchCandidate, SearchSourceBatch } from '../../../shared/search/search-types.js';
 
 const catalogCapabilities = {
   providesBodyEvidence: false,
@@ -110,17 +111,34 @@ function handleCatalogFailure(error: unknown, diagnostics: MutableDiagnostics): 
 export async function loadCatalogSourceBatch(input: {
   loadSearchCatalog: () => Promise<readonly SearchCatalogItem[]>;
   diagnostics: MutableDiagnostics;
+  signal?: AbortSignal | undefined;
 }): Promise<SearchSourceBatch> {
   let items: readonly SearchCatalogItem[];
+
+  throwIfAborted(input.signal);
 
   try {
     items = await input.loadSearchCatalog();
   } catch (error: unknown) {
+    if (isAbortError(error)) {
+      throw error;
+    }
+
+    throwIfAborted(input.signal);
+
     return handleCatalogFailure(error, input.diagnostics);
   }
 
+  throwIfAborted(input.signal);
+
   let droppedCount = 0;
-  const candidates = items.flatMap((item) => {
+  const candidates: SearchCandidate[] = [];
+
+  for (const [index, item] of items.entries()) {
+    if (index % 64 === 0) {
+      throwIfAborted(input.signal);
+    }
+
     const title = normalizeString(item.title);
     const path = normalizeString(item.path);
     const url = normalizeString(item.url);
@@ -135,7 +153,7 @@ export async function loadCatalogSourceBatch(input: {
         source: 'catalog',
         candidateRef,
       });
-      return [];
+      continue;
     }
 
     const canonicalUrl = normalizeDocumentCanonicalUrl(path);
@@ -147,10 +165,10 @@ export async function loadCatalogSourceBatch(input: {
         source: 'catalog',
         candidateRef,
       });
-      return [];
+      continue;
     }
     if (!isSearchVisibleCanonicalUrl(canonicalUrl)) {
-      return [];
+      continue;
     }
 
     const validatedUrl = validateResultUrl(url);
@@ -162,7 +180,7 @@ export async function loadCatalogSourceBatch(input: {
         source: 'catalog',
         candidateRef,
       });
-      return [];
+      continue;
     }
 
     const normalizedTargetCanonicalUrl = normalizeDocumentCanonicalUrl(validatedUrl.url);
@@ -174,7 +192,7 @@ export async function loadCatalogSourceBatch(input: {
         source: 'catalog',
         candidateRef,
       });
-      return [];
+      continue;
     }
 
     if (normalizedTargetCanonicalUrl !== canonicalUrl) {
@@ -185,36 +203,36 @@ export async function loadCatalogSourceBatch(input: {
         source: 'catalog',
         candidateRef,
       });
-      return [];
+      continue;
     }
 
     const description = normalizeString(item.description);
     const tags = normalizeStringArray(item.tags);
     const keywords = normalizeStringArray(item.keywords);
 
-    return [
-      {
+    candidates.push({
+      canonicalUrl,
+      url: validatedUrl.url,
+      pathLabel: derivePathLabel(canonicalUrl),
+      title,
+      description,
+      date: normalizeDateValue(normalizeString(item.date)),
+      tags,
+      snippet: snippetFromDescription(description),
+      matchedSources: ['catalog'],
+      matchedFields: [],
+      matchedTokens: [],
+      featureScores: { ...emptyFeatureScores() },
+      fieldTokens: createFieldTokens({
         canonicalUrl,
-        url: validatedUrl.url,
-        pathLabel: derivePathLabel(canonicalUrl),
         title,
-        description,
-        date: normalizeDateValue(normalizeString(item.date)),
-        tags,
-        snippet: snippetFromDescription(description),
-        matchedSources: ['catalog' as const],
-        matchedFields: [],
-        matchedTokens: [],
-        featureScores: { ...emptyFeatureScores() },
-        fieldTokens: createFieldTokens({
-          canonicalUrl,
-          title,
-          body: description,
-          keywords: [...keywords, ...tags],
-        }),
-      },
-    ];
-  });
+        body: description,
+        keywords: [...keywords, ...tags],
+      }),
+    });
+  }
+
+  throwIfAborted(input.signal);
 
   const fetchedCount = items.length;
   const degradedThreshold = Math.max(5, Math.ceil(fetchedCount * 0.05));

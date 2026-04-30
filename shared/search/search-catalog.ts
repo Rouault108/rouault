@@ -20,7 +20,9 @@ export class SearchCatalogLoadError extends Error {
 
 type SearchCatalogFetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
+let searchCatalogItems: readonly SearchCatalogItem[] | null = null;
 let searchCatalogPromise: Promise<readonly SearchCatalogItem[]> | null = null;
+let searchCatalogCacheGeneration = 0;
 
 function normalizeString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
@@ -119,10 +121,38 @@ export async function loadSearchCatalog(
 }
 
 export async function getSearchCatalog(): Promise<readonly SearchCatalogItem[]> {
-  searchCatalogPromise ??= loadSearchCatalog();
+  if (searchCatalogItems !== null) {
+    return searchCatalogItems;
+  }
+
+  if (searchCatalogPromise !== null) {
+    return searchCatalogPromise;
+  }
+
+  const generation = searchCatalogCacheGeneration;
+
+  searchCatalogPromise = loadSearchCatalog()
+    .then((items) => {
+      if (generation === searchCatalogCacheGeneration) {
+        searchCatalogItems = items;
+        searchCatalogPromise = null;
+      }
+
+      return items;
+    })
+    .catch((error: unknown) => {
+      if (generation === searchCatalogCacheGeneration) {
+        searchCatalogPromise = null;
+      }
+
+      throw error;
+    });
+
   return searchCatalogPromise;
 }
 
 export function resetSearchCatalogCache(): void {
+  searchCatalogCacheGeneration += 1;
+  searchCatalogItems = null;
   searchCatalogPromise = null;
 }

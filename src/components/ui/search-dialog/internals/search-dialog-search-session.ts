@@ -32,6 +32,7 @@ export class SearchDialogSearchSession {
   private _searchTimerId: ReturnType<typeof setTimeout> | undefined;
   private _searchToken = 0;
   private _abortController: AbortController | null = null;
+  private _lastObservedQuery = '';
 
   constructor(
     private readonly _host: SearchDialogSearchSessionHost,
@@ -40,7 +41,10 @@ export class SearchDialogSearchSession {
 
   destroy(): void {
     this.clearScheduled();
+    this._searchToken += 1;
     this._abortController?.abort();
+    this._abortController = null;
+    this._lastObservedQuery = '';
     this._worker.destroy();
   }
 
@@ -51,7 +55,8 @@ export class SearchDialogSearchSession {
   }
 
   handleQueryChanged(): void {
-    this._scheduleSearch();
+    const trimmedQuery = this._syncObservedQuery({ abortOnChange: true });
+    this._scheduleSearch(trimmedQuery);
   }
 
   handleLoadingChanged(): void {
@@ -60,27 +65,38 @@ export class SearchDialogSearchSession {
       return;
     }
 
-    if (this._host.getQuery().trim() !== '') {
-      this._scheduleSearch();
-    } else {
-      this._host.setLiveMessage('');
-    }
+    const trimmedQuery = this._syncObservedQuery({ abortOnChange: false });
+    this._scheduleSearch(trimmedQuery);
   }
 
   requestSearchNow(): void {
-    if (this._host.getQuery().trim() === '') return;
+    const trimmedQuery = this._syncObservedQuery({ abortOnChange: false });
+    if (trimmedQuery === '') return;
     if (this._host.isLoading()) return;
-    this._scheduleSearch();
+    this._scheduleSearch(trimmedQuery);
   }
 
-  private _scheduleSearch(): void {
+  private _syncObservedQuery(options: { abortOnChange: boolean }): string {
+    const nextQuery = this._host.getQuery().trim();
+
+    if (nextQuery !== this._lastObservedQuery) {
+      if (options.abortOnChange) {
+        this._abortController?.abort();
+      }
+      this._lastObservedQuery = nextQuery;
+    }
+
+    return nextQuery;
+  }
+
+  private _scheduleSearch(trimmedQuery: string): void {
     this.clearScheduled();
     this._searchToken += 1;
 
-    const trimmedQuery = this._host.getQuery().trim();
     if (trimmedQuery === '') {
       this._abortController?.abort();
       this._abortController = null;
+      this._lastObservedQuery = '';
       this._host.setResults([]);
       this._host.setActiveId(null);
       this._host.setHasCompletedSearch(false);
@@ -115,9 +131,10 @@ export class SearchDialogSearchSession {
         return;
       }
 
-      console.error('[ui-search-dialog] search failed', error);
-
       if (token !== this._searchToken) return;
+      if (query !== this._host.getQuery().trim()) return;
+
+      console.error('[ui-search-dialog] search failed', error);
 
       this._host.setResults([]);
       this._host.setActiveId(null);
@@ -292,7 +309,12 @@ export class SearchDialogSearchSession {
   }
 
   private static _isAbortError(error: unknown): boolean {
-    return error instanceof DOMException && error.name === 'AbortError';
+    return (
+      (typeof DOMException !== 'undefined' &&
+        error instanceof DOMException &&
+        error.name === 'AbortError') ||
+      (error instanceof Error && error.name === 'AbortError')
+    );
   }
 }
 

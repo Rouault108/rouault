@@ -283,4 +283,105 @@ describe('search-core', () => {
     ]);
     expect(response.diagnostics.degraded).to.equal(true);
   });
+
+  it('abort 済み signal では source loader を呼ばないこと', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    let pagefindLoadCount = 0;
+    let catalogLoadCount = 0;
+    const core = createSearchCore({
+      loadPagefind: () => {
+        pagefindLoadCount += 1;
+        return Promise.resolve(createPagefindApi());
+      },
+      loadSearchCatalog: () => {
+        catalogLoadCount += 1;
+        return Promise.resolve(catalogItems);
+      },
+    });
+
+    await expect(
+      core.search(
+        {
+          mode: 'explore',
+          q: 'music',
+          tags: [],
+          tagMode: 'or',
+          sort: 'relevance',
+        },
+        { signal: controller.signal },
+      ),
+    ).rejects.toMatchObject({ name: 'AbortError' });
+
+    expect(pagefindLoadCount).to.equal(0);
+    expect(catalogLoadCount).to.equal(0);
+  });
+
+  it('Pagefind loader 失敗を永続メモ化せず次回検索で再試行すること', async () => {
+    let pagefindLoadCount = 0;
+    const core = createSearchCore({
+      loadPagefind: () => {
+        pagefindLoadCount += 1;
+        if (pagefindLoadCount === 1) {
+          return Promise.reject(new Error('temporary pagefind failure'));
+        }
+
+        return Promise.resolve(createPagefindApi());
+      },
+      loadSearchCatalog: () => Promise.resolve(catalogItems),
+    });
+
+    await core.search({
+      mode: 'navigate',
+      q: 'ジャズ',
+      tags: [],
+      tagMode: 'or',
+      sort: 'relevance',
+    });
+    await core.search({
+      mode: 'navigate',
+      q: 'ジャズ',
+      tags: [],
+      tagMode: 'or',
+      sort: 'relevance',
+    });
+
+    expect(pagefindLoadCount).to.equal(2);
+  });
+
+  it('Pagefind result.data() の通常 reject は source failure に分類し catalog fallback を返すこと', async () => {
+    const core = createSearchCore({
+      loadPagefind: () =>
+        Promise.resolve({
+          filters() {
+            return Promise.resolve({});
+          },
+          search() {
+            return Promise.resolve({
+              results: [
+                {
+                  data() {
+                    return Promise.reject(new Error('data failed'));
+                  },
+                },
+              ],
+              unfilteredResultCount: 1,
+              totalFilters: {},
+            });
+          },
+        }),
+      loadSearchCatalog: () => Promise.resolve(catalogItems),
+    });
+
+    const response = await core.search({
+      mode: 'navigate',
+      q: 'ジャズ',
+      tags: [],
+      tagMode: 'or',
+      sort: 'relevance',
+    });
+
+    expect(response.items.map((item) => item.title)).to.include('ジャズ理論の基礎');
+    expect(response.diagnostics.failures).to.include('pagefind-search-failed');
+  });
 });

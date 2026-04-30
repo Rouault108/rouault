@@ -1,4 +1,7 @@
-import type { UiSearchDialogItem } from '../components/ui/search-dialog/search-dialog.types.js';
+import type {
+  UiSearchDialogItem,
+  UiSearchDialogSearcher,
+} from '../components/ui/search-dialog/search-dialog.types.js';
 import { navigateToUrl } from './navigation.js';
 import { searchCore } from './search-core.js';
 import type { InteractionModality } from '../components/ui/search-dialog/internals/interaction-modality.js';
@@ -8,36 +11,48 @@ interface SearchDialogElement extends HTMLElement {
   query: string;
   captureOpenModality(modality?: InteractionModality): void;
   requestOpen(trigger?: HTMLElement): void;
-  searcher?: (context: {
-    query: string;
-    signal: AbortSignal;
-  }) =>
-    | Promise<{ items: readonly UiSearchDialogItem[] }>
-    | { items: readonly UiSearchDialogItem[] };
+  searcher?: UiSearchDialogSearcher | null | undefined;
 }
 
 let initialized = false;
+let bootstrapListenerController: AbortController | null = null;
+let initializedDialog: SearchDialogElement | null = null;
+let previousSearcher: SearchDialogElement['searcher'] = undefined;
+let hadSearcherProperty = false;
+let hadOwnSearcherProperty = false;
 
 export function initSearch(): void {
   if (initialized || typeof document === 'undefined') {
     return;
   }
 
-  initialized = true;
-
   const dialog = document.querySelector<SearchDialogElement>('#global-search-dialog');
   if (!dialog) {
     return;
   }
 
-  dialog.searcher = async ({ query }): Promise<{ items: UiSearchDialogItem[] }> => {
-    const result = await searchCore.search({
-      mode: 'navigate',
-      q: query,
-      tags: [],
-      tagMode: 'or',
-      sort: 'relevance',
-    });
+  initialized = true;
+  initializedDialog = dialog;
+  hadSearcherProperty = 'searcher' in dialog;
+  hadOwnSearcherProperty = Object.prototype.hasOwnProperty.call(dialog, 'searcher');
+  previousSearcher = hadSearcherProperty ? dialog.searcher : undefined;
+  bootstrapListenerController = new AbortController();
+  const { signal } = bootstrapListenerController;
+
+  dialog.searcher = async ({
+    query,
+    signal: searchSignal,
+  }): Promise<{ items: UiSearchDialogItem[] }> => {
+    const result = await searchCore.search(
+      {
+        mode: 'navigate',
+        q: query,
+        tags: [],
+        tagMode: 'or',
+        sort: 'relevance',
+      },
+      { signal: searchSignal },
+    );
 
     return {
       items: result.items.map((item) => ({
@@ -51,13 +66,13 @@ export function initSearch(): void {
     };
   };
 
-  document.addEventListener('open-search-dialog', (event) => {
+  const onOpenSearchDialog = (event: Event): void => {
     const trigger = event.target instanceof HTMLElement ? event.target : undefined;
     dialog.captureOpenModality();
     dialog.requestOpen(trigger);
-  });
+  };
 
-  dialog.addEventListener('ui-search-dialog-selected', (event) => {
+  const onSelected = (event: Event): void => {
     const customEvent = event as CustomEvent<{ url?: string }>;
     const url = customEvent.detail.url;
     if (typeof url !== 'string' || url.length === 0) {
@@ -65,22 +80,22 @@ export function initSearch(): void {
     }
 
     void navigateToUrl(url);
-  });
+  };
 
-  dialog.addEventListener('ui-search-dialog-open-requested', () => {
+  const onOpenRequested = (): void => {
     dialog.opened = true;
-  });
+  };
 
-  dialog.addEventListener('ui-search-dialog-close-requested', () => {
+  const onCloseRequested = (): void => {
     dialog.opened = false;
-  });
+  };
 
-  dialog.addEventListener('ui-search-dialog-query-changed', (event) => {
+  const onQueryChanged = (event: Event): void => {
     const customEvent = event as CustomEvent<{ query?: string }>;
     dialog.query = typeof customEvent.detail.query === 'string' ? customEvent.detail.query : '';
-  });
+  };
 
-  document.addEventListener('keydown', (event) => {
+  const onKeydown = (event: KeyboardEvent): void => {
     if (event.key.toLowerCase() !== 'k') {
       return;
     }
@@ -104,5 +119,35 @@ export function initSearch(): void {
       document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
     dialog.captureOpenModality('keyboard');
     dialog.requestOpen(trigger);
-  });
+  };
+
+  document.addEventListener('open-search-dialog', onOpenSearchDialog, { signal });
+  dialog.addEventListener('ui-search-dialog-selected', onSelected, { signal });
+  dialog.addEventListener('ui-search-dialog-open-requested', onOpenRequested, { signal });
+  dialog.addEventListener('ui-search-dialog-close-requested', onCloseRequested, { signal });
+  dialog.addEventListener('ui-search-dialog-query-changed', onQueryChanged, { signal });
+  document.addEventListener('keydown', onKeydown, { signal });
+}
+
+export function resetSearchBootstrapForTest(): void {
+  bootstrapListenerController?.abort();
+  bootstrapListenerController = null;
+
+  if (initializedDialog) {
+    if (hadSearcherProperty) {
+      initializedDialog.searcher = previousSearcher;
+
+      if (!hadOwnSearcherProperty) {
+        delete initializedDialog.searcher;
+      }
+    } else {
+      delete initializedDialog.searcher;
+    }
+  }
+
+  initializedDialog = null;
+  previousSearcher = undefined;
+  hadSearcherProperty = false;
+  hadOwnSearcherProperty = false;
+  initialized = false;
 }

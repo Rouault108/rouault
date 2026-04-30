@@ -1,29 +1,34 @@
 import { expect } from '@open-wc/testing';
 
-import { initSearch } from '../../src/search/bootstrap.js';
+import { initSearch, resetSearchBootstrapForTest } from '../../src/search/bootstrap.js';
 import { searchCore } from '../../src/search/search-core.js';
 import type { InteractionModality } from '../../src/components/ui/search-dialog/internals/interaction-modality.js';
+import type { UiSearchDialogSearcher } from '../../src/components/ui/search-dialog/search-dialog.types.js';
 
 interface TestSearchDialogElement extends HTMLElement {
   opened: boolean;
   query: string;
   captureOpenModality(modality?: InteractionModality): void;
   requestOpen(trigger?: HTMLElement): void;
-  searcher?: (context: {
-    query: string;
-    signal: AbortSignal;
-  }) => Promise<{ items: readonly unknown[] }>;
+  searcher?: UiSearchDialogSearcher | null;
 }
 
 describe('search-bootstrap', () => {
+  afterEach(() => {
+    resetSearchBootstrapForTest();
+    document.querySelector('#global-search-dialog')?.remove();
+  });
+
   it('dialog searcher と open request を searchCore に接続し、起動モダリティ snapshot を引き渡すこと', async () => {
     const originalSearch = searchCore.search.bind(searchCore);
     const requests: unknown[] = [];
+    const options: unknown[] = [];
     const openedWith: (HTMLElement | undefined)[] = [];
     const capturedModalities: (InteractionModality | undefined)[] = [];
 
-    searchCore.search = (request) => {
+    searchCore.search = (request, executionOptions) => {
       requests.push(request);
+      options.push(executionOptions);
       return Promise.resolve({
         mode: 'navigate',
         items: [
@@ -106,9 +111,10 @@ describe('search-bootstrap', () => {
 
       expect(capturedModalities).to.deep.equal([undefined, 'keyboard', 'keyboard']);
       expect(openedWith).to.deep.equal([trigger, trigger, trigger]);
+      const controller = new AbortController();
       const result = await dialog.searcher?.({
         query: 'router',
-        signal: new AbortController().signal,
+        signal: controller.signal,
       });
 
       expect(requests).to.deep.equal([
@@ -120,6 +126,7 @@ describe('search-bootstrap', () => {
           sort: 'relevance',
         },
       ]);
+      expect(options).to.deep.equal([{ signal: controller.signal }]);
       expect(result?.items[0]).to.deep.equal({
         id: '/notes/router/',
         title: 'Router 設計メモ',
@@ -132,6 +139,50 @@ describe('search-bootstrap', () => {
       searchCore.search = originalSearch;
       dialog.remove();
       trigger.remove();
+    }
+  });
+
+  it('dialog 未配置時の initSearch は initialized を消費しないこと', async () => {
+    const originalSearch = searchCore.search.bind(searchCore);
+    let searchCount = 0;
+
+    searchCore.search = () => {
+      searchCount += 1;
+      return Promise.resolve({
+        mode: 'navigate',
+        items: [],
+        total: 0,
+        rankingProfileId: 'rouault-search-v1',
+        diagnostics: {
+          degraded: false,
+          activeSources: [],
+          failures: [],
+          issues: [],
+        },
+      });
+    };
+
+    try {
+      initSearch();
+
+      const dialog = document.createElement('div') as unknown as TestSearchDialogElement;
+      dialog.id = 'global-search-dialog';
+      dialog.opened = false;
+      dialog.query = '';
+      dialog.captureOpenModality = () => undefined;
+      dialog.requestOpen = () => undefined;
+      document.body.append(dialog);
+
+      initSearch();
+
+      await dialog.searcher?.({
+        query: 'router',
+        signal: new AbortController().signal,
+      });
+
+      expect(searchCount).to.equal(1);
+    } finally {
+      searchCore.search = originalSearch;
     }
   });
 });

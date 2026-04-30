@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
   UiSearchDialogItem,
   UiSearchDialogSearchError,
   UiSearchDialogSearcher,
 } from '../../src/components/ui/search-dialog/search-dialog.types.js';
 import { SearchDialogSearchSession } from '../../src/components/ui/search-dialog/internals/search-dialog-search-session.js';
+import { SEARCH_DEBOUNCE_MS } from '../../src/components/ui/search-dialog/search-dialog.constants.js';
 
 interface SessionState {
   query: string;
@@ -73,7 +74,23 @@ async function waitForSearch(): Promise<void> {
   });
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((innerResolve, innerReject) => {
+    resolve = innerResolve;
+    reject = innerReject;
+  });
+
+  return { promise, resolve, reject };
+}
+
 describe('SearchDialogSearchSession', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
   it('空クエリなら結果をクリアする', () => {
     const state = createState();
     state.results = [{ id: 'old', title: 'old', url: '/old' }];
@@ -212,5 +229,102 @@ describe('SearchDialogSearchSession', () => {
     await waitForSearch();
 
     expect(state.activeId).to.equal('beta');
+  });
+
+  it('Error.name が AbortError の場合は error state に流さない', async () => {
+    const state = createState();
+    state.query = 'alpha';
+    state.searcher = () => {
+      const error = new Error('aborted');
+      error.name = 'AbortError';
+      return Promise.reject(error);
+    };
+
+    const session = new SearchDialogSearchSession(createHost(state));
+
+    session.handleQueryChanged();
+    await waitForSearch();
+
+    expect(state.errorCode).to.equal(null);
+    expect(state.hasCompletedSearch).to.equal(false);
+    expect(state.liveMessage).to.equal('');
+
+    session.destroy();
+  });
+
+  it('query 変更時に実行中検索を debounce 前に abort する', async () => {
+    vi.useFakeTimers();
+    const state = createState();
+    const signals: AbortSignal[] = [];
+    state.query = 'alpha';
+    state.searcher = ({ signal }) => {
+      signals.push(signal);
+      return createDeferred<{ items: UiSearchDialogItem[] }>().promise;
+    };
+
+    const session = new SearchDialogSearchSession(createHost(state));
+
+    session.handleQueryChanged();
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+
+    expect(signals).to.have.length(1);
+    expect(signals[0]?.aborted).to.equal(false);
+
+    state.query = 'beta';
+    session.handleQueryChanged();
+
+    expect(signals[0]?.aborted).to.equal(true);
+
+    session.destroy();
+  });
+
+  it('requestSearchNow 経路で観測済みの同一 query 再通知は即時 abort しない', async () => {
+    vi.useFakeTimers();
+    const state = createState();
+    const signals: AbortSignal[] = [];
+    state.query = 'alpha';
+    state.searcher = ({ signal }) => {
+      signals.push(signal);
+      return createDeferred<{ items: UiSearchDialogItem[] }>().promise;
+    };
+
+    const session = new SearchDialogSearchSession(createHost(state));
+
+    session.requestSearchNow();
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+
+    expect(signals).to.have.length(1);
+    expect(signals[0]?.aborted).to.equal(false);
+
+    session.handleQueryChanged();
+
+    expect(signals[0]?.aborted).to.equal(false);
+
+    session.destroy();
+  });
+
+  it('stale token の通常 Error reject をログにも UI にも反映しない', async () => {
+    vi.useFakeTimers();
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const state = createState();
+    const first = createDeferred<{ items: UiSearchDialogItem[] }>();
+    state.query = 'alpha';
+    state.searcher = () => first.promise;
+
+    const session = new SearchDialogSearchSession(createHost(state));
+
+    session.handleQueryChanged();
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+
+    state.query = 'beta';
+    session.handleQueryChanged();
+    first.reject(new Error('late failure'));
+    await Promise.resolve();
+
+    expect(consoleError).not.toHaveBeenCalled();
+    expect(state.errorCode).to.equal(null);
+    expect(state.hasCompletedSearch).to.equal(false);
+
+    session.destroy();
   });
 });
