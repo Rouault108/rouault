@@ -6,7 +6,10 @@ import {
 import type { ShellProjectionSnapshot } from '../../shared/navigation/shell-projection.js';
 import '../../src/components/app/app-router.js';
 import '../../src/components/layout/layout-sidebar.js';
-import type { AppRouterContentRenderedDetail } from '../../src/components/app/app-router.js';
+import type {
+  AppRouterContentDomReplacedDetail,
+  AppRouterNavigationCommittedDetail,
+} from '../../src/components/app/app-router.js';
 import type { NavigationResult } from '../../src/router/router.js';
 import { createRouterContentHtml } from '../../src/router/router-content-html.js';
 import { PRIMARY_TAB_URL_STATE_CHANGE_EVENT } from '../../src/components/app/navigation/primary-tab-url-state.js';
@@ -213,8 +216,9 @@ describe('app-router', () => {
     expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('SSR Body');
   });
 
-  it('初期 boot では本文要素の identity を維持し、content-rendered を発火しないこと', async () => {
-    let renderedCount = 0;
+  it('初期 boot では本文要素の identity を維持し、content-dom-replaced と navigation-committed を発火しないこと', async () => {
+    let contentDomReplacedCount = 0;
+    let navigationCommittedCount = 0;
 
     host = await fixture<AppRouterElement>(
       html`<app-router>
@@ -228,15 +232,19 @@ describe('app-router', () => {
     const main = appHost.querySelector<HTMLElement>('#main-content');
     const articleHeader = appHost.querySelector<HTMLElement>('.article-header');
 
-    appHost.addEventListener('app-router:content-rendered', () => {
-      renderedCount += 1;
+    appHost.addEventListener('app-router:content-dom-replaced', () => {
+      contentDomReplacedCount += 1;
+    });
+    appHost.addEventListener('app-router:navigation-committed', () => {
+      navigationCommittedCount += 1;
     });
 
     await appHost.whenReady();
 
     expect(appHost.querySelector('#main-content')).to.equal(main);
     expect(appHost.querySelector('.article-header')).to.equal(articleHeader);
-    expect(renderedCount).to.equal(0);
+    expect(contentDomReplacedCount).to.equal(0);
+    expect(navigationCommittedCount).to.equal(0);
   });
 
   it('初期 boot では SSR 済み TOC nav の identity も維持すること', async () => {
@@ -314,8 +322,8 @@ describe('app-router', () => {
     await appHost.ready;
   });
 
-  it('navigate() は NavigationResult を返し main を更新し content-rendered detail に contentRoot を含めること', async () => {
-    const renderedRoots: HTMLElement[] = [];
+  it('navigate() は NavigationResult を返し main を更新し navigation-committed detail に contentRoot と result を含めること', async () => {
+    const committedDetails: AppRouterNavigationCommittedDetail[] = [];
 
     globalThis.fetch = () =>
       Promise.resolve(
@@ -335,11 +343,9 @@ describe('app-router', () => {
 
     await appHost.whenReady();
 
-    appHost.addEventListener('app-router:content-rendered', (event: Event) => {
-      const detail = (event as CustomEvent<AppRouterContentRenderedDetail>).detail;
-      if (detail?.contentRoot instanceof HTMLElement) {
-        renderedRoots.push(detail.contentRoot);
-      }
+    appHost.addEventListener('app-router:navigation-committed', (event: Event) => {
+      const detail = (event as CustomEvent<AppRouterNavigationCommittedDetail>).detail;
+      committedDetails.push(detail);
     });
 
     const result = await appHost.navigate('/client-page');
@@ -354,10 +360,58 @@ describe('app-router', () => {
     expect(document.title).to.equal('Client Routed');
     expect(appHost.querySelectorAll('main').length).to.equal(1);
     expect(appHost.querySelectorAll('#main-content').length).to.equal(1);
-    expect(renderedRoots.length).to.be.greaterThan(0);
-    expect(renderedRoots.at(-1)).to.equal(
-      appHost.getContentRoot?.() ?? appHost.querySelector('#main-content'),
+    expect(committedDetails.length).to.equal(1);
+
+    const detail = committedDetails[0];
+    if (!detail) {
+      throw new Error('navigation-committed detail が記録されていません');
+    }
+
+    expect(detail.contentRoot).to.equal(appHost.getContentRoot());
+    expect(detail.result.outcome).to.equal('completed');
+    expect(detail.result.committed).to.equal(true);
+    expect(detail.result.stateOnly).to.equal(false);
+    expect(detail.result.renderedKind).to.equal('page');
+  });
+
+  it('content-dom-replaced は navigation-committed より前に発火すること', async () => {
+    const events: string[] = [];
+
+    globalThis.fetch = () =>
+      Promise.resolve(
+        createEnvelopeResponse({
+          html: '<h1>Ordered Page</h1>',
+          title: 'Ordered Page',
+          description: 'ordered page',
+        }),
+      );
+
+    host = await fixture<AppRouterElement>(
+      html`<app-router
+        ><main id="main-content" tabindex="-1"><h1>SSR Title</h1></main></app-router
+      >`,
     );
+    const appHost = host;
+
+    await appHost.whenReady();
+
+    appHost.addEventListener('app-router:content-dom-replaced', (event: Event) => {
+      const detail = (event as CustomEvent<AppRouterContentDomReplacedDetail>).detail;
+      expect(detail.contentRoot).to.equal(appHost.getContentRoot());
+      events.push('content-dom-replaced');
+    });
+
+    appHost.addEventListener('app-router:navigation-committed', (event: Event) => {
+      const detail = (event as CustomEvent<AppRouterNavigationCommittedDetail>).detail;
+      expect(detail.contentRoot).to.equal(appHost.getContentRoot());
+      expect(detail.result.outcome).to.equal('completed');
+      events.push('navigation-committed');
+    });
+
+    const result = await appHost.navigate('/ordered-page');
+
+    expect(result.outcome).to.equal('completed');
+    expect(events).to.deep.equal(['content-dom-replaced', 'navigation-committed']);
   });
 
   it('SSR 済み app-router からでも navigate() で本文を差し替えられること', async () => {
@@ -447,6 +501,51 @@ describe('app-router', () => {
     expect(appHost.querySelectorAll('[data-app-router-announcement]').length).to.equal(1);
     expect(appHost.querySelectorAll('main').length).to.equal(1);
     expect(focusOptions).to.deep.equal({ preventScroll: true });
+  });
+
+  it('navigation-committed は post-commit による aria-live と focus 更新後に発火すること', async () => {
+    let committedSnapshot:
+      | {
+          announcement: string;
+          activeElement: Element | null;
+          title: string;
+        }
+      | undefined;
+
+    globalThis.fetch = () =>
+      Promise.resolve(
+        createEnvelopeResponse({
+          html: '<h1>Post Commit Page</h1>',
+          title: 'Post Commit Page',
+          description: 'post commit page',
+        }),
+      );
+
+    host = await fixture<AppRouterElement>(
+      html`<app-router
+        ><main id="main-content" tabindex="-1"><h1>SSR Title</h1></main></app-router
+      >`,
+    );
+    const appHost = host;
+
+    await appHost.whenReady();
+
+    appHost.addEventListener('app-router:navigation-committed', () => {
+      committedSnapshot = {
+        announcement:
+          appHost.querySelector('[data-app-router-announcement]')?.textContent ?? '',
+        activeElement: document.activeElement,
+        title: document.title,
+      };
+    });
+
+    const result = await appHost.navigate('/post-commit-page');
+    const main = appHost.getContentRoot();
+
+    expect(result.outcome).to.equal('completed');
+    expect(committedSnapshot?.announcement).to.contain('ページが読み込まれました');
+    expect(committedSnapshot?.activeElement).to.equal(main);
+    expect(committedSnapshot?.title).to.equal('Post Commit Page');
   });
 
   it('client-side navigation 後は main#main-content に論理フォーカスを移しつつ可視リングを出さないこと', async () => {
@@ -1144,6 +1243,53 @@ describe('app-router', () => {
     expect(document.title).to.equal('Before Header Failure');
   });
 
+  it('durable commit 失敗または rollback を伴う navigation では navigation-committed を発火しないこと', async () => {
+    const events: string[] = [];
+
+    globalThis.fetch = () =>
+      Promise.resolve(
+        createEnvelopeResponse({
+          html: '<h1>Rollback Page</h1>',
+          title: 'Rollback Page',
+          description: 'rollback page',
+        }),
+      );
+
+    host = await fixture<AppRouterElement>(
+      html`<app-router
+        ><main id="main-content" tabindex="-1"><h1>SSR Title</h1></main></app-router
+      >`,
+    );
+    const appHost = host;
+    await appHost.whenReady();
+
+    const previousMainText = appHost.querySelector('#main-content')?.textContent ?? '';
+
+    appHost.addEventListener('app-router:content-dom-replaced', () => {
+      events.push('content-dom-replaced');
+    });
+    appHost.addEventListener('app-router:navigation-committed', () => {
+      events.push('navigation-committed');
+    });
+
+    const currentPushState = history.pushState;
+    history.pushState = (() => {
+      throw new Error('mock pushState failure');
+    }) as typeof history.pushState;
+
+    try {
+      const result = await appHost.navigate('/rollback-page');
+
+      expect(result.outcome).to.equal('failed');
+      expect(result.committed).to.equal(false);
+      expect(events).to.not.include('navigation-committed');
+      expect(events.filter((event) => event === 'content-dom-replaced').length).to.equal(2);
+      expect(appHost.querySelector('#main-content')?.textContent ?? '').to.equal(previousMainText);
+    } finally {
+      history.pushState = currentPushState;
+    }
+  });
+
   it('primary tab の state-only navigation で URL state 通知と hash scroll を行うこと', async () => {
     mockHistoryState = {
       __routerUrl: '/notes/testing?tab=overview',
@@ -1197,6 +1343,64 @@ describe('app-router', () => {
     } finally {
       window.removeEventListener(PRIMARY_TAB_URL_STATE_CHANGE_EVENT, listener);
       heading.remove();
+    }
+  });
+
+  it('primary tab の state-only navigation では content-dom-replaced と navigation-committed を発火しないこと', async () => {
+    mockHistoryState = {
+      __routerUrl: '/notes/state-only-test?tab=overview',
+    };
+
+    host = await fixture<AppRouterElement>(
+      html`<app-router
+        ><main id="main-content" tabindex="-1"><h1>SSR State Only</h1></main></app-router
+      >`,
+    );
+    const appHost = host;
+    await appHost.whenReady();
+
+    const main = appHost.querySelector<HTMLElement>('#main-content');
+    const previousText = main?.textContent ?? '';
+    let contentDomReplacedCount = 0;
+    let navigationCommittedCount = 0;
+    let eventDetail:
+      | {
+          previousUrl: string;
+          url: string;
+        }
+      | undefined;
+
+    appHost.addEventListener('app-router:content-dom-replaced', () => {
+      contentDomReplacedCount += 1;
+    });
+    appHost.addEventListener('app-router:navigation-committed', () => {
+      navigationCommittedCount += 1;
+    });
+
+    const listener = (event: Event) => {
+      const customEvent = event as CustomEvent<{ previousUrl: string; url: string }>;
+      eventDetail = customEvent.detail;
+    };
+    window.addEventListener(PRIMARY_TAB_URL_STATE_CHANGE_EVENT, listener);
+
+    try {
+      const result = await appHost.navigate('/notes/state-only-test?tab=details');
+
+      expect(result.outcome).to.equal('completed');
+      expect(result.committed).to.equal(true);
+      expect(result.stateOnly).to.equal(true);
+      expect(result.source).to.equal('state-only');
+      expect(result.renderedKind).to.equal(null);
+      expect(contentDomReplacedCount).to.equal(0);
+      expect(navigationCommittedCount).to.equal(0);
+      expect(eventDetail).to.deep.equal({
+        previousUrl: '/notes/state-only-test?tab=overview',
+        url: '/notes/state-only-test?tab=details',
+      });
+      expect(appHost.querySelector('#main-content')).to.equal(main);
+      expect(appHost.querySelector('#main-content')?.textContent ?? '').to.equal(previousText);
+    } finally {
+      window.removeEventListener(PRIMARY_TAB_URL_STATE_CHANGE_EVENT, listener);
     }
   });
 

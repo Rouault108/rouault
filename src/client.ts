@@ -1,6 +1,6 @@
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import { MAIN_CONTENT_SELECTOR } from '../shared/navigation/main-landmark-contract.js';
-import type { AppRouter, AppRouterContentRenderedDetail } from './components/app/app-router.js';
+import type { AppRouter, AppRouterNavigationCommittedDetail } from './components/app/app-router.js';
 import './components/ui/syntax-card/syntax-card.js';
 import { HydrationScheduler } from './client/hydration/scheduler.js';
 import { promoteDeclarativeShadowRoots } from './router/declarative-shadow-dom.js';
@@ -111,8 +111,8 @@ const bootstrapClient = async (): Promise<void> => {
   await hydrateCurrentContent();
 };
 
-document.addEventListener('app-router:content-rendered', (event: Event) => {
-  const detail = (event as CustomEvent<AppRouterContentRenderedDetail>).detail;
+document.addEventListener('app-router:navigation-committed', (event: Event) => {
+  const detail = (event as CustomEvent<AppRouterNavigationCommittedDetail>).detail;
   const contentRoot = detail.contentRoot;
   void hydrateCurrentContent(contentRoot instanceof HTMLElement ? contentRoot : undefined);
 });

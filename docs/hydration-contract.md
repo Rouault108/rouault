@@ -26,6 +26,13 @@ hydration trigger の決定は scheduler / registry が正本です。
 [`src/client.ts`](../src/client.ts)
 は bootstrap と scheduler 呼び出しだけを持ちます。
 
+- 初期 SSR 本文の hydration は `bootstrapClient()` の初期 content hydration で行う
+- SPA 遷移後本文の hydration は `app-router:navigation-committed` を契機に行う
+- `app-router:content-dom-replaced` は本文 DOM 差し替え通知であり、hydration trigger の正本として使ってはならない
+- state-only navigation は本文 DOM 差し替えを伴わないため、content hydration trigger にしてはならない
+- `app-router:content-rendered` は廃止済みイベント名である。実装コード、テスト、hydration trigger として復活させてはならない
+- `app-router:content-rendered` という旧イベント名は、廃止済み名称の説明として仕様書に記載してよいが、実行時イベントとして発火してはならない
+
 持ってはいけない責務:
 
 - component ごとの manual `activateHydration()` 呼び出し

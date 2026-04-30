@@ -30,8 +30,13 @@ import { PrimaryTabNavigationPolicy } from './navigation/primary-tab-navigation-
 import { primaryTabTabsUrlSyncStrategy } from './navigation/primary-tab-url-state.js';
 import { createAppShellAdapter } from './shell/app-shell-adapter.js';
 
-export interface AppRouterContentRenderedDetail {
+export interface AppRouterContentDomReplacedDetail {
   contentRoot: HTMLElement;
+}
+
+export interface AppRouterNavigationCommittedDetail {
+  contentRoot: HTMLElement;
+  result: NavigationResult;
 }
 
 const createNotStartedResult = (url: string): NavigationResult => ({
@@ -133,6 +138,10 @@ export class AppRouter extends HTMLElement {
       this._syncBusyState(isNavigating);
     });
 
+    router.on('after:navigate', (result) => {
+      this._dispatchNavigationCommitted(result);
+    });
+
     this._router = router;
 
     void router.start();
@@ -187,11 +196,11 @@ export class AppRouter extends HTMLElement {
         return {
           commit: () => {
             this._currentContent = nextContent;
-            this._replaceContent(nextContent, { dispatchRenderedEvent: true });
+            this._replaceContent(nextContent, { dispatchContentDomReplacedEvent: true });
           },
           rollback: () => {
             this._currentContent = previousContent;
-            this._replaceContent(previousContent, { dispatchRenderedEvent: true });
+            this._replaceContent(previousContent, { dispatchContentDomReplacedEvent: true });
           },
         };
       },
@@ -243,7 +252,7 @@ export class AppRouter extends HTMLElement {
 
   private _replaceContent(
     content: RouterContentHtml,
-    options: { dispatchRenderedEvent: boolean },
+    options: { dispatchContentDomReplacedEvent: boolean },
   ): void {
     const contentRoot = this._ensureContentRoot(this._findExistingContentRoot());
     replaceElementChildrenFromHtml(
@@ -252,8 +261,8 @@ export class AppRouter extends HTMLElement {
       contentRoot.ownerDocument,
     );
 
-    if (options.dispatchRenderedEvent) {
-      this._dispatchContentRendered(contentRoot);
+    if (options.dispatchContentDomReplacedEvent) {
+      this._dispatchContentDomReplaced(contentRoot);
     }
   }
 
@@ -273,11 +282,37 @@ export class AppRouter extends HTMLElement {
     main.removeAttribute('aria-busy');
   }
 
-  private _dispatchContentRendered(contentRoot: HTMLElement): void {
-    // 描画後連携は event detail 経由で現在の本文 root を受け取れることを契約にします。
+  private _dispatchContentDomReplaced(contentRoot: HTMLElement): void {
     this.dispatchEvent(
-      new CustomEvent<AppRouterContentRenderedDetail>('app-router:content-rendered', {
+      new CustomEvent<AppRouterContentDomReplacedDetail>('app-router:content-dom-replaced', {
         detail: { contentRoot },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private _dispatchNavigationCommitted(result: NavigationResult): void {
+    if (
+      result.outcome !== 'completed' ||
+      !result.committed ||
+      result.stateOnly ||
+      result.renderedKind === null
+    ) {
+      return;
+    }
+
+    const contentRoot = this.getContentRoot();
+    if (!(contentRoot instanceof HTMLElement)) {
+      return;
+    }
+
+    this.dispatchEvent(
+      new CustomEvent<AppRouterNavigationCommittedDetail>('app-router:navigation-committed', {
+        detail: {
+          contentRoot,
+          result,
+        },
         bubbles: true,
         composed: true,
       }),

@@ -371,6 +371,7 @@ interface NavigationResult {
 
 - `navigate()` の戻り値は、**その呼び出し自身** の完了結果を受け取るための API です。
 - `after:navigate` は、router が処理した **すべての遷移要求** を外部が受動的に観測するためのイベントです。
+- `after:navigate` は、durable commit と `postCommitController.run()` の実行後に発火します。
 - imperative call の呼び出し元は、自身の遷移完了判定に `after:navigate` を使ってはなりません。必ず `navigate()` の戻り値を用います。
 - `after:navigate` は、リンク横取り、`popstate`、他コンポーネント起点の遷移も含めた横断的観測のためにのみ用います。
 
@@ -679,7 +680,18 @@ router における **durable commit point** は、次が整合した状態と�
 - router は `contentAdapter.prepare()` を呼び出し、`PreparedContentUpdate` を取得します。
 - `prepare()` は **外部可視状態を publish してはなりません**。staging のみを行います。
 - `PreparedContentUpdate.commit()` は durable content commit の一部として扱います。
+- content adapter の commit は、本文 DOM 差し替えの局所 commit であり、navigation 全体の完了を意味しません。
 - `content:load` は durable commit 完了後にのみ発火します。
+
+### app shell の本文差し替え通知と遷移完了通知
+
+- app shell が本文 DOM 差し替えを DOM event として公開する場合、そのイベント名は `content-dom-replaced` 相当とし、shell / head / history / post-commit の完了を意味してはなりません。
+- hydration や外部の遷移後処理は、本文 DOM 差し替えイベントではなく、`navigation-committed` 相当の安定イベントを契機にしなければなりません。
+- `navigation-committed` 相当のイベントは、completed / committed / non-state-only / `renderedKind != null` の遷移でのみ発火してよいものとします。
+- durable commit 失敗、rollback、cancelled、superseded、failed の各経路では、`navigation-committed` 相当のイベントを発火してはなりません。
+- state-only navigation は URL state の commit であり、本文 DOM 差し替えを伴わないため、本文 hydration trigger にしてはなりません。
+- state-only navigation では、本文 DOM 差し替え通知と `navigation-committed` 相当の通知の双方を発火してはなりません。
+- `app-router:content-rendered` は廃止済みイベント名です。本文 DOM 差し替え通知と navigation 完了通知を混同するため、実行時イベントとして発火してはなりません。
 
 ### `shellAdapter` 指定時
 
