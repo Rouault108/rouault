@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { createSearchCore, type PagefindApi } from '../../src/search/search-core.js';
+import { createAbortError } from '../../src/search/abort.js';
 import type { SearchCatalogItem } from '../../shared/search/search-catalog.js';
+import type { SearchRequest } from '../../shared/search/search-types.js';
 
 describe('search-core', () => {
   const catalogItems: SearchCatalogItem[] = [
@@ -95,6 +97,14 @@ describe('search-core', () => {
       },
     };
   }
+
+  const navigateMusicRequest = {
+    mode: 'navigate',
+    q: 'music',
+    tags: [],
+    tagMode: 'or',
+    sort: 'relevance',
+  } satisfies SearchRequest;
 
   it('explore モードで query 集合と tag 集合の件数を分けて返すこと', async () => {
     const core = createSearchCore({
@@ -383,5 +393,189 @@ describe('search-core', () => {
 
     expect(response.items.map((item) => item.title)).to.include('ジャズ理論の基礎');
     expect(response.diagnostics.failures).to.include('pagefind-search-failed');
+  });
+
+  it('source が AbortError を投げた場合は diagnostics に変換しないこと', async () => {
+    const core = createSearchCore({
+      loadPagefind: () => Promise.reject(createAbortError()),
+      loadSearchCatalog: () => Promise.resolve(catalogItems),
+    });
+
+    await expect(core.search(navigateMusicRequest)).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
+  it('Pagefind load の catch 時に abort 済みなら通常 failure へ変換しないこと', async () => {
+    const controller = new AbortController();
+    const core = createSearchCore({
+      loadPagefind: () => {
+        controller.abort();
+        return Promise.reject(new Error('late load failure'));
+      },
+      loadSearchCatalog: () => Promise.resolve(catalogItems),
+    });
+
+    await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+  });
+
+  it('Pagefind search の catch 時に abort 済みなら通常 failure へ変換しないこと', async () => {
+    const controller = new AbortController();
+    const core = createSearchCore({
+      loadPagefind: () =>
+        Promise.resolve({
+          filters() {
+            return Promise.resolve({});
+          },
+          search() {
+            controller.abort();
+            return Promise.reject(new Error('late search failure'));
+          },
+        }),
+      loadSearchCatalog: () => Promise.resolve(catalogItems),
+    });
+
+    await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+  });
+
+  it('Pagefind result.data() の AbortError は pagefind-search-failed に変換しないこと', async () => {
+    const core = createSearchCore({
+      loadPagefind: () =>
+        Promise.resolve({
+          filters() {
+            return Promise.resolve({});
+          },
+          search() {
+            return Promise.resolve({
+              results: [
+                {
+                  data() {
+                    return Promise.reject(createAbortError());
+                  },
+                },
+              ],
+              unfilteredResultCount: 1,
+              totalFilters: {},
+            });
+          },
+        }),
+      loadSearchCatalog: () => Promise.resolve(catalogItems),
+    });
+
+    await expect(core.search(navigateMusicRequest)).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
+  it('Pagefind result.data() の catch 時に abort 済みなら通常 failure へ変換しないこと', async () => {
+    const controller = new AbortController();
+    const core = createSearchCore({
+      loadPagefind: () =>
+        Promise.resolve({
+          filters() {
+            return Promise.resolve({});
+          },
+          search() {
+            return Promise.resolve({
+              results: [
+                {
+                  data() {
+                    controller.abort();
+                    return Promise.reject(new Error('late data failure'));
+                  },
+                },
+              ],
+              unfilteredResultCount: 1,
+              totalFilters: {},
+            });
+          },
+        }),
+      loadSearchCatalog: () => Promise.resolve(catalogItems),
+    });
+
+    await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+  });
+
+  it('Pagefind candidate 正規化中の abort では SearchResponse を返さないこと', async () => {
+    const controller = new AbortController();
+    const rawResult = {
+      get url() {
+        controller.abort();
+        return '/notes/music/jazz/jazz-theory/';
+      },
+      excerpt: '<mark>ジャズ</mark>理論の基礎',
+      meta: {
+        title: 'ジャズ理論の基礎',
+        description: 'ジャズ音楽の基本理論',
+        date: '2026-02-01',
+        genre: 'music,jazz',
+      },
+    };
+    const core = createSearchCore({
+      loadPagefind: () =>
+        Promise.resolve({
+          filters() {
+            return Promise.resolve({});
+          },
+          search() {
+            return Promise.resolve({
+              results: [
+                {
+                  data() {
+                    return Promise.resolve(rawResult);
+                  },
+                },
+              ],
+              unfilteredResultCount: 1,
+              totalFilters: {},
+            });
+          },
+        }),
+      loadSearchCatalog: () => Promise.resolve(catalogItems),
+    });
+
+    await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+  });
+
+  it('catalog load の catch 時に abort 済みなら通常 failure へ変換しないこと', async () => {
+    const controller = new AbortController();
+    const core = createSearchCore({
+      loadPagefind: () => Promise.resolve(createPagefindApi()),
+      loadSearchCatalog: () => {
+        controller.abort();
+        return Promise.reject(new Error('late catalog failure'));
+      },
+    });
+
+    await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+  });
+
+  it('通常 source failure diagnostics は維持すること', async () => {
+    const core = createSearchCore({
+      loadPagefind: () =>
+        Promise.resolve({
+          filters() {
+            return Promise.resolve({});
+          },
+          search() {
+            return Promise.reject(new Error('pagefind search failed'));
+          },
+        }),
+      loadSearchCatalog: () => Promise.reject(new Error('catalog failed')),
+    });
+
+    const response = await core.search(navigateMusicRequest);
+
+    expect(response.diagnostics.failures).to.deep.equal([
+      'catalog-fetch-failed',
+      'pagefind-search-failed',
+      'all-sources-failed',
+    ]);
   });
 });

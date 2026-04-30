@@ -252,6 +252,23 @@ describe('SearchDialogSearchSession', () => {
     session.destroy();
   });
 
+  it('DOMException の AbortError も error state に流さない', async () => {
+    const state = createState();
+    state.query = 'alpha';
+    state.searcher = () => Promise.reject(new DOMException('aborted', 'AbortError'));
+
+    const session = new SearchDialogSearchSession(createHost(state));
+
+    session.handleQueryChanged();
+    await waitForSearch();
+
+    expect(state.errorCode).to.equal(null);
+    expect(state.hasCompletedSearch).to.equal(false);
+    expect(state.liveMessage).to.equal('');
+
+    session.destroy();
+  });
+
   it('query 変更時に実行中検索を debounce 前に abort する', async () => {
     vi.useFakeTimers();
     const state = createState();
@@ -303,6 +320,86 @@ describe('SearchDialogSearchSession', () => {
     session.destroy();
   });
 
+  it('loading 解除経路で観測済みの同一 query 再通知は即時 abort しない', async () => {
+    vi.useFakeTimers();
+    const state = createState();
+    const signals: AbortSignal[] = [];
+    state.query = 'alpha';
+    state.searcher = ({ signal }) => {
+      signals.push(signal);
+      return createDeferred<{ items: UiSearchDialogItem[] }>().promise;
+    };
+
+    const session = new SearchDialogSearchSession(createHost(state));
+
+    session.handleLoadingChanged();
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+
+    expect(signals).to.have.length(1);
+    expect(signals[0]?.aborted).to.equal(false);
+
+    session.handleQueryChanged();
+
+    expect(signals[0]?.aborted).to.equal(false);
+
+    state.query = 'beta';
+    session.handleQueryChanged();
+
+    expect(signals[0]?.aborted).to.equal(true);
+
+    session.destroy();
+  });
+
+  it('destroy 後に abort を無視した in-flight resolve を UI に反映しない', async () => {
+    vi.useFakeTimers();
+    const state = createState();
+    const deferred = createDeferred<{ items: UiSearchDialogItem[] }>();
+    state.query = 'alpha';
+    state.searcher = () => deferred.promise;
+
+    const session = new SearchDialogSearchSession(createHost(state));
+
+    session.handleQueryChanged();
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+    session.destroy();
+
+    deferred.resolve({
+      items: [{ id: 'alpha', title: 'Alpha', url: '/alpha' }],
+    });
+    await Promise.resolve();
+
+    expect(state.results).to.deep.equal([]);
+    expect(state.activeId).to.equal(null);
+    expect(state.hasCompletedSearch).to.equal(false);
+    expect(state.errorCode).to.equal(null);
+    expect(state.liveMessage).to.equal('');
+  });
+
+  it('destroy 後に abort を無視した in-flight reject をログにも UI にも反映しない', async () => {
+    vi.useFakeTimers();
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const state = createState();
+    const deferred = createDeferred<{ items: UiSearchDialogItem[] }>();
+    state.query = 'alpha';
+    state.searcher = () => deferred.promise;
+
+    const session = new SearchDialogSearchSession(createHost(state));
+
+    session.handleQueryChanged();
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+    session.destroy();
+
+    deferred.reject(new Error('late failure'));
+    await Promise.resolve();
+
+    expect(consoleError).not.toHaveBeenCalled();
+    expect(state.results).to.deep.equal([]);
+    expect(state.activeId).to.equal(null);
+    expect(state.hasCompletedSearch).to.equal(false);
+    expect(state.errorCode).to.equal(null);
+    expect(state.liveMessage).to.equal('');
+  });
+
   it('stale token の通常 Error reject をログにも UI にも反映しない', async () => {
     vi.useFakeTimers();
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -324,6 +421,54 @@ describe('SearchDialogSearchSession', () => {
     expect(consoleError).not.toHaveBeenCalled();
     expect(state.errorCode).to.equal(null);
     expect(state.hasCompletedSearch).to.equal(false);
+
+    session.destroy();
+  });
+
+  it('query mismatch の通常 Error reject をログにも UI にも反映しない', async () => {
+    vi.useFakeTimers();
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const state = createState();
+    const deferred = createDeferred<{ items: UiSearchDialogItem[] }>();
+    state.query = 'alpha';
+    state.searcher = () => deferred.promise;
+
+    const session = new SearchDialogSearchSession(createHost(state));
+
+    session.handleQueryChanged();
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+
+    state.query = 'beta';
+    deferred.reject(new Error('query changed'));
+    await Promise.resolve();
+
+    expect(consoleError).not.toHaveBeenCalled();
+    expect(state.errorCode).to.equal(null);
+    expect(state.hasCompletedSearch).to.equal(false);
+    expect(state.liveMessage).to.equal('');
+
+    session.destroy();
+  });
+
+  it('最新 token かつ query 一致の通常 Error reject は error state に流す', async () => {
+    vi.useFakeTimers();
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const state = createState();
+    state.query = 'alpha';
+    state.searcher = () => Promise.reject(new Error('current failure'));
+
+    const session = new SearchDialogSearchSession(createHost(state));
+
+    session.handleQueryChanged();
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+    await Promise.resolve();
+
+    expect(consoleError).toHaveBeenCalledOnce();
+    expect(state.results).to.deep.equal([]);
+    expect(state.activeId).to.equal(null);
+    expect(state.hasCompletedSearch).to.equal(true);
+    expect(state.errorCode).to.equal('search-failed');
+    expect(state.liveMessage).to.equal('検索結果を取得できませんでした');
 
     session.destroy();
   });

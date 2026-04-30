@@ -150,6 +150,7 @@ describe('search-catalog', () => {
   it('resetSearchCatalogCache 後に古い Promise が cache へ再注入されないこと', async () => {
     const originalFetch = globalThis.fetch;
     const first = createDeferred<Response>();
+    const second = createDeferred<Response>();
     let fetchCount = 0;
     const oldCatalog: SearchCatalogItem[] = [
       {
@@ -180,12 +181,7 @@ describe('search-catalog', () => {
         return first.promise;
       }
 
-      return Promise.resolve(
-        new Response(JSON.stringify(newCatalog), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        }),
-      );
+      return second.promise;
     }) as typeof fetch;
 
     resetSearchCatalogCache();
@@ -193,6 +189,15 @@ describe('search-catalog', () => {
     try {
       const oldRequest = getSearchCatalog();
       resetSearchCatalogCache();
+      const newRequest = getSearchCatalog();
+
+      second.resolve(
+        new Response(JSON.stringify(newCatalog), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      expect(await newRequest).to.deep.equal(newCatalog);
 
       first.resolve(
         new Response(JSON.stringify(oldCatalog), {
@@ -202,7 +207,6 @@ describe('search-catalog', () => {
       );
 
       expect(await oldRequest).to.deep.equal(oldCatalog);
-      expect(await getSearchCatalog()).to.deep.equal(newCatalog);
       expect(await getSearchCatalog()).to.deep.equal(newCatalog);
       expect(fetchCount).to.equal(2);
     } finally {

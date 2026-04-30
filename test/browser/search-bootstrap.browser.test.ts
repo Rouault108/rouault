@@ -10,7 +10,7 @@ interface TestSearchDialogElement extends HTMLElement {
   query: string;
   captureOpenModality(modality?: InteractionModality): void;
   requestOpen(trigger?: HTMLElement): void;
-  searcher?: UiSearchDialogSearcher | null;
+  searcher?: UiSearchDialogSearcher | null | undefined;
 }
 
 describe('search-bootstrap', () => {
@@ -184,5 +184,85 @@ describe('search-bootstrap', () => {
     } finally {
       searchCore.search = originalSearch;
     }
+  });
+
+  it('reset は searcher property がなかった fixture を元の形へ戻し listener も解除すること', () => {
+    let openCount = 0;
+    const dialog = document.createElement('div') as unknown as TestSearchDialogElement;
+    dialog.id = 'global-search-dialog';
+    dialog.opened = false;
+    dialog.query = '';
+    dialog.captureOpenModality = () => undefined;
+    dialog.requestOpen = () => {
+      openCount += 1;
+    };
+    document.body.append(dialog);
+
+    expect('searcher' in dialog).to.equal(false);
+
+    initSearch();
+
+    expect('searcher' in dialog).to.equal(true);
+    expect(Object.prototype.hasOwnProperty.call(dialog, 'searcher')).to.equal(true);
+
+    resetSearchBootstrapForTest();
+
+    expect('searcher' in dialog).to.equal(false);
+
+    dialog.dispatchEvent(
+      new CustomEvent('open-search-dialog', {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    expect(openCount).to.equal(0);
+  });
+
+  it('reset は prototype 側の searcher property を own property にせず null へ復元すること', () => {
+    class PrototypeSearchDialogElement extends HTMLElement {
+      opened = false;
+      query = '';
+      private _searcher: UiSearchDialogSearcher | null = null;
+
+      get searcher(): UiSearchDialogSearcher | null {
+        return this._searcher;
+      }
+
+      set searcher(value: UiSearchDialogSearcher | null | undefined) {
+        this._searcher = value ?? null;
+      }
+
+      captureOpenModality(): void {
+        return undefined;
+      }
+
+      requestOpen(): void {
+        return undefined;
+      }
+    }
+
+    const tagName = 'test-search-dialog-prototype';
+    if (!customElements.get(tagName)) {
+      customElements.define(tagName, PrototypeSearchDialogElement);
+    }
+
+    const dialog = document.createElement(tagName) as PrototypeSearchDialogElement;
+    dialog.id = 'global-search-dialog';
+    document.body.append(dialog);
+
+    expect('searcher' in dialog).to.equal(true);
+    expect(Object.prototype.hasOwnProperty.call(dialog, 'searcher')).to.equal(false);
+    expect(dialog.searcher).to.equal(null);
+
+    initSearch();
+
+    expect(typeof dialog.searcher).to.equal('function');
+
+    resetSearchBootstrapForTest();
+
+    expect('searcher' in dialog).to.equal(true);
+    expect(Object.prototype.hasOwnProperty.call(dialog, 'searcher')).to.equal(false);
+    expect(dialog.searcher).to.equal(null);
   });
 });
