@@ -4,13 +4,15 @@ import {
   finalizeHydrationDiagnostics,
   type MutableHydrationDiagnostics,
 } from './diagnostics.js';
-import { HYDRATION_REGISTRY_BY_TAG, type HydrationRegistryEntry } from './registry.js';
+import { HYDRATION_REGISTRY_BY_TAG } from './registry.js';
 import { promoteDeclarativeShadowRoots } from '../../router/declarative-shadow-dom.js';
 import { planHydration } from './planner.js';
 import type {
   HydrationDiagnostics,
   HydrationPlanItem,
+  HydrationRegistryEntry,
   HydrationScopePlan,
+  HydrationSessionKind,
   HydrationTrigger,
 } from './types.js';
 
@@ -18,6 +20,7 @@ interface HydrationSession {
   readonly id: number;
   readonly root: ParentNode;
   readonly controller: AbortController;
+  readonly kind: HydrationSessionKind;
 }
 
 interface HydrationSchedulerOptions {
@@ -65,6 +68,7 @@ export class HydrationScheduler {
       id: 0,
       root,
       controller: new AbortController(),
+      kind: 'shell',
     } satisfies HydrationSession;
 
     const prepared = await this.#prepareSession(session);
@@ -94,6 +98,7 @@ export class HydrationScheduler {
       id: ++this.nextSessionId,
       root,
       controller: new AbortController(),
+      kind: 'content',
     } satisfies HydrationSession;
     this.activeContentSession = session;
 
@@ -163,6 +168,8 @@ export class HydrationScheduler {
     const firstPass = this.#plan(session.root);
     diagnostics.plannedCount += firstPass.reduce((sum, scope) => sum + scope.items.length, 0);
 
+    this.#preloadPlannedEntries(firstPass, session);
+
     await this.#executePhase(matchPlanItems(firstPass, 'initial'), session, diagnostics, processed);
 
     if (session.controller.signal.aborted) {
@@ -195,6 +202,16 @@ export class HydrationScheduler {
 
     diagnostics.plannedCount += secondPassItems.length;
 
+    const secondPassItemSet = new Set(secondPassItems);
+    const secondPassPreloadPlan = secondPass
+      .map((scope) => ({
+        scope: scope.scope,
+        items: scope.items.filter((item) => secondPassItemSet.has(item)),
+      }))
+      .filter((scope) => scope.items.length > 0);
+
+    this.#preloadPlannedEntries(secondPassPreloadPlan, session);
+
     return {
       diagnostics,
       processed,
@@ -211,6 +228,34 @@ export class HydrationScheduler {
 
   #plan(root: ParentNode): HydrationScopePlan[] {
     return planHydration(root);
+  }
+
+  #preloadPlannedEntries(
+    plans: readonly HydrationScopePlan[],
+    session: HydrationSession,
+  ): void {
+    const seenTags = new Set<string>();
+
+    for (const item of plans.flatMap((scope) => scope.items)) {
+      if (seenTags.has(item.tag)) {
+        continue;
+      }
+      seenTags.add(item.tag);
+
+      const entry = this.registry.get(item.tag);
+      if (!entry || entry.preload?.when !== 'planned') {
+        continue;
+      }
+
+      const preloadScopes = entry.preload.scopes;
+      if (preloadScopes && !preloadScopes.includes(session.kind)) {
+        continue;
+      }
+
+      void this.#loadEntry(entry).catch(() => {
+        // 通常 hydration 側で再試行し、その時点の診断へ記録する。
+      });
+    }
   }
 
   async #executePhase(
@@ -272,6 +317,7 @@ export class HydrationScheduler {
     if (entry.kind !== 'enhancer') {
       try {
         await customElements.whenDefined(item.tag);
+        customElements.upgrade(item.element);
         diagnostics.upgradedCount += 1;
       } catch {
         diagnostics.failedCount += 1;
@@ -294,6 +340,8 @@ export class HydrationScheduler {
         });
         diagnostics.activatedCount += 1;
       }
+
+      this.#cleanupBootMarker(entry, item.element);
     } catch {
       diagnostics.failedCount += 1;
       addHydrationIssue(diagnostics, {
@@ -313,9 +361,35 @@ export class HydrationScheduler {
       return;
     }
 
-    const pending = entry.loader().then(() => undefined);
+    const pending = Promise.resolve()
+      .then(() => entry.loader())
+      .then(() => undefined);
     this.loadedTags.set(entry.tag, pending);
-    await pending;
+
+    try {
+      await pending;
+    } catch (error) {
+      this.loadedTags.delete(entry.tag);
+      throw error;
+    }
+  }
+
+  #cleanupBootMarker(entry: HydrationRegistryEntry, element: HTMLElement): void {
+    const marker = entry.bootMarker;
+    if (marker?.remove !== 'after-activation') {
+      return;
+    }
+
+    const current = element.getAttribute(marker.attribute);
+    if (current === null) {
+      return;
+    }
+
+    if (marker.value !== undefined && current !== marker.value) {
+      return;
+    }
+
+    element.removeAttribute(marker.attribute);
   }
 
   async #waitForVisible(

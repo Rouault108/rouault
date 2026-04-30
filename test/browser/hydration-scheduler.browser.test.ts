@@ -1,7 +1,9 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import { HydrationScheduler } from '../../src/client/hydration/scheduler.js';
-import type { HydrationRegistryEntry } from '../../src/client/hydration/registry.js';
-import type { HydrationDiagnostics } from '../../src/client/hydration/types.js';
+import type {
+  HydrationDiagnostics,
+  HydrationRegistryEntry,
+} from '../../src/client/hydration/types.js';
 
 const defineTestElement = (tag: string): void => {
   if (!customElements.get(tag)) {
@@ -18,6 +20,31 @@ const requireDiagnostics = (
   }
 
   return diagnostics;
+};
+
+const delayTask = async (): Promise<void> => {
+  await new Promise<void>((resolve) => {
+    window.setTimeout(resolve, 0);
+  });
+};
+
+const clickUntil = async (element: HTMLElement, isDone: () => boolean): Promise<void> => {
+  const dispatchClick = (): void => {
+    element.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+  };
+
+  dispatchClick();
+  const intervalId = window.setInterval(() => {
+    if (!isDone()) {
+      dispatchClick();
+    }
+  }, 16);
+
+  try {
+    await waitUntil(isDone, 'interaction hydration が完了すること');
+  } finally {
+    window.clearInterval(intervalId);
+  }
 };
 
 describe('HydrationScheduler', () => {
@@ -181,73 +208,688 @@ describe('HydrationScheduler', () => {
     expect(currentDiagnostics.failedCount).to.equal(0);
   });
 
-  it('layout-sidebar の SSR boot marker を hydration 完了時に解除すること', async () => {
+  it('planned preload が未解決でも initial hydration を阻害しないこと', async () => {
+    const steps: string[] = [];
+    const preloadTag = 'x-hydration-preload-target';
+    const initialTag = 'x-hydration-initial-target';
+
+    defineTestElement(preloadTag);
+    defineTestElement(initialTag);
+
+    let resolvePreload!: () => void;
+    const preloadPromise = new Promise<void>((resolve) => {
+      resolvePreload = resolve;
+    });
+
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        preloadTag,
+        {
+          tag: preloadTag,
+          loader: () => {
+            steps.push('load:preload');
+            return preloadPromise;
+          },
+          preload: { when: 'planned' },
+        },
+      ],
+      [
+        initialTag,
+        {
+          tag: initialTag,
+          loader: () => {
+            steps.push('load:initial');
+            return Promise.resolve();
+          },
+          activate: () => {
+            steps.push('activate:initial');
+          },
+        },
+      ],
+    ]);
+
     const root = await fixture<HTMLElement>(html`<main></main>`);
     root.innerHTML = `
-      <section data-hydration-scope="note-sidebar">
-        <layout-sidebar
-          data-sidebar-boot-state="ssr"
+      <section data-hydration-scope="test-shell">
+        <${preloadTag}
+          data-hydration-capability="progressive"
+          data-hydration-trigger="post-commit"
+        ></${preloadTag}>
+        <${initialTag}
           data-hydration-capability="interactive"
           data-hydration-trigger="initial"
-          state-scope-id="note-navigation"
-          selected-id="music/classical/beethoven/symphony-9"
-          initial-expanded-ids='["music","music/classical"]'
-          presentation="overlay"
-        >
-          <nav data-sidebar-nav aria-label="ノートナビゲーション">
-            <ul>
-              <li data-node-id="music" data-node-kind="branch" data-node-depth="0">
-                <button
-                  type="button"
-                  data-sidebar-nav-control
-                  data-sidebar-nav-branch-control
-                  aria-expanded="true"
-                  aria-controls="sidebar-group-music"
-                >
-                  <span data-sidebar-nav-label>Music</span>
-                </button>
-                <ul id="sidebar-group-music">
-                  <li
-                    data-node-id="music/classical/beethoven/symphony-9"
-                    data-node-kind="leaf"
-                    data-node-depth="1"
-                  >
-                    <a
-                      data-sidebar-nav-control
-                      data-sidebar-nav-link
-                      href="/notes/music/classical/beethoven/symphony-9"
-                      aria-current="page"
-                    >
-                      <span data-sidebar-nav-label>交響曲第9番 ニ短調</span>
-                    </a>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </nav>
-        </layout-sidebar>
+        ></${initialTag}>
       </section>
     `;
 
-    const scheduler = new HydrationScheduler();
-    let diagnostics: HydrationDiagnostics | null = null;
-    root.addEventListener(
-      'app-router:hydration-diagnostics',
-      (event: Event) => {
-        diagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
-      },
-      { once: true },
+    const scheduler = new HydrationScheduler(registry);
+    const hydration = scheduler.hydrateShell(root);
+
+    await waitUntil(() => steps.includes('load:preload'), 'planned preload が開始されること');
+    await waitUntil(
+      () => steps.includes('activate:initial'),
+      'preload 未解決でも initial activation が実行されること',
     );
 
-    const sidebar = root.querySelector<HTMLElement>('layout-sidebar');
-    if (!(sidebar instanceof HTMLElement)) {
-      throw new Error('layout-sidebar が見つかりません');
+    resolvePreload();
+    await hydration;
+  });
+
+  it('preload.scopes が planned preload だけを session.kind で制御すること', async () => {
+    const preloadTag = 'x-hydration-scoped-preload';
+    const gateTag = 'x-hydration-scoped-gate';
+
+    defineTestElement(preloadTag);
+    defineTestElement(gateTag);
+
+    let loadCount = 0;
+    let gatePromise: Promise<void> = Promise.resolve();
+
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        preloadTag,
+        {
+          tag: preloadTag,
+          loader: () => {
+            loadCount += 1;
+            return Promise.resolve();
+          },
+          preload: {
+            when: 'planned',
+            scopes: ['shell'],
+          },
+        },
+      ],
+      [
+        gateTag,
+        {
+          tag: gateTag,
+          loader: () => Promise.resolve(),
+          activate: () => gatePromise,
+        },
+      ],
+    ]);
+
+    let resolveContentGate!: () => void;
+    gatePromise = new Promise<void>((resolve) => {
+      resolveContentGate = resolve;
+    });
+
+    const contentRoot = await fixture<HTMLElement>(html`<main></main>`);
+    contentRoot.innerHTML = `
+      <section data-hydration-scope="note-content">
+        <${gateTag}
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></${gateTag}>
+        <${preloadTag}
+          data-hydration-capability="progressive"
+          data-hydration-trigger="post-commit"
+        ></${preloadTag}>
+      </section>
+    `;
+
+    const contentScheduler = new HydrationScheduler(registry);
+    const contentHydration = contentScheduler.hydrateContent(contentRoot, {
+      dispatchTarget: contentRoot,
+    });
+
+    await delayTask();
+    expect(loadCount).to.equal(0);
+
+    resolveContentGate();
+    await contentHydration;
+    expect(loadCount).to.equal(1);
+
+    loadCount = 0;
+    let resolveShellGate!: () => void;
+    gatePromise = new Promise<void>((resolve) => {
+      resolveShellGate = resolve;
+    });
+
+    const shellRoot = await fixture<HTMLElement>(html`<main></main>`);
+    shellRoot.innerHTML = `
+      <section data-hydration-scope="test-shell">
+        <${gateTag}
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></${gateTag}>
+        <${preloadTag}
+          data-hydration-capability="progressive"
+          data-hydration-trigger="post-commit"
+        ></${preloadTag}>
+      </section>
+    `;
+
+    const shellScheduler = new HydrationScheduler(registry);
+    const shellHydration = shellScheduler.hydrateShell(shellRoot);
+
+    await waitUntil(() => loadCount === 1, 'shell session で planned preload が開始されること');
+
+    resolveShellGate();
+    await shellHydration;
+    expect(loadCount).to.equal(1);
+  });
+
+  it('second pass で新規 planned になった interaction item も preload されること', async () => {
+    const steps: string[] = [];
+    const initialTag = 'x-hydration-second-pass-producer';
+    const interactionTag = 'x-hydration-second-pass-interaction';
+
+    defineTestElement(initialTag);
+    defineTestElement(interactionTag);
+
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        initialTag,
+        {
+          tag: initialTag,
+          loader: () => Promise.resolve(),
+          activate: ({ root }) => {
+            const scope =
+              root instanceof HTMLElement
+                ? root.querySelector('[data-hydration-scope="test-shell"]')
+                : null;
+            if (!(scope instanceof HTMLElement)) {
+              throw new Error('test scope が見つかりません');
+            }
+
+            scope.insertAdjacentHTML(
+              'beforeend',
+              `
+                <${interactionTag}
+                  data-hydration-capability="interactive"
+                  data-hydration-trigger="interaction"
+                ></${interactionTag}>
+              `,
+            );
+          },
+        },
+      ],
+      [
+        interactionTag,
+        {
+          tag: interactionTag,
+          loader: () => {
+            steps.push('load:interaction');
+            return Promise.resolve();
+          },
+          preload: { when: 'planned' },
+          activate: () => {
+            steps.push('activate:interaction');
+          },
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`<main></main>`);
+    root.innerHTML = `
+      <section data-hydration-scope="test-shell">
+        <${initialTag}
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></${initialTag}>
+      </section>
+    `;
+
+    const scheduler = new HydrationScheduler(registry);
+    const hydration = scheduler.hydrateShell(root);
+
+    await waitUntil(
+      () => steps.includes('load:interaction'),
+      'second pass planned item の preload が開始されること',
+    );
+    expect(steps).not.to.include('activate:interaction');
+
+    const interaction = root.querySelector<HTMLElement>(interactionTag);
+    if (!(interaction instanceof HTMLElement)) {
+      throw new Error('interaction target が見つかりません');
     }
 
-    await scheduler.hydrateContent(root, { dispatchTarget: root });
+    await clickUntil(interaction, () => steps.includes('activate:interaction'));
+    await hydration;
+  });
 
-    await waitUntil(() => diagnostics !== null, 'layout-sidebar の diagnostics が発火すること');
-    expect(sidebar.getAttribute('data-sidebar-boot-state')).to.equal(null);
+  it('preload 対象が重複しても loader を1回だけ呼ぶこと', async () => {
+    const tag = 'x-hydration-duplicate-preload';
+    defineTestElement(tag);
+
+    let loadCount = 0;
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        tag,
+        {
+          tag,
+          loader: () => {
+            loadCount += 1;
+            return Promise.resolve();
+          },
+          preload: { when: 'planned' },
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`<main></main>`);
+    root.innerHTML = `
+      <section data-hydration-scope="test-shell">
+        <${tag}
+          data-hydration-capability="progressive"
+          data-hydration-trigger="post-commit"
+        ></${tag}>
+        <${tag}
+          data-hydration-capability="progressive"
+          data-hydration-trigger="post-commit"
+        ></${tag}>
+      </section>
+    `;
+
+    const scheduler = new HydrationScheduler(registry);
+    await scheduler.hydrateShell(root);
+
+    expect(loadCount).to.equal(1);
+  });
+
+  it('通常 hydration の loader 失敗後に同一 scheduler で再試行できること', async () => {
+    const tag = 'x-hydration-load-retry';
+    defineTestElement(tag);
+
+    let loadCount = 0;
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        tag,
+        {
+          tag,
+          loader: () => {
+            loadCount += 1;
+            if (loadCount === 1) {
+              return Promise.reject(new Error('load failed'));
+            }
+            return Promise.resolve();
+          },
+        },
+      ],
+    ]);
+
+    const scheduler = new HydrationScheduler(registry);
+    const firstRoot = await fixture<HTMLElement>(html`<main></main>`);
+    firstRoot.innerHTML = `
+      <section data-hydration-scope="note-content">
+        <${tag}
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></${tag}>
+      </section>
+    `;
+
+    let firstDiagnostics: HydrationDiagnostics | null = null;
+    firstRoot.addEventListener('app-router:hydration-diagnostics', (event: Event) => {
+      firstDiagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
+    });
+
+    await scheduler.hydrateContent(firstRoot, { dispatchTarget: firstRoot });
+    await waitUntil(() => firstDiagnostics !== null, '1回目の diagnostics が発火すること');
+
+    const currentFirstDiagnostics = requireDiagnostics(
+      firstDiagnostics,
+      'firstDiagnostics が取得できませんでした',
+    );
+    expect(currentFirstDiagnostics.issues).to.deep.equal([
+      {
+        code: 'module-load-failed',
+        trigger: 'initial',
+        capability: 'interactive',
+        count: 1,
+      },
+    ]);
+
+    const secondRoot = await fixture<HTMLElement>(html`<main></main>`);
+    secondRoot.innerHTML = `
+      <section data-hydration-scope="note-content">
+        <${tag}
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></${tag}>
+      </section>
+    `;
+
+    let secondDiagnostics: HydrationDiagnostics | null = null;
+    secondRoot.addEventListener('app-router:hydration-diagnostics', (event: Event) => {
+      secondDiagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
+    });
+
+    await scheduler.hydrateContent(secondRoot, { dispatchTarget: secondRoot });
+    await waitUntil(() => secondDiagnostics !== null, '2回目の diagnostics が発火すること');
+
+    const currentSecondDiagnostics = requireDiagnostics(
+      secondDiagnostics,
+      'secondDiagnostics が取得できませんでした',
+    );
+    expect(loadCount).to.equal(2);
+    expect(currentSecondDiagnostics.failedCount).to.equal(0);
+  });
+
+  it('planned preload 失敗後に通常 hydration で再試行できること', async () => {
+    const preloadTag = 'x-hydration-preload-retry';
+    const gateTag = 'x-hydration-preload-retry-gate';
+
+    defineTestElement(preloadTag);
+    defineTestElement(gateTag);
+
+    let resolveGate!: () => void;
+    const gatePromise = new Promise<void>((resolve) => {
+      resolveGate = resolve;
+    });
+
+    let rejectFirstLoad!: (error: Error) => void;
+    const firstLoadPromise = new Promise<void>((_resolve, reject) => {
+      rejectFirstLoad = reject;
+    });
+
+    let preloadFailureObserved = false;
+    const observedFirstLoadPromise = firstLoadPromise.catch((error) => {
+      preloadFailureObserved = true;
+      throw error;
+    });
+
+    let resolveSecondLoad!: () => void;
+    const secondLoadPromise = new Promise<void>((resolve) => {
+      resolveSecondLoad = resolve;
+    });
+
+    let loadCount = 0;
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        preloadTag,
+        {
+          tag: preloadTag,
+          loader: () => {
+            loadCount += 1;
+            if (loadCount === 1) {
+              return observedFirstLoadPromise;
+            }
+            return secondLoadPromise;
+          },
+          preload: { when: 'planned' },
+        },
+      ],
+      [
+        gateTag,
+        {
+          tag: gateTag,
+          loader: () => Promise.resolve(),
+          activate: () => gatePromise,
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`<main></main>`);
+    root.innerHTML = `
+      <section data-hydration-scope="test-shell">
+        <${gateTag}
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></${gateTag}>
+        <${preloadTag}
+          data-hydration-capability="progressive"
+          data-hydration-trigger="post-commit"
+        ></${preloadTag}>
+      </section>
+    `;
+
+    const scheduler = new HydrationScheduler(registry);
+    const hydration = scheduler.hydrateShell(root);
+
+    await waitUntil(() => loadCount === 1, 'planned preload が開始されること');
+    rejectFirstLoad(new Error('preload failed'));
+    await waitUntil(() => preloadFailureObserved, 'preload 失敗が観測されること');
+
+    resolveGate();
+    await waitUntil(() => loadCount === 2, 'post-commit hydration で再試行されること');
+
+    resolveSecondLoad();
+    await hydration;
+  });
+
+  it('planned preload の失敗が unhandledrejection を発生させないこと', async () => {
+    const tag = 'x-hydration-preload-unhandled';
+    const gateTag = 'x-hydration-preload-unhandled-gate';
+
+    defineTestElement(tag);
+    defineTestElement(gateTag);
+
+    const unhandled: PromiseRejectionEvent[] = [];
+    const onUnhandledRejection = (event: PromiseRejectionEvent): void => {
+      unhandled.push(event);
+    };
+
+    window.addEventListener('unhandledrejection', onUnhandledRejection);
+
+    try {
+      let resolveGate!: () => void;
+      const gatePromise = new Promise<void>((resolve) => {
+        resolveGate = resolve;
+      });
+
+      let rejectPreload!: (error: Error) => void;
+      const preloadPromise = new Promise<void>((_resolve, reject) => {
+        rejectPreload = reject;
+      });
+
+      let resolveSecondLoad!: () => void;
+      const secondLoadPromise = new Promise<void>((resolve) => {
+        resolveSecondLoad = resolve;
+      });
+
+      let loadCount = 0;
+      const registry = new Map<string, HydrationRegistryEntry>([
+        [
+          tag,
+          {
+            tag,
+            loader: () => {
+              loadCount += 1;
+              if (loadCount === 1) {
+                return preloadPromise;
+              }
+              return secondLoadPromise;
+            },
+            preload: { when: 'planned' },
+          },
+        ],
+        [
+          gateTag,
+          {
+            tag: gateTag,
+            loader: () => Promise.resolve(),
+            activate: () => gatePromise,
+          },
+        ],
+      ]);
+
+      const root = await fixture<HTMLElement>(html`<main></main>`);
+      root.innerHTML = `
+        <section data-hydration-scope="test-shell">
+          <${gateTag}
+            data-hydration-capability="interactive"
+            data-hydration-trigger="initial"
+          ></${gateTag}>
+          <${tag}
+            data-hydration-capability="progressive"
+            data-hydration-trigger="post-commit"
+          ></${tag}>
+        </section>
+      `;
+
+      const scheduler = new HydrationScheduler(registry);
+      const hydration = scheduler.hydrateShell(root);
+
+      await waitUntil(() => loadCount === 1, 'planned preload の loader が呼ばれること');
+      rejectPreload(new Error('preload failed'));
+      await delayTask();
+      expect(unhandled).to.deep.equal([]);
+
+      resolveGate();
+      await waitUntil(() => loadCount === 2, 'post-commit hydration で再試行されること');
+
+      resolveSecondLoad();
+      await hydration;
+      expect(unhandled).to.deep.equal([]);
+    } finally {
+      window.removeEventListener('unhandledrejection', onUnhandledRejection);
+    }
+  });
+
+  it('boot marker を scheduler の契約で解除すること', async () => {
+    const tag = 'x-hydration-boot-marker';
+    defineTestElement(tag);
+
+    const root = await fixture<HTMLElement>(html`<main></main>`);
+    root.innerHTML = `
+      <section data-hydration-scope="test-shell">
+        <${tag}
+          data-test-boot-state="ssr"
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></${tag}>
+      </section>
+    `;
+
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        tag,
+        {
+          tag,
+          loader: () => Promise.resolve(),
+          bootMarker: {
+            attribute: 'data-test-boot-state',
+            value: 'ssr',
+            remove: 'after-activation',
+          },
+        },
+      ],
+    ]);
+
+    const element = root.querySelector<HTMLElement>(tag);
+    if (!(element instanceof HTMLElement)) {
+      throw new Error('boot marker target が見つかりません');
+    }
+
+    const scheduler = new HydrationScheduler(registry);
+    await scheduler.hydrateShell(root);
+
+    expect(element.getAttribute('data-test-boot-state')).to.equal(null);
+  });
+
+  it('boot marker の value が一致しない場合は解除しないこと', async () => {
+    const tag = 'x-hydration-boot-marker-value';
+    defineTestElement(tag);
+
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        tag,
+        {
+          tag,
+          loader: () => Promise.resolve(),
+          bootMarker: {
+            attribute: 'data-test-boot-state',
+            value: 'ssr',
+            remove: 'after-activation',
+          },
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`<main></main>`);
+    root.innerHTML = `
+      <section data-hydration-scope="test-shell">
+        <${tag}
+          data-test-boot-state="client"
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></${tag}>
+      </section>
+    `;
+
+    const scheduler = new HydrationScheduler(registry);
+    await scheduler.hydrateShell(root);
+
+    const element = root.querySelector<HTMLElement>(tag);
+    expect(element?.getAttribute('data-test-boot-state')).to.equal('client');
+  });
+
+  it('activate が marker を変更しなくても scheduler が boot marker を解除すること', async () => {
+    const tag = 'x-hydration-boot-marker-activate';
+    defineTestElement(tag);
+
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        tag,
+        {
+          tag,
+          loader: () => Promise.resolve(),
+          activate: () => undefined,
+          bootMarker: {
+            attribute: 'data-test-boot-state',
+            value: 'ssr',
+            remove: 'after-activation',
+          },
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`<main></main>`);
+    root.innerHTML = `
+      <section data-hydration-scope="test-shell">
+        <${tag}
+          data-test-boot-state="ssr"
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></${tag}>
+      </section>
+    `;
+
+    const scheduler = new HydrationScheduler(registry);
+    await scheduler.hydrateShell(root);
+
+    const element = root.querySelector<HTMLElement>(tag);
+    expect(element?.getAttribute('data-test-boot-state')).to.equal(null);
+  });
+
+  it('未対応の boot marker remove 値では属性を解除しないこと', async () => {
+    const tag = 'x-hydration-boot-marker-upgrade';
+    defineTestElement(tag);
+
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        tag,
+        {
+          tag,
+          loader: () => Promise.resolve(),
+          bootMarker: {
+            attribute: 'data-test-boot-state',
+            value: 'ssr',
+            remove: 'after-upgrade',
+          },
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`<main></main>`);
+    root.innerHTML = `
+      <section data-hydration-scope="test-shell">
+        <${tag}
+          data-test-boot-state="ssr"
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></${tag}>
+      </section>
+    `;
+
+    const scheduler = new HydrationScheduler(registry);
+    await scheduler.hydrateShell(root);
+
+    const element = root.querySelector<HTMLElement>(tag);
+    expect(element?.getAttribute('data-test-boot-state')).to.equal('ssr');
   });
 
   it('新しい route が始まったら旧 session の diagnostics を commit しないこと', async () => {

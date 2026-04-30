@@ -2,19 +2,7 @@ import { enhanceCodeBlocks } from '../post-hydrate/code-block-enhancer.js';
 import { enhanceCodeGroups } from '../post-hydrate/code-group-enhancer.js';
 import { enhanceFootnotePopovers } from '../post-hydrate/footnote-popover-enhancer.js';
 import { enhanceImageLightboxes } from '../post-hydrate/image-lightbox-enhancer.js';
-
-export interface HydrationActivationContext {
-  readonly element: HTMLElement;
-  readonly root: ParentNode;
-  readonly signal: AbortSignal;
-}
-
-export interface HydrationRegistryEntry {
-  readonly tag: string;
-  readonly kind?: 'custom-element' | 'enhancer';
-  readonly loader: () => Promise<unknown>;
-  readonly activate?: (context: HydrationActivationContext) => void | Promise<void>;
-}
+import type { HydrationActivationContext, HydrationRegistryEntry } from './types.js';
 
 interface ActivatableElement extends HTMLElement {
   activateHydration?: () => void | Promise<void>;
@@ -43,12 +31,6 @@ const activateFootnotePopovers = ({ root }: HydrationActivationContext): void =>
 const activateLayoutSidebar = ({ element }: HydrationActivationContext): void => {
   if (!element.isConnected) {
     return;
-  }
-
-  // Safari 系で upgrade 後も SSR boot marker が残る揺らぎを吸収し、
-  // pre-hydration guard を hydration 完了後へ持ち越さない。
-  if (element.getAttribute('data-sidebar-boot-state') === 'ssr') {
-    element.removeAttribute('data-sidebar-boot-state');
   }
 };
 
@@ -112,6 +94,15 @@ export const HYDRATION_REGISTRY = [
   {
     tag: 'layout-sidebar',
     loader: () => import('../../components/layout/layout-sidebar.js'),
+    preload: {
+      when: 'planned',
+      scopes: ['shell'],
+    },
+    bootMarker: {
+      attribute: 'data-sidebar-boot-state',
+      value: 'ssr',
+      remove: 'after-activation',
+    },
     activate: activateLayoutSidebar,
   },
   {

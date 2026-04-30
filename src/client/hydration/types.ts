@@ -11,6 +11,34 @@ export type HydrationStage =
   | 'failed'
   | 'aborted';
 
+export type HydrationSessionKind = 'shell' | 'content';
+
+export interface HydrationActivationContext {
+  readonly element: HTMLElement;
+  readonly root: ParentNode;
+  readonly signal: AbortSignal;
+}
+
+export interface HydrationPreloadPolicy {
+  readonly when: 'planned';
+  readonly scopes?: readonly HydrationSessionKind[];
+}
+
+export interface HydrationBootMarkerPolicy {
+  readonly attribute: string;
+  readonly value?: string;
+  readonly remove: 'after-defined' | 'after-upgrade' | 'after-activation';
+}
+
+export interface HydrationRegistryEntry {
+  readonly tag: string;
+  readonly kind?: 'custom-element' | 'enhancer';
+  readonly loader: () => Promise<unknown>;
+  readonly activate?: (context: HydrationActivationContext) => void | Promise<void>;
+  readonly preload?: HydrationPreloadPolicy;
+  readonly bootMarker?: HydrationBootMarkerPolicy;
+}
+
 export interface HydrationIssue {
   code: 'module-load-failed' | 'upgrade-failed' | 'activation-failed' | 'missing-directive';
   trigger: HydrationTrigger;
