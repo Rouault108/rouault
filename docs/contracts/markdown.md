@@ -82,7 +82,31 @@
 
 ### Build-time
 
+- 実装上の source of truth は `velite.config.ts` におけるプラグイン順序である。
+- Markdown transform pipeline は次の順序で成立する。
+  1. `remarkMath`
+  2. `remarkGfm`
+  3. `remarkExpandExampleIncludes`
+  4. `remarkDisallowRawHtml`
+  5. `remarkRouaultDirectives`
+  6. `remarkLinkCards`
+  7. `remark-rehype`
+  8. `rehypeKatex`
+  9. `rehypeRouaultComponents`
+  10. `rehypeHeadingIds`
+  11. `rehypePreviewSandbox`
+  12. `rehypeShikiCodeBlocks`
+  13. `rehypeStaticCodeGroups`
+  14. `rehypeAnnotateLinkKinds`
+  15. `rehypeInlineCodeTranslateNo`
+  16. `rehypeOrderedListContracts`
+  17. `rehypeDisallowDangerousProps`
 - Parser / transformer / adapter が Markdown を最終 DOM へ正規化する。
+- authoring grammar に関わる意味論変更は、remark 層の正本と実装順序の双方を整合させる。
+- 出力 DOM に関わる意味論変更は、rehype 層の正本と実装順序の双方を整合させる。
+- 本文リンクの種別注釈は rehype 層で確定し、その詳細な出力属性契約は `docs/references/markdown-output.md` を参照する。
+- 安全規約は後段検査へ押し込むだけでなく、可能なものは前段で早期拒否してよい。
+- 実装順序の変更は意味論変更を伴いうるため、単なるリファクタリングとして扱ってはならない。
 
 ### SSR
 
