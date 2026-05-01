@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const notePath = '/notes/program/csharp';
+const notePath = '/notes/program/csharp/what-is-csharp';
 const noteCanonicalPath = '/notes/program/csharp/';
 const publicTagPagePath = '/tags/Programming/';
 const targetTitle = 'C#とは何か';

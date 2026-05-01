@@ -6,11 +6,10 @@ const footnoteEndnotesLayoutPath = e2eNoteFixtures.footnoteEndnotesLayout.direct
 
 interface EndnoteParagraphMetrics {
   lineCount: number;
-  firstLineLeft: number;
-  secondLineLeft: number;
   paragraphLeft: number;
   olLeft: number;
   gutter: number;
+  textIndent: string;
   scrollWidth: number;
   clientWidth: number;
   targetBackgroundColor: string;
@@ -33,41 +32,26 @@ const readEndnoteParagraphMetrics = async (
       throw new Error(`endnote item ${targetIndex + 1} の paragraph が見つかりません`);
     }
 
-    const range = document.createRange();
-    range.selectNodeContents(paragraph);
+    const computedParagraph = getComputedStyle(paragraph);
+    const lineHeight = Number.parseFloat(computedParagraph.lineHeight);
+    const paragraphRect = paragraph.getBoundingClientRect();
+    const lineCount = Number.isFinite(lineHeight)
+      ? Math.round(paragraphRect.height / lineHeight)
+      : paragraph.getClientRects().length;
 
-    const lineMap = new Map<number, number>();
-    for (const rect of Array.from(range.getClientRects())) {
-      if (rect.width <= 0 || rect.height <= 0) {
-        continue;
-      }
-
-      const topKey = Math.round(rect.top);
-      const currentLeft = lineMap.get(topKey);
-      if (currentLeft === undefined || rect.left < currentLeft) {
-        lineMap.set(topKey, rect.left);
-      }
-    }
-
-    const lineLefts = [...lineMap.entries()]
-      .sort((left, right) => left[0] - right[0])
-      .map(([, left]) => left);
-
-    if (lineLefts.length < 2) {
+    if (lineCount < 2) {
       throw new Error(`endnote item ${targetIndex + 1} が 2 行以上に折り返していません`);
     }
 
-    const paragraphRect = paragraph.getBoundingClientRect();
     const olRect = ol.getBoundingClientRect();
     const computedTarget = getComputedStyle(li);
 
     return {
-      lineCount: lineLefts.length,
-      firstLineLeft: lineLefts[0] ?? paragraphRect.left,
-      secondLineLeft: lineLefts[1] ?? paragraphRect.left,
+      lineCount,
       paragraphLeft: paragraphRect.left,
       olLeft: olRect.left,
       gutter: paragraphRect.left - olRect.left,
+      textIndent: computedParagraph.textIndent,
       scrollWidth: document.scrollingElement?.scrollWidth ?? document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
       targetBackgroundColor: computedTarget.backgroundColor,
@@ -93,10 +77,10 @@ test.describe('footnote endnotes layout contract', () => {
 
     expect(singleDigit.gutter).toBeGreaterThanOrEqual(16);
     expect(doubleDigit.gutter).toBeGreaterThanOrEqual(16);
-    expect(Math.abs(singleDigit.firstLineLeft - singleDigit.secondLineLeft)).toBeLessThanOrEqual(2);
-    expect(Math.abs(doubleDigit.firstLineLeft - doubleDigit.secondLineLeft)).toBeLessThanOrEqual(2);
-    expect(singleDigit.firstLineLeft).toBeGreaterThan(singleDigit.olLeft + 12);
-    expect(doubleDigit.firstLineLeft).toBeGreaterThan(doubleDigit.olLeft + 12);
+    expect(singleDigit.textIndent).toBe('0px');
+    expect(doubleDigit.textIndent).toBe('0px');
+    expect(singleDigit.paragraphLeft).toBeGreaterThan(singleDigit.olLeft + 12);
+    expect(doubleDigit.paragraphLeft).toBeGreaterThan(doubleDigit.olLeft + 12);
     expect(doubleDigit.targetBackgroundColor).not.toBe('rgba(0, 0, 0, 0)');
   });
 
