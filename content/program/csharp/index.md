@@ -54,7 +54,7 @@ C#の理解において、ECMA-334とECMA-335の混同は避けなければな�
 
 この立場では、コードが書けることと、そのコードがどの規則に従って解釈されるかを追跡できることとを区別する。型、オーバーロード解決、boxing、状態機械変換、メタデータ表現、実行時コストは、いずれも表面構文の背後にある規則の問題である。本ノート群では、各論点について、言語仕様、CLI/.NET実装、.NETライブラリ群という層の違いを意識しながら記述する。[^1][^2][^5][^7][^8]
 
-以後のページでは、型システム、名前束縛、ジェネリクス、nullability、非同期、メモリ制御、メタデータを、この区分に従って扱う。仕様上の事実、実装上の観察、設計上の含意を混同しないことを、以後の記述全体の基本方針とする。[^1][^6][^9]
+以後のノートでは、型システム、名前束縛、ジェネリクス、nullability、非同期、メモリ制御、メタデータを、この区分に従って扱う。仕様上の事実、実装上の観察、設計上の含意を混同しないことを、以後の記述全体の基本方針とする。[^1][^6][^9]
 
 [^1]: Ecma International, *ECMA-334: C# Language Specification*, 7th ed., December 2023, Foreword; §1 Scope; §5 Conformance. C#プログラムの表現、構文、意味規則、適合実装の制約を与える規範的標準。[https://ecma-international.org/publications-and-standards/standards/ecma-334/](https://ecma-international.org/publications-and-standards/standards/ecma-334/)
 

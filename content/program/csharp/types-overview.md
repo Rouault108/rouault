@@ -8,7 +8,7 @@ genre:
   - Programming
 ---
 
-第II部では、C#プログラムを宣言構造と型システムの側から読む。前章では、宣言がどの名前を導入し、どの宣言空間に属し、どのアクセシビリティと修飾子を持つかを整理した。本ノートでは、その宣言によって導入される型、および式・変数・値に付与される型の全体像を整理する。
+前ノートでは、宣言がどの名前を導入し、どの宣言空間に属し、どのアクセシビリティと修飾子を持つかを整理した。本ノートでは、その宣言によって導入される型、および式・変数・値に付与される型の全体像を整理する。
 
 C#における型は、単なる名前の分類ではない。型は、値が取り得る範囲、許される操作、代入可能性、変換、メンバー探索、オーバーロード解決、メタデータ表現、実行時の値表現に関係する。したがって、型を読むことは、構文を読むことではなく、プログラムの静的な制約と実行時表現の接点を読むことである。[^1][^2]
 
@@ -182,4 +182,3 @@ Console.WriteLine(value);
 [^9]: Microsoft Learn, *Attributes interpreted by the compiler: Pseudo-attributes and nullable analysis*, updated 2026-02-17; Microsoft Learn, *TupleElementNamesAttribute Class*, .NET API reference. タプル要素名がシグネチャ上では`TupleElementNamesAttribute`として符号化され得ることの公式整理。[https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/attributes/pseudo-attributes](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/attributes/pseudo-attributes) ; [https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.tupleelementnamesattribute](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.tupleelementnamesattribute)
 
 [^10]: Microsoft Learn, *Lambda expressions and anonymous functions - C# reference*, updated 2026-01-24, “Natural type of a lambda expression”. ラムダ式がCTS上の固有型を持たず、文脈に応じてデリゲート型または式木型へ変換されること、およびC# 10以降のnatural typeの整理。[https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/lambda-expressions](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/lambda-expressions)
-
