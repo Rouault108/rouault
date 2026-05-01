@@ -12,6 +12,46 @@ interface HastNode {
   children?: HastNode[];
 }
 
+const findElements = (
+  node: HastNode | undefined,
+  predicate: (node: HastNode) => boolean,
+): HastNode[] => {
+  if (!node) {
+    return [];
+  }
+
+  const matched = predicate(node) ? [node] : [];
+  const children = node.children ?? [];
+  return [...matched, ...children.flatMap((child) => findElements(child, predicate))];
+};
+
+const findElement = (
+  node: HastNode | undefined,
+  predicate: (node: HastNode) => boolean,
+): HastNode | undefined => findElements(node, predicate)[0];
+
+const createRawFootnoteRef = (
+  refId: string,
+  index: string,
+  instanceSuffix = '',
+): HastNode => ({
+  type: 'element',
+  tagName: 'sup',
+  children: [
+    {
+      type: 'element',
+      tagName: 'a',
+      properties: {
+        href: `#user-content-${refId}`,
+        id: `user-content-${refId.replace('fn-', 'fnref-')}${instanceSuffix}`,
+        dataFootnoteRef: true,
+        ariaDescribedBy: 'footnote-label',
+      },
+      children: [{ type: 'text', value: index }],
+    },
+  ],
+});
+
 describe('rehypeRouaultComponents', () => {
   it('静的 code block はそのまま維持すること', () => {
     const tree: HastNode = {
@@ -263,6 +303,157 @@ describe('rehypeRouaultComponents', () => {
     expect(heading?.properties?.['id']).to.equal('footnote-label');
     expect(heading?.properties?.['className']).to.equal(undefined);
     expect(heading?.children?.[0]?.value).to.equal('脚注');
+  });
+
+  it('脚注定義内の脚注参照も正規化済み footnote reference として保持すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'p',
+          children: [
+            { type: 'text', value: '本文から脚注1を参照する' },
+            createRawFootnoteRef('fn-1', '1'),
+          ],
+        },
+        {
+          type: 'element',
+          tagName: 'p',
+          children: [
+            { type: 'text', value: '本文から脚注3を参照する' },
+            createRawFootnoteRef('fn-3', '3'),
+          ],
+        },
+        {
+          type: 'element',
+          tagName: 'section',
+          properties: {
+            className: ['footnotes'],
+            'data-footnotes': 'true',
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'h2',
+              properties: { id: 'footnote-label' },
+              children: [{ type: 'text', value: 'Footnotes' }],
+            },
+            {
+              type: 'element',
+              tagName: 'ol',
+              children: [
+                {
+                  type: 'element',
+                  tagName: 'li',
+                  properties: { id: 'user-content-fn-1' },
+                  children: [
+                    {
+                      type: 'element',
+                      tagName: 'p',
+                      children: [{ type: 'text', value: '脚注1の本文' }],
+                    },
+                  ],
+                },
+                {
+                  type: 'element',
+                  tagName: 'li',
+                  properties: { id: 'user-content-fn-3' },
+                  children: [
+                    {
+                      type: 'element',
+                      tagName: 'p',
+                      children: [
+                        { type: 'text', value: '脚注3から脚注1を参照する' },
+                        createRawFootnoteRef('fn-1', '1', '-7'),
+                        { type: 'text', value: ' ' },
+                        {
+                          type: 'element',
+                          tagName: 'a',
+                          properties: {
+                            href: '#user-content-fnref-3',
+                            dataFootnoteBackref: true,
+                            ariaLabel: 'Back to content',
+                          },
+                          children: [{ type: 'text', value: '↩' }],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const fn3Item = findElement(
+      tree,
+      (node) => node.tagName === 'li' && node.properties?.['id'] === 'fn-3',
+    );
+
+    const nestedRef = findElement(
+      fn3Item,
+      (node) =>
+        node.tagName === 'a' &&
+        node.properties?.['data-footnote-ref'] === 'true' &&
+        node.properties?.['data-footnote-id'] === 'fn-1',
+    );
+
+    expect(nestedRef?.tagName).to.equal('a');
+    expect(nestedRef?.properties?.['role']).to.equal('doc-noteref');
+    expect(nestedRef?.properties?.['data-footnote-ref']).to.equal('true');
+    expect(nestedRef?.properties?.['data-footnote-id']).to.equal('fn-1');
+    expect(nestedRef?.properties?.['data-footnote-index']).to.equal('1');
+    expect(nestedRef?.properties?.['data-footnote-ref-instance']).to.equal('2');
+    expect(nestedRef?.properties?.['data-footnote-role']).to.equal('secondary');
+    expect(nestedRef?.properties?.['data-hydration-key']).to.equal('footnote-popover-enhancer');
+    expect(nestedRef?.properties?.['data-hydration-capability']).to.equal('progressive');
+    expect(nestedRef?.properties?.['data-hydration-trigger']).to.equal('post-commit');
+
+    const fn3Backrefs = findElements(
+      fn3Item,
+      (node) => node.tagName === 'a' && node.properties?.['role'] === 'doc-backlink',
+    );
+
+    expect(fn3Backrefs).to.have.length(1);
+
+    const legacyBackrefs = findElements(
+      fn3Item,
+      (node) =>
+        node.tagName === 'a' &&
+        (node.properties?.['dataFootnoteBackref'] !== undefined ||
+          node.properties?.['href'] === '#user-content-fnref-3' ||
+          node.properties?.['ariaLabel'] === 'Back to content'),
+    );
+
+    expect(legacyBackrefs).to.have.length(0);
+
+    const fn3FootnoteRefs = findElements(
+      fn3Item,
+      (node) => node.tagName === 'a' && node.properties?.['data-footnote-ref'] === 'true',
+    );
+
+    expect(fn3FootnoteRefs.length).to.be.greaterThan(0);
+
+    const fn1Item = findElement(
+      tree,
+      (node) => node.tagName === 'li' && node.properties?.['id'] === 'fn-1',
+    );
+
+    const fn1Backrefs = findElements(
+      fn1Item,
+      (node) => node.tagName === 'a' && node.properties?.['role'] === 'doc-backlink',
+    );
+
+    expect(fn1Backrefs).to.have.length(2);
+
+    const fn1BackrefHrefs = fn1Backrefs.map((node) => node.properties?.['href']);
+    expect(fn1BackrefHrefs).to.include('#fn-1-ref-1');
+    expect(fn1BackrefHrefs).to.include('#fn-1-ref-2');
   });
 
   it('HTML 断片を保存前 surface HTML に正規化できること', () => {

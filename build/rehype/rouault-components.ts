@@ -13,7 +13,6 @@ import { type HastNode } from './hast-utils.js';
 interface FootnoteDefinition {
   readonly refId: string;
   readonly index: number;
-  readonly contentNodes: HastNode[];
   readonly itemNode: HastNode;
 }
 
@@ -1096,9 +1095,11 @@ const synchronizeFootnoteBackrefs = (
 ): void => {
   for (const definition of definitions.values()) {
     const refCount = refCounters.get(definition.refId) ?? 1;
-    definition.itemNode.children = definition.contentNodes.map((contentNode) =>
-      cloneNode(contentNode),
-    );
+    const contentNodes = (definition.itemNode.children ?? [])
+      .map((contentNode) => cloneWithoutFootnoteBackrefs(contentNode))
+      .filter((contentNode): contentNode is HastNode => contentNode !== null);
+
+    definition.itemNode.children = contentNodes;
 
     for (let refInstance = 1; refInstance <= refCount; refInstance += 1) {
       definition.itemNode.children.push({
@@ -1197,14 +1198,9 @@ const collectFootnoteDefinitions = (
         item.properties['id'] = refId;
 
         if (!definitions.has(refId)) {
-          const contentNodes = (item.children ?? [])
-            .map((child) => cloneWithoutFootnoteBackrefs(child))
-            .filter((child): child is HastNode => child !== null);
-
           definitions.set(refId, {
             refId,
             index: resolvedIndex,
-            contentNodes,
             itemNode: item,
           });
         }
