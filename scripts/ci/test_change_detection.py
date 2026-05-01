@@ -4,8 +4,8 @@ import subprocess
 import unittest
 from unittest.mock import patch
 
-import classify_changes
 import change_detection
+import classify_changes
 from change_detection import (
     ALL_ZERO_SHA,
     EMPTY_TREE_SHA,
@@ -49,7 +49,7 @@ class ClassificationTest(unittest.TestCase):
             ("_headers", False, False, True),
             ("_redirects", False, False, True),
             ("wrangler.jsonc", False, False, True),
-            ("AGENTS.md", False, True, True),
+            ("AGENTS.md", False, False, False),
             ("unknown.file", False, True, True),
         ]
 
@@ -93,7 +93,9 @@ class ResolveDiffRangeTest(unittest.TestCase):
             }
         }
 
-        with patch.object(change_detection, "run_git", return_value="merge-base-sha\n") as run_git:
+        with patch.object(
+            change_detection, "run_git", return_value="merge-base-sha\n"
+        ) as run_git:
             result = resolve_diff_range("pull_request", payload)
 
         self.assertEqual(result, DiffRange(base="merge-base-sha", head="head-sha"))
@@ -128,7 +130,9 @@ class ResolveDiffRangeTest(unittest.TestCase):
                 resolve_diff_range("pull_request", payload)
 
     def test_push_uses_payload_before_after(self) -> None:
-        result = resolve_diff_range("push", {"before": "before-sha", "after": "after-sha"})
+        result = resolve_diff_range(
+            "push", {"before": "before-sha", "after": "after-sha"}
+        )
 
         self.assertEqual(result, DiffRange(base="before-sha", head="after-sha"))
 
@@ -141,7 +145,9 @@ class ResolveDiffRangeTest(unittest.TestCase):
             resolve_diff_range("push", {"before": "before-sha"})
 
     def test_push_all_zero_before_uses_empty_tree(self) -> None:
-        result = resolve_diff_range("push", {"before": ALL_ZERO_SHA, "after": "after-sha"})
+        result = resolve_diff_range(
+            "push", {"before": ALL_ZERO_SHA, "after": "after-sha"}
+        )
 
         self.assertEqual(result.base, EMPTY_TREE_SHA)
         self.assertEqual(result.head, "after-sha")
@@ -162,7 +168,9 @@ class ObjectAvailabilityTest(unittest.TestCase):
     def test_missing_object_fetch_succeeds(self) -> None:
         failure = subprocess.CalledProcessError(1, ["git", "cat-file"])
 
-        with patch.object(change_detection, "run_git", side_effect=[failure, "", ""]) as run_git:
+        with patch.object(
+            change_detection, "run_git", side_effect=[failure, "", ""]
+        ) as run_git:
             self.assertTrue(ensure_object_available("base-sha"))
 
         self.assertEqual(
@@ -192,7 +200,9 @@ class ChangedFilesTest(unittest.TestCase):
     def test_changed_files_reads_null_delimited_diff_and_sorts_paths(self) -> None:
         diff_output = b"src/z.ts\0README.md\0content/a.md\0"
 
-        with patch.object(change_detection, "run_git", return_value=diff_output) as run_git:
+        with patch.object(
+            change_detection, "run_git", return_value=diff_output
+        ) as run_git:
             self.assertEqual(
                 changed_files("base-sha", "head-sha"),
                 ["README.md", "content/a.md", "src/z.ts"],
@@ -210,7 +220,9 @@ class ChangedFilesTest(unittest.TestCase):
 
 class EntryPointAvailabilityTest(unittest.TestCase):
     def test_workflow_dispatch_returns_full_run_outputs(self) -> None:
-        with patch.dict("os.environ", {"GITHUB_EVENT_NAME": "workflow_dispatch"}, clear=True):
+        with patch.dict(
+            "os.environ", {"GITHUB_EVENT_NAME": "workflow_dispatch"}, clear=True
+        ):
             with patch.object(classify_changes, "write_outputs") as write_outputs:
                 with patch.object(classify_changes, "log"):
                     self.assertEqual(classify_changes.main(), 0)
@@ -228,13 +240,17 @@ class EntryPointAvailabilityTest(unittest.TestCase):
 
         with patch.dict("os.environ", {"GITHUB_EVENT_NAME": "push"}, clear=True):
             with patch.object(classify_changes, "read_event_payload", return_value={}):
-                with patch.object(classify_changes, "resolve_diff_range", return_value=diff_range):
+                with patch.object(
+                    classify_changes, "resolve_diff_range", return_value=diff_range
+                ):
                     with patch.object(
                         classify_changes,
                         "ensure_object_available",
                         return_value=False,
                     ):
-                        with patch.object(classify_changes, "write_outputs") as write_outputs:
+                        with patch.object(
+                            classify_changes, "write_outputs"
+                        ) as write_outputs:
                             with patch.object(classify_changes, "log"):
                                 self.assertEqual(classify_changes.main(), 1)
 
@@ -245,13 +261,17 @@ class EntryPointAvailabilityTest(unittest.TestCase):
 
         with patch.dict("os.environ", {"GITHUB_EVENT_NAME": "push"}, clear=True):
             with patch.object(classify_changes, "read_event_payload", return_value={}):
-                with patch.object(classify_changes, "resolve_diff_range", return_value=diff_range):
+                with patch.object(
+                    classify_changes, "resolve_diff_range", return_value=diff_range
+                ):
                     with patch.object(
                         classify_changes,
                         "ensure_object_available",
                         side_effect=[True, False],
                     ):
-                        with patch.object(classify_changes, "write_outputs") as write_outputs:
+                        with patch.object(
+                            classify_changes, "write_outputs"
+                        ) as write_outputs:
                             with patch.object(classify_changes, "log"):
                                 self.assertEqual(classify_changes.main(), 0)
 
