@@ -8,6 +8,7 @@
 - `docs/`は **仕様・契約・設計判断** の所在です。
 - `package.json`、設定ファイル、テスト、実装コードは **現在の実装事実** の所在です。
 - `temporary/`、`docs/old/`、`docs/temporary/`は、特に断りがない限り **履歴資料** として扱います。
+- `dist/`、`.generated/`、`.velite/`、`content/_generated/`、`playwright-report/`、`test-results/`は生成物として扱い、実装判断の正本にしないでください。
 
 README・AGENTS・実装の内容が衝突した場合は、次の優先順位で解釈してください。
 
@@ -105,7 +106,17 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 - ビルド時 SSR: `@lit-labs/ssr`
 - 検索: Pagefind
 - コードハイライト: Shiki
+- 数式: KaTeX
 - コンテンツ処理: Velite + Markdown変換パイプライン
+- テスト: Vitest / Web Test Runner / Playwright / Storybook
+
+### 実行環境
+
+- Node.js: 24.x
+- pnpm: 10.x
+- package manager: `pnpm@10.33.0`
+
+`.node-version`、`package.json` の `engines`、`packageManager` を基準にしてください。
 
 ### 中心契約
 
@@ -114,6 +125,7 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 - router coreの正規入力は `NavigationEnvelope`のみです。
 - routerは URL正規化、文書取得、本文・shell・文書メタデータ・履歴stateのcommitに責務を限定します。
 - shellの描画後後処理や各UIの一時状態をrouter coreに背負わせないでください。
+- fetch経路とdocument routeの差はloader / envelope側へ閉じ込めてください。
 
 #### hydration
 
@@ -127,37 +139,65 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 - sidebar の正本は`layout-sidebar`のlight DOMにあるnav subtreeです。
 - presentation stateとtree stateは分離してください。
 - app shell上のsidebar hostは1実体だけに保ってください。
+- `layout-sidebar-surface` はoverlay表示のsurfaceであり、state ownerにしないでください。
+
+#### permanent URL
+
+- Permanent URL と `/archives/{hash}` の契約は `docs/contracts/permanent-url.md` を正本にしてください。
+- hash生成規則をUI都合で変えないでください。
+- note navigation、search、Markdown出力がPermanent URLへ依存する場合は、それぞれの契約文書との整合を確認してください。
 
 ### 主なコード配置
 
 - `build/` : build-time専用処理。content / navigation / projections / search / ssr / remark / rehype
 - `content/` : ノート本文、frontmatter、関連アセット
+- `examples/` : authoring / media / manifest 用の例示資産
 - `shared/` : build-time / runtime共有ドメインロジック
+- `shared/navigation/` : `NavigationEnvelope` などbuild-time / runtime共有のnavigation契約
+- `shared/search/` : 検索データモデルなど共有検索ロジック
 - `src/components/` : UIコンポーネント
 - `src/router/` : router core、navigation commit、head / history / route coordination
-- `src/search/` : 検索 core、ranking、source adapter
+- `src/search/` : 検索 core、ranking、source adapter、bootstrap、navigation、diagnostics、snippet整形
 - `src/client/` : hydration scheduler / registry / post-hydrate coordination
-- `src/layout/` / `src/layouts/` : layout-level helper と Eleventy layout
+- `src/layout/` / `src/layouts/` : layout-level helper と Eleventy layout / page shell
 - `src/data/` : page projection / data shaping
+- `src/article-header/` : article header の共有契約
+- `src/icons/` / `src/generated/` : icon登録と生成済みicon subset
 - `src/theme/` : テーマ切替と状態
 - `src/toc/` : TOC 公開入口
+- `src/assets/` / `src/styles/` : CSS、静的UI資産、design token利用箇所
 - `src/testing/` / `src/stories/` : テスト・Storybook補助
 - `test/` : node / browser / ssr / e2e / storybook
+- `scripts/` : codegen、build補助、CI補助、content同期補助
 - `docs/` : 契約・仕様・設計資料
 
-### 優先して参照すべき仕様書
+### 優先して参照すべき文書
 
-- `docs/router-specification.md`
-- `docs/navigation-envelope-specification.md`
-- `docs/hydration-contract.md`
-- `docs/sidebar-state-specification.md`
-- `docs/search-specification.md`
-- `docs/testing-taxonomy.md`
-- `docs/notes_sidebar_breadcrumb_contract.md`
-- `docs/content-config-syntax.md`
-- `docs/corpus-specification.md`
-- `docs/markdown/`
+- `docs/README.md`
+- `docs/contracts/router.md`
+- `docs/contracts/router-document.md`
+- `docs/contracts/navigation-envelope.md`
+- `docs/contracts/hydration.md`
+- `docs/contracts/sidebar-state.md`
+- `docs/contracts/note-navigation.md`
+- `docs/contracts/permanent-url.md`
+- `docs/contracts/search.md`
+- `docs/contracts/markdown.md`
+- `docs/contracts/corpus.md`
+- `docs/contracts/content-config.md`
+- `docs/contracts/testing-taxonomy.md`
+- `docs/references/navigation-envelope-schema.md`
+- `docs/references/search-data-model.md`
+- `docs/references/search-ranking-and-diagnostics.md`
+- `docs/references/markdown-output.md`
+- `docs/references/compatibility.md`
+- `docs/guides/markdown-authoring.md`
+- `docs/guides/note-authoring.md`
+- `docs/guides/content-config.md`
+- `docs/guides/corpus.md`
+- `docs/guides/operations/`
 - `docs/design-system/`
+- `docs/architecture/shell-projection.md`
 
 ---
 
@@ -201,12 +241,47 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 - 変換順序依存の振る舞いは文書化とテストで固定してください。
 - 独自記法を導入する場合は、authoring guide・output contract・safety policyを同時に更新してください。
 - Markdown由来のUIをコンポーネント都合で無理に再解釈しないでください。
+- content config や corpus の入力仕様は `docs/contracts/` と `docs/guides/` の両方を確認してください。
 
 ### data projection
 
 - source dataとpage/view modelの境界を明確にしてください。
 - template側のad-hoc整形ではなく、projection層へ責務を集約してください。
 - 同じ導出ロジックを複数テンプレートへ重複実装しないでください。
+
+### icons / generated assets
+
+- アイコン追加時は `scripts/generate-icon-subset.ts` と `src/generated/lucide-subset.ts` の生成経路に合わせてください。
+- 手作業で生成済みicon subsetを恒久編集しないでください。
+- 生成物の差分は、対応する入力やscript変更とセットで扱ってください。
+
+---
+
+## よく使うコマンド
+
+```bash
+pnpm dev                    # Eleventy dev server
+pnpm build                  # client / images / Eleventy / Lit SSR / navigation artifacts / Pagefind
+pnpm build:production       # production条件をまとめたビルド入口
+pnpm build:client           # client bundleのみ生成
+pnpm build:images           # 画像生成
+
+pnpm test:node              # pure logic / policy / parser / projection helper
+pnpm test:browser           # custom element / enhancer のbrowser-observable contract
+pnpm test:ssr               # build-time / final DOM / static artifact / CSS structure
+pnpm test:e2e               # app shell / no-JS baseline / router / search / 主要導線
+pnpm test:storybook:meta    # story metadata / import boundary
+pnpm test:storybook:smoke   # Storybook smoke
+pnpm test                   # node + ssr + browser + storybook:meta
+pnpm test:extended          # storybook smoke + e2e:production + e2e:dev
+
+pnpm lint                   # ESLint
+pnpm typecheck              # app + node の型チェック
+pnpm check                  # lint + typecheck + test
+pnpm ci                     # check + test:extended
+```
+
+通常ビルドは、client bundle、画像生成、Eleventy、Lit SSR、navigation artifact、Pagefind indexの順に進みます。build-time契約を変更する場合は、この順序に依存したテストの有無を確認してください。
 
 ---
 
