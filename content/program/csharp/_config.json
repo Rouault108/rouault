@@ -2,6 +2,7 @@
   "label": "C#",
   "order": [
     "index.md",
+    "what-is-csharp.md",
     "source-code-to-execution.md",
     "language-version-build-context-compatibility.md",
     "declarations-modifiers-members.md",
