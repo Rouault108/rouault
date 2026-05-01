@@ -18,7 +18,7 @@
 
 ## 実装注記（2026-03）
 
-- 検索意味論、URL 状態、ランキング、diagnostics の正本は [`docs/search-specification.md`](../../search-specification.md) とし、実装は shared `search-core` を介して `ui-search-dialog` と `search-page` の両方で共有します。
+- 検索意味論、URL 状態、ランキング、diagnostics の正本は [`docs/contracts/search.md`](../../contracts/search.md) とし、詳細型や ranking は `docs/references/` を参照します。実装は shared `search-core` を介して `ui-search-dialog` と `search-page` の両方で共有します。
 - `ui-search-dialog` は検索意味論を持たず、現行の安定 runtime API は `opened`、`query`、`loading`、`items`、`searcher` を中心とした UI shell です。
 - 本書は dialog の公開 UI 契約を扱い、query 正規化、tag 意味論、`DocumentCanonicalUrl`、`SearchStateUrl` などの検索仕様を上書きしません。
 
@@ -95,14 +95,14 @@
 
 ### 入力契約
 
-| 名前          | 種別                 | 必須     | 内容             | 契約                                                                                                                                                                                                                                 |
-| ------------- | -------------------- | -------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `opened`      | property / attribute | はい     | 開閉状態         | `true` で開き、`false` で閉じます。唯一の開閉真実源です                                                                                                                                                                              |
-| `query`       | property / attribute | はい     | 入力文字列       | 表示値であり検索入力の原値です。検索評価に用いる正規化、空判定、tokenization は `search-specification.md` の query 仕様および shared `search-core` に従います。`ui-search-dialog` 自身は `trim()` のみを独自意味論として固定しません |
-| `items`       | property             | 条件付き | ローカル検索対象 | `searcher` を使わない場合の検索対象です                                                                                                                                                                                              |
-| `searcher`    | property             | 条件付き | 外部検索関数     | `items` の代わりに検索を完全外部化するための入力です                                                                                                                                                                                 |
-| `messages`    | property             | いいえ   | 文言セット       | ラベル、loading、empty、error などの文言です                                                                                                                                                                                         |
-| `matchFields` | property             | いいえ   | 一致対象面       | 既定では `title` / `path` / `keywords` です                                                                                                                                                                                          |
+| 名前          | 種別                 | 必須     | 内容             | 契約                                                                                                                                                                                                                               |
+| ------------- | -------------------- | -------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `opened`      | property / attribute | はい     | 開閉状態         | `true` で開き、`false` で閉じます。唯一の開閉真実源です                                                                                                                                                                            |
+| `query`       | property / attribute | はい     | 入力文字列       | 表示値であり検索入力の原値です。検索評価に用いる正規化、空判定、tokenization は `docs/contracts/search.md` の検索契約および shared `search-core` に従います。`ui-search-dialog` 自身は `trim()` のみを独自意味論として固定しません |
+| `items`       | property             | 条件付き | ローカル検索対象 | `searcher` を使わない場合の検索対象です                                                                                                                                                                                            |
+| `searcher`    | property             | 条件付き | 外部検索関数     | `items` の代わりに検索を完全外部化するための入力です                                                                                                                                                                               |
+| `messages`    | property             | いいえ   | 文言セット       | ラベル、loading、empty、error などの文言です                                                                                                                                                                                       |
+| `matchFields` | property             | いいえ   | 一致対象面       | 既定では `title` / `path` / `keywords` です                                                                                                                                                                                        |
 
 `items` と `searcher` は同時に必須ではありませんが、**どちらか一方**を検索ソースとして与えます。両方が与えられた場合、公開契約では**設定エラー**として扱い、暗黙優先は設けません。責務の明快さを優先し、ローカル検索と外部検索の同時混在は認めません。
 
@@ -134,7 +134,7 @@ interface UiSearchDialogItem {
 
 ### shared `search-core` 統合規約
 
-Rouault アプリ本体で `ui-search-dialog` を用いる場合、検索意味論の正本は `search-specification.md` とします。
+Rouault アプリ本体で `ui-search-dialog` を用いる場合、検索意味論の正本は `docs/contracts/search.md` とします。
 アプリ本体での検索実行は、shared `search-core` の `navigate` モードを `searcher` 経由で接続しなければなりません。
 `items` は Storybook、固定データ例示、単体利用のための入力であり、アプリ本体における検索意味論の正本を置き換えません。
 
@@ -252,13 +252,13 @@ interface UiSearchDialogSelectedDetail {
 
 ### 公開メソッド
 
-| 名前                    | 種別   | 契約                                                                                              |
-| ----------------------- | ------ | ------------------------------------------------------------------------------------------------- |
+| 名前                    | 種別   | 契約                                                                                                                                                  |
+| ----------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `captureOpenModality()` | method | 次回 open 用の起動モダリティ snapshot を保持します。引数省略時はその時点の tracker snapshot を採用します。`requestOpen()` の payload は拡張しません。 |
-| `focusInput()`          | method | 検索入力へフォーカスを移します。内部的には `ui-search-field.focus()` に委譲します。               |
-| `focusClearButton()`    | method | clear button が利用可能な場合のみ、clear button へフォーカスを移します。利用不能時は no-op です。 |
-| `requestOpen(trigger?)` | method | 開く要求を通知します。`trigger` を与えた場合、その参照を open request の detail に含めます。      |
-| `requestClose(reason?)` | method | 閉じる要求を通知します。reason 未指定時は `programmatic` として扱います。                         |
+| `focusInput()`          | method | 検索入力へフォーカスを移します。内部的には `ui-search-field.focus()` に委譲します。                                                                   |
+| `focusClearButton()`    | method | clear button が利用可能な場合のみ、clear button へフォーカスを移します。利用不能時は no-op です。                                                     |
+| `requestOpen(trigger?)` | method | 開く要求を通知します。`trigger` を与えた場合、その参照を open request の detail に含めます。                                                          |
+| `requestClose(reason?)` | method | 閉じる要求を通知します。reason 未指定時は `programmatic` として扱います。                                                                             |
 
 `open()` / `close()` のような**強制状態変更メソッド**は、controlled 契約とは相性が悪いため採りません。公開メソッドは request ベースに寄せます。
 

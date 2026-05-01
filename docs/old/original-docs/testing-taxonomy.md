@@ -1,3 +1,7 @@
+この文書は現行契約の正本ではない。現行契約は docs/contracts/、Design System 契約は docs/design-system/ を参照する。
+
+---
+
 # Rouault テスト分類と責務境界
 
 ## 1. 目的

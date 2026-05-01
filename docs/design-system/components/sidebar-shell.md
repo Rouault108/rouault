@@ -23,9 +23,7 @@
 - hydration timing の自己決定
 - state source of truth
 
-sidebar state の ownership は
-[`docs/sidebar-state-specification.md`](../../sidebar-state-specification.md)
-を正本とします。
+sidebar state の ownership は [`docs/contracts/sidebar-state.md`](../../contracts/sidebar-state.md) を正本とします。
 
 ## 公開入力
 

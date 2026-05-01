@@ -7,19 +7,14 @@ Rouaultは、個人的なノートを静かに読むための Webアプリケー
 
 ## このリポジトリの正本
 
-READMEは入口文書です。  
-仕様・契約・設計判断は `docs/`を正本とし、実装事実は `package.json`、設定ファイル、`build/`、`src/`、`shared/`、`test/` を正本とします。
-`docs/temporary/` や `docs/old/` のような履歴資料ディレクトリを置く場合、それらは現行契約の正本には含めません。
-
-特に重要な文書は次のとおりです。
-
-- `docs/router-specification.md`
-- `docs/navigation-envelope-specification.md`
-- `docs/hydration-contract.md`
-- `docs/sidebar-state-specification.md`
-- `docs/search-specification.md`
-- `docs/testing-taxonomy.md`
-- `docs/compatibility-inventory.md`
+READMEはリポジトリ全体の入口文書です。
+機能契約は `docs/contracts/` を正本とします。
+Design System 契約は `docs/design-system/` を正本とします。
+文書体系の詳細は `docs/README.md` を参照してください。
+型・詳細 schema・詳細表・棚卸しは `docs/references/` を参照してください。
+執筆・実装・運用案内は `docs/guides/` を参照してください。
+設計判断の経緯は `docs/adr/` を参照してください。
+`docs/old/` と `docs/temporary/` は現行契約の正本ではありません。
 
 ## 何を目指すプロダクトか
 
@@ -178,7 +173,7 @@ Rouaultは、**何を保証するか** でテストの置き場を分けてい�
   - import boundary
   - smoke allowlistの健全性確認
 
-詳細は `docs/testing-taxonomy.md`を参照してください。
+詳細は `docs/contracts/testing-taxonomy.md`を参照してください。
 
 ## 現在の設計上の要点
 
@@ -188,36 +183,14 @@ Rouaultは、**何を保証するか** でテストの置き場を分けてい�
 - URLは共有可能で再構成可能な状態だけを担います
 - Storybookは仕様決定の場ではなく、docs / visual catalog / smokeに限定します
 
-## 重要ドキュメント
+## 文書体系
 
-アーキテクチャと契約:
-
-- `docs/router-specification.md`
-- `docs/navigation-envelope-specification.md`
-- `docs/hydration-contract.md`
-- `docs/sidebar-state-specification.md`
-- `docs/search-specification.md`
-- `docs/testing-taxonomy.md`
-- `docs/architecture/router-document-contract.md`
-- `docs/notes_sidebar_breadcrumb_contract.md`
-
-コンテンツ / Markdown:
-
-- `docs/content-config-syntax.md`
-- `docs/corpus-specification.md`
-- `docs/markdown/markdown-overview.md`
-- `docs/markdown/markdown-authoring-specification.md`
-- `docs/markdown/note-authoring-guide.md`
-- `docs/markdown/markdown-output-contract.md`
-- `docs/markdown/markdown-safety-and-test-policy.md`
-
-デザインシステム:
-
-- `docs/design-system/foundations.md`
-- `docs/design-system/accessibility.md`
-- `docs/design-system/patterns.md`
-- `docs/design-system/components/toc.md`
-- `docs/design-system/components/`
+- `docs/README.md`: 文書分類と正本ルール
+- `docs/contracts/`: router / router-document / navigation / hydration / sidebar / note-navigation / permanent-url / search / markdown / corpus / content-config / testing-taxonomy の機能契約
+- `docs/design-system/`: Design System契約
+- `docs/references/`: 型、詳細schema、詳細表、棚卸し
+- `docs/guides/`: 執筆・実装・運用案内
+- `docs/adr/`: 設計判断の経緯
 
 ## 開発原則
 

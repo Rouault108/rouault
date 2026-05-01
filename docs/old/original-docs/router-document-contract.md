@@ -1,3 +1,7 @@
+この文書は現行契約の正本ではない。現行契約は docs/contracts/、Design System 契約は docs/design-system/ を参照する。
+
+---
+
 # Router Document Contract
 
 Rouault の router は document-first を前提にします。ここでいう文書契約は、SSR 初期表示と client navigation が同じ本文境界を共有するための最低条件です。

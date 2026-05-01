@@ -1,3 +1,7 @@
+この文書は現行契約の正本ではない。現行契約は docs/contracts/、Design System 契約は docs/design-system/ を参照する。
+
+---
+
 # ノート記述ガイド
 
 ## この文書の位置づけ
@@ -71,23 +75,23 @@ genre:
 
 ### 3.2 書ける項目と許容値
 
-| 項目                     | 必須     | 許容値                                                                                                  | 主な制約・補足                                                                                  |
-| ------------------------ | -------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `title`                  | 必須     | YAML 文字列                                                                                             | 実質的なタイトルです。空文字運用は避けます。本文の先頭見出しと揃えると管理しやすくなります。    |
-| `description`            | 任意     | YAML 文字列                                                                                             | 一覧、検索、メタ説明に使われます。1文程度の短い要約を推奨します。                              |
-| `date`                   | 任意     | `YYYY-MM-DD` 形式の ISO 日付                                                                            | 初出日です。`2026-03-14`のように書きます。                                                      |
-| `updated`                | 任意     | `YYYY-MM-DD` 形式の ISO 日付                                                                            | 更新日です。`date`と同じ形式だけを書きます。                                                    |
-| `genre`                  | 任意     | 文字列配列                                                                                              | 分類用です。検索UIではタグとして扱われます。空文字や重複は避けます。                            |
-| `sidebarIcon`            | 任意     | `file-text` のような bare icon 名                                                                       | `lucide:`接頭辞は使えません。`none`も使えます。省略時は `_config.json`側の設定を継承します。   |
-| `cover`                  | 任意     | `content/_assets/...` または `examples/media/...` 配下のローカル画像パス                                | 現行実装では外部URLは使えません。manifestに存在しない画像はbuildで失敗する場合があります。      |
-| `source`                 | 任意     | 文字列                                                                                                  | 記事ヘッダーでの表示対象は `http:` / `https:`の単一URLのみです。                                |
-| `license`                | 任意     | 文字列                                                                                                  | 表示用のライセンス名です。前後空白のみの値は意味を持ちません。                                  |
-| `licenseNote`            | 任意     | 文字列                                                                                                  | ライセンス補足です。構造化データではなく単純な文字列だけを書きます。                            |
-| `status`                 | 任意     | `draft` / `archived` / `wip` / `deprecated`                                                             | `draft` は公開ノート集合から除外されます。省略時は通常公開扱いです。                            |
-| `kind`                   | 任意     | `reader` / `testing` / `demo`                                                                           | 省略時は `reader`として扱われます。公開面を変える項目です。                                     |
-| `chromeProfile`          | 任意     | `reader` / `plain`                                                                                      | note shell の構成です。`kind: reader` の既定値は `reader`、`kind: testing` の既定値は `plain` です。 |
-| `testingArea`            | 条件付き | `index` / `markdown-basic` / `media` / `code` / `interactive` / `sandbox` / `layout` / `navigation` / `typography` | `kind: testing` のときだけ必須です。`kind` が `testing` 以外なら書けません。                    |
-| `hydrationBudgetProfile` | 任意     | `reader-shell-canary` / `testing-interactive-canary` / `testing-sandbox-canary` / `testing-code-canary` | hydration budget を明示したい canary note 専用です。通常ノートでは不要です。                    |
+| 項目                     | 必須     | 許容値                                                                                                             | 主な制約・補足                                                                                       |
+| ------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `title`                  | 必須     | YAML 文字列                                                                                                        | 実質的なタイトルです。空文字運用は避けます。本文の先頭見出しと揃えると管理しやすくなります。         |
+| `description`            | 任意     | YAML 文字列                                                                                                        | 一覧、検索、メタ説明に使われます。1文程度の短い要約を推奨します。                                    |
+| `date`                   | 任意     | `YYYY-MM-DD` 形式の ISO 日付                                                                                       | 初出日です。`2026-03-14`のように書きます。                                                           |
+| `updated`                | 任意     | `YYYY-MM-DD` 形式の ISO 日付                                                                                       | 更新日です。`date`と同じ形式だけを書きます。                                                         |
+| `genre`                  | 任意     | 文字列配列                                                                                                         | 分類用です。検索UIではタグとして扱われます。空文字や重複は避けます。                                 |
+| `sidebarIcon`            | 任意     | `file-text` のような bare icon 名                                                                                  | `lucide:`接頭辞は使えません。`none`も使えます。省略時は `_config.json`側の設定を継承します。         |
+| `cover`                  | 任意     | `content/_assets/...` または `examples/media/...` 配下のローカル画像パス                                           | 現行実装では外部URLは使えません。manifestに存在しない画像はbuildで失敗する場合があります。           |
+| `source`                 | 任意     | 文字列                                                                                                             | 記事ヘッダーでの表示対象は `http:` / `https:`の単一URLのみです。                                     |
+| `license`                | 任意     | 文字列                                                                                                             | 表示用のライセンス名です。前後空白のみの値は意味を持ちません。                                       |
+| `licenseNote`            | 任意     | 文字列                                                                                                             | ライセンス補足です。構造化データではなく単純な文字列だけを書きます。                                 |
+| `status`                 | 任意     | `draft` / `archived` / `wip` / `deprecated`                                                                        | `draft` は公開ノート集合から除外されます。省略時は通常公開扱いです。                                 |
+| `kind`                   | 任意     | `reader` / `testing` / `demo`                                                                                      | 省略時は `reader`として扱われます。公開面を変える項目です。                                          |
+| `chromeProfile`          | 任意     | `reader` / `plain`                                                                                                 | note shell の構成です。`kind: reader` の既定値は `reader`、`kind: testing` の既定値は `plain` です。 |
+| `testingArea`            | 条件付き | `index` / `markdown-basic` / `media` / `code` / `interactive` / `sandbox` / `layout` / `navigation` / `typography` | `kind: testing` のときだけ必須です。`kind` が `testing` 以外なら書けません。                         |
+| `hydrationBudgetProfile` | 任意     | `reader-shell-canary` / `testing-interactive-canary` / `testing-sandbox-canary` / `testing-code-canary`            | hydration budget を明示したい canary note 専用です。通常ノートでは不要です。                         |
 
 ### 3.3 各項目の書き方
 
@@ -148,7 +152,7 @@ genre:
   note shell を切り替える項目です。
   - `reader`: reader shell を使います
   - `plain`: sidebar を持たない簡素な shell を使います
-  testing note でも reader shell の契約を検証したい場合は `chromeProfile: 'reader'` を指定します。
+    testing note でも reader shell の契約を検証したい場合は `chromeProfile: 'reader'` を指定します。
 
 - `testingArea`
   `kind: testing` のときだけ書きます。許可値は `index` / `markdown-basic` / `media` / `code` / `interactive` / `sandbox` / `layout` / `navigation` / `typography` です。

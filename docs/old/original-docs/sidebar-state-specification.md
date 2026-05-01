@@ -1,3 +1,7 @@
+この文書は現行契約の正本ではない。現行契約は docs/contracts/、Design System 契約は docs/design-system/ を参照する。
+
+---
+
 # Sidebar State Specification
 
 ## 1. 目的

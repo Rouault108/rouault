@@ -23,9 +23,7 @@ Rouault の note sidebar 正本は `layout-sidebar` 配下の server-first light
 - tree expanded state の source of truth
 - overlay state の source of truth
 
-state ownership の正本は
-[`docs/sidebar-state-specification.md`](../../sidebar-state-specification.md)
-です。
+state ownership の正本は [`docs/contracts/sidebar-state.md`](../../contracts/sidebar-state.md) です。
 
 ## 公開入力
 

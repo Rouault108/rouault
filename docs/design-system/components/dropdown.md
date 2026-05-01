@@ -71,9 +71,9 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 #### `ui-dropdown`
 
-| 名前               | 発火条件                                         | `detail`                           |
-| ------------------ | ------------------------------------------------ | ---------------------------------- |
-| `menu-item-select` | `ui-menu-item` が選択されたとき                  | `{ value: string, label: string }` |
+| 名前               | 発火条件                                        | `detail`                           |
+| ------------------ | ----------------------------------------------- | ---------------------------------- |
+| `menu-item-select` | `ui-menu-item` が選択されたとき                 | `{ value: string, label: string }` |
 | `open`             | public open state が `false` から `true` へ入る | なし                               |
 | `close`            | public open state が `true` から `false` へ戻る | なし                               |
 

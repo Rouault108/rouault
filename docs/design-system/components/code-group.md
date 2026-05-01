@@ -4,7 +4,7 @@
 
 本書は、code group の合成契約を定義します。
 
-読者向けの正規出力は `section[data-code-group]` を root とする native tab structure です。note 本文ではこの static DOM を正本とし、`ui-code-group` は Storybook・isolated rendering・旧実装互換のための adapter としてのみ扱います。最終 DOM 契約の正本は `docs/markdown/markdown-output-contract.md` です。
+読者向けの正規出力は `section[data-code-group]` を root とする native tab structure です。note 本文ではこの static DOM を正本とし、`ui-code-group` は Storybook・isolated rendering・旧実装互換のための adapter としてのみ扱います。Markdown 出力・安全性の正本は `docs/contracts/markdown.md`、詳細表は `docs/references/markdown-output.md` です。
 
 code group は、複数の code block を比較可能な単一提示面へ束ねる契約です。責務は、単に block をタブ化することではありません。**比較対象の識別、選択状態の安定化、copy 文脈の同期、比較 UI の成立条件、no-JS stacked fallback、入力違反時の退行規則**を、一貫した公開契約として提供することにあります。
 

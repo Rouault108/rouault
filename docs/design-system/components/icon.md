@@ -114,10 +114,10 @@ empty state では host は CSS により非表示になります。
 
 empty state では、単に非表示にするだけではなく、意味を持つ画像として露出しないように正規化します。
 
-* host から `role` を外します
-* glyph から `icon` を外します
-* glyph に `aria-hidden="true"` を付けます
-* glyph の `aria-label` を外します
+- host から `role` を外します
+- glyph から `icon` を外します
+- glyph に `aria-hidden="true"` を付けます
+- glyph の `aria-label` を外します
 
 ---
 
@@ -137,9 +137,9 @@ empty state では、単に非表示にするだけではなく、意味を持�
 
 ### 重要
 
-* JS から host の `style.display` を直書きしません
-* JS から `align-items` / `justify-content` / `line-height` を直書きしません
-* host の inline / block size は固定しません
+- JS から host の `style.display` を直書きしません
+- JS から `align-items` / `justify-content` / `line-height` を直書きしません
+- host の inline / block size は固定しません
 
 したがって、サイズ責務は利用側コンポーネントで持てます。
 
@@ -151,17 +151,17 @@ empty state では、単に非表示にするだけではなく、意味を持�
 
 `aria-label` がある場合、`ui-icon` は意味を持つ画像として扱います。
 
-* host に `role="img"` を付けます
-* glyph に `aria-hidden="false"` を付けます
-* glyph に `aria-label` を付けます
+- host に `role="img"` を付けます
+- glyph に `aria-hidden="false"` を付けます
+- glyph に `aria-label` を付けます
 
 ### decorative icon
 
 `aria-label` がない場合、`ui-icon` は装飾目的として扱います。
 
-* host に `role` は付けません
-* glyph は `aria-hidden="true"` です
-* glyph に `aria-label` は付きません
+- host に `role` は付けません
+- glyph は `aria-hidden="true"` です
+- glyph に `aria-label` は付きません
 
 ---
 
@@ -169,26 +169,25 @@ empty state では、単に非表示にするだけではなく、意味を持�
 
 ### `ui-icon` が担当すること
 
-* `name` を glyph 名として内部 glyph に反映すること
-* decorative / semantic の a11y state を反映すること
-* host の最小標準 presentation を提供すること
-* empty state を reflected state として表すこと
+- `name` を glyph 名として内部 glyph に反映すること
+- decorative / semantic の a11y state を反映すること
+- host の最小標準 presentation を提供すること
+- empty state を reflected state として表すこと
 
 ### `ui-icon` が担当しないこと
 
-* parent layout の制御
-* responsive hide/show の主導
-* ornament の要否判断
-* breakpoint ごとの affordance policy
-* parent 側の render omission 判断
+- parent layout の制御
+- responsive hide/show の主導
+- ornament の要否判断
+- breakpoint ごとの affordance policy
+- parent 側の render omission 判断
 
 ---
 
 ## 例
 
 ```html
-<ui-icon name="calendar-clock"></ui-icon>
-<ui-icon name="link" aria-label="固定リンク"></ui-icon>
+<ui-icon name="calendar-clock"></ui-icon> <ui-icon name="link" aria-label="固定リンク"></ui-icon>
 ```
 
 ---
@@ -199,34 +198,34 @@ empty state では、単に非表示にするだけではなく、意味を持�
 
 次のようなケースでは `ui-icon` を使います。
 
-* ナビゲーション
-* 状態表示
-* ボタン内部の補助 glyph
-* 一覧や見出しの補助
-* 複数箇所で再利用する icon
+- ナビゲーション
+- 状態表示
+- ボタン内部の補助 glyph
+- 一覧や見出しの補助
+- 複数箇所で再利用する icon
 
 ### inline SVG を使う場面
 
 次のようなケースでは inline SVG を使ってよいです。
 
-* あるコンポーネントにしか存在しない固定 glyph
-* 外部登録を経由せず閉じた描画にしたい場合
-* geometry を強く制御したい control glyph
+- あるコンポーネントにしか存在しない固定 glyph
+- 外部登録を経由せず閉じた描画にしたい場合
+- geometry を強く制御したい control glyph
 
 ---
 
 ## 運用ルール
 
-| 項目           | ルール                                |
-| ------------ | ---------------------------------- |
-| 正規入力         | `name` のみを使う                       |
-| 非推奨ではなく非対応   | `icon` 属性はサポートしない                  |
-| semantic 化   | 意味を持たせる場合だけ `aria-label` を与える      |
-| 非表示          | `name` が無い場合は empty state として描画しない |
-| presentation | host presentation は CSS で与える       |
-| サイズ          | `ui-icon` 自身は固定しない。利用側で必要に応じて与える   |
-| 再利用 glyph    | `ui-icon` に集約する                    |
-| 固定 glyph     | inline SVG を検討してよい                 |
+| 項目                 | ルール                                                 |
+| -------------------- | ------------------------------------------------------ |
+| 正規入力             | `name` のみを使う                                      |
+| 非推奨ではなく非対応 | `icon` 属性はサポートしない                            |
+| semantic 化          | 意味を持たせる場合だけ `aria-label` を与える           |
+| 非表示               | `name` が無い場合は empty state として描画しない       |
+| presentation         | host presentation は CSS で与える                      |
+| サイズ               | `ui-icon` 自身は固定しない。利用側で必要に応じて与える |
+| 再利用 glyph         | `ui-icon` に集約する                                   |
+| 固定 glyph           | inline SVG を検討してよい                              |
 
 ---
 
@@ -247,6 +246,6 @@ ${icon ? html`<ui-icon name=${icon}></ui-icon>` : nothing}
 
 ## 既知の境界
 
-* `ui-icon` は現時点では `HTMLElement` ベースの custom element です
-* 本契約は LitElement 化を前提にしません
-* 実装詳細ではなく、観測可能な DOM / a11y / CSS 契約を優先します
+- `ui-icon` は現時点では `HTMLElement` ベースの custom element です
+- 本契約は LitElement 化を前提にしません
+- 実装詳細ではなく、観測可能な DOM / a11y / CSS 契約を優先します
