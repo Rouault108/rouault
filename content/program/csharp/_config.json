@@ -3,7 +3,10 @@
   "order": [
     "index.md",
     "source-code-to-execution.md",
-    "language-version-build-context-compatibility.md"
+    "language-version-build-context-compatibility.md",
+    "declarations-modifiers-members.md",
+    "types-overview.md",
+    "value-types.md"
   ],
   "sidebar": {
     "scope": "self"
