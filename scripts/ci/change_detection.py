@@ -27,18 +27,11 @@ class Classification:
     reasons: tuple[str, ...]
 
 
-IGNORED_EXACT = {
-    "README.md",
-    "LICENSE",
-}
+IGNORED_EXACT = {"README.md", "LICENSE", "AGENTS.md"}
 
-IGNORED_PREFIXES = (
-    "docs/",
-)
+IGNORED_PREFIXES = ("docs/",)
 
-CONTENT_PREFIXES = (
-    "content/",
-)
+CONTENT_PREFIXES = ("content/",)
 
 APP_PREFIXES = (
     "src/",
@@ -182,9 +175,7 @@ def changed_files(base_sha: str, head_sha: str) -> list[str]:
     raw = run_git("diff", "-z", "--name-only", base_sha, head_sha, text=False)
     assert isinstance(raw, (bytes, bytearray))
     files = [
-        chunk.decode("utf-8", errors="replace")
-        for chunk in raw.split(b"\0")
-        if chunk
+        chunk.decode("utf-8", errors="replace") for chunk in raw.split(b"\0") if chunk
     ]
     return sorted(files)
 
