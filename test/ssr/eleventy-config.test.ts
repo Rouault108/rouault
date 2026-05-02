@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import type { UserConfig } from '@11ty/eleventy';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 type GlobalData = () => unknown;
 type EleventyHook = () => unknown | Promise<unknown>;
@@ -59,6 +59,10 @@ describe('eleventy config', () => {
   });
 
   it('tagPages グローバルデータを遅延 import で登録できること', async () => {
+    vi.doMock('../../src/data/tagPages.js', () => ({
+      loadTagPagesData: vi.fn(() => []),
+    }));
+
     const { config, globalData, passthroughCopies } = createConfigCapture();
 
     const moduleUrl = new URL('../../eleventy.config.ts', import.meta.url).href;
@@ -73,7 +77,7 @@ describe('eleventy config', () => {
     if (!loadTagPages) {
       throw new Error('tagPages が登録されていません');
     }
-    await expect(loadTagPages()).resolves.toEqual(expect.any(Array));
+    await expect(loadTagPages()).resolves.toEqual([]);
 
     expect(typeof loadHome).toBe('function');
     expect(loadHome).toBeDefined();

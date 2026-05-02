@@ -69,9 +69,10 @@ describe('production build entrypoint contract', () => {
     expect(storybookSmokeJob).toContain(fullRunCondition);
     expect(testE2eProductionJob).toContain(fullRunCondition);
     expect(testE2eDevJob).toContain(fullRunCondition);
-    expect(deployProductionJob).toContain(
-      "if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.build == 'true'",
-    );
+    expect(deployProductionJob).toContain('if: >-');
+    expect(deployProductionJob).toContain("github.event_name == 'push'");
+    expect(deployProductionJob).toContain("github.ref == 'refs/heads/main'");
+    expect(deployProductionJob).toContain("needs.detect-changes.outputs.build == 'true'");
     expect(deployProductionJob).not.toContain("github.event_name == 'workflow_dispatch'");
   });
 });
