@@ -309,7 +309,16 @@ jobs:
       - detect-changes
       - build-production
       - ci-required
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.build == 'true'
+    if: >-
+      ${{
+        !cancelled()
+        && needs.detect-changes.result == 'success'
+        && needs.build-production.result == 'success'
+        && needs.ci-required.result == 'success'
+        && github.event_name == 'push'
+        && github.ref == 'refs/heads/main'
+        && needs.detect-changes.outputs.build == 'true'
+      }}
     environment: production
     concurrency:
       group: deploy-production

@@ -6,6 +6,7 @@ Rouault の production deploy は、GitHub Actions の `deploy-production` job �
 
 - production deploy の実行主体は `.github/workflows/ci-cd.yml` の `deploy-production` job。
 - `deploy-production` は `main` への `push` かつ `detect-changes.outputs.build == 'true'` の場合だけ実行する。
+- `deploy-production` の job-level `if` は `!cancelled()` と direct `needs` の `result == 'success'` を明示する。これは、skipped ancestor job を含む依存チェーンで GitHub Actions の暗黙 `success()` により本番 deploy が skipped になることを避けるため。
 - `workflow_dispatch` は full CI 検査に使うが、production deploy は行わない。
 - Cloudflare Pages 側の Git 連携による automatic production deployment は無効にする。
 
