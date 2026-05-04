@@ -50,7 +50,7 @@ C#のビルド結果として得られるアセンブリは、型とリソース
 
 これに対してILはメソッド本体の操作列として位置付けられる。ローカル変数、引数、評価スタック、分岐、例外ハンドラー、メソッド呼び出し、ボックス化、アンボックス化などは、最終的にIL命令列として表現される。アセンブリの実行可能性は、自己記述的なデータとしてのメタデータと、操作列としてのILとの結合によって成立する。[^2][^5]
 
-PDB（Program Database）はこれとは別にデバッグや診断のためのシンボル情報を保持する。今日の.NETではPortable PDBが標準的であり、ソース行との対応、ローカル変数名、シーケンスポイント、非同期メソッドや反復子の対応関係などの情報をデバッガや各種ツールへ提供する。PDBの位置付けはプログラム意味論の本体ではなく、生成コードをソースへ引き戻して観察するための補助情報にある。したがってアセンブリ本体とPDBとは区別して扱われる。[^10]
+PDB（Program Database）はこれとは別にデバッグや診断のためのシンボル情報を保持する。.NETではPortable PDBが標準的に用いられ、ソース行との対応、ローカル変数名、シーケンスポイント、非同期メソッドや反復子の対応関係などの情報をデバッガや各種ツールへ提供する。PDBの位置付けはプログラム意味論の本体ではなく、生成コードをソースへ引き戻して観察するための補助情報にある。したがってアセンブリ本体とPDBとは区別して扱われる。[^10]
 
 ビルド成果物には`.deps.json`や`.runtimeconfig.json`のように、アセンブリ本体とは別にホストや依存関係解決に用いられる補助ファイルが伴う。これらはCLI仕様上のアセンブリ構造そのものではないが、実際の.NETアプリケーションがどのランタイムで起動し、どの依存関係を読み込むかを定める。したがってCLI仕様上のアセンブリ構造と、.NET配布物としての構成とは区別される。[^8]
 
@@ -74,11 +74,11 @@ PDB（Program Database）はこれとは別にデバッグや診断のための�
 Console.WriteLine("Hello, World!");
 ```
 
-この記法はトップレベルステートメント（top-level statements）によるものであり、明示的な`Program`クラスや`Main`メソッドを書かずに実行可能プログラムの入口を記述する。コンパイラはトップレベルステートメントを含むコンパイル対象に対して実行入口となるメソッドを生成し、必要なメタデータとILを出力する。この生成物はソース上の公開APIではなく、実行開始を成立させるためのコンパイラ生成構造である。[^13]
+この記法はトップレベルステートメント（top-level statements）によるものであり、明示的な`Program`クラスや`Main`メソッドを書かずに実行可能プログラムの入口を記述する。コンパイラはトップレベルステートメントを含むコンパイル対象に対して実行入口となるメソッドを生成し、必要なメタデータとILを出力する。この生成物はソース上の公開APIではなく、実行開始を成立させるためのコンパイラ生成構造である。トップレベルステートメントの位置付けは、既存の実行モデルに対する簡略記法にある。[^13]
 
-この最小形は少なくとも三つの層へ分解される。第一にソース上には`Console.WriteLine`という文だけが現れる。第二にコンパイラはトップレベルステートメントを含むコンパイル対象に対して実行入口となるメソッドを生成し、必要なメタデータとILを出力する。第三に実行時にはCLRがアセンブリを読み込み、入口点から実行を開始する。トップレベルステートメントの位置付けは既存の実行モデルに対する簡略記法にある。[^3][^13]
+この最小形は少なくとも三つの層へ分解される。第一にソース上には`Console.WriteLine`という文だけが現れる。第二にコンパイラは入口点を含む実行可能アセンブリを生成する。第三に実行時にはCLRがアセンブリを読み込み、入口点から実行を開始する。[^3][^13]
 
-トップレベルステートメントは明示的な`Program`クラスや`Main`メソッドをソース上に書かずに、実行可能プロジェクトの入口を記述する構文である。コンパイラはトップレベルステートメントを含むコンパイル対象に対して、実行入口となるメソッドを生成する。そのシグネチャは`await`および`return`の有無に応じて変化する。[^13][^16]
+トップレベルステートメントを含められるコンパイル対象は一つだけである。トップレベルステートメントが存在する場合、明示的な`Main`メソッドを書いても、その`Main`は入口点として扱われない。この制約は実行開始位置の一意性を保つためのものである。`await`および`return`の有無に応じて、生成される入口点のシグネチャは変化する。[^13][^16]
 
 トップレベルステートメントを含められるコンパイル対象は一つだけである。トップレベルステートメントが存在する場合、明示的な`Main`メソッドを書いても、その`Main`は入口点として扱われない。この制約は、実行開始位置の一意性を保つためのものである。[^13][^16]
 
@@ -122,4 +122,4 @@ C# 14の機能仕様では、ファイルベースアプリを支えるために
 
 [^16]: Microsoft Learn, *Resolve errors and warnings related to a program entry point*; *Main() and command-line arguments - C#*. 入口点シグネチャ、`Main`、`StartupObject`、トップレベルステートメントと入口点の関係。[https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/entry-point-errors](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/entry-point-errors) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/main-command-line](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/main-command-line)。
 
-[^17]: Microsoft Learn, *File-based apps - .NET*; *Preprocessor directives - C#*; *Tutorial: Build file-based C# programs*. ファイルベースアプリ、`#!`、`#:`系ディレクティブ、および.NET SDKによる単一C#ファイル実行モデルの整理。[https://learn.microsoft.com/en-us/dotnet/core/sdk/file-based-apps](https://learn.microsoft.com/en-us/dotnet/core/sdk/file-based-apps) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/preprocessor-directives](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/preprocessor-directives) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/tutorials/file-based-programs](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/tutorials/file-based-programs)。
+[^17]: Microsoft Learn, *File-based apps - .NET*; *Ignored preprocessor directives - C# feature specifications*; *Preprocessor directives - C#*; *Tutorial: Build file-based C# programs*. ファイルベースアプリ、`#!`、`#:`系ディレクティブ、および.NET SDKによる単一C#ファイル実行モデルの整理。[https://learn.microsoft.com/en-us/dotnet/core/sdk/file-based-apps](https://learn.microsoft.com/en-us/dotnet/core/sdk/file-based-apps) ; [https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-14.0/ignored-directives](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-14.0/ignored-directives) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/preprocessor-directives](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/preprocessor-directives) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/tutorials/file-based-programs](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/tutorials/file-based-programs)。
