@@ -22,9 +22,9 @@ C#コンパイラはソーステキストを字句要素として扱い、そこ
 
 Roslynの実装ではソースコードは構文木とシンボル表現へ整理され、式や文に対する意味付けを経て、反復子、非同期、パターンマッチング、補間文字列、トップレベルステートメント（top-level statements）などの高水準構文がより基本的な内部表現へ変換されたうえで出力段階へ渡される。この変換はローワリングと呼ばれる。ローワリングの位置付けは、表面上の高水準構文を生成物として出力しやすい内部表現へ整理する内部変換にある。[^12]
 
-この過程の主要な成果物はILとメタデータである。メタデータは、型、メンバー、参照、属性、ジェネリックパラメーター、制約などについての記述でありILはその操作列である。ソースコード上の型やメソッドはテキストとしてではなくメタデータとILの組としてアセンブリ内に格納される。コンパイル時に固定されるのはC#の意味論のうち、CLI上の表現へ外部化される部分である。[^2][^5]
+この過程の主要な成果物はILとメタデータである。メタデータは、型、メンバー、参照、属性、ジェネリックパラメーター、制約などについての記述であり、ILはメソッド本体を表す操作列である。ソースコード上の型やメソッドはテキストとしてではなくメタデータとILの組としてアセンブリ内に格納される。コンパイル時に固定されるのはC#の意味論のうち、CLI上の表現へ外部化される部分である。[^2][^5]
 
-典型的な管理実行では、CLRがアセンブリを読み込み、必要なメタデータを参照しながらメソッド本体をJITコンパイルし、プロセッサ固有のコードへ変換する。ここに属するのはロード、型解決、検証、JIT最適化、ガベージコレクション管理などである。名前束縛やオーバーロード解決のようなC#言語固有の問題は、この段階には属さない。したがって「C#ソース→ILとメタデータ→実行時コンパイル→実行」という連鎖において、前者は言語仕様とコンパイラの問題、後者は実行基盤の問題として区分される。[^2][^3][^6]
+典型的な管理実行ではCLRがアセンブリを読み込み、必要になったメソッド本体のILをJITコンパイルし、プロセッサ固有のコードとして実行する。ここに属するのはロード、型解決、JITコンパイル、最適化、ガベージコレクションなどの実行時サービスである。検証の有無や範囲、事前コンパイル済みコードの利用は、実行環境、信頼境界、配布形態に依存する。名前束縛やオーバーロード解決のようなC#言語固有の問題は、この段階には属さない。したがって「C#ソース→ILとメタデータ→実行時コンパイル→実行」という連鎖において、前者は言語仕様とコンパイラの問題、後者は実行基盤の問題として区分される。[^2][^3][^6]
 
 本ノートでは、この典型的な経路を基準に記述する。配布形態や実行形態によっては、事前コンパイル済みコードを伴う場合もあるが、それらは後続のノートまたは補足で扱う。
 
@@ -32,7 +32,7 @@ Roslynの実装ではソースコードは構文木とシンボル表現へ整�
 
 C#プログラムは一つ以上のコンパイル単位から成る。各コンパイル単位には`using`ディレクティブ、グローバル属性、名前空間メンバー宣言、型宣言などが含まれ、複数のコンパイル単位は一つのコンパイル対象集合として処理される。`.cs`ファイルの位置付けは物理的な保存単位であり、独立した実行単位ではない。[^1][^4]
 
-名前空間は論理的な名前付けの構造であり、物理的なファイル配置とは独立である。ある名前空間に属する宣言は複数ファイルへ分散でき、逆に一つのファイルに複数の名前空間宣言を含めることもできる。`partial`宣言はこの性質を型定義に拡張し、一つの型定義を複数ファイルへ分割したうえで、コンパイル時に一つの型として統合する。ソースファイルの分割は可読性、責務分離、生成コードとの共存、部分的なコード生成のための編成として位置付けられる。[^4][^7]
+名前空間は論理的な名前付けの構造であり、物理的なファイル配置とは独立である。ある名前空間に属する宣言は複数ファイルへ分散でき、逆に一つのファイルに複数の名前空間宣言を含めることもできる。`partial`宣言はこの性質を型定義に拡張し、同一の型を構成する複数の部分宣言をコンパイル時に一つの型として統合する。分割された部分は、同一アセンブリ内で同じ名前空間と型名を持つなど、仕様上の条件を満たす必要がある。ソースファイルの分割は可読性、責務分離、生成コードとの共存、部分的なコード生成のための編成として位置付けられる。[^4][^7]
 
 コンパイル単位の集合は通常アセンブリの生成へ向かう。ただしソースファイル、コンパイル単位、名前空間、型、アセンブリは、それぞれ異なる粒度の概念である。ソースファイルは物理的な保存単位、コンパイル単位は言語仕様上の入力単位、アセンブリはCLI上の出力単位である。これらは運用上しばしば重なって見えるが、概念上は別物である。[^1][^2]
 
@@ -56,7 +56,7 @@ PDB（Program Database）はこれとは別にデバッグや診断のための�
 
 ## 2.4 ツールチェーン
 
-現代の.NET開発では通常SDKスタイルプロジェクトを`dotnet`コマンドとMSBuildが処理し、その中でC#コンパイラが呼び出される。`dotnet build`の位置付けは`csc`単体の起動ではなく、必要に応じた復元、MSBuildプロジェクトの評価、参照解決、コンパイル、出力の整理を含む一連の処理の入口にある。ビルドとはコンパイルそのものに加えて、コンパイルを成立させる文脈の構成を含む操作である。[^8]
+現代の.NET開発では、通常SDKスタイルプロジェクトを`dotnet`コマンドとMSBuildが処理し、その中でC#コンパイラが呼び出される。.NET 10以降では、ファイルベースアプリも`dotnet build`の対象に含まれる。`dotnet build`の位置付けは`csc`単体の起動ではなく、必要に応じた復元、MSBuildによる評価、参照解決、コンパイル、出力の整理を含む一連の処理の入口にある。[^8]
 
 このツールチェーンにおいてMSBuildは、ソース群、参照群、ターゲットフレームワーク、アナライザ、ジェネレーター、条件付き設定を調停する。Roslynはその文脈の中でC#の構文解析、意味解析、診断、ローワリング、生成物出力（emit）を担うコンパイラ実装である。したがって「どのコードが受理されるか」は主としてコンパイラの問題であり、「どの入力と設定でそのコンパイラが走るか」はビルドシステムの問題である。[^8][^12]
 
@@ -68,27 +68,27 @@ PDB（Program Database）はこれとは別にデバッグや診断のための�
 
 ## 2.5 最小プログラムの分解
 
-現在の.NET SDKのコンソールアプリケーションでは、最小例を次のように書ける。
+.NET 6以降のSDKテンプレートで作成されるコンソールアプリケーションでは、トップレベルステートメントを用いた最小例を次のように書ける。
 
 ```csharp
 Console.WriteLine("Hello, World!");
 ```
 
-この記法はトップレベルステートメント（top-level statements）によるものであり、明示的な`Program`クラスや`Main`メソッドを書かなくても実行可能プロジェクトとしての入口を表現する。ここで与えられるのは実行入口の省略ではなくその簡略な記述様式である。コンパイラはこれを入口点を持つ形へ変換し、ソース上の簡潔さを生成物側で吸収する。[^13]
+この記法はトップレベルステートメント（top-level statements）によるものであり、明示的な`Program`クラスや`Main`メソッドを書かずに実行可能プログラムの入口を記述する。コンパイラはトップレベルステートメントを含むコンパイル対象に対して実行入口となるメソッドを生成し、必要なメタデータとILを出力する。この生成物はソース上の公開APIではなく、実行開始を成立させるためのコンパイラ生成構造である。[^13]
 
-この最小形は少なくとも三つの層へ分解される。第一にソース上には`Console.WriteLine`という文だけが現れる。第二にコンパイラはそれを暗黙の型と入口点を持つ実行可能アセンブリとして編成し、必要なメタデータとILを生成する。第三に実行時にはCLRがそのアセンブリを読み込み、入口から実行を開始する。トップレベルステートメントの位置付けは既存の実行モデルに対する簡略記法にある。[^3][^13]
+この最小形は少なくとも三つの層へ分解される。第一にソース上には`Console.WriteLine`という文だけが現れる。第二にコンパイラはトップレベルステートメントを含むコンパイル対象に対して実行入口となるメソッドを生成し、必要なメタデータとILを出力する。第三に実行時にはCLRがアセンブリを読み込み、入口点から実行を開始する。トップレベルステートメントの位置付けは既存の実行モデルに対する簡略記法にある。[^3][^13]
 
 トップレベルステートメントは明示的な`Program`クラスや`Main`メソッドをソース上に書かずに、実行可能プロジェクトの入口を記述する構文である。コンパイラはトップレベルステートメントを含むコンパイル対象に対して、実行入口となるメソッドを生成する。そのシグネチャは`await`および`return`の有無に応じて変化する。[^13][^16]
 
-トップレベルステートメントを含められるコンパイル対象は一つだけである。トップレベルステートメントが存在する場合、明示的な`Main`メソッドを書いても、その`Main`は入口点として扱われない。この制約は、実行開始位置の一意性を保つためのものである。暗黙の`Program`型は、ソース上のAPI面ではなく、入口点を保持するためのコンパイラ生成の器として位置付けられる。[^13][^16]
+トップレベルステートメントを含められるコンパイル対象は一つだけである。トップレベルステートメントが存在する場合、明示的な`Main`メソッドを書いても、その`Main`は入口点として扱われない。この制約は、実行開始位置の一意性を保つためのものである。[^13][^16]
 
 この最小例を逆アセンブルした結果には、アセンブリマニフェスト、型定義、メソッド定義、ローカル変数情報、IL命令列、必要に応じたPDB上の対応情報が含まれる。最小プログラムの観察は以後の章で扱う型、束縛、変換、非同期、メタデータ、状態機械変換を読むための最初の足場として位置付けられる。[^10][^14]
 
-ファイルベースアプリは、.NET 10 SDK以降で導入された単一C#ファイルのビルド・実行形態である。トップレベルステートメントによる簡潔な入口記述を、.NET SDKの実行モデルへ接続する機能として位置付けられる。これは単一のC#ソースファイルを、明示的なプロジェクトファイルなしに`dotnet`ホストからビルドおよび実行する形態であり、C#言語の構文規則だけで完結する機能ではない。ソースファイルは通常のC#プログラムとして扱われるが、プロジェクトファイルに相当する設定の一部は、SDK側で生成または解釈される。これは単一のC#ソースファイルを、明示的なプロジェクトファイルなしに`dotnet`ホストからビルドおよび実行する形態であり、C#言語の構文規則だけで完結する機能ではない。ソースファイルは通常のC#プログラムとして扱われるが、プロジェクトファイルに相当する設定の一部は、SDK側で生成または解釈される。
+ファイルベースアプリは、.NET 10 SDK以降で導入された単一C#ファイルのビルド・実行形態である。明示的なプロジェクトファイルを作成せずに、`.cs`ファイルを`dotnet`コマンドからビルド、実行、公開できる。ソースファイルは通常のC#プログラムとして扱われるが、プロジェクトファイルに相当する設定の一部はSDK側で生成または解釈される。トップレベルステートメントと相性がよいが、それに限定される機能ではない。
 
-C# 14では、この形態を支えるために、言語としては無視され、SDKやツールが解釈できる`#!`および`#:`系ディレクティブが整理された。`#:`系ディレクティブは、パッケージ、プロジェクト参照、SDK、MSBuildプロパティなどをソースファイル先頭で指定するために用いられる。これらは通常の前処理ディレクティブとは同列ではなく、ファイルベースアプリにおいてビルドシステムが扱う指示である。したがって、トップレベルステートメントは言語上の入口記述であり、ファイルベースアプリは.NET SDKによる実行形態である。[^17]
+C# 14の機能仕様では、ファイルベースアプリを支えるために、`#!`および`#:`系ディレクティブが無視可能な前処理ディレクティブとして整理された。`#!`はUnix系環境でソースファイルを直接実行するためのshebangであり、`#:`系ディレクティブはパッケージ、プロジェクト参照、SDK、MSBuildプロパティなどを指定するビルドシステム向けの指示である。これらは通常の条件付きコンパイル用ディレクティブとは役割が異なり、C#言語としては無視され、SDKやツールが必要に応じて解釈する。したがって、トップレベルステートメントは言語上の入口記述であり、ファイルベースアプリは.NET SDKによる実行形態である。[^17]
 
-以後の議論では、短いソースの背後にもコンパイル単位、アセンブリ、メタデータ、IL、入口点、実行時コンパイル、ホスト構成という複数の層があることを前提とする。本ノート群全体の出発点はC#を表面構文だけで読むのではなく、どの段階でどの情報が固定され、どの段階でどの責務が現れるかを追跡することにある。[^1][^2][^3]
+以後の議論では、短いソースの背後にもコンパイル単位、アセンブリ、メタデータ、IL、入口点、実行時コンパイル、`.runtimeconfig.json`などを含むホスト構成という複数の層があることを前提とする。`#!`および`#:`系ディレクティブの構文上の位置付け、配置制約、ビルド文脈との関係は、言語バージョンと前処理ディレクティブを扱う後続章で整理する。
 
 [^1]: Ecma International, *ECMA-334: C# Language Specification*, 7th ed., December 2023. C#言語の適格性、意味規則、コンパイル単位、名前空間、型宣言などの規範的定義。[https://ecma-international.org/wp-content/uploads/ECMA-334_7th_edition_december_2023.pdf](https://ecma-international.org/wp-content/uploads/ECMA-334_7th_edition_december_2023.pdf)。
 
@@ -116,10 +116,10 @@ C# 14では、この形態を支えるために、言語としては無視され
 
 [^13]: Microsoft Learn, *Top-level statements - programs without Main methods - C#*; *General structure of a C# program*. トップレベルステートメント、入口点規則、暗黙の`Program`に関する整理。[https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/top-level-statements](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/top-level-statements) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/)。
 
-[^14]: Microsoft Learn, *How to: View assembly contents*; *Ildasm.exe (IL Disassembler)*. ILDASMによるILおよびアセンブリマニフェストの観察。[https://learn.microsoft.com/en-us/dotnet/standard/assembly/view-contents](https://learn.microsoft.com/en-us/dotnet/standard/assembly/view-contents) ; [https://learn.microsoft.com/en-us/dotnet/framework/tools/ildasm-exe-il-disassembler](https://learn.microsoft.com/en-us/dotnet/framework/tools/ildasm-exe-il-disassembler)。
+[^17]: Microsoft Learn, *File-based apps - .NET*; *Ignored preprocessor directives - C# feature specifications*; *Preprocessor directives - C#*; *Tutorial: Build file-based C# programs*. ファイルベースアプリ、`#!`、`#:`系ディレクティブ、および.NET SDKによる単一C#ファイル実行モデルの整理。[https://learn.microsoft.com/en-us/dotnet/core/sdk/file-based-apps](https://learn.microsoft.com/en-us/dotnet/core/sdk/file-based-apps) ; [https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-14.0/ignored-directives](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-14.0/ignored-directives) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/preprocessor-directives](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/preprocessor-directives) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/tutorials/file-based-programs](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/tutorials/file-based-programs)。
 
 [^15]: GitHub, *icsharpcode/ILSpy*. .NETアセンブリブラウザ兼デコンパイラとしての外部観察ツール。[https://github.com/icsharpcode/ilspy](https://github.com/icsharpcode/ilspy)。
 
 [^16]: Microsoft Learn, *Resolve errors and warnings related to a program entry point*; *Main() and command-line arguments - C#*. 入口点シグネチャ、`Main`、`StartupObject`、トップレベルステートメントと入口点の関係。[https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/entry-point-errors](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/entry-point-errors) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/main-command-line](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/main-command-line)。
 
-[^17]: Microsoft Learn, *File-based apps - .NET*; *Preprocessor directives - C# reference*; *Tutorial: Build file-based C# programs*. ファイルベースアプリ、`#!`、`#:`系ディレクティブ、および.NET SDKによる単一C#ファイル実行モデルの整理。
+[^17]: Microsoft Learn, *File-based apps - .NET*; *Preprocessor directives - C#*; *Tutorial: Build file-based C# programs*. ファイルベースアプリ、`#!`、`#:`系ディレクティブ、および.NET SDKによる単一C#ファイル実行モデルの整理。[https://learn.microsoft.com/en-us/dotnet/core/sdk/file-based-apps](https://learn.microsoft.com/en-us/dotnet/core/sdk/file-based-apps) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/preprocessor-directives](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/preprocessor-directives) ; [https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/tutorials/file-based-programs](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/tutorials/file-based-programs)。
