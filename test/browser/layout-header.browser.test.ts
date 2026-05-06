@@ -614,6 +614,59 @@ describe('layout-header browser contract', () => {
     expect(header.readShellProjection().tocPresence).to.equal('absent');
   });
 
+  it('shell projection は TOC trigger reservation と interactive state を分離して round-trip すること', async () => {
+    const header = await fixture<LayoutHeader>(
+      html`<layout-header
+        note-layout
+        toc-presence="present"
+        toc-runtime-id="test-toc"
+        toc-trigger-reserved
+      ></layout-header>`,
+    );
+    await waitForLitUpdate(header);
+
+    let trigger = expectPresent(
+      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
+      'tocTrigger',
+    );
+
+    expect(header.readShellProjection().tocTriggerReserved).to.equal(true);
+    expect(trigger.getAttribute('data-toc-trigger-reserved')).to.equal('true');
+    expect(trigger.getAttribute('data-toc-trigger-interactive')).to.equal('false');
+    expect(trigger.disabled).to.equal(true);
+
+    publishReadyTocRuntime('test-toc');
+    await waitForLitUpdate(header);
+
+    trigger = expectPresent(
+      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
+      'tocTrigger',
+    );
+    expect(trigger.getAttribute('data-toc-trigger-reserved')).to.equal('true');
+    expect(trigger.getAttribute('data-toc-trigger-interactive')).to.equal('true');
+    expect(trigger.disabled).to.equal(false);
+
+    header.applyShellProjection({
+      corpora: [],
+      currentCorpusKey: 'all',
+      noteLayout: true,
+      sidebarEnabled: false,
+      tocPresence: 'present',
+      tocRuntimeId: 'next-toc',
+      tocTriggerReserved: false,
+    });
+    await waitForLitUpdate(header);
+
+    trigger = expectPresent(
+      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
+      'tocTrigger',
+    );
+    expect(header.getAttribute('toc-trigger-reserved')).to.equal('false');
+    expect(header.readShellProjection().tocTriggerReserved).to.equal(false);
+    expect(trigger.getAttribute('data-toc-trigger-reserved')).to.equal('false');
+    expect(trigger.getAttribute('data-toc-trigger-interactive')).to.equal('false');
+  });
+
   it('640px では TOC trigger が非表示であること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 640px;">

@@ -64,6 +64,55 @@ describe('BaseLayout', () => {
     expect(rendered).not.toContain('heading="ナビゲーション"');
   });
 
+  it('TOC present note では header trigger reservation を interactive state とは別に出力すること', () => {
+    const rendered = new BaseLayout().render({
+      content: '<article>Reader</article>',
+      note: {
+        slug: 'reader-with-toc',
+        title: 'Reader with TOC',
+        permalink: '/notes/reader-with-toc',
+        noteKind: 'leaf',
+        kind: 'reader',
+      },
+      notePage: {
+        noteKind: 'reader',
+        noteShellSidebarPresence: 'absent',
+        tocPresence: 'present',
+        showSidebar: false,
+        contentHtml: '<article>Reader</article>',
+        toc: {
+          sourceId: 'toc-source-reader-with-toc',
+          ownerId: 'toc-owner-reader-with-toc',
+          headings: [
+            {
+              id: 'intro',
+              text: 'Intro',
+              level: 2,
+            },
+          ],
+          capabilities: {
+            activeTracking: true,
+            dynamicScopes: false,
+            mobilePanel: true,
+          },
+          contentRootId: 'note-content-reader-with-toc',
+          homeHref: '/',
+          shouldHydrate: true,
+        },
+        articleHeader: {
+          heading: 'Reader with TOC',
+          genres: [],
+        },
+        pagefind: null,
+      },
+    });
+
+    expect(rendered).toContain('toc-presence="present"');
+    expect(rendered).toContain('toc-runtime-id="toc-source-reader-with-toc"');
+    expect(rendered).toContain('toc-trigger-reserved="true"');
+    expect(rendered).toContain('data-hydration-owner-id="toc-owner-reader-with-toc"');
+  });
+
   it('body pagefind ignore は notePage.pagefind を正本にすること', () => {
     const rendered = new BaseLayout().render({
       content: '<article>Fixture</article>',

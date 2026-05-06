@@ -371,6 +371,9 @@ export class LayoutHeader extends LitElement {
   @property({ type: String, attribute: 'toc-runtime-id' })
   tocRuntimeId = '';
 
+  @property({ type: String, attribute: 'toc-trigger-reserved' })
+  tocTriggerReserved = 'auto';
+
   @property({ type: String, attribute: 'sidebar-id' })
   sidebarId = DEFAULT_LAYOUT_SIDEBAR_ID;
 
@@ -413,6 +416,7 @@ export class LayoutHeader extends LitElement {
     this.sidebarEnabled = snapshot.sidebarEnabled;
     this.tocPresence = snapshot.tocPresence;
     this.tocRuntimeId = snapshot.tocRuntimeId ?? '';
+    this._setTocTriggerReserved(snapshot.tocTriggerReserved ?? snapshot.tocPresence === 'present');
   }
 
   readShellProjection(): HeaderShellProjection {
@@ -423,6 +427,7 @@ export class LayoutHeader extends LitElement {
       sidebarEnabled: this.sidebarEnabled,
       tocPresence: this.tocPresence,
       tocRuntimeId: this._readTocRuntimeId(),
+      tocTriggerReserved: this._isTocTriggerReserved(),
     };
   }
 
@@ -560,7 +565,7 @@ export class LayoutHeader extends LitElement {
 
   private _handleTocTriggerClick = (): void => {
     const runtimeId = this._readTocRuntimeId();
-    if (runtimeId === null) {
+    if (runtimeId === null || !this._shouldRenderMobileTocTrigger()) {
       return;
     }
 
@@ -641,9 +646,29 @@ export class LayoutHeader extends LitElement {
   private _shouldRenderMobileTocTrigger(): boolean {
     return (
       this.tocPresence === 'present' &&
+      this._isTocTriggerReserved() &&
       this._tocRuntimeView.ready &&
       this._tocRuntimeView.hasVisibleHeadings
     );
+  }
+
+  private _isTocTriggerReserved(): boolean {
+    const value = this.tocTriggerReserved.trim();
+    if (value === '' || value === 'true') {
+      return true;
+    }
+
+    if (value === 'false') {
+      return false;
+    }
+
+    return this.tocPresence === 'present';
+  }
+
+  private _setTocTriggerReserved(value: boolean): void {
+    const serialized = value ? 'true' : 'false';
+    this.tocTriggerReserved = serialized;
+    this.setAttribute('toc-trigger-reserved', serialized);
   }
 
   private _readTocTriggerLabel(): string {
@@ -661,6 +686,7 @@ export class LayoutHeader extends LitElement {
     const corpusItems = this._corpusItems;
     const currentCorpusLabel = this._currentCorpusItem?.label ?? 'すべてのノート';
     const shouldRenderTocTrigger = this._shouldRenderMobileTocTrigger();
+    const isTocTriggerReserved = this._isTocTriggerReserved() && this.tocPresence === 'present';
     const tocTriggerLabel = this._readTocTriggerLabel();
     const tocPanelId = this._readTocPanelId();
     const tocTriggerAriaLabel = this._tocPanelOpen ? '目次を閉じる' : '目次を開く';
@@ -709,9 +735,13 @@ export class LayoutHeader extends LitElement {
             class="toc-trigger"
             type="button"
             data-visible=${String(shouldRenderTocTrigger)}
+            data-reserved=${String(isTocTriggerReserved)}
+            data-toc-trigger-reserved=${String(isTocTriggerReserved)}
+            data-toc-trigger-interactive=${String(shouldRenderTocTrigger)}
             aria-label=${tocTriggerAriaLabel}
             aria-expanded=${String(this._tocPanelOpen)}
             aria-controls=${tocPanelId ?? nothing}
+            ?disabled=${!shouldRenderTocTrigger}
             @click=${this._handleTocTriggerClick}
           >
             <ui-icon class="toc-trigger-icon" name="menu" aria-hidden="true"></ui-icon>

@@ -4,6 +4,7 @@ import type {
   PreparedShellUpdate,
   ShellAdapter,
 } from '../../../router/router.js';
+import { TOC_TRIGGER_RESERVED_ATTRIBUTE } from '../../../toc/toc-mobile-panel-dom-css-contract.js';
 
 interface CorpusShellItem {
   key: string;
@@ -74,6 +75,11 @@ const readTocRuntimeId = (header: Element): string | null => {
   return tocRuntimeId && tocRuntimeId.length > 0 ? tocRuntimeId : null;
 };
 
+const readTocTriggerReserved = (header: Element): boolean => {
+  const value = header.getAttribute(TOC_TRIGGER_RESERVED_ATTRIBUTE);
+  return value === '' || value === 'true';
+};
+
 export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
   corpora: parseCorpora(header.getAttribute('corpora-json') ?? null),
   currentCorpusKey: readCurrentCorpusKey(header),
@@ -81,7 +87,7 @@ export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
   sidebarEnabled: header.hasAttribute('sidebar-enabled'),
   tocPresence: readTocPresence(header),
   tocRuntimeId: readTocRuntimeId(header),
-  tocTriggerReserved: header.getAttribute('toc-trigger-reserved') === 'true',
+  tocTriggerReserved: readTocTriggerReserved(header),
 });
 
 export const applyHeaderSnapshot = (
@@ -101,7 +107,7 @@ export const applyHeaderSnapshot = (
   header.toggleAttribute('note-layout', snapshot.noteLayout);
   header.toggleAttribute('sidebar-enabled', snapshot.sidebarEnabled);
   header.setAttribute('toc-presence', snapshot.tocPresence);
-  header.setAttribute('toc-trigger-reserved', snapshot.tocTriggerReserved ? 'true' : 'false');
+  header.toggleAttribute(TOC_TRIGGER_RESERVED_ATTRIBUTE, snapshot.tocTriggerReserved === true);
 
   const tocRuntimeId = snapshot.tocRuntimeId?.trim();
   if (tocRuntimeId && tocRuntimeId.length > 0) {

@@ -27,6 +27,7 @@ import {
 } from './html-output.js';
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import type { NoteNavigationEntry } from '../../build/navigation/index.js';
+import { TOC_TRIGGER_RESERVED_DATA_ATTRIBUTE } from '../toc/toc-mobile-panel-dom-css-contract.js';
 
 export interface BaseLayoutData {
   title?: string;
@@ -184,6 +185,7 @@ export class BaseLayout {
       { name: 'toc-presence', value: tocPresence },
       { name: 'toc-runtime-id', value: tocRuntimeId },
       { name: 'toc-trigger-reserved', value: tocTriggerReserved ? 'true' : 'false' },
+      { name: TOC_TRIGGER_RESERVED_DATA_ATTRIBUTE, value: tocTriggerReserved ? 'true' : 'false' },
       { name: 'data-hydration-owner-id', value: tocOwnerId },
       { name: 'corpora-json', value: corpora, kind: 'json' },
       { name: 'current-corpus-key', value: currentCorpusKey },
