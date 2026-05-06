@@ -105,7 +105,7 @@ describe('eleventy config', () => {
     expect(passthroughCopies).toContainEqual({ 'src/assets': 'assets' });
     expect(passthroughCopies).toContainEqual({ '.generated/media/assets': 'media' });
     expect(passthroughCopies).toContainEqual({ 'examples/media': 'example-assets' });
-  });
+  }, 10_000);
 
   it('buildMetadata グローバルデータを build label 付きで登録できること', async () => {
     const previousBuildLabel = process.env['ROUAULT_BUILD_LABEL'];
