@@ -1,4 +1,5 @@
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
+import { createHydrationMarkerAttributes } from '../../shared/hydration/hydration-markers.js';
 import { buildHashHrefFromId } from '../router/url-hash.js';
 import { escapeHtmlAttribute, escapeHtmlText, serializeHtmlAttributes } from './html-output.js';
 
@@ -47,9 +48,12 @@ const renderHeadingItems = (headings: TocProjection['headings']): string => {
 };
 
 export const renderTocHtml = (toc: TocProjection): string => {
+  const ownerId = toc.ownerId ?? toc.sourceId;
   const controllerAttributes = serializeHtmlAttributes([
     { name: 'source-id', value: toc.sourceId },
     { name: 'toc-runtime-id', value: toc.sourceId },
+    { name: 'toc-owner-id', value: ownerId },
+    { name: 'data-toc-trigger-reserved', value: 'true' },
     { name: 'capabilities-json', value: toc.capabilities, kind: 'json' },
     { name: 'content-root-id', value: toc.contentRootId },
     {
@@ -61,13 +65,22 @@ export const renderTocHtml = (toc: TocProjection): string => {
       value: toc.shouldHydrate ? 'initial' : undefined,
     },
   ]);
+  const rootMarkerAttributes = serializeHtmlAttributes(
+    Object.entries(
+      createHydrationMarkerAttributes({
+        marker: 'toc-owner',
+        ownerId,
+        scopeId: 'note-toc',
+      }),
+    ).map(([name, value]) => ({ name, value })),
+  );
 
   return `
     <aside
       class="layout-toc-col"
       aria-label="目次"
       data-layout-toc-root
-      data-hydration-scope="note-toc"
+      ${rootMarkerAttributes.trim()}
     >
       <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
         <ol class="layout-toc__list">${renderHeadingItems(toc.headings)}</ol>

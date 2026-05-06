@@ -56,6 +56,7 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('<layout-header note-layout sidebar-enabled');
     expect(rendered).toContain('toc-presence="absent"');
     expect(rendered).toContain('toc-runtime-id=""');
+    expect(rendered).toContain('toc-trigger-reserved="false"');
     expect(rendered).toContain('initial-expanded-ids="[]"');
     expect(rendered).toContain('topology-revision="reader-note-topology"');
     expect(rendered).toContain('<nav data-sidebar-nav');
@@ -244,9 +245,7 @@ describe('BaseLayout', () => {
 
     const skipLinkHtml = '<a class="skip-link" href="#main-content">メインコンテンツへ移動</a>';
     const skipLinkIndex = rendered.indexOf(skipLinkHtml);
-    const appRootIndex = rendered.indexOf(
-      '<div id="app" class="app-root" data-hydration-scope="app-shell">',
-    );
+    const appRootIndex = rendered.indexOf('<div id="app" class="app-root"');
     const renderedSkipLinkHtml = rendered.slice(
       skipLinkIndex,
       rendered.indexOf('</a>', skipLinkIndex) + 4,
@@ -263,7 +262,8 @@ describe('BaseLayout', () => {
     expect(skipLinkIndex).toBeLessThan(appRootIndex);
     expect(renderedSkipLinkHtml).not.toContain('data-hydration-');
 
-    expect(rendered).toContain('<div id="app" class="app-root" data-hydration-scope="app-shell">');
+    expect(rendered).toContain('<div id="app" class="app-root" data-hydration-scope="app-shell"');
+    expect(rendered).toContain('data-hydration-marker="reading-shell"');
     expect(rendered).toContain('<layout-header');
     expect(rendered).toContain('<app-router');
     expect(rendered).toContain('data-app-shell-sidebar-overlay-layer');

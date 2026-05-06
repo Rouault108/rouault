@@ -15,6 +15,7 @@ import type {
   SidebarShellProjection,
 } from '../../shared/navigation/shell-projection.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
+import { readParse5HydrationMarker } from './parse5-hydration-markers.js';
 
 type Parse5Node = DefaultTreeAdapterMap['node'];
 type Parse5ChildNode = DefaultTreeAdapterMap['childNode'];
@@ -186,6 +187,8 @@ const collectHydrationPlan = (document: Parse5Document): HydrationPlanScope[] =>
     }
 
     seen.add(dedupeKey);
+    const marker = readParse5HydrationMarker(scopeElement);
+
     plan.push({
       scope: normalizedScope,
       ...(capability === 'static' || capability === 'progressive' || capability === 'interactive'
@@ -197,6 +200,7 @@ const collectHydrationPlan = (document: Parse5Document): HydrationPlanScope[] =>
       trigger === 'interaction'
         ? { trigger }
         : {}),
+      ...(marker !== null ? { marker: marker.marker, ownerId: marker.ownerId } : {}),
     });
   }
 
@@ -219,6 +223,7 @@ const extractHeaderProjection = (document: Parse5Document): HeaderShellProjectio
     sidebarEnabled: hasAttribute(header, 'sidebar-enabled'),
     tocPresence: toTocPresence(getAttribute(header, 'toc-presence')),
     tocRuntimeId: toOptionalString(getAttribute(header, 'toc-runtime-id')),
+    tocTriggerReserved: getAttribute(header, 'toc-trigger-reserved') === 'true',
   };
 };
 

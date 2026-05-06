@@ -4,6 +4,7 @@ import {
   type HydrationScopePlan,
   type HydrationTrigger,
 } from './types.js';
+import { readDomHydrationMarker } from './dom-hydration-markers.js';
 
 const SCOPE_ATTRIBUTE = 'data-hydration-scope';
 const CAPABILITY_ATTRIBUTE = 'data-hydration-capability';
@@ -60,6 +61,8 @@ const readPlanItem = (element: Element, scopeId: string): HydrationPlanItem | nu
     return null;
   }
 
+  const marker = readDomHydrationMarker(element);
+
   return {
     tag: (() => {
       const value = element.getAttribute(KEY_ATTRIBUTE)?.trim();
@@ -69,6 +72,7 @@ const readPlanItem = (element: Element, scopeId: string): HydrationPlanItem | nu
     scope: scopeId,
     trigger,
     capability,
+    ...(marker !== null ? { marker } : {}),
   };
 };
 

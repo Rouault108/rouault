@@ -19,11 +19,12 @@ describe('navigation artifacts', () => {
 </head>
 <body>
   <ui-skip-link data-hydration-scope="skip-link" data-hydration-capability="interactive" data-hydration-trigger="initial"></ui-skip-link>
-  <div id="app" data-hydration-scope="app-shell">
+  <div id="app" data-hydration-scope="app-shell" data-hydration-marker="reading-shell" data-hydration-owner-id="app-shell">
     <layout-header
       note-layout
       sidebar-enabled
       toc-presence="present"
+      toc-trigger-reserved="true"
       corpora-json='[{"key":"all","label":"All","href":"/corpora/"}]'
       current-corpus-key="all"
       toc-runtime-id="toc-source-example"
@@ -62,6 +63,7 @@ describe('navigation artifacts', () => {
     expect(envelope.shellProjection?.header.currentCorpusKey).to.equal('all');
     expect(envelope.shellProjection?.header.tocPresence).to.equal('present');
     expect(envelope.shellProjection?.header.tocRuntimeId).to.equal('toc-source-example');
+    expect(envelope.shellProjection?.header.tocTriggerReserved).to.equal(true);
     expect(envelope.shellProjection?.sidebar?.selectedId).to.equal('notes/example');
     expect(envelope.shellProjection?.sidebar?.initialExpandedIds).to.deep.equal(['notes']);
     expect(envelope.shellProjection?.sidebar?.topologyRevision).to.equal('topology:example');
@@ -76,6 +78,8 @@ describe('navigation artifacts', () => {
       },
       {
         scope: 'app-shell',
+        marker: 'reading-shell',
+        ownerId: 'app-shell',
       },
       {
         scope: 'note-content',

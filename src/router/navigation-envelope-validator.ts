@@ -59,6 +59,7 @@ const isHeaderShellProjection = (value: unknown): value is HeaderShellProjection
     isBoolean(value['noteLayout']) &&
     isBoolean(value['sidebarEnabled']) &&
     isTocPresence(value['tocPresence']) &&
+    (value['tocTriggerReserved'] === undefined || isBoolean(value['tocTriggerReserved'])) &&
     (value['tocRuntimeId'] === undefined ||
       value['tocRuntimeId'] === null ||
       isString(value['tocRuntimeId']))
@@ -153,6 +154,22 @@ const isHydrationPlan = (value: unknown): value is HydrationPlan => {
       ) {
         return false;
       }
+    }
+
+    if (scope['marker'] !== undefined) {
+      const marker = scope['marker'];
+      if (
+        marker !== 'toc-owner' &&
+        marker !== 'toc-source' &&
+        marker !== 'toc-trigger' &&
+        marker !== 'reading-shell'
+      ) {
+        return false;
+      }
+    }
+
+    if (scope['ownerId'] !== undefined && !isString(scope['ownerId'])) {
+      return false;
     }
 
     return true;

@@ -57,6 +57,7 @@ export interface NotePageSidebarProjection {
 
 export interface NotePageTocProjection {
   sourceId: string;
+  ownerId?: string;
   headings: NotePageTocHeading[];
   capabilities: {
     activeTracking: boolean;
@@ -261,6 +262,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const slug = typeof input.note.slug === 'string' ? input.note.slug : '';
   const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
   const tocSourceId = `toc-source-${dataIdBase}`;
+  const tocOwnerId = `toc-owner-${dataIdBase}`;
   const contentRootId = `note-content-${dataIdBase}`;
   const headings = normalizeHeadings(input.note.tocHeadings);
   const tocPresence: TocPresence = headings.length > 0 ? 'present' : 'absent';
@@ -300,6 +302,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
       : {}),
     toc: {
       sourceId: tocSourceId,
+      ownerId: tocOwnerId,
       headings,
       capabilities: tocCapabilities,
       contentRootId,

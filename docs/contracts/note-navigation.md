@@ -108,7 +108,9 @@
 
 ### Hydration
 
-- N/A
+- Reading chrome の TOC owner / source / trigger marker は build-time projection と runtime hydration の接続点として扱う。
+- Stage 7 完了前の TOC reservation は fail-closed skeleton であり、owner validation の完了とはみなさない。
+- Header の `tocPresence` と `tocRuntimeId` は navigation artifact へ投影するが、interactive trigger の可否は reservation state と分離する。
 
 ### Tests
 

@@ -1,3 +1,5 @@
+import type { HydrationMarker } from '../../../shared/hydration/hydration-markers.js';
+
 export type HydrationTrigger = 'initial' | 'post-commit' | 'visible' | 'interaction';
 
 export type HydrationCapability = 'static' | 'progressive' | 'interactive' | 'sandboxed';
@@ -63,6 +65,7 @@ export interface HydrationPlanItem {
   readonly scope: string;
   readonly trigger: HydrationTrigger;
   readonly capability: HydrationCapability;
+  readonly marker?: HydrationMarker;
 }
 
 export interface HydrationScopePlan {

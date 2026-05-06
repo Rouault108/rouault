@@ -14,6 +14,8 @@ describe('planHydration', () => {
           </aside>
           <article data-hydration-scope="note-content">
             <pre
+              data-hydration-marker="toc-source"
+              data-hydration-owner-id="toc-owner-fixture"
               data-hydration-key="code-block-enhancer"
               data-hydration-capability="progressive"
               data-hydration-trigger="post-commit"
@@ -33,6 +35,11 @@ describe('planHydration', () => {
     expect(plans[0]?.items).to.have.length(0);
     expect(plans[1]?.items.map((item) => item.tag)).to.deep.equal(['layout-sidebar']);
     expect(plans[2]?.items.map((item) => item.tag)).to.deep.equal(['code-block-enhancer']);
+    expect(plans[2]?.items[0]?.marker).to.deep.equal({
+      marker: 'toc-source',
+      ownerId: 'toc-owner-fixture',
+      scopeId: 'note-content',
+    });
   });
 
   it('scope がない root では fallback せず空配列を返すこと', async () => {

@@ -94,6 +94,8 @@ describe('renderTocHtml', () => {
     expect(link ? getAttribute(link, 'title') : null).to.equal(headingText);
     expect(link ? getAttribute(link, 'href') : null).to.equal(buildHashHrefFromId(headingId));
     expect(label ? getTextContent(label) : null).to.equal(headingText);
+    expect(rendered).toContain('data-hydration-marker="toc-owner"');
+    expect(rendered).toContain('toc-owner-id="toc-source-test"');
 
     expect(rendered).toContain('title="A &quot;quoted&quot; &lt;heading&gt; &amp; detail"');
     expect(rendered).toContain('A "quoted" &lt;heading&gt; &amp; detail');

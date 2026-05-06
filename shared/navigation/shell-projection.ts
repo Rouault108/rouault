@@ -11,6 +11,7 @@ export interface HeaderShellProjection {
   sidebarEnabled: boolean;
   tocPresence: TocPresence;
   tocRuntimeId?: string | null;
+  tocTriggerReserved?: boolean;
 }
 
 export interface SidebarShellProjection {

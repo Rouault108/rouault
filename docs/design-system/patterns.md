@@ -52,3 +52,9 @@ URL、routing、search、note identity、Permanent URL の意味論は機能 Con
 - Patterns が component 固有契約を過剰に再定義していない。
 - Accessibility 要求事項を上書きしていない。
 - Router / search / note-navigation / permanent-url の契約を上書きしていない。
+
+## 8. Reading Chrome Reservation
+
+- Reading chrome の TOC trigger は、本文より強い視覚要素にしない。
+- 予約状態と interactive 状態は分離し、未確定の TOC owner を操作可能 UI として見せない。
+- Hydration marker は build-time / runtime の接続点を示す属性であり、見た目の variant として扱わない。

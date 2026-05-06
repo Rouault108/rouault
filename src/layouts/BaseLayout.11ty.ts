@@ -19,6 +19,7 @@ import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.
 import { resolveEffectiveNoteChromeProfile } from '../../shared/note/note-chrome-profile.js';
 import { resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
+import { createHydrationMarkerAttributes } from '../../shared/hydration/hydration-markers.js';
 import {
   escapeHtmlText,
   escapeInlineExecutableScriptText,
@@ -168,6 +169,11 @@ export class BaseLayout {
       data.notePage?.tocPresence === 'present'
         ? data.notePage.toc.sourceId
         : (data.headerTocRuntimeId ?? '');
+    const tocOwnerId =
+      data.notePage?.tocPresence === 'present'
+        ? (data.notePage.toc.ownerId ?? data.notePage.toc.sourceId)
+        : tocRuntimeId;
+    const tocTriggerReserved = tocPresence === 'present';
     const headerAttributes = serializeHtmlAttributes([
       { name: 'note-layout', value: Boolean(data.note), kind: 'boolean' },
       {
@@ -177,6 +183,8 @@ export class BaseLayout {
       },
       { name: 'toc-presence', value: tocPresence },
       { name: 'toc-runtime-id', value: tocRuntimeId },
+      { name: 'toc-trigger-reserved', value: tocTriggerReserved ? 'true' : 'false' },
+      { name: 'data-hydration-owner-id', value: tocOwnerId },
       { name: 'corpora-json', value: corpora, kind: 'json' },
       { name: 'current-corpus-key', value: currentCorpusKey },
       { name: 'data-hydration-capability', value: 'interactive' },
@@ -184,6 +192,15 @@ export class BaseLayout {
     ]);
     const sidebarPresence =
       data.notePage?.showSidebar && data.notePage.sidebar ? 'present' : 'absent';
+    const shellMarkerAttributes = serializeHtmlAttributes(
+      Object.entries(
+        createHydrationMarkerAttributes({
+          marker: 'reading-shell',
+          ownerId: 'app-shell',
+          scopeId: 'app-shell',
+        }),
+      ).map(([name, value]) => ({ name, value })),
+    );
 
     return `
 <!DOCTYPE html>
@@ -201,7 +218,7 @@ export class BaseLayout {
 </head>
 <body${bodyAttributes}>
   <a${skipLinkAttributes}>${escapeHtmlText(SKIP_LINK_LABEL)}</a>
-  <div id="app" class="app-root" data-hydration-scope="app-shell">
+  <div id="app" class="app-root"${shellMarkerAttributes}>
     <layout-header${headerAttributes}></layout-header>
     <app-router
       data-sidebar-presence="${sidebarPresence}"

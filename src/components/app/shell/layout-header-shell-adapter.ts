@@ -25,6 +25,7 @@ export const SAFE_FALLBACK_HEADER_SHELL_PROJECTION: HeaderShellSnapshot = {
   sidebarEnabled: false,
   tocPresence: 'absent',
   tocRuntimeId: null,
+  tocTriggerReserved: false,
 };
 
 const parseCorpora = (value: string | null): CorpusShellItem[] => {
@@ -80,6 +81,7 @@ export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
   sidebarEnabled: header.hasAttribute('sidebar-enabled'),
   tocPresence: readTocPresence(header),
   tocRuntimeId: readTocRuntimeId(header),
+  tocTriggerReserved: header.getAttribute('toc-trigger-reserved') === 'true',
 });
 
 export const applyHeaderSnapshot = (
@@ -99,6 +101,7 @@ export const applyHeaderSnapshot = (
   header.toggleAttribute('note-layout', snapshot.noteLayout);
   header.toggleAttribute('sidebar-enabled', snapshot.sidebarEnabled);
   header.setAttribute('toc-presence', snapshot.tocPresence);
+  header.setAttribute('toc-trigger-reserved', snapshot.tocTriggerReserved ? 'true' : 'false');
 
   const tocRuntimeId = snapshot.tocRuntimeId?.trim();
   if (tocRuntimeId && tocRuntimeId.length > 0) {

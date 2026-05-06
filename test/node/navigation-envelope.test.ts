@@ -44,6 +44,7 @@ describe('navigation envelope', () => {
           noteLayout: true,
           sidebarEnabled: true,
           tocPresence: 'absent',
+          tocTriggerReserved: false,
         },
         sidebar: {
           present: true,
@@ -59,6 +60,7 @@ describe('navigation envelope', () => {
     });
 
     expect(envelope.shellProjection?.sidebar?.heading).to.equal(null);
+    expect(envelope.shellProjection?.header.tocTriggerReserved).to.equal(false);
     expect(envelope.shellProjection?.sidebar?.initialExpandedIds).to.deep.equal([]);
     expect(envelope.shellProjection?.sidebar?.topologyRevision).to.equal(null);
     expect(envelope.shellProjection?.sidebar?.navHtml).to.equal(null);

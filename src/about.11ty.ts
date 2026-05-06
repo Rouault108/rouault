@@ -64,6 +64,7 @@ const ABOUT_HEADINGS = ABOUT_SECTIONS.map((section) => ({
 }));
 
 const ABOUT_TOC_RUNTIME_ID = 'about-page-toc';
+const ABOUT_TOC_OWNER_ID = 'about-page-toc-owner';
 
 const ABOUT_TOC_CAPABILITIES = {
   activeTracking: true,
@@ -113,6 +114,8 @@ export class AboutPageTemplate {
     const tocAttributes = serializeHtmlAttributes([
       { name: 'headings-json', value: ABOUT_HEADINGS, kind: 'json' },
       { name: 'toc-runtime-id', value: ABOUT_TOC_RUNTIME_ID },
+      { name: 'toc-owner-id', value: ABOUT_TOC_OWNER_ID },
+      { name: 'data-toc-trigger-reserved', value: 'true' },
       { name: 'capabilities-json', value: ABOUT_TOC_CAPABILITIES, kind: 'json' },
       { name: 'content-root-id', value: 'about-page-content' },
       { name: 'home-href', value: '/' },
