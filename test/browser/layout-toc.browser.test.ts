@@ -1,6 +1,7 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/toc/toc.js';
 import type { Toc } from '../../src/components/ui/toc/toc.js';
+import { normalizeTocHeadings } from '../../src/toc/toc-headings.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const headers = [
@@ -101,6 +102,15 @@ describe('ui-toc active link scroll contract', () => {
       HTMLElement.prototype,
       'scrollIntoView',
     );
+  });
+
+  it('heading normalization helper と同じ入力契約を使うこと', () => {
+    expect(
+      normalizeTocHeadings([
+        { id: 'intro', text: ' Intro ', level: 2 },
+        { id: '', text: 'Empty', level: 2 },
+      ]),
+    ).to.deep.equal([{ id: 'intro', text: 'Intro', level: 2 }]);
   });
 
   afterEach(() => {

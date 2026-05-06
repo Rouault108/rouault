@@ -22,6 +22,12 @@ describe('extractTocFromHtml', () => {
     expect(extractTocFromHtml('')).to.deep.equal([]);
   });
 
+  it('抽出結果は runtime heading helper と同じ heading shape を使うこと', () => {
+    const toc = extractTocFromHtml('<h2 id="intro"> Intro </h2>');
+
+    expect(toc).to.deep.equal([{ id: 'intro', text: 'Intro', level: 2 }]);
+  });
+
   it('見出し内の固定リンクは TOC テキストに混ざらないこと', () => {
     const html = `
       <h2 id="intro">

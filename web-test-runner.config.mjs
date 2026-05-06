@@ -30,8 +30,10 @@ const config = {
   browsers: [
     playwrightLauncher({ product: 'chromium' }),
     playwrightLauncher({ product: 'firefox' }),
-    playwrightLauncher({ product: 'webkit' }),
+    playwrightLauncher({ product: 'webkit', concurrency: 1 }),
   ],
+  browserStartTimeout: 90000,
+  testsStartTimeout: 90000,
   testFramework: {
     config: {
       ui: 'bdd',

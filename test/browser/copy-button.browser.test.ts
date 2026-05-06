@@ -1,4 +1,4 @@
-import { expect, fixture, html } from '@open-wc/testing';
+import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import '../../src/components/ui/copy-button/copy-button.js';
 import type { CopyButton } from '../../src/components/ui/copy-button/copy-button.js';
 import { nextAnimationFrame, waitForLitUpdate, waitMs } from './helpers/wait-for-lit.js';
@@ -139,11 +139,13 @@ describe('ui-copy-button browser contract', () => {
       async () => Promise.resolve(),
       async () => {
         innerButton.click();
-        await waitMs(80);
+        await waitUntil(() => copyEventCount === 1, '初回 copy event が発火すること');
+        await waitForLitUpdate(host);
         const firstLabel = innerButton.getAttribute('aria-label');
 
         innerButton.click();
-        await waitMs(80);
+        await waitUntil(() => copyEventCount === 2, '2 回目 copy event が発火すること');
+        await waitForLitUpdate(host);
         const secondLabel = innerButton.getAttribute('aria-label');
 
         expect(host.getAttribute('state')).to.equal('success');

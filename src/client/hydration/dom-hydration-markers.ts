@@ -14,7 +14,9 @@ const readTrimmedAttribute = (element: Element, name: string): string | null => 
 export const readDomHydrationMarker = (element: Element): HydrationMarker | null => {
   const marker = readTrimmedAttribute(element, HYDRATION_MARKER_ATTRIBUTE);
   const ownerId = readTrimmedAttribute(element, HYDRATION_MARKER_OWNER_ATTRIBUTE);
-  const scopeId = readTrimmedAttribute(element, HYDRATION_MARKER_SCOPE_ATTRIBUTE);
+  const scopeId =
+    readTrimmedAttribute(element, HYDRATION_MARKER_SCOPE_ATTRIBUTE) ??
+    readTrimmedAttribute(element.closest(`[${HYDRATION_MARKER_SCOPE_ATTRIBUTE}]`) ?? element, HYDRATION_MARKER_SCOPE_ATTRIBUTE);
 
   if (!isHydrationMarkerName(marker) || ownerId === null || scopeId === null) {
     return null;

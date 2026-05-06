@@ -20,7 +20,7 @@ const appendContentFixture = (): (() => void) => {
       <h3 id="section-2">Section 2</h3>
       <p>second</p>
     </article>
-    <script id="toc-source-test" type="application/json">${JSON.stringify(headings)}</script>
+    <script id="toc-source-test" type="application/json" data-toc-owner-id="toc-owner-test">${JSON.stringify(headings)}</script>
   `;
   document.body.append(wrapper);
 

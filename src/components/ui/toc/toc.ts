@@ -4,17 +4,10 @@ import { classMap } from 'lit/directives/class-map.js';
 import { map } from 'lit/directives/map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { buildHashHrefFromId } from '../../../router/url-hash.js';
+import type { TocHeading } from '../../../toc/toc-headings.js';
 import '../tooltip/tooltip';
 
-export interface Heading {
-  id: string;
-  text: string;
-  level: number;
-  scopeSelections?: {
-    scopeId: string;
-    value: string;
-  }[];
-}
+export type Heading = TocHeading;
 
 export interface UiTocActiveChangeDetail {
   id: string;

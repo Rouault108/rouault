@@ -35,6 +35,7 @@ import {
   normalizeNoteSourceRoot,
   type NoteSourceRoot,
 } from '../../shared/note/note-source-root.js';
+import { hasDynamicTocScopeSelections } from '../../src/toc/toc-headings.js';
 
 type SidebarIconSetting = IconName | 'none';
 
@@ -108,9 +109,7 @@ const inferTocCapabilities = (
   chromePolicy: NoteChromePolicy,
 ): IntrinsicNote['tocCapabilities'] => ({
   activeTracking: headings.length > 0,
-  dynamicScopes: headings.some(
-    (heading) => Array.isArray(heading.scopeSelections) && heading.scopeSelections.length > 0,
-  ),
+  dynamicScopes: hasDynamicTocScopeSelections(headings),
   mobilePanel: chromePolicy.tocMobilePanel && headings.length > 0,
 });
 

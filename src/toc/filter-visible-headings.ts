@@ -1,6 +1,10 @@
-import type { Heading } from '../components/ui/toc/toc.js';
 import { getTabsUrlSyncStrategy } from '../components/ui/tabs/tabs-url-sync-strategy.js';
 import { isHTMLElement } from '../lib/dom.js';
+import type {
+  TocCapabilities,
+  TocHeading as Heading,
+  TocScopeSelection,
+} from './toc-headings.js';
 
 type TabsLike = HTMLElement & {
   selectedValue?: string | null;
@@ -13,13 +17,7 @@ type TabsLike = HTMLElement & {
   ) => void;
 };
 
-export interface TocCapabilities {
-  activeTracking: boolean;
-  dynamicScopes: boolean;
-  mobilePanel: boolean;
-}
-
-export type TocScopeSelection = NonNullable<Heading['scopeSelections']>[number];
+export type { TocCapabilities, TocScopeSelection };
 
 const isTabPanel = (value: Element | null): value is HTMLElement =>
   isHTMLElement(value) && value.getAttribute('role') === 'tabpanel';

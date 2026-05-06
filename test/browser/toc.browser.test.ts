@@ -1,6 +1,7 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/toc/toc.js';
 import type { Toc } from '../../src/components/ui/toc/toc.js';
+import { hasDynamicTocScopeSelections } from '../../src/toc/toc-headings.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const headers = [
@@ -245,6 +246,20 @@ describe('ui-toc active link scroll contract', () => {
 
     const nav = toc.shadowRoot?.querySelector<HTMLElement>('nav');
     expect(nav?.getAttribute('aria-label')).to.equal('目次');
+  });
+
+  it('scopeSelections の有無は shared heading helper で判定すること', () => {
+    expect(
+      hasDynamicTocScopeSelections([
+        { id: 'intro', text: 'Intro', level: 2 },
+        {
+          id: 'details',
+          text: 'Details',
+          level: 2,
+          scopeSelections: [{ scopeId: 'tabs', value: 'details' }],
+        },
+      ]),
+    ).to.equal(true);
   });
 
   it('navigation-label attribute で内部 nav の accessible name を上書きできること', async () => {

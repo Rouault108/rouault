@@ -9,6 +9,17 @@ import {
   readTocScopeSelectionMap,
   type TocCapabilities,
 } from '../../toc/filter-visible-headings.js';
+import {
+  hasDynamicTocScopeSelections,
+  normalizeTocCapabilities,
+  parseTocHeadingsJson,
+} from '../../toc/toc-headings.js';
+import { readTocJsonSourceScriptHeadings } from '../../toc/toc-json-source-script.js';
+import { resolveTocRuntimeId } from '../../toc/toc-source-id-resolution.js';
+import {
+  findTocSourceScript,
+  resolveTocSourceLookupRoot,
+} from '../../toc/toc-source-lookup-root.js';
 import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
 import { TocNavigationController } from '../../toc/toc-navigation-controller.js';
 import { decodeHashFragment } from '../../router/url-hash.js';
@@ -24,64 +35,6 @@ import type { Heading } from '../ui/toc/toc.js';
 
 const DEFAULT_LAYOUT_TOC_RUNTIME_ID = 'page-toc';
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const toHeading = (value: unknown): Heading | null => {
-  if (!isRecord(value)) {
-    return null;
-  }
-
-  const id = typeof value['id'] === 'string' ? value['id'] : '';
-  const text = typeof value['text'] === 'string' ? value['text'].trim() : '';
-  const level = typeof value['level'] === 'number' ? Math.trunc(value['level']) : Number.NaN;
-  if (id.length === 0 || text.length === 0) {
-    return null;
-  }
-  if (!Number.isFinite(level) || level < 2 || level > 6) {
-    return null;
-  }
-
-  const scopeSelections = Array.isArray(value['scopeSelections'])
-    ? value['scopeSelections']
-        .map((selection) => {
-          if (!isRecord(selection)) {
-            return null;
-          }
-          const scopeId =
-            typeof selection['scopeId'] === 'string' ? selection['scopeId'].trim() : '';
-          const selectedValue =
-            typeof selection['value'] === 'string' ? selection['value'].trim() : '';
-          if (scopeId.length === 0 || selectedValue.length === 0) {
-            return null;
-          }
-          return { scopeId, value: selectedValue };
-        })
-        .filter((selection): selection is { scopeId: string; value: string } => selection !== null)
-    : [];
-
-  return {
-    id,
-    text,
-    level,
-    ...(scopeSelections.length > 0 ? { scopeSelections } : {}),
-  };
-};
-
-const parseJsonArray = (value: string): unknown[] | null => {
-  const normalized = value.trim();
-  if (normalized.length === 0) {
-    return null;
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(normalized);
-    return Array.isArray(parsed) ? (parsed as unknown[]) : [];
-  } catch {
-    return [];
-  }
-};
-
 const parseJsonValue = (value: string): unknown => {
   const normalized = value.trim();
   if (normalized.length === 0) {
@@ -93,22 +46,6 @@ const parseJsonValue = (value: string): unknown => {
   } catch {
     return null;
   }
-};
-
-const normalizeCapabilities = (value: unknown): TocCapabilities => {
-  if (!isRecord(value)) {
-    return {
-      activeTracking: false,
-      dynamicScopes: false,
-      mobilePanel: false,
-    };
-  }
-
-  return {
-    activeTracking: value['activeTracking'] === true,
-    dynamicScopes: value['dynamicScopes'] === true,
-    mobilePanel: value['mobilePanel'] === true,
-  };
 };
 
 @customElement('layout-toc')
@@ -377,9 +314,7 @@ export class LayoutToc extends LitElement {
 
   private _resolveVisibleHeadings(headings: Heading[] = this._allHeadings): Heading[] {
     const contentRoot = this._resolveContentRoot();
-    const hasDynamicScopes = headings.some(
-      (heading) => Array.isArray(heading.scopeSelections) && heading.scopeSelections.length > 0,
-    );
+    const hasDynamicScopes = hasDynamicTocScopeSelections(headings);
     const scopedHeadings =
       contentRoot === null || !(this._capabilities.dynamicScopes || hasDynamicScopes)
         ? headings
@@ -395,31 +330,18 @@ export class LayoutToc extends LitElement {
   }
 
   private _loadHeadingsFromSource(): void {
-    const inlineHeadings = parseJsonArray(this.headingsJson);
+    const inlineHeadings = parseTocHeadingsJson(this.headingsJson);
 
     let nextHeadings: Heading[] = [];
     if (inlineHeadings !== null) {
-      nextHeadings = inlineHeadings
-        .map((item) => toHeading(item))
-        .filter((item): item is Heading => item !== null);
+      nextHeadings = inlineHeadings;
     } else if (this.sourceId.length > 0 && typeof document !== 'undefined') {
-      const source = document.getElementById(this.sourceId);
-      if (source instanceof HTMLScriptElement) {
-        try {
-          const parsed: unknown = JSON.parse(source.textContent || '[]');
-          if (Array.isArray(parsed)) {
-            nextHeadings = parsed
-              .map((item) => toHeading(item))
-              .filter((item): item is Heading => item !== null);
-          }
-        } catch {
-          nextHeadings = [];
-        }
-      }
+      const source = findTocSourceScript(resolveTocSourceLookupRoot(this), this.sourceId);
+      nextHeadings = source === null ? [] : readTocJsonSourceScriptHeadings(source);
     }
 
     this._allHeadings = nextHeadings;
-    this._capabilities = normalizeCapabilities(parseJsonValue(this.capabilitiesJson));
+    this._capabilities = normalizeTocCapabilities(parseJsonValue(this.capabilitiesJson));
 
     const visibleHeadings = this._resolveVisibleHeadings(nextHeadings);
     this._applyVisibleHeadings(visibleHeadings);
@@ -443,9 +365,7 @@ export class LayoutToc extends LitElement {
     }
 
     const contentRoot = this._resolveContentRoot();
-    const hasDynamicScopes = this._allHeadings.some(
-      (heading) => Array.isArray(heading.scopeSelections) && heading.scopeSelections.length > 0,
-    );
+    const hasDynamicScopes = hasDynamicTocScopeSelections(this._allHeadings);
     this._tracker = new TocActiveTracker({
       contentRootId: contentRoot?.id ?? this.contentRootId,
       headings: this._allHeadings,
@@ -563,22 +483,12 @@ export class LayoutToc extends LitElement {
   };
 
   private _getRuntimeId(): string {
-    const explicitRuntimeId = this.tocRuntimeId.trim();
-    if (explicitRuntimeId.length > 0) {
-      return explicitRuntimeId;
-    }
-
-    const sourceId = this.sourceId.trim();
-    if (sourceId.length > 0) {
-      return sourceId;
-    }
-
-    const contentRootId = this.contentRootId.trim();
-    if (contentRootId.length > 0) {
-      return contentRootId;
-    }
-
-    return DEFAULT_LAYOUT_TOC_RUNTIME_ID;
+    return resolveTocRuntimeId(
+      this.tocRuntimeId,
+      this.sourceId,
+      this.contentRootId,
+      DEFAULT_LAYOUT_TOC_RUNTIME_ID,
+    );
   }
 
   private _getPanelId(): string {

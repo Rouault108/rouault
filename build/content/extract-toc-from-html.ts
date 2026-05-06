@@ -1,17 +1,8 @@
 import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
+import type { TocHeading, TocScopeSelection } from '../../src/toc/toc-headings.js';
 
-export interface TocScopeSelection {
-  scopeId: string;
-  value: string;
-}
-
-export interface TocHeading {
-  id: string;
-  text: string;
-  level: number;
-  scopeSelections?: TocScopeSelection[];
-}
+export type { TocHeading, TocScopeSelection };
 
 export interface PreparedTocHtml {
   html: string;

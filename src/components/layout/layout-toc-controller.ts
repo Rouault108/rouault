@@ -6,6 +6,16 @@ import {
   readTocScopeSelectionMap,
   type TocCapabilities,
 } from '../../toc/filter-visible-headings.js';
+import {
+  hasDynamicTocScopeSelections,
+  normalizeTocCapabilities,
+} from '../../toc/toc-headings.js';
+import { readTocJsonSourceScriptHeadings } from '../../toc/toc-json-source-script.js';
+import { resolveTocRuntimeId } from '../../toc/toc-source-id-resolution.js';
+import {
+  findTocSourceScript,
+  resolveTocSourceLookupRoot,
+} from '../../toc/toc-source-lookup-root.js';
 import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
 import { TocNavigationController } from '../../toc/toc-navigation-controller.js';
 import { decodeHashFragment } from '../../router/url-hash.js';
@@ -13,65 +23,6 @@ import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
 import { layoutTocRuntimeStore, type LayoutTocRuntimeSnapshot } from './layout-toc-runtime-store.js';
 
 const DEFAULT_LAYOUT_TOC_RUNTIME_ID = 'page-toc';
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const toHeading = (value: unknown): Heading | null => {
-  if (!isRecord(value)) {
-    return null;
-  }
-
-  const id = typeof value['id'] === 'string' ? value['id'] : '';
-  const text = typeof value['text'] === 'string' ? value['text'].trim() : '';
-  const level = typeof value['level'] === 'number' ? Math.trunc(value['level']) : Number.NaN;
-  if (id.length === 0 || text.length === 0 || !Number.isFinite(level) || level < 2 || level > 6) {
-    return null;
-  }
-
-  const scopeSelections = Array.isArray(value['scopeSelections'])
-    ? value['scopeSelections']
-        .map((selection) => {
-          if (!isRecord(selection)) {
-            return null;
-          }
-
-          const scopeId =
-            typeof selection['scopeId'] === 'string' ? selection['scopeId'].trim() : '';
-          const selectedValue =
-            typeof selection['value'] === 'string' ? selection['value'].trim() : '';
-          if (scopeId.length === 0 || selectedValue.length === 0) {
-            return null;
-          }
-
-          return { scopeId, value: selectedValue };
-        })
-        .filter((selection): selection is { scopeId: string; value: string } => selection !== null)
-    : [];
-
-  return {
-    id,
-    text,
-    level,
-    ...(scopeSelections.length > 0 ? { scopeSelections } : {}),
-  };
-};
-
-const normalizeCapabilities = (value: unknown): TocCapabilities => {
-  if (!isRecord(value)) {
-    return {
-      activeTracking: false,
-      dynamicScopes: false,
-      mobilePanel: false,
-    };
-  }
-
-  return {
-    activeTracking: value['activeTracking'] === true,
-    dynamicScopes: value['dynamicScopes'] === true,
-    mobilePanel: value['mobilePanel'] === true,
-  };
-};
 
 const parseJsonValue = (value: string): unknown => {
   const normalized = value.trim();
@@ -155,7 +106,7 @@ export class LayoutTocController extends HTMLElement {
 
     this._hydrationActivated = true;
     this._allHeadings = this._readHeadingsFromSource();
-    this._capabilities = normalizeCapabilities(parseJsonValue(this.capabilitiesJson));
+    this._capabilities = normalizeTocCapabilities(parseJsonValue(this.capabilitiesJson));
 
     this._connectMobileController();
     this._attachDesktopNavClickListener();
@@ -169,28 +120,13 @@ export class LayoutTocController extends HTMLElement {
       return [];
     }
 
-    const source = document.getElementById(this.sourceId);
-    if (!(source instanceof HTMLScriptElement)) {
-      return [];
-    }
-
-    try {
-      const parsed = JSON.parse(source.textContent || '[]') as unknown;
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-
-      return parsed.map((item) => toHeading(item)).filter((item): item is Heading => item !== null);
-    } catch {
-      return [];
-    }
+    const source = findTocSourceScript(resolveTocSourceLookupRoot(this), this.sourceId);
+    return source === null ? [] : readTocJsonSourceScriptHeadings(source);
   }
 
   private _resolveVisibleHeadings(headings: Heading[]): Heading[] {
     const contentRoot = this._resolveContentRoot();
-    const hasDynamicScopes = headings.some(
-      (heading) => Array.isArray(heading.scopeSelections) && heading.scopeSelections.length > 0,
-    );
+    const hasDynamicScopes = hasDynamicTocScopeSelections(headings);
     const scopedHeadings =
       contentRoot === null || !(this._capabilities.dynamicScopes || hasDynamicScopes)
         ? headings
@@ -206,9 +142,7 @@ export class LayoutTocController extends HTMLElement {
   private _connectTracker(): void {
     this._tracker?.destroy();
 
-    const hasDynamicScopes = this._allHeadings.some(
-      (heading) => Array.isArray(heading.scopeSelections) && heading.scopeSelections.length > 0,
-    );
+    const hasDynamicScopes = hasDynamicTocScopeSelections(this._allHeadings);
 
     this._tracker = new TocActiveTracker({
       contentRootId: this.contentRootId,
@@ -432,19 +366,12 @@ export class LayoutTocController extends HTMLElement {
   }
 
   private _getRuntimeId(): string {
-    if (this.tocRuntimeId.length > 0) {
-      return this.tocRuntimeId;
-    }
-
-    if (this.sourceId.length > 0) {
-      return this.sourceId;
-    }
-
-    if (this.contentRootId.length > 0) {
-      return this.contentRootId;
-    }
-
-    return DEFAULT_LAYOUT_TOC_RUNTIME_ID;
+    return resolveTocRuntimeId(
+      this.tocRuntimeId,
+      this.sourceId,
+      this.contentRootId,
+      DEFAULT_LAYOUT_TOC_RUNTIME_ID,
+    );
   }
 
   private _getPanelId(): string {
