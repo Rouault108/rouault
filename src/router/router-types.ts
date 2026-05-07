@@ -6,6 +6,7 @@ import type {
   ShellProjectionSnapshot,
   SidebarShellProjection,
 } from '../../shared/navigation/shell-projection.js';
+import type { RouterDiagnosticPayload } from './router-diagnostics.js';
 
 export type HistoryMode = 'none' | 'push' | 'replace';
 
@@ -25,6 +26,7 @@ export type NavigationErrorReason =
 export interface NavigationIssue {
   code: 'post-commit-failed';
   error?: Error | undefined;
+  diagnostic?: RouterDiagnosticPayload | undefined;
 }
 
 export interface NavigateRequest {
@@ -176,7 +178,9 @@ export interface RouterEventMap {
   error: {
     error: Error;
     stage: 'before-navigate' | 'load' | 'commit' | 'post-commit';
+    diagnostic?: RouterDiagnosticPayload | undefined;
   };
+  diagnostic: RouterDiagnosticPayload;
 }
 
 export class RouterOwnershipError extends Error {

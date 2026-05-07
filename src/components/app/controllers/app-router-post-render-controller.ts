@@ -1,5 +1,6 @@
 import { FocusManager } from '../../../router/focus-manager.js';
 import type { PostCommitController } from '../../../router/router.js';
+import type { RouterDiagnosticPayload } from '../../../router/router-diagnostics.js';
 import { MAIN_CONTENT_SELECTOR } from '../../../../shared/navigation/main-landmark-contract.js';
 import {
   dispatchPrimaryTabUrlStateChange,
@@ -50,6 +51,18 @@ export class AppRouterPostRenderController {
           this.focusManager.focusMainContent(main);
         }
       },
+    };
+  }
+
+  createHashTargetDiagnostic(url: string): RouterDiagnosticPayload | null {
+    const hash = readDecodedHash(url);
+    if (hash.length === 0 || document.getElementById(hash) instanceof HTMLElement) {
+      return null;
+    }
+
+    return {
+      reason: 'return-to-reading-unavailable',
+      routeId: url,
     };
   }
 

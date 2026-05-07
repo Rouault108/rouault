@@ -1,6 +1,7 @@
 import { classifyLinkHref, isRoutableLinkKind } from '../../shared/link/link-kind.js';
 import { LocationAdapter } from './location-adapter.js';
 import type { NavigationResult } from './router-types.js';
+import type { RouterDiagnosticPayload } from './router-diagnostics.js';
 
 interface InterceptorRequest {
   url: string;
@@ -15,6 +16,7 @@ export class BrowserLinkInterceptor {
     private location: LocationAdapter,
     private getCurrentUrl: () => string,
     private requestNavigation: (request: InterceptorRequest) => Promise<NavigationResult>,
+    private reportDiagnostic?: (diagnostic: RouterDiagnosticPayload) => void,
   ) {
     this.clickHandler = (event: MouseEvent) => {
       this.handleAnchorClick(event);
@@ -84,6 +86,10 @@ export class BrowserLinkInterceptor {
     const normalizedCurrentWithoutHash = this.location.stripHash(this.getCurrentUrl());
 
     if (normalizedTargetWithoutHash === normalizedCurrentWithoutHash && targetUrl.hash) {
+      this.reportDiagnostic?.({
+        reason: 'return-to-reading-unavailable',
+        routeId: `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`,
+      });
       return;
     }
 

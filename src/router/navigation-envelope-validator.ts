@@ -10,6 +10,7 @@ import type {
   SidebarShellProjection,
 } from '../../shared/navigation/shell-projection.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
+import { createRouterDiagnosticError } from './router-diagnostics.js';
 
 type SidebarShellProjectionInput = Omit<
   SidebarShellProjection,
@@ -196,30 +197,37 @@ export class NavigationEnvelopeValidationError extends Error {
   override name = 'NavigationEnvelopeValidationError' as const;
 }
 
+const createInvalidEnvelopeError = (message: string): NavigationEnvelopeValidationError => {
+  const error = new NavigationEnvelopeValidationError(message);
+  error.cause = createRouterDiagnosticError(message, {
+    reason: 'navigation-envelope-invalid',
+    routeId: 'navigation-envelope',
+  });
+  return error;
+};
+
 export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope => {
   if (!isRecord(value)) {
-    throw new NavigationEnvelopeValidationError(
-      'navigation envelope は object である必要があります。',
-    );
+    throw createInvalidEnvelopeError('navigation envelope は object である必要があります。');
   }
 
   if (value['schemaVersion'] !== NAVIGATION_ENVELOPE_SCHEMA_VERSION) {
-    throw new NavigationEnvelopeValidationError(
+    throw createInvalidEnvelopeError(
       `navigation envelope schemaVersion ${String(value['schemaVersion'])} は未対応です。`,
     );
   }
 
   if (!isDocumentRenderSnapshot(value['document'])) {
-    throw new NavigationEnvelopeValidationError('navigation envelope document が不正です。');
+    throw createInvalidEnvelopeError('navigation envelope document が不正です。');
   }
 
   if (value['shellProjection'] !== null && !isShellProjectionSnapshot(value['shellProjection'])) {
-    throw new NavigationEnvelopeValidationError('navigation envelope shellProjection が不正です。');
+    throw createInvalidEnvelopeError('navigation envelope shellProjection が不正です。');
   }
 
   if (value['hydrationPlan'] !== undefined && value['hydrationPlan'] !== null) {
     if (!isHydrationPlan(value['hydrationPlan'])) {
-      throw new NavigationEnvelopeValidationError('navigation envelope hydrationPlan が不正です。');
+      throw createInvalidEnvelopeError('navigation envelope hydrationPlan が不正です。');
     }
   }
 

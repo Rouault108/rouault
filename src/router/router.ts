@@ -20,6 +20,7 @@ import {
   RouterNotStartedError,
   RouterOwnershipError,
 } from './router-types.js';
+import type { RouterDiagnosticPayload } from './router-diagnostics.js';
 
 export type {
   BeforeNavigateContext,
@@ -51,6 +52,7 @@ export type {
 } from './router-types.js';
 export type { PostCommitController, UrlStateNavigationPolicy } from './router-types.js';
 export type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
+export type { RouterDiagnosticPayload, RouterDiagnosticReason } from './router-diagnostics.js';
 export {
   RouterDestroyedError,
   RouterNotStartedError,
@@ -99,6 +101,7 @@ export class Router {
       requestNavigation: async (request) => this.navigate(request),
       runNavigation: async (request, signal) => this.runNavigation(request, signal),
       createSupersededResult: (request) => this.createSupersededResult(request),
+      reportDiagnostic: (diagnostic) => this.eventBus.emit('diagnostic', diagnostic),
     });
 
     this.eventBus = runtime.eventBus;
@@ -327,6 +330,7 @@ export class Router {
       this.eventBus.emit('error', {
         error: finalResult.error ?? new Error('navigation failed'),
         stage: 'load',
+        diagnostic: this.createRouterDiagnostic('navigation-envelope-invalid', request.normalizedUrl),
       });
       this.eventBus.emit('after:navigate', finalResult);
       return finalResult;
@@ -358,6 +362,7 @@ export class Router {
       this.eventBus.emit('error', {
         error: normalizedError,
         stage: 'commit',
+        diagnostic: this.createRouterDiagnostic('route-state-mismatch', request.normalizedUrl),
       });
 
       return {
@@ -441,10 +446,12 @@ export class Router {
       result.issues.push({
         code: 'post-commit-failed',
         error: normalizedError,
+        diagnostic: this.createRouterDiagnostic('post-commit-handler-failed', 'post-commit'),
       });
       this.eventBus.emit('error', {
         error: normalizedError,
         stage: 'post-commit',
+        diagnostic: this.createRouterDiagnostic('post-commit-handler-failed', 'post-commit'),
       });
     }
   }
@@ -518,6 +525,7 @@ export class Router {
         this.eventBus.emit('error', {
           error: normalizedError,
           stage: 'before-navigate',
+          diagnostic: this.createRouterDiagnostic('route-state-mismatch', request.normalizedUrl),
         });
         return {
           outcome: 'failed',
@@ -583,6 +591,23 @@ export class Router {
       issues: [],
       source: 'none',
       renderedKind: null,
+    };
+  }
+
+  private createRouterDiagnostic(
+    reason: RouterDiagnosticPayload['reason'],
+    routeId: string,
+  ): RouterDiagnosticPayload {
+    if (reason === 'post-commit-handler-failed') {
+      return {
+        reason,
+        handlerName: routeId,
+      };
+    }
+
+    return {
+      reason,
+      routeId,
     };
   }
 }

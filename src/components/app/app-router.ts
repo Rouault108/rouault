@@ -1,5 +1,6 @@
 import {
   Router,
+  type RouterDiagnosticPayload,
   RouterNotStartedError,
   type ContentUpdateAdapter,
   type NavigationResult,
@@ -37,6 +38,10 @@ export interface AppRouterContentDomReplacedDetail {
 export interface AppRouterNavigationCommittedDetail {
   contentRoot: HTMLElement;
   result: NavigationResult;
+}
+
+export interface AppRouterRouterDiagnosticDetail {
+  diagnostic: RouterDiagnosticPayload;
 }
 
 const createNotStartedResult = (url: string): NavigationResult => ({
@@ -140,6 +145,10 @@ export class AppRouter extends HTMLElement {
 
     router.on('after:navigate', (result) => {
       this._dispatchNavigationCommitted(result);
+    });
+
+    router.on('diagnostic', (diagnostic) => {
+      this._dispatchRouterDiagnostic(diagnostic);
     });
 
     this._router = router;
@@ -313,6 +322,16 @@ export class AppRouter extends HTMLElement {
           contentRoot,
           result,
         },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private _dispatchRouterDiagnostic(diagnostic: RouterDiagnosticPayload): void {
+    this.dispatchEvent(
+      new CustomEvent<AppRouterRouterDiagnosticDetail>('app-router:router-diagnostic', {
+        detail: { diagnostic },
         bubbles: true,
         composed: true,
       }),

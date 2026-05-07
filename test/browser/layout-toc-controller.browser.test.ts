@@ -5,6 +5,10 @@ import {
 } from '../../src/components/layout/layout-toc-controller.js';
 import { layoutTocMobileController } from '../../src/components/layout/layout-toc-mobile-controller.js';
 import { layoutTocRuntimeStore } from '../../src/components/layout/layout-toc-runtime-store.js';
+import {
+  syncTocActiveLinks,
+  syncTocHeadingVisibility,
+} from '../../src/toc/toc-desktop-nav-sync.js';
 
 const headings = [
   { id: 'section-1', text: 'Section 1', level: 2 },
@@ -135,6 +139,43 @@ describe('layout-toc-controller', () => {
       restoreHash();
       cleanup();
     }
+  });
+
+  it('desktop nav sync helper が stale current state を削除し diagnostic snapshot を返すこと', async () => {
+    const nav = await fixture<HTMLElement>(html`
+      <nav>
+        <ol>
+          <li class="layout-toc__item" data-heading-id="section-1">
+            <a class="is-active" href="#section-1" data-toc-link data-heading-id="section-1" data-active="true" aria-current="location">Section 1</a>
+          </li>
+          <li class="layout-toc__item" data-heading-id="section-2">
+            <a href="#section-2" data-toc-link data-heading-id="section-2">Section 2</a>
+          </li>
+        </ol>
+      </nav>
+    `);
+
+    syncTocHeadingVisibility(nav, new Set(['section-2']));
+    const snapshot = syncTocActiveLinks({
+      nav,
+      ownerId: 'toc-source-test',
+      activeHeadingId: 'missing-heading',
+      visibleHeadingIds: new Set(['section-2']),
+    });
+
+    expect(
+      nav.querySelector<HTMLElement>('.layout-toc__item[data-heading-id="section-1"]')?.hidden,
+    ).to.equal(true);
+    expect(nav.querySelector('[aria-current]')).to.equal(null);
+    expect(nav.querySelector('[data-active]')).to.equal(null);
+    expect(nav.querySelector('.is-active')).to.equal(null);
+    expect(snapshot.activeHeadingId).to.equal('missing-heading');
+    expect(snapshot.diagnostics).to.deep.equal([
+      {
+        reason: 'missing-active-heading',
+        ownerId: 'toc-source-test',
+      },
+    ]);
   });
 
   it('visible headings が空になったとき stale current state を desktop / mobile から削除すること', async () => {

@@ -7,8 +7,26 @@ import {
   createNavigationEnvelopeFromHtml,
   emitNavigationArtifacts,
 } from '../../build/navigation/emit-navigation-artifacts.js';
+import {
+  createTocSourceSideEffect,
+  tocSideEffectDirectives,
+} from '../../src/toc/toc-source-side-effects.js';
 
 describe('navigation artifacts', () => {
+  it('TOC source side-effect directive は artifact 生成から独立した契約語彙を持つこと', () => {
+    expect(tocSideEffectDirectives).to.deep.equal([
+      'none',
+      'cleanup-stale-source',
+      'refresh-panel-content',
+      'assert-css-artifact',
+    ]);
+    expect(createTocSourceSideEffect('toc-source-example', 'cleanup-stale-source')).to.deep.equal({
+      directive: 'cleanup-stale-source',
+      sourceId: 'toc-source-example',
+      allowedDuringHydration: true,
+    });
+  });
+
   it('heading attribute が無い HTML からも NavigationEnvelope を抽出できること', () => {
     const html = `
 <!DOCTYPE html>

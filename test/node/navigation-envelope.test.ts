@@ -3,6 +3,7 @@ import {
   NavigationEnvelopeValidationError,
   validateNavigationEnvelope,
 } from '../../src/router/navigation-envelope-validator.js';
+import { RouterDiagnosticError } from '../../src/router/router-diagnostics.js';
 import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
 
 describe('navigation envelope', () => {
@@ -116,5 +117,27 @@ describe('navigation envelope', () => {
         shellProjection: null,
       }),
     ).to.throw(NavigationEnvelopeValidationError);
+  });
+
+  it('不正 envelope rejection は router diagnostic reason を保持すること', () => {
+    try {
+      validateNavigationEnvelope({
+        schemaVersion: 999,
+        document: {
+          html: '<main>bad</main>',
+          title: 'Bad',
+          description: null,
+          renderedKind: 'page',
+        },
+        shellProjection: null,
+      });
+      throw new Error('validation should fail');
+    } catch (error) {
+      expect(error).to.be.instanceOf(NavigationEnvelopeValidationError);
+      expect((error as Error).cause).to.be.instanceOf(RouterDiagnosticError);
+      expect(((error as Error).cause as RouterDiagnosticError).diagnostic.reason).to.equal(
+        'navigation-envelope-invalid',
+      );
+    }
   });
 });

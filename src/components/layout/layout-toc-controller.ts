@@ -11,6 +11,10 @@ import {
   normalizeTocCapabilities,
 } from '../../toc/toc-headings.js';
 import { readTocJsonSourceScriptHeadings } from '../../toc/toc-json-source-script.js';
+import {
+  syncTocActiveLinks,
+  syncTocHeadingVisibility,
+} from '../../toc/toc-desktop-nav-sync.js';
 import { resolveTocRuntimeId } from '../../toc/toc-source-id-resolution.js';
 import {
   findTocSourceScript,
@@ -201,38 +205,16 @@ export class LayoutTocController extends HTMLElement {
   }
 
   private _syncHeadingVisibility(nav: HTMLElement | null, visibleIds: ReadonlySet<string>): void {
-    if (!(nav instanceof HTMLElement)) {
-      return;
-    }
-
-    const items = nav.querySelectorAll<HTMLElement>('.layout-toc__item[data-heading-id]');
-    for (const item of items) {
-      const headingId = item.getAttribute('data-heading-id') ?? '';
-      const visible = headingId.length > 0 && visibleIds.has(headingId);
-      item.hidden = !visible;
-      item.setAttribute('aria-hidden', visible ? 'false' : 'true');
-    }
+    syncTocHeadingVisibility(nav, visibleIds);
   }
 
   private _syncActiveLinks(nav: HTMLElement | null): void {
-    if (!(nav instanceof HTMLElement)) {
-      return;
-    }
-
-    const links = nav.querySelectorAll<HTMLAnchorElement>('[data-toc-link][data-heading-id]');
-    for (const link of links) {
-      const headingId = link.getAttribute('data-heading-id') ?? '';
-      const active = headingId.length > 0 && headingId === this._activeId;
-      if (active) {
-        link.setAttribute('aria-current', 'location');
-        link.setAttribute('data-active', 'true');
-        link.classList.add('is-active');
-      } else {
-        link.removeAttribute('aria-current');
-        link.removeAttribute('data-active');
-        link.classList.remove('is-active');
-      }
-    }
+    syncTocActiveLinks({
+      nav,
+      ownerId: this._getRuntimeId(),
+      activeHeadingId: this._activeId.length > 0 ? this._activeId : null,
+      visibleHeadingIds: new Set(this._visibleHeadings.map((heading) => heading.id)),
+    });
   }
 
   private _connectMobileController(): void {

@@ -6,6 +6,7 @@ import { NavigationQueue, type QueuedNavigationRequest } from './navigation-queu
 import { RouteRegistry } from './route-registry.js';
 import { RouterEventBus } from './router-event-bus.js';
 import type { NavigationResult, RouterOptions } from './router-types.js';
+import type { RouterDiagnosticPayload } from './router-diagnostics.js';
 
 interface InterceptorRequest {
   url: string;
@@ -29,6 +30,7 @@ interface CreateRouterRuntimeOptions {
   requestNavigation(request: InterceptorRequest): Promise<NavigationResult>;
   runNavigation(request: QueuedNavigationRequest, signal: AbortSignal): Promise<NavigationResult>;
   createSupersededResult(request: QueuedNavigationRequest): NavigationResult;
+  reportDiagnostic?(diagnostic: RouterDiagnosticPayload): void;
 }
 
 export const createRouterRuntime = (runtimeOptions: CreateRouterRuntimeOptions): RouterRuntime => {
@@ -47,10 +49,12 @@ export const createRouterRuntime = (runtimeOptions: CreateRouterRuntimeOptions):
     location,
     () => runtimeOptions.getCurrentUrl(),
     (request) => runtimeOptions.requestNavigation(request),
+    runtimeOptions.reportDiagnostic,
   );
   const queue = new NavigationQueue(
     (request, signal) => runtimeOptions.runNavigation(request, signal),
     (request) => runtimeOptions.createSupersededResult(request),
+    runtimeOptions.reportDiagnostic,
   );
 
   return {

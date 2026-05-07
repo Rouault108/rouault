@@ -1,4 +1,5 @@
 import type { HistoryMode, NavigationResult } from './router-types.js';
+import type { RouterDiagnosticPayload } from './router-diagnostics.js';
 
 export interface QueuedNavigationRequest {
   requestedUrl: string;
@@ -28,6 +29,7 @@ export class NavigationQueue {
       signal: AbortSignal,
     ) => Promise<NavigationResult>,
     private createSupersededResult: (request: QueuedNavigationRequest) => NavigationResult,
+    private reportDiagnostic?: (diagnostic: RouterDiagnosticPayload) => void,
   ) {}
 
   enqueue(request: QueuedNavigationRequest): Promise<NavigationResult> {
@@ -40,6 +42,10 @@ export class NavigationQueue {
       if (this.activeNavigation) {
         this.activeNavigation.superseded = true;
         this.activeNavigation.controller.abort();
+        this.reportDiagnostic?.({
+          reason: 'route-state-mismatch',
+          routeId: request.normalizedUrl,
+        });
 
         if (this.pendingNavigation) {
           this.pendingNavigation.resolve(
