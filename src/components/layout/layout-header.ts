@@ -580,19 +580,15 @@ export class LayoutHeader extends LitElement {
       return;
     }
 
-    if (this._tocHashSyncFrame === null) {
-      this._tocHashSyncFrame = window.requestAnimationFrame(() => {
+    this._tocHashSyncFrame ??= window.requestAnimationFrame(() => {
         this._tocHashSyncFrame = null;
         this._syncTocActiveLinksFromHash();
       });
-    }
 
-    if (this._tocHashSyncTimer === null) {
-      this._tocHashSyncTimer = window.setTimeout(() => {
+    this._tocHashSyncTimer ??= window.setTimeout(() => {
         this._tocHashSyncTimer = null;
         this._syncTocActiveLinksFromHash();
       }, 160);
-    }
   }
 
   private _cancelTocHashSync(): void {

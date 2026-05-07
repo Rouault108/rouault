@@ -33,11 +33,12 @@ export class TocHydrationSessionController {
       input.contentRootId ?? '',
       DEFAULT_LAYOUT_TOC_RUNTIME_ID,
     );
+    const sourceId = input.sourceId?.trim();
     const controller = new AbortController();
     const session: TocHydrationSession = {
       state: 'hydrating',
       ownerId,
-      sourceId: input.sourceId?.trim() || null,
+      sourceId: sourceId === undefined || sourceId.length === 0 ? null : sourceId,
       generation: this._generation + 1,
       signal: controller.signal,
     };

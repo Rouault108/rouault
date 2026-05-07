@@ -49,12 +49,16 @@ export const createRouterRuntime = (runtimeOptions: CreateRouterRuntimeOptions):
     location,
     () => runtimeOptions.getCurrentUrl(),
     (request) => runtimeOptions.requestNavigation(request),
-    runtimeOptions.reportDiagnostic,
+    (diagnostic) => {
+      runtimeOptions.reportDiagnostic?.(diagnostic);
+    },
   );
   const queue = new NavigationQueue(
     (request, signal) => runtimeOptions.runNavigation(request, signal),
     (request) => runtimeOptions.createSupersededResult(request),
-    runtimeOptions.reportDiagnostic,
+    (diagnostic) => {
+      runtimeOptions.reportDiagnostic?.(diagnostic);
+    },
   );
 
   return {

@@ -60,7 +60,7 @@ export const findProductionImportBoundaryViolations = async (
     for (const match of source.matchAll(IMPORT_RE)) {
       const specifier = match[1] ?? '';
       const resolved = resolveRelativeSpecifier(repoPath, specifier);
-      if (resolved !== null && resolved.startsWith('test/')) {
+      if (resolved?.startsWith('test/') === true) {
         violations.push({
           file: repoPath,
           specifier,

@@ -71,7 +71,7 @@ export const collectProductionHtmlReachableCssAssets = async (
   for (const htmlFile of htmlFiles) {
     const html = readFileSync(htmlFile, 'utf8');
     for (const linkMatch of html.matchAll(STYLESHEET_LINK_RE)) {
-      const link = linkMatch[0] ?? '';
+      const link = linkMatch[0];
       const href = HREF_RE.exec(link)?.[1];
       if (href === undefined) {
         continue;

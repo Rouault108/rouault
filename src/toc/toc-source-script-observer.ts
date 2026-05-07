@@ -30,7 +30,7 @@ export const createTocSourceObserverSnapshot = (
   }
 
   const contract: TocJsonSourceScript | null = readTocJsonSourceScriptContract(script);
-  if (contract === null || contract.ownerId !== ownerId) {
+  if (contract?.ownerId !== ownerId) {
     return { status: 'source-stale', ownerId, sourceId: script.id };
   }
 

@@ -101,7 +101,9 @@ export class Router {
       requestNavigation: async (request) => this.navigate(request),
       runNavigation: async (request, signal) => this.runNavigation(request, signal),
       createSupersededResult: (request) => this.createSupersededResult(request),
-      reportDiagnostic: (diagnostic) => this.eventBus.emit('diagnostic', diagnostic),
+      reportDiagnostic: (diagnostic) => {
+        this.eventBus.emit('diagnostic', diagnostic);
+      },
     });
 
     this.eventBus = runtime.eventBus;
