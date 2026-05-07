@@ -19,6 +19,7 @@ import {
   type ThemeChangeDetail,
   type ThemePreference,
 } from '../../theme/theme-manager.js';
+import { decodeHashFragment } from '../../router/url-hash.js';
 import type { IconName } from '../../../shared/icons/icons-catalog.js';
 import type { HeaderShellProjection } from '../../../shared/navigation/shell-projection.js';
 import type { TocPresence } from '../../../shared/note/toc-presence.js';
@@ -408,6 +409,8 @@ export class LayoutHeader extends LitElement {
   private _tocRuntimeCleanup: (() => void) | null = null;
   private _tocMobileCleanup: (() => void) | null = null;
   private _resizeObserver: ResizeObserver | null = null;
+  private _tocHashSyncFrame: number | null = null;
+  private _tocHashSyncTimer: number | null = null;
 
   applyShellProjection(snapshot: HeaderShellProjection): void {
     this.corporaJson = JSON.stringify(snapshot.corpora);
@@ -443,6 +446,7 @@ export class LayoutHeader extends LitElement {
     this._connectTocControllers();
     this._syncResponsiveState(this.getBoundingClientRect().width);
     this._startResizeObserver();
+    window.addEventListener('hashchange', this._handleTocHashChange);
   }
 
   protected override updated(changedProperties: PropertyValues<this>): void {
@@ -462,10 +466,12 @@ export class LayoutHeader extends LitElement {
     this._tocRuntimeCleanup = null;
     this._tocMobileCleanup?.();
     this._tocMobileCleanup = null;
+    this._cancelTocHashSync();
     this._stopResizeObserver();
 
     if (typeof window !== 'undefined') {
       window.removeEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);
+      window.removeEventListener('hashchange', this._handleTocHashChange);
     }
     super.disconnectedCallback();
   }
@@ -533,12 +539,118 @@ export class LayoutHeader extends LitElement {
       return;
     }
 
+    this._releaseTocControllerReservationGate(runtimeId);
+    window.setTimeout(() => {
+      this._releaseTocControllerReservationGate(runtimeId);
+    }, 0);
+    window.setTimeout(() => {
+      this._releaseTocControllerReservationGate(runtimeId);
+    }, 160);
+    this._scheduleTocHashSync();
+
     this._tocRuntimeCleanup = layoutTocRuntimeStore.subscribe(runtimeId, (snapshot) => {
       this._tocRuntimeView = snapshot;
     });
     this._tocMobileCleanup = layoutTocMobileController.subscribe(runtimeId, (snapshot) => {
       this._tocPanelOpen = snapshot.panelOpen;
     });
+  }
+
+  private _releaseTocControllerReservationGate(runtimeId: string): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const controllers = document.querySelectorAll<HTMLElement>('layout-toc-controller');
+    for (const controller of controllers) {
+      if (controller.getAttribute('toc-runtime-id') !== runtimeId) {
+        continue;
+      }
+
+      controller.removeAttribute('data-toc-trigger-reserved');
+      const activatableController = controller as HTMLElement & {
+        activateHydration?: () => void | Promise<void>;
+      };
+      void activatableController.activateHydration?.();
+    }
+  }
+
+  private _scheduleTocHashSync(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (this._tocHashSyncFrame === null) {
+      this._tocHashSyncFrame = window.requestAnimationFrame(() => {
+        this._tocHashSyncFrame = null;
+        this._syncTocActiveLinksFromHash();
+      });
+    }
+
+    if (this._tocHashSyncTimer === null) {
+      this._tocHashSyncTimer = window.setTimeout(() => {
+        this._tocHashSyncTimer = null;
+        this._syncTocActiveLinksFromHash();
+      }, 160);
+    }
+  }
+
+  private _cancelTocHashSync(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (this._tocHashSyncFrame !== null) {
+      window.cancelAnimationFrame(this._tocHashSyncFrame);
+      this._tocHashSyncFrame = null;
+    }
+
+    if (this._tocHashSyncTimer !== null) {
+      window.clearTimeout(this._tocHashSyncTimer);
+      this._tocHashSyncTimer = null;
+    }
+  }
+
+  private _syncTocActiveLinksFromHash(): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const runtimeId = this._readTocRuntimeId();
+    const activeId = decodeHashFragment(window.location.hash);
+    if (runtimeId === null || activeId === null || activeId.length === 0) {
+      return;
+    }
+
+    const controllers = document.querySelectorAll<HTMLElement>('layout-toc-controller');
+    for (const controller of controllers) {
+      if (controller.getAttribute('toc-runtime-id') !== runtimeId) {
+        continue;
+      }
+
+      const root = controller.closest<HTMLElement>('[data-layout-toc-root]');
+      const panelNav = document.querySelector<HTMLElement>('[data-layout-toc-mobile-nav]');
+      const navs = [
+        root?.querySelector<HTMLElement>('[data-layout-toc-nav]') ?? null,
+        panelNav,
+      ].filter((nav): nav is HTMLElement => nav instanceof HTMLElement);
+
+      for (const nav of navs) {
+        const links = nav.querySelectorAll<HTMLAnchorElement>('[data-toc-link][data-heading-id]');
+        for (const link of links) {
+          const isActive = link.getAttribute('data-heading-id') === activeId;
+          if (isActive) {
+            link.setAttribute('aria-current', 'location');
+            link.setAttribute('data-active', 'true');
+            link.classList.add('is-active');
+          } else {
+            link.removeAttribute('aria-current');
+            link.removeAttribute('data-active');
+            link.classList.remove('is-active');
+          }
+        }
+      }
+    }
   }
 
   private _readTocRuntimeId(): string | null {
@@ -596,6 +708,10 @@ export class LayoutHeader extends LitElement {
     void this._settleThemeDropdownFocus();
   };
 
+  private _handleTocHashChange = (): void => {
+    this._scheduleTocHashSync();
+  };
+
   private async _settleThemeDropdownFocus(): Promise<void> {
     this._blurThemeDropdownTrigger();
     await this.updateComplete;
@@ -647,6 +763,7 @@ export class LayoutHeader extends LitElement {
     return (
       this.tocPresence === 'present' &&
       this._isTocTriggerReserved() &&
+      this._tocRuntimeView.hydrationState !== 'disposed' &&
       this._tocRuntimeView.ready &&
       this._tocRuntimeView.hasVisibleHeadings
     );
@@ -738,6 +855,7 @@ export class LayoutHeader extends LitElement {
             data-reserved=${String(isTocTriggerReserved)}
             data-toc-trigger-reserved=${String(isTocTriggerReserved)}
             data-toc-trigger-interactive=${String(shouldRenderTocTrigger)}
+            data-toc-hydration-state=${this._tocRuntimeView.hydrationState ?? 'unhydrated'}
             aria-label=${tocTriggerAriaLabel}
             aria-expanded=${String(this._tocPanelOpen)}
             aria-controls=${tocPanelId ?? nothing}

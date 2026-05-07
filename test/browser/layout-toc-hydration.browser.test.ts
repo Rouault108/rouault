@@ -489,6 +489,9 @@ describe('layout-toc hydration reconciliation', () => {
       expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
       expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
       expect(mobilePanel?.hasAttribute('hidden')).to.equal(true);
+      expect(layoutTocRuntimeStore.getSnapshot('toc-source-test').hydrationState).to.equal(
+        'hydrated',
+      );
     } finally {
       restoreHash();
       cleanup();

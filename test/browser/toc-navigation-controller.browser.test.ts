@@ -1,6 +1,9 @@
 import { expect } from '@open-wc/testing';
 import type { TocActiveTracker } from '../../src/toc/toc-active-tracker.js';
-import { TocNavigationController } from '../../src/toc/toc-navigation-controller.js';
+import {
+  shouldCloseMobilePanelAfterTocNavigation,
+  TocNavigationController,
+} from '../../src/toc/toc-navigation-controller.js';
 
 const createTrackerStub = (): TocActiveTracker =>
   ({
@@ -187,5 +190,41 @@ describe('TocNavigationController', () => {
     expect(event.defaultPrevented).to.equal(false);
     expect(activeId).to.equal('');
     expect(window.location.hash).to.equal('');
+  });
+
+  it('owned navigation が mobile panel nav 内の link なら close 対象にすること', () => {
+    document.body.innerHTML = `
+      <nav data-layout-toc-mobile-nav>
+        <a href="#section" data-toc-link data-heading-id="section">Section</a>
+      </nav>
+      <a href="#section" data-toc-link data-heading-id="section" id="desktop-link">Section</a>
+    `;
+
+    const mobileNav = document.querySelector<HTMLElement>('[data-layout-toc-mobile-nav]');
+    const mobileLink = mobileNav?.querySelector<HTMLAnchorElement>('a[data-toc-link]');
+    const desktopLink = document.querySelector<HTMLAnchorElement>('#desktop-link');
+    if (
+      !(mobileNav instanceof HTMLElement) ||
+      !(mobileLink instanceof HTMLAnchorElement) ||
+      !(desktopLink instanceof HTMLAnchorElement)
+    ) {
+      throw new Error('mobile panel navigation fixture の構築に失敗しました。');
+    }
+
+    expect(
+      shouldCloseMobilePanelAfterTocNavigation(
+        { owned: true, targetId: 'section', link: mobileLink },
+        mobileNav,
+      ),
+    ).to.equal(true);
+    expect(
+      shouldCloseMobilePanelAfterTocNavigation(
+        { owned: true, targetId: 'section', link: desktopLink },
+        mobileNav,
+      ),
+    ).to.equal(false);
+    expect(
+      shouldCloseMobilePanelAfterTocNavigation({ owned: false, reason: 'empty-hash' }, mobileNav),
+    ).to.equal(false);
   });
 });

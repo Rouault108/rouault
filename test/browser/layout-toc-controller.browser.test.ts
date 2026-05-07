@@ -129,6 +129,7 @@ describe('layout-toc-controller', () => {
       expect(snapshot.ready).to.equal(true);
       expect(snapshot.hasVisibleHeadings).to.equal(true);
       expect(snapshot.activeId).to.equal('section-2');
+      expect(snapshot.hydrationState).to.equal('hydrated');
     } finally {
       root?.remove();
       restoreHash();
@@ -547,6 +548,9 @@ describe('layout-toc-controller', () => {
 
       expect(panel.hasAttribute('hidden')).to.equal(true);
       expect(document.activeElement).to.equal(trigger);
+      const mobileSnapshot = layoutTocMobileController.getSnapshot('toc-source-test');
+      expect(mobileSnapshot.cleanupDecision.directive).to.equal('refresh-panel-content');
+      expect(mobileSnapshot.cleanupDecision.sourceId).to.equal('toc-source-test');
     } finally {
       root?.remove();
       trigger?.remove();

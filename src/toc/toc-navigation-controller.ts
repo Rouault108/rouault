@@ -37,6 +37,12 @@ export type TocNavigationClickResult =
   | { owned: true; targetId: string; link: HTMLAnchorElement }
   | { owned: false; reason: TocNavigationRejectReason };
 
+export const shouldCloseMobilePanelAfterTocNavigation = (
+  result: TocNavigationClickResult,
+  mobilePanelNav: HTMLElement | null,
+): boolean =>
+  result.owned && mobilePanelNav instanceof HTMLElement && mobilePanelNav.contains(result.link);
+
 const SCROLL_KEYS = new Set([
   'ArrowDown',
   'ArrowLeft',

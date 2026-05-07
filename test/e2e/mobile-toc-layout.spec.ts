@@ -78,6 +78,8 @@ const readLayoutState = async (page: Page, shellSelector: string) =>
       horizontalOverflow:
         document.documentElement.scrollWidth - document.documentElement.clientWidth,
       triggerExists: trigger instanceof HTMLElement,
+      triggerHydrationState:
+        trigger instanceof HTMLElement ? trigger.dataset['tocHydrationState'] ?? null : null,
       triggerRight: triggerRect ? triggerRect.right : null,
       viewportWidth: window.innerWidth,
       mobileBarExists: mobileBar instanceof HTMLElement,
@@ -109,6 +111,7 @@ test.describe('mobile TOC layout contract after header integration', () => {
     expect(state?.shellTrackCount).toBe(1);
     expect(state?.horizontalOverflow).toBeLessThanOrEqual(1);
     expect(state?.triggerExists).toBe(true);
+    expect(state?.triggerHydrationState).toBe('hydrated');
     expect(state?.triggerTextVisible).toBe(false);
     expect(state?.triggerProgressExists).toBe(false);
     expect(state?.compactLabelExists).toBe(false);
@@ -133,6 +136,7 @@ test.describe('mobile TOC layout contract after header integration', () => {
     expect(state?.shellTrackCount).toBe(1);
     expect(state?.horizontalOverflow).toBeLessThanOrEqual(1);
     expect(state?.triggerExists).toBe(true);
+    expect(state?.triggerHydrationState).toBe('hydrated');
     expect(state?.mobileBarExists).toBe(false);
     expect(state?.triggerRight ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(
       (state?.viewportWidth ?? 0) + 1,

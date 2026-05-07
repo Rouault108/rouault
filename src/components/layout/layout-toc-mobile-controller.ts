@@ -1,5 +1,11 @@
+import {
+  createTocSourceCleanupDecision,
+  type TocSourceCleanupDecision,
+} from '../../toc/toc-source-cleanup-directive.js';
+
 export interface LayoutTocMobileSnapshot {
   readonly panelOpen: boolean;
+  readonly cleanupDecision: TocSourceCleanupDecision;
 }
 
 const DEFAULT_LAYOUT_TOC_RUNTIME_ID = 'page-toc';
@@ -7,17 +13,20 @@ const DEFAULT_LAYOUT_TOC_RUNTIME_ID = 'page-toc';
 interface Entry {
   panelOpen: boolean;
   returnFocusTarget: HTMLElement | null;
+  cleanupDecision: TocSourceCleanupDecision;
   listeners: Set<(snapshot: LayoutTocMobileSnapshot) => void>;
 }
 
 const createEntry = (): Entry => ({
   panelOpen: false,
   returnFocusTarget: null,
+  cleanupDecision: createTocSourceCleanupDecision(null, 'none'),
   listeners: new Set(),
 });
 
 const toSnapshot = (entry: Entry): LayoutTocMobileSnapshot => ({
   panelOpen: entry.panelOpen,
+  cleanupDecision: entry.cleanupDecision,
 });
 
 class LayoutTocMobileController {
@@ -49,6 +58,7 @@ class LayoutTocMobileController {
     if (trigger instanceof HTMLElement) {
       entry.returnFocusTarget = trigger;
     }
+    entry.cleanupDecision = createTocSourceCleanupDecision(resolvedId, 'none');
 
     if (entry.panelOpen) {
       this._emit(entry);
@@ -60,7 +70,9 @@ class LayoutTocMobileController {
   }
 
   close(id: string | undefined): void {
-    const entry = this._ensure(id);
+    const resolvedId = this._resolveId(id);
+    const entry = this._ensure(resolvedId);
+    entry.cleanupDecision = createTocSourceCleanupDecision(resolvedId, 'refresh-panel-content');
     if (!entry.panelOpen) {
       this._emit(entry);
       return;
@@ -88,6 +100,15 @@ class LayoutTocMobileController {
         : null;
     entry.returnFocusTarget = null;
     return target;
+  }
+
+  cleanup(id?: string): void {
+    const resolvedId = this._resolveId(id);
+    const entry = this._ensure(resolvedId);
+    entry.panelOpen = false;
+    entry.returnFocusTarget = null;
+    entry.cleanupDecision = createTocSourceCleanupDecision(resolvedId, 'cleanup-stale-source');
+    this._emit(entry);
   }
 
   reset(id?: string): void {
