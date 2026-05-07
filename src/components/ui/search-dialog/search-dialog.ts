@@ -191,9 +191,13 @@ export class UiSearchDialog extends LitElement {
           this.requestClose(reason);
         },
         dispatchSelected: (detail: UiSearchDialogSelectedDetail) => {
+          const selectedDetail: UiSearchDialogSelectedDetail = {
+            ...detail,
+            canonicalUrl: detail.canonicalUrl ?? detail.item.canonicalUrl ?? detail.url,
+          };
           this.dispatchEvent(
             new CustomEvent<UiSearchDialogSelectedDetail>('ui-search-dialog-selected', {
-              detail,
+              detail: selectedDetail,
               bubbles: true,
               composed: true,
             }),

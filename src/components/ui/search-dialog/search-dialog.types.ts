@@ -63,6 +63,7 @@ export interface UiSearchDialogQueryChangedDetail {
 export interface UiSearchDialogSelectedDetail {
   id: string;
   url: string;
+  canonicalUrl?: string;
   title: string;
   query: string;
   index: number;

@@ -2,6 +2,17 @@ export type SearchMode = 'navigate' | 'explore';
 
 export type SearchSourceKind = 'pagefind' | 'catalog';
 
+export type SearchReturnToReadingEventName = 'rouault-search:return-to-reading';
+
+export type SearchDialogEventName =
+  | 'rouault-search:open'
+  | 'rouault-search:close'
+  | SearchReturnToReadingEventName;
+
+export type SearchImportBoundaryRuleId =
+  | 'search-dialog-no-router-core-import'
+  | 'search-return-to-reading-via-adapter';
+
 export type SearchFieldKind = 'title' | 'description' | 'body' | 'path' | 'keyword' | 'tag';
 
 export type SearchTagMode = 'or' | 'and';
@@ -53,6 +64,32 @@ export interface SearchState {
   tags: string[];
   tagMode: SearchTagMode;
   sort: SearchSortMode;
+}
+
+export interface SearchDialogEventContract {
+  readonly eventName: SearchDialogEventName;
+  readonly routeId: string | null;
+}
+
+export interface SearchReturnToReadingEventDetail extends SearchDialogEventContract {
+  readonly eventName: SearchReturnToReadingEventName;
+  readonly url: string;
+  readonly canonicalUrl: DocumentCanonicalUrl;
+  readonly title: string;
+  readonly query: string;
+  readonly selectionMethod: 'keyboard' | 'pointer';
+}
+
+export interface SearchIndexTypeContract {
+  readonly candidateUrl: DocumentCanonicalUrl;
+  readonly stateUrl: SearchStateUrl | null;
+  readonly snippetIsStructured: true;
+}
+
+export interface SearchImportBoundaryContract {
+  readonly edgeId: SearchImportBoundaryRuleId;
+  readonly forbidsDirectRouterImport: true;
+  readonly adapterEventName: SearchReturnToReadingEventName;
 }
 
 export interface SearchDateValue {

@@ -3,6 +3,7 @@ import type { PreparedSearchQuery } from '../../../shared/search/query-preproces
 import type {
   SearchCandidate,
   SearchDiagnostics,
+  SearchDialogEventContract,
   SearchRequest,
   SearchResponse,
   SearchSourceBatch,
@@ -36,4 +37,8 @@ export interface RankingAndSortingStageOutput extends CandidateMergeStageOutput 
 export interface CountsAndDiagnosticsStageOutput extends RankingAndSortingStageOutput {
   diagnosticsResult: SearchDiagnostics;
   response: SearchResponse;
+}
+
+export interface SearchStageEventAudit {
+  readonly events: readonly SearchDialogEventContract[];
 }

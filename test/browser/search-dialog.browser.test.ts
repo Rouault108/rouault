@@ -505,6 +505,7 @@ describe('ui-search-dialog browser contract', () => {
 
     expect(events).to.deep.equal(['selected', 'close-requested', 'closed']);
     expect(selections[0]?.selectionMethod).to.equal('pointer');
+    expect(selections[0]?.canonicalUrl).to.equal('/docs/alpha');
     expect(closeReasons).to.deep.equal(['selection']);
   });
 

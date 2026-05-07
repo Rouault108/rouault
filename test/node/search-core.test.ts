@@ -3,9 +3,22 @@ import { describe, expect, it } from 'vitest';
 import { createSearchCore, type PagefindApi } from '../../src/search/search-core.js';
 import { createAbortError } from '../../src/search/abort.js';
 import type { SearchCatalogItem } from '../../shared/search/search-catalog.js';
-import type { SearchRequest } from '../../shared/search/search-types.js';
+import type {
+  SearchImportBoundaryContract,
+  SearchRequest,
+} from '../../shared/search/search-types.js';
 
 describe('search-core', () => {
+  it('search import boundary contract uses the return-to-reading adapter event', () => {
+    const contract = {
+      edgeId: 'search-return-to-reading-via-adapter',
+      forbidsDirectRouterImport: true,
+      adapterEventName: 'rouault-search:return-to-reading',
+    } satisfies SearchImportBoundaryContract;
+
+    expect(contract.adapterEventName).to.equal('rouault-search:return-to-reading');
+  });
+
   const catalogItems: SearchCatalogItem[] = [
     {
       title: '交響曲第9番 ニ短調',

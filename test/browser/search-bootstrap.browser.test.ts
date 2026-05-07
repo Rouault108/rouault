@@ -2,8 +2,10 @@ import { expect } from '@open-wc/testing';
 
 import { initSearch, resetSearchBootstrapForTest } from '../../src/search/bootstrap.js';
 import { searchCore } from '../../src/search/search-core.js';
+import { searchReturnToReadingEventName } from '../../src/search/search-dialog-events.js';
 import type { InteractionModality } from '../../src/components/ui/search-dialog/internals/interaction-modality.js';
 import type { UiSearchDialogSearcher } from '../../src/components/ui/search-dialog/search-dialog.types.js';
+import type { SearchReturnToReadingEventDetail } from '../../shared/search/search-types.js';
 
 interface TestSearchDialogElement extends HTMLElement {
   opened: boolean;
@@ -264,5 +266,57 @@ describe('search-bootstrap', () => {
     expect('searcher' in dialog).to.equal(true);
     expect(Object.prototype.hasOwnProperty.call(dialog, 'searcher')).to.equal(false);
     expect(dialog.searcher).to.equal(null);
+  });
+
+  it('selection を return-to-reading event boundary へ変換すること', () => {
+    const dialog = document.createElement('div') as unknown as TestSearchDialogElement;
+    const events: SearchReturnToReadingEventDetail[] = [];
+    dialog.id = 'global-search-dialog';
+    dialog.opened = true;
+    dialog.query = 'router';
+    dialog.captureOpenModality = () => undefined;
+    dialog.requestOpen = () => undefined;
+    document.body.append(dialog);
+
+    dialog.addEventListener(searchReturnToReadingEventName, (event) => {
+      const customEvent = event as CustomEvent<SearchReturnToReadingEventDetail>;
+      customEvent.preventDefault();
+      events.push(customEvent.detail);
+    });
+
+    initSearch();
+
+    dialog.dispatchEvent(
+      new CustomEvent('ui-search-dialog-selected', {
+        bubbles: true,
+        composed: true,
+        detail: {
+          id: '/notes/router/',
+          url: '/notes/router/',
+          title: 'Router',
+          query: 'router',
+          index: 0,
+          item: {
+            id: '/notes/router/',
+            title: 'Router',
+            url: '/notes/router/',
+            canonicalUrl: '/notes/router/',
+          },
+          selectionMethod: 'pointer',
+        },
+      }),
+    );
+
+    expect(events).to.deep.equal([
+      {
+        eventName: searchReturnToReadingEventName,
+        routeId: '/notes/router/',
+        url: '/notes/router/',
+        canonicalUrl: '/notes/router/',
+        title: 'Router',
+        query: 'router',
+        selectionMethod: 'pointer',
+      },
+    ]);
   });
 });

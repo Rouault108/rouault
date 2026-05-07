@@ -1,9 +1,14 @@
 import type {
   UiSearchDialogItem,
   UiSearchDialogSearcher,
+  UiSearchDialogSelectedDetail,
 } from '../components/ui/search-dialog/search-dialog.types.js';
-import { navigateToUrl } from './navigation.js';
+import {
+  dispatchSearchReturnToReading,
+  handleSearchReturnToReadingEvent,
+} from './navigation.js';
 import { searchCore } from './search-core.js';
+import { searchReturnToReadingEventName } from './search-dialog-events.js';
 import type { InteractionModality } from '../components/ui/search-dialog/internals/interaction-modality.js';
 
 interface SearchDialogElement extends HTMLElement {
@@ -73,13 +78,29 @@ export function initSearch(): void {
   };
 
   const onSelected = (event: Event): void => {
-    const customEvent = event as CustomEvent<{ url?: string }>;
-    const url = customEvent.detail.url;
+    const customEvent = event as CustomEvent<UiSearchDialogSelectedDetail>;
+    const { url, title, query, selectionMethod, item } = customEvent.detail;
     if (typeof url !== 'string' || url.length === 0) {
       return;
     }
 
-    void navigateToUrl(url);
+    const canonicalUrl = item.canonicalUrl ?? url;
+    dispatchSearchReturnToReading(
+      {
+        eventName: searchReturnToReadingEventName,
+        routeId: canonicalUrl,
+        url,
+        canonicalUrl,
+        title,
+        query,
+        selectionMethod,
+      },
+      { target: dialog },
+    );
+  };
+
+  const onReturnToReading = (event: Event): void => {
+    void handleSearchReturnToReadingEvent(event);
   };
 
   const onOpenRequested = (): void => {
@@ -123,6 +144,7 @@ export function initSearch(): void {
 
   document.addEventListener('open-search-dialog', onOpenSearchDialog, { signal });
   dialog.addEventListener('ui-search-dialog-selected', onSelected, { signal });
+  dialog.addEventListener(searchReturnToReadingEventName, onReturnToReading, { signal });
   dialog.addEventListener('ui-search-dialog-open-requested', onOpenRequested, { signal });
   dialog.addEventListener('ui-search-dialog-close-requested', onCloseRequested, { signal });
   dialog.addEventListener('ui-search-dialog-query-changed', onQueryChanged, { signal });

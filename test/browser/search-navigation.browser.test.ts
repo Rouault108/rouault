@@ -1,6 +1,11 @@
 import { expect, fixture, html } from '@open-wc/testing';
 
-import { navigateToUrl } from '../../src/search/navigation.js';
+import {
+  dispatchSearchReturnToReading,
+  handleSearchReturnToReadingEvent,
+  navigateToUrl,
+} from '../../src/search/navigation.js';
+import { searchReturnToReadingEventName } from '../../src/search/search-dialog-events.js';
 
 describe('search-navigation', () => {
   it('app-router が存在する場合は SPA navigate を優先すること', async () => {
@@ -30,5 +35,38 @@ describe('search-navigation', () => {
     });
 
     expect(assignedUrl).to.equal('/tags/music/');
+  });
+
+  it('return-to-reading event を navigation adapter が URL navigation へ変換すること', async () => {
+    const target = new EventTarget();
+    let assignedUrl = '';
+    let observedType = '';
+
+    target.addEventListener(searchReturnToReadingEventName, (event) => {
+      observedType = event.type;
+      void handleSearchReturnToReadingEvent(event, {
+        assign: (url) => {
+          assignedUrl = url;
+        },
+        resolveRouter: () => null,
+      });
+    });
+
+    const dispatched = dispatchSearchReturnToReading(
+      {
+        eventName: searchReturnToReadingEventName,
+        routeId: '/notes/search-result/',
+        url: '/notes/search-result/',
+        canonicalUrl: '/notes/search-result/',
+        title: 'Search Result',
+        query: 'search',
+        selectionMethod: 'keyboard',
+      },
+      { target },
+    );
+
+    expect(dispatched).to.equal(true);
+    expect(observedType).to.equal(searchReturnToReadingEventName);
+    expect(assignedUrl).to.equal('/notes/search-result/');
   });
 });

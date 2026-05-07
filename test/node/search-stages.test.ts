@@ -11,6 +11,7 @@ import { runRankingAndSortingStage } from '../../src/search/core/stages/ranking-
 import { runSourceFederationStage } from '../../src/search/core/stages/source-federation.js';
 import type { SearchCandidate, SearchSourceBatch } from '../../shared/search/search-types.js';
 import type { SearchSortMode, SearchTagMode } from '../../shared/search/search-types.js';
+import type { SearchStageEventAudit } from '../../src/search/core/stage-types.js';
 
 function createCandidate(
   overrides: Partial<SearchCandidate> & Pick<SearchCandidate, 'canonicalUrl' | 'url' | 'title'>,
@@ -48,6 +49,19 @@ function createCandidate(
 }
 
 describe('search-stages', () => {
+  it('stage event audit can record search dialog event contracts', () => {
+    const audit = {
+      events: [
+        {
+          eventName: 'rouault-search:return-to-reading',
+          routeId: '/notes/router/',
+        },
+      ],
+    } satisfies SearchStageEventAudit;
+
+    expect(audit.events[0]?.eventName).to.equal('rouault-search:return-to-reading');
+  });
+
   it('query-preparation stage は request を正規化すること', () => {
     const output = runQueryPreparationStage({
       request: {
