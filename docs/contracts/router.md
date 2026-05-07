@@ -25,6 +25,7 @@
 - note identity、permalink、breadcrumb、directory-index。正本は `docs/contracts/note-navigation.md` とする。
 - Permanent URL の hash 生成規則。正本は `docs/contracts/permanent-url.md` とする。
 - 検索 URL state。正本は `docs/contracts/search.md` とする。
+- Reading chrome の owner / trigger / mobile panel / current DOM。正本は `docs/contracts/reading-chrome.md` とする。
 
 ## 3. Public Contract
 
@@ -53,6 +54,7 @@
 - navigation URL は共有可能で再構成可能な route state を表す。
 - state-only navigation は document fetch と content hydration trigger を発生させない。
 - feature-local URL state は各 feature が所有し、router core は意味を解釈しない。
+- Search return-to-reading は router の公開 navigation adapter へ接続されるが、search UI や reading chrome state は router core の durable state ではない。
 - fetch target URL は取得直前にのみ導出する。
 - 静的 HTML の `index.html` 解決に必要な trailing slash 補完は fetch target 解決層の責務である。
 - trailing slash 補完は note page navigation URL の canonical 定義を書き換えない。
@@ -84,6 +86,7 @@
 ### Forbidden Coupling
 
 - router core は focus 移動、scroll 復帰、読み上げ文言、component-local state を所有してはならない。
+- router core は TOC current DOM、mobile panel open state、search dialog selection state を所有してはならない。
 - router core は fetched HTML の component 属性形式を router protocol として扱ってはならない。
 - router core は `/archives/{hash}` を通常の note page navigation URL として扱ってはならない。
 

@@ -20,6 +20,7 @@
 
 - `_config.json` の固定入力仕様。正本は `docs/contracts/content-config.md`。
 - Sidebar presentation / tree state。正本は `docs/contracts/sidebar-state.md`。
+- Reading chrome の owner / source / trigger 境界。正本は `docs/contracts/reading-chrome.md`。
 - Search の `DocumentCanonicalUrl` / `SearchStateUrl`。正本は `docs/contracts/search.md`。
 - Permanent URL / `/archives/{hash}` / hash 生成規則。正本は `docs/contracts/permanent-url.md`。
 
@@ -111,6 +112,7 @@
 - Reading chrome の TOC owner / source / trigger marker は build-time projection と runtime hydration の接続点として扱う。
 - Stage 7 完了前の TOC reservation は fail-closed skeleton であり、owner validation の完了とはみなさない。
 - Header の `tocPresence` と `tocRuntimeId` は navigation artifact へ投影するが、interactive trigger の可否は reservation state と分離する。
+- Reading chrome の current DOM、density tier、mobile panel clone は note identity や note page navigation URL の意味を変更しない。
 
 ### Tests
 

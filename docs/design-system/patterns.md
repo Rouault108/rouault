@@ -2,6 +2,7 @@
 
 この文書は Design System の横断 UI pattern を定義する正本である。
 URL、routing、search、note identity、Permanent URL の意味論は機能 Contract を正本とし、本書は UI pattern としての扱いだけを説明する。
+Reading chrome の機能契約は `docs/contracts/reading-chrome.md` を正本とし、詳細 pattern は `docs/design-system/pattern-reading-chrome.md` と `docs/design-system/pattern-reading-block-intrusion.md` に分離する。
 
 ## 1. Status
 
@@ -58,3 +59,4 @@ URL、routing、search、note identity、Permanent URL の意味論は機能 Con
 - Reading chrome の TOC trigger は、本文より強い視覚要素にしない。
 - 予約状態と interactive 状態は分離し、未確定の TOC owner を操作可能 UI として見せない。
 - Hydration marker は build-time / runtime の接続点を示す属性であり、見た目の variant として扱わない。
+- Reading chrome の配置・密度・侵入度は専用 pattern 文書を参照し、本書では機能 Contract を再定義しない。

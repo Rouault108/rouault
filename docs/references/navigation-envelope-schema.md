@@ -28,8 +28,10 @@
 - `sidebar`: route に対応する sidebar projection。
 - `breadcrumb`: route に対応する breadcrumb projection。
 - `corpus`: route に対応する corpus projection。
+- `tocTrigger`: route に対応する reading chrome trigger projection。
 
 Shell projection は route 由来の durable shell state を運ぶ。UI component 固有の一時状態は含めない。
+Reading chrome の mobile panel open state、current DOM、density tier の runtime 再計算結果は `shellProjection` に保存しない。
 
 ## `shellProjection.sidebar`
 
@@ -50,6 +52,7 @@ Sidebar state ownership は `docs/contracts/sidebar-state.md` を正本とする
 - `shell`: shell hydration に必要な planning 情報。
 - `content`: content hydration に必要な planning 情報。
 - `islands`: hydration 対象 component と trigger 分類。
+- Reading chrome island は planning 情報であり、scheduler / registry の trigger ownership を置き換えない。
 
 Hydration trigger の正本は `docs/contracts/hydration.md` と scheduler / registry である。
 

@@ -23,6 +23,7 @@
 - Note permalink / slug / directory-index。正本は `docs/contracts/note-navigation.md`。
 - Permanent URL / `/archives/{hash}` / hash 生成規則。正本は `docs/contracts/permanent-url.md`。
 - UI pattern としての検索導線。`docs/design-system/patterns.md` が扱ってよい。
+- Reading chrome への return-to-reading UI pattern。正本は `docs/contracts/reading-chrome.md` と Design System pattern docs。
 
 ## 3. Public Contract
 
@@ -44,6 +45,7 @@
 ### Events
 
 - UI events は検索 UI が所有する。検索コアは DOM event を所有しない。
+- `ui-search-dialog-selected` は選択通知であり、return-to-reading への橋渡しは navigation adapter が担う。
 
 ### DOM / URL / State Contract
 
@@ -54,6 +56,7 @@
 - `DocumentCanonicalUrl` と note page navigation URL を同一視してはならない。
 - Snippet は構造化表現であり、生 HTML を UI 境界へ渡してはならない。
 - UI は検索 ranking や source 統合の意味論を持たない。
+- Search UI は router core を runtime import せず、return-to-reading request を event / adapter 境界で扱う。
 
 ## 4. State Model
 
@@ -81,6 +84,7 @@
 - Search UI へ検索意味論を移してはならない。
 - Permanent URL を通常結果 URL の canonicalization へ混ぜてはならない。
 - Search URL state を router core の feature-local state と混同してはならない。
+- Search dialog の選択通知を router core ownership へ直接結合してはならない。
 
 ## 5. Failure Semantics
 
@@ -102,6 +106,7 @@
 ### Client Runtime
 
 - Search core は source adapter と URL adapter を通して実行される。
+- Search bootstrap は dialog selection を return-to-reading request へ変換し、navigation adapter が遷移を実行する。
 
 ### Hydration
 

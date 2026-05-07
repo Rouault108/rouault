@@ -235,6 +235,7 @@ interface UiSearchDialogSelectedDetail {
 ```
 
 `ui-search-dialog-selected` は選択通知のみを担います。コンポーネント自身は遷移を行いません。
+Rouault アプリ本体では、この選択通知は `rouault-search:return-to-reading` へ橋渡しされます。`ui-search-dialog` 自身は router を runtime import せず、読書面への遷移実行を所有しません。
 
 #### イベント送出特性
 
@@ -445,6 +446,7 @@ trim 後 query が空です。検索を行いません。結果一覧も empty s
 本コンポーネントは、**入力欄に主フォーカスを保持したまま `aria-activedescendant` で active result を表現するモデル**を採ります。したがって、公開契約としては**結果行への直接フォーカス移動を要求しません**。
 
 選択時は `ui-search-dialog-selected` を発火します。選択イベントはナビゲーションを意味しません。上位が必要に応じて遷移します。
+Return-to-reading adapter はこの通知を読書面への request event として扱いますが、検索 ranking、URL state、router history commit の契約をこの component 文書で再定義しません。
 
 ### close reason
 

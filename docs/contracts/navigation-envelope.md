@@ -14,6 +14,7 @@
 - `NavigationEnvelope` が client navigation の正規 payload であること。
 - route 経路と fetch 経路を同じ payload model で扱うこと。
 - `document`、`shellProjection`、`hydrationPlan` を主要構造として扱うこと。
+- Reading chrome の route 由来 shell projection を durable state として運ぶこと。
 - `schemaVersion`、`buildId`、`generatedAt` の互換境界。
 
 ### This Layer Must Not Own
@@ -45,6 +46,7 @@
 - fetched HTML の component 属性形式を router protocol としてはならない。
 - `NavigationEnvelope` は document と shell の route 由来 durable state を運ぶ。
 - `hydrationPlan` は planning 情報であり、hydration trigger の正本ではない。
+- Reading chrome の TOC trigger projection は shell state であり、mobile panel open state や current DOM の ephemeral state ではない。
 - `buildId` が一致しない場合、client navigation は安全な document navigation へ縮退する。
 
 ## 4. State Model
@@ -65,11 +67,13 @@
 
 - Hydration planning
 - Shell projection application plan
+- Reading chrome trigger availability
 
 ### Forbidden Coupling
 
 - `shellProjection.sidebar` の詳細 field を sidebar state contract に押し込んではならない。
 - Reference は `NavigationEnvelope` が正規 payload であるという Contract を上書きしてはならない。
+- Reading chrome の trigger projection を component-local runtime state の保存場所として使ってはならない。
 
 ## 5. Failure Semantics
 

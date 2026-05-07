@@ -15,6 +15,7 @@
 - `docs/contracts/hydration.md`
 - `docs/contracts/sidebar-state.md`
 - `docs/contracts/note-navigation.md`
+- `docs/contracts/reading-chrome.md`
 - `docs/contracts/permanent-url.md`
 - `docs/contracts/search.md`
 - `docs/contracts/markdown.md`
@@ -27,7 +28,11 @@
 - `docs/design-system/foundations.md`
 - `docs/design-system/accessibility.md`
 - `docs/design-system/patterns.md`
+- `docs/design-system/pattern-reading-chrome.md`
+- `docs/design-system/pattern-reading-block-intrusion.md`
 - `docs/design-system/components/`
+
+Design System pattern は UI の見え方と配置判断を扱う。Router、search、hydration、note navigation、reading chrome の機能契約を上書きしない。
 
 ## Reference
 

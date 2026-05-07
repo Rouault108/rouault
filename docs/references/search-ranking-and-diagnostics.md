@@ -40,5 +40,7 @@
 - `snippet-dropped`
 - `source-timeout`
 - `degraded-results`
+- `return-to-reading-adapter-missing`
 
 Issue code は UI 文言ではない。UI は diagnostics を表示材料として扱い、検索意味論を再定義しない。
+Return-to-reading に関する issue code は adapter 接続の診断であり、ranking profile や candidate merge の score へ影響させない。

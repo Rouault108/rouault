@@ -1,0 +1,131 @@
+# Reading Chrome Contract
+
+## 1. Status
+
+- Type: Normative
+- Source of truth: note page projection、TOC owner validation、hydration scheduler / registry、search return-to-reading integration、production artifact validators
+- Applies to: note reading chrome、TOC owner / source / trigger boundary、mobile TOC panel、desktop TOC sync、search result return-to-reading、diagnostics、density tier、documentation audit
+- Non-goals: router URL 意味論の再定義、検索 ranking 詳細、component 固有 visual token の全列挙、authoring 記法の追加
+
+## 2. Ownership
+
+### This Layer Owns
+
+- 読書中に本文外へ置く補助 chrome の責務境界。
+- TOC owner、TOC source、desktop nav、mobile panel clone、header trigger の接続条件。
+- Build-time owner validation と runtime hydration lifecycle の分離。
+- Reading chrome に関係する diagnostics を、表示仕様ではなく契約違反の観測面として扱うこと。
+- TOC density tier を見出し量から導出し、意味論を変えずに読書面の密度だけへ反映すること。
+
+### This Layer Must Not Own
+
+- Navigation URL、fetch target URL、history commit。正本は `docs/contracts/router.md` と `docs/contracts/note-navigation.md`。
+- Hydration trigger の正本。正本は `docs/contracts/hydration.md`。
+- `NavigationEnvelope` schema の詳細。正本は `docs/references/navigation-envelope-schema.md`。
+- 検索 ranking、source 統合、diagnostics aggregation の詳細。正本は `docs/contracts/search.md` と `docs/references/search-ranking-and-diagnostics.md`。
+- Component 単体の visual token 詳細。正本は `docs/design-system/components/`。
+
+## 3. Public Contract
+
+### Inputs
+
+- Note page projection が生成する TOC presence、TOC headings、runtime id、owner candidate、shell trigger projection。
+- SSR が出力する desktop TOC nav、TOC JSON source、hydration marker。
+- Scheduler / registry が所有する hydration target。
+- Search dialog の selection event から変換される return-to-reading request。
+
+### Outputs
+
+- Static-first で読める note HTML。
+- Hydration 後に同期された desktop nav、mobile panel nav、header trigger state。
+- `ready`、`hasVisibleHeadings`、`activeId` を含む header 向け runtime snapshot。
+- Build-time / runtime / production artifact validation で観測できる diagnostics。
+
+### Events
+
+- Reading chrome は router event を hydration trigger の正本にしない。
+- Search result selection は検索 UI からの選択通知であり、navigation adapter が return-to-reading request へ橋渡しする。
+
+### DOM / URL / State Contract
+
+- Note page では SSR の desktop TOC nav を正本とし、mobile panel は runtime clone として扱う。
+- Header trigger は TOC content owner にならない。trigger は open / close の導線であり、TOC headings を保持しない。
+- TOC owner candidate が未確定または不正な場合、interactive trigger を有効な reading chrome として見せない。
+- Hydration marker は build-time / runtime 接続点であり、visual variant として使わない。
+- Desktop nav と mobile panel nav は同じ visible headings と active id から current DOM を同期する。
+- Density tier は `compact`、`comfortable`、`expanded` の視覚密度であり、heading identity、URL、active state の意味を変えない。
+- Search の return-to-reading は router core の import boundary を壊さず、検索 UI は router を直接所有しない。
+
+## 4. State Model
+
+### Durable State
+
+- Build-time TOC projection。
+- Validated owner candidate。
+- Runtime id。
+- Navigation envelope の shell projection。
+- Search index / catalog に含まれる destination URL。
+
+### Ephemeral State
+
+- Hydration session。
+- Mobile panel open state。
+- Active heading snapshot。
+- Desktop nav / mobile panel clone の current DOM。
+- Search dialog open / query / selection state。
+
+### Derived State
+
+- Visible headings。
+- Header trigger availability。
+- TOC density tier。
+- Diagnostics issue list。
+- Return-to-reading request。
+
+### Forbidden Coupling
+
+- Router core が TOC current DOM、mobile panel、focus return、search dialog state を所有してはならない。
+- Search UI が router core を runtime import してはならない。
+- Header trigger が TOC headings の source になってはならない。
+- `NavigationEnvelope.hydrationPlan` を hydration trigger 正本として扱ってはならない。
+- Density tier を content authoring 規約、URL、search ranking へ逆流させてはならない。
+
+## 5. Failure Semantics
+
+- Owner candidate 不整合は build-time validation で拒否する。
+- Runtime source 欠落、duplicate owner、source cleanup failure は diagnostics として観測可能にする。
+- Hydration target 欠落時も no-JS baseline の読書構造を壊さない。
+- Production CSS artifact に mobile TOC / density selector が到達していない場合は production build gate の失敗として扱う。
+- Search return-to-reading adapter が接続できない場合、検索 UI は選択通知までに留まり、検索意味論を再計算しない。
+
+## 6. Integration Boundaries
+
+### Build-time
+
+- Note projection、owner candidate validation、navigation artifact、production CSS artifact assertion を担当する。
+
+### SSR
+
+- No-JS baseline と desktop TOC nav、TOC JSON source、必要な hydration marker を出力する。
+
+### Client Runtime
+
+- `layout-toc-controller` と sync helper が desktop nav / mobile panel clone / header snapshot を同期する。
+- Search bootstrap は選択 event を return-to-reading request へ橋渡しする。
+
+### Hydration
+
+- Scheduler / registry が hydration trigger と lifecycle を所有し、component-local connected timing へ戻さない。
+
+### Tests
+
+- Placement は `docs/contracts/testing-taxonomy.md` に従う。DOM / CSS structure は SSR、observable runtime は browser / e2e、pure boundary validators は node / script で固定する。
+
+## 7. Acceptance Criteria
+
+- Reading chrome は static-first の本文読書構造を壊さない。
+- TOC owner / source / trigger / mobile panel の ownership が分離されている。
+- Desktop nav と mobile panel clone が同じ active state と visible headings で同期する。
+- Search return-to-reading が検索 UI と router の import boundary を壊さない。
+- Production CSS artifact と import-boundary assertion が final validation に含まれている。
+- Design System pattern docs は機能 Contract を上書きせず、読書面での見え方と intrusion 判断だけを扱う。

@@ -14,6 +14,7 @@
 - `test/node/**`、`test/browser/**`、`test/ssr/**`、`test/e2e/**`、`test/storybook/**` の責務境界。
 - Storybook は contract test harness ではないこと。
 - CSS 構造契約と computed style 検証の分離。
+- Production import boundary と production CSS artifact assertion の配置。
 - 新規テスト追加時の判断順。
 - Fixture note の基本方針。
 
@@ -46,6 +47,7 @@
 - `test/ssr/**` は build-time / final DOM / static artifact / CSS structure を担当する。
 - `test/e2e/**` は app shell integration、no-JS baseline、router/history/search、主要導線を担当する。
 - `test/storybook/**` は docs / smoke / metadata に限定する。
+- Production import-boundary / CSS artifact / search import-boundary scripts は node-level verification として扱い、読書 chrome の runtime UI 挙動は browser / e2e で固定する。
 
 ## 4. State Model
 
@@ -72,6 +74,7 @@
 
 - Contract 変更に対して検証レイヤが存在しない場合、変更の受け入れ条件が不完全である。
 - Fixture note を publication surface として使う場合、SSR artifact と no-JS baseline を壊してはならない。
+- Production artifact assertion が失敗した場合、生成物ではなく source CSS / build integration を修正する。
 
 ## 6. Integration Boundaries
 
@@ -82,10 +85,12 @@
 ### SSR
 
 - Final DOM、selector / hook / token 参照、hydration budget を固定する。
+- Reading chrome の static DOM、hydration marker、TOC density selector、production CSS 到達性を固定する。
 
 ### Client Runtime
 
 - Observable behavior は browser/e2e tests で固定する。
+- Desktop nav / mobile panel current sync、search return-to-reading event bridge、focus return は browser / e2e で固定する。
 
 ### Hydration
 

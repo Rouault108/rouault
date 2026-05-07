@@ -76,7 +76,8 @@ build-time で決定し、`layout-toc-controller[capabilities-json]` へ渡し�
 | 名前       | 種別                               | 契約                         |
 | ---------- | ---------------------------------- | ---------------------------- |
 | `headers`  | property                           | 描画対象見出し。唯一のソース |
-| `activeId` | property / attribute (`active-id`) | 現在アクティブな見出し ID    |
+| `activeId`    | property / attribute (`active-id`)       | 現在アクティブな見出し ID                                        |
+| `densityTier` | property / attribute (`density-tier`)    | `compact` / `comfortable` / `expanded` の視覚密度。意味論は変えない |
 
 ### 4.2 イベント
 
@@ -114,6 +115,7 @@ TOC の現在地表示は、支援技術向けには `aria-current="location"`�
 - active item に hover または focus-visible が重なった場合、current surface と active foreground を優先する
 - 通常表示でも forced-colors でも、active item に hover / focus-visible が重なった場合は active foreground を維持する
 - TOC link は navigation surface として扱い、通常・hover・focus・current のいずれでも下線を出さない
+- density tier は `--toc-item-*` token recipe を切り替えるだけで、見出し ID、active state、URL を変更しない
 
 forced-colors 契約:
 
@@ -171,6 +173,7 @@ hydration 後の current DOM 契約:
 - active item 以外からは `.is-active`、`data-active`、`aria-current` を削除する
 - 各 nav 内に active id 対応 link が存在しない場合、その nav では current state を持たない
 - mobile panel clone も current DOM 契約の対象であり、open / close により stale current state を残してはならない
+- desktop nav、mobile panel nav、`ui-toc` は同じ density tier 語彙を使う。SSR static nav では `data-density-tier`、Lit component では `density-tier` attribute を使う。
 
 ---
 
@@ -198,3 +201,4 @@ runtime 契約:
 - current heading は active item 強調で把握できること
 - mobile panel が header の直下から開くこと
 - close 後に trigger へ focus return できること
+- density tier が CSS structure と browser behavior の両方で固定されていること

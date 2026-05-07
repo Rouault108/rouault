@@ -15,6 +15,7 @@
 - Hydration scheduler / registry の登録、起動、重複抑止。
 - Shell hydration と content hydration の入口。
 - SPA 遷移後の content hydration trigger。
+- Reading chrome の hydration session は scheduler / registry の target として扱う。
 
 ### This Layer Must Not Own
 
@@ -29,6 +30,7 @@
 - SSR HTML に付与された build-time hydration annotation。
 - `NavigationEnvelope.hydrationPlan` による planning 情報。
 - Scheduler / registry に登録された component hydration target。
+- SSR が出力した reading chrome hydration marker。
 
 ### Outputs
 
@@ -46,6 +48,7 @@
 - component は hydration timing を自己決定してはならない。
 - state-only navigation は content hydration trigger にしてはならない。
 - Hydration directive は build-time 注釈を正本とする。
+- Reading chrome の owner / source / trigger marker は hydration 接続点であり、component が connected 時に独自 trigger 判定をしてはならない。
 
 ## 4. State Model
 
@@ -68,6 +71,7 @@
 
 - Router event を hydration trigger 正本にしてはならない。
 - Component-local lifecycle に hydration timing を戻してはならない。
+- Reading chrome の mobile panel open state や current DOM 同期を hydration trigger 正本にしてはならない。
 
 ## 5. Failure Semantics
 
@@ -87,6 +91,7 @@
 ### Client Runtime
 
 - Scheduler / registry が trigger と実行を所有する。
+- `layout-toc-controller` などの reading chrome component は登録された target として起動し、起動条件を自分で所有しない。
 
 ### Hydration
 
