@@ -578,6 +578,7 @@ describe('layout-toc-controller', () => {
 
       expect(panel.hasAttribute('hidden')).to.equal(false);
       expect(panel.parentElement).to.equal(document.body);
+      expect(panel.getAttribute('data-hydration-state')).to.equal('hydrated');
       expect(
         panel.querySelector('[data-layout-toc-mobile-nav]')?.getAttribute('aria-label'),
       ).to.equal('モバイル目次');

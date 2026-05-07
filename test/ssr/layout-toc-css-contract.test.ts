@@ -16,6 +16,17 @@ import {
 const layoutTocCss = readFileSync(resolve(process.cwd(), 'src/assets/css/layout-toc.css'), 'utf8');
 
 describe('layout toc css contract', () => {
+  it('disposed mobile panel state is hidden by the shared CSS artifact', () => {
+    expect(
+      hasDeclarationForSelector(
+        layoutTocCss,
+        ".layout-toc-mobile-panel[data-hydration-state='disposed']",
+        'display',
+        'none',
+      ),
+    ).toBe(true);
+  });
+
   it('toc links explicitly opt out from underline in screen scope', () => {
     expect(
       hasDeclarationForSelector(layoutTocCss, '.layout-toc__link', 'text-decoration', 'none', {

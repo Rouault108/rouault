@@ -10,6 +10,7 @@ const SCOPE_ATTRIBUTE = 'data-hydration-scope';
 const CAPABILITY_ATTRIBUTE = 'data-hydration-capability';
 const TRIGGER_ATTRIBUTE = 'data-hydration-trigger';
 const KEY_ATTRIBUTE = 'data-hydration-key';
+const TOC_TRIGGER_RESERVED_ATTRIBUTE = 'data-toc-trigger-reserved';
 
 const VALID_CAPABILITIES = new Set<HydrationCapability>([
   'static',
@@ -46,6 +47,10 @@ const createScopeId = (scope: Element, fallbackIndex: number): string => {
 };
 
 const readPlanItem = (element: Element, scopeId: string): HydrationPlanItem | null => {
+  if (element.getAttribute(TOC_TRIGGER_RESERVED_ATTRIBUTE) === 'true') {
+    return null;
+  }
+
   const capabilityValue = element.getAttribute(CAPABILITY_ATTRIBUTE)?.trim();
   const triggerValue = element.getAttribute(TRIGGER_ATTRIBUTE)?.trim();
   const capability =

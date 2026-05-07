@@ -33,4 +33,11 @@ describe('hydration registry', () => {
       expect(HYDRATION_REGISTRY_BY_TAG.has(tagName)).toBe(false);
     }
   });
+
+  it('layout-toc controller / owner は activation adapter を registry に集約すること', () => {
+    expect(HYDRATION_REGISTRY_BY_TAG.get('layout-toc-controller')?.activate).toBeTypeOf(
+      'function',
+    );
+    expect(HYDRATION_REGISTRY_BY_TAG.get('layout-toc')?.activate).toBeTypeOf('function');
+  });
 });

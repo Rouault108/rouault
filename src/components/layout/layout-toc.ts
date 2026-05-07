@@ -22,6 +22,8 @@ import {
 } from '../../toc/toc-source-lookup-root.js';
 import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
 import { TocNavigationController } from '../../toc/toc-navigation-controller.js';
+import { TocHydrationSessionController } from '../../toc/toc-hydration-session.js';
+import { syncLayoutTocControllersForSession } from '../../toc/sync-layout-toc-controllers.js';
 import { decodeHashFragment } from '../../router/url-hash.js';
 import { isHTMLElement } from '../../lib/dom.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
@@ -214,6 +216,7 @@ export class LayoutToc extends LitElement {
   private _tracker: TocActiveTracker | null = null;
   private _navigationController: TocNavigationController | null = null;
   private _hydrationActivated = false;
+  private readonly _hydrationSessionController = new TocHydrationSessionController();
   private _mobileControllerCleanup: (() => void) | null = null;
   private _panelDocumentListenersAttached = false;
 
@@ -229,6 +232,15 @@ export class LayoutToc extends LitElement {
     this._detachPanelDocumentListeners();
     this._detachStickyFooterBoundary?.();
     this._detachStickyFooterBoundary = null;
+    const disposedSession = this._hydrationSessionController.dispose();
+    if (disposedSession !== null) {
+      layoutTocRuntimeStore.publish(disposedSession.ownerId, {
+        ready: false,
+        hasVisibleHeadings: false,
+        activeId: null,
+        hydrationState: disposedSession.state,
+      });
+    }
     super.disconnectedCallback();
   }
 
@@ -277,6 +289,11 @@ export class LayoutToc extends LitElement {
     }
 
     this._hydrationActivated = true;
+    this._hydrationSessionController.start({
+      ownerId: this.tocRuntimeId,
+      sourceId: this.sourceId,
+      contentRootId: this.contentRootId,
+    });
     this._upgradeNestedShadowHosts();
 
     if (!this.hasUpdated) {
@@ -301,6 +318,8 @@ export class LayoutToc extends LitElement {
     });
 
     this._connectTracker();
+    this._hydrationSessionController.markHydrated();
+    this._publishRuntimeSnapshot();
     this.requestUpdate();
   }
 
@@ -440,14 +459,23 @@ export class LayoutToc extends LitElement {
       return;
     }
 
-    layoutTocRuntimeStore.publish(this._getRuntimeId(), this._buildRuntimeSnapshot());
+    const snapshot = this._buildRuntimeSnapshot();
+    const session = this._hydrationSessionController.current;
+    if (session !== null) {
+      syncLayoutTocControllersForSession(session, snapshot);
+      return;
+    }
+
+    layoutTocRuntimeStore.publish(this._getRuntimeId(), snapshot);
   }
 
   private _buildRuntimeSnapshot(): LayoutTocRuntimeSnapshot {
+    const hydrationState = this._hydrationSessionController.current?.state;
     return {
       ready: this._tocReady,
       hasVisibleHeadings: this._visibleHeadings.length > 0,
       activeId: this._activeId.length > 0 ? this._activeId : null,
+      ...(hydrationState === undefined ? {} : { hydrationState }),
     };
   }
 
@@ -556,6 +584,7 @@ export class LayoutToc extends LitElement {
 
     const tocKey = this._visibleHeadings.map((heading) => heading.id).join('|');
     const panelId = this._getPanelId();
+    const hydrationState = this._hydrationSessionController.current?.state ?? 'unhydrated';
 
     return html`
       <div class="desktop">
@@ -574,6 +603,7 @@ export class LayoutToc extends LitElement {
       <div
         id=${panelId}
         class="mobile-panel"
+        data-hydration-state=${hydrationState}
         data-open=${String(this._panelOpen)}
         aria-hidden=${String(!this._panelOpen)}
         ?inert=${!this._panelOpen}

@@ -1,6 +1,7 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import { HydrationScheduler } from '../../src/client/hydration/scheduler.js';
+import { planHydration } from '../../src/client/hydration/planner.js';
 import '../../src/components/layout/layout-toc.js';
 import '../../src/components/ui/toc/toc.js';
 import type { LayoutToc } from '../../src/components/layout/layout-toc.js';
@@ -284,6 +285,7 @@ describe('layout-toc hydration reconciliation', () => {
       const mobilePanel = host.shadowRoot?.querySelector<HTMLElement>('.mobile-panel') ?? null;
       expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
       expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
+      expect(mobilePanel?.getAttribute('data-hydration-state')).to.equal('hydrated');
 
       await waitForActiveDom(desktopToc, secondHeadingLabel);
       expect(readActiveLabel(desktopToc)).to.equal(secondHeadingLabel);
@@ -291,6 +293,20 @@ describe('layout-toc hydration reconciliation', () => {
       restoreHash();
       cleanup();
     }
+  });
+
+  it('reserved layout-toc-controller trigger は hydration plan から除外すること', async () => {
+    const root = await fixture<HTMLElement>(html`
+      <section data-hydration-scope="note-toc">
+        <layout-toc-controller
+          data-toc-trigger-reserved="true"
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></layout-toc-controller>
+      </section>
+    `);
+
+    expect(planHydration(root)).to.deep.equal([{ scope: 'note-toc', items: [] }]);
   });
 
   it('hydrate 開始直後でも location hash の active が失われないこと', async () => {
@@ -489,6 +505,7 @@ describe('layout-toc hydration reconciliation', () => {
       expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
       expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
       expect(mobilePanel?.hasAttribute('hidden')).to.equal(true);
+      expect(mobilePanel?.getAttribute('data-hydration-state')).to.equal('hydrated');
       expect(layoutTocRuntimeStore.getSnapshot('toc-source-test').hydrationState).to.equal(
         'hydrated',
       );

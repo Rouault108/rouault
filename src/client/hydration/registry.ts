@@ -36,7 +36,12 @@ const activateLayoutSidebar = ({ element }: HydrationActivationContext): void =>
 
 const activateLayoutTocController = async ({
   element,
+  signal,
 }: HydrationActivationContext): Promise<void> => {
+  if (signal.aborted) {
+    return;
+  }
+
   if (element.getAttribute('data-toc-trigger-reserved') === 'true') {
     return;
   }

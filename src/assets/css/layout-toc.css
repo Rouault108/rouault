@@ -208,6 +208,10 @@ layout-toc-controller {
   overscroll-behavior: contain;
 }
 
+.layout-toc-mobile-panel[data-hydration-state='disposed'] {
+  display: none;
+}
+
 .layout-toc-mobile-panel__header {
   display: flex;
   justify-content: flex-end;

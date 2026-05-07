@@ -21,7 +21,9 @@ import {
   resolveTocSourceLookupRoot,
 } from '../../toc/toc-source-lookup-root.js';
 import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
+import { TocHydrationSessionController } from '../../toc/toc-hydration-session.js';
 import { TocNavigationController } from '../../toc/toc-navigation-controller.js';
+import { syncLayoutTocControllersForSession } from '../../toc/sync-layout-toc-controllers.js';
 import { decodeHashFragment } from '../../router/url-hash.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
 import { layoutTocRuntimeStore, type LayoutTocRuntimeSnapshot } from './layout-toc-runtime-store.js';
@@ -66,6 +68,7 @@ export class LayoutTocController extends HTMLElement {
   private _panelOpen = false;
   private _documentListenersAttached = false;
   private _desktopNavClickAttached = false;
+  private readonly _hydrationSessionController = new TocHydrationSessionController();
   private _ready = false;
   private _activeId = '';
   private _allHeadings: Heading[] = [];
@@ -99,6 +102,15 @@ export class LayoutTocController extends HTMLElement {
     this._navigationController = null;
     this._tracker?.destroy();
     this._tracker = null;
+    const disposedSession = this._hydrationSessionController.dispose();
+    if (disposedSession !== null) {
+      layoutTocRuntimeStore.publish(disposedSession.ownerId, {
+        ready: false,
+        hasVisibleHeadings: false,
+        activeId: null,
+        hydrationState: disposedSession.state,
+      });
+    }
     this._detachPanelDocumentListeners();
     this._removeMobilePanel();
   }
@@ -109,6 +121,11 @@ export class LayoutTocController extends HTMLElement {
     }
 
     this._hydrationActivated = true;
+    this._hydrationSessionController.start({
+      ownerId: this.tocRuntimeId,
+      sourceId: this.sourceId,
+      contentRootId: this.contentRootId,
+    });
     this._allHeadings = this._readHeadingsFromSource();
     this._capabilities = normalizeTocCapabilities(parseJsonValue(this.capabilitiesJson));
 
@@ -117,6 +134,8 @@ export class LayoutTocController extends HTMLElement {
     this._ensureMobilePanel();
     this._applyVisibleHeadings(this._resolveVisibleHeadings(this._allHeadings));
     this._connectTracker();
+    this._hydrationSessionController.markHydrated();
+    this._publishRuntimeSnapshot();
   }
 
   private _readHeadingsFromSource(): Heading[] {
@@ -249,6 +268,10 @@ export class LayoutTocController extends HTMLElement {
     panel.setAttribute('aria-hidden', 'true');
     panel.setAttribute('hidden', '');
     panel.setAttribute('inert', '');
+    panel.setAttribute(
+      'data-hydration-state',
+      this._hydrationSessionController.current?.state ?? 'unhydrated',
+    );
 
     const header = document.createElement('div');
     header.className = 'layout-toc-mobile-panel__header';
@@ -315,6 +338,10 @@ export class LayoutTocController extends HTMLElement {
     }
 
     if (this._panelOpen) {
+      panel.setAttribute(
+        'data-hydration-state',
+        this._hydrationSessionController.current?.state ?? 'unhydrated',
+      );
       panel.removeAttribute('hidden');
       panel.removeAttribute('inert');
       panel.setAttribute('aria-hidden', 'false');
@@ -327,10 +354,12 @@ export class LayoutTocController extends HTMLElement {
   }
 
   private _buildRuntimeSnapshot(): LayoutTocRuntimeSnapshot {
+    const hydrationState = this._hydrationSessionController.current?.state;
     return {
       ready: this._ready,
       hasVisibleHeadings: this._visibleHeadings.length > 0,
       activeId: this._activeId.length > 0 ? this._activeId : null,
+      ...(hydrationState === undefined ? {} : { hydrationState }),
     };
   }
 
@@ -339,7 +368,19 @@ export class LayoutTocController extends HTMLElement {
       return;
     }
 
-    layoutTocRuntimeStore.publish(this._getRuntimeId(), this._buildRuntimeSnapshot());
+    this._panelRoot?.setAttribute(
+      'data-hydration-state',
+      this._hydrationSessionController.current?.state ?? 'unhydrated',
+    );
+
+    const snapshot = this._buildRuntimeSnapshot();
+    const session = this._hydrationSessionController.current;
+    if (session !== null) {
+      syncLayoutTocControllersForSession(session, snapshot);
+      return;
+    }
+
+    layoutTocRuntimeStore.publish(this._getRuntimeId(), snapshot);
   }
 
   private _resolveDesktopNav(): HTMLElement | null {

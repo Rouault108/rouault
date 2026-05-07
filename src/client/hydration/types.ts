@@ -19,6 +19,7 @@ export interface HydrationActivationContext {
   readonly element: HTMLElement;
   readonly root: ParentNode;
   readonly signal: AbortSignal;
+  readonly sessionId?: string | undefined;
 }
 
 export interface HydrationPreloadPolicy {

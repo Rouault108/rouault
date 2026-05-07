@@ -2,6 +2,7 @@ import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/toc/toc.js';
 import type { Toc } from '../../src/components/ui/toc/toc.js';
 import { normalizeTocHeadings } from '../../src/toc/toc-headings.js';
+import { TocHydrationSessionController } from '../../src/toc/toc-hydration-session.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const headers = [
@@ -111,6 +112,17 @@ describe('ui-toc active link scroll contract', () => {
         { id: '', text: 'Empty', level: 2 },
       ]),
     ).to.deep.equal([{ id: 'intro', text: 'Intro', level: 2 }]);
+  });
+
+  it('TOC hydration session は再起動時に前 generation を abort すること', () => {
+    const controller = new TocHydrationSessionController();
+    const first = controller.start({ ownerId: 'toc-a', sourceId: 'source-a' });
+    const second = controller.start({ ownerId: 'toc-a', sourceId: 'source-a' });
+
+    expect(first.signal.aborted).to.equal(true);
+    expect(second.signal.aborted).to.equal(false);
+    expect(second.generation).to.equal(first.generation + 1);
+    expect(controller.markHydrated()?.state).to.equal('hydrated');
   });
 
   afterEach(() => {
