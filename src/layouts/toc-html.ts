@@ -1,6 +1,7 @@
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import { createHydrationMarkerAttributes } from '../../shared/hydration/hydration-markers.js';
 import { buildHashHrefFromId } from '../router/url-hash.js';
+import { resolveTocDensityTier } from '../toc/toc-density-tier.js';
 import { escapeHtmlAttribute, escapeHtmlText, serializeHtmlAttributes } from './html-output.js';
 
 type TocProjection = NotePageProjection['toc'];
@@ -49,6 +50,7 @@ const renderHeadingItems = (headings: TocProjection['headings']): string => {
 
 export const renderTocHtml = (toc: TocProjection): string => {
   const ownerId = (toc.ownerId ?? toc.sourceId).trim();
+  const densityTier = resolveTocDensityTier(toc.headings);
   const controllerAttributes = serializeHtmlAttributes([
     { name: 'source-id', value: toc.sourceId },
     { name: 'toc-runtime-id', value: toc.sourceId },
@@ -79,6 +81,7 @@ export const renderTocHtml = (toc: TocProjection): string => {
     <aside
       class="layout-toc-col"
       aria-label="目次"
+      data-density-tier="${densityTier}"
       data-layout-toc-root
       ${rootMarkerAttributes.trim()}
     >

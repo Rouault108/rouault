@@ -29,6 +29,33 @@ describe('layout toc css contract', () => {
     ).toBe(true);
   });
 
+  it('keeps layout toc density tier selectors on the shared CSS artifact', () => {
+    expect(
+      hasDeclarationForAllSelectors(
+        layoutTocCss,
+        [
+          ".layout-toc-col[data-density-tier='compact'] .layout-toc",
+          ".layout-toc[data-density-tier='compact']",
+          ".layout-toc-mobile-panel[data-density-tier='compact']",
+        ],
+        '--toc-item-min-block-size',
+        'var(--toc-item-compact-min-block-size, 22px)',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForAllSelectors(
+        layoutTocCss,
+        [
+          ".layout-toc-col[data-density-tier='expanded'] .layout-toc",
+          ".layout-toc[data-density-tier='expanded']",
+          ".layout-toc-mobile-panel[data-density-tier='expanded']",
+        ],
+        '--toc-item-active-max-lines',
+        '4',
+      ),
+    ).toBe(true);
+  });
+
   it('toc links explicitly opt out from underline in screen scope', () => {
     expect(
       hasDeclarationForSelector(layoutTocCss, '.layout-toc__link', 'text-decoration', 'none', {

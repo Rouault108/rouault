@@ -1,6 +1,7 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/toc/toc.js';
 import type { Toc } from '../../src/components/ui/toc/toc.js';
+import { resolveTocDensityTier } from '../../src/toc/toc-density-tier.js';
 import { normalizeTocHeadings } from '../../src/toc/toc-headings.js';
 import { TocHydrationSessionController } from '../../src/toc/toc-hydration-session.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
@@ -112,6 +113,19 @@ describe('ui-toc active link scroll contract', () => {
         { id: '', text: 'Empty', level: 2 },
       ]),
     ).to.deep.equal([{ id: 'intro', text: 'Intro', level: 2 }]);
+  });
+
+  it('density tier helper と同じ入力契約を使うこと', () => {
+    expect(resolveTocDensityTier(headers)).to.equal('expanded');
+    expect(
+      resolveTocDensityTier(
+        Array.from({ length: 12 }, (_, index) => ({
+          id: `section-${String(index + 1)}`,
+          text: `Section ${String(index + 1)}`,
+          level: 2,
+        })),
+      ),
+    ).to.equal('compact');
   });
 
   it('TOC hydration session は再起動時に前 generation を abort すること', () => {

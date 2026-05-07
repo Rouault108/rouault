@@ -21,6 +21,7 @@ import {
   resolveTocSourceLookupRoot,
 } from '../../toc/toc-source-lookup-root.js';
 import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
+import { resolveTocDensityTier } from '../../toc/toc-density-tier.js';
 import { TocHydrationSessionController } from '../../toc/toc-hydration-session.js';
 import { TocNavigationController } from '../../toc/toc-navigation-controller.js';
 import { syncLayoutTocControllersForSession } from '../../toc/sync-layout-toc-controllers.js';
@@ -195,9 +196,17 @@ export class LayoutTocController extends HTMLElement {
   private _applyVisibleHeadings(headings: Heading[]): void {
     this._visibleHeadings = headings;
     const visibleIds = new Set(headings.map((heading) => heading.id));
+    const densityTier = resolveTocDensityTier(headings);
 
     this._syncHeadingVisibility(this._resolveDesktopNav(), visibleIds);
     this._syncHeadingVisibility(this._panelNav, visibleIds);
+    this._syncDensityTier(this._resolveDesktopNav(), densityTier);
+    this._syncDensityTier(this._panelNav, densityTier);
+    this.closest<HTMLElement>('[data-layout-toc-root]')?.setAttribute(
+      'data-density-tier',
+      densityTier,
+    );
+    this._panelRoot?.setAttribute('data-density-tier', densityTier);
 
     const hash = readLocationHash();
     if (hash.length > 0 && visibleIds.has(hash)) {
@@ -225,6 +234,10 @@ export class LayoutTocController extends HTMLElement {
 
   private _syncHeadingVisibility(nav: HTMLElement | null, visibleIds: ReadonlySet<string>): void {
     syncTocHeadingVisibility(nav, visibleIds);
+  }
+
+  private _syncDensityTier(nav: HTMLElement | null, densityTier: string): void {
+    nav?.setAttribute('data-density-tier', densityTier);
   }
 
   private _syncActiveLinks(nav: HTMLElement | null): void {
@@ -265,6 +278,7 @@ export class LayoutTocController extends HTMLElement {
     const panel = document.createElement('div');
     panel.id = this._getPanelId();
     panel.className = 'layout-toc-mobile-panel';
+    panel.setAttribute('data-density-tier', resolveTocDensityTier(this._visibleHeadings));
     panel.setAttribute('aria-hidden', 'true');
     panel.setAttribute('hidden', '');
     panel.setAttribute('inert', '');

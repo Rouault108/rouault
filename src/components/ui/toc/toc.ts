@@ -4,6 +4,10 @@ import { classMap } from 'lit/directives/class-map.js';
 import { map } from 'lit/directives/map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { buildHashHrefFromId } from '../../../router/url-hash.js';
+import {
+  normalizeTocDensityTier,
+  type TocDensityTier,
+} from '../../../toc/toc-density-tier.js';
 import type { TocHeading } from '../../../toc/toc-headings.js';
 import '../tooltip/tooltip';
 
@@ -22,6 +26,20 @@ export class Toc extends LitElement {
     :host {
       display: block;
       min-inline-size: 0;
+    }
+
+    :host([density-tier='compact']) {
+      --toc-item-min-block-size: var(--toc-item-compact-min-block-size, 22px);
+      --toc-item-padding-block: var(--toc-item-compact-padding-block, 2px);
+      --toc-item-inactive-upper-max-lines: 1;
+      --toc-item-active-max-lines: 2;
+    }
+
+    :host([density-tier='expanded']) {
+      --toc-item-min-block-size: var(--toc-item-expanded-min-block-size, 28px);
+      --toc-item-padding-block: var(--toc-item-expanded-padding-block, var(--space-2, 8px));
+      --toc-item-inactive-upper-max-lines: 3;
+      --toc-item-active-max-lines: 4;
     }
 
     nav {
@@ -257,6 +275,9 @@ export class Toc extends LitElement {
   @property({ type: String, attribute: 'navigation-label' })
   navigationLabel = '目次';
 
+  @property({ type: String, attribute: 'density-tier', reflect: true })
+  densityTier: TocDensityTier = 'comfortable';
+
   @property({ type: Boolean, attribute: 'suppress-active-link-scroll' })
   suppressActiveLinkScroll = false;
 
@@ -291,6 +312,12 @@ export class Toc extends LitElement {
     this._labelResizeObserver?.disconnect();
     this._labelResizeObserver = null;
     super.disconnectedCallback();
+  }
+
+  protected override willUpdate(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has('densityTier')) {
+      this.densityTier = normalizeTocDensityTier(this.densityTier);
+    }
   }
 
   override updated(changedProperties: PropertyValues<this>): void {

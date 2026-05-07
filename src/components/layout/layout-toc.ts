@@ -24,6 +24,7 @@ import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
 import { TocNavigationController } from '../../toc/toc-navigation-controller.js';
 import { TocHydrationSessionController } from '../../toc/toc-hydration-session.js';
 import { syncLayoutTocControllersForSession } from '../../toc/sync-layout-toc-controllers.js';
+import { resolveTocDensityTier, type TocDensityTier } from '../../toc/toc-density-tier.js';
 import { decodeHashFragment } from '../../router/url-hash.js';
 import { isHTMLElement } from '../../lib/dom.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
@@ -211,6 +212,7 @@ export class LayoutToc extends LitElement {
   @state() private _activeId = '';
   @state() private _panelOpen = false;
   @state() private _tocReady = false;
+  @state() private _densityTier: TocDensityTier = 'comfortable';
 
   private _detachStickyFooterBoundary: (() => void) | null = null;
   private _tracker: TocActiveTracker | null = null;
@@ -437,6 +439,7 @@ export class LayoutToc extends LitElement {
 
   private _applyVisibleHeadings(headings: Heading[]): void {
     this._visibleHeadings = headings;
+    this._densityTier = resolveTocDensityTier(headings);
 
     const hash = this._readLocationHash();
     if (hash.length > 0 && headings.some((heading) => heading.id === hash)) {
@@ -594,6 +597,7 @@ export class LayoutToc extends LitElement {
             <ui-toc
               .headers=${this._visibleHeadings}
               .activeId=${this._activeId}
+              .densityTier=${this._densityTier}
               @click=${this._handleTocClick}
             ></ui-toc>
           `,
@@ -603,6 +607,7 @@ export class LayoutToc extends LitElement {
       <div
         id=${panelId}
         class="mobile-panel"
+        data-density-tier=${this._densityTier}
         data-hydration-state=${hydrationState}
         data-open=${String(this._panelOpen)}
         aria-hidden=${String(!this._panelOpen)}
@@ -625,6 +630,7 @@ export class LayoutToc extends LitElement {
             <ui-toc
               .headers=${this._visibleHeadings}
               .activeId=${this._activeId}
+              .densityTier=${this._densityTier}
               @click=${this._handleTocClick}
             ></ui-toc>
           `,

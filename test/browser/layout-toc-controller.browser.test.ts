@@ -128,6 +128,15 @@ describe('layout-toc-controller', () => {
       expect(mobileActiveLink?.classList.contains('is-active')).to.equal(true);
       expect(mobileActiveLink?.getAttribute('data-active')).to.equal('true');
       expect(mobileActiveLink?.getAttribute('aria-current')).to.equal('location');
+      expect(currentRoot.querySelector('[data-layout-toc-nav]')?.getAttribute('data-density-tier')).to.equal(
+        'expanded',
+      );
+      expect(mobilePanel?.getAttribute('data-density-tier')).to.equal('expanded');
+      expect(
+        mobilePanel
+          ?.querySelector('[data-layout-toc-mobile-nav]')
+          ?.getAttribute('data-density-tier'),
+      ).to.equal('expanded');
 
       const snapshot = layoutTocRuntimeStore.getSnapshot('toc-source-test');
       expect(snapshot.ready).to.equal(true);

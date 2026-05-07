@@ -48,6 +48,25 @@ const tocSourcePath = 'src/components/ui/toc/toc.ts';
 const tocCss = extractSingleStaticLitCss(readSourceFile(tocSourcePath), 'ui-toc', tocSourcePath);
 
 describe('ui-toc style contract', () => {
+  it('keeps host density tier selectors aligned with layout toc CSS', () => {
+    expect(
+      hasDeclarationForSelector(
+        tocCss,
+        ":host([density-tier='compact'])",
+        '--toc-item-min-block-size',
+        'var(--toc-item-compact-min-block-size, 22px)',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tocCss,
+        ":host([density-tier='expanded'])",
+        '--toc-item-active-max-lines',
+        '4',
+      ),
+    ).toBe(true);
+  });
+
   it('keeps base toc link fallback recipe and underline contract', () => {
     expect(hasDeclarationForSelector(tocCss, '.toc-link', 'text-decoration', 'none')).toBe(true);
     expect(hasDeclarationForSelector(tocCss, '.toc-link::before', 'box-sizing', 'border-box')).toBe(

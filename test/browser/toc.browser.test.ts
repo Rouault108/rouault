@@ -248,6 +248,17 @@ describe('ui-toc active link scroll contract', () => {
     expect(nav?.getAttribute('aria-label')).to.equal('目次');
   });
 
+  it('density-tier は列挙外値を comfortable へ正規化すること', async () => {
+    const toc = await fixture<Toc>(html`
+      <ui-toc .headers=${headers} density-tier="invalid"></ui-toc>
+    `);
+
+    await flush(toc);
+
+    expect(toc.densityTier).to.equal('comfortable');
+    expect(toc.getAttribute('density-tier')).to.equal('comfortable');
+  });
+
   it('scopeSelections の有無は shared heading helper で判定すること', () => {
     expect(
       hasDynamicTocScopeSelections([
