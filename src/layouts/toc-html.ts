@@ -48,12 +48,12 @@ const renderHeadingItems = (headings: TocProjection['headings']): string => {
 };
 
 export const renderTocHtml = (toc: TocProjection): string => {
-  const ownerId = toc.ownerId ?? toc.sourceId;
+  const ownerId = (toc.ownerId ?? toc.sourceId).trim();
   const controllerAttributes = serializeHtmlAttributes([
     { name: 'source-id', value: toc.sourceId },
     { name: 'toc-runtime-id', value: toc.sourceId },
     { name: 'toc-owner-id', value: ownerId },
-    { name: 'data-toc-trigger-reserved', value: 'true' },
+    { name: 'data-toc-trigger-reserved', value: 'false' },
     { name: 'capabilities-json', value: toc.capabilities, kind: 'json' },
     { name: 'content-root-id', value: toc.contentRootId },
     {

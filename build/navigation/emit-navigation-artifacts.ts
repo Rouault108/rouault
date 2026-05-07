@@ -16,6 +16,10 @@ import type {
 } from '../../shared/navigation/shell-projection.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import { readParse5HydrationMarker } from './parse5-hydration-markers.js';
+import {
+  validateTocOwnerCandidates,
+  type TocOwnerCandidate,
+} from './validate-toc-owner-candidates.js';
 
 type Parse5Node = DefaultTreeAdapterMap['node'];
 type Parse5ChildNode = DefaultTreeAdapterMap['childNode'];
@@ -207,6 +211,36 @@ const collectHydrationPlan = (document: Parse5Document): HydrationPlanScope[] =>
   return plan;
 };
 
+const collectTocOwnerCandidates = (
+  document: Parse5Document,
+  htmlFilePath: string,
+): TocOwnerCandidate[] =>
+  findAllElements(
+    document,
+    (candidate) => getAttribute(candidate, 'data-hydration-marker') === 'toc-owner',
+  ).map((candidate, index) => ({
+    ownerId: getAttribute(candidate, 'data-hydration-owner-id'),
+    targetPath: `${htmlFilePath}#toc-owner-${String(index + 1)}`,
+    scopeId: getAttribute(candidate, 'data-hydration-scope'),
+  }));
+
+const assertTocOwnerCandidates = (document: Parse5Document, htmlFilePath: string): void => {
+  const candidates = collectTocOwnerCandidates(document, htmlFilePath);
+  if (candidates.length === 0) {
+    return;
+  }
+
+  const result = validateTocOwnerCandidates(candidates);
+  if (result.issues.length === 0) {
+    return;
+  }
+
+  const issueText = result.issues
+    .map((issue) => `${issue.status}:${issue.ownerId ?? 'null'}:${issue.targetPath}`)
+    .join(', ');
+  throw new Error(`[navigation-artifact] TOC owner candidate validation failed: ${issueText}`);
+};
+
 const extractHeaderProjection = (document: Parse5Document): HeaderShellProjection | null => {
   const header = findFirstElement(document, (candidate) => candidate.tagName === 'layout-header');
   if (header === null) {
@@ -223,6 +257,7 @@ const extractHeaderProjection = (document: Parse5Document): HeaderShellProjectio
     sidebarEnabled: hasAttribute(header, 'sidebar-enabled'),
     tocPresence: toTocPresence(getAttribute(header, 'toc-presence')),
     tocRuntimeId: toOptionalString(getAttribute(header, 'toc-runtime-id')),
+    tocOwnerId: toOptionalString(getAttribute(header, 'data-hydration-owner-id')),
     tocTriggerReserved: getAttribute(header, 'toc-trigger-reserved') === 'true',
   };
 };
@@ -288,6 +323,7 @@ export const createNavigationEnvelopeFromHtml = (
   } = {},
 ): NavigationEnvelope => {
   const document = parse5.parse(html);
+  assertTocOwnerCandidates(document, htmlFilePath);
   const embeddedBuildId = readEmbeddedBuildId(document);
   const main = findFirstElement(
     document,

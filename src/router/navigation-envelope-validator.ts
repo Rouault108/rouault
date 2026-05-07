@@ -63,7 +63,10 @@ const isHeaderShellProjection = (value: unknown): value is HeaderShellProjection
     (value['tocTriggerReserved'] === undefined || isBoolean(value['tocTriggerReserved'])) &&
     (value['tocRuntimeId'] === undefined ||
       value['tocRuntimeId'] === null ||
-      isString(value['tocRuntimeId']))
+      isString(value['tocRuntimeId'])) &&
+    (value['tocOwnerId'] === undefined ||
+      value['tocOwnerId'] === null ||
+      isString(value['tocOwnerId']))
   );
 };
 

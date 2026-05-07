@@ -111,6 +111,9 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('toc-runtime-id="toc-source-reader-with-toc"');
     expect(rendered).toContain('toc-trigger-reserved="true"');
     expect(rendered).toContain('data-hydration-owner-id="toc-owner-reader-with-toc"');
+    expect(rendered.match(/<layout-header\b[^>]*>/u)?.[0] ?? '').not.toContain(
+      'data-toc-trigger-reserved',
+    );
   });
 
   it('body pagefind ignore は notePage.pagefind を正本にすること', () => {

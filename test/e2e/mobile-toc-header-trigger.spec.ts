@@ -62,6 +62,8 @@ const readMobilePanelState = async (page: Page) =>
     const headerRect = headerHost?.getBoundingClientRect() ?? null;
 
     return {
+      headerOwnerId:
+        headerHost instanceof HTMLElement ? headerHost.getAttribute('data-hydration-owner-id') : null,
       triggerExists: trigger instanceof HTMLElement,
       triggerVisible: trigger instanceof HTMLElement ? getComputedStyle(trigger).display !== 'none' : false,
       triggerExpanded: trigger instanceof HTMLElement ? trigger.getAttribute('aria-expanded') : null,
@@ -109,6 +111,7 @@ test.describe('mobile TOC header trigger contract', () => {
       expect(state.triggerTextContent).toBe('目次');
       expect(state.triggerTextVisible).toBe(expectedTextVisible);
       expect(state.triggerControls).toMatch(/^layout-toc-panel-/);
+      expect(state.headerOwnerId).toMatch(/^toc-owner-/);
     });
   }
 

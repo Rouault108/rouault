@@ -266,6 +266,9 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const contentRootId = `note-content-${dataIdBase}`;
   const headings = normalizeHeadings(input.note.tocHeadings);
   const tocPresence: TocPresence = headings.length > 0 ? 'present' : 'absent';
+  if (tocPresence === 'present' && tocOwnerId.trim().length === 0) {
+    throw new Error(`[projection] note "${slug}" の TOC owner candidate が空です。`);
+  }
   const tocCapabilities = normalizeTocCapabilities(input.note.tocCapabilities);
   const shouldHydrateToc =
     tocCapabilities.activeTracking || tocCapabilities.dynamicScopes || tocCapabilities.mobilePanel;

@@ -7,12 +7,35 @@ import {
   createNavigationEnvelopeFromHtml,
   emitNavigationArtifacts,
 } from '../../build/navigation/emit-navigation-artifacts.js';
+import { validateTocOwnerCandidates } from '../../build/navigation/validate-toc-owner-candidates.js';
 import {
   createTocSourceSideEffect,
   tocSideEffectDirectives,
 } from '../../src/toc/toc-source-side-effects.js';
 
 describe('navigation artifacts', () => {
+  it('TOC owner candidate validation は complete-validation mode で valid owner を受理すること', () => {
+    expect(
+      validateTocOwnerCandidates([
+        {
+          ownerId: 'toc-owner-example',
+          targetPath: '/notes/example/',
+          scopeId: 'note-toc',
+        },
+      ]),
+    ).to.deep.equal({
+      mode: 'complete-validation',
+      issues: [],
+      accepted: [
+        {
+          accepted: true,
+          mode: 'complete-validation',
+          ownerId: 'toc-owner-example',
+        },
+      ],
+    });
+  });
+
   it('TOC source side-effect directive は artifact 生成から独立した契約語彙を持つこと', () => {
     expect(tocSideEffectDirectives).to.deep.equal([
       'none',
@@ -46,6 +69,7 @@ describe('navigation artifacts', () => {
       corpora-json='[{"key":"all","label":"All","href":"/corpora/"}]'
       current-corpus-key="all"
       toc-runtime-id="toc-source-example"
+      data-hydration-owner-id="toc-owner-test"
     ></layout-header>
     <app-router data-sidebar-presence="present">
       <div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>
@@ -81,6 +105,7 @@ describe('navigation artifacts', () => {
     expect(envelope.shellProjection?.header.currentCorpusKey).to.equal('all');
     expect(envelope.shellProjection?.header.tocPresence).to.equal('present');
     expect(envelope.shellProjection?.header.tocRuntimeId).to.equal('toc-source-example');
+    expect(envelope.shellProjection?.header.tocOwnerId).to.equal('toc-owner-test');
     expect(envelope.shellProjection?.header.tocTriggerReserved).to.equal(true);
     expect(envelope.shellProjection?.sidebar?.selectedId).to.equal('notes/example');
     expect(envelope.shellProjection?.sidebar?.initialExpandedIds).to.deep.equal(['notes']);

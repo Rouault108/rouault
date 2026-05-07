@@ -26,6 +26,7 @@ export const SAFE_FALLBACK_HEADER_SHELL_PROJECTION: HeaderShellSnapshot = {
   sidebarEnabled: false,
   tocPresence: 'absent',
   tocRuntimeId: null,
+  tocOwnerId: null,
   tocTriggerReserved: false,
 };
 
@@ -75,6 +76,11 @@ const readTocRuntimeId = (header: Element): string | null => {
   return tocRuntimeId && tocRuntimeId.length > 0 ? tocRuntimeId : null;
 };
 
+const readTocOwnerId = (header: Element): string | null => {
+  const tocOwnerId = header.getAttribute('data-hydration-owner-id')?.trim();
+  return tocOwnerId && tocOwnerId.length > 0 ? tocOwnerId : null;
+};
+
 const readTocTriggerReserved = (header: Element): boolean => {
   const value = header.getAttribute(TOC_TRIGGER_RESERVED_ATTRIBUTE);
   return value === '' || value === 'true';
@@ -87,6 +93,7 @@ export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
   sidebarEnabled: header.hasAttribute('sidebar-enabled'),
   tocPresence: readTocPresence(header),
   tocRuntimeId: readTocRuntimeId(header),
+  tocOwnerId: readTocOwnerId(header),
   tocTriggerReserved: readTocTriggerReserved(header),
 });
 
@@ -108,12 +115,23 @@ export const applyHeaderSnapshot = (
   header.toggleAttribute('sidebar-enabled', snapshot.sidebarEnabled);
   header.setAttribute('toc-presence', snapshot.tocPresence);
   header.toggleAttribute(TOC_TRIGGER_RESERVED_ATTRIBUTE, snapshot.tocTriggerReserved === true);
+  header.setAttribute(
+    'toc-trigger-reserved',
+    snapshot.tocTriggerReserved === true ? 'true' : 'false',
+  );
 
   const tocRuntimeId = snapshot.tocRuntimeId?.trim();
   if (tocRuntimeId && tocRuntimeId.length > 0) {
     header.setAttribute('toc-runtime-id', tocRuntimeId);
   } else {
     header.removeAttribute('toc-runtime-id');
+  }
+
+  const tocOwnerId = snapshot.tocOwnerId?.trim();
+  if (tocOwnerId && tocOwnerId.length > 0) {
+    header.setAttribute('data-hydration-owner-id', tocOwnerId);
+  } else {
+    header.removeAttribute('data-hydration-owner-id');
   }
 };
 
