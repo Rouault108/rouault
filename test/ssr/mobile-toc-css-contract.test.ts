@@ -2,9 +2,19 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import {
+  TOC_MOBILE_PANEL_CSS_ARTIFACT_PATH,
+  TOC_MOBILE_PANEL_SELECTOR,
+} from '../../src/toc/toc-mobile-panel-dom-css-contract.js';
+
 const mainCss = readFileSync(resolve(process.cwd(), 'src/assets/css/main.css'), 'utf8');
 
 describe('mobile toc css contract', () => {
+  it('mobile panel contract points at the shared layout toc CSS artifact', () => {
+    expect(TOC_MOBILE_PANEL_SELECTOR).toBe('[data-layout-toc-mobile-panel]');
+    expect(TOC_MOBILE_PANEL_CSS_ARTIFACT_PATH).toBe('src/assets/css/layout-toc.css');
+  });
+
   it('mobile shell collapses TOC holder into a zero-height host while keeping one-column shells', () => {
     expect(mainCss).toContain('@media (max-width: 639px)');
 

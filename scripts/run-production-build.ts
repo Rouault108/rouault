@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
 import { resolveBuildLabel } from '../build/metadata/build-metadata.js';
+import { assertProductionCssArtifacts } from './assert-production-css-artifacts.js';
 
 const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 const distDir = path.resolve(process.cwd(), 'dist');
@@ -33,4 +34,14 @@ if (result.error) {
 
 if (result.status !== 0) {
   process.exit(result.status ?? 1);
+}
+
+try {
+  await assertProductionCssArtifacts();
+} catch (error) {
+  console.error(
+    '[production-build] production CSS artifact assertion failed:',
+    error instanceof Error ? error.message : String(error),
+  );
+  process.exit(1);
 }

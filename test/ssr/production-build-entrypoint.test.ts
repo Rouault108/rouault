@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 const projectRoot = process.cwd();
 const workflowPath = path.resolve(projectRoot, '.github/workflows/ci-cd.yml');
 const playwrightConfigPath = path.resolve(projectRoot, 'playwright.config.ts');
+const productionBuildEntrypointPath = path.resolve(projectRoot, 'scripts/run-production-build.ts');
 
 const sliceWorkflowJob = (workflow: string, jobName: string, nextJobName: string): string => {
   const start = workflow.indexOf(`${jobName}:`);
@@ -74,5 +75,14 @@ describe('production build entrypoint contract', () => {
     expect(deployProductionJob).toContain("github.ref == 'refs/heads/main'");
     expect(deployProductionJob).toContain("needs.detect-changes.outputs.build == 'true'");
     expect(deployProductionJob).not.toContain("github.event_name == 'workflow_dispatch'");
+  });
+
+  it('production build entrypoint は生成後に CSS artifact assertion を実行すること', () => {
+    const productionBuildEntrypoint = readFileSync(productionBuildEntrypointPath, 'utf8');
+
+    expect(productionBuildEntrypoint).toContain(
+      "import { assertProductionCssArtifacts } from './assert-production-css-artifacts.js';",
+    );
+    expect(productionBuildEntrypoint).toContain('await assertProductionCssArtifacts();');
   });
 });

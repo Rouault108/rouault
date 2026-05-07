@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { TOC_MOBILE_PANEL_SELECTOR } from '../../src/toc/toc-mobile-panel-dom-css-contract.js';
 import {
   findLastDeclarationRuleOrderForSelector,
   hasDeclarationForAllSelectors,
@@ -17,6 +18,7 @@ const layoutTocCss = readFileSync(resolve(process.cwd(), 'src/assets/css/layout-
 
 describe('layout toc css contract', () => {
   it('disposed mobile panel state is hidden by the shared CSS artifact', () => {
+    expect(TOC_MOBILE_PANEL_SELECTOR).toBe('[data-layout-toc-mobile-panel]');
     expect(
       hasDeclarationForSelector(
         layoutTocCss,
