@@ -150,7 +150,10 @@ export class LayoutHeader extends LitElement {
       --ui-header-center-end-inset: clamp(
         184px,
         24vw,
-        calc(var(--note-toc-width, 216px) + var(--note-shell-column-gap, var(--space-8, 32px)))
+        calc(
+          var(--note-toc-width, clamp(15rem, 18vw, 17rem)) +
+            var(--note-shell-column-gap, var(--space-8, 32px))
+        )
       );
     }
 
@@ -292,7 +295,8 @@ export class LayoutHeader extends LitElement {
     @container layout-header-shell (min-width: 1024px) {
       :host([note-layout]) ui-header {
         --ui-header-center-end-inset: calc(
-          var(--note-toc-width, 216px) + var(--note-shell-column-gap, var(--space-8, 32px))
+          var(--note-toc-width, clamp(15rem, 18vw, 17rem)) +
+            var(--note-shell-column-gap, var(--space-8, 32px))
         );
       }
 
@@ -595,14 +599,14 @@ export class LayoutHeader extends LitElement {
     }
 
     this._tocHashSyncFrame ??= window.requestAnimationFrame(() => {
-        this._tocHashSyncFrame = null;
-        this._syncTocActiveLinksFromHash();
-      });
+      this._tocHashSyncFrame = null;
+      this._syncTocActiveLinksFromHash();
+    });
 
     this._tocHashSyncTimer ??= window.setTimeout(() => {
-        this._tocHashSyncTimer = null;
-        this._syncTocActiveLinksFromHash();
-      }, 160);
+      this._tocHashSyncTimer = null;
+      this._syncTocActiveLinksFromHash();
+    }, 160);
   }
 
   private _cancelTocHashSync(): void {

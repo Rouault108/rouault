@@ -157,6 +157,20 @@ e2eFixtureId: 'note.footnote-long-url'
         'utf8',
       );
 
+      const fallbackTestingDir = join(fallbackRoot, 'testing');
+      mkdirSync(fallbackTestingDir, { recursive: true });
+      writeFileSync(
+        join(fallbackTestingDir, 'toc-readable-long-heading.md'),
+        `---
+title: 'TOC Readable Long Heading'
+e2eFixtureId: 'note.toc-readable-long-heading'
+---
+
+# fixture
+`,
+        'utf8',
+      );
+
       const manifest = buildE2ENoteFixtureManifest(
         [
           {
@@ -247,6 +261,14 @@ e2eFixtureId: 'note.footnote-long-url'
           '/notes/e2e/article-header-static-layout/extraordinarily-long-intermediate-breadcrumb-label-for-mobile-overflow-verification/very-long-breadcrumb-label',
         contentRootId:
           'note-content-e2e-article-header-static-layout-extraordinarily-long-intermediate-breadcrumb-label-for-mobile-overflow-verification-very-long-breadcrumb-label',
+      });
+
+      expect(manifest['note.toc-readable-long-heading']).toEqual({
+        fixtureId: 'note.toc-readable-long-heading',
+        title: 'TOC Readable Long Heading',
+        slug: 'testing/toc-readable-long-heading',
+        permalink: '/notes/testing/toc-readable-long-heading',
+        contentRootId: 'note-content-testing-toc-readable-long-heading',
       });
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });

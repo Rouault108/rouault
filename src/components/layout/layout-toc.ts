@@ -25,6 +25,7 @@ import { TocNavigationController } from '../../toc/toc-navigation-controller.js'
 import { TocHydrationSessionController } from '../../toc/toc-hydration-session.js';
 import { syncLayoutTocControllersForSession } from '../../toc/sync-layout-toc-controllers.js';
 import { resolveTocDensityTier, type TocDensityTier } from '../../toc/toc-density-tier.js';
+import { TOC_MOBILE_PANEL_SELECTOR } from '../../toc/toc-mobile-panel-dom-css-contract.js';
 import { decodeHashFragment } from '../../router/url-hash.js';
 import { isHTMLElement } from '../../lib/dom.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
@@ -507,7 +508,7 @@ export class LayoutToc extends LitElement {
       },
     });
 
-    const panel = this.shadowRoot?.querySelector<HTMLElement>('.mobile-panel');
+    const panel = this.shadowRoot?.querySelector<HTMLElement>(TOC_MOBILE_PANEL_SELECTOR);
     if (result.owned && panel instanceof HTMLElement && panel.contains(result.link)) {
       layoutTocMobileController.close(this._getRuntimeId());
     }
@@ -563,7 +564,7 @@ export class LayoutToc extends LitElement {
     }
 
     const path = event.composedPath();
-    const panel = this.shadowRoot?.querySelector<HTMLElement>('.mobile-panel');
+    const panel = this.shadowRoot?.querySelector<HTMLElement>(TOC_MOBILE_PANEL_SELECTOR);
     if (panel instanceof HTMLElement && path.includes(panel)) {
       return;
     }
@@ -607,6 +608,7 @@ export class LayoutToc extends LitElement {
       <div
         id=${panelId}
         class="mobile-panel"
+        data-layout-toc-mobile-panel
         data-density-tier=${this._densityTier}
         data-hydration-state=${hydrationState}
         data-open=${String(this._panelOpen)}

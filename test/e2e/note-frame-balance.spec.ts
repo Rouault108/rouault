@@ -74,16 +74,16 @@ test.describe('note frame balance', () => {
     expect(wide.hasSidebarColumn).toBe(true);
     expect(wide.hasNoteShell).toBe(true);
 
-    expect(wide.appRouterWidth).toBeGreaterThanOrEqual(1358);
-    expect(wide.appRouterWidth).toBeLessThanOrEqual(1362);
+    expect(wide.appRouterWidth).toBeGreaterThanOrEqual(1414);
+    expect(wide.appRouterWidth).toBeLessThanOrEqual(1418);
     expect(wide.sidebarColumnLeft).not.toBeNull();
     expect(wide.sidebarColumnWidth).toBeGreaterThanOrEqual(246);
     expect(wide.sidebarColumnWidth).toBeLessThanOrEqual(250);
 
     expect(wide.noteShellWidth).not.toBeNull();
-    expect((wide.noteShellWidth ?? 0) <= 1116).toBe(true);
-    expect(wide.tocColumnWidth).toBeGreaterThanOrEqual(214);
-    expect(wide.tocColumnWidth).toBeLessThanOrEqual(218);
+    expect((wide.noteShellWidth ?? 0) <= 1170).toBe(true);
+    expect(wide.tocColumnWidth).toBeGreaterThanOrEqual(270);
+    expect(wide.tocColumnWidth).toBeLessThanOrEqual(274);
     expect(wide.articleWidth).toBeGreaterThanOrEqual(820);
     expect((wide.articleWidth ?? 0) > (wide.tocColumnWidth ?? 0)).toBe(true);
 
@@ -94,8 +94,8 @@ test.describe('note frame balance', () => {
 
     const wider = await readNoteWideFrameSnapshot(page);
 
-    expect(wider.appRouterWidth).toBeGreaterThanOrEqual(1358);
-    expect(wider.appRouterWidth).toBeLessThanOrEqual(1362);
+    expect(wider.appRouterWidth).toBeGreaterThanOrEqual(1414);
+    expect(wider.appRouterWidth).toBeLessThanOrEqual(1418);
 
     expect(Math.abs((wider.appRouterWidth ?? 0) - (wide.appRouterWidth ?? 0))).toBeLessThanOrEqual(
       1,
@@ -103,8 +103,8 @@ test.describe('note frame balance', () => {
     expect(wider.sidebarColumnLeft).not.toBeNull();
     expect(wider.sidebarColumnWidth).toBeGreaterThanOrEqual(246);
     expect(wider.sidebarColumnWidth).toBeLessThanOrEqual(250);
-    expect(wider.tocColumnWidth).toBeGreaterThanOrEqual(214);
-    expect(wider.tocColumnWidth).toBeLessThanOrEqual(218);
+    expect(wider.tocColumnWidth).toBeGreaterThanOrEqual(270);
+    expect(wider.tocColumnWidth).toBeLessThanOrEqual(274);
     expect((wider.articleWidth ?? 0) > (wider.tocColumnWidth ?? 0)).toBe(true);
 
     expect(wider.horizontalOverflow).toBeLessThanOrEqual(1);

@@ -117,6 +117,16 @@ TOC の現在地表示は、支援技術向けには `aria-current="location"`�
 - TOC link は navigation surface として扱い、通常・hover・focus・current のいずれでも下線を出さない
 - density tier は `--toc-item-*` token recipe を切り替えるだけで、見出し ID、active state、URL を変更しない
 
+### 4.5 Label wrapping
+
+TOC label は、階層だけを理由に 1 行省略してはならない。`data-heading-depth` は構造情報であり、indent や検証用の hook として残すが、`white-space: nowrap`、`text-overflow: ellipsis`、`line-clamp: unset` の根拠にしてはならない。
+
+inactive item は density tier に応じた最大行数で clamp する。compact inactive item は原則 2 行、expanded inactive item は原則 3 行まで表示する。active item は現在地把握のため inactive item より多い行数を許容し、compact active item は原則 3 行、expanded active item は原則 4 行まで表示する。
+
+`ui-toc` と SSR `.layout-toc` は同じ `--toc-item-inactive-max-lines` / `--toc-item-active-max-lines` token recipe と label wrapping contract を共有する。`--toc-item-inactive-upper-max-lines` は廃止済みであり、runtime source では使用してはならない。
+
+mobile panel の DOM / test contract hook は `[data-layout-toc-mobile-panel]` である。mobile panel の CSS styling hook は `.layout-toc-mobile-panel` である。static-first controller panel と legacy Lit panel は、配置場所が異なっても同じ DOM contract hook `[data-layout-toc-mobile-panel]` を持つ。
+
 forced-colors 契約:
 
 - inactive item は `CanvasText` とする

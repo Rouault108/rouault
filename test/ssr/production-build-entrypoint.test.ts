@@ -7,6 +7,10 @@ const projectRoot = process.cwd();
 const workflowPath = path.resolve(projectRoot, '.github/workflows/ci-cd.yml');
 const playwrightConfigPath = path.resolve(projectRoot, 'playwright.config.ts');
 const productionBuildEntrypointPath = path.resolve(projectRoot, 'scripts/run-production-build.ts');
+const productionCssArtifactAssertionPath = path.resolve(
+  projectRoot,
+  'scripts/assert-production-css-artifacts.ts',
+);
 
 const sliceWorkflowJob = (workflow: string, jobName: string, nextJobName: string): string => {
   const start = workflow.indexOf(`${jobName}:`);
@@ -84,5 +88,18 @@ describe('production build entrypoint contract', () => {
       "import { assertProductionCssArtifacts } from './assert-production-css-artifacts.js';",
     );
     expect(productionBuildEntrypoint).toContain('await assertProductionCssArtifacts();');
+  });
+
+  it('production CSS artifact assertion は reachable CSS 全体と styling hook を検査すること', () => {
+    const assertionSource = readFileSync(productionCssArtifactAssertionPath, 'utf8');
+
+    expect(assertionSource).not.toContain('TOC_MOBILE_PANEL_SELECTOR');
+    expect(assertionSource).toContain('TOC_MOBILE_PANEL_STYLING_SELECTOR');
+    expect(assertionSource).toContain('TOC_MOBILE_PANEL_CSS_ARTIFACT_PATH');
+    expect(assertionSource).toContain("const reachableCss = [...cssByAsset.values()].join('\\n');");
+    expect(assertionSource).toContain('--toc-item-inactive-upper-max-lines');
+    expect(assertionSource).toContain('expectRuleHasDeclarations');
+    expect(assertionSource).toContain('var(--toc-item-inactive-max-lines, 2)');
+    expect(assertionSource).toContain('var(--toc-item-active-max-lines, 3)');
   });
 });

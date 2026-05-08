@@ -9,6 +9,20 @@ const headers = [
   { id: '72-配列の要素の読み書き', text: '7.2 配列の要素の読み書き', level: 2 },
 ];
 
+const longHeaders = [
+  { id: 'overview', text: '概要', level: 2 },
+  {
+    id: 'source-code-to-execution',
+    text: '第2章 ソースコードから実行まで：コンパイル単位、アセンブリ、IL、メタデータ、CLRの関係',
+    level: 4,
+  },
+  {
+    id: 'runtime-boundary',
+    text: '実行時境界を越えるときに発生する型情報、例外、依存解決の扱い',
+    level: 3,
+  },
+] as const;
+
 const createRect = ({
   top,
   left = 0,
@@ -238,9 +252,7 @@ describe('ui-toc active link scroll contract', () => {
   });
 
   it('navigation label は既定で 目次 を内部 nav へ設定すること', async () => {
-    const toc = await fixture<Toc>(html`
-      <ui-toc .headers=${headers}></ui-toc>
-    `);
+    const toc = await fixture<Toc>(html` <ui-toc .headers=${headers}></ui-toc> `);
 
     await flush(toc);
 
@@ -257,6 +269,38 @@ describe('ui-toc active link scroll contract', () => {
 
     expect(toc.densityTier).to.equal('comfortable');
     expect(toc.getAttribute('density-tier')).to.equal('comfortable');
+  });
+
+  it('compact density は inactive 2行、active 3行 clamp を使い deep heading を nowrap にしないこと', async () => {
+    const toc = await fixture<Toc>(html`
+      <ui-toc
+        style="inline-size: 180px;"
+        density-tier="compact"
+        .headers=${longHeaders}
+        active-id="source-code-to-execution"
+      ></ui-toc>
+    `);
+
+    await flush(toc);
+
+    const inactiveLabel = toc.shadowRoot?.querySelector<HTMLElement>(
+      'a.toc-link[data-heading-id="runtime-boundary"] .toc-link-label',
+    );
+    const activeLabel = toc.shadowRoot?.querySelector<HTMLElement>(
+      'a.toc-link[data-heading-id="source-code-to-execution"] .toc-link-label',
+    );
+    if (!(inactiveLabel instanceof HTMLElement) || !(activeLabel instanceof HTMLElement)) {
+      throw new Error('TOC label が見つかりません。');
+    }
+
+    const inactiveStyle = getComputedStyle(inactiveLabel);
+    const activeStyle = getComputedStyle(activeLabel);
+
+    expect(inactiveStyle.webkitLineClamp).to.equal('2');
+    expect(inactiveStyle.whiteSpace).to.equal('normal');
+    expect(inactiveStyle.textOverflow).to.not.equal('ellipsis');
+    expect(activeStyle.webkitLineClamp).to.equal('3');
+    expect(activeStyle.whiteSpace).to.equal('normal');
   });
 
   it('scopeSelections の有無は shared heading helper で判定すること', () => {
@@ -286,10 +330,7 @@ describe('ui-toc active link scroll contract', () => {
 
   it('active DOM の再照合は encoded href ではなく raw data-heading-id を使うこと', async () => {
     const toc = await fixture<Toc>(html`
-      <ui-toc
-        .headers=${[{ id: 'a b', text: 'A B', level: 2 }]}
-        active-id="a b"
-      ></ui-toc>
+      <ui-toc .headers=${[{ id: 'a b', text: 'A B', level: 2 }]} active-id="a b"></ui-toc>
     `);
 
     await flush(toc);

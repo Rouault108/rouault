@@ -11,6 +11,7 @@ import {
   hasDeclarationValueIncluding,
   hasDeclarationValueIncludingForAllSelectors,
   hasDeclarationValueNotIncludingForAllSelectors,
+  lacksRuleForSelector,
   lacksDeclarationPropertyForAllSelectors,
 } from './support/css-contract.js';
 
@@ -39,7 +40,43 @@ describe('layout toc css contract', () => {
           ".layout-toc-mobile-panel[data-density-tier='compact']",
         ],
         '--toc-item-min-block-size',
-        'var(--toc-item-compact-min-block-size, 22px)',
+        'var(--toc-item-compact-min-block-size, 24px)',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForAllSelectors(
+        layoutTocCss,
+        [
+          ".layout-toc-col[data-density-tier='compact'] .layout-toc",
+          ".layout-toc[data-density-tier='compact']",
+          ".layout-toc-mobile-panel[data-density-tier='compact']",
+        ],
+        '--toc-item-inactive-max-lines',
+        '2',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForAllSelectors(
+        layoutTocCss,
+        [
+          ".layout-toc-col[data-density-tier='compact'] .layout-toc",
+          ".layout-toc[data-density-tier='compact']",
+          ".layout-toc-mobile-panel[data-density-tier='compact']",
+        ],
+        '--toc-item-active-max-lines',
+        '3',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForAllSelectors(
+        layoutTocCss,
+        [
+          ".layout-toc-col[data-density-tier='expanded'] .layout-toc",
+          ".layout-toc[data-density-tier='expanded']",
+          ".layout-toc-mobile-panel[data-density-tier='expanded']",
+        ],
+        '--toc-item-inactive-max-lines',
+        '3',
       ),
     ).toBe(true);
     expect(
@@ -187,10 +224,10 @@ describe('layout toc css contract', () => {
     ).toBe(true);
   });
 
-  it('keeps long label display contract depth based in screen scope', () => {
-    const inactiveUpperSelector =
+  it('keeps long label display contract independent from heading depth in screen scope', () => {
+    const inactiveSelector =
       ".layout-toc__link:not(.is-active):not([data-active='true']) .layout-toc__link-label";
-    const inactiveLowerSelector =
+    const deprecatedDepthSelector =
       ".layout-toc__link:not(.is-active):not([data-active='true']):is([data-heading-depth='2'],[data-heading-depth='3'],[data-heading-depth='4']) .layout-toc__link-label";
     const activeSelectors = [
       '.layout-toc__link.is-active .layout-toc__link-label',
@@ -201,39 +238,35 @@ describe('layout toc css contract', () => {
       hasDeclarationForSelector(layoutTocCss, '.layout-toc__link-label', 'overflow', 'hidden'),
     ).toBe(true);
     expect(
-      hasDeclarationForSelector(layoutTocCss, inactiveUpperSelector, 'display', '-webkit-box'),
+      hasDeclarationForSelector(layoutTocCss, inactiveSelector, 'display', '-webkit-box'),
     ).toBe(true);
     expect(
       hasDeclarationForSelector(
         layoutTocCss,
-        inactiveUpperSelector,
+        inactiveSelector,
         '-webkit-line-clamp',
-        'var(--toc-item-inactive-upper-max-lines, 2)',
+        'var(--toc-item-inactive-max-lines, 2)',
       ),
     ).toBe(true);
     expect(
       hasDeclarationForSelector(
         layoutTocCss,
-        inactiveUpperSelector,
+        inactiveSelector,
         'line-clamp',
-        'var(--toc-item-inactive-upper-max-lines, 2)',
+        'var(--toc-item-inactive-max-lines, 2)',
       ),
     ).toBe(true);
-    expect(hasDeclarationForSelector(layoutTocCss, inactiveLowerSelector, 'display', 'block')).toBe(
+    expect(hasDeclarationForSelector(layoutTocCss, inactiveSelector, 'white-space', 'normal')).toBe(
       true,
     );
-    expect(
-      hasDeclarationForSelector(layoutTocCss, inactiveLowerSelector, '-webkit-line-clamp', 'unset'),
-    ).toBe(true);
-    expect(
-      hasDeclarationForSelector(layoutTocCss, inactiveLowerSelector, 'line-clamp', 'unset'),
-    ).toBe(true);
-    expect(
-      hasDeclarationForSelector(layoutTocCss, inactiveLowerSelector, 'white-space', 'nowrap'),
-    ).toBe(true);
-    expect(
-      hasDeclarationForSelector(layoutTocCss, inactiveLowerSelector, 'text-overflow', 'ellipsis'),
-    ).toBe(true);
+    expect(hasDeclarationForSelector(layoutTocCss, inactiveSelector, 'overflow', 'hidden')).toBe(
+      true,
+    );
+    expect(lacksRuleForSelector(layoutTocCss, deprecatedDepthSelector)).toBe(true);
+    expect(layoutTocCss).not.toContain('--toc-item-inactive-upper-max-lines');
+    expect(layoutTocCss).not.toMatch(/data-heading-depth[\s\S]*white-space:\s*nowrap/u);
+    expect(layoutTocCss).not.toMatch(/data-heading-depth[\s\S]*text-overflow:\s*ellipsis/u);
+    expect(layoutTocCss).not.toMatch(/data-heading-depth[\s\S]*line-clamp:\s*unset/u);
     expect(
       hasDeclarationForAllSelectors(
         layoutTocCss,
@@ -253,6 +286,12 @@ describe('layout toc css contract', () => {
     expect(hasDeclarationForAllSelectors(layoutTocCss, activeSelectors, 'overflow', 'hidden')).toBe(
       true,
     );
+    expect(
+      hasDeclarationForAllSelectors(layoutTocCss, activeSelectors, 'white-space', 'normal'),
+    ).toBe(true);
+    expect(
+      hasDeclarationForAllSelectors(layoutTocCss, activeSelectors, 'text-overflow', 'clip'),
+    ).toBe(true);
   });
 
   it('keeps active font weight and base typography on token fallback recipe', () => {

@@ -149,6 +149,31 @@ export const hasDeclarationForSelector = (
   return found;
 };
 
+export const hasRuleForSelector = (
+  cssText: string,
+  selector: string,
+  options: CssDeclarationSearchOptions = {},
+): boolean => {
+  const scope = options.scope ?? 'screen';
+  const expectedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
+  let found = false;
+
+  parseCss(cssText).walkRules((rule) => {
+    if (found || !isRuleInScope(rule, scope)) {
+      return;
+    }
+    found = splitSelectors(rule.selector).includes(expectedSelector);
+  });
+
+  return found;
+};
+
+export const lacksRuleForSelector = (
+  cssText: string,
+  selector: string,
+  options?: CssDeclarationSearchOptions,
+): boolean => !hasRuleForSelector(cssText, selector, options);
+
 export const hasDeclarationForAllSelectors = (
   cssText: string,
   selectors: readonly string[],

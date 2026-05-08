@@ -16,6 +16,25 @@ const accessibilityDocs = readFileSync(
 );
 
 describe('tokens css contract', () => {
+  it('defines the readable TOC token recipe', () => {
+    const expectedTokens = [
+      ['--note-toc-width', 'clamp(15rem, 18vw, 17rem)'],
+      ['--toc-item-rail-offset-inline', '6px'],
+      ['--toc-item-rail-gap', '6px'],
+      ['--toc-item-padding-inline-end', '6px'],
+      ['--toc-item-indent-step', '6px'],
+      ['--toc-item-font-weight-active', 'var(--font-medium)'],
+      ['--toc-item-inactive-max-lines', '2'],
+      ['--toc-item-active-max-lines', '3'],
+    ] as const;
+
+    for (const [property, value] of expectedTokens) {
+      expect(hasDeclarationForSelector(tokensCss, ':root', property, value)).toBe(true);
+    }
+
+    expect(tokensCss).not.toContain('--toc-item-inactive-upper-max-lines');
+  });
+
   it('defines toc shared surface bleed token', () => {
     expect(
       hasDeclarationForSelector(

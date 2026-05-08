@@ -24,7 +24,7 @@ const waitForHeaderTrigger = async (page: Page): Promise<void> => {
       return await page.evaluate(() => {
         const controller = document.querySelector('layout-toc-controller');
         const desktopNav = document.querySelector('[data-layout-toc-nav]');
-        const panel = document.querySelector('.layout-toc-mobile-panel');
+        const panel = document.querySelector('[data-layout-toc-mobile-panel]');
         return (
           controller instanceof HTMLElement &&
           desktopNav instanceof HTMLElement &&
@@ -52,7 +52,7 @@ const readMobilePanelState = async (page: Page) =>
     const header = document.querySelector('layout-header');
     const trigger = header?.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger');
     const triggerText = header?.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text');
-    const panel = document.querySelector<HTMLElement>('.layout-toc-mobile-panel');
+    const panel = document.querySelector<HTMLElement>('[data-layout-toc-mobile-panel]');
     const closeButton = panel?.querySelector<HTMLButtonElement>('.layout-toc-mobile-panel__close');
     const tocNav = panel?.querySelector<HTMLElement>('[data-layout-toc-mobile-nav]');
     const headerHost = header instanceof HTMLElement ? header : null;
@@ -65,14 +65,19 @@ const readMobilePanelState = async (page: Page) =>
       headerOwnerId:
         headerHost instanceof HTMLElement ? headerHost.getAttribute('data-toc-owner-id') : null,
       triggerExists: trigger instanceof HTMLElement,
-      triggerVisible: trigger instanceof HTMLElement ? getComputedStyle(trigger).display !== 'none' : false,
-      triggerExpanded: trigger instanceof HTMLElement ? trigger.getAttribute('aria-expanded') : null,
-      triggerControls: trigger instanceof HTMLElement ? trigger.getAttribute('aria-controls') : null,
+      triggerVisible:
+        trigger instanceof HTMLElement ? getComputedStyle(trigger).display !== 'none' : false,
+      triggerExpanded:
+        trigger instanceof HTMLElement ? trigger.getAttribute('aria-expanded') : null,
+      triggerControls:
+        trigger instanceof HTMLElement ? trigger.getAttribute('aria-controls') : null,
       triggerAriaLabel: trigger instanceof HTMLElement ? trigger.getAttribute('aria-label') : null,
       triggerTextContent:
         triggerText instanceof HTMLElement ? (triggerText.textContent?.trim() ?? '') : null,
       triggerTextVisible:
-        triggerText instanceof HTMLElement ? getComputedStyle(triggerText).display !== 'none' : false,
+        triggerText instanceof HTMLElement
+          ? getComputedStyle(triggerText).display !== 'none'
+          : false,
       panelExists: panel instanceof HTMLElement,
       panelOpen: panel instanceof HTMLElement ? !panel.hasAttribute('hidden') : false,
       panelAriaHidden: panel instanceof HTMLElement ? panel.getAttribute('aria-hidden') : null,
@@ -115,15 +120,15 @@ test.describe('mobile TOC header trigger contract', () => {
     });
   }
 
-  test('note ページで header trigger 押下により panel が header 直下から開閉すること', async ({ page }) => {
+  test('note ページで header trigger 押下により panel が header 直下から開閉すること', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 400, height: 900 });
     await page.goto(layoutRichPath);
     await waitForHeaderTrigger(page);
 
     await clickHeaderTrigger(page);
-    await expect
-      .poll(async () => (await readMobilePanelState(page)).panelOpen)
-      .toBe(true);
+    await expect.poll(async () => (await readMobilePanelState(page)).panelOpen).toBe(true);
 
     let state = await readMobilePanelState(page);
     expect(state.triggerExpanded).toBe('true');
@@ -144,9 +149,7 @@ test.describe('mobile TOC header trigger contract', () => {
     expect(state.mobileBarExists).toBe(false);
 
     await clickHeaderTrigger(page);
-    await expect
-      .poll(async () => (await readMobilePanelState(page)).panelOpen)
-      .toBe(false);
+    await expect.poll(async () => (await readMobilePanelState(page)).panelOpen).toBe(false);
 
     state = await readMobilePanelState(page);
     expect(state.triggerExpanded).toBe('false');
@@ -164,9 +167,7 @@ test.describe('mobile TOC header trigger contract', () => {
     });
 
     await clickHeaderTrigger(page);
-    await expect
-      .poll(async () => (await readMobilePanelState(page)).panelOpen)
-      .toBe(true);
+    await expect.poll(async () => (await readMobilePanelState(page)).panelOpen).toBe(true);
 
     const state = await readMobilePanelState(page);
     expect(Math.abs((state.panelTop ?? 0) - (state.headerBottom ?? 0))).toBeLessThanOrEqual(1);

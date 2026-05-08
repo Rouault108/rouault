@@ -31,6 +31,7 @@ const readLayoutState = async (page: Page, shellSelector: string) =>
       header?.shadowRoot?.querySelector<HTMLElement>('.corpus-switcher') ?? null;
     const themeChevron = header?.shadowRoot?.querySelector<HTMLElement>('.theme-chevron') ?? null;
     const mobileBar = toc?.shadowRoot?.querySelector('.mobile-bar') ?? null;
+    const mobilePanel = document.querySelector('[data-layout-toc-mobile-panel]');
     const zoneStart = uiHeader?.shadowRoot?.querySelector<HTMLElement>('.zone-start') ?? null;
     const zoneEnd = uiHeader?.shadowRoot?.querySelector<HTMLElement>('.zone-end') ?? null;
 
@@ -79,10 +80,11 @@ const readLayoutState = async (page: Page, shellSelector: string) =>
         document.documentElement.scrollWidth - document.documentElement.clientWidth,
       triggerExists: trigger instanceof HTMLElement,
       triggerHydrationState:
-        trigger instanceof HTMLElement ? trigger.dataset['tocHydrationState'] ?? null : null,
+        trigger instanceof HTMLElement ? (trigger.dataset['tocHydrationState'] ?? null) : null,
       triggerRight: triggerRect ? triggerRect.right : null,
       viewportWidth: window.innerWidth,
       mobileBarExists: mobileBar instanceof HTMLElement,
+      mobilePanelExists: mobilePanel instanceof HTMLElement,
       compactLabelExists: compactLabel instanceof HTMLElement,
       corpusSwitcherVisible: isVisible(corpusSwitcher),
       themeChevronExists: themeChevron instanceof HTMLElement,
@@ -118,6 +120,7 @@ test.describe('mobile TOC layout contract after header integration', () => {
     expect(state?.corpusSwitcherVisible).toBe(false);
     expect(state?.themeChevronExists).toBe(false);
     expect(state?.mobileBarExists).toBe(false);
+    expect(state?.mobilePanelExists).toBe(true);
     expect(state?.zoneStartExists).toBe(true);
     expect(state?.zoneEndExists).toBe(true);
     expect(state?.triggerRight ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(

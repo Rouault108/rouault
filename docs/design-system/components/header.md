@@ -6,6 +6,8 @@
 
 `layout-header` は `ui-header` の上位 adapter として、Rouault の page chrome に必要な start / end 領域を供給します。特に note page では `toc-presence="present|absent"` を受け、本文側の TOC 列契約と同じ presence 信号で center-end reserve を切り替えます。
 
+Note layout の header center zone は `--note-sidebar-width` と `--note-toc-width` を前提に本文中心を維持します。`--note-toc-width` は `clamp(15rem, 18vw, 17rem)` を基準とし、この変更は TOC だけでなく `layout-header` の center inset にも影響するため、reading chrome 全体の契約として扱います。Desktop note layout では、header center zone、note fixed frame、TOC reserve が同じ layout token 群に従わなければなりません。
+
 ただし、Rouault の現在の `layout-header` は breadcrumb を所有しません。note 文脈の breadcrumb 正本は本文先頭の SSR light DOM `header.article-header` が所有し、`layout-header` は移動・補助操作・TOC トリガー・corpus 切替・theme 切替に専念します。
 
 `ui-header` は、アプリケーションシェル上部に配置するヘッダーコンポーネントです。単にヘッダーらしい見た目を描画するのではなく、**アプリ全体のナビゲーション開始点をどこに置くか**、**文脈表示をどの位置に固定するか**、**`sidebarExpanded` という現名称の layout 同期入力を start 幅予約へどう反映するか**、**その状態変化をどのイベント面で通知するか**を公開契約として固定します。

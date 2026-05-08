@@ -54,6 +54,12 @@
 - Hydration marker は build-time / runtime 接続点であり、visual variant として使わない。
 - Desktop nav と mobile panel nav は同じ visible headings と active id から current DOM を同期する。
 - Density tier は `compact`、`comfortable`、`expanded` の視覚密度であり、heading identity、URL、active state の意味を変えない。
+- TOC density tier は表示密度を調整するが、階層だけを理由に見出しラベルを 1 行省略してはならない。
+- `compact` density は余白を詰めるための契約であり、見出し情報を過剰に欠落させる契約ではない。
+- Desktop TOC nav、static-first mobile panel clone、Lit `ui-toc` は同じ label wrapping contract を共有する。
+- SSR `.layout-toc` と Lit `ui-toc` は、同じ `--toc-item-inactive-max-lines` / `--toc-item-active-max-lines` contract に従う。
+- `data-heading-depth` は階層インデントなどの構造表現に使うが、label wrapping を 1 行化する根拠として使ってはならない。
+- Mobile panel の DOM contract hook は `[data-layout-toc-mobile-panel]` であり、CSS styling hook は `.layout-toc-mobile-panel` である。DOM / test lookup は `[data-layout-toc-mobile-panel]` を正本とし、`.layout-toc-mobile-panel` を正本 DOM selector として扱わない。
 - Search の return-to-reading は router core の import boundary を壊さず、検索 UI は router を直接所有しない。
 
 ## 4. State Model

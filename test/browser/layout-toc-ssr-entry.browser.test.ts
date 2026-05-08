@@ -2,6 +2,7 @@ import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import { HydrationScheduler } from '../../src/client/hydration/scheduler.js';
 import { replaceElementChildrenFromHtml } from '../../src/router/declarative-shadow-dom.js';
+import { TOC_MOBILE_PANEL_SELECTOR } from '../../src/toc/toc-mobile-panel-dom-css-contract.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const headingsJson = JSON.stringify([
@@ -136,7 +137,13 @@ describe('layout-toc SSR entry hydration', () => {
                     </template>
                   </ui-toc>
                 </div>
-                <div class="mobile-panel" data-open="false" aria-hidden="true" inert></div>
+                <div
+                  class="mobile-panel"
+                  data-layout-toc-mobile-panel
+                  data-open="false"
+                  aria-hidden="true"
+                  inert
+                ></div>
               </template>
             </layout-toc>
           </aside>
@@ -173,9 +180,11 @@ describe('layout-toc SSR entry hydration', () => {
       expect(syncedDesktopToc.activeId).to.equal('72-配列の要素の読み書き');
       expect(syncedDesktopToc.getAttribute('active-id')).to.equal('72-配列の要素の読み書き');
 
-      const mobilePanel = host.shadowRoot?.querySelector<HTMLElement>('.mobile-panel') ?? null;
+      const mobilePanel =
+        host.shadowRoot?.querySelector<HTMLElement>(TOC_MOBILE_PANEL_SELECTOR) ?? null;
       expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
       expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
+      expect(mobilePanel?.hasAttribute('data-layout-toc-mobile-panel')).to.equal(true);
       expect(host.shadowRoot?.querySelector('.mobile-bar')).to.equal(null);
 
       expect(getActiveLabel(syncedDesktopToc)).to.equal('7.2 配列の要素の読み書き');

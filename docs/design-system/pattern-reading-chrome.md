@@ -15,6 +15,7 @@
 - Reading chrome は本文の理解を補助する場合だけ視覚的に前へ出す。
 - 本文の rhythm を壊す固定 bar、過剰な shadow、強い色面を導入しない。
 - Desktop TOC は補助 navigation として扱い、本文より高い階層に見せない。
+- ただし、章題・節題の意味が把握できないほど圧縮してはならない。
 - Mobile trigger は読書面の入口であり、TOC 内容の owner ではない。
 
 ## 3. Trigger And Panel Pattern
@@ -29,6 +30,10 @@
 - TOC density は `compact`、`comfortable`、`expanded` の読書密度で扱う。
 - Density は見出し量と階層の読みやすさを調整する視覚入力であり、URL、active id、heading identity を変えない。
 - `compact` は長い TOC の scanning を優先し、`expanded` は短い TOC の tap / focus 余白を優先する。
+- `compact` は余白を詰める density であり、見出し情報を過剰に欠落させる契約ではない。
+- 右 TOC は補助 navigation だが、現在地と章題を実用上把握できるだけの情報量を保持する。
+- Desktop TOC、static-first mobile panel clone、Lit `ui-toc` は同じ label wrapping contract に従う。
+- Mobile panel は DOM contract hook `[data-layout-toc-mobile-panel]` と CSS styling hook `.layout-toc-mobile-panel` を分離する。
 
 ## 5. Diagnostics Pattern
 

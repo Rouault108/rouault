@@ -9,6 +9,7 @@ import {
   syncTocActiveLinks,
   syncTocHeadingVisibility,
 } from '../../src/toc/toc-desktop-nav-sync.js';
+import { TOC_MOBILE_PANEL_SELECTOR } from '../../src/toc/toc-mobile-panel-dom-css-contract.js';
 
 const headings = [
   { id: 'section-1', text: 'Section 1', level: 2 },
@@ -48,7 +49,7 @@ describe('layout-toc-controller', () => {
   afterEach(() => {
     layoutTocMobileController.reset();
     layoutTocRuntimeStore.reset();
-    document.querySelectorAll('.layout-toc-mobile-panel').forEach((element) => element.remove());
+    document.querySelectorAll(TOC_MOBILE_PANEL_SELECTOR).forEach((element) => element.remove());
   });
 
   it('hydrate 後に SSR nav の active state と runtime snapshot を同期すること', async () => {
@@ -114,7 +115,7 @@ describe('layout-toc-controller', () => {
       const inactiveLink = currentRoot.querySelector<HTMLAnchorElement>(
         '[data-toc-link][data-heading-id="section-1"]',
       );
-      const mobilePanel = document.querySelector<HTMLElement>('#layout-toc-panel-toc-source-test');
+      const mobilePanel = document.querySelector<HTMLElement>(TOC_MOBILE_PANEL_SELECTOR);
       const mobileActiveLink = mobilePanel?.querySelector<HTMLAnchorElement>(
         '[data-layout-toc-mobile-nav] [data-toc-link][data-heading-id="section-2"]',
       );
@@ -128,9 +129,11 @@ describe('layout-toc-controller', () => {
       expect(mobileActiveLink?.classList.contains('is-active')).to.equal(true);
       expect(mobileActiveLink?.getAttribute('data-active')).to.equal('true');
       expect(mobileActiveLink?.getAttribute('aria-current')).to.equal('location');
-      expect(currentRoot.querySelector('[data-layout-toc-nav]')?.getAttribute('data-density-tier')).to.equal(
-        'expanded',
-      );
+      expect(mobilePanel?.id).to.equal('layout-toc-panel-toc-source-test');
+      expect(mobilePanel?.hasAttribute('data-layout-toc-mobile-panel')).to.equal(true);
+      expect(
+        currentRoot.querySelector('[data-layout-toc-nav]')?.getAttribute('data-density-tier'),
+      ).to.equal('expanded');
       expect(mobilePanel?.getAttribute('data-density-tier')).to.equal('expanded');
       expect(
         mobilePanel
@@ -155,7 +158,15 @@ describe('layout-toc-controller', () => {
       <nav>
         <ol>
           <li class="layout-toc__item" data-heading-id="section-1">
-            <a class="is-active" href="#section-1" data-toc-link data-heading-id="section-1" data-active="true" aria-current="location">Section 1</a>
+            <a
+              class="is-active"
+              href="#section-1"
+              data-toc-link
+              data-heading-id="section-1"
+              data-active="true"
+              aria-current="location"
+              >Section 1</a
+            >
           </li>
           <li class="layout-toc__item" data-heading-id="section-2">
             <a href="#section-2" data-toc-link data-heading-id="section-2">Section 2</a>
@@ -249,7 +260,7 @@ describe('layout-toc-controller', () => {
         return snapshot.ready && !snapshot.hasVisibleHeadings && snapshot.activeId === null;
       }, 'visible headings 空状態が snapshot に反映されること');
 
-      const mobilePanel = document.querySelector<HTMLElement>('#layout-toc-panel-toc-source-test');
+      const mobilePanel = document.querySelector<HTMLElement>(TOC_MOBILE_PANEL_SELECTOR);
       expect(currentRoot.querySelector('.is-active')).to.equal(null);
       expect(currentRoot.querySelector('[data-active]')).to.equal(null);
       expect(currentRoot.querySelector('[aria-current]')).to.equal(null);
@@ -319,7 +330,7 @@ describe('layout-toc-controller', () => {
         'desktop nav の current state が同期されること',
       );
 
-      const mobilePanel = document.querySelector<HTMLElement>('#layout-toc-panel-toc-source-test');
+      const mobilePanel = document.querySelector<HTMLElement>(TOC_MOBILE_PANEL_SELECTOR);
       const mobileNav = mobilePanel?.querySelector<HTMLElement>('[data-layout-toc-mobile-nav]');
       const mobileSection2Item = mobileNav
         ?.querySelector<HTMLAnchorElement>('[data-toc-link][data-heading-id="section-2"]')
@@ -523,7 +534,7 @@ describe('layout-toc-controller', () => {
       expect(link.getAttribute('aria-current')).to.equal('location');
       expect(layoutTocRuntimeStore.getSnapshot('toc-source-test').activeId).to.equal('section-2');
       expect(window.location.hash).to.equal('#section-2');
-      expect(document.querySelector('#layout-toc-panel-toc-source-test')).to.equal(null);
+      expect(document.querySelector(TOC_MOBILE_PANEL_SELECTOR)).to.equal(null);
     } finally {
       root?.remove();
       document.documentElement.style.scrollPaddingTop = '';
@@ -577,7 +588,7 @@ describe('layout-toc-controller', () => {
       activateLayoutTocController(controller);
       layoutTocMobileController.open('toc-source-test', trigger);
 
-      const panel = document.querySelector<HTMLElement>('#layout-toc-panel-toc-source-test');
+      const panel = document.querySelector<HTMLElement>(TOC_MOBILE_PANEL_SELECTOR);
       const link = panel?.querySelector<HTMLAnchorElement>(
         '[data-toc-link][data-heading-id="section-1"]',
       );

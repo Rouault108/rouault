@@ -107,4 +107,34 @@ describe('renderTocHtml', () => {
     expect(rendered).toContain('A "quoted" &lt;heading&gt; &amp; detail');
     expect(rendered).not.toContain(`href="#${headingId}"`);
   });
+
+  it('長い日本語見出しでも label / title と構造用 depth を維持すること', () => {
+    const headingText =
+      '第2章 ソースコードから実行まで：コンパイル単位、アセンブリ、IL、メタデータ、CLRの関係';
+    const rendered = renderTocHtml(
+      createToc([
+        { id: 'overview', text: 'Overview', level: 2 },
+        { id: 'source-code-to-execution', text: headingText, level: 4 },
+      ]),
+    );
+    const fragment = parseFragment(rendered);
+    const link = findElement(
+      fragment,
+      (element) =>
+        element.tagName === 'a' &&
+        getAttribute(element, 'data-heading-id') === 'source-code-to-execution',
+    );
+    const label = link
+      ? findElement(
+          link,
+          (element) =>
+            element.tagName === 'span' &&
+            getAttribute(element, 'class') === 'layout-toc__link-label',
+        )
+      : null;
+
+    expect(link ? getAttribute(link, 'data-heading-depth') : null).to.equal('2');
+    expect(link ? getAttribute(link, 'title') : null).to.equal(headingText);
+    expect(label ? getTextContent(label) : null).to.equal(headingText);
+  });
 });

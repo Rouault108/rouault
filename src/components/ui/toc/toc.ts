@@ -4,10 +4,7 @@ import { classMap } from 'lit/directives/class-map.js';
 import { map } from 'lit/directives/map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { buildHashHrefFromId } from '../../../router/url-hash.js';
-import {
-  normalizeTocDensityTier,
-  type TocDensityTier,
-} from '../../../toc/toc-density-tier.js';
+import { normalizeTocDensityTier, type TocDensityTier } from '../../../toc/toc-density-tier.js';
 import type { TocHeading } from '../../../toc/toc-headings.js';
 import '../tooltip/tooltip';
 
@@ -29,16 +26,16 @@ export class Toc extends LitElement {
     }
 
     :host([density-tier='compact']) {
-      --toc-item-min-block-size: var(--toc-item-compact-min-block-size, 22px);
-      --toc-item-padding-block: var(--toc-item-compact-padding-block, 2px);
-      --toc-item-inactive-upper-max-lines: 1;
-      --toc-item-active-max-lines: 2;
+      --toc-item-min-block-size: var(--toc-item-compact-min-block-size, 24px);
+      --toc-item-padding-block: var(--toc-item-compact-padding-block, 3px);
+      --toc-item-inactive-max-lines: 2;
+      --toc-item-active-max-lines: 3;
     }
 
     :host([density-tier='expanded']) {
-      --toc-item-min-block-size: var(--toc-item-expanded-min-block-size, 28px);
+      --toc-item-min-block-size: var(--toc-item-expanded-min-block-size, 30px);
       --toc-item-padding-block: var(--toc-item-expanded-padding-block, var(--space-2, 8px));
-      --toc-item-inactive-upper-max-lines: 3;
+      --toc-item-inactive-max-lines: 3;
       --toc-item-active-max-lines: 4;
     }
 
@@ -134,22 +131,10 @@ export class Toc extends LitElement {
     .toc-link:not(.is-active) .toc-link-label {
       display: -webkit-box;
       -webkit-box-orient: vertical;
-      -webkit-line-clamp: var(--toc-item-inactive-upper-max-lines, 2);
-      line-clamp: var(--toc-item-inactive-upper-max-lines, 2);
+      -webkit-line-clamp: var(--toc-item-inactive-max-lines, 2);
+      line-clamp: var(--toc-item-inactive-max-lines, 2);
+      overflow: hidden;
       white-space: normal;
-    }
-
-    .toc-link:not(.is-active):is(
-        [data-heading-depth='2'],
-        [data-heading-depth='3'],
-        [data-heading-depth='4']
-      )
-      .toc-link-label {
-      display: block;
-      -webkit-line-clamp: unset;
-      line-clamp: unset;
-      white-space: nowrap;
-      text-overflow: ellipsis;
     }
 
     .toc-link.is-active .toc-link-label {

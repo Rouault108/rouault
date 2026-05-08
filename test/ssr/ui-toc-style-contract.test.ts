@@ -9,6 +9,7 @@ import {
   hasDeclarationForSelector,
   hasDeclarationValueIncluding,
   hasDeclarationValueNotIncludingForAllSelectors,
+  lacksRuleForSelector,
 } from './support/css-contract.js';
 
 const readSourceFile = (sourcePath: string): string =>
@@ -54,7 +55,31 @@ describe('ui-toc style contract', () => {
         tocCss,
         ":host([density-tier='compact'])",
         '--toc-item-min-block-size',
-        'var(--toc-item-compact-min-block-size, 22px)',
+        'var(--toc-item-compact-min-block-size, 24px)',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tocCss,
+        ":host([density-tier='compact'])",
+        '--toc-item-inactive-max-lines',
+        '2',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tocCss,
+        ":host([density-tier='compact'])",
+        '--toc-item-active-max-lines',
+        '3',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tocCss,
+        ":host([density-tier='expanded'])",
+        '--toc-item-inactive-max-lines',
+        '3',
       ),
     ).toBe(true);
     expect(
@@ -112,44 +137,36 @@ describe('ui-toc style contract', () => {
     ).toBe(true);
   });
 
-  it('keeps long label display contract depth based', () => {
-    const inactiveUpperSelector = '.toc-link:not(.is-active) .toc-link-label';
-    const inactiveLowerSelector =
+  it('keeps long label display contract independent from heading depth', () => {
+    const inactiveSelector = '.toc-link:not(.is-active) .toc-link-label';
+    const deprecatedDepthSelector =
       ".toc-link:not(.is-active):is([data-heading-depth='2'],[data-heading-depth='3'],[data-heading-depth='4']) .toc-link-label";
 
     expect(hasDeclarationForSelector(tocCss, '.toc-link-label', 'overflow', 'hidden')).toBe(true);
-    expect(hasDeclarationForSelector(tocCss, inactiveUpperSelector, 'display', '-webkit-box')).toBe(
+    expect(hasDeclarationForSelector(tocCss, inactiveSelector, 'display', '-webkit-box')).toBe(
       true,
     );
     expect(
       hasDeclarationForSelector(
         tocCss,
-        inactiveUpperSelector,
+        inactiveSelector,
         '-webkit-line-clamp',
-        'var(--toc-item-inactive-upper-max-lines, 2)',
+        'var(--toc-item-inactive-max-lines, 2)',
       ),
     ).toBe(true);
     expect(
       hasDeclarationForSelector(
         tocCss,
-        inactiveUpperSelector,
+        inactiveSelector,
         'line-clamp',
-        'var(--toc-item-inactive-upper-max-lines, 2)',
+        'var(--toc-item-inactive-max-lines, 2)',
       ),
     ).toBe(true);
-    expect(hasDeclarationForSelector(tocCss, inactiveLowerSelector, 'display', 'block')).toBe(true);
-    expect(
-      hasDeclarationForSelector(tocCss, inactiveLowerSelector, '-webkit-line-clamp', 'unset'),
-    ).toBe(true);
-    expect(hasDeclarationForSelector(tocCss, inactiveLowerSelector, 'line-clamp', 'unset')).toBe(
-      true,
-    );
-    expect(hasDeclarationForSelector(tocCss, inactiveLowerSelector, 'white-space', 'nowrap')).toBe(
-      true,
-    );
-    expect(
-      hasDeclarationForSelector(tocCss, inactiveLowerSelector, 'text-overflow', 'ellipsis'),
-    ).toBe(true);
+    expect(hasDeclarationForSelector(tocCss, inactiveSelector, 'white-space', 'normal')).toBe(true);
+    expect(hasDeclarationForSelector(tocCss, inactiveSelector, 'overflow', 'hidden')).toBe(true);
+    expect(lacksRuleForSelector(tocCss, deprecatedDepthSelector)).toBe(true);
+    expect(tocCss).not.toContain('--toc-item-inactive-upper-max-lines');
+    expect(tocCss).not.toMatch(/data-heading-depth[\s\S]*white-space:\s*nowrap/u);
     expect(
       hasDeclarationForSelector(
         tocCss,
@@ -167,7 +184,12 @@ describe('ui-toc style contract', () => {
       ),
     ).toBe(true);
     expect(
-      hasDeclarationForSelector(tocCss, '.toc-link.is-active .toc-link-label', 'overflow', 'hidden'),
+      hasDeclarationForSelector(
+        tocCss,
+        '.toc-link.is-active .toc-link-label',
+        'overflow',
+        'hidden',
+      ),
     ).toBe(true);
   });
 

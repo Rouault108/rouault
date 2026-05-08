@@ -26,6 +26,7 @@ const webkitFinalCheck = [
 const mobileWebkitFinalCheck = [
   '**/mobile-header-dropdown-position.spec.ts',
   articleHeaderStaticLayoutCheck,
+  '**/toc-readable-long-heading.spec.ts',
 ];
 
 const isCI = !!process.env['CI'];

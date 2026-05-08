@@ -565,7 +565,7 @@ describe('layout-header browser contract', () => {
 
     const styles = getComputedStyle(zoneCenter);
     expect(styles.left).to.equal('280px');
-    expect(styles.right).to.equal('248px');
+    expect(styles.right).to.equal('272px');
   });
 
   it('toc-presence=absent の note-layout でも desktop では present と同じ right reserve を維持すること', async () => {
@@ -592,7 +592,16 @@ describe('layout-header browser contract', () => {
 
     const styles = getComputedStyle(zoneCenter);
     expect(styles.left).to.equal('280px');
-    expect(styles.right).to.equal('248px');
+    expect(styles.right).to.equal('272px');
+  });
+
+  it('note-layout の center reserve は新しい TOC 幅 fallback を使うこと', async () => {
+    const headerSource = await fetch(
+      new URL('../../src/components/layout/layout-header.ts', import.meta.url).href,
+    ).then((response) => response.text());
+
+    expect(headerSource).to.contain('var(--note-toc-width, clamp(15rem, 18vw, 17rem))');
+    expect(headerSource).not.to.contain('var(--note-toc-width, 216px)');
   });
 
   it('shell projection に tocPresence を round-trip すること', async () => {

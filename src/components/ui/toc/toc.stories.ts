@@ -16,6 +16,25 @@ const nestedHeaders: Heading[] = [
   { id: 'appendix', text: '補足', level: 4 },
 ];
 
+const longJapaneseHeadings: Heading[] = [
+  { id: 'overview', text: '全体像と読み進めるための前提', level: 2 },
+  {
+    id: 'source-code-to-execution',
+    text: '第2章 ソースコードから実行まで：コンパイル単位、アセンブリ、IL、メタデータ、CLRの関係',
+    level: 4,
+  },
+  {
+    id: 'runtime-boundary',
+    text: '実行時境界を越えるときに発生する型情報、例外、依存解決の扱い',
+    level: 3,
+  },
+  {
+    id: 'verification-policy',
+    text: '検証方針：静的生成、SSR、hydration、検索インデックスの責務分離',
+    level: 2,
+  },
+];
+
 const meta: Meta<Toc> = {
   title: 'Components/Toc',
   component: 'ui-toc',
@@ -53,4 +72,37 @@ export const NestedLevels: Story = {
 
 export const Empty: Story = {
   render: () => html`<ui-toc id="toc-empty" .headers=${[]}></ui-toc>`,
+};
+
+export const LongJapaneseHeadingsCompact: Story = {
+  render: () => html`
+    <ui-toc
+      id="toc-long-japanese-compact"
+      density-tier="compact"
+      .headers=${longJapaneseHeadings}
+      active-id="overview"
+    ></ui-toc>
+  `,
+};
+
+export const LongJapaneseHeadingsActive: Story = {
+  render: () => html`
+    <ui-toc
+      id="toc-long-japanese-active"
+      density-tier="compact"
+      .headers=${longJapaneseHeadings}
+      active-id="source-code-to-execution"
+    ></ui-toc>
+  `,
+};
+
+export const DeepLongJapaneseHeadings: Story = {
+  render: () => html`
+    <ui-toc
+      id="toc-deep-long-japanese"
+      density-tier="compact"
+      .headers=${longJapaneseHeadings}
+      active-id="runtime-boundary"
+    ></ui-toc>
+  `,
 };

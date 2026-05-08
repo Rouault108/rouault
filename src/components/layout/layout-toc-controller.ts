@@ -6,16 +6,10 @@ import {
   readTocScopeSelectionMap,
   type TocCapabilities,
 } from '../../toc/filter-visible-headings.js';
-import {
-  hasDynamicTocScopeSelections,
-  normalizeTocCapabilities,
-} from '../../toc/toc-headings.js';
+import { hasDynamicTocScopeSelections, normalizeTocCapabilities } from '../../toc/toc-headings.js';
 import { readTocJsonSourceScriptHeadings } from '../../toc/toc-json-source-script.js';
 import type { HydrationActivationResult } from '../../../shared/hydration/hydration-activation.js';
-import {
-  syncTocActiveLinks,
-  syncTocHeadingVisibility,
-} from '../../toc/toc-desktop-nav-sync.js';
+import { syncTocActiveLinks, syncTocHeadingVisibility } from '../../toc/toc-desktop-nav-sync.js';
 import { resolveTocRuntimeId } from '../../toc/toc-source-id-resolution.js';
 import {
   findTocSourceScript,
@@ -25,10 +19,14 @@ import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
 import { resolveTocDensityTier } from '../../toc/toc-density-tier.js';
 import { TocHydrationSessionController } from '../../toc/toc-hydration-session.js';
 import { TocNavigationController } from '../../toc/toc-navigation-controller.js';
+import { TOC_MOBILE_PANEL_SELECTOR } from '../../toc/toc-mobile-panel-dom-css-contract.js';
 import { syncLayoutTocControllersForSession } from '../../toc/sync-layout-toc-controllers.js';
 import { decodeHashFragment } from '../../router/url-hash.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
-import { layoutTocRuntimeStore, type LayoutTocRuntimeSnapshot } from './layout-toc-runtime-store.js';
+import {
+  layoutTocRuntimeStore,
+  type LayoutTocRuntimeSnapshot,
+} from './layout-toc-runtime-store.js';
 
 const DEFAULT_LAYOUT_TOC_RUNTIME_ID = 'page-toc';
 
@@ -54,7 +52,8 @@ const readLocationHash = (): string => {
 };
 
 const removeIdsFromTree = (root: ParentNode): void => {
-  const elements = 'querySelectorAll' in root ? Array.from(root.querySelectorAll<HTMLElement>('[id]')) : [];
+  const elements =
+    'querySelectorAll' in root ? Array.from(root.querySelectorAll<HTMLElement>('[id]')) : [];
   for (const element of elements) {
     element.removeAttribute('id');
   }
@@ -167,7 +166,9 @@ export class LayoutTocController extends HTMLElement {
         ? headings
         : filterHeadingsByScopeSelections(headings, readTocScopeSelectionMap(contentRoot));
 
-    return contentRoot === null ? scopedHeadings : filterVisibleHeadings(contentRoot, scopedHeadings);
+    return contentRoot === null
+      ? scopedHeadings
+      : filterVisibleHeadings(contentRoot, scopedHeadings);
   }
 
   private _resolveContentRoot(): HTMLElement | null {
@@ -289,6 +290,7 @@ export class LayoutTocController extends HTMLElement {
     const panel = document.createElement('div');
     panel.id = this._getPanelId();
     panel.className = 'layout-toc-mobile-panel';
+    panel.setAttribute('data-layout-toc-mobile-panel', '');
     panel.setAttribute('data-density-tier', resolveTocDensityTier(this._visibleHeadings));
     panel.setAttribute('aria-hidden', 'true');
     panel.setAttribute('hidden', '');
@@ -327,7 +329,10 @@ export class LayoutTocController extends HTMLElement {
 
     this._panelRoot = panel;
     this._panelNav = mobileNav;
-    this._syncHeadingVisibility(this._panelNav, new Set(this._visibleHeadings.map((heading) => heading.id)));
+    this._syncHeadingVisibility(
+      this._panelNav,
+      new Set(this._visibleHeadings.map((heading) => heading.id)),
+    );
     this._syncActiveLinks(this._panelNav);
   }
 
@@ -352,6 +357,11 @@ export class LayoutTocController extends HTMLElement {
     }
     this._panelNav?.removeEventListener('click', this._handleNavClick);
     this._panelRoot?.remove();
+    document.querySelectorAll(TOC_MOBILE_PANEL_SELECTOR).forEach((element) => {
+      if (element.id === this._getPanelId()) {
+        element.remove();
+      }
+    });
     this._panelRoot = null;
     this._panelNav = null;
   }
@@ -505,8 +515,7 @@ export class LayoutTocController extends HTMLElement {
     const panelId = this._getPanelId();
     if (
       path.some(
-        (node) =>
-          node instanceof HTMLElement && node.getAttribute('aria-controls') === panelId,
+        (node) => node instanceof HTMLElement && node.getAttribute('aria-controls') === panelId,
       )
     ) {
       return;

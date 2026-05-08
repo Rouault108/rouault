@@ -10,6 +10,7 @@ import { layoutTocMobileController } from '../../src/components/layout/layout-to
 import { layoutTocRuntimeStore } from '../../src/components/layout/layout-toc-runtime-store.js';
 import type { Toc } from '../../src/components/ui/toc/toc.js';
 import type { HydrationDiagnostics } from '../../src/client/hydration/types.js';
+import { TOC_MOBILE_PANEL_SELECTOR } from '../../src/toc/toc-mobile-panel-dom-css-contract.js';
 import { replaceElementChildrenFromHtml } from '../../src/router/declarative-shadow-dom.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
@@ -40,13 +41,14 @@ const queryDesktopToc = (host: LayoutToc): Toc | null =>
   host.shadowRoot?.querySelector<Toc>('.desktop ui-toc') ?? null;
 
 const queryMobileToc = (host: LayoutToc): Toc | null =>
-  host.shadowRoot?.querySelector<Toc>('.mobile-panel ui-toc') ?? null;
+  host.shadowRoot?.querySelector<Toc>(`${TOC_MOBILE_PANEL_SELECTOR} ui-toc`) ?? null;
 
 const hasMobilePanelTitle = (host: LayoutToc): boolean =>
   (host.shadowRoot?.querySelector('.mobile-panel-title') ?? null) !== null;
 
 const queryMobilePanelCloseButton = (host: LayoutToc): HTMLButtonElement | null =>
-  host.shadowRoot?.querySelector<HTMLButtonElement>('.mobile-panel .close-button') ?? null;
+  host.shadowRoot?.querySelector<HTMLButtonElement>(`${TOC_MOBILE_PANEL_SELECTOR} .close-button`) ??
+  null;
 
 const readTocNavigationLabel = (toc: Toc | null): string | null =>
   toc?.shadowRoot?.querySelector<HTMLElement>('nav')?.getAttribute('aria-label') ?? null;
@@ -254,7 +256,7 @@ describe('layout-toc hydration reconciliation', () => {
   afterEach(() => {
     layoutTocMobileController.reset();
     layoutTocRuntimeStore.reset();
-    document.querySelectorAll('.layout-toc-mobile-panel').forEach((element) => element.remove());
+    document.querySelectorAll(TOC_MOBILE_PANEL_SELECTOR).forEach((element) => element.remove());
   });
 
   it('hydrate 後に location hash と ui-toc の active DOM が一致すること', async () => {
@@ -282,7 +284,8 @@ describe('layout-toc hydration reconciliation', () => {
       expect(desktopToc.activeId).to.equal(secondHeadingId);
       expect(desktopToc.getAttribute('active-id')).to.equal(secondHeadingId);
 
-      const mobilePanel = host.shadowRoot?.querySelector<HTMLElement>('.mobile-panel') ?? null;
+      const mobilePanel =
+        host.shadowRoot?.querySelector<HTMLElement>(TOC_MOBILE_PANEL_SELECTOR) ?? null;
       expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
       expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
       expect(mobilePanel?.getAttribute('data-hydration-state')).to.equal('hydrated');
@@ -466,7 +469,8 @@ describe('layout-toc hydration reconciliation', () => {
       expect(desktopToc.activeId).to.equal(secondHeadingId);
       expect(desktopToc.getAttribute('active-id')).to.equal(secondHeadingId);
 
-      const mobilePanel = host.shadowRoot?.querySelector<HTMLElement>('.mobile-panel') ?? null;
+      const mobilePanel =
+        host.shadowRoot?.querySelector<HTMLElement>(TOC_MOBILE_PANEL_SELECTOR) ?? null;
       expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
       expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
 
@@ -501,7 +505,7 @@ describe('layout-toc hydration reconciliation', () => {
       expect(activeLink?.getAttribute('aria-current')).to.equal('location');
       expect(activeLink?.getAttribute('data-active')).to.equal('true');
 
-      const mobilePanel = document.querySelector<HTMLElement>('#layout-toc-panel-toc-source-test');
+      const mobilePanel = document.querySelector<HTMLElement>(TOC_MOBILE_PANEL_SELECTOR);
       expect(mobilePanel?.getAttribute('aria-hidden')).to.equal('true');
       expect(mobilePanel?.hasAttribute('inert')).to.equal(true);
       expect(mobilePanel?.hasAttribute('hidden')).to.equal(true);
