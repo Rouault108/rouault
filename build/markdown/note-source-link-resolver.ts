@@ -1,17 +1,8 @@
-import {
-  existsSync,
-  lstatSync,
-  readdirSync,
-  realpathSync,
-  statSync,
-} from 'node:fs';
+import { existsSync, lstatSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { normalizeNotePath } from '../../shared/navigation/normalize-note-path.js';
-import {
-  NOTE_SOURCE_ROOTS,
-  type NoteSourceRoot,
-} from '../../shared/note/note-source-root.js';
+import { NOTE_SOURCE_ROOTS, type NoteSourceRoot } from '../../shared/note/note-source-root.js';
 
 export interface ResolveNoteSourceLinkInput {
   href: string;
@@ -74,8 +65,25 @@ const WEB_SCHEMES = new Set(['http:', 'https:']);
 const ACTION_SCHEMES = new Set(['mailto:', 'tel:']);
 const UNSAFE_SCHEMES = new Set(['javascript:', 'data:', 'vbscript:']);
 const SCHEME_PATTERN = /^[A-Za-z][A-Za-z\d+.-]*:/u;
-const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f-\u009f]/u;
 const SAFE_MARKDOWN_PATH_PATTERN = /^[A-Za-z0-9._/~/-]+$/u;
+const C0_CONTROL_CHARACTER_MAX = 0x1f;
+const C1_CONTROL_CHARACTER_MIN = 0x7f;
+const C1_CONTROL_CHARACTER_MAX = 0x9f;
+
+const hasControlCharacter = (value: string): boolean => {
+  for (let index = 0; index < value.length; index += 1) {
+    const codeUnit = value.charCodeAt(index);
+
+    if (
+      codeUnit <= C0_CONTROL_CHARACTER_MAX ||
+      (codeUnit >= C1_CONTROL_CHARACTER_MIN && codeUnit <= C1_CONTROL_CHARACTER_MAX)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+};
 
 const toPosixPath = (value: string): string => value.replace(/\\/gu, '/');
 
@@ -134,7 +142,7 @@ const createLinkError = (
 };
 
 export const parseRawHref = (href: string): ParsedRawHref => {
-  if (CONTROL_CHARACTER_PATTERN.test(href)) {
+  if (hasControlCharacter(href)) {
     throw new Error(`[markdown] href に制御文字は使用できません: ${JSON.stringify(href)}`);
   }
 
@@ -188,10 +196,7 @@ const isMarkdownSourceLinkCandidate = (pathname: string): boolean =>
   pathname.endsWith('.markdown') ||
   pathname.includes('.md.');
 
-const validateMarkdownSourcePathname = (
-  parsed: ParsedRawHref,
-  sourceFilePath: string,
-): void => {
+const validateMarkdownSourcePathname = (parsed: ParsedRawHref, sourceFilePath: string): void => {
   const pathname = parsed.pathname;
 
   if (pathname.endsWith('.md/')) {
@@ -246,7 +251,9 @@ const normalizeSourceRootPaths = (
     const resolved = path.resolve(configured);
     const rootStat = lstatSync(resolved);
     if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) {
-      throw buildConfigurationError(`Source root "${sourceRoot}" must be a non-symlink directory: ${resolved}`);
+      throw buildConfigurationError(
+        `Source root "${sourceRoot}" must be a non-symlink directory: ${resolved}`,
+      );
     }
     return [sourceRoot, resolved];
   });
