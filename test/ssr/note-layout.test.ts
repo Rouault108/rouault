@@ -27,6 +27,9 @@ const createProjection = (
     ...(sidebar === undefined ? { sidebar: defaultSidebar } : { sidebar }),
     toc: {
       sourceId: 'toc-source-note',
+      runtimeId: 'toc-source-note',
+      ownerId: 'toc-owner-note',
+      scopeId: 'note-toc',
       headings: [{ id: 'intro', text: 'Intro', level: 2 }],
       capabilities: {
         activeTracking: true,
@@ -123,6 +126,9 @@ describe('NoteLayout', () => {
         tocPresence: 'absent',
         toc: {
           sourceId: 'toc-source-note',
+          runtimeId: 'toc-source-note',
+          ownerId: 'toc-owner-note',
+          scopeId: 'note-toc',
           headings: [],
           capabilities: {
             activeTracking: true,

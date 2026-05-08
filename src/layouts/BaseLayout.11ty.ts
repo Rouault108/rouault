@@ -41,6 +41,7 @@ export interface BaseLayoutData {
   clientBundle?: unknown;
   headerTocPresence?: TocPresence;
   headerTocRuntimeId?: string;
+  headerTocOwnerId?: string;
 }
 
 const buildThemeBootstrapScript = (): string =>
@@ -167,12 +168,15 @@ export class BaseLayout {
       data.notePage?.tocPresence ?? data.headerTocPresence ?? 'absent';
     const tocRuntimeId =
       data.notePage?.tocPresence === 'present'
-        ? data.notePage.toc.sourceId
+        ? data.notePage.toc.runtimeId
         : (data.headerTocRuntimeId ?? '');
+    const explicitHeaderTocOwnerId = data.headerTocOwnerId?.trim() ?? '';
     const tocOwnerId =
       data.notePage?.tocPresence === 'present'
-        ? (data.notePage.toc.ownerId ?? data.notePage.toc.sourceId)
-        : tocRuntimeId;
+        ? data.notePage.toc.ownerId
+        : explicitHeaderTocOwnerId.length > 0
+          ? explicitHeaderTocOwnerId
+          : tocRuntimeId;
     const tocTriggerReserved = tocPresence === 'present' && tocOwnerId.length > 0;
     const headerAttributes = serializeHtmlAttributes([
       { name: 'note-layout', value: Boolean(data.note), kind: 'boolean' },
@@ -184,7 +188,7 @@ export class BaseLayout {
       { name: 'toc-presence', value: tocPresence },
       { name: 'toc-runtime-id', value: tocRuntimeId },
       { name: 'toc-trigger-reserved', value: tocTriggerReserved ? 'true' : 'false' },
-      { name: 'data-hydration-owner-id', value: tocOwnerId },
+      { name: 'data-toc-owner-id', value: tocOwnerId },
       { name: 'corpora-json', value: corpora, kind: 'json' },
       { name: 'current-corpus-key', value: currentCorpusKey },
       { name: 'data-hydration-capability', value: 'interactive' },

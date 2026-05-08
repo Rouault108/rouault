@@ -5,6 +5,7 @@ const DEFAULT_LAYOUT_TOC_RUNTIME_ID = 'page-toc';
 
 export interface TocHydrationSession {
   readonly state: TocHydrationState;
+  readonly runtimeId: string;
   readonly ownerId: string;
   readonly sourceId: string | null;
   readonly generation: number;
@@ -21,22 +22,26 @@ export class TocHydrationSessionController {
   }
 
   start(input: {
+    readonly runtimeId?: string | null | undefined;
     readonly ownerId?: string | null | undefined;
     readonly sourceId?: string | null | undefined;
     readonly contentRootId?: string | null | undefined;
   }): TocHydrationSession {
     this.abort();
 
-    const ownerId = resolveTocRuntimeId(
-      input.ownerId ?? '',
+    const runtimeId = resolveTocRuntimeId(
+      input.runtimeId ?? '',
       input.sourceId ?? '',
       input.contentRootId ?? '',
       DEFAULT_LAYOUT_TOC_RUNTIME_ID,
     );
+    const explicitOwnerId = input.ownerId?.trim() ?? '';
+    const ownerId = explicitOwnerId.length > 0 ? explicitOwnerId : runtimeId;
     const sourceId = input.sourceId?.trim();
     const controller = new AbortController();
     const session: TocHydrationSession = {
       state: 'hydrating',
+      runtimeId,
       ownerId,
       sourceId: sourceId === undefined || sourceId.length === 0 ? null : sourceId,
       generation: this._generation + 1,

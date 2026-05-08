@@ -1,15 +1,14 @@
-import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import { createHydrationMarkerAttributes } from '../../shared/hydration/hydration-markers.js';
+import type { TocChromeProjection, TocHeading } from '../../shared/toc/toc-chrome-projection.js';
+import { serializeTocHeadingsForSourceScript } from '../../shared/toc/toc-normalization.js';
 import { buildHashHrefFromId } from '../router/url-hash.js';
 import { resolveTocDensityTier } from '../toc/toc-density-tier.js';
 import { escapeHtmlAttribute, escapeHtmlText, serializeHtmlAttributes } from './html-output.js';
 
-type TocProjection = NotePageProjection['toc'];
-
-const readMinimumLevel = (headings: TocProjection['headings']): number =>
+const readMinimumLevel = (headings: readonly TocHeading[]): number =>
   headings.reduce((minimum, heading) => Math.min(minimum, heading.level), Number.POSITIVE_INFINITY);
 
-const renderHeadingItems = (headings: TocProjection['headings']): string => {
+const renderHeadingItems = (headings: readonly TocHeading[]): string => {
   if (headings.length === 0) {
     return '';
   }
@@ -48,16 +47,38 @@ const renderHeadingItems = (headings: TocProjection['headings']): string => {
     .join('');
 };
 
-export const renderTocHtml = (toc: TocProjection): string => {
-  const ownerId = (toc.ownerId ?? toc.sourceId).trim();
+export const renderTocJsonSourceScript = (toc: TocChromeProjection): string => {
+  const sourceAttributes = serializeHtmlAttributes([
+    { name: 'id', value: toc.sourceId },
+    { name: 'type', value: 'application/json' },
+    { name: 'data-toc-owner-id', value: toc.ownerId },
+    ...Object.entries(
+      createHydrationMarkerAttributes({
+        marker: 'toc-source',
+        ownerId: toc.ownerId,
+        scopeId: toc.scopeId,
+      }),
+    ).map(([name, value]) => ({ name, value })),
+  ]);
+
+  return `
+    <script${sourceAttributes}>
+${serializeTocHeadingsForSourceScript(toc.headings)}
+    </script>
+  `.trim();
+};
+
+export const renderTocChromeHtml = (toc: TocChromeProjection): string => {
   const densityTier = resolveTocDensityTier(toc.headings);
   const controllerAttributes = serializeHtmlAttributes([
     { name: 'source-id', value: toc.sourceId },
-    { name: 'toc-runtime-id', value: toc.sourceId },
-    { name: 'toc-owner-id', value: ownerId },
+    { name: 'toc-runtime-id', value: toc.runtimeId },
+    { name: 'toc-owner-id', value: toc.ownerId },
     { name: 'data-toc-trigger-reserved', value: 'false' },
     { name: 'capabilities-json', value: toc.capabilities, kind: 'json' },
     { name: 'content-root-id', value: toc.contentRootId },
+    { name: 'data-hydration-scope', value: toc.scopeId },
+    { name: 'data-hydration-deferred', value: 'toc-trigger' },
     {
       name: 'data-hydration-capability',
       value: toc.shouldHydrate ? 'interactive' : undefined,
@@ -71,8 +92,8 @@ export const renderTocHtml = (toc: TocProjection): string => {
     Object.entries(
       createHydrationMarkerAttributes({
         marker: 'toc-owner',
-        ownerId,
-        scopeId: 'note-toc',
+        ownerId: toc.ownerId,
+        scopeId: toc.scopeId,
       }),
     ).map(([name, value]) => ({ name, value })),
   );
@@ -88,7 +109,10 @@ export const renderTocHtml = (toc: TocProjection): string => {
       <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
         <ol class="layout-toc__list">${renderHeadingItems(toc.headings)}</ol>
       </nav>
-      <layout-toc-controller${controllerAttributes}></layout-toc-controller>
+      ${toc.shouldHydrate ? renderTocJsonSourceScript(toc) : ''}
+      ${toc.shouldHydrate ? `<layout-toc-controller${controllerAttributes}></layout-toc-controller>` : ''}
     </aside>
   `.trim();
 };
+
+export const renderTocHtml = renderTocChromeHtml;

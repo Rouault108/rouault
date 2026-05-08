@@ -15,7 +15,7 @@ import type {
   SidebarShellProjection,
 } from '../../shared/navigation/shell-projection.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
-import { readParse5HydrationMarker } from './parse5-hydration-markers.js';
+import { readParse5HydrationMarkerResult } from './parse5-hydration-markers.js';
 import {
   validateTocOwnerCandidates,
   type TocOwnerCandidate,
@@ -191,7 +191,13 @@ const collectHydrationPlan = (document: Parse5Document): HydrationPlanScope[] =>
     }
 
     seen.add(dedupeKey);
-    const marker = readParse5HydrationMarker(scopeElement);
+    const markerResult = readParse5HydrationMarkerResult(scopeElement);
+    if (markerResult.status === 'malformed') {
+      const issueText = markerResult.issues
+        .map((issue) => `${issue.code}:${issue.attribute}`)
+        .join(', ');
+      throw new Error(`[navigation-artifact] malformed hydration marker: ${issueText}`);
+    }
 
     plan.push({
       scope: normalizedScope,
@@ -204,7 +210,9 @@ const collectHydrationPlan = (document: Parse5Document): HydrationPlanScope[] =>
       trigger === 'interaction'
         ? { trigger }
         : {}),
-      ...(marker !== null ? { marker: marker.marker, ownerId: marker.ownerId } : {}),
+      ...(markerResult.status === 'valid'
+        ? { marker: markerResult.marker.marker, ownerId: markerResult.marker.ownerId }
+        : {}),
     });
   }
 
@@ -257,7 +265,7 @@ const extractHeaderProjection = (document: Parse5Document): HeaderShellProjectio
     sidebarEnabled: hasAttribute(header, 'sidebar-enabled'),
     tocPresence: toTocPresence(getAttribute(header, 'toc-presence')),
     tocRuntimeId: toOptionalString(getAttribute(header, 'toc-runtime-id')),
-    tocOwnerId: toOptionalString(getAttribute(header, 'data-hydration-owner-id')),
+    tocOwnerId: toOptionalString(getAttribute(header, 'data-toc-owner-id')),
     tocTriggerReserved: getAttribute(header, 'toc-trigger-reserved') === 'true',
   };
 };

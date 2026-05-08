@@ -11,6 +11,7 @@ import {
   normalizeTocCapabilities,
 } from '../../toc/toc-headings.js';
 import { readTocJsonSourceScriptHeadings } from '../../toc/toc-json-source-script.js';
+import type { HydrationActivationResult } from '../../../shared/hydration/hydration-activation.js';
 import {
   syncTocActiveLinks,
   syncTocHeadingVisibility,
@@ -88,6 +89,10 @@ export class LayoutTocController extends HTMLElement {
     return this.getAttribute('toc-runtime-id')?.trim() ?? '';
   }
 
+  get tocOwnerId(): string {
+    return this.getAttribute('toc-owner-id')?.trim() ?? '';
+  }
+
   get contentRootId(): string {
     return this.getAttribute('content-root-id')?.trim() ?? '';
   }
@@ -105,7 +110,7 @@ export class LayoutTocController extends HTMLElement {
     this._tracker = null;
     const disposedSession = this._hydrationSessionController.dispose();
     if (disposedSession !== null) {
-      layoutTocRuntimeStore.publish(disposedSession.ownerId, {
+      layoutTocRuntimeStore.publish(disposedSession.runtimeId, {
         ready: false,
         hasVisibleHeadings: false,
         activeId: null,
@@ -116,18 +121,24 @@ export class LayoutTocController extends HTMLElement {
     this._removeMobilePanel();
   }
 
-  activateHydration(): void {
+  activateHydration(): HydrationActivationResult {
     if (this._hydrationActivated || typeof window === 'undefined') {
-      return;
+      return { status: 'skipped', reason: 'already-activated' };
+    }
+
+    const source = this._readSourceScript();
+    if (source === null) {
+      return { status: 'skipped', reason: 'missing-source' };
     }
 
     this._hydrationActivated = true;
     this._hydrationSessionController.start({
-      ownerId: this.tocRuntimeId,
+      runtimeId: this.tocRuntimeId,
+      ownerId: this.tocOwnerId,
       sourceId: this.sourceId,
       contentRootId: this.contentRootId,
     });
-    this._allHeadings = this._readHeadingsFromSource();
+    this._allHeadings = readTocJsonSourceScriptHeadings(source);
     this._capabilities = normalizeTocCapabilities(parseJsonValue(this.capabilitiesJson));
 
     this._connectMobileController();
@@ -137,15 +148,15 @@ export class LayoutTocController extends HTMLElement {
     this._connectTracker();
     this._hydrationSessionController.markHydrated();
     this._publishRuntimeSnapshot();
+    return { status: 'activated' };
   }
 
-  private _readHeadingsFromSource(): Heading[] {
+  private _readSourceScript(): HTMLScriptElement | null {
     if (typeof document === 'undefined') {
-      return [];
+      return null;
     }
 
-    const source = findTocSourceScript(resolveTocSourceLookupRoot(this), this.sourceId);
-    return source === null ? [] : readTocJsonSourceScriptHeadings(source);
+    return findTocSourceScript(resolveTocSourceLookupRoot(this), this.sourceId);
   }
 
   private _resolveVisibleHeadings(headings: Heading[]): Heading[] {
@@ -515,10 +526,10 @@ if (!customElements.get('layout-toc-controller')) {
   customElements.define('layout-toc-controller', LayoutTocController);
 }
 
-export const activateLayoutTocController = (element: HTMLElement): void => {
+export const activateLayoutTocController = (element: HTMLElement): HydrationActivationResult => {
   if (!(element instanceof LayoutTocController)) {
-    return;
+    return { status: 'skipped', reason: 'invalid-element' };
   }
 
-  element.activateHydration();
+  return element.activateHydration();
 };

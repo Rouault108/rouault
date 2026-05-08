@@ -1,17 +1,19 @@
 import type { HydrationMarker } from '../../../shared/hydration/hydration-markers.js';
+import type {
+  HydrationCapability,
+  HydrationTrigger,
+} from '../../../shared/hydration/hydration-directives.js';
 
-export type HydrationTrigger = 'initial' | 'post-commit' | 'visible' | 'interaction';
-
-export type HydrationCapability = 'static' | 'progressive' | 'interactive' | 'sandboxed';
-
-export type HydrationStage =
-  | 'planned'
-  | 'loaded'
-  | 'upgraded'
-  | 'activated'
-  | 'skipped'
-  | 'failed'
-  | 'aborted';
+export type {
+  HydrationActivationCleanupRegistration,
+  HydrationActivationResult,
+  HydrationCleanup,
+  HydrationSkippedReason,
+} from '../../../shared/hydration/hydration-activation.js';
+export type {
+  HydrationCapability,
+  HydrationTrigger,
+} from '../../../shared/hydration/hydration-directives.js';
 
 export type HydrationSessionKind = 'shell' | 'content';
 
@@ -37,7 +39,7 @@ export interface HydrationRegistryEntry {
   readonly tag: string;
   readonly kind?: 'custom-element' | 'enhancer';
   readonly loader: () => Promise<unknown>;
-  readonly activate?: (context: HydrationActivationContext) => void | Promise<void>;
+  readonly activate?: (context: HydrationActivationContext) => unknown;
   readonly preload?: HydrationPreloadPolicy;
   readonly bootMarker?: HydrationBootMarkerPolicy;
 }

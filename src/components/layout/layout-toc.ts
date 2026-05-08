@@ -355,7 +355,7 @@ export class LayoutToc extends LitElement {
 
     let nextHeadings: Heading[] = [];
     if (inlineHeadings !== null) {
-      nextHeadings = inlineHeadings;
+      nextHeadings = [...inlineHeadings];
     } else if (this.sourceId.length > 0 && typeof document !== 'undefined') {
       const source = findTocSourceScript(resolveTocSourceLookupRoot(this), this.sourceId);
       nextHeadings = source === null ? [] : readTocJsonSourceScriptHeadings(source);

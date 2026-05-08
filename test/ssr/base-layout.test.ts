@@ -28,6 +28,9 @@ describe('BaseLayout', () => {
         },
         toc: {
           sourceId: 'toc-source-reader-note',
+          runtimeId: 'toc-source-reader-note',
+          ownerId: 'toc-owner-reader-note',
+          scopeId: 'note-toc',
           headings: [],
           capabilities: {
             activeTracking: false,
@@ -82,7 +85,9 @@ describe('BaseLayout', () => {
         contentHtml: '<article>Reader</article>',
         toc: {
           sourceId: 'toc-source-reader-with-toc',
+          runtimeId: 'toc-source-reader-with-toc',
           ownerId: 'toc-owner-reader-with-toc',
+          scopeId: 'note-toc',
           headings: [
             {
               id: 'intro',
@@ -110,7 +115,7 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('toc-presence="present"');
     expect(rendered).toContain('toc-runtime-id="toc-source-reader-with-toc"');
     expect(rendered).toContain('toc-trigger-reserved="true"');
-    expect(rendered).toContain('data-hydration-owner-id="toc-owner-reader-with-toc"');
+    expect(rendered).toContain('data-toc-owner-id="toc-owner-reader-with-toc"');
     expect(rendered.match(/<layout-header\b[^>]*>/u)?.[0] ?? '').not.toContain(
       'data-toc-trigger-reserved',
     );
@@ -134,6 +139,9 @@ describe('BaseLayout', () => {
         contentHtml: '<article>Fixture</article>',
         toc: {
           sourceId: 'toc-source-fixture-reader',
+          runtimeId: 'toc-source-fixture-reader',
+          ownerId: 'toc-owner-fixture-reader',
+          scopeId: 'note-toc',
           headings: [],
           capabilities: {
             activeTracking: false,
@@ -188,6 +196,9 @@ describe('BaseLayout', () => {
         contentHtml: '<article>Reader</article>',
         toc: {
           sourceId: 'toc-source-reader',
+          runtimeId: 'toc-source-reader',
+          ownerId: 'toc-owner-reader',
+          scopeId: 'note-toc',
           headings: [],
           capabilities: {
             activeTracking: false,
@@ -350,6 +361,9 @@ describe('BaseLayout', () => {
         contentHtml: '<article><h1>本文</h1></article>',
         toc: {
           sourceId: 'toc-source-plain',
+          runtimeId: 'toc-source-plain',
+          ownerId: 'toc-owner-plain',
+          scopeId: 'note-toc',
           headings: [],
           capabilities: {
             activeTracking: false,

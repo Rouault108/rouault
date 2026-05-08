@@ -6,7 +6,7 @@
  * app shell 上の sidebar host は BaseLayout が所有する。
  */
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
-import { escapeHtmlText, renderJsonScriptElement, serializeHtmlAttributes } from './html-output.js';
+import { escapeHtmlText, serializeHtmlAttributes } from './html-output.js';
 import { renderArticleHeaderHtml } from './article-header-html.js';
 import { renderTocHtml } from './toc-html.js';
 
@@ -110,11 +110,6 @@ export class NoteLayout {
 
         ${notePage.tocPresence === 'present' ? renderToc(notePage.toc) : ''}
       </section>
-      ${
-        notePage.tocPresence === 'present'
-          ? renderJsonScriptElement(notePage.toc.sourceId, notePage.toc.headings)
-          : ''
-      }
     `.trim();
   }
 }

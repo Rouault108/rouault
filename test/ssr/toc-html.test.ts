@@ -50,6 +50,9 @@ const findElement = (
 
 const createToc = (headings: NotePageProjection['toc']['headings']): NotePageProjection['toc'] => ({
   sourceId: 'toc-source-test',
+  runtimeId: 'toc-source-test',
+  ownerId: 'toc-owner-test',
+  scopeId: 'note-toc',
   headings,
   capabilities: {
     activeTracking: true,
@@ -95,7 +98,8 @@ describe('renderTocHtml', () => {
     expect(link ? getAttribute(link, 'href') : null).to.equal(buildHashHrefFromId(headingId));
     expect(label ? getTextContent(label) : null).to.equal(headingText);
     expect(rendered).toContain('data-hydration-marker="toc-owner"');
-    expect(rendered).toContain('toc-owner-id="toc-source-test"');
+    expect(rendered).toContain('toc-owner-id="toc-owner-test"');
+    expect(rendered).toContain('data-hydration-marker="toc-source"');
     expect(rendered).toContain('data-toc-trigger-reserved="false"');
     expect(rendered).toContain('data-density-tier="comfortable"');
 

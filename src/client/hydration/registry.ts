@@ -37,7 +37,7 @@ const activateLayoutSidebar = ({ element }: HydrationActivationContext): void =>
 const activateLayoutTocController = async ({
   element,
   signal,
-}: HydrationActivationContext): Promise<void> => {
+}: HydrationActivationContext) => {
   if (signal.aborted) {
     return;
   }
@@ -47,61 +47,68 @@ const activateLayoutTocController = async ({
   }
 
   const module = await import('../../components/layout/layout-toc-controller.js');
-  module.activateLayoutTocController(element);
-};
-
-const activateLayoutToc = async ({ element }: HydrationActivationContext): Promise<void> => {
-  const module = await import('../../components/layout/layout-toc.js');
-  await module.activateLayoutToc(element);
+  return module.activateLayoutTocController(element);
 };
 
 export const HYDRATION_REGISTRY = [
   {
     tag: 'ui-skip-link',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/skip-link/skip-link.js'),
   },
   {
     tag: 'layout-header',
+    kind: 'custom-element',
     loader: () => import('../../components/layout/layout-header.js'),
   },
   {
     tag: 'app-router',
+    kind: 'custom-element',
     loader: () => import('../../components/app/app-router.js'),
   },
   {
     tag: 'layout-footer',
+    kind: 'custom-element',
     loader: () => import('../../components/layout/layout-footer.js'),
   },
   {
     tag: 'ui-search-dialog',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/search-dialog/search-dialog.js'),
   },
   {
     tag: 'ui-card',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/card/card.js'),
   },
   {
     tag: 'search-page',
+    kind: 'custom-element',
     loader: () => import('../../components/search/search-page.js'),
   },
   {
     tag: 'tag-page',
+    kind: 'custom-element',
     loader: () => import('../../components/tag/tag-page.js'),
   },
   {
     tag: 'corpus-page',
+    kind: 'custom-element',
     loader: () => import('../../components/corpus/corpus-page.js'),
   },
   {
     tag: 'corpora-overview-page',
+    kind: 'custom-element',
     loader: () => import('../../components/corpus/corpora-overview-page.js'),
   },
   {
     tag: 'not-found-page',
+    kind: 'custom-element',
     loader: () => import('../../components/not-found/not-found-page.js'),
   },
   {
     tag: 'layout-sidebar',
+    kind: 'custom-element',
     loader: () => import('../../components/layout/layout-sidebar.js'),
     preload: {
       when: 'planned',
@@ -116,13 +123,9 @@ export const HYDRATION_REGISTRY = [
   },
   {
     tag: 'layout-toc-controller',
+    kind: 'custom-element',
     loader: () => import('../../components/layout/layout-toc-controller.js'),
     activate: activateLayoutTocController,
-  },
-  {
-    tag: 'layout-toc',
-    loader: () => import('../../components/layout/layout-toc.js'),
-    activate: activateLayoutToc,
   },
   {
     tag: 'code-block-enhancer',
@@ -138,19 +141,23 @@ export const HYDRATION_REGISTRY = [
   },
   {
     tag: 'ui-checkbox',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/checkbox/checkbox.js'),
   },
   {
     tag: 'ui-code-preview',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/code-preview/code-preview.js'),
   },
   {
     tag: 'ui-preview-sandbox',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/preview-sandbox/preview-sandbox.js'),
     activate: activateElementMethod,
   },
   {
     tag: 'ui-details',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/details/details.js'),
   },
   {
@@ -161,6 +168,7 @@ export const HYDRATION_REGISTRY = [
   },
   {
     tag: 'ui-highlight',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/highlight/highlight.js'),
   },
   {
@@ -171,27 +179,33 @@ export const HYDRATION_REGISTRY = [
   },
   {
     tag: 'ui-score',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/score/score.js'),
     activate: activateElementMethod,
   },
   {
     tag: 'ui-syntax-card',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/syntax-card/syntax-card.js'),
   },
   {
     tag: 'ui-syntax-section',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/syntax-card/syntax-section.js'),
   },
   {
     tag: 'ui-syntax-field',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/syntax-field/syntax-field.js'),
   },
   {
     tag: 'ui-tabs',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/tabs/tabs.js'),
   },
   {
     tag: 'ui-translation',
+    kind: 'custom-element',
     loader: () => import('../../components/ui/translation/translation.js'),
     activate: activateElementMethod,
   },

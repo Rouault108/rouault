@@ -1,4 +1,6 @@
 import { escapeHtmlText, serializeHtmlAttributes } from './layouts/html-output.js';
+import { renderTocChromeHtml } from './layouts/toc-html.js';
+import type { TocChromeProjection } from '../shared/toc/toc-chrome-projection.js';
 
 interface AboutSection {
   id: string;
@@ -63,14 +65,29 @@ const ABOUT_HEADINGS = ABOUT_SECTIONS.map((section) => ({
   level: 2,
 }));
 
+const ABOUT_TOC_SOURCE_ID = 'toc-source-about';
 const ABOUT_TOC_RUNTIME_ID = 'about-page-toc';
 const ABOUT_TOC_OWNER_ID = 'about-page-toc-owner';
+const ABOUT_TOC_SCOPE_ID = 'about-toc';
+const ABOUT_CONTENT_ROOT_ID = 'about-page-content';
 
 const ABOUT_TOC_CAPABILITIES = {
   activeTracking: true,
   dynamicScopes: false,
   mobilePanel: true,
 } as const;
+
+const ABOUT_TOC = {
+  sourceId: ABOUT_TOC_SOURCE_ID,
+  runtimeId: ABOUT_TOC_RUNTIME_ID,
+  ownerId: ABOUT_TOC_OWNER_ID,
+  scopeId: ABOUT_TOC_SCOPE_ID,
+  headings: ABOUT_HEADINGS,
+  capabilities: ABOUT_TOC_CAPABILITIES,
+  contentRootId: ABOUT_CONTENT_ROOT_ID,
+  homeHref: '/',
+  shouldHydrate: true,
+} as const satisfies TocChromeProjection;
 
 const renderSummaryItems = (): string =>
   ABOUT_SUMMARY_ITEMS.map((item) => `<li>${escapeHtmlText(item)}</li>`).join('');
@@ -107,22 +124,11 @@ export class AboutPageTemplate {
       permalink: '/about/index.html',
       headerTocPresence: 'present',
       headerTocRuntimeId: ABOUT_TOC_RUNTIME_ID,
+      headerTocOwnerId: ABOUT_TOC_OWNER_ID,
     };
   }
 
   render() {
-    const tocAttributes = serializeHtmlAttributes([
-      { name: 'headings-json', value: ABOUT_HEADINGS, kind: 'json' },
-      { name: 'toc-runtime-id', value: ABOUT_TOC_RUNTIME_ID },
-      { name: 'toc-owner-id', value: ABOUT_TOC_OWNER_ID },
-      { name: 'data-toc-trigger-reserved', value: 'true' },
-      { name: 'capabilities-json', value: ABOUT_TOC_CAPABILITIES, kind: 'json' },
-      { name: 'content-root-id', value: 'about-page-content' },
-      { name: 'home-href', value: '/' },
-      { name: 'data-hydration-capability', value: 'interactive' },
-      { name: 'data-hydration-trigger', value: 'initial' },
-    ]);
-
     return `
       <section class="about-shell">
         <article class="layout-main-col container-reading about-main-col">
@@ -140,19 +146,13 @@ export class AboutPageTemplate {
               </ul>
             </div>
 
-            <div id="about-page-content" class="about-prose">
+            <div id="${ABOUT_CONTENT_ROOT_ID}" class="about-prose">
               ${renderSections()}
             </div>
           </div>
         </article>
 
-        <aside
-          class="layout-toc-col"
-          aria-label="目次"
-          data-hydration-scope="about-toc"
-        >
-          <layout-toc${tocAttributes}></layout-toc>
-        </aside>
+        ${renderTocChromeHtml(ABOUT_TOC)}
       </section>
     `.trim();
   }

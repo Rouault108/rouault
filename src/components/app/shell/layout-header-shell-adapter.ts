@@ -77,7 +77,7 @@ const readTocRuntimeId = (header: Element): string | null => {
 };
 
 const readTocOwnerId = (header: Element): string | null => {
-  const tocOwnerId = header.getAttribute('data-hydration-owner-id')?.trim();
+  const tocOwnerId = header.getAttribute('data-toc-owner-id')?.trim();
   return tocOwnerId && tocOwnerId.length > 0 ? tocOwnerId : null;
 };
 
@@ -129,9 +129,9 @@ export const applyHeaderSnapshot = (
 
   const tocOwnerId = snapshot.tocOwnerId?.trim();
   if (tocOwnerId && tocOwnerId.length > 0) {
-    header.setAttribute('data-hydration-owner-id', tocOwnerId);
+    header.setAttribute('data-toc-owner-id', tocOwnerId);
   } else {
-    header.removeAttribute('data-hydration-owner-id');
+    header.removeAttribute('data-toc-owner-id');
   }
 };
 

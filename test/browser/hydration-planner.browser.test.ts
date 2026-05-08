@@ -14,6 +14,7 @@ describe('planHydration', () => {
           </aside>
           <article data-hydration-scope="note-content">
             <pre
+              data-hydration-scope="note-content"
               data-hydration-marker="toc-source"
               data-hydration-owner-id="toc-owner-fixture"
               data-hydration-key="code-block-enhancer"

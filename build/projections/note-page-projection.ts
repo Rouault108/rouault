@@ -13,6 +13,15 @@ import {
   shouldRenderArticleHeaderTags,
 } from '../../shared/note/note-publication-policy.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
+import type {
+  TocChromeProjection,
+  TocHeading,
+  TocScopeSelection,
+} from '../../shared/toc/toc-chrome-projection.js';
+import {
+  normalizeTocCapabilities,
+  normalizeTocHeadings,
+} from '../../shared/toc/toc-normalization.js';
 import { NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE } from '../../src/layout/note-sidebar-breakpoint.js';
 import { renderNoteSidebarNav } from '../navigation/render-note-sidebar-nav.js';
 import {
@@ -22,22 +31,8 @@ import {
 import { normalizeNoteDate } from './normalize-note-date.js';
 import type { IntrinsicNote } from '../../build/data/notes.js';
 
-interface NotePageTocScopeSelection {
-  scopeId: string;
-  value: string;
-}
-
-interface RawTocScopeSelection {
-  scopeId?: unknown;
-  value?: unknown;
-}
-
-export interface NotePageTocHeading {
-  id: string;
-  text: string;
-  level: number;
-  scopeSelections?: NotePageTocScopeSelection[];
-}
+export type NotePageTocScopeSelection = TocScopeSelection;
+export type NotePageTocHeading = TocHeading;
 
 export interface NotePageProjectionInput {
   note: IntrinsicNote;
@@ -55,19 +50,7 @@ export interface NotePageSidebarProjection {
   fixedBreakpoint: string;
 }
 
-export interface NotePageTocProjection {
-  sourceId: string;
-  ownerId?: string;
-  headings: NotePageTocHeading[];
-  capabilities: {
-    activeTracking: boolean;
-    dynamicScopes: boolean;
-    mobilePanel: boolean;
-  };
-  contentRootId: string;
-  homeHref: string;
-  shouldHydrate: boolean;
-}
+export type NotePageTocProjection = TocChromeProjection;
 
 export interface NotePageArticleHeaderProjection {
   heading: string;
@@ -101,56 +84,6 @@ export interface NotePageProjection {
   toc: NotePageTocProjection;
   articleHeader: NotePageArticleHeaderProjection;
   pagefind: NotePagePagefindProjection | null;
-}
-
-function normalizeHeadings(value: IntrinsicNote['tocHeadings']): NotePageTocHeading[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((item) => {
-      const id = typeof item.id === 'string' ? item.id : '';
-      const text = typeof item.text === 'string' ? item.text.trim() : '';
-      const level = typeof item.level === 'number' ? Math.trunc(item.level) : Number.NaN;
-
-      if (id.length === 0 || text.length === 0 || !Number.isFinite(level)) {
-        return null;
-      }
-
-      if (level < 2 || level > 6) {
-        return null;
-      }
-
-      const scopeSelections = Array.isArray(item.scopeSelections)
-        ? item.scopeSelections
-            .map((selection: RawTocScopeSelection) => {
-              const scopeId = typeof selection.scopeId === 'string' ? selection.scopeId.trim() : '';
-              const value = typeof selection.value === 'string' ? selection.value.trim() : '';
-              if (scopeId.length === 0 || value.length === 0) {
-                return null;
-              }
-              return { scopeId, value };
-            })
-            .filter((selection): selection is NotePageTocScopeSelection => selection !== null)
-        : [];
-
-      return {
-        id,
-        text,
-        level,
-        ...(scopeSelections.length > 0 ? { scopeSelections } : {}),
-      };
-    })
-    .filter((item): item is NotePageTocHeading => item !== null);
-}
-
-function normalizeTocCapabilities(value: IntrinsicNote['tocCapabilities']) {
-  return {
-    activeTracking: value.activeTracking,
-    dynamicScopes: value.dynamicScopes,
-    mobilePanel: value.mobilePanel,
-  };
 }
 
 function toSafeDataId(slug: string): string {
@@ -262,9 +195,11 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const slug = typeof input.note.slug === 'string' ? input.note.slug : '';
   const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
   const tocSourceId = `toc-source-${dataIdBase}`;
+  const tocRuntimeId = tocSourceId;
   const tocOwnerId = `toc-owner-${dataIdBase}`;
+  const tocScopeId = 'note-toc';
   const contentRootId = `note-content-${dataIdBase}`;
-  const headings = normalizeHeadings(input.note.tocHeadings);
+  const headings = normalizeTocHeadings(input.note.tocHeadings);
   const tocPresence: TocPresence = headings.length > 0 ? 'present' : 'absent';
   if (tocPresence === 'present' && tocOwnerId.trim().length === 0) {
     throw new Error(`[projection] note "${slug}" の TOC owner candidate が空です。`);
@@ -305,7 +240,9 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
       : {}),
     toc: {
       sourceId: tocSourceId,
+      runtimeId: tocRuntimeId,
       ownerId: tocOwnerId,
+      scopeId: tocScopeId,
       headings,
       capabilities: tocCapabilities,
       contentRootId,

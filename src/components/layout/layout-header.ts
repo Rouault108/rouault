@@ -372,6 +372,9 @@ export class LayoutHeader extends LitElement {
   @property({ type: String, attribute: 'toc-runtime-id' })
   tocRuntimeId = '';
 
+  @property({ type: String, attribute: 'data-toc-owner-id' })
+  tocOwnerId = '';
+
   @property({ type: String, attribute: 'toc-trigger-reserved' })
   tocTriggerReserved = 'auto';
 
@@ -419,6 +422,12 @@ export class LayoutHeader extends LitElement {
     this.sidebarEnabled = snapshot.sidebarEnabled;
     this.tocPresence = snapshot.tocPresence;
     this.tocRuntimeId = snapshot.tocRuntimeId ?? '';
+    this.tocOwnerId = snapshot.tocOwnerId ?? '';
+    if (this.tocOwnerId.length > 0) {
+      this.setAttribute('data-toc-owner-id', this.tocOwnerId);
+    } else {
+      this.removeAttribute('data-toc-owner-id');
+    }
     this._setTocTriggerReserved(snapshot.tocTriggerReserved ?? snapshot.tocPresence === 'present');
   }
 
@@ -430,6 +439,7 @@ export class LayoutHeader extends LitElement {
       sidebarEnabled: this.sidebarEnabled,
       tocPresence: this.tocPresence,
       tocRuntimeId: this._readTocRuntimeId(),
+      tocOwnerId: this.tocOwnerId.trim() || null,
       tocTriggerReserved: this._isTocTriggerReserved(),
     };
   }

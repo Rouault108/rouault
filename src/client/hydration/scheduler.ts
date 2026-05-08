@@ -5,8 +5,8 @@ import {
   type MutableHydrationDiagnostics,
 } from './diagnostics.js';
 import { HYDRATION_REGISTRY_BY_TAG } from './registry.js';
-import { promoteDeclarativeShadowRoots } from '../../router/declarative-shadow-dom.js';
 import { planHydration } from './planner.js';
+import { normalizeHydrationActivationResult } from '../../../shared/hydration/hydration-activation.js';
 import type {
   HydrationDiagnostics,
   HydrationPlanItem,
@@ -163,8 +163,6 @@ export class HydrationScheduler {
     const diagnostics = createHydrationDiagnostics();
     const processed = new WeakSet<HTMLElement>();
 
-    promoteDeclarativeShadowRoots(session.root);
-
     const firstPass = this.#plan(session.root);
     diagnostics.plannedCount += firstPass.reduce((sum, scope) => sum + scope.items.length, 0);
 
@@ -189,8 +187,6 @@ export class HydrationScheduler {
       diagnostics,
       processed,
     );
-
-    promoteDeclarativeShadowRoots(session.root);
 
     const secondPass = this.#plan(session.root);
     const firstPassElements = new Set(
@@ -333,12 +329,21 @@ export class HydrationScheduler {
 
     try {
       if (entry.activate) {
-        await entry.activate({
+        const result = normalizeHydrationActivationResult(await entry.activate({
           element: item.element,
           root: session.root,
           signal: session.controller.signal,
-        });
-        diagnostics.activatedCount += 1;
+          sessionId: String(session.id),
+        }));
+        if (result.status === 'activated') {
+          diagnostics.activatedCount += 1;
+        } else if (result.status === 'skipped') {
+          diagnostics.skippedCount += 1;
+        } else if (result.status === 'aborted') {
+          diagnostics.skippedCount += 1;
+        } else {
+          diagnostics.skippedCount += 1;
+        }
       }
 
       this.#cleanupBootMarker(entry, item.element);

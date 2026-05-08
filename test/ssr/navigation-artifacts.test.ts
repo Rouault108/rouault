@@ -69,7 +69,7 @@ describe('navigation artifacts', () => {
       corpora-json='[{"key":"all","label":"All","href":"/corpora/"}]'
       current-corpus-key="all"
       toc-runtime-id="toc-source-example"
-      data-hydration-owner-id="toc-owner-test"
+      data-toc-owner-id="toc-owner-test"
     ></layout-header>
     <app-router data-sidebar-presence="present">
       <div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>

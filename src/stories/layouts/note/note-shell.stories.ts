@@ -56,6 +56,9 @@ const articleHeaderMarkup = renderArticleHeaderHtml({
 
 const tocMarkup = renderTocHtml({
   sourceId: 'story-note-toc-source',
+  runtimeId: 'story-note-toc-source',
+  ownerId: 'story-note-toc-owner',
+  scopeId: 'note-toc',
   headings: tocSource,
   capabilities: {
     activeTracking: true,
@@ -85,6 +88,7 @@ const renderNoteShell = () =>
                 sidebar-enabled
                 toc-presence="present"
                 toc-runtime-id="story-note-toc-source"
+                data-toc-owner-id="story-note-toc-owner"
               ></layout-header>
               <main id="note-shell-main" tabindex="-1">
                 <section class="note-shell">

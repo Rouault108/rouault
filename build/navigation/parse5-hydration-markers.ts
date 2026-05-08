@@ -2,6 +2,8 @@ import {
   HYDRATION_MARKER_ATTRIBUTE,
   HYDRATION_MARKER_OWNER_ATTRIBUTE,
   HYDRATION_MARKER_SCOPE_ATTRIBUTE,
+  type HydrationMarkerReadIssue,
+  type Parse5HydrationMarkerReadResult,
   isHydrationMarkerName,
   type HydrationMarker,
 } from '../../shared/hydration/hydration-markers.js';
@@ -24,13 +26,51 @@ const readTrimmedAttribute = (
 export const readParse5HydrationMarker = (
   element: Parse5HydrationMarkerElement,
 ): HydrationMarker | null => {
-  const marker = readTrimmedAttribute(element, HYDRATION_MARKER_ATTRIBUTE);
-  const ownerId = readTrimmedAttribute(element, HYDRATION_MARKER_OWNER_ATTRIBUTE);
-  const scopeId = readTrimmedAttribute(element, HYDRATION_MARKER_SCOPE_ATTRIBUTE);
+  const result = readParse5HydrationMarkerResult(element);
+  return result.status === 'valid' ? result.marker : null;
+};
 
-  if (!isHydrationMarkerName(marker) || ownerId === null || scopeId === null) {
-    return null;
+export const readParse5HydrationMarkerResult = (
+  element: Parse5HydrationMarkerElement,
+): Parse5HydrationMarkerReadResult => {
+  const marker = readTrimmedAttribute(element, HYDRATION_MARKER_ATTRIBUTE);
+  if (marker === null) {
+    return { status: 'absent' };
   }
 
-  return { marker, ownerId, scopeId };
+  const ownerId = readTrimmedAttribute(element, HYDRATION_MARKER_OWNER_ATTRIBUTE);
+  const scopeId = readTrimmedAttribute(element, HYDRATION_MARKER_SCOPE_ATTRIBUTE);
+  const issues: HydrationMarkerReadIssue[] = [];
+
+  if (!isHydrationMarkerName(marker)) {
+    issues.push({
+      code: 'invalid-marker-name',
+      attribute: HYDRATION_MARKER_ATTRIBUTE,
+      value: marker,
+    });
+  }
+
+  if (ownerId === null) {
+    issues.push({
+      code: 'missing-marker-owner',
+      attribute: HYDRATION_MARKER_OWNER_ATTRIBUTE,
+    });
+  }
+
+  if (scopeId === null) {
+    issues.push({
+      code: 'missing-marker-scope',
+      attribute: HYDRATION_MARKER_SCOPE_ATTRIBUTE,
+    });
+  }
+
+  if (issues.length > 0) {
+    return { status: 'malformed', issues };
+  }
+
+  if (!isHydrationMarkerName(marker) || ownerId === null || scopeId === null) {
+    return { status: 'malformed', issues };
+  }
+
+  return { status: 'valid', marker: { marker, ownerId, scopeId } };
 };

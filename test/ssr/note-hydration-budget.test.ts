@@ -112,6 +112,9 @@ const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
       : {}),
     toc: {
       sourceId: `toc-source-${dataId}`,
+      runtimeId: `toc-source-${dataId}`,
+      ownerId: `toc-owner-${dataId}`,
+      scopeId: 'note-toc',
       headings: [],
       capabilities: {
         activeTracking: hasHeadings,

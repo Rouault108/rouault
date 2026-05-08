@@ -10,12 +10,12 @@ export const syncLayoutTocControllersForSession = (
     readonly activeId: string | null;
   },
 ): void => {
-  layoutTocRuntimeStore.publish(session.ownerId, {
+  layoutTocRuntimeStore.publish(session.runtimeId, {
     ...input,
     hydrationState: session.state,
   });
 
   if (session.state === 'disposed') {
-    layoutTocMobileController.cleanup(session.ownerId);
+    layoutTocMobileController.cleanup(session.runtimeId);
   }
 };
