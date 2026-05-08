@@ -63,7 +63,7 @@ const readMobilePanelState = async (page: Page) =>
 
     return {
       headerOwnerId:
-        headerHost instanceof HTMLElement ? headerHost.getAttribute('data-hydration-owner-id') : null,
+        headerHost instanceof HTMLElement ? headerHost.getAttribute('data-toc-owner-id') : null,
       triggerExists: trigger instanceof HTMLElement,
       triggerVisible: trigger instanceof HTMLElement ? getComputedStyle(trigger).display !== 'none' : false,
       triggerExpanded: trigger instanceof HTMLElement ? trigger.getAttribute('aria-expanded') : null,

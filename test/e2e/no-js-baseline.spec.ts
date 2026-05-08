@@ -163,7 +163,7 @@ test.describe('No-JS baseline', () => {
     const state = await page.evaluate(() => {
       const shell = document.querySelector('.about-shell');
       const tocCol = shell?.querySelector(':scope > .layout-toc-col');
-      const tocHost = tocCol?.querySelector('layout-toc');
+      const tocHost = tocCol?.querySelector('.layout-toc');
 
       if (!(shell instanceof HTMLElement)) {
         return null;
@@ -202,7 +202,7 @@ test.describe('No-JS baseline', () => {
 
     await expect(page.locator('.about-shell')).toHaveCount(1);
     await expect(page.locator('.about-shell > .layout-toc-col')).toHaveCount(1);
-    await expect(page.locator('.about-shell layout-toc')).toHaveCount(1);
+    await expect(page.locator('.about-shell .layout-toc')).toHaveCount(1);
   });
 
   test('layout-rich が狭幅でも本文列を 1文字幅へ潰さないこと', async ({ page }) => {

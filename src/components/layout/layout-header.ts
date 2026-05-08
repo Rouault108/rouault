@@ -432,14 +432,18 @@ export class LayoutHeader extends LitElement {
   }
 
   readShellProjection(): HeaderShellProjection {
+    const currentCorpusKey =
+      typeof this.currentCorpusKey === 'string' ? this.currentCorpusKey.trim() : '';
+    const tocOwnerId = typeof this.tocOwnerId === 'string' ? this.tocOwnerId.trim() : '';
+
     return {
       corpora: this._corpusItems,
-      currentCorpusKey: this.currentCorpusKey.trim() || 'all',
+      currentCorpusKey: currentCorpusKey || 'all',
       noteLayout: this.noteLayout,
       sidebarEnabled: this.sidebarEnabled,
       tocPresence: this.tocPresence,
       tocRuntimeId: this._readTocRuntimeId(),
-      tocOwnerId: this.tocOwnerId.trim() || null,
+      tocOwnerId: tocOwnerId || null,
       tocTriggerReserved: this._isTocTriggerReserved(),
     };
   }
@@ -761,7 +765,8 @@ export class LayoutHeader extends LitElement {
   }
 
   private get _currentCorpusItem(): CorpusNavigationItem | null {
-    const currentKey = this.currentCorpusKey.trim() || 'all';
+    const currentKey =
+      typeof this.currentCorpusKey === 'string' ? this.currentCorpusKey.trim() || 'all' : 'all';
     return this._corpusItems.find((item) => item.key === currentKey) ?? null;
   }
 
