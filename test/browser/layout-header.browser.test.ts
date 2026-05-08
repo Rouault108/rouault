@@ -541,6 +541,102 @@ describe('layout-header browser contract', () => {
     expect(uiHeader.hasAttribute('overlay-sidebar-open')).to.equal(false);
   });
 
+  it('normal and note layout headers use the same app header width token', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1440px; --app-header-inner-max-width: 777px;">
+        <layout-header data-test="normal"></layout-header>
+        <layout-header data-test="note" note-layout sidebar-enabled></layout-header>
+      </div>
+    `);
+
+    const normalHeader = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header[data-test="normal"]'),
+      'normalHeader',
+    );
+    const noteHeader = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header[data-test="note"]'),
+      'noteHeader',
+    );
+
+    await waitForLitUpdate(normalHeader);
+    await waitForLitUpdate(noteHeader);
+
+    const getInner = (header: LayoutHeader): HTMLElement => {
+      const uiHeader = expectPresent(
+        header.shadowRoot?.querySelector<UiHeader>('ui-header'),
+        'uiHeader',
+      );
+      return expectPresent(uiHeader.shadowRoot?.querySelector<HTMLElement>('.inner'), 'inner');
+    };
+
+    const normalInner = getInner(normalHeader);
+    const noteInner = getInner(noteHeader);
+
+    expect(normalInner.getBoundingClientRect().width).to.be.closeTo(777, 1);
+    expect(noteInner.getBoundingClientRect().width).to.be.closeTo(777, 1);
+    expect(normalInner.getBoundingClientRect().width).to.be.closeTo(
+      noteInner.getBoundingClientRect().width,
+      1,
+    );
+  });
+
+  it('fixed sidebar path and note layout path keep the same header border-box width', async () => {
+    layoutSidebarController.initialize(DEFAULT_LAYOUT_SIDEBAR_ID, {
+      presentation: 'fixed',
+      fixedBreakpoint: 1024,
+      storage: null,
+    });
+
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1440px; --app-header-inner-max-width: 777px;">
+        <layout-header data-test="non-note" sidebar-enabled></layout-header>
+        <layout-header data-test="note" note-layout sidebar-enabled></layout-header>
+      </div>
+    `);
+
+    const nonNoteHeader = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header[data-test="non-note"]'),
+      'nonNoteHeader',
+    );
+    const noteHeader = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header[data-test="note"]'),
+      'noteHeader',
+    );
+
+    await waitForLitUpdate(nonNoteHeader);
+    await waitForLitUpdate(noteHeader);
+
+    const nonNoteUiHeader = expectPresent(
+      nonNoteHeader.shadowRoot?.querySelector<UiHeader>('ui-header'),
+      'nonNoteUiHeader',
+    );
+    const noteUiHeader = expectPresent(
+      noteHeader.shadowRoot?.querySelector<UiHeader>('ui-header'),
+      'noteUiHeader',
+    );
+    const nonNoteInner = expectPresent(
+      nonNoteUiHeader.shadowRoot?.querySelector<HTMLElement>('.inner'),
+      'nonNoteInner',
+    );
+    const noteInner = expectPresent(
+      noteUiHeader.shadowRoot?.querySelector<HTMLElement>('.inner'),
+      'noteInner',
+    );
+
+    expect(nonNoteUiHeader.sidebarExpanded).to.equal(true);
+    expect(nonNoteUiHeader.hasAttribute('sidebar-expanded')).to.equal(true);
+
+    expect(noteUiHeader.sidebarExpanded).to.equal(false);
+    expect(noteUiHeader.hasAttribute('sidebar-expanded')).to.equal(false);
+
+    expect(nonNoteInner.getBoundingClientRect().width).to.be.closeTo(777, 1);
+    expect(noteInner.getBoundingClientRect().width).to.be.closeTo(777, 1);
+    expect(nonNoteInner.getBoundingClientRect().width).to.be.closeTo(
+      noteInner.getBoundingClientRect().width,
+      1,
+    );
+  });
+
   it('desktop の note-layout では sidebar-main gap を含む start reserve と TOC reserve を使うこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 1440px; --note-sidebar-main-gap: 32px;">

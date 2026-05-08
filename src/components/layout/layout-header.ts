@@ -142,7 +142,10 @@ export class LayoutHeader extends LitElement {
     ui-header {
       --ui-header-center-start-inset: 0px;
       --ui-header-center-end-inset: 0px;
-      --ui-header-max-inline-size: var(--layout-chrome-max-width, 1280px);
+      --ui-header-max-inline-size: var(
+        --app-header-inner-max-width,
+        var(--layout-chrome-max-width, 1384px)
+      );
       --ui-header-max-inline-size-with-sidebar: var(--ui-header-max-inline-size);
     }
 
@@ -159,13 +162,6 @@ export class LayoutHeader extends LitElement {
 
     :host([sidebar-enabled]) ui-header {
       --ui-header-center-start-inset: 44px;
-    }
-
-    :host([note-layout][sidebar-enabled]) ui-header {
-      --ui-header-max-inline-size: calc(
-        var(--note-fixed-frame-max-width, 1440px) - (var(--space-4, 16px) * 2)
-      );
-      --ui-header-max-inline-size-with-sidebar: var(--ui-header-max-inline-size);
     }
 
     .sidebar-toggle {

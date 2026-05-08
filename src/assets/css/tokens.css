@@ -509,18 +509,37 @@
   --aside-width: 240px;
   --toc-heading-scroll-margin-top: var(--space-8, 32px);
 
-  /* レイアウト最大幅は breakpoint token と分離して管理する */
-  --layout-chrome-max-width: 1280px;
+  /* =========================================================================
+   * App Header / Chrome Width
+   * =========================================================================
+   * ui-header shadow DOM 内 .inner の border-box 最大幅。
+   *
+   * .inner は box-sizing: border-box であり、padding-inline と
+   * focus ring bleed を内部に含む。content box 幅ではなく、
+   * border-box 幅を契約対象にする。
+   *
+   * --layout-chrome-max-width:
+   *   既存コード・外部 override 経路との互換性のため token 名は維持する。
+   *   ただし、header chrome の統一幅に合わせて default value を
+   *   1280px から 1384px へ変更する。
+   *
+   * --app-header-inner-max-width:
+   *   新規利用者向けの semantic override token。
+   *   root default はここでは定義しない。
+   *   ui-header / layout-header 側の fallback chain で、
+   *   --app-header-inner-max-width > --layout-chrome-max-width > 1384px
+   *   の順に解決する。
+   */
+  --layout-chrome-max-width: 1384px;
 
   /* note layout 専用寸法
    * 「静かに読む」ため、本文主体の比率へ再配分する。
-   * header / sidebar / toc を同じ token 系から導出し、調整点を一箇所へ集約する。
+   * header .inner の外形幅とは独立した note frame の寸法として扱う。
    */
   --note-sidebar-width: 248px;
   --note-toc-width: clamp(15rem, 18vw, 17rem);
   --note-shell-column-gap: 32px;
-  /* wide viewport では本文 + TOC + sidebar を 1360px 前後で頭打ちにし、
-   * header と note frame の外形契約を揃える */
+  /* wide viewport では本文 + TOC + sidebar を 1360px 前後で頭打ちにする。 */
   --note-reading-max-inline-size: 54rem;
   --note-shell-max-width: calc(
     var(--note-reading-max-inline-size) + var(--note-toc-width) + var(--note-shell-column-gap)

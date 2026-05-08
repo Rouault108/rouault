@@ -28,6 +28,26 @@ const waitForHeaderToggle = (header: UiHeader): Promise<CustomEvent<UiHeaderSide
     );
   });
 
+const ensureTokensCssLoaded = async (): Promise<void> => {
+  const href = new URL('../../src/assets/css/tokens.css', import.meta.url).href;
+
+  if (document.querySelector(`link[data-test-tokens-css][href="${href}"]`)) {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.dataset['testTokensCss'] = 'true';
+    link.addEventListener('load', () => resolve(), { once: true });
+    link.addEventListener('error', () => reject(new Error('tokens.css の読み込みに失敗しました')), {
+      once: true,
+    });
+    document.head.append(link);
+  });
+};
+
 describe('ui-header browser contract', () => {
   it('初回 render では event を発火せず、sidebarExpanded 変更時だけ non-bubbling event を出すこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
@@ -206,5 +226,123 @@ describe('ui-header browser contract', () => {
     expect(styles.overflowY).to.equal('visible');
     expect(styles.paddingInlineStart).to.equal('20px');
     expect(styles.paddingInlineEnd).to.equal('20px');
+  });
+
+  it('app header width token controls inner border-box width without sidebar-expanded path', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1440px; --app-header-inner-max-width: 777px;">
+        <ui-header .sidebarExpanded=${false}></ui-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<UiHeader>('ui-header'), 'header');
+    await waitForLitUpdate(header);
+
+    expect(header.sidebarExpanded).to.equal(false);
+    expect(header.hasAttribute('sidebar-expanded')).to.equal(false);
+
+    const inner = expectPresent(header.shadowRoot?.querySelector<HTMLElement>('.inner'), 'inner');
+
+    expect(inner.getBoundingClientRect().width).to.be.closeTo(777, 1);
+  });
+
+  it('legacy layout chrome width token remains an override path without sidebar-expanded path', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1440px; --layout-chrome-max-width: 777px;">
+        <ui-header .sidebarExpanded=${false}></ui-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<UiHeader>('ui-header'), 'header');
+    await waitForLitUpdate(header);
+
+    expect(header.sidebarExpanded).to.equal(false);
+    expect(header.hasAttribute('sidebar-expanded')).to.equal(false);
+
+    const inner = expectPresent(header.shadowRoot?.querySelector<HTMLElement>('.inner'), 'inner');
+
+    expect(inner.getBoundingClientRect().width).to.be.closeTo(777, 1);
+  });
+
+  it('app header token wins when both new and legacy width tokens are provided without sidebar-expanded path', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div
+        style="
+          inline-size: 1440px;
+          --app-header-inner-max-width: 900px;
+          --layout-chrome-max-width: 777px;
+        "
+      >
+        <ui-header .sidebarExpanded=${false}></ui-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<UiHeader>('ui-header'), 'header');
+    await waitForLitUpdate(header);
+
+    expect(header.sidebarExpanded).to.equal(false);
+    expect(header.hasAttribute('sidebar-expanded')).to.equal(false);
+
+    const inner = expectPresent(header.shadowRoot?.querySelector<HTMLElement>('.inner'), 'inner');
+
+    expect(inner.getBoundingClientRect().width).to.be.closeTo(900, 1);
+  });
+
+  it('sidebar-expanded path uses the same default header width token', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1440px; --app-header-inner-max-width: 777px;">
+        <ui-header sidebar-expanded></ui-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<UiHeader>('ui-header'), 'header');
+    await waitForLitUpdate(header);
+
+    expect(header.sidebarExpanded).to.equal(true);
+    expect(header.hasAttribute('sidebar-expanded')).to.equal(true);
+
+    const inner = expectPresent(header.shadowRoot?.querySelector<HTMLElement>('.inner'), 'inner');
+
+    expect(inner.getBoundingClientRect().width).to.be.closeTo(777, 1);
+  });
+
+  it('tokens.css default resolves ui-header inner width to 1384px on wide containers', async () => {
+    await ensureTokensCssLoaded();
+
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1536px;">
+        <ui-header .sidebarExpanded=${false}></ui-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<UiHeader>('ui-header'), 'header');
+    await waitForLitUpdate(header);
+
+    expect(header.sidebarExpanded).to.equal(false);
+    expect(header.hasAttribute('sidebar-expanded')).to.equal(false);
+
+    const inner = expectPresent(header.shadowRoot?.querySelector<HTMLElement>('.inner'), 'inner');
+
+    expect(inner.getBoundingClientRect().width).to.be.closeTo(1384, 1);
+  });
+
+  it('tokens.css does not block local legacy layout chrome width overrides', async () => {
+    await ensureTokensCssLoaded();
+
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1440px; --layout-chrome-max-width: 777px;">
+        <ui-header .sidebarExpanded=${false}></ui-header>
+      </div>
+    `);
+
+    const header = expectPresent(wrapper.querySelector<UiHeader>('ui-header'), 'header');
+    await waitForLitUpdate(header);
+
+    expect(header.sidebarExpanded).to.equal(false);
+    expect(header.hasAttribute('sidebar-expanded')).to.equal(false);
+
+    const inner = expectPresent(header.shadowRoot?.querySelector<HTMLElement>('.inner'), 'inner');
+
+    expect(inner.getBoundingClientRect().width).to.be.closeTo(777, 1);
   });
 });

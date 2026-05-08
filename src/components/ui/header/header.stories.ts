@@ -73,6 +73,18 @@ const meta: Meta<UiHeader> = {
 - \`sidebarExpanded\` は sidebar 状態そのものではなく start ゾーンの予約幅入力
 - 狭幅では \`center\` を隠し、文脈表示を出さない例を含む
 - event / attribute / responsive contract は \`test/browser/header.browser.test.ts\` に移送済み
+
+幅契約:
+
+- \`ui-header\` shadow DOM 内 \`.inner\` の契約対象は content box ではなく border-box width
+- 新規参照用の semantic override token は \`--app-header-inner-max-width\`
+- \`--layout-chrome-max-width\` は legacy override token として残し、削除・非推奨化しない
+- \`--layout-chrome-max-width\` の default value は 1384px で、旧 default visual value 1280px の維持は保証しない
+- 同一 scope で \`--app-header-inner-max-width\` と \`--layout-chrome-max-width\` が競合した場合は \`--app-header-inner-max-width\` を優先
+- \`--layout-chrome-max-width\` だけを局所指定する legacy override 経路は引き続き有効
+- tokens.css root には \`--app-header-inner-max-width\` を定義しない
+- \`sidebar-expanded\` 経路も同じ幅契約に従う
+- \`--ui-header-max-inline-size\` / \`--ui-header-max-inline-size-with-sidebar\` は ui-header 内部・adapter bridge 用 token
         `,
       },
     },

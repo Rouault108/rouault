@@ -6,7 +6,7 @@
 
 `layout-header` は `ui-header` の上位 adapter として、Rouault の page chrome に必要な start / end 領域を供給します。特に note page では `toc-presence="present|absent"` を受け、本文側の TOC 列契約と同じ presence 信号で center-end reserve を切り替えます。
 
-Note layout の header center zone は `--note-sidebar-width` と `--note-toc-width` を前提に本文中心を維持します。`--note-toc-width` は `clamp(15rem, 18vw, 17rem)` を基準とし、この変更は TOC だけでなく `layout-header` の center inset にも影響するため、reading chrome 全体の契約として扱います。Desktop note layout では、header center zone、note fixed frame、TOC reserve が同じ layout token 群に従わなければなりません。
+Note layout の header center zone は `--note-sidebar-width` と `--note-toc-width` を前提に、箱の内側の予約領域だけを調整します。`--note-toc-width` は `clamp(15rem, 18vw, 17rem)` を基準とし、この変更は TOC だけでなく `layout-header` の center inset にも影響します。ただし、`ui-header` shadow DOM 内 `.inner` の外形幅はページ種別で切り替えず、全ページで同じ header width contract に従います。
 
 ただし、Rouault の現在の `layout-header` は breadcrumb を所有しません。note 文脈の breadcrumb 正本は本文先頭の SSR light DOM `header.article-header` が所有し、`layout-header` は移動・補助操作・TOC トリガー・corpus 切替・theme 切替に専念します。
 
@@ -187,17 +187,27 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 `ui-header` は、外部から上書き可能な CSS Custom Properties として次を公開します。
 
-| 名前                             | 既定値 | 用途                                   |
-| -------------------------------- | ------ | -------------------------------------- |
-| `--ui-header-backdrop-saturate`  | `0.5`  | Glassmorphism 背景の `saturate()` 強度 |
-| `--ui-header-center-start-inset` | `0px`  | center ゾーンの開始側インセット        |
-| `--ui-header-center-end-inset`   | `0px`  | center ゾーンの終了側インセット        |
+| 名前                             | 既定値 | 用途                                                                          |
+| -------------------------------- | ------ | ----------------------------------------------------------------------------- |
+| `--ui-header-backdrop-saturate`  | `0.5`  | Glassmorphism 背景の `saturate()` 強度                                        |
+| `--ui-header-center-start-inset` | `0px`  | center ゾーンの開始側インセット                                               |
+| `--ui-header-center-end-inset`   | `0px`  | center ゾーンの終了側インセット                                               |
+| `--app-header-inner-max-width`   | なし   | `.inner` の border-box width を指定する新規利用者向け semantic override token |
+
+`--app-header-inner-max-width` は新規利用者向けの公開 override 面です。tokens.css root には `--app-header-inner-max-width` を定義せず、局所的に `--layout-chrome-max-width` だけを上書きする legacy 経路を維持します。
+
+`--layout-chrome-max-width` は legacy override token として残します。今回の契約では default value を 1384px に変更し、旧 default visual value 1280px の維持は保証しません。同一 scope で `--app-header-inner-max-width` と `--layout-chrome-max-width` が競合した場合は、semantic token である `--app-header-inner-max-width` を優先します。
+
+`--ui-header-max-inline-size` / `--ui-header-max-inline-size-with-sidebar` は、ui-header 内部・adapter bridge 用 token です。新規利用者が直接参照すべき semantic token ではありません。`sidebar-expanded` 経路も既定では同じ `.inner` border-box width 契約に従います。
 
 ### `layout-header` の note shell 契約
 
 - `layout-header` は `ui-header` の上位 adapter です
 - `layout-header[note-layout][toc-presence='present']` は TOC 列幅に応じた `--ui-header-center-end-inset` を与えます
-- `layout-header[note-layout]` は desktop では `toc-presence` にかかわらず `present` と同じ `--ui-header-center-end-inset` を維持し、note shell の外形契約とそろえます
+- `layout-header[note-layout]` は desktop では `toc-presence` にかかわらず `present` と同じ `--ui-header-center-end-inset` を維持します
+- `layout-header[note-layout][sidebar-enabled]` は `ui-header` の最大幅を上書きしません
+- note 文脈差は `--ui-header-center-start-inset` / `--ui-header-center-end-inset` に限定して表現します
+- note frame 全体と header frame の完全な共通導出はこの契約では行いません
 - start 側 reserve は従来どおり `sidebar-enabled` で決め、TOC presence と混在させません
 - Rouault の `layout-header` は breadcrumb を所有しません
 - note 文脈の breadcrumb は SSR light DOM `header.article-header` が所有します
@@ -214,11 +224,12 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 公開トークンは次の値域で扱います。
 
-| 名前                             | 想定する値型                                     | 既定動作                         | 無効値の扱い                                                           |
-| -------------------------------- | ------------------------------------------------ | -------------------------------- | ---------------------------------------------------------------------- |
-| `--ui-header-backdrop-saturate`  | CSS の `<number>`                                | `saturate(0.5)` として評価します | 無効値は当該宣言が無効になり、UA の CSS 評価結果に従います             |
-| `--ui-header-center-start-inset` | CSS の `<length-percentage>` を含む inset 相当値 | `0px`                            | 無効値は当該宣言が無効になり、既定値または他宣言へフォールバックします |
-| `--ui-header-center-end-inset`   | CSS の `<length-percentage>` を含む inset 相当値 | `0px`                            | 無効値は当該宣言が無効になり、既定値または他宣言へフォールバックします |
+| 名前                             | 想定する値型                                     | 既定動作                                  | 無効値の扱い                                                           |
+| -------------------------------- | ------------------------------------------------ | ----------------------------------------- | ---------------------------------------------------------------------- |
+| `--ui-header-backdrop-saturate`  | CSS の `<number>`                                | `saturate(0.5)` として評価します          | 無効値は当該宣言が無効になり、UA の CSS 評価結果に従います             |
+| `--ui-header-center-start-inset` | CSS の `<length-percentage>` を含む inset 相当値 | `0px`                                     | 無効値は当該宣言が無効になり、既定値または他宣言へフォールバックします |
+| `--ui-header-center-end-inset`   | CSS の `<length-percentage>` を含む inset 相当値 | `0px`                                     | 無効値は当該宣言が無効になり、既定値または他宣言へフォールバックします |
+| `--app-header-inner-max-width`   | CSS の `<length-percentage>` 相当値              | `--layout-chrome-max-width` 経由で 1384px | 無効値は fallback chain の評価結果に従います                           |
 
 利用者は、`--ui-header-center-start-inset` および `--ui-header-center-end-inset` に `calc(...)` を与えてかまいません。負値も CSS としては与えられますが、header 契約としては与えるべきではありません（SHOULD NOT）。
 
@@ -228,21 +239,21 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 `ui-header` は、公開トークンとは別に、app-shell または foundation 側のトークンへ依存します。これらは **header 固有の長期安定 API** ではなく、外部方針に従属する dependency token です。
 
-| 用途           | 依存トークン                          |
-| -------------- | ------------------------------------- |
-| ヘッダー高さ   | `--header-height`                     |
-| z-index        | `--z-fixed`                           |
-| 背景           | `--glass-panel` / `--bg-default`      |
-| 境界線         | `--border-width` / `--border-default` |
-| 文字色         | `--fg-default`                        |
-| フォントサイズ | `--text-base`                         |
-| blur 強度      | `--blur-md`                           |
-| 最大幅         | `--bp-xl`                             |
-| 左右余白       | `--space-4`                           |
-| zone ギャップ  | `--space-2`                           |
-| サイドバー幅   | `--sidebar-width`                     |
+| 用途           | 依存トークン                                                 |
+| -------------- | ------------------------------------------------------------ |
+| ヘッダー高さ   | `--header-height`                                            |
+| z-index        | `--z-fixed`                                                  |
+| 背景           | `--glass-panel` / `--bg-default`                             |
+| 境界線         | `--border-width` / `--border-default`                        |
+| 文字色         | `--fg-default`                                               |
+| フォントサイズ | `--text-base`                                                |
+| blur 強度      | `--blur-md`                                                  |
+| 最大幅         | `--app-header-inner-max-width` / `--layout-chrome-max-width` |
+| 左右余白       | `--space-4`                                                  |
+| zone ギャップ  | `--space-2`                                                  |
+| サイドバー幅   | `--sidebar-width`                                            |
 
-利用者は、これらの dependency token を header 固有の public token と誤読してはなりません（MUST NOT）。header 側が長期安定を保証するのは `--ui-header-*` 系の public token であり、上表は app-shell または foundation 側の契約に従属する依存面です。
+利用者は、これらの dependency token を header 固有の public token と誤読してはなりません（MUST NOT）。header 幅の新規 override 面は `--app-header-inner-max-width` であり、`--ui-header-max-inline-size` 系は adapter bridge 用 token として扱います。上表のうち foundation 側 token は app-shell または foundation 側の契約に従属する依存面です。
 
 狭幅条件の閾値も同様に app-shell 側の responsive policy に従属します。現行実装では **639px 以下を狭幅、640px 以上を通常幅開始**として扱いますが、これは header 私有の長期安定値ではありません。利用者は境界値そのものではなく、**狭幅では `center` が失われ得る**という挙動契約へ依存しなければなりません（MUST）。
 
@@ -411,7 +422,8 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 - 内部 `header` は `position: sticky`、`top: 0` です。
 - `grid-column: 1 / -1` により、アプリシェル Grid 全幅へ参加します。
 - `block-size` は `var(--header-height, 48px)` です。
-- `.inner` は `max-inline-size: var(--bp-xl, 1280px)` を持ち、中央寄せされます。
+- `.inner` は `--app-header-inner-max-width`、`--layout-chrome-max-width`、1384px fallback の順で解決した最大幅を持ち、中央寄せされます。
+- `.inner` の幅契約対象は content box ではなく border-box width です。
 - `.inner` の左右パディングは `var(--space-4, 1rem)` です。
 - `start` は左寄せ、`center` は視覚的中央、`end` は右寄せです。
 - header は単一行レイアウトであり、内容に応じて自動で高さを増やしません。
@@ -449,19 +461,19 @@ Rouault の現行 `layout-header` は、mobile note で compact breadcrumb を�
 
 本コンポーネントは、header 固有の公開トークンとは別に、app-shell または foundation 側のトークンへ依存します。これらは header 自身が長期安定を約束する API ではなく、外部方針に従属する依存面です。
 
-| 用途           | 依存トークン                          |
-| -------------- | ------------------------------------- |
-| ヘッダー高さ   | `--header-height`                     |
-| z-index        | `--z-fixed`                           |
-| 背景           | `--glass-panel` / `--bg-default`      |
-| 境界線         | `--border-width` / `--border-default` |
-| 文字色         | `--fg-default`                        |
-| フォントサイズ | `--text-base`                         |
-| blur 強度      | `--blur-md`                           |
-| 最大幅         | `--bp-xl`                             |
-| 左右余白       | `--space-4`                           |
-| zone ギャップ  | `--space-2`                           |
-| サイドバー幅   | `--sidebar-width`                     |
+| 用途           | 依存トークン                                                 |
+| -------------- | ------------------------------------------------------------ |
+| ヘッダー高さ   | `--header-height`                                            |
+| z-index        | `--z-fixed`                                                  |
+| 背景           | `--glass-panel` / `--bg-default`                             |
+| 境界線         | `--border-width` / `--border-default`                        |
+| 文字色         | `--fg-default`                                               |
+| フォントサイズ | `--text-base`                                                |
+| blur 強度      | `--blur-md`                                                  |
+| 最大幅         | `--app-header-inner-max-width` / `--layout-chrome-max-width` |
+| 左右余白       | `--space-4`                                                  |
+| zone ギャップ  | `--space-2`                                                  |
+| サイドバー幅   | `--sidebar-width`                                            |
 
 `center` の狭幅時非表示は responsive policy に従属します。現行実装では **639px 以下で非表示、640px 以上で通常表示** ですが、将来的な breakpoint 再編は app-shell 側 policy によって行うべきであり、header 単独で私有 breakpoint を増やすべきではありません。
 

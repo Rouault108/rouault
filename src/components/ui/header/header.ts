@@ -15,7 +15,16 @@ export class UiHeader extends LitElement {
       --ui-header-backdrop-saturate: 0.5;
       --ui-header-center-start-inset: 0px;
       --ui-header-center-end-inset: 0px;
-      --ui-header-max-inline-size: var(--layout-chrome-max-width, 1280px);
+      /*
+       * Width bridge tokens.
+       * 新規利用者向けの semantic override token は --app-header-inner-max-width。
+       * --layout-chrome-max-width は legacy override token。
+       * --ui-header-max-inline-size 系は ui-header 内部・adapter bridge 用として扱う。
+       */
+      --ui-header-max-inline-size: var(
+        --app-header-inner-max-width,
+        var(--layout-chrome-max-width, 1384px)
+      );
       --ui-header-max-inline-size-with-sidebar: var(--ui-header-max-inline-size);
 
       /* コンポーネントローカルトークン */
