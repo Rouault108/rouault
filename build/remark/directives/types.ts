@@ -39,6 +39,9 @@ export interface MdastNode {
 export interface VFileLike {
   path?: string;
   value?: unknown;
+  data?: {
+    rouaultPolicyContext?: import('./policy/note-policy-context.js').NotePolicyContext;
+  };
 }
 
 export type DirectiveName =

@@ -34,6 +34,7 @@
     "test:e2e:dev": "pnpm run codegen:icons && pnpm run codegen:content && pnpm exec playwright test --config playwright.dev.config.ts",
     "test:e2e:production": "pnpm run codegen:icons && pnpm run codegen:content && pnpm exec playwright test",
     "test": "pnpm run test:node && pnpm run test:ssr && pnpm run test:browser && pnpm run test:storybook:meta",
+    "validate:note-links": "pnpm run codegen:content && pnpm exec tsx scripts/validate-note-source-links.ts",
     "test:extended": "pnpm run test:storybook:smoke && pnpm run test:e2e:production && pnpm run test:e2e:dev",
     "storybook": "pnpm run codegen:manifest && pnpm exec storybook dev",
     "storybook:build": "pnpm run codegen:manifest && pnpm exec storybook build",
@@ -43,7 +44,7 @@
     "build:production": "pnpm exec tsx scripts/run-production-build.ts",
     "dev": "pnpm run codegen:icons && tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
     "start": "pnpm run dev",
-    "check": "pnpm run lint && pnpm run typecheck && pnpm run test",
+    "check": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run validate:note-links",
     "ci": "pnpm run check && pnpm run test:extended",
     "sync:link-cards": "pnpm exec tsx scripts/sync-link-card-metadata.ts"
   },

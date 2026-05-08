@@ -49,12 +49,12 @@ C#は単なる構文項目の集合ではなく、ソースコードを言語仕
 
 | 章 | ノート | 位置付け |
 | --- | --- | --- |
-| 第1章 | [C#とは何か](./csharp/what-is-csharp.md) | C#を言語仕様と.NET実行基盤の両面から位置付ける |
-| 第2章 | [ソースコードから実行まで](./csharp/source-code-to-execution.md) | ソースコード、コンパイル単位、アセンブリ、IL、メタデータ、CLRの関係を整理する |
-| 第3章 | [言語バージョン・ビルド文脈・互換性](./csharp/language-version-build-context-compatibility.md) | `LangVersion`、TFM、SDK、前処理ディレクティブ、nullable文脈を整理する |
-| 第4章 | [宣言、修飾子、メンバー分類](./csharp/declarations-modifiers-members.md) | 宣言空間、型宣言、メンバー宣言、アクセシビリティ、修飾子、partialを整理する |
-| 第5章 | [型の全体像](./csharp/types-overview.md) | 値型、参照型、型パラメーター、ポインター型、`dynamic`、null許容参照型注釈を概観する |
-| 第6章 | [値型](./csharp/value-types.md) | 組み込み値型、列挙型、構造体、record struct、null許容値型、boxingとコピーを整理する |
+| 第1章 | [C#とは何か](./what-is-csharp.md) | C#を言語仕様と.NET実行基盤の両面から位置付ける |
+| 第2章 | [ソースコードから実行まで](./source-code-to-execution.md) | ソースコード、コンパイル単位、アセンブリ、IL、メタデータ、CLRの関係を整理する |
+| 第3章 | [言語バージョン・ビルド文脈・互換性](./language-version-build-context-compatibility.md) | `LangVersion`、TFM、SDK、前処理ディレクティブ、nullable文脈を整理する |
+| 第4章 | [宣言、修飾子、メンバー分類](./declarations-modifiers-members.md) | 宣言空間、型宣言、メンバー宣言、アクセシビリティ、修飾子、partialを整理する |
+| 第5章 | [型の全体像](./types-overview.md) | 値型、参照型、型パラメーター、ポインター型、`dynamic`、null許容参照型注釈を概観する |
+| 第6章 | [値型](./value-types.md) | 組み込み値型、列挙型、構造体、record struct、null許容値型、boxingとコピーを整理する |
 
 ## 参照上の注意
 
@@ -68,7 +68,7 @@ C#は単なる構文項目の集合ではなく、ソースコードを言語仕
 
 ### 第I部　C#の位置付けと実行基盤
 
-#### 第1章　[C#とは何か](./csharp/what-is-csharp.md)
+#### 第1章　[C#とは何か](./what-is-csharp.md)
 
 - **1.1 C#を「言語」として見る**
   - 言語設計の目的
@@ -100,7 +100,7 @@ C#は単なる構文項目の集合ではなく、ソースコードを言語仕
 
 ---
 
-#### 第2章　[ソースコードから実行まで](./csharp/source-code-to-execution.md)
+#### 第2章　[ソースコードから実行まで](./source-code-to-execution.md)
 
 - **2.1 コンパイルの全体像**
   - 字句解析
@@ -141,7 +141,7 @@ C#は単なる構文項目の集合ではなく、ソースコードを言語仕
 
 ---
 
-#### 第3章　[言語バージョン・ビルド文脈・互換性](./csharp/language-version-build-context-compatibility.md)
+#### 第3章　[言語バージョン・ビルド文脈・互換性](./language-version-build-context-compatibility.md)
 
 - **3.1 `LangVersion`の意味**
   - `LangVersion`未指定時の言語バージョン
@@ -198,7 +198,7 @@ C#は単なる構文項目の集合ではなく、ソースコードを言語仕
 
 ### 第II部　宣言構造と型システム
 
-#### 第4章　[宣言、修飾子、メンバー分類](./csharp/declarations-modifiers-members.md)
+#### 第4章　[宣言、修飾子、メンバー分類](./declarations-modifiers-members.md)
 
 - **4.1 宣言空間**
   - 宣言空間の意味
@@ -267,7 +267,7 @@ C#は単なる構文項目の集合ではなく、ソースコードを言語仕
 
 ---
 
-#### 第5章　[型の全体像](./csharp/types-overview.md)
+#### 第5章　[型の全体像](./types-overview.md)
 
 - **5.1 型とは何か**
   - 値の集合としての型
@@ -318,7 +318,7 @@ C#は単なる構文項目の集合ではなく、ソースコードを言語仕
 
 ---
 
-#### 第6章　[値型](./csharp/value-types.md)
+#### 第6章　[値型](./value-types.md)
 
 - **6.1 組み込み値型**
   - 整数型

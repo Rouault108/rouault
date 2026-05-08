@@ -11,9 +11,9 @@ status: 'wip'
 
 このディレクトリでは、Rouault の Markdown 出力契約を主題別に確認します。
 
-- [Reader Basic](/notes/testing/reader-basic/)
-- [Markdown Basic](/notes/testing/markdown-basic/)
-- [Media](/notes/testing/media/)
-- [Code](/notes/testing/code/)
-- [Interactive](/notes/testing/interactive/)
-- [Sandbox](/notes/testing/sandbox/)
+- [Reader Basic](./reader-basic.md)
+- [Markdown Basic](./markdown-basic.md)
+- [Media](./media.md)
+- [Code](./code.md)
+- [Interactive](./interactive.md)
+- [Sandbox](./sandbox.md)

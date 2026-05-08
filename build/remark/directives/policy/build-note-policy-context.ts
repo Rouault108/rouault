@@ -32,6 +32,10 @@ const inferPolicyContextFromPath = (filePath: string): NotePolicyContext | null 
 };
 
 export const buildNotePolicyContext = (file: VFileLike | undefined): NotePolicyContext => {
+  if (file?.data?.rouaultPolicyContext) {
+    return file.data.rouaultPolicyContext;
+  }
+
   if (typeof file?.value !== 'string' || file.value.trim().length === 0) {
     return createNotePolicyContext('testing', 'sandbox');
   }

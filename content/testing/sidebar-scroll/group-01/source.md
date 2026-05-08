@@ -15,4 +15,4 @@ genre:
 
 このノートは、サイドバーのルート遷移時に現在地へ寄せる挙動を検証するための遷移元です。
 
-[Sidebar Scroll Target](/notes/testing/sidebar-scroll/group-16/target/)
+[Sidebar Scroll Target](../group-16/target.md)

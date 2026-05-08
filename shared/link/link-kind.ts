@@ -61,6 +61,10 @@ export const classifyLinkHref = (href: string, options: ClassifyLinkOptions = {}
     return 'internal-fragment';
   }
 
+  if (trimmed.startsWith('//')) {
+    return 'external-web';
+  }
+
   if (!SCHEME_PATTERN.test(trimmed)) {
     return 'internal-document';
   }

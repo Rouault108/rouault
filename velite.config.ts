@@ -9,6 +9,7 @@ import { rehypeHeadingIds } from './build/rehype/rehype-heading-ids.js';
 import { rehypeInlineCodeTranslateNo } from './build/rehype/inline-code-translate-no.js';
 import { rehypeOrderedListContracts } from './build/rehype/ordered-list-contracts.js';
 import { rehypePreviewSandbox } from './build/rehype/preview-sandbox.js';
+import { rehypeResolveNoteSourceLinks } from './build/rehype/resolve-note-source-links.js';
 import {
   normalizeRouaultStaticSurfaceHtml,
   rehypeRouaultComponents,
@@ -126,6 +127,7 @@ export default defineConfig({
       rehypePreviewSandbox,
       rehypeShikiCodeBlocks,
       rehypeStaticCodeGroups,
+      rehypeResolveNoteSourceLinks,
       rehypeAnnotateLinkKinds(),
       rehypeInlineCodeTranslateNo,
       rehypeOrderedListContracts,

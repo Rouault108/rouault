@@ -29,6 +29,10 @@ describe('classifyLinkHref', () => {
     ).to.equal('external-web');
   });
 
+  it('protocol-relative URL を external-web として分類すること', () => {
+    expect(classifyLinkHref('//example.com/article')).to.equal('external-web');
+  });
+
   it('mailto/tel を external-action として分類すること', () => {
     expect(classifyLinkHref('mailto:hello@example.com')).to.equal('external-action');
     expect(classifyLinkHref('tel:+81300000000')).to.equal('external-action');

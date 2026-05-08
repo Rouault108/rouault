@@ -14,6 +14,7 @@ import { createDevelopmentRouterArtifactMiddleware } from './build/dev/dev-route
 import { renderSearchCatalogArtifact } from './build/search/emit-search-artifacts.js';
 import { hasExternalMediaBaseUrl } from './build/media/media-base-url.js';
 import { resolveBuildLabel } from './build/metadata/build-metadata.js';
+import { validateNoteSourceLinks } from './build/content/validate-note-source-links.js';
 import { resolveTrailingSlashRewrite } from './shared/navigation/trailing-slash-rewrite.js';
 
 const formatErrorForConsole = (error: unknown): string => {
@@ -162,8 +163,9 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   eleventyConfig.on('eleventy.before', async () => {
     try {
       await ensureVeliteBuild(isServing);
+      await validateNoteSourceLinks();
     } catch (error: unknown) {
-      console.error(`❌ Velite build failed:\n${formatErrorForConsole(error)}`);
+      console.error(`❌ Content validation failed:\n${formatErrorForConsole(error)}`);
 
       if (!isServing) {
         console.error('Exiting due to build failure in production mode.');
