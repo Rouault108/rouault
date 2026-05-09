@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import { keyed } from 'lit/directives/keyed.js';
 import '../ui/icon/icon.js';
 import '../ui/header/header.js';
 import '../ui/search-trigger/search-trigger.js';
@@ -13,9 +14,11 @@ import {
 } from './layout-toc-runtime-store.js';
 import { navigateToUrl } from '../../search/navigation.js';
 import {
+  THEME_ATTRIBUTE,
   THEME_CHANGE_EVENT,
   applyThemePreference,
-  readStoredThemePreference,
+  isThemePreference,
+  readAppliedThemePreference,
   type ThemeChangeDetail,
   type ThemePreference,
 } from '../../theme/theme-manager.js';
@@ -402,9 +405,6 @@ export class LayoutHeader extends LitElement {
   @state()
   private _isNarrowLayout = false;
 
-  @query('[data-dropdown="theme"]')
-  private _themeDropdownElement!: HTMLElement | null;
-
   @query('.toc-trigger')
   private _tocTriggerElement!: HTMLButtonElement | null;
 
@@ -412,6 +412,7 @@ export class LayoutHeader extends LitElement {
   private _tocRuntimeCleanup: (() => void) | null = null;
   private _tocMobileCleanup: (() => void) | null = null;
   private _resizeObserver: ResizeObserver | null = null;
+  private _themeAttributeObserver: MutationObserver | null = null;
   private _tocHashSyncFrame: number | null = null;
   private _tocHashSyncTimer: number | null = null;
 
@@ -454,13 +455,21 @@ export class LayoutHeader extends LitElement {
       return;
     }
 
-    this._themePreference = readStoredThemePreference();
+    this._commitThemePreference(readAppliedThemePreference());
     window.addEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);
+    this._startThemeAttributeObserver();
     this._connectSidebarController();
     this._connectTocControllers();
     this._syncResponsiveState(this.getBoundingClientRect().width);
     this._startResizeObserver();
     window.addEventListener('hashchange', this._handleTocHashChange);
+    window.setTimeout(() => {
+      if (!this.isConnected) {
+        return;
+      }
+
+      this._commitThemePreference(readAppliedThemePreference());
+    }, 0);
   }
 
   protected override updated(changedProperties: PropertyValues<this>): void {
@@ -473,6 +482,10 @@ export class LayoutHeader extends LitElement {
     }
   }
 
+  protected override firstUpdated(): void {
+    this._commitThemePreference(readAppliedThemePreference());
+  }
+
   override disconnectedCallback(): void {
     this._sidebarControllerCleanup?.();
     this._sidebarControllerCleanup = null;
@@ -482,6 +495,7 @@ export class LayoutHeader extends LitElement {
     this._tocMobileCleanup = null;
     this._cancelTocHashSync();
     this._stopResizeObserver();
+    this._stopThemeAttributeObserver();
 
     if (typeof window !== 'undefined') {
       window.removeEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);
@@ -510,6 +524,26 @@ export class LayoutHeader extends LitElement {
   private _stopResizeObserver(): void {
     this._resizeObserver?.disconnect();
     this._resizeObserver = null;
+  }
+
+  private _startThemeAttributeObserver(): void {
+    if (typeof MutationObserver === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
+    this._stopThemeAttributeObserver();
+    this._themeAttributeObserver = new MutationObserver(() => {
+      this._commitThemePreference(readAppliedThemePreference());
+    });
+    this._themeAttributeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: [THEME_ATTRIBUTE],
+    });
+  }
+
+  private _stopThemeAttributeObserver(): void {
+    this._themeAttributeObserver?.disconnect();
+    this._themeAttributeObserver = null;
   }
 
   private _syncResponsiveState(width: number): void {
@@ -703,35 +737,102 @@ export class LayoutHeader extends LitElement {
     void navigateToUrl(href);
   };
 
-  private _handleThemeChange = (event: CustomEvent<ThemeChangeDetail>): void => {
-    this._themePreference = event.detail.preference;
-  };
+  private _commitThemePreference(preference: ThemePreference): void {
+    this._themePreference = preference;
 
-  private _handleThemeSelect = (event: CustomEvent<{ value: string }>): void => {
-    const nextPreference = event.detail.value;
-    if (nextPreference !== 'light' && nextPreference !== 'dark' && nextPreference !== 'system') {
+    // SSR / hydration 後の stale な shadow DOM part に依存しないよう、
+    // 状態更新経路では明示的に更新要求も出す。
+    this.requestUpdate();
+    void this.updateComplete.then(() => {
+      if (this._themePreference !== preference || !this.isConnected) {
+        return;
+      }
+
+      this._syncThemeTriggerDom(preference);
+    });
+  }
+
+  private _syncThemeTriggerDom(preference: ThemePreference): void {
+    const option = THEME_OPTIONS[preference];
+    const trigger = this.shadowRoot?.querySelector<HTMLElement>(
+      '[data-dropdown="theme"] [slot="trigger"]',
+    );
+
+    if (!(trigger instanceof HTMLElement)) {
       return;
     }
 
-    this._themePreference = nextPreference;
-    applyThemePreference(nextPreference);
-    void this._settleThemeDropdownFocus();
+    trigger.setAttribute('accessible-name', `テーマ: ${option.label}`);
+    trigger.shadowRoot
+      ?.querySelector<HTMLButtonElement>('button')
+      ?.setAttribute('aria-label', `テーマ: ${option.label}`);
+
+    const main = trigger.querySelector<HTMLElement>('.theme-trigger-main');
+    main?.setAttribute('data-theme-preference', preference);
+
+    const icon = trigger.querySelector<HTMLElement>('.theme-trigger-icon');
+    icon?.setAttribute('name', option.icon);
+    icon?.shadowRoot
+      ?.querySelector<HTMLElement>('iconify-icon')
+      ?.setAttribute('icon', `lucide:${option.icon}`);
+
+    const label = trigger.querySelector<HTMLElement>('.theme-trigger-text');
+    this._syncTextPart(label, option.label);
+
+    const items =
+      this.shadowRoot?.querySelectorAll<HTMLElement>('[data-dropdown="theme"] ui-menu-item') ?? [];
+    for (const item of items) {
+      const value = item.getAttribute('value');
+      const selected = value === preference;
+      item.toggleAttribute('data-selected', selected);
+
+      const itemIcon = item.querySelector<HTMLElement>('ui-icon');
+      if (!itemIcon || !isThemePreference(value)) {
+        continue;
+      }
+
+      itemIcon.setAttribute('name', selected ? 'check' : THEME_OPTIONS[value].icon);
+    }
+  }
+
+  private _syncTextPart(container: HTMLElement | null, text: string): void {
+    if (!container) {
+      return;
+    }
+
+    const textNode = [...container.childNodes].find(
+      (node): node is Text => node.nodeType === Node.TEXT_NODE,
+    );
+
+    if (textNode && textNode.data !== text) {
+      textNode.data = text;
+    }
+  }
+
+  private _handleThemeChange = (event: CustomEvent<Partial<ThemeChangeDetail> | null>): void => {
+    const preference = event.detail?.preference;
+
+    if (!isThemePreference(preference)) {
+      return;
+    }
+
+    this._commitThemePreference(preference);
+  };
+
+  private _handleThemeSelect = (event: CustomEvent<{ value?: unknown } | null>): void => {
+    const nextPreference = event.detail?.value;
+
+    if (!isThemePreference(nextPreference)) {
+      return;
+    }
+
+    const detail = applyThemePreference(nextPreference);
+    this._commitThemePreference(detail.preference);
   };
 
   private _handleTocHashChange = (): void => {
     this._scheduleTocHashSync();
   };
-
-  private async _settleThemeDropdownFocus(): Promise<void> {
-    this._blurThemeDropdownTrigger();
-    await this.updateComplete;
-    this._blurThemeDropdownTrigger();
-  }
-
-  private _blurThemeDropdownTrigger(): void {
-    const trigger = this._themeDropdownElement?.querySelector<HTMLElement>('[slot="trigger"]');
-    trigger?.blur();
-  }
 
   private get _corpusItems(): CorpusNavigationItem[] {
     const normalized = this.corporaJson.trim();
@@ -884,36 +985,54 @@ export class LayoutHeader extends LitElement {
             align="end"
             @menu-item-select=${this._handleThemeSelect}
           >
-            <ui-button slot="trigger" variant="ghost" accessible-name="テーマ">
-              <span class="theme-trigger-label">
-                <span class="theme-trigger-main">
-                  <ui-icon
-                    class="theme-trigger-icon"
-                    name=${currentThemeOption.icon}
-                    aria-hidden="true"
-                  ></ui-icon>
-                  <span class="theme-trigger-text">テーマ</span>
-                </span>
-                <ui-icon
-                  class="theme-trigger-chevron"
-                  name="chevron-down"
-                  aria-hidden="true"
-                ></ui-icon>
-              </span>
-            </ui-button>
+            ${keyed(
+              this._themePreference,
+              html`
+                <ui-button
+                  slot="trigger"
+                  variant="ghost"
+                  accessible-name=${`テーマ: ${currentThemeOption.label}`}
+                >
+                  <span class="theme-trigger-label">
+                    <span
+                      class="theme-trigger-main"
+                      data-theme-preference=${this._themePreference}
+                    >
+                      <ui-icon
+                        class="theme-trigger-icon"
+                        name=${currentThemeOption.icon}
+                        aria-hidden="true"
+                      ></ui-icon>
+                      <span class="theme-trigger-text">${currentThemeOption.label}</span>
+                    </span>
+                    <ui-icon
+                      class="theme-trigger-chevron"
+                      name="chevron-down"
+                      aria-hidden="true"
+                    ></ui-icon>
+                  </span>
+                </ui-button>
+              `,
+            )}
             ${(
               Object.entries(THEME_OPTIONS) as [
                 ThemePreference,
                 (typeof THEME_OPTIONS)[ThemePreference],
               ][]
-            ).map(
-              ([value, option]) => html`
-                <ui-menu-item value=${value} text-value=${option.label}>
-                  <ui-icon name=${option.icon} aria-hidden="true"></ui-icon>
+            ).map(([value, option]) => {
+              const selected = value === this._themePreference;
+
+              return html`
+                <ui-menu-item
+                  value=${value}
+                  text-value=${option.label}
+                  ?data-selected=${selected}
+                >
+                  <ui-icon name=${selected ? 'check' : option.icon} aria-hidden="true"></ui-icon>
                   ${option.label}
                 </ui-menu-item>
-              `,
-            )}
+              `;
+            })}
           </ui-dropdown>
         </div>
       </ui-header>

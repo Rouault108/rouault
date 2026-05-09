@@ -13,6 +13,39 @@ export type DropdownAlign = 'start' | 'center' | 'end';
 export type MenuItemVariant = 'default' | 'danger';
 
 type PositionPhase = 'idle' | 'positioning' | 'ready';
+type DropdownCloseReason =
+  | 'restore'
+  | 'pointer-select'
+  | 'keyboard-select'
+  | 'escape'
+  | 'outside-pointer'
+  | 'scroll'
+  | 'tab'
+  | 'disabled'
+  | 'fail-open'
+  | 'programmatic';
+
+type DropdownCloseOptions =
+  | {
+      restoreFocus: true;
+      reason?: 'restore' | 'keyboard-select' | 'escape' | 'programmatic';
+    }
+  | {
+      restoreFocus: false;
+      reason?:
+        | 'pointer-select'
+        | 'outside-pointer'
+        | 'scroll'
+        | 'tab'
+        | 'disabled'
+        | 'fail-open'
+        | 'programmatic';
+    };
+
+interface NormalizedDropdownCloseOptions {
+  restoreFocus: boolean;
+  reason: DropdownCloseReason;
+}
 
 /**
  * command menu を一時的に提示する dropdown です。
@@ -153,7 +186,11 @@ export class Dropdown extends LitElement {
   private _overlayController: AnchoredOverlayController | null = null;
   private _typeaheadBuffer = '';
   private _typeaheadTimer: ReturnType<typeof setTimeout> | null = null;
-  private _restoreFocusOnClose = true;
+  private _tabCloseTimer: ReturnType<typeof setTimeout> | null = null;
+  private _openMethodInProgress = false;
+  private _closeMethodInProgress = false;
+  private _suppressNextCloseEvent = false;
+  private _suppressNextCloseLifecycle = false;
   private readonly _menuId = `dropdown-menu-${Math.random().toString(36).slice(2, 11)}`;
   private readonly _triggerId = `dropdown-trigger-${Math.random().toString(36).slice(2, 11)}`;
   private readonly _openSequencer = new DropdownOpenSequencer();
@@ -173,6 +210,7 @@ export class Dropdown extends LitElement {
     this.removeEventListener('menu-item-click', this._handleMenuItemClick as EventListener);
     this._detachTriggerListeners(this._boundTriggerElement);
     this._boundTriggerElement = null;
+    this._clearScheduledTabClose();
     this._cancelOpenSequencing();
     this._overlayController?.destroy();
 
@@ -195,16 +233,69 @@ export class Dropdown extends LitElement {
       const wasOpened = typeof previousOpened === 'boolean' ? previousOpened : false;
       const didOpen = !wasOpened && this.opened;
       const didClose = wasOpened && !this.opened;
+      const openMethodInProgress = this._openMethodInProgress;
+      const closeMethodInProgress = this._closeMethodInProgress;
+
+      this._openMethodInProgress = false;
+      this._closeMethodInProgress = false;
+
+      let dispatchOpen = false;
+      let dispatchClose = false;
 
       if (didOpen) {
-        this._onOpen();
+        this._clearScheduledTabClose();
+
+        if (this.disabled) {
+          this._cancelOpenSequencing();
+          this._positionPhase = 'idle';
+          this._syncPanelAccessibility();
+          this._suppressNextCloseEvent = true;
+          this._suppressNextCloseLifecycle = true;
+          this.opened = false;
+        } else {
+          if (!openMethodInProgress) {
+            this._cancelOpenSequencing();
+            this._positionPhase = 'positioning';
+            this._syncPanelAccessibility();
+          }
+
+          this._onOpen();
+          dispatchOpen = true;
+        }
       } else if (didClose) {
-        this._onClose();
+        const suppressCloseLifecycle = this._suppressNextCloseLifecycle;
+        const suppressCloseEvent = this._suppressNextCloseEvent;
+
+        this._suppressNextCloseLifecycle = false;
+        this._suppressNextCloseEvent = false;
+
+        if (!suppressCloseLifecycle) {
+          if (!closeMethodInProgress) {
+            this._clearScheduledTabClose();
+            this._cancelOpenSequencing();
+            this._releaseFocusBeforePanelHide({ restoreFocus: true, reason: 'programmatic' });
+            this._positionPhase = 'idle';
+            this._syncPanelAccessibility();
+          }
+
+          this._onClose();
+        }
+
+        dispatchClose = !suppressCloseEvent;
       }
 
-      if (didOpen || didClose) {
+      if (dispatchOpen) {
         this.dispatchEvent(
-          new CustomEvent(this.opened ? 'open' : 'close', {
+          new CustomEvent('open', {
+            bubbles: true,
+            composed: true,
+          }),
+        );
+      }
+
+      if (dispatchClose) {
+        this.dispatchEvent(
+          new CustomEvent('close', {
             bubbles: true,
             composed: true,
           }),
@@ -220,7 +311,7 @@ export class Dropdown extends LitElement {
 
     if (changedProperties.has('disabled')) {
       if (this.disabled && this.opened) {
-        this.close(false);
+        this.close({ restoreFocus: false, reason: 'disabled' });
       } else {
         this._syncTriggerElement();
       }
@@ -228,25 +319,36 @@ export class Dropdown extends LitElement {
   }
 
   open(): void {
+    this._clearScheduledTabClose();
+    this._closeMethodInProgress = false;
+
     if (this.disabled || this.opened) {
       return;
     }
 
+    this._openMethodInProgress = true;
     this._cancelOpenSequencing();
     this._positionPhase = 'positioning';
     this._syncPanelAccessibility();
     this.opened = true;
   }
 
-  close(restoreFocus = true): void {
+  close(options: boolean | DropdownCloseOptions = true): void {
+    this._clearScheduledTabClose();
+    this._openMethodInProgress = false;
+
     if (!this.opened) {
       return;
     }
 
-    this._restoreFocusOnClose = restoreFocus;
+    const closeOptions = this._normalizeCloseOptions(options);
+
     this._cancelOpenSequencing();
+    this._releaseFocusBeforePanelHide(closeOptions);
     this._positionPhase = 'idle';
     this._syncPanelAccessibility();
+
+    this._closeMethodInProgress = true;
     this.opened = false;
   }
 
@@ -285,12 +387,6 @@ export class Dropdown extends LitElement {
     this._lastCommitSnapshot = null;
     this._syncPanelAccessibility();
     this._stopOverlay();
-
-    if (this._restoreFocusOnClose) {
-      this._getTriggerElement()?.focus({ preventScroll: true });
-    }
-
-    this._restoreFocusOnClose = true;
   }
 
   private _attachTriggerListeners(trigger: HTMLElement | null): void {
@@ -364,12 +460,17 @@ export class Dropdown extends LitElement {
 
     if (reason === 'escape' && event instanceof KeyboardEvent) {
       event.preventDefault();
-      this.close(true);
+      this.close({ restoreFocus: true, reason: 'escape' });
       return;
     }
 
-    if (reason === 'outside-pointer' || reason === 'scroll') {
-      this.close(false);
+    if (reason === 'outside-pointer') {
+      this.close({ restoreFocus: false, reason: 'outside-pointer' });
+      return;
+    }
+
+    if (reason === 'scroll') {
+      this.close({ restoreFocus: false, reason: 'scroll' });
     }
   }
 
@@ -439,11 +540,52 @@ export class Dropdown extends LitElement {
       return;
     }
 
-    this.close(false);
+    this.close({ restoreFocus: false, reason: 'fail-open' });
   }
 
   private _cancelOpenSequencing(): void {
     this._openSequencer.cancel();
+  }
+
+  private _clearScheduledTabClose(): void {
+    if (this._tabCloseTimer === null) {
+      return;
+    }
+
+    clearTimeout(this._tabCloseTimer);
+    this._tabCloseTimer = null;
+  }
+
+  private _scheduleTabClose(): void {
+    if (this._tabCloseTimer !== null) {
+      return;
+    }
+
+    this._tabCloseTimer = setTimeout(() => {
+      this._tabCloseTimer = null;
+
+      if (!this.opened) {
+        return;
+      }
+
+      this.close({ restoreFocus: false, reason: 'tab' });
+    }, 0);
+  }
+
+  private _normalizeCloseOptions(
+    options: boolean | DropdownCloseOptions,
+  ): NormalizedDropdownCloseOptions {
+    if (typeof options === 'boolean') {
+      return {
+        restoreFocus: options,
+        reason: options ? 'restore' : 'programmatic',
+      };
+    }
+
+    return {
+      restoreFocus: options.restoreFocus,
+      reason: options.reason ?? (options.restoreFocus ? 'restore' : 'programmatic'),
+    };
   }
 
   private _updateTriggerAria(expanded: boolean): void {
@@ -528,6 +670,87 @@ export class Dropdown extends LitElement {
     return null;
   }
 
+  private _getDeepActiveElement(root: Document | ShadowRoot = this.ownerDocument): Element | null {
+    let activeElement = root.activeElement;
+
+    while (activeElement?.shadowRoot?.activeElement) {
+      activeElement = activeElement.shadowRoot.activeElement;
+    }
+
+    return activeElement;
+  }
+
+  private _hasPanelFocus(): boolean {
+    const focusedItem = this._getFocusedItem(this._getMenuItems());
+    if (focusedItem !== null) {
+      return true;
+    }
+
+    const panel = this.getMenuElement();
+    const activeElement = this._getDeepActiveElement();
+
+    return activeElement instanceof Node && panel?.contains(activeElement) === true;
+  }
+
+  private _hasTriggerFocus(): boolean {
+    const trigger = this._getTriggerElement();
+    if (!(trigger instanceof HTMLElement)) {
+      return false;
+    }
+
+    const activeElement = this._getDeepActiveElement();
+
+    return (
+      this.ownerDocument.activeElement === trigger ||
+      activeElement === trigger ||
+      (activeElement instanceof Node &&
+        (trigger.contains(activeElement) || trigger.shadowRoot?.contains(activeElement) === true))
+    );
+  }
+
+  private _releaseFocusBeforePanelHide(options: NormalizedDropdownCloseOptions): void {
+    if (options.reason === 'tab') {
+      if (!this._hasPanelFocus()) {
+        return;
+      }
+
+      const activeElement = this._getDeepActiveElement();
+      if (activeElement instanceof HTMLElement) {
+        activeElement.blur();
+      }
+
+      return;
+    }
+
+    if (options.restoreFocus) {
+      this._getTriggerElement()?.focus({ preventScroll: true });
+
+      if (!this._hasPanelFocus()) {
+        return;
+      }
+
+      const activeElement = this._getDeepActiveElement();
+      if (activeElement instanceof HTMLElement) {
+        activeElement.blur();
+      }
+
+      return;
+    }
+
+    if (!this._hasPanelFocus() && !this._hasTriggerFocus()) {
+      return;
+    }
+
+    const activeElement = this._getDeepActiveElement();
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur();
+    }
+
+    if (this._hasTriggerFocus()) {
+      this._getTriggerElement()?.blur();
+    }
+  }
+
   private _handleTriggerKeyDown = (event: KeyboardEvent): void => {
     if (this.disabled) {
       return;
@@ -564,7 +787,7 @@ export class Dropdown extends LitElement {
     if (this._positionPhase !== 'ready') {
       if (event.key === 'Escape') {
         event.preventDefault();
-        this.close(true);
+        this.close({ restoreFocus: true, reason: 'escape' });
       }
       return;
     }
@@ -576,7 +799,7 @@ export class Dropdown extends LitElement {
     switch (event.key) {
       case 'Escape': {
         event.preventDefault();
-        this.close(true);
+        this.close({ restoreFocus: true, reason: 'escape' });
         break;
       }
       case 'ArrowDown': {
@@ -600,7 +823,7 @@ export class Dropdown extends LitElement {
         break;
       }
       case 'Tab': {
-        this.close(false);
+        this._scheduleTabClose();
         break;
       }
       case 'Enter':
@@ -698,7 +921,7 @@ export class Dropdown extends LitElement {
         },
       }),
     );
-    this.close(true);
+    this.close({ restoreFocus: true, reason: 'keyboard-select' });
   }
 
   private _handleMenuItemClick = (event: CustomEvent<{ value: string; label: string }>): void => {
@@ -715,20 +938,8 @@ export class Dropdown extends LitElement {
         detail: event.detail,
       }),
     );
-    this.close(false);
-    this._blurTriggerIfActive();
+    this.close({ restoreFocus: false, reason: 'pointer-select' });
   };
-
-  private _blurTriggerIfActive(): void {
-    const trigger = this._getTriggerElement();
-    if (!trigger) {
-      return;
-    }
-
-    if (trigger === trigger.ownerDocument.activeElement) {
-      trigger.blur();
-    }
-  }
 
   private _handleTriggerClick = (event: Event): void => {
     if (this.disabled) {

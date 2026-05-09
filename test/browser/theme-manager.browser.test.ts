@@ -5,6 +5,7 @@ import {
   THEME_STORAGE_KEY,
   applyThemePreference,
   normalizeThemePreference,
+  readAppliedThemePreference,
   readStoredThemePreference,
   resolveThemePreference,
 } from '../../src/theme/theme-manager.js';
@@ -48,6 +49,30 @@ describe('theme-manager', () => {
     storage.setItem(THEME_STORAGE_KEY, 'dark');
 
     expect(readStoredThemePreference(storage)).to.equal('dark');
+  });
+
+  it('DOM に適用済みのテーマ設定を読み取れること', () => {
+    const root = document.createElement('html');
+    root.setAttribute(THEME_ATTRIBUTE, 'light');
+
+    expect(readAppliedThemePreference(root)).to.equal('light');
+  });
+
+  it('DOM に適用済みのテーマ設定が不正な場合は system に正規化されること', () => {
+    const root = document.createElement('html');
+    root.setAttribute(THEME_ATTRIBUTE, 'unknown');
+
+    expect(readAppliedThemePreference(root)).to.equal('system');
+  });
+
+  it('DOM にテーマ設定がない場合は system に正規化されること', () => {
+    const root = document.createElement('html');
+
+    expect(readAppliedThemePreference(root)).to.equal('system');
+  });
+
+  it('root が null の場合は system に正規化されること', () => {
+    expect(readAppliedThemePreference(null)).to.equal('system');
   });
 
   it('system 選択時は OS 設定から実テーマを解決すること', () => {

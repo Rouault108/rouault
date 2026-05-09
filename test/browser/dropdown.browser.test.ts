@@ -41,6 +41,37 @@ const getFocusedValue = (dropdown: Dropdown): string | null => {
   return null;
 };
 
+const getDeepActiveElement = (root: Document | ShadowRoot = document): Element | null => {
+  let activeElement = root.activeElement;
+
+  while (activeElement?.shadowRoot?.activeElement) {
+    activeElement = activeElement.shadowRoot.activeElement;
+  }
+
+  return activeElement;
+};
+
+const hasTriggerDeepFocus = (trigger: HTMLElement): boolean => {
+  const activeElement = getDeepActiveElement();
+
+  return (
+    document.activeElement === trigger ||
+    activeElement === trigger ||
+    (activeElement instanceof Node &&
+      (trigger.contains(activeElement) || trigger.shadowRoot?.contains(activeElement) === true))
+  );
+};
+
+const hasPanelDeepFocus = (dropdown: Dropdown): boolean => {
+  const panel = getPanel(dropdown);
+  const activeElement = getDeepActiveElement();
+
+  return activeElement instanceof Node && panel?.contains(activeElement) === true;
+};
+
+const hasMenuItemShadowFocus = (dropdown: Dropdown): boolean =>
+  getMenuItems(dropdown).some((item) => item.shadowRoot?.activeElement instanceof HTMLElement);
+
 const expectPresent = <T>(value: T | null | undefined, name: string): T => {
   expect(value, `${name} should exist`).to.not.equal(null);
   expect(value, `${name} should exist`).to.not.equal(undefined);
@@ -124,6 +155,20 @@ const waitUntilFocusedValue = async (dropdown: Dropdown, value: string): Promise
     20,
     `focus が ${value} へ移動しません`,
   );
+};
+
+const openDropdownFromKeyboard = async (
+  dropdown: Dropdown,
+): Promise<{ trigger: HTMLElement; panel: HTMLElement }> => {
+  const trigger = expectPresent(getTrigger(dropdown), 'trigger');
+  const panel = expectPresent(getPanel(dropdown), 'panel');
+
+  dispatchKey(trigger, 'ArrowDown');
+  await waitForLitUpdate(dropdown);
+  await waitUntilReadyState(dropdown, trigger, panel);
+  await waitUntilFocusedValue(dropdown, expectPresent(getMenuItems(dropdown)[0], 'first item').value);
+
+  return { trigger, panel };
 };
 
 describe('ui-dropdown browser contract', () => {
@@ -250,7 +295,7 @@ describe('ui-dropdown browser contract', () => {
     const selectEvent = await selectPromise;
     await waitForLitUpdate(dropdown);
     await waitUntil(
-      () => dropdown.opened === false && document.activeElement === trigger,
+      () => dropdown.opened === false && hasTriggerDeepFocus(trigger) && !hasPanelDeepFocus(dropdown),
       1200,
       20,
       'dropdown が閉じず trigger へ focus が戻りません',
@@ -259,7 +304,8 @@ describe('ui-dropdown browser contract', () => {
     expect(selectEvent.detail.value).to.equal('duplicate');
     expect(selectEvent.detail.label).to.equal('複製');
     expect(dropdown.opened).to.equal(false);
-    expect(document.activeElement).to.equal(trigger);
+    expect(hasTriggerDeepFocus(trigger)).to.equal(true);
+    expect(hasPanelDeepFocus(dropdown)).to.equal(false);
   });
 
   it('ArrowUp 起点 open では ready 後に最後の enabled item へ focus すること', async () => {
@@ -316,7 +362,8 @@ describe('ui-dropdown browser contract', () => {
 
     expect(selectEvent.detail.value).to.equal('duplicate');
     expect(selectEvent.detail.label).to.equal('複製');
-    expect(document.activeElement).to.not.equal(trigger);
+    expect(hasTriggerDeepFocus(trigger)).to.equal(false);
+    expect(hasPanelDeepFocus(dropdown)).to.equal(false);
   });
 
   it('non-button trigger では role/tabindex/aria-disabled を公開し、disabled 遷移時は閉じること', async () => {
@@ -348,5 +395,247 @@ describe('ui-dropdown browser contract', () => {
     expect(trigger.getAttribute('aria-disabled')).to.equal('true');
     expect(trigger.getAttribute('tabindex')).to.equal('-1');
     expect(dropdown.opened).to.equal(false);
+  });
+
+  it('Escape close では trigger へ deep focus を戻し panel 内 focus を残さないこと', async () => {
+    const dropdown = await fixture<Dropdown>(html`
+      <ui-dropdown>
+        <button slot="trigger" type="button">操作</button>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+      </ui-dropdown>
+    `);
+    await waitForLitUpdate(dropdown);
+
+    const { trigger, panel } = await openDropdownFromKeyboard(dropdown);
+
+    dispatchKey(panel, 'Escape');
+    await waitForLitUpdate(dropdown);
+    await waitUntilClosedState(dropdown, trigger, panel);
+
+    expect(hasTriggerDeepFocus(trigger)).to.equal(true);
+    expect(hasPanelDeepFocus(dropdown)).to.equal(false);
+    expect(hasMenuItemShadowFocus(dropdown)).to.equal(false);
+  });
+
+  it('outside-pointer close では panel と trigger に focus を残さないこと', async () => {
+    const dropdown = await fixture<Dropdown>(html`
+      <ui-dropdown>
+        <button slot="trigger" type="button">操作</button>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+      </ui-dropdown>
+    `);
+    await waitForLitUpdate(dropdown);
+
+    const { trigger, panel } = await openDropdownFromKeyboard(dropdown);
+
+    document.body.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        composed: true,
+        button: 0,
+      }),
+    );
+    await waitForLitUpdate(dropdown);
+    await waitUntilClosedState(dropdown, trigger, panel);
+
+    expect(hasTriggerDeepFocus(trigger)).to.equal(false);
+    expect(hasPanelDeepFocus(dropdown)).to.equal(false);
+    expect(hasMenuItemShadowFocus(dropdown)).to.equal(false);
+  });
+
+  it('scroll close では panel と trigger に focus を残さないこと', async () => {
+    const dropdown = await fixture<Dropdown>(html`
+      <ui-dropdown>
+        <button slot="trigger" type="button">操作</button>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+      </ui-dropdown>
+    `);
+    await waitForLitUpdate(dropdown);
+
+    const { trigger, panel } = await openDropdownFromKeyboard(dropdown);
+
+    window.dispatchEvent(new Event('scroll'));
+    await waitForLitUpdate(dropdown);
+    await waitUntilClosedState(dropdown, trigger, panel);
+
+    expect(hasTriggerDeepFocus(trigger)).to.equal(false);
+    expect(hasPanelDeepFocus(dropdown)).to.equal(false);
+    expect(hasMenuItemShadowFocus(dropdown)).to.equal(false);
+  });
+
+  it('disabled close では panel と trigger に focus を残さないこと', async () => {
+    const dropdown = await fixture<Dropdown>(html`
+      <ui-dropdown>
+        <button slot="trigger" type="button">操作</button>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+      </ui-dropdown>
+    `);
+    await waitForLitUpdate(dropdown);
+
+    const { trigger, panel } = await openDropdownFromKeyboard(dropdown);
+
+    dropdown.disabled = true;
+    await waitForLitUpdate(dropdown);
+    await waitUntilClosedState(dropdown, trigger, panel);
+
+    expect(hasTriggerDeepFocus(trigger)).to.equal(false);
+    expect(hasPanelDeepFocus(dropdown)).to.equal(false);
+    expect(hasMenuItemShadowFocus(dropdown)).to.equal(false);
+  });
+
+  it('restoreFocus=true で trigger が存在しなくても panel 内 focus を残さないこと', async () => {
+    let closeEventCount = 0;
+    const dropdown = await fixture<Dropdown>(html`
+      <ui-dropdown
+        @close=${() => {
+          closeEventCount += 1;
+        }}
+      >
+        <button slot="trigger" type="button">操作</button>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+      </ui-dropdown>
+    `);
+    await waitForLitUpdate(dropdown);
+
+    const trigger = expectPresent(getTrigger(dropdown), 'trigger');
+    const panel = expectPresent(getPanel(dropdown), 'panel');
+
+    dispatchKey(trigger, 'ArrowDown');
+    await waitForLitUpdate(dropdown);
+    await waitUntilReadyState(dropdown, trigger, panel);
+    await waitUntilFocusedValue(dropdown, 'edit');
+
+    trigger.remove();
+    await waitForLitUpdate(dropdown);
+    await waitMs(0);
+    expect(getTrigger(dropdown)).to.equal(null);
+
+    dropdown.close(true);
+    await waitForLitUpdate(dropdown);
+    await waitUntil(
+      () =>
+        dropdown.opened === false &&
+        getPanelPhase(panel) === 'idle' &&
+        panel.getAttribute('aria-hidden') === 'true' &&
+        panel.hasAttribute('inert') === true,
+      1200,
+      20,
+      'trigger removal 後に dropdown が閉じません',
+    );
+
+    expect(hasPanelDeepFocus(dropdown)).to.equal(false);
+    expect(hasMenuItemShadowFocus(dropdown)).to.equal(false);
+    expect(closeEventCount).to.equal(1);
+  });
+
+  it('public opened=true 経路でも open lifecycle が成立すること', async () => {
+    let openEventCount = 0;
+    const dropdown = await fixture<Dropdown>(html`
+      <ui-dropdown
+        @open=${() => {
+          openEventCount += 1;
+        }}
+      >
+        <button slot="trigger" type="button">操作</button>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+      </ui-dropdown>
+    `);
+    await waitForLitUpdate(dropdown);
+
+    const trigger = expectPresent(getTrigger(dropdown), 'trigger');
+    const panel = expectPresent(getPanel(dropdown), 'panel');
+
+    dropdown.opened = true;
+    await waitForLitUpdate(dropdown);
+    await waitUntilReadyState(dropdown, trigger, panel);
+    await waitUntilFocusedValue(dropdown, 'edit');
+
+    expect(openEventCount).to.equal(1);
+  });
+
+  it('disabled=true では public opened=true を拒否し open/close event を発火しないこと', async () => {
+    let openEventCount = 0;
+    let closeEventCount = 0;
+
+    const dropdown = await fixture<Dropdown>(html`
+      <ui-dropdown
+        disabled
+        @open=${() => {
+          openEventCount += 1;
+        }}
+        @close=${() => {
+          closeEventCount += 1;
+        }}
+      >
+        <button slot="trigger" type="button">操作</button>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+      </ui-dropdown>
+    `);
+    await waitForLitUpdate(dropdown);
+
+    const trigger = expectPresent(getTrigger(dropdown), 'trigger');
+    const panel = expectPresent(getPanel(dropdown), 'panel');
+
+    dropdown.opened = true;
+    await waitForLitUpdate(dropdown);
+
+    await waitUntilClosedState(dropdown, trigger, panel);
+    await waitMs(0);
+    await waitForLitUpdate(dropdown);
+
+    expect(openEventCount).to.equal(0);
+    expect(closeEventCount).to.equal(0);
+  });
+
+  it('public opened=false 経路では panel focus を解放し close event を発火すること', async () => {
+    let closeEventCount = 0;
+    const dropdown = await fixture<Dropdown>(html`
+      <ui-dropdown
+        @close=${() => {
+          closeEventCount += 1;
+        }}
+      >
+        <button slot="trigger" type="button">操作</button>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+      </ui-dropdown>
+    `);
+    await waitForLitUpdate(dropdown);
+
+    const { trigger, panel } = await openDropdownFromKeyboard(dropdown);
+
+    dropdown.opened = false;
+    await waitForLitUpdate(dropdown);
+    await waitUntilClosedState(dropdown, trigger, panel);
+
+    expect(closeEventCount).to.equal(1);
+    expect(hasTriggerDeepFocus(trigger)).to.equal(true);
+    expect(hasPanelDeepFocus(dropdown)).to.equal(false);
+    expect(hasMenuItemShadowFocus(dropdown)).to.equal(false);
+  });
+
+  it('古い Tab close timer が再 open 後の dropdown を閉じないこと', async () => {
+    const dropdown = await fixture<Dropdown>(html`
+      <ui-dropdown>
+        <button slot="trigger" type="button">操作</button>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+      </ui-dropdown>
+    `);
+    await waitForLitUpdate(dropdown);
+
+    const { trigger, panel } = await openDropdownFromKeyboard(dropdown);
+
+    dispatchKey(panel, 'Tab');
+    dropdown.opened = false;
+    await waitForLitUpdate(dropdown);
+    await waitUntilClosedState(dropdown, trigger, panel);
+
+    dropdown.open();
+    await waitForLitUpdate(dropdown);
+    await waitUntilReadyState(dropdown, trigger, panel);
+    await waitMs(0);
+    await waitForLitUpdate(dropdown);
+
+    expect(dropdown.opened).to.equal(true);
+    expect(getPanelPhase(panel)).to.equal('ready');
   });
 });

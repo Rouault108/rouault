@@ -78,6 +78,12 @@ export function readStoredThemePreference(
   }
 }
 
+export function readAppliedThemePreference(
+  root: HTMLElement | null = getDefaultRoot(),
+): ThemePreference {
+  return normalizeThemePreference(root?.getAttribute(THEME_ATTRIBUTE));
+}
+
 export function resolveThemePreference(
   preference: ThemePreference,
   mediaQueryList: ThemeMediaQueryLike | null = getDefaultMediaQueryList(),

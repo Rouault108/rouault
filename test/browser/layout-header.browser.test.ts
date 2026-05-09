@@ -10,6 +10,12 @@ import { layoutTocMobileController } from '../../src/components/layout/layout-to
 import { layoutTocRuntimeStore } from '../../src/components/layout/layout-toc-runtime-store.js';
 import type { UiHeader } from '../../src/components/ui/header/header.js';
 import { waitForLitUpdate } from './helpers/wait-for-lit.js';
+import {
+  RESOLVED_THEME_ATTRIBUTE,
+  THEME_ATTRIBUTE,
+  THEME_CHANGE_EVENT,
+  THEME_STORAGE_KEY,
+} from '../../src/theme/theme-manager.js';
 
 const expectPresent = <T>(value: T | null | undefined, name: string): T => {
   expect(value, `${name} should exist`).to.not.equal(null);
@@ -126,9 +132,73 @@ const waitForDropdownIdle = async (dropdown: Dropdown): Promise<void> => {
   }, 'dropdown が idle state へ戻りません');
 };
 
+const resetThemeTestState = (): void => {
+  document.documentElement.removeAttribute(THEME_ATTRIBUTE);
+  document.documentElement.removeAttribute(RESOLVED_THEME_ATTRIBUTE);
+  document.documentElement.style.colorScheme = '';
+  localStorage.removeItem(THEME_STORAGE_KEY);
+};
+
+const readThemeTriggerState = async (
+  header: LayoutHeader,
+): Promise<{
+  icons: string[];
+  iconGlyphs: (string | null)[];
+  labels: string[];
+  markers: (string | null)[];
+  accessibleName: string | null;
+  ariaLabel: string | null;
+  selectedItems: { value: string | null; icon: string | null }[];
+}> => {
+  await waitForLitUpdate(header);
+
+  const trigger = expectPresent(
+    header.shadowRoot?.querySelector<HTMLElement>('[data-dropdown="theme"] [slot="trigger"]'),
+    'themeTrigger',
+  );
+  await waitForLitUpdate(trigger);
+
+  const button = expectPresent(
+    trigger.shadowRoot?.querySelector<HTMLButtonElement>('button'),
+    'themeTriggerButton',
+  );
+  const icons = [...trigger.querySelectorAll<HTMLElement>('.theme-trigger-icon')];
+  const items = [
+    ...(header.shadowRoot?.querySelectorAll<HTMLElement>('[data-dropdown="theme"] ui-menu-item') ??
+      []),
+  ];
+
+  return {
+    icons: icons.map((icon) => icon.getAttribute('name') ?? ''),
+    iconGlyphs: icons.map(
+      (icon) =>
+        icon.shadowRoot?.querySelector<HTMLElement>('iconify-icon')?.getAttribute('icon') ?? null,
+    ),
+    labels: [...trigger.querySelectorAll<HTMLElement>('.theme-trigger-text')].map(
+      (node) => node.textContent?.trim() ?? '',
+    ),
+    markers: [...trigger.querySelectorAll<HTMLElement>('.theme-trigger-main')].map((node) =>
+      node.getAttribute('data-theme-preference'),
+    ),
+    accessibleName: trigger.getAttribute('accessible-name'),
+    ariaLabel: button.getAttribute('aria-label'),
+    selectedItems: items
+      .filter((item) => item.hasAttribute('data-selected'))
+      .map((item) => ({
+        value: item.getAttribute('value'),
+        icon: item.querySelector('ui-icon')?.getAttribute('name') ?? null,
+      })),
+  };
+};
+
 describe('layout-header browser contract', () => {
   // browser: state / accessibility / interactivity の公開契約を検証する
+  beforeEach(() => {
+    resetThemeTestState();
+  });
+
   afterEach(() => {
+    resetThemeTestState();
     layoutSidebarController.reset();
     layoutTocRuntimeStore.reset();
     layoutTocMobileController.reset();
@@ -264,6 +334,82 @@ describe('layout-header browser contract', () => {
     await expectFocusedHeaderItemRaised(header, themeDropdown);
   });
 
+  it('layout-header は localStorage ではなく適用済み DOM 属性から theme 表示を初期同期すること', async () => {
+    localStorage.setItem(THEME_STORAGE_KEY, 'dark');
+    document.documentElement.setAttribute(THEME_ATTRIBUTE, 'light');
+    document.documentElement.setAttribute(RESOLVED_THEME_ATTRIBUTE, 'light');
+
+    const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
+    const state = await readThemeTriggerState(header);
+
+    expect(state.icons).to.deep.equal(['sun']);
+    expect(state.iconGlyphs).to.deep.equal(['lucide:sun']);
+    expect(state.labels).to.deep.equal(['ライト']);
+    expect(state.markers).to.deep.equal(['light']);
+    expect(state.accessibleName).to.equal('テーマ: ライト');
+    expect(state.ariaLabel).to.equal('テーマ: ライト');
+    expect(state.selectedItems).to.deep.equal([{ value: 'light', icon: 'check' }]);
+  });
+
+  it('data-theme 未設定時は system 表示へ正規化すること', async () => {
+    const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
+    const state = await readThemeTriggerState(header);
+
+    expect(state.icons).to.deep.equal(['monitor']);
+    expect(state.iconGlyphs).to.deep.equal(['lucide:monitor']);
+    expect(state.labels).to.deep.equal(['OSテーマ']);
+    expect(state.markers).to.deep.equal(['system']);
+    expect(state.accessibleName).to.equal('テーマ: OSテーマ');
+    expect(state.ariaLabel).to.equal('テーマ: OSテーマ');
+    expect(state.selectedItems).to.deep.equal([{ value: 'system', icon: 'check' }]);
+  });
+
+  it('不正な theme change detail では表示を変えず render も壊れないこと', async () => {
+    document.documentElement.setAttribute(THEME_ATTRIBUTE, 'light');
+
+    const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
+    expect((await readThemeTriggerState(header)).labels).to.deep.equal(['ライト']);
+
+    window.dispatchEvent(
+      new CustomEvent(THEME_CHANGE_EVENT, {
+        detail: { preference: 'unknown' },
+      }),
+    );
+    await waitForLitUpdate(header);
+
+    const state = await readThemeTriggerState(header);
+    expect(state.icons).to.deep.equal(['sun']);
+    expect(state.labels).to.deep.equal(['ライト']);
+    expect(state.markers).to.deep.equal(['light']);
+  });
+
+  it('不正な menu-item-select detail では TypeError を出さず表示を変えないこと', async () => {
+    document.documentElement.setAttribute(THEME_ATTRIBUTE, 'dark');
+
+    const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
+    const dropdown = expectPresent(
+      header.shadowRoot?.querySelector<Dropdown>('[data-dropdown="theme"]'),
+      'themeDropdown',
+    );
+
+    for (const detail of [null, undefined, { value: 42 }, { value: 'unknown' }] as const) {
+      dropdown.dispatchEvent(
+        new CustomEvent('menu-item-select', {
+          bubbles: true,
+          composed: true,
+          detail,
+        }),
+      );
+      await waitForLitUpdate(header);
+    }
+
+    const state = await readThemeTriggerState(header);
+    expect(state.icons).to.deep.equal(['moon']);
+    expect(state.iconGlyphs).to.deep.equal(['lucide:moon']);
+    expect(state.labels).to.deep.equal(['ダーク']);
+    expect(state.markers).to.deep.equal(['dark']);
+  });
+
   it('テーマ変更後の再描画で theme dropdown trigger に focus を残さないこと', async () => {
     const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
     await waitForLitUpdate(header);
@@ -287,6 +433,7 @@ describe('layout-header browser contract', () => {
 
     themeTrigger.click();
     await waitForLitUpdate(header);
+    await waitForDropdownReady(themeDropdown as Dropdown);
 
     darkItemButton.click();
     await waitForLitUpdate(header);
@@ -479,7 +626,8 @@ describe('layout-header browser contract', () => {
     );
 
     expect(getComputedStyle(themeTriggerText).display).to.equal('none');
-    expect(themeTriggerButton.getAttribute('aria-label')).to.equal('テーマ');
+    expect(themeTrigger.getAttribute('accessible-name')).to.equal('テーマ: OSテーマ');
+    expect(themeTriggerButton.getAttribute('aria-label')).to.equal('テーマ: OSテーマ');
   });
 
   it('overlay 展開時は ui-header に overlaySidebarOpen だけを渡し、sidebar 幅は予約しないこと', async () => {
