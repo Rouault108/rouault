@@ -20,6 +20,7 @@ import { resolveEffectiveNoteChromeProfile } from '../../shared/note/note-chrome
 import { resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import { createHydrationMarkerAttributes } from '../../shared/hydration/hydration-markers.js';
+import { buildDocumentTitle } from '../../shared/document-title.js';
 import {
   escapeHtmlText,
   escapeInlineExecutableScriptText,
@@ -116,14 +117,8 @@ const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar
   ]);
 
 export class BaseLayout {
-  data() {
-    return {
-      title: 'Rouault',
-    };
-  }
-
   render(data: BaseLayoutData) {
-    const title = data.title ? `${data.title} - Rouault` : 'Rouault';
+    const title = buildDocumentTitle(data.title);
     const description = data.description ?? '個人ノートを静かに読むためのWebアプリケーション';
     const clientBundle = normalizeClientBundle(data.clientBundle);
     const clientScriptSrc: string = clientBundle.scriptSrc;

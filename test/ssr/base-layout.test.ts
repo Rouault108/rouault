@@ -6,6 +6,74 @@ import { loadBuildMetadataData } from '../../src/data/buildMetadata.js';
 const getBodyTag = (html: string): string => html.match(/<body[^>]*>/u)?.[0] ?? '';
 
 describe('BaseLayout', () => {
+  it('page title が未指定の場合は site title のみを出力すること', () => {
+    const rendered = new BaseLayout().render({
+      content: '<p>Home</p>',
+    });
+
+    expect(rendered).toContain('<title>Rouault</title>');
+    expect(rendered).not.toContain('<title>Rouault - Rouault</title>');
+  });
+
+  it('page title が site title と同一の場合は重複させないこと', () => {
+    const rendered = new BaseLayout().render({
+      title: 'Rouault',
+      content: '<p>Home</p>',
+    });
+
+    expect(rendered).toContain('<title>Rouault</title>');
+    expect(rendered).not.toContain('<title>Rouault - Rouault</title>');
+  });
+
+  it('page title が site title の重複済み文書タイトルの場合は site title に正規化すること', () => {
+    const rendered = new BaseLayout().render({
+      title: 'Rouault - Rouault',
+      content: '<p>Home</p>',
+    });
+
+    expect(rendered).toContain('<title>Rouault</title>');
+    expect(rendered).not.toContain('<title>Rouault - Rouault</title>');
+  });
+
+  it('page title が site title と異なる場合は site title を接尾辞として付けること', () => {
+    const rendered = new BaseLayout().render({
+      title: 'このサイトについて',
+      content: '<p>About</p>',
+    });
+
+    expect(rendered).toContain('<title>このサイトについて - Rouault</title>');
+  });
+
+  it('page title がすでに文書タイトル化済みの場合は再接尾辞化しないこと', () => {
+    const rendered = new BaseLayout().render({
+      title: 'このサイトについて - Rouault',
+      content: '<p>About</p>',
+    });
+
+    expect(rendered).toContain('<title>このサイトについて - Rouault</title>');
+    expect(rendered).not.toContain('このサイトについて - Rouault - Rouault');
+  });
+
+  it('page title が重複済み文書タイトルの場合は単一接尾辞に正規化すること', () => {
+    const rendered = new BaseLayout().render({
+      title: 'このサイトについて - Rouault - Rouault',
+      content: '<p>About</p>',
+    });
+
+    expect(rendered).toContain('<title>このサイトについて - Rouault</title>');
+    expect(rendered).not.toContain('このサイトについて - Rouault - Rouault');
+  });
+
+  it('page title を HTML text として escape してから title 要素へ出力すること', () => {
+    const rendered = new BaseLayout().render({
+      title: 'A & B <C>',
+      content: '<p>Escaped</p>',
+    });
+
+    expect(rendered).toContain('<title>A &amp; B &lt;C&gt; - Rouault</title>');
+    expect(rendered).not.toContain('<title>A & B <C> - Rouault</title>');
+  });
+
   it('reader note では header に sidebar-enabled を出力し、既定 heading を注入しないこと', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({

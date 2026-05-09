@@ -12,16 +12,10 @@ import {
   NavigationEnvelopeBuildMismatchError,
   NavigationEnvelopeContractError,
 } from './navigation-envelope-errors.js';
-
-const SITE_TITLE = 'Rouault';
+import { buildDocumentTitle } from '../../shared/document-title.js';
 
 const escapeHtml = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-const buildDocumentTitle = (pageTitle: string): string => {
-  const normalized = pageTitle.trim();
-  return normalized.length > 0 ? `${normalized} - ${SITE_TITLE}` : SITE_TITLE;
-};
 
 const createEnvelope = (document: NavigationEnvelope['document']): NavigationEnvelope => ({
   schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
