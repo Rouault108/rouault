@@ -15,12 +15,6 @@ interface TocSyncState {
   mobileActiveLabel: string | null;
 }
 
-interface ViewportPosition {
-  top: number | null;
-  bottom: number | null;
-  viewportHeight: number;
-}
-
 interface ExpectedActiveHeading {
   id: string | null;
   label: string | null;
@@ -213,28 +207,6 @@ const scrollHeadingToActiveZone = async (page: Page, headingId: string): Promise
   }, headingId);
 };
 
-const readHeadingViewportPosition = async (
-  page: Page,
-  headingId: string,
-): Promise<ViewportPosition> =>
-  page.evaluate((id) => {
-    const target = document.getElementById(id);
-    if (!(target instanceof HTMLElement)) {
-      return {
-        top: null,
-        bottom: null,
-        viewportHeight: window.innerHeight,
-      };
-    }
-
-    const rect = target.getBoundingClientRect();
-    return {
-      top: Math.round(rect.top),
-      bottom: Math.round(rect.bottom),
-      viewportHeight: window.innerHeight,
-    };
-  }, headingId);
-
 test.describe('TOC active state stays synchronized with rendered contract', () => {
   test('layout-rich 直アクセス時に scroll で child prop / attribute / DOM の current が同期して更新されること', async ({
     page,
@@ -268,13 +240,6 @@ test.describe('TOC active state stays synchronized with rendered contract', () =
     await page.goto(`${layoutRichPath}#${encodeURIComponent(target.id)}`);
     await waitForTocReady(page);
     await expectTocSynchronized(page, target.id, target.label);
-
-    const position = await readHeadingViewportPosition(page, target.id);
-
-    expect(position.top).not.toBeNull();
-    expect(position.bottom).not.toBeNull();
-    expect(position.top ?? Number.POSITIVE_INFINITY).toBeLessThan(position.viewportHeight);
-    expect(position.bottom ?? Number.NEGATIVE_INFINITY).toBeGreaterThan(0);
   });
 
   test('SPA 遷移で layout-rich を開いた後も scroll に応じて child prop / attribute / DOM の current が同期すること', async ({

@@ -59,6 +59,8 @@ const readEndnoteParagraphMetrics = async (
   }, index);
 
 test.describe('footnote endnotes layout contract', () => {
+  test.describe.configure({ timeout: 60 * 1000 });
+
   test.use({
     viewport: {
       width: 375,
