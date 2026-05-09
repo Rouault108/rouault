@@ -149,6 +149,43 @@ export const hasDeclarationForSelector = (
   return found;
 };
 
+export const hasDeclarationForSelectorInMedia = (
+  cssText: string,
+  mediaPredicate: (params: string) => boolean,
+  selector: string,
+  property: string,
+  expectedValue: string,
+): boolean => {
+  const expectedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
+  const normalizedExpectedValue = normalizeCssDeclarationValue(expectedValue);
+  let found = false;
+
+  parseCss(cssText).walkRules((rule) => {
+    if (found) {
+      return;
+    }
+    if (!isRuleInScope(rule, 'screen')) {
+      return;
+    }
+
+    const mediaAncestors = collectMediaAncestors(rule);
+    if (!mediaAncestors.some((media) => mediaPredicate(media.params))) {
+      return;
+    }
+    if (!splitSelectors(rule.selector).includes(expectedSelector)) {
+      return;
+    }
+
+    rule.walkDecls(property, (declaration) => {
+      if (normalizeCssDeclarationValue(declaration.value) === normalizedExpectedValue) {
+        found = true;
+      }
+    });
+  });
+
+  return found;
+};
+
 export const hasRuleForSelector = (
   cssText: string,
   selector: string,

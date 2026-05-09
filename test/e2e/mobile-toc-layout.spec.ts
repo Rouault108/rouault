@@ -39,6 +39,11 @@ const readLayoutState = async (page: Page, shellSelector: string) =>
       return null;
     }
 
+    const staticTocNav = shell.querySelector<HTMLElement>('[data-layout-toc-nav]');
+    const staticTocNavStyle =
+      staticTocNav instanceof HTMLElement ? getComputedStyle(staticTocNav) : null;
+    const staticTocNavRect =
+      staticTocNav instanceof HTMLElement ? staticTocNav.getBoundingClientRect() : null;
     const isVisible = (element: Element | null): element is HTMLElement => {
       if (!(element instanceof HTMLElement)) {
         return false;
@@ -85,6 +90,10 @@ const readLayoutState = async (page: Page, shellSelector: string) =>
       viewportWidth: window.innerWidth,
       mobileBarExists: mobileBar instanceof HTMLElement,
       mobilePanelExists: mobilePanel instanceof HTMLElement,
+      staticTocNavExists: staticTocNav instanceof HTMLElement,
+      staticTocNavDisplay: staticTocNavStyle?.display ?? null,
+      staticTocNavVisible: isVisible(staticTocNav),
+      staticTocNavHeight: staticTocNavRect ? Math.round(staticTocNavRect.height) : null,
       compactLabelExists: compactLabel instanceof HTMLElement,
       corpusSwitcherVisible: isVisible(corpusSwitcher),
       themeChevronExists: themeChevron instanceof HTMLElement,
@@ -138,6 +147,10 @@ test.describe('mobile TOC layout contract after header integration', () => {
     expect(state?.shellTrackCount).toBe(1);
     expect(state?.horizontalOverflow).toBeLessThanOrEqual(1);
     expect(state?.mobileBarExists).toBe(false);
+    expect(state?.staticTocNavExists).toBe(true);
+    expect(state?.staticTocNavDisplay).toBe('none');
+    expect(state?.staticTocNavVisible).toBe(false);
+    expect(state?.staticTocNavHeight).toBe(0);
     if (state?.triggerExists) {
       expect(state.triggerRight ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(
         state.viewportWidth + 1,
@@ -163,4 +176,51 @@ test.describe('mobile TOC layout contract after header integration', () => {
     expect(noteState?.mobileBarExists).toBe(false);
     expect(aboutState?.mobileBarExists).toBe(false);
   });
+
+  for (const width of [639, 640] as const) {
+    test(`about static TOC visibility at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(aboutPath);
+
+      const state = await page.evaluate(() => {
+        const shell = document.querySelector<HTMLElement>('.about-shell');
+        const nav = document.querySelector<HTMLElement>('.about-shell [data-layout-toc-nav]');
+
+        if (!(shell instanceof HTMLElement) || !(nav instanceof HTMLElement)) {
+          return null;
+        }
+
+        const gridTemplateColumns = getComputedStyle(shell).gridTemplateColumns.trim();
+        const trackCount =
+          gridTemplateColumns.length === 0 ? 0 : gridTemplateColumns.split(/\s+/u).length;
+        const style = getComputedStyle(nav);
+        const rect = nav.getBoundingClientRect();
+
+        return {
+          trackCount,
+          display: style.display,
+          visible:
+            style.display !== 'none' &&
+            style.visibility !== 'hidden' &&
+            rect.width > 0 &&
+            rect.height > 0,
+          height: Math.round(rect.height),
+        };
+      });
+
+      expect(state).not.toBeNull();
+
+      if (width === 639) {
+        expect(state?.trackCount).toBe(1);
+        expect(state?.display).toBe('none');
+        expect(state?.visible).toBe(false);
+        expect(state?.height).toBe(0);
+      } else {
+        expect(state?.trackCount).toBeGreaterThan(1);
+        expect(state?.display).not.toBe('none');
+        expect(state?.visible).toBe(true);
+        expect(state?.height ?? 0).toBeGreaterThan(0);
+      }
+    });
+  }
 });

@@ -154,7 +154,7 @@ test.describe('No-JS baseline', () => {
     await expect(page.locator('aside[aria-label="目次"]')).toHaveCount(0);
   });
 
-  test('about ページが狭幅では SSR 時点で 1 カラムとなり TOC を右カラムへ残さないこと', async ({
+  test('about ページが狭幅 No-JS では SSR 静的TOC nav を表示せず、下部漏れを出さないこと', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 375, height: 900 });
@@ -163,7 +163,7 @@ test.describe('No-JS baseline', () => {
     const state = await page.evaluate(() => {
       const shell = document.querySelector('.about-shell');
       const tocCol = shell?.querySelector(':scope > .layout-toc-col');
-      const tocHost = tocCol?.querySelector('.layout-toc');
+      const tocNav = tocCol?.querySelector('[data-layout-toc-nav]');
 
       if (!(shell instanceof HTMLElement)) {
         return null;
@@ -171,7 +171,7 @@ test.describe('No-JS baseline', () => {
       if (!(tocCol instanceof HTMLElement)) {
         return null;
       }
-      if (!(tocHost instanceof HTMLElement)) {
+      if (!(tocNav instanceof HTMLElement)) {
         return null;
       }
 
@@ -179,14 +179,21 @@ test.describe('No-JS baseline', () => {
       const trackCount =
         gridTemplateColumns.length === 0 ? 0 : gridTemplateColumns.split(/\s+/u).length;
       const tocColRect = tocCol.getBoundingClientRect();
-      const tocHostRect = tocHost.getBoundingClientRect();
+      const tocNavStyle = getComputedStyle(tocNav);
+      const tocNavRect = tocNav.getBoundingClientRect();
 
       return {
         trackCount,
         tocColPosition: getComputedStyle(tocCol).position,
         tocColLeft: Math.round(tocColRect.left),
         tocColWidth: Math.round(tocColRect.width),
-        tocHostWidth: Math.round(tocHostRect.width),
+        tocNavDisplay: tocNavStyle.display,
+        tocNavVisible:
+          tocNavStyle.display !== 'none' &&
+          tocNavStyle.visibility !== 'hidden' &&
+          tocNavRect.width > 0 &&
+          tocNavRect.height > 0,
+        tocNavHeight: Math.round(tocNavRect.height),
         horizontalOverflow:
           document.documentElement.scrollWidth - document.documentElement.clientWidth,
       };
@@ -197,12 +204,17 @@ test.describe('No-JS baseline', () => {
     expect(state?.tocColPosition).toBe('static');
     expect(state?.tocColLeft ?? Number.POSITIVE_INFINITY).toBeLessThan(80);
     expect(state?.tocColWidth ?? 0).toBeGreaterThan(240);
-    expect(state?.tocHostWidth ?? 0).toBeGreaterThan(240);
+    expect(state?.tocNavDisplay).toBe('none');
+    expect(state?.tocNavVisible).toBe(false);
+    expect(state?.tocNavHeight).toBe(0);
     expect(state?.horizontalOverflow ?? 0).toBeLessThanOrEqual(1);
 
     await expect(page.locator('.about-shell')).toHaveCount(1);
     await expect(page.locator('.about-shell > .layout-toc-col')).toHaveCount(1);
-    await expect(page.locator('.about-shell .layout-toc')).toHaveCount(1);
+    await expect(page.locator('.about-shell [data-layout-toc-nav]')).toHaveCount(1);
+    await expect(page.locator('.about-shell [data-layout-toc-nav]')).toBeHidden();
+    await expect(page.locator('[data-layout-toc-mobile-panel]')).toHaveCount(0);
+    await expect(page.locator('[data-layout-toc-mobile-nav]')).toHaveCount(0);
   });
 
   test('layout-rich が狭幅でも本文列を 1文字幅へ潰さないこと', async ({ page }) => {

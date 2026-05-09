@@ -251,7 +251,7 @@ layout-toc-controller {
 }
 
 @media (max-width: 639px) {
-  .note-shell[data-toc-presence='present'] .layout-toc-col [data-layout-toc-nav] {
+  .layout-toc-col [data-layout-toc-nav] {
     display: none;
   }
 }
