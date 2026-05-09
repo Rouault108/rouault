@@ -21,10 +21,12 @@ interface HydrationSession {
   readonly root: ParentNode;
   readonly controller: AbortController;
   readonly kind: HydrationSessionKind;
+  readonly excludeSubtrees: readonly Element[];
 }
 
 interface HydrationSchedulerOptions {
   readonly dispatchTarget?: EventTarget | null;
+  readonly excludeSubtrees?: readonly Element[];
 }
 
 interface PreparedSession {
@@ -54,6 +56,18 @@ const delayTask = async (): Promise<void> => {
   });
 };
 
+const normalizeExcludeSubtrees = (
+  excludeSubtrees: readonly Element[] | undefined,
+): readonly Element[] => (excludeSubtrees ? [...excludeSubtrees] : []);
+
+const isCustomElementEntry = (entry: HydrationRegistryEntry): boolean =>
+  entry.kind !== 'enhancer';
+
+const canLoadEntryForElement = (
+  entry: HydrationRegistryEntry,
+  element: HTMLElement,
+): boolean => !isCustomElementEntry(entry) || element.localName === entry.tag;
+
 export class HydrationScheduler {
   private loadedTags = new Map<string, Promise<void>>();
   private activeContentSession: HydrationSession | null = null;
@@ -63,12 +77,16 @@ export class HydrationScheduler {
     private registry: ReadonlyMap<string, HydrationRegistryEntry> = HYDRATION_REGISTRY_BY_TAG,
   ) {}
 
-  async hydrateShell(root: ParentNode): Promise<HydrationDiagnostics> {
+  async hydrateShell(
+    root: ParentNode,
+    options: HydrationSchedulerOptions = {},
+  ): Promise<HydrationDiagnostics> {
     const session = {
       id: 0,
       root,
       controller: new AbortController(),
       kind: 'shell',
+      excludeSubtrees: normalizeExcludeSubtrees(options.excludeSubtrees),
     } satisfies HydrationSession;
 
     const prepared = await this.#prepareSession(session);
@@ -99,6 +117,7 @@ export class HydrationScheduler {
       root,
       controller: new AbortController(),
       kind: 'content',
+      excludeSubtrees: normalizeExcludeSubtrees(options.excludeSubtrees),
     } satisfies HydrationSession;
     this.activeContentSession = session;
 
@@ -163,7 +182,7 @@ export class HydrationScheduler {
     const diagnostics = createHydrationDiagnostics();
     const processed = new WeakSet<HTMLElement>();
 
-    const firstPass = this.#plan(session.root);
+    const firstPass = this.#plan(session);
     diagnostics.plannedCount += firstPass.reduce((sum, scope) => sum + scope.items.length, 0);
 
     this.#preloadPlannedEntries(firstPass, session);
@@ -188,7 +207,7 @@ export class HydrationScheduler {
       processed,
     );
 
-    const secondPass = this.#plan(session.root);
+    const secondPass = this.#plan(session);
     const firstPassElements = new Set(
       firstPass.flatMap((scope) => scope.items.map((item) => item.element)),
     );
@@ -222,8 +241,10 @@ export class HydrationScheduler {
     };
   }
 
-  #plan(root: ParentNode): HydrationScopePlan[] {
-    return planHydration(root);
+  #plan(session: HydrationSession): HydrationScopePlan[] {
+    return planHydration(session.root, {
+      excludeSubtrees: session.excludeSubtrees,
+    });
   }
 
   #preloadPlannedEntries(
@@ -233,15 +254,19 @@ export class HydrationScheduler {
     const seenTags = new Set<string>();
 
     for (const item of plans.flatMap((scope) => scope.items)) {
-      if (seenTags.has(item.tag)) {
-        continue;
-      }
-      seenTags.add(item.tag);
-
       const entry = this.registry.get(item.tag);
       if (!entry || entry.preload?.when !== 'planned') {
         continue;
       }
+
+      if (!canLoadEntryForElement(entry, item.element)) {
+        continue;
+      }
+
+      if (seenTags.has(item.tag)) {
+        continue;
+      }
+      seenTags.add(item.tag);
 
       const preloadScopes = entry.preload.scopes;
       if (preloadScopes && !preloadScopes.includes(session.kind)) {
@@ -289,6 +314,17 @@ export class HydrationScheduler {
       diagnostics.skippedCount += 1;
       addHydrationIssue(diagnostics, {
         code: 'missing-directive',
+        capability: item.capability,
+        trigger: item.trigger,
+      });
+      processed.add(item.element);
+      return;
+    }
+
+    if (!canLoadEntryForElement(entry, item.element)) {
+      diagnostics.failedCount += 1;
+      addHydrationIssue(diagnostics, {
+        code: 'upgrade-failed',
         capability: item.capability,
         trigger: item.trigger,
       });

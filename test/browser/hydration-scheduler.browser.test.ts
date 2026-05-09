@@ -48,6 +48,340 @@ const clickUntil = async (element: HTMLElement, isDone: () => boolean): Promise<
 };
 
 describe('HydrationScheduler', () => {
+  it('root 自身が executable custom element scope root の場合も loader 経由で upgrade すること', async () => {
+    const tag = 'x-hydration-root-scope';
+    let loadCount = 0;
+
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        tag,
+        {
+          tag,
+          kind: 'custom-element',
+          loader: () => {
+            loadCount += 1;
+            defineTestElement(tag);
+            return Promise.resolve();
+          },
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`
+      <x-hydration-root-scope
+        data-hydration-scope="x-hydration-root-scope"
+        data-hydration-capability="interactive"
+        data-hydration-trigger="initial"
+      ></x-hydration-root-scope>
+    `);
+
+    const scheduler = new HydrationScheduler(registry);
+    const diagnostics = await scheduler.hydrateShell(root);
+
+    expect(loadCount).to.equal(1);
+    expect(root.constructor).not.to.equal(HTMLElement);
+    expect(diagnostics.plannedCount).to.equal(1);
+    expect(diagnostics.upgradedCount).to.equal(1);
+  });
+
+  it('root executable custom element は scope id が localName と異なっても loader 経由で upgrade すること', async () => {
+    const tag = 'x-hydration-global-search-dialog';
+    let loadCount = 0;
+
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        tag,
+        {
+          tag,
+          kind: 'custom-element',
+          loader: () => {
+            loadCount += 1;
+            defineTestElement(tag);
+            return Promise.resolve();
+          },
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`
+      <x-hydration-global-search-dialog
+        data-hydration-scope="global-search"
+        data-hydration-capability="interactive"
+        data-hydration-trigger="initial"
+      ></x-hydration-global-search-dialog>
+    `);
+
+    const scheduler = new HydrationScheduler(registry);
+    const diagnostics = await scheduler.hydrateShell(root);
+
+    expect(loadCount).to.equal(1);
+    expect(root.constructor).not.to.equal(HTMLElement);
+    expect(diagnostics.upgradedCount).to.equal(1);
+  });
+
+  it('descendant route-level self-scope component を hydrateContent 経由で upgrade できること', async () => {
+    const tag = 'x-hydration-route-page';
+    let loadCount = 0;
+
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        tag,
+        {
+          tag,
+          kind: 'custom-element',
+          loader: () => {
+            loadCount += 1;
+            defineTestElement(tag);
+            return Promise.resolve();
+          },
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`<main></main>`);
+    root.innerHTML = `
+      <${tag}
+        data-hydration-scope="${tag}"
+        data-hydration-capability="interactive"
+        data-hydration-trigger="initial"
+      ></${tag}>
+    `;
+
+    let diagnostics: HydrationDiagnostics | null = null;
+    root.addEventListener('app-router:hydration-diagnostics', (event: Event) => {
+      diagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
+    });
+
+    const scheduler = new HydrationScheduler(registry);
+    await scheduler.hydrateContent(root, { dispatchTarget: root });
+    await waitUntil(() => diagnostics !== null, 'content diagnostics が発火すること');
+
+    const page = root.querySelector<HTMLElement>(tag);
+    const currentDiagnostics = requireDiagnostics(
+      diagnostics,
+      'diagnostics が取得できませんでした',
+    );
+
+    expect(loadCount).to.equal(1);
+    expect(page?.constructor).not.to.equal(HTMLElement);
+    expect(currentDiagnostics.upgradedCount).to.equal(1);
+  });
+
+  it('custom-element key mismatch では loader を呼ばず upgrade-failed を記録すること', async () => {
+    let loadCount = 0;
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        'x-hydration-keyed-card',
+        {
+          tag: 'x-hydration-keyed-card',
+          kind: 'custom-element',
+          loader: () => {
+            loadCount += 1;
+            defineTestElement('x-hydration-keyed-card');
+            return Promise.resolve();
+          },
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`
+      <section data-hydration-scope="note-content">
+        <div
+          data-hydration-key="x-hydration-keyed-card"
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></div>
+      </section>
+    `);
+
+    const scheduler = new HydrationScheduler(registry);
+    const diagnostics = await scheduler.hydrateShell(root);
+
+    expect(loadCount).to.equal(0);
+    expect(diagnostics.failedCount).to.equal(1);
+    expect(diagnostics.issues).to.deep.equal([
+      {
+        code: 'upgrade-failed',
+        trigger: 'initial',
+        capability: 'interactive',
+        count: 1,
+      },
+    ]);
+  });
+
+  it('custom-element key mismatch では planned preload でも loader を呼ばないこと', async () => {
+    let loadCount = 0;
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        'x-hydration-keyed-preload',
+        {
+          tag: 'x-hydration-keyed-preload',
+          kind: 'custom-element',
+          loader: () => {
+            loadCount += 1;
+            defineTestElement('x-hydration-keyed-preload');
+            return Promise.resolve();
+          },
+          preload: { when: 'planned' },
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`
+      <section data-hydration-scope="note-content">
+        <div
+          data-hydration-key="x-hydration-keyed-preload"
+          data-hydration-capability="progressive"
+          data-hydration-trigger="post-commit"
+        ></div>
+      </section>
+    `);
+
+    const scheduler = new HydrationScheduler(registry);
+    const diagnostics = await scheduler.hydrateShell(root);
+
+    expect(loadCount).to.equal(0);
+    expect(diagnostics.failedCount).to.equal(1);
+    expect(diagnostics.issues).to.deep.equal([
+      {
+        code: 'upgrade-failed',
+        trigger: 'post-commit',
+        capability: 'progressive',
+        count: 1,
+      },
+    ]);
+  });
+
+  it('shell hydration が excludeSubtrees 配下の route content component を先に hydrate しないこと', async () => {
+    const headerTag = 'x-hydration-shell-header';
+    const pageTag = 'x-hydration-content-page';
+    defineTestElement(headerTag);
+    defineTestElement(pageTag);
+
+    const steps: string[] = [];
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        headerTag,
+        {
+          tag: headerTag,
+          loader: () => {
+            steps.push('load:header');
+            return Promise.resolve();
+          },
+        },
+      ],
+      [
+        pageTag,
+        {
+          tag: pageTag,
+          loader: () => {
+            steps.push('load:page');
+            return Promise.resolve();
+          },
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`
+      <div data-hydration-scope="app-shell">
+        <x-hydration-shell-header
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></x-hydration-shell-header>
+        <main id="content">
+          <x-hydration-content-page
+            data-hydration-scope="x-hydration-content-page"
+            data-hydration-capability="interactive"
+            data-hydration-trigger="initial"
+          ></x-hydration-content-page>
+        </main>
+      </div>
+    `);
+    const content = root.querySelector<HTMLElement>('#content');
+    if (!(content instanceof HTMLElement)) {
+      throw new Error('content root が見つかりません');
+    }
+
+    const scheduler = new HydrationScheduler(registry);
+    await scheduler.hydrateShell(root, { excludeSubtrees: [content] });
+
+    expect(steps).to.deep.equal(['load:header']);
+  });
+
+  it('excludeSubtrees が second pass の newly planned preload item にも適用され snapshot として固定されること', async () => {
+    const producerTag = 'x-hydration-exclude-producer';
+    const preloadTag = 'x-hydration-excluded-preload';
+    defineTestElement(producerTag);
+    defineTestElement(preloadTag);
+
+    let resolveProducer!: () => void;
+    const producerGate = new Promise<void>((resolve) => {
+      resolveProducer = resolve;
+    });
+    let loadPreloadCount = 0;
+
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        producerTag,
+        {
+          tag: producerTag,
+          loader: () => Promise.resolve(),
+          activate: async ({ root }) => {
+            await producerGate;
+            const target =
+              root instanceof HTMLElement ? root.querySelector<HTMLElement>('#content') : null;
+            if (!(target instanceof HTMLElement)) {
+              throw new Error('content root が見つかりません');
+            }
+            target.insertAdjacentHTML(
+              'beforeend',
+              `
+                <${preloadTag}
+                  data-hydration-capability="interactive"
+                  data-hydration-trigger="interaction"
+                ></${preloadTag}>
+              `,
+            );
+          },
+        },
+      ],
+      [
+        preloadTag,
+        {
+          tag: preloadTag,
+          loader: () => {
+            loadPreloadCount += 1;
+            return Promise.resolve();
+          },
+          preload: { when: 'planned' },
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`
+      <div data-hydration-scope="app-shell">
+        <x-hydration-exclude-producer
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></x-hydration-exclude-producer>
+        <main id="content"></main>
+      </div>
+    `);
+    const content = root.querySelector<HTMLElement>('#content');
+    if (!(content instanceof HTMLElement)) {
+      throw new Error('content root が見つかりません');
+    }
+
+    const excluded = [content];
+    const scheduler = new HydrationScheduler(registry);
+    const hydration = scheduler.hydrateShell(root, { excludeSubtrees: excluded });
+    excluded.length = 0;
+    resolveProducer();
+
+    await hydration;
+    expect(loadPreloadCount).to.equal(0);
+  });
+
   it('plain DOM enhancer を data-hydration-key 経由で起動できること', async () => {
     const steps: string[] = [];
 

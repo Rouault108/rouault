@@ -33,14 +33,25 @@ const waitForAppRouterReady = async (): Promise<AppRouter | null> => {
 };
 
 const hydrateShellScopes = async (): Promise<void> => {
-  const shellScopes = [
-    document.querySelector<HTMLElement>('[data-hydration-scope="skip-link"]'),
-    document.querySelector<HTMLElement>('[data-hydration-scope="app-shell"]'),
-    document.querySelector<HTMLElement>('[data-hydration-scope="global-search"]'),
-  ].filter((scope): scope is HTMLElement => scope !== null);
+  const mainContent = document.querySelector<HTMLElement>(MAIN_CONTENT_SELECTOR);
 
-  for (const scope of shellScopes) {
-    await hydrationScheduler.hydrateShell(scope);
+  const skipLink = document.querySelector<HTMLElement>('[data-hydration-scope="skip-link"]');
+  if (skipLink) {
+    await hydrationScheduler.hydrateShell(skipLink);
+  }
+
+  const appShell = document.querySelector<HTMLElement>('[data-hydration-scope="app-shell"]');
+  if (appShell) {
+    await hydrationScheduler.hydrateShell(appShell, {
+      excludeSubtrees: mainContent ? [mainContent] : [],
+    });
+  }
+
+  const globalSearch = document.querySelector<HTMLElement>(
+    '[data-hydration-scope="global-search"]',
+  );
+  if (globalSearch) {
+    await hydrationScheduler.hydrateShell(globalSearch);
   }
 };
 
