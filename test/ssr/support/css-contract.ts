@@ -4,10 +4,13 @@ import { join, resolve } from 'node:path';
 import postcss, { type AtRule, type Container, type Declaration, type Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';
 
-export type CssRuleScope = 'screen' | 'forced-colors' | 'print' | 'reduced-motion' | 'any';
+export type CssRuleScope = 'base' | 'screen' | 'forced-colors' | 'print' | 'reduced-motion' | 'any';
+export type SelectorKind = 'element' | 'pseudo-before' | 'pseudo-after' | 'any';
 
 export interface CssDeclarationSearchOptions {
   readonly scope?: CssRuleScope;
+  readonly mediaPredicate?: (params: string) => boolean;
+  readonly selectorKind?: SelectorKind;
 }
 
 export interface CssContractViolation {
@@ -21,20 +24,15 @@ export interface CssContractViolation {
 
 const CSS_ROOT = resolve(process.cwd(), 'src/assets/css');
 
-// static CSS 横断契約用の helper。既存 css-contract-test-helpers.ts は個別 CSS の
-// 文字列構造検査を担当し、ここでは selector / at-rule を AST で扱う。
-
 const isAtRule = (node: Container['parent']): node is AtRule =>
   node !== undefined && node !== null && node.type === 'atrule';
 
 const isPrintMedia = (params: string): boolean => /\bprint\b/u.test(params);
-
 const isForcedColorsMedia = (params: string): boolean => /forced-colors\s*:\s*active/u.test(params);
-
 const isReducedMotionMedia = (params: string): boolean =>
   /prefers-reduced-motion\s*:\s*reduce/u.test(params);
 
-const normalizeCssDeclarationValue = (value: string): string =>
+export const normalizeCssDeclarationValue = (value: string): string =>
   value
     .trim()
     .replace(/\s+/gu, ' ')
@@ -60,6 +58,8 @@ const isRuleInScope = (rule: Rule, scope: CssRuleScope): boolean => {
   const mediaAncestors = collectMediaAncestors(rule);
 
   switch (scope) {
+    case 'base':
+      return mediaAncestors.length === 0;
     case 'screen':
       return !mediaAncestors.some(
         (media) =>
@@ -75,6 +75,12 @@ const isRuleInScope = (rule: Rule, scope: CssRuleScope): boolean => {
       return mediaAncestors.some((media) => isReducedMotionMedia(media.params));
     case 'any':
       return true;
+  }
+};
+
+const assertValidOptions = (options: CssDeclarationSearchOptions): void => {
+  if (options.scope !== undefined && options.mediaPredicate !== undefined) {
+    throw new Error('scope と mediaPredicate は同時指定できません');
   }
 };
 
@@ -102,23 +108,109 @@ const splitSelectors = (selectorText: string): string[] => {
   return selectors;
 };
 
+const selectorMatchesKind = (selector: string, selectorKind: SelectorKind): boolean => {
+  if (selectorKind === 'any') return true;
+  const hasBefore = /::before\b/u.test(selector);
+  const hasAfter = /::after\b/u.test(selector);
+  if (selectorKind === 'pseudo-before') return hasBefore;
+  if (selectorKind === 'pseudo-after') return hasAfter;
+  return !hasBefore && !hasAfter;
+};
+
 const parseCss = (cssText: string) => postcss.parse(cssText);
 
 const listCssFilesInDirectory = (directoryPath: string): string[] => {
   return readdirSync(directoryPath, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = join(directoryPath, entry.name);
-    if (entry.isDirectory()) {
-      return listCssFilesInDirectory(entryPath);
-    }
+    if (entry.isDirectory()) return listCssFilesInDirectory(entryPath);
     return entry.isFile() && entry.name.endsWith('.css') ? [entryPath] : [];
   });
 };
+
+const ruleMatchesOptions = (rule: Rule, options: CssDeclarationSearchOptions): boolean => {
+  assertValidOptions(options);
+  if (options.mediaPredicate !== undefined) {
+    return collectMediaAncestors(rule).some((media) => options.mediaPredicate?.(media.params) === true);
+  }
+  return isRuleInScope(rule, options.scope ?? 'screen');
+};
+
+const selectorFragmentMatches = (selector: string, fragment: string): boolean => {
+  const normalizedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
+  const normalizedFragment = normalizeAttributeQuoteStyle(normalizeSelector(fragment));
+  return normalizedSelector.includes(normalizedFragment);
+};
+
+const selectorsForRule = (rule: Rule, selectorKind: SelectorKind): string[] =>
+  splitSelectors(rule.selector).filter((selector) => selectorMatchesKind(selector, selectorKind));
+
+const ruleHasSelector = (
+  rule: Rule,
+  selector: string,
+  options: CssDeclarationSearchOptions,
+  mode: 'exact' | 'fragment',
+): boolean => {
+  const selectorKind = options.selectorKind ?? 'any';
+  const expectedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
+  return selectorsForRule(rule, selectorKind).some((actualSelector) =>
+    mode === 'exact' ? actualSelector === expectedSelector : selectorFragmentMatches(actualSelector, selector),
+  );
+};
+
+const matchingRules = (
+  cssText: string,
+  selector: string,
+  options: CssDeclarationSearchOptions,
+  mode: 'exact' | 'fragment',
+): Rule[] => {
+  assertValidOptions(options);
+  const rules: Rule[] = [];
+  parseCss(cssText).walkRules((rule) => {
+    if (!ruleMatchesOptions(rule, options)) return;
+    if (!ruleHasSelector(rule, selector, options, mode)) return;
+    rules.push(rule);
+  });
+  return rules;
+};
+
+const matchingDeclarations = (
+  cssText: string,
+  selector: string,
+  property: string,
+  options: CssDeclarationSearchOptions,
+  mode: 'exact' | 'fragment',
+): Declaration[] =>
+  matchingRules(cssText, selector, options, mode).flatMap((rule) => {
+    const declarations: Declaration[] = [];
+    rule.walkDecls(property, (declaration) => {
+      declarations.push(declaration);
+    });
+    return declarations;
+  });
 
 export const listCssFiles = (): string[] => listCssFilesInDirectory(CSS_ROOT).sort();
 
 export const readCssFile = (filePath: string): { cssText: string } => ({
   cssText: readFileSync(filePath, 'utf8'),
 });
+
+export const hasRuleForSelector = (
+  cssText: string,
+  selector: string,
+  options: CssDeclarationSearchOptions = {},
+): boolean => matchingRules(cssText, selector, options, 'exact').length > 0;
+
+export const lacksRuleForSelector = (
+  cssText: string,
+  selector: string,
+  options?: CssDeclarationSearchOptions,
+): boolean => !hasRuleForSelector(cssText, selector, options);
+
+export const hasRuleContainingSelectorFragment = (
+  cssText: string,
+  selectorFragment: string,
+  options: CssDeclarationSearchOptions = {},
+): boolean => matchingRules(cssText, selectorFragment, options, 'fragment').length > 0;
 
 export const hasDeclarationForSelector = (
   cssText: string,
@@ -127,26 +219,23 @@ export const hasDeclarationForSelector = (
   expectedValue: string,
   options: CssDeclarationSearchOptions = {},
 ): boolean => {
-  const scope = options.scope ?? 'screen';
-  const expectedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
-  let found = false;
+  const expected = normalizeCssDeclarationValue(expectedValue);
+  return matchingDeclarations(cssText, selector, property, options, 'exact').some(
+    (declaration) => normalizeCssDeclarationValue(declaration.value) === expected,
+  );
+};
 
-  parseCss(cssText).walkRules((rule) => {
-    if (found || !isRuleInScope(rule, scope)) {
-      return;
-    }
-    if (!splitSelectors(rule.selector).includes(expectedSelector)) {
-      return;
-    }
-
-    rule.walkDecls(property, (declaration) => {
-      if (declaration.value.trim() === expectedValue) {
-        found = true;
-      }
-    });
-  });
-
-  return found;
+export const hasDeclarationForSelectorContaining = (
+  cssText: string,
+  selectorFragment: string,
+  property: string,
+  expectedValue: string,
+  options: CssDeclarationSearchOptions = {},
+): boolean => {
+  const expected = normalizeCssDeclarationValue(expectedValue);
+  return matchingDeclarations(cssText, selectorFragment, property, options, 'fragment').some(
+    (declaration) => normalizeCssDeclarationValue(declaration.value) === expected,
+  );
 };
 
 export const hasDeclarationForSelectorInMedia = (
@@ -155,61 +244,19 @@ export const hasDeclarationForSelectorInMedia = (
   selector: string,
   property: string,
   expectedValue: string,
-): boolean => {
-  const expectedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
-  const normalizedExpectedValue = normalizeCssDeclarationValue(expectedValue);
-  let found = false;
+): boolean =>
+  hasDeclarationForSelector(cssText, selector, property, expectedValue, { mediaPredicate });
 
-  parseCss(cssText).walkRules((rule) => {
-    if (found) {
-      return;
-    }
-    if (!isRuleInScope(rule, 'screen')) {
-      return;
-    }
-
-    const mediaAncestors = collectMediaAncestors(rule);
-    if (!mediaAncestors.some((media) => mediaPredicate(media.params))) {
-      return;
-    }
-    if (!splitSelectors(rule.selector).includes(expectedSelector)) {
-      return;
-    }
-
-    rule.walkDecls(property, (declaration) => {
-      if (normalizeCssDeclarationValue(declaration.value) === normalizedExpectedValue) {
-        found = true;
-      }
-    });
-  });
-
-  return found;
-};
-
-export const hasRuleForSelector = (
+export const hasDeclarationForSelectorContainingInMedia = (
   cssText: string,
-  selector: string,
-  options: CssDeclarationSearchOptions = {},
-): boolean => {
-  const scope = options.scope ?? 'screen';
-  const expectedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
-  let found = false;
-
-  parseCss(cssText).walkRules((rule) => {
-    if (found || !isRuleInScope(rule, scope)) {
-      return;
-    }
-    found = splitSelectors(rule.selector).includes(expectedSelector);
+  mediaPredicate: (params: string) => boolean,
+  selectorFragment: string,
+  property: string,
+  expectedValue: string,
+): boolean =>
+  hasDeclarationForSelectorContaining(cssText, selectorFragment, property, expectedValue, {
+    mediaPredicate,
   });
-
-  return found;
-};
-
-export const lacksRuleForSelector = (
-  cssText: string,
-  selector: string,
-  options?: CssDeclarationSearchOptions,
-): boolean => !hasRuleForSelector(cssText, selector, options);
 
 export const hasDeclarationForAllSelectors = (
   cssText: string,
@@ -228,29 +275,13 @@ export const hasDeclarationTokenForSelector = (
   property: string,
   expectedToken: string,
   options: CssDeclarationSearchOptions = {},
-): boolean => {
-  const scope = options.scope ?? 'screen';
-  const expectedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
-  let found = false;
-
-  parseCss(cssText).walkRules((rule) => {
-    if (found || !isRuleInScope(rule, scope)) {
-      return;
-    }
-    if (!splitSelectors(rule.selector).includes(expectedSelector)) {
-      return;
-    }
-
-    rule.walkDecls(property, (declaration) => {
-      const tokens = declaration.value.split(/\s+/u).map((token) => token.trim());
-      if (tokens.includes(expectedToken)) {
-        found = true;
-      }
-    });
-  });
-
-  return found;
-};
+): boolean =>
+  matchingDeclarations(cssText, selector, property, options, 'exact').some((declaration) =>
+    declaration.value
+      .split(/\s+/u)
+      .map((token) => token.trim())
+      .includes(expectedToken),
+  );
 
 export const hasDeclarationTokenForAllSelectors = (
   cssText: string,
@@ -263,6 +294,34 @@ export const hasDeclarationTokenForAllSelectors = (
     hasDeclarationTokenForSelector(cssText, selector, property, expectedToken, options),
   );
 
+export const hasAnyDeclarationValueIncludingForSelectorContaining = (
+  cssText: string,
+  selectorFragment: string,
+  property: string,
+  expectedFragment: string,
+  options: CssDeclarationSearchOptions = {},
+): boolean => {
+  const fragment = normalizeCssDeclarationValue(expectedFragment);
+  return matchingDeclarations(cssText, selectorFragment, property, options, 'fragment').some(
+    (declaration) => normalizeCssDeclarationValue(declaration.value).includes(fragment),
+  );
+};
+
+export const hasAllDeclarationValuesIncludingForSelectorContaining = (
+  cssText: string,
+  selectorFragment: string,
+  property: string,
+  expectedFragment: string,
+  options: CssDeclarationSearchOptions = {},
+): boolean => {
+  const declarations = matchingDeclarations(cssText, selectorFragment, property, options, 'fragment');
+  if (declarations.length === 0) return false;
+  const fragment = normalizeCssDeclarationValue(expectedFragment);
+  return declarations.every((declaration) =>
+    normalizeCssDeclarationValue(declaration.value).includes(fragment),
+  );
+};
+
 export const hasDeclarationValueIncluding = (
   cssText: string,
   selector: string,
@@ -270,28 +329,29 @@ export const hasDeclarationValueIncluding = (
   expectedFragment: string,
   options: CssDeclarationSearchOptions = {},
 ): boolean => {
-  const scope = options.scope ?? 'screen';
-  const expectedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
-  const normalizedExpectedFragment = normalizeCssDeclarationValue(expectedFragment);
-  let found = false;
-
-  parseCss(cssText).walkRules((rule) => {
-    if (found || !isRuleInScope(rule, scope)) {
-      return;
-    }
-    if (!splitSelectors(rule.selector).includes(expectedSelector)) {
-      return;
-    }
-
-    rule.walkDecls(property, (declaration) => {
-      if (normalizeCssDeclarationValue(declaration.value).includes(normalizedExpectedFragment)) {
-        found = true;
-      }
-    });
-  });
-
-  return found;
+  const fragment = normalizeCssDeclarationValue(expectedFragment);
+  return matchingDeclarations(cssText, selector, property, options, 'exact').some((declaration) =>
+    normalizeCssDeclarationValue(declaration.value).includes(fragment),
+  );
 };
+
+export const hasDeclarationValueIncludingForSelectorContaining =
+  hasAnyDeclarationValueIncludingForSelectorContaining;
+
+export const hasDeclarationValueIncludingForSelectorContainingInMedia = (
+  cssText: string,
+  mediaPredicate: (params: string) => boolean,
+  selectorFragment: string,
+  property: string,
+  expectedFragment: string,
+): boolean =>
+  hasAnyDeclarationValueIncludingForSelectorContaining(
+    cssText,
+    selectorFragment,
+    property,
+    expectedFragment,
+    { mediaPredicate },
+  );
 
 export const hasDeclarationValueIncludingForAllSelectors = (
   cssText: string,
@@ -304,6 +364,21 @@ export const hasDeclarationValueIncludingForAllSelectors = (
     hasDeclarationValueIncluding(cssText, selector, property, expectedFragment, options),
   );
 
+export const hasDeclarationValueNotIncludingForSelectorContaining = (
+  cssText: string,
+  selectorFragment: string,
+  property: string,
+  forbiddenFragment: string,
+  options: CssDeclarationSearchOptions = {},
+): boolean => {
+  const declarations = matchingDeclarations(cssText, selectorFragment, property, options, 'fragment');
+  if (declarations.length === 0) return false;
+  const fragment = normalizeCssDeclarationValue(forbiddenFragment);
+  return declarations.every(
+    (declaration) => !normalizeCssDeclarationValue(declaration.value).includes(fragment),
+  );
+};
+
 export const hasDeclarationValueNotIncluding = (
   cssText: string,
   selector: string,
@@ -311,30 +386,28 @@ export const hasDeclarationValueNotIncluding = (
   forbiddenFragment: string,
   options: CssDeclarationSearchOptions = {},
 ): boolean => {
-  const scope = options.scope ?? 'screen';
-  const expectedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
-  const normalizedForbiddenFragment = normalizeCssDeclarationValue(forbiddenFragment);
-  let foundSelectorProperty = false;
-  let hasForbiddenValue = false;
-
-  parseCss(cssText).walkRules((rule) => {
-    if (!isRuleInScope(rule, scope)) {
-      return;
-    }
-    if (!splitSelectors(rule.selector).includes(expectedSelector)) {
-      return;
-    }
-
-    rule.walkDecls(property, (declaration) => {
-      foundSelectorProperty = true;
-      if (normalizeCssDeclarationValue(declaration.value).includes(normalizedForbiddenFragment)) {
-        hasForbiddenValue = true;
-      }
-    });
-  });
-
-  return foundSelectorProperty && !hasForbiddenValue;
+  const declarations = matchingDeclarations(cssText, selector, property, options, 'exact');
+  if (declarations.length === 0) return false;
+  const fragment = normalizeCssDeclarationValue(forbiddenFragment);
+  return declarations.every(
+    (declaration) => !normalizeCssDeclarationValue(declaration.value).includes(fragment),
+  );
 };
+
+export const hasDeclarationValueNotIncludingForSelectorContainingInMedia = (
+  cssText: string,
+  mediaPredicate: (params: string) => boolean,
+  selectorFragment: string,
+  property: string,
+  forbiddenFragment: string,
+): boolean =>
+  hasDeclarationValueNotIncludingForSelectorContaining(
+    cssText,
+    selectorFragment,
+    property,
+    forbiddenFragment,
+    { mediaPredicate },
+  );
 
 export const hasDeclarationValueNotIncludingForAllSelectors = (
   cssText: string,
@@ -347,48 +420,64 @@ export const hasDeclarationValueNotIncludingForAllSelectors = (
     hasDeclarationValueNotIncluding(cssText, selector, property, forbiddenFragment, options),
   );
 
+export const hasOnlyAllowedDeclarationValuesForSelectorContaining = (
+  cssText: string,
+  selectorFragment: string,
+  property: string,
+  allowedValues: readonly string[],
+  options: CssDeclarationSearchOptions & { readonly requireDeclaration?: boolean } = {},
+): boolean => {
+  const declarations = matchingDeclarations(cssText, selectorFragment, property, options, 'fragment');
+  if (declarations.length === 0) return options.requireDeclaration === true ? false : true;
+  const allowed = new Set(allowedValues.map((value) => normalizeCssDeclarationValue(value)));
+  return declarations.every((declaration) => allowed.has(normalizeCssDeclarationValue(declaration.value)));
+};
+
+export const hasNoDeclarationValueIncludingForSelectorContaining = (
+  cssText: string,
+  selectorFragment: string,
+  forbiddenFragment: string,
+  options: CssDeclarationSearchOptions & { readonly allowMissingRule?: boolean } = {},
+): boolean => {
+  const rules = matchingRules(cssText, selectorFragment, options, 'fragment');
+  if (rules.length === 0) return options.allowMissingRule === true;
+  const fragment = normalizeCssDeclarationValue(forbiddenFragment);
+  return rules.every((rule) => {
+    let ok = true;
+    rule.walkDecls((declaration) => {
+      if (normalizeCssDeclarationValue(declaration.value).includes(fragment)) ok = false;
+    });
+    return ok;
+  });
+};
+
 export const hasDeclarationPropertyForSelector = (
   cssText: string,
   selector: string,
   property: string,
   options: CssDeclarationSearchOptions = {},
-): boolean => {
-  const scope = options.scope ?? 'screen';
-  const expectedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
-  let found = false;
+): boolean => matchingDeclarations(cssText, selector, property, options, 'exact').length > 0;
 
-  parseCss(cssText).walkRules((rule) => {
-    if (found || !isRuleInScope(rule, scope)) {
-      return;
-    }
-    if (!splitSelectors(rule.selector).includes(expectedSelector)) {
-      return;
-    }
-
-    rule.walkDecls(property, () => {
-      found = true;
-    });
-  });
-
-  return found;
-};
-
-export const hasDeclarationPropertyForAllSelectors = (
+export const hasDeclarationPropertyForSelectorContaining = (
   cssText: string,
-  selectors: readonly string[],
+  selectorFragment: string,
   property: string,
-  options?: CssDeclarationSearchOptions,
-): boolean =>
-  selectors.every((selector) =>
-    hasDeclarationPropertyForSelector(cssText, selector, property, options),
-  );
+  options: CssDeclarationSearchOptions = {},
+): boolean => matchingDeclarations(cssText, selectorFragment, property, options, 'fragment').length > 0;
 
 export const lacksDeclarationPropertyForSelector = (
   cssText: string,
   selector: string,
   property: string,
-  options?: CssDeclarationSearchOptions,
+  options: CssDeclarationSearchOptions = {},
 ): boolean => !hasDeclarationPropertyForSelector(cssText, selector, property, options);
+
+export const lacksDeclarationPropertyForSelectorContaining = (
+  cssText: string,
+  selectorFragment: string,
+  property: string,
+  options: CssDeclarationSearchOptions = {},
+): boolean => !hasDeclarationPropertyForSelectorContaining(cssText, selectorFragment, property, options);
 
 export const lacksDeclarationPropertyForAllSelectors = (
   cssText: string,
@@ -396,9 +485,7 @@ export const lacksDeclarationPropertyForAllSelectors = (
   property: string,
   options?: CssDeclarationSearchOptions,
 ): boolean =>
-  selectors.every((selector) =>
-    lacksDeclarationPropertyForSelector(cssText, selector, property, options),
-  );
+  selectors.every((selector) => lacksDeclarationPropertyForSelector(cssText, selector, property, options));
 
 export const findLastDeclarationRuleOrderForSelector = (
   cssText: string,
@@ -406,38 +493,25 @@ export const findLastDeclarationRuleOrderForSelector = (
   property: string,
   options: CssDeclarationSearchOptions = {},
 ): number => {
-  const scope = options.scope ?? 'screen';
-  const expectedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
   let order = 0;
-  let foundOrder = -1;
-
+  let lastOrder = -1;
   parseCss(cssText).walkRules((rule) => {
-    if (!isRuleInScope(rule, scope)) {
-      return;
-    }
-
     order += 1;
-
-    if (!splitSelectors(rule.selector).includes(expectedSelector)) {
-      return;
-    }
-
+    if (!ruleMatchesOptions(rule, options)) return;
+    if (!ruleHasSelector(rule, selector, options, 'exact')) return;
     let hasProperty = false;
     rule.walkDecls(property, () => {
       hasProperty = true;
     });
-
-    if (hasProperty) {
-      foundOrder = order;
-    }
+    if (hasProperty) lastOrder = order;
   });
 
-  if (foundOrder < 0) {
-    throw new Error(`${selector} の ${property} が ${scope} scope に見つかりません`);
+  if (lastOrder < 0) {
+    throw new Error(`${selector} の ${property} が見つかりません`);
   }
-
-  return foundOrder;
+  return lastOrder;
 };
+
 
 const isUnderlineDeclaration = (property: string, value: string): boolean => {
   if (property !== 'text-decoration' && property !== 'text-decoration-line') {
@@ -446,7 +520,7 @@ const isUnderlineDeclaration = (property: string, value: string): boolean => {
   return value.split(/\s+/u).includes('underline');
 };
 
-const isDeclaration = (node: Rule['nodes'][number]): node is Declaration => node.type === 'decl';
+const isDeclaration = (node: { readonly type: string }): node is Declaration => node.type === 'decl';
 
 const ALLOWED_BROAD_UNDERLINE_SELECTORS = new Set([
   ':is(.prose,.about-prose) a[href]:not(.heading-anchor)',
@@ -494,7 +568,7 @@ export const findLinkUnderlineContractViolations = (
       return;
     }
 
-    const underlineDeclarations = rule.nodes.filter(
+    const underlineDeclarations = (rule.nodes ?? []).filter(
       (node): node is Declaration =>
         isDeclaration(node) && isUnderlineDeclaration(node.prop, node.value.trim()),
     );

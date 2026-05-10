@@ -162,10 +162,6 @@ export class UiSidebarShell extends LitElement {
         border-right: var(--border-width, 1px) solid CanvasText;
       }
 
-      ::slotted([aria-current='page']) {
-        outline: 2px solid Highlight;
-        outline-offset: -2px;
-      }
     }
 
     @media (prefers-reduced-motion: reduce) {

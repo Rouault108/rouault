@@ -1,6 +1,5 @@
 import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import { keyed } from 'lit/directives/keyed.js';
 import '../ui/icon/icon.js';
 import '../ui/header/header.js';
 import '../ui/search-trigger/search-trigger.js';
@@ -985,35 +984,27 @@ export class LayoutHeader extends LitElement {
             align="end"
             @menu-item-select=${this._handleThemeSelect}
           >
-            ${keyed(
-              this._themePreference,
-              html`
-                <ui-button
-                  slot="trigger"
-                  variant="ghost"
-                  accessible-name=${`テーマ: ${currentThemeOption.label}`}
-                >
-                  <span class="theme-trigger-label">
-                    <span
-                      class="theme-trigger-main"
-                      data-theme-preference=${this._themePreference}
-                    >
-                      <ui-icon
-                        class="theme-trigger-icon"
-                        name=${currentThemeOption.icon}
-                        aria-hidden="true"
-                      ></ui-icon>
-                      <span class="theme-trigger-text">${currentThemeOption.label}</span>
-                    </span>
-                    <ui-icon
-                      class="theme-trigger-chevron"
-                      name="chevron-down"
-                      aria-hidden="true"
-                    ></ui-icon>
-                  </span>
-                </ui-button>
-              `,
-            )}
+            <ui-button
+              slot="trigger"
+              variant="ghost"
+              accessible-name=${`テーマ: ${currentThemeOption.label}`}
+            >
+              <span class="theme-trigger-label">
+                <span class="theme-trigger-main" data-theme-preference=${this._themePreference}>
+                  <ui-icon
+                    class="theme-trigger-icon"
+                    name=${currentThemeOption.icon}
+                    aria-hidden="true"
+                  ></ui-icon>
+                  <span class="theme-trigger-text">${currentThemeOption.label}</span>
+                </span>
+                <ui-icon
+                  class="theme-trigger-chevron"
+                  name="chevron-down"
+                  aria-hidden="true"
+                ></ui-icon>
+              </span>
+            </ui-button>
             ${(
               Object.entries(THEME_OPTIONS) as [
                 ThemePreference,
@@ -1023,11 +1014,7 @@ export class LayoutHeader extends LitElement {
               const selected = value === this._themePreference;
 
               return html`
-                <ui-menu-item
-                  value=${value}
-                  text-value=${option.label}
-                  ?data-selected=${selected}
-                >
+                <ui-menu-item value=${value} text-value=${option.label} ?data-selected=${selected}>
                   <ui-icon name=${selected ? 'check' : option.icon} aria-hidden="true"></ui-icon>
                   ${option.label}
                 </ui-menu-item>

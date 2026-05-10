@@ -1,11 +1,26 @@
 import { expect, fixture, html } from '@open-wc/testing';
+import '../../src/components/layout/layout-sidebar-surface.js';
+import '../../src/components/ui/sidebar-shell/sidebar-shell.js';
+
+import type { LayoutSidebarSurface } from '../../src/components/layout/layout-sidebar-surface.js';
+import type { UiSidebarShell } from '../../src/components/ui/sidebar-shell/sidebar-shell.js';
+import { ensureMainCssLoaded } from './helpers/load-main-css.js';
+import { withDocumentTheme } from './helpers/document-theme.js';
+import {
+  compositeOver,
+  expectContrast,
+  expectVisiblePseudoPaint,
+  resolveComputedColor,
+  resolvePaintedElementBackground,
+  resolvePseudoColor,
+} from './helpers/color-contrast.js';
 
 import {
   LayoutSidebarNavInteractionController,
   findLayoutSidebarNav,
   syncLayoutSidebarNav,
 } from '../../src/components/layout/layout-sidebar-nav.js';
-import { dispatchKey, nextAnimationFrame } from './helpers/wait-for-lit.js';
+import { dispatchKey, nextAnimationFrame, waitForStyleRecalc } from './helpers/wait-for-lit.js';
 
 const expectPresent = <T>(value: T | null | undefined, name: string): T => {
   expect(value, `${name} should exist`).to.not.equal(null);
@@ -174,4 +189,87 @@ describe('layout-sidebar-nav explicit contract', () => {
 
     controller.disconnect();
   });
+});
+
+
+describe('layout-sidebar-nav paint contract', () => {
+  const navMarkup = `
+    <nav data-sidebar-nav aria-label="ノートナビゲーション">
+      <ul>
+        <li data-node-id="music" data-node-kind="branch" data-node-depth="0" data-current-branch="true">
+          <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="sidebar-group-music">
+            <span data-sidebar-nav-label>Music</span>
+            <span data-sidebar-nav-disclosure aria-hidden="true">
+              <svg viewBox="0 0 16 16" focusable="false" aria-hidden="true"><path d="M6 3.5L10.5 8L6 12.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg>
+            </span>
+          </button>
+          <ul id="sidebar-group-music">
+            <li data-node-id="music/mozart" data-node-kind="leaf" data-node-depth="1">
+              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/mozart" aria-current="page"><span data-sidebar-nav-label>Mozart</span></a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  `;
+
+  const renderSurface = async (): Promise<{
+    surface: LayoutSidebarSurface;
+    shell: UiSidebarShell;
+    shellNav: HTMLElement;
+    currentLink: HTMLAnchorElement;
+    branchControl: HTMLButtonElement;
+  }> => {
+    await ensureMainCssLoaded();
+    const surface = await fixture<LayoutSidebarSurface>(html`
+      <layout-sidebar-surface .navMarkup=${navMarkup}></layout-sidebar-surface>
+    `);
+    await surface.updateComplete;
+    const shell = expectPresent(surface.querySelector<UiSidebarShell>('ui-sidebar-shell'), 'ui-sidebar-shell');
+    await shell.updateComplete;
+    await waitForStyleRecalc();
+    const shellNav = expectPresent(shell.shadowRoot?.querySelector<HTMLElement>('nav'), 'shell nav');
+    const currentLink = expectPresent(surface.querySelector<HTMLAnchorElement>('[data-sidebar-nav-link][aria-current="page"]'), 'current link');
+    const branchControl = expectPresent(surface.querySelector<HTMLButtonElement>('li[data-current-branch="true"] > [data-sidebar-nav-control]'), 'current branch');
+    return { surface, shell, shellNav, currentLink, branchControl };
+  };
+
+  for (const theme of ['light', 'dark'] as const) {
+    it(`${theme} theme で current page の surface / indicator contrast を満たすこと`, async () => {
+      await withDocumentTheme(theme, async () => {
+        const { surface, shellNav, currentLink } = await renderSurface();
+        const shellBackground = resolvePaintedElementBackground(shellNav, surface);
+        expect(shellBackground.a, 'shell painted background alpha').to.equal(1);
+
+        const foreground = resolveComputedColor(getComputedStyle(currentLink).color, currentLink, 'color');
+        expect(foreground.a, 'current page foreground alpha').to.equal(1);
+
+        const activeSurface = resolvePseudoColor(currentLink, '::before', 'background-color');
+        expectVisiblePseudoPaint(currentLink, '::before', activeSurface, 'current page active surface');
+
+        const indicator = resolvePseudoColor(currentLink, '::after', 'background-color');
+        expectVisiblePseudoPaint(currentLink, '::after', indicator, 'current page indicator');
+
+        const paintedActiveSurface = compositeOver(activeSurface, shellBackground);
+        const paintedIndicator = compositeOver(indicator, paintedActiveSurface);
+
+        expectContrast(foreground, paintedActiveSurface, 4.5);
+        expectContrast(paintedIndicator, paintedActiveSurface, 3);
+      });
+    });
+
+    it(`${theme} theme で current branch は非 hover surface を持たず indicator contrast を満たすこと`, async () => {
+      await withDocumentTheme(theme, async () => {
+        const { surface, shellNav, branchControl } = await renderSurface();
+        const shellBackground = resolvePaintedElementBackground(shellNav, surface);
+        const branchSurface = resolvePseudoColor(branchControl, '::before', 'background-color');
+        expect(branchSurface.a, 'current branch base surface raw alpha').to.be.lessThanOrEqual(0.001);
+
+        const branchIndicator = resolvePseudoColor(branchControl, '::after', 'background-color');
+        expectVisiblePseudoPaint(branchControl, '::after', branchIndicator, 'current branch indicator');
+        const paintedBranchIndicator = compositeOver(branchIndicator, shellBackground);
+        expectContrast(paintedBranchIndicator, shellBackground, 3);
+      });
+    });
+  }
 });

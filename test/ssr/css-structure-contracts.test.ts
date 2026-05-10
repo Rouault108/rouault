@@ -425,7 +425,8 @@ describe('css structure contracts', () => {
       '.expand-icon',
       '.current-slot-indicator',
       '@media (prefers-reduced-motion: reduce)',
-      'transition-duration: 0.01ms',
+      'transition: none',
+      'animation: none',
       '@media (forced-colors: active)',
       'CanvasText',
       'Highlight',
@@ -433,6 +434,8 @@ describe('css structure contracts', () => {
       '@media print',
       ':host([print-mode]) .expand-icon',
     ]);
+
+    expectCssExcludes(cssText, ['transition-duration: 0.01ms']);
   });
 
   it('ul が scope / token / forced-colors 契約を保持すること', () => {

@@ -17,13 +17,14 @@ export class TreeItem extends LitElement {
       position: relative;
       min-inline-size: 0;
       --tree-item-content-gap: 4px;
+      --tree-item-indent-step: var(--tree-indent-step, var(--sidebar-item-indent-step, 16px));
 
       --tree-item-row-inline-padding: var(--sidebar-item-row-inline-padding, var(--space-4, 16px));
       --tree-item-row-column-gap: var(--sidebar-item-row-column-gap, var(--space-2, 8px));
 
       --tree-item-selected-bg: var(
         --sidebar-item-active-bg,
-        oklch(from var(--primary) l c h / 0.05)
+        var(--bg-surface-active, oklch(from var(--primary) l c h / 0.05))
       );
       --tree-item-selected-indicator-color: var(
         --nav-item-indicator-color,
@@ -129,6 +130,11 @@ export class TreeItem extends LitElement {
       color: var(--sidebar-item-fg-hover, var(--fg-default, oklch(20% 0 0)));
     }
 
+    :host([selected]) .item.is-branch:hover,
+    :host([selected]) .item.is-page:hover {
+      color: var(--sidebar-item-fg-active, var(--fg-default, oklch(20% 0 0)));
+    }
+
     :host([selected]) .item {
       color: var(--sidebar-item-fg-active, var(--fg-default, oklch(20% 0 0)));
       font-weight: var(--sidebar-item-font-weight-active, var(--font-medium, 500));
@@ -138,11 +144,11 @@ export class TreeItem extends LitElement {
       position: relative;
       display: flex;
       align-self: stretch;
-      inline-size: calc(var(--tree-item-ancestor-rail-count, 0) * var(--tree-indent-step, 16px));
+      inline-size: calc(var(--tree-item-ancestor-rail-count, 0) * var(--tree-item-indent-step));
       min-inline-size: calc(
-        var(--tree-item-ancestor-rail-count, 0) * var(--tree-indent-step, 16px)
+        var(--tree-item-ancestor-rail-count, 0) * var(--tree-item-indent-step)
       );
-      flex: 0 0 calc(var(--tree-item-ancestor-rail-count, 0) * var(--tree-indent-step, 16px));
+      flex: 0 0 calc(var(--tree-item-ancestor-rail-count, 0) * var(--tree-item-indent-step));
     }
 
     .ancestor-rail {
@@ -150,18 +156,18 @@ export class TreeItem extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      inline-size: var(--tree-indent-step, 16px);
-      min-inline-size: var(--tree-indent-step, 16px);
+      inline-size: var(--tree-item-indent-step);
+      min-inline-size: var(--tree-item-indent-step);
       block-size: 100%;
       min-block-size: 100%;
-      flex: 0 0 var(--tree-indent-step, 16px);
+      flex: 0 0 var(--tree-item-indent-step);
       box-sizing: border-box;
     }
 
     .surface {
       position: relative;
       display: grid;
-      grid-template-columns: var(--tree-indent-step, 16px) minmax(0, 1fr);
+      grid-template-columns: var(--tree-item-indent-step) minmax(0, 1fr);
       align-items: center;
       inline-size: 100%;
       min-inline-size: 0;
@@ -171,7 +177,7 @@ export class TreeItem extends LitElement {
     }
 
     .item.has-content-icon .surface {
-      grid-template-columns: var(--tree-indent-step, 16px) 16px minmax(0, 1fr);
+      grid-template-columns: var(--tree-item-indent-step) 16px minmax(0, 1fr);
     }
 
     .surface::before {
@@ -216,11 +222,11 @@ export class TreeItem extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      inline-size: var(--tree-indent-step, 16px);
-      min-inline-size: var(--tree-indent-step, 16px);
+      inline-size: var(--tree-item-indent-step);
+      min-inline-size: var(--tree-item-indent-step);
       block-size: 100%;
       min-block-size: 100%;
-      flex: 0 0 var(--tree-indent-step, 16px);
+      flex: 0 0 var(--tree-item-indent-step);
       box-sizing: border-box;
       grid-column: 1;
     }
@@ -308,6 +314,7 @@ export class TreeItem extends LitElement {
 
     .expand-glyph {
       display: flex;
+      color: currentColor;
       align-items: center;
       justify-content: center;
       inline-size: 16px;
@@ -340,6 +347,7 @@ export class TreeItem extends LitElement {
     .expand-glyph > ui-icon,
     .content-icon > ui-icon {
       display: block;
+      color: currentColor;
       inline-size: 16px;
       min-inline-size: 16px;
       max-inline-size: 16px;
@@ -389,8 +397,8 @@ export class TreeItem extends LitElement {
       display: block;
       inline-size: 100%;
       min-inline-size: 0;
-      font-size: 15px;
-      line-height: var(--line-height-normal, 1.5);
+      font-size: inherit;
+      line-height: inherit;
       text-align: start;
       white-space: nowrap;
       overflow: hidden;
@@ -457,7 +465,11 @@ export class TreeItem extends LitElement {
       .current-slot-indicator,
       .expand-glyph,
       .children {
-        transition-duration: 0.01ms;
+        transition: none;
+      }
+
+      .item:focus-visible {
+        animation: none;
       }
     }
 
@@ -481,8 +493,15 @@ export class TreeItem extends LitElement {
       }
 
       :host([selected]) .current-slot.is-leaf .current-slot-indicator {
-        background: CanvasText;
+        background: HighlightText;
         opacity: 1;
+      }
+
+      :host([selected]) .current-slot.is-branch,
+      :host([selected]) .current-slot.is-branch .expand-glyph,
+      :host([selected]) .current-slot.is-branch .expand-glyph > ui-icon {
+        color: HighlightText;
+        forced-color-adjust: none;
       }
     }
 

@@ -5,124 +5,51 @@ import '../../src/components/ui/search-field/search-field.js';
 import '../../src/components/ui/search-trigger/search-trigger.js';
 import '../../src/components/ui/select/select.js';
 import '../../src/components/ui/textarea/textarea.js';
+import {
+  compositeOver as compositeRgbaOver,
+  contrastRatio as contrastRgbaRatio,
+  resolveComputedColor,
+  type ColorProperty,
+  type Rgba,
+} from './helpers/color-contrast.js';
 import { ensureMainCssLoaded } from './helpers/load-main-css.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
-type Rgb = readonly [number, number, number];
-type Rgba = readonly [number, number, number, number];
-
-const parseColor = (value: string): Rgba => {
-  const oklch = value.match(
-    /^oklch\(\s*(?<l>[0-9.]+)(?<percent>%?)\s+(?<c>[0-9.]+)\s+(?<h>[0-9.]+)(?:\s*\/\s*(?<a>[0-9.]+))?\s*\)$/u,
-  );
-  if (oklch?.groups) {
-    const l = Number(oklch.groups['l']) / (oklch.groups['percent'] === '%' ? 100 : 1);
-    const c = Number(oklch.groups['c']);
-    const a = oklch.groups['a'] === undefined ? 1 : Number(oklch.groups['a']);
-    const h = (Number(oklch.groups['h']) * Math.PI) / 180;
-    const labA = c * Math.cos(h);
-    const labB = c * Math.sin(h);
-    const long = (l + 0.3963377774 * labA + 0.2158037573 * labB) ** 3;
-    const medium = (l - 0.1055613458 * labA - 0.0638541728 * labB) ** 3;
-    const short = (l - 0.0894841775 * labA - 1.291485548 * labB) ** 3;
-    const toEncoded = (linear: number): number => {
-      const encoded =
-        linear <= 0.0031308 ? 12.92 * linear : 1.055 * Math.abs(linear) ** (1 / 2.4) - 0.055;
-      return Math.round(Math.min(Math.max(encoded, 0), 1) * 255);
-    };
-    return [
-      toEncoded(+4.0767416621 * long - 3.3077115913 * medium + 0.2309699292 * short),
-      toEncoded(-1.2684380046 * long + 2.6097574011 * medium - 0.3413193965 * short),
-      toEncoded(-0.0041960863 * long - 0.7034186147 * medium + 1.707614701 * short),
-      a,
-    ];
-  }
-
-  const srgb = value.match(
-    /^color\(\s*srgb\s+(?<r>[0-9.]+)\s+(?<g>[0-9.]+)\s+(?<b>[0-9.]+)(?:\s*\/\s*(?<a>[0-9.]+))?\s*\)$/u,
-  );
-  if (srgb?.groups) {
-    const a = srgb.groups['a'] === undefined ? 1 : Number(srgb.groups['a']);
-    return [
-      Math.round(Number(srgb.groups['r']) * 255),
-      Math.round(Number(srgb.groups['g']) * 255),
-      Math.round(Number(srgb.groups['b']) * 255),
-      a,
-    ];
-  }
-
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  if (!context) {
-    throw new Error('canvas context を作成できません');
-  }
-  context.fillStyle = value;
-  const resolved = context.fillStyle;
-  const hex = resolved.match(/^#(?<r>[0-9a-f]{2})(?<g>[0-9a-f]{2})(?<b>[0-9a-f]{2})$/iu);
-  if (hex?.groups) {
-    const r = hex.groups['r'];
-    const g = hex.groups['g'];
-    const b = hex.groups['b'];
-    if (r === undefined || g === undefined || b === undefined) {
-      throw new Error(`HEX へ解決できません: ${value} => ${resolved}`);
-    }
-    return [Number.parseInt(r, 16), Number.parseInt(g, 16), Number.parseInt(b, 16), 1];
-  }
-  const match = resolved.match(/rgba?\((?<r>\d+),\s*(?<g>\d+),\s*(?<b>\d+)(?:,\s*(?<a>[0-9.]+))?/u);
-  if (!match?.groups) {
-    throw new Error(`RGB へ解決できません: ${value} => ${resolved}`);
-  }
-  return [
-    Number(match.groups['r']),
-    Number(match.groups['g']),
-    Number(match.groups['b']),
-    match.groups['a'] === undefined ? 1 : Number(match.groups['a']),
-  ];
+const toCssColor = (color: Rgba): string => {
+  const r = Math.round(color.r);
+  const g = Math.round(color.g);
+  const b = Math.round(color.b);
+  return color.a === 1 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${color.a})`;
 };
 
-const luminance = ([r, g, b]: Rgb): number => {
-  const toLinear = (channel: number): number => {
-    const normalized = channel / 255;
-    return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
-};
-
-const asRgb = ([r, g, b]: Rgba): Rgb => [r, g, b];
-
-const compositeOver = (foreground: string, background: string): string => {
-  const [fr, fg, fb, fa] = parseColor(foreground);
-  const [br, bg, bb] = parseColor(background);
-  return `rgb(${Math.round(fr * fa + br * (1 - fa))}, ${Math.round(fg * fa + bg * (1 - fa))}, ${Math.round(
-    fb * fa + bb * (1 - fa),
-  )})`;
-};
-
-const contrastRatio = (foreground: string, background: string): number => {
-  const fg = luminance(asRgb(parseColor(foreground)));
-  const bg = luminance(asRgb(parseColor(background)));
-  const lighter = Math.max(fg, bg);
-  const darker = Math.min(fg, bg);
-  return (lighter + 0.05) / (darker + 0.05);
-};
+const resolveTokenColor = (value: string, property: ColorProperty): Rgba =>
+  resolveComputedColor(value, document.documentElement, property);
 
 const getToken = (name: string): string =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 const expectContrast = (label: string, foreground: string, background: string, minimum: number) => {
-  expect(contrastRatio(foreground, background), label).to.be.greaterThanOrEqual(minimum);
+  const foregroundColor = resolveTokenColor(foreground, 'color');
+  const backgroundColor = resolveTokenColor(background, 'background-color');
+
+  expect(foregroundColor.a, `${label} foreground alpha`).to.equal(1);
+  expect(backgroundColor.a, `${label} background alpha`).to.equal(1);
+  expect(contrastRgbaRatio(foregroundColor, backgroundColor), label).to.be.greaterThanOrEqual(
+    minimum,
+  );
 };
 
-const resolveBackgroundColor = (value: string): string => {
-  const probe = document.createElement('div');
-  probe.style.position = 'absolute';
-  probe.style.inset = '-9999px auto auto -9999px';
-  probe.style.backgroundColor = value;
-  document.body.append(probe);
-  const resolved = getComputedStyle(probe).backgroundColor;
-  probe.remove();
-  return resolved;
-};
+const compositeOver = (foreground: string, background: string): string =>
+  toCssColor(
+    compositeRgbaOver(
+      resolveTokenColor(foreground, 'background-color'),
+      resolveTokenColor(background, 'background-color'),
+    ),
+  );
+
+
+const resolveBackgroundColor = (value: string): string =>
+  toCssColor(resolveTokenColor(value, 'background-color'));
 
 describe('color token contrast contract', () => {
   beforeEach(async () => {

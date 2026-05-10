@@ -3,7 +3,11 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { hasDeclarationForSelector, hasDeclarationValueIncluding } from './support/css-contract.js';
+import {
+  hasDeclarationForSelector,
+  hasDeclarationValueIncluding,
+  lacksDeclarationPropertyForSelector,
+} from './support/css-contract.js';
 
 const tokensCss = readFileSync(resolve(process.cwd(), 'src/assets/css/tokens.css'), 'utf8');
 const foundationsDocs = readFileSync(
@@ -16,6 +20,79 @@ const accessibilityDocs = readFileSync(
 );
 
 describe('tokens css contract', () => {
+
+
+  it('defines sidebar active surface through theme-aware surface token', () => {
+    expect(
+      hasDeclarationForSelector(tokensCss, ':root', '--sidebar-item-active-bg', 'var(--bg-surface-active)', {
+        scope: 'base',
+      }),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tokensCss,
+        ':root',
+        '--sidebar-item-font-weight-current-branch',
+        'var(--sidebar-item-font-weight)',
+        { scope: 'base' },
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(tokensCss, ':root', '--sidebar-item-indent-step', 'var(--space-4)', {
+        scope: 'base',
+      }),
+    ).toBe(true);
+    expect(
+      hasDeclarationValueIncluding(
+        tokensCss,
+        ':root',
+        '--sidebar-item-current-branch-indicator-color',
+        'var(--nav-item-indicator-color, var(--primary)) 76%',
+        { scope: 'base' },
+      ),
+    ).toBe(true);
+    expect(tokensCss).not.toContain('--accent-soft');
+  });
+
+  it('keeps sidebar active surface routed through explicit light / dark / system theme paths', () => {
+    expect(
+      hasDeclarationForSelector(tokensCss, ':root', '--bg-surface-active', 'var(--bg-active)', {
+        scope: 'base',
+      }),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tokensCss,
+        ':root',
+        '--bg-active',
+        'oklch(from var(--primary) l c h / 0.15)',
+        { mediaPredicate: (params) => /prefers-color-scheme\s*:\s*dark/u.test(params) },
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tokensCss,
+        ":root[data-theme='dark']",
+        '--bg-active',
+        'oklch(from var(--primary) l c h / 0.15)',
+        { scope: 'base' },
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tokensCss,
+        ":root[data-theme='light']",
+        '--bg-active',
+        'oklch(from var(--primary) l c h / 0.08)',
+        { scope: 'base' },
+      ),
+    ).toBe(true);
+    expect(
+      lacksDeclarationPropertyForSelector(tokensCss, ":root[data-theme='system']", '--bg-active', {
+        scope: 'base',
+      }),
+    ).toBe(true);
+  });
   it('defines the readable TOC token recipe', () => {
     const expectedTokens = [
       ['--note-toc-width', 'clamp(15rem, 18vw, 17rem)'],

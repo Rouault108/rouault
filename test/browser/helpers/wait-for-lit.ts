@@ -10,6 +10,14 @@ export async function waitForLitUpdate(element: LitLikeElement): Promise<void> {
   await Promise.resolve();
 }
 
+export async function waitForStyleRecalc(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve());
+    });
+  });
+}
+
 export async function nextAnimationFrame(): Promise<void> {
   await new Promise<void>((resolve) => {
     requestAnimationFrame(() => {
