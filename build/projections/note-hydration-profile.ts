@@ -60,11 +60,11 @@ export const NOTE_HYDRATION_BUDGET_PROFILES = {
   'testing-code-canary': {
     name: 'testing-code-canary',
     budget: {
-      initial: 1,
+      initial: 3,
       postCommit: 1,
       visible: 2,
       interaction: 0,
-      total: 4,
+      total: 6,
     },
   },
 } as const satisfies Record<NoteHydrationBudgetProfileName, NoteHydrationBudgetProfile>;

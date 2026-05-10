@@ -22,6 +22,38 @@ interface SyntaxCardState {
 const normalizeText = (value: string | null | undefined): string =>
   (value ?? '').replace(/\s+/gu, ' ').trim();
 
+const waitForFirstSyntaxCardHydrated = async (page: Page): Promise<void> => {
+  await page.waitForFunction(() => {
+    const normalize = (value: string | null | undefined): string =>
+      (value ?? '').replace(/\s+/gu, ' ').trim();
+
+    const card = document.querySelector<HTMLElement>('ui-syntax-card');
+    const section = card?.querySelector<HTMLElement>('ui-syntax-section') ?? null;
+    const field = card?.querySelector<HTMLElement>('ui-syntax-field') ?? null;
+
+    const cardName = normalize(
+      card?.shadowRoot?.querySelector<HTMLElement>('.name')?.textContent,
+    );
+    const copyButton = card?.shadowRoot?.querySelector('ui-copy-button.copy-action');
+
+    const sectionTitle = normalize(
+      section?.shadowRoot?.querySelector<HTMLElement>('.section-title')?.textContent,
+    );
+
+    return (
+      card instanceof HTMLElement &&
+      card.shadowRoot !== null &&
+      cardName.length > 0 &&
+      copyButton !== null &&
+      section instanceof HTMLElement &&
+      section.shadowRoot !== null &&
+      sectionTitle.length > 0 &&
+      field instanceof HTMLElement &&
+      field.querySelector('.field-wrapper') !== null
+    );
+  });
+};
+
 const readFirstSyntaxCardState = async (page: Page): Promise<SyntaxCardState> =>
   page.evaluate(() => {
     const normalize = (value: string | null | undefined): string =>
@@ -59,6 +91,7 @@ test.describe('syntax-card family e2e', () => {
     await page.goto(codePath);
 
     await expect(page.locator('ui-syntax-card').first()).toBeVisible();
+    await waitForFirstSyntaxCardHydrated(page);
 
     const state = await readFirstSyntaxCardState(page);
 
@@ -84,6 +117,7 @@ test.describe('syntax-card family e2e', () => {
     await page.reload();
 
     await expect(page.locator('ui-syntax-card').first()).toBeVisible();
+    await waitForFirstSyntaxCardHydrated(page);
 
     const state = await readFirstSyntaxCardState(page);
 

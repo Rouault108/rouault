@@ -607,4 +607,84 @@ describe('rehypeRouaultComponents', () => {
     const checkbox = listItem?.children?.[0];
     expect(checkbox?.tagName).to.equal('ui-checkbox');
   });
+
+  it('ui-syntax-card に hydration directive を付与すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-syntax-card',
+          properties: {
+            kind: 'Method',
+            name: 'useEffect',
+          },
+          children: [],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const syntaxCard = findElement(tree, (node) => node.tagName === 'ui-syntax-card');
+
+    expect(syntaxCard?.tagName).to.equal('ui-syntax-card');
+    expect(syntaxCard?.properties?.['data-hydration-capability']).to.equal('progressive');
+    expect(syntaxCard?.properties?.['data-hydration-trigger']).to.equal('initial');
+  });
+
+  it('syntax-card family では ui-syntax-card のみ hydration root にすること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-syntax-card',
+          properties: {
+            kind: 'Method',
+            name: 'useEffect',
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'ui-syntax-section',
+              properties: {
+                label: '概要',
+              },
+              children: [
+                {
+                  type: 'element',
+                  tagName: 'ui-syntax-field',
+                  properties: {
+                    name: 'effect',
+                  },
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const card = findElement(tree, (node) => node.tagName === 'ui-syntax-card');
+    const section = findElement(tree, (node) => node.tagName === 'ui-syntax-section');
+    const field = findElement(tree, (node) => node.tagName === 'ui-syntax-field');
+
+    expect(card?.tagName).to.equal('ui-syntax-card');
+    expect(section?.tagName).to.equal('ui-syntax-section');
+    expect(field?.tagName).to.equal('ui-syntax-field');
+
+    expect(card?.properties?.['data-hydration-capability']).to.equal('progressive');
+    expect(card?.properties?.['data-hydration-trigger']).to.equal('initial');
+
+    expect(section?.properties?.['data-hydration-capability']).to.equal(undefined);
+    expect(section?.properties?.['data-hydration-trigger']).to.equal(undefined);
+
+    expect(field?.properties?.['data-hydration-capability']).to.equal(undefined);
+    expect(field?.properties?.['data-hydration-trigger']).to.equal(undefined);
+  });
+
 });

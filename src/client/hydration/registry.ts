@@ -50,6 +50,8 @@ const activateLayoutTocController = async ({
   return module.activateLayoutTocController(element);
 };
 
+const loadSyntaxBundle = () => import('../../components/ui/syntax-card/syntax-bundle.js');
+
 export const HYDRATION_REGISTRY = [
   {
     tag: 'ui-skip-link',
@@ -186,17 +188,17 @@ export const HYDRATION_REGISTRY = [
   {
     tag: 'ui-syntax-card',
     kind: 'custom-element',
-    loader: () => import('../../components/ui/syntax-card/syntax-card.js'),
+    loader: loadSyntaxBundle,
   },
   {
     tag: 'ui-syntax-section',
     kind: 'custom-element',
-    loader: () => import('../../components/ui/syntax-card/syntax-section.js'),
+    loader: loadSyntaxBundle,
   },
   {
     tag: 'ui-syntax-field',
     kind: 'custom-element',
-    loader: () => import('../../components/ui/syntax-field/syntax-field.js'),
+    loader: loadSyntaxBundle,
   },
   {
     tag: 'ui-tabs',

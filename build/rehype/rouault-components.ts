@@ -289,6 +289,9 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
     case 'ui-score':
       return { capability: 'progressive', trigger: 'visible' };
 
+    case 'ui-syntax-card':
+      return { capability: 'progressive', trigger: 'initial' };
+
     case 'figure':
       if (
         node.properties?.['data-image'] !== undefined &&
