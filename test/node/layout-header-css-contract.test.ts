@@ -133,8 +133,11 @@ const ruleSelectors = (rule: Rule): string[] =>
 const nearestContainerParams = (node: Node): string | null => {
   let parent = node.parent;
   while (parent !== undefined) {
-    if (parent.type === 'atrule' && parent.name === 'container') {
-      return normalizeWhitespace(parent.params);
+    if (parent.type === 'atrule') {
+      const atRule = parent as AtRule;
+      if (atRule.name === 'container') {
+        return normalizeWhitespace(atRule.params);
+      }
     }
     parent = parent.parent;
   }
@@ -151,7 +154,9 @@ describe('layout-header CSS static contract', () => {
   it('layout-header-shell named container と range syntax だけを使うこと', async () => {
     const root = await readCssRoot();
     const containers: AtRule[] = [];
-    root.walkAtRules('container', (rule) => containers.push(rule));
+    root.walkAtRules('container', (rule) => {
+      containers.push(rule);
+    });
 
     expect(containers.length, '@container が存在すること').to.be.greaterThan(0);
 
