@@ -293,11 +293,17 @@ const assertCanonicalFootnoteRefChildren = (
   errors: string[],
 ): void => {
   const meaningful = getMeaningfulChildren(node);
-  if (meaningful.length !== 1 || !isElementNode(meaningful[0]) || meaningful[0].tagName !== 'sup') {
+  const supCandidate = meaningful[0];
+  if (
+    meaningful.length !== 1 ||
+    supCandidate === undefined ||
+    !isElementNode(supCandidate) ||
+    supCandidate.tagName !== 'sup'
+  ) {
     errors.push('canonical footnote ref は a > sup > text の形でなければなりません');
     return;
   }
-  const sup = meaningful[0];
+  const sup = supCandidate;
   const supMeaningful = getMeaningfulChildren(sup);
   if (supMeaningful.length !== 1 || getTextContent(sup).trim() !== indexText) {
     errors.push(
@@ -327,6 +333,8 @@ const collectCanonicalFootnoteDefinitions = (
 
   if (
     meaningful.length !== 2 ||
+    heading === undefined ||
+    list === undefined ||
     !isElementNode(heading) ||
     heading.tagName !== 'h2' ||
     getAttributeValue(heading, 'id') !== 'footnote-label' ||

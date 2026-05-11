@@ -1070,7 +1070,7 @@ const isFootnotesSection = (node: HastNode): boolean => {
 const isHeadingElement = (node: HastNode): boolean =>
   isElement(node) && typeof node.tagName === 'string' && /^h[1-6]$/u.test(node.tagName);
 
-const getMeaningfulChildEntries = (node: HastNode): Array<{ node: HastNode; index: number }> => {
+const getMeaningfulChildEntries = (node: HastNode): { node: HastNode; index: number }[] => {
   const children = Array.isArray(node.children) ? node.children : [];
   return children
     .map((child, index) => ({ node: child, index }))
@@ -1298,7 +1298,7 @@ const normalizeExistingFootnoteReferenceAttributes = (
   const expectedRole = nextInstance === 1 ? 'primary' : 'secondary';
   const expectedAriaLabel = `脚注 ${expectedIndex} を開く`;
 
-  const existingChecks: Array<[string, string]> = [
+  const existingChecks: [string, string][] = [
     ['id', expectedId],
     ['data-footnote-index', expectedIndex],
     ['data-footnote-ref-instance', String(nextInstance)],
@@ -1322,10 +1322,16 @@ const normalizeExistingFootnoteReferenceAttributes = (
   }
 };
 
+interface StaticFootnoteReference {
+  readonly tagName: string;
+  readonly properties: Record<string, unknown>;
+  readonly children: HastNode[];
+}
+
 const createStaticFootnoteReference = (
   definition: FootnoteDefinition,
   nextInstance: number,
-): Pick<HastNode, 'tagName' | 'properties' | 'children'> => {
+): StaticFootnoteReference => {
   const resolvedIndex = String(definition.index);
   return {
     tagName: 'a',
@@ -1432,14 +1438,15 @@ const toStaticFootnoteReference = (
 
   normalizeExistingFootnoteReferenceAttributes(anchor, definition, nextInstance);
   const staticReference = createStaticFootnoteReference(definition, nextInstance);
+  const staticProperties = { ...staticReference.properties };
 
   node.tagName = staticReference.tagName;
-  node.properties = staticReference.properties;
+  node.properties = staticProperties;
   node.children = staticReference.children;
-  removeFootnoteClassMarkers(node.properties);
-  delete node.properties['aria-describedby'];
-  delete node.properties['ariaDescribedBy'];
-  delete node.properties['ariadescribedby'];
+  removeFootnoteClassMarkers(staticProperties);
+  delete staticProperties['aria-describedby'];
+  delete staticProperties['ariaDescribedBy'];
+  delete staticProperties['ariadescribedby'];
 
   refCounters.set(definition.refId, nextInstance);
   return true;
