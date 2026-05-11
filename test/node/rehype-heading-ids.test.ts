@@ -88,4 +88,37 @@ describe('rehypeHeadingIds', () => {
     const h1Children = h1.children ?? [];
     expect(h1Children).to.have.length(1);
   });
+
+  it('endnotes 内の h2#footnote-label には heading permalink を追加しないこと', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'section',
+          properties: { role: 'doc-endnotes' },
+          children: [
+            {
+              type: 'element',
+              tagName: 'h2',
+              properties: { id: 'footnote-label' },
+              children: [{ type: 'text', value: '脚注' }],
+            },
+            {
+              type: 'element',
+              tagName: 'ol',
+              properties: {},
+              children: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    rehypeHeadingIds()(tree);
+
+    const section = tree.children?.[0];
+    const heading = section?.children?.[0];
+    expect(heading?.children).to.deep.equal([{ type: 'text', value: '脚注' }]);
+  });
 });

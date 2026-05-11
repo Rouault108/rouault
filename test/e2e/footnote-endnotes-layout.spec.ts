@@ -86,7 +86,7 @@ test.describe('footnote endnotes layout contract', () => {
     expect(doubleDigit.targetBackgroundColor).not.toBe('rgba(0, 0, 0, 0)');
   });
 
-  test('TOC の脚注項目と endnotes 冒頭の脚注見出しが h2#footnote-label で一致すること', async ({
+  test('endnotes 冒頭の脚注見出しを表示し、TOC と permalink からは除外すること', async ({
     page,
   }) => {
     await page.goto(footnoteEndnotesLayoutPath);
@@ -95,15 +95,18 @@ test.describe('footnote endnotes layout contract', () => {
     const tocLink = page.locator(
       '[data-layout-toc-nav] a[data-toc-link][data-heading-id="footnote-label"]',
     );
-    await expect(tocLink).toHaveAttribute('href', '#footnote-label');
-    await expect(tocLink.locator('.layout-toc__link-label')).toHaveText('脚注');
+    await expect(tocLink).toHaveCount(0);
 
     const heading = page.locator('section[role="doc-endnotes"] > h2#footnote-label');
     await expect(heading).toHaveText('脚注');
     await expect(heading).toBeVisible();
+    await expect(heading).not.toHaveClass(/sr-only/u);
+    await expect(heading).not.toHaveAttribute('hidden', /.*/u);
+    await expect(heading).not.toHaveAttribute('aria-hidden', 'true');
+    await expect(heading).not.toHaveAttribute('data-hidden', /.*/u);
 
-    const permalink = heading.locator(':scope > a.heading-anchor');
-    await expect(permalink).toHaveAttribute('href', '#footnote-label');
+    await expect(heading.locator(':scope > a.heading-anchor')).toHaveCount(0);
+    await expect(heading.locator(':scope [data-heading-permalink]')).toHaveCount(0);
   });
 
   test('長い URL を含んでも endnotes が mobile viewport を横方向に押し広げないこと', async ({

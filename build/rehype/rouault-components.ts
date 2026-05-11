@@ -9,6 +9,12 @@ import {
 } from '../media/image-resolver.js';
 import { LUCIDE_SUBSET } from '../../src/generated/lucide-subset.js';
 import { type HastNode } from './hast-utils.js';
+import {
+  canonicalizeFootnoteId,
+  createFootnoteRefId,
+  parseFootnoteBackrefHref,
+  parseFootnoteRefHref,
+} from '../../shared/footnotes/footnote-id.js';
 
 interface FootnoteDefinition {
   readonly refId: string;
@@ -302,7 +308,10 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
       return null;
 
     case 'a':
-      if (node.properties?.['data-footnote-ref'] !== undefined) {
+      if (
+        node.properties?.['data-footnote-ref'] === 'true' &&
+        node.properties?.['role'] === 'doc-noteref'
+      ) {
         return { capability: 'progressive', trigger: 'post-commit' };
       }
       return null;
@@ -927,35 +936,100 @@ const toStaticFigureImage = (
   node.children = nextChildren;
 };
 
-const stripHash = (value: string): string => value.replace(/^#/, '');
-const stripUserContentPrefix = (value: string): string => value.replace(/^user-content-/, '');
+const getPropertyString = (
+  properties: Record<string, unknown> | undefined,
+  name: string,
+): string | undefined => pickOptionalString(properties?.[name]);
 
-const normalizeFootnoteId = (value: string, fallbackIndex: number): string => {
-  const trimmed = value.trim();
-  const raw = stripUserContentPrefix(stripHash(trimmed));
-  const compact = raw.replace(/\s+/g, '-');
+const getElementClassList = (node: HastNode): string[] => {
+  const properties = node.properties ?? {};
+  return [...getClassList(properties['className']), ...getClassList(properties['class'])];
+};
 
-  const prefixed = /^fn-(\d+)$/.exec(compact);
-  if (prefixed) {
-    return `fn-${prefixed[1] ?? ''}`;
+const setElementClassList = (
+  properties: Record<string, unknown>,
+  nextClassList: string[],
+): void => {
+  const unique = [...new Set(nextClassList.filter((className) => className.length > 0))];
+  if (unique.length > 0) {
+    properties['className'] = unique;
+  } else {
+    delete properties['className'];
   }
-  const compactFn = /^fn(\d+)$/.exec(compact);
-  if (compactFn) {
-    return `fn-${compactFn[1] ?? ''}`;
-  }
-  const numberOnly = /^(\d+)$/.exec(compact);
-  if (numberOnly) {
-    return `fn-${numberOnly[1] ?? ''}`;
-  }
+  delete properties['class'];
+};
 
-  if (compact.length > 0) {
-    return compact;
+const normalizeMarkerText = (value: unknown): string | null => {
+  if (typeof value === 'boolean') {
+    return value ? 'true' : 'false';
   }
-  return `fn-${String(fallbackIndex)}`;
+  if (typeof value === 'number') {
+    return String(value);
+  }
+  if (typeof value === 'string') {
+    return value.trim().toLowerCase();
+  }
+  return null;
+};
+
+const isFalseFootnoteMarkerValue = (value: unknown): boolean => {
+  const normalized = normalizeMarkerText(value);
+  return (
+    normalized === 'false' || normalized === '0' || normalized === 'off' || normalized === 'no'
+  );
+};
+
+const isTruthyFootnoteMarkerValue = (value: unknown): boolean => {
+  const normalized = normalizeMarkerText(value);
+  if (normalized === null) {
+    return false;
+  }
+  return !isFalseFootnoteMarkerValue(value);
+};
+
+const hasTruthyFootnoteRefDataMarker = (properties: Record<string, unknown>): boolean =>
+  isTruthyFootnoteMarkerValue(properties['dataFootnoteRef']) ||
+  isTruthyFootnoteMarkerValue(properties['data-footnote-ref']);
+
+const hasFalseFootnoteRefDataMarker = (properties: Record<string, unknown>): boolean =>
+  isFalseFootnoteMarkerValue(properties['dataFootnoteRef']) ||
+  isFalseFootnoteMarkerValue(properties['data-footnote-ref']);
+
+const hasTruthyFootnoteBackrefDataMarker = (properties: Record<string, unknown>): boolean =>
+  isTruthyFootnoteMarkerValue(properties['dataFootnoteBackref']) ||
+  isTruthyFootnoteMarkerValue(properties['data-footnote-backref']);
+
+const hasFalseFootnoteBackrefDataMarker = (properties: Record<string, unknown>): boolean =>
+  isFalseFootnoteMarkerValue(properties['dataFootnoteBackref']) ||
+  isFalseFootnoteMarkerValue(properties['data-footnote-backref']);
+
+const deleteFootnoteRefMarkerProperties = (properties: Record<string, unknown>): void => {
+  delete properties['dataFootnoteRef'];
+  delete properties['data-footnote-ref'];
+};
+
+const deleteFootnoteBackrefMarkerProperties = (properties: Record<string, unknown>): void => {
+  delete properties['dataFootnoteBackref'];
+  delete properties['data-footnote-backref'];
+};
+
+const hasFootnoteReferenceClassMarker = (node: HastNode): boolean =>
+  getElementClassList(node).includes('data-footnote-ref');
+
+const hasFootnoteBackrefClassMarker = (node: HastNode): boolean =>
+  getElementClassList(node).includes('data-footnote-backref');
+
+const removeFootnoteClassMarkers = (properties: Record<string, unknown>): void => {
+  setElementClassList(
+    properties,
+    [...getClassList(properties['className']), ...getClassList(properties['class'])].filter(
+      (className) => className !== 'data-footnote-ref' && className !== 'data-footnote-backref',
+    ),
+  );
 };
 
 const parseFootnoteIndexFromText = (value: string): number | null => {
-  const matched = /(\d+)/.exec(value);
+  const matched = /(\d+)/u.exec(value);
   if (!matched) {
     return null;
   }
@@ -965,7 +1039,7 @@ const parseFootnoteIndexFromText = (value: string): number | null => {
 };
 
 const parseFootnoteIndexFromId = (value: string): number | null => {
-  const matched = /fn-(\d+)/.exec(value);
+  const matched = /^fn-(\d+)$/u.exec(value);
   if (!matched) {
     return null;
   }
@@ -974,65 +1048,433 @@ const parseFootnoteIndexFromId = (value: string): number | null => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 };
 
-const hasFootnoteReferenceMarker = (properties: Record<string, unknown>): boolean => {
-  if (
-    toBooleanAttribute(properties['dataFootnoteRef']) ||
-    toBooleanAttribute(properties['data-footnote-ref'])
-  ) {
+const isFootnotesSection = (node: HastNode): boolean => {
+  if (!isElement(node, 'section')) {
+    return false;
+  }
+
+  if (node.properties?.['role'] === 'doc-endnotes') {
     return true;
   }
 
-  const classList = getClassList(properties['className']);
-  return classList.includes('data-footnote-ref');
+  const classList = getElementClassList(node);
+  if (classList.includes('footnotes')) {
+    return true;
+  }
+  return (
+    toBooleanAttribute(node.properties?.['dataFootnotes']) ||
+    toBooleanAttribute(node.properties?.['data-footnotes'])
+  );
 };
 
-const isFootnoteReferenceAnchor = (node: HastNode, allowHrefFallback: boolean): boolean => {
+const isHeadingElement = (node: HastNode): boolean =>
+  isElement(node) && typeof node.tagName === 'string' && /^h[1-6]$/u.test(node.tagName);
+
+const getMeaningfulChildEntries = (node: HastNode): Array<{ node: HastNode; index: number }> => {
+  const children = Array.isArray(node.children) ? node.children : [];
+  return children
+    .map((child, index) => ({ node: child, index }))
+    .filter(({ node: child }) => !isWhitespaceText(child));
+};
+
+const normalizeFootnotesHeadingNode = (headingNode: HastNode): void => {
+  const properties = headingNode.properties ?? {};
+  setElementClassList(
+    properties,
+    [...getClassList(properties['className']), ...getClassList(properties['class'])].filter(
+      (className) => className !== 'sr-only' && className !== 'visually-hidden',
+    ),
+  );
+  delete properties['hidden'];
+  delete properties['aria-hidden'];
+  delete properties['data-hidden'];
+  headingNode.tagName = 'h2';
+  properties['id'] = FOOTNOTES_SECTION_HEADING_ID;
+  headingNode.properties = properties;
+  headingNode.children = [createTextNode(FOOTNOTES_SECTION_LABEL)];
+};
+
+const normalizeFootnotesSectionStructure = (node: HastNode): HastNode => {
+  node.properties ??= {};
+  node.properties['role'] = 'doc-endnotes';
+
+  const meaningful = getMeaningfulChildEntries(node);
+  const headingEntries = meaningful.filter(({ node: child }) => isHeadingElement(child));
+  const olEntries = meaningful.filter(({ node: child }) => isElement(child, 'ol'));
+
+  if (olEntries.length !== 1) {
+    throw new Error('[markdown] footnotes section must contain exactly one direct ol');
+  }
+  if (headingEntries.length > 1) {
+    throw new Error('[markdown] footnotes section must contain at most one direct heading');
+  }
+  if (headingEntries.length === 1 && meaningful.length !== 2) {
+    throw new Error('[markdown] footnotes section must not contain extra meaningful children');
+  }
+  if (headingEntries.length === 0 && meaningful.length !== 1) {
+    throw new Error('[markdown] footnotes section without heading must contain only one direct ol');
+  }
+
+  const olEntry = olEntries[0];
+  if (!olEntry) {
+    throw new Error('[markdown] footnotes section requires a direct ol');
+  }
+  const olNode = olEntry.node;
+
+  let headingNode = headingEntries[0]?.node;
+  if (headingNode) {
+    const headingMeaningfulIndex = meaningful.findIndex((entry) => entry.node === headingNode);
+    const olMeaningfulIndex = meaningful.findIndex((entry) => entry.node === olNode);
+    if (headingMeaningfulIndex + 1 !== olMeaningfulIndex) {
+      throw new Error('[markdown] footnotes heading must be immediately followed by ol');
+    }
+    normalizeFootnotesHeadingNode(headingNode);
+  } else {
+    headingNode = createElement('h2', { id: FOOTNOTES_SECTION_HEADING_ID }, [
+      createTextNode(FOOTNOTES_SECTION_LABEL),
+    ]);
+  }
+
+  const olProperties = olNode.properties ?? {};
+  delete olProperties['start'];
+  delete olProperties['reversed'];
+  delete olProperties['data-marker-digits'];
+  delete olProperties['data-ol-depth'];
+  delete olProperties['data-ol-index'];
+  delete olProperties['style'];
+  olNode.properties = olProperties;
+
+  if (Array.isArray(olNode.children)) {
+    for (const item of olNode.children) {
+      if (!isElement(item, 'li')) {
+        continue;
+      }
+      item.properties ??= {};
+      delete item.properties['value'];
+      delete item.properties['data-ol-depth'];
+      delete item.properties['data-ol-index'];
+      delete item.properties['data-marker-digits'];
+      delete item.properties['style'];
+    }
+  }
+
+  node.children = [headingNode, olNode];
+  return olNode;
+};
+
+const collectDocumentIds = (
+  node: HastNode,
+  ids = new Map<string, HastNode>(),
+): Map<string, HastNode> => {
+  if (isElement(node)) {
+    const id = getPropertyString(node.properties, 'id');
+    if (id) {
+      if (ids.has(id)) {
+        throw new Error(`[markdown] duplicate id "${id}" is not allowed`);
+      }
+      ids.set(id, node);
+    }
+  }
+
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) {
+      collectDocumentIds(child, ids);
+    }
+  }
+
+  return ids;
+};
+
+const collectFootnoteDefinitions = (
+  node: HastNode,
+  definitions: Map<string, FootnoteDefinition>,
+  sectionCount: { value: number },
+): void => {
+  if (isFootnotesSection(node)) {
+    sectionCount.value += 1;
+    if (sectionCount.value > 1) {
+      throw new Error('[markdown] section[role="doc-endnotes"] must be unique');
+    }
+
+    const listNode = normalizeFootnotesSectionStructure(node);
+    if (Array.isArray(listNode.children)) {
+      let listIndex = 0;
+      for (const item of listNode.children) {
+        if (!isElement(item, 'li')) {
+          continue;
+        }
+
+        listIndex += 1;
+        item.properties ??= {};
+        const rawId = getPropertyString(item.properties, 'id');
+        if (rawId === undefined) {
+          throw new Error('[markdown] footnote definition li requires id');
+        }
+        const refId = canonicalizeFootnoteId(rawId);
+        if (refId === null) {
+          throw new Error(`[markdown] invalid footnote definition id "${rawId}"`);
+        }
+        if (definitions.has(refId)) {
+          throw new Error(`[markdown] duplicate footnote definition id "${refId}"`);
+        }
+        const resolvedIndex = parseFootnoteIndexFromId(refId) ?? listIndex;
+        item.properties['id'] = refId;
+        definitions.set(refId, {
+          refId,
+          index: resolvedIndex,
+          itemNode: item,
+        });
+      }
+    }
+  }
+
+  if (!Array.isArray(node.children)) {
+    return;
+  }
+  for (const child of node.children) {
+    collectFootnoteDefinitions(child, definitions, sectionCount);
+  }
+};
+
+const resolveAnchorFootnoteTarget = (
+  anchor: HastNode,
+  definitions: Map<string, FootnoteDefinition>,
+  explicit: boolean,
+): string | null => {
+  const properties = anchor.properties ?? {};
+  const href = getPropertyString(properties, 'href');
+  const dataFootnoteId =
+    getPropertyString(properties, 'data-footnote-id') ??
+    getPropertyString(properties, 'dataFootnoteId');
+  let hrefTarget: string | null = null;
+
+  if (href) {
+    const parsed = parseFootnoteRefHref(href);
+    if (parsed.kind === 'invalid') {
+      if (explicit) {
+        throw new Error(`[markdown] invalid footnote reference href "${href}"`);
+      }
+      return null;
+    }
+    if (parsed.kind === 'canonical') {
+      hrefTarget = parsed.footnoteId;
+    } else if (explicit) {
+      throw new Error('[markdown] explicit footnote reference requires a footnote href');
+    }
+  }
+
+  const dataTarget = dataFootnoteId ? canonicalizeFootnoteId(dataFootnoteId) : null;
+  if (dataFootnoteId && dataTarget === null) {
+    throw new Error(`[markdown] invalid data-footnote-id "${dataFootnoteId}"`);
+  }
+  if (hrefTarget && dataTarget && hrefTarget !== dataTarget) {
+    throw new Error('[markdown] footnote reference href and data-footnote-id disagree');
+  }
+
+  const target = hrefTarget ?? dataTarget;
+  if (target === null) {
+    if (explicit) {
+      throw new Error('[markdown] explicit footnote reference requires href or data-footnote-id');
+    }
+    return null;
+  }
+  if (!definitions.has(target)) {
+    if (explicit) {
+      throw new Error(`[markdown] footnote definition "${target}" was not found`);
+    }
+    return null;
+  }
+  return target;
+};
+
+const normalizeExistingFootnoteReferenceAttributes = (
+  anchor: HastNode,
+  definition: FootnoteDefinition,
+  nextInstance: number,
+): void => {
+  const properties = anchor.properties ?? {};
+  const expectedId = createFootnoteRefId(definition.refId, nextInstance);
+  const expectedIndex = String(definition.index);
+  const expectedRole = nextInstance === 1 ? 'primary' : 'secondary';
+  const expectedAriaLabel = `脚注 ${expectedIndex} を開く`;
+
+  const existingChecks: Array<[string, string]> = [
+    ['id', expectedId],
+    ['data-footnote-index', expectedIndex],
+    ['data-footnote-ref-instance', String(nextInstance)],
+    ['data-footnote-role', expectedRole],
+    ['role', 'doc-noteref'],
+    ['aria-label', expectedAriaLabel],
+    ['data-hydration-key', 'footnote-popover-enhancer'],
+    ['data-hydration-capability', 'progressive'],
+    ['data-hydration-trigger', 'post-commit'],
+  ];
+  for (const [name, expected] of existingChecks) {
+    const current = getPropertyString(properties, name);
+    if (current !== undefined && current !== expected) {
+      throw new Error(`[markdown] footnote reference ${name} conflicts with canonical value`);
+    }
+  }
+
+  const visibleIndex = parseFootnoteIndexFromText(getTextContent(anchor));
+  if (visibleIndex !== null && visibleIndex !== definition.index) {
+    throw new Error('[markdown] footnote reference visible label conflicts with definition index');
+  }
+};
+
+const createStaticFootnoteReference = (
+  definition: FootnoteDefinition,
+  nextInstance: number,
+): Pick<HastNode, 'tagName' | 'properties' | 'children'> => {
+  const resolvedIndex = String(definition.index);
+  return {
+    tagName: 'a',
+    properties: {
+      id: createFootnoteRefId(definition.refId, nextInstance),
+      href: `#${definition.refId}`,
+      role: 'doc-noteref',
+      'aria-label': `脚注 ${resolvedIndex} を開く`,
+      'data-footnote-ref': 'true',
+      'data-footnote-id': definition.refId,
+      'data-footnote-index': resolvedIndex,
+      'data-footnote-ref-instance': String(nextInstance),
+      'data-footnote-role': nextInstance === 1 ? 'primary' : 'secondary',
+      'data-hydration-key': 'footnote-popover-enhancer',
+      'data-hydration-capability': 'progressive',
+      'data-hydration-trigger': 'post-commit',
+    },
+    children: [createElement('sup', {}, [createTextNode(resolvedIndex)])],
+  };
+};
+
+const isExplicitFootnoteReferenceAnchor = (node: HastNode): boolean => {
   if (!isElement(node, 'a')) {
     return false;
   }
-
   const properties = node.properties ?? {};
-  if (hasFootnoteReferenceMarker(properties)) {
-    return true;
+  if (hasFalseFootnoteRefDataMarker(properties)) {
+    if (properties['role'] === 'doc-noteref' || hasFootnoteReferenceClassMarker(node)) {
+      throw new Error(
+        '[markdown] false-valued footnote ref marker conflicts with structural marker',
+      );
+    }
+    deleteFootnoteRefMarkerProperties(properties);
+    return false;
   }
-  if (!allowHrefFallback) {
+  return (
+    hasTruthyFootnoteRefDataMarker(properties) ||
+    properties['role'] === 'doc-noteref' ||
+    hasFootnoteReferenceClassMarker(node)
+  );
+};
+
+const getSingleFootnoteCandidateAnchorFromSup = (node: HastNode): HastNode | null => {
+  if (!isElement(node, 'sup') || !Array.isArray(node.children)) {
+    return null;
+  }
+
+  const meaningful = node.children.filter((child) => !isWhitespaceText(child));
+  const anchors = meaningful.filter((child) => isElement(child, 'a'));
+  const candidateAnchors = anchors.filter((anchor) => {
+    const properties = anchor.properties ?? {};
+    if (hasFalseFootnoteRefDataMarker(properties)) {
+      deleteFootnoteRefMarkerProperties(properties);
+      return false;
+    }
+    if (isExplicitFootnoteReferenceAnchor(anchor)) {
+      return true;
+    }
+    const href = getPropertyString(properties, 'href');
+    if (!href) {
+      return false;
+    }
+    const parsed = parseFootnoteRefHref(href);
+    return parsed.kind === 'canonical';
+  });
+
+  if (candidateAnchors.length === 0) {
+    return null;
+  }
+  if (meaningful.length !== 1 || candidateAnchors.length !== 1) {
+    throw new Error('[markdown] footnote sup wrapper must contain exactly one footnote anchor');
+  }
+
+  return candidateAnchors[0] ?? null;
+};
+
+const toStaticFootnoteReference = (
+  node: HastNode,
+  definitions: Map<string, FootnoteDefinition>,
+  refCounters: Map<string, number>,
+): boolean => {
+  const anchor =
+    getSingleFootnoteCandidateAnchorFromSup(node) ?? (isElement(node, 'a') ? node : null);
+  if (!anchor || !isElement(anchor, 'a')) {
     return false;
   }
 
-  const href = pickOptionalString(properties['href']);
-  if (!href) {
+  const explicit = isExplicitFootnoteReferenceAnchor(anchor);
+  const isSupFallback = isElement(node, 'sup');
+  if (!explicit && !isSupFallback) {
     return false;
   }
 
-  const target = stripUserContentPrefix(stripHash(href));
-  return target.startsWith('fn-');
+  const target = resolveAnchorFootnoteTarget(anchor, definitions, explicit);
+  if (target === null) {
+    return false;
+  }
+
+  const definition = definitions.get(target);
+  if (!definition) {
+    return false;
+  }
+  const nextInstance = (refCounters.get(definition.refId) ?? 0) + 1;
+
+  normalizeExistingFootnoteReferenceAttributes(anchor, definition, nextInstance);
+  const staticReference = createStaticFootnoteReference(definition, nextInstance);
+
+  node.tagName = staticReference.tagName;
+  node.properties = staticReference.properties;
+  node.children = staticReference.children;
+  removeFootnoteClassMarkers(node.properties);
+  delete node.properties['aria-describedby'];
+  delete node.properties['ariaDescribedBy'];
+  delete node.properties['ariadescribedby'];
+
+  refCounters.set(definition.refId, nextInstance);
+  return true;
 };
 
 const isFootnoteBackrefAnchor = (node: HastNode): boolean => {
   if (!isElement(node, 'a')) {
     return false;
   }
-
   const properties = node.properties ?? {};
-  if (
-    toBooleanAttribute(properties['dataFootnoteBackref']) ||
-    toBooleanAttribute(properties['data-footnote-backref'])
-  ) {
-    return true;
+  const hasExplicitBackrefMarker =
+    hasTruthyFootnoteBackrefDataMarker(properties) ||
+    properties['role'] === 'doc-backlink' ||
+    hasFootnoteBackrefClassMarker(node);
+  const href = getPropertyString(properties, 'href');
+
+  if (hasExplicitBackrefMarker) {
+    if (!href) {
+      throw new Error('[markdown] explicit footnote backref marker requires href');
+    }
+    const parsed = parseFootnoteBackrefHref(href);
+    if (parsed.kind === 'canonical' || parsed.kind === 'legacy-user-content-fnref') {
+      return true;
+    }
+    throw new Error(`[markdown] invalid footnote backref href "${href}"`);
   }
 
-  const classList = getClassList(properties['className']);
-  if (classList.includes('data-footnote-backref')) {
-    return true;
-  }
-
-  const href = pickOptionalString(properties['href']);
   if (!href) {
     return false;
   }
-
-  const target = stripUserContentPrefix(stripHash(href));
-  return /-ref-\d+$/.test(target);
+  const parsed = parseFootnoteBackrefHref(href);
+  if (parsed.kind === 'invalid') {
+    throw new Error(`[markdown] invalid footnote backref href "${href}"`);
+  }
+  return parsed.kind === 'canonical' || parsed.kind === 'legacy-user-content-fnref';
 };
 
 const cloneWithoutFootnoteBackrefs = (node: HastNode): HastNode | null => {
@@ -1058,6 +1500,14 @@ const cloneWithoutFootnoteBackrefs = (node: HastNode): HastNode | null => {
   }
   if (node.properties !== undefined) {
     clonedNode.properties = { ...node.properties };
+    if (isElement(clonedNode, 'a')) {
+      if (hasFalseFootnoteRefDataMarker(clonedNode.properties)) {
+        deleteFootnoteRefMarkerProperties(clonedNode.properties);
+      }
+      if (hasFalseFootnoteBackrefDataMarker(clonedNode.properties)) {
+        deleteFootnoteBackrefMarkerProperties(clonedNode.properties);
+      }
+    }
   }
   if (clonedChildren !== undefined) {
     clonedNode.children = clonedChildren;
@@ -1079,9 +1529,9 @@ const createFootnoteBackrefAnchor = (refId: string, refInstance: number): HastNo
   type: 'element',
   tagName: 'a',
   properties: {
-    href: `#${refId}-ref-${String(refInstance)}`,
+    href: `#${createFootnoteRefId(refId, refInstance)}`,
     role: 'doc-backlink',
-    'data-footnote-backref': true,
+    'data-footnote-backref': 'true',
     'aria-label': `脚注参照 ${String(refInstance)} に戻る`,
   },
   children: [
@@ -1092,189 +1542,50 @@ const createFootnoteBackrefAnchor = (refId: string, refInstance: number): HastNo
   ],
 });
 
+const appendFootnoteBackrefs = (targetNode: HastNode, refId: string, refCount: number): void => {
+  targetNode.children ??= [];
+  for (let refInstance = 1; refInstance <= refCount; refInstance += 1) {
+    const lastChild = targetNode.children[targetNode.children.length - 1];
+    if (lastChild !== undefined && !isWhitespaceText(lastChild)) {
+      targetNode.children.push(createTextNode(' '));
+    } else if (refInstance > 1) {
+      targetNode.children.push(createTextNode(' '));
+    }
+    targetNode.children.push(createFootnoteBackrefAnchor(refId, refInstance));
+  }
+};
+
+const findBackrefInsertionTarget = (itemNode: HastNode): HastNode => {
+  const directParagraphs = Array.isArray(itemNode.children)
+    ? itemNode.children.filter(
+        (child) => isElement(child, 'p') && hasMeaningfulChildren(child.children ?? []),
+      )
+    : [];
+  return directParagraphs[directParagraphs.length - 1] ?? itemNode;
+};
+
 const synchronizeFootnoteBackrefs = (
   definitions: Map<string, FootnoteDefinition>,
   refCounters: Map<string, number>,
 ): void => {
   for (const definition of definitions.values()) {
-    const refCount = refCounters.get(definition.refId) ?? 1;
+    const refCount = refCounters.get(definition.refId) ?? 0;
     const contentNodes = (definition.itemNode.children ?? [])
       .map((contentNode) => cloneWithoutFootnoteBackrefs(contentNode))
       .filter((contentNode): contentNode is HastNode => contentNode !== null);
 
     definition.itemNode.children = contentNodes;
 
-    for (let refInstance = 1; refInstance <= refCount; refInstance += 1) {
-      definition.itemNode.children.push({
-        type: 'text',
-        value: ' ',
-      });
-      definition.itemNode.children.push(createFootnoteBackrefAnchor(definition.refId, refInstance));
+    if (refCount <= 0) {
+      continue;
     }
-  }
-};
 
-const isFootnotesSection = (node: HastNode): boolean => {
-  if (!isElement(node, 'section')) {
-    return false;
-  }
-
-  const classList = getClassList(node.properties?.['className']);
-  if (classList.includes('footnotes')) {
-    return true;
-  }
-  return (
-    toBooleanAttribute(node.properties?.['dataFootnotes']) ||
-    toBooleanAttribute(node.properties?.['data-footnotes'])
-  );
-};
-
-const isHeadingElement = (node: HastNode): boolean =>
-  isElement(node) && typeof node.tagName === 'string' && /^h[1-6]$/.test(node.tagName);
-
-const normalizeFootnotesSectionHeading = (node: HastNode): void => {
-  const children = Array.isArray(node.children) ? node.children : [];
-  const headingIndex = children.findIndex((child) => isHeadingElement(child));
-  const headingNode = headingIndex >= 0 ? children[headingIndex] : undefined;
-
-  if (headingNode) {
-    const properties = headingNode.properties ?? {};
-    const classList = getClassList(properties['className']).filter(
-      (className) => className !== 'sr-only',
+    appendFootnoteBackrefs(
+      findBackrefInsertionTarget(definition.itemNode),
+      definition.refId,
+      refCount,
     );
-
-    if (classList.length > 0) {
-      properties['className'] = classList;
-    } else {
-      delete properties['className'];
-    }
-
-    headingNode.tagName = 'h2';
-    properties['id'] = FOOTNOTES_SECTION_HEADING_ID;
-    headingNode.properties = properties;
-    headingNode.children = [createTextNode(FOOTNOTES_SECTION_LABEL)];
-
-    node.children = [
-      headingNode,
-      ...children.filter((_, index) => index !== headingIndex),
-    ];
-    return;
   }
-
-  node.children = [
-    createElement(
-      'h2',
-      {
-        id: FOOTNOTES_SECTION_HEADING_ID,
-      },
-      [createTextNode(FOOTNOTES_SECTION_LABEL)],
-    ),
-    ...children,
-  ];
-};
-
-const collectFootnoteDefinitions = (
-  node: HastNode,
-  definitions: Map<string, FootnoteDefinition>,
-): void => {
-  if (isFootnotesSection(node)) {
-    node.properties ??= {};
-    if (!pickOptionalString(node.properties['role'])) {
-      node.properties['role'] = 'doc-endnotes';
-    }
-    normalizeFootnotesSectionHeading(node);
-
-    const listNode =
-      (node.children ?? []).find((child): child is HastNode => isElement(child, 'ol')) ?? null;
-    if (listNode && Array.isArray(listNode.children)) {
-      let listIndex = 0;
-      for (const item of listNode.children) {
-        if (!isElement(item, 'li')) {
-          continue;
-        }
-
-        listIndex += 1;
-        item.properties ??= {};
-        const rawId = pickOptionalString(item.properties['id']) ?? `fn-${String(listIndex)}`;
-        const refId = normalizeFootnoteId(rawId, listIndex);
-        const resolvedIndex = parseFootnoteIndexFromId(refId) ?? listIndex;
-        item.properties['id'] = refId;
-
-        if (!definitions.has(refId)) {
-          definitions.set(refId, {
-            refId,
-            index: resolvedIndex,
-            itemNode: item,
-          });
-        }
-      }
-    }
-  }
-
-  if (!Array.isArray(node.children)) {
-    return;
-  }
-  for (const child of node.children) {
-    collectFootnoteDefinitions(child, definitions);
-  }
-};
-
-const resolveFootnoteReferenceAnchor = (node: HastNode): HastNode | null => {
-  if (isElement(node, 'sup') && Array.isArray(node.children)) {
-    const candidates = node.children.filter((child) => !isWhitespaceText(child));
-    if (candidates.length !== 1) {
-      return null;
-    }
-    const [anchor] = candidates;
-    if (!anchor) {
-      return null;
-    }
-    return isFootnoteReferenceAnchor(anchor, true) ? anchor : null;
-  }
-
-  return null;
-};
-
-const toStaticFootnoteReference = (
-  node: HastNode,
-  definitions: Map<string, FootnoteDefinition>,
-  refCounters: Map<string, number>,
-): boolean => {
-  const anchor = resolveFootnoteReferenceAnchor(node);
-  if (!anchor) {
-    return false;
-  }
-
-  const href = pickOptionalString(anchor.properties?.['href']);
-  if (!href) {
-    return false;
-  }
-
-  const anchorTextIndex = parseFootnoteIndexFromText(getTextContent(anchor));
-  const fallbackIndex = anchorTextIndex ?? 1;
-  const refId = normalizeFootnoteId(href, fallbackIndex);
-  const definition = definitions.get(refId);
-  const resolvedIndex = definition?.index ?? parseFootnoteIndexFromId(refId) ?? fallbackIndex;
-  const nextInstance = (refCounters.get(refId) ?? 0) + 1;
-  refCounters.set(refId, nextInstance);
-
-  node.tagName = 'a';
-  node.properties = {
-    id: `${refId}-ref-${String(nextInstance)}`,
-    href: `#${refId}`,
-    role: 'doc-noteref',
-    'data-footnote-ref': 'true',
-    'data-footnote-id': refId,
-    'data-footnote-index': String(resolvedIndex),
-    'data-footnote-ref-instance': String(nextInstance),
-    'data-footnote-role': nextInstance === 1 ? 'primary' : 'secondary',
-    'data-hydration-key': 'footnote-popover-enhancer',
-    'data-hydration-capability': 'progressive',
-    'data-hydration-trigger': 'post-commit',
-    'aria-label': `脚注 ${String(resolvedIndex)} を開く`,
-  };
-  node.children = [createElement('sup', {}, [createTextNode(String(resolvedIndex))])];
-  return true;
 };
 
 /**
@@ -1284,7 +1595,7 @@ export function rehypeRouaultComponents() {
   return (tree: unknown, file?: VFileLike) => {
     const footnoteDefinitions = new Map<string, FootnoteDefinition>();
     if (tree && typeof tree === 'object') {
-      collectFootnoteDefinitions(tree as HastNode, footnoteDefinitions);
+      collectFootnoteDefinitions(tree as HastNode, footnoteDefinitions, { value: 0 });
     }
     const footnoteRefCounters = new Map<string, number>();
     const imageContext: ImageNormalizationContext = { eagerImageCount: 0 };
@@ -1308,6 +1619,19 @@ export function rehypeRouaultComponents() {
         return;
       }
 
+      if (isElement(current, 'a')) {
+        const properties = current.properties ?? {};
+        if (hasFalseFootnoteBackrefDataMarker(properties)) {
+          if (properties['role'] === 'doc-backlink' || hasFootnoteBackrefClassMarker(current)) {
+            throw new Error(
+              '[markdown] false-valued footnote backref marker conflicts with structural marker',
+            );
+          }
+          deleteFootnoteBackrefMarkerProperties(properties);
+          current.properties = properties;
+        }
+      }
+
       if (current.tagName === 'table' || current.tagName === 'ui-table') {
         toStaticTable(current);
 
@@ -1327,6 +1651,21 @@ export function rehypeRouaultComponents() {
           setHydrationDirective(current, hydrationDirective);
         }
         return;
+      }
+
+      if (isElement(current, 'sup')) {
+        const footnoteTransformed = toStaticFootnoteReference(
+          current,
+          footnoteDefinitions,
+          footnoteRefCounters,
+        );
+        if (footnoteTransformed) {
+          const hydrationDirective = resolveHydrationDirective(current);
+          if (hydrationDirective) {
+            setHydrationDirective(current, hydrationDirective);
+          }
+          return;
+        }
       }
 
       if (Array.isArray(current.children)) {
@@ -1379,6 +1718,9 @@ export function rehypeRouaultComponents() {
 
     visit(tree);
     synchronizeFootnoteBackrefs(footnoteDefinitions, footnoteRefCounters);
+    if (tree && typeof tree === 'object') {
+      collectDocumentIds(tree as HastNode);
+    }
   };
 }
 

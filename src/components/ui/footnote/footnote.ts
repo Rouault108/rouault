@@ -3,6 +3,10 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import type { UiPopover } from '../popover/popover.js';
 import '../popover/popover.js';
+import {
+  canonicalizeFootnoteId,
+  createFootnoteRefId,
+} from '../../../../shared/footnotes/footnote-id.js';
 
 interface ImportMetaEnvLike {
   DEV?: boolean;
@@ -104,6 +108,9 @@ ui-footnote .footnote-list-link {
   font-weight: var(--font-medium, 500);
   letter-spacing: var(--tracking-wide, 0.02em);
   text-decoration: none;
+  text-underline-offset: 0.14em;
+  text-decoration-thickness: var(--border-width, 1px);
+  border-radius: var(--radius-sm, 4px);
 }
 
 ui-footnote .footnote-list-link:hover,
@@ -125,15 +132,13 @@ ui-footnote .sr-only {
   white-space: nowrap;
 }
 
-section[role='doc-endnotes'],
-section.footnotes {
+section[role='doc-endnotes'] {
   margin-block-start: var(--space-16, 64px);
   padding-block-start: var(--space-8, 32px);
   border-block-start: var(--border-width, 1px) solid var(--border-default, oklch(86% 0 0));
 }
 
-section[role='doc-endnotes'] > h2#footnote-label,
-section.footnotes > h2#footnote-label {
+section[role='doc-endnotes'] > h2#footnote-label {
   margin: 0;
   margin-block-end: var(--space-4, 16px);
   font-size: var(--reading-h3-size);
@@ -142,49 +147,44 @@ section.footnotes > h2#footnote-label {
   color: var(--fg-muted, var(--reading-h3-color));
 }
 
-section[role='doc-endnotes'] ol,
-section.footnotes ol {
+section[role='doc-endnotes'] ol {
   list-style-position: outside;
   margin: 0;
   padding-inline-start: max(var(--space-5, 20px), 2.5ch);
 }
 
-section[role='doc-endnotes'] li,
-section.footnotes li {
+section[role='doc-endnotes'] li {
   margin-block-end: var(--space-3, 12px);
   color: var(--fg-default, oklch(20% 0 0));
   font-size: var(--text-sm, 13px);
 }
 
-section[role='doc-endnotes'] li > :first-child,
-section.footnotes li > :first-child {
+section[role='doc-endnotes'] li > :first-child {
   margin-block-start: 0;
 }
 
-section[role='doc-endnotes'] li > :last-child,
-section.footnotes li > :last-child {
+section[role='doc-endnotes'] li > :last-child {
   margin-block-end: 0;
 }
 
 section[role='doc-endnotes'] li:target,
-section[role='doc-endnotes'] li[data-router-hash-target='true'],
-section.footnotes li[data-router-hash-target='true'],
-section.footnotes li:target {
+section[role='doc-endnotes'] li[data-router-hash-target='true'] {
   background-color: var(--bg-highlight-subtle, oklch(96% 0.04 65));
   border-radius: var(--radius-sm, 4px);
 }
 
-section[role='doc-endnotes'] a[data-footnote-backref],
-section.footnotes a[data-footnote-backref] {
+section[role='doc-endnotes'] a[data-footnote-backref='true'][role='doc-backlink'] {
   color: var(--fg-muted, oklch(48% 0 0));
   text-decoration: none;
+  text-underline-offset: 0.14em;
+  text-decoration-thickness: var(--border-width, 1px);
+  border-radius: var(--radius-sm, 4px);
 }
 
-section[role='doc-endnotes'] a[data-footnote-backref]:hover,
-section[role='doc-endnotes'] a[data-footnote-backref]:focus-visible,
-section.footnotes a[data-footnote-backref]:hover,
-section.footnotes a[data-footnote-backref]:focus-visible {
+section[role='doc-endnotes'] a[data-footnote-backref='true'][role='doc-backlink']:hover,
+section[role='doc-endnotes'] a[data-footnote-backref='true'][role='doc-backlink']:focus-visible {
   color: var(--primary, oklch(56% 0.16 252));
+  text-decoration: underline;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -198,8 +198,7 @@ section.footnotes a[data-footnote-backref]:focus-visible {
     color: LinkText;
   }
 
-  section[role='doc-endnotes'],
-  section.footnotes {
+  section[role='doc-endnotes'] {
     border-block-start: 1px solid CanvasText;
   }
 }
@@ -281,16 +280,28 @@ export class Footnote extends LitElement {
     return isPositiveInteger(normalized) ? normalized : 1;
   }
 
+  private get _hasValidRefInstance(): boolean {
+    const normalized = Math.trunc(this.refInstance);
+    return isPositiveInteger(normalized);
+  }
+
   private get _resolvedRefId(): string {
-    return this.refId.trim();
+    return canonicalizeFootnoteId(this.refId) ?? '';
+  }
+
+  private get _hasCanonicalFootnoteTarget(): boolean {
+    return this._resolvedRefId !== '' && this._hasValidRefInstance;
   }
 
   private get _resolvedBaseId(): string {
-    return this._resolvedRefId === '' ? this._fallbackBaseId : this._resolvedRefId;
+    return this._hasCanonicalFootnoteTarget ? this._resolvedRefId : this._fallbackBaseId;
   }
 
   private get _resolvedTriggerId(): string {
-    return `${this._resolvedBaseId}-ref-${String(this._resolvedRefInstance)}`;
+    if (!this._hasCanonicalFootnoteTarget) {
+      return `${this._fallbackBaseId}-trigger`;
+    }
+    return createFootnoteRefId(this._resolvedRefId, this._resolvedRefInstance);
   }
 
   private get _resolvedPopoverId(): string {
@@ -306,7 +317,7 @@ export class Footnote extends LitElement {
   }
 
   private get _resolvedHref(): string {
-    return this._resolvedRefId === '' ? '#' : `#${this._resolvedRefId}`;
+    return this._hasCanonicalFootnoteTarget ? `#${this._resolvedRefId}` : '#';
   }
 
   private get _supportsPopoverApi(): boolean {
@@ -327,7 +338,7 @@ export class Footnote extends LitElement {
     if (refId === '') return [];
     const root = this._getScopeRoot();
     return Array.from(root.querySelectorAll<Footnote>('ui-footnote')).filter(
-      (footnote) => footnote.refId.trim() === refId,
+      (footnote) => footnote._resolvedRefId === refId,
     );
   }
 
@@ -390,16 +401,14 @@ export class Footnote extends LitElement {
   }
 
   private _getScopeEndnotes(): HTMLElement | null {
-    return this._getScopeRoot().querySelector<HTMLElement>(
-      'section.footnotes[role="doc-endnotes"]',
-    );
+    return this._getScopeRoot().querySelector<HTMLElement>('section[role="doc-endnotes"]');
   }
 
   private _getScopeEndnoteItem(refId: string): HTMLElement | null {
     if (refId === '') return null;
-    const endnotes = this._getScopeEndnotes();
-    if (!endnotes) return null;
-    return endnotes.querySelector<HTMLElement>(`#${escapeCssIdentifier(refId)}`);
+    return this._getScopeRoot().querySelector<HTMLElement>(
+      `section[role="doc-endnotes"] > h2#footnote-label + ol > li#${escapeCssIdentifier(refId)}`,
+    );
   }
 
   private _runDiagnostics(): void {
@@ -441,7 +450,7 @@ export class Footnote extends LitElement {
     if (!isPositiveInteger(this.refInstance)) {
       this._warnDiagnostic(
         'invalid-ref-instance',
-        'refInstance は正の整数で指定してください。現在は縮退表示として 1 を使用しています。',
+        'refInstance は正の整数で指定してください。canonical group には参加せず、fallback trigger id と href="#" に縮退します。',
       );
     }
 
@@ -485,7 +494,7 @@ export class Footnote extends LitElement {
     if (!endnotes) {
       this._warnDiagnostic(
         'missing-endnotes',
-        '同一 scope 内に section.footnotes[role="doc-endnotes"] が必要です。',
+        '同一 scope 内に section[role="doc-endnotes"] が必要です。',
       );
       return;
     }
@@ -500,7 +509,7 @@ export class Footnote extends LitElement {
     }
 
     if (refId !== '' && endnoteItem) {
-      const backlinkSelector = `a[data-footnote-backref][href="#${escapeCssIdentifier(this._resolvedTriggerId)}"]`;
+      const backlinkSelector = `a[data-footnote-backref="true"][role="doc-backlink"][href="#${escapeCssIdentifier(this._resolvedTriggerId)}"]`;
       if (!endnoteItem.querySelector(backlinkSelector)) {
         this._warnDiagnostic(
           'missing-backlink',
@@ -514,11 +523,19 @@ export class Footnote extends LitElement {
     const refId = this._resolvedRefId;
     if (refId === '') return null;
 
-    const root = this._getScopeRoot();
-    const ownerSelector = `ui-footnote[ref-id="${escapeCssIdentifier(refId)}"]:not([shared])`;
-    const host = root.querySelector<HTMLElement>(
-      `${ownerSelector} ui-popover[data-part="popover-host"]`,
-    );
+    const owners = this._getScopeFootnotes(refId).filter((footnote) => !footnote.shared);
+    if (owners.length !== 1) {
+      if (owners.length > 1) {
+        this._warnDiagnostic(
+          'multiple-shared-popover-owners',
+          `refId="${refId}" の shared popover owner が複数あります。`,
+        );
+      }
+      return null;
+    }
+
+    const owner = owners[0];
+    const host = owner?.querySelector<HTMLElement>('ui-popover[data-part="popover-host"]') ?? null;
 
     if (!(host instanceof HTMLElement)) return null;
     if (host.tagName.toLowerCase() !== 'ui-popover') return null;

@@ -181,4 +181,62 @@ describe('rehypeDisallowDangerousProps', () => {
       '[markdown] 許可されていない style 属性 "color" は使用できません: content/notes/sample.md',
     );
   });
+
+  it('canonical footnote fragment href と hydration 属性を許可すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'a',
+          properties: {
+            href: '#fn-note-a',
+            role: 'doc-noteref',
+            'data-footnote-ref': 'true',
+            'data-footnote-id': 'fn-note-a',
+            'data-hydration-key': 'footnote-popover-enhancer',
+            'data-hydration-capability': 'progressive',
+            'data-hydration-trigger': 'post-commit',
+          },
+          children: [],
+        },
+        {
+          type: 'element',
+          tagName: 'a',
+          properties: {
+            href: '#fn-note-a-ref-1',
+            role: 'doc-backlink',
+            'data-footnote-backref': 'true',
+          },
+          children: [],
+        },
+      ],
+    };
+
+    const run = () => {
+      rehypeDisallowDangerousProps()(tree, { path: 'content/notes/sample.md' });
+    };
+    expect(run).not.to.throw();
+  });
+
+  it('脚注構造リンクでも危険な URL スキームを禁止すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'a',
+          properties: { href: 'javascript:alert(1)', 'data-footnote-ref': 'true' },
+          children: [],
+        },
+      ],
+    };
+
+    const run = () => {
+      rehypeDisallowDangerousProps()(tree, { path: 'content/notes/sample.md' });
+    };
+    expect(run).to.throw(
+      '[markdown] 危険なURL属性 "href" は使用できません: content/notes/sample.md',
+    );
+  });
 });

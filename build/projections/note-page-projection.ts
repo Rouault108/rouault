@@ -1,4 +1,7 @@
-import { injectNoteContentProfiles } from '../../build/content/note-content-contracts.js';
+import {
+  injectNoteContentProfiles,
+  validateNoteContentContracts,
+} from '../../build/content/note-content-contracts.js';
 import type {
   BreadcrumbItem,
   NoteNavigationModel,
@@ -211,6 +214,12 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const contentHtml = injectNoteContentProfiles(
     typeof input.note.content === 'string' ? input.note.content : '',
     noteKind,
+  );
+  validateNoteContentContracts(
+    noteKind,
+    contentHtml,
+    `${slug}:post-profile-injection`,
+    input.note.testingArea,
   );
   const normalizedPublished = normalizeNoteDate(input.note.date);
   const normalizedCreated = normalizeNoteDate(input.note.created);

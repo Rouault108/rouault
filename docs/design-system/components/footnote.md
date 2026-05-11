@@ -227,3 +227,36 @@ endnotes のレイアウト主語は `section[role="doc-endnotes"]` とします
 現行実装では `build/rehype/rouault-components.ts` が本文参照を static link へ正規化し、`src/client/post-hydrate/footnote-popover-enhancer.ts` が Popover を付与します。この構成は本書の契約と整合します。
 
 今後 `ui-footnote` を残す場合でも、その用途は Storybook・互換検証・non-note 面に限定して整理するのが妥当です。note 本文の契約書としては、本書の static-first モデルを正本とします。
+
+---
+
+## 脚注構造リンクと本文リンクの分離契約
+
+note 本文では、通常本文リンクと脚注構造リンクを別種のリンクとして扱います。
+
+- 通常本文リンクと脚注本文中の通常 URL は本文テキストリンクであり、通常時から underline を持ちます。
+- Popover 本文中の通常 URL も underline と `overflow-wrap: anywhere` を持ちます。
+- 脚注参照 `a[data-footnote-ref="true"][role="doc-noteref"]`、脚注 backref `a[data-footnote-backref="true"][role="doc-backlink"]`、runtime Popover / `ui-footnote` 互換 DOM 内の脚注一覧導線は、通常時 underline なし、hover / focus-visible 時 underline ありとします。
+- `.footnote-list-link` 単独は note 最終 static HTML に残してはなりません。脚注一覧導線として扱うのは `[data-footnote-popover] .footnote-list-link` と `ui-footnote .footnote-list-link` に限定します。
+- `.link-text` は通常リンク utility であり、脚注構造リンクに付けてはなりません。
+- 脚注構造リンクは `data-link-kind`、`data-link-surface`、`data-external` を持ってはなりません。
+
+最終 note HTML の footnote marker は canonical 値に固定します。
+
+- `data-footnote-ref` と `data-footnote-backref` の最終値は文字列 `"true"` だけです。
+- `.data-footnote-ref` / `.data-footnote-backref` は入力互換 marker であり、最終 HTML には残しません。
+- false 相当値は通常リンク扱いにする場合も最終 HTML から削除します。
+- 非 canonical truthy 値を入力互換として受け付ける場合も、最終 HTML では `"true"` へ正規化します。
+
+## 脚注 ID と endnotes 構造契約
+
+- `data-footnote-id` は `fn-*` 形式を正本とします。`*` は数値に限定しません。
+- `fn-*-ref-*` 形状は footnote definition ID として使ってはなりません。
+- `user-content-fn-*` は入力互換として `fn-*` へ正規化します。
+- `user-content-fnref-*` は canonical ref id ではなく legacy backref として除去し、実際の ref instance 集合から canonical backref を再生成します。
+- footnote ID canonicalizer は `shared/footnotes/footnote-id.ts` の browser-safe helper を正本にします。TypeScript import は `.js` 拡張子付きに統一します。
+- canonical footnote ref は `aria-label="脚注 ${data-footnote-index} を開く"`、`a > sup > text`、hydration exact value を持ちます。
+- endnotes 内の `h2#footnote-label` は表示される構造見出しであり、permalink / TOC 対象にしません。
+- TOC 正本は `tocHeadings` に統一します。
+- `prepareTocHtml()` 後、post-normalize 後、`injectNoteContentProfiles()` 後の HTML も `validateNoteContentContracts()` の対象です。
+- orphan backref、endnotes-only、参照 0 件の footnote definition は build error です。

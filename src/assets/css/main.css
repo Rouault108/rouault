@@ -1050,7 +1050,16 @@ a:focus-visible {
  * - 読書面は .prose と .about-prose の両方を対象にする
  */
 .link-text[href],
-:is(.prose, .about-prose) a[href]:not(.heading-anchor) {
+:is(.prose, .about-prose)
+  a[href]:not(
+    :where(
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ) {
   cursor: pointer;
   color: var(--fg-default); /* 本文色を維持し、読むリズムを優先 */
   text-decoration: underline;
@@ -1076,21 +1085,48 @@ a:focus-visible {
 /* Progressive Enhancement: Relative Color Syntax 対応環境 */
 @supports (color: oklch(from white l c h)) {
   .link-text[href],
-  :is(.prose, .about-prose) a[href]:not(.heading-anchor) {
+  :is(.prose, .about-prose)
+    a[href]:not(
+      :where(
+        .heading-anchor,
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink'],
+        [data-footnote-popover] .footnote-list-link,
+        ui-footnote .footnote-list-link
+      )
+    ) {
     text-decoration-color: var(--link-decoration-color);
   }
 }
 
 /* Hover状態 - テキストと下線の両方を色付け */
 .link-text[href]:hover,
-:is(.prose, .about-prose) a[href]:not(.heading-anchor):hover {
+:is(.prose, .about-prose)
+  a[href]:not(
+    :where(
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):hover {
   color: var(--primary-hover);
   text-decoration-color: var(--primary-hover);
 }
 
 /* Focus-Visible状態 - テキスト色は変更せず、フォーカスリングのみで状態を示す */
 .link-text[href]:focus-visible,
-:is(.prose, .about-prose) a[href]:not(.heading-anchor):focus-visible {
+:is(.prose, .about-prose)
+  a[href]:not(
+    :where(
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):focus-visible {
   outline-style: solid;
   outline-width: var(--focus-ring-width);
   outline-offset: var(--focus-ring-offset);
@@ -1104,7 +1140,16 @@ a:focus-visible {
 
 /* Visited状態 - 個人メモでは既読管理より読むリズムを優先 */
 .link-text[href]:visited,
-:is(.prose, .about-prose) a[href]:not(.heading-anchor):visited {
+:is(.prose, .about-prose)
+  a[href]:not(
+    :where(
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):visited {
   color: var(--fg-default);
   text-decoration-color: var(--primary);
 }
@@ -1114,7 +1159,15 @@ a:focus-visible {
  * 2. hand-authored な about ページ等のために href scheme でも保守的 fallback を持つ
  */
 :is(.prose, .about-prose)
-  a[href]:not(.heading-anchor):is(
+  a[href]:not(
+    :where(
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):is(
     [data-link-kind='external-web'],
     [data-link-kind='external-action'],
     [href^='http://'],
@@ -1126,7 +1179,15 @@ a:focus-visible {
 }
 
 :is(.prose, .about-prose)
-  a[href]:not(.heading-anchor):is(
+  a[href]:not(
+    :where(
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):is(
     [data-link-kind='external-web'],
     [data-link-kind='external-action'],
     [href^='http://'],
@@ -1145,7 +1206,15 @@ a:focus-visible {
 }
 
 :is(.prose, .about-prose)
-  a[href]:not(.heading-anchor):is(
+  a[href]:not(
+    :where(
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):is(
     [data-link-kind='external-web'],
     [data-link-kind='external-action'],
     [href^='http://'],
@@ -1154,7 +1223,15 @@ a:focus-visible {
     [href^='tel:']
   ):hover::after,
 :is(.prose, .about-prose)
-  a[href]:not(.heading-anchor):is(
+  a[href]:not(
+    :where(
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):is(
     [data-link-kind='external-web'],
     [data-link-kind='external-action'],
     [href^='http://'],
@@ -1168,7 +1245,16 @@ a:focus-visible {
 /* Progressive Enhancement: Relative Color Syntax 対応環境 */
 @supports (color: oklch(from white l c h)) {
   .link-text[href]:visited,
-  :is(.prose, .about-prose) a[href]:not(.heading-anchor):visited {
+  :is(.prose, .about-prose)
+    a[href]:not(
+      :where(
+        .heading-anchor,
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink'],
+        [data-footnote-popover] .footnote-list-link,
+        ui-footnote .footnote-list-link
+      )
+    ):visited {
     text-decoration-color: var(--link-decoration-color);
   }
 }
@@ -1176,7 +1262,16 @@ a:focus-visible {
 /* Touch (No Hover) 判定 - タッチデバイスでは発見可能性を優先 */
 @media (hover: none) and (pointer: coarse) {
   .link-text[href],
-  :is(.prose, .about-prose) a[href]:not(.heading-anchor) {
+  :is(.prose, .about-prose)
+    a[href]:not(
+      :where(
+        .heading-anchor,
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink'],
+        [data-footnote-popover] .footnote-list-link,
+        ui-footnote .footnote-list-link
+      )
+    ) {
     color: var(--primary);
     text-decoration-color: var(--link-decoration-color-touch);
   }
@@ -1471,8 +1566,20 @@ ui-list-item > [slot]:not([slot='actions']) a[href]:visited {
   }
 
   /* カード内リンク: 下線を表示し、リンクであることを明示 */
-  .card a,
-  .callout a {
+  .card
+    a[href]:not(
+      :where(
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink']
+      )
+    ),
+  .callout
+    a[href]:not(
+      :where(
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink']
+      )
+    ) {
     text-decoration: underline;
     text-decoration-color: currentColor;
   }
@@ -1484,7 +1591,16 @@ ui-list-item > [slot]:not([slot='actions']) a[href]:visited {
 
 @media print {
   /* 外部リンク（http/https）のURLを表示 */
-  :is(.prose, .about-prose) a[href^='http']::after {
+  :is(.prose, .about-prose)
+    a[href^='http']:not(
+      :where(
+        .heading-anchor,
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink'],
+        [data-footnote-popover] .footnote-list-link,
+        ui-footnote .footnote-list-link
+      )
+    )::after {
     content: ' (' attr(href) ')';
     font-size: 0.875em;
     color: var(--fg-muted);
@@ -1498,7 +1614,16 @@ ui-list-item > [slot]:not([slot='actions']) a[href]:visited {
   }
 
   /* 下線は常に表示し、リンクであることを明示 */
-  :is(.prose, .about-prose) a:not(.heading-anchor) {
+  :is(.prose, .about-prose)
+    a[href]:not(
+      :where(
+        .heading-anchor,
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink'],
+        [data-footnote-popover] .footnote-list-link,
+        ui-footnote .footnote-list-link
+      )
+    ) {
     text-decoration: underline;
     text-decoration-color: currentColor;
   }
@@ -1849,16 +1974,11 @@ layout-sidebar-surface .heading {
   min-inline-size: 0;
 }
 
-:is(layout-sidebar, layout-sidebar-surface)
-  [data-sidebar-nav]
-  li
-  > ul {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] li > ul {
   padding-inline-start: var(--sidebar-item-indent-step, var(--space-4, 16px));
 }
 
-:is(layout-sidebar, layout-sidebar-surface)
-  [data-sidebar-nav]
-  [data-sidebar-nav-control] {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-control] {
   box-sizing: border-box;
   inline-size: 100%;
   min-inline-size: 0;
@@ -1891,17 +2011,13 @@ layout-sidebar-surface .heading {
     var(--nav-item-transition-easing, var(--ease-out));
 }
 
-:is(layout-sidebar, layout-sidebar-surface)
-  [data-sidebar-nav]
-  [data-sidebar-nav-link] {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-link] {
   display: flex;
   align-items: center;
   color: var(--sidebar-item-fg-page, var(--fg-muted));
 }
 
-:is(layout-sidebar, layout-sidebar-surface)
-  [data-sidebar-nav]
-  [data-sidebar-nav-branch-control] {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-branch-control] {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 16px;
   align-items: center;
@@ -1909,9 +2025,7 @@ layout-sidebar-surface .heading {
   color: var(--sidebar-item-fg-branch, var(--fg-muted));
 }
 
-:is(layout-sidebar, layout-sidebar-surface)
-  [data-sidebar-nav]
-  [data-sidebar-nav-label] {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-label] {
   position: relative;
   z-index: 2;
 
@@ -1925,9 +2039,7 @@ layout-sidebar-surface .heading {
   white-space: nowrap;
 }
 
-:is(layout-sidebar, layout-sidebar-surface)
-  [data-sidebar-nav]
-  [data-sidebar-nav-disclosure] {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-disclosure] {
   position: relative;
   z-index: 2;
 
@@ -1951,18 +2063,13 @@ layout-sidebar-surface .heading {
   transform: rotate(90deg);
 }
 
-:is(layout-sidebar, layout-sidebar-surface)
-  [data-sidebar-nav]
-  [data-sidebar-nav-disclosure]
-  svg {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-disclosure] svg {
   display: block;
   inline-size: 16px;
   block-size: 16px;
 }
 
-:is(layout-sidebar, layout-sidebar-surface)
-  [data-sidebar-nav]
-  [data-sidebar-nav-control]::before {
+:is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-control]::before {
   content: '';
   position: absolute;
   z-index: 0;
@@ -2080,18 +2187,10 @@ layout-sidebar-surface .heading {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :is(layout-sidebar, layout-sidebar-surface)
-    [data-sidebar-nav]
-    [data-sidebar-nav-control],
-  :is(layout-sidebar, layout-sidebar-surface)
-    [data-sidebar-nav]
-    [data-sidebar-nav-control]::before,
-  :is(layout-sidebar, layout-sidebar-surface)
-    [data-sidebar-nav]
-    [data-sidebar-nav-control]::after,
-  :is(layout-sidebar, layout-sidebar-surface)
-    [data-sidebar-nav]
-    [data-sidebar-nav-disclosure] {
+  :is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-control],
+  :is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-control]::before,
+  :is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-control]::after,
+  :is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-disclosure] {
     transition: none;
   }
 
@@ -2817,7 +2916,7 @@ figure[data-image] dialog[data-image-lightbox-dialog]::backdrop {
   line-height: var(--line-height-relaxed, 1.75);
 }
 
-a[data-footnote-ref] {
+a[data-footnote-ref='true'][role='doc-noteref'] {
   display: inline-flex;
   align-items: baseline;
   margin-inline: 0.1em;
@@ -2830,19 +2929,19 @@ a[data-footnote-ref] {
   border-radius: var(--radius-sm, 4px);
 }
 
-a[data-footnote-ref] > sup {
+a[data-footnote-ref='true'][role='doc-noteref'] > sup {
   font-size: inherit;
   line-height: 1;
   vertical-align: super;
 }
 
-a[data-footnote-ref]:hover,
-a[data-footnote-ref]:focus-visible {
+a[data-footnote-ref='true'][role='doc-noteref']:hover,
+a[data-footnote-ref='true'][role='doc-noteref']:focus-visible {
   color: var(--primary, oklch(56% 0.16 252));
   text-decoration: underline;
 }
 
-a[data-footnote-ref].is-active-trigger {
+a[data-footnote-ref='true'][role='doc-noteref'].is-active-trigger {
   background: var(--bg-active, oklch(95% 0 0));
 }
 
@@ -2877,22 +2976,43 @@ a[data-footnote-ref].is-active-trigger {
   margin-block-end: 0;
 }
 
+[data-footnote-popover]
+  .footnote-popover-body
+  a[href]:not(
+    :where(
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      .footnote-list-link
+    )
+  ) {
+  color: var(--fg-default);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  overflow-wrap: anywhere;
+  text-decoration-color: var(--primary);
+  text-decoration-thickness: var(--border-width);
+}
+
 .footnote-popover-footer {
   margin-block-start: var(--space-3, 12px);
   padding-block-start: var(--space-2, 8px);
   border-top: 1px solid var(--border-ghost, oklch(88% 0 0 / 0.5));
 }
 
-.footnote-list-link {
+[data-footnote-popover] .footnote-list-link {
   color: var(--fg-muted, oklch(48% 0 0));
   font-size: var(--text-xs, 12px);
   font-weight: var(--font-medium, 500);
   letter-spacing: var(--tracking-wide, 0.02em);
   text-decoration: none;
+  text-underline-offset: 0.14em;
+  text-decoration-thickness: var(--border-width, 1px);
+  border-radius: var(--radius-sm, 4px);
 }
 
-.footnote-list-link:hover,
-.footnote-list-link:focus-visible {
+[data-footnote-popover] .footnote-list-link:hover,
+[data-footnote-popover] .footnote-list-link:focus-visible {
   color: var(--primary, oklch(56% 0.16 252));
   text-decoration: underline;
 }
@@ -2946,17 +3066,18 @@ section.footnotes li:target {
   border-radius: var(--radius-sm, 4px);
 }
 
-section[role='doc-endnotes'] a[data-footnote-backref],
-section.footnotes a[data-footnote-backref] {
+section[role='doc-endnotes'] a[data-footnote-backref='true'][role='doc-backlink'] {
   color: var(--fg-muted, oklch(48% 0 0));
   text-decoration: none;
+  text-underline-offset: 0.14em;
+  text-decoration-thickness: var(--border-width, 1px);
+  border-radius: var(--radius-sm, 4px);
 }
 
-section[role='doc-endnotes'] a[data-footnote-backref]:hover,
-section[role='doc-endnotes'] a[data-footnote-backref]:focus-visible,
-section.footnotes a[data-footnote-backref]:hover,
-section.footnotes a[data-footnote-backref]:focus-visible {
+section[role='doc-endnotes'] a[data-footnote-backref='true'][role='doc-backlink']:hover,
+section[role='doc-endnotes'] a[data-footnote-backref='true'][role='doc-backlink']:focus-visible {
   color: var(--primary, oklch(56% 0.16 252));
+  text-decoration: underline;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2966,7 +3087,9 @@ section.footnotes a[data-footnote-backref]:focus-visible {
 }
 
 @media (forced-colors: active) {
-  a[data-footnote-ref] {
+  a[data-footnote-ref='true'][role='doc-noteref'],
+  section[role='doc-endnotes'] a[data-footnote-backref='true'][role='doc-backlink'],
+  [data-footnote-popover] .footnote-list-link {
     color: LinkText;
   }
 

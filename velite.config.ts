@@ -64,7 +64,10 @@ const notes = defineCollection({
       toc: s.toc().optional(),
     })
     .transform((data) => {
-      const { excludeFromPublicationSurfaces, ...rest } = data;
+      const rest = { ...data };
+      delete rest['excludeFromPublicationSurfaces'];
+      delete rest['toc'];
+      const excludeFromPublicationSurfaces = data.excludeFromPublicationSurfaces;
       const sourcePath = typeof data.slug === 'string' ? data.slug : '';
       const { sourceRoot, slug } = resolveNoteSourceLocation(sourcePath);
       const kind = normalizeNoteContentKind(data.kind);

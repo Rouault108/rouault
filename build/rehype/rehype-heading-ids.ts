@@ -142,7 +142,24 @@ const ensureHeadingPermalink = (node: HastNode, id: string, text: string): void 
   );
 };
 
-const assignHeadingIds = (node: HastNode, counters: Map<string, number>): void => {
+const isDocEndnotesSection = (node: HastNode): boolean =>
+  node.type === 'element' &&
+  node.tagName === 'section' &&
+  node.properties?.['role'] === 'doc-endnotes';
+
+const isEndnotesLabelHeading = (node: HastNode, insideDocEndnotes: boolean): boolean =>
+  insideDocEndnotes &&
+  node.type === 'element' &&
+  node.tagName === 'h2' &&
+  node.properties?.['id'] === 'footnote-label';
+
+const assignHeadingIds = (
+  node: HastNode,
+  counters: Map<string, number>,
+  insideDocEndnotes = false,
+): void => {
+  const nextInsideDocEndnotes = insideDocEndnotes || isDocEndnotesSection(node);
+
   if (isHeadingElement(node)) {
     const properties = getOrCreateProperties(node);
     const existingId = properties['id'];
@@ -156,7 +173,7 @@ const assignHeadingIds = (node: HastNode, counters: Map<string, number>): void =
     const id = typeof properties['id'] === 'string' ? properties['id'] : '';
     const text = getTextContent(node).trim();
 
-    if (id.length > 0 && text.length > 0) {
+    if (id.length > 0 && text.length > 0 && !isEndnotesLabelHeading(node, nextInsideDocEndnotes)) {
       ensureHeadingPermalink(node, id, text);
     }
   }
@@ -166,7 +183,7 @@ const assignHeadingIds = (node: HastNode, counters: Map<string, number>): void =
   }
 
   for (const child of node.children) {
-    assignHeadingIds(child, counters);
+    assignHeadingIds(child, counters, nextInsideDocEndnotes);
   }
 };
 

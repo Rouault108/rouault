@@ -130,7 +130,9 @@ const listCssFilesInDirectory = (directoryPath: string): string[] => {
 const ruleMatchesOptions = (rule: Rule, options: CssDeclarationSearchOptions): boolean => {
   assertValidOptions(options);
   if (options.mediaPredicate !== undefined) {
-    return collectMediaAncestors(rule).some((media) => options.mediaPredicate?.(media.params) === true);
+    return collectMediaAncestors(rule).some(
+      (media) => options.mediaPredicate?.(media.params) === true,
+    );
   }
   return isRuleInScope(rule, options.scope ?? 'screen');
 };
@@ -153,7 +155,9 @@ const ruleHasSelector = (
   const selectorKind = options.selectorKind ?? 'any';
   const expectedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
   return selectorsForRule(rule, selectorKind).some((actualSelector) =>
-    mode === 'exact' ? actualSelector === expectedSelector : selectorFragmentMatches(actualSelector, selector),
+    mode === 'exact'
+      ? actualSelector === expectedSelector
+      : selectorFragmentMatches(actualSelector, selector),
   );
 };
 
@@ -314,7 +318,13 @@ export const hasAllDeclarationValuesIncludingForSelectorContaining = (
   expectedFragment: string,
   options: CssDeclarationSearchOptions = {},
 ): boolean => {
-  const declarations = matchingDeclarations(cssText, selectorFragment, property, options, 'fragment');
+  const declarations = matchingDeclarations(
+    cssText,
+    selectorFragment,
+    property,
+    options,
+    'fragment',
+  );
   if (declarations.length === 0) return false;
   const fragment = normalizeCssDeclarationValue(expectedFragment);
   return declarations.every((declaration) =>
@@ -371,7 +381,13 @@ export const hasDeclarationValueNotIncludingForSelectorContaining = (
   forbiddenFragment: string,
   options: CssDeclarationSearchOptions = {},
 ): boolean => {
-  const declarations = matchingDeclarations(cssText, selectorFragment, property, options, 'fragment');
+  const declarations = matchingDeclarations(
+    cssText,
+    selectorFragment,
+    property,
+    options,
+    'fragment',
+  );
   if (declarations.length === 0) return false;
   const fragment = normalizeCssDeclarationValue(forbiddenFragment);
   return declarations.every(
@@ -427,10 +443,18 @@ export const hasOnlyAllowedDeclarationValuesForSelectorContaining = (
   allowedValues: readonly string[],
   options: CssDeclarationSearchOptions & { readonly requireDeclaration?: boolean } = {},
 ): boolean => {
-  const declarations = matchingDeclarations(cssText, selectorFragment, property, options, 'fragment');
+  const declarations = matchingDeclarations(
+    cssText,
+    selectorFragment,
+    property,
+    options,
+    'fragment',
+  );
   if (declarations.length === 0) return options.requireDeclaration === true ? false : true;
   const allowed = new Set(allowedValues.map((value) => normalizeCssDeclarationValue(value)));
-  return declarations.every((declaration) => allowed.has(normalizeCssDeclarationValue(declaration.value)));
+  return declarations.every((declaration) =>
+    allowed.has(normalizeCssDeclarationValue(declaration.value)),
+  );
 };
 
 export const hasNoDeclarationValueIncludingForSelectorContaining = (
@@ -463,7 +487,8 @@ export const hasDeclarationPropertyForSelectorContaining = (
   selectorFragment: string,
   property: string,
   options: CssDeclarationSearchOptions = {},
-): boolean => matchingDeclarations(cssText, selectorFragment, property, options, 'fragment').length > 0;
+): boolean =>
+  matchingDeclarations(cssText, selectorFragment, property, options, 'fragment').length > 0;
 
 export const lacksDeclarationPropertyForSelector = (
   cssText: string,
@@ -477,7 +502,8 @@ export const lacksDeclarationPropertyForSelectorContaining = (
   selectorFragment: string,
   property: string,
   options: CssDeclarationSearchOptions = {},
-): boolean => !hasDeclarationPropertyForSelectorContaining(cssText, selectorFragment, property, options);
+): boolean =>
+  !hasDeclarationPropertyForSelectorContaining(cssText, selectorFragment, property, options);
 
 export const lacksDeclarationPropertyForAllSelectors = (
   cssText: string,
@@ -485,7 +511,9 @@ export const lacksDeclarationPropertyForAllSelectors = (
   property: string,
   options?: CssDeclarationSearchOptions,
 ): boolean =>
-  selectors.every((selector) => lacksDeclarationPropertyForSelector(cssText, selector, property, options));
+  selectors.every((selector) =>
+    lacksDeclarationPropertyForSelector(cssText, selector, property, options),
+  );
 
 export const findLastDeclarationRuleOrderForSelector = (
   cssText: string,
@@ -512,7 +540,6 @@ export const findLastDeclarationRuleOrderForSelector = (
   return lastOrder;
 };
 
-
 const isUnderlineDeclaration = (property: string, value: string): boolean => {
   if (property !== 'text-decoration' && property !== 'text-decoration-line') {
     return false;
@@ -520,13 +547,15 @@ const isUnderlineDeclaration = (property: string, value: string): boolean => {
   return value.split(/\s+/u).includes('underline');
 };
 
-const isDeclaration = (node: { readonly type: string }): node is Declaration => node.type === 'decl';
+const isDeclaration = (node: { readonly type: string }): node is Declaration =>
+  node.type === 'decl';
+
+const PROSE_TEXT_LINK_SELECTOR =
+  ":is(.prose,.about-prose) a[href]:not(:where(.heading-anchor,[data-footnote-ref='true'][role='doc-noteref'],[data-footnote-backref='true'][role='doc-backlink'],[data-footnote-popover] .footnote-list-link,ui-footnote .footnote-list-link))";
+const POPOVER_BODY_TEXT_LINK_SELECTOR =
+  "[data-footnote-popover] .footnote-popover-body a[href]:not(:where(.heading-anchor,[data-footnote-ref='true'][role='doc-noteref'],[data-footnote-backref='true'][role='doc-backlink'],.footnote-list-link))";
 
 const ALLOWED_BROAD_UNDERLINE_SELECTORS = new Set([
-  ':is(.prose,.about-prose) a[href]:not(.heading-anchor)',
-  ':is(.prose,.about-prose) a[href]:not(.heading-anchor):hover',
-  ':is(.prose,.about-prose) a[href]:not(.heading-anchor):focus-visible',
-  ':is(.prose,.about-prose) a[href]:not(.heading-anchor):visited',
   "ui-list-item>a[slot][href]:not([slot='actions'])",
   "ui-list-item>[slot]:not([slot='actions']) a[href]",
   "ui-list-item>a[slot][href]:not([slot='actions']):hover",
@@ -535,18 +564,24 @@ const ALLOWED_BROAD_UNDERLINE_SELECTORS = new Set([
   "ui-list-item>[slot]:not([slot='actions']) a[href]:focus-visible",
   "ui-list-item>a[slot][href]:not([slot='actions']):visited",
   "ui-list-item>[slot]:not([slot='actions']) a[href]:visited",
-  'a[data-footnote-ref]:hover',
-  'a[data-footnote-ref]:focus-visible',
+  PROSE_TEXT_LINK_SELECTOR,
+  `${PROSE_TEXT_LINK_SELECTOR}:hover`,
+  `${PROSE_TEXT_LINK_SELECTOR}:focus-visible`,
+  `${PROSE_TEXT_LINK_SELECTOR}:visited`,
+  POPOVER_BODY_TEXT_LINK_SELECTOR,
+  "a[data-footnote-ref='true'][role='doc-noteref']:hover",
+  "a[data-footnote-ref='true'][role='doc-noteref']:focus-visible",
+  "section[role='doc-endnotes'] a[data-footnote-backref='true'][role='doc-backlink']:hover",
+  "section[role='doc-endnotes'] a[data-footnote-backref='true'][role='doc-backlink']:focus-visible",
+  '[data-footnote-popover] .footnote-list-link:hover',
+  '[data-footnote-popover] .footnote-list-link:focus-visible',
 ]);
 
 const LINK_PSEUDO_PATTERN = /(^|[>+~\s,(]):(?:any-link|link|visited)\b/u;
 const ANCHOR_SURFACE_PATTERN = /(^|[>+~\s,(])a(?:[#.:[\s]|$)/u;
 
 const isAllowedBroadUnderlineSelector = (selector: string): boolean =>
-  ALLOWED_BROAD_UNDERLINE_SELECTORS.has(selector) ||
-  selector.startsWith(':is(.prose,.about-prose) a[href]:not(.heading-anchor):is(') ||
-  selector.startsWith('ui-list-item>') ||
-  selector.includes(' a[href]:not(.heading-anchor):is(');
+  ALLOWED_BROAD_UNDERLINE_SELECTORS.has(selector) || selector.startsWith('ui-list-item>');
 
 const isBroadLinkSelector = (selector: string): boolean =>
   LINK_PSEUDO_PATTERN.test(selector) ||

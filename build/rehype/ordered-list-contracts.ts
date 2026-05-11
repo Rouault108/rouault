@@ -6,6 +6,35 @@ import {
   toInteger,
 } from './hast-utils.js';
 
+const getMeaningfulChildren = (node: HastNode): HastNode[] =>
+  (node.children ?? []).filter(
+    (child) =>
+      !(
+        child.type === 'text' &&
+        (typeof child.value !== 'string' || child.value.trim().length === 0)
+      ),
+  );
+
+const isCanonicalFootnoteDefinitionList = (node: HastNode, parent: HastNode | null): boolean => {
+  if (node.type !== 'element' || node.tagName !== 'ol') {
+    return false;
+  }
+  if (parent?.type !== 'element' || parent.tagName !== 'section') {
+    return false;
+  }
+  if (parent.properties?.['role'] !== 'doc-endnotes') {
+    return false;
+  }
+  const meaningful = getMeaningfulChildren(parent);
+  return (
+    meaningful.length >= 2 &&
+    meaningful[0]?.type === 'element' &&
+    meaningful[0].tagName === 'h2' &&
+    meaningful[0].properties?.['id'] === 'footnote-label' &&
+    meaningful[1] === node
+  );
+};
+
 /**
  * `.prose ol` 向けに、桁数注釈とカウンター同期情報を build-time で付与する。
  * - `data-marker-digits="3"` の自動判定
@@ -14,13 +43,17 @@ import {
  */
 export function rehypeOrderedListContracts() {
   return (tree: unknown) => {
-    const visit = (node: unknown): void => {
+    const visit = (node: unknown, parent: HastNode | null = null): void => {
       if (!node || typeof node !== 'object') {
         return;
       }
 
       const current = node as HastNode;
-      if (current.type === 'element' && current.tagName === 'ol') {
+      if (
+        current.type === 'element' &&
+        current.tagName === 'ol' &&
+        !isCanonicalFootnoteDefinitionList(current, parent)
+      ) {
         const props = getOrCreateProperties(current);
         const liChildren = (current.children ?? []).filter(
           (child): child is HastNode => child.type === 'element' && child.tagName === 'li',
@@ -80,10 +113,10 @@ export function rehypeOrderedListContracts() {
         return;
       }
       for (const child of current.children) {
-        visit(child);
+        visit(child, current);
       }
     };
 
-    visit(tree);
+    visit(tree, null);
   };
 }

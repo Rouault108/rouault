@@ -131,3 +131,21 @@
 - raw HTML、dangerous URL、dangerous props、arbitrary style injection が禁止されている。
 - no-JS baseline と static-first DOM が維持されている。
 - 詳細 DOM mapping は Reference に分離されている。
+
+---
+
+## Footnote static-first contract
+
+Markdown から note HTML への脚注出力は static-first DOM を正本にします。
+
+- `ui-footnote` は note 最終 HTML に残しません。
+- 通常リンク注釈と脚注構造リンクを分離します。
+- `data-footnote-id` は `fn-*` 形式であり、数値限定ではありません。
+- `fn-*-ref-*` 形状は footnote definition ID として禁止します。
+- `user-content-fn-*` / `user-content-fnref-*` は最終 DOM に残しません。
+- footnote ID canonicalizer は browser-safe shared helper を正本にします。
+- endnotes 内の `h2#footnote-label` は permalink / TOC 対象にしません。
+- TOC 正本は `tocHeadings` に統一します。
+- post-HTML normalizer 後、`prepareTocHtml()` 後、`injectNoteContentProfiles()` 後にも最終契約を満たします。
+- `validateNoteContentContracts()` の collection-first 化後も、table、callout、image、preview sandbox など既存の非脚注契約を保持します。
+- `rehypeDisallowDangerousProps` 後も safe fragment href を持つ脚注構造を維持します。

@@ -39,3 +39,16 @@
 - 静的検索 highlight 用の一時 `<mark>` を最終本文 DOM に残さない。
 - Component 化後も semantic fallback を失わない。
 - `preview-sandbox` の `srcdoc` は compiler-generated output として扱い、author supplied HTML ではない。
+
+---
+
+## Footnote output contract
+
+Markdown 由来の脚注は static-first DOM へ正規化します。
+
+- footnote definition ID は `fn-*` 形式です。
+- `user-content-fn-*` は入力互換として `fn-*` へ正規化されます。
+- `user-content-fnref-*` は definition ID でも canonical ref id でもありません。legacy backref として除去され、実際の ref instance 集合から canonical `fn-*-ref-N` backref が再生成されます。
+- `data-footnote-ref` / `data-footnote-backref` は最終 HTML で `"true"` 固定です。
+- false 相当 marker、role-only marker、class marker は最終 HTML に残りません。
+- endnotes 内の `h2#footnote-label` は構造見出しであり、TOC と heading permalink の対象外です。

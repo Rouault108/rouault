@@ -96,18 +96,31 @@ const getPanelSelectionMap = (tabsHost: Parse5Element): Map<Parse5Element, strin
   return panelSelections;
 };
 
+const isDocEndnotesSection = (node: Parse5Node): boolean =>
+  isElementNode(node) &&
+  node.tagName === 'section' &&
+  getAttributeValue(node, 'role') === 'doc-endnotes';
+
 const visitNode = (
   node: Parse5Node,
   scopeSelections: TocScopeSelection[],
   headings: TocHeading[],
   counters: { scope: number },
+  insideDocEndnotes = false,
 ): void => {
+  const nextInsideDocEndnotes = insideDocEndnotes || isDocEndnotesSection(node);
+
   if (isHeadingElement(node)) {
     const id = getAttributeValue(node, 'id') ?? '';
     const text = normalizeText(getTextContent(node));
     const level = Number.parseInt(node.tagName.slice(1), 10);
 
-    if (id.length > 0 && text.length > 0 && Number.isFinite(level)) {
+    if (
+      id.length > 0 &&
+      text.length > 0 &&
+      Number.isFinite(level) &&
+      !(nextInsideDocEndnotes && id === 'footnote-label')
+    ) {
       headings.push({
         id,
         text,
@@ -124,7 +137,7 @@ const visitNode = (
   if (!isElementNode(node)) {
     if ('childNodes' in node && Array.isArray(node.childNodes)) {
       for (const child of node.childNodes) {
-        visitNode(child, scopeSelections, headings, counters);
+        visitNode(child, scopeSelections, headings, counters, nextInsideDocEndnotes);
       }
     }
     return;
@@ -145,11 +158,12 @@ const visitNode = (
             [...scopeSelections, { scopeId, value: panelSelections.get(child) as string }],
             headings,
             counters,
+            nextInsideDocEndnotes,
           );
           continue;
         }
 
-        visitNode(child, scopeSelections, headings, counters);
+        visitNode(child, scopeSelections, headings, counters, nextInsideDocEndnotes);
       }
     }
     return;
@@ -157,7 +171,7 @@ const visitNode = (
 
   if ('childNodes' in node && Array.isArray(node.childNodes)) {
     for (const child of node.childNodes) {
-      visitNode(child, scopeSelections, headings, counters);
+      visitNode(child, scopeSelections, headings, counters, nextInsideDocEndnotes);
     }
   }
 };
@@ -175,7 +189,7 @@ export const prepareTocHtml = (html: string): PreparedTocHtml => {
   const counters = { scope: 0 };
 
   for (const child of fragment.childNodes) {
-    visitNode(child, [], headings, counters);
+    visitNode(child, [], headings, counters, false);
   }
 
   return {

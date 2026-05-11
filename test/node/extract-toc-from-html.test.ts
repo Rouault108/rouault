@@ -75,4 +75,19 @@ describe('extractTocFromHtml', () => {
       },
     ]);
   });
+
+  it('endnotes 内の footnote-label を TOC から除外すること', () => {
+    const html = `
+      <h2 id="intro">本文見出し</h2>
+      <section role="doc-endnotes">
+        <h2 id="footnote-label">脚注</h2>
+        <ol><li id="fn-a">脚注本文</li></ol>
+      </section>
+    `;
+
+    const prepared = prepareTocHtml(html);
+
+    expect(prepared.headings).to.deep.equal([{ id: 'intro', text: '本文見出し', level: 2 }]);
+    expect(prepared.html).to.contain('id="footnote-label"');
+  });
 });

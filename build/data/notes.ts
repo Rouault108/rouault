@@ -9,6 +9,7 @@ import {
 import type { NavigationDirectoryPresentationMap } from '../../shared/navigation/navigation-types.js';
 import { resolveSidebarRoot } from '../../build/navigation/resolve-sidebar-root.js';
 import { prepareTocHtml, type TocHeading } from '../../build/content/extract-toc-from-html.js';
+import { validateNoteContentContracts } from '../../build/content/note-content-contracts.js';
 import { resolveCoverAsset, type ResolvedImageAsset } from '../../build/media/image-resolver.js';
 import { isIconName, type IconName } from '../../shared/icons/icons-catalog.js';
 import type { NoteStatus } from '../../src/types/article-status.js';
@@ -385,7 +386,16 @@ export const buildNotesCollection = (
       const kind = normalizeNoteContentKind(note.kind);
       const chromeProfile = resolveEffectiveNoteChromeProfile(kind, note.chromeProfile);
       const testingArea = normalizeTestingArea(note.testingArea);
+      const noteWithoutVeliteToc: SourceNote = { ...note };
+      delete noteWithoutVeliteToc['toc'];
+
       const preparedToc = prepareTocHtml(typeof note.content === 'string' ? note.content : '');
+      validateNoteContentContracts(
+        kind,
+        preparedToc.html,
+        `${sourceSlug}:post-prepare-toc`,
+        testingArea,
+      );
       const e2eFixtureId =
         typeof note.e2eFixtureId === 'string' && note.e2eFixtureId.trim().length > 0
           ? note.e2eFixtureId.trim()
@@ -419,7 +429,7 @@ export const buildNotesCollection = (
       const chromePolicy = resolveNoteChromePolicy(chromeProfile);
 
       return {
-        ...note,
+        ...noteWithoutVeliteToc,
         ...(typeof note.content === 'string' ? { content: preparedToc.html } : {}),
         kind,
         chromeProfile,

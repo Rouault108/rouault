@@ -89,7 +89,7 @@ describe('ui-footnote browser contract', () => {
             <ol>
               <li id="fn-1">
                 補足: 本文に集中できる設計は、補助情報へのアクセス経路を明確に定義する。
-                <a href="#fn-1-ref-1" data-footnote-backref role="doc-backlink">↩︎</a>
+                <a href="#fn-1-ref-1" data-footnote-backref="true" role="doc-backlink">↩︎</a>
               </li>
             </ol>
           </section>
@@ -161,8 +161,8 @@ describe('ui-footnote browser contract', () => {
             <ol>
               <li id="fn-11">
                 共有本文は primary reference が 1 つだけ保持する。
-                <a href="#fn-11-ref-1" data-footnote-backref role="doc-backlink">↩︎</a>
-                <a href="#fn-11-ref-2" data-footnote-backref role="doc-backlink">↩︎2</a>
+                <a href="#fn-11-ref-1" data-footnote-backref="true" role="doc-backlink">↩︎</a>
+                <a href="#fn-11-ref-2" data-footnote-backref="true" role="doc-backlink">↩︎2</a>
               </li>
             </ol>
           </section>
@@ -251,7 +251,7 @@ describe('ui-footnote browser contract', () => {
             <ol>
               <li id="fn-40">
                 読書フローの継続を妨げないキーボード契約。
-                <a href="#fn-40-ref-1" data-footnote-backref role="doc-backlink">↩︎</a>
+                <a href="#fn-40-ref-1" data-footnote-backref="true" role="doc-backlink">↩︎</a>
               </li>
             </ol>
           </section>
@@ -355,7 +355,7 @@ describe('ui-footnote browser contract', () => {
             <ol>
               <li id="fn-60">
                 SSR で埋め込まれた脚注本文。
-                <a href="#fn-60-ref-1" data-footnote-backref role="doc-backlink">↩︎</a>
+                <a href="#fn-60-ref-1" data-footnote-backref="true" role="doc-backlink">↩︎</a>
               </li>
             </ol>
           </section>

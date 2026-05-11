@@ -77,11 +77,11 @@ const createFootnoteRoot = (): HTMLElement => {
       </a>
     </p>
     <section role="doc-endnotes">
-      <h2>脚注</h2>
+      <h2 id="footnote-label">脚注</h2>
       <ol>
         <li id="fn-enhancer-1">
           enhancer footnote body
-          <a href="#fn-enhancer-1-ref-1" data-footnote-backref role="doc-backlink">↩︎</a>
+          <a href="#fn-enhancer-1-ref-1" data-footnote-backref="true" role="doc-backlink">↩︎</a>
         </li>
       </ol>
     </section>

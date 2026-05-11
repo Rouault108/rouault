@@ -1,4 +1,9 @@
-const FOOTNOTE_SELECTOR = 'a[data-footnote-ref]';
+import {
+  canonicalizeFootnoteId,
+  parseFootnoteBackrefHref,
+} from '../../../shared/footnotes/footnote-id.js';
+
+const FOOTNOTE_SELECTOR = 'a[data-footnote-ref="true"][role="doc-noteref"]';
 const SCOPE_SELECTOR = '[data-footnote-scope], article, [role="article"], [data-note-root], main';
 const POPOVER_MARGIN = 12;
 const POPOVER_OFFSET = 8;
@@ -10,15 +15,79 @@ type PopoverElement = HTMLElement & {
 
 let popoverSequence = 0;
 
+const escapeCssIdentifier = (value: string): string => {
+  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+    return CSS.escape(value);
+  }
+  return value.replace(/[^a-zA-Z0-9_-]/gu, '\\$&');
+};
+
 const resolveScope = (anchor: HTMLElement): ParentNode => {
   return anchor.closest<HTMLElement>(SCOPE_SELECTOR) ?? document;
 };
 
-const cloneFootnoteBody = (scope: ParentNode, refId: string): HTMLElement | null => {
-  const item = scope.querySelector<HTMLElement>(
-    `section[role="doc-endnotes"] #${CSS.escape(refId)}`,
+const isFalseFootnoteBackrefMarker = (value: string | null): boolean => {
+  const normalized = value?.trim().toLowerCase();
+  return (
+    normalized === 'false' || normalized === '0' || normalized === 'off' || normalized === 'no'
   );
-  if (!item) {
+};
+
+const isRemovableFootnoteCloneLink = (anchor: HTMLAnchorElement): boolean => {
+  if (
+    anchor.closest('[data-footnote-popover], ui-footnote') &&
+    anchor.classList.contains('footnote-list-link')
+  ) {
+    return true;
+  }
+
+  const parsed = parseFootnoteBackrefHref(anchor.getAttribute('href') ?? '');
+  if (parsed.kind !== 'canonical' && parsed.kind !== 'legacy-user-content-fnref') {
+    return false;
+  }
+
+  const marker = anchor.getAttribute('data-footnote-backref');
+  if (marker !== null && !isFalseFootnoteBackrefMarker(marker)) {
+    return true;
+  }
+  if (anchor.getAttribute('role') === 'doc-backlink') {
+    return true;
+  }
+  if (anchor.classList.contains('data-footnote-backref')) {
+    return true;
+  }
+
+  return true;
+};
+
+const removeFootnoteCloneLinks = (root: HTMLElement): boolean => {
+  if (root instanceof HTMLAnchorElement && isRemovableFootnoteCloneLink(root)) {
+    return true;
+  }
+
+  for (const anchor of Array.from(
+    root.querySelectorAll<HTMLAnchorElement>(
+      'a[href], a[role], a[data-footnote-backref], a.data-footnote-backref, a.footnote-list-link',
+    ),
+  )) {
+    if (isRemovableFootnoteCloneLink(anchor)) {
+      anchor.remove();
+    }
+  }
+
+  return false;
+};
+
+const cloneFootnoteBody = (scope: ParentNode, refId: string): HTMLElement | null => {
+  const canonicalRefId = canonicalizeFootnoteId(refId);
+  if (canonicalRefId === null) {
+    return null;
+  }
+
+  const item = scope.querySelector<HTMLElement>(
+    `section[role="doc-endnotes"] > h2#footnote-label + ol > li#${escapeCssIdentifier(canonicalRefId)}`,
+  );
+  if (!(item instanceof HTMLLIElement)) {
     return null;
   }
 
@@ -28,13 +97,8 @@ const cloneFootnoteBody = (scope: ParentNode, refId: string): HTMLElement | null
   for (const node of Array.from(item.childNodes)) {
     const cloned = node.cloneNode(true);
 
-    if (cloned instanceof HTMLElement) {
-      cloned.querySelectorAll('a[data-footnote-backref]').forEach((backref) => {
-        backref.remove();
-      });
-      if (cloned.matches('a[data-footnote-backref]')) {
-        continue;
-      }
+    if (cloned instanceof HTMLElement && removeFootnoteCloneLinks(cloned)) {
+      continue;
     }
 
     body.append(cloned);
@@ -119,12 +183,13 @@ const ensurePopover = (anchor: HTMLElement): HTMLElement | null => {
   }
 
   const refId = anchor.getAttribute('data-footnote-id');
-  if (!refId) {
+  const canonicalRefId = refId ? canonicalizeFootnoteId(refId) : null;
+  if (canonicalRefId === null) {
     return null;
   }
 
   const scope = resolveScope(anchor);
-  const body = cloneFootnoteBody(scope, refId);
+  const body = cloneFootnoteBody(scope, canonicalRefId);
   if (!body) {
     return null;
   }
@@ -142,7 +207,7 @@ const ensurePopover = (anchor: HTMLElement): HTMLElement | null => {
 
   const link = document.createElement('a');
   link.className = 'footnote-list-link';
-  link.href = `#${refId}`;
+  link.href = `#${canonicalRefId}`;
   link.textContent = '脚注一覧で見る';
 
   footer.append(link);

@@ -12,7 +12,18 @@ describe('prose link css contract', () => {
     expect(
       hasDeclarationTokenForAllSelectors(
         mainCss,
-        ['.link-text[href]', ':is(.prose, .about-prose) a[href]:not(.heading-anchor)'],
+        [
+          '.link-text[href]',
+          `:is(.prose, .about-prose) a[href]:not(
+            :where(
+              .heading-anchor,
+              [data-footnote-ref='true'][role='doc-noteref'],
+              [data-footnote-backref='true'][role='doc-backlink'],
+              [data-footnote-popover] .footnote-list-link,
+              ui-footnote .footnote-list-link
+            )
+          )`,
+        ],
         'text-decoration',
         'underline',
         { scope: 'screen' },
