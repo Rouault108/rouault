@@ -96,7 +96,7 @@ describe('rehypeAnnotateLinkKinds', () => {
             href: '#fn-a',
             role: 'doc-noteref',
             'data-footnote-ref': 'true',
-            'data-link-kind': 'internal-hash',
+            'data-link-kind': 'internal-fragment',
             datalinksuface: 'prose',
           },
           children: [],
@@ -188,7 +188,7 @@ describe('rehypeAnnotateLinkKinds', () => {
     rehypeAnnotateLinkKinds()(tree);
 
     const anchor = tree.children?.[0]?.children?.[0]?.children?.[0];
-    expect(anchor?.properties?.['data-link-kind']).to.equal('internal-hash');
+    expect(anchor?.properties?.['data-link-kind']).to.equal('internal-fragment');
     expect(anchor?.properties?.['data-link-surface']).to.equal('prose');
   });
 });

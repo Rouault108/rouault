@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { extractTocFromHtml, prepareTocHtml } from '../../build/content/extract-toc-from-html.js';
+import { validateNoteContentContracts } from '../../build/content/note-content-contracts.js';
 
 describe('extractTocFromHtml', () => {
   it('id付きのh2-h6見出しを抽出できること', () => {
@@ -89,5 +90,48 @@ describe('extractTocFromHtml', () => {
 
     expect(prepared.headings).to.deep.equal([{ id: 'intro', text: '本文見出し', level: 2 }]);
     expect(prepared.html).to.contain('id="footnote-label"');
+  });
+
+  it('canonical 脚注構造リンクの値なし structural 属性を post-prepare-toc 前に true へ正規化すること', () => {
+    const html = `
+      <p>
+        脚注
+        <a
+          id="fn-a-ref-1"
+          href="#fn-a"
+          data-footnote-ref
+          data-footnote-id="fn-a"
+          data-footnote-index="1"
+          data-footnote-ref-instance="1"
+          data-footnote-role="primary"
+          role="doc-noteref"
+          aria-label="脚注 1 を開く"
+          data-hydration-key="footnote-popover-enhancer"
+          data-hydration-capability="progressive"
+          data-hydration-trigger="post-commit"
+        ><sup>1</sup></a>
+      </p>
+      <section role="doc-endnotes">
+        <h2 id="footnote-label">脚注</h2>
+        <ol>
+          <li id="fn-a">
+            <p>本文 <a href="#fn-a-ref-1" data-footnote-backref role="doc-backlink" aria-label="脚注参照 1 に戻る">↩︎</a></p>
+          </li>
+        </ol>
+      </section>
+    `;
+
+    const prepared = prepareTocHtml(html);
+
+    expect(prepared.html).to.contain('data-footnote-ref="true"');
+    expect(prepared.html).to.contain('data-footnote-backref="true"');
+    expect(() =>
+      validateNoteContentContracts(
+        'testing',
+        prepared.html,
+        'test:post-prepare-toc',
+        'markdown-basic',
+      ),
+    ).not.toThrow();
   });
 });

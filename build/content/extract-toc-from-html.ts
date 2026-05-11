@@ -1,6 +1,10 @@
 import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
 import type { TocHeading, TocScopeSelection } from '../../src/toc/toc-headings.js';
+import {
+  parseFootnoteBackrefHref,
+  parseFootnoteRefHref,
+} from '../../shared/footnotes/footnote-id.js';
 
 export type { TocHeading, TocScopeSelection };
 
@@ -33,6 +37,34 @@ const setAttributeValue = (node: Parse5Element, name: string, value: string): vo
   }
 
   node.attrs.push({ name, value } as Parse5Attribute);
+};
+
+const normalizeFootnoteStructuralBooleanAttributes = (node: Parse5Element): void => {
+  if (node.tagName !== 'a') {
+    return;
+  }
+
+  if (
+    getAttributeValue(node, 'data-footnote-ref') === '' &&
+    getAttributeValue(node, 'role') === 'doc-noteref'
+  ) {
+    const href = getAttributeValue(node, 'href') ?? '';
+    const parsed = parseFootnoteRefHref(href);
+    if (parsed.kind === 'canonical') {
+      setAttributeValue(node, 'data-footnote-ref', 'true');
+    }
+  }
+
+  if (
+    getAttributeValue(node, 'data-footnote-backref') === '' &&
+    getAttributeValue(node, 'role') === 'doc-backlink'
+  ) {
+    const href = getAttributeValue(node, 'href') ?? '';
+    const parsed = parseFootnoteBackrefHref(href);
+    if (parsed.kind === 'canonical') {
+      setAttributeValue(node, 'data-footnote-backref', 'true');
+    }
+  }
 };
 
 const getElementChildren = (node: Parse5Node): Parse5Element[] => {
@@ -108,6 +140,10 @@ const visitNode = (
   counters: { scope: number },
   insideDocEndnotes = false,
 ): void => {
+  if (isElementNode(node)) {
+    normalizeFootnoteStructuralBooleanAttributes(node);
+  }
+
   const nextInsideDocEndnotes = insideDocEndnotes || isDocEndnotesSection(node);
 
   if (isHeadingElement(node)) {
