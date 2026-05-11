@@ -602,7 +602,6 @@ describe('css structure contracts', () => {
       '@media (forced-colors: active)',
       '@media print',
       `section[role='doc-endnotes']`,
-      'section.footnotes',
       '> h2#footnote-label',
       'list-style-position: outside',
       'padding-inline-start',
@@ -620,14 +619,17 @@ describe('css structure contracts', () => {
     ]);
 
     if (
-      /section(?:\[role=['"]doc-endnotes['"]\]|\.footnotes)\s*\{[^}]*display\s*:\s*none/i.test(
+      /section\[role=['"]doc-endnotes['"]\]\s*\{[^}]*display\s*:\s*none/i.test(
         FOOTNOTE_DOCUMENT_CSS,
       )
     ) {
       throw new Error('endnotes section を非表示にする契約違反があります');
     }
 
-    expectCssExcludes(FOOTNOTE_DOCUMENT_CSS, ["section[role='doc-endnotes'] .sr-only"]);
+    expectCssExcludes(FOOTNOTE_DOCUMENT_CSS, [
+      'section.footnotes',
+      "section[role='doc-endnotes'] .sr-only",
+    ]);
   });
 
   it('info-box が forced-colors / semantic token / density / print 契約を保持すること', () => {

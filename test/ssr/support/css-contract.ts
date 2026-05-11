@@ -550,7 +550,7 @@ const isUnderlineDeclaration = (property: string, value: string): boolean => {
 const isDeclaration = (node: { readonly type: string }): node is Declaration =>
   node.type === 'decl';
 
-const PROSE_TEXT_LINK_SELECTOR =
+export const PROSE_TEXT_LINK_SELECTOR =
   ":is(.prose,.about-prose) a[href]:not(:where(.heading-anchor,[data-footnote-ref='true'][role='doc-noteref'],[data-footnote-backref='true'][role='doc-backlink'],[data-footnote-popover] .footnote-list-link,ui-footnote .footnote-list-link))";
 const POPOVER_BODY_TEXT_LINK_SELECTOR =
   "[data-footnote-popover] .footnote-popover-body a[href]:not(:where(.heading-anchor,[data-footnote-ref='true'][role='doc-noteref'],[data-footnote-backref='true'][role='doc-backlink'],.footnote-list-link))";

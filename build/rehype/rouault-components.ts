@@ -1287,6 +1287,9 @@ const resolveAnchorFootnoteTarget = (
   return target;
 };
 
+const isLegacyFootnoteReferenceId = (value: string): boolean =>
+  parseFootnoteBackrefHref(`#${value}`).kind === 'legacy-user-content-fnref';
+
 const normalizeExistingFootnoteReferenceAttributes = (
   anchor: HastNode,
   definition: FootnoteDefinition,
@@ -1312,6 +1315,9 @@ const normalizeExistingFootnoteReferenceAttributes = (
   for (const [name, expected] of existingChecks) {
     const current = getPropertyString(properties, name);
     if (current !== undefined && current !== expected) {
+      if (name === 'id' && isLegacyFootnoteReferenceId(current)) {
+        continue;
+      }
       throw new Error(`[markdown] footnote reference ${name} conflicts with canonical value`);
     }
   }

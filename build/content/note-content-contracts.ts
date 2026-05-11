@@ -141,6 +141,22 @@ const isCanonicalFootnoteBackrefElement = (node: Parse5Element): boolean =>
 const hasFootnoteStructuralAttribute = (node: Parse5Element): boolean =>
   FOOTNOTE_STRUCTURAL_ATTRIBUTES.some((name) => hasAttribute(node, name));
 
+const hasInvalidFootnoteStructuralAttributePlacement = (node: Parse5Element): boolean => {
+  if (!hasFootnoteStructuralAttribute(node)) {
+    return false;
+  }
+  if (hasAttribute(node, 'data-footnote-ref') && !isCanonicalFootnoteRefElement(node)) {
+    return true;
+  }
+  if (hasAttribute(node, 'data-footnote-backref') && !isCanonicalFootnoteBackrefElement(node)) {
+    return true;
+  }
+
+  return FOOTNOTE_REF_ONLY_STRUCTURAL_ATTRIBUTES.some(
+    (name) => hasAttribute(node, name) && !isCanonicalFootnoteRefElement(node),
+  );
+};
+
 const hasForbiddenFootnoteHydrationKey = (node: Parse5Element): boolean =>
   getAttributeValue(node, 'data-hydration-key') === 'footnote-popover-enhancer' &&
   !isCanonicalFootnoteRefElement(node);
@@ -178,6 +194,13 @@ const FORBIDDEN_LINK_ANNOTATION_ATTRIBUTES = [
 const FOOTNOTE_STRUCTURAL_ATTRIBUTES = [
   'data-footnote-ref',
   'data-footnote-backref',
+  'data-footnote-id',
+  'data-footnote-index',
+  'data-footnote-ref-instance',
+  'data-footnote-role',
+] as const;
+
+const FOOTNOTE_REF_ONLY_STRUCTURAL_ATTRIBUTES = [
   'data-footnote-id',
   'data-footnote-index',
   'data-footnote-ref-instance',
@@ -495,11 +518,7 @@ const validateFootnoteContracts = (fragment: Parse5DocumentFragment, errors: str
         return;
       }
     }
-    if (
-      hasFootnoteStructuralAttribute(element) &&
-      !isCanonicalFootnoteRefElement(element) &&
-      !isCanonicalFootnoteBackrefElement(element)
-    ) {
+    if (hasInvalidFootnoteStructuralAttributePlacement(element)) {
       errors.push('footnote structural 属性は canonical footnote ref/backref にだけ許可します');
       return;
     }

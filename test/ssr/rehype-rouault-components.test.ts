@@ -230,6 +230,12 @@ describe('rehypeRouaultComponents', () => {
           children: [
             {
               type: 'element',
+              tagName: 'h3',
+              properties: { id: 'legacy-footnotes', className: ['sr-only', 'legacy-heading'] },
+              children: [{ type: 'text', value: 'Footnotes' }],
+            },
+            {
+              type: 'element',
               tagName: 'ol',
               children: [
                 {
@@ -245,12 +251,6 @@ describe('rehypeRouaultComponents', () => {
                   ],
                 },
               ],
-            },
-            {
-              type: 'element',
-              tagName: 'h3',
-              properties: { id: 'legacy-footnotes', className: ['sr-only', 'legacy-heading'] },
-              children: [{ type: 'text', value: 'Footnotes' }],
             },
           ],
         },

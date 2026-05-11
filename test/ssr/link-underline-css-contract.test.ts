@@ -81,7 +81,7 @@ describe('link underline css contract', () => {
       @media print {
         a[href] { text-decoration-line: underline; }
       }
-      a[data-footnote-ref]:hover { text-decoration-line: underline; }
+      a[data-footnote-ref='true'][role='doc-noteref']:hover { text-decoration-line: underline; }
       a[data-footnote-ref] { text-decoration-line: underline; }
     `;
 
