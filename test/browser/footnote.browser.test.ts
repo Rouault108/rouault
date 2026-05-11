@@ -339,7 +339,7 @@ describe('ui-footnote browser contract', () => {
     expect(document.activeElement).to.equal(afterFootnote);
   });
 
-  it('SSR 由来本文を保持し、再描画後も失わず、無効 index / refInstance を正規化すること', async () => {
+  it('SSR 由来本文を保持し、再描画後も失わず、無効 index を正規化して無効 refInstance は fallback に縮退すること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>
         <article data-footnote-scope>
@@ -373,7 +373,8 @@ describe('ui-footnote browser contract', () => {
       'footnote-body',
     );
 
-    expect(trigger.id).to.equal('fn-60-ref-1');
+    expect(trigger.id).to.match(/^ui-footnote-invalid-[a-z0-9]+-trigger$/u);
+    expect(trigger.getAttribute('href')).to.equal('#');
     expect(trigger.textContent?.trim()).to.equal('[1]');
     expect(body.textContent?.includes('SSR で埋め込まれた脚注本文。')).to.equal(true);
     expect(
@@ -394,6 +395,8 @@ describe('ui-footnote browser contract', () => {
       'rerenderedBody',
     );
 
+    expect(rerenderedTrigger.id).to.equal(trigger.id);
+    expect(rerenderedTrigger.getAttribute('href')).to.equal('#');
     expect(rerenderedTrigger.textContent?.trim()).to.equal('[61]');
     expect(rerenderedBody.textContent?.includes('SSR で埋め込まれた脚注本文。')).to.equal(true);
   });

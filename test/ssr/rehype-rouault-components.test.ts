@@ -321,8 +321,8 @@ describe('rehypeRouaultComponents', () => {
           type: 'element',
           tagName: 'p',
           children: [
-            { type: 'text', value: '本文から脚注3を参照する' },
-            createRawFootnoteRef('fn-3', '3'),
+            { type: 'text', value: '本文から脚注2を参照する' },
+            createRawFootnoteRef('fn-2', '2'),
           ],
         },
         {
@@ -358,20 +358,20 @@ describe('rehypeRouaultComponents', () => {
                 {
                   type: 'element',
                   tagName: 'li',
-                  properties: { id: 'user-content-fn-3' },
+                  properties: { id: 'user-content-fn-2' },
                   children: [
                     {
                       type: 'element',
                       tagName: 'p',
                       children: [
-                        { type: 'text', value: '脚注3から脚注1を参照する' },
+                        { type: 'text', value: '脚注2から脚注1を参照する' },
                         createRawFootnoteRef('fn-1', '1', '-7'),
                         { type: 'text', value: ' ' },
                         {
                           type: 'element',
                           tagName: 'a',
                           properties: {
-                            href: '#user-content-fnref-3',
+                            href: '#user-content-fnref-2',
                             dataFootnoteBackref: true,
                             ariaLabel: 'Back to content',
                           },
@@ -390,13 +390,13 @@ describe('rehypeRouaultComponents', () => {
 
     rehypeRouaultComponents()(tree);
 
-    const fn3Item = findElement(
+    const fn2Item = findElement(
       tree,
-      (node) => node.tagName === 'li' && node.properties?.['id'] === 'fn-3',
+      (node) => node.tagName === 'li' && node.properties?.['id'] === 'fn-2',
     );
 
     const nestedRef = findElement(
-      fn3Item,
+      fn2Item,
       (node) =>
         node.tagName === 'a' &&
         node.properties?.['data-footnote-ref'] === 'true' &&
@@ -414,26 +414,26 @@ describe('rehypeRouaultComponents', () => {
     expect(nestedRef?.properties?.['data-hydration-capability']).to.equal('progressive');
     expect(nestedRef?.properties?.['data-hydration-trigger']).to.equal('post-commit');
 
-    const fn3Backrefs = findElements(
-      fn3Item,
+    const fn2Backrefs = findElements(
+      fn2Item,
       (node) => node.tagName === 'a' && node.properties?.['role'] === 'doc-backlink',
     );
 
-    expect(fn3Backrefs).to.have.length(1);
+    expect(fn2Backrefs).to.have.length(1);
 
     const legacyBackrefs = findElements(
-      fn3Item,
+      fn2Item,
       (node) =>
         node.tagName === 'a' &&
         (node.properties?.['dataFootnoteBackref'] !== undefined ||
-          node.properties?.['href'] === '#user-content-fnref-3' ||
+          node.properties?.['href'] === '#user-content-fnref-2' ||
           node.properties?.['ariaLabel'] === 'Back to content'),
     );
 
     expect(legacyBackrefs).to.have.length(0);
 
     const fn3FootnoteRefs = findElements(
-      fn3Item,
+      fn2Item,
       (node) => node.tagName === 'a' && node.properties?.['data-footnote-ref'] === 'true',
     );
 

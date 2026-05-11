@@ -1038,15 +1038,6 @@ const parseFootnoteIndexFromText = (value: string): number | null => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 };
 
-const parseFootnoteIndexFromId = (value: string): number | null => {
-  const matched = /^fn-(\d+)$/u.exec(value);
-  if (!matched) {
-    return null;
-  }
-
-  const parsed = Number.parseInt(matched[1] ?? '', 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-};
 
 const isFootnotesSection = (node: HastNode): boolean => {
   if (!isElement(node, 'section')) {
@@ -1217,11 +1208,10 @@ const collectFootnoteDefinitions = (
         if (definitions.has(refId)) {
           throw new Error(`[markdown] duplicate footnote definition id "${refId}"`);
         }
-        const resolvedIndex = parseFootnoteIndexFromId(refId) ?? listIndex;
         item.properties['id'] = refId;
         definitions.set(refId, {
           refId,
-          index: resolvedIndex,
+          index: listIndex,
           itemNode: item,
         });
       }
@@ -1359,6 +1349,59 @@ const createStaticFootnoteReference = (
   };
 };
 
+const applyStaticFootnoteReference = (
+  node: HastNode,
+  definition: FootnoteDefinition,
+  nextInstance: number,
+): void => {
+  const staticReference = createStaticFootnoteReference(definition, nextInstance);
+  const staticProperties = { ...staticReference.properties };
+
+  node.tagName = staticReference.tagName;
+  node.properties = staticProperties;
+  node.children = staticReference.children;
+  removeFootnoteClassMarkers(staticProperties);
+  delete staticProperties['aria-describedby'];
+  delete staticProperties['ariaDescribedBy'];
+  delete staticProperties['ariadescribedby'];
+};
+
+const isCanonicalStaticFootnoteReference = (node: HastNode): boolean =>
+  isElement(node, 'a') &&
+  node.properties?.['data-footnote-ref'] === 'true' &&
+  node.properties?.['role'] === 'doc-noteref';
+
+const renumberCanonicalFootnoteReferences = (
+  node: HastNode,
+  definitions: Map<string, FootnoteDefinition>,
+  refCounters: Map<string, number>,
+): void => {
+  if (isCanonicalStaticFootnoteReference(node)) {
+    const target = resolveAnchorFootnoteTarget(node, definitions, true);
+    if (target === null) {
+      return;
+    }
+
+    const definition = definitions.get(target);
+    if (!definition) {
+      return;
+    }
+
+    const nextInstance = (refCounters.get(definition.refId) ?? 0) + 1;
+    applyStaticFootnoteReference(node, definition, nextInstance);
+    refCounters.set(definition.refId, nextInstance);
+    return;
+  }
+
+  if (!Array.isArray(node.children)) {
+    return;
+  }
+
+  for (const child of node.children) {
+    renumberCanonicalFootnoteReferences(child, definitions, refCounters);
+  }
+};
+
 const isExplicitFootnoteReferenceAnchor = (node: HastNode): boolean => {
   if (!isElement(node, 'a')) {
     return false;
@@ -1443,17 +1486,7 @@ const toStaticFootnoteReference = (
   const nextInstance = (refCounters.get(definition.refId) ?? 0) + 1;
 
   normalizeExistingFootnoteReferenceAttributes(anchor, definition, nextInstance);
-  const staticReference = createStaticFootnoteReference(definition, nextInstance);
-  const staticProperties = { ...staticReference.properties };
-
-  node.tagName = staticReference.tagName;
-  node.properties = staticProperties;
-  node.children = staticReference.children;
-  removeFootnoteClassMarkers(staticProperties);
-  delete staticProperties['aria-describedby'];
-  delete staticProperties['ariaDescribedBy'];
-  delete staticProperties['ariadescribedby'];
-
+  applyStaticFootnoteReference(node, definition, nextInstance);
   refCounters.set(definition.refId, nextInstance);
   return true;
 };
@@ -1730,6 +1763,14 @@ export function rehypeRouaultComponents() {
     };
 
     visit(tree);
+    footnoteRefCounters.clear();
+    if (tree && typeof tree === 'object') {
+      renumberCanonicalFootnoteReferences(
+        tree as HastNode,
+        footnoteDefinitions,
+        footnoteRefCounters,
+      );
+    }
     synchronizeFootnoteBackrefs(footnoteDefinitions, footnoteRefCounters);
     if (tree && typeof tree === 'object') {
       collectDocumentIds(tree as HastNode);
