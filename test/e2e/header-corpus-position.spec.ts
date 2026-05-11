@@ -1,7 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { e2eNoteFixtures } from './support/note-fixtures.js';
-
-const noteFixture = e2eNoteFixtures.layoutRich;
+const notePath = '/notes/program/csharp/what-is-csharp';
 const testedViewports = [640, 768, 1023, 1024, 1440] as const;
 
 interface HeaderFrameSnapshot {
@@ -238,7 +236,8 @@ test.describe('header corpus dropdown position contract', () => {
   }) => {
     for (const width of testedViewports) {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto(noteFixture.directPath);
+      await page.goto(notePath);
+      await waitForHeaderCorpusTrigger(page);
       const noteState = await readHeaderCorpusState(page);
       const corpusHref = await readCorpusHrefFromCurrentHeader(page);
 
@@ -260,7 +259,7 @@ test.describe('header corpus dropdown position contract', () => {
         1,
       );
 
-      await page.goto(noteFixture.directPath);
+      await page.goto(notePath);
       const notePanelGeometry = await readCorpusGeometry(page, { panel: true });
       await page.goto(corpusHref);
       const corpusPanelGeometry = await readCorpusGeometry(page, { panel: true });
@@ -280,7 +279,7 @@ test.describe('header corpus dropdown position contract', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 768, height: 900 });
-    await page.goto(noteFixture.directPath);
+    await page.goto(notePath);
     await waitForHeaderCorpusTrigger(page);
 
     const state = await readHeaderCorpusState(page);

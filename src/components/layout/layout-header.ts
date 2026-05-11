@@ -145,6 +145,12 @@ export class LayoutHeader extends LitElement {
       z-index: var(--z-anchored-overlay, var(--z-popover, 400));
     }
 
+    .layout-header-query-frame {
+      inline-size: 100%;
+      container-type: inline-size;
+      container-name: layout-header-shell;
+    }
+
     .brand {
       display: inline-flex;
       align-items: center;
@@ -818,11 +824,12 @@ export class LayoutHeader extends LitElement {
   };
 
   private _commitThemePreference(preference: ThemePreference): void {
-    this._themePreference = preference;
+    if (this._themePreference !== preference) {
+      this._themePreference = preference;
+    }
 
-    // SSR / hydration 後の stale な shadow DOM part に依存しないよう、
-    // 状態更新経路では明示的に更新要求も出す。
-    this.requestUpdate();
+    // Lit の update 完了直後に同値 state を再代入して不要な update を発生させない。
+    // DOM 同期は現在の updateComplete に連結し、theme 表示だけを後段で補正する。
     void this.updateComplete.then(() => {
       if (this._themePreference !== preference || !this.isConnected) {
         return;
@@ -1001,11 +1008,12 @@ export class LayoutHeader extends LitElement {
     const tocTriggerAriaLabel = this._tocPanelOpen ? '目次を閉じる' : '目次を開く';
 
     return html`
-      <ui-header
-        .sidebarExpanded=${this._headerSidebarReserved}
-        .overlaySidebarOpen=${this._overlaySidebarOpen}
-      >
-        <div slot="start" class="slot-group start-slot-group">
+      <div class="layout-header-query-frame">
+        <ui-header
+          .sidebarExpanded=${this._headerSidebarReserved}
+          .overlaySidebarOpen=${this._overlaySidebarOpen}
+        >
+          <div slot="start" class="slot-group start-slot-group">
           ${this.sidebarEnabled
             ? html`
                 <ui-button
@@ -1037,9 +1045,9 @@ export class LayoutHeader extends LitElement {
               (item) => html`<ui-menu-item value=${item.href}>${item.label}</ui-menu-item>`,
             )}
           </ui-dropdown>
-        </div>
+          </div>
 
-        <div slot="end" class="slot-group end-slot-group">
+          <div slot="end" class="slot-group end-slot-group">
           <button
             class="toc-trigger"
             type="button"
@@ -1102,8 +1110,9 @@ export class LayoutHeader extends LitElement {
               `;
             })}
           </ui-dropdown>
-        </div>
-      </ui-header>
+          </div>
+        </ui-header>
+      </div>
     `;
   }
 }

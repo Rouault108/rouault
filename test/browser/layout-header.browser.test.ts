@@ -157,6 +157,15 @@ const expectWithinPx = (actual: number, expected: number, tolerance = 1): void =
   expect(Math.abs(actual - expected)).to.be.lessThanOrEqual(tolerance);
 };
 
+const waitForComputedStyleValue = async (
+  element: HTMLElement,
+  property: keyof CSSStyleDeclaration,
+  expected: string,
+  message: string,
+): Promise<void> => {
+  await waitUntil(() => String(getComputedStyle(element)[property]) === expected, message);
+};
+
 const readUiHeaderZoneCenterStyle = (header: LayoutHeader): CSSStyleDeclaration => {
   const uiHeader = expectPresent(
     header.shadowRoot?.querySelector<UiHeader>('ui-header'),
@@ -993,10 +1002,20 @@ describe('layout-header browser contract', () => {
     await waitForResponsiveState(header, false);
 
     const { start, end } = readSlotGroups(header);
-    expect(getComputedStyle(start).gap).to.equal('6px');
-    expect(getComputedStyle(end).gap).to.equal('2px');
-    expect(getComputedStyle(start).paddingLeft).to.equal('38px');
-    expect(getComputedStyle(end).paddingLeft).to.equal('0px');
+    await waitForComputedStyleValue(start, 'gap', '6px', 'start-slot-group の gap が 6px に同期されません');
+    await waitForComputedStyleValue(end, 'gap', '2px', 'end-slot-group の gap が 2px に同期されません');
+    await waitForComputedStyleValue(
+      start,
+      'paddingLeft',
+      '38px',
+      'start-slot-group の padding-left が 38px に同期されません',
+    );
+    await waitForComputedStyleValue(
+      end,
+      'paddingLeft',
+      '0px',
+      'end-slot-group の padding-left が 0px に同期されません',
+    );
   });
 
   it('center start inset は 1024px 未満では token override、1024px 以上では fixed sidebar reserve に従うこと', async () => {
@@ -1076,8 +1095,18 @@ describe('layout-header browser contract', () => {
     await waitForResponsiveState(normalHeader, false);
     await waitForResponsiveState(sidebarHeader, false);
 
-    expect(getComputedStyle(readSlotGroups(normalHeader).start).minBlockSize).to.equal('0px');
-    expect(getComputedStyle(readSlotGroups(sidebarHeader).start).minBlockSize).to.equal('44px');
+    await waitForComputedStyleValue(
+      readSlotGroups(normalHeader).start,
+      'minBlockSize',
+      '0px',
+      'normal start-slot-group の min-block-size が 0px に同期されません',
+    );
+    await waitForComputedStyleValue(
+      readSlotGroups(sidebarHeader).start,
+      'minBlockSize',
+      '44px',
+      'sidebar start-slot-group の min-block-size が 44px に同期されません',
+    );
 
     const desktopWrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 1440px;">
@@ -1089,7 +1118,12 @@ describe('layout-header browser contract', () => {
       'desktopHeader',
     );
     await waitForResponsiveState(desktopHeader, false);
-    expect(getComputedStyle(readSlotGroups(desktopHeader).start).minBlockSize).to.equal('0px');
+    await waitForComputedStyleValue(
+      readSlotGroups(desktopHeader).start,
+      'minBlockSize',
+      '0px',
+      'desktop start-slot-group の min-block-size が 0px に同期されません',
+    );
   });
 
   it('visible size override は sidebar toggle 実寸と reserve の両方へ反映されること', async () => {
@@ -1123,8 +1157,18 @@ describe('layout-header browser contract', () => {
     const toggleRect = toggle.getBoundingClientRect();
     expectWithinPx(toggleRect.width, 40, 1);
     expectWithinPx(toggleRect.height, 40, 1);
-    expect(getComputedStyle(readSlotGroups(sidebarHeader).start).paddingLeft).to.equal('48px');
-    expect(getComputedStyle(readSlotGroups(sidebarHeader).start).minBlockSize).to.equal('44px');
+    await waitForComputedStyleValue(
+      readSlotGroups(sidebarHeader).start,
+      'paddingLeft',
+      '48px',
+      'sidebar start-slot-group の padding-left が 48px に同期されません',
+    );
+    await waitForComputedStyleValue(
+      readSlotGroups(sidebarHeader).start,
+      'minBlockSize',
+      '44px',
+      'sidebar start-slot-group の min-block-size が 44px に同期されません',
+    );
     expectWithinPx(
       await readCorpusTriggerLeft(normalHeader),
       await readCorpusTriggerLeft(sidebarHeader),
@@ -1157,8 +1201,18 @@ describe('layout-header browser contract', () => {
     );
     expectWithinPx(toggle.getBoundingClientRect().width, 48, 1);
     expectWithinPx(toggle.getBoundingClientRect().height, 48, 1);
-    expect(getComputedStyle(readSlotGroups(header).start).gap).to.equal('2px');
-    expect(getComputedStyle(readSlotGroups(header).start).minBlockSize).to.equal('48px');
+    await waitForComputedStyleValue(
+      readSlotGroups(header).start,
+      'gap',
+      '2px',
+      'start-slot-group の gap が 2px に同期されません',
+    );
+    await waitForComputedStyleValue(
+      readSlotGroups(header).start,
+      'minBlockSize',
+      '48px',
+      'start-slot-group の min-block-size が 48px に同期されません',
+    );
   });
 
   it('--layout-header-start-leading-visual-reserve は reserve 下限を縮小せず、大きい値では拡張すること', async () => {
@@ -1172,7 +1226,12 @@ describe('layout-header browser contract', () => {
       'smallHeader',
     );
     await waitForResponsiveState(smallHeader, false);
-    expect(getComputedStyle(readSlotGroups(smallHeader).start).paddingLeft).to.equal('40px');
+    await waitForComputedStyleValue(
+      readSlotGroups(smallHeader).start,
+      'paddingLeft',
+      '40px',
+      'small reserve start-slot-group の padding-left が 40px に同期されません',
+    );
 
     const largeWrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 768px; --layout-header-start-leading-visual-reserve: 56px;">
@@ -1184,7 +1243,12 @@ describe('layout-header browser contract', () => {
       'largeHeader',
     );
     await waitForResponsiveState(largeHeader, false);
-    expect(getComputedStyle(readSlotGroups(largeHeader).start).paddingLeft).to.equal('56px');
+    await waitForComputedStyleValue(
+      readSlotGroups(largeHeader).start,
+      'paddingLeft',
+      '56px',
+      'large reserve start-slot-group の padding-left が 56px に同期されません',
+    );
   });
 
   it('focus stacking contract を維持し、sidebar toggle focus 時も absolute 配置を維持すること', async () => {
