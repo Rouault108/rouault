@@ -1280,6 +1280,24 @@ const resolveAnchorFootnoteTarget = (
 const isLegacyFootnoteReferenceId = (value: string): boolean =>
   parseFootnoteBackrefHref(`#${value}`).kind === 'legacy-user-content-fnref';
 
+const assertExistingFootnoteReferenceProperty = (
+  properties: Record<string, unknown>,
+  names: readonly string[],
+  expected: string,
+  options: { readonly allowLegacyId?: boolean } = {},
+): void => {
+  for (const name of names) {
+    const current = getPropertyString(properties, name);
+    if (current === undefined || current === expected) {
+      continue;
+    }
+    if (options.allowLegacyId === true && isLegacyFootnoteReferenceId(current)) {
+      continue;
+    }
+    throw new Error(`[markdown] footnote reference ${name} conflicts with canonical value`);
+  }
+};
+
 const normalizeExistingFootnoteReferenceAttributes = (
   anchor: HastNode,
   definition: FootnoteDefinition,
@@ -1288,29 +1306,45 @@ const normalizeExistingFootnoteReferenceAttributes = (
   const properties = anchor.properties ?? {};
   const expectedId = createFootnoteRefId(definition.refId, nextInstance);
   const expectedIndex = String(definition.index);
+  const expectedInstance = String(nextInstance);
   const expectedRole = nextInstance === 1 ? 'primary' : 'secondary';
   const expectedAriaLabel = `脚注 ${expectedIndex} を開く`;
 
-  const existingChecks: [string, string][] = [
-    ['id', expectedId],
-    ['data-footnote-index', expectedIndex],
-    ['data-footnote-ref-instance', String(nextInstance)],
-    ['data-footnote-role', expectedRole],
-    ['role', 'doc-noteref'],
-    ['aria-label', expectedAriaLabel],
-    ['data-hydration-key', 'footnote-popover-enhancer'],
-    ['data-hydration-capability', 'progressive'],
-    ['data-hydration-trigger', 'post-commit'],
-  ];
-  for (const [name, expected] of existingChecks) {
-    const current = getPropertyString(properties, name);
-    if (current !== undefined && current !== expected) {
-      if (name === 'id' && isLegacyFootnoteReferenceId(current)) {
-        continue;
-      }
-      throw new Error(`[markdown] footnote reference ${name} conflicts with canonical value`);
-    }
-  }
+  assertExistingFootnoteReferenceProperty(properties, ['id'], expectedId, {
+    allowLegacyId: true,
+  });
+  assertExistingFootnoteReferenceProperty(
+    properties,
+    ['data-footnote-index', 'dataFootnoteIndex'],
+    expectedIndex,
+  );
+  assertExistingFootnoteReferenceProperty(
+    properties,
+    ['data-footnote-ref-instance', 'dataFootnoteRefInstance'],
+    expectedInstance,
+  );
+  assertExistingFootnoteReferenceProperty(
+    properties,
+    ['data-footnote-role', 'dataFootnoteRole'],
+    expectedRole,
+  );
+  assertExistingFootnoteReferenceProperty(properties, ['role'], 'doc-noteref');
+  assertExistingFootnoteReferenceProperty(properties, ['aria-label'], expectedAriaLabel);
+  assertExistingFootnoteReferenceProperty(
+    properties,
+    ['data-hydration-key', 'dataHydrationKey'],
+    'footnote-popover-enhancer',
+  );
+  assertExistingFootnoteReferenceProperty(
+    properties,
+    ['data-hydration-capability', 'dataHydrationCapability'],
+    'progressive',
+  );
+  assertExistingFootnoteReferenceProperty(
+    properties,
+    ['data-hydration-trigger', 'dataHydrationTrigger'],
+    'post-commit',
+  );
 
   const visibleIndex = parseFootnoteIndexFromText(getTextContent(anchor));
   if (visibleIndex !== null && visibleIndex !== definition.index) {
@@ -1371,10 +1405,34 @@ const isCanonicalStaticFootnoteReference = (node: HastNode): boolean =>
   node.properties?.['data-footnote-ref'] === 'true' &&
   node.properties?.['role'] === 'doc-noteref';
 
+const collectDocumentIdsExcludingCanonicalFootnoteReferences = (
+  node: HastNode,
+  ids = new Map<string, HastNode>(),
+): Map<string, HastNode> => {
+  if (isElement(node)) {
+    const id = getPropertyString(node.properties, 'id');
+    if (id && !isCanonicalStaticFootnoteReference(node)) {
+      if (ids.has(id)) {
+        throw new Error(`[markdown] duplicate id "${id}" is not allowed`);
+      }
+      ids.set(id, node);
+    }
+  }
+
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) {
+      collectDocumentIdsExcludingCanonicalFootnoteReferences(child, ids);
+    }
+  }
+
+  return ids;
+};
+
 const renumberCanonicalFootnoteReferences = (
   node: HastNode,
   definitions: Map<string, FootnoteDefinition>,
   refCounters: Map<string, number>,
+  reservedIds: Map<string, HastNode>,
 ): void => {
   if (isCanonicalStaticFootnoteReference(node)) {
     const target = resolveAnchorFootnoteTarget(node, definitions, true);
@@ -1388,7 +1446,14 @@ const renumberCanonicalFootnoteReferences = (
     }
 
     const nextInstance = (refCounters.get(definition.refId) ?? 0) + 1;
+    const nextId = createFootnoteRefId(definition.refId, nextInstance);
+    const conflictingNode = reservedIds.get(nextId);
+    if (conflictingNode !== undefined && conflictingNode !== node) {
+      throw new Error(`[markdown] footnote ref id "${nextId}" already exists`);
+    }
+
     applyStaticFootnoteReference(node, definition, nextInstance);
+    reservedIds.set(nextId, node);
     refCounters.set(definition.refId, nextInstance);
     return;
   }
@@ -1398,7 +1463,7 @@ const renumberCanonicalFootnoteReferences = (
   }
 
   for (const child of node.children) {
-    renumberCanonicalFootnoteReferences(child, definitions, refCounters);
+    renumberCanonicalFootnoteReferences(child, definitions, refCounters, reservedIds);
   }
 };
 
@@ -1416,11 +1481,7 @@ const isExplicitFootnoteReferenceAnchor = (node: HastNode): boolean => {
     deleteFootnoteRefMarkerProperties(properties);
     return false;
   }
-  return (
-    hasTruthyFootnoteRefDataMarker(properties) ||
-    properties['role'] === 'doc-noteref' ||
-    hasFootnoteReferenceClassMarker(node)
-  );
+  return hasTruthyFootnoteRefDataMarker(properties) || hasFootnoteReferenceClassMarker(node);
 };
 
 const getSingleFootnoteCandidateAnchorFromSup = (node: HastNode): HastNode | null => {
@@ -1433,11 +1494,19 @@ const getSingleFootnoteCandidateAnchorFromSup = (node: HastNode): HastNode | nul
   const candidateAnchors = anchors.filter((anchor) => {
     const properties = anchor.properties ?? {};
     if (hasFalseFootnoteRefDataMarker(properties)) {
+      if (properties['role'] === 'doc-noteref' || hasFootnoteReferenceClassMarker(anchor)) {
+        throw new Error(
+          '[markdown] false-valued footnote ref marker conflicts with structural marker',
+        );
+      }
       deleteFootnoteRefMarkerProperties(properties);
       return false;
     }
     if (isExplicitFootnoteReferenceAnchor(anchor)) {
       return true;
+    }
+    if (properties['role'] === 'doc-noteref') {
+      throw new Error('[markdown] role-only footnote ref marker is not allowed');
     }
     const href = getPropertyString(properties, 'href');
     if (!href) {
@@ -1765,10 +1834,14 @@ export function rehypeRouaultComponents() {
     visit(tree);
     footnoteRefCounters.clear();
     if (tree && typeof tree === 'object') {
+      const reservedFootnoteReferenceIds = collectDocumentIdsExcludingCanonicalFootnoteReferences(
+        tree as HastNode,
+      );
       renumberCanonicalFootnoteReferences(
         tree as HastNode,
         footnoteDefinitions,
         footnoteRefCounters,
+        reservedFootnoteReferenceIds,
       );
     }
     synchronizeFootnoteBackrefs(footnoteDefinitions, footnoteRefCounters);

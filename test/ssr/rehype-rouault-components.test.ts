@@ -687,4 +687,164 @@ describe('rehypeRouaultComponents', () => {
     expect(field?.properties?.['data-hydration-trigger']).to.equal(undefined);
   });
 
+
+  it('role-only の脚注参照を fallback candidate として救済しないこと', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'p',
+          children: [
+            {
+              type: 'element',
+              tagName: 'sup',
+              children: [
+                {
+                  type: 'element',
+                  tagName: 'a',
+                  properties: {
+                    href: '#fn-a',
+                    role: 'doc-noteref',
+                  },
+                  children: [{ type: 'text', value: '1' }],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'element',
+          tagName: 'section',
+          properties: { role: 'doc-endnotes' },
+          children: [
+            {
+              type: 'element',
+              tagName: 'ol',
+              children: [
+                {
+                  type: 'element',
+                  tagName: 'li',
+                  properties: { id: 'fn-a' },
+                  children: [
+                    {
+                      type: 'element',
+                      tagName: 'p',
+                      children: [{ type: 'text', value: '脚注A' }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(() => rehypeRouaultComponents()(tree)).to.throw(
+      'role-only footnote ref marker is not allowed',
+    );
+  });
+
+  it('footnote ref の final 再採番時に既存 id との衝突を拒否すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'p',
+          properties: { id: 'fn-a-ref-1' },
+          children: [{ type: 'text', value: '既存 id' }],
+        },
+        {
+          type: 'element',
+          tagName: 'p',
+          children: [createRawFootnoteRef('fn-a', '1')],
+        },
+        {
+          type: 'element',
+          tagName: 'section',
+          properties: { role: 'doc-endnotes' },
+          children: [
+            {
+              type: 'element',
+              tagName: 'ol',
+              children: [
+                {
+                  type: 'element',
+                  tagName: 'li',
+                  properties: { id: 'fn-a' },
+                  children: [
+                    {
+                      type: 'element',
+                      tagName: 'p',
+                      children: [{ type: 'text', value: '脚注A' }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(() => rehypeRouaultComponents()(tree)).to.throw(
+      'footnote ref id "fn-a-ref-1" already exists',
+    );
+  });
+
+  it('camelCase の既存 structural 属性が canonical 値と矛盾する場合は拒否すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'p',
+          children: [
+            {
+              type: 'element',
+              tagName: 'a',
+              properties: {
+                href: '#fn-a',
+                dataFootnoteRef: 'true',
+                dataFootnoteIndex: '99',
+              },
+              children: [{ type: 'text', value: '1' }],
+            },
+          ],
+        },
+        {
+          type: 'element',
+          tagName: 'section',
+          properties: { role: 'doc-endnotes' },
+          children: [
+            {
+              type: 'element',
+              tagName: 'ol',
+              children: [
+                {
+                  type: 'element',
+                  tagName: 'li',
+                  properties: { id: 'fn-a' },
+                  children: [
+                    {
+                      type: 'element',
+                      tagName: 'p',
+                      children: [{ type: 'text', value: '脚注A' }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(() => rehypeRouaultComponents()(tree)).to.throw(
+      'footnote reference dataFootnoteIndex conflicts with canonical value',
+    );
+  });
+
 });
