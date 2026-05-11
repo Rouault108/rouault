@@ -49,17 +49,23 @@ const staticNoteHtml = `
       id="fn-static-1-ref-1"
       href="#fn-static-1"
       role="doc-noteref"
+      aria-label="脚注 1 を開く"
       data-footnote-ref="true"
       data-footnote-id="fn-static-1"
+      data-footnote-index="1"
       data-footnote-ref-instance="1"
+      data-footnote-role="primary"
       data-hydration-key="footnote-popover-enhancer"
       data-hydration-capability="progressive"
       data-hydration-trigger="post-commit"
     ><sup>1</sup></a>
   </p>
   <section role="doc-endnotes">
+    <h2 id="footnote-label">脚注</h2>
     <ol>
-      <li id="fn-static-1">footnote body <a href="#fn-static-1-ref-1" data-footnote-backref role="doc-backlink">↩︎</a></li>
+      <li id="fn-static-1">
+        <p>footnote body <a href="#fn-static-1-ref-1" data-footnote-backref="true" role="doc-backlink" aria-label="脚注参照 1 に戻る">↩︎</a></p>
+      </li>
     </ol>
   </section>
 `;

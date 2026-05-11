@@ -16,6 +16,7 @@ export interface PreparedTocHtml {
 type Parse5DocumentFragment = DefaultTreeAdapterMap['documentFragment'];
 type Parse5Element = DefaultTreeAdapterMap['element'];
 type Parse5Node = DefaultTreeAdapterMap['node'];
+type Parse5TextNode = DefaultTreeAdapterMap['textNode'];
 type Parse5Attribute = Parse5Element['attrs'][number];
 
 const WHITESPACE_PATTERN = /\s+/g;
@@ -38,6 +39,46 @@ const setAttributeValue = (node: Parse5Element, name: string, value: string): vo
 
   node.attrs.push({ name, value } as Parse5Attribute);
 };
+
+const removeAttribute = (node: Parse5Element, name: string): void => {
+  node.attrs = node.attrs.filter((attribute) => attribute.name !== name);
+};
+
+const removeAttributesWhere = (node: Parse5Element, predicate: (name: string) => boolean): void => {
+  node.attrs = node.attrs.filter((attribute) => !predicate(attribute.name));
+};
+
+const normalizeCounterStyle = (node: Parse5Element): void => {
+  const style = getAttributeValue(node, 'style');
+  if (style === undefined || !/--ui-ol-counter-(?:reset|step|set)/u.test(style)) {
+    return;
+  }
+
+  const remaining = style
+    .split(';')
+    .map((declaration) => declaration.trim())
+    .filter(
+      (declaration) =>
+        declaration.length > 0 && !/^--ui-ol-counter-(?:reset|step|set)\s*:/u.test(declaration),
+    )
+    .join('; ');
+
+  if (remaining.length === 0) {
+    removeAttribute(node, 'style');
+    return;
+  }
+
+  setAttributeValue(node, 'style', remaining);
+};
+
+const getClassNames = (node: Parse5Element): string[] =>
+  (getAttributeValue(node, 'class') ?? '')
+    .split(/\s+/u)
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+
+const hasClassName = (node: Parse5Element, className: string): boolean =>
+  getClassNames(node).includes(className);
 
 const normalizeFootnoteStructuralBooleanAttributes = (node: Parse5Element): void => {
   if (node.tagName !== 'a') {
@@ -67,12 +108,193 @@ const normalizeFootnoteStructuralBooleanAttributes = (node: Parse5Element): void
   }
 };
 
+const isEndnotesLabelHeading = (node: Parse5Element, insideDocEndnotes: boolean): boolean =>
+  insideDocEndnotes && node.tagName === 'h2' && getAttributeValue(node, 'id') === 'footnote-label';
+
+const isHeadingPermalinkNode = (node: Parse5Element): boolean =>
+  hasClassName(node, 'heading-anchor') ||
+  getAttributeValue(node, 'data-heading-permalink') === 'true';
+
+const removeHeadingPermalinkDescendants = (node: Parse5Element): void => {
+  if (!('childNodes' in node) || !Array.isArray(node.childNodes)) {
+    return;
+  }
+
+  node.childNodes = node.childNodes.filter(
+    (child) => !(isElementNode(child) && isHeadingPermalinkNode(child)),
+  );
+
+  for (const child of node.childNodes) {
+    if (isElementNode(child)) {
+      removeHeadingPermalinkDescendants(child);
+    }
+  }
+};
+
 const getElementChildren = (node: Parse5Node): Parse5Element[] => {
   if (!('childNodes' in node) || !Array.isArray(node.childNodes)) {
     return [];
   }
 
   return node.childNodes.filter((child): child is Parse5Element => isElementNode(child));
+};
+
+const getChildNodes = (node: Parse5Node): Parse5Node[] =>
+  'childNodes' in node && Array.isArray(node.childNodes) ? node.childNodes : [];
+
+const createTextNode = (value: string): Parse5TextNode =>
+  ({
+    nodeName: '#text',
+    value,
+  }) as Parse5TextNode;
+
+const normalizeCanonicalEndnotesOrderedListAttributes = (section: Parse5Element): void => {
+  const children = getElementChildren(section);
+  const heading = children[0];
+  const list = children[1];
+
+  if (
+    heading === undefined ||
+    list === undefined ||
+    heading.tagName !== 'h2' ||
+    getAttributeValue(heading, 'id') !== 'footnote-label' ||
+    list.tagName !== 'ol'
+  ) {
+    return;
+  }
+
+  removeAttribute(list, 'start');
+  removeAttribute(list, 'reversed');
+  removeAttribute(list, 'data-marker-digits');
+  removeAttributesWhere(list, (name) => name.startsWith('data-ol-'));
+  if (getAttributeValue(list, 'role') === 'list') {
+    removeAttribute(list, 'role');
+  }
+  normalizeCounterStyle(list);
+
+  for (const child of getElementChildren(list)) {
+    if (child.tagName !== 'li') {
+      continue;
+    }
+
+    removeAttribute(child, 'value');
+    removeAttribute(child, 'data-marker-digits');
+    removeAttributesWhere(child, (name) => name.startsWith('data-ol-'));
+    if (getAttributeValue(child, 'role') === 'listitem') {
+      removeAttribute(child, 'role');
+    }
+    normalizeCounterStyle(child);
+  }
+};
+
+const isCanonicalFootnoteBackref = (node: Parse5Element): boolean => {
+  if (node.tagName !== 'a') {
+    return false;
+  }
+
+  normalizeFootnoteStructuralBooleanAttributes(node);
+
+  if (
+    getAttributeValue(node, 'data-footnote-backref') !== 'true' ||
+    getAttributeValue(node, 'role') !== 'doc-backlink'
+  ) {
+    return false;
+  }
+
+  return parseFootnoteBackrefHref(getAttributeValue(node, 'href') ?? '').kind === 'canonical';
+};
+
+const collectCanonicalFootnoteBackrefs = (node: Parse5Node): Parse5Element[] => {
+  const backrefs: Parse5Element[] = [];
+  const visit = (current: Parse5Node): void => {
+    if (isElementNode(current) && isCanonicalFootnoteBackref(current)) {
+      backrefs.push(current);
+    }
+
+    for (const child of getChildNodes(current)) {
+      visit(child);
+    }
+  };
+
+  visit(node);
+  return backrefs;
+};
+
+const removeDescendantNodes = (node: Parse5Node, targets: ReadonlySet<Parse5Node>): void => {
+  if (!('childNodes' in node) || !Array.isArray(node.childNodes)) {
+    return;
+  }
+
+  node.childNodes = node.childNodes.filter((child) => !targets.has(child));
+
+  for (const child of node.childNodes) {
+    removeDescendantNodes(child, targets);
+  }
+};
+
+const isWhitespaceTextNode = (node: Parse5Node): boolean =>
+  'value' in node && typeof node.value === 'string' && node.value.trim().length === 0;
+
+const hasMeaningfulTextContent = (node: Parse5Node): boolean =>
+  getTextContent(node).trim().length > 0;
+
+const getBackrefTargetContainer = (item: Parse5Element): Parse5Element => {
+  const directParagraphs = getChildNodes(item).filter(
+    (child): child is Parse5Element =>
+      isElementNode(child) && child.tagName === 'p' && hasMeaningfulTextContent(child),
+  );
+
+  return directParagraphs[directParagraphs.length - 1] ?? item;
+};
+
+const appendCanonicalBackrefs = (container: Parse5Element, backrefs: Parse5Element[]): void => {
+  container.childNodes ??= [];
+
+  for (const backref of backrefs) {
+    const lastChild = container.childNodes[container.childNodes.length - 1];
+    if (lastChild !== undefined && !isWhitespaceTextNode(lastChild)) {
+      container.childNodes.push(createTextNode(' '));
+    }
+    container.childNodes.push(backref);
+  }
+};
+
+const normalizeCanonicalEndnotesBackrefPlacement = (section: Parse5Element): void => {
+  const children = getElementChildren(section);
+  const heading = children[0];
+  const list = children[1];
+
+  if (
+    heading === undefined ||
+    list === undefined ||
+    heading.tagName !== 'h2' ||
+    getAttributeValue(heading, 'id') !== 'footnote-label' ||
+    list.tagName !== 'ol'
+  ) {
+    return;
+  }
+
+  for (const item of getElementChildren(list)) {
+    if (item.tagName !== 'li') {
+      continue;
+    }
+
+    const backrefs = collectCanonicalFootnoteBackrefs(item);
+    if (backrefs.length === 0) {
+      continue;
+    }
+
+    backrefs.sort((left, right) => {
+      const leftParsed = parseFootnoteBackrefHref(getAttributeValue(left, 'href') ?? '');
+      const rightParsed = parseFootnoteBackrefHref(getAttributeValue(right, 'href') ?? '');
+      const leftInstance = leftParsed.kind === 'canonical' ? leftParsed.instance : 0;
+      const rightInstance = rightParsed.kind === 'canonical' ? rightParsed.instance : 0;
+      return leftInstance - rightInstance;
+    });
+
+    removeDescendantNodes(item, new Set(backrefs));
+    appendCanonicalBackrefs(getBackrefTargetContainer(item), backrefs);
+  }
 };
 
 const isHeadingElement = (node: Parse5Node): node is Parse5Element =>
@@ -145,6 +367,15 @@ const visitNode = (
   }
 
   const nextInsideDocEndnotes = insideDocEndnotes || isDocEndnotesSection(node);
+
+  if (isElementNode(node) && isDocEndnotesSection(node)) {
+    normalizeCanonicalEndnotesOrderedListAttributes(node);
+    normalizeCanonicalEndnotesBackrefPlacement(node);
+  }
+
+  if (isElementNode(node) && isEndnotesLabelHeading(node, nextInsideDocEndnotes)) {
+    removeHeadingPermalinkDescendants(node);
+  }
 
   if (isHeadingElement(node)) {
     const id = getAttributeValue(node, 'id') ?? '';

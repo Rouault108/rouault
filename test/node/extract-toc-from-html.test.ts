@@ -134,4 +134,173 @@ describe('extractTocFromHtml', () => {
       ),
     ).not.toThrow();
   });
+
+  it('endnotes 見出しの heading permalink を post-prepare-toc 前に除去すること', () => {
+    const html = `
+      <p>
+        脚注
+        <a
+          id="fn-a-ref-1"
+          href="#fn-a"
+          data-footnote-ref="true"
+          data-footnote-id="fn-a"
+          data-footnote-index="1"
+          data-footnote-ref-instance="1"
+          data-footnote-role="primary"
+          role="doc-noteref"
+          aria-label="脚注 1 を開く"
+          data-hydration-key="footnote-popover-enhancer"
+          data-hydration-capability="progressive"
+          data-hydration-trigger="post-commit"
+        ><sup>1</sup></a>
+      </p>
+      <section role="doc-endnotes">
+        <h2 id="footnote-label">
+          <span class="heading-text">脚注</span>
+          <a
+            class="heading-anchor"
+            href="#footnote-label"
+            aria-label="「脚注」への固定リンク"
+            data-heading-permalink="true"
+          >#</a>
+        </h2>
+        <ol>
+          <li id="fn-a">
+            <p>本文 <a href="#fn-a-ref-1" data-footnote-backref="true" role="doc-backlink" aria-label="脚注参照 1 に戻る">↩︎</a></p>
+          </li>
+        </ol>
+      </section>
+    `;
+
+    const prepared = prepareTocHtml(html);
+
+    expect(prepared.headings).to.deep.equal([]);
+    expect(prepared.html).to.contain('id="footnote-label"');
+    expect(prepared.html).not.to.contain('heading-anchor');
+    expect(prepared.html).not.to.contain('data-heading-permalink');
+    expect(() =>
+      validateNoteContentContracts(
+        'testing',
+        prepared.html,
+        'test:post-prepare-toc',
+        'markdown-basic',
+      ),
+    ).not.toThrow();
+  });
+
+  it('canonical endnotes の ordered-list 補助属性を post-prepare-toc 前に除去すること', () => {
+    const html = `
+      <p>
+        脚注
+        <a
+          id="fn-a-ref-1"
+          href="#fn-a"
+          data-footnote-ref="true"
+          data-footnote-id="fn-a"
+          data-footnote-index="1"
+          data-footnote-ref-instance="1"
+          data-footnote-role="primary"
+          role="doc-noteref"
+          aria-label="脚注 1 を開く"
+          data-hydration-key="footnote-popover-enhancer"
+          data-hydration-capability="progressive"
+          data-hydration-trigger="post-commit"
+        ><sup>1</sup></a>
+      </p>
+      <section role="doc-endnotes">
+        <h2 id="footnote-label">脚注</h2>
+        <ol
+          start="3"
+          reversed
+          role="list"
+          data-marker-digits="2"
+          data-ol-depth="1"
+          style="--ui-ol-counter-reset: item 2; --ui-ol-counter-step: 1"
+        >
+          <li
+            id="fn-a"
+            value="3"
+            role="listitem"
+            data-marker-digits="2"
+            data-ol-index="3"
+            style="--ui-ol-counter-set: item 3"
+          >
+            <p>本文 <a href="#fn-a-ref-1" data-footnote-backref="true" role="doc-backlink" aria-label="脚注参照 1 に戻る">↩︎</a></p>
+          </li>
+        </ol>
+      </section>
+    `;
+
+    const prepared = prepareTocHtml(html);
+
+    expect(prepared.html).not.to.contain('start=');
+    expect(prepared.html).not.to.contain('reversed');
+    expect(prepared.html).not.to.contain('role="list"');
+    expect(prepared.html).not.to.contain('role="listitem"');
+    expect(prepared.html).not.to.contain('value="3"');
+    expect(prepared.html).not.to.contain('data-marker-digits');
+    expect(prepared.html).not.to.contain('data-ol-');
+    expect(prepared.html).not.to.contain('--ui-ol-counter-');
+    expect(() =>
+      validateNoteContentContracts(
+        'testing',
+        prepared.html,
+        'test:post-prepare-toc',
+        'markdown-basic',
+      ),
+    ).not.toThrow();
+  });
+
+  it('canonical footnote backref を post-prepare-toc 前に direct paragraph 末尾へ再配置すること', () => {
+    const html = `
+      <p>
+        脚注
+        <a
+          id="fn-a-ref-1"
+          href="#fn-a"
+          data-footnote-ref="true"
+          data-footnote-id="fn-a"
+          data-footnote-index="1"
+          data-footnote-ref-instance="1"
+          data-footnote-role="primary"
+          role="doc-noteref"
+          aria-label="脚注 1 を開く"
+          data-hydration-key="footnote-popover-enhancer"
+          data-hydration-capability="progressive"
+          data-hydration-trigger="post-commit"
+        ><sup>1</sup></a>
+      </p>
+      <section role="doc-endnotes">
+        <h2 id="footnote-label">脚注</h2>
+        <ol>
+          <li id="fn-a">
+            <p>
+              本文
+              <span class="legacy-backref-wrapper">
+                <a href="#fn-a-ref-1" data-footnote-backref="true" role="doc-backlink" aria-label="脚注参照 1 に戻る">↩︎</a>
+              </span>
+            </p>
+          </li>
+        </ol>
+      </section>
+    `;
+
+    const prepared = prepareTocHtml(html);
+
+    expect(prepared.html).to.contain('<span class="legacy-backref-wrapper">');
+    expect(prepared.html).not.to.match(
+      /<span class="legacy-backref-wrapper">[\s\S]*?<a href="#fn-a-ref-1"[\s\S]*?<\/span>/u,
+    );
+    expect(prepared.html).to.match(
+      /<\/span>\s*<a href="#fn-a-ref-1" data-footnote-backref="true" role="doc-backlink"/u,
+    );
+    expect(() =>
+      validateNoteContentContracts(
+        'testing',
+        prepared.html,
+        'test:post-prepare-toc',
+        'markdown-basic',
+      ),
+    ).not.toThrow();
+  });
 });
