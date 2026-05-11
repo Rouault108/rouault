@@ -200,25 +200,93 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 `--ui-header-max-inline-size` / `--ui-header-max-inline-size-with-sidebar` は、ui-header 内部・adapter bridge 用 token です。新規利用者が直接参照すべき semantic token ではありません。`sidebar-expanded` 経路も既定では同じ `.inner` border-box width 契約に従います。
 
-### `layout-header` の note shell 契約
+### `layout-header` の note shell / corpus chrome 契約
 
-- `layout-header` は `ui-header` の上位 adapter です
-- `layout-header[note-layout][toc-presence='present']` は TOC 列幅に応じた `--ui-header-center-end-inset` を与えます
-- `layout-header[note-layout]` は desktop では `toc-presence` にかかわらず `present` と同じ `--ui-header-center-end-inset` を維持します
-- `layout-header[note-layout][sidebar-enabled]` は `ui-header` の最大幅を上書きしません
-- note 文脈差は `--ui-header-center-start-inset` / `--ui-header-center-end-inset` に限定して表現します
-- note frame 全体と header frame の完全な共通導出はこの契約では行いません
-- start 側 reserve は従来どおり `sidebar-enabled` で決め、TOC presence と混在させません
-- Rouault の `layout-header` は breadcrumb を所有しません
-- note 文脈の breadcrumb は SSR light DOM `header.article-header` が所有します
-- Rouault の `layout-header` は現在 `center` / `compact-center` を使いません
-- TOC trigger は `end` slot の補助導線であり、現在位置表示要素ではありません
-- TOC trigger の幅契約は viewport ではなく `layout-header` host の container inline-size で決まります
-- TOC trigger は 640px 以上で非表示、400px 以上 639px 以下で `目次`、399px 以下で icon-only とします
-- Rouault の `layout-header` では、corpus trigger と theme trigger の両方に dropdown affordance として chevron を表示します
-- `corpus-switcher` が表示される場合、狭幅でも corpus 側の chevron を維持します
+- `layout-header` は `ui-header` の上位 adapter です。
+- `layout-header[note-layout][toc-presence='present']` は TOC 列幅に応じた `--ui-header-center-end-inset` を与えます。
+- `layout-header[note-layout]` は desktop では `toc-presence` にかかわらず `present` と同じ `--ui-header-center-end-inset` を維持します。
+- `layout-header[note-layout][sidebar-enabled]` は `ui-header` の最大幅を上書きしません。
+- note 文脈差は center inset / TOC reserve を中心に扱います。`note-layout` は `corpus-switcher` の開始位置を変える条件ではありません。
+- `corpus-switcher` は page kind ではなく header chrome contract に従って配置します。`1024px` 以上では全ページで共通 primary start offset を使い、`640px <= width < 1024px` では sidebar toggle の有無にかかわらず start leading visual reserve 後の位置に揃えます。
+- `width < 640px` の `note-layout + sidebar-enabled` では、既存契約どおり `corpus-switcher` を非表示にします。
+- sidebar toggle が表示される幅域では、primary context control の前に必要な leading reserve を page kind 非依存で扱います。
+- start 側 reserve は TOC presence と混在させません。start 側と end 側の gap は分離し、interaction bleed は start 側 gap にだけ反映します。
+- Rouault の `layout-header` は breadcrumb を所有しません。
+- note 文脈の breadcrumb は SSR light DOM `header.article-header` が所有します。
+- Rouault の `layout-header` は現在 `center` / `compact-center` を使いません。
+- TOC trigger は `end` slot の補助導線であり、現在位置表示要素ではありません。
+- TOC trigger の幅契約は viewport ではなく `layout-header` host の container inline-size で決まります。
+- TOC trigger は `width >= 640px` で非表示、`400px <= width < 640px` で `目次` 表示、`width < 400px` で icon-only とします。
+- Rouault の `layout-header` では、corpus trigger と theme trigger の両方に dropdown affordance として chevron を表示します。
+- `corpus-switcher` が表示される場合、狭幅でも corpus 側の chevron を維持します。
+- `layout-header` host の mobile z-index は container query 内の `:host` rule ではなく、runtime の `width < 640px` 判定と `narrow-layout` 属性で制御します。
 
 これらは、`ui-header` の 4 slot 公開契約を削減するものではありません。`center` / `compact-center` は `ui-header` の汎用公開面として維持されますが、Rouault アプリケーションの `layout-header` は現行運用としてそれらへ本文文脈表示を供給しません。
+
+### `layout-header` adapter token
+
+`layout-header` は、`ui-header` の公開 token とは別に、Rouault adapter として次の token を公開します。
+
+| 名前 | 既定値 | 用途 |
+| --- | --- | --- |
+| `--layout-header-slot-group-gap` | `var(--space-2, 8px)` | start / end slot group の要求 gap |
+| `--layout-header-primary-start-offset` | `clamp(var(--space-2, 8px), 2vw, var(--space-6, 24px))` | `width >= 1024px` の primary context control 開始 offset |
+| `--layout-header-sidebar-toggle-visible-size` | `var(--control-height-md, 32px)` | sidebar toggle の可視サイズ |
+| `--layout-header-sidebar-toggle-interaction-bleed` | `6px` | `ui-button` の interactive area が可視サイズから片側へはみ出す量 |
+| `--layout-header-start-leading-visual-reserve` | `0px` | start leading visual reserve の下限拡張値 |
+| `--layout-header-center-start-inset-with-sidebar` | `max(visible size, 44px)` 相当 | `1024px` 未満の `sidebar-enabled` header center start inset |
+
+次は公開 token ではありません。
+
+- `--layout-header-start-leading-interaction-reserve`
+- `--layout-header-sidebar-toggle-min-touch-size`
+- `--layout-header-sidebar-toggle-effective-interaction-size`
+
+`ui-button` icon-only の interactive area は、内部 `button::after` により `max(100%, 44px)` として扱います。`tokens.css` の `--control-min-touch` は現時点で 24px であり、この値とは一致しません。今回の header 契約は 44px を header-local internal constant として扱い、`--control-min-touch` は変更しません。`--control-min-touch` の再定義は別 issue / 別設計として扱います。
+
+visual reserve は `corpus-switcher` の可視開始位置を揃えるための契約です。interaction contract は sidebar toggle の hit area が corpus trigger と重ならないことを担保するための契約です。effective interaction size を inline 方向の visual reserve に直接混ぜてはなりません。ただし block axis では、absolute 配置された sidebar toggle の effective interaction target を収めるため、`sidebar-enabled` の `.start-slot-group` に effective interaction size 相当の `min-block-size` を与えます。
+
+不変条件は次です。
+
+```text
+effective interaction size = max(visible size, 44px)
+
+visible size が 44px 未満の場合:
+  interaction bleed = (44px - visible size) / 2
+
+visible size が 44px 以上の場合:
+  interaction bleed = 0px
+```
+
+CSS 実装では除算による bleed 自動計算を行いません。`--layout-header-sidebar-toggle-visible-size` を override する場合は、`--layout-header-sidebar-toggle-interaction-bleed` も整合する値へ override する必要があります。
+
+`--layout-header-start-leading-visual-reserve` は final reserve の直接 override ではありません。これは start leading visual reserve の下限を拡張する token です。
+
+```text
+final reserve = max(
+  --layout-header-start-leading-visual-reserve,
+  visible size + effective start gap
+)
+```
+
+visible size + effective start gap より小さい値を指定しても、final reserve は縮小されません。
+
+`--layout-header-center-start-inset-with-sidebar` は `1024px` 未満の `sidebar-enabled` header center inset を制御します。`1024px` 以上では既存どおり note sidebar width + main gap を使うため、この token は desktop fixed sidebar reserve には影響しません。
+
+### `layout-header` responsive contract
+
+`layout-header` は host の container inline-size によって responsive contract を決めます。`ui-header` は汎用 shell として viewport media query を含みます。両者を同一の幅判定として扱ってはなりません。
+
+`layout-header.ts` 内の `@container` at-rule は `layout-header-shell` named container に統一し、無名 `@container` は使いません。`min-width` / `max-width` 形式は使わず、container query range syntax で次の形式に限定します。
+
+```css
+@container layout-header-shell (width < 400px) {}
+@container layout-header-shell (width < 640px) {}
+@container layout-header-shell (width >= 640px) {}
+@container layout-header-shell (width >= 1024px) {}
+```
+
+対応外ブラウザをサポート対象に含める場合は、従来記法と custom property による fallback 方針を別途定義します。
 
 ### 公開トークンの値域と無効値
 
@@ -255,7 +323,7 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 利用者は、これらの dependency token を header 固有の public token と誤読してはなりません（MUST NOT）。header 幅の新規 override 面は `--app-header-inner-max-width` であり、`--ui-header-max-inline-size` 系は adapter bridge 用 token として扱います。上表のうち foundation 側 token は app-shell または foundation 側の契約に従属する依存面です。
 
-狭幅条件の閾値も同様に app-shell 側の responsive policy に従属します。現行実装では **639px 以下を狭幅、640px 以上を通常幅開始**として扱いますが、これは header 私有の長期安定値ではありません。利用者は境界値そのものではなく、**狭幅では `center` が失われ得る**という挙動契約へ依存しなければなりません（MUST）。
+狭幅条件の閾値も同様に app-shell 側の responsive policy に従属します。現行の `layout-header` adapter は **width < 640px を狭幅、width >= 640px を通常幅開始**として扱います。`ui-header` 自体は viewport media query を含むため、両者を同一条件として扱ってはなりません。これは header 私有の長期安定値ではありません。利用者は境界値そのものではなく、**狭幅では `center` が失われ得る**という挙動契約へ依存しなければなりません（MUST）。
 
 ### 属性反映契約
 
@@ -475,7 +543,7 @@ Rouault の現行 `layout-header` は、mobile note で compact breadcrumb を�
 | zone ギャップ  | `--space-2`                                                  |
 | サイドバー幅   | `--sidebar-width`                                            |
 
-`center` の狭幅時非表示は responsive policy に従属します。現行実装では **639px 以下で非表示、640px 以上で通常表示** ですが、将来的な breakpoint 再編は app-shell 側 policy によって行うべきであり、header 単独で私有 breakpoint を増やすべきではありません。
+`center` の狭幅時非表示は responsive policy に従属します。現行の `ui-header` は viewport media query により **639px 以下で非表示、640px 以上で通常表示** として扱います。一方、`layout-header` adapter は container query の `width < 640px` / `width >= 640px` を使います。将来的な breakpoint 再編は app-shell 側 policy によって行うべきであり、header 単独で私有 breakpoint を増やすべきではありません。
 
 また、利用者は dependency token の値体系を header 固有の public contract と誤読してはなりません（MUST NOT）。foundation 再編時は、まず外部依存の変更として扱うべきであり、header 自身の public token 変更と混同してはなりません。
 

@@ -101,6 +101,48 @@ export class LayoutHeader extends LitElement {
         --layout-header-trigger-padding-inline-compact,
         var(--space-2, 8px)
       );
+      --_layout-header-slot-group-gap-requested: var(
+        --layout-header-slot-group-gap,
+        var(--space-2, 8px)
+      );
+      --_layout-header-primary-start-offset: var(
+        --layout-header-primary-start-offset,
+        clamp(var(--space-2, 8px), 2vw, var(--space-6, 24px))
+      );
+      --_layout-header-sidebar-toggle-visible-size: var(
+        --layout-header-sidebar-toggle-visible-size,
+        var(--control-height-md, 32px)
+      );
+      --_layout-header-sidebar-toggle-min-touch-size: 44px;
+      --_layout-header-sidebar-toggle-effective-interaction-size: max(
+        var(--_layout-header-sidebar-toggle-visible-size),
+        var(--_layout-header-sidebar-toggle-min-touch-size)
+      );
+      --_layout-header-sidebar-toggle-interaction-bleed: var(
+        --layout-header-sidebar-toggle-interaction-bleed,
+        6px
+      );
+      --_layout-header-start-slot-group-gap: max(
+        var(--_layout-header-slot-group-gap-requested),
+        var(--_layout-header-sidebar-toggle-interaction-bleed)
+      );
+      --_layout-header-end-slot-group-gap: var(--_layout-header-slot-group-gap-requested);
+      --_layout-header-start-leading-visual-reserve-min: calc(
+        var(--_layout-header-sidebar-toggle-visible-size) +
+          var(--_layout-header-start-slot-group-gap)
+      );
+      --_layout-header-start-leading-visual-reserve: max(
+        var(--layout-header-start-leading-visual-reserve, 0px),
+        var(--_layout-header-start-leading-visual-reserve-min)
+      );
+      --_layout-header-center-start-inset-with-sidebar: var(
+        --layout-header-center-start-inset-with-sidebar,
+        var(--_layout-header-sidebar-toggle-effective-interaction-size)
+      );
+    }
+
+    :host([narrow-layout]) {
+      z-index: var(--z-anchored-overlay, var(--z-popover, 400));
     }
 
     .brand {
@@ -129,9 +171,9 @@ export class LayoutHeader extends LitElement {
     }
 
     .slot-group {
+      box-sizing: border-box;
       display: flex;
       align-items: center;
-      gap: var(--space-2, 8px);
       min-inline-size: 0;
       overflow: visible;
     }
@@ -139,6 +181,14 @@ export class LayoutHeader extends LitElement {
     .slot-group > :focus-within {
       position: relative;
       z-index: 1;
+    }
+
+    .start-slot-group {
+      gap: var(--_layout-header-start-slot-group-gap);
+    }
+
+    .end-slot-group {
+      gap: var(--_layout-header-end-slot-group-gap);
     }
 
     ui-header {
@@ -163,11 +213,12 @@ export class LayoutHeader extends LitElement {
     }
 
     :host([sidebar-enabled]) ui-header {
-      --ui-header-center-start-inset: 44px;
+      --ui-header-center-start-inset: var(--_layout-header-center-start-inset-with-sidebar);
     }
 
     .sidebar-toggle {
       display: inline-flex;
+      --control-height-md: var(--_layout-header-sidebar-toggle-visible-size);
     }
 
     .theme-trigger-label,
@@ -290,7 +341,27 @@ export class LayoutHeader extends LitElement {
       --search-trigger-padding-inline-compact: var(--_layout-header-trigger-padding-inline-compact);
     }
 
-    @container layout-header-shell (min-width: 1024px) {
+    @container layout-header-shell (width >= 640px) {
+      .start-slot-group {
+        position: relative;
+        padding-inline-start: var(--_layout-header-start-leading-visual-reserve);
+      }
+
+      :host([sidebar-enabled]) .start-slot-group {
+        min-block-size: var(--_layout-header-sidebar-toggle-effective-interaction-size);
+      }
+
+      .start-slot-group > .sidebar-toggle,
+      .start-slot-group > .sidebar-toggle:focus-within {
+        position: absolute;
+        z-index: 1;
+        inset-inline-start: 0;
+        inset-block-start: 50%;
+        transform: translateY(-50%);
+      }
+    }
+
+    @container layout-header-shell (width >= 1024px) {
       :host([note-layout]) ui-header {
         --ui-header-center-end-inset: calc(
           var(--note-toc-width, clamp(15rem, 18vw, 17rem)) +
@@ -304,20 +375,28 @@ export class LayoutHeader extends LitElement {
         );
       }
 
-      :host([note-layout][sidebar-enabled]) .corpus-switcher {
-        margin-inline-start: clamp(var(--space-2, 8px), 2vw, var(--space-6, 24px));
+      .start-slot-group {
+        position: relative;
+        padding-inline-start: 0;
       }
 
-      .sidebar-toggle {
+      :host([sidebar-enabled]) .start-slot-group {
+        min-block-size: 0;
+      }
+
+      .start-slot-group > .sidebar-toggle,
+      .start-slot-group > .sidebar-toggle:focus-within {
         display: none;
+        position: static;
+        transform: none;
+      }
+
+      .corpus-switcher {
+        margin-inline-start: var(--_layout-header-primary-start-offset);
       }
     }
 
-    @container layout-header-shell (max-width: 639px) {
-      :host {
-        z-index: var(--z-anchored-overlay, var(--z-popover, 400));
-      }
-
+    @container layout-header-shell (width < 640px) {
       :host([note-layout][sidebar-enabled]) .corpus-switcher {
         display: none;
       }
@@ -349,7 +428,7 @@ export class LayoutHeader extends LitElement {
       }
     }
 
-    @container layout-header-shell (max-width: 399px) {
+    @container layout-header-shell (width < 400px) {
       .toc-trigger-text {
         display: none;
       }
@@ -546,10 +625,12 @@ export class LayoutHeader extends LitElement {
   }
 
   private _syncResponsiveState(width: number): void {
-    const nextIsNarrowLayout = width > 0 && width <= 639;
+    const nextIsNarrowLayout = width > 0 && width < 640;
     if (this._isNarrowLayout !== nextIsNarrowLayout) {
       this._isNarrowLayout = nextIsNarrowLayout;
     }
+
+    this.toggleAttribute('narrow-layout', nextIsNarrowLayout);
   }
 
   private _connectSidebarController(): void {
@@ -924,7 +1005,7 @@ export class LayoutHeader extends LitElement {
         .sidebarExpanded=${this._headerSidebarReserved}
         .overlaySidebarOpen=${this._overlaySidebarOpen}
       >
-        <div slot="start" class="slot-group">
+        <div slot="start" class="slot-group start-slot-group">
           ${this.sidebarEnabled
             ? html`
                 <ui-button
@@ -958,7 +1039,7 @@ export class LayoutHeader extends LitElement {
           </ui-dropdown>
         </div>
 
-        <div slot="end" class="slot-group">
+        <div slot="end" class="slot-group end-slot-group">
           <button
             class="toc-trigger"
             type="button"

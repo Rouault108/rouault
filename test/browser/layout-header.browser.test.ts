@@ -125,6 +125,80 @@ const waitForDropdownReady = async (dropdown: Dropdown): Promise<HTMLElement> =>
   return panel;
 };
 
+const waitForDropdownTrigger = async (dropdown: Dropdown): Promise<HTMLElement> => {
+  await waitForLitUpdate(dropdown);
+
+  await waitUntil(
+    () => dropdown.getTriggerElement() instanceof HTMLElement,
+    'dropdown trigger が slot assignment されません',
+  );
+
+  const trigger = dropdown.getTriggerElement();
+  if (!(trigger instanceof HTMLElement)) {
+    throw new Error('dropdown trigger was not assigned');
+  }
+
+  return trigger;
+};
+
+const waitForResponsiveState = async (
+  header: LayoutHeader,
+  expectedNarrow: boolean,
+): Promise<void> => {
+  await waitForLitUpdate(header);
+
+  await waitUntil(
+    () => header.hasAttribute('narrow-layout') === expectedNarrow,
+    `narrow-layout 属性が ${String(expectedNarrow)} に同期されません`,
+  );
+};
+
+const expectWithinPx = (actual: number, expected: number, tolerance = 1): void => {
+  expect(Math.abs(actual - expected)).to.be.lessThanOrEqual(tolerance);
+};
+
+const readUiHeaderZoneCenterStyle = (header: LayoutHeader): CSSStyleDeclaration => {
+  const uiHeader = expectPresent(
+    header.shadowRoot?.querySelector<UiHeader>('ui-header'),
+    'uiHeader',
+  );
+  const zoneCenter = expectPresent(
+    uiHeader.shadowRoot?.querySelector<HTMLElement>('.zone-center'),
+    'zoneCenter',
+  );
+
+  return getComputedStyle(zoneCenter);
+};
+
+const readSlotGroups = (
+  header: LayoutHeader,
+): {
+  start: HTMLElement;
+  end: HTMLElement;
+} => {
+  return {
+    start: expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.start-slot-group'),
+      'startSlotGroup',
+    ),
+    end: expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.end-slot-group'),
+      'endSlotGroup',
+    ),
+  };
+};
+
+const readCorpusTriggerLeft = async (header: LayoutHeader): Promise<number> => {
+  await waitForLitUpdate(header);
+  const dropdown = expectPresent(
+    header.shadowRoot?.querySelector<Dropdown>('.corpus-switcher'),
+    'corpusDropdown',
+  );
+  const trigger = await waitForDropdownTrigger(dropdown);
+
+  return trigger.getBoundingClientRect().left;
+};
+
 const waitForDropdownIdle = async (dropdown: Dropdown): Promise<void> => {
   await waitUntil(() => {
     const panel = dropdown.getMenuElement();
@@ -783,6 +857,389 @@ describe('layout-header browser contract', () => {
       noteInner.getBoundingClientRect().width,
       1,
     );
+  });
+
+  it('1024px 以上では page kind によらず corpus dropdown trigger の開始位置が一致すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1440px;">
+        <layout-header data-test="normal"></layout-header>
+        <layout-header data-test="note" note-layout></layout-header>
+        <layout-header data-test="note-sidebar" note-layout sidebar-enabled></layout-header>
+      </div>
+    `);
+
+    const headers = [...wrapper.querySelectorAll<LayoutHeader>('layout-header')];
+    expect(headers).to.have.length(3);
+    for (const header of headers) {
+      await waitForResponsiveState(header, false);
+      expect(header.getBoundingClientRect().width).to.be.greaterThan(1023);
+    }
+
+    const lefts = await Promise.all(headers.map((header) => readCorpusTriggerLeft(header)));
+    expectWithinPx(lefts[0] ?? 0, lefts[1] ?? 0, 1);
+    expectWithinPx(lefts[0] ?? 0, lefts[2] ?? 0, 1);
+  });
+
+  it('640px 以上 1024px 未満では sidebar toggle 表示幅域でも corpus dropdown trigger の開始位置が一致すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 768px;">
+        <layout-header data-test="normal"></layout-header>
+        <layout-header data-test="note" note-layout></layout-header>
+        <layout-header data-test="note-sidebar" note-layout sidebar-enabled></layout-header>
+      </div>
+    `);
+
+    const headers = [...wrapper.querySelectorAll<LayoutHeader>('layout-header')];
+    expect(headers).to.have.length(3);
+    for (const header of headers) {
+      await waitForResponsiveState(header, false);
+      const width = header.getBoundingClientRect().width;
+      expect(width).to.be.greaterThan(639);
+      expect(width).to.be.lessThan(1024);
+    }
+
+    const lefts = await Promise.all(headers.map((header) => readCorpusTriggerLeft(header)));
+    expectWithinPx(lefts[0] ?? 0, lefts[1] ?? 0, 1);
+    expectWithinPx(lefts[0] ?? 0, lefts[2] ?? 0, 1);
+  });
+
+  it('container query の fractional boundary と runtime narrow-layout 属性が一致すること', async () => {
+    const widths = [399.5, 400, 639.5, 640, 768, 1023, 1023.5, 1024, 1440] as const;
+
+    for (const width of widths) {
+      const wrapper = await fixture<HTMLDivElement>(html`
+        <div style="inline-size: ${width}px; overflow: auto;">
+          <layout-header
+            note-layout
+            sidebar-enabled
+            toc-presence="present"
+            toc-runtime-id="test-toc-${String(width).replace('.', '-')}"
+          ></layout-header>
+        </div>
+      `);
+      const header = expectPresent(
+        wrapper.querySelector<LayoutHeader>('layout-header'),
+        `layoutHeader ${width}`,
+      );
+      publishReadyTocRuntime(`test-toc-${String(width).replace('.', '-')}`);
+      await waitUntil(
+        () => Math.abs(header.getBoundingClientRect().width - width) <= 1,
+        `${width}px の container width が反映されません`,
+      );
+      await waitForResponsiveState(header, width < 640);
+
+      const measuredWidth = header.getBoundingClientRect().width;
+      const corpusSwitcher = expectPresent(
+        header.shadowRoot?.querySelector<HTMLElement>('.corpus-switcher'),
+        'corpusSwitcher',
+      );
+      const corpusChevron = expectPresent(
+        header.shadowRoot?.querySelector<HTMLElement>('.corpus-trigger-icon'),
+        'corpusChevron',
+      );
+      const tocText = expectPresent(
+        header.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text'),
+        'tocText',
+      );
+
+      if (measuredWidth < 640) {
+        expect(getComputedStyle(corpusSwitcher).display).to.equal('none');
+        expect(header.hasAttribute('narrow-layout')).to.equal(true);
+        expect(getComputedStyle(header).zIndex).to.not.equal('100');
+      } else {
+        expect(isVisible(corpusSwitcher)).to.equal(true);
+        expect(isVisible(corpusChevron)).to.equal(true);
+        expect(header.hasAttribute('narrow-layout')).to.equal(false);
+        expect(wrapper.scrollWidth - wrapper.clientWidth).to.be.lessThanOrEqual(1);
+      }
+
+      if (measuredWidth < 400) {
+        expect(getComputedStyle(tocText).display).to.equal('none');
+      }
+    }
+  });
+
+  it('stale な narrow-layout 属性は 640px 以上の responsive state 同期で除去されること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 768px;">
+        <layout-header narrow-layout note-layout sidebar-enabled></layout-header>
+      </div>
+    `);
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
+
+    await waitForResponsiveState(header, false);
+    expect(header.hasAttribute('narrow-layout')).to.equal(false);
+  });
+
+  it('start / end slot group の gap と leading reserve を分離すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div
+        style="
+          inline-size: 768px;
+          --layout-header-slot-group-gap: 2px;
+          --layout-header-sidebar-toggle-interaction-bleed: 6px;
+        "
+      >
+        <layout-header sidebar-enabled></layout-header>
+      </div>
+    `);
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
+    await waitForResponsiveState(header, false);
+
+    const { start, end } = readSlotGroups(header);
+    expect(getComputedStyle(start).gap).to.equal('6px');
+    expect(getComputedStyle(end).gap).to.equal('2px');
+    expect(getComputedStyle(start).paddingLeft).to.equal('38px');
+    expect(getComputedStyle(end).paddingLeft).to.equal('0px');
+  });
+
+  it('center start inset は 1024px 未満では token override、1024px 以上では fixed sidebar reserve に従うこと', async () => {
+    const mediumWrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 768px; --layout-header-center-start-inset-with-sidebar: 52px;">
+        <layout-header sidebar-enabled></layout-header>
+      </div>
+    `);
+    const mediumHeader = expectPresent(
+      mediumWrapper.querySelector<LayoutHeader>('layout-header'),
+      'mediumHeader',
+    );
+    await waitForResponsiveState(mediumHeader, false);
+    expect(readUiHeaderZoneCenterStyle(mediumHeader).left).to.equal('52px');
+
+    const desktopWrapper = await fixture<HTMLDivElement>(html`
+      <div
+        style="
+          inline-size: 1440px;
+          --layout-header-center-start-inset-with-sidebar: 52px;
+          --note-sidebar-width: 248px;
+          --note-sidebar-main-gap: 32px;
+        "
+      >
+        <layout-header sidebar-enabled></layout-header>
+      </div>
+    `);
+    const desktopHeader = expectPresent(
+      desktopWrapper.querySelector<LayoutHeader>('layout-header'),
+      'desktopHeader',
+    );
+    await waitForResponsiveState(desktopHeader, false);
+    expect(readUiHeaderZoneCenterStyle(desktopHeader).left).to.equal('280px');
+  });
+
+  it('1024px 未満と 1024px 以上の note-layout center-end inset contract を維持すること', async () => {
+    const mediumWrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 768px;">
+        <layout-header note-layout></layout-header>
+      </div>
+    `);
+    const mediumHeader = expectPresent(
+      mediumWrapper.querySelector<LayoutHeader>('layout-header'),
+      'mediumHeader',
+    );
+    await waitForResponsiveState(mediumHeader, false);
+    expect(readUiHeaderZoneCenterStyle(mediumHeader).right).to.not.equal('0px');
+
+    const desktopWrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1440px; --note-toc-width: 260px; --note-shell-column-gap: 36px;">
+        <layout-header note-layout></layout-header>
+      </div>
+    `);
+    const desktopHeader = expectPresent(
+      desktopWrapper.querySelector<LayoutHeader>('layout-header'),
+      'desktopHeader',
+    );
+    await waitForResponsiveState(desktopHeader, false);
+    expect(readUiHeaderZoneCenterStyle(desktopHeader).right).to.equal('296px');
+  });
+
+  it('sidebar toggle の min-block-size は sidebar-enabled の中幅だけに適用され desktop では解除されること', async () => {
+    const mediumWrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 768px;">
+        <layout-header data-test="normal"></layout-header>
+        <layout-header data-test="sidebar" sidebar-enabled></layout-header>
+      </div>
+    `);
+    const normalHeader = expectPresent(
+      mediumWrapper.querySelector<LayoutHeader>('layout-header[data-test="normal"]'),
+      'normalHeader',
+    );
+    const sidebarHeader = expectPresent(
+      mediumWrapper.querySelector<LayoutHeader>('layout-header[data-test="sidebar"]'),
+      'sidebarHeader',
+    );
+    await waitForResponsiveState(normalHeader, false);
+    await waitForResponsiveState(sidebarHeader, false);
+
+    expect(getComputedStyle(readSlotGroups(normalHeader).start).minBlockSize).to.equal('0px');
+    expect(getComputedStyle(readSlotGroups(sidebarHeader).start).minBlockSize).to.equal('44px');
+
+    const desktopWrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 1440px;">
+        <layout-header sidebar-enabled></layout-header>
+      </div>
+    `);
+    const desktopHeader = expectPresent(
+      desktopWrapper.querySelector<LayoutHeader>('layout-header'),
+      'desktopHeader',
+    );
+    await waitForResponsiveState(desktopHeader, false);
+    expect(getComputedStyle(readSlotGroups(desktopHeader).start).minBlockSize).to.equal('0px');
+  });
+
+  it('visible size override は sidebar toggle 実寸と reserve の両方へ反映されること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div
+        style="
+          inline-size: 768px;
+          --layout-header-sidebar-toggle-visible-size: 40px;
+          --layout-header-sidebar-toggle-interaction-bleed: 2px;
+        "
+      >
+        <layout-header data-test="normal"></layout-header>
+        <layout-header data-test="sidebar" sidebar-enabled></layout-header>
+      </div>
+    `);
+    const normalHeader = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header[data-test="normal"]'),
+      'normalHeader',
+    );
+    const sidebarHeader = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header[data-test="sidebar"]'),
+      'sidebarHeader',
+    );
+    await waitForResponsiveState(normalHeader, false);
+    await waitForResponsiveState(sidebarHeader, false);
+
+    const toggle = expectPresent(
+      sidebarHeader.shadowRoot?.querySelector<HTMLElement>('.sidebar-toggle'),
+      'sidebarToggle',
+    );
+    const toggleRect = toggle.getBoundingClientRect();
+    expectWithinPx(toggleRect.width, 40, 1);
+    expectWithinPx(toggleRect.height, 40, 1);
+    expect(getComputedStyle(readSlotGroups(sidebarHeader).start).paddingLeft).to.equal('48px');
+    expect(getComputedStyle(readSlotGroups(sidebarHeader).start).minBlockSize).to.equal('44px');
+    expectWithinPx(
+      await readCorpusTriggerLeft(normalHeader),
+      await readCorpusTriggerLeft(sidebarHeader),
+      1,
+    );
+  });
+
+  it('visible size が 44px 以上の場合は bleed 0px で実寸と min-block-size が一致すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div
+        style="
+          inline-size: 768px;
+          --layout-header-sidebar-toggle-visible-size: 48px;
+          --layout-header-sidebar-toggle-interaction-bleed: 0px;
+          --layout-header-slot-group-gap: 2px;
+        "
+      >
+        <layout-header sidebar-enabled></layout-header>
+      </div>
+    `);
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
+    await waitForResponsiveState(header, false);
+
+    const toggle = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.sidebar-toggle'),
+      'sidebarToggle',
+    );
+    expectWithinPx(toggle.getBoundingClientRect().width, 48, 1);
+    expectWithinPx(toggle.getBoundingClientRect().height, 48, 1);
+    expect(getComputedStyle(readSlotGroups(header).start).gap).to.equal('2px');
+    expect(getComputedStyle(readSlotGroups(header).start).minBlockSize).to.equal('48px');
+  });
+
+  it('--layout-header-start-leading-visual-reserve は reserve 下限を縮小せず、大きい値では拡張すること', async () => {
+    const smallWrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 768px; --layout-header-start-leading-visual-reserve: 12px;">
+        <layout-header></layout-header>
+      </div>
+    `);
+    const smallHeader = expectPresent(
+      smallWrapper.querySelector<LayoutHeader>('layout-header'),
+      'smallHeader',
+    );
+    await waitForResponsiveState(smallHeader, false);
+    expect(getComputedStyle(readSlotGroups(smallHeader).start).paddingLeft).to.equal('40px');
+
+    const largeWrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 768px; --layout-header-start-leading-visual-reserve: 56px;">
+        <layout-header></layout-header>
+      </div>
+    `);
+    const largeHeader = expectPresent(
+      largeWrapper.querySelector<LayoutHeader>('layout-header'),
+      'largeHeader',
+    );
+    await waitForResponsiveState(largeHeader, false);
+    expect(getComputedStyle(readSlotGroups(largeHeader).start).paddingLeft).to.equal('56px');
+  });
+
+  it('focus stacking contract を維持し、sidebar toggle focus 時も absolute 配置を維持すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div style="inline-size: 768px;">
+        <layout-header sidebar-enabled></layout-header>
+      </div>
+    `);
+    const header = expectPresent(
+      wrapper.querySelector<LayoutHeader>('layout-header'),
+      'layoutHeader',
+    );
+    await waitForResponsiveState(header, false);
+
+    const corpusDropdown = expectPresent(
+      header.shadowRoot?.querySelector<Dropdown>('.corpus-switcher'),
+      'corpusDropdown',
+    );
+    const searchTrigger = getSearchTriggerHost(header.shadowRoot);
+    const themeDropdown = expectPresent(
+      header.shadowRoot?.querySelector<Dropdown>('[data-dropdown="theme"]'),
+      'themeDropdown',
+    );
+    const sidebarToggle = expectPresent(
+      header.shadowRoot?.querySelector<HTMLElement>('.sidebar-toggle'),
+      'sidebarToggle',
+    );
+
+    const corpusTrigger = await waitForDropdownTrigger(corpusDropdown);
+    expectPresent(
+      corpusTrigger.shadowRoot?.querySelector<HTMLButtonElement>('button'),
+      'corpusTriggerButton',
+    ).focus();
+    await expectFocusedHeaderItemRaised(header, corpusDropdown);
+
+    getSearchTriggerButton(header.shadowRoot).focus();
+    await expectFocusedHeaderItemRaised(header, searchTrigger);
+
+    const themeTrigger = await waitForDropdownTrigger(themeDropdown);
+    expectPresent(
+      themeTrigger.shadowRoot?.querySelector<HTMLButtonElement>('button'),
+      'themeTriggerButton',
+    ).focus();
+    await expectFocusedHeaderItemRaised(header, themeDropdown);
+
+    expectPresent(
+      sidebarToggle.shadowRoot?.querySelector<HTMLButtonElement>('button'),
+      'sidebarToggleButton',
+    ).focus();
+    await waitForLitUpdate(header);
+
+    const toggleStyle = getComputedStyle(sidebarToggle);
+    expect(toggleStyle.position).to.equal('absolute');
+    expect(toggleStyle.zIndex).to.equal('1');
+    expect(toggleStyle.transform).to.not.equal('none');
   });
 
   it('desktop の note-layout では sidebar-main gap を含む start reserve と TOC reserve を使うこと', async () => {
@@ -1469,7 +1926,9 @@ describe('layout-header browser contract', () => {
 
     const buttonStyle = getComputedStyle(searchButton);
 
-    if (window.matchMedia('(max-width: 639px)').matches) {
+    const headerWidth = header.getBoundingClientRect().width;
+
+    if (headerWidth < 640) {
       expect(buttonStyle.paddingLeft).to.equal('0px');
       expect(buttonStyle.paddingRight).to.equal('0px');
     } else if (window.matchMedia('(max-width: 960px)').matches) {
@@ -1532,7 +1991,9 @@ describe('layout-header browser contract', () => {
       'searchPlaceholder',
     );
 
-    if (window.matchMedia('(max-width: 639px)').matches) {
+    const headerWidth = header.getBoundingClientRect().width;
+
+    if (headerWidth < 640) {
       expect(buttonStyle.justifyContent).to.equal('center');
       expect(buttonStyle.paddingLeft).to.equal('0px');
       expect(buttonStyle.paddingRight).to.equal('0px');
