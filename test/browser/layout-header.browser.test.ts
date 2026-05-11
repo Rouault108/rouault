@@ -1002,8 +1002,18 @@ describe('layout-header browser contract', () => {
     await waitForResponsiveState(header, false);
 
     const { start, end } = readSlotGroups(header);
-    await waitForComputedStyleValue(start, 'gap', '6px', 'start-slot-group の gap が 6px に同期されません');
-    await waitForComputedStyleValue(end, 'gap', '2px', 'end-slot-group の gap が 2px に同期されません');
+    await waitForComputedStyleValue(
+      start,
+      'gap',
+      '6px',
+      'start-slot-group の gap が 6px に同期されません',
+    );
+    await waitForComputedStyleValue(
+      end,
+      'gap',
+      '2px',
+      'end-slot-group の gap が 2px に同期されません',
+    );
     await waitForComputedStyleValue(
       start,
       'paddingLeft',
@@ -1990,9 +2000,7 @@ describe('layout-header browser contract', () => {
 
     const buttonStyle = getComputedStyle(searchButton);
 
-    const headerWidth = header.getBoundingClientRect().width;
-
-    if (headerWidth < 640) {
+    if (window.matchMedia('(max-width: 639px)').matches) {
       expect(buttonStyle.paddingLeft).to.equal('0px');
       expect(buttonStyle.paddingRight).to.equal('0px');
     } else if (window.matchMedia('(max-width: 960px)').matches) {
@@ -2055,15 +2063,22 @@ describe('layout-header browser contract', () => {
       'searchPlaceholder',
     );
 
-    const headerWidth = header.getBoundingClientRect().width;
-
-    if (headerWidth < 640) {
+    /*
+     * layout-header の narrow 判定は container inline-size 契約だが、
+     * ui-search-trigger[density="auto"] の縮退は search-trigger 自身の
+     * viewport media query 契約である。ここで headerWidth < 640 を使って
+     * search-trigger の icon-only 化を期待してはならない。
+     */
+    if (window.matchMedia('(max-width: 639px)').matches) {
       expect(buttonStyle.justifyContent).to.equal('center');
       expect(buttonStyle.paddingLeft).to.equal('0px');
       expect(buttonStyle.paddingRight).to.equal('0px');
       expect(getComputedStyle(searchPlaceholder).display).to.equal('none');
       return;
     }
+
+    expect(buttonStyle.justifyContent).to.equal('flex-start');
+    expect(getComputedStyle(searchPlaceholder).display).to.not.equal('none');
 
     if (window.matchMedia('(max-width: 960px)').matches) {
       expect(buttonStyle.gap).to.equal('6px');
