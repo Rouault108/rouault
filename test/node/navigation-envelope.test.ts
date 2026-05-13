@@ -6,6 +6,9 @@ import {
 import { RouterDiagnosticError } from '../../src/router/router-diagnostics.js';
 import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
 
+const VALID_SIDEBAR_NAV_HTML =
+  '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="rev-1"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example/" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></nav>';
+
 describe('navigation envelope', () => {
   it('schemaVersion と最小構造が正しい envelope を受理すること', () => {
     const envelope = validateNavigationEnvelope({
@@ -28,7 +31,7 @@ describe('navigation envelope', () => {
     expect(envelope.hydrationPlan?.scopes).to.have.length(1);
   });
 
-  it('sidebar.heading = null を含む shellProjection を受理して null へ正規化すること', () => {
+  it('present sidebar の navHtml / topologyRevision を保持し heading = null を受理すること', () => {
     const envelope = validateNavigationEnvelope({
       schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
       buildId: 'build-456',
@@ -55,6 +58,8 @@ describe('navigation envelope', () => {
           fixedBreakpoint: 1024,
           presentation: 'auto',
           heading: null,
+          topologyRevision: 'rev-1',
+          navHtml: VALID_SIDEBAR_NAV_HTML,
         },
       },
       hydrationPlan: null,
@@ -63,11 +68,11 @@ describe('navigation envelope', () => {
     expect(envelope.shellProjection?.sidebar?.heading).to.equal(null);
     expect(envelope.shellProjection?.header.tocTriggerReserved).to.equal(false);
     expect(envelope.shellProjection?.sidebar?.initialExpandedIds).to.deep.equal([]);
-    expect(envelope.shellProjection?.sidebar?.topologyRevision).to.equal(null);
-    expect(envelope.shellProjection?.sidebar?.navHtml).to.equal(null);
+    expect(envelope.shellProjection?.sidebar?.topologyRevision).to.equal('rev-1');
+    expect(envelope.shellProjection?.sidebar?.navHtml).to.equal(VALID_SIDEBAR_NAV_HTML);
   });
 
-  it('sidebar の空白 heading / topologyRevision / navHtml を null へ正規化すること', () => {
+  it('present sidebar の空白 heading は null に正規化し navHtml / topologyRevision は必須にすること', () => {
     const envelope = validateNavigationEnvelope({
       schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
       document: {
@@ -88,20 +93,53 @@ describe('navigation envelope', () => {
           present: true,
           sidebarId: 'note-primary',
           stateScopeId: 'note-navigation',
-          selectedId: null,
+          selectedId: 'notes/example',
           fixedBreakpoint: 1024,
           presentation: 'auto',
           heading: '   ',
-          topologyRevision: '  ',
-          navHtml: '\n  ',
+          topologyRevision: 'rev-1',
+          navHtml: VALID_SIDEBAR_NAV_HTML,
         },
       },
       hydrationPlan: null,
     });
 
     expect(envelope.shellProjection?.sidebar?.heading).to.equal(null);
-    expect(envelope.shellProjection?.sidebar?.topologyRevision).to.equal(null);
-    expect(envelope.shellProjection?.sidebar?.navHtml).to.equal(null);
+    expect(envelope.shellProjection?.sidebar?.topologyRevision).to.equal('rev-1');
+    expect(envelope.shellProjection?.sidebar?.navHtml).to.equal(VALID_SIDEBAR_NAV_HTML);
+
+    expect(() =>
+      validateNavigationEnvelope({
+        schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
+        document: {
+          html: '<main>ok</main>',
+          title: 'Invalid Sidebar Fields',
+          description: null,
+          renderedKind: 'page',
+        },
+        shellProjection: {
+          header: {
+            corpora: [],
+            currentCorpusKey: 'all',
+            noteLayout: true,
+            sidebarEnabled: true,
+            tocPresence: 'absent',
+          },
+          sidebar: {
+            present: true,
+            sidebarId: 'note-primary',
+            stateScopeId: 'note-navigation',
+            selectedId: null,
+            fixedBreakpoint: 1024,
+            presentation: 'auto',
+            heading: '   ',
+            topologyRevision: '  ',
+            navHtml: '\n  ',
+          },
+        },
+        hydrationPlan: null,
+      }),
+    ).to.throw(NavigationEnvelopeValidationError);
   });
 
   it('schemaVersion 不一致は reject すること', () => {

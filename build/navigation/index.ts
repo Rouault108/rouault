@@ -1,4 +1,8 @@
 export { buildNoteNavigationModel } from './build-note-navigation-model.js';
+export {
+  SidebarNavHtmlInvariantError,
+  validateSidebarNavHtmlInvariant,
+} from './validate-sidebar-nav-html-invariant.js';
 export { normalizeNoteNavigationUrl } from '../../shared/navigation/normalize-note-navigation-url.js';
 export { normalizeNotePath } from '../../shared/navigation/normalize-note-path.js';
 export type {

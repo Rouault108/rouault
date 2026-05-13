@@ -1,0 +1,364 @@
+import * as parse5 from 'parse5';
+import type { DefaultTreeAdapterMap } from 'parse5';
+import type { SidebarNavRow } from '../../shared/navigation/navigation-types.js';
+
+export class SidebarNavHtmlInvariantError extends Error {
+  override name = 'SidebarNavHtmlInvariantError' as const;
+}
+
+type Parse5Node = DefaultTreeAdapterMap['node'];
+type Parse5ChildNode = DefaultTreeAdapterMap['childNode'];
+type Parse5ParentNode = DefaultTreeAdapterMap['parentNode'];
+type Parse5Element = DefaultTreeAdapterMap['element'];
+type Parse5DocumentFragment = DefaultTreeAdapterMap['documentFragment'];
+
+export interface ValidateSidebarNavHtmlInvariantInput {
+  readonly sidebarPresent: boolean;
+  readonly navHtml: string | null | undefined;
+  readonly selectedId: string | null;
+  readonly initialExpandedIds: readonly string[];
+  readonly topologyRevision: string | null | undefined;
+  readonly sidebarRows?: readonly SidebarNavRow[];
+  readonly sourceLabel?: string;
+}
+
+interface ParsedNavRow {
+  readonly id: string;
+  readonly kind: 'branch' | 'leaf';
+  readonly depth: number;
+  readonly element: Parse5Element;
+  readonly directControl: Parse5Element | null;
+  readonly directGroup: Parse5Element | null;
+}
+
+const isElementNode = (node: Parse5Node): node is Parse5Element =>
+  'tagName' in node && typeof node.tagName === 'string' && Array.isArray(node.attrs);
+
+const isParentNode = (node: Parse5Node): node is Parse5ParentNode => {
+  const candidate = node as { childNodes?: unknown };
+  return Array.isArray(candidate.childNodes);
+};
+
+const getAttribute = (element: Parse5Element, name: string): string | null =>
+  element.attrs.find((attribute) => attribute.name === name)?.value ?? null;
+
+const hasAttribute = (element: Parse5Element, name: string): boolean =>
+  element.attrs.some((attribute) => attribute.name === name);
+
+const directElementChildren = (node: Parse5ParentNode): Parse5Element[] =>
+  node.childNodes.filter((childNode): childNode is Parse5Element => isElementNode(childNode));
+
+const isWhitespaceNode = (node: Parse5ChildNode): boolean =>
+  ('value' in node && typeof node.value === 'string' && node.value.trim().length === 0) ||
+  node.nodeName === '#comment';
+
+const visibleTopLevelChildren = (fragment: Parse5DocumentFragment): Parse5ChildNode[] =>
+  fragment.childNodes.filter((childNode) => !isWhitespaceNode(childNode));
+
+const toTrimmedString = (value: string | null | undefined): string =>
+  typeof value === 'string' ? value.trim() : '';
+
+const fail = (sourceLabel: string, message: string): never => {
+  throw new SidebarNavHtmlInvariantError(`[sidebar-nav-html:${sourceLabel}] ${message}`);
+};
+
+const flattenRows = (rows: readonly SidebarNavRow[]): SidebarNavRow[] =>
+  rows.flatMap((row) => [row, ...flattenRows(row.children)]);
+
+const collectRows = (root: Parse5ParentNode): ParsedNavRow[] => {
+  const rows: ParsedNavRow[] = [];
+
+  const visit = (list: Parse5Element): void => {
+    for (const rowElement of directElementChildren(list).filter((child) => child.tagName === 'li')) {
+      const id = toTrimmedString(getAttribute(rowElement, 'data-node-id'));
+      const kind = getAttribute(rowElement, 'data-node-kind') === 'branch' ? 'branch' : 'leaf';
+      const rawDepth = toTrimmedString(getAttribute(rowElement, 'data-node-depth'));
+      const depth = Number.parseInt(rawDepth, 10);
+      const directChildren = directElementChildren(rowElement);
+      const directControl =
+        directChildren.find((child) =>
+          child.attrs.some((attribute) => attribute.name === 'data-sidebar-nav-control'),
+        ) ?? null;
+      const directGroup = directChildren.find((child) => child.tagName === 'ul') ?? null;
+
+      rows.push({
+        id,
+        kind,
+        depth: Number.isFinite(depth) ? depth : Number.NaN,
+        element: rowElement,
+        directControl,
+        directGroup,
+      });
+
+      if (directGroup !== null) {
+        visit(directGroup);
+      }
+    }
+  };
+
+  for (const list of directElementChildren(root).filter((child) => child.tagName === 'ul')) {
+    visit(list);
+  }
+
+  return rows;
+};
+
+const collectAriaCurrentElements = (node: Parse5ParentNode, result: Parse5Element[] = []): Parse5Element[] => {
+  for (const childNode of node.childNodes) {
+    if (isElementNode(childNode) && hasAttribute(childNode, 'aria-current')) {
+      result.push(childNode);
+    }
+
+    if (isParentNode(childNode)) {
+      collectAriaCurrentElements(childNode, result);
+    }
+  }
+
+  return result;
+};
+
+const assertAbsentProjection = (
+  input: ValidateSidebarNavHtmlInvariantInput,
+  sourceLabel: string,
+): void => {
+  if (toTrimmedString(input.navHtml).length > 0) {
+    fail(sourceLabel, 'absent sidebar projection must not contain navHtml.');
+  }
+
+  if (input.selectedId !== null) {
+    fail(sourceLabel, 'absent sidebar projection must have selectedId=null.');
+  }
+
+  if (input.initialExpandedIds.length > 0) {
+    fail(sourceLabel, 'absent sidebar projection must have empty initialExpandedIds.');
+  }
+
+  if (input.topologyRevision !== null && input.topologyRevision !== undefined) {
+    fail(sourceLabel, 'absent sidebar projection must have topologyRevision=null.');
+  }
+};
+
+const assertSetEquals = (
+  actual: readonly string[],
+  expected: readonly string[],
+  sourceLabel: string,
+  label: string,
+): void => {
+  const normalizedActual = [...new Set(actual)].sort();
+  const normalizedExpected = [...new Set(expected)].sort();
+  if (
+    normalizedActual.length !== normalizedExpected.length ||
+    normalizedActual.some((value, index) => value !== normalizedExpected[index])
+  ) {
+    fail(
+      sourceLabel,
+      `${label} mismatch: actual=${JSON.stringify(normalizedActual)} expected=${JSON.stringify(
+        normalizedExpected,
+      )}`,
+    );
+  }
+};
+
+export const validateSidebarNavHtmlInvariant = (
+  input: ValidateSidebarNavHtmlInvariantInput,
+): void => {
+  const sourceLabel = input.sourceLabel ?? 'unknown';
+
+  if (!input.sidebarPresent) {
+    assertAbsentProjection(input, sourceLabel);
+    return;
+  }
+
+  const navHtml = toTrimmedString(input.navHtml);
+  if (navHtml.length === 0) {
+    fail(sourceLabel, 'present sidebar projection must contain non-empty navHtml.');
+  }
+
+  if (toTrimmedString(input.topologyRevision).length === 0) {
+    fail(sourceLabel, 'present sidebar projection must contain non-empty topologyRevision.');
+  }
+
+  const expectedRows = input.sidebarRows === undefined ? null : flattenRows(input.sidebarRows);
+  if (expectedRows !== null && expectedRows.length === 0) {
+    fail(sourceLabel, 'present sidebar projection must contain at least one sidebar row.');
+  }
+
+  const fragment = parse5.parseFragment(navHtml);
+  const topLevelChildren = visibleTopLevelChildren(fragment);
+  if (topLevelChildren.length !== 1 || !isElementNode(topLevelChildren[0])) {
+    fail(sourceLabel, 'navHtml must be a single top-level nav[data-sidebar-nav] fragment.');
+  }
+
+  const nav = topLevelChildren[0];
+  if (nav.tagName !== 'nav' || !hasAttribute(nav, 'data-sidebar-nav')) {
+    fail(sourceLabel, 'navHtml top-level element must be nav[data-sidebar-nav].');
+  }
+
+  const navElements = collectRows(nav);
+  const directLists = directElementChildren(nav).filter((child) => child.tagName === 'ul');
+  if (directLists.length !== 1) {
+    fail(sourceLabel, 'nav[data-sidebar-nav] must have exactly one direct child ul.');
+  }
+
+  const rootRows = directElementChildren(directLists[0]!).filter((child) => child.tagName === 'li');
+  if (rootRows.length === 0) {
+    fail(sourceLabel, 'nav[data-sidebar-nav] direct child ul must contain at least one li row.');
+  }
+
+  const navTopologyRevision = toTrimmedString(getAttribute(nav, 'data-topology-revision'));
+  if (navTopologyRevision !== toTrimmedString(input.topologyRevision)) {
+    fail(sourceLabel, 'navHtml data-topology-revision must match topologyRevision.');
+  }
+
+  const rowById = new Map<string, ParsedNavRow>();
+  const expandedBranchIds: string[] = [];
+  const selectedLeafIds: string[] = [];
+
+  for (const row of navElements) {
+    if (row.id.length === 0) {
+      fail(sourceLabel, 'sidebar nav row data-node-id is required.');
+    }
+
+    if (rowById.has(row.id)) {
+      fail(sourceLabel, `duplicate sidebar nav row id: ${row.id}`);
+    }
+    rowById.set(row.id, row);
+
+    if (!Number.isInteger(row.depth) || row.depth < 0) {
+      fail(sourceLabel, `sidebar nav row ${row.id} has invalid data-node-depth.`);
+    }
+
+    if (row.directControl === null) {
+      fail(sourceLabel, `sidebar nav row ${row.id} must have a direct child control.`);
+    }
+
+    const ariaCurrent = row.directControl === null ? null : getAttribute(row.directControl, 'aria-current');
+
+    if (row.kind === 'leaf') {
+      if (row.directControl?.tagName !== 'a' || !hasAttribute(row.directControl, 'data-sidebar-nav-link')) {
+        fail(sourceLabel, `leaf row ${row.id} must have a direct child a[data-sidebar-nav-link].`);
+      }
+
+      if (row.directGroup !== null) {
+        fail(sourceLabel, `leaf row ${row.id} must not have a direct child ul.`);
+      }
+
+      const href = toTrimmedString(getAttribute(row.directControl, 'href'));
+      if (href.length === 0) {
+        fail(sourceLabel, `leaf row ${row.id} must have non-empty href.`);
+      }
+
+      if (row.id === input.selectedId) {
+        if (ariaCurrent !== 'page') {
+          fail(sourceLabel, `selected leaf row ${row.id} must have aria-current="page".`);
+        }
+        selectedLeafIds.push(row.id);
+      } else if (ariaCurrent !== null) {
+        fail(sourceLabel, `non-selected leaf row ${row.id} must not have aria-current.`);
+      }
+      continue;
+    }
+
+    if (
+      row.directControl?.tagName !== 'button' ||
+      !hasAttribute(row.directControl, 'data-sidebar-nav-branch-control')
+    ) {
+      fail(sourceLabel, `branch row ${row.id} must have a direct child branch button.`);
+    }
+
+    if (ariaCurrent !== null) {
+      fail(sourceLabel, `branch row ${row.id} must not have aria-current.`);
+    }
+
+    if (row.directGroup === null) {
+      fail(sourceLabel, `branch row ${row.id} must have a direct child ul group.`);
+    }
+
+    const childRows = directElementChildren(row.directGroup).filter((child) => child.tagName === 'li');
+    if (childRows.length === 0) {
+      fail(sourceLabel, `branch row ${row.id} must not have an empty child group.`);
+    }
+
+    const expanded = getAttribute(row.directControl, 'aria-expanded');
+    if (expanded !== 'true' && expanded !== 'false') {
+      fail(sourceLabel, `branch row ${row.id} must have aria-expanded true/false.`);
+    }
+
+    const groupId = toTrimmedString(getAttribute(row.directGroup, 'id'));
+    const controls = toTrimmedString(getAttribute(row.directControl, 'aria-controls'));
+    if (groupId.length === 0 || controls !== groupId) {
+      fail(sourceLabel, `branch row ${row.id} aria-controls must match direct child group id.`);
+    }
+
+    if ((expanded === 'false') !== hasAttribute(row.directGroup, 'hidden')) {
+      fail(sourceLabel, `branch row ${row.id} aria-expanded and hidden must be consistent.`);
+    }
+
+    if (expanded === 'true') {
+      expandedBranchIds.push(row.id);
+    }
+  }
+
+  const ariaCurrentElements = collectAriaCurrentElements(nav);
+  if (ariaCurrentElements.some((element) => getAttribute(element, 'aria-current') !== 'page')) {
+    fail(sourceLabel, 'nav aria-current value must be exactly "page".');
+  }
+
+  const selectedId = input.selectedId;
+  if (selectedId === null) {
+    if (ariaCurrentElements.length !== 0) {
+      fail(sourceLabel, 'nav must not contain aria-current when selectedId is null.');
+    }
+  } else {
+    const selectedRow = rowById.get(selectedId);
+    if (selectedRow === undefined || selectedRow.kind !== 'leaf') {
+      fail(sourceLabel, `selectedId ${selectedId} must identify a leaf row in navHtml.`);
+    }
+
+    if (selectedLeafIds.length !== 1 || ariaCurrentElements.length !== 1) {
+      fail(sourceLabel, 'nav must contain exactly one selected leaf aria-current="page".');
+    }
+  }
+
+  assertSetEquals(expandedBranchIds, input.initialExpandedIds, sourceLabel, 'initialExpandedIds');
+
+  if (expectedRows === null) {
+    return;
+  }
+
+  if (expectedRows.length !== navElements.length) {
+    fail(sourceLabel, 'sidebarRows and navHtml row count must match.');
+  }
+
+  expectedRows.forEach((expectedRow, index) => {
+    const actualRow = navElements[index];
+    if (actualRow === undefined) {
+      fail(sourceLabel, `missing navHtml row at index ${String(index)}.`);
+    }
+
+    if (actualRow.id !== expectedRow.id || actualRow.kind !== expectedRow.kind) {
+      fail(sourceLabel, `sidebarRows and navHtml row identity mismatch at index ${String(index)}.`);
+    }
+
+    if (actualRow.depth !== expectedRow.depth) {
+      fail(sourceLabel, `sidebarRows and navHtml row depth mismatch for ${expectedRow.id}.`);
+    }
+
+    const hasCurrentBranch = getAttribute(actualRow.element, 'data-current-branch') === 'true';
+    const hasCurrentPathIndicator =
+      getAttribute(actualRow.element, 'data-current-path-indicator') === 'true';
+    const expectsCurrentBranch = expectedRow.kind === 'branch' && expectedRow.hasCurrentDescendant;
+    const expectsCurrentPathIndicator =
+      expectedRow.kind === 'branch' &&
+      expectedRow.hasCurrentDescendant &&
+      expectedRow.showsCurrentPathIndicator;
+
+    if (hasCurrentBranch !== expectsCurrentBranch) {
+      fail(sourceLabel, `data-current-branch mismatch for ${expectedRow.id}.`);
+    }
+
+    if (hasCurrentPathIndicator !== expectsCurrentPathIndicator) {
+      fail(sourceLabel, `data-current-path-indicator mismatch for ${expectedRow.id}.`);
+    }
+  });
+};

@@ -16,6 +16,7 @@ import type {
 } from '../../shared/navigation/shell-projection.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import { readParse5HydrationMarkerResult } from './parse5-hydration-markers.js';
+import { validateSidebarNavHtmlInvariant } from './validate-sidebar-nav-html-invariant.js';
 import {
   validateTocOwnerCandidates,
   type TocOwnerCandidate,
@@ -290,7 +291,7 @@ const extractSidebarProjection = (document: Parse5Document): SidebarShellProject
 
   const presentation = getAttribute(sidebar, 'presentation');
 
-  return {
+  const projection: SidebarShellProjection = {
     present: true,
     sidebarId: toTrimmedString(getAttribute(sidebar, 'sidebar-id'), FALLBACK_SIDEBAR_ID),
     stateScopeId: toTrimmedString(getAttribute(sidebar, 'state-scope-id'), ''),
@@ -305,6 +306,17 @@ const extractSidebarProjection = (document: Parse5Document): SidebarShellProject
     ),
     presentation: presentation === 'fixed' || presentation === 'overlay' ? presentation : 'auto',
   };
+
+  validateSidebarNavHtmlInvariant({
+    sidebarPresent: true,
+    navHtml: projection.navHtml,
+    selectedId: projection.selectedId,
+    initialExpandedIds: projection.initialExpandedIds,
+    topologyRevision: projection.topologyRevision,
+    sourceLabel: 'navigation-artifact',
+  });
+
+  return projection;
 };
 
 const inferRenderedKind = (

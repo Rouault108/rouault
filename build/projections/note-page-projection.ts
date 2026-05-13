@@ -27,6 +27,7 @@ import {
 } from '../../shared/toc/toc-normalization.js';
 import { NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE } from '../../src/layout/note-sidebar-breakpoint.js';
 import { renderNoteSidebarNav } from '../navigation/render-note-sidebar-nav.js';
+import { validateSidebarNavHtmlInvariant } from '../navigation/validate-sidebar-nav-html-invariant.js';
 import {
   resolveNoteHydrationBudgetProfile,
   type NoteHydrationCounts,
@@ -225,28 +226,51 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const normalizedCreated = normalizeNoteDate(input.note.created);
   const normalizedUpdated = normalizeNoteDate(input.note.updated);
 
+  if (showSidebar && input.navigation.sidebarRows.length === 0) {
+    throw new Error(`[projection] note "${slug}" は sidebar enabled ですが sidebarRows が空です。`);
+  }
+
+  const sidebarNavHtml = showSidebar
+    ? renderNoteSidebarNav(input.navigation.sidebarRows, {
+        ariaLabel: 'ノートナビゲーション',
+        topologyRevision: input.navigation.topologyRevision,
+      })
+    : null;
+
+  validateSidebarNavHtmlInvariant({
+    sidebarPresent: showSidebar,
+    navHtml: sidebarNavHtml,
+    selectedId: showSidebar ? input.navigation.selectedId : null,
+    initialExpandedIds: showSidebar ? input.navigation.initialExpandedIds : [],
+    topologyRevision: showSidebar ? input.navigation.topologyRevision : null,
+    sidebarRows: showSidebar ? input.navigation.sidebarRows : undefined,
+    sourceLabel: `note-page:${slug}`,
+  });
+
+  let sidebarProjection: NotePageSidebarProjection | null = null;
+  if (showSidebar) {
+    if (sidebarNavHtml === null) {
+      throw new Error(`[projection] note "${slug}" の sidebar navHtml が生成されませんでした。`);
+    }
+
+    sidebarProjection = {
+      stateScopeId: 'note-navigation',
+      selectedId: input.navigation.selectedId,
+      initialExpandedIds: input.navigation.initialExpandedIds,
+      topologyRevision: input.navigation.topologyRevision,
+      navHtml: sidebarNavHtml,
+      heading: null,
+      fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE,
+    };
+  }
+
   const projection: NotePageProjection = {
     noteKind,
     noteShellSidebarPresence: showSidebar ? 'present' : 'absent',
     tocPresence,
     showSidebar,
     contentHtml,
-    ...(showSidebar
-      ? {
-          sidebar: {
-            stateScopeId: 'note-navigation',
-            selectedId: input.navigation.selectedId,
-            initialExpandedIds: input.navigation.initialExpandedIds,
-            topologyRevision: input.navigation.topologyRevision,
-            navHtml: renderNoteSidebarNav(input.navigation.sidebarRows, {
-              ariaLabel: 'ノートナビゲーション',
-              topologyRevision: input.navigation.topologyRevision,
-            }),
-            heading: null,
-            fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE,
-          },
-        }
-      : {}),
+    ...(sidebarProjection !== null ? { sidebar: sidebarProjection } : {}),
     toc: {
       sourceId: tocSourceId,
       runtimeId: tocRuntimeId,

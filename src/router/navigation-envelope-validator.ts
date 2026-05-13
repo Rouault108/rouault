@@ -11,6 +11,7 @@ import type {
 } from '../../shared/navigation/shell-projection.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import { createRouterDiagnosticError } from './router-diagnostics.js';
+import { assertRuntimePresentSidebarNavHtml } from './sidebar-nav-html-presence.js';
 
 type SidebarShellProjectionInput = Omit<
   SidebarShellProjection,
@@ -107,18 +108,42 @@ const isSidebarShellProjection = (value: unknown): value is SidebarShellProjecti
 
 const normalizeSidebarShellProjection = (
   value: SidebarShellProjectionInput,
-): SidebarShellProjection => ({
-  present: value.present,
-  sidebarId: value.sidebarId,
-  stateScopeId: value.stateScopeId,
-  selectedId: value.selectedId,
-  initialExpandedIds: value.initialExpandedIds ?? [],
-  topologyRevision: normalizeOptionalString(value.topologyRevision),
-  navHtml: normalizeOptionalString(value.navHtml),
-  heading: normalizeOptionalString(value.heading),
-  fixedBreakpoint: value.fixedBreakpoint,
-  presentation: value.presentation,
-});
+): SidebarShellProjection => {
+  const initialExpandedIds = value.initialExpandedIds ?? [];
+  const topologyRevision = normalizeOptionalString(value.topologyRevision);
+  const navHtml = normalizeOptionalString(value.navHtml);
+  const heading = normalizeOptionalString(value.heading);
+
+  if (value.present) {
+    if (topologyRevision === null) {
+      throw createInvalidEnvelopeError(
+        'present sidebar shellProjection.topologyRevision は非空文字列である必要があります。',
+      );
+    }
+
+    try {
+      assertRuntimePresentSidebarNavHtml(navHtml, 'navigation-envelope');
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw createInvalidEnvelopeError(
+        `present sidebar shellProjection.navHtml が不正です: ${detail}`,
+      );
+    }
+  }
+
+  return {
+    present: value.present,
+    sidebarId: value.sidebarId,
+    stateScopeId: value.stateScopeId,
+    selectedId: value.selectedId,
+    initialExpandedIds,
+    topologyRevision,
+    navHtml,
+    heading,
+    fixedBreakpoint: value.fixedBreakpoint,
+    presentation: value.presentation,
+  };
+};
 
 const isShellProjectionSnapshot = (value: unknown): value is ShellProjectionSnapshot => {
   if (!isRecord(value)) {
@@ -200,14 +225,14 @@ export class NavigationEnvelopeValidationError extends Error {
   override name = 'NavigationEnvelopeValidationError' as const;
 }
 
-const createInvalidEnvelopeError = (message: string): NavigationEnvelopeValidationError => {
+function createInvalidEnvelopeError(message: string): NavigationEnvelopeValidationError {
   const error = new NavigationEnvelopeValidationError(message);
   error.cause = createRouterDiagnosticError(message, {
     reason: 'navigation-envelope-invalid',
     routeId: 'navigation-envelope',
   });
   return error;
-};
+}
 
 export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope => {
   if (!isRecord(value)) {
