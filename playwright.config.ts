@@ -31,6 +31,20 @@ const mobileWebkitFinalCheck = [
 
 const isCI = !!process.env['CI'];
 
+const resolveE2EBuildLabel = (): string => {
+  const explicitBuildLabel = process.env['ROUAULT_BUILD_LABEL']?.trim();
+  if (explicitBuildLabel !== undefined && explicitBuildLabel.length > 0) {
+    return explicitBuildLabel;
+  }
+
+  const githubSha = process.env['GITHUB_SHA']?.trim();
+  if (githubSha !== undefined && githubSha.length >= 7) {
+    return githubSha.slice(0, 7);
+  }
+
+  return 'e2e local';
+};
+
 const withNodeOption = (currentValue: string | undefined, option: string): string => {
   if (typeof currentValue !== 'string' || currentValue.trim().length === 0) {
     return option;
@@ -97,6 +111,7 @@ export default defineConfig({
     timeout: 120 * 1000,
     env: {
       ...toPlaywrightEnv(process.env),
+      ROUAULT_BUILD_LABEL: resolveE2EBuildLabel(),
       ROUAULT_SKIP_PAGEFIND: '1',
       NODE_OPTIONS: withNodeOption(process.env['NODE_OPTIONS'], '--max-old-space-size=4096'),
     },

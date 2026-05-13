@@ -33,6 +33,16 @@ describe('production build entrypoint contract', () => {
     );
   });
 
+  it('Playwright production e2e は未指定時の local build label を明示注入すること', () => {
+    const playwrightConfig = readFileSync(playwrightConfigPath, 'utf8');
+
+    expect(playwrightConfig).toContain('const resolveE2EBuildLabel = (): string => {');
+    expect(playwrightConfig).toContain("process.env['ROUAULT_BUILD_LABEL']?.trim()");
+    expect(playwrightConfig).toContain("process.env['GITHUB_SHA']?.trim()");
+    expect(playwrightConfig).toContain("return 'e2e local';");
+    expect(playwrightConfig).toContain('ROUAULT_BUILD_LABEL: resolveE2EBuildLabel(),');
+  });
+
   it('build-production と dev/prod e2e jobs が同じ media base URL と build label 経路を使うこと', () => {
     const workflow = readFileSync(workflowPath, 'utf8');
     const testE2eProductionJob = sliceWorkflowJob(workflow, 'test-e2e-production', 'test-e2e-dev');
@@ -96,10 +106,10 @@ describe('production build entrypoint contract', () => {
     expect(productionBuildEntrypoint).toContain(
       "import { resolveProductionBuildMetadata } from '../build/metadata/build-metadata.js';",
     );
-    expect(productionBuildEntrypoint).toContain('const buildMetadata = resolveProductionBuildMetadata();');
     expect(productionBuildEntrypoint).toContain(
-      "env['ROUAULT_BUILD_ID'] = buildMetadata.buildId;",
+      'const buildMetadata = resolveProductionBuildMetadata();',
     );
+    expect(productionBuildEntrypoint).toContain("env['ROUAULT_BUILD_ID'] = buildMetadata.buildId;");
     expect(productionBuildEntrypoint).toContain(
       "env['ROUAULT_BUILD_LABEL'] = buildMetadata.buildLabel;",
     );
