@@ -1,26 +1,11 @@
-import {
-  validateLoadedEnvelope,
-  validateNavigationEnvelope,
-} from './navigation-envelope-validator.js';
-import type {
-  DocumentRouteContext,
-  StrictLoadedNavigationEnvelope,
-} from './router-types.js';
+import type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
+import type { DocumentRouteContext } from './router-types.js';
 
 export const normalizeDocumentRouteEnvelope = (
-  envelope: unknown,
-  context: Pick<DocumentRouteContext, 'currentBuildId' | 'currentGeneratedAt' | 'normalizedUrl'>,
-): StrictLoadedNavigationEnvelope => {
-  const validated = validateNavigationEnvelope(envelope);
-  return validateLoadedEnvelope({
-    envelope: {
-      ...validated,
-      buildId: validated.buildId ?? context.currentBuildId,
-      generatedAt: validated.generatedAt ?? context.currentGeneratedAt,
-    },
-    source: 'document-route',
-    currentBuildId: context.currentBuildId,
-    currentGeneratedAt: context.currentGeneratedAt,
-    normalizedUrl: context.normalizedUrl,
-  });
-};
+  envelope: NavigationEnvelope,
+  context: Pick<DocumentRouteContext, 'currentBuildId' | 'currentGeneratedAt'>,
+): NavigationEnvelope => ({
+  ...envelope,
+  buildId: envelope.buildId ?? context.currentBuildId,
+  generatedAt: envelope.generatedAt ?? context.currentGeneratedAt,
+});

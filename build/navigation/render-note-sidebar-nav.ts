@@ -36,10 +36,15 @@ const renderRow = (row: SidebarNavRow, groupIdPrefix: SidebarGroupIdPrefix): str
   ].join(' ');
 
   if (row.kind === 'leaf') {
+    const href = row.href?.trim() ?? '';
+    if (href.length === 0) {
+      throw new Error('[navigation] leaf sidebar nav row requires non-empty href.');
+    }
+
     const currentAttribute = row.isCurrent ? ' aria-current="page"' : '';
     return [
       `<li ${baseAttributes}>`,
-      `<a data-sidebar-nav-control data-sidebar-nav-link href="${escapeHtml(row.href ?? '')}"${currentAttribute}>`,
+      `<a data-sidebar-nav-control data-sidebar-nav-link href="${escapeHtml(href)}"${currentAttribute}>`,
       `<span data-sidebar-nav-label>${escapeHtml(row.label)}</span>`,
       `</a>`,
       `</li>`,

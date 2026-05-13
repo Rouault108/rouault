@@ -198,6 +198,7 @@ describe('sidebar nav html invariant', () => {
   it('initialExpandedIds と aria-expanded / hidden の双方向整合を検証すること', () => {
     expectInvalidFixture({ initialExpandedIds: ['root/child'] });
     expectInvalidFixture({ initialExpandedIds: ['missing'] });
+    expectInvalidFixture({ initialExpandedIds: ['root', 'root'] });
     expectInvalidFixture({
       navHtml: validNavHtml.replace(`<ul id="${rootGroupId}">`, `<ul hidden id="${rootGroupId}">`),
     });

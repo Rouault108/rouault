@@ -29,6 +29,9 @@ export interface ValidateLoadedEnvelopeInput {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+const hasOwn = (value: object, key: string): boolean =>
+  Object.prototype.hasOwnProperty.call(value, key);
+
 const isString = (value: unknown): value is string => typeof value === 'string';
 const isRenderedKind = (value: unknown): value is DocumentRenderSnapshot['renderedKind'] =>
   value === 'page' || value === 'not-found' || value === 'error';
@@ -142,9 +145,13 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
     throw createInvalidEnvelopeError('navigation envelope hydrationPlan が不正です。');
   }
 
+  if (!hasOwn(value, 'shellProjection')) {
+    throw createInvalidEnvelopeError('navigation envelope shellProjection is required.');
+  }
+
   let shellProjection: NavigationEnvelope['shellProjection'];
   try {
-    shellProjection = validateNavigationEnvelopeShellProjection(value['shellProjection'] ?? null);
+    shellProjection = validateNavigationEnvelopeShellProjection(value['shellProjection']);
   } catch (error) {
     if (error instanceof ShellProjectionValidationError) {
       throw createInvalidEnvelopeError(`navigation envelope shellProjection が不正です: ${error.message}`);

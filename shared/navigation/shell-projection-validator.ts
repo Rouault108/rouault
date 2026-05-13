@@ -145,8 +145,9 @@ const validateHeader = (value: unknown): HeaderShellProjection => {
     tocPresence: value['tocPresence'],
     tocRuntimeId: optionalStringOrNull(value['tocRuntimeId'], 'header.tocRuntimeId'),
     tocOwnerId: optionalStringOrNull(value['tocOwnerId'], 'header.tocOwnerId'),
-    tocTriggerReserved:
-      value['tocTriggerReserved'] === undefined ? undefined : Boolean(value['tocTriggerReserved']),
+    ...(value['tocTriggerReserved'] === undefined
+      ? {}
+      : { tocTriggerReserved: Boolean(value['tocTriggerReserved']) }),
   };
 };
 

@@ -1,16 +1,33 @@
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const excludedDirectories = new Set(['.git', 'node_modules', 'dist', '_site']);
 
-const callSites = [
-  'build/projections/note-page-projection.ts',
-  'test/ssr/sidebar-nav-contract.test.ts',
-  'test/node/render-note-sidebar-nav.test.ts',
-  'test/browser/layout-sidebar-group-id-contract.browser.test.ts',
-] as const;
+const collectTypeScriptFiles = async (directory: string): Promise<string[]> => {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files: string[] = [];
+
+  for (const entry of entries) {
+    if (excludedDirectories.has(entry.name)) {
+      continue;
+    }
+
+    const absolutePath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...await collectTypeScriptFiles(absolutePath));
+      continue;
+    }
+
+    if (entry.isFile() && /\.tsx?$/u.test(entry.name)) {
+      files.push(absolutePath);
+    }
+  }
+
+  return files;
+};
 
 const findRenderNoteSidebarNavCalls = (source: string): string[] => {
   const calls: string[] = [];
@@ -46,17 +63,29 @@ const findRenderNoteSidebarNavCalls = (source: string): string[] => {
 };
 
 describe('renderNoteSidebarNav call-site boundary', () => {
-  it('全 call site が groupIdPrefix を明示して group id identity を固定すること', async () => {
-    for (const relativePath of callSites) {
-      const source = await readFile(path.join(repoRoot, relativePath), 'utf8');
-      const calls = findRenderNoteSidebarNavCalls(source);
+  it('repo-wide の全 call site が groupIdPrefix を明示して group id identity を固定すること', async () => {
+    const files = await collectTypeScriptFiles(repoRoot);
+    const violations: string[] = [];
+    let callCount = 0;
 
-      expect(calls.length, `${relativePath} should call renderNoteSidebarNav`).toBeGreaterThan(0);
+    for (const file of files) {
+      const relativePath = path.relative(repoRoot, file);
+      if (relativePath === 'test/node/render-note-sidebar-nav-callsite-boundary.test.ts') {
+        continue;
+      }
+
+      const source = await readFile(file, 'utf8');
+      const calls = findRenderNoteSidebarNavCalls(source);
+      callCount += calls.length;
+
       for (const call of calls) {
-        expect(call, `${relativePath} renderNoteSidebarNav call should pass groupIdPrefix`).toContain(
-          'groupIdPrefix',
-        );
+        if (!call.includes('groupIdPrefix')) {
+          violations.push(relativePath);
+        }
       }
     }
+
+    expect(callCount).toBeGreaterThan(0);
+    expect(violations).to.deep.equal([]);
   });
 });

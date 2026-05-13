@@ -97,6 +97,14 @@ describe('navigation envelope validator browser contract', () => {
 
 
 
+  it('missing shellProjection は explicit null と区別して contract error にすること', () => {
+    const envelope = createEnvelope() as Record<string, unknown>;
+    delete envelope['shellProjection'];
+
+    expect(() => validateNavigationEnvelope(envelope)).to.throw(NavigationEnvelopeContractError);
+    expect(validateNavigationEnvelope(createEnvelope()).shellProjection).to.equal(null);
+  });
+
   it('present sidebar payload の navHtml missing / undefined / null / empty / non-string を contract error に変換すること', () => {
     for (const navHtml of [undefined, null, '', '   ', 42]) {
       expect(() => validateNavigationEnvelope(createPresentSidebarEnvelope(navHtml))).to.throw(

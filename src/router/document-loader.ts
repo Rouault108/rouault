@@ -1,5 +1,5 @@
-import { requireBuildIdInput } from '../../shared/navigation/build-id-contract.js';
-import { requireGeneratedAtInput } from '../../shared/navigation/generated-at-contract.js';
+import { validateOptionalBuildIdInput } from '../../shared/navigation/build-id-contract.js';
+import { validateOptionalGeneratedAtInput } from '../../shared/navigation/generated-at-contract.js';
 import { HtmlDocumentFetcher } from './html-document-fetcher.js';
 import { normalizeDocumentRouteEnvelope } from './document-route-envelope.js';
 import { ErrorEnvelopeFactory } from './error-envelope-factory.js';
@@ -12,6 +12,33 @@ import {
 import type { StrictLoadedNavigationEnvelope } from './router-types.js';
 import { RouteRegistry } from './route-registry.js';
 import type { DocumentRouteContext, LoadDocumentResult } from './router-types.js';
+
+export type CurrentMetadataReadResult =
+  | { readonly kind: 'valid'; readonly value: string }
+  | { readonly kind: 'missing' }
+  | { readonly kind: 'empty' }
+  | { readonly kind: 'invalid-format'; readonly value: string };
+
+const createCurrentMetadataInvalidError = (
+  field: 'buildId' | 'generatedAt',
+  result: Exclude<CurrentMetadataReadResult, { readonly kind: 'valid' }>,
+): CurrentBuildMetadataInvalidError =>
+  new CurrentBuildMetadataInvalidError({
+    field,
+    reason: result.kind,
+    ...(result.kind === 'invalid-format' ? { value: result.value } : {}),
+  });
+
+const requireCurrentMetadataValue = (
+  field: 'buildId' | 'generatedAt',
+  result: CurrentMetadataReadResult,
+): string => {
+  if (result.kind === 'valid') {
+    return result.value;
+  }
+
+  throw createCurrentMetadataInvalidError(field, result);
+};
 
 export class DocumentLoader {
   private readonly fetcher = new HtmlDocumentFetcher();
@@ -33,8 +60,17 @@ export class DocumentLoader {
     try {
       const routeEnvelope = await this.routeRegistry.execute(routeContext);
       if (routeEnvelope !== null) {
+        const envelope = validateNavigationEnvelope(routeEnvelope);
+        const normalizedEnvelope = normalizeDocumentRouteEnvelope(envelope, routeContext);
+
         return {
-          envelope: normalizeDocumentRouteEnvelope(routeEnvelope, routeContext),
+          envelope: validateLoadedEnvelope({
+            envelope: normalizedEnvelope,
+            source: 'document-route',
+            currentBuildId: routeContext.currentBuildId,
+            currentGeneratedAt: routeContext.currentGeneratedAt,
+            normalizedUrl,
+          }),
           source: 'document-route',
         };
       }
@@ -66,8 +102,11 @@ export class DocumentLoader {
 
   private createRouteContext(normalizedUrl: string, signal: AbortSignal): DocumentRouteContext {
     const parsedUrl = new URL(normalizedUrl, window.location.origin);
-    const currentBuildId = this.readCurrentBuildId();
-    const currentGeneratedAt = this.readCurrentGeneratedAt();
+    const currentBuildId = requireCurrentMetadataValue('buildId', this.readCurrentBuildId());
+    const currentGeneratedAt = requireCurrentMetadataValue(
+      'generatedAt',
+      this.readCurrentGeneratedAt(),
+    );
 
     return {
       url: normalizedUrl,
@@ -118,29 +157,33 @@ export class DocumentLoader {
     return document.querySelector(`meta[name="${name}"]`)?.getAttribute('content') ?? null;
   }
 
-  private readCurrentBuildId(): string {
-    const raw = this.readMetaContentRaw('rouault-build-id');
-    try {
-      return requireBuildIdInput(raw);
-    } catch {
-      throw new CurrentBuildMetadataInvalidError({
-        field: 'buildId',
-        reason: raw === null ? 'missing' : raw.trim().length === 0 ? 'empty' : 'invalid-format',
-        ...(raw !== null && raw.trim().length > 0 ? { value: raw } : {}),
-      });
+  private readCurrentBuildId(): CurrentMetadataReadResult {
+    const result = validateOptionalBuildIdInput(this.readMetaContentRaw('rouault-build-id'));
+    if (result.kind === 'valid') {
+      return result;
     }
+    if (result.kind === 'invalid-format') {
+      return { kind: 'invalid-format', value: result.value };
+    }
+    if (result.kind === 'invalid-type') {
+      return { kind: 'invalid-format', value: String(result.value) };
+    }
+    return { kind: result.kind };
   }
 
-  private readCurrentGeneratedAt(): string {
-    const raw = this.readMetaContentRaw('rouault-generated-at');
-    try {
-      return requireGeneratedAtInput(raw);
-    } catch {
-      throw new CurrentBuildMetadataInvalidError({
-        field: 'generatedAt',
-        reason: raw === null ? 'missing' : raw.trim().length === 0 ? 'empty' : 'invalid-format',
-        ...(raw !== null && raw.trim().length > 0 ? { value: raw } : {}),
-      });
+  private readCurrentGeneratedAt(): CurrentMetadataReadResult {
+    const result = validateOptionalGeneratedAtInput(
+      this.readMetaContentRaw('rouault-generated-at'),
+    );
+    if (result.kind === 'valid') {
+      return result;
     }
+    if (result.kind === 'invalid-format') {
+      return { kind: 'invalid-format', value: result.value };
+    }
+    if (result.kind === 'invalid-type') {
+      return { kind: 'invalid-format', value: String(result.value) };
+    }
+    return { kind: result.kind };
   }
 }

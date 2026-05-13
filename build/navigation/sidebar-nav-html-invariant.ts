@@ -225,6 +225,20 @@ const assertAbsentProjection = (
   }
 };
 
+const assertNoDuplicateIds = (
+  values: readonly string[],
+  sourceLabel: string,
+  label: string,
+): void => {
+  const seen = new Set<string>();
+  for (const value of values) {
+    if (seen.has(value)) {
+      fail(sourceLabel, `${label} must not contain duplicate id: ${value}`);
+    }
+    seen.add(value);
+  }
+};
+
 const assertSetEquals = (
   actual: readonly string[],
   expected: readonly string[],
@@ -264,6 +278,8 @@ export const validateSidebarNavHtmlInvariant = (
   if (toTrimmedString(input.topologyRevision).length === 0) {
     fail(sourceLabel, 'present sidebar projection must contain non-empty topologyRevision.');
   }
+
+  assertNoDuplicateIds(input.initialExpandedIds, sourceLabel, 'initialExpandedIds');
 
   let sidebarId: string;
   let stateScopeId: string;

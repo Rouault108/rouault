@@ -1390,12 +1390,36 @@ describe('layout-header browser contract', () => {
       currentCorpusKey: 'all',
       noteLayout: true,
       sidebarEnabled: true,
+      sidebarId: DEFAULT_LAYOUT_SIDEBAR_ID,
       tocPresence: 'absent',
     });
     await waitForLitUpdate(header);
 
     expect(header.getAttribute('toc-presence')).to.equal('absent');
     expect(header.readShellProjection().tocPresence).to.equal('absent');
+  });
+
+  it('sidebar disabled snapshot は stale sidebar-id を default に正規化すること', async () => {
+    const header = await fixture<LayoutHeader>(
+      html`<layout-header sidebar-id="note-secondary"></layout-header>`,
+    );
+    await waitForLitUpdate(header);
+
+    expect(header.readShellProjection().sidebarEnabled).to.equal(false);
+    expect(header.readShellProjection().sidebarId).to.equal(DEFAULT_LAYOUT_SIDEBAR_ID);
+
+    header.applyShellProjection({
+      corpora: [],
+      currentCorpusKey: 'all',
+      noteLayout: false,
+      sidebarEnabled: false,
+      sidebarId: 'note-secondary',
+      tocPresence: 'absent',
+    });
+    await waitForLitUpdate(header);
+
+    expect(header.getAttribute('sidebar-id')).to.equal(DEFAULT_LAYOUT_SIDEBAR_ID);
+    expect(header.readShellProjection().sidebarId).to.equal(DEFAULT_LAYOUT_SIDEBAR_ID);
   });
 
   it('shell projection は TOC trigger reservation と interactive state を分離して round-trip すること', async () => {
@@ -1435,6 +1459,7 @@ describe('layout-header browser contract', () => {
       currentCorpusKey: 'all',
       noteLayout: true,
       sidebarEnabled: false,
+      sidebarId: DEFAULT_LAYOUT_SIDEBAR_ID,
       tocPresence: 'present',
       tocRuntimeId: 'next-toc',
       tocTriggerReserved: false,

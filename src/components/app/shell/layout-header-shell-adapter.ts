@@ -87,17 +87,23 @@ const readTocTriggerReserved = (header: Element): boolean => {
   return value === '' || value === 'true';
 };
 
-export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
-  corpora: parseCorpora(header.getAttribute('corpora-json') ?? null),
-  currentCorpusKey: readCurrentCorpusKey(header),
-  noteLayout: header.hasAttribute('note-layout'),
-  sidebarEnabled: header.hasAttribute('sidebar-enabled'),
-  sidebarId: header.getAttribute('sidebar-id')?.trim() || DEFAULT_SIDEBAR_ID,
-  tocPresence: readTocPresence(header),
-  tocRuntimeId: readTocRuntimeId(header),
-  tocOwnerId: readTocOwnerId(header),
-  tocTriggerReserved: readTocTriggerReserved(header),
-});
+export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => {
+  const sidebarEnabled = header.hasAttribute('sidebar-enabled');
+
+  return {
+    corpora: parseCorpora(header.getAttribute('corpora-json') ?? null),
+    currentCorpusKey: readCurrentCorpusKey(header),
+    noteLayout: header.hasAttribute('note-layout'),
+    sidebarEnabled,
+    sidebarId: sidebarEnabled
+      ? header.getAttribute('sidebar-id')?.trim() || DEFAULT_SIDEBAR_ID
+      : DEFAULT_SIDEBAR_ID,
+    tocPresence: readTocPresence(header),
+    tocRuntimeId: readTocRuntimeId(header),
+    tocOwnerId: readTocOwnerId(header),
+    tocTriggerReserved: readTocTriggerReserved(header),
+  };
+};
 
 export const applyHeaderSnapshot = (
   header: HTMLElement,
@@ -115,7 +121,10 @@ export const applyHeaderSnapshot = (
   header.setAttribute('current-corpus-key', snapshot.currentCorpusKey);
   header.toggleAttribute('note-layout', snapshot.noteLayout);
   header.toggleAttribute('sidebar-enabled', snapshot.sidebarEnabled);
-  header.setAttribute('sidebar-id', snapshot.sidebarId);
+  header.setAttribute(
+    'sidebar-id',
+    snapshot.sidebarEnabled ? snapshot.sidebarId : DEFAULT_SIDEBAR_ID,
+  );
   header.setAttribute('toc-presence', snapshot.tocPresence);
   header.toggleAttribute(TOC_TRIGGER_RESERVED_ATTRIBUTE, snapshot.tocTriggerReserved === true);
   header.setAttribute(

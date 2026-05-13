@@ -5,16 +5,14 @@ import {
   type NavigationEnvelope,
 } from '../../shared/navigation/navigation-envelope.js';
 import { normalizeDocumentRouteEnvelope } from '../../src/router/document-route-envelope.js';
-import { NavigationEnvelopeContractError } from '../../src/router/navigation-envelope-errors.js';
 import type { DocumentRouteContext } from '../../src/router/router-types.js';
 
 const currentContext: Pick<
   DocumentRouteContext,
-  'currentBuildId' | 'currentGeneratedAt' | 'normalizedUrl'
+  'currentBuildId' | 'currentGeneratedAt'
 > = {
   currentBuildId: 'build-current',
   currentGeneratedAt: '2026-04-11T00:00:00.000Z',
-  normalizedUrl: '/notes/example',
 };
 
 const createEnvelope = (
@@ -46,16 +44,16 @@ describe('document-route envelope normalization', () => {
     expect(explicitNull.generatedAt).toBe('2026-04-11T00:00:00.000Z');
   });
 
-  it('document-route の empty / invalid-format metadata は補完せず拒否すること', () => {
+  it('document-route の empty / invalid-format metadata は補完せず後段 validation へ渡すこと', () => {
     for (const envelope of [
       createEnvelope({ buildId: '' }),
       createEnvelope({ buildId: 'build current' }),
       createEnvelope({ generatedAt: '' }),
       createEnvelope({ generatedAt: 'not-a-date' }),
     ]) {
-      expect(() => normalizeDocumentRouteEnvelope(envelope, currentContext)).toThrow(
-        NavigationEnvelopeContractError,
-      );
+      const normalized = normalizeDocumentRouteEnvelope(envelope, currentContext);
+      expect(normalized.buildId).toBe(envelope.buildId);
+      expect(normalized.generatedAt).toBe(envelope.generatedAt);
     }
   });
 });

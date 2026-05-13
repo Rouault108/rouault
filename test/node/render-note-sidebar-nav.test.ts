@@ -89,6 +89,21 @@ describe('renderNoteSidebarNav', () => {
     );
   });
 
+  it('leaf row の href missing / empty を render 時点で reject すること', () => {
+    const invalidRows = structuredClone(rows);
+    if (invalidRows[0]?.children[0]?.kind === 'leaf') {
+      invalidRows[0].children[0].href = '   ';
+    }
+
+    expect(() =>
+      renderNoteSidebarNav(invalidRows, {
+        sidebarId: 'note-primary',
+        topologyRevision: 'topology:test',
+        groupIdPrefix,
+      }),
+    ).toThrow(/non-empty href/u);
+  });
+
   it('present sidebar の空 row と空 sidebarId を reject すること', () => {
     expect(() =>
       renderNoteSidebarNav([], {
