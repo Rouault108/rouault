@@ -580,6 +580,11 @@ export class LayoutSidebar extends LitElement {
   }
 
   private _syncSurfaceMount(): void {
+    if (this.hidden) {
+      this._removeSurface();
+      return;
+    }
+
     const surface = this._ensureSurface();
     const mountTarget = this._resolveSurfaceMountTarget();
 

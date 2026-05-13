@@ -232,10 +232,12 @@ const renderSidebarFixture = (options: {
 
   return html`
     <layout-sidebar
+      sidebar-id="${DEFAULT_LAYOUT_SIDEBAR_ID}"
       presentation="${options.presentation ?? 'overlay'}"
       state-scope-id="${options.stateScopeId ?? 'note-navigation'}"
       selected-id="${options.selectedId ?? 'music/classical/beethoven/symphony-9'}"
       initial-expanded-ids="${options.initialExpandedIds ?? '["music","music/classical"]'}"
+      topology-revision="topology:sample"
       heading=${ifDefined(heading)}
     >
       ${unsafeHTML(options.markup ?? sampleNavMarkup)}
@@ -625,7 +627,7 @@ describe('layout-sidebar browser contract', () => {
       await settle(host);
 
       expect(host.hidden).to.equal(true);
-      expect(host.stateScopeId).to.equal('');
+      expect(host.stateScopeId).to.equal('note-navigation');
       expect(host.selectedId).to.equal(null);
       expect(host.initialExpandedIdsJson).to.equal('[]');
       expect(host.topologyRevision).to.equal(null);
@@ -635,7 +637,7 @@ describe('layout-sidebar browser contract', () => {
       expect(host.innerHTML).not.to.contain('nav data-sidebar-nav');
       expect(host.readShellProjection().present).to.equal(false);
       expect(overlayLayer.querySelector('ui-sidebar-shell')).to.equal(null);
-      expect(host.querySelector('ui-sidebar-shell')).to.not.equal(null);
+      expect(host.querySelector('ui-sidebar-shell')).to.equal(null);
     } finally {
       media.restore();
     }

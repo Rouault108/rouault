@@ -123,6 +123,10 @@ const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar
 
 export class BaseLayout {
   render(data: BaseLayoutData) {
+    if (data.buildMetadata === undefined || data.buildMetadata === null) {
+      throw new Error('BaseLayout requires buildMetadata.');
+    }
+
     const title = buildDocumentTitle(data.title);
     const description = data.description ?? '個人ノートを静かに読むためのWebアプリケーション';
     const clientBundle = normalizeClientBundle(data.clientBundle);

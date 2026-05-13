@@ -250,7 +250,7 @@ describe('layout-sidebar-nav paint contract', () => {
   const navMarkup = `
     <nav data-sidebar-nav aria-label="ノートナビゲーション">
       <ul>
-        <li data-node-id="music" data-node-kind="branch" data-node-depth="0" data-current-branch="true">
+        <li data-node-id="music" data-node-kind="branch" data-node-depth="0" data-current-branch="true" data-current-path-indicator="true">
           <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="sidebar-group-music">
             <span data-sidebar-nav-label>Music</span>
             <span data-sidebar-nav-disclosure aria-hidden="true">

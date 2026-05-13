@@ -432,7 +432,7 @@ describe('buildNoteNavigationModel', () => {
     expect(
       findRow(model.sidebarRows as readonly SidebarRowNode[], 'program/csharp')
         ?.showsCurrentPathIndicator,
-    ).to.equal(false);
+    ).to.equal(true);
     expect(
       findRow(model.sidebarRows as readonly SidebarRowNode[], 'program/javascript')
         ?.showsCurrentPathIndicator,

@@ -474,7 +474,8 @@ export const buildNoteNavigationModel = ({
   const sidebarNotes = mergeCurrentNoteIntoSidebarNotes(currentNote, notes);
   const rootSlug = toTrimmedString(currentNote?.sidebarRoot);
   const sidebarTree = buildSidebarTree(sidebarNotes, rootSlug);
-  const selectedId = resolveSelectedSidebarNodeId(currentNote);
+  const selectedId =
+    currentNote && isSidebarVisible(currentNote) ? resolveSelectedSidebarNodeId(currentNote) : null;
   const selectedAncestors = collectSelectedAncestors(sidebarTree, selectedId);
   if (selectedId !== null) {
     const selectedNode = findNodeById(sidebarTree, selectedId);

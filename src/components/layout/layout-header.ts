@@ -465,7 +465,7 @@ export class LayoutHeader extends LitElement {
   @property({ type: String, attribute: 'toc-trigger-reserved' })
   tocTriggerReserved = 'auto';
 
-  @property({ type: String, attribute: 'sidebar-id' })
+  @property({ type: String, reflect: true, attribute: 'sidebar-id' })
   sidebarId = DEFAULT_LAYOUT_SIDEBAR_ID;
 
   @state()

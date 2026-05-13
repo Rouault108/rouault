@@ -67,7 +67,7 @@ describe('layout-sidebar-tree-state', () => {
 
   it('sidebarId と stateScopeId ごとに保存キーを分離できること', () => {
     expect(getLayoutSidebarTreeStateStorageKey()).to.equal(
-      `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V3}:default:global`,
+      `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V3}:note-primary:note-navigation`,
     );
     expect(
       getLayoutSidebarTreeStateStorageKey({

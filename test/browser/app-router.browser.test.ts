@@ -725,12 +725,15 @@ describe('app-router', () => {
             <layout-sidebar
               state-scope-id="note-navigation"
               selected-id="notes/old"
+              initial-expanded-ids="[]"
+              topology-revision="topology:old"
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
               presentation="auto"
               ><nav
                 data-sidebar-nav
                 aria-label="ノートナビゲーション"
+                data-sidebar-id="note-primary"
                 data-topology-revision="topology:old"
               >
                 <ul>
@@ -820,6 +823,8 @@ describe('app-router', () => {
             <layout-sidebar
               state-scope-id="note-navigation"
               selected-id="notes/old"
+              initial-expanded-ids="[]"
+              topology-revision="topology:old"
               heading="古い見出し"
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
@@ -827,6 +832,7 @@ describe('app-router', () => {
               ><nav
                 data-sidebar-nav
                 aria-label="ノートナビゲーション"
+                data-sidebar-id="note-primary"
                 data-topology-revision="topology:old"
               >
                 <ul>
@@ -912,12 +918,15 @@ describe('app-router', () => {
             <layout-sidebar
               state-scope-id="note-navigation"
               selected-id="notes/old"
+              initial-expanded-ids="[]"
+              topology-revision="topology:old"
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
               presentation="auto"
               ><nav
                 data-sidebar-nav
                 aria-label="ノートナビゲーション"
+                data-sidebar-id="note-primary"
                 data-topology-revision="topology:old"
               >
                 <ul>
@@ -997,14 +1006,26 @@ describe('app-router', () => {
             <layout-sidebar
               state-scope-id="note-navigation"
               selected-id="notes/old"
+              initial-expanded-ids="[]"
+              topology-revision="topology:old"
               heading="古い見出し"
               fixed-breakpoint="1440"
               sidebar-id="note-primary"
               presentation="fixed"
-              ><nav data-sidebar-nav aria-label="ノートナビゲーション">
+              ><nav
+                data-sidebar-nav
+                aria-label="ノートナビゲーション"
+                data-sidebar-id="note-primary"
+                data-topology-revision="topology:old"
+              >
                 <ul>
                   <li data-node-id="notes/old" data-node-kind="leaf" data-node-depth="0">
-                    <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/old">
+                    <a
+                      data-sidebar-nav-control
+                      data-sidebar-nav-link
+                      href="/notes/old"
+                      aria-current="page"
+                    >
                       <span data-sidebar-nav-label>Old</span>
                     </a>
                   </li>
@@ -1079,6 +1100,8 @@ describe('app-router', () => {
             <layout-sidebar
               state-scope-id="note-navigation"
               selected-id="notes/old"
+              initial-expanded-ids="[]"
+              topology-revision="topology:old"
               heading="古いナビゲーション"
               fixed-breakpoint="1024"
               sidebar-id="note-primary"
@@ -1086,6 +1109,7 @@ describe('app-router', () => {
               ><nav
                 data-sidebar-nav
                 aria-label="ノートナビゲーション"
+                data-sidebar-id="note-primary"
                 data-topology-revision="topology:old"
               >
                 <ul>
