@@ -2,10 +2,13 @@ import type { DocumentRenderSnapshot } from '../../shared/navigation/document-re
 import type { HydrationPlan } from '../../shared/navigation/hydration-plan.js';
 import type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
 import type {
+  AbsentRuntimeSidebarShellProjection,
   HeaderShellProjection,
+  PresentSidebarShellProjection,
+  RuntimeSidebarShellSnapshot as SharedRuntimeSidebarShellSnapshot,
   ShellProjectionSnapshot,
-  SidebarShellProjection,
 } from '../../shared/navigation/shell-projection.js';
+import type { StrictLoadedNavigationEnvelope } from './navigation-envelope-validator.js';
 import type { RouterDiagnosticPayload } from './router-diagnostics.js';
 
 export type HistoryMode = 'none' | 'push' | 'replace';
@@ -44,7 +47,7 @@ export interface NavigationResult {
   committed: boolean;
   degraded: boolean;
   issues: NavigationIssue[];
-  source: 'document-route' | 'fetch' | 'state-only' | 'none';
+  source: 'document-route' | 'fetch' | 'error-fallback' | 'state-only' | 'none';
   renderedKind: 'page' | 'not-found' | 'error' | null;
   error?: Error | undefined;
   errorReason?: NavigationErrorReason | undefined;
@@ -67,12 +70,22 @@ export interface ContentUpdateAdapter {
 
 export type HeaderShellSnapshot = HeaderShellProjection;
 
-export type SidebarShellSnapshot = SidebarShellProjection;
+export type PayloadDocumentShellSnapshot = ShellProjectionSnapshot;
+export type RuntimeSidebarShellSnapshot = SharedRuntimeSidebarShellSnapshot;
+export type RuntimeDocumentShellSnapshot = {
+  header: HeaderShellProjection;
+  sidebar: RuntimeSidebarShellSnapshot | null;
+};
 
-export type DocumentShellSnapshot = ShellProjectionSnapshot;
+/** @deprecated Payload shell snapshot. Use PayloadDocumentShellSnapshot. */
+export type DocumentShellSnapshot = PayloadDocumentShellSnapshot;
+/** @deprecated Runtime sidebar snapshot. Use RuntimeSidebarShellSnapshot. */
+export type SidebarShellSnapshot = RuntimeSidebarShellSnapshot;
+
+export type { PresentSidebarShellProjection, AbsentRuntimeSidebarShellProjection };
 
 export interface ShellUpdatePayload {
-  shell: DocumentShellSnapshot | null;
+  shell: PayloadDocumentShellSnapshot | null;
   navigationUrl: string;
 }
 
@@ -122,14 +135,19 @@ export interface RouterOptions {
   navigationTimeoutMs?: number | null | undefined;
 }
 
-export type LoadDocumentSource = 'document-route' | 'fetch';
+export type LoadDocumentSource = 'document-route' | 'fetch' | 'error-fallback';
 
-export interface LoadDocumentResult {
-  envelope: NavigationEnvelope;
-  source: LoadDocumentSource;
-  error?: Error | undefined;
-  errorReason?: Exclude<NavigationErrorReason, 'destroyed' | 'not-started'> | undefined;
-}
+export type LoadDocumentResult =
+  | {
+      envelope: StrictLoadedNavigationEnvelope;
+      source: 'document-route' | 'fetch';
+    }
+  | {
+      envelope: NavigationEnvelope;
+      source: 'error-fallback';
+      error?: Error | undefined;
+      errorReason?: Exclude<NavigationErrorReason, 'destroyed' | 'not-started'> | undefined;
+    };
 
 export interface DocumentRouteContext {
   url: string;
@@ -138,6 +156,8 @@ export interface DocumentRouteContext {
   searchParams: URLSearchParams;
   hash: string;
   signal: AbortSignal;
+  currentBuildId: string;
+  currentGeneratedAt: string;
 }
 
 export type RouterDocumentRenderSnapshot = DocumentRenderSnapshot;

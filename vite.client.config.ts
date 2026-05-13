@@ -1,12 +1,14 @@
 import path from 'node:path';
 import { defineConfig } from 'vite';
-import { resolveBuildLabel } from './build/metadata/build-metadata.js';
+import { resolveProductionBuildMetadata } from './build/metadata/build-metadata.js';
 
-const buildLabel = resolveBuildLabel();
+const buildMetadata = resolveProductionBuildMetadata();
 
 export default defineConfig({
   define: {
-    __ROUAULT_BUILD_LABEL__: buildLabel === undefined ? 'undefined' : JSON.stringify(buildLabel),
+    __ROUAULT_BUILD_ID__: JSON.stringify(buildMetadata.buildId),
+    __ROUAULT_BUILD_LABEL__: JSON.stringify(buildMetadata.buildLabel),
+    __ROUAULT_GENERATED_AT__: JSON.stringify(buildMetadata.generatedAt),
   },
   publicDir: false,
   resolve: {

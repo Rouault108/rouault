@@ -123,7 +123,7 @@ describe('eleventy config', () => {
         throw new Error('buildMetadata が登録されていません');
       }
 
-      expect(loadBuildMetadata()).toEqual({ buildLabel: 'build abcdef1' });
+      expect(loadBuildMetadata()).toEqual({ buildLabel: 'abcdef1' });
     } finally {
       if (previousBuildLabel === undefined) {
         delete process.env['ROUAULT_BUILD_LABEL'];

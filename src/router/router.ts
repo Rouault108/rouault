@@ -30,6 +30,11 @@ export type {
   DocumentRouteContext,
   DocumentRouteHandler,
   DocumentShellSnapshot,
+  PayloadDocumentShellSnapshot,
+  RuntimeDocumentShellSnapshot,
+  RuntimeSidebarShellSnapshot,
+  PresentSidebarShellProjection,
+  AbsentRuntimeSidebarShellProjection,
   LoadDocumentResult,
   HeaderShellSnapshot,
   HistoryMode,
@@ -320,11 +325,11 @@ export class Router {
         durableCommitResult.outcome === 'failed'
           ? {
               ...durableCommitResult,
-              source: 'fetch',
+              source: loadResult.source,
             }
           : {
               ...durableCommitResult,
-              source: 'fetch',
+              source: loadResult.source,
               error: loadResult.error ?? (error instanceof Error ? error : undefined),
               errorReason: loadResult.errorReason,
             };

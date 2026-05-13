@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   normalizeBuildLabel,
   resolveBuildLabel,
+  resolveBuildMetadata,
+  resolveDevelopmentBuildMetadata,
   resolveGitShortSha,
 } from '../../build/metadata/build-metadata.js';
 
@@ -16,8 +18,8 @@ const restoreEnv = (previousBuildLabel: string | undefined): void => {
 };
 
 describe('build metadata', () => {
-  it('短い SHA 形式の値は build ラベルへ正規化すること', () => {
-    expect(normalizeBuildLabel('abcdef1')).to.equal('build abcdef1');
+  it('buildLabel は shared contract の正本に従い、SHA 形式も identity として解釈しないこと', () => {
+    expect(normalizeBuildLabel('abcdef1')).to.equal('abcdef1');
   });
 
   it('build プレフィックス付きの値はそのまま返すこと', () => {
@@ -52,29 +54,47 @@ describe('build metadata', () => {
     }
   });
 
-  it('ROUAULT_BUILD_LABEL が未設定なら git short sha にフォールバックすること', () => {
+  it('ROUAULT_BUILD_LABEL が未設定なら buildLabel は missing として扱うこと', () => {
     const previousBuildLabel = process.env['ROUAULT_BUILD_LABEL'];
     delete process.env['ROUAULT_BUILD_LABEL'];
 
     try {
-      const gitLabel = resolveGitShortSha();
-      if (gitLabel === undefined) {
-        return;
-      }
-
-      expect(resolveBuildLabel()).to.equal(gitLabel);
+      expect(resolveBuildLabel()).to.equal(undefined);
     } finally {
       restoreEnv(previousBuildLabel);
     }
   });
 
-  it('git short SHA が利用できる場合は build ラベルを返すこと', () => {
-    const gitLabel = resolveGitShortSha();
 
-    if (gitLabel === undefined) {
+  it('production metadata は buildLabel missing を hard fail すること', () => {
+    const previousBuildLabel = process.env['ROUAULT_BUILD_LABEL'];
+    delete process.env['ROUAULT_BUILD_LABEL'];
+
+    try {
+      expect(() => resolveBuildMetadata()).toThrow(/buildLabel is required/u);
+    } finally {
+      restoreEnv(previousBuildLabel);
+    }
+  });
+
+  it('development metadata だけが local buildLabel fallback を持つこと', () => {
+    const previousBuildLabel = process.env['ROUAULT_BUILD_LABEL'];
+    delete process.env['ROUAULT_BUILD_LABEL'];
+
+    try {
+      expect(resolveDevelopmentBuildMetadata({ buildId: 'dev', generatedAt: '2026-04-11T00:00:00.000Z' }).buildLabel).to.equal('build local');
+    } finally {
+      restoreEnv(previousBuildLabel);
+    }
+  });
+
+  it('git short SHA は buildId fallback 用の raw identity として返すこと', () => {
+    const gitSha = resolveGitShortSha();
+
+    if (gitSha === undefined) {
       return;
     }
 
-    expect(gitLabel).to.match(/^build [0-9a-f]{7}$/i);
+    expect(gitSha).to.match(/^[0-9a-f]{7,40}$/i);
   });
 });

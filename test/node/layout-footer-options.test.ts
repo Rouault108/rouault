@@ -12,7 +12,7 @@ const restoreEnv = (previousBuildLabel: string | undefined): void => {
 };
 
 describe('buildLayoutFooterOptions', () => {
-  it('build label 未指定時は共有 build metadata を fallback すること', () => {
+  it('build label 未指定時は buildLabel を出力しないこと', () => {
     const previousBuildLabel = process.env['ROUAULT_BUILD_LABEL'];
     process.env['ROUAULT_BUILD_LABEL'] = 'abcdef1';
 
@@ -29,7 +29,7 @@ describe('buildLayoutFooterOptions', () => {
         linksJson: undefined,
       });
 
-      expect(options.meta.buildLabel).to.equal('build abcdef1');
+      expect(options.meta.buildLabel).to.equal(undefined);
     } finally {
       restoreEnv(previousBuildLabel);
     }

@@ -1,30 +1,29 @@
-import { normalizeBuildLabel } from '../../build/metadata/build-label.js';
+import { normalizeBuildId } from '../../shared/navigation/build-id-contract.js';
+import { normalizeBuildLabel } from '../../shared/navigation/build-label-contract.js';
+import { normalizeGeneratedAt } from '../../shared/navigation/generated-at-contract.js';
 
 export interface BuildMetadataData {
-  buildLabel?: string;
+  buildId: string;
+  buildLabel: string;
+  generatedAt: string;
 }
 
-declare const __ROUAULT_BUILD_LABEL__: string | undefined;
+export interface LoadBuildMetadataDataInput {
+  buildId: unknown;
+  buildLabel: unknown;
+  generatedAt: unknown;
+  sourceLabel: string;
+}
 
-const readRuntimeBuildLabel = (): string | undefined => {
-  const defineBuildLabel =
-    typeof __ROUAULT_BUILD_LABEL__ === 'string' ? __ROUAULT_BUILD_LABEL__ : undefined;
-  if (defineBuildLabel) {
-    return defineBuildLabel;
+export const loadBuildMetadataData = (input: LoadBuildMetadataDataInput): BuildMetadataData => {
+  try {
+    return {
+      buildId: normalizeBuildId(input.buildId),
+      buildLabel: normalizeBuildLabel(input.buildLabel),
+      generatedAt: normalizeGeneratedAt(input.generatedAt),
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`[buildMetadata:${input.sourceLabel}] ${message}`);
   }
-
-  if (typeof process !== 'undefined' && typeof process.env === 'object') {
-    const envBuildLabel = process.env['ROUAULT_BUILD_LABEL'];
-    if (typeof envBuildLabel === 'string') {
-      return envBuildLabel;
-    }
-  }
-
-  return undefined;
-};
-
-export const loadBuildMetadataData = (buildLabel?: string): BuildMetadataData => {
-  const normalizedBuildLabel = normalizeBuildLabel(buildLabel ?? readRuntimeBuildLabel());
-
-  return normalizedBuildLabel ? { buildLabel: normalizedBuildLabel } : {};
 };

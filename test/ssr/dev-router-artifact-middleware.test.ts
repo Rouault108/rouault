@@ -115,6 +115,8 @@ describe('dev-router-artifact-middleware', () => {
         '<html lang="ja">',
         '  <head>',
         '    <meta charset="utf-8">',
+        '    <meta name="rouault-build-id" content="dev-build">',
+        '    <meta name="rouault-generated-at" content="2026-04-11T00:00:00.000Z">',
         '    <title>About - Rouault</title>',
         '    <meta name="description" content="about page">',
         '  </head>',
@@ -129,6 +131,7 @@ describe('dev-router-artifact-middleware', () => {
     const middleware = createDevelopmentRouterArtifactMiddleware({
       outputDirectory,
       buildId: 'dev-build',
+      generatedAt: '2026-04-11T00:00:00.000Z',
     });
 
     const request = {
@@ -164,7 +167,7 @@ describe('dev-router-artifact-middleware', () => {
     expect(envelope.document.html).toContain('<h1>About</h1>');
   });
 
-  it('html に埋め込まれた buildId を router artifact の正本として優先すること', async () => {
+  it('strict artifact mode では embedded buildId の不一致を拒否すること', async () => {
     const outputDirectory = await mkdtemp(path.join(tmpdir(), 'rouault-dev-router-artifact-'));
     temporaryDirectories.push(outputDirectory);
 
@@ -178,6 +181,7 @@ describe('dev-router-artifact-middleware', () => {
         '  <head>',
         '    <meta charset="utf-8">',
         '    <meta name="rouault-build-id" content="dist-build">',
+        '    <meta name="rouault-generated-at" content="2026-04-11T00:00:00.000Z">',
         '    <title>About - Rouault</title>',
         '  </head>',
         '  <body>',
@@ -192,6 +196,7 @@ describe('dev-router-artifact-middleware', () => {
     const middleware = createDevelopmentRouterArtifactMiddleware({
       outputDirectory,
       buildId: 'dev-build',
+      generatedAt: '2026-04-11T00:00:00.000Z',
     });
 
     const request = {
@@ -200,15 +205,14 @@ describe('dev-router-artifact-middleware', () => {
     } satisfies Partial<IncomingMessage>;
     const { response, state } = createMockResponse();
 
-    middleware(request as IncomingMessage, response, () => {
-      throw new Error('next should not be called');
+    let nextError: Error | null = null;
+    middleware(request as IncomingMessage, response, (error?: Error) => {
+      nextError = error ?? null;
     });
 
-    const envelope = JSON.parse(state.body.toString('utf8')) as {
-      buildId: string | null;
-    };
-
-    expect(envelope.buildId).toBe('dist-build');
+    expect(state.ended).toBe(false);
+    expect(nextError).toBeInstanceOf(Error);
+    expect(nextError?.message).toContain('embedded buildId does not match strict-artifact buildId');
   });
 
   it('対応する html が存在しない場合は次の middleware へ渡すこと', async () => {
@@ -218,6 +222,7 @@ describe('dev-router-artifact-middleware', () => {
     const middleware = createDevelopmentRouterArtifactMiddleware({
       outputDirectory,
       buildId: 'dev-build',
+      generatedAt: '2026-04-11T00:00:00.000Z',
     });
 
     const request = {

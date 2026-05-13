@@ -3,7 +3,7 @@ import {
   resolveCurrentCorpusKey,
   type CorpusPageEntry,
 } from '../data/corpusPages.js';
-import { type BuildMetadataData } from '../data/buildMetadata.js';
+import { loadBuildMetadataData, type BuildMetadataData } from '../data/buildMetadata.js';
 import {
   THEME_ATTRIBUTE,
   THEME_STORAGE_KEY,
@@ -29,8 +29,10 @@ import {
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import type { NoteNavigationEntry } from '../../build/navigation/index.js';
 import {
+  DEFAULT_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE,
   DEFAULT_SIDEBAR_ID,
   DEFAULT_SIDEBAR_PRESENTATION,
+  DEFAULT_SIDEBAR_STATE_SCOPE_ID,
 } from '../../shared/navigation/sidebar-shell-defaults.js';
 
 export interface BaseLayoutData {
@@ -42,7 +44,7 @@ export interface BaseLayoutData {
   notes?: NoteNavigationEntry[];
   corpusPages?: readonly CorpusPageEntry[];
   currentCorpusKey?: string;
-  buildMetadata?: BuildMetadataData;
+  buildMetadata: BuildMetadataData;
   clientBundle?: unknown;
   headerTocPresence?: TocPresence;
   headerTocRuntimeId?: string;
@@ -139,18 +141,30 @@ export class BaseLayout {
     const isNotePage = data.note !== undefined;
     const shouldIgnorePagefind = isNotePage && (data.notePage?.pagefind ?? null) === null;
     const corpora = buildCorpusNavigation(data.corpusPages ?? []);
+    if (data.buildMetadata === undefined || data.buildMetadata === null) {
+      throw new Error('BaseLayout requires buildMetadata.');
+    }
+    const buildMetadata = loadBuildMetadataData({
+      buildId: data.buildMetadata.buildId,
+      buildLabel: data.buildMetadata.buildLabel,
+      generatedAt: data.buildMetadata.generatedAt,
+      sourceLabel: 'BaseLayout',
+    });
+
     const footerAttributes = serializeHtmlAttributes([
-      { name: 'build-label', value: data.buildMetadata?.buildLabel },
+      { name: 'build-label', value: buildMetadata.buildLabel },
       { name: 'data-hydration-capability', value: 'static' },
       { name: 'data-hydration-trigger', value: 'initial' },
     ]);
     const themeBootstrapScript = buildThemeBootstrapScript();
-    const buildIdMeta =
-      typeof data.buildMetadata?.buildLabel === 'string' && data.buildMetadata.buildLabel.length > 0
-        ? `<meta name="rouault-build-id"${serializeHtmlAttributes([
-            { name: 'content', value: data.buildMetadata.buildLabel },
-          ])}>`
-        : '';
+    const buildIdMeta = [
+      `<meta name="rouault-build-id"${serializeHtmlAttributes([
+        { name: 'content', value: buildMetadata.buildId },
+      ])}>`,
+      `<meta name="rouault-generated-at"${serializeHtmlAttributes([
+        { name: 'content', value: buildMetadata.generatedAt },
+      ])}>`,
+    ].join('\n  ');
     const bodyAttributes = serializeHtmlAttributes([
       {
         name: 'data-pagefind-ignore',
@@ -250,6 +264,8 @@ export class BaseLayout {
               ? buildSidebarAttributes(data.notePage.sidebar)
               : serializeHtmlAttributes([
                   { name: 'sidebar-id', value: DEFAULT_SIDEBAR_ID },
+                  { name: 'state-scope-id', value: DEFAULT_SIDEBAR_STATE_SCOPE_ID },
+                  { name: 'fixed-breakpoint', value: DEFAULT_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE },
                   { name: 'presentation', value: DEFAULT_SIDEBAR_PRESENTATION },
                   { name: 'data-hydration-capability', value: 'interactive' },
                   { name: 'data-hydration-trigger', value: 'initial' },

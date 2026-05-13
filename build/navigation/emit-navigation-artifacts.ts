@@ -3,6 +3,8 @@ import path from 'node:path';
 import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
 import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.js';
+import { normalizeRouterBuildMetadata } from '../../shared/navigation/build-metadata-contract.js';
+import { assertValidSidebarId, assertValidSidebarStateScopeId } from '../../shared/navigation/sidebar-identity-contract.js';
 import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
 
 import {
@@ -12,14 +14,11 @@ import {
 import type { HydrationPlanScope } from '../../shared/navigation/hydration-plan.js';
 import type {
   HeaderShellProjection,
-  SidebarShellProjection,
+  PayloadSidebarShellProjection,
 } from '../../shared/navigation/shell-projection.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import {
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
-  DEFAULT_SIDEBAR_ID,
-  normalizeSidebarId,
-  normalizeSidebarStateScopeId,
 } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { readParse5HydrationMarkerResult } from './parse5-hydration-markers.js';
 import { validateSidebarNavHtmlInvariant } from './validate-sidebar-nav-html-invariant.js';
@@ -147,6 +146,15 @@ const toOptionalString = (value: string | null): string | null => {
   return normalized.length > 0 ? normalized : null;
 };
 
+const requireStringAttribute = (value: string | null, label: string): string => {
+  const normalized = toOptionalString(value);
+  if (normalized === null) {
+    throw new Error(`[navigation-artifact] ${label} is required.`);
+  }
+  return normalized;
+};
+
+
 const toNumber = (value: string | null, fallback: number): number => {
   if (typeof value !== 'string') {
     return fallback;
@@ -159,20 +167,19 @@ const toNumber = (value: string | null, fallback: number): number => {
 const toTocPresence = (value: string | null): TocPresence =>
   value === 'present' ? 'present' : 'absent';
 
-const readEmbeddedBuildId = (document: Parse5Document): string | undefined => {
-  const buildIdMeta = findFirstElement(
+const readEmbeddedMetaContent = (document: Parse5Document, name: string): string | undefined => {
+  const meta = findFirstElement(
     document,
-    (candidate) =>
-      candidate.tagName === 'meta' && getAttribute(candidate, 'name') === 'rouault-build-id',
+    (candidate) => candidate.tagName === 'meta' && getAttribute(candidate, 'name') === name,
   );
-  const metaBuildId = toOptionalString(buildIdMeta ? getAttribute(buildIdMeta, 'content') : null);
-  if (metaBuildId) {
-    return metaBuildId;
-  }
-
-  const footer = findFirstElement(document, (candidate) => candidate.tagName === 'layout-footer');
-  return toOptionalString(footer ? getAttribute(footer, 'build-label') : null) ?? undefined;
+  return toOptionalString(meta ? getAttribute(meta, 'content') : null) ?? undefined;
 };
+
+const readRouterBuildIdMetaContent = (document: Parse5Document): string | undefined =>
+  readEmbeddedMetaContent(document, 'rouault-build-id');
+
+const readRouterGeneratedAtMetaContent = (document: Parse5Document): string | undefined =>
+  readEmbeddedMetaContent(document, 'rouault-generated-at');
 
 const collectHydrationPlan = (document: Parse5Document): HydrationPlanScope[] => {
   const scopes = findAllElements(
@@ -269,7 +276,7 @@ const extractHeaderProjection = (document: Parse5Document): HeaderShellProjectio
     ),
     noteLayout: hasAttribute(header, 'note-layout'),
     sidebarEnabled: hasAttribute(header, 'sidebar-enabled'),
-    sidebarId: normalizeSidebarId(getAttribute(header, 'sidebar-id')),
+    sidebarId: assertValidSidebarId(getAttribute(header, 'sidebar-id'), 'layout-header[sidebar-id]'),
     tocPresence: toTocPresence(getAttribute(header, 'toc-presence')),
     tocRuntimeId: toOptionalString(getAttribute(header, 'toc-runtime-id')),
     tocOwnerId: toOptionalString(getAttribute(header, 'data-toc-owner-id')),
@@ -277,7 +284,7 @@ const extractHeaderProjection = (document: Parse5Document): HeaderShellProjectio
   };
 };
 
-const extractSidebarProjection = (document: Parse5Document): SidebarShellProjection | null => {
+const extractSidebarProjection = (document: Parse5Document): PayloadSidebarShellProjection | null => {
   const sidebarHost = findFirstElement(
     document,
     (candidate) =>
@@ -297,14 +304,17 @@ const extractSidebarProjection = (document: Parse5Document): SidebarShellProject
 
   const presentation = getAttribute(sidebar, 'presentation');
 
-  const projection: SidebarShellProjection = {
+  const projection: PayloadSidebarShellProjection = {
     present: true,
-    sidebarId: normalizeSidebarId(getAttribute(sidebar, 'sidebar-id')),
-    stateScopeId: normalizeSidebarStateScopeId(getAttribute(sidebar, 'state-scope-id')),
+    sidebarId: assertValidSidebarId(getAttribute(sidebar, 'sidebar-id'), 'layout-sidebar[sidebar-id]'),
+    stateScopeId: assertValidSidebarStateScopeId(
+      getAttribute(sidebar, 'state-scope-id'),
+      'layout-sidebar[state-scope-id]',
+    ),
     selectedId: toOptionalString(getAttribute(sidebar, 'selected-id')),
     initialExpandedIds: parseStringArrayAttribute(getAttribute(sidebar, 'initial-expanded-ids')),
-    topologyRevision: toOptionalString(getAttribute(sidebar, 'topology-revision')),
-    navHtml: serializeInnerHtml(sidebar).trim() || null,
+    topologyRevision: requireStringAttribute(getAttribute(sidebar, 'topology-revision'), 'layout-sidebar[topology-revision]'),
+    navHtml: requireStringAttribute(serializeInnerHtml(sidebar), 'layout-sidebar navHtml'),
     heading: toOptionalString(getAttribute(sidebar, 'heading')),
     fixedBreakpoint: toNumber(
       getAttribute(sidebar, 'fixed-breakpoint'),
@@ -318,6 +328,7 @@ const extractSidebarProjection = (document: Parse5Document): SidebarShellProject
     navHtml: projection.navHtml,
     selectedId: projection.selectedId,
     sidebarId: projection.sidebarId,
+    stateScopeId: projection.stateScopeId,
     initialExpandedIds: projection.initialExpandedIds,
     topologyRevision: projection.topologyRevision,
     sourceLabel: 'navigation-artifact',
@@ -341,17 +352,111 @@ const inferRenderedKind = (
   return notFoundPage === null ? 'page' : 'not-found';
 };
 
+export type NavigationEnvelopeHtmlMetadataMode =
+  | {
+      readonly mode: 'strict-artifact';
+      readonly buildId: string;
+      readonly generatedAt: string;
+    }
+  | {
+      readonly mode: 'legacy-fixture';
+      readonly buildId?: string | null | undefined;
+      readonly generatedAt?: string | null | undefined;
+    };
+
+const resolveNavigationEnvelopeBuildMetadata = (
+  document: Parse5Document,
+  metadataMode: NavigationEnvelopeHtmlMetadataMode,
+): { buildId: string; generatedAt: string } => {
+  const embeddedBuildId = readRouterBuildIdMetaContent(document);
+  const embeddedGeneratedAt = readRouterGeneratedAtMetaContent(document);
+
+  if (metadataMode.mode === 'strict-artifact') {
+    if (embeddedBuildId === undefined || embeddedGeneratedAt === undefined) {
+      throw new Error('[navigation-artifact] strict-artifact mode requires embedded buildId and generatedAt meta.');
+    }
+
+    const buildMetadata = normalizeRouterBuildMetadata({
+      buildId: metadataMode.buildId,
+      generatedAt: metadataMode.generatedAt,
+    });
+
+    if (embeddedBuildId !== buildMetadata.buildId) {
+      throw new Error('[navigation-artifact] embedded buildId does not match strict-artifact buildId.');
+    }
+
+    if (embeddedGeneratedAt !== buildMetadata.generatedAt) {
+      throw new Error(
+        '[navigation-artifact] embedded generatedAt does not match strict-artifact generatedAt.',
+      );
+    }
+
+    return buildMetadata;
+  }
+
+  return normalizeRouterBuildMetadata({
+    buildId: metadataMode.buildId ?? embeddedBuildId,
+    generatedAt: metadataMode.generatedAt ?? embeddedGeneratedAt,
+  });
+};
+
+const assertUniqueLayoutSidebarIdentityInstances = (document: Parse5Document): void => {
+  const sidebarIds = new Set<string>();
+  for (const sidebar of findAllElements(document, (candidate) => candidate.tagName === 'layout-sidebar')) {
+    if (hasAttribute(sidebar, 'hidden')) {
+      continue;
+    }
+    const sidebarId = assertValidSidebarId(
+      getAttribute(sidebar, 'sidebar-id'),
+      'layout-sidebar[sidebar-id]',
+    );
+    const stateScopeId = assertValidSidebarStateScopeId(
+      getAttribute(sidebar, 'state-scope-id'),
+      'layout-sidebar[state-scope-id]',
+    );
+    const key = `${stateScopeId}\u0000${sidebarId}`;
+    if (sidebarIds.has(key)) {
+      throw new Error('[navigation-artifact] duplicate layout-sidebar identity instance.');
+    }
+    sidebarIds.add(key);
+  }
+};
+
+const assertHeaderSidebarConsistency = (
+  headerProjection: HeaderShellProjection | null,
+  sidebarProjection: PayloadSidebarShellProjection | null,
+): void => {
+  if (headerProjection === null) {
+    if (sidebarProjection !== null) {
+      throw new Error('[navigation-artifact] sidebar projection exists without layout-header.');
+    }
+    return;
+  }
+
+  if (headerProjection.sidebarEnabled) {
+    if (sidebarProjection === null) {
+      throw new Error('[navigation-artifact] header.sidebarEnabled=true requires present sidebar.');
+    }
+    if (headerProjection.sidebarId !== sidebarProjection.sidebarId) {
+      throw new Error('[navigation-artifact] header.sidebarId must match sidebar.sidebarId.');
+    }
+    return;
+  }
+
+  if (sidebarProjection !== null) {
+    throw new Error('[navigation-artifact] header.sidebarEnabled=false requires sidebar payload null.');
+  }
+};
+
 export const createNavigationEnvelopeFromHtml = (
   html: string,
   htmlFilePath: string,
-  options: {
-    buildId?: string | null | undefined;
-    generatedAt?: string | null | undefined;
-  } = {},
+  metadataMode: NavigationEnvelopeHtmlMetadataMode,
 ): NavigationEnvelope => {
   const document = parse5.parse(html);
+  assertUniqueLayoutSidebarIdentityInstances(document);
   assertTocOwnerCandidates(document, htmlFilePath);
-  const embeddedBuildId = readEmbeddedBuildId(document);
+  const buildMetadata = resolveNavigationEnvelopeBuildMetadata(document, metadataMode);
   const main = findFirstElement(
     document,
     (candidate) =>
@@ -371,12 +476,14 @@ export const createNavigationEnvelopeFromHtml = (
       candidate.tagName === 'meta' && getAttribute(candidate, 'name') === 'description',
   );
   const headerProjection = extractHeaderProjection(document);
+  const sidebarProjection = extractSidebarProjection(document);
+  assertHeaderSidebarConsistency(headerProjection, sidebarProjection);
   const hydrationPlan = collectHydrationPlan(document);
 
   return {
     schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
-    buildId: embeddedBuildId ?? options.buildId,
-    generatedAt: options.generatedAt,
+    buildId: buildMetadata.buildId,
+    generatedAt: buildMetadata.generatedAt,
     document: {
       html: serializeInnerHtml(main),
       title: titleElement ? getTextContent(titleElement).trim() : '',
@@ -389,7 +496,7 @@ export const createNavigationEnvelopeFromHtml = (
         ? null
         : {
             header: headerProjection,
-            sidebar: extractSidebarProjection(document),
+            sidebar: sidebarProjection,
           },
     hydrationPlan: hydrationPlan.length > 0 ? { scopes: hydrationPlan } : null,
   };
@@ -443,18 +550,19 @@ const collectHtmlFiles = async (rootDirectory: string): Promise<string[]> => {
 
 export const emitNavigationArtifacts = async (options: {
   outputDir: string;
-  buildId?: string | null | undefined;
-  generatedAt?: string | null | undefined;
+  buildId: string;
+  generatedAt: string;
 }): Promise<void> => {
-  const generatedAt = options.generatedAt ?? new Date().toISOString();
+  const buildMetadata = normalizeRouterBuildMetadata(options);
   const htmlFiles = await collectHtmlFiles(options.outputDir);
 
   await Promise.all(
     htmlFiles.map(async (htmlFilePath) => {
       const html = await readFile(htmlFilePath, 'utf8');
       const envelope = createNavigationEnvelopeFromHtml(html, htmlFilePath, {
-        buildId: options.buildId,
-        generatedAt,
+        mode: 'strict-artifact',
+        buildId: buildMetadata.buildId,
+        generatedAt: buildMetadata.generatedAt,
       });
       const artifactPath = resolveArtifactPath(options.outputDir, htmlFilePath);
       await mkdir(path.dirname(artifactPath), { recursive: true });

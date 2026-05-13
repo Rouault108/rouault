@@ -1,23 +1,31 @@
-const BUILD_PREFIX_PATTERN = /^build\s+/i;
-const GIT_SHA_PATTERN = /^[0-9a-f]{7,40}$/i;
+import {
+  normalizeBuildLabel,
+  validateBuildLabelInput,
+} from '../../shared/navigation/build-label-contract.js';
 
-export const normalizeBuildLabel = (value: string | undefined): string | undefined => {
-  if (typeof value !== 'string') {
+export const DEFAULT_BUILD_LABEL = 'build local';
+
+const readBuildLabelSource = (explicit?: unknown): unknown =>
+  explicit === undefined ? process.env['ROUAULT_BUILD_LABEL'] : explicit;
+
+export const resolveBuildLabel = (explicit?: unknown): string | undefined => {
+  const candidate = readBuildLabelSource(explicit);
+  const validation = validateBuildLabelInput(candidate);
+  if (validation.kind === 'missing') {
     return undefined;
   }
-
-  const trimmed = value.trim();
-  if (trimmed.length === 0) {
-    return undefined;
+  if (validation.kind !== 'valid') {
+    throw new Error(`buildLabel is invalid: ${validation.kind}`);
   }
-
-  if (BUILD_PREFIX_PATTERN.test(trimmed)) {
-    return trimmed;
-  }
-
-  if (GIT_SHA_PATTERN.test(trimmed)) {
-    return `build ${trimmed.slice(0, 7)}`;
-  }
-
-  return trimmed;
+  return normalizeBuildLabel(validation.value);
 };
+
+export const requireBuildLabel = (explicit?: unknown): string => {
+  const label = resolveBuildLabel(explicit);
+  if (label === undefined) {
+    throw new Error('buildLabel is required.');
+  }
+  return label;
+};
+
+export { normalizeBuildLabel };

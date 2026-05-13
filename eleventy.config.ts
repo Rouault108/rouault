@@ -11,9 +11,10 @@ import { loadClientBundleData } from './src/data/clientBundle.js';
 import { loadBuildMetadataData } from './src/data/buildMetadata.js';
 import { createStaticDirectoryMiddleware } from './build/dev/dev-static-directory.js';
 import { createDevelopmentRouterArtifactMiddleware } from './build/dev/dev-router-artifact-middleware.js';
+import { devBuildMetadata } from './build/dev/dev-build-metadata.js';
 import { renderSearchCatalogArtifact } from './build/search/emit-search-artifacts.js';
 import { hasExternalMediaBaseUrl } from './build/media/media-base-url.js';
-import { resolveBuildLabel } from './build/metadata/build-metadata.js';
+import { resolveProductionBuildMetadata } from './build/metadata/build-metadata.js';
 import { validateNoteSourceLinks } from './build/content/validate-note-source-links.js';
 import { resolveTrailingSlashRewrite } from './shared/navigation/trailing-slash-rewrite.js';
 
@@ -88,7 +89,8 @@ const registerDevelopmentRouterArtifacts = (server: ViteDevServer): void => {
   server.middlewares.use(
     createDevelopmentRouterArtifactMiddleware({
       outputDirectory: path.resolve(process.cwd(), 'dist'),
-      buildId: resolveBuildLabel(),
+      buildId: devBuildMetadata.buildId,
+      generatedAt: devBuildMetadata.generatedAt,
     }),
   );
 };
@@ -128,7 +130,15 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   eleventyConfig.addGlobalData('notes', () => loadNotesData());
   eleventyConfig.addGlobalData('home', () => loadHomeData());
   eleventyConfig.addGlobalData('clientBundle', () => loadClientBundleData());
-  eleventyConfig.addGlobalData('buildMetadata', () => loadBuildMetadataData(resolveBuildLabel()));
+  eleventyConfig.addGlobalData('buildMetadata', () => {
+    const metadata = isServing ? devBuildMetadata : resolveProductionBuildMetadata();
+    return loadBuildMetadataData({
+      buildId: metadata.buildId,
+      buildLabel: metadata.buildLabel,
+      generatedAt: metadata.generatedAt,
+      sourceLabel: isServing ? 'eleventy-dev' : 'eleventy-build',
+    });
+  });
 
   eleventyConfig.addGlobalData('tagPages', async () => {
     const tagPagesModule = await import('./src/data/tagPages.js');

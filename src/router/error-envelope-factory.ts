@@ -9,8 +9,8 @@ import {
 } from '../../shared/navigation/navigation-envelope.js';
 import type { LoadDocumentResult, NavigationErrorReason } from './router-types.js';
 import {
-  NavigationEnvelopeBuildMismatchError,
   NavigationEnvelopeContractError,
+  NavigationEnvelopeMetadataMismatchError,
 } from './navigation-envelope-errors.js';
 import { buildDocumentTitle } from '../../shared/document-title.js';
 
@@ -85,10 +85,10 @@ export class ErrorEnvelopeFactory {
       );
     }
 
-    if (error instanceof NavigationEnvelopeBuildMismatchError) {
+    if (error instanceof NavigationEnvelopeMetadataMismatchError) {
       return this.createErrorResult(
         'ビルド不整合',
-        '表示中の文書と取得した router artifact の buildId が一致しません。再読み込みしてください。',
+        '表示中の文書と取得した router artifact の build metadata が一致しません。再読み込みしてください。',
         'unexpected',
         undefined,
         error,
@@ -125,7 +125,7 @@ export class ErrorEnvelopeFactory {
         renderedKind: 'not-found',
         announcedTitle: NOT_FOUND_PAGE_TITLE,
       }),
-      source: 'fetch',
+      source: 'error-fallback',
     };
   }
 
@@ -149,7 +149,7 @@ export class ErrorEnvelopeFactory {
         renderedKind: 'error',
         announcedTitle: title,
       }),
-      source: 'fetch',
+      source: 'error-fallback',
       error,
       errorReason: reason,
     };

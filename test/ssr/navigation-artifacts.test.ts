@@ -8,14 +8,20 @@ import {
   emitNavigationArtifacts,
 } from '../../build/navigation/emit-navigation-artifacts.js';
 import { validateTocOwnerCandidates } from '../../build/navigation/validate-toc-owner-candidates.js';
-import { createSidebarGroupId } from '../../shared/navigation/sidebar-group-id.js';
+import {
+  createSidebarGroupId,
+  createSidebarGroupIdPrefixFromSidebarIdentity,
+} from '../../shared/navigation/sidebar-group-id.js';
 import {
   createTocSourceSideEffect,
   tocSideEffectDirectives,
 } from '../../src/toc/toc-source-side-effects.js';
 
 describe('navigation artifacts', () => {
-  const notesGroupId = createSidebarGroupId({ sidebarId: 'note-primary', rowId: 'notes' });
+  const notesGroupId = createSidebarGroupId(
+    createSidebarGroupIdPrefixFromSidebarIdentity('note-navigation', 'note-primary'),
+    'notes',
+  );
   it('TOC owner candidate validation は complete-validation mode で valid owner を受理すること', () => {
     expect(
       validateTocOwnerCandidates([
@@ -66,6 +72,7 @@ describe('navigation artifacts', () => {
     <layout-header
       note-layout
       sidebar-enabled
+      sidebar-id="note-primary"
       toc-presence="present"
       toc-trigger-reserved="true"
       corpora-json='[{"key":"all","label":"All","href":"/corpora/"}]'
@@ -94,11 +101,12 @@ describe('navigation artifacts', () => {
     `.trim();
 
     const envelope = createNavigationEnvelopeFromHtml(html, '/tmp/example/index.html', {
-      buildId: 'build abcdef1',
+      mode: 'legacy-fixture',
+      buildId: 'build-abcdef1',
       generatedAt: '2026-04-11T00:00:00.000Z',
     });
 
-    expect(envelope.buildId).to.equal('build abcdef1');
+    expect(envelope.buildId).to.equal('build-abcdef1');
     expect(envelope.generatedAt).to.equal('2026-04-11T00:00:00.000Z');
     expect(envelope.document.title).to.equal('Example - Rouault');
     expect(envelope.document.description).to.equal('静かな説明');
@@ -144,6 +152,7 @@ describe('navigation artifacts', () => {
     <layout-header
       note-layout
       sidebar-enabled
+      sidebar-id="note-primary"
       toc-presence="absent"
       corpora-json="[]"
       current-corpus-key="all"
@@ -169,7 +178,11 @@ describe('navigation artifacts', () => {
 </html>
     `.trim();
 
-    const envelope = createNavigationEnvelopeFromHtml(html, '/tmp/example/index.html');
+    const envelope = createNavigationEnvelopeFromHtml(html, '/tmp/example/index.html', {
+      mode: 'legacy-fixture',
+      buildId: 'build-heading',
+      generatedAt: '2026-04-11T00:00:00.000Z',
+    });
 
     expect(envelope.shellProjection?.sidebar?.heading).to.equal(null);
   });
@@ -188,9 +201,11 @@ describe('navigation artifacts', () => {
 <head>
   <title>Example - Rouault</title>
   <meta name="description" content="description">
+  <meta name="rouault-build-id" content="build-1234567">
+  <meta name="rouault-generated-at" content="2026-04-11T00:00:00.000Z">
 </head>
 <body>
-  <layout-header current-corpus-key="all" toc-presence="absent" toc-runtime-id="" corpora-json="[]"></layout-header>
+  <layout-header current-corpus-key="all" toc-presence="absent" toc-runtime-id="" sidebar-id="note-primary" corpora-json="[]"></layout-header>
   <app-router>
     <div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>
     <main id="main-content"><p>body</p></main>
@@ -203,7 +218,7 @@ describe('navigation artifacts', () => {
 
       await emitNavigationArtifacts({
         outputDir,
-        buildId: 'build 1234567',
+        buildId: 'build-1234567',
         generatedAt: '2026-04-11T00:00:00.000Z',
       });
 
@@ -218,7 +233,7 @@ describe('navigation artifacts', () => {
         shellProjection: { header: { currentCorpusKey: string; tocPresence: string } } | null;
       };
 
-      expect(artifact.buildId).to.equal('build 1234567');
+      expect(artifact.buildId).to.equal('build-1234567');
       expect(artifact.document.title).to.equal('Example - Rouault');
       expect(artifact.document.html).to.equal('<p>body</p>');
       expect(artifact.shellProjection?.header.currentCorpusKey).to.equal('all');
@@ -241,7 +256,13 @@ describe('navigation artifacts', () => {
 </html>
     `.trim();
 
-    expect(() => createNavigationEnvelopeFromHtml(html, '/tmp/broken/index.html')).toThrow(
+    expect(() =>
+      createNavigationEnvelopeFromHtml(html, '/tmp/broken/index.html', {
+        mode: 'legacy-fixture',
+        buildId: 'build-broken',
+        generatedAt: '2026-04-11T00:00:00.000Z',
+      }),
+    ).toThrow(
       /main#main-content/,
     );
   });

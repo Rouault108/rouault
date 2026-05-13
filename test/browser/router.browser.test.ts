@@ -11,6 +11,18 @@ import {
   type NavigationResult,
 } from '../../src/router/router.js';
 
+beforeEach(() => {
+  document.head.insertAdjacentHTML(
+    'beforeend',
+    '<meta name="rouault-build-id" content="build-test"><meta name="rouault-generated-at" content="2026-04-11T00:00:00.000Z">',
+  );
+});
+
+afterEach(() => {
+  document.head.querySelector('meta[name="rouault-build-id"]')?.remove();
+  document.head.querySelector('meta[name="rouault-generated-at"]')?.remove();
+});
+
 function simulateClick(element: HTMLElement, options: MouseEventInit = {}): void {
   let target = element;
   let tempSpan: HTMLSpanElement | null = null;
@@ -48,8 +60,8 @@ function createNavigationEnvelopeResponse({
   return new Response(
     JSON.stringify({
       schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
-      buildId: null,
-      generatedAt: null,
+      buildId: 'build-test',
+      generatedAt: '2026-04-11T00:00:00.000Z',
       document: {
         html,
         title,
@@ -270,8 +282,8 @@ describe('Router', () => {
 
       return {
         schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
-        buildId: null,
-        generatedAt: null,
+        buildId: 'build-test',
+        generatedAt: '2026-04-11T00:00:00.000Z',
         document: {
           html: `<section><h1>From Handler</h1><p>${normalizedUrl}</p></section>`,
           title: 'Virtual - Rouault',

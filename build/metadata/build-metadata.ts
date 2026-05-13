@@ -1,24 +1,37 @@
-import { execSync } from 'node:child_process';
+import { DEFAULT_BUILD_LABEL, requireBuildLabel, resolveBuildLabel } from './build-label.js';
+import { resolveBuildId } from './build-id.js';
+import { createBuildGeneratedAtOnce } from './generated-at.js';
 
-import { normalizeBuildLabel } from './build-label.js';
+export { normalizeBuildLabel, requireBuildLabel, resolveBuildLabel } from './build-label.js';
+export { normalizeBuildId } from '../../shared/navigation/build-id-contract.js';
+export { normalizeGeneratedAt } from '../../shared/navigation/generated-at-contract.js';
+export { createBuildGeneratedAtOnce, resolveGeneratedAt } from './generated-at.js';
+export { resolveBuildId, resolveGitShortSha } from './build-id.js';
 
-export { normalizeBuildLabel } from './build-label.js';
+export interface ResolvedBuildMetadata {
+  readonly buildId: string;
+  readonly buildLabel: string;
+  readonly generatedAt: string;
+}
 
-const resolveGitShortShaRaw = (): string | undefined => {
-  try {
-    return execSync('git rev-parse --short HEAD', {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-  } catch {
-    return undefined;
-  }
-};
+export interface ResolveBuildMetadataOptions {
+  readonly buildId?: string | undefined;
+  readonly buildLabel?: string | undefined;
+  readonly generatedAt?: string | undefined;
+}
 
-export const resolveGitShortSha = (): string | undefined =>
-  normalizeBuildLabel(resolveGitShortShaRaw());
+export const resolveBuildMetadata = (options: ResolveBuildMetadataOptions = {}): ResolvedBuildMetadata => ({
+  buildId: resolveBuildId(options.buildId),
+  buildLabel: requireBuildLabel(options.buildLabel),
+  generatedAt: createBuildGeneratedAtOnce(options.generatedAt),
+});
 
-export const resolveBuildLabel = (explicit?: string | undefined): string | undefined =>
-  normalizeBuildLabel(explicit) ??
-  normalizeBuildLabel(process.env['ROUAULT_BUILD_LABEL']) ??
-  resolveGitShortSha();
+export const resolveProductionBuildMetadata = resolveBuildMetadata;
+
+export const resolveDevelopmentBuildMetadata = (
+  options: ResolveBuildMetadataOptions = {},
+): ResolvedBuildMetadata => ({
+  buildId: resolveBuildId(options.buildId),
+  buildLabel: resolveBuildLabel(options.buildLabel) ?? DEFAULT_BUILD_LABEL,
+  generatedAt: createBuildGeneratedAtOnce(options.generatedAt),
+});

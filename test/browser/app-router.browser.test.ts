@@ -40,7 +40,8 @@ const createEnvelopeResponse = (options?: {
   new Response(
     JSON.stringify({
       schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
-      buildId: null,
+      buildId: 'build-test',
+      generatedAt: '2026-04-11T00:00:00.000Z',
       document: {
         html: options?.html ?? '<h1>Default App Router Mock</h1>',
         title: options?.title ?? 'Default App Router Mock - Rouault',
@@ -58,6 +59,18 @@ const createEnvelopeResponse = (options?: {
       },
     },
   );
+
+beforeEach(() => {
+  document.head.insertAdjacentHTML(
+    'beforeend',
+    '<meta name="rouault-build-id" content="build-test"><meta name="rouault-generated-at" content="2026-04-11T00:00:00.000Z">',
+  );
+});
+
+afterEach(() => {
+  document.head.querySelector('meta[name="rouault-build-id"]')?.remove();
+  document.head.querySelector('meta[name="rouault-generated-at"]')?.remove();
+});
 
 describe('app-router', () => {
   let host: AppRouterElement | null = null;

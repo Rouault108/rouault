@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  NavigationEnvelopeValidationError,
-  validateNavigationEnvelope,
-} from '../../src/router/navigation-envelope-validator.js';
+import { validateNavigationEnvelope } from '../../src/router/navigation-envelope-validator.js';
+import { NavigationEnvelopeContractError } from '../../src/router/navigation-envelope-errors.js';
 import { RouterDiagnosticError } from '../../src/router/router-diagnostics.js';
 import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
 
@@ -141,7 +139,7 @@ describe('navigation envelope', () => {
         },
         hydrationPlan: null,
       }),
-    ).to.throw(NavigationEnvelopeValidationError);
+    ).to.throw(NavigationEnvelopeContractError);
   });
 
   it('schemaVersion 不一致は reject すること', () => {
@@ -156,7 +154,7 @@ describe('navigation envelope', () => {
         },
         shellProjection: null,
       }),
-    ).to.throw(NavigationEnvelopeValidationError);
+    ).to.throw(NavigationEnvelopeContractError);
   });
 
   it('不正 envelope rejection は router diagnostic reason を保持すること', () => {
@@ -173,7 +171,7 @@ describe('navigation envelope', () => {
       });
       throw new Error('validation should fail');
     } catch (error) {
-      expect(error).to.be.instanceOf(NavigationEnvelopeValidationError);
+      expect(error).to.be.instanceOf(NavigationEnvelopeContractError);
       expect((error as Error).cause).to.be.instanceOf(RouterDiagnosticError);
       expect(((error as Error).cause as RouterDiagnosticError).diagnostic.reason).to.equal(
         'navigation-envelope-invalid',

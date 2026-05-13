@@ -6,7 +6,6 @@ import {
   type FooterLinkItem,
   type FooterRenderOptions,
 } from '../ui/footer/footer.js';
-import { loadBuildMetadataData } from '../../data/buildMetadata.js';
 
 const DEFAULT_SITE_NAME = 'Rouault';
 const DEFAULT_SITE_URL = '/';
@@ -97,8 +96,7 @@ export const buildLayoutFooterOptions = ({
 }): FooterRenderOptions => {
   const normalizedFooterId = normalizeOptionalText(footerId);
   const normalizedSiteUrl = normalizeOptionalText(siteUrl) ?? DEFAULT_SITE_URL;
-  const resolvedBuildLabel =
-    normalizeOptionalText(buildLabel) ?? loadBuildMetadataData().buildLabel;
+  const resolvedBuildLabel = normalizeOptionalText(buildLabel);
   const resolvedDescription = normalizeOptionalText(siteDescription);
   const resolvedEyebrow = normalizeOptionalText(siteEyebrow);
 

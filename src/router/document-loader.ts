@@ -1,11 +1,14 @@
+import { normalizeBuildId } from '../../shared/navigation/build-id-contract.js';
+import { normalizeGeneratedAt } from '../../shared/navigation/generated-at-contract.js';
 import { HtmlDocumentFetcher } from './html-document-fetcher.js';
 import { ErrorEnvelopeFactory } from './error-envelope-factory.js';
 import { LocationAdapter } from './location-adapter.js';
+import { CurrentBuildMetadataInvalidError, NavigationEnvelopeContractError } from './navigation-envelope-errors.js';
 import {
-  NavigationEnvelopeBuildMismatchError,
-  NavigationEnvelopeContractError,
-} from './navigation-envelope-errors.js';
-import { validateNavigationEnvelope } from './navigation-envelope-validator.js';
+  validateLoadedEnvelope,
+  validateNavigationEnvelope,
+  type StrictLoadedNavigationEnvelope,
+} from './navigation-envelope-validator.js';
 import { RouteRegistry } from './route-registry.js';
 import type { DocumentRouteContext, LoadDocumentResult } from './router-types.js';
 
@@ -19,13 +22,23 @@ export class DocumentLoader {
   ) {}
 
   async load(normalizedUrl: string, signal: AbortSignal): Promise<LoadDocumentResult> {
-    const routeContext = this.createRouteContext(normalizedUrl, signal);
-    const routeEnvelope = await this.routeRegistry.execute(routeContext);
-    if (routeEnvelope !== null) {
-      return {
-        envelope: routeEnvelope,
-        source: 'document-route',
-      };
+    let routeContext: DocumentRouteContext;
+    try {
+      routeContext = this.createRouteContext(normalizedUrl, signal);
+    } catch (error) {
+      return this.errorEnvelopeFactory.createExceptionResult(error);
+    }
+
+    try {
+      const routeEnvelope = await this.routeRegistry.execute(routeContext);
+      if (routeEnvelope !== null) {
+        return {
+          envelope: this.normalizeDocumentRouteEnvelope(routeEnvelope, routeContext),
+          source: 'document-route',
+        };
+      }
+    } catch (error) {
+      return this.errorEnvelopeFactory.createExceptionResult(error);
     }
 
     const snapshotUrl = this.location.resolveSnapshotUrl(normalizedUrl);
@@ -33,7 +46,7 @@ export class DocumentLoader {
     if (snapshotResponse.ok) {
       try {
         const responseText = await snapshotResponse.text();
-        const envelope = this.decodeSnapshotResponse(responseText, normalizedUrl);
+        const envelope = this.decodeSnapshotResponse(responseText, normalizedUrl, routeContext);
         return {
           envelope,
           source: 'fetch',
@@ -52,6 +65,8 @@ export class DocumentLoader {
 
   private createRouteContext(normalizedUrl: string, signal: AbortSignal): DocumentRouteContext {
     const parsedUrl = new URL(normalizedUrl, window.location.origin);
+    const currentBuildId = this.readCurrentBuildId();
+    const currentGeneratedAt = this.readCurrentGeneratedAt();
 
     return {
       url: normalizedUrl,
@@ -60,13 +75,34 @@ export class DocumentLoader {
       searchParams: new URLSearchParams(parsedUrl.search),
       hash: parsedUrl.hash,
       signal,
+      currentBuildId,
+      currentGeneratedAt,
     };
+  }
+
+  private normalizeDocumentRouteEnvelope(
+    envelope: unknown,
+    context: DocumentRouteContext,
+  ): StrictLoadedNavigationEnvelope {
+    const validated = validateNavigationEnvelope(envelope);
+    return validateLoadedEnvelope({
+      envelope: {
+        ...validated,
+        buildId: validated.buildId ?? context.currentBuildId,
+        generatedAt: validated.generatedAt ?? context.currentGeneratedAt,
+      },
+      source: 'document-route',
+      currentBuildId: context.currentBuildId,
+      currentGeneratedAt: context.currentGeneratedAt,
+      normalizedUrl: context.normalizedUrl,
+    });
   }
 
   private decodeSnapshotResponse(
     text: string,
     normalizedUrl: string,
-  ): LoadDocumentResult['envelope'] {
+    context: DocumentRouteContext,
+  ): StrictLoadedNavigationEnvelope {
     const trimmed = text.trimStart();
     if (trimmed.startsWith('<')) {
       throw new NavigationEnvelopeContractError(
@@ -86,39 +122,40 @@ export class DocumentLoader {
     }
 
     const envelope = validateNavigationEnvelope(parsed);
-    this.assertBuildIdMatches(envelope.buildId, normalizedUrl);
-    return envelope;
-  }
-
-  private assertBuildIdMatches(
-    envelopeBuildId: string | null | undefined,
-    normalizedUrl: string,
-  ): void {
-    const currentBuildId = this.readCurrentBuildId();
-    if (!currentBuildId || !envelopeBuildId || currentBuildId === envelopeBuildId) {
-      return;
-    }
-
-    throw new NavigationEnvelopeBuildMismatchError({
-      currentBuildId,
-      envelopeBuildId,
+    return validateLoadedEnvelope({
+      envelope,
+      source: 'fetch',
+      currentBuildId: context.currentBuildId,
+      currentGeneratedAt: context.currentGeneratedAt,
       normalizedUrl,
     });
   }
 
-  private readCurrentBuildId(): string | null {
-    const metaBuildId = document
-      .querySelector('meta[name="rouault-build-id"]')
-      ?.getAttribute('content')
-      ?.trim();
-    if (metaBuildId) {
-      return metaBuildId;
-    }
+  private readMetaContentRaw(name: string): string | null {
+    return document.querySelector(`meta[name="${name}"]`)?.getAttribute('content') ?? null;
+  }
 
-    const footerBuildId = document
-      .querySelector('layout-footer[build-label]')
-      ?.getAttribute('build-label')
-      ?.trim();
-    return footerBuildId && footerBuildId.length > 0 ? footerBuildId : null;
+  private readCurrentBuildId(): string {
+    const raw = this.readMetaContentRaw('rouault-build-id');
+    try {
+      return normalizeBuildId(raw);
+    } catch {
+      throw new CurrentBuildMetadataInvalidError(
+        'buildId',
+        raw === null ? 'missing' : raw.trim().length === 0 ? 'empty' : 'invalid-format',
+      );
+    }
+  }
+
+  private readCurrentGeneratedAt(): string {
+    const raw = this.readMetaContentRaw('rouault-generated-at');
+    try {
+      return normalizeGeneratedAt(raw);
+    } catch {
+      throw new CurrentBuildMetadataInvalidError(
+        'generatedAt',
+        raw === null ? 'missing' : raw.trim().length === 0 ? 'empty' : 'invalid-format',
+      );
+    }
   }
 }

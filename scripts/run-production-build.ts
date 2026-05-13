@@ -3,7 +3,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
-import { resolveBuildLabel } from '../build/metadata/build-metadata.js';
+import { resolveProductionBuildMetadata } from '../build/metadata/build-metadata.js';
 import { assertProductionCssArtifacts } from './assert-production-css-artifacts.js';
 
 const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
@@ -11,16 +11,16 @@ const distDir = path.resolve(process.cwd(), 'dist');
 
 await rm(distDir, { recursive: true, force: true });
 
-const resolvedBuildLabel = resolveBuildLabel();
+const buildMetadata = resolveProductionBuildMetadata();
 
 const env: NodeJS.ProcessEnv = {
   ...process.env,
   ROUAULT_MEDIA_STRICT: '1',
 };
 
-if (resolvedBuildLabel) {
-  env['ROUAULT_BUILD_LABEL'] = resolvedBuildLabel;
-}
+env['ROUAULT_BUILD_ID'] = buildMetadata.buildId;
+env['ROUAULT_BUILD_LABEL'] = buildMetadata.buildLabel;
+env['ROUAULT_GENERATED_AT'] = buildMetadata.generatedAt;
 
 const result = spawnSync(command, ['build'], {
   env,
