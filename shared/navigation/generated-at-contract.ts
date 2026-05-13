@@ -9,6 +9,20 @@ export type OptionalGeneratedAtValidationResult =
 
 const GENERATED_AT_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u;
 
+export const isGeneratedAtString = (value: string): boolean => normalizeGeneratedAt(value) !== null;
+
+export const normalizeGeneratedAt = (value: string): string | null => {
+  const normalized = value.trim();
+  if (!GENERATED_AT_PATTERN.test(normalized)) {
+    return null;
+  }
+  const timestamp = Date.parse(normalized);
+  if (!Number.isFinite(timestamp)) {
+    return null;
+  }
+  return new Date(timestamp).toISOString() === normalized ? normalized : null;
+};
+
 export const validateOptionalGeneratedAtInput = (
   value: unknown,
 ): OptionalGeneratedAtValidationResult => {
@@ -35,10 +49,10 @@ export const validateOptionalGeneratedAtInput = (
   return { kind: 'valid', value: normalized };
 };
 
-export const normalizeGeneratedAt = (value: unknown): string => {
+export const requireGeneratedAtInput = (value: unknown, label = 'generatedAt'): string => {
   const result = validateOptionalGeneratedAtInput(value);
   if (result.kind !== 'valid') {
-    throw new Error(`generatedAt is invalid: ${result.kind}`);
+    throw new Error(`${label} is invalid: ${result.kind}`);
   }
   return result.value;
 };

@@ -1,5 +1,5 @@
-import { normalizeBuildId } from '../../shared/navigation/build-id-contract.js';
-import { normalizeGeneratedAt } from '../../shared/navigation/generated-at-contract.js';
+import { requireBuildIdInput } from '../../shared/navigation/build-id-contract.js';
+import { requireGeneratedAtInput } from '../../shared/navigation/generated-at-contract.js';
 import { HtmlDocumentFetcher } from './html-document-fetcher.js';
 import { ErrorEnvelopeFactory } from './error-envelope-factory.js';
 import { LocationAdapter } from './location-adapter.js';
@@ -7,8 +7,8 @@ import { CurrentBuildMetadataInvalidError, NavigationEnvelopeContractError } fro
 import {
   validateLoadedEnvelope,
   validateNavigationEnvelope,
-  type StrictLoadedNavigationEnvelope,
 } from './navigation-envelope-validator.js';
+import type { StrictLoadedNavigationEnvelope } from './router-types.js';
 import { RouteRegistry } from './route-registry.js';
 import type { DocumentRouteContext, LoadDocumentResult } from './router-types.js';
 
@@ -138,7 +138,7 @@ export class DocumentLoader {
   private readCurrentBuildId(): string {
     const raw = this.readMetaContentRaw('rouault-build-id');
     try {
-      return normalizeBuildId(raw);
+      return requireBuildIdInput(raw);
     } catch {
       throw new CurrentBuildMetadataInvalidError(
         'buildId',
@@ -150,7 +150,7 @@ export class DocumentLoader {
   private readCurrentGeneratedAt(): string {
     const raw = this.readMetaContentRaw('rouault-generated-at');
     try {
-      return normalizeGeneratedAt(raw);
+      return requireGeneratedAtInput(raw);
     } catch {
       throw new CurrentBuildMetadataInvalidError(
         'generatedAt',

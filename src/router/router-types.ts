@@ -8,7 +8,6 @@ import type {
   RuntimeSidebarShellSnapshot as SharedRuntimeSidebarShellSnapshot,
   ShellProjectionSnapshot,
 } from '../../shared/navigation/shell-projection.js';
-import type { StrictLoadedNavigationEnvelope } from './navigation-envelope-validator.js';
 import type { RouterDiagnosticPayload } from './router-diagnostics.js';
 
 export type HistoryMode = 'none' | 'push' | 'replace';
@@ -71,6 +70,10 @@ export interface ContentUpdateAdapter {
 export type HeaderShellSnapshot = HeaderShellProjection;
 
 export type PayloadDocumentShellSnapshot = ShellProjectionSnapshot;
+export type StrictLoadedNavigationEnvelope = NavigationEnvelope & {
+  buildId: string;
+  generatedAt: string;
+};
 export type RuntimeSidebarShellSnapshot = SharedRuntimeSidebarShellSnapshot;
 export type RuntimeDocumentShellSnapshot = {
   header: HeaderShellProjection;

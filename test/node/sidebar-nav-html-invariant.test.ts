@@ -90,4 +90,82 @@ describe('sidebar nav html invariant', () => {
       }),
     ).to.throw(SidebarNavHtmlInvariantError);
   });
+
+  it('data-node-kind の不正値を leaf fallback せず拒否すること', () => {
+    expect(() =>
+      validateSidebarNavHtmlInvariant({
+        sidebarPresent: true,
+        navHtml: validNavHtml.replace('data-node-kind="leaf"', 'data-node-kind="unknown"'),
+        selectedId: 'root/child',
+        sidebarId: 'note-primary',
+        stateScopeId: 'note-navigation',
+        initialExpandedIds: ['root'],
+        topologyRevision: 'rev-1',
+        sidebarRows: rows,
+        sourceLabel: 'test',
+      }),
+    ).to.throw(SidebarNavHtmlInvariantError);
+  });
+
+  it('current marker 属性値は true だけを許可すること', () => {
+    expect(() =>
+      validateSidebarNavHtmlInvariant({
+        sidebarPresent: true,
+        navHtml: validNavHtml.replace('data-current-branch="true"', 'data-current-branch="false"'),
+        selectedId: 'root/child',
+        sidebarId: 'note-primary',
+        stateScopeId: 'note-navigation',
+        initialExpandedIds: ['root'],
+        topologyRevision: 'rev-1',
+        sidebarRows: rows,
+        sourceLabel: 'test',
+      }),
+    ).to.throw(SidebarNavHtmlInvariantError);
+
+    expect(() =>
+      validateSidebarNavHtmlInvariant({
+        sidebarPresent: true,
+        navHtml: validNavHtml.replace(
+          'data-current-path-indicator="true"',
+          'data-current-path-indicator="false"',
+        ),
+        selectedId: 'root/child',
+        sidebarId: 'note-primary',
+        stateScopeId: 'note-navigation',
+        initialExpandedIds: ['root'],
+        topologyRevision: 'rev-1',
+        sidebarRows: rows,
+        sourceLabel: 'test',
+      }),
+    ).to.throw(SidebarNavHtmlInvariantError);
+  });
+
+  it('sidebarRows がなくても DOM の depth と current marker false negative を検出すること', () => {
+    expect(() =>
+      validateSidebarNavHtmlInvariant({
+        sidebarPresent: true,
+        navHtml: validNavHtml.replace('data-node-depth="1"', 'data-node-depth="3"'),
+        selectedId: 'root/child',
+        sidebarId: 'note-primary',
+        stateScopeId: 'note-navigation',
+        initialExpandedIds: ['root'],
+        topologyRevision: 'rev-1',
+        sourceLabel: 'test',
+      }),
+    ).to.throw(SidebarNavHtmlInvariantError);
+
+    expect(() =>
+      validateSidebarNavHtmlInvariant({
+        sidebarPresent: true,
+        navHtml: validNavHtml.replace(' data-current-branch="true"', ''),
+        selectedId: 'root/child',
+        sidebarId: 'note-primary',
+        stateScopeId: 'note-navigation',
+        initialExpandedIds: ['root'],
+        topologyRevision: 'rev-1',
+        sourceLabel: 'test',
+      }),
+    ).to.throw(SidebarNavHtmlInvariantError);
+  });
+
 });

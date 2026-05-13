@@ -1,170 +1,45 @@
+import { requireBuildIdInput } from '../../shared/navigation/build-id-contract.js';
+import { requireGeneratedAtInput } from '../../shared/navigation/generated-at-contract.js';
 import {
   NAVIGATION_ENVELOPE_SCHEMA_VERSION,
   type NavigationEnvelope,
 } from '../../shared/navigation/navigation-envelope.js';
 import type { DocumentRenderSnapshot } from '../../shared/navigation/document-render-snapshot.js';
 import type { HydrationPlan } from '../../shared/navigation/hydration-plan.js';
-import type {
-  HeaderShellProjection,
-  ShellProjectionSnapshot,
-  SidebarShellProjection,
-} from '../../shared/navigation/shell-projection.js';
-import { DEFAULT_SIDEBAR_ID } from '../../shared/navigation/sidebar-shell-defaults.js';
-import type { TocPresence } from '../../shared/note/toc-presence.js';
+import {
+  ShellProjectionValidationError,
+  validateNavigationEnvelopeShellProjection,
+} from '../../shared/navigation/shell-projection-validator.js';
 import { createRouterDiagnosticError } from './router-diagnostics.js';
-import { assertRuntimePresentSidebarNavHtml } from './sidebar-nav-html-presence.js';
+import type { StrictLoadedNavigationEnvelope } from './router-types.js';
+import {
+  NavigationEnvelopeContractError,
+  NavigationEnvelopeMetadataMismatchError,
+} from './navigation-envelope-errors.js';
 
-type SidebarShellProjectionInput = Omit<
-  SidebarShellProjection,
-  'initialExpandedIds' | 'topologyRevision' | 'navHtml' | 'heading'
-> & {
-  initialExpandedIds?: string[];
-  topologyRevision?: string | null;
-  navHtml?: string | null;
-  heading?: string | null;
-};
+
+export interface ValidateLoadedEnvelopeInput {
+  readonly envelope: NavigationEnvelope;
+  readonly source: 'fetch' | 'document-route';
+  readonly currentBuildId: string;
+  readonly currentGeneratedAt: string;
+  readonly normalizedUrl: string;
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isString = (value: unknown): value is string => typeof value === 'string';
-
-const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
-const isTocPresence = (value: unknown): value is TocPresence =>
-  value === 'present' || value === 'absent';
-
 const isRenderedKind = (value: unknown): value is DocumentRenderSnapshot['renderedKind'] =>
   value === 'page' || value === 'not-found' || value === 'error';
 
-const isHeaderCorpusItem = (
-  value: unknown,
-): value is HeaderShellProjection['corpora'][number] => {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  return (
-    isString(value['key']) &&
-    isString(value['label']) &&
-    isString(value['href'])
-  );
-};
-
-const isHeaderShellProjection = (value: unknown): value is HeaderShellProjection => {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  return (
-    Array.isArray(value['corpora']) &&
-    value['corpora'].every(isHeaderCorpusItem) &&
-    isString(value['currentCorpusKey']) &&
-    isBoolean(value['noteLayout']) &&
-    isBoolean(value['sidebarEnabled']) &&
-    (value['sidebarId'] === undefined || isString(value['sidebarId'])) &&
-    isTocPresence(value['tocPresence']) &&
-    (value['tocTriggerReserved'] === undefined || isBoolean(value['tocTriggerReserved'])) &&
-    (value['tocRuntimeId'] === undefined ||
-      value['tocRuntimeId'] === null ||
-      isString(value['tocRuntimeId'])) &&
-    (value['tocOwnerId'] === undefined ||
-      value['tocOwnerId'] === null ||
-      isString(value['tocOwnerId']))
-  );
-};
-
-const isSidebarPresentation = (value: unknown): value is SidebarShellProjection['presentation'] =>
-  value === 'auto' || value === 'fixed' || value === 'overlay';
-
-const normalizeOptionalString = (value: string | null | undefined): string | null => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : null;
-};
-
-const normalizeHeaderShellProjection = (value: HeaderShellProjection): HeaderShellProjection => ({
-  ...value,
-  sidebarId:
-    typeof value.sidebarId === 'string' && value.sidebarId.trim().length > 0
-      ? value.sidebarId.trim()
-      : DEFAULT_SIDEBAR_ID,
-});
-
-
-const isSidebarShellProjection = (value: unknown): value is SidebarShellProjectionInput => {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  return (
-    isBoolean(value['present']) &&
-    isString(value['sidebarId']) &&
-    isString(value['stateScopeId']) &&
-    (value['selectedId'] === null || isString(value['selectedId'])) &&
-    (value['initialExpandedIds'] === undefined ||
-      (Array.isArray(value['initialExpandedIds']) &&
-        value['initialExpandedIds'].every((entry: unknown) => isString(entry)))) &&
-    (value['topologyRevision'] === undefined ||
-      value['topologyRevision'] === null ||
-      isString(value['topologyRevision'])) &&
-    (value['navHtml'] === undefined || value['navHtml'] === null || isString(value['navHtml'])) &&
-    (value['heading'] === undefined || value['heading'] === null || isString(value['heading'])) &&
-    typeof value['fixedBreakpoint'] === 'number' &&
-    isSidebarPresentation(value['presentation'])
-  );
-};
-
-const normalizeSidebarShellProjection = (
-  value: SidebarShellProjectionInput,
-): SidebarShellProjection => {
-  const initialExpandedIds = value.initialExpandedIds ?? [];
-  const topologyRevision = normalizeOptionalString(value.topologyRevision);
-  const navHtml = normalizeOptionalString(value.navHtml);
-  const heading = normalizeOptionalString(value.heading);
-
-  if (value.present) {
-    if (topologyRevision === null) {
-      throw createInvalidEnvelopeError(
-        'present sidebar shellProjection.topologyRevision は非空文字列である必要があります。',
-      );
-    }
-
-    try {
-      assertRuntimePresentSidebarNavHtml(navHtml, 'navigation-envelope');
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
-      throw createInvalidEnvelopeError(
-        `present sidebar shellProjection.navHtml が不正です: ${detail}`,
-      );
-    }
-  }
-
-  return {
-    present: value.present,
-    sidebarId: value.sidebarId,
-    stateScopeId: value.stateScopeId,
-    selectedId: value.selectedId,
-    initialExpandedIds,
-    topologyRevision,
-    navHtml,
-    heading,
-    fixedBreakpoint: value.fixedBreakpoint,
-    presentation: value.presentation,
-  };
-};
-
-const isShellProjectionSnapshot = (value: unknown): value is ShellProjectionSnapshot => {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  return (
-    isHeaderShellProjection(value['header']) &&
-    (value['sidebar'] === null || isSidebarShellProjection(value['sidebar']))
-  );
+const createInvalidEnvelopeError = (message: string): NavigationEnvelopeContractError => {
+  const error = new NavigationEnvelopeContractError(message);
+  error.cause = createRouterDiagnosticError(message, {
+    reason: 'navigation-envelope-invalid',
+    routeId: 'navigation-envelope',
+  });
+  return error;
 };
 
 const isHydrationPlan = (value: unknown): value is HydrationPlan => {
@@ -177,42 +52,39 @@ const isHydrationPlan = (value: unknown): value is HydrationPlan => {
       return false;
     }
 
-    if (scope['capability'] !== undefined) {
-      const capability = scope['capability'];
-      if (capability !== 'static' && capability !== 'progressive' && capability !== 'interactive') {
-        return false;
-      }
-    }
-
-    if (scope['trigger'] !== undefined) {
-      const trigger = scope['trigger'];
-      if (
-        trigger !== 'initial' &&
-        trigger !== 'post-commit' &&
-        trigger !== 'visible' &&
-        trigger !== 'interaction'
-      ) {
-        return false;
-      }
-    }
-
-    if (scope['marker'] !== undefined) {
-      const marker = scope['marker'];
-      if (
-        marker !== 'toc-owner' &&
-        marker !== 'toc-source' &&
-        marker !== 'toc-trigger' &&
-        marker !== 'reading-shell'
-      ) {
-        return false;
-      }
-    }
-
-    if (scope['ownerId'] !== undefined && !isString(scope['ownerId'])) {
+    const capability = scope['capability'];
+    if (
+      capability !== undefined &&
+      capability !== 'static' &&
+      capability !== 'progressive' &&
+      capability !== 'interactive'
+    ) {
       return false;
     }
 
-    return true;
+    const trigger = scope['trigger'];
+    if (
+      trigger !== undefined &&
+      trigger !== 'initial' &&
+      trigger !== 'post-commit' &&
+      trigger !== 'visible' &&
+      trigger !== 'interaction'
+    ) {
+      return false;
+    }
+
+    const marker = scope['marker'];
+    if (
+      marker !== undefined &&
+      marker !== 'toc-owner' &&
+      marker !== 'toc-source' &&
+      marker !== 'toc-trigger' &&
+      marker !== 'reading-shell'
+    ) {
+      return false;
+    }
+
+    return scope['ownerId'] === undefined || isString(scope['ownerId']);
   });
 };
 
@@ -232,18 +104,23 @@ const isDocumentRenderSnapshot = (value: unknown): value is DocumentRenderSnapsh
   );
 };
 
-export class NavigationEnvelopeValidationError extends Error {
-  override name = 'NavigationEnvelopeValidationError' as const;
-}
+const readOptionalMetadataString = (
+  value: unknown,
+  label: 'buildId' | 'generatedAt',
+): string | null | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (value === null) {
+    return null;
+  }
 
-function createInvalidEnvelopeError(message: string): NavigationEnvelopeValidationError {
-  const error = new NavigationEnvelopeValidationError(message);
-  error.cause = createRouterDiagnosticError(message, {
-    reason: 'navigation-envelope-invalid',
-    routeId: 'navigation-envelope',
-  });
-  return error;
-}
+  if (!isString(value)) {
+    throw createInvalidEnvelopeError(`navigation envelope ${label} は string/null/undefined である必要があります。`);
+  }
+
+  return value;
+};
 
 export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope => {
   if (!isRecord(value)) {
@@ -260,41 +137,61 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
     throw createInvalidEnvelopeError('navigation envelope document が不正です。');
   }
 
-  if (value['shellProjection'] !== null && !isShellProjectionSnapshot(value['shellProjection'])) {
-    throw createInvalidEnvelopeError('navigation envelope shellProjection が不正です。');
+  const hydrationPlan = value['hydrationPlan'];
+  if (hydrationPlan !== undefined && hydrationPlan !== null && !isHydrationPlan(hydrationPlan)) {
+    throw createInvalidEnvelopeError('navigation envelope hydrationPlan が不正です。');
   }
 
-  if (value['hydrationPlan'] !== undefined && value['hydrationPlan'] !== null) {
-    if (!isHydrationPlan(value['hydrationPlan'])) {
-      throw createInvalidEnvelopeError('navigation envelope hydrationPlan が不正です。');
+  let shellProjection: NavigationEnvelope['shellProjection'];
+  try {
+    shellProjection = validateNavigationEnvelopeShellProjection(value['shellProjection'] ?? null);
+  } catch (error) {
+    if (error instanceof ShellProjectionValidationError) {
+      throw createInvalidEnvelopeError(`navigation envelope shellProjection が不正です: ${error.message}`);
     }
+    throw error;
   }
-
-  const shellProjection = value['shellProjection'];
 
   return {
     schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
-    buildId:
-      value['buildId'] === undefined || value['buildId'] === null || isString(value['buildId'])
-        ? value['buildId']
-        : null,
-    generatedAt:
-      value['generatedAt'] === undefined ||
-      value['generatedAt'] === null ||
-      isString(value['generatedAt'])
-        ? value['generatedAt']
-        : null,
-    document: value['document'],
-    shellProjection:
-      shellProjection === null
-        ? null
-        : {
-            header: normalizeHeaderShellProjection(shellProjection.header),
-            sidebar:
-              shellProjection.sidebar === null
-                ? null
-                : normalizeSidebarShellProjection(shellProjection.sidebar),
-          },
-    hydrationPlan: value['hydrationPlan'] ?? null,
+    buildId: readOptionalMetadataString(value['buildId'], 'buildId'),
+    generatedAt: readOptionalMetadataString(value['generatedAt'], 'generatedAt'),
+    document: value['document'] as DocumentRenderSnapshot,
+    shellProjection,
+    hydrationPlan: (hydrationPlan ?? null) as HydrationPlan | null,
+  };
+};
+
+export const validateLoadedEnvelope = ({
+  envelope,
+  currentBuildId,
+  currentGeneratedAt,
+  normalizedUrl,
+}: ValidateLoadedEnvelopeInput): StrictLoadedNavigationEnvelope => {
+  const envelopeBuildId = requireBuildIdInput(envelope.buildId, 'navigation envelope buildId');
+  const envelopeGeneratedAt = requireGeneratedAtInput(envelope.generatedAt, 'navigation envelope generatedAt');
+
+  if (envelopeBuildId !== currentBuildId) {
+    throw new NavigationEnvelopeMetadataMismatchError(
+      'buildId',
+      currentBuildId,
+      envelopeBuildId,
+      normalizedUrl,
+    );
+  }
+
+  if (envelopeGeneratedAt !== currentGeneratedAt) {
+    throw new NavigationEnvelopeMetadataMismatchError(
+      'generatedAt',
+      currentGeneratedAt,
+      envelopeGeneratedAt,
+      normalizedUrl,
+    );
+  }
+
+  return {
+    ...envelope,
+    buildId: envelopeBuildId,
+    generatedAt: envelopeGeneratedAt,
   };
 };

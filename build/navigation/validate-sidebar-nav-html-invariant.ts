@@ -31,8 +31,10 @@ export interface ValidateSidebarNavHtmlInvariantInput {
 
 interface ParsedNavRow {
   readonly id: string;
-  readonly kind: 'branch' | 'leaf';
+  readonly kind: 'branch' | 'leaf' | 'invalid';
   readonly depth: number;
+  readonly parentId: string | null;
+  readonly siblingCount: number;
   readonly element: Parse5Element;
   readonly directControl: Parse5Element | null;
   readonly directGroup: Parse5Element | null;
@@ -75,10 +77,13 @@ const flattenRows = (rows: readonly SidebarNavRow[]): SidebarNavRow[] =>
 const collectRows = (root: Parse5ParentNode): ParsedNavRow[] => {
   const rows: ParsedNavRow[] = [];
 
-  const visit = (list: Parse5Element): void => {
-    for (const rowElement of directElementChildren(list).filter((child) => child.tagName === 'li')) {
+  const visit = (list: Parse5Element, parentId: string | null): void => {
+    const listRows = directElementChildren(list).filter((child) => child.tagName === 'li');
+    const siblingCount = listRows.length;
+    for (const rowElement of listRows) {
       const id = toTrimmedString(getAttribute(rowElement, 'data-node-id'));
-      const kind = getAttribute(rowElement, 'data-node-kind') === 'branch' ? 'branch' : 'leaf';
+      const rawKind = getAttribute(rowElement, 'data-node-kind');
+      const kind = rawKind === 'branch' || rawKind === 'leaf' ? rawKind : 'invalid';
       const rawDepth = toTrimmedString(getAttribute(rowElement, 'data-node-depth'));
       const depth = Number.parseInt(rawDepth, 10);
       const directChildren = directElementChildren(rowElement);
@@ -92,19 +97,21 @@ const collectRows = (root: Parse5ParentNode): ParsedNavRow[] => {
         id,
         kind,
         depth: Number.isFinite(depth) ? depth : Number.NaN,
+        parentId,
+        siblingCount,
         element: rowElement,
         directControl,
         directGroup,
       });
 
       if (directGroup !== null) {
-        visit(directGroup);
+        visit(directGroup, id);
       }
     }
   };
 
   for (const list of directElementChildren(root).filter((child) => child.tagName === 'ul')) {
-    visit(list);
+    visit(list, null);
   }
 
   return rows;
@@ -122,6 +129,37 @@ const collectAriaCurrentElements = (node: Parse5ParentNode, result: Parse5Elemen
   }
 
   return result;
+};
+
+
+const readTrueMarker = (
+  element: Parse5Element,
+  attributeName: 'data-current-branch' | 'data-current-path-indicator',
+  rowId: string,
+  sourceLabel: string,
+): boolean => {
+  const value = getAttribute(element, attributeName);
+  if (value === null) {
+    return false;
+  }
+  if (value !== 'true') {
+    fail(sourceLabel, `sidebar nav row ${rowId} has invalid ${attributeName} value.`);
+  }
+  return true;
+};
+
+const collectAncestorIds = (rowById: ReadonlyMap<string, ParsedNavRow>, row: ParsedNavRow): Set<string> => {
+  const ancestors = new Set<string>();
+  let currentParentId = row.parentId;
+  while (currentParentId !== null) {
+    const parent = rowById.get(currentParentId);
+    if (parent === undefined) {
+      break;
+    }
+    ancestors.add(parent.id);
+    currentParentId = parent.parentId;
+  }
+  return ancestors;
 };
 
 const assertAbsentProjection = (
@@ -248,8 +286,23 @@ export const validateSidebarNavHtmlInvariant = (
     }
     rowById.set(row.id, row);
 
+    if (row.kind === 'invalid') {
+      fail(sourceLabel, `sidebar nav row ${row.id} has invalid data-node-kind.`);
+    }
+
     if (!Number.isInteger(row.depth) || row.depth < 0) {
       fail(sourceLabel, `sidebar nav row ${row.id} has invalid data-node-depth.`);
+    }
+
+    if (row.parentId === null && row.depth !== 0) {
+      fail(sourceLabel, `root sidebar nav row ${row.id} must have data-node-depth=0.`);
+    }
+
+    if (row.parentId !== null) {
+      const parent = rowById.get(row.parentId);
+      if (parent === undefined || row.depth !== parent.depth + 1) {
+        fail(sourceLabel, `sidebar nav row ${row.id} data-node-depth must be parent depth + 1.`);
+      }
     }
 
     if (row.directControl === null) {
@@ -359,6 +412,24 @@ export const validateSidebarNavHtmlInvariant = (
 
   assertSetEquals(expandedBranchIds, input.initialExpandedIds, sourceLabel, 'initialExpandedIds');
 
+  const selectedRowForPath = selectedId === null ? null : rowById.get(selectedId) ?? null;
+  const inferredCurrentAncestorIds = selectedRowForPath === null ? new Set<string>() : collectAncestorIds(rowById, selectedRowForPath);
+
+  for (const row of navElements) {
+    const hasCurrentBranch = readTrueMarker(row.element, 'data-current-branch', row.id, sourceLabel);
+    const hasCurrentPathIndicator = readTrueMarker(row.element, 'data-current-path-indicator', row.id, sourceLabel);
+    const expectsCurrentBranch = row.kind === 'branch' && inferredCurrentAncestorIds.has(row.id);
+    const expectsCurrentPathIndicator = expectsCurrentBranch && row.siblingCount > 1;
+
+    if (hasCurrentBranch !== expectsCurrentBranch) {
+      fail(sourceLabel, `data-current-branch mismatch for ${row.id}.`);
+    }
+
+    if (hasCurrentPathIndicator !== expectsCurrentPathIndicator) {
+      fail(sourceLabel, `data-current-path-indicator mismatch for ${row.id}.`);
+    }
+  }
+
   if (expectedRows === null) {
     return;
   }
@@ -381,9 +452,18 @@ export const validateSidebarNavHtmlInvariant = (
       fail(sourceLabel, `sidebarRows and navHtml row depth mismatch for ${expectedRow.id}.`);
     }
 
-    const hasCurrentBranch = getAttribute(actualRow.element, 'data-current-branch') === 'true';
-    const hasCurrentPathIndicator =
-      getAttribute(actualRow.element, 'data-current-path-indicator') === 'true';
+    const hasCurrentBranch = readTrueMarker(
+      actualRow.element,
+      'data-current-branch',
+      actualRow.id,
+      sourceLabel,
+    );
+    const hasCurrentPathIndicator = readTrueMarker(
+      actualRow.element,
+      'data-current-path-indicator',
+      actualRow.id,
+      sourceLabel,
+    );
     const expectsCurrentBranch = expectedRow.kind === 'branch' && expectedRow.hasCurrentDescendant;
     const expectsCurrentPathIndicator =
       expectedRow.kind === 'branch' &&

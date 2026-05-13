@@ -334,6 +334,13 @@ describe('sidebar nav explicit contract', () => {
         { scope: 'screen', selectorKind: 'any' },
       ),
     ).toBe(true);
+
+    const currentBranchCustomPropertyDeclarations = listDeclarationsForSelectorContaining(
+      mainCss,
+      "li[data-current-branch='true']",
+      { scope: 'screen', selectorKind: 'any' },
+    ).filter((declaration) => declaration.property.startsWith('--'));
+    expect(currentBranchCustomPropertyDeclarations).toEqual([]);
   });
 
   it('hover / forced-colors / reduced-motion の scope を分離していること', () => {

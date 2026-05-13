@@ -1,10 +1,16 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import type { SidebarShellProjection } from '../../../shared/navigation/shell-projection.js';
-import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
-import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../layout/note-sidebar-breakpoint.js';
+import { createCanonicalAbsentRuntimeSidebarProjection } from '../../../shared/navigation/sidebar-shell-projection-contract.js';
+import type { RuntimeSidebarShellSnapshot } from '../../../shared/navigation/shell-projection.js';
+import { validateRuntimeSidebarProjection } from '../../../shared/navigation/shell-projection-validator.js';
 import {
-  DEFAULT_LAYOUT_SIDEBAR_ID,
+  DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
+  DEFAULT_SIDEBAR_ID,
+  DEFAULT_SIDEBAR_PRESENTATION,
+  DEFAULT_SIDEBAR_STATE_SCOPE_ID,
+} from '../../../shared/navigation/sidebar-shell-defaults.js';
+import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
+import {
   layoutSidebarController,
   type LayoutSidebarControllerSnapshot,
   type LayoutSidebarPresentation,
@@ -58,7 +64,7 @@ export class LayoutSidebar extends LitElement {
   `;
 
   @property({ type: String, attribute: 'state-scope-id' })
-  stateScopeId = '';
+  stateScopeId = DEFAULT_SIDEBAR_STATE_SCOPE_ID;
 
   @property({ type: String, attribute: 'selected-id' })
   selectedId: string | null = null;
@@ -73,13 +79,13 @@ export class LayoutSidebar extends LitElement {
   heading = '';
 
   @property({ type: Number, attribute: 'fixed-breakpoint' })
-  fixedBreakpoint = NOTE_SIDEBAR_FIXED_BREAKPOINT;
+  fixedBreakpoint = DEFAULT_SIDEBAR_FIXED_BREAKPOINT;
 
   @property({ type: String, reflect: true })
   presentation: LayoutSidebarPresentation = 'auto';
 
   @property({ type: String, attribute: 'sidebar-id' })
-  sidebarId = DEFAULT_LAYOUT_SIDEBAR_ID;
+  sidebarId = DEFAULT_SIDEBAR_ID;
 
   @state()
   private _navMarkup = '';
@@ -113,7 +119,7 @@ export class LayoutSidebar extends LitElement {
     },
   });
 
-  applyShellProjection(snapshot: SidebarShellProjection | null): void {
+  applyShellProjection(snapshot: RuntimeSidebarShellSnapshot | null): void {
     if (!snapshot?.present) {
       this._applyAbsentShellProjection();
       return;
@@ -162,6 +168,9 @@ export class LayoutSidebar extends LitElement {
   }
 
   private _applyAbsentShellProjection(): void {
+    const previousSidebarId = this._resolveSidebarId();
+    layoutSidebarController.close(previousSidebarId);
+
     this.hidden = true;
 
     this.removeAttribute('state-scope-id');
@@ -170,31 +179,36 @@ export class LayoutSidebar extends LitElement {
     this.removeAttribute('topology-revision');
     this.removeAttribute('heading');
     this.removeAttribute('fixed-breakpoint');
+    this.removeAttribute('sidebar-id');
+    this.removeAttribute('presentation');
 
-    this.stateScopeId = '';
+    this.sidebarId = DEFAULT_SIDEBAR_ID;
+    this.stateScopeId = DEFAULT_SIDEBAR_STATE_SCOPE_ID;
     this.selectedId = null;
     this.initialExpandedIdsJson = '[]';
     this.topologyRevision = null;
     this.heading = '';
-    this.fixedBreakpoint = NOTE_SIDEBAR_FIXED_BREAKPOINT;
-    this.presentation = 'auto';
+    this.fixedBreakpoint = DEFAULT_SIDEBAR_FIXED_BREAKPOINT;
+    this.presentation = DEFAULT_SIDEBAR_PRESENTATION;
     this._navMarkup = '';
     this._activeId = null;
 
     // absent projection は stale な SSR/projection light DOM も投影状態として破棄する。
     this.innerHTML = '';
-
-    layoutSidebarController.close(this._resolveSidebarId());
     this._syncSurfaceMount();
     this._syncSurfaceProps();
     void this._syncSurfaceTree();
   }
 
-  readShellProjection(): SidebarShellProjection {
-    return {
-      present: !this.hidden,
-      sidebarId: this._resolveSidebarId(),
-      stateScopeId: this._resolveStateScopeId(),
+  readShellProjection(): RuntimeSidebarShellSnapshot {
+    if (this.hidden) {
+      return createCanonicalAbsentRuntimeSidebarProjection();
+    }
+
+    return validateRuntimeSidebarProjection({
+      present: true,
+      sidebarId: this.sidebarId.trim(),
+      stateScopeId: this.stateScopeId.trim(),
       selectedId: this.selectedId,
       initialExpandedIds: this._parseInitialExpandedIds(this.initialExpandedIdsJson),
       topologyRevision: this.topologyRevision,
@@ -202,7 +216,7 @@ export class LayoutSidebar extends LitElement {
       heading: this._readHeadingProjection(),
       fixedBreakpoint: this.fixedBreakpoint,
       presentation: this.presentation,
-    };
+    });
   }
 
   override connectedCallback(): void {
@@ -308,7 +322,7 @@ export class LayoutSidebar extends LitElement {
 
   private _resolveSidebarId(): string {
     const normalized = this.sidebarId.trim();
-    return normalized.length > 0 ? normalized : DEFAULT_LAYOUT_SIDEBAR_ID;
+    return normalized.length > 0 ? normalized : DEFAULT_SIDEBAR_ID;
   }
 
   private _connectPresentationStore(): void {
@@ -394,7 +408,7 @@ export class LayoutSidebar extends LitElement {
 
   private _resolveStateScopeId(): string {
     const normalized = this.stateScopeId.trim();
-    return normalized.length > 0 ? normalized : 'global';
+    return normalized.length > 0 ? normalized : DEFAULT_SIDEBAR_STATE_SCOPE_ID;
   }
 
   private _normalizeHeading(value: string | null | undefined): string {

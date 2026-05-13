@@ -1,10 +1,10 @@
-import { normalizeGeneratedAt } from '../../shared/navigation/generated-at-contract.js';
+import { requireGeneratedAtInput } from '../../shared/navigation/generated-at-contract.js';
 
 let generatedAtOnce: string | null = null;
 
 export const resolveGeneratedAt = (explicit?: string | undefined): string | undefined => {
   const candidate = explicit ?? process.env['ROUAULT_GENERATED_AT'];
-  return candidate === undefined ? undefined : normalizeGeneratedAt(candidate);
+  return candidate === undefined ? undefined : requireGeneratedAtInput(candidate);
 };
 
 export const createBuildGeneratedAtOnce = (explicit?: string | undefined): string => {
@@ -12,6 +12,6 @@ export const createBuildGeneratedAtOnce = (explicit?: string | undefined): strin
     return generatedAtOnce;
   }
 
-  generatedAtOnce = resolveGeneratedAt(explicit) ?? normalizeGeneratedAt(new Date().toISOString());
+  generatedAtOnce = resolveGeneratedAt(explicit) ?? requireGeneratedAtInput(new Date().toISOString());
   return generatedAtOnce;
 };

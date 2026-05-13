@@ -9,6 +9,20 @@ export type OptionalBuildIdValidationResult =
 const BUILD_ID_PATTERN = /^[A-Za-z0-9._:-]+$/u;
 const MAX_BUILD_ID_LENGTH = 128;
 
+export const isBuildIdString = (value: string): boolean => {
+  const normalized = value.trim();
+  return (
+    normalized.length > 0 &&
+    normalized.length <= MAX_BUILD_ID_LENGTH &&
+    BUILD_ID_PATTERN.test(normalized)
+  );
+};
+
+export const normalizeBuildId = (value: string): string | null => {
+  const normalized = value.trim();
+  return isBuildIdString(normalized) ? normalized : null;
+};
+
 export const validateOptionalBuildIdInput = (value: unknown): OptionalBuildIdValidationResult => {
   if (value === undefined || value === null) {
     return { kind: 'missing' };
@@ -29,10 +43,10 @@ export const validateOptionalBuildIdInput = (value: unknown): OptionalBuildIdVal
   return { kind: 'valid', value: normalized };
 };
 
-export const normalizeBuildId = (value: unknown): string => {
+export const requireBuildIdInput = (value: unknown, label = 'buildId'): string => {
   const result = validateOptionalBuildIdInput(value);
   if (result.kind !== 'valid') {
-    throw new Error(`buildId is invalid: ${result.kind}`);
+    throw new Error(`${label} is invalid: ${result.kind}`);
   }
   return result.value;
 };

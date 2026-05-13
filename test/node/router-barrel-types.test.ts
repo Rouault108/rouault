@@ -1,0 +1,52 @@
+import { describe, expect, it } from 'vitest';
+
+import type {
+  PayloadDocumentShellSnapshot,
+  RuntimeDocumentShellSnapshot,
+  ShellUpdatePayload,
+  StrictLoadedNavigationEnvelope,
+} from '../../src/router/router.js';
+import { createCanonicalAbsentRuntimeSidebarProjection } from '../../shared/navigation/sidebar-shell-projection-contract.js';
+
+const acceptsPayloadShell = (value: PayloadDocumentShellSnapshot | null): PayloadDocumentShellSnapshot | null => value;
+const acceptsRuntimeShell = (value: RuntimeDocumentShellSnapshot | null): RuntimeDocumentShellSnapshot | null => value;
+const acceptsStrictEnvelope = (value: StrictLoadedNavigationEnvelope): string => value.buildId;
+
+describe('router barrel shell projection types', () => {
+  it('ShellUpdatePayload は payload shell snapshot を受け取り、runtime absent は rollback 側に限定すること', () => {
+    const payloadUpdate: ShellUpdatePayload = {
+      shell: null,
+      navigationUrl: '/notes/example',
+    };
+
+    const runtimeShell: RuntimeDocumentShellSnapshot = {
+      header: {
+        corpora: [],
+        currentCorpusKey: 'all',
+        noteLayout: false,
+        sidebarEnabled: false,
+        sidebarId: 'note-primary',
+        tocPresence: 'absent',
+      },
+      sidebar: createCanonicalAbsentRuntimeSidebarProjection(),
+    };
+
+    expect(acceptsPayloadShell(payloadUpdate.shell)).to.equal(null);
+    expect(acceptsRuntimeShell(runtimeShell)?.sidebar?.present).to.equal(false);
+    expect(
+      acceptsStrictEnvelope({
+        schemaVersion: 1,
+        buildId: 'build-test',
+        generatedAt: '2026-04-11T00:00:00.000Z',
+        document: {
+          html: '<p>Example</p>',
+          title: 'Example',
+          description: null,
+          renderedKind: 'page',
+        },
+        shellProjection: null,
+        hydrationPlan: null,
+      }),
+    ).to.equal('build-test');
+  });
+});

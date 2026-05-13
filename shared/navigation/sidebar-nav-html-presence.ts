@@ -1,5 +1,21 @@
+export type SidebarNavHtmlPresenceReason =
+  | 'missing'
+  | 'null'
+  | 'invalid-type'
+  | 'empty'
+  | 'missing-nav'
+  | 'multiple-nav';
+
 export class SidebarNavHtmlPresenceError extends Error {
   override name = 'SidebarNavHtmlPresenceError' as const;
+
+  constructor(
+    message: string,
+    readonly reason: SidebarNavHtmlPresenceReason,
+    readonly sourceLabel: string,
+  ) {
+    super(message);
+  }
 }
 
 export interface RuntimeSidebarNavHtmlPresenceInput {
@@ -8,8 +24,12 @@ export interface RuntimeSidebarNavHtmlPresenceInput {
   readonly sourceLabel?: string;
 }
 
-const fail = (message: string): never => {
-  throw new SidebarNavHtmlPresenceError(message);
+const fail = (
+  sourceLabel: string,
+  reason: SidebarNavHtmlPresenceReason,
+  message: string,
+): never => {
+  throw new SidebarNavHtmlPresenceError(`[${sourceLabel}] ${message}`, reason, sourceLabel);
 };
 
 const countNavFragments = (navHtml: string): number => {
@@ -32,24 +52,28 @@ export const assertRuntimeSidebarNavHtmlPresence = ({
   }
 
   if (navHtml === undefined) {
-    fail(`[${sourceLabel}] present sidebar projection navHtml is missing.`);
+    fail(sourceLabel, 'missing', 'present sidebar projection navHtml is missing.');
   }
   if (navHtml === null) {
-    fail(`[${sourceLabel}] present sidebar projection navHtml must not be null.`);
+    fail(sourceLabel, 'null', 'present sidebar projection navHtml must not be null.');
   }
   if (typeof navHtml !== 'string') {
-    fail(`[${sourceLabel}] present sidebar projection navHtml must be a string.`);
+    fail(sourceLabel, 'invalid-type', 'present sidebar projection navHtml must be a string.');
   }
 
-  const normalized = navHtml.trim();
+  const navHtmlString = navHtml as string;
+  const normalized = navHtmlString.trim();
   if (normalized.length === 0) {
-    fail(`[${sourceLabel}] present sidebar projection must contain non-empty navHtml.`);
+    fail(sourceLabel, 'empty', 'present sidebar projection must contain non-empty navHtml.');
   }
 
   const navCount = countNavFragments(normalized);
-  if (navCount !== 1) {
-    fail(`[${sourceLabel}] present sidebar projection must contain exactly one nav[data-sidebar-nav].`);
+  if (navCount === 0) {
+    fail(sourceLabel, 'missing-nav', 'present sidebar projection must contain one nav[data-sidebar-nav].');
+  }
+  if (navCount > 1) {
+    fail(sourceLabel, 'multiple-nav', 'present sidebar projection must contain exactly one nav[data-sidebar-nav].');
   }
 
-  return navHtml;
+  return navHtmlString;
 };

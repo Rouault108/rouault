@@ -1,20 +1,25 @@
 export class NavigationEnvelopeContractError extends Error {
-  override name = 'NavigationEnvelopeContractError' as const;
+  override name = 'NavigationEnvelopeContractError';
 }
 
 export class CurrentBuildMetadataInvalidError extends NavigationEnvelopeContractError {
-  override name = 'CurrentBuildMetadataInvalidError' as const;
+  override name = 'CurrentBuildMetadataInvalidError';
+
+  readonly kind: 'current-buildId-invalid' | 'current-generatedAt-invalid';
 
   constructor(
     readonly field: 'buildId' | 'generatedAt',
     readonly reason: string,
   ) {
     super(`current ${field} is invalid: ${reason}`);
+    this.kind = field === 'buildId' ? 'current-buildId-invalid' : 'current-generatedAt-invalid';
   }
 }
 
 export class NavigationEnvelopeMetadataMismatchError extends NavigationEnvelopeContractError {
-  override name = 'NavigationEnvelopeMetadataMismatchError' as const;
+  override name = 'NavigationEnvelopeMetadataMismatchError';
+
+  readonly kind: 'buildId-mismatch' | 'generatedAt-mismatch';
 
   constructor(
     readonly field: 'buildId' | 'generatedAt',
@@ -25,11 +30,12 @@ export class NavigationEnvelopeMetadataMismatchError extends NavigationEnvelopeC
     super(
       `navigation envelope ${field} mismatch: current=${currentValue}, envelope=${envelopeValue}, url=${normalizedUrl}`,
     );
+    this.kind = field === 'buildId' ? 'buildId-mismatch' : 'generatedAt-mismatch';
   }
 }
 
 export class NavigationEnvelopeBuildMismatchError extends NavigationEnvelopeMetadataMismatchError {
-  override name = 'NavigationEnvelopeBuildMismatchError' as const;
+  override name = 'NavigationEnvelopeBuildMismatchError';
   readonly currentBuildId: string;
   readonly envelopeBuildId: string;
 

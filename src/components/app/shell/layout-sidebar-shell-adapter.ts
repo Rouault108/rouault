@@ -1,11 +1,22 @@
 import type {
-  DocumentShellSnapshot,
+  PayloadDocumentShellSnapshot,
   PreparedShellUpdate,
+  RuntimeDocumentShellSnapshot,
+  RuntimeSidebarShellSnapshot,
   ShellAdapter,
-  SidebarShellSnapshot,
 } from '../../../router/router.js';
-import { DEFAULT_LAYOUT_SIDEBAR_ID } from '../../layout/layout-sidebar-controller.js';
-import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../../layout/note-sidebar-breakpoint.js';
+import {
+  DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
+  DEFAULT_SIDEBAR_ID,
+  DEFAULT_SIDEBAR_PRESENTATION,
+  DEFAULT_SIDEBAR_STATE_SCOPE_ID,
+} from '../../../../shared/navigation/sidebar-shell-defaults.js';
+import {
+  createCanonicalAbsentRuntimeSidebarProjection,
+} from '../../../../shared/navigation/sidebar-shell-projection-contract.js';
+import {
+  validateRuntimeSidebarProjection,
+} from '../../../../shared/navigation/shell-projection-validator.js';
 import { SAFE_FALLBACK_HEADER_SHELL_PROJECTION } from './layout-header-shell-adapter.js';
 
 const APP_ROUTER_SELECTOR = 'app-router';
@@ -19,24 +30,27 @@ const SIDEBAR_PROJECTION_ATTRIBUTES = [
   'heading',
   'fixed-breakpoint',
   'presentation',
+  'sidebar-id',
 ] as const;
 
 interface SidebarProjectionHost extends HTMLElement {
-  applyShellProjection?(snapshot: SidebarShellSnapshot | null): void;
-  readShellProjection?(): SidebarShellSnapshot;
+  applyShellProjection?(snapshot: RuntimeSidebarShellSnapshot | null): void;
+  readShellProjection?(): RuntimeSidebarShellSnapshot;
 }
 
-const toTrimmedString = (value: string | null, fallback = ''): string => {
-  if (typeof value !== 'string') {
-    return fallback;
+const readRequiredAttribute = (element: Element, attributeName: string): string => {
+  const value = element.getAttribute(attributeName);
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`visible layout-sidebar requires ${attributeName}.`);
   }
-
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : fallback;
+  return value.trim();
 };
 
 const toOptionalString = (value: string | null): string | null => {
-  const normalized = toTrimmedString(value);
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const normalized = value.trim();
   return normalized.length > 0 ? normalized : null;
 };
 
@@ -64,36 +78,43 @@ const parseStringArrayAttribute = (value: string | null): string[] => {
   }
 };
 
-export const readSidebarShellSnapshot = (sidebar: Element): SidebarShellSnapshot => ({
-  present: !(sidebar instanceof HTMLElement && sidebar.hidden),
-  sidebarId: toTrimmedString(sidebar.getAttribute('sidebar-id'), DEFAULT_LAYOUT_SIDEBAR_ID),
-  stateScopeId: toTrimmedString(sidebar.getAttribute('state-scope-id')),
-  selectedId: toOptionalString(sidebar.getAttribute('selected-id')),
-  initialExpandedIds: parseStringArrayAttribute(sidebar.getAttribute('initial-expanded-ids')),
-  topologyRevision: toOptionalString(sidebar.getAttribute('topology-revision')),
-  // fallback 読み取りは SSR / projection 由来 DOM の rollback 復元に限定する。
-  navHtml: sidebar.innerHTML.trim() || null,
-  heading: toOptionalString(sidebar.getAttribute('heading')),
-  fixedBreakpoint: toNumber(
-    sidebar.getAttribute('fixed-breakpoint'),
-    NOTE_SIDEBAR_FIXED_BREAKPOINT,
-  ),
-  presentation:
-    sidebar.getAttribute('presentation') === 'fixed' ||
-    sidebar.getAttribute('presentation') === 'overlay'
-      ? (sidebar.getAttribute('presentation') as SidebarShellSnapshot['presentation'])
-      : 'auto',
-});
+export const readSidebarShellSnapshot = (sidebar: Element): RuntimeSidebarShellSnapshot => {
+  if (sidebar instanceof HTMLElement && sidebar.hidden) {
+    return createCanonicalAbsentRuntimeSidebarProjection();
+  }
 
-export const applySidebarSnapshot = (
-  shell: DocumentShellSnapshot | null,
+  const presentationAttribute = sidebar.getAttribute('presentation');
+  const presentation =
+    presentationAttribute === 'fixed' || presentationAttribute === 'overlay'
+      ? presentationAttribute
+      : DEFAULT_SIDEBAR_PRESENTATION;
+
+  return validateRuntimeSidebarProjection({
+    present: true,
+    sidebarId: readRequiredAttribute(sidebar, 'sidebar-id'),
+    stateScopeId: readRequiredAttribute(sidebar, 'state-scope-id'),
+    selectedId: toOptionalString(sidebar.getAttribute('selected-id')),
+    initialExpandedIds: parseStringArrayAttribute(sidebar.getAttribute('initial-expanded-ids')),
+    topologyRevision: readRequiredAttribute(sidebar, 'topology-revision'),
+    navHtml: sidebar.innerHTML,
+    heading: toOptionalString(sidebar.getAttribute('heading')),
+    fixedBreakpoint: toNumber(
+      sidebar.getAttribute('fixed-breakpoint'),
+      DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
+    ),
+    presentation,
+  });
+};
+
+const applyRuntimeSidebarSnapshot = (
+  snapshot: RuntimeSidebarShellSnapshot | null,
   currentRouter: HTMLElement | null,
   currentSidebarColumn: HTMLElement | null,
   currentSidebar: HTMLElement | null,
 ): void => {
-  const snapshot = shell?.sidebar;
-  const normalizedSnapshot = snapshot === null || snapshot?.present === false ? null : snapshot;
-  const isPresent = normalizedSnapshot !== null && normalizedSnapshot !== undefined;
+  const runtimeSnapshot = snapshot ?? createCanonicalAbsentRuntimeSidebarProjection();
+  const validated = validateRuntimeSidebarProjection(runtimeSnapshot);
+  const isPresent = validated.present === true;
 
   if (currentRouter instanceof HTMLElement) {
     currentRouter.setAttribute('data-sidebar-presence', isPresent ? 'present' : 'absent');
@@ -108,83 +129,117 @@ export const applySidebarSnapshot = (
 
   const projectionSidebar = currentSidebar as SidebarProjectionHost;
   if (typeof projectionSidebar.applyShellProjection === 'function') {
-    projectionSidebar.applyShellProjection(normalizedSnapshot ?? null);
+    projectionSidebar.applyShellProjection(validated);
     return;
   }
 
-  if (!normalizedSnapshot) {
+  if (!isPresent) {
     for (const attributeName of SIDEBAR_PROJECTION_ATTRIBUTES) {
       currentSidebar.removeAttribute(attributeName);
     }
+    if ('sidebarId' in currentSidebar) {
+      (currentSidebar as { sidebarId?: unknown }).sidebarId = DEFAULT_SIDEBAR_ID;
+    }
+    if ('stateScopeId' in currentSidebar) {
+      (currentSidebar as { stateScopeId?: unknown }).stateScopeId = DEFAULT_SIDEBAR_STATE_SCOPE_ID;
+    }
+    if ('initialExpandedIdsJson' in currentSidebar) {
+      (currentSidebar as { initialExpandedIdsJson?: unknown }).initialExpandedIdsJson = '[]';
+    }
     if ('presentation' in currentSidebar) {
-      (currentSidebar as { presentation?: unknown }).presentation = 'auto';
+      (currentSidebar as { presentation?: unknown }).presentation = DEFAULT_SIDEBAR_PRESENTATION;
     }
     if ('fixedBreakpoint' in currentSidebar) {
       (currentSidebar as { fixedBreakpoint?: unknown }).fixedBreakpoint =
-        NOTE_SIDEBAR_FIXED_BREAKPOINT;
+        DEFAULT_SIDEBAR_FIXED_BREAKPOINT;
     }
     currentSidebar.innerHTML = '';
     return;
   }
 
-  currentSidebar.setAttribute('state-scope-id', normalizedSnapshot.stateScopeId);
+  currentSidebar.setAttribute('state-scope-id', validated.stateScopeId);
 
-  if (normalizedSnapshot.selectedId === null) {
+  if (validated.selectedId === null) {
     currentSidebar.removeAttribute('selected-id');
   } else {
-    currentSidebar.setAttribute('selected-id', normalizedSnapshot.selectedId);
+    currentSidebar.setAttribute('selected-id', validated.selectedId);
   }
 
-  currentSidebar.setAttribute(
-    'initial-expanded-ids',
-    JSON.stringify(normalizedSnapshot.initialExpandedIds),
-  );
+  currentSidebar.setAttribute('initial-expanded-ids', JSON.stringify(validated.initialExpandedIds));
+  currentSidebar.setAttribute('topology-revision', validated.topologyRevision);
 
-  if (normalizedSnapshot.topologyRevision === null) {
-    currentSidebar.removeAttribute('topology-revision');
-  } else {
-    currentSidebar.setAttribute('topology-revision', normalizedSnapshot.topologyRevision);
-  }
-
-  if (normalizedSnapshot.heading === null) {
+  if (validated.heading === null) {
     currentSidebar.removeAttribute('heading');
   } else {
-    currentSidebar.setAttribute('heading', normalizedSnapshot.heading);
+    currentSidebar.setAttribute('heading', validated.heading);
   }
-  currentSidebar.setAttribute('fixed-breakpoint', String(normalizedSnapshot.fixedBreakpoint));
-  currentSidebar.setAttribute('sidebar-id', normalizedSnapshot.sidebarId);
-  currentSidebar.setAttribute('presentation', normalizedSnapshot.presentation);
-
-  currentSidebar.innerHTML =
-    typeof normalizedSnapshot.navHtml === 'string' ? normalizedSnapshot.navHtml : '';
+  currentSidebar.setAttribute('fixed-breakpoint', String(validated.fixedBreakpoint));
+  currentSidebar.setAttribute('sidebar-id', validated.sidebarId);
+  currentSidebar.setAttribute('presentation', validated.presentation);
+  currentSidebar.innerHTML = validated.navHtml;
 };
+
+export const applyPayloadShellSnapshot = (
+  shell: PayloadDocumentShellSnapshot | null,
+  currentRouter: HTMLElement | null,
+  currentSidebarColumn: HTMLElement | null,
+  currentSidebar: HTMLElement | null,
+): void => {
+  applyRuntimeSidebarSnapshot(
+    shell?.sidebar ?? createCanonicalAbsentRuntimeSidebarProjection(),
+    currentRouter,
+    currentSidebarColumn,
+    currentSidebar,
+  );
+};
+
+export const applyRuntimeSidebarSnapshotForRollback = (
+  shell: RuntimeDocumentShellSnapshot | null,
+  currentRouter: HTMLElement | null,
+  currentSidebarColumn: HTMLElement | null,
+  currentSidebar: HTMLElement | null,
+): void => {
+  applyRuntimeSidebarSnapshot(
+    shell?.sidebar ?? createCanonicalAbsentRuntimeSidebarProjection(),
+    currentRouter,
+    currentSidebarColumn,
+    currentSidebar,
+  );
+};
+
+/** @deprecated Use applyPayloadShellSnapshot for commit path. */
+export const applySidebarSnapshot = applyPayloadShellSnapshot;
 
 export const createLayoutSidebarShellAdapter = (): ShellAdapter => ({
   prepare(update): PreparedShellUpdate {
     const currentRouter = document.querySelector<HTMLElement>(APP_ROUTER_SELECTOR);
     const currentSidebarColumn = document.querySelector<HTMLElement>(SIDEBAR_COLUMN_SELECTOR);
     const currentSidebar = document.querySelector<SidebarProjectionHost>(SIDEBAR_HOST_SELECTOR);
-    const previousShell: DocumentShellSnapshot | null =
+    const previousRuntimeSidebar =
+      currentSidebar instanceof HTMLElement
+        ? typeof currentSidebar.readShellProjection === 'function'
+          ? currentSidebar.readShellProjection()
+          : readSidebarShellSnapshot(currentSidebar)
+        : createCanonicalAbsentRuntimeSidebarProjection();
+    const previousShell: RuntimeDocumentShellSnapshot | null =
       currentSidebar instanceof HTMLElement
         ? {
             header: SAFE_FALLBACK_HEADER_SHELL_PROJECTION,
-            sidebar:
-              currentSidebarColumn instanceof HTMLElement &&
-              !currentSidebarColumn.hidden &&
-              !currentSidebar.hidden
-                ? typeof currentSidebar.readShellProjection === 'function'
-                  ? currentSidebar.readShellProjection()
-                  : readSidebarShellSnapshot(currentSidebar)
-                : null,
+            sidebar: previousRuntimeSidebar,
           }
         : null;
 
     return {
       commit: () => {
-        applySidebarSnapshot(update.shell, currentRouter, currentSidebarColumn, currentSidebar);
+        applyPayloadShellSnapshot(update.shell, currentRouter, currentSidebarColumn, currentSidebar);
       },
       rollback: () => {
-        applySidebarSnapshot(previousShell, currentRouter, currentSidebarColumn, currentSidebar);
+        applyRuntimeSidebarSnapshotForRollback(
+          previousShell,
+          currentRouter,
+          currentSidebarColumn,
+          currentSidebar,
+        );
       },
     };
   },

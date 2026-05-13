@@ -29,6 +29,22 @@ const getPersistentSidebarHost = (root: ParentNode): HTMLElement | null =>
 const getPersistentSidebarColumn = (root: ParentNode): HTMLElement | null =>
   root.querySelector<HTMLElement>('[data-app-shell-sidebar-host]');
 
+const VALID_SIDEBAR_NAV_HTML =
+  '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:test"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></nav>';
+
+const createValidSidebarProjection = (): ShellProjectionSnapshot['sidebar'] => ({
+  present: true,
+  sidebarId: 'note-primary',
+  stateScopeId: 'note-navigation',
+  selectedId: 'notes/example',
+  initialExpandedIds: [],
+  topologyRevision: 'topology:test',
+  navHtml: VALID_SIDEBAR_NAV_HTML,
+  heading: null,
+  fixedBreakpoint: 1024,
+  presentation: 'auto',
+});
+
 const createEnvelopeResponse = (options?: {
   html?: string;
   title?: string;
@@ -668,9 +684,10 @@ describe('app-router', () => {
               currentCorpusKey: 'music',
               noteLayout: true,
               sidebarEnabled: true,
+              sidebarId: 'note-primary',
               tocPresence: 'present',
             },
-            sidebar: null,
+            sidebar: createValidSidebarProjection(),
           },
         }),
       );
@@ -756,6 +773,7 @@ describe('app-router', () => {
               currentCorpusKey: 'music',
               noteLayout: false,
               sidebarEnabled: true,
+              sidebarId: 'note-primary',
               tocPresence: 'absent',
             },
             sidebar: {
@@ -765,7 +783,7 @@ describe('app-router', () => {
               initialExpandedIds: [],
               topologyRevision: 'topology:new',
               navHtml:
-                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
+                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
               heading: '新しいナビゲーション',
               fixedBreakpoint: 1440,
               sidebarId: 'note-primary',
@@ -850,6 +868,7 @@ describe('app-router', () => {
               currentCorpusKey: 'all',
               noteLayout: false,
               sidebarEnabled: true,
+              sidebarId: 'note-primary',
               tocPresence: 'absent',
             },
             sidebar: {
@@ -859,7 +878,7 @@ describe('app-router', () => {
               initialExpandedIds: [],
               topologyRevision: 'topology:new',
               navHtml:
-                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
+                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
               heading: null,
               fixedBreakpoint: 1024,
               sidebarId: 'note-primary',
@@ -940,6 +959,7 @@ describe('app-router', () => {
               currentCorpusKey: 'all',
               noteLayout: false,
               sidebarEnabled: false,
+              sidebarId: 'note-primary',
               tocPresence: 'absent',
             },
             sidebar: null,
@@ -1017,20 +1037,10 @@ describe('app-router', () => {
               currentCorpusKey: 'all',
               noteLayout: false,
               sidebarEnabled: false,
+              sidebarId: 'note-primary',
               tocPresence: 'absent',
             },
-            sidebar: {
-              present: false,
-              stateScopeId: 'must-not-survive',
-              selectedId: 'must-not-survive',
-              initialExpandedIds: ['must-not-survive'],
-              topologyRevision: 'must-not-survive',
-              navHtml: '<nav data-sidebar-nav><span>Must not survive</span></nav>',
-              heading: 'Must not survive',
-              fixedBreakpoint: 1440,
-              sidebarId: 'note-primary',
-              presentation: 'fixed',
-            },
+            sidebar: null
           },
         }),
       );
@@ -1137,6 +1147,7 @@ describe('app-router', () => {
               currentCorpusKey: 'music',
               noteLayout: false,
               sidebarEnabled: true,
+              sidebarId: 'note-primary',
               tocPresence: 'absent',
             },
             sidebar: {
@@ -1146,7 +1157,7 @@ describe('app-router', () => {
               initialExpandedIds: [],
               topologyRevision: 'topology:new',
               navHtml:
-                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
+                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
               heading: '新しいナビゲーション',
               fixedBreakpoint: 1440,
               sidebarId: 'note-primary',
@@ -1214,9 +1225,10 @@ describe('app-router', () => {
               currentCorpusKey: 'music',
               noteLayout: true,
               sidebarEnabled: true,
+              sidebarId: 'note-primary',
               tocPresence: 'present',
             },
-            sidebar: null,
+            sidebar: createValidSidebarProjection(),
           },
         }),
       );

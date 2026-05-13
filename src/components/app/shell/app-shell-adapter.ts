@@ -1,5 +1,6 @@
 import type {
-  DocumentShellSnapshot,
+  PayloadDocumentShellSnapshot,
+  RuntimeDocumentShellSnapshot,
   PreparedShellUpdate,
   ShellAdapter,
 } from '../../../router/router.js';
@@ -8,7 +9,11 @@ import {
   readHeaderSnapshot,
   SAFE_FALLBACK_HEADER_SHELL_PROJECTION,
 } from './layout-header-shell-adapter.js';
-import { applySidebarSnapshot, readSidebarShellSnapshot } from './layout-sidebar-shell-adapter.js';
+import {
+  applyPayloadShellSnapshot,
+  applyRuntimeSidebarSnapshotForRollback,
+  readSidebarShellSnapshot,
+} from './layout-sidebar-shell-adapter.js';
 
 const HEADER_SELECTOR = 'layout-header';
 const APP_ROUTER_SELECTOR = 'app-router';
@@ -16,11 +21,11 @@ const SIDEBAR_COLUMN_SELECTOR = '[data-app-shell-sidebar-host]';
 const SIDEBAR_HOST_SELECTOR = `${SIDEBAR_COLUMN_SELECTOR} layout-sidebar`;
 
 interface HeaderProjectionHost extends HTMLElement {
-  readShellProjection?(): DocumentShellSnapshot['header'];
+  readShellProjection?(): PayloadDocumentShellSnapshot['header'];
 }
 
 interface SidebarProjectionHost extends HTMLElement {
-  readShellProjection?(): NonNullable<DocumentShellSnapshot['sidebar']>;
+  readShellProjection?(): RuntimeDocumentShellSnapshot['sidebar'];
 }
 
 export const createAppShellAdapter = (): ShellAdapter => ({
@@ -45,7 +50,7 @@ export const createAppShellAdapter = (): ShellAdapter => ({
           ? currentSidebar.readShellProjection()
           : readSidebarShellSnapshot(currentSidebar)
         : null;
-    const previousShell: DocumentShellSnapshot | null =
+    const previousShell: RuntimeDocumentShellSnapshot | null =
       currentHeader instanceof HTMLElement || currentSidebar instanceof HTMLElement
         ? {
             header: previousHeader,
@@ -61,14 +66,14 @@ export const createAppShellAdapter = (): ShellAdapter => ({
           applyHeaderSnapshot(currentHeader, nextShell);
         }
 
-        applySidebarSnapshot(nextShell, currentRouter, currentSidebarColumn, currentSidebar);
+        applyPayloadShellSnapshot(nextShell, currentRouter, currentSidebarColumn, currentSidebar);
       },
       rollback: () => {
         if (currentHeader instanceof HTMLElement) {
           applyHeaderSnapshot(currentHeader, previousShell);
         }
 
-        applySidebarSnapshot(previousShell, currentRouter, currentSidebarColumn, currentSidebar);
+        applyRuntimeSidebarSnapshotForRollback(previousShell, currentRouter, currentSidebarColumn, currentSidebar);
       },
     };
   },

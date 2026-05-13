@@ -7,6 +7,16 @@ export type BuildLabelValidationResult =
 
 const MAX_BUILD_LABEL_LENGTH = 256;
 
+export const isBuildLabelString = (value: string): boolean => {
+  const normalized = value.trim();
+  return normalized.length > 0 && normalized.length <= MAX_BUILD_LABEL_LENGTH;
+};
+
+export const normalizeBuildLabel = (value: string): string | null => {
+  const normalized = value.trim();
+  return isBuildLabelString(normalized) ? normalized : null;
+};
+
 export const validateBuildLabelInput = (value: unknown): BuildLabelValidationResult => {
   if (value === undefined || value === null) {
     return { kind: 'missing' };
@@ -24,10 +34,10 @@ export const validateBuildLabelInput = (value: unknown): BuildLabelValidationRes
   return { kind: 'valid', value: normalized };
 };
 
-export const normalizeBuildLabel = (value: unknown): string => {
+export const requireBuildLabelInput = (value: unknown, label = 'buildLabel'): string => {
   const result = validateBuildLabelInput(value);
   if (result.kind !== 'valid') {
-    throw new Error(`buildLabel is invalid: ${result.kind}`);
+    throw new Error(`${label} is invalid: ${result.kind}`);
   }
   return result.value;
 };

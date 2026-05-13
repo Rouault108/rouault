@@ -1,7 +1,4 @@
-import {
-  normalizeBuildLabel,
-  validateBuildLabelInput,
-} from '../../shared/navigation/build-label-contract.js';
+import { validateBuildLabelInput } from '../../shared/navigation/build-label-contract.js';
 
 export const DEFAULT_BUILD_LABEL = 'build local';
 
@@ -17,7 +14,7 @@ export const resolveBuildLabel = (explicit?: unknown): string | undefined => {
   if (validation.kind !== 'valid') {
     throw new Error(`buildLabel is invalid: ${validation.kind}`);
   }
-  return normalizeBuildLabel(validation.value);
+  return validation.value;
 };
 
 export const requireBuildLabel = (explicit?: unknown): string => {
@@ -28,4 +25,4 @@ export const requireBuildLabel = (explicit?: unknown): string => {
   return label;
 };
 
-export { normalizeBuildLabel };
+export { normalizeBuildLabel } from '../../shared/navigation/build-label-contract.js';

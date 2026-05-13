@@ -1,4 +1,12 @@
 import type { TocPresence } from '../note/toc-presence.js';
+import type {
+  DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
+  DEFAULT_SIDEBAR_ID,
+  DEFAULT_SIDEBAR_PRESENTATION,
+  DEFAULT_SIDEBAR_STATE_SCOPE_ID,
+} from './sidebar-shell-defaults.js';
+
+export type SidebarPresentation = 'auto' | 'fixed' | 'overlay';
 
 export interface HeaderShellProjection {
   corpora: {
@@ -16,20 +24,42 @@ export interface HeaderShellProjection {
   tocTriggerReserved?: boolean;
 }
 
-export interface SidebarShellProjection {
-  present: boolean;
+export interface PresentSidebarShellProjection {
+  present: true;
   sidebarId: string;
   stateScopeId: string;
   selectedId: string | null;
   initialExpandedIds: string[];
-  topologyRevision: string | null;
-  navHtml: string | null;
+  topologyRevision: string;
+  navHtml: string;
   heading: string | null;
   fixedBreakpoint: number;
-  presentation: 'auto' | 'fixed' | 'overlay';
+  presentation: SidebarPresentation;
 }
+
+export interface AbsentRuntimeSidebarShellProjection {
+  present: false;
+  sidebarId: typeof DEFAULT_SIDEBAR_ID;
+  stateScopeId: typeof DEFAULT_SIDEBAR_STATE_SCOPE_ID;
+  selectedId: null;
+  initialExpandedIds: [];
+  topologyRevision: null;
+  navHtml: null;
+  heading: null;
+  fixedBreakpoint: typeof DEFAULT_SIDEBAR_FIXED_BREAKPOINT;
+  presentation: typeof DEFAULT_SIDEBAR_PRESENTATION;
+}
+
+export type PayloadSidebarShellProjection = PresentSidebarShellProjection;
+
+export type RuntimeSidebarShellSnapshot =
+  | PresentSidebarShellProjection
+  | AbsentRuntimeSidebarShellProjection;
+
+/** @deprecated Use PayloadSidebarShellProjection or RuntimeSidebarShellSnapshot explicitly. */
+export type SidebarShellProjection = RuntimeSidebarShellSnapshot;
 
 export interface ShellProjectionSnapshot {
   header: HeaderShellProjection;
-  sidebar: SidebarShellProjection | null;
+  sidebar: PayloadSidebarShellProjection | null;
 }

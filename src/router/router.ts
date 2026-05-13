@@ -53,6 +53,7 @@ export type {
   ShellAdapter,
   ShellUpdatePayload,
   SidebarShellSnapshot,
+  StrictLoadedNavigationEnvelope,
   UrlStateNavigationDecision,
 } from './router-types.js';
 export type { PostCommitController, UrlStateNavigationPolicy } from './router-types.js';
@@ -287,6 +288,10 @@ export class Router {
         loadResult.envelope,
       );
 
+      const loadError = loadResult.source === 'error-fallback' ? loadResult.error : undefined;
+      const loadErrorReason =
+        loadResult.source === 'error-fallback' ? loadResult.errorReason : undefined;
+
       const finalResult: NavigationResult =
         durableCommitResult.outcome === 'failed'
           ? {
@@ -296,10 +301,10 @@ export class Router {
           : {
               ...durableCommitResult,
               source: loadResult.source,
-              error: loadResult.error,
+              error: loadError,
               errorReason:
                 loadResult.envelope.document.renderedKind === 'error'
-                  ? loadResult.errorReason
+                  ? loadErrorReason
                   : durableCommitResult.errorReason,
             };
 
@@ -313,12 +318,16 @@ export class Router {
       }
 
       const loadResult = this.loader.createExceptionResult(error);
+      const loadError = loadResult.source === 'error-fallback' ? loadResult.error : undefined;
+      const loadErrorReason =
+        loadResult.source === 'error-fallback' ? loadResult.errorReason : undefined;
+
       const durableCommitResult = await this.commitLoadedSnapshot(
         request,
         currentUrl,
         loadResult.envelope,
         error instanceof Error ? error : undefined,
-        loadResult.errorReason,
+        loadErrorReason,
       );
 
       const finalResult: NavigationResult =
@@ -330,8 +339,8 @@ export class Router {
           : {
               ...durableCommitResult,
               source: loadResult.source,
-              error: loadResult.error ?? (error instanceof Error ? error : undefined),
-              errorReason: loadResult.errorReason,
+              error: loadError ?? (error instanceof Error ? error : undefined),
+              errorReason: loadErrorReason,
             };
 
       this.eventBus.emit('error', {
