@@ -59,6 +59,7 @@ export interface SidebarNavRow {
   depth: number;
   isCurrent: boolean;
   hasCurrentDescendant: boolean;
+  showsCurrentPathIndicator: boolean;
   isInitiallyExpanded: boolean;
   children: readonly SidebarNavRow[];
 }

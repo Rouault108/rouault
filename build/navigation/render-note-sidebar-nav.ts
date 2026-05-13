@@ -14,7 +14,7 @@ const renderDisclosureIcon = (): string =>
 
 const renderRows = (rows: readonly SidebarNavRow[]): string => {
   if (rows.length === 0) {
-    return '';
+    throw new Error('[navigation] present sidebar nav must contain at least one row.');
   }
 
   return `<ul>${rows.map((row) => renderRow(row)).join('')}</ul>`;
@@ -26,6 +26,9 @@ const renderRow = (row: SidebarNavRow): string => {
     `data-node-kind="${escapeHtml(row.kind)}"`,
     `data-node-depth="${String(row.depth)}"`,
     ...(row.kind === 'branch' && row.hasCurrentDescendant ? ['data-current-branch="true"'] : []),
+    ...(row.kind === 'branch' && row.hasCurrentDescendant && row.showsCurrentPathIndicator
+      ? ['data-current-path-indicator="true"']
+      : []),
   ].join(' ');
 
   if (row.kind === 'leaf') {

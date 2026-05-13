@@ -113,27 +113,34 @@ const buildSidebarRows = (
   },
 ): SidebarNavRow[] => {
   const depth = options.depth ?? 0;
+  const hasSiblingChoice = nodes.length > 1;
 
-  return nodes.map((node) => ({
-    id: node.id,
-    label: node.label,
-    kind: node.kind,
-    ...(node.kind === 'leaf' ? { href: node.href } : {}),
-    ...(typeof node.icon === 'string' ? { icon: node.icon } : {}),
-    depth,
-    isCurrent: node.id === options.selectedId,
-    hasCurrentDescendant: node.kind === 'branch' ? options.currentAncestorIds.has(node.id) : false,
-    isInitiallyExpanded: node.kind === 'branch' ? options.initialExpandedIds.has(node.id) : false,
-    children:
-      node.kind === 'branch'
-        ? buildSidebarRows(node.children, {
-            selectedId: options.selectedId,
-            currentAncestorIds: options.currentAncestorIds,
-            initialExpandedIds: options.initialExpandedIds,
-            depth: depth + 1,
-          })
-        : [],
-  }));
+  return nodes.map((node) => {
+    const hasCurrentDescendant =
+      node.kind === 'branch' ? options.currentAncestorIds.has(node.id) : false;
+
+    return {
+      id: node.id,
+      label: node.label,
+      kind: node.kind,
+      ...(node.kind === 'leaf' ? { href: node.href } : {}),
+      ...(typeof node.icon === 'string' ? { icon: node.icon } : {}),
+      depth,
+      isCurrent: node.id === options.selectedId,
+      hasCurrentDescendant,
+      showsCurrentPathIndicator: node.kind === 'branch' && hasCurrentDescendant && hasSiblingChoice,
+      isInitiallyExpanded: node.kind === 'branch' ? options.initialExpandedIds.has(node.id) : false,
+      children:
+        node.kind === 'branch'
+          ? buildSidebarRows(node.children, {
+              selectedId: options.selectedId,
+              currentAncestorIds: options.currentAncestorIds,
+              initialExpandedIds: options.initialExpandedIds,
+              depth: depth + 1,
+            })
+          : [],
+    };
+  });
 };
 
 const toTopologySnapshot = (nodes: readonly TreeNode[]): unknown[] =>

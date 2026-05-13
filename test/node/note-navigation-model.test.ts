@@ -10,6 +10,27 @@ interface SidebarTreeNode {
   children?: SidebarTreeNode[];
 }
 
+interface SidebarRowNode {
+  id: string;
+  children: readonly SidebarRowNode[];
+  showsCurrentPathIndicator?: boolean;
+  hasCurrentDescendant?: boolean;
+  isCurrent?: boolean;
+}
+
+const findRow = (nodes: readonly SidebarRowNode[], id: string): SidebarRowNode | null => {
+  for (const node of nodes) {
+    if (node.id === id) {
+      return node;
+    }
+    const found = findRow(node.children, id);
+    if (found !== null) {
+      return found;
+    }
+  }
+  return null;
+};
+
 const findNode = (nodes: SidebarTreeNode[], id: string): SidebarTreeNode | null => {
   for (const node of nodes) {
     if (node.id === id) {
@@ -340,5 +361,103 @@ describe('buildNoteNavigationModel', () => {
 
     expect(findNode(model.sidebarTree as SidebarTreeNode[], 'testing')).to.equal(null);
     expect(findNode(model.sidebarTree as SidebarTreeNode[], 'testing/reader-basic')).to.equal(null);
+  });
+
+  it('一本道 ancestor では current branch semantic state と path indicator を分離すること', () => {
+    const model = buildNoteNavigationModel({
+      currentNote: {
+        slug: 'program/csharp/value-types',
+        title: '値型',
+        permalink: '/notes/program/csharp/value-types',
+        noteKind: 'leaf',
+      },
+      notes: [
+        {
+          slug: 'program/csharp/value-types',
+          title: '値型',
+          permalink: '/notes/program/csharp/value-types',
+          noteKind: 'leaf',
+        },
+      ],
+    });
+
+    const program = findRow(model.sidebarRows as readonly SidebarRowNode[], 'program');
+    const csharp = findRow(model.sidebarRows as readonly SidebarRowNode[], 'program/csharp');
+    const leaf = findRow(
+      model.sidebarRows as readonly SidebarRowNode[],
+      'program/csharp/value-types',
+    );
+
+    expect(program?.hasCurrentDescendant).to.equal(true);
+    expect(program?.showsCurrentPathIndicator).to.equal(false);
+    expect(csharp?.hasCurrentDescendant).to.equal(true);
+    expect(csharp?.showsCurrentPathIndicator).to.equal(false);
+    expect(leaf?.isCurrent).to.equal(true);
+    expect(leaf?.showsCurrentPathIndicator).to.equal(false);
+  });
+
+  it('sibling group がある current ancestor だけ path indicator を表示対象にすること', () => {
+    const model = buildNoteNavigationModel({
+      currentNote: {
+        slug: 'program/csharp/value-types',
+        title: '値型',
+        permalink: '/notes/program/csharp/value-types',
+        noteKind: 'leaf',
+      },
+      notes: [
+        {
+          slug: 'program/csharp/value-types',
+          title: '値型',
+          permalink: '/notes/program/csharp/value-types',
+          noteKind: 'leaf',
+        },
+        {
+          slug: 'program/javascript/index',
+          title: 'JavaScript',
+          permalink: '/notes/program/javascript/index',
+          noteKind: 'leaf',
+        },
+        {
+          slug: 'library/index',
+          title: 'Library',
+          permalink: '/notes/library/index',
+          noteKind: 'leaf',
+        },
+      ],
+    });
+
+    expect(
+      findRow(model.sidebarRows as readonly SidebarRowNode[], 'program')?.showsCurrentPathIndicator,
+    ).to.equal(true);
+    expect(
+      findRow(model.sidebarRows as readonly SidebarRowNode[], 'program/csharp')
+        ?.showsCurrentPathIndicator,
+    ).to.equal(false);
+    expect(
+      findRow(model.sidebarRows as readonly SidebarRowNode[], 'program/javascript')
+        ?.showsCurrentPathIndicator,
+    ).to.equal(false);
+  });
+
+  it('selectedId と current state だけが異なっても topologyRevision は変化しないこと', () => {
+    const notes = [
+      {
+        slug: 'program/csharp/value-types',
+        title: '値型',
+        permalink: '/notes/program/csharp/value-types',
+        noteKind: 'leaf' as const,
+      },
+      {
+        slug: 'program/csharp/source-code-to-execution',
+        title: '実行過程',
+        permalink: '/notes/program/csharp/source-code-to-execution',
+        noteKind: 'leaf' as const,
+      },
+    ];
+
+    const first = buildNoteNavigationModel({ currentNote: notes[0], notes });
+    const second = buildNoteNavigationModel({ currentNote: notes[1], notes });
+
+    expect(first.topologyRevision).to.equal(second.topologyRevision);
   });
 });

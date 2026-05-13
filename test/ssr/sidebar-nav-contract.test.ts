@@ -11,7 +11,9 @@ import {
   hasDeclarationForSelectorContaining,
   hasNoDeclarationValueIncludingForSelectorContaining,
   hasOnlyAllowedDeclarationValuesForSelectorContaining,
+  hasDeclarationValueNotIncludingForSelectorContaining,
   lacksDeclarationPropertyForSelectorContaining,
+  listDeclarationsForSelectorContaining,
 } from './support/css-contract.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -23,6 +25,56 @@ const hoverMedia = (params: string): boolean => /hover\s*:\s*hover/u.test(params
 const currentPage = "[data-sidebar-nav-link][aria-current='page']";
 const currentBranch =
   "li[data-current-branch='true'] > [data-sidebar-nav-control]:not([aria-current='page'])";
+const currentPathIndicator = [
+  "li[data-current-path-indicator='true']",
+  '> button[data-sidebar-nav-control][data-sidebar-nav-branch-control]',
+].join(' ');
+
+const expectOnlyDeclarationPropertiesForSelector = (
+  selectorFragment: string,
+  selectorKind: 'element' | 'pseudo-before' | 'pseudo-after',
+  allowedProperties: readonly string[],
+): void => {
+  const allowed = new Set(allowedProperties);
+  const unexpected = listDeclarationsForSelectorContaining(mainCss, selectorFragment, {
+    scope: 'screen',
+    selectorKind,
+  }).filter((declaration) => !allowed.has(declaration.property));
+
+  expect(unexpected).toEqual([]);
+};
+
+const expectNoDeclarationPropertiesForSelector = (
+  selectorFragment: string,
+  selectorKind: 'element' | 'pseudo-before' | 'pseudo-after',
+  forbiddenProperties: readonly string[],
+): void => {
+  const violations = forbiddenProperties.filter((property) =>
+    !lacksDeclarationPropertyForSelectorContaining(mainCss, selectorFragment, property, {
+      scope: 'screen',
+      selectorKind,
+    }),
+  );
+
+  expect(violations).toEqual([]);
+};
+
+const expectNoTransitionAllForSidebarNav = (): void => {
+  const violations = listDeclarationsForSelectorContaining(mainCss, '[data-sidebar-nav]', {
+    scope: 'screen',
+    selectorKind: 'any',
+  }).filter(
+    (declaration) =>
+      declaration.property === 'transition-property' &&
+      declaration.value
+        .split(/\s*,\s*/u)
+        .map((value) => value.trim().toLowerCase())
+        .includes('all'),
+  );
+
+  expect(violations).toEqual([]);
+};
+
 const forbiddenFragments = [
   '--accent-soft',
   '--fg-strong',
@@ -40,6 +92,7 @@ describe('sidebar nav explicit contract', () => {
         depth: 0,
         isCurrent: false,
         hasCurrentDescendant: true,
+        showsCurrentPathIndicator: true,
         isInitiallyExpanded: true,
         children: [
           {
@@ -50,6 +103,7 @@ describe('sidebar nav explicit contract', () => {
             depth: 1,
             isCurrent: true,
             hasCurrentDescendant: false,
+            showsCurrentPathIndicator: false,
             isInitiallyExpanded: false,
             children: [],
           },
@@ -67,6 +121,7 @@ describe('sidebar nav explicit contract', () => {
     expect(markup).toContain('data-sidebar-nav-label');
     expect(markup).toContain('aria-current="page"');
     expect(markup).toContain('data-current-branch="true"');
+    expect(markup).toContain('data-current-path-indicator="true"');
     expect(markup).toContain('stroke="currentColor"');
     expect(markup).toContain('focusable="false"');
     expect(markup).toContain('aria-hidden="true"');
@@ -80,6 +135,7 @@ describe('sidebar nav explicit contract', () => {
       '[data-sidebar-nav] [data-sidebar-nav-branch-control]',
       '[data-sidebar-nav] [data-sidebar-nav-link][aria-current=',
       "li[data-current-branch='true']",
+      "li[data-current-path-indicator='true']",
       '[data-sidebar-nav] [data-sidebar-nav-control]:focus-visible',
     ]);
 
@@ -128,7 +184,7 @@ describe('sidebar nav explicit contract', () => {
     expect(
       hasAllDeclarationValuesIncludingForSelectorContaining(
         mainCss,
-        `${currentBranch}::after`,
+        `${currentPathIndicator}::after`,
         'background',
         '--sidebar-item-current-branch-indicator-color',
         { scope: 'base', selectorKind: 'pseudo-after' },
@@ -209,6 +265,72 @@ describe('sidebar nav explicit contract', () => {
         selectorKind: 'pseudo-before',
       }),
     ).toBe(true);
+    expect(
+      lacksDeclarationPropertyForSelectorContaining(mainCss, `${currentBranch}::after`, 'content', {
+        scope: 'base',
+        selectorKind: 'pseudo-after',
+      }),
+    ).toBe(true);
+  });
+
+
+  it('current path selector は paint / geometry / transition 契約を allowlist で固定すること', () => {
+    const forbiddenProperties = [
+      '--sidebar-item-active-bg',
+      '--sidebar-item-current-branch-indicator-color',
+      'background',
+      'background-color',
+      'background-image',
+      'border',
+      'border-block',
+      'border-inline',
+      'box-shadow',
+      'content',
+      'height',
+      'inset',
+      'inset-block',
+      'inset-inline',
+      'outline',
+      'position',
+      'transition',
+      'width',
+    ] as const;
+
+    expectOnlyDeclarationPropertiesForSelector(currentBranch, 'element', ['font-weight']);
+    expectNoDeclarationPropertiesForSelector(currentBranch, 'element', forbiddenProperties);
+    expectOnlyDeclarationPropertiesForSelector(`${currentBranch}::before`, 'pseudo-before', []);
+    expectOnlyDeclarationPropertiesForSelector(`${currentBranch}::after`, 'pseudo-after', []);
+
+    expectOnlyDeclarationPropertiesForSelector(currentPathIndicator, 'element', ['position']);
+    expectOnlyDeclarationPropertiesForSelector(`${currentPathIndicator}::after`, 'pseudo-after', [
+      'background',
+      'block-size',
+      'border-radius',
+      'content',
+      'inline-size',
+      'inset-block',
+      'inset-inline-start',
+      'pointer-events',
+      'position',
+      'z-index',
+    ]);
+
+    expect(
+      lacksDeclarationPropertyForSelectorContaining(mainCss, '[data-sidebar-nav]', 'transition', {
+        scope: 'screen',
+        selectorKind: 'any',
+      }),
+    ).toBe(true);
+    expectNoTransitionAllForSidebarNav();
+    expect(
+      hasDeclarationValueNotIncludingForSelectorContaining(
+        mainCss,
+        '[data-sidebar-nav]',
+        'transition-property',
+        'all',
+        { scope: 'screen', selectorKind: 'any' },
+      ),
+    ).toBe(true);
   });
 
   it('hover / forced-colors / reduced-motion の scope を分離していること', () => {
@@ -234,7 +356,7 @@ describe('sidebar nav explicit contract', () => {
       hasDeclarationForSelectorContaining(
         mainCss,
         '[data-sidebar-nav-control]',
-        'transition',
+        'transition-property',
         'none',
         { scope: 'reduced-motion', selectorKind: 'element' },
       ),

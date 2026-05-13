@@ -232,6 +232,7 @@ describe('buildNotePageProjection', () => {
     expect(projection.sidebar?.navHtml).toContain('data-node-id="music"');
     expect(projection.sidebar?.navHtml).toContain('data-node-id="music/classical"');
     expect(projection.sidebar?.navHtml).toContain('data-current-branch="true"');
+    expect(projection.sidebar?.navHtml).toContain('data-current-path-indicator="true"');
     expect(projection.sidebar?.navHtml).toContain('&quot;icon&quot;:&quot;book-open&quot;');
     expect(projection.sidebar?.navHtml).toContain('&quot;icon&quot;:&quot;folder-open&quot;');
     expect(projection.sidebar?.navHtml).toContain('&quot;icon&quot;:&quot;music&quot;');

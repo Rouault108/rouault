@@ -198,6 +198,30 @@ export const readCssFile = (filePath: string): { cssText: string } => ({
   cssText: readFileSync(filePath, 'utf8'),
 });
 
+
+export interface CssDeclarationSummary {
+  readonly selector: string;
+  readonly property: string;
+  readonly value: string;
+}
+
+export const listDeclarationsForSelectorContaining = (
+  cssText: string,
+  selectorFragment: string,
+  options: CssDeclarationSearchOptions = {},
+): CssDeclarationSummary[] =>
+  matchingRules(cssText, selectorFragment, options, 'fragment').flatMap((rule) => {
+    const declarations: CssDeclarationSummary[] = [];
+    rule.walkDecls((declaration) => {
+      declarations.push({
+        selector: rule.selector,
+        property: declaration.prop,
+        value: normalizeCssDeclarationValue(declaration.value),
+      });
+    });
+    return declarations;
+  });
+
 export const hasRuleForSelector = (
   cssText: string,
   selector: string,

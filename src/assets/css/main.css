@@ -2007,8 +2007,9 @@ layout-sidebar-surface .heading {
   text-decoration: none;
   cursor: pointer;
 
-  transition: color var(--nav-item-transition-duration, var(--duration-fast, 70ms))
-    var(--nav-item-transition-easing, var(--ease-out));
+  transition-property: color;
+  transition-duration: var(--nav-item-transition-duration, var(--duration-fast, 70ms));
+  transition-timing-function: var(--nav-item-transition-easing, var(--ease-out));
 }
 
 :is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-link] {
@@ -2053,7 +2054,9 @@ layout-sidebar-surface .heading {
   color: currentColor;
   transform: rotate(0deg);
   transform-origin: center;
-  transition: transform var(--duration-slow, 200ms) var(--ease-out);
+  transition-property: transform;
+  transition-duration: var(--duration-slow, 200ms);
+  transition-timing-function: var(--ease-out);
 }
 
 :is(layout-sidebar, layout-sidebar-surface)
@@ -2082,8 +2085,9 @@ layout-sidebar-surface .heading {
 
   pointer-events: none;
 
-  transition: background-color var(--nav-item-transition-duration, var(--duration-fast, 70ms))
-    var(--nav-item-transition-easing, var(--ease-out));
+  transition-property: background-color;
+  transition-duration: var(--nav-item-transition-duration, var(--duration-fast, 70ms));
+  transition-timing-function: var(--nav-item-transition-easing, var(--ease-out));
 }
 
 :is(layout-sidebar, layout-sidebar-surface)
@@ -2152,7 +2156,6 @@ layout-sidebar-surface .heading {
   [data-sidebar-nav]
   li[data-current-branch='true']
   > [data-sidebar-nav-control]:not([aria-current='page']) {
-  position: relative;
   font-weight: var(
     --sidebar-item-font-weight-current-branch,
     var(--sidebar-item-font-weight, var(--font-normal, 400))
@@ -2161,8 +2164,15 @@ layout-sidebar-surface .heading {
 
 :is(layout-sidebar, layout-sidebar-surface)
   [data-sidebar-nav]
-  li[data-current-branch='true']
-  > [data-sidebar-nav-control]:not([aria-current='page'])::after {
+  li[data-current-path-indicator='true']
+  > button[data-sidebar-nav-control][data-sidebar-nav-branch-control] {
+  position: relative;
+}
+
+:is(layout-sidebar, layout-sidebar-surface)
+  [data-sidebar-nav]
+  li[data-current-path-indicator='true']
+  > button[data-sidebar-nav-control][data-sidebar-nav-branch-control]::after {
   content: '';
   position: absolute;
   z-index: 1;
@@ -2191,7 +2201,9 @@ layout-sidebar-surface .heading {
   :is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-control]::before,
   :is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-control]::after,
   :is(layout-sidebar, layout-sidebar-surface) [data-sidebar-nav] [data-sidebar-nav-disclosure] {
-    transition: none;
+    transition-property: none;
+    transition-duration: 0ms;
+    transition-timing-function: ease;
   }
 
   :is(layout-sidebar, layout-sidebar-surface)
@@ -2225,8 +2237,8 @@ layout-sidebar-surface .heading {
 
   :is(layout-sidebar, layout-sidebar-surface)
     [data-sidebar-nav]
-    li[data-current-branch='true']
-    > [data-sidebar-nav-control]:not([aria-current='page'])::after {
+    li[data-current-path-indicator='true']
+    > button[data-sidebar-nav-control][data-sidebar-nav-branch-control]::after {
     background: CanvasText;
     forced-color-adjust: none;
   }
