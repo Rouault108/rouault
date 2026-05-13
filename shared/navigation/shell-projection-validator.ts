@@ -234,6 +234,10 @@ export const validateNavigationEnvelopeShellProjection = (
     fail('header.sidebarEnabled=false requires shellProjection.sidebar=null.', 'invalid-shell');
   }
 
+  if (!header.sidebarEnabled && header.sidebarId !== DEFAULT_SIDEBAR_ID) {
+    fail('header.sidebarId must be the default sidebar id when sidebar is disabled.', 'sidebar-id-invalid');
+  }
+
   if (sidebar !== null && header.sidebarId !== sidebar.sidebarId) {
     fail('header.sidebarId must match sidebar.sidebarId.', 'sidebar-id-invalid');
   }

@@ -119,4 +119,21 @@ describe('shell projection validator', () => {
     ).toThrow(ShellProjectionValidationError);
   });
 
+
+  it('sidebar disabled header は DEFAULT_SIDEBAR_ID だけを受け入れること', () => {
+    expect(
+      validateNavigationEnvelopeShellProjection({
+        header: { ...header, sidebarEnabled: false, sidebarId: 'note-primary' },
+        sidebar: null,
+      })?.header.sidebarId,
+    ).toBe('note-primary');
+
+    expect(() =>
+      validateNavigationEnvelopeShellProjection({
+        header: { ...header, sidebarEnabled: false, sidebarId: 'note-secondary' },
+        sidebar: null,
+      }),
+    ).toThrow(/default sidebar id/u);
+  });
+
 });

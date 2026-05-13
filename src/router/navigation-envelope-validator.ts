@@ -162,14 +162,34 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
   };
 };
 
+const requireLoadedEnvelopeBuildId = (value: unknown): string => {
+  try {
+    return requireBuildIdInput(value, 'navigation envelope buildId');
+  } catch (error) {
+    throw createInvalidEnvelopeError(
+      error instanceof Error ? error.message : 'navigation envelope buildId is invalid.',
+    );
+  }
+};
+
+const requireLoadedEnvelopeGeneratedAt = (value: unknown): string => {
+  try {
+    return requireGeneratedAtInput(value, 'navigation envelope generatedAt');
+  } catch (error) {
+    throw createInvalidEnvelopeError(
+      error instanceof Error ? error.message : 'navigation envelope generatedAt is invalid.',
+    );
+  }
+};
+
 export const validateLoadedEnvelope = ({
   envelope,
   currentBuildId,
   currentGeneratedAt,
   normalizedUrl,
 }: ValidateLoadedEnvelopeInput): StrictLoadedNavigationEnvelope => {
-  const envelopeBuildId = requireBuildIdInput(envelope.buildId, 'navigation envelope buildId');
-  const envelopeGeneratedAt = requireGeneratedAtInput(envelope.generatedAt, 'navigation envelope generatedAt');
+  const envelopeBuildId = requireLoadedEnvelopeBuildId(envelope.buildId);
+  const envelopeGeneratedAt = requireLoadedEnvelopeGeneratedAt(envelope.generatedAt);
 
   if (envelopeBuildId !== currentBuildId) {
     throw new NavigationEnvelopeMetadataMismatchError(
