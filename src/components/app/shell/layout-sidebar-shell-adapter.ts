@@ -141,13 +141,14 @@ const applyRuntimeSidebarSnapshot = (
   }
 
   currentSidebarColumn.hidden = !isPresent;
-  currentSidebar.hidden = !isPresent;
 
   const projectionSidebar = currentSidebar as SidebarProjectionHost;
   if (typeof projectionSidebar.applyShellProjection === 'function') {
     projectionSidebar.applyShellProjection(validated);
     return;
   }
+
+  currentSidebar.hidden = !isPresent;
 
   if (!isPresent) {
     const previousSidebarId = readCurrentSidebarIdForFallback(currentSidebar);

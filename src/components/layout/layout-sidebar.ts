@@ -125,6 +125,11 @@ export class LayoutSidebar extends LitElement {
       return;
     }
 
+    const previousSidebarId = this._resolveSidebarId();
+    const previousStateScopeId = this._resolveStateScopeId();
+    const previousTopologyRevision = this.topologyRevision;
+    const previousProjectionPresent = this._hasPresentProjectionRuntimeState();
+
     // server nav subtree を唯一正本として差し替え、開閉状態の継続だけを localStorage へ委ねる。
     this.stateScopeId = snapshot.stateScopeId;
     this.selectedId = snapshot.selectedId;
@@ -158,6 +163,15 @@ export class LayoutSidebar extends LitElement {
     this._navMarkup = snapshot.navHtml.trim();
     this._activeId = null;
 
+    const sidebarIdentityChanged =
+      previousSidebarId !== this._resolveSidebarId() ||
+      previousStateScopeId !== this._resolveStateScopeId();
+    const topologyChanged = previousTopologyRevision !== this.topologyRevision;
+
+    if (!previousProjectionPresent || sidebarIdentityChanged || topologyChanged) {
+      this._restoreExpandedIds();
+    }
+
     this._syncSurfaceMount();
     this._syncSurfaceProps();
     void this._syncSurfaceTree();
@@ -188,6 +202,9 @@ export class LayoutSidebar extends LitElement {
     this.presentation = DEFAULT_SIDEBAR_PRESENTATION;
     this._navMarkup = '';
     this._activeId = null;
+    this._setExpandedIds([]);
+    this._hasStoredExpandedState = false;
+    this._navInteraction.disconnect();
 
     // absent projection は stale な SSR/projection light DOM も投影状態として破棄する。
     this.innerHTML = '';
@@ -229,7 +246,9 @@ export class LayoutSidebar extends LitElement {
     super.connectedCallback();
 
     this._storage = this._resolveStorage();
-    this._restoreExpandedIds();
+    if (this._hasPresentProjectionRuntimeState()) {
+      this._restoreExpandedIds();
+    }
     this._initializePresentationStore();
     this._connectPresentationStore();
     this._reflectModeAttribute();
@@ -251,13 +270,20 @@ export class LayoutSidebar extends LitElement {
   }
 
   protected override willUpdate(changedProperties: Map<string, unknown>): void {
-    if (
+    const shouldRestoreForIdentity =
       !this.hasUpdated ||
       changedProperties.has('sidebarId') ||
-      changedProperties.has('stateScopeId')
-    ) {
-      this._restoreExpandedIds();
+      changedProperties.has('stateScopeId');
+
+    if (!shouldRestoreForIdentity) {
+      return;
     }
+
+    if (!this._hasPresentProjectionRuntimeState()) {
+      return;
+    }
+
+    this._restoreExpandedIds();
   }
 
   protected override updated(changedProperties: Map<string, unknown>): void {
@@ -319,6 +345,15 @@ export class LayoutSidebar extends LitElement {
   private _resolveSidebarId(): string {
     const normalized = this.sidebarId.trim();
     return normalized.length > 0 ? normalized : DEFAULT_SIDEBAR_ID;
+  }
+
+  private _hasPresentProjectionRuntimeState(): boolean {
+    return (
+      !this.hidden &&
+      typeof this.topologyRevision === 'string' &&
+      this.topologyRevision.trim().length > 0 &&
+      this._navMarkup.trim().length > 0
+    );
   }
 
   private _connectPresentationStore(): void {
