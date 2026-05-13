@@ -89,11 +89,11 @@ describe('navigation artifact build metadata contract', () => {
 
 
   it('strict-artifact mode では injected buildId / generatedAt の欠落・不正値を拒否すること', () => {
-    const cases: Array<{
+    const cases: {
       buildId: unknown;
       generatedAt: unknown;
       message: RegExp;
-    }> = [
+    }[] = [
       { buildId: undefined, generatedAt: '2026-04-11T00:00:00.000Z', message: /buildId/u },
       { buildId: '', generatedAt: '2026-04-11T00:00:00.000Z', message: /buildId/u },
       { buildId: 'build current', generatedAt: '2026-04-11T00:00:00.000Z', message: /buildId/u },

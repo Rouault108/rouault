@@ -355,19 +355,19 @@ const inferRenderedKind = (
   return notFoundPage === null ? 'page' : 'not-found';
 };
 
-type NavigationEnvelopeStrictArtifactMode = {
+interface NavigationEnvelopeStrictArtifactMode {
   readonly mode: 'strict-artifact';
   readonly buildId: string;
   readonly generatedAt: string;
-};
+}
 
 type NavigationEnvelopeLegacyFixtureModeName = 'legacy-fixture';
 
-type NavigationEnvelopeLegacyFixtureMode = {
+interface NavigationEnvelopeLegacyFixtureMode {
   readonly mode: NavigationEnvelopeLegacyFixtureModeName;
   readonly buildId?: string | null | undefined;
   readonly generatedAt?: string | null | undefined;
-};
+}
 
 export type NavigationEnvelopeHtmlMetadataMode =
   | NavigationEnvelopeStrictArtifactMode

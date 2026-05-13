@@ -91,7 +91,7 @@ describe('shell projection validator', () => {
   });
 
   it('runtime absent canonical object の各 stale field を reject すること', () => {
-    const staleCases: Array<[string, Record<string, unknown>]> = [
+    const staleCases: [string, Record<string, unknown>][] = [
       ['stateScopeId', { stateScopeId: 'stale-scope' }],
       ['selectedId', { selectedId: 'notes/a' }],
       ['initialExpandedIds', { initialExpandedIds: ['a'] }],

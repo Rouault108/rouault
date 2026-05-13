@@ -130,7 +130,7 @@ const applyRuntimeSidebarSnapshot = (
 ): void => {
   const runtimeSnapshot = snapshot ?? createCanonicalAbsentRuntimeSidebarProjection();
   const validated = validateRuntimeSidebarProjection(runtimeSnapshot);
-  const isPresent = validated.present === true;
+  const isPresent = validated.present;
 
   if (currentRouter instanceof HTMLElement) {
     currentRouter.setAttribute('data-sidebar-presence', isPresent ? 'present' : 'absent');

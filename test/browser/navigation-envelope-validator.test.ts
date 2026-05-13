@@ -69,7 +69,7 @@ describe('navigation envelope validator browser contract', () => {
   });
 
   it('missing / null / empty / invalid-type build metadata は mismatch ではなく contract error にすること', () => {
-    const invalidCases: Array<{ buildId?: unknown; generatedAt?: unknown }> = [
+    const invalidCases: { buildId?: unknown; generatedAt?: unknown }[] = [
       { buildId: undefined },
       { buildId: null },
       { buildId: '' },

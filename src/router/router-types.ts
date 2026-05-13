@@ -75,10 +75,10 @@ export type StrictLoadedNavigationEnvelope = NavigationEnvelope & {
   generatedAt: string;
 };
 export type RuntimeSidebarShellSnapshot = SharedRuntimeSidebarShellSnapshot;
-export type RuntimeDocumentShellSnapshot = {
+export interface RuntimeDocumentShellSnapshot {
   header: HeaderShellProjection;
   sidebar: RuntimeSidebarShellSnapshot | null;
-};
+}
 
 /** @deprecated Payload shell snapshot. Use PayloadDocumentShellSnapshot. */
 export type DocumentShellSnapshot = PayloadDocumentShellSnapshot;

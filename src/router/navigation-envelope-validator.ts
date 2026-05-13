@@ -163,9 +163,9 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
     schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
     buildId: readOptionalMetadataString(value['buildId'], 'buildId'),
     generatedAt: readOptionalMetadataString(value['generatedAt'], 'generatedAt'),
-    document: value['document'] as DocumentRenderSnapshot,
+    document: value['document'],
     shellProjection,
-    hydrationPlan: (hydrationPlan ?? null) as HydrationPlan | null,
+    hydrationPlan: (hydrationPlan ?? null),
   };
 };
 

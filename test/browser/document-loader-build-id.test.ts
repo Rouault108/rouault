@@ -126,13 +126,13 @@ describe('DocumentLoader build metadata strict contract', () => {
   });
 
   it('current metadata reader は missing / empty / invalid-format を buildId と generatedAt で区別すること', async () => {
-    const cases: Array<{
+    const cases: {
       field: 'buildId' | 'generatedAt';
       buildId: string | null;
       generatedAt: string | null;
       reason: string;
       value?: string;
-    }> = [
+    }[] = [
       { field: 'buildId', buildId: null, generatedAt: CURRENT_GENERATED_AT, reason: 'missing' },
       { field: 'buildId', buildId: '   ', generatedAt: CURRENT_GENERATED_AT, reason: 'empty' },
       {
@@ -205,7 +205,7 @@ describe('DocumentLoader build metadata strict contract', () => {
   });
 
   it('document-route の empty / invalid-format metadata は補完せず contract error にすること', async () => {
-    const cases: Array<Parameters<typeof createEnvelopeObject>[0]> = [
+    const cases: Parameters<typeof createEnvelopeObject>[0][] = [
       { buildId: '' },
       { buildId: 'build current' },
       { generatedAt: '' },
@@ -226,7 +226,7 @@ describe('DocumentLoader build metadata strict contract', () => {
   });
 
   it('fetch artifact の missing / null / empty metadata は補完せず contract error にすること', async () => {
-    const cases: Array<Parameters<typeof createEnvelopeObject>[0]> = [
+    const cases: Parameters<typeof createEnvelopeObject>[0][] = [
       { omitBuildId: true },
       { buildId: null },
       { buildId: '' },
