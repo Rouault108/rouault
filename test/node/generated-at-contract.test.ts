@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { GeneratedAtValidationResult } from '../../shared/navigation/generated-at-contract.js';
 import {
   isGeneratedAtString,
   normalizeGeneratedAt,
@@ -8,6 +9,12 @@ import {
 } from '../../shared/navigation/generated-at-contract.js';
 
 describe('generatedAt contract', () => {
+  it('GeneratedAtValidationResult は公開 validation result 型として使えること', () => {
+    const result: GeneratedAtValidationResult = validateOptionalGeneratedAtInput('2026-04-11T00:00:00.000Z');
+
+    expect(result).toEqual({ kind: 'valid', value: '2026-04-11T00:00:00.000Z' });
+  });
+
   afterEach(() => {
     vi.unstubAllEnvs();
   });

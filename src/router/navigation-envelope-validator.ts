@@ -192,21 +192,21 @@ export const validateLoadedEnvelope = ({
   const envelopeGeneratedAt = requireLoadedEnvelopeGeneratedAt(envelope.generatedAt);
 
   if (envelopeBuildId !== currentBuildId) {
-    throw new NavigationEnvelopeMetadataMismatchError(
-      'buildId',
-      currentBuildId,
-      envelopeBuildId,
+    throw new NavigationEnvelopeMetadataMismatchError({
+      kind: 'buildId',
+      currentValue: currentBuildId,
+      envelopeValue: envelopeBuildId,
       normalizedUrl,
-    );
+    });
   }
 
   if (envelopeGeneratedAt !== currentGeneratedAt) {
-    throw new NavigationEnvelopeMetadataMismatchError(
-      'generatedAt',
-      currentGeneratedAt,
-      envelopeGeneratedAt,
+    throw new NavigationEnvelopeMetadataMismatchError({
+      kind: 'generatedAt',
+      currentValue: currentGeneratedAt,
+      envelopeValue: envelopeGeneratedAt,
       normalizedUrl,
-    );
+    });
   }
 
   return {

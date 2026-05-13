@@ -2,14 +2,13 @@ import { expect, fixture, html } from '@open-wc/testing';
 
 import {
   SidebarIdentityDocumentContractError,
-  assertUniqueDocumentSidebarIds,
+  validateSidebarIdentityInstances,
 } from '../../shared/navigation/sidebar-identity-document-contract.js';
 
-const readLayoutSidebarRecords = (root: ParentNode) =>
+const readLayoutSidebarInstances = (root: ParentNode) =>
   [...root.querySelectorAll<HTMLElement>('layout-sidebar')].map((sidebar, index) => ({
     sidebarId: sidebar.getAttribute('sidebar-id'),
-    stateScopeId: sidebar.getAttribute('state-scope-id'),
-    hidden: sidebar.hasAttribute('hidden'),
+    present: !sidebar.hasAttribute('hidden'),
     sourceLabel: `fixture:${String(index)}`,
   }));
 
@@ -22,9 +21,9 @@ describe('sidebar identity document contract', () => {
       </div>
     `);
 
-    expect(() => assertUniqueDocumentSidebarIds(readLayoutSidebarRecords(wrapper), 'browser-test')).to.throw(
-      SidebarIdentityDocumentContractError,
-    );
+    expect(() =>
+      validateSidebarIdentityInstances(readLayoutSidebarInstances(wrapper), { sourceLabel: 'browser-test' }),
+    ).to.throw(SidebarIdentityDocumentContractError);
   });
 
   it('hidden な absent placeholder は document-wide sidebar-id 重複として数えないこと', async () => {
@@ -35,6 +34,8 @@ describe('sidebar identity document contract', () => {
       </div>
     `);
 
-    expect(() => assertUniqueDocumentSidebarIds(readLayoutSidebarRecords(wrapper), 'browser-test')).not.to.throw();
+    expect(() =>
+      validateSidebarIdentityInstances(readLayoutSidebarInstances(wrapper), { sourceLabel: 'browser-test' }),
+    ).not.to.throw();
   });
 });

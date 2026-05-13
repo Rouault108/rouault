@@ -7,6 +7,8 @@ export type OptionalGeneratedAtValidationResult =
   | { kind: 'non-canonical'; value: string }
   | { kind: 'valid'; value: string };
 
+export type GeneratedAtValidationResult = OptionalGeneratedAtValidationResult;
+
 const GENERATED_AT_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u;
 
 export const isGeneratedAtString = (value: string): boolean => normalizeGeneratedAt(value) !== null;

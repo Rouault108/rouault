@@ -6,6 +6,12 @@ const expectNoBuildGeneratedAtOnceCall = (filePath: string): void => {
   expect(source, filePath).not.toContain('createBuildGeneratedAtOnce');
 };
 
+const expectNoGeneratedAtFactoryAlias = (filePath: string): void => {
+  const source = readFileSync(filePath, 'utf8');
+  expect(source, filePath).not.toContain('resolveProductionBuildMetadata');
+  expect(source, filePath).not.toContain('resolveBuildMetadata');
+};
+
 describe('generatedAt call-site boundary', () => {
   it('request / artifact path では createBuildGeneratedAtOnce を呼ばないこと', () => {
     for (const filePath of [
@@ -15,6 +21,7 @@ describe('generatedAt call-site boundary', () => {
       'src/router/navigation-envelope-validator.ts',
     ]) {
       expectNoBuildGeneratedAtOnceCall(filePath);
+      expectNoGeneratedAtFactoryAlias(filePath);
     }
   });
 

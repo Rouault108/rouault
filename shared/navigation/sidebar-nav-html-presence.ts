@@ -1,14 +1,21 @@
-export type SidebarNavHtmlPresenceReason = 'missing' | 'invalid-type' | 'empty';
+export type SidebarNavHtmlPresenceErrorReason = 'missing' | 'empty' | 'invalid-type';
+export type SidebarNavHtmlPresenceReason = SidebarNavHtmlPresenceErrorReason;
 
 export class SidebarNavHtmlPresenceError extends Error {
   override name = 'SidebarNavHtmlPresenceError' as const;
+  readonly sourceLabel: string;
+  readonly reason: SidebarNavHtmlPresenceErrorReason;
 
-  constructor(
-    message: string,
-    readonly reason: SidebarNavHtmlPresenceReason,
-    readonly sourceLabel: string,
-  ) {
-    super(message);
+  constructor({
+    sourceLabel,
+    reason,
+  }: {
+    sourceLabel: string;
+    reason: SidebarNavHtmlPresenceErrorReason;
+  }) {
+    super(`[${sourceLabel}] present sidebar projection navHtml is invalid: ${reason}`);
+    this.sourceLabel = sourceLabel;
+    this.reason = reason;
   }
 }
 
@@ -20,10 +27,9 @@ export interface RuntimeSidebarNavHtmlPresenceInput {
 
 const fail = (
   sourceLabel: string,
-  reason: SidebarNavHtmlPresenceReason,
-  message: string,
+  reason: SidebarNavHtmlPresenceErrorReason,
 ): never => {
-  throw new SidebarNavHtmlPresenceError(`[${sourceLabel}] ${message}`, reason, sourceLabel);
+  throw new SidebarNavHtmlPresenceError({ sourceLabel, reason });
 };
 
 export const assertRuntimeSidebarNavHtmlPresence = ({
@@ -36,13 +42,13 @@ export const assertRuntimeSidebarNavHtmlPresence = ({
   }
 
   if (navHtml === undefined || navHtml === null) {
-    fail(sourceLabel, 'missing', 'present sidebar projection navHtml is missing.');
+    fail(sourceLabel, 'missing');
   }
   if (typeof navHtml !== 'string') {
-    fail(sourceLabel, 'invalid-type', 'present sidebar projection navHtml must be a string.');
+    fail(sourceLabel, 'invalid-type');
   }
 
   if (navHtml.trim().length === 0) {
-    fail(sourceLabel, 'empty', 'present sidebar projection must contain non-empty navHtml.');
+    fail(sourceLabel, 'empty');
   }
 };

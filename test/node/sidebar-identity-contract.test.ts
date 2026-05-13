@@ -30,13 +30,20 @@ describe('sidebar identity contract', () => {
     expect(validateSidebarIdInput('   ')).toEqual({ kind: 'empty' });
     expect(validateSidebarIdInput(123)).toEqual({ kind: 'invalid-type', value: 123 });
     expect(validateSidebarIdInput(tooLong)).toEqual({ kind: 'too-long', value: tooLong });
-    expect(validateSidebarIdInput('note primary')).toEqual({ kind: 'invalid-format', value: 'note primary' });
-    expect(validateSidebarIdInput('note/primary')).toEqual({ kind: 'invalid-format', value: 'note/primary' });
-    expect(validateSidebarStateScopeIdInput('note\\primary')).toEqual({
-      kind: 'invalid-format',
-      value: 'note\\primary',
-    });
-    expect(normalizeSidebarId('note primary')).toBeNull();
-    expect(normalizeSidebarStateScopeId('note/primary')).toBeNull();
+    for (const invalid of [
+      'note primary',
+      'note/primary',
+      'note\\primary',
+      'note\u0000primary',
+      'ノート-primary',
+      'note#primary',
+      'note?primary',
+      'note@primary',
+    ]) {
+      expect(validateSidebarIdInput(invalid)).toEqual({ kind: 'invalid-format', value: invalid });
+      expect(validateSidebarStateScopeIdInput(invalid)).toEqual({ kind: 'invalid-format', value: invalid });
+      expect(normalizeSidebarId(invalid)).toBeNull();
+      expect(normalizeSidebarStateScopeId(invalid)).toBeNull();
+    }
   });
 });

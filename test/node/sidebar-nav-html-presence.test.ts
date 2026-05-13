@@ -21,6 +21,16 @@ const expectPresenceError = (value: unknown, reason: SidebarNavHtmlPresenceError
 };
 
 describe('sidebar nav html presence contract', () => {
+  it('SidebarNavHtmlPresenceError constructor は object API で reason/sourceLabel を保持すること', () => {
+    const error = new SidebarNavHtmlPresenceError({
+      sourceLabel: 'presence-test',
+      reason: 'missing',
+    });
+
+    expect(error.reason).toBe('missing');
+    expect(error.sourceLabel).toBe('presence-test');
+  });
+
   it('absent sidebar では navHtml を検証せず no-op とすること', () => {
     expect(
       assertRuntimeSidebarNavHtmlPresence({

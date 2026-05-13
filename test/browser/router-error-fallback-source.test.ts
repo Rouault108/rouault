@@ -11,7 +11,12 @@ describe('router error fallback source contract', () => {
   it('metadata mismatch / current metadata invalid / contract error を error-fallback source に統一すること', () => {
     const factory = new ErrorEnvelopeFactory();
     const errors = [
-      new NavigationEnvelopeMetadataMismatchError('buildId', 'current', 'stale', '/notes/a'),
+      new NavigationEnvelopeMetadataMismatchError({
+        kind: 'buildId',
+        currentValue: 'current',
+        envelopeValue: 'stale',
+        normalizedUrl: '/notes/a',
+      }),
       new CurrentBuildMetadataInvalidError({ field: 'generatedAt', reason: 'missing' }),
       new NavigationEnvelopeContractError('invalid envelope'),
     ];

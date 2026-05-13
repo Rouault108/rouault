@@ -33,13 +33,23 @@ export type ShellProjectionValidationReason =
 
 export class ShellProjectionValidationError extends Error {
   override name = 'ShellProjectionValidationError' as const;
+  readonly reason: ShellProjectionValidationReason;
+  readonly sourceLabel?: string;
 
-  constructor(
-    message: string,
-    readonly reason: ShellProjectionValidationReason,
-    readonly sourceLabel: string = 'shellProjection',
-  ) {
-    super(message);
+  constructor({
+    reason,
+    sourceLabel,
+    message,
+  }: {
+    reason: ShellProjectionValidationReason;
+    sourceLabel?: string;
+    message?: string;
+  }) {
+    super(message ?? `[shell-projection]${sourceLabel ? ` ${sourceLabel}:` : ''} ${reason}`);
+    this.reason = reason;
+    if (sourceLabel !== undefined) {
+      this.sourceLabel = sourceLabel;
+    }
   }
 }
 
@@ -48,7 +58,7 @@ const fail = (
   reason: ShellProjectionValidationReason,
   sourceLabel = 'shellProjection',
 ): never => {
-  throw new ShellProjectionValidationError(message, reason, sourceLabel);
+  throw new ShellProjectionValidationError({ reason, sourceLabel, message });
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

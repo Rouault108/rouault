@@ -1,5 +1,5 @@
 import type { DefaultTreeAdapterMap } from 'parse5';
-import { assertUniqueDocumentSidebarIds } from '../../shared/navigation/sidebar-identity-document-contract.js';
+import { validateSidebarIdentityInstances } from '../../shared/navigation/sidebar-identity-document-contract.js';
 
 type Parse5Node = DefaultTreeAdapterMap['node'];
 type Parse5ParentNode = DefaultTreeAdapterMap['parentNode'];
@@ -38,13 +38,12 @@ export const assertUniqueLayoutSidebarIdsInDocument = (
   document: Parse5Document,
   sourceLabel = 'navigation-artifact',
 ): void => {
-  assertUniqueDocumentSidebarIds(
+  validateSidebarIdentityInstances(
     findLayoutSidebars(document).map((sidebar, index) => ({
       sidebarId: getAttribute(sidebar, 'sidebar-id'),
-      stateScopeId: getAttribute(sidebar, 'state-scope-id'),
-      hidden: hasAttribute(sidebar, 'hidden'),
+      present: !hasAttribute(sidebar, 'hidden'),
       sourceLabel: `${sourceLabel}:layout-sidebar[${String(index)}]`,
     })),
-    sourceLabel,
+    { sourceLabel },
   );
 };

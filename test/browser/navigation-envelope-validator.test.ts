@@ -114,6 +114,21 @@ describe('navigation envelope validator browser contract', () => {
     );
   });
 
+  it('NavigationEnvelopeMetadataMismatchError は object constructor API を使うこと', () => {
+    const error = new NavigationEnvelopeMetadataMismatchError({
+      kind: 'generatedAt',
+      currentValue: '2026-04-11T00:00:00.000Z',
+      envelopeValue: '2026-04-11T00:00:01.000Z',
+      normalizedUrl: '/notes/example',
+    });
+
+    expect(error.kind).to.equal('generatedAt');
+    expect(error.field).to.equal('generatedAt');
+    expect(error.currentValue).to.equal('2026-04-11T00:00:00.000Z');
+    expect(error.envelopeValue).to.equal('2026-04-11T00:00:01.000Z');
+    expect(error.normalizedUrl).to.equal('/notes/example');
+  });
+
   it('buildId / generatedAt mismatch は metadata mismatch taxonomy を使うこと', () => {
     expect(() =>
       validateLoadedEnvelope({

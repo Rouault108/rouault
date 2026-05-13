@@ -31,6 +31,16 @@ const presentSidebar = {
 };
 
 describe('shell projection validator', () => {
+  it('ShellProjectionValidationError constructor は object API で reason/sourceLabel を保持すること', () => {
+    const error = new ShellProjectionValidationError({
+      reason: 'invalid-shell',
+      sourceLabel: 'shell-test',
+    });
+
+    expect(error.reason).toBe('invalid-shell');
+    expect(error.sourceLabel).toBe('shell-test');
+  });
+
   it('payload shellProjection.sidebar の present=false を reject すること', () => {
     expect(() =>
       validateNavigationEnvelopeShellProjection({

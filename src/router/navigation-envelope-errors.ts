@@ -31,21 +31,31 @@ export class CurrentBuildMetadataInvalidError extends NavigationEnvelopeContract
   }
 }
 
+export interface NavigationEnvelopeMetadataMismatchErrorOptions {
+  readonly kind: 'buildId' | 'generatedAt';
+  readonly currentValue: string;
+  readonly envelopeValue: string;
+  readonly normalizedUrl: string;
+}
+
 export class NavigationEnvelopeMetadataMismatchError extends NavigationEnvelopeContractError {
   override name = 'NavigationEnvelopeMetadataMismatchError';
 
   readonly kind: 'buildId' | 'generatedAt';
+  readonly field: 'buildId' | 'generatedAt';
+  readonly currentValue: string;
+  readonly envelopeValue: string;
+  readonly normalizedUrl: string;
 
-  constructor(
-    readonly field: 'buildId' | 'generatedAt',
-    readonly currentValue: string,
-    readonly envelopeValue: string,
-    readonly normalizedUrl: string,
-  ) {
+  constructor(options: NavigationEnvelopeMetadataMismatchErrorOptions) {
     super(
-      `navigation envelope ${field} mismatch: current=${currentValue}, envelope=${envelopeValue}, url=${normalizedUrl}`,
+      `navigation envelope ${options.kind} mismatch: current=${options.currentValue}, envelope=${options.envelopeValue}, url=${options.normalizedUrl}`,
     );
-    this.kind = field;
+    this.kind = options.kind;
+    this.field = options.kind;
+    this.currentValue = options.currentValue;
+    this.envelopeValue = options.envelopeValue;
+    this.normalizedUrl = options.normalizedUrl;
   }
 }
 
@@ -55,7 +65,12 @@ export class NavigationEnvelopeBuildMismatchError extends NavigationEnvelopeMeta
   readonly envelopeBuildId: string;
 
   constructor(options: { currentBuildId: string; envelopeBuildId: string; normalizedUrl: string }) {
-    super('buildId', options.currentBuildId, options.envelopeBuildId, options.normalizedUrl);
+    super({
+      kind: 'buildId',
+      currentValue: options.currentBuildId,
+      envelopeValue: options.envelopeBuildId,
+      normalizedUrl: options.normalizedUrl,
+    });
     this.currentBuildId = options.currentBuildId;
     this.envelopeBuildId = options.envelopeBuildId;
   }

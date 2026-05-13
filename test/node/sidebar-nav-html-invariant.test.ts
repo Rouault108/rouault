@@ -14,7 +14,6 @@ const rows: SidebarNavRow[] = [
     id: 'root',
     label: 'Root',
     kind: 'branch',
-    href: null,
     depth: 0,
     isCurrent: false,
     hasCurrentDescendant: true,
