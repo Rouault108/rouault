@@ -32,7 +32,20 @@ describe('router barrel shell projection types', () => {
     };
 
     expect(acceptsPayloadShell(payloadUpdate.shell)).to.equal(null);
+    const absentRuntimeSidebar = createCanonicalAbsentRuntimeSidebarProjection();
+    const runtimeRollbackShell: RuntimeDocumentShellSnapshot = {
+      header: runtimeShell.header,
+      sidebar: absentRuntimeSidebar,
+    };
+    const invalidPayloadShell: PayloadDocumentShellSnapshot = {
+      header: runtimeShell.header,
+      // @ts-expect-error payload shell snapshot must not accept runtime present:false sidebar.
+      sidebar: absentRuntimeSidebar,
+    };
+
     expect(acceptsRuntimeShell(runtimeShell)?.sidebar?.present).to.equal(false);
+    expect(acceptsRuntimeShell(runtimeRollbackShell)?.sidebar?.present).to.equal(false);
+    expect(Boolean(invalidPayloadShell)).to.equal(true);
     expect(
       acceptsStrictEnvelope({
         schemaVersion: 1,

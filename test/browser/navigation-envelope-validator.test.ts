@@ -42,7 +42,7 @@ describe('navigation envelope validator browser contract', () => {
     expect(envelope.generatedAt).to.equal('2026-04-11T00:00:00.000Z');
   });
 
-  it('missing / null / empty build metadata は mismatch ではなく contract error にすること', () => {
+  it('missing / null / empty / invalid-type build metadata は mismatch ではなく contract error にすること', () => {
     const invalidCases: Array<{ buildId?: unknown; generatedAt?: unknown }> = [
       { buildId: undefined },
       { buildId: null },
@@ -50,6 +50,10 @@ describe('navigation envelope validator browser contract', () => {
       { generatedAt: undefined },
       { generatedAt: null },
       { generatedAt: '' },
+      { buildId: 123 },
+      { buildId: {} },
+      { generatedAt: 123 },
+      { generatedAt: [] },
     ];
 
     for (const invalid of invalidCases) {
@@ -67,7 +71,7 @@ describe('navigation envelope validator browser contract', () => {
 
 
 
-  it('present sidebar payload の navHtml null / empty / non-string を contract error に変換すること', () => {
+  it('present sidebar payload の navHtml missing / undefined / null / empty / non-string を contract error に変換すること', () => {
     const createPresentSidebarEnvelope = (navHtml: unknown): unknown => ({
       ...createEnvelope(),
       shellProjection: {
@@ -94,11 +98,20 @@ describe('navigation envelope validator browser contract', () => {
       },
     });
 
-    for (const navHtml of [null, '', '   ', 42]) {
+    for (const navHtml of [undefined, null, '', '   ', 42]) {
       expect(() => validateNavigationEnvelope(createPresentSidebarEnvelope(navHtml))).to.throw(
         NavigationEnvelopeContractError,
       );
     }
+
+    const missingNavHtmlEnvelope = createPresentSidebarEnvelope('<nav></nav>') as {
+      shellProjection: { sidebar: Record<string, unknown> };
+    };
+    delete missingNavHtmlEnvelope.shellProjection.sidebar['navHtml'];
+
+    expect(() => validateNavigationEnvelope(missingNavHtmlEnvelope)).to.throw(
+      NavigationEnvelopeContractError,
+    );
   });
 
   it('buildId / generatedAt mismatch は metadata mismatch taxonomy を使うこと', () => {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   isGeneratedAtString,
@@ -8,6 +8,9 @@ import {
 } from '../../shared/navigation/generated-at-contract.js';
 
 describe('generatedAt contract', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
   it('canonical UTC timestamp だけを valid として正規化すること', () => {
     expect(normalizeGeneratedAt(' 2026-04-11T00:00:00.000Z ')).toBe('2026-04-11T00:00:00.000Z');
     expect(isGeneratedAtString('2026-04-11T00:00:00.000Z')).toBe(true);
@@ -48,4 +51,20 @@ describe('generatedAt contract', () => {
     });
     expect(normalizeGeneratedAt('2026-02-31T00:00:00.000Z')).toBeNull();
   });
+
+  it('createBuildGeneratedAtOnce() は process-local に stable な generatedAt を返すこと', async () => {
+    vi.resetModules();
+
+    const { createBuildGeneratedAtOnce } = await import('../../build/metadata/generated-at.js');
+
+    expect(createBuildGeneratedAtOnce('2026-04-11T00:00:00.000Z')).toBe(
+      '2026-04-11T00:00:00.000Z',
+    );
+    expect(createBuildGeneratedAtOnce('2026-04-11T00:00:01.000Z')).toBe(
+      '2026-04-11T00:00:00.000Z',
+    );
+
+    vi.resetModules();
+  });
+
 });

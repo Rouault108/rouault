@@ -13,6 +13,14 @@ const TEST_BUILD_METADATA = loadBuildMetadataData({
 });
 
 describe('BaseLayout', () => {
+  it('buildMetadata missing では render-time hard fail すること', () => {
+    expect(() =>
+      new BaseLayout().render({
+        content: '<p>本文</p>',
+      } as unknown as Parameters<BaseLayout['render']>[0]),
+    ).toThrow(/BaseLayout requires buildMetadata/u);
+  });
+
   it('page title が未指定の場合は site title のみを出力すること', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,

@@ -27,4 +27,19 @@ describe('navigation artifact mode boundary', () => {
       expect(readFileSync(filePath, 'utf8'), filePath).not.toContain("mode: 'legacy-fixture'");
     }
   });
+
+  it('strict artifact path には boolean option / generatedAt fallback / footer build-label fallback を残さないこと', () => {
+    const sources = [
+      'build/navigation/emit-navigation-artifacts.ts',
+      'build/dev/dev-router-artifact-middleware.ts',
+      'scripts/emit-navigation-artifacts.ts',
+    ];
+
+    for (const filePath of sources) {
+      const source = readFileSync(filePath, 'utf8');
+      expect(source, filePath).not.toContain('strictBuildMetadata');
+      expect(source, filePath).not.toMatch(/new Date\(\)\.toISOString\(\)/u);
+      expect(source, filePath).not.toMatch(/layout-footer|build-label|buildLabel/u);
+    }
+  });
 });

@@ -4,6 +4,7 @@ import {
   createSidebarGroupId,
   createSidebarGroupIdPrefixFromSidebarIdentity,
   parseSidebarGroupId,
+  type SidebarGroupIdPrefix,
 } from '../../shared/navigation/sidebar-group-id.js';
 
 describe('sidebar group id contract', () => {
@@ -43,5 +44,11 @@ describe('sidebar group id contract', () => {
     expect(() => createSidebarGroupIdPrefixFromSidebarIdentity('', 'note-primary')).toThrow();
     expect(() => createSidebarGroupIdPrefixFromSidebarIdentity('note-navigation', '')).toThrow();
     expect(() => createSidebarGroupId(createSidebarGroupIdPrefixFromSidebarIdentity('note-navigation', 'note-primary'), '')).toThrow();
+  });
+
+  it('invalid groupIdPrefix では group id を作らないこと', () => {
+    expect(() =>
+      createSidebarGroupId('sidebar-identity-broken' as SidebarGroupIdPrefix, 'row-id'),
+    ).toThrow(/prefix is invalid/u);
   });
 });

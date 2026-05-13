@@ -90,6 +90,25 @@ describe('production build entrypoint contract', () => {
     expect(productionBuildEntrypoint).toContain('await assertProductionCssArtifacts();');
   });
 
+  it('production build entrypoint は build metadata を subprocess env に注入すること', () => {
+    const productionBuildEntrypoint = readFileSync(productionBuildEntrypointPath, 'utf8');
+
+    expect(productionBuildEntrypoint).toContain(
+      "import { resolveProductionBuildMetadata } from '../build/metadata/build-metadata.js';",
+    );
+    expect(productionBuildEntrypoint).toContain('const buildMetadata = resolveProductionBuildMetadata();');
+    expect(productionBuildEntrypoint).toContain(
+      "env['ROUAULT_BUILD_ID'] = buildMetadata.buildId;",
+    );
+    expect(productionBuildEntrypoint).toContain(
+      "env['ROUAULT_BUILD_LABEL'] = buildMetadata.buildLabel;",
+    );
+    expect(productionBuildEntrypoint).toContain(
+      "env['ROUAULT_GENERATED_AT'] = buildMetadata.generatedAt;",
+    );
+    expect(productionBuildEntrypoint).toMatch(/spawnSync\(command, \['build'\], \{\s*env,/su);
+  });
+
   it('production CSS artifact assertion は reachable CSS 全体と styling hook を検査すること', () => {
     const assertionSource = readFileSync(productionCssArtifactAssertionPath, 'utf8');
 

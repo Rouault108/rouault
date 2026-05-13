@@ -151,9 +151,26 @@ describe('DocumentLoader build metadata strict contract', () => {
     ];
 
     for (const testCase of cases) {
-      installCurrentMetadata(testCase.buildId, testCase.generatedAt);
-      const result = await loadWithFetchEnvelope();
+      let fetched = false;
+      let executed = false;
+      globalThis.fetch = (async () => {
+        fetched = true;
+        return createEnvelopeResponse();
+      }) as typeof globalThis.fetch;
 
+      installCurrentMetadata(testCase.buildId, testCase.generatedAt);
+      const routes = new RouteRegistry();
+      routes.add('/notes/example', () => {
+        executed = true;
+        return createEnvelopeObject();
+      });
+      const result = await new DocumentLoader(routes, new LocationAdapter()).load(
+        '/notes/example',
+        new AbortController().signal,
+      );
+
+      expect(executed).to.equal(false);
+      expect(fetched).to.equal(false);
       expect(result.source).to.equal('error-fallback');
       expect(result.error).to.be.instanceOf(CurrentBuildMetadataInvalidError);
       expect((result.error as CurrentBuildMetadataInvalidError).field).to.equal(testCase.field);
