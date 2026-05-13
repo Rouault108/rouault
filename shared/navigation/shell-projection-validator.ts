@@ -175,18 +175,20 @@ const validatePresentSidebar = (value: Record<string, unknown>): PayloadSidebarS
     initialExpandedIds: readStringArray(value['initialExpandedIds'], 'sidebar.initialExpandedIds'),
     topologyRevision: requiredString(value['topologyRevision'], 'topologyRevision'),
     navHtml: (() => {
+      const navHtml = value['navHtml'];
       try {
-        return assertRuntimeSidebarNavHtmlPresence({
+        assertRuntimeSidebarNavHtmlPresence({
           sidebarPresent: true,
-          navHtml: value['navHtml'],
+          navHtml,
           sourceLabel: 'shellProjection.sidebar',
-        })!;
+        });
       } catch (error) {
         if (error instanceof SidebarNavHtmlPresenceError) {
           fail(error.message, 'nav-html-invalid', error.sourceLabel);
         }
         throw error;
       }
+      return navHtml as string;
     })(),
     heading: optionalStringOrNull(value['heading'], 'sidebar.heading'),
     fixedBreakpoint: value['fixedBreakpoint'] as number,

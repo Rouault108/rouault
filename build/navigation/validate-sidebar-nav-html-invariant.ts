@@ -17,7 +17,11 @@ type Parse5ParentNode = DefaultTreeAdapterMap['parentNode'];
 type Parse5Element = DefaultTreeAdapterMap['element'];
 type Parse5DocumentFragment = DefaultTreeAdapterMap['documentFragment'];
 
+export type SidebarNavHtmlInvariantMode = 'ssr-build' | 'artifact-extraction' | 'test-fixture';
+
 export interface ValidateSidebarNavHtmlInvariantInput {
+  readonly mode: SidebarNavHtmlInvariantMode;
+  readonly sourceLabel: string;
   readonly sidebarPresent: boolean;
   readonly navHtml: string | null | undefined;
   readonly selectedId: string | null;
@@ -26,7 +30,6 @@ export interface ValidateSidebarNavHtmlInvariantInput {
   readonly initialExpandedIds: readonly string[];
   readonly topologyRevision: string | null | undefined;
   readonly sidebarRows?: readonly SidebarNavRow[];
-  readonly sourceLabel?: string;
 }
 
 interface ParsedNavRow {
@@ -74,11 +77,17 @@ const fail = (sourceLabel: string, message: string): never => {
 const flattenRows = (rows: readonly SidebarNavRow[]): SidebarNavRow[] =>
   rows.flatMap((row) => [row, ...flattenRows(row.children)]);
 
-const collectRows = (root: Parse5ParentNode): ParsedNavRow[] => {
+const collectRows = (root: Parse5ParentNode, sourceLabel: string): ParsedNavRow[] => {
   const rows: ParsedNavRow[] = [];
 
   const visit = (list: Parse5Element, parentId: string | null): void => {
-    const listRows = directElementChildren(list).filter((child) => child.tagName === 'li');
+    const directChildren = directElementChildren(list);
+    const nonRowChildren = directChildren.filter((child) => child.tagName !== 'li');
+    if (nonRowChildren.length > 0) {
+      fail(sourceLabel, 'sidebar nav ul direct children must all be li rows.');
+    }
+
+    const listRows = directChildren.filter((child) => child.tagName === 'li');
     const siblingCount = listRows.length;
     for (const rowElement of listRows) {
       const id = toTrimmedString(getAttribute(rowElement, 'data-node-id'));
@@ -87,11 +96,20 @@ const collectRows = (root: Parse5ParentNode): ParsedNavRow[] => {
       const rawDepth = toTrimmedString(getAttribute(rowElement, 'data-node-depth'));
       const depth = Number.parseInt(rawDepth, 10);
       const directChildren = directElementChildren(rowElement);
-      const directControl =
-        directChildren.find((child) =>
-          child.attrs.some((attribute) => attribute.name === 'data-sidebar-nav-control'),
-        ) ?? null;
-      const directGroup = directChildren.find((child) => child.tagName === 'ul') ?? null;
+      const directControls = directChildren.filter((child) =>
+        child.attrs.some((attribute) => attribute.name === 'data-sidebar-nav-control'),
+      );
+      const directGroups = directChildren.filter((child) => child.tagName === 'ul');
+
+      if (directControls.length > 1) {
+        fail(sourceLabel, `sidebar nav row ${id || '(missing id)'} must not have multiple direct child controls.`);
+      }
+      if (directGroups.length > 1) {
+        fail(sourceLabel, `sidebar nav row ${id || '(missing id)'} must not have multiple direct child groups.`);
+      }
+
+      const directControl = directControls[0] ?? null;
+      const directGroup = directGroups[0] ?? null;
 
       rows.push({
         id,
@@ -131,6 +149,24 @@ const collectAriaCurrentElements = (node: Parse5ParentNode, result: Parse5Elemen
   return result;
 };
 
+
+const collectElementsWithAttribute = (
+  node: Parse5ParentNode,
+  attributeName: string,
+  result: Parse5Element[] = [],
+): Parse5Element[] => {
+  for (const childNode of node.childNodes) {
+    if (isElementNode(childNode) && hasAttribute(childNode, attributeName)) {
+      result.push(childNode);
+    }
+
+    if (isParentNode(childNode)) {
+      collectElementsWithAttribute(childNode, attributeName, result);
+    }
+  }
+
+  return result;
+};
 
 const readTrueMarker = (
   element: Parse5Element,
@@ -207,7 +243,7 @@ const assertSetEquals = (
 export const validateSidebarNavHtmlInvariant = (
   input: ValidateSidebarNavHtmlInvariantInput,
 ): void => {
-  const sourceLabel = input.sourceLabel ?? 'unknown';
+  const sourceLabel = `${input.mode}:${input.sourceLabel}`;
 
   if (!input.sidebarPresent) {
     assertAbsentProjection(input, sourceLabel);
@@ -251,12 +287,13 @@ export const validateSidebarNavHtmlInvariant = (
     fail(sourceLabel, 'navHtml top-level element must be nav[data-sidebar-nav].');
   }
 
-  const navElements = collectRows(nav);
-  const directLists = directElementChildren(nav).filter((child) => child.tagName === 'ul');
-  if (directLists.length !== 1) {
+  const directNavChildren = directElementChildren(nav);
+  const directLists = directNavChildren.filter((child) => child.tagName === 'ul');
+  if (directLists.length !== 1 || directNavChildren.length !== 1) {
     fail(sourceLabel, 'nav[data-sidebar-nav] must have exactly one direct child ul.');
   }
 
+  const navElements = collectRows(nav, sourceLabel);
   const rootRows = directElementChildren(directLists[0]!).filter((child) => child.tagName === 'li');
   if (rootRows.length === 0) {
     fail(sourceLabel, 'nav[data-sidebar-nav] direct child ul must contain at least one li row.');
@@ -273,6 +310,16 @@ export const validateSidebarNavHtmlInvariant = (
   }
 
   const rowById = new Map<string, ParsedNavRow>();
+
+  const rowElements = new Set<Parse5Element>(navElements.map((row) => row.element));
+  for (const markerName of ['data-current-branch', 'data-current-path-indicator'] as const) {
+    for (const markerElement of collectElementsWithAttribute(nav, markerName)) {
+      if (!rowElements.has(markerElement)) {
+        fail(sourceLabel, `${markerName} is only allowed on sidebar nav row li elements.`);
+      }
+    }
+  }
+
   const expandedBranchIds: string[] = [];
   const selectedLeafIds: string[] = [];
 

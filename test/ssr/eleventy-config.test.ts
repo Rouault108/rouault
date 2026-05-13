@@ -107,9 +107,13 @@ describe('eleventy config', () => {
     expect(passthroughCopies).toContainEqual({ 'examples/media': 'example-assets' });
   }, 10_000);
 
-  it('buildMetadata グローバルデータを build label 付きで登録できること', async () => {
+  it('buildMetadata グローバルデータを buildId / buildLabel / generatedAt 付きで登録できること', async () => {
+    const previousBuildId = process.env['ROUAULT_BUILD_ID'];
     const previousBuildLabel = process.env['ROUAULT_BUILD_LABEL'];
-    process.env['ROUAULT_BUILD_LABEL'] = 'abcdef1';
+    const previousGeneratedAt = process.env['ROUAULT_GENERATED_AT'];
+    process.env['ROUAULT_BUILD_ID'] = 'eleventy-test-build';
+    process.env['ROUAULT_BUILD_LABEL'] = 'eleventy test build';
+    process.env['ROUAULT_GENERATED_AT'] = '2026-05-12T00:00:00.000Z';
 
     try {
       const { config, globalData } = createConfigCapture();
@@ -123,12 +127,25 @@ describe('eleventy config', () => {
         throw new Error('buildMetadata が登録されていません');
       }
 
-      expect(loadBuildMetadata()).toEqual({ buildLabel: 'abcdef1' });
+      const metadata = loadBuildMetadata();
+      expect(metadata.buildId).toBe('eleventy-test-build');
+      expect(metadata.buildLabel).toBe('eleventy test build');
+      expect(metadata.generatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u);
     } finally {
+      if (previousBuildId === undefined) {
+        delete process.env['ROUAULT_BUILD_ID'];
+      } else {
+        process.env['ROUAULT_BUILD_ID'] = previousBuildId;
+      }
       if (previousBuildLabel === undefined) {
         delete process.env['ROUAULT_BUILD_LABEL'];
       } else {
         process.env['ROUAULT_BUILD_LABEL'] = previousBuildLabel;
+      }
+      if (previousGeneratedAt === undefined) {
+        delete process.env['ROUAULT_GENERATED_AT'];
+      } else {
+        process.env['ROUAULT_GENERATED_AT'] = previousGeneratedAt;
       }
     }
   });

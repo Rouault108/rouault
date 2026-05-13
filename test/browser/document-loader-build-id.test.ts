@@ -90,6 +90,6 @@ describe('DocumentLoader build metadata strict contract', () => {
 
     expect(result.source).to.equal('error-fallback');
     expect(result.error).to.be.instanceOf(NavigationEnvelopeMetadataMismatchError);
-    expect((result.error as NavigationEnvelopeMetadataMismatchError).kind).to.equal('generatedAt-mismatch');
+    expect((result.error as NavigationEnvelopeMetadataMismatchError).kind).to.equal('generatedAt');
   });
 });

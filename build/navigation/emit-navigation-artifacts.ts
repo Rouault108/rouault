@@ -22,6 +22,7 @@ import {
 } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { readParse5HydrationMarkerResult } from './parse5-hydration-markers.js';
 import { validateSidebarNavHtmlInvariant } from './validate-sidebar-nav-html-invariant.js';
+import { assertUniqueLayoutSidebarIdsInDocument } from './sidebar-identity-dom-contract.js';
 import {
   validateTocOwnerCandidates,
   type TocOwnerCandidate,
@@ -324,6 +325,7 @@ const extractSidebarProjection = (document: Parse5Document): PayloadSidebarShell
   };
 
   validateSidebarNavHtmlInvariant({
+    mode: 'artifact-extraction',
     sidebarPresent: true,
     navHtml: projection.navHtml,
     selectedId: projection.selectedId,
@@ -401,25 +403,7 @@ const resolveNavigationEnvelopeBuildMetadata = (
 };
 
 const assertUniqueLayoutSidebarIdentityInstances = (document: Parse5Document): void => {
-  const sidebarIds = new Set<string>();
-  for (const sidebar of findAllElements(document, (candidate) => candidate.tagName === 'layout-sidebar')) {
-    if (hasAttribute(sidebar, 'hidden')) {
-      continue;
-    }
-    const sidebarId = assertValidSidebarId(
-      getAttribute(sidebar, 'sidebar-id'),
-      'layout-sidebar[sidebar-id]',
-    );
-    const stateScopeId = assertValidSidebarStateScopeId(
-      getAttribute(sidebar, 'state-scope-id'),
-      'layout-sidebar[state-scope-id]',
-    );
-    const key = `${stateScopeId}\u0000${sidebarId}`;
-    if (sidebarIds.has(key)) {
-      throw new Error('[navigation-artifact] duplicate layout-sidebar identity instance.');
-    }
-    sidebarIds.add(key);
-  }
+  assertUniqueLayoutSidebarIdsInDocument(document, 'navigation-artifact');
 };
 
 const assertHeaderSidebarConsistency = (

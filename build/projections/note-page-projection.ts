@@ -254,6 +254,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     : null;
 
   validateSidebarNavHtmlInvariant({
+    mode: 'ssr-build',
     sidebarPresent: showSidebar,
     navHtml: sidebarNavHtml,
     selectedId: showSidebar ? input.navigation.selectedId : null,

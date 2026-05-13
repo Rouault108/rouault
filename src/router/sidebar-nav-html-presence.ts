@@ -9,9 +9,11 @@ import { assertRuntimeSidebarNavHtmlPresence } from '../../shared/navigation/sid
 export const assertRuntimePresentSidebarNavHtml = (
   navHtml: unknown,
   sourceLabel = 'navigation-envelope',
-): string =>
+): string => {
   assertRuntimeSidebarNavHtmlPresence({
     sidebarPresent: true,
     navHtml,
     sourceLabel,
-  })!;
+  });
+  return navHtml as string;
+};

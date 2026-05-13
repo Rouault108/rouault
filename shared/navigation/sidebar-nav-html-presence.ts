@@ -1,10 +1,4 @@
-export type SidebarNavHtmlPresenceReason =
-  | 'missing'
-  | 'null'
-  | 'invalid-type'
-  | 'empty'
-  | 'missing-nav'
-  | 'multiple-nav';
+export type SidebarNavHtmlPresenceReason = 'missing' | 'invalid-type' | 'empty';
 
 export class SidebarNavHtmlPresenceError extends Error {
   override name = 'SidebarNavHtmlPresenceError' as const;
@@ -32,48 +26,23 @@ const fail = (
   throw new SidebarNavHtmlPresenceError(`[${sourceLabel}] ${message}`, reason, sourceLabel);
 };
 
-const countNavFragments = (navHtml: string): number => {
-  if (typeof document !== 'undefined') {
-    const template = document.createElement('template');
-    template.innerHTML = navHtml;
-    return template.content.querySelectorAll('nav[data-sidebar-nav]').length;
-  }
-
-  return navHtml.match(/<nav\b(?=[^>]*\bdata-sidebar-nav(?:\s|=|>|$))/giu)?.length ?? 0;
-};
-
 export const assertRuntimeSidebarNavHtmlPresence = ({
   sidebarPresent,
   navHtml,
   sourceLabel = 'navigation-envelope',
-}: RuntimeSidebarNavHtmlPresenceInput): string | null => {
+}: RuntimeSidebarNavHtmlPresenceInput): void => {
   if (!sidebarPresent) {
-    return null;
+    return;
   }
 
-  if (navHtml === undefined) {
+  if (navHtml === undefined || navHtml === null) {
     fail(sourceLabel, 'missing', 'present sidebar projection navHtml is missing.');
-  }
-  if (navHtml === null) {
-    fail(sourceLabel, 'null', 'present sidebar projection navHtml must not be null.');
   }
   if (typeof navHtml !== 'string') {
     fail(sourceLabel, 'invalid-type', 'present sidebar projection navHtml must be a string.');
   }
 
-  const navHtmlString = navHtml as string;
-  const normalized = navHtmlString.trim();
-  if (normalized.length === 0) {
+  if (navHtml.trim().length === 0) {
     fail(sourceLabel, 'empty', 'present sidebar projection must contain non-empty navHtml.');
   }
-
-  const navCount = countNavFragments(normalized);
-  if (navCount === 0) {
-    fail(sourceLabel, 'missing-nav', 'present sidebar projection must contain one nav[data-sidebar-nav].');
-  }
-  if (navCount > 1) {
-    fail(sourceLabel, 'multiple-nav', 'present sidebar projection must contain exactly one nav[data-sidebar-nav].');
-  }
-
-  return navHtmlString;
 };

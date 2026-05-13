@@ -21,33 +21,30 @@ const expectPresenceError = (value: unknown, reason: SidebarNavHtmlPresenceError
 };
 
 describe('sidebar nav html presence contract', () => {
-  it('absent sidebar では navHtml を null に正規化すること', () => {
+  it('absent sidebar では navHtml を検証せず no-op とすること', () => {
     expect(
       assertRuntimeSidebarNavHtmlPresence({
         sidebarPresent: false,
         navHtml: undefined,
         sourceLabel: 'presence-test',
       }),
-    ).toBeNull();
+    ).toBeUndefined();
   });
 
   it('present sidebar の raw navHtml 欠落理由を区別すること', () => {
     expectPresenceError(undefined, 'missing');
-    expectPresenceError(null, 'null');
+    expectPresenceError(null, 'missing');
     expectPresenceError(1, 'invalid-type');
     expectPresenceError('   ', 'empty');
   });
 
-  it('present sidebar は nav[data-sidebar-nav] をちょうど 1 個だけ要求すること', () => {
-    expectPresenceError('<div></div>', 'missing-nav');
-    expectPresenceError('<nav data-sidebar-nav></nav><nav data-sidebar-nav></nav>', 'multiple-nav');
-
+  it('present sidebar の raw navHtml が string かつ trim 後非空なら構造検証せず許可すること', () => {
     expect(
       assertRuntimeSidebarNavHtmlPresence({
         sidebarPresent: true,
-        navHtml: '<nav data-sidebar-nav><ul><li></li></ul></nav>',
+        navHtml: '<div></div>',
         sourceLabel: 'presence-test',
       }),
-    ).toBe('<nav data-sidebar-nav><ul><li></li></ul></nav>');
+    ).toBeUndefined();
   });
 });

@@ -19,7 +19,7 @@ export class CurrentBuildMetadataInvalidError extends NavigationEnvelopeContract
 export class NavigationEnvelopeMetadataMismatchError extends NavigationEnvelopeContractError {
   override name = 'NavigationEnvelopeMetadataMismatchError';
 
-  readonly kind: 'buildId-mismatch' | 'generatedAt-mismatch';
+  readonly kind: 'buildId' | 'generatedAt';
 
   constructor(
     readonly field: 'buildId' | 'generatedAt',
@@ -30,7 +30,7 @@ export class NavigationEnvelopeMetadataMismatchError extends NavigationEnvelopeC
     super(
       `navigation envelope ${field} mismatch: current=${currentValue}, envelope=${envelopeValue}, url=${normalizedUrl}`,
     );
-    this.kind = field === 'buildId' ? 'buildId-mismatch' : 'generatedAt-mismatch';
+    this.kind = field;
   }
 }
 
