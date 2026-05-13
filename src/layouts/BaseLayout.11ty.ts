@@ -44,7 +44,7 @@ export interface BaseLayoutData {
   notes?: NoteNavigationEntry[];
   corpusPages?: readonly CorpusPageEntry[];
   currentCorpusKey?: string;
-  buildMetadata: BuildMetadataData;
+  buildMetadata?: BuildMetadataData | null;
   clientBundle?: unknown;
   headerTocPresence?: TocPresence;
   headerTocRuntimeId?: string;
