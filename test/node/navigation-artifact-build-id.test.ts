@@ -86,4 +86,31 @@ describe('navigation artifact build metadata contract', () => {
       ).toThrow(/strict-artifact mode requires embedded buildId and generatedAt meta/u);
     }
   });
+
+
+  it('strict-artifact mode では injected buildId / generatedAt の欠落・不正値を拒否すること', () => {
+    const cases: Array<{
+      buildId: unknown;
+      generatedAt: unknown;
+      message: RegExp;
+    }> = [
+      { buildId: undefined, generatedAt: '2026-04-11T00:00:00.000Z', message: /buildId/u },
+      { buildId: '', generatedAt: '2026-04-11T00:00:00.000Z', message: /buildId/u },
+      { buildId: 'build current', generatedAt: '2026-04-11T00:00:00.000Z', message: /buildId/u },
+      { buildId: 'build-current', generatedAt: undefined, message: /generatedAt/u },
+      { buildId: 'build-current', generatedAt: '', message: /generatedAt/u },
+      { buildId: 'build-current', generatedAt: 'not-a-date', message: /generatedAt/u },
+    ];
+
+    for (const testCase of cases) {
+      expect(() =>
+        createNavigationEnvelopeFromHtml(createHtml(), '/tmp/example/index.html', {
+          mode: 'strict-artifact',
+          buildId: testCase.buildId,
+          generatedAt: testCase.generatedAt,
+        } as never),
+      ).toThrow(testCase.message);
+    }
+  });
+
 });

@@ -460,4 +460,34 @@ describe('buildNoteNavigationModel', () => {
 
     expect(first.topologyRevision).to.equal(second.topologyRevision);
   });
+
+
+  it('selectedId が sidebarTree 外を指す場合は hard fail すること', () => {
+    expect(() =>
+      buildNoteNavigationModel({
+        currentNote: {
+          slug: 'program/csharp/value-types',
+          title: '値型',
+          permalink: '/notes/program/csharp/value-types',
+          noteKind: 'leaf',
+          sidebarRoot: 'program/javascript',
+        },
+        notes: [
+          {
+            slug: 'program/csharp/value-types',
+            title: '値型',
+            permalink: '/notes/program/csharp/value-types',
+            noteKind: 'leaf',
+          },
+          {
+            slug: 'program/javascript/index',
+            title: 'JavaScript',
+            permalink: '/notes/program/javascript/index',
+            noteKind: 'leaf',
+          },
+        ],
+      }),
+    ).to.throw(/selectedId program\/csharp\/value-types must identify a leaf node inside sidebarTree/u);
+  });
+
 });

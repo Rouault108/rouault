@@ -1,6 +1,7 @@
 import { requireBuildIdInput } from '../../shared/navigation/build-id-contract.js';
 import { requireGeneratedAtInput } from '../../shared/navigation/generated-at-contract.js';
 import { HtmlDocumentFetcher } from './html-document-fetcher.js';
+import { normalizeDocumentRouteEnvelope } from './document-route-envelope.js';
 import { ErrorEnvelopeFactory } from './error-envelope-factory.js';
 import { LocationAdapter } from './location-adapter.js';
 import { CurrentBuildMetadataInvalidError, NavigationEnvelopeContractError } from './navigation-envelope-errors.js';
@@ -33,7 +34,7 @@ export class DocumentLoader {
       const routeEnvelope = await this.routeRegistry.execute(routeContext);
       if (routeEnvelope !== null) {
         return {
-          envelope: this.normalizeDocumentRouteEnvelope(routeEnvelope, routeContext),
+          envelope: normalizeDocumentRouteEnvelope(routeEnvelope, routeContext),
           source: 'document-route',
         };
       }
@@ -80,24 +81,6 @@ export class DocumentLoader {
     };
   }
 
-  private normalizeDocumentRouteEnvelope(
-    envelope: unknown,
-    context: DocumentRouteContext,
-  ): StrictLoadedNavigationEnvelope {
-    const validated = validateNavigationEnvelope(envelope);
-    return validateLoadedEnvelope({
-      envelope: {
-        ...validated,
-        buildId: validated.buildId ?? context.currentBuildId,
-        generatedAt: validated.generatedAt ?? context.currentGeneratedAt,
-      },
-      source: 'document-route',
-      currentBuildId: context.currentBuildId,
-      currentGeneratedAt: context.currentGeneratedAt,
-      normalizedUrl: context.normalizedUrl,
-    });
-  }
-
   private decodeSnapshotResponse(
     text: string,
     normalizedUrl: string,
@@ -140,10 +123,11 @@ export class DocumentLoader {
     try {
       return requireBuildIdInput(raw);
     } catch {
-      throw new CurrentBuildMetadataInvalidError(
-        'buildId',
-        raw === null ? 'missing' : raw.trim().length === 0 ? 'empty' : 'invalid-format',
-      );
+      throw new CurrentBuildMetadataInvalidError({
+        field: 'buildId',
+        reason: raw === null ? 'missing' : raw.trim().length === 0 ? 'empty' : 'invalid-format',
+        ...(raw !== null && raw.trim().length > 0 ? { value: raw } : {}),
+      });
     }
   }
 
@@ -152,10 +136,11 @@ export class DocumentLoader {
     try {
       return requireGeneratedAtInput(raw);
     } catch {
-      throw new CurrentBuildMetadataInvalidError(
-        'generatedAt',
-        raw === null ? 'missing' : raw.trim().length === 0 ? 'empty' : 'invalid-format',
-      );
+      throw new CurrentBuildMetadataInvalidError({
+        field: 'generatedAt',
+        reason: raw === null ? 'missing' : raw.trim().length === 0 ? 'empty' : 'invalid-format',
+        ...(raw !== null && raw.trim().length > 0 ? { value: raw } : {}),
+      });
     }
   }
 }

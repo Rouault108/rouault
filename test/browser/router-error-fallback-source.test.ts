@@ -12,7 +12,7 @@ describe('router error fallback source contract', () => {
     const factory = new ErrorEnvelopeFactory();
     const errors = [
       new NavigationEnvelopeMetadataMismatchError('buildId', 'current', 'stale', '/notes/a'),
-      new CurrentBuildMetadataInvalidError('generatedAt', 'missing'),
+      new CurrentBuildMetadataInvalidError({ field: 'generatedAt', reason: 'missing' }),
       new NavigationEnvelopeContractError('invalid envelope'),
     ];
 

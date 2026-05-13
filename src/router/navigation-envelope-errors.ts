@@ -2,17 +2,32 @@ export class NavigationEnvelopeContractError extends Error {
   override name = 'NavigationEnvelopeContractError';
 }
 
+export type CurrentBuildMetadataInvalidReason = 'missing' | 'empty' | 'invalid-format';
+
+export interface CurrentBuildMetadataInvalidErrorOptions {
+  readonly field: 'buildId' | 'generatedAt';
+  readonly reason: CurrentBuildMetadataInvalidReason;
+  readonly value?: string | undefined;
+}
+
 export class CurrentBuildMetadataInvalidError extends NavigationEnvelopeContractError {
   override name = 'CurrentBuildMetadataInvalidError';
 
   readonly kind: 'current-buildId-invalid' | 'current-generatedAt-invalid';
+  readonly field: 'buildId' | 'generatedAt';
+  readonly reason: CurrentBuildMetadataInvalidReason;
+  readonly value?: string | undefined;
 
-  constructor(
-    readonly field: 'buildId' | 'generatedAt',
-    readonly reason: string,
-  ) {
-    super(`current ${field} is invalid: ${reason}`);
-    this.kind = field === 'buildId' ? 'current-buildId-invalid' : 'current-generatedAt-invalid';
+  constructor(options: CurrentBuildMetadataInvalidErrorOptions) {
+    super(
+      options.value === undefined
+        ? `current ${options.field} is invalid: ${options.reason}`
+        : `current ${options.field} is invalid: ${options.reason}: ${options.value}`,
+    );
+    this.field = options.field;
+    this.reason = options.reason;
+    this.value = options.value;
+    this.kind = options.field === 'buildId' ? 'current-buildId-invalid' : 'current-generatedAt-invalid';
   }
 }
 

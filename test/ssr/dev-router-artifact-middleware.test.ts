@@ -153,6 +153,7 @@ describe('dev-router-artifact-middleware', () => {
     const envelope = JSON.parse(state.body.toString('utf8')) as {
       schemaVersion: string;
       buildId: string | null;
+      generatedAt: string | null;
       document: {
         title: string;
         renderedKind: string;
@@ -162,9 +163,65 @@ describe('dev-router-artifact-middleware', () => {
 
     expect(envelope.schemaVersion).toBe(NAVIGATION_ENVELOPE_SCHEMA_VERSION);
     expect(envelope.buildId).toBe('dev-build');
+    expect(envelope.generatedAt).toBe('2026-04-11T00:00:00.000Z');
     expect(envelope.document.title).toBe('About - Rouault');
     expect(envelope.document.renderedKind).toBe('page');
     expect(envelope.document.html).toContain('<h1>About</h1>');
+  });
+
+
+  it('dev artifact generatedAt は request をまたいでも injected metadata と一致して stable であること', async () => {
+    const outputDirectory = await mkdtemp(path.join(tmpdir(), 'rouault-dev-router-artifact-'));
+    temporaryDirectories.push(outputDirectory);
+
+    const aboutDirectory = path.join(outputDirectory, 'about');
+    await mkdir(aboutDirectory, { recursive: true });
+    await writeFile(
+      path.join(aboutDirectory, 'index.html'),
+      [
+        '<!doctype html>',
+        '<html lang="ja">',
+        '  <head>',
+        '    <meta charset="utf-8">',
+        '    <meta name="rouault-build-id" content="dev-build">',
+        '    <meta name="rouault-generated-at" content="2026-04-11T00:00:00.000Z">',
+        '    <title>About - Rouault</title>',
+        '  </head>',
+        '  <body>',
+        '    <main id="main-content"><h1>About</h1></main>',
+        '  </body>',
+        '</html>',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const middleware = createDevelopmentRouterArtifactMiddleware({
+      outputDirectory,
+      buildId: 'dev-build',
+      generatedAt: '2026-04-11T00:00:00.000Z',
+    });
+
+    const readEnvelope = (): { buildId: string; generatedAt: string } => {
+      const request = {
+        method: 'GET',
+        url: '/__router/about/index.router.json',
+      } satisfies Partial<IncomingMessage>;
+      const { response, state } = createMockResponse();
+
+      middleware(request as IncomingMessage, response, () => {
+        throw new Error('middleware should not call next for an existing router artifact.');
+      });
+
+      expect(state.statusCode).toBe(200);
+      return JSON.parse(state.body.toString('utf8')) as { buildId: string; generatedAt: string };
+    };
+
+    const first = readEnvelope();
+    const second = readEnvelope();
+
+    expect(first.buildId).toBe('dev-build');
+    expect(first.generatedAt).toBe('2026-04-11T00:00:00.000Z');
+    expect(second).toEqual(first);
   });
 
   it('strict artifact mode では embedded buildId の不一致を拒否すること', async () => {

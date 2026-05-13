@@ -206,6 +206,12 @@ describe('sidebar nav html invariant', () => {
       navHtml: validNavHtml.replace('aria-expanded="true"', 'aria-expanded="false"'),
       initialExpandedIds: [],
     });
+    expectInvalidFixture({
+      navHtml: validNavHtml
+        .replace('aria-expanded="true"', 'aria-expanded="false"')
+        .replace(`<ul id="${rootGroupId}">`, `<ul hidden id="${rootGroupId}">`),
+      initialExpandedIds: [],
+    });
   });
 
   it('topologyRevision と current marker の false positive / false negative を検証すること', () => {

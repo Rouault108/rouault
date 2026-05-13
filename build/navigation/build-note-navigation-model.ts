@@ -475,7 +475,17 @@ export const buildNoteNavigationModel = ({
   const rootSlug = toTrimmedString(currentNote?.sidebarRoot);
   const sidebarTree = buildSidebarTree(sidebarNotes, rootSlug);
   const selectedId = resolveSelectedSidebarNodeId(currentNote);
-  const initialExpandedIds = collectSelectedAncestors(sidebarTree, selectedId) ?? [];
+  const selectedAncestors = collectSelectedAncestors(sidebarTree, selectedId);
+  if (selectedId !== null) {
+    const selectedNode = findNodeById(sidebarTree, selectedId);
+    if (selectedAncestors === null || selectedNode === null || selectedNode.kind !== 'leaf') {
+      throw new Error(
+        `[note-navigation] selectedId ${selectedId} must identify a leaf node inside sidebarTree.`,
+      );
+    }
+  }
+
+  const initialExpandedIds = selectedAncestors ?? [];
   const currentAncestorSet = new Set(initialExpandedIds);
   const initialExpandedSet = new Set(initialExpandedIds);
 

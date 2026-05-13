@@ -355,17 +355,23 @@ const inferRenderedKind = (
   return notFoundPage === null ? 'page' : 'not-found';
 };
 
+type NavigationEnvelopeStrictArtifactMode = {
+  readonly mode: 'strict-artifact';
+  readonly buildId: string;
+  readonly generatedAt: string;
+};
+
+type NavigationEnvelopeLegacyFixtureModeName = 'legacy-fixture';
+
+type NavigationEnvelopeLegacyFixtureMode = {
+  readonly mode: NavigationEnvelopeLegacyFixtureModeName;
+  readonly buildId?: string | null | undefined;
+  readonly generatedAt?: string | null | undefined;
+};
+
 export type NavigationEnvelopeHtmlMetadataMode =
-  | {
-      readonly mode: 'strict-artifact';
-      readonly buildId: string;
-      readonly generatedAt: string;
-    }
-  | {
-      readonly mode: 'legacy-fixture';
-      readonly buildId?: string | null | undefined;
-      readonly generatedAt?: string | null | undefined;
-    };
+  | NavigationEnvelopeStrictArtifactMode
+  | NavigationEnvelopeLegacyFixtureMode;
 
 const resolveNavigationEnvelopeBuildMetadata = (
   document: Parse5Document,

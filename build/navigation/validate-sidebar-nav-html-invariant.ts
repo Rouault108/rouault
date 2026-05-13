@@ -473,6 +473,12 @@ export const validateSidebarNavHtmlInvariant = (
 
   const selectedRowForPath = selectedId === null ? null : rowById.get(selectedId) ?? null;
   const inferredCurrentAncestorIds = selectedRowForPath === null ? new Set<string>() : collectAncestorIds(rowById, selectedRowForPath);
+  assertSetEquals(
+    input.initialExpandedIds,
+    [...inferredCurrentAncestorIds],
+    sourceLabel,
+    'selected leaf ancestor initialExpandedIds',
+  );
 
   for (const row of navElements) {
     const hasCurrentBranch = readTrueMarker(row.element, 'data-current-branch', row.id, sourceLabel);

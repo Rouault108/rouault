@@ -463,9 +463,11 @@ const main = async (): Promise<void> => {
     }
   });
 
+  const metadataGeneratedAt = new Date().toISOString();
+
   const output = {
     version: 1,
-    generatedAt: new Date().toISOString(),
+    generatedAt: metadataGeneratedAt,
     entries: Object.fromEntries(
       Object.entries(entries).sort(([left], [right]) => left.localeCompare(right)),
     ),
@@ -478,7 +480,7 @@ const main = async (): Promise<void> => {
     `${JSON.stringify(
       {
         version: 1,
-        generatedAt: new Date().toISOString(),
+        generatedAt: metadataGeneratedAt,
         entries: Object.fromEntries(
           Object.entries(thumbnailEntries).sort(([left], [right]) => left.localeCompare(right)),
         ),

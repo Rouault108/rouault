@@ -131,6 +131,7 @@ describe('DocumentLoader build metadata strict contract', () => {
       buildId: string | null;
       generatedAt: string | null;
       reason: string;
+      value?: string;
     }> = [
       { field: 'buildId', buildId: null, generatedAt: CURRENT_GENERATED_AT, reason: 'missing' },
       { field: 'buildId', buildId: '   ', generatedAt: CURRENT_GENERATED_AT, reason: 'empty' },
@@ -139,6 +140,7 @@ describe('DocumentLoader build metadata strict contract', () => {
         buildId: 'build current',
         generatedAt: CURRENT_GENERATED_AT,
         reason: 'invalid-format',
+        value: 'build current',
       },
       { field: 'generatedAt', buildId: CURRENT_BUILD_ID, generatedAt: null, reason: 'missing' },
       { field: 'generatedAt', buildId: CURRENT_BUILD_ID, generatedAt: '   ', reason: 'empty' },
@@ -147,6 +149,7 @@ describe('DocumentLoader build metadata strict contract', () => {
         buildId: CURRENT_BUILD_ID,
         generatedAt: '2026-04-11T00:00:00Z',
         reason: 'invalid-format',
+        value: '2026-04-11T00:00:00Z',
       },
     ];
 
@@ -175,6 +178,7 @@ describe('DocumentLoader build metadata strict contract', () => {
       expect(result.error).to.be.instanceOf(CurrentBuildMetadataInvalidError);
       expect((result.error as CurrentBuildMetadataInvalidError).field).to.equal(testCase.field);
       expect((result.error as CurrentBuildMetadataInvalidError).reason).to.equal(testCase.reason);
+      expect((result.error as CurrentBuildMetadataInvalidError).value).to.equal(testCase.value);
     }
   });
 
