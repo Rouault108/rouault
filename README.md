@@ -135,6 +135,14 @@ pnpm ci                     # check + test:extended
 
 production条件つきのビルド入口は `pnpm build:production`です。
 
+`pnpm build:production` を直接実行する場合は、production build の由来を明示するため `ROUAULT_BUILD_LABEL` を指定してください。
+
+```bash
+ROUAULT_BUILD_LABEL="$(git rev-parse --short HEAD)" pnpm build:production
+```
+
+詳細は `docs/guides/operations/deployment.md` を参照してください。
+
 ## テスト方針
 
 Rouaultは、**何を保証するか** でテストの置き場を分けています。

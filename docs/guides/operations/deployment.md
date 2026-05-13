@@ -32,6 +32,20 @@ Repository-level variables:
 
 `ROUAULT_MEDIA_BASE_URL` は production build と E2E job でも参照するため、`production` environment 専用にはしない。
 
+## Production Build Label
+
+`pnpm build:production` は production build metadata として `ROUAULT_BUILD_LABEL` を必須とする。未指定の場合、production build は契約違反として失敗する。
+
+ローカルで production build を直接実行する場合は、成果物の由来を説明できる値を指定する。通常は Git commit の短縮 SHA を用いる。
+
+```bash
+ROUAULT_BUILD_LABEL="$(git rev-parse --short HEAD)" pnpm build:production
+```
+
+`ROUAULT_BUILD_LABEL` は build artifact の人間向け診断ラベルであり、`buildId` の代替ではない。production build では、曖昧な `local` / `unknown` fallback を使わない。
+
+GitHub Actions では `${GITHUB_SHA::7}` を `ROUAULT_BUILD_LABEL` として設定する。
+
 ## Cloudflare Pages Check
 
 Cloudflare Pages project では次を確認する。
