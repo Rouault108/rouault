@@ -1,3 +1,7 @@
+import {
+  DEFAULT_SIDEBAR_ID,
+  DEFAULT_SIDEBAR_STATE_SCOPE_ID,
+} from '../../../shared/navigation/sidebar-shell-defaults.js';
 import type { TreeNode } from '../ui/file-tree/file-tree.js';
 
 export const LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY = 'rouault.sidebar.tree-state.v1';
@@ -25,8 +29,8 @@ const normalizeScopePart = (value: string | null | undefined, fallback: string):
 export const getLayoutSidebarTreeStateStorageKey = (
   scope: LayoutSidebarTreeStateScope = {},
 ): string => {
-  const sidebarId = normalizeScopePart(scope.sidebarId, 'default');
-  const stateScopeId = normalizeScopePart(scope.stateScopeId, 'global');
+  const sidebarId = normalizeScopePart(scope.sidebarId, DEFAULT_SIDEBAR_ID);
+  const stateScopeId = normalizeScopePart(scope.stateScopeId, DEFAULT_SIDEBAR_STATE_SCOPE_ID);
   return `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY_V3}:${sidebarId}:${stateScopeId}`;
 };
 

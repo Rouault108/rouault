@@ -15,6 +15,12 @@ import type {
   SidebarShellProjection,
 } from '../../shared/navigation/shell-projection.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
+import {
+  DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
+  DEFAULT_SIDEBAR_ID,
+  normalizeSidebarId,
+  normalizeSidebarStateScopeId,
+} from '../../shared/navigation/sidebar-shell-defaults.js';
 import { readParse5HydrationMarkerResult } from './parse5-hydration-markers.js';
 import { validateSidebarNavHtmlInvariant } from './validate-sidebar-nav-html-invariant.js';
 import {
@@ -30,8 +36,7 @@ type Parse5DocumentFragment = DefaultTreeAdapterMap['documentFragment'];
 type Parse5Element = DefaultTreeAdapterMap['element'];
 
 const FALLBACK_CURRENT_CORPUS_KEY = 'all';
-const FALLBACK_SIDEBAR_ID = 'note-primary';
-const FALLBACK_SIDEBAR_BREAKPOINT = 1024;
+
 
 const isElementNode = (node: Parse5Node): node is Parse5Element =>
   'tagName' in node && typeof node.tagName === 'string' && Array.isArray(node.attrs);
@@ -264,6 +269,7 @@ const extractHeaderProjection = (document: Parse5Document): HeaderShellProjectio
     ),
     noteLayout: hasAttribute(header, 'note-layout'),
     sidebarEnabled: hasAttribute(header, 'sidebar-enabled'),
+    sidebarId: normalizeSidebarId(getAttribute(header, 'sidebar-id')),
     tocPresence: toTocPresence(getAttribute(header, 'toc-presence')),
     tocRuntimeId: toOptionalString(getAttribute(header, 'toc-runtime-id')),
     tocOwnerId: toOptionalString(getAttribute(header, 'data-toc-owner-id')),
@@ -293,8 +299,8 @@ const extractSidebarProjection = (document: Parse5Document): SidebarShellProject
 
   const projection: SidebarShellProjection = {
     present: true,
-    sidebarId: toTrimmedString(getAttribute(sidebar, 'sidebar-id'), FALLBACK_SIDEBAR_ID),
-    stateScopeId: toTrimmedString(getAttribute(sidebar, 'state-scope-id'), ''),
+    sidebarId: normalizeSidebarId(getAttribute(sidebar, 'sidebar-id')),
+    stateScopeId: normalizeSidebarStateScopeId(getAttribute(sidebar, 'state-scope-id')),
     selectedId: toOptionalString(getAttribute(sidebar, 'selected-id')),
     initialExpandedIds: parseStringArrayAttribute(getAttribute(sidebar, 'initial-expanded-ids')),
     topologyRevision: toOptionalString(getAttribute(sidebar, 'topology-revision')),
@@ -302,7 +308,7 @@ const extractSidebarProjection = (document: Parse5Document): SidebarShellProject
     heading: toOptionalString(getAttribute(sidebar, 'heading')),
     fixedBreakpoint: toNumber(
       getAttribute(sidebar, 'fixed-breakpoint'),
-      FALLBACK_SIDEBAR_BREAKPOINT,
+      DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
     ),
     presentation: presentation === 'fixed' || presentation === 'overlay' ? presentation : 'auto',
   };
@@ -311,6 +317,7 @@ const extractSidebarProjection = (document: Parse5Document): SidebarShellProject
     sidebarPresent: true,
     navHtml: projection.navHtml,
     selectedId: projection.selectedId,
+    sidebarId: projection.sidebarId,
     initialExpandedIds: projection.initialExpandedIds,
     topologyRevision: projection.topologyRevision,
     sourceLabel: 'navigation-artifact',

@@ -9,6 +9,7 @@ export interface HeaderShellProjection {
   currentCorpusKey: string;
   noteLayout: boolean;
   sidebarEnabled: boolean;
+  sidebarId: string;
   tocPresence: TocPresence;
   tocRuntimeId?: string | null;
   tocOwnerId?: string | null;

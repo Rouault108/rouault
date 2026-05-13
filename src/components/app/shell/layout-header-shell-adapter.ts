@@ -1,10 +1,10 @@
 import type {
-  DocumentShellSnapshot,
   HeaderShellSnapshot,
   PreparedShellUpdate,
   ShellAdapter,
 } from '../../../router/router.js';
 import { TOC_TRIGGER_RESERVED_ATTRIBUTE } from '../../../toc/toc-mobile-panel-dom-css-contract.js';
+import { DEFAULT_SIDEBAR_ID } from '../../../../shared/navigation/sidebar-shell-defaults.js';
 
 interface CorpusShellItem {
   key: string;
@@ -24,6 +24,7 @@ export const SAFE_FALLBACK_HEADER_SHELL_PROJECTION: HeaderShellSnapshot = {
   currentCorpusKey: 'all',
   noteLayout: false,
   sidebarEnabled: false,
+  sidebarId: DEFAULT_SIDEBAR_ID,
   tocPresence: 'absent',
   tocRuntimeId: null,
   tocOwnerId: null,
@@ -91,6 +92,7 @@ export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
   currentCorpusKey: readCurrentCorpusKey(header),
   noteLayout: header.hasAttribute('note-layout'),
   sidebarEnabled: header.hasAttribute('sidebar-enabled'),
+  sidebarId: header.getAttribute('sidebar-id')?.trim() || DEFAULT_SIDEBAR_ID,
   tocPresence: readTocPresence(header),
   tocRuntimeId: readTocRuntimeId(header),
   tocOwnerId: readTocOwnerId(header),
@@ -99,7 +101,7 @@ export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => ({
 
 export const applyHeaderSnapshot = (
   header: HTMLElement,
-  shell: DocumentShellSnapshot | null,
+  shell: { header: HeaderShellSnapshot } | null,
 ): void => {
   const snapshot = shell?.header ?? SAFE_FALLBACK_HEADER_SHELL_PROJECTION;
   const projectionHeader = header as HeaderProjectionHost;
@@ -113,6 +115,7 @@ export const applyHeaderSnapshot = (
   header.setAttribute('current-corpus-key', snapshot.currentCorpusKey);
   header.toggleAttribute('note-layout', snapshot.noteLayout);
   header.toggleAttribute('sidebar-enabled', snapshot.sidebarEnabled);
+  header.setAttribute('sidebar-id', snapshot.sidebarId);
   header.setAttribute('toc-presence', snapshot.tocPresence);
   header.toggleAttribute(TOC_TRIGGER_RESERVED_ATTRIBUTE, snapshot.tocTriggerReserved === true);
   header.setAttribute(
@@ -138,7 +141,7 @@ export const applyHeaderSnapshot = (
 export const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
   prepare(update): PreparedShellUpdate {
     const currentHeader = document.querySelector<HeaderProjectionHost>('layout-header');
-    const previousShell =
+    const previousShell: { header: HeaderShellSnapshot; sidebar: null } | null =
       currentHeader instanceof HTMLElement
         ? {
             header:

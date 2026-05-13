@@ -505,6 +505,7 @@ export class LayoutHeader extends LitElement {
     this.currentCorpusKey = snapshot.currentCorpusKey;
     this.noteLayout = snapshot.noteLayout;
     this.sidebarEnabled = snapshot.sidebarEnabled;
+    this.sidebarId = snapshot.sidebarId;
     this.tocPresence = snapshot.tocPresence;
     this.tocRuntimeId = snapshot.tocRuntimeId ?? '';
     this.tocOwnerId = snapshot.tocOwnerId ?? '';
@@ -526,6 +527,7 @@ export class LayoutHeader extends LitElement {
       currentCorpusKey: currentCorpusKey || 'all',
       noteLayout: this.noteLayout,
       sidebarEnabled: this.sidebarEnabled,
+      sidebarId: this._resolveSidebarId(),
       tocPresence: this.tocPresence,
       tocRuntimeId: this._readTocRuntimeId(),
       tocOwnerId: tocOwnerId || null,

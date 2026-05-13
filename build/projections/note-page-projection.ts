@@ -25,7 +25,13 @@ import {
   normalizeTocCapabilities,
   normalizeTocHeadings,
 } from '../../shared/toc/toc-normalization.js';
-import { NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE } from '../../src/layout/note-sidebar-breakpoint.js';
+import {
+  DEFAULT_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE,
+  DEFAULT_SIDEBAR_ID,
+  DEFAULT_SIDEBAR_PRESENTATION,
+  DEFAULT_SIDEBAR_STATE_SCOPE_ID,
+} from '../../shared/navigation/sidebar-shell-defaults.js';
+import { createSidebarGroupIdPrefixFromSidebarIdentity } from '../../shared/navigation/sidebar-group-id.js';
 import { renderNoteSidebarNav } from '../navigation/render-note-sidebar-nav.js';
 import { validateSidebarNavHtmlInvariant } from '../navigation/validate-sidebar-nav-html-invariant.js';
 import {
@@ -45,6 +51,7 @@ export interface NotePageProjectionInput {
 }
 
 export interface NotePageSidebarProjection {
+  sidebarId: string;
   stateScopeId: string;
   selectedId: string | null;
   initialExpandedIds: readonly string[];
@@ -52,6 +59,7 @@ export interface NotePageSidebarProjection {
   navHtml: string;
   heading: string | null;
   fixedBreakpoint: string;
+  presentation: 'auto' | 'fixed' | 'overlay';
 }
 
 export type NotePageTocProjection = TocChromeProjection;
@@ -230,10 +238,18 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     throw new Error(`[projection] note "${slug}" は sidebar enabled ですが sidebarRows が空です。`);
   }
 
+  const sidebarId = DEFAULT_SIDEBAR_ID;
+  const stateScopeId = DEFAULT_SIDEBAR_STATE_SCOPE_ID;
+  const groupIdPrefix = showSidebar
+    ? createSidebarGroupIdPrefixFromSidebarIdentity(stateScopeId, sidebarId)
+    : null;
+
   const sidebarNavHtml = showSidebar
     ? renderNoteSidebarNav(input.navigation.sidebarRows, {
         ariaLabel: 'ノートナビゲーション',
+        sidebarId,
         topologyRevision: input.navigation.topologyRevision,
+        groupIdPrefix: groupIdPrefix!,
       })
     : null;
 
@@ -241,6 +257,8 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     sidebarPresent: showSidebar,
     navHtml: sidebarNavHtml,
     selectedId: showSidebar ? input.navigation.selectedId : null,
+    sidebarId: showSidebar ? sidebarId : null,
+    stateScopeId: showSidebar ? stateScopeId : null,
     initialExpandedIds: showSidebar ? input.navigation.initialExpandedIds : [],
     topologyRevision: showSidebar ? input.navigation.topologyRevision : null,
     sidebarRows: showSidebar ? input.navigation.sidebarRows : undefined,
@@ -254,13 +272,15 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     }
 
     sidebarProjection = {
-      stateScopeId: 'note-navigation',
+      sidebarId,
+      stateScopeId,
       selectedId: input.navigation.selectedId,
       initialExpandedIds: input.navigation.initialExpandedIds,
       topologyRevision: input.navigation.topologyRevision,
       navHtml: sidebarNavHtml,
       heading: null,
-      fixedBreakpoint: NOTE_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE,
+      fixedBreakpoint: DEFAULT_SIDEBAR_FIXED_BREAKPOINT_ATTRIBUTE,
+      presentation: DEFAULT_SIDEBAR_PRESENTATION,
     };
   }
 

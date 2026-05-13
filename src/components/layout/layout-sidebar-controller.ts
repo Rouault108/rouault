@@ -1,7 +1,10 @@
 import type { SidebarMode, SidebarState } from '../ui/sidebar-shell/sidebar-shell.js';
-import { NOTE_SIDEBAR_FIXED_BREAKPOINT } from '../../layout/note-sidebar-breakpoint.js';
+import {
+  DEFAULT_SIDEBAR_ID,
+  DEFAULT_SIDEBAR_FIXED_BREAKPOINT as NOTE_SIDEBAR_FIXED_BREAKPOINT,
+} from '../../../shared/navigation/sidebar-shell-defaults.js';
 
-export const DEFAULT_LAYOUT_SIDEBAR_ID = 'note-primary';
+export const DEFAULT_LAYOUT_SIDEBAR_ID = DEFAULT_SIDEBAR_ID;
 
 const OVERLAY_STATE_STORAGE_KEY = 'rouault.note-sidebar.overlay-state';
 const MIN_BREAKPOINT = 320;

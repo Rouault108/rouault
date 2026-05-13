@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { renderNoteSidebarNav } from '../../build/navigation/render-note-sidebar-nav.js';
+import { createSidebarGroupIdPrefixFromSidebarIdentity } from '../../shared/navigation/sidebar-group-id.js';
 import type { SidebarNavRow } from '../../shared/navigation/navigation-types.js';
 import { expectCssExcludes, expectCssIncludes } from './css-contract-test-helpers.js';
 import {
@@ -112,7 +113,9 @@ describe('sidebar nav explicit contract', () => {
     ];
 
     const markup = renderNoteSidebarNav(rows, {
+      sidebarId: 'note-primary',
       topologyRevision: 'topology:test',
+      groupIdPrefix: createSidebarGroupIdPrefixFromSidebarIdentity('note-navigation', 'note-primary'),
     });
 
     expect(markup).toContain('data-sidebar-nav-control');

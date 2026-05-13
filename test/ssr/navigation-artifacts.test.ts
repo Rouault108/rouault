@@ -8,12 +8,14 @@ import {
   emitNavigationArtifacts,
 } from '../../build/navigation/emit-navigation-artifacts.js';
 import { validateTocOwnerCandidates } from '../../build/navigation/validate-toc-owner-candidates.js';
+import { createSidebarGroupId } from '../../shared/navigation/sidebar-group-id.js';
 import {
   createTocSourceSideEffect,
   tocSideEffectDirectives,
 } from '../../src/toc/toc-source-side-effects.js';
 
 describe('navigation artifacts', () => {
+  const notesGroupId = createSidebarGroupId({ sidebarId: 'note-primary', rowId: 'notes' });
   it('TOC owner candidate validation は complete-validation mode で valid owner を受理すること', () => {
     expect(
       validateTocOwnerCandidates([
@@ -82,7 +84,7 @@ describe('navigation artifacts', () => {
           fixed-breakpoint="1024"
           sidebar-id="note-primary"
           presentation="auto"
-        ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="topology:example"><ul><li data-node-id="notes" data-node-kind="branch" data-node-depth="0" data-current-branch="true"><button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="sidebar-group-notes"><span data-sidebar-nav-label>Notes</span><span data-sidebar-nav-disclosure aria-hidden="true"></span></button><ul id="sidebar-group-notes"><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="1"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></li></ul></nav></layout-sidebar>
+        ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:example"><ul><li data-node-id="notes" data-node-kind="branch" data-node-depth="0" data-current-branch="true"><button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="${notesGroupId}"><span data-sidebar-nav-label>Notes</span><span data-sidebar-nav-disclosure aria-hidden="true"></span></button><ul id="${notesGroupId}"><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="1"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></li></ul></nav></layout-sidebar>
       </aside>
       <main id="main-content"><article data-hydration-scope="note-content"><h1>Example</h1></article></main>
     </app-router>
@@ -151,11 +153,14 @@ describe('navigation artifacts', () => {
       <aside data-app-shell-sidebar-host>
         <layout-sidebar
           state-scope-id="note-navigation"
+          selected-id="notes/example"
+          initial-expanded-ids="[]"
+          topology-revision="topology:heading"
           heading="   "
           fixed-breakpoint="1024"
           sidebar-id="note-primary"
           presentation="auto"
-        ><nav data-sidebar-nav aria-label="ノートナビゲーション"><ul></ul></nav></layout-sidebar>
+        ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:heading"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></nav></layout-sidebar>
       </aside>
       <main id="main-content"><p>body</p></main>
     </app-router>

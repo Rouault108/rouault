@@ -8,14 +8,16 @@ const createProjection = (
 ): NotePageProjection => {
   const { sidebar, ...rest } = overrides;
   const defaultSidebar: NonNullable<NotePageProjection['sidebar']> = {
+    sidebarId: 'note-primary',
     stateScopeId: 'note-navigation',
     selectedId: 'note',
     initialExpandedIds: [],
     topologyRevision: '[{"id":"note","kind":"leaf","label":"Note","href":"/notes/note"}]',
     navHtml:
-      '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="[{&quot;id&quot;:&quot;note&quot;,&quot;kind&quot;:&quot;leaf&quot;,&quot;label&quot;:&quot;Note&quot;,&quot;href&quot;:&quot;/notes/note&quot;}]"><ul><li data-node-id="note" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/note" aria-current="page"><span data-sidebar-nav-label>Note</span></a></li></ul></nav>',
+      '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="[{&quot;id&quot;:&quot;note&quot;,&quot;kind&quot;:&quot;leaf&quot;,&quot;label&quot;:&quot;Note&quot;,&quot;href&quot;:&quot;/notes/note&quot;}]"><ul><li data-node-id="note" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/note" aria-current="page"><span data-sidebar-nav-label>Note</span></a></li></ul></nav>',
     heading: null,
     fixedBreakpoint: '1024',
+    presentation: 'auto',
   };
 
   return {
@@ -156,14 +158,16 @@ describe('NoteLayout', () => {
       notePage: createProjection({
         contentHtml: '<p>本文</p><script>console.log("unsafe")</script>',
         sidebar: {
+          sidebarId: 'note-primary',
           stateScopeId: 'note-navigation',
           selectedId: 'note',
           initialExpandedIds: [],
           topologyRevision: '[{"id":"note","kind":"leaf","label":"<Unsafe>","href":"/notes/note"}]',
           navHtml:
-            '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-topology-revision="unsafe"><ul><li data-node-id="note" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/note" aria-current="page"><span data-sidebar-nav-label>&lt;Unsafe&gt;</span></a></li></ul></nav>',
+            '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="unsafe"><ul><li data-node-id="note" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/note" aria-current="page"><span data-sidebar-nav-label>&lt;Unsafe&gt;</span></a></li></ul></nav>',
           heading: null,
           fixedBreakpoint: '1024',
+          presentation: 'auto',
         },
         articleHeader: {
           heading: '"Danger"<tag>',

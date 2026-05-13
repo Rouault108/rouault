@@ -28,6 +28,10 @@ import {
 } from './html-output.js';
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import type { NoteNavigationEntry } from '../../build/navigation/index.js';
+import {
+  DEFAULT_SIDEBAR_ID,
+  DEFAULT_SIDEBAR_PRESENTATION,
+} from '../../shared/navigation/sidebar-shell-defaults.js';
 
 export interface BaseLayoutData {
   title?: string;
@@ -75,7 +79,6 @@ const buildThemeBootstrapScript = (): string =>
 
 const DEFAULT_CLIENT_SCRIPT_SRC = '/src/client.ts';
 const DEFAULT_CLIENT_STYLE_SRCS = ['/src/assets/css/main.css'] as const;
-const NOTE_LAYOUT_SIDEBAR_ID = 'note-primary';
 const SKIP_LINK_LABEL = 'メインコンテンツへ移動';
 const SKIP_LINK_HREF = `#${MAIN_CONTENT_ID}`;
 
@@ -109,8 +112,8 @@ const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar
     { name: 'topology-revision', value: sidebar.topologyRevision },
     { name: 'heading', value: sidebar.heading },
     { name: 'fixed-breakpoint', value: sidebar.fixedBreakpoint },
-    { name: 'sidebar-id', value: NOTE_LAYOUT_SIDEBAR_ID },
-    { name: 'presentation', value: 'auto' },
+    { name: 'sidebar-id', value: sidebar.sidebarId },
+    { name: 'presentation', value: sidebar.presentation },
     { name: 'data-sidebar-boot-state', value: 'ssr' },
     { name: 'data-hydration-capability', value: 'interactive' },
     { name: 'data-hydration-trigger', value: 'initial' },
@@ -180,6 +183,10 @@ export class BaseLayout {
         value: Boolean(data.note && noteChromePolicy.sidebar),
         kind: 'boolean',
       },
+      {
+        name: 'sidebar-id',
+        value: data.notePage?.sidebar?.sidebarId ?? DEFAULT_SIDEBAR_ID,
+      },
       { name: 'toc-presence', value: tocPresence },
       { name: 'toc-runtime-id', value: tocRuntimeId },
       { name: 'toc-trigger-reserved', value: tocTriggerReserved ? 'true' : 'false' },
@@ -242,8 +249,8 @@ export class BaseLayout {
             data.notePage?.showSidebar && data.notePage.sidebar
               ? buildSidebarAttributes(data.notePage.sidebar)
               : serializeHtmlAttributes([
-                  { name: 'sidebar-id', value: NOTE_LAYOUT_SIDEBAR_ID },
-                  { name: 'presentation', value: 'auto' },
+                  { name: 'sidebar-id', value: DEFAULT_SIDEBAR_ID },
+                  { name: 'presentation', value: DEFAULT_SIDEBAR_PRESENTATION },
                   { name: 'data-hydration-capability', value: 'interactive' },
                   { name: 'data-hydration-trigger', value: 'initial' },
                 ])

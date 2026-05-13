@@ -9,6 +9,7 @@ import type {
   ShellProjectionSnapshot,
   SidebarShellProjection,
 } from '../../shared/navigation/shell-projection.js';
+import { DEFAULT_SIDEBAR_ID } from '../../shared/navigation/sidebar-shell-defaults.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import { createRouterDiagnosticError } from './router-diagnostics.js';
 import { assertRuntimePresentSidebarNavHtml } from './sidebar-nav-html-presence.js';
@@ -60,6 +61,7 @@ const isHeaderShellProjection = (value: unknown): value is HeaderShellProjection
     isString(value['currentCorpusKey']) &&
     isBoolean(value['noteLayout']) &&
     isBoolean(value['sidebarEnabled']) &&
+    (value['sidebarId'] === undefined || isString(value['sidebarId'])) &&
     isTocPresence(value['tocPresence']) &&
     (value['tocTriggerReserved'] === undefined || isBoolean(value['tocTriggerReserved'])) &&
     (value['tocRuntimeId'] === undefined ||
@@ -82,6 +84,15 @@ const normalizeOptionalString = (value: string | null | undefined): string | nul
   const normalized = value.trim();
   return normalized.length > 0 ? normalized : null;
 };
+
+const normalizeHeaderShellProjection = (value: HeaderShellProjection): HeaderShellProjection => ({
+  ...value,
+  sidebarId:
+    typeof value.sidebarId === 'string' && value.sidebarId.trim().length > 0
+      ? value.sidebarId.trim()
+      : DEFAULT_SIDEBAR_ID,
+});
+
 
 const isSidebarShellProjection = (value: unknown): value is SidebarShellProjectionInput => {
   if (!isRecord(value)) {
@@ -278,7 +289,7 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
       shellProjection === null
         ? null
         : {
-            header: shellProjection.header,
+            header: normalizeHeaderShellProjection(shellProjection.header),
             sidebar:
               shellProjection.sidebar === null
                 ? null

@@ -1,5 +1,10 @@
 import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
+import { parseSidebarGroupId } from '../../shared/navigation/sidebar-group-id.js';
+import {
+  assertValidSidebarId,
+  assertValidSidebarStateScopeId,
+} from '../../shared/navigation/sidebar-identity-contract.js';
 import type { SidebarNavRow } from '../../shared/navigation/navigation-types.js';
 
 export class SidebarNavHtmlInvariantError extends Error {
@@ -16,6 +21,8 @@ export interface ValidateSidebarNavHtmlInvariantInput {
   readonly sidebarPresent: boolean;
   readonly navHtml: string | null | undefined;
   readonly selectedId: string | null;
+  readonly sidebarId?: string | null;
+  readonly stateScopeId?: string | null;
   readonly initialExpandedIds: readonly string[];
   readonly topologyRevision: string | null | undefined;
   readonly sidebarRows?: readonly SidebarNavRow[];
@@ -178,6 +185,18 @@ export const validateSidebarNavHtmlInvariant = (
     fail(sourceLabel, 'present sidebar projection must contain non-empty topologyRevision.');
   }
 
+  let sidebarId: string;
+  let stateScopeId: string;
+  try {
+    sidebarId = assertValidSidebarId(input.sidebarId, 'sidebarId');
+  } catch (error) {
+    fail(sourceLabel, error instanceof Error ? error.message : 'sidebarId is invalid.');
+  }
+  try {
+    stateScopeId = assertValidSidebarStateScopeId(input.stateScopeId, 'stateScopeId');
+  } catch (error) {
+    fail(sourceLabel, error instanceof Error ? error.message : 'stateScopeId is invalid.');
+  }
   const expectedRows = input.sidebarRows === undefined ? null : flattenRows(input.sidebarRows);
   if (expectedRows !== null && expectedRows.length === 0) {
     fail(sourceLabel, 'present sidebar projection must contain at least one sidebar row.');
@@ -203,6 +222,11 @@ export const validateSidebarNavHtmlInvariant = (
   const rootRows = directElementChildren(directLists[0]!).filter((child) => child.tagName === 'li');
   if (rootRows.length === 0) {
     fail(sourceLabel, 'nav[data-sidebar-nav] direct child ul must contain at least one li row.');
+  }
+
+  const navSidebarId = toTrimmedString(getAttribute(nav, 'data-sidebar-id'));
+  if (navSidebarId !== sidebarId) {
+    fail(sourceLabel, 'navHtml data-sidebar-id must match sidebarId.');
   }
 
   const navTopologyRevision = toTrimmedString(getAttribute(nav, 'data-topology-revision'));
@@ -288,6 +312,19 @@ export const validateSidebarNavHtmlInvariant = (
     const controls = toTrimmedString(getAttribute(row.directControl, 'aria-controls'));
     if (groupId.length === 0 || controls !== groupId) {
       fail(sourceLabel, `branch row ${row.id} aria-controls must match direct child group id.`);
+    }
+
+    const groupIdentity = parseSidebarGroupId(groupId);
+    if (groupIdentity === null) {
+      fail(sourceLabel, `branch row ${row.id} has invalid sidebar group id.`);
+    }
+
+    if (
+      groupIdentity.sidebarId !== sidebarId ||
+      groupIdentity.stateScopeId !== stateScopeId ||
+      groupIdentity.rowId !== row.id
+    ) {
+      fail(sourceLabel, `branch row ${row.id} group id must encode stateScopeId, sidebarId and row id.`);
     }
 
     if ((expanded === 'false') !== hasAttribute(row.directGroup, 'hidden')) {
