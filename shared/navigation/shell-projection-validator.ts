@@ -39,13 +39,11 @@ export class ShellProjectionValidationError extends Error {
   constructor({
     reason,
     sourceLabel,
-    message,
   }: {
     reason: ShellProjectionValidationReason;
     sourceLabel?: string;
-    message?: string;
   }) {
-    super(message ?? `[shell-projection]${sourceLabel ? ` ${sourceLabel}:` : ''} ${reason}`);
+    super(`[shell-projection]${sourceLabel ? ` ${sourceLabel}:` : ''} ${reason}`);
     this.reason = reason;
     if (sourceLabel !== undefined) {
       this.sourceLabel = sourceLabel;
@@ -54,11 +52,11 @@ export class ShellProjectionValidationError extends Error {
 }
 
 const fail = (
-  message: string,
+  _message: string,
   reason: ShellProjectionValidationReason,
   sourceLabel = 'shellProjection',
 ): never => {
-  throw new ShellProjectionValidationError({ reason, sourceLabel, message });
+  throw new ShellProjectionValidationError({ reason, sourceLabel });
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -198,7 +196,7 @@ const validatePresentSidebar = (value: Record<string, unknown>): PayloadSidebarS
         }
         throw error;
       }
-      return navHtml as string;
+      return (navHtml as string).trim();
     })(),
     heading: optionalStringOrNull(value['heading'], 'sidebar.heading'),
     fixedBreakpoint: value['fixedBreakpoint'] as number,

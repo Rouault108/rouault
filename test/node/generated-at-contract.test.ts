@@ -49,11 +49,11 @@ describe('generatedAt contract', () => {
       value: 'not-a-date',
     });
     expect(validateOptionalGeneratedAtInput('2026-13-11T00:00:00.000Z')).toEqual({
-      kind: 'invalid-date',
+      kind: 'invalid-format',
       value: '2026-13-11T00:00:00.000Z',
     });
     expect(validateOptionalGeneratedAtInput('2026-02-31T00:00:00.000Z')).toEqual({
-      kind: 'non-canonical',
+      kind: 'invalid-format',
       value: '2026-02-31T00:00:00.000Z',
     });
     expect(normalizeGeneratedAt('2026-02-31T00:00:00.000Z')).toBeNull();

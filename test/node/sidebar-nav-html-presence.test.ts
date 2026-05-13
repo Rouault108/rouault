@@ -41,6 +41,12 @@ describe('sidebar nav html presence contract', () => {
     ).toBeUndefined();
   });
 
+  it('SidebarNavHtmlPresenceError は canonical message を持つこと', () => {
+    const error = new SidebarNavHtmlPresenceError({ sourceLabel: 'presence-test', reason: 'empty' });
+
+    expect(error.message).toBe('[sidebar-nav-html-presence] presence-test: empty');
+  });
+
   it('present sidebar の raw navHtml 欠落理由を区別すること', () => {
     expectPresenceError(undefined, 'missing');
     expectPresenceError(null, 'missing');

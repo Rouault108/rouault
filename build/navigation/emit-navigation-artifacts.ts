@@ -22,8 +22,8 @@ import {
   DEFAULT_SIDEBAR_ID,
 } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { readParse5HydrationMarkerResult } from './parse5-hydration-markers.js';
-import { validateSidebarNavHtmlInvariant } from './validate-sidebar-nav-html-invariant.js';
-import { assertUniqueLayoutSidebarIdsInDocument } from './sidebar-identity-dom-contract.js';
+import { validateSidebarNavHtmlInvariant } from './sidebar-nav-html-invariant.js';
+import { validateDocumentSidebarIdentityContract } from './sidebar-identity-dom-contract.js';
 import {
   validateTocOwnerCandidates,
   type TocOwnerCandidate,
@@ -410,7 +410,7 @@ const resolveNavigationEnvelopeBuildMetadata = (
 };
 
 const assertUniqueLayoutSidebarIdentityInstances = (document: Parse5Document): void => {
-  assertUniqueLayoutSidebarIdsInDocument(document, 'navigation-artifact');
+  validateDocumentSidebarIdentityContract(document, { sourceLabel: 'navigation-artifact' });
 };
 
 const assertHeaderSidebarConsistency = (

@@ -28,6 +28,32 @@ const createEnvelope = (metadata?: { buildId?: unknown; generatedAt?: unknown })
   hydrationPlan: null,
 });
 
+const createPresentSidebarEnvelope = (navHtml: unknown): unknown => ({
+  ...createEnvelope(),
+  shellProjection: {
+    header: {
+      corpora: [],
+      currentCorpusKey: 'all',
+      noteLayout: true,
+      sidebarEnabled: true,
+      sidebarId: 'note-primary',
+      tocPresence: 'absent',
+    },
+    sidebar: {
+      present: true,
+      sidebarId: 'note-primary',
+      stateScopeId: 'note-navigation',
+      selectedId: null,
+      initialExpandedIds: [],
+      topologyRevision: 'topology:test',
+      navHtml,
+      heading: null,
+      fixedBreakpoint: 1024,
+      presentation: 'auto',
+    },
+  },
+});
+
 describe('navigation envelope validator browser contract', () => {
   it('validateLoadedEnvelope は strict loaded envelope 型境界として buildId / generatedAt を必須にすること', () => {
     const envelope = validateLoadedEnvelope({
@@ -72,32 +98,6 @@ describe('navigation envelope validator browser contract', () => {
 
 
   it('present sidebar payload の navHtml missing / undefined / null / empty / non-string を contract error に変換すること', () => {
-    const createPresentSidebarEnvelope = (navHtml: unknown): unknown => ({
-      ...createEnvelope(),
-      shellProjection: {
-        header: {
-          corpora: [],
-          currentCorpusKey: 'all',
-          noteLayout: true,
-          sidebarEnabled: true,
-          sidebarId: 'note-primary',
-          tocPresence: 'absent',
-        },
-        sidebar: {
-          present: true,
-          sidebarId: 'note-primary',
-          stateScopeId: 'note-navigation',
-          selectedId: null,
-          initialExpandedIds: [],
-          topologyRevision: 'topology:test',
-          navHtml,
-          heading: null,
-          fixedBreakpoint: 1024,
-          presentation: 'auto',
-        },
-      },
-    });
-
     for (const navHtml of [undefined, null, '', '   ', 42]) {
       expect(() => validateNavigationEnvelope(createPresentSidebarEnvelope(navHtml))).to.throw(
         NavigationEnvelopeContractError,
@@ -112,6 +112,14 @@ describe('navigation envelope validator browser contract', () => {
     expect(() => validateNavigationEnvelope(missingNavHtmlEnvelope)).to.throw(
       NavigationEnvelopeContractError,
     );
+  });
+
+
+  it('present sidebar payload の navHtml は normalized projection で trim 済みになること', () => {
+    const navHtml = '<nav data-sidebar-nav aria-label="ノートナビゲーション"><ul></ul></nav>';
+    const envelope = validateNavigationEnvelope(createPresentSidebarEnvelope(`  ${navHtml}  `));
+
+    expect(envelope.shellProjection?.sidebar?.navHtml).to.equal(navHtml);
   });
 
   it('NavigationEnvelopeMetadataMismatchError は object constructor API を使うこと', () => {

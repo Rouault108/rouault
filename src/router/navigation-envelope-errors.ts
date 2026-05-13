@@ -19,11 +19,7 @@ export class CurrentBuildMetadataInvalidError extends NavigationEnvelopeContract
   readonly value?: string | undefined;
 
   constructor(options: CurrentBuildMetadataInvalidErrorOptions) {
-    super(
-      options.value === undefined
-        ? `current ${options.field} is invalid: ${options.reason}`
-        : `current ${options.field} is invalid: ${options.reason}: ${options.value}`,
-    );
+    super(`[navigation-envelope] current ${options.field} is ${options.reason}`);
     this.field = options.field;
     this.reason = options.reason;
     this.value = options.value;
@@ -49,7 +45,7 @@ export class NavigationEnvelopeMetadataMismatchError extends NavigationEnvelopeC
 
   constructor(options: NavigationEnvelopeMetadataMismatchErrorOptions) {
     super(
-      `navigation envelope ${options.kind} mismatch: current=${options.currentValue}, envelope=${options.envelopeValue}, url=${options.normalizedUrl}`,
+      `[navigation-envelope] ${options.kind} mismatch for ${options.normalizedUrl}: current=${options.currentValue}, envelope=${options.envelopeValue}`,
     );
     this.kind = options.kind;
     this.field = options.kind;

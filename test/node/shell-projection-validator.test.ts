@@ -56,7 +56,7 @@ describe('shell projection validator', () => {
         header,
         sidebar: { ...presentSidebar, sidebarId: 'note-secondary' },
       }),
-    ).toThrow(/header\.sidebarId must match sidebar\.sidebarId/u);
+    ).toThrow(ShellProjectionValidationError);
   });
 
   it('runtime absent sidebar は canonical object だけを受け入れること', () => {
@@ -70,6 +70,19 @@ describe('shell projection validator', () => {
         sidebarId: 'stale-sidebar',
       }),
     ).toThrow(ShellProjectionValidationError);
+  });
+
+
+  it('present sidebar navHtml は validation 後に trim 済み文字列として保持すること', () => {
+    const shell = validateNavigationEnvelopeShellProjection({
+      header,
+      sidebar: {
+        ...presentSidebar,
+        navHtml: `  ${presentSidebar.navHtml}  `,
+      },
+    });
+
+    expect(shell?.sidebar?.navHtml).toBe(presentSidebar.navHtml);
   });
 
   it('runtime absent は payload 変換時に null へ正規化すること', () => {
@@ -143,7 +156,7 @@ describe('shell projection validator', () => {
         header: { ...header, sidebarEnabled: false, sidebarId: 'note-secondary' },
         sidebar: null,
       }),
-    ).toThrow(/default sidebar id/u);
+    ).toThrow(ShellProjectionValidationError);
   });
 
 });

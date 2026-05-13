@@ -18,14 +18,14 @@ describe('buildId contract', () => {
     expect(requireBuildIdInput(' build-abcdef1 ')).toBe('build-abcdef1');
   });
 
-  it('missing / empty / invalid-type / too-long を区別すること', () => {
+  it('missing / empty / invalid-type を区別し、too-long は invalid-format として reject すること', () => {
     const tooLong = 'x'.repeat(129);
 
     expect(validateOptionalBuildIdInput(undefined)).toEqual({ kind: 'missing' });
     expect(validateOptionalBuildIdInput(null)).toEqual({ kind: 'missing' });
     expect(validateOptionalBuildIdInput('   ')).toEqual({ kind: 'empty' });
     expect(validateOptionalBuildIdInput(123)).toEqual({ kind: 'invalid-type', value: 123 });
-    expect(validateOptionalBuildIdInput(tooLong)).toEqual({ kind: 'too-long', value: tooLong });
+    expect(validateOptionalBuildIdInput(tooLong)).toEqual({ kind: 'invalid-format', value: tooLong });
     expect(normalizeBuildId(tooLong)).toBeNull();
   });
 

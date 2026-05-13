@@ -19,7 +19,7 @@ type Parse5DocumentFragment = DefaultTreeAdapterMap['documentFragment'];
 
 export type SidebarNavHtmlInvariantMode = 'ssr-build' | 'artifact-extraction' | 'test-fixture';
 
-export interface ValidateSidebarNavHtmlInvariantInput {
+export interface SidebarNavHtmlInvariantInput {
   readonly mode: SidebarNavHtmlInvariantMode;
   readonly sourceLabel: string;
   readonly sidebarPresent: boolean;
@@ -31,6 +31,8 @@ export interface ValidateSidebarNavHtmlInvariantInput {
   readonly topologyRevision: string | null | undefined;
   readonly sidebarRows?: readonly SidebarNavRow[];
 }
+
+export type ValidateSidebarNavHtmlInvariantInput = SidebarNavHtmlInvariantInput;
 
 interface ParsedNavRow {
   readonly id: string;
@@ -203,7 +205,7 @@ const collectAncestorIds = (rowById: ReadonlyMap<string, ParsedNavRow>, row: Par
 };
 
 const assertAbsentProjection = (
-  input: ValidateSidebarNavHtmlInvariantInput,
+  input: SidebarNavHtmlInvariantInput,
   sourceLabel: string,
 ): void => {
   if (toTrimmedString(input.navHtml).length > 0) {
@@ -245,7 +247,7 @@ const assertSetEquals = (
 };
 
 export const validateSidebarNavHtmlInvariant = (
-  input: ValidateSidebarNavHtmlInvariantInput,
+  input: SidebarNavHtmlInvariantInput,
 ): void => {
   const sourceLabel = `${input.mode}:${input.sourceLabel}`;
 

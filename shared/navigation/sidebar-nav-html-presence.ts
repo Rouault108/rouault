@@ -13,7 +13,7 @@ export class SidebarNavHtmlPresenceError extends Error {
     sourceLabel: string;
     reason: SidebarNavHtmlPresenceErrorReason;
   }) {
-    super(`[${sourceLabel}] present sidebar projection navHtml is invalid: ${reason}`);
+    super(`[sidebar-nav-html-presence] ${sourceLabel}: ${reason}`);
     this.sourceLabel = sourceLabel;
     this.reason = reason;
   }

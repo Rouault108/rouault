@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   SidebarNavHtmlInvariantError,
   validateSidebarNavHtmlInvariant,
-} from '../../build/navigation/validate-sidebar-nav-html-invariant.js';
+} from '../../build/navigation/sidebar-nav-html-invariant.js';
 import {
   createSidebarGroupId,
   createSidebarGroupIdPrefixFromSidebarIdentity,

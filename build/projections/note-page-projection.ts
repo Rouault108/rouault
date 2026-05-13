@@ -33,7 +33,7 @@ import {
 } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { createSidebarGroupIdPrefixFromSidebarIdentity } from '../../shared/navigation/sidebar-group-id.js';
 import { renderNoteSidebarNav } from '../navigation/render-note-sidebar-nav.js';
-import { validateSidebarNavHtmlInvariant } from '../navigation/validate-sidebar-nav-html-invariant.js';
+import { validateSidebarNavHtmlInvariant } from '../navigation/sidebar-nav-html-invariant.js';
 import {
   resolveNoteHydrationBudgetProfile,
   type NoteHydrationCounts,

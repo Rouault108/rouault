@@ -34,10 +34,11 @@ const findLayoutSidebars = (node: Parse5ParentNode, matches: Parse5Element[] = [
   return matches;
 };
 
-export const assertUniqueLayoutSidebarIdsInDocument = (
+export const validateDocumentSidebarIdentityContract = (
   document: Parse5Document,
-  sourceLabel = 'navigation-artifact',
+  options: { readonly sourceLabel?: string } = {},
 ): void => {
+  const sourceLabel = options.sourceLabel ?? 'navigation-artifact';
   validateSidebarIdentityInstances(
     findLayoutSidebars(document).map((sidebar, index) => ({
       sidebarId: getAttribute(sidebar, 'sidebar-id'),

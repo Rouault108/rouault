@@ -2,7 +2,6 @@ export type OptionalBuildIdValidationResult =
   | { kind: 'missing' }
   | { kind: 'empty' }
   | { kind: 'invalid-type'; value: unknown }
-  | { kind: 'too-long'; value: string }
   | { kind: 'invalid-format'; value: string }
   | { kind: 'valid'; value: string };
 
@@ -35,7 +34,7 @@ export const validateOptionalBuildIdInput = (value: unknown): OptionalBuildIdVal
     return { kind: 'empty' };
   }
   if (normalized.length > MAX_BUILD_ID_LENGTH) {
-    return { kind: 'too-long', value: normalized };
+    return { kind: 'invalid-format', value: normalized };
   }
   if (!BUILD_ID_PATTERN.test(normalized)) {
     return { kind: 'invalid-format', value: normalized };

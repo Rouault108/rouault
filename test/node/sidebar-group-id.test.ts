@@ -51,4 +51,14 @@ describe('sidebar group id contract', () => {
       createSidebarGroupId('sidebar-identity-broken' as SidebarGroupIdPrefix, 'row-id'),
     ).toThrow(/prefix is invalid/u);
   });
+
+  it('browser-safe helper として Buffer / node:buffer に依存しないこと', async () => {
+    const source = await import('node:fs/promises').then(({ readFile }) =>
+      readFile(new URL('../../shared/navigation/sidebar-group-id.ts', import.meta.url), 'utf8'),
+    );
+
+    expect(source).not.toContain('Buffer');
+    expect(source).not.toContain('node:buffer');
+  });
+
 });

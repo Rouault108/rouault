@@ -1,13 +1,11 @@
-export type OptionalGeneratedAtValidationResult =
+export type GeneratedAtValidationResult =
   | { kind: 'missing' }
   | { kind: 'empty' }
   | { kind: 'invalid-type'; value: unknown }
   | { kind: 'invalid-format'; value: string }
-  | { kind: 'invalid-date'; value: string }
-  | { kind: 'non-canonical'; value: string }
   | { kind: 'valid'; value: string };
 
-export type GeneratedAtValidationResult = OptionalGeneratedAtValidationResult;
+export type OptionalGeneratedAtValidationResult = GeneratedAtValidationResult;
 
 const GENERATED_AT_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u;
 
@@ -43,10 +41,10 @@ export const validateOptionalGeneratedAtInput = (
   }
   const timestamp = Date.parse(normalized);
   if (!Number.isFinite(timestamp)) {
-    return { kind: 'invalid-date', value: normalized };
+    return { kind: 'invalid-format', value: normalized };
   }
   if (new Date(timestamp).toISOString() !== normalized) {
-    return { kind: 'non-canonical', value: normalized };
+    return { kind: 'invalid-format', value: normalized };
   }
   return { kind: 'valid', value: normalized };
 };

@@ -4,6 +4,7 @@ import type { LayoutSidebar } from '../../src/components/layout/layout-sidebar.j
 import '../../src/components/layout/layout-sidebar.js';
 import { createCanonicalAbsentRuntimeSidebarProjection } from '../../shared/navigation/sidebar-shell-projection-contract.js';
 import { validateRuntimeSidebarProjection } from '../../shared/navigation/shell-projection-validator.js';
+import { layoutSidebarController } from '../../src/components/layout/layout-sidebar-controller.js';
 import {
   applyPayloadShellSnapshot,
   applyRuntimeSidebarSnapshotForRollback,
@@ -87,6 +88,14 @@ describe('layout-sidebar shell projection browser contract', () => {
     sidebar.presentation = 'overlay';
     sidebar.fixedBreakpoint = 768;
     sidebar.innerHTML = navHtml;
+    layoutSidebarController.reset();
+    layoutSidebarController.initialize('note-secondary', {
+      presentation: 'overlay',
+      fixedBreakpoint: 1024,
+      storage: null,
+    });
+    layoutSidebarController.open('note-secondary');
+    expect(layoutSidebarController.getSnapshot('note-secondary').state).to.equal('expanded');
 
     applyPayloadShellSnapshot(
       {
@@ -119,6 +128,7 @@ describe('layout-sidebar shell projection browser contract', () => {
     expect(sidebar.presentation).to.equal('auto');
     expect(sidebar.fixedBreakpoint).to.equal(1024);
     expect(sidebar.innerHTML).to.equal('');
+    expect(layoutSidebarController.getSnapshot('note-secondary').state).to.equal('collapsed');
   });
 
   it('rollback path は runtime absent snapshot を canonical object として復元すること', () => {

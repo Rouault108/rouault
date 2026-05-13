@@ -17,6 +17,7 @@ import {
 import {
   validateRuntimeSidebarProjection,
 } from '../../../../shared/navigation/shell-projection-validator.js';
+import { layoutSidebarController } from '../../layout/layout-sidebar-controller.js';
 import { SAFE_FALLBACK_HEADER_SHELL_PROJECTION } from './layout-header-shell-adapter.js';
 
 const APP_ROUTER_SELECTOR = 'app-router';
@@ -61,6 +62,21 @@ const toNumber = (value: string | null, fallback: number): number => {
 
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+
+const readCurrentSidebarIdForFallback = (sidebar: HTMLElement): string => {
+  const propertyValue = (sidebar as { sidebarId?: unknown }).sidebarId;
+  if (typeof propertyValue === 'string' && propertyValue.trim().length > 0) {
+    return propertyValue.trim();
+  }
+
+  const attributeValue = sidebar.getAttribute('sidebar-id');
+  if (typeof attributeValue === 'string' && attributeValue.trim().length > 0) {
+    return attributeValue.trim();
+  }
+
+  return DEFAULT_SIDEBAR_ID;
 };
 
 const parseStringArrayAttribute = (value: string | null): string[] => {
@@ -134,6 +150,9 @@ const applyRuntimeSidebarSnapshot = (
   }
 
   if (!isPresent) {
+    const previousSidebarId = readCurrentSidebarIdForFallback(currentSidebar);
+    layoutSidebarController.close(previousSidebarId);
+
     for (const attributeName of SIDEBAR_PROJECTION_ATTRIBUTES) {
       currentSidebar.removeAttribute(attributeName);
     }
