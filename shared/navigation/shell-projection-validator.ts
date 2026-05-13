@@ -51,16 +51,27 @@ export class ShellProjectionValidationError extends Error {
   }
 }
 
-const fail = (
+function fail(
   _message: string,
   reason: ShellProjectionValidationReason,
   sourceLabel = 'shellProjection',
-): never => {
+): never {
   throw new ShellProjectionValidationError({ reason, sourceLabel });
-};
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const requireRecord = (
+  value: unknown,
+  message: string,
+  reason: ShellProjectionValidationReason,
+): Record<string, unknown> => {
+  if (!isRecord(value)) {
+    fail(message, reason);
+  }
+  return value;
+};
 
 const isString = (value: unknown): value is string => typeof value === 'string';
 const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
@@ -69,6 +80,22 @@ const isTocPresence = (value: unknown): value is TocPresence =>
 const isSidebarPresentation = (value: unknown): value is SidebarPresentation =>
   value === 'auto' || value === 'fixed' || value === 'overlay';
 
+const readSidebarId = (value: unknown, label: string): string => {
+  try {
+    return assertValidSidebarId(value, label);
+  } catch (error) {
+    fail(error instanceof Error ? error.message : `${label} is invalid.`, 'sidebar-id-invalid');
+  }
+};
+
+const readStateScopeId = (value: unknown, label: string): string => {
+  try {
+    return assertValidSidebarStateScopeId(value, label);
+  } catch (error) {
+    fail(error instanceof Error ? error.message : `${label} is invalid.`, 'state-scope-id-invalid');
+  }
+};
+
 const optionalStringOrNull = (value: unknown, label: string): string | null => {
   if (value === null || value === undefined) {
     return null;
@@ -76,149 +103,148 @@ const optionalStringOrNull = (value: unknown, label: string): string | null => {
   if (!isString(value)) {
     fail(`${label} must be string or null.`, 'invalid-sidebar');
   }
-  const valueString = value as string;
-  const normalized = valueString.trim();
+  const normalized = value.trim();
   return normalized.length > 0 ? normalized : null;
 };
 
-const requiredString = (value: unknown, label: string, options?: { preserveWhitespace?: boolean }): string => {
+const requiredString = (
+  value: unknown,
+  label: string,
+  options?: { preserveWhitespace?: boolean },
+): string => {
   if (!isString(value)) {
     fail(`${label} must be string.`, 'invalid-sidebar');
   }
-  const valueString = value as string;
-  const normalized = valueString.trim();
+  const normalized = value.trim();
   if (normalized.length === 0) {
-    fail(`${label} must be non-empty.`, label === 'navHtml' ? 'nav-html-invalid' : 'invalid-sidebar');
+    fail(
+      `${label} must be non-empty.`,
+      label === 'navHtml' ? 'nav-html-invalid' : 'invalid-sidebar',
+    );
   }
-  return options?.preserveWhitespace === true ? valueString : normalized;
+  return options?.preserveWhitespace === true ? value : normalized;
 };
 
 const readStringArray = (value: unknown, label: string): string[] => {
   if (!Array.isArray(value) || !value.every(isString)) {
     fail(`${label} must be string[].`, 'invalid-sidebar');
   }
-  return (value as string[]).map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+  return value.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
 };
 
 const validateHeader = (value: unknown): HeaderShellProjection => {
-  if (!isRecord(value)) {
-    fail('shellProjection.header must be object.', 'invalid-header');
-  }
+  const record = requireRecord(value, 'shellProjection.header must be object.', 'invalid-header');
 
-  const corpora = value['corpora'];
+  const corpora = record['corpora'];
   if (!Array.isArray(corpora)) {
     fail('header.corpora must be array.', 'invalid-header');
   }
 
-  const normalizedCorpora = corpora.map((item): HeaderShellProjection['corpora'][number] => {
-    if (!isRecord(item) || !isString(item['key']) || !isString(item['label']) || !isString(item['href'])) {
+  const normalizedCorpora = corpora.map((item: unknown): HeaderShellProjection['corpora'][number] => {
+    const corpus = requireRecord(item, 'header.corpora item is invalid.', 'invalid-header');
+    const key = corpus['key'];
+    const label = corpus['label'];
+    const href = corpus['href'];
+    if (!isString(key) || !isString(label) || !isString(href)) {
       fail('header.corpora item is invalid.', 'invalid-header');
     }
     return {
-      key: (item['key'] as string).trim(),
-      label: (item['label'] as string).trim(),
-      href: (item['href'] as string).trim(),
+      key: key.trim(),
+      label: label.trim(),
+      href: href.trim(),
     };
   });
 
-  if (!isString(value['currentCorpusKey']) || !isBoolean(value['noteLayout']) || !isBoolean(value['sidebarEnabled'])) {
+  const currentCorpusKey = record['currentCorpusKey'];
+  const noteLayout = record['noteLayout'];
+  const sidebarEnabled = record['sidebarEnabled'];
+  if (!isString(currentCorpusKey) || !isBoolean(noteLayout) || !isBoolean(sidebarEnabled)) {
     fail('header scalar fields are invalid.', 'invalid-header');
   }
 
-  let sidebarId: string;
-  try {
-    sidebarId = assertValidSidebarId(value['sidebarId'], 'header.sidebarId');
-  } catch (error) {
-    fail(error instanceof Error ? error.message : 'header.sidebarId is invalid.', 'sidebar-id-invalid');
-  }
-
-  if (!isTocPresence(value['tocPresence'])) {
+  const sidebarId = readSidebarId(record['sidebarId'], 'header.sidebarId');
+  const tocPresence = record['tocPresence'];
+  if (!isTocPresence(tocPresence)) {
     fail('header.tocPresence is invalid.', 'invalid-header');
   }
 
   return {
     corpora: normalizedCorpora,
-    currentCorpusKey: (value['currentCorpusKey'] as string).trim(),
-    noteLayout: value['noteLayout'],
-    sidebarEnabled: value['sidebarEnabled'],
+    currentCorpusKey: currentCorpusKey.trim(),
+    noteLayout,
+    sidebarEnabled,
     sidebarId,
-    tocPresence: value['tocPresence'],
-    tocRuntimeId: optionalStringOrNull(value['tocRuntimeId'], 'header.tocRuntimeId'),
-    tocOwnerId: optionalStringOrNull(value['tocOwnerId'], 'header.tocOwnerId'),
-    ...(value['tocTriggerReserved'] === undefined
+    tocPresence,
+    tocRuntimeId: optionalStringOrNull(record['tocRuntimeId'], 'header.tocRuntimeId'),
+    tocOwnerId: optionalStringOrNull(record['tocOwnerId'], 'header.tocOwnerId'),
+    ...(record['tocTriggerReserved'] === undefined
       ? {}
-      : { tocTriggerReserved: Boolean(value['tocTriggerReserved']) }),
+      : { tocTriggerReserved: Boolean(record['tocTriggerReserved']) }),
   };
 };
 
 const validatePresentSidebar = (value: Record<string, unknown>): PayloadSidebarShellProjection => {
-  let sidebarId: string;
-  let stateScopeId: string;
-  try {
-    sidebarId = assertValidSidebarId(value['sidebarId'], 'sidebar.sidebarId');
-  } catch (error) {
-    fail(error instanceof Error ? error.message : 'sidebar.sidebarId is invalid.', 'sidebar-id-invalid');
-  }
-  try {
-    stateScopeId = assertValidSidebarStateScopeId(value['stateScopeId'], 'sidebar.stateScopeId');
-  } catch (error) {
-    fail(
-      error instanceof Error ? error.message : 'sidebar.stateScopeId is invalid.',
-      'state-scope-id-invalid',
-    );
-  }
+  const sidebarId = readSidebarId(value['sidebarId'], 'sidebar.sidebarId');
+  const stateScopeId = readStateScopeId(value['stateScopeId'], 'sidebar.stateScopeId');
 
-  if (value['selectedId'] !== null && !isString(value['selectedId'])) {
+  const selectedId = value['selectedId'];
+  if (selectedId !== null && !isString(selectedId)) {
     fail('sidebar.selectedId must be string or null.', 'invalid-sidebar');
   }
 
-  if (!isSidebarPresentation(value['presentation']) || typeof value['fixedBreakpoint'] !== 'number') {
+  const presentation = value['presentation'];
+  const fixedBreakpoint = value['fixedBreakpoint'];
+  if (!isSidebarPresentation(presentation) || typeof fixedBreakpoint !== 'number') {
     fail('sidebar presentation fields are invalid.', 'invalid-sidebar');
+  }
+
+  const navHtml = value['navHtml'];
+  try {
+    assertRuntimeSidebarNavHtmlPresence({
+      sidebarPresent: true,
+      navHtml,
+      sourceLabel: 'shellProjection.sidebar',
+    });
+  } catch (error) {
+    if (error instanceof SidebarNavHtmlPresenceError) {
+      fail(error.message, 'nav-html-invalid', error.sourceLabel);
+    }
+    throw error;
+  }
+  if (!isString(navHtml)) {
+    fail('sidebar.navHtml must be string.', 'nav-html-invalid');
   }
 
   return {
     present: true,
     sidebarId,
     stateScopeId,
-    selectedId: value['selectedId'] === null ? null : (value['selectedId'] as string).trim(),
+    selectedId: selectedId === null ? null : selectedId.trim(),
     initialExpandedIds: readStringArray(value['initialExpandedIds'], 'sidebar.initialExpandedIds'),
     topologyRevision: requiredString(value['topologyRevision'], 'topologyRevision'),
-    navHtml: (() => {
-      const navHtml = value['navHtml'];
-      try {
-        assertRuntimeSidebarNavHtmlPresence({
-          sidebarPresent: true,
-          navHtml,
-          sourceLabel: 'shellProjection.sidebar',
-        });
-      } catch (error) {
-        if (error instanceof SidebarNavHtmlPresenceError) {
-          fail(error.message, 'nav-html-invalid', error.sourceLabel);
-        }
-        throw error;
-      }
-      return (navHtml as string).trim();
-    })(),
+    navHtml: navHtml.trim(),
     heading: optionalStringOrNull(value['heading'], 'sidebar.heading'),
-    fixedBreakpoint: value['fixedBreakpoint'] as number,
-    presentation: value['presentation'] as SidebarPresentation,
+    fixedBreakpoint,
+    presentation,
   };
 };
 
 const validatePayloadSidebar = (value: unknown): PayloadSidebarShellProjection => {
-  if (!isRecord(value)) {
-    fail('shellProjection.sidebar must be object or null.', 'invalid-sidebar');
-  }
+  const record = requireRecord(
+    value,
+    'shellProjection.sidebar must be object or null.',
+    'invalid-sidebar',
+  );
 
-  if (value['present'] === false) {
+  if (record['present'] === false) {
     fail('payload shellProjection.sidebar must use null for absent sidebar.', 'payload-present-false');
   }
 
-  if (value['present'] !== true) {
+  if (record['present'] !== true) {
     fail('payload shellProjection.sidebar.present must be true.', 'invalid-sidebar');
   }
 
-  return validatePresentSidebar(value as Record<string, unknown>);
+  return validatePresentSidebar(record);
 };
 
 export const validateNavigationEnvelopeShellProjection = (
@@ -228,12 +254,9 @@ export const validateNavigationEnvelopeShellProjection = (
     return null;
   }
 
-  if (!isRecord(value)) {
-    fail('shellProjection must be object or null.', 'invalid-shell');
-  }
-
-  const header = validateHeader(value['header']);
-  const sidebar = value['sidebar'] === null ? null : validatePayloadSidebar(value['sidebar']);
+  const record = requireRecord(value, 'shellProjection must be object or null.', 'invalid-shell');
+  const header = validateHeader(record['header']);
+  const sidebar = record['sidebar'] === null ? null : validatePayloadSidebar(record['sidebar']);
 
   if (header.sidebarEnabled && sidebar === null) {
     fail('header.sidebarEnabled=true requires present sidebar payload.', 'invalid-shell');
@@ -257,29 +280,27 @@ export const validateNavigationEnvelopeShellProjection = (
 export const validateRuntimeSidebarProjection = (
   value: unknown,
 ): RuntimeSidebarShellSnapshot => {
-  if (!isRecord(value)) {
-    fail('runtime sidebar projection must be object.', 'invalid-sidebar');
+  const record = requireRecord(value, 'runtime sidebar projection must be object.', 'invalid-sidebar');
+
+  if (record['present'] === true) {
+    return validatePresentSidebar(record);
   }
 
-  if (value['present'] === true) {
-    return validatePresentSidebar(value as Record<string, unknown>);
-  }
-
-  if (value['present'] !== false) {
+  if (record['present'] !== false) {
     fail('runtime sidebar projection present must be boolean.', 'invalid-sidebar');
   }
 
   const canonical =
-    value['sidebarId'] === DEFAULT_SIDEBAR_ID &&
-    value['stateScopeId'] === DEFAULT_SIDEBAR_STATE_SCOPE_ID &&
-    value['selectedId'] === null &&
-    Array.isArray(value['initialExpandedIds']) &&
-    value['initialExpandedIds'].length === 0 &&
-    value['topologyRevision'] === null &&
-    value['navHtml'] === null &&
-    value['heading'] === null &&
-    value['fixedBreakpoint'] === DEFAULT_SIDEBAR_FIXED_BREAKPOINT &&
-    value['presentation'] === DEFAULT_SIDEBAR_PRESENTATION;
+    record['sidebarId'] === DEFAULT_SIDEBAR_ID &&
+    record['stateScopeId'] === DEFAULT_SIDEBAR_STATE_SCOPE_ID &&
+    record['selectedId'] === null &&
+    Array.isArray(record['initialExpandedIds']) &&
+    record['initialExpandedIds'].length === 0 &&
+    record['topologyRevision'] === null &&
+    record['navHtml'] === null &&
+    record['heading'] === null &&
+    record['fixedBreakpoint'] === DEFAULT_SIDEBAR_FIXED_BREAKPOINT &&
+    record['presentation'] === DEFAULT_SIDEBAR_PRESENTATION;
 
   if (!canonical) {
     fail('runtime absent sidebar projection is not canonical.', 'runtime-absent-non-canonical');

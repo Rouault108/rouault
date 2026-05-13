@@ -262,14 +262,18 @@ describe('dev-router-artifact-middleware', () => {
     } satisfies Partial<IncomingMessage>;
     const { response, state } = createMockResponse();
 
-    let nextError: Error | null = null;
+    const nextResult: { error: Error | null } = { error: null };
     middleware(request as IncomingMessage, response, (error?: Error) => {
-      nextError = error ?? null;
+      nextResult.error = error ?? null;
     });
 
     expect(state.ended).toBe(false);
+    const nextError = nextResult.error;
     expect(nextError).toBeInstanceOf(Error);
-    expect(nextError?.message).toContain('embedded buildId does not match strict-artifact buildId');
+    if (nextError === null) {
+      throw new Error('middleware should pass strict-artifact mismatch error to next.');
+    }
+    expect(nextError.message).toContain('embedded buildId does not match strict-artifact buildId');
   });
 
   it('対応する html が存在しない場合は次の middleware へ渡すこと', async () => {

@@ -24,6 +24,9 @@ describe('router error fallback source contract', () => {
     for (const error of errors) {
       const result = factory.createExceptionResult(error);
       expect(result.source).to.equal('error-fallback');
+      if (result.source !== 'error-fallback') {
+        throw new Error('expected error-fallback load result');
+      }
       expect(result.envelope.document.renderedKind).to.equal('error');
       expect(result.error).to.equal(error);
     }

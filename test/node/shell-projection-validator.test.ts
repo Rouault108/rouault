@@ -18,7 +18,7 @@ const header = {
 };
 
 const presentSidebar = {
-  present: true,
+  present: true as const,
   sidebarId: 'note-primary',
   stateScopeId: 'note-navigation',
   selectedId: null,

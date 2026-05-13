@@ -86,6 +86,16 @@ const loadWithFetchEnvelope = async (
   );
 };
 
+const expectErrorFallback = (
+  result: Awaited<ReturnType<DocumentLoader['load']>>,
+): Extract<Awaited<ReturnType<DocumentLoader['load']>>, { source: 'error-fallback' }> => {
+  expect(result.source).to.equal('error-fallback');
+  if (result.source !== 'error-fallback') {
+    throw new Error('expected error-fallback load result');
+  }
+  return result;
+};
+
 describe('DocumentLoader build metadata strict contract', () => {
   let originalFetch: typeof globalThis.fetch;
 
@@ -121,8 +131,8 @@ describe('DocumentLoader build metadata strict contract', () => {
 
     expect(executed).to.equal(false);
     expect(fetched).to.equal(false);
-    expect(result.source).to.equal('error-fallback');
-    expect(result.error).to.be.instanceOf(CurrentBuildMetadataInvalidError);
+    const errorResult = expectErrorFallback(result);
+    expect(errorResult.error).to.be.instanceOf(CurrentBuildMetadataInvalidError);
   });
 
   it('current metadata reader は missing / empty / invalid-format を buildId と generatedAt で区別すること', async () => {
@@ -174,11 +184,11 @@ describe('DocumentLoader build metadata strict contract', () => {
 
       expect(executed).to.equal(false);
       expect(fetched).to.equal(false);
-      expect(result.source).to.equal('error-fallback');
-      expect(result.error).to.be.instanceOf(CurrentBuildMetadataInvalidError);
-      expect((result.error as CurrentBuildMetadataInvalidError).field).to.equal(testCase.field);
-      expect((result.error as CurrentBuildMetadataInvalidError).reason).to.equal(testCase.reason);
-      expect((result.error as CurrentBuildMetadataInvalidError).value).to.equal(testCase.value);
+      const errorResult = expectErrorFallback(result);
+      expect(errorResult.error).to.be.instanceOf(CurrentBuildMetadataInvalidError);
+      expect((errorResult.error as CurrentBuildMetadataInvalidError).field).to.equal(testCase.field);
+      expect((errorResult.error as CurrentBuildMetadataInvalidError).reason).to.equal(testCase.reason);
+      expect((errorResult.error as CurrentBuildMetadataInvalidError).value).to.equal(testCase.value);
     }
   });
 
@@ -220,8 +230,8 @@ describe('DocumentLoader build metadata strict contract', () => {
         new AbortController().signal,
       );
 
-      expect(result.source).to.equal('error-fallback');
-      expect(result.error).to.be.instanceOf(NavigationEnvelopeContractError);
+      const errorResult = expectErrorFallback(result);
+      expect(errorResult.error).to.be.instanceOf(NavigationEnvelopeContractError);
     }
   });
 
@@ -240,16 +250,16 @@ describe('DocumentLoader build metadata strict contract', () => {
     for (const testCase of cases) {
       const result = await loadWithFetchEnvelope(testCase);
 
-      expect(result.source).to.equal('error-fallback');
-      expect(result.error).to.be.instanceOf(NavigationEnvelopeContractError);
+      const errorResult = expectErrorFallback(result);
+      expect(errorResult.error).to.be.instanceOf(NavigationEnvelopeContractError);
     }
   });
 
   it('generatedAt mismatch を NavigationEnvelopeMetadataMismatchError として error-fallback にすること', async () => {
     const result = await loadWithFetchEnvelope({ generatedAt: '2026-04-11T00:00:01.000Z' });
 
-    expect(result.source).to.equal('error-fallback');
-    expect(result.error).to.be.instanceOf(NavigationEnvelopeMetadataMismatchError);
-    expect((result.error as NavigationEnvelopeMetadataMismatchError).kind).to.equal('generatedAt');
+    const errorResult = expectErrorFallback(result);
+    expect(errorResult.error).to.be.instanceOf(NavigationEnvelopeMetadataMismatchError);
+    expect((errorResult.error as NavigationEnvelopeMetadataMismatchError).kind).to.equal('generatedAt');
   });
 });

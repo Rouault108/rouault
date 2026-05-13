@@ -258,7 +258,7 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     stateScopeId: showSidebar ? stateScopeId : null,
     initialExpandedIds: showSidebar ? input.navigation.initialExpandedIds : [],
     topologyRevision: showSidebar ? input.navigation.topologyRevision : null,
-    sidebarRows: showSidebar ? input.navigation.sidebarRows : undefined,
+    ...(showSidebar ? { sidebarRows: input.navigation.sidebarRows } : {}),
     sourceLabel: `note-page:${slug}`,
   });
 

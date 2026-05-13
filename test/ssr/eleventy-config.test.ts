@@ -127,7 +127,11 @@ describe('eleventy config', () => {
         throw new Error('buildMetadata が登録されていません');
       }
 
-      const metadata = loadBuildMetadata();
+      const metadata = loadBuildMetadata() as {
+        buildId: string;
+        buildLabel: string;
+        generatedAt: string;
+      };
       expect(metadata.buildId).toBe('eleventy-test-build');
       expect(metadata.buildLabel).toBe('eleventy test build');
       expect(metadata.generatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u);

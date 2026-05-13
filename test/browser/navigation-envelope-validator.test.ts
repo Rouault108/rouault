@@ -10,7 +10,7 @@ import {
   NavigationEnvelopeMetadataMismatchError,
 } from '../../src/router/navigation-envelope-errors.js';
 
-const createEnvelope = (metadata?: { buildId?: unknown; generatedAt?: unknown }): unknown => ({
+const createEnvelope = (metadata?: { buildId?: unknown; generatedAt?: unknown }): Record<string, unknown> => ({
   schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
   ...(Object.prototype.hasOwnProperty.call(metadata ?? {}, 'buildId')
     ? { buildId: metadata?.buildId }
@@ -28,7 +28,7 @@ const createEnvelope = (metadata?: { buildId?: unknown; generatedAt?: unknown })
   hydrationPlan: null,
 });
 
-const createPresentSidebarEnvelope = (navHtml: unknown): unknown => ({
+const createPresentSidebarEnvelope = (navHtml: unknown): Record<string, unknown> => ({
   ...createEnvelope(),
   shellProjection: {
     header: {

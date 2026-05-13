@@ -5,6 +5,17 @@ import { LocationAdapter } from '../../src/router/location-adapter.js';
 import { NavigationEnvelopeMetadataMismatchError } from '../../src/router/navigation-envelope-errors.js';
 import { RouteRegistry } from '../../src/router/route-registry.js';
 
+
+const expectErrorFallback = (
+  result: Awaited<ReturnType<DocumentLoader['load']>>,
+): Extract<Awaited<ReturnType<DocumentLoader['load']>>, { source: 'error-fallback' }> => {
+  expect(result.source).to.equal('error-fallback');
+  if (result.source !== 'error-fallback') {
+    throw new Error('expected error-fallback load result');
+  }
+  return result;
+};
+
 const createEnvelopeResponse = (options?: {
   buildId?: string | null;
   generatedAt?: string | null;
@@ -76,8 +87,9 @@ describe('DocumentLoader', () => {
     const loader = new DocumentLoader(new RouteRegistry(), new LocationAdapter());
     const result = await loader.load('/notes/example', new AbortController().signal);
 
-    expect(result.envelope.document.renderedKind).to.equal('error');
-    expect(result.error?.name).to.equal('NavigationEnvelopeContractError');
+    const errorResult = expectErrorFallback(result);
+    expect(errorResult.envelope.document.renderedKind).to.equal('error');
+    expect(errorResult.error?.name).to.equal('NavigationEnvelopeContractError');
   });
 
   it('current buildId と fetched buildId が不一致なら error envelope へ縮退すること', async () => {
@@ -89,7 +101,8 @@ describe('DocumentLoader', () => {
     const loader = new DocumentLoader(new RouteRegistry(), new LocationAdapter());
     const result = await loader.load('/notes/example', new AbortController().signal);
 
-    expect(result.envelope.document.renderedKind).to.equal('error');
-    expect(result.error).to.be.instanceOf(NavigationEnvelopeMetadataMismatchError);
+    const errorResult = expectErrorFallback(result);
+    expect(errorResult.envelope.document.renderedKind).to.equal('error');
+    expect(errorResult.error).to.be.instanceOf(NavigationEnvelopeMetadataMismatchError);
   });
 });

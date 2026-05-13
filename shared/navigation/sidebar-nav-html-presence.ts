@@ -25,12 +25,12 @@ export interface RuntimeSidebarNavHtmlPresenceInput {
   readonly sourceLabel?: string;
 }
 
-const fail = (
+function fail(
   sourceLabel: string,
   reason: SidebarNavHtmlPresenceErrorReason,
-): never => {
+): never {
   throw new SidebarNavHtmlPresenceError({ sourceLabel, reason });
-};
+}
 
 export const assertRuntimeSidebarNavHtmlPresence = ({
   sidebarPresent,
@@ -44,11 +44,12 @@ export const assertRuntimeSidebarNavHtmlPresence = ({
   if (navHtml === undefined || navHtml === null) {
     fail(sourceLabel, 'missing');
   }
-  if (typeof navHtml !== 'string') {
+  const navHtmlText = navHtml;
+  if (typeof navHtmlText !== 'string') {
     fail(sourceLabel, 'invalid-type');
   }
 
-  if (navHtml.trim().length === 0) {
+  if (navHtmlText.trim().length === 0) {
     fail(sourceLabel, 'empty');
   }
 };

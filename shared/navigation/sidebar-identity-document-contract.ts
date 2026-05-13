@@ -14,8 +14,16 @@ export interface ValidateSidebarIdentityInstancesOptions {
   readonly sourceLabel?: string;
 }
 
-const fail = (sourceLabel: string, message: string): never => {
+function fail(sourceLabel: string, message: string): never {
   throw new SidebarIdentityDocumentContractError(`[sidebar-identity:${sourceLabel}] ${message}`);
+}
+
+const readSidebarId = (value: unknown, sourceLabel: string): string => {
+  try {
+    return assertValidSidebarId(value, 'layout-sidebar[sidebar-id]');
+  } catch (error) {
+    fail(sourceLabel, error instanceof Error ? error.message : 'sidebar id is invalid.');
+  }
 };
 
 export const validateSidebarIdentityInstances = (
@@ -30,15 +38,11 @@ export const validateSidebarIdentityInstances = (
       continue;
     }
 
-    let sidebarId: string;
-    try {
-      sidebarId = assertValidSidebarId(instance.sidebarId, 'layout-sidebar[sidebar-id]');
-    } catch (error) {
-      fail(instance.sourceLabel || sourceLabel, error instanceof Error ? error.message : 'sidebar id is invalid.');
-    }
+    const instanceSourceLabel = instance.sourceLabel || sourceLabel;
+    const sidebarId = readSidebarId(instance.sidebarId, instanceSourceLabel);
 
     if (seenSidebarIds.has(sidebarId)) {
-      fail(instance.sourceLabel || sourceLabel, `duplicate layout-sidebar sidebar-id: ${sidebarId}`);
+      fail(instanceSourceLabel, `duplicate layout-sidebar sidebar-id: ${sidebarId}`);
     }
     seenSidebarIds.add(sidebarId);
   }

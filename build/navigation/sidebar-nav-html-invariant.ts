@@ -76,9 +76,9 @@ const visibleTopLevelChildren = (fragment: Parse5DocumentFragment): Parse5ChildN
 const toTrimmedString = (value: string | null | undefined): string =>
   typeof value === 'string' ? value.trim() : '';
 
-const fail = (sourceLabel: string, message: string): never => {
+function fail(sourceLabel: string, message: string): never {
   throw new SidebarNavHtmlInvariantError(`[sidebar-nav-html:${sourceLabel}] ${message}`);
-};
+}
 
 const flattenRows = (rows: readonly SidebarNavRow[]): SidebarNavRow[] =>
   rows.flatMap((row) => [row, ...flattenRows(row.children)]);
@@ -281,18 +281,20 @@ export const validateSidebarNavHtmlInvariant = (
 
   assertNoDuplicateIds(input.initialExpandedIds, sourceLabel, 'initialExpandedIds');
 
-  let sidebarId: string;
-  let stateScopeId: string;
-  try {
-    sidebarId = assertValidSidebarId(input.sidebarId, 'sidebarId');
-  } catch (error) {
-    fail(sourceLabel, error instanceof Error ? error.message : 'sidebarId is invalid.');
-  }
-  try {
-    stateScopeId = assertValidSidebarStateScopeId(input.stateScopeId, 'stateScopeId');
-  } catch (error) {
-    fail(sourceLabel, error instanceof Error ? error.message : 'stateScopeId is invalid.');
-  }
+  const sidebarId = (() => {
+    try {
+      return assertValidSidebarId(input.sidebarId, 'sidebarId');
+    } catch (error) {
+      fail(sourceLabel, error instanceof Error ? error.message : 'sidebarId is invalid.');
+    }
+  })();
+  const stateScopeId = (() => {
+    try {
+      return assertValidSidebarStateScopeId(input.stateScopeId, 'stateScopeId');
+    } catch (error) {
+      fail(sourceLabel, error instanceof Error ? error.message : 'stateScopeId is invalid.');
+    }
+  })();
   const expectedRows = input.sidebarRows === undefined ? null : flattenRows(input.sidebarRows);
   if (expectedRows !== null && expectedRows.length === 0) {
     fail(sourceLabel, 'present sidebar projection must contain at least one sidebar row.');
@@ -304,11 +306,12 @@ export const validateSidebarNavHtmlInvariant = (
   }
 
   const topLevelChildren = visibleTopLevelChildren(fragment);
-  if (topLevelChildren.length !== 1 || !isElementNode(topLevelChildren[0])) {
+  const topLevelChild = topLevelChildren[0];
+  if (topLevelChildren.length !== 1 || topLevelChild === undefined || !isElementNode(topLevelChild)) {
     fail(sourceLabel, 'navHtml must be a single top-level nav[data-sidebar-nav] fragment.');
   }
 
-  const nav = topLevelChildren[0];
+  const nav = topLevelChild;
   if (nav.tagName !== 'nav' || !hasAttribute(nav, 'data-sidebar-nav')) {
     fail(sourceLabel, 'navHtml top-level element must be nav[data-sidebar-nav].');
   }
@@ -383,14 +386,15 @@ export const validateSidebarNavHtmlInvariant = (
       }
     }
 
-    if (row.directControl === null) {
+    const directControl = row.directControl;
+    if (directControl === null) {
       fail(sourceLabel, `sidebar nav row ${row.id} must have a direct child control.`);
     }
 
-    const ariaCurrent = row.directControl === null ? null : getAttribute(row.directControl, 'aria-current');
+    const ariaCurrent = getAttribute(directControl, 'aria-current');
 
     if (row.kind === 'leaf') {
-      if (row.directControl?.tagName !== 'a' || !hasAttribute(row.directControl, 'data-sidebar-nav-link')) {
+      if (directControl.tagName !== 'a' || !hasAttribute(directControl, 'data-sidebar-nav-link')) {
         fail(sourceLabel, `leaf row ${row.id} must have a direct child a[data-sidebar-nav-link].`);
       }
 
@@ -405,7 +409,7 @@ export const validateSidebarNavHtmlInvariant = (
         fail(sourceLabel, `leaf row ${row.id} must not have a direct child branch button.`);
       }
 
-      const href = toTrimmedString(getAttribute(row.directControl, 'href'));
+      const href = toTrimmedString(getAttribute(directControl, 'href'));
       if (href.length === 0) {
         fail(sourceLabel, `leaf row ${row.id} must have non-empty href.`);
       }
@@ -422,8 +426,8 @@ export const validateSidebarNavHtmlInvariant = (
     }
 
     if (
-      row.directControl?.tagName !== 'button' ||
-      !hasAttribute(row.directControl, 'data-sidebar-nav-branch-control')
+      directControl.tagName !== 'button' ||
+      !hasAttribute(directControl, 'data-sidebar-nav-branch-control')
     ) {
       fail(sourceLabel, `branch row ${row.id} must have a direct child branch button.`);
     }
@@ -432,22 +436,23 @@ export const validateSidebarNavHtmlInvariant = (
       fail(sourceLabel, `branch row ${row.id} must not have aria-current.`);
     }
 
-    if (row.directGroup === null) {
+    const directGroup = row.directGroup;
+    if (directGroup === null) {
       fail(sourceLabel, `branch row ${row.id} must have a direct child ul group.`);
     }
 
-    const childRows = directElementChildren(row.directGroup).filter((child) => child.tagName === 'li');
+    const childRows = directElementChildren(directGroup).filter((child) => child.tagName === 'li');
     if (childRows.length === 0) {
       fail(sourceLabel, `branch row ${row.id} must not have an empty child group.`);
     }
 
-    const expanded = getAttribute(row.directControl, 'aria-expanded');
+    const expanded = getAttribute(directControl, 'aria-expanded');
     if (expanded !== 'true' && expanded !== 'false') {
       fail(sourceLabel, `branch row ${row.id} must have aria-expanded true/false.`);
     }
 
-    const groupId = toTrimmedString(getAttribute(row.directGroup, 'id'));
-    const controls = toTrimmedString(getAttribute(row.directControl, 'aria-controls'));
+    const groupId = toTrimmedString(getAttribute(directGroup, 'id'));
+    const controls = toTrimmedString(getAttribute(directControl, 'aria-controls'));
     if (groupId.length === 0 || controls !== groupId) {
       fail(sourceLabel, `branch row ${row.id} aria-controls must match direct child group id.`);
     }
@@ -465,7 +470,7 @@ export const validateSidebarNavHtmlInvariant = (
       fail(sourceLabel, `branch row ${row.id} group id must encode stateScopeId, sidebarId and row id.`);
     }
 
-    if ((expanded === 'false') !== hasAttribute(row.directGroup, 'hidden')) {
+    if ((expanded === 'false') !== hasAttribute(directGroup, 'hidden')) {
       fail(sourceLabel, `branch row ${row.id} aria-expanded and hidden must be consistent.`);
     }
 
@@ -529,7 +534,7 @@ export const validateSidebarNavHtmlInvariant = (
     fail(sourceLabel, 'sidebarRows and navHtml row count must match.');
   }
 
-  expectedRows.forEach((expectedRow, index) => {
+  for (const [index, expectedRow] of expectedRows.entries()) {
     const actualRow = navElements[index];
     if (actualRow === undefined) {
       fail(sourceLabel, `missing navHtml row at index ${String(index)}.`);
@@ -568,5 +573,5 @@ export const validateSidebarNavHtmlInvariant = (
     if (hasCurrentPathIndicator !== expectsCurrentPathIndicator) {
       fail(sourceLabel, `data-current-path-indicator mismatch for ${expectedRow.id}.`);
     }
-  });
+  }
 };
