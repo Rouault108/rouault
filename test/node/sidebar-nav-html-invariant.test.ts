@@ -191,6 +191,12 @@ describe('sidebar nav html invariant', () => {
       ),
     });
     expectInvalidFixture({ navHtml: validNavHtml.replace('aria-current="page"', 'aria-current="location"') });
+    expectInvalidFixture({
+      navHtml: validNavHtml.replace(
+        '<a data-sidebar-nav-control data-sidebar-nav-link href="/root/child/" aria-current="page"><span data-sidebar-nav-label>Child</span></a></li>',
+        '<a data-sidebar-nav-control data-sidebar-nav-link href="/root/child/" aria-current="page"><span data-sidebar-nav-label>Child</span></a><button type="button" data-sidebar-nav-branch-control>Bad</button></li>',
+      ),
+    });
     expectInvalidFixture({ selectedId: 'missing' });
     expectInvalidFixture({ selectedId: 'root' });
   });

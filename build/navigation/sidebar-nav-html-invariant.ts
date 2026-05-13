@@ -397,6 +397,13 @@ export const validateSidebarNavHtmlInvariant = (
         fail(sourceLabel, `leaf row ${row.id} must not have a direct child ul.`);
       }
 
+      const directBranchControlButtons = directElementChildren(row.element).filter(
+        (child) => child.tagName === 'button' && hasAttribute(child, 'data-sidebar-nav-branch-control'),
+      );
+      if (directBranchControlButtons.length > 0) {
+        fail(sourceLabel, `leaf row ${row.id} must not have a direct child branch button.`);
+      }
+
       const href = toTrimmedString(getAttribute(row.directControl, 'href'));
       if (href.length === 0) {
         fail(sourceLabel, `leaf row ${row.id} must have non-empty href.`);
