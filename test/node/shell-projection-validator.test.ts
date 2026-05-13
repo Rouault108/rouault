@@ -102,7 +102,7 @@ describe('shell projection validator', () => {
       ['presentation', { presentation: 'fixed' }],
     ];
 
-    for (const [label, override] of staleCases) {
+    for (const [, override] of staleCases) {
       expect(() =>
         validateRuntimeSidebarProjection({
           ...createCanonicalAbsentRuntimeSidebarProjection(),

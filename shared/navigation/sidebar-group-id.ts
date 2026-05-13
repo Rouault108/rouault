@@ -102,8 +102,13 @@ const parsePrefix = (value: string): { stateScopeId: string; sidebarId: string }
     return null;
   }
 
-  const stateScopeId = decodeBase64Url(segments[0]!);
-  const sidebarId = decodeBase64Url(segments[1]!);
+  const [encodedStateScopeId, encodedSidebarId] = segments;
+  if (encodedStateScopeId === undefined || encodedSidebarId === undefined) {
+    return null;
+  }
+
+  const stateScopeId = decodeBase64Url(encodedStateScopeId);
+  const sidebarId = decodeBase64Url(encodedSidebarId);
   if (stateScopeId === null || sidebarId === null) {
     return null;
   }
@@ -164,9 +169,18 @@ export function parseSidebarGroupId(groupId: string): ParsedSidebarGroupId | nul
     return null;
   }
 
-  const stateScopeId = decodeBase64Url(segments[0]!);
-  const sidebarId = decodeBase64Url(segments[1]!);
-  const rowId = decodeBase64Url(segments[2]!);
+  const [encodedStateScopeId, encodedSidebarId, encodedRowId] = segments;
+  if (
+    encodedStateScopeId === undefined ||
+    encodedSidebarId === undefined ||
+    encodedRowId === undefined
+  ) {
+    return null;
+  }
+
+  const stateScopeId = decodeBase64Url(encodedStateScopeId);
+  const sidebarId = decodeBase64Url(encodedSidebarId);
+  const rowId = decodeBase64Url(encodedRowId);
   if (stateScopeId === null || sidebarId === null || rowId === null) {
     return null;
   }

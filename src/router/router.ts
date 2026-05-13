@@ -29,7 +29,6 @@ export type {
   ContentUpdatePayload,
   DocumentRouteContext,
   DocumentRouteHandler,
-  DocumentShellSnapshot,
   PayloadDocumentShellSnapshot,
   RuntimeDocumentShellSnapshot,
   RuntimeSidebarShellSnapshot,
@@ -52,7 +51,6 @@ export type {
   RouterOptions,
   ShellAdapter,
   ShellUpdatePayload,
-  SidebarShellSnapshot,
   StrictLoadedNavigationEnvelope,
   UrlStateNavigationDecision,
 } from './router-types.js';

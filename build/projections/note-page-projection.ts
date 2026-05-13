@@ -240,16 +240,12 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
 
   const sidebarId = DEFAULT_SIDEBAR_ID;
   const stateScopeId = DEFAULT_SIDEBAR_STATE_SCOPE_ID;
-  const groupIdPrefix = showSidebar
-    ? createSidebarGroupIdPrefixFromSidebarIdentity(stateScopeId, sidebarId)
-    : null;
-
   const sidebarNavHtml = showSidebar
     ? renderNoteSidebarNav(input.navigation.sidebarRows, {
         ariaLabel: 'ノートナビゲーション',
         sidebarId,
         topologyRevision: input.navigation.topologyRevision,
-        groupIdPrefix: groupIdPrefix!,
+        groupIdPrefix: createSidebarGroupIdPrefixFromSidebarIdentity(stateScopeId, sidebarId),
       })
     : null;
 

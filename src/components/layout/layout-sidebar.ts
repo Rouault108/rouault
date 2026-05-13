@@ -134,7 +134,7 @@ export class LayoutSidebar extends LitElement {
     this.fixedBreakpoint = snapshot.fixedBreakpoint;
     this.sidebarId = snapshot.sidebarId;
     this.presentation = snapshot.presentation;
-    this.hidden = !snapshot.present;
+    this.hidden = false;
     this.setAttribute('state-scope-id', snapshot.stateScopeId);
 
     if (snapshot.selectedId === null) {
@@ -145,11 +145,7 @@ export class LayoutSidebar extends LitElement {
 
     this.setAttribute('initial-expanded-ids', JSON.stringify(snapshot.initialExpandedIds));
 
-    if (snapshot.topologyRevision === null) {
-      this.removeAttribute('topology-revision');
-    } else {
-      this.setAttribute('topology-revision', snapshot.topologyRevision);
-    }
+    this.setAttribute('topology-revision', snapshot.topologyRevision);
 
     if (snapshot.heading === null) {
       this.removeAttribute('heading');
@@ -159,7 +155,7 @@ export class LayoutSidebar extends LitElement {
     this.setAttribute('fixed-breakpoint', String(snapshot.fixedBreakpoint));
     this.setAttribute('sidebar-id', snapshot.sidebarId);
     this.setAttribute('presentation', snapshot.presentation);
-    this._navMarkup = snapshot.navHtml?.trim() ?? '';
+    this._navMarkup = snapshot.navHtml.trim();
     this._activeId = null;
 
     this._syncSurfaceMount();

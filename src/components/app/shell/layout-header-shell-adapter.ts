@@ -87,6 +87,11 @@ const readTocTriggerReserved = (header: Element): boolean => {
   return value === '' || value === 'true';
 };
 
+const readSidebarId = (header: Element): string => {
+  const sidebarId = header.getAttribute('sidebar-id')?.trim() ?? '';
+  return sidebarId.length > 0 ? sidebarId : DEFAULT_SIDEBAR_ID;
+};
+
 export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => {
   const sidebarEnabled = header.hasAttribute('sidebar-enabled');
 
@@ -95,9 +100,7 @@ export const readHeaderSnapshot = (header: Element): HeaderShellSnapshot => {
     currentCorpusKey: readCurrentCorpusKey(header),
     noteLayout: header.hasAttribute('note-layout'),
     sidebarEnabled,
-    sidebarId: sidebarEnabled
-      ? header.getAttribute('sidebar-id')?.trim() || DEFAULT_SIDEBAR_ID
-      : DEFAULT_SIDEBAR_ID,
+    sidebarId: sidebarEnabled ? readSidebarId(header) : DEFAULT_SIDEBAR_ID,
     tocPresence: readTocPresence(header),
     tocRuntimeId: readTocRuntimeId(header),
     tocOwnerId: readTocOwnerId(header),

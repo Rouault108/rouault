@@ -141,9 +141,6 @@ export class BaseLayout {
     const isNotePage = data.note !== undefined;
     const shouldIgnorePagefind = isNotePage && (data.notePage?.pagefind ?? null) === null;
     const corpora = buildCorpusNavigation(data.corpusPages ?? []);
-    if (data.buildMetadata === undefined || data.buildMetadata === null) {
-      throw new Error('BaseLayout requires buildMetadata.');
-    }
     const buildMetadata = loadBuildMetadataData({
       buildId: data.buildMetadata.buildId,
       buildLabel: data.buildMetadata.buildLabel,

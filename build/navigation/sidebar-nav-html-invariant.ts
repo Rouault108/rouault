@@ -319,12 +319,13 @@ export const validateSidebarNavHtmlInvariant = (
 
   const directNavChildren = directElementChildren(nav);
   const directLists = directNavChildren.filter((child) => child.tagName === 'ul');
-  if (directLists.length !== 1 || directNavChildren.length !== 1) {
+  const directList = directLists[0];
+  if (directList === undefined || directLists.length !== 1 || directNavChildren.length !== 1) {
     fail(sourceLabel, 'nav[data-sidebar-nav] must have exactly one direct child ul.');
   }
 
   const navElements = collectRows(nav, sourceLabel);
-  const rootRows = directElementChildren(directLists[0]!).filter((child) => child.tagName === 'li');
+  const rootRows = directElementChildren(directList).filter((child) => child.tagName === 'li');
   if (rootRows.length === 0) {
     fail(sourceLabel, 'nav[data-sidebar-nav] direct child ul must contain at least one li row.');
   }
