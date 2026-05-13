@@ -44,12 +44,16 @@ export interface BaseLayoutData {
   notes?: NoteNavigationEntry[];
   corpusPages?: readonly CorpusPageEntry[];
   currentCorpusKey?: string;
-  buildMetadata?: BuildMetadataData | null;
+  buildMetadata?: BuildMetadataData;
   clientBundle?: unknown;
   headerTocPresence?: TocPresence;
   headerTocRuntimeId?: string;
   headerTocOwnerId?: string;
 }
+
+type BaseLayoutRenderInput = Omit<BaseLayoutData, 'buildMetadata'> & {
+  buildMetadata?: BuildMetadataData | null;
+};
 
 const buildThemeBootstrapScript = (): string =>
   `
@@ -122,8 +126,11 @@ const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar
   ]);
 
 export class BaseLayout {
-  render(data: BaseLayoutData) {
-    if (data.buildMetadata === undefined || data.buildMetadata === null) {
+  render(data: BaseLayoutData): string;
+  render(data: BaseLayoutRenderInput): string {
+    const rawBuildMetadata = data.buildMetadata;
+
+    if (rawBuildMetadata === undefined || rawBuildMetadata === null) {
       throw new Error('BaseLayout requires buildMetadata.');
     }
 
@@ -146,9 +153,9 @@ export class BaseLayout {
     const shouldIgnorePagefind = isNotePage && (data.notePage?.pagefind ?? null) === null;
     const corpora = buildCorpusNavigation(data.corpusPages ?? []);
     const buildMetadata = loadBuildMetadataData({
-      buildId: data.buildMetadata.buildId,
-      buildLabel: data.buildMetadata.buildLabel,
-      generatedAt: data.buildMetadata.generatedAt,
+      buildId: rawBuildMetadata.buildId,
+      buildLabel: rawBuildMetadata.buildLabel,
+      generatedAt: rawBuildMetadata.generatedAt,
       sourceLabel: 'BaseLayout',
     });
 
