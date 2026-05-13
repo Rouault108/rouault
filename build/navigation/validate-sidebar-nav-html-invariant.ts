@@ -60,9 +60,13 @@ const hasAttribute = (element: Parse5Element, name: string): boolean =>
 const directElementChildren = (node: Parse5ParentNode): Parse5Element[] =>
   node.childNodes.filter((childNode): childNode is Parse5Element => isElementNode(childNode));
 
+const isCommentNode = (node: Parse5ChildNode): boolean => node.nodeName === '#comment';
+
 const isWhitespaceNode = (node: Parse5ChildNode): boolean =>
-  ('value' in node && typeof node.value === 'string' && node.value.trim().length === 0) ||
-  node.nodeName === '#comment';
+  !isCommentNode(node) &&
+  'value' in node &&
+  typeof node.value === 'string' &&
+  node.value.trim().length === 0;
 
 const visibleTopLevelChildren = (fragment: Parse5DocumentFragment): Parse5ChildNode[] =>
   fragment.childNodes.filter((childNode) => !isWhitespaceNode(childNode));
@@ -277,6 +281,10 @@ export const validateSidebarNavHtmlInvariant = (
   }
 
   const fragment = parse5.parseFragment(navHtml);
+  if (fragment.childNodes.some((childNode) => isCommentNode(childNode))) {
+    fail(sourceLabel, 'navHtml must not contain top-level comment nodes.');
+  }
+
   const topLevelChildren = visibleTopLevelChildren(fragment);
   if (topLevelChildren.length !== 1 || !isElementNode(topLevelChildren[0])) {
     fail(sourceLabel, 'navHtml must be a single top-level nav[data-sidebar-nav] fragment.');
@@ -285,6 +293,10 @@ export const validateSidebarNavHtmlInvariant = (
   const nav = topLevelChildren[0];
   if (nav.tagName !== 'nav' || !hasAttribute(nav, 'data-sidebar-nav')) {
     fail(sourceLabel, 'navHtml top-level element must be nav[data-sidebar-nav].');
+  }
+
+  if (nav.childNodes.some((childNode) => isCommentNode(childNode))) {
+    fail(sourceLabel, 'nav[data-sidebar-nav] must not contain direct child comment nodes.');
   }
 
   const directNavChildren = directElementChildren(nav);

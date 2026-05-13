@@ -126,6 +126,60 @@ describe('layout-sidebar-nav explicit contract', () => {
     controller.disconnect();
   });
 
+
+
+  it('active fallback は data-current-branch だけを読み data-current-path-indicator だけの branch を候補にしないこと', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div>
+        <nav data-sidebar-nav aria-label="ノートナビゲーション">
+          <ul>
+            <li data-node-id="alpha" data-node-kind="leaf" data-node-depth="0">
+              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/alpha">
+                <span data-sidebar-nav-label>Alpha</span>
+              </a>
+            </li>
+            <li data-node-id="branch" data-node-kind="branch" data-node-depth="0" data-current-branch="true" data-current-path-indicator="true">
+              <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true">
+                <span data-sidebar-nav-label>Branch</span>
+              </button>
+              <ul>
+                <li data-node-id="branch/leaf" data-node-kind="leaf" data-node-depth="1">
+                  <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/branch/leaf">
+                    <span data-sidebar-nav-label>Leaf</span>
+                  </a>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    `);
+
+    const nav = expectPresent(findLayoutSidebarNav(wrapper), 'nav');
+    const branch = expectPresent(wrapper.querySelector<HTMLLIElement>('li[data-node-id="branch"]'), 'branch');
+
+    const activeWithCurrentBranch = syncLayoutSidebarNav(nav, {
+      selectedId: null,
+      expandedIds: new Set(['branch']),
+      activeId: null,
+    });
+
+    expect(activeWithCurrentBranch).to.equal('branch');
+    expect(branch.getAttribute('data-current-branch')).to.equal('true');
+    expect(branch.getAttribute('data-current-path-indicator')).to.equal('true');
+
+    branch.removeAttribute('data-current-branch');
+    const activeWithPathIndicatorOnly = syncLayoutSidebarNav(nav, {
+      selectedId: null,
+      expandedIds: new Set(['branch']),
+      activeId: null,
+    });
+
+    expect(activeWithPathIndicatorOnly).to.equal('alpha');
+    expect(branch.getAttribute('data-current-branch')).to.equal(null);
+    expect(branch.getAttribute('data-current-path-indicator')).to.equal('true');
+  });
+
   it('metadata を外した fixture では interaction が成立しないこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>

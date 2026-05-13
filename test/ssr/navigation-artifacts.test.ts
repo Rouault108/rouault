@@ -243,6 +243,33 @@ describe('navigation artifacts', () => {
     }
   });
 
+
+
+  it('absent sidebar artifact では layout-header[sidebar-id] を default に固定すること', () => {
+    const html = `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <title>Absent Sidebar - Rouault</title>
+</head>
+<body>
+  <layout-header current-corpus-key="all" toc-presence="absent" sidebar-id="note-secondary" corpora-json="[]"></layout-header>
+  <app-router>
+    <main id="main-content"><p>body</p></main>
+  </app-router>
+</body>
+</html>
+    `.trim();
+
+    expect(() =>
+      createNavigationEnvelopeFromHtml(html, '/tmp/absent/index.html', {
+        mode: 'legacy-fixture',
+        buildId: 'build-absent',
+        generatedAt: '2026-04-11T00:00:00.000Z',
+      }),
+    ).toThrow(/default sidebar id/);
+  });
+
   it('main#main-content を持たない HTML は artifact 化を失敗させること', () => {
     const html = `
 <!DOCTYPE html>

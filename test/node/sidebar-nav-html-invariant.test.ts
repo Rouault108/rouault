@@ -55,19 +55,38 @@ const rootGroupId = createSidebarGroupId(
 );
 const validNavHtml = `<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="rev-1"><ul><li data-node-id="root" data-node-kind="branch" data-node-depth="0" data-current-branch="true" data-current-path-indicator="true"><button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="${rootGroupId}"><span data-sidebar-nav-label>Root</span></button><ul id="${rootGroupId}"><li data-node-id="root/child" data-node-kind="leaf" data-node-depth="1"><a data-sidebar-nav-control data-sidebar-nav-link href="/root/child/" aria-current="page"><span data-sidebar-nav-label>Child</span></a></li></ul></li><li data-node-id="sibling" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/sibling/"><span data-sidebar-nav-label>Sibling</span></a></li></ul></nav>`;
 
+type SidebarNavHtmlInvariantInput = Parameters<typeof validateSidebarNavHtmlInvariant>[0];
+type SidebarNavHtmlInvariantTestOverrides = Omit<
+  Partial<SidebarNavHtmlInvariantInput>,
+  'sidebarRows'
+> & {
+  readonly sidebarRows?: readonly SidebarNavRow[] | undefined;
+};
+
+const createValidationInput = (
+  overrides: SidebarNavHtmlInvariantTestOverrides = {},
+): SidebarNavHtmlInvariantInput => ({
+  mode: 'test-fixture',
+  sidebarPresent: true,
+  navHtml: validNavHtml,
+  selectedId: 'root/child',
+  sidebarId: 'note-primary',
+  stateScopeId: 'note-navigation',
+  initialExpandedIds: ['root'],
+  topologyRevision: 'rev-1',
+  sidebarRows: rows,
+  sourceLabel: 'test',
+  ...overrides,
+}) as SidebarNavHtmlInvariantInput;
+
 const validateFixture = (navHtml: string, sidebarRows: readonly SidebarNavRow[] | undefined = rows): void => {
-  validateSidebarNavHtmlInvariant({
-    mode: 'test-fixture',
-    sidebarPresent: true,
-    navHtml,
-    selectedId: 'root/child',
-    sidebarId: 'note-primary',
-    stateScopeId: 'note-navigation',
-    initialExpandedIds: ['root'],
-    topologyRevision: 'rev-1',
-    sidebarRows,
-    sourceLabel: 'test',
-  });
+  validateSidebarNavHtmlInvariant(createValidationInput({ navHtml, sidebarRows }));
+};
+
+const expectInvalidFixture = (overrides: SidebarNavHtmlInvariantTestOverrides): void => {
+  expect(() => validateSidebarNavHtmlInvariant(createValidationInput(overrides))).to.throw(
+    SidebarNavHtmlInvariantError,
+  );
 };
 
 describe('sidebar nav html invariant', () => {
@@ -123,6 +142,93 @@ describe('sidebar nav html invariant', () => {
     expect(() => validateFixture(validNavHtml.replace(' data-current-branch="true"', ''), undefined)).to.throw(
       SidebarNavHtmlInvariantError,
     );
+  });
+
+
+
+  it('top-level nav fragment の単一性と comment 禁止を検証すること', () => {
+    expectInvalidFixture({ navHtml: '<div></div>' });
+    expectInvalidFixture({ navHtml: `${validNavHtml}${validNavHtml}` });
+    expectInvalidFixture({ navHtml: `${validNavHtml}<div></div>` });
+    expectInvalidFixture({ navHtml: `<!-- stale -->${validNavHtml}` });
+    expectInvalidFixture({
+      navHtml: validNavHtml.replace(
+        '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="rev-1">',
+        '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="rev-1"><!-- stale -->',
+      ),
+    });
+  });
+
+  it('nav 直下 ul contract を direct child として検証すること', () => {
+    expectInvalidFixture({
+      navHtml:
+        '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="rev-1"></nav>',
+    });
+    expectInvalidFixture({
+      navHtml: validNavHtml.replace(
+        '</nav>',
+        '<ul><li data-node-id="extra" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/extra/">Extra</a></li></ul></nav>',
+      ),
+    });
+    expectInvalidFixture({
+      navHtml:
+        '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="rev-1"><ul></ul></nav>',
+    });
+  });
+
+  it('leaf href と aria-current の leaf-only selected contract を検証すること', () => {
+    expectInvalidFixture({ navHtml: validNavHtml.replace(' href="/root/child/"', '') });
+    expectInvalidFixture({ navHtml: validNavHtml.replace('href="/root/child/"', 'href=""') });
+    expectInvalidFixture({
+      navHtml: validNavHtml.replace(
+        '<button type="button"',
+        '<button aria-current="true" type="button"',
+      ),
+    });
+    expectInvalidFixture({
+      navHtml: validNavHtml.replace(
+        'href="/sibling/"',
+        'href="/sibling/" aria-current="location"',
+      ),
+    });
+    expectInvalidFixture({ navHtml: validNavHtml.replace('aria-current="page"', 'aria-current="location"') });
+    expectInvalidFixture({ selectedId: 'missing' });
+    expectInvalidFixture({ selectedId: 'root' });
+  });
+
+  it('initialExpandedIds と aria-expanded / hidden の双方向整合を検証すること', () => {
+    expectInvalidFixture({ initialExpandedIds: ['root/child'] });
+    expectInvalidFixture({ initialExpandedIds: ['missing'] });
+    expectInvalidFixture({
+      navHtml: validNavHtml.replace(`<ul id="${rootGroupId}">`, `<ul hidden id="${rootGroupId}">`),
+    });
+    expectInvalidFixture({
+      navHtml: validNavHtml.replace('aria-expanded="true"', 'aria-expanded="false"'),
+      initialExpandedIds: [],
+    });
+  });
+
+  it('topologyRevision と current marker の false positive / false negative を検証すること', () => {
+    expectInvalidFixture({ navHtml: validNavHtml.replace(' data-topology-revision="rev-1"', '') });
+    expectInvalidFixture({
+      navHtml: validNavHtml.replace(
+        'data-topology-revision="rev-1"',
+        'data-topology-revision="rev-2"',
+      ),
+    });
+    expectInvalidFixture({
+      navHtml: validNavHtml.replace(
+        '<li data-node-id="sibling"',
+        '<li data-node-id="sibling" data-current-branch="true"',
+      ),
+    });
+    expectInvalidFixture({
+      navHtml: validNavHtml.replace(
+        '<li data-node-id="sibling"',
+        '<li data-node-id="sibling" data-current-path-indicator="true"',
+      ),
+    });
+    expectInvalidFixture({ navHtml: validNavHtml.replace(' data-current-path-indicator="true"', '') });
   });
 
   it('ul 直下の非 li element を拒否すること', () => {

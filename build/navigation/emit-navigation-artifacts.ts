@@ -19,6 +19,7 @@ import type {
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import {
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
+  DEFAULT_SIDEBAR_ID,
 } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { readParse5HydrationMarkerResult } from './parse5-hydration-markers.js';
 import { validateSidebarNavHtmlInvariant } from './validate-sidebar-nav-html-invariant.js';
@@ -425,6 +426,10 @@ const assertHeaderSidebarConsistency = (
       throw new Error('[navigation-artifact] header.sidebarId must match sidebar.sidebarId.');
     }
     return;
+  }
+
+  if (headerProjection.sidebarId !== DEFAULT_SIDEBAR_ID) {
+    throw new Error('[navigation-artifact] header.sidebarEnabled=false requires default sidebar id.');
   }
 
   if (sidebarProjection !== null) {

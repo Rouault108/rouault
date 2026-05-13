@@ -65,6 +65,42 @@ describe('navigation envelope validator browser contract', () => {
     }
   });
 
+
+
+  it('present sidebar payload の navHtml null / empty / non-string を contract error に変換すること', () => {
+    const createPresentSidebarEnvelope = (navHtml: unknown): unknown => ({
+      ...createEnvelope(),
+      shellProjection: {
+        header: {
+          corpora: [],
+          currentCorpusKey: 'all',
+          noteLayout: true,
+          sidebarEnabled: true,
+          sidebarId: 'note-primary',
+          tocPresence: 'absent',
+        },
+        sidebar: {
+          present: true,
+          sidebarId: 'note-primary',
+          stateScopeId: 'note-navigation',
+          selectedId: null,
+          initialExpandedIds: [],
+          topologyRevision: 'topology:test',
+          navHtml,
+          heading: null,
+          fixedBreakpoint: 1024,
+          presentation: 'auto',
+        },
+      },
+    });
+
+    for (const navHtml of [null, '', '   ', 42]) {
+      expect(() => validateNavigationEnvelope(createPresentSidebarEnvelope(navHtml))).to.throw(
+        NavigationEnvelopeContractError,
+      );
+    }
+  });
+
   it('buildId / generatedAt mismatch は metadata mismatch taxonomy を使うこと', () => {
     expect(() =>
       validateLoadedEnvelope({
