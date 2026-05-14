@@ -280,4 +280,44 @@ test.describe('mobile TOC header trigger contract', () => {
     expect(state.desktopTocNavExists).toBe(false);
   });
 
+
+  test('TOC ありノートから About へ SPA 遷移しても旧 TOC DOM と header 属性を残さないこと', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 400, height: 900 });
+    await page.goto(layoutRichPath);
+    await waitForHeaderTrigger(page);
+
+    await clickHeaderTrigger(page);
+    await expect.poll(async () => (await readMobilePanelState(page)).panelOpen).toBe(true);
+    await expect(page.locator('[data-layout-toc-mobile-panel]')).toHaveCount(1);
+    await expect(page.locator('[data-layout-toc-mobile-nav]')).toHaveCount(1);
+    await expect(page.locator('layout-toc-controller')).toHaveCount(1);
+    await expect(page.locator('[data-layout-toc-nav]')).toHaveCount(1);
+
+    const aboutLink = page.locator('layout-footer a[href="/about/"]').first();
+    await expect(aboutLink).toBeVisible();
+    await aboutLink.click();
+
+    await expect(page).toHaveURL('/about/');
+    await waitForAboutHeaderStable(page);
+
+    await expect(page.locator('[data-layout-toc-mobile-panel]')).toHaveCount(0);
+    await expect(page.locator('[data-layout-toc-mobile-nav]')).toHaveCount(0);
+    await expect(page.locator('layout-toc-controller')).toHaveCount(0);
+    await expect(page.locator('[data-layout-toc-nav]')).toHaveCount(0);
+
+    const state = await readAboutHeaderTocAbsenceState(page);
+    expect(state.headerTocPresence).toBe('absent');
+    expect(state.headerTocTriggerReserved).toBe('false');
+    expect(state.headerTocRuntimeId).toBeNull();
+    expect(state.headerOwnerId).toBeNull();
+
+    expect(state.triggerExists).toBe(true);
+    expect(state.triggerVisible).toBe(false);
+    expect(state.triggerDisabled).toBe(true);
+    expect(state.triggerHydrationState).toBe('unhydrated');
+    expect(state.triggerControls).toBeNull();
+  });
+
 });
