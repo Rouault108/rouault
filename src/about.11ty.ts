@@ -1,6 +1,4 @@
 import { escapeHtmlText, serializeHtmlAttributes } from './layouts/html-output.js';
-import { renderTocChromeHtml } from './layouts/toc-html.js';
-import type { TocChromeProjection } from '../shared/toc/toc-chrome-projection.js';
 
 interface AboutSection {
   id: string;
@@ -58,35 +56,7 @@ const ABOUT_SECTIONS: readonly AboutSection[] = [
   },
 ] as const;
 
-const ABOUT_HEADINGS = ABOUT_SECTIONS.map((section) => ({
-  id: section.id,
-  text: section.heading,
-  level: 2,
-}));
-
-const ABOUT_TOC_SOURCE_ID = 'toc-source-about';
-const ABOUT_TOC_RUNTIME_ID = 'about-page-toc';
-const ABOUT_TOC_OWNER_ID = 'about-page-toc-owner';
-const ABOUT_TOC_SCOPE_ID = 'about-toc';
 const ABOUT_CONTENT_ROOT_ID = 'about-page-content';
-
-const ABOUT_TOC_CAPABILITIES = {
-  activeTracking: true,
-  dynamicScopes: false,
-  mobilePanel: true,
-} as const;
-
-const ABOUT_TOC = {
-  sourceId: ABOUT_TOC_SOURCE_ID,
-  runtimeId: ABOUT_TOC_RUNTIME_ID,
-  ownerId: ABOUT_TOC_OWNER_ID,
-  scopeId: ABOUT_TOC_SCOPE_ID,
-  headings: ABOUT_HEADINGS,
-  capabilities: ABOUT_TOC_CAPABILITIES,
-  contentRootId: ABOUT_CONTENT_ROOT_ID,
-  homeHref: '/',
-  shouldHydrate: true,
-} as const satisfies TocChromeProjection;
 
 const renderSummaryItems = (): string =>
   ABOUT_SUMMARY_ITEMS.map((item) => `<li>${escapeHtmlText(item)}</li>`).join('');
@@ -121,17 +91,14 @@ export class AboutPageTemplate {
       layout: 'base',
       title: 'About',
       permalink: '/about/index.html',
-      headerTocPresence: 'present',
-      headerTocRuntimeId: ABOUT_TOC_RUNTIME_ID,
-      headerTocOwnerId: ABOUT_TOC_OWNER_ID,
-      headerTocShouldHydrate: true,
+      headerTocPresence: 'absent',
     };
   }
 
   render() {
     return `
       <section class="about-shell">
-        <article class="layout-main-col container-reading about-main-col">
+        <article class="about-main-col">
           <div class="about-content">
             <header class="about-hero">
               <p class="about-eyebrow">About Rouault</p>
@@ -151,8 +118,6 @@ export class AboutPageTemplate {
             </div>
           </div>
         </article>
-
-        ${renderTocChromeHtml(ABOUT_TOC)}
       </section>
     `.trim();
   }

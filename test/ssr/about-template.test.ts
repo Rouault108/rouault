@@ -3,29 +3,39 @@ import { describe, expect, it } from 'vitest';
 import { AboutPageTemplate } from '../../src/about.11ty.js';
 
 describe('AboutPageTemplate', () => {
-  it('about 専用の静的ページ設定を返すこと', () => {
+  it('about 専用の TOC absent 静的ページ設定を返すこと', () => {
     const template = new AboutPageTemplate();
     const data = template.data();
 
     expect(data.layout).toBe('base');
     expect(data.title).toBe('About');
     expect(data.permalink).toBe('/about/index.html');
-    expect(data.headerTocPresence).toBe('present');
-    expect(data.headerTocRuntimeId).toBe('about-page-toc');
+    expect(data.headerTocPresence).toBe('absent');
+    expect(data).not.toHaveProperty('headerTocRuntimeId');
+    expect(data).not.toHaveProperty('headerTocOwnerId');
+    expect(data).not.toHaveProperty('headerTocShouldHydrate');
   });
 
-  it('about を静的 HTML として描画し、TOC を独立して hydration 可能にすること', () => {
+  it('about を TOC なしの静的紹介ページとして描画すること', () => {
     const template = new AboutPageTemplate();
     const rendered = template.render();
 
     expect(rendered).toContain('<section class="about-shell">');
+    expect(rendered).toContain('<article class="about-main-col">');
     expect(rendered).toContain('id="about-page-content" class="about-prose"');
     expect(rendered).toContain('About Rouault');
     expect(rendered).toContain('個人ノートを静かに読むためのアプリケーション');
-    expect(rendered).toContain('<layout-toc');
-    expect(rendered).toContain('data-hydration-scope="about-toc"');
-    expect(rendered).toContain('data-hydration-capability="interactive"');
-    expect(rendered).toContain('data-hydration-trigger="initial"');
+
+    expect(rendered).not.toContain('layout-main-col');
+    expect(rendered).not.toContain('container-reading');
+    expect(rendered).not.toContain('layout-toc-col');
+    expect(rendered).not.toContain('data-layout-toc-nav');
+    expect(rendered).not.toContain('toc-source-about');
+    expect(rendered).not.toContain('<layout-toc-controller');
+    expect(rendered).not.toContain('data-toc-owner-id="about-page-toc-owner"');
+    expect(rendered).not.toContain('data-hydration-scope="about-toc"');
+    expect(rendered).not.toContain('data-hydration-deferred="toc-trigger"');
+    expect(rendered).not.toContain('data-toc-trigger-reserved');
     expect(rendered).not.toContain('<about-page');
     expect(rendered).not.toContain('<layout-sidebar');
     expect(rendered).not.toContain('<search-page');
