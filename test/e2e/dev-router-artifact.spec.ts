@@ -40,6 +40,21 @@ test.describe('dev router artifact', () => {
     const artifactResponse = await artifactResponsePromise;
     expect(artifactResponse.status()).toBe(200);
 
+    const artifact = await artifactResponse.json();
+    expect(artifact.shellProjection.header.tocPresence).toBe('absent');
+    expect(artifact.shellProjection.header.tocRuntimeId).toBeNull();
+    expect(artifact.shellProjection.header.tocOwnerId).toBeNull();
+    expect(artifact.shellProjection.header.tocTriggerReserved).toBe(false);
+
+    const artifactHtml = artifact.document.html;
+    expect(artifactHtml).toContain('class="about-shell"');
+    expect(artifactHtml).toContain('class="about-main-col"');
+    expect(artifactHtml).toContain('id="about-page-content"');
+    expect(artifactHtml).not.toContain('layout-toc-col');
+    expect(artifactHtml).not.toContain('layout-toc-controller');
+    expect(artifactHtml).not.toContain('toc-source-about');
+    expect(artifactHtml).not.toContain('about-page-toc');
+
     await expect(page).toHaveURL('/about/');
     await expect(page.locator('#main-content')).not.toContainText(
       'このページは見つかりませんでした',
