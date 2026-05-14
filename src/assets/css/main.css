@@ -1861,29 +1861,13 @@ layout-toc:not(:defined) {
 }
 
 .about-shell {
-  --about-main-track: calc(var(--width-reading) + 12rem);
-  --about-toc-inline-size: var(--aside-width);
-  --about-toc-track: var(--about-toc-inline-size);
-  --about-shell-column-gap: var(--space-8, 32px);
+  --about-content-max-inline-size: 52rem;
 
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--about-toc-track);
-  align-items: start;
-  min-height: calc(100vh - var(--header-height));
-  max-width: var(--bp-xl);
-  margin-inline: auto;
+  box-sizing: border-box;
   width: 100%;
-}
-
-@media (min-width: 1024px) {
-  .about-shell {
-    column-gap: var(--about-shell-column-gap);
-    max-width: min(
-      100%,
-      var(--bp-xl),
-      calc(var(--about-main-track) + var(--about-shell-column-gap) + var(--about-toc-inline-size))
-    );
-  }
+  min-height: calc(100vh - var(--header-height));
+  padding-block: var(--page-shell-padding-block-start) var(--page-shell-padding-block-end);
+  padding-inline: var(--page-shell-padding-inline);
 }
 
 app-router[data-sidebar-presence='present'] .layout-sidebar-col {
@@ -2281,7 +2265,10 @@ layout-sidebar-surface .heading {
 }
 
 .about-main-col {
-  max-width: min(100%, var(--about-main-track, calc(var(--width-reading) + 12rem)));
+  box-sizing: border-box;
+  min-inline-size: 0;
+  width: min(100%, var(--about-content-max-inline-size, 52rem));
+  margin-inline: auto;
 }
 
 .about-hero {
@@ -2302,8 +2289,9 @@ layout-sidebar-surface .heading {
 
 .about-title {
   margin: 0;
-  font-size: clamp(var(--text-2xl), 4vw, var(--text-4xl));
+  font-size: clamp(var(--text-2xl), 3.2vw, var(--text-3xl));
   line-height: var(--line-height-tight);
+  text-wrap: balance;
 }
 
 .about-lead {
@@ -2581,10 +2569,6 @@ layout-sidebar-surface .heading {
 
 /* Tablet: about / home の密度調整 */
 @media (max-width: 767px) {
-  .about-shell {
-    --about-toc-track: minmax(200px, 34vw);
-  }
-
   .home-meta {
     gap: var(--space-1, 4px) var(--space-2, 8px);
   }
@@ -2605,8 +2589,7 @@ layout-sidebar-surface .heading {
 
   .note-shell,
   .note-shell[data-toc-presence='present'],
-  .note-shell[data-toc-presence='absent'],
-  .about-shell {
+  .note-shell[data-toc-presence='absent'] {
     grid-template-columns: minmax(0, 1fr);
     row-gap: 0;
   }
@@ -2622,8 +2605,7 @@ layout-sidebar-surface .heading {
     padding-inline: var(--space-3, 12px);
   }
 
-  .note-shell[data-toc-presence='present'] .layout-toc-col,
-  .about-shell .layout-toc-col {
+  .note-shell[data-toc-presence='present'] .layout-toc-col {
     grid-column: 1;
     position: static;
     block-size: 0;

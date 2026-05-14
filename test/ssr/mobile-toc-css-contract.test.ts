@@ -22,15 +22,22 @@ describe('mobile toc css contract', () => {
     expect(mainCss).toContain("@import './layout-toc.css';");
   });
 
-  it('mobile shell collapses TOC holder into a zero-height host while keeping one-column shells', () => {
+  it('mobile shell collapses note TOC holder without involving about shell', () => {
     expect(mainCss).toContain('@media (max-width: 639px)');
 
     expect(mainCss).toMatch(
-      /\.note-shell,\s*\.note-shell\[data-toc-presence='present'\],\s*\.note-shell\[data-toc-presence='absent'\],\s*\.about-shell\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\);\s*row-gap:\s*0;/s,
+      /\.note-shell,\s*\.note-shell\[data-toc-presence='present'\],\s*\.note-shell\[data-toc-presence='absent'\]\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\);\s*row-gap:\s*0;/s,
     );
 
     expect(mainCss).toMatch(
-      /\.note-shell\[data-toc-presence='present'\]\s+\.layout-toc-col,\s*\.about-shell\s+\.layout-toc-col\s*\{\s*grid-column:\s*1;\s*position:\s*static;\s*block-size:\s*0;\s*min-block-size:\s*0;\s*max-block-size:\s*none;\s*overflow:\s*visible;\s*transform:\s*none;\s*\}/s,
+      /\.note-shell\[data-toc-presence='present'\]\s+\.layout-toc-col\s*\{\s*grid-column:\s*1;\s*position:\s*static;\s*block-size:\s*0;\s*min-block-size:\s*0;\s*max-block-size:\s*none;\s*overflow:\s*visible;\s*transform:\s*none;\s*\}/s,
+    );
+
+    expect(mainCss).not.toMatch(/\.about-shell\s+\.layout-toc-col/u);
+    expect(mainCss).not.toMatch(/\.about-shell\s+\[data-layout-toc-nav\]/u);
+    expect(mainCss).not.toMatch(/\.about-shell\s+\[data-layout-toc-mobile-panel\]/u);
+    expect(mainCss).not.toMatch(
+      /--about-(main-track|toc-track|toc-inline-size|shell-column-gap)\b/u,
     );
   });
 
