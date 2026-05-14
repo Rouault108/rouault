@@ -507,10 +507,18 @@ export class LayoutHeader extends LitElement {
     this.sidebarEnabled = snapshot.sidebarEnabled;
     this.sidebarId = snapshot.sidebarEnabled ? snapshot.sidebarId : DEFAULT_LAYOUT_SIDEBAR_ID;
     this.tocPresence = snapshot.tocPresence;
-    this.tocRuntimeId = snapshot.tocRuntimeId ?? '';
-    this.tocOwnerId = snapshot.tocOwnerId ?? '';
-    if (this.tocOwnerId.length > 0) {
-      this.setAttribute('data-toc-owner-id', this.tocOwnerId);
+    const tocRuntimeId = snapshot.tocRuntimeId?.trim() ?? '';
+    this.tocRuntimeId = tocRuntimeId;
+    if (tocRuntimeId.length > 0) {
+      this.setAttribute('toc-runtime-id', tocRuntimeId);
+    } else {
+      this.removeAttribute('toc-runtime-id');
+    }
+
+    const tocOwnerId = snapshot.tocOwnerId?.trim() ?? '';
+    this.tocOwnerId = tocOwnerId;
+    if (tocOwnerId.length > 0) {
+      this.setAttribute('data-toc-owner-id', tocOwnerId);
     } else {
       this.removeAttribute('data-toc-owner-id');
     }

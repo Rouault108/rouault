@@ -1426,6 +1426,49 @@ describe('layout-header browser contract', () => {
     expect(header.readShellProjection().tocPresence).to.equal('absent');
   });
 
+  it('shell projection が present から absent へ更新されると TOC runtime 属性を削除すること', async () => {
+    const header = await fixture<LayoutHeader>(
+      html`<layout-header
+        note-layout
+        toc-presence="present"
+        toc-runtime-id="old-runtime-id"
+        data-toc-owner-id="old-owner-id"
+        toc-trigger-reserved="true"
+      ></layout-header>`,
+    );
+    await waitForLitUpdate(header);
+
+    expect(header.getAttribute('toc-runtime-id')).to.equal('old-runtime-id');
+    expect(header.getAttribute('data-toc-owner-id')).to.equal('old-owner-id');
+
+    header.applyShellProjection({
+      corpora: [],
+      currentCorpusKey: 'all',
+      noteLayout: false,
+      sidebarEnabled: false,
+      sidebarId: DEFAULT_LAYOUT_SIDEBAR_ID,
+      tocPresence: 'absent',
+      tocRuntimeId: null,
+      tocOwnerId: null,
+      tocTriggerReserved: false,
+    });
+    await waitForLitUpdate(header);
+
+    const trigger = expectPresent(
+      header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
+      'tocTrigger',
+    );
+
+    expect(header.getAttribute('toc-presence')).to.equal('absent');
+    expect(header.getAttribute('toc-trigger-reserved')).to.equal('false');
+    expect(header.hasAttribute('toc-runtime-id')).to.equal(false);
+    expect(header.hasAttribute('data-toc-owner-id')).to.equal(false);
+    expect(header.readShellProjection().tocRuntimeId).to.equal(null);
+    expect(header.readShellProjection().tocOwnerId).to.equal(null);
+    expect(isVisible(trigger)).to.equal(false);
+    expect(trigger.disabled).to.equal(true);
+  });
+
   it('sidebar disabled snapshot は stale sidebar-id を default に正規化すること', async () => {
     const header = await fixture<LayoutHeader>(
       html`<layout-header sidebar-id="note-secondary"></layout-header>`,
