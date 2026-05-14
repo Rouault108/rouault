@@ -125,6 +125,7 @@ export class AboutPageTemplate {
       headerTocPresence: 'present',
       headerTocRuntimeId: ABOUT_TOC_RUNTIME_ID,
       headerTocOwnerId: ABOUT_TOC_OWNER_ID,
+      headerTocShouldHydrate: true,
     };
   }
 

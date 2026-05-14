@@ -198,6 +198,61 @@ function validateNoteHydrationBudget(
   );
 }
 
+const validateTocProjectionContract = (input: {
+  slug: string;
+  tocPresence: TocPresence;
+  headings: readonly TocHeading[];
+  tocCapabilities: NotePageProjection['toc']['capabilities'];
+  tocCapabilitySource: IntrinsicNote['tocCapabilitySource'] | undefined;
+  shouldHydrateToc: boolean;
+  tocRuntimeId: string;
+  tocOwnerId: string;
+  tocSourceId: string;
+  contentRootId: string;
+}): void => {
+  if (input.tocPresence === 'absent') {
+    return;
+  }
+
+  if (
+    input.tocRuntimeId.trim().length === 0 ||
+    input.tocOwnerId.trim().length === 0 ||
+    input.tocSourceId.trim().length === 0 ||
+    input.contentRootId.trim().length === 0
+  ) {
+    throw new Error(`[projection] note "${input.slug}" の present TOC identity が不完全です。`);
+  }
+
+  if (input.tocCapabilitySource === 'testing-override') {
+    if (input.headings.length === 0) {
+      throw new Error(`[projection] note "${input.slug}" の static TOC fixture に heading がありません。`);
+    }
+
+    const hasInvalidHeading = input.headings.some(
+      (heading) => heading.level < 2 || heading.level > 6,
+    );
+    if (hasInvalidHeading) {
+      throw new Error(`[projection] note "${input.slug}" の static TOC fixture に h2-h6 以外があります。`);
+    }
+
+    if (
+      input.tocCapabilities.activeTracking !== false ||
+      input.tocCapabilities.dynamicScopes !== false ||
+      input.tocCapabilities.mobilePanel !== false ||
+      input.shouldHydrateToc !== false
+    ) {
+      throw new Error(`[projection] note "${input.slug}" の static TOC capabilities が不正です。`);
+    }
+    return;
+  }
+
+  if (!input.shouldHydrateToc) {
+    throw new Error(
+      `[projection] note "${input.slug}" has present TOC without hydration outside testing override.`,
+    );
+  }
+};
+
 export function buildNotePageProjection(input: NotePageProjectionInput): NotePageProjection {
   const noteKind = input.note.kind;
   const chromeProfile = resolveEffectiveNoteChromeProfile(noteKind, input.note.chromeProfile);
@@ -219,6 +274,18 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
   const tocCapabilities = normalizeTocCapabilities(input.note.tocCapabilities);
   const shouldHydrateToc =
     tocCapabilities.activeTracking || tocCapabilities.dynamicScopes || tocCapabilities.mobilePanel;
+  validateTocProjectionContract({
+    slug,
+    tocPresence,
+    headings,
+    tocCapabilities,
+    tocCapabilitySource: input.note.tocCapabilitySource ?? 'inferred',
+    shouldHydrateToc,
+    tocRuntimeId,
+    tocOwnerId,
+    tocSourceId,
+    contentRootId,
+  });
   const genres = shouldRenderArticleHeaderTags(input.note) ? normalizeGenres(input.note.genre) : [];
   const contentHtml = injectNoteContentProfiles(
     typeof input.note.content === 'string' ? input.note.content : '',

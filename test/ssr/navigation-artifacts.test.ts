@@ -156,7 +156,7 @@ describe('navigation artifacts', () => {
       toc-presence="absent"
       corpora-json="[]"
       current-corpus-key="all"
-      toc-runtime-id="toc-source-example"
+      toc-trigger-reserved="false"
     ></layout-header>
     <app-router data-sidebar-presence="present">
       <aside data-app-shell-sidebar-host>

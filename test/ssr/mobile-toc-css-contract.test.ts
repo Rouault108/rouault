@@ -39,7 +39,7 @@ describe('mobile toc css contract', () => {
       hasDeclarationForSelectorInMedia(
         layoutTocCss,
         (params) => /\bmax-width\s*:\s*639px\b/u.test(params),
-        '.layout-toc-col [data-layout-toc-nav]',
+        ".layout-toc-col[data-toc-hydration='hydrated'] [data-layout-toc-nav]",
         'display',
         'none',
       ),

@@ -89,9 +89,10 @@ const renderNoteShell = () =>
                 toc-presence="present"
                 toc-runtime-id="story-note-toc-source"
                 data-toc-owner-id="story-note-toc-owner"
+                toc-trigger-reserved="true"
               ></layout-header>
               <main id="note-shell-main" tabindex="-1">
-                <section class="note-shell">
+                <section class="note-shell" data-toc-presence="present">
                   <aside class="layout-sidebar-col" aria-label="ナビゲーション">
                     <layout-sidebar
                       id="story-note-sidebar"

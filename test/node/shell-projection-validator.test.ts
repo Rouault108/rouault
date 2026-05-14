@@ -15,6 +15,9 @@ const header = {
   sidebarEnabled: true,
   sidebarId: 'note-primary',
   tocPresence: 'absent' as const,
+  tocRuntimeId: null,
+  tocOwnerId: null,
+  tocTriggerReserved: false,
 };
 
 const presentSidebar = {
@@ -136,7 +139,7 @@ describe('shell projection validator', () => {
 
     expect(() =>
       validateNavigationEnvelopeShellProjection({
-        header: { ...header, sidebarEnabled: false },
+        header: { ...header, sidebarEnabled: false, sidebarId: 'note-primary' },
         sidebar: presentSidebar,
       }),
     ).toThrow(ShellProjectionValidationError);

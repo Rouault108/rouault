@@ -170,6 +170,17 @@ e2eFixtureId: 'note.toc-readable-long-heading'
 `,
         'utf8',
       );
+      writeFileSync(
+        join(fallbackTestingDir, 'toc-static-present.md'),
+        `---
+title: 'Static TOC Present'
+e2eFixtureId: 'note.toc-static-present'
+---
+
+# fixture
+`,
+        'utf8',
+      );
 
       const manifest = buildE2ENoteFixtureManifest(
         [

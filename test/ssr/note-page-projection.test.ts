@@ -8,13 +8,34 @@ import {
 import type { IntrinsicNote } from '../../build/data/notes.js';
 import { buildPagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 
+type NoteFixture = Partial<IntrinsicNote> &
+  Pick<
+    IntrinsicNote,
+    | 'rawSlug'
+    | 'slug'
+    | 'permalink'
+    | 'noteKind'
+    | 'sortIndex'
+    | 'tocHeadings'
+    | 'tocCapabilities'
+    | 'kind'
+  >;
+
 const buildProjection = (
-  note: IntrinsicNote,
-  notes: readonly IntrinsicNote[] = [],
+  inputNote: NoteFixture,
+  notes: readonly NoteFixture[] = [],
 ): NotePageProjection => {
+  const note: IntrinsicNote = {
+    ...inputNote,
+    tocCapabilitySource: inputNote.tocCapabilitySource ?? 'inferred',
+  };
+  const normalizedNotes: IntrinsicNote[] = notes.map((entry) => ({
+    ...entry,
+    tocCapabilitySource: entry.tocCapabilitySource ?? 'inferred',
+  }));
   const navigation = buildNoteNavigationModel({
     currentNote: note,
-    notes,
+    notes: normalizedNotes,
   });
   const pagefindDocument = buildPagefindDocumentData({
     title: typeof note.title === 'string' ? note.title : undefined,
@@ -45,6 +66,7 @@ describe('buildNotePageProjection', () => {
         dynamicScopes: false,
         mobilePanel: false,
       },
+      tocCapabilitySource: 'inferred',
       kind: 'reader',
       title: 'ジャズ理論の基礎',
       description: '即興と和声のメモ',
@@ -77,6 +99,7 @@ describe('buildNotePageProjection', () => {
         dynamicScopes: false,
         mobilePanel: false,
       },
+      tocCapabilitySource: 'inferred',
       kind: 'reader',
       title: '日付なし',
     });
@@ -97,6 +120,7 @@ describe('buildNotePageProjection', () => {
         dynamicScopes: false,
         mobilePanel: false,
       },
+      tocCapabilitySource: 'inferred',
       kind: 'reader',
       title: 'Published ISO',
       date: '2026-04-19T00:00:00.000Z',
@@ -174,7 +198,7 @@ describe('buildNotePageProjection', () => {
   });
 
   it('sidebar の selected id と icon 付き tree を受け渡すこと', () => {
-    const note: IntrinsicNote = {
+    const note: NoteFixture = {
       rawSlug: 'music/classical/mozart',
       slug: 'music/classical/mozart',
       permalink: '/notes/music/classical/mozart',
@@ -215,6 +239,7 @@ describe('buildNotePageProjection', () => {
           dynamicScopes: false,
           mobilePanel: false,
         },
+        tocCapabilitySource: 'inferred',
         kind: 'reader',
         title: 'Kind of Blue',
       },
@@ -239,7 +264,7 @@ describe('buildNotePageProjection', () => {
   });
 
   it('directory-index の current note を含む sidebar model を受け渡すこと', () => {
-    const note: IntrinsicNote = {
+    const note: NoteFixture = {
       rawSlug: 'music/index',
       slug: 'music',
       permalink: '/notes/music',
@@ -252,6 +277,7 @@ describe('buildNotePageProjection', () => {
         dynamicScopes: false,
         mobilePanel: false,
       },
+      tocCapabilitySource: 'inferred',
       kind: 'reader',
       title: '音楽とは何か',
       navigationDirectoryPresentation: {
@@ -274,6 +300,7 @@ describe('buildNotePageProjection', () => {
           dynamicScopes: false,
           mobilePanel: false,
         },
+        tocCapabilitySource: 'inferred',
         kind: 'reader',
         title: 'モーツァルト',
         navigationDirectoryPresentation: {
@@ -357,7 +384,11 @@ describe('buildNotePageProjection', () => {
         dynamicScopes: false,
         mobilePanel: false,
       },
-      kind: 'reader',
+      tocCapabilitySource: 'testing-override',
+      kind: 'testing',
+      testingArea: 'layout',
+      sourceRoot: 'test/fixtures/content',
+      e2eFixtureId: 'note.toc-static-present',
       title: 'Present Static',
       content: '<h2 id="intro">Intro</h2>',
     });

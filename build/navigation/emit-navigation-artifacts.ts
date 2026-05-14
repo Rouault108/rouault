@@ -16,6 +16,7 @@ import type {
   HeaderShellProjection,
   PayloadSidebarShellProjection,
 } from '../../shared/navigation/shell-projection.js';
+import { validateNavigationEnvelopeShellProjection } from '../../shared/navigation/shell-projection-validator.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import {
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
@@ -473,6 +474,13 @@ export const createNavigationEnvelopeFromHtml = (
   const headerProjection = extractHeaderProjection(document);
   const sidebarProjection = extractSidebarProjection(document);
   assertHeaderSidebarConsistency(headerProjection, sidebarProjection);
+  const shellProjection =
+    headerProjection === null
+      ? null
+      : validateNavigationEnvelopeShellProjection({
+          header: headerProjection,
+          sidebar: sidebarProjection,
+        });
   const hydrationPlan = collectHydrationPlan(document);
 
   return {
@@ -486,13 +494,7 @@ export const createNavigationEnvelopeFromHtml = (
       renderedKind: inferRenderedKind(document, htmlFilePath),
       announcedTitle: titleElement ? getTextContent(titleElement).trim() : '',
     },
-    shellProjection:
-      headerProjection === null
-        ? null
-        : {
-            header: headerProjection,
-            sidebar: sidebarProjection,
-          },
+    shellProjection,
     hydrationPlan: hydrationPlan.length > 0 ? { scopes: hydrationPlan } : null,
   };
 };

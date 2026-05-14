@@ -47,6 +47,8 @@ describe('navigation envelope', () => {
           sidebarEnabled: true,
           sidebarId: 'note-primary',
           tocPresence: 'absent',
+          tocRuntimeId: null,
+          tocOwnerId: null,
           tocTriggerReserved: false,
         },
         sidebar: {
@@ -89,6 +91,9 @@ describe('navigation envelope', () => {
           sidebarEnabled: true,
           sidebarId: 'note-primary',
           tocPresence: 'absent',
+          tocRuntimeId: null,
+          tocOwnerId: null,
+          tocTriggerReserved: false,
         },
         sidebar: {
           present: true,

@@ -26,6 +26,7 @@ export const REQUIRED_E2E_NOTE_FIXTURE_IDS = [
   'note.sidebar-scroll-target',
   'note.toc-absent',
   'note.toc-readable-long-heading',
+  'note.toc-static-present',
 ] as const;
 
 export type RequiredE2ENoteFixtureId = (typeof REQUIRED_E2E_NOTE_FIXTURE_IDS)[number];

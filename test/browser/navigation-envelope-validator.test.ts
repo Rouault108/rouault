@@ -38,6 +38,9 @@ const createPresentSidebarEnvelope = (navHtml: unknown): Record<string, unknown>
       sidebarEnabled: true,
       sidebarId: 'note-primary',
       tocPresence: 'absent',
+      tocRuntimeId: null,
+      tocOwnerId: null,
+      tocTriggerReserved: false,
     },
     sidebar: {
       present: true,

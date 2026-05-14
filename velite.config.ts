@@ -59,6 +59,13 @@ const notes = defineCollection({
       hydrationBudgetProfile: s.enum(NOTE_HYDRATION_BUDGET_PROFILE_NAMES).optional(),
       e2eFixtureId: s.string().optional(),
       excludeFromPublicationSurfaces: s.boolean().optional(),
+      tocCapabilitiesOverride: s
+        .object({
+          activeTracking: s.boolean(),
+          dynamicScopes: s.boolean(),
+          mobilePanel: s.boolean(),
+        })
+        .optional(),
       content: s.markdown(),
       excerpt: s.excerpt().optional(),
       toc: s.toc().optional(),
@@ -81,6 +88,20 @@ const notes = defineCollection({
         typeof data.e2eFixtureId === 'string' && data.e2eFixtureId.trim().length > 0
           ? data.e2eFixtureId.trim()
           : undefined;
+      const tocCapabilitiesOverride = data.tocCapabilitiesOverride;
+      const hasTocCapabilitiesOverride = tocCapabilitiesOverride !== undefined;
+      if (
+        hasTocCapabilitiesOverride &&
+        !(
+          sourceRoot === 'test/fixtures/content' &&
+          testingArea === 'layout' &&
+          e2eFixtureId === 'note.toc-static-present'
+        )
+      ) {
+        throw new Error(
+          `[metadata] tocCapabilitiesOverride is only allowed for note.toc-static-present layout fixtures: ${sourcePath}`,
+        );
+      }
 
       validateNoteMetadataContracts(kind, chromeProfile, testingArea, sourcePath);
       validateNoteContentContracts(kind, normalizedContent, sourcePath, testingArea);
@@ -98,6 +119,7 @@ const notes = defineCollection({
         ...(testingArea !== undefined ? { testingArea } : {}),
         ...(hydrationBudgetProfile !== undefined ? { hydrationBudgetProfile } : {}),
         ...(e2eFixtureId !== undefined ? { e2eFixtureId } : {}),
+        ...(hasTocCapabilitiesOverride ? { tocCapabilitiesOverride } : {}),
         status: data.status ?? '',
       };
     }),

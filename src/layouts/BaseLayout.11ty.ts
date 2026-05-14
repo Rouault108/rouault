@@ -49,6 +49,7 @@ export interface BaseLayoutData {
   headerTocPresence?: TocPresence;
   headerTocRuntimeId?: string;
   headerTocOwnerId?: string;
+  headerTocShouldHydrate?: boolean;
 }
 
 type BaseLayoutRenderInput = Omit<BaseLayoutData, 'buildMetadata'> & {
@@ -186,18 +187,31 @@ export class BaseLayout {
     ]);
     const tocPresence: TocPresence =
       data.notePage?.tocPresence ?? data.headerTocPresence ?? 'absent';
-    const tocRuntimeId =
+    const explicitHeaderTocShouldHydrate = data.headerTocShouldHydrate === true;
+    if (
+      data.notePage === undefined &&
+      tocPresence === 'present' &&
+      !explicitHeaderTocShouldHydrate
+    ) {
+      throw new Error('BaseLayout requires hydrated TOC for non-note headerTocPresence=present.');
+    }
+    const rawTocRuntimeId =
       data.notePage?.tocPresence === 'present'
         ? data.notePage.toc.runtimeId
-        : (data.headerTocRuntimeId ?? '');
+        : (data.headerTocRuntimeId ?? '').trim();
+    const tocRuntimeId = tocPresence === 'present' && rawTocRuntimeId.length > 0 ? rawTocRuntimeId : undefined;
     const explicitHeaderTocOwnerId = data.headerTocOwnerId?.trim() ?? '';
-    const tocOwnerId =
+    const rawTocOwnerId =
       data.notePage?.tocPresence === 'present'
         ? data.notePage.toc.ownerId
         : explicitHeaderTocOwnerId.length > 0
           ? explicitHeaderTocOwnerId
-          : tocRuntimeId;
-    const tocTriggerReserved = tocPresence === 'present' && tocOwnerId.length > 0;
+          : (tocRuntimeId ?? '');
+    const tocOwnerId = tocPresence === 'present' && rawTocOwnerId.length > 0 ? rawTocOwnerId : undefined;
+    const tocTriggerReserved =
+      tocPresence === 'present' &&
+      tocOwnerId !== undefined &&
+      (data.notePage?.toc.shouldHydrate ?? explicitHeaderTocShouldHydrate);
     const headerAttributes = serializeHtmlAttributes([
       { name: 'note-layout', value: Boolean(data.note), kind: 'boolean' },
       {

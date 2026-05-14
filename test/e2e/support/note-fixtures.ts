@@ -16,7 +16,8 @@ export type E2ENoteFixtureId =
   | 'note.sidebar-scroll-source'
   | 'note.sidebar-scroll-target'
   | 'note.toc-absent'
-  | 'note.toc-readable-long-heading';
+  | 'note.toc-readable-long-heading'
+  | 'note.toc-static-present';
 
 export interface E2ENoteFixture extends E2ENoteFixtureManifestEntry {
   directPath: string;
@@ -89,5 +90,8 @@ export const e2eNoteFixtures = {
   },
   get tocReadableLongHeading(): E2ENoteFixture {
     return getE2ENoteFixture('note.toc-readable-long-heading');
+  },
+  get tocStaticPresent(): E2ENoteFixture {
+    return getE2ENoteFixture('note.toc-static-present');
   },
 } as const;

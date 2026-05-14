@@ -548,6 +548,7 @@
   --note-shell-column-gap: 32px;
   /* wide viewport では本文 + TOC + sidebar を 1360px 前後で頭打ちにする。 */
   --note-reading-max-inline-size: 54rem;
+  --note-shell-absent-max-width: min(100%, 72rem);
   --note-shell-max-width: calc(
     var(--note-reading-max-inline-size) + var(--note-toc-width) + var(--note-shell-column-gap)
   );

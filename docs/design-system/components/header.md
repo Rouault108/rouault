@@ -4,7 +4,7 @@
 
 本書は、`ui-header` の公開契約、状態モデル、アクセシビリティ、および視覚契約を整理するものです。
 
-`layout-header` は `ui-header` の上位 adapter として、Rouault の page chrome に必要な start / end 領域を供給します。特に note page では `toc-presence="present|absent"` を受け、本文側の TOC 列契約と同じ presence 信号で center-end reserve を切り替えます。
+`layout-header` は `ui-header` の上位 adapter として、Rouault の page chrome に必要な start / end 領域を供給します。特に note page では `toc-presence="present|absent"` を受け、本文側の TOC 列契約と同じ presence 信号で center-end reserve を切り替えます。`toc-presence="absent"` では `toc-runtime-id` と `data-toc-owner-id` を持たず、TOC trigger reservation も `false` に正規化します。
 
 Note layout の header center zone は `--note-sidebar-width` と `--note-toc-width` を前提に、箱の内側の予約領域だけを調整します。`--note-toc-width` は `clamp(15rem, 18vw, 17rem)` を基準とし、この変更は TOC だけでなく `layout-header` の center inset にも影響します。ただし、`ui-header` shadow DOM 内 `.inner` の外形幅はページ種別で切り替えず、全ページで同じ header width contract に従います。
 

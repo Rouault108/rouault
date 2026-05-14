@@ -22,6 +22,7 @@ const createOverviewNote = (
       dynamicScopes: false,
       mobilePanel: false,
     },
+    tocCapabilitySource: 'inferred',
     kind: 'reader',
     ...rest,
   };

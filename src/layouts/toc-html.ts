@@ -8,7 +8,12 @@ import { escapeHtmlAttribute, escapeHtmlText, serializeHtmlAttributes } from './
 const readMinimumLevel = (headings: readonly TocHeading[]): number =>
   headings.reduce((minimum, heading) => Math.min(minimum, heading.level), Number.POSITIVE_INFINITY);
 
-const renderHeadingItems = (headings: readonly TocHeading[]): string => {
+type TocHeadingItemMode = 'controller-managed' | 'static';
+
+const renderHeadingItems = (
+  headings: readonly TocHeading[],
+  options: { mode: TocHeadingItemMode },
+): string => {
   if (headings.length === 0) {
     return '';
   }
@@ -22,6 +27,15 @@ const renderHeadingItems = (headings: readonly TocHeading[]): string => {
       const headingHref = escapeHtmlAttribute(buildHashHrefFromId(heading.id));
       const headingTitle = escapeHtmlAttribute(heading.text);
       const headingLabel = escapeHtmlText(heading.text);
+      const linkDataAttributes =
+        options.mode === 'controller-managed'
+          ? `
+            data-toc-link
+            data-heading-id="${headingId}"
+            data-heading-level="${String(heading.level)}"
+            data-heading-depth="${String(depth)}"
+          `.trim()
+          : 'data-toc-static-link';
       return `
         <li
           class="layout-toc__item"
@@ -33,10 +47,7 @@ const renderHeadingItems = (headings: readonly TocHeading[]): string => {
           <a
             class="layout-toc__link"
             href="${headingHref}"
-            data-toc-link
-            data-heading-id="${headingId}"
-            data-heading-level="${String(heading.level)}"
-            data-heading-depth="${String(depth)}"
+            ${linkDataAttributes}
             title="${headingTitle}"
           >
             <span class="layout-toc__link-label">${headingLabel}</span>
@@ -70,6 +81,7 @@ ${serializeTocHeadingsForSourceScript(toc.headings)}
 
 export const renderTocChromeHtml = (toc: TocChromeProjection): string => {
   const densityTier = resolveTocDensityTier(toc.headings);
+  const hydrationMode = toc.shouldHydrate ? 'hydrated' : 'static';
   const controllerAttributes = serializeHtmlAttributes([
     { name: 'source-id', value: toc.sourceId },
     { name: 'toc-runtime-id', value: toc.runtimeId },
@@ -104,10 +116,13 @@ export const renderTocChromeHtml = (toc: TocChromeProjection): string => {
       aria-label="目次"
       data-density-tier="${densityTier}"
       data-layout-toc-root
+      data-toc-hydration="${hydrationMode}"
       ${rootMarkerAttributes.trim()}
     >
       <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
-        <ol class="layout-toc__list">${renderHeadingItems(toc.headings)}</ol>
+        <ol class="layout-toc__list">${renderHeadingItems(toc.headings, {
+          mode: toc.shouldHydrate ? 'controller-managed' : 'static',
+        })}</ol>
       </nav>
       ${toc.shouldHydrate ? renderTocJsonSourceScript(toc) : ''}
       ${toc.shouldHydrate ? `<layout-toc-controller${controllerAttributes}></layout-toc-controller>` : ''}
@@ -116,3 +131,21 @@ export const renderTocChromeHtml = (toc: TocChromeProjection): string => {
 };
 
 export const renderTocHtml = renderTocChromeHtml;
+
+export const renderMobileStaticTocNavHtml = (toc: TocChromeProjection): string => {
+  const densityTier = resolveTocDensityTier(toc.headings);
+  const attributes = serializeHtmlAttributes([
+    { name: 'class', value: 'layout-toc layout-toc--mobile-static' },
+    { name: 'aria-label', value: 'モバイル目次' },
+    { name: 'data-layout-toc-mobile-static-nav', value: true, kind: 'boolean' },
+    { name: 'data-toc-hydration', value: 'static' },
+    { name: 'data-density-tier', value: densityTier },
+    { name: 'data-pagefind-ignore', value: true, kind: 'boolean' },
+  ]);
+
+  return `
+    <nav${attributes}>
+      <ol class="layout-toc__list">${renderHeadingItems(toc.headings, { mode: 'static' })}</ol>
+    </nav>
+  `.trim();
+};

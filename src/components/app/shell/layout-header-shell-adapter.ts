@@ -129,10 +129,10 @@ export const applyHeaderSnapshot = (
     snapshot.sidebarEnabled ? snapshot.sidebarId : DEFAULT_SIDEBAR_ID,
   );
   header.setAttribute('toc-presence', snapshot.tocPresence);
-  header.toggleAttribute(TOC_TRIGGER_RESERVED_ATTRIBUTE, snapshot.tocTriggerReserved === true);
+  header.toggleAttribute(TOC_TRIGGER_RESERVED_ATTRIBUTE, snapshot.tocTriggerReserved);
   header.setAttribute(
     'toc-trigger-reserved',
-    snapshot.tocTriggerReserved === true ? 'true' : 'false',
+    snapshot.tocTriggerReserved ? 'true' : 'false',
   );
 
   const tocRuntimeId = snapshot.tocRuntimeId?.trim();

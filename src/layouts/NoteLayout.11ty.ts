@@ -8,7 +8,7 @@
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import { escapeHtmlText, serializeHtmlAttributes } from './html-output.js';
 import { renderArticleHeaderHtml } from './article-header-html.js';
-import { renderTocHtml } from './toc-html.js';
+import { renderMobileStaticTocNavHtml, renderTocHtml } from './toc-html.js';
 
 interface NoteLayoutData {
   notePage?: NotePageProjection;
@@ -97,6 +97,11 @@ export class NoteLayout {
 
     return `
       <section${shellAttributes}>
+        ${
+          notePage.tocPresence === 'present' && !notePage.toc.shouldHydrate
+            ? renderMobileStaticTocNavHtml(notePage.toc)
+            : ''
+        }
         <article${article}>
           ${notePage.pagefind ? renderPagefindMetadata(notePage.pagefind) : ''}
           ${renderArticleHeaderHtml(notePage.articleHeader)}

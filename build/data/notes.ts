@@ -55,6 +55,14 @@ interface BuildNotesCollectionOptions {
   sourceRoots?: Partial<Record<NoteSourceRoot, string>>;
 }
 
+export type TocCapabilitySource = 'inferred' | 'testing-override';
+
+interface TocCapabilitiesOverride {
+  activeTracking: boolean;
+  dynamicScopes: boolean;
+  mobilePanel: boolean;
+}
+
 export interface SourceNote {
   slug?: string;
   title?: string;
@@ -73,6 +81,7 @@ export interface SourceNote {
   sourceRoot?: NoteSourceRoot;
   e2eFixtureId?: string;
   excludeFromPublicationSurfaces?: boolean;
+  tocCapabilitiesOverride?: unknown;
   genre?: string[];
   sidebarIcon?: SidebarIconSetting;
   [key: string]: unknown;
@@ -91,6 +100,7 @@ export interface IntrinsicNote extends SourceNote {
     dynamicScopes: boolean;
     mobilePanel: boolean;
   };
+  tocCapabilitySource: TocCapabilitySource;
   sidebarRoot?: string;
   sidebarResolvedIcon?: IconName;
   navigationDirectoryPresentation?: NavigationDirectoryPresentationMap;
@@ -113,6 +123,75 @@ const inferTocCapabilities = (
   dynamicScopes: hasDynamicTocScopeSelections(headings),
   mobilePanel: chromePolicy.tocMobilePanel && headings.length > 0,
 });
+
+const TOC_CAPABILITIES_OVERRIDE_KEYS = [
+  'activeTracking',
+  'dynamicScopes',
+  'mobilePanel',
+] as const;
+
+const isTocCapabilitiesOverrideRecord = (
+  value: unknown,
+): value is Record<(typeof TOC_CAPABILITIES_OVERRIDE_KEYS)[number], unknown> =>
+  isRecord(value) && !Array.isArray(value);
+
+const normalizeTocCapabilitiesOverride = (
+  note: SourceNote,
+): {
+  tocCapabilities: TocCapabilitiesOverride;
+  tocCapabilitySource: TocCapabilitySource;
+} | null => {
+  if (note.tocCapabilitiesOverride === undefined) {
+    return null;
+  }
+
+  const sourceRoot = normalizeNoteSourceRoot(note.sourceRoot);
+  const testingArea = normalizeTestingArea(note.testingArea);
+  const e2eFixtureId =
+    typeof note.e2eFixtureId === 'string' && note.e2eFixtureId.trim().length > 0
+      ? note.e2eFixtureId.trim()
+      : undefined;
+  if (
+    sourceRoot !== 'test/fixtures/content' ||
+    testingArea !== 'layout' ||
+    e2eFixtureId !== 'note.toc-static-present'
+  ) {
+    throw new Error(
+      `[notes] tocCapabilitiesOverride is only allowed for note.toc-static-present layout fixtures: ${note.slug ?? '(unknown)'}`,
+    );
+  }
+
+  const override = note.tocCapabilitiesOverride;
+  if (!isTocCapabilitiesOverrideRecord(override)) {
+    throw new Error(`[notes] tocCapabilitiesOverride must be an object: ${note.slug ?? '(unknown)'}`);
+  }
+
+  const unknownKeys = Object.keys(override).filter(
+    (key) => !TOC_CAPABILITIES_OVERRIDE_KEYS.includes(key as never),
+  );
+  if (unknownKeys.length > 0) {
+    throw new Error(
+      `[notes] tocCapabilitiesOverride has unknown fields (${unknownKeys.join(', ')}): ${note.slug ?? '(unknown)'}`,
+    );
+  }
+
+  for (const key of TOC_CAPABILITIES_OVERRIDE_KEYS) {
+    if (override[key] !== false) {
+      throw new Error(
+        `[notes] tocCapabilitiesOverride.${key} must be false for static TOC fixtures: ${note.slug ?? '(unknown)'}`,
+      );
+    }
+  }
+
+  return {
+    tocCapabilities: {
+      activeTracking: false,
+      dynamicScopes: false,
+      mobilePanel: false,
+    },
+    tocCapabilitySource: 'testing-override',
+  };
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -388,6 +467,7 @@ export const buildNotesCollection = (
       const testingArea = normalizeTestingArea(note.testingArea);
       const noteWithoutVeliteToc: SourceNote = { ...note };
       delete noteWithoutVeliteToc['toc'];
+      delete noteWithoutVeliteToc['tocCapabilitiesOverride'];
 
       const preparedToc = prepareTocHtml(typeof note.content === 'string' ? note.content : '');
       validateNoteContentContracts(
@@ -427,6 +507,9 @@ export const buildNotesCollection = (
       );
 
       const chromePolicy = resolveNoteChromePolicy(chromeProfile);
+      const tocCapabilitiesOverride = normalizeTocCapabilitiesOverride(note);
+      const tocCapabilities =
+        tocCapabilitiesOverride?.tocCapabilities ?? inferTocCapabilities(preparedToc.headings, chromePolicy);
 
       return {
         ...noteWithoutVeliteToc,
@@ -442,7 +525,8 @@ export const buildNotesCollection = (
         ...(pathInfo.directoryPath !== undefined ? { directoryPath: pathInfo.directoryPath } : {}),
         sortIndex: calculateCachedSortIndex(sourceSlug, sourceRootPath),
         tocHeadings: preparedToc.headings,
-        tocCapabilities: inferTocCapabilities(preparedToc.headings, chromePolicy),
+        tocCapabilities,
+        tocCapabilitySource: tocCapabilitiesOverride?.tocCapabilitySource ?? 'inferred',
         ...(sidebarRoot !== undefined ? { sidebarRoot } : {}),
         ...(sidebarResolvedIcon !== undefined ? { sidebarResolvedIcon } : {}),
         ...(Object.keys(directoryPresentation.presentation).length > 0

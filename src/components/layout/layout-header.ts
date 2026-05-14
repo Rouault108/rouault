@@ -207,7 +207,7 @@ export class LayoutHeader extends LitElement {
       --ui-header-max-inline-size-with-sidebar: var(--ui-header-max-inline-size);
     }
 
-    :host([note-layout]) ui-header {
+    :host([note-layout][toc-presence='present']) ui-header {
       --ui-header-center-end-inset: clamp(
         184px,
         24vw,
@@ -368,7 +368,7 @@ export class LayoutHeader extends LitElement {
     }
 
     @container layout-header-shell (width >= 1024px) {
-      :host([note-layout]) ui-header {
+      :host([note-layout][toc-presence='present']) ui-header {
         --ui-header-center-end-inset: calc(
           var(--note-toc-width, clamp(15rem, 18vw, 17rem)) +
             var(--note-shell-column-gap, var(--space-8, 32px))
@@ -514,7 +514,7 @@ export class LayoutHeader extends LitElement {
     } else {
       this.removeAttribute('data-toc-owner-id');
     }
-    this._setTocTriggerReserved(snapshot.tocTriggerReserved ?? snapshot.tocPresence === 'present');
+    this._setTocTriggerReserved(snapshot.tocTriggerReserved);
   }
 
   readShellProjection(): HeaderShellProjection {
@@ -669,7 +669,7 @@ export class LayoutHeader extends LitElement {
     this._tocMobileCleanup = null;
 
     const runtimeId = this._readTocRuntimeId();
-    if (runtimeId === null || this.tocPresence !== 'present') {
+    if (runtimeId === null || this.tocPresence !== 'present' || !this._isTocTriggerReserved()) {
       this._tocRuntimeView = DEFAULT_TOC_RUNTIME_VIEW;
       this._tocPanelOpen = false;
       return;
@@ -980,7 +980,7 @@ export class LayoutHeader extends LitElement {
       return false;
     }
 
-    return this.tocPresence === 'present';
+    return false;
   }
 
   private _setTocTriggerReserved(value: boolean): void {

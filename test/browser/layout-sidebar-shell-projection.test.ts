@@ -100,6 +100,9 @@ const headerSnapshot: PayloadDocumentShellSnapshot['header'] = {
   sidebarEnabled: true,
   sidebarId: 'note-primary',
   tocPresence: 'absent',
+  tocRuntimeId: null,
+  tocOwnerId: null,
+  tocTriggerReserved: false,
 };
 
 const absentHeaderSnapshot: PayloadDocumentShellSnapshot['header'] = {
@@ -506,6 +509,9 @@ describe('layout-sidebar shell projection browser contract', () => {
           sidebarEnabled: false,
           sidebarId: 'note-primary',
           tocPresence: 'absent',
+          tocRuntimeId: null,
+          tocOwnerId: null,
+          tocTriggerReserved: false,
         },
         sidebar: null,
       },
@@ -554,6 +560,9 @@ describe('layout-sidebar shell projection browser contract', () => {
           sidebarEnabled: false,
           sidebarId: 'note-primary',
           tocPresence: 'absent',
+          tocRuntimeId: null,
+          tocOwnerId: null,
+          tocTriggerReserved: false,
         },
         sidebar: createCanonicalAbsentRuntimeSidebarProjection(),
       },

@@ -27,6 +27,9 @@ describe('router barrel shell projection types', () => {
         sidebarEnabled: false,
         sidebarId: 'note-primary',
         tocPresence: 'absent',
+        tocRuntimeId: null,
+        tocOwnerId: null,
+        tocTriggerReserved: false,
       },
       sidebar: createCanonicalAbsentRuntimeSidebarProjection(),
     };

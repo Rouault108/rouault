@@ -113,6 +113,8 @@
 ### SSR
 
 - No-JS baseline と desktop TOC nav、TOC JSON source、必要な hydration marker を出力する。
+- TOC absent note は TOC DOM / TOC JSON source / header TOC identity を出力しない。
+- Static TOC present fixture は `data-toc-hydration="static"` の desktop nav と article 前 mobile static nav を出し、controller / JSON source / mobile panel trigger は出力しない。
 
 ### Client Runtime
 

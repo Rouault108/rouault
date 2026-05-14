@@ -153,18 +153,20 @@ CSS contract test の初期制約として、hover / focus-visible surface selec
 
 - TOC presence は note page projection の `tocPresence` で決まり、`headings.length === 0` のときは `absent` とする
 - `tocPresence='absent'` の note page では TOC DOM、TOC JSON script、`data-hydration-scope="note-toc"` を出力しない
+- `tocPresence='present'` の `.layout-toc-col` は `data-toc-hydration="hydrated|static"` を必ず持つ
 - note page では SSR の `<nav class="layout-toc">` を正本にする
 - `layout-toc-controller` は `capabilities-json` を持つ
 - `activeTracking` / `dynamicScopes` / `mobilePanel` のいずれかが true の場合だけ hydration directive を持つ
-- static-only TOC は SSR 出力だけで成立させる
+- static-only TOC は testing fixture 限定で、SSR 出力だけで成立させる
+- static-only TOC の link は `data-toc-link` を持たず、active sync / mobile panel の対象にしない
 - SSR 層は request URL の hash を正本として current state を出力しない
 - current state は hydration 後の `layout-toc-controller` が visible headings と hash を照合して決定する
 
 presence と hydration は分離する。
 
 - `absent`: headings 0 件。TOC host 自体を出さない
-- `present-static`: headings 1 件以上かつ interactive capability なし。SSR のみで成立
-- `present-interactive`: headings 1 件以上かつ interactive capability あり。SSR nav 後に `layout-toc-controller` を hydrate する
+- `present-static`: headings 1 件以上、testing override 由来、interactive capability なし。desktop static nav と article 前 mobile static nav だけで成立
+- `present-interactive`: headings 1 件以上かつ interactive capability あり。SSR nav / TOC JSON source 後に `layout-toc-controller` を hydrate する
 
 `toc.shouldHydrate` は current DOM 同期の前提であり、scroll tracking の有効化条件そのものではない。
 

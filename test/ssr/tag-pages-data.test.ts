@@ -20,6 +20,7 @@ const createIntrinsicNote = (
       dynamicScopes: false,
       mobilePanel: false,
     },
+    tocCapabilitySource: 'inferred',
     kind: 'reader',
     ...rest,
   };

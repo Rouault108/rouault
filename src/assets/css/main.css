@@ -1810,27 +1810,20 @@ app-router[data-sidebar-presence='absent'] {
   width: 100%;
 }
 
-.note-shell {
-  --reading-measure: var(--note-reading-max-inline-size);
-  --note-toc-track: var(--note-toc-width, var(--aside-width));
-  display: grid;
-  align-items: start;
-  column-gap: var(--note-shell-column-gap, var(--space-8, 32px));
-  max-width: min(100%, var(--note-shell-max-width, 1280px));
-  margin-inline: auto;
-  width: 100%;
-}
-
 /*
  * TOC ありは 2 カラム、TOC なしは 1 カラムへ明示的に分岐する。
  * ただし note shell の外形は TOC presence にかかわらず固定し、
  * 本文開始位置を sidebar 基準で揃える。
  */
-.note-shell[data-toc-presence='present'],
-.note-shell[data-toc-presence='absent'] {
+.note-shell[data-toc-presence='present'] {
   grid-template-columns:
     minmax(0, 1fr)
     var(--note-toc-track);
+}
+
+.note-shell[data-toc-presence='absent'] {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: var(--note-shell-absent-max-width, min(100%, 72rem));
 }
 
 .note-shell .container-reading {
@@ -2540,9 +2533,7 @@ layout-sidebar-surface .heading {
   }
 
   .note-shell[data-toc-presence='absent'] {
-    grid-template-columns:
-      minmax(0, 1fr)
-      minmax(200px, 34vw);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   app-router[data-sidebar-presence='present'] .layout-sidebar-col {
@@ -2621,6 +2612,14 @@ layout-sidebar-surface .heading {
   .layout-toc-col {
     border-left: none;
     padding: 0;
+  }
+
+  [data-layout-toc-mobile-static-nav] {
+    display: block;
+  }
+
+  .layout-toc-col[data-toc-hydration='static'] {
+    display: none;
   }
 }
 

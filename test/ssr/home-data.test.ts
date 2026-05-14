@@ -20,6 +20,7 @@ const createHomeNote = (overrides: Partial<HomeSourceNote> & { slug: string }): 
       dynamicScopes: false,
       mobilePanel: false,
     },
+    tocCapabilitySource: 'inferred',
     kind: 'reader',
     ...rest,
   };

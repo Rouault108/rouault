@@ -167,6 +167,20 @@ const validateHeader = (value: unknown): HeaderShellProjection => {
   if (!isTocPresence(tocPresence)) {
     fail('header.tocPresence is invalid.', 'invalid-header');
   }
+  const tocRuntimeId = optionalStringOrNull(record['tocRuntimeId'], 'header.tocRuntimeId');
+  const tocOwnerId = optionalStringOrNull(record['tocOwnerId'], 'header.tocOwnerId');
+  const tocTriggerReserved = record['tocTriggerReserved'];
+  if (!isBoolean(tocTriggerReserved)) {
+    fail('header.tocTriggerReserved must be boolean.', 'invalid-header');
+  }
+
+  if (tocPresence === 'absent') {
+    if (tocRuntimeId !== null || tocOwnerId !== null || tocTriggerReserved) {
+      fail('absent TOC header projection must clear TOC identity.', 'invalid-header');
+    }
+  } else if (tocRuntimeId === null || tocOwnerId === null) {
+    fail('present TOC header projection requires TOC identity.', 'invalid-header');
+  }
 
   return {
     corpora: normalizedCorpora,
@@ -175,11 +189,9 @@ const validateHeader = (value: unknown): HeaderShellProjection => {
     sidebarEnabled,
     sidebarId,
     tocPresence,
-    tocRuntimeId: optionalStringOrNull(record['tocRuntimeId'], 'header.tocRuntimeId'),
-    tocOwnerId: optionalStringOrNull(record['tocOwnerId'], 'header.tocOwnerId'),
-    ...(record['tocTriggerReserved'] === undefined
-      ? {}
-      : { tocTriggerReserved: Boolean(record['tocTriggerReserved']) }),
+    tocRuntimeId,
+    tocOwnerId,
+    tocTriggerReserved,
   };
 };
 

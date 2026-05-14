@@ -550,7 +550,13 @@ describe('layout-header browser contract', () => {
   it('mobile note でも layout-header は compact-center slot を使わないこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px;">
-        <layout-header note-layout></layout-header>
+        <layout-header
+          note-layout
+          toc-presence="present"
+          toc-runtime-id="test-toc"
+          data-toc-owner-id="test-toc-owner"
+          toc-trigger-reserved="true"
+        ></layout-header>
       </div>
     `);
 
@@ -595,7 +601,13 @@ describe('layout-header browser contract', () => {
   it('mobile note かつ sidebar-enabled=false では corpus-switcher を維持し、corpus chevron も visible であること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px;">
-        <layout-header note-layout></layout-header>
+        <layout-header
+          note-layout
+          toc-presence="present"
+          toc-runtime-id="test-toc"
+          data-toc-owner-id="test-toc-owner"
+          toc-trigger-reserved="true"
+        ></layout-header>
       </div>
     `);
 
@@ -1064,7 +1076,13 @@ describe('layout-header browser contract', () => {
   it('1024px 未満と 1024px 以上の note-layout center-end inset contract を維持すること', async () => {
     const mediumWrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 768px;">
-        <layout-header note-layout></layout-header>
+        <layout-header
+          note-layout
+          toc-presence="present"
+          toc-runtime-id="test-toc"
+          data-toc-owner-id="test-toc-owner"
+          toc-trigger-reserved="true"
+        ></layout-header>
       </div>
     `);
     const mediumHeader = expectPresent(
@@ -1076,7 +1094,13 @@ describe('layout-header browser contract', () => {
 
     const desktopWrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 1440px; --note-toc-width: 260px; --note-shell-column-gap: 36px;">
-        <layout-header note-layout></layout-header>
+        <layout-header
+          note-layout
+          toc-presence="present"
+          toc-runtime-id="test-toc"
+          data-toc-owner-id="test-toc-owner"
+          toc-trigger-reserved="true"
+        ></layout-header>
       </div>
     `);
     const desktopHeader = expectPresent(
@@ -1343,7 +1367,7 @@ describe('layout-header browser contract', () => {
     expect(styles.right).to.equal('272px');
   });
 
-  it('toc-presence=absent の note-layout でも desktop では present と同じ right reserve を維持すること', async () => {
+  it('toc-presence=absent の note-layout は desktop で right reserve を持たないこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 1440px; --note-sidebar-main-gap: 32px;">
         <layout-header note-layout sidebar-enabled toc-presence="absent"></layout-header>
@@ -1367,7 +1391,7 @@ describe('layout-header browser contract', () => {
 
     const styles = getComputedStyle(zoneCenter);
     expect(styles.left).to.equal('280px');
-    expect(styles.right).to.equal('272px');
+    expect(styles.right).to.equal('0px');
   });
 
   it('note-layout の center reserve は新しい TOC 幅 fallback を使うこと', async () => {
@@ -1392,6 +1416,9 @@ describe('layout-header browser contract', () => {
       sidebarEnabled: true,
       sidebarId: DEFAULT_LAYOUT_SIDEBAR_ID,
       tocPresence: 'absent',
+      tocRuntimeId: null,
+      tocOwnerId: null,
+      tocTriggerReserved: false,
     });
     await waitForLitUpdate(header);
 
@@ -1415,6 +1442,9 @@ describe('layout-header browser contract', () => {
       sidebarEnabled: false,
       sidebarId: 'note-secondary',
       tocPresence: 'absent',
+      tocRuntimeId: null,
+      tocOwnerId: null,
+      tocTriggerReserved: false,
     });
     await waitForLitUpdate(header);
 
@@ -1462,6 +1492,7 @@ describe('layout-header browser contract', () => {
       sidebarId: DEFAULT_LAYOUT_SIDEBAR_ID,
       tocPresence: 'present',
       tocRuntimeId: 'next-toc',
+      tocOwnerId: 'next-toc-owner',
       tocTriggerReserved: false,
     });
     await waitForLitUpdate(header);
@@ -1479,7 +1510,13 @@ describe('layout-header browser contract', () => {
   it('640px では TOC trigger が非表示であること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 640px;">
-        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+        <layout-header
+          note-layout
+          toc-presence="present"
+          toc-runtime-id="test-toc"
+          data-toc-owner-id="test-toc-owner"
+          toc-trigger-reserved="true"
+        ></layout-header>
       </div>
     `);
 
@@ -1515,6 +1552,8 @@ describe('layout-header browser contract', () => {
           current-corpus-key="program"
           toc-presence="present"
           toc-runtime-id="test-toc"
+          data-toc-owner-id="test-toc-owner"
+          toc-trigger-reserved="true"
           corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for 639px boundary verification","href":"/corpora/program/"}]'
         ></layout-header>
       </div>
@@ -1613,6 +1652,8 @@ describe('layout-header browser contract', () => {
           current-corpus-key="program"
           toc-presence="present"
           toc-runtime-id="test-toc"
+          data-toc-owner-id="test-toc-owner"
+          toc-trigger-reserved="true"
           corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for mobile overflow verification","href":"/corpora/program/"}]'
         ></layout-header>
       </div>
@@ -1646,7 +1687,13 @@ describe('layout-header browser contract', () => {
   it('focused mobile TOC trigger is raised without adding horizontal overflow', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 375px; overflow: auto;">
-        <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+        <layout-header
+          note-layout
+          toc-presence="present"
+          toc-runtime-id="test-toc"
+          data-toc-owner-id="test-toc-owner"
+          toc-trigger-reserved="true"
+        ></layout-header>
       </div>
     `);
 
@@ -1766,7 +1813,12 @@ describe('layout-header browser contract', () => {
   it('non-note の TOC page でも 639px で同じ TOC trigger 契約が成立すること', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div style="inline-size: 639px;">
-        <layout-header toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+        <layout-header
+          toc-presence="present"
+          toc-runtime-id="test-toc"
+          data-toc-owner-id="test-toc-owner"
+          toc-trigger-reserved="true"
+        ></layout-header>
       </div>
     `);
 
@@ -1797,7 +1849,13 @@ describe('layout-header browser contract', () => {
 
   it('toc mobile controller snapshot を aria-expanded へ反映すること', async () => {
     const header = await fixture<LayoutHeader>(html`
-      <layout-header note-layout toc-presence="present" toc-runtime-id="test-toc"></layout-header>
+      <layout-header
+        note-layout
+        toc-presence="present"
+        toc-runtime-id="test-toc"
+        data-toc-owner-id="test-toc-owner"
+        toc-trigger-reserved="true"
+      ></layout-header>
     `);
 
     layoutTocRuntimeStore.publish('test-toc', {

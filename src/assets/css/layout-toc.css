@@ -28,6 +28,10 @@
   --toc-item-active-max-lines: 4;
 }
 
+[data-layout-toc-mobile-static-nav] {
+  display: none;
+}
+
 .layout-toc:hover,
 .layout-toc:focus-within,
 .layout-toc-mobile-panel:hover,
@@ -251,7 +255,11 @@ layout-toc-controller {
 }
 
 @media (max-width: 639px) {
-  .layout-toc-col [data-layout-toc-nav] {
+  .layout-toc-col[data-toc-hydration='hydrated'] [data-layout-toc-nav] {
+    display: none;
+  }
+
+  .layout-toc-col[data-toc-hydration='static'] {
     display: none;
   }
 }
