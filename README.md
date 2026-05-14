@@ -1,6 +1,6 @@
 # Rouault
 
-Rouaultは、個人的なノートを静かに読むための Webアプリケーションです。  
+Rouaultは個人的なノートを静かに読むための Webアプリケーションです。  
 一般的なドキュメントサイトやナレッジベースではなく、Markdownで蓄積した内容を**落ち着いて通読すること**を優先して設計しています。
 
 現行実装は、Eleventyを基盤とする静的生成、LitによるUI、build-time SSR、client hydration、Pagefindによる検索、Markdown中心のコンテンツ管理を組み合わせています。
@@ -18,7 +18,7 @@ Design System 契約は `docs/design-system/` を正本とします。
 
 ## 何を目指すプロダクトか
 
-Rouaultは、次の用途を想定した個人向け読書アプリです。
+Rouaultは次の用途を想定した個人向け読書アプリです。
 
 - Markdownノートの閲覧
 - サイドバーとTOCを使った移動
@@ -145,7 +145,7 @@ ROUAULT_BUILD_LABEL="$(git rev-parse --short HEAD)" pnpm build:production
 
 ## テスト方針
 
-Rouaultは、**何を保証するか** でテストの置き場を分けています。
+Rouaultは**何を保証するか** でテストの置き場を分けています。
 
 - `test/node/`
   - pure logic
