@@ -94,53 +94,78 @@ const readMobilePanelState = async (page: Page) =>
     };
   });
 
-const readAboutMobileTocState = async (page: Page) =>
+const waitForAboutHeaderStable = async (page: Page): Promise<void> => {
+  await expect
+    .poll(async () =>
+      await page.evaluate(async () => {
+        await customElements.whenDefined('layout-header');
+
+        const header = document.querySelector('layout-header') as
+          | (HTMLElement & { updateComplete?: Promise<unknown> })
+          | null;
+
+        if (!(header instanceof HTMLElement)) {
+          return false;
+        }
+
+        if (header.updateComplete instanceof Promise) {
+          await header.updateComplete;
+        }
+
+        return (
+          header.getAttribute('toc-presence') === 'absent' &&
+          header.getAttribute('toc-trigger-reserved') === 'false' &&
+          !header.hasAttribute('toc-runtime-id') &&
+          !header.hasAttribute('data-toc-owner-id') &&
+          header.shadowRoot?.querySelector('.toc-trigger') instanceof HTMLButtonElement
+        );
+      }),
+    )
+    .toBe(true);
+};
+
+const readAboutHeaderTocAbsenceState = async (page: Page) =>
   await page.evaluate(() => {
     const header = document.querySelector<HTMLElement>('layout-header');
     const trigger = header?.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger');
-    const triggerText = header?.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text');
     const panel = document.querySelector<HTMLElement>('[data-layout-toc-mobile-panel]');
-    const mobileNav = panel?.querySelector<HTMLElement>('[data-layout-toc-mobile-nav]');
-    const closeButton = panel?.querySelector<HTMLButtonElement>('.layout-toc-mobile-panel__close');
-
-    const headerRect = header instanceof HTMLElement ? header.getBoundingClientRect() : null;
-    const panelRect = panel instanceof HTMLElement ? panel.getBoundingClientRect() : null;
+    const mobileNav = document.querySelector<HTMLElement>('[data-layout-toc-mobile-nav]');
+    const layoutTocController = document.querySelector<HTMLElement>('layout-toc-controller');
+    const desktopTocNav = document.querySelector<HTMLElement>('[data-layout-toc-nav]');
 
     return {
+      headerTocPresence:
+        header instanceof HTMLElement ? header.getAttribute('toc-presence') : null,
+      headerTocTriggerReserved:
+        header instanceof HTMLElement ? header.getAttribute('toc-trigger-reserved') : null,
+      headerTocRuntimeId:
+        header instanceof HTMLElement ? header.getAttribute('toc-runtime-id') : null,
       headerOwnerId:
         header instanceof HTMLElement ? header.getAttribute('data-toc-owner-id') : null,
       triggerExists: trigger instanceof HTMLButtonElement,
       triggerVisible:
         trigger instanceof HTMLButtonElement ? getComputedStyle(trigger).display !== 'none' : false,
       triggerDisabled: trigger instanceof HTMLButtonElement ? trigger.disabled : null,
-      triggerHydrationState:
+      triggerDataVisible:
+        trigger instanceof HTMLButtonElement ? (trigger.dataset['visible'] ?? null) : null,
+      triggerDataReserved:
+        trigger instanceof HTMLButtonElement ? (trigger.dataset['reserved'] ?? null) : null,
+      triggerTocTriggerReserved:
         trigger instanceof HTMLButtonElement
-          ? (trigger.dataset['tocHydrationState'] ?? null)
+          ? (trigger.dataset['tocTriggerReserved'] ?? null)
           : null,
-      triggerExpanded:
-        trigger instanceof HTMLButtonElement ? trigger.getAttribute('aria-expanded') : null,
+      triggerTocTriggerInteractive:
+        trigger instanceof HTMLButtonElement
+          ? (trigger.dataset['tocTriggerInteractive'] ?? null)
+          : null,
+      triggerHydrationState:
+        trigger instanceof HTMLButtonElement ? (trigger.dataset['tocHydrationState'] ?? null) : null,
       triggerControls:
         trigger instanceof HTMLButtonElement ? trigger.getAttribute('aria-controls') : null,
-      triggerAriaLabel:
-        trigger instanceof HTMLButtonElement ? trigger.getAttribute('aria-label') : null,
-      triggerTextContent:
-        triggerText instanceof HTMLElement ? (triggerText.textContent?.trim() ?? '') : null,
       panelExists: panel instanceof HTMLElement,
-      panelId: panel instanceof HTMLElement ? panel.id : null,
-      panelOpen: panel instanceof HTMLElement ? !panel.hasAttribute('hidden') : false,
-      panelAriaHidden: panel instanceof HTMLElement ? panel.getAttribute('aria-hidden') : null,
-      closeButtonExists: closeButton instanceof HTMLButtonElement,
-      closeButtonAriaLabel:
-        closeButton instanceof HTMLButtonElement ? closeButton.getAttribute('aria-label') : null,
       mobileNavExists: mobileNav instanceof HTMLElement,
-      mobileNavAriaLabel:
-        mobileNav instanceof HTMLElement ? mobileNav.getAttribute('aria-label') : null,
-      panelTop: panelRect ? Math.round(panelRect.top) : null,
-      headerBottom: headerRect ? Math.round(headerRect.bottom) : null,
-      focusedTrigger:
-        header instanceof HTMLElement &&
-        trigger instanceof HTMLButtonElement &&
-        header.shadowRoot?.activeElement === trigger,
+      layoutTocControllerExists: layoutTocController instanceof HTMLElement,
+      desktopTocNavExists: desktopTocNav instanceof HTMLElement,
     };
   });
 
@@ -225,84 +250,34 @@ test.describe('mobile TOC header trigger contract', () => {
     expect(state.mobileBarExists).toBe(false);
   });
 
-  test('about ページで header trigger から mobile TOC panel を開閉できること', async ({
+  test('about ページでは mobile TOC trigger が非表示・非活性で panel を生成しないこと', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 400, height: 900 });
     await page.goto(aboutPath);
+    await waitForAboutHeaderStable(page);
 
-    await expect
-      .poll(async () => {
-        const state = await readAboutMobileTocState(page);
-        return (
-          state.triggerExists &&
-          state.triggerVisible &&
-          state.triggerDisabled === false &&
-          state.panelExists
-        );
-      })
-      .toBe(true);
+    const state = await readAboutHeaderTocAbsenceState(page);
 
-    let state = await readAboutMobileTocState(page);
+    expect(state.headerTocPresence).toBe('absent');
+    expect(state.headerTocTriggerReserved).toBe('false');
+    expect(state.headerTocRuntimeId).toBeNull();
+    expect(state.headerOwnerId).toBeNull();
 
-    expect(state.headerOwnerId).toBe('about-page-toc-owner');
-    expect(state.triggerDisabled).toBe(false);
-    expect(state.triggerHydrationState).toBe('hydrated');
-    expect(state.triggerControls).toBe('layout-toc-panel-about-page-toc');
-    expect(state.panelId).toBe(state.triggerControls);
-    expect(state.triggerExpanded).toBe('false');
-    expect(state.triggerAriaLabel).toBe('目次を開く');
-    expect(state.panelAriaHidden).toBe('true');
-    expect(state.triggerTextContent).toBe('目次');
+    expect(state.triggerExists).toBe(true);
+    expect(state.triggerVisible).toBe(false);
+    expect(state.triggerDisabled).toBe(true);
+    expect(state.triggerDataVisible).toBe('false');
+    expect(state.triggerDataReserved).toBe('false');
+    expect(state.triggerTocTriggerReserved).toBe('false');
+    expect(state.triggerTocTriggerInteractive).toBe('false');
+    expect(state.triggerHydrationState).toBe('unhydrated');
+    expect(state.triggerControls).toBeNull();
 
-    await page.evaluate(() => {
-      const header = document.querySelector('layout-header');
-      const trigger = header?.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger');
-
-      if (!(trigger instanceof HTMLButtonElement)) {
-        throw new Error('about page TOC trigger not found');
-      }
-
-      trigger.click();
-    });
-
-    await expect.poll(async () => (await readAboutMobileTocState(page)).panelOpen).toBe(true);
-
-    state = await readAboutMobileTocState(page);
-
-    expect(state.triggerExpanded).toBe('true');
-    expect(state.triggerAriaLabel).toBe('目次を閉じる');
-    expect(state.panelAriaHidden).toBe('false');
-    expect(state.mobileNavExists).toBe(true);
-    expect(state.mobileNavAriaLabel).toBe('モバイル目次');
-    expect(state.closeButtonExists).toBe(true);
-    expect(state.closeButtonAriaLabel).toBe('目次を閉じる');
-    expect(Math.abs((state.panelTop ?? 0) - (state.headerBottom ?? 0))).toBeLessThanOrEqual(1);
-
-    await page.evaluate(() => {
-      const panel = document.querySelector<HTMLElement>('[data-layout-toc-mobile-panel]');
-      const closeButton = panel?.querySelector<HTMLButtonElement>(
-        '.layout-toc-mobile-panel__close',
-      );
-
-      if (!(closeButton instanceof HTMLButtonElement)) {
-        throw new Error('about page mobile TOC close button not found');
-      }
-
-      closeButton.click();
-    });
-
-    await expect
-      .poll(async () => {
-        const state = await readAboutMobileTocState(page);
-        return !state.panelOpen && state.panelAriaHidden === 'true';
-      })
-      .toBe(true);
-
-    state = await readAboutMobileTocState(page);
-
-    expect(state.triggerExpanded).toBe('false');
-    expect(state.triggerAriaLabel).toBe('目次を開く');
-    expect(state.focusedTrigger).toBe(true);
+    expect(state.panelExists).toBe(false);
+    expect(state.mobileNavExists).toBe(false);
+    expect(state.layoutTocControllerExists).toBe(false);
+    expect(state.desktopTocNavExists).toBe(false);
   });
+
 });

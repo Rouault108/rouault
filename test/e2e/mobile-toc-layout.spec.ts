@@ -17,13 +17,43 @@ const waitForHeaderTrigger = async (page: Page): Promise<void> => {
     .toBe(true);
 };
 
+const waitForAboutHeaderStable = async (page: Page): Promise<void> => {
+  await expect
+    .poll(async () =>
+      await page.evaluate(async () => {
+        await customElements.whenDefined('layout-header');
+
+        const header = document.querySelector('layout-header') as
+          | (HTMLElement & { updateComplete?: Promise<unknown> })
+          | null;
+
+        if (!(header instanceof HTMLElement)) {
+          return false;
+        }
+
+        if (header.updateComplete instanceof Promise) {
+          await header.updateComplete;
+        }
+
+        return (
+          header.getAttribute('toc-presence') === 'absent' &&
+          header.getAttribute('toc-trigger-reserved') === 'false' &&
+          !header.hasAttribute('toc-runtime-id') &&
+          !header.hasAttribute('data-toc-owner-id') &&
+          header.shadowRoot?.querySelector('.toc-trigger') instanceof HTMLButtonElement
+        );
+      }),
+    )
+    .toBe(true);
+};
+
 const readLayoutState = async (page: Page, shellSelector: string) =>
   await page.evaluate((selector) => {
     const shell = document.querySelector(selector);
-    const header = document.querySelector('layout-header');
+    const header = document.querySelector<HTMLElement>('layout-header');
     const toc = document.querySelector('layout-toc');
     const uiHeader = header?.shadowRoot?.querySelector('ui-header');
-    const trigger = header?.shadowRoot?.querySelector<HTMLElement>('.toc-trigger') ?? null;
+    const trigger = header?.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger') ?? null;
     const triggerText = header?.shadowRoot?.querySelector<HTMLElement>('.toc-trigger-text') ?? null;
     const compactLabel =
       header?.shadowRoot?.querySelector<HTMLElement>('.compact-note-label') ?? null;
@@ -32,6 +62,7 @@ const readLayoutState = async (page: Page, shellSelector: string) =>
     const themeChevron = header?.shadowRoot?.querySelector<HTMLElement>('.theme-chevron') ?? null;
     const mobileBar = toc?.shadowRoot?.querySelector('.mobile-bar') ?? null;
     const mobilePanel = document.querySelector('[data-layout-toc-mobile-panel]');
+    const layoutTocController = document.querySelector('layout-toc-controller');
     const zoneStart = uiHeader?.shadowRoot?.querySelector<HTMLElement>('.zone-start') ?? null;
     const zoneEnd = uiHeader?.shadowRoot?.querySelector<HTMLElement>('.zone-end') ?? null;
 
@@ -40,10 +71,6 @@ const readLayoutState = async (page: Page, shellSelector: string) =>
     }
 
     const staticTocNav = shell.querySelector<HTMLElement>('[data-layout-toc-nav]');
-    const staticTocNavStyle =
-      staticTocNav instanceof HTMLElement ? getComputedStyle(staticTocNav) : null;
-    const staticTocNavRect =
-      staticTocNav instanceof HTMLElement ? staticTocNav.getBoundingClientRect() : null;
     const isVisible = (element: Element | null): element is HTMLElement => {
       if (!(element instanceof HTMLElement)) {
         return false;
@@ -66,12 +93,7 @@ const readLayoutState = async (page: Page, shellSelector: string) =>
 
       const rect = element.getBoundingClientRect();
       return {
-        left: Math.round(rect.left),
         right: Math.round(rect.right),
-        top: Math.round(rect.top),
-        bottom: Math.round(rect.bottom),
-        width: Math.round(rect.width),
-        height: Math.round(rect.height),
       };
     };
 
@@ -83,17 +105,39 @@ const readLayoutState = async (page: Page, shellSelector: string) =>
       shellTrackCount,
       horizontalOverflow:
         document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      triggerExists: trigger instanceof HTMLElement,
+      headerTocPresence: header instanceof HTMLElement ? header.getAttribute('toc-presence') : null,
+      headerTocRuntimeId:
+        header instanceof HTMLElement ? header.getAttribute('toc-runtime-id') : null,
+      headerOwnerId:
+        header instanceof HTMLElement ? header.getAttribute('data-toc-owner-id') : null,
+      headerTocTriggerReserved:
+        header instanceof HTMLElement ? header.getAttribute('toc-trigger-reserved') : null,
+      triggerExists: trigger instanceof HTMLButtonElement,
+      triggerVisible:
+        trigger instanceof HTMLButtonElement ? getComputedStyle(trigger).display !== 'none' : false,
+      triggerDisabled: trigger instanceof HTMLButtonElement ? trigger.disabled : null,
+      triggerDataVisible:
+        trigger instanceof HTMLButtonElement ? (trigger.dataset['visible'] ?? null) : null,
+      triggerDataReserved:
+        trigger instanceof HTMLButtonElement ? (trigger.dataset['reserved'] ?? null) : null,
+      triggerTocTriggerReserved:
+        trigger instanceof HTMLButtonElement
+          ? (trigger.dataset['tocTriggerReserved'] ?? null)
+          : null,
+      triggerTocTriggerInteractive:
+        trigger instanceof HTMLButtonElement
+          ? (trigger.dataset['tocTriggerInteractive'] ?? null)
+          : null,
       triggerHydrationState:
-        trigger instanceof HTMLElement ? (trigger.dataset['tocHydrationState'] ?? null) : null,
+        trigger instanceof HTMLButtonElement ? (trigger.dataset['tocHydrationState'] ?? null) : null,
+      triggerControls:
+        trigger instanceof HTMLButtonElement ? trigger.getAttribute('aria-controls') : null,
       triggerRight: triggerRect ? triggerRect.right : null,
       viewportWidth: window.innerWidth,
       mobileBarExists: mobileBar instanceof HTMLElement,
       mobilePanelExists: mobilePanel instanceof HTMLElement,
       staticTocNavExists: staticTocNav instanceof HTMLElement,
-      staticTocNavDisplay: staticTocNavStyle?.display ?? null,
-      staticTocNavVisible: isVisible(staticTocNav),
-      staticTocNavHeight: staticTocNavRect ? Math.round(staticTocNavRect.height) : null,
+      layoutTocControllerExists: layoutTocController instanceof HTMLElement,
       compactLabelExists: compactLabel instanceof HTMLElement,
       corpusSwitcherVisible: isVisible(corpusSwitcher),
       themeChevronExists: themeChevron instanceof HTMLElement,
@@ -137,90 +181,60 @@ test.describe('mobile TOC layout contract after header integration', () => {
     );
   });
 
-  test('about ページが mobile で 1 カラム契約を維持し、header trigger による横溢れを出さないこと', async ({
+  test('about ページが mobile で TOC DOM を出さず、header trigger を非表示・非活性にすること', async ({
     page,
   }) => {
     await page.goto(aboutPath);
+    await waitForAboutHeaderStable(page);
 
     const state = await readLayoutState(page, '.about-shell');
     expect(state).not.toBeNull();
-    expect(state?.shellTrackCount).toBe(1);
     expect(state?.horizontalOverflow).toBeLessThanOrEqual(1);
     expect(state?.mobileBarExists).toBe(false);
-    expect(state?.staticTocNavExists).toBe(true);
-    expect(state?.staticTocNavDisplay).toBe('none');
-    expect(state?.staticTocNavVisible).toBe(false);
-    expect(state?.staticTocNavHeight).toBe(0);
-    if (state?.triggerExists) {
-      expect(state.triggerRight ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(
-        state.viewportWidth + 1,
-      );
-    }
+    expect(state?.mobilePanelExists).toBe(false);
+    expect(state?.staticTocNavExists).toBe(false);
+    expect(state?.layoutTocControllerExists).toBe(false);
+
+    expect(state?.headerTocPresence).toBe('absent');
+    expect(state?.headerTocRuntimeId).toBeNull();
+    expect(state?.headerOwnerId).toBeNull();
+    expect(state?.headerTocTriggerReserved).toBe('false');
+
+    expect(state?.triggerExists).toBe(true);
+    expect(state?.triggerVisible).toBe(false);
+    expect(state?.triggerDisabled).toBe(true);
+    expect(state?.triggerDataVisible).toBe('false');
+    expect(state?.triggerDataReserved).toBe('false');
+    expect(state?.triggerTocTriggerReserved).toBe('false');
+    expect(state?.triggerTocTriggerInteractive).toBe('false');
+    expect(state?.triggerHydrationState).toBe('unhydrated');
+    expect(state?.triggerControls).toBeNull();
   });
 
-  test('note と about の両方で旧 mobile bar なしに header trigger を使うこと', async ({ page }) => {
+  test('note と about の両方で旧 mobile bar なしにページ種別ごとの header trigger 状態を使うこと', async ({
+    page,
+  }) => {
     await page.goto(layoutRichPath);
     await waitForHeaderTrigger(page);
     const noteState = await readLayoutState(page, '.note-shell');
 
     await page.goto(aboutPath);
+    await waitForAboutHeaderStable(page);
     const aboutState = await readLayoutState(page, '.about-shell');
 
     expect(noteState).not.toBeNull();
     expect(aboutState).not.toBeNull();
     expect(noteState?.shellTrackCount).toBe(1);
-    expect(aboutState?.shellTrackCount).toBe(1);
-    expect(noteState?.horizontalOverflow).toBeLessThanOrEqual(1);
     expect(aboutState?.horizontalOverflow).toBeLessThanOrEqual(1);
+    expect(noteState?.horizontalOverflow).toBeLessThanOrEqual(1);
     expect(noteState?.triggerExists).toBe(true);
     expect(noteState?.mobileBarExists).toBe(false);
     expect(aboutState?.mobileBarExists).toBe(false);
+    expect(aboutState?.mobilePanelExists).toBe(false);
+    expect(aboutState?.staticTocNavExists).toBe(false);
+    expect(aboutState?.layoutTocControllerExists).toBe(false);
+    expect(aboutState?.triggerExists).toBe(true);
+    expect(aboutState?.triggerVisible).toBe(false);
+    expect(aboutState?.triggerDisabled).toBe(true);
   });
-
-  for (const width of [639, 640] as const) {
-    test(`about static TOC visibility at ${width}px`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto(aboutPath);
-
-      const state = await page.evaluate(() => {
-        const shell = document.querySelector<HTMLElement>('.about-shell');
-        const nav = document.querySelector<HTMLElement>('.about-shell [data-layout-toc-nav]');
-
-        if (!(shell instanceof HTMLElement) || !(nav instanceof HTMLElement)) {
-          return null;
-        }
-
-        const gridTemplateColumns = getComputedStyle(shell).gridTemplateColumns.trim();
-        const trackCount =
-          gridTemplateColumns.length === 0 ? 0 : gridTemplateColumns.split(/\s+/u).length;
-        const style = getComputedStyle(nav);
-        const rect = nav.getBoundingClientRect();
-
-        return {
-          trackCount,
-          display: style.display,
-          visible:
-            style.display !== 'none' &&
-            style.visibility !== 'hidden' &&
-            rect.width > 0 &&
-            rect.height > 0,
-          height: Math.round(rect.height),
-        };
-      });
-
-      expect(state).not.toBeNull();
-
-      if (width === 639) {
-        expect(state?.trackCount).toBe(1);
-        expect(state?.display).toBe('none');
-        expect(state?.visible).toBe(false);
-        expect(state?.height).toBe(0);
-      } else {
-        expect(state?.trackCount).toBeGreaterThan(1);
-        expect(state?.display).not.toBe('none');
-        expect(state?.visible).toBe(true);
-        expect(state?.height ?? 0).toBeGreaterThan(0);
-      }
-    });
-  }
 });
