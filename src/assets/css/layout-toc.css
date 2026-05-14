@@ -137,7 +137,8 @@
   word-break: break-word;
 }
 
-.layout-toc__link:not(.is-active):not([data-active='true']) .layout-toc__link-label {
+.layout-toc__link:not(.is-active):not([data-active='true']):not([aria-current='location'])
+  .layout-toc__link-label {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: var(--toc-item-inactive-max-lines, 2);
@@ -160,7 +161,8 @@
 }
 
 .layout-toc__link.is-active,
-.layout-toc__link[data-active='true'] {
+.layout-toc__link[data-active='true'],
+.layout-toc__link[aria-current='location'] {
   color: var(--toc-item-fg-active, var(--fg-default, oklch(20% 0 0)));
   font-weight: var(
     --toc-item-font-weight-active,
@@ -169,7 +171,8 @@
 }
 
 .layout-toc__link.is-active .layout-toc__link-label,
-.layout-toc__link[data-active='true'] .layout-toc__link-label {
+.layout-toc__link[data-active='true'] .layout-toc__link-label,
+.layout-toc__link[aria-current='location'] .layout-toc__link-label {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: var(--toc-item-active-max-lines, 3);
@@ -188,7 +191,8 @@
 }
 
 .layout-toc__link.is-active::before,
-.layout-toc__link[data-active='true']::before {
+.layout-toc__link[data-active='true']::before,
+.layout-toc__link[aria-current='location']::before {
   inset-block: var(--_toc-active-inset-block);
   block-size: auto;
   transform: none;
@@ -196,7 +200,8 @@
 }
 
 .layout-toc__link.is-active::after,
-.layout-toc__link[data-active='true']::after {
+.layout-toc__link[data-active='true']::after,
+.layout-toc__link[aria-current='location']::after {
   background-color: var(--toc-item-active-bg, transparent);
 }
 
@@ -296,12 +301,14 @@ layout-toc-controller {
   }
 
   .layout-toc__link.is-active,
-  .layout-toc__link[data-active='true'] {
+  .layout-toc__link[data-active='true'],
+  .layout-toc__link[aria-current='location'] {
     color: Highlight;
   }
 
   .layout-toc__link.is-active::before,
-  .layout-toc__link[data-active='true']::before {
+  .layout-toc__link[data-active='true']::before,
+  .layout-toc__link[aria-current='location']::before {
     background-color: transparent;
     border: var(--border-width, 1px) solid Highlight;
   }

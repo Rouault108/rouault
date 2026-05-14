@@ -226,12 +226,13 @@ describe('layout toc css contract', () => {
 
   it('keeps long label display contract independent from heading depth in screen scope', () => {
     const inactiveSelector =
-      ".layout-toc__link:not(.is-active):not([data-active='true']) .layout-toc__link-label";
+      ".layout-toc__link:not(.is-active):not([data-active='true']):not([aria-current='location']) .layout-toc__link-label";
     const deprecatedDepthSelector =
       ".layout-toc__link:not(.is-active):not([data-active='true']):is([data-heading-depth='2'],[data-heading-depth='3'],[data-heading-depth='4']) .layout-toc__link-label";
     const activeSelectors = [
       '.layout-toc__link.is-active .layout-toc__link-label',
       ".layout-toc__link[data-active='true'] .layout-toc__link-label",
+      ".layout-toc__link[aria-current='location'] .layout-toc__link-label",
     ];
 
     expect(

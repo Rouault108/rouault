@@ -1834,6 +1834,15 @@ app-router[data-sidebar-presence='absent'] {
   max-width: var(--reading-measure);
 }
 
+.note-shell[data-toc-presence='absent'] .container-reading {
+  max-width: 100%;
+  margin-inline: 0;
+}
+
+.note-shell[data-toc-presence='absent'] .prose {
+  margin-inline: 0;
+}
+
 layout-header:not(:defined) {
   display: block;
   position: sticky;
