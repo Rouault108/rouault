@@ -154,7 +154,7 @@ test.describe('No-JS baseline', () => {
     await expect(page.locator('aside[aria-label="目次"]')).toHaveCount(0);
   });
 
-  test('about ページが狭幅 No-JS では SSR 静的TOC nav を表示せず、下部漏れを出さないこと', async ({
+  test('about ページは狭幅 No-JS でも TOC DOM を出力せず、本文幅と横溢れ契約を維持すること', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 375, height: 900 });
@@ -162,57 +162,45 @@ test.describe('No-JS baseline', () => {
 
     const state = await page.evaluate(() => {
       const shell = document.querySelector('.about-shell');
+      const mainCol = shell?.querySelector(':scope > .about-main-col');
       const tocCol = shell?.querySelector(':scope > .layout-toc-col');
-      const tocNav = tocCol?.querySelector('[data-layout-toc-nav]');
-
-      if (!(shell instanceof HTMLElement)) {
-        return null;
-      }
-      if (!(tocCol instanceof HTMLElement)) {
-        return null;
-      }
-      if (!(tocNav instanceof HTMLElement)) {
-        return null;
-      }
-
-      const gridTemplateColumns = getComputedStyle(shell).gridTemplateColumns.trim();
-      const trackCount =
-        gridTemplateColumns.length === 0 ? 0 : gridTemplateColumns.split(/\s+/u).length;
-      const tocColRect = tocCol.getBoundingClientRect();
-      const tocNavStyle = getComputedStyle(tocNav);
-      const tocNavRect = tocNav.getBoundingClientRect();
+      const tocNav = shell?.querySelector('[data-layout-toc-nav]');
+      const layoutTocController = document.querySelector('layout-toc-controller');
+      const mobilePanel = document.querySelector('[data-layout-toc-mobile-panel]');
+      const mobileNav = document.querySelector('[data-layout-toc-mobile-nav]');
 
       return {
-        trackCount,
-        tocColPosition: getComputedStyle(tocCol).position,
-        tocColLeft: Math.round(tocColRect.left),
-        tocColWidth: Math.round(tocColRect.width),
-        tocNavDisplay: tocNavStyle.display,
-        tocNavVisible:
-          tocNavStyle.display !== 'none' &&
-          tocNavStyle.visibility !== 'hidden' &&
-          tocNavRect.width > 0 &&
-          tocNavRect.height > 0,
-        tocNavHeight: Math.round(tocNavRect.height),
+        shellExists: shell instanceof HTMLElement,
+        mainColExists: mainCol instanceof HTMLElement,
+        mainColWidth:
+          mainCol instanceof HTMLElement ? Math.round(mainCol.getBoundingClientRect().width) : null,
+        tocColExists: tocCol instanceof HTMLElement,
+        tocNavExists: tocNav instanceof HTMLElement,
+        layoutTocControllerExists: layoutTocController instanceof HTMLElement,
+        mobilePanelExists: mobilePanel instanceof HTMLElement,
+        mobileNavExists: mobileNav instanceof HTMLElement,
         horizontalOverflow:
           document.documentElement.scrollWidth - document.documentElement.clientWidth,
       };
     });
 
-    expect(state).not.toBeNull();
-    expect(state?.trackCount).toBe(1);
-    expect(state?.tocColPosition).toBe('static');
-    expect(state?.tocColLeft ?? Number.POSITIVE_INFINITY).toBeLessThan(80);
-    expect(state?.tocColWidth ?? 0).toBeGreaterThan(240);
-    expect(state?.tocNavDisplay).toBe('none');
-    expect(state?.tocNavVisible).toBe(false);
-    expect(state?.tocNavHeight).toBe(0);
+    expect(state?.shellExists).toBe(true);
+    expect(state?.mainColExists).toBe(true);
+    expect(state?.mainColWidth ?? 0).toBeGreaterThan(240);
+
+    expect(state?.tocColExists).toBe(false);
+    expect(state?.tocNavExists).toBe(false);
+    expect(state?.layoutTocControllerExists).toBe(false);
+    expect(state?.mobilePanelExists).toBe(false);
+    expect(state?.mobileNavExists).toBe(false);
     expect(state?.horizontalOverflow ?? 0).toBeLessThanOrEqual(1);
 
     await expect(page.locator('.about-shell')).toHaveCount(1);
-    await expect(page.locator('.about-shell > .layout-toc-col')).toHaveCount(1);
-    await expect(page.locator('.about-shell [data-layout-toc-nav]')).toHaveCount(1);
-    await expect(page.locator('.about-shell [data-layout-toc-nav]')).toBeHidden();
+    await expect(page.locator('.about-main-col')).toHaveCount(1);
+    await expect(page.locator('.about-shell > .layout-toc-col')).toHaveCount(0);
+    await expect(page.locator('.about-shell [data-layout-toc-nav]')).toHaveCount(0);
+    await expect(page.locator('layout-toc-controller')).toHaveCount(0);
+    await expect(page.locator('aside[aria-label="目次"]')).toHaveCount(0);
     await expect(page.locator('[data-layout-toc-mobile-panel]')).toHaveCount(0);
     await expect(page.locator('[data-layout-toc-mobile-nav]')).toHaveCount(0);
   });
