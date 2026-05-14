@@ -141,8 +141,8 @@ describe('transformHtmlWithLitSsr', () => {
         if (tagName === 'page-host') {
           return Promise.resolve(
             `<page-host${serializeAttributes(attributes)}>
-              <section class="about-shell">
-                <aside class="layout-toc-col">
+              <section class="synthetic-shell">
+                <aside class="synthetic-toc-col">
                   <layout-toc headings-json="[]"></layout-toc>
                 </aside>
               </section>
