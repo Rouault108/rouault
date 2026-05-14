@@ -213,10 +213,11 @@ layout-toc-controller {
   position: fixed;
   inset-inline: 0;
   top: var(--header-height);
-  bottom: 0;
   z-index: var(--z-non-modal-panel, var(--z-modal, 300));
+  max-block-size: min(70vh, calc(100dvh - var(--header-height)));
   background: var(--bg-default);
   border-top: var(--border-width, 1px) solid var(--border-default);
+  border-bottom: var(--border-width, 1px) solid var(--border-default);
   padding: var(--space-2, 8px) max(var(--space-3, 12px), env(safe-area-inset-right))
     var(--space-6, 24px) max(var(--space-3, 12px), env(safe-area-inset-left));
   overflow-y: auto;

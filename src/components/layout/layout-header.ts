@@ -67,6 +67,9 @@ const DEFAULT_TOC_RUNTIME_VIEW: LayoutTocRuntimeSnapshot = {
   activeId: null,
 };
 
+const normalizeOptionalString = (value: string | null | undefined): string =>
+  typeof value === 'string' ? value.trim() : '';
+
 @customElement('layout-header')
 export class LayoutHeader extends LitElement {
   static override styles = css`
@@ -457,10 +460,10 @@ export class LayoutHeader extends LitElement {
   tocPresence: TocPresence = 'absent';
 
   @property({ type: String, attribute: 'toc-runtime-id' })
-  tocRuntimeId = '';
+  tocRuntimeId: string | null = '';
 
   @property({ type: String, attribute: 'data-toc-owner-id' })
-  tocOwnerId = '';
+  tocOwnerId: string | null = '';
 
   @property({ type: String, attribute: 'toc-trigger-reserved' })
   tocTriggerReserved = 'auto';
@@ -507,21 +510,21 @@ export class LayoutHeader extends LitElement {
     this.sidebarEnabled = snapshot.sidebarEnabled;
     this.sidebarId = snapshot.sidebarEnabled ? snapshot.sidebarId : DEFAULT_LAYOUT_SIDEBAR_ID;
     this.tocPresence = snapshot.tocPresence;
-    const tocRuntimeId = snapshot.tocRuntimeId?.trim() ?? '';
-    this.tocRuntimeId = tocRuntimeId;
+    const tocRuntimeId = normalizeOptionalString(snapshot.tocRuntimeId);
     if (tocRuntimeId.length > 0) {
       this.setAttribute('toc-runtime-id', tocRuntimeId);
     } else {
       this.removeAttribute('toc-runtime-id');
     }
+    this.tocRuntimeId = tocRuntimeId;
 
-    const tocOwnerId = snapshot.tocOwnerId?.trim() ?? '';
-    this.tocOwnerId = tocOwnerId;
+    const tocOwnerId = normalizeOptionalString(snapshot.tocOwnerId);
     if (tocOwnerId.length > 0) {
       this.setAttribute('data-toc-owner-id', tocOwnerId);
     } else {
       this.removeAttribute('data-toc-owner-id');
     }
+    this.tocOwnerId = tocOwnerId;
     this._setTocTriggerReserved(snapshot.tocTriggerReserved);
   }
 
@@ -794,12 +797,12 @@ export class LayoutHeader extends LitElement {
   }
 
   private _readTocRuntimeId(): string | null {
-    const normalized = this.tocRuntimeId.trim();
+    const normalized = normalizeOptionalString(this.tocRuntimeId);
     return normalized.length > 0 ? normalized : null;
   }
 
   private _resolveSidebarId(): string {
-    const normalized = this.sidebarId.trim();
+    const normalized = normalizeOptionalString(this.sidebarId);
     return normalized.length > 0 ? normalized : DEFAULT_LAYOUT_SIDEBAR_ID;
   }
 
@@ -979,7 +982,7 @@ export class LayoutHeader extends LitElement {
   }
 
   private _isTocTriggerReserved(): boolean {
-    const value = this.tocTriggerReserved.trim();
+    const value = normalizeOptionalString(this.tocTriggerReserved);
     if (value === '' || value === 'true') {
       return true;
     }
