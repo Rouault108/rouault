@@ -1861,7 +1861,11 @@ layout-toc:not(:defined) {
 }
 
 .about-shell {
-  --about-toc-track: var(--aside-width);
+  --about-main-track: calc(var(--width-reading) + 12rem);
+  --about-toc-inline-size: var(--aside-width);
+  --about-toc-track: var(--about-toc-inline-size);
+  --about-shell-column-gap: var(--space-8, 32px);
+
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--about-toc-track);
   align-items: start;
@@ -1869,6 +1873,17 @@ layout-toc:not(:defined) {
   max-width: var(--bp-xl);
   margin-inline: auto;
   width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .about-shell {
+    column-gap: var(--about-shell-column-gap);
+    max-width: min(
+      100%,
+      var(--bp-xl),
+      calc(var(--about-main-track) + var(--about-shell-column-gap) + var(--about-toc-inline-size))
+    );
+  }
 }
 
 app-router[data-sidebar-presence='present'] .layout-sidebar-col {
@@ -2266,7 +2281,7 @@ layout-sidebar-surface .heading {
 }
 
 .about-main-col {
-  max-width: min(100%, calc(var(--width-reading) + 12rem));
+  max-width: min(100%, var(--about-main-track, calc(var(--width-reading) + 12rem)));
 }
 
 .about-hero {
