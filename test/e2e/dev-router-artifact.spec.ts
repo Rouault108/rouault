@@ -46,7 +46,7 @@ test.describe('dev router artifact', () => {
     );
 
     await expect(page.locator('#main-content')).toContainText(
-      '個人ノートを、静かに読むためのアプリケーション',
+      '個人ノートを静かに読むためのアプリケーション',
     );
   });
 });

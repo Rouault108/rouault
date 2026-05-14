@@ -21,7 +21,7 @@ describe('AboutPageTemplate', () => {
     expect(rendered).toContain('<section class="about-shell">');
     expect(rendered).toContain('id="about-page-content" class="about-prose"');
     expect(rendered).toContain('About Rouault');
-    expect(rendered).toContain('個人ノートを、静かに読むためのアプリケーション');
+    expect(rendered).toContain('個人ノートを静かに読むためのアプリケーション');
     expect(rendered).toContain('<layout-toc');
     expect(rendered).toContain('data-hydration-scope="about-toc"');
     expect(rendered).toContain('data-hydration-capability="interactive"');

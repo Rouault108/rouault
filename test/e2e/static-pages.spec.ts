@@ -5,7 +5,7 @@ test.describe('Static pages', () => {
     await page.goto('/about/');
 
     await expect(page.locator('#main-content h1').first()).toHaveText(
-      '個人ノートを、静かに読むためのアプリケーション',
+      '個人ノートを静かに読むためのアプリケーション',
     );
     await expect(page.locator('#main-content')).toContainText('Rouault の目的と設計方針');
   });
