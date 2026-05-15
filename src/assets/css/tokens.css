@@ -554,15 +554,27 @@
   );
   --note-fixed-frame-max-width: calc(var(--note-sidebar-width) + var(--note-shell-max-width));
 
+  /*
+   * Header 直下から本文開始位置までの上余白は
+   * --page-content-padding-block-start を正本とする。
+   * ページ別 token は override 用であり、default は正本 token に従う。
+   */
+  --page-content-padding-block-start: var(--space-8);
+  --note-content-padding-block-start: var(--page-content-padding-block-start);
+
   /* 単一カラムのトップレベルページで共有する外枠 */
   --page-shell-max-width: 72rem;
   --page-shell-padding-inline: clamp(var(--space-4), 2vw, var(--space-6));
-  --page-shell-padding-block-start: clamp(var(--space-6), 4vw, var(--space-10));
+  --page-shell-padding-block-start: var(--page-content-padding-block-start);
   --page-shell-padding-block-end: var(--space-12);
 
-  /* ホームは左右外枠だけ共通化し、縦方向の呼吸だけ個別に持つ */
-  --home-shell-padding-block-start: clamp(var(--space-4), 2.5vw, var(--space-8));
+  /* ホーム / 404 は .home-shell を共有する */
+  --home-shell-padding-block-start: var(--page-content-padding-block-start);
   --home-shell-padding-block-end: var(--space-12);
+
+  /* About 専用 1 カラム本文 */
+  --about-content-padding-block-start: var(--page-content-padding-block-start);
+  --about-content-padding-block-end: var(--page-shell-padding-block-end);
 
   /* =========================================================================
    * Breakpoints
