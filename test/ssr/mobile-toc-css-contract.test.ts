@@ -36,6 +36,10 @@ describe('mobile toc css contract', () => {
     expect(mainCss).not.toMatch(/\.about-shell\s+\.layout-toc-col/u);
     expect(mainCss).not.toMatch(/\.about-shell\s+\[data-layout-toc-nav\]/u);
     expect(mainCss).not.toMatch(/\.about-shell\s+\[data-layout-toc-mobile-panel\]/u);
+    expect(mainCss).not.toMatch(/\.about-shell\s+\[data-layout-toc-source\]/u);
+    expect(mainCss).not.toMatch(/\.about-shell\s+\[data-toc-owner-id\]/u);
+    expect(mainCss).not.toMatch(/\.about-shell\s+\[data-hydration-scope=['"]about-toc['"]\]/u);
+    expect(mainCss).not.toMatch(/\.about-shell\s+\[data-toc-runtime-id\]/u);
     expect(mainCss).not.toMatch(
       /--about-(main-track|toc-track|toc-inline-size|shell-column-gap)\b/u,
     );
