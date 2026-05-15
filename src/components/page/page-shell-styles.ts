@@ -12,7 +12,7 @@ export const pageShellStyles = css`
     margin-inline: auto;
     padding: var(
         --page-shell-padding-block-start,
-        clamp(var(--space-6, 24px), 4vw, var(--space-10, 40px))
+        var(--page-content-padding-block-start, var(--space-8, 32px))
       )
       var(--page-shell-padding-inline, clamp(var(--space-4, 16px), 2vw, var(--space-6, 24px)))
       var(--page-shell-padding-block-end, var(--space-12, 48px));
