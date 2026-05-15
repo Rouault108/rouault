@@ -12,7 +12,7 @@ describe('buildNotFoundPageMarkup', () => {
     const rendered = buildNotFoundPageMarkup();
 
     expect(rendered).toContain('<not-found-page');
-    expect(rendered).toContain('class="not-found-page-fallback"');
+    expect(rendered).toContain('class="home-shell not-found-page-fallback"');
     expect(rendered).toContain('aria-labelledby="not-found-page-title"');
     expect(rendered).toContain('aria-label="404 navigation"');
     expect(rendered).toContain(NOT_FOUND_PAGE_TITLE);

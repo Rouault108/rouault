@@ -188,8 +188,8 @@ test.describe('No-JS baseline', () => {
 
       const hasNonZeroSecondComponent = (value: string): boolean => {
         const parts = value.split(/\s+/u).filter((part) => part.length > 0);
-        if (parts.length < 2) return false;
-        return !isZeroLengthToken(parts[1]);
+        const secondComponent = parts[1];
+        return secondComponent !== undefined && !isZeroLengthToken(secondComponent);
       };
 
       const hasBlockAxisTranslateOffset = (value: string): boolean => {
@@ -199,15 +199,18 @@ test.describe('No-JS baseline', () => {
         }
         if (normalized.startsWith('translatey(')) {
           const args = splitCssFunctionArguments(normalized.slice('translatey('.length, -1));
-          return args.length > 0 && !isZeroLengthToken(args[0]);
+          const y = args[0];
+          return y !== undefined && !isZeroLengthToken(y);
         }
         if (normalized.startsWith('translate3d(')) {
           const args = splitCssFunctionArguments(normalized.slice('translate3d('.length, -1));
-          return args.length >= 2 && !isZeroLengthToken(args[1]);
+          const y = args[1];
+          return y !== undefined && !isZeroLengthToken(y);
         }
         if (normalized.startsWith('translate(')) {
           const args = splitCssFunctionArguments(normalized.slice('translate('.length, -1));
-          if (args.length >= 2) return !isZeroLengthToken(args[1]);
+          const y = args[1];
+          if (y !== undefined) return !isZeroLengthToken(y);
           return hasNonZeroSecondComponent(args[0] ?? '');
         }
         if (normalized.startsWith('translatex(')) return false;
@@ -219,23 +222,28 @@ test.describe('No-JS baseline', () => {
         if (normalized.length === 0 || normalized === 'none') return false;
         for (const match of normalized.matchAll(/translatey\(([^)]*)\)/gu)) {
           const args = splitCssFunctionArguments(match[1] ?? '');
-          if (args.length > 0 && !isZeroLengthToken(args[0])) return true;
+          const y = args[0];
+          if (y !== undefined && !isZeroLengthToken(y)) return true;
         }
         for (const match of normalized.matchAll(/translate3d\(([^)]*)\)/gu)) {
           const args = splitCssFunctionArguments(match[1] ?? '');
-          if (args.length >= 2 && !isZeroLengthToken(args[1])) return true;
+          const y = args[1];
+          if (y !== undefined && !isZeroLengthToken(y)) return true;
         }
         for (const match of normalized.matchAll(/translate\(([^)]*)\)/gu)) {
           const args = splitCssFunctionArguments(match[1] ?? '');
-          if (args.length >= 2 && !isZeroLengthToken(args[1])) return true;
+          const y = args[1];
+          if (y !== undefined && !isZeroLengthToken(y)) return true;
         }
         for (const match of normalized.matchAll(/matrix\(([^)]*)\)/gu)) {
           const args = splitCssFunctionArguments(match[1] ?? '');
-          if (args.length >= 6 && !isZeroLengthToken(args[5])) return true;
+          const y = args[5];
+          if (y !== undefined && !isZeroLengthToken(y)) return true;
         }
         for (const match of normalized.matchAll(/matrix3d\(([^)]*)\)/gu)) {
           const args = splitCssFunctionArguments(match[1] ?? '');
-          if (args.length >= 14 && !isZeroLengthToken(args[13])) return true;
+          const y = args[13];
+          if (y !== undefined && !isZeroLengthToken(y)) return true;
         }
         return false;
       };

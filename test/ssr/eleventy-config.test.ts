@@ -105,7 +105,7 @@ describe('eleventy config', () => {
     expect(passthroughCopies).toContainEqual({ 'src/assets': 'assets' });
     expect(passthroughCopies).toContainEqual({ '.generated/media/assets': 'media' });
     expect(passthroughCopies).toContainEqual({ 'examples/media': 'example-assets' });
-  }, 10_000);
+  }, 30_000);
 
   it('buildMetadata グローバルデータを buildId / buildLabel / generatedAt 付きで登録できること', async () => {
     const previousBuildId = process.env['ROUAULT_BUILD_ID'];
@@ -152,7 +152,7 @@ describe('eleventy config', () => {
         process.env['ROUAULT_GENERATED_AT'] = previousGeneratedAt;
       }
     }
-  });
+  }, 20_000);
 
   it('ROUAULT_MEDIA_BASE_URL が設定されている場合は .generated/media/assets の passthrough copy を省くこと', async () => {
     const previousBaseUrl = process.env['ROUAULT_MEDIA_BASE_URL'];

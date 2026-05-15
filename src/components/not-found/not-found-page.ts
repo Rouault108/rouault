@@ -45,14 +45,14 @@ export const buildNotFoundPageMarkup = (options: BuildNotFoundPageMarkupOptions 
       color: var(--fg-default);
     }
 
-    .not-found-page-fallback {
+    .not-found-page-fallback:not(.home-shell) {
       box-sizing: border-box;
       width: min(100%, 72rem);
       margin: 0 auto;
       padding:
-        clamp(var(--space-12, 48px), 12vh, 8rem)
-        var(--space-4, 16px)
-        clamp(var(--space-16, 64px), 18vh, 10rem);
+        var(--home-shell-padding-block-start, var(--page-content-padding-block-start, var(--space-8, 32px)))
+        var(--page-shell-padding-inline, clamp(var(--space-4, 16px), 2vw, var(--space-6, 24px)))
+        var(--home-shell-padding-block-end, var(--space-12, 48px));
     }
 
     .not-found-page-fallback__inner {
@@ -188,7 +188,7 @@ export const buildNotFoundPageMarkup = (options: BuildNotFoundPageMarkupOptions 
     }
 
     @media (max-width: 639px) {
-      .not-found-page-fallback {
+      .not-found-page-fallback:not(.home-shell) {
         padding-inline: var(--space-3, 12px);
       }
 
@@ -204,7 +204,7 @@ export const buildNotFoundPageMarkup = (options: BuildNotFoundPageMarkupOptions 
 
   <section
     data-not-found-fallback
-    class="not-found-page-fallback"
+    class="home-shell not-found-page-fallback"
     aria-labelledby="not-found-page-title"
   >
     <div class="not-found-page-fallback__inner">
