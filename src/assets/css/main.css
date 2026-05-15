@@ -1866,8 +1866,6 @@ layout-toc:not(:defined) {
   box-sizing: border-box;
   width: 100%;
   min-height: calc(100vh - var(--header-height));
-  padding-block: var(--page-shell-padding-block-start) var(--page-shell-padding-block-end);
-  padding-inline: var(--page-shell-padding-inline);
 }
 
 app-router[data-sidebar-presence='present'] .layout-sidebar-col {
@@ -1883,7 +1881,11 @@ app-router[data-sidebar-presence='absent'] > main#main-content {
 }
 
 .layout-main-col {
-  padding-block: var(--space-8);
+  padding-block-start: var(
+    --note-content-padding-block-start,
+    var(--page-content-padding-block-start, var(--space-8))
+  );
+  padding-block-end: var(--layout-main-col-padding-block-end, var(--space-8));
 }
 
 .layout-sidebar-col,
@@ -2265,10 +2267,30 @@ layout-sidebar-surface .heading {
 }
 
 .about-main-col {
+  --about-content-padding-inline: var(
+    --page-shell-padding-inline,
+    clamp(var(--space-4), 2vw, var(--space-6))
+  );
+
   box-sizing: border-box;
   min-inline-size: 0;
-  width: min(100%, var(--about-content-max-inline-size, 52rem));
+  width: min(
+    100%,
+    calc(
+      var(--about-content-max-inline-size, 52rem) + var(--about-content-padding-inline) +
+        var(--about-content-padding-inline)
+    )
+  );
   margin-inline: auto;
+  padding-block-start: var(
+    --about-content-padding-block-start,
+    var(--page-content-padding-block-start, var(--space-8))
+  );
+  padding-block-end: var(
+    --about-content-padding-block-end,
+    var(--page-shell-padding-block-end, var(--space-12))
+  );
+  padding-inline: var(--about-content-padding-inline);
 }
 
 .about-hero {
@@ -2335,7 +2357,7 @@ layout-sidebar-surface .heading {
   min-height: calc(100vh - var(--header-height));
   padding: var(
       --home-shell-padding-block-start,
-      clamp(var(--space-4, 16px), 2.5vw, var(--space-8, 32px))
+      var(--page-content-padding-block-start, var(--space-8, 32px))
     )
     var(--page-shell-padding-inline, clamp(var(--space-4, 16px), 2vw, var(--space-6, 24px)))
     var(--home-shell-padding-block-end, var(--space-12, 48px));
