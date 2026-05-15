@@ -31,8 +31,10 @@ describe('AboutPageTemplate', () => {
     expect(rendered).not.toContain('layout-toc-col');
     expect(rendered).not.toContain('data-layout-toc-nav');
     expect(rendered).not.toContain('toc-source-about');
+    expect(rendered).not.toContain('data-layout-toc-source');
     expect(rendered).not.toContain('<layout-toc-controller');
     expect(rendered).not.toContain('data-toc-owner-id="about-page-toc-owner"');
+    expect(rendered).not.toContain('data-toc-runtime-id');
     expect(rendered).not.toContain('data-hydration-scope="about-toc"');
     expect(rendered).not.toContain('data-hydration-deferred="toc-trigger"');
     expect(rendered).not.toContain('data-toc-trigger-reserved');
