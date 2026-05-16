@@ -917,6 +917,8 @@ export class FileTree extends LitElement {
           icon=${ifDefined(node.icon)}
           .href=${isLeafNode(node) ? node.href : ''}
           href=${ifDefined(isLeafNode(node) ? node.href : undefined)}
+          data-link-kind=${ifDefined(isLeafNode(node) ? 'internal-document' : undefined)}
+          data-link-surface=${ifDefined(isLeafNode(node) ? 'navigation' : undefined)}
           .hasChildren=${isBranchNode(node)}
           ?has-children=${isBranchNode(node)}
           .expanded=${isExpanded}

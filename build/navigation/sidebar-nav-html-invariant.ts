@@ -414,6 +414,18 @@ export const validateSidebarNavHtmlInvariant = (
         fail(sourceLabel, `leaf row ${row.id} must have non-empty href.`);
       }
 
+      if (getAttribute(directControl, 'data-link-kind') !== 'internal-document') {
+        fail(sourceLabel, `leaf row ${row.id} link must have data-link-kind="internal-document".`);
+      }
+
+      if (getAttribute(directControl, 'data-link-surface') !== 'navigation') {
+        fail(sourceLabel, `leaf row ${row.id} link must have data-link-surface="navigation".`);
+      }
+
+      if (hasAttribute(directControl, 'data-external')) {
+        fail(sourceLabel, `leaf row ${row.id} link must not have data-external.`);
+      }
+
       if (row.id === input.selectedId) {
         if (ariaCurrent !== 'page') {
           fail(sourceLabel, `selected leaf row ${row.id} must have aria-current="page".`);

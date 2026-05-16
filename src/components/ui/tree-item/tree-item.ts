@@ -989,6 +989,8 @@ export class TreeItem extends LitElement {
                   class=${classMap(controlClasses)}
                   tabindex=${tabIndex}
                   href=${ifDefined(this.href)}
+                  data-link-kind="internal-document"
+                  data-link-surface="navigation"
                   aria-current=${ifDefined(this.selected ? 'page' : undefined)}
                   @click=${this._handleClick}
                   @keydown=${this._handleKeyDown}

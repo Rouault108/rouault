@@ -199,10 +199,12 @@ const validatePresentSidebar = (value: Record<string, unknown>): PayloadSidebarS
   const sidebarId = readSidebarId(value['sidebarId'], 'sidebar.sidebarId');
   const stateScopeId = readStateScopeId(value['stateScopeId'], 'sidebar.stateScopeId');
 
-  const selectedId = value['selectedId'];
-  if (selectedId !== null && !isString(selectedId)) {
-    fail('sidebar.selectedId must be string or null.', 'invalid-sidebar');
-  }
+  const rawSelectedId = value['selectedId'];
+  const selectedId: string | null = rawSelectedId === null
+    ? null
+    : isString(rawSelectedId)
+      ? rawSelectedId
+      : fail('sidebar.selectedId must be string or null.', 'invalid-sidebar');
 
   const presentation = value['presentation'];
   const fixedBreakpoint = value['fixedBreakpoint'];

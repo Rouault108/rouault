@@ -44,7 +44,7 @@ const renderRow = (row: SidebarNavRow, groupIdPrefix: SidebarGroupIdPrefix): str
     const currentAttribute = row.isCurrent ? ' aria-current="page"' : '';
     return [
       `<li ${baseAttributes}>`,
-      `<a data-sidebar-nav-control data-sidebar-nav-link href="${escapeHtml(href)}"${currentAttribute}>`,
+      `<a data-sidebar-nav-control data-sidebar-nav-link href="${escapeHtml(href)}" data-link-kind="internal-document" data-link-surface="navigation"${currentAttribute}>`,
       `<span data-sidebar-nav-label>${escapeHtml(row.label)}</span>`,
       `</a>`,
       `</li>`,

@@ -21,10 +21,10 @@ const sampleNavMarkup = `
           </button>
           <ul id="story-sidebar-classical">
             <li data-node-id="music/classical/beethoven/symphony-9" data-node-kind="leaf" data-node-depth="2">
-              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/beethoven/symphony-9" aria-current="page"><span data-sidebar-nav-label>交響曲第9番 ニ短調</span></a>
+              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/beethoven/symphony-9" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>交響曲第9番 ニ短調</span></a>
             </li>
             <li data-node-id="music/classical/tchaikovsky/the-nutcracker" data-node-kind="leaf" data-node-depth="2">
-              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/tchaikovsky/the-nutcracker"><span data-sidebar-nav-label>くるみ割り人形</span></a>
+              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/tchaikovsky/the-nutcracker" data-link-kind="internal-document" data-link-surface="navigation"><span data-sidebar-nav-label>くるみ割り人形</span></a>
             </li>
           </ul>
         </li>
