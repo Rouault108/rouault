@@ -49,7 +49,7 @@
 ### 2.3 `permalink`
 
 `slug` から導出される、note page 用の navigation URL。
-本契約における `permalink` は note page に対する canonical URL を指し、`docs/search-specification.md` における `DocumentCanonicalUrl` および `SearchStateUrl` とは別概念とする。
+本契約における `permalink` は note page に対する canonical URL を指し、`docs/search-specification.md` における `SearchCanonicalPathname` および `SearchStateUrl` とは別概念とする。
 
 ### 2.4 `TreeNode.id`
 
@@ -229,7 +229,7 @@ sidebar UI の内部状態管理に用いる stable ID。
 
 1. 本章は、note page に対する navigation URL の canonical form を定義する。
 2. 本章は `docs/router-specification.md` における navigation URL / fetch target URL の責務境界と整合しなければならない。
-3. 本章は `docs/search-specification.md` における `DocumentCanonicalUrl` および `SearchStateUrl` を定義しない。
+3. 本章は `docs/search-specification.md` における `SearchCanonicalPathname` および `SearchStateUrl` を定義しない。
 4. `/search`、`/tags/<tag>/`、`/archives/{hash}` のような非 note route の URL 規則は、本章の対象外とする。
 
 ### 8.2 Note navigation URL canonical form
@@ -241,8 +241,8 @@ sidebar UI の内部状態管理に用いる stable ID。
 ### 8.3 表示・比較層の責務
 
 1. history 更新、breadcrumb、sidebar href、note page 間の内部比較には note page navigation URL を用いる。
-2. 検索結果表示は `docs/search-specification.md` の `url` / `canonicalUrl` / `pathLabel` 契約に従わなければならない。
-3. 検索結果表示において、`DocumentCanonicalUrl` を note page navigation URL と同一視してはならない。
+2. 検索結果表示は `docs/search-specification.md` の `url` / `canonicalPathname` / `pathLabel` 契約に従わなければならない。
+3. 検索結果表示において、`SearchCanonicalPathname` を note page navigation URL と同一視してはならない。
 4. 表示層に trailing slash 付き note page URL を混在させてはならない。
 
 ### 8.4 取得層の責務
@@ -255,7 +255,7 @@ sidebar UI の内部状態管理に用いる stable ID。
 
 1. data 層で trailing slash 付き `permalink` を保持してはならない。
 2. note page navigation URL と fetch target URL を混同してはならない。
-3. note page navigation URL と `DocumentCanonicalUrl` を混同してはならない。
+3. note page navigation URL と `SearchCanonicalPathname` を混同してはならない。
 4. note page 用の canonicalization 規則と検索用の canonicalization 規則を単一の意味論として統合してはならない。
 
 ---
@@ -296,10 +296,10 @@ sidebar UI の内部状態管理に用いる stable ID。
 ### 9.1 URL ownership boundary
 
 1. note page 用の navigation URL 規則は、本契約および `docs/router-specification.md` が所有する。
-2. 検索結果項目の `DocumentCanonicalUrl`、表示用 `pathLabel`、検索状態 URL である `SearchStateUrl` の規則は `docs/search-specification.md` が所有する。
+2. 検索結果項目の `SearchCanonicalPathname`、表示用 `pathLabel`、検索状態 URL である `SearchStateUrl` の規則は `docs/search-specification.md` が所有する。
 3. URL 正規化の実装は分散していてよいが、各 URL family は単一の契約文書と単一の ownership を持たなければならない。
 4. 単一の巨大 URL 正規化ユーティリティへ全規則を集約することは、本契約の要求ではない。
-5. 実装の集約を行う場合も、note page navigation URL、fetch target URL、`DocumentCanonicalUrl`、`SearchStateUrl` の意味論を混同してはならない。
+5. 実装の集約を行う場合も、note page navigation URL、fetch target URL、`SearchCanonicalPathname`、`SearchStateUrl` の意味論を混同してはならない。
 
 ---
 

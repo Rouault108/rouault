@@ -22,8 +22,8 @@
 - 検索ダイアログと検索結果ページは**同一検索コア**を使う
 - 検索モードは `navigate` と `explore` に分離する
 - 検索ソースは **Pagefind を主検索源**、**補助検索カタログを補完検索源**として扱う
-- 重複判定の主キーは `canonicalUrl` とする
-- `canonicalUrl` の正規化規則を固定し、実装裁量を残さない
+- 重複判定の主キーは `canonicalPathname` とする
+- `canonicalPathname` の正規化規則を固定し、実装裁量を残さない
 - 補助検索カタログでは `path` を文書識別用、`url` を遷移用として分離し、両者が**同一文書を指すこと**を必須契約とする
 - 複数タグの意味論は URL で明示可能とし、既定を `or` とする
 - 検索結果のスニペットは **安全な構造化表現**として扱い、生の HTML を UI 境界に持ち込まない
@@ -153,11 +153,11 @@ flowchart LR
 
 Pagefind または補助検索カタログのように、検索候補や一致情報を供給するデータ源です。
 
-### 5.6 DocumentCanonicalUrl
+### 5.6 SearchCanonicalPathname
 
-候補の重複判定と内部一意性判定に使う**文書単位の正規 URL**です。`DocumentCanonicalUrl` は、ノート本文や個別文書のような**検索結果項目そのもの**を識別するために使います。`DocumentCanonicalUrl` は UI 入口の違いを吸収した文書識別子であり、遷移先 URL と常に同一である必要はありません。
+候補の重複判定と内部一意性判定に使う**文書単位の正規 URL**です。`SearchCanonicalPathname` は、ノート本文や個別文書のような**検索結果項目そのもの**を識別するために使います。`SearchCanonicalPathname` は UI 入口の違いを吸収した文書識別子であり、遷移先 URL と常に同一である必要はありません。
 
-`DocumentCanonicalUrl` について、次を満たさなければいけません。
+`SearchCanonicalPathname` について、次を満たさなければいけません。
 
 - 検索結果項目に対して安定であること
 - query / hash に依存しないこと
@@ -180,13 +180,13 @@ Pagefind または補助検索カタログのように、検索候補や一致�
 
 ### 5.9 pathLabel
 
-検索結果に表示する**表示専用の経路ラベル**です。`pathLabel` は `DocumentCanonicalUrl` またはそれと同値な文書 URL から導出される派生表現であり、識別子ではありません。
+検索結果に表示する**表示専用の経路ラベル**です。`pathLabel` は `SearchCanonicalPathname` またはそれと同値な文書 URL から導出される派生表現であり、識別子ではありません。
 
 `pathLabel` について、次を満たさなければいけません。
 
 - 表示専用であり、重複判定に使ってはならない
 - `title` の代替識別子として扱ってはならない
-- `DocumentCanonicalUrl` と 1 対 1 で安定に導出できること
+- `SearchCanonicalPathname` と 1 対 1 で安定に導出できること
 - 検索状態 URL から生成してはならない
 
 ### 5.10 SearchStateUrl
@@ -197,7 +197,7 @@ Pagefind または補助検索カタログのように、検索候補や一致�
 
 - `q`、`tag`、`tagMode`、`sort` を一意に表現できること
 - canonical な状態表現は常に `/search/` または `/search/?...` 形式であること
-- 検索結果項目の `canonicalUrl` と混同してはならない
+- 検索結果項目の `canonicalPathname` と混同してはならない
 
 ---
 
@@ -303,7 +303,7 @@ Pagefind または補助検索カタログのように、検索候補や一致�
 
 #### 7.1.4 candidate merge
 
-- `canonicalUrl` 単位の統合
+- `canonicalPathname` 単位の統合
 - 採用 `url` の決定
 - 重複吸収
 
@@ -368,7 +368,7 @@ Pagefind または補助検索カタログのように、検索候補や一致�
 
 - `/search-catalog.json` の取得
 - カタログ項目の正規化
-- `SearchCatalogItem.path` からの `DocumentCanonicalUrl` 導出
+- `SearchCatalogItem.path` からの `SearchCanonicalPathname` 導出
 - `SearchCatalogItem.url` の遷移先検証
 - `SearchCatalogItem.path` と `SearchCatalogItem.url` の**同一文書性検証**
 - path / slug / keyword ベースの補完一致判定
@@ -442,7 +442,7 @@ type SearchDiagnosticIssueCode =
   | 'source-degraded'
   | 'source-failed';
 
-type DocumentCanonicalUrl = string;
+type SearchCanonicalPathname = string;
 type SearchStateUrl = string;
 type SearchRankingProfileId = 'rouault-search-v1';
 
@@ -496,7 +496,7 @@ interface SearchDateValue {
 
 ```ts
 interface SearchCandidate {
-  canonicalUrl: DocumentCanonicalUrl;
+  canonicalPathname: SearchCanonicalPathname;
   url: string;
   pathLabel: string;
   title: string;
@@ -513,10 +513,10 @@ interface SearchCandidate {
 
 規則:
 
-- `SearchCandidate.canonicalUrl` は、**ソースごとに定義された canonical 入力**を `normalizeDocumentCanonicalUrl(...)` へ通して `null` を返さない場合にのみ設定してよいものとします
+- `SearchCandidate.canonicalPathname` は、**ソースごとに定義された canonical 入力**を `normalizeSearchCanonicalPathname(...)` へ通して `null` を返さない場合にのみ設定してよいものとします
 - `SearchCandidate.url` は、22.2 の URL 検証を通過した値でなければいけません
 - `catalog-source` では `SearchCatalogItem.path` を canonical 入力とし、`url` を canonical 入力として使ってはいけません
-- `SearchCandidate` は**正規化済みで有効な候補のみ**を表し、`canonicalUrl = null` を許可しません
+- `SearchCandidate` は**正規化済みで有効な候補のみ**を表し、`canonicalPathname = null` を許可しません
 
 ### 8.5 検索スニペット
 
@@ -638,7 +638,7 @@ type SearchResponse =
 
 ```ts
 interface SearchResultItem {
-  canonicalUrl: DocumentCanonicalUrl;
+  canonicalPathname: SearchCanonicalPathname;
   url: string;
   pathLabel: string;
   title: string;
@@ -763,10 +763,10 @@ issue code ごとの既定 severity は以下のとおりとします。
    - `catalogDroppedCount` は、次の理由で候補化前に項目全体を破棄した件数のみを数えなければいけません
      1. required field `title` / `url` / `path` の欠落
      2. required field `title` / `url` / `path` が正規化後に空文字となる
-     3. `path` がルート相対 path 契約を満たさない、または `normalizeDocumentCanonicalUrl(path) = null`
+     3. `path` がルート相対 path 契約を満たさない、または `normalizeSearchCanonicalPathname(path) = null`
      4. `url` が 22.2 の許可 URL 契約を満たさない
-     5. `normalizeDocumentCanonicalUrl(url) = null`
-     6. `normalizeDocumentCanonicalUrl(path) !== normalizeDocumentCanonicalUrl(url)`
+     5. `normalizeSearchCanonicalPathname(url) = null`
+     6. `normalizeSearchCanonicalPathname(path) !== normalizeSearchCanonicalPathname(url)`
    - 次の事象は `catalogDroppedCount` に含めてはいけません
      1. `date` のパース失敗により `epochMs = null` へフォールバックしたが、項目自体は採用できる場合
      2. `description`、`keywords`、`tags` の一部正規化や空要素除去により項目は採用可能な場合
@@ -834,38 +834,38 @@ issue code ごとの既定 severity は以下のとおりとします。
 
 URL は次の 2 種類に厳密に分離します。
 
-- `DocumentCanonicalUrl`: 検索結果項目である文書を識別する URL
+- `SearchCanonicalPathname`: 検索結果項目である文書を識別する URL
 - `SearchStateUrl`: 検索結果ページの状態を表現する URL
 
 両者は役割が異なるため、同一型名・同一契約として扱ってはいけません。
 
 #### 用語注記
 
-本仕様で `SearchCandidate.canonicalUrl` および `SearchResultItem.canonicalUrl` に格納される値は、常に **`DocumentCanonicalUrl`** を意味します。  
+本仕様で `SearchCandidate.canonicalPathname` および `SearchResultItem.canonicalPathname` に格納される値は、常に **`SearchCanonicalPathname`** を意味します。
 これは `patterns.md` における最新版導線としての **Canonical URL** とは別概念です。
 
-また、router 文脈で用いる `navigation URL` / `fetch target URL` とも別概念です。  
-本仕様では曖昧さを避けるため、型・規則・説明では `canonicalUrl` という略称だけで呼ばず、原則として **`DocumentCanonicalUrl`** と表記します。
+また、router 文脈で用いる `navigation URL` / `fetch target URL` とも別概念です。
+本仕様では曖昧さを避けるため、型・規則・説明では `canonicalPathname` という略称だけで呼ばず、原則として **`SearchCanonicalPathname`** と表記します。
 
 ### 9.2 適用範囲
 
-- `SearchCandidate.canonicalUrl` と `SearchResultItem.canonicalUrl` は **DocumentCanonicalUrl のみ**を許可します
+- `SearchCandidate.canonicalPathname` と `SearchResultItem.canonicalPathname` は **SearchCanonicalPathname のみ**を許可します
 - `/search/` または `/search/?...` は **SearchStateUrl** であり、検索結果ページの汎用状態を表します
 - `/tags/<tag>/` は **タグページ URL** であり、`SearchStateUrl` とは別の URL 種別として扱わなければいけません
-- `/search/`、`/search/?...`、`/tags/<tag>/` は、いずれも検索結果項目の `canonicalUrl` に使ってはいけません
-- 検索結果集合の重複統合は `DocumentCanonicalUrl` のみで行わなければいけません
+- `/search/`、`/search/?...`、`/tags/<tag>/` は、いずれも検索結果項目の `canonicalPathname` に使ってはいけません
+- 検索結果集合の重複統合は `SearchCanonicalPathname` のみで行わなければいけません
 
-### 9.3 DocumentCanonicalUrl の目的
+### 9.3 SearchCanonicalPathname の目的
 
-`DocumentCanonicalUrl` は、検索候補の重複統合と同一文書判定の唯一の基準です。したがって、正規化規則は実装差を許してはいけません。
+`SearchCanonicalPathname` は、検索候補の重複統合と同一文書判定の唯一の基準です。したがって、正規化規則は実装差を許してはいけません。
 
-### 9.4 DocumentCanonicalUrl の正規化入力
+### 9.4 SearchCanonicalPathname の正規化入力
 
-正規化関数 `normalizeDocumentCanonicalUrl(url)` は、絶対 URL またはルート相対 URL を受け付けます。
+正規化関数 `normalizeSearchCanonicalPathname(url)` は、絶対 URL またはルート相対 URL を受け付けます。
 
-### 9.5 DocumentCanonicalUrl の正規化出力
+### 9.5 SearchCanonicalPathname の正規化出力
 
-`normalizeDocumentCanonicalUrl(url)` の戻り値型は `DocumentCanonicalUrl | null` としなければいけません。
+`normalizeSearchCanonicalPathname(url)` の戻り値型は `SearchCanonicalPathname | null` としなければいけません。
 
 - 正常時は、**origin を含まない絶対パス形式の **`` を返します
 - 文書 URL として不正な入力を受けた場合は `null` を返します
@@ -876,9 +876,9 @@ URL は次の 2 種類に厳密に分離します。
 - `/notes/math/logic/`
 - `/essay/formal-language/`
 
-### 9.6 DocumentCanonicalUrl の正規化規則
+### 9.6 SearchCanonicalPathname の正規化規則
 
-`normalizeDocumentCanonicalUrl(url)` は以下を適用します。
+`normalizeSearchCanonicalPathname(url)` は以下を適用します。
 
 1. origin を除去する
 2. hash を除去する
@@ -888,17 +888,17 @@ URL は次の 2 種類に厳密に分離します。
 6. `%xx` は URL デコード後に再エンコードした正規形へ統一する
 7. path の重複スラッシュは単一化する
 8. 空 path は `/` とする
-9. `/search/`、`/search/?...`、`/tags/<tag>/` を受け取った場合は、**DocumentCanonicalUrl としては不正**として `null` を返さなければいけません
+9. `/search/`、`/search/?...`、`/tags/<tag>/` を受け取った場合は、**SearchCanonicalPathname としては不正**として `null` を返さなければいけません
 
 ### 9.7 pathLabel の生成入力
 
-`derivePathLabel(documentCanonicalUrl)` は、`DocumentCanonicalUrl` のみを受け付けなければいけません。`SearchStateUrl` や未正規化 URL を直接受け取ってはいけません。
+`derivePathLabel(documentCanonicalPathname)` は、`SearchCanonicalPathname` のみを受け付けなければいけません。`SearchStateUrl` や未正規化 URL を直接受け取ってはいけません。
 
 ### 9.8 pathLabel の生成規則
 
-`derivePathLabel(documentCanonicalUrl)` は以下を適用します。
+`derivePathLabel(documentCanonicalPathname)` は以下を適用します。
 
-1. `DocumentCanonicalUrl` から先頭 `/` と末尾 `/` を除去する
+1. `SearchCanonicalPathname` から先頭 `/` と末尾 `/` を除去する
 2. 空文字になった場合は `/` を返す
 3. `/` で分割して path segment 列を得る
 4. 各 segment に対して URL デコードを行う
@@ -920,8 +920,8 @@ URL は次の 2 種類に厳密に分離します。
 - `pathLabel` は `title` の代替表示ではなく、補助情報として扱わなければいけません
 - `pathLabel` はランキング特徴量の算出根拠に使ってはいけません
 - `pathLabel` は安定化ソートの比較キーに使ってはいけません
-- 安定化ソートが必要な場合は `DocumentCanonicalUrl` またはそれと同値な内部識別キーを使わなければいけません
-- 同一 `DocumentCanonicalUrl` に対して、常に同じ `pathLabel` が導出されなければいけません
+- 安定化ソートが必要な場合は `SearchCanonicalPathname` またはそれと同値な内部識別キーを使わなければいけません
+- 同一 `SearchCanonicalPathname` に対して、常に同じ `pathLabel` が導出されなければいけません
 
 ### 9.10 SearchStateUrl の目的
 
@@ -1084,7 +1084,7 @@ interface PreparedSearchQuery {
 
 ### 11.1 検索ソース共通出力契約
 
-検索コアは、個別ソース API へ直接依存してはいけません。  
+検索コアは、個別ソース API へ直接依存してはいけません。
 `pagefind-source`、`catalog-source` を含むすべての検索ソースは、少なくとも次の共通出力契約へ正規化して `search-core` へ渡さなければいけません。
 
 ```ts
@@ -1191,7 +1191,7 @@ interface SearchCatalogItem {
 
 意味論:
 
-- `path`: 文書識別および索引のための**内部ルート相対 path**。`DocumentCanonicalUrl` の導出元として使います
+- `path`: 文書識別および索引のための**内部ルート相対 path**。`SearchCanonicalPathname` の導出元として使います
 - `url`: UI が実際に遷移に使う**遷移先 URL**。文書識別子として使ってはいけません
 
 出力:
@@ -1204,14 +1204,14 @@ interface SearchCatalogItem {
 - `catalog-source` は、各項目を `SearchCandidate` へ正規化し、source 状態とともに `SearchSourceBatch` へ包んで返さなければいけません
 - `title`、`url`、`path` は必須です
 - `path` は `/` から始まるルート相対 path でなければいけません
-- `path` は `normalizeDocumentCanonicalUrl(path)` により `DocumentCanonicalUrl` へ変換可能でなければいけません
-- `url` は遷移前検証の対象であり、`DocumentCanonicalUrl` 導出元として使ってはいけません
+- `path` は `normalizeSearchCanonicalPathname(path)` により `SearchCanonicalPathname` へ変換可能でなければいけません
+- `url` は遷移前検証の対象であり、`SearchCanonicalPathname` 導出元として使ってはいけません
 - `url` は同一 origin の内部文書 URL、またはそれと等価なルート相対 URL でなければいけません
 - `url` は `http:` または `https:` の絶対 URL、もしくは `/` から始まるルート相対 URL のみを許可します
 - `javascript:`, `data:`, `file:`, `blob:`, `mailto:`, `tel:` などの許可されないスキームを持つ `url` は不正とみなし破棄しなければいけません
 - userinfo を含む `url` は不正とみなし破棄しなければいけません
-- `normalizeDocumentCanonicalUrl(url)` が `null` を返す場合、その項目は不正とみなし破棄しなければいけません
-- `normalizeDocumentCanonicalUrl(url)` が成功した場合、その値は `normalizeDocumentCanonicalUrl(path)` と必ず一致しなければいけません
+- `normalizeSearchCanonicalPathname(url)` が `null` を返す場合、その項目は不正とみなし破棄しなければいけません
+- `normalizeSearchCanonicalPathname(url)` が成功した場合、その値は `normalizeSearchCanonicalPathname(path)` と必ず一致しなければいけません
 - `url` と `path` の正規化結果が一致しない場合、その項目は破棄し、`catalog-path-url-mismatch` を記録しなければいけません
 - `date` を持つ場合、その形式は `YYYY-MM-DD` または UTC の ISO 8601 としなければいけません
 - `date` のパース失敗は項目全体失敗ではなく、`epochMs = null` へのフォールバックとして扱わなければいけません
@@ -1240,23 +1240,23 @@ interface SearchCatalogItem {
 
 ### 12.1 統合単位
 
-候補統合の主キーは `canonicalUrl` とします。
+候補統合の主キーは `canonicalPathname` とします。
 
 ### 12.2 URL モデル
 
 - `url`: 遷移に使う URL
-- `pathLabel`: `DocumentCanonicalUrl` から導出される表示専用ラベル
-- `canonicalUrl`: `DocumentCanonicalUrl`。重複判定用 URL
+- `pathLabel`: `SearchCanonicalPathname` から導出される表示専用ラベル
+- `canonicalPathname`: `SearchCanonicalPathname`。重複判定用 URL
 
-この 3 者を同一視してはいけません。とくに `pathLabel` は表示専用、`canonicalUrl` は識別専用です。
+この 3 者を同一視してはいけません。とくに `pathLabel` は表示専用、`canonicalPathname` は識別専用です。
 
 ### 12.3 統合規則
 
-同一 `canonicalUrl` の候補は以下で統合します。
+同一 `canonicalPathname` の候補は以下で統合します。
 
-- `canonicalUrl`: 統合キーそのものを維持する
+- `canonicalPathname`: 統合キーそのものを維持する
 - `url`: 次の決定規則で 1 つに確定しなければいけません
-  1. 候補 `url` のうち、22.2 の URL 検証を通過し、かつ `normalizeDocumentCanonicalUrl(url) === canonicalUrl` を満たすものだけを**採用候補**とする
+  1. 候補 `url` のうち、22.2 の URL 検証を通過し、かつ `normalizeSearchCanonicalPathname(url) === canonicalPathname` を満たすものだけを**採用候補**とする
   2. 採用候補が 0 件の場合、統合後候補は不正とし破棄しなければいけません
   3. 採用候補が複数ある場合、`matchedSources` の優先順位 `pagefind > catalog` を先に適用する
   4. 同一 source 優先度内では、query / hash を持たない `url` を優先する
@@ -1278,16 +1278,16 @@ interface SearchCatalogItem {
 
 以下の候補は破棄します。
 
-- `canonicalUrl` が空
+- `canonicalPathname` が空
 - `url` が空
 - `title` が空
-- `normalizeDocumentCanonicalUrl(...)` が `null` を返す
-- `catalog-source` において `normalizeDocumentCanonicalUrl(path) !== normalizeDocumentCanonicalUrl(url)` となる
-- 同一 `canonicalUrl` の統合後に、12.3 の `url` 決定規則を満たす採用候補が 1 件も残らない
+- `normalizeSearchCanonicalPathname(...)` が `null` を返す
+- `catalog-source` において `normalizeSearchCanonicalPathname(path) !== normalizeSearchCanonicalPathname(url)` となる
+- 同一 `canonicalPathname` の統合後に、12.3 の `url` 決定規則を満たす採用候補が 1 件も残らない
 
 規則:
 
-- `normalizeDocumentCanonicalUrl(...)` が `null` を返した場合、候補は破棄し、対応する issue を記録しなければいけません
+- `normalizeSearchCanonicalPathname(...)` が `null` を返した場合、候補は破棄し、対応する issue を記録しなければいけません
 - `catalog-source` で `path` と `url` の正規化結果が一致しない場合、候補は破棄し、`catalog-path-url-mismatch` を記録しなければいけません
 - 統合後に採用可能な `url` が存在しない場合、統合後候補は破棄し、`invalid-result-url` を記録しなければいけません
 
@@ -1410,7 +1410,7 @@ score =
 2. `sourceReliabilityScore` 降順
 3. `date.epochMs` 降順（`null` は最下位）
 4. `title` 昇順
-5. `canonicalUrl` 昇順
+5. `canonicalPathname` 昇順
 
 追加規則:
 
@@ -1429,7 +1429,7 @@ score =
 1. `date.epochMs` 降順（`null` は最下位）
 2. `matchEvidenceScore` 降順
 3. `title` 昇順
-4. `canonicalUrl` 昇順
+4. `canonicalPathname` 昇順
 
 ---
 
@@ -1511,7 +1511,7 @@ score =
 
 ### 15.1.1 所有権
 
-検索結果ページの URL 状態は **feature-local URL state** とします。  
+検索結果ページの URL 状態は **feature-local URL state** とします。
 これは文書遷移そのものではなく、検索結果ページという単一文書内で復元・共有される UI 状態です。
 
 したがって、検索結果ページの URL 状態は router core の一般責務へ取り込まず、search-page とその補助モジュールが単一に所有しなければいけません。
@@ -1546,7 +1546,7 @@ score =
 - この URL が表す状態は、`q=''`、`tags=[tag]`、`tagMode='or'`、`sort='relevance'` とします
 - `/tags/<tag>/` はタグ自体を主語とする独立ページであり、単なる `/search/?tag=<tag>` の別入口としてのみ扱ってはいけません
 - `q` が非空になった場合、またはタグが複数になった場合、または `tagMode != 'or'` となった場合、または `sort != 'relevance'` となった場合、UI は対応する `/search/?...` へ遷移しなければいけません
-- `/tags/<tag>/` は検索結果項目の `canonicalUrl` と混同してはいけません
+- `/tags/<tag>/` は検索結果項目の `canonicalPathname` と混同してはいけません
 
 ### 15.5 履歴操作
 
@@ -1682,7 +1682,7 @@ score =
 - 選択時、検索ダイアログは選択通知を外部へ送出しなければいけません
 - 検索ダイアログ自身は遷移を内蔵してはいけません
 - 上位統合層は、選択通知を受けた後、必要に応じて `navigation-adapter` を通じて遷移しなければいけません
-- 選択 detail には少なくとも `url` を含め、shared `search-core` を用いる実装では `canonicalUrl` を含めてよいものとします
+- 選択 detail には少なくとも `url` を含め、shared `search-core` を用いる実装では `canonicalPathname` を含めてよいものとします
 
 ### 17.7 結果ランキング
 
@@ -1704,7 +1704,7 @@ score =
 
 ### 18.2 遷移手順
 
-`navigateToUrl(url)` は以下の順序で遷移を試みます。
+`navigateInternalDocument(url)` は以下の順序で遷移を試みます。
 
 1. `app-router` を取得する
 2. `navigate()` 相当 API が存在すればそれを利用する
@@ -1840,7 +1840,7 @@ score =
 
 結果 `url` は遷移前に検証しなければいけません。
 
-- `DocumentCanonicalUrl` への正規化と、遷移先 `url` の検証を混同してはいけません
+- `SearchCanonicalPathname` への正規化と、遷移先 `url` の検証を混同してはいけません
 - `url` の検証は、少なくとも空文字・不正 URL・許可されないスキームを排除することを目的とします
 - 許可される `url` の形式は、`/` から始まるルート相対 URL、または同一 origin の `http:` / `https:` 絶対 URL に限ります
 - `javascript:`, `data:`, `file:`, `blob:`, `mailto:`, `tel:` などのスキームは許可してはいけません
@@ -1857,7 +1857,7 @@ score =
 
 - `diagnostics.issues` に raw URL、origin、本文断片、未加工スニペットを含めてはいけません
 - `diagnostics.issues` の `candidateRef` は不透明 ID またはハッシュ化識別子でなければいけません
-- `candidateRef` は、`DocumentCanonicalUrl` が存在する場合はその値から、存在しない場合はソース内の安定入力値から生成しなければいけません
+- `candidateRef` は、`SearchCanonicalPathname` が存在する場合はその値から、存在しない場合はソース内の安定入力値から生成しなければいけません
 - `candidateRef` の生成には、少なくとも `(source, stableInput)` を連結した値に対する決定的ハッシュを用いなければいけません
 - `candidateRef` の生成結果は同一入力に対して同一セッション内および同一ビルド内で安定でなければいけません
 - `candidateRef` の生成に乱数や時刻依存値を使ってはいけません
@@ -1947,7 +1947,7 @@ src/components/ui/search-dialog/
 
 対象:
 
-- `normalizeDocumentCanonicalUrl(url)` の冪等性
+- `normalizeSearchCanonicalPathname(url)` の冪等性
 - `buildSearchStateUrl(parseSearchStateUrl(url))` の正規化不変性
 - タグ集合の順序が意味論へ影響しないこと
 - `issues` 集約が入力順に依存しないこと

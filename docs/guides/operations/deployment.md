@@ -32,6 +32,19 @@ Repository-level variables:
 
 `ROUAULT_MEDIA_BASE_URL` は production build と E2E job でも参照するため、`production` environment 専用にはしない。
 
+## Link Contract Build Environment
+
+Production build では、リンク分類と route manifest の正本として次の環境変数を使う。
+
+- `ROUAULT_SITE_ORIGIN` は必須であり、`http:` または `https:` の absolute origin だけを指定する。
+- `ROUAULT_BASE_PATH` は任意であり、未指定時は空文字として扱う。指定する場合は leading slash あり・trailing slash なしの base path に正規化できる値だけを使う。
+- `ROUAULT_SITE_ORIGIN` に credentials、query、hash、root 以外の pathname を含めてはいけない。
+- `ROUAULT_BASE_PATH` に空白、control character、query、hash、backslash、raw `%`、encoded slash、encoded backslash、encoded dot segment、`.` / `..` segment を含めてはいけない。
+- production code は `DEFAULT_SITE_URL_CONTEXT` に fallback してはいけない。
+- `pnpm build:production` は正しい `ROUAULT_SITE_ORIGIN` 指定時に通り、欠落または不正値では契約どおり失敗する。
+
+Cloudflare Pages / GitHub Actions では、production deployment の build step に `ROUAULT_SITE_ORIGIN` を明示的に渡す。`ROUAULT_BASE_PATH` を使う配信では、route manifest meta、Search render href、NavigationEnvelope artifact URL が同じ base path を使うことを確認する。
+
 ## Production Build Label
 
 `pnpm build:production` は production build metadata として `ROUAULT_BUILD_LABEL` を必須とする。未指定の場合、production build は契約違反として失敗する。

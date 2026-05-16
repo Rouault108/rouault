@@ -18,7 +18,7 @@
 - `title`: document title。
 - `description`: head metadata に反映できる説明。
 - `html`: router document boundary に挿入する本文 HTML。
-- `canonicalUrl`: document metadata としての canonical URL。
+- `canonicalPathname`: document metadata としての canonical URL。
 - `head`: head 更新に必要な最小情報。
 
 本文 DOM 境界は `docs/contracts/router-document.md` を正本とする。

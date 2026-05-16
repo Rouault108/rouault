@@ -1,108 +1,89 @@
-import { readFileSync } from 'node:fs';
-import { readdir } from 'node:fs/promises';
-import path from 'node:path';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { dirname, join, normalize, relative, resolve } from 'node:path';
+import ts from 'typescript';
 
-export interface ImportBoundaryViolation {
-  readonly file: string;
+export interface ImportEdge {
+  readonly from: string;
+  readonly to: string;
   readonly specifier: string;
-  readonly ruleId:
-    | 'production-no-test-imports'
-    | 'toc-production-boundary-explicit'
-    | 'runtime-no-build-metadata-imports';
 }
 
-const IMPORT_RE =
-  /(?:import\s+(?:type\s+)?(?:[^'"]+?\s+from\s+)?|export\s+(?:type\s+)?[^'"]+?\s+from\s+)['"]([^'"]+)['"]/gu;
+const isSourceFile = (path: string): boolean => /\.(?:ts|tsx|js|mjs)$/u.test(path);
 
-const RUNTIME_SOURCE_ROOTS = ['src', 'shared'] as const;
+export const walkSourceFiles = (roots: readonly string[]): string[] => roots.flatMap((root) => {
+  const visit = (directory: string): string[] => readdirSync(directory).flatMap((entry) => {
+    const path = join(directory, entry);
+    const stat = statSync(path);
+    if (stat.isDirectory()) return visit(path);
+    return isSourceFile(path) ? [path] : [];
+  });
+  return visit(root);
+});
 
-const RUNTIME_FORBIDDEN_BUILD_IMPORTS = [
-  'build/metadata/build-id',
-  'build/metadata/generated-at',
-  'build/metadata/build-label',
-  'build/metadata/build-metadata',
-  'build/dev/dev-build-metadata',
-] as const;
+const normalizeProjectPath = (path: string): string => normalize(path).replace(/\\/gu, '/');
 
-const isSourceFile = (filePath: string): boolean =>
-  (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) &&
-  !filePath.endsWith('.d.ts') &&
-  !filePath.includes(`${path.sep}.generated${path.sep}`);
-
-const collectFiles = async (root: string): Promise<string[]> => {
-  const entries = await readdir(root, { withFileTypes: true });
-  const files: string[] = [];
-
-  for (const entry of entries) {
-    const absolutePath = path.join(root, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.git') {
-        continue;
-      }
-      files.push(...(await collectFiles(absolutePath)));
-    } else if (entry.isFile() && isSourceFile(absolutePath)) {
-      files.push(absolutePath);
-    }
-  }
-
-  return files;
+const resolveSpecifier = (from: string, specifier: string): string => {
+  if (!specifier.startsWith('.')) return specifier;
+  return normalizeProjectPath(relative(process.cwd(), resolve(dirname(from), specifier)));
 };
 
-const toRepoPath = (repoRoot: string, filePath: string): string =>
-  path.relative(repoRoot, filePath).split(path.sep).join('/');
-
-const stripKnownExtension = (value: string): string =>
-  value.replace(/\.(?:js|mjs|ts|tsx)$/u, '');
-
-const resolveRelativeSpecifier = (fromFile: string, specifier: string): string | null => {
-  if (!specifier.startsWith('.')) {
-    return null;
-  }
-
-  const resolved = path.normalize(path.join(path.dirname(fromFile), specifier));
-  return stripKnownExtension(resolved.split(path.sep).join('/'));
-};
-
-const isForbiddenRuntimeBuildImport = (resolved: string | null): boolean =>
-  resolved !== null &&
-  RUNTIME_FORBIDDEN_BUILD_IMPORTS.some(
-    (forbidden) => resolved === forbidden || resolved.startsWith(`${forbidden}/`),
+const collectSpecifiersFromSource = (sourceText: string, fileName: string): string[] => {
+  const source = ts.createSourceFile(
+    fileName,
+    sourceText,
+    ts.ScriptTarget.Latest,
+    true,
+    fileName.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
   );
+  const specifiers: string[] = [];
 
-export const findProductionImportBoundaryViolations = async (
-  repoRoot = process.cwd(),
-): Promise<ImportBoundaryViolation[]> => {
-  const files = (
-    await Promise.all(
-      RUNTIME_SOURCE_ROOTS.map((root) => collectFiles(path.join(repoRoot, root))),
-    )
-  ).flat();
-  const violations: ImportBoundaryViolation[] = [];
+  const pushSpecifier = (expression: ts.Expression): void => {
+    if (ts.isStringLiteralLike(expression)) {
+      specifiers.push(expression.text);
+    }
+  };
 
-  for (const absoluteFile of files) {
-    const repoPath = toRepoPath(repoRoot, absoluteFile);
-    const source = readFileSync(absoluteFile, 'utf8');
-
-    for (const match of source.matchAll(IMPORT_RE)) {
-      const specifier = match[1] ?? '';
-      const resolved = resolveRelativeSpecifier(repoPath, specifier);
-      if (resolved?.startsWith('test/') === true) {
-        violations.push({
-          file: repoPath,
-          specifier,
-          ruleId: 'production-no-test-imports',
-        });
+  const visit = (node: ts.Node): void => {
+    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
+      if (node.moduleSpecifier !== undefined && ts.isStringLiteralLike(node.moduleSpecifier)) {
+        specifiers.push(node.moduleSpecifier.text);
       }
-
-      if (isForbiddenRuntimeBuildImport(resolved)) {
-        violations.push({
-          file: repoPath,
-          specifier,
-          ruleId: 'runtime-no-build-metadata-imports',
-        });
+    } else if (ts.isImportEqualsDeclaration(node)) {
+      const reference = node.moduleReference;
+      if (ts.isExternalModuleReference(reference) && reference.expression !== undefined) {
+        pushSpecifier(reference.expression);
+      }
+    } else if (
+      ts.isCallExpression(node) &&
+      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+      node.arguments.length === 1
+    ) {
+      const [argument] = node.arguments;
+      if (argument !== undefined) {
+        pushSpecifier(argument);
       }
     }
-  }
+    ts.forEachChild(node, visit);
+  };
 
-  return violations;
+  visit(source);
+  return specifiers;
 };
+
+export const collectImportEdges = (roots: readonly string[]): ImportEdge[] => {
+  const edges: ImportEdge[] = [];
+  for (const file of walkSourceFiles(roots)) {
+    const content = readFileSync(file, 'utf8');
+    for (const specifier of collectSpecifiersFromSource(content, file)) {
+      edges.push({
+        from: normalizeProjectPath(file),
+        to: resolveSpecifier(file, specifier),
+        specifier,
+      });
+    }
+  }
+  return edges;
+};
+
+export const edgeMatches = (edge: ImportEdge, fromPrefix: string, toPrefix: string): boolean =>
+  edge.from.startsWith(fromPrefix) && edge.to.startsWith(toPrefix);

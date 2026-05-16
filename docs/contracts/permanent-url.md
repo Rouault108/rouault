@@ -19,7 +19,7 @@
 ### This Layer Must Not Own
 
 - Note page navigation URL、`slug`、`permalink`、`directory-index`。正本は `docs/contracts/note-navigation.md`。
-- `DocumentCanonicalUrl` と `SearchStateUrl` の検索上の意味。正本は `docs/contracts/search.md`。
+- `SearchCanonicalPathname` と `SearchStateUrl` の検索上の意味。正本は `docs/contracts/search.md`。
 - コピー UI の詳細 pattern。`docs/design-system/patterns.md` が扱ってよい。
 
 ## 3. Public Contract

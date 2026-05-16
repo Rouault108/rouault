@@ -52,7 +52,7 @@ const rootGroupId = createSidebarGroupId(
   createSidebarGroupIdPrefixFromSidebarIdentity('note-navigation', 'note-primary'),
   'root',
 );
-const validNavHtml = `<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="rev-1"><ul><li data-node-id="root" data-node-kind="branch" data-node-depth="0" data-current-branch="true" data-current-path-indicator="true"><button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="${rootGroupId}"><span data-sidebar-nav-label>Root</span></button><ul id="${rootGroupId}"><li data-node-id="root/child" data-node-kind="leaf" data-node-depth="1"><a data-sidebar-nav-control data-sidebar-nav-link href="/root/child/" aria-current="page"><span data-sidebar-nav-label>Child</span></a></li></ul></li><li data-node-id="sibling" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/sibling/"><span data-sidebar-nav-label>Sibling</span></a></li></ul></nav>`;
+const validNavHtml = `<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="rev-1"><ul><li data-node-id="root" data-node-kind="branch" data-node-depth="0" data-current-branch="true" data-current-path-indicator="true"><button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="${rootGroupId}"><span data-sidebar-nav-label>Root</span></button><ul id="${rootGroupId}"><li data-node-id="root/child" data-node-kind="leaf" data-node-depth="1"><a data-sidebar-nav-control data-sidebar-nav-link href="/root/child/" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Child</span></a></li></ul></li><li data-node-id="sibling" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/sibling/" data-link-kind="internal-document" data-link-surface="navigation"><span data-sidebar-nav-label>Sibling</span></a></li></ul></nav>`;
 
 type SidebarNavHtmlInvariantInput = Parameters<typeof validateSidebarNavHtmlInvariant>[0];
 type SidebarNavHtmlInvariantTestOverrides = Omit<
@@ -166,7 +166,7 @@ describe('sidebar nav html invariant', () => {
     expectInvalidFixture({
       navHtml: validNavHtml.replace(
         '</nav>',
-        '<ul><li data-node-id="extra" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/extra/">Extra</a></li></ul></nav>',
+        '<ul><li data-node-id="extra" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/extra/" data-link-kind="internal-document" data-link-surface="navigation">Extra</a></li></ul></nav>',
       ),
     });
     expectInvalidFixture({
@@ -191,10 +191,15 @@ describe('sidebar nav html invariant', () => {
       ),
     });
     expectInvalidFixture({ navHtml: validNavHtml.replace('aria-current="page"', 'aria-current="location"') });
+    expectInvalidFixture({ navHtml: validNavHtml.replace(' data-link-kind="internal-document"', '') });
+    expectInvalidFixture({ navHtml: validNavHtml.replace('data-link-kind="internal-document"', 'data-link-kind="external-web"') });
+    expectInvalidFixture({ navHtml: validNavHtml.replace(' data-link-surface="navigation"', '') });
+    expectInvalidFixture({ navHtml: validNavHtml.replace('data-link-surface="navigation"', 'data-link-surface="metadata"') });
+    expectInvalidFixture({ navHtml: validNavHtml.replace('href="/sibling/"', 'href="/sibling/" data-external="true"') });
     expectInvalidFixture({
       navHtml: validNavHtml.replace(
-        '<a data-sidebar-nav-control data-sidebar-nav-link href="/root/child/" aria-current="page"><span data-sidebar-nav-label>Child</span></a></li>',
-        '<a data-sidebar-nav-control data-sidebar-nav-link href="/root/child/" aria-current="page"><span data-sidebar-nav-label>Child</span></a><button type="button" data-sidebar-nav-branch-control>Bad</button></li>',
+        '<a data-sidebar-nav-control data-sidebar-nav-link href="/root/child/" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Child</span></a></li>',
+        '<a data-sidebar-nav-control data-sidebar-nav-link href="/root/child/" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Child</span></a><button type="button" data-sidebar-nav-branch-control>Bad</button></li>',
       ),
     });
     expectInvalidFixture({ selectedId: 'missing' });

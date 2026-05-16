@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BaseLayout } from '../../src/layouts/BaseLayout.11ty.js';
 import { loadBuildMetadataData } from '../../src/data/buildMetadata.js';
+import { loadSiteUrlContextData } from '../../src/data/siteUrlContext.js';
 
 const getBodyTag = (html: string): string => html.match(/<body[^>]*>/u)?.[0] ?? '';
 
@@ -9,6 +10,12 @@ const TEST_BUILD_METADATA = loadBuildMetadataData({
   buildId: 'test-build',
   buildLabel: 'build test',
   generatedAt: '2026-01-01T00:00:00.000Z',
+  sourceLabel: 'base-layout-test',
+});
+
+const TEST_SITE_URL_CONTEXT = loadSiteUrlContextData({
+  siteOrigin: 'https://example.com',
+  basePath: '',
   sourceLabel: 'base-layout-test',
 });
 
@@ -21,9 +28,27 @@ describe('BaseLayout', () => {
     ).toThrow(/BaseLayout requires buildMetadata/u);
   });
 
+
+  it('SiteUrlContext と route manifest meta を SSR head に出力すること', () => {
+    const rendered = new BaseLayout().render({
+      buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
+      content: '<p>Home</p>',
+    });
+
+    expect(rendered).toContain('<meta name="rouault-site-origin" content="https://example.com">');
+    expect(rendered).toContain('<meta name="rouault-base-path" content="">');
+    expect(rendered).toContain(
+      '<meta name="rouault-route-manifest" content="/assets/internal-document-routes.json?buildId=test-build">',
+    );
+    expect(rendered).toContain('<meta name="rouault-route-manifest-build-id" content="test-build">');
+    expect(rendered).toContain('<meta name="rouault-route-manifest-version" content="1">');
+  });
+
   it('page title が未指定の場合は site title のみを出力すること', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       content: '<p>Home</p>',
     });
 
@@ -34,6 +59,7 @@ describe('BaseLayout', () => {
   it('page title が site title と同一の場合は重複させないこと', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       title: 'Rouault',
       content: '<p>Home</p>',
     });
@@ -45,6 +71,7 @@ describe('BaseLayout', () => {
   it('page title が site title の重複済み文書タイトルの場合は site title に正規化すること', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       title: 'Rouault - Rouault',
       content: '<p>Home</p>',
     });
@@ -56,6 +83,7 @@ describe('BaseLayout', () => {
   it('page title が site title と異なる場合は site title を接尾辞として付けること', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       title: 'このサイトについて',
       content: '<p>About</p>',
     });
@@ -66,6 +94,7 @@ describe('BaseLayout', () => {
   it('page title がすでに文書タイトル化済みの場合は再接尾辞化しないこと', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       title: 'このサイトについて - Rouault',
       content: '<p>About</p>',
     });
@@ -77,6 +106,7 @@ describe('BaseLayout', () => {
   it('page title が重複済み文書タイトルの場合は単一接尾辞に正規化すること', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       title: 'このサイトについて - Rouault - Rouault',
       content: '<p>About</p>',
     });
@@ -88,6 +118,7 @@ describe('BaseLayout', () => {
   it('page title を HTML text として escape してから title 要素へ出力すること', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       title: 'A & B <C>',
       content: '<p>Escaped</p>',
     });
@@ -100,6 +131,7 @@ describe('BaseLayout', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       content: '<p>本文</p>',
       notePage: {
         noteKind: 'reader',
@@ -114,7 +146,7 @@ describe('BaseLayout', () => {
           initialExpandedIds: [],
           topologyRevision: 'reader-note-topology',
           navHtml:
-            '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="reader-note-topology"><ul><li data-node-id="reader-note" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/reader-note" aria-current="page"><span data-sidebar-nav-label>Reader Note</span></a></li></ul></nav>',
+            '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="reader-note-topology"><ul><li data-node-id="reader-note" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/reader-note" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Reader Note</span></a></li></ul></nav>',
           heading: null,
           fixedBreakpoint: '1024',
           presentation: 'auto',
@@ -156,6 +188,9 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('initial-expanded-ids="[]"');
     expect(rendered).toContain('topology-revision="reader-note-topology"');
     expect(rendered).toContain('<nav data-sidebar-nav');
+    expect(rendered).toContain('href="/notes/reader-note"');
+    expect(rendered).toContain('data-link-kind="internal-document"');
+    expect(rendered).toContain('data-link-surface="navigation"');
     expect(rendered).toContain('data-sidebar-boot-state="ssr"');
     expect(rendered).not.toContain('heading="ナビゲーション"');
   });
@@ -163,6 +198,7 @@ describe('BaseLayout', () => {
   it('TOC present note では header trigger reservation を interactive state とは別に出力すること', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       content: '<article>Reader</article>',
       note: {
         slug: 'reader-with-toc',
@@ -218,6 +254,7 @@ describe('BaseLayout', () => {
   it('body pagefind ignore は notePage.pagefind を正本にすること', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       content: '<article>Fixture</article>',
       note: {
         slug: 'fixture-reader',
@@ -261,6 +298,7 @@ describe('BaseLayout', () => {
   it('note data があるのに notePage projection がない場合は body を Pagefind 除外にすること', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       content: '<article>Broken note input</article>',
       note: {
         slug: 'broken-note-input',
@@ -277,6 +315,7 @@ describe('BaseLayout', () => {
   it('notePage.pagefind がある場合は body に Pagefind 除外を出さないこと', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       content: '<article>Reader</article>',
       note: {
         slug: 'reader',
@@ -329,6 +368,7 @@ describe('BaseLayout', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       content: '<p>本文</p>',
       note: {
         slug: 'testing-note',
@@ -347,6 +387,7 @@ describe('BaseLayout', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       content: '<p>本文</p>',
       note: {
         slug: 'testing-note',
@@ -368,6 +409,7 @@ describe('BaseLayout', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       content: '<p>本文</p>',
       note: {
         slug: 'computer-science/algorithms/sorting',
@@ -404,10 +446,11 @@ describe('BaseLayout', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       content: '<article><h1>本文</h1><p>静かな本文です。</p></article>',
     });
 
-    const skipLinkHtml = '<a class="skip-link" href="#main-content">メインコンテンツへ移動</a>';
+    const skipLinkHtml = '<a class="skip-link" href="#main-content" data-link-kind="internal-fragment" data-link-surface="structural">メインコンテンツへ移動</a>';
     const skipLinkIndex = rendered.indexOf(skipLinkHtml);
     const appRootIndex = rendered.indexOf('<div id="app" class="app-root"');
     const renderedSkipLinkHtml = rendered.slice(
@@ -418,12 +461,15 @@ describe('BaseLayout', () => {
     expect(rendered).toContain(skipLinkHtml);
     expect(rendered).not.toContain('<ui-skip-link');
     expect(
-      rendered.match(/<a class="skip-link" href="#main-content">メインコンテンツへ移動<\/a>/g)
-        ?.length ?? 0,
+      rendered.match(
+        /<a class="skip-link" href="#main-content" data-link-kind="internal-fragment" data-link-surface="structural">メインコンテンツへ移動<\/a>/g,
+      )?.length ?? 0,
     ).to.equal(1);
     expect(skipLinkIndex).toBeGreaterThanOrEqual(0);
     expect(appRootIndex).toBeGreaterThanOrEqual(0);
     expect(skipLinkIndex).toBeLessThan(appRootIndex);
+    expect(renderedSkipLinkHtml).toContain('data-link-kind="internal-fragment"');
+    expect(renderedSkipLinkHtml).toContain('data-link-surface="structural"');
     expect(renderedSkipLinkHtml).not.toContain('data-hydration-');
 
     expect(rendered).toContain('<div id="app" class="app-root" data-hydration-scope="app-shell"');
@@ -444,6 +490,7 @@ describe('BaseLayout', () => {
   it('app shell sidebar host と overlay layer を単一実体として出力すること', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       content: '<article><h1>本文</h1></article>',
     });
 
@@ -455,6 +502,7 @@ describe('BaseLayout', () => {
   it('sidebar absent でも app shell structure を維持し host を hidden にすること', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
       content: '<article><h1>本文</h1></article>',
       notePage: {
         noteKind: 'testing',
@@ -502,6 +550,7 @@ describe('BaseLayout', () => {
         generatedAt: '2026-01-01T00:00:00.000Z',
         sourceLabel: 'base-layout-test',
       }),
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
     });
 
     expect(rendered).toContain('data-hydration-capability="static"');
@@ -521,6 +570,7 @@ describe('BaseLayout', () => {
         generatedAt: '2026-01-01T00:00:00.000Z',
         sourceLabel: 'base-layout-test',
       }),
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
     });
 
     expect(rendered).toContain(

@@ -43,7 +43,7 @@ describe('layout-sidebar-nav explicit contract', () => {
               <a href="/notes/legacy">Legacy</a>
             </li>
             <li data-node-id="explicit" data-node-kind="leaf" data-node-depth="0">
-              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/explicit">
+              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/explicit" data-link-kind="internal-document" data-link-surface="navigation">
                 <span data-sidebar-nav-label>Explicit</span>
               </a>
             </li>
@@ -79,10 +79,10 @@ describe('layout-sidebar-nav explicit contract', () => {
         <nav data-sidebar-nav aria-label="ノートナビゲーション">
           <ul>
             <li data-node-id="alpha" data-node-kind="leaf" data-node-depth="0">
-              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/alpha">Alpha</a>
+              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/alpha" data-link-kind="internal-document" data-link-surface="navigation">Alpha</a>
             </li>
             <li data-node-id="beta" data-node-kind="leaf" data-node-depth="0">
-              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/beta">
+              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/beta" data-link-kind="internal-document" data-link-surface="navigation">
                 <span data-sidebar-nav-label>Beta</span>
               </a>
             </li>
@@ -134,7 +134,7 @@ describe('layout-sidebar-nav explicit contract', () => {
         <nav data-sidebar-nav aria-label="ノートナビゲーション">
           <ul>
             <li data-node-id="alpha" data-node-kind="leaf" data-node-depth="0">
-              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/alpha">
+              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/alpha" data-link-kind="internal-document" data-link-surface="navigation">
                 <span data-sidebar-nav-label>Alpha</span>
               </a>
             </li>
@@ -144,7 +144,7 @@ describe('layout-sidebar-nav explicit contract', () => {
               </button>
               <ul>
                 <li data-node-id="branch/leaf" data-node-kind="leaf" data-node-depth="1">
-                  <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/branch/leaf">
+                  <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/branch/leaf" data-link-kind="internal-document" data-link-surface="navigation">
                     <span data-sidebar-nav-label>Leaf</span>
                   </a>
                 </li>
@@ -259,7 +259,7 @@ describe('layout-sidebar-nav paint contract', () => {
           </button>
           <ul id="sidebar-group-music">
             <li data-node-id="music/mozart" data-node-kind="leaf" data-node-depth="1">
-              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/mozart" aria-current="page"><span data-sidebar-nav-label>Mozart</span></a>
+              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/mozart" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Mozart</span></a>
             </li>
           </ul>
         </li>

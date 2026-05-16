@@ -35,7 +35,7 @@ describe('markdown plugin order', () => {
           "rehypeShikiCodeBlocks",
           "rehypeStaticCodeGroups",
           "rehypeResolveNoteSourceLinks",
-          "rehypeAnnotateLinkKinds()",
+          "rehypeAnnotateLinkKinds(resolveBuildLinkAnnotationOptions())",
           "rehypeInlineCodeTranslateNo",
           "rehypeOrderedListContracts",
           "rehypeDisallowDangerousProps",

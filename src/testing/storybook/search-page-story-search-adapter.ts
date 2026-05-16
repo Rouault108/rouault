@@ -1,12 +1,13 @@
-import { searchCore } from '../../search/search-core.js';
+import {
+  createSearchCanonicalPathname,
+  type SearchCanonicalPathname,
+  type SearchRenderHref,
+} from '../../../shared/search/document-url.js';
 import type { ExploreSearchResponse, SearchRequest } from '../../../shared/search/search-types.js';
 
-const ORIGINAL_SEARCH = searchCore.search.bind(searchCore);
-
 interface MockSearchItem {
-  canonicalUrl: string;
+  canonicalPathname: SearchCanonicalPathname;
   title: string;
-  url: string;
   pathLabel: string;
   snippet: string;
   description: string;
@@ -14,11 +15,18 @@ interface MockSearchItem {
   tags: readonly string[];
 }
 
+const canonicalPathname = (pathname: string): SearchCanonicalPathname => {
+  const result = createSearchCanonicalPathname({ pathname });
+  if (!result.ok) {
+    throw new Error(`invalid Storybook search canonical pathname: ${pathname}`);
+  }
+  return result.canonicalPathname;
+};
+
 const MOCK_ITEMS: readonly MockSearchItem[] = [
   {
-    canonicalUrl: '/notes/router-design/',
+    canonicalPathname: canonicalPathname('/notes/router-design/'),
     title: 'Router 設計メモ',
-    url: '/notes/router-design',
     pathLabel: 'notes / router-design',
     snippet: 'Router の設計と遷移制御をまとめたメモです。',
     description: 'Router の設計ノート',
@@ -26,9 +34,8 @@ const MOCK_ITEMS: readonly MockSearchItem[] = [
     tags: ['router', 'architecture'],
   },
   {
-    canonicalUrl: '/notes/lit-performance/',
+    canonicalPathname: canonicalPathname('/notes/lit-performance/'),
     title: 'Lit レンダリング最適化',
-    url: '/notes/lit-performance',
     pathLabel: 'notes / lit-performance',
     snippet: 'Lit の描画最適化と差分更新をまとめています。',
     description: 'Lit の描画最適化メモ',
@@ -36,9 +43,8 @@ const MOCK_ITEMS: readonly MockSearchItem[] = [
     tags: ['lit', 'performance'],
   },
   {
-    canonicalUrl: '/notes/a11y-log/',
+    canonicalPathname: canonicalPathname('/notes/a11y-log/'),
     title: 'アクセシビリティ実装ログ',
-    url: '/notes/a11y-log',
     pathLabel: 'notes / a11y-log',
     snippet: 'フォーム操作とラベル設計を検証したメモです。',
     description: 'A11y 実装の記録',
@@ -46,9 +52,8 @@ const MOCK_ITEMS: readonly MockSearchItem[] = [
     tags: ['a11y', 'architecture'],
   },
   {
-    canonicalUrl: '/notes/router-event-boundary/',
+    canonicalPathname: canonicalPathname('/notes/router-event-boundary/'),
     title: 'Router イベント境界の設計',
-    url: '/notes/router-event-boundary',
     pathLabel: 'notes / router-event-boundary',
     snippet: 'Router のイベント境界と購読戦略を整理しています。',
     description: 'Router のイベント境界設計メモ',
@@ -140,9 +145,9 @@ function createSearchResponse(
     rankingProfileId: 'rouault-search-v1',
     total: sortedItems.length,
     items: sortedItems.map((item) => ({
-      canonicalUrl: item.canonicalUrl,
+      canonicalPathname: item.canonicalPathname,
+      renderHref: item.canonicalPathname as unknown as SearchRenderHref,
       title: item.title,
-      url: item.url,
       pathLabel: item.pathLabel,
       description: item.description,
       date: {
@@ -166,11 +171,14 @@ function createSearchResponse(
   } satisfies ExploreSearchResponse;
 }
 
+export function createSearchPageStorySearchResponse(request: SearchRequest): ExploreSearchResponse {
+  return createSearchResponse(request.q, request.tags, request.sort, request.tagMode);
+}
+
 export function installSearchPageStorySearchMock(): void {
-  searchCore.search = (request: SearchRequest) =>
-    Promise.resolve(createSearchResponse(request.q, request.tags, request.sort, request.tagMode));
+  // Search singleton mutation is intentionally not used. Stories use static fixtures.
 }
 
 export function restoreSearchPageStorySearchMock(): void {
-  searchCore.search = ORIGINAL_SEARCH;
+  // No-op: no global SearchCore instance is patched.
 }

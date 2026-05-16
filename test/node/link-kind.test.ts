@@ -1,45 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { classifyLinkHref } from '../../shared/link/link-kind.js';
+import { isExternalWebLinkKind, isRouterRoutableLinkKind } from '../../shared/link/link-kind.js';
 
-describe('classifyLinkHref', () => {
-  it('相対URLを internal-document として分類すること', () => {
-    expect(classifyLinkHref('/notes/example')).to.equal('internal-document');
-    expect(classifyLinkHref('../other-note')).to.equal('internal-document');
+describe('link kind predicates', () => {
+  it('external-web だけを external indicator 対象にすること', () => {
+    expect(isExternalWebLinkKind('external-web')).to.equal(true);
+    expect(isExternalWebLinkKind('external-action')).to.equal(false);
   });
 
-  it('hash link を internal-fragment として分類すること', () => {
-    expect(classifyLinkHref('#section-1')).to.equal('internal-fragment');
-  });
-
-  it('同一 origin の絶対URLを internal-document として分類すること', () => {
-    expect(
-      classifyLinkHref('https://rouault.example/notes/example', {
-        siteOrigin: 'https://rouault.example',
-        currentUrl: 'https://rouault.example/notes/current',
-      }),
-    ).to.equal('internal-document');
-  });
-
-  it('外部 http(s) URL を external-web として分類すること', () => {
-    expect(
-      classifyLinkHref('https://example.com/article', {
-        siteOrigin: 'https://rouault.example',
-        currentUrl: 'https://rouault.example/notes/current',
-      }),
-    ).to.equal('external-web');
-  });
-
-  it('protocol-relative URL を external-web として分類すること', () => {
-    expect(classifyLinkHref('//example.com/article')).to.equal('external-web');
-  });
-
-  it('mailto/tel を external-action として分類すること', () => {
-    expect(classifyLinkHref('mailto:hello@example.com')).to.equal('external-action');
-    expect(classifyLinkHref('tel:+81300000000')).to.equal('external-action');
-  });
-
-  it('危険な scheme を unsafe として分類すること', () => {
-    expect(classifyLinkHref('javascript:alert(1)')).to.equal('unsafe');
-    expect(classifyLinkHref('data:text/html,<b>x</b>')).to.equal('unsafe');
+  it('internal-document だけを router routable とすること', () => {
+    expect(isRouterRoutableLinkKind('internal-document')).to.equal(true);
+    expect(isRouterRoutableLinkKind('internal-resource')).to.equal(false);
+    expect(isRouterRoutableLinkKind('internal-fragment')).to.equal(false);
   });
 });

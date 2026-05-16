@@ -522,7 +522,7 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 譜例やスコア表示用の埋め込みです。
 
 ```markdown
-::score{src="/scores/example.svg" label="譜例" caption="譜例1" loading="lazy"}
+::score{src="/media/score/example.svg" label="譜例" caption="譜例1" loading="lazy"}
 ::
 ```
 

@@ -39,21 +39,21 @@ const canonicalFootnoteHtml = (
 describe('validateNoteContentContracts', () => {
   it('reader note の preview-sandbox を build error にすること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'reader',
-        '<ui-code-preview><ui-preview-sandbox slot="preview"></ui-preview-sandbox></ui-code-preview>',
-        'testing/test',
-      );
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: '<ui-code-preview><ui-preview-sandbox slot="preview"></ui-preview-sandbox></ui-code-preview>',
+  sourceLabel: 'testing/test',
+});
     }).toThrow('[note-content:testing/test] reader note では preview-sandbox を使用できません');
   });
 
   it('reader note の code-preview controls と toolbar を build error にすること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'reader',
-        '<ui-code-preview controls="viewport"><button slot="toolbar">Open</button></ui-code-preview>',
-        'testing/test',
-      );
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: '<ui-code-preview controls="viewport"><button slot="toolbar">Open</button></ui-code-preview>',
+  sourceLabel: 'testing/test',
+});
     }).toThrow(
       '[note-content:testing/test] reader note の code-preview では controls を使用できません',
     );
@@ -61,23 +61,23 @@ describe('validateNoteContentContracts', () => {
 
   it('testing note の sandbox と controls は許可すること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'testing',
-        '<ui-code-preview controls="viewport"><ui-preview-sandbox slot="preview"></ui-preview-sandbox></ui-code-preview>',
-        'testing/test',
-        'sandbox',
-      );
+      validateNoteContentContracts({
+  kind: 'testing',
+  html: '<ui-code-preview controls="viewport"><ui-preview-sandbox slot="preview"></ui-preview-sandbox></ui-code-preview>',
+  sourceLabel: 'testing/test',
+  testingArea: 'sandbox',
+});
     }).not.toThrow();
   });
 
   it('testing/sandbox 以外の preview-sandbox を build error にすること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'testing',
-        '<ui-code-preview><ui-preview-sandbox slot="preview" allow-js="true"></ui-preview-sandbox></ui-code-preview>',
-        'testing/interactive',
-        'interactive',
-      );
+      validateNoteContentContracts({
+  kind: 'testing',
+  html: '<ui-code-preview><ui-preview-sandbox slot="preview" allow-js="true"></ui-preview-sandbox></ui-code-preview>',
+  sourceLabel: 'testing/interactive',
+  testingArea: 'interactive',
+});
     }).toThrow(
       '[note-content:testing/interactive] testing/sandbox 以外では preview-sandbox を使用できません',
     );
@@ -85,11 +85,11 @@ describe('validateNoteContentContracts', () => {
 
   it('static-first 化した legacy ui-* が note 最終 HTML に残っていれば build error にすること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'reader',
-        '<ui-callout kind="tip"><p>legacy</p></ui-callout>',
-        'testing/test',
-      );
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: '<ui-callout kind="tip"><p>legacy</p></ui-callout>',
+  sourceLabel: 'testing/test',
+});
     }).toThrow('[note-content:testing/test] ui-callout は note 最終 HTML に残してはいけません');
   });
 
@@ -156,32 +156,36 @@ describe('validateNoteContentContracts', () => {
     `;
 
     expect(() => {
-      validateNoteContentContracts('reader', html, 'testing/test');
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: html,
+  sourceLabel: 'testing/test',
+});
     }).not.toThrow();
   });
 
   it('table root contract が崩れていれば build error にすること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'reader',
-        '<div data-table-root="true"><table></table></div>',
-        'testing/test',
-      );
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: '<div data-table-root="true"><table></table></div>',
+  sourceLabel: 'testing/test',
+});
     }).toThrow('[note-content:testing/test] [data-table-root] には role="region" が必要です');
   });
 
   it('zoomable image に enhancer key が無ければ build error にすること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'reader',
-        [
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: [
           '<figure data-image="true" data-image-zoomable="true">',
           '<button type="button" data-image-zoom-trigger="true">拡大</button>',
           '<img src="/static/example.png" alt="example image">',
           '</figure>',
         ].join(''),
-        'testing/test',
-      );
+  sourceLabel: 'testing/test',
+});
     }).toThrow(
       '[note-content:testing/test] zoomable な figure[data-image] には data-hydration-key="image-lightbox-enhancer" が必要です',
     );
@@ -189,9 +193,9 @@ describe('validateNoteContentContracts', () => {
 
   it('footnote ref に doc-endnotes が無ければ build error にすること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'reader',
-        [
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: [
           '<p>',
           '<a',
           ' id="fn-1-ref-1"',
@@ -209,8 +213,8 @@ describe('validateNoteContentContracts', () => {
           '><sup>1</sup></a>',
           '</p>',
         ].join(''),
-        'testing/test',
-      );
+  sourceLabel: 'testing/test',
+});
     }).toThrow(
       '[note-content:testing/test] [data-footnote-ref] を含む note には section[role="doc-endnotes"] が必要です',
     );
@@ -218,11 +222,11 @@ describe('validateNoteContentContracts', () => {
 
   it('canonical footnote ref の href は canonical fragment と exact に一致する必要があること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'reader',
-        canonicalFootnoteHtml().replace('href="#fn-a"', 'href="#user-content-fn-a"'),
-        'testing/test',
-      );
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: canonicalFootnoteHtml().replace('href="#fn-a"', 'href="#user-content-fn-a"'),
+  sourceLabel: 'testing/test',
+});
     }).toThrow(
       'canonical footnote ref の href は #${data-footnote-id} と exact に一致する必要があります',
     );
@@ -230,59 +234,59 @@ describe('validateNoteContentContracts', () => {
 
   it('footnote structural 属性が non-anchor / non-canonical link に残れば build error にすること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'reader',
-        `${canonicalFootnoteHtml()}<span data-footnote-ref="true"></span>`,
-        'testing/test',
-      );
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: `${canonicalFootnoteHtml()}<span data-footnote-ref="true"></span>`,
+  sourceLabel: 'testing/test',
+});
     }).toThrow('footnote structural 属性は canonical footnote ref/backref にだけ許可します');
   });
 
   it('canonical footnote backref に通常リンク注釈が混入すれば build error にすること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'reader',
-        canonicalFootnoteHtml({
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: canonicalFootnoteHtml({
           item: '<p>body <a href="#fn-a-ref-1" data-footnote-backref="true" role="doc-backlink" data-link-surface="prose" aria-label="脚注参照 1 に戻る">↩︎</a></p>',
         }),
-        'testing/test',
-      );
+  sourceLabel: 'testing/test',
+});
     }).toThrow('脚注構造リンクに通常リンク注釈を付与してはいけません');
   });
 
   it('canonical footnote item 内の malformed backref-like href を build error にすること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'reader',
-        canonicalFootnoteHtml({
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: canonicalFootnoteHtml({
           item: '<p>body <a href="#fn-a-ref-NaN">bad</a> <a href="#fn-a-ref-1" data-footnote-backref="true" role="doc-backlink" aria-label="脚注参照 1 に戻る">↩︎</a></p>',
         }),
-        'testing/test',
-      );
+  sourceLabel: 'testing/test',
+});
     }).toThrow('canonical footnote item 内の malformed backref-like href は許可されません');
   });
 
   it('canonical footnote ol / li に ordered-list 補助属性が残れば build error にすること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'reader',
-        canonicalFootnoteHtml({
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: canonicalFootnoteHtml({
           olAttrs: 'role="list" style="--ui-ol-counter-reset: 0"',
         }),
-        'testing/test',
-      );
+  sourceLabel: 'testing/test',
+});
     }).toThrow('canonical footnote ol に ordered-list 補助属性を残してはいけません');
   });
 
   it('footnote backref が direct paragraph 末尾以外にある場合は build error にすること', () => {
     expect(() => {
-      validateNoteContentContracts(
-        'reader',
-        canonicalFootnoteHtml({
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: canonicalFootnoteHtml({
           item: '<blockquote><p>body <a href="#fn-a-ref-1" data-footnote-backref="true" role="doc-backlink" aria-label="脚注参照 1 に戻る">↩︎</a></p></blockquote>',
         }),
-        'testing/test',
-      );
+  sourceLabel: 'testing/test',
+});
     }).toThrow(
       'footnote backref は direct child paragraph 末尾または li 直下末尾に置く必要があります',
     );

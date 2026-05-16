@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { rehypeAnnotateLinkKinds } from '../../build/rehype/annotate-link-kinds.js';
+import { createManifestLoadedRouteClassificationMode } from '../../shared/link/link-annotation.js';
 
 interface HastNode {
   type: string;
@@ -7,6 +8,16 @@ interface HastNode {
   properties?: Record<string, unknown>;
   children?: HastNode[];
 }
+
+
+const annotate = () =>
+  rehypeAnnotateLinkKinds({
+    siteUrlContext: { siteOrigin: 'https://rouault.invalid', basePath: '' },
+    currentUrl: 'https://rouault.invalid/notes/current/',
+    routeClassificationMode: createManifestLoadedRouteClassificationMode({
+      isInternalDocumentPathname: (pathname) => pathname === '/notes/example' || pathname === '/notes/current/',
+    }),
+  });
 
 describe('rehypeAnnotateLinkKinds', () => {
   it('本文リンクへ data-link-kind と data-link-surface を付与すること', () => {
@@ -40,7 +51,7 @@ describe('rehypeAnnotateLinkKinds', () => {
       ],
     };
 
-    rehypeAnnotateLinkKinds()(tree);
+    annotate()(tree);
 
     const paragraph = tree.children?.[0];
     const internalLink = paragraph?.children?.[0];
@@ -57,7 +68,7 @@ describe('rehypeAnnotateLinkKinds', () => {
 
     expect(externalActionLink?.properties?.['data-link-kind']).to.equal('external-action');
     expect(externalActionLink?.properties?.['data-link-surface']).to.equal('prose');
-    expect(externalActionLink?.properties?.['data-external']).to.equal('true');
+    expect(externalActionLink?.properties?.['data-external']).to.equal(undefined);
   });
 
   it('heading-anchor には注釈しないこと', () => {
@@ -76,11 +87,11 @@ describe('rehypeAnnotateLinkKinds', () => {
       ],
     };
 
-    rehypeAnnotateLinkKinds()(tree);
+    annotate()(tree);
 
     const anchor = tree.children?.[0];
-    expect(anchor?.properties?.['data-link-kind']).to.equal(undefined);
-    expect(anchor?.properties?.['data-link-surface']).to.equal(undefined);
+    expect(anchor?.properties?.['data-link-kind']).to.equal('internal-fragment');
+    expect(anchor?.properties?.['data-link-surface']).to.equal('structural');
     expect(anchor?.properties?.['data-external']).to.equal(undefined);
   });
 
@@ -149,7 +160,7 @@ describe('rehypeAnnotateLinkKinds', () => {
       ],
     };
 
-    rehypeAnnotateLinkKinds()(tree);
+    annotate()(tree);
 
     const ref = tree.children?.[0];
     const backref = tree.children?.[1]?.children?.[1]?.children?.[0]?.children?.[0]?.children?.[0];
@@ -185,7 +196,7 @@ describe('rehypeAnnotateLinkKinds', () => {
       ],
     };
 
-    rehypeAnnotateLinkKinds()(tree);
+    annotate()(tree);
 
     const anchor = tree.children?.[0]?.children?.[0]?.children?.[0];
     expect(anchor?.properties?.['data-link-kind']).to.equal('internal-fragment');

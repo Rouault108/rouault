@@ -154,6 +154,50 @@ describe('eleventy config', () => {
     }
   }, 20_000);
 
+  it('siteUrlContext グローバルデータを検証済み siteOrigin / basePath 付きで登録できること', async () => {
+    const previousSiteOrigin = process.env['ROUAULT_SITE_ORIGIN'];
+    const previousBasePath = process.env['ROUAULT_BASE_PATH'];
+    const previousBuildLabel = process.env['ROUAULT_BUILD_LABEL'];
+    process.env['ROUAULT_SITE_ORIGIN'] = 'https://example.com/';
+    process.env['ROUAULT_BASE_PATH'] = '/rouault/';
+    process.env['ROUAULT_BUILD_LABEL'] = 'eleventy site context test';
+
+    try {
+      const { config, globalData } = createConfigCapture();
+      const moduleUrl = new URL('../../eleventy.config.ts', import.meta.url).href;
+      const { default: configureEleventy } = (await import(moduleUrl)) as EleventyConfigModule;
+      configureEleventy(config as unknown as UserConfig);
+
+      const loadSiteUrlContext = globalData.get('siteUrlContext');
+      expect(typeof loadSiteUrlContext).toBe('function');
+      if (!loadSiteUrlContext) {
+        throw new Error('siteUrlContext が登録されていません');
+      }
+
+      expect(loadSiteUrlContext()).toEqual({
+        siteOrigin: 'https://example.com',
+        basePath: '/rouault',
+      });
+    } finally {
+      if (previousSiteOrigin === undefined) {
+        delete process.env['ROUAULT_SITE_ORIGIN'];
+      } else {
+        process.env['ROUAULT_SITE_ORIGIN'] = previousSiteOrigin;
+      }
+      if (previousBasePath === undefined) {
+        delete process.env['ROUAULT_BASE_PATH'];
+      } else {
+        process.env['ROUAULT_BASE_PATH'] = previousBasePath;
+      }
+      if (previousBuildLabel === undefined) {
+        delete process.env['ROUAULT_BUILD_LABEL'];
+      } else {
+        process.env['ROUAULT_BUILD_LABEL'] = previousBuildLabel;
+      }
+    }
+  });
+
+
   it('ROUAULT_MEDIA_BASE_URL が設定されている場合は .generated/media/assets の passthrough copy を省くこと', async () => {
     const previousBaseUrl = process.env['ROUAULT_MEDIA_BASE_URL'];
     process.env['ROUAULT_MEDIA_BASE_URL'] = 'https://media.example.com/';

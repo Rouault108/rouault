@@ -22,13 +22,13 @@ const sidebarNavMarkup = `
       </button>
       <ul id="story-note-shell-notes">
         <li data-node-id="intro-reading" data-node-kind="leaf" data-node-depth="1">
-          <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/serene-reading"><span data-sidebar-nav-label>Serene Reading</span></a>
+          <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/serene-reading" data-link-kind="internal-document" data-link-surface="navigation"><span data-sidebar-nav-label>Serene Reading</span></a>
         </li>
         <li data-node-id="story-shell" data-node-kind="leaf" data-node-depth="1">
-          <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/story-shell" aria-current="page"><span data-sidebar-nav-label>Storybook Shell</span></a>
+          <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/story-shell" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Storybook Shell</span></a>
         </li>
         <li data-node-id="router-notes" data-node-kind="leaf" data-node-depth="1">
-          <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/router-notes"><span data-sidebar-nav-label>Router Notes</span></a>
+          <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/router-notes" data-link-kind="internal-document" data-link-surface="navigation"><span data-sidebar-nav-label>Router Notes</span></a>
         </li>
       </ul>
     </li>

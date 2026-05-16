@@ -85,7 +85,7 @@ describe('renderNoteSidebarNav', () => {
     expect(html.match(/data-current-path-indicator="true"/gu)).toHaveLength(1);
     expect(html.match(/aria-current="page"/gu)).toHaveLength(1);
     expect(html).toContain(
-      '<a data-sidebar-nav-control data-sidebar-nav-link href="/notes/program/typescript/" aria-current="page">',
+      '<a data-sidebar-nav-control data-sidebar-nav-link href="/notes/program/typescript/" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page">',
     );
   });
 

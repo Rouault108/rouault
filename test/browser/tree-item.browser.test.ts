@@ -172,6 +172,11 @@ describe('ui-tree-item browser contract', () => {
 
     const item = getItem(host) as HTMLAnchorElement;
 
+    expect(item.tagName.toLowerCase()).to.equal('a');
+    expect(item.getAttribute('href')).to.equal('/notes/readme');
+    expect(item.getAttribute('data-link-kind')).to.equal('internal-document');
+    expect(item.getAttribute('data-link-surface')).to.equal('navigation');
+
     let primaryActionCount = 0;
     let anchorClickCount = 0;
 
@@ -211,6 +216,11 @@ describe('ui-tree-item browser contract', () => {
     await flush(host);
 
     const item = getItem(host) as HTMLAnchorElement;
+
+    expect(item.tagName.toLowerCase()).to.equal('a');
+    expect(item.getAttribute('href')).to.equal('/notes/readme');
+    expect(item.getAttribute('data-link-kind')).to.equal('internal-document');
+    expect(item.getAttribute('data-link-surface')).to.equal('navigation');
 
     let primaryActionCount = 0;
     let defaultPreventedAtAnchor: boolean | undefined;

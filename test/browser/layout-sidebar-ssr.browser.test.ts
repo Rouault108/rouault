@@ -91,7 +91,7 @@ describe('layout-sidebar hydration contract', () => {
                     <a
                       data-sidebar-nav-control
                       data-sidebar-nav-link
-                      href="/notes/music/classical/beethoven/symphony-9"
+                      href="/notes/music/classical/beethoven/symphony-9" data-link-kind="internal-document" data-link-surface="navigation"
                       aria-current="page"
                       ><span data-sidebar-nav-label>交響曲第9番 ニ短調</span></a
                     >

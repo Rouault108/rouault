@@ -126,12 +126,12 @@ describe('extractTocFromHtml', () => {
     expect(prepared.html).to.contain('data-footnote-ref="true"');
     expect(prepared.html).to.contain('data-footnote-backref="true"');
     expect(() =>
-      validateNoteContentContracts(
-        'testing',
-        prepared.html,
-        'test:post-prepare-toc',
-        'markdown-basic',
-      ),
+      validateNoteContentContracts({
+  kind: 'testing',
+  html: prepared.html,
+  sourceLabel: 'test:post-prepare-toc',
+  testingArea: 'markdown-basic',
+}),
     ).not.toThrow();
   });
 
@@ -179,12 +179,12 @@ describe('extractTocFromHtml', () => {
     expect(prepared.html).not.to.contain('heading-anchor');
     expect(prepared.html).not.to.contain('data-heading-permalink');
     expect(() =>
-      validateNoteContentContracts(
-        'testing',
-        prepared.html,
-        'test:post-prepare-toc',
-        'markdown-basic',
-      ),
+      validateNoteContentContracts({
+  kind: 'testing',
+  html: prepared.html,
+  sourceLabel: 'test:post-prepare-toc',
+  testingArea: 'markdown-basic',
+}),
     ).not.toThrow();
   });
 
@@ -242,12 +242,12 @@ describe('extractTocFromHtml', () => {
     expect(prepared.html).not.to.contain('data-ol-');
     expect(prepared.html).not.to.contain('--ui-ol-counter-');
     expect(() =>
-      validateNoteContentContracts(
-        'testing',
-        prepared.html,
-        'test:post-prepare-toc',
-        'markdown-basic',
-      ),
+      validateNoteContentContracts({
+  kind: 'testing',
+  html: prepared.html,
+  sourceLabel: 'test:post-prepare-toc',
+  testingArea: 'markdown-basic',
+}),
     ).not.toThrow();
   });
 
@@ -295,12 +295,12 @@ describe('extractTocFromHtml', () => {
       /<\/span>\s*<a href="#fn-a-ref-1" data-footnote-backref="true" role="doc-backlink"/u,
     );
     expect(() =>
-      validateNoteContentContracts(
-        'testing',
-        prepared.html,
-        'test:post-prepare-toc',
-        'markdown-basic',
-      ),
+      validateNoteContentContracts({
+  kind: 'testing',
+  html: prepared.html,
+  sourceLabel: 'test:post-prepare-toc',
+  testingArea: 'markdown-basic',
+}),
     ).not.toThrow();
   });
 });

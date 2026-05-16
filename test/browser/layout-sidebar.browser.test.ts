@@ -40,10 +40,10 @@ const sampleNavMarkup = `
             </button>
             <ul id="sidebar-group-classical">
               <li data-node-id="music/classical/beethoven/symphony-9" data-node-kind="leaf" data-node-depth="2">
-                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/beethoven/symphony-9" aria-current="page"><span data-sidebar-nav-label>交響曲第9番 ニ短調</span></a>
+                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/beethoven/symphony-9" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>交響曲第9番 ニ短調</span></a>
               </li>
               <li data-node-id="music/classical/tchaikovsky/the-nutcracker" data-node-kind="leaf" data-node-depth="2">
-                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/tchaikovsky/the-nutcracker"><span data-sidebar-nav-label>くるみ割り人形</span></a>
+                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/tchaikovsky/the-nutcracker" data-link-kind="internal-document" data-link-surface="navigation"><span data-sidebar-nav-label>くるみ割り人形</span></a>
               </li>
             </ul>
           </li>
@@ -56,7 +56,7 @@ const sampleNavMarkup = `
         </button>
         <ul id="sidebar-group-essay" hidden>
           <li data-node-id="essay/reading-notes" data-node-kind="leaf" data-node-depth="1">
-            <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/essay/reading-notes"><span data-sidebar-nav-label>Reading Notes</span></a>
+            <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/essay/reading-notes" data-link-kind="internal-document" data-link-surface="navigation"><span data-sidebar-nav-label>Reading Notes</span></a>
           </li>
         </ul>
       </li>
@@ -80,7 +80,7 @@ const sampleNavMarkupWithoutClassical = `
             </button>
             <ul id="sidebar-group-classical-v2">
               <li data-node-id="music/classical/mozart/requiem" data-node-kind="leaf" data-node-depth="2">
-                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/mozart/requiem" aria-current="page"><span data-sidebar-nav-label>Requiem</span></a>
+                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/mozart/requiem" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Requiem</span></a>
               </li>
             </ul>
           </li>

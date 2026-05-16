@@ -91,7 +91,7 @@ describe('navigation artifacts', () => {
           fixed-breakpoint="1024"
           sidebar-id="note-primary"
           presentation="auto"
-        ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:example"><ul><li data-node-id="notes" data-node-kind="branch" data-node-depth="0" data-current-branch="true"><button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="${notesGroupId}"><span data-sidebar-nav-label>Notes</span><span data-sidebar-nav-disclosure aria-hidden="true"></span></button><ul id="${notesGroupId}"><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="1"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></li></ul></nav></layout-sidebar>
+        ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:example"><ul><li data-node-id="notes" data-node-kind="branch" data-node-depth="0" data-current-branch="true"><button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true" aria-controls="${notesGroupId}"><span data-sidebar-nav-label>Notes</span><span data-sidebar-nav-disclosure aria-hidden="true"></span></button><ul id="${notesGroupId}"><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="1"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></li></ul></nav></layout-sidebar>
       </aside>
       <main id="main-content"><article data-hydration-scope="note-content"><h1>Example</h1></article></main>
     </app-router>
@@ -169,7 +169,7 @@ describe('navigation artifacts', () => {
           fixed-breakpoint="1024"
           sidebar-id="note-primary"
           presentation="auto"
-        ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:heading"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></nav></layout-sidebar>
+        ><nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:heading"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></nav></layout-sidebar>
       </aside>
       <main id="main-content"><p>body</p></main>
     </app-router>

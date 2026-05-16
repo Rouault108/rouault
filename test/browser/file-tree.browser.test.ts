@@ -128,6 +128,11 @@ describe('ui-file-tree browser contract', () => {
     expect(fileTree.selectedId).to.equal('notes/design/file-tree');
 
     expect(selectedItem.hasAttribute('selected')).to.equal(true);
+    expect(selectedItem.getAttribute('data-link-kind')).to.equal('internal-document');
+    expect(selectedItem.getAttribute('data-link-surface')).to.equal('navigation');
+    const selectedAction = getTreeItemAction(fileTree, 'notes/design/file-tree');
+    expect(selectedAction.getAttribute('data-link-kind')).to.equal('internal-document');
+    expect(selectedAction.getAttribute('data-link-surface')).to.equal('navigation');
     expect(expandedBranch.hasAttribute('has-children')).to.equal(true);
     expect(expandedBranch.hasAttribute('expanded')).to.equal(true);
     expect(ancestorBranch.hasAttribute('has-children')).to.equal(true);

@@ -42,9 +42,9 @@ describe('velite config', () => {
     expect(source).toContain(
       'validateNoteMetadataContracts(kind, chromeProfile, testingArea, sourcePath);',
     );
-    expect(source).toContain(
-      'validateNoteContentContracts(kind, normalizedContent, sourcePath, testingArea);',
-    );
+    expect(source).toContain('validateNoteContentContracts({');
+    expect(source).toContain('html: normalizedContent');
+    expect(source).toContain('sourceLabel: sourcePath');
     expect(source).toContain('content: normalizedContent,');
     expect(source).toContain('chromeProfile: resolveEffectiveNoteChromeProfile(kind, chromeProfile),');
   });
@@ -90,7 +90,7 @@ describe('velite config', () => {
     const headingIdsIndex = source.lastIndexOf('rehypeHeadingIds,');
     const staticCodeGroupsIndex = source.lastIndexOf('rehypeStaticCodeGroups,');
     const rouaultComponentsIndex = source.lastIndexOf('rehypeRouaultComponents,');
-    const annotateLinkKindsIndex = source.indexOf('rehypeAnnotateLinkKinds(),');
+    const annotateLinkKindsIndex = source.indexOf('rehypeAnnotateLinkKinds(resolveBuildLinkAnnotationOptions()),');
     const inlineCodeTranslateNoIndex = source.indexOf('rehypeInlineCodeTranslateNo,');
 
     expect(shikiCodeBlocksIndex).toBeGreaterThan(-1);

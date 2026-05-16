@@ -20,7 +20,7 @@
 
 - 検索意味論、URL 状態、ランキング、diagnostics の正本は [`docs/contracts/search.md`](../../contracts/search.md) とし、詳細型や ranking は `docs/references/` を参照します。実装は shared `search-core` を介して `ui-search-dialog` と `search-page` の両方で共有します。
 - `ui-search-dialog` は検索意味論を持たず、現行の安定 runtime API は `opened`、`query`、`loading`、`items`、`searcher` を中心とした UI shell です。
-- 本書は dialog の公開 UI 契約を扱い、query 正規化、tag 意味論、`DocumentCanonicalUrl`、`SearchStateUrl` などの検索仕様を上書きしません。
+- 本書は dialog の公開 UI 契約を扱い、query 正規化、tag 意味論、`SearchCanonicalPathname`、`SearchStateUrl` などの検索仕様を上書きしません。
 
 ---
 
@@ -72,7 +72,7 @@
 
 ### 結果は ID を主キーとして扱う
 
-検索結果は `url + title` のような便宜的合成キーではなく、**安定 ID** で識別します。重複除去、active option、選択 detail、分析、復元のすべてを ID 基準で扱います。
+検索結果は `renderHref + title` のような便宜的合成キーではなく、**安定 ID** で識別します。重複除去、active option、選択 detail、分析、復元のすべてを ID 基準で扱います。
 
 ### 読書を妨げる機能を持ち込まない
 
@@ -116,7 +116,8 @@
 interface UiSearchDialogItem {
   id: string;
   title: string;
-  url: string;
+  renderHref: string;
+  canonicalPathname: string;
   path?: string;
   keywords?: readonly string[];
 }
@@ -126,11 +127,12 @@ interface UiSearchDialogItem {
 | ---------- | ------ | ------------ | ----------------------------------------------- |
 | `id`       | はい   | 安定識別子   | 重複除去、option 識別、選択 detail の主キーです |
 | `title`    | はい   | 主表示       | 空文字は正規結果として扱いません                |
-| `url`      | はい   | 遷移先識別値 | 選択通知に含める主値です                        |
+| `renderHref` | はい | 表示用 href | `canonicalPathname` から render boundary で生成された値です |
+| `canonicalPathname` | はい | 正規 pathname | identity / validation の正本です |
 | `path`     | いいえ | 補助表示     | 人間が読むための補助ラベルです                  |
 | `keywords` | いいえ | 補助一致対象 | 既定一致対象面に含みます                        |
 
-`path` は**表示専用ラベル**として扱います。`url` の正規化表示と同一視しません。`path` の自動導出を行う場合でも、それは convenience であり、公開契約の中心ではありません。
+`path` は**表示専用ラベル**として扱います。`canonicalPathname` や render boundary で生成する `renderHref` と同一視しません。`path` の自動導出を行う場合でも、それは convenience であり、公開契約の中心ではありません。
 
 ### shared `search-core` 統合規約
 
@@ -140,9 +142,9 @@ Rouault アプリ本体で `ui-search-dialog` を用いる場合、検索意味�
 
 shared `search-core` 統合時の対応は次のとおりです。
 
-- `id` は `SearchResultItem.canonicalUrl` を用います
+- `id` は `SearchResultItem.canonicalPathname` を用います
 - `title` は `SearchResultItem.title` を用います
-- `url` は `SearchResultItem.url` を用います
+- `renderHref` は render boundary で `SearchResultItem.canonicalPathname` と `SiteUrlContext` から生成した `SearchRenderHref` を用います
 - `path` は `SearchResultItem.pathLabel` を用います
 
 ### 検索関数契約
@@ -225,7 +227,8 @@ type CloseReason = 'selection' | 'escape' | 'backdrop' | 'close-button' | 'progr
 ```ts
 interface UiSearchDialogSelectedDetail {
   id: string;
-  url: string;
+  renderHref: string;
+  canonicalPathname: string;
   title: string;
   query: string;
   index: number;
@@ -385,7 +388,7 @@ trim 後 query が空です。検索を行いません。結果一覧も empty s
 - `path`
 - `keywords`
 
-`url` は表示上の path 導出に使うことはあっても、既定一致対象面には含めません。読書用途では URL 一致はノイズになりやすいためです。必要なら `matchFields` を通じて opt-in で追加します。
+`renderHref` は表示上の path 導出に使うことはあっても、既定一致対象面には含めません。読書用途では URL 一致はノイズになりやすいためです。必要なら `matchFields` を通じて opt-in で追加します。
 
 ### 正規化規則
 
@@ -415,7 +418,7 @@ trim 後 query が空です。検索を行いません。結果一覧も empty s
 
 - `id` が非空文字列であること
 - `title` が非空文字列であること
-- `url` が非空文字列であること
+- `renderHref` が非空文字列であること
 
 重複除去は `id` 基準で行います。重複が複数件ある場合は、**最初に出現した項目を採用し、以後の同一 `id` 項目は破棄**します。
 
@@ -671,7 +674,7 @@ trim 後 query が空なら検索は行わず、状態は `idle` です。empty 
 
 ### 不正結果
 
-`id`、`title`、`url` のいずれかが空なら結果として採用しません。
+`id`、`title`、`renderHref`、`canonicalPathname` のいずれかが空なら結果として採用しません。
 
 ### stale response
 
@@ -745,6 +748,6 @@ trim 後 query が空なら検索は行わず、状態は `idle` です。empty 
 
 - `searcher` へ渡す `limit` / `locale` は型としては確保していますが、現行実装では未供給です。
 - `ui-search-field` 依存境界はなお primitive の公開面に寄せていますが、抽象操作専用の adapter 層は導入していません。
-- `path` 未指定時の表示補助は引き続き `url` から導出します。これは convenience であり、`path` の意味論そのものを置き換えるものではありません。
+- `path` 未指定時の表示補助は引き続き `renderHref` から導出します。これは convenience であり、`path` の意味論そのものを置き換えるものではありません。
 
 以後も仕様を更新する場合は、実装、Storybook、test を同時に更新し、契約書と実装契約のずれを長期放置しません。

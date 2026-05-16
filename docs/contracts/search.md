@@ -14,7 +14,7 @@
 - 検索コア、検索ソース層、UI 層の分離。
 - `navigate` / `explore` の意味論。
 - Pagefind と catalog の役割分担。
-- `canonicalUrl` と `SearchStateUrl` の区別。
+- `canonicalPathname` と `SearchStateUrl` の区別。
 - Snippet の安全境界。
 - 検索失敗時の縮退運転と diagnostics。
 
@@ -51,9 +51,9 @@
 
 - `navigate` は目的地を見つけるための検索 mode である。
 - `explore` は結果を比較・探索するための検索 mode である。
-- `canonicalUrl` / `DocumentCanonicalUrl` は document 重複判定と結果識別に使う。
+- `canonicalPathname` / `SearchCanonicalPathname` は document 重複判定と結果識別に使う。
 - `SearchStateUrl` は検索画面の query / filter / mode state を表す。
-- `DocumentCanonicalUrl` と note page navigation URL を同一視してはならない。
+- `SearchCanonicalPathname` と note page navigation URL を同一視してはならない。
 - Snippet は構造化表現であり、生 HTML を UI 境界へ渡してはならない。
 - UI は検索 ranking や source 統合の意味論を持たない。
 - Search UI は router core を runtime import せず、return-to-reading request を event / adapter 境界で扱う。
@@ -119,6 +119,6 @@
 ## 7. Acceptance Criteria
 
 - Search core、source adapter、UI 層が分離されている。
-- `canonicalUrl` と `SearchStateUrl` が混同されていない。
+- `canonicalPathname` と `SearchStateUrl` が混同されていない。
 - Snippet が生 HTML として UI 境界へ渡されない。
 - 検索失敗時に縮退 diagnostics が観測できる。

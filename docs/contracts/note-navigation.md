@@ -21,7 +21,7 @@
 - `_config.json` の固定入力仕様。正本は `docs/contracts/content-config.md`。
 - Sidebar presentation / tree state。正本は `docs/contracts/sidebar-state.md`。
 - Reading chrome の owner / source / trigger 境界。正本は `docs/contracts/reading-chrome.md`。
-- Search の `DocumentCanonicalUrl` / `SearchStateUrl`。正本は `docs/contracts/search.md`。
+- Search の `SearchCanonicalPathname` / `SearchStateUrl`。正本は `docs/contracts/search.md`。
 - Permanent URL / `/archives/{hash}` / hash 生成規則。正本は `docs/contracts/permanent-url.md`。
 
 ## 3. Public Contract
@@ -54,7 +54,7 @@
 - note page navigation URL の canonical form は末尾スラッシュなしである。
 - history 更新、breadcrumb、sidebar href、note page 間比較には note page navigation URL を使う。
 - 表示層に trailing slash 付き note page URL を混在させてはならない。
-- note page navigation URL と `DocumentCanonicalUrl` を混同してはならない。
+- note page navigation URL と `SearchCanonicalPathname` を混同してはならない。
 - note page navigation URL と fetch target URL を混同してはならない。
 - 静的 HTML の `index.html` 解決に必要な trailing slash 補完は fetch target 解決層だけが行う。
 

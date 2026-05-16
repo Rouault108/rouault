@@ -250,7 +250,11 @@ describe('table node contracts', () => {
     ].join('');
 
     expect(() => {
-      validateNoteContentContracts('reader', html, 'testing/table-contracts');
+      validateNoteContentContracts({
+  kind: 'reader',
+  html: html,
+  sourceLabel: 'testing/table-contracts',
+});
     }).not.toThrow();
   });
 });
