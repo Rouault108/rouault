@@ -57,4 +57,27 @@ describe('resolve note current URL', () => {
       expect(classified.kind).to.equal('internal-fragment');
     },
   );
+
+  it(
+    'non-ASCII slug の build-time note context でも current document hash を分類できること',
+    () => {
+      const context = resolveNoteLinkClassificationContext({
+        sourceFilePath: 'content/library/collection/計算機科学・ソフトウェア開発関連書籍.md',
+        siteUrlContext,
+      });
+
+      const classified = classifyLinkHref({
+        href: '#計算機科学情報学の基礎',
+        surface: 'prose',
+        siteUrlContext,
+        currentUrl: context.currentUrl,
+        routeClassificationMode: context.routeClassificationMode,
+      });
+
+      expect(context.currentUrl).to.contain(
+        '/notes/library/collection/%E8%A8%88%E7%AE%97%E6%A9%9F%E7%A7%91%E5%AD%A6',
+      );
+      expect(classified.kind).to.equal('internal-fragment');
+    },
+  );
 });

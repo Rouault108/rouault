@@ -17,6 +17,7 @@ import { pageShellStyles } from '../page/page-shell-styles.js';
 import type { SearchCore } from '../../search/search-core.js';
 import { getInitializedSearchCore, getInitializedSearchRoutePredicate } from '../../search/bootstrap.js';
 import { buildSearchResultRenderHref } from '../../search/normalize-search-result-url.js';
+import { isDefaultInternalResourcePathname } from '../../../shared/link/link-annotation.js';
 import { createSearchJsonParseDiagnosticSink } from '../../../shared/search/search-diagnostics.js';
 import { parseStaticExploreSearchResponseJson } from '../../../shared/search/search-json-artifact-parser.js';
 import { navigateInternalDocument } from '../../router/navigate-internal-document.js';
@@ -33,7 +34,9 @@ import {
 } from '../../../shared/search/search-url.js';
 import type {
   ExploreSearchResponse,
+  SearchCanonicalPathname,
   SearchResultItem,
+  SearchRenderHref,
   SearchSnippet,
 } from '../../../shared/search/search-types.js';
 import { createSiteUrlContext, type SiteUrlContext } from '../../../shared/site/site-url-context.js';
@@ -55,16 +58,6 @@ interface GenreFilterEntry {
   count: number;
   selected: boolean;
   disabled: boolean;
-}
-
-function isSameSearchState(left: SearchState, right: SearchState): boolean {
-  return (
-    left.q === right.q &&
-    left.tagMode === right.tagMode &&
-    left.sort === right.sort &&
-    left.tags.length === right.tags.length &&
-    left.tags.every((tag, index) => tag === right.tags[index])
-  );
 }
 
 @customElement('search-page')
@@ -422,10 +415,10 @@ export class SearchPage extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     window.addEventListener('popstate', this._onPopState);
-    this._syncStateFromLocation();
-    if (this._canUseInitialPayload()) {
+    if (this._hasInitialExplorePayload()) {
       return;
     }
+    this._syncStateFromLocation();
     void this._refreshResults();
   }
 
@@ -517,34 +510,49 @@ export class SearchPage extends LitElement {
     };
   }
 
-  private _canUseInitialPayload(): boolean {
-    const initialState = this._parseInitialState();
-    const initialResponse = this._parseInitialResponse();
-    if (initialState === null || initialResponse?.mode !== 'explore') {
-      return false;
+  private _hasInitialExplorePayload(): boolean {
+    return this._parseInitialState() !== null && this._parseInitialResponse()?.mode === 'explore';
+  }
+
+  private _commitUrl(nextUrl: string, historyMode: 'push' | 'replace'): void {
+    if (nextUrl === `${window.location.pathname}${window.location.search}`) {
+      return;
     }
 
-    return isSameSearchState(initialState, this._currentSearchState());
+    if (window.location.pathname.startsWith('/tags/') && nextUrl.startsWith('/search/')) {
+      void navigateInternalDocument(nextUrl, { historyMode }).then((result) => {
+        if (result.outcome === 'completed') {
+          return;
+        }
+
+        if (historyMode === 'replace') {
+          history.replaceState(history.state, '', nextUrl);
+          return;
+        }
+
+        history.pushState(history.state, '', nextUrl);
+      });
+      return;
+    }
+
+    if (historyMode === 'replace') {
+      history.replaceState(history.state, '', nextUrl);
+      return;
+    }
+
+    history.pushState(history.state, '', nextUrl);
   }
 
   private _replaceUrl(): void {
     const nextUrl = buildUrlForSearchState(this._currentSearchState());
 
-    if (nextUrl === `${window.location.pathname}${window.location.search}`) {
-      return;
-    }
-
-    history.replaceState(history.state, '', nextUrl);
+    this._commitUrl(nextUrl, 'replace');
   }
 
   private _pushUrl(): void {
     const nextUrl = buildUrlForSearchState(this._currentSearchState());
 
-    if (nextUrl === `${window.location.pathname}${window.location.search}`) {
-      return;
-    }
-
-    history.pushState(history.state, '', nextUrl);
+    this._commitUrl(nextUrl, 'push');
   }
 
   private _readControlValue(target: EventTarget | null): string | null {
@@ -667,9 +675,38 @@ export class SearchPage extends LitElement {
       return item.renderHref;
     }
 
+    return this._renderHrefForCanonicalPathname(item.canonicalPathname);
+  }
+
+  private _renderHrefForCanonicalPathname(canonicalPathname: SearchCanonicalPathname): string {
+    try {
+      return buildSearchResultRenderHref({
+        canonicalPathname,
+        siteUrlContext: this._readSiteUrlContext(),
+      });
+    } catch {
+      return canonicalPathname;
+    }
+  }
+
+  private _readInitialResponseSiteUrlContext(): SiteUrlContext {
+    if (typeof document === 'undefined') {
+      return createSiteUrlContext({ siteOrigin: 'https://rouault.invalid', basePath: '' });
+    }
+
+    return this._readSiteUrlContext();
+  }
+
+  private _isStaticInitialDocumentPathname(pathname: string): boolean {
+    return !isDefaultInternalResourcePathname(pathname);
+  }
+
+  private _renderHrefForStaticInitialItem(item: {
+    readonly canonicalPathname: SearchCanonicalPathname;
+  }): SearchRenderHref {
     return buildSearchResultRenderHref({
       canonicalPathname: item.canonicalPathname,
-      siteUrlContext: this._readSiteUrlContext(),
+      siteUrlContext: this._readInitialResponseSiteUrlContext(),
     });
   }
 
@@ -1063,10 +1100,9 @@ export class SearchPage extends LitElement {
       return null;
     }
 
-    const isInternalDocumentPathname = getInitializedSearchRoutePredicate();
-    if (isInternalDocumentPathname === null) {
-      return null;
-    }
+    const isInternalDocumentPathname =
+      getInitializedSearchRoutePredicate() ??
+      ((pathname: string) => this._isStaticInitialDocumentPathname(pathname));
 
     const mutableDiagnostics = { issues: [] };
     const diagnostics = createSearchJsonParseDiagnosticSink(mutableDiagnostics);
@@ -1074,7 +1110,7 @@ export class SearchPage extends LitElement {
     try {
       const parsed = parseStaticExploreSearchResponseJson({
         value: JSON.parse(normalized),
-        siteUrlContext: this._readSiteUrlContext(),
+        siteUrlContext: this._readInitialResponseSiteUrlContext(),
         isInternalDocumentPathname,
         diagnostics,
       });
@@ -1086,10 +1122,7 @@ export class SearchPage extends LitElement {
         ...parsed.response,
         items: parsed.response.items.map((item) => ({
           ...item,
-          renderHref: buildSearchResultRenderHref({
-            canonicalPathname: item.canonicalPathname,
-            siteUrlContext: this._readSiteUrlContext(),
-          }),
+          renderHref: this._renderHrefForStaticInitialItem(item),
         })),
       };
     } catch {

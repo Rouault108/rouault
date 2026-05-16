@@ -30,6 +30,8 @@ const mobileWebkitFinalCheck = [
 ];
 
 const isCI = !!process.env['CI'];
+const productionPreviewPort = 4173;
+const productionPreviewOrigin = `http://127.0.0.1:${productionPreviewPort}`;
 
 const resolveE2EBuildLabel = (): string => {
   const explicitBuildLabel = process.env['ROUAULT_BUILD_LABEL']?.trim();
@@ -76,7 +78,7 @@ export default defineConfig({
   reporter: 'html',
 
   use: {
-    baseURL: 'http://127.0.0.1:8080',
+    baseURL: productionPreviewOrigin,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -105,14 +107,14 @@ export default defineConfig({
 
   webServer: {
     command:
-      'pnpm run build:production && pnpm exec vite preview --config vite.preview.config.ts --host 127.0.0.1 --port 8080 --strictPort',
-    url: 'http://127.0.0.1:8080/search/',
+      'pnpm run build:production && pnpm exec vite preview --config vite.preview.config.ts --host 127.0.0.1 --port 4173 --strictPort',
+    port: productionPreviewPort,
     reuseExistingServer: !isCI,
     timeout: 120 * 1000,
     env: {
       ...toPlaywrightEnv(process.env),
       ROUAULT_BUILD_LABEL: resolveE2EBuildLabel(),
-      ROUAULT_SKIP_PAGEFIND: '1',
+      ROUAULT_SITE_ORIGIN: productionPreviewOrigin,
       NODE_OPTIONS: withNodeOption(process.env['NODE_OPTIONS'], '--max-old-space-size=4096'),
     },
   },

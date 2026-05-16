@@ -10,8 +10,18 @@ const waitForAppRouterReady = async (page: Page): Promise<void> => {
     const router = document.querySelector('app-router');
     return (
       router instanceof HTMLElement &&
-      typeof (router as { navigate?: unknown }).navigate === 'function'
+      typeof (router as { navigate?: unknown }).navigate === 'function' &&
+      typeof (router as { whenReady?: unknown }).whenReady === 'function'
     );
+  });
+  await page.evaluate(async () => {
+    const router = document.querySelector('app-router') as
+      | (HTMLElement & { whenReady: () => Promise<void> })
+      | null;
+    if (!router || typeof router.whenReady !== 'function') {
+      throw new Error('app-router.whenReady() が利用できません');
+    }
+    await router.whenReady();
   });
 };
 

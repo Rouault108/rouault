@@ -5,22 +5,27 @@ const navigateToMissingRoute = async (page: Page, url: string) => {
     const router = document.querySelector('app-router');
     return (
       router instanceof HTMLElement &&
-      typeof (router as { navigate?: unknown }).navigate === 'function'
+      typeof (router as { navigate?: unknown }).navigate === 'function' &&
+      typeof (router as { whenReady?: unknown }).whenReady === 'function'
     );
   });
 
-  await page.evaluate((targetUrl) => {
+  await page.evaluate(async (targetUrl) => {
     const router = document.querySelector('app-router') as
-      | (HTMLElement & { navigate: (nextUrl: string) => Promise<unknown> })
+      | (HTMLElement & {
+          navigate: (nextUrl: string) => Promise<unknown>;
+          whenReady: () => Promise<void>;
+        })
       | null;
     const globalWindow = window as typeof window & {
       __lastNotFoundNavigationResult?: unknown;
     };
 
-    if (!router || typeof router.navigate !== 'function') {
+    if (!router || typeof router.navigate !== 'function' || typeof router.whenReady !== 'function') {
       throw new Error('app-router.navigate() が利用できません');
     }
 
+    await router.whenReady();
     delete globalWindow.__lastNotFoundNavigationResult;
     void router.navigate(targetUrl).then((result) => {
       globalWindow.__lastNotFoundNavigationResult = result;

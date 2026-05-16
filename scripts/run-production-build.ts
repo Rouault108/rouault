@@ -12,6 +12,22 @@ const distDir = path.resolve(process.cwd(), 'dist');
 
 await rm(distDir, { recursive: true, force: true });
 
+const resolveEntrypointBuildLabel = (): string => {
+  const explicitLabel = process.env['ROUAULT_BUILD_LABEL']?.trim();
+  if (explicitLabel !== undefined && explicitLabel.length > 0) {
+    return explicitLabel;
+  }
+
+  const githubSha = process.env['GITHUB_SHA']?.trim();
+  if (githubSha !== undefined && githubSha.length > 0) {
+    return githubSha.slice(0, 7);
+  }
+
+  return 'production local';
+};
+
+process.env['ROUAULT_BUILD_LABEL'] = resolveEntrypointBuildLabel();
+
 const buildMetadata = resolveProductionBuildMetadata();
 
 const env: NodeJS.ProcessEnv = {

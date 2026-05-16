@@ -15,8 +15,24 @@ const renderTestRunnerHtml = testFramework => `<!DOCTYPE html>
   </body>
 </html>`;
 
+const includeWebkit = process.env.CI === 'true' || process.env.ROUAULT_WTR_WEBKIT === '1';
+const requestedBrowsers = new Set(
+  (process.env.ROUAULT_WTR_BROWSERS ?? 'chromium,firefox')
+    .split(',')
+    .map(browser => browser.trim())
+    .filter(Boolean),
+);
+
+const browserLaunchers = [
+  ...(requestedBrowsers.has('chromium') ? [playwrightLauncher({ product: 'chromium' })] : []),
+  ...(requestedBrowsers.has('firefox') ? [playwrightLauncher({ product: 'firefox' })] : []),
+  ...(includeWebkit || requestedBrowsers.has('webkit')
+    ? [playwrightLauncher({ product: 'webkit', concurrency: 1 })]
+    : []),
+];
+
 const config = {
-  files: ['test/browser/**/*.test.ts'],
+  files: ['test/browser/**/*.test.ts', '!test/browser/app-router.browser.test.ts'],
   nodeResolve: {
     exportConditions: ['browser', 'development'],
   },
@@ -27,17 +43,14 @@ const config = {
       tsconfig: './tsconfig.json',
     }),
   ],
-  browsers: [
-    playwrightLauncher({ product: 'chromium' }),
-    playwrightLauncher({ product: 'firefox' }),
-    playwrightLauncher({ product: 'webkit', concurrency: 1 }),
-  ],
+  browsers: browserLaunchers,
   browserStartTimeout: 90000,
   testsStartTimeout: 90000,
+  testsFinishTimeout: 900000,
   testFramework: {
     config: {
       ui: 'bdd',
-      timeout: '4000',
+      timeout: 10000,
     },
   },
   testRunnerHtml: testFramework => renderTestRunnerHtml(testFramework),

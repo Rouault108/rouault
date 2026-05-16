@@ -10,6 +10,7 @@ import { STATIC_DOCUMENT_ROUTES } from './static-document-routes.js';
 import { resolveNotePermalink } from '../../shared/note/resolve-note-permalink.js';
 import type { NoteSourceRoot } from '../../shared/note/note-source-root.js';
 import { resolveEffectiveNotePublicationPolicy } from '../../shared/note/note-publication-policy.js';
+import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js';
 
 export type InternalDocumentRouteSource = 'static' | 'note' | 'corpus' | 'tag';
 export type ContentRouteSetKind = 'production' | 'fixture';
@@ -184,6 +185,9 @@ const toRequestedSlug = (root: string, sourceFilePath: string): string => {
     : withoutExtension;
 };
 
+const normalizeRoutePathnameForUrlComparison = (pathname: string): InternalDocumentRoutePathname =>
+  normalizeRouaultPathname(new URL(pathname, 'https://rouault.invalid').pathname);
+
 const resolveNoteRouteSeeds = (
   sourceRoot: NoteSourceRoot,
   rootPath: string,
@@ -213,7 +217,7 @@ const resolveNoteRouteSeeds = (
         requestedSlug,
         rawSlug: permalink.rawSlug,
         slug: permalink.slug,
-        permalink: permalink.canonicalPathname,
+        permalink: normalizeRoutePathnameForUrlComparison(permalink.canonicalPathname),
         noteKind: permalink.kind,
         genres: metadata.genres,
         ...(metadata.status !== undefined ? { status: metadata.status } : {}),
@@ -292,7 +296,11 @@ export const buildProductionInternalDocumentRouteSet = (
   options: BuildInternalDocumentRouteSetOptions = {},
 ): ContentDerivedInternalDocumentRoutes => {
   const contentRoot = options.contentRoot ?? DEFAULT_CONTENT_ROOT;
-  const noteRoutes = resolveNoteRouteSeeds('content', contentRoot);
+  const fixtureRoot = options.fixtureRoot ?? DEFAULT_FIXTURE_ROOT;
+  const noteRoutes = [
+    ...resolveNoteRouteSeeds('content', contentRoot),
+    ...resolveNoteRouteSeeds('test/fixtures/content', fixtureRoot),
+  ];
   return buildContentDerivedRoutes('production', noteRoutes);
 };
 

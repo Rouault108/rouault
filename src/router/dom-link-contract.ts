@@ -6,6 +6,7 @@ import type { LinkKind } from '../../shared/link/link-kind.js';
 import { detectUnsafeHref } from '../../shared/link/unsafe-href-detector.js';
 import { isLinkSurface } from '../../shared/link/link-surface.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
+import { stripBasePathFromPathname } from '../../shared/url/normalize-rouault-url.js';
 import type { LoadedInternalDocumentRouteManifestState } from './internal-document-route-manifest-loader.js';
 
 const LINK_KINDS: readonly LinkKind[] = [
@@ -40,6 +41,11 @@ const isFootnoteStructuralException = (anchor: HTMLAnchorElement): boolean =>
 const toAbsoluteCurrentUrl = (siteUrlContext: SiteUrlContext, normalizedUrl: string): string => {
   const resolved = new URL(normalizedUrl, `${siteUrlContext.siteOrigin}/`);
   return resolved.href;
+};
+
+const toCurrentPathname = (siteUrlContext: SiteUrlContext, normalizedUrl: string): string => {
+  const resolved = new URL(normalizedUrl, `${siteUrlContext.siteOrigin}/`);
+  return stripBasePathFromPathname(resolved.pathname, siteUrlContext.basePath);
 };
 
 const validateAnchor = (
@@ -101,13 +107,15 @@ const validateAnchor = (
         ? true
         : (downloadValue ?? true)
       : undefined;
+    const currentPathname = toCurrentPathname(options.siteUrlContext, options.currentUrl);
     const annotation = classifyLinkHref({
       href: annotatedHref,
       surface: annotatedSurface,
       siteUrlContext: options.siteUrlContext,
       currentUrl: toAbsoluteCurrentUrl(options.siteUrlContext, options.currentUrl),
       routeClassificationMode: createManifestLoadedRouteClassificationMode({
-        isInternalDocumentPathname: (pathname) => options.routeManifestState.routeSet.has(pathname),
+        isInternalDocumentPathname: (pathname) =>
+          options.routeManifestState.routeSet.has(pathname) || pathname === currentPathname,
       }),
       runtimeEnvironment: 'production',
       ...(target === '_blank' || target === '_self' ? { target } : {}),
@@ -119,10 +127,16 @@ const validateAnchor = (
       fail(options.sourceLabel, 'unsafe annotation must not be rendered');
     }
     if (annotation.kind !== kind) {
-      fail(options.sourceLabel, 'link kind mismatch');
+      fail(
+        options.sourceLabel,
+        `link kind mismatch: href="${annotatedHref}" expected="${kind}" actual="${annotation.kind}"`,
+      );
     }
     if (annotation.surface !== surface) {
-      fail(options.sourceLabel, 'link surface mismatch');
+      fail(
+        options.sourceLabel,
+        `link surface mismatch: href="${annotatedHref}" expected="${surface}" actual="${annotation.surface}"`,
+      );
     }
   }
 

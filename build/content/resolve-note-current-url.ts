@@ -13,6 +13,7 @@ import {
 import { resolveNotePermalink } from '../../shared/note/resolve-note-permalink.js';
 import { resolveNoteSourceLocation } from '../../shared/note/note-source-root.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
+import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js';
 
 export interface ResolveNoteCurrentUrlOptions {
   readonly sourceFilePath: string | undefined;
@@ -51,6 +52,9 @@ const getRouteSetForKind = (kind: ContentRouteSetKind) =>
     ? buildFixtureInternalDocumentRouteSet().routeSet
     : buildProductionInternalDocumentRouteSet().routeSet;
 
+const normalizeCanonicalPathnameForUrlComparison = (pathname: string): string =>
+  normalizeRouaultPathname(new URL(pathname, 'https://rouault.invalid').pathname);
+
 export const resolveNoteCanonicalPathnameFromSourcePath = (
   sourceFilePath: string | undefined,
 ): string => {
@@ -75,7 +79,9 @@ export const resolveNoteCurrentUrlFromSourcePath = ({
   sourceFilePath,
   siteUrlContext,
 }: ResolveNoteCurrentUrlOptions): string => {
-  const canonicalPathname = resolveNoteCanonicalPathnameFromSourcePath(sourceFilePath);
+  const canonicalPathname = normalizeCanonicalPathnameForUrlComparison(
+    resolveNoteCanonicalPathnameFromSourcePath(sourceFilePath),
+  );
   return `${siteUrlContext.siteOrigin}${siteUrlContext.basePath}${canonicalPathname}`;
 };
 
@@ -84,8 +90,8 @@ export const createNoteRouteClassificationModeForSourcePath = (
 ): RouteClassificationMode => {
   const routeSetKind = resolveRouteSetKindForNoteSourcePath(sourceFilePath);
   const routeSet = getRouteSetForKind(routeSetKind);
-  const currentDocumentPathname = resolveNoteCanonicalPathnameFromSourcePath(
-    sourceFilePath,
+  const currentDocumentPathname = normalizeCanonicalPathnameForUrlComparison(
+    resolveNoteCanonicalPathnameFromSourcePath(sourceFilePath),
   );
   return createManifestLoadedRouteClassificationMode({
     isInternalDocumentPathname: (pathname) =>
@@ -98,8 +104,8 @@ export const resolveNoteLinkClassificationContext = (
 ): ResolvedNoteLinkClassificationContext => {
   const routeSetKind = resolveRouteSetKindForNoteSourcePath(options.sourceFilePath);
   const routeSet = getRouteSetForKind(routeSetKind);
-  const currentDocumentPathname = resolveNoteCanonicalPathnameFromSourcePath(
-    options.sourceFilePath,
+  const currentDocumentPathname = normalizeCanonicalPathnameForUrlComparison(
+    resolveNoteCanonicalPathnameFromSourcePath(options.sourceFilePath),
   );
   const currentUrl =
     `${options.siteUrlContext.siteOrigin}` +

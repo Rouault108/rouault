@@ -29,7 +29,7 @@ describe('production build entrypoint contract', () => {
     const normalizedPlaywrightConfig = playwrightConfig.replace(/\s+/g, ' ');
 
     expect(normalizedPlaywrightConfig).toContain(
-      "command: 'pnpm run build:production && pnpm exec vite preview --config vite.preview.config.ts --host 127.0.0.1 --port 8080 --strictPort'",
+      "command: 'pnpm run build:production && pnpm exec vite preview --config vite.preview.config.ts --host 127.0.0.1 --port 4173 --strictPort'",
     );
   });
 

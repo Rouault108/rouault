@@ -51,7 +51,7 @@ export default defineConfig({
 
   webServer: {
     command: 'pnpm run dev',
-    url: 'http://127.0.0.1:8080/search/',
+    port: 8080,
     reuseExistingServer: !isCI,
     timeout: 120 * 1000,
     env: {

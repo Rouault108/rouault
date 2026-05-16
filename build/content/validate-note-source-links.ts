@@ -22,6 +22,7 @@ import {
 } from '../remark/directives/grammar/url-attribute-policies.js';
 import type { DirectiveName, MdastNode } from '../remark/directives/types.js';
 import { createNotePolicyContext } from '../remark/directives/policy/note-policy-context.js';
+import { createNoteDirectiveUrlPolicyContext } from '../remark/directives/policy/directive-url-policy-context.js';
 import type { NoteSourceRoot } from '../../shared/note/note-source-root.js';
 
 export interface SourcePosition {
@@ -134,10 +135,14 @@ const pickFrontmatterValue = (frontmatter: string | null, key: string): string |
   return matched?.[1]?.trim().replace(/^['"]|['"]$/gu, '');
 };
 
-const buildPolicyContextFromFrontmatter = (frontmatter: string | null) =>
+const buildPolicyContextFromFrontmatter = (
+  frontmatter: string | null,
+  file: { readonly path?: string; readonly value?: string },
+) =>
   createNotePolicyContext(
     pickFrontmatterValue(frontmatter, 'kind'),
     pickFrontmatterValue(frontmatter, 'testingArea'),
+    createNoteDirectiveUrlPolicyContext(file),
   );
 
 const toResolveOptions = (
@@ -180,8 +185,9 @@ export async function collectNoteSourceLinksFromMarkdown(
   const file = {
     path: options.sourceFilePath,
     value: options.body,
-    data: { rouaultPolicyContext: buildPolicyContextFromFrontmatter(options.frontmatter) },
+    data: {},
   };
+  file.data = { rouaultPolicyContext: buildPolicyContextFromFrontmatter(options.frontmatter, file) };
 
   await remarkExpandExampleIncludes()(tree, file);
   remarkDisallowRawHtml()(tree, file);

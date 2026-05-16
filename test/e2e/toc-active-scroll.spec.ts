@@ -30,7 +30,8 @@ const waitForAppRouterReady = async (page: Page): Promise<void> => {
     const router = document.querySelector('app-router');
     return (
       router instanceof HTMLElement &&
-      typeof (router as { navigate?: unknown }).navigate === 'function'
+      typeof (router as { navigate?: unknown }).navigate === 'function' &&
+      typeof (router as { whenReady?: unknown }).whenReady === 'function'
     );
   });
 };
@@ -40,12 +41,16 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
 
   await page.evaluate(async (targetUrl) => {
     const router = document.querySelector('app-router') as
-      | (HTMLElement & { navigate: (nextUrl: string) => Promise<unknown> })
+      | (HTMLElement & {
+          navigate: (nextUrl: string) => Promise<unknown>;
+          whenReady: () => Promise<void>;
+        })
       | null;
-    if (!router || typeof router.navigate !== 'function') {
+    if (!router || typeof router.navigate !== 'function' || typeof router.whenReady !== 'function') {
       throw new Error('app-router.navigate() が利用できません');
     }
 
+    await router.whenReady();
     await router.navigate(targetUrl);
   }, url);
 };

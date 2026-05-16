@@ -27,7 +27,8 @@ test.describe('App Shell', () => {
         dialog instanceof HTMLElement &&
         customElements.get('ui-search-dialog') !== undefined &&
         typeof (dialog as { requestOpen?: unknown }).requestOpen === 'function' &&
-        typeof (dialog as { captureOpenModality?: unknown }).captureOpenModality === 'function'
+        typeof (dialog as { captureOpenModality?: unknown }).captureOpenModality === 'function' &&
+        typeof (dialog as { searcher?: unknown }).searcher === 'function'
       );
     });
 

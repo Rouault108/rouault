@@ -202,16 +202,26 @@ const validateKindHrefShape = (
   if (kind === null || isFootnoteStructuralException(node)) return;
 
   if (hasFullClassificationContext(options) && !isFootnoteStructuralException(node)) {
-    const classified = classifyLinkHref({
-      href,
-      surface: 'prose',
-      siteUrlContext: options.siteUrlContext,
-      currentUrl: options.currentUrl,
-      routeClassificationMode: options.routeClassificationMode,
-      ...(options.isInternalResourcePathname !== undefined
-        ? { isInternalResourcePathname: options.isInternalResourcePathname }
-        : {}),
-    });
+    let classified: ReturnType<typeof classifyLinkHref>;
+    try {
+      classified = classifyLinkHref({
+        href,
+        surface: 'prose',
+        siteUrlContext: options.siteUrlContext,
+        currentUrl: options.currentUrl,
+        routeClassificationMode: options.routeClassificationMode,
+        ...(options.isInternalResourcePathname !== undefined
+          ? { isInternalResourcePathname: options.isInternalResourcePathname }
+          : {}),
+      });
+    } catch (error) {
+      fail(
+        options.sourceLabel,
+        `link classification failed for href "${href}": ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
     if (classified.kind !== kind) {
       fail(
         options.sourceLabel,

@@ -9,7 +9,8 @@ function normalizeListenOptions(options) {
   if (
     normalized.host == null ||
     normalized.host === 'localhost' ||
-    normalized.host === '127.0.0.1'
+    normalized.host === '127.0.0.1' ||
+    normalized.host === '0.0.0.0'
   ) {
     // sandbox とローカル実行の両方で確実に loopback に bind する。
     normalized.host = '127.0.0.1';
@@ -24,7 +25,10 @@ net.Server.prototype.listen = function patchedListen(...args) {
   }
 
   if (typeof args[0] === 'number') {
-    const host = typeof args[1] === 'string' && args[1] !== 'localhost' ? args[1] : '127.0.0.1';
+    const host =
+      typeof args[1] === 'string' && args[1] !== 'localhost' && args[1] !== '0.0.0.0'
+        ? args[1]
+        : '127.0.0.1';
     return originalListen.call(this, args[0], host, ...args.slice(2));
   }
 
@@ -74,6 +78,14 @@ const derivePassed = (runner, reportedPassed) => {
   return true;
 };
 
+const sessionHasFinished = (session) =>
+  session.testResults !== undefined || (Array.isArray(session.errors) && session.errors.length > 0);
+
+const allSessionsHaveFinished = (runner) => {
+  const sessions = Array.from(runner.sessions.all());
+  return sessions.length > 0 && sessions.every((session) => sessionHasFinished(session));
+};
+
 const runner = await startTestRunner({ autoExitProcess: false });
 
 if (runner === undefined) {
@@ -92,6 +104,14 @@ if (runner === undefined) {
     void runner.stop(error);
   });
 
+  const stopWhenComplete = setInterval(() => {
+    if (allSessionsHaveFinished(runner)) {
+      clearInterval(stopWhenComplete);
+      void runner.stop();
+    }
+  }, 1000);
+
   const reportedPassed = await stopped;
+  clearInterval(stopWhenComplete);
   process.exitCode = derivePassed(runner, reportedPassed) ? 0 : 1;
 }

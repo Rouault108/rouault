@@ -1,4 +1,5 @@
 import { detectUnsafeHref } from '../../shared/link/unsafe-href-detector.js';
+import { isDefaultInternalResourcePathname } from '../../shared/link/link-annotation.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { isPathnameInsideBasePath } from '../../shared/site/site-url-context.js';
 import {
@@ -48,7 +49,9 @@ export const validateInternalDocumentNavigationRequest = (options: {
   if (options.routeManifestState.status !== 'loaded') return { ok: false, reason: reasonFor(options.routeManifestState) };
 
   const pathname = stripBasePathFromPathname(url.pathname, options.siteUrlContext.basePath);
-  if (!options.routeManifestState.routeSet.has(pathname)) return { ok: false, reason: 'disallowed-url' };
+  if (!options.routeManifestState.routeSet.has(pathname) && isDefaultInternalResourcePathname(pathname)) {
+    return { ok: false, reason: 'disallowed-url' };
+  }
 
   return { ok: true, normalizedUrl: toInternalDocumentNormalizedUrl(`${url.pathname}${url.search}${url.hash}`) };
 };
