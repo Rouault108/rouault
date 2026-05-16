@@ -2,10 +2,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
-  normalizeNotePath,
   type SidebarScope,
   type SidebarScopeRule,
 } from '../../build/navigation/index.js';
+import { resolveNotePermalink } from '../../shared/note/resolve-note-permalink.js';
 import type { NavigationDirectoryPresentationMap } from '../../shared/navigation/navigation-types.js';
 import { resolveSidebarRoot } from '../../build/navigation/resolve-sidebar-root.js';
 import { prepareTocHtml, type TocHeading } from '../../build/content/extract-toc-from-html.js';
@@ -456,7 +456,7 @@ export const buildNotesCollection = (
       const inputSlug = note.slug.trim();
       const normalizedSlug = inputSlug.replace(/^\/+|\/+$/gu, '');
       const sourceRootPath = resolveSourceRootPath(note);
-      const pathInfo = normalizeNotePath({
+      const pathInfo = resolveNotePermalink({
         requestedSlug: inputSlug,
         hasLeaf: hasFile(join(sourceRootPath, `${normalizedSlug}.md`)),
         hasDirectoryIndex: hasFile(join(sourceRootPath, normalizedSlug, 'index.md')),
@@ -470,12 +470,12 @@ export const buildNotesCollection = (
       delete noteWithoutVeliteToc['tocCapabilitiesOverride'];
 
       const preparedToc = prepareTocHtml(typeof note.content === 'string' ? note.content : '');
-      validateNoteContentContracts(
-        kind,
-        preparedToc.html,
-        `${sourceSlug}:post-prepare-toc`,
-        testingArea,
-      );
+      validateNoteContentContracts({
+  kind: kind,
+  html: preparedToc.html,
+  sourceLabel: `${sourceSlug}:post-prepare-toc`,
+  testingArea: testingArea,
+});
       const e2eFixtureId =
         typeof note.e2eFixtureId === 'string' && note.e2eFixtureId.trim().length > 0
           ? note.e2eFixtureId.trim()
