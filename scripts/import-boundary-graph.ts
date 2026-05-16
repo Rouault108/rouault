@@ -50,7 +50,7 @@ const collectSpecifiersFromSource = (sourceText: string, fileName: string): stri
       }
     } else if (ts.isImportEqualsDeclaration(node)) {
       const reference = node.moduleReference;
-      if (ts.isExternalModuleReference(reference) && reference.expression !== undefined) {
+      if (ts.isExternalModuleReference(reference)) {
         pushSpecifier(reference.expression);
       }
     } else if (
@@ -87,3 +87,45 @@ export const collectImportEdges = (roots: readonly string[]): ImportEdge[] => {
 
 export const edgeMatches = (edge: ImportEdge, fromPrefix: string, toPrefix: string): boolean =>
   edge.from.startsWith(fromPrefix) && edge.to.startsWith(toPrefix);
+
+const productionForbiddenPatterns: readonly [RegExp, string][] = [
+  [/\bLegacyClassifyLinkOptions\b/u, 'legacy link classification options must be removed'],
+  [/classifyLinkHref\s*\(\s*href\b/u, 'legacy classifyLinkHref(href, ...) API must be removed'],
+  [/\bDEFAULT_SITE_URL_CONTEXT\b/u, 'production code must not import DEFAULT_SITE_URL_CONTEXT'],
+  [new RegExp('\\b' + 'isRoutable' + 'LinkKind' + '\\b', 'u'), 'legacy routable predicate must not be used'],
+  [new RegExp('\\b' + 'isExternal' + 'LinkKind' + '\\b', 'u'), 'legacy external predicate must not be used'],
+  [new RegExp('\\b' + 'Browser' + 'LinkInterceptor' + '\\b', 'u'), 'legacy router interceptor export must not be used'],
+  [new RegExp('\\b' + 'HtmlDocument' + 'Fetcher' + '\\b', 'u'), 'HTML direct fetcher must not be used'],
+  [new RegExp('\\b' + 'navigateTo' + 'Url' + '\\b', 'u'), 'legacy imperative navigation API must not be used'],
+];
+
+const productionForbiddenEdges: readonly [string, string, string][] = [
+  ['shared/link/', 'src/router/', 'shared/link must not depend on src/router'],
+  ['shared/url/', 'shared/link/', 'shared/url must not depend on shared/link'],
+  ['src/router/', 'build/navigation/', 'src/router must not import build/navigation'],
+  ['src/search/', 'build/search/', 'src/search must not import build/search'],
+];
+
+export const findProductionImportBoundaryViolations = (): Promise<string[]> => {
+  const roots = ['src', 'build'];
+  const violations: string[] = [];
+  for (const file of walkSourceFiles(roots)) {
+    if (file.startsWith('scripts/assert-')) continue;
+    const text = readFileSync(file, 'utf8');
+    for (const [pattern, reason] of productionForbiddenPatterns) {
+      if (pattern.test(text)) {
+        violations.push(`production import boundary violation: ${file}: ${reason}`);
+      }
+    }
+  }
+
+  for (const edge of collectImportEdges(roots)) {
+    for (const [fromPrefix, toPrefix, reason] of productionForbiddenEdges) {
+      if (edgeMatches(edge, fromPrefix, toPrefix)) {
+        violations.push(`production import boundary violation: ${edge.from} -> ${edge.specifier}: ${reason}`);
+      }
+    }
+  }
+
+  return Promise.resolve(violations);
+};

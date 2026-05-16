@@ -72,9 +72,11 @@ describe('static article-header html contract', () => {
       ],
     });
 
-    expect(rendered).toContain(
-      '<a class="article-header__breadcrumb-node article-header__breadcrumb-link" href="/notes/">Notes</a>',
-    );
+    expect(rendered).toContain('class="article-header__breadcrumb-node article-header__breadcrumb-link"');
+    expect(rendered).toContain('href="/notes/"');
+    expect(rendered).toContain('data-link-kind="internal-document"');
+    expect(rendered).toContain('data-link-surface="navigation"');
+    expect(rendered).toContain('>Notes</a>');
     expect(rendered).toContain(
       '<span class="article-header__breadcrumb-node article-header__breadcrumb-static">Unsafe</span>',
     );

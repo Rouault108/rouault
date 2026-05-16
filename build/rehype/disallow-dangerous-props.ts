@@ -110,7 +110,7 @@ const validateCiteAttribute = (value: string, file: VFileLike | undefined): void
   try {
     parsed = new URL(value);
   } catch {
-    throwContractError(file, 'unsafe-url-bearing-attribute', 'cite must be an absolute http(s) URL');
+    return throwContractError(file, 'unsafe-url-bearing-attribute', 'cite must be an absolute http(s) URL');
   }
   if ((parsed.protocol !== 'http:' && parsed.protocol !== 'https:') || parsed.username.length > 0 || parsed.password.length > 0) {
     throwContractError(file, 'unsafe-url-bearing-attribute', 'cite must be an absolute http(s) URL without credentials');
@@ -155,13 +155,13 @@ const validateUrlBearingAttribute = (
   }
 
   if (typeof rawValue !== 'string') {
-    throwContractError(file, 'unsafe-url-bearing-attribute', `${normalizedTag}[${normalizedAttribute}] must be a string`);
+    return throwContractError(file, 'unsafe-url-bearing-attribute', `${normalizedTag}[${normalizedAttribute}] must be a string`);
   }
 
   if (policy === 'link') validateLinkHref(rawValue, file);
-  if (policy === 'media') validateMediaAttribute(rawValue, file);
-  if (policy === 'media-srcset') validateSrcsetAttribute(rawValue, file);
-  if (policy === 'cite') validateCiteAttribute(rawValue, file);
+  else if (policy === 'media') validateMediaAttribute(rawValue, file);
+  else if (policy === 'media-srcset') validateSrcsetAttribute(rawValue, file);
+  else if (policy === 'cite') validateCiteAttribute(rawValue, file);
 };
 
 /**
@@ -203,7 +203,7 @@ export function rehypeDisallowDangerousProps() {
 
           if (normalizedName !== 'style') continue;
           if (typeof rawValue !== 'string') {
-            throwContractError(file, 'unsafe-url-bearing-attribute', 'style attribute must be a string');
+            return throwContractError(file, 'unsafe-url-bearing-attribute', 'style attribute must be a string');
           }
           const styleNames = getStylePropertyNames(rawValue);
           if (styleNames.length === 0) {

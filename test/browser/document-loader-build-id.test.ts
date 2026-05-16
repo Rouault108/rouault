@@ -10,11 +10,14 @@ import {
   NavigationEnvelopeContractError,
   NavigationEnvelopeMetadataMismatchError,
 } from '../../src/router/navigation-envelope-errors.js';
-import { LocationAdapter } from '../../src/router/location-adapter.js';
+import { createSiteUrlContext } from '../../shared/site/site-url-context.js';
+import { toInternalDocumentNormalizedUrl } from '../../src/router/internal-document-normalized-url.js';
 import { RouteRegistry } from '../../src/router/route-registry.js';
 
 const CURRENT_BUILD_ID = 'build-current';
 const CURRENT_GENERATED_AT = '2026-04-11T00:00:00.000Z';
+const SITE_URL_CONTEXT = createSiteUrlContext({ siteOrigin: 'https://example.com' });
+const EXAMPLE_URL = toInternalDocumentNormalizedUrl('/notes/example');
 
 const installCurrentMetadata = (buildId: string | null, generatedAt: string | null): void => {
   document.head
@@ -80,8 +83,8 @@ const loadWithFetchEnvelope = async (
   options?: Parameters<typeof createEnvelopeObject>[0],
 ): Promise<Awaited<ReturnType<DocumentLoader['load']>>> => {
   globalThis.fetch = (async () => createEnvelopeResponse(options)) as typeof globalThis.fetch;
-  return new DocumentLoader(new RouteRegistry(), new LocationAdapter()).load(
-    '/notes/example',
+  return new DocumentLoader(new RouteRegistry(), SITE_URL_CONTEXT).load(
+    EXAMPLE_URL,
     new AbortController().signal,
   );
 };
@@ -124,8 +127,8 @@ describe('DocumentLoader build metadata strict contract', () => {
       return createEnvelopeObject();
     });
 
-    const result = await new DocumentLoader(routes, new LocationAdapter()).load(
-      '/notes/example',
+    const result = await new DocumentLoader(routes, SITE_URL_CONTEXT).load(
+      EXAMPLE_URL,
       new AbortController().signal,
     );
 
@@ -177,8 +180,8 @@ describe('DocumentLoader build metadata strict contract', () => {
         executed = true;
         return createEnvelopeObject();
       });
-      const result = await new DocumentLoader(routes, new LocationAdapter()).load(
-        '/notes/example',
+      const result = await new DocumentLoader(routes, SITE_URL_CONTEXT).load(
+        EXAMPLE_URL,
         new AbortController().signal,
       );
 
@@ -202,9 +205,9 @@ describe('DocumentLoader build metadata strict contract', () => {
         : createEnvelopeObject({ buildId: null, generatedAt: null });
     });
 
-    const loader = new DocumentLoader(routes, new LocationAdapter());
-    const first = await loader.load('/notes/example', new AbortController().signal);
-    const second = await loader.load('/notes/example', new AbortController().signal);
+    const loader = new DocumentLoader(routes, SITE_URL_CONTEXT);
+    const first = await loader.load(EXAMPLE_URL, new AbortController().signal);
+    const second = await loader.load(EXAMPLE_URL, new AbortController().signal);
 
     expect(first.source).to.equal('document-route');
     expect(first.envelope.buildId).to.equal(CURRENT_BUILD_ID);
@@ -225,8 +228,8 @@ describe('DocumentLoader build metadata strict contract', () => {
     for (const testCase of cases) {
       const routes = new RouteRegistry();
       routes.add('/notes/example', () => createEnvelopeObject(testCase));
-      const result = await new DocumentLoader(routes, new LocationAdapter()).load(
-        '/notes/example',
+      const result = await new DocumentLoader(routes, SITE_URL_CONTEXT).load(
+        EXAMPLE_URL,
         new AbortController().signal,
       );
 

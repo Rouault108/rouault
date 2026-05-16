@@ -53,7 +53,7 @@ const validateAnchor = (
 ): void => {
   const href = anchor.getAttribute('href');
   if (href === null || href.trim().length === 0) {
-    fail(options.sourceLabel, 'anchor href is missing');
+    return fail(options.sourceLabel, 'anchor href is missing');
   }
 
   const unsafe = detectUnsafeHref(href);
@@ -90,25 +90,30 @@ const validateAnchor = (
 
   if (!isFootnoteStructuralException(anchor)) {
     if (kind === null || surface === null || !isLinkSurface(surface)) {
-      fail(options.sourceLabel, 'link annotation is invalid');
+      return fail(options.sourceLabel, 'link annotation is invalid');
     }
+    const annotatedHref = href;
+    const annotatedSurface = surface;
+    const rel = anchor.getAttribute('rel') ?? undefined;
+    const downloadValue = anchor.getAttribute('download');
+    const download = anchor.hasAttribute('download')
+      ? downloadValue === ''
+        ? true
+        : (downloadValue ?? true)
+      : undefined;
     const annotation = classifyLinkHref({
-      href,
-      surface,
+      href: annotatedHref,
+      surface: annotatedSurface,
       siteUrlContext: options.siteUrlContext,
       currentUrl: toAbsoluteCurrentUrl(options.siteUrlContext, options.currentUrl),
       routeClassificationMode: createManifestLoadedRouteClassificationMode({
         isInternalDocumentPathname: (pathname) => options.routeManifestState.routeSet.has(pathname),
       }),
       runtimeEnvironment: 'production',
-      target: target === '_blank' || target === '_self' ? target : undefined,
-      rel: anchor.getAttribute('rel') ?? undefined,
+      ...(target === '_blank' || target === '_self' ? { target } : {}),
+      ...(rel !== undefined ? { rel } : {}),
       noRouter: anchor.hasAttribute('data-no-router'),
-      download: anchor.hasAttribute('download')
-        ? anchor.getAttribute('download') === ''
-          ? true
-          : (anchor.getAttribute('download') ?? true)
-        : undefined,
+      ...(download !== undefined ? { download } : {}),
     });
     if (annotation.isUnsafe) {
       fail(options.sourceLabel, 'unsafe annotation must not be rendered');

@@ -4,6 +4,7 @@ import { LocationAdapter } from './location-adapter.js';
 import type { NavigationResult } from './router-types.js';
 import type { LoadedInternalDocumentRouteManifestState } from './internal-document-route-manifest-loader.js';
 import type { RouterRuntimeDiagnosticSink } from './router-diagnostics.js';
+import { stripAsciiControlCharacters } from '../../shared/string/ascii-control.js';
 
 interface InterceptorRequest {
   url: string;
@@ -21,7 +22,7 @@ export interface RouterLinkInterceptorOptions {
 }
 
 const sanitizeTargetForDiagnostic = (target: string): string =>
-  target.replace(/[\u0000-\u001F\u007F]/gu, '').slice(0, 120);
+  stripAsciiControlCharacters(target).slice(0, 120);
 
 const isInvalidTarget = (target: string): boolean =>
   target.length === 0 || (target !== '_blank' && target !== '_self');
@@ -70,7 +71,9 @@ export class RouterLinkInterceptor {
     this.getCurrentUrl = options.getCurrentUrl;
     this.requestNavigation = options.requestNavigation;
     this.routeManifestState = options.routeManifestState;
-    this.isInternalResourcePathname = options.isInternalResourcePathname;
+    if (options.isInternalResourcePathname !== undefined) {
+      this.isInternalResourcePathname = options.isInternalResourcePathname;
+    }
     this.diagnosticSink = options.diagnosticSink;
     this.clickHandler = (event: MouseEvent) => {
       this.handleAnchorClick(event);

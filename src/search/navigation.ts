@@ -64,7 +64,7 @@ export async function handleSearchReturnToReadingEvent(
 
   const canonical = createSearchCanonicalPathname({
     pathname: detail.canonicalPathname,
-    isInternalDocumentPathname: (pathname) => options.routeManifestState?.routeSet.has(pathname) ?? false,
+    isInternalDocumentPathname: (pathname) => options.routeManifestState.routeSet.has(pathname),
   });
   if (!canonical.ok) {
     const candidateRef = createSearchEventDiagnosticCandidateRef('return-to-reading:invalid-canonical');

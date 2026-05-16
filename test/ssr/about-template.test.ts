@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { AboutPageTemplate } from '../../src/about.11ty.js';
+import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 
 describe('AboutPageTemplate', () => {
   it('about 専用の TOC absent 静的ページ設定を返すこと', () => {
@@ -18,7 +19,7 @@ describe('AboutPageTemplate', () => {
 
   it('about を TOC なしの静的紹介ページとして描画すること', () => {
     const template = new AboutPageTemplate();
-    const rendered = template.render();
+    const rendered = template.render({ siteUrlContext: DEFAULT_SITE_URL_CONTEXT });
 
     expect(rendered).toContain('<section class="about-shell">');
     expect(rendered).toContain('<article class="about-main-col">');

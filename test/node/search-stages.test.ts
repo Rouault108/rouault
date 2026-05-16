@@ -63,7 +63,6 @@ describe('search-stages', () => {
       events: [
         {
           eventName: 'rouault-search:return-to-reading',
-          routeId: '/notes/router/',
         },
       ],
     } satisfies SearchStageEventAudit;
@@ -296,15 +295,18 @@ describe('search-stages', () => {
       },
     });
 
-    const result = runCountsAndDiagnosticsStage({
-      ...prepared,
-      batches: [],
-      activeBatches: [],
-      mergedCandidates: [candidate],
-      queryMatchedCandidates: [candidate],
-      filteredCandidates: [candidate],
-      sortedCandidates: [candidate],
-    });
+    const result = runCountsAndDiagnosticsStage(
+      {
+        ...prepared,
+        batches: [],
+        activeBatches: [],
+        mergedCandidates: [candidate],
+        queryMatchedCandidates: [candidate],
+        filteredCandidates: [candidate],
+        sortedCandidates: [candidate],
+      },
+      { siteUrlContext: DEFAULT_SITE_URL_CONTEXT },
+    );
 
     expect(result.response.mode).to.equal('explore');
     if (result.response.mode !== 'explore') {

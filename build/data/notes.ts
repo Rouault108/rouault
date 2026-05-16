@@ -483,10 +483,11 @@ export const buildNotesCollection = (
         kind,
         html: preparedToc.html,
         sourceLabel: `${sourceSlug}:post-prepare-toc`,
-        testingArea,
         siteUrlContext,
         currentUrl: noteLinkContext.currentUrl,
         routeClassificationMode: noteLinkContext.routeClassificationMode,
+        validateLinkContracts: false,
+        ...(testingArea !== undefined ? { testingArea } : {}),
       });
       const e2eFixtureId =
         typeof note.e2eFixtureId === 'string' && note.e2eFixtureId.trim().length > 0

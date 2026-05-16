@@ -881,6 +881,7 @@ export interface ValidateNoteContentContractsOptions {
   readonly currentUrl?: string;
   readonly routeClassificationMode?: RouteClassificationMode;
   readonly isInternalResourcePathname?: (pathname: string) => boolean;
+  readonly validateLinkContracts?: boolean;
 }
 
 export const validateNoteContentContracts = (
@@ -891,16 +892,6 @@ export const validateNoteContentContracts = (
   if (typeof html !== 'string' || html.trim().length === 0) {
     return;
   }
-
-  validateGeneratedPageHtmlLinkContracts({
-    html,
-    sourceLabel,
-    scope: 'note-content',
-    siteUrlContext: options.siteUrlContext,
-    currentUrl: options.currentUrl,
-    routeClassificationMode: options.routeClassificationMode,
-    isInternalResourcePathname: options.isInternalResourcePathname,
-  });
 
   const fragment = parse5.parseFragment(html);
   const errors: string[] = [];
@@ -986,6 +977,22 @@ export const validateNoteContentContracts = (
     !staticContractState.sawEndnotes
   ) {
     errors.push('[data-footnote-ref] を含む note には section[role="doc-endnotes"] が必要です');
+  }
+
+  if (errors.length === 0 && options.validateLinkContracts !== false) {
+    validateGeneratedPageHtmlLinkContracts({
+      html,
+      sourceLabel,
+      scope: 'note-content',
+      ...(options.siteUrlContext !== undefined ? { siteUrlContext: options.siteUrlContext } : {}),
+      ...(options.currentUrl !== undefined ? { currentUrl: options.currentUrl } : {}),
+      ...(options.routeClassificationMode !== undefined
+        ? { routeClassificationMode: options.routeClassificationMode }
+        : {}),
+      ...(options.isInternalResourcePathname !== undefined
+        ? { isInternalResourcePathname: options.isInternalResourcePathname }
+        : {}),
+    });
   }
 
   if (errors.length > 0) {

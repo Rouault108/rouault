@@ -4,6 +4,7 @@ import type {
   SearchDiagnosticSeverity,
   SearchSourceKind,
 } from './search-types.js';
+import { stripAsciiControlCharacters } from '../string/ascii-control.js';
 
 export interface SearchDiagnosticIssue {
   readonly stage: SearchDiagnosticStage;
@@ -64,7 +65,7 @@ export interface SearchJsonParseDiagnosticSink {
 }
 
 const normalizeCandidateRef = (value: string): SearchDiagnosticCandidateRef | undefined => {
-  const sanitized = value.replace(/[\u0000-\u001F\u007F]/gu, '').slice(0, 120);
+  const sanitized = stripAsciiControlCharacters(value).slice(0, 120);
   return sanitized.length > 0 ? (sanitized as SearchDiagnosticCandidateRef) : undefined;
 };
 
@@ -157,7 +158,7 @@ export type SearchEventDiagnosticCandidateRef = string & {
 export const createSearchEventDiagnosticCandidateRef = (
   value: string,
 ): SearchEventDiagnosticCandidateRef | null => {
-  const sanitized = value.replace(/[\u0000-\u001F\u007F]/gu, '').slice(0, 120);
+  const sanitized = stripAsciiControlCharacters(value).slice(0, 120);
   return sanitized.length > 0 ? (sanitized as SearchEventDiagnosticCandidateRef) : null;
 };
 

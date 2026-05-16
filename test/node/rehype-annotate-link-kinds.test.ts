@@ -15,7 +15,7 @@ const annotate = () =>
     siteUrlContext: { siteOrigin: 'https://rouault.invalid', basePath: '' },
     currentUrl: 'https://rouault.invalid/notes/current/',
     routeClassificationMode: createManifestLoadedRouteClassificationMode({
-      isInternalDocumentPathname: (pathname) => pathname === '/notes/example' || pathname === '/notes/current/',
+      isInternalDocumentPathname: (pathname) => pathname === '/notes/example' || pathname === '/notes/current',
     }),
   });
 

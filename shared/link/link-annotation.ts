@@ -74,8 +74,10 @@ export const createDevTestMissingManifestFallbackMode = (options: {
 }): RouteClassificationMode => ({
   kind: 'dev-test-missing-manifest-fallback',
   runtimeEnvironment: options.runtimeEnvironment,
-  currentDocumentIsInternalDocument: options.currentDocumentIsInternalDocument,
   recordDiagnostic: options.recordDiagnostic,
+  ...(options.currentDocumentIsInternalDocument !== undefined
+    ? { currentDocumentIsInternalDocument: options.currentDocumentIsInternalDocument }
+    : {}),
 });
 
 export const assertRouteClassificationModeAllowed = (options: {
@@ -94,7 +96,9 @@ export const toCurrentDocumentClassificationContext = (
     ? { kind: 'manifest-loaded', isInternalDocumentPathname: mode.isInternalDocumentPathname }
     : {
         kind: 'dev-test-missing-manifest-fallback',
-        currentDocumentIsInternalDocument: mode.currentDocumentIsInternalDocument,
+        ...(mode.currentDocumentIsInternalDocument !== undefined
+          ? { currentDocumentIsInternalDocument: mode.currentDocumentIsInternalDocument }
+          : {}),
       };
 
 export const isDefaultInternalResourcePathname = (pathname: string): boolean =>

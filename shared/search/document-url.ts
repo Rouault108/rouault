@@ -1,5 +1,6 @@
 import type { SiteUrlContext } from '../site/site-url-context.js';
 import { isPathnameInsideBasePath } from '../site/site-url-context.js';
+import { hasAsciiControlCharacter } from '../string/ascii-control.js';
 import { stripBasePathFromPathname } from '../url/normalize-rouault-url.js';
 
 declare const SearchCanonicalPathnameBrand: unique symbol;
@@ -49,7 +50,7 @@ function extractCanonicalPathnameInput(value: string): string | null {
     return null;
   }
 
-  if (/[?#\u0000-\u001f\u007f\\]/u.test(trimmed)) {
+  if (/[?#\\]/u.test(trimmed) || hasAsciiControlCharacter(trimmed)) {
     return null;
   }
 

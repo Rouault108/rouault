@@ -170,7 +170,7 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
 
   const onSelected = (event: Event): void => {
     const customEvent = event as CustomEvent<UiSearchDialogSelectedDetail>;
-    const { renderHref: selectedRenderHref, canonicalPathname, title, query, selectionMethod, item } = customEvent.detail;
+    const { renderHref: selectedRenderHref, canonicalPathname, title, query, selectionMethod } = customEvent.detail;
     if (typeof selectedRenderHref !== 'string' || selectedRenderHref.length === 0) {
       return;
     }

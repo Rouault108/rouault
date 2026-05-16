@@ -34,6 +34,13 @@ export const resolveNoteSourceLocation = (value: string): ResolvedNoteSourceLoca
         slug: normalized.slice(prefix.length),
       };
     }
+    const embeddedIndex = normalized.indexOf(`/${prefix}`);
+    if (embeddedIndex >= 0) {
+      return {
+        sourceRoot,
+        slug: normalized.slice(embeddedIndex + prefix.length + 1),
+      };
+    }
   }
 
   throw new Error(

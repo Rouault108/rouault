@@ -19,8 +19,6 @@ export class InternalDocumentRouteSetContractError extends Error {
   }
 }
 
-const ASCII_CONTROL_RE = /[\u0000-\u001f\u007f]/u;
-
 const fail = (
   reason: InternalDocumentRouteSetContractErrorReason,
   message: string,
@@ -43,7 +41,7 @@ export const normalizeInternalDocumentRoutePathname = (
     fail('invalid-route-pathname', 'Internal document route pathname must not include query or hash.');
   }
 
-  if (value.includes('\\') || ASCII_CONTROL_RE.test(value)) {
+  if (value.includes('\\') || hasAsciiControlCharacter(value)) {
     fail(
       'invalid-route-pathname',
       'Internal document route pathname must not include backslash or control characters.',
@@ -83,3 +81,4 @@ export const routeSetIncludesPathname = (
   routeSet: InternalDocumentRouteSet,
   pathname: string,
 ): boolean => routeSet.has(pathname);
+import { hasAsciiControlCharacter } from '../string/ascii-control.js';

@@ -1,6 +1,7 @@
 import { classifyLinkHref, type ClassifyLinkOptions, type ResolvedLinkAnnotation } from '../../shared/link/link-annotation.js';
 import { hasForbiddenRelToken, parseRelTokens, serializeRelTokens } from '../../shared/link/rel-tokens.js';
 import type { LinkSurface } from '../../shared/link/link-surface.js';
+import { hasAsciiControlCharacter } from '../../shared/string/ascii-control.js';
 import { escapeHtmlText, serializeHtmlAttributes, type HtmlAttributeDescriptor } from './html-output.js';
 
 export interface RenderTextLinkHtmlOptions extends Omit<ClassifyLinkOptions, 'surface'> {
@@ -23,7 +24,7 @@ const validateTarget = (target: string | undefined): '_blank' | '_self' | undefi
 const validateDownload = (value: boolean | string | undefined): boolean | string | undefined => {
   if (typeof value !== 'string') return value;
   const trimmed = value.trim();
-  if (trimmed.length === 0 || trimmed === '.' || trimmed === '..' || /[\u0000-\u001f\u007f/\\]/u.test(trimmed) || [...trimmed].length > 255) {
+  if (trimmed.length === 0 || trimmed === '.' || trimmed === '..' || /[/\\]/u.test(trimmed) || hasAsciiControlCharacter(trimmed) || Array.from(trimmed).length > 255) {
     throw new Error('invalid-download');
   }
   return trimmed;

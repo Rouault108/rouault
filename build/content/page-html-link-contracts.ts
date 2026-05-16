@@ -6,6 +6,7 @@ import { isLinkSurface } from '../../shared/link/link-surface.js';
 import { parseRelTokens } from '../../shared/link/rel-tokens.js';
 import type { LinkKind } from '../../shared/link/link-kind.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
+import { hasAsciiControlCharacter } from '../../shared/string/ascii-control.js';
 
 export interface ValidateGeneratedPageHtmlLinkContractsOptions {
   readonly html: string;
@@ -84,7 +85,9 @@ const validateKindHrefShape = (
       siteUrlContext: options.siteUrlContext,
       currentUrl: options.currentUrl,
       routeClassificationMode: options.routeClassificationMode,
-      isInternalResourcePathname: options.isInternalResourcePathname,
+      ...(options.isInternalResourcePathname !== undefined
+        ? { isInternalResourcePathname: options.isInternalResourcePathname }
+        : {}),
     });
     if (classified.kind !== kind) {
       fail(options.sourceLabel, `link kind does not match classified href: expected ${classified.kind}, got ${kind}`);
@@ -118,8 +121,9 @@ const validateDownload = (sourceLabel: string, value: string): void => {
   if (
     trimmed === '.' ||
     trimmed === '..' ||
-    /[\u0000-\u001f\u007f/\\]/u.test(trimmed) ||
-    [...trimmed].length > 255
+    /[/\\]/u.test(trimmed) ||
+    hasAsciiControlCharacter(trimmed) ||
+    Array.from(trimmed).length > 255
   ) {
     fail(sourceLabel, 'invalid download attribute');
   }

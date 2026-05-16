@@ -2,6 +2,7 @@ import { classifyLinkHref, type ClassifyLinkOptions } from '../../shared/link/li
 import type { LinkSurface } from '../../shared/link/link-surface.js';
 import type { SafeLinkKind } from '../../shared/link/link-kind.js';
 import { hasForbiddenRelToken, parseRelTokens, serializeRelTokens } from '../../shared/link/rel-tokens.js';
+import { hasAsciiControlCharacter } from '../../shared/string/ascii-control.js';
 
 export type LitLinkAttributes =
   | {
@@ -33,8 +34,9 @@ const validateDownload = (value: boolean | string | undefined): boolean | string
     trimmed.length === 0 ||
     trimmed === '.' ||
     trimmed === '..' ||
-    /[\u0000-\u001f\u007f/\\]/u.test(trimmed) ||
-    [...trimmed].length > 255
+    /[/\\]/u.test(trimmed) ||
+    hasAsciiControlCharacter(trimmed) ||
+    Array.from(trimmed).length > 255
   ) {
     throw new Error('invalid-download');
   }

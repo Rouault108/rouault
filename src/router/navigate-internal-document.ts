@@ -60,7 +60,7 @@ const defaultResolveRouter = (): AppRouterNavigationHost | null =>
   document.querySelector<HTMLElement & AppRouterNavigationHost>('app-router');
 
 const defaultCurrentUrl = (siteUrlContext: SiteUrlContext): string => {
-  if (typeof document !== 'undefined' && document.location !== undefined) {
+  if (typeof document !== 'undefined') {
     return document.location.href;
   }
 

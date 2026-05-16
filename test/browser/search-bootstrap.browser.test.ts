@@ -8,7 +8,7 @@ import type { UiSearchDialogSearcher } from '../../src/components/ui/search-dial
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
 import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
-import type { SearchCanonicalPathname } from '../../shared/search/document-url.js';
+import { buildSearchRenderHref, type SearchCanonicalPathname } from '../../shared/search/document-url.js';
 
 
 const createTestSearchCore = () => createSearchCore({
@@ -68,13 +68,14 @@ describe('search-bootstrap', () => {
   });
 
   it('dialog searcher と open request を createTestSearchCore() に接続し、起動モダリティ snapshot を引き渡すこと', async () => {
-    const originalSearch = createTestSearchCore().search.bind(createTestSearchCore());
+    const controller = createTestSearchCore();
+    const originalSearch = controller.search.bind(controller);
     const requests: unknown[] = [];
     const options: unknown[] = [];
     const openedWith: (HTMLElement | undefined)[] = [];
     const capturedModalities: (InteractionModality | undefined)[] = [];
 
-    createTestSearchCore().search = (request, executionOptions) => {
+    controller.search = (request, executionOptions) => {
       requests.push(request);
       options.push(executionOptions);
       return Promise.resolve({
@@ -82,6 +83,10 @@ describe('search-bootstrap', () => {
         items: [
           {
             canonicalPathname: '/notes/router/' as SearchCanonicalPathname,
+            renderHref: buildSearchRenderHref({
+              canonicalPathname: '/notes/router/' as SearchCanonicalPathname,
+              basePath: DEFAULT_SITE_URL_CONTEXT.basePath,
+            }),
             pathLabel: 'notes / router',
             title: 'Router 設計メモ',
             description: 'desc',
@@ -121,7 +126,7 @@ describe('search-bootstrap', () => {
     document.body.append(trigger);
 
     try {
-      initSearch(createTestInitSearchOptions());
+      initSearch(createTestInitSearchOptions(controller));
       trigger.dispatchEvent(
         new CustomEvent('open-search-dialog', {
           bubbles: true,
@@ -158,10 +163,10 @@ describe('search-bootstrap', () => {
 
       expect(capturedModalities).to.deep.equal([undefined, 'keyboard', 'keyboard']);
       expect(openedWith).to.deep.equal([trigger, trigger, trigger]);
-      const controller = new AbortController();
+      const abortController = new AbortController();
       const result = await dialog.searcher?.({
         query: 'router',
-        signal: controller.signal,
+        signal: abortController.signal,
       });
 
       expect(requests).to.deep.equal([
@@ -173,17 +178,17 @@ describe('search-bootstrap', () => {
           sort: 'relevance',
         },
       ]);
-      expect(options).to.deep.equal([{ signal: controller.signal }]);
+      expect(options).to.deep.equal([{ signal: abortController.signal }]);
       expect(result?.items[0]).to.deep.equal({
         id: '/notes/router/',
         title: 'Router 設計メモ',
-        url: '/notes/router/',
+        renderHref: '/notes/router/',
         canonicalPathname: '/notes/router/',
         path: 'notes / router',
         keywords: ['router'],
       });
     } finally {
-      createTestSearchCore().search = originalSearch;
+      controller.search = originalSearch;
       dialog.remove();
       trigger.remove();
     }
@@ -220,14 +225,15 @@ describe('search-bootstrap', () => {
         composed: true,
         detail: {
           id: '/notes/router/',
-          url: '/notes/router/',
+          renderHref: '/notes/router/',
+          canonicalPathname: '/notes/router/',
           title: 'Router',
           query: 'router',
           index: 0,
           item: {
             id: '/notes/router/',
             title: 'Router',
-            url: '/notes/router/',
+            renderHref: '/notes/router/',
             canonicalPathname: '/notes/router/',
           },
           selectionMethod: 'pointer',

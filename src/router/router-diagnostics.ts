@@ -5,6 +5,7 @@ export const routerDiagnosticReasons = [
   'route-state-mismatch',
   'return-to-reading-unavailable',
   'invalid-target',
+  'navigation-envelope-invalid',
 ] as const;
 
 export type RouterDiagnosticReason = (typeof routerDiagnosticReasons)[number];
@@ -25,6 +26,10 @@ export type RouterDiagnosticPayload =
   | {
       readonly reason: 'invalid-target';
       readonly target: string;
+    }
+  | {
+      readonly reason: 'navigation-envelope-invalid';
+      readonly routeId: string;
     };
 
 export class RouterDiagnosticError extends DiagnosticError {

@@ -89,37 +89,37 @@ export const parseInternalDocumentRouteManifest = (
   value: unknown,
 ): InternalDocumentRouteManifest => {
   if (!isRecord(value)) {
-    fail('invalid-manifest-schema', 'Internal document route manifest must be an object.');
+    return fail('invalid-manifest-schema', 'Internal document route manifest must be an object.');
   }
+  const manifestRecord = value;
 
-  const version = requireManifestVersion(value['version']);
-  const siteUrlContext = (() => {
-    try {
-      return createSiteUrlContext({
-        siteOrigin: value['siteOrigin'],
-        basePath: value['basePath'],
-      });
-    } catch {
-      fail('invalid-manifest-site-url-context', 'Internal document route manifest site URL context is invalid.');
-    }
-  })();
+  const version = requireManifestVersion(manifestRecord['version']);
+  let siteUrlContext: SiteUrlContext;
+  try {
+    siteUrlContext = createSiteUrlContext({
+      siteOrigin: manifestRecord['siteOrigin'],
+      basePath: manifestRecord['basePath'],
+    });
+  } catch {
+    return fail('invalid-manifest-site-url-context', 'Internal document route manifest site URL context is invalid.');
+  }
 
   try {
     return {
       version,
-      buildId: requireBuildIdInput(value['buildId'], 'manifest.buildId'),
-      buildLabel: requireBuildLabelInput(value['buildLabel'], 'manifest.buildLabel'),
-      generatedAt: requireGeneratedAtInput(value['generatedAt'], 'manifest.generatedAt'),
+      buildId: requireBuildIdInput(manifestRecord['buildId'], 'manifest.buildId'),
+      buildLabel: requireBuildLabelInput(manifestRecord['buildLabel'], 'manifest.buildLabel'),
+      generatedAt: requireGeneratedAtInput(manifestRecord['generatedAt'], 'manifest.generatedAt'),
       siteOrigin: siteUrlContext.siteOrigin,
       basePath: siteUrlContext.basePath,
-      routes: requireRoutes(value['routes']),
+      routes: requireRoutes(manifestRecord['routes']),
     };
   } catch (error) {
     if (error instanceof InternalDocumentRouteManifestContractError) {
       throw error;
     }
 
-    fail('invalid-manifest-build-metadata', 'Internal document route manifest build metadata is invalid.');
+    return fail('invalid-manifest-build-metadata', 'Internal document route manifest build metadata is invalid.');
   }
 };
 

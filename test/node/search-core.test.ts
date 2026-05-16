@@ -64,9 +64,9 @@ const createTestSearchCore = (
   ...testSearchCoreDefaults,
   ...(dependencies.loadPagefind ? { testOnlyLoadPagefind: dependencies.loadPagefind } : {}),
   testOnlySearchCatalogFetcher: createCatalogFetcher({
-    items: dependencies.catalogItems,
-    error: dependencies.catalogError,
-    onFetch: dependencies.onCatalogFetch,
+    ...(dependencies.catalogItems !== undefined ? { items: dependencies.catalogItems } : {}),
+    ...(dependencies.catalogError !== undefined ? { error: dependencies.catalogError } : {}),
+    ...(dependencies.onCatalogFetch !== undefined ? { onFetch: dependencies.onCatalogFetch } : {}),
   }),
   ...(dependencies.now ? { now: dependencies.now } : {}),
 });

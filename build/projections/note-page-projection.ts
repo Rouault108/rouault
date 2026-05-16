@@ -304,10 +304,10 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     kind: noteKind,
     html: contentHtml,
     sourceLabel: `${slug}:post-profile-injection`,
-    testingArea: input.note.testingArea,
     siteUrlContext,
     currentUrl: noteLinkContext.currentUrl,
     routeClassificationMode: noteLinkContext.routeClassificationMode,
+    ...(input.note.testingArea !== undefined ? { testingArea: input.note.testingArea } : {}),
   });
   const normalizedPublished = normalizeNoteDate(input.note.date);
   const normalizedCreated = normalizeNoteDate(input.note.created);

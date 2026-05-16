@@ -15,6 +15,7 @@ import {
   NavigationEnvelopeContractError,
   NavigationEnvelopeMetadataMismatchError,
 } from './navigation-envelope-errors.js';
+import { createRouterDiagnosticError } from './router-diagnostics.js';
 
 
 export interface ValidateLoadedEnvelopeInput {
@@ -36,7 +37,12 @@ const isRenderedKind = (value: unknown): value is DocumentRenderSnapshot['render
   value === 'page' || value === 'not-found' || value === 'error';
 
 const createInvalidEnvelopeError = (message: string): NavigationEnvelopeContractError =>
-  new NavigationEnvelopeContractError(message);
+  new NavigationEnvelopeContractError(message, {
+    cause: createRouterDiagnosticError(message, {
+      reason: 'navigation-envelope-invalid',
+      routeId: 'navigation-envelope',
+    }),
+  });
 
 const isHydrationPlan = (value: unknown): value is HydrationPlan => {
   if (!isRecord(value) || !Array.isArray(value['scopes'])) {

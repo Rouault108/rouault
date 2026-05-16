@@ -31,7 +31,10 @@ describe('HomePageTemplate', () => {
     );
     expect(rendered).toContain('3件');
     expect(rendered).toContain('最新更新 <time datetime="2026-03-10">2026-03-10</time>');
-    expect(rendered).toContain('<a class="home-meta-link" href="/about/">このサイトについて</a>');
+    expect(rendered).toContain('class="home-meta-link link-text link-text--muted"');
+    expect(rendered).toContain('href="/about/"');
+    expect(rendered).toContain('data-link-kind="internal-document"');
+    expect(rendered).toContain('このサイトについて</a>');
     expect(rendered).toContain('<h2 id="home-feed-heading" class="home-feed-title">新着一覧</h2>');
     expect(rendered).toContain('music / romantic');
     expect(rendered).toContain('和声進行の整理');

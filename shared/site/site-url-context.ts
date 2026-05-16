@@ -25,7 +25,6 @@ export interface CreateSiteUrlContextInput {
   readonly basePath?: unknown;
 }
 
-const ASCII_CONTROL_RE = /[\u0000-\u001f\u007f]/u;
 const WHITESPACE_RE = /\s/u;
 const BASE_PATH_FORBIDDEN_CHARS_RE = /[?#\\]/u;
 
@@ -93,7 +92,7 @@ export const normalizeBasePath = (value: unknown): string => {
     return '';
   }
 
-  if (basePath !== basePath.trim() || WHITESPACE_RE.test(basePath) || ASCII_CONTROL_RE.test(basePath)) {
+  if (basePath !== basePath.trim() || WHITESPACE_RE.test(basePath) || hasAsciiControlCharacter(basePath)) {
     fail('invalid-base-path', 'basePath must not include whitespace or control characters.');
   }
 
@@ -135,3 +134,4 @@ export const isPathnameInsideBasePath = (pathname: string, basePath: string): bo
 
   return pathname === normalizedBasePath || pathname.startsWith(`${normalizedBasePath}/`);
 };
+import { hasAsciiControlCharacter } from '../string/ascii-control.js';

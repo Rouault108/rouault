@@ -6,6 +6,7 @@ import { NavigationQueue, type QueuedNavigationRequest } from './navigation-queu
 import { RouteRegistry } from './route-registry.js';
 import { RouterEventBus } from './router-event-bus.js';
 import type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
+import { stripAsciiControlCharacters } from '../../shared/string/ascii-control.js';
 import type {
   BeforeNavigateContext,
   BeforeNavigateHook,
@@ -213,18 +214,6 @@ export class Router {
 
   async navigate(request: NavigateRequest): Promise<NavigationResult> {
     const historyMode = request.historyMode ?? 'push';
-    const validation = validateInternalDocumentNavigationRequest({
-      requestedUrl: request.url,
-      currentUrl: this.getCurrentAbsoluteUrl(),
-      siteUrlContext: this.urlDependencies.siteUrlContext,
-      routeManifestState: this.urlDependencies.routeManifestState,
-    });
-
-    if (!validation.ok) {
-      const reason = validation.reason;
-      return this.createValidationFailureResult(reason, historyMode);
-    }
-
     if (this.destroyed) {
       return this.createLifecycleFailureResult(
         historyMode,
@@ -239,6 +228,18 @@ export class Router {
         new RouterNotStartedError('start() 前の Router です。'),
         'not-started',
       );
+    }
+
+    const validation = validateInternalDocumentNavigationRequest({
+      requestedUrl: request.url,
+      currentUrl: this.getCurrentAbsoluteUrl(),
+      siteUrlContext: this.urlDependencies.siteUrlContext,
+      routeManifestState: this.urlDependencies.routeManifestState,
+    });
+
+    if (!validation.ok) {
+      const reason = validation.reason;
+      return this.createValidationFailureResult(reason, historyMode);
     }
 
     return this.queue.enqueue(this.normalizeValidatedRequest(request, validation.normalizedUrl, historyMode));
@@ -665,9 +666,10 @@ export class Router {
       case 'post-commit-handler-failed':
         return { reason, handlerName: detail };
       case 'invalid-target':
-        return { reason, target: detail.replace(/[\u0000-\u001f\u007f]/gu, '') };
+        return { reason, target: stripAsciiControlCharacters(detail) };
       case 'route-state-mismatch':
       case 'return-to-reading-unavailable':
+      case 'navigation-envelope-invalid':
         return { reason, routeId: detail };
     }
   }

@@ -11,7 +11,8 @@ describe('search-dialog-highlight', () => {
       {
         id: 'alpha',
         title: 'Alpha',
-        url: 'https://example.com/docs/alpha',
+        renderHref: 'https://example.com/docs/alpha',
+        canonicalPathname: '/docs/alpha/',
         path: '/custom/alpha',
       },
       'https://example.com/base',
@@ -25,7 +26,8 @@ describe('search-dialog-highlight', () => {
       {
         id: 'alpha',
         title: 'Alpha',
-        url: 'https://example.com/docs/alpha?q=1#top',
+        renderHref: 'https://example.com/docs/alpha?q=1#top',
+        canonicalPathname: '/docs/alpha/',
       },
       'https://example.com/base',
     );

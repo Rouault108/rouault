@@ -1,10 +1,13 @@
 import { expect } from '@open-wc/testing';
 import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
+import { createSiteUrlContext } from '../../shared/site/site-url-context.js';
 import { DocumentLoader } from '../../src/router/document-loader.js';
-import { LocationAdapter } from '../../src/router/location-adapter.js';
+import { toInternalDocumentNormalizedUrl } from '../../src/router/internal-document-normalized-url.js';
 import { NavigationEnvelopeMetadataMismatchError } from '../../src/router/navigation-envelope-errors.js';
 import { RouteRegistry } from '../../src/router/route-registry.js';
 
+const SITE_URL_CONTEXT = createSiteUrlContext({ siteOrigin: 'https://example.com' });
+const EXAMPLE_URL = toInternalDocumentNormalizedUrl('/notes/example');
 
 const expectErrorFallback = (
   result: Awaited<ReturnType<DocumentLoader['load']>>,
@@ -72,8 +75,8 @@ describe('DocumentLoader', () => {
       return new Response('', { status: 404 });
     }) as typeof globalThis.fetch;
 
-    const loader = new DocumentLoader(new RouteRegistry(), new LocationAdapter());
-    const result = await loader.load('/notes/example', new AbortController().signal);
+    const loader = new DocumentLoader(new RouteRegistry(), SITE_URL_CONTEXT);
+    const result = await loader.load(EXAMPLE_URL, new AbortController().signal);
 
     expect(requestedUrls).to.deep.equal(['/__router/notes/example/index.router.json']);
     expect(result.envelope.document.renderedKind).to.equal('not-found');
@@ -84,8 +87,8 @@ describe('DocumentLoader', () => {
     globalThis.fetch = (async () =>
       new Response('<!DOCTYPE html><html></html>', { status: 200 })) as typeof globalThis.fetch;
 
-    const loader = new DocumentLoader(new RouteRegistry(), new LocationAdapter());
-    const result = await loader.load('/notes/example', new AbortController().signal);
+    const loader = new DocumentLoader(new RouteRegistry(), SITE_URL_CONTEXT);
+    const result = await loader.load(EXAMPLE_URL, new AbortController().signal);
 
     const errorResult = expectErrorFallback(result);
     expect(errorResult.envelope.document.renderedKind).to.equal('error');
@@ -98,8 +101,8 @@ describe('DocumentLoader', () => {
         buildId: 'build-stale',
       })) as typeof globalThis.fetch;
 
-    const loader = new DocumentLoader(new RouteRegistry(), new LocationAdapter());
-    const result = await loader.load('/notes/example', new AbortController().signal);
+    const loader = new DocumentLoader(new RouteRegistry(), SITE_URL_CONTEXT);
+    const result = await loader.load(EXAMPLE_URL, new AbortController().signal);
 
     const errorResult = expectErrorFallback(result);
     expect(errorResult.envelope.document.renderedKind).to.equal('error');

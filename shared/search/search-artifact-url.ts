@@ -1,7 +1,8 @@
 import type { SiteUrlContext } from '../site/site-url-context.js';
+import { hasAsciiControlCharacter } from '../string/ascii-control.js';
 
 const withTrailingSlash = (value: string): string => value.replace(/\/?$/u, '/');
-const ASSET_UNSAFE_RE = /[\u0000-\u001f\u007f?#\\]/u;
+const ASSET_UNSAFE_RE = /[?#\\]/u;
 const SCHEME_RE = /^[A-Za-z][A-Za-z0-9+.-]*:/u;
 
 const normalizePagefindAssetPath = (assetPath: string): string => {
@@ -12,7 +13,7 @@ const normalizePagefindAssetPath = (assetPath: string): string => {
   if (SCHEME_RE.test(trimmed) || trimmed.startsWith('pagefind/')) {
     throw new Error('Pagefind asset path must be relative to /pagefind/.');
   }
-  if (ASSET_UNSAFE_RE.test(trimmed) || trimmed.includes('%2f') || trimmed.includes('%2F') || trimmed.includes('%5c') || trimmed.includes('%5C')) {
+  if (ASSET_UNSAFE_RE.test(trimmed) || hasAsciiControlCharacter(trimmed) || trimmed.includes('%2f') || trimmed.includes('%2F') || trimmed.includes('%5c') || trimmed.includes('%5C')) {
     throw new Error('Pagefind asset path contains unsafe characters.');
   }
   const segments = trimmed.split('/');

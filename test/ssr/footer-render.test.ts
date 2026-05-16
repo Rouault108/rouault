@@ -87,7 +87,8 @@ describe('renderFooter', () => {
 
     const navItemCount = rendered.match(/class="ui-footer__nav-item"/g)?.length ?? 0;
 
-    expect(rendered).toContain('<a href="https://rouault.example">');
+    expect(rendered).toContain('href="https://rouault.example"');
+    expect(rendered).toContain('data-link-kind="external-web"');
     expect(rendered).toContain('>Rouault<');
     expect(rendered).toContain('release 2026.03.24');
     expect(rendered).toContain('aria-label="フッター補助導線"');

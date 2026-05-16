@@ -5,13 +5,11 @@ import type { InternalDocumentNormalizedUrl } from './internal-document-normaliz
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { normalizeDocumentRouteEnvelope } from './document-route-envelope.js';
 import { ErrorEnvelopeFactory } from './error-envelope-factory.js';
-import { LocationAdapter } from './location-adapter.js';
-import { CurrentBuildMetadataInvalidError, NavigationEnvelopeContractError } from './navigation-envelope-errors.js';
+import { CurrentBuildMetadataInvalidError } from './navigation-envelope-errors.js';
 import {
   validateLoadedEnvelope,
   validateNavigationEnvelope,
 } from './navigation-envelope-validator.js';
-import type { StrictLoadedNavigationEnvelope } from './router-types.js';
 import { RouteRegistry } from './route-registry.js';
 import type { DocumentRouteContext, LoadDocumentResult } from './router-types.js';
 
@@ -51,7 +49,6 @@ export class DocumentLoader {
 
   constructor(
     private readonly routeRegistry: RouteRegistry,
-    private readonly location: LocationAdapter,
     private readonly siteUrlContext: SiteUrlContext,
   ) {}
 

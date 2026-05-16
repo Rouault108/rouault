@@ -4,20 +4,22 @@ import {
   type NavigationEnvelope,
 } from '../../shared/navigation/navigation-envelope.js';
 import type { ShellProjectionSnapshot } from '../../shared/navigation/shell-projection.js';
-import '../../src/components/app/app-router.js';
+import { AppRouter } from '../../src/components/app/app-router.js';
 import '../../src/components/layout/layout-sidebar.js';
 import type {
   AppRouterContentDomReplacedDetail,
   AppRouterNavigationCommittedDetail,
 } from '../../src/components/app/app-router.js';
-import type { NavigationResult } from '../../src/router/router.js';
+import type { NavigationResult, RouterRuntimeUrlDependencies } from '../../src/router/router.js';
 import { createRouterContentHtml } from '../../src/router/router-content-html.js';
 import { PRIMARY_TAB_URL_STATE_CHANGE_EVENT } from '../../src/components/app/navigation/primary-tab-url-state.js';
 import { ensureMainCssLoaded } from './helpers/load-main-css.js';
+import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
 
 type AppRouterElement = HTMLElement & {
   ready: Promise<void>;
   whenReady(): Promise<void>;
+  initializeRuntime(urlDependencies: RouterRuntimeUrlDependencies): void;
   navigate(url: string): Promise<NavigationResult>;
   getContentRoot(): HTMLElement | null;
   serverContent?: unknown;
@@ -44,6 +46,47 @@ const createValidSidebarProjection = (): ShellProjectionSnapshot['sidebar'] => (
   fixedBreakpoint: 1024,
   presentation: 'auto',
 });
+
+const createAppRouterTestUrlDependencies = () => {
+  const manifestRouteSet = createInternalDocumentRouteSet([
+    '/',
+    '/client-page',
+    '/next',
+    '/ordered-page',
+    '/hydrated-client-page',
+    '/focused-page',
+    '/focused-main',
+    '/post-commit-page',
+    '/slow-page',
+    '/notes/new-note',
+    '/notes/new',
+    '/standalone-page',
+    '/broken-sidebar',
+    '/notes/broken-note',
+    '/rollback-page',
+    '/notes/testing',
+    '/notes/state-only-test',
+    '/hash-target',
+  ]);
+  const routeSet = manifestRouteSet;
+  return {
+    siteUrlContext: { siteOrigin: window.location.origin, basePath: '' },
+    routeManifestState: {
+      status: 'loaded' as const,
+      manifest: {
+        version: 1 as const,
+        buildId: 'build-test',
+        buildLabel: 'test',
+        generatedAt: '2026-04-11T00:00:00.000Z',
+        siteOrigin: window.location.origin,
+        basePath: '',
+        routes: manifestRouteSet.routes,
+      },
+      routeSet,
+    },
+    isInternalDocumentPathname: (pathname: string) => routeSet.has(pathname),
+  };
+};
 
 const createEnvelopeResponse = (options?: {
   html?: string;
@@ -98,12 +141,24 @@ describe('app-router', () => {
   let originalScrollToDescriptor: PropertyDescriptor | undefined;
   let originalScrollIntoViewDescriptor: PropertyDescriptor | undefined;
   let originalFocusDescriptor: PropertyDescriptor | undefined;
+  let originalWhenReady: AppRouter['whenReady'];
 
   let mockHistoryState: unknown;
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
     globalThis.fetch = () => Promise.resolve(createEnvelopeResponse());
+    originalWhenReady = AppRouter.prototype.whenReady;
+    AppRouter.prototype.whenReady = function patchedWhenReady(this: AppRouter): Promise<void> {
+      try {
+        this.initializeRuntime(createAppRouterTestUrlDependencies());
+      } catch (error) {
+        if (!(error instanceof Error && error.name === 'AppRouterRuntimeInitializationError')) {
+          throw error;
+        }
+      }
+      return Promise.resolve();
+    };
 
     originalPushState = history.pushState.bind(history);
     originalReplaceState = history.replaceState.bind(history);
@@ -160,6 +215,7 @@ describe('app-router', () => {
     host = null;
 
     globalThis.fetch = originalFetch;
+    AppRouter.prototype.whenReady = originalWhenReady;
     history.pushState = originalPushState;
     history.replaceState = originalReplaceState;
 
@@ -579,11 +635,19 @@ describe('app-router', () => {
 
   it('client-side navigation 後は main#main-content に論理フォーカスを移しつつ可視リングを出さないこと', async () => {
     await ensureMainCssLoaded();
+    let focusedElement: HTMLElement | null = null;
+
+    Object.defineProperty(HTMLElement.prototype, 'focus', {
+      configurable: true,
+      value() {
+        focusedElement = document.querySelector<HTMLElement>('main#main-content');
+      },
+    });
 
     globalThis.fetch = () =>
       Promise.resolve(
         createEnvelopeResponse({
-          html: '<h1>Focused Main</h1><p><a href="/next">Next</a></p>',
+          html: '<h1>Focused Main</h1><p><a href="/next" data-link-kind="internal-document" data-link-surface="prose">Next</a></p>',
           title: 'Focused Main',
           description: 'focused main',
         }),
@@ -597,13 +661,14 @@ describe('app-router', () => {
     const appHost = host;
 
     await appHost.whenReady();
-    await appHost.navigate('/focused-main');
+    const result = await appHost.navigate('/focused-main');
+    expect(result.outcome).to.equal('completed');
 
     await waitUntil(() => {
       const main = appHost.querySelector<HTMLElement>('main#main-content');
       return (
         main instanceof HTMLElement &&
-        document.activeElement === main &&
+        focusedElement === main &&
         (main.textContent?.includes('Focused Main') ?? false)
       );
     }, '遷移後に main#main-content が activeElement になること');

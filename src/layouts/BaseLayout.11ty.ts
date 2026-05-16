@@ -18,6 +18,7 @@ import {
 } from '../../shared/app-router/app-router-announcement-contract.js';
 import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.js';
 import { createManifestLoadedRouteClassificationMode } from '../../shared/link/link-annotation.js';
+import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js';
 import { validateGeneratedPageHtmlLinkContracts } from '../../build/content/page-html-link-contracts.js';
 import { resolveEffectiveNoteChromeProfile } from '../../shared/note/note-chrome-profile.js';
 import { resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
@@ -174,6 +175,7 @@ const addGeneratedRoute = (routes: Set<string>, value: unknown): void => {
   const pathname = normalizeGeneratedRoutePathname(value);
   if (pathname !== null) {
     routes.add(pathname);
+    routes.add(normalizeRouaultPathname(pathname));
   }
 };
 

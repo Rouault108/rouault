@@ -18,8 +18,17 @@ function parseSearchStateUrl(input: string | URL): ParsedSearchStateUrl {
   }
 
   const trimmed = input.trim();
-  if (trimmed.length === 0 || /^[A-Za-z][A-Za-z0-9+.-]*:/u.test(trimmed) || trimmed.startsWith('//')) {
+  if (trimmed.length === 0 || trimmed.startsWith('//')) {
     return { pathname: SEARCH_PAGE_PATH, searchParams: new URLSearchParams() };
+  }
+
+  if (/^[A-Za-z][A-Za-z0-9+.-]*:/u.test(trimmed)) {
+    try {
+      const parsed = new URL(trimmed);
+      return { pathname: parsed.pathname, searchParams: new URLSearchParams(parsed.search) };
+    } catch {
+      return { pathname: SEARCH_PAGE_PATH, searchParams: new URLSearchParams() };
+    }
   }
 
   const withoutHash = trimmed.split('#', 1)[0] ?? '';

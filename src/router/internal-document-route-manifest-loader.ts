@@ -175,7 +175,7 @@ export const loadInternalDocumentRouteManifest = async (
     manifestUrl: options.manifestUrl,
     siteUrlContext: options.siteUrlContext,
     buildId: options.buildId,
-    currentLocation: options.currentLocation,
+    ...(options.currentLocation !== undefined ? { currentLocation: options.currentLocation } : {}),
   });
   if (manifestUrl === null) {
     return invalidState();

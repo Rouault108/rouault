@@ -22,14 +22,14 @@ const createRouterTestUrlDependencies = () => ({
       generatedAt: '2026-04-11T00:00:00.000Z',
       siteOrigin: window.location.origin,
       basePath: '',
-      routes: ['/', '/next/', '/articles/example/', '/search/', '/tags/music/'],
+      routes: ['/', '/about/', '/next/', '/articles/example/', '/search/', '/tags/music/'],
     },
     routeSet: {
-      routes: ['/', '/next/', '/articles/example/', '/search/', '/tags/music/'],
-      has: (pathname: string) => ['/', '/next/', '/articles/example/', '/search/', '/tags/music/'].includes(pathname),
+      routes: ['/', '/about/', '/next/', '/articles/example/', '/search/', '/tags/music/'],
+      has: (pathname: string) => !pathname.startsWith('/assets/'),
     },
   },
-  isInternalDocumentPathname: (pathname: string) => ['/', '/next/', '/articles/example/', '/search/', '/tags/music/'].includes(pathname),
+  isInternalDocumentPathname: (pathname: string) => !pathname.startsWith('/assets/'),
 });
 
 beforeEach(() => {
@@ -626,11 +626,16 @@ describe('Router', () => {
     router = new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true });
     await router.start();
 
-    const link = await fixture<HTMLAnchorElement>(html`<a href="/about/">About</a>`);
+    const link = await fixture<HTMLAnchorElement>(
+      html`<a href="/about/" data-link-kind="internal-document" data-link-surface="navigation"
+        >About</a
+      >`,
+    );
 
     simulateClick(link);
 
     await waitUntil(() => fetchedUrls.length === 1, 'router artifact fetch が行われること');
+    await waitUntil(() => document.title === 'About - Rouault', 'navigation commit が完了すること');
 
     expect(fetchedUrls).to.deep.equal(['/__router/about/index.router.json']);
     expect(document.title).to.equal('About - Rouault');

@@ -20,11 +20,12 @@ export const validateNavigationEnvelopeJsonContentType = (contentType: string | 
   validateSharedJsonContentType(contentType).ok;
 
 export const fetchNavigationEnvelopeArtifact = async (options: FetchNavigationEnvelopeArtifactOptions): Promise<unknown> => {
-  const response = await fetch(resolveNavigationEnvelopeArtifactUrl({ normalizedUrl: options.normalizedUrl, siteUrlContext: options.siteUrlContext }), {
+  const requestInit: RequestInit = {
     redirect: 'manual',
     credentials: 'same-origin',
-    signal: options.signal,
-  });
+    ...(options.signal !== undefined ? { signal: options.signal } : {}),
+  };
+  const response = await fetch(resolveNavigationEnvelopeArtifactUrl({ normalizedUrl: options.normalizedUrl, siteUrlContext: options.siteUrlContext }), requestInit);
   if (response.type === 'opaqueredirect' || response.status >= 300 && response.status < 400) {
     throw new Error('navigation-envelope-invalid');
   }

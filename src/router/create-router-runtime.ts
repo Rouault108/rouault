@@ -40,7 +40,7 @@ export const createRouterRuntime = (runtimeOptions: CreateRouterRuntimeOptions):
   const eventBus = new RouterEventBus();
   const location = new LocationAdapter();
   const routeRegistry = new RouteRegistry();
-  const loader = new DocumentLoader(routeRegistry, location, runtimeOptions.urlDependencies.siteUrlContext);
+  const loader = new DocumentLoader(routeRegistry, runtimeOptions.urlDependencies.siteUrlContext);
   const committer = new ContentCommitter(
     outlet,
     location,

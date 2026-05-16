@@ -1,6 +1,7 @@
 import { isDefaultInternalResourcePathname } from '../../shared/link/link-annotation.js';
 import { detectUnsafeHref } from '../../shared/link/unsafe-href-detector.js';
 import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
+import { hasAsciiControlCharacter } from '../../shared/string/ascii-control.js';
 import { createSharedRouaultUrlPolicy, type UrlPolicy } from './url-policy.js';
 
 export class LocationAdapter {
@@ -27,7 +28,7 @@ export class LocationAdapter {
       return null;
     }
 
-    if (/[\\\u0000-\u001F\u007F]/u.test(value)) {
+    if (value.includes('\\') || hasAsciiControlCharacter(value)) {
       return null;
     }
 

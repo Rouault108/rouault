@@ -11,6 +11,7 @@ import type { NavigationResult } from '../../src/router/router.js';
 import { toInternalDocumentNormalizedUrl } from '../../src/router/internal-document-normalized-url.js';
 import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
 import { createSearchEventDiagnosticSink } from '../../shared/search/search-diagnostics.js';
+import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js';
 
 const createCompletedNavigationResult = (url: string): NavigationResult => ({
   kind: 'completed',
@@ -25,7 +26,12 @@ const createCompletedNavigationResult = (url: string): NavigationResult => ({
   renderedKind: null,
 });
 
-const createLoadedRouteManifestState = (routes: readonly string[]) => ({
+const createLoadedRouteManifestState = (routes: readonly string[]) => {
+  const routeSet = createInternalDocumentRouteSet([
+    ...routes,
+    ...routes.map((route) => normalizeRouaultPathname(route)),
+  ]);
+  return {
   status: 'loaded' as const,
   manifest: {
     version: 1 as const,
@@ -34,10 +40,11 @@ const createLoadedRouteManifestState = (routes: readonly string[]) => ({
     generatedAt: '2026-01-01T00:00:00.000Z',
     siteOrigin: DEFAULT_SITE_URL_CONTEXT.siteOrigin,
     basePath: DEFAULT_SITE_URL_CONTEXT.basePath,
-    routes,
+    routes: routeSet.routes,
   },
-  routeSet: createInternalDocumentRouteSet(routes),
-});
+  routeSet,
+  };
+};
 
 describe('search-navigation', () => {
   it('app-router が存在する場合は SPA navigate を優先すること', async () => {
@@ -63,7 +70,9 @@ describe('search-navigation', () => {
     });
 
     expect(result.kind).to.equal('lifecycle-failure');
-    expect(result.reason).to.equal('not-started');
+    if (result.kind === 'lifecycle-failure') {
+      expect(result.reason).to.equal('not-started');
+    }
   });
 
   it('return-to-reading event を route manifest 検証後に navigation adapter が URL navigation へ変換すること', async () => {
@@ -163,7 +172,9 @@ describe('search-navigation', () => {
       });
 
       expect(result.kind).to.equal('validation-failure');
-      expect(result.reason).to.equal('disallowed-url');
+      if (result.kind === 'validation-failure') {
+        expect(result.reason).to.equal('disallowed-url');
+      }
     }
   });
 
@@ -176,7 +187,9 @@ describe('search-navigation', () => {
     });
 
     expect(result.kind).to.equal('lifecycle-failure');
-    expect(result.reason).to.equal('not-started');
+    if (result.kind === 'lifecycle-failure') {
+      expect(result.reason).to.equal('not-started');
+    }
   });
 
 
@@ -189,7 +202,9 @@ describe('search-navigation', () => {
     });
 
     expect(result.kind).to.equal('validation-failure');
-    expect(result.reason).to.equal('route-manifest-unavailable');
+    if (result.kind === 'validation-failure') {
+      expect(result.reason).to.equal('route-manifest-unavailable');
+    }
   });
 
 });

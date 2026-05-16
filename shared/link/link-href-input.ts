@@ -28,7 +28,6 @@ interface RawHrefComponents {
   readonly hash: string;
 }
 
-const ASCII_CONTROL_RE = /[\u0000-\u001f\u007f]/u;
 const MALFORMED_PERCENT_RE = /%(?![0-9A-Fa-f]{2})/u;
 const SCHEME_RE = /^[A-Za-z][A-Za-z0-9+.-]*:/u;
 
@@ -107,7 +106,7 @@ const isDangerousDecodedPathSegment = (rawSegment: string, decodedSegment: strin
     decodedSegment === '..' ||
     decodedSegment.includes('/') ||
     decodedSegment.includes('\\') ||
-    ASCII_CONTROL_RE.test(decodedSegment)
+    hasAsciiControlCharacter(decodedSegment)
   );
 };
 
@@ -146,7 +145,7 @@ export const validateLinkHrefAttribute = (
     return { ok: false, reason: 'empty-href' };
   }
 
-  if (ASCII_CONTROL_RE.test(value)) {
+  if (hasAsciiControlCharacter(value)) {
     return { ok: false, reason: 'control-character' };
   }
 
@@ -175,3 +174,4 @@ export const validateLinkHrefAttribute = (
     },
   };
 };
+import { hasAsciiControlCharacter } from '../string/ascii-control.js';

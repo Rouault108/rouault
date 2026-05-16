@@ -68,13 +68,13 @@ const rewriteHtmlSiteUrlContext = (
     buildId: buildMetadata.buildId,
   });
 
-  return [
+  return ([
     ['rouault-site-origin', siteUrlContext.siteOrigin],
     ['rouault-base-path', siteUrlContext.basePath],
     ['rouault-route-manifest', manifestUrl],
     ['rouault-route-manifest-build-id', buildMetadata.buildId],
     ['rouault-route-manifest-version', String(INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION)],
-  ].reduce((result, [name, content]) => replaceMetaContent(result, name, content), html);
+  ] as const).reduce((result, [name, content]) => replaceMetaContent(result, name, content), html);
 };
 
 export const createDevelopmentHtmlSiteUrlContextMiddleware = (
@@ -85,9 +85,7 @@ export const createDevelopmentHtmlSiteUrlContextMiddleware = (
     const originalWrite = response.write.bind(response) as (
       ...args: Parameters<ServerResponse['write']>
     ) => boolean;
-    const originalEnd = response.end.bind(response) as (
-      ...args: Parameters<ServerResponse['end']>
-    ) => ServerResponse;
+    const originalEnd = response.end.bind(response) as (chunk?: string | Buffer) => ServerResponse;
 
     response.write = ((...args: Parameters<ServerResponse['write']>): boolean => {
       const chunk = args[0];
@@ -122,7 +120,7 @@ export const createDevelopmentHtmlSiteUrlContextMiddleware = (
         return originalEnd(Buffer.concat(chunks));
       }
 
-      return originalEnd(...args);
+      return originalEnd(typeof args[0] === 'string' || Buffer.isBuffer(args[0]) ? args[0] : undefined);
     }) as typeof response.end;
 
     next();
