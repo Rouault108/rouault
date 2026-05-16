@@ -33,6 +33,8 @@ import {
 } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { createSidebarGroupIdPrefixFromSidebarIdentity } from '../../shared/navigation/sidebar-group-id.js';
 import { renderNoteSidebarNav } from '../navigation/render-note-sidebar-nav.js';
+import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
+import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
 import { validateSidebarNavHtmlInvariant } from '../navigation/sidebar-nav-html-invariant.js';
 import {
   resolveNoteHydrationBudgetProfile,
@@ -291,12 +293,22 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     typeof input.note.content === 'string' ? input.note.content : '',
     noteKind,
   );
-  validateNoteContentContracts(
-    noteKind,
-    contentHtml,
-    `${slug}:post-profile-injection`,
-    input.note.testingArea,
-  );
+  const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
+    ? resolveProductionSiteUrlContext()
+    : resolveDevelopmentSiteUrlContext();
+  const noteLinkContext = resolveNoteLinkClassificationContext({
+    sourceFilePath: `${input.note.sourceRoot ?? 'content'}/${slug}.md`,
+    siteUrlContext,
+  });
+  validateNoteContentContracts({
+    kind: noteKind,
+    html: contentHtml,
+    sourceLabel: `${slug}:post-profile-injection`,
+    testingArea: input.note.testingArea,
+    siteUrlContext,
+    currentUrl: noteLinkContext.currentUrl,
+    routeClassificationMode: noteLinkContext.routeClassificationMode,
+  });
   const normalizedPublished = normalizeNoteDate(input.note.date);
   const normalizedCreated = normalizeNoteDate(input.note.created);
   const normalizedUpdated = normalizeNoteDate(input.note.updated);

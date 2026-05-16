@@ -1,6 +1,10 @@
 import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
 
+import { validateGeneratedPageHtmlLinkContracts } from './page-html-link-contracts.js';
+import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
+import type { RouteClassificationMode } from '../../shared/link/link-annotation.js';
+
 import { type NoteContentKind } from '../../shared/note/note-kind.js';
 import type { TestingArea } from '../../shared/note/testing-area.js';
 import { createNotePolicyContext } from '../remark/directives/policy/note-policy-context.js';
@@ -868,15 +872,35 @@ const validateStaticNoteRootContracts = (
   }
 };
 
+export interface ValidateNoteContentContractsOptions {
+  readonly kind: NoteContentKind;
+  readonly html: string | undefined;
+  readonly sourceLabel?: string;
+  readonly testingArea?: TestingArea;
+  readonly siteUrlContext?: SiteUrlContext;
+  readonly currentUrl?: string;
+  readonly routeClassificationMode?: RouteClassificationMode;
+  readonly isInternalResourcePathname?: (pathname: string) => boolean;
+}
+
 export const validateNoteContentContracts = (
-  kind: NoteContentKind,
-  html: string | undefined,
-  sourceLabel = 'unknown',
-  testingArea?: TestingArea,
+  options: ValidateNoteContentContractsOptions,
 ): void => {
+  const { kind, html, testingArea } = options;
+  const sourceLabel = options.sourceLabel ?? 'unknown';
   if (typeof html !== 'string' || html.trim().length === 0) {
     return;
   }
+
+  validateGeneratedPageHtmlLinkContracts({
+    html,
+    sourceLabel,
+    scope: 'note-content',
+    siteUrlContext: options.siteUrlContext,
+    currentUrl: options.currentUrl,
+    routeClassificationMode: options.routeClassificationMode,
+    isInternalResourcePathname: options.isInternalResourcePathname,
+  });
 
   const fragment = parse5.parseFragment(html);
   const errors: string[] = [];

@@ -17,6 +17,8 @@ import {
   APP_ROUTER_ANNOUNCEMENT_CLASS_NAME,
 } from '../../shared/app-router/app-router-announcement-contract.js';
 import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.js';
+import { createManifestLoadedRouteClassificationMode } from '../../shared/link/link-annotation.js';
+import { validateGeneratedPageHtmlLinkContracts } from '../../build/content/page-html-link-contracts.js';
 import { resolveEffectiveNoteChromeProfile } from '../../shared/note/note-chrome-profile.js';
 import { resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
@@ -48,6 +50,7 @@ export interface BaseLayoutData {
   note?: NoteNavigationEntry;
   notes?: NoteNavigationEntry[];
   corpusPages?: readonly CorpusPageEntry[];
+  tagPages?: readonly { readonly tag?: string }[];
   currentCorpusKey?: string;
   buildMetadata?: BuildMetadataData;
   siteUrlContext?: SiteUrlContextData;
@@ -56,6 +59,7 @@ export interface BaseLayoutData {
   headerTocRuntimeId?: string;
   headerTocOwnerId?: string;
   headerTocShouldHydrate?: boolean;
+  page?: { readonly url?: string };
 }
 
 type BaseLayoutRenderInput = Omit<BaseLayoutData, 'buildMetadata' | 'siteUrlContext'> & {
@@ -132,6 +136,105 @@ const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar
     { name: 'data-hydration-capability', value: 'interactive' },
     { name: 'data-hydration-trigger', value: 'initial' },
   ]);
+
+
+const STATIC_GENERATED_DOCUMENT_ROUTES = ['/', '/about/', '/search/', '/corpora/'] as const;
+
+const normalizeGeneratedRoutePathname = (value: unknown): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+  let pathname: string;
+  try {
+    pathname = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+      ? new URL(trimmed).pathname
+      : new URL(trimmed, 'https://rouault.invalid').pathname;
+  } catch {
+    return null;
+  }
+  if (pathname.endsWith('/index.html')) {
+    pathname = `${pathname.slice(0, -'/index.html'.length)}/`;
+  } else if (pathname === '/index.html') {
+    pathname = '/';
+  }
+  if (pathname === '/404.html') {
+    return null;
+  }
+  if (!pathname.startsWith('/')) {
+    pathname = `/${pathname}`;
+  }
+  return pathname.endsWith('/') || /\.[^/]+$/u.test(pathname) ? pathname : `${pathname}/`;
+};
+
+const addGeneratedRoute = (routes: Set<string>, value: unknown): void => {
+  const pathname = normalizeGeneratedRoutePathname(value);
+  if (pathname !== null) {
+    routes.add(pathname);
+  }
+};
+
+const buildGeneratedPageRouteSet = (data: BaseLayoutRenderInput): Set<string> => {
+  const routes = new Set<string>(STATIC_GENERATED_DOCUMENT_ROUTES);
+  addGeneratedRoute(routes, data.page?.url);
+  addGeneratedRoute(routes, data.note?.permalink);
+
+  for (const note of data.notes ?? []) {
+    addGeneratedRoute(routes, note.permalink);
+    const genres = Array.isArray((note as { readonly genre?: unknown }).genre)
+      ? ((note as { readonly genre?: unknown[] }).genre ?? [])
+      : [];
+    for (const genre of genres) {
+      if (typeof genre === 'string' && genre.trim().length > 0) {
+        addGeneratedRoute(routes, `/tags/${encodeURIComponent(genre.trim())}/`);
+      }
+    }
+  }
+
+  for (const corpusPage of data.corpusPages ?? []) {
+    addGeneratedRoute(routes, corpusPage.href);
+  }
+
+  for (const tagPage of data.tagPages ?? []) {
+    if (typeof tagPage.tag === 'string' && tagPage.tag.trim().length > 0) {
+      addGeneratedRoute(routes, `/tags/${encodeURIComponent(tagPage.tag.trim())}/`);
+    }
+  }
+
+  return routes;
+};
+
+const buildGeneratedPageCurrentUrl = (
+  data: BaseLayoutRenderInput,
+  siteUrlContext: SiteUrlContextData,
+): string => {
+  const pagePathname =
+    normalizeGeneratedRoutePathname(data.note?.permalink) ??
+    normalizeGeneratedRoutePathname(data.page?.url) ??
+    '/';
+  return `${siteUrlContext.siteOrigin}${siteUrlContext.basePath}${pagePathname}`;
+};
+
+const validateBaseLayoutGeneratedHtmlLinks = (
+  html: string,
+  data: BaseLayoutRenderInput,
+  siteUrlContext: SiteUrlContextData,
+): void => {
+  const routeSet = buildGeneratedPageRouteSet(data);
+  validateGeneratedPageHtmlLinkContracts({
+    html,
+    sourceLabel: `generated-page:${data.page?.url ?? 'unknown'}`,
+    scope: 'generated-page',
+    siteUrlContext,
+    currentUrl: buildGeneratedPageCurrentUrl(data, siteUrlContext),
+    routeClassificationMode: createManifestLoadedRouteClassificationMode({
+      isInternalDocumentPathname: (pathname) => routeSet.has(pathname),
+    }),
+  });
+};
 
 export class BaseLayout {
   render(data: BaseLayoutData): string;
@@ -220,6 +323,8 @@ export class BaseLayout {
     const skipLinkAttributes = serializeHtmlAttributes([
       { name: 'class', value: 'skip-link' },
       { name: 'href', value: SKIP_LINK_HREF },
+      { name: 'data-link-kind', value: 'internal-fragment' },
+      { name: 'data-link-surface', value: 'structural' },
     ]);
     const tocPresence: TocPresence =
       data.notePage?.tocPresence ?? data.headerTocPresence ?? 'absent';
@@ -280,7 +385,7 @@ export class BaseLayout {
       ).map(([name, value]) => ({ name, value })),
     );
 
-    return `
+    const html = `
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -347,6 +452,10 @@ export class BaseLayout {
 </body>
 </html>
     `.trim();
+
+    validateBaseLayoutGeneratedHtmlLinks(html, data, siteUrlContext);
+
+    return html;
   }
 }
 
