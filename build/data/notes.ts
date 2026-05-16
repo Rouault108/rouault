@@ -10,6 +10,8 @@ import type { NavigationDirectoryPresentationMap } from '../../shared/navigation
 import { resolveSidebarRoot } from '../../build/navigation/resolve-sidebar-root.js';
 import { prepareTocHtml, type TocHeading } from '../../build/content/extract-toc-from-html.js';
 import { validateNoteContentContracts } from '../../build/content/note-content-contracts.js';
+import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
+import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
 import { resolveCoverAsset, type ResolvedImageAsset } from '../../build/media/image-resolver.js';
 import { isIconName, type IconName } from '../../shared/icons/icons-catalog.js';
 import type { NoteStatus } from '../../src/types/article-status.js';
@@ -336,6 +338,9 @@ export const buildNotesCollection = (
   const configCache = new Map<string, NoteDirectoryConfig | null>();
   const fileExistenceCache = new Map<string, boolean>();
   const sourceRoots = options.sourceRoots ?? {};
+  const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
+    ? resolveProductionSiteUrlContext()
+    : resolveDevelopmentSiteUrlContext();
 
   const resolveSourceRootPath = (note: SourceNote): string => {
     const normalizedSourceRoot = normalizeNoteSourceRoot(note.sourceRoot);
@@ -470,12 +475,19 @@ export const buildNotesCollection = (
       delete noteWithoutVeliteToc['tocCapabilitiesOverride'];
 
       const preparedToc = prepareTocHtml(typeof note.content === 'string' ? note.content : '');
+      const noteLinkContext = resolveNoteLinkClassificationContext({
+        sourceFilePath: `${normalizeNoteSourceRoot(note.sourceRoot) ?? 'content'}/${sourceSlug}.md`,
+        siteUrlContext,
+      });
       validateNoteContentContracts({
-  kind: kind,
-  html: preparedToc.html,
-  sourceLabel: `${sourceSlug}:post-prepare-toc`,
-  testingArea: testingArea,
-});
+        kind,
+        html: preparedToc.html,
+        sourceLabel: `${sourceSlug}:post-prepare-toc`,
+        testingArea,
+        siteUrlContext,
+        currentUrl: noteLinkContext.currentUrl,
+        routeClassificationMode: noteLinkContext.routeClassificationMode,
+      });
       const e2eFixtureId =
         typeof note.e2eFixtureId === 'string' && note.e2eFixtureId.trim().length > 0
           ? note.e2eFixtureId.trim()

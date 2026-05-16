@@ -1,3 +1,4 @@
+
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -35,6 +36,21 @@ import {
 } from './shared/note/note-chrome-profile.js';
 import { TESTING_AREAS, normalizeTestingArea } from './shared/note/testing-area.js';
 import { resolveNoteSourceLocation } from './shared/note/note-source-root.js';
+import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from './build/site/site-url-context.js';
+import { resolveNoteCurrentUrlFromSourcePath, createNoteRouteClassificationModeForSourcePath } from './build/content/resolve-note-current-url.js';
+
+
+
+const resolveBuildLinkAnnotationOptions = () => {
+  const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
+    ? resolveProductionSiteUrlContext()
+    : resolveDevelopmentSiteUrlContext();
+  const currentUrl = (file: { readonly path?: string } | undefined): string =>
+    resolveNoteCurrentUrlFromSourcePath({ sourceFilePath: file?.path, siteUrlContext });
+  const routeClassificationMode = (file: { readonly path?: string } | undefined) =>
+    createNoteRouteClassificationModeForSourcePath(file?.path);
+  return { siteUrlContext, currentUrl, routeClassificationMode };
+};
 
 const notes = defineCollection({
   name: 'Note',
@@ -104,7 +120,15 @@ const notes = defineCollection({
       }
 
       validateNoteMetadataContracts(kind, chromeProfile, testingArea, sourcePath);
-      validateNoteContentContracts(kind, normalizedContent, sourcePath, testingArea);
+      validateNoteContentContracts({
+        kind,
+        html: normalizedContent,
+        sourceLabel: sourcePath,
+        testingArea,
+        siteUrlContext: resolveBuildLinkAnnotationOptions().siteUrlContext,
+        currentUrl: resolveBuildLinkAnnotationOptions().currentUrl({ path: sourcePath }),
+        routeClassificationMode: resolveBuildLinkAnnotationOptions().routeClassificationMode({ path: sourcePath }),
+      });
 
       return {
         ...rest,
@@ -153,7 +177,7 @@ export default defineConfig({
       rehypeShikiCodeBlocks,
       rehypeStaticCodeGroups,
       rehypeResolveNoteSourceLinks,
-      rehypeAnnotateLinkKinds(),
+      rehypeAnnotateLinkKinds(resolveBuildLinkAnnotationOptions()),
       rehypeInlineCodeTranslateNo,
       rehypeOrderedListContracts,
       rehypeDisallowDangerousProps,

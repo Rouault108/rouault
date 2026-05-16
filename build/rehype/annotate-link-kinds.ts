@@ -1,5 +1,7 @@
 import { getOrCreateProperties, type HastNode } from './hast-utils.js';
-import { classifyLinkHref, isExternalLinkKind } from '../../shared/link/link-kind.js';
+import { classifyLinkHref, type RouteClassificationMode } from '../../shared/link/link-annotation.js';
+import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
+import { RehypeLinkContractError } from './link-contract-error.js';
 import { parseFootnoteBackrefHref } from '../../shared/footnotes/footnote-id.js';
 
 interface LinkContext {
@@ -171,8 +173,19 @@ const isCanonicalFootnoteDefinitionList = (node: HastNode, parent: HastNode | nu
 const isCanonicalFootnoteItem = (node: HastNode, context: LinkContext): boolean =>
   node.type === 'element' && node.tagName === 'li' && context.insideCanonicalFootnoteList;
 
-export function rehypeAnnotateLinkKinds() {
-  return (tree: unknown) => {
+export interface RehypeAnnotateLinkKindsOptions {
+  readonly siteUrlContext: SiteUrlContext;
+  readonly currentUrl: string | ((file: { readonly path?: string } | undefined) => string);
+  readonly routeClassificationMode: RouteClassificationMode | ((file: { readonly path?: string } | undefined) => RouteClassificationMode);
+}
+
+export function rehypeAnnotateLinkKinds(options: RehypeAnnotateLinkKindsOptions) {
+  return (tree: unknown, file?: { readonly path?: string }) => {
+    const currentUrl = typeof options.currentUrl === 'function' ? options.currentUrl(file) : options.currentUrl;
+    const routeClassificationMode =
+      typeof options.routeClassificationMode === 'function'
+        ? options.routeClassificationMode(file)
+        : options.routeClassificationMode;
     const visit = (node: unknown, context: LinkContext, parent: HastNode | null): void => {
       if (!node || typeof node !== 'object') {
         return;
@@ -196,18 +209,38 @@ export function rehypeAnnotateLinkKinds() {
       if (current.type === 'element' && current.tagName === 'a') {
         const properties = getOrCreateProperties(current);
         if (isStructuralLink(current, nextContext)) {
-          deleteLinkAnnotations(properties);
+          if (typeof properties['href'] === 'string' && !isCanonicalFootnoteRef(current) && !isCanonicalFootnoteBackref(current)) {
+            properties['data-link-kind'] = 'internal-fragment';
+            properties['data-link-surface'] = 'structural';
+          } else {
+            deleteLinkAnnotations(properties);
+          }
           return;
         }
 
         const href = current.properties?.['href'];
         if (typeof href === 'string' && href.trim().length > 0) {
-          const linkKind = classifyLinkHref(href);
+          const annotation = classifyLinkHref({
+            href,
+            siteUrlContext: options.siteUrlContext,
+            currentUrl,
+            routeClassificationMode,
+            surface: 'prose',
+          });
 
-          properties['data-link-kind'] = linkKind;
+          if (annotation.isUnsafe === true) {
+            throw new RehypeLinkContractError({
+              reason: 'unsafe-link-href',
+              sourceLabel: 'markdown',
+              message: 'unsafe link href was rejected by the link contract.',
+            });
+          }
+
+          properties['href'] = annotation.renderHref;
+          properties['data-link-kind'] = annotation.kind;
           properties['data-link-surface'] = 'prose';
 
-          if (isExternalLinkKind(linkKind)) {
+          if (annotation.isExternalWeb) {
             properties['data-external'] = 'true';
           } else {
             delete properties['data-external'];

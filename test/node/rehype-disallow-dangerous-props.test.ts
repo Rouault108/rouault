@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { rehypeDisallowDangerousProps } from '../../build/rehype/disallow-dangerous-props.js';
+import { RehypeLinkContractError } from '../../build/rehype/link-contract-error.js';
 
 interface HastNode {
   type: string;
@@ -135,9 +136,8 @@ describe('rehypeDisallowDangerousProps', () => {
     const run = () => {
       rehypeDisallowDangerousProps()(tree, { path: 'content/notes/sample.md' });
     };
-    expect(run).to.throw(
-      '[markdown] 危険な属性 "onclick" は使用できません: content/notes/sample.md',
-    );
+    expect(run).to.throw(RehypeLinkContractError);
+    expect(run).to.throw('event handler attribute onclick is not allowed');
   });
 
   it('危険な URL スキームを禁止すること', () => {
@@ -156,9 +156,8 @@ describe('rehypeDisallowDangerousProps', () => {
     const run = () => {
       rehypeDisallowDangerousProps()(tree, { path: 'content/notes/sample.md' });
     };
-    expect(run).to.throw(
-      '[markdown] 危険なURL属性 "href" は使用できません: content/notes/sample.md',
-    );
+    expect(run).to.throw(RehypeLinkContractError);
+    expect(run).to.throw('unsafe link href is forbidden');
   });
 
   it('不要な style 属性を禁止すること', () => {
@@ -177,9 +176,37 @@ describe('rehypeDisallowDangerousProps', () => {
     const run = () => {
       rehypeDisallowDangerousProps()(tree, { path: 'content/notes/sample.md' });
     };
-    expect(run).to.throw(
-      '[markdown] 許可されていない style 属性 "color" は使用できません: content/notes/sample.md',
-    );
+    expect(run).to.throw(RehypeLinkContractError);
+    expect(run).to.throw('style property color is not allowed');
+  });
+
+
+
+  it('SVG / MathML subtree の URL-bearing attribute を禁止すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'svg',
+          properties: {},
+          children: [
+            {
+              type: 'element',
+              tagName: 'a',
+              properties: { href: 'https://example.com' },
+              children: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    const run = () => {
+      rehypeDisallowDangerousProps()(tree, { path: 'content/notes/sample.md' });
+    };
+    expect(run).to.throw(RehypeLinkContractError);
+    expect(run).to.throw('SVG/MathML attribute href is not allowed');
   });
 
   it('canonical footnote fragment href と hydration 属性を許可すること', () => {
@@ -235,8 +262,7 @@ describe('rehypeDisallowDangerousProps', () => {
     const run = () => {
       rehypeDisallowDangerousProps()(tree, { path: 'content/notes/sample.md' });
     };
-    expect(run).to.throw(
-      '[markdown] 危険なURL属性 "href" は使用できません: content/notes/sample.md',
-    );
+    expect(run).to.throw(RehypeLinkContractError);
+    expect(run).to.throw('unsafe link href is forbidden');
   });
 });

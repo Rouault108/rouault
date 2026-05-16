@@ -1,7 +1,7 @@
 import { existsSync, lstatSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
 
-import { normalizeNotePath } from '../../shared/navigation/normalize-note-path.js';
+import { resolveNotePermalink } from '../../shared/note/resolve-note-permalink.js';
 import { NOTE_SOURCE_ROOTS, type NoteSourceRoot } from '../../shared/note/note-source-root.js';
 
 export interface ResolveNoteSourceLinkInput {
@@ -457,7 +457,7 @@ export function resolveNoteSourceLink(
   const targetWithoutIndex = requestedSlug;
   const leafPath = path.join(sourceRootPath, `${targetWithoutIndex}.md`);
   const directoryIndexPath = path.join(sourceRootPath, targetWithoutIndex, 'index.md');
-  const pathInfo = normalizeNotePath({
+  const pathInfo = resolveNotePermalink({
     requestedSlug,
     hasLeaf: existsSync(leafPath) && statSync(leafPath).isFile(),
     hasDirectoryIndex: existsSync(directoryIndexPath) && statSync(directoryIndexPath).isFile(),
