@@ -40,20 +40,13 @@ import {
   resolveDevelopmentSiteUrlContext,
   resolveProductionSiteUrlContext,
 } from './build/site/site-url-context.js';
-import {
-  resolveNoteCurrentUrlFromSourcePath,
-  createNoteRouteClassificationModeForSourcePath,
-} from './build/content/resolve-note-current-url.js';
+import { resolveNoteLinkClassificationContext } from './build/content/resolve-note-current-url.js';
 
 const resolveBuildLinkAnnotationOptions = () => {
   const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
     ? resolveProductionSiteUrlContext()
     : resolveDevelopmentSiteUrlContext();
-  const currentUrl = (file: { readonly path?: string } | undefined): string =>
-    resolveNoteCurrentUrlFromSourcePath({ sourceFilePath: file?.path, siteUrlContext });
-  const routeClassificationMode = (file: { readonly path?: string } | undefined) =>
-    createNoteRouteClassificationModeForSourcePath(file?.path);
-  return { siteUrlContext, currentUrl, routeClassificationMode };
+  return { siteUrlContext };
 };
 
 const notes = defineCollection({
@@ -106,15 +99,17 @@ const notes = defineCollection({
       const normalizedStaticContent = normalizeRouaultStaticSurfaceHtml(data.content);
       const linkAnnotationOptions = resolveBuildLinkAnnotationOptions();
       const sourceFilePath = sourcePath.endsWith('.md') ? sourcePath : `${sourcePath}.md`;
+      const noteLinkContext = resolveNoteLinkClassificationContext({
+        sourceFilePath,
+        siteUrlContext: linkAnnotationOptions.siteUrlContext,
+      });
       const normalizedContent = annotateGeneratedPageHtmlLinkContracts({
         html: normalizedStaticContent,
         sourceLabel: sourcePath,
         sourceFilePath,
         siteUrlContext: linkAnnotationOptions.siteUrlContext,
-        currentUrl: linkAnnotationOptions.currentUrl({ path: sourcePath }),
-        routeClassificationMode: linkAnnotationOptions.routeClassificationMode({
-          path: sourcePath,
-        }),
+        currentUrl: noteLinkContext.currentUrl,
+        routeClassificationMode: noteLinkContext.routeClassificationMode,
       });
       const e2eFixtureId =
         typeof data.e2eFixtureId === 'string' && data.e2eFixtureId.trim().length > 0
@@ -142,10 +137,8 @@ const notes = defineCollection({
         sourceLabel: sourcePath,
         testingArea,
         siteUrlContext: linkAnnotationOptions.siteUrlContext,
-        currentUrl: linkAnnotationOptions.currentUrl({ path: sourcePath }),
-        routeClassificationMode: linkAnnotationOptions.routeClassificationMode({
-          path: sourcePath,
-        }),
+        currentUrl: noteLinkContext.currentUrl,
+        routeClassificationMode: noteLinkContext.routeClassificationMode,
       });
 
       return {

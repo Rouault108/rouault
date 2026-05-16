@@ -51,10 +51,9 @@ const getRouteSetForKind = (kind: ContentRouteSetKind) =>
     ? buildFixtureInternalDocumentRouteSet().routeSet
     : buildProductionInternalDocumentRouteSet().routeSet;
 
-export const resolveNoteCurrentUrlFromSourcePath = ({
-  sourceFilePath,
-  siteUrlContext,
-}: ResolveNoteCurrentUrlOptions): string => {
+export const resolveNoteCanonicalPathnameFromSourcePath = (
+  sourceFilePath: string | undefined,
+): string => {
   const sourcePath = assertSourceFilePath(sourceFilePath);
   const { sourceRoot, slug } = resolveNoteSourceLocation(sourcePath);
   const requestedSlug = slug.replace(/\.md$/u, '').replace(/\/index$/u, '');
@@ -65,13 +64,19 @@ export const resolveNoteCurrentUrlFromSourcePath = ({
   const rootPath = path.resolve(process.cwd(), sourceRoot);
   const leafPath = path.join(rootPath, `${requestedSlug}.md`);
   const directoryIndexPath = path.join(rootPath, requestedSlug, 'index.md');
-  const permalink = resolveNotePermalink({
+  return resolveNotePermalink({
     requestedSlug,
     hasLeaf: existsSync(leafPath) && statSync(leafPath).isFile(),
     hasDirectoryIndex: existsSync(directoryIndexPath) && statSync(directoryIndexPath).isFile(),
-  });
+  }).canonicalPathname;
+};
 
-  return `${siteUrlContext.siteOrigin}${siteUrlContext.basePath}${permalink.canonicalPathname}`;
+export const resolveNoteCurrentUrlFromSourcePath = ({
+  sourceFilePath,
+  siteUrlContext,
+}: ResolveNoteCurrentUrlOptions): string => {
+  const canonicalPathname = resolveNoteCanonicalPathnameFromSourcePath(sourceFilePath);
+  return `${siteUrlContext.siteOrigin}${siteUrlContext.basePath}${canonicalPathname}`;
 };
 
 export const createNoteRouteClassificationModeForSourcePath = (
@@ -79,8 +84,12 @@ export const createNoteRouteClassificationModeForSourcePath = (
 ): RouteClassificationMode => {
   const routeSetKind = resolveRouteSetKindForNoteSourcePath(sourceFilePath);
   const routeSet = getRouteSetForKind(routeSetKind);
+  const currentDocumentPathname = resolveNoteCanonicalPathnameFromSourcePath(
+    sourceFilePath,
+  );
   return createManifestLoadedRouteClassificationMode({
-    isInternalDocumentPathname: (pathname) => routeSet.has(pathname),
+    isInternalDocumentPathname: (pathname) =>
+      pathname === currentDocumentPathname || routeSet.has(pathname),
   });
 };
 
@@ -89,11 +98,18 @@ export const resolveNoteLinkClassificationContext = (
 ): ResolvedNoteLinkClassificationContext => {
   const routeSetKind = resolveRouteSetKindForNoteSourcePath(options.sourceFilePath);
   const routeSet = getRouteSetForKind(routeSetKind);
+  const currentDocumentPathname = resolveNoteCanonicalPathnameFromSourcePath(
+    options.sourceFilePath,
+  );
+  const currentUrl =
+    `${options.siteUrlContext.siteOrigin}` +
+    `${options.siteUrlContext.basePath}${currentDocumentPathname}`;
   return {
     routeSetKind,
-    currentUrl: resolveNoteCurrentUrlFromSourcePath(options),
+    currentUrl,
     routeClassificationMode: createManifestLoadedRouteClassificationMode({
-      isInternalDocumentPathname: (pathname) => routeSet.has(pathname),
+      isInternalDocumentPathname: (pathname) =>
+        pathname === currentDocumentPathname || routeSet.has(pathname),
     }),
   };
 };
