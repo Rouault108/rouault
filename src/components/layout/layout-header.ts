@@ -11,7 +11,7 @@ import {
   layoutTocRuntimeStore,
   type LayoutTocRuntimeSnapshot,
 } from './layout-toc-runtime-store.js';
-import { navigateInternalDocument } from '../../search/navigation.js';
+import { navigateInternalDocument } from '../../router/navigate-internal-document.js';
 import {
   THEME_ATTRIBUTE,
   THEME_CHANGE_EVENT,

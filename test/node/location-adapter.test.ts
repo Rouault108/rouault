@@ -72,7 +72,7 @@ describe('LocationAdapter', () => {
     expect(receivedPathname).to.equal('/notes/example/');
   });
 
-  it('normalizeUrl() では search param sanitization と pathname 正規化を UrlPolicy に委譲すること', () => {
+  it('normalizeInternalDocumentUrl() では search param sanitization と pathname 正規化を UrlPolicy に委譲すること', () => {
     let sanitizeCalled = false;
     let receivedPathname: string | null = null;
     const policy: UrlPolicy = {
@@ -92,7 +92,7 @@ describe('LocationAdapter', () => {
     const adapter = new LocationAdapter(policy);
 
     withStubbedWindow(() => {
-      expect(adapter.normalizeUrl('/notes/example/?debug=1&tab=overview')).to.equal(
+      expect(adapter.normalizeInternalDocumentUrl('/notes/example/?debug=1&tab=overview')).to.equal(
         '/normalized?tab=overview',
       );
       expect(sanitizeCalled).to.equal(true);
@@ -203,4 +203,48 @@ describe('LocationAdapter', () => {
       });
     });
   });
+  it('readCurrentUrl() は不正な __routerUrl を破棄して window.location へ recovery すること', () => {
+    const policy: UrlPolicy = {
+      normalizePathname(pathname) {
+        return pathname;
+      },
+      sanitizeSearchParams() {
+        // no-op
+      },
+      resolveContentPath(pathname) {
+        return pathname;
+      },
+    };
+
+    const adapter = new LocationAdapter(policy);
+
+    withStubbedWindow(() => {
+      Object.defineProperty(globalThis, 'window', {
+        configurable: true,
+        value: {
+          location: new URL('https://example.com/recovered?tab=overview') as unknown as Location,
+        } satisfies Pick<Window, 'location'>,
+      });
+
+      for (const invalidRouterUrl of [
+        'https://evil.example/notes/hijack/',
+        '//evil.example/notes/hijack/',
+        'javascript:alert(1)',
+        '\\evil',
+        'notes/relative',
+        '/notes/bad\u0000value',
+        '/assets/file.pdf',
+        '/__router/notes/example/index.router.json',
+        '/media/score/example.svg',
+        '/notes/%2e%2e/secret/',
+        '/notes/%2Fsecret/',
+        '/notes/../secret/',
+      ]) {
+        withStubbedHistory({ __routerUrl: invalidRouterUrl }, () => {
+          expect(adapter.readCurrentUrl()).to.equal('/recovered?tab=overview');
+        });
+      }
+    });
+  });
+
 });

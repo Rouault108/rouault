@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { TagPageEntry, TagPageNoteSummary } from '../../data/tagPages.js';
-import { navigateInternalDocument } from '../../search/navigation.js';
+import { navigateInternalDocument } from '../../router/navigate-internal-document.js';
 import {
   DEFAULT_SEARCH_SORT_MODE,
   buildUrlForSearchState,

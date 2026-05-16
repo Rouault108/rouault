@@ -1,9 +1,10 @@
+import { isDefaultInternalResourcePathname } from '../../shared/link/link-annotation.js';
+import { detectUnsafeHref } from '../../shared/link/unsafe-href-detector.js';
 import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
-import { RouaultUrlPolicy } from './rouault-url-policy.js';
-import type { UrlPolicy } from './url-policy.js';
+import { createSharedRouaultUrlPolicy, type UrlPolicy } from './url-policy.js';
 
 export class LocationAdapter {
-  constructor(private readonly policy: UrlPolicy = new RouaultUrlPolicy()) {}
+  constructor(private readonly policy: UrlPolicy = createSharedRouaultUrlPolicy()) {}
 
   private toUrl(input?: string | URL): URL {
     if (input instanceof URL) {
@@ -17,16 +18,58 @@ export class LocationAdapter {
     return new URL(window.location.href);
   }
 
+  private readTrustedHistoryRouterUrl(value: unknown): string | null {
+    if (typeof value !== 'string' || value.length === 0) {
+      return null;
+    }
+
+    if (!value.startsWith('/') || value.startsWith('//')) {
+      return null;
+    }
+
+    if (/[\\\u0000-\u001F\u007F]/u.test(value)) {
+      return null;
+    }
+
+    if (!detectUnsafeHref(value).ok) {
+      return null;
+    }
+
+    const rawPath = value.split(/[?#]/u, 1)[0] ?? '';
+    if (rawPath.split('/').some((segment) => segment === '.' || segment === '..')) {
+      return null;
+    }
+
+    let parsed: URL;
+    try {
+      parsed = new URL(value, window.location.origin);
+    } catch {
+      return null;
+    }
+
+    if (parsed.origin !== window.location.origin) {
+      return null;
+    }
+
+    const normalizedPathname = this.policy.normalizePathname(parsed.pathname);
+    if (isDefaultInternalResourcePathname(normalizedPathname)) {
+      return null;
+    }
+
+    return `${normalizedPathname}${parsed.search}${parsed.hash}`;
+  }
+
   readCurrentUrl(): string {
     const currentState: unknown = history.state;
     if (this.isHistoryStateObject(currentState)) {
       const historyUrl = currentState['__routerUrl'];
-      if (typeof historyUrl === 'string' && historyUrl.length > 0) {
-        return this.normalizeUrl(historyUrl);
+      const trustedHistoryUrl = this.readTrustedHistoryRouterUrl(historyUrl);
+      if (trustedHistoryUrl !== null) {
+        return this.normalizeInternalDocumentUrl(trustedHistoryUrl);
       }
     }
 
-    return this.normalizeUrl(
+    return this.normalizeInternalDocumentUrl(
       `${window.location.pathname}${window.location.search}${window.location.hash}`,
     );
   }
@@ -44,12 +87,13 @@ export class LocationAdapter {
     };
   }
 
-  normalizeUrl(url: string): string {
+  normalizeInternalDocumentUrl(url: string): string {
     const normalized = this.toUrl(url);
     this.policy.sanitizeSearchParams(normalized);
     normalized.pathname = this.policy.normalizePathname(normalized.pathname);
     return `${normalized.pathname}${normalized.search}${normalized.hash}`;
   }
+
 
   normalizePathname(pathname: string): string {
     return this.policy.normalizePathname(pathname);

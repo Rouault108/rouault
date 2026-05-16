@@ -8,22 +8,44 @@ import type {
   RuntimeSidebarShellSnapshot as SharedRuntimeSidebarShellSnapshot,
   ShellProjectionSnapshot,
 } from '../../shared/navigation/shell-projection.js';
+import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
+import type { LoadedInternalDocumentRouteManifestState } from './internal-document-route-manifest-loader.js';
 import type { RouterDiagnosticPayload } from './router-diagnostics.js';
+import type { InternalDocumentNormalizedUrl } from './internal-document-normalized-url.js';
 
-export type HistoryMode = 'none' | 'push' | 'replace';
 
-export type NavigationOutcome = 'completed' | 'cancelled' | 'superseded' | 'failed';
+export type NavigationValidationFailureReason =
+  | 'disallowed-url'
+  | 'route-manifest-unavailable'
+  | 'route-manifest-invalid'
+  | 'route-manifest-stale';
 
-export type NavigationErrorReason =
+export type NavigationLifecycleFailureReason = 'destroyed' | 'not-started';
+
+export type NavigationLoadFailureReason =
   | 'auth'
   | 'forbidden'
   | 'timeout'
   | 'network'
   | 'server'
   | 'service-unavailable'
-  | 'unexpected'
-  | 'destroyed'
-  | 'not-started';
+  | 'unexpected';
+
+export interface RouterRuntimeUrlDependencies {
+  readonly siteUrlContext: SiteUrlContext;
+  readonly isInternalDocumentPathname: (pathname: string) => boolean;
+  readonly isInternalResourcePathname?: (pathname: string) => boolean;
+  readonly routeManifestState: LoadedInternalDocumentRouteManifestState;
+}
+
+export type HistoryMode = 'none' | 'push' | 'replace';
+
+export type NavigationOutcome = 'completed' | 'cancelled' | 'superseded' | 'failed';
+
+export type NavigationErrorReason =
+  | NavigationValidationFailureReason
+  | NavigationLifecycleFailureReason
+  | NavigationLoadFailureReason;
 
 export interface NavigationIssue {
   code: 'post-commit-failed';
@@ -37,20 +59,100 @@ export interface NavigateRequest {
   state?: Record<string, unknown> | undefined;
 }
 
-export interface NavigationResult {
-  outcome: NavigationOutcome;
-  requestedUrl: string;
-  normalizedUrl: string;
-  historyMode: HistoryMode;
-  stateOnly: boolean;
-  committed: boolean;
+export interface NavigationResultMetadata {
+  readonly stateOnly: boolean;
+  readonly committed: boolean;
   degraded: boolean;
-  issues: NavigationIssue[];
-  source: 'document-route' | 'fetch' | 'error-fallback' | 'state-only' | 'none';
-  renderedKind: 'page' | 'not-found' | 'error' | null;
-  error?: Error | undefined;
-  errorReason?: NavigationErrorReason | undefined;
+  readonly issues: NavigationIssue[];
+  readonly source: 'document-route' | 'fetch' | 'error-fallback' | 'state-only' | 'none';
+  readonly renderedKind: 'page' | 'not-found' | 'error' | null;
 }
+
+export interface NavigationCompletedResult extends NavigationResultMetadata {
+  readonly kind: 'completed';
+  readonly outcome: 'completed';
+  readonly historyMode: HistoryMode;
+  readonly requestedUrl?: never;
+  readonly normalizedUrl: InternalDocumentNormalizedUrl;
+  readonly error?: Error | undefined;
+  readonly errorReason?: NavigationLoadFailureReason | undefined;
+}
+
+export interface NavigationCancelledResult extends NavigationResultMetadata {
+  readonly kind: 'cancelled';
+  readonly outcome: 'cancelled';
+  readonly reason: 'cancelled';
+  readonly historyMode: HistoryMode;
+  readonly requestedUrl?: never;
+  readonly normalizedUrl: InternalDocumentNormalizedUrl;
+  readonly error?: undefined;
+  readonly errorReason?: undefined;
+}
+
+export interface NavigationSupersededResult extends NavigationResultMetadata {
+  readonly kind: 'superseded';
+  readonly outcome: 'superseded';
+  readonly reason: 'superseded';
+  readonly historyMode: HistoryMode;
+  readonly requestedUrl?: never;
+  readonly normalizedUrl: InternalDocumentNormalizedUrl;
+  readonly error?: undefined;
+  readonly errorReason?: undefined;
+}
+
+export interface NavigationValidationFailureResult {
+  readonly kind: 'validation-failure';
+  readonly outcome: 'failed';
+  readonly reason: NavigationValidationFailureReason;
+  readonly errorReason: NavigationValidationFailureReason;
+  readonly historyMode: HistoryMode;
+  readonly stateOnly: false;
+  readonly committed: false;
+  degraded: false;
+  readonly issues: NavigationIssue[];
+  readonly source: 'none';
+  readonly renderedKind: null;
+  readonly normalizedUrl?: never;
+  readonly requestedUrl?: never;
+  readonly sanitizedRequestRef?: string;
+  readonly error?: undefined;
+}
+
+export interface NavigationLifecycleFailureResult {
+  readonly kind: 'lifecycle-failure';
+  readonly outcome: 'failed';
+  readonly reason: NavigationLifecycleFailureReason;
+  readonly errorReason: NavigationLifecycleFailureReason;
+  readonly historyMode: HistoryMode;
+  readonly stateOnly: false;
+  readonly committed: false;
+  degraded: false;
+  readonly issues: NavigationIssue[];
+  readonly source: 'none';
+  readonly renderedKind: null;
+  readonly normalizedUrl?: never;
+  readonly requestedUrl?: never;
+  readonly error: Error;
+}
+
+export interface NavigationLoadFailureResult extends NavigationResultMetadata {
+  readonly kind: 'load-failure';
+  readonly outcome: 'failed';
+  readonly reason: NavigationLoadFailureReason;
+  readonly historyMode: HistoryMode;
+  readonly normalizedUrl: InternalDocumentNormalizedUrl;
+  readonly requestedUrl?: never;
+  readonly error?: Error | undefined;
+  readonly errorReason: NavigationLoadFailureReason;
+}
+
+export type NavigationResult =
+  | NavigationCompletedResult
+  | NavigationCancelledResult
+  | NavigationSupersededResult
+  | NavigationValidationFailureResult
+  | NavigationLifecycleFailureResult
+  | NavigationLoadFailureResult;
 
 export interface ContentUpdatePayload {
   html: string;
@@ -112,7 +214,7 @@ export interface UrlStateNavigationPolicy {
   evaluate(context: {
     currentUrl: string;
     requestedUrl: string;
-    normalizedUrl: string;
+    normalizedUrl: InternalDocumentNormalizedUrl;
     historyMode: HistoryMode;
     outlet: HTMLElement;
   }): UrlStateNavigationDecision | Promise<UrlStateNavigationDecision>;
@@ -149,12 +251,12 @@ export type LoadDocumentResult =
       envelope: NavigationEnvelope;
       source: 'error-fallback';
       error?: Error | undefined;
-      errorReason?: Exclude<NavigationErrorReason, 'destroyed' | 'not-started'> | undefined;
+      errorReason?: NavigationLoadFailureReason | undefined;
     };
 
 export interface DocumentRouteContext {
   url: string;
-  normalizedUrl: string;
+  normalizedUrl: InternalDocumentNormalizedUrl;
   pathname: string;
   searchParams: URLSearchParams;
   hash: string;
@@ -176,7 +278,7 @@ export type DocumentRouteHandler = (
 export interface BeforeNavigateContext {
   currentUrl: string;
   requestedUrl: string;
-  normalizedUrl: string;
+  normalizedUrl: InternalDocumentNormalizedUrl;
   historyMode: HistoryMode;
 }
 

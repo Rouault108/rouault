@@ -11,6 +11,27 @@ import {
   type NavigationResult,
 } from '../../src/router/router.js';
 
+const createRouterTestUrlDependencies = () => ({
+  siteUrlContext: { siteOrigin: window.location.origin, basePath: '' },
+  routeManifestState: {
+    status: 'loaded' as const,
+    manifest: {
+      version: 1 as const,
+      buildId: 'build-test',
+      buildLabel: 'test',
+      generatedAt: '2026-04-11T00:00:00.000Z',
+      siteOrigin: window.location.origin,
+      basePath: '',
+      routes: ['/', '/next/', '/articles/example/', '/search/', '/tags/music/'],
+    },
+    routeSet: {
+      routes: ['/', '/next/', '/articles/example/', '/search/', '/tags/music/'],
+      has: (pathname: string) => ['/', '/next/', '/articles/example/', '/search/', '/tags/music/'].includes(pathname),
+    },
+  },
+  isInternalDocumentPathname: (pathname: string) => ['/', '/next/', '/articles/example/', '/search/', '/tags/music/'].includes(pathname),
+});
+
 beforeEach(() => {
   document.head.insertAdjacentHTML(
     'beforeend',
@@ -180,7 +201,7 @@ describe('Router', () => {
       );
     };
 
-    router = new Router(outlet);
+    router = new Router(outlet, createRouterTestUrlDependencies());
 
     const link = await fixture<HTMLAnchorElement>(html`<a href="/next-page">Next</a>`);
     let defaultPrevented = false;
@@ -198,7 +219,7 @@ describe('Router', () => {
   });
 
   it('start() は初回遷移結果を返し、2回目以降は null を返すこと', async () => {
-    router = new Router(outlet);
+    router = new Router(outlet, createRouterTestUrlDependencies());
 
     const firstResult = await router.start();
     const secondResult = await router.start();
@@ -212,7 +233,7 @@ describe('Router', () => {
   });
 
   it('skipInitialNavigation=true の start() は null を返し、navigate() で遷移できること', async () => {
-    router = new Router(outlet, { skipInitialNavigation: true });
+    router = new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true });
 
     const startResult = await router.start();
     const navigateResult = await router.navigate({
@@ -227,7 +248,7 @@ describe('Router', () => {
   });
 
   it('start() 前の navigate() は not-started 失敗結果を返すこと', async () => {
-    router = new Router(outlet, { skipInitialNavigation: true });
+    router = new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true });
 
     const result = await router.navigate({
       url: '/before-start',
@@ -241,7 +262,7 @@ describe('Router', () => {
   });
 
   it('destroy() 後の navigate() は destroyed 失敗結果を返し、所有権を解放すること', async () => {
-    router = new Router(outlet, { skipInitialNavigation: true });
+    router = new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true });
     await router.start();
     router.destroy();
 
@@ -249,7 +270,7 @@ describe('Router', () => {
       url: '/after-destroy',
       historyMode: 'push',
     });
-    const nextRouter = new Router(outlet, { skipInitialNavigation: true });
+    const nextRouter = new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true });
 
     expect(result.outcome).to.equal('failed');
     expect(result.errorReason).to.equal('destroyed');
@@ -258,9 +279,9 @@ describe('Router', () => {
   });
 
   it('live Router の二重生成では RouterOwnershipError を送出すること', () => {
-    router = new Router(outlet, { skipInitialNavigation: true });
+    router = new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true });
 
-    expect(() => new Router(outlet, { skipInitialNavigation: true })).to.throw(
+    expect(() => new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true })).to.throw(
       RouterOwnershipError,
     );
   });
@@ -275,7 +296,7 @@ describe('Router', () => {
       );
     };
 
-    router = new Router(outlet, { skipInitialNavigation: true });
+    router = new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true });
     router.addDocumentRoute('/virtual-route', ({ normalizedUrl, searchParams }) => {
       observedSearchValues = searchParams.getAll('tag');
       searchParams.append('tag', 'mutated');
@@ -309,7 +330,7 @@ describe('Router', () => {
   });
 
   it('getSearchParams() は重複値を保持し、防御的コピーを返すこと', async () => {
-    router = new Router(outlet, { skipInitialNavigation: true });
+    router = new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true });
     await router.start();
     await router.navigate({
       url: '/notes/testing?tag=a&tag=b&empty=',
@@ -325,7 +346,7 @@ describe('Router', () => {
   });
 
   it('before navigate hook の false は cancelled を返すこと', async () => {
-    router = new Router(outlet, { skipInitialNavigation: true });
+    router = new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true });
     router.addBeforeNavigateHook(() => false);
     await router.start();
 
@@ -356,7 +377,7 @@ describe('Router', () => {
     let shellRollbackCalled = false;
     let postCommitCalled = false;
 
-    router = new Router(outlet, {
+    router = new Router(outlet, createRouterTestUrlDependencies(), {
       skipInitialNavigation: true,
       shellAdapter: {
         prepare: () => ({
@@ -404,7 +425,7 @@ describe('Router', () => {
   });
 
   it('post-commit failure は completed + degraded に落とすこと', async () => {
-    router = new Router(outlet, {
+    router = new Router(outlet, createRouterTestUrlDependencies(), {
       skipInitialNavigation: true,
       postCommitController: {
         run: () => {
@@ -441,7 +462,7 @@ describe('Router', () => {
       },
     });
 
-    router = new Router(outlet, { skipInitialNavigation: true });
+    router = new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true });
     await router.start();
 
     const result = await router.navigate({
@@ -470,7 +491,7 @@ describe('Router', () => {
       __routerUrl: '/notes/testing?tab=overview',
     };
 
-    router = new Router(outlet, {
+    router = new Router(outlet, createRouterTestUrlDependencies(), {
       skipInitialNavigation: true,
       urlStateNavigationPolicy: {
         evaluate: ({ currentUrl, normalizedUrl }) =>
@@ -535,7 +556,7 @@ describe('Router', () => {
   });
 
   it('新規履歴書込みは __routerUrl を現在 URL へ更新すること', async () => {
-    router = new Router(outlet, { skipInitialNavigation: true });
+    router = new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true });
     await router.start();
 
     await router.navigate({
@@ -555,7 +576,7 @@ describe('Router', () => {
         resolveResponse = resolve;
       });
 
-    router = new Router(outlet, { skipInitialNavigation: true });
+    router = new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true });
     await router.start();
 
     const busyStates: boolean[] = [];
@@ -602,7 +623,7 @@ describe('Router', () => {
       );
     }) as typeof globalThis.fetch;
 
-    router = new Router(outlet, { skipInitialNavigation: true });
+    router = new Router(outlet, createRouterTestUrlDependencies(), { skipInitialNavigation: true });
     await router.start();
 
     const link = await fixture<HTMLAnchorElement>(html`<a href="/about/">About</a>`);

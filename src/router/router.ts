@@ -204,11 +204,18 @@ export class Router {
     return this.location.getPath(this.currentUrl);
   }
 
+  private getCurrentAbsoluteUrl(): string {
+    return new URL(
+      this.currentUrl || this.location.readCurrentUrl(),
+      `${this.urlDependencies.siteUrlContext.siteOrigin}${this.urlDependencies.siteUrlContext.basePath}/`,
+    ).toString();
+  }
+
   async navigate(request: NavigateRequest): Promise<NavigationResult> {
     const historyMode = request.historyMode ?? 'push';
     const validation = validateInternalDocumentNavigationRequest({
       requestedUrl: request.url,
-      currentUrl: this.currentUrl || this.location.readCurrentUrl(),
+      currentUrl: this.getCurrentAbsoluteUrl(),
       siteUrlContext: this.urlDependencies.siteUrlContext,
       routeManifestState: this.urlDependencies.routeManifestState,
     });

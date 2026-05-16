@@ -30,7 +30,7 @@ const getPersistentSidebarColumn = (root: ParentNode): HTMLElement | null =>
   root.querySelector<HTMLElement>('[data-app-shell-sidebar-host]');
 
 const VALID_SIDEBAR_NAV_HTML =
-  '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:test"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></nav>';
+  '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:test"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></nav>';
 
 const createValidSidebarProjection = (): ShellProjectionSnapshot['sidebar'] => ({
   present: true,
@@ -744,7 +744,7 @@ describe('app-router', () => {
                     <a
                       data-sidebar-nav-control
                       data-sidebar-nav-link
-                      href="/notes/old"
+                      href="/notes/old" data-link-kind="internal-document" data-link-surface="navigation"
                       aria-current="page"
                       ><span data-sidebar-nav-label>Old</span></a
                     >
@@ -792,7 +792,7 @@ describe('app-router', () => {
               initialExpandedIds: [],
               topologyRevision: 'topology:new',
               navHtml:
-                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
+                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
               heading: '新しいナビゲーション',
               fixedBreakpoint: 1440,
               sidebarId: 'note-primary',
@@ -846,7 +846,7 @@ describe('app-router', () => {
                     <a
                       data-sidebar-nav-control
                       data-sidebar-nav-link
-                      href="/notes/old"
+                      href="/notes/old" data-link-kind="internal-document" data-link-surface="navigation"
                       aria-current="page"
                       ><span data-sidebar-nav-label>Old</span></a
                     >
@@ -893,7 +893,7 @@ describe('app-router', () => {
               initialExpandedIds: [],
               topologyRevision: 'topology:new',
               navHtml:
-                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
+                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
               heading: null,
               fixedBreakpoint: 1024,
               sidebarId: 'note-primary',
@@ -943,7 +943,7 @@ describe('app-router', () => {
                     <a
                       data-sidebar-nav-control
                       data-sidebar-nav-link
-                      href="/notes/old"
+                      href="/notes/old" data-link-kind="internal-document" data-link-surface="navigation"
                       aria-current="page"
                       ><span data-sidebar-nav-label>Old</span></a
                     >
@@ -1035,7 +1035,7 @@ describe('app-router', () => {
                     <a
                       data-sidebar-nav-control
                       data-sidebar-nav-link
-                      href="/notes/old"
+                      href="/notes/old" data-link-kind="internal-document" data-link-surface="navigation"
                       aria-current="page"
                     >
                       <span data-sidebar-nav-label>Old</span>
@@ -1132,7 +1132,7 @@ describe('app-router', () => {
                     <a
                       data-sidebar-nav-control
                       data-sidebar-nav-link
-                      href="/notes/old"
+                      href="/notes/old" data-link-kind="internal-document" data-link-surface="navigation"
                       aria-current="page"
                       ><span data-sidebar-nav-label>Old</span></a
                     >
@@ -1199,7 +1199,7 @@ describe('app-router', () => {
               initialExpandedIds: [],
               topologyRevision: 'topology:new',
               navHtml:
-                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
+                '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:new"><ul><li data-node-id="notes/new" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/new" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>New</span></a></li></ul></nav>',
               heading: '新しいナビゲーション',
               fixedBreakpoint: 1440,
               sidebarId: 'note-primary',

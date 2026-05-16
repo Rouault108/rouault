@@ -7,7 +7,7 @@ import {
   NAVIGATION_ENVELOPE_SCHEMA_VERSION,
   type NavigationEnvelope,
 } from '../../shared/navigation/navigation-envelope.js';
-import type { LoadDocumentResult, NavigationErrorReason } from './router-types.js';
+import type { LoadDocumentResult, NavigationLoadFailureReason } from './router-types.js';
 import {
   NavigationEnvelopeContractError,
   NavigationEnvelopeMetadataMismatchError,
@@ -132,7 +132,7 @@ export class ErrorEnvelopeFactory {
   private createErrorResult(
     title: string,
     message: string,
-    reason: Exclude<NavigationErrorReason, 'destroyed' | 'not-started'>,
+    reason: NavigationLoadFailureReason,
     _statusCode?: number,
     error?: Error,
   ): LoadDocumentResult {

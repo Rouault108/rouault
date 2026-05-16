@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { CorpusPageEntry, CorpusPageNoteSummary } from '../../data/corpusPages.js';
-import { navigateInternalDocument } from '../../search/navigation.js';
+import { navigateInternalDocument } from '../../router/navigate-internal-document.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
 import '../ui/card/card.js';
 import '../ui/empty-state/empty-state.js';

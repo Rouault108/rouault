@@ -4,7 +4,12 @@ import {
   RouterNotStartedError,
   type ContentUpdateAdapter,
   type NavigationResult,
+  type RouterRuntimeUrlDependencies,
+  type HistoryMode,
 } from '../../router/router.js';
+import type { InternalDocumentRouteManifestState } from '../../router/internal-document-route-manifest-loader.js';
+import { detectUnsafeHref } from '../../../shared/link/unsafe-href-detector.js';
+import { isPathnameInsideBasePath } from '../../../shared/site/site-url-context.js';
 import {
   createRouterContentHtml,
   type RouterContentHtml,
@@ -44,20 +49,59 @@ export interface AppRouterRouterDiagnosticDetail {
   diagnostic: RouterDiagnosticPayload;
 }
 
-const createNotStartedResult = (url: string): NavigationResult => ({
-  outcome: 'failed',
-  requestedUrl: url,
-  normalizedUrl: url,
-  historyMode: 'push',
-  stateOnly: false,
-  committed: false,
-  degraded: false,
-  issues: [],
-  source: 'none',
-  renderedKind: null,
-  error: new RouterNotStartedError('app-router が未初期化です。'),
-  errorReason: 'not-started',
-});
+
+export type AppRouterRuntimeInitializationState =
+  | 'not-initialized'
+  | 'initialized'
+  | 'failed';
+
+export class AppRouterRuntimeInitializationError extends Error {
+  override readonly name = 'AppRouterRuntimeInitializationError';
+
+  constructor(message = 'AppRouter runtime は二重初期化できません。') {
+    super(message);
+  }
+}
+
+type AppRouterRuntimeFailureBootstrap =
+  | { readonly reason: 'route-manifest-invalid'; readonly siteUrlContext?: RouterRuntimeUrlDependencies['siteUrlContext']; readonly routeManifestState?: Extract<InternalDocumentRouteManifestState, { readonly status: 'invalid' }> }
+  | { readonly siteUrlContext: RouterRuntimeUrlDependencies['siteUrlContext']; readonly routeManifestState: Extract<InternalDocumentRouteManifestState, { readonly status: 'unavailable' | 'stale' }> };
+
+const createNavigationFailureResult = (
+  reason: 'not-started' | 'disallowed-url' | 'route-manifest-unavailable' | 'route-manifest-invalid' | 'route-manifest-stale',
+  historyMode: HistoryMode,
+): NavigationResult => {
+  if (reason === 'not-started') {
+    return {
+      kind: 'lifecycle-failure',
+      outcome: 'failed',
+      reason: 'not-started',
+      historyMode,
+      stateOnly: false,
+      committed: false,
+      degraded: false,
+      issues: [],
+      source: 'none',
+      renderedKind: null,
+      error: new RouterNotStartedError('app-router が未初期化です。'),
+      errorReason: 'not-started',
+    };
+  }
+
+  return {
+    kind: 'validation-failure',
+    outcome: 'failed',
+    reason,
+    errorReason: reason,
+    historyMode,
+    stateOnly: false,
+    committed: false,
+    degraded: false,
+    issues: [],
+    source: 'none',
+    renderedKind: null,
+  };
+};
 
 registerTabsUrlSyncStrategy(primaryTabTabsUrlSyncStrategy);
 
@@ -69,7 +113,10 @@ export class AppRouter extends HTMLElement {
   private _serverContent: RouterContentHtml | null = null;
   private _currentContent: RouterContentHtml = createRouterContentHtml('');
   private _router: Router | null = null;
+  private _runtimeFailureReason: 'route-manifest-unavailable' | 'route-manifest-invalid' | 'route-manifest-stale' | null = null;
+  private _runtimeFailureSiteUrlContext: RouterRuntimeUrlDependencies['siteUrlContext'] | null = null;
   private _bootstrapped = false;
+  private _runtimeInitializationState: AppRouterRuntimeInitializationState = 'not-initialized';
   private _isNavigating = false;
   private readonly _postRenderController: AppRouterPostRenderController;
   private _resolveReady: (() => void) | null = null;
@@ -113,11 +160,6 @@ export class AppRouter extends HTMLElement {
   }
 
   connectedCallback(): void {
-    if (this._router) {
-      this._markReady();
-      return;
-    }
-
     const existingContentRoot = this._findExistingContentRoot();
     const contentRoot = this._ensureContentRoot(existingContentRoot);
     const isInitialBoot = !this._bootstrapped;
@@ -129,8 +171,14 @@ export class AppRouter extends HTMLElement {
       this._ensureAnnouncementRegion();
       this._syncBusyState(this._isNavigating);
     }
+  }
 
-    const router = new Router(this, {
+  initializeRuntime(urlDependencies: RouterRuntimeUrlDependencies): void {
+    if (this._runtimeInitializationState !== 'not-initialized' || this._router || this._runtimeFailureReason !== null) {
+      throw new AppRouterRuntimeInitializationError();
+    }
+
+    const router = new Router(this, urlDependencies, {
       skipInitialNavigation: true,
       contentAdapter: this._createContentAdapter(),
       postCommitController: this._postRenderController.createPostCommitController(this),
@@ -151,15 +199,23 @@ export class AppRouter extends HTMLElement {
       this._dispatchRouterDiagnostic(diagnostic);
     });
 
+    this._runtimeInitializationState = 'initialized';
+    this._runtimeFailureReason = null;
     this._router = router;
-
     void router.start();
+    this._postRenderController.restoreInitialScrollImmediately(window.location.href);
+    void this._postRenderController.restoreInitialScroll();
+    this._markReady();
+  }
 
-    if (isInitialBoot) {
-      this._postRenderController.restoreInitialScrollImmediately(window.location.href);
-      void this._postRenderController.restoreInitialScroll();
+  initializeRuntimeFailure(bootstrap: AppRouterRuntimeFailureBootstrap): void {
+    if (this._runtimeInitializationState !== 'not-initialized' || this._router || this._runtimeFailureReason !== null) {
+      throw new AppRouterRuntimeInitializationError();
     }
-
+    this._runtimeInitializationState = 'failed';
+    this._router = null;
+    this._runtimeFailureReason = 'reason' in bootstrap ? bootstrap.reason : bootstrap.routeManifestState.reason;
+    this._runtimeFailureSiteUrlContext = bootstrap.siteUrlContext ?? null;
     this._markReady();
   }
 
@@ -170,15 +226,43 @@ export class AppRouter extends HTMLElement {
     this._postRenderController.dispose();
   }
 
-  async navigate(url: string): Promise<NavigationResult> {
+  async navigate(
+    url: string,
+    options: { readonly historyMode?: HistoryMode } = {},
+  ): Promise<NavigationResult> {
+    const historyMode = options.historyMode ?? 'push';
     const router = this._router;
     if (!router) {
-      return createNotStartedResult(url);
+      const unsafe = detectUnsafeHref(url);
+      if (!unsafe.ok) {
+        return createNavigationFailureResult('disallowed-url', historyMode);
+      }
+
+      const failureContext = this._runtimeFailureSiteUrlContext;
+      if (failureContext !== null) {
+        try {
+          const parsed = new URL(url, `${failureContext.siteOrigin}/`);
+          if (
+            (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') ||
+            parsed.origin !== failureContext.siteOrigin ||
+            !isPathnameInsideBasePath(parsed.pathname, failureContext.basePath)
+          ) {
+            return createNavigationFailureResult('disallowed-url', historyMode);
+          }
+        } catch {
+          return createNavigationFailureResult('disallowed-url', historyMode);
+        }
+      }
+
+      return createNavigationFailureResult(
+        this._runtimeFailureReason ?? 'not-started',
+        historyMode,
+      );
     }
 
     return router.navigate({
       url,
-      historyMode: 'push',
+      historyMode,
     });
   }
 

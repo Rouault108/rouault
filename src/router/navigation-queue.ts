@@ -1,9 +1,10 @@
 import type { HistoryMode, NavigationResult } from './router-types.js';
+import type { InternalDocumentNormalizedUrl } from './internal-document-normalized-url.js';
 import type { RouterDiagnosticPayload } from './router-diagnostics.js';
 
 export interface QueuedNavigationRequest {
   requestedUrl: string;
-  normalizedUrl: string;
+  normalizedUrl: InternalDocumentNormalizedUrl;
   historyMode: HistoryMode;
   state: Record<string, unknown> | undefined;
 }

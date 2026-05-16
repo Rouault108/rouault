@@ -1,36 +1,14 @@
 import type { SearchReturnToReadingEventDetail } from '../../shared/search/search-types.js';
+import { navigateInternalDocument, type NavigateInternalDocumentOptions } from '../router/navigate-internal-document.js';
 import {
   createSearchReturnToReadingEvent,
   searchReturnToReadingEventName,
 } from './search-dialog-events.js';
 
-export interface NavigationOptions {
-  assign?: (url: string) => void;
-  resolveRouter?: () => (HTMLElement & { navigate?: (path: string) => Promise<unknown> }) | null;
-}
+export interface NavigationOptions extends NavigateInternalDocumentOptions {}
 
 export interface ReturnToReadingDispatchOptions {
   target?: EventTarget | null;
-}
-
-export async function navigateToUrl(url: string, options: NavigationOptions = {}): Promise<void> {
-  const routerElement =
-    options.resolveRouter?.() ??
-    document.querySelector<HTMLElement & { navigate?: (path: string) => Promise<unknown> }>(
-      'app-router',
-    );
-
-  if (typeof routerElement?.navigate === 'function') {
-    await routerElement.navigate(url);
-    return;
-  }
-
-  const assign =
-    options.assign ??
-    ((target: string) => {
-      window.location.assign(target);
-    });
-  assign(url);
 }
 
 export function dispatchSearchReturnToReading(
@@ -59,5 +37,5 @@ export async function handleSearchReturnToReadingEvent(
     return;
   }
 
-  await navigateToUrl(url, options);
+  await navigateInternalDocument(url, options);
 }

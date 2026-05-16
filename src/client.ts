@@ -99,7 +99,18 @@ const initializeAppRouterRuntime = async (): Promise<void> => {
   });
 
   if (routeManifestState.status !== 'loaded') {
-    appRouter.initializeRuntimeFailure({ siteUrlContext: manifestMeta.siteUrlContext, routeManifestState });
+    if (routeManifestState.status === 'invalid') {
+      appRouter.initializeRuntimeFailure({
+        reason: 'route-manifest-invalid',
+        siteUrlContext: manifestMeta.siteUrlContext,
+        routeManifestState,
+      });
+    } else {
+      appRouter.initializeRuntimeFailure({
+        siteUrlContext: manifestMeta.siteUrlContext,
+        routeManifestState,
+      });
+    }
     initSearchUnavailable();
     return;
   }

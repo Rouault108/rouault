@@ -15,7 +15,7 @@ import type { SelectOption } from '../../components/ui/select/select.js';
 import { HIGHLIGHT_RULE_TEMPLATE } from '../ui/highlight/highlight.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
 import { createSearchCore, type SearchCore } from '../../search/search-core.js';
-import { navigateInternalDocument } from '../../search/navigation.js';
+import { navigateInternalDocument } from '../../router/navigate-internal-document.js';
 import {
   DEFAULT_SEARCH_SORT_MODE,
   DEFAULT_SEARCH_TAG_MODE,
