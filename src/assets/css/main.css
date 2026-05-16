@@ -1168,12 +1168,7 @@ a:focus-visible {
       ui-footnote .footnote-list-link
     )
   ):is(
-    [data-link-kind='external-web'],
-    [data-link-kind='external-action'],
-    [href^='http://'],
-    [href^='https://'],
-    [href^='mailto:'],
-    [href^='tel:']
+    [data-link-kind='external-web']
   ) {
   text-decoration-style: dotted;
 }
@@ -1188,12 +1183,7 @@ a:focus-visible {
       ui-footnote .footnote-list-link
     )
   ):is(
-    [data-link-kind='external-web'],
-    [data-link-kind='external-action'],
-    [href^='http://'],
-    [href^='https://'],
-    [href^='mailto:'],
-    [href^='tel:']
+    [data-link-kind='external-web']
   )::after {
   content: '↗';
   display: inline-block;
@@ -1215,12 +1205,7 @@ a:focus-visible {
       ui-footnote .footnote-list-link
     )
   ):is(
-    [data-link-kind='external-web'],
-    [data-link-kind='external-action'],
-    [href^='http://'],
-    [href^='https://'],
-    [href^='mailto:'],
-    [href^='tel:']
+    [data-link-kind='external-web']
   ):hover::after,
 :is(.prose, .about-prose)
   a[href]:not(
@@ -1232,12 +1217,7 @@ a:focus-visible {
       ui-footnote .footnote-list-link
     )
   ):is(
-    [data-link-kind='external-web'],
-    [data-link-kind='external-action'],
-    [href^='http://'],
-    [href^='https://'],
-    [href^='mailto:'],
-    [href^='tel:']
+    [data-link-kind='external-web']
   ):focus-visible::after {
   color: currentColor;
 }
@@ -1336,9 +1316,7 @@ a:focus-visible {
 }
 
 .ui-link[data-link-kind='external-web']::after,
-.ui-link[data-link-kind='external-action']::after,
-.link-control[data-link-kind='external-web']::after,
-.link-control[data-link-kind='external-action']::after {
+.link-control[data-link-kind='external-web']::after {
   content: '↗';
   display: inline-block;
   margin-inline-start: 0.28em;
@@ -1350,9 +1328,7 @@ a:focus-visible {
 }
 
 .ui-link[data-link-kind='external-web']:hover::after,
-.ui-link[data-link-kind='external-action']:hover::after,
-.link-control[data-link-kind='external-web']:hover::after,
-.link-control[data-link-kind='external-action']:hover::after {
+.link-control[data-link-kind='external-web']:hover::after {
   color: currentColor;
 }
 
