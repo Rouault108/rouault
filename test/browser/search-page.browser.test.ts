@@ -4,7 +4,10 @@ import type { Checkbox } from '../../src/components/ui/checkbox/checkbox.js';
 import type { Details } from '../../src/components/ui/details/details.js';
 import type { SearchField } from '../../src/components/ui/search-field/search-field.js';
 import type { SearchPage } from '../../src/components/search/search-page.js';
+import { initSearch, resetSearchBootstrapForTest } from '../../src/search/bootstrap.js';
 import { createSearchCore } from '../../src/search/search-core.js';
+import { createInternalDocumentRouteManifest } from '../../shared/navigation/internal-document-route-manifest.js';
+import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
 import type { ExploreSearchResponse, SearchRequest } from '../../shared/search/search-types.js';
@@ -47,8 +50,6 @@ interface FilterOptionState {
   checked: boolean;
   selected: boolean;
 }
-
-const ORIGINAL_SEARCH = createTestSearchCore().search.bind(createTestSearchCore());
 
 const MOCK_ITEMS: readonly MockSearchItem[] = [
   {
@@ -208,13 +209,42 @@ const createSearchResponse = (
   } satisfies ExploreSearchResponse;
 };
 
-const installSearchMock = (): void => {
-  createTestSearchCore().search = (request: SearchRequest) =>
-    Promise.resolve(createSearchResponse(request.q, request.tags, request.sort, request.tagMode));
-};
+const createTestRouteSet = () =>
+  createInternalDocumentRouteSet([
+    '/',
+    '/search/',
+    '/tags/lit/',
+    ...MOCK_ITEMS.map((item) => item.canonicalPathname),
+  ]);
 
-const restoreSearchMock = (): void => {
-  createTestSearchCore().search = ORIGINAL_SEARCH;
+const installSearchMock = (): void => {
+  resetSearchBootstrapForTest();
+
+  const routeSet = createTestRouteSet();
+  const controller = createTestSearchCore();
+  controller.search = (request: SearchRequest) =>
+    Promise.resolve(createSearchResponse(request.q, request.tags, request.sort, request.tagMode));
+
+  const result = initSearch({
+    runtimeEnvironment: 'test',
+    siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+    routeManifestState: {
+      status: 'loaded',
+      routeSet,
+      manifest: createInternalDocumentRouteManifest({
+        buildId: 'test-build-id',
+        buildLabel: 'test-build-label',
+        generatedAt: '2026-01-01T00:00:00.000Z',
+        siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+        routeSet,
+      }),
+    },
+    controller,
+  });
+
+  if (result.status !== 'ready') {
+    throw new Error(`search bootstrap failed: ${result.reason}`);
+  }
 };
 
 const flush = async (host: SearchPage): Promise<void> => {
@@ -322,7 +352,7 @@ const assertFilterSelectionConsistency = (host: SearchPage, context: string): vo
 
 describe('search-page browser contract', () => {
   afterEach(() => {
-    restoreSearchMock();
+    resetSearchBootstrapForTest();
     history.replaceState(history.state, '', '/');
   });
 

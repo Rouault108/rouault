@@ -36,12 +36,36 @@ const projectRoot = process.cwd();
 const veliteNotesPath = `${projectRoot}/.velite/notes.json`;
 const canaryFixturePath = new URL('../fixtures/note-hydration-canary-notes.json', import.meta.url);
 
-const loadHydrationCanaryNotes = (): VeliteNoteFixture[] => {
-  if (existsSync(veliteNotesPath)) {
-    return JSON.parse(readFileSync(veliteNotesPath, 'utf8')) as VeliteNoteFixture[];
+const readHydrationCanaryFixtureNotes = (): VeliteNoteFixture[] =>
+  JSON.parse(readFileSync(canaryFixturePath, 'utf8')) as VeliteNoteFixture[];
+
+const mergeCanaryFixtureNotes = (
+  generatedNotes: readonly VeliteNoteFixture[],
+  canaryNotes: readonly VeliteNoteFixture[],
+): VeliteNoteFixture[] => {
+  const merged = new Map<string, VeliteNoteFixture>();
+
+  for (const note of generatedNotes) {
+    merged.set(note.slug, note);
   }
 
-  return JSON.parse(readFileSync(canaryFixturePath, 'utf8')) as VeliteNoteFixture[];
+  for (const note of canaryNotes) {
+    if (!merged.has(note.slug)) {
+      merged.set(note.slug, note);
+    }
+  }
+
+  return [...merged.values()];
+};
+
+const loadHydrationCanaryNotes = (): VeliteNoteFixture[] => {
+  const canaryNotes = readHydrationCanaryFixtureNotes();
+  if (!existsSync(veliteNotesPath)) {
+    return canaryNotes;
+  }
+
+  const generatedNotes = JSON.parse(readFileSync(veliteNotesPath, 'utf8')) as VeliteNoteFixture[];
+  return mergeCanaryFixtureNotes(generatedNotes, canaryNotes);
 };
 
 const notes = loadHydrationCanaryNotes();

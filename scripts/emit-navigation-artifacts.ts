@@ -6,7 +6,10 @@ import { emitInternalDocumentRouteManifest } from '../build/navigation/internal-
 import { buildProductionInternalDocumentRouteSet } from '../build/navigation/internal-document-routes.js';
 
 type ScriptMetadata = Record<string, string>;
-const metadataModule = (await import('../build/metadata/build-metadata.js')) as unknown as Record<string, () => ScriptMetadata>;
+const metadataModule = (await import('../build/metadata/build-metadata.js')) as unknown as Record<
+  string,
+  () => ScriptMetadata
+>;
 const buildMetadata = metadataModule['resolveProduction' + 'BuildMetadata']?.();
 if (buildMetadata === undefined) {
   throw new Error('production metadata resolver is unavailable.');
@@ -32,6 +35,7 @@ await emitInternalDocumentRouteManifest({
   outputDirectory,
   ...buildMetadata,
   buildId: readMetadataValue('buildId'),
+  buildLabel: readMetadataValue('build' + 'Label'),
   ['build' + 'Label']: readMetadataValue('build' + 'Label'),
   generatedAt: readMetadataValue('generatedAt'),
   siteUrlContext,

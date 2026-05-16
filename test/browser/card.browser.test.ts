@@ -135,7 +135,13 @@ describe('ui-card browser contract', () => {
     try {
       const host = await fixture<Card>(html`
         <ui-card clickable>
-          <a id="primary-link" href="/notes/primary">primary</a>
+          <a
+            id="primary-link"
+            href="/notes/primary"
+            data-link-kind="internal-document"
+            data-link-surface="card"
+            >primary</a
+          >
           <button id="inner-button" type="button">inner action</button>
         </ui-card>
       `);
