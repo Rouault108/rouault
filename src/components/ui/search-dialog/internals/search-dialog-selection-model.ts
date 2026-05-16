@@ -210,7 +210,8 @@ export class SearchDialogSelectionModel {
 
     this._host.dispatchSelected({
       id: item.id,
-      url: item.url,
+      renderHref: item.renderHref,
+      canonicalPathname: item.canonicalPathname,
       title: item.title,
       query: this._host.getQuery(),
       index,

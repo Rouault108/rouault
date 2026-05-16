@@ -12,7 +12,7 @@ interface SessionState {
   loading: boolean;
   items: readonly UiSearchDialogItem[];
   searcher: UiSearchDialogSearcher | null;
-  matchFields: readonly ('title' | 'path' | 'keywords' | 'url')[];
+  matchFields: readonly ('title' | 'path' | 'keywords' | 'renderHref')[];
   results: UiSearchDialogItem[];
   activeId: string | null;
   hasCompletedSearch: boolean;
@@ -93,7 +93,7 @@ describe('SearchDialogSearchSession', () => {
 
   it('空クエリなら結果をクリアする', () => {
     const state = createState();
-    state.results = [{ id: 'old', title: 'old', url: '/old' }];
+    state.results = [{ id: 'old', title: 'old', renderHref: '/old' , canonicalPathname: '/old' }];
     state.activeId = 'old';
     state.hasCompletedSearch = true;
     state.errorCode = 'stale';
@@ -129,18 +129,20 @@ describe('SearchDialogSearchSession', () => {
       {
         id: 'alpha',
         title: 'Alpha Guide',
-        url: '/alpha',
+        renderHref: '/alpha',
+        canonicalPathname: '/alpha',
         path: '/docs/alpha',
         keywords: ['guide'],
       },
       {
         id: 'delta',
         title: 'Delta Reference',
-        url: '/delta',
+        renderHref: '/delta',
+        canonicalPathname: '/delta',
         path: '/api/delta',
         keywords: ['schema'],
       },
-      { id: 'gamma', title: 'Gamma Note', url: '/gamma', path: '/notes/gamma', keywords: ['api'] },
+      { id: 'gamma', title: 'Gamma Note', renderHref: '/gamma', canonicalPathname: '/gamma', path: '/notes/gamma', keywords: ['api'] },
     ];
 
     const session = new SearchDialogSearchSession(createHost(state));
@@ -148,24 +150,24 @@ describe('SearchDialogSearchSession', () => {
     session.handleQueryChanged();
     await waitForSearch();
 
-    expect(state.results.map((item) => item.url)).to.deep.equal(['/delta', '/gamma']);
+    expect(state.results.map((item) => item.renderHref)).to.deep.equal(['/delta', '/gamma']);
     expect(state.activeId).to.equal('delta');
     expect(state.hasCompletedSearch).to.equal(true);
     expect(state.liveMessage).to.contain('2 件');
     expect(state.scrolled).to.equal(true);
   });
 
-  it('custom searcher の結果を正規化し、空 id/title/url と重複を落とす', async () => {
+  it('custom searcher の結果を正規化し、空 id/title/renderHref と重複を落とす', async () => {
     const state = createState();
     state.query = 'alpha';
     state.searcher = () => ({
       items: [
-        { id: 'alpha', title: ' Alpha ', url: '/alpha ' },
-        { id: 'alpha', title: 'Alpha', url: '/alpha' },
-        { id: 'empty-title', title: '', url: '/empty-title' },
-        { id: 'empty-url', title: 'Empty Url', url: '' },
-        { id: '', title: 'No Id', url: '/missing-id' },
-        { id: 'beta', title: 'Beta', url: '/beta', path: ' /beta ' },
+        { id: 'alpha', title: ' Alpha ', renderHref: '/alpha ' , canonicalPathname: '/alpha ' },
+        { id: 'alpha', title: 'Alpha', renderHref: '/alpha' , canonicalPathname: '/alpha' },
+        { id: 'empty-title', title: '', renderHref: '/empty-title' , canonicalPathname: '/empty-title' },
+        { id: 'empty-url', title: 'Empty Url', renderHref: '' , canonicalPathname: '' },
+        { id: '', title: 'No Id', renderHref: '/missing-id' , canonicalPathname: '/missing-id' },
+        { id: 'beta', title: 'Beta', renderHref: '/beta', canonicalPathname: '/beta', path: ' /beta ' },
       ] satisfies UiSearchDialogItem[],
     });
 
@@ -175,8 +177,8 @@ describe('SearchDialogSearchSession', () => {
     await waitForSearch();
 
     expect(state.results).to.deep.equal([
-      { id: 'alpha', title: 'Alpha', url: '/alpha' },
-      { id: 'beta', title: 'Beta', url: '/beta', path: '/beta' },
+      { id: 'alpha', title: 'Alpha', renderHref: '/alpha' , canonicalPathname: '/alpha' },
+      { id: 'beta', title: 'Beta', renderHref: '/beta', canonicalPathname: '/beta', path: '/beta' },
     ]);
   });
 
@@ -204,14 +206,14 @@ describe('SearchDialogSearchSession', () => {
   it('requestSearchNow は loading=false かつ非空 query の時だけ実行する', async () => {
     const state = createState();
     state.query = 'alpha';
-    state.items = [{ id: 'alpha', title: 'Alpha', url: '/alpha' }];
+    state.items = [{ id: 'alpha', title: 'Alpha', renderHref: '/alpha' , canonicalPathname: '/alpha' }];
 
     const session = new SearchDialogSearchSession(createHost(state));
 
     session.requestSearchNow();
     await waitForSearch();
 
-    expect(state.results).to.deep.equal([{ id: 'alpha', title: 'Alpha', url: '/alpha' }]);
+    expect(state.results).to.deep.equal([{ id: 'alpha', title: 'Alpha', renderHref: '/alpha' , canonicalPathname: '/alpha' }]);
   });
 
   it('同じ id が残る場合は activeId を維持する', async () => {
@@ -219,8 +221,8 @@ describe('SearchDialogSearchSession', () => {
     state.query = 'a';
     state.activeId = 'beta';
     state.items = [
-      { id: 'alpha', title: 'Alpha', url: '/alpha' },
-      { id: 'beta', title: 'Beta', url: '/beta' },
+      { id: 'alpha', title: 'Alpha', renderHref: '/alpha' , canonicalPathname: '/alpha' },
+      { id: 'beta', title: 'Beta', renderHref: '/beta' , canonicalPathname: '/beta' },
     ];
 
     const session = new SearchDialogSearchSession(createHost(state));
@@ -364,7 +366,7 @@ describe('SearchDialogSearchSession', () => {
     session.destroy();
 
     deferred.resolve({
-      items: [{ id: 'alpha', title: 'Alpha', url: '/alpha' }],
+      items: [{ id: 'alpha', title: 'Alpha', renderHref: '/alpha' , canonicalPathname: '/alpha' }],
     });
     await Promise.resolve();
 

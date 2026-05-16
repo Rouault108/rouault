@@ -1,18 +1,18 @@
 import { loadCatalogSourceBatch } from '../../sources/catalog-source.js';
 import { throwIfAborted } from '../../abort.js';
-import {
-  loadPagefindSourceBatch,
-  type PagefindApi,
-  type PagefindLoader,
-} from '../../sources/pagefind-source.js';
+import { loadPagefindSourceBatch } from '../../sources/pagefind-source.js';
+import type { PagefindApi, PagefindLoader } from '../../../../shared/search/search-loaders.js';
 import type { SearchCatalogItem } from '../../../../shared/search/search-catalog.js';
+import type { SiteUrlContext } from '../../../../shared/site/site-url-context.js';
 import type { SourceFederationStageOutput, QueryPreparationStageOutput } from '../stage-types.js';
+import type { MutableDiagnostics } from '../../diagnostics.js';
 
-export type LoadSearchCatalog = () => Promise<readonly SearchCatalogItem[]>;
+export type LoadSearchCatalog = (diagnostics: MutableDiagnostics) => Promise<readonly SearchCatalogItem[]>;
 
 export interface RunSourceFederationStageInput extends QueryPreparationStageOutput {
   loadPagefind: PagefindLoader;
   loadSearchCatalog: LoadSearchCatalog;
+  siteUrlContext: SiteUrlContext;
   signal?: AbortSignal | undefined;
 }
 
@@ -28,6 +28,7 @@ export async function runSourceFederationStage(
       preparedQuery: input.preparedQuery,
       diagnostics: input.diagnostics,
       signal: input.signal,
+      siteUrlContext: input.siteUrlContext,
     }),
     loadCatalogSourceBatch({
       loadSearchCatalog: input.loadSearchCatalog,

@@ -4,14 +4,37 @@ import type { Checkbox } from '../../src/components/ui/checkbox/checkbox.js';
 import type { Details } from '../../src/components/ui/details/details.js';
 import type { SearchField } from '../../src/components/ui/search-field/search-field.js';
 import type { SearchPage } from '../../src/components/search/search-page.js';
-import { searchCore } from '../../src/search/search-core.js';
+import { createSearchCore } from '../../src/search/search-core.js';
+import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
+import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
 import type { ExploreSearchResponse, SearchRequest } from '../../shared/search/search-types.js';
+import type { SearchCanonicalPathname, SearchRenderHref } from '../../shared/search/document-url.js';
 import { nextAnimationFrame, waitForLitUpdate, waitMs } from './helpers/wait-for-lit.js';
 
+
+const createTestSearchCore = () => createSearchCore({
+  runtimeEnvironment: 'test',
+  siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+  artifactUrlResolver: createSearchArtifactUrlResolver({ siteUrlContext: DEFAULT_SITE_URL_CONTEXT }),
+  isInternalDocumentPathname: (pathname: string) => pathname.startsWith('/'),
+  testOnlyLoadPagefind: async () => ({
+    filters: async () => ({}),
+    search: async () => ({ results: [], unfilteredResultCount: 0 }),
+  }),
+  testOnlySearchCatalogFetcher: async () => ({
+    ok: true,
+    status: 200,
+    type: 'basic',
+    redirected: false,
+    headers: { get: (_name: string) => 'application/json; charset=utf-8' },
+    json: async () => [],
+    text: async () => '[]',
+  }),
+});
+
 interface MockSearchItem {
-  canonicalUrl: string;
+  canonicalPathname: string;
   title: string;
-  url: string;
   pathLabel: string;
   snippet: string;
   description: string;
@@ -25,13 +48,12 @@ interface FilterOptionState {
   selected: boolean;
 }
 
-const ORIGINAL_SEARCH = searchCore.search.bind(searchCore);
+const ORIGINAL_SEARCH = createTestSearchCore().search.bind(createTestSearchCore());
 
 const MOCK_ITEMS: readonly MockSearchItem[] = [
   {
-    canonicalUrl: '/notes/router-design/',
+    canonicalPathname: '/notes/router-design/',
     title: 'Router 設計メモ',
-    url: '/notes/router-design',
     pathLabel: 'notes / router-design',
     snippet: 'Router の設計と遷移制御をまとめたメモです。',
     description: 'Router の設計ノート',
@@ -39,9 +61,8 @@ const MOCK_ITEMS: readonly MockSearchItem[] = [
     tags: ['router', 'architecture'],
   },
   {
-    canonicalUrl: '/notes/lit-performance/',
+    canonicalPathname: '/notes/lit-performance/',
     title: 'Lit レンダリング最適化',
-    url: '/notes/lit-performance',
     pathLabel: 'notes / lit-performance',
     snippet: 'Lit の描画最適化と差分更新をまとめています。',
     description: 'Lit の描画最適化メモ',
@@ -49,9 +70,8 @@ const MOCK_ITEMS: readonly MockSearchItem[] = [
     tags: ['lit', 'performance'],
   },
   {
-    canonicalUrl: '/notes/a11y-log/',
+    canonicalPathname: '/notes/a11y-log/',
     title: 'アクセシビリティ実装ログ',
-    url: '/notes/a11y-log',
     pathLabel: 'notes / a11y-log',
     snippet: 'フォーム操作とラベル設計を検証したメモです。',
     description: 'A11y 実装の記録',
@@ -59,9 +79,8 @@ const MOCK_ITEMS: readonly MockSearchItem[] = [
     tags: ['a11y', 'architecture'],
   },
   {
-    canonicalUrl: '/notes/router-event-boundary/',
+    canonicalPathname: '/notes/router-event-boundary/',
     title: 'Router イベント境界の設計',
-    url: '/notes/router-event-boundary',
     pathLabel: 'notes / router-event-boundary',
     snippet: 'Router のイベント境界と購読戦略を整理しています。',
     description: 'Router のイベント境界設計メモ',
@@ -163,9 +182,9 @@ const createSearchResponse = (
     rankingProfileId: 'rouault-search-v1',
     total: sortedItems.length,
     items: sortedItems.map((item) => ({
-      canonicalUrl: item.canonicalUrl,
+      canonicalPathname: item.canonicalPathname as SearchCanonicalPathname,
+      renderHref: item.canonicalPathname as SearchRenderHref,
       title: item.title,
-      url: item.url,
       pathLabel: item.pathLabel,
       description: item.description,
       date: {
@@ -190,12 +209,12 @@ const createSearchResponse = (
 };
 
 const installSearchMock = (): void => {
-  searchCore.search = (request: SearchRequest) =>
+  createTestSearchCore().search = (request: SearchRequest) =>
     Promise.resolve(createSearchResponse(request.q, request.tags, request.sort, request.tagMode));
 };
 
 const restoreSearchMock = (): void => {
-  searchCore.search = ORIGINAL_SEARCH;
+  createTestSearchCore().search = ORIGINAL_SEARCH;
 };
 
 const flush = async (host: SearchPage): Promise<void> => {

@@ -14,7 +14,11 @@ import '../../components/ui/tag/tag.js';
 import type { SelectOption } from '../../components/ui/select/select.js';
 import { HIGHLIGHT_RULE_TEMPLATE } from '../ui/highlight/highlight.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
-import { createSearchCore, type SearchCore } from '../../search/search-core.js';
+import type { SearchCore } from '../../search/search-core.js';
+import { getInitializedSearchCore, getInitializedSearchRoutePredicate } from '../../search/bootstrap.js';
+import { buildSearchResultRenderHref } from '../../search/normalize-search-result-url.js';
+import { createSearchJsonParseDiagnosticSink } from '../../../shared/search/search-diagnostics.js';
+import { parseStaticExploreSearchResponseJson } from '../../../shared/search/search-json-artifact-parser.js';
 import { navigateInternalDocument } from '../../router/navigate-internal-document.js';
 import {
   DEFAULT_SEARCH_SORT_MODE,
@@ -32,6 +36,7 @@ import type {
   SearchResultItem,
   SearchSnippet,
 } from '../../../shared/search/search-types.js';
+import { createSiteUrlContext, type SiteUrlContext } from '../../../shared/site/site-url-context.js';
 
 const SEARCH_DEBOUNCE_MS = 150;
 const SEARCH_SORT_OPTIONS: SelectOption[] = [
@@ -64,7 +69,8 @@ function isSameSearchState(left: SearchState, right: SearchState): boolean {
 
 @customElement('search-page')
 export class SearchPage extends LitElement {
-  private readonly _searchRuntime: SearchCore = createSearchCore();
+  private _searchRuntime: SearchCore | null = null;
+  private _siteUrlContext: SiteUrlContext | null = null;
 
   static override styles = [
     pageShellStyles,
@@ -463,7 +469,7 @@ export class SearchPage extends LitElement {
     this._errorMessage = '';
 
     try {
-      const result = await this._searchRuntime.search({
+      const result = await this._getSearchRuntime().search({
         mode: 'explore',
         q: this._query,
         tags: this._selectedTags,
@@ -625,6 +631,47 @@ export class SearchPage extends LitElement {
     this._pushUrl();
     void this._refreshResults();
   };
+
+
+  private _getSearchRuntime(): SearchCore {
+    const runtime = this._searchRuntime ?? getInitializedSearchCore();
+    if (runtime === null) {
+      throw new Error('SearchPage requires initialized search runtime.');
+    }
+    this._searchRuntime = runtime;
+    return runtime;
+  }
+
+  private _readSiteUrlContext(): SiteUrlContext {
+    if (this._siteUrlContext) {
+      return this._siteUrlContext;
+    }
+    if (typeof document === 'undefined') {
+      throw new Error('SearchPage requires document metadata to build render hrefs.');
+    }
+    const siteOrigin = document
+      .querySelector<HTMLMetaElement>('meta[name="rouault-site-origin"]')
+      ?.getAttribute('content');
+    const basePath = document
+      .querySelector<HTMLMetaElement>('meta[name="rouault-base-path"]')
+      ?.getAttribute('content') ?? '';
+    if (!siteOrigin || siteOrigin.trim().length === 0) {
+      throw new Error('SearchPage requires rouault-site-origin meta to build render hrefs.');
+    }
+    this._siteUrlContext = createSiteUrlContext({ siteOrigin, basePath });
+    return this._siteUrlContext;
+  }
+
+  private _renderHrefForItem(item: SearchResultItem): string {
+    if (typeof item.renderHref === 'string' && item.renderHref.length > 0) {
+      return item.renderHref;
+    }
+
+    return buildSearchResultRenderHref({
+      canonicalPathname: item.canonicalPathname,
+      siteUrlContext: this._readSiteUrlContext(),
+    });
+  }
 
   private _onResultClick = (event: MouseEvent, renderHref: string): void => {
     if (
@@ -873,16 +920,17 @@ export class SearchPage extends LitElement {
     return html`
       <ol class="results-list">
         ${this._results.map((item) => {
+          const renderHref = this._renderHrefForItem(item);
           return html`
             <li>
               <ui-card class="result-card" clickable variant="outlined">
                 <a
                   class="result-link"
-                  href=${item.renderHref}
+                  href=${renderHref}
                   data-link-kind="internal-document"
                   data-link-surface="card"
                   @click=${(event: MouseEvent) => {
-                    this._onResultClick(event, item.renderHref);
+                    this._onResultClick(event, renderHref);
                   }}
                 >
                   <div class="result-path">${item.pathLabel}</div>
@@ -1015,8 +1063,35 @@ export class SearchPage extends LitElement {
       return null;
     }
 
+    const isInternalDocumentPathname = getInitializedSearchRoutePredicate();
+    if (isInternalDocumentPathname === null) {
+      return null;
+    }
+
+    const mutableDiagnostics = { issues: [] };
+    const diagnostics = createSearchJsonParseDiagnosticSink(mutableDiagnostics);
+
     try {
-      return JSON.parse(normalized) as ExploreSearchResponse;
+      const parsed = parseStaticExploreSearchResponseJson({
+        value: JSON.parse(normalized),
+        siteUrlContext: this._readSiteUrlContext(),
+        isInternalDocumentPathname,
+        diagnostics,
+      });
+      if (!parsed.ok) {
+        return null;
+      }
+
+      return {
+        ...parsed.response,
+        items: parsed.response.items.map((item) => ({
+          ...item,
+          renderHref: buildSearchResultRenderHref({
+            canonicalPathname: item.canonicalPathname,
+            siteUrlContext: this._readSiteUrlContext(),
+          }),
+        })),
+      };
     } catch {
       return null;
     }

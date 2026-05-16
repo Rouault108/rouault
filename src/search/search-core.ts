@@ -7,16 +7,14 @@
  * - shared/search/** から src/search/** を import しない
  */
 import {
-  createDefaultPagefindLoader,
   type PagefindApi,
   type PagefindFragmentData,
   type PagefindLoader,
   type PagefindSearchResponse,
   type PagefindSearchResult,
-} from './sources/pagefind-source.js';
+} from '../../shared/search/search-loaders.js';
 import {
   createSearchCore,
-  searchCore,
   type SearchCore,
   type SearchCoreDependencies,
   type SearchExecutionOptions,
@@ -32,4 +30,4 @@ export type {
   SearchCoreDependencies,
   SearchExecutionOptions,
 };
-export { createDefaultPagefindLoader, createSearchCore, searchCore };
+export { createSearchCore };

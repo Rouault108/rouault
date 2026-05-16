@@ -86,7 +86,7 @@ const initializeAppRouterRuntime = async (): Promise<void> => {
   const manifestMeta = readInternalDocumentRouteManifestMeta(document);
   if (manifestMeta === null) {
     appRouter.initializeRuntimeFailure({ reason: 'route-manifest-invalid' });
-    initSearchUnavailable();
+    initSearchUnavailable({ runtimeEnvironment: 'production', reason: 'route-manifest-invalid' });
     return;
   }
 
@@ -111,7 +111,11 @@ const initializeAppRouterRuntime = async (): Promise<void> => {
         routeManifestState,
       });
     }
-    initSearchUnavailable();
+    initSearchUnavailable({
+      runtimeEnvironment: 'production',
+      siteUrlContext: manifestMeta.siteUrlContext,
+      reason: routeManifestState.reason,
+    });
     return;
   }
 
@@ -120,7 +124,11 @@ const initializeAppRouterRuntime = async (): Promise<void> => {
     routeManifestState,
     isInternalDocumentPathname: (pathname) => routeManifestState.routeSet.has(pathname),
   });
-  initSearch({ siteUrlContext: manifestMeta.siteUrlContext, routeManifestState });
+  initSearch({
+    runtimeEnvironment: 'production',
+    siteUrlContext: manifestMeta.siteUrlContext,
+    routeManifestState,
+  });
 };
 
 const bootstrapClient = async (): Promise<void> => {

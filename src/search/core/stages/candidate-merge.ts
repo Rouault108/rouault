@@ -1,19 +1,8 @@
-import { addIssue } from '../../diagnostics.js';
-import {
-  normalizeDocumentCanonicalUrl,
-  validateResultUrl,
-} from '../../../../shared/search/document-url.js';
 import type {
   SearchCandidate,
   SearchSourceBatch,
-  SearchSourceKind,
 } from '../../../../shared/search/search-types.js';
 import type { CandidateMergeStageOutput, CandidateValidationStageOutput } from '../stage-types.js';
-
-interface MergedCandidateUrlEntry {
-  source: SearchSourceKind;
-  url: string;
-}
 
 function mergeFieldTokens(
   left: SearchCandidate,
@@ -33,52 +22,11 @@ function snippetMatchCount(candidate: SearchCandidate): number {
   return candidate.snippet?.segments.filter((segment) => segment.matched).length ?? 0;
 }
 
-function pickPreferredUrl(
-  canonicalUrl: string,
-  urlEntries: readonly MergedCandidateUrlEntry[],
-): string | null {
-  const validEntries = urlEntries.filter((entry) => {
-    const validated = validateResultUrl(entry.url);
-    if (!validated.ok) {
-      return false;
-    }
-
-    return normalizeDocumentCanonicalUrl(validated.url) === canonicalUrl;
-  });
-
-  if (validEntries.length === 0) {
-    return null;
-  }
-
-  return (
-    [...validEntries].sort((left, right) => {
-      const leftSourceOrder = left.source === 'pagefind' ? 0 : 1;
-      const rightSourceOrder = right.source === 'pagefind' ? 0 : 1;
-      if (leftSourceOrder !== rightSourceOrder) {
-        return leftSourceOrder - rightSourceOrder;
-      }
-
-      const leftHasQueryOrHash = left.url.includes('?') || left.url.includes('#') ? 1 : 0;
-      const rightHasQueryOrHash = right.url.includes('?') || right.url.includes('#') ? 1 : 0;
-      if (leftHasQueryOrHash !== rightHasQueryOrHash) {
-        return leftHasQueryOrHash - rightHasQueryOrHash;
-      }
-
-      return left.url.localeCompare(right.url, 'ja');
-    })[0]?.url ?? null
-  );
-}
-
 function mergeCandidates(
   batches: readonly SearchSourceBatch[],
-  diagnostics: CandidateValidationStageOutput['diagnostics'],
+  _diagnostics: CandidateValidationStageOutput['diagnostics'],
 ): SearchCandidate[] {
-  const merged = new Map<
-    string,
-    SearchCandidate & {
-      urlEntries: MergedCandidateUrlEntry[];
-    }
-  >();
+  const merged = new Map<string, SearchCandidate>();
 
   for (const batch of batches) {
     if (batch.status !== 'active') {
@@ -86,12 +34,9 @@ function mergeCandidates(
     }
 
     for (const candidate of batch.candidates) {
-      const existing = merged.get(candidate.canonicalUrl);
+      const existing = merged.get(candidate.canonicalPathname);
       if (!existing) {
-        merged.set(candidate.canonicalUrl, {
-          ...candidate,
-          urlEntries: [{ source: batch.source, url: candidate.url }],
-        });
+        merged.set(candidate.canonicalPathname, candidate);
         continue;
       }
 
@@ -126,7 +71,7 @@ function mergeCandidates(
             ? candidate.title
             : existing.title;
 
-      merged.set(candidate.canonicalUrl, {
+      merged.set(candidate.canonicalPathname, {
         ...existing,
         title: preferredTitle,
         description: preferredDescription,
@@ -148,40 +93,11 @@ function mergeCandidates(
             candidate.featureScores.matchEvidenceScore,
           ),
         },
-        urlEntries: [...existing.urlEntries, { source: batch.source, url: candidate.url }],
       });
     }
   }
 
-  return [...merged.values()].flatMap((candidate) => {
-    const preferredUrl = pickPreferredUrl(candidate.canonicalUrl, candidate.urlEntries);
-    if (preferredUrl === null) {
-      addIssue(diagnostics, {
-        code: 'invalid-result-url',
-        stage: 'merge',
-        ...(candidate.matchedSources[0] ? { source: candidate.matchedSources[0] } : {}),
-      });
-      return [];
-    }
-
-    return [
-      {
-        canonicalUrl: candidate.canonicalUrl,
-        url: preferredUrl,
-        pathLabel: candidate.pathLabel,
-        title: candidate.title,
-        description: candidate.description,
-        date: candidate.date,
-        tags: candidate.tags,
-        snippet: candidate.snippet,
-        matchedSources: candidate.matchedSources,
-        matchedFields: candidate.matchedFields,
-        matchedTokens: candidate.matchedTokens,
-        featureScores: candidate.featureScores,
-        fieldTokens: candidate.fieldTokens,
-      },
-    ];
-  });
+  return [...merged.values()];
 }
 
 export function runCandidateMergeStage(

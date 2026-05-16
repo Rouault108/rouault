@@ -95,8 +95,8 @@ describe('SearchDialogSelectionModel', () => {
     const state: SelectionState = {
       loading: false,
       results: [
-        { id: 'alpha', title: 'Alpha', url: '/alpha' },
-        { id: 'beta', title: 'Beta', url: '/beta' },
+        { id: 'alpha', title: 'Alpha', renderHref: '/alpha' , canonicalPathname: '/alpha' },
+        { id: 'beta', title: 'Beta', renderHref: '/beta' , canonicalPathname: '/beta' },
       ],
       activeId: null,
       query: 'a',
@@ -118,8 +118,8 @@ describe('SearchDialogSelectionModel', () => {
     const state: SelectionState = {
       loading: false,
       results: [
-        { id: 'alpha', title: 'Alpha', url: '/alpha' },
-        { id: 'beta', title: 'Beta', url: '/beta' },
+        { id: 'alpha', title: 'Alpha', renderHref: '/alpha' , canonicalPathname: '/alpha' },
+        { id: 'beta', title: 'Beta', renderHref: '/beta' , canonicalPathname: '/beta' },
       ],
       activeId: null,
       query: 'a',
@@ -140,8 +140,8 @@ describe('SearchDialogSelectionModel', () => {
     const state: SelectionState = {
       loading: false,
       results: [
-        { id: 'alpha', title: 'Alpha', url: '/alpha' },
-        { id: 'beta', title: 'Beta', url: '/beta' },
+        { id: 'alpha', title: 'Alpha', renderHref: '/alpha' , canonicalPathname: '/alpha' },
+        { id: 'beta', title: 'Beta', renderHref: '/beta' , canonicalPathname: '/beta' },
       ],
       activeId: 'beta',
       query: 'beta',
@@ -159,10 +159,11 @@ describe('SearchDialogSelectionModel', () => {
       {
         id: 'beta',
         title: 'Beta',
-        url: '/beta',
+        renderHref: '/beta',
+        canonicalPathname: '/beta',
         query: 'beta',
         index: 1,
-        item: { id: 'beta', title: 'Beta', url: '/beta' },
+        item: { id: 'beta', title: 'Beta', renderHref: '/beta' , canonicalPathname: '/beta' },
         selectionMethod: 'keyboard',
       },
     ]);
@@ -173,8 +174,8 @@ describe('SearchDialogSelectionModel', () => {
     const state: SelectionState = {
       loading: false,
       results: [
-        { id: 'alpha', title: 'Alpha', url: '/alpha' },
-        { id: 'beta', title: 'Beta', url: '/beta' },
+        { id: 'alpha', title: 'Alpha', renderHref: '/alpha' , canonicalPathname: '/alpha' },
+        { id: 'beta', title: 'Beta', renderHref: '/beta' , canonicalPathname: '/beta' },
       ],
       activeId: null,
       query: 'alpha',

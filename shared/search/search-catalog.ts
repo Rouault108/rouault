@@ -1,7 +1,12 @@
+import type { SearchCanonicalPathname } from './document-url.js';
+import { validateJsonContentType } from '../http/media-type.js';
+import type { LoadSearchCatalogOptions, SearchCatalogFetcher, TestLoadSearchCatalogOptions } from './search-loaders.js';
+import { createSearchJsonParseDiagnosticSink } from './search-diagnostics.js';
+import { parseSearchCatalogJson } from './search-json-artifact-parser.js';
+
 export interface SearchCatalogItem {
   title: string;
-  url: string;
-  path: string;
+  canonicalPathname: SearchCanonicalPathname;
   description?: string;
   date?: string;
   keywords?: readonly string[];
@@ -18,91 +23,52 @@ export class SearchCatalogLoadError extends Error {
   }
 }
 
-type SearchCatalogFetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
-let searchCatalogItems: readonly SearchCatalogItem[] | null = null;
-let searchCatalogPromise: Promise<readonly SearchCatalogItem[]> | null = null;
-let searchCatalogCacheGeneration = 0;
+const defaultSearchCatalogFetcher: SearchCatalogFetcher = async (url, init) => fetch(url, init);
 
-function normalizeString(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-function normalizeStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  const normalized = new Map<string, string>();
-
-  for (const item of value) {
-    if (typeof item !== 'string') {
-      continue;
-    }
-
-    const stringValue = item.trim();
-    if (stringValue.length === 0) {
-      continue;
-    }
-
-    const key = stringValue.toLocaleLowerCase('ja');
-    if (!normalized.has(key)) {
-      normalized.set(key, stringValue);
-    }
-  }
-
-  return [...normalized.values()];
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-
-function normalizeCatalogPayload(payload: unknown): SearchCatalogItem[] {
-  if (!Array.isArray(payload)) {
-    throw new SearchCatalogLoadError(
-      'catalog-normalize-failed',
-      '検索カタログのトップレベルは配列である必要があります。',
-    );
-  }
-
-  return payload.flatMap((entry) => {
-    if (!isRecord(entry)) {
-      return [];
-    }
-
-    return [
-      {
-        title: normalizeString(entry['title']),
-        url: normalizeString(entry['url']),
-        path: normalizeString(entry['path']),
-        description: normalizeString(entry['description']),
-        date: normalizeString(entry['date']),
-        keywords: normalizeStringArray(entry['keywords']),
-        tags: normalizeStringArray(entry['tags'] ?? entry['genres']),
-      } satisfies SearchCatalogItem,
-    ];
-  });
-}
+const isTestLoadSearchCatalogOptions = (
+  options: LoadSearchCatalogOptions | TestLoadSearchCatalogOptions,
+): options is TestLoadSearchCatalogOptions =>
+  'runtimeEnvironment' in options && options.runtimeEnvironment === 'test';
 
 export async function loadSearchCatalog(
-  fetcher: SearchCatalogFetcher = fetch,
+  options: LoadSearchCatalogOptions | TestLoadSearchCatalogOptions,
 ): Promise<readonly SearchCatalogItem[]> {
-  let response: Response;
+  const fetcher =
+    isTestLoadSearchCatalogOptions(options) && options.testOnlyFetcher
+      ? options.testOnlyFetcher
+      : defaultSearchCatalogFetcher;
+  const url = options.artifactUrlResolver.resolveSearchCatalogUrl();
+  let response;
 
   try {
-    response = await fetcher('/search-catalog.json');
+    response = await fetcher(url, {
+      credentials: 'same-origin',
+      redirect: 'manual',
+      ...(options.signal ? { signal: options.signal } : {}),
+    });
   } catch (error: unknown) {
+    options.diagnostics?.addIssue({ code: 'invalid-search-catalog-schema', artifactSource: 'search-catalog-json' });
     throw new SearchCatalogLoadError(
       'catalog-fetch-failed',
       error instanceof Error ? error.message : '検索カタログの取得に失敗しました。',
     );
   }
 
-  if (!response.ok) {
+  if (response.type === 'opaqueredirect' || response.redirected || !response.ok) {
+    options.diagnostics?.addIssue({ code: 'invalid-search-catalog-schema', artifactSource: 'search-catalog-json' });
     throw new SearchCatalogLoadError(
       'catalog-fetch-failed',
       `検索カタログの読み込みに失敗しました: ${response.status.toString()}`,
+    );
+  }
+
+  const contentType = validateJsonContentType(response.headers.get('content-type'));
+  if (!contentType.ok) {
+    options.diagnostics?.addIssue({ code: 'invalid-search-catalog-schema', artifactSource: 'search-catalog-json' });
+    throw new SearchCatalogLoadError(
+      'catalog-fetch-failed',
+      '検索カタログの Content-Type が不正です。',
     );
   }
 
@@ -111,48 +77,35 @@ export async function loadSearchCatalog(
   try {
     payload = await response.json();
   } catch (error: unknown) {
+    options.diagnostics?.addIssue({ code: 'invalid-json', artifactSource: 'search-catalog-json' });
     throw new SearchCatalogLoadError(
       'catalog-normalize-failed',
       error instanceof Error ? error.message : '検索カタログ JSON の解析に失敗しました。',
     );
   }
 
-  return normalizeCatalogPayload(payload);
+  const diagnostics = options.diagnostics ?? createSearchJsonParseDiagnosticSink({ issues: [] });
+  const parsed = parseSearchCatalogJson({
+    value: payload,
+    siteUrlContext: options.siteUrlContext,
+    diagnostics,
+    isInternalDocumentPathname: options.isInternalDocumentPathname,
+  });
+  if (!parsed.ok) {
+    throw new SearchCatalogLoadError(
+      'catalog-normalize-failed',
+      '検索カタログ JSON の schema が不正です。',
+    );
+  }
+  return parsed.items;
 }
 
-export async function getSearchCatalog(): Promise<readonly SearchCatalogItem[]> {
-  if (searchCatalogItems !== null) {
-    return searchCatalogItems;
-  }
-
-  if (searchCatalogPromise !== null) {
-    return searchCatalogPromise;
-  }
-
-  const generation = searchCatalogCacheGeneration;
-
-  searchCatalogPromise = loadSearchCatalog()
-    .then((items) => {
-      if (generation === searchCatalogCacheGeneration) {
-        searchCatalogItems = items;
-        searchCatalogPromise = null;
-      }
-
-      return items;
-    })
-    .catch((error: unknown) => {
-      if (generation === searchCatalogCacheGeneration) {
-        searchCatalogPromise = null;
-      }
-
-      throw error;
-    });
-
-  return searchCatalogPromise;
+export async function loadSearchCatalogFromDefaultSource(
+  options: LoadSearchCatalogOptions | TestLoadSearchCatalogOptions,
+): Promise<readonly SearchCatalogItem[]> {
+  return loadSearchCatalog(options);
 }
 
 export function resetSearchCatalogCache(): void {
-  searchCatalogCacheGeneration += 1;
-  searchCatalogItems = null;
-  searchCatalogPromise = null;
+  // Search catalog caching was removed from the production module-level boundary.
 }

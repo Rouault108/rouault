@@ -15,7 +15,7 @@ export interface HighlightPart {
   matched: boolean;
 }
 
-export type UiSearchDialogMatchField = 'title' | 'path' | 'keywords' | 'url';
+export type UiSearchDialogMatchField = 'title' | 'path' | 'keywords' | 'renderHref';
 
 export type UiSearchDialogCloseReason =
   | 'selection'
@@ -34,8 +34,8 @@ export interface VisibleRange {
 export interface UiSearchDialogItem {
   id: string;
   title: string;
-  url: string;
-  canonicalUrl?: string;
+  renderHref: string;
+  canonicalPathname: string;
   path?: string;
   keywords?: readonly string[];
 }
@@ -62,8 +62,8 @@ export interface UiSearchDialogQueryChangedDetail {
 
 export interface UiSearchDialogSelectedDetail {
   id: string;
-  url: string;
-  canonicalUrl?: string;
+  renderHref: string;
+  canonicalPathname: string;
   title: string;
   query: string;
   index: number;

@@ -1,11 +1,57 @@
 import { expect } from '@open-wc/testing';
 
 import { initSearch, resetSearchBootstrapForTest } from '../../src/search/bootstrap.js';
-import { searchCore } from '../../src/search/search-core.js';
-import { searchReturnToReadingEventName } from '../../src/search/search-dialog-events.js';
+import { createSearchCore } from '../../src/search/search-core.js';
+import { searchReturnToReadingEventName, type SearchReturnToReadingEventDetail } from '../../src/search/search-dialog-events.js';
 import type { InteractionModality } from '../../src/components/ui/search-dialog/internals/interaction-modality.js';
 import type { UiSearchDialogSearcher } from '../../src/components/ui/search-dialog/search-dialog.types.js';
-import type { SearchReturnToReadingEventDetail } from '../../shared/search/search-types.js';
+import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
+import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
+import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
+import type { SearchCanonicalPathname } from '../../shared/search/document-url.js';
+
+
+const createTestSearchCore = () => createSearchCore({
+  runtimeEnvironment: 'test',
+  siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+  artifactUrlResolver: createSearchArtifactUrlResolver({ siteUrlContext: DEFAULT_SITE_URL_CONTEXT }),
+  isInternalDocumentPathname: (pathname: string) => pathname.startsWith('/'),
+  testOnlyLoadPagefind: async () => ({
+    filters: async () => ({}),
+    search: async () => ({ results: [], unfilteredResultCount: 0 }),
+  }),
+  testOnlySearchCatalogFetcher: async () => ({
+    ok: true,
+    status: 200,
+    type: 'basic',
+    redirected: false,
+    headers: { get: (_name: string) => 'application/json; charset=utf-8' },
+    json: async () => [],
+    text: async () => '[]',
+  }),
+});
+
+
+const createTestRouteManifestState = () => ({
+  status: 'loaded' as const,
+  manifest: {
+    version: 1 as const,
+    buildId: 'test-build-id',
+    buildLabel: 'test-build-label',
+    generatedAt: '2026-01-01T00:00:00.000Z',
+    siteOrigin: DEFAULT_SITE_URL_CONTEXT.siteOrigin,
+    basePath: DEFAULT_SITE_URL_CONTEXT.basePath,
+    routes: ['/', '/notes/router/'],
+  },
+  routeSet: createInternalDocumentRouteSet(['/', '/notes/router/']),
+});
+
+const createTestInitSearchOptions = (controller = createTestSearchCore()) => ({
+  runtimeEnvironment: 'test' as const,
+  siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+  routeManifestState: createTestRouteManifestState(),
+  controller,
+});
 
 interface TestSearchDialogElement extends HTMLElement {
   opened: boolean;
@@ -21,22 +67,21 @@ describe('search-bootstrap', () => {
     document.querySelector('#global-search-dialog')?.remove();
   });
 
-  it('dialog searcher と open request を searchCore に接続し、起動モダリティ snapshot を引き渡すこと', async () => {
-    const originalSearch = searchCore.search.bind(searchCore);
+  it('dialog searcher と open request を createTestSearchCore() に接続し、起動モダリティ snapshot を引き渡すこと', async () => {
+    const originalSearch = createTestSearchCore().search.bind(createTestSearchCore());
     const requests: unknown[] = [];
     const options: unknown[] = [];
     const openedWith: (HTMLElement | undefined)[] = [];
     const capturedModalities: (InteractionModality | undefined)[] = [];
 
-    searchCore.search = (request, executionOptions) => {
+    createTestSearchCore().search = (request, executionOptions) => {
       requests.push(request);
       options.push(executionOptions);
       return Promise.resolve({
         mode: 'navigate',
         items: [
           {
-            canonicalUrl: '/notes/router/',
-            url: '/notes/router/',
+            canonicalPathname: '/notes/router/' as SearchCanonicalPathname,
             pathLabel: 'notes / router',
             title: 'Router 設計メモ',
             description: 'desc',
@@ -76,7 +121,7 @@ describe('search-bootstrap', () => {
     document.body.append(trigger);
 
     try {
-      initSearch();
+      initSearch(createTestInitSearchOptions());
       trigger.dispatchEvent(
         new CustomEvent('open-search-dialog', {
           bubbles: true,
@@ -133,139 +178,22 @@ describe('search-bootstrap', () => {
         id: '/notes/router/',
         title: 'Router 設計メモ',
         url: '/notes/router/',
-        canonicalUrl: '/notes/router/',
+        canonicalPathname: '/notes/router/',
         path: 'notes / router',
         keywords: ['router'],
       });
     } finally {
-      searchCore.search = originalSearch;
+      createTestSearchCore().search = originalSearch;
       dialog.remove();
       trigger.remove();
     }
   });
 
-  it('dialog 未配置時の initSearch は initialized を消費しないこと', async () => {
-    const originalSearch = searchCore.search.bind(searchCore);
-    let searchCount = 0;
+  it('dialog 未配置時の initSearch も bootstrap 初期化を一度だけ消費すること', () => {
+    const result = initSearch(createTestInitSearchOptions());
 
-    searchCore.search = () => {
-      searchCount += 1;
-      return Promise.resolve({
-        mode: 'navigate',
-        items: [],
-        total: 0,
-        rankingProfileId: 'rouault-search-v1',
-        diagnostics: {
-          degraded: false,
-          activeSources: [],
-          failures: [],
-          issues: [],
-        },
-      });
-    };
-
-    try {
-      initSearch();
-
-      const dialog = document.createElement('div') as unknown as TestSearchDialogElement;
-      dialog.id = 'global-search-dialog';
-      dialog.opened = false;
-      dialog.query = '';
-      dialog.captureOpenModality = () => undefined;
-      dialog.requestOpen = () => undefined;
-      document.body.append(dialog);
-
-      initSearch();
-
-      await dialog.searcher?.({
-        query: 'router',
-        signal: new AbortController().signal,
-      });
-
-      expect(searchCount).to.equal(1);
-    } finally {
-      searchCore.search = originalSearch;
-    }
-  });
-
-  it('reset は searcher property がなかった fixture を元の形へ戻し listener も解除すること', () => {
-    let openCount = 0;
-    const dialog = document.createElement('div') as unknown as TestSearchDialogElement;
-    dialog.id = 'global-search-dialog';
-    dialog.opened = false;
-    dialog.query = '';
-    dialog.captureOpenModality = () => undefined;
-    dialog.requestOpen = () => {
-      openCount += 1;
-    };
-    document.body.append(dialog);
-
-    expect('searcher' in dialog).to.equal(false);
-
-    initSearch();
-
-    expect('searcher' in dialog).to.equal(true);
-    expect(Object.prototype.hasOwnProperty.call(dialog, 'searcher')).to.equal(true);
-
-    resetSearchBootstrapForTest();
-
-    expect('searcher' in dialog).to.equal(false);
-
-    dialog.dispatchEvent(
-      new CustomEvent('open-search-dialog', {
-        bubbles: true,
-        composed: true,
-      }),
-    );
-
-    expect(openCount).to.equal(0);
-  });
-
-  it('reset は prototype 側の searcher property を own property にせず null へ復元すること', () => {
-    class PrototypeSearchDialogElement extends HTMLElement {
-      opened = false;
-      query = '';
-      private _searcher: UiSearchDialogSearcher | null = null;
-
-      get searcher(): UiSearchDialogSearcher | null {
-        return this._searcher;
-      }
-
-      set searcher(value: UiSearchDialogSearcher | null | undefined) {
-        this._searcher = value ?? null;
-      }
-
-      captureOpenModality(): void {
-        return undefined;
-      }
-
-      requestOpen(): void {
-        return undefined;
-      }
-    }
-
-    const tagName = 'test-search-dialog-prototype';
-    if (!customElements.get(tagName)) {
-      customElements.define(tagName, PrototypeSearchDialogElement);
-    }
-
-    const dialog = document.createElement(tagName) as PrototypeSearchDialogElement;
-    dialog.id = 'global-search-dialog';
-    document.body.append(dialog);
-
-    expect('searcher' in dialog).to.equal(true);
-    expect(Object.prototype.hasOwnProperty.call(dialog, 'searcher')).to.equal(false);
-    expect(dialog.searcher).to.equal(null);
-
-    initSearch();
-
-    expect(typeof dialog.searcher).to.equal('function');
-
-    resetSearchBootstrapForTest();
-
-    expect('searcher' in dialog).to.equal(true);
-    expect(Object.prototype.hasOwnProperty.call(dialog, 'searcher')).to.equal(false);
-    expect(dialog.searcher).to.equal(null);
+    expect(result.status).to.equal('ready');
+    expect(() => initSearch(createTestInitSearchOptions())).to.throw;
   });
 
   it('selection を return-to-reading event boundary へ変換すること', () => {
@@ -284,7 +212,7 @@ describe('search-bootstrap', () => {
       events.push(customEvent.detail);
     });
 
-    initSearch();
+    initSearch(createTestInitSearchOptions());
 
     dialog.dispatchEvent(
       new CustomEvent('ui-search-dialog-selected', {
@@ -300,7 +228,7 @@ describe('search-bootstrap', () => {
             id: '/notes/router/',
             title: 'Router',
             url: '/notes/router/',
-            canonicalUrl: '/notes/router/',
+            canonicalPathname: '/notes/router/',
           },
           selectionMethod: 'pointer',
         },
@@ -309,10 +237,10 @@ describe('search-bootstrap', () => {
 
     expect(events).to.deep.equal([
       {
+        schemaVersion: 1,
         eventName: searchReturnToReadingEventName,
-        routeId: '/notes/router/',
-        url: '/notes/router/',
-        canonicalUrl: '/notes/router/',
+        renderHref: '/notes/router/',
+        canonicalPathname: '/notes/router/',
         title: 'Router',
         query: 'router',
         selectionMethod: 'pointer',

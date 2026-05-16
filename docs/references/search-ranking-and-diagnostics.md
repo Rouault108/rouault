@@ -32,7 +32,7 @@
 
 ## Diagnostic Issue Codes
 
-- `pagefind-unavailable`
+- `search-source-pagefind-failed`
 - `catalog-unavailable`
 - `invalid-candidate`
 - `invalid-url`

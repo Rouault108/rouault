@@ -108,8 +108,8 @@ export class SearchDialogSearchWorker {
                 return Array.isArray(item.keywords)
                   ? item.keywords.some((keyword) => normalize(keyword).includes(query))
                   : false;
-              case 'url':
-                return normalize(item.url).includes(query);
+              case 'renderHref':
+                return normalize(item.renderHref).includes(query);
               default:
                 return false;
             }

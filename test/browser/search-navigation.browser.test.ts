@@ -10,6 +10,7 @@ import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js'
 import type { NavigationResult } from '../../src/router/router.js';
 import { toInternalDocumentNormalizedUrl } from '../../src/router/internal-document-normalized-url.js';
 import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
+import { createSearchEventDiagnosticSink } from '../../shared/search/search-diagnostics.js';
 
 const createCompletedNavigationResult = (url: string): NavigationResult => ({
   kind: 'completed',
@@ -65,14 +66,20 @@ describe('search-navigation', () => {
     expect(result.reason).to.equal('not-started');
   });
 
-  it('return-to-reading event を navigation adapter が URL navigation へ変換すること', async () => {
+  it('return-to-reading event を route manifest 検証後に navigation adapter が URL navigation へ変換すること', async () => {
     const target = new EventTarget();
     let navigatedUrl = '';
     let observedType = '';
+    const routeManifestState = createLoadedRouteManifestState(['/notes/search-result/']);
+
+    const diagnostics = createSearchEventDiagnosticSink();
 
     target.addEventListener(searchReturnToReadingEventName, (event) => {
       observedType = event.type;
       void handleSearchReturnToReadingEvent(event, {
+        siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+        routeManifestState,
+        diagnostics,
         resolveRouter: () => ({
           navigate: (url: string) => {
             navigatedUrl = url;
@@ -84,10 +91,10 @@ describe('search-navigation', () => {
 
     const dispatched = dispatchSearchReturnToReading(
       {
+        schemaVersion: 1,
         eventName: searchReturnToReadingEventName,
-        routeId: '/notes/search-result/',
-        url: '/notes/search-result/',
-        canonicalUrl: '/notes/search-result/',
+        renderHref: '/notes/search-result/',
+        canonicalPathname: '/notes/search-result/',
         title: 'Search Result',
         query: 'search',
         selectionMethod: 'keyboard',
@@ -100,6 +107,48 @@ describe('search-navigation', () => {
     expect(dispatched).to.equal(true);
     expect(observedType).to.equal(searchReturnToReadingEventName);
     expect(navigatedUrl).to.equal('/notes/search-result/');
+  });
+
+  it('return-to-reading event は renderHref mismatch を navigation しないこと', async () => {
+    const target = new EventTarget();
+    let navigatedUrl = '';
+    const routeManifestState = createLoadedRouteManifestState(['/notes/search-result/']);
+
+    const diagnostics = createSearchEventDiagnosticSink();
+
+    target.addEventListener(searchReturnToReadingEventName, (event) => {
+      void handleSearchReturnToReadingEvent(event, {
+        siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+        routeManifestState,
+        diagnostics,
+        resolveRouter: () => ({
+          navigate: (url: string) => {
+            navigatedUrl = url;
+            return Promise.resolve(createCompletedNavigationResult(url));
+          },
+        }),
+      });
+    });
+
+    dispatchSearchReturnToReading(
+      {
+        schemaVersion: 1,
+        eventName: searchReturnToReadingEventName,
+        renderHref: '/externalized/',
+        canonicalPathname: '/notes/search-result/',
+        title: 'Search Result',
+        query: 'search',
+        selectionMethod: 'keyboard',
+      },
+      { target },
+    );
+
+    await Promise.resolve();
+
+    expect(navigatedUrl).to.equal('');
+    expect(diagnostics.snapshot().issues.map((issue) => issue.code)).to.deep.equal([
+      'search-event-render-href-mismatch',
+    ]);
   });
 
   it('router host がない場合も unsafe / external / resource を disallowed-url にすること', async () => {
@@ -130,6 +179,7 @@ describe('search-navigation', () => {
     expect(result.reason).to.equal('not-started');
   });
 
+
   it('router host がない内部文書候補は manifest failure を not-started より優先すること', async () => {
     const result = await navigateInternalDocument('/notes/example/', {
       siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
@@ -141,4 +191,5 @@ describe('search-navigation', () => {
     expect(result.kind).to.equal('validation-failure');
     expect(result.reason).to.equal('route-manifest-unavailable');
   });
+
 });

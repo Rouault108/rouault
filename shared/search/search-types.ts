@@ -46,11 +46,10 @@ export type SearchDiagnosticIssueCode =
   | 'invalid-document-canonical-url'
   | 'catalog-path-url-mismatch'
   | 'invalid-catalog-item'
-  | 'search-event-render-href-mismatch'
   | 'source-degraded'
   | 'source-failed';
 
-import type { SearchCanonicalPathname } from './document-url.js';
+import type { SearchCanonicalPathname, SearchRenderHref } from './document-url.js';
 export type { SearchCanonicalPathname, SearchRenderHref } from './document-url.js';
 
 export type SearchStateUrl = string;
@@ -70,20 +69,10 @@ export interface SearchState {
 
 export interface SearchDialogEventContract {
   readonly eventName: SearchDialogEventName;
-  readonly routeId: string | null;
-}
-
-export interface SearchReturnToReadingEventDetail extends SearchDialogEventContract {
-  readonly eventName: SearchReturnToReadingEventName;
-  readonly url: string;
-  readonly canonicalPathname: SearchCanonicalPathname;
-  readonly title: string;
-  readonly query: string;
-  readonly selectionMethod: 'keyboard' | 'pointer';
 }
 
 export interface SearchIndexTypeContract {
-  readonly candidateUrl: SearchCanonicalPathname;
+  readonly canonicalPathname: SearchCanonicalPathname;
   readonly stateUrl: SearchStateUrl | null;
   readonly snippetIsStructured: true;
 }
@@ -178,6 +167,7 @@ export interface SearchDiagnosticIssue {
   severity: SearchDiagnosticSeverity;
   stage: SearchDiagnosticStage;
   source?: SearchSourceKind;
+  artifactSource?: 'search-catalog-json' | 'static-explore-response-json';
   candidateRef?: string;
   count: number;
 }
@@ -191,6 +181,7 @@ export interface SearchDiagnostics {
 
 export interface SearchResultItem {
   canonicalPathname: SearchCanonicalPathname;
+  renderHref: SearchRenderHref;
   pathLabel: string;
   title: string;
   description: string;
@@ -198,6 +189,27 @@ export interface SearchResultItem {
   tags: string[];
   snippet: SearchSnippet | null;
   reasons: SearchReason[];
+}
+
+export interface StaticExploreSearchResultItem {
+  canonicalPathname: SearchCanonicalPathname;
+  pathLabel: string;
+  title: string;
+  description: string;
+  date: SearchDateValue;
+  tags: string[];
+  snippet: SearchSnippet | null;
+  reasons: SearchReason[];
+}
+
+export interface StaticExploreSearchResponse {
+  mode: 'explore';
+  items: StaticExploreSearchResultItem[];
+  total: number;
+  rankingProfileId: SearchRankingProfileId;
+  diagnostics: SearchDiagnostics;
+  tagCounts: SearchCountMap;
+  allTagCounts: SearchCountMap;
 }
 
 export interface SearchResponseBase {

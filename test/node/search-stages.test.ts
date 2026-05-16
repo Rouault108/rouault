@@ -9,16 +9,25 @@ import {
 import { runQueryPreparationStage } from '../../src/search/core/stages/query-preparation.js';
 import { runRankingAndSortingStage } from '../../src/search/core/stages/ranking-and-sorting.js';
 import { runSourceFederationStage } from '../../src/search/core/stages/source-federation.js';
+import { createSearchCanonicalPathname, type SearchCanonicalPathname } from '../../shared/search/document-url.js';
+import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import type { SearchCandidate, SearchSourceBatch } from '../../shared/search/search-types.js';
 import type { SearchSortMode, SearchTagMode } from '../../shared/search/search-types.js';
 import type { SearchStageEventAudit } from '../../src/search/core/stage-types.js';
 
+function canonicalPathname(pathname: string): SearchCanonicalPathname {
+  const result = createSearchCanonicalPathname({ pathname });
+  if (!result.ok) {
+    throw new Error(`invalid canonical pathname in test fixture: ${pathname}`);
+  }
+  return result.canonicalPathname;
+}
+
 function createCandidate(
-  overrides: Partial<SearchCandidate> & Pick<SearchCandidate, 'canonicalUrl' | 'url' | 'title'>,
+  overrides: Partial<SearchCandidate> & Pick<SearchCandidate, 'canonicalPathname' | 'title'>,
 ): SearchCandidate {
   return {
-    canonicalUrl: overrides.canonicalUrl,
-    url: overrides.url,
+    canonicalPathname: overrides.canonicalPathname,
     pathLabel: overrides.pathLabel ?? 'notes / sample',
     title: overrides.title,
     description: overrides.description ?? '',
@@ -109,6 +118,7 @@ describe('search-stages', () => {
             }),
         }),
       loadSearchCatalog: () => Promise.resolve([]),
+      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
     });
 
     expect(result.batches.map((batch) => batch.source)).to.deep.equal(['pagefind', 'catalog']);
@@ -138,8 +148,7 @@ describe('search-stages', () => {
         },
         candidates: [
           createCandidate({
-            canonicalUrl: '/notes/router/',
-            url: '/notes/different/',
+            canonicalPathname: '/search/' as SearchCanonicalPathname,
             title: 'Router',
           }),
         ],
@@ -182,8 +191,7 @@ describe('search-stages', () => {
           },
           candidates: [
             createCandidate({
-              canonicalUrl: '/notes/router/',
-              url: '/notes/router/',
+              canonicalPathname: canonicalPathname('/notes/router/'),
               title: 'Router 設計メモ',
               matchedSources: ['pagefind'],
               description: 'Pagefind description',
@@ -202,8 +210,7 @@ describe('search-stages', () => {
           },
           candidates: [
             createCandidate({
-              canonicalUrl: '/notes/router/',
-              url: '/notes/router/',
+              canonicalPathname: canonicalPathname('/notes/router/'),
               title: 'Router 設計メモ',
               matchedSources: ['catalog'],
               description: 'Catalog description',
@@ -238,8 +245,7 @@ describe('search-stages', () => {
       activeBatches: [],
       mergedCandidates: [
         createCandidate({
-          canonicalUrl: '/notes/router/',
-          url: '/notes/router/',
+          canonicalPathname: canonicalPathname('/notes/router/'),
           title: 'Router 設計メモ',
           fieldTokens: {
             titleTokens: ['router', '設計', 'メモ'],
@@ -249,8 +255,7 @@ describe('search-stages', () => {
           },
         }),
         createCandidate({
-          canonicalUrl: '/notes/rendering/',
-          url: '/notes/rendering/',
+          canonicalPathname: canonicalPathname('/notes/rendering/'),
           title: '描画最適化',
           fieldTokens: {
             titleTokens: ['描画', '最適化'],
@@ -262,7 +267,7 @@ describe('search-stages', () => {
       ],
     });
 
-    expect(ranked.sortedCandidates.map((candidate) => candidate.canonicalUrl)).to.deep.equal([
+    expect(ranked.sortedCandidates.map((candidate) => candidate.canonicalPathname)).to.deep.equal([
       '/notes/router/',
     ]);
   });
@@ -279,8 +284,7 @@ describe('search-stages', () => {
       nowUtcMs: Date.parse('2026-03-10'),
     });
     const candidate = createCandidate({
-      canonicalUrl: '/notes/router/',
-      url: '/notes/router/',
+      canonicalPathname: canonicalPathname('/notes/router/'),
       title: 'Router 設計メモ',
       tags: ['architecture', 'router'],
       matchedSources: ['catalog'],

@@ -1,4 +1,4 @@
-import { createFieldTokens } from '../../../build/search/indexing/field-tokenizers.js';
+import { createFieldTokens } from '../../../shared/search/field-tokenizers.js';
 import {
   addFailure,
   addIssue,
@@ -8,10 +8,9 @@ import {
 import { isAbortError, throwIfAborted } from '../abort.js';
 import {
   derivePathLabel,
-  normalizeDocumentCanonicalUrl,
-  validateResultUrl,
+  normalizeSearchCanonicalPathname,
 } from '../../../shared/search/document-url.js';
-import { isSearchVisibleCanonicalUrl } from '../../../shared/search/search-visibility.js';
+import { isSearchVisibleCanonicalPathname } from '../../../shared/search/search-visibility.js';
 import { snippetFromDescription } from '../search-snippet.js';
 import type {
   SearchCatalogItem,
@@ -109,7 +108,7 @@ function handleCatalogFailure(error: unknown, diagnostics: MutableDiagnostics): 
 }
 
 export async function loadCatalogSourceBatch(input: {
-  loadSearchCatalog: () => Promise<readonly SearchCatalogItem[]>;
+  loadSearchCatalog: (diagnostics: MutableDiagnostics) => Promise<readonly SearchCatalogItem[]>;
   diagnostics: MutableDiagnostics;
   signal?: AbortSignal | undefined;
 }): Promise<SearchSourceBatch> {
@@ -118,7 +117,7 @@ export async function loadCatalogSourceBatch(input: {
   throwIfAborted(input.signal);
 
   try {
-    items = await input.loadSearchCatalog();
+    items = await input.loadSearchCatalog(input.diagnostics);
   } catch (error: unknown) {
     if (isAbortError(error)) {
       throw error;
@@ -140,12 +139,11 @@ export async function loadCatalogSourceBatch(input: {
     }
 
     const title = normalizeString(item.title);
-    const path = normalizeString(item.path);
-    const url = normalizeString(item.url);
-    const stableInput = path || url || title || JSON.stringify(item);
+    const path = String(item.canonicalPathname);
+    const stableInput = path || title || JSON.stringify(item);
     const candidateRef = createCandidateRef('catalog', stableInput);
 
-    if (title.length === 0 || path.length === 0 || url.length === 0) {
+    if (title.length === 0 || path.length === 0) {
       droppedCount += 1;
       addIssue(input.diagnostics, {
         code: 'invalid-catalog-item',
@@ -156,8 +154,8 @@ export async function loadCatalogSourceBatch(input: {
       continue;
     }
 
-    const canonicalUrl = normalizeDocumentCanonicalUrl(path);
-    if (canonicalUrl === null) {
+    const canonicalPathname = normalizeSearchCanonicalPathname(path);
+    if (canonicalPathname === null) {
       droppedCount += 1;
       addIssue(input.diagnostics, {
         code: 'invalid-document-canonical-url',
@@ -167,53 +165,18 @@ export async function loadCatalogSourceBatch(input: {
       });
       continue;
     }
-    if (!isSearchVisibleCanonicalUrl(canonicalUrl)) {
+    if (!isSearchVisibleCanonicalPathname(canonicalPathname)) {
       continue;
     }
 
-    const validatedUrl = validateResultUrl(url);
-    if (!validatedUrl.ok) {
-      droppedCount += 1;
-      addIssue(input.diagnostics, {
-        code: validatedUrl.code,
-        stage: 'validate',
-        source: 'catalog',
-        candidateRef,
-      });
-      continue;
-    }
-
-    const normalizedTargetCanonicalUrl = normalizeDocumentCanonicalUrl(validatedUrl.url);
-    if (normalizedTargetCanonicalUrl === null) {
-      droppedCount += 1;
-      addIssue(input.diagnostics, {
-        code: 'invalid-document-canonical-url',
-        stage: 'validate',
-        source: 'catalog',
-        candidateRef,
-      });
-      continue;
-    }
-
-    if (normalizedTargetCanonicalUrl !== canonicalUrl) {
-      droppedCount += 1;
-      addIssue(input.diagnostics, {
-        code: 'catalog-path-url-mismatch',
-        stage: 'validate',
-        source: 'catalog',
-        candidateRef,
-      });
-      continue;
-    }
 
     const description = normalizeString(item.description);
     const tags = normalizeStringArray(item.tags);
     const keywords = normalizeStringArray(item.keywords);
 
     candidates.push({
-      canonicalUrl,
-      url: validatedUrl.url,
-      pathLabel: derivePathLabel(canonicalUrl),
+      canonicalPathname,
+      pathLabel: derivePathLabel(canonicalPathname),
       title,
       description,
       date: normalizeDateValue(normalizeString(item.date)),
@@ -224,7 +187,7 @@ export async function loadCatalogSourceBatch(input: {
       matchedTokens: [],
       featureScores: { ...emptyFeatureScores() },
       fieldTokens: createFieldTokens({
-        canonicalUrl,
+        canonicalPathname,
         title,
         body: description,
         keywords: [...keywords, ...tags],

@@ -233,8 +233,8 @@ export class SearchDialogSearchSession {
             return (item.keywords ?? []).some((keyword) =>
               SearchDialogSearchSession._normalizeText(keyword).includes(normalizedQuery),
             );
-          case 'url':
-            return SearchDialogSearchSession._normalizeText(item.url).includes(normalizedQuery);
+          case 'renderHref':
+            return SearchDialogSearchSession._normalizeText(item.renderHref).includes(normalizedQuery);
         }
       });
     });
@@ -247,8 +247,9 @@ export class SearchDialogSearchSession {
     for (const item of results) {
       const id = item.id.trim();
       const title = item.title.trim();
-      const url = item.url.trim();
-      if (id === '' || title === '' || url === '') continue;
+      const renderHref = item.renderHref.trim();
+      const canonicalPathname = item.canonicalPathname.trim();
+      if (id === '' || title === '' || renderHref === '' || canonicalPathname === '') continue;
 
       const path = typeof item.path === 'string' && item.path.trim() !== '' ? item.path.trim() : '';
       if (seen.has(id)) continue;
@@ -257,7 +258,8 @@ export class SearchDialogSearchSession {
       const normalizedItem: UiSearchDialogItem = {
         id,
         title,
-        url,
+        renderHref,
+        canonicalPathname,
       };
 
       if (path !== '') {
@@ -269,10 +271,6 @@ export class SearchDialogSearchSession {
         normalizedItem.keywords = keywords
           .map((keyword: string) => keyword.trim())
           .filter((keyword: string) => keyword !== '');
-      }
-
-      if (item.canonicalUrl) {
-        normalizedItem.canonicalUrl = item.canonicalUrl;
       }
 
       normalized.push(normalizedItem);

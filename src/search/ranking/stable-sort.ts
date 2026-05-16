@@ -28,7 +28,7 @@ export function stableSortCandidates(
         return titleOrder;
       }
 
-      return left.canonicalUrl.localeCompare(right.canonicalUrl, 'ja');
+      return left.canonicalPathname.localeCompare(right.canonicalPathname, 'ja');
     }
 
     const scoreOrder =
@@ -59,6 +59,6 @@ export function stableSortCandidates(
       return titleOrder;
     }
 
-    return left.canonicalUrl.localeCompare(right.canonicalUrl, 'ja');
+    return left.canonicalPathname.localeCompare(right.canonicalPathname, 'ja');
   });
 }

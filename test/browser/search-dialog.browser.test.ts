@@ -24,28 +24,32 @@ const FIXTURE_ITEMS: UiSearchDialogItem[] = [
   {
     id: 'alpha',
     title: 'Alpha Guide',
-    url: '/docs/alpha',
+    renderHref: '/docs/alpha',
+    canonicalPathname: '/docs/alpha',
     path: '/docs/alpha',
     keywords: ['guide', 'entry'],
   },
   {
     id: 'beta',
     title: 'Beta Reference',
-    url: '/docs/beta',
+    renderHref: '/docs/beta',
+    canonicalPathname: '/docs/beta',
     path: '/docs/beta',
     keywords: ['reference', 'api'],
   },
   {
     id: 'gamma',
     title: 'Gamma Notes',
-    url: '/notes/gamma',
+    renderHref: '/notes/gamma',
+    canonicalPathname: '/notes/gamma',
     path: '/notes/gamma',
     keywords: ['notes', 'memo'],
   },
   {
     id: 'delta',
     title: 'Delta API',
-    url: '/api/delta',
+    renderHref: '/api/delta',
+    canonicalPathname: '/api/delta',
     path: '/api/delta',
     keywords: ['schema'],
   },
@@ -55,7 +59,8 @@ const createVirtualizedItems = (total = 160): UiSearchDialogItem[] =>
   Array.from({ length: total }, (_, index) => ({
     id: `virtual-${String(index + 1)}`,
     title: `Virtual Item ${String(index + 1)}`,
-    url: `/virtual/${String(index + 1)}`,
+    renderHref: `/virtual/${String(index + 1)}`,
+    canonicalPathname: `/virtual/${String(index + 1)}`,
     path: `/virtual/${String(index + 1)}`,
     keywords: [`keyword-${String(index + 1)}`],
   }));
@@ -505,7 +510,7 @@ describe('ui-search-dialog browser contract', () => {
 
     expect(events).to.deep.equal(['selected', 'close-requested', 'closed']);
     expect(selections[0]?.selectionMethod).to.equal('pointer');
-    expect(selections[0]?.canonicalUrl).to.equal('/docs/alpha');
+    expect(selections[0]?.canonicalPathname).to.equal('/docs/alpha');
     expect(closeReasons).to.deep.equal(['selection']);
   });
 

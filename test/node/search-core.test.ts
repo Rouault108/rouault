@@ -1,12 +1,75 @@
 import { describe, expect, it } from 'vitest';
 
-import { createSearchCore, type PagefindApi } from '../../src/search/search-core.js';
+import { createSearchCore, type PagefindApi, type SearchCore, type SearchCoreDependencies } from '../../src/search/search-core.js';
 import { createAbortError } from '../../src/search/abort.js';
 import type { SearchCatalogItem } from '../../shared/search/search-catalog.js';
+import type { SearchCatalogFetcher } from '../../shared/search/search-loaders.js';
+import { createSearchCanonicalPathname } from '../../shared/search/document-url.js';
+import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
+import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import type {
   SearchImportBoundaryContract,
   SearchRequest,
 } from '../../shared/search/search-types.js';
+
+
+const canonicalPathname = (pathname: string): SearchCatalogItem['canonicalPathname'] => {
+  const canonical = createSearchCanonicalPathname({ pathname });
+  if (!canonical.ok) {
+    throw new Error(`Invalid test canonical pathname: ${pathname}`);
+  }
+  return canonical.canonicalPathname;
+};
+
+const testSearchCoreDefaults = {
+  runtimeEnvironment: 'test',
+  siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+  artifactUrlResolver: createSearchArtifactUrlResolver({ siteUrlContext: DEFAULT_SITE_URL_CONTEXT }),
+  isInternalDocumentPathname: (pathname: string) => pathname.startsWith('/'),
+} as const satisfies Pick<
+  Extract<SearchCoreDependencies, { readonly runtimeEnvironment: 'test' }>,
+  'runtimeEnvironment' | 'siteUrlContext' | 'artifactUrlResolver' | 'isInternalDocumentPathname'
+>;
+
+const createCatalogFetcher = (options: {
+  readonly items?: readonly SearchCatalogItem[];
+  readonly error?: Error;
+  readonly onFetch?: () => void;
+} = {}): SearchCatalogFetcher => async () => {
+  options.onFetch?.();
+  if (options.error) {
+    throw options.error;
+  }
+  const items = options.items ?? [];
+  return {
+    ok: true,
+    status: 200,
+    type: 'basic',
+    redirected: false,
+    headers: { get: (_name: string) => 'application/json; charset=utf-8' },
+    json: async () => items,
+    text: async () => JSON.stringify(items),
+  };
+};
+
+const createTestSearchCore = (
+  dependencies: {
+    readonly loadPagefind?: Extract<SearchCoreDependencies, { readonly runtimeEnvironment: 'test' }>['testOnlyLoadPagefind'];
+    readonly catalogItems?: readonly SearchCatalogItem[];
+    readonly catalogError?: Error;
+    readonly onCatalogFetch?: () => void;
+    readonly now?: () => number;
+  },
+): SearchCore => createSearchCore({
+  ...testSearchCoreDefaults,
+  ...(dependencies.loadPagefind ? { testOnlyLoadPagefind: dependencies.loadPagefind } : {}),
+  testOnlySearchCatalogFetcher: createCatalogFetcher({
+    items: dependencies.catalogItems,
+    error: dependencies.catalogError,
+    onFetch: dependencies.onCatalogFetch,
+  }),
+  ...(dependencies.now ? { now: dependencies.now } : {}),
+});
 
 describe('search-core', () => {
   it('search import boundary contract uses the return-to-reading adapter event', () => {
@@ -22,8 +85,7 @@ describe('search-core', () => {
   const catalogItems: SearchCatalogItem[] = [
     {
       title: '交響曲第9番 ニ短調',
-      url: '/notes/music/classical/beethoven/symphony-9/',
-      path: '/notes/music/classical/beethoven/symphony-9/',
+      canonicalPathname: canonicalPathname('/notes/music/classical/beethoven/symphony-9/'),
       description: 'ベートーヴェンの交響曲分析メモ',
       date: '2026-03-10',
       keywords: ['music', 'classical', 'symphony', '交響曲'],
@@ -31,8 +93,7 @@ describe('search-core', () => {
     },
     {
       title: 'ジャズ理論の基礎',
-      url: '/notes/music/jazz/jazz-theory/',
-      path: '/notes/music/jazz/jazz-theory/',
+      canonicalPathname: canonicalPathname('/notes/music/jazz/jazz-theory/'),
       description: 'ジャズ音楽の基本理論',
       date: '2026-02-01',
       keywords: ['music', 'jazz', '理論'],
@@ -40,8 +101,7 @@ describe('search-core', () => {
     },
     {
       title: 'ロジック入門',
-      url: '/notes/philosophy/logic/',
-      path: '/notes/philosophy/logic/',
+      canonicalPathname: canonicalPathname('/notes/philosophy/logic/'),
       description: '形式論理の入門メモ',
       date: '2025-12-24',
       keywords: ['logic', 'philosophy'],
@@ -120,9 +180,9 @@ describe('search-core', () => {
   } satisfies SearchRequest;
 
   it('explore モードで query 集合と tag 集合の件数を分けて返すこと', async () => {
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () => Promise.resolve(createPagefindApi()),
-      loadSearchCatalog: () => Promise.resolve(catalogItems),
+      catalogItems,
       now: () => Date.parse('2026-03-23T00:00:00Z'),
     });
 
@@ -156,9 +216,9 @@ describe('search-core', () => {
   });
 
   it('and 条件は core の後段フィルターで保証すること', async () => {
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () => Promise.resolve(createPagefindApi()),
-      loadSearchCatalog: () => Promise.resolve(catalogItems),
+      catalogItems,
       now: () => Date.parse('2026-03-23T00:00:00Z'),
     });
 
@@ -177,17 +237,16 @@ describe('search-core', () => {
   it('navigate モードは結果を 20 件に制限すること', async () => {
     const manyCatalogItems = Array.from({ length: 25 }, (_, index) => ({
       title: `note-${index.toString()}`,
-      url: `/notes/note-${index.toString()}/`,
-      path: `/notes/note-${index.toString()}/`,
+      canonicalPathname: canonicalPathname(`/notes/note-${index.toString()}/`),
       description: '検索用メモ',
       date: '2026-03-01',
       keywords: ['note'],
       tags: ['memo'],
     })) satisfies SearchCatalogItem[];
 
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () => Promise.reject(new Error('missing pagefind')),
-      loadSearchCatalog: () => Promise.resolve(manyCatalogItems),
+      catalogItems: manyCatalogItems,
       now: () => Date.parse('2026-03-23T00:00:00Z'),
     });
 
@@ -205,7 +264,7 @@ describe('search-core', () => {
   });
 
   it('runtime 検索は /notes/testing/ のような path 名特例で結果を捨てないこと', async () => {
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () =>
         Promise.resolve({
           filters() {
@@ -254,19 +313,17 @@ describe('search-core', () => {
             });
           },
         }),
-      loadSearchCatalog: () =>
-        Promise.resolve([
-          ...catalogItems,
-          {
-            title: 'Testing Jazz Fixture',
-            url: '/notes/testing/interactive/',
-            path: '/notes/testing/interactive/',
-            description: 'ジャズ向け internal testing note',
-            date: '2026-03-20',
-            keywords: ['testing', 'ジャズ'],
-            tags: ['testing', 'jazz'],
-          },
-        ]),
+      catalogItems: [
+        ...catalogItems,
+        {
+          title: 'Testing Jazz Fixture',
+          canonicalPathname: canonicalPathname('/notes/testing/interactive/'),
+          description: 'ジャズ向け internal testing note',
+          date: '2026-03-20',
+          keywords: ['testing', 'ジャズ'],
+          tags: ['testing', 'jazz'],
+        },
+      ],
       now: () => Date.parse('2026-03-23T00:00:00Z'),
     });
 
@@ -279,14 +336,14 @@ describe('search-core', () => {
     });
 
     expect(response.mode).to.equal('explore');
-    expect(response.items.some((item) => item.url.startsWith('/notes/testing/'))).to.equal(true);
+    expect(response.items.some((item) => item.canonicalPathname.startsWith('/notes/testing/'))).to.equal(true);
     expect(response.items.map((item) => item.title)).to.include('Testing Jazz Fixture');
   });
 
   it('全 source 失敗時は all-sources-failed を返すこと', async () => {
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () => Promise.reject(new Error('missing pagefind')),
-      loadSearchCatalog: () => Promise.reject(new Error('missing catalog')),
+      catalogError: new Error('missing catalog'),
     });
 
     const response = await core.search({
@@ -312,14 +369,14 @@ describe('search-core', () => {
     controller.abort();
     let pagefindLoadCount = 0;
     let catalogLoadCount = 0;
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () => {
         pagefindLoadCount += 1;
         return Promise.resolve(createPagefindApi());
       },
-      loadSearchCatalog: () => {
+      catalogItems,
+      onCatalogFetch: () => {
         catalogLoadCount += 1;
-        return Promise.resolve(catalogItems);
       },
     });
 
@@ -342,7 +399,7 @@ describe('search-core', () => {
 
   it('Pagefind loader 失敗を永続メモ化せず次回検索で再試行すること', async () => {
     let pagefindLoadCount = 0;
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () => {
         pagefindLoadCount += 1;
         if (pagefindLoadCount === 1) {
@@ -351,7 +408,7 @@ describe('search-core', () => {
 
         return Promise.resolve(createPagefindApi());
       },
-      loadSearchCatalog: () => Promise.resolve(catalogItems),
+      catalogItems,
     });
 
     await core.search({
@@ -373,7 +430,7 @@ describe('search-core', () => {
   });
 
   it('Pagefind result.data() の通常 reject は source failure に分類し catalog fallback を返すこと', async () => {
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () =>
         Promise.resolve({
           filters() {
@@ -393,7 +450,7 @@ describe('search-core', () => {
             });
           },
         }),
-      loadSearchCatalog: () => Promise.resolve(catalogItems),
+      catalogItems,
     });
 
     const response = await core.search({
@@ -409,9 +466,9 @@ describe('search-core', () => {
   });
 
   it('source が AbortError を投げた場合は diagnostics に変換しないこと', async () => {
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () => Promise.reject(createAbortError()),
-      loadSearchCatalog: () => Promise.resolve(catalogItems),
+      catalogItems,
     });
 
     await expect(core.search(navigateMusicRequest)).rejects.toMatchObject({ name: 'AbortError' });
@@ -419,12 +476,12 @@ describe('search-core', () => {
 
   it('Pagefind load の catch 時に abort 済みなら通常 failure へ変換しないこと', async () => {
     const controller = new AbortController();
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () => {
         controller.abort();
         return Promise.reject(new Error('late load failure'));
       },
-      loadSearchCatalog: () => Promise.resolve(catalogItems),
+      catalogItems,
     });
 
     await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
@@ -434,7 +491,7 @@ describe('search-core', () => {
 
   it('Pagefind search の catch 時に abort 済みなら通常 failure へ変換しないこと', async () => {
     const controller = new AbortController();
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () =>
         Promise.resolve({
           filters() {
@@ -445,7 +502,7 @@ describe('search-core', () => {
             return Promise.reject(new Error('late search failure'));
           },
         }),
-      loadSearchCatalog: () => Promise.resolve(catalogItems),
+      catalogItems,
     });
 
     await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
@@ -454,7 +511,7 @@ describe('search-core', () => {
   });
 
   it('Pagefind result.data() の AbortError は pagefind-search-failed に変換しないこと', async () => {
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () =>
         Promise.resolve({
           filters() {
@@ -474,7 +531,7 @@ describe('search-core', () => {
             });
           },
         }),
-      loadSearchCatalog: () => Promise.resolve(catalogItems),
+      catalogItems,
     });
 
     await expect(core.search(navigateMusicRequest)).rejects.toMatchObject({ name: 'AbortError' });
@@ -482,7 +539,7 @@ describe('search-core', () => {
 
   it('Pagefind result.data() の catch 時に abort 済みなら通常 failure へ変換しないこと', async () => {
     const controller = new AbortController();
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () =>
         Promise.resolve({
           filters() {
@@ -503,7 +560,7 @@ describe('search-core', () => {
             });
           },
         }),
-      loadSearchCatalog: () => Promise.resolve(catalogItems),
+      catalogItems,
     });
 
     await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
@@ -526,7 +583,7 @@ describe('search-core', () => {
         genre: 'music,jazz',
       },
     };
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () =>
         Promise.resolve({
           filters() {
@@ -546,7 +603,7 @@ describe('search-core', () => {
             });
           },
         }),
-      loadSearchCatalog: () => Promise.resolve(catalogItems),
+      catalogItems,
     });
 
     await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
@@ -556,11 +613,11 @@ describe('search-core', () => {
 
   it('catalog load の catch 時に abort 済みなら通常 failure へ変換しないこと', async () => {
     const controller = new AbortController();
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () => Promise.resolve(createPagefindApi()),
-      loadSearchCatalog: () => {
+      catalogError: new Error('late catalog failure'),
+      onCatalogFetch: () => {
         controller.abort();
-        return Promise.reject(new Error('late catalog failure'));
       },
     });
 
@@ -570,7 +627,7 @@ describe('search-core', () => {
   });
 
   it('通常 source failure diagnostics は維持すること', async () => {
-    const core = createSearchCore({
+    const core = createTestSearchCore({
       loadPagefind: () =>
         Promise.resolve({
           filters() {
@@ -580,7 +637,7 @@ describe('search-core', () => {
             return Promise.reject(new Error('pagefind search failed'));
           },
         }),
-      loadSearchCatalog: () => Promise.reject(new Error('catalog failed')),
+      catalogError: new Error('catalog failed'),
     });
 
     const response = await core.search(navigateMusicRequest);

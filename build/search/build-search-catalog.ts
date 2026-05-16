@@ -1,5 +1,6 @@
 import { filterNotesBySurface, type SourceNote } from '../../src/data/notes.js';
 import type { SearchCatalogItem } from '../../shared/search/search-catalog.js';
+import { createSearchCanonicalPathname } from '../../shared/search/document-url.js';
 import { buildCatalogKeywords } from './indexing/catalog-keywords.js';
 
 export interface SearchCatalogSourceNote extends SourceNote {
@@ -37,11 +38,15 @@ export function buildSearchCatalog(notes: readonly SearchCatalogSourceNote[]): S
     const tags = normalizeStringArray(note.genre);
     const description = normalizeString(note.description);
 
+    const canonical = createSearchCanonicalPathname({ pathname: permalink });
+    if (!canonical.ok) {
+      return [];
+    }
+
     return [
       {
         title,
-        url: permalink,
-        path: permalink,
+        canonicalPathname: canonical.canonicalPathname,
         description,
         date: normalizeString(note.updated) || normalizeString(note.date),
         keywords: buildCatalogKeywords({

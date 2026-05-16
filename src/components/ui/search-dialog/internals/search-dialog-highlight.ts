@@ -15,10 +15,10 @@ export function resolveSearchDialogItemPath(
   }
 
   try {
-    const url = new URL(item.url, baseHref);
+    const url = new URL(item.renderHref, baseHref);
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
-    return item.url;
+    return item.renderHref;
   }
 }
 

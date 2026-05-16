@@ -1,4 +1,10 @@
-import { createFieldTokens } from '../../../build/search/indexing/field-tokenizers.js';
+import type {
+  PagefindApi,
+  PagefindFragmentData,
+  PagefindLoader,
+  PagefindSearchResponse,
+} from '../../../shared/search/search-loaders.js';
+import { createFieldTokens } from '../../../shared/search/field-tokenizers.js';
 import {
   addFailure,
   addIssue,
@@ -8,10 +14,9 @@ import {
 import { isAbortError, throwIfAborted } from '../abort.js';
 import {
   derivePathLabel,
-  normalizeDocumentCanonicalUrl,
-  validateResultUrl,
+  validateSearchResultRenderHref,
 } from '../../../shared/search/document-url.js';
-import { isSearchVisibleCanonicalUrl } from '../../../shared/search/search-visibility.js';
+import { isSearchVisibleCanonicalPathname } from '../../../shared/search/search-visibility.js';
 import type { PreparedSearchQuery } from '../../../shared/search/query-preprocessor.js';
 import { snippetFromDescription, snippetFromExcerptHtml } from '../search-snippet.js';
 import type {
@@ -20,50 +25,7 @@ import type {
   SearchRequest,
   SearchSourceBatch,
 } from '../../../shared/search/search-types.js';
-
-type PagefindFilterExpression = string | string[] | Record<string, unknown>;
-
-export interface PagefindFragmentData {
-  url: string;
-  excerpt?: string;
-  meta?: Record<string, string>;
-  raw_content?: string;
-}
-
-export interface PagefindSearchResult {
-  data(): Promise<PagefindFragmentData>;
-}
-
-export interface PagefindSearchResponse {
-  results: PagefindSearchResult[];
-  unfilteredResultCount: number;
-  filters?: Record<string, Record<string, number>>;
-  totalFilters?: Record<string, Record<string, number>>;
-}
-
-export interface PagefindApi {
-  filters(): Promise<Record<string, Record<string, number>>>;
-  search(
-    term: string | null,
-    options?: {
-      filters?: Record<string, PagefindFilterExpression>;
-      sort?: Record<string, 'asc' | 'desc'>;
-    },
-  ): Promise<PagefindSearchResponse>;
-}
-
-export type PagefindLoader = () => Promise<PagefindApi>;
-
-interface DefaultPagefindLoaderDependencies {
-  fetchModule?: (moduleUrl: string) => Promise<{
-    ok: boolean;
-    status: number;
-    text(): Promise<string>;
-  }>;
-  importModule?: (moduleUrl: string) => Promise<unknown>;
-  createModuleUrl?: (moduleSource: string) => string;
-  revokeModuleUrl?: (moduleUrl: string) => void;
-}
+import type { SiteUrlContext } from '../../../shared/site/site-url-context.js';
 
 const pagefindCapabilities = {
   providesBodyEvidence: true,
@@ -72,79 +34,6 @@ const pagefindCapabilities = {
   supportsNativeAndSemantics: false,
   supportsNativeDateDescSort: false,
 } as const;
-
-function isPagefindModule(value: unknown): value is {
-  filters: PagefindApi['filters'];
-  search: PagefindApi['search'];
-  options?: (options: { basePath: string }) => Promise<void> | void;
-} {
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-
-  const candidate = value as Partial<{
-    filters: PagefindApi['filters'];
-    search: PagefindApi['search'];
-    options?: (options: { basePath: string }) => Promise<void> | void;
-  }>;
-
-  return typeof candidate.filters === 'function' && typeof candidate.search === 'function';
-}
-
-function createPagefindModuleUrl(moduleSource: string): string {
-  const blob = new Blob([moduleSource], { type: 'text/javascript' });
-  return URL.createObjectURL(blob);
-}
-
-async function importPagefindModule(moduleUrl: string): Promise<unknown> {
-  return import(/* @vite-ignore */ moduleUrl);
-}
-
-export function createDefaultPagefindLoader(
-  dependencies: DefaultPagefindLoaderDependencies = {},
-): PagefindLoader {
-  const fetchModule =
-    dependencies.fetchModule ??
-    (async (moduleUrl: string) => {
-      const response = await fetch(moduleUrl, { cache: 'no-store' });
-      return response;
-    });
-  const importModule = dependencies.importModule ?? importPagefindModule;
-  const createModuleUrl = dependencies.createModuleUrl ?? createPagefindModuleUrl;
-  const revokeModuleUrl =
-    dependencies.revokeModuleUrl ??
-    ((moduleUrl: string): void => {
-      URL.revokeObjectURL(moduleUrl);
-    });
-
-  return async (): Promise<PagefindApi> => {
-    const response = await fetchModule('/pagefind/pagefind.js');
-    if (!response.ok) {
-      throw new Error(`Pagefind module の読み込みに失敗しました: ${response.status.toString()}`);
-    }
-
-    const moduleSource = await response.text();
-    const moduleUrl = createModuleUrl(moduleSource);
-
-    try {
-      const imported = await importModule(moduleUrl);
-      if (!isPagefindModule(imported)) {
-        throw new Error('Pagefind module shape is invalid.');
-      }
-
-      if (typeof imported.options === 'function') {
-        await imported.options({ basePath: '/pagefind/' });
-      }
-
-      return {
-        filters: imported.filters,
-        search: imported.search,
-      };
-    } finally {
-      revokeModuleUrl(moduleUrl);
-    }
-  };
-}
 
 function normalizeString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
@@ -209,21 +98,23 @@ function normalizeDateValue(value: string) {
   };
 }
 
-function createPagefindCandidate(data: PagefindFragmentData): SearchCandidate | null {
-  const validatedUrl = validateResultUrl(normalizeString(data.url));
+function createPagefindCandidate(
+  data: PagefindFragmentData,
+  siteUrlContext: SiteUrlContext,
+): SearchCandidate | null {
+  const validatedUrl = validateSearchResultRenderHref(normalizeString(data.url), {
+    siteUrlContext,
+  });
   if (!validatedUrl.ok) {
     return null;
   }
 
-  const canonicalUrl = normalizeDocumentCanonicalUrl(validatedUrl.url);
-  if (canonicalUrl === null) {
-    return null;
-  }
-  if (!isSearchVisibleCanonicalUrl(canonicalUrl)) {
+  const canonicalPathname = validatedUrl.canonicalPathname;
+  if (!isSearchVisibleCanonicalPathname(canonicalPathname)) {
     return null;
   }
 
-  const title = normalizeString(data.meta?.['title']) || derivePathLabel(canonicalUrl);
+  const title = normalizeString(data.meta?.['title']) || derivePathLabel(canonicalPathname);
   if (title.length === 0) {
     return null;
   }
@@ -239,9 +130,8 @@ function createPagefindCandidate(data: PagefindFragmentData): SearchCandidate | 
     snippetFromExcerptHtml(normalizeString(data.excerpt)) ?? snippetFromDescription(description);
 
   return {
-    canonicalUrl,
-    url: validatedUrl.url,
-    pathLabel: derivePathLabel(canonicalUrl),
+    canonicalPathname,
+    pathLabel: derivePathLabel(canonicalPathname),
     title,
     description,
     date: normalizeDateValue(normalizeString(data.meta?.['date'])),
@@ -252,7 +142,7 @@ function createPagefindCandidate(data: PagefindFragmentData): SearchCandidate | 
     matchedTokens: [],
     featureScores: { ...emptyFeatureScores() },
     fieldTokens: createFieldTokens({
-      canonicalUrl,
+      canonicalPathname,
       title,
       body: bodyText,
       keywords: [...tags],
@@ -266,6 +156,7 @@ export async function loadPagefindSourceBatch(input: {
   preparedQuery: PreparedSearchQuery;
   diagnostics: MutableDiagnostics;
   signal?: AbortSignal | undefined;
+  siteUrlContext: SiteUrlContext;
 }): Promise<SearchSourceBatch> {
   let pagefind: PagefindApi;
 
@@ -364,7 +255,7 @@ export async function loadPagefindSourceBatch(input: {
       throwIfAborted(input.signal);
     }
 
-    const candidate = createPagefindCandidate(result);
+    const candidate = createPagefindCandidate(result, input.siteUrlContext);
     if (candidate !== null) {
       candidates.push(candidate);
       continue;
@@ -384,7 +275,7 @@ export async function loadPagefindSourceBatch(input: {
   let countMap: SearchCountMap | null | undefined = undefined;
   if (input.request.mode === 'explore') {
     throwIfAborted(input.signal);
-    countMap = normalizeCountMap(response.totalFilters?.['genre']);
+    countMap = normalizeCountMap((response as { readonly totalFilters?: Record<string, unknown> }).totalFilters?.['genre'] ?? undefined);
     throwIfAborted(input.signal);
 
     if (candidates.length > 0 && countMap === null) {

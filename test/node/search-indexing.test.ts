@@ -6,7 +6,7 @@ import { buildCatalogKeywords } from '../../build/search/indexing/catalog-keywor
 describe('search-indexing', () => {
   it('field tokenizers は title/body/path/keyword を決定的に分解すること', () => {
     const fieldTokens = createFieldTokens({
-      canonicalUrl: '/notes/music/jazz-theory/',
+      canonicalPathname: '/notes/music/jazz-theory/',
       title: 'ジャズ理論の基礎',
       body: '即興と和声のメモ',
       keywords: ['music', 'jazz'],

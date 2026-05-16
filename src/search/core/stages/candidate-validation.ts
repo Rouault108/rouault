@@ -1,8 +1,5 @@
 import { addIssue, createCandidateRef } from '../../diagnostics.js';
-import {
-  normalizeDocumentCanonicalUrl,
-  validateResultUrl,
-} from '../../../../shared/search/document-url.js';
+import { normalizeSearchCanonicalPathname } from '../../../../shared/search/document-url.js';
 import type { SearchSourceBatch } from '../../../../shared/search/search-types.js';
 import type {
   CandidateValidationStageOutput,
@@ -22,32 +19,10 @@ function validateBatch(
     candidates: batch.candidates.flatMap((candidate) => {
       const candidateRef = createCandidateRef(
         batch.source,
-        candidate.url || candidate.canonicalUrl || candidate.title,
+        candidate.canonicalPathname || candidate.title,
       );
-      const canonicalUrl = normalizeDocumentCanonicalUrl(candidate.canonicalUrl);
-      if (canonicalUrl === null) {
-        addIssue(diagnostics, {
-          code: 'invalid-document-canonical-url',
-          stage: 'validate',
-          source: batch.source,
-          candidateRef,
-        });
-        return [];
-      }
-
-      const validatedUrl = validateResultUrl(candidate.url);
-      if (!validatedUrl.ok) {
-        addIssue(diagnostics, {
-          code: validatedUrl.code,
-          stage: 'validate',
-          source: batch.source,
-          candidateRef,
-        });
-        return [];
-      }
-
-      const urlCanonical = normalizeDocumentCanonicalUrl(validatedUrl.url);
-      if (urlCanonical === null || urlCanonical !== canonicalUrl) {
+      const canonicalPathname = normalizeSearchCanonicalPathname(candidate.canonicalPathname);
+      if (canonicalPathname === null) {
         addIssue(diagnostics, {
           code: 'invalid-document-canonical-url',
           stage: 'validate',
@@ -60,8 +35,7 @@ function validateBatch(
       return [
         {
           ...candidate,
-          canonicalUrl,
-          url: validatedUrl.url,
+          canonicalPathname,
         },
       ];
     }),

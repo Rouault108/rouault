@@ -1,4 +1,6 @@
 import { finalizeDiagnostics } from '../../diagnostics.js';
+import { buildSearchRenderHref } from '../../../../shared/search/document-url.js';
+import type { SiteUrlContext } from '../../../../shared/site/site-url-context.js';
 import { computeReasons } from '../../ranking/scoring.js';
 import type {
   ExploreSearchResponse,
@@ -33,10 +35,14 @@ function toResultItem(
   candidate: SearchCandidate,
   queryTokens: readonly string[],
   selectedTags: readonly string[],
+  siteUrlContext: SiteUrlContext,
 ) {
   return {
-    canonicalUrl: candidate.canonicalUrl,
-    url: candidate.url,
+    canonicalPathname: candidate.canonicalPathname,
+    renderHref: buildSearchRenderHref({
+      canonicalPathname: candidate.canonicalPathname,
+      basePath: siteUrlContext.basePath,
+    }),
     pathLabel: candidate.pathLabel,
     title: candidate.title,
     description: candidate.description,
@@ -75,10 +81,11 @@ export function buildEmptySearchResponse(
 
 export function runCountsAndDiagnosticsStage(
   input: RankingAndSortingStageOutput,
+  options: { readonly siteUrlContext: SiteUrlContext },
 ): CountsAndDiagnosticsStageOutput {
   const diagnosticsResult = finalizeDiagnostics(input.diagnostics, input.batches);
   const items = input.sortedCandidates.map((candidate) =>
-    toResultItem(candidate, input.preparedQuery.tokens, input.request.tags),
+    toResultItem(candidate, input.preparedQuery.tokens, input.request.tags, options.siteUrlContext),
   );
 
   const response =
