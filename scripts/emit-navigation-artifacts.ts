@@ -24,7 +24,7 @@ const readMetadataValue = (key: string): string => {
 const siteUrlContext = resolveProductionSiteUrlContext();
 const routeSet = buildProductionInternalDocumentRouteSet().routeSet;
 const outputDirectory = path.resolve(process.cwd(), 'dist');
-const manifestMetadataLabelKey = `build${'Label'}` as const;
+const manifestMetadataLabelKey = `buildLabel` as const;
 
 await emitNavigationArtifacts({
   outputDir: outputDirectory,
