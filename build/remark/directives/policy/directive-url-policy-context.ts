@@ -1,6 +1,7 @@
 import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../../../site/site-url-context.js';
 import type { RouteClassificationMode } from '../../../../shared/link/link-annotation.js';
 import { resolveNoteLinkClassificationContext } from '../../../content/resolve-note-current-url.js';
+import { resolveNoteSourcePathFromVFile } from '../../../content/note-source-vfile.js';
 import type { SiteUrlContext } from '../../../../shared/site/site-url-context.js';
 import type { VFileLike } from '../types.js';
 
@@ -17,7 +18,7 @@ export const createNoteDirectiveUrlPolicyContext = (
     ? resolveProductionSiteUrlContext()
     : resolveDevelopmentSiteUrlContext();
   const noteContext = resolveNoteLinkClassificationContext({
-    sourceFilePath: file?.path,
+    sourceFilePath: resolveNoteSourcePathFromVFile(file),
     siteUrlContext,
   });
   return {

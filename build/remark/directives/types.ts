@@ -38,9 +38,11 @@ export interface MdastNode {
 
 export interface VFileLike {
   path?: string;
+  history?: readonly unknown[];
   value?: unknown;
   data?: {
     rouaultPolicyContext?: import('./policy/note-policy-context.js').NotePolicyContext;
+    [key: string]: unknown;
   };
 }
 

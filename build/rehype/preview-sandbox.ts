@@ -1,4 +1,5 @@
 import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
+import { resolveNoteSourcePathFromVFile } from '../content/note-source-vfile.js';
 import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
 import { type HastNode, type VFileLike } from './hast-utils.js';
 import {
@@ -198,7 +199,7 @@ const createPreviewSandboxHtmlSnippetLinkContext = (
     ? resolveProductionSiteUrlContext()
     : resolveDevelopmentSiteUrlContext();
   const noteContext = resolveNoteLinkClassificationContext({
-    sourceFilePath: file?.path,
+    sourceFilePath: resolveNoteSourcePathFromVFile(file),
     siteUrlContext,
   });
   return {

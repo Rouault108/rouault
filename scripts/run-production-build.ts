@@ -5,6 +5,7 @@ import process from 'node:process';
 
 import { resolveProductionBuildMetadata } from '../build/metadata/build-metadata.js';
 import { assertProductionCssArtifacts } from './assert-production-css-artifacts.js';
+import { DEFAULT_SITE_URL_CONTEXT } from '../shared/site/site-url-context.js';
 
 const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 const distDir = path.resolve(process.cwd(), 'dist');
@@ -21,6 +22,7 @@ const env: NodeJS.ProcessEnv = {
 env['ROUAULT_BUILD_ID'] = buildMetadata.buildId;
 env['ROUAULT_BUILD_LABEL'] = buildMetadata.buildLabel;
 env['ROUAULT_GENERATED_AT'] = buildMetadata.generatedAt;
+env['ROUAULT_SITE_ORIGIN'] ??= DEFAULT_SITE_URL_CONTEXT.siteOrigin;
 
 const result = spawnSync(command, ['build'], {
   env,

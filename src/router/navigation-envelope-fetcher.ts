@@ -2,6 +2,7 @@ import type { InternalDocumentNormalizedUrl } from './internal-document-normaliz
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { applyBasePathToRenderHref, stripBasePathFromPathname } from '../../shared/url/normalize-rouault-url.js';
 import { validateJsonContentType as validateSharedJsonContentType } from '../../shared/http/media-type.js';
+import { NavigationEnvelopeContractError, NavigationEnvelopeHttpStatusError } from './navigation-envelope-errors.js';
 
 export interface FetchNavigationEnvelopeArtifactOptions {
   readonly normalizedUrl: InternalDocumentNormalizedUrl;
@@ -27,12 +28,22 @@ export const fetchNavigationEnvelopeArtifact = async (options: FetchNavigationEn
   };
   const response = await fetch(resolveNavigationEnvelopeArtifactUrl({ normalizedUrl: options.normalizedUrl, siteUrlContext: options.siteUrlContext }), requestInit);
   if (response.type === 'opaqueredirect' || response.status >= 300 && response.status < 400) {
-    throw new Error('navigation-envelope-invalid');
+    throw new NavigationEnvelopeContractError('navigation envelope artifact redirects are not allowed.');
   }
-  if (!response.ok) throw new Error('navigation-envelope-unavailable');
+  if (!response.ok) {
+    throw new NavigationEnvelopeHttpStatusError(response.status);
+  }
   const contentType = response.headers.get('content-type');
   if (!validateNavigationEnvelopeJsonContentType(contentType)) {
-    throw new Error('navigation-envelope-invalid');
+    throw new NavigationEnvelopeContractError('navigation envelope artifact content-type must be JSON.');
   }
-  return response.json();
+
+  try {
+    return await response.json();
+  } catch (error) {
+    throw new NavigationEnvelopeContractError(
+      'navigation envelope artifact body must be valid JSON.',
+      { cause: error },
+    );
+  }
 };

@@ -2,6 +2,16 @@ export class NavigationEnvelopeContractError extends Error {
   override name = 'NavigationEnvelopeContractError';
 }
 
+export class NavigationEnvelopeHttpStatusError extends Error {
+  override name = 'NavigationEnvelopeHttpStatusError';
+  readonly status: number;
+
+  constructor(status: number) {
+    super(`[navigation-envelope] artifact HTTP status ${String(status)}`);
+    this.status = status;
+  }
+}
+
 export type CurrentBuildMetadataInvalidReason = 'missing' | 'empty' | 'invalid-format';
 
 export interface CurrentBuildMetadataInvalidErrorOptions {

@@ -14,6 +14,8 @@ export interface HastNode {
 
 export interface VFileLike {
   path?: string;
+  history?: readonly unknown[];
+  data?: unknown;
 }
 
 export const toInteger = (value: unknown): number | null => {

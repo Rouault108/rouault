@@ -3,6 +3,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { isLocalContentAssetPath, resolveLinkCardImage } from '../media/image-resolver.js';
 import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
 import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
+import { resolveNoteSourcePathFromVFile } from '../content/note-source-vfile.js';
 import { resolveLinkCardUrlPolicy, type LinkCardUrlPolicyContext } from './link-card-url-policy.js';
 import type { LinkCardPayload } from './directives/payload/payload-types.js';
 import type { RouaultDirectiveState } from './directives/types.js';
@@ -37,6 +38,8 @@ interface VFileMessageLike {
 
 interface VFileLike {
   path?: string;
+  history?: readonly unknown[];
+  data?: unknown;
   value?: unknown;
   messages?: VFileMessageLike[];
   message?: (reason: string) => void;
@@ -109,7 +112,7 @@ const createLinkCardPolicyContext = (file?: VFileLike): LinkCardUrlPolicyContext
     ? resolveProductionSiteUrlContext()
     : resolveDevelopmentSiteUrlContext();
   const noteContext = resolveNoteLinkClassificationContext({
-    sourceFilePath: file?.path,
+    sourceFilePath: resolveNoteSourcePathFromVFile(file),
     siteUrlContext,
   });
   return {

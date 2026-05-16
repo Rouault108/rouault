@@ -5,7 +5,10 @@ import type { InternalDocumentNormalizedUrl } from './internal-document-normaliz
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { normalizeDocumentRouteEnvelope } from './document-route-envelope.js';
 import { ErrorEnvelopeFactory } from './error-envelope-factory.js';
-import { CurrentBuildMetadataInvalidError } from './navigation-envelope-errors.js';
+import {
+  CurrentBuildMetadataInvalidError,
+  NavigationEnvelopeHttpStatusError,
+} from './navigation-envelope-errors.js';
 import {
   validateLoadedEnvelope,
   validateNavigationEnvelope,
@@ -104,6 +107,12 @@ export class DocumentLoader {
     } catch (error) {
       if (isAbortError(error)) {
         throw error;
+      }
+      if (error instanceof NavigationEnvelopeHttpStatusError) {
+        return this.errorEnvelopeFactory.createHttpErrorResult(
+          error.status,
+          String(normalizedUrl),
+        );
       }
       return this.errorEnvelopeFactory.createExceptionResult(error);
     }

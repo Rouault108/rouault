@@ -3,6 +3,7 @@ import { classifyLinkHref, type RouteClassificationMode } from '../../shared/lin
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { RehypeLinkContractError } from './link-contract-error.js';
 import { parseFootnoteBackrefHref } from '../../shared/footnotes/footnote-id.js';
+import { resolveNoteSourcePathFromVFile } from '../content/note-source-vfile.js';
 
 interface LinkContext {
   readonly insideCanonicalFootnoteItem: boolean;
@@ -180,12 +181,23 @@ export interface RehypeAnnotateLinkKindsOptions {
 }
 
 export function rehypeAnnotateLinkKinds(options: RehypeAnnotateLinkKindsOptions) {
-  return (tree: unknown, file?: { readonly path?: string }) => {
-    const currentUrl = typeof options.currentUrl === 'function' ? options.currentUrl(file) : options.currentUrl;
-    const routeClassificationMode =
-      typeof options.routeClassificationMode === 'function'
-        ? options.routeClassificationMode(file)
+  return (tree: unknown, file?: { readonly path?: string; readonly history?: readonly unknown[]; readonly data?: unknown }) => {
+    const sourceFilePath = resolveNoteSourcePathFromVFile(file);
+    const sourceFile = sourceFilePath === undefined ? undefined : { path: sourceFilePath };
+    let resolvedCurrentUrl: string | undefined;
+    let resolvedRouteClassificationMode: RouteClassificationMode | undefined;
+    const getCurrentUrl = (): string => {
+      resolvedCurrentUrl ??= typeof options.currentUrl === 'function'
+        ? options.currentUrl(sourceFile)
+        : options.currentUrl;
+      return resolvedCurrentUrl;
+    };
+    const getRouteClassificationMode = (): RouteClassificationMode => {
+      resolvedRouteClassificationMode ??= typeof options.routeClassificationMode === 'function'
+        ? options.routeClassificationMode(sourceFile)
         : options.routeClassificationMode;
+      return resolvedRouteClassificationMode;
+    };
     const visit = (node: unknown, context: LinkContext, parent: HastNode | null): void => {
       if (!node || typeof node !== 'object') {
         return;
@@ -223,8 +235,8 @@ export function rehypeAnnotateLinkKinds(options: RehypeAnnotateLinkKindsOptions)
           const annotation = classifyLinkHref({
             href,
             siteUrlContext: options.siteUrlContext,
-            currentUrl,
-            routeClassificationMode,
+            currentUrl: getCurrentUrl(),
+            routeClassificationMode: getRouteClassificationMode(),
             surface: 'prose',
           });
 
