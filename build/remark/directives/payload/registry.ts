@@ -9,10 +9,12 @@ import { normalizeSyntaxPayloadByNode } from './normalize-syntax-payload.js';
 import { normalizeTabsPayloadByNode } from './normalize-tabs-registry.js';
 import { normalizeTranslationPayloadByNode } from './normalize-translation-registry.js';
 import type { DirectivePayload } from './payload-types.js';
+import type { NotePolicyContext } from '../policy/note-policy-context.js';
 
 const normalizeDirectivePayload = (
   node: MdastNode,
   file?: VFileLike,
+  policyContext?: NotePolicyContext,
 ): DirectivePayload | undefined => {
   const directiveState = node.rouaultDirective;
   if (!directiveState) {
@@ -29,8 +31,8 @@ const normalizeDirectivePayload = (
   );
 
   return (
-    normalizeSurfacePayload(directiveState.name, directiveState.rawAttributes, node, file) ??
-    normalizePreviewPayload(directiveState.name, directiveState.rawAttributes, node, file) ??
+    normalizeSurfacePayload(directiveState.name, directiveState.rawAttributes, node, file, policyContext) ??
+    normalizePreviewPayload(directiveState.name, directiveState.rawAttributes, node, file, policyContext) ??
     normalizeTabsPayloadByNode(directiveState.name, directiveState.rawAttributes, node, file) ??
     normalizeTranslationPayloadByNode(
       directiveState.name,
@@ -43,9 +45,9 @@ const normalizeDirectivePayload = (
   );
 };
 
-const normalizeNodePayload = (node: MdastNode, file?: VFileLike): void => {
+const normalizeNodePayload = (node: MdastNode, file?: VFileLike, policyContext?: NotePolicyContext): void => {
   if (node.rouaultDirective) {
-    node.rouaultDirective.payload = normalizeDirectivePayload(node, file);
+    node.rouaultDirective.payload = normalizeDirectivePayload(node, file, policyContext);
   }
 
   if (node.type === 'code') {
@@ -56,11 +58,12 @@ const normalizeNodePayload = (node: MdastNode, file?: VFileLike): void => {
 export const normalizeDirectivePayloadTree = (
   nodes: MdastNode[],
   file?: VFileLike,
+  policyContext?: NotePolicyContext,
 ): MdastNode[] => {
   for (const node of nodes) {
-    normalizeNodePayload(node, file);
+    normalizeNodePayload(node, file, policyContext);
     if (Array.isArray(node.children)) {
-      node.children = normalizeDirectivePayloadTree(node.children, file);
+      node.children = normalizeDirectivePayloadTree(node.children, file, policyContext);
     }
   }
 

@@ -60,7 +60,7 @@ describe('rehypePreviewSandbox', () => {
                 'allow-popups': true,
                 height: '160',
                 'max-height': '320',
-                'base-url': 'https://example.com/demo/',
+                'base-url': 'https://example.com/assets/preview/demo/',
               },
               children: [
                 createCodeBlock('preview-html', '<button class="demo">押す</button>', {
@@ -178,5 +178,62 @@ describe('rehypePreviewSandbox', () => {
     expect(cssCode?.properties?.['intent']).to.equal('valid');
     expect(cssCode?.properties?.['show-line-numbers']).to.equal(true);
     expect(cssCode?.properties?.['filename']).to.equal('preview.css');
+  });
+
+
+  it('preview HTML snippet 内の preview resource link を build-time に検証して許可すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-code-preview',
+          properties: {},
+          children: [
+            {
+              type: 'element',
+              tagName: 'ui-preview-sandbox',
+              properties: { slot: 'preview', 'iframe-title': 'HTML link' },
+              children: [
+                createCodeBlock(
+                  'preview-html',
+                  '<a href="/assets/preview/demo/index.html">demo</a><img src="/media/preview/demo.png">',
+                ),
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    rehypePreviewSandbox()(tree, { path: 'content/testing/sandbox.md' });
+
+    const sandbox = tree.children?.[0]?.children?.[0];
+    expect(sandbox?.children?.[0]?.tagName).to.equal('template');
+  });
+
+  it('preview HTML snippet 内の unsafe link を build-time に拒否すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-code-preview',
+          properties: {},
+          children: [
+            {
+              type: 'element',
+              tagName: 'ui-preview-sandbox',
+              properties: { slot: 'preview', 'iframe-title': 'Unsafe link' },
+              children: [createCodeBlock('preview-html', '<a href="javascript:alert(1)">bad</a>')],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(() => rehypePreviewSandbox()(tree, { path: 'content/testing/sandbox.md' })).toThrow(
+      /invalid-preview-sandbox-link-url/u,
+    );
   });
 });

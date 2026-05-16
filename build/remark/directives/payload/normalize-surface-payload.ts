@@ -1,4 +1,6 @@
 import type { MdastNode, VFileLike } from '../types.js';
+import type { NotePolicyContext } from '../policy/note-policy-context.js';
+import { resolveLinkCardUrlPolicy } from '../../link-card-url-policy.js';
 import {
   CALLOUT_VARIANTS,
   DETAILS_VARIANTS,
@@ -6,6 +8,7 @@ import {
   SCORE_LOADING_MODES,
 } from '../shared/constants.js';
 import { pickOptional } from '../parser-core/parse-attributes.js';
+import { sanitizeScoreSource } from '../../../../shared/media/media-source-attributes.js';
 import { toError } from '../shared/errors.js';
 import { parseBooleanAttribute, parseIntegerInRange } from './normalize-helpers.js';
 import type {
@@ -141,15 +144,36 @@ export const normalizeLinkCardPayload = (
   attrs: Record<string, string>,
   node: MdastNode,
   file?: VFileLike,
+  policyContext?: NotePolicyContext,
 ): LinkCardPayload => {
   const url = pickOptional(attrs['url']);
   if (!url) {
     throw toError(file, node, 'link-card の url は必須です');
   }
+  const urlPolicyContext = policyContext?.urlPolicyContext;
+  if (!urlPolicyContext) {
+    throw toError(file, node, 'link-card の url 検証には URL policy context が必要です');
+  }
+  const result = resolveLinkCardUrlPolicy(url, urlPolicyContext);
+  if (result.ok === false) {
+    if (result.reason === 'link-card-prose-fallback') {
+      return {
+        kind: 'link-card',
+        url,
+        ...(pickOptional(attrs['title']) ? { title: pickOptional(attrs['title']) } : {}),
+        ...(pickOptional(attrs['description'])
+          ? { description: pickOptional(attrs['description']) }
+          : {}),
+        ...(pickOptional(attrs['image']) ? { image: pickOptional(attrs['image']) } : {}),
+        ...(pickOptional(attrs['site-name']) ? { siteName: pickOptional(attrs['site-name']) } : {}),
+      };
+    }
+    throw toError(file, node, 'link-card の url は unsafe URL として拒否されました');
+  }
 
   return {
     kind: 'link-card',
-    url,
+    url: result.href,
     ...(pickOptional(attrs['title']) ? { title: pickOptional(attrs['title']) } : {}),
     ...(pickOptional(attrs['description'])
       ? { description: pickOptional(attrs['description']) }
@@ -163,15 +187,29 @@ export const normalizeScorePayload = (
   attrs: Record<string, string>,
   node: MdastNode,
   file?: VFileLike,
+  policyContext?: NotePolicyContext,
 ): ScorePayload => {
   const loading = pickOptional(attrs['loading'])?.toLowerCase();
   if (loading && !SCORE_LOADING_MODES.has(loading)) {
     throw toError(file, node, 'score の loading は lazy/eager のみ指定可能です');
   }
 
+  const rawScoreSource = pickOptional(attrs['src']);
+  const scoreSource =
+    rawScoreSource === undefined
+      ? undefined
+      : policyContext?.urlPolicyContext
+        ? sanitizeScoreSource(rawScoreSource, {
+            siteUrlContext: policyContext.urlPolicyContext.siteUrlContext,
+          })
+        : undefined;
+  if (rawScoreSource !== undefined && scoreSource === undefined) {
+    throw toError(file, node, 'score の src は /media/score/ 配下の安全な内部リソースのみ指定可能です');
+  }
+
   return {
     kind: 'score',
-    ...(pickOptional(attrs['src']) ? { src: pickOptional(attrs['src']) } : {}),
+    ...(scoreSource ? { src: scoreSource } : {}),
     ...(pickOptional(attrs['caption']) ? { caption: pickOptional(attrs['caption']) } : {}),
     ...(pickOptional(attrs['label']) ? { label: pickOptional(attrs['label']) } : {}),
     ...(pickOptional(attrs['description'])

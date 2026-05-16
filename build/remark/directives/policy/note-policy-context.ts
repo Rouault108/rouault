@@ -4,6 +4,7 @@ import {
   normalizeNoteContentKind,
 } from '../../../../shared/note/note-kind.js';
 import type { TestingArea } from '../../../../shared/note/testing-area.js';
+import type { NoteDirectiveUrlPolicyContext } from './directive-url-policy-context.js';
 import { normalizeTestingArea } from '../../../../shared/note/testing-area.js';
 
 export interface NotePolicyContext {
@@ -14,11 +15,13 @@ export interface NotePolicyContext {
   readonly allowsSandboxJavaScript: boolean;
   readonly allowsCodePreviewControls: boolean;
   readonly allowsCodePreviewToolbar: boolean;
+  readonly urlPolicyContext?: NoteDirectiveUrlPolicyContext;
 }
 
 export const createNotePolicyContext = (
   kind: NoteContentKind | string | undefined,
   testingArea?: TestingArea | string,
+  urlPolicyContext?: NoteDirectiveUrlPolicyContext,
 ): NotePolicyContext => {
   const normalizedKind = normalizeNoteContentKind(kind);
   const normalizedTestingArea = normalizeTestingArea(testingArea);
@@ -33,5 +36,6 @@ export const createNotePolicyContext = (
     allowsSandboxJavaScript: allowsPreviewSandbox,
     allowsCodePreviewControls: !isReaderFacing,
     allowsCodePreviewToolbar: !isReaderFacing,
+    ...(urlPolicyContext ? { urlPolicyContext } : {}),
   };
 };

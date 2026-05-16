@@ -1,6 +1,9 @@
 import path from 'node:path';
 import { readFileSync, statSync } from 'node:fs';
 import { isLocalContentAssetPath, resolveLinkCardImage } from '../media/image-resolver.js';
+import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
+import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
+import { resolveLinkCardUrlPolicy, type LinkCardUrlPolicyContext } from './link-card-url-policy.js';
 import type { LinkCardPayload } from './directives/payload/payload-types.js';
 import type { RouaultDirectiveState } from './directives/types.js';
 
@@ -100,17 +103,52 @@ const isWhitespaceText = (node: MdastNode): boolean =>
 const getMeaningfulChildren = (node: MdastNode): MdastNode[] =>
   Array.isArray(node.children) ? node.children.filter((child) => !isWhitespaceText(child)) : [];
 
-const normalizeHttpUrl = (value: string, node: MdastNode, file?: VFileLike): string => {
-  try {
-    const url = new URL(value);
-    if (!HTTP_PROTOCOLS.has(url.protocol)) {
-      throw new Error('unsupported protocol');
-    }
-    return url.toString();
-  } catch {
-    throw toError(file, node, 'link-card の url は http/https の絶対 URL のみ指定可能です');
-  }
+
+const createLinkCardPolicyContext = (file?: VFileLike): LinkCardUrlPolicyContext => {
+  const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
+    ? resolveProductionSiteUrlContext()
+    : resolveDevelopmentSiteUrlContext();
+  const noteContext = resolveNoteLinkClassificationContext({
+    sourceFilePath: file?.path,
+    siteUrlContext,
+  });
+  return {
+    siteUrlContext,
+    currentUrl: noteContext.currentUrl,
+    routeClassificationMode: noteContext.routeClassificationMode,
+  };
 };
+
+const resolveCardHref = (
+  value: string,
+  context: LinkCardUrlPolicyContext,
+  node: MdastNode,
+  file?: VFileLike,
+): { readonly kind: 'card'; readonly href: string } | { readonly kind: 'fallback' } => {
+  const result = resolveLinkCardUrlPolicy(value, context);
+  if (result.ok === true) {
+    return { kind: 'card', href: result.href };
+  }
+  if (
+    result.ok === false &&
+    (result.reason === 'unsafe-link-card-url' || result.reason === 'invalid-link-card-url')
+  ) {
+    throw toError(file, node, 'link-card の url は unsafe URL として拒否されました');
+  }
+  return { kind: 'fallback' };
+};
+
+const createFallbackLinkParagraph = (source: LinkCardSource, href: string, sourceNode: MdastNode): MdastNode => ({
+  type: 'paragraph',
+  children: [
+    {
+      type: 'link',
+      url: href,
+      children: [{ type: 'text', value: source.title ?? href }],
+    },
+  ],
+  ...(sourceNode.position ? { position: sourceNode.position } : {}),
+});
 
 const normalizeLookupKey = (value: string): string | undefined => {
   try {
@@ -145,15 +183,6 @@ const buildLookupCandidates = (href: string): string[] => {
   }
 
   return [...candidates];
-};
-
-const isExternalHttpUrl = (value: string): boolean => {
-  try {
-    const url = new URL(value);
-    return HTTP_PROTOCOLS.has(url.protocol);
-  } catch {
-    return false;
-  }
 };
 
 const buildFallbackTitle = (href: string): string => {
@@ -280,11 +309,7 @@ const isAutoLinkCardParagraph = (
   }
 
   const onlyChild = meaningfulChildren[0];
-  return (
-    onlyChild?.type === 'link' &&
-    typeof onlyChild.url === 'string' &&
-    isExternalHttpUrl(onlyChild.url)
-  );
+  return onlyChild?.type === 'link' && typeof onlyChild.url === 'string';
 };
 
 const getDirectiveLinkCardSource = (node: MdastNode): LinkCardSource | null => {
@@ -356,6 +381,7 @@ const toResolvedLinkCardNode = (
 const transformNodes = (
   nodes: MdastNode[],
   metadataMap: Map<string, LinkCardMetadata>,
+  context: LinkCardUrlPolicyContext,
   file?: VFileLike,
 ): void => {
   for (let index = 0; index < nodes.length; index += 1) {
@@ -366,7 +392,12 @@ const transformNodes = (
 
     const directiveSource = getDirectiveLinkCardSource(current);
     if (directiveSource) {
-      const href = normalizeHttpUrl(directiveSource.url, current, file);
+      const resolved = resolveCardHref(directiveSource.url, context, current, file);
+      if (resolved.kind === 'fallback') {
+        nodes[index] = createFallbackLinkParagraph(directiveSource, directiveSource.url, current);
+        continue;
+      }
+      const href = resolved.href;
       const metadata = findCachedMetadata(href, metadataMap);
 
       nodes[index] = toResolvedLinkCardNode(
@@ -379,7 +410,12 @@ const transformNodes = (
 
     if (isAutoLinkCardParagraph(current)) {
       const linkNode = getMeaningfulChildren(current)[0];
-      const href = normalizeHttpUrl(linkNode?.url ?? '', current, file);
+      const sourceHref = linkNode?.url ?? '';
+      const resolved = resolveCardHref(sourceHref, context, current, file);
+      if (resolved.kind === 'fallback') {
+        continue;
+      }
+      const href = resolved.href;
       const metadata = findCachedMetadata(href, metadataMap);
 
       nodes[index] = toResolvedLinkCardNode(
@@ -391,7 +427,7 @@ const transformNodes = (
     }
 
     if (Array.isArray(current.children) && current.children.length > 0) {
-      transformNodes(current.children, metadataMap, file);
+      transformNodes(current.children, metadataMap, context, file);
     }
   }
 };
@@ -408,6 +444,7 @@ export function remarkLinkCards(options: RemarkLinkCardsOptions = {}) {
     }
 
     const metadataMap = loadMetadataMap(options.metadataFile ?? DEFAULT_METADATA_FILE);
-    transformNodes(root.children, metadataMap, file);
+    const context = createLinkCardPolicyContext(file);
+    transformNodes(root.children, metadataMap, context, file);
   };
 }

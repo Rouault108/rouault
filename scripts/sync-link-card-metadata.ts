@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { parse } from 'parse5';
+import { detectUnsafeHref } from '../shared/link/unsafe-href-detector.js';
 
 interface MetadataEntry {
   title?: string;
@@ -49,6 +50,9 @@ const REQUEST_TIMEOUT_MS = 8000;
 const CONCURRENCY = 4;
 const IMAGE_ACCEPT_HEADER = 'image/avif,image/webp,image/jpeg,image/png,image/*;q=0.8,*/*;q=0.5';
 
+const createUrlLogRef = (value: string): string =>
+  `url:${createHash('sha256').update(value).digest('hex').slice(0, 12)}`;
+
 const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
 
 const pickOptionalString = (value: unknown): string | undefined => {
@@ -60,9 +64,12 @@ const pickOptionalString = (value: unknown): string | undefined => {
 };
 
 const normalizeLookupKey = (value: string): string | undefined => {
+  if (!detectUnsafeHref(value).ok) {
+    return undefined;
+  }
   try {
     const url = new URL(value);
-    if (!HTTP_PROTOCOLS.has(url.protocol)) {
+    if (!HTTP_PROTOCOLS.has(url.protocol) || url.username.length > 0 || url.password.length > 0) {
       return undefined;
     }
     url.hash = '';
@@ -74,13 +81,17 @@ const normalizeLookupKey = (value: string): string | undefined => {
 
 const resolveSafeHttpUrl = (value: string | undefined, baseUrl: string): string | undefined => {
   const trimmed = pickOptionalString(value);
-  if (!trimmed) {
+  if (!trimmed || !detectUnsafeHref(trimmed).ok) {
     return undefined;
   }
 
   try {
     const resolved = new URL(trimmed, baseUrl);
-    return HTTP_PROTOCOLS.has(resolved.protocol) ? resolved.toString() : undefined;
+    if (!HTTP_PROTOCOLS.has(resolved.protocol) || resolved.username.length > 0 || resolved.password.length > 0) {
+      return undefined;
+    }
+    const serialized = resolved.toString();
+    return detectUnsafeHref(serialized).ok ? serialized : undefined;
   } catch {
     return undefined;
   }
@@ -307,13 +318,18 @@ const extensionFromContentType = (contentType: string | null): string => {
 };
 
 const downloadThumbnailSource = async (url: string): Promise<ThumbnailCacheEntry> => {
+  const normalizedUrl = normalizeLookupKey(url);
+  if (!normalizedUrl) {
+    throw new Error('unsafe thumbnail URL');
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => {
     controller.abort();
   }, REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(normalizedUrl, {
       redirect: 'follow',
       signal: controller.signal,
       headers: {
@@ -433,7 +449,7 @@ const main = async (): Promise<void> => {
   const sortedUrls = [...urls].sort((a, b) => a.localeCompare(b));
 
   await runPool(sortedUrls, CONCURRENCY, async (url) => {
-    process.stdout.write(`sync link-card metadata: ${url}\n`);
+    process.stdout.write(`sync link-card metadata: ${createUrlLogRef(url)}\n`);
 
     try {
       const { finalUrl, metadata } = await fetchMetadata(url);
@@ -454,12 +470,12 @@ const main = async (): Promise<void> => {
         } catch (thumbnailError) {
           const thumbnailMessage =
             thumbnailError instanceof Error ? thumbnailError.message : 'unknown error';
-          process.stderr.write(`warn: thumbnail ${metadata.image}: ${thumbnailMessage}\n`);
+          process.stderr.write(`warn: thumbnail ${createUrlLogRef(metadata.image)}: ${thumbnailMessage}\n`);
         }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'unknown error';
-      process.stderr.write(`warn: ${url}: ${message}\n`);
+      process.stderr.write(`warn: ${createUrlLogRef(url)}: ${message}\n`);
     }
   });
 

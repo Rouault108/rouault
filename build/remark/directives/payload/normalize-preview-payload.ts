@@ -13,6 +13,8 @@ import {
   parseEnumListAttribute,
   parseIntegerMin,
 } from './normalize-helpers.js';
+import { validatePreviewSandboxBaseUrl } from '../../../rehype/preview-sandbox-link-contract.js';
+import type { NotePolicyContext } from '../policy/note-policy-context.js';
 import type {
   CodePreviewPayload,
   PreviewSandboxPayload,
@@ -112,19 +114,39 @@ export const normalizeToolbarSlotPayload = (): ToolbarSlotPayload => ({
   kind: 'toolbar',
 });
 
+
+const normalizePreviewSandboxBaseUrl = (
+  value: string,
+  policyContext: NotePolicyContext | undefined,
+  node: MdastNode,
+  file?: VFileLike,
+): string => {
+  const urlPolicyContext = policyContext?.urlPolicyContext;
+  if (!urlPolicyContext) {
+    throw toError(file, node, 'preview-sandbox の base-url 検証には URL policy context が必要です');
+  }
+
+  try {
+    return validatePreviewSandboxBaseUrl(value, urlPolicyContext.siteUrlContext);
+  } catch {
+    throw toError(
+      file,
+      node,
+      'preview-sandbox の base-url は same-origin かつ basePath 配下の /assets/preview/ または /media/preview/ に限定します',
+    );
+  }
+};
+
 export const normalizePreviewSandboxPayload = (
   attrs: Record<string, string>,
   node: MdastNode,
   file?: VFileLike,
+  policyContext?: NotePolicyContext,
 ): PreviewSandboxPayload => {
   const baseUrl = pickOptional(attrs['base-url']);
-  if (baseUrl) {
-    try {
-      new URL(baseUrl);
-    } catch {
-      throw toError(file, node, 'preview-sandbox の base-url は絶対 URL で指定してください');
-    }
-  }
+  const normalizedBaseUrl = baseUrl
+    ? normalizePreviewSandboxBaseUrl(baseUrl, policyContext, node, file)
+    : undefined;
 
   const activationPolicy = pickOptional(attrs['activation-policy']);
   if (activationPolicy && !['eager', 'visible', 'manual'].includes(activationPolicy)) {
@@ -149,7 +171,7 @@ export const normalizePreviewSandboxPayload = (
     ...(pickOptional(attrs['iframe-title'])
       ? { iframeTitle: pickOptional(attrs['iframe-title']) }
       : {}),
-    ...(baseUrl ? { baseUrl: new URL(baseUrl).href } : {}),
+    ...(normalizedBaseUrl ? { baseUrl: normalizedBaseUrl } : {}),
     allowJs:
       parseBooleanAttribute(attrs['allow-js'], node, file, 'preview-sandbox', 'allow-js') === true,
     ...(activationPolicy

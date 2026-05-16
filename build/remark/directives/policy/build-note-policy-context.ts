@@ -1,6 +1,7 @@
 import type { VFileLike } from '../types.js';
 import type { NotePolicyContext } from './note-policy-context.js';
 import { createNotePolicyContext } from './note-policy-context.js';
+import { createNoteDirectiveUrlPolicyContext } from './directive-url-policy-context.js';
 import { normalizeTestingArea } from '../../../../shared/note/testing-area.js';
 
 const FRONTMATTER_PATTERN = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u;
@@ -32,12 +33,13 @@ const inferPolicyContextFromPath = (filePath: string): NotePolicyContext | null 
 };
 
 export const buildNotePolicyContext = (file: VFileLike | undefined): NotePolicyContext => {
+  const urlPolicyContext = createNoteDirectiveUrlPolicyContext(file);
   if (file?.data?.rouaultPolicyContext) {
     return file.data.rouaultPolicyContext;
   }
 
   if (typeof file?.value !== 'string' || file.value.trim().length === 0) {
-    return createNotePolicyContext('testing', 'sandbox');
+    return createNotePolicyContext('testing', 'sandbox', urlPolicyContext);
   }
 
   const frontmatter = FRONTMATTER_PATTERN.exec(file.value)?.[1] ?? '';
@@ -45,8 +47,11 @@ export const buildNotePolicyContext = (file: VFileLike | undefined): NotePolicyC
   const testingArea = pickFrontmatterValue(frontmatter, 'testingArea');
 
   if (kind !== undefined || testingArea !== undefined) {
-    return createNotePolicyContext(kind, testingArea);
+    return createNotePolicyContext(kind, testingArea, urlPolicyContext);
   }
 
-  return inferPolicyContextFromPath(file.path ?? '') ?? createNotePolicyContext('reader');
+  const inferred = inferPolicyContextFromPath(file.path ?? '');
+  return inferred
+    ? { ...inferred, urlPolicyContext }
+    : createNotePolicyContext('reader', undefined, urlPolicyContext);
 };

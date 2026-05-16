@@ -1,4 +1,11 @@
-import { type HastNode } from './hast-utils.js';
+import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
+import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
+import { type HastNode, type VFileLike } from './hast-utils.js';
+import {
+  previewSandboxHtmlMayContainUrlBearingAttributes,
+  validatePreviewSandboxHtmlSnippetLinkContract,
+  type PreviewSandboxHtmlSnippetLinkContext,
+} from './preview-sandbox-link-contract.js';
 
 type PreviewKind = 'html' | 'css' | 'js';
 
@@ -184,7 +191,39 @@ const resolveCodeGroupLabel = (previewNode: HastNode, sandboxNode: HastNode): st
   return 'プレビューコード例';
 };
 
-const transformCodePreview = (node: HastNode): void => {
+const createPreviewSandboxHtmlSnippetLinkContext = (
+  file?: VFileLike,
+): PreviewSandboxHtmlSnippetLinkContext => {
+  const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
+    ? resolveProductionSiteUrlContext()
+    : resolveDevelopmentSiteUrlContext();
+  const noteContext = resolveNoteLinkClassificationContext({
+    sourceFilePath: file?.path,
+    siteUrlContext,
+  });
+  return {
+    siteUrlContext,
+    currentUrl: noteContext.currentUrl,
+    routeClassificationMode: noteContext.routeClassificationMode,
+  };
+};
+
+const validatePreviewSandboxSnippets = (snippets: readonly PreviewSnippet[], file?: VFileLike): void => {
+  const htmlSnippetsWithUrlAttributes = snippets.filter(
+    (snippet) =>
+      snippet.kind === 'html' && previewSandboxHtmlMayContainUrlBearingAttributes(snippet.source),
+  );
+  if (htmlSnippetsWithUrlAttributes.length === 0) {
+    return;
+  }
+
+  const context = createPreviewSandboxHtmlSnippetLinkContext(file);
+  for (const snippet of htmlSnippetsWithUrlAttributes) {
+    validatePreviewSandboxHtmlSnippetLinkContract(snippet.source, context);
+  }
+};
+
+const transformCodePreview = (node: HastNode, file?: VFileLike): void => {
   if (!Array.isArray(node.children)) {
     return;
   }
@@ -200,6 +239,7 @@ const transformCodePreview = (node: HastNode): void => {
   const orderedSnippets = PREVIEW_KIND_ORDER.flatMap((kind) =>
     snippets.filter((snippet) => snippet.kind === kind),
   );
+  validatePreviewSandboxSnippets(orderedSnippets, file);
 
   sandboxNode.children = orderedSnippets.map((snippet) =>
     createTemplateNode(snippet.kind, snippet.source),
@@ -218,7 +258,7 @@ const transformCodePreview = (node: HastNode): void => {
  * preview-sandbox の source を inert payload と表示用 code area に展開する。
  */
 export function rehypePreviewSandbox() {
-  return (tree: unknown) => {
+  return (tree: unknown, file?: VFileLike) => {
     const visit = (node: HastNode): void => {
       if (Array.isArray(node.children)) {
         for (const child of node.children) {
@@ -227,7 +267,7 @@ export function rehypePreviewSandbox() {
       }
 
       if (isElement(node, 'ui-code-preview')) {
-        transformCodePreview(node);
+        transformCodePreview(node, file);
       }
     };
 

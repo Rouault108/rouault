@@ -1099,7 +1099,7 @@ describe('remarkRouaultDirectives', () => {
             {
               type: 'text',
               value:
-                '::preview-sandbox{iframe-title="ボタンの sandbox" allow-js="true" activation-policy="visible" height-mode="bounded-auto" height="160" max-height="320" base-url="https://example.com/demo/"}',
+                '::preview-sandbox{iframe-title="ボタンの sandbox" allow-js="true" activation-policy="visible" height-mode="bounded-auto" height="160" max-height="320" base-url="https://example.com/assets/preview/demo/"}',
             },
           ],
         },
@@ -1147,7 +1147,7 @@ describe('remarkRouaultDirectives', () => {
     expect(sandbox?.data?.hProperties?.['height-mode']).to.equal('bounded-auto');
     expect(sandbox?.data?.hProperties?.['height']).to.equal('160');
     expect(sandbox?.data?.hProperties?.['max-height']).to.equal('320');
-    expect(sandbox?.data?.hProperties?.['base-url']).to.equal('https://example.com/demo/');
+    expect(sandbox?.data?.hProperties?.['base-url']).to.equal('https://example.com/assets/preview/demo/');
     expect(sandbox?.children).to.have.length(3);
   });
 

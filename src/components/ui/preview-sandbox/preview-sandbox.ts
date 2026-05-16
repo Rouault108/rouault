@@ -820,6 +820,7 @@ export class PreviewSandbox extends LitElement {
     return html`
       <div
         class="root"
+        data-link-contract-sandbox="preview"
         style=${`--_ui-preview-sandbox-min-height: ${String(
           this._normalizedHeight,
         )}px; --_ui-preview-sandbox-resolved-height: ${String(this._resolvedHeight)}px;`}

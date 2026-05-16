@@ -21,7 +21,7 @@ export function remarkRouaultDirectives() {
 
     const policyContext = buildNotePolicyContext(file);
     const parsedChildren = parseDirectiveNodes(root.children, file);
-    const payloadChildren = normalizeDirectivePayloadTree(parsedChildren, file);
+    const payloadChildren = normalizeDirectivePayloadTree(parsedChildren, file, policyContext);
     validateDirectiveTree(payloadChildren, policyContext, file);
     root.children = payloadChildren.map((node: MdastNode) => adaptOutputTree(node, file));
   };

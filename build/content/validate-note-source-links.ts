@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -257,6 +258,9 @@ export async function collectNoteSourceLinksFromMarkdown(
 const formatLocation = (link: CollectedMarkdownUrl): string =>
   link.position ? `${link.sourceFileDisplayPath}:${link.position.line}:${link.position.column}` : link.sourceFileDisplayPath;
 
+const createHrefDiagnosticRef = (href: string): string =>
+  `href:${createHash('sha256').update(href).digest('hex').slice(0, 12)}`;
+
 export function validateCollectedAuthoringLinks(
   links: readonly CollectedMarkdownUrl[],
   options: Pick<ValidateNoteSourceLinksOptions, 'sourceRootPaths'> = {},
@@ -264,7 +268,7 @@ export function validateCollectedAuthoringLinks(
   for (const link of links) {
     if (isRawNotesAbsoluteHref(link.href)) {
       throw new Error(
-        `[markdown] /notes/... をMarkdown本文へ直書きできません: ${formatLocation(link)} href="${link.href}"。source file relative .md link を使ってください。`,
+        `[markdown] /notes/... をMarkdown本文へ直書きできません: ${formatLocation(link)} ${createHrefDiagnosticRef(link.href)}。source file relative .md link を使ってください。`,
       );
     }
 
@@ -296,7 +300,7 @@ export function validateCollectedRouteReachability(
     );
     if (resolved.kind === 'resolved' && !routePermalinks.has(resolved.permalink)) {
       throw new Error(
-        `[markdown] note source link resolves to a non-generated route: ${formatLocation(link)} href="${link.href}" resolved="${resolved.permalink}"`,
+        `[markdown] note source link resolves to a non-generated route: ${formatLocation(link)} ${createHrefDiagnosticRef(link.href)} resolved="${resolved.permalink}"`,
       );
     }
   }
