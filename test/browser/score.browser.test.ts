@@ -1,6 +1,9 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/score/score.js';
-import type { UiScore } from '../../src/components/ui/score/score.js';
+import {
+  INVALID_SCORE_SOURCE_MESSAGE,
+  type UiScore,
+} from '../../src/components/ui/score/score.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const MALICIOUS_SVG = `
@@ -56,6 +59,21 @@ const installResizeObserverStub = (): (() => void) => {
   };
 };
 
+
+const installScoreRuntimeMeta = (): (() => void) => {
+  const siteOrigin = document.createElement('meta');
+  siteOrigin.name = 'rouault-site-origin';
+  siteOrigin.content = window.location.origin;
+  const basePath = document.createElement('meta');
+  basePath.name = 'rouault-base-path';
+  basePath.content = '';
+  document.head.append(siteOrigin, basePath);
+  return () => {
+    siteOrigin.remove();
+    basePath.remove();
+  };
+};
+
 const flush = async (host: UiScore): Promise<void> => {
   await waitForLitUpdate(host);
   await nextAnimationFrame();
@@ -76,6 +94,17 @@ const waitFor = async (
 };
 
 describe('ui-score browser contract', () => {
+  let restoreRuntimeMeta: (() => void) | undefined;
+
+  beforeEach(() => {
+    restoreRuntimeMeta = installScoreRuntimeMeta();
+  });
+
+  afterEach(() => {
+    restoreRuntimeMeta?.();
+    restoreRuntimeMeta = undefined;
+  });
+
   it('inline SVG slot は aria-hidden 化され、scroll container に label / description を与えること', async () => {
     const restoreResizeObserver = installResizeObserverStub();
 
@@ -118,7 +147,7 @@ describe('ui-score browser contract', () => {
       }) as typeof globalThis.fetch;
 
       const host = await fixture<UiScore>(html`
-        <ui-score src="/scores/malicious.svg" loading="eager" label="譜例2"></ui-score>
+        <ui-score src="/media/score/malicious.svg" loading="eager" label="譜例2"></ui-score>
       `);
 
       await flush(host);
@@ -141,6 +170,33 @@ describe('ui-score browser contract', () => {
       const rect = expectPresent(runtimeSvg.querySelector<SVGRectElement>('rect'), 'rect');
       expect(rect.getAttribute('fill')).to.equal('currentColor');
       expect(rect.getAttribute('stroke')).to.equal('currentColor');
+    } finally {
+      globalThis.fetch = originalFetch;
+      restoreResizeObserver();
+    }
+  });
+
+
+  it('unsafe score source は fetch せず fallback UI を表示すること', async () => {
+    const restoreResizeObserver = installResizeObserverStub();
+    const originalFetch = globalThis.fetch;
+    let fetchCalls = 0;
+
+    try {
+      globalThis.fetch = (async (): Promise<Response> => {
+        fetchCalls += 1;
+        return new Response(MALICIOUS_SVG, { status: 200 });
+      }) as typeof globalThis.fetch;
+
+      const host = await fixture<UiScore>(html`
+        <ui-score src="data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=" loading="eager" label="譜例4"></ui-score>
+      `);
+
+      await flush(host);
+
+      const error = expectPresent(host.shadowRoot?.querySelector<HTMLElement>('.error'), 'error');
+      expect(error.textContent?.trim()).to.equal(INVALID_SCORE_SOURCE_MESSAGE);
+      expect(fetchCalls).to.equal(0);
     } finally {
       globalThis.fetch = originalFetch;
       restoreResizeObserver();

@@ -146,6 +146,22 @@ describe('ui-image browser contract', () => {
     expect(host.shadowRoot?.activeElement).to.equal(trigger);
   });
 
+
+  it('unsafe image media URL は DOM に出力せず empty state にすること', async () => {
+    const host = await fixture<UiImage>(html`
+      <ui-image src="javascript:alert(1)" srcset="/safe.png 1x, javascript:alert(1) 2x" alt="unsafe"></ui-image>
+    `);
+
+    await flush(host);
+
+    const fallback = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('.error-fallback'),
+      'empty fallback',
+    );
+    expect(fallback.textContent?.includes('画像が指定されていません')).to.equal(true);
+    expect(host.shadowRoot?.querySelector<HTMLImageElement>('img.thumbnail-image')).to.equal(null);
+  });
+
   it('thumbnail error 後は error state になり、lightbox を開けないこと', async () => {
     const host = await fixture<UiImage>(html`
       <ui-image src="${SAMPLE_DATA_URI}" alt="壊れた画像"></ui-image>

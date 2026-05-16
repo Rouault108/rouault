@@ -3,6 +3,9 @@ import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import {
   parseMediaSourcesAttribute,
+  sanitizeImageSource,
+  sanitizeImageSrcset,
+  sanitizeMediaSources,
   serializeMediaSources,
   type MediaSourceDescriptor,
 } from '../../../../shared/media/media-source-attributes.js';
@@ -422,11 +425,11 @@ export class UiImage extends LitElement {
   }
 
   private get _resolvedSrc(): string {
-    return this.src.trim();
+    return sanitizeImageSource(this.src) ?? '';
   }
 
   private get _resolvedSrcset(): string {
-    return this.srcset.trim();
+    return sanitizeImageSrcset(this.srcset) ?? '';
   }
 
   private get _resolvedSizes(): string {
@@ -434,13 +437,11 @@ export class UiImage extends LitElement {
   }
 
   private get _resolvedPlaceholder(): string {
-    return this.placeholder.trim();
+    return sanitizeImageSource(this.placeholder) ?? '';
   }
 
   private get _resolvedSources(): MediaSourceDescriptor[] {
-    return this.sources.filter(
-      (entry) => entry.type.trim().length > 0 && entry.srcset.trim().length > 0,
-    );
+    return sanitizeMediaSources(this.sources);
   }
 
   private get _resolvedCaption(): string {
@@ -456,11 +457,11 @@ export class UiImage extends LitElement {
   }
 
   private get _resolvedLightboxSrc(): string {
-    return this.lightboxSrc.trim() || this._resolvedSrc;
+    return sanitizeImageSource(this.lightboxSrc) ?? this._resolvedSrc;
   }
 
   private get _resolvedLightboxSrcset(): string {
-    return this.lightboxSrcset.trim();
+    return sanitizeImageSrcset(this.lightboxSrcset) ?? '';
   }
 
   private get _resolvedLightboxSizes(): string {
@@ -468,12 +469,8 @@ export class UiImage extends LitElement {
   }
 
   private get _resolvedLightboxSources(): MediaSourceDescriptor[] {
-    if (this.lightboxSources.length > 0) {
-      return this.lightboxSources.filter(
-        (entry) => entry.type.trim().length > 0 && entry.srcset.trim().length > 0,
-      );
-    }
-    return this._resolvedSources;
+    const lightboxSources = sanitizeMediaSources(this.lightboxSources);
+    return lightboxSources.length > 0 ? lightboxSources : this._resolvedSources;
   }
 
   private get _resolvedWidth(): number | null {

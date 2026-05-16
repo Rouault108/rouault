@@ -2,15 +2,51 @@ import { css, html, LitElement, nothing, type PropertyValues, type TemplateResul
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
+import { sanitizeScoreSource } from '../../../../shared/media/media-source-attributes.js';
+import { createSiteUrlContext, type SiteUrlContext } from '../../../../shared/site/site-url-context.js';
 
 export type ScoreLoading = 'lazy' | 'eager';
 
 const VALID_LOADING = new Set<ScoreLoading>(['lazy', 'eager']);
-const VALID_SRC_PROTOCOLS = new Set(['http:', 'https:', 'data:']);
 const DEFAULT_ASPECT_RATIO = '3 / 1';
 const LAZY_ROOT_MARGIN = '200px 0px';
 const LOAD_ERROR_MESSAGE = '楽譜を読み込めませんでした';
-const INVALID_SRC_ERROR_MESSAGE = '不正な楽譜ソースです';
+export const INVALID_SCORE_SOURCE_MESSAGE = '不正な楽譜ソースです';
+
+/* Runtime basePath handling is intentionally local; shared score source validation
+ * validates the basePath-stripped media pathname contract. */
+const readRuntimeSiteUrlContext = (): SiteUrlContext | null => {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  const siteOrigin = document
+    .querySelector<HTMLMetaElement>('meta[name="rouault-site-origin"]')
+    ?.content.trim();
+  if (!siteOrigin) {
+    return null;
+  }
+
+  try {
+    return createSiteUrlContext({
+      siteOrigin,
+      basePath:
+        document.querySelector<HTMLMetaElement>('meta[name="rouault-base-path"]')?.content.trim() ?? '',
+    });
+  } catch {
+    return null;
+  }
+};
+
+const resolveSafeScoreSource = (value: string): string | null => {
+  const siteUrlContext = readRuntimeSiteUrlContext();
+  if (siteUrlContext === null) {
+    return null;
+  }
+
+  const sanitized = sanitizeScoreSource(value, { siteUrlContext });
+  return sanitized ?? null;
+};
 
 let scoreUid = 0;
 
@@ -438,17 +474,12 @@ export class UiScore extends LitElement {
     return this._normalizeAspectRatio(this.aspectRatio);
   }
 
-  private get _hasValidRuntimeSource(): boolean {
-    const resolvedSrc = this._resolvedSrc;
-    if (resolvedSrc === '') return false;
+  private get _safeRuntimeSource(): string | null {
+    return resolveSafeScoreSource(this._resolvedSrc);
+  }
 
-    try {
-      const baseUrl = typeof window === 'undefined' ? 'http://localhost/' : window.location.href;
-      const url = new URL(resolvedSrc, baseUrl);
-      return VALID_SRC_PROTOCOLS.has(url.protocol);
-    } catch {
-      return false;
-    }
+  private get _hasValidRuntimeSource(): boolean {
+    return this._safeRuntimeSource !== null;
   }
 
   private get _isRuntimeMode(): boolean {
@@ -619,7 +650,7 @@ export class UiScore extends LitElement {
     }
 
     if (!this._hasValidRuntimeSource) {
-      this._errorMessage = INVALID_SRC_ERROR_MESSAGE;
+      this._errorMessage = INVALID_SCORE_SOURCE_MESSAGE;
       this._hasRequested = false;
       return;
     }
@@ -695,7 +726,13 @@ export class UiScore extends LitElement {
     this._errorMessage = '';
 
     try {
-      const response = await fetch(this._resolvedSrc, { signal: abortController.signal });
+      const safeSource = this._safeRuntimeSource;
+      if (safeSource === null) {
+        this._errorMessage = INVALID_SCORE_SOURCE_MESSAGE;
+        return;
+      }
+
+      const response = await fetch(safeSource, { signal: abortController.signal });
       if (!response.ok) {
         throw new Error(`HTTP status ${String(response.status)}`);
       }
@@ -747,15 +784,22 @@ export class UiScore extends LitElement {
           continue;
         }
 
-        if (
-          (normalizedName === 'href' || normalizedName === 'xlink:href') &&
-          this._isJavaScriptProtocol(value)
-        ) {
+        if (normalizedName === 'href' || normalizedName === 'xlink:href') {
+          if (!this._isSafeSvgFragmentReference(value)) {
+            element.removeAttribute(attributeName);
+          }
+          continue;
+        }
+
+        if (normalizedName === 'style' && this._hasUnsafeSvgStyle(value)) {
           element.removeAttribute(attributeName);
           continue;
         }
 
-        if (normalizedName === 'style' && /javascript:/i.test(value)) {
+        if (
+          (normalizedName === 'stroke' || normalizedName === 'fill') &&
+          this._hasUnsafePaintUrl(value)
+        ) {
           element.removeAttribute(attributeName);
           continue;
         }
@@ -773,8 +817,21 @@ export class UiScore extends LitElement {
     return new XMLSerializer().serializeToString(root);
   }
 
-  private _isJavaScriptProtocol(value: string): boolean {
-    return /^\s*javascript:/i.test(value);
+  private _isSafeSvgFragmentReference(value: string): boolean {
+    const trimmed = value.trim();
+    return trimmed.length === 0 || trimmed.startsWith('#');
+  }
+
+  private _hasUnsafeSvgStyle(value: string): boolean {
+    return /javascript:/iu.test(value) || /url\(/iu.test(value);
+  }
+
+  private _hasUnsafePaintUrl(value: string): boolean {
+    const trimmed = value.trim();
+    if (!/url\(/iu.test(trimmed)) {
+      return false;
+    }
+    return !/^url\(\s*#[^)]+\)$/iu.test(trimmed);
   }
 
   private _replaceHardcodedBlack(value: string): string {

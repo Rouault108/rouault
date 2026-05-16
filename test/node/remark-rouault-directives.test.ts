@@ -499,7 +499,7 @@ describe('remarkRouaultDirectives', () => {
             {
               type: 'text',
               value:
-                '::score{src="/scores/a.svg" label="譜例" caption="譜例1" description="詳細説明" aspect-ratio="4/1" loading="eager" primary="true"}',
+                '::score{src="/media/score/a.svg" label="譜例" caption="譜例1" description="詳細説明" aspect-ratio="4/1" loading="eager" primary="true"}',
             },
           ],
         },
@@ -514,7 +514,7 @@ describe('remarkRouaultDirectives', () => {
 
     const score = tree.children?.[0];
     expect(score?.data?.hName).to.equal('ui-score');
-    expect(score?.data?.hProperties?.['src']).to.equal('/scores/a.svg');
+    expect(score?.data?.hProperties?.['src']).to.equal('/media/score/a.svg');
     expect(score?.data?.hProperties?.['label']).to.equal('譜例');
     expect(score?.data?.hProperties?.['caption']).to.equal('譜例1');
     expect(score?.data?.hProperties?.['description']).to.equal('詳細説明');

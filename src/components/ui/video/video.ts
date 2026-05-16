@@ -1,6 +1,10 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import {
+  sanitizeVideoPoster,
+  sanitizeVideoSource,
+} from '../../../../shared/media/media-source-attributes.js';
 import '../icon/icon.js';
 import '../button/button';
 
@@ -891,11 +895,11 @@ export class UiVideo extends LitElement {
   // ─── 算出プロパティ ───
 
   private get _resolvedSrc(): string {
-    return this.src.trim();
+    return sanitizeVideoSource(this.src) ?? '';
   }
 
   private get _resolvedPoster(): string {
-    return this.poster.trim();
+    return sanitizeVideoPoster(this.poster) ?? '';
   }
 
   private get _resolvedCaption(): string {
@@ -1064,7 +1068,7 @@ export class UiVideo extends LitElement {
   // ─── ユーティリティ ───
 
   private _normalizeTrack(track: Track): Track | null {
-    const src = track.src.trim();
+    const src = sanitizeVideoSource(track.src) ?? '';
     const srclang = track.srclang.trim();
     const label = track.label.trim();
 

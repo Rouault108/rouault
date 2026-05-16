@@ -187,6 +187,25 @@ describe('ui-video browser contract', () => {
     expect(retryButton).to.equal(null);
   });
 
+
+  it('unsafe video media URL と unsafe track を DOM に出力しないこと', async () => {
+    const component = await fixture<UiVideo>(html` <ui-video src="data:text/html;base64,PGgxPng8L2gxPg==" caption="unsafe"></ui-video> `);
+    component.tracks = [
+      {
+        src: 'javascript:alert(1)',
+        srclang: 'ja',
+        label: 'unsafe',
+        kind: 'captions',
+      },
+    ];
+
+    await waitForLitUpdate(component);
+
+    const video = expectPresent(getVideoElement(component), 'video');
+    expect(video.getAttribute('src')).to.equal(null);
+    expect(component.shadowRoot?.querySelector('track')).to.equal(null);
+  });
+
   it('caption と valid tracks を render し、figcaption と video に aria-describedby を設定すること', async () => {
     const invalidTrack = {
       src: '/captions/invalid.vtt',
