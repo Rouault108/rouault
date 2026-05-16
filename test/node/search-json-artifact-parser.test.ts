@@ -13,15 +13,15 @@ import type {
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 
 const createDiagnosticRecorder = () => {
-  const issues: Array<{
+  const issues: {
     code: SearchArtifactParseIssueCode;
     artifactSource: SearchArtifactDiagnosticSource;
-  }> = [];
-  const summaries: Array<{
+  }[] = [];
+  const summaries: {
     code: SearchDiagnosticSummaryCode;
     artifactSource: SearchArtifactDiagnosticSource;
     droppedItemCount: number;
-  }> = [];
+  }[] = [];
 
   const diagnostics: SearchJsonParseDiagnosticSink = {
     addIssue(issue) {

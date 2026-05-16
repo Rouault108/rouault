@@ -207,5 +207,5 @@ export const attachRouterLinkInterceptor = (
 ): { readonly dispose: () => void } => {
   const interceptor = new RouterLinkInterceptor(options);
   interceptor.attach();
-  return { dispose: () => interceptor.detach() };
+  return { dispose: () => { interceptor.detach(); } };
 };

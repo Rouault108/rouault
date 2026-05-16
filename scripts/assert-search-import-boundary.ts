@@ -46,7 +46,7 @@ if (/createSearchCore(?:FromSiteContext)?\b/u.test(searchPageText)) {
   console.error('search import boundary violation: src/components/search/search-page.ts: SearchCore must not be created by the component');
   failed = true;
 }
-if (/pathname\.startsWith\('\/'\)/u.test(searchPageText)) {
+if (searchPageText.includes('pathname.startsWith(\'/\')')) {
   console.error('search import boundary violation: src/components/search/search-page.ts: SearchPage must not fake a route manifest predicate');
   failed = true;
 }
@@ -78,12 +78,12 @@ if (!directivePayloadText.includes("from '../../../../shared/media/media-source-
   console.error('search import boundary violation: build/remark/directives/payload/normalize-surface-payload.ts: score directive src must import media URL safety through the correct repository-relative boundary');
   failed = true;
 }
-if (/\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/shared\/media\/media-source-attributes\.js/u.test(directivePayloadText)) {
+if (directivePayloadText.includes('../../../../../shared/media/media-source-attributes.js')) {
   console.error('search import boundary violation: build/remark/directives/payload/normalize-surface-payload.ts: score directive src must not import media URL safety through an invalid parent traversal');
   failed = true;
 }
 const searchDataModelText = readFileSync('docs/references/search-data-model.md', 'utf8');
-if (new RegExp('SearchCandidate' + '[^\\n]*、' + 'url' + '、', 'u').test(searchDataModelText) || new RegExp('SearchCandidate' + '\\.url', 'u').test(searchDataModelText)) {
+if (new RegExp('SearchCandidate' + '[^\\n]*、' + 'url' + '、', 'u').test(searchDataModelText) || searchDataModelText.includes('SearchCandidate.url')) {
   console.error('search import boundary violation: docs/references/search-data-model.md: Search candidate live docs must not carry legacy URL fields');
   failed = true;
 }

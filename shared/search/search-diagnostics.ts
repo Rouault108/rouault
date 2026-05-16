@@ -39,7 +39,7 @@ export type SearchDiagnosticCandidateRef = string & {
 };
 
 export interface MutableSearchDiagnosticsTarget {
-  issues: Array<{
+  issues: {
     code: SearchDiagnosticIssueCode;
     severity: SearchDiagnosticSeverity;
     stage: SearchDiagnosticStage;
@@ -47,7 +47,7 @@ export interface MutableSearchDiagnosticsTarget {
     artifactSource?: SearchArtifactDiagnosticSource;
     candidateRef?: string;
     count: number;
-  }>;
+  }[];
 }
 
 export interface SearchJsonParseDiagnosticSink {

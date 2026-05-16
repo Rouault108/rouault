@@ -220,7 +220,7 @@ export class Router {
       routeManifestState: this.urlDependencies.routeManifestState,
     });
 
-    if (validation.ok === false) {
+    if (!validation.ok) {
       const reason = validation.reason;
       return this.createValidationFailureResult(reason, historyMode);
     }
