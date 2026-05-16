@@ -14,8 +14,8 @@ import { createStaticDirectoryMiddleware } from './build/dev/dev-static-director
 import { createDevelopmentRouterArtifactMiddleware } from './build/dev/dev-router-artifact-middleware.js';
 import { createDevelopmentInternalDocumentRouteManifestMiddleware } from './build/dev/dev-internal-document-route-manifest-middleware.js';
 import { createDevelopmentHtmlSiteUrlContextMiddleware } from './build/dev/dev-html-site-url-context-middleware.js';
+import { createDevelopmentSearchArtifactMiddleware } from './build/dev/dev-search-artifact-middleware.js';
 import { devBuildMetadata } from './build/dev/dev-build-metadata.js';
-import { renderSearchCatalogArtifact } from './build/search/emit-search-artifacts.js';
 import { hasExternalMediaBaseUrl } from './build/media/media-base-url.js';
 import { resolveProductionBuildMetadata } from './build/metadata/build-metadata.js';
 import {
@@ -120,17 +120,13 @@ const registerDevelopmentRouterArtifacts = (server: ViteDevServer): void => {
   );
 };
 
-const registerSearchCatalogMiddleware = (server: ViteDevServer): void => {
-  server.middlewares.use((req, res, next) => {
-    if (req.url !== '/search-catalog.json') {
-      next();
-      return;
-    }
-
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.end(renderSearchCatalogArtifact(loadNotesData()));
-  });
+const registerDevelopmentSearchArtifacts = (server: ViteDevServer): void => {
+  server.middlewares.use(
+    createDevelopmentSearchArtifactMiddleware({
+      siteUrlContext: resolveDevelopmentSiteUrlContext(),
+      loadNotes: () => loadNotesData(),
+    }),
+  );
 };
 
 const copyStaticHostingArtifacts = async (): Promise<void> => {
@@ -236,7 +232,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
             configureServer(server: ViteDevServer) {
               registerDevelopmentSiteUrlContext(server);
               registerDevelopmentStaticDirectories(server);
-              registerSearchCatalogMiddleware(server);
+              registerDevelopmentSearchArtifacts(server);
               registerDevelopmentRouteManifest(server);
               registerDevelopmentRouterArtifacts(server);
               registerTrailingSlashRewrite(server);
@@ -244,7 +240,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
             configurePreviewServer(server: ViteDevServer) {
               registerDevelopmentSiteUrlContext(server);
               registerDevelopmentStaticDirectories(server);
-              registerSearchCatalogMiddleware(server);
+              registerDevelopmentSearchArtifacts(server);
               registerDevelopmentRouteManifest(server);
               registerDevelopmentRouterArtifacts(server);
               registerTrailingSlashRewrite(server);

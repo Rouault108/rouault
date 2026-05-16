@@ -4,6 +4,7 @@ import {
   type CorpusPageEntry,
 } from '../data/corpusPages.js';
 import { loadBuildMetadataData, type BuildMetadataData } from '../data/buildMetadata.js';
+import { loadSiteUrlContextData, type SiteUrlContextData } from '../data/siteUrlContext.js';
 import {
   THEME_ATTRIBUTE,
   THEME_STORAGE_KEY,
@@ -20,6 +21,10 @@ import { resolveEffectiveNoteChromeProfile } from '../../shared/note/note-chrome
 import { resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
 import { createHydrationMarkerAttributes } from '../../shared/hydration/hydration-markers.js';
+import {
+  INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION,
+  resolveInternalDocumentRouteManifestUrl,
+} from '../../shared/navigation/internal-document-route-manifest-path.js';
 import { buildDocumentTitle } from '../../shared/document-title.js';
 import {
   escapeHtmlText,
@@ -45,6 +50,7 @@ export interface BaseLayoutData {
   corpusPages?: readonly CorpusPageEntry[];
   currentCorpusKey?: string;
   buildMetadata?: BuildMetadataData;
+  siteUrlContext?: SiteUrlContextData;
   clientBundle?: unknown;
   headerTocPresence?: TocPresence;
   headerTocRuntimeId?: string;
@@ -52,8 +58,9 @@ export interface BaseLayoutData {
   headerTocShouldHydrate?: boolean;
 }
 
-type BaseLayoutRenderInput = Omit<BaseLayoutData, 'buildMetadata'> & {
+type BaseLayoutRenderInput = Omit<BaseLayoutData, 'buildMetadata' | 'siteUrlContext'> & {
   buildMetadata?: BuildMetadataData | null;
+  siteUrlContext?: SiteUrlContextData | null;
 };
 
 const buildThemeBootstrapScript = (): string =>
@@ -130,9 +137,14 @@ export class BaseLayout {
   render(data: BaseLayoutData): string;
   render(data: BaseLayoutRenderInput): string {
     const rawBuildMetadata = data.buildMetadata;
+    const rawSiteUrlContext = data.siteUrlContext;
 
     if (rawBuildMetadata === undefined || rawBuildMetadata === null) {
       throw new Error('BaseLayout requires buildMetadata.');
+    }
+
+    if (rawSiteUrlContext === undefined || rawSiteUrlContext === null) {
+      throw new Error('BaseLayout requires siteUrlContext.');
     }
 
     const title = buildDocumentTitle(data.title);
@@ -159,6 +171,11 @@ export class BaseLayout {
       generatedAt: rawBuildMetadata.generatedAt,
       sourceLabel: 'BaseLayout',
     });
+    const siteUrlContext = loadSiteUrlContextData({
+      siteOrigin: rawSiteUrlContext.siteOrigin,
+      basePath: rawSiteUrlContext.basePath,
+      sourceLabel: 'BaseLayout',
+    });
 
     const footerAttributes = serializeHtmlAttributes([
       { name: 'build-label', value: buildMetadata.buildLabel },
@@ -166,12 +183,31 @@ export class BaseLayout {
       { name: 'data-hydration-trigger', value: 'initial' },
     ]);
     const themeBootstrapScript = buildThemeBootstrapScript();
+    const routeManifestUrl = resolveInternalDocumentRouteManifestUrl({
+      siteUrlContext,
+      buildId: buildMetadata.buildId,
+    });
     const buildIdMeta = [
       `<meta name="rouault-build-id"${serializeHtmlAttributes([
         { name: 'content', value: buildMetadata.buildId },
       ])}>`,
       `<meta name="rouault-generated-at"${serializeHtmlAttributes([
         { name: 'content', value: buildMetadata.generatedAt },
+      ])}>`,
+      `<meta name="rouault-site-origin"${serializeHtmlAttributes([
+        { name: 'content', value: siteUrlContext.siteOrigin },
+      ])}>`,
+      `<meta name="rouault-base-path"${serializeHtmlAttributes([
+        { name: 'content', value: siteUrlContext.basePath },
+      ])}>`,
+      `<meta name="rouault-route-manifest"${serializeHtmlAttributes([
+        { name: 'content', value: routeManifestUrl },
+      ])}>`,
+      `<meta name="rouault-route-manifest-build-id"${serializeHtmlAttributes([
+        { name: 'content', value: buildMetadata.buildId },
+      ])}>`,
+      `<meta name="rouault-route-manifest-version"${serializeHtmlAttributes([
+        { name: 'content', value: String(INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION) },
       ])}>`,
     ].join('\n  ');
     const bodyAttributes = serializeHtmlAttributes([

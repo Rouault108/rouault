@@ -1,17 +1,27 @@
 import path from 'node:path';
 
-import { resolveBuildId } from '../build/metadata/build-id.js';
-import { resolveGeneratedAt } from '../build/metadata/generated-at.js';
+import { resolveProductionBuildMetadata } from '../build/metadata/build-metadata.js';
+import { resolveProductionSiteUrlContext } from '../build/site/site-url-context.js';
 import { emitNavigationArtifacts } from '../build/navigation/emit-navigation-artifacts.js';
+import { emitInternalDocumentRouteManifest } from '../build/navigation/internal-document-route-manifest.js';
+import { buildProductionInternalDocumentRouteSet } from '../build/navigation/internal-document-routes.js';
 
-const generatedAt = resolveGeneratedAt();
-
-if (generatedAt === undefined) {
-  throw new Error('ROUAULT_GENERATED_AT is required when emitting navigation artifacts.');
-}
+const buildMetadata = resolveProductionBuildMetadata();
+const siteUrlContext = resolveProductionSiteUrlContext();
+const routeSet = buildProductionInternalDocumentRouteSet().routeSet;
+const outputDirectory = path.resolve(process.cwd(), 'dist');
 
 await emitNavigationArtifacts({
-  outputDir: path.resolve(process.cwd(), 'dist'),
-  buildId: resolveBuildId(),
-  generatedAt,
+  outputDir: outputDirectory,
+  buildId: buildMetadata.buildId,
+  generatedAt: buildMetadata.generatedAt,
+});
+
+await emitInternalDocumentRouteManifest({
+  outputDirectory,
+  buildId: buildMetadata.buildId,
+  buildLabel: buildMetadata.buildLabel,
+  generatedAt: buildMetadata.generatedAt,
+  siteUrlContext,
+  routeSet,
 });
