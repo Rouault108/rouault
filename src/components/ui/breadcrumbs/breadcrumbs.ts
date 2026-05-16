@@ -364,7 +364,11 @@ export class Breadcrumbs extends LitElement {
     }
 
     if (item.href) {
-      return html`<a class="breadcrumb-node breadcrumb-link" href="${item.href}"
+      return html`<a
+        class="breadcrumb-node breadcrumb-link"
+        href="${item.href}"
+        data-link-kind="internal-document"
+        data-link-surface="navigation"
         >${item.label}</a
       >`;
     }
@@ -410,8 +414,10 @@ export class Breadcrumbs extends LitElement {
     });
 
     if (!this.dispatchEvent(navigateEvent)) return;
-    if (typeof window === 'undefined') return;
-    window.location.assign(href);
+    const router = this.ownerDocument.querySelector<HTMLElement & { navigate?: (url: string) => Promise<unknown> }>('app-router');
+    if (typeof router?.navigate === 'function') {
+      void router.navigate(href);
+    }
   };
 }
 

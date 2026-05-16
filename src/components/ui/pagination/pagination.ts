@@ -440,7 +440,7 @@ export class Pagination extends LitElement {
     }
     return html`
       <li class="item">
-        <a class="nav-btn" href="${getHref(current - 1)}" aria-label="前のページへ移動">
+        <a class="nav-btn" href="${getHref(current - 1)}" data-link-kind="internal-document" data-link-surface="navigation" aria-label="前のページへ移動">
           <ui-icon name="chevron-left" aria-hidden="true"></ui-icon>
         </a>
       </li>
@@ -465,7 +465,7 @@ export class Pagination extends LitElement {
     }
     return html`
       <li class="item">
-        <a class="nav-btn" href="${getHref(current + 1)}" aria-label="次のページへ移動">
+        <a class="nav-btn" href="${getHref(current + 1)}" data-link-kind="internal-document" data-link-surface="navigation" aria-label="次のページへ移動">
           <ui-icon name="chevron-right" aria-hidden="true"></ui-icon>
         </a>
       </li>
@@ -494,6 +494,8 @@ export class Pagination extends LitElement {
           <a
             class="page-btn"
             href="${getHref(item)}"
+            data-link-kind="internal-document"
+            data-link-surface="navigation"
             aria-current="page"
             aria-label="現在のページ、${item}ページ"
           >
@@ -505,7 +507,7 @@ export class Pagination extends LitElement {
 
     return html`
       <li class="item">
-        <a class="page-btn" href="${getHref(item)}" aria-label="${item}ページへ移動"> ${item} </a>
+        <a class="page-btn" href="${getHref(item)}" data-link-kind="internal-document" data-link-surface="navigation" aria-label="${item}ページへ移動"> ${item} </a>
       </li>
     `;
   }

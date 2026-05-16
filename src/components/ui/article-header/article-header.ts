@@ -578,7 +578,10 @@ export class ArticleHeader extends LitElement {
           href="${sourceHref}"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="出典（外部リンク）"
+          data-link-kind="external-web"
+          data-link-surface="metadata"
+          data-external="true"
+          aria-label="出典（外部サイト、新しいタブで開く）"
         >
           出典
         </a>

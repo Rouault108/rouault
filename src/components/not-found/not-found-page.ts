@@ -220,10 +220,12 @@ export const buildNotFoundPageMarkup = (options: BuildNotFoundPageMarkupOptions 
         <a
           class="not-found-page-fallback__link not-found-page-fallback__link--primary"
           href="${SEARCH_PAGE_HREF}"
+          data-link-kind="internal-document"
+          data-link-surface="control"
         >
           検索ページへ
         </a>
-        <a class="not-found-page-fallback__link" href="${ABOUT_PAGE_HREF}">
+        <a class="not-found-page-fallback__link" href="${ABOUT_PAGE_HREF}" data-link-kind="internal-document" data-link-surface="control">
           このサイトについて
         </a>
       </nav>

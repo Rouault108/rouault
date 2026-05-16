@@ -14,8 +14,8 @@ import '../../components/ui/tag/tag.js';
 import type { SelectOption } from '../../components/ui/select/select.js';
 import { HIGHLIGHT_RULE_TEMPLATE } from '../ui/highlight/highlight.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
-import { searchCore } from '../../search/search-core.js';
-import { navigateToUrl } from '../../search/navigation.js';
+import { createSearchCore, type SearchCore } from '../../search/search-core.js';
+import { navigateInternalDocument } from '../../search/navigation.js';
 import {
   DEFAULT_SEARCH_SORT_MODE,
   DEFAULT_SEARCH_TAG_MODE,
@@ -64,6 +64,8 @@ function isSameSearchState(left: SearchState, right: SearchState): boolean {
 
 @customElement('search-page')
 export class SearchPage extends LitElement {
+  private readonly _searchRuntime: SearchCore = createSearchCore();
+
   static override styles = [
     pageShellStyles,
     css`
@@ -461,7 +463,7 @@ export class SearchPage extends LitElement {
     this._errorMessage = '';
 
     try {
-      const result = await searchCore.search({
+      const result = await this._searchRuntime.search({
         mode: 'explore',
         q: this._query,
         tags: this._selectedTags,
@@ -624,7 +626,7 @@ export class SearchPage extends LitElement {
     void this._refreshResults();
   };
 
-  private _onResultClick = (event: MouseEvent, url: string): void => {
+  private _onResultClick = (event: MouseEvent, renderHref: string): void => {
     if (
       event.defaultPrevented ||
       event.button !== 0 ||
@@ -637,7 +639,7 @@ export class SearchPage extends LitElement {
     }
 
     event.preventDefault();
-    void navigateToUrl(url);
+    void navigateInternalDocument(renderHref);
   };
 
   private _buildGenreFilterEntries(): GenreFilterEntry[] {
@@ -876,9 +878,11 @@ export class SearchPage extends LitElement {
               <ui-card class="result-card" clickable variant="outlined">
                 <a
                   class="result-link"
-                  href=${item.url}
+                  href=${item.renderHref}
+                  data-link-kind="internal-document"
+                  data-link-surface="card"
                   @click=${(event: MouseEvent) => {
-                    this._onResultClick(event, item.url);
+                    this._onResultClick(event, item.renderHref);
                   }}
                 >
                   <div class="result-path">${item.pathLabel}</div>

@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { TagPageEntry, TagPageNoteSummary } from '../../data/tagPages.js';
-import { navigateToUrl } from '../../search/navigation.js';
+import { navigateInternalDocument } from '../../search/navigation.js';
 import {
   DEFAULT_SEARCH_SORT_MODE,
   buildUrlForSearchState,
@@ -141,7 +141,7 @@ export class TagPage extends LitElement {
     }
 
     event.preventDefault();
-    void navigateToUrl(url);
+    void navigateInternalDocument(url);
   };
 
   private _renderNotes(tagPage: TagPageEntry) {
@@ -163,6 +163,8 @@ export class TagPage extends LitElement {
                 <a
                   class="result-link tag-page__item-link"
                   href=${note.permalink}
+                  data-link-kind="internal-document"
+                  data-link-surface="card"
                   @click=${(event: MouseEvent) => {
                     this._onLinkClick(event, note.permalink);
                   }}
@@ -210,6 +212,8 @@ export class TagPage extends LitElement {
             <a
               class="tag-page__search-link"
               href=${searchHref}
+              data-link-kind="internal-document"
+              data-link-surface="control"
               @click=${(event: MouseEvent) => {
                 this._onLinkClick(event, searchHref);
               }}

@@ -11,7 +11,7 @@ import {
   layoutTocRuntimeStore,
   type LayoutTocRuntimeSnapshot,
 } from './layout-toc-runtime-store.js';
-import { navigateToUrl } from '../../search/navigation.js';
+import { navigateInternalDocument } from '../../search/navigation.js';
 import {
   THEME_ATTRIBUTE,
   THEME_CHANGE_EVENT,
@@ -833,7 +833,7 @@ export class LayoutHeader extends LitElement {
       return;
     }
 
-    void navigateToUrl(href);
+    void navigateInternalDocument(href);
   };
 
   private _commitThemePreference(preference: ThemePreference): void {

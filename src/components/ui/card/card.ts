@@ -374,11 +374,20 @@ export class Card extends LitElement {
     return this.siteName.trim();
   }
 
+  private get _linkCardKind(): 'internal-document' | 'external-web' | null {
+    const href = this._normalizedHref;
+    if (/^(javascript:|data:|vbscript:|mailto:|tel:)/iu.test(href)) return null;
+    if (/^https?:/iu.test(href)) return 'external-web';
+    if (href.startsWith('/')) return 'internal-document';
+    return null;
+  }
+
   private get _isLinkCard(): boolean {
     return (
       this.cardKind === 'link' &&
       this._normalizedHref.length > 0 &&
-      this._normalizedCardTitle.length > 0
+      this._normalizedCardTitle.length > 0 &&
+      this._linkCardKind !== null
     );
   }
 
@@ -474,6 +483,8 @@ export class Card extends LitElement {
       ? (this.shadowRoot?.querySelector<HTMLAnchorElement>('a[href]') ?? null)
       : this.querySelector<HTMLAnchorElement>('a[href]');
     if (primaryLink) {
+      const kind = primaryLink.getAttribute('data-link-kind');
+      if (kind !== 'internal-document' && kind !== 'external-web') return;
       e.preventDefault();
       primaryLink.click();
     }
@@ -567,11 +578,15 @@ export class Card extends LitElement {
     const textTruncated = isDescriptionTextTruncated(rawDescription);
     const imageSrc = this._normalizedImageSrc;
     const hasImage = imageSrc.length > 0;
+    const linkKind = this._linkCardKind ?? 'internal-document';
 
     return html`
       <a
         class="link-card ${hasImage ? '' : 'link-card--no-image'}"
         href=${ifDefined(href || undefined)}
+        data-link-kind=${linkKind}
+        data-link-surface="card"
+        data-external=${ifDefined(linkKind === 'external-web' ? 'true' : undefined)}
       >
         <div class="link-card__body">
           ${siteName.length > 0 ? html`<p class="link-card__eyebrow">${siteName}</p>` : null}

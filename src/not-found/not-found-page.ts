@@ -18,6 +18,8 @@ const renderHomeEntry = (entry: HomePageData['notes'][number]): string => `
     <a${serializeHtmlAttributes([
       { name: 'class', value: 'home-entry' },
       { name: 'href', value: entry.permalink },
+      { name: 'data-link-kind', value: 'internal-document' },
+      { name: 'data-link-surface', value: 'card' },
     ])}>
       <div class="home-entry__date">${renderTime(entry.date)}</div>
       <div class="home-entry__body">
@@ -57,7 +59,7 @@ export class HomePageTemplate {
             ])}>
               <span class="home-meta-item">最新更新 ${latestUpdatedDate}</span>
               <span class="home-meta-separator" aria-hidden="true">・</span>
-              <a class="home-meta-link" href="/about/">このサイトについて</a>
+              <a class="home-meta-link link-text link-text--muted" href="/about/" data-link-kind="internal-document" data-link-surface="metadata">このサイトについて</a>
             </p>
           </header>
 

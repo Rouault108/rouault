@@ -30,7 +30,7 @@ const renderBreadcrumbs = (breadcrumbs: ArticleHeaderProjection['breadcrumbs']):
       const content = isLast
         ? `<span class="article-header__breadcrumb-node article-header__breadcrumb-current" aria-current="page">${label}</span>`
         : item.href
-          ? `<a class="article-header__breadcrumb-node article-header__breadcrumb-link" href="${escapeHtmlAttribute(item.href)}">${label}</a>`
+          ? `<a class="article-header__breadcrumb-node article-header__breadcrumb-link" href="${escapeHtmlAttribute(item.href)}" data-link-kind="internal-document" data-link-surface="navigation">${label}</a>`
           : `<span class="article-header__breadcrumb-node article-header__breadcrumb-static">${label}</span>`;
       const separator = !isLast
         ? `<span class="article-header__breadcrumb-separator" aria-hidden="true">${renderStaticArticleHeaderIconHtml(
@@ -105,6 +105,8 @@ const renderTags = (genres: readonly string[]): string => {
           <a
             class="article-header__tag-link"
             href="${escapeHtmlAttribute(href)}"
+            data-link-kind="internal-document"
+            data-link-surface="control"
             rel="tag"
             aria-label="タグ: ${escapeHtmlAttribute(normalizedGenre)}"
           >
@@ -141,7 +143,10 @@ const renderSecondaryMetadata = (articleHeader: ArticleHeaderProjection): string
           href="${escapeHtmlAttribute(sourceHref)}"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="出典（外部リンク）"
+          data-link-kind="external-web"
+          data-link-surface="metadata"
+          data-external="true"
+          aria-label="出典（外部サイト、新しいタブで開く）"
         >
           出典
         </a>

@@ -609,6 +609,8 @@ export class Tag extends LitElement {
           <a
             class="tag-link"
             href="${this.disabled ? nothing : this.href}"
+            data-link-kind="internal-document"
+            data-link-surface="control"
             @click="${this._handleLinkClick}"
           >
             ${this._renderIcon()} ${this._renderText()}
@@ -624,6 +626,8 @@ export class Tag extends LitElement {
         <a
           class="tag-link"
           href="${this.disabled ? nothing : this.href}"
+          data-link-kind="internal-document"
+          data-link-surface="control"
           @click="${this._handleLinkClick}"
         >
           ${this._renderIcon()} ${this._renderText()}

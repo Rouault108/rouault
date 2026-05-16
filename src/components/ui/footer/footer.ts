@@ -35,10 +35,13 @@ export interface FooterRenderOptions {
   a11y?: Partial<FooterA11yLabels>;
 }
 
+export type FooterLinkKind = 'internal-document' | 'external-web' | 'external-action';
+
 export interface NormalizedFooterLinkItem {
   href: string;
   label: string;
   external: boolean;
+  kind: FooterLinkKind;
 }
 
 export interface NormalizedFooterMetaContent {
@@ -326,7 +329,16 @@ export const isFooterHrefAllowed = (value: string | undefined): value is string 
   return EXTERNAL_PROTOCOL_PATTERN.test(trimmed) || INTERNAL_REFERENCE_PATTERN.test(trimmed);
 };
 
-export const isFooterExternalHref = (href: string): boolean => EXTERNAL_PROTOCOL_PATTERN.test(href);
+export const isFooterSiteHrefAllowed = (value: string | undefined): value is string => {
+  if (!isFooterHrefAllowed(value)) {
+    return false;
+  }
+  return !/^(mailto:|tel:)/iu.test(value.trim());
+};
+
+export const isFooterExternalHref = (href: string): boolean => /^https?:/iu.test(href);
+export const resolveFooterLinkKind = (href: string): FooterLinkKind =>
+  /^https?:/iu.test(href) ? 'external-web' : /^(mailto:|tel:)/iu.test(href) ? 'external-action' : 'internal-document';
 
 export const normalizeFooterLinkItem = (
   item: FooterLinkItem,
@@ -337,10 +349,12 @@ export const normalizeFooterLinkItem = (
   }
 
   const href = item.href.trim();
+  const kind = resolveFooterLinkKind(href);
   return {
     href,
     label,
-    external: typeof item.external === 'boolean' ? item.external : isFooterExternalHref(href),
+    external: typeof item.external === 'boolean' ? item.external : kind === 'external-web',
+    kind,
   };
 };
 
@@ -360,7 +374,7 @@ export const normalizeFooterLinks = (
 export const normalizeFooterMeta = (meta: FooterMetaContent): NormalizedFooterMetaContent => {
   const siteName = normalizeRequiredText(meta.siteName, 'meta.siteName');
   const copyrightText = normalizeRequiredText(meta.copyrightText, 'meta.copyrightText');
-  const siteUrl = isFooterHrefAllowed(meta.siteUrl) ? meta.siteUrl.trim() : undefined;
+  const siteUrl = isFooterSiteHrefAllowed(meta.siteUrl) ? meta.siteUrl.trim() : undefined;
   const buildLabel = normalizeOptionalText(meta.buildLabel);
   const eyebrow = normalizeOptionalText(meta.eyebrow);
   const description = normalizeOptionalText(meta.description);
@@ -392,17 +406,25 @@ export const ensureFooterDocumentStyles = (): void => {
   document.head.appendChild(style);
 };
 
-const renderSiteName = (meta: NormalizedFooterMetaContent): TemplateResult =>
-  meta.siteUrl ? html`<a href=${meta.siteUrl}>${meta.siteName}</a>` : html`${meta.siteName}`;
+const renderSiteName = (meta: NormalizedFooterMetaContent): TemplateResult => {
+  if (!meta.siteUrl) return html`${meta.siteName}`;
+  const kind = resolveFooterLinkKind(meta.siteUrl);
+  return html`<a
+    href=${meta.siteUrl}
+    data-link-kind=${kind}
+    data-link-surface="navigation"
+    data-external=${ifDefined(kind === 'external-web' ? 'true' : undefined)}
+  >${meta.siteName}</a>`;
+};
 
 const renderFooterLink = (link: NormalizedFooterLinkItem): TemplateResult => html`
   <span class="ui-footer__nav-item">
     <a
       href=${link.href}
-      rel=${ifDefined(link.external ? 'noreferrer' : undefined)}
-      data-external=${ifDefined(link.external ? 'true' : undefined)}
-      data-link-kind=${link.external ? 'external-web' : 'internal-document'}
-      data-link-surface="ui"
+      rel=${ifDefined(link.kind === 'external-web' ? 'noreferrer' : undefined)}
+      data-external=${ifDefined(link.kind === 'external-web' ? 'true' : undefined)}
+      data-link-kind=${link.kind}
+      data-link-surface="navigation"
       aria-label=${ifDefined(link.external ? `${link.label}（外部サイト）` : undefined)}
       >${link.label}</a
     >

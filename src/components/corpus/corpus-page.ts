@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { CorpusPageEntry, CorpusPageNoteSummary } from '../../data/corpusPages.js';
-import { navigateToUrl } from '../../search/navigation.js';
+import { navigateInternalDocument } from '../../search/navigation.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
 import '../ui/card/card.js';
 import '../ui/empty-state/empty-state.js';
@@ -130,7 +130,7 @@ export class CorpusPage extends LitElement {
     }
 
     event.preventDefault();
-    void navigateToUrl(url);
+    void navigateInternalDocument(url);
   };
 
   private _renderNotes(corpusPage: CorpusPageEntry) {
@@ -154,6 +154,8 @@ export class CorpusPage extends LitElement {
                 <a
                   class="result-link corpus-page__item-link"
                   href=${note.permalink}
+                  data-link-kind="internal-document"
+                  data-link-surface="card"
                   @click=${(event: MouseEvent) => {
                     this._onLinkClick(event, note.permalink);
                   }}

@@ -2,7 +2,7 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { HomeNoteItem } from '../../data/home.js';
 import type { CorporaOverviewCorpusItem, CorporaOverviewData } from '../../data/corporaOverview.js';
-import { navigateToUrl } from '../../search/navigation.js';
+import { navigateInternalDocument } from '../../search/navigation.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
 import '../ui/card/card.js';
 import '../ui/empty-state/empty-state.js';
@@ -197,7 +197,7 @@ export class CorporaOverviewPage extends LitElement {
     }
 
     event.preventDefault();
-    void navigateToUrl(url);
+    void navigateInternalDocument(url);
   };
 
   private _renderCorpora(corpora: readonly CorporaOverviewCorpusItem[]) {
@@ -219,6 +219,8 @@ export class CorporaOverviewPage extends LitElement {
                 <a
                   class="result-link"
                   href=${corpus.href}
+                  data-link-kind="internal-document"
+                  data-link-surface="card"
                   @click=${(event: MouseEvent) => {
                     this._onLinkClick(event, corpus.href);
                   }}
@@ -261,6 +263,8 @@ export class CorporaOverviewPage extends LitElement {
                 <a
                   class="result-link"
                   href=${note.permalink}
+                  data-link-kind="internal-document"
+                  data-link-surface="card"
                   @click=${(event: MouseEvent) => {
                     this._onLinkClick(event, note.permalink);
                   }}
