@@ -2,6 +2,10 @@ export const NOTE_SOURCE_ROOTS = ['content', 'test/fixtures/content'] as const;
 
 export type NoteSourceRoot = (typeof NOTE_SOURCE_ROOTS)[number];
 
+const NOTE_SOURCE_ROOTS_BY_SPECIFICITY = [...NOTE_SOURCE_ROOTS].sort(
+  (left, right) => right.length - left.length,
+);
+
 const normalizePathLike = (value: string): string =>
   value
     .trim()
@@ -26,7 +30,7 @@ export interface ResolvedNoteSourceLocation {
 export const resolveNoteSourceLocation = (value: string): ResolvedNoteSourceLocation => {
   const normalized = normalizePathLike(value);
 
-  for (const sourceRoot of NOTE_SOURCE_ROOTS) {
+  for (const sourceRoot of NOTE_SOURCE_ROOTS_BY_SPECIFICITY) {
     const prefix = `${sourceRoot}/`;
     if (normalized.startsWith(prefix)) {
       return {
@@ -34,11 +38,13 @@ export const resolveNoteSourceLocation = (value: string): ResolvedNoteSourceLoca
         slug: normalized.slice(prefix.length),
       };
     }
-    const embeddedIndex = normalized.indexOf(`/${prefix}`);
+
+    const embeddedPrefix = `/${prefix}`;
+    const embeddedIndex = normalized.indexOf(embeddedPrefix);
     if (embeddedIndex >= 0) {
       return {
         sourceRoot,
-        slug: normalized.slice(embeddedIndex + prefix.length + 1),
+        slug: normalized.slice(embeddedIndex + embeddedPrefix.length),
       };
     }
   }

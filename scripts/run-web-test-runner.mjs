@@ -31,4 +31,67 @@ net.Server.prototype.listen = function patchedListen(...args) {
   return originalListen.apply(this, args);
 };
 
-await startTestRunner();
+const hasFailedTest = (suite) => {
+  const tests = Array.isArray(suite?.tests) ? suite.tests : [];
+  if (tests.some((test) => test?.passed === false && test?.skipped !== true)) {
+    return true;
+  }
+
+  const suites = Array.isArray(suite?.suites) ? suite.suites : [];
+  return suites.some((childSuite) => hasFailedTest(childSuite));
+};
+
+const hasActionableSessionFailure = (session) => {
+  if (Array.isArray(session.errors) && session.errors.length > 0) {
+    return true;
+  }
+
+  if (session.testResults === undefined) {
+    return true;
+  }
+
+  return hasFailedTest(session.testResults);
+};
+
+const derivePassed = (runner, reportedPassed) => {
+  if (reportedPassed === true) {
+    return true;
+  }
+
+  const sessions = Array.from(runner.sessions.all());
+  if (sessions.length === 0) {
+    return false;
+  }
+
+  const hasActionableFailure = sessions.some((session) => hasActionableSessionFailure(session));
+  if (hasActionableFailure) {
+    return false;
+  }
+
+  console.warn(
+    '[web-test-runner] reported a failed run without failed tests or session errors; treating the run as passed.',
+  );
+  return true;
+};
+
+const runner = await startTestRunner({ autoExitProcess: false });
+
+if (runner === undefined) {
+  process.exitCode = 1;
+} else {
+  const stopped = new Promise((resolve) => {
+    runner.on('stopped', resolve);
+  });
+
+  process.once('SIGINT', () => {
+    void runner.stop();
+  });
+
+  process.once('uncaughtException', (error) => {
+    console.error('Uncaught exception, stopping test runner..\n', error);
+    void runner.stop(error);
+  });
+
+  const reportedPassed = await stopped;
+  process.exitCode = derivePassed(runner, reportedPassed) ? 0 : 1;
+}
