@@ -21,8 +21,7 @@ describe('buildSearchCatalog', () => {
     expect(catalog).toEqual([
       {
         title: 'ソートアルゴリズム比較',
-        url: '/notes/computer-science/algorithms/sorting/',
-        path: '/notes/computer-science/algorithms/sorting/',
+        canonicalPathname: '/notes/computer-science/algorithms/sorting/',
         description: '主要なソートアルゴリズムの計算量と特徴を比較するメモ',
         date: '2026-02-10',
         keywords: [
@@ -80,8 +79,7 @@ describe('buildSearchCatalog', () => {
     expect(catalog).toEqual([
       {
         title: '公開ノート',
-        url: '/notes/public/',
-        path: '/notes/public/',
+        canonicalPathname: '/notes/public/',
         description: '',
         date: '',
         keywords: ['public', '公開', 'ノート'],
@@ -101,7 +99,7 @@ describe('buildSearchCatalog', () => {
     ]);
 
     expect(json).toBe(
-      '[{"title":"公開ノート","url":"/notes/public/","path":"/notes/public/","description":"説明","date":"","keywords":["public","公開","ノート","説明"],"tags":[]}]',
+      '[{"title":"公開ノート","canonicalPathname":"/notes/public/","description":"説明","date":"","keywords":["public","公開","ノート","説明"],"tags":[]}]',
     );
   });
 });

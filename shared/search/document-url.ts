@@ -1,10 +1,14 @@
-function tryParseUrl(value: string): URL | null {
-  try {
-    return new URL(value, 'https://rouault.invalid');
-  } catch {
-    return null;
-  }
-}
+import type { SiteUrlContext } from '../site/site-url-context.js';
+import { isPathnameInsideBasePath } from '../site/site-url-context.js';
+import { stripBasePathFromPathname } from '../url/normalize-rouault-url.js';
+
+declare const SearchCanonicalPathnameBrand: unique symbol;
+declare const SearchRenderHrefBrand: unique symbol;
+
+export type SearchCanonicalPathname = string & { readonly [SearchCanonicalPathnameBrand]: true };
+export type SearchRenderHref = string & { readonly [SearchRenderHrefBrand]: true };
+
+const ABSOLUTE_OR_PROTOCOL_RELATIVE_URL_RE = /^(?:[A-Za-z][A-Za-z0-9+.-]*:|\/\/)/u;
 
 function normalizeEncodedPathname(pathname: string): string {
   const collapsed = pathname.replace(/\/+/g, '/');
@@ -31,6 +35,27 @@ function isDocumentUrlPath(pathname: string): boolean {
   return !(pathname === '/search/' || pathname === '/search' || pathname.startsWith('/tags/'));
 }
 
+function extractCanonicalPathnameInput(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  if (ABSOLUTE_OR_PROTOCOL_RELATIVE_URL_RE.test(trimmed)) {
+    return null;
+  }
+
+  if (!trimmed.startsWith('/')) {
+    return null;
+  }
+
+  if (/[?#\u0000-\u001f\u007f\\]/u.test(trimmed)) {
+    return null;
+  }
+
+  return trimmed;
+}
+
 function truncateSegment(segment: string, maxLength: number): string {
   if (segment.length <= maxLength) {
     return segment;
@@ -47,41 +72,23 @@ function joinPathLabelSegments(segments: readonly string[]): string {
   return segments.join(' / ');
 }
 
-export function normalizeDocumentCanonicalUrl(value: string): string | null {
-  const normalized = value.trim();
-  if (normalized.length === 0) {
+export function normalizeSearchCanonicalPathname(value: string): SearchCanonicalPathname | null {
+  const pathnameInput = extractCanonicalPathnameInput(value);
+  if (pathnameInput === null) {
     return null;
   }
 
-  const parsed = tryParseUrl(normalized);
-  if (parsed === null) {
-    return null;
-  }
-
-  const protocol = parsed.protocol;
-  if (
-    protocol !== 'http:' &&
-    protocol !== 'https:' &&
-    !(normalized.startsWith('/') || normalized.startsWith('./') || normalized.startsWith('../'))
-  ) {
-    return null;
-  }
-
-  if (parsed.username.length > 0 || parsed.password.length > 0) {
-    return null;
-  }
-
-  const pathname = normalizeEncodedPathname(parsed.pathname || '/');
-  return isDocumentUrlPath(pathname) ? pathname : null;
+  const pathname = normalizeEncodedPathname(pathnameInput);
+  return isDocumentUrlPath(pathname) ? (pathname as SearchCanonicalPathname) : null;
 }
 
-export function derivePathLabel(documentCanonicalUrl: string): string {
-  const canonicalUrl = normalizeDocumentCanonicalUrl(documentCanonicalUrl);
-  if (canonicalUrl === null || canonicalUrl === '/') {
+export function derivePathLabel(documentCanonicalPathname: string): string {
+  const canonicalPathname = normalizeSearchCanonicalPathname(documentCanonicalPathname);
+  if (canonicalPathname === null || canonicalPathname === '/') {
     return '/';
   }
 
-  const segments = canonicalUrl
+  const segments = canonicalPathname
     .replace(/^\/+|\/+$/g, '')
     .split('/')
     .flatMap((segment) => {
@@ -122,7 +129,11 @@ export function derivePathLabel(documentCanonicalUrl: string): string {
 }
 
 export type ValidatedResultUrl =
-  | { ok: true; url: string }
+  | {
+      ok: true;
+      canonicalPathname: SearchCanonicalPathname;
+      renderHref: SearchRenderHref;
+    }
   | {
       ok: false;
       code:
@@ -132,14 +143,19 @@ export type ValidatedResultUrl =
         | 'url-with-credentials';
     };
 
-export function validateResultUrl(value: string): ValidatedResultUrl {
+export function validateSearchResultRenderHref(
+  value: string,
+  options: { readonly siteUrlContext: SiteUrlContext },
+): ValidatedResultUrl {
   const normalized = value.trim();
   if (normalized.length === 0) {
     return { ok: false, code: 'invalid-result-url' };
   }
 
-  const parsed = tryParseUrl(normalized);
-  if (parsed === null) {
+  let parsed: URL;
+  try {
+    parsed = new URL(normalized, `${options.siteUrlContext.siteOrigin}${options.siteUrlContext.basePath || '/'}`);
+  } catch {
     return { ok: false, code: 'invalid-result-url' };
   }
 
@@ -151,16 +167,44 @@ export function validateResultUrl(value: string): ValidatedResultUrl {
     return { ok: false, code: 'unsupported-url-scheme' };
   }
 
-  const currentOrigin =
-    typeof window === 'undefined' ? 'https://rouault.invalid' : window.location.origin;
-
-  if (parsed.origin !== 'https://rouault.invalid' && parsed.origin !== currentOrigin) {
+  if (parsed.origin !== options.siteUrlContext.siteOrigin) {
     return { ok: false, code: 'cross-origin-url' };
   }
 
-  const pathname = parsed.pathname.replace(/\/+/g, '/');
+  if (!isPathnameInsideBasePath(parsed.pathname, options.siteUrlContext.basePath)) {
+    return { ok: false, code: 'cross-origin-url' };
+  }
+
+  const pathnameWithoutBasePath = stripBasePathFromPathname(
+    parsed.pathname,
+    options.siteUrlContext.basePath,
+  );
+  const canonicalPathname = normalizeSearchCanonicalPathname(pathnameWithoutBasePath);
+  if (canonicalPathname === null) {
+    return { ok: false, code: 'invalid-result-url' };
+  }
+
   return {
     ok: true,
-    url: `${pathname}${parsed.search}${parsed.hash}`,
+    canonicalPathname,
+    renderHref: buildSearchRenderHref({
+      canonicalPathname,
+      basePath: options.siteUrlContext.basePath,
+    }),
   };
 }
+
+export const createSearchCanonicalPathname = (options: {
+  readonly pathname: string;
+  readonly isInternalDocumentPathname?: (pathname: string) => boolean;
+}): { readonly ok: true; readonly canonicalPathname: SearchCanonicalPathname } | { readonly ok: false; readonly reason: 'invalid-canonical-pathname' } => {
+  const normalized = normalizeSearchCanonicalPathname(options.pathname);
+  if (normalized === null) return { ok: false, reason: 'invalid-canonical-pathname' };
+  if (options.isInternalDocumentPathname && !options.isInternalDocumentPathname(normalized)) return { ok: false, reason: 'invalid-canonical-pathname' };
+  return { ok: true, canonicalPathname: normalized as SearchCanonicalPathname };
+};
+
+export const buildSearchRenderHref = (options: { readonly canonicalPathname: SearchCanonicalPathname; readonly basePath?: string }): SearchRenderHref => {
+  const basePath = options.basePath ?? '';
+  return `${basePath}${options.canonicalPathname}` as SearchRenderHref;
+};

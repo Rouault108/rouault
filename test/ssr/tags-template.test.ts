@@ -43,7 +43,7 @@ describe('TagPagesTemplate', () => {
     expect(rendered).toContain('initial-search-response-json="');
     expect(rendered).toContain('&quot;tagMode&quot;:&quot;or&quot;');
     expect(rendered).toContain('&quot;tags&quot;:[&quot;music&quot;]');
-    expect(rendered).toContain('&quot;canonicalUrl&quot;:&quot;/notes/music/symphony/&quot;');
+    expect(rendered).toContain('&quot;canonicalPathname&quot;:&quot;/notes/music/symphony/&quot;');
     expect(rendered).toContain('&quot;pathLabel&quot;:&quot;notes / music / symphony&quot;');
   });
 });

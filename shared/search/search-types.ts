@@ -46,10 +46,12 @@ export type SearchDiagnosticIssueCode =
   | 'invalid-document-canonical-url'
   | 'catalog-path-url-mismatch'
   | 'invalid-catalog-item'
+  | 'search-event-render-href-mismatch'
   | 'source-degraded'
   | 'source-failed';
 
-export type DocumentCanonicalUrl = string;
+import type { SearchCanonicalPathname } from './document-url.js';
+export type { SearchCanonicalPathname, SearchRenderHref } from './document-url.js';
 
 export type SearchStateUrl = string;
 
@@ -74,14 +76,14 @@ export interface SearchDialogEventContract {
 export interface SearchReturnToReadingEventDetail extends SearchDialogEventContract {
   readonly eventName: SearchReturnToReadingEventName;
   readonly url: string;
-  readonly canonicalUrl: DocumentCanonicalUrl;
+  readonly canonicalPathname: SearchCanonicalPathname;
   readonly title: string;
   readonly query: string;
   readonly selectionMethod: 'keyboard' | 'pointer';
 }
 
 export interface SearchIndexTypeContract {
-  readonly candidateUrl: DocumentCanonicalUrl;
+  readonly candidateUrl: SearchCanonicalPathname;
   readonly stateUrl: SearchStateUrl | null;
   readonly snippetIsStructured: true;
 }
@@ -140,8 +142,7 @@ export interface SearchFieldTokens {
 }
 
 export interface SearchCandidate {
-  canonicalUrl: DocumentCanonicalUrl;
-  url: string;
+  canonicalPathname: SearchCanonicalPathname;
   pathLabel: string;
   title: string;
   description: string;
@@ -189,8 +190,7 @@ export interface SearchDiagnostics {
 }
 
 export interface SearchResultItem {
-  canonicalUrl: DocumentCanonicalUrl;
-  url: string;
+  canonicalPathname: SearchCanonicalPathname;
   pathLabel: string;
   title: string;
   description: string;

@@ -7,10 +7,27 @@ export const DEFAULT_SEARCH_SORT_MODE: SearchSortMode = 'relevance';
 export const DEFAULT_SEARCH_TAG_MODE: SearchTagMode = 'or';
 const SEARCH_PAGE_PATH = '/search/';
 
-function parseUrl(input: string | URL): URL {
-  return input instanceof URL
-    ? new URL(input.toString())
-    : new URL(input, 'https://rouault.invalid');
+interface ParsedSearchStateUrl {
+  readonly pathname: string;
+  readonly searchParams: URLSearchParams;
+}
+
+function parseSearchStateUrl(input: string | URL): ParsedSearchStateUrl {
+  if (input instanceof URL) {
+    return { pathname: input.pathname, searchParams: new URLSearchParams(input.search) };
+  }
+
+  const trimmed = input.trim();
+  if (trimmed.length === 0 || /^[A-Za-z][A-Za-z0-9+.-]*:/u.test(trimmed) || trimmed.startsWith('//')) {
+    return { pathname: SEARCH_PAGE_PATH, searchParams: new URLSearchParams() };
+  }
+
+  const withoutHash = trimmed.split('#', 1)[0] ?? '';
+  const queryIndex = withoutHash.indexOf('?');
+  const rawPathname = queryIndex >= 0 ? withoutHash.slice(0, queryIndex) : withoutHash;
+  const rawSearch = queryIndex >= 0 ? withoutHash.slice(queryIndex + 1) : '';
+  const pathname = rawPathname.length === 0 ? SEARCH_PAGE_PATH : rawPathname;
+  return { pathname, searchParams: new URLSearchParams(rawSearch) };
 }
 
 export function normalizeSearchQuery(value: string): string {
@@ -66,6 +83,10 @@ function parseTagFromPathname(pathname: string): string[] {
 }
 
 export function parseSearchStateFromUrl(url: URL): SearchState {
+  return parseSearchStateFromParts({ pathname: url.pathname, searchParams: url.searchParams });
+}
+
+function parseSearchStateFromParts(url: ParsedSearchStateUrl): SearchState {
   const pathname = url.pathname;
   const tagPageTags = parseTagFromPathname(pathname);
 
@@ -158,13 +179,13 @@ export function buildUrlForSearchState(state: SearchState): string {
 }
 
 export function normalizeSearchStateUrl(input: string | URL): SearchStateUrl {
-  const url = parseUrl(input);
+  const url = parseSearchStateUrl(input);
 
   if (url.pathname.startsWith('/tags/')) {
     const tags = parseTagFromPathname(url.pathname);
     return tags.length > 0 ? buildTagPageUrl(tags[0] ?? '') : SEARCH_PAGE_PATH;
   }
 
-  const state = parseSearchStateFromUrl(url);
+  const state = parseSearchStateFromParts(url);
   return buildSearchStateUrl(state);
 }

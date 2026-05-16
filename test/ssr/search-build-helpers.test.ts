@@ -57,7 +57,7 @@ describe('search build helpers', () => {
       sort: 'relevance',
     });
     expect(response.items[0]).toMatchObject({
-      canonicalUrl: '/notes/music/symphony/',
+      canonicalPathname: '/notes/music/symphony/',
       pathLabel: 'notes / music / symphony',
       title: '交響曲メモ',
       reasons: [{ kind: 'tag-filter-match', tokens: ['music'] }],
@@ -82,7 +82,7 @@ describe('search build helpers', () => {
 
       expect(path.basename(result.searchCatalogPath)).toBe('search-catalog.json');
       expect(await readFile(result.searchCatalogPath, 'utf8')).toBe(
-        '[{"title":"公開ノート","url":"/notes/public/","path":"/notes/public/","description":"説明","date":"","keywords":["public","公開","ノート","説明"],"tags":[]}]',
+        '[{"title":"公開ノート","canonicalPathname":"/notes/public/","description":"説明","date":"","keywords":["public","公開","ノート","説明"],"tags":[]}]',
       );
     } finally {
       await rm(outputDir, { recursive: true, force: true });

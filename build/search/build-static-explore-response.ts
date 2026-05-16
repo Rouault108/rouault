@@ -8,10 +8,10 @@ import {
 } from '../../shared/search/search-url.js';
 import {
   derivePathLabel,
-  normalizeDocumentCanonicalUrl,
+  normalizeSearchCanonicalPathname,
+  type SearchCanonicalPathname,
 } from '../../shared/search/document-url.js';
 import type {
-  ExploreSearchResponse,
   SearchState,
   SearchSourceKind,
   SearchDiagnostics,
@@ -30,6 +30,30 @@ export interface StaticExploreResponseInput {
   notes?: readonly StaticExploreResponseNote[];
   activeSources?: readonly SearchSourceKind[];
   diagnostics?: SearchDiagnostics;
+}
+
+export interface StaticExploreSearchResultItem {
+  readonly canonicalPathname: SearchCanonicalPathname;
+  readonly pathLabel: string;
+  readonly title: string;
+  readonly description: string;
+  readonly date: {
+    readonly epochMs: number | null;
+    readonly original: string | null;
+  };
+  readonly tags: string[];
+  readonly snippet: { readonly segments: readonly { readonly text: string; readonly matched: boolean }[] } | null;
+  readonly reasons: readonly { readonly kind: 'tag-filter-match'; readonly tokens: readonly string[] }[];
+}
+
+export interface StaticExploreSearchResponse {
+  readonly mode: 'explore';
+  readonly items: StaticExploreSearchResultItem[];
+  readonly total: number;
+  readonly rankingProfileId: 'rouault-search-v1';
+  readonly tagCounts: Record<string, number>;
+  readonly allTagCounts: Record<string, number>;
+  readonly diagnostics: SearchDiagnostics;
 }
 
 function normalizeString(value: unknown): string {
@@ -86,22 +110,21 @@ export function buildStaticSearchState(state: Partial<SearchState> = {}): Search
 
 export function buildStaticExploreResponse(
   input: StaticExploreResponseInput = {},
-): ExploreSearchResponse {
+): StaticExploreSearchResponse {
   const state = buildStaticSearchState(input.state);
   const notes = input.notes ?? [];
-  type ExploreItem = ExploreSearchResponse['items'][number];
+  type ExploreItem = StaticExploreSearchResultItem;
   const items = notes.flatMap((note): ExploreItem[] => {
-    const canonicalUrl = normalizeDocumentCanonicalUrl(note.permalink);
-    if (canonicalUrl === null) {
+    const canonicalPathname = normalizeSearchCanonicalPathname(note.permalink);
+    if (canonicalPathname === null) {
       return [];
     }
 
     const description = normalizeString(note.description);
     return [
       {
-        canonicalUrl,
-        url: note.permalink,
-        pathLabel: derivePathLabel(canonicalUrl),
+        canonicalPathname,
+        pathLabel: derivePathLabel(canonicalPathname),
         title: note.title,
         description,
         date: {
