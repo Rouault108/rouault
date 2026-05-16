@@ -10,7 +10,6 @@ import {
   ShellProjectionValidationError,
   validateNavigationEnvelopeShellProjection,
 } from '../../shared/navigation/shell-projection-validator.js';
-import { createRouterDiagnosticError } from './router-diagnostics.js';
 import type { StrictLoadedNavigationEnvelope } from './router-types.js';
 import {
   NavigationEnvelopeContractError,
@@ -36,14 +35,8 @@ const isString = (value: unknown): value is string => typeof value === 'string';
 const isRenderedKind = (value: unknown): value is DocumentRenderSnapshot['renderedKind'] =>
   value === 'page' || value === 'not-found' || value === 'error';
 
-const createInvalidEnvelopeError = (message: string): NavigationEnvelopeContractError => {
-  const error = new NavigationEnvelopeContractError(message);
-  error.cause = createRouterDiagnosticError(message, {
-    reason: 'navigation-envelope-invalid',
-    routeId: 'navigation-envelope',
-  });
-  return error;
-};
+const createInvalidEnvelopeError = (message: string): NavigationEnvelopeContractError =>
+  new NavigationEnvelopeContractError(message);
 
 const isHydrationPlan = (value: unknown): value is HydrationPlan => {
   if (!isRecord(value) || !Array.isArray(value['scopes'])) {
@@ -141,8 +134,12 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
   }
 
   const hydrationPlan = value['hydrationPlan'];
-  if (hydrationPlan !== undefined && hydrationPlan !== null && !isHydrationPlan(hydrationPlan)) {
-    throw createInvalidEnvelopeError('navigation envelope hydrationPlan が不正です。');
+  let normalizedHydrationPlan: HydrationPlan | null = null;
+  if (hydrationPlan !== undefined && hydrationPlan !== null) {
+    if (!isHydrationPlan(hydrationPlan)) {
+      throw createInvalidEnvelopeError('navigation envelope hydrationPlan が不正です。');
+    }
+    normalizedHydrationPlan = hydrationPlan;
   }
 
   if (!hasOwn(value, 'shellProjection')) {
@@ -165,7 +162,7 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
     generatedAt: readOptionalMetadataString(value['generatedAt'], 'generatedAt'),
     document: value['document'],
     shellProjection,
-    hydrationPlan: (hydrationPlan ?? null),
+    hydrationPlan: normalizedHydrationPlan,
   };
 };
 

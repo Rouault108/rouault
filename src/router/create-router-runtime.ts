@@ -44,6 +44,7 @@ export const createRouterRuntime = (runtimeOptions: CreateRouterRuntimeOptions):
   const committer = new ContentCommitter(
     outlet,
     location,
+    runtimeOptions.urlDependencies,
     options.contentAdapter,
     options.shellAdapter,
   );

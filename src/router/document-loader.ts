@@ -1,6 +1,8 @@
 import { validateOptionalBuildIdInput } from '../../shared/navigation/build-id-contract.js';
 import { validateOptionalGeneratedAtInput } from '../../shared/navigation/generated-at-contract.js';
-import { HtmlDocumentFetcher } from './html-document-fetcher.js';
+import { fetchNavigationEnvelopeArtifact } from './navigation-envelope-fetcher.js';
+import type { InternalDocumentNormalizedUrl } from './internal-document-normalized-url.js';
+import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { normalizeDocumentRouteEnvelope } from './document-route-envelope.js';
 import { ErrorEnvelopeFactory } from './error-envelope-factory.js';
 import { LocationAdapter } from './location-adapter.js';
@@ -12,6 +14,10 @@ import {
 import type { StrictLoadedNavigationEnvelope } from './router-types.js';
 import { RouteRegistry } from './route-registry.js';
 import type { DocumentRouteContext, LoadDocumentResult } from './router-types.js';
+
+
+const isAbortError = (error: unknown): boolean =>
+  error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError');
 
 export type CurrentMetadataReadResult =
   | { readonly kind: 'valid'; readonly value: string }
@@ -41,15 +47,15 @@ const requireCurrentMetadataValue = (
 };
 
 export class DocumentLoader {
-  private readonly fetcher = new HtmlDocumentFetcher();
   private readonly errorEnvelopeFactory = new ErrorEnvelopeFactory();
 
   constructor(
     private readonly routeRegistry: RouteRegistry,
     private readonly location: LocationAdapter,
+    private readonly siteUrlContext: SiteUrlContext,
   ) {}
 
-  async load(normalizedUrl: string, signal: AbortSignal): Promise<LoadDocumentResult> {
+  async load(normalizedUrl: InternalDocumentNormalizedUrl, signal: AbortSignal): Promise<LoadDocumentResult> {
     let routeContext: DocumentRouteContext;
     try {
       routeContext = this.createRouteContext(normalizedUrl, signal);
@@ -69,39 +75,50 @@ export class DocumentLoader {
             source: 'document-route',
             currentBuildId: routeContext.currentBuildId,
             currentGeneratedAt: routeContext.currentGeneratedAt,
-            normalizedUrl,
+            normalizedUrl: String(normalizedUrl),
           }),
           source: 'document-route',
         };
       }
     } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
+      }
       return this.errorEnvelopeFactory.createExceptionResult(error);
     }
 
-    const snapshotUrl = this.location.resolveSnapshotUrl(normalizedUrl);
-    const snapshotResponse = await this.fetcher.fetch(snapshotUrl, signal);
-    if (snapshotResponse.ok) {
-      try {
-        const responseText = await snapshotResponse.text();
-        const envelope = this.decodeSnapshotResponse(responseText, normalizedUrl, routeContext);
-        return {
+    try {
+      const artifact = await fetchNavigationEnvelopeArtifact({
+        normalizedUrl,
+        siteUrlContext: this.siteUrlContext,
+        signal,
+      });
+      const envelope = validateNavigationEnvelope(artifact);
+      return {
+        envelope: validateLoadedEnvelope({
           envelope,
           source: 'fetch',
-        };
-      } catch (error) {
-        return this.errorEnvelopeFactory.createExceptionResult(error);
+          currentBuildId: routeContext.currentBuildId,
+          currentGeneratedAt: routeContext.currentGeneratedAt,
+          normalizedUrl: String(normalizedUrl),
+        }),
+        source: 'fetch',
+      };
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
       }
+      return this.errorEnvelopeFactory.createExceptionResult(error);
     }
-
-    return this.errorEnvelopeFactory.createHttpErrorResult(snapshotResponse.status, normalizedUrl);
   }
 
   createExceptionResult(error: unknown): LoadDocumentResult {
     return this.errorEnvelopeFactory.createExceptionResult(error);
   }
 
-  private createRouteContext(normalizedUrl: string, signal: AbortSignal): DocumentRouteContext {
-    const parsedUrl = new URL(normalizedUrl, window.location.origin);
+  private createRouteContext(normalizedUrl: InternalDocumentNormalizedUrl, signal: AbortSignal): DocumentRouteContext {
+    const serializedUrl = String(normalizedUrl);
+    const parsedUrl = new URL(serializedUrl, window.location.origin);
     const currentBuildId = requireCurrentMetadataValue('buildId', this.readCurrentBuildId());
     const currentGeneratedAt = requireCurrentMetadataValue(
       'generatedAt',
@@ -109,7 +126,7 @@ export class DocumentLoader {
     );
 
     return {
-      url: normalizedUrl,
+      url: serializedUrl,
       normalizedUrl,
       pathname: parsedUrl.pathname,
       searchParams: new URLSearchParams(parsedUrl.search),
@@ -118,39 +135,6 @@ export class DocumentLoader {
       currentBuildId,
       currentGeneratedAt,
     };
-  }
-
-  private decodeSnapshotResponse(
-    text: string,
-    normalizedUrl: string,
-    context: DocumentRouteContext,
-  ): StrictLoadedNavigationEnvelope {
-    const trimmed = text.trimStart();
-    if (trimmed.startsWith('<')) {
-      throw new NavigationEnvelopeContractError(
-        'router artifact は JSON NavigationEnvelope である必要があります。',
-      );
-    }
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(text);
-    } catch (error) {
-      throw new NavigationEnvelopeContractError(
-        error instanceof Error
-          ? `router artifact JSON の decode に失敗しました: ${error.message}`
-          : 'router artifact JSON の decode に失敗しました。',
-      );
-    }
-
-    const envelope = validateNavigationEnvelope(parsed);
-    return validateLoadedEnvelope({
-      envelope,
-      source: 'fetch',
-      currentBuildId: context.currentBuildId,
-      currentGeneratedAt: context.currentGeneratedAt,
-      normalizedUrl,
-    });
   }
 
   private readMetaContentRaw(name: string): string | null {

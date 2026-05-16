@@ -5,7 +5,7 @@ import { RouterDiagnosticError } from '../../src/router/router-diagnostics.js';
 import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
 
 const VALID_SIDEBAR_NAV_HTML =
-  '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="rev-1"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example/" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></nav>';
+  '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="rev-1"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example/" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></nav>';
 
 describe('navigation envelope', () => {
   it('schemaVersion と最小構造が正しい envelope を受理すること', () => {

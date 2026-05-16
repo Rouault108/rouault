@@ -27,7 +27,7 @@ const presentSidebar = {
   selectedId: null,
   initialExpandedIds: [] as string[],
   topologyRevision: 'topology:test',
-  navHtml: '<nav data-sidebar-nav aria-label="ノートナビゲーション"><ul><li data-node-id="a" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/a"><span data-sidebar-nav-label>A</span></a></li></ul></nav>',
+  navHtml: '<nav data-sidebar-nav aria-label="ノートナビゲーション"><ul><li data-node-id="a" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/a" data-link-kind="internal-document" data-link-surface="navigation"><span data-sidebar-nav-label>A</span></a></li></ul></nav>',
   heading: null,
   fixedBreakpoint: 1024,
   presentation: 'auto' as const,

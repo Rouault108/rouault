@@ -2,10 +2,12 @@ import { HeadManager } from './head-manager.js';
 import { replaceElementChildrenFromHtml } from './declarative-shadow-dom.js';
 import { LocationAdapter } from './location-adapter.js';
 import type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
+import { validateCommittedRuntimeDomLinkContracts } from './dom-link-contract.js';
 import type {
   ContentUpdateAdapter,
   HistoryMode,
   PreparedShellUpdate,
+  RouterRuntimeUrlDependencies,
   ShellAdapter,
 } from './router-types.js';
 
@@ -39,6 +41,7 @@ export class ContentCommitter {
   constructor(
     private outlet: HTMLElement,
     private location: LocationAdapter,
+    private urlDependencies: RouterRuntimeUrlDependencies,
     private contentAdapter?: ContentUpdateAdapter,
     private shellAdapter?: ShellAdapter,
   ) {}
@@ -64,6 +67,13 @@ export class ContentCommitter {
     try {
       await preparedContentMutation.commit();
       await preparedShellMutation.commit();
+      validateCommittedRuntimeDomLinkContracts({
+        root: document,
+        sourceLabel: `commit:${request.normalizedUrl}`,
+        siteUrlContext: this.urlDependencies.siteUrlContext,
+        currentUrl: request.normalizedUrl,
+        routeManifestState: this.urlDependencies.routeManifestState,
+      });
 
       this.headManager.setTitle(request.envelope.document.title);
       this.headManager.setMetaDescription(request.envelope.document.description);

@@ -65,7 +65,11 @@ export class ErrorEnvelopeFactory {
   }
 
   createExceptionResult(error: unknown): LoadDocumentResult {
-    if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw error;
+    }
+
+    if (error instanceof Error && error.name === 'TimeoutError') {
       return this.createErrorResult(
         'タイムアウト',
         'ページの読み込みがタイムアウトしました。',

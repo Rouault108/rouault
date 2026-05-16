@@ -13,7 +13,7 @@ import {
 } from '../../src/components/app/shell/layout-sidebar-shell-adapter.js';
 import { type LitLikeElement, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
-const navHtml = '<nav data-sidebar-nav aria-label="ノートナビゲーション"><ul><li data-node-id="a" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/a"><span data-sidebar-nav-label>A</span></a></li></ul></nav>';
+const navHtml = '<nav data-sidebar-nav aria-label="ノートナビゲーション"><ul><li data-node-id="a" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/a" data-link-kind="internal-document" data-link-surface="navigation"><span data-sidebar-nav-label>A</span></a></li></ul></nav>';
 const OVERLAY_LAYER_SELECTOR = '[data-app-shell-sidebar-overlay-layer]';
 
 const noteNavHtml = `
@@ -30,12 +30,12 @@ const noteNavHtml = `
             </button>
             <ul id="sidebar-group-classical" hidden>
               <li data-node-id="music/classical/beethoven/symphony-9" data-node-kind="leaf" data-node-depth="2">
-                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/beethoven/symphony-9">
+                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/beethoven/symphony-9" data-link-kind="internal-document" data-link-surface="navigation">
                   <span data-sidebar-nav-label>Symphony 9</span>
                 </a>
               </li>
               <li data-node-id="music/classical/tchaikovsky/the-nutcracker" data-node-kind="leaf" data-node-depth="2">
-                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/tchaikovsky/the-nutcracker">
+                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/tchaikovsky/the-nutcracker" data-link-kind="internal-document" data-link-surface="navigation">
                   <span data-sidebar-nav-label>The Nutcracker</span>
                 </a>
               </li>
@@ -47,7 +47,7 @@ const noteNavHtml = `
             </button>
             <ul id="sidebar-group-legacy" hidden>
               <li data-node-id="legacy-only/leaf" data-node-kind="leaf" data-node-depth="2">
-                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/legacy-only/leaf">
+                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/legacy-only/leaf" data-link-kind="internal-document" data-link-surface="navigation">
                   <span data-sidebar-nav-label>Legacy Leaf</span>
                 </a>
               </li>
@@ -73,7 +73,7 @@ const noteNavHtmlWithoutLegacy = `
             </button>
             <ul id="sidebar-group-classical-v2" hidden>
               <li data-node-id="music/classical/mozart/requiem" data-node-kind="leaf" data-node-depth="2">
-                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/mozart/requiem">
+                <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/music/classical/mozart/requiem" data-link-kind="internal-document" data-link-surface="navigation">
                   <span data-sidebar-nav-label>Requiem</span>
                 </a>
               </li>
