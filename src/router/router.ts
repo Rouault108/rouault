@@ -1,4 +1,3 @@
-import { BrowserLinkInterceptor } from './browser-link-interceptor.js';
 import { ContentCommitter } from './content-committer.js';
 import { createRouterRuntime } from './create-router-runtime.js';
 import { DocumentLoader } from './document-loader.js';
@@ -11,9 +10,11 @@ import type {
   BeforeNavigateContext,
   BeforeNavigateHook,
   NavigateRequest,
+  HistoryMode,
   NavigationResult,
   RouterEventMap,
   RouterOptions,
+  RouterRuntimeUrlDependencies,
 } from './router-types.js';
 import {
   RouterDestroyedError,
@@ -21,6 +22,8 @@ import {
   RouterOwnershipError,
 } from './router-types.js';
 import type { RouterDiagnosticPayload } from './router-diagnostics.js';
+import type { InternalDocumentNormalizedUrl } from './internal-document-normalized-url.js';
+import { validateInternalDocumentNavigationRequest } from './validate-internal-document-navigation-request.js';
 
 export type {
   BeforeNavigateContext,
@@ -49,6 +52,7 @@ export type {
   RoutePattern,
   RouterEventMap,
   RouterOptions,
+  RouterRuntimeUrlDependencies,
   ShellAdapter,
   ShellUpdatePayload,
   StrictLoadedNavigationEnvelope,
@@ -80,15 +84,16 @@ export class Router {
   private readonly loader: DocumentLoader;
   private readonly committer: ContentCommitter;
   private readonly beforeNavigateHooks = new Set<BeforeNavigateHook>();
-  private readonly linkInterceptor: BrowserLinkInterceptor;
+  private readonly linkInterceptor: import('./browser-link-interceptor.js').RouterLinkInterceptor;
   private readonly queue: NavigationQueue;
+  private readonly urlDependencies: RouterRuntimeUrlDependencies;
   private started = false;
   private destroyed = false;
   private isBusy = false;
   private currentUrl = '';
   private hasCommittedNavigation = false;
 
-  constructor(outlet: HTMLElement, options: RouterOptions = {}) {
+  constructor(outlet: HTMLElement, urlDependencies: RouterRuntimeUrlDependencies, options?: RouterOptions) {
     const currentOwner = LIVE_ROUTER_OWNERS.get(document);
     if (currentOwner && !currentOwner.destroyed) {
       throw new RouterOwnershipError('document ごとに live Router は 1 つだけです。');
@@ -96,11 +101,13 @@ export class Router {
 
     LIVE_ROUTER_OWNERS.set(document, this);
     this.outlet = outlet;
-    this.options = options;
+    this.urlDependencies = urlDependencies;
+    this.options = options ?? {};
 
     const runtime = createRouterRuntime({
       outlet: this.outlet,
       options: this.options,
+      urlDependencies,
       getCurrentUrl: () => this.currentUrl,
       requestNavigation: async (request) => this.navigate(request),
       runNavigation: async (request, signal) => this.runNavigation(request, signal),
@@ -198,33 +205,46 @@ export class Router {
   }
 
   async navigate(request: NavigateRequest): Promise<NavigationResult> {
-    const normalizedRequest = this.normalizeRequest(request);
+    const historyMode = request.historyMode ?? 'push';
+    const validation = validateInternalDocumentNavigationRequest({
+      requestedUrl: request.url,
+      currentUrl: this.currentUrl || this.location.readCurrentUrl(),
+      siteUrlContext: this.urlDependencies.siteUrlContext,
+      routeManifestState: this.urlDependencies.routeManifestState,
+    });
+
+    if (validation.ok === false) {
+      const reason = validation.reason;
+      return this.createValidationFailureResult(reason, historyMode);
+    }
 
     if (this.destroyed) {
-      return this.createFailureResult(
-        normalizedRequest,
+      return this.createLifecycleFailureResult(
+        historyMode,
         new RouterDestroyedError('destroy() 済みの Router です。'),
         'destroyed',
       );
     }
 
     if (!this.started) {
-      return this.createFailureResult(
-        normalizedRequest,
+      return this.createLifecycleFailureResult(
+        historyMode,
         new RouterNotStartedError('start() 前の Router です。'),
         'not-started',
       );
     }
 
-    return this.queue.enqueue(normalizedRequest);
+    return this.queue.enqueue(this.normalizeValidatedRequest(request, validation.normalizedUrl, historyMode));
   }
 
-  private normalizeRequest(request: NavigateRequest): NormalizedNavigationRequest {
-    const requestedUrl = request.url;
-    const historyMode = request.historyMode ?? 'push';
+  private normalizeValidatedRequest(
+    request: NavigateRequest,
+    normalizedUrl: InternalDocumentNormalizedUrl,
+    historyMode: HistoryMode,
+  ): NormalizedNavigationRequest {
     return {
-      requestedUrl,
-      normalizedUrl: this.location.normalizeUrl(requestedUrl),
+      requestedUrl: request.url,
+      normalizedUrl,
       historyMode,
       state: request.state,
     };
@@ -344,7 +364,6 @@ export class Router {
       this.eventBus.emit('error', {
         error: finalResult.error ?? new Error('navigation failed'),
         stage: 'load',
-        diagnostic: this.createRouterDiagnostic('navigation-envelope-invalid', request.normalizedUrl),
       });
       this.eventBus.emit('after:navigate', finalResult);
       return finalResult;
@@ -362,8 +381,8 @@ export class Router {
     previousUrl: string,
     envelope: NavigationEnvelope,
     baseError?: Error,
-    baseErrorReason?: NavigationResult['errorReason'],
-  ): Promise<NavigationResult> {
+    baseErrorReason?: import('./router-types.js').NavigationLoadFailureReason,
+  ): Promise<import('./router-types.js').NavigationCompletedResult | import('./router-types.js').NavigationLoadFailureResult> {
     try {
       await this.committer.commit({
         envelope,
@@ -380,8 +399,9 @@ export class Router {
       });
 
       return {
+        kind: 'load-failure',
         outcome: 'failed',
-        requestedUrl: request.requestedUrl,
+        reason: 'unexpected',
         normalizedUrl: request.normalizedUrl,
         historyMode: request.historyMode,
         stateOnly: false,
@@ -400,8 +420,8 @@ export class Router {
     this.hasCommittedNavigation = true;
 
     const result: NavigationResult = {
+      kind: 'completed',
       outcome: 'completed',
-      requestedUrl: request.requestedUrl,
       normalizedUrl: request.normalizedUrl,
       historyMode: request.historyMode,
       stateOnly: false,
@@ -490,8 +510,8 @@ export class Router {
     this.eventBus.emit('ui-url-state-change', detail);
 
     const result: NavigationResult = {
+      kind: 'completed',
       outcome: 'completed',
-      requestedUrl: request.requestedUrl,
       normalizedUrl: request.normalizedUrl,
       historyMode: request.historyMode,
       stateOnly: true,
@@ -522,8 +542,9 @@ export class Router {
         const hookResult = await hook(context);
         if (hookResult === false) {
           return {
+            kind: 'cancelled',
             outcome: 'cancelled',
-            requestedUrl: request.requestedUrl,
+            reason: 'cancelled',
             normalizedUrl: request.normalizedUrl,
             historyMode: request.historyMode,
             stateOnly: false,
@@ -542,8 +563,9 @@ export class Router {
           diagnostic: this.createRouterDiagnostic('route-state-mismatch', request.normalizedUrl),
         });
         return {
+          kind: 'load-failure',
           outcome: 'failed',
-          requestedUrl: request.requestedUrl,
+          reason: 'unexpected',
           normalizedUrl: request.normalizedUrl,
           historyMode: request.historyMode,
           stateOnly: false,
@@ -572,16 +594,35 @@ export class Router {
     });
   }
 
-  private createFailureResult(
-    request: NormalizedNavigationRequest,
-    error: Error,
-    reason: NavigationResult['errorReason'],
+  private createValidationFailureResult(
+    reason: import('./router-types.js').NavigationValidationFailureReason,
+    historyMode: HistoryMode,
   ): NavigationResult {
     return {
+      kind: 'validation-failure',
       outcome: 'failed',
-      requestedUrl: request.requestedUrl,
-      normalizedUrl: request.normalizedUrl,
-      historyMode: request.historyMode,
+      reason,
+      errorReason: reason,
+      historyMode,
+      stateOnly: false,
+      committed: false,
+      degraded: false,
+      issues: [],
+      source: 'none',
+      renderedKind: null,
+    };
+  }
+
+  private createLifecycleFailureResult(
+    historyMode: HistoryMode,
+    error: Error,
+    reason: import('./router-types.js').NavigationLifecycleFailureReason,
+  ): NavigationResult {
+    return {
+      kind: 'lifecycle-failure',
+      outcome: 'failed',
+      reason,
+      historyMode,
       stateOnly: false,
       committed: false,
       degraded: false,
@@ -595,8 +636,9 @@ export class Router {
 
   private createSupersededResult(request: NormalizedNavigationRequest): NavigationResult {
     return {
+      kind: 'superseded',
       outcome: 'superseded',
-      requestedUrl: request.requestedUrl,
+      reason: 'superseded',
       normalizedUrl: request.normalizedUrl,
       historyMode: request.historyMode,
       stateOnly: false,
@@ -610,18 +652,16 @@ export class Router {
 
   private createRouterDiagnostic(
     reason: RouterDiagnosticPayload['reason'],
-    routeId: string,
+    detail: string,
   ): RouterDiagnosticPayload {
-    if (reason === 'post-commit-handler-failed') {
-      return {
-        reason,
-        handlerName: routeId,
-      };
+    switch (reason) {
+      case 'post-commit-handler-failed':
+        return { reason, handlerName: detail };
+      case 'invalid-target':
+        return { reason, target: detail.replace(/[\u0000-\u001f\u007f]/gu, '') };
+      case 'route-state-mismatch':
+      case 'return-to-reading-unavailable':
+        return { reason, routeId: detail };
     }
-
-    return {
-      reason,
-      routeId,
-    };
   }
 }

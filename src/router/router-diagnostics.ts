@@ -1,19 +1,15 @@
 import { DiagnosticError } from '../diagnostics/diagnostic-error.js';
 
 export const routerDiagnosticReasons = [
-  'navigation-envelope-invalid',
   'post-commit-handler-failed',
   'route-state-mismatch',
   'return-to-reading-unavailable',
+  'invalid-target',
 ] as const;
 
 export type RouterDiagnosticReason = (typeof routerDiagnosticReasons)[number];
 
 export type RouterDiagnosticPayload =
-  | {
-      readonly reason: 'navigation-envelope-invalid';
-      readonly routeId: string;
-    }
   | {
       readonly reason: 'post-commit-handler-failed';
       readonly handlerName: string;
@@ -25,6 +21,10 @@ export type RouterDiagnosticPayload =
   | {
       readonly reason: 'return-to-reading-unavailable';
       readonly routeId: string;
+    }
+  | {
+      readonly reason: 'invalid-target';
+      readonly target: string;
     };
 
 export class RouterDiagnosticError extends DiagnosticError {
@@ -41,3 +41,15 @@ export const createRouterDiagnosticError = (
   message: string,
   diagnostic: RouterDiagnosticPayload,
 ): RouterDiagnosticError => new RouterDiagnosticError(message, diagnostic);
+
+export interface RouterRuntimeDiagnosticSink {
+  readonly record: (diagnostic: RouterDiagnosticPayload) => void;
+}
+
+export const createRouterRuntimeDiagnosticSink = (
+  onRecord?: (diagnostic: RouterDiagnosticPayload) => void,
+): RouterRuntimeDiagnosticSink => ({
+  record: (diagnostic) => {
+    onRecord?.(diagnostic);
+  },
+});
