@@ -131,6 +131,8 @@ const ensureHeadingPermalink = (node: HastNode, id: string, text: string): void 
         href: `#${id}`,
         'aria-label': `「${text}」への固定リンク`,
         'data-heading-permalink': 'true',
+        'data-link-kind': 'internal-fragment',
+        'data-link-surface': 'structural',
       },
       [
         createElement('ui-icon', {

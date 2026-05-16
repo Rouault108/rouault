@@ -717,6 +717,8 @@ export class Toc extends LitElement {
                       'is-click': isActive && this._activeIdSource === 'click',
                     })}
                     href=${buildHashHrefFromId(heading.id)}
+                    data-link-kind="internal-fragment"
+                    data-link-surface="structural"
                     data-toc-link
                     data-heading-id=${heading.id}
                     data-heading-level=${String(heading.level)}

@@ -48,6 +48,8 @@ const renderHeadingItems = (
             class="layout-toc__link"
             href="${headingHref}"
             ${linkDataAttributes}
+            data-link-kind="internal-fragment"
+            data-link-surface="structural"
             title="${headingTitle}"
           >
             <span class="layout-toc__link-label">${headingLabel}</span>

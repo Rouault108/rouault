@@ -714,6 +714,8 @@ export class Footnote extends LitElement {
             <a
               href="${this._resolvedHref}"
               class="footnote-list-link"
+              data-link-kind="internal-fragment"
+              data-link-surface="structural"
               @click="${this._onFooterLinkClick}"
               @keydown="${this._onFooterLinkKeyDown}"
             >

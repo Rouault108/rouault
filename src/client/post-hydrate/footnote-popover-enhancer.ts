@@ -208,6 +208,7 @@ const ensurePopover = (anchor: HTMLElement): HTMLElement | null => {
   const link = document.createElement('a');
   link.className = 'footnote-list-link';
   link.href = `#${canonicalRefId}`;
+  link.setAttribute('data-footnote-fallback-trigger', 'true');
   link.textContent = '脚注一覧で見る';
 
   footer.append(link);
