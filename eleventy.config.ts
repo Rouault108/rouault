@@ -9,12 +9,19 @@ import { loadNotesData } from './src/data/notes.js';
 import { loadHomeData } from './src/data/home.js';
 import { loadClientBundleData } from './src/data/clientBundle.js';
 import { loadBuildMetadataData } from './src/data/buildMetadata.js';
+import { loadSiteUrlContextData } from './src/data/siteUrlContext.js';
 import { createStaticDirectoryMiddleware } from './build/dev/dev-static-directory.js';
 import { createDevelopmentRouterArtifactMiddleware } from './build/dev/dev-router-artifact-middleware.js';
+import { createDevelopmentInternalDocumentRouteManifestMiddleware } from './build/dev/dev-internal-document-route-manifest-middleware.js';
+import { createDevelopmentHtmlSiteUrlContextMiddleware } from './build/dev/dev-html-site-url-context-middleware.js';
 import { devBuildMetadata } from './build/dev/dev-build-metadata.js';
 import { renderSearchCatalogArtifact } from './build/search/emit-search-artifacts.js';
 import { hasExternalMediaBaseUrl } from './build/media/media-base-url.js';
 import { resolveProductionBuildMetadata } from './build/metadata/build-metadata.js';
+import {
+  resolveDevelopmentSiteUrlContext,
+  resolveProductionSiteUrlContext,
+} from './build/site/site-url-context.js';
 import { validateNoteSourceLinks } from './build/content/validate-note-source-links.js';
 import { resolveTrailingSlashRewrite } from './shared/navigation/trailing-slash-rewrite.js';
 
@@ -85,6 +92,24 @@ const registerDevelopmentStaticDirectories = (server: ViteDevServer): void => {
   );
 };
 
+const registerDevelopmentSiteUrlContext = (server: ViteDevServer): void => {
+  server.middlewares.use(
+    createDevelopmentHtmlSiteUrlContextMiddleware({
+      siteUrlContext: resolveDevelopmentSiteUrlContext(),
+      buildMetadata: devBuildMetadata,
+    }),
+  );
+};
+
+const registerDevelopmentRouteManifest = (server: ViteDevServer): void => {
+  server.middlewares.use(
+    createDevelopmentInternalDocumentRouteManifestMiddleware({
+      siteUrlContext: resolveDevelopmentSiteUrlContext(),
+      buildMetadata: devBuildMetadata,
+    }),
+  );
+};
+
 const registerDevelopmentRouterArtifacts = (server: ViteDevServer): void => {
   server.middlewares.use(
     createDevelopmentRouterArtifactMiddleware({
@@ -136,6 +161,17 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
       buildId: metadata.buildId,
       buildLabel: metadata.buildLabel,
       generatedAt: metadata.generatedAt,
+      sourceLabel: isServing ? 'eleventy-dev' : 'eleventy-build',
+    });
+  });
+
+  eleventyConfig.addGlobalData('siteUrlContext', () => {
+    const siteUrlContext = isServing
+      ? resolveDevelopmentSiteUrlContext()
+      : resolveProductionSiteUrlContext();
+    return loadSiteUrlContextData({
+      siteOrigin: siteUrlContext.siteOrigin,
+      basePath: siteUrlContext.basePath,
       sourceLabel: isServing ? 'eleventy-dev' : 'eleventy-build',
     });
   });
@@ -198,14 +234,18 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
           {
             name: 'rouault-trailing-slash-rewrite',
             configureServer(server: ViteDevServer) {
+              registerDevelopmentSiteUrlContext(server);
               registerDevelopmentStaticDirectories(server);
               registerSearchCatalogMiddleware(server);
+              registerDevelopmentRouteManifest(server);
               registerDevelopmentRouterArtifacts(server);
               registerTrailingSlashRewrite(server);
             },
             configurePreviewServer(server: ViteDevServer) {
+              registerDevelopmentSiteUrlContext(server);
               registerDevelopmentStaticDirectories(server);
               registerSearchCatalogMiddleware(server);
+              registerDevelopmentRouteManifest(server);
               registerDevelopmentRouterArtifacts(server);
               registerTrailingSlashRewrite(server);
             },
