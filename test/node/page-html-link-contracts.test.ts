@@ -1,8 +1,42 @@
 import { describe, expect, it } from 'vitest';
-import { validateGeneratedPageHtmlLinkContracts } from '../../build/content/page-html-link-contracts.js';
+import {
+  annotateGeneratedPageHtmlLinkContracts,
+  validateGeneratedPageHtmlLinkContracts,
+} from '../../build/content/page-html-link-contracts.js';
+import { createManifestLoadedRouteClassificationMode } from '../../shared/link/link-annotation.js';
 import { BaseLayout } from '../../src/layouts/BaseLayout.11ty.js';
 
 describe('page HTML link contracts', () => {
+  it('note HTML 後段の未注釈 source .md link を解決して本文リンク注釈を付与すること', () => {
+    const annotated = annotateGeneratedPageHtmlLinkContracts({
+      html: '<p><a href="../group-16/target.md">Sidebar Scroll Target</a></p>',
+      sourceLabel: 'content/testing/sidebar-scroll/group-01/source',
+      sourceFilePath: 'content/testing/sidebar-scroll/group-01/source.md',
+      siteUrlContext: { siteOrigin: 'https://example.com', basePath: '' },
+      currentUrl: 'https://example.com/notes/testing/sidebar-scroll/group-01/source',
+      routeClassificationMode: createManifestLoadedRouteClassificationMode({
+        isInternalDocumentPathname: (pathname) =>
+          pathname === '/notes/testing/sidebar-scroll/group-16/target',
+      }),
+    });
+
+    expect(annotated).toContain('href="/notes/testing/sidebar-scroll/group-16/target"');
+    expect(annotated).toContain('data-link-kind="internal-document"');
+    expect(annotated).toContain('data-link-surface="prose"');
+    expect(() =>
+      validateGeneratedPageHtmlLinkContracts({
+        html: annotated ?? '',
+        sourceLabel: 'content/testing/sidebar-scroll/group-01/source',
+        siteUrlContext: { siteOrigin: 'https://example.com', basePath: '' },
+        currentUrl: 'https://example.com/notes/testing/sidebar-scroll/group-01/source',
+        routeClassificationMode: createManifestLoadedRouteClassificationMode({
+          isInternalDocumentPathname: (pathname) =>
+            pathname === '/notes/testing/sidebar-scroll/group-16/target',
+        }),
+      }),
+    ).not.toThrow();
+  });
+
   it('unsafe href を拒否すること', () => {
     expect(() =>
       validateGeneratedPageHtmlLinkContracts({
@@ -21,12 +55,12 @@ describe('page HTML link contracts', () => {
     ).toThrow('external-web link kind does not match href');
   });
 
-
   it('BaseLayout の generated page content で href と data-link-kind の分類不一致を拒否すること', () => {
     const layout = new BaseLayout();
     expect(() =>
       layout.render({
-        content: '<a href="/about/" data-link-kind="external-web" data-link-surface="prose" data-external="true">about</a>',
+        content:
+          '<a href="/about/" data-link-kind="external-web" data-link-surface="prose" data-external="true">about</a>',
         page: { url: '/' },
         buildMetadata: {
           buildId: '0123456789abcdef0123456789abcdef01234567',
@@ -40,7 +74,6 @@ describe('page HTML link contracts', () => {
       }),
     ).toThrow('link kind does not match classified href');
   });
-
 
   it('BaseLayout の full HTML に skip link structural attributes を出し contract 対象にすること', () => {
     const layout = new BaseLayout();
@@ -63,5 +96,4 @@ describe('page HTML link contracts', () => {
     expect(html).toContain('data-link-kind="internal-fragment"');
     expect(html).toContain('data-link-surface="structural"');
   });
-
 });

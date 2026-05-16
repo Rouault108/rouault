@@ -1,4 +1,3 @@
-
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -18,6 +17,7 @@ import {
 import { rehypeShikiCodeBlocks } from './build/rehype/shiki-code-blocks.js';
 import { rehypeStaticCodeGroups } from './build/rehype/static-code-groups.js';
 import { validateNoteContentContracts } from './build/content/note-content-contracts.js';
+import { annotateGeneratedPageHtmlLinkContracts } from './build/content/page-html-link-contracts.js';
 import { validateNoteMetadataContracts } from './build/content/note-metadata-contracts.js';
 import { remarkExpandExampleIncludes } from './build/remark/expand-example-includes.js';
 import { remarkDisallowRawHtml } from './build/remark/disallow-raw-html.js';
@@ -36,10 +36,14 @@ import {
 } from './shared/note/note-chrome-profile.js';
 import { TESTING_AREAS, normalizeTestingArea } from './shared/note/testing-area.js';
 import { resolveNoteSourceLocation } from './shared/note/note-source-root.js';
-import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from './build/site/site-url-context.js';
-import { resolveNoteCurrentUrlFromSourcePath, createNoteRouteClassificationModeForSourcePath } from './build/content/resolve-note-current-url.js';
-
-
+import {
+  resolveDevelopmentSiteUrlContext,
+  resolveProductionSiteUrlContext,
+} from './build/site/site-url-context.js';
+import {
+  resolveNoteCurrentUrlFromSourcePath,
+  createNoteRouteClassificationModeForSourcePath,
+} from './build/content/resolve-note-current-url.js';
 
 const resolveBuildLinkAnnotationOptions = () => {
   const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
@@ -99,7 +103,19 @@ const notes = defineCollection({
       const hydrationBudgetProfile = normalizeNoteHydrationBudgetProfileName(
         data.hydrationBudgetProfile,
       );
-      const normalizedContent = normalizeRouaultStaticSurfaceHtml(data.content);
+      const normalizedStaticContent = normalizeRouaultStaticSurfaceHtml(data.content);
+      const linkAnnotationOptions = resolveBuildLinkAnnotationOptions();
+      const sourceFilePath = sourcePath.endsWith('.md') ? sourcePath : `${sourcePath}.md`;
+      const normalizedContent = annotateGeneratedPageHtmlLinkContracts({
+        html: normalizedStaticContent,
+        sourceLabel: sourcePath,
+        sourceFilePath,
+        siteUrlContext: linkAnnotationOptions.siteUrlContext,
+        currentUrl: linkAnnotationOptions.currentUrl({ path: sourcePath }),
+        routeClassificationMode: linkAnnotationOptions.routeClassificationMode({
+          path: sourcePath,
+        }),
+      });
       const e2eFixtureId =
         typeof data.e2eFixtureId === 'string' && data.e2eFixtureId.trim().length > 0
           ? data.e2eFixtureId.trim()
@@ -125,9 +141,11 @@ const notes = defineCollection({
         html: normalizedContent,
         sourceLabel: sourcePath,
         testingArea,
-        siteUrlContext: resolveBuildLinkAnnotationOptions().siteUrlContext,
-        currentUrl: resolveBuildLinkAnnotationOptions().currentUrl({ path: sourcePath }),
-        routeClassificationMode: resolveBuildLinkAnnotationOptions().routeClassificationMode({ path: sourcePath }),
+        siteUrlContext: linkAnnotationOptions.siteUrlContext,
+        currentUrl: linkAnnotationOptions.currentUrl({ path: sourcePath }),
+        routeClassificationMode: linkAnnotationOptions.routeClassificationMode({
+          path: sourcePath,
+        }),
       });
 
       return {

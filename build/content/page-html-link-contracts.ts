@@ -1,12 +1,26 @@
 import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
-import { classifyLinkHref, type RouteClassificationMode } from '../../shared/link/link-annotation.js';
+import {
+  classifyLinkHref,
+  type RouteClassificationMode,
+} from '../../shared/link/link-annotation.js';
 import { detectUnsafeHref } from '../../shared/link/unsafe-href-detector.js';
 import { isLinkSurface } from '../../shared/link/link-surface.js';
 import { parseRelTokens } from '../../shared/link/rel-tokens.js';
 import type { LinkKind } from '../../shared/link/link-kind.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { hasAsciiControlCharacter } from '../../shared/string/ascii-control.js';
+import { resolveNoteSourceLink } from '../markdown/note-source-link-resolver.js';
+
+export interface AnnotateGeneratedPageHtmlLinkContractsOptions {
+  readonly html: string | undefined;
+  readonly sourceLabel: string;
+  readonly siteUrlContext: SiteUrlContext;
+  readonly currentUrl: string;
+  readonly routeClassificationMode: RouteClassificationMode;
+  readonly sourceFilePath?: string;
+  readonly isInternalResourcePathname?: (pathname: string) => boolean;
+}
 
 export interface ValidateGeneratedPageHtmlLinkContractsOptions {
   readonly html: string;
@@ -42,6 +56,24 @@ const attr = (node: ElementNode, name: string): string | null =>
 
 const hasAttr = (node: ElementNode, name: string): boolean => attr(node, name) !== null;
 
+const setAttr = (node: ElementNode, name: string, value: string): void => {
+  const existing = node.attrs.find((item) => item.name.toLowerCase() === name.toLowerCase());
+  if (existing !== undefined) {
+    existing.value = value;
+    return;
+  }
+  node.attrs.push({ name, value });
+};
+
+const removeAttr = (node: ElementNode, name: string): void => {
+  const normalized = name.toLowerCase();
+  for (let index = node.attrs.length - 1; index >= 0; index -= 1) {
+    if (node.attrs[index]?.name.toLowerCase() === normalized) {
+      node.attrs.splice(index, 1);
+    }
+  }
+};
+
 const isFootnoteStructuralException = (node: ElementNode): boolean =>
   hasAttr(node, 'data-footnote-ref') ||
   hasAttr(node, 'data-footnote-backref') ||
@@ -53,6 +85,97 @@ const isComponentShadowPlaceholder = (node: ElementNode): boolean =>
 function fail(sourceLabel: string, message: string): never {
   throw new PageHtmlLinkContractError(`[${sourceLabel}] ${message}`);
 }
+
+const resolveHtmlAnchorHref = (
+  href: string,
+  options: AnnotateGeneratedPageHtmlLinkContractsOptions,
+): string => {
+  if (options.sourceFilePath === undefined) {
+    return href;
+  }
+
+  const resolved = resolveNoteSourceLink({ href, sourceFilePath: options.sourceFilePath });
+  return resolved.kind === 'resolved' ? resolved.href : href;
+};
+
+const annotateAnchor = (
+  node: ElementNode,
+  options: AnnotateGeneratedPageHtmlLinkContractsOptions,
+): void => {
+  if (isFootnoteStructuralException(node)) {
+    removeAttr(node, 'data-link-kind');
+    removeAttr(node, 'data-link-surface');
+    removeAttr(node, 'data-external');
+    return;
+  }
+
+  const href = attr(node, 'href');
+  if (href === null || href.trim().length === 0) {
+    return;
+  }
+
+  const resolvedHref = resolveHtmlAnchorHref(href, options);
+  if (
+    resolvedHref === href &&
+    attr(node, 'data-link-kind') !== null &&
+    attr(node, 'data-link-surface') !== null
+  ) {
+    return;
+  }
+
+  const annotation = classifyLinkHref({
+    href: resolvedHref,
+    surface: 'prose',
+    siteUrlContext: options.siteUrlContext,
+    currentUrl: options.currentUrl,
+    routeClassificationMode: options.routeClassificationMode,
+    ...(options.isInternalResourcePathname !== undefined
+      ? { isInternalResourcePathname: options.isInternalResourcePathname }
+      : {}),
+  });
+
+  if (annotation.isUnsafe) {
+    fail(options.sourceLabel, 'unsafe link kind must not be rendered');
+  }
+
+  setAttr(node, 'href', annotation.renderHref);
+  setAttr(node, 'data-link-kind', annotation.kind);
+  setAttr(node, 'data-link-surface', annotation.surface);
+
+  if (annotation.isExternalWeb) {
+    setAttr(node, 'data-external', 'true');
+  } else {
+    removeAttr(node, 'data-external');
+  }
+};
+
+const visitForAnnotation = (
+  node: Node,
+  options: AnnotateGeneratedPageHtmlLinkContractsOptions,
+  insidePlaceholder = false,
+): void => {
+  const nextInsidePlaceholder =
+    insidePlaceholder || (isElementNode(node) && isComponentShadowPlaceholder(node));
+  if (isElementNode(node) && node.tagName === 'a' && !nextInsidePlaceholder) {
+    annotateAnchor(node, options);
+  }
+  const childNodes = 'childNodes' in node ? node.childNodes : [];
+  for (const child of childNodes) {
+    visitForAnnotation(child, options, nextInsidePlaceholder);
+  }
+};
+
+export const annotateGeneratedPageHtmlLinkContracts = (
+  options: AnnotateGeneratedPageHtmlLinkContractsOptions,
+): string | undefined => {
+  if (typeof options.html !== 'string' || options.html.trim().length === 0) {
+    return options.html;
+  }
+
+  const document = parse5.parseFragment(options.html);
+  visitForAnnotation(document, options);
+  return parse5.serialize(document);
+};
 
 const requiresClassificationContext = (kind: string | null): boolean =>
   kind === 'internal-document' || kind === 'internal-resource' || kind === 'internal-fragment';
@@ -90,7 +213,10 @@ const validateKindHrefShape = (
         : {}),
     });
     if (classified.kind !== kind) {
-      fail(options.sourceLabel, `link kind does not match classified href: expected ${classified.kind}, got ${kind}`);
+      fail(
+        options.sourceLabel,
+        `link kind does not match classified href: expected ${classified.kind}, got ${kind}`,
+      );
     }
     return;
   }
@@ -108,10 +234,19 @@ const validateKindHrefShape = (
   if (kind === 'internal-fragment' && !href.startsWith('#')) {
     fail(options.sourceLabel, 'internal-fragment link kind does not match href');
   }
-  if ((kind === 'internal-document' || kind === 'internal-resource') && /^(?:https?:)?\/\//iu.test(href)) {
-    fail(options.sourceLabel, `${kind} link kind must not use external absolute href without classification context`);
+  if (
+    (kind === 'internal-document' || kind === 'internal-resource') &&
+    /^(?:https?:)?\/\//iu.test(href)
+  ) {
+    fail(
+      options.sourceLabel,
+      `${kind} link kind must not use external absolute href without classification context`,
+    );
   }
-  if ((kind === 'internal-document' || kind === 'internal-resource') && /^(?:mailto|tel):/iu.test(href)) {
+  if (
+    (kind === 'internal-document' || kind === 'internal-resource') &&
+    /^(?:mailto|tel):/iu.test(href)
+  ) {
     fail(options.sourceLabel, `${kind} link kind must not use external-action href`);
   }
 };
@@ -197,7 +332,8 @@ const visit = (
   options: ValidateGeneratedPageHtmlLinkContractsOptions,
   insidePlaceholder = false,
 ): void => {
-  const nextInsidePlaceholder = insidePlaceholder || (isElementNode(node) && isComponentShadowPlaceholder(node));
+  const nextInsidePlaceholder =
+    insidePlaceholder || (isElementNode(node) && isComponentShadowPlaceholder(node));
   if (isElementNode(node) && node.tagName === 'a' && !nextInsidePlaceholder) {
     validateAnchor(node, options);
   }
