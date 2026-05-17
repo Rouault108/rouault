@@ -28,9 +28,15 @@ GitHub repository には `production` environment を作成する。
 
 Repository-level variables:
 
-- `ROUAULT_MEDIA_BASE_URL`
+- `ROUAULT_MEDIA_BASE_URL`（必須）
+- `ROUAULT_SITE_ORIGIN`（必須）
+- `ROUAULT_BASE_PATH`（任意）
 
 `ROUAULT_MEDIA_BASE_URL` は production build と E2E job でも参照するため、`production` environment 専用にはしない。
+
+`ROUAULT_SITE_ORIGIN` は `build-production` job が `pnpm build:production` を実行する前に参照する。生成済み `dist` の HTML meta、route manifest meta、route manifest JSON を同じ production URL contract で生成するため、`production` environment variable ではなく repository-level variable として設定する。
+
+`ROUAULT_BASE_PATH` を使わない配信では、未設定または空文字でよい。
 
 ## Link Contract Build Environment
 
@@ -44,6 +50,8 @@ Production build では、リンク分類と route manifest の正本として�
 - `pnpm build:production` は正しい `ROUAULT_SITE_ORIGIN` 指定時に通り、欠落または不正値では契約どおり失敗する。
 
 Cloudflare Pages / GitHub Actions では、production deployment の build step に `ROUAULT_SITE_ORIGIN` を明示的に渡す。`ROUAULT_BASE_PATH` を使う配信では、route manifest meta、Search render href、NavigationEnvelope artifact URL が同じ base path を使うことを確認する。
+
+`deploy-production` job だけに `ROUAULT_SITE_ORIGIN` を渡しても、すでに upload artifact として生成された `dist` の HTML meta は変わらない。`main` push の deployable production build では、repository-level `ROUAULT_SITE_ORIGIN` が未設定なら `build-production` を失敗させる。`pull_request` / `workflow_dispatch` の production-mode build 検証では、deployable artifact ではなく契約検証として `http://127.0.0.1:4173` を明示的な CI 用 origin に使う。
 
 ## Production Build Label
 

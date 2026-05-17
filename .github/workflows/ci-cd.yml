@@ -260,6 +260,8 @@ jobs:
     if: ${{ !cancelled() && needs.detect-changes.result == 'success' && needs.prebuild-gate.result == 'success' && needs.detect-changes.outputs.build == 'true' }}
     env:
       ROUAULT_MEDIA_BASE_URL: ${{ vars.ROUAULT_MEDIA_BASE_URL }}
+      REPOSITORY_ROUAULT_SITE_ORIGIN: ${{ vars.ROUAULT_SITE_ORIGIN }}
+      REPOSITORY_ROUAULT_BASE_PATH: ${{ vars.ROUAULT_BASE_PATH }}
     steps:
       - uses: actions/checkout@v5
       - run: echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
@@ -270,6 +272,22 @@ jobs:
           cache: pnpm
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
+      - name: resolve production build site URL context
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            if [[ -z "${REPOSITORY_ROUAULT_SITE_ORIGIN:-}" ]]; then
+              echo "ROUAULT_SITE_ORIGIN is required for main production deployment builds." >&2
+              exit 1
+            fi
+
+            echo "ROUAULT_SITE_ORIGIN=${REPOSITORY_ROUAULT_SITE_ORIGIN}" >> "$GITHUB_ENV"
+          else
+            echo "ROUAULT_SITE_ORIGIN=${REPOSITORY_ROUAULT_SITE_ORIGIN:-http://127.0.0.1:4173}" >> "$GITHUB_ENV"
+          fi
+
+          echo "ROUAULT_BASE_PATH=${REPOSITORY_ROUAULT_BASE_PATH:-}" >> "$GITHUB_ENV"
       - run: pnpm build:production
       - uses: actions/upload-artifact@v6
         with:

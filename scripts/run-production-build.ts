@@ -4,8 +4,9 @@ import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
 import { resolveProductionBuildMetadata } from '../build/metadata/build-metadata.js';
+import { resolveProductionSiteUrlContext } from '../build/site/site-url-context.js';
 import { assertProductionCssArtifacts } from './assert-production-css-artifacts.js';
-import { DEFAULT_SITE_URL_CONTEXT } from '../shared/site/site-url-context.js';
+import { assertProductionSiteUrlContext } from './assert-production-site-url-context.js';
 
 const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 const distDir = path.resolve(process.cwd(), 'dist');
@@ -29,6 +30,20 @@ const resolveEntrypointBuildLabel = (): string => {
 process.env['ROUAULT_BUILD_LABEL'] = resolveEntrypointBuildLabel();
 
 const buildMetadata = resolveProductionBuildMetadata();
+const siteUrlContext = (() => {
+  try {
+    return resolveProductionSiteUrlContext({
+      siteOrigin: process.env['ROUAULT_SITE_ORIGIN'],
+      basePath: process.env['ROUAULT_BASE_PATH'],
+    });
+  } catch (error) {
+    console.error(
+      '[production-build] invalid production site URL context:',
+      error instanceof Error ? error.message : String(error),
+    );
+    process.exit(1);
+  }
+})();
 
 const env: NodeJS.ProcessEnv = {
   ...process.env,
@@ -38,7 +53,8 @@ const env: NodeJS.ProcessEnv = {
 env['ROUAULT_BUILD_ID'] = buildMetadata.buildId;
 env['ROUAULT_BUILD_LABEL'] = buildMetadata.buildLabel;
 env['ROUAULT_GENERATED_AT'] = buildMetadata.generatedAt;
-env['ROUAULT_SITE_ORIGIN'] ??= DEFAULT_SITE_URL_CONTEXT.siteOrigin;
+env['ROUAULT_SITE_ORIGIN'] = siteUrlContext.siteOrigin;
+env['ROUAULT_BASE_PATH'] = siteUrlContext.basePath;
 
 const result = spawnSync(command, ['build'], {
   env,
@@ -56,9 +72,10 @@ if (result.status !== 0) {
 
 try {
   await assertProductionCssArtifacts();
+  await assertProductionSiteUrlContext();
 } catch (error) {
   console.error(
-    '[production-build] production CSS artifact assertion failed:',
+    '[production-build] production artifact assertion failed:',
     error instanceof Error ? error.message : String(error),
   );
   process.exit(1);
