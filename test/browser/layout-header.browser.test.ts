@@ -16,6 +16,14 @@ import {
   THEME_CHANGE_EVENT,
   THEME_STORAGE_KEY,
 } from '../../src/theme/theme-manager.js';
+import {
+  createCorpusNavigationProjectionPayload,
+  EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
+  type CorpusNavigationItem,
+} from '../../shared/navigation/corpus-navigation-projection.js';
+
+const serializeCorpusPayload = (items: readonly CorpusNavigationItem[]) =>
+  JSON.stringify(createCorpusNavigationProjectionPayload(items));
 
 const expectPresent = <T>(value: T | null | undefined, name: string): T => {
   expect(value, `${name} should exist`).to.not.equal(null);
@@ -293,7 +301,10 @@ describe('layout-header browser contract', () => {
         <layout-header
           note-layout
           current-corpus-key="program"
-          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label","href":"/corpora/program/"}]'
+          corpora-json=${serializeCorpusPayload([
+            { key: 'all', label: 'すべてのノート', href: '/corpora/' },
+            { key: 'program', label: 'Program corpus with a relatively long label', href: '/corpora/program/' },
+          ])}
         ></layout-header>
       </div>
     `);
@@ -336,7 +347,10 @@ describe('layout-header browser contract', () => {
       <div style="inline-size: 640px; overflow: auto;">
         <layout-header
           current-corpus-key="program"
-          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for boundary verification","href":"/corpora/program/"}]'
+          corpora-json=${serializeCorpusPayload([
+            { key: 'all', label: 'すべてのノート', href: '/corpora/' },
+            { key: 'program', label: 'Program corpus with a relatively long label for boundary verification', href: '/corpora/program/' },
+          ])}
         ></layout-header>
       </div>
     `);
@@ -1410,7 +1424,7 @@ describe('layout-header browser contract', () => {
     await waitForLitUpdate(header);
 
     header.applyShellProjection({
-      corpora: [],
+      corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
       currentCorpusKey: 'all',
       noteLayout: true,
       sidebarEnabled: true,
@@ -1442,7 +1456,7 @@ describe('layout-header browser contract', () => {
     expect(header.getAttribute('data-toc-owner-id')).to.equal('old-owner-id');
 
     header.applyShellProjection({
-      corpora: [],
+      corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
       currentCorpusKey: 'all',
       noteLayout: false,
       sidebarEnabled: false,
@@ -1479,7 +1493,7 @@ describe('layout-header browser contract', () => {
     expect(header.readShellProjection().sidebarId).to.equal(DEFAULT_LAYOUT_SIDEBAR_ID);
 
     header.applyShellProjection({
-      corpora: [],
+      corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
       currentCorpusKey: 'all',
       noteLayout: false,
       sidebarEnabled: false,
@@ -1528,7 +1542,7 @@ describe('layout-header browser contract', () => {
     expect(trigger.disabled).to.equal(false);
 
     header.applyShellProjection({
-      corpora: [],
+      corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
       currentCorpusKey: 'all',
       noteLayout: true,
       sidebarEnabled: false,
@@ -1597,7 +1611,10 @@ describe('layout-header browser contract', () => {
           toc-runtime-id="test-toc"
           data-toc-owner-id="test-toc-owner"
           toc-trigger-reserved="true"
-          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for 639px boundary verification","href":"/corpora/program/"}]'
+          corpora-json=${serializeCorpusPayload([
+            { key: 'all', label: 'すべてのノート', href: '/corpora/' },
+            { key: 'program', label: 'Program corpus with a relatively long label for 639px boundary verification', href: '/corpora/program/' },
+          ])}
         ></layout-header>
       </div>
     `);
@@ -1697,7 +1714,10 @@ describe('layout-header browser contract', () => {
           toc-runtime-id="test-toc"
           data-toc-owner-id="test-toc-owner"
           toc-trigger-reserved="true"
-          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for mobile overflow verification","href":"/corpora/program/"}]'
+          corpora-json=${serializeCorpusPayload([
+            { key: 'all', label: 'すべてのノート', href: '/corpora/' },
+            { key: 'program', label: 'Program corpus with a relatively long label for mobile overflow verification', href: '/corpora/program/' },
+          ])}
         ></layout-header>
       </div>
     `);
@@ -1769,7 +1789,10 @@ describe('layout-header browser contract', () => {
           sidebar-enabled
           current-corpus-key="program"
           toc-presence="present"
-          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for desktop sidebar verification","href":"/corpora/program/"}]'
+          corpora-json=${serializeCorpusPayload([
+            { key: 'all', label: 'すべてのノート', href: '/corpora/' },
+            { key: 'program', label: 'Program corpus with a relatively long label for desktop sidebar verification', href: '/corpora/program/' },
+          ])}
         ></layout-header>
       </div>
     `);
@@ -1816,7 +1839,10 @@ describe('layout-header browser contract', () => {
           current-corpus-key="program"
           toc-presence="present"
           toc-runtime-id="test-toc"
-          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for packed-width verification","href":"/corpora/program/"}]'
+          corpora-json=${serializeCorpusPayload([
+            { key: 'all', label: 'すべてのノート', href: '/corpora/' },
+            { key: 'program', label: 'Program corpus with a relatively long label for packed-width verification', href: '/corpora/program/' },
+          ])}
         ></layout-header>
       </div>
     `);
@@ -2016,7 +2042,10 @@ describe('layout-header browser contract', () => {
         <layout-header
           note-layout
           current-corpus-key="program"
-          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus","href":"/corpora/program/"}]'
+          corpora-json=${serializeCorpusPayload([
+            { key: 'all', label: 'すべてのノート', href: '/corpora/' },
+            { key: 'program', label: 'Program corpus', href: '/corpora/program/' },
+          ])}
         ></layout-header>
       </div>
     `);
@@ -2077,7 +2106,10 @@ describe('layout-header browser contract', () => {
           current-corpus-key="program"
           toc-presence="present"
           toc-runtime-id="test-toc"
-          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus","href":"/corpora/program/"}]'
+          corpora-json=${serializeCorpusPayload([
+            { key: 'all', label: 'すべてのノート', href: '/corpora/' },
+            { key: 'program', label: 'Program corpus', href: '/corpora/program/' },
+          ])}
         ></layout-header>
       </div>
     `);

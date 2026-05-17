@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { createNavigationEnvelopeFromHtml } from '../../build/navigation/emit-navigation-artifacts.js';
+import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../shared/navigation/corpus-navigation-projection.js';
 
 const hasOwn = (value: object, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(value, key);
+
+const emptyCorpusPayloadJson = JSON.stringify(EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD);
 
 const createHtml = (options: {
   buildIdMeta?: string | null;
@@ -25,7 +28,7 @@ const createHtml = (options: {
       : `  <meta name="rouault-generated-at" content="${generatedAtMeta}">`,
     '</head>',
     '<body>',
-    '  <layout-header current-corpus-key="all" toc-presence="absent" sidebar-id="note-primary" corpora-json="[]"></layout-header>',
+    `  <layout-header current-corpus-key="all" toc-presence="absent" sidebar-id="note-primary" corpora-json='${emptyCorpusPayloadJson}'></layout-header>`,
     '  <app-router><main id="main-content"><p>body</p></main></app-router>',
     '</body>',
     '</html>',

@@ -6,6 +6,7 @@ import type {
   ShellUpdatePayload,
   StrictLoadedNavigationEnvelope,
 } from '../../src/router/router.js';
+import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../shared/navigation/corpus-navigation-projection.js';
 import { createCanonicalAbsentRuntimeSidebarProjection } from '../../shared/navigation/sidebar-shell-projection-contract.js';
 
 const acceptsPayloadShell = (value: PayloadDocumentShellSnapshot | null): PayloadDocumentShellSnapshot | null => value;
@@ -21,7 +22,7 @@ describe('router barrel shell projection types', () => {
 
     const runtimeShell: RuntimeDocumentShellSnapshot = {
       header: {
-        corpora: [],
+        corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
         currentCorpusKey: 'all',
         noteLayout: false,
         sidebarEnabled: false,

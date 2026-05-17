@@ -1,8 +1,5 @@
 import type { TocPresence } from '../note/toc-presence.js';
-import type {
-  CorpusNavigationItem,
-  CorpusNavigationProjectionPayload,
-} from './corpus-navigation-projection.js';
+import type { CorpusNavigationProjectionPayload } from './corpus-navigation-projection.js';
 import type {
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
   DEFAULT_SIDEBAR_ID,
@@ -13,7 +10,7 @@ import type {
 export type SidebarPresentation = 'auto' | 'fixed' | 'overlay';
 
 export interface HeaderShellProjection {
-  corpora: CorpusNavigationProjectionPayload | readonly CorpusNavigationItem[];
+  corpora: CorpusNavigationProjectionPayload;
   currentCorpusKey: string;
   noteLayout: boolean;
   sidebarEnabled: boolean;

@@ -5,6 +5,7 @@ import type { PayloadDocumentShellSnapshot } from '../../src/router/router.js';
 import '../../src/components/layout/layout-sidebar.js';
 import { createCanonicalAbsentRuntimeSidebarProjection } from '../../shared/navigation/sidebar-shell-projection-contract.js';
 import { validateRuntimeSidebarProjection } from '../../shared/navigation/shell-projection-validator.js';
+import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../shared/navigation/corpus-navigation-projection.js';
 import { layoutSidebarController } from '../../src/components/layout/layout-sidebar-controller.js';
 import { getLayoutSidebarTreeStateStorageKey } from '../../src/components/layout/layout-sidebar-tree-state.js';
 import {
@@ -94,7 +95,7 @@ interface SidebarProjectionMethodHost extends HTMLElement {
 }
 
 const headerSnapshot: PayloadDocumentShellSnapshot['header'] = {
-  corpora: [],
+  corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
   currentCorpusKey: 'all',
   noteLayout: true,
   sidebarEnabled: true,
@@ -503,7 +504,7 @@ describe('layout-sidebar shell projection browser contract', () => {
     applyPayloadShellSnapshot(
       {
         header: {
-          corpora: [],
+          corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
           currentCorpusKey: 'all',
           noteLayout: false,
           sidebarEnabled: false,
@@ -554,7 +555,7 @@ describe('layout-sidebar shell projection browser contract', () => {
     applyRuntimeSidebarSnapshotForRollback(
       {
         header: {
-          corpora: [],
+          corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
           currentCorpusKey: 'all',
           noteLayout: false,
           sidebarEnabled: false,

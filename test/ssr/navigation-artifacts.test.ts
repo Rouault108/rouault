@@ -16,6 +16,16 @@ import {
   createTocSourceSideEffect,
   tocSideEffectDirectives,
 } from '../../src/toc/toc-source-side-effects.js';
+import {
+  createCorpusNavigationProjectionPayload,
+  EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
+  type CorpusNavigationItem,
+} from '../../shared/navigation/corpus-navigation-projection.js';
+
+const serializeCorpusPayload = (items: readonly CorpusNavigationItem[]) =>
+  JSON.stringify(createCorpusNavigationProjectionPayload(items));
+
+const emptyCorpusPayloadJson = JSON.stringify(EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD);
 
 describe('navigation artifacts', () => {
   const notesGroupId = createSidebarGroupId(
@@ -75,7 +85,7 @@ describe('navigation artifacts', () => {
       sidebar-id="note-primary"
       toc-presence="present"
       toc-trigger-reserved="true"
-      corpora-json='[{"key":"all","label":"All","href":"/corpora/"}]'
+      corpora-json='${serializeCorpusPayload([{ key: 'all', label: 'All', href: '/corpora/' }])}'
       current-corpus-key="all"
       toc-runtime-id="toc-source-example"
       data-toc-owner-id="toc-owner-test"
@@ -154,7 +164,7 @@ describe('navigation artifacts', () => {
       sidebar-enabled
       sidebar-id="note-primary"
       toc-presence="absent"
-      corpora-json="[]"
+      corpora-json='${emptyCorpusPayloadJson}'
       current-corpus-key="all"
       toc-trigger-reserved="false"
     ></layout-header>
@@ -205,7 +215,7 @@ describe('navigation artifacts', () => {
   <meta name="rouault-generated-at" content="2026-04-11T00:00:00.000Z">
 </head>
 <body>
-  <layout-header current-corpus-key="all" toc-presence="absent" toc-runtime-id="" sidebar-id="note-primary" corpora-json="[]"></layout-header>
+  <layout-header current-corpus-key="all" toc-presence="absent" toc-runtime-id="" sidebar-id="note-primary" corpora-json='${emptyCorpusPayloadJson}'></layout-header>
   <app-router>
     <div data-app-router-announcement="" aria-live="polite" aria-atomic="true" class="sr-only"></div>
     <main id="main-content"><p>body</p></main>
@@ -253,7 +263,7 @@ describe('navigation artifacts', () => {
   <title>Absent Sidebar - Rouault</title>
 </head>
 <body>
-  <layout-header current-corpus-key="all" toc-presence="absent" sidebar-id="note-secondary" corpora-json="[]"></layout-header>
+  <layout-header current-corpus-key="all" toc-presence="absent" sidebar-id="note-secondary" corpora-json='${emptyCorpusPayloadJson}'></layout-header>
   <app-router>
     <main id="main-content"><p>body</p></main>
   </app-router>

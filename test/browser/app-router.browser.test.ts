@@ -15,6 +15,11 @@ import { createRouterContentHtml } from '../../src/router/router-content-html.js
 import { PRIMARY_TAB_URL_STATE_CHANGE_EVENT } from '../../src/components/app/navigation/primary-tab-url-state.js';
 import { ensureMainCssLoaded } from './helpers/load-main-css.js';
 import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
+import {
+  createCorpusNavigationProjectionPayload,
+  EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
+  type CorpusNavigationItem,
+} from '../../shared/navigation/corpus-navigation-projection.js';
 
 type AppRouterElement = HTMLElement & {
   ready: Promise<void>;
@@ -33,6 +38,12 @@ const getPersistentSidebarColumn = (root: ParentNode): HTMLElement | null =>
 
 const VALID_SIDEBAR_NAV_HTML =
   '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="topology:test"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></nav>';
+
+const createCorpusPayload = (items: readonly CorpusNavigationItem[]) =>
+  createCorpusNavigationProjectionPayload(items);
+
+const serializeCorpusPayload = (items: readonly CorpusNavigationItem[]) =>
+  JSON.stringify(createCorpusPayload(items));
 
 const createValidSidebarProjection = (): ShellProjectionSnapshot['sidebar'] => ({
   present: true,
@@ -729,7 +740,9 @@ describe('app-router', () => {
   it('shell adapter 経由で layout-header を同期すること', async () => {
     const header = await fixture<HTMLElement>(
       html`<layout-header
-        corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"}]'
+        corpora-json=${serializeCorpusPayload([
+          { key: 'all', label: 'すべてのノート', href: '/corpora/' },
+        ])}
         current-corpus-key="all"
       ></layout-header>`,
     );
@@ -742,10 +755,10 @@ describe('app-router', () => {
           description: 'header sync',
           shellProjection: {
             header: {
-              corpora: [
+              corpora: createCorpusPayload([
                 { key: 'all', label: 'すべてのノート', href: '/corpora/' },
                 { key: 'music', label: '音楽', href: '/corpora/music/' },
-              ],
+              ]),
               currentCorpusKey: 'music',
               noteLayout: true,
               sidebarEnabled: true,
@@ -779,7 +792,10 @@ describe('app-router', () => {
     expect(header.hasAttribute('sidebar-enabled')).to.equal(true);
     expect(header.getAttribute('toc-presence')).to.equal('present');
     expect(header.getAttribute('corpora-json')).to.equal(
-      '[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]',
+      serializeCorpusPayload([
+        { key: 'all', label: 'すべてのノート', href: '/corpora/' },
+        { key: 'music', label: '音楽', href: '/corpora/music/' },
+      ]),
     );
     expect(header.getAttribute('current-corpus-key')).to.equal('music');
   });
@@ -840,7 +856,7 @@ describe('app-router', () => {
           description: 'sidebar sync',
           shellProjection: {
             header: {
-              corpora: [],
+              corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
               currentCorpusKey: 'music',
               noteLayout: false,
               sidebarEnabled: true,
@@ -941,7 +957,7 @@ describe('app-router', () => {
           description: 'heading removed',
           shellProjection: {
             header: {
-              corpora: [],
+              corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
               currentCorpusKey: 'all',
               noteLayout: false,
               sidebarEnabled: true,
@@ -1038,7 +1054,7 @@ describe('app-router', () => {
           description: 'no sidebar',
           shellProjection: {
             header: {
-              corpora: [],
+              corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
               currentCorpusKey: 'all',
               noteLayout: false,
               sidebarEnabled: false,
@@ -1131,7 +1147,7 @@ describe('app-router', () => {
           description: 'defensive absent',
           shellProjection: {
             header: {
-              corpora: [],
+              corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
               currentCorpusKey: 'all',
               noteLayout: false,
               sidebarEnabled: false,
@@ -1247,7 +1263,7 @@ describe('app-router', () => {
           description: 'broken sidebar sync',
           shellProjection: {
             header: {
-              corpora: [],
+              corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
               currentCorpusKey: 'music',
               noteLayout: false,
               sidebarEnabled: true,
@@ -1301,7 +1317,9 @@ describe('app-router', () => {
 
     const header = await fixture<HTMLElement>(
       html`<layout-header
-        corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"}]'
+        corpora-json=${serializeCorpusPayload([
+          { key: 'all', label: 'すべてのノート', href: '/corpora/' },
+        ])}
         current-corpus-key="all"
       ></layout-header>`,
     );
@@ -1328,7 +1346,9 @@ describe('app-router', () => {
           description: 'broken header sync',
           shellProjection: {
             header: {
-              corpora: [{ key: 'music', label: '音楽', href: '/corpora/music/' }],
+              corpora: createCorpusPayload([
+                { key: 'music', label: '音楽', href: '/corpora/music/' },
+              ]),
               currentCorpusKey: 'music',
               noteLayout: true,
               sidebarEnabled: true,
@@ -1364,7 +1384,7 @@ describe('app-router', () => {
     expect(result.degraded).to.equal(false);
     expect(result.issues).to.deep.equal([]);
     expect(header.getAttribute('corpora-json')).to.equal(
-      '[{"key":"all","label":"すべてのノート","href":"/corpora/"}]',
+      serializeCorpusPayload([{ key: 'all', label: 'すべてのノート', href: '/corpora/' }]),
     );
     expect(header.getAttribute('current-corpus-key')).to.equal('all');
     expect(header.hasAttribute('note-layout')).to.equal(false);
