@@ -55,10 +55,15 @@ export function renderSearchDialog(host: RenderSearchDialogHost): TemplateResult
   const hasQuery = host.query.trim() !== '';
   const showUnavailable = host.unavailable;
   const showLoading = !showUnavailable && host.loading;
-  const showError = !showLoading && host.error !== null;
-  const showResults = !showLoading && !showError && host.results.length > 0;
+  const showError = !showUnavailable && !showLoading && host.error !== null;
+  const showResults = !showUnavailable && !showLoading && !showError && host.results.length > 0;
   const showEmpty =
-    !showLoading && !showError && hasQuery && host.hasCompletedSearch && host.results.length === 0;
+    !showUnavailable &&
+    !showLoading &&
+    !showError &&
+    hasQuery &&
+    host.hasCompletedSearch &&
+    host.results.length === 0;
   const activeOptionId = host.activeId ? host.getOptionId(host.activeId) : '';
   const visibleResults = showResults
     ? host.results.slice(host.visibleRange.start, host.visibleRange.end)

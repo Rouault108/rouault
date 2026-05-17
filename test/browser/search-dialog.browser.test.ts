@@ -9,7 +9,10 @@ import type {
   UiSearchDialogSearchResult,
   UiSearchDialogSelectedDetail,
 } from '../../src/components/ui/search-dialog/search-dialog.types.js';
-import { BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE } from '../../src/components/ui/search-dialog/search-dialog.constants.js';
+import {
+  BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE,
+  SEARCH_DEBOUNCE_MS,
+} from '../../src/components/ui/search-dialog/search-dialog.constants.js';
 import { nextAnimationFrame, waitForLitUpdate, waitMs } from './helpers/wait-for-lit.js';
 
 interface SearchFieldLike extends HTMLElement {
@@ -105,6 +108,9 @@ const getCloseButton = (dialog: UiSearchDialog): HTMLButtonElement =>
 
 const getResultItems = (dialog: UiSearchDialog): HTMLElement[] =>
   Array.from(dialog.shadowRoot?.querySelectorAll<HTMLElement>('.result-item') ?? []);
+
+const getSearchState = (dialog: UiSearchDialog, selector: string): HTMLElement =>
+  expectPresent(dialog.shadowRoot?.querySelector<HTMLElement>(selector), selector);
 
 const waitUntil = async (
   predicate: () => boolean,
@@ -203,6 +209,47 @@ const waitForResults = async (dialog: UiSearchDialog): Promise<void> => {
     25,
     'search results did not appear',
   );
+};
+
+const withCapturedSearchFailures = async (callback: () => Promise<void>): Promise<unknown[][]> => {
+  const originalError = console.error;
+  const failures: unknown[][] = [];
+
+  console.error = (...args: unknown[]) => {
+    if (args[0] === '[ui-search-dialog] search failed') {
+      failures.push(args);
+      return;
+    }
+
+    originalError(...args);
+  };
+
+  try {
+    await callback();
+    return failures;
+  } finally {
+    console.error = originalError;
+  }
+};
+
+const waitPastSearchDebounce = async (dialog: UiSearchDialog): Promise<void> => {
+  await waitMs(SEARCH_DEBOUNCE_MS + 50);
+  await waitForLitUpdate(dialog);
+  await nextAnimationFrame();
+};
+
+const expectUnavailableOnly = (dialog: UiSearchDialog): void => {
+  const text = dialog.shadowRoot?.textContent ?? '';
+  const errorStates = Array.from(
+    dialog.shadowRoot?.querySelectorAll<HTMLElement>('.error-state') ?? [],
+  );
+
+  expect(text).to.contain('検索を利用できません');
+  expect(getSearchState(dialog, '.loading-state').hidden).to.equal(true);
+  expect(getSearchState(dialog, '.empty-state').hidden).to.equal(true);
+  expect(expectPresent(errorStates[0], 'unavailable state').hidden).to.equal(false);
+  expect(expectPresent(errorStates[1], 'error state').hidden).to.equal(true);
+  expect(getSearchState(dialog, '.result-list').hidden).to.equal(true);
 };
 
 describe('ui-search-dialog browser contract', () => {
@@ -574,5 +621,123 @@ describe('ui-search-dialog browser contract', () => {
     const text = dialog.shadowRoot?.textContent ?? '';
     expect(text).to.contain('検索結果を取得できませんでした');
     expect(text).to.contain('時間をおいて再度お試しください');
+  });
+
+  it('search unavailable 中に query を変更しても検索エラーへ遷移しないこと', async () => {
+    const failures = await withCapturedSearchFailures(async () => {
+      const wrapper = await fixture<HTMLDivElement>(html`
+        <div>
+          <button data-testid="trigger" type="button">検索を開く</button>
+          <ui-search-dialog
+            .items=${[]}
+            .searcher=${null}
+            .searchUnavailable=${true}
+            search-unavailable-reason="route-manifest-invalid"
+          ></ui-search-dialog>
+        </div>
+      `);
+
+      const dialog = await requestOpen(wrapper);
+
+      await setQuery(dialog, 'alpha');
+      expectUnavailableOnly(dialog);
+
+      await waitPastSearchDebounce(dialog);
+      expectUnavailableOnly(dialog);
+    });
+
+    expect(failures).to.deep.equal([]);
+  });
+
+  it('search unavailable 中は searcher を持っていても query 変更で searcher を呼ばないこと', async () => {
+    let searcherCallCount = 0;
+    const searcher = async (): Promise<UiSearchDialogSearchResult> => {
+      searcherCallCount += 1;
+      return {
+        items: FIXTURE_ITEMS.slice(0, 1),
+      };
+    };
+
+    const failures = await withCapturedSearchFailures(async () => {
+      const wrapper = await fixture<HTMLDivElement>(html`
+        <div>
+          <button data-testid="trigger" type="button">検索を開く</button>
+          <ui-search-dialog
+            .items=${[]}
+            .searcher=${searcher}
+            .searchUnavailable=${true}
+            search-unavailable-reason="route-manifest-invalid"
+          ></ui-search-dialog>
+        </div>
+      `);
+
+      const dialog = await requestOpen(wrapper);
+
+      await setQuery(dialog, 'alpha');
+      await waitPastSearchDebounce(dialog);
+
+      expect(searcherCallCount).to.equal(0);
+      expectUnavailableOnly(dialog);
+    });
+
+    expect(failures).to.deep.equal([]);
+  });
+
+  it('search unavailable 中も検索入力欄と close 操作を維持すること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div>
+        <button data-testid="trigger" type="button">検索を開く</button>
+        <ui-search-dialog
+          .items=${[]}
+          .searchUnavailable=${true}
+          search-unavailable-reason="route-manifest-invalid"
+        ></ui-search-dialog>
+      </div>
+    `);
+
+    const dialog = await requestOpen(wrapper);
+    const nativeDialog = getNativeDialog(dialog);
+    const closeReasons: string[] = [];
+
+    dialog.addEventListener('ui-search-dialog-close-requested', (event) => {
+      closeReasons.push((event as CustomEvent<UiSearchDialogCloseRequestedDetail>).detail.reason);
+    });
+
+    expect(getSearchField(dialog)).to.not.equal(null);
+    expect(getSearchInput(dialog)).to.not.equal(null);
+    expect(getCloseButton(dialog)).to.not.equal(null);
+
+    getCloseButton(dialog).click();
+    await waitUntil(() => nativeDialog.open === false, 1500, 20, 'native dialog did not close');
+
+    expect(dialog.opened).to.equal(false);
+    expect(closeReasons).to.deep.equal(['close-button']);
+  });
+
+  it('search unavailable は既存 error / empty / results / loading より優先して表示すること', async () => {
+    const dialog = await fixture<UiSearchDialog>(html`
+      <ui-search-dialog
+        .opened=${true}
+        .items=${[]}
+        .searchUnavailable=${true}
+        search-unavailable-reason="route-manifest-invalid"
+      ></ui-search-dialog>
+    `);
+
+    await waitForLitUpdate(dialog);
+
+    dialog.loading = true;
+    dialog.searcher = async (): Promise<UiSearchDialogSearchResult> => ({
+      items: [],
+      error: {
+        code: 'search-failed',
+      },
+    });
+
+    await waitForLitUpdate(dialog);
+    await setQuery(dialog, 'あ');
+    await waitPastSearchDebounce(dialog);
+
+    expectUnavailableOnly(dialog);
   });
 });

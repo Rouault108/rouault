@@ -155,6 +155,7 @@ export class UiSearchDialog extends LitElement {
     this._searchSession = new SearchDialogSearchSession({
       getQuery: () => this.query,
       isLoading: () => this.loading,
+      isUnavailable: () => this.searchUnavailable,
       getItems: () => this.items,
       getSearcher: () => this.searcher,
       getMatchFields: () => this.matchFields,
