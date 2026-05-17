@@ -16,6 +16,7 @@ import { SearchDialogSearchWorker } from './search-dialog-search-worker.js';
 export interface SearchDialogSearchSessionHost {
   getQuery(): string;
   isLoading(): boolean;
+  isUnavailable?(): boolean;
   getItems(): readonly UiSearchDialogItem[];
   getSearcher(): UiSearchDialogSearcher | null;
   getMatchFields(): readonly UiSearchDialogMatchField[];
@@ -55,11 +56,19 @@ export class SearchDialogSearchSession {
   }
 
   handleQueryChanged(): void {
+    if (this._isUnavailable()) {
+      this.clearUnavailableState();
+      return;
+    }
     const trimmedQuery = this._syncObservedQuery({ abortOnChange: true });
     this._scheduleSearch(trimmedQuery);
   }
 
   handleLoadingChanged(): void {
+    if (this._isUnavailable()) {
+      this.clearUnavailableState();
+      return;
+    }
     if (this._host.isLoading()) {
       this._host.setLiveMessage(LOADING_MESSAGE);
       return;
@@ -70,6 +79,10 @@ export class SearchDialogSearchSession {
   }
 
   requestSearchNow(): void {
+    if (this._isUnavailable()) {
+      this.clearUnavailableState();
+      return;
+    }
     const trimmedQuery = this._syncObservedQuery({ abortOnChange: false });
     if (trimmedQuery === '') return;
     if (this._host.isLoading()) return;
@@ -92,6 +105,11 @@ export class SearchDialogSearchSession {
   private _scheduleSearch(trimmedQuery: string): void {
     this.clearScheduled();
     this._searchToken += 1;
+
+    if (this._isUnavailable()) {
+      this.clearUnavailableState();
+      return;
+    }
 
     if (trimmedQuery === '') {
       this._abortController?.abort();
@@ -122,6 +140,10 @@ export class SearchDialogSearchSession {
   }
 
   private async _executeSearch(query: string, token: number): Promise<void> {
+    if (this._isUnavailable()) {
+      this.clearUnavailableState();
+      return;
+    }
     let rawResults: readonly UiSearchDialogItem[];
 
     try {
@@ -167,6 +189,9 @@ export class SearchDialogSearchSession {
   }
 
   private async _runSearch(query: string, token: number): Promise<readonly UiSearchDialogItem[]> {
+    if (this._isUnavailable()) {
+      return [];
+    }
     const searcher = this._host.getSearcher();
     const items = this._host.getItems();
 
@@ -238,6 +263,23 @@ export class SearchDialogSearchSession {
         }
       });
     });
+  }
+
+  private _isUnavailable(): boolean {
+    return this._host.isUnavailable?.() === true;
+  }
+
+  clearUnavailableState(): void {
+    this.clearScheduled();
+    this._searchToken += 1;
+    this._abortController?.abort();
+    this._abortController = null;
+    this._lastObservedQuery = '';
+    this._host.setResults([]);
+    this._host.setActiveId(null);
+    this._host.setHasCompletedSearch(false);
+    this._host.setError(null);
+    this._host.setLiveMessage('');
   }
 
   private _normalizeResults(results: readonly UiSearchDialogItem[]): UiSearchDialogItem[] {

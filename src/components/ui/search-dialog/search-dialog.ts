@@ -29,6 +29,10 @@ import type {
   UiSearchDialogSelectedDetail,
 } from './search-dialog.types.js';
 import { renderSearchDialog } from './views/render-search-dialog.js';
+import {
+  getSearchBootstrapUnavailableMessage,
+  type SearchBootstrapUnavailableReason,
+} from '../../../../shared/search/search-unavailable-reason.js';
 
 const DEFAULT_MATCH_FIELDS: readonly UiSearchDialogMatchField[] = ['title', 'path', 'keywords'];
 const DEFAULT_MESSAGES: UiSearchDialogMessages = {
@@ -62,6 +66,12 @@ export class UiSearchDialog extends LitElement {
 
   @property({ attribute: false })
   searcher: UiSearchDialogSearcher | null = null;
+
+  @property({ type: Boolean, attribute: 'search-unavailable', reflect: true })
+  searchUnavailable = false;
+
+  @property({ type: String, attribute: 'search-unavailable-reason', reflect: true })
+  searchUnavailableReason: SearchBootstrapUnavailableReason | '' = '';
 
   @property({ attribute: false })
   messages: Partial<UiSearchDialogMessages> = {};
@@ -172,6 +182,7 @@ export class UiSearchDialog extends LitElement {
     this._selectionModel = new SearchDialogSelectionModel(
       {
         isLoading: () => this.loading,
+        isUnavailable: () => this.searchUnavailable,
         getResults: () => this._results,
         getActiveId: () => this._activeId,
         setActiveId: (id) => {
@@ -216,6 +227,12 @@ export class UiSearchDialog extends LitElement {
   }
 
   protected override willUpdate(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has('searchUnavailable')) {
+      if (this.searchUnavailable) {
+        this._clearUnavailableState();
+      }
+    }
+
     if (changedProperties.has('query')) {
       this._virtualScrollTop = 0;
       this._searchSession.handleQueryChanged();
@@ -227,6 +244,14 @@ export class UiSearchDialog extends LitElement {
   }
 
   protected override updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has('searchUnavailable')) {
+      if (this.searchUnavailable) {
+        this.dataset['searchUnavailable'] = 'true';
+      } else {
+        delete this.dataset['searchUnavailable'];
+      }
+    }
+
     if (changedProperties.has('opened')) {
       if (!this.opened) {
         this._controller.setPendingCloseReason(this._lastCloseReason);
@@ -280,6 +305,21 @@ export class UiSearchDialog extends LitElement {
     this._liveMessage = message;
   }
 
+  private _clearUnavailableState(): void {
+    this._searchSession.clearUnavailableState();
+    this._results = [];
+    this._activeId = null;
+    this._error = null;
+    this._hasCompletedSearch = false;
+    this._virtualScrollTop = 0;
+    this.loading = false;
+    this._setLiveMessage(
+      this.searchUnavailableReason
+        ? getSearchBootstrapUnavailableMessage(this.searchUnavailableReason)
+        : '',
+    );
+  }
+
   private readonly _onInput = (event: Event): void => {
     const input = event.currentTarget;
     if (!input || typeof input !== 'object' || !('value' in input)) return;
@@ -326,6 +366,10 @@ export class UiSearchDialog extends LitElement {
     return renderSearchDialog({
       query: this.query,
       loading: this.loading,
+      unavailable: this.searchUnavailable,
+      unavailableMessage: this.searchUnavailableReason
+        ? getSearchBootstrapUnavailableMessage(this.searchUnavailableReason)
+        : '',
       results: this._results,
       activeId: this._activeId,
       liveMessage: this._liveMessage,

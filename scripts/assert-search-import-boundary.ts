@@ -46,8 +46,26 @@ export const findSearchImportBoundaryViolations = (): Promise<string[]> => {
   if (searchPageText.includes('pathname.startsWith(\'/\')')) {
     violations.push('search import boundary violation: src/components/search/search-page.ts: SearchPage must not fake a route manifest predicate');
   }
-  if (!searchPageText.includes('getInitializedSearchCore')) {
-    violations.push('search import boundary violation: src/components/search/search-page.ts: SearchPage must consume the bootstrap-initialized Search runtime');
+  if (!searchPageText.includes('getInitializedSearchBootstrapState')) {
+    violations.push('search import boundary violation: src/components/search/search-page.ts: SearchPage must consume the bootstrap state');
+  }
+  if (/type\s+SearchBootstrapUnavailableReason\s*=/u.test(bootstrapText)) {
+    violations.push('search import boundary violation: src/search/bootstrap.ts: unavailable reason must use shared/search/search-unavailable-reason.ts');
+  }
+  if (/_results:\s*SearchResultItem\[\]/u.test(searchPageText)) {
+    violations.push('search import boundary violation: src/components/search/search-page.ts: _results must not be fixed to SearchResultItem[]');
+  }
+  const parseInitialResponseStart = searchPageText.indexOf('private _parseInitialResponse():');
+  const parseInitialResponseEnd = searchPageText.indexOf('\n  }\n}', parseInitialResponseStart);
+  const parseInitialResponseBody =
+    parseInitialResponseStart >= 0 && parseInitialResponseEnd >= 0
+      ? searchPageText.slice(parseInitialResponseStart, parseInitialResponseEnd)
+      : '';
+  if (parseInitialResponseBody.includes('renderHref:')) {
+    violations.push('search import boundary violation: src/components/search/search-page.ts: initial response parsing must not add renderHref');
+  }
+  if (/catch\s*\{\s*return\s+canonicalPathname\s*;/u.test(searchPageText)) {
+    violations.push('search import boundary violation: src/components/search/search-page.ts: canonical pathname must not be active href fallback');
   }
   const pagefindSourceText = readFileSync('src/search/sources/pagefind-source.ts', 'utf8');
   if (/createDefaultPagefindLoader\b/u.test(pagefindSourceText)) {

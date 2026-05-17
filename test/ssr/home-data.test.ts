@@ -103,6 +103,7 @@ describe('buildHomePageProjection', () => {
     expect(home.notes[0]).toEqual({
       title: 'Alpha',
       permalink: '/notes/alpha/',
+      renderHref: '/notes/alpha/',
       summary: '最初の要約',
       date: '2026-03-10',
       pathLabel: 'music / alpha',
@@ -111,6 +112,7 @@ describe('buildHomePageProjection', () => {
     expect(home.notes[1]).toEqual({
       title: 'Alpha',
       permalink: '/notes/alpha-b/',
+      renderHref: '/notes/alpha-b/',
       summary: '同名タイトル',
       date: '2026-03-10',
       pathLabel: 'music / alpha-b',
@@ -119,6 +121,7 @@ describe('buildHomePageProjection', () => {
     expect(home.notes[2]).toEqual({
       title: 'Gamma',
       permalink: '/notes/gamma/',
+      renderHref: '/notes/gamma/',
       summary: '三番目の要約',
       date: '2026-03-10',
       pathLabel: 'music / gamma',

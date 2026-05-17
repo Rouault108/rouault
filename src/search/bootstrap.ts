@@ -17,6 +17,7 @@ import { buildSearchResultRenderHref } from './normalize-search-result-url.js';
 import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
 import { createSearchCanonicalPathname } from '../../shared/search/document-url.js';
 import { createSearchEventDiagnosticSink } from '../../shared/search/search-diagnostics.js';
+import type { SearchBootstrapUnavailableReason } from '../../shared/search/search-unavailable-reason.js';
 
 interface SearchDialogElement extends HTMLElement {
   opened: boolean;
@@ -24,6 +25,8 @@ interface SearchDialogElement extends HTMLElement {
   captureOpenModality(modality?: InteractionModality): void;
   requestOpen(trigger?: HTMLElement): void;
   searcher?: UiSearchDialogSearcher | null | undefined;
+  searchUnavailable: boolean;
+  searchUnavailableReason: SearchBootstrapUnavailableReason | '';
 }
 
 let initialized = false;
@@ -32,14 +35,17 @@ let initializedDialog: SearchDialogElement | null = null;
 let previousSearcher: SearchDialogElement['searcher'] = undefined;
 let initializedSearchCore: SearchCore | null = null;
 let initializedSearchRoutePredicate: ((pathname: string) => boolean) | null = null;
+let initializedSearchBootstrapState: SearchBootstrapState | null = null;
 let hadSearcherProperty = false;
 let hadOwnSearcherProperty = false;
 
-export type SearchBootstrapUnavailableReason =
-  | 'route-manifest-unavailable'
-  | 'route-manifest-invalid'
-  | 'route-manifest-stale'
-  | 'search-runtime-unavailable';
+export type SearchBootstrapState =
+  | {
+      readonly status: 'ready';
+      readonly searchCore: SearchCore;
+      readonly isInternalDocumentPathname: (pathname: string) => boolean;
+    }
+  | { readonly status: 'unavailable'; readonly reason: SearchBootstrapUnavailableReason };
 
 export type SearchBootstrapResult =
   | { readonly status: 'ready'; readonly searchCore: SearchCore }
@@ -74,10 +80,18 @@ const createRuntimeSearchCore = (options: {
     artifactUrlResolver: createSearchArtifactUrlResolver({ siteUrlContext: options.siteUrlContext }),
   });
 
-export const getInitializedSearchCore = (): SearchCore | null => initializedSearchCore;
+export const getInitializedSearchBootstrapState = (): SearchBootstrapState | null =>
+  initializedSearchBootstrapState;
+
+export const getInitializedSearchCore = (): SearchCore | null =>
+  initializedSearchBootstrapState?.status === 'ready'
+    ? initializedSearchBootstrapState.searchCore
+    : initializedSearchCore;
 
 export const getInitializedSearchRoutePredicate = (): ((pathname: string) => boolean) | null =>
-  initializedSearchRoutePredicate;
+  initializedSearchBootstrapState?.status === 'ready'
+    ? initializedSearchBootstrapState.isInternalDocumentPathname
+    : initializedSearchRoutePredicate;
 
 const assertSearchBootstrapNotInitialized = (): void => {
   if (initialized) {
@@ -108,16 +122,28 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
     initialized = true;
     initializedSearchCore = controller;
     initializedSearchRoutePredicate = isInternalDocumentPathname;
+    initializedSearchBootstrapState = {
+      status: 'ready',
+      searchCore: controller,
+      isInternalDocumentPathname,
+    };
     return { status: 'ready', searchCore: controller };
   }
 
   initialized = true;
   initializedSearchCore = controller;
   initializedSearchRoutePredicate = isInternalDocumentPathname;
+  initializedSearchBootstrapState = {
+    status: 'ready',
+    searchCore: controller,
+    isInternalDocumentPathname,
+  };
   initializedDialog = dialog;
   hadSearcherProperty = 'searcher' in dialog;
   hadOwnSearcherProperty = Object.prototype.hasOwnProperty.call(dialog, 'searcher');
   previousSearcher = hadSearcherProperty ? dialog.searcher : undefined;
+  dialog.searchUnavailable = false;
+  dialog.searchUnavailableReason = '';
   bootstrapListenerController = new AbortController();
   const { signal } = bootstrapListenerController;
   const searchEventDiagnostics = createSearchEventDiagnosticSink();
@@ -269,6 +295,7 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
   initialized = true;
   initializedSearchCore = null;
   initializedSearchRoutePredicate = null;
+  initializedSearchBootstrapState = { status: 'unavailable', reason: options.reason };
   initializedDialog = dialog;
   if (!dialog) {
     return { status: 'unavailable', reason: options.reason };
@@ -278,6 +305,57 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
   hadOwnSearcherProperty = Object.prototype.hasOwnProperty.call(dialog, 'searcher');
   previousSearcher = hadSearcherProperty ? dialog.searcher : undefined;
   dialog.searcher = null;
+  dialog.searchUnavailable = true;
+  dialog.searchUnavailableReason = options.reason;
+  bootstrapListenerController = new AbortController();
+  const { signal } = bootstrapListenerController;
+
+  const onOpenSearchDialog = (event: Event): void => {
+    const trigger = event.target instanceof HTMLElement ? event.target : undefined;
+    dialog.captureOpenModality();
+    dialog.requestOpen(trigger);
+  };
+
+  const onOpenRequested = (): void => {
+    dialog.opened = true;
+  };
+
+  const onCloseRequested = (): void => {
+    dialog.opened = false;
+  };
+
+  const onQueryChanged = (event: Event): void => {
+    const customEvent = event as CustomEvent<{ query?: string }>;
+    dialog.query = typeof customEvent.detail.query === 'string' ? customEvent.detail.query : '';
+  };
+
+  const onKeydown = (event: KeyboardEvent): void => {
+    if (event.key.toLowerCase() !== 'k' || (!event.metaKey && !event.ctrlKey)) {
+      return;
+    }
+
+    const target = event.target;
+    if (
+      target instanceof HTMLElement &&
+      (target.isContentEditable ||
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement)
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    const trigger =
+      document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+    dialog.captureOpenModality('keyboard');
+    dialog.requestOpen(trigger);
+  };
+
+  document.addEventListener('open-search-dialog', onOpenSearchDialog, { signal });
+  dialog.addEventListener('ui-search-dialog-open-requested', onOpenRequested, { signal });
+  dialog.addEventListener('ui-search-dialog-close-requested', onCloseRequested, { signal });
+  dialog.addEventListener('ui-search-dialog-query-changed', onQueryChanged, { signal });
+  document.addEventListener('keydown', onKeydown, { signal });
   return { status: 'unavailable', reason: options.reason };
 }
 
@@ -286,6 +364,8 @@ export function resetSearchBootstrapForTest(): void {
   bootstrapListenerController = null;
 
   if (initializedDialog) {
+    initializedDialog.searchUnavailable = false;
+    initializedDialog.searchUnavailableReason = '';
     if (hadSearcherProperty) {
       initializedDialog.searcher = previousSearcher;
 
@@ -300,6 +380,7 @@ export function resetSearchBootstrapForTest(): void {
   initializedDialog = null;
   initializedSearchCore = null;
   initializedSearchRoutePredicate = null;
+  initializedSearchBootstrapState = null;
   previousSearcher = undefined;
   hadSearcherProperty = false;
   hadOwnSearcherProperty = false;

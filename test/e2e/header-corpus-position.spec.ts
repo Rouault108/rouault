@@ -107,17 +107,25 @@ const readHeaderCorpusState = async (page: Page): Promise<HeaderCorpusState> => 
           corporaJson?: string;
           readShellProjection?: () => {
             currentCorpusKey: string;
-            corpora: { key: string; label: string; href: string }[];
+            corpora:
+              | { items?: { key: string; label: string; href: string }[] }
+              | { key: string; label: string; href: string }[];
           };
         })
       | null;
     const projection = header?.readShellProjection?.();
     const corpusDropdown = header?.shadowRoot?.querySelector('.corpus-switcher');
+    const rawCorpora = projection?.corpora;
+    const corpora = Array.isArray(rawCorpora)
+      ? rawCorpora
+      : Array.isArray(rawCorpora?.items)
+        ? rawCorpora.items
+        : [];
 
     return {
       currentCorpusKey: projection?.currentCorpusKey ?? header?.currentCorpusKey ?? null,
-      corpora: projection?.corpora ?? [],
-      menuItemCount: corpusDropdown?.querySelectorAll('ui-menu-item').length ?? null,
+      corpora,
+      menuItemCount: corpusDropdown?.querySelectorAll('ui-menu-link').length ?? null,
       noteLayout: header?.hasAttribute('note-layout') ?? false,
       sidebarEnabled: header?.hasAttribute('sidebar-enabled') ?? false,
     };

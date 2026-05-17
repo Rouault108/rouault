@@ -15,7 +15,10 @@ import type { SelectOption } from '../../components/ui/select/select.js';
 import { HIGHLIGHT_RULE_TEMPLATE } from '../ui/highlight/highlight.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
 import type { SearchCore } from '../../search/search-core.js';
-import { getInitializedSearchCore, getInitializedSearchRoutePredicate } from '../../search/bootstrap.js';
+import {
+  getInitializedSearchBootstrapState,
+  getInitializedSearchRoutePredicate,
+} from '../../search/bootstrap.js';
 import { buildSearchResultRenderHref } from '../../search/normalize-search-result-url.js';
 import { isDefaultInternalResourcePathname } from '../../../shared/link/link-annotation.js';
 import { createSearchJsonParseDiagnosticSink } from '../../../shared/search/search-diagnostics.js';
@@ -33,13 +36,17 @@ import {
   type SearchSortMode,
 } from '../../../shared/search/search-url.js';
 import type {
-  ExploreSearchResponse,
   SearchCanonicalPathname,
+  StaticExploreSearchResponse,
   SearchResultItem,
   SearchRenderHref,
   SearchSnippet,
 } from '../../../shared/search/search-types.js';
 import { createSiteUrlContext, type SiteUrlContext } from '../../../shared/site/site-url-context.js';
+import {
+  getSearchBootstrapUnavailableMessage,
+  type SearchBootstrapUnavailableReason,
+} from '../../../shared/search/search-unavailable-reason.js';
 
 const SEARCH_DEBOUNCE_MS = 150;
 const SEARCH_SORT_OPTIONS: SelectOption[] = [
@@ -59,6 +66,22 @@ interface GenreFilterEntry {
   selected: boolean;
   disabled: boolean;
 }
+
+type SearchPageCanonicalResultItem = Omit<SearchResultItem, 'renderHref'> & {
+  readonly renderHref?: SearchRenderHref;
+};
+
+type SearchPageResultView =
+  | {
+      readonly item: SearchPageCanonicalResultItem;
+      readonly renderHref: SearchRenderHref;
+      readonly linkAvailable: true;
+    }
+  | {
+      readonly item: SearchPageCanonicalResultItem;
+      readonly renderHref: null;
+      readonly linkAvailable: false;
+    };
 
 @customElement('search-page')
 export class SearchPage extends LitElement {
@@ -360,7 +383,7 @@ export class SearchPage extends LitElement {
   private _sortMode: SearchSortMode = DEFAULT_SEARCH_SORT_MODE;
 
   @state()
-  private _results: SearchResultItem[] = [];
+  private _results: SearchPageCanonicalResultItem[] = [];
 
   @state()
   private _loading = false;
@@ -370,6 +393,9 @@ export class SearchPage extends LitElement {
 
   @state()
   private _errorMessage = '';
+
+  @state()
+  private _searchUnavailableReason: SearchBootstrapUnavailableReason | '' = '';
 
   @state()
   private _tagCounts: Record<string, number> = {};
@@ -389,6 +415,13 @@ export class SearchPage extends LitElement {
 
   protected override willUpdate(_changedProperties: PropertyValues): void {
     if (this._didApplyInitialPayload) {
+      return;
+    }
+
+    const bootstrapState = getInitializedSearchBootstrapState();
+    if (bootstrapState?.status === 'unavailable') {
+      this._applyUnavailableState(bootstrapState.reason);
+      this._didApplyInitialPayload = true;
       return;
     }
 
@@ -415,6 +448,11 @@ export class SearchPage extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     window.addEventListener('popstate', this._onPopState);
+    const bootstrapState = getInitializedSearchBootstrapState();
+    if (bootstrapState?.status === 'unavailable') {
+      this._applyUnavailableState(bootstrapState.reason);
+      return;
+    }
     if (this._hasInitialExplorePayload()) {
       return;
     }
@@ -457,6 +495,12 @@ export class SearchPage extends LitElement {
   }
 
   private async _refreshResults(): Promise<void> {
+    const bootstrapState = getInitializedSearchBootstrapState();
+    if (bootstrapState?.status === 'unavailable') {
+      this._applyUnavailableState(bootstrapState.reason);
+      return;
+    }
+
     const currentToken = ++this._requestToken;
     this._loading = true;
     this._errorMessage = '';
@@ -477,7 +521,7 @@ export class SearchPage extends LitElement {
         throw new Error('explore モードの検索応答が必要です。');
       }
 
-      this._results = result.items;
+      this._results = result.items.map(({ renderHref, ...item }) => ({ ...item, renderHref }));
       this._tagCounts = result.tagCounts;
       this._allTagCounts = result.allTagCounts;
       this._loaded = true;
@@ -511,6 +555,10 @@ export class SearchPage extends LitElement {
   }
 
   private _hasInitialExplorePayload(): boolean {
+    const bootstrapState = getInitializedSearchBootstrapState();
+    if (bootstrapState?.status === 'unavailable') {
+      return false;
+    }
     return this._parseInitialState() !== null && this._parseInitialResponse()?.mode === 'explore';
   }
 
@@ -642,7 +690,12 @@ export class SearchPage extends LitElement {
 
 
   private _getSearchRuntime(): SearchCore {
-    const runtime = this._searchRuntime ?? getInitializedSearchCore();
+    const bootstrapState = getInitializedSearchBootstrapState();
+    if (bootstrapState?.status === 'unavailable') {
+      throw new Error(getSearchBootstrapUnavailableMessage(bootstrapState.reason));
+    }
+
+    const runtime = this._searchRuntime ?? (bootstrapState?.status === 'ready' ? bootstrapState.searchCore : null);
     if (runtime === null) {
       throw new Error('SearchPage requires initialized search runtime.');
     }
@@ -670,23 +723,12 @@ export class SearchPage extends LitElement {
     return this._siteUrlContext;
   }
 
-  private _renderHrefForItem(item: SearchResultItem): string {
+  private _renderHrefForItem(item: SearchPageCanonicalResultItem): SearchRenderHref | null {
     if (typeof item.renderHref === 'string' && item.renderHref.length > 0) {
       return item.renderHref;
     }
 
-    return this._renderHrefForCanonicalPathname(item.canonicalPathname);
-  }
-
-  private _renderHrefForCanonicalPathname(canonicalPathname: SearchCanonicalPathname): string {
-    try {
-      return buildSearchResultRenderHref({
-        canonicalPathname,
-        siteUrlContext: this._readSiteUrlContext(),
-      });
-    } catch {
-      return canonicalPathname;
-    }
+    return this._renderHrefForStaticInitialItem(item);
   }
 
   private _readInitialResponseSiteUrlContext(): SiteUrlContext {
@@ -703,28 +745,35 @@ export class SearchPage extends LitElement {
 
   private _renderHrefForStaticInitialItem(item: {
     readonly canonicalPathname: SearchCanonicalPathname;
-  }): SearchRenderHref {
-    return buildSearchResultRenderHref({
-      canonicalPathname: item.canonicalPathname,
-      siteUrlContext: this._readInitialResponseSiteUrlContext(),
-    });
+  }): SearchRenderHref | null {
+    try {
+      return buildSearchResultRenderHref({
+        canonicalPathname: item.canonicalPathname,
+        siteUrlContext: this._readInitialResponseSiteUrlContext(),
+      });
+    } catch {
+      return null;
+    }
   }
 
-  private _onResultClick = (event: MouseEvent, renderHref: string): void => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
-      return;
-    }
+  private _applyUnavailableState(reason: SearchBootstrapUnavailableReason): void {
+    this._searchUnavailableReason = reason;
+    this._loading = false;
+    this._loaded = true;
+    this._results = [];
+    this._tagCounts = {};
+    this._allTagCounts = {};
+    this._errorMessage = '';
+  }
 
-    event.preventDefault();
-    void navigateInternalDocument(renderHref);
-  };
+  private _createResultViews(): SearchPageResultView[] {
+    return this._results.map((item) => {
+      const renderHref = this._renderHrefForItem(item);
+      return renderHref === null
+        ? { item, renderHref: null, linkAvailable: false }
+        : { item, renderHref, linkAvailable: true };
+    });
+  }
 
   private _buildGenreFilterEntries(): GenreFilterEntry[] {
     const map = new Map<string, number>(Object.entries(this._allTagCounts));
@@ -910,6 +959,17 @@ export class SearchPage extends LitElement {
   }
 
   private _renderResults(): unknown {
+    if (this._searchUnavailableReason !== '') {
+      return html`
+        <ui-empty-state class="empty-hint" variant="error">
+          <span slot="heading">検索を利用できません</span>
+          <span slot="description"
+            >${getSearchBootstrapUnavailableMessage(this._searchUnavailableReason)}</span
+          >
+        </ui-empty-state>
+      `;
+    }
+
     if (this._loading) {
       return html`
         <div class="loading" aria-live="polite">
@@ -956,19 +1016,37 @@ export class SearchPage extends LitElement {
 
     return html`
       <ol class="results-list">
-        ${this._results.map((item) => {
-          const renderHref = this._renderHrefForItem(item);
+        ${this._createResultViews().map((view) => {
+          const item = view.item;
+          if (!view.linkAvailable) {
+            return html`
+              <li>
+                <ui-card
+                  class="result-card"
+                  variant="outlined"
+                  data-search-result-link-unavailable="true"
+                >
+                  <div class="result-link">
+                    <div class="result-path">${item.pathLabel}</div>
+                    <h2 class="result-title">${item.title}</h2>
+                    ${item.date.original
+                      ? html`<div class="result-meta">更新日: ${item.date.original}</div>`
+                      : nothing}
+                    ${this._renderResultSecondaryText(item.snippet, item.description)}
+                  </div>
+                </ui-card>
+              </li>
+            `;
+          }
+
           return html`
             <li>
               <ui-card class="result-card" clickable variant="outlined">
                 <a
                   class="result-link"
-                  href=${renderHref}
+                  href=${view.renderHref}
                   data-link-kind="internal-document"
                   data-link-surface="card"
-                  @click=${(event: MouseEvent) => {
-                    this._onResultClick(event, renderHref);
-                  }}
                 >
                   <div class="result-path">${item.pathLabel}</div>
                   <h2 class="result-title">${item.title}</h2>
@@ -992,7 +1070,11 @@ export class SearchPage extends LitElement {
     const singleTag = isTagDefaultView ? (currentState.tags[0] ?? '') : '';
 
     return html`
-      <section class="search-page page-shell" aria-label="検索結果">
+      <section
+        class="search-page page-shell"
+        aria-label="検索結果"
+        data-search-unavailable=${this._searchUnavailableReason !== '' ? 'true' : nothing}
+      >
         <div class="hero">
           <p class="eyebrow">${isTagDefaultView ? 'Tag / Explore' : 'Search / Filter'}</p>
           <h1 class="heading">${isTagDefaultView ? `#${singleTag}` : '検索'}</h1>
@@ -1094,7 +1176,7 @@ export class SearchPage extends LitElement {
     }
   }
 
-  private _parseInitialResponse(): ExploreSearchResponse | null {
+  private _parseInitialResponse(): StaticExploreSearchResponse | null {
     const normalized = this.initialSearchResponseJson.trim();
     if (normalized.length === 0) {
       return null;
@@ -1118,13 +1200,7 @@ export class SearchPage extends LitElement {
         return null;
       }
 
-      return {
-        ...parsed.response,
-        items: parsed.response.items.map((item) => ({
-          ...item,
-          renderHref: this._renderHrefForStaticInitialItem(item),
-        })),
-      };
+      return parsed.response;
     } catch {
       return null;
     }

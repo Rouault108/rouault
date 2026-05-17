@@ -93,6 +93,7 @@ describe('buildCorpusPageProjection', () => {
           {
             title: 'ソート比較',
             permalink: '/notes/computer-science/algorithms/',
+            renderHref: '/notes/computer-science/algorithms/',
             description: '',
             date: '2026-03-08',
             slug: 'computer-science/algorithms',
@@ -110,6 +111,7 @@ describe('buildCorpusPageProjection', () => {
           {
             title: '和声のメモ',
             permalink: '/notes/music/harmony/',
+            renderHref: '/notes/music/harmony/',
             description: '機能和声の整理',
             date: '2026-03-10',
             slug: 'music/harmony',
@@ -118,6 +120,7 @@ describe('buildCorpusPageProjection', () => {
           {
             title: '音楽とは何か',
             permalink: '/notes/music/',
+            renderHref: '/notes/music/',
             description: '',
             date: '2026-03-01',
             slug: 'music',
@@ -150,6 +153,7 @@ describe('buildCorpusPageProjection', () => {
           {
             title: 'C#',
             permalink: '/notes/program/csharp/',
+            renderHref: '/notes/program/csharp/',
             description: '',
             date: '2026-04-15',
             slug: 'program/csharp',
@@ -198,6 +202,7 @@ describe('buildCorpusPageProjection', () => {
           {
             title: 'JavaScriptの配列',
             permalink: '/notes/program/sample-javascript/',
+            renderHref: '/notes/program/sample-javascript/',
             description: '',
             date: '2026-03-10',
             slug: 'program/sample-javascript',
@@ -206,6 +211,7 @@ describe('buildCorpusPageProjection', () => {
           {
             title: 'C#とは何か',
             permalink: '/notes/program/csharp/',
+            renderHref: '/notes/program/csharp/',
             description: '',
             date: '2026-03-01',
             slug: 'program/csharp',

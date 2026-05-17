@@ -42,6 +42,8 @@ import {
   DEFAULT_SIDEBAR_PRESENTATION,
   DEFAULT_SIDEBAR_STATE_SCOPE_ID,
 } from '../../shared/navigation/sidebar-shell-defaults.js';
+import { createCorpusNavigationProjectionPayload } from '../../shared/navigation/corpus-navigation-projection.js';
+import { validateCorpusRouteRootHrefForRender } from '../../shared/link/corpus-link-validation.js';
 
 export interface BaseLayoutData {
   title?: string;
@@ -269,7 +271,9 @@ export class BaseLayout {
     );
     const isNotePage = data.note !== undefined;
     const shouldIgnorePagefind = isNotePage && (data.notePage?.pagefind ?? null) === null;
-    const corpora = buildCorpusNavigation(data.corpusPages ?? []);
+    const corpora = createCorpusNavigationProjectionPayload(
+      buildCorpusNavigation(data.corpusPages ?? []),
+    );
     const buildMetadata = loadBuildMetadataData({
       buildId: rawBuildMetadata.buildId,
       buildLabel: rawBuildMetadata.buildLabel,
@@ -372,9 +376,30 @@ export class BaseLayout {
       { name: 'data-toc-owner-id', value: tocOwnerId },
       { name: 'corpora-json', value: corpora, kind: 'json' },
       { name: 'current-corpus-key', value: currentCorpusKey },
+      { name: 'site-origin', value: siteUrlContext.siteOrigin },
+      { name: 'base-path', value: siteUrlContext.basePath },
       { name: 'data-hydration-capability', value: 'interactive' },
       { name: 'data-hydration-trigger', value: 'initial' },
     ]);
+    const corpusFallbackAnchors = corpora.items
+      .flatMap((item) => {
+        const href = validateCorpusRouteRootHrefForRender({
+          href: item.href,
+          siteUrlContext,
+        });
+        if (href === null) {
+          return [];
+        }
+
+        return [
+          `<a${serializeHtmlAttributes([
+            { name: 'href', value: href },
+            { name: 'data-link-kind', value: 'internal-document' },
+            { name: 'data-link-surface', value: 'header' },
+          ])}>${escapeHtmlText(item.label)}</a>`,
+        ];
+      })
+      .join('');
     const sidebarPresence =
       data.notePage?.showSidebar && data.notePage.sidebar ? 'present' : 'absent';
     const shellMarkerAttributes = serializeHtmlAttributes(
@@ -404,7 +429,7 @@ export class BaseLayout {
 <body${bodyAttributes}>
   <a${skipLinkAttributes}>${escapeHtmlText(SKIP_LINK_LABEL)}</a>
   <div id="app" class="app-root"${shellMarkerAttributes}>
-    <layout-header${headerAttributes}></layout-header>
+    <layout-header${headerAttributes}>${corpusFallbackAnchors}</layout-header>
     <app-router
       data-sidebar-presence="${sidebarPresence}"
       data-hydration-capability="interactive"

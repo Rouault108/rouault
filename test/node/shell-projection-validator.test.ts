@@ -7,9 +7,10 @@ import {
   ShellProjectionValidationError,
 } from '../../shared/navigation/shell-projection-validator.js';
 import { createCanonicalAbsentRuntimeSidebarProjection } from '../../shared/navigation/sidebar-shell-projection-contract.js';
+import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../shared/navigation/corpus-navigation-projection.js';
 
 const header = {
-  corpora: [],
+  corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
   currentCorpusKey: 'all',
   noteLayout: true,
   sidebarEnabled: true,

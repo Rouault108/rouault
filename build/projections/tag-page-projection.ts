@@ -3,12 +3,19 @@ import {
   type IntrinsicNote,
   type IntrinsicNotesCollection,
 } from '../../build/data/notes.js';
+import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
+import { applyBasePathToRenderHref } from '../../shared/url/normalize-rouault-url.js';
+import {
+  DEFAULT_SEARCH_SORT_MODE,
+  buildUrlForSearchState,
+} from '../../shared/search/search-url.js';
 
 export type TagPageSourceNote = IntrinsicNote;
 
 export interface TagPageNoteSummary {
   title: string;
   permalink: string;
+  renderHref: string;
   description: string;
   date: string;
   slug: string;
@@ -17,6 +24,8 @@ export interface TagPageNoteSummary {
 
 export interface TagPageEntry {
   tag: string;
+  searchHref: string;
+  searchRenderHref: string;
   noteCount: number;
   notes: TagPageNoteSummary[];
 }
@@ -50,6 +59,19 @@ function normalizeGenres(value: unknown): string[] {
   return normalized;
 }
 
+const resolveBuildRenderHref = (pathname: string): string => {
+  const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
+    ? resolveProductionSiteUrlContext()
+    : resolveDevelopmentSiteUrlContext();
+  const url = new URL(pathname, `${siteUrlContext.siteOrigin}/`);
+  return applyBasePathToRenderHref({
+    pathname: url.pathname,
+    search: url.search,
+    hash: url.hash,
+    siteUrlContext,
+  });
+};
+
 function toTagPageNoteSummary(note: TagPageSourceNote): TagPageNoteSummary | null {
   const title = normalizeString(note.title);
   const permalink = normalizeString(note.permalink);
@@ -62,6 +84,7 @@ function toTagPageNoteSummary(note: TagPageSourceNote): TagPageNoteSummary | nul
   return {
     title,
     permalink,
+    renderHref: resolveBuildRenderHref(permalink),
     description: normalizeString(note.description),
     date: normalizeString(note.updated) || normalizeString(note.date),
     slug,
@@ -107,8 +130,16 @@ export function buildTagPageProjection(
     .sort((left, right) => left[0].localeCompare(right[0], 'ja'))
     .map(([tag, summaries]) => {
       const notesForTag = [...summaries].sort(compareNoteSummaries);
+      const searchHref = buildUrlForSearchState({
+        q: '',
+        tags: [tag],
+        tagMode: 'or',
+        sort: DEFAULT_SEARCH_SORT_MODE,
+      });
       return {
         tag,
+        searchHref,
+        searchRenderHref: resolveBuildRenderHref(searchHref),
         noteCount: notesForTag.length,
         notes: notesForTag,
       } satisfies TagPageEntry;

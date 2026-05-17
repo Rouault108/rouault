@@ -65,11 +65,14 @@ describe('buildTagPageProjection', () => {
     expect(buildTagPageProjection(notes)).toEqual([
       {
         tag: 'baroque',
+        searchHref: '/tags/baroque/',
+        searchRenderHref: '/tags/baroque/',
         noteCount: 1,
         notes: [
           {
             title: 'バロック入門',
             permalink: '/notes/music/baroque/',
+            renderHref: '/notes/music/baroque/',
             description: '通奏低音の基礎',
             date: '2026-02-14',
             slug: 'music/baroque',
@@ -79,11 +82,14 @@ describe('buildTagPageProjection', () => {
       },
       {
         tag: 'music',
+        searchHref: '/tags/music/',
+        searchRenderHref: '/tags/music/',
         noteCount: 2,
         notes: [
           {
             title: '後期ロマン派',
             permalink: '/notes/music/romantic/',
+            renderHref: '/notes/music/romantic/',
             description: '和声進行の整理',
             date: '2026-03-10',
             slug: 'music/romantic',
@@ -92,6 +98,7 @@ describe('buildTagPageProjection', () => {
           {
             title: 'バロック入門',
             permalink: '/notes/music/baroque/',
+            renderHref: '/notes/music/baroque/',
             description: '通奏低音の基礎',
             date: '2026-02-14',
             slug: 'music/baroque',
@@ -101,11 +108,14 @@ describe('buildTagPageProjection', () => {
       },
       {
         tag: 'romantic',
+        searchHref: '/tags/romantic/',
+        searchRenderHref: '/tags/romantic/',
         noteCount: 1,
         notes: [
           {
             title: '後期ロマン派',
             permalink: '/notes/music/romantic/',
+            renderHref: '/notes/music/romantic/',
             description: '和声進行の整理',
             date: '2026-03-10',
             slug: 'music/romantic',
@@ -144,11 +154,14 @@ describe('buildTagPageProjection', () => {
     expect(buildTagPageProjection(notes)).toEqual([
       {
         tag: '設計',
+        searchHref: '/tags/%E8%A8%AD%E8%A8%88/',
+        searchRenderHref: '/tags/%E8%A8%AD%E8%A8%88/',
         noteCount: 3,
         notes: [
           {
             title: 'Beta',
             permalink: '/notes/beta/',
+            renderHref: '/notes/beta/',
             description: '',
             date: '2026-01-20',
             slug: 'beta',
@@ -157,6 +170,7 @@ describe('buildTagPageProjection', () => {
           {
             title: 'Alpha',
             permalink: '/notes/alpha/',
+            renderHref: '/notes/alpha/',
             description: '',
             date: '2026-01-12',
             slug: 'alpha',
@@ -165,6 +179,7 @@ describe('buildTagPageProjection', () => {
           {
             title: 'Zeta',
             permalink: '/notes/zeta/',
+            renderHref: '/notes/zeta/',
             description: '',
             date: '2026-01-12',
             slug: 'zeta',

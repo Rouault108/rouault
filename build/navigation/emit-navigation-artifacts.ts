@@ -22,6 +22,10 @@ import {
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
   DEFAULT_SIDEBAR_ID,
 } from '../../shared/navigation/sidebar-shell-defaults.js';
+import {
+  EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
+  parseCorpusNavigationProjectionPayload,
+} from '../../shared/navigation/corpus-navigation-projection.js';
 import { readParse5HydrationMarkerResult } from './parse5-hydration-markers.js';
 import { validateSidebarNavHtmlInvariant } from './sidebar-nav-html-invariant.js';
 import { validateDocumentSidebarIdentityContract } from './sidebar-identity-dom-contract.js';
@@ -272,7 +276,10 @@ const extractHeaderProjection = (document: Parse5Document): HeaderShellProjectio
   }
 
   return {
-    corpora: parseJsonAttribute(getAttribute(header, 'corpora-json'), []),
+    corpora:
+      parseCorpusNavigationProjectionPayload(
+        parseJsonAttribute(getAttribute(header, 'corpora-json'), null),
+      ) ?? EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
     currentCorpusKey: toTrimmedString(
       getAttribute(header, 'current-corpus-key'),
       FALLBACK_CURRENT_CORPUS_KEY,

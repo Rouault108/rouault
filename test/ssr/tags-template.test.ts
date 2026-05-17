@@ -15,11 +15,14 @@ describe('TagPagesTemplate', () => {
     const rendered = template.render({
       tagPage: {
         tag: 'music',
+        searchHref: '/search/?tags=music',
+        searchRenderHref: '/search/?tags=music',
         noteCount: 2,
         notes: [
           {
             title: '交響曲メモ',
             permalink: '/notes/music/symphony/',
+            renderHref: '/notes/music/symphony/',
             description: '主題展開の整理',
             date: '2026-03-10',
             slug: 'music/symphony',
@@ -28,6 +31,7 @@ describe('TagPagesTemplate', () => {
           {
             title: '協奏曲メモ',
             permalink: '/notes/music/concerto/',
+            renderHref: '/notes/music/concerto/',
             description: '',
             date: '',
             slug: 'music/concerto',

@@ -58,11 +58,16 @@ const clickHeaderDropdownItem = async (
   selector: string,
   value: string,
 ): Promise<void> => {
-  await page
-    .locator('layout-header')
-    .locator(selector)
-    .locator(`ui-menu-item[value="${value}"] button`)
-    .click();
+  const dropdown = page.locator('layout-header').locator(selector);
+  const commandItem = dropdown.locator(`ui-menu-item[value="${value}"] button`);
+  const linkItem = dropdown.locator(`ui-menu-link[href="${value}"] a`);
+
+  if ((await commandItem.count()) > 0) {
+    await commandItem.click();
+    return;
+  }
+
+  await linkItem.click();
 };
 
 const readHeaderDropdown = async (page: Page, selector: string): Promise<DropdownSnapshot | null> => {
@@ -80,7 +85,9 @@ const readHeaderDropdown = async (page: Page, selector: string): Promise<Dropdow
 
     const panelRect = panel.getBoundingClientRect();
     const triggerRect = trigger.getBoundingClientRect();
-    const items = Array.from(dropdown.querySelectorAll<HTMLElement>('ui-menu-item'));
+    const items = Array.from(
+      dropdown.querySelectorAll<HTMLElement>('ui-menu-item, ui-menu-link'),
+    );
     const activeItem = items.find((item) => item.shadowRoot?.activeElement instanceof HTMLElement);
 
     return {

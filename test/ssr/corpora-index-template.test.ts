@@ -15,6 +15,7 @@ describe('CorporaOverviewTemplate', () => {
             key: 'music',
             label: '音楽',
             href: '/corpora/music/',
+            renderHref: '/corpora/music/',
             noteCount: 2,
             latestUpdatedDate: '2026-03-10',
           },
@@ -23,6 +24,7 @@ describe('CorporaOverviewTemplate', () => {
           {
             title: '和声のメモ',
             permalink: '/notes/music/harmony/',
+            renderHref: '/notes/music/harmony/',
             summary: '機能和声の整理',
             date: '2026-03-10',
             pathLabel: 'music / harmony',

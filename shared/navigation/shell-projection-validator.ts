@@ -20,6 +20,7 @@ import {
   SidebarNavHtmlPresenceError,
   assertRuntimeSidebarNavHtmlPresence,
 } from './sidebar-nav-html-presence.js';
+import { parseCorpusNavigationProjectionPayload } from './corpus-navigation-projection.js';
 
 export type ShellProjectionValidationReason =
   | 'invalid-shell'
@@ -135,25 +136,10 @@ const readStringArray = (value: unknown, label: string): string[] => {
 const validateHeader = (value: unknown): HeaderShellProjection => {
   const record = requireRecord(value, 'shellProjection.header must be object.', 'invalid-header');
 
-  const corpora = record['corpora'];
-  if (!Array.isArray(corpora)) {
-    fail('header.corpora must be array.', 'invalid-header');
+  const normalizedCorpora = parseCorpusNavigationProjectionPayload(record['corpora']);
+  if (normalizedCorpora === null) {
+    fail('header.corpora must be CorpusNavigationProjectionPayload.', 'invalid-header');
   }
-
-  const normalizedCorpora = corpora.map((item: unknown): HeaderShellProjection['corpora'][number] => {
-    const corpus = requireRecord(item, 'header.corpora item is invalid.', 'invalid-header');
-    const key = corpus['key'];
-    const label = corpus['label'];
-    const href = corpus['href'];
-    if (!isString(key) || !isString(label) || !isString(href)) {
-      fail('header.corpora item is invalid.', 'invalid-header');
-    }
-    return {
-      key: key.trim(),
-      label: label.trim(),
-      href: href.trim(),
-    };
-  });
 
   const currentCorpusKey = record['currentCorpusKey'];
   const noteLayout = record['noteLayout'];

@@ -13,6 +13,7 @@ describe('HomePageTemplate', () => {
           {
             title: '後期ロマン派',
             permalink: '/notes/music/romantic/',
+            renderHref: '/notes/music/romantic/',
             summary: '和声進行の整理',
             date: '2026-03-10',
             pathLabel: 'music / romantic',
@@ -50,6 +51,7 @@ describe('HomePageTemplate', () => {
           {
             title: '後期ロマン派',
             permalink: '/notes/music/romantic/',
+            renderHref: '/notes/music/romantic/',
             summary: '',
             date: '2026-03-10',
             pathLabel: 'music / romantic',

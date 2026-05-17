@@ -78,6 +78,7 @@ describe('buildCorporaOverviewProjection', () => {
           key: 'computer-science',
           label: 'Computer Science',
           href: '/corpora/computer-science/',
+          renderHref: '/corpora/computer-science/',
           noteCount: 1,
           latestUpdatedDate: '2026-03-08',
         },
@@ -85,6 +86,7 @@ describe('buildCorporaOverviewProjection', () => {
           key: 'music',
           label: '音楽',
           href: '/corpora/music/',
+          renderHref: '/corpora/music/',
           noteCount: 2,
           latestUpdatedDate: '2026-03-10',
         },
@@ -93,6 +95,7 @@ describe('buildCorporaOverviewProjection', () => {
         {
           title: '和声のメモ',
           permalink: '/notes/music/harmony/',
+          renderHref: '/notes/music/harmony/',
           summary: '機能和声の整理',
           date: '2026-03-10',
           pathLabel: 'music / harmony',
@@ -101,6 +104,7 @@ describe('buildCorporaOverviewProjection', () => {
         {
           title: 'ソート比較',
           permalink: '/notes/computer-science/algorithms/',
+          renderHref: '/notes/computer-science/algorithms/',
           summary: '',
           date: '2026-03-08',
           pathLabel: 'computer-science / algorithms',
@@ -109,6 +113,7 @@ describe('buildCorporaOverviewProjection', () => {
         {
           title: '音楽',
           permalink: '/notes/music/',
+          renderHref: '/notes/music/',
           summary: '',
           date: '2026-03-01',
           pathLabel: 'music',

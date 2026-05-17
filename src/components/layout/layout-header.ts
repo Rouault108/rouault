@@ -11,7 +11,6 @@ import {
   layoutTocRuntimeStore,
   type LayoutTocRuntimeSnapshot,
 } from './layout-toc-runtime-store.js';
-import { navigateInternalDocument } from '../../router/navigate-internal-document.js';
 import {
   THEME_ATTRIBUTE,
   THEME_CHANGE_EVENT,
@@ -25,11 +24,19 @@ import { decodeHashFragment } from '../../router/url-hash.js';
 import type { IconName } from '../../../shared/icons/icons-catalog.js';
 import type { HeaderShellProjection } from '../../../shared/navigation/shell-projection.js';
 import type { TocPresence } from '../../../shared/note/toc-presence.js';
+import { createSiteUrlContext } from '../../../shared/site/site-url-context.js';
+import { validateCorpusRouteRootHrefForRender } from '../../../shared/link/corpus-link-validation.js';
+import {
+  createCorpusNavigationProjectionPayload,
+  parseCorpusNavigationProjectionPayload,
+  type CorpusNavigationProjectionPayload,
+} from '../../../shared/navigation/corpus-navigation-projection.js';
 
 interface CorpusNavigationItem {
   key: string;
   label: string;
   href: string;
+  renderHref: string;
 }
 
 const DEFAULT_CORPUS_ITEMS: readonly CorpusNavigationItem[] = [
@@ -37,6 +44,7 @@ const DEFAULT_CORPUS_ITEMS: readonly CorpusNavigationItem[] = [
     key: 'all',
     label: 'すべてのノート',
     href: '/corpora/',
+    renderHref: '/corpora/',
   },
 ];
 
@@ -450,6 +458,12 @@ export class LayoutHeader extends LitElement {
   @property({ type: String, attribute: 'current-corpus-key' })
   currentCorpusKey = 'all';
 
+  @property({ type: String, attribute: 'site-origin' })
+  siteOrigin = '';
+
+  @property({ type: String, attribute: 'base-path' })
+  basePath = '';
+
   @property({ type: Boolean, reflect: true, attribute: 'note-layout' })
   noteLayout = false;
 
@@ -534,7 +548,7 @@ export class LayoutHeader extends LitElement {
     const tocOwnerId = typeof this.tocOwnerId === 'string' ? this.tocOwnerId.trim() : '';
 
     return {
-      corpora: this._corpusItems,
+      corpora: this._parseCorpusPayload() ?? createCorpusNavigationProjectionPayload([]),
       currentCorpusKey: currentCorpusKey || 'all',
       noteLayout: this.noteLayout,
       sidebarEnabled: this.sidebarEnabled,
@@ -827,15 +841,6 @@ export class LayoutHeader extends LitElement {
     layoutTocMobileController.toggle(runtimeId, this._tocTriggerElement ?? undefined);
   };
 
-  private _handleCorpusSelect = (event: CustomEvent<{ value: string }>): void => {
-    const href = event.detail.value.trim();
-    if (href.length === 0 || typeof window === 'undefined') {
-      return;
-    }
-
-    void navigateInternalDocument(href);
-  };
-
   private _commitThemePreference(preference: ThemePreference): void {
     if (this._themePreference !== preference) {
       this._themePreference = preference;
@@ -934,35 +939,38 @@ export class LayoutHeader extends LitElement {
     this._scheduleTocHashSync();
   };
 
-  private get _corpusItems(): CorpusNavigationItem[] {
+  private _readSiteUrlContext() {
+    const siteOrigin = this.siteOrigin.trim() || window.location.origin;
+    return createSiteUrlContext({ siteOrigin, basePath: this.basePath });
+  }
+
+  private _parseCorpusPayload(): CorpusNavigationProjectionPayload | null {
     const normalized = this.corporaJson.trim();
     if (normalized.length === 0) {
-      return [...DEFAULT_CORPUS_ITEMS];
+      return createCorpusNavigationProjectionPayload(DEFAULT_CORPUS_ITEMS);
     }
 
     try {
-      const parsed = JSON.parse(normalized) as unknown;
-      if (!Array.isArray(parsed)) {
-        return [...DEFAULT_CORPUS_ITEMS];
-      }
-
-      const items = parsed.filter((item): item is CorpusNavigationItem => {
-        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
-          return false;
-        }
-
-        const candidate = item as Record<string, unknown>;
-        return (
-          typeof candidate['key'] === 'string' &&
-          typeof candidate['label'] === 'string' &&
-          typeof candidate['href'] === 'string'
-        );
-      });
-
-      return items.length > 0 ? items : [...DEFAULT_CORPUS_ITEMS];
+      return parseCorpusNavigationProjectionPayload(JSON.parse(normalized) as unknown);
     } catch {
-      return [...DEFAULT_CORPUS_ITEMS];
+      return null;
     }
+  }
+
+  private get _corpusItems(): CorpusNavigationItem[] {
+    const payload = this._parseCorpusPayload();
+    if (payload === null) {
+      return [];
+    }
+
+    const siteUrlContext = this._readSiteUrlContext();
+    return payload.items.flatMap((item) => {
+      const renderHref = validateCorpusRouteRootHrefForRender({
+        href: item.href,
+        siteUrlContext,
+      });
+      return renderHref === null ? [] : [{ ...item, renderHref }];
+    });
   }
 
   private get _currentCorpusItem(): CorpusNavigationItem | null {
@@ -1041,7 +1049,7 @@ export class LayoutHeader extends LitElement {
                 </ui-button>
               `
             : null}
-          <ui-dropdown class="corpus-switcher" @menu-item-select=${this._handleCorpusSelect}>
+          <ui-dropdown class="corpus-switcher">
             <ui-button slot="trigger" variant="ghost">
               <span class="corpus-trigger-label">
                 <span class="corpus-trigger-main">
@@ -1055,7 +1063,16 @@ export class LayoutHeader extends LitElement {
               </span>
             </ui-button>
             ${corpusItems.map(
-              (item) => html`<ui-menu-item value=${item.href}>${item.label}</ui-menu-item>`,
+              (item) => html`
+                <ui-menu-link
+                  href=${item.renderHref}
+                  text-value=${item.label}
+                  data-link-kind="internal-document"
+                  data-link-surface="header"
+                >
+                  ${item.label}
+                </ui-menu-link>
+              `,
             )}
           </ui-dropdown>
           </div>

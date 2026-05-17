@@ -23,6 +23,7 @@ describe('CorpusPagesTemplate', () => {
           {
             title: '交響曲メモ',
             permalink: '/notes/music/symphony/',
+            renderHref: '/notes/music/symphony/',
             description: '主題展開の整理',
             date: '2026-03-10',
             slug: 'music/symphony',

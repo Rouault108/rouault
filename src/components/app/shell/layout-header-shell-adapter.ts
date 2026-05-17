@@ -5,12 +5,11 @@ import type {
 } from '../../../router/router.js';
 import { TOC_TRIGGER_RESERVED_ATTRIBUTE } from '../../../toc/toc-mobile-panel-dom-css-contract.js';
 import { DEFAULT_SIDEBAR_ID } from '../../../../shared/navigation/sidebar-shell-defaults.js';
-
-interface CorpusShellItem {
-  key: string;
-  label: string;
-  href: string;
-}
+import {
+  EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
+  parseCorpusNavigationProjectionPayload,
+  type CorpusNavigationProjectionPayload,
+} from '../../../../shared/navigation/corpus-navigation-projection.js';
 
 type TocPresence = 'present' | 'absent';
 
@@ -20,7 +19,7 @@ interface HeaderProjectionHost extends HTMLElement {
 }
 
 export const SAFE_FALLBACK_HEADER_SHELL_PROJECTION: HeaderShellSnapshot = {
-  corpora: [],
+  corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
   currentCorpusKey: 'all',
   noteLayout: false,
   sidebarEnabled: false,
@@ -31,36 +30,16 @@ export const SAFE_FALLBACK_HEADER_SHELL_PROJECTION: HeaderShellSnapshot = {
   tocTriggerReserved: false,
 };
 
-const parseCorpora = (value: string | null): CorpusShellItem[] => {
+const parseCorpora = (value: string | null): CorpusNavigationProjectionPayload => {
   if (typeof value !== 'string' || value.trim().length === 0) {
-    return [];
+    return EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD;
   }
 
   try {
     const parsed: unknown = JSON.parse(value);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .map((item) => {
-        if (typeof item !== 'object' || item === null) {
-          return null;
-        }
-
-        const record = item as Record<string, unknown>;
-        const key = typeof record['key'] === 'string' ? record['key'].trim() : '';
-        const label = typeof record['label'] === 'string' ? record['label'].trim() : '';
-        const href = typeof record['href'] === 'string' ? record['href'].trim() : '';
-        if (key.length === 0 || label.length === 0 || href.length === 0) {
-          return null;
-        }
-
-        return { key, label, href };
-      })
-      .filter((item): item is CorpusShellItem => item !== null);
+    return parseCorpusNavigationProjectionPayload(parsed) ?? EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD;
   } catch {
-    return [];
+    return EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD;
   }
 };
 

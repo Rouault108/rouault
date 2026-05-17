@@ -25,6 +25,8 @@ import type {
 export interface RenderSearchDialogHost {
   query: string;
   loading: boolean;
+  unavailable: boolean;
+  unavailableMessage: string;
   results: readonly UiSearchDialogItem[];
   activeId: string | null;
   liveMessage: string;
@@ -51,7 +53,8 @@ export interface RenderSearchDialogHost {
 
 export function renderSearchDialog(host: RenderSearchDialogHost): TemplateResult {
   const hasQuery = host.query.trim() !== '';
-  const showLoading = host.loading;
+  const showUnavailable = host.unavailable;
+  const showLoading = !showUnavailable && host.loading;
   const showError = !showLoading && host.error !== null;
   const showResults = !showLoading && !showError && host.results.length > 0;
   const showEmpty =
@@ -113,6 +116,16 @@ export function renderSearchDialog(host: RenderSearchDialogHost): TemplateResult
       </div>
 
       <div class="body">
+        <section class="error-state" role="status" aria-atomic="true" .hidden=${!showUnavailable}>
+          <div class="empty-state-content">
+            <div class="empty-state-icon" aria-hidden="true">
+              <ui-icon name="alert-circle"></ui-icon>
+            </div>
+            <h2 class="empty-state-heading">検索を利用できません</h2>
+            <p class="empty-state-description">${host.unavailableMessage}</p>
+          </div>
+        </section>
+
         <div class="loading-state" .hidden=${!showLoading}>
           <ui-spinner size="lg"></ui-spinner>
           <div class="status-copy" role="status" aria-atomic="true">

@@ -2,6 +2,7 @@ export const LINK_SURFACES = [
   'prose',
   'metadata',
   'navigation',
+  'header',
   'card',
   'structural',
   'control',

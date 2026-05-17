@@ -1,7 +1,6 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { CorpusPageEntry, CorpusPageNoteSummary } from '../../data/corpusPages.js';
-import { navigateInternalDocument } from '../../router/navigate-internal-document.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
 import '../ui/card/card.js';
 import '../ui/empty-state/empty-state.js';
@@ -29,13 +28,15 @@ const toCorpusPageNoteSummary = (value: unknown): CorpusPageNoteSummary | null =
 
   const title = normalizeString(value['title']);
   const permalink = normalizeString(value['permalink']);
-  if (title.length === 0 || permalink.length === 0) {
+  const renderHref = normalizeString(value['renderHref']);
+  if (title.length === 0 || permalink.length === 0 || renderHref.length === 0) {
     return null;
   }
 
   return {
     title,
     permalink,
+    renderHref,
     description: normalizeString(value['description']),
     date: normalizeString(value['date']),
     slug: normalizeString(value['slug']),
@@ -117,22 +118,6 @@ export class CorpusPage extends LitElement {
     }
   }
 
-  private _onLinkClick = (event: MouseEvent, url: string): void => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    void navigateInternalDocument(url);
-  };
-
   private _renderNotes(corpusPage: CorpusPageEntry) {
     if (corpusPage.notes.length === 0) {
       return html`
@@ -153,12 +138,9 @@ export class CorpusPage extends LitElement {
               <ui-card class="result-card corpus-page__item-card" clickable variant="outlined">
                 <a
                   class="result-link corpus-page__item-link"
-                  href=${note.permalink}
+                  href=${note.renderHref}
                   data-link-kind="internal-document"
                   data-link-surface="card"
-                  @click=${(event: MouseEvent) => {
-                    this._onLinkClick(event, note.permalink);
-                  }}
                 >
                   <div class="result-path">${note.permalink}</div>
                   <h2 class="result-title corpus-page__item-title">${note.title}</h2>

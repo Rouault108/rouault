@@ -11,6 +11,7 @@ import { DropdownOpenSequencer } from './internal/dropdown-open-sequencer.js';
 export type DropdownSide = 'top' | 'right' | 'bottom' | 'left';
 export type DropdownAlign = 'start' | 'center' | 'end';
 export type MenuItemVariant = 'default' | 'danger';
+export type DropdownMenuEntry = MenuItem | MenuLink;
 
 type PositionPhase = 'idle' | 'positioning' | 'ready';
 type DropdownCloseReason =
@@ -203,11 +204,13 @@ export class Dropdown extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener('menu-item-click', this._handleMenuItemClick as EventListener);
+    this.addEventListener('menu-link-click', this._handleMenuLinkClick as EventListener);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('menu-item-click', this._handleMenuItemClick as EventListener);
+    this.removeEventListener('menu-link-click', this._handleMenuLinkClick as EventListener);
     this._detachTriggerListeners(this._boundTriggerElement);
     this._boundTriggerElement = null;
     this._clearScheduledTabClose();
@@ -527,7 +530,7 @@ export class Dropdown extends LitElement {
   }
 
   private _focusInitialItem(focusTarget: 'first' | 'last'): void {
-    const items = this._getMenuItems();
+    const items = this._getMenuEntries();
     const target =
       focusTarget === 'last'
         ? [...items].reverse().find((item) => !item.disabled)
@@ -622,7 +625,7 @@ export class Dropdown extends LitElement {
     panel?.setAttribute('aria-labelledby', trigger.id);
   }
 
-  private _getMenuItems(): MenuItem[] {
+  private _getMenuEntries(): DropdownMenuEntry[] {
     const slot = this.shadowRoot?.querySelector<HTMLSlotElement>('.menu-slot');
 
     if (!slot) {
@@ -631,7 +634,10 @@ export class Dropdown extends LitElement {
 
     return slot
       .assignedElements({ flatten: true })
-      .filter((element): element is MenuItem => element instanceof MenuItem);
+      .filter(
+        (element): element is DropdownMenuEntry =>
+          element instanceof MenuItem || element instanceof MenuLink,
+      );
   }
 
   private _getTriggerElement(): HTMLElement | null {
@@ -656,11 +662,11 @@ export class Dropdown extends LitElement {
     return `${this.side}-${this.align}` as Placement;
   }
 
-  private _focusItem(item: MenuItem | null): void {
+  private _focusItem(item: DropdownMenuEntry | null): void {
     item?.focus({ preventScroll: true });
   }
 
-  private _getFocusedItem(items: MenuItem[]): MenuItem | null {
+  private _getFocusedItem(items: DropdownMenuEntry[]): DropdownMenuEntry | null {
     for (const item of items) {
       if (item.shadowRoot?.activeElement instanceof HTMLElement) {
         return item;
@@ -681,7 +687,7 @@ export class Dropdown extends LitElement {
   }
 
   private _hasPanelFocus(): boolean {
-    const focusedItem = this._getFocusedItem(this._getMenuItems());
+    const focusedItem = this._getFocusedItem(this._getMenuEntries());
     if (focusedItem !== null) {
       return true;
     }
@@ -792,7 +798,7 @@ export class Dropdown extends LitElement {
       return;
     }
 
-    const items = this._getMenuItems();
+    const items = this._getMenuEntries();
     const currentItem = this._getFocusedItem(items);
     const currentIndex = currentItem ? items.indexOf(currentItem) : -1;
 
@@ -828,9 +834,16 @@ export class Dropdown extends LitElement {
       }
       case 'Enter':
       case ' ': {
-        event.preventDefault();
         if (currentItem && !currentItem.disabled) {
-          this._selectItem(currentItem);
+          if (currentItem.activationKind === 'command') {
+            event.preventDefault();
+            this._selectItem(currentItem);
+          } else if (event.key === ' ') {
+            event.preventDefault();
+            if (currentItem.activateByKeyboard()) {
+              this.close({ restoreFocus: false, reason: 'pointer-select' });
+            }
+          }
         }
         break;
       }
@@ -844,10 +857,10 @@ export class Dropdown extends LitElement {
   };
 
   private _findNextEnabled(
-    items: MenuItem[],
+    items: DropdownMenuEntry[],
     currentIndex: number,
     direction: 1 | -1,
-  ): MenuItem | null {
+  ): DropdownMenuEntry | null {
     const enabledItems = items.filter((item) => !item.disabled);
 
     if (enabledItems.length === 0) {
@@ -868,7 +881,11 @@ export class Dropdown extends LitElement {
     return null;
   }
 
-  private _handleTypeahead(char: string, items: MenuItem[], currentIndex: number): void {
+  private _handleTypeahead(
+    char: string,
+    items: DropdownMenuEntry[],
+    currentIndex: number,
+  ): void {
     if (this._positionPhase !== 'ready') {
       return;
     }
@@ -941,6 +958,16 @@ export class Dropdown extends LitElement {
     this.close({ restoreFocus: false, reason: 'pointer-select' });
   };
 
+  private _handleMenuLinkClick = (event: CustomEvent): void => {
+    if (this._positionPhase !== 'ready') {
+      event.stopPropagation();
+      return;
+    }
+
+    event.stopPropagation();
+    this.close({ restoreFocus: false, reason: 'pointer-select' });
+  };
+
   private _handleTriggerClick = (event: Event): void => {
     if (this.disabled) {
       event.preventDefault();
@@ -979,6 +1006,8 @@ export class Dropdown extends LitElement {
 
 @customElement('ui-menu-item')
 export class MenuItem extends LitElement {
+  readonly activationKind = 'command' as const;
+
   static override styles = css`
     :host {
       display: block;
@@ -1151,6 +1180,154 @@ export class MenuItem extends LitElement {
 
   override focus(options?: FocusOptions): void {
     this.shadowRoot?.querySelector('button')?.focus(options);
+  }
+}
+
+@customElement('ui-menu-link')
+export class MenuLink extends LitElement {
+  readonly activationKind = 'link' as const;
+
+  static override styles = css`
+    :host {
+      display: block;
+    }
+
+    a,
+    span {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2, 8px);
+      height: var(--control-height-md, 32px);
+      min-height: var(--control-height-md, 32px);
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0 var(--space-3, 12px);
+      font-family: inherit;
+      font-size: var(--text-base, 14px);
+      font-weight: var(--font-normal, 400);
+      color: var(--fg-default, oklch(20% 0 0));
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm, 4px);
+      text-align: start;
+      text-decoration: none;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      position: relative;
+      transition: background-color var(--duration-fast, 70ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+    }
+
+    a:hover,
+    a:focus-visible,
+    a:active {
+      background: var(--bg-surface-active, oklch(0% 0 0 / 0.05));
+    }
+
+    a:focus-visible {
+      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+      outline-offset: -2px;
+      animation: var(--animation-focus);
+    }
+
+    :host([disabled]) span {
+      color: var(--fg-disabled);
+      cursor: default;
+    }
+  `;
+
+  @property({ type: String, reflect: true })
+  href = '';
+
+  @property({ type: Boolean, reflect: true })
+  disabled = false;
+
+  @property({ type: String, attribute: 'text-value', reflect: true })
+  textValue = '';
+
+  getNormalizedLabel(): string {
+    return this.textValue.trim() || this.textContent.trim() || '';
+  }
+
+  activateByKeyboard(): boolean {
+    const anchor = this._getAnchor();
+    if (this.disabled || !anchor?.hasAttribute('href')) {
+      return false;
+    }
+
+    anchor.click();
+    return true;
+  }
+
+  override focus(options?: FocusOptions): void {
+    this._getAnchor()?.focus(options);
+  }
+
+  private _getAnchor(): HTMLAnchorElement | null {
+    return this.shadowRoot?.querySelector('a') ?? null;
+  }
+
+  private _activeHref(): string | null {
+    const normalized = this.href.trim();
+    if (this.disabled || normalized.length === 0 || normalized.startsWith('//')) {
+      return null;
+    }
+
+    try {
+      const parsed = new URL(normalized, 'https://rouault.invalid/');
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        return normalized;
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }
+
+  private _forwardedAnnotationAttributes(): { readonly name: string; readonly value: string }[] {
+    return ['data-link-kind', 'data-link-surface'].flatMap((name) => {
+      const value = this.getAttribute(name);
+      return value === null ? [] : [{ name, value }];
+    });
+  }
+
+  private _handleClick = (event: Event): void => {
+    if (this.disabled || this._activeHref() === null) {
+      event.preventDefault();
+      return;
+    }
+
+    this.dispatchEvent(
+      new CustomEvent('menu-link-click', {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  };
+
+  override render() {
+    const href = this._activeHref();
+    if (href === null) {
+      return html`<span role="menuitem" aria-disabled="true"><slot></slot></span>`;
+    }
+
+    const annotations = this._forwardedAnnotationAttributes();
+    return html`
+      <a
+        role="menuitem"
+        tabindex="-1"
+        href=${href}
+        data-link-kind=${annotations.find((item) => item.name === 'data-link-kind')?.value ?? nothing}
+        data-link-surface=${annotations.find((item) => item.name === 'data-link-surface')?.value ?? nothing}
+        @click=${this._handleClick}
+      >
+        <slot></slot>
+      </a>
+    `;
   }
 }
 

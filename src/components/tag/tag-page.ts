@@ -1,11 +1,6 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { TagPageEntry, TagPageNoteSummary } from '../../data/tagPages.js';
-import { navigateInternalDocument } from '../../router/navigate-internal-document.js';
-import {
-  DEFAULT_SEARCH_SORT_MODE,
-  buildUrlForSearchState,
-} from '../../../shared/search/search-url.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
 import '../ui/card/card.js';
 import '../ui/empty-state/empty-state.js';
@@ -33,13 +28,15 @@ const toTagPageNoteSummary = (value: unknown): TagPageNoteSummary | null => {
 
   const title = normalizeString(value['title']);
   const permalink = normalizeString(value['permalink']);
-  if (title.length === 0 || permalink.length === 0) {
+  const renderHref = normalizeString(value['renderHref']);
+  if (title.length === 0 || permalink.length === 0 || renderHref.length === 0) {
     return null;
   }
 
   return {
     title,
     permalink,
+    renderHref,
     description: normalizeString(value['description']),
     date: normalizeString(value['date']),
     slug: normalizeString(value['slug']),
@@ -53,7 +50,9 @@ const toTagPageEntry = (value: unknown): TagPageEntry | null => {
   }
 
   const tag = normalizeString(value['tag']);
-  if (tag.length === 0) {
+  const searchHref = normalizeString(value['searchHref']);
+  const searchRenderHref = normalizeString(value['searchRenderHref']);
+  if (tag.length === 0 || searchHref.length === 0 || searchRenderHref.length === 0) {
     return null;
   }
 
@@ -71,6 +70,8 @@ const toTagPageEntry = (value: unknown): TagPageEntry | null => {
 
   return {
     tag,
+    searchHref,
+    searchRenderHref,
     noteCount,
     notes,
   };
@@ -128,22 +129,6 @@ export class TagPage extends LitElement {
     }
   }
 
-  private _onLinkClick = (event: MouseEvent, url: string): void => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    void navigateInternalDocument(url);
-  };
-
   private _renderNotes(tagPage: TagPageEntry) {
     if (tagPage.notes.length === 0) {
       return html`
@@ -162,12 +147,9 @@ export class TagPage extends LitElement {
               <ui-card class="result-card tag-page__item-card" clickable variant="outlined">
                 <a
                   class="result-link tag-page__item-link"
-                  href=${note.permalink}
+                  href=${note.renderHref}
                   data-link-kind="internal-document"
                   data-link-surface="card"
-                  @click=${(event: MouseEvent) => {
-                    this._onLinkClick(event, note.permalink);
-                  }}
                 >
                   <div class="result-path">${note.permalink}</div>
                   <h2 class="result-title tag-page__item-title">${note.title}</h2>
@@ -194,13 +176,6 @@ export class TagPage extends LitElement {
       return nothing;
     }
 
-    const searchHref = buildUrlForSearchState({
-      q: '',
-      tags: [tagPage.tag],
-      tagMode: 'or',
-      sort: DEFAULT_SEARCH_SORT_MODE,
-    });
-
     return html`
       <section class="tag-page page-shell" aria-labelledby="tag-page-title">
         <div class="hero">
@@ -211,12 +186,9 @@ export class TagPage extends LitElement {
             <span class="tag-page__count">${tagPage.noteCount.toString()}件のノート</span>
             <a
               class="tag-page__search-link"
-              href=${searchHref}
+              href=${tagPage.searchRenderHref}
               data-link-kind="internal-document"
               data-link-surface="control"
-              @click=${(event: MouseEvent) => {
-                this._onLinkClick(event, searchHref);
-              }}
             >
               このタグで検索へ
             </a>

@@ -3,6 +3,7 @@ import { validateNavigationEnvelope } from '../../src/router/navigation-envelope
 import { NavigationEnvelopeContractError } from '../../src/router/navigation-envelope-errors.js';
 import { RouterDiagnosticError } from '../../src/router/router-diagnostics.js';
 import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
+import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../shared/navigation/corpus-navigation-projection.js';
 
 const VALID_SIDEBAR_NAV_HTML =
   '<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="rev-1"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/example/" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>Example</span></a></li></ul></nav>';
@@ -41,7 +42,7 @@ describe('navigation envelope', () => {
       },
       shellProjection: {
         header: {
-          corpora: [],
+          corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
           currentCorpusKey: 'all',
           noteLayout: true,
           sidebarEnabled: true,
@@ -85,7 +86,7 @@ describe('navigation envelope', () => {
       },
       shellProjection: {
         header: {
-          corpora: [],
+          corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
           currentCorpusKey: 'all',
           noteLayout: true,
           sidebarEnabled: true,
@@ -126,7 +127,7 @@ describe('navigation envelope', () => {
         },
         shellProjection: {
           header: {
-            corpora: [],
+            corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
             currentCorpusKey: 'all',
             noteLayout: true,
             sidebarEnabled: true,

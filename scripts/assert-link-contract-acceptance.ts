@@ -61,8 +61,8 @@ forbidPattern(
 );
 requireContains(
   'src/components/search/search-page.ts',
-  'getInitializedSearchCore',
-  'SearchPage must consume the bootstrap-initialized Search runtime',
+  'getInitializedSearchBootstrapState',
+  'SearchPage must consume bootstrap state before requiring SearchCore',
 );
 requireContains(
   'build/remark/directives/payload/normalize-surface-payload.ts',

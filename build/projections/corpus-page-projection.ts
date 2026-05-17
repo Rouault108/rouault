@@ -4,12 +4,15 @@ import {
   type IntrinsicNote,
   type IntrinsicNotesCollection,
 } from '../../build/data/notes.js';
+import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
+import { applyBasePathToRenderHref } from '../../shared/url/normalize-rouault-url.js';
 
 export type CorpusPageSourceNote = IntrinsicNote;
 
 export interface CorpusPageNoteSummary {
   title: string;
   permalink: string;
+  renderHref: string;
   description: string;
   date: string;
   slug: string;
@@ -60,6 +63,13 @@ function normalizeGenres(value: unknown): string[] {
   return normalized;
 }
 
+const resolveBuildRenderHref = (pathname: string): string => {
+  const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
+    ? resolveProductionSiteUrlContext()
+    : resolveDevelopmentSiteUrlContext();
+  return applyBasePathToRenderHref({ pathname, search: '', hash: '', siteUrlContext });
+};
+
 function normalizeSegmentLabel(segment: string): string {
   return segment
     .replace(/[-_]+/g, ' ')
@@ -89,6 +99,7 @@ function toCorpusPageNoteSummary(note: CorpusPageSourceNote): CorpusPageNoteSumm
   return {
     title,
     permalink,
+    renderHref: resolveBuildRenderHref(permalink),
     description: normalizeString(note.description),
     date: normalizeNoteDate(normalizeString(note.updated) || normalizeString(note.date)) ?? '',
     slug,

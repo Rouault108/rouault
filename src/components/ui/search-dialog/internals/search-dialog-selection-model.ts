@@ -8,6 +8,7 @@ import { SearchDialogVirtualizer } from './search-dialog-virtualizer.js';
 
 export interface SearchDialogSelectionHost {
   isLoading(): boolean;
+  isUnavailable?(): boolean;
   getResults(): readonly UiSearchDialogItem[];
   getActiveId(): string | null;
   setActiveId(id: string | null): void;
@@ -84,6 +85,7 @@ export class SearchDialogSelectionModel {
   };
 
   readonly handleResultClick = (event: Event): void => {
+    if (this._isUnavailable()) return;
     const target = event.currentTarget;
     if (!(target instanceof HTMLElement)) return;
 
@@ -97,6 +99,7 @@ export class SearchDialogSelectionModel {
   };
 
   readonly handleResultKeydown = (event: KeyboardEvent): void => {
+    if (this._isUnavailable()) return;
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       this.handleResultClick(event);
@@ -128,6 +131,7 @@ export class SearchDialogSelectionModel {
   }
 
   private _onInputKeydown(event: KeyboardEvent): void {
+    if (this._isUnavailable()) return;
     if (this._host.isLoading()) return;
 
     const results = this._host.getResults();
@@ -198,6 +202,10 @@ export class SearchDialogSelectionModel {
     const activeId = this._host.getActiveId();
     if (activeId === null) return -1;
     return this._host.getResults().findIndex((item) => item.id === activeId);
+  }
+
+  private _isUnavailable(): boolean {
+    return this._host.isUnavailable?.() === true;
   }
 
   private _selectActiveResult(selectionMethod: 'keyboard' | 'pointer'): void {

@@ -4,12 +4,15 @@ import {
   type IntrinsicNote,
   type IntrinsicNotesCollection,
 } from '../../build/data/notes.js';
+import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
+import { applyBasePathToRenderHref } from '../../shared/url/normalize-rouault-url.js';
 
 export type HomeSourceNote = IntrinsicNote;
 
 export interface HomeNoteItem {
   title: string;
   permalink: string;
+  renderHref: string;
   summary: string;
   date: string | null;
   pathLabel: string;
@@ -53,6 +56,13 @@ const normalizeStringArray = (value: unknown): string[] => {
   }
 
   return [...unique.values()];
+};
+
+const resolveBuildRenderHref = (pathname: string): string => {
+  const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
+    ? resolveProductionSiteUrlContext()
+    : resolveDevelopmentSiteUrlContext();
+  return applyBasePathToRenderHref({ pathname, search: '', hash: '', siteUrlContext });
 };
 
 const buildQuietPathLabel = (slug: string): string => {
@@ -126,6 +136,7 @@ export const buildHomePageProjection = (
       {
         title,
         permalink,
+        renderHref: resolveBuildRenderHref(permalink),
         summary: normalizeText(note.description),
         date: effectiveDate,
         pathLabel: buildQuietPathLabel(slug),
@@ -144,6 +155,7 @@ export const buildHomePageProjection = (
     notes: sortedNotes.slice(0, 12).map((note) => ({
       title: note.title,
       permalink: note.permalink,
+      renderHref: note.renderHref,
       summary: note.summary,
       date: note.date,
       pathLabel: note.pathLabel,

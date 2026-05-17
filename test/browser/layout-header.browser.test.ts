@@ -2226,7 +2226,9 @@ describe('layout-header browser contract', () => {
           current-corpus-key="program"
           toc-presence="present"
           toc-runtime-id="test-toc"
-          corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for truncate verification across a packed mobile header","href":"/corpora/program/"}]'
+          site-origin="https://example.com"
+          base-path=""
+          corpora-json='{"schemaVersion":1,"source":"corpus-navigation-projection","items":[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"program","label":"Program corpus with a relatively long label for truncate verification across a packed mobile header","href":"/corpora/program/"}]}'
         ></layout-header>
       </div>
     `);

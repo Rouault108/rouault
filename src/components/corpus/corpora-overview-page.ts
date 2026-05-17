@@ -2,7 +2,6 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { HomeNoteItem } from '../../data/home.js';
 import type { CorporaOverviewCorpusItem, CorporaOverviewData } from '../../data/corporaOverview.js';
-import { navigateInternalDocument } from '../../router/navigate-internal-document.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
 import '../ui/card/card.js';
 import '../ui/empty-state/empty-state.js';
@@ -39,7 +38,8 @@ const toCorporaOverviewCorpusItem = (value: unknown): CorporaOverviewCorpusItem 
   const key = normalizeString(value['key']);
   const label = normalizeString(value['label']);
   const href = normalizeString(value['href']);
-  if (key.length === 0 || label.length === 0 || href.length === 0) {
+  const renderHref = normalizeString(value['renderHref']);
+  if (key.length === 0 || label.length === 0 || href.length === 0 || renderHref.length === 0) {
     return null;
   }
 
@@ -49,6 +49,7 @@ const toCorporaOverviewCorpusItem = (value: unknown): CorporaOverviewCorpusItem 
     key,
     label,
     href,
+    renderHref,
     noteCount: normalizeCount(value['noteCount'], 0),
     latestUpdatedDate: latestUpdatedDate.length > 0 ? latestUpdatedDate : null,
   };
@@ -61,7 +62,8 @@ const toHomeNoteItem = (value: unknown): HomeNoteItem | null => {
 
   const title = normalizeString(value['title']);
   const permalink = normalizeString(value['permalink']);
-  if (title.length === 0 || permalink.length === 0) {
+  const renderHref = normalizeString(value['renderHref']);
+  if (title.length === 0 || permalink.length === 0 || renderHref.length === 0) {
     return null;
   }
 
@@ -70,6 +72,7 @@ const toHomeNoteItem = (value: unknown): HomeNoteItem | null => {
   return {
     title,
     permalink,
+    renderHref,
     summary: normalizeString(value['summary']),
     date: date.length > 0 ? date : null,
     pathLabel: normalizeString(value['pathLabel']) || '—',
@@ -184,22 +187,6 @@ export class CorporaOverviewPage extends LitElement {
     }
   }
 
-  private _onLinkClick = (event: MouseEvent, url: string): void => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    void navigateInternalDocument(url);
-  };
-
   private _renderCorpora(corpora: readonly CorporaOverviewCorpusItem[]) {
     if (corpora.length === 0) {
       return html`
@@ -218,12 +205,9 @@ export class CorporaOverviewPage extends LitElement {
               <ui-card clickable variant="outlined" class="result-card">
                 <a
                   class="result-link"
-                  href=${corpus.href}
+                  href=${corpus.renderHref}
                   data-link-kind="internal-document"
                   data-link-surface="card"
-                  @click=${(event: MouseEvent) => {
-                    this._onLinkClick(event, corpus.href);
-                  }}
                 >
                   <div class="result-path">${corpus.href}</div>
                   <h2 class="result-title">${corpus.label}</h2>
@@ -262,12 +246,9 @@ export class CorporaOverviewPage extends LitElement {
               <ui-card clickable variant="outlined" class="result-card">
                 <a
                   class="result-link"
-                  href=${note.permalink}
+                  href=${note.renderHref}
                   data-link-kind="internal-document"
                   data-link-surface="card"
-                  @click=${(event: MouseEvent) => {
-                    this._onLinkClick(event, note.permalink);
-                  }}
                 >
                   <div class="result-path corpora-overview__note-path">${note.pathLabel}</div>
                   <h2 class="result-title">${note.title}</h2>

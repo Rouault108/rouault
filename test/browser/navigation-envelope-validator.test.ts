@@ -9,6 +9,7 @@ import {
   NavigationEnvelopeContractError,
   NavigationEnvelopeMetadataMismatchError,
 } from '../../src/router/navigation-envelope-errors.js';
+import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../shared/navigation/corpus-navigation-projection.js';
 
 const createEnvelope = (metadata?: { buildId?: unknown; generatedAt?: unknown }): Record<string, unknown> => ({
   schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
@@ -32,7 +33,7 @@ const createPresentSidebarEnvelope = (navHtml: unknown): Record<string, unknown>
   ...createEnvelope(),
   shellProjection: {
     header: {
-      corpora: [],
+      corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
       currentCorpusKey: 'all',
       noteLayout: true,
       sidebarEnabled: true,
