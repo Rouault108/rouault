@@ -40,7 +40,7 @@
     "storybook:build": "pnpm run codegen:manifest && pnpm exec storybook build",
     "build:client": "pnpm run codegen:icons && pnpm exec vite build --config vite.client.config.ts",
     "build:images": "pnpm exec tsx scripts/build-images.ts",
-    "build": "pnpm run build:client && pnpm run build:images && tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts && tsx scripts/apply-lit-ssr.ts && tsx scripts/emit-navigation-artifacts.ts && tsx scripts/build-pagefind.ts",
+    "build": "pnpm run build:client && pnpm run build:images && tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts && tsx scripts/apply-lit-ssr.ts && tsx scripts/emit-navigation-artifacts.ts && tsx scripts/emit-search-artifacts.ts && tsx scripts/build-pagefind.ts",
     "build:production": "pnpm exec tsx scripts/run-production-build.ts",
     "dev": "pnpm run codegen:icons && tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
     "start": "pnpm run dev",

@@ -327,6 +327,8 @@ jobs:
       - detect-changes
       - build-production
       - ci-required
+    outputs:
+      deployment-url: ${{ steps.record-deployment-summary.outputs.deployment-url }}
     if: >-
       ${{
         !cancelled()
@@ -375,11 +377,13 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=${{ vars.CF_PAGES_PROJECT }} --branch=${{ github.ref_name }}
-      - name: record deployment summary
+      - id: record-deployment-summary
+        name: record deployment summary
         env:
           WRANGLER_COMMAND_OUTPUT: ${{ steps.deploy-cloudflare-pages.outputs.command-output }}
         run: |
           DEPLOYMENT_URL="$(printf '%s\n' "${WRANGLER_COMMAND_OUTPUT}" | grep -Eo 'https://[^[:space:]]+' | head -n 1 || true)"
+          echo "deployment-url=${DEPLOYMENT_URL}" >> "$GITHUB_OUTPUT"
           {
             echo "## Production deployment"
             echo ""
@@ -411,3 +415,10 @@ jobs:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_REF: ${{ github.ref }}
         run: python3 scripts/ci/validate_deployment_needs.py
+      - name: verify production runtime artifacts over HTTP
+        if: ${{ needs.deploy-production.result == 'success' }}
+        env:
+          ACTUAL_DEPLOYMENT_URL: ${{ needs.deploy-production.outputs.deployment-url }}
+          ROUAULT_SITE_ORIGIN: ${{ vars.ROUAULT_SITE_ORIGIN }}
+          ROUAULT_BASE_PATH: ${{ vars.ROUAULT_BASE_PATH }}
+        run: python3 scripts/ci/verify_production_artifacts_http.py

@@ -53,6 +53,44 @@ Cloudflare Pages / GitHub Actions では、production deployment の build step 
 
 `deploy-production` job だけに `ROUAULT_SITE_ORIGIN` を渡しても、すでに upload artifact として生成された `dist` の HTML meta は変わらない。`main` push の deployable production build では、repository-level `ROUAULT_SITE_ORIGIN` が未設定なら `build-production` を失敗させる。`pull_request` / `workflow_dispatch` の production-mode build 検証では、deployable artifact ではなく契約検証として `http://127.0.0.1:4173` を明示的な CI 用 origin に使う。
 
+## Production Runtime Artifacts
+
+Production deploy では、次の runtime artifact が actual deployment URL で配信されることを必須契約とする。
+
+- `/search-catalog.json`
+- `/assets/internal-document-routes.json`
+- `/pagefind/pagefind.js`
+- `/pagefind/pagefind-entry.json`
+
+`ROUAULT_BASE_PATH` が空でない環境では、確認 URL に base path を含める。たとえば `ROUAULT_BASE_PATH=/docs` なら `/docs/search-catalog.json` を確認する。
+
+`search-catalog.json` は top-level array 形式であり、`{ "items": [...] }` 形式ではない。Production deploy では empty catalog と `canonicalPathname` 重複を正常扱いしない。Pagefind index が存在しても、`search-catalog.json` が欠落すると Rouault の検索 UI は正常動作しない。
+
+`assets/internal-document-routes.json` は HTML meta から参照される route manifest であり、検索 catalog の `canonicalPathname` allowlist としても使われる。`ROUAULT_SITE_ORIGIN` と `ROUAULT_BASE_PATH` は、route manifest、HTML meta、production assertion の整合性に必要である。
+
+Deploy 後の `verify-production-deployment` job は、deploy job の success / skipped 判定だけで完了扱いにせず、actual deployment URL へ HTTP request を送り runtime artifact を検証する。期待する Content-Type は次のとおり。
+
+- `search-catalog.json`: JSON として妥当な Content-Type
+- route manifest: `application/json` を含む Content-Type
+- `pagefind/pagefind.js`: JavaScript Content-Type
+- `pagefind/pagefind-entry.json`: `application/json` を含む Content-Type
+
+手元で確認する場合は、actual deployment URL を指定して次を実行する。
+
+```bash
+ACTUAL_DEPLOYMENT_URL="https://example.pages.dev" \
+ROUAULT_BASE_PATH="" \
+python3 scripts/ci/verify_production_artifacts_http.py
+```
+
+fetch で個別確認する場合は、`search-catalog.json` が 200、JSON parse 可能、かつ配列として 1 件以上であることを確認する。
+
+```js
+const response = await fetch('/search-catalog.json');
+const catalog = await response.json();
+console.log(response.status, response.headers.get('content-type'), Array.isArray(catalog), catalog.length);
+```
+
 ## Production Build Label
 
 `pnpm build:production` は production build metadata として `ROUAULT_BUILD_LABEL` を必須とする。未指定の場合、production build は契約違反として失敗する。
