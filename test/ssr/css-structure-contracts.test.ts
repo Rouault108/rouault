@@ -52,6 +52,7 @@ describe('css structure contracts', () => {
     const cssText = extractStyleTagCss(buildNotFoundPageMarkup({ requestedPath: '/missing' }));
 
     expectCssIncludes(cssText, [
+      '[data-not-found-page]',
       '.not-found-page-fallback__link[href]',
       'text-decoration-line: none',
       ':focus-visible',

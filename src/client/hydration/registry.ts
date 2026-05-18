@@ -104,11 +104,6 @@ export const HYDRATION_REGISTRY = [
     loader: () => import('../../components/corpus/corpora-overview-page.js'),
   },
   {
-    tag: 'not-found-page',
-    kind: 'custom-element',
-    loader: () => import('../../components/not-found/not-found-page.js'),
-  },
-  {
     tag: 'layout-sidebar',
     kind: 'custom-element',
     loader: () => import('../../components/layout/layout-sidebar.js'),

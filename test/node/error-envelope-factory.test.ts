@@ -11,6 +11,23 @@ describe('ErrorEnvelopeFactory', () => {
     expect(result.envelope.document.announcedTitle).toBe(NOT_FOUND_PAGE_TITLE);
   });
 
+  it('404 error envelope は static not-found fallback HTML を返すこと', () => {
+    const result = new ErrorEnvelopeFactory().createHttpErrorResult(
+      404,
+      '/missing/?x=<script>',
+    );
+
+    expect(result.envelope.document.html).toContain('data-not-found-page');
+    expect(result.envelope.document.html).toContain('data-requested-path=');
+    expect(result.envelope.document.html).toContain('&lt;script&gt;');
+    expect(result.envelope.document.html).not.toContain('<script>');
+    expect(result.envelope.document.html).not.toContain('<not-found-page');
+    expect(result.envelope.document.html).not.toContain('</not-found-page>');
+    expect(result.envelope.document.html).not.toContain(' requested-path=');
+    expect(result.envelope.document.renderedKind).toBe('not-found');
+    expect(result.envelope.hydrationPlan).toBeNull();
+  });
+
   it('汎用 HTTP error envelope でも document.title と announcedTitle の責務を分離すること', () => {
     const result = new ErrorEnvelopeFactory().createHttpErrorResult(500, '/broken/');
 

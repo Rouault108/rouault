@@ -108,12 +108,6 @@ export const SSR_COMPONENT_DEFINITIONS = [
     adapterKind: 'shadow-default',
   },
   {
-    tag: 'not-found-page',
-    ssr: 'shadow',
-    profiles: ['page'],
-    adapterKind: 'shadow-default',
-  },
-  {
     tag: 'ui-article-header',
     ssr: 'shadow',
     profiles: ['note'],

@@ -52,17 +52,6 @@ describe('server-entry', () => {
     expect(rendered).toContain('削除');
   });
 
-  it('not-found-page を SSR 描画できること', async () => {
-    const rendered = await renderCustomElement(
-      'not-found-page',
-      [{ name: 'requested-path', value: '/notes/does-not-exist' }],
-      '',
-    );
-
-    expect(rendered).toContain('not-found-page');
-    expect(rendered).toContain('/notes/does-not-exist');
-  });
-
   it('ui-article-header に data-tags がある場合、SSR 時にタグを描画できること', async () => {
     const rendered = await renderCustomElement(
       'ui-article-header',

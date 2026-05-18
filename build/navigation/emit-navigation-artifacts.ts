@@ -360,7 +360,7 @@ const inferRenderedKind = (
 
   const notFoundPage = findFirstElement(
     document,
-    (candidate) => candidate.tagName === 'not-found-page',
+    (candidate) => hasAttribute(candidate, 'data-not-found-page'),
   );
   return notFoundPage === null ? 'page' : 'not-found';
 };

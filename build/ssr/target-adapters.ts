@@ -29,7 +29,6 @@ import '../../src/components/ui/score/score.js';
 import '../../src/components/ui/syntax-card/syntax-card.js';
 import '../../src/components/ui/tabs/tabs.js';
 import '../../src/components/ui/translation/translation.js';
-import '../../src/components/not-found/not-found-page.js';
 
 import {
   ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE,

@@ -150,6 +150,84 @@ describe('navigation artifacts', () => {
     ]);
   });
 
+  it('404.html は not-found renderedKind として抽出すること', () => {
+    const html = `
+<!DOCTYPE html>
+<html lang="ja">
+<head><title>Not Found - Rouault</title></head>
+<body>
+  <app-router>
+    <main id="main-content">
+      <div data-not-found-page>
+        <section data-not-found-fallback><h1>Not Found</h1></section>
+      </div>
+    </main>
+  </app-router>
+</body>
+</html>
+    `.trim();
+
+    const envelope = createNavigationEnvelopeFromHtml(html, '/tmp/site/404.html', {
+      mode: 'legacy-fixture',
+      buildId: 'build-404',
+      generatedAt: '2026-04-11T00:00:00.000Z',
+    });
+
+    expect(envelope.document.renderedKind).to.equal('not-found');
+  });
+
+  it('data-not-found-page を含む fallback HTML は not-found renderedKind として抽出すること', () => {
+    const html = `
+<!DOCTYPE html>
+<html lang="ja">
+<head><title>Not Found - Rouault</title></head>
+<body>
+  <app-router>
+    <main id="main-content">
+      <div data-not-found-page>
+        <section data-not-found-fallback><h1>Not Found</h1></section>
+      </div>
+    </main>
+  </app-router>
+</body>
+</html>
+    `.trim();
+
+    const envelope = createNavigationEnvelopeFromHtml(html, '/tmp/site/missing/index.html', {
+      mode: 'legacy-fixture',
+      buildId: 'build-data-not-found',
+      generatedAt: '2026-04-11T00:00:00.000Z',
+    });
+
+    expect(envelope.document.renderedKind).to.equal('not-found');
+  });
+
+  it('not-found-page tag だけでは not-found renderedKind として扱わないこと', () => {
+    const html = `
+<!DOCTYPE html>
+<html lang="ja">
+<head><title>Legacy Host - Rouault</title></head>
+<body>
+  <app-router>
+    <main id="main-content">
+      <not-found-page>
+        <p>legacy-like host</p>
+      </not-found-page>
+    </main>
+  </app-router>
+</body>
+</html>
+    `.trim();
+
+    const envelope = createNavigationEnvelopeFromHtml(html, '/tmp/site/legacy/index.html', {
+      mode: 'legacy-fixture',
+      buildId: 'build-legacy-host',
+      generatedAt: '2026-04-11T00:00:00.000Z',
+    });
+
+    expect(envelope.document.renderedKind).to.equal('page');
+  });
+
   it('空白 heading attribute は artifact 抽出時に null へ正規化すること', () => {
     const html = `
 <!DOCTYPE html>

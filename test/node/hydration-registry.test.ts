@@ -40,4 +40,8 @@ describe('hydration registry', () => {
     );
     expect(HYDRATION_REGISTRY_BY_TAG.get('layout-toc')).toBeUndefined();
   });
+
+  it('static 404 fallback は hydration registry へ登録しないこと', () => {
+    expect(HYDRATION_REGISTRY_BY_TAG.has('not-found-page')).toBe(false);
+  });
 });

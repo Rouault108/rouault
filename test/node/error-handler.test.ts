@@ -150,9 +150,12 @@ describe('ErrorHandler', () => {
 
       const html = generateErrorHTML(appError);
 
-      expect(html).to.include('not-found-page');
+      expect(html).to.include('data-not-found-page');
       expect(html).to.include('検索ページへ');
       expect(html).to.include('このサイトについて');
+      expect(html).not.to.include('<not-found-page');
+      expect(html).not.to.include('</not-found-page>');
+      expect(html).not.to.include(' requested-path=');
       expect(html).not.to.include('ホームに戻る');
       expect(html).not.to.include('ノート一覧');
     });

@@ -19,7 +19,6 @@ const renderNotFoundPage = (args: StoryArgs) => html`
 
 const meta = {
   title: 'Components/NotFoundPage',
-  component: 'not-found-page',
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
@@ -29,11 +28,14 @@ const meta = {
 not-found-page は Lit custom element ではなく、**静的マークアップ生成関数**
 \`buildNotFoundPageMarkup()\` を正本とする 404 fallback です。
 
-基本構造と requestedPath 表示は \`test/ssr/not-found-page.test.ts\`、  
-SSR 経由での描画は \`test/ssr/server-entry.test.ts\`、  
-CSS 構造契約は \`test/ssr/css-structure-contracts.test.ts\` を正本とします。
+この story は custom element story ではなく、static markup renderer の docs / smoke / 手動確認用です。
 
-この story ファイルは **docs / smoke / 手動確認** に限定します。
+正本テスト:
+- \`test/ssr/not-found-page.test.ts\`
+- \`test/ssr/css-structure-contracts.test.ts\`
+- \`test/node/error-handler.test.ts\`
+- \`test/node/error-envelope-factory.test.ts\`
+
         `,
       },
     },

@@ -34,13 +34,14 @@ const renderRequestedPath = (requestedPath: string): string => {
 export const buildNotFoundPageMarkup = (options: BuildNotFoundPageMarkupOptions = {}): string => {
   const requestedPath = options.requestedPath?.trim() ?? '';
   const hostAttributes = serializeHtmlAttributes([
-    { name: 'requested-path', value: requestedPath.length > 0 ? requestedPath : null },
+    { name: 'data-not-found-page', value: true, kind: 'boolean' },
+    { name: 'data-requested-path', value: requestedPath.length > 0 ? requestedPath : null },
   ]);
 
   return `
-<not-found-page${hostAttributes}>
+<div${hostAttributes}>
   <style>
-    not-found-page {
+    [data-not-found-page] {
       display: block;
       color: var(--fg-default);
     }
@@ -231,6 +232,6 @@ export const buildNotFoundPageMarkup = (options: BuildNotFoundPageMarkupOptions 
       </nav>
     </div>
   </section>
-</not-found-page>
+</div>
   `.trim();
 };
