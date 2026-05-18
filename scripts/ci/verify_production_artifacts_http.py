@@ -60,7 +60,12 @@ def assert_javascript_artifact(url: str) -> None:
 
 
 def main() -> int:
-    origin = (os.environ.get("ACTUAL_DEPLOYMENT_URL") or os.environ.get("ROUAULT_SITE_ORIGIN") or "").strip()
+    configured_origin = (os.environ.get("ROUAULT_SITE_ORIGIN") or "").strip()
+    if configured_origin == "":
+        print("ROUAULT_SITE_ORIGIN is required.", file=sys.stderr)
+        return 1
+
+    origin = (os.environ.get("ACTUAL_DEPLOYMENT_URL") or configured_origin).strip()
     if origin == "":
         print("ACTUAL_DEPLOYMENT_URL or ROUAULT_SITE_ORIGIN is required.", file=sys.stderr)
         return 1
