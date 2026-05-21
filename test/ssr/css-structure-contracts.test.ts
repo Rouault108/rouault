@@ -539,9 +539,9 @@ describe('css structure contracts', () => {
     expectCssIncludes(cssText, [
       '.copy-button-icon-container',
       '.sr-only',
-      ":host([state='idle']) ui-icon",
-      ":host([state='success']) ui-icon",
-      ":host([state='error']) ui-icon",
+      ":host([state='idle'])[data-icon]",
+      ":host([state='success'])[data-icon]",
+      ":host([state='error'])[data-icon]",
       '@keyframes flash-copy-success',
       '@keyframes flash-copy-error',
       '@media (prefers-reduced-motion: reduce)',

@@ -243,7 +243,7 @@ describe('dev-router-artifact-middleware', () => {
         '  </head>',
         '  <body>',
         '    <main id="main-content"><h1>About</h1></main>',
-        '    <layout-footer build-label="dist-build"></layout-footer>',
+        '    <footer class="ui-footer" data-layout-footer><p class="ui-footer__build">dist-build</p></footer>',
         '  </body>',
         '</html>',
       ].join('\n'),

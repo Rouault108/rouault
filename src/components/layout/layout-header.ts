@@ -1,9 +1,9 @@
 import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import '../ui/icon/icon.js';
 import '../ui/header/header.js';
 import '../ui/button/button.js';
 import '../ui/dropdown/dropdown.js';
+import { renderStaticIconTemplate } from '../ui/icon/static-icon-template.js';
 import { DEFAULT_LAYOUT_SIDEBAR_ID, layoutSidebarController } from './layout-sidebar-controller.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
 import {
@@ -903,6 +903,24 @@ export class LayoutHeader extends LitElement {
   };
 
   private _commitThemePreference(preference: ThemePreference): void {
+    if (!this.hasUpdated && this._themePreference !== preference) {
+      void this.updateComplete.then(() => {
+        if (!this.isConnected) {
+          return;
+        }
+
+        this._themePreference = preference;
+        void this.updateComplete.then(() => {
+          if (this._themePreference !== preference || !this.isConnected) {
+            return;
+          }
+
+          this._syncThemeTriggerDom(preference);
+        });
+      });
+      return;
+    }
+
     if (this._themePreference !== preference) {
       this._themePreference = preference;
     }
@@ -936,29 +954,8 @@ export class LayoutHeader extends LitElement {
     const main = trigger.querySelector<HTMLElement>('.theme-trigger-main');
     main?.setAttribute('data-theme-preference', preference);
 
-    const icon = trigger.querySelector<HTMLElement>('.theme-trigger-icon');
-    icon?.setAttribute('name', option.icon);
-    icon?.shadowRoot
-      ?.querySelector<HTMLElement>('iconify-icon')
-      ?.setAttribute('icon', `lucide:${option.icon}`);
-
     const label = trigger.querySelector<HTMLElement>('.theme-trigger-text');
     this._syncTextPart(label, option.label);
-
-    const items =
-      this.shadowRoot?.querySelectorAll<HTMLElement>('[data-dropdown="theme"] ui-menu-item') ?? [];
-    for (const item of items) {
-      const value = item.getAttribute('value');
-      const selected = value === preference;
-      item.toggleAttribute('data-selected', selected);
-
-      const itemIcon = item.querySelector<HTMLElement>('ui-icon');
-      if (!itemIcon || !isThemePreference(value)) {
-        continue;
-      }
-
-      itemIcon.setAttribute('name', selected ? 'check' : THEME_OPTIONS[value].icon);
-    }
   }
 
   private _syncTextPart(container: HTMLElement | null, text: string): void {
@@ -1106,7 +1103,7 @@ export class LayoutHeader extends LitElement {
                   aria-expanded=${String(this._sidebarOpen)}
                   @click=${this._handleSidebarToggleClick}
                 >
-                  <ui-icon name="panel-left" aria-hidden="true"></ui-icon>
+                  ${renderStaticIconTemplate('panel-left')}
                 </ui-button>
               `
             : null}
@@ -1116,11 +1113,7 @@ export class LayoutHeader extends LitElement {
                 <span class="corpus-trigger-main">
                   <span class="corpus-trigger-text">${currentCorpusLabel}</span>
                 </span>
-                <ui-icon
-                  class="corpus-trigger-icon"
-                  name="chevron-down"
-                  aria-hidden="true"
-                ></ui-icon>
+                ${renderStaticIconTemplate('chevron-down', 'corpus-trigger-icon')}
               </span>
             </ui-button>
             ${corpusItems.map(
@@ -1153,7 +1146,7 @@ export class LayoutHeader extends LitElement {
             ?disabled=${!shouldRenderTocTrigger}
             @click=${this._handleTocTriggerClick}
           >
-            <ui-icon class="toc-trigger-icon" name="menu" aria-hidden="true"></ui-icon>
+            ${renderStaticIconTemplate('menu', 'toc-trigger-icon')}
             <span class="toc-trigger-text">${tocTriggerLabel}</span>
           </button>
 
@@ -1166,7 +1159,7 @@ export class LayoutHeader extends LitElement {
             aria-expanded="false"
             @click=${this._handleSearchTriggerClick}
           >
-            <ui-icon class="search-trigger__icon" name="search" aria-hidden="true"></ui-icon>
+            ${renderStaticIconTemplate('search', 'search-trigger__icon')}
             <span class="search-trigger__label">検索</span>
           </button>
 
@@ -1182,18 +1175,10 @@ export class LayoutHeader extends LitElement {
             >
               <span class="theme-trigger-label">
                 <span class="theme-trigger-main" data-theme-preference=${this._themePreference}>
-                  <ui-icon
-                    class="theme-trigger-icon"
-                    name=${currentThemeOption.icon}
-                    aria-hidden="true"
-                  ></ui-icon>
+                  ${renderStaticIconTemplate(currentThemeOption.icon, 'theme-trigger-icon')}
                   <span class="theme-trigger-text">${currentThemeOption.label}</span>
                 </span>
-                <ui-icon
-                  class="theme-trigger-chevron"
-                  name="chevron-down"
-                  aria-hidden="true"
-                ></ui-icon>
+                ${renderStaticIconTemplate('chevron-down', 'theme-trigger-chevron')}
               </span>
             </ui-button>
             ${(
@@ -1206,7 +1191,7 @@ export class LayoutHeader extends LitElement {
 
               return html`
                 <ui-menu-item value=${value} text-value=${option.label} ?data-selected=${selected}>
-                  <ui-icon name=${selected ? 'check' : option.icon} aria-hidden="true"></ui-icon>
+                  ${renderStaticIconTemplate(selected ? 'check' : option.icon)}
                   ${option.label}
                 </ui-menu-item>
               `;

@@ -1,5 +1,5 @@
 import type { CorpusPageEntry } from './data/corpusPages.js';
-import { serializeHtmlAttributes } from './layouts/html-output.js';
+import { renderCorpusPageHtml } from './layouts/corpus-page-html.js';
 
 interface CorpusPagesPaginationData {
   corpusPages?: CorpusPageEntry[];
@@ -38,12 +38,7 @@ export class CorpusPagesTemplate {
       return '';
     }
 
-    return `<corpus-page${serializeHtmlAttributes([
-      { name: 'data-hydration-scope', value: 'corpus-page' },
-      { name: 'corpus-page-json', value: data.corpusPage, kind: 'json' },
-      { name: 'data-hydration-capability', value: 'interactive' },
-      { name: 'data-hydration-trigger', value: 'initial' },
-    ])}></corpus-page>`;
+    return renderCorpusPageHtml(data.corpusPage);
   }
 }
 

@@ -51,8 +51,9 @@ const readDesktopTocStyle = async (page: Page) =>
       '[data-layout-toc-nav] [data-toc-link][aria-current="location"]',
     );
     const inactiveLabel =
-      inactiveLink?.querySelector<HTMLElement>('.layout-toc__link-label') ?? null;
-    const activeLabel = activeLink?.querySelector<HTMLElement>('.layout-toc__link-label') ?? null;
+      inactiveLink?.querySelector<HTMLElement>('.layout-toc__link-label') ?? inactiveLink ?? null;
+    const activeLabel =
+      activeLink?.querySelector<HTMLElement>('.layout-toc__link-label') ?? activeLink ?? null;
     const inactiveStyle =
       inactiveLabel instanceof HTMLElement ? getComputedStyle(inactiveLabel) : null;
     const activeStyle = activeLabel instanceof HTMLElement ? getComputedStyle(activeLabel) : null;
@@ -116,11 +117,17 @@ const readMobilePanelStyle = async (page: Page) =>
     const inactiveLabel =
       panel?.querySelector<HTMLElement>(
         '[data-layout-toc-mobile-nav] [data-toc-link] .layout-toc__link-label',
-      ) ?? null;
+      ) ??
+      panel?.querySelector<HTMLElement>('[data-layout-toc-mobile-nav] [data-toc-link]') ??
+      null;
     const activeLabel =
       panel?.querySelector<HTMLElement>(
         '[data-layout-toc-mobile-nav] [data-toc-link][aria-current="location"] .layout-toc__link-label',
-      ) ?? null;
+      ) ??
+      panel?.querySelector<HTMLElement>(
+        '[data-layout-toc-mobile-nav] [data-toc-link][aria-current="location"]',
+      ) ??
+      null;
     const inactiveStyle =
       inactiveLabel instanceof HTMLElement ? getComputedStyle(inactiveLabel) : null;
     const activeStyle = activeLabel instanceof HTMLElement ? getComputedStyle(activeLabel) : null;

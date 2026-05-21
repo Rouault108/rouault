@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import '../../../components/layout/layout-header';
-import '../../../components/layout/layout-footer';
 import '../../../components/ui/skip-link/skip-link';
+import { renderDefaultLayoutFooterHtml } from '../../../layouts/footer-html.js';
 import {
   renderFoundationFrame,
   renderFoundationSection,
@@ -44,7 +45,7 @@ const renderAppShell = () =>
                   </p>
                 </div>
               </main>
-              <layout-footer build-label="build abcdef1"></layout-footer>
+              ${unsafeHTML(renderDefaultLayoutFooterHtml('build abcdef1'))}
             </div>
           </div>
         `,

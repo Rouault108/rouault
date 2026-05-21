@@ -1,6 +1,8 @@
 import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import '../button/button';
+import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
+import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 
 type CopyButtonState = 'idle' | 'success' | 'error';
 type CopyButtonSize = 'sm' | 'md';
@@ -93,7 +95,7 @@ export class CopyButton extends LitElement {
       height: var(--_copy-button-icon-size);
     }
 
-    ui-icon {
+    [data-icon] {
       font-size: var(--_copy-button-icon-size);
       transition:
         color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
@@ -101,20 +103,20 @@ export class CopyButton extends LitElement {
     }
 
     /* Icon Color States */
-    :host([state='idle']) ui-icon {
+    :host([state='idle']) [data-icon] {
       color: var(--fg-muted, oklch(48% 0 0));
     }
 
-    :host([state='success']) ui-icon {
+    :host([state='success']) [data-icon] {
       color: var(--fg-success, var(--success, oklch(60% 0.15 160)));
     }
 
-    :host([state='error']) ui-icon {
+    :host([state='error']) [data-icon] {
       color: var(--fg-danger, var(--danger, oklch(55% 0.2 28)));
     }
 
     /* Icon Swap with Snappy Scale */
-    ui-button:active ui-icon {
+    ui-button:active [data-icon] {
       transform: scale(var(--_copy-button-scale-pressed));
     }
 
@@ -165,7 +167,7 @@ export class CopyButton extends LitElement {
 
     /* Motion Reduction: アニメーションを即時完了 */
     @media (prefers-reduced-motion: reduce) {
-      ui-icon {
+      [data-icon] {
         transition-duration: 0.01ms;
       }
 
@@ -181,7 +183,7 @@ export class CopyButton extends LitElement {
         border: var(--border-width, 1px) solid CanvasText;
       }
 
-      :host([state='success']) ui-icon {
+      :host([state='success']) [data-icon] {
         color: Highlight;
       }
 
@@ -190,7 +192,7 @@ export class CopyButton extends LitElement {
         outline-offset: -2px;
       }
 
-      :host([state='error']) ui-icon {
+      :host([state='error']) [data-icon] {
         color: CanvasText;
       }
     }
@@ -400,7 +402,7 @@ export class CopyButton extends LitElement {
   /**
    * 現在の状態に基づいたアイコンを取得
    */
-  private get _icon(): string {
+  private get _icon(): IconName {
     if (this._isCopyingVisible) {
       return 'loader-circle';
     }
@@ -539,7 +541,7 @@ export class CopyButton extends LitElement {
         @click="${this._handleCopy}"
       >
         <span class="copy-button-icon-container">
-          <ui-icon name="${this._icon}" aria-hidden="true"></ui-icon>
+          ${renderStaticIconTemplate(this._icon)}
         </span>
       </ui-button>
 

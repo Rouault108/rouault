@@ -27,6 +27,10 @@ describe('hydration registry', () => {
       'ui-image',
       'ui-footnote',
       'ui-divider',
+      'ui-details',
+      'ui-syntax-card',
+      'ui-syntax-section',
+      'ui-syntax-field',
     ];
 
     for (const tagName of removedTags) {

@@ -270,11 +270,9 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
     case 'layout-toc':
     case 'ui-checkbox':
     case 'ui-code-group':
-    case 'ui-details':
     case 'ui-tabs':
       return { capability: 'interactive', trigger: 'initial' };
 
-    case 'ui-card':
     case 'ui-code-block':
       return { capability: 'progressive', trigger: 'initial' };
 
@@ -294,9 +292,6 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
 
     case 'ui-score':
       return { capability: 'progressive', trigger: 'visible' };
-
-    case 'ui-syntax-card':
-      return { capability: 'progressive', trigger: 'initial' };
 
     case 'figure':
       if (
@@ -630,6 +625,169 @@ const toStaticInfoBox = (node: HastNode, context: SurfaceNormalizationContext): 
 
   nextChildren.push(createElement('div', { 'data-info-box-body': 'true' }, children));
   node.children = nextChildren;
+};
+
+const toStaticLinkCard = (node: HastNode): void => {
+  const properties = node.properties ?? {};
+  const href = pickOptionalString(properties['href'] ?? properties['url']);
+  const title =
+    pickOptionalString(properties['card-title'] ?? properties['title']) ?? href ?? 'Link';
+  const description = pickOptionalString(properties['description']);
+  const imageSrc = pickOptionalString(properties['image-src'] ?? properties['image']);
+  const siteName = pickOptionalString(properties['site-name']);
+
+  if (!href) {
+    node.tagName = 'article';
+    node.properties = {
+      className: ['link-card'],
+      'data-link-card': 'true',
+      'data-link-card-invalid': 'true',
+    };
+    node.children = [createElement('p', {}, [createTextNode(title)])];
+    return;
+  }
+
+  const bodyChildren: HastNode[] = [];
+  if (siteName) {
+    bodyChildren.push(
+      createElement('p', { className: ['link-card__site'] }, [createTextNode(siteName)]),
+    );
+  }
+  bodyChildren.push(createElement('h2', { className: ['link-card__title'] }, [createTextNode(title)]));
+  if (description) {
+    bodyChildren.push(
+      createElement('p', { className: ['link-card__description'] }, [
+        createTextNode(description),
+      ]),
+    );
+  }
+
+  const linkChildren: HastNode[] = [createElement('div', { className: ['link-card__body'] }, bodyChildren)];
+  if (imageSrc) {
+    linkChildren.push(
+      createElement('img', {
+        className: ['link-card__image'],
+        src: imageSrc,
+        alt: '',
+        loading: 'lazy',
+      }),
+    );
+  }
+
+  node.tagName = 'article';
+  node.properties = {
+    className: ['link-card'],
+    'data-link-card': 'true',
+  };
+  const linkKind = resolveFooterLinkKindLike(href);
+  node.children = [
+    createElement(
+      'a',
+      {
+        className: ['link-card__link'],
+        href,
+        'data-link-kind': linkKind,
+        'data-link-surface': 'card',
+        ...(linkKind === 'external-web' ? { 'data-external': 'true', rel: 'noreferrer' } : {}),
+      },
+      linkChildren,
+    ),
+  ];
+};
+
+const resolveFooterLinkKindLike = (href: string): string =>
+  /^https?:/iu.test(href)
+    ? 'external-web'
+    : /^(mailto:|tel:)/iu.test(href)
+      ? 'external-action'
+      : 'internal-document';
+
+const toStaticDetails = (node: HastNode): void => {
+  const properties = node.properties ?? {};
+  const summary = pickOptionalString(properties['summary']) ?? '詳細';
+  const open = toBooleanAttribute(properties['open']);
+  const variant = pickOptionalString(properties['variant']);
+  const region = toBooleanAttribute(properties['region']);
+  const ariaLabel = pickOptionalString(properties['aria-label']);
+  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+
+  node.tagName = 'details';
+  node.properties = {
+    className: ['details-block'],
+    'data-details': 'true',
+    ...(open ? { open: true } : {}),
+    ...(variant ? { 'data-variant': variant } : {}),
+    ...(region ? { role: 'region' } : {}),
+    ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
+  };
+  node.children = [
+    createElement('summary', { className: ['details-block__summary'] }, [
+      createTextNode(summary),
+    ]),
+    createElement('div', { className: ['details-block__body'] }, children),
+  ];
+};
+
+const toStaticSyntaxField = (node: HastNode): void => {
+  const properties = node.properties ?? {};
+  const name = pickOptionalString(properties['name']) ?? '';
+  const type = pickOptionalString(properties['type']);
+  const defaultValue = pickOptionalString(properties['default']);
+  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+
+  node.tagName = 'div';
+  node.properties = {
+    className: ['syntax-field'],
+    'data-syntax-field': 'true',
+  };
+  node.children = [
+    createElement('dt', { className: ['syntax-field__term'] }, [
+      createElement('code', {}, [createTextNode(name)]),
+      ...(type ? [createElement('span', { className: ['syntax-field__type'] }, [createTextNode(type)])] : []),
+      ...(defaultValue
+        ? [createElement('span', { className: ['syntax-field__default'] }, [createTextNode(defaultValue)])]
+        : []),
+    ]),
+    createElement('dd', { className: ['syntax-field__description'] }, children),
+  ];
+};
+
+const toStaticSyntaxSection = (node: HastNode): void => {
+  const properties = node.properties ?? {};
+  const label = pickOptionalString(properties['label']) ?? 'Section';
+  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+
+  node.tagName = 'section';
+  node.properties = {
+    className: ['syntax-section'],
+    'data-syntax-section': 'true',
+  };
+  node.children = [
+    createElement('h3', { className: ['syntax-section__heading'] }, [createTextNode(label)]),
+    ...children,
+  ];
+};
+
+const toStaticSyntaxCard = (node: HastNode): void => {
+  const properties = node.properties ?? {};
+  const kind = pickOptionalString(properties['kind']);
+  const name = pickOptionalString(properties['name']) ?? 'Syntax';
+  const lang = pickOptionalString(properties['data-lang']);
+  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+
+  node.tagName = 'section';
+  node.properties = {
+    className: ['syntax-card'],
+    'data-syntax-card': 'true',
+    ...(lang ? { 'data-lang': lang } : {}),
+  };
+  node.children = [
+    createElement('header', { className: ['syntax-card__header'] }, [
+      ...(kind ? [createElement('p', { className: ['syntax-card__kind'] }, [createTextNode(kind)])] : []),
+      createElement('h2', { className: ['syntax-card__name'] }, [createTextNode(name)]),
+    ]),
+    ...children,
+  ];
 };
 
 const isCheckboxInput = (node: HastNode): boolean => {
@@ -1809,6 +1967,16 @@ export function rehypeRouaultComponents() {
             toStaticTable(current);
           } else if (current.tagName === 'ui-blockquote') {
             toStaticBlockquote(current);
+          } else if (current.tagName === 'ui-card') {
+            toStaticLinkCard(current);
+          } else if (current.tagName === 'ui-details') {
+            toStaticDetails(current);
+          } else if (current.tagName === 'ui-syntax-field') {
+            toStaticSyntaxField(current);
+          } else if (current.tagName === 'ui-syntax-section') {
+            toStaticSyntaxSection(current);
+          } else if (current.tagName === 'ui-syntax-card') {
+            toStaticSyntaxCard(current);
           } else if (
             current.tagName === 'ui-callout' ||
             (current.tagName === 'aside' && current.properties?.['data-callout'] !== undefined)

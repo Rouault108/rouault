@@ -252,10 +252,12 @@ const readThemeTriggerState = async (
   ];
 
   return {
-    icons: icons.map((icon) => icon.getAttribute('name') ?? ''),
+    icons: icons.map((icon) => icon.getAttribute('data-icon') ?? ''),
     iconGlyphs: icons.map(
-      (icon) =>
-        icon.shadowRoot?.querySelector<HTMLElement>('iconify-icon')?.getAttribute('icon') ?? null,
+      (icon) => {
+        const iconName = icon.getAttribute('data-icon');
+        return iconName === null ? null : `lucide:${iconName}`;
+      },
     ),
     labels: [...trigger.querySelectorAll<HTMLElement>('.theme-trigger-text')].map(
       (node) => node.textContent?.trim() ?? '',
@@ -269,7 +271,7 @@ const readThemeTriggerState = async (
       .filter((item) => item.hasAttribute('data-selected'))
       .map((item) => ({
         value: item.getAttribute('value'),
-        icon: item.querySelector('ui-icon')?.getAttribute('name') ?? null,
+        icon: item.querySelector('[data-icon]')?.getAttribute('data-icon') ?? null,
       })),
   };
 };
@@ -355,7 +357,7 @@ describe('layout-header browser contract', () => {
 
     const corpusChevron = expectPresent(
       header.shadowRoot?.querySelector<HTMLElement>(
-        '.corpus-switcher [slot="trigger"] ui-icon[name="chevron-down"]',
+        '.corpus-switcher [slot="trigger"] [data-icon="chevron-down"]',
       ),
       'corpusChevron',
     );
@@ -545,11 +547,14 @@ describe('layout-header browser contract', () => {
       ),
       'lightItem',
     );
-    const lightIcon = expectPresent(lightItem.querySelector<HTMLElement>('ui-icon'), 'lightIcon');
+    const lightIcon = expectPresent(
+      lightItem.querySelector<HTMLElement>('[data-icon]'),
+      'lightIcon',
+    );
 
     expect(lightItem.getAttribute('text-value')).to.equal('ライト');
     expect(lightItem.querySelector('.theme-menu-label')).to.equal(null);
-    expect(lightIcon.getAttribute('name')).to.equal('sun');
+    expect(lightIcon.getAttribute('data-icon')).to.equal('sun');
     expect(lightItem.textContent?.trim()).to.equal('ライト');
   });
 
@@ -629,7 +634,7 @@ describe('layout-header browser contract', () => {
     );
     const corpusChevron = expectPresent(
       header.shadowRoot?.querySelector<HTMLElement>(
-        '.corpus-switcher [slot="trigger"] ui-icon[name="chevron-down"]',
+        '.corpus-switcher [slot="trigger"] [data-icon="chevron-down"]',
       ),
       'corpusChevron',
     );
@@ -653,7 +658,7 @@ describe('layout-header browser contract', () => {
 
     const corpusChevron = expectPresent(
       header.shadowRoot?.querySelector<HTMLElement>(
-        '.corpus-switcher [slot="trigger"] ui-icon[name="chevron-down"]',
+        '.corpus-switcher [slot="trigger"] [data-icon="chevron-down"]',
       ),
       'corpusChevron',
     );
@@ -687,7 +692,7 @@ describe('layout-header browser contract', () => {
     );
     const corpusChevron = expectPresent(
       header.shadowRoot?.querySelector<HTMLElement>(
-        '.corpus-switcher [slot="trigger"] ui-icon[name="chevron-down"]',
+        '.corpus-switcher [slot="trigger"] [data-icon="chevron-down"]',
       ),
       'corpusChevron',
     );
@@ -1630,7 +1635,7 @@ describe('layout-header browser contract', () => {
     );
     const corpusChevron = expectPresent(
       header.shadowRoot?.querySelector<HTMLElement>(
-        '.corpus-switcher [slot="trigger"] ui-icon[name="chevron-down"]',
+        '.corpus-switcher [slot="trigger"] [data-icon="chevron-down"]',
       ),
       'corpusChevron',
     );
@@ -1859,7 +1864,7 @@ describe('layout-header browser contract', () => {
     );
     const corpusChevron = expectPresent(
       header.shadowRoot?.querySelector<HTMLElement>(
-        '.corpus-switcher [slot="trigger"] ui-icon[name="chevron-down"]',
+        '.corpus-switcher [slot="trigger"] [data-icon="chevron-down"]',
       ),
       'corpusChevron',
     );

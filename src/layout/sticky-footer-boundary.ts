@@ -35,7 +35,7 @@ export const computeStickyFooterOffset = ({
 };
 
 const resolveFooterHost = (): HTMLElement | null =>
-  document.querySelector<HTMLElement>('layout-footer');
+  document.querySelector<HTMLElement>('[data-layout-footer]');
 
 const readPxCustomProperty = (element: HTMLElement, propertyName: string): number => {
   const rawValue = getComputedStyle(element).getPropertyValue(propertyName).trim();

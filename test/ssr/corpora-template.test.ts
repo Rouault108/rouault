@@ -10,7 +10,7 @@ describe('CorpusPagesTemplate', () => {
     expect(data.pagination.data).toBe('corpusPages');
   });
 
-  it('コーパス専用の corpus-page を描画すること', () => {
+  it('コーパス専用ページを静的 HTML として描画すること', () => {
     const template = new CorpusPagesTemplate();
     const rendered = template.render({
       corpusPage: {
@@ -33,12 +33,12 @@ describe('CorpusPagesTemplate', () => {
       },
     });
 
-    expect(rendered).toContain('<corpus-page data-hydration-scope="corpus-page"');
-    expect(rendered).toContain('data-hydration-capability="interactive"');
-    expect(rendered).toContain('data-hydration-trigger="initial"');
-    expect(rendered).toContain('corpus-page-json="');
-    expect(rendered).toContain('&quot;key&quot;:&quot;music&quot;');
-    expect(rendered).toContain('&quot;label&quot;:&quot;音楽&quot;');
-    expect(rendered).toContain('&quot;href&quot;:&quot;/corpora/music/&quot;');
+    expect(rendered).toContain('<section class="corpus-page page-shell"');
+    expect(rendered).toContain('<p class="eyebrow">Corpus</p>');
+    expect(rendered).toContain('<h1 id="corpus-page-title" class="heading">音楽</h1>');
+    expect(rendered).toContain('href="/notes/music/symphony/"');
+    expect(rendered).toContain('data-link-kind="internal-document"');
+    expect(rendered).not.toContain('<corpus-page');
+    expect(rendered).not.toContain('data-hydration-');
   });
 });

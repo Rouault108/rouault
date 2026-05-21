@@ -5,18 +5,9 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import type { TemplateResult } from 'lit';
 import { html, unsafeStatic } from 'lit/static-html.js';
 
-import { LayoutFooter } from '../../src/components/layout/layout-footer.js';
-
-import '../../src/components/ui/icon/icon.js';
 import '../../src/components/ui/tag/tag.js';
 import '../../src/components/ui/skip-link/skip-link.js';
 import '../../src/components/layout/layout-header.js';
-import '../../src/components/ui/search-dialog/search-dialog.js';
-import '../../src/components/ui/card/card.js';
-import '../../src/components/search/search-page.js';
-import '../../src/components/tag/tag-page.js';
-import '../../src/components/corpus/corpus-page.js';
-import '../../src/components/corpus/corpora-overview-page.js';
 import '../../src/components/ui/article-header/article-header.js';
 import '../../src/components/layout/layout-sidebar.js';
 import '../../src/components/layout/layout-toc.js';
@@ -64,16 +55,6 @@ interface SsrTargetAdapter {
 
 const renderTemplateResult = async (template: TemplateResult): Promise<string> =>
   collectResult(renderThunked(template));
-
-const assignDefined = <T extends object, K extends keyof T>(
-  target: T,
-  key: K,
-  value: T[K] | undefined,
-): void => {
-  if (value !== undefined) {
-    target[key] = value;
-  }
-};
 
 const createSsrTargetAdapterResult = (
   tag: SsrTargetTag,
@@ -153,25 +134,6 @@ const renderLightHostPassthroughElement = async (
   return `<${tagName}${serializeAttributes(attributes)}>${innerHtml}</${tagName}>`;
 };
 
-const renderLayoutFooterLightElement = async (
-  attributes: readonly SsrAttribute[],
-): Promise<string> => {
-  const footer = new LayoutFooter();
-
-  assignDefined(footer, 'footerId', getAttributeValue(attributes, 'footer-id'));
-  assignDefined(footer, 'siteEyebrow', getAttributeValue(attributes, 'site-eyebrow'));
-  assignDefined(footer, 'siteName', getAttributeValue(attributes, 'site-name'));
-  assignDefined(footer, 'siteUrl', getAttributeValue(attributes, 'site-url'));
-  assignDefined(footer, 'siteDescription', getAttributeValue(attributes, 'site-description'));
-  assignDefined(footer, 'copyrightText', getAttributeValue(attributes, 'copyright-text'));
-  assignDefined(footer, 'buildLabel', getAttributeValue(attributes, 'build-label'));
-  assignDefined(footer, 'navLabel', getAttributeValue(attributes, 'nav-label'));
-  assignDefined(footer, 'linksJson', getAttributeValue(attributes, 'links-json'));
-
-  const rendered = await collectResult(renderThunked(footer.render()));
-  return `<layout-footer${serializeAttributes(attributes)}>${rendered}</layout-footer>`;
-};
-
 const createSsrTargetAdapter = (definition: SsrComponentDefinition): SsrTargetAdapter | null => {
   const tag = definition.tag as SsrTargetTag;
 
@@ -210,12 +172,6 @@ const createSsrTargetAdapter = (definition: SsrComponentDefinition): SsrTargetAd
         definition.documentStyle,
       );
 
-    case 'light-layout-footer':
-      return createSsrTargetAdapterResult(
-        tag,
-        renderLayoutFooterLightElement,
-        definition.documentStyle,
-      );
   }
 };
 
@@ -230,7 +186,14 @@ export const renderSsrTarget = async (
   tagName: SsrTargetTag,
   attributes: readonly SsrAttribute[],
   innerHtml: string,
-): Promise<string> => SSR_TARGET_ADAPTERS[tagName].render(attributes, innerHtml);
+): Promise<string> => {
+  const adapter = SSR_TARGET_ADAPTERS[tagName];
+  if (!adapter) {
+    throw new Error(`Unknown SSR target: ${tagName}`);
+  }
+
+  return adapter.render(attributes, innerHtml);
+};
 
 export const collectSsrDocumentStyles = (
   tagNames: Iterable<string>,

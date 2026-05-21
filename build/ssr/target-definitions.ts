@@ -1,16 +1,7 @@
 import {
-  FOOTER_DOCUMENT_CSS,
-  FOOTER_DOCUMENT_STYLE_ID,
-} from '../../src/components/ui/footer/footer.js';
-import {
   DOCUMENT_CSS as HIGHLIGHT_DOCUMENT_CSS,
   DOCUMENT_STYLE_ID as HIGHLIGHT_DOCUMENT_STYLE_ID,
 } from '../../src/components/ui/highlight/highlight.js';
-import {
-  DOCUMENT_CSS as SYNTAX_FIELD_DOCUMENT_CSS,
-  DOCUMENT_STYLE_ID as SYNTAX_FIELD_DOCUMENT_STYLE_ID,
-} from '../../src/components/ui/syntax-field/syntax-field.js';
-
 export type SsrComponentProfile = 'shell' | 'note' | 'page';
 export type SsrComponentMode = 'shadow' | 'light' | 'none';
 
@@ -19,8 +10,7 @@ export type SsrAdapterKind =
   | 'light-host-passthrough'
   | 'shadow-default'
   | 'shadow-article-header'
-  | 'light-app-router'
-  | 'light-layout-footer';
+  | 'light-app-router';
 
 export interface SsrDocumentStyleDefinition {
   readonly id: string;
@@ -36,7 +26,6 @@ export interface SsrComponentDefinition {
 }
 
 export const SSR_COMPONENT_DEFINITIONS = [
-  { tag: 'ui-icon', ssr: 'none', profiles: ['shell', 'note', 'page'], adapterKind: 'none' },
   {
     tag: 'ui-tag',
     ssr: 'shadow',
@@ -60,52 +49,6 @@ export const SSR_COMPONENT_DEFINITIONS = [
     ssr: 'light',
     profiles: ['shell'],
     adapterKind: 'light-app-router',
-  },
-  {
-    tag: 'layout-footer',
-    ssr: 'light',
-    profiles: ['shell'],
-    adapterKind: 'light-layout-footer',
-    documentStyle: {
-      id: FOOTER_DOCUMENT_STYLE_ID,
-      cssText: FOOTER_DOCUMENT_CSS,
-    },
-  },
-  {
-    tag: 'ui-search-dialog',
-    ssr: 'shadow',
-    profiles: ['shell'],
-    adapterKind: 'shadow-default',
-  },
-  {
-    tag: 'ui-card',
-    ssr: 'shadow',
-    profiles: ['shell', 'page'],
-    adapterKind: 'shadow-default',
-  },
-  {
-    tag: 'search-page',
-    ssr: 'shadow',
-    profiles: ['page'],
-    adapterKind: 'shadow-default',
-  },
-  {
-    tag: 'tag-page',
-    ssr: 'shadow',
-    profiles: ['page'],
-    adapterKind: 'shadow-default',
-  },
-  {
-    tag: 'corpus-page',
-    ssr: 'shadow',
-    profiles: ['page'],
-    adapterKind: 'shadow-default',
-  },
-  {
-    tag: 'corpora-overview-page',
-    ssr: 'shadow',
-    profiles: ['page'],
-    adapterKind: 'shadow-default',
   },
   {
     tag: 'ui-article-header',
@@ -144,12 +87,6 @@ export const SSR_COMPONENT_DEFINITIONS = [
     adapterKind: 'shadow-default',
   },
   {
-    tag: 'ui-details',
-    ssr: 'shadow',
-    profiles: ['note'],
-    adapterKind: 'shadow-default',
-  },
-  {
     tag: 'ui-highlight',
     ssr: 'shadow',
     profiles: ['shell'],
@@ -164,28 +101,6 @@ export const SSR_COMPONENT_DEFINITIONS = [
     ssr: 'shadow',
     profiles: ['note'],
     adapterKind: 'shadow-default',
-  },
-  {
-    tag: 'ui-syntax-card',
-    ssr: 'light',
-    profiles: ['note'],
-    adapterKind: 'light-host-passthrough',
-  },
-  {
-    tag: 'ui-syntax-section',
-    ssr: 'light',
-    profiles: ['note'],
-    adapterKind: 'light-host-passthrough',
-  },
-  {
-    tag: 'ui-syntax-field',
-    ssr: 'light',
-    profiles: ['note'],
-    adapterKind: 'light-host-passthrough',
-    documentStyle: {
-      id: SYNTAX_FIELD_DOCUMENT_STYLE_ID,
-      cssText: SYNTAX_FIELD_DOCUMENT_CSS,
-    },
   },
   {
     tag: 'ui-tabs',

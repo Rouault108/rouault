@@ -12,9 +12,9 @@ const getInnerButton = (host: CopyButton): HTMLElement => {
 };
 
 const getIcon = (host: CopyButton): HTMLElement => {
-  const icon = host.shadowRoot?.querySelector<HTMLElement>('ui-icon');
+  const icon = host.shadowRoot?.querySelector<HTMLElement>('[data-icon]');
   if (!icon) {
-    throw new Error('ui-icon が見つかりません');
+    throw new Error('data-icon を持つ静的 icon が見つかりません');
   }
   return icon;
 };
@@ -69,7 +69,7 @@ describe('ui-copy-button browser contract', () => {
     );
 
     expect(host.getAttribute('state')).to.equal('success');
-    expect(getIcon(host).getAttribute('name')).to.equal('check');
+    expect(getIcon(host).getAttribute('data-icon')).to.equal('check');
     expect(innerButton.getAttribute('aria-label')).to.contain('コピーしました');
 
     const liveRegion = getLiveRegion(host);
@@ -109,7 +109,7 @@ describe('ui-copy-button browser contract', () => {
     );
 
     expect(host.getAttribute('state')).to.equal('error');
-    expect(getIcon(host).getAttribute('name')).to.equal('alert-triangle');
+    expect(getIcon(host).getAttribute('data-icon')).to.equal('alert-triangle');
     expect(innerButton.getAttribute('aria-label')).to.contain('コピー失敗');
 
     const liveRegion = getLiveRegion(host);
@@ -181,7 +181,7 @@ describe('ui-copy-button browser contract', () => {
         await waitMs(25);
         await waitForLitUpdate(host);
 
-        expect(getIcon(host).getAttribute('name')).to.equal('loader-circle');
+        expect(getIcon(host).getAttribute('data-icon')).to.equal('loader-circle');
         expect(innerButton.getAttribute('aria-label')).to.contain('コピー中');
 
         await waitMs(100);

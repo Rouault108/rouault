@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import '../../../components/layout/layout-header';
-import '../../../components/layout/layout-footer';
 import '../../../components/layout/layout-sidebar';
 import '../../../components/layout/layout-toc-controller';
 import { renderArticleHeaderHtml } from '../../../layouts/article-header-html.js';
+import { renderDefaultLayoutFooterHtml } from '../../../layouts/footer-html.js';
 import { renderTocHtml } from '../../../layouts/toc-html.js';
 import {
   renderFoundationFrame,
@@ -133,7 +133,7 @@ const renderNoteShell = () =>
                   ${JSON.stringify(tocSource)}
                 </script>
               </main>
-              <layout-footer build-label="build abcdef1"></layout-footer>
+              ${unsafeHTML(renderDefaultLayoutFooterHtml('build abcdef1'))}
             </div>
           </div>
         `,

@@ -86,7 +86,8 @@ describe('attachStickyFooterBoundary', () => {
       target.style.setProperty('--header-height', '48px');
       document.body.append(target);
 
-      const footer = document.createElement('layout-footer');
+      const footer = document.createElement('footer');
+      footer.setAttribute('data-layout-footer', '');
       Object.defineProperty(footer, 'getBoundingClientRect', {
         configurable: true,
         value: () =>
@@ -130,7 +131,8 @@ describe('attachStickyFooterBoundary', () => {
       target.style.setProperty('--header-height', '48px');
       document.body.append(target);
 
-      const footer = document.createElement('layout-footer');
+      const footer = document.createElement('footer');
+      footer.setAttribute('data-layout-footer', '');
       Object.defineProperty(footer, 'getBoundingClientRect', {
         configurable: true,
         value: () =>

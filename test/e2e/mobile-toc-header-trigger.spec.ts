@@ -295,7 +295,7 @@ test.describe('mobile TOC header trigger contract', () => {
     await expect(page.locator('layout-toc-controller')).toHaveCount(1);
     await expect(page.locator('[data-layout-toc-nav]')).toHaveCount(1);
 
-    const aboutLink = page.locator('layout-footer a[href="/about/"]').first();
+    const aboutLink = page.locator('[data-layout-footer] a[href="/about/"]').first();
     await expect(aboutLink).toBeVisible();
     await aboutLink.click();
 

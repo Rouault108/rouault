@@ -27,7 +27,7 @@ test.describe('dev router artifact', () => {
     await page.goto(sourcePath);
     await waitForAppRouterReady(page);
 
-    const aboutLink = page.locator('layout-footer a[href="/about/"]').first();
+    const aboutLink = page.locator('[data-layout-footer] a[href="/about/"]').first();
     await expect(aboutLink).toBeVisible();
 
     const artifactResponsePromise = page.waitForResponse((response) => {

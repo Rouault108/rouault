@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import type { Banner } from './banner';
 import './banner';
+import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
 
 const meta: Meta<Banner> = {
   title: 'Components/Banner',
@@ -99,7 +100,7 @@ export const SlotExamples: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-banner variant="info">
-        <ui-icon name="calendar-clock" aria-hidden="true"></ui-icon>
+        ${renderStaticIconTemplate('calendar-clock')}
         計画メンテナンスは明日0時に開始します。
       </ui-banner>
 

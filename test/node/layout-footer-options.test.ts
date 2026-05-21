@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildLayoutFooterOptions } from '../../src/components/layout/layout-footer.js';
+import { buildLayoutFooterOptions } from '../../src/layouts/footer-options.js';
 
 const restoreEnv = (previousBuildLabel: string | undefined): void => {
   if (previousBuildLabel === undefined) {

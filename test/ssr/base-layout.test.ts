@@ -482,9 +482,9 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('aria-atomic="true"');
     expect(rendered).toContain('class="sr-only"');
     expect(rendered).toContain('<main id="main-content" tabindex="-1">');
-    expect(rendered).toContain(
-      '<layout-footer build-label="build test" data-hydration-capability="static" data-hydration-trigger="initial"></layout-footer>',
-    );
+    expect(rendered).toContain('<footer class="ui-footer" data-layout-footer>');
+    expect(rendered).toContain('<p class="ui-footer__build">build test</p>');
+    expect(rendered).not.toContain('<layout-footer');
   });
 
   it('app shell sidebar host と overlay layer を単一実体として出力すること', () => {
@@ -540,7 +540,7 @@ describe('BaseLayout', () => {
     expect(rendered.match(/data-app-shell-sidebar-overlay-layer/g)?.length ?? 0).to.equal(1);
   });
 
-  it('footer を shell hydration の初期計画へ含めること', () => {
+  it('footer を静的 HTML として shell へ含めること', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({
       content: '<p>本文</p>',
@@ -553,14 +553,12 @@ describe('BaseLayout', () => {
       siteUrlContext: TEST_SITE_URL_CONTEXT,
     });
 
-    expect(rendered).toContain('data-hydration-capability="static"');
-    expect(rendered).toContain('data-hydration-trigger="initial"');
-    expect(rendered).toContain(
-      '<layout-footer build-label="build test" data-hydration-capability="static" data-hydration-trigger="initial"></layout-footer>',
-    );
+    expect(rendered).toContain('<footer class="ui-footer" data-layout-footer>');
+    expect(rendered).toContain('<p class="ui-footer__build">build test</p>');
+    expect(rendered).not.toContain('<layout-footer');
   });
 
-  it('buildMetadata の buildLabel を footer 属性へ流し込むこと', () => {
+  it('buildMetadata の buildLabel を footer の静的本文へ流し込むこと', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({
       content: '<p>本文</p>',
@@ -573,9 +571,8 @@ describe('BaseLayout', () => {
       siteUrlContext: TEST_SITE_URL_CONTEXT,
     });
 
-    expect(rendered).toContain(
-      '<layout-footer build-label="build abcdef1" data-hydration-capability="static" data-hydration-trigger="initial"></layout-footer>',
-    );
+    expect(rendered).toContain('<p class="ui-footer__build">build abcdef1</p>');
+    expect(rendered).not.toContain('<layout-footer');
     expect(rendered).toContain('<meta name="rouault-build-id" content="abcdef1">');
   });
 });

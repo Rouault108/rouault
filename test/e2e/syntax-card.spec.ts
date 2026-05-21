@@ -6,13 +6,10 @@ const codePath = e2eNoteFixtures.code.directPath;
 
 interface SyntaxCardState {
   hostExists: boolean;
-  hostShadowRoot: boolean;
   headingText: string;
-  copyButtonExists: boolean;
   signaturePreExists: boolean;
   signatureCodeChildExists: boolean;
   signatureWrappedAsCodeBlock: boolean;
-  firstSectionShadowRoot: boolean;
   firstSectionTitle: string;
   firstFieldWrapperExists: boolean;
   firstFieldTermText: string;
@@ -22,34 +19,26 @@ interface SyntaxCardState {
 const normalizeText = (value: string | null | undefined): string =>
   (value ?? '').replace(/\s+/gu, ' ').trim();
 
-const waitForFirstSyntaxCardHydrated = async (page: Page): Promise<void> => {
+const waitForFirstSyntaxCardRendered = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
     const normalize = (value: string | null | undefined): string =>
       (value ?? '').replace(/\s+/gu, ' ').trim();
 
-    const card = document.querySelector<HTMLElement>('ui-syntax-card');
-    const section = card?.querySelector<HTMLElement>('ui-syntax-section') ?? null;
-    const field = card?.querySelector<HTMLElement>('ui-syntax-field') ?? null;
+    const card = document.querySelector<HTMLElement>('[data-syntax-card]');
+    const section = card?.querySelector<HTMLElement>('[data-syntax-section]') ?? null;
+    const field = card?.querySelector<HTMLElement>('[data-syntax-field]') ?? null;
 
-    const cardName = normalize(
-      card?.shadowRoot?.querySelector<HTMLElement>('.name')?.textContent,
-    );
-    const copyButton = card?.shadowRoot?.querySelector('ui-copy-button.copy-action');
+    const cardName = normalize(card?.querySelector<HTMLElement>('.syntax-card__name')?.textContent);
 
-    const sectionTitle = normalize(
-      section?.shadowRoot?.querySelector<HTMLElement>('.section-title')?.textContent,
-    );
+    const sectionTitle = normalize(section?.querySelector<HTMLElement>('.syntax-section__heading')?.textContent);
 
     return (
       card instanceof HTMLElement &&
-      card.shadowRoot !== null &&
       cardName.length > 0 &&
-      copyButton !== null &&
       section instanceof HTMLElement &&
-      section.shadowRoot !== null &&
       sectionTitle.length > 0 &&
       field instanceof HTMLElement &&
-      field.querySelector('.field-wrapper') !== null
+      field.querySelector('.syntax-field__term') !== null
     );
   });
 };
@@ -59,52 +48,46 @@ const readFirstSyntaxCardState = async (page: Page): Promise<SyntaxCardState> =>
     const normalize = (value: string | null | undefined): string =>
       (value ?? '').replace(/\s+/gu, ' ').trim();
 
-    const card = document.querySelector<HTMLElement>('ui-syntax-card');
-    const signaturePre = card?.querySelector<HTMLPreElement>('pre[slot="signature"]') ?? null;
-    const firstSection = card?.querySelector<HTMLElement>('ui-syntax-section') ?? null;
-    const firstField = card?.querySelector<HTMLElement>('ui-syntax-field') ?? null;
+    const card = document.querySelector<HTMLElement>('[data-syntax-card]');
+    const signaturePre = card?.querySelector<HTMLPreElement>('pre[data-syntax-signature]') ?? null;
+    const firstSection = card?.querySelector<HTMLElement>('[data-syntax-section]') ?? null;
+    const firstField = card?.querySelector<HTMLElement>('[data-syntax-field]') ?? null;
 
     return {
       hostExists: card instanceof HTMLElement,
-      hostShadowRoot: card?.shadowRoot !== null,
-      headingText: normalize(card?.shadowRoot?.querySelector<HTMLElement>('.name')?.textContent),
-      copyButtonExists: card?.shadowRoot?.querySelector('ui-copy-button.copy-action') !== null,
+      headingText: normalize(card?.querySelector<HTMLElement>('.syntax-card__name')?.textContent),
       signaturePreExists: signaturePre instanceof HTMLPreElement,
       signatureCodeChildExists: signaturePre?.querySelector('code') !== null,
       signatureWrappedAsCodeBlock:
         signaturePre?.matches('[data-code-block]') === true ||
         signaturePre?.closest('[data-code-block-root]') !== null,
-      firstSectionShadowRoot: firstSection?.shadowRoot !== null,
       firstSectionTitle: normalize(
-        firstSection?.shadowRoot?.querySelector<HTMLElement>('.section-title')?.textContent,
+        firstSection?.querySelector<HTMLElement>('.syntax-section__heading')?.textContent,
       ),
-      firstFieldWrapperExists: firstField?.querySelector('.field-wrapper') !== null,
-      firstFieldTermText: normalize(firstField?.querySelector('dt.field-term')?.textContent),
+      firstFieldWrapperExists: firstField?.querySelector('.syntax-field__term') !== null,
+      firstFieldTermText: normalize(firstField?.querySelector('dt.syntax-field__term')?.textContent),
       firstFieldDescriptionText: normalize(
-        firstField?.querySelector('dd.field-description')?.textContent,
+        firstField?.querySelector('dd.syntax-field__description')?.textContent,
       ),
     };
   });
 
 test.describe('syntax-card family e2e', () => {
-  test('code fixture 上で syntax-card family が upgrade されること', async ({ page }) => {
+  test('code fixture 上で syntax-card family が静的 HTML として描画されること', async ({ page }) => {
     await page.goto(codePath);
 
-    await expect(page.locator('ui-syntax-card').first()).toBeVisible();
-    await waitForFirstSyntaxCardHydrated(page);
+    await expect(page.locator('[data-syntax-card]').first()).toBeVisible();
+    await waitForFirstSyntaxCardRendered(page);
 
     const state = await readFirstSyntaxCardState(page);
 
     expect(state.hostExists).toBe(true);
-    expect(state.hostShadowRoot).toBe(true);
     expect(state.headingText).toBe('useEffect');
-    expect(state.copyButtonExists).toBe(true);
 
     expect(state.signaturePreExists).toBe(true);
     expect(state.signatureCodeChildExists).toBe(false);
     expect(state.signatureWrappedAsCodeBlock).toBe(false);
 
-    expect(state.firstSectionShadowRoot).toBe(true);
     expect(state.firstSectionTitle).toBe('概要');
 
     expect(state.firstFieldWrapperExists).toBe(true);
@@ -116,21 +99,18 @@ test.describe('syntax-card family e2e', () => {
     await page.goto(codePath);
     await page.reload();
 
-    await expect(page.locator('ui-syntax-card').first()).toBeVisible();
-    await waitForFirstSyntaxCardHydrated(page);
+    await expect(page.locator('[data-syntax-card]').first()).toBeVisible();
+    await waitForFirstSyntaxCardRendered(page);
 
     const state = await readFirstSyntaxCardState(page);
 
     expect(state.hostExists).toBe(true);
-    expect(state.hostShadowRoot).toBe(true);
     expect(state.headingText).toBe('useEffect');
-    expect(state.copyButtonExists).toBe(true);
 
     expect(state.signaturePreExists).toBe(true);
     expect(state.signatureCodeChildExists).toBe(false);
     expect(state.signatureWrappedAsCodeBlock).toBe(false);
 
-    expect(state.firstSectionShadowRoot).toBe(true);
     expect(state.firstSectionTitle).toBe('概要');
 
     expect(state.firstFieldWrapperExists).toBe(true);

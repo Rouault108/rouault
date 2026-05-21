@@ -1,9 +1,9 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import type { PropertyValues } from 'lit';
-import '../icon/icon.js';
 import '../button/button';
 import '../dropdown/dropdown';
+import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
 import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 
 type PreviewPadding = 'normal' | 'none' | 'compact';
@@ -365,7 +365,7 @@ export class CodePreview extends LitElement {
       --bg-hover: var(--_ui-preview-bg-hover);
     }
 
-    .header-control ui-button ui-icon {
+    .header-control ui-button [data-icon] {
       flex-shrink: 0;
     }
 
@@ -810,7 +810,7 @@ export class CodePreview extends LitElement {
   ) {
     return html`
       <ui-button slot="trigger" variant="ghost" size="sm">
-        <ui-icon name="${option.icon}" aria-hidden="true"></ui-icon>
+        ${renderStaticIconTemplate(option.icon)}
         <span>${option.shortLabel}</span>
       </ui-button>
     `;
@@ -828,7 +828,7 @@ export class CodePreview extends LitElement {
         ${THEME_OPTIONS.map(
           (option) => html`
             <ui-menu-item value="${option.value}">
-              <ui-icon name="${option.icon}" aria-hidden="true"></ui-icon>
+              ${renderStaticIconTemplate(option.icon)}
               <span>${option.label}</span>
             </ui-menu-item>
           `,
@@ -849,7 +849,7 @@ export class CodePreview extends LitElement {
         ${SURFACE_OPTIONS.map(
           (option) => html`
             <ui-menu-item value="${option.value}">
-              <ui-icon name="${option.icon}" aria-hidden="true"></ui-icon>
+              ${renderStaticIconTemplate(option.icon)}
               <span>${option.label}</span>
             </ui-menu-item>
           `,
@@ -870,7 +870,7 @@ export class CodePreview extends LitElement {
         ${VIEWPORT_OPTIONS.map(
           (option) => html`
             <ui-menu-item value="${option.value}">
-              <ui-icon name="${option.icon}" aria-hidden="true"></ui-icon>
+              ${renderStaticIconTemplate(option.icon)}
               <span>${option.label}</span>
             </ui-menu-item>
           `,

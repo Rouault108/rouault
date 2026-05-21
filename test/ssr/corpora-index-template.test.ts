@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CorporaOverviewTemplate } from '../../src/corpora-index.11ty.js';
 
 describe('CorporaOverviewTemplate', () => {
-  it('すべてのノート用の overview コンポーネントを描画すること', () => {
+  it('すべてのノート用の overview を静的 HTML として描画すること', () => {
     const template = new CorporaOverviewTemplate();
     const rendered = template.render({
       corporaOverview: {
@@ -34,14 +34,14 @@ describe('CorporaOverviewTemplate', () => {
       },
     });
 
-    expect(rendered).toContain(
-      '<corpora-overview-page data-hydration-scope="corpora-overview-page"',
-    );
-    expect(rendered).toContain('data-hydration-capability="interactive"');
-    expect(rendered).toContain('data-hydration-trigger="initial"');
-    expect(rendered).toContain('corpora-overview-json="');
-    expect(rendered).toContain('&quot;corpusCount&quot;:2');
-    expect(rendered).toContain('&quot;noteCount&quot;:3');
-    expect(rendered).toContain('&quot;href&quot;:&quot;/corpora/music/&quot;');
+    expect(rendered).toContain('<section class="corpora-overview page-shell"');
+    expect(rendered).toContain('<div class="meta-row corpora-overview__meta">');
+    expect(rendered).toContain('2件のコーパス');
+    expect(rendered).toContain('3件のノート');
+    expect(rendered).toContain('<article class="result-card" data-result-card>');
+    expect(rendered).toContain('href="/corpora/music/"');
+    expect(rendered).toContain('href="/notes/music/harmony/"');
+    expect(rendered).not.toContain('<corpora-overview-page');
+    expect(rendered).not.toContain('data-hydration-');
   });
 });

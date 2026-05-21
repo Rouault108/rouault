@@ -3,7 +3,7 @@ export const APP_SHELL_SIDEBAR_OVERLAY_LAYER_ATTRIBUTE = 'data-app-shell-sidebar
 export const APP_SHELL_SIDEBAR_OVERLAY_LAYER_SELECTOR = `[${APP_SHELL_SIDEBAR_OVERLAY_LAYER_ATTRIBUTE}]`;
 
 const APP_ROOT_SELECTOR = '#app';
-const FOOTER_SELECTOR = 'layout-footer';
+const FOOTER_SELECTOR = '[data-layout-footer]';
 
 export const ensureLayoutSidebarOverlayLayer = (documentRoot: Document): HTMLElement => {
   const existing = documentRoot.querySelector<HTMLElement>(

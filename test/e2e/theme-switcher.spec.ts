@@ -66,7 +66,6 @@ const waitForHeaderHydrated = async (page: Page): Promise<void> => {
     await customElements.whenDefined('ui-dropdown');
     await customElements.whenDefined('ui-menu-item');
     await customElements.whenDefined('ui-button');
-    await customElements.whenDefined('ui-icon');
 
     const assertLitElement = (
       element: Element | null | undefined,
@@ -161,10 +160,12 @@ const readThemeState = async (page: Page) =>
       attrTheme: document.documentElement.getAttribute('data-theme'),
       resolvedTheme: document.documentElement.getAttribute('data-resolved-theme'),
       storage: localStorage.getItem('rouault-theme-preference'),
-      icons: themeIcons.map((icon) => icon.getAttribute('name')),
+      icons: themeIcons.map((icon) => icon.getAttribute('data-icon')),
       iconGlyphs: themeIcons.map(
-        (icon) =>
-          icon.shadowRoot?.querySelector<HTMLElement>('iconify-icon')?.getAttribute('icon') ?? null,
+        (icon) => {
+          const iconName = icon.getAttribute('data-icon');
+          return iconName === null ? null : `lucide:${iconName}`;
+        },
       ),
       labels: [...trigger.querySelectorAll<HTMLElement>('.theme-trigger-text')].map(
         (label) => label.textContent?.trim() ?? '',
@@ -179,7 +180,7 @@ const readThemeState = async (page: Page) =>
         .filter((item) => item.hasAttribute('data-selected'))
         .map((item) => ({
           value: item.getAttribute('value'),
-          icon: item.querySelector('ui-icon')?.getAttribute('name') ?? null,
+          icon: item.querySelector('[data-icon]')?.getAttribute('data-icon') ?? null,
         })),
     };
   });

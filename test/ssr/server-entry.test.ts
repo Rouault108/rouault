@@ -11,22 +11,10 @@ describe('server-entry', () => {
     expect(highlightStyle?.cssText).toContain('ui-highlight > mark');
   });
 
-  it('ui-card の link mode を SSR 描画できること', async () => {
-    const rendered = await renderCustomElement(
-      'ui-card',
-      [
-        { name: 'card-kind', value: 'link' },
-        { name: 'href', value: 'https://example.com/article' },
-        { name: 'card-title', value: 'SSR Link Card' },
-        { name: 'description', value: 'SSR description' },
-        { name: 'site-name', value: 'Example' },
-      ],
-      '',
+  it('static-first 化した ui-card を SSR target として扱わないこと', async () => {
+    await expect(renderCustomElement('ui-card' as never, [], '')).rejects.toThrow(
+      /Unknown SSR target/u,
     );
-
-    expect(rendered).toContain('shadowrootmode="open"');
-    expect(rendered).toContain('SSR Link Card');
-    expect(rendered).toContain('https://example.com/article');
   });
 
   it('note 本文 static-first 化により ui-image / ui-footnote を SSR target として要求しないこと', () => {

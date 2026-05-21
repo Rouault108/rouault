@@ -35,6 +35,8 @@ import {
   serializeHtmlAttributes,
 } from './html-output.js';
 import { renderSearchDialogHtml } from './search-dialog-html.js';
+import { renderDefaultLayoutFooterHtml } from './footer-html.js';
+import { FOOTER_DOCUMENT_CSS, FOOTER_DOCUMENT_STYLE_ID } from '../components/ui/footer/footer.js';
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import type { NoteNavigationEntry } from '../../build/navigation/index.js';
 import {
@@ -287,11 +289,7 @@ export class BaseLayout {
       sourceLabel: 'BaseLayout',
     });
 
-    const footerAttributes = serializeHtmlAttributes([
-      { name: 'build-label', value: buildMetadata.buildLabel },
-      { name: 'data-hydration-capability', value: 'static' },
-      { name: 'data-hydration-trigger', value: 'initial' },
-    ]);
+    const footerHtml = renderDefaultLayoutFooterHtml(buildMetadata.buildLabel);
     const themeBootstrapScript = buildThemeBootstrapScript();
     const routeManifestUrl = resolveInternalDocumentRouteManifestUrl({
       siteUrlContext,
@@ -424,6 +422,7 @@ export class BaseLayout {
   <meta name="description"${serializeHtmlAttributes([{ name: 'content', value: description }])}>
   ${buildIdMeta}
   <script>${escapeInlineExecutableScriptText(themeBootstrapScript)}</script>
+  <style id="${FOOTER_DOCUMENT_STYLE_ID}">${FOOTER_DOCUMENT_CSS}</style>
   ${clientStyleLinks}
   <script type="module"${serializeHtmlAttributes([{ name: 'src', value: clientScriptSrc }])}></script>
 </head>
@@ -469,7 +468,7 @@ export class BaseLayout {
       </main>
     </app-router>
     <div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer></div>
-    <layout-footer${footerAttributes}></layout-footer>
+    ${footerHtml}
   </div>
   ${renderSearchDialogHtml()}
 </body>

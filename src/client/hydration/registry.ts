@@ -60,8 +60,6 @@ const activateLayoutTocController = async ({
   return module.activateLayoutTocController(element);
 };
 
-const loadSyntaxBundle = () => import('../../components/ui/syntax-card/syntax-bundle.js');
-
 export const HYDRATION_REGISTRY = [
   {
     tag: 'ui-skip-link',
@@ -79,16 +77,6 @@ export const HYDRATION_REGISTRY = [
     loader: () => import('../../components/app/app-router.js'),
   },
   {
-    tag: 'layout-footer',
-    kind: 'custom-element',
-    loader: () => import('../../components/layout/layout-footer.js'),
-  },
-  {
-    tag: 'ui-card',
-    kind: 'custom-element',
-    loader: () => import('../../components/ui/card/card.js'),
-  },
-  {
     tag: 'search-dialog-enhancer',
     kind: 'enhancer',
     loader: () => Promise.resolve(undefined),
@@ -99,21 +87,6 @@ export const HYDRATION_REGISTRY = [
     kind: 'enhancer',
     loader: () => Promise.resolve(undefined),
     activate: activateSearchPage,
-  },
-  {
-    tag: 'tag-page',
-    kind: 'custom-element',
-    loader: () => import('../../components/tag/tag-page.js'),
-  },
-  {
-    tag: 'corpus-page',
-    kind: 'custom-element',
-    loader: () => import('../../components/corpus/corpus-page.js'),
-  },
-  {
-    tag: 'corpora-overview-page',
-    kind: 'custom-element',
-    loader: () => import('../../components/corpus/corpora-overview-page.js'),
   },
   {
     tag: 'layout-sidebar',
@@ -165,11 +138,6 @@ export const HYDRATION_REGISTRY = [
     activate: activateElementMethod,
   },
   {
-    tag: 'ui-details',
-    kind: 'custom-element',
-    loader: () => import('../../components/ui/details/details.js'),
-  },
-  {
     tag: 'footnote-popover-enhancer',
     kind: 'enhancer',
     loader: () => Promise.resolve(undefined),
@@ -191,21 +159,6 @@ export const HYDRATION_REGISTRY = [
     kind: 'custom-element',
     loader: () => import('../../components/ui/score/score.js'),
     activate: activateElementMethod,
-  },
-  {
-    tag: 'ui-syntax-card',
-    kind: 'custom-element',
-    loader: loadSyntaxBundle,
-  },
-  {
-    tag: 'ui-syntax-section',
-    kind: 'custom-element',
-    loader: loadSyntaxBundle,
-  },
-  {
-    tag: 'ui-syntax-field',
-    kind: 'custom-element',
-    loader: loadSyntaxBundle,
   },
   {
     tag: 'ui-tabs',

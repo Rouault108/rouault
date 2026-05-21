@@ -2,24 +2,19 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './header';
 import type { UiHeader } from './header';
-import '../breadcrumbs/breadcrumbs';
 import '../button/button';
 import '../dropdown/dropdown';
-import '../search-trigger/search-trigger';
+import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
 
 const fullSlotContent = html`
   <div slot="start" style="display: flex; align-items: center; gap: 8px;">
     <ui-button variant="ghost" icon-only aria-label="サイドバーを閉じる">
-      <ui-icon name="panel-left" aria-hidden="true"></ui-icon>
+      ${renderStaticIconTemplate('panel-left')}
     </ui-button>
     <ui-dropdown>
       <ui-button slot="trigger" variant="ghost">
         音楽
-        <ui-icon
-          name="chevron-down"
-          aria-hidden="true"
-          style="width: 14px; height: 14px;"
-        ></ui-icon>
+        ${renderStaticIconTemplate('chevron-down')}
       </ui-button>
       <ui-menu-item value="music">音楽</ui-menu-item>
       <ui-menu-item value="notes">ノート</ui-menu-item>
@@ -27,19 +22,20 @@ const fullSlotContent = html`
     </ui-dropdown>
   </div>
 
-  <ui-breadcrumbs
-    slot="center"
-    .items=${[
-      { label: 'ホーム', href: '/' },
-      { label: 'プロジェクト', href: '/projects' },
-      { label: '設定' },
-    ]}
-  ></ui-breadcrumbs>
+  <nav slot="center" aria-label="パンくず">
+    <ol style="display: flex; gap: 0.5rem; margin: 0; padding: 0; list-style: none;">
+      <li><a href="/">ホーム</a></li>
+      <li aria-hidden="true">/</li>
+      <li><a href="/projects">プロジェクト</a></li>
+      <li aria-hidden="true">/</li>
+      <li aria-current="page">設定</li>
+    </ol>
+  </nav>
 
   <div slot="end" style="display: flex; align-items: center; gap: 8px;">
-    <ui-search-trigger></ui-search-trigger>
+    <button type="button" data-search-dialog-trigger aria-haspopup="dialog">検索</button>
     <ui-button variant="ghost" icon-only aria-label="テーマを変更">
-      <ui-icon name="sun" aria-hidden="true"></ui-icon>
+      ${renderStaticIconTemplate('sun')}
     </ui-button>
   </div>
 `;
@@ -47,13 +43,13 @@ const fullSlotContent = html`
 const mobileSlotContent = html`
   <div slot="start">
     <ui-button variant="ghost" icon-only aria-label="メニューを開く">
-      <ui-icon name="menu" aria-hidden="true"></ui-icon>
+      ${renderStaticIconTemplate('menu')}
     </ui-button>
   </div>
 
   <div slot="end">
     <ui-button variant="ghost" icon-only aria-label="テーマを変更">
-      <ui-icon name="sun" aria-hidden="true"></ui-icon>
+      ${renderStaticIconTemplate('sun')}
     </ui-button>
   </div>
 `;
@@ -165,7 +161,7 @@ export const EmptySlots: Story = {
           aria-label="サイドバーを閉じる"
           style="all: unset; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; cursor: pointer;"
         >
-          <ui-icon name="panel-left" aria-hidden="true"></ui-icon>
+          ${renderStaticIconTemplate('panel-left')}
         </button>
       </div>
       <div slot="end">
@@ -174,7 +170,7 @@ export const EmptySlots: Story = {
           aria-label="検索"
           style="all: unset; display: inline-flex; width: 32px; height: 32px; cursor: pointer; align-items: center; justify-content: center;"
         >
-          <ui-icon name="search" aria-hidden="true"></ui-icon>
+          ${renderStaticIconTemplate('search')}
         </button>
       </div>
     </ui-header>

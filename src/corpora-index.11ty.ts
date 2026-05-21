@@ -1,5 +1,5 @@
 import { loadCorporaOverviewData, type CorporaOverviewData } from './data/corporaOverview.js';
-import { serializeHtmlAttributes } from './layouts/html-output.js';
+import { renderCorporaOverviewHtml } from './layouts/corpora-overview-html.js';
 
 interface CorporaOverviewTemplateData {
   corporaOverview?: CorporaOverviewData;
@@ -19,12 +19,7 @@ export class CorporaOverviewTemplate {
   render(data: CorporaOverviewTemplateData) {
     const corporaOverview = data.corporaOverview ?? loadCorporaOverviewData();
 
-    return `<corpora-overview-page${serializeHtmlAttributes([
-      { name: 'data-hydration-scope', value: 'corpora-overview-page' },
-      { name: 'corpora-overview-json', value: corporaOverview, kind: 'json' },
-      { name: 'data-hydration-capability', value: 'interactive' },
-      { name: 'data-hydration-trigger', value: 'initial' },
-    ])}></corpora-overview-page>`;
+    return renderCorporaOverviewHtml(corporaOverview);
   }
 }
 
