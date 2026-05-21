@@ -41,9 +41,13 @@ describe('TagPagesTemplate', () => {
       },
     });
 
-    expect(rendered).toContain(
-      '<search-page data-hydration-scope="search-page" initial-search-state-json="',
-    );
+    expect(rendered).toContain('data-hydration-scope="search-page"');
+    expect(rendered).toContain('data-search-page-root');
+    expect(rendered).toContain('data-hydration-key="search-page-enhancer"');
+    expect(rendered).not.toContain('<search-page');
+    expect(rendered).toContain('<input');
+    expect(rendered).toContain('type="search"');
+    expect(rendered).toContain('<select');
     expect(rendered).toContain('initial-search-response-json="');
     expect(rendered).toContain('&quot;tagMode&quot;:&quot;or&quot;');
     expect(rendered).toContain('&quot;tags&quot;:[&quot;music&quot;]');

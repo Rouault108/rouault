@@ -3,7 +3,7 @@ import {
   buildStaticExploreResponse,
   buildStaticSearchState,
 } from '../build/search/build-static-explore-response.js';
-import { serializeHtmlAttributes } from './layouts/html-output.js';
+import { renderSearchPageHtml } from './layouts/search-page-html.js';
 
 interface TagPagesPaginationData extends TagPageTemplateData {
   tagPages?: TagPageEntry[];
@@ -64,21 +64,10 @@ export class TagPagesTemplate {
       return '';
     }
 
-    return `<search-page${serializeHtmlAttributes([
-      { name: 'data-hydration-scope', value: 'search-page' },
-      {
-        name: 'initial-search-state-json',
-        value: buildInitialSearchState(tagPage),
-        kind: 'json',
-      },
-      {
-        name: 'initial-search-response-json',
-        value: buildInitialSearchResponse(tagPage),
-        kind: 'json',
-      },
-      { name: 'data-hydration-capability', value: 'interactive' },
-      { name: 'data-hydration-trigger', value: 'initial' },
-    ])}></search-page>`;
+    return renderSearchPageHtml({
+      initialState: buildInitialSearchState(tagPage),
+      initialResponse: buildInitialSearchResponse(tagPage),
+    });
   }
 }
 

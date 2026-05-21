@@ -84,8 +84,7 @@ const readWrapperPaddingState = ({
 };
 
 const readSearchPageShellPaddingState = (): WrapperPaddingState => {
-  const host = document.querySelector('search-page');
-  const pageShell = host?.shadowRoot?.querySelector<HTMLElement>('.page-shell');
+  const pageShell = document.querySelector<HTMLElement>('[data-search-page-root].page-shell');
   if (!(pageShell instanceof HTMLElement)) {
     return { exists: false, paddingBlockStart: '', resolvedToken: '' };
   }
@@ -455,7 +454,7 @@ test.describe('About layout', () => {
 
     await page.goto('/search/');
     await page.waitForFunction(() =>
-      Boolean(document.querySelector('search-page')?.shadowRoot?.querySelector('.page-shell')),
+      Boolean(document.querySelector('[data-search-page-root].page-shell')),
     );
     const pageShellState = await page.evaluate(readSearchPageShellPaddingState);
     expect(pageShellState.exists).toBe(true);

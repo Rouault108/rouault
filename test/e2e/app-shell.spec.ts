@@ -18,57 +18,48 @@ test.describe('App Shell', () => {
 
     await page.goto('/');
 
-    const searchTrigger = page.locator('layout-header ui-search-trigger').first();
+    const searchTrigger = page.locator('layout-header [data-search-dialog-trigger]').first();
     await expect(searchTrigger).toBeVisible();
 
     await page.waitForFunction(() => {
       const dialog = document.querySelector('#global-search-dialog');
       return (
-        dialog instanceof HTMLElement &&
-        customElements.get('ui-search-dialog') !== undefined &&
-        typeof (dialog as { requestOpen?: unknown }).requestOpen === 'function' &&
-        typeof (dialog as { captureOpenModality?: unknown }).captureOpenModality === 'function' &&
-        typeof (dialog as { searcher?: unknown }).searcher === 'function'
+        dialog instanceof HTMLDialogElement &&
+        dialog.querySelector('[data-search-dialog-input]') instanceof HTMLInputElement
       );
     });
 
     await searchTrigger.click();
-    await expect(page.locator('#global-search-dialog')).toHaveAttribute('opened', '');
+    await expect(page.locator('#global-search-dialog')).toHaveAttribute('open', '');
 
     await page.waitForFunction(() => {
       const dialog = document.querySelector('#global-search-dialog');
-      if (!(dialog instanceof HTMLElement) || dialog.shadowRoot === null) {
+      if (!(dialog instanceof HTMLDialogElement)) {
         return false;
       }
 
-      const field = dialog.shadowRoot.querySelector('ui-search-field');
-      if (!(field instanceof HTMLElement) || field.shadowRoot === null) {
-        return false;
-      }
-
-      return field.shadowRoot.activeElement?.matches('input[type="search"]') === true;
+      return dialog.querySelector('[data-search-dialog-input]') === document.activeElement;
     });
 
     await page.keyboard.press('Escape');
-    await expect(page.locator('#global-search-dialog')).not.toHaveAttribute('opened', '');
+    await expect(page.locator('#global-search-dialog')).not.toHaveAttribute('open', '');
 
     await page.keyboard.press('Control+K');
-    await expect(page.locator('#global-search-dialog')).toHaveAttribute('opened', '');
+    await expect(page.locator('#global-search-dialog')).toHaveAttribute('open', '');
 
     expect(consoleMessages.join('\n')).not.toContain('requestOpen is not a function');
     expect(consoleMessages.join('\n')).not.toContain('captureOpenModality is not a function');
   });
 
-  test('search page component が content hydration 経由で upgrade されること', async ({ page }) => {
+  test('search page enhancer が content hydration 経由で有効になること', async ({ page }) => {
     await page.goto('/search/');
 
     await page.waitForFunction(() => {
-      const host = document.querySelector('#main-content search-page');
+      const host = document.querySelector('#main-content [data-search-page-root]');
       return (
         host instanceof HTMLElement &&
-        customElements.get('search-page') !== undefined &&
-        host.constructor !== HTMLElement &&
-        host.shadowRoot?.querySelector('ui-search-field.search-input-control') !== null
+        host.querySelector('[data-search-query-input]') instanceof HTMLInputElement &&
+        host.querySelector('[data-search-page-form]') instanceof HTMLFormElement
       );
     });
   });

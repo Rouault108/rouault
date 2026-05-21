@@ -60,7 +60,7 @@ test.describe('production search artifacts', () => {
 
   test('search page の初期化で search-catalog.json が 404 にならないこと', async ({ page }) => {
     await page.goto('/search/');
-    await page.locator('search-page').waitFor();
+    await page.locator('[data-search-page-root]').waitFor();
     const status = await page.evaluate(async (pathname) => {
       const response = await fetch(pathname);
       return response.status;
@@ -73,8 +73,8 @@ test.describe('production search artifacts', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.locator('ui-search-trigger').first().click();
-    await expect(page.locator('#global-search-dialog')).toHaveAttribute('opened');
+    await page.locator('[data-search-dialog-trigger]').first().click();
+    await expect(page.locator('#global-search-dialog')).toHaveAttribute('open');
     const status = await page.evaluate(async (pathname) => {
       const response = await fetch(pathname);
       return response.status;
@@ -87,23 +87,16 @@ test.describe('production search artifacts', () => {
     page,
   }) => {
     await page.goto('/search/?tag=Programming');
-    await page.locator('search-page').waitFor();
-    await page.locator('ui-search-field.search-input-control input[type="search"]').first().waitFor();
+    await page.locator('[data-search-page-root]').waitFor();
+    await page.locator('[data-search-query-input]').first().waitFor();
 
-    await page.locator('ui-details.filter-details').evaluate((element) => {
-      const details = element as HTMLElement & { open?: boolean };
+    await page.locator('details.filter-details').evaluate((element) => {
+      const details = element as HTMLDetailsElement;
       details.open = true;
       details.setAttribute('open', '');
     });
 
-    await expect(page.locator('ui-details.filter-details')).toHaveAttribute('open');
-    await expect
-      .poll(async () =>
-        page.locator('search-page').evaluate((element) => {
-          const host = element as HTMLElement & { shadowRoot: ShadowRoot };
-          return host.shadowRoot.querySelector('.filter-panel') !== null;
-        }),
-      )
-      .toBe(true);
+    await expect(page.locator('details.filter-details')).toHaveAttribute('open');
+    await expect(page.locator('[data-search-page-root] .filter-panel')).toBeVisible();
   });
 });

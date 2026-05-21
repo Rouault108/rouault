@@ -34,6 +34,7 @@ import {
   escapeInlineExecutableScriptText,
   serializeHtmlAttributes,
 } from './html-output.js';
+import { renderSearchDialogHtml } from './search-dialog-html.js';
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import type { NoteNavigationEntry } from '../../build/navigation/index.js';
 import {
@@ -470,12 +471,7 @@ export class BaseLayout {
     <div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer></div>
     <layout-footer${footerAttributes}></layout-footer>
   </div>
-  <ui-search-dialog
-    id="global-search-dialog"
-    data-hydration-scope="global-search"
-    data-hydration-capability="interactive"
-    data-hydration-trigger="initial"
-  ></ui-search-dialog>
+  ${renderSearchDialogHtml()}
 </body>
 </html>
     `.trim();

@@ -34,7 +34,7 @@ describe('extractTocFromHtml', () => {
       <h2 id="intro">
         <span class="heading-text">はじめに</span>
         <a class="heading-anchor" href="#intro" aria-label="「はじめに」への固定リンク">
-          <ui-icon name="link" aria-hidden="true"></ui-icon>
+          <svg data-icon="link" aria-hidden="true" focusable="false"></svg>
         </a>
       </h2>
     `;

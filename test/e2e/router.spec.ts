@@ -48,7 +48,7 @@ const expectInteractiveCanaryContent = async (page: Page): Promise<void> => {
 };
 
 const waitForSearchPageReady = async (page: Page): Promise<void> => {
-  await page.locator('ui-search-field.search-input-control').first().waitFor();
+  await page.locator('[data-search-page-root] [data-search-query-input]').first().waitFor();
 };
 
 const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => {

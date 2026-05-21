@@ -2,6 +2,8 @@ import { enhanceCodeBlocks } from '../post-hydrate/code-block-enhancer.js';
 import { enhanceCodeGroups } from '../post-hydrate/code-group-enhancer.js';
 import { enhanceFootnotePopovers } from '../post-hydrate/footnote-popover-enhancer.js';
 import { enhanceImageLightboxes } from '../post-hydrate/image-lightbox-enhancer.js';
+import { enhanceSearchDialog } from '../post-hydrate/search-dialog-enhancer.js';
+import { enhanceSearchPage } from '../post-hydrate/search-page-enhancer.js';
 import type { HydrationActivationContext, HydrationRegistryEntry } from './types.js';
 
 interface ActivatableElement extends HTMLElement {
@@ -26,6 +28,14 @@ const activateImageLightboxes = ({ root }: HydrationActivationContext): void => 
 
 const activateFootnotePopovers = ({ root }: HydrationActivationContext): void => {
   enhanceFootnotePopovers(root);
+};
+
+const activateSearchDialog = ({ root }: HydrationActivationContext): void => {
+  enhanceSearchDialog(root);
+};
+
+const activateSearchPage = ({ root }: HydrationActivationContext): void => {
+  enhanceSearchPage(root);
 };
 
 const activateLayoutSidebar = ({ element }: HydrationActivationContext): void => {
@@ -74,19 +84,21 @@ export const HYDRATION_REGISTRY = [
     loader: () => import('../../components/layout/layout-footer.js'),
   },
   {
-    tag: 'ui-search-dialog',
-    kind: 'custom-element',
-    loader: () => import('../../components/ui/search-dialog/search-dialog.js'),
-  },
-  {
     tag: 'ui-card',
     kind: 'custom-element',
     loader: () => import('../../components/ui/card/card.js'),
   },
   {
-    tag: 'search-page',
-    kind: 'custom-element',
-    loader: () => import('../../components/search/search-page.js'),
+    tag: 'search-dialog-enhancer',
+    kind: 'enhancer',
+    loader: () => Promise.resolve(undefined),
+    activate: activateSearchDialog,
+  },
+  {
+    tag: 'search-page-enhancer',
+    kind: 'enhancer',
+    loader: () => Promise.resolve(undefined),
+    activate: activateSearchPage,
   },
   {
     tag: 'tag-page',

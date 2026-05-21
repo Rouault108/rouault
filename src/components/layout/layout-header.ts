@@ -2,7 +2,6 @@ import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import '../ui/icon/icon.js';
 import '../ui/header/header.js';
-import '../ui/search-trigger/search-trigger.js';
 import '../ui/button/button.js';
 import '../ui/dropdown/dropdown.js';
 import { DEFAULT_LAYOUT_SIDEBAR_ID, layoutSidebarController } from './layout-sidebar-controller.js';
@@ -300,7 +299,7 @@ export class LayoutHeader extends LitElement {
     .corpus-trigger-icon {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       width: var(--icon-base, 16px);
       height: var(--icon-base, 16px);
       flex-shrink: 0;
@@ -351,11 +350,60 @@ export class LayoutHeader extends LitElement {
       font-size: var(--text-sm, 13px);
     }
 
-    ui-search-trigger {
+    .search-trigger {
       --search-trigger-gap: var(--_layout-header-trigger-content-gap-default);
       --search-trigger-gap-compact: var(--_layout-header-trigger-content-gap-compact);
       --search-trigger-padding-inline: var(--_layout-header-trigger-padding-inline-default);
       --search-trigger-padding-inline-compact: var(--_layout-header-trigger-padding-inline-compact);
+      display: inline-flex;
+      min-inline-size: 0;
+      align-items: center;
+      justify-content: flex-start;
+      gap: var(--search-trigger-gap);
+      min-block-size: var(--control-height-md, 2.25rem);
+      padding-block: 0;
+      padding-inline: var(--search-trigger-padding-inline);
+      border: var(--border-width, 1px) solid var(--border-default);
+      border-radius: var(--radius-md, 8px);
+      background: var(--bg-control-muted);
+      color: var(--fg-default);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .search-trigger:hover {
+      background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%));
+    }
+
+    .search-trigger:focus-visible {
+      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+      outline-offset: var(--focus-ring-offset, 2px);
+    }
+
+    .search-trigger__icon {
+      inline-size: var(--icon-base, 16px);
+      block-size: var(--icon-base, 16px);
+      font-size: var(--icon-base, 16px);
+    }
+
+    .search-trigger__label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 960px) {
+      .search-trigger {
+        gap: var(--search-trigger-gap-compact);
+        padding-inline: var(--search-trigger-padding-inline-compact);
+      }
+    }
+
+    @media (max-width: 639px) {
+      .search-trigger {
+        justify-content: center;
+        padding-inline: 0;
+      }
     }
 
     @container layout-header-shell (width >= 640px) {
@@ -841,6 +889,19 @@ export class LayoutHeader extends LitElement {
     layoutTocMobileController.toggle(runtimeId, this._tocTriggerElement ?? undefined);
   };
 
+  private _handleSearchTriggerClick = (event: Event): void => {
+    const trigger = event.currentTarget;
+    document.dispatchEvent(
+      new CustomEvent('open-search-dialog', {
+        bubbles: true,
+        composed: true,
+        detail: {
+          trigger: trigger instanceof HTMLElement ? trigger : null,
+        },
+      }),
+    );
+  };
+
   private _commitThemePreference(preference: ThemePreference): void {
     if (this._themePreference !== preference) {
       this._themePreference = preference;
@@ -1096,7 +1157,18 @@ export class LayoutHeader extends LitElement {
             <span class="toc-trigger-text">${tocTriggerLabel}</span>
           </button>
 
-          <ui-search-trigger density="auto"></ui-search-trigger>
+          <button
+            class="search-trigger"
+            type="button"
+            data-search-dialog-trigger
+            aria-haspopup="dialog"
+            aria-controls="global-search-dialog"
+            aria-expanded="false"
+            @click=${this._handleSearchTriggerClick}
+          >
+            <ui-icon class="search-trigger__icon" name="search" aria-hidden="true"></ui-icon>
+            <span class="search-trigger__label">検索</span>
+          </button>
 
           <ui-dropdown
             data-dropdown="theme"

@@ -2339,6 +2339,18 @@ layout-sidebar-surface .heading {
     var(--home-shell-padding-block-end, var(--space-12, 48px));
 }
 
+.search-page.page-shell {
+  box-sizing: border-box;
+  width: min(100%, var(--page-shell-max-width, 72rem));
+  margin-inline: auto;
+  padding: var(
+      --page-shell-padding-block-start,
+      var(--page-content-padding-block-start, var(--space-8, 32px))
+    )
+    var(--page-shell-padding-inline, clamp(var(--space-4, 16px), 2vw, var(--space-6, 24px)))
+    var(--page-shell-padding-block-end, var(--space-12, 48px));
+}
+
 .home-content {
   display: grid;
   gap: var(--space-8, 32px);

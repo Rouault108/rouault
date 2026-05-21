@@ -1,4 +1,5 @@
 import { type HastNode, getOrCreateProperties } from './hast-utils.js';
+import { createStaticIconHast } from './static-icon-hast.js';
 
 const HEADING_TAG_PATTERN = /^h([1-6])$/;
 const PERMALINK_HEADING_TAG_PATTERN = /^h([2-6])$/;
@@ -134,12 +135,7 @@ const ensureHeadingPermalink = (node: HastNode, id: string, text: string): void 
         'data-link-kind': 'internal-fragment',
         'data-link-surface': 'structural',
       },
-      [
-        createElement('ui-icon', {
-          name: 'link',
-          'aria-hidden': 'true',
-        }),
-      ],
+      [createStaticIconHast('link', { className: ['heading-anchor-icon'] })],
     ),
   );
 };

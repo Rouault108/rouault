@@ -2,7 +2,7 @@ import {
   buildStaticExploreResponse,
   buildStaticSearchState,
 } from '../build/search/build-static-explore-response.js';
-import { serializeHtmlAttributes } from './layouts/html-output.js';
+import { renderSearchPageHtml } from './layouts/search-page-html.js';
 
 export class SearchPageTemplate {
   data() {
@@ -21,18 +21,7 @@ export class SearchPageTemplate {
       activeSources: [],
     });
 
-    return `
-      <noscript>
-        <p class="noscript-notice">検索・フィルタ機能にはJavaScriptが必要です。</p>
-      </noscript>
-      <search-page${serializeHtmlAttributes([
-        { name: 'data-hydration-scope', value: 'search-page' },
-        { name: 'initial-search-state-json', value: initialState, kind: 'json' },
-        { name: 'initial-search-response-json', value: initialResponse, kind: 'json' },
-        { name: 'data-hydration-capability', value: 'interactive' },
-        { name: 'data-hydration-trigger', value: 'initial' },
-      ])}></search-page>
-    `.trim();
+    return renderSearchPageHtml({ initialState, initialResponse });
   }
 }
 

@@ -1,5 +1,4 @@
 import { LUCIDE_SUBSET } from '../generated/lucide-subset.js';
-import type { ArticleHeaderIconName } from '../article-header/article-header-contract.js';
 import { escapeHtmlAttribute } from './html-output.js';
 
 interface IconDefinition {
@@ -16,7 +15,7 @@ interface IconAliasDefinition {
 const icons = LUCIDE_SUBSET.icons as Record<string, IconDefinition>;
 const aliases = LUCIDE_SUBSET.aliases as Record<string, IconAliasDefinition | undefined>;
 
-const resolveIconBody = (name: ArticleHeaderIconName): string => {
+const resolveIconBody = (name: string): string => {
   const direct = icons[name]?.body;
   if (typeof direct === 'string' && direct.length > 0) {
     return direct;
@@ -38,11 +37,13 @@ const resolveIconBody = (name: ArticleHeaderIconName): string => {
 };
 
 export const renderStaticArticleHeaderIconHtml = (
-  name: ArticleHeaderIconName,
+  name: string,
   className: string,
 ): string => {
   const body = resolveIconBody(name);
   return `<svg class="${escapeHtmlAttribute(className)}" viewBox="0 0 ${String(
     LUCIDE_SUBSET.width,
-  )} ${String(LUCIDE_SUBSET.height)}" aria-hidden="true" focusable="false">${body}</svg>`;
+  )} ${String(LUCIDE_SUBSET.height)}" aria-hidden="true" focusable="false" data-icon="${escapeHtmlAttribute(
+    name,
+  )}">${body}</svg>`;
 };

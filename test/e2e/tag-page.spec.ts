@@ -35,47 +35,27 @@ const changeSearchSelect = async (
   value: 'and' | 'or' | 'relevance' | 'date-desc',
 ): Promise<void> => {
   await waitForSearchInputReady(page);
-  await page.locator('#main-content search-page').evaluate(
-    (element, next) => {
-      const host = element as HTMLElement & {
-        _onTagModeChange?: (event: Event) => void;
-        _onSortChange?: (event: Event) => void;
-      };
-      const event = new CustomEvent('change', {
-        detail: { value: next.value },
-        bubbles: true,
-        composed: true,
-      });
-
-      if (next.index === 0) {
-        host._onTagModeChange?.(event);
-        return;
-      }
-
-      host._onSortChange?.(event);
-    },
-    { index, value },
-  );
+  const selector = index === 0 ? '[data-search-tag-mode-select]' : '[data-search-sort-select]';
+  await page.locator(selector).selectOption(value);
 };
 
 const waitForSearchInputReady = async (page: Page): Promise<void> => {
-  await page.locator('#main-content search-page').waitFor();
-  await page.locator('ui-search-field.search-input-control input[type="search"]').first().waitFor();
+  await page.locator('#main-content [data-search-page-root]').waitFor();
+  await page.locator('[data-search-query-input]').first().waitFor();
   await page.waitForFunction(() => {
-    const host = document.querySelector('#main-content search-page');
+    const host = document.querySelector('#main-content [data-search-page-root]');
     return (
       host instanceof HTMLElement &&
-      typeof (host as { _toggleTag?: unknown })._toggleTag === 'function' &&
-      typeof (host as { _onTagModeChange?: unknown })._onTagModeChange === 'function' &&
-      typeof (host as { _onSortChange?: unknown })._onSortChange === 'function'
+      host.querySelector('[data-search-page-form]') instanceof HTMLFormElement &&
+      host.querySelector('[data-search-query-input]') instanceof HTMLInputElement
     );
   });
 };
 
 const openTagFilter = async (page: Page): Promise<void> => {
   await waitForSearchInputReady(page);
-  await page.locator('ui-details.filter-details').evaluate((element) => {
-    const details = element as HTMLElement & { open?: boolean };
+  await page.locator('details.filter-details').evaluate((element) => {
+    const details = element as HTMLDetailsElement;
     details.open = true;
     details.setAttribute('open', '');
   });
@@ -90,18 +70,12 @@ const clickArticleHeaderTag = async (page: Page, href: string): Promise<void> =>
 
 const inputSearchQuery = async (page: Page, value: string): Promise<void> => {
   await waitForSearchInputReady(page);
-  await page
-    .locator('ui-search-field.search-input-control input[type="search"]')
-    .first()
-    .fill(value);
+  await page.locator('[data-search-query-input]').first().fill(value);
 };
 
 const toggleFilterCheckbox = async (page: Page, label: string): Promise<void> => {
   await waitForSearchInputReady(page);
-  await page.locator('#main-content search-page').evaluate((element, tag) => {
-    const host = element as HTMLElement & { _toggleTag?: (value: string) => void };
-    host._toggleTag?.(tag);
-  }, label);
+  await page.locator(`[data-search-tag-checkbox][value="${label}"]`).check();
 };
 
 const clickSearchResultLink = async (page: Page, title: string): Promise<void> => {
@@ -195,7 +169,7 @@ test.describe('Tag Page', () => {
     await page.goto(publicTagPagePath);
     await openTagFilter(page);
 
-    await toggleFilterCheckbox(page, 'c#');
+    await toggleFilterCheckbox(page, 'C#');
 
     await expect(page).toHaveURL(/\/search\/\?/);
     await expect
@@ -210,7 +184,7 @@ test.describe('Tag Page', () => {
       )
         .toEqual({
         pathname: '/search/',
-        tags: ['c#', 'Programming'],
+        tags: ['C#', 'Programming'],
       });
     await expect(page.locator('#main-content h1').first()).toHaveText('検索');
   });

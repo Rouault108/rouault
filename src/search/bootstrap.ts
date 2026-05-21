@@ -17,16 +17,22 @@ import { buildSearchResultRenderHref } from './normalize-search-result-url.js';
 import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
 import { createSearchCanonicalPathname } from '../../shared/search/document-url.js';
 import { createSearchEventDiagnosticSink } from '../../shared/search/search-diagnostics.js';
-import type { SearchBootstrapUnavailableReason } from '../../shared/search/search-unavailable-reason.js';
+import {
+  getSearchBootstrapUnavailableMessage,
+  type SearchBootstrapUnavailableReason,
+} from '../../shared/search/search-unavailable-reason.js';
 
 interface SearchDialogElement extends HTMLElement {
-  opened: boolean;
-  query: string;
-  captureOpenModality(modality?: InteractionModality): void;
-  requestOpen(trigger?: HTMLElement): void;
+  opened?: boolean;
+  query?: string;
+  captureOpenModality?(modality?: InteractionModality): void;
+  requestOpen?(trigger?: HTMLElement): void;
+  close?(): void;
+  showModal?(): void;
+  open?: boolean;
   searcher?: UiSearchDialogSearcher | null | undefined;
-  searchUnavailable: boolean;
-  searchUnavailableReason: SearchBootstrapUnavailableReason | '';
+  searchUnavailable?: boolean;
+  searchUnavailableReason?: SearchBootstrapUnavailableReason | '';
 }
 
 let initialized = false;
@@ -96,6 +102,113 @@ export const getInitializedSearchRoutePredicate = (): ((pathname: string) => boo
 const assertSearchBootstrapNotInitialized = (): void => {
   if (initialized) {
     throw new SearchBootstrapInitializationError('Search bootstrap was already initialized.');
+  }
+};
+
+const readOpenSearchDialogTrigger = (event: Event): HTMLElement | undefined => {
+  const detail = event instanceof CustomEvent ? (event.detail as unknown) : null;
+  if (
+    detail !== null &&
+    typeof detail === 'object' &&
+    'trigger' in detail &&
+    detail.trigger instanceof HTMLElement
+  ) {
+    return detail.trigger;
+  }
+
+  return event.target instanceof HTMLElement ? event.target : undefined;
+};
+
+const syncSearchTriggerExpanded = (expanded: boolean): void => {
+  for (const trigger of document.querySelectorAll<HTMLElement>('[data-search-dialog-trigger]')) {
+    trigger.setAttribute('aria-expanded', String(expanded));
+  }
+};
+
+const requestSearchDialogOpen = (
+  dialog: SearchDialogElement,
+  trigger?: HTMLElement,
+  modality?: InteractionModality,
+): void => {
+  dialog.captureOpenModality?.(modality);
+  if (typeof dialog.requestOpen === 'function') {
+    dialog.requestOpen(trigger);
+  } else if (typeof dialog.showModal === 'function') {
+    if (dialog.open !== true) {
+      dialog.showModal();
+    }
+  } else {
+    dialog.setAttribute('open', '');
+  }
+  dialog.opened = true;
+  syncSearchTriggerExpanded(true);
+  dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]')?.focus();
+};
+
+const requestSearchDialogClose = (dialog: SearchDialogElement): void => {
+  if (typeof dialog.close === 'function') {
+    dialog.close();
+  } else {
+    dialog.removeAttribute('open');
+  }
+  dialog.opened = false;
+  syncSearchTriggerExpanded(false);
+};
+
+const isTextEditingSearchShortcutTarget = (
+  target: EventTarget | null,
+  dialog: SearchDialogElement,
+): boolean => {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  const isTextEditingTarget =
+    target.isContentEditable ||
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement;
+  if (!isTextEditingTarget) {
+    return false;
+  }
+
+  return !(dialog.open !== true && dialog.contains(target));
+};
+
+const setSearchDialogStatus = (dialog: SearchDialogElement, message: string): void => {
+  const status = dialog.querySelector<HTMLElement>('[data-search-dialog-status]');
+  if (status) {
+    status.textContent = message;
+  }
+};
+
+const clearSearchDialogResults = (dialog: SearchDialogElement): void => {
+  const results = dialog.querySelector<HTMLOListElement>('[data-search-dialog-results]');
+  if (results) {
+    results.replaceChildren();
+  }
+};
+
+const renderSearchDialogItems = (
+  dialog: SearchDialogElement,
+  items: readonly UiSearchDialogItem[],
+  query: string,
+): void => {
+  const results = dialog.querySelector<HTMLOListElement>('[data-search-dialog-results]');
+  if (!results) {
+    return;
+  }
+  results.replaceChildren();
+  for (const item of items) {
+    const row = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = item.renderHref;
+    link.dataset['linkKind'] = 'internal-document';
+    link.dataset['linkSurface'] = 'search-dialog';
+    link.dataset['canonicalPathname'] = item.canonicalPathname;
+    link.dataset['searchQuery'] = query;
+    link.textContent = item.title;
+    row.append(link);
+    results.append(row);
   }
 };
 
@@ -188,10 +301,40 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
     };
   };
 
+  let searchTimerId: number | undefined;
+  const runDialogSearch = (query: string): void => {
+    if (typeof searchTimerId === 'number') {
+      window.clearTimeout(searchTimerId);
+    }
+    searchTimerId = window.setTimeout(() => {
+      const normalizedQuery = query.trim();
+      if (normalizedQuery.length === 0) {
+        clearSearchDialogResults(dialog);
+        setSearchDialogStatus(dialog, 'キーワードを入力して検索できます。');
+        return;
+      }
+      setSearchDialogStatus(dialog, '検索しています...');
+      void Promise.resolve(
+        dialog.searcher?.({ query: normalizedQuery, signal }) ?? { items: [] },
+      )
+        .then((result) => {
+          renderSearchDialogItems(dialog, result.items, normalizedQuery);
+          setSearchDialogStatus(
+            dialog,
+            result.items.length > 0
+              ? `${result.items.length.toString()} 件の結果`
+              : '一致するメモが見つかりません。',
+          );
+        })
+        .catch(() => {
+          clearSearchDialogResults(dialog);
+          setSearchDialogStatus(dialog, '検索の読み込みに失敗しました。');
+        });
+    }, 150);
+  };
+
   const onOpenSearchDialog = (event: Event): void => {
-    const trigger = event.target instanceof HTMLElement ? event.target : undefined;
-    dialog.captureOpenModality();
-    dialog.requestOpen(trigger);
+    requestSearchDialogOpen(dialog, readOpenSearchDialogTrigger(event));
   };
 
   const onSelected = (event: Event): void => {
@@ -235,17 +378,39 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
   };
 
   const onOpenRequested = (): void => {
-    dialog.opened = true;
+    requestSearchDialogOpen(dialog);
   };
 
   const onCloseRequested = (): void => {
     searchEventDiagnostics.clear();
+    requestSearchDialogClose(dialog);
+  };
+
+  const onNativeClose = (): void => {
     dialog.opened = false;
+    syncSearchTriggerExpanded(false);
   };
 
   const onQueryChanged = (event: Event): void => {
     const customEvent = event as CustomEvent<{ query?: string }>;
     dialog.query = typeof customEvent.detail.query === 'string' ? customEvent.detail.query : '';
+    runDialogSearch(dialog.query);
+  };
+
+  const onInput = (event: Event): void => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) {
+      return;
+    }
+    dialog.query = target.value;
+    runDialogSearch(target.value);
+  };
+
+  const onClick = (event: Event): void => {
+    const target = event.target;
+    if (target instanceof HTMLElement && target.closest('[data-search-dialog-close]')) {
+      requestSearchDialogClose(dialog);
+    }
   };
 
   const onKeydown = (event: KeyboardEvent): void => {
@@ -257,24 +422,20 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
       return;
     }
 
-    const target = event.target;
-    if (
-      target instanceof HTMLElement &&
-      (target.isContentEditable ||
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement)
-    ) {
+    if (isTextEditingSearchShortcutTarget(event.target, dialog)) {
       return;
     }
 
     event.preventDefault();
     const trigger =
       document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
-    dialog.captureOpenModality('keyboard');
-    dialog.requestOpen(trigger);
+    requestSearchDialogOpen(dialog, trigger, 'keyboard');
   };
 
   document.addEventListener('open-search-dialog', onOpenSearchDialog, { signal });
+  dialog.addEventListener('input', onInput, { signal });
+  dialog.addEventListener('click', onClick, { signal });
+  dialog.addEventListener('close', onNativeClose, { signal });
   dialog.addEventListener('ui-search-dialog-selected', onSelected, { signal });
   dialog.addEventListener(searchReturnToReadingEventName, onReturnToReading, { signal });
   dialog.addEventListener('ui-search-dialog-open-requested', onOpenRequested, { signal });
@@ -311,17 +472,21 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
   const { signal } = bootstrapListenerController;
 
   const onOpenSearchDialog = (event: Event): void => {
-    const trigger = event.target instanceof HTMLElement ? event.target : undefined;
-    dialog.captureOpenModality();
-    dialog.requestOpen(trigger);
+    requestSearchDialogOpen(dialog, readOpenSearchDialogTrigger(event));
+    setSearchDialogStatus(dialog, getSearchBootstrapUnavailableMessage(options.reason));
   };
 
   const onOpenRequested = (): void => {
-    dialog.opened = true;
+    requestSearchDialogOpen(dialog);
   };
 
   const onCloseRequested = (): void => {
+    requestSearchDialogClose(dialog);
+  };
+
+  const onNativeClose = (): void => {
     dialog.opened = false;
+    syncSearchTriggerExpanded(false);
   };
 
   const onQueryChanged = (event: Event): void => {
@@ -329,29 +494,32 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
     dialog.query = typeof customEvent.detail.query === 'string' ? customEvent.detail.query : '';
   };
 
+  const onClick = (event: Event): void => {
+    const target = event.target;
+    if (target instanceof HTMLElement && target.closest('[data-search-dialog-close]')) {
+      requestSearchDialogClose(dialog);
+    }
+  };
+
   const onKeydown = (event: KeyboardEvent): void => {
     if (event.key.toLowerCase() !== 'k' || (!event.metaKey && !event.ctrlKey)) {
       return;
     }
 
-    const target = event.target;
-    if (
-      target instanceof HTMLElement &&
-      (target.isContentEditable ||
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement)
-    ) {
+    if (isTextEditingSearchShortcutTarget(event.target, dialog)) {
       return;
     }
 
     event.preventDefault();
     const trigger =
       document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
-    dialog.captureOpenModality('keyboard');
-    dialog.requestOpen(trigger);
+    requestSearchDialogOpen(dialog, trigger, 'keyboard');
+    setSearchDialogStatus(dialog, getSearchBootstrapUnavailableMessage(options.reason));
   };
 
   document.addEventListener('open-search-dialog', onOpenSearchDialog, { signal });
+  dialog.addEventListener('click', onClick, { signal });
+  dialog.addEventListener('close', onNativeClose, { signal });
   dialog.addEventListener('ui-search-dialog-open-requested', onOpenRequested, { signal });
   dialog.addEventListener('ui-search-dialog-close-requested', onCloseRequested, { signal });
   dialog.addEventListener('ui-search-dialog-query-changed', onQueryChanged, { signal });

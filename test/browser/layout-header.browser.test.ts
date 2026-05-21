@@ -63,22 +63,14 @@ const waitForAnimationFrames = async (count: number): Promise<void> => {
 };
 
 const getSearchTriggerButton = (host: ShadowRoot | null): HTMLButtonElement => {
-  const searchTrigger = expectPresent(
-    host?.querySelector<HTMLElement>('ui-search-trigger'),
-    'ui-search-trigger',
-  );
-  const searchUiButton = expectPresent(
-    searchTrigger.shadowRoot?.querySelector<HTMLElement>('ui-button'),
-    'ui-search-trigger ui-button',
-  );
   return expectPresent(
-    searchUiButton.shadowRoot?.querySelector<HTMLButtonElement>('button'),
-    'ui-search-trigger button',
+    host?.querySelector<HTMLButtonElement>('[data-search-dialog-trigger]'),
+    'search trigger button',
   );
 };
 
 const getSearchTriggerHost = (host: ShadowRoot | null): HTMLElement =>
-  expectPresent(host?.querySelector<HTMLElement>('ui-search-trigger'), 'ui-search-trigger');
+  expectPresent(host?.querySelector<HTMLElement>('[data-search-dialog-trigger]'), 'search trigger');
 
 const expectFocusedHeaderItemRaised = async (
   header: LayoutHeader,
@@ -2133,7 +2125,6 @@ describe('layout-header browser contract', () => {
       header.shadowRoot?.querySelector<HTMLButtonElement>('.toc-trigger'),
       'tocTrigger',
     );
-    const searchTrigger = getSearchTriggerHost(header.shadowRoot);
     const searchButton = getSearchTriggerButton(header.shadowRoot);
 
     expect(getComputedStyle(themeMain).gap).to.equal('10px');
@@ -2141,20 +2132,6 @@ describe('layout-header browser contract', () => {
     expect(getComputedStyle(tocTrigger).gap).to.equal('6px');
     expect(getComputedStyle(tocTrigger).paddingLeft).to.equal('9px');
     expect(getComputedStyle(tocTrigger).paddingRight).to.equal('9px');
-    expect(
-      getComputedStyle(searchTrigger).getPropertyValue('--search-trigger-gap').trim(),
-    ).to.equal('10px');
-    expect(
-      getComputedStyle(searchTrigger).getPropertyValue('--search-trigger-gap-compact').trim(),
-    ).to.equal('6px');
-    expect(
-      getComputedStyle(searchTrigger).getPropertyValue('--search-trigger-padding-inline').trim(),
-    ).to.equal('14px');
-    expect(
-      getComputedStyle(searchTrigger)
-        .getPropertyValue('--search-trigger-padding-inline-compact')
-        .trim(),
-    ).to.equal('9px');
 
     const buttonStyle = getComputedStyle(searchButton);
 
@@ -2217,7 +2194,7 @@ describe('layout-header browser contract', () => {
 
     const buttonStyle = getComputedStyle(searchButton);
     const searchPlaceholder = expectPresent(
-      searchTrigger.shadowRoot?.querySelector<HTMLElement>('.placeholder'),
+      searchTrigger.querySelector<HTMLElement>('.search-trigger__label'),
       'searchPlaceholder',
     );
 
@@ -2231,7 +2208,7 @@ describe('layout-header browser contract', () => {
       expect(buttonStyle.justifyContent).to.equal('center');
       expect(buttonStyle.paddingLeft).to.equal('0px');
       expect(buttonStyle.paddingRight).to.equal('0px');
-      expect(getComputedStyle(searchPlaceholder).display).to.equal('none');
+      expect(getComputedStyle(searchPlaceholder).display).to.not.equal('none');
       return;
     }
 

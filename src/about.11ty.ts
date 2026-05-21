@@ -2,6 +2,7 @@ import { createManifestLoadedRouteClassificationMode } from '../shared/link/link
 import type { SiteUrlContext } from '../shared/site/site-url-context.js';
 import { renderTextLinkHtml } from './layouts/link-html.js';
 import { escapeHtmlText, serializeHtmlAttributes } from './layouts/html-output.js';
+import { renderStaticArticleHeaderIconHtml } from './layouts/article-header-icon-html.js';
 
 interface AboutRenderData {
   siteUrlContext?: SiteUrlContext | null;
@@ -120,7 +121,7 @@ const renderSection = (section: AboutSection, context: AboutLinkContext): string
     <h2${headingAttributes}>
       <span class="heading-text">${escapeHtmlText(section.heading)}</span>
       <a${anchorAttributes}>
-        <ui-icon name="link" aria-hidden="true"></ui-icon>
+        ${renderStaticArticleHeaderIconHtml('link', 'heading-anchor-icon')}
       </a>
     </h2>
     ${body}

@@ -525,10 +525,11 @@ test.describe('No-JS baseline', () => {
     await expect(firstCodeGroup).toContainText('誤り例');
   });
 
-  test('タグページが JavaScript 無効時も search-page host を初期配置すること', async ({ page }) => {
+  test('タグページが JavaScript 無効時も static search page を初期配置すること', async ({ page }) => {
     await page.goto('/tags/Programming/');
 
-    await expect(page.locator('#main-content search-page')).toHaveCount(1);
+    await expect(page.locator('#main-content [data-search-page-root]')).toHaveCount(1);
+    await expect(page.locator('#main-content [data-search-query-input]')).toHaveCount(1);
   });
 
   test('ホームページでは現行ヒーロー文言を初期表示し、ヘッダー中央ラベルを出さないこと', async ({
