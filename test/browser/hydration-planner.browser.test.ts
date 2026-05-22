@@ -2,13 +2,15 @@ import { expect, fixture, html } from '@open-wc/testing';
 import { planHydration } from '../../src/client/hydration/planner.js';
 
 describe('planHydration', () => {
-  it('root 自身が executable custom element scope root の場合も direct item として計画すること', async () => {
+  it('root 配下の keyed enhancer を direct item として計画すること', async () => {
     const root = await fixture<HTMLElement>(html`
-      <search-page
-        data-hydration-scope="search-page"
-        data-hydration-capability="interactive"
-        data-hydration-trigger="initial"
-      ></search-page>
+      <section data-hydration-scope="search-page">
+        <div
+          data-hydration-key="search-page-enhancer"
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></div>
+      </section>
     `);
 
     const plans = planHydration(root);
@@ -16,17 +18,19 @@ describe('planHydration', () => {
     expect(plans).to.have.length(1);
     expect(plans[0]?.scope).to.equal('search-page');
     expect(plans[0]?.items.map((item) => [item.tag, item.scope])).to.deep.equal([
-      ['search-page', 'search-page'],
+      ['search-page-enhancer', 'search-page'],
     ]);
   });
 
-  it('root executable custom element は scope id が localName と異なっても採用すること', async () => {
+  it('root 配下の global search enhancer は scope id が key と異なっても採用すること', async () => {
     const root = await fixture<HTMLElement>(html`
-      <ui-search-dialog
-        data-hydration-scope="global-search"
-        data-hydration-capability="interactive"
-        data-hydration-trigger="initial"
-      ></ui-search-dialog>
+      <section data-hydration-scope="global-search">
+        <dialog
+          data-hydration-key="search-dialog-enhancer"
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></dialog>
+      </section>
     `);
 
     const plans = planHydration(root);
@@ -34,7 +38,7 @@ describe('planHydration', () => {
     expect(plans).to.have.length(1);
     expect(plans[0]?.scope).to.equal('global-search');
     expect(plans[0]?.items.map((item) => [item.tag, item.scope])).to.deep.equal([
-      ['ui-search-dialog', 'global-search'],
+      ['search-dialog-enhancer', 'global-search'],
     ]);
   });
 
@@ -112,21 +116,33 @@ describe('planHydration', () => {
   it('descendant の route-level self-scope component を独立 scope として計画すること', async () => {
     const root = await fixture<HTMLElement>(html`
       <main data-hydration-scope="app-shell">
-        <search-page
+        <section
           data-hydration-scope="search-page"
-          data-hydration-capability="interactive"
-          data-hydration-trigger="initial"
-        ></search-page>
-        <corpus-page
+        >
+          <div
+            data-hydration-key="search-page-enhancer"
+            data-hydration-capability="interactive"
+            data-hydration-trigger="initial"
+          ></div>
+        </section>
+        <section
           data-hydration-scope="corpus-page"
-          data-hydration-capability="interactive"
-          data-hydration-trigger="initial"
-        ></corpus-page>
-        <corpora-overview-page
+        >
+          <div
+            data-hydration-key="corpus-page-static"
+            data-hydration-capability="interactive"
+            data-hydration-trigger="initial"
+          ></div>
+        </section>
+        <section
           data-hydration-scope="corpora-overview-page"
-          data-hydration-capability="interactive"
-          data-hydration-trigger="initial"
-        ></corpora-overview-page>
+        >
+          <div
+            data-hydration-key="corpora-overview-static"
+            data-hydration-capability="interactive"
+            data-hydration-trigger="initial"
+          ></div>
+        </section>
       </main>
     `);
 
@@ -140,9 +156,9 @@ describe('planHydration', () => {
     ]);
     expect(plans[0]?.items).to.have.length(0);
     expect(plans.slice(1).map((plan) => plan.items.map((item) => item.tag))).to.deep.equal([
-      ['search-page'],
-      ['corpus-page'],
-      ['corpora-overview-page'],
+      ['search-page-enhancer'],
+      ['corpus-page-static'],
+      ['corpora-overview-static'],
     ]);
   });
 
@@ -227,30 +243,31 @@ describe('planHydration', () => {
     expect(plans.map((plan) => plan.scope)).to.deep.equal(['note-content']);
   });
 
-  it('空の data-hydration-key は key なしとして扱い scoped custom element を scope root として扱うこと', async () => {
+  it('空の data-hydration-key は key なしとして扱い scope 配下 item にしないこと', async () => {
     const root = await fixture<HTMLElement>(html`
-      <search-page
-        data-hydration-scope="search-page"
-        data-hydration-key=" "
-        data-hydration-capability="interactive"
-        data-hydration-trigger="initial"
-      ></search-page>
+      <section data-hydration-scope="search-page">
+        <div
+          data-hydration-key=" "
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></div>
+      </section>
     `);
 
     const plans = planHydration(root);
 
     expect(plans).to.have.length(1);
-    expect(plans[0]?.items.map((item) => item.tag)).to.deep.equal(['search-page']);
+    expect(plans[0]?.items).to.have.length(0);
   });
 
   it('空の data-hydration-scope と marker-only source script は scope root として採用しないこと', async () => {
     const root = await fixture<HTMLElement>(html`
       <main>
-        <search-page
+        <section
           data-hydration-scope=" "
           data-hydration-capability="interactive"
           data-hydration-trigger="initial"
-        ></search-page>
+        ></section>
         <script
           type="application/json"
           data-hydration-scope="note-content"
@@ -289,24 +306,27 @@ describe('planHydration', () => {
 
   it('executable scope root 配下の通常 nested scope を重複収集しないこと', async () => {
     const root = await fixture<HTMLElement>(html`
-      <search-page
+      <section
         data-hydration-scope="search-page"
-        data-hydration-capability="interactive"
-        data-hydration-trigger="initial"
       >
+        <div
+          data-hydration-key="search-page-enhancer"
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></div>
         <section data-hydration-scope="nested">
           <layout-sidebar
             data-hydration-capability="interactive"
             data-hydration-trigger="initial"
           ></layout-sidebar>
         </section>
-      </search-page>
+      </section>
     `);
 
     const plans = planHydration(root);
 
     expect(plans.map((plan) => plan.scope)).to.deep.equal(['search-page', 'nested']);
-    expect(plans[0]?.items.map((item) => item.tag)).to.deep.equal(['search-page']);
+    expect(plans[0]?.items.map((item) => item.tag)).to.deep.equal(['search-page-enhancer']);
     expect(plans[1]?.items.map((item) => item.tag)).to.deep.equal(['layout-sidebar']);
   });
 
@@ -318,11 +338,13 @@ describe('planHydration', () => {
           data-hydration-trigger="initial"
         ></layout-header>
         <article data-hydration-scope="note-content">
-          <search-page
-            data-hydration-scope="search-page"
-            data-hydration-capability="interactive"
-            data-hydration-trigger="initial"
-          ></search-page>
+          <section data-hydration-scope="search-page">
+            <div
+              data-hydration-key="search-page-enhancer"
+              data-hydration-capability="interactive"
+              data-hydration-trigger="initial"
+            ></div>
+          </section>
         </article>
       </main>
     `);

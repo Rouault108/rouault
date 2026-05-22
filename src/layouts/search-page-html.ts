@@ -150,13 +150,13 @@ export const renderSearchPageHtml = (options: {
             <div class="meta-row"><span>${initialResponse.total.toString()} 件の結果</span></div>
             <label class="sort-field">
               <span class="sort-label">タグ演算子</span>
-              <select class="sort-select" name="tagMode" data-ui-select data-search-tag-mode-select>
+              <select class="sort-select" name="tagMode" data-static-select data-search-tag-mode-select>
                 ${tagModeOptions.map(([value, label]) => renderOption(value, label, initialState.tagMode)).join('')}
               </select>
             </label>
             <label class="sort-field">
               <span class="sort-label">並び順</span>
-              <select class="sort-select" name="sort" data-ui-select data-search-sort-select>
+              <select class="sort-select" name="sort" data-static-select data-search-sort-select>
                 ${sortOptions.map(([value, label]) => renderOption(value, label, initialState.sort)).join('')}
               </select>
             </label>

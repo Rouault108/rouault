@@ -540,7 +540,7 @@ describe('buildNotePageProjection', () => {
         genre: ['javascript', 'programming'],
         content: [
           '<h2 id="sample">Sample</h2>',
-          '<ui-details data-hydration-trigger="initial"></ui-details>',
+          '<ui-tabs data-hydration-trigger="initial"></ui-tabs>',
           '<div data-code-block-root="true" data-hydration-trigger="post-commit" data-hydration-key="code-block-enhancer"><pre data-code-block="true"></pre></div>',
         ].join(''),
       }),
@@ -567,7 +567,7 @@ describe('buildNotePageProjection', () => {
         genre: ['javascript', 'programming'],
         content: [
           '<h2 id="sample">Sample</h2>',
-          '<ui-details data-hydration-trigger="initial"></ui-details>',
+          '<ui-tabs data-hydration-trigger="initial"></ui-tabs>',
           '<div data-code-block-root="true" data-hydration-trigger="post-commit" data-hydration-key="code-block-enhancer"><pre data-code-block="true"></pre></div>',
         ].join(''),
       }),

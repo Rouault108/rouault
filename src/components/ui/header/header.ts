@@ -88,7 +88,7 @@ export class UiHeader extends LitElement {
        * 自然なコンテンツ幅で配置しつつ、center を全幅に絶対配置して
        * ヘッダーの視覚的中央に固定する。
        *
-       * ui-button / ui-search-trigger は外側 outline を使うため、
+       * action button / static search trigger は外側 outline を使うため、
        * padding-inline に focus ring bleed を含めて端部の描画余白を予約する。
        */
       position: relative;

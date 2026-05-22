@@ -336,13 +336,11 @@ hr[data-divider-variant='layout'] {
     figure,
     blockquote,
     [data-callout],
-    ui-card,
-    ui-code-block,
-    ui-code-group,
     pre[data-code-block],
     section[data-code-group],
     [data-code-block-root],
-    ui-details,
+    [data-link-card],
+    [data-details],
     [data-info-box],
     [data-image],
     ui-video,
@@ -420,8 +418,6 @@ hr[data-divider-variant='layout'] {
   > ui-tabs
   > [slot='panel']
   > :is(
-    ui-code-block,
-    ui-code-group,
     pre[data-code-block],
     section[data-code-group],
     [data-code-block-root]
@@ -433,7 +429,7 @@ hr[data-divider-variant='layout'] {
 :is(.prose, .about-prose)
   > ui-tabs
   > [slot='panel']
-  > :is([data-table-root], [data-score], ui-math) {
+  > :is([data-table-root], [data-score], [data-math]) {
   --ui-table-breakout-width: 100%;
   --ui-table-breakout-margin: 0;
 }
@@ -452,13 +448,11 @@ hr[data-divider-variant='layout'] {
     figure,
     blockquote,
     [data-callout],
-    ui-card,
-    ui-code-block,
-    ui-code-group,
     pre[data-code-block],
     section[data-code-group],
     [data-code-block-root],
-    ui-details,
+    [data-link-card],
+    [data-details],
     [data-info-box],
     [data-image],
     ui-video,
@@ -569,16 +563,12 @@ hr[data-divider-variant='layout'] {
 
 .prose
   > :is(
-    ui-code-block,
-    ui-code-group,
     pre[data-code-block],
     section[data-code-group],
     [data-code-block-root]
   ),
 .about-prose
   > :is(
-    ui-code-block,
-    ui-code-group,
     pre[data-code-block],
     section[data-code-group],
     [data-code-block-root]
@@ -592,7 +582,7 @@ hr[data-divider-variant='layout'] {
   --ui-table-breakout-margin: 0;
 }
 
-.prose > ui-math {
+.prose > [data-math] {
   --ui-table-breakout-width: 100%;
   --ui-table-breakout-margin: 0;
 }
@@ -2785,7 +2775,7 @@ input:disabled,
   .header,
   .toc,
   .ui-button,
-  .ui-search-trigger,
+  [data-search-dialog-trigger],
   .ui-dropdown {
     display: none !important;
   }
@@ -2902,7 +2892,7 @@ input:disabled,
  * KaTeX（Light DOM）
  *
  * rehype-katex が .prose 等の Light DOM へ直接出力する KaTeX HTML に対する
- * グローバルスタイル。ui-math の Shadow DOM 内では同等ルールをコンポーネント
+ * グローバルスタイル。静的数式面では同等ルールを本文 CSS が担う
  * スタイルで管理するため、ここでは Light DOM のみを対象とする。
  *
  * KaTeX は出力に .katex-mathml（MathML / スクリーンリーダー用）と

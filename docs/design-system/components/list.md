@@ -438,7 +438,7 @@ loading 中は、次を固定契約とします。
         </div>
       </div>
       [div.empty-state]
-      [ui-pagination]
+      [nav[data-pagination]]
     </section>
 </ui-list>
 ```
@@ -655,7 +655,7 @@ print 契約は本書の正本範囲に含めません。印刷時の扱いは�
 
 ### ページネーション契約
 
-`ui-list` は `ui-pagination` を内包して表示できますが、ページそのものの状態遷移は外部責務です。`getPageHref` はページ番号からリンク先 URL を導出する補助にすぎません。
+`ui-list` は静的 pagination navigation を内包して表示できますが、ページそのものの状態遷移は外部責務です。`getPageHref` はページ番号からリンク先 URL を導出する補助にすぎません。
 
 利用者は、ページ番号と `pagination.offset`、`pagination.limit`、`pagination.total` の整合を保たなければなりません（MUST）。
 

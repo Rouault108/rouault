@@ -231,7 +231,7 @@ built-in controls または公開 property 更新により preview の公開状�
 ## 5.2 見出しの意味
 
 `heading` は、preview と code の読書単位を表す見出しです。  
-`ui-code-group` のタブラベルや `ui-code-block` のファイル名の代替ではありません。
+静的 code group のタブラベルや静的 code block のファイル名の代替ではありません。
 
 ## 5.3 toolbar
 
@@ -318,7 +318,7 @@ built-in controls または公開 property 更新により preview の公開状�
 
 - preview は group の選択状態や公開属性を所有しません。
 - group を static code root としてそのまま組み込みます。
-- 必要な外部同期は `ui-code-group-change` を上位層が受けて行います。
+- 必要な外部同期は静的 code group enhancer の変更イベントを上位層が受けて行います。
 
 ## 8.3 `code-composition.md` との関係
 

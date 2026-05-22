@@ -29,14 +29,14 @@ describe('transformHtmlWithLitSsr', () => {
         <body>
           <main id="main-content">
             <div class="prose">本文</div>
-            <ui-details summary="通知"><p>通知本文</p></ui-details>
+            <ui-tabs aria-label="通知"><div slot="tab" value="notice">通知</div><div slot="panel"><p>通知本文</p></div></ui-tabs>
             <ui-tabs aria-label="表示切替"><div slot="tab" value="one">1つ目</div><div slot="panel">パネル本文</div></ui-tabs>
           </main>
         </body>
       </html>`;
 
     const transformed = await transformHtmlWithLitSsr(html, {
-      targetTagNames: ['ui-details', 'ui-tabs'],
+      targetTagNames: ['ui-tabs'],
       renderCustomElement: (
         tagName: string,
         attributes: readonly SsrAttribute[],
@@ -50,13 +50,6 @@ describe('transformHtmlWithLitSsr', () => {
       collectDocumentStylesForTags: (tagNames: ReadonlySet<string>) => {
         const renderedTagNames = new Set(tagNames);
         const styles: DocumentStyleDefinition[] = [];
-
-        if (renderedTagNames.has('ui-details')) {
-          styles.push({
-            id: 'ui-details-document-styles',
-            cssText: '.details{display:block;}',
-          });
-        }
 
         if (renderedTagNames.has('ui-tabs')) {
           styles.push({
@@ -72,13 +65,12 @@ describe('transformHtmlWithLitSsr', () => {
     expect(transformed).toContain('class="prose">本文</div>');
     expect(transformed).toContain('type="application/json" id="sidebar-data"');
     expect(transformed).toContain('<template shadowrootmode="open">');
-    expect(transformed).toContain('id="ui-details-document-styles"');
     expect(transformed).toContain('id="ui-tabs-document-styles"');
 
     expect(renderCalls).toHaveLength(2);
-    expect(renderCalls[0]?.tagName).toBe('ui-details');
+    expect(renderCalls[0]?.tagName).toBe('ui-tabs');
     expect(renderCalls[0]?.attributes).toContainEqual({
-      name: 'summary',
+      name: 'aria-label',
       value: '通知',
     });
     expect(
@@ -94,7 +86,7 @@ describe('transformHtmlWithLitSsr', () => {
         </head>
         <body>
           <main id="main-content">
-            <search-page></search-page>
+            <section data-hydration-scope="search-page"><div data-hydration-key="search-page-enhancer"></div></section>
             <tag-page tag-page-json="{&quot;tag&quot;:&quot;music&quot;}"></tag-page>
             <article data-static="keep">残したい要素</article>
           </main>
@@ -102,7 +94,7 @@ describe('transformHtmlWithLitSsr', () => {
       </html>`;
 
     const transformed = await transformHtmlWithLitSsr(html, {
-      targetTagNames: ['search-page', 'tag-page'],
+      targetTagNames: ['tag-page'],
       renderCustomElement: (tagName: string, attributes: readonly SsrAttribute[]) =>
         Promise.resolve(
           `<${tagName}${serializeAttributes(attributes)}><template shadowrootmode="open"><div>SSR ${tagName}</div></template></${tagName}>`,
@@ -112,9 +104,7 @@ describe('transformHtmlWithLitSsr', () => {
 
     expect(transformed).toContain('pagefind:metadata:genre');
     expect(transformed).toContain('<article data-static="keep">残したい要素</article>');
-    expect(transformed).toContain(
-      '<search-page><template shadowrootmode="open"><div>SSR search-page</div></template></search-page>',
-    );
+    expect(transformed).toContain('data-hydration-key="search-page-enhancer"');
     expect(transformed).toContain(
       '<tag-page tag-page-json="{&quot;tag&quot;:&quot;music&quot;}"><template shadowrootmode="open"><div>SSR tag-page</div></template></tag-page>',
     );
@@ -221,18 +211,18 @@ describe('transformHtmlWithLitSsr', () => {
     const html = `<!doctype html>
       <html lang="ja">
         <head>
-          <style id="ui-details-document-styles">.existing{display:block;}</style>
+          <style id="ui-tabs-document-styles">.existing{display:block;}</style>
         </head>
         <body>
           <main>
-            <ui-details summary="A"><p>A</p></ui-details>
-            <ui-details summary="B"><p>B</p></ui-details>
+            <ui-tabs aria-label="A"><div slot="tab" value="a">A</div><div slot="panel"><p>A</p></div></ui-tabs>
+            <ui-tabs aria-label="B"><div slot="tab" value="b">B</div><div slot="panel"><p>B</p></div></ui-tabs>
           </main>
         </body>
       </html>`;
 
     const transformed = await transformHtmlWithLitSsr(html, {
-      targetTagNames: ['ui-details'],
+      targetTagNames: ['ui-tabs'],
       renderCustomElement: (
         tagName: string,
         attributes: readonly SsrAttribute[],
@@ -243,13 +233,13 @@ describe('transformHtmlWithLitSsr', () => {
         ),
       collectDocumentStylesForTags: () => [
         {
-          id: 'ui-details-document-styles',
-          cssText: '.details{display:block;}',
+          id: 'ui-tabs-document-styles',
+          cssText: '.tabs{display:block;}',
         },
       ],
     });
 
-    expect(transformed.match(/id="ui-details-document-styles"/g)).toHaveLength(1);
+    expect(transformed.match(/id="ui-tabs-document-styles"/g)).toHaveLength(1);
     expect(transformed).toContain('.existing{display:block;}');
   });
 });

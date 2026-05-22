@@ -2205,7 +2205,7 @@ describe('layout-header browser contract', () => {
 
     /*
      * layout-header の narrow 判定は container inline-size 契約だが、
-     * ui-search-trigger[density="auto"] の縮退は search-trigger 自身の
+     * static search trigger の縮退は search-trigger 自身の
      * viewport media query 契約である。ここで headerWidth < 640 を使って
      * search-trigger の icon-only 化を期待してはならない。
      */
