@@ -1,23 +1,15 @@
-import { existsSync, readFileSync } from 'node:fs';
-
 import { describe, expect, it } from 'vitest';
 
-import { NoteLayout } from '../../src/layouts/NoteLayout.11ty.js';
+import { loadNotesData, type IntrinsicNote } from '../../build/data/notes.js';
+import { buildNoteNavigationModel } from '../../build/navigation/index.js';
 import { NOTE_HYDRATION_BUDGET_PROFILES } from '../../build/projections/note-hydration-profile.js';
-import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
+import {
+  buildNotePageProjection,
+  type NotePageProjection,
+} from '../../build/projections/note-page-projection.js';
+import { buildPagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
+import { NoteLayout } from '../../src/layouts/NoteLayout.11ty.js';
 import type { NoteHydrationBudgetProfileName } from '../../src/types/note-hydration-budget-profile.js';
-
-interface VeliteNoteFixture {
-  slug: string;
-  title: string;
-  kind?: 'reader' | 'testing';
-  chromeProfile?: 'reader' | 'plain';
-  date?: string;
-  updated?: string;
-  description?: string;
-  genre?: string[];
-  content?: string;
-}
 
 interface HydrationTriggerCounts {
   initial: number;
@@ -32,46 +24,8 @@ interface CountedNotePage {
   readonly counts: HydrationTriggerCounts;
 }
 
-const projectRoot = process.cwd();
-const veliteNotesPath = `${projectRoot}/.velite/notes.json`;
-const canaryFixturePath = new URL('../fixtures/note-hydration-canary-notes.json', import.meta.url);
-
-const readHydrationCanaryFixtureNotes = (): VeliteNoteFixture[] =>
-  JSON.parse(readFileSync(canaryFixturePath, 'utf8')) as VeliteNoteFixture[];
-
-const mergeCanaryFixtureNotes = (
-  generatedNotes: readonly VeliteNoteFixture[],
-  canaryNotes: readonly VeliteNoteFixture[],
-): VeliteNoteFixture[] => {
-  const merged = new Map<string, VeliteNoteFixture>();
-
-  for (const note of generatedNotes) {
-    merged.set(note.slug, note);
-  }
-
-  for (const note of canaryNotes) {
-    if (!merged.has(note.slug)) {
-      merged.set(note.slug, note);
-    }
-  }
-
-  return [...merged.values()];
-};
-
-const loadHydrationCanaryNotes = (): VeliteNoteFixture[] => {
-  const canaryNotes = readHydrationCanaryFixtureNotes();
-  if (!existsSync(veliteNotesPath)) {
-    return canaryNotes;
-  }
-
-  const generatedNotes = JSON.parse(readFileSync(veliteNotesPath, 'utf8')) as VeliteNoteFixture[];
-  return mergeCanaryFixtureNotes(generatedNotes, canaryNotes);
-};
-
-const notes = loadHydrationCanaryNotes();
+const notes = loadNotesData();
 const layout = new NoteLayout();
-
-const slugToId = (slug: string): string => slug.replace(/[^a-zA-Z0-9_-]/g, '-');
 
 const countHydrationTriggers = (html: string): HydrationTriggerCounts => {
   const counts = {
@@ -97,88 +51,52 @@ const countHydrationTriggers = (html: string): HydrationTriggerCounts => {
   return { ...counts, total };
 };
 
-const buildProjection = (note: VeliteNoteFixture): NotePageProjection => {
-  const contentHtml = note.content ?? '';
-  const hasHeadings = /<h[2-6]\b/i.test(contentHtml);
-  const genres = Array.isArray(note.genre)
-    ? note.genre.filter(
-        (genre): genre is string => typeof genre === 'string' && genre.trim().length > 0,
-      )
-    : [];
-  const showSidebar = note.chromeProfile === 'reader' || (note.chromeProfile === undefined && note.kind === 'reader');
-  const dataId = slugToId(note.slug);
-
-  return {
-    noteKind: note.kind ?? 'reader',
-    noteShellSidebarPresence: showSidebar ? 'present' : 'absent',
-    tocPresence: hasHeadings ? 'present' : 'absent',
-    showSidebar,
-    contentHtml,
-    ...(showSidebar
-      ? {
-          sidebar: {
-            sidebarId: 'note-primary',
-            stateScopeId: 'note-navigation',
-            selectedId: note.slug,
-            initialExpandedIds: [],
-            topologyRevision: JSON.stringify([
-              {
-                id: note.slug,
-                label: note.title,
-                kind: 'leaf',
-                href: `/notes/${note.slug}`,
-              },
-            ]),
-            navHtml: `<nav data-sidebar-nav aria-label="ノートナビゲーション" data-sidebar-id="note-primary" data-topology-revision="${note.slug}"><ul><li data-node-id="${note.slug}" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/notes/${note.slug}" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page"><span data-sidebar-nav-label>${note.title}</span></a></li></ul></nav>`,
-            heading: null,
-            fixedBreakpoint: '1024',
-            presentation: 'auto',
-          },
-        }
-      : {}),
-    toc: {
-      sourceId: `toc-source-${dataId}`,
-      runtimeId: `toc-source-${dataId}`,
-      ownerId: `toc-owner-${dataId}`,
-      scopeId: 'note-toc',
-      headings: [],
-      capabilities: {
-        activeTracking: hasHeadings,
-        dynamicScopes: false,
-        mobilePanel: showSidebar && hasHeadings,
-      },
-      contentRootId: `note-content-${dataId}`,
-      homeHref: '/',
-      shouldHydrate: hasHeadings,
-    },
-    articleHeader: {
-      heading: note.title,
-      ...(typeof note.date === 'string' ? { published: note.date } : {}),
-      ...(typeof note.updated === 'string' ? { updated: note.updated } : {}),
-      genres,
-    },
-    pagefind:
-      note.kind === 'reader'
-        ? {
-            sortDate: typeof note.date === 'string' ? note.date.slice(0, 10) : '0000-00-00',
-            title: note.title,
-            tokenizedTitle: '',
-            description: typeof note.description === 'string' ? note.description : '',
-            tokenizedDescription: '',
-            date: typeof note.date === 'string' ? note.date.slice(0, 10) : '',
-            tags: genres,
-          }
-        : null,
-  };
-};
-
-const renderNotePage = (slug: string): CountedNotePage => {
+const findCanaryNote = (slug: string): IntrinsicNote => {
   const note = notes.find((entry) => entry.slug === slug);
   if (!note) {
-    throw new Error(`note "${slug}" が見つかりません`);
+    throw new Error(
+      `hydration canary note "${slug}" が見つかりません。pnpm run codegen:content の生成結果と content/testing/*.md を確認してください。`,
+    );
   }
+  return note;
+};
 
-  const notePage = buildProjection(note);
+const assertCanaryProfile = (
+  note: IntrinsicNote,
+  expectedProfile: NoteHydrationBudgetProfileName,
+): void => {
+  expect(note.hydrationBudgetProfile).toBe(expectedProfile);
+};
+
+const buildHydrationBudgetNotePageProjection = (note: IntrinsicNote): NotePageProjection => {
+  const navigation = buildNoteNavigationModel({
+    currentNote: note,
+    notes,
+  });
+
+  const pagefindDocument = buildPagefindDocumentData({
+    title: typeof note.title === 'string' ? note.title : undefined,
+    description: typeof note.description === 'string' ? note.description : undefined,
+    date: typeof note.date === 'string' ? note.date : undefined,
+    updated: typeof note.updated === 'string' ? note.updated : undefined,
+    tags: Array.isArray(note.genre) ? note.genre : undefined,
+  });
+
+  return buildNotePageProjection({
+    note,
+    navigation,
+    pagefindDocument,
+  });
+};
+
+const renderNotePage = (
+  slug: string,
+  expectedProfile: NoteHydrationBudgetProfileName,
+): CountedNotePage => {
+  const note = findCanaryNote(slug);
+  assertCanaryProfile(note, expectedProfile);
+
+  const notePage = buildHydrationBudgetNotePageProjection(note);
   const sidebar =
     notePage.showSidebar && notePage.sidebar
       ? '<layout-sidebar data-hydration-capability="interactive" data-hydration-trigger="initial"></layout-sidebar>'
@@ -203,7 +121,7 @@ const CANARY_CASES: readonly {
 describe('note hydration budget', () => {
   for (const testCase of CANARY_CASES) {
     it(`${testCase.profile} を budget どおりに描画すること`, () => {
-      const result = renderNotePage(testCase.slug);
+      const result = renderNotePage(testCase.slug, testCase.profile);
       expect(result.counts).to.deep.equal(NOTE_HYDRATION_BUDGET_PROFILES[testCase.profile].budget);
     });
   }

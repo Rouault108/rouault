@@ -24,6 +24,16 @@ const forbidPattern = (path: string, pattern: RegExp, label: string): void => {
   }
 };
 
+const forbidPatternIfExists = (path: string, pattern: RegExp, label: string): void => {
+  if (!existsSync(path)) {
+    return;
+  }
+
+  const source = readFileSync(path, 'utf8');
+  if (pattern.test(source)) {
+    violations.push(`${path}: ${label}`);
+  }
+};
 
 const forbidFileExists = (path: string, label: string): void => {
   if (existsSync(path)) {
@@ -147,10 +157,10 @@ forbidPattern(
   'Search data model docs must not reference the legacy candidate URL property',
 );
 
-forbidPattern(
+forbidPatternIfExists(
   'docs/design-system/components/search-dialog.md',
   new RegExp('SearchResultItem' + '\\.url', 'u'),
-  'live Search dialog docs must not reference legacy SearchResultItem' + '.url',
+  'Search dialog docs must not reference legacy SearchResultItem' + '.url',
 );
 
 

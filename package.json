@@ -23,7 +23,7 @@
     "typecheck:node": "pnpm run codegen:icons && pnpm exec tsc -p tsconfig.node.json --noEmit",
     "typecheck": "pnpm run typecheck:app && pnpm run typecheck:node",
     "test:node": "pnpm run codegen:icons && pnpm exec vitest --project node",
-    "test:ssr": "pnpm run codegen:icons && pnpm exec vitest --project ssr",
+    "test:ssr": "pnpm run codegen:icons && pnpm run codegen:content && pnpm exec vitest --project ssr",
     "test:browser": "pnpm run codegen:icons && node scripts/run-web-test-runner.mjs --config web-test-runner.config.mjs",
     "test:storybook:meta": "pnpm run codegen:manifest && pnpm exec vitest --project storybook-meta",
     "test:storybook:smoke": "pnpm run codegen:manifest && pnpm exec vitest --project storybook-smoke",
