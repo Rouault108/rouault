@@ -1,7 +1,6 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/list/list.js';
 import '../../src/components/ui/list-item/list-item.js';
-import '../../src/components/ui/pagination/pagination.js';
 import type {
   ColumnDef,
   List,
@@ -10,7 +9,6 @@ import type {
   UiPreviewRequestDetail,
 } from '../../src/components/ui/list/list.js';
 import type { ListItem } from '../../src/components/ui/list-item/list-item.js';
-import type { Pagination } from '../../src/components/ui/pagination/pagination.js';
 import { dispatchKey, nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
 const columns: ColumnDef[] = [
@@ -152,12 +150,19 @@ describe('ui-list browser contract', () => {
 
     expect(sortChanges.at(-1)).to.deep.equal({ key: 'title', direction: 'asc' });
 
-    const paginationHost = expectPresent(
-      host.shadowRoot?.querySelector<Pagination>('ui-pagination'),
+    const paginationNav = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('[data-pagination]'),
       'pagination',
     );
-    expect(paginationHost.current).to.equal(3);
-    expect(paginationHost.total).to.equal(10);
+    expect(paginationNav.querySelector('[data-pagination-current]')?.textContent?.trim()).to.equal(
+      '3 / 10',
+    );
+    expect(
+      paginationNav.querySelector<HTMLAnchorElement>('[data-pagination-prev]')?.getAttribute('href'),
+    ).to.equal('/notes?page=2');
+    expect(
+      paginationNav.querySelector<HTMLAnchorElement>('[data-pagination-next]')?.getAttribute('href'),
+    ).to.equal('/notes?page=4');
   });
 
   it('loading=false かつ row 不在では empty status を出し、loading=true では loading status を優先すること', async () => {

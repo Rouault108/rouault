@@ -4,7 +4,7 @@ import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { map } from 'lit/directives/map.js';
 import '../list-item/list-item';
-import '../pagination/pagination';
+import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
 
 export interface ColumnDef {
   id: string;
@@ -755,18 +755,44 @@ export class List extends LitElement {
     const currentSort = this._resolvedSort;
     if (currentSort.key === sortKey) {
       const icon = currentSort.direction === 'asc' ? 'chevron-up' : 'chevron-down';
-      return html`<ui-icon
-        name="${icon}"
-        style="font-size: var(--icon-sm, 14px);"
-        aria-hidden="true"
-      ></ui-icon>`;
+      return html`<span style="font-size: var(--icon-sm, 14px);" aria-hidden="true"
+        >${renderStaticIconTemplate(icon)}</span
+      >`;
     }
 
-    return html`<ui-icon
-      name="chevrons-up-down"
-      style="font-size: var(--icon-sm, 14px); opacity: 0.4;"
-      aria-hidden="true"
-    ></ui-icon>`;
+    return html`<span style="font-size: var(--icon-sm, 14px); opacity: 0.4;" aria-hidden="true"
+      >${renderStaticIconTemplate('chevrons-up-down')}</span
+    >`;
+  }
+
+  private _renderPagination(currentPage: number, totalPages: number): TemplateResult {
+    const getHref = this.getPageHref ?? ((page: number): string => `?page=${String(page)}`);
+    const previousPage = Math.max(1, currentPage - 1);
+    const nextPage = Math.min(totalPages, currentPage + 1);
+
+    return html`
+      <nav class="ui-pagination" aria-label="ページネーション" data-pagination>
+        <a
+          class="ui-pagination__control"
+          href="${getHref(previousPage)}"
+          rel="prev"
+          aria-disabled="${String(currentPage <= 1)}"
+          data-pagination-prev
+          >前へ</a
+        >
+        <span class="ui-pagination__status" aria-current="page" data-pagination-current>
+          ${currentPage} / ${totalPages}
+        </span>
+        <a
+          class="ui-pagination__control"
+          href="${getHref(nextPage)}"
+          rel="next"
+          aria-disabled="${String(currentPage >= totalPages)}"
+          data-pagination-next
+          >次へ</a
+        >
+      </nav>
+    `;
   }
 
   override render(): TemplateResult {
@@ -873,12 +899,7 @@ export class List extends LitElement {
               <div
                 style="margin-top: var(--space-3, 12px); display: flex; justify-content: center;"
               >
-                <ui-pagination
-                  .current="${currentPage}"
-                  .total="${totalPages}"
-                  .getHref="${this.getPageHref ??
-                  ((page: number): string => `?page=${String(page)}`)}"
-                ></ui-pagination>
+                ${this._renderPagination(currentPage, totalPages)}
               </div>
             `
           : nothing}

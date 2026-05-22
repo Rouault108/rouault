@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import '../icon/icon.js';
+import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
+import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 
 export type ToastVariant = 'success' | 'warning' | 'danger' | 'info';
 type ToastRole = 'status' | 'alert';
@@ -26,7 +27,7 @@ const TOAST_ROLE_BY_VARIANT: Record<ToastVariant, ToastRole> = {
   danger: 'alert',
 };
 
-const TOAST_ICON_BY_VARIANT: Record<ToastVariant, string> = {
+const TOAST_ICON_BY_VARIANT: Record<ToastVariant, IconName> = {
   info: 'info',
   success: 'check-circle',
   warning: 'alert-triangle',
@@ -476,8 +477,9 @@ export class UiToast extends LitElement {
       animation: var(--animation-focus, none);
     }
 
-    .toast-close ui-icon {
-      font-size: var(--icon-sm, 14px);
+    .toast-close svg {
+      inline-size: var(--icon-sm, 14px);
+      block-size: var(--icon-sm, 14px);
     }
 
     @keyframes toast-slide-in {
@@ -708,11 +710,7 @@ export class UiToast extends LitElement {
               @focusout="${this._onToastFocusOut}"
             >
               <div class="toast-content">
-                <ui-icon
-                  class="toast-icon"
-                  name="${TOAST_ICON_BY_VARIANT[toast.variant]}"
-                  aria-hidden="true"
-                ></ui-icon>
+                ${renderStaticIconTemplate(TOAST_ICON_BY_VARIANT[toast.variant], 'toast-icon')}
                 <span class="toast-message">${toast.message}</span>
               </div>
 
@@ -725,7 +723,7 @@ export class UiToast extends LitElement {
                       data-toast-id="${toast.id}"
                       @click="${this._onDismissClick}"
                     >
-                      <ui-icon name="x" aria-hidden="true"></ui-icon>
+                      ${renderStaticIconTemplate('x')}
                     </button>
                   `
                 : nothing}

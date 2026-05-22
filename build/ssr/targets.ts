@@ -1,15 +1,17 @@
-import { SSR_COMPONENT_DEFINITIONS, type SsrComponentTag } from './target-definitions.js';
+import {
+  SSR_COMPONENT_DEFINITIONS,
+  type SsrComponentProfile,
+  type SsrComponentTag,
+} from './target-definitions.js';
 
 type ComponentDefinition = (typeof SSR_COMPONENT_DEFINITIONS)[number];
-type ComponentProfile = ComponentDefinition['profiles'][number];
-
 const pickTags = (
   predicate: (definition: ComponentDefinition) => boolean,
 ): readonly SsrComponentTag[] =>
   SSR_COMPONENT_DEFINITIONS.filter(predicate).map((definition) => definition.tag);
 
-const hasProfile = (definition: ComponentDefinition, profile: ComponentProfile): boolean =>
-  (definition.profiles as readonly ComponentProfile[]).includes(profile);
+const hasProfile = (definition: ComponentDefinition, profile: SsrComponentProfile): boolean =>
+  (definition.profiles as readonly SsrComponentProfile[]).includes(profile);
 
 export const SSR_SHADOW_TARGET_TAGS = pickTags((definition) => definition.ssr === 'shadow');
 export const SSR_LIGHT_TARGET_TAGS = pickTags((definition) => definition.ssr === 'light');

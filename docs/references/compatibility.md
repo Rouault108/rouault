@@ -11,7 +11,6 @@
 ## Current Inventory
 
 - Legacy router history path key: current compatibility API ではない。
-- `ui-icon[icon]`: current compatibility API ではない。
 - `ui-kbd[keys]` / host text: current compatibility API ではない。
 - 未分類 link failsafe: current compatibility API ではない。
 - `ui-skip-link[href]`: current compatibility API ではない。

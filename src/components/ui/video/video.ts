@@ -5,7 +5,8 @@ import {
   sanitizeVideoPoster,
   sanitizeVideoSource,
 } from '../../../../shared/media/media-source-attributes.js';
-import '../icon/icon.js';
+import type { IconName } from '../../../../shared/icons/icons-catalog.js';
+import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
 import '../button/button';
 
 export type VideoState =
@@ -144,9 +145,9 @@ export class UiVideo extends LitElement {
         opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
-    .play-button ui-icon {
-      font-size: var(--icon-xl, 32px);
-      line-height: 1;
+    .play-button svg {
+      inline-size: var(--icon-xl, 32px);
+      block-size: var(--icon-xl, 32px);
     }
 
     .play-button.is-hidden {
@@ -200,9 +201,9 @@ export class UiVideo extends LitElement {
         transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
-    .skip-button ui-icon {
-      font-size: var(--icon-md, 18px);
-      line-height: 1;
+    .skip-button svg {
+      inline-size: var(--icon-md, 18px);
+      block-size: var(--icon-md, 18px);
     }
 
     .skip-button:hover:not(:disabled) {
@@ -306,10 +307,10 @@ export class UiVideo extends LitElement {
       -webkit-backdrop-filter: blur(var(--blur-sm, 8px));
     }
 
-    .empty-panel ui-icon,
-    .error-panel ui-icon {
-      font-size: var(--icon-xl, 32px);
-      line-height: 1;
+    .empty-panel svg,
+    .error-panel svg {
+      inline-size: var(--icon-xl, 32px);
+      block-size: var(--icon-xl, 32px);
     }
 
     .error-panel {
@@ -967,7 +968,7 @@ export class UiVideo extends LitElement {
     return '再生';
   }
 
-  private get _playButtonIcon(): string {
+  private get _playButtonIcon(): IconName {
     if (this._isPlayingLike) return 'pause';
     if (this._status === 'ENDED') return 'rotate-ccw';
     return 'play';
@@ -1007,7 +1008,7 @@ export class UiVideo extends LitElement {
     return this.muted || this._volume === 0 ? 'ミュート解除' : 'ミュート';
   }
 
-  private get _muteButtonIcon(): string {
+  private get _muteButtonIcon(): IconName {
     if (this.muted || this._volume === 0) return 'volume-x';
     if (this._volume < 0.5) return 'volume-1';
     return 'volume-2';
@@ -1017,7 +1018,7 @@ export class UiVideo extends LitElement {
     return this._isFullscreen ? '全画面を終了' : '全画面表示';
   }
 
-  private get _fullscreenButtonIcon(): string {
+  private get _fullscreenButtonIcon(): IconName {
     return this._isFullscreen ? 'minimize' : 'maximize';
   }
 
@@ -1041,7 +1042,7 @@ export class UiVideo extends LitElement {
     return this._captionsActive ? '字幕をオフ' : '字幕をオン';
   }
 
-  private get _captionToggleIcon(): string {
+  private get _captionToggleIcon(): IconName {
     return this._captionsActive ? 'captions' : 'captions-off';
   }
 
@@ -1833,7 +1834,7 @@ export class UiVideo extends LitElement {
             ?disabled=${this._controlDisabled}
             @click="${this._onSkipBack}"
           >
-            <ui-icon name="rotate-ccw" aria-hidden="true"></ui-icon>
+            ${renderStaticIconTemplate('rotate-ccw')}
           </button>
 
           <button
@@ -1845,7 +1846,7 @@ export class UiVideo extends LitElement {
             ?disabled=${this._controlDisabled}
             @click="${this._togglePlayback}"
           >
-            <ui-icon name="${this._playButtonIcon}" aria-hidden="true"></ui-icon>
+            ${renderStaticIconTemplate(this._playButtonIcon)}
           </button>
 
           <button
@@ -1856,7 +1857,7 @@ export class UiVideo extends LitElement {
             ?disabled=${this._controlDisabled}
             @click="${this._onSkipForward}"
           >
-            <ui-icon name="rotate-cw" aria-hidden="true"></ui-icon>
+            ${renderStaticIconTemplate('rotate-cw')}
           </button>
         </div>
       </div>
@@ -1868,7 +1869,7 @@ export class UiVideo extends LitElement {
       return html`
         <div class="state-layer">
           <div class="empty-panel" role="status" aria-live="polite">
-            <ui-icon name="film" aria-hidden="true"></ui-icon>
+            ${renderStaticIconTemplate('film')}
             <span class="state-text">動画ソースが設定されていません</span>
           </div>
         </div>
@@ -1894,7 +1895,7 @@ export class UiVideo extends LitElement {
             aria-live="${this._statusLive}"
             aria-atomic="true"
           >
-            <ui-icon name="triangle-alert" aria-hidden="true"></ui-icon>
+            ${renderStaticIconTemplate('triangle-alert')}
             <span class="state-text">${this._statusMessage}</span>
             <button type="button" class="retry-button" @click="${this._onRetryClick}">
               再試行
@@ -2032,7 +2033,7 @@ export class UiVideo extends LitElement {
                   ?disabled=${this._controlDisabled}
                   @click="${this._onFloatingBarPlay}"
                 >
-                  <ui-icon name="${this._playButtonIcon}" aria-hidden="true"></ui-icon>
+                  ${renderStaticIconTemplate(this._playButtonIcon)}
                 </ui-button>
 
                 <ui-button
@@ -2043,7 +2044,7 @@ export class UiVideo extends LitElement {
                   ?disabled=${this._controlDisabled}
                   @click="${this._onFloatingBarSkipBack}"
                 >
-                  <ui-icon name="rewind" aria-hidden="true"></ui-icon>
+                  ${renderStaticIconTemplate('rewind')}
                 </ui-button>
 
                 <ui-button
@@ -2054,7 +2055,7 @@ export class UiVideo extends LitElement {
                   ?disabled=${this._controlDisabled}
                   @click="${this._onFloatingBarSkipForward}"
                 >
-                  <ui-icon name="fast-forward" aria-hidden="true"></ui-icon>
+                  ${renderStaticIconTemplate('fast-forward')}
                 </ui-button>
 
                 <ui-button
@@ -2065,7 +2066,7 @@ export class UiVideo extends LitElement {
                   ?disabled=${this._controlDisabled}
                   @click="${this._toggleMuted}"
                 >
-                  <ui-icon name="${this._muteButtonIcon}" aria-hidden="true"></ui-icon>
+                  ${renderStaticIconTemplate(this._muteButtonIcon)}
                 </ui-button>
 
                 <input
@@ -2099,7 +2100,7 @@ export class UiVideo extends LitElement {
                         ?disabled=${this._controlDisabled}
                         @click="${this._toggleCaptions}"
                       >
-                        <ui-icon name="${this._captionToggleIcon}" aria-hidden="true"></ui-icon>
+                        ${renderStaticIconTemplate(this._captionToggleIcon)}
                       </ui-button>
                     `
                   : nothing}
@@ -2113,7 +2114,7 @@ export class UiVideo extends LitElement {
                   ?disabled=${this._controlDisabled}
                   @click="${this._toggleFullscreen}"
                 >
-                  <ui-icon name="${this._fullscreenButtonIcon}" aria-hidden="true"></ui-icon>
+                  ${renderStaticIconTemplate(this._fullscreenButtonIcon)}
                 </ui-button>
               </div>
             </div>

@@ -33,7 +33,7 @@ import {
   layoutTocRuntimeStore,
   type LayoutTocRuntimeSnapshot,
 } from './layout-toc-runtime-store.js';
-import '../ui/icon/icon.js';
+import { renderStaticIconTemplate } from '../ui/icon/static-icon-template.js';
 import '../ui/toc/toc.js';
 import type { Heading } from '../ui/toc/toc.js';
 
@@ -623,7 +623,7 @@ export class LayoutToc extends LitElement {
             aria-label="目次を閉じる"
             @click=${this._closeMobilePanel}
           >
-            <ui-icon name="x" aria-hidden="true"></ui-icon>
+            ${renderStaticIconTemplate('x')}
           </button>
         </div>
         ${keyed(

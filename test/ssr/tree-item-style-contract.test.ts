@@ -58,7 +58,7 @@ describe('ui-tree-item style contract', () => {
     ).toBe(true);
     expect(hasDeclarationForSelector(treeItemCss, '.expand-glyph', 'color', 'currentColor', { scope: 'base' })).toBe(true);
     expect(
-      hasDeclarationForSelector(treeItemCss, '.expand-glyph > ui-icon', 'color', 'currentColor', {
+      hasDeclarationForSelector(treeItemCss, '.expand-glyph > svg', 'color', 'currentColor', {
         scope: 'base',
       }),
     ).toBe(true);
@@ -111,7 +111,7 @@ describe('ui-tree-item style contract', () => {
     for (const selector of [
       ':host([selected]) .current-slot.is-branch',
       ':host([selected]) .current-slot.is-branch .expand-glyph',
-      ':host([selected]) .current-slot.is-branch .expand-glyph > ui-icon',
+      ':host([selected]) .current-slot.is-branch .expand-glyph > svg',
     ] as const) {
       expect(hasDeclarationForSelector(treeItemCss, selector, 'color', 'HighlightText', { scope: 'forced-colors' })).toBe(true);
       expect(

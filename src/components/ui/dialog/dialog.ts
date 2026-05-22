@@ -2,7 +2,7 @@ import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import type { Button } from '../button/button.js';
 import '../button/button.js';
-import '../icon/icon.js';
+import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
 import {
   captureTrigger,
   createBodyScrollLock,
@@ -673,7 +673,7 @@ export class UiDialog extends LitElement {
             aria-label=${CLOSE_BUTTON_LABEL}
             @click=${this._onCloseButtonClick}
           >
-            <ui-icon name="x" aria-hidden="true"></ui-icon>
+            ${renderStaticIconTemplate('x')}
           </ui-button>
         </div>
 

@@ -94,17 +94,12 @@ describe('ui-tree-item selected visual contract', () => {
       item.shadowRoot?.querySelector<HTMLElement>('.expand-glyph'),
       'expand glyph',
     );
-    const uiIcon = expectPresent(expandGlyph.querySelector<HTMLElement>('ui-icon'), 'expand ui-icon');
-    const iconifyGlyph = expectPresent(
-      uiIcon.shadowRoot?.querySelector<HTMLElement>('iconify-icon[part="glyph"]'),
-      'iconify glyph',
-    );
-    expect(iconifyGlyph.getAttribute('icon'), 'icon attribute').to.be.a('string').and.not.equal('');
+    const svgIcon = expectPresent(expandGlyph.querySelector<SVGElement>('svg[data-icon]'), 'expand icon');
+    expect(svgIcon.getAttribute('data-icon'), 'icon attribute').to.equal('chevron-right');
     await waitForStyleRecalc();
 
     const active = resolveComputedColor(getComputedStyle(currentSlot).color, currentSlot, 'color');
     expectColorClose(resolveComputedColor(getComputedStyle(expandGlyph).color, expandGlyph, 'color'), active);
-    expectColorClose(resolveComputedColor(getComputedStyle(uiIcon).color, uiIcon, 'color'), active);
-    expectColorClose(resolveComputedColor(getComputedStyle(iconifyGlyph).color, iconifyGlyph, 'color'), active);
+    expectColorClose(resolveComputedColor(getComputedStyle(svgIcon).color, svgIcon, 'color'), active);
   });
 });

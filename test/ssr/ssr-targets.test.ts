@@ -12,7 +12,6 @@ const REQUIRED_NOTE_CONTENT_TAGS: readonly string[] = [
   'ui-checkbox',
   'ui-code-preview',
   'ui-preview-sandbox',
-  'ui-score',
   'ui-tabs',
   'ui-translation',
 ] as const;
@@ -48,6 +47,7 @@ describe('component manifest / ssr targets', () => {
       'ui-image',
       'ui-footnote',
       'ui-details',
+      'ui-score',
       'ui-syntax-card',
       'ui-syntax-section',
       'ui-syntax-field',

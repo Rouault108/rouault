@@ -5,7 +5,7 @@ import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import '../tooltip/tooltip';
 import type { IconName } from '../../../../shared/icons/icons-catalog.js';
-import '../icon/icon.js';
+import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
 
 type TreeItemDensity = 'normal' | 'compact';
 
@@ -344,8 +344,8 @@ export class TreeItem extends LitElement {
       display: none;
     }
 
-    .expand-glyph > ui-icon,
-    .content-icon > ui-icon {
+    .expand-glyph > svg,
+    .content-icon > svg {
       display: block;
       color: currentColor;
       inline-size: 16px;
@@ -499,7 +499,7 @@ export class TreeItem extends LitElement {
 
       :host([selected]) .current-slot.is-branch,
       :host([selected]) .current-slot.is-branch .expand-glyph,
-      :host([selected]) .current-slot.is-branch .expand-glyph > ui-icon {
+      :host([selected]) .current-slot.is-branch .expand-glyph > svg {
         color: HighlightText;
         forced-color-adjust: none;
       }
@@ -932,7 +932,7 @@ export class TreeItem extends LitElement {
             <span class="current-slot-line"></span>
             <span class="expand-icon">
               <span class="expand-glyph">
-                <ui-icon name="chevron-right"></ui-icon>
+                ${renderStaticIconTemplate('chevron-right')}
               </span>
             </span>
           </span>
@@ -958,7 +958,7 @@ export class TreeItem extends LitElement {
           aria-hidden="true"
         >
           ${this.icon
-            ? html`<ui-icon name=${this.icon}></ui-icon>`
+            ? renderStaticIconTemplate(this.icon)
             : html`<slot
                 class="content-icon-slot"
                 name="icon"

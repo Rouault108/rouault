@@ -50,19 +50,19 @@ forbidPattern(
   'Pagefind loader authority must live in shared/search/search-loaders.ts only',
 );
 forbidPattern(
-  'src/components/search/search-page.ts',
+  'src/client/post-hydrate/search-page-enhancer.ts',
   /createSearchCore(?:FromSiteContext)?\b/u,
-  'SearchPage must not create SearchCore directly or through a compatibility wrapper',
+  'search-page enhancer must not create SearchCore directly or through a compatibility wrapper',
 );
 forbidPattern(
-  'src/components/search/search-page.ts',
+  'src/client/post-hydrate/search-page-enhancer.ts',
   /pathname\.startsWith\('\/'\)/u,
-  'SearchPage must not fake a route manifest predicate',
+  'search-page enhancer must not fake a route manifest predicate',
 );
 requireContains(
-  'src/components/search/search-page.ts',
-  'getInitializedSearchBootstrapState',
-  'SearchPage must consume bootstrap state before requiring SearchCore',
+  'src/layouts/search-page-html.ts',
+  'data-hydration-key="search-page-enhancer"',
+  'static search page must expose the search-page enhancer hydration key',
 );
 requireContains(
   'build/remark/directives/payload/normalize-surface-payload.ts',
@@ -380,14 +380,14 @@ requireContains(
   'Search JSON parser must record item drop summaries through the JSON diagnostic taxonomy',
 );
 requireContains(
-  'src/components/search/search-page.ts',
-  'parseStaticExploreSearchResponseJson',
-  'SearchPage must hydrate initial-search-response-json through the static response JSON parser',
+  'src/layouts/search-page-html.ts',
+  'initial-search-response-json',
+  'static SearchPage HTML must serialize initial-search-response-json for progressive enhancement',
 );
 forbidPattern(
-  'src/components/search/search-page.ts',
+  'src/client/post-hydrate/search-page-enhancer.ts',
   /JSON\.parse\(normalized\) as ExploreSearchResponse/u,
-  'SearchPage must not cast parsed initial-search-response-json directly to ExploreSearchResponse',
+  'search-page enhancer must not cast parsed initial-search-response-json directly to ExploreSearchResponse',
 );
 requireContains(
   'src/router/location-adapter.ts',

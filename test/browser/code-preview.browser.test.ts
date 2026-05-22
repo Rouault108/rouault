@@ -1,23 +1,11 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/code-preview/code-preview.js';
-import '../../src/components/ui/codeblock/codeblock.js';
-import '../../src/components/ui/code-group/code-group.js';
 import '../../src/components/ui/button/button.js';
 import type {
   CodePreview,
   CodePreviewStateChangeDetail,
 } from '../../src/components/ui/code-preview/code-preview.js';
 import { nextAnimationFrame, waitForLitUpdate, waitMs } from './helpers/wait-for-lit.js';
-
-type CodeBlockLike = HTMLElement & {
-  getCodeContent?: () => string;
-};
-
-type CopyButtonLike = HTMLElement & {
-  value?: string;
-  label?: string;
-  disabled?: boolean;
-};
 
 const getRoot = (preview: CodePreview): HTMLElement | null =>
   preview.shadowRoot?.querySelector<HTMLElement>('.root') ?? null;
@@ -66,27 +54,21 @@ describe('ui-code-preview browser contract', () => {
     const basic = await fixture<CodePreview>(html`
       <ui-code-preview>
         <div slot="preview">preview</div>
-        <ui-code-block layout="inline" lang="ts">
-          <pre><code>const basic = 1;</code></pre>
-        </ui-code-block>
+        <pre data-code-block><code>const basic = 1;</code></pre>
       </ui-code-preview>
     `);
 
     const headingOnly = await fixture<CodePreview>(html`
       <ui-code-preview heading="見出しあり">
         <div slot="preview">preview</div>
-        <ui-code-block layout="inline" lang="ts">
-          <pre><code>const headingOnly = 1;</code></pre>
-        </ui-code-block>
+        <pre data-code-block><code>const headingOnly = 1;</code></pre>
       </ui-code-preview>
     `);
 
     const readerWithControls = await fixture<CodePreview>(html`
       <ui-code-preview controls="theme surface viewport" preview-profile="reader">
         <div slot="preview">preview</div>
-        <ui-code-block layout="inline" lang="ts">
-          <pre><code>const reader = 1;</code></pre>
-        </ui-code-block>
+        <pre data-code-block><code>const reader = 1;</code></pre>
       </ui-code-preview>
     `);
 
@@ -148,9 +130,7 @@ describe('ui-code-preview browser contract', () => {
         <div id="preview-host" slot="preview" style="padding: 1rem; border-radius: 8px;">
           preview
         </div>
-        <ui-code-block id="preview-code" layout="inline" lang="ts">
-          <pre><code>const showcase = 1;</code></pre>
-        </ui-code-block>
+        <pre id="preview-code" data-code-block><code>const showcase = 1;</code></pre>
       </ui-code-preview>
     `);
 
@@ -241,18 +221,12 @@ describe('ui-code-preview browser contract', () => {
       <ui-code-preview heading="Copy Preservation">
         <div slot="preview">preview</div>
 
-        <ui-code-block id="copy-block" layout="inline" lang="ts">
-          <pre><code>const blockValue = 1;</code></pre>
-        </ui-code-block>
+        <pre id="copy-block" data-code-block><code>const blockValue = 1;</code></pre>
 
-        <ui-code-group id="copy-group" aria-label="comparison group">
-          <ui-code-block group-key="a" tab-label="A" lang="ts">
-            <pre><code>const groupValueA = 1;</code></pre>
-          </ui-code-block>
-          <ui-code-block group-key="b" tab-label="B" lang="ts">
-            <pre><code>const groupValueB = 2;</code></pre>
-          </ui-code-block>
-        </ui-code-group>
+        <section id="copy-group" data-code-group aria-label="comparison group">
+          <pre data-code-block><code>const groupValueA = 1;</code></pre>
+          <pre data-code-block><code>const groupValueB = 2;</code></pre>
+        </section>
       </ui-code-preview>
     `);
 
@@ -269,33 +243,15 @@ describe('ui-code-preview browser contract', () => {
     expect(previewStyle.getPropertyValue('--ui-code-group-width').trim()).to.equal('100%');
     expect(previewStyle.getPropertyValue('--ui-code-group-margin-inline').trim()).to.equal('0');
 
-    const codeBlock = expectPresent(
-      preview.querySelector<CodeBlockLike>('#copy-block'),
-      'codeBlock',
-    );
-    const codeGroup = expectPresent(preview.querySelector<HTMLElement>('#copy-group'), 'codeGroup');
-
-    const blockExpected = codeBlock.getCodeContent?.() ?? '';
-    const blockCopy = expectPresent(
-      codeBlock.shadowRoot?.querySelector<CopyButtonLike>('ui-copy-button'),
-      'blockCopy',
-    );
-    expect(blockCopy.value ?? blockCopy.getAttribute('value') ?? '').to.equal(blockExpected);
-
-    const groupCopy = expectPresent(
-      codeGroup.shadowRoot?.querySelector<CopyButtonLike>('.header-tools ui-copy-button'),
-      'groupCopy',
-    );
-    expect((groupCopy.value ?? groupCopy.getAttribute('value') ?? '').trim()).to.not.equal('');
+    expect(preview.querySelector('#copy-block')).to.not.equal(null);
+    expect(preview.querySelector('#copy-group')).to.not.equal(null);
   });
 
   it('invalid padding / invalid align は安全にフォールバックすること', async () => {
     const preview = await fixture<CodePreview>(html`
       <ui-code-preview preview-padding="invalid" preview-align="invalid">
         <div slot="preview">preview</div>
-        <ui-code-block layout="inline" lang="ts">
-          <pre><code>const invalid = 1;</code></pre>
-        </ui-code-block>
+        <pre data-code-block><code>const invalid = 1;</code></pre>
       </ui-code-preview>
     `);
 

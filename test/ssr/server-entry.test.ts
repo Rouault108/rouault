@@ -3,14 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { collectDocumentStylesForTags, renderCustomElement } from '../../build/ssr/server-entry.js';
 
 describe('server-entry', () => {
-  it('ui-highlight の document style を収集できること', () => {
-    const styles = collectDocumentStylesForTags(['ui-highlight']);
-    const highlightStyle = styles.find((style) => style.id === 'ui-highlight-styles');
-
-    expect(highlightStyle).toBeDefined();
-    expect(highlightStyle?.cssText).toContain('ui-highlight > mark');
-  });
-
   it('static-first 化した ui-card を SSR target として扱わないこと', async () => {
     await expect(renderCustomElement('ui-card' as never, [], '')).rejects.toThrow(
       /Unknown SSR target/u,
@@ -18,64 +10,10 @@ describe('server-entry', () => {
   });
 
   it('note 本文 static-first 化により ui-image / ui-footnote を SSR target として要求しないこと', () => {
-    const styles = collectDocumentStylesForTags(['ui-highlight']);
+    const styles = collectDocumentStylesForTags([]);
 
     expect(styles.some((style) => style.id === 'ui-image-styles')).toBe(false);
     expect(styles.some((style) => style.id === 'ui-footnote-document-styles')).toBe(false);
-  });
-
-  it('ui-tag を SSR 描画できること', async () => {
-    const rendered = await renderCustomElement(
-      'ui-tag',
-      [
-        { name: 'href', value: '/tags/testing' },
-        { name: 'removable', value: '' },
-      ],
-      'Testing',
-    );
-
-    expect(rendered).toContain('shadowrootmode="open"');
-    expect(rendered).toContain('Testing');
-    expect(rendered).toContain('/tags/testing');
-    expect(rendered).toContain('削除');
-  });
-
-  it('ui-article-header に data-tags がある場合、SSR 時にタグを描画できること', async () => {
-    const rendered = await renderCustomElement(
-      'ui-article-header',
-      [
-        { name: 'heading', value: 'SSR Article Header' },
-        { name: 'published', value: '2026-02-01' },
-        { name: 'data-tags', value: '["music","classical"]' },
-      ],
-      '',
-    );
-
-    expect(rendered).toContain('shadowrootmode="open"');
-    expect(rendered).toContain('SSR Article Header');
-    expect(rendered).toContain('music');
-    expect(rendered).toContain('classical');
-    expect(rendered).toContain('data-tags="[');
-  });
-
-  it('ui-article-header に breadcrumbs-json がある場合、SSR 時にパンくずを描画できること', async () => {
-    const rendered = await renderCustomElement(
-      'ui-article-header',
-      [
-        { name: 'heading', value: 'SSR Article Header' },
-        {
-          name: 'breadcrumbs-json',
-          value:
-            '[{"label":"Notes","href":"/"},{"label":"Program","href":"/notes/program"},{"label":"JavaScriptの配列"}]',
-        },
-      ],
-      '',
-    );
-
-    expect(rendered).toContain('shadowrootmode="open"');
-    expect(rendered).toContain('items-json="[{&quot;label&quot;:&quot;Notes&quot;');
-    expect(rendered).toContain('aria-label="現在の階層"');
-    expect(rendered).toContain('JavaScriptの配列');
   });
 
   it('app-router は main#main-content を持たない raw content を strict contract violation として拒否すること', async () => {

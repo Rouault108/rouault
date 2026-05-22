@@ -1,10 +1,15 @@
-import type { SearchField } from '../../search-field/search-field.js';
 import type {
   UiSearchDialogCloseReason,
   UiSearchDialogItem,
   UiSearchDialogSelectedDetail,
 } from '../search-dialog.types.js';
 import { SearchDialogVirtualizer } from './search-dialog-virtualizer.js';
+
+interface SearchDialogSearchFieldElement extends HTMLElement {
+  readonly clearButtonVisible?: boolean;
+  focusClearButton?: () => void;
+  focus: (options?: FocusOptions) => void;
+}
 
 export interface SearchDialogSelectionHost {
   isLoading(): boolean;
@@ -13,7 +18,7 @@ export interface SearchDialogSelectionHost {
   getActiveId(): string | null;
   setActiveId(id: string | null): void;
   getQuery(): string;
-  getSearchFieldElement(): SearchField | undefined;
+  getSearchFieldElement(): SearchDialogSearchFieldElement | undefined;
   getCloseButtonElement(): HTMLButtonElement | null;
   getShadowRootRef(): ShadowRoot | null;
   getResultListElement(): HTMLUListElement | undefined;
@@ -52,7 +57,7 @@ export class SearchDialogSelectionModel {
     if (currentTarget === closeButton && event.shiftKey) {
       event.preventDefault();
 
-      if (searchField.clearButtonVisible) {
+      if (searchField.clearButtonVisible && searchField.focusClearButton) {
         searchField.focusClearButton();
       } else {
         searchField.focus({ preventScroll: true });
@@ -76,7 +81,7 @@ export class SearchDialogSelectionModel {
     if (origin instanceof HTMLInputElement && !event.shiftKey) {
       event.preventDefault();
 
-      if (searchField.clearButtonVisible) {
+      if (searchField.clearButtonVisible && searchField.focusClearButton) {
         searchField.focusClearButton();
       } else {
         closeButton.focus();

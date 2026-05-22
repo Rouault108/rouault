@@ -13,7 +13,6 @@ import '@fontsource/jetbrains-mono/400.css';
 import '@fontsource/jetbrains-mono/700.css';
 
 import '../src/assets/css/main.css';
-import '../src/components/ui/icon/icon';
 
 setCustomElementsManifest(customElements);
 

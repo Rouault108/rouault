@@ -135,15 +135,16 @@ const adaptLinkCardOutput = (payload: LinkCardPayload): RemarkOutputBinding => (
 });
 
 const adaptScoreOutput = (payload: ScorePayload): RemarkOutputBinding => ({
-  hName: 'ui-score',
+  hName: 'figure',
   hProperties: toOptionalProps([
-    ['src', payload.src],
-    ['caption', payload.caption],
-    ['label', payload.label],
-    ['description', payload.description],
-    ['aspect-ratio', payload.aspectRatio],
-    ['loading', payload.loading],
-    ['primary', payload.primary ? true : undefined],
+    ['data-score', 'true'],
+    ['data-score-src', payload.src],
+    ['data-score-caption', payload.caption],
+    ['data-score-label', payload.label],
+    ['data-score-description', payload.description],
+    ['data-score-aspect-ratio', payload.aspectRatio],
+    ['data-score-loading', payload.loading],
+    ['data-score-primary', payload.primary ? 'true' : undefined],
   ]),
 });
 

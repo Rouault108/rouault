@@ -1,32 +1,20 @@
 import { renderThunked } from '@lit-labs/ssr';
 import { collectResult } from '@lit-labs/ssr/lib/render-result.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { ifDefined } from 'lit/directives/if-defined.js';
 import type { TemplateResult } from 'lit';
 import { html, unsafeStatic } from 'lit/static-html.js';
 
-import '../../src/components/ui/tag/tag.js';
 import '../../src/components/ui/skip-link/skip-link.js';
 import '../../src/components/layout/layout-header.js';
-import '../../src/components/ui/article-header/article-header.js';
 import '../../src/components/layout/layout-sidebar.js';
 import '../../src/components/layout/layout-toc.js';
 import '../../src/components/ui/checkbox/checkbox.js';
 import '../../src/components/ui/code-preview/code-preview.js';
 import '../../src/components/ui/preview-sandbox/preview-sandbox.js';
-import '../../src/components/ui/details/details.js';
-import '../../src/components/ui/highlight/highlight.js';
-import '../../src/components/ui/score/score.js';
-import '../../src/components/ui/syntax-card/syntax-card.js';
 import '../../src/components/ui/tabs/tabs.js';
 import '../../src/components/ui/translation/translation.js';
 
-import {
-  ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE,
-  parseArticleHeaderTagsAdapterValue,
-} from '../../src/components/ui/article-header/article-header-tags-adapter.js';
-
-import { getAttributeValue, serializeAttributes, type SsrAttribute } from './attributes.js';
+import { serializeAttributes, type SsrAttribute } from './attributes.js';
 import {
   getSsrComponentDefinition,
   SSR_COMPONENT_DEFINITIONS,
@@ -35,17 +23,6 @@ import {
 } from './target-definitions.js';
 import { normalizeAppRouterLightDom } from './app-router-light-dom-normalizer.js';
 import { type SsrShadowTargetTag, type SsrTargetTag } from './targets.js';
-
-const ARTICLE_HEADER_BRIDGED_ATTRIBUTE_NAMES = new Set([
-  'heading',
-  'published',
-  'created',
-  'updated',
-  'reading-time',
-  'status',
-  'source',
-  'license',
-]);
 
 interface SsrTargetAdapter {
   readonly tag: SsrTargetTag;
@@ -73,46 +50,6 @@ const buildShadowTemplate = (
 
   // eslint-disable-next-line lit/binding-positions, lit/no-invalid-html
   return html`<${staticTagName}${staticAttributes}>${unsafeHTML(innerHtml)}</${staticTagName}>`;
-};
-
-const renderArticleHeaderShadowElement = async (
-  attributes: readonly SsrAttribute[],
-  innerHtml: string,
-): Promise<string> => {
-  /* eslint-disable lit/binding-positions, lit/no-invalid-html */
-  const staticTagName = unsafeStatic('ui-article-header');
-  const passthroughAttributes = attributes.filter(
-    (attribute) => !ARTICLE_HEADER_BRIDGED_ATTRIBUTE_NAMES.has(attribute.name),
-  );
-  const staticAttributes = unsafeStatic(serializeAttributes(passthroughAttributes));
-  const heading = getAttributeValue(attributes, 'heading') ?? '';
-  const published = getAttributeValue(attributes, 'published');
-  const created = getAttributeValue(attributes, 'created');
-  const updated = getAttributeValue(attributes, 'updated');
-  const readingTime = getAttributeValue(attributes, 'reading-time');
-  const status = getAttributeValue(attributes, 'status');
-  const source = getAttributeValue(attributes, 'source');
-  const license = getAttributeValue(attributes, 'license');
-  const tags = parseArticleHeaderTagsAdapterValue(
-    getAttributeValue(attributes, ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE),
-  );
-
-  return renderTemplateResult(html`
-    <${staticTagName}
-      ${staticAttributes}
-      heading=${heading}
-      published=${ifDefined(published)}
-      created=${ifDefined(created)}
-      updated=${ifDefined(updated)}
-      reading-time=${ifDefined(readingTime)}
-      status=${ifDefined(status)}
-      source=${ifDefined(source)}
-      license=${ifDefined(license)}
-      .tags=${tags}
-      >${unsafeHTML(innerHtml)}</${staticTagName}
-    >
-  `);
-  /* eslint-enable lit/binding-positions, lit/no-invalid-html */
 };
 
 const renderAppRouterLightElement = async (
@@ -150,13 +87,6 @@ const createSsrTargetAdapter = (definition: SsrComponentDefinition): SsrTargetAd
         definition.documentStyle,
       );
     }
-
-    case 'shadow-article-header':
-      return createSsrTargetAdapterResult(
-        tag,
-        renderArticleHeaderShadowElement,
-        definition.documentStyle,
-      );
 
     case 'light-host-passthrough':
       return createSsrTargetAdapterResult(

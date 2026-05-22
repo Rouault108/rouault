@@ -1,7 +1,3 @@
-import {
-  DOCUMENT_CSS as HIGHLIGHT_DOCUMENT_CSS,
-  DOCUMENT_STYLE_ID as HIGHLIGHT_DOCUMENT_STYLE_ID,
-} from '../../src/components/ui/highlight/highlight.js';
 export type SsrComponentProfile = 'shell' | 'note' | 'page';
 export type SsrComponentMode = 'shadow' | 'light' | 'none';
 
@@ -9,7 +5,6 @@ export type SsrAdapterKind =
   | 'none'
   | 'light-host-passthrough'
   | 'shadow-default'
-  | 'shadow-article-header'
   | 'light-app-router';
 
 export interface SsrDocumentStyleDefinition {
@@ -27,12 +22,6 @@ export interface SsrComponentDefinition {
 
 export const SSR_COMPONENT_DEFINITIONS = [
   {
-    tag: 'ui-tag',
-    ssr: 'shadow',
-    profiles: ['shell', 'note', 'page'],
-    adapterKind: 'shadow-default',
-  },
-  {
     tag: 'ui-skip-link',
     ssr: 'shadow',
     profiles: ['shell'],
@@ -49,12 +38,6 @@ export const SSR_COMPONENT_DEFINITIONS = [
     ssr: 'light',
     profiles: ['shell'],
     adapterKind: 'light-app-router',
-  },
-  {
-    tag: 'ui-article-header',
-    ssr: 'shadow',
-    profiles: ['note'],
-    adapterKind: 'shadow-article-header',
   },
   {
     tag: 'layout-sidebar',
@@ -82,22 +65,6 @@ export const SSR_COMPONENT_DEFINITIONS = [
   },
   {
     tag: 'ui-preview-sandbox',
-    ssr: 'shadow',
-    profiles: ['note'],
-    adapterKind: 'shadow-default',
-  },
-  {
-    tag: 'ui-highlight',
-    ssr: 'shadow',
-    profiles: ['shell'],
-    adapterKind: 'shadow-default',
-    documentStyle: {
-      id: HIGHLIGHT_DOCUMENT_STYLE_ID,
-      cssText: HIGHLIGHT_DOCUMENT_CSS,
-    },
-  },
-  {
-    tag: 'ui-score',
     ssr: 'shadow',
     profiles: ['note'],
     adapterKind: 'shadow-default',

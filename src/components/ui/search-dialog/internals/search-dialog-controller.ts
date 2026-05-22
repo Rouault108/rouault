@@ -5,7 +5,6 @@ import {
   showNativeDialog,
   waitForDialogAnimations,
 } from '../../dialog/dialog-helpers.js';
-import type { SearchField } from '../../search-field/search-field.js';
 import { BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE } from '../search-dialog.constants.js';
 import {
   createInteractionModalityTracker,
@@ -20,10 +19,15 @@ import type {
 
 const searchDialogBodyScrollLock = createBodyScrollLock(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE);
 
+interface SearchDialogSearchFieldElement extends HTMLElement {
+  focus: (options?: FocusOptions) => void;
+  setSelectionRange?: (selectionStart: number, selectionEnd: number) => void;
+}
+
 export interface SearchDialogControllerHost {
   getOwnerDocument(): Document;
   getDialogElement(): HTMLDialogElement | undefined;
-  getSearchFieldElement(): SearchField | undefined;
+  getSearchFieldElement(): SearchDialogSearchFieldElement | undefined;
   getQuery(): string;
   isLoading(): boolean;
   isOpened(): boolean;
@@ -204,7 +208,7 @@ export class SearchDialogController {
       const query = this._host.getQuery();
 
       searchField?.focus({ preventScroll: true });
-      searchField?.setSelectionRange(query.length, query.length);
+      searchField?.setSelectionRange?.(query.length, query.length);
     });
   }
 
@@ -234,7 +238,10 @@ export class SearchDialogController {
     this._clearSoftFocusAppearance = null;
   }
 
-  private _applySoftFocusAppearance(searchField: SearchField, generation: number): void {
+  private _applySoftFocusAppearance(
+    searchField: SearchDialogSearchFieldElement,
+    generation: number,
+  ): void {
     searchField.style.setProperty('--focus-ring-width', '1px');
     searchField.style.setProperty('--focus-ring-offset', '1px');
     searchField.style.setProperty('--animation-focus', 'none');

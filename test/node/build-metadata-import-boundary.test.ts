@@ -10,8 +10,8 @@ describe('build metadata import boundary', () => {
     expect(source).not.toMatch(/__ROUAULT_/u);
   });
 
-  it('layout-footer.ts は loadBuildMetadataData fallback を持たないこと', () => {
-    const source = readFileSync('src/components/layout/layout-footer.ts', 'utf8');
+  it('static footer renderer は loadBuildMetadataData fallback を持たないこと', () => {
+    const source = readFileSync('src/layouts/footer-html.ts', 'utf8');
 
     expect(source).not.toContain('loadBuildMetadataData');
   });

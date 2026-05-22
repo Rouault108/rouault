@@ -489,7 +489,7 @@ describe('remarkRouaultDirectives', () => {
     expect(card?.data?.hProperties?.['image']).to.equal('https://cdn.example.com/card.png');
   });
 
-  it('score ディレクティブを ui-score ノードへ変換すること', () => {
+  it('score ディレクティブを static score ノードへ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -513,14 +513,15 @@ describe('remarkRouaultDirectives', () => {
     remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
 
     const score = tree.children?.[0];
-    expect(score?.data?.hName).to.equal('ui-score');
-    expect(score?.data?.hProperties?.['src']).to.equal('/media/score/a.svg');
-    expect(score?.data?.hProperties?.['label']).to.equal('譜例');
-    expect(score?.data?.hProperties?.['caption']).to.equal('譜例1');
-    expect(score?.data?.hProperties?.['description']).to.equal('詳細説明');
-    expect(score?.data?.hProperties?.['aspect-ratio']).to.equal('4/1');
-    expect(score?.data?.hProperties?.['loading']).to.equal('eager');
-    expect(score?.data?.hProperties?.['primary']).to.equal(true);
+    expect(score?.data?.hName).to.equal('figure');
+    expect(score?.data?.hProperties?.['data-score']).to.equal('true');
+    expect(score?.data?.hProperties?.['data-score-src']).to.equal('/media/score/a.svg');
+    expect(score?.data?.hProperties?.['data-score-label']).to.equal('譜例');
+    expect(score?.data?.hProperties?.['data-score-caption']).to.equal('譜例1');
+    expect(score?.data?.hProperties?.['data-score-description']).to.equal('詳細説明');
+    expect(score?.data?.hProperties?.['data-score-aspect-ratio']).to.equal('4/1');
+    expect(score?.data?.hProperties?.['data-score-loading']).to.equal('eager');
+    expect(score?.data?.hProperties?.['data-score-primary']).to.equal('true');
   });
 
   it('tabs と tab/panel スロットディレクティブを変換すること', () => {

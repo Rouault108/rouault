@@ -144,21 +144,10 @@ export const HYDRATION_REGISTRY = [
     activate: activateFootnotePopovers,
   },
   {
-    tag: 'ui-highlight',
-    kind: 'custom-element',
-    loader: () => import('../../components/ui/highlight/highlight.js'),
-  },
-  {
     tag: 'image-lightbox-enhancer',
     kind: 'enhancer',
     loader: () => Promise.resolve(undefined),
     activate: activateImageLightboxes,
-  },
-  {
-    tag: 'ui-score',
-    kind: 'custom-element',
-    loader: () => import('../../components/ui/score/score.js'),
-    activate: activateElementMethod,
   },
   {
     tag: 'ui-tabs',
