@@ -10,6 +10,7 @@ interface LinkContext {
   readonly insideCanonicalFootnoteList: boolean;
   readonly insideFootnotePopover: boolean;
   readonly insideUiFootnote: boolean;
+  readonly insideLinkCard: boolean;
 }
 
 const getClassNames = (node: HastNode): string[] => {
@@ -174,6 +175,15 @@ const isCanonicalFootnoteDefinitionList = (node: HastNode, parent: HastNode | nu
 const isCanonicalFootnoteItem = (node: HastNode, context: LinkContext): boolean =>
   node.type === 'element' && node.tagName === 'li' && context.insideCanonicalFootnoteList;
 
+const isLinkCardRoot = (node: HastNode): boolean =>
+  node.type === 'element' && node.properties?.['data-link-card'] !== undefined;
+
+const isCardSurfaceLink = (node: HastNode, context: LinkContext): boolean =>
+  node.type === 'element' &&
+  node.tagName === 'a' &&
+  (node.properties?.['data-link-surface'] === 'card' ||
+    (context.insideLinkCard && hasClassName(node, 'link-card__link')));
+
 export interface RehypeAnnotateLinkKindsOptions {
   readonly siteUrlContext: SiteUrlContext;
   readonly currentUrl: string | ((file: { readonly path?: string } | undefined) => string);
@@ -216,6 +226,7 @@ export function rehypeAnnotateLinkKinds(options: RehypeAnnotateLinkKindsOptions)
         insideUiFootnote:
           context.insideUiFootnote ||
           (current.type === 'element' && current.tagName === 'ui-footnote'),
+        insideLinkCard: context.insideLinkCard || isLinkCardRoot(current),
       };
 
       if (current.type === 'element' && current.tagName === 'a') {
@@ -237,7 +248,7 @@ export function rehypeAnnotateLinkKinds(options: RehypeAnnotateLinkKindsOptions)
             siteUrlContext: options.siteUrlContext,
             currentUrl: getCurrentUrl(),
             routeClassificationMode: getRouteClassificationMode(),
-            surface: 'prose',
+            surface: isCardSurfaceLink(current, nextContext) ? 'card' : 'prose',
           });
 
           if (annotation.isUnsafe === true) {
@@ -250,7 +261,7 @@ export function rehypeAnnotateLinkKinds(options: RehypeAnnotateLinkKindsOptions)
 
           properties['href'] = annotation.renderHref;
           properties['data-link-kind'] = annotation.kind;
-          properties['data-link-surface'] = 'prose';
+          properties['data-link-surface'] = annotation.surface;
 
           if (annotation.isExternalWeb) {
             properties['data-external'] = 'true';
@@ -276,6 +287,7 @@ export function rehypeAnnotateLinkKinds(options: RehypeAnnotateLinkKindsOptions)
         insideCanonicalFootnoteList: false,
         insideFootnotePopover: false,
         insideUiFootnote: false,
+        insideLinkCard: false,
       },
       null,
     );

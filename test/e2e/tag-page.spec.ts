@@ -46,6 +46,7 @@ const waitForSearchInputReady = async (page: Page): Promise<void> => {
     const host = document.querySelector('#main-content [data-search-page-root]');
     return (
       host instanceof HTMLElement &&
+      host.dataset['enhanced'] === 'true' &&
       host.querySelector('[data-search-page-form]') instanceof HTMLFormElement &&
       host.querySelector('[data-search-query-input]') instanceof HTMLInputElement
     );

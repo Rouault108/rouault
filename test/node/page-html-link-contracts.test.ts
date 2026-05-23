@@ -55,6 +55,64 @@ describe('page HTML link contracts', () => {
     ).toThrow('external-web link kind does not match href');
   });
 
+  it('generated HTML annotation が link-card surface の prose 降格を card に補正すること', () => {
+    const annotated = annotateGeneratedPageHtmlLinkContracts({
+      html: '<article data-link-card="true"><a class="link-card__link" href="https://external.example/post" data-link-kind="internal-document" data-link-surface="prose">card</a></article>',
+      sourceLabel: 'test',
+      siteUrlContext: { siteOrigin: 'https://example.com', basePath: '' },
+      currentUrl: 'https://example.com/notes/current',
+      routeClassificationMode: createManifestLoadedRouteClassificationMode({
+        isInternalDocumentPathname: (pathname) => pathname === '/notes/current',
+      }),
+    });
+
+    expect(annotated).toContain('data-link-kind="external-web"');
+    expect(annotated).toContain('data-link-surface="card"');
+    expect(annotated).toContain('data-external="true"');
+  });
+
+  it('generated HTML annotation が card surface link の古い data-link-kind を補正すること', () => {
+    const annotated = annotateGeneratedPageHtmlLinkContracts({
+      html: '<article data-link-card="true"><a class="link-card__link" href="mailto:hello@example.com" data-link-kind="external-web" data-link-surface="card" data-external="true">mail</a></article>',
+      sourceLabel: 'test',
+      siteUrlContext: { siteOrigin: 'https://example.com', basePath: '' },
+      currentUrl: 'https://example.com/notes/current',
+      routeClassificationMode: createManifestLoadedRouteClassificationMode({
+        isInternalDocumentPathname: (pathname) => pathname === '/notes/current',
+      }),
+    });
+
+    expect(annotated).toContain('data-link-kind="external-action"');
+    expect(annotated).toContain('data-link-surface="card"');
+    expect(annotated).not.toContain('data-external="true"');
+  });
+
+  it('validate が link-card link の prose 降格と wrong kind を拒否すること', () => {
+    const context = {
+      siteUrlContext: { siteOrigin: 'https://example.com', basePath: '' },
+      currentUrl: 'https://example.com/notes/current',
+      routeClassificationMode: createManifestLoadedRouteClassificationMode({
+        isInternalDocumentPathname: (pathname: string) => pathname === '/notes/current',
+      }),
+    };
+
+    expect(() =>
+      validateGeneratedPageHtmlLinkContracts({
+        html: '<article data-link-card="true"><a class="link-card__link" href="https://external.example/post" data-link-kind="external-web" data-link-surface="prose" data-external="true">card</a></article>',
+        sourceLabel: 'test',
+        ...context,
+      }),
+    ).toThrow('link-card link must use data-link-surface="card"');
+
+    expect(() =>
+      validateGeneratedPageHtmlLinkContracts({
+        html: '<article data-link-card="true"><a class="link-card__link" href="mailto:hello@example.com" data-link-kind="external-web" data-link-surface="card" data-external="true">mail</a></article>',
+        sourceLabel: 'test',
+        ...context,
+      }),
+    ).toThrow('link kind does not match classified href');
+  });
+
   it('BaseLayout の generated page content で href と data-link-kind の分類不一致を拒否すること', () => {
     const layout = new BaseLayout();
     expect(() =>

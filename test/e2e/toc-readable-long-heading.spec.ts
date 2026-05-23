@@ -150,6 +150,7 @@ test.describe('readable long heading TOC contract', () => {
     await page.goto(fixturePath);
     await waitForTocReady(page);
     await activateLongHeading(page);
+    await expect.poll(async () => (await readDesktopTocStyle(page)).activeClamp).toBe('3');
 
     const state = await readDesktopTocStyle(page);
     expect(state.densityTier).toBe('compact');

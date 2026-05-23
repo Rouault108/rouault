@@ -145,6 +145,9 @@ const isDocEndnotesSection = (node: HastNode): boolean =>
   node.tagName === 'section' &&
   node.properties?.['role'] === 'doc-endnotes';
 
+const isHeadingExcludedSurface = (node: HastNode): boolean =>
+  node.type === 'element' && node.properties?.['data-link-card'] !== undefined;
+
 const isEndnotesLabelHeading = (node: HastNode, insideDocEndnotes: boolean): boolean =>
   insideDocEndnotes &&
   node.type === 'element' &&
@@ -155,10 +158,13 @@ const assignHeadingIds = (
   node: HastNode,
   counters: Map<string, number>,
   insideDocEndnotes = false,
+  insideExcludedHeadingSurface = false,
 ): void => {
   const nextInsideDocEndnotes = insideDocEndnotes || isDocEndnotesSection(node);
+  const nextInsideExcludedHeadingSurface =
+    insideExcludedHeadingSurface || isHeadingExcludedSurface(node);
 
-  if (isHeadingElement(node)) {
+  if (!nextInsideExcludedHeadingSurface && isHeadingElement(node)) {
     const properties = getOrCreateProperties(node);
     const existingId = properties['id'];
 
@@ -181,7 +187,7 @@ const assignHeadingIds = (
   }
 
   for (const child of node.children) {
-    assignHeadingIds(child, counters, nextInsideDocEndnotes);
+    assignHeadingIds(child, counters, nextInsideDocEndnotes, nextInsideExcludedHeadingSurface);
   }
 };
 

@@ -82,6 +82,18 @@ const isFootnoteStructuralException = (node: ElementNode): boolean =>
 const isComponentShadowPlaceholder = (node: ElementNode): boolean =>
   attr(node, 'data-link-contract-placeholder') === 'component-shadow';
 
+const hasClassName = (node: ElementNode, className: string): boolean =>
+  (attr(node, 'class') ?? '')
+    .split(/\s+/u)
+    .filter((value) => value.length > 0)
+    .includes(className);
+
+const isLinkCardRoot = (node: ElementNode): boolean => hasAttr(node, 'data-link-card');
+
+const isCardSurfaceLink = (node: ElementNode, insideLinkCard: boolean): boolean =>
+  attr(node, 'data-link-surface') === 'card' ||
+  (insideLinkCard && hasClassName(node, 'link-card__link'));
+
 function fail(sourceLabel: string, message: string): never {
   throw new PageHtmlLinkContractError(`[${sourceLabel}] ${message}`);
 }
@@ -101,6 +113,7 @@ const resolveHtmlAnchorHref = (
 const annotateAnchor = (
   node: ElementNode,
   options: AnnotateGeneratedPageHtmlLinkContractsOptions,
+  insideLinkCard: boolean,
 ): void => {
   if (isFootnoteStructuralException(node)) {
     removeAttr(node, 'data-link-kind');
@@ -115,17 +128,11 @@ const annotateAnchor = (
   }
 
   const resolvedHref = resolveHtmlAnchorHref(href, options);
-  if (
-    resolvedHref === href &&
-    attr(node, 'data-link-kind') !== null &&
-    attr(node, 'data-link-surface') !== null
-  ) {
-    return;
-  }
+  const expectedSurface = isCardSurfaceLink(node, insideLinkCard) ? 'card' : 'prose';
 
   const annotation = classifyLinkHref({
     href: resolvedHref,
-    surface: 'prose',
+    surface: expectedSurface,
     siteUrlContext: options.siteUrlContext,
     currentUrl: options.currentUrl,
     routeClassificationMode: options.routeClassificationMode,
@@ -136,6 +143,14 @@ const annotateAnchor = (
 
   if (annotation.isUnsafe) {
     fail(options.sourceLabel, 'unsafe link kind must not be rendered');
+  }
+
+  if (
+    resolvedHref === href &&
+    attr(node, 'data-link-kind') === annotation.kind &&
+    attr(node, 'data-link-surface') === annotation.surface
+  ) {
+    return;
   }
 
   setAttr(node, 'href', annotation.renderHref);
@@ -153,15 +168,17 @@ const visitForAnnotation = (
   node: Node,
   options: AnnotateGeneratedPageHtmlLinkContractsOptions,
   insidePlaceholder = false,
+  insideLinkCard = false,
 ): void => {
   const nextInsidePlaceholder =
     insidePlaceholder || (isElementNode(node) && isComponentShadowPlaceholder(node));
+  const nextInsideLinkCard = insideLinkCard || (isElementNode(node) && isLinkCardRoot(node));
   if (isElementNode(node) && node.tagName === 'a' && !nextInsidePlaceholder) {
-    annotateAnchor(node, options);
+    annotateAnchor(node, options, nextInsideLinkCard);
   }
   const childNodes = 'childNodes' in node ? node.childNodes : [];
   for (const child of childNodes) {
-    visitForAnnotation(child, options, nextInsidePlaceholder);
+    visitForAnnotation(child, options, nextInsidePlaceholder, nextInsideLinkCard);
   }
 };
 
@@ -198,6 +215,7 @@ const validateKindHrefShape = (
   options: ValidateGeneratedPageHtmlLinkContractsOptions,
   href: string,
   kind: string | null,
+  surface: string | null,
 ): void => {
   if (kind === null || isFootnoteStructuralException(node)) return;
 
@@ -206,7 +224,7 @@ const validateKindHrefShape = (
     try {
       classified = classifyLinkHref({
         href,
-        surface: 'prose',
+        surface: surface === 'card' ? 'card' : 'prose',
         siteUrlContext: options.siteUrlContext,
         currentUrl: options.currentUrl,
         routeClassificationMode: options.routeClassificationMode,
@@ -277,6 +295,7 @@ const validateDownload = (sourceLabel: string, value: string): void => {
 const validateAnchor = (
   node: ElementNode,
   options: ValidateGeneratedPageHtmlLinkContractsOptions,
+  insideLinkCard: boolean,
 ): void => {
   const href = attr(node, 'href');
   if (href === null || href.trim().length === 0) {
@@ -302,10 +321,13 @@ const validateAnchor = (
   if (surface !== null && !isLinkSurface(surface)) {
     fail(options.sourceLabel, 'invalid link surface');
   }
+  if (insideLinkCard && hasClassName(node, 'link-card__link') && surface !== 'card') {
+    fail(options.sourceLabel, 'link-card link must use data-link-surface="card"');
+  }
   if (kind === 'unsafe') {
     fail(options.sourceLabel, 'unsafe link kind must not be rendered');
   }
-  validateKindHrefShape(node, options, checkedHref, kind);
+  validateKindHrefShape(node, options, checkedHref, kind, surface);
   if (checkedHref === '#' && !footnote) {
     fail(options.sourceLabel, 'marker-less href="#" is forbidden');
   }
@@ -341,15 +363,17 @@ const visit = (
   node: Node,
   options: ValidateGeneratedPageHtmlLinkContractsOptions,
   insidePlaceholder = false,
+  insideLinkCard = false,
 ): void => {
   const nextInsidePlaceholder =
     insidePlaceholder || (isElementNode(node) && isComponentShadowPlaceholder(node));
+  const nextInsideLinkCard = insideLinkCard || (isElementNode(node) && isLinkCardRoot(node));
   if (isElementNode(node) && node.tagName === 'a' && !nextInsidePlaceholder) {
-    validateAnchor(node, options);
+    validateAnchor(node, options, nextInsideLinkCard);
   }
   const childNodes = 'childNodes' in node ? node.childNodes : [];
   for (const child of childNodes) {
-    visit(child, options, nextInsidePlaceholder);
+    visit(child, options, nextInsidePlaceholder, nextInsideLinkCard);
   }
 };
 

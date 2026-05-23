@@ -639,21 +639,41 @@ const toStaticLinkCard = (node: HastNode): void => {
   if (!href) {
     node.tagName = 'article';
     node.properties = {
-      className: ['link-card'],
+      className: ['link-card', 'link-card--invalid'],
       'data-link-card': 'true',
       'data-link-card-invalid': 'true',
     };
-    node.children = [createElement('p', {}, [createTextNode(title)])];
+    node.children = [
+      createElement(
+        'div',
+        {
+          className: ['link-card__invalid'],
+          role: 'note',
+          'aria-label': '無効なリンクカード',
+        },
+        [
+          createElement('div', { className: ['link-card__body'] }, [
+            createElement('p', { className: ['link-card__eyebrow'] }, [
+              createTextNode('Invalid link card'),
+            ]),
+            createElement('p', { className: ['link-card__title'] }, [createTextNode(title)]),
+            createElement('p', { className: ['link-card__description'] }, [
+              createTextNode('リンク先 URL が指定されていません。'),
+            ]),
+          ]),
+        ],
+      ),
+    ];
     return;
   }
 
   const bodyChildren: HastNode[] = [];
   if (siteName) {
     bodyChildren.push(
-      createElement('p', { className: ['link-card__site'] }, [createTextNode(siteName)]),
+      createElement('p', { className: ['link-card__eyebrow'] }, [createTextNode(siteName)]),
     );
   }
-  bodyChildren.push(createElement('h2', { className: ['link-card__title'] }, [createTextNode(title)]));
+  bodyChildren.push(createElement('p', { className: ['link-card__title'] }, [createTextNode(title)]));
   if (description) {
     bodyChildren.push(
       createElement('p', { className: ['link-card__description'] }, [
@@ -666,7 +686,7 @@ const toStaticLinkCard = (node: HastNode): void => {
   if (imageSrc) {
     linkChildren.push(
       createElement('img', {
-        className: ['link-card__image'],
+        className: ['link-card__media'],
         src: imageSrc,
         alt: '',
         loading: 'lazy',
@@ -679,12 +699,16 @@ const toStaticLinkCard = (node: HastNode): void => {
     className: ['link-card'],
     'data-link-card': 'true',
   };
-  const linkKind = resolveFooterLinkKindLike(href);
+  const linkKind = resolveStaticLinkKindLike(href);
+  const linkClassNames = [
+    'link-card__link',
+    ...(imageSrc ? [] : ['link-card__link--no-image']),
+  ];
   node.children = [
     createElement(
       'a',
       {
-        className: ['link-card__link'],
+        className: linkClassNames,
         href,
         'data-link-kind': linkKind,
         'data-link-surface': 'card',
@@ -695,7 +719,7 @@ const toStaticLinkCard = (node: HastNode): void => {
   ];
 };
 
-const resolveFooterLinkKindLike = (href: string): string =>
+const resolveStaticLinkKindLike = (href: string): string =>
   /^https?:/iu.test(href)
     ? 'external-web'
     : /^(mailto:|tel:)/iu.test(href)

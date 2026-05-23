@@ -608,6 +608,115 @@ describe('rehypeRouaultComponents', () => {
     expect(checkbox?.tagName).to.equal('ui-checkbox');
   });
 
+  it('link-card を nested anchor が発生しない静的 HTML contract へ変換すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-card',
+          properties: {
+            'card-kind': 'link',
+            href: 'https://example.com/post',
+            'card-title': 'Example Post',
+            description: '本文の補足',
+            'site-name': 'example.com',
+            'image-src': '/assets/card.png',
+          },
+          children: [],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const card = tree.children?.[0];
+    const link = card?.children?.[0];
+    const body = link?.children?.[0];
+    const eyebrow = body?.children?.[0];
+    const title = body?.children?.[1];
+    const media = link?.children?.[1];
+
+    expect(card?.tagName).to.equal('article');
+    expect(card?.properties?.['data-link-card']).to.equal('true');
+    expect(link?.tagName).to.equal('a');
+    expect(link?.properties?.['className']).to.deep.equal(['link-card__link']);
+    expect(link?.properties?.['data-link-surface']).to.equal('card');
+    expect(link?.properties?.['data-link-kind']).to.equal('external-web');
+    expect(link?.properties?.['data-external']).to.equal('true');
+    expect(eyebrow?.tagName).to.equal('p');
+    expect(eyebrow?.properties?.['className']).to.deep.equal(['link-card__eyebrow']);
+    expect(title?.tagName).to.equal('p');
+    expect(title?.properties?.['className']).to.deep.equal(['link-card__title']);
+    expect(findElement(card, (node) => /^h[1-6]$/u.test(node.tagName ?? ''))).to.equal(
+      undefined,
+    );
+    expect(media?.tagName).to.equal('img');
+    expect(media?.properties?.['className']).to.deep.equal(['link-card__media']);
+  });
+
+  it('画像なし link-card に renderer 側で no-image class を付与すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-card',
+          properties: {
+            'card-kind': 'link',
+            href: '/notes/example',
+            'card-title': 'Example',
+          },
+          children: [],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const link = tree.children?.[0]?.children?.[0];
+    expect(link?.properties?.['className']).to.deep.equal([
+      'link-card__link',
+      'link-card__link--no-image',
+    ]);
+  });
+
+  it('invalid link-card は anchor を出力せず非リンク表示面へ変換すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-card',
+          properties: {
+            'card-kind': 'link',
+            'card-title': 'Broken card',
+          },
+          children: [],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const card = tree.children?.[0];
+    const invalid = card?.children?.[0];
+    const title = findElement(card, (node) =>
+      Array.isArray(node.properties?.['className'])
+        ? node.properties['className'].includes('link-card__title')
+        : false,
+    );
+
+    expect(card?.properties?.['className']).to.deep.equal(['link-card', 'link-card--invalid']);
+    expect(card?.properties?.['data-link-card-invalid']).to.equal('true');
+    expect(invalid?.tagName).to.equal('div');
+    expect(invalid?.properties?.['className']).to.deep.equal(['link-card__invalid']);
+    expect(invalid?.properties?.['role']).to.equal('note');
+    expect(invalid?.properties?.['data-link-surface']).to.equal(undefined);
+    expect(findElement(card, (node) => node.tagName === 'a')).to.equal(undefined);
+    expect(title?.tagName).to.equal('p');
+  });
+
   it('ui-syntax-card を静的 syntax-card root に正規化すること', () => {
     const tree: HastNode = {
       type: 'root',

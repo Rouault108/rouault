@@ -123,4 +123,47 @@ describe('rehypeHeadingIds', () => {
     const heading = section?.children?.[0];
     expect(heading?.children).to.deep.equal([{ type: 'text', value: '脚注' }]);
   });
+
+  it('[data-link-card] 配下の heading には id と permalink を付与しないこと', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'article',
+          properties: { 'data-link-card': '' },
+          children: [
+            {
+              type: 'element',
+              tagName: 'a',
+              properties: { href: 'https://example.com' },
+              children: [
+                {
+                  type: 'element',
+                  tagName: 'h2',
+                  properties: {},
+                  children: [{ type: 'text', value: 'カード見出し' }],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'element',
+          tagName: 'h2',
+          properties: {},
+          children: [{ type: 'text', value: '通常見出し' }],
+        },
+      ],
+    };
+
+    rehypeHeadingIds()(tree);
+
+    const cardHeading = tree.children?.[0]?.children?.[0]?.children?.[0];
+    const proseHeading = tree.children?.[1];
+    expect(cardHeading?.properties?.['id']).to.equal(undefined);
+    expect(cardHeading?.children).to.deep.equal([{ type: 'text', value: 'カード見出し' }]);
+    expect(proseHeading?.properties?.['id']).to.equal('通常見出し');
+    expect(proseHeading?.children?.[1]?.tagName).to.equal('a');
+  });
 });

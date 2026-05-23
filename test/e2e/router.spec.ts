@@ -227,12 +227,14 @@ test.describe('Router Navigation', () => {
     await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('');
 
     const href = await headingPermalink.getAttribute('href');
-    expect(href).not.toBeNull();
+    if (href === null) {
+      throw new Error('heading permalink href が見つかりません');
+    }
 
     await headingPermalink.click();
     await expect
       .poll(() => page.evaluate(() => decodeURIComponent(window.location.hash)))
-      .toBe(href);
+      .toBe(decodeURIComponent(href));
   });
 
   test('本文見出しの hover では本文外で固定リンク affordance を出さないこと', async ({ page }) => {

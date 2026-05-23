@@ -202,4 +202,37 @@ describe('rehypeAnnotateLinkKinds', () => {
     expect(anchor?.properties?.['data-link-kind']).to.equal('internal-fragment');
     expect(anchor?.properties?.['data-link-surface']).to.equal('prose');
   });
+
+  it('link-card 配下の card surface link を prose に降格しないこと', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'article',
+          properties: { 'data-link-card': 'true' },
+          children: [
+            {
+              type: 'element',
+              tagName: 'a',
+              properties: {
+                href: 'https://example.com',
+                className: ['link-card__link'],
+                'data-link-surface': 'prose',
+                'data-link-kind': 'internal-document',
+              },
+              children: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    annotate()(tree);
+
+    const anchor = tree.children?.[0]?.children?.[0];
+    expect(anchor?.properties?.['data-link-kind']).to.equal('external-web');
+    expect(anchor?.properties?.['data-link-surface']).to.equal('card');
+    expect(anchor?.properties?.['data-external']).to.equal('true');
+  });
 });

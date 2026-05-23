@@ -16,6 +16,7 @@ describe('prose link css contract', () => {
           '.link-text[href]',
           `:is(.prose, .about-prose) a[href]:not(
             :where(
+              [data-link-surface='card'],
               .heading-anchor,
               [data-footnote-ref='true'][role='doc-noteref'],
               [data-footnote-backref='true'][role='doc-backlink'],

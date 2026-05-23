@@ -3,6 +3,9 @@ export const enhanceSearchPage = (root: ParentNode = document): void => {
   if (!page) {
     return;
   }
+  if (page.dataset['enhanced'] === 'true') {
+    return;
+  }
 
   const form = page.querySelector<HTMLFormElement>('[data-search-page-form]');
   if (!form) {
@@ -38,4 +41,5 @@ export const enhanceSearchPage = (root: ParentNode = document): void => {
 
   form.addEventListener('change', syncSearchUrl);
   form.querySelector('[data-search-query-input]')?.addEventListener('input', syncSearchUrl);
+  page.dataset['enhanced'] = 'true';
 };
