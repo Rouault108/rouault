@@ -1015,6 +1015,10 @@ hr[data-divider-variant='layout'] {
  * Link Cards
  * =========================================================================== */
 
+:is(.prose, .about-prose) > [data-link-card] {
+  display: block;
+}
+
 .link-card {
   box-sizing: border-box;
   overflow: hidden;
@@ -1030,7 +1034,10 @@ hr[data-divider-variant='layout'] {
 }
 
 .link-card:focus-within {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset, 2px);
   border-color: var(--focus-ring-color);
+  animation: var(--animation-focus);
 }
 
 .link-card__link,
@@ -1143,6 +1150,7 @@ hr[data-divider-variant='layout'] {
     forced-color-adjust: auto;
   }
 
+  .link-card:not(.link-card--invalid):hover,
   .link-card:not(.link-card--invalid):focus-within {
     outline: var(--focus-ring-width) solid CanvasText;
     outline-offset: var(--focus-ring-offset);

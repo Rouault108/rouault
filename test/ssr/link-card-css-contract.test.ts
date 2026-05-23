@@ -7,6 +7,7 @@ import {
   hasDeclarationForSelector,
   hasDeclarationForSelectorContaining,
   hasDeclarationForSelectorContainingInMedia,
+  hasDeclarationValueIncluding,
   hasDeclarationValueIncludingForSelectorContainingInMedia,
   PROSE_TEXT_LINK_SELECTOR,
 } from './support/css-contract.js';
@@ -15,7 +16,23 @@ const mainCss = readFileSync(resolve(process.cwd(), 'src/assets/css/main.css'), 
 
 describe('link-card css contract', () => {
   it('defines static link-card light DOM layout and text contract', () => {
+    expect(
+      hasDeclarationForSelector(
+        mainCss,
+        ':is(.prose, .about-prose) > [data-link-card]',
+        'display',
+        'block',
+      ),
+    ).toBe(true);
     expect(hasDeclarationForSelector(mainCss, '.link-card', 'break-inside', 'avoid')).toBe(true);
+    expect(
+      hasDeclarationValueIncluding(
+        mainCss,
+        '.link-card:focus-within',
+        'outline',
+        'var(--focus-ring-color)',
+      ),
+    ).toBe(true);
     expect(
       hasDeclarationForSelector(mainCss, '.link-card__link', 'cursor', 'pointer'),
     ).toBe(true);
@@ -67,7 +84,7 @@ describe('link-card css contract', () => {
       hasDeclarationValueIncludingForSelectorContainingInMedia(
         mainCss,
         (params) => /forced-colors:\s*active/u.test(params),
-        '.link-card:not(.link-card--invalid):focus-within',
+        '.link-card:not(.link-card--invalid):hover',
         'outline',
         'CanvasText',
       ),
