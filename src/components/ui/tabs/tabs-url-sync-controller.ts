@@ -102,13 +102,9 @@ export class TabsUrlSyncController implements ReactiveController {
       return;
     }
 
-    const currentQueryValue = strategy.readValue(currentUrl);
-
     let nextUrl = currentUrl;
 
     if (source === 'hash') {
-      nextUrl = strategy.writeValue(currentUrl, activeValue);
-    } else if (currentQueryValue !== null) {
       nextUrl = strategy.writeValue(currentUrl, activeValue);
     }
 

@@ -78,9 +78,14 @@ const createSelectedTag = (tag: string): HTMLElement => {
   return chip;
 };
 
-const syncFilterDomFromForm = (page: HTMLElement, form: HTMLFormElement, preferredTag?: string): void => {
+const syncFilterDomFromForm = (
+  page: HTMLElement,
+  form: HTMLFormElement,
+  preferredTag?: string,
+): void => {
   const selectedTags = orderedSelectedTagValues(form, preferredTag);
-  const tagMode = readFormString(new FormData(form).get('tagMode')) === 'and' ? 'すべて' : 'いずれか';
+  const tagMode =
+    readFormString(new FormData(form).get('tagMode')) === 'and' ? 'すべて' : 'いずれか';
   const selectedTagsRoot = page.querySelector<HTMLElement>('[data-selected-tags]');
   if (selectedTagsRoot) {
     selectedTagsRoot.replaceChildren();
@@ -98,7 +103,9 @@ const syncFilterDomFromForm = (page: HTMLElement, form: HTMLFormElement, preferr
   const state = page.querySelector<HTMLElement>('.filter-summary-state');
   if (state) {
     state.textContent =
-      selectedTags.length > 0 ? `${String(selectedTags.length)}タグ選択中 / ${tagMode}` : 'すべてのタグ';
+      selectedTags.length > 0
+        ? `${String(selectedTags.length)}タグ選択中 / ${tagMode}`
+        : 'すべてのタグ';
   }
   const detail = page.querySelector<HTMLElement>('.filter-summary-detail');
   if (detail) {
@@ -150,18 +157,19 @@ const syncFilterDomFromForm = (page: HTMLElement, form: HTMLFormElement, preferr
   syncStaticSearchFieldClearButtons(page);
 };
 
-export const enhanceSearchPage = (
-  root: ParentNode = document,
-  signal?: AbortSignal,
-): void => {
+export const enhanceSearchPage = (root: ParentNode = document, signal?: AbortSignal): void => {
   const listenerOptions = signal ? { signal } : undefined;
   const page = root.querySelector<HTMLElement>('[data-search-page-root]');
   if (!page) {
     return;
   }
   const existing = sessions.get(page);
-  if (existing && existing.signal === signal && signal?.aborted !== true) {
+  if (existing && existing.signal?.aborted !== true) {
     return;
+  }
+  if (existing?.signal?.aborted === true) {
+    sessions.delete(page);
+    delete page.dataset['enhanced'];
   }
   if (signal?.aborted === true) {
     return;
@@ -190,56 +198,80 @@ export const enhanceSearchPage = (
     syncFilterDomFromForm(page, form, preferredTag);
   };
 
-  form.addEventListener('change', (event) => {
-    const target = event.target;
-    const preferredTag =
-      target instanceof HTMLInputElement &&
-      target.matches('[data-search-tag-checkbox]') &&
-      target.checked
-        ? target.value
-        : undefined;
-    syncAll(preferredTag);
-  }, listenerOptions);
-  form.querySelector<HTMLInputElement>('[data-search-query-input]')?.addEventListener('input', () => {
-    syncAll();
-  }, listenerOptions);
-  form.querySelector<HTMLInputElement>('[data-search-filter-input]')?.addEventListener('input', () => {
-    syncFilterDomFromForm(page, form);
-  }, listenerOptions);
-  form.querySelector<HTMLButtonElement>('[data-search-query-clear]')?.addEventListener('click', () => {
-    const input = form.querySelector<HTMLInputElement>('[data-search-query-input]');
-    if (input) {
-      input.value = '';
+  form.addEventListener(
+    'change',
+    (event) => {
+      const target = event.target;
+      const preferredTag =
+        target instanceof HTMLInputElement &&
+        target.matches('[data-search-tag-checkbox]') &&
+        target.checked
+          ? target.value
+          : undefined;
+      syncAll(preferredTag);
+    },
+    listenerOptions,
+  );
+  form.querySelector<HTMLInputElement>('[data-search-query-input]')?.addEventListener(
+    'input',
+    () => {
       syncAll();
-      input.focus();
-    }
-  }, listenerOptions);
-  form.querySelector<HTMLButtonElement>('[data-search-filter-clear]')?.addEventListener('click', () => {
-    const input = form.querySelector<HTMLInputElement>('[data-search-filter-input]');
-    if (input) {
-      input.value = '';
+    },
+    listenerOptions,
+  );
+  form.querySelector<HTMLInputElement>('[data-search-filter-input]')?.addEventListener(
+    'input',
+    () => {
       syncFilterDomFromForm(page, form);
-      input.focus();
-    }
-  }, listenerOptions);
-  form.addEventListener('click', (event) => {
-    const target = event.target;
-    const button =
-      target instanceof HTMLElement
-        ? target.closest<HTMLButtonElement>('[data-search-selected-tag-remove]')
-        : null;
-    if (!button) {
-      return;
-    }
-    const tag = button.dataset['searchSelectedTagRemove'];
-    const checkbox = [...form.querySelectorAll<HTMLInputElement>('[data-search-tag-checkbox]')].find(
-      (candidate) => candidate.value === tag,
-    );
-    if (checkbox) {
-      checkbox.checked = false;
-      syncAll();
-    }
-  }, listenerOptions);
+    },
+    listenerOptions,
+  );
+  form.querySelector<HTMLButtonElement>('[data-search-query-clear]')?.addEventListener(
+    'click',
+    () => {
+      const input = form.querySelector<HTMLInputElement>('[data-search-query-input]');
+      if (input) {
+        input.value = '';
+        syncAll();
+        input.focus();
+      }
+    },
+    listenerOptions,
+  );
+  form.querySelector<HTMLButtonElement>('[data-search-filter-clear]')?.addEventListener(
+    'click',
+    () => {
+      const input = form.querySelector<HTMLInputElement>('[data-search-filter-input]');
+      if (input) {
+        input.value = '';
+        syncFilterDomFromForm(page, form);
+        input.focus();
+      }
+    },
+    listenerOptions,
+  );
+  form.addEventListener(
+    'click',
+    (event) => {
+      const target = event.target;
+      const button =
+        target instanceof HTMLElement
+          ? target.closest<HTMLButtonElement>('[data-search-selected-tag-remove]')
+          : null;
+      if (!button) {
+        return;
+      }
+      const tag = button.dataset['searchSelectedTagRemove'];
+      const checkbox = [
+        ...form.querySelectorAll<HTMLInputElement>('[data-search-tag-checkbox]'),
+      ].find((candidate) => candidate.value === tag);
+      if (checkbox) {
+        checkbox.checked = false;
+        syncAll();
+      }
+    },
+    listenerOptions,
+  );
 
   syncFilterDomFromForm(page, form);
 };

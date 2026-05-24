@@ -161,18 +161,16 @@ const readThemeState = async (page: Page) =>
       resolvedTheme: document.documentElement.getAttribute('data-resolved-theme'),
       storage: localStorage.getItem('rouault-theme-preference'),
       icons: themeIcons.map((icon) => icon.getAttribute('data-icon')),
-      iconGlyphs: themeIcons.map(
-        (icon) => {
-          const iconName = icon.getAttribute('data-icon');
-          return iconName === null ? null : `lucide:${iconName}`;
-        },
-      ),
+      iconGlyphs: themeIcons.map((icon) => {
+        const iconName = icon.getAttribute('data-icon');
+        return iconName === null ? null : `lucide:${iconName}`;
+      }),
       labels: [...trigger.querySelectorAll<HTMLElement>('.theme-trigger-text')].map(
         (label) => label.textContent?.trim() ?? '',
       ),
-      themePreferenceMarkers: [
-        ...trigger.querySelectorAll<HTMLElement>('.theme-trigger-main'),
-      ].map((node) => node.getAttribute('data-theme-preference')),
+      themePreferenceMarkers: [...trigger.querySelectorAll<HTMLElement>('.theme-trigger-main')].map(
+        (node) => node.getAttribute('data-theme-preference'),
+      ),
       triggerAccessibleName: trigger.getAttribute('accessible-name'),
       triggerAriaLabel: triggerButton.getAttribute('aria-label'),
       themeItemValues: themeItems.map((item) => item.getAttribute('value')),
@@ -231,6 +229,25 @@ const openThemeDropdown = async (page: Page): Promise<void> => {
   await expect.poll(isReady).toBe(true);
 };
 
+const waitForThemeDropdownClosed = async (page: Page): Promise<void> => {
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const header = document.querySelector('layout-header');
+        const dropdown = header?.shadowRoot?.querySelector('[data-dropdown="theme"]');
+        const panel = dropdown?.shadowRoot?.querySelector<HTMLElement>('[data-ui-dropdown-panel]');
+
+        return (
+          panel === undefined ||
+          panel === null ||
+          panel.getAttribute('aria-hidden') === 'true' ||
+          panel.hasAttribute('inert')
+        );
+      }),
+    )
+    .toBe(true);
+};
+
 const selectThemeByPointer = async (
   page: Page,
   value: 'light' | 'dark' | 'system',
@@ -242,6 +259,7 @@ const selectThemeByPointer = async (
   await expect(itemButton).toHaveCount(1);
   await expect(itemButton.first()).toBeVisible();
   await itemButton.first().click();
+  await waitForThemeDropdownClosed(page);
 };
 
 const expectThemeState = async (
@@ -262,13 +280,15 @@ const expectThemeState = async (
     }[];
   },
 ): Promise<void> => {
-  await expect.poll(() => readThemeState(page)).toMatchObject({
-    attrTheme: expected.attrTheme,
-    resolvedTheme: expected.resolvedTheme,
-    storage: expected.storage,
-    triggerAccessibleName: expected.triggerAccessibleName,
-    triggerAriaLabel: expected.triggerAriaLabel,
-  });
+  await expect
+    .poll(() => readThemeState(page))
+    .toMatchObject({
+      attrTheme: expected.attrTheme,
+      resolvedTheme: expected.resolvedTheme,
+      storage: expected.storage,
+      triggerAccessibleName: expected.triggerAccessibleName,
+      triggerAriaLabel: expected.triggerAriaLabel,
+    });
 
   await expect
     .poll(async () => [...(await readThemeState(page)).themeItemValues].sort())
@@ -320,7 +340,8 @@ const expectFocusState = async (
     const backwardSentinel = document.querySelector('[data-theme-backward-sentinel]');
 
     return {
-      panelContainsDeepFocus: activeElement instanceof Node && panel?.contains(activeElement) === true,
+      panelContainsDeepFocus:
+        activeElement instanceof Node && panel?.contains(activeElement) === true,
       focusedMenuItemCount,
       triggerContainsDeepFocus:
         trigger instanceof HTMLElement &&
@@ -348,9 +369,12 @@ test.describe('theme switcher hydration regression', () => {
   test('初期 system(light) から light を初回選択しても header 表示が stale にならない', async ({
     page,
   }) => {
-    await page.addInitScript(({ key }) => {
-      localStorage.removeItem(key);
-    }, { key: themeStorageKey });
+    await page.addInitScript(
+      ({ key }) => {
+        localStorage.removeItem(key);
+      },
+      { key: themeStorageKey },
+    );
     const diagnostics = collectBrowserDiagnostics(page);
 
     await page.goto(themeSwitcherPath);
@@ -373,9 +397,7 @@ test.describe('theme switcher hydration regression', () => {
     expectCleanDiagnostics(diagnostics);
   });
 
-  test('persisted light で初期 hydration 後の header 表示が stale にならない', async ({
-    page,
-  }) => {
+  test('persisted light で初期 hydration 後の header 表示が stale にならない', async ({ page }) => {
     await page.addInitScript(
       ({ key, value }) => {
         localStorage.setItem(key, value);
@@ -403,9 +425,12 @@ test.describe('theme switcher hydration regression', () => {
   });
 
   test('連続切り替えでも header 表示が stale にならない', async ({ page }) => {
-    await page.addInitScript(({ key }) => {
-      localStorage.removeItem(key);
-    }, { key: themeStorageKey });
+    await page.addInitScript(
+      ({ key }) => {
+        localStorage.removeItem(key);
+      },
+      { key: themeStorageKey },
+    );
     const diagnostics = collectBrowserDiagnostics(page);
 
     await page.goto(themeSwitcherPath);
@@ -459,9 +484,12 @@ test.describe('theme switcher hydration regression', () => {
   });
 
   test('Tab close で forward focus 移動を阻害しない', async ({ page }) => {
-    await page.addInitScript(({ key }) => {
-      localStorage.removeItem(key);
-    }, { key: themeStorageKey });
+    await page.addInitScript(
+      ({ key }) => {
+        localStorage.removeItem(key);
+      },
+      { key: themeStorageKey },
+    );
     const diagnostics = collectBrowserDiagnostics(page);
 
     await page.goto(themeSwitcherPath);
@@ -477,19 +505,24 @@ test.describe('theme switcher hydration regression', () => {
 
     await openThemeDropdown(page);
     await page.keyboard.press('Tab');
-    await expect.poll(async () => await expectFocusState(page)).toMatchObject({
-      panelContainsDeepFocus: false,
-      focusedMenuItemCount: 0,
-      forwardSentinelFocused: true,
-      bodyFocused: false,
-    });
+    await expect
+      .poll(async () => await expectFocusState(page))
+      .toMatchObject({
+        panelContainsDeepFocus: false,
+        focusedMenuItemCount: 0,
+        forwardSentinelFocused: true,
+        bodyFocused: false,
+      });
     expectCleanDiagnostics(diagnostics);
   });
 
   test('Shift+Tab close で backward focus 移動を阻害しない', async ({ page }) => {
-    await page.addInitScript(({ key }) => {
-      localStorage.removeItem(key);
-    }, { key: themeStorageKey });
+    await page.addInitScript(
+      ({ key }) => {
+        localStorage.removeItem(key);
+      },
+      { key: themeStorageKey },
+    );
     const diagnostics = collectBrowserDiagnostics(page);
 
     await page.goto(themeSwitcherPath);
@@ -505,11 +538,13 @@ test.describe('theme switcher hydration regression', () => {
 
     await openThemeDropdown(page);
     await page.keyboard.press('Shift+Tab');
-    await expect.poll(async () => await expectFocusState(page)).toMatchObject({
-      panelContainsDeepFocus: false,
-      focusedMenuItemCount: 0,
-      bodyFocused: false,
-    });
+    await expect
+      .poll(async () => await expectFocusState(page))
+      .toMatchObject({
+        panelContainsDeepFocus: false,
+        focusedMenuItemCount: 0,
+        bodyFocused: false,
+      });
     const focusState = await expectFocusState(page);
     expect(focusState.triggerContainsDeepFocus || focusState.backwardSentinelFocused).toBe(true);
     expectCleanDiagnostics(diagnostics);

@@ -30,11 +30,20 @@ const findElement = (
   predicate: (node: HastNode) => boolean,
 ): HastNode | undefined => findElements(node, predicate)[0];
 
-const createRawFootnoteRef = (
-  refId: string,
-  index: string,
-  instanceSuffix = '',
-): HastNode => ({
+const getClassList = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+
+const getTextContent = (node: HastNode | undefined): string => {
+  if (!node) {
+    return '';
+  }
+  if (typeof node.value === 'string') {
+    return node.value;
+  }
+  return (node.children ?? []).map((child) => getTextContent(child)).join('');
+};
+
+const createRawFootnoteRef = (refId: string, index: string, instanceSuffix = ''): HastNode => ({
   type: 'element',
   tagName: 'sup',
   children: [
@@ -648,9 +657,7 @@ describe('rehypeRouaultComponents', () => {
     expect(eyebrow?.properties?.['className']).to.deep.equal(['link-card__eyebrow']);
     expect(title?.tagName).to.equal('p');
     expect(title?.properties?.['className']).to.deep.equal(['link-card__title']);
-    expect(findElement(card, (node) => /^h[1-6]$/u.test(node.tagName ?? ''))).to.equal(
-      undefined,
-    );
+    expect(findElement(card, (node) => /^h[1-6]$/u.test(node.tagName ?? ''))).to.equal(undefined);
     expect(media?.tagName).to.equal('img');
     expect(media?.properties?.['className']).to.deep.equal(['link-card__media']);
   });
@@ -735,7 +742,10 @@ describe('rehypeRouaultComponents', () => {
 
     rehypeRouaultComponents()(tree);
 
-    const syntaxCard = findElement(tree, (node) => node.properties?.['data-syntax-card'] === 'true');
+    const syntaxCard = findElement(
+      tree,
+      (node) => node.properties?.['data-syntax-card'] === 'true',
+    );
 
     expect(syntaxCard?.tagName).to.equal('section');
     expect(syntaxCard?.properties?.['data-hydration-capability']).to.equal(undefined);
@@ -780,18 +790,21 @@ describe('rehypeRouaultComponents', () => {
     rehypeRouaultComponents()(tree);
 
     const card = findElement(tree, (node) => node.properties?.['data-syntax-card'] === 'true');
-    const section = findElement(tree, (node) => node.properties?.['data-syntax-section'] === 'true');
+    const section = findElement(
+      tree,
+      (node) => node.properties?.['data-syntax-section'] === 'true',
+    );
     const field = findElement(tree, (node) => node.properties?.['data-syntax-field'] === 'true');
 
     expect(card?.tagName).to.equal('section');
     expect(section?.tagName).to.equal('section');
     expect(field?.tagName).to.equal('dl');
-    expect(findElement(field, (node) => node.tagName === 'dt')?.properties?.['className']).to.deep.equal([
-      'syntax-field__term',
-    ]);
-    expect(findElement(field, (node) => node.tagName === 'dd')?.properties?.['className']).to.deep.equal([
-      'syntax-field__description',
-    ]);
+    expect(
+      findElement(field, (node) => node.tagName === 'dt')?.properties?.['className'],
+    ).to.deep.equal(['syntax-field__term']);
+    expect(
+      findElement(field, (node) => node.tagName === 'dd')?.properties?.['className'],
+    ).to.deep.equal(['syntax-field__description']);
 
     expect(card?.properties?.['data-hydration-capability']).to.equal(undefined);
     expect(card?.properties?.['data-hydration-trigger']).to.equal(undefined);
@@ -806,6 +819,241 @@ describe('rehypeRouaultComponents', () => {
     expect(findElement(tree, (node) => node.tagName === 'ui-syntax-field')).to.equal(undefined);
   });
 
+  it('syntax-card の heading-level と条件付き surface を静的 HTML 契約へ正規化すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-syntax-card',
+          properties: {
+            kind: 'Function',
+            name: 'createThing',
+            'heading-level': '2',
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'pre',
+              properties: { slot: 'signature' },
+              children: [{ type: 'text', value: 'createThing()' }],
+            },
+            {
+              type: 'element',
+              tagName: 'p',
+              children: [{ type: 'text', value: '説明' }],
+            },
+          ],
+        },
+        {
+          type: 'element',
+          tagName: 'ui-syntax-card',
+          properties: {
+            kind: 'Function',
+            name: 'fallbackThing',
+            'heading-level': '9',
+          },
+          children: [],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const cards = findElements(tree, (node) => node.properties?.['data-syntax-card'] === 'true');
+    const firstHeading = findElement(cards[0], (node) =>
+      getClassList(node.properties?.['className']).includes('syntax-card__name'),
+    );
+    const fallbackHeading = findElement(cards[1], (node) =>
+      getClassList(node.properties?.['className']).includes('syntax-card__name'),
+    );
+
+    expect(firstHeading?.tagName).to.equal('h2');
+    expect(fallbackHeading?.tagName).to.equal('h4');
+    expect(
+      findElement(cards[0], (node) =>
+        getClassList(node.properties?.['className']).includes('syntax-card__signature'),
+      ),
+    ).not.to.equal(undefined);
+    expect(
+      findElement(cards[0], (node) =>
+        getClassList(node.properties?.['className']).includes('syntax-card__content'),
+      ),
+    ).not.to.equal(undefined);
+    expect(
+      findElement(cards[1], (node) =>
+        getClassList(node.properties?.['className']).includes('syntax-card__signature'),
+      ),
+    ).to.equal(undefined);
+    expect(
+      findElement(cards[1], (node) =>
+        getClassList(node.properties?.['className']).includes('syntax-card__content'),
+      ),
+    ).to.equal(undefined);
+    expect(
+      findElement(tree, (node) =>
+        getClassList(node.properties?.['className']).includes('syntax-card__copy-action'),
+      ),
+    ).to.equal(undefined);
+  });
+
+  it('syntax-section と syntax-field の詳細契約を静的 HTML に固定すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-syntax-section',
+          properties: { label: 'Props' },
+          children: [],
+        },
+        {
+          type: 'element',
+          tagName: 'ui-syntax-section',
+          properties: { label: 'Returns' },
+          children: [],
+        },
+        {
+          type: 'element',
+          tagName: 'ui-syntax-field',
+          properties: {
+            name: 'effect',
+            type: '() => void',
+            default: 'noop',
+          },
+          children: [{ type: 'text', value: '副作用' }],
+        },
+        {
+          type: 'element',
+          tagName: 'ui-syntax-field',
+          properties: {
+            name: 'requiredValue',
+            required: 'true',
+          },
+          children: [{ type: 'text', value: '必須値' }],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const sections = findElements(
+      tree,
+      (node) => node.properties?.['data-syntax-section'] === 'true',
+    );
+    const headingIds = sections.map((section) => {
+      const heading = findElement(section, (node) =>
+        getClassList(node.properties?.['className']).includes('syntax-section__heading'),
+      );
+      expect(section.properties?.['aria-labelledby']).to.equal(heading?.properties?.['id']);
+      return heading?.properties?.['id'];
+    });
+    const fields = findElements(tree, (node) => node.properties?.['data-syntax-field'] === 'true');
+    const defaultValue = findElement(fields[0], (node) =>
+      getClassList(node.properties?.['className']).includes('syntax-field__default'),
+    );
+    const required = findElement(fields[1], (node) =>
+      getClassList(node.properties?.['className']).includes('syntax-field__required'),
+    );
+
+    expect(new Set(headingIds).size).to.equal(2);
+    expect(fields[0]?.tagName).to.equal('dl');
+    expect(findElement(fields[0], (node) => node.tagName === 'div')).to.equal(undefined);
+    expect(getTextContent(defaultValue)).to.equal('default: noop');
+    expect(getClassList(defaultValue?.properties?.['className'])).to.include(
+      'syntax-field__default--with-type',
+    );
+    expect(required?.properties?.['aria-label']).to.equal('必須');
+    expect(
+      findElement(fields[0], (node) =>
+        getClassList(node.properties?.['className']).includes('syntax-field__required'),
+      ),
+    ).to.equal(undefined);
+  });
+
+  it('score は label なし primary=false でも scroll surface に既定 aria-label を持つこと', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'figure',
+          properties: {
+            'data-score': 'true',
+            'data-score-aspect-ratio': '4.5 / 1.25',
+            'data-score-src': 'javascript:alert(1)',
+          },
+          children: [{ type: 'element', tagName: 'svg', children: [] }],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const score = findElement(tree, (node) => node.properties?.['data-score'] === 'true');
+    const scroll = findElement(score, (node) => node.properties?.['data-score-scroll'] === 'true');
+    const stage = findElement(score, (node) => node.properties?.['data-score-stage'] === 'true');
+    const skeleton = findElement(score, (node) =>
+      getClassList(node.properties?.['className']).includes('score__skeleton'),
+    );
+
+    expect(score?.properties?.['data-score-src']).to.equal('javascript:alert(1)');
+    expect(score?.properties?.['data-hydration-key']).to.equal('score-scroll-enhancer');
+    expect(scroll?.properties?.['aria-label']).to.equal('譜面');
+    expect(scroll?.properties?.['role']).to.equal(undefined);
+    expect(stage?.properties?.['style']).to.equal('--_score-aspect-ratio: 4.5 / 1.25;');
+    expect(skeleton?.properties?.['style']).to.equal('--_score-aspect-ratio: 4.5 / 1.25;');
+    expect(
+      findElement(score, (node) =>
+        getClassList(node.properties?.['className']).includes('score__source'),
+      ),
+    ).to.equal(undefined);
+    expect(
+      findElement(score, (node) =>
+        getClassList(node.properties?.['className']).includes('score__label'),
+      ),
+    ).to.equal(undefined);
+    expect(
+      findElement(score, (node) =>
+        getClassList(node.properties?.['className']).includes('score__description'),
+      ),
+    ).to.equal(undefined);
+  });
+
+  it('primary score は region と説明参照を label aria-label とは分離して持つこと', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'figure',
+          properties: {
+            'data-score': 'true',
+            'data-score-label': '譜例A',
+            'data-score-description': '譜例の説明',
+            'data-score-caption': '譜例キャプション',
+            'data-score-primary': 'true',
+          },
+          children: [{ type: 'element', tagName: 'svg', children: [] }],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const score = findElement(tree, (node) => node.properties?.['data-score'] === 'true');
+    const scroll = findElement(score, (node) => node.properties?.['data-score-scroll'] === 'true');
+    const descriptionId = scroll?.properties?.['aria-describedby'];
+    const description = findElement(score, (node) => node.properties?.['id'] === descriptionId);
+    const caption = findElement(score, (node) => node.tagName === 'figcaption');
+
+    expect(scroll?.properties?.['aria-label']).to.equal('譜例A');
+    expect(scroll?.properties?.['role']).to.equal('region');
+    expect(getClassList(description?.properties?.['className'])).to.deep.equal(['score__sr-only']);
+    expect(getTextContent(description)).to.equal('譜例の説明');
+    expect(getClassList(caption?.properties?.['className'])).to.deep.equal(['score__caption']);
+    expect(getTextContent(caption)).to.equal('譜例キャプション');
+  });
 
   it('role-only の脚注参照を fallback candidate として救済しないこと', () => {
     const tree: HastNode = {
@@ -965,5 +1213,4 @@ describe('rehypeRouaultComponents', () => {
       'footnote reference dataFootnoteIndex conflicts with canonical value',
     );
   });
-
 });

@@ -39,10 +39,7 @@ const findScrollTargets = (root: ParentNode): HTMLElement[] => {
   return [...root.querySelectorAll<HTMLElement>('[data-score-scroll]')];
 };
 
-export const enhanceScoreScroll = (
-  root: ParentNode = document,
-  signal?: AbortSignal,
-): void => {
+export const enhanceScoreScroll = (root: ParentNode = document, signal?: AbortSignal): void => {
   const isSignalAborted = signal?.aborted === true;
   if (isSignalAborted) {
     return;
@@ -50,8 +47,12 @@ export const enhanceScoreScroll = (
 
   for (const scroll of findScrollTargets(root)) {
     const active = activeScrolls.get(scroll);
-    if (active && active.signal === signal) {
+    if (active && active.signal?.aborted !== true) {
       continue;
+    }
+    if (active?.signal?.aborted === true) {
+      active.resizeObserver?.disconnect();
+      activeScrolls.delete(scroll);
     }
 
     const update = (): void => {
