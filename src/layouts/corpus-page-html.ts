@@ -34,9 +34,13 @@ const renderNote = (note: CorpusPageNoteSummary): string => `
 const renderNotes = (corpusPage: CorpusPageEntry): string => {
   if (corpusPage.notes.length === 0) {
     return `
-      <section class="empty-hint" data-empty-state>
-        <h2>このコーパスの公開ノートはまだありません</h2>
-        <p>別のコーパスへ切り替えるか、時間をおいて再度確認してください。</p>
+      <section class="empty-hint" data-empty-state data-empty-variant="default">
+        <div class="empty-hint__message" data-announce="off">
+          <div class="empty-hint__icon" aria-hidden="true"></div>
+          <h2 class="empty-hint__heading">このコーパスの公開ノートはまだありません</h2>
+          <p class="empty-hint__description">別のコーパスへ切り替えるか、時間をおいて再度確認してください。</p>
+        </div>
+        <div class="empty-hint__actions" hidden></div>
       </section>
     `.trim();
   }

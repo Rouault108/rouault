@@ -23,6 +23,13 @@
 @import './code-surfaces.css';
 @import './article-header.css';
 @import './layout-toc.css';
+@import './search-dialog.css';
+@import './search-page.css';
+@import './details-block.css';
+@import './syntax.css';
+@import './score.css';
+@import './empty-state.css';
+@import './page-corpora.css';
 
 /* ===========================================================================
  * View Transitions API サポート

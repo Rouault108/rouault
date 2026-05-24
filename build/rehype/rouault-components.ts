@@ -33,6 +33,8 @@ interface ImageNormalizationContext {
 interface SurfaceNormalizationContext {
   calloutHeadingCount: number;
   infoBoxHeadingCount: number;
+  syntaxSectionHeadingCount: number;
+  scoreDescriptionCount: number;
 }
 
 type Parse5Node = DefaultTreeAdapterMap['node'];
@@ -125,6 +127,11 @@ const toHeadingLevel = (value: unknown): number | null => {
     return null;
   }
   return parsed;
+};
+
+const toSyntaxHeadingLevel = (value: unknown): number => {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  return Number.isInteger(parsed) && parsed >= 2 && parsed <= 6 ? parsed : 4;
 };
 
 const hasMeaningfulChildren = (children: readonly HastNode[]): boolean =>
@@ -726,6 +733,103 @@ const resolveStaticLinkKindLike = (href: string): string =>
       ? 'external-action'
       : 'internal-document';
 
+const isScoreFigure = (node: HastNode): boolean =>
+  isElement(node, 'figure') && node.properties?.['data-score'] !== undefined;
+
+const normalizeScoreAspectRatio = (value: unknown): string | undefined => {
+  const text = pickOptionalString(value);
+  if (!text) {
+    return undefined;
+  }
+  const match = /^([0-9]+(?:\.[0-9]+)?)\s*\/\s*([0-9]+(?:\.[0-9]+)?)$/u.exec(text);
+  if (!match) {
+    return undefined;
+  }
+  const left = Number(match[1]);
+  const right = Number(match[2]);
+  if (!Number.isFinite(left) || !Number.isFinite(right) || left <= 0 || right <= 0) {
+    return undefined;
+  }
+  return `${match[1]} / ${match[2]}`;
+};
+
+const toStaticScore = (node: HastNode, context: SurfaceNormalizationContext): void => {
+  const properties = node.properties ?? {};
+  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+  const caption = pickOptionalString(properties['data-score-caption']);
+  const label = pickOptionalString(properties['data-score-label']) ?? '譜面';
+  const description = pickOptionalString(properties['data-score-description']);
+  const primary = properties['data-score-primary'] === 'true';
+  const aspectRatio = normalizeScoreAspectRatio(properties['data-score-aspect-ratio']);
+  const descriptionId = description
+    ? `score-description-${String(++context.scoreDescriptionCount)}`
+    : undefined;
+  const existingClasses = getClassList(properties['className']).filter((className) => className !== 'score');
+  const stageStyle = aspectRatio ? `--_score-aspect-ratio: ${aspectRatio};` : undefined;
+
+  const nextProperties: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(properties)) {
+    if (
+      key === 'id' ||
+      key.startsWith('aria-') ||
+      key === 'role' ||
+      key.startsWith('data-score')
+    ) {
+      nextProperties[key] = value;
+    }
+  }
+  nextProperties['className'] = ['score', ...existingClasses];
+  nextProperties['data-score'] = 'true';
+  nextProperties['data-hydration-key'] = 'score-scroll-enhancer';
+  nextProperties['data-hydration-capability'] = 'progressive';
+  nextProperties['data-hydration-trigger'] = 'visible';
+
+  node.tagName = 'figure';
+  node.properties = nextProperties;
+  node.children = [
+    createElement(
+      'div',
+      {
+        className: ['score__scroll'],
+        'data-score-scroll': 'true',
+        tabindex: '0',
+        'aria-label': label,
+        ...(primary ? { role: 'region' } : {}),
+        ...(descriptionId ? { 'aria-describedby': descriptionId } : {}),
+      },
+      [
+        createElement(
+          'div',
+          {
+            className: ['score__stage'],
+            'data-score-stage': 'true',
+            ...(stageStyle ? { style: stageStyle } : {}),
+          },
+          [
+            createElement('div', {
+              className: ['score__skeleton'],
+              'data-visible': 'false',
+              'aria-hidden': 'true',
+              ...(stageStyle ? { style: stageStyle } : {}),
+            }),
+            createElement('div', { className: ['score__content'], 'data-visible': 'true' }, [
+              createElement('div', { className: ['score__fallback'], 'data-score-fallback': 'true' }, children),
+              createElement('div', { className: ['score__svg-host'], 'aria-hidden': 'true', hidden: true }, []),
+            ]),
+          ],
+        ),
+      ],
+    ),
+    createElement('div', { className: ['score__error'], 'aria-live': 'polite' }, []),
+    ...(description && descriptionId
+      ? [createElement('p', { id: descriptionId, className: ['score__sr-only'] }, [createTextNode(description)])]
+      : []),
+    ...(caption
+      ? [createElement('figcaption', { className: ['score__caption'] }, [createTextNode(caption)])]
+      : []),
+  ];
+};
+
 const toStaticDetails = (node: HastNode): void => {
   const properties = node.properties ?? {};
   const summary = pickOptionalString(properties['summary']) ?? '詳細';
@@ -746,9 +850,13 @@ const toStaticDetails = (node: HastNode): void => {
   };
   node.children = [
     createElement('summary', { className: ['details-block__summary'] }, [
-      createTextNode(summary),
+      createElement('span', { className: ['details-block__summary-label'] }, [
+        createTextNode(summary),
+      ]),
     ]),
-    createElement('div', { className: ['details-block__body'] }, children),
+    createElement('div', { className: ['details-block__body-wrapper'] }, [
+      createElement('div', { className: ['details-block__body'] }, children),
+    ]),
   ];
 };
 
@@ -757,38 +865,63 @@ const toStaticSyntaxField = (node: HastNode): void => {
   const name = pickOptionalString(properties['name']) ?? '';
   const type = pickOptionalString(properties['type']);
   const defaultValue = pickOptionalString(properties['default']);
+  const required = toBooleanAttribute(properties['required']);
   const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
 
-  node.tagName = 'div';
+  node.tagName = 'dl';
   node.properties = {
     className: ['syntax-field'],
     'data-syntax-field': 'true',
   };
   node.children = [
     createElement('dt', { className: ['syntax-field__term'] }, [
-      createElement('code', {}, [createTextNode(name)]),
+      createElement('code', { className: ['syntax-field__name'] }, [createTextNode(name)]),
+      ...(required
+        ? [
+            createElement(
+              'span',
+              { className: ['syntax-field__required'], 'aria-label': '必須' },
+              [createTextNode('必須')],
+            ),
+          ]
+        : []),
       ...(type ? [createElement('span', { className: ['syntax-field__type'] }, [createTextNode(type)])] : []),
       ...(defaultValue
-        ? [createElement('span', { className: ['syntax-field__default'] }, [createTextNode(defaultValue)])]
+        ? [
+            createElement(
+              'span',
+              {
+                className: [
+                  'syntax-field__default',
+                  ...(type ? ['syntax-field__default--with-type'] : []),
+                ],
+              },
+              [createTextNode(`default: ${defaultValue}`)],
+            ),
+          ]
         : []),
     ]),
     createElement('dd', { className: ['syntax-field__description'] }, children),
   ];
 };
 
-const toStaticSyntaxSection = (node: HastNode): void => {
+const toStaticSyntaxSection = (node: HastNode, context: SurfaceNormalizationContext): void => {
   const properties = node.properties ?? {};
   const label = pickOptionalString(properties['label']) ?? 'Section';
   const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+  const headingId = `syntax-section-heading-${String(++context.syntaxSectionHeadingCount)}`;
 
   node.tagName = 'section';
   node.properties = {
     className: ['syntax-section'],
     'data-syntax-section': 'true',
+    'aria-labelledby': headingId,
   };
   node.children = [
-    createElement('h3', { className: ['syntax-section__heading'] }, [createTextNode(label)]),
-    ...children,
+    createElement('h3', { id: headingId, className: ['syntax-section__heading'] }, [
+      createTextNode(label),
+    ]),
+    createElement('div', { className: ['syntax-section__content'] }, children),
   ];
 };
 
@@ -797,20 +930,37 @@ const toStaticSyntaxCard = (node: HastNode): void => {
   const kind = pickOptionalString(properties['kind']);
   const name = pickOptionalString(properties['name']) ?? 'Syntax';
   const lang = pickOptionalString(properties['data-lang']);
+  const headingLevel = toSyntaxHeadingLevel(properties['heading-level']);
   const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+  const signatureChildren = children.filter(
+    (child) => isElement(child) && child.properties?.['slot'] === 'signature',
+  );
+  const contentChildren = children.filter(
+    (child) => !(isElement(child) && child.properties?.['slot'] === 'signature'),
+  );
+  const hasContent = hasMeaningfulChildren(contentChildren);
+  const hasSignature = hasMeaningfulChildren(signatureChildren);
 
   node.tagName = 'section';
   node.properties = {
     className: ['syntax-card'],
     'data-syntax-card': 'true',
+    'data-content-empty': String(!hasContent),
     ...(lang ? { 'data-lang': lang } : {}),
   };
   node.children = [
     createElement('header', { className: ['syntax-card__header'] }, [
       ...(kind ? [createElement('p', { className: ['syntax-card__kind'] }, [createTextNode(kind)])] : []),
-      createElement('h2', { className: ['syntax-card__name'] }, [createTextNode(name)]),
+      createElement(`h${String(headingLevel)}`, { className: ['syntax-card__name'] }, [
+        createTextNode(name),
+      ]),
     ]),
-    ...children,
+    ...(hasSignature
+      ? [createElement('div', { className: ['syntax-card__signature'] }, signatureChildren)]
+      : []),
+    ...(hasContent
+      ? [createElement('div', { className: ['syntax-card__content'] }, contentChildren)]
+      : []),
   ];
 };
 
@@ -1899,6 +2049,8 @@ export function rehypeRouaultComponents() {
     const surfaceContext: SurfaceNormalizationContext = {
       calloutHeadingCount: 0,
       infoBoxHeadingCount: 0,
+      syntaxSectionHeadingCount: 0,
+      scoreDescriptionCount: 0,
     };
 
     const visit = (node: unknown): void => {
@@ -1982,7 +2134,11 @@ export function rehypeRouaultComponents() {
 
         if (!footnoteTransformed) {
           if (current.tagName === 'figure') {
-            toStaticFigureImage(current, imageContext, file);
+            if (isScoreFigure(current)) {
+              toStaticScore(current, surfaceContext);
+            } else {
+              toStaticFigureImage(current, imageContext, file);
+            }
           } else if (current.tagName === 'img') {
             toStaticImage(current, imageContext, file);
           } else if (current.tagName === 'mark') {
@@ -1998,7 +2154,7 @@ export function rehypeRouaultComponents() {
           } else if (current.tagName === 'ui-syntax-field') {
             toStaticSyntaxField(current);
           } else if (current.tagName === 'ui-syntax-section') {
-            toStaticSyntaxSection(current);
+            toStaticSyntaxSection(current, surfaceContext);
           } else if (current.tagName === 'ui-syntax-card') {
             toStaticSyntaxCard(current);
           } else if (
@@ -2047,6 +2203,8 @@ const normalizeRouaultStaticSurfacesTree = (tree: HastNode): void => {
   const surfaceContext: SurfaceNormalizationContext = {
     calloutHeadingCount: 0,
     infoBoxHeadingCount: 0,
+    syntaxSectionHeadingCount: 0,
+    scoreDescriptionCount: 0,
   };
 
   const visit = (node: unknown): void => {

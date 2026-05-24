@@ -2,6 +2,7 @@ import { enhanceCodeBlocks } from '../post-hydrate/code-block-enhancer.js';
 import { enhanceCodeGroups } from '../post-hydrate/code-group-enhancer.js';
 import { enhanceFootnotePopovers } from '../post-hydrate/footnote-popover-enhancer.js';
 import { enhanceImageLightboxes } from '../post-hydrate/image-lightbox-enhancer.js';
+import { enhanceScoreScroll } from '../post-hydrate/score-scroll-enhancer.js';
 import { enhanceSearchDialog } from '../post-hydrate/search-dialog-enhancer.js';
 import { enhanceSearchPage } from '../post-hydrate/search-page-enhancer.js';
 import type { HydrationActivationContext, HydrationRegistryEntry } from './types.js';
@@ -30,12 +31,16 @@ const activateFootnotePopovers = ({ root }: HydrationActivationContext): void =>
   enhanceFootnotePopovers(root);
 };
 
-const activateSearchDialog = ({ root }: HydrationActivationContext): void => {
-  enhanceSearchDialog(root);
+const activateSearchDialog = ({ root, signal }: HydrationActivationContext): void => {
+  enhanceSearchDialog(root, signal);
 };
 
-const activateSearchPage = ({ root }: HydrationActivationContext): void => {
-  enhanceSearchPage(root);
+const activateSearchPage = ({ root, signal }: HydrationActivationContext): void => {
+  enhanceSearchPage(root, signal);
+};
+
+const activateScoreScroll = ({ element, signal }: HydrationActivationContext): void => {
+  enhanceScoreScroll(element, signal);
 };
 
 const activateLayoutSidebar = ({ element }: HydrationActivationContext): void => {
@@ -87,6 +92,12 @@ export const HYDRATION_REGISTRY = [
     kind: 'enhancer',
     loader: () => Promise.resolve(undefined),
     activate: activateSearchPage,
+  },
+  {
+    tag: 'score-scroll-enhancer',
+    kind: 'enhancer',
+    loader: () => Promise.resolve(undefined),
+    activate: activateScoreScroll,
   },
   {
     tag: 'layout-sidebar',

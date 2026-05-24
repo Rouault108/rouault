@@ -1,0 +1,44 @@
+.score { margin: 0; }
+.prose .score { width: calc(100% + var(--space-8)); margin-inline: calc(var(--space-4) * -1); }
+.score[data-score-primary='true'] { margin-block: var(--space-6); }
+.score__scroll {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: var(--space-4);
+  color: var(--fg-default);
+  background: var(--bg-score-paper, var(--bg-surface-2));
+  border: var(--border-width) solid var(--border-muted);
+  border-radius: var(--radius-md);
+  scrollbar-gutter: stable both-edges;
+}
+.score__scroll:focus-visible { outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--focus-default)); outline-offset: var(--focus-ring-offset, 2px); }
+.score__scroll::-webkit-scrollbar { block-size: var(--scrollbar-size, 10px); }
+.score__scroll::-webkit-scrollbar-track { background: transparent; }
+.score__scroll::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: var(--radius-full); }
+.score__scroll::-webkit-scrollbar-thumb:hover { background: var(--fg-muted); }
+.score__scroll[data-overflow='true'][data-fade-left='true'][data-fade-right='true'] { mask-image: linear-gradient(90deg, transparent, #000 var(--space-6), #000 calc(100% - var(--space-6)), transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--space-6), #000 calc(100% - var(--space-6)), transparent); }
+.score__scroll[data-overflow='true'][data-fade-left='true']:not([data-fade-right='true']) { mask-image: linear-gradient(90deg, transparent, #000 var(--space-6)); -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--space-6)); }
+.score__scroll[data-overflow='true'][data-fade-right='true']:not([data-fade-left='true']) { mask-image: linear-gradient(90deg, #000 calc(100% - var(--space-6)), transparent); -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - var(--space-6)), transparent); }
+.score__stage { display: grid; position: relative; min-width: max-content; aspect-ratio: var(--_score-aspect-ratio, 3 / 1); }
+.score__stage > * { grid-area: 1 / 1; }
+.score__skeleton { width: 100%; min-width: max-content; aspect-ratio: var(--_score-aspect-ratio, 3 / 1); background: var(--bg-fill-muted); border-radius: var(--radius-sm); overflow: hidden; opacity: 0; transition: opacity var(--duration-fast) var(--ease-out); }
+.score__skeleton::after { content: ''; display: block; inline-size: 100%; block-size: 100%; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent); animation: ui-score-shimmer 1.2s linear infinite; }
+.score__skeleton[data-visible='true'] { opacity: 1; }
+.score__content { opacity: 0; transition: opacity var(--duration-fast) var(--ease-out); }
+.score__content[data-visible='true'] { opacity: 1; }
+.score__inline-slot,
+.score__svg-host { display: inline-block; min-width: max-content; }
+.score__svg-host svg { display: block; width: auto; height: auto; max-width: none; min-width: max-content; }
+.score__fallback { padding: var(--space-2); min-width: max-content; }
+.score__source,
+.score__source-invalid { display: none; }
+.score__error { min-height: 1.4em; margin-top: var(--space-2); color: var(--fg-danger, var(--fg-default)); font-size: var(--text-sm); text-align: center; }
+.score__caption { margin-top: var(--space-2); color: var(--fg-muted); font-size: var(--text-sm); line-height: var(--line-height-relaxed); text-align: center; }
+.score__sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@keyframes ui-score-shimmer { to { transform: translateX(100%); } }
+@media (min-width: 768px) { .prose .score { width: calc(100% + var(--space-16)); margin-inline: calc(var(--space-8) * -1); } }
+@media (prefers-color-scheme: dark) { .score__scroll { background: var(--bg-surface-2); } }
+@media (prefers-reduced-motion: reduce) { .score__skeleton::after { animation: none; } .score__content, .score__skeleton { transition-duration: 0.01ms; } }
+@media (forced-colors: active) { .score__scroll { color: CanvasText; background: Canvas; border-color: CanvasText; } }
+@media print { .prose .score { width: auto; margin-inline: 0; } .score__scroll { overflow: visible; mask-image: none; -webkit-mask-image: none; } }

@@ -785,7 +785,13 @@ describe('rehypeRouaultComponents', () => {
 
     expect(card?.tagName).to.equal('section');
     expect(section?.tagName).to.equal('section');
-    expect(field?.tagName).to.equal('div');
+    expect(field?.tagName).to.equal('dl');
+    expect(findElement(field, (node) => node.tagName === 'dt')?.properties?.['className']).to.deep.equal([
+      'syntax-field__term',
+    ]);
+    expect(findElement(field, (node) => node.tagName === 'dd')?.properties?.['className']).to.deep.equal([
+      'syntax-field__description',
+    ]);
 
     expect(card?.properties?.['data-hydration-capability']).to.equal(undefined);
     expect(card?.properties?.['data-hydration-trigger']).to.equal(undefined);

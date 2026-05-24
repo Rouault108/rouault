@@ -8,9 +8,13 @@ const renderDate = (value: string | null): string =>
 const renderCorpora = (corpora: readonly CorporaOverviewCorpusItem[]): string => {
   if (corpora.length === 0) {
     return `
-      <section class="empty-hint" data-empty-state>
-        <h2>公開コーパスはまだありません</h2>
-        <p>ノートが公開されると、ここにコーパス一覧が表示されます。</p>
+      <section class="empty-hint" data-empty-state data-empty-variant="default">
+        <div class="empty-hint__message" data-announce="off">
+          <div class="empty-hint__icon" aria-hidden="true"></div>
+          <h2 class="empty-hint__heading">公開コーパスはまだありません</h2>
+          <p class="empty-hint__description">ノートが公開されると、ここにコーパス一覧が表示されます。</p>
+        </div>
+        <div class="empty-hint__actions" hidden></div>
       </section>
     `.trim();
   }
@@ -47,9 +51,13 @@ const renderCorpora = (corpora: readonly CorporaOverviewCorpusItem[]): string =>
 const renderRecentNotes = (recentNotes: readonly HomeNoteItem[]): string => {
   if (recentNotes.length === 0) {
     return `
-      <section class="empty-hint" data-empty-state>
-        <h2>公開ノートはまだありません</h2>
-        <p>ノートが公開されると、ここに最近更新した項目が表示されます。</p>
+      <section class="empty-hint" data-empty-state data-empty-variant="default">
+        <div class="empty-hint__message" data-announce="off">
+          <div class="empty-hint__icon" aria-hidden="true"></div>
+          <h2 class="empty-hint__heading">公開ノートはまだありません</h2>
+          <p class="empty-hint__description">ノートが公開されると、ここに最近更新した項目が表示されます。</p>
+        </div>
+        <div class="empty-hint__actions" hidden></div>
       </section>
     `.trim();
   }
