@@ -1,7 +1,7 @@
 import type {
-  UiSearchDialogCloseReason,
-  UiSearchDialogItem,
-  UiSearchDialogSelectedDetail,
+  SearchDialogCloseReason,
+  SearchDialogItem,
+  SearchDialogSelectedDetail,
 } from './search-dialog-types.js';
 import { SearchDialogVirtualizer } from './search-dialog-virtualizer.js';
 
@@ -14,7 +14,7 @@ interface SearchDialogSearchFieldElement extends HTMLElement {
 export interface SearchDialogSelectionHost {
   isLoading(): boolean;
   isUnavailable?(): boolean;
-  getResults(): readonly UiSearchDialogItem[];
+  getResults(): readonly SearchDialogItem[];
   getActiveId(): string | null;
   setActiveId(id: string | null): void;
   getQuery(): string;
@@ -24,8 +24,8 @@ export interface SearchDialogSelectionHost {
   getResultListElement(): HTMLUListElement | undefined;
   getVirtualScrollTop(): number;
   setVirtualScrollTop(value: number): void;
-  requestClose(reason: UiSearchDialogCloseReason): void;
-  dispatchSelected(detail: UiSearchDialogSelectedDetail): void;
+  requestClose(reason: SearchDialogCloseReason): void;
+  dispatchSelected(detail: SearchDialogSelectedDetail): void;
 }
 
 export class SearchDialogSelectionModel {

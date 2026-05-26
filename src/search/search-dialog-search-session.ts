@@ -6,10 +6,10 @@ import {
   SEARCH_WORKER_THRESHOLD,
 } from './search-dialog-constants.js';
 import type {
-  UiSearchDialogItem,
-  UiSearchDialogMatchField,
-  UiSearchDialogSearchError,
-  UiSearchDialogSearcher,
+  SearchDialogItem,
+  SearchDialogMatchField,
+  SearchDialogSearchError,
+  SearchDialogSearcher,
 } from './search-dialog-types.js';
 import { SearchDialogSearchWorker } from './search-dialog-search-worker.js';
 
@@ -17,14 +17,14 @@ export interface SearchDialogSearchSessionHost {
   getQuery(): string;
   isLoading(): boolean;
   isUnavailable?(): boolean;
-  getItems(): readonly UiSearchDialogItem[];
-  getSearcher(): UiSearchDialogSearcher | null;
-  getMatchFields(): readonly UiSearchDialogMatchField[];
-  setResults(results: UiSearchDialogItem[]): void;
+  getItems(): readonly SearchDialogItem[];
+  getSearcher(): SearchDialogSearcher | null;
+  getMatchFields(): readonly SearchDialogMatchField[];
+  setResults(results: SearchDialogItem[]): void;
   getActiveId(): string | null;
   setActiveId(id: string | null): void;
   setHasCompletedSearch(value: boolean): void;
-  setError(error: UiSearchDialogSearchError | null): void;
+  setError(error: SearchDialogSearchError | null): void;
   setLiveMessage(message: string): void;
   scrollActiveOptionIntoView(): void;
 }
@@ -144,7 +144,7 @@ export class SearchDialogSearchSession {
       this.clearUnavailableState();
       return;
     }
-    let rawResults: readonly UiSearchDialogItem[];
+    let rawResults: readonly SearchDialogItem[];
 
     try {
       rawResults = await this._runSearch(query, token);
@@ -188,7 +188,7 @@ export class SearchDialogSearchSession {
     this._host.scrollActiveOptionIntoView();
   }
 
-  private async _runSearch(query: string, token: number): Promise<readonly UiSearchDialogItem[]> {
+  private async _runSearch(query: string, token: number): Promise<readonly SearchDialogItem[]> {
     if (this._isUnavailable()) {
       return [];
     }
@@ -241,7 +241,7 @@ export class SearchDialogSearchSession {
     return this._filterItems(query);
   }
 
-  private _filterItems(query: string): UiSearchDialogItem[] {
+  private _filterItems(query: string): SearchDialogItem[] {
     const normalizedQuery = SearchDialogSearchSession._normalizeText(query);
     if (normalizedQuery === '') return [];
 
@@ -282,8 +282,8 @@ export class SearchDialogSearchSession {
     this._host.setLiveMessage('');
   }
 
-  private _normalizeResults(results: readonly UiSearchDialogItem[]): UiSearchDialogItem[] {
-    const normalized: UiSearchDialogItem[] = [];
+  private _normalizeResults(results: readonly SearchDialogItem[]): SearchDialogItem[] {
+    const normalized: SearchDialogItem[] = [];
     const seen = new Set<string>();
 
     for (const item of results) {
@@ -297,7 +297,7 @@ export class SearchDialogSearchSession {
       if (seen.has(id)) continue;
       seen.add(id);
 
-      const normalizedItem: UiSearchDialogItem = {
+      const normalizedItem: SearchDialogItem = {
         id,
         title,
         renderHref,
@@ -321,7 +321,7 @@ export class SearchDialogSearchSession {
     return normalized;
   }
 
-  private _syncActiveId(results: readonly UiSearchDialogItem[]): void {
+  private _syncActiveId(results: readonly SearchDialogItem[]): void {
     const currentActiveId = this._host.getActiveId();
     if (results.length === 0) {
       this._host.setActiveId(null);
@@ -342,7 +342,7 @@ export class SearchDialogSearchSession {
     return value.trim().normalize('NFKC').toLocaleLowerCase('ja');
   }
 
-  private static _canUseWorker(matchFields: readonly UiSearchDialogMatchField[]): boolean {
+  private static _canUseWorker(matchFields: readonly SearchDialogMatchField[]): boolean {
     return matchFields.every(
       (field) => field === 'title' || field === 'path' || field === 'keywords',
     );
@@ -359,7 +359,7 @@ export class SearchDialogSearchSession {
 }
 
 class SearchDialogStructuredError extends Error {
-  constructor(readonly searchError: UiSearchDialogSearchError) {
+  constructor(readonly searchError: SearchDialogSearchError) {
     super(searchError.message ?? searchError.code);
     this.name = 'SearchDialogStructuredError';
   }

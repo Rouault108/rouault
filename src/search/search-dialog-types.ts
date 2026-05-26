@@ -1,13 +1,13 @@
 export interface SearchWorkerRequest {
   token: number;
   query: string;
-  items: readonly UiSearchDialogItem[];
-  matchFields: readonly UiSearchDialogMatchField[];
+  items: readonly SearchDialogItem[];
+  matchFields: readonly SearchDialogMatchField[];
 }
 
 export interface SearchWorkerResponse {
   token: number;
-  results: readonly UiSearchDialogItem[];
+  results: readonly SearchDialogItem[];
 }
 
 export interface HighlightPart {
@@ -15,9 +15,9 @@ export interface HighlightPart {
   matched: boolean;
 }
 
-export type UiSearchDialogMatchField = 'title' | 'path' | 'keywords' | 'renderHref';
+export type SearchDialogMatchField = 'title' | 'path' | 'keywords' | 'renderHref';
 
-export type UiSearchDialogCloseReason =
+export type SearchDialogCloseReason =
   | 'selection'
   | 'escape'
   | 'backdrop'
@@ -31,7 +31,7 @@ export interface VisibleRange {
   bottomSpacer: number;
 }
 
-export interface UiSearchDialogItem {
+export interface SearchDialogItem {
   id: string;
   title: string;
   renderHref: string;
@@ -40,62 +40,62 @@ export interface UiSearchDialogItem {
   keywords?: readonly string[];
 }
 
-export interface UiSearchDialogOpenedDetail {
+export interface SearchDialogOpenedDetail {
   trigger: HTMLElement | null;
 }
 
-export interface UiSearchDialogClosedDetail {
-  reason: UiSearchDialogCloseReason;
+export interface SearchDialogClosedDetail {
+  reason: SearchDialogCloseReason;
 }
 
-export interface UiSearchDialogOpenRequestedDetail {
+export interface SearchDialogOpenRequestedDetail {
   trigger: HTMLElement | null;
 }
 
-export interface UiSearchDialogCloseRequestedDetail {
-  reason: UiSearchDialogCloseReason;
+export interface SearchDialogCloseRequestedDetail {
+  reason: SearchDialogCloseReason;
 }
 
-export interface UiSearchDialogQueryChangedDetail {
+export interface SearchDialogQueryChangedDetail {
   query: string;
 }
 
-export interface UiSearchDialogSelectedDetail {
+export interface SearchDialogSelectedDetail {
   id: string;
   renderHref: string;
   canonicalPathname: string;
   title: string;
   query: string;
   index: number;
-  item: UiSearchDialogItem;
+  item: SearchDialogItem;
   selectionMethod: 'keyboard' | 'pointer';
 }
 
-export interface UiSearchDialogSearchContext {
+export interface SearchDialogSearchContext {
   query: string;
   signal: AbortSignal;
   limit?: number;
   locale?: string;
 }
 
-export interface UiSearchDialogSearchError {
+export interface SearchDialogSearchError {
   code: string;
   message?: string;
   retryable?: boolean;
 }
 
-export interface UiSearchDialogSearchResult {
-  items: readonly UiSearchDialogItem[];
+export interface SearchDialogSearchResult {
+  items: readonly SearchDialogItem[];
   total?: number;
   isPartial?: boolean;
-  error?: UiSearchDialogSearchError;
+  error?: SearchDialogSearchError;
 }
 
-export type UiSearchDialogSearcher = (
-  context: UiSearchDialogSearchContext,
-) => Promise<UiSearchDialogSearchResult> | UiSearchDialogSearchResult;
+export type SearchDialogSearcher = (
+  context: SearchDialogSearchContext,
+) => Promise<SearchDialogSearchResult> | SearchDialogSearchResult;
 
-export interface UiSearchDialogMessages {
+export interface SearchDialogMessages {
   dialogLabel: string;
   closeLabel: string;
   clearLabel: string;

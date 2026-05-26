@@ -1,8 +1,8 @@
 import type {
-  UiSearchDialogItem,
-  UiSearchDialogCloseReason,
-  UiSearchDialogSearchContext,
-  UiSearchDialogSelectedDetail,
+  SearchDialogItem,
+  SearchDialogCloseReason,
+  SearchDialogSearchContext,
+  SearchDialogSelectedDetail,
 } from './search-dialog-types.js';
 import {
   dispatchSearchReturnToReading,
@@ -37,7 +37,7 @@ let initializedSearchBootstrapState: SearchBootstrapState | null = null;
 let activeSearchDialogTrigger: HTMLElement | null = null;
 let closePipelineState:
   | {
-      readonly reason: UiSearchDialogCloseReason;
+      readonly reason: SearchDialogCloseReason;
       readonly timeoutId: number | undefined;
     }
   | null = null;
@@ -147,7 +147,7 @@ const requestSearchDialogOpen = (
 };
 
 const dispatchSearchDialogFocusReturn = (
-  reason: UiSearchDialogCloseReason,
+  reason: SearchDialogCloseReason,
 ): void => {
   document.dispatchEvent(
     new CustomEvent('search-dialog:focus-return', {
@@ -161,7 +161,7 @@ const dispatchSearchDialogFocusReturn = (
 
 const completeSearchDialogClose = (
   dialog: SearchDialogRootElement,
-  reason: UiSearchDialogCloseReason,
+  reason: SearchDialogCloseReason,
 ): void => {
   if (typeof dialog.close === 'function' && dialog.open === true) {
     dialog.close();
@@ -181,7 +181,7 @@ const completeSearchDialogClose = (
 
 const requestSearchDialogClose = (
   dialog: SearchDialogRootElement,
-  options: { reason?: UiSearchDialogCloseReason } = {},
+  options: { reason?: SearchDialogCloseReason } = {},
 ): void => {
   if (!dialog.open && !dialog.hasAttribute('open')) {
     return;
@@ -319,7 +319,7 @@ const appendHighlightedText = (target: HTMLElement, text: string, query: string)
 
 const renderSearchDialogItems = (
   dialog: SearchDialogRootElement,
-  items: readonly UiSearchDialogItem[],
+  items: readonly SearchDialogItem[],
   query: string,
 ): void => {
   const results = dialog.querySelector<HTMLOListElement>('[data-search-dialog-results]');
@@ -392,7 +392,7 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
   bootstrapListenerController = new AbortController();
   const { signal } = bootstrapListenerController;
   const searchEventDiagnostics = createSearchEventDiagnosticSink();
-  let latestItems: readonly UiSearchDialogItem[] = [];
+  let latestItems: readonly SearchDialogItem[] = [];
   let activeIndex = -1;
   let searchTimerId: number | undefined;
   let searchGeneration = 0;
@@ -400,7 +400,7 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
   const searcher = async ({
     query,
     signal: searchSignal,
-  }: UiSearchDialogSearchContext): Promise<{ items: UiSearchDialogItem[] }> => {
+  }: SearchDialogSearchContext): Promise<{ items: SearchDialogItem[] }> => {
     const result = await controller.search(
       {
         mode: 'navigate',
@@ -521,14 +521,14 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
 
   const selectDialogItem = (
     index: number,
-    selectionMethod: UiSearchDialogSelectedDetail['selectionMethod'],
+    selectionMethod: SearchDialogSelectedDetail['selectionMethod'],
   ): void => {
     const item = latestItems[index];
     if (!item) {
       return;
     }
     document.dispatchEvent(
-      new CustomEvent<UiSearchDialogSelectedDetail>('search-dialog:selected', {
+      new CustomEvent<SearchDialogSelectedDetail>('search-dialog:selected', {
         detail: {
           id: item.id,
           renderHref: item.renderHref,
@@ -563,7 +563,7 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
   };
 
   const onSelected = (event: Event): void => {
-    const customEvent = event as CustomEvent<UiSearchDialogSelectedDetail>;
+    const customEvent = event as CustomEvent<SearchDialogSelectedDetail>;
     const { renderHref: selectedRenderHref, canonicalPathname, title, query, selectionMethod } = customEvent.detail;
     if (typeof selectedRenderHref !== 'string' || selectedRenderHref.length === 0) {
       return;

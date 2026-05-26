@@ -1,10 +1,10 @@
-import type { HighlightPart, UiSearchDialogItem } from './search-dialog-types.js';
+import type { HighlightPart, SearchDialogItem } from './search-dialog-types.js';
 
 const escapeHtmlText = (value: string): string =>
   value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
 export function resolveSearchDialogItemPath(
-  item: UiSearchDialogItem,
+  item: SearchDialogItem,
   baseHref = window.location.href,
 ): string {
   if (typeof item.path === 'string' && item.path.trim() !== '') {

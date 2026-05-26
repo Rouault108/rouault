@@ -12,10 +12,15 @@ describe('search dialog import boundary', () => {
       'src/search/search-dialog-search-worker.ts',
       'src/search/search-dialog-selection-model.ts',
       'src/search/search-dialog-virtualizer.ts',
+      'src/search/search-dialog-types.ts',
+      'src/search/search-dialog-events.ts',
       'src/search/search-dialog-constants.ts',
+      'src/search/bootstrap.ts',
+      'src/client/post-hydrate/search-dialog-enhancer.ts',
     ]) {
       const source = readSource(path);
       expect(source, path).not.toContain('src/components/ui/search-dialog');
+      expect(source, path).not.toContain('UiSearchDialog');
       expect(source, path).not.toContain('SearchDialogElement');
       expect(source, path).not.toContain('ui-search-dialog');
     }

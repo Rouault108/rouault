@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
-  UiSearchDialogItem,
-  UiSearchDialogSearchError,
-  UiSearchDialogSearcher,
+  SearchDialogItem,
+  SearchDialogSearchError,
+  SearchDialogSearcher,
 } from '../../src/search/search-dialog-types.js';
 import { SearchDialogSearchSession } from '../../src/search/search-dialog-search-session.js';
 import { SEARCH_DEBOUNCE_MS } from '../../src/search/search-dialog-constants.js';
@@ -10,10 +10,10 @@ import { SEARCH_DEBOUNCE_MS } from '../../src/search/search-dialog-constants.js'
 interface SessionState {
   query: string;
   loading: boolean;
-  items: readonly UiSearchDialogItem[];
-  searcher: UiSearchDialogSearcher | null;
+  items: readonly SearchDialogItem[];
+  searcher: SearchDialogSearcher | null;
   matchFields: readonly ('title' | 'path' | 'keywords' | 'renderHref')[];
-  results: UiSearchDialogItem[];
+  results: SearchDialogItem[];
   activeId: string | null;
   hasCompletedSearch: boolean;
   errorCode: string | null;
@@ -44,7 +44,7 @@ function createHost(state: SessionState) {
     getItems: () => state.items,
     getSearcher: () => state.searcher,
     getMatchFields: () => state.matchFields,
-    setResults: (results: UiSearchDialogItem[]) => {
+    setResults: (results: SearchDialogItem[]) => {
       state.results = results;
     },
     getActiveId: () => state.activeId,
@@ -54,7 +54,7 @@ function createHost(state: SessionState) {
     setHasCompletedSearch: (value: boolean) => {
       state.hasCompletedSearch = value;
     },
-    setError: (error: UiSearchDialogSearchError | null) => {
+    setError: (error: SearchDialogSearchError | null) => {
       state.errorCode = error?.code ?? null;
     },
     setLiveMessage: (message: string) => {
@@ -168,7 +168,7 @@ describe('SearchDialogSearchSession', () => {
         { id: 'empty-url', title: 'Empty Url', renderHref: '' , canonicalPathname: '' },
         { id: '', title: 'No Id', renderHref: '/missing-id' , canonicalPathname: '/missing-id' },
         { id: 'beta', title: 'Beta', renderHref: '/beta', canonicalPathname: '/beta', path: ' /beta ' },
-      ] satisfies UiSearchDialogItem[],
+      ] satisfies SearchDialogItem[],
     });
 
     const session = new SearchDialogSearchSession(createHost(state));
@@ -278,7 +278,7 @@ describe('SearchDialogSearchSession', () => {
     state.query = 'alpha';
     state.searcher = ({ signal }) => {
       signals.push(signal);
-      return createDeferred<{ items: UiSearchDialogItem[] }>().promise;
+      return createDeferred<{ items: SearchDialogItem[] }>().promise;
     };
 
     const session = new SearchDialogSearchSession(createHost(state));
@@ -304,7 +304,7 @@ describe('SearchDialogSearchSession', () => {
     state.query = 'alpha';
     state.searcher = ({ signal }) => {
       signals.push(signal);
-      return createDeferred<{ items: UiSearchDialogItem[] }>().promise;
+      return createDeferred<{ items: SearchDialogItem[] }>().promise;
     };
 
     const session = new SearchDialogSearchSession(createHost(state));
@@ -329,7 +329,7 @@ describe('SearchDialogSearchSession', () => {
     state.query = 'alpha';
     state.searcher = ({ signal }) => {
       signals.push(signal);
-      return createDeferred<{ items: UiSearchDialogItem[] }>().promise;
+      return createDeferred<{ items: SearchDialogItem[] }>().promise;
     };
 
     const session = new SearchDialogSearchSession(createHost(state));
@@ -355,7 +355,7 @@ describe('SearchDialogSearchSession', () => {
   it('destroy 後に abort を無視した in-flight resolve を UI に反映しない', async () => {
     vi.useFakeTimers();
     const state = createState();
-    const deferred = createDeferred<{ items: UiSearchDialogItem[] }>();
+    const deferred = createDeferred<{ items: SearchDialogItem[] }>();
     state.query = 'alpha';
     state.searcher = () => deferred.promise;
 
@@ -381,7 +381,7 @@ describe('SearchDialogSearchSession', () => {
     vi.useFakeTimers();
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const state = createState();
-    const deferred = createDeferred<{ items: UiSearchDialogItem[] }>();
+    const deferred = createDeferred<{ items: SearchDialogItem[] }>();
     state.query = 'alpha';
     state.searcher = () => deferred.promise;
 
@@ -406,7 +406,7 @@ describe('SearchDialogSearchSession', () => {
     vi.useFakeTimers();
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const state = createState();
-    const first = createDeferred<{ items: UiSearchDialogItem[] }>();
+    const first = createDeferred<{ items: SearchDialogItem[] }>();
     state.query = 'alpha';
     state.searcher = () => first.promise;
 
@@ -431,7 +431,7 @@ describe('SearchDialogSearchSession', () => {
     vi.useFakeTimers();
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const state = createState();
-    const deferred = createDeferred<{ items: UiSearchDialogItem[] }>();
+    const deferred = createDeferred<{ items: SearchDialogItem[] }>();
     state.query = 'alpha';
     state.searcher = () => deferred.promise;
 

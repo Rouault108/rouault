@@ -1,4 +1,4 @@
-import type { UiSearchDialogCloseReason, UiSearchDialogItem } from './search-dialog-types.js';
+import type { SearchDialogCloseReason, SearchDialogItem } from './search-dialog-types.js';
 
 export const searchDialogEventNames = [
   'search-dialog:open-request',
@@ -20,7 +20,7 @@ export interface SearchDialogOpenRequestDetail {
 }
 
 export interface SearchDialogCloseRequestDetail {
-  readonly reason: UiSearchDialogCloseReason;
+  readonly reason: SearchDialogCloseReason;
 }
 
 export interface SearchDialogQueryChangeDetail {
@@ -33,7 +33,7 @@ export interface SearchDialogLoadingChangeDetail {
 
 export interface SearchDialogResultsChangeDetail {
   readonly query: string;
-  readonly items: readonly UiSearchDialogItem[];
+  readonly items: readonly SearchDialogItem[];
 }
 
 export interface SearchDialogSelectedDetail {
@@ -43,7 +43,7 @@ export interface SearchDialogSelectedDetail {
   readonly title: string;
   readonly query: string;
   readonly index: number;
-  readonly item: UiSearchDialogItem;
+  readonly item: SearchDialogItem;
   readonly selectionMethod: 'keyboard' | 'pointer';
 }
 
@@ -56,7 +56,7 @@ export interface SearchDialogErrorDetail {
 }
 
 export interface SearchDialogFocusReturnDetail {
-  readonly reason: UiSearchDialogCloseReason;
+  readonly reason: SearchDialogCloseReason;
 }
 
 export interface SearchDialogEventDetailMap {

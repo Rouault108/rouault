@@ -86,7 +86,7 @@ Rouault 固有の定数は `footer` に埋め込まず、上位設定または�
 
 ## 公開契約
 
-`footer` の公開契約は、**描画入力として `FooterRenderOptions` を受け取り、`TemplateResult` を返すこと**です。`footer` 自身は固定値を暗黙に持たず、必要な値は上位から供給されます。
+`footer` の公開契約は、**描画入力として `FooterRenderOptions` を受け取り、静的 HTML 文字列を返すこと**です。`footer` 自身は固定値を暗黙に持たず、必要な値は上位から供給されます。
 
 ### 公開 API
 

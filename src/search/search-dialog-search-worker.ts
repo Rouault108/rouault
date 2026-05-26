@@ -1,8 +1,8 @@
 import type {
   SearchWorkerRequest,
   SearchWorkerResponse,
-  UiSearchDialogItem,
-  UiSearchDialogMatchField,
+  SearchDialogItem,
+  SearchDialogMatchField,
 } from './search-dialog-types.js';
 
 export class SearchDialogSearchWorker {
@@ -13,9 +13,9 @@ export class SearchDialogSearchWorker {
   async run(
     query: string,
     token: number,
-    items: readonly UiSearchDialogItem[],
-    matchFields: readonly UiSearchDialogMatchField[],
-  ): Promise<readonly UiSearchDialogItem[] | null> {
+    items: readonly SearchDialogItem[],
+    matchFields: readonly SearchDialogMatchField[],
+  ): Promise<readonly SearchDialogItem[] | null> {
     if (this._workerUnsupported) return null;
 
     const worker = this._ensureSearchWorker();
@@ -28,7 +28,7 @@ export class SearchDialogSearchWorker {
       matchFields,
     };
 
-    return new Promise<readonly UiSearchDialogItem[] | null>((resolve, reject) => {
+    return new Promise<readonly SearchDialogItem[] | null>((resolve, reject) => {
       const onMessage = (event: MessageEvent<unknown>): void => {
         const payload = SearchDialogSearchWorker._asWorkerResponse(event.data);
         if (!payload) return;
@@ -150,7 +150,7 @@ export class SearchDialogSearchWorker {
 
     return {
       token,
-      results: results as readonly UiSearchDialogItem[],
+      results: results as readonly SearchDialogItem[],
     };
   }
 }
