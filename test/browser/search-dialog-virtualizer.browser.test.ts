@@ -1,5 +1,5 @@
 import { expect } from '@open-wc/testing';
-import { SearchDialogVirtualizer } from '../../src/components/ui/search-dialog/internals/search-dialog-virtualizer.js';
+import { SearchDialogVirtualizer } from '../../src/search/search-dialog-virtualizer.js';
 
 describe('SearchDialogVirtualizer', () => {
   it('threshold 以下では virtualize しない', () => {

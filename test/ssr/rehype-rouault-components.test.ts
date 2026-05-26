@@ -583,7 +583,7 @@ describe('rehypeRouaultComponents', () => {
     expect(first?.tagName).to.equal('pre');
   });
 
-  it('task list の input[type=checkbox] を ui-checkbox へ変換すること', () => {
+  it('task list の input[type=checkbox] を static checkbox へ変換すること', () => {
     const tree: HastNode = {
       type: 'root',
       children: [
@@ -614,7 +614,14 @@ describe('rehypeRouaultComponents', () => {
 
     const listItem = tree.children?.[0]?.children?.[0];
     const checkbox = listItem?.children?.[0];
-    expect(checkbox?.tagName).to.equal('ui-checkbox');
+    expect(listItem?.properties?.['data-task-list-item']).to.equal('true');
+    expect(listItem?.properties?.['data-task-state']).to.equal('checked');
+    expect(checkbox?.tagName).to.equal('input');
+    expect(checkbox?.properties?.['className']).to.deep.equal([
+      'static-checkbox',
+      'task-list-item__checkbox',
+    ]);
+    expect(checkbox?.properties?.['disabled']).to.equal(true);
   });
 
   it('link-card を nested anchor が発生しない静的 HTML contract へ変換すること', () => {
@@ -623,9 +630,9 @@ describe('rehypeRouaultComponents', () => {
       children: [
         {
           type: 'element',
-          tagName: 'ui-card',
+          tagName: 'div',
           properties: {
-            'card-kind': 'link',
+            'data-link-card-source': 'true',
             href: 'https://example.com/post',
             'card-title': 'Example Post',
             description: '本文の補足',
@@ -668,9 +675,9 @@ describe('rehypeRouaultComponents', () => {
       children: [
         {
           type: 'element',
-          tagName: 'ui-card',
+          tagName: 'div',
           properties: {
-            'card-kind': 'link',
+            'data-link-card-source': 'true',
             href: '/notes/example',
             'card-title': 'Example',
           },
@@ -694,9 +701,9 @@ describe('rehypeRouaultComponents', () => {
       children: [
         {
           type: 'element',
-          tagName: 'ui-card',
+          tagName: 'div',
           properties: {
-            'card-kind': 'link',
+            'data-link-card-source': 'true',
             'card-title': 'Broken card',
           },
           children: [],
@@ -730,8 +737,9 @@ describe('rehypeRouaultComponents', () => {
       children: [
         {
           type: 'element',
-          tagName: 'ui-syntax-card',
+          tagName: 'section',
           properties: {
+            'data-syntax-card-source': 'true',
             kind: 'Method',
             name: 'useEffect',
           },
@@ -759,23 +767,26 @@ describe('rehypeRouaultComponents', () => {
       children: [
         {
           type: 'element',
-          tagName: 'ui-syntax-card',
+          tagName: 'section',
           properties: {
+            'data-syntax-card-source': 'true',
             kind: 'Method',
             name: 'useEffect',
           },
           children: [
             {
               type: 'element',
-              tagName: 'ui-syntax-section',
+              tagName: 'section',
               properties: {
+                'data-syntax-section-source': 'true',
                 label: '概要',
               },
               children: [
                 {
                   type: 'element',
-                  tagName: 'ui-syntax-field',
+                  tagName: 'div',
                   properties: {
+                    'data-syntax-field-source': 'true',
                     name: 'effect',
                   },
                   children: [],
@@ -825,8 +836,9 @@ describe('rehypeRouaultComponents', () => {
       children: [
         {
           type: 'element',
-          tagName: 'ui-syntax-card',
+          tagName: 'section',
           properties: {
+            'data-syntax-card-source': 'true',
             kind: 'Function',
             name: 'createThing',
             'heading-level': '2',
@@ -847,8 +859,9 @@ describe('rehypeRouaultComponents', () => {
         },
         {
           type: 'element',
-          tagName: 'ui-syntax-card',
+          tagName: 'section',
           properties: {
+            'data-syntax-card-source': 'true',
             kind: 'Function',
             name: 'fallbackThing',
             'heading-level': '9',
@@ -903,20 +916,21 @@ describe('rehypeRouaultComponents', () => {
       children: [
         {
           type: 'element',
-          tagName: 'ui-syntax-section',
-          properties: { label: 'Props' },
+          tagName: 'section',
+          properties: { 'data-syntax-section-source': 'true', label: 'Props' },
           children: [],
         },
         {
           type: 'element',
-          tagName: 'ui-syntax-section',
-          properties: { label: 'Returns' },
+          tagName: 'section',
+          properties: { 'data-syntax-section-source': 'true', label: 'Returns' },
           children: [],
         },
         {
           type: 'element',
-          tagName: 'ui-syntax-field',
+          tagName: 'div',
           properties: {
+            'data-syntax-field-source': 'true',
             name: 'effect',
             type: '() => void',
             default: 'noop',
@@ -925,8 +939,9 @@ describe('rehypeRouaultComponents', () => {
         },
         {
           type: 'element',
-          tagName: 'ui-syntax-field',
+          tagName: 'div',
           properties: {
+            'data-syntax-field-source': 'true',
             name: 'requiredValue',
             required: 'true',
           },
@@ -997,7 +1012,7 @@ describe('rehypeRouaultComponents', () => {
       getClassList(node.properties?.['className']).includes('score__skeleton'),
     );
 
-    expect(score?.properties?.['data-score-src']).to.equal('javascript:alert(1)');
+    expect(score?.properties?.['data-score-src']).to.equal(undefined);
     expect(score?.properties?.['data-hydration-key']).to.equal('score-scroll-enhancer');
     expect(scroll?.properties?.['aria-label']).to.equal('譜面');
     expect(scroll?.properties?.['role']).to.equal(undefined);

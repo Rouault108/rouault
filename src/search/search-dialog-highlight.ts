@@ -1,5 +1,5 @@
 import { html, nothing, type TemplateResult } from 'lit';
-import type { HighlightPart, UiSearchDialogItem } from '../search-dialog.types.js';
+import type { HighlightPart, UiSearchDialogItem } from './search-dialog-types.js';
 
 export type SearchDialogHighlightRenderValue =
   | string

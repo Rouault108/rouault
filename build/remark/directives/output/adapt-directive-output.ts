@@ -50,8 +50,11 @@ const adaptCalloutOutput = (payload: CalloutPayload): RemarkOutputBinding => ({
 });
 
 const adaptCodeGroupOutput = (payload: CodeGroupPayload): RemarkOutputBinding => ({
-  hName: 'ui-code-group',
-  hProperties: toOptionalProps([['aria-label', payload.ariaLabel]]),
+  hName: 'section',
+  hProperties: toOptionalProps([
+    ['data-code-group-source', 'true'],
+    ['aria-label', payload.ariaLabel],
+  ]),
 });
 
 const adaptCodePreviewOutput = (payload: CodePreviewPayload): RemarkOutputBinding => ({
@@ -97,13 +100,11 @@ const adaptSlotOutput = (
 });
 
 const adaptDetailsOutput = (payload: DetailsPayload): RemarkOutputBinding => ({
-  hName: 'ui-details',
+  hName: 'details',
   hProperties: toOptionalProps([
+    ['data-details-source', 'true'],
     ['summary', payload.summary],
-    ['aria-label', payload.ariaLabel],
     ['open', payload.open ? true : undefined],
-    ['variant', payload.variant],
-    ['region', payload.region ? true : undefined],
   ]),
 });
 
@@ -124,8 +125,9 @@ const adaptInfoBoxOutput = (payload: InfoBoxPayload): RemarkOutputBinding => ({
 });
 
 const adaptLinkCardOutput = (payload: LinkCardPayload): RemarkOutputBinding => ({
-  hName: 'ui-card',
+  hName: 'div',
   hProperties: toOptionalProps([
+    ['data-link-card-source', 'true'],
     ['url', payload.url],
     ['title', payload.title],
     ['description', payload.description],
@@ -143,7 +145,6 @@ const adaptScoreOutput = (payload: ScorePayload): RemarkOutputBinding => ({
     ['data-score-label', payload.label],
     ['data-score-description', payload.description],
     ['data-score-aspect-ratio', payload.aspectRatio],
-    ['data-score-loading', payload.loading],
     ['data-score-primary', payload.primary ? 'true' : undefined],
   ]),
 });

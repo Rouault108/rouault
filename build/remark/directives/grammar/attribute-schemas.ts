@@ -38,7 +38,7 @@ export const directiveAttributeSchemas: Record<DirectiveName, DirectiveAttribute
     ],
   },
   details: {
-    allowedKeys: ['aria-label', 'summary', 'open', 'variant', 'region'],
+    allowedKeys: ['summary', 'open'],
   },
   'info-box': {
     allowedKeys: ['heading', 'icon', 'heading-level', 'landmark', 'variant', 'density'],
@@ -47,7 +47,7 @@ export const directiveAttributeSchemas: Record<DirectiveName, DirectiveAttribute
     allowedKeys: ['url', 'title', 'description', 'image', 'site-name'],
   },
   score: {
-    allowedKeys: ['src', 'caption', 'label', 'description', 'aspect-ratio', 'loading', 'primary'],
+    allowedKeys: ['src', 'caption', 'label', 'description', 'aspect-ratio', 'primary'],
   },
   tabs: {
     allowedKeys: [

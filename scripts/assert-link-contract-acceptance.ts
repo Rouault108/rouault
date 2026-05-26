@@ -303,12 +303,12 @@ requireContains(
   'SearchResultItem must carry browser display renderHref',
 );
 requireContains(
-  'src/components/ui/search-dialog/search-dialog.types.ts',
+  'src/search/search-dialog-types.ts',
   'renderHref: string',
   'Search dialog item and selected detail must use renderHref, not legacy url',
 );
 forbidPattern(
-  'src/components/ui/search-dialog/search-dialog.types.ts',
+  'src/search/search-dialog-types.ts',
   /\burl:\s*string/u,
   'Search dialog public item/detail contract must not expose legacy url',
 );

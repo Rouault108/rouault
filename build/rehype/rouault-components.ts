@@ -7,14 +7,15 @@ import {
   serializeMediaSources,
   type ResolvedImageAsset,
 } from '../media/image-resolver.js';
-import { LUCIDE_SUBSET } from '../../src/generated/lucide-subset.js';
 import { type HastNode } from './hast-utils.js';
+import { createStaticIconHast } from './static-icon-hast.js';
 import {
   canonicalizeFootnoteId,
   createFootnoteRefId,
   parseFootnoteBackrefHref,
   parseFootnoteRefHref,
 } from '../../shared/footnotes/footnote-id.js';
+import { isIconName } from '../../shared/icons/icon-paths.js';
 
 interface FootnoteDefinition {
   readonly refId: string;
@@ -45,6 +46,8 @@ interface HydrationDirective {
   readonly capability: 'progressive' | 'interactive' | 'sandboxed';
   readonly trigger: 'initial' | 'post-commit' | 'visible' | 'interaction';
 }
+
+let taskListItemCounter = 0;
 
 const isElement = (node: HastNode, tagName?: string): boolean => {
   if (node.type !== 'element' || typeof node.tagName !== 'string') {
@@ -102,8 +105,6 @@ const getTextContent = (node: HastNode): string => {
 
 const isWhitespaceText = (node: HastNode): boolean =>
   node.type === 'text' && (typeof node.value !== 'string' || node.value.trim().length === 0);
-
-const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
 
 const createTextNode = (value: string): HastNode => ({
   type: 'text',
@@ -172,8 +173,6 @@ const parse5NodeToHast = (node: Parse5Node): HastNode | null => {
   return createElement(node.tagName, properties, children);
 };
 
-const svgIconCache = new Map<string, HastNode | null>();
-
 const createInlineIcon = (
   iconName: string | undefined,
   className: string,
@@ -184,34 +183,19 @@ const createInlineIcon = (
   }
 
   const normalizedIconName = iconName.trim();
-  const cacheKey = `${className}:${dataAttributeName}:${normalizedIconName}`;
-  if (svgIconCache.has(cacheKey)) {
-    const cached = svgIconCache.get(cacheKey);
-    return cached ? cloneNode(cached) : null;
-  }
-
-  const iconDefinition = (LUCIDE_SUBSET.icons as Record<string, { body?: string }>)[
-    normalizedIconName
-  ];
-  if (!iconDefinition?.body) {
-    svgIconCache.set(cacheKey, null);
+  if (!isIconName(normalizedIconName)) {
     return null;
   }
 
-  const fragment = parse5.parseFragment(
-    `<svg class="${className}" ${dataAttributeName}="${normalizedIconName}" viewBox="0 0 ${String(LUCIDE_SUBSET.width)} ${String(LUCIDE_SUBSET.height)}" fill="none" aria-hidden="true" focusable="false">${iconDefinition.body}</svg>`,
+  return createElement(
+    'span',
     {
-      sourceCodeLocationInfo: false,
+      className: [className, 'static-icon'],
+      [dataAttributeName]: normalizedIconName,
+      'aria-hidden': 'true',
     },
+    [createStaticIconHast(normalizedIconName)],
   );
-
-  const rootNode =
-    fragment.childNodes
-      .map((child) => parse5NodeToHast(child))
-      .find((child): child is HastNode => child !== null) ?? null;
-
-  svgIconCache.set(cacheKey, rootNode);
-  return rootNode ? cloneNode(rootNode) : null;
 };
 
 const CALLOUT_KIND_CONFIG = {
@@ -275,13 +259,8 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
   switch (node.tagName) {
     case 'layout-sidebar':
     case 'layout-toc':
-    case 'ui-checkbox':
-    case 'ui-code-group':
     case 'ui-tabs':
       return { capability: 'interactive', trigger: 'initial' };
-
-    case 'ui-code-block':
-      return { capability: 'progressive', trigger: 'initial' };
 
     case 'ui-code-preview': {
       const controls = pickOptionalString(node.properties?.['controls']);
@@ -296,9 +275,6 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
 
     case 'ui-preview-sandbox':
       return { capability: 'sandboxed', trigger: 'interaction' };
-
-    case 'ui-score':
-      return { capability: 'progressive', trigger: 'visible' };
 
     case 'figure':
       if (
@@ -736,6 +712,29 @@ const resolveStaticLinkKindLike = (href: string): string =>
 const isScoreFigure = (node: HastNode): boolean =>
   isElement(node, 'figure') && node.properties?.['data-score'] !== undefined;
 
+const hasStaticSourceProperty = (node: HastNode, kebabName: string, camelName: string): boolean =>
+  node.properties?.[kebabName] !== undefined || node.properties?.[camelName] !== undefined;
+
+const isLinkCardSource = (node: HastNode): boolean =>
+  isElement(node, 'div') &&
+  hasStaticSourceProperty(node, 'data-link-card-source', 'dataLinkCardSource');
+
+const isDetailsSource = (node: HastNode): boolean =>
+  isElement(node, 'details') &&
+  hasStaticSourceProperty(node, 'data-details-source', 'dataDetailsSource');
+
+const isSyntaxFieldSource = (node: HastNode): boolean =>
+  isElement(node, 'div') &&
+  hasStaticSourceProperty(node, 'data-syntax-field-source', 'dataSyntaxFieldSource');
+
+const isSyntaxSectionSource = (node: HastNode): boolean =>
+  isElement(node, 'section') &&
+  hasStaticSourceProperty(node, 'data-syntax-section-source', 'dataSyntaxSectionSource');
+
+const isSyntaxCardSource = (node: HastNode): boolean =>
+  isElement(node, 'section') &&
+  hasStaticSourceProperty(node, 'data-syntax-card-source', 'dataSyntaxCardSource');
+
 const normalizeScoreAspectRatio = (value: unknown): string | undefined => {
   const text = pickOptionalString(value);
   if (!text) {
@@ -769,12 +768,7 @@ const toStaticScore = (node: HastNode, context: SurfaceNormalizationContext): vo
 
   const nextProperties: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(properties)) {
-    if (
-      key === 'id' ||
-      key.startsWith('aria-') ||
-      key === 'role' ||
-      key.startsWith('data-score')
-    ) {
+    if (key === 'id' || key.startsWith('aria-') || key === 'role') {
       nextProperties[key] = value;
     }
   }
@@ -992,47 +986,30 @@ const toUiTaskListItem = (node: HastNode): void => {
     (child, index) => index > checkboxIndex && (isElement(child, 'ul') || isElement(child, 'ol')),
   );
   const contentEnd = nestedListIndex < 0 ? children.length : nestedListIndex;
-  const labelNodes = children.slice(checkboxIndex + 1, contentEnd);
-  const label = normalizeWhitespace(labelNodes.map((item) => getTextContent(item)).join(' '));
-
-  const hostProperties: Record<string, unknown> = {};
-  if (toBooleanAttribute(checkboxNode.properties['checked'])) {
-    hostProperties['checked'] = true;
-  }
-  if (toBooleanAttribute(checkboxNode.properties['disabled'])) {
-    hostProperties['disabled'] = true;
-  }
-  if (toBooleanAttribute(checkboxNode.properties['required'])) {
-    hostProperties['required'] = true;
-  }
-
-  const name = pickOptionalString(checkboxNode.properties['name']);
-  if (name) {
-    hostProperties['name'] = name;
-  }
-  const value = pickOptionalString(checkboxNode.properties['value']);
-  if (value) {
-    hostProperties['value'] = value;
-  }
-  if (label.length > 0) {
-    hostProperties['label'] = label;
-  }
-
+  const checked = toBooleanAttribute(checkboxNode.properties['checked']);
+  const labelNodes = children.slice(checkboxIndex + 1, contentEnd).map((child) => cloneNode(child));
   const tailChildren = nestedListIndex < 0 ? [] : children.slice(nestedListIndex);
+  const labelId = `task-list-item-label-${String(++taskListItemCounter)}`;
+  node.properties = {
+    ...(node.properties ?? {}),
+    className: [
+      ...getClassList(node.properties?.['className']).filter((className) => className !== 'contains-task-list'),
+      'task-list-item',
+    ],
+    'data-task-list-item': 'true',
+    'data-task-state': checked ? 'checked' : 'unchecked',
+  };
   node.children = [
-    {
-      type: 'element',
-      tagName: 'ui-checkbox',
-      properties: hostProperties,
-      children: [],
-    },
+    createElement('input', {
+      className: ['static-checkbox', 'task-list-item__checkbox'],
+      type: 'checkbox',
+      ...(checked ? { checked: true } : {}),
+      disabled: true,
+      'aria-labelledby': labelId,
+    }),
+    createElement('span', { id: labelId, className: ['task-list-item__content'] }, labelNodes),
     ...tailChildren,
   ];
-
-  const checkboxHost = node.children[0];
-  if (checkboxHost && isElement(checkboxHost, 'ui-checkbox')) {
-    setHydrationDirective(checkboxHost, { capability: 'interactive', trigger: 'initial' });
-  }
 };
 
 const normalizeHighlightMark = (node: HastNode): void => {
@@ -2147,15 +2124,15 @@ export function rehypeRouaultComponents() {
             toStaticTable(current);
           } else if (current.tagName === 'ui-blockquote') {
             toStaticBlockquote(current);
-          } else if (current.tagName === 'ui-card') {
+          } else if (isLinkCardSource(current)) {
             toStaticLinkCard(current);
-          } else if (current.tagName === 'ui-details') {
+          } else if (isDetailsSource(current)) {
             toStaticDetails(current);
-          } else if (current.tagName === 'ui-syntax-field') {
+          } else if (isSyntaxFieldSource(current)) {
             toStaticSyntaxField(current);
-          } else if (current.tagName === 'ui-syntax-section') {
+          } else if (isSyntaxSectionSource(current)) {
             toStaticSyntaxSection(current, surfaceContext);
-          } else if (current.tagName === 'ui-syntax-card') {
+          } else if (isSyntaxCardSource(current)) {
             toStaticSyntaxCard(current);
           } else if (
             current.tagName === 'ui-callout' ||

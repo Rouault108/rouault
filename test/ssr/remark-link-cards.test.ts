@@ -77,8 +77,9 @@ describe('remarkLinkCards', () => {
         {
           type: 'rouaultDirectiveLinkCard',
           data: {
-            hName: 'ui-card',
+            hName: 'div',
             hProperties: {
+              'data-link-card-source': 'true',
               url: 'https://example.com/post',
             },
           },
@@ -169,8 +170,9 @@ describe('remarkLinkCards', () => {
         {
           type: 'rouaultDirectiveLinkCard',
           data: {
-            hName: 'ui-card',
+            hName: 'div',
             hProperties: {
+              'data-link-card-source': 'true',
               url: 'https://example.com/post',
               title: 'Author Title',
             },

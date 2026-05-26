@@ -3,9 +3,9 @@ import type {
   UiSearchDialogItem,
   UiSearchDialogSearchError,
   UiSearchDialogSearcher,
-} from '../../src/components/ui/search-dialog/search-dialog.types.js';
-import { SearchDialogSearchSession } from '../../src/components/ui/search-dialog/internals/search-dialog-search-session.js';
-import { SEARCH_DEBOUNCE_MS } from '../../src/components/ui/search-dialog/search-dialog.constants.js';
+} from '../../src/search/search-dialog-types.js';
+import { SearchDialogSearchSession } from '../../src/search/search-dialog-search-session.js';
+import { SEARCH_DEBOUNCE_MS } from '../../src/search/search-dialog-constants.js';
 
 interface SessionState {
   query: string;

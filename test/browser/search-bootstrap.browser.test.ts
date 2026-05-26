@@ -3,8 +3,8 @@ import { expect } from '@open-wc/testing';
 import { initSearch, resetSearchBootstrapForTest } from '../../src/search/bootstrap.js';
 import { createSearchCore } from '../../src/search/search-core.js';
 import { searchReturnToReadingEventName, type SearchReturnToReadingEventDetail } from '../../src/search/search-dialog-events.js';
-import type { InteractionModality } from '../../src/components/ui/search-dialog/internals/interaction-modality.js';
-import type { UiSearchDialogSearcher } from '../../src/components/ui/search-dialog/search-dialog.types.js';
+import type { InteractionModality } from '../../src/search/interaction-modality.js';
+import type { UiSearchDialogSearcher } from '../../src/search/search-dialog-types.js';
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
 import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
@@ -220,7 +220,7 @@ describe('search-bootstrap', () => {
     initSearch(createTestInitSearchOptions());
 
     dialog.dispatchEvent(
-      new CustomEvent('ui-search-dialog-selected', {
+      new CustomEvent('search-dialog:selected', {
         bubbles: true,
         composed: true,
         detail: {

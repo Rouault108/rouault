@@ -67,8 +67,9 @@ const adaptSyntaxFieldOutput = (
   return preserveNodeMeta(node, {
     ...preserveNodeType(node),
     data: {
-      hName: 'ui-syntax-field',
+      hName: 'div',
       hProperties: toOptionalProps([
+        ['data-syntax-field-source', 'true'],
         ['name', payload.name],
         ['type', payload.type],
         ['required', payload.required ? true : undefined],
@@ -122,8 +123,9 @@ const adaptSyntaxSectionOutput = (
   return preserveNodeMeta(node, {
     ...preserveNodeType(node),
     data: {
-      hName: 'ui-syntax-section',
+      hName: 'section',
       hProperties: {
+        'data-syntax-section-source': 'true',
         label: payload.label,
       },
     },
@@ -165,8 +167,9 @@ export const adaptSyntaxCardOutput = (
   return preserveNodeMeta(node, {
     ...preserveNodeType(node),
     data: {
-      hName: 'ui-syntax-card',
+      hName: 'section',
       hProperties: toOptionalProps([
+        ['data-syntax-card-source', 'true'],
         ['kind', payload.cardKind],
         ['name', payload.name],
         ['data-lang', resolveSyntaxCardLang(node, payload)],

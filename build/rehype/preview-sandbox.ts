@@ -170,8 +170,9 @@ const createCodeAreaNode = (snippets: PreviewSnippet[], label: string): HastNode
 
   return {
     type: 'element',
-    tagName: 'ui-code-group',
+    tagName: 'section',
     properties: {
+      'data-code-group-source': 'true',
       'aria-label': label,
     },
     children: generatedChildren,

@@ -163,7 +163,7 @@ describe('remarkRouaultDirectives', () => {
     expect(run).to.throw('[markdown] callout 属性 "aria-label" は未対応です');
   });
 
-  it('code-group ディレクティブを ui-code-group ノードへ変換すること', () => {
+  it('code-group ディレクティブを static source ノードへ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -194,7 +194,8 @@ describe('remarkRouaultDirectives', () => {
 
     expect(tree.children).to.have.length(1);
     const group = tree.children?.[0];
-    expect(group?.data?.hName).to.equal('ui-code-group');
+    expect(group?.data?.hName).to.equal('section');
+    expect(group?.data?.hProperties?.['data-code-group-source']).to.equal('true');
     expect(group?.data?.hProperties?.['aria-label']).to.equal('比較');
     expect(group?.children).to.have.length(2);
 
@@ -241,7 +242,7 @@ describe('remarkRouaultDirectives', () => {
     );
   });
 
-  it('details ディレクティブを ui-details ノードへ変換すること', () => {
+  it('details ディレクティブを native details source ノードへ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -250,7 +251,7 @@ describe('remarkRouaultDirectives', () => {
           children: [
             {
               type: 'text',
-              value: '::details{summary="補足情報" variant="bordered" open="true" region="true"}',
+              value: '::details{summary="補足情報" open="true"}',
             },
           ],
         },
@@ -268,14 +269,13 @@ describe('remarkRouaultDirectives', () => {
     remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
 
     const details = tree.children?.[0];
-    expect(details?.data?.hName).to.equal('ui-details');
+    expect(details?.data?.hName).to.equal('details');
+    expect(details?.data?.hProperties?.['data-details-source']).to.equal('true');
     expect(details?.data?.hProperties?.['summary']).to.equal('補足情報');
-    expect(details?.data?.hProperties?.['variant']).to.equal('bordered');
     expect(details?.data?.hProperties?.['open']).to.equal(true);
-    expect(details?.data?.hProperties?.['region']).to.equal(true);
   });
 
-  it('details ディレクティブの icon-only 利用で aria-label を転送すること', () => {
+  it('details ディレクティブの aria-label 利用は build error にすること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -294,12 +294,9 @@ describe('remarkRouaultDirectives', () => {
       ],
     };
 
-    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
-
-    const details = tree.children?.[0];
-    expect(details?.data?.hName).to.equal('ui-details');
-    expect(details?.data?.hProperties?.['aria-label']).to.equal('補足を開閉');
-    expect(details?.data?.hProperties?.['open']).to.equal(true);
+    expect(() => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    }).to.throw('details 属性 "aria-label" は未対応です');
   });
 
   it('details ディレクティブで summary と aria-label の両方がない場合はエラーにすること', () => {
@@ -353,7 +350,7 @@ describe('remarkRouaultDirectives', () => {
       remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
     };
 
-    expect(run).to.throw('[markdown] details では summary と aria-label を同時指定できません');
+    expect(run).to.throw('[markdown] details 属性 "aria-label" は未対応です');
   });
 
   it('details ディレクティブの icon-only 利用で空の aria-label はエラーにすること', () => {
@@ -379,9 +376,7 @@ describe('remarkRouaultDirectives', () => {
       remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
     };
 
-    expect(run).to.throw(
-      '[markdown] details の icon-only 利用では aria-label に空文字を指定できません',
-    );
+    expect(run).to.throw('[markdown] details 属性 "aria-label" は未対応です');
   });
 
   it('info-box ディレクティブを section[data-info-box] ノードへ変換すること', () => {
@@ -421,7 +416,7 @@ describe('remarkRouaultDirectives', () => {
     expect(infoBox?.data?.hProperties?.['data-density']).to.equal('compact');
   });
 
-  it('link-card ディレクティブを終端なしの ui-card ノードへ変換すること', () => {
+  it('link-card ディレクティブを終端なしの static source ノードへ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -446,7 +441,8 @@ describe('remarkRouaultDirectives', () => {
 
     const card = tree.children?.[0];
     const paragraph = tree.children?.[1];
-    expect(card?.data?.hName).to.equal('ui-card');
+    expect(card?.data?.hName).to.equal('div');
+    expect(card?.data?.hProperties?.['data-link-card-source']).to.equal('true');
     expect(card?.data?.hProperties?.['url']).to.equal('https://example.com/post');
     expect(card?.data?.hProperties?.['title']).to.equal('著者指定タイトル');
     expect(card?.data?.hProperties?.['description']).to.equal('補足文');
@@ -482,7 +478,8 @@ describe('remarkRouaultDirectives', () => {
     remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
 
     const card = tree.children?.[0];
-    expect(card?.data?.hName).to.equal('ui-card');
+    expect(card?.data?.hName).to.equal('div');
+    expect(card?.data?.hProperties?.['data-link-card-source']).to.equal('true');
     expect(card?.data?.hProperties?.['url']).to.equal('https://example.com/post');
     expect(card?.data?.hProperties?.['title']).to.equal('著者指定タイトル');
     expect(card?.data?.hProperties?.['description']).to.equal('補足文');
@@ -499,7 +496,7 @@ describe('remarkRouaultDirectives', () => {
             {
               type: 'text',
               value:
-                '::score{src="/media/score/a.svg" label="譜例" caption="譜例1" description="詳細説明" aspect-ratio="4/1" loading="eager" primary="true"}',
+                '::score{src="/media/score/a.svg" label="譜例" caption="譜例1" description="詳細説明" aspect-ratio="4/1" primary="true"}',
             },
           ],
         },
@@ -520,7 +517,7 @@ describe('remarkRouaultDirectives', () => {
     expect(score?.data?.hProperties?.['data-score-caption']).to.equal('譜例1');
     expect(score?.data?.hProperties?.['data-score-description']).to.equal('詳細説明');
     expect(score?.data?.hProperties?.['data-score-aspect-ratio']).to.equal('4/1');
-    expect(score?.data?.hProperties?.['data-score-loading']).to.equal('eager');
+    expect(score?.data?.hProperties?.['data-score-loading']).to.equal(undefined);
     expect(score?.data?.hProperties?.['data-score-primary']).to.equal('true');
   });
 
@@ -2416,7 +2413,7 @@ describe('remarkRouaultDirectives', () => {
     );
   });
 
-  it('syntax-card family を ui-syntax-card / ui-syntax-section / ui-syntax-field 構造へ変換すること', () => {
+  it('syntax-card family を static source 構造へ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -2508,7 +2505,8 @@ describe('remarkRouaultDirectives', () => {
 
     expect(tree.children).to.have.length(1);
     const syntaxCard = tree.children?.[0];
-    expect(syntaxCard?.data?.hName).to.equal('ui-syntax-card');
+    expect(syntaxCard?.data?.hName).to.equal('section');
+    expect(syntaxCard?.data?.hProperties?.['data-syntax-card-source']).to.equal('true');
     expect(syntaxCard?.data?.hProperties?.['kind']).to.equal('Method');
     expect(syntaxCard?.data?.hProperties?.['name']).to.equal('useEffect');
     expect(syntaxCard?.data?.hProperties?.['data-lang']).to.equal('ts');
@@ -2523,17 +2521,20 @@ describe('remarkRouaultDirectives', () => {
     );
 
     const section = syntaxCard?.children?.[1];
-    expect(section?.data?.hName).to.equal('ui-syntax-section');
+    expect(section?.data?.hName).to.equal('section');
+    expect(section?.data?.hProperties?.['data-syntax-section-source']).to.equal('true');
     expect(section?.data?.hProperties?.['label']).to.equal('パラメータ');
 
     const fields = section?.children?.[1];
     expect(fields?.data?.hName).to.equal('dl');
     const firstField = fields?.children?.[0];
     const secondField = fields?.children?.[1];
-    expect(firstField?.data?.hName).to.equal('ui-syntax-field');
+    expect(firstField?.data?.hName).to.equal('div');
+    expect(firstField?.data?.hProperties?.['data-syntax-field-source']).to.equal('true');
     expect(firstField?.data?.hProperties?.['name']).to.equal('effect');
     expect(firstField?.data?.hProperties?.['required']).to.equal(true);
-    expect(secondField?.data?.hName).to.equal('ui-syntax-field');
+    expect(secondField?.data?.hName).to.equal('div');
+    expect(secondField?.data?.hProperties?.['data-syntax-field-source']).to.equal('true');
     expect(secondField?.data?.hProperties?.['name']).to.equal('deps');
     expect(secondField?.data?.hProperties?.['default']).to.equal('[]');
     expect(secondField?.data?.hProperties?.['required']).to.equal(undefined);

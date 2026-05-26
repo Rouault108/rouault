@@ -77,7 +77,7 @@ describe('rehypeShikiCodeBlocks', () => {
     await rehypeShikiCodeBlocks()(tree);
 
     const root = tree.children?.[0];
-    expect(root?.tagName).toBe('div');
+    expect(root?.tagName).toBe('figure');
     expect(root?.properties?.['data-code-block-root']).toBe('true');
     expect(root?.properties?.['data-hydration-key']).toBe('code-block-enhancer');
     expect(root?.properties?.['data-hydration-capability']).toBe('progressive');
@@ -152,12 +152,12 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(grouped?.tagName).toBe('pre');
     expect(grouped?.properties?.['data-hydration-key']).toBeUndefined();
 
-    expect(firstStandalone?.tagName).toBe('div');
+    expect(firstStandalone?.tagName).toBe('figure');
     expect(firstStandalone?.properties?.['data-hydration-key']).toBe('code-block-enhancer');
     expect(firstStandalone?.properties?.['data-hydration-capability']).toBe('progressive');
     expect(firstStandalone?.properties?.['data-hydration-trigger']).toBe('post-commit');
 
-    expect(secondStandalone?.tagName).toBe('div');
+    expect(secondStandalone?.tagName).toBe('figure');
     expect(secondStandalone?.properties?.['data-hydration-key']).toBeUndefined();
     expect(secondStandalone?.properties?.['data-hydration-capability']).toBeUndefined();
     expect(secondStandalone?.properties?.['data-hydration-trigger']).toBeUndefined();
@@ -199,7 +199,7 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(signaturePre?.children?.[0]?.value).toBe('function useEffect(): void');
 
     const standaloneRoot = tree.children?.[1];
-    expect(standaloneRoot?.tagName).toBe('div');
+    expect(standaloneRoot?.tagName).toBe('figure');
     expect(standaloneRoot?.properties?.['data-code-block-root']).toBe('true');
   });
 
@@ -213,7 +213,7 @@ describe('rehypeShikiCodeBlocks', () => {
 
     const root = tree.children?.[0];
     const pre = root?.children?.find((child) => child.tagName === 'pre');
-    expect(root?.tagName).toBe('div');
+    expect(root?.tagName).toBe('figure');
     expect(pre?.tagName).toBe('pre');
     expect(readNodeClassList(pre)).toContain('shiki');
     expect(pre?.properties?.['data-code-language']).toBe('text');

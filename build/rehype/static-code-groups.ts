@@ -25,6 +25,9 @@ const pickOptionalString = (value: unknown): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
+const hasSourceProperty = (node: HastNode, kebabName: string, camelName: string): boolean =>
+  node.properties?.[kebabName] !== undefined || node.properties?.[camelName] !== undefined;
+
 const cloneNode = (node: HastNode): HastNode => {
   const cloned: HastNode = { ...node };
   if (node.properties) {
@@ -189,7 +192,12 @@ export function rehypeStaticCodeGroups(): (tree: unknown) => void {
         }
       }
 
-      if (!isElement(node, 'ui-code-group')) {
+      if (
+        !(
+          isElement(node, 'section') &&
+          hasSourceProperty(node, 'data-code-group-source', 'dataCodeGroupSource')
+        )
+      ) {
         return;
       }
 
@@ -218,6 +226,8 @@ export function rehypeStaticCodeGroups(): (tree: unknown) => void {
       const selectedKey = items[0]?.key ?? '';
       const selectedCopySourceId = `${groupId}-copy-source-0`;
       const originalProperties = { ...(node.properties ?? {}) };
+      delete originalProperties['data-code-group-source'];
+      delete originalProperties['dataCodeGroupSource'];
 
       node.tagName = 'section';
       node.properties = {

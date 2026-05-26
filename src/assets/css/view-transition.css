@@ -1,0 +1,26 @@
+@supports (view-transition-name: root) {
+  @view-transition {
+    navigation: auto;
+  }
+
+  ::view-transition-group(*) {
+    animation-duration: 0.2s;
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    mix-blend-mode: var(--view-transition-fade);
+  }
+}
+
+@supports not (view-transition-name: root) {
+  .page-transition {
+    animation: fade-in var(--duration-normal) var(--ease-out);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

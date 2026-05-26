@@ -92,7 +92,7 @@ const findOption = <T extends string>(
  * 「See it, then understand it」の読み順を実現します。
  *
  * @slot preview - レンダリング結果を含む任意のHTML
- * @slot         - コードエリア（pre[data-code-block] または section[data-code-group] を配置）
+ * @slot         - コードエリア（figure[data-code-block-root] または section[data-code-group] を配置）
  * @slot toolbar - ヘッダー右側に配置するオプションのアクション領域
  */
 @customElement('ui-code-preview')
@@ -514,7 +514,7 @@ export class CodePreview extends LitElement {
 
     /* ─── Code Area ─── */
 
-    ::slotted([data-code-block]) {
+    ::slotted([data-code-block-root]) {
       width: 100% !important;
       margin: 0 !important;
       border-top-left-radius: 0 !important;

@@ -10,11 +10,6 @@ const manifestPath = path.join(projectRoot, 'custom-elements.json');
 const pnpmBin = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 
 const STATIC_FIRST_MANIFEST_EXCLUDED_PATHS = new Set([
-  'src/components/corpus/corpora-overview-page.ts',
-  'src/components/corpus/corpus-page.ts',
-  'src/components/layout/layout-footer.ts',
-  'src/components/search/search-page.ts',
-  'src/components/tag/tag-page.ts',
   'src/components/ui/article-header/article-header.ts',
   'src/components/ui/badge/badge.ts',
   'src/components/ui/banner/banner.ts',
@@ -24,7 +19,6 @@ const STATIC_FIRST_MANIFEST_EXCLUDED_PATHS = new Set([
   'src/components/ui/card/card.ts',
   'src/components/ui/code-group/code-group.ts',
   'src/components/ui/codeblock/codeblock.ts',
-  'src/components/ui/copy-button/copy-button.ts',
   'src/components/ui/details/details.ts',
   'src/components/ui/divider/divider.ts',
   'src/components/ui/empty-state/empty-state.ts',
@@ -39,7 +33,6 @@ const STATIC_FIRST_MANIFEST_EXCLUDED_PATHS = new Set([
   'src/components/ui/pagination/pagination.ts',
   'src/components/ui/progress/progress.ts',
   'src/components/ui/score/score.ts',
-  'src/components/ui/search-dialog/search-dialog.ts',
   'src/components/ui/search-field/search-field.ts',
   'src/components/ui/search-trigger/search-trigger.ts',
   'src/components/ui/select/select.ts',

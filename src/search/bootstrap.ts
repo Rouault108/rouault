@@ -3,14 +3,14 @@ import type {
   UiSearchDialogCloseReason,
   UiSearchDialogSearcher,
   UiSearchDialogSelectedDetail,
-} from '../components/ui/search-dialog/search-dialog.types.js';
+} from './search-dialog-types.js';
 import {
   dispatchSearchReturnToReading,
   handleSearchReturnToReadingEvent,
 } from './navigation.js';
 import { createSearchCore, type SearchCore } from './search-core.js';
 import { searchReturnToReadingEventName } from './search-dialog-events.js';
-import type { InteractionModality } from '../components/ui/search-dialog/internals/interaction-modality.js';
+import type { InteractionModality } from './interaction-modality.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import type { RuntimeEnvironment } from '../../shared/runtime/runtime-environment.js';
 import type { LoadedInternalDocumentRouteManifestState } from '../router/internal-document-route-manifest-loader.js';
@@ -22,6 +22,7 @@ import {
   getSearchBootstrapUnavailableMessage,
   type SearchBootstrapUnavailableReason,
 } from '../../shared/search/search-unavailable-reason.js';
+import { BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE } from './search-dialog-constants.js';
 
 interface SearchDialogElement extends HTMLElement {
   opened?: boolean;
@@ -147,7 +148,7 @@ const requestSearchDialogOpen = (
   dialog.captureOpenModality?.(modality);
   closePipelineState = null;
   dialog.removeAttribute('data-closing');
-  document.body.dataset['uiSearchDialogOpen'] = 'true';
+  document.body.setAttribute(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE, '');
   if (typeof dialog.requestOpen === 'function') {
     dialog.requestOpen(trigger);
   } else if (typeof dialog.showModal === 'function') {
@@ -167,7 +168,7 @@ const dispatchSearchDialogClosed = (
   reason: UiSearchDialogCloseReason,
 ): void => {
   dialog.dispatchEvent(
-    new CustomEvent('ui-search-dialog-closed', {
+    new CustomEvent('search-dialog:closed', {
       detail: { reason },
       bubbles: true,
       composed: true,
@@ -187,7 +188,7 @@ const completeSearchDialogClose = (
   dialog.removeAttribute('data-closing');
   dialog.opened = false;
   syncSearchTriggerExpanded(false);
-  document.body.removeAttribute('data-ui-search-dialog-open');
+  document.body.removeAttribute(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE);
   dispatchSearchDialogClosed(dialog, reason);
   if (reason !== 'selection' && activeSearchDialogTrigger?.isConnected === true) {
     activeSearchDialogTrigger.focus();
@@ -553,7 +554,7 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
       return;
     }
     dialog.dispatchEvent(
-      new CustomEvent<UiSearchDialogSelectedDetail>('ui-search-dialog-selected', {
+      new CustomEvent<UiSearchDialogSelectedDetail>('search-dialog:selected', {
         detail: {
           id: item.id,
           renderHref: item.renderHref,
@@ -758,11 +759,11 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
   dialog.addEventListener('cancel', onCancel, { signal });
   dialog.addEventListener('pointerdown', onBackdropPointer, { signal });
   dialog.addEventListener('close', onNativeClose, { signal });
-  dialog.addEventListener('ui-search-dialog-selected', onSelected, { signal });
+  dialog.addEventListener('search-dialog:selected', onSelected, { signal });
   dialog.addEventListener(searchReturnToReadingEventName, onReturnToReading, { signal });
-  dialog.addEventListener('ui-search-dialog-open-requested', onOpenRequested, { signal });
-  dialog.addEventListener('ui-search-dialog-close-requested', onCloseRequested, { signal });
-  dialog.addEventListener('ui-search-dialog-query-changed', onQueryChanged, { signal });
+  dialog.addEventListener('search-dialog:open-requested', onOpenRequested, { signal });
+  dialog.addEventListener('search-dialog:close-requested', onCloseRequested, { signal });
+  dialog.addEventListener('search-dialog:query-changed', onQueryChanged, { signal });
   document.addEventListener('keydown', onKeydown, { signal });
 
   return { status: 'ready', searchCore: controller };
@@ -877,9 +878,9 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
     event.preventDefault();
     requestSearchDialogClose(dialog, { reason: 'escape' });
   }, { signal });
-  dialog.addEventListener('ui-search-dialog-open-requested', onOpenRequested, { signal });
-  dialog.addEventListener('ui-search-dialog-close-requested', onCloseRequested, { signal });
-  dialog.addEventListener('ui-search-dialog-query-changed', onQueryChanged, { signal });
+  dialog.addEventListener('search-dialog:open-requested', onOpenRequested, { signal });
+  dialog.addEventListener('search-dialog:close-requested', onCloseRequested, { signal });
+  dialog.addEventListener('search-dialog:query-changed', onQueryChanged, { signal });
   document.addEventListener('keydown', onKeydown, { signal });
   return { status: 'unavailable', reason: options.reason };
 }

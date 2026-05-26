@@ -478,7 +478,7 @@ const createStandaloneCodeSurface = (
   }
 
   return createElement(
-    'div',
+    'figure',
     {
       className: [
         'code-surface-root',

@@ -2,7 +2,7 @@ import type {
   UiSearchDialogCloseReason,
   UiSearchDialogItem,
   UiSearchDialogSelectedDetail,
-} from '../search-dialog.types.js';
+} from './search-dialog-types.js';
 import { SearchDialogVirtualizer } from './search-dialog-virtualizer.js';
 
 interface SearchDialogSearchFieldElement extends HTMLElement {

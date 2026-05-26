@@ -38,14 +38,14 @@ const createStaticCodeBlock = (
 });
 
 describe('rehypeStaticCodeGroups', () => {
-  it('ui-code-group を stacked baseline + enhancement 用の静的構造へ変換すること', () => {
+  it('code group source を stacked baseline + enhancement 用の静的構造へ変換すること', () => {
     const tree: HastNode = {
       type: 'root',
       children: [
         {
           type: 'element',
-          tagName: 'ui-code-group',
-          properties: { 'aria-label': '実装比較' },
+          tagName: 'section',
+          properties: { 'data-code-group-source': 'true', 'aria-label': '実装比較' },
           children: [
             createStaticCodeBlock('valid', '正しい例', 'ts', 'valid.ts'),
             createStaticCodeBlock('invalid', '誤り例', 'ts', 'invalid.ts'),
@@ -116,8 +116,8 @@ describe('rehypeStaticCodeGroups', () => {
       children: [
         {
           type: 'element',
-          tagName: 'ui-code-group',
-          properties: { 'aria-label': '単一' },
+          tagName: 'section',
+          properties: { 'data-code-group-source': 'true', 'aria-label': '単一' },
           children: [createStaticCodeBlock('only', 'Only', 'ts')],
         },
       ],

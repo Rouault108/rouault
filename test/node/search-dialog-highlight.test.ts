@@ -3,7 +3,7 @@ import {
   renderSearchDialogHighlightedText,
   resolveSearchDialogItemPath,
   splitSearchDialogHighlightParts,
-} from '../../src/components/ui/search-dialog/internals/search-dialog-highlight.js';
+} from '../../src/search/search-dialog-highlight.js';
 
 describe('search-dialog-highlight', () => {
   it('path が明示されている場合はそれを優先する', () => {

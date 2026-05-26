@@ -8,7 +8,6 @@ import '../../src/components/ui/skip-link/skip-link.js';
 import '../../src/components/layout/layout-header.js';
 import '../../src/components/layout/layout-sidebar.js';
 import '../../src/components/layout/layout-toc.js';
-import '../../src/components/ui/checkbox/checkbox.js';
 import '../../src/components/ui/code-preview/code-preview.js';
 import '../../src/components/ui/preview-sandbox/preview-sandbox.js';
 import '../../src/components/ui/tabs/tabs.js';

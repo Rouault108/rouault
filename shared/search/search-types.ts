@@ -4,11 +4,6 @@ export type SearchSourceKind = 'pagefind' | 'catalog';
 
 export type SearchReturnToReadingEventName = 'rouault-search:return-to-reading';
 
-export type SearchDialogEventName =
-  | 'rouault-search:open'
-  | 'rouault-search:close'
-  | SearchReturnToReadingEventName;
-
 export type SearchImportBoundaryRuleId =
   | 'search-dialog-no-router-core-import'
   | 'search-return-to-reading-via-adapter';
@@ -68,7 +63,7 @@ export interface SearchState {
 }
 
 export interface SearchDialogEventContract {
-  readonly eventName: SearchDialogEventName;
+  readonly eventName: SearchReturnToReadingEventName;
 }
 
 export interface SearchIndexTypeContract {

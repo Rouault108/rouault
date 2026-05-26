@@ -3,7 +3,7 @@ import type {
   SearchWorkerResponse,
   UiSearchDialogItem,
   UiSearchDialogMatchField,
-} from '../search-dialog.types.js';
+} from './search-dialog-types.js';
 
 export class SearchDialogSearchWorker {
   private _searchWorker: Worker | null = null;
@@ -123,7 +123,7 @@ export class SearchDialogSearchWorker {
     const url = URL.createObjectURL(blob);
 
     try {
-      this._searchWorker = new Worker(url, { name: 'ui-search-dialog-worker' });
+      this._searchWorker = new Worker(url, { name: 'search-dialog-worker' });
       this._searchWorkerUrl = url;
     } catch {
       URL.revokeObjectURL(url);

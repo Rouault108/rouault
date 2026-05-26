@@ -4,13 +4,13 @@ import {
   LOADING_MESSAGE,
   SEARCH_DEBOUNCE_MS,
   SEARCH_WORKER_THRESHOLD,
-} from '../search-dialog.constants.js';
+} from './search-dialog-constants.js';
 import type {
   UiSearchDialogItem,
   UiSearchDialogMatchField,
   UiSearchDialogSearchError,
   UiSearchDialogSearcher,
-} from '../search-dialog.types.js';
+} from './search-dialog-types.js';
 import { SearchDialogSearchWorker } from './search-dialog-search-worker.js';
 
 export interface SearchDialogSearchSessionHost {
@@ -156,7 +156,7 @@ export class SearchDialogSearchSession {
       if (token !== this._searchToken) return;
       if (query !== this._host.getQuery().trim()) return;
 
-      console.error('[ui-search-dialog] search failed', error);
+      console.error('[search-dialog] search failed', error);
 
       this._host.setResults([]);
       this._host.setActiveId(null);
@@ -196,11 +196,11 @@ export class SearchDialogSearchSession {
     const items = this._host.getItems();
 
     if (searcher && items.length > 0) {
-      throw new Error('ui-search-dialog: items と searcher は同時に指定できません');
+      throw new Error('search-dialog: items と searcher は同時に指定できません');
     }
 
     if (!searcher && items.length === 0) {
-      throw new Error('ui-search-dialog: items か searcher のいずれかが必要です');
+      throw new Error('search-dialog: items か searcher のいずれかが必要です');
     }
 
     this._abortController?.abort();

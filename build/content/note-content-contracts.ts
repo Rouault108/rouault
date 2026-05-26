@@ -101,6 +101,33 @@ const isWhitespaceTextNode = (node: Parse5Node): boolean =>
 const getMeaningfulChildren = (node: Parse5Node): Parse5Node[] =>
   getChildNodes(node).filter((child) => !isWhitespaceTextNode(child));
 
+const isAllowedCodePreviewDefaultSlotRoot = (node: Parse5Element): boolean =>
+  (node.tagName === 'figure' && hasAttribute(node, 'data-code-block-root')) ||
+  (node.tagName === 'section' && hasAttribute(node, 'data-code-group'));
+
+const validateCodePreviewDefaultSlot = (node: Parse5Element, errors: string[]): void => {
+  for (const child of getMeaningfulChildren(node)) {
+    if (!isElementNode(child)) {
+      errors.push(
+        'ui-code-preview の default slot には figure[data-code-block-root] または section[data-code-group] だけを配置できます',
+      );
+      return;
+    }
+
+    const slot = getAttributeValue(child, 'slot')?.trim();
+    if (slot && slot.length > 0) {
+      continue;
+    }
+
+    if (!isAllowedCodePreviewDefaultSlotRoot(child)) {
+      errors.push(
+        'ui-code-preview の default slot には figure[data-code-block-root] または section[data-code-group] だけを配置できます',
+      );
+      return;
+    }
+  }
+};
+
 const isDirectChildOf = (
   node: Parse5Node,
   parent: Parse5Element,
@@ -936,6 +963,10 @@ export const validateNoteContentContracts = (
       const controls = getAttributeValue(node, 'controls')?.trim() ?? '';
       if (controls.length > 0 && getCodePreviewControlsRestrictionMessage(policyContext)) {
         errors.push(getCodePreviewControlsRestrictionMessage(policyContext) ?? '');
+        return;
+      }
+      validateCodePreviewDefaultSlot(node, errors);
+      if (errors.length > 0) {
         return;
       }
     }

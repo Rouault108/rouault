@@ -358,7 +358,7 @@ const buildResolvedLinkCardProps = (
   const siteName = source.siteName ?? metadata.siteName ?? buildFallbackTitle(href);
 
   return {
-    'card-kind': 'link',
+    'data-link-card-source': 'true',
     href,
     'card-title': title,
     ...(description ? { description } : {}),
@@ -374,7 +374,7 @@ const toResolvedLinkCardNode = (
 ): MdastNode => ({
   type: nodeType,
   data: {
-    hName: 'ui-card',
+    hName: 'div',
     hProperties: properties,
   },
   children: [],

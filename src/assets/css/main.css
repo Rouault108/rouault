@@ -4,6 +4,7 @@
 @import './static-copy-button.css';
 
 @import './skip-link.css';
+@import './dialog-state.css';
 @import './code-surfaces.css';
 @import './article-header.css';
 @import './layout-toc.css';
@@ -15,38 +16,7 @@
 @import './empty-state.css';
 @import './page-corpora.css';
 @import './footer.css';
-
-/* ===========================================================================
- * View Transitions API サポート
- * =========================================================================== */
-
-@supports (view-transition-name: root) {
-  @view-transition {
-    navigation: auto;
-  }
-
-  ::view-transition-group(*) {
-    animation-duration: 0.2s;
-    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
-    mix-blend-mode: var(--view-transition-fade);
-  }
-}
-
-/* 非対応ブラウザではシンプルなフェード */
-@supports not (view-transition-name: root) {
-  .page-transition {
-    animation: fade-in var(--duration-normal) var(--ease-out);
-  }
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
+@import './view-transition.css';
 
 /* ===========================================================================
  * Box Sizing Reset
@@ -99,16 +69,6 @@ body {
   /* Safari の自動文字拡大を body レベルでも抑止して再発を防ぐ */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-}
-
-body[data-ui-dialog-open] {
-  overflow: hidden;
-  scrollbar-gutter: stable;
-}
-
-body[data-ui-search-dialog-open] {
-  overflow: hidden;
-  scrollbar-gutter: stable;
 }
 
 /* ===========================================================================

@@ -102,7 +102,8 @@ describe('rehypePreviewSandbox', () => {
     expect(sandbox?.properties?.['height']).to.equal('160');
 
     const codeGroup = preview?.children?.[1];
-    expect(codeGroup?.tagName).to.equal('ui-code-group');
+    expect(codeGroup?.tagName).to.equal('section');
+    expect(codeGroup?.properties?.['data-code-group-source']).to.equal('true');
     expect(codeGroup?.properties?.['aria-label']).to.equal('Sandbox例 のコード例');
     expect(codeGroup?.children).to.have.length(3);
 
