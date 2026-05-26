@@ -575,9 +575,9 @@ const isDeclaration = (node: { readonly type: string }): node is Declaration =>
   node.type === 'decl';
 
 export const PROSE_TEXT_LINK_SELECTOR =
-  ":is(.prose,.about-prose) a[href]:not(:where([data-link-surface='card'],.heading-anchor,[data-footnote-ref='true'][role='doc-noteref'],[data-footnote-backref='true'][role='doc-backlink'],[data-footnote-popover] .footnote-list-link,ui-footnote .footnote-list-link))";
+  ":is(.prose,.about-prose) a[href]:not(:where([data-link-surface='card'],.heading-anchor))";
 const POPOVER_BODY_TEXT_LINK_SELECTOR =
-  "[data-footnote-popover] .footnote-popover-body a[href]:not(:where([data-link-surface='card'],.heading-anchor,[data-footnote-ref='true'][role='doc-noteref'],[data-footnote-backref='true'][role='doc-backlink'],[data-footnote-popover] .footnote-list-link,ui-footnote .footnote-list-link))";
+  "[data-footnote-popover] .footnote-popover-body a[href]:not(:where([data-link-surface='card'],.heading-anchor,[data-footnote-ref='true'][role='doc-noteref'],[data-footnote-backref='true'][role='doc-backlink'],[data-footnote-popover] .footnote-list-link))";
 
 const ALLOWED_BROAD_UNDERLINE_SELECTORS = new Set([
   "ui-list-item>a[slot][href]:not([slot='actions'])",

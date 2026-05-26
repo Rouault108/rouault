@@ -35,7 +35,7 @@ const isFalseFootnoteBackrefMarker = (value: string | null): boolean => {
 
 const isRemovableFootnoteCloneLink = (anchor: HTMLAnchorElement): boolean => {
   if (
-    anchor.closest('[data-footnote-popover], ui-footnote') &&
+    anchor.closest('[data-footnote-popover]') &&
     anchor.classList.contains('footnote-list-link')
   ) {
     return true;

@@ -9,7 +9,6 @@ interface LinkContext {
   readonly insideCanonicalFootnoteItem: boolean;
   readonly insideCanonicalFootnoteList: boolean;
   readonly insideFootnotePopover: boolean;
-  readonly insideUiFootnote: boolean;
   readonly insideLinkCard: boolean;
 }
 
@@ -137,7 +136,7 @@ const isStructuralLink = (node: HastNode, context: LinkContext): boolean => {
   }
 
   if (hasClassName(node, 'footnote-list-link')) {
-    return context.insideFootnotePopover || context.insideUiFootnote;
+    return context.insideFootnotePopover;
   }
 
   return isStructuralFootnoteMarker(node, context);
@@ -223,9 +222,6 @@ export function rehypeAnnotateLinkKinds(options: RehypeAnnotateLinkKindsOptions)
           context.insideFootnotePopover ||
           (current.type === 'element' &&
             current.properties?.['data-footnote-popover'] !== undefined),
-        insideUiFootnote:
-          context.insideUiFootnote ||
-          (current.type === 'element' && current.tagName === 'ui-footnote'),
         insideLinkCard: context.insideLinkCard || isLinkCardRoot(current),
       };
 
@@ -286,7 +282,6 @@ export function rehypeAnnotateLinkKinds(options: RehypeAnnotateLinkKindsOptions)
         insideCanonicalFootnoteItem: false,
         insideCanonicalFootnoteList: false,
         insideFootnotePopover: false,
-        insideUiFootnote: false,
         insideLinkCard: false,
       },
       null,

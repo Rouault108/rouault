@@ -150,6 +150,9 @@ describe('static CSS contracts', () => {
     expect(score).not.to.contain('ui-score-shimmer');
     expect(score).to.contain('@media print');
 
+    const footnotes = readCss('footnotes.css');
+    expect(footnotes).not.to.contain('ui-footnote');
+
     const empty = readCss('empty-state.css');
     expectRuleToDeclare(empty, '.empty-hint__message', ['inline-size: min(100%, 40ch)']);
     expect(empty).to.contain('@keyframes empty-state-enter');

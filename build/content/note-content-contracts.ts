@@ -515,13 +515,12 @@ const validateFootnoteContracts = (fragment: Parse5DocumentFragment, errors: str
       }
     }
     if (hasClassName(element, 'footnote-list-link')) {
-      const inPopoverOrUiFootnote = collections.elements.some(
+      const inPopover = collections.elements.some(
         (candidate) =>
-          (hasAttribute(candidate, 'data-footnote-popover') ||
-            candidate.tagName === 'ui-footnote') &&
+          hasAttribute(candidate, 'data-footnote-popover') &&
           isDescendantOf(element, candidate, collections.parentByNode),
       );
-      if (!inPopoverOrUiFootnote) {
+      if (!inPopover) {
         errors.push('.footnote-list-link は note 最終 HTML に残してはいけません');
         return;
       }

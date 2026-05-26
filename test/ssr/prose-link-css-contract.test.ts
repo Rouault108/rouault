@@ -18,11 +18,7 @@ describe('prose link css contract', () => {
           `:is(.prose, .about-prose) a[href]:not(
             :where(
               [data-link-surface='card'],
-              .heading-anchor,
-              [data-footnote-ref='true'][role='doc-noteref'],
-              [data-footnote-backref='true'][role='doc-backlink'],
-              [data-footnote-popover] .footnote-list-link,
-              ui-footnote .footnote-list-link
+              .heading-anchor
             )
           )`,
         ],
@@ -35,5 +31,12 @@ describe('prose link css contract', () => {
 
   it('keeps link code readability rule', () => {
     expect(mainCss).toMatch(/a\s*>\s*code\s*\{[^{}]*color:\s*var\(--fg-default\)/u);
+  });
+
+  it('keeps footnote-specific selectors out of link primitives', () => {
+    expect(linkPrimitivesCss).not.toContain('ui-footnote');
+    expect(linkPrimitivesCss).not.toContain('data-footnote-ref');
+    expect(linkPrimitivesCss).not.toContain('data-footnote-backref');
+    expect(linkPrimitivesCss).not.toContain('data-footnote-popover');
   });
 });

@@ -34,11 +34,7 @@ a:focus-visible {
   a[href]:not(
     :where(
       [data-link-surface='card'],
-      .heading-anchor,
-      [data-footnote-ref='true'][role='doc-noteref'],
-      [data-footnote-backref='true'][role='doc-backlink'],
-      [data-footnote-popover] .footnote-list-link,
-      ui-footnote .footnote-list-link
+      .heading-anchor
     )
   ) {
   cursor: pointer;
@@ -70,11 +66,7 @@ a:focus-visible {
     a[href]:not(
       :where(
         [data-link-surface='card'],
-        .heading-anchor,
-        [data-footnote-ref='true'][role='doc-noteref'],
-        [data-footnote-backref='true'][role='doc-backlink'],
-        [data-footnote-popover] .footnote-list-link,
-        ui-footnote .footnote-list-link
+        .heading-anchor
       )
     ) {
     text-decoration-color: var(--link-decoration-color);
@@ -87,11 +79,7 @@ a:focus-visible {
   a[href]:not(
     :where(
       [data-link-surface='card'],
-      .heading-anchor,
-      [data-footnote-ref='true'][role='doc-noteref'],
-      [data-footnote-backref='true'][role='doc-backlink'],
-      [data-footnote-popover] .footnote-list-link,
-      ui-footnote .footnote-list-link
+      .heading-anchor
     )
   ):hover {
   color: var(--primary-hover);
@@ -104,11 +92,7 @@ a:focus-visible {
   a[href]:not(
     :where(
       [data-link-surface='card'],
-      .heading-anchor,
-      [data-footnote-ref='true'][role='doc-noteref'],
-      [data-footnote-backref='true'][role='doc-backlink'],
-      [data-footnote-popover] .footnote-list-link,
-      ui-footnote .footnote-list-link
+      .heading-anchor
     )
   ):focus-visible {
   outline-style: solid;
@@ -128,11 +112,7 @@ a:focus-visible {
   a[href]:not(
     :where(
       [data-link-surface='card'],
-      .heading-anchor,
-      [data-footnote-ref='true'][role='doc-noteref'],
-      [data-footnote-backref='true'][role='doc-backlink'],
-      [data-footnote-popover] .footnote-list-link,
-      ui-footnote .footnote-list-link
+      .heading-anchor
     )
   ):visited {
   color: var(--fg-default);
@@ -147,11 +127,7 @@ a:focus-visible {
   a[href]:not(
     :where(
       [data-link-surface='card'],
-      .heading-anchor,
-      [data-footnote-ref='true'][role='doc-noteref'],
-      [data-footnote-backref='true'][role='doc-backlink'],
-      [data-footnote-popover] .footnote-list-link,
-      ui-footnote .footnote-list-link
+      .heading-anchor
     )
   ):is(
     [data-link-kind='external-web']
@@ -163,11 +139,7 @@ a:focus-visible {
   a[href]:not(
     :where(
       [data-link-surface='card'],
-      .heading-anchor,
-      [data-footnote-ref='true'][role='doc-noteref'],
-      [data-footnote-backref='true'][role='doc-backlink'],
-      [data-footnote-popover] .footnote-list-link,
-      ui-footnote .footnote-list-link
+      .heading-anchor
     )
   ):is(
     [data-link-kind='external-web']
@@ -186,11 +158,7 @@ a:focus-visible {
   a[href]:not(
     :where(
       [data-link-surface='card'],
-      .heading-anchor,
-      [data-footnote-ref='true'][role='doc-noteref'],
-      [data-footnote-backref='true'][role='doc-backlink'],
-      [data-footnote-popover] .footnote-list-link,
-      ui-footnote .footnote-list-link
+      .heading-anchor
     )
   ):is(
     [data-link-kind='external-web']
@@ -199,11 +167,7 @@ a:focus-visible {
   a[href]:not(
     :where(
       [data-link-surface='card'],
-      .heading-anchor,
-      [data-footnote-ref='true'][role='doc-noteref'],
-      [data-footnote-backref='true'][role='doc-backlink'],
-      [data-footnote-popover] .footnote-list-link,
-      ui-footnote .footnote-list-link
+      .heading-anchor
     )
   ):is(
     [data-link-kind='external-web']
@@ -218,11 +182,7 @@ a:focus-visible {
     a[href]:not(
       :where(
         [data-link-surface='card'],
-        .heading-anchor,
-        [data-footnote-ref='true'][role='doc-noteref'],
-        [data-footnote-backref='true'][role='doc-backlink'],
-        [data-footnote-popover] .footnote-list-link,
-        ui-footnote .footnote-list-link
+        .heading-anchor
       )
     ):visited {
     text-decoration-color: var(--link-decoration-color);
@@ -236,11 +196,7 @@ a:focus-visible {
     a[href]:not(
       :where(
         [data-link-surface='card'],
-        .heading-anchor,
-        [data-footnote-ref='true'][role='doc-noteref'],
-        [data-footnote-backref='true'][role='doc-backlink'],
-        [data-footnote-popover] .footnote-list-link,
-        ui-footnote .footnote-list-link
+        .heading-anchor
       )
     ) {
     color: var(--primary);
@@ -449,20 +405,8 @@ a:focus-visible {
   }
 
   /* カード内リンク: 下線を表示し、リンクであることを明示 */
-  .card
-    a[href]:not(
-      :where(
-        [data-footnote-ref='true'][role='doc-noteref'],
-        [data-footnote-backref='true'][role='doc-backlink']
-      )
-    ),
-  .callout
-    a[href]:not(
-      :where(
-        [data-footnote-ref='true'][role='doc-noteref'],
-        [data-footnote-backref='true'][role='doc-backlink']
-      )
-    ) {
+  .card a[href],
+  .callout a[href] {
     text-decoration: underline;
     text-decoration-color: currentColor;
   }
@@ -478,11 +422,7 @@ a:focus-visible {
     a[href^='http']:not(
       :where(
         [data-link-surface='card'],
-        .heading-anchor,
-        [data-footnote-ref='true'][role='doc-noteref'],
-        [data-footnote-backref='true'][role='doc-backlink'],
-        [data-footnote-popover] .footnote-list-link,
-        ui-footnote .footnote-list-link
+        .heading-anchor
       )
     )::after {
     content: ' (' attr(href) ')';
@@ -502,11 +442,7 @@ a:focus-visible {
     a[href]:not(
       :where(
         [data-link-surface='card'],
-        .heading-anchor,
-        [data-footnote-ref='true'][role='doc-noteref'],
-        [data-footnote-backref='true'][role='doc-backlink'],
-        [data-footnote-popover] .footnote-list-link,
-        ui-footnote .footnote-list-link
+        .heading-anchor
       )
     ) {
     text-decoration: underline;
