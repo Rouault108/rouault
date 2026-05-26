@@ -159,22 +159,16 @@
 }
 
 .search-dialog__spinner {
+  box-sizing: border-box;
   inline-size: var(--icon-xl, 32px);
   block-size: var(--icon-xl, 32px);
-  display: inline-flex;
+  display: inline-block;
   color: currentColor;
   vertical-align: middle;
-}
-
-.search-dialog__spinner::before {
-  content: '';
-  inline-size: 100%;
-  block-size: 100%;
   border: 3px solid currentColor;
   border-block-start-color: transparent;
   border-radius: 50%;
-  animation: search-dialog-spinner-rotate 0.8s linear infinite,
-    search-dialog-spinner-dash 1.4s ease-in-out infinite;
+  animation: rouault-static-spinner-rotate 0.8s linear infinite;
 }
 
 .search-dialog__status-copy,
@@ -289,20 +283,19 @@
   to { opacity: 0; }
 }
 
-@keyframes search-dialog-spinner-rotate {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes search-dialog-spinner-dash {
-  50% { border-block-start-color: currentColor; }
+@keyframes rouault-static-spinner-rotate {
+  to { transform: rotate(1turn); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .search-dialog,
-  .search-dialog::backdrop,
-  .search-dialog__spinner::before {
+  .search-dialog::backdrop {
     animation-duration: 0.01ms;
     transition-duration: 0.01ms;
+  }
+
+  .search-dialog__spinner {
+    animation: none;
   }
 }
 
@@ -313,6 +306,10 @@
   .search-dialog__close {
     color: CanvasText;
     border-color: CanvasText;
+  }
+
+  .search-dialog__spinner {
+    border-block-start-color: transparent;
   }
 }
 

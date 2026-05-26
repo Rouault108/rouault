@@ -74,7 +74,16 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(css, '.search-dialog__body', ['min-block-size:', 'overflow:']);
     expectRuleToDeclare(css, '.search-dialog__icon', ['inline-size:', 'block-size:']);
     expectRuleToDeclare(css, '.search-dialog[data-closing]', ['animation:']);
-    expectRuleToDeclare(css, '.search-dialog__spinner', ['inline-size:', 'block-size:']);
+    expectRuleToDeclare(css, '.search-dialog__spinner', [
+      'box-sizing: border-box',
+      'inline-size:',
+      'block-size:',
+      'border:',
+      'border-block-start-color: transparent',
+      'animation: rouault-static-spinner-rotate',
+    ]);
+    expect(css).not.to.contain('.search-dialog__spinner::before');
+    expect(css).to.contain('@keyframes rouault-static-spinner-rotate');
     expectRuleToDeclare(css, '.search-dialog__state-icon', ['inline-size:', 'block-size:']);
     expect(ruleBlock(css, ".search-dialog__result[aria-selected='true']")).to.match(
       /background:|outline:/u,
@@ -93,7 +102,16 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(css, '.filter-list', ['max-block-size:', 'overflow-y:']);
     expectRuleToDeclare(css, '.selected-tag', ['border:', 'border-radius:']);
     expectRuleToDeclare(css, '.filter-option-checkbox__control', ['inline-size: 16px', 'block-size: 16px']);
-    expectRuleToDeclare(css, '.search-page__spinner', ['inline-size:', 'block-size:']);
+    expectRuleToDeclare(css, '.search-page__spinner', [
+      'box-sizing: border-box',
+      'inline-size:',
+      'block-size:',
+      'border:',
+      'border-block-start-color: transparent',
+      'animation: rouault-static-spinner-rotate',
+    ]);
+    expect(css).not.to.contain('.search-page__spinner::before');
+    expect(css).to.contain('@keyframes rouault-static-spinner-rotate');
   });
 
   it('details, syntax, score, empty state, and corpora CSS expose static contracts', () => {
@@ -109,7 +127,9 @@ describe('static CSS contracts', () => {
     const score = readCss('score.css');
     expectRuleToDeclare(score, '.score__scroll', ['overflow-x:', 'scrollbar-gutter:', 'border:']);
     expectRuleToDeclare(score, '.score__stage', ['aspect-ratio:']);
-    expectRuleToDeclare(score, '.score__skeleton', ['aspect-ratio:']);
+    expectRuleToDeclare(score, '.score__svg-host svg', ['display: block']);
+    expect(score).not.to.contain('score__skeleton');
+    expect(score).not.to.contain('ui-score-shimmer');
     expect(score).to.contain('@media print');
 
     const empty = readCss('empty-state.css');

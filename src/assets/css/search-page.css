@@ -194,29 +194,20 @@
 .filter-option-count { color: var(--fg-muted); font-size: var(--text-sm); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .filter-option[data-selected='true'] .filter-option-count { color: var(--fg-default); }
 .search-page__loading { display: flex; align-items: center; gap: var(--space-3); color: var(--fg-muted); font-size: var(--text-sm); }
-.search-page__spinner { inline-size: var(--icon-base, 16px); block-size: var(--icon-base, 16px); display: inline-flex; }
-.search-page__spinner::before {
-  content: '';
-  inline-size: 100%;
-  block-size: 100%;
-  border: 2px solid currentColor;
-  border-block-start-color: transparent;
-  border-radius: 50%;
-  animation: search-page-spinner 0.8s linear infinite;
-}
+.search-page__spinner { box-sizing: border-box; inline-size: var(--icon-base, 16px); block-size: var(--icon-base, 16px); display: inline-block; border: 2px solid currentColor; border-block-start-color: transparent; border-radius: 50%; animation: rouault-static-spinner-rotate 0.8s linear infinite; }
 .search-page__loading-label { line-height: normal; color: var(--fg-muted); }
 .search-page .empty-hint[data-search-empty-state] { min-block-size: 25vh; }
-@keyframes search-page-spinner { to { transform: rotate(360deg); } }
+@keyframes rouault-static-spinner-rotate { to { transform: rotate(1turn); } }
 @media (max-width: 768px) { .filter-summary { grid-template-columns: 1fr; } .filter-summary-meta { text-align: start; } }
 @media (prefers-color-scheme: dark) { .filter-option[data-selected='true'] { background: var(--bg-fill-muted); } }
 @media (forced-colors: active) {
   .sort-select,
   .tag-mode-select,
-  .filter-option-checkbox__control,
-  .search-page__spinner { color: CanvasText; background: Canvas; border-color: CanvasText; }
+  .filter-option-checkbox__control { color: CanvasText; background: Canvas; border-color: CanvasText; }
+  .search-page__spinner { color: CanvasText; border-color: CanvasText; border-block-start-color: transparent; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .search-page__spinner::before { animation-duration: 0.01ms; }
+  .search-page__spinner { animation: none; }
   .filter-option { transition-duration: 0.01ms; }
 }
 @media print { .sort-select__chevron, .tag-mode-select__chevron, .search-page__spinner { display: none; } }

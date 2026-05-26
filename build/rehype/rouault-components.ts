@@ -800,21 +800,11 @@ const toStaticScore = (node: HastNode, context: SurfaceNormalizationContext): vo
             ...(stageStyle ? { style: stageStyle } : {}),
           },
           [
-            createElement('div', {
-              className: ['score__skeleton'],
-              'data-visible': 'false',
-              'aria-hidden': 'true',
-              ...(stageStyle ? { style: stageStyle } : {}),
-            }),
-            createElement('div', { className: ['score__content'], 'data-visible': 'true' }, [
-              createElement('div', { className: ['score__fallback'], 'data-score-fallback': 'true' }, children),
-              createElement('div', { className: ['score__svg-host'], 'aria-hidden': 'true', hidden: true }, []),
-            ]),
+            createElement('div', { className: ['score__svg-host'] }, children),
           ],
         ),
       ],
     ),
-    createElement('div', { className: ['score__error'], 'aria-live': 'polite' }, []),
     ...(description && descriptionId
       ? [createElement('p', { id: descriptionId, className: ['score__sr-only'] }, [createTextNode(description)])]
       : []),
