@@ -116,4 +116,24 @@ describe('search-page-enhancer', () => {
     queryInput.dispatchEvent(new Event('input', { bubbles: true }));
     expect(location.search).to.contain('q=after+abort');
   });
+
+  it('選択済みタグの解除 button を static icon 契約で生成すること', () => {
+    const root = renderSearchPageFixture();
+    enhanceSearchPage(root);
+
+    const remove = expectElement(
+      root.querySelector<HTMLButtonElement>(
+        'button.selected-tag__remove[data-search-selected-tag-remove][type="button"]',
+      ),
+      'selected tag remove',
+    );
+
+    expect(remove.getAttribute('aria-label')).to.equal('architecture を解除');
+    expect(remove.querySelector('.selected-tag__remove-icon.static-icon > svg')).not.to.equal(null);
+    expect(remove.hasAttribute('data-selected-tag-remove')).to.equal(false);
+    expect(root.querySelector('[data-filter-option]')?.getAttribute('data-selected')).to.equal(
+      'true',
+    );
+    expect(root.querySelector('.filter-option--selected')).to.equal(null);
+  });
 });

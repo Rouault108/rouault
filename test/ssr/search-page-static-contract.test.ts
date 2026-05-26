@@ -40,8 +40,16 @@ describe('renderSearchPageHtml static contract', () => {
     expect(rendered).toContain('class="filter-search-field__clear"');
     expect(rendered).toContain('name="tag"');
     expect(rendered).toContain('class="filter-option-checkbox__control"');
-    expect(rendered).toContain('class="filter-option-checkbox__icon"');
+    expect(rendered).toContain('class="filter-option-checkbox__icon static-icon"');
     expect(rendered).toContain('class="selected-tag"');
+    expect(rendered).toContain('class="selected-tag__remove-icon static-icon"');
+    expect(rendered).toContain('class="search-input-field__icon static-icon"');
+    expect(rendered).toContain('class="search-input-clear__icon static-icon"');
+    expect(rendered).toContain('class="filter-search-field__icon static-icon"');
+    expect(rendered).toContain('class="filter-search-field__clear-icon static-icon"');
+    expect(rendered).toContain('class="sort-select__chevron static-icon"');
+    expect(rendered).toContain('class="tag-mode-select__chevron static-icon"');
+    expect(rendered).toContain('<svg ');
     expect(rendered).not.toContain('data-search-page-loading');
   });
 

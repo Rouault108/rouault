@@ -45,7 +45,7 @@
 ### Events
 
 - UI events は検索 UI が所有する。検索コアは DOM event を所有しない。
-- `ui-search-dialog-selected` は選択通知であり、return-to-reading への橋渡しは navigation adapter が担う。
+- `search-dialog:selected` は static search dialog の選択通知であり、return-to-reading への橋渡しは navigation adapter が担う。
 
 ### DOM / URL / State Contract
 

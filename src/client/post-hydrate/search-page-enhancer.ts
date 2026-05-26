@@ -1,3 +1,5 @@
+import { renderStaticIconHtml } from '../../../shared/icons/render-static-icon-html.js';
+
 interface SearchPageSession {
   readonly signal: AbortSignal | undefined;
 }
@@ -73,7 +75,7 @@ const createSelectedTag = (tag: string): HTMLElement => {
   button.type = 'button';
   button.setAttribute('aria-label', `${tag} を解除`);
   button.dataset['searchSelectedTagRemove'] = tag;
-  button.textContent = '×';
+  button.innerHTML = renderStaticIconHtml('x', 'selected-tag__remove-icon');
   chip.append(label, button);
   return chip;
 };

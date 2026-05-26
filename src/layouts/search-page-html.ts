@@ -2,6 +2,7 @@ import type { SearchState } from '../../shared/search/search-types.js';
 import type { StaticExploreSearchResponse } from '../../build/search/build-static-explore-response.js';
 import { buildSearchResultRenderHref } from '../search/normalize-search-result-url.js';
 import { createSiteUrlContext } from '../../shared/site/site-url-context.js';
+import { renderStaticIconHtml } from '../../shared/icons/render-static-icon-html.js';
 import { escapeHtmlAttribute, escapeHtmlText, serializeHtmlAttributes } from './html-output.js';
 
 const sortOptions = [
@@ -73,7 +74,7 @@ const renderTagCheckboxes = (
               data-search-tag-checkbox
             >
             <span class="filter-option-checkbox__control" aria-hidden="true">
-              <span class="filter-option-checkbox__icon"></span>
+              ${renderStaticIconHtml('check', 'filter-option-checkbox__icon')}
             </span>
             <span class="filter-option-label">${escapeHtmlText(tag)}</span>
           </label>
@@ -98,7 +99,7 @@ const renderSelectedTags = (selectedTags: readonly string[]): string => {
             type="button"
             aria-label="${escapeHtmlAttribute(`${tag} を解除`)}"
             data-search-selected-tag-remove="${escapeHtmlAttribute(tag)}"
-          >×</button>
+          >${renderStaticIconHtml('x', 'selected-tag__remove-icon')}</button>
         </span>
       `,
     )
@@ -200,7 +201,7 @@ export const renderSearchPageHtml = (options: {
         <form class="search-controls" role="search" data-search-page-form>
           <label class="sr-only" for="search-page-query">検索</label>
           <div class="search-input-field" data-static-search-field>
-            <span class="search-input-field__icon" aria-hidden="true"></span>
+            ${renderStaticIconHtml('search', 'search-input-field__icon')}
             <input
               id="search-page-query"
               class="search-input-control"
@@ -212,7 +213,7 @@ export const renderSearchPageHtml = (options: {
               data-search-query-input
             >
             <button class="search-input-clear" type="button" aria-label="検索語をクリア" hidden data-search-query-clear>
-              <span class="search-input-clear__icon" aria-hidden="true"></span>
+              ${renderStaticIconHtml('x', 'search-input-clear__icon')}
             </button>
           </div>
 
@@ -224,7 +225,7 @@ export const renderSearchPageHtml = (options: {
                 <select class="tag-mode-select" name="tagMode" data-search-tag-mode-select>
                   ${tagModeOptions.map(([value, label]) => renderOption(value, label, initialState.tagMode)).join('')}
                 </select>
-                <span class="tag-mode-select__chevron" aria-hidden="true"></span>
+                ${renderStaticIconHtml('chevron-down', 'tag-mode-select__chevron')}
               </span>
             </label>
             <label class="sort-field">
@@ -233,7 +234,7 @@ export const renderSearchPageHtml = (options: {
                 <select class="sort-select" name="sort" data-search-sort-select>
                   ${sortOptions.map(([value, label]) => renderOption(value, label, initialState.sort)).join('')}
                 </select>
-                <span class="sort-select__chevron" aria-hidden="true"></span>
+                ${renderStaticIconHtml('chevron-down', 'sort-select__chevron')}
               </span>
             </label>
           </div>
@@ -267,10 +268,10 @@ export const renderSearchPageHtml = (options: {
                 </div>
                 <label class="sr-only" for="search-page-filter-query">タグを絞り込む</label>
                 <div class="filter-search-field" data-static-search-field>
-                  <span class="filter-search-field__icon" aria-hidden="true"></span>
+                  ${renderStaticIconHtml('search', 'filter-search-field__icon')}
                   <input id="search-page-filter-query" class="filter-search-control" type="search" autocomplete="off" placeholder="タグ名で絞り込む" data-search-filter-input>
                   <button class="filter-search-field__clear" type="button" aria-label="タグ絞り込みをクリア" hidden data-search-filter-clear>
-                    <span class="filter-search-field__clear-icon" aria-hidden="true"></span>
+                    ${renderStaticIconHtml('x', 'filter-search-field__clear-icon')}
                   </button>
                 </div>
                 <div class="filter-list" role="list" data-search-filter-list>${renderTagCheckboxes(initialResponse, initialState.tags)}</div>

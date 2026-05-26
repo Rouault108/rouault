@@ -102,6 +102,16 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(css, '.filter-list', ['max-block-size:', 'overflow-y:']);
     expectRuleToDeclare(css, '.selected-tag', ['border:', 'border-radius:']);
     expectRuleToDeclare(css, '.filter-option-checkbox__control', ['inline-size: 16px', 'block-size: 16px']);
+    expectRuleToDeclare(css, '.filter-option-checkbox__icon', ['opacity: 0']);
+    expectRuleToDeclare(
+      css,
+      ".filter-option-checkbox__input:checked + .filter-option-checkbox__control .filter-option-checkbox__icon",
+      ['opacity: 1'],
+    );
+    expectRuleToDeclare(css, ".filter-option[data-selected='true']", [
+      'background: var(--bg-accent-muted, var(--bg-fill-muted))',
+      'border-color: var(--border-accent, var(--border-default))',
+    ]);
     expectRuleToDeclare(css, '.search-page__spinner', [
       'box-sizing: border-box',
       'inline-size:',
@@ -112,6 +122,12 @@ describe('static CSS contracts', () => {
     ]);
     expect(css).not.to.contain('.search-page__spinner::before');
     expect(css).to.contain('@keyframes rouault-static-spinner-rotate');
+    expect(css).to.contain('@media (max-width: 640px)');
+    expect(css).to.contain('.toolbar-row { align-items: stretch; }');
+    expect(css).to.contain('@media (prefers-color-scheme: dark)');
+    expect(css).to.contain(
+      ".filter-option[data-selected='true'] { background: var(--bg-fill-muted); border-color: var(--border-accent, var(--border-default)); }",
+    );
   });
 
   it('details, syntax, score, empty state, and corpora CSS expose static contracts', () => {
