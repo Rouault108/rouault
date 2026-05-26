@@ -190,14 +190,62 @@ const ensureStyleTag = async (id: string, href: string, transform?: (cssText: st
   await waitForStyleRecalc();
 };
 
+const IMPORT_HREF_PATTERN = /@import\s+(?:url\()?['"](?<href>[^'")]+)['"]\)?\s*;/giu;
+
+const inlineTopLevelImports = async (
+  cssText: string,
+  baseHref: string,
+  visited: Set<string> = new Set(),
+): Promise<string> => {
+  const ranges = collectImportRanges(cssText);
+  const nestedImport = ranges.find((range) => range.depth > 0);
+  if (nestedImport !== undefined) {
+    throw new Error('top-level 以外の @import は browser contract test で扱いません');
+  }
+
+  let cursor = 0;
+  let output = '';
+  for (const range of ranges) {
+    output += cssText.slice(cursor, range.start);
+    const importText = cssText.slice(range.start, range.end);
+    const match = IMPORT_HREF_PATTERN.exec(importText);
+    IMPORT_HREF_PATTERN.lastIndex = 0;
+    const importHref = match?.groups?.['href'];
+    if (importHref === undefined) {
+      throw new Error(`@import の href を解決できません: ${importText}`);
+    }
+    if (!importHref.startsWith('.') && !importHref.startsWith('/')) {
+      output += '\n';
+      cursor = range.end;
+      continue;
+    }
+    const resolvedHref = new URL(importHref, baseHref).href;
+    if (visited.has(resolvedHref)) {
+      cursor = range.end;
+      continue;
+    }
+    visited.add(resolvedHref);
+    const response = await fetch(resolvedHref);
+    if (!response.ok) {
+      throw new Error(`${resolvedHref} の読み込みに失敗しました: ${response.status} ${response.statusText}`);
+    }
+    output += `\n${await inlineTopLevelImports(await response.text(), resolvedHref, visited)}\n`;
+    cursor = range.end;
+  }
+  output += cssText.slice(cursor);
+  return output;
+};
+
 export const ensureMainCssLoaded = async (): Promise<void> => {
+  const mainCssHref = new URL('../../../src/assets/css/main.css', import.meta.url).href;
   await ensureStyleTag(
     TOKENS_STYLE_ID,
     new URL('../../../src/assets/css/tokens.css', import.meta.url).href,
   );
-  await ensureStyleTag(
-    MAIN_STYLE_ID,
-    new URL('../../../src/assets/css/main.css', import.meta.url).href,
-    stripTopLevelImports,
-  );
+  await ensureStyleTag(MAIN_STYLE_ID, mainCssHref, (cssText) => cssText);
+  const style = document.getElementById(MAIN_STYLE_ID);
+  if (style instanceof HTMLStyleElement && hasTopLevelImport(style.textContent ?? '')) {
+    style.textContent = await inlineTopLevelImports(style.textContent ?? '', mainCssHref);
+    await waitForStyleRecalc();
+  }
 };

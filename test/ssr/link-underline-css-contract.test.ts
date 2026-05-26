@@ -55,7 +55,7 @@ describe('link underline css contract', () => {
     const cssText = `
       .one[href],
       .two[href],
-      ui-list-item > a[slot][href]:not([slot="actions"]) {
+      .three[href] {
         text-decoration: none;
       }
     `;
@@ -68,7 +68,7 @@ describe('link underline css contract', () => {
     expect(
       hasDeclarationForSelector(
         cssText,
-        "ui-list-item > a[slot][href]:not([slot='actions'])",
+        '.three[href]',
         'text-decoration',
         'none',
         { scope: 'screen' },

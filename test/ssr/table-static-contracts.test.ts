@@ -6,12 +6,12 @@ import { describe, it } from 'vitest';
 import { expectCssExcludes, expectCssIncludes } from './css-contract-test-helpers.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
-const mainCssPath = path.resolve(dirname, '../../src/assets/css/main.css');
-const mainCss = readFileSync(mainCssPath, 'utf8');
+const tableCssPath = path.resolve(dirname, '../../src/assets/css/table.css');
+const tableCss = readFileSync(tableCssPath, 'utf8');
 
 describe('table static css contracts', () => {
   it('prose 内 table root が static scroll container / focus-visible / reduced-motion 契約を保持すること', () => {
-    expectCssIncludes(mainCss, [
+    expectCssIncludes(tableCss, [
       ':is(.prose, .about-prose) > [data-table-root]',
       ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]",
       'width: 100%',
@@ -29,7 +29,7 @@ describe('table static css contracts', () => {
   });
 
   it('static table root が base / caption / tfoot / multiple tbody / compact density 契約を保持すること', () => {
-    expectCssIncludes(mainCss, [
+    expectCssIncludes(tableCss, [
       '[data-table-root] > table',
       'border-collapse: collapse',
       'width: max-content',
@@ -45,7 +45,7 @@ describe('table static css contracts', () => {
   });
 
   it('align attribute と numeric data の静的 CSS 契約を保持すること', () => {
-    expectCssIncludes(mainCss, [
+    expectCssIncludes(tableCss, [
       "[data-table-root] > table th[align='center']",
       "[data-table-root] > table td[align='center']",
       "[data-table-root] > table th[align='right']",
@@ -57,7 +57,7 @@ describe('table static css contracts', () => {
   });
 
   it('hover capability / coarse pointer / forced-colors の静的 CSS 契約を保持すること', () => {
-    expectCssIncludes(mainCss, [
+    expectCssIncludes(tableCss, [
       '@media (hover: hover) and (pointer: fine)',
       '[data-table-root] > table tbody tr:hover',
       'background-color: var(--bg-table-ruler',
@@ -72,7 +72,7 @@ describe('table static css contracts', () => {
   });
 
   it('note static table CSS が legacy ui-table selector に依存しないこと', () => {
-    expectCssExcludes(mainCss, [
+    expectCssExcludes(tableCss, [
       'ui-table table',
       'ui-table tbody tr:hover',
       'ui-table[density="compact"]',

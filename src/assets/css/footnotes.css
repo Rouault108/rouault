@@ -1,0 +1,189 @@
+a[data-footnote-ref='true'][role='doc-noteref'] {
+  display: inline-flex;
+  align-items: baseline;
+  margin-inline: 0.1em;
+  color: var(--fg-muted, oklch(48% 0 0));
+  font-size: max(var(--text-xs, 12px), 12px);
+  font-weight: var(--font-medium, 500);
+  letter-spacing: var(--tracking-wide, 0.02em);
+  line-height: var(--line-height-none, 1);
+  text-decoration: none;
+  border-radius: var(--radius-sm, 4px);
+}
+
+a[data-footnote-ref='true'][role='doc-noteref'] > sup {
+  font-size: inherit;
+  line-height: 1;
+  vertical-align: super;
+}
+
+a[data-footnote-ref='true'][role='doc-noteref']:hover,
+a[data-footnote-ref='true'][role='doc-noteref']:focus-visible {
+  color: var(--primary, oklch(56% 0.16 252));
+  text-decoration: underline;
+}
+
+a[data-footnote-ref='true'][role='doc-noteref'].is-active-trigger {
+  background: var(--bg-active, oklch(95% 0 0));
+}
+
+[data-footnote-popover] {
+  position: fixed;
+  inset: auto;
+  right: auto;
+  bottom: auto;
+  margin: 0;
+  z-index: var(--z-popover, 400);
+  box-sizing: border-box;
+  inline-size: max-content;
+  max-inline-size: min(90vw, 400px);
+  max-block-size: min(60vh, calc(100vh - 24px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  background: var(--bg-surface-2, oklch(100% 0 0));
+  border: var(--border-width, 1px) solid var(--border-default, oklch(86% 0 0));
+  border-radius: var(--radius-md, 6px);
+  box-shadow: var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12));
+  color: var(--fg-default, oklch(20% 0 0));
+  font-size: var(--text-sm, 13px);
+  line-height: var(--line-height-relaxed, 1.75);
+}
+
+.footnote-popover-body > :first-child {
+  margin-block-start: 0;
+}
+
+.footnote-popover-body > :last-child {
+  margin-block-end: 0;
+}
+
+[data-footnote-popover]
+  .footnote-popover-body
+  a[href]:not(
+      :where(
+        [data-link-surface='card'],
+        .heading-anchor,
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink'],
+        [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ) {
+  color: var(--fg-default);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  overflow-wrap: anywhere;
+  text-decoration-color: var(--primary);
+  text-decoration-thickness: var(--border-width);
+}
+
+.footnote-popover-footer {
+  margin-block-start: var(--space-3, 12px);
+  padding-block-start: var(--space-2, 8px);
+  border-top: 1px solid var(--border-ghost, oklch(88% 0 0 / 0.5));
+}
+
+[data-footnote-popover] .footnote-list-link {
+  color: var(--fg-muted, oklch(48% 0 0));
+  font-size: var(--text-xs, 12px);
+  font-weight: var(--font-medium, 500);
+  letter-spacing: var(--tracking-wide, 0.02em);
+  text-decoration: none;
+  text-underline-offset: 0.14em;
+  text-decoration-thickness: var(--border-width, 1px);
+  border-radius: var(--radius-sm, 4px);
+}
+
+[data-footnote-popover] .footnote-list-link:hover,
+[data-footnote-popover] .footnote-list-link:focus-visible {
+  color: var(--primary, oklch(56% 0.16 252));
+  text-decoration: underline;
+}
+
+section[role='doc-endnotes'],
+section.footnotes {
+  margin-block-start: var(--space-16, 64px);
+  padding-block-start: var(--space-8, 32px);
+  border-block-start: var(--border-width, 1px) solid var(--border-default, oklch(86% 0 0));
+}
+
+section[role='doc-endnotes'] > h2#footnote-label,
+section.footnotes > h2#footnote-label {
+  margin: 0;
+  margin-block-end: var(--space-4, 16px);
+  font-size: var(--reading-h3-size);
+  font-weight: var(--reading-h3-weight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-muted, var(--reading-h3-color));
+}
+
+section[role='doc-endnotes'] ol,
+section.footnotes ol {
+  list-style-position: outside;
+  margin: 0;
+  padding-inline-start: max(var(--space-5, 20px), 2.5ch);
+}
+
+section[role='doc-endnotes'] li,
+section.footnotes li {
+  margin-block-end: var(--space-3, 12px);
+  color: var(--fg-default, oklch(20% 0 0));
+  font-size: var(--text-sm, 13px);
+}
+
+section[role='doc-endnotes'] li > :first-child,
+section.footnotes li > :first-child {
+  margin-block-start: 0;
+}
+
+section[role='doc-endnotes'] li > :last-child,
+section.footnotes li > :last-child {
+  margin-block-end: 0;
+}
+
+section[role='doc-endnotes'] li:target,
+section[role='doc-endnotes'] li[data-router-hash-target='true'],
+section.footnotes li[data-router-hash-target='true'],
+section.footnotes li:target {
+  background-color: var(--bg-highlight-subtle, oklch(96% 0.04 65));
+  border-radius: var(--radius-sm, 4px);
+}
+
+section[role='doc-endnotes'] a[data-footnote-backref='true'][role='doc-backlink'] {
+  color: var(--fg-muted, oklch(48% 0 0));
+  text-decoration: none;
+  text-underline-offset: 0.14em;
+  text-decoration-thickness: var(--border-width, 1px);
+  border-radius: var(--radius-sm, 4px);
+}
+
+section[role='doc-endnotes'] a[data-footnote-backref='true'][role='doc-backlink']:hover,
+section[role='doc-endnotes'] a[data-footnote-backref='true'][role='doc-backlink']:focus-visible {
+  color: var(--primary, oklch(56% 0.16 252));
+  text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-footnote-popover] {
+    transition-duration: var(--duration-instant, 0ms);
+  }
+}
+
+@media (forced-colors: active) {
+  a[data-footnote-ref='true'][role='doc-noteref'],
+  section[role='doc-endnotes'] a[data-footnote-backref='true'][role='doc-backlink'],
+  [data-footnote-popover] .footnote-list-link {
+    color: LinkText;
+  }
+
+  [data-footnote-popover] {
+    border: 2px solid CanvasText;
+    box-shadow: none;
+  }
+
+  section[role='doc-endnotes'],
+  section.footnotes {
+    border-block-start: 1px solid CanvasText;
+  }
+}

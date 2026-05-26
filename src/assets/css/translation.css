@@ -1,0 +1,31 @@
+.prose > ui-translation,
+.prose > .translation-static,
+.about-prose > ui-translation {
+  display: block;
+}
+
+.about-prose > .translation-static {
+  display: block;
+}
+
+:is(.prose, .about-prose) > .translation-static {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-inline-start: var(--border-width-thick, 2px) solid var(--border-subtle);
+  background: var(--bg-surface-1);
+}
+
+:is(.prose, .about-prose) > .translation-static > .translation-original,
+:is(.prose, .about-prose) > .translation-static > .translation-translated {
+  margin: 0;
+}
+
+:is(.prose, .about-prose) > .translation-static > .translation-original {
+  color: var(--fg-default);
+}
+
+:is(.prose, .about-prose) > .translation-static > .translation-translated {
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+}

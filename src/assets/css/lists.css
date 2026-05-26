@@ -1,0 +1,1 @@
+ol[data-list], ul[data-list] { padding-inline-start: max(var(--space-5, 20px), 1.5em); }

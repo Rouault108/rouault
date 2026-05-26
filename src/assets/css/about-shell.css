@@ -1,0 +1,96 @@
+.about-shell {
+  --about-content-max-inline-size: 52rem;
+
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(100vh - var(--header-height));
+}
+
+.about-content {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.about-main-col {
+  --about-content-padding-inline: var(
+    --page-shell-padding-inline,
+    clamp(var(--space-4), 2vw, var(--space-6))
+  );
+
+  box-sizing: border-box;
+  min-inline-size: 0;
+  width: min(
+    100%,
+    calc(
+      var(--about-content-max-inline-size, 52rem) + var(--about-content-padding-inline) +
+        var(--about-content-padding-inline)
+    )
+  );
+  margin-inline: auto;
+  padding-block-start: var(
+    --about-content-padding-block-start,
+    var(--page-content-padding-block-start, var(--space-8))
+  );
+  padding-block-end: var(
+    --about-content-padding-block-end,
+    var(--page-shell-padding-block-end, var(--space-12))
+  );
+  padding-inline: var(--about-content-padding-inline);
+}
+
+.about-hero {
+  display: grid;
+  gap: var(--space-4);
+  padding-bottom: var(--space-6);
+  border-bottom: var(--border-width) solid var(--border-default);
+}
+
+.about-eyebrow {
+  margin: 0;
+  color: var(--fg-default);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.about-title {
+  margin: 0;
+  font-size: clamp(var(--text-2xl), 3.2vw, var(--text-3xl));
+  line-height: var(--line-height-tight);
+  text-wrap: balance;
+}
+
+.about-lead {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: var(--text-base);
+  line-height: var(--line-height-relaxed);
+}
+
+.about-summary {
+  display: grid;
+  gap: var(--space-3);
+  padding-inline-start: var(--space-4);
+  border-inline-start: var(--border-width-thick) solid var(--border-default);
+}
+
+.about-summary-label {
+  margin: 0;
+  color: var(--fg-default);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.about-summary-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--fg-default);
+}
+
+.about-summary-list li + li {
+  margin-top: var(--space-2);
+}

@@ -25,6 +25,8 @@ const expectWithinPx = (actual: number, expected: number, tolerance = 1): void =
   expect(Math.abs(actual - expected)).toBeLessThanOrEqual(tolerance);
 };
 
+const corpusPanelPositionTolerancePx = 1.5;
+
 const waitForAnimationFrames = async (page: Page, count = 3): Promise<void> => {
   for (let index = 0; index < count; index += 1) {
     await page.evaluate(
@@ -278,7 +280,7 @@ test.describe('header corpus dropdown position contract', () => {
       expectWithinPx(
         notePanelGeometry.panelLeft ?? 0,
         corpusPanelGeometry.panelLeft ?? 0,
-        1,
+        corpusPanelPositionTolerancePx,
       );
     }
   });

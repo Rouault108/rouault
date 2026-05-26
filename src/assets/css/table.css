@@ -1,0 +1,144 @@
+:is(.prose, .about-prose) > [data-table-root],
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root] {
+  width: 100%;
+  margin-inline: 0;
+  box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: visible;
+
+  /* iOS Safari:
+   * 横スクロール面を root 側でも固定し、表だけ文字が肥大化するのを防ぐ */
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+:is(.prose, .about-prose) > [data-table-root]:focus-visible,
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+  outline-offset: var(--focus-ring-offset, 2px);
+  border-radius: var(--radius-sm, 4px);
+  animation: var(--animation-focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.prose, .about-prose) > [data-table-root]:focus-visible,
+  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]:focus-visible {
+    animation: none;
+  }
+}
+
+[data-table-root] > table,
+[data-table-root] > table > caption,
+[data-table-root] > table th,
+[data-table-root] > table td {
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+[data-table-root] > table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+}
+
+[data-table-root] > table > caption {
+  caption-side: top;
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--fg-muted, oklch(48% 0 0));
+  padding: var(--space-2, 0.5rem) 0;
+  text-align: left;
+}
+
+[data-table-root] > table th {
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: var(--font-medium, 500);
+  letter-spacing: var(--tracking-wide, 0.04em);
+  color: var(--fg-muted, oklch(48% 0 0));
+  vertical-align: bottom;
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  border-bottom: var(--border-width-thick, 2px) solid var(--border-default, oklch(0% 0 0 / 0.08));
+  text-align: left;
+}
+
+[data-table-root] > table td {
+  font-size: var(--text-base, 0.875rem);
+  color: var(--fg-default, oklch(20% 0 0));
+  vertical-align: top;
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  white-space: normal;
+}
+
+[data-table-root] > table tr {
+  border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(0% 0 0 / 0.08));
+  transition: background-color var(--duration-fast, 70ms)
+    var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-table-root] > table tbody tr:hover {
+    background-color: var(--bg-table-ruler, oklch(0% 0 0 / 0.04));
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  [data-table-root] > table tbody tr:hover {
+    background-color: transparent;
+  }
+}
+
+[data-table-root] > table tfoot tr:first-child {
+  border-top: var(--border-width-thick, 2px) solid var(--border-default, oklch(0% 0 0 / 0.08));
+}
+
+[data-table-root] > table tbody + tbody {
+  border-top: var(--border-width-thick, 2px) solid var(--border-default, oklch(0% 0 0 / 0.08));
+}
+
+[data-table-root][data-density='compact'] > table th {
+  padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+}
+
+[data-table-root][data-density='compact'] > table td {
+  font-size: var(--text-sm, 0.8125rem);
+  padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+}
+
+[data-table-root] > table th[align='center'],
+[data-table-root] > table td[align='center'] {
+  text-align: center;
+}
+
+[data-table-root] > table th[align='right'],
+[data-table-root] > table td[align='right'] {
+  text-align: right;
+}
+
+[data-table-root] > table th[align='left'],
+[data-table-root] > table td[align='left'] {
+  text-align: left;
+}
+
+[data-table-root] > table td[align='right'] {
+  font-feature-settings: 'tnum';
+}
+
+@media (hover: none) and (pointer: coarse) {
+  [data-table-root] > table td {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
+
+@media (forced-colors: active) {
+  [data-table-root] > table tr {
+    border-bottom: 1px solid CanvasText;
+  }
+
+  [data-table-root] > table tfoot tr:first-child,
+  [data-table-root] > table tbody + tbody {
+    border-top: 2px solid CanvasText;
+  }
+}

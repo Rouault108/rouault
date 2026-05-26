@@ -6,12 +6,13 @@ import { describe, expect, it } from 'vitest';
 import { hasDeclarationTokenForAllSelectors } from './support/css-contract.js';
 
 const mainCss = readFileSync(resolve(process.cwd(), 'src/assets/css/main.css'), 'utf8');
+const linkPrimitivesCss = readFileSync(resolve(process.cwd(), 'src/assets/css/link-primitives.css'), 'utf8');
 
 describe('prose link css contract', () => {
   it('keeps prose and link-text links underlined explicitly in screen scope', () => {
     expect(
       hasDeclarationTokenForAllSelectors(
-        mainCss,
+        linkPrimitivesCss,
         [
           '.link-text[href]',
           `:is(.prose, .about-prose) a[href]:not(

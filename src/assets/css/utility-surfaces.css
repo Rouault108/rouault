@@ -1,0 +1,56 @@
+/* Glass Panel：ヘッダー、フローティングパネル用 */
+.glass-panel {
+  /* Baseline: 明確な境界線による構造化 */
+  background: var(--glass-panel);
+  border: var(--border-style-subtle);
+}
+
+@supports (backdrop-filter: blur(12px)) {
+  .glass-panel {
+    /* Enhanced: 背後のコンテキストを感じさせる透過性 */
+    background: oklch(from var(--bg-default) l c h / 0.85);
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
+
+    /* Edge Highlight: 1pxの光の反射を表現 */
+    box-shadow:
+      inset 0 1px 0 0 oklch(100% 0 0 / 0.05),
+      inset 0 0 0 1px oklch(100% 0 0 / 0.03);
+  }
+}
+
+/* Dark Mode時の調整 */
+@media (prefers-color-scheme: dark) {
+  @supports (backdrop-filter: blur(12px)) {
+    .glass-panel {
+      box-shadow:
+        inset 0 1px 0 0 oklch(100% 0 0 / 0.08),
+        inset 0 0 0 1px oklch(100% 0 0 / 0.05);
+    }
+  }
+}
+
+/* Skeleton UI */
+.skeleton {
+  background: var(--skeleton-bg);
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(90deg, transparent, var(--skeleton-shimmer), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}

@@ -1,0 +1,32 @@
+/* ===========================================================================
+ * Layout System
+ * =========================================================================== */
+
+/* Container */
+.container {
+  width: 100%;
+  max-width: var(--bp-xl);
+  margin-inline: auto;
+  padding-inline: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  /* --bp-md */
+  .container {
+    padding-inline: var(--space-8);
+  }
+}
+
+.container-reading {
+  max-width: min(100%, var(--reading-measure, var(--width-reading)));
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  /* --bp-md */
+  .container-reading {
+    padding-inline: var(--space-8);
+  }
+}

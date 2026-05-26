@@ -25,8 +25,31 @@ describe('static CSS contracts', () => {
   it('main.css imports static UI contract files', () => {
     const css = readCss('main.css');
     for (const fileName of [
+      './link-primitives.css',
+      './card-link.css',
+      './utility-surfaces.css',
+      './layout-containers.css',
+      './stateful-note-bridges.css',
+      './translation.css',
+      './app-shell.css',
+      './router-shell.css',
+      './layout-header.css',
+      './layout-sidebar.css',
+      './note-shell.css',
+      './about-shell.css',
+      './page-shell.css',
+      './home-page.css',
+      './result-card.css',
+      './not-found-page.css',
       './search-dialog.css',
       './search-page.css',
+      './blockquote.css',
+      './callout.css',
+      './info-box.css',
+      './table.css',
+      './footnotes.css',
+      './link-card.css',
+      './image.css',
       './details-block.css',
       './syntax.css',
       './score.css',
@@ -35,6 +58,8 @@ describe('static CSS contracts', () => {
     ]) {
       expect(css).to.contain(`@import '${fileName}'`);
     }
+    expect(css).not.to.match(/\.(?:app-root|note-shell|page-shell|home-shell|result-card|result-link)\b/u);
+    expect(css).not.to.contain('ui-list-item >');
   });
 
   it('search dialog CSS contains required layout and state declarations', () => {
@@ -93,5 +118,19 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(corpora, '.corpora-overview__corpus-grid', ['grid-template-columns:']);
     expectRuleToDeclare(corpora, '.corpus-page .empty-hint[data-empty-state]', ['min-block-size:']);
     expect(corpora).not.to.match(/\.result-(card|link|title|meta|excerpt)\s*\{/u);
+  });
+
+  it('page shell CSS is split by responsibility', () => {
+    const pageShell = readCss('page-shell.css');
+    expectRuleToDeclare(pageShell, '.page-shell', ['--page-shell-padding-block-start']);
+    expectRuleToDeclare(pageShell, '.page-shell .hero', ['display: grid']);
+
+    const resultCard = readCss('result-card.css');
+    expectRuleToDeclare(resultCard, '.page-shell .result-card', ['border:', 'background:']);
+    expect(resultCard).not.to.contain('.hero');
+
+    const homePage = readCss('home-page.css');
+    expectRuleToDeclare(homePage, '.home-shell', ['--home-shell-padding-block-start']);
+    expect(homePage).not.to.match(/\.hero\s*\{/u);
   });
 });

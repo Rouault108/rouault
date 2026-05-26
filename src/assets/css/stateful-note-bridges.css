@@ -1,0 +1,141 @@
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin-inline: 0;
+  text-align: start;
+}
+
+:is(.prose, .about-prose)
+  > ui-tabs
+  > [slot='panel']
+  > :is(
+    pre[data-code-block],
+    section[data-code-group],
+    [data-code-block-root]
+  ) {
+  width: 100%;
+  margin-inline: 0;
+}
+
+:is(.prose, .about-prose)
+  > ui-tabs
+  > [slot='panel']
+  > :is([data-table-root], [data-score], [data-math]) {
+  --ui-table-breakout-width: 100%;
+  --ui-table-breakout-margin: 0;
+}
+
+:is(.prose, .about-prose)
+  > ui-tabs
+  > [slot='panel']
+  > *
+  + :where(
+    p,
+    ul,
+    ol,
+    dl,
+    pre,
+    table,
+    figure,
+    blockquote,
+    [data-callout],
+    pre[data-code-block],
+    section[data-code-group],
+    [data-code-block-root],
+    [data-link-card],
+    [data-details],
+    [data-info-box],
+    [data-image],
+    ui-video,
+    [data-score],
+    [data-table-root],
+    ui-tabs,
+    ui-translation
+  ) {
+  margin-block-start: var(--reading-flow-space);
+}
+
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > * + h2 {
+  margin-block-start: var(--reading-h2-space);
+}
+
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > * + h3 {
+  margin-block-start: var(--reading-h3-space);
+}
+
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > * + h4 {
+  margin-block-start: var(--reading-h4-space);
+}
+
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > * + h5 {
+  margin-block-start: var(--reading-h5-space);
+}
+
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > * + h6 {
+  margin-block-start: var(--reading-h6-space);
+}
+
+@media (max-width: 767px) {
+  .prose > ui-tabs,
+  .about-prose > ui-tabs {
+    --ui-tabs-inline-bleed: var(--space-1);
+  }
+}
+
+/* Proseコンテナ内のメディア要素はテキスト幅を超えて拡張 */
+/* Proseコンテナ内のメディア要素はテキスト幅を超えて拡張 */
+.prose > img,
+.prose > pre,
+.prose > video {
+  max-width: none;
+}
+
+.prose
+  > :is(
+    pre[data-code-block],
+    section[data-code-group],
+    [data-code-block-root]
+  ),
+.about-prose
+  > :is(
+    pre[data-code-block],
+    section[data-code-group],
+    [data-code-block-root]
+  ) {
+  width: 100%;
+  margin-inline: 0;
+}
+
+.prose > [data-score] {
+  --ui-table-breakout-width: 100%;
+  --ui-table-breakout-margin: 0;
+}
+
+.prose > [data-math] {
+  --ui-table-breakout-width: 100%;
+  --ui-table-breakout-margin: 0;
+}
+
+/* Mobile: コンテナより広く */
+@media (max-width: 767px) {
+  /* --bp-md */
+  .prose > img,
+  .prose > pre,
+  .prose > video {
+    width: calc(100% + var(--space-8));
+    margin-inline: var(--space-n4);
+  }
+}
+
+/* Desktop: さらに広く強調 */
+@media (min-width: 768px) {
+  /* --bp-md */
+  .prose > img,
+  .prose > pre,
+  .prose > video {
+    width: calc(100% + var(--space-16));
+    margin-inline: var(--space-n8);
+  }
+}

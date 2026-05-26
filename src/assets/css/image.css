@@ -1,0 +1,119 @@
+/* ===========================================================================
+ * Static Image / Footnote roots for note prose
+ * =========================================================================== */
+
+figure[data-image] {
+  position: relative;
+  display: grid;
+  gap: var(--space-2, 8px);
+  margin: 0;
+}
+
+figure[data-image] > picture {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.04));
+  border-radius: var(--radius-md, 6px);
+  background: var(--bg-fill-neutral, oklch(95% 0 0));
+}
+
+figure[data-image] img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+}
+
+figure[data-image] > figcaption {
+  color: var(--fg-muted, oklch(48% 0 0));
+  font-size: var(--text-sm, 13px);
+  line-height: var(--line-height-relaxed, 1.75);
+}
+
+figure[data-image] > [data-image-zoom-trigger] {
+  position: absolute;
+  inset-block-start: var(--space-2, 8px);
+  inset-inline-end: var(--space-2, 8px);
+  z-index: 1;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  padding: 0;
+  border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.08));
+  border-radius: 999px;
+  background: oklch(100% 0 0 / 0.78);
+  color: var(--fg-muted, oklch(48% 0 0));
+  cursor: zoom-in;
+  backdrop-filter: blur(var(--blur-md, 12px));
+  -webkit-backdrop-filter: blur(var(--blur-md, 12px));
+}
+
+figure[data-image] > [data-image-zoom-trigger]:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 252));
+  outline-offset: var(--focus-ring-offset, 2px);
+}
+
+figure[data-image] dialog[data-image-lightbox-dialog] {
+  max-width: none;
+  max-height: none;
+  width: 100vw;
+  height: 100vh;
+  padding: var(--space-4, 16px);
+  border: 0;
+  background: oklch(0% 0 0 / 0.6);
+}
+
+figure[data-image] dialog[data-image-lightbox-dialog]::backdrop {
+  background: oklch(0% 0 0 / 0.6);
+  backdrop-filter: blur(var(--blur-md, 12px));
+  -webkit-backdrop-filter: blur(var(--blur-md, 12px));
+}
+
+.image-lightbox-surface {
+  position: relative;
+  display: grid;
+  gap: var(--space-3, 12px);
+  justify-items: center;
+  align-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.image-lightbox-image {
+  display: block;
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 2rem);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.04));
+  border-radius: var(--radius-md, 6px);
+  background: var(--bg-fill-neutral, oklch(95% 0 0));
+}
+
+.image-lightbox-close {
+  position: absolute;
+  inset-block-start: var(--space-2, 8px);
+  inset-inline-end: var(--space-2, 8px);
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.08));
+  border-radius: 999px;
+  background: oklch(100% 0 0 / 0.78);
+  cursor: pointer;
+}
+
+.image-lightbox-caption {
+  margin: 0;
+  color: oklch(98% 0 0);
+  font-size: var(--text-sm, 13px);
+  line-height: var(--line-height-relaxed, 1.75);
+}
+
+@media print {
+  figure[data-image] > [data-image-zoom-trigger],
+  figure[data-image] dialog[data-image-lightbox-dialog],
+  [data-footnote-popover] {
+    display: none !important;
+  }
+}

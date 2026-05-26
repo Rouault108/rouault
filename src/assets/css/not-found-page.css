@@ -1,0 +1,33 @@
+.not-found-page-fallback {
+  display: grid;
+  gap: var(--space-4, 16px);
+  min-block-size: min(60vh, 32rem);
+  place-content: center;
+  padding: var(--space-8, 32px);
+  text-align: center;
+}
+
+.not-found-page-fallback__title {
+  margin: 0;
+  font-size: var(--text-3xl, 30px);
+  line-height: var(--line-height-tight, 1.2);
+}
+
+.not-found-page-fallback__description {
+  margin: 0;
+  color: var(--fg-muted);
+}
+
+.not-found-page-fallback__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3, 12px);
+}
+
+.not-found-page-fallback__link {
+  color: var(--fg-default);
+  text-decoration-line: underline;
+  text-decoration-thickness: var(--border-width, 1px);
+  text-underline-offset: 0.15em;
+}

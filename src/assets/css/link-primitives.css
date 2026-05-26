@@ -1,0 +1,515 @@
+/* ===========================================================================
+ * Links
+ * =========================================================================== */
+
+/* グローバルリンク（デフォルト） */
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+a:focus-visible {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  border-radius: var(--focus-ring-radius);
+  animation: var(--animation-focus);
+}
+
+/* ===========================================================================
+ * Text Links（テキストリンク）
+ * @see docs/design-system/components.md - Prose Link仕様
+ * =========================================================================== */
+
+/*
+ * テキストリンク契約:
+ * - 色以外のシグナル（常時下線）を必須にする
+ * - link-text は Shadow DOM/Light DOM 共通の明示クラス
+ * - 読書面は .prose と .about-prose の両方を対象にする
+ */
+.link-text[href],
+:is(.prose, .about-prose)
+  a[href]:not(
+    :where(
+      [data-link-surface='card'],
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ) {
+  cursor: pointer;
+  color: var(--fg-default); /* 本文色を維持し、読むリズムを優先 */
+  text-decoration: underline;
+  text-underline-offset: 0.15em; /* Noto Sans JPのベースラインに最適化 */
+
+  /* 長い URL / 英数字列が読書面の幅を押し広げないようにする */
+  overflow-wrap: anywhere;
+
+  /* Baseline: Relative Color Syntax 非対応ブラウザ向けの安全なフォールバック */
+  text-decoration-color: var(--primary);
+
+  text-decoration-thickness: var(--border-width); /* UI全体の線幅との一貫性 */
+
+  transition:
+    text-decoration-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+
+  /* 改行時もスタイルを行ごとに適用（Firefox未サポート、Progressive Enhancement） */
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Progressive Enhancement: Relative Color Syntax 対応環境 */
+@supports (color: oklch(from white l c h)) {
+  .link-text[href],
+  :is(.prose, .about-prose)
+    a[href]:not(
+      :where(
+        [data-link-surface='card'],
+        .heading-anchor,
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink'],
+        [data-footnote-popover] .footnote-list-link,
+        ui-footnote .footnote-list-link
+      )
+    ) {
+    text-decoration-color: var(--link-decoration-color);
+  }
+}
+
+/* Hover状態 - テキストと下線の両方を色付け */
+.link-text[href]:hover,
+:is(.prose, .about-prose)
+  a[href]:not(
+    :where(
+      [data-link-surface='card'],
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):hover {
+  color: var(--primary-hover);
+  text-decoration-color: var(--primary-hover);
+}
+
+/* Focus-Visible状態 - テキスト色は変更せず、フォーカスリングのみで状態を示す */
+.link-text[href]:focus-visible,
+:is(.prose, .about-prose)
+  a[href]:not(
+    :where(
+      [data-link-surface='card'],
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):focus-visible {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  border-radius: var(--focus-ring-radius);
+  animation: var(--animation-focus);
+
+  color: var(--fg-default);
+  text-decoration-color: var(--primary);
+}
+
+/* Visited状態 - 個人メモでは既読管理より読むリズムを優先 */
+.link-text[href]:visited,
+:is(.prose, .about-prose)
+  a[href]:not(
+    :where(
+      [data-link-surface='card'],
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):visited {
+  color: var(--fg-default);
+  text-decoration-color: var(--primary);
+}
+
+/* 外部リンク:
+ * 1. data-link-kind がある場合はそれを正本として使う
+ * 2. hand-authored な about ページ等のために href scheme でも保守的 fallback を持つ
+ */
+:is(.prose, .about-prose)
+  a[href]:not(
+    :where(
+      [data-link-surface='card'],
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):is(
+    [data-link-kind='external-web']
+  ) {
+  text-decoration-style: dotted;
+}
+
+:is(.prose, .about-prose)
+  a[href]:not(
+    :where(
+      [data-link-surface='card'],
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):is(
+    [data-link-kind='external-web']
+  )::after {
+  content: '↗';
+  display: inline-block;
+  margin-inline-start: 0.28em;
+  color: var(--fg-muted);
+  font-size: 0.78em;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: 0.08em;
+}
+
+:is(.prose, .about-prose)
+  a[href]:not(
+    :where(
+      [data-link-surface='card'],
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):is(
+    [data-link-kind='external-web']
+  ):hover::after,
+:is(.prose, .about-prose)
+  a[href]:not(
+    :where(
+      [data-link-surface='card'],
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link,
+      ui-footnote .footnote-list-link
+    )
+  ):is(
+    [data-link-kind='external-web']
+  ):focus-visible::after {
+  color: currentColor;
+}
+
+/* Progressive Enhancement: Relative Color Syntax 対応環境 */
+@supports (color: oklch(from white l c h)) {
+  .link-text[href]:visited,
+  :is(.prose, .about-prose)
+    a[href]:not(
+      :where(
+        [data-link-surface='card'],
+        .heading-anchor,
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink'],
+        [data-footnote-popover] .footnote-list-link,
+        ui-footnote .footnote-list-link
+      )
+    ):visited {
+    text-decoration-color: var(--link-decoration-color);
+  }
+}
+
+/* Touch (No Hover) 判定 - タッチデバイスでは発見可能性を優先 */
+@media (hover: none) and (pointer: coarse) {
+  .link-text[href],
+  :is(.prose, .about-prose)
+    a[href]:not(
+      :where(
+        [data-link-surface='card'],
+        .heading-anchor,
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink'],
+        [data-footnote-popover] .footnote-list-link,
+        ui-footnote .footnote-list-link
+      )
+    ) {
+    color: var(--primary);
+    text-decoration-color: var(--link-decoration-color-touch);
+  }
+}
+
+/* ===========================================================================
+ * Control Links（構造型リンク / UIリンク）
+ * @see docs/design-system/components.md - Contextual Link仕様
+ *
+ * カード、サイドバー等のUIコンポーネント内に配置される
+ * ナビゲーションやアクションを目的としたリンク。
+ * Prose Link（読み物内）とは明確に区別される。
+ * =========================================================================== */
+
+/**
+ * Base Style
+ * - デフォルトは Nav バリアント（ニュートラル）
+ * - Prose Linkと同じ下線オフセット・太さを共有し一貫性を保証
+ */
+.ui-link[href],
+.link-control[href] {
+  cursor: pointer;
+  color: var(--fg-default);
+  text-decoration: none;
+  text-underline-offset: 0.15em; /* Noto Sans JPのベースラインに最適化 */
+  text-decoration-thickness: var(--border-width); /* UI全体の線幅との一貫性 */
+  font-weight: var(--font-medium); /* 周辺テキストより一段階強調 */
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    text-decoration-color var(--duration-fast) var(--ease-out);
+}
+
+/* Hover: 下線追加 + プライマリカラーへ変化 */
+.ui-link[href]:hover,
+.link-control[href]:hover {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+
+/* Active: Tactile Feedback（ボタンと同様のスケール変化） */
+.ui-link[href]:active,
+.link-control[href]:active {
+  transform: scale(var(--scale-pressed));
+}
+
+/* Focus-Visible: Adaptive Focusリング */
+.ui-link[href]:focus-visible,
+.link-control[href]:focus-visible {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  border-radius: var(--focus-ring-radius); /* グローバル定義に追従 */
+  animation: var(--animation-focus);
+}
+
+/* Visited: UIの透明化を優先、Default状態と統合 */
+.ui-link[href]:visited,
+.link-control[href]:visited {
+  color: var(--fg-default);
+}
+
+.ui-link[data-link-kind='external-web']::after,
+.link-control[data-link-kind='external-web']::after {
+  content: '↗';
+  display: inline-block;
+  margin-inline-start: 0.28em;
+  color: var(--fg-muted);
+  font-size: 0.78em;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: 0.08em;
+}
+
+.ui-link[data-link-kind='external-web']:hover::after,
+.link-control[data-link-kind='external-web']:hover::after {
+  color: currentColor;
+}
+
+/* Sidebar Nav: 階層構造を示すため muted を基準色とする */
+.sidebar .ui-link[href]:not(.link-action),
+.sidebar .link-control[href]:not(.link-action) {
+  color: var(--fg-muted);
+}
+
+.sidebar .ui-link[href]:not(.link-action):visited,
+.sidebar .link-control[href]:not(.link-action):visited {
+  color: var(--fg-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Action Variant - ユーザーに操作を促す強いリンク
+ * 「編集」「作成」などの明確なアクション
+ * --------------------------------------------------------------------------- */
+.ui-link.link-action,
+.link-action {
+  color: var(--primary);
+}
+
+.ui-link.link-action:visited,
+.link-action:visited {
+  color: var(--primary);
+}
+
+.ui-link.link-action:hover,
+.link-action:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+
+/* Current (Nav only): 現在地は色と物理的インジケータで示す */
+.ui-link[href]:not(.link-action)[aria-current='page'],
+.ui-link[href]:not(.link-action).is-active,
+.link-control[href]:not(.link-action)[aria-current='page'],
+.link-control[href]:not(.link-action).is-active {
+  color: var(--primary);
+  font-weight: var(--font-medium);
+  border-inline-start: var(--border-width-thick) solid var(--primary);
+  padding-inline-start: var(--space-2);
+}
+
+/* ---------------------------------------------------------------------------
+ * Subtle Variant - メタデータ、日付、タグ等
+ * 控えめに存在を示唆し、ホバーで明確化
+ * 
+ * 注意: --bg-default または --bg-surface-2 上でのみ使用可能
+ *       --bg-fill-muted (3.8:1) では WCAG AA 未達
+ * --------------------------------------------------------------------------- */
+.ui-link.link-subtle,
+.link-subtle {
+  color: var(--fg-muted);
+  font-weight: var(--font-normal); /* Subtleは強調しない */
+  text-decoration: none;
+}
+
+.ui-link.link-subtle:hover,
+.link-subtle:hover {
+  color: var(--fg-default);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+
+.ui-link.link-subtle:focus-visible,
+.link-subtle:focus-visible {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  border-radius: var(--focus-ring-radius);
+  animation: var(--animation-focus);
+  color: var(--fg-muted);
+  text-decoration: underline;
+}
+
+.ui-link.link-subtle:visited,
+.link-subtle:visited {
+  color: var(--fg-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Touch (No Hover) 判定
+ * タッチデバイスではホバーによる発見可能性が得られないため、
+ * デフォルト状態から視覚的ヒントを強化
+ * --------------------------------------------------------------------------- */
+@media (hover: none) and (pointer: coarse) {
+  /* Nav バリアント: デフォルトで色付き */
+  .ui-link[href]:not(.link-action),
+  .link-control[href]:not(.link-action) {
+    color: var(--primary);
+  }
+
+  /* Icon Only: 最小タップ領域を確保 */
+  .ui-link.icon-only {
+    min-inline-size: var(--control-min-touch);
+    min-block-size: var(--control-min-touch);
+  }
+
+  /* Subtle バリアント: 発見可能性を優先し、fg-default に格上げ */
+  .ui-link.link-subtle,
+  .link-subtle {
+    color: var(--fg-default);
+  }
+}
+
+/* ===========================================================================
+ * Print Styles - Contextual Links
+ * =========================================================================== */
+
+@media print {
+  /* ナビゲーションリンク: 印刷時は非表示（ページ内でのみ意味を持つため） */
+  .sidebar a[href],
+  .ui-link.link-nav {
+    display: none;
+  }
+
+  /* アクションリンク: 外部URLの場合のみ展開 */
+  .ui-link.link-action[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.875em;
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+
+  /* カード内リンク: 下線を表示し、リンクであることを明示 */
+  .card
+    a[href]:not(
+      :where(
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink']
+      )
+    ),
+  .callout
+    a[href]:not(
+      :where(
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink']
+      )
+    ) {
+    text-decoration: underline;
+    text-decoration-color: currentColor;
+  }
+}
+
+/* ===========================================================================
+ * Print Styles - Prose Links
+ * =========================================================================== */
+
+@media print {
+  /* 外部リンク（http/https）のURLを表示 */
+  :is(.prose, .about-prose)
+    a[href^='http']:not(
+      :where(
+        [data-link-surface='card'],
+        .heading-anchor,
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink'],
+        [data-footnote-popover] .footnote-list-link,
+        ui-footnote .footnote-list-link
+      )
+    )::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.875em;
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+
+  /* 内部リンク（相対パス、アンカー）はURL展開しない */
+  :is(.prose, .about-prose) a[href^='#']::after,
+  :is(.prose, .about-prose) a[href^='/']::after {
+    content: none;
+  }
+
+  /* 下線は常に表示し、リンクであることを明示 */
+  :is(.prose, .about-prose)
+    a[href]:not(
+      :where(
+        [data-link-surface='card'],
+        .heading-anchor,
+        [data-footnote-ref='true'][role='doc-noteref'],
+        [data-footnote-backref='true'][role='doc-backlink'],
+        [data-footnote-popover] .footnote-list-link,
+        ui-footnote .footnote-list-link
+      )
+    ) {
+    text-decoration: underline;
+    text-decoration-color: currentColor;
+  }
+}

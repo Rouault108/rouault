@@ -1,0 +1,124 @@
+.note-shell {
+  --reading-measure: var(--note-reading-max-inline-size);
+  --note-toc-track: var(--note-toc-width, var(--aside-width));
+  display: grid;
+  align-items: start;
+  column-gap: var(--note-shell-column-gap, var(--space-8, 32px));
+  max-width: min(100%, var(--note-shell-max-width, 1280px));
+  margin-inline: auto;
+  width: 100%;
+}
+
+/*
+ * TOC ありは 2 カラム、TOC なしは 1 カラムへ明示的に分岐する。
+ * ただし note shell の外形は TOC presence にかかわらず固定し、
+ * 本文開始位置を sidebar 基準で揃える。
+ */
+.note-shell[data-toc-presence='present'] {
+  grid-template-columns:
+    minmax(0, 1fr)
+    var(--note-toc-track);
+}
+
+.note-shell[data-toc-presence='absent'] {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: var(--note-shell-absent-max-width, min(100%, 72rem));
+}
+
+.note-shell .container-reading {
+  max-width: min(100%, var(--reading-measure));
+}
+
+.note-shell .prose {
+  max-width: var(--reading-measure);
+}
+
+.note-shell[data-toc-presence='absent'] .container-reading {
+  max-width: 100%;
+  margin-inline: 0;
+}
+
+.note-shell[data-toc-presence='absent'] .prose {
+  margin-inline: 0;
+}
+
+.layout-main-col {
+  padding-block-start: var(
+    --note-content-padding-block-start,
+    var(--page-content-padding-block-start, var(--space-8))
+  );
+  padding-block-end: var(--layout-main-col-padding-block-end, var(--space-8));
+}
+
+.layout-sidebar-col,
+.layout-main-col,
+.layout-toc-col {
+  box-sizing: border-box;
+  min-inline-size: 0;
+}
+
+.note-shell .layout-main-col {
+  grid-column: 1;
+}
+
+.note-shell[data-toc-presence='present'] .layout-toc-col {
+  grid-column: 2;
+}
+
+.layout-toc-col {
+  position: sticky;
+  top: var(--header-height);
+  align-self: start;
+  block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
+  max-block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
+  border-left: var(--border-width) solid color-mix(in oklab, var(--border-ghost) 48%, transparent);
+  overflow: hidden;
+  padding-block: var(--space-5, 20px);
+  padding-inline-start: var(--space-3, 12px);
+  padding-inline-end: var(--space-2, 8px);
+  transform: translateY(calc(var(--layout-sticky-footer-offset, 0px) * -1));
+}
+
+@media (max-width: 1023px) {
+  .note-shell[data-toc-presence='present'] {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(200px, 34vw);
+  }
+
+  .note-shell[data-toc-presence='absent'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 639px) {
+  .note-shell,
+  .note-shell[data-toc-presence='present'],
+  .note-shell[data-toc-presence='absent'] {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0;
+  }
+
+.note-shell[data-toc-presence='present'] .layout-toc-col {
+    grid-column: 1;
+    position: static;
+    block-size: 0;
+    min-block-size: 0;
+    max-block-size: none;
+    overflow: visible;
+    transform: none;
+  }
+
+  .layout-toc-col {
+    border-left: none;
+    padding: 0;
+  }
+
+  [data-layout-toc-mobile-static-nav] {
+    display: block;
+  }
+
+  .layout-toc-col[data-toc-hydration='static'] {
+    display: none;
+  }
+}

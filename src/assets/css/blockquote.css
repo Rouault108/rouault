@@ -1,0 +1,74 @@
+:is(.prose, .about-prose) > blockquote,
+:is(.prose, .about-prose) > figure > blockquote,
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > blockquote,
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > figure > blockquote {
+  margin: 0;
+  padding-inline-start: var(--space-4, 16px);
+  border-inline-start: var(--border-width-thick, 2px) solid
+    var(--border-muted, var(--border-default, oklch(70% 0 0 / 0.28)));
+  color: var(--fg-default, oklch(20% 0 0));
+  font-style: normal;
+}
+
+:is(.prose, .about-prose) > blockquote > :first-child,
+:is(.prose, .about-prose) > figure > blockquote > :first-child,
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > blockquote > :first-child,
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > figure > blockquote > :first-child {
+  margin-block-start: 0;
+}
+
+:is(.prose, .about-prose) > blockquote > :last-child,
+:is(.prose, .about-prose) > figure > blockquote > :last-child,
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > blockquote > :last-child,
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > figure > blockquote > :last-child {
+  margin-block-end: 0;
+}
+
+:is(.prose, .about-prose) > figure[data-blockquote-variant='nested'] > blockquote,
+:is(.prose, .about-prose) > blockquote[data-blockquote-variant='nested'],
+:is(.prose, .about-prose)
+  > ui-tabs
+  > [slot='panel']
+  > figure[data-blockquote-variant='nested']
+  > blockquote,
+:is(.prose, .about-prose)
+  > ui-tabs
+  > [slot='panel']
+  > blockquote[data-blockquote-variant='nested'] {
+  margin-block: var(--space-4, 16px);
+  margin-inline-start: 0;
+}
+
+:is(.prose, .about-prose) > figure > figcaption.source,
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > figure > figcaption.source {
+  margin-block-start: var(--space-2, 8px);
+  color: var(--fg-muted, oklch(48% 0 0));
+  font-size: var(--text-xs, 12px);
+  font-weight: var(--font-medium, 500);
+  letter-spacing: var(--tracking-wide, 0.025em);
+  line-height: var(--line-height-normal, 1.5);
+}
+
+:is(.prose, .about-prose) > figure > figcaption.source cite,
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > figure > figcaption.source cite {
+  color: inherit;
+  font-style: normal;
+}
+
+@media print {
+  :is(.prose, .about-prose) > blockquote,
+  :is(.prose, .about-prose) > figure > blockquote,
+  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > blockquote,
+  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > figure > blockquote,
+  :is(.prose, .about-prose) > figure {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  :is(.prose, .about-prose) > blockquote,
+  :is(.prose, .about-prose) > figure > blockquote,
+  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > blockquote,
+  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > figure > blockquote {
+    border-inline-start-color: #000 !important;
+  }
+}

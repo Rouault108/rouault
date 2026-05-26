@@ -18,8 +18,8 @@ import {
 } from './support/css-contract.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
-const mainCssPath = path.resolve(dirname, '../../src/assets/css/main.css');
-const mainCss = readFileSync(mainCssPath, 'utf8');
+const layoutSidebarCssPath = path.resolve(dirname, '../../src/assets/css/layout-sidebar.css');
+const mainCss = readFileSync(layoutSidebarCssPath, 'utf8');
 
 const hoverMedia = (params: string): boolean => /hover\s*:\s*hover/u.test(params) && /pointer\s*:\s*fine/u.test(params);
 

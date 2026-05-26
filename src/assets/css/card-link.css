@@ -1,0 +1,42 @@
+/* ---------------------------------------------------------------------------
+ * Block Link (Card Action)
+ * カード全体をリンク化する Stretched Link パターン
+ * 
+ * 使用条件:
+ * - 親コンテナ（.card 等）に position: relative が必須
+ * - 内部の別リンク/ボタンには position: relative + z-index: 2 以上を設定
+ * --------------------------------------------------------------------------- */
+.card-link::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+}
+
+/* Block Link (card-link) にフォーカス時、親カード全体を強調 */
+.card:focus-within {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  border-radius: var(--radius-md);
+  animation: var(--animation-focus);
+}
+
+/* Enhancement: :has() 対応環境では card-link のフォーカスに限定 */
+.card:has(.card-link:focus-visible) {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  border-radius: var(--radius-md);
+  animation: var(--animation-focus);
+}
+
+/* card-link 自体のフォーカスリングは非表示（親カードに委譲） */
+.card-link:focus-visible {
+  outline: none;
+}

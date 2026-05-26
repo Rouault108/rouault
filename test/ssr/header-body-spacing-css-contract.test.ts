@@ -10,7 +10,12 @@ const readProjectFile = (path: string): string => readFileSync(resolve(process.c
 
 const tokensCss = readProjectFile('src/assets/css/tokens.css');
 const mainCss = readProjectFile('src/assets/css/main.css');
-const pageShellStylesSource = readProjectFile('src/components/page/page-shell-styles.ts');
+const appShellCss = readProjectFile('src/assets/css/app-shell.css');
+const routerShellCss = readProjectFile('src/assets/css/router-shell.css');
+const noteShellCss = readProjectFile('src/assets/css/note-shell.css');
+const aboutShellCss = readProjectFile('src/assets/css/about-shell.css');
+const homePageCss = readProjectFile('src/assets/css/home-page.css');
+const pageShellCss = readProjectFile('src/assets/css/page-shell.css');
 const layoutHeaderSource = readProjectFile('src/components/layout/layout-header.ts');
 const uiHeaderSource = readProjectFile('src/components/ui/header/header.ts');
 
@@ -22,7 +27,6 @@ const extractFirstCssTemplate = (source: string, label: string): string => {
   return match[1];
 };
 
-const pageShellCss = extractFirstCssTemplate(pageShellStylesSource, 'page-shell-styles.ts');
 const layoutHeaderCss = extractFirstCssTemplate(layoutHeaderSource, 'layout-header.ts');
 const uiHeaderCss = extractFirstCssTemplate(uiHeaderSource, 'ui/header/header.ts');
 
@@ -487,19 +491,19 @@ describe('header body spacing css contract', () => {
 
   it('keeps page wrapper padding-block-start attached to each effective token', () => {
     expectPaddingUsesRequiredToken(
-      mainCss,
+      noteShellCss,
       classSubject('layout-main-col'),
       '--note-content-padding-block-start',
       '.layout-main-col',
     );
     expectPaddingUsesRequiredToken(
-      mainCss,
+      aboutShellCss,
       classSubject('about-main-col'),
       '--about-content-padding-block-start',
       '.about-main-col',
     );
     expectPaddingUsesRequiredToken(
-      mainCss,
+      homePageCss,
       classSubject('home-shell'),
       '--home-shell-padding-block-start',
       '.home-shell',
@@ -514,55 +518,55 @@ describe('header body spacing css contract', () => {
 
   it('keeps about-shell as an outer shell without body-start spacing responsibility', () => {
     const aboutShell = classSubject('about-shell');
-    expectNoDeclarations(mainCss, aboutShell, ABOUT_SHELL_PADDING_PROPERTIES, '.about-shell padding');
-    expectOnlyZeroMarginDeclarations(mainCss, aboutShell, BLOCK_START_MARGIN_PROPERTIES, '.about-shell block-start margin');
-    expectNoDeclarations(mainCss, aboutShell, WIDTH_LIMIT_PROPERTIES, '.about-shell width responsibility');
+    expectNoDeclarations(aboutShellCss, aboutShell, ABOUT_SHELL_PADDING_PROPERTIES, '.about-shell padding');
+    expectOnlyZeroMarginDeclarations(aboutShellCss, aboutShell, BLOCK_START_MARGIN_PROPERTIES, '.about-shell block-start margin');
+    expectNoDeclarations(aboutShellCss, aboutShell, WIDTH_LIMIT_PROPERTIES, '.about-shell width responsibility');
     expectOnlyAllowedDeclarations(
-      mainCss,
+      aboutShellCss,
       aboutShell,
       ABOUT_SHELL_INLINE_SIZE_PROPERTIES,
       ABOUT_SHELL_ALLOWED_INLINE_SIZE_VALUES,
       '.about-shell inline-size allowlist',
     );
     expectOnlyAllowedDeclarations(
-      mainCss,
+      aboutShellCss,
       aboutShell,
       new Set(['display']),
       ABOUT_SHELL_ALLOWED_DISPLAY_VALUES,
       '.about-shell display allowlist',
     );
-    expectNoDeclarations(mainCss, aboutShell, LAYOUT_TRACK_PROPERTIES, '.about-shell layout track responsibility');
-    expectNoVisualOffsetDeclarations(mainCss, aboutShell, '.about-shell visual offset');
-    expectNoNonZeroDeclarations(mainCss, aboutShell, BLOCK_START_BORDER_PROPERTIES, '.about-shell block-start border');
-    expectNoPseudoSpacer(mainCss, aboutShell, '.about-shell');
+    expectNoDeclarations(aboutShellCss, aboutShell, LAYOUT_TRACK_PROPERTIES, '.about-shell layout track responsibility');
+    expectNoVisualOffsetDeclarations(aboutShellCss, aboutShell, '.about-shell visual offset');
+    expectNoNonZeroDeclarations(aboutShellCss, aboutShell, BLOCK_START_BORDER_PROPERTIES, '.about-shell block-start border');
+    expectNoPseudoSpacer(aboutShellCss, aboutShell, '.about-shell');
 
-    const forbiddenTokenReferences = collectDeclarationsForSubject(mainCss, aboutShell).filter(
+    const forbiddenTokenReferences = collectDeclarationsForSubject(aboutShellCss, aboutShell).filter(
       (declaration) => /--page-shell-padding-(block-start|block-end|inline)\b/u.test(declaration.value),
     );
     expect(forbiddenTokenReferences, '.about-shell must not consume page shell padding tokens').toEqual([]);
   });
 
   it('keeps about-main-col as the about content box and border-box controller', () => {
-    const declarations = collectDeclarationsForSubject(mainCss, classSubject('about-main-col'));
+    const declarations = collectDeclarationsForSubject(aboutShellCss, classSubject('about-main-col'));
     expect(declarations.some((declaration) => declaration.property === 'margin-inline' && declaration.value === 'auto')).toBe(true);
     expect(declarations.some((declaration) => declaration.property === 'padding-inline')).toBe(true);
     expect(declarations.some((declaration) => declaration.property === 'padding-block-end')).toBe(true);
     expect(declarations.some((declaration) => declaration.property === 'width' && declaration.value.includes('--about-content-max-inline-size'))).toBe(true);
 
-    expectNoDeclarations(mainCss, classSubject('about-main-col'), BLOCK_START_MARGIN_PROPERTIES, '.about-main-col block-start margin');
-    expectNoVisualOffsetDeclarations(mainCss, classSubject('about-main-col'), '.about-main-col visual offset');
-    expectNoNonZeroDeclarations(mainCss, classSubject('about-main-col'), BLOCK_START_BORDER_PROPERTIES, '.about-main-col block-start border');
-    expectNoPseudoSpacer(mainCss, classSubject('about-main-col'), '.about-main-col');
+    expectNoDeclarations(aboutShellCss, classSubject('about-main-col'), BLOCK_START_MARGIN_PROPERTIES, '.about-main-col block-start margin');
+    expectNoVisualOffsetDeclarations(aboutShellCss, classSubject('about-main-col'), '.about-main-col visual offset');
+    expectNoNonZeroDeclarations(aboutShellCss, classSubject('about-main-col'), BLOCK_START_BORDER_PROPERTIES, '.about-main-col block-start border');
+    expectNoPseudoSpacer(aboutShellCss, classSubject('about-main-col'), '.about-main-col');
   });
 
   it('prevents about-content and about-hero from creating extra top distance', () => {
     for (const className of ['about-content', 'about-hero']) {
       const matcher = classSubject(className);
-      expectNoDeclarations(mainCss, matcher, BLOCK_START_MARGIN_PROPERTIES, `.${className} block-start margin`);
-      expectNoDeclarations(mainCss, matcher, BLOCK_START_PADDING_PROPERTIES, `.${className} block-start padding`);
-      expectNoVisualOffsetDeclarations(mainCss, matcher, `.${className} visual offset`);
-      expectNoNonZeroDeclarations(mainCss, matcher, BLOCK_START_BORDER_PROPERTIES, `.${className} block-start border`);
-      expectNoPseudoSpacer(mainCss, matcher, `.${className}`);
+      expectNoDeclarations(aboutShellCss, matcher, BLOCK_START_MARGIN_PROPERTIES, `.${className} block-start margin`);
+      expectNoDeclarations(aboutShellCss, matcher, BLOCK_START_PADDING_PROPERTIES, `.${className} block-start padding`);
+      expectNoVisualOffsetDeclarations(aboutShellCss, matcher, `.${className} visual offset`);
+      expectNoNonZeroDeclarations(aboutShellCss, matcher, BLOCK_START_BORDER_PROPERTIES, `.${className} block-start border`);
+      expectNoPseudoSpacer(aboutShellCss, matcher, `.${className}`);
     }
   });
 
@@ -572,17 +576,17 @@ describe('header body spacing css contract', () => {
       ...BLOCK_START_MARGIN_PROPERTIES,
     ]);
 
-    expectNoDeclarations(mainCss, elementSubject('layout-header'), blockedSpacingProperties, 'layout-header spacing');
-    expectNoDeclarations(mainCss, elementSubject('app-router'), blockedSpacingProperties, 'app-router spacing');
-    expectNoDeclarations(mainCss, mainContentSubject, blockedSpacingProperties, 'main#main-content spacing');
-    expectNoVisualOffsetDeclarations(mainCss, elementSubject('layout-header'), 'layout-header visual offset');
-    expectNoVisualOffsetDeclarations(mainCss, elementSubject('app-router'), 'app-router visual offset');
-    expectNoVisualOffsetDeclarations(mainCss, mainContentSubject, 'main#main-content visual offset');
-    expectNoPseudoSpacer(mainCss, elementSubject('layout-header'), 'layout-header');
-    expectNoPseudoSpacer(mainCss, elementSubject('app-router'), 'app-router');
-    expectNoPseudoSpacer(mainCss, mainContentSubject, 'main#main-content');
+    expectNoDeclarations(layoutHeaderCss, elementSubject('layout-header'), blockedSpacingProperties, 'layout-header spacing');
+    expectNoDeclarations(routerShellCss, elementSubject('app-router'), blockedSpacingProperties, 'app-router spacing');
+    expectNoDeclarations(routerShellCss, mainContentSubject, blockedSpacingProperties, 'main#main-content spacing');
+    expectNoVisualOffsetDeclarations(layoutHeaderCss, elementSubject('layout-header'), 'layout-header visual offset');
+    expectNoVisualOffsetDeclarations(routerShellCss, elementSubject('app-router'), 'app-router visual offset');
+    expectNoVisualOffsetDeclarations(routerShellCss, mainContentSubject, 'main#main-content visual offset');
+    expectNoPseudoSpacer(layoutHeaderCss, elementSubject('layout-header'), 'layout-header');
+    expectNoPseudoSpacer(routerShellCss, elementSubject('app-router'), 'app-router');
+    expectNoPseudoSpacer(routerShellCss, mainContentSubject, 'main#main-content');
 
-    const appShellGapViolations = collectDeclarationsForSubject(mainCss, appShellSubject).filter(
+    const appShellGapViolations = collectDeclarationsForSubject(appShellCss, appShellSubject).filter(
       (declaration) => declaration.property === 'gap' || declaration.property === 'row-gap' || declaration.property === 'grid-template-rows',
     );
     expect(appShellGapViolations, 'app shell parent must not create header-body spacing by gap or grid row track').toEqual([]);

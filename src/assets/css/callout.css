@@ -1,0 +1,89 @@
+:is(.prose, .about-prose) > [data-callout],
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-callout] {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3, 12px);
+  padding: var(--space-4, 16px);
+  border-radius: var(--radius-md, 6px);
+  border-inline-start: var(--border-width-thick, 2px) solid var(--fg-muted);
+  background: var(--bg-note-subtle);
+  color: var(--fg-default);
+}
+
+[data-callout][data-callout-kind='note'] {
+  background: var(--bg-note-subtle);
+  border-inline-start-color: var(--fg-muted);
+  --callout-accent-color: var(--fg-muted);
+}
+
+[data-callout][data-callout-kind='tip'] {
+  background: var(--bg-tip-subtle);
+  border-inline-start-color: var(--fg-info);
+  --callout-accent-color: var(--fg-info);
+}
+
+[data-callout][data-callout-kind='success'] {
+  background: var(--bg-success-subtle);
+  border-inline-start-color: var(--fg-success);
+  --callout-accent-color: var(--fg-success);
+}
+
+[data-callout][data-callout-kind='warning'] {
+  background: var(--bg-warning-subtle);
+  border-inline-start-color: var(--fg-warning);
+  --callout-accent-color: var(--fg-warning);
+}
+
+[data-callout][data-callout-kind='danger'] {
+  background: var(--bg-danger-subtle);
+  border-inline-start-color: var(--fg-danger);
+  --callout-accent-color: var(--fg-danger);
+}
+
+[data-callout] > .callout-icon,
+[data-callout] > [data-callout-icon-svg] {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  width: var(--icon-base, 16px);
+  height: calc(1em * var(--line-height-relaxed, 1.75));
+  stroke-width: 1.5;
+  color: var(--callout-accent-color, var(--fg-muted));
+}
+
+[data-callout] > [data-callout-content='true'] {
+  min-width: 0;
+  line-height: var(--line-height-relaxed, 1.75);
+  color: var(--fg-default);
+}
+
+[data-callout] [data-callout-heading='true'] {
+  margin: 0 0 var(--space-2, 8px) 0;
+  font-weight: var(--font-semibold, 600);
+  line-height: var(--line-height-relaxed, 1.75);
+  color: inherit;
+  font-size: inherit;
+}
+
+[data-callout] [data-callout-body='true'] {
+  color: inherit;
+}
+
+[data-callout] [data-callout-body='true'] > :first-child {
+  margin-block-start: 0;
+}
+
+[data-callout] [data-callout-body='true'] > :last-child {
+  margin-block-end: 0;
+}
+
+@media (forced-colors: active) {
+  [data-callout] {
+    border: var(--border-width, 1px) solid var(--border-default);
+    border-inline-start: var(--border-width-thick, 2px) solid var(--primary);
+  }
+
+  [data-callout][data-callout-kind='danger'] {
+    border-inline-start-color: var(--danger);
+  }
+}

@@ -11,6 +11,7 @@ import {
 import { hasDeclarationForSelectorInMedia } from './support/css-contract.js';
 
 const mainCss = readFileSync(resolve(process.cwd(), 'src/assets/css/main.css'), 'utf8');
+const noteShellCss = readFileSync(resolve(process.cwd(), 'src/assets/css/note-shell.css'), 'utf8');
 const layoutTocCss = readFileSync(resolve(process.cwd(), 'src/assets/css/layout-toc.css'), 'utf8');
 
 describe('mobile toc css contract', () => {
@@ -23,24 +24,24 @@ describe('mobile toc css contract', () => {
   });
 
   it('mobile shell collapses note TOC holder without involving about shell', () => {
-    expect(mainCss).toContain('@media (max-width: 639px)');
+    expect(noteShellCss).toContain('@media (max-width: 639px)');
 
-    expect(mainCss).toMatch(
+    expect(noteShellCss).toMatch(
       /\.note-shell,\s*\.note-shell\[data-toc-presence='present'\],\s*\.note-shell\[data-toc-presence='absent'\]\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\);\s*row-gap:\s*0;/s,
     );
 
-    expect(mainCss).toMatch(
+    expect(noteShellCss).toMatch(
       /\.note-shell\[data-toc-presence='present'\]\s+\.layout-toc-col\s*\{\s*grid-column:\s*1;\s*position:\s*static;\s*block-size:\s*0;\s*min-block-size:\s*0;\s*max-block-size:\s*none;\s*overflow:\s*visible;\s*transform:\s*none;\s*\}/s,
     );
 
-    expect(mainCss).not.toMatch(/\.about-shell\s+\.layout-toc-col/u);
-    expect(mainCss).not.toMatch(/\.about-shell\s+\[data-layout-toc-nav\]/u);
-    expect(mainCss).not.toMatch(/\.about-shell\s+\[data-layout-toc-mobile-panel\]/u);
-    expect(mainCss).not.toMatch(/\.about-shell\s+\[data-layout-toc-source\]/u);
-    expect(mainCss).not.toMatch(/\.about-shell\s+\[data-toc-owner-id\]/u);
-    expect(mainCss).not.toMatch(/\.about-shell\s+\[data-hydration-scope=['"]about-toc['"]\]/u);
-    expect(mainCss).not.toMatch(/\.about-shell\s+\[data-toc-runtime-id\]/u);
-    expect(mainCss).not.toMatch(
+    expect(noteShellCss).not.toMatch(/\.about-shell\s+\.layout-toc-col/u);
+    expect(noteShellCss).not.toMatch(/\.about-shell\s+\[data-layout-toc-nav\]/u);
+    expect(noteShellCss).not.toMatch(/\.about-shell\s+\[data-layout-toc-mobile-panel\]/u);
+    expect(noteShellCss).not.toMatch(/\.about-shell\s+\[data-layout-toc-source\]/u);
+    expect(noteShellCss).not.toMatch(/\.about-shell\s+\[data-toc-owner-id\]/u);
+    expect(noteShellCss).not.toMatch(/\.about-shell\s+\[data-hydration-scope=['"]about-toc['"]\]/u);
+    expect(noteShellCss).not.toMatch(/\.about-shell\s+\[data-toc-runtime-id\]/u);
+    expect(noteShellCss).not.toMatch(
       /--about-(main-track|toc-track|toc-inline-size|shell-column-gap)\b/u,
     );
   });

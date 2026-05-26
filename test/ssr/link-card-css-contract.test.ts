@@ -12,45 +12,47 @@ import {
   PROSE_TEXT_LINK_SELECTOR,
 } from './support/css-contract.js';
 
-const mainCss = readFileSync(resolve(process.cwd(), 'src/assets/css/main.css'), 'utf8');
+const linkCardCss = readFileSync(resolve(process.cwd(), 'src/assets/css/link-card.css'), 'utf8');
+const linkPrimitivesCss = readFileSync(resolve(process.cwd(), 'src/assets/css/link-primitives.css'), 'utf8');
+const footnotesCss = readFileSync(resolve(process.cwd(), 'src/assets/css/footnotes.css'), 'utf8');
 
 describe('link-card css contract', () => {
   it('defines static link-card light DOM layout and text contract', () => {
     expect(
       hasDeclarationForSelector(
-        mainCss,
+        linkCardCss,
         ':is(.prose, .about-prose) > [data-link-card]',
         'display',
         'block',
       ),
     ).toBe(true);
-    expect(hasDeclarationForSelector(mainCss, '.link-card', 'break-inside', 'avoid')).toBe(true);
+    expect(hasDeclarationForSelector(linkCardCss, '.link-card', 'break-inside', 'avoid')).toBe(true);
     expect(
       hasDeclarationValueIncluding(
-        mainCss,
+        linkCardCss,
         '.link-card:focus-within',
         'outline',
         'var(--focus-ring-color)',
       ),
     ).toBe(true);
     expect(
-      hasDeclarationForSelector(mainCss, '.link-card__link', 'cursor', 'pointer'),
+      hasDeclarationForSelector(linkCardCss, '.link-card__link', 'cursor', 'pointer'),
     ).toBe(true);
     expect(
-      hasDeclarationForSelector(mainCss, '.link-card__body', 'min-inline-size', '0'),
+      hasDeclarationForSelector(linkCardCss, '.link-card__body', 'min-inline-size', '0'),
     ).toBe(true);
     expect(
-      hasDeclarationForSelector(mainCss, '.link-card__title', '-webkit-line-clamp', '2'),
+      hasDeclarationForSelector(linkCardCss, '.link-card__title', '-webkit-line-clamp', '2'),
     ).toBe(true);
     expect(
-      hasDeclarationForSelector(mainCss, '.link-card__description', '-webkit-line-clamp', '2'),
+      hasDeclarationForSelector(linkCardCss, '.link-card__description', '-webkit-line-clamp', '2'),
     ).toBe(true);
     expect(
-      hasDeclarationForSelector(mainCss, '.link-card__media', 'object-fit', 'cover'),
+      hasDeclarationForSelector(linkCardCss, '.link-card__media', 'object-fit', 'cover'),
     ).toBe(true);
     expect(
       hasDeclarationForSelector(
-        mainCss,
+        linkCardCss,
         '.link-card__link--no-image',
         'grid-template-columns',
         'minmax(0, 1fr)',
@@ -61,7 +63,7 @@ describe('link-card css contract', () => {
   it('keeps responsive, hover, forced-colors, print, and invalid contracts explicit', () => {
     expect(
       hasDeclarationForSelectorContainingInMedia(
-        mainCss,
+        linkCardCss,
         (params) => /max-width:\s*480px/u.test(params),
         '.link-card__media',
         'aspect-ratio',
@@ -70,7 +72,7 @@ describe('link-card css contract', () => {
     ).toBe(true);
     expect(
       hasDeclarationForSelectorContainingInMedia(
-        mainCss,
+        linkCardCss,
         (params) => /hover:\s*hover/u.test(params) && /pointer:\s*fine/u.test(params),
         '.link-card:not(.link-card--invalid):hover',
         'transform',
@@ -78,11 +80,11 @@ describe('link-card css contract', () => {
       ),
     ).toBe(true);
     expect(
-      hasDeclarationForSelector(mainCss, '.link-card--invalid', 'border-style', 'dashed'),
+      hasDeclarationForSelector(linkCardCss, '.link-card--invalid', 'border-style', 'dashed'),
     ).toBe(true);
     expect(
       hasDeclarationValueIncludingForSelectorContainingInMedia(
-        mainCss,
+        linkCardCss,
         (params) => /forced-colors:\s*active/u.test(params),
         '.link-card:not(.link-card--invalid):hover',
         'outline',
@@ -91,7 +93,7 @@ describe('link-card css contract', () => {
     ).toBe(true);
     expect(
       hasDeclarationForSelectorContainingInMedia(
-        mainCss,
+        linkCardCss,
         (params) => /\bprint\b/u.test(params),
         '.link-card',
         'transform',
@@ -103,13 +105,13 @@ describe('link-card css contract', () => {
   it('excludes card surface links from prose and footnote popover text link selectors', () => {
     expect(PROSE_TEXT_LINK_SELECTOR).toContain("[data-link-surface='card']");
     expect(
-      hasDeclarationForSelector(mainCss, PROSE_TEXT_LINK_SELECTOR, 'overflow-wrap', 'anywhere', {
+      hasDeclarationForSelector(linkPrimitivesCss, PROSE_TEXT_LINK_SELECTOR, 'overflow-wrap', 'anywhere', {
         scope: 'screen',
       }),
     ).toBe(true);
     expect(
       hasDeclarationForSelectorContaining(
-        mainCss,
+        footnotesCss,
         "[data-footnote-popover] .footnote-popover-body a[href]:not(:where([data-link-surface='card']",
         'text-decoration',
         'underline',
