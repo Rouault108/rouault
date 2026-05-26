@@ -8,6 +8,12 @@
 
 本書は、現行実装の説明ではなく、**長期的に維持しやすい契約の基準**を示します。現行実装が本書と一致しない場合は、本書を優先して設計を判断します。
 
+## static-first 境界
+
+`ui-preview-sandbox` は stateful allowlist component として維持します。sandbox iframe、payload activation、height synchronization、script capability、内部 lifecycle は component が所有し、静的 HTML 化対象にはしません。
+
+note SSR では host と公開 Light DOM の `template[data-preview-kind]` fallback を保持します。host と公開 Light DOM 子孫は note static output 検査対象ですが、内部 Shadow DOM と declarative shadowroot template は non-allowlisted Custom Element 検査から除外します。
+
 ---
 
 ## 設計原則

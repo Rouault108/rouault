@@ -8,6 +8,12 @@
 
 Rouault における video は、強い娯楽 UI ではなく、**読む体験の補助として埋め込まれるメディア**です。したがって、本コンポーネントの契約は、動画視聴に必要な操作性を確保しつつ、**「没入して読む」ことのできるデザイン**を維持する方向で定義します。
 
+## static-first 境界
+
+`ui-video` は stateful allowlist component として維持します。再生状態、字幕、シーク、全画面、キーボード操作、focus 制御は内部 Shadow DOM と component lifecycle が所有し、静的 HTML / global CSS / note static surface enhancer へ移しません。
+
+note SSR では host と公開 Light DOM fallback / named slot content を保持し、hydration registry から component を起動します。host と公開 Light DOM 子孫は note static output 検査対象ですが、内部 Shadow DOM と declarative shadowroot template は non-allowlisted Custom Element 検査から除外します。
+
 ---
 
 ## 適用範囲

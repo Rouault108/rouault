@@ -103,12 +103,18 @@ preview ヘッダー左側の見出しは `heading` で表します。
 - `demo` profile は controls と toolbar を伴う demo 用です。
 - profile の選択責務は note kind を知っている build / layout 側にあります。
 
+### 3.1.2 static-first 境界
+
+`ui-code-preview` は stateful allowlist component として維持します。viewport / theme / surface control、toolbar、focus 制御、keyboard 操作、内部 Shadow DOM CSS は component が所有し、static component CSS や `note-static-surface-enhancer` へ移しません。
+
+note SSR では host と公開 Light DOM の preview / code root / toolbar fallback を保持します。default slot の code root は `figure[data-code-block-root]` と `section[data-code-group]` だけを正規契約とし、旧 `pre[data-code-block]` 直置きは廃止仕様です。
+
 ## 3.2 スロット契約
 
 | 名前         | 種別       | 必須             | 個数       | 内容                                                                          |
 | ------------ | ---------- | ---------------- | ---------- | ----------------------------------------------------------------------------- |
 | `preview`    | named slot | 正規構成では必須 | ちょうど 1 | preview 面の root を受け取ります。                                            |
-| 既定スロット | slot       | 正規構成では必須 | ちょうど 1 | `pre[data-code-block]` または `section[data-code-group]` を直接受け取ります。 |
+| 既定スロット | slot       | 正規構成では必須 | ちょうど 1 | `figure[data-code-block-root]` または `section[data-code-group]` を直接受け取ります。 |
 | `toolbar`    | named slot | いいえ           | 0 個以上   | ヘッダー右側の補助操作を受け取ります。                                        |
 
 ## 3.3 正規構成
@@ -117,7 +123,7 @@ preview ヘッダー左側の見出しは `heading` で表します。
 
 1. `preview` スロットに preview root が 1 つあること
 2. 既定スロットに code root が 1 つあること
-3. code root は `pre[data-code-block]` または `section[data-code-group]` であること
+3. code root は `figure[data-code-block-root]` または `section[data-code-group]` であること
 4. code root は `ui-code-preview` の直接子要素であること
 5. `toolbar` は補助操作のみを受け持つこと
 
@@ -127,6 +133,8 @@ preview ヘッダー左側の見出しは `heading` で表します。
 - 既定スロットが空
 - 複数の code root
 - wrapper 越しの code root
+- `pre[data-code-block]` の直置き
+- raw `pre > code` の直置き
 - 既定スロットへの無関係要素混在
 
 ## 3.4 code root との合成契約
@@ -373,7 +381,7 @@ built-in controls または公開 property 更新により preview の公開状�
 
 少なくとも次を検証対象に含めます。
 
-- `pre[data-code-block]` を code root とする正規構成
+- `figure[data-code-block-root]` を code root とする正規構成
 - `section[data-code-group]` を code root とする正規構成
 - `heading` あり / なし
 - `controls` の各組み合わせ

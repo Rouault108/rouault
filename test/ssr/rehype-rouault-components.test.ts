@@ -1008,8 +1008,8 @@ describe('rehypeRouaultComponents', () => {
     const score = findElement(tree, (node) => node.properties?.['data-score'] === 'true');
     const scroll = findElement(score, (node) => node.properties?.['data-score-scroll'] === 'true');
     const stage = findElement(score, (node) => node.properties?.['data-score-stage'] === 'true');
-    const svgHost = findElement(score, (node) =>
-      getClassList(node.properties?.['className']).includes('score__svg-host'),
+    const svg = findElement(score, (node) =>
+      getClassList(node.properties?.['className']).includes('score__svg'),
     );
 
     expect(score?.properties?.['data-score-src']).to.equal(undefined);
@@ -1017,7 +1017,7 @@ describe('rehypeRouaultComponents', () => {
     expect(scroll?.properties?.['aria-label']).to.equal('譜面');
     expect(scroll?.properties?.['role']).to.equal(undefined);
     expect(stage?.properties?.['style']).to.equal('--_score-aspect-ratio: 4.5 / 1.25;');
-    expect(svgHost?.tagName).to.equal('div');
+    expect(svg?.tagName).to.equal('div');
     expect(
       findElement(score, (node) =>
         getClassList(node.properties?.['className']).includes('score__skeleton'),

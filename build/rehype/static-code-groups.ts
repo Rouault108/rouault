@@ -1,4 +1,4 @@
-import { createStaticIconHast } from './static-icon-hast.js';
+import { createStaticCopyButtonHast } from './static-copy-button-hast.js';
 import { type HastNode } from './hast-utils.js';
 
 const isElement = (node: HastNode, tagName?: string): boolean => {
@@ -90,51 +90,12 @@ const createGroupCopyButton = (targetId: string): HastNode => ({
     className: ['code-group-header-tools'],
   },
   children: [
-    {
-      type: 'element',
-      tagName: 'span',
-      properties: {
-        className: ['static-copy-control'],
-        'data-copy-control': 'true',
-      },
-      children: [
-        {
-          type: 'element',
-          tagName: 'button',
-          properties: {
-            className: ['static-copy-button', 'code-group-copy-button'],
-            type: 'button',
-            'data-copy-button': 'true',
-            'data-copy-target-id': targetId,
-            'data-copy-state': 'idle',
-            'data-code-group-copy': 'true',
-            'aria-label': 'コードをコピー',
-          },
-          children: [
-            {
-              type: 'element',
-              tagName: 'span',
-              properties: {
-                className: ['static-icon'],
-                'aria-hidden': 'true',
-              },
-              children: [createStaticIconHast('copy')],
-            },
-          ],
-        },
-        {
-          type: 'element',
-          tagName: 'span',
-          properties: {
-            className: ['static-copy-button__status', 'sr-only'],
-            role: 'status',
-            'aria-live': 'polite',
-            'data-copy-status': 'true',
-          },
-          children: [],
-        },
-      ],
-    },
+    createStaticCopyButtonHast({
+      targetId,
+      label: 'コードをコピー',
+      buttonClassName: 'code-group-copy-button',
+      extraButtonAttributes: [{ name: 'data-code-group-copy', value: 'true' }],
+    }),
   ],
 });
 

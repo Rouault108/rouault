@@ -800,7 +800,7 @@ const toStaticScore = (node: HastNode, context: SurfaceNormalizationContext): vo
             ...(stageStyle ? { style: stageStyle } : {}),
           },
           [
-            createElement('div', { className: ['score__svg-host'] }, children),
+            createElement('div', { className: ['score__svg'] }, children),
           ],
         ),
       ],

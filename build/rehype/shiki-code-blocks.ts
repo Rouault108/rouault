@@ -6,7 +6,7 @@ import {
   transformerRemoveNotationEscape,
 } from '@shikijs/transformers';
 
-import { createStaticIconHast } from './static-icon-hast.js';
+import { createStaticCopyButtonHast } from './static-copy-button-hast.js';
 import { type HastNode } from './hast-utils.js';
 
 const SHIKI_THEMES = {
@@ -359,47 +359,12 @@ const createStaticCopyButton = (
   disabled: boolean,
   extraClassName: string,
 ): HastNode =>
-  createElement(
-    'span',
-    {
-      className: ['static-copy-control'],
-      'data-copy-control': 'true',
-    },
-    [
-      createElement(
-        'button',
-        {
-          className: ['static-copy-button', extraClassName],
-          type: 'button',
-          'data-copy-button': 'true',
-          'data-copy-target-id': targetId,
-          'data-copy-state': 'idle',
-          'aria-label': label,
-          ...(disabled ? { disabled: true } : {}),
-        },
-        [
-          createElement(
-            'span',
-            {
-              className: ['static-icon'],
-              'aria-hidden': 'true',
-            },
-            [createStaticIconHast('copy')],
-          ),
-        ],
-      ),
-      createElement(
-        'span',
-        {
-          className: ['static-copy-button__status', 'sr-only'],
-          role: 'status',
-          'aria-live': 'polite',
-          'data-copy-status': 'true',
-        },
-        [],
-      ),
-    ],
-  );
+  createStaticCopyButtonHast({
+    targetId,
+    label,
+    disabled,
+    buttonClassName: extraClassName,
+  });
 
 const createStandaloneCodeSurface = (
   preNode: HastNode,

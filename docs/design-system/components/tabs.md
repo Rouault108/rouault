@@ -10,6 +10,12 @@
 
 Rouault における tabs は、複数の情報面を高密度に並置するための装置ではなく、**読書の流れを保ったまま関心の切り替えを行うための静かな切替面**であることを求めます。したがって、本コンポーネントの契約は、切替可能性の明示と、**「没入して読む」ことのできるデザイン**の維持を両立する方向で定義します。
 
+## static-first 境界
+
+`ui-tabs` は stateful allowlist component として維持します。選択状態、Roving Tabindex、ARIA 同期、keyboard 操作、indicator、内部 Shadow DOM CSS は component が所有し、static component CSS や `note-static-surface-enhancer` へ移しません。
+
+note SSR では host と公開 Light DOM の tab / panel fallback を保持します。host と公開 Light DOM 子孫は note static output 検査対象ですが、内部 Shadow DOM と declarative shadowroot template は non-allowlisted Custom Element 検査から除外します。
+
 ---
 
 ## 適用範囲

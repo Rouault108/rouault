@@ -6,6 +6,12 @@
 
 Rouault の translation は static-first です。常時読める対訳は Markdown 出力の `.translation-static` が担い、`ui-translation` は必要時に開く overlay 専用コンポーネントとして扱います。
 
+## static-first 境界
+
+`ui-translation` は stateful allowlist component として維持します。開閉状態、focus return、overlay positioning、keyboard 操作は component / orchestration が所有し、global CSS は `.translation-static` など公開 Light DOM fallback の本文内配置だけを扱います。
+
+note SSR では host と公開 Light DOM fallback を保持し、hydration registry から component を起動します。host と公開 Light DOM 子孫は note static output 検査対象ですが、内部状態と lifecycle は `note-static-surface-enhancer` へ移しません。
+
 ---
 
 ## 2. 適用範囲

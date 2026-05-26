@@ -23,8 +23,8 @@
 .score__stage { display: grid; position: relative; min-width: max-content; aspect-ratio: var(--_score-aspect-ratio, 3 / 1); }
 .score__stage > * { grid-area: 1 / 1; }
 .score__inline-slot,
-.score__svg-host { display: inline-block; min-width: max-content; }
-.score__svg-host svg { display: block; width: auto; height: auto; max-width: none; min-width: max-content; }
+.score__svg { display: inline-block; min-width: max-content; }
+.score__svg svg { display: block; width: auto; height: auto; max-width: none; min-width: max-content; }
 .score__caption { margin-top: var(--space-2); color: var(--fg-muted); font-size: var(--text-sm); line-height: var(--line-height-relaxed); text-align: center; }
 .score__sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (min-width: 768px) { .prose .score { width: calc(100% + var(--space-16)); margin-inline: calc(var(--space-8) * -1); } }

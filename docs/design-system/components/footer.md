@@ -171,12 +171,12 @@ export interface FooterRenderOptions {
   a11y?: Partial<FooterA11yLabels>;
 }
 
-export declare function renderFooter(options: FooterRenderOptions): TemplateResult;
+export declare function renderFooterHtml(options: FooterRenderOptions): string;
 ```
 
 ### 契約の要点
 
-- `renderFooter()` は必須の `options: FooterRenderOptions` を受け取ります。
+- `renderFooterHtml()` は必須の `options: FooterRenderOptions` を受け取ります。
 - `meta.siteName` と `meta.copyrightText` は必須です。`trim()` 後に空文字列であってはなりません。
 - `siteUrl` および `links[].href` は、次のいずれかの形式のみを許容します。
   - `http:` / `https:` / `mailto:` / `tel:` で始まる絶対 URL
@@ -458,17 +458,17 @@ Storybook は契約書の代替ではありません。契約書を正本とし�
 
 ## 実装整合メモ
 
-2026-03-24 時点で、画面用 `footer` 実装は本契約に合わせて更新済みです。とくに次の点を満たします。
+2026-05-26 時点で、画面用 footer は `layout-footer` Custom Element ではなく、`src/layouts/footer-html.ts` と `src/assets/css/footer.css` による static shell UI として更新済みです。とくに次の点を満たします。
 
-- `renderFooter(options)` は `meta` / `links` / `a11y` を入力とする純粋描画 API です。
+- `renderFooterHtml(options)` は `meta` / `links` / `a11y` を入力とする純粋描画 API です。
 - `siteUrl`、`buildLabel`、`links` はいずれも任意であり、未指定時は対応する領域を描画しません。
 - `a11y.navLabel` は上位供給可能で、未指定時は `"補助ナビゲーション"` を既定値として用います。
 - URL は最小限の検証を行い、危険なプロトコルや制御文字を含む値は描画対象から除外します。
-- 文書スタイル注入は `ensureFooterDocumentStyles()` に分離され、`renderFooter()` 自体は import 時副作用と描画時副作用を持ちません。
+- 文書スタイル注入は行わず、視覚契約は `footer.css` が担います。
 - 公開トークンは `--footer-*` 群を正面に置きつつ、アプリケーショントークンへフォールバックします。
 - Storybook は `DefaultContract`、`MinimalState`、`LinkAndBuildVariants`、`AccessibilityContract`、`TokenContract`、`ForcedColorsContract`、`PrintPolicyContract` を通じて契約を検証します。
 
-なお、Rouault 固有の既定値供給は `footer` 自身ではなく `layout-footer` が担います。これは本契約の「上位供給」方針と整合します。
+なお、Rouault 固有の既定値供給は `src/layouts/footer-options.ts` が担います。`data-layout-footer` は sticky footer と sidebar overlay の layout boundary selector として維持しますが、視覚契約 selector は `data-footer` と `.ui-footer` が担います。
 
 ---
 
