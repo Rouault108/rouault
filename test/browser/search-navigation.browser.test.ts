@@ -5,7 +5,7 @@ import {
   handleSearchReturnToReadingEvent,
 } from '../../src/search/navigation.js';
 import { navigateInternalDocument } from '../../src/router/navigate-internal-document.js';
-import { searchReturnToReadingEventName } from '../../src/search/search-dialog-events.js';
+import { searchReturnToReadingEventName } from '../../src/search/search-navigation-events.js';
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import type { NavigationResult } from '../../src/router/router.js';
 import { toInternalDocumentNormalizedUrl } from '../../src/router/internal-document-normalized-url.js';

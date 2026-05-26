@@ -1,7 +1,7 @@
 import type {
   UiSearchDialogItem,
   UiSearchDialogCloseReason,
-  UiSearchDialogSearcher,
+  UiSearchDialogSearchContext,
   UiSearchDialogSelectedDetail,
 } from './search-dialog-types.js';
 import {
@@ -9,8 +9,7 @@ import {
   handleSearchReturnToReadingEvent,
 } from './navigation.js';
 import { createSearchCore, type SearchCore } from './search-core.js';
-import { searchReturnToReadingEventName } from './search-dialog-events.js';
-import type { InteractionModality } from './interaction-modality.js';
+import { searchReturnToReadingEventName } from './search-navigation-events.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import type { RuntimeEnvironment } from '../../shared/runtime/runtime-environment.js';
 import type { LoadedInternalDocumentRouteManifestState } from '../router/internal-document-route-manifest-loader.js';
@@ -24,28 +23,17 @@ import {
 } from '../../shared/search/search-unavailable-reason.js';
 import { BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE } from './search-dialog-constants.js';
 
-interface SearchDialogElement extends HTMLElement {
-  opened?: boolean;
-  query?: string;
-  captureOpenModality?(modality?: InteractionModality): void;
-  requestOpen?(trigger?: HTMLElement): void;
+interface SearchDialogRootElement extends HTMLElement {
   close?(): void;
   showModal?(): void;
   open?: boolean;
-  searcher?: UiSearchDialogSearcher | null | undefined;
-  searchUnavailable?: boolean;
-  searchUnavailableReason?: SearchBootstrapUnavailableReason | '';
 }
 
 let initialized = false;
 let bootstrapListenerController: AbortController | null = null;
-let initializedDialog: SearchDialogElement | null = null;
-let previousSearcher: SearchDialogElement['searcher'] = undefined;
 let initializedSearchCore: SearchCore | null = null;
 let initializedSearchRoutePredicate: ((pathname: string) => boolean) | null = null;
 let initializedSearchBootstrapState: SearchBootstrapState | null = null;
-let hadSearcherProperty = false;
-let hadOwnSearcherProperty = false;
 let activeSearchDialogTrigger: HTMLElement | null = null;
 let closePipelineState:
   | {
@@ -138,46 +126,41 @@ const syncSearchTriggerExpanded = (expanded: boolean): void => {
 };
 
 const requestSearchDialogOpen = (
-  dialog: SearchDialogElement,
+  dialog: SearchDialogRootElement,
   trigger?: HTMLElement,
-  modality?: InteractionModality,
 ): void => {
   if (trigger instanceof HTMLElement) {
     activeSearchDialogTrigger = trigger;
   }
-  dialog.captureOpenModality?.(modality);
   closePipelineState = null;
   dialog.removeAttribute('data-closing');
   document.body.setAttribute(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE, '');
-  if (typeof dialog.requestOpen === 'function') {
-    dialog.requestOpen(trigger);
-  } else if (typeof dialog.showModal === 'function') {
+  if (typeof dialog.showModal === 'function') {
     if (dialog.open !== true) {
       dialog.showModal();
     }
   } else {
     dialog.setAttribute('open', '');
   }
-  dialog.opened = true;
   syncSearchTriggerExpanded(true);
   dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]')?.focus();
 };
 
-const dispatchSearchDialogClosed = (
-  dialog: SearchDialogElement,
+const dispatchSearchDialogFocusReturn = (
   reason: UiSearchDialogCloseReason,
 ): void => {
-  dialog.dispatchEvent(
-    new CustomEvent('search-dialog:closed', {
+  document.dispatchEvent(
+    new CustomEvent('search-dialog:focus-return', {
       detail: { reason },
-      bubbles: true,
-      composed: true,
+      bubbles: false,
+      composed: false,
+      cancelable: false,
     }),
   );
 };
 
 const completeSearchDialogClose = (
-  dialog: SearchDialogElement,
+  dialog: SearchDialogRootElement,
   reason: UiSearchDialogCloseReason,
 ): void => {
   if (typeof dialog.close === 'function' && dialog.open === true) {
@@ -186,22 +169,21 @@ const completeSearchDialogClose = (
     dialog.removeAttribute('open');
   }
   dialog.removeAttribute('data-closing');
-  dialog.opened = false;
   syncSearchTriggerExpanded(false);
   document.body.removeAttribute(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE);
-  dispatchSearchDialogClosed(dialog, reason);
   if (reason !== 'selection' && activeSearchDialogTrigger?.isConnected === true) {
     activeSearchDialogTrigger.focus();
+    dispatchSearchDialogFocusReturn(reason);
   }
   activeSearchDialogTrigger = null;
   closePipelineState = null;
 };
 
 const requestSearchDialogClose = (
-  dialog: SearchDialogElement,
+  dialog: SearchDialogRootElement,
   options: { reason?: UiSearchDialogCloseReason } = {},
 ): void => {
-  if (!dialog.open && !dialog.hasAttribute('open') && dialog.opened !== true) {
+  if (!dialog.open && !dialog.hasAttribute('open')) {
     return;
   }
   if (closePipelineState !== null || dialog.hasAttribute('data-closing')) {
@@ -231,7 +213,7 @@ const requestSearchDialogClose = (
 
 const isTextEditingSearchShortcutTarget = (
   target: EventTarget | null,
-  dialog: SearchDialogElement,
+  dialog: SearchDialogRootElement,
 ): boolean => {
   if (!(target instanceof HTMLElement)) {
     return false;
@@ -248,7 +230,7 @@ const isTextEditingSearchShortcutTarget = (
   return !(dialog.open !== true && dialog.contains(target));
 };
 
-const setSearchDialogStatus = (dialog: SearchDialogElement, message: string): void => {
+const setSearchDialogStatus = (dialog: SearchDialogRootElement, message: string): void => {
   const status =
     dialog.querySelector<HTMLElement>('[data-search-dialog-status]') ??
     dialog.querySelector<HTMLElement>('[data-search-dialog-live]');
@@ -263,10 +245,10 @@ const setElementHidden = (element: Element | null, hidden: boolean): void => {
   }
 };
 
-const getSearchDialogInput = (dialog: SearchDialogElement): HTMLInputElement | null =>
+const getSearchDialogInput = (dialog: SearchDialogRootElement): HTMLInputElement | null =>
   dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]');
 
-const syncSearchDialogClearButton = (dialog: SearchDialogElement): void => {
+const syncSearchDialogClearButton = (dialog: SearchDialogRootElement): void => {
   const input = getSearchDialogInput(dialog);
   const clear = dialog.querySelector<HTMLButtonElement>('[data-search-dialog-clear]');
   if (clear) {
@@ -274,7 +256,7 @@ const syncSearchDialogClearButton = (dialog: SearchDialogElement): void => {
   }
 };
 
-const resetSearchDialogActiveOption = (dialog: SearchDialogElement): void => {
+const resetSearchDialogActiveOption = (dialog: SearchDialogRootElement): void => {
   getSearchDialogInput(dialog)?.removeAttribute('aria-activedescendant');
   for (const option of dialog.querySelectorAll<HTMLElement>('[role="option"]')) {
     option.setAttribute('aria-selected', 'false');
@@ -283,7 +265,7 @@ const resetSearchDialogActiveOption = (dialog: SearchDialogElement): void => {
 };
 
 const setSearchDialogState = (
-  dialog: SearchDialogElement,
+  dialog: SearchDialogRootElement,
   state: 'idle' | 'loading' | 'results' | 'empty' | 'error' | 'unavailable',
   message?: string,
 ): void => {
@@ -304,7 +286,7 @@ const setSearchDialogState = (
   }
 };
 
-const clearSearchDialogResults = (dialog: SearchDialogElement): void => {
+const clearSearchDialogResults = (dialog: SearchDialogRootElement): void => {
   const results = dialog.querySelector<HTMLOListElement>('[data-search-dialog-results]');
   if (results) {
     results.replaceChildren();
@@ -336,7 +318,7 @@ const appendHighlightedText = (target: HTMLElement, text: string, query: string)
 };
 
 const renderSearchDialogItems = (
-  dialog: SearchDialogElement,
+  dialog: SearchDialogRootElement,
   items: readonly UiSearchDialogItem[],
   query: string,
 ): void => {
@@ -386,7 +368,7 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
       isInternalDocumentPathname,
     });
 
-  const dialog = document.querySelector<SearchDialogElement>('#global-search-dialog');
+  const dialog = document.querySelector<SearchDialogRootElement>('#global-search-dialog');
   if (!dialog) {
     initialized = true;
     initializedSearchCore = controller;
@@ -407,12 +389,6 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
     searchCore: controller,
     isInternalDocumentPathname,
   };
-  initializedDialog = dialog;
-  hadSearcherProperty = 'searcher' in dialog;
-  hadOwnSearcherProperty = Object.prototype.hasOwnProperty.call(dialog, 'searcher');
-  previousSearcher = hadSearcherProperty ? dialog.searcher : undefined;
-  dialog.searchUnavailable = false;
-  dialog.searchUnavailableReason = '';
   bootstrapListenerController = new AbortController();
   const { signal } = bootstrapListenerController;
   const searchEventDiagnostics = createSearchEventDiagnosticSink();
@@ -421,10 +397,10 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
   let searchTimerId: number | undefined;
   let searchGeneration = 0;
 
-  dialog.searcher = async ({
+  const searcher = async ({
     query,
     signal: searchSignal,
-  }): Promise<{ items: UiSearchDialogItem[] }> => {
+  }: UiSearchDialogSearchContext): Promise<{ items: UiSearchDialogItem[] }> => {
     const result = await controller.search(
       {
         mode: 'navigate',
@@ -516,9 +492,7 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
       resetSearchDialogActiveOption(dialog);
       setSearchDialogState(dialog, 'loading');
       setSearchDialogStatus(dialog, '検索しています...');
-      void Promise.resolve(
-        dialog.searcher?.({ query: normalizedQuery, signal }) ?? { items: [] },
-      )
+      void Promise.resolve(searcher({ query: normalizedQuery, signal }))
         .then((result) => {
           const currentValue = getSearchDialogInput(dialog)?.value.trim() ?? '';
           if (generation !== searchGeneration || currentValue !== normalizedQuery) {
@@ -553,7 +527,7 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
     if (!item) {
       return;
     }
-    dialog.dispatchEvent(
+    document.dispatchEvent(
       new CustomEvent<UiSearchDialogSelectedDetail>('search-dialog:selected', {
         detail: {
           id: item.id,
@@ -565,8 +539,9 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
           item,
           selectionMethod,
         },
-        bubbles: true,
-        composed: true,
+        bubbles: false,
+        composed: false,
+        cancelable: false,
       }),
     );
     requestSearchDialogClose(dialog, { reason: 'selection' });
@@ -627,8 +602,8 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
     });
   };
 
-  const onOpenRequested = (): void => {
-    requestSearchDialogOpen(dialog);
+  const onOpenRequested = (event: Event): void => {
+    requestSearchDialogOpen(dialog, readOpenSearchDialogTrigger(event));
   };
 
   const onCloseRequested = (event: Event): void => {
@@ -646,14 +621,12 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
   };
 
   const onNativeClose = (): void => {
-    dialog.opened = false;
     syncSearchTriggerExpanded(false);
   };
 
   const onQueryChanged = (event: Event): void => {
     const customEvent = event as CustomEvent<{ query?: string }>;
-    dialog.query = typeof customEvent.detail.query === 'string' ? customEvent.detail.query : '';
-    runDialogSearch(dialog.query);
+    runDialogSearch(typeof customEvent.detail.query === 'string' ? customEvent.detail.query : '');
   };
 
   const onInput = (event: Event): void => {
@@ -661,7 +634,6 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
     if (!(target instanceof HTMLInputElement)) {
       return;
     }
-    dialog.query = target.value;
     runDialogSearch(target.value);
   };
 
@@ -675,7 +647,6 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
       const input = getSearchDialogInput(dialog);
       if (input) {
         input.value = '';
-        dialog.query = '';
         resetDialogSearch();
         input.focus();
         input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
@@ -748,7 +719,7 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
     event.preventDefault();
     const trigger =
       document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
-    requestSearchDialogOpen(dialog, trigger, 'keyboard');
+    requestSearchDialogOpen(dialog, trigger);
   };
 
   document.addEventListener('open-search-dialog', onOpenSearchDialog, { signal });
@@ -759,11 +730,11 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
   dialog.addEventListener('cancel', onCancel, { signal });
   dialog.addEventListener('pointerdown', onBackdropPointer, { signal });
   dialog.addEventListener('close', onNativeClose, { signal });
-  dialog.addEventListener('search-dialog:selected', onSelected, { signal });
+  document.addEventListener('search-dialog:selected', onSelected, { signal });
   dialog.addEventListener(searchReturnToReadingEventName, onReturnToReading, { signal });
-  dialog.addEventListener('search-dialog:open-requested', onOpenRequested, { signal });
-  dialog.addEventListener('search-dialog:close-requested', onCloseRequested, { signal });
-  dialog.addEventListener('search-dialog:query-changed', onQueryChanged, { signal });
+  document.addEventListener('search-dialog:open-request', onOpenRequested, { signal });
+  document.addEventListener('search-dialog:close-request', onCloseRequested, { signal });
+  document.addEventListener('search-dialog:query-change', onQueryChanged, { signal });
   document.addEventListener('keydown', onKeydown, { signal });
 
   return { status: 'ready', searchCore: controller };
@@ -775,22 +746,15 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
   }
   assertSearchBootstrapNotInitialized();
 
-  const dialog = document.querySelector<SearchDialogElement>('#global-search-dialog');
+  const dialog = document.querySelector<SearchDialogRootElement>('#global-search-dialog');
   initialized = true;
   initializedSearchCore = null;
   initializedSearchRoutePredicate = null;
   initializedSearchBootstrapState = { status: 'unavailable', reason: options.reason };
-  initializedDialog = dialog;
   if (!dialog) {
     return { status: 'unavailable', reason: options.reason };
   }
 
-  hadSearcherProperty = 'searcher' in dialog;
-  hadOwnSearcherProperty = Object.prototype.hasOwnProperty.call(dialog, 'searcher');
-  previousSearcher = hadSearcherProperty ? dialog.searcher : undefined;
-  dialog.searcher = null;
-  dialog.searchUnavailable = true;
-  dialog.searchUnavailableReason = options.reason;
   bootstrapListenerController = new AbortController();
   const { signal } = bootstrapListenerController;
   const unavailableMessage = getSearchBootstrapUnavailableMessage(options.reason);
@@ -815,8 +779,8 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
     setSearchDialogStatus(dialog, unavailableMessage);
   };
 
-  const onOpenRequested = (): void => {
-    requestSearchDialogOpen(dialog);
+  const onOpenRequested = (event: Event): void => {
+    requestSearchDialogOpen(dialog, readOpenSearchDialogTrigger(event));
   };
 
   const onCloseRequested = (): void => {
@@ -824,13 +788,10 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
   };
 
   const onNativeClose = (): void => {
-    dialog.opened = false;
     syncSearchTriggerExpanded(false);
   };
 
-  const onQueryChanged = (event: Event): void => {
-    const customEvent = event as CustomEvent<{ query?: string }>;
-    dialog.query = typeof customEvent.detail.query === 'string' ? customEvent.detail.query : '';
+  const onQueryChanged = (): void => {
     syncUnavailableClearButton();
   };
 
@@ -844,7 +805,6 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
       const input = getSearchDialogInput(dialog);
       if (input) {
         input.value = '';
-        dialog.query = '';
         clearSearchDialogResults(dialog);
         syncUnavailableClearButton();
         setSearchDialogState(dialog, 'unavailable', unavailableMessage);
@@ -865,7 +825,7 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
     event.preventDefault();
     const trigger =
       document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
-    requestSearchDialogOpen(dialog, trigger, 'keyboard');
+    requestSearchDialogOpen(dialog, trigger);
     setSearchDialogState(dialog, 'unavailable', unavailableMessage);
     setSearchDialogStatus(dialog, unavailableMessage);
   };
@@ -878,9 +838,9 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
     event.preventDefault();
     requestSearchDialogClose(dialog, { reason: 'escape' });
   }, { signal });
-  dialog.addEventListener('search-dialog:open-requested', onOpenRequested, { signal });
-  dialog.addEventListener('search-dialog:close-requested', onCloseRequested, { signal });
-  dialog.addEventListener('search-dialog:query-changed', onQueryChanged, { signal });
+  document.addEventListener('search-dialog:open-request', onOpenRequested, { signal });
+  document.addEventListener('search-dialog:close-request', onCloseRequested, { signal });
+  document.addEventListener('search-dialog:query-change', onQueryChanged, { signal });
   document.addEventListener('keydown', onKeydown, { signal });
   return { status: 'unavailable', reason: options.reason };
 }
@@ -889,26 +849,8 @@ export function resetSearchBootstrapForTest(): void {
   bootstrapListenerController?.abort();
   bootstrapListenerController = null;
 
-  if (initializedDialog) {
-    initializedDialog.searchUnavailable = false;
-    initializedDialog.searchUnavailableReason = '';
-    if (hadSearcherProperty) {
-      initializedDialog.searcher = previousSearcher;
-
-      if (!hadOwnSearcherProperty) {
-        delete initializedDialog.searcher;
-      }
-    } else {
-      delete initializedDialog.searcher;
-    }
-  }
-
-  initializedDialog = null;
   initializedSearchCore = null;
   initializedSearchRoutePredicate = null;
   initializedSearchBootstrapState = null;
-  previousSearcher = undefined;
-  hadSearcherProperty = false;
-  hadOwnSearcherProperty = false;
   initialized = false;
 }

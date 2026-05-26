@@ -20,11 +20,12 @@ export const enhanceSearchDialog = (root: ParentNode = document, signal?: AbortS
     trigger.addEventListener(
       'click',
       () => {
-        trigger.dispatchEvent(
-          new CustomEvent('open-search-dialog', {
-            bubbles: true,
-            composed: true,
-            detail: { trigger },
+        document.dispatchEvent(
+          new CustomEvent('search-dialog:open-request', {
+            detail: { trigger, modality: undefined },
+            bubbles: false,
+            composed: false,
+            cancelable: false,
           }),
         );
       },

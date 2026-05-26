@@ -2,9 +2,10 @@ import { expect } from '@open-wc/testing';
 
 import { initSearch, resetSearchBootstrapForTest } from '../../src/search/bootstrap.js';
 import { createSearchCore } from '../../src/search/search-core.js';
-import { searchReturnToReadingEventName, type SearchReturnToReadingEventDetail } from '../../src/search/search-dialog-events.js';
-import type { InteractionModality } from '../../src/search/interaction-modality.js';
-import type { UiSearchDialogSearcher } from '../../src/search/search-dialog-types.js';
+import {
+  searchReturnToReadingEventName,
+  type SearchReturnToReadingEventDetail,
+} from '../../src/search/search-navigation-events.js';
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
 import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
@@ -53,13 +54,29 @@ const createTestInitSearchOptions = (controller = createTestSearchCore()) => ({
   controller,
 });
 
-interface TestSearchDialogElement extends HTMLElement {
-  opened: boolean;
-  query: string;
-  captureOpenModality(modality?: InteractionModality): void;
-  requestOpen(trigger?: HTMLElement): void;
-  searcher?: UiSearchDialogSearcher | null | undefined;
-}
+const appendStaticSearchDialog = (): HTMLElement => {
+  const dialog = document.createElement('div');
+  dialog.id = 'global-search-dialog';
+  dialog.innerHTML = `
+    <form data-search-dialog-form>
+      <input data-search-dialog-input>
+      <button type="button" data-search-dialog-clear hidden></button>
+    </form>
+    <p data-search-dialog-status></p>
+    <div data-search-dialog-loading hidden></div>
+    <div data-search-dialog-empty hidden></div>
+    <div data-search-dialog-error hidden><p data-search-dialog-error-message></p></div>
+    <div data-search-dialog-unavailable hidden><p data-search-dialog-unavailable-message></p></div>
+    <ol data-search-dialog-results></ol>
+  `;
+  document.body.append(dialog);
+  return dialog;
+};
+
+const waitForSearchDebounce = (): Promise<void> =>
+  new Promise((resolve) => {
+    window.setTimeout(resolve, 180);
+  });
 
 describe('search-bootstrap', () => {
   afterEach(() => {
@@ -67,13 +84,11 @@ describe('search-bootstrap', () => {
     document.querySelector('#global-search-dialog')?.remove();
   });
 
-  it('dialog searcher と open request を createTestSearchCore() に接続し、起動モダリティ snapshot を引き渡すこと', async () => {
+  it('static dialog DOM の open request と input search を createTestSearchCore() に接続すること', async () => {
     const controller = createTestSearchCore();
     const originalSearch = controller.search.bind(controller);
     const requests: unknown[] = [];
     const options: unknown[] = [];
-    const openedWith: (HTMLElement | undefined)[] = [];
-    const capturedModalities: (InteractionModality | undefined)[] = [];
 
     controller.search = (request, executionOptions) => {
       requests.push(request);
@@ -110,17 +125,12 @@ describe('search-bootstrap', () => {
       });
     };
 
-    const dialog = document.createElement('div') as unknown as TestSearchDialogElement;
-    dialog.id = 'global-search-dialog';
-    dialog.opened = false;
-    dialog.query = '';
-    dialog.captureOpenModality = (modality?: InteractionModality) => {
-      capturedModalities.push(modality);
-    };
-    dialog.requestOpen = (trigger?: HTMLElement) => {
-      openedWith.push(trigger);
-    };
-    document.body.append(dialog);
+    const dialog = appendStaticSearchDialog();
+    const input = dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]');
+    const results = dialog.querySelector<HTMLOListElement>('[data-search-dialog-results]');
+    if (!input || !results) {
+      throw new Error('static search dialog fixture is invalid');
+    }
 
     const trigger = document.createElement('button');
     document.body.append(trigger);
@@ -134,8 +144,8 @@ describe('search-bootstrap', () => {
         }),
       );
 
-      expect(capturedModalities).to.deep.equal([undefined]);
-      expect(openedWith).to.deep.equal([trigger]);
+      expect(dialog.hasAttribute('open')).to.equal(true);
+      expect(trigger.getAttribute('aria-expanded')).to.equal('true');
 
       trigger.focus();
       document.dispatchEvent(
@@ -148,8 +158,7 @@ describe('search-bootstrap', () => {
         }),
       );
 
-      expect(capturedModalities).to.deep.equal([undefined, 'keyboard']);
-      expect(openedWith).to.deep.equal([trigger, trigger]);
+      expect(dialog.hasAttribute('open')).to.equal(true);
 
       document.dispatchEvent(
         new KeyboardEvent('keydown', {
@@ -161,13 +170,9 @@ describe('search-bootstrap', () => {
         }),
       );
 
-      expect(capturedModalities).to.deep.equal([undefined, 'keyboard', 'keyboard']);
-      expect(openedWith).to.deep.equal([trigger, trigger, trigger]);
-      const abortController = new AbortController();
-      const result = await dialog.searcher?.({
-        query: 'router',
-        signal: abortController.signal,
-      });
+      input.value = 'router';
+      input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+      await waitForSearchDebounce();
 
       expect(requests).to.deep.equal([
         {
@@ -178,15 +183,11 @@ describe('search-bootstrap', () => {
           sort: 'relevance',
         },
       ]);
-      expect(options).to.deep.equal([{ signal: abortController.signal }]);
-      expect(result?.items[0]).to.deep.equal({
-        id: '/notes/router/',
-        title: 'Router 設計メモ',
-        renderHref: '/notes/router/',
-        canonicalPathname: '/notes/router/',
-        path: 'notes / router',
-        keywords: ['router'],
-      });
+      expect(options[0]).to.have.property('signal');
+      expect(results.textContent).to.contain('Router 設計メモ');
+      expect(results.querySelector('[data-render-href]')?.getAttribute('data-render-href')).to.equal(
+        '/notes/router/',
+      );
     } finally {
       controller.search = originalSearch;
       dialog.remove();
@@ -202,14 +203,8 @@ describe('search-bootstrap', () => {
   });
 
   it('selection を return-to-reading event boundary へ変換すること', () => {
-    const dialog = document.createElement('div') as unknown as TestSearchDialogElement;
+    const dialog = appendStaticSearchDialog();
     const events: SearchReturnToReadingEventDetail[] = [];
-    dialog.id = 'global-search-dialog';
-    dialog.opened = true;
-    dialog.query = 'router';
-    dialog.captureOpenModality = () => undefined;
-    dialog.requestOpen = () => undefined;
-    document.body.append(dialog);
 
     dialog.addEventListener(searchReturnToReadingEventName, (event) => {
       const customEvent = event as CustomEvent<SearchReturnToReadingEventDetail>;
@@ -219,10 +214,11 @@ describe('search-bootstrap', () => {
 
     initSearch(createTestInitSearchOptions());
 
-    dialog.dispatchEvent(
+    document.dispatchEvent(
       new CustomEvent('search-dialog:selected', {
-        bubbles: true,
-        composed: true,
+        bubbles: false,
+        composed: false,
+        cancelable: false,
         detail: {
           id: '/notes/router/',
           renderHref: '/notes/router/',

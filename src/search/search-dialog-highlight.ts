@@ -1,10 +1,7 @@
-import { html, nothing, type TemplateResult } from 'lit';
 import type { HighlightPart, UiSearchDialogItem } from './search-dialog-types.js';
 
-export type SearchDialogHighlightRenderValue =
-  | string
-  | typeof nothing
-  | (string | typeof nothing | TemplateResult)[];
+const escapeHtmlText = (value: string): string =>
+  value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
 export function resolveSearchDialogItemPath(
   item: UiSearchDialogItem,
@@ -57,14 +54,18 @@ export function splitSearchDialogHighlightParts(value: string, query: string): H
 export function renderSearchDialogHighlightedText(
   value: string,
   query: string,
-): SearchDialogHighlightRenderValue {
+): string {
   const parts = splitSearchDialogHighlightParts(value, query);
   const hasMatch = parts.some((part) => part.matched);
   if (!hasMatch) {
-    return value;
+    return escapeHtmlText(value);
   }
 
-  return parts.map((part) =>
-    part.matched ? html`<mark data-highlight="true">${part.text}</mark>` : part.text || nothing,
-  );
+  return parts
+    .map((part) =>
+      part.matched
+        ? `<mark data-highlight="true">${escapeHtmlText(part.text)}</mark>`
+        : escapeHtmlText(part.text),
+    )
+    .join('');
 }

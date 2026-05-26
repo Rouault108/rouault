@@ -17,4 +17,4 @@ export const VIRTUALIZATION_THRESHOLD = 100;
 export const VIRTUAL_ROW_HEIGHT_PX = 48;
 export const VIRTUAL_OVERSCAN = 6;
 export const SEARCH_WORKER_THRESHOLD = VIRTUALIZATION_THRESHOLD;
-export const SEARCH_DIALOG_HIGHLIGHT_SELECTOR = ':where(.result-item ui-highlight > mark)';
+export const SEARCH_DIALOG_HIGHLIGHT_SELECTOR = ':where(mark[data-highlight])';

@@ -198,8 +198,6 @@
   inline-size: var(--icon-xl, 32px);
   block-size: var(--icon-xl, 32px);
   margin-inline: auto;
-  border: var(--border-width) solid currentColor;
-  border-radius: 50%;
 }
 
 .search-dialog__state-description {
@@ -248,10 +246,6 @@
   color: inherit;
   background: var(--bg-mark, var(--bg-fill-muted));
   border-radius: var(--radius-xs, 2px);
-}
-
-.search-dialog__virtual-spacer {
-  block-size: 0;
 }
 
 .search-dialog__footer {

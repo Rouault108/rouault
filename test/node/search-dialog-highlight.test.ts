@@ -4,6 +4,7 @@ import {
   resolveSearchDialogItemPath,
   splitSearchDialogHighlightParts,
 } from '../../src/search/search-dialog-highlight.js';
+import { SEARCH_DIALOG_HIGHLIGHT_SELECTOR } from '../../src/search/search-dialog-constants.js';
 
 describe('search-dialog-highlight', () => {
   it('path が明示されている場合はそれを優先する', () => {
@@ -55,5 +56,16 @@ describe('search-dialog-highlight', () => {
     const rendered = renderSearchDialogHighlightedText('Alpha Guide', 'zzz');
 
     expect(rendered).to.equal('Alpha Guide');
+  });
+
+  it('一致箇所を static mark HTML として返す', () => {
+    const rendered = renderSearchDialogHighlightedText('Alpha <Guide>', 'gui');
+
+    expect(rendered).to.equal('Alpha &lt;<mark data-highlight="true">Gui</mark>de&gt;');
+  });
+
+  it('static highlight DOM を検索ダイアログの highlight selector とする', () => {
+    expect(SEARCH_DIALOG_HIGHLIGHT_SELECTOR).to.equal(':where(mark[data-highlight])');
+    expect(SEARCH_DIALOG_HIGHLIGHT_SELECTOR).not.to.contain('ui-highlight');
   });
 });

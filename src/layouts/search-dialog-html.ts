@@ -62,7 +62,7 @@ export const renderSearchDialogHtml = (): string => `
           data-search-dialog-unavailable
         >
           <div class="search-dialog__state-content">
-            <span class="search-dialog__state-icon" aria-hidden="true"></span>
+            ${renderStaticIconHtml('alert-circle', 'search-dialog__state-icon')}
             <h2 class="search-dialog__state-heading">検索を利用できません</h2>
             <p class="search-dialog__state-description" data-search-dialog-unavailable-message></p>
           </div>
@@ -82,7 +82,7 @@ export const renderSearchDialogHtml = (): string => `
           data-search-dialog-empty
         >
           <div class="search-dialog__state-content">
-            <span class="search-dialog__state-icon" aria-hidden="true"></span>
+            ${renderStaticIconHtml('search', 'search-dialog__state-icon')}
             <h2 class="search-dialog__state-heading">一致するメモが見つかりません</h2>
             <p class="search-dialog__state-description">検索語を変えて試してください。</p>
           </div>
@@ -95,7 +95,7 @@ export const renderSearchDialogHtml = (): string => `
           data-search-dialog-error
         >
           <div class="search-dialog__state-content">
-            <span class="search-dialog__state-icon" aria-hidden="true"></span>
+            ${renderStaticIconHtml('alert-circle', 'search-dialog__state-icon')}
             <h2 class="search-dialog__state-heading">検索を表示できません</h2>
             <p class="search-dialog__state-description" data-search-dialog-error-message></p>
           </div>

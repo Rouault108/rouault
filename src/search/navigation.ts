@@ -1,4 +1,4 @@
-import type { SearchReturnToReadingEventDetail } from './search-dialog-events.js';
+import type { SearchReturnToReadingEventDetail } from './search-navigation-events.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import type { LoadedInternalDocumentRouteManifestState } from '../router/internal-document-route-manifest-loader.js';
 import { navigateInternalDocument, type NavigateInternalDocumentOptions } from '../router/navigate-internal-document.js';
@@ -12,7 +12,7 @@ import {
   createSearchReturnToReadingEvent,
   readSearchReturnToReadingEventDetail,
   searchReturnToReadingEventName,
-} from './search-dialog-events.js';
+} from './search-navigation-events.js';
 
 export interface NavigationOptions extends NavigateInternalDocumentOptions {
   readonly siteUrlContext?: SiteUrlContext;

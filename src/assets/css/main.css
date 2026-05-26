@@ -513,9 +513,7 @@ input:disabled,
   .sidebar,
   .header,
   .toc,
-  .ui-button,
-  [data-search-dialog-trigger],
-  .ui-dropdown {
+  [data-search-dialog-trigger] {
     display: none !important;
   }
 

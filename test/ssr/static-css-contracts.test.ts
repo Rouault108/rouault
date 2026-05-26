@@ -75,9 +75,11 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(css, '.search-dialog__icon', ['inline-size:', 'block-size:']);
     expectRuleToDeclare(css, '.search-dialog[data-closing]', ['animation:']);
     expectRuleToDeclare(css, '.search-dialog__spinner', ['inline-size:', 'block-size:']);
+    expectRuleToDeclare(css, '.search-dialog__state-icon', ['inline-size:', 'block-size:']);
     expect(ruleBlock(css, ".search-dialog__result[aria-selected='true']")).to.match(
       /background:|outline:/u,
     );
+    expect(css).not.to.contain('.search-dialog__virtual-spacer');
     expect(css).to.contain('@media print');
     expect(css).to.contain('@media (forced-colors: active)');
     expect(css).to.contain('@media (prefers-reduced-motion: reduce)');
