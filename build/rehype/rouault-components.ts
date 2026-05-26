@@ -818,9 +818,6 @@ const toStaticDetails = (node: HastNode): void => {
   const properties = node.properties ?? {};
   const summary = pickOptionalString(properties['summary']) ?? '詳細';
   const open = toBooleanAttribute(properties['open']);
-  const variant = pickOptionalString(properties['variant']);
-  const region = toBooleanAttribute(properties['region']);
-  const ariaLabel = pickOptionalString(properties['aria-label']);
   const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
 
   node.tagName = 'details';
@@ -828,9 +825,6 @@ const toStaticDetails = (node: HastNode): void => {
     className: ['details-block'],
     'data-details': 'true',
     ...(open ? { open: true } : {}),
-    ...(variant ? { 'data-variant': variant } : {}),
-    ...(region ? { role: 'region' } : {}),
-    ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
   };
   node.children = [
     createElement('summary', { className: ['details-block__summary'] }, [

@@ -9,9 +9,7 @@ export const INLINE_SUPERSCRIPT_PATTERN = /^\^([^^\n]+)\^/;
 export const INLINE_SUBSCRIPT_PATTERN = /^~([^~\n]+)~/;
 
 export const CALLOUT_VARIANTS = new Set(['note', 'tip', 'success', 'warning', 'danger']);
-export const DETAILS_VARIANTS = new Set(['default', 'bordered']);
 export const INFO_BOX_VARIANTS = new Set(['default', 'filled']);
-export const SCORE_LOADING_MODES = new Set(['lazy', 'eager']);
 export const IMAGE_LOADING_MODES = new Set(['lazy', 'eager']);
 export const TABS_ORIENTATIONS = new Set(['horizontal', 'vertical']);
 export const PREVIEW_PADDING_MODES = new Set(['normal', 'compact', 'none']);

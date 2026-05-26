@@ -1,8 +1,6 @@
 export type CalloutKind = 'note' | 'tip' | 'success' | 'warning' | 'danger';
-export type DetailsVariant = 'default' | 'bordered';
 export type InfoBoxVariant = 'default' | 'filled';
 export type InfoBoxDensity = 'comfortable' | 'compact';
-export type ScoreLoading = 'lazy' | 'eager';
 export type TabsOrientation = 'horizontal' | 'vertical';
 export type PreviewPadding = 'normal' | 'compact' | 'none';
 export type PreviewAlign = 'center' | 'start' | 'stretch';
@@ -67,11 +65,8 @@ export interface PreviewSandboxPayload {
 
 export interface DetailsPayload {
   readonly kind: 'details';
-  readonly summary?: string | undefined;
-  readonly ariaLabel?: string | undefined;
+  readonly summary: string;
   readonly open: boolean;
-  readonly variant?: DetailsVariant | undefined;
-  readonly region: boolean;
 }
 
 export interface InfoBoxPayload {
@@ -100,7 +95,6 @@ export interface ScorePayload {
   readonly label?: string | undefined;
   readonly description?: string | undefined;
   readonly aspectRatio?: string | undefined;
-  readonly loading?: ScoreLoading | undefined;
   readonly primary: boolean;
 }
 

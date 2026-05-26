@@ -1,12 +1,7 @@
 import type { MdastNode, VFileLike } from '../types.js';
 import type { NotePolicyContext } from '../policy/note-policy-context.js';
 import { resolveLinkCardUrlPolicy } from '../../link-card-url-policy.js';
-import {
-  CALLOUT_VARIANTS,
-  DETAILS_VARIANTS,
-  INFO_BOX_VARIANTS,
-  SCORE_LOADING_MODES,
-} from '../shared/constants.js';
+import { CALLOUT_VARIANTS, INFO_BOX_VARIANTS } from '../shared/constants.js';
 import { pickOptional } from '../parser-core/parse-attributes.js';
 import { sanitizeScoreSource } from '../../../../shared/media/media-source-attributes.js';
 import { toError } from '../shared/errors.js';
@@ -73,34 +68,16 @@ export const normalizeDetailsPayload = (
   node: MdastNode,
   file?: VFileLike,
 ): DetailsPayload => {
-  const hasAriaLabelAttribute = Object.prototype.hasOwnProperty.call(attrs, 'aria-label');
-  const ariaLabel = pickOptional(attrs['aria-label']);
   const summary = pickOptional(attrs['summary']);
 
-  if (summary && hasAriaLabelAttribute) {
-    throw toError(file, node, 'details では summary と aria-label を同時指定できません');
-  }
-
-  if (!summary && hasAriaLabelAttribute && !ariaLabel) {
-    throw toError(file, node, 'details の icon-only 利用では aria-label に空文字を指定できません');
-  }
-
-  if (!summary && !ariaLabel) {
-    throw toError(file, node, 'details では summary または aria-label のいずれかが必須です');
-  }
-
-  const variant = pickOptional(attrs['variant'])?.toLowerCase();
-  if (variant && !DETAILS_VARIANTS.has(variant)) {
-    throw toError(file, node, 'details の variant は default/bordered のみ指定可能です');
+  if (!summary) {
+    throw toError(file, node, 'details では summary が必須です');
   }
 
   return {
     kind: 'details',
-    ...(summary ? { summary } : {}),
-    ...(ariaLabel ? { ariaLabel } : {}),
+    summary,
     open: parseBooleanAttribute(attrs['open'], node, file, 'details', 'open') === true,
-    region: parseBooleanAttribute(attrs['region'], node, file, 'details', 'region') === true,
-    ...(variant ? { variant: variant as DetailsPayload['variant'] } : {}),
   };
 };
 
@@ -189,11 +166,6 @@ export const normalizeScorePayload = (
   file?: VFileLike,
   policyContext?: NotePolicyContext,
 ): ScorePayload => {
-  const loading = pickOptional(attrs['loading'])?.toLowerCase();
-  if (loading && !SCORE_LOADING_MODES.has(loading)) {
-    throw toError(file, node, 'score の loading は lazy/eager のみ指定可能です');
-  }
-
   const rawScoreSource = pickOptional(attrs['src']);
   const scoreSource =
     rawScoreSource === undefined
@@ -218,7 +190,6 @@ export const normalizeScorePayload = (
     ...(pickOptional(attrs['aspect-ratio'])
       ? { aspectRatio: pickOptional(attrs['aspect-ratio']) }
       : {}),
-    ...(loading ? { loading: loading as ScorePayload['loading'] } : {}),
     primary: parseBooleanAttribute(attrs['primary'], node, file, 'score', 'primary') === true,
   };
 };

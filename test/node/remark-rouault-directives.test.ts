@@ -299,7 +299,7 @@ describe('remarkRouaultDirectives', () => {
     }).to.throw('details 属性 "aria-label" は未対応です');
   });
 
-  it('details ディレクティブで summary と aria-label の両方がない場合はエラーにすること', () => {
+  it('details ディレクティブで summary がない場合はエラーにすること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -322,7 +322,7 @@ describe('remarkRouaultDirectives', () => {
       remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
     };
 
-    expect(run).to.throw('[markdown] details では summary または aria-label のいずれかが必須です');
+    expect(run).to.throw('[markdown] details では summary が必須です');
   });
 
   it('details ディレクティブで summary と aria-label の同時指定はエラーにすること', () => {
@@ -377,6 +377,36 @@ describe('remarkRouaultDirectives', () => {
     };
 
     expect(run).to.throw('[markdown] details 属性 "aria-label" は未対応です');
+  });
+
+  it('details ディレクティブの旧 variant / region / slot 属性は build error にすること', () => {
+    for (const source of [
+      '::details{summary="補足情報" variant="bordered"}',
+      '::details{summary="補足情報" region="true"}',
+      '::details{summary="補足情報" slot="summary"}',
+    ]) {
+      const tree: MdastNode = {
+        type: 'root',
+        children: [
+          {
+            type: 'paragraph',
+            children: [{ type: 'text', value: source }],
+          },
+          {
+            type: 'paragraph',
+            children: [{ type: 'text', value: '詳細本文です。' }],
+          },
+          {
+            type: 'paragraph',
+            children: [{ type: 'text', value: '::' }],
+          },
+        ],
+      };
+
+      expect(() => {
+        remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+      }).to.throw('[markdown] details 属性');
+    }
   });
 
   it('info-box ディレクティブを section[data-info-box] ノードへ変換すること', () => {
@@ -519,6 +549,26 @@ describe('remarkRouaultDirectives', () => {
     expect(score?.data?.hProperties?.['data-score-aspect-ratio']).to.equal('4/1');
     expect(score?.data?.hProperties?.['data-score-loading']).to.equal(undefined);
     expect(score?.data?.hProperties?.['data-score-primary']).to.equal('true');
+  });
+
+  it('score ディレクティブの旧 loading 属性は build error にすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::score{src="/media/score/a.svg" loading="lazy"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    expect(() => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    }).to.throw('[markdown] score 属性 "loading" は未対応です');
   });
 
   it('tabs と tab/panel スロットディレクティブを変換すること', () => {
