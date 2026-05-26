@@ -1,7 +1,5 @@
-import { html, type TemplateResult } from 'lit';
-import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
-import { LUCIDE_SUBSET } from '../../../generated/lucide-subset.js';
-import type { IconName } from '../../../../shared/icons/icon-paths.js';
+import { LUCIDE_SUBSET } from '../../src/generated/lucide-subset.js';
+import type { IconName } from './icon-paths.js';
 
 interface IconDefinition {
   readonly body?: string;
@@ -28,7 +26,6 @@ const resolveIconBody = (name: IconName): string => {
     if (alias.hFlip === true || alias.vFlip === true || typeof alias.rotate === 'number') {
       throw new Error(`Static icon alias must not require transform: "${name}".`);
     }
-
     const parentBody = icons[alias.parent]?.body;
     if (typeof parentBody === 'string' && parentBody.length > 0) {
       return parentBody;
@@ -38,17 +35,19 @@ const resolveIconBody = (name: IconName): string => {
   throw new Error(`Unknown static icon: "${name}".`);
 };
 
-export const renderStaticIconTemplate = (
-  name: IconName,
-  className?: string,
-): TemplateResult => html`
-  <svg
-    class=${className ?? ''}
-    viewBox="0 0 ${String(LUCIDE_SUBSET.width)} ${String(LUCIDE_SUBSET.height)}"
-    aria-hidden="true"
-    focusable="false"
-    data-icon=${name}
-  >
-    ${unsafeSVG(resolveIconBody(name))}
-  </svg>
-`;
+const escapeAttribute = (value: string): string =>
+  value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
+
+export const renderStaticIconHtml = (name: IconName, className = 'static-icon'): string => {
+  const classes = className.split(/\s+/u).filter((item) => item.length > 0);
+  const classAttribute = escapeAttribute(
+    classes.includes('static-icon') ? classes.join(' ') : [...classes, 'static-icon'].join(' '),
+  );
+  return `<span class="${classAttribute}" aria-hidden="true"><svg viewBox="0 0 ${String(
+    LUCIDE_SUBSET.width,
+  )} ${String(
+    LUCIDE_SUBSET.height,
+  )}" aria-hidden="true" focusable="false" data-icon="${escapeAttribute(name)}">${resolveIconBody(
+    name,
+  )}</svg></span>`;
+};

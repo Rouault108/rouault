@@ -48,25 +48,6 @@ export const resolveLanguageLabel = (value: string | null | undefined): string |
   return normalized.slice(0, 1).toUpperCase() + normalized.slice(1);
 };
 
-export const getCodeCopyValue = (pre: HTMLElement): string | null =>
-  pickOptionalString(pre.dataset['codeRaw']);
-
-export const isCodeCopyDisabled = (pre: HTMLElement): boolean =>
-  pre.dataset['codeCopyable'] === 'false' || getCodeCopyValue(pre) === null;
-
-export const shouldRenderCodeCopyButton = (pre: HTMLElement): boolean => {
-  const mode = pre.dataset['codeCopyMode'] ?? 'auto';
-  if (mode === 'hidden') {
-    return false;
-  }
-
-  if (mode === 'always') {
-    return true;
-  }
-
-  return getCodeCopyValue(pre) !== null;
-};
-
 const withCopyVerb = (contextName: string | null): string => {
   if (!contextName || contextName === 'コード') {
     return 'コードをコピー';

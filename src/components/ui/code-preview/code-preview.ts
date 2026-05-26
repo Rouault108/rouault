@@ -4,7 +4,7 @@ import type { PropertyValues } from 'lit';
 import '../button/button';
 import '../dropdown/dropdown';
 import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
-import type { IconName } from '../../../../shared/icons/icons-catalog.js';
+import type { IconName } from '../../../../shared/icons/icon-paths.js';
 
 type PreviewPadding = 'normal' | 'none' | 'compact';
 type PreviewAlign = 'center' | 'start' | 'stretch';

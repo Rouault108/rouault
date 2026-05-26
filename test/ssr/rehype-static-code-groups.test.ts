@@ -88,17 +88,21 @@ describe('rehypeStaticCodeGroups', () => {
     expect(headerTools?.properties?.['className']).toEqual(['code-group-header-tools']);
 
     const copyButton = headerTools?.children?.[0];
-    expect(copyButton?.tagName).toBe('ui-copy-button');
-    expect(copyButton?.properties?.['data-code-group-copy']).toBe('true');
-    expect(copyButton?.properties?.['disabled']).toBe(true);
+    expect(copyButton?.tagName).toBe('span');
+    expect(copyButton?.properties?.['data-copy-control']).toBe('true');
+    const button = copyButton?.children?.[0];
+    expect(button?.tagName).toBe('button');
+    expect(button?.properties?.['data-code-group-copy']).toBe('true');
+    expect(button?.properties?.['data-copy-target-id']).toBe('code-group-1-copy-source-0');
 
     const firstPanel = group?.children?.[1];
     const secondPanel = group?.children?.[2];
     expect(firstPanel?.tagName).toBe('section');
     expect(firstPanel?.properties?.['data-code-group-panel']).toBe('valid');
     expect(firstPanel?.properties?.['role']).toBeUndefined();
-    expect(firstPanel?.children?.[0]?.tagName).toBe('p');
-    expect(firstPanel?.children?.[1]?.tagName).toBe('pre');
+    expect(firstPanel?.children?.[0]?.tagName).toBe('template');
+    expect(firstPanel?.children?.[1]?.tagName).toBe('p');
+    expect(firstPanel?.children?.[2]?.tagName).toBe('pre');
 
     expect(secondPanel?.tagName).toBe('section');
     expect(secondPanel?.properties?.['data-code-group-panel']).toBe('invalid');

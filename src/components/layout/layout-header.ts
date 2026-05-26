@@ -20,7 +20,7 @@ import {
   type ThemePreference,
 } from '../../theme/theme-manager.js';
 import { decodeHashFragment } from '../../router/url-hash.js';
-import type { IconName } from '../../../shared/icons/icons-catalog.js';
+import type { IconName } from '../../../shared/icons/icon-paths.js';
 import type { HeaderShellProjection } from '../../../shared/navigation/shell-projection.js';
 import type { TocPresence } from '../../../shared/note/toc-presence.js';
 import { createSiteUrlContext } from '../../../shared/site/site-url-context.js';

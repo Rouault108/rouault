@@ -1,23 +1,7 @@
-/* ===========================================================================
- * フォント読み込み
- * =========================================================================== */
-
-/* Rouault Sans
- * - Noto Sans JP Variable をベースにしたプロジェクト用エイリアス
- * - 和文とアイコンの視覚中心差を吸収するため、font metrics を調整 */
-@import './fonts/rouault-sans.css';
-
-/* JetBrains Mono
- * - code / pre / Shiki 出力で使用する等幅フォント
- * - Storybook のみでなく、アプリ本体でも読み込む */
-@import '@fontsource/jetbrains-mono/400.css';
-@import '@fontsource/jetbrains-mono/700.css';
-
-/* Inter Variable Font（欧文用）
- * - 将来的な追加を見越してコメント残し
- * - 現在は Noto Sans JP のラテン文字グリフを使用 */
-
+@import './fonts.css';
 @import './tokens.css';
+@import './static-icons.css';
+@import './static-copy-button.css';
 
 @import './skip-link.css';
 @import './code-surfaces.css';
@@ -30,6 +14,7 @@
 @import './score.css';
 @import './empty-state.css';
 @import './page-corpora.css';
+@import './footer.css';
 
 /* ===========================================================================
  * View Transitions API サポート

@@ -9,11 +9,11 @@ import {
 } from '../../build/ssr/targets.js';
 
 const REQUIRED_NOTE_CONTENT_TAGS: readonly string[] = [
-  'ui-checkbox',
   'ui-code-preview',
   'ui-preview-sandbox',
   'ui-tabs',
   'ui-translation',
+  'ui-video',
 ] as const;
 
 describe('component manifest / ssr targets', () => {
@@ -40,6 +40,7 @@ describe('component manifest / ssr targets', () => {
     const removedTags: readonly string[] = [
       'ui-code-block',
       'ui-code-group',
+      'ui-checkbox',
       'ui-callout',
       'ui-table',
       'ui-blockquote',

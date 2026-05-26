@@ -1,14 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { renderThunked } from '@lit-labs/ssr';
-import { collectResult } from '@lit-labs/ssr/lib/render-result.js';
-import {
-  FOOTER_DEFAULT_NAV_LABEL,
-  renderFooter,
-  type FooterRenderOptions,
-} from '../../src/components/ui/footer/footer.js';
+import { renderFooterHtml } from '../../src/layouts/footer-html.js';
+import type { FooterRenderOptions } from '../../src/layouts/footer-options.js';
 
 const renderFooterMarkup = async (options: FooterRenderOptions): Promise<string> =>
-  collectResult(renderThunked(renderFooter(options)));
+  Promise.resolve(renderFooterHtml(options));
 
 describe('renderFooter', () => {
   it('完全状態で brand / legal / build / nav を出力すること', async () => {
@@ -26,14 +21,14 @@ describe('renderFooter', () => {
       ],
     });
 
-    expect(rendered).toContain('<footer id="footer-default" class="ui-footer">');
+    expect(rendered).toContain('<footer id="footer-default" class="ui-footer" data-footer data-layout-footer>');
     expect(rendered).toContain('class="ui-footer__inner"');
     expect(rendered).toContain('class="ui-footer__meta"');
     expect(rendered).toContain('class="ui-footer__brand"');
     expect(rendered).toContain('class="ui-footer__subline"');
     expect(rendered).toContain('class="ui-footer__legal"');
     expect(rendered).toContain('class="ui-footer__build"');
-    expect(rendered).toContain(`aria-label="${FOOTER_DEFAULT_NAV_LABEL}"`);
+    expect(rendered).toContain('aria-label="補助ナビゲーション"');
     expect(rendered).toContain('<p class="ui-footer__site">');
     expect(rendered).toContain('href="/"');
     expect(rendered).toContain('>Rouault<');
@@ -52,7 +47,7 @@ describe('renderFooter', () => {
       },
     });
 
-    expect(rendered).toContain('<footer id="footer-minimal" class="ui-footer">');
+    expect(rendered).toContain('<footer id="footer-minimal" class="ui-footer" data-footer data-layout-footer>');
     expect(rendered).toContain('class="ui-footer__meta"');
     expect(rendered).toContain('class="ui-footer__subline"');
     expect(rendered).toContain('class="ui-footer__legal"');

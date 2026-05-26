@@ -2,6 +2,7 @@ import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
 
 import { validateGeneratedPageHtmlLinkContracts } from './page-html-link-contracts.js';
+import { classifyStaticFirstTag } from './static-first-tags.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import type { RouteClassificationMode } from '../../shared/link/link-annotation.js';
 
@@ -25,17 +26,6 @@ type Parse5DocumentFragment = DefaultTreeAdapterMap['documentFragment'];
 type Parse5Element = DefaultTreeAdapterMap['element'];
 type Parse5Node = DefaultTreeAdapterMap['node'];
 type Parse5Attribute = Parse5Element['attrs'][number];
-
-const STATIC_FIRST_LEGACY_TAGS = new Set<string>([
-  'ui-blockquote',
-  'ui-callout',
-  'ui-divider',
-  'ui-footnote',
-  'ui-highlight',
-  'ui-image',
-  'ui-info-box',
-  'ui-table',
-]);
 
 const isElementNode = (node: Parse5Node): node is Parse5Element =>
   'tagName' in node && typeof node.tagName === 'string' && Array.isArray(node.attrs);
@@ -767,7 +757,8 @@ const validateStaticNoteRootContracts = (
   errors: string[],
   state: StaticContractState,
 ): void => {
-  if (STATIC_FIRST_LEGACY_TAGS.has(node.tagName)) {
+  const classification = classifyStaticFirstTag(node.tagName);
+  if (classification !== 'NON_UI_TAG' && classification !== 'STATEFUL_ALLOWED_NOTE_TAGS') {
     errors.push(`${node.tagName} は note 最終 HTML に残してはいけません`);
     return;
   }
@@ -911,6 +902,13 @@ export const validateNoteContentContracts = (
 
     validateStaticNoteRootContracts(node, errors, staticContractState);
     if (errors.length > 0) {
+      return;
+    }
+
+    if (
+      node.tagName === 'template' &&
+      (hasAttribute(node, 'shadowrootmode') || hasAttribute(node, 'shadowroot'))
+    ) {
       return;
     }
 

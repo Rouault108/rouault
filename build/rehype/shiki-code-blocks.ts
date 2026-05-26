@@ -6,6 +6,7 @@ import {
   transformerRemoveNotationEscape,
 } from '@shikijs/transformers';
 
+import { createStaticIconHast } from './static-icon-hast.js';
 import { type HastNode } from './hast-utils.js';
 
 const SHIKI_THEMES = {
@@ -334,6 +335,72 @@ const createElement = (
   children,
 });
 
+let codeCopySourceCounter = 0;
+
+const createCodeCopySource = (source: string): { id: string; template: HastNode } => {
+  codeCopySourceCounter += 1;
+  const id = `code-copy-source-${String(codeCopySourceCounter)}`;
+  return {
+    id,
+    template: createElement(
+      'template',
+      {
+        id,
+        'data-code-copy-source': 'true',
+      },
+      [createTextNode(source)],
+    ),
+  };
+};
+
+const createStaticCopyButton = (
+  targetId: string,
+  label: string,
+  disabled: boolean,
+  extraClassName: string,
+): HastNode =>
+  createElement(
+    'span',
+    {
+      className: ['static-copy-control'],
+      'data-copy-control': 'true',
+    },
+    [
+      createElement(
+        'button',
+        {
+          className: ['static-copy-button', extraClassName],
+          type: 'button',
+          'data-copy-button': 'true',
+          'data-copy-target-id': targetId,
+          'data-copy-state': 'idle',
+          'aria-label': label,
+          ...(disabled ? { disabled: true } : {}),
+        },
+        [
+          createElement(
+            'span',
+            {
+              className: ['static-icon'],
+              'aria-hidden': 'true',
+            },
+            [createStaticIconHast('copy')],
+          ),
+        ],
+      ),
+      createElement(
+        'span',
+        {
+          className: ['static-copy-button__status', 'sr-only'],
+          role: 'status',
+          'aria-live': 'polite',
+          'data-copy-status': 'true',
+        },
+        [],
+      ),
+    ],
+  );
+
 const createStandaloneCodeSurface = (
   preNode: HastNode,
   options: {
@@ -348,6 +415,10 @@ const createStandaloneCodeSurface = (
 ): HastNode => {
   const captionChildren: HastNode[] = [];
   const captionMainChildren: HastNode[] = [];
+  const copySource = createCodeCopySource(options.source);
+  if (preNode.properties) {
+    delete preNode.properties['data-code-copy-source'];
+  }
   const intentLabel = getIntentLabel(options.intent);
 
   if (options.filename) {
@@ -395,12 +466,12 @@ const createStandaloneCodeSurface = (
           className: ['code-surface-copy-button-shell'],
         },
         [
-          createElement('ui-copy-button', {
-            size: 'sm',
-            label: resolveStandaloneCopyButtonLabel(options.filename, options.language),
-            value: options.source,
-            ...(isCopyDisabled(options.source, options.copyable) ? { disabled: true } : {}),
-          }),
+          createStaticCopyButton(
+            copySource.id,
+            resolveStandaloneCopyButtonLabel(options.filename, options.language),
+            isCopyDisabled(options.source, options.copyable),
+            'code-surface-copy-button',
+          ),
         ],
       ),
     );
@@ -434,6 +505,7 @@ const createStandaloneCodeSurface = (
             ),
           ]
         : []),
+      copySource.template,
       preNode,
     ],
   );
@@ -511,7 +583,7 @@ const highlightCodeBlock = async (
     className: classList,
     'data-code-block': true,
     'data-code-language': language,
-    'data-code-raw': source,
+    'data-code-copy-source': source,
     ...(filename ? { 'data-code-filename': filename } : {}),
     ...(label ? { 'data-code-label': label } : {}),
     ...(groupKey ? { 'data-code-group-key': groupKey } : {}),

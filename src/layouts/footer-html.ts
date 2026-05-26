@@ -1,14 +1,40 @@
-import {
-  type FooterRenderOptions,
-  normalizeFooterLinks,
-  normalizeFooterMeta,
-  resolveFooterLinkKind,
-  resolveFooterNavLabel,
-} from '../components/ui/footer/footer.js';
 import { escapeHtmlAttribute, escapeHtmlText } from './html-output.js';
-import { buildLayoutFooterOptions } from './footer-options.js';
+import {
+  buildLayoutFooterOptions,
+  type FooterLinkItem,
+  type FooterRenderOptions,
+} from './footer-options.js';
 
-const renderFooterSiteName = (meta: ReturnType<typeof normalizeFooterMeta>): string => {
+interface NormalizedFooterLink extends FooterLinkItem {
+  readonly kind: string;
+}
+
+const resolveFooterLinkKind = (href: string): string => {
+  if (href.startsWith('mailto:')) {
+    return 'external-action';
+  }
+  if (/^[a-z][a-z0-9+.-]*:/iu.test(href)) {
+    return 'external-web';
+  }
+  return 'internal-document';
+};
+
+const normalizeFooterLinks = (
+  links: readonly FooterLinkItem[] | undefined,
+): readonly NormalizedFooterLink[] =>
+  (links ?? []).flatMap((link) => {
+    const href = link.href.trim();
+    const label = link.label.trim();
+    if (!href || !label || /^javascript:/iu.test(href)) {
+      return [];
+    }
+    return [{ ...link, href, label, kind: resolveFooterLinkKind(href) }];
+  });
+
+const resolveFooterNavLabel = (a11y: FooterRenderOptions['a11y']): string =>
+  a11y?.navLabel?.trim() ?? '補助ナビゲーション';
+
+const renderFooterSiteName = (meta: FooterRenderOptions['meta']): string => {
   if (!meta.siteUrl) {
     return escapeHtmlText(meta.siteName);
   }
@@ -20,7 +46,7 @@ const renderFooterSiteName = (meta: ReturnType<typeof normalizeFooterMeta>): str
   )}</a>`;
 };
 
-const renderFooterLink = (link: ReturnType<typeof normalizeFooterLinks>[number]): string => {
+const renderFooterLink = (link: NormalizedFooterLink): string => {
   const externalAttribute = link.kind === 'external-web' ? ' data-external="true"' : '';
   const relAttribute = link.kind === 'external-web' ? ' rel="noreferrer"' : '';
   const ariaLabelAttribute = link.external
@@ -35,13 +61,13 @@ const renderFooterLink = (link: ReturnType<typeof normalizeFooterLinks>[number])
 };
 
 export const renderFooterHtml = (options: FooterRenderOptions): string => {
-  const meta = normalizeFooterMeta(options.meta);
+  const meta = options.meta;
   const links = normalizeFooterLinks(options.links);
   const navLabel = resolveFooterNavLabel(options.a11y);
   const idAttribute = options.id ? ` id="${escapeHtmlAttribute(options.id)}"` : '';
 
   return `
-    <footer${idAttribute} class="ui-footer" data-layout-footer>
+    <footer${idAttribute} class="ui-footer" data-footer data-layout-footer>
       <div class="ui-footer__inner">
         <div class="ui-footer__meta">
           <div class="ui-footer__brand">

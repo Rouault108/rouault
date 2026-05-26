@@ -5,7 +5,7 @@ import {
   sanitizeVideoPoster,
   sanitizeVideoSource,
 } from '../../../../shared/media/media-source-attributes.js';
-import type { IconName } from '../../../../shared/icons/icons-catalog.js';
+import type { IconName } from '../../../../shared/icons/icon-paths.js';
 import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
 import '../button/button';
 

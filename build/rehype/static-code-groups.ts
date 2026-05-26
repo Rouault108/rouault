@@ -1,3 +1,4 @@
+import { createStaticIconHast } from './static-icon-hast.js';
 import { type HastNode } from './hast-utils.js';
 
 const isElement = (node: HastNode, tagName?: string): boolean => {
@@ -38,6 +39,7 @@ const cloneNode = (node: HastNode): HastNode => {
 interface StaticCodeBlockMeta {
   readonly block: HastNode;
   readonly key: string;
+  readonly source: string;
   readonly tabLabel: string;
 }
 
@@ -61,7 +63,9 @@ const readStaticCodeBlockMeta = (node: HastNode): StaticCodeBlockMeta | null => 
     return null;
   }
 
-  return { block: node, key, tabLabel };
+  const source = pickOptionalString(node.properties?.['data-code-copy-source']) ?? '';
+
+  return { block: node, key, source, tabLabel };
 };
 
 let codeGroupCounter = 0;
@@ -76,7 +80,7 @@ const createTabButton = (key: string, label: string): HastNode => ({
   children: [{ type: 'text', value: label }],
 });
 
-const createGroupCopyButton = (): HastNode => ({
+const createGroupCopyButton = (targetId: string): HastNode => ({
   type: 'element',
   tagName: 'div',
   properties: {
@@ -85,27 +89,85 @@ const createGroupCopyButton = (): HastNode => ({
   children: [
     {
       type: 'element',
-      tagName: 'ui-copy-button',
+      tagName: 'span',
       properties: {
-        size: 'sm',
-        label: 'コードをコピー',
-        disabled: true,
-        'data-code-group-copy': 'true',
+        className: ['static-copy-control'],
+        'data-copy-control': 'true',
       },
-      children: [],
+      children: [
+        {
+          type: 'element',
+          tagName: 'button',
+          properties: {
+            className: ['static-copy-button', 'code-group-copy-button'],
+            type: 'button',
+            'data-copy-button': 'true',
+            'data-copy-target-id': targetId,
+            'data-copy-state': 'idle',
+            'data-code-group-copy': 'true',
+            'aria-label': 'コードをコピー',
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'span',
+              properties: {
+                className: ['static-icon'],
+                'aria-hidden': 'true',
+              },
+              children: [createStaticIconHast('copy')],
+            },
+          ],
+        },
+        {
+          type: 'element',
+          tagName: 'span',
+          properties: {
+            className: ['static-copy-button__status', 'sr-only'],
+            role: 'status',
+            'aria-live': 'polite',
+            'data-copy-status': 'true',
+          },
+          children: [],
+        },
+      ],
     },
   ],
 });
 
-const createPanel = (item: StaticCodeBlockMeta, selected: boolean): HastNode => ({
+const createCodeCopySource = (id: string, source: string): HastNode => ({
+  type: 'element',
+  tagName: 'template',
+  properties: {
+    id,
+    'data-code-copy-source': 'true',
+  },
+  children: [{ type: 'text', value: source }],
+});
+
+const cloneStaticCodeBlock = (item: StaticCodeBlockMeta): HastNode => {
+  const block = cloneNode(item.block);
+  if (block.properties) {
+    delete block.properties['data-code-copy-source'];
+  }
+  return block;
+};
+
+const createPanel = (
+  item: StaticCodeBlockMeta,
+  selected: boolean,
+  copySourceId: string,
+): HastNode => ({
   type: 'element',
   tagName: 'section',
   properties: {
     'data-code-group-panel': item.key,
     'data-code-group-panel-label': item.tabLabel,
+    'data-code-copy-source-id': copySourceId,
     ...(selected ? {} : { 'data-code-group-inactive': 'true' }),
   },
   children: [
+    createCodeCopySource(copySourceId, item.source),
     {
       type: 'element',
       tagName: 'p',
@@ -114,7 +176,7 @@ const createPanel = (item: StaticCodeBlockMeta, selected: boolean): HastNode => 
       },
       children: [{ type: 'text', value: item.tabLabel }],
     },
-    cloneNode(item.block),
+    cloneStaticCodeBlock(item),
   ],
 });
 
@@ -139,6 +201,9 @@ export function rehypeStaticCodeGroups(): (tree: unknown) => void {
         const fallback = items[0]?.block;
         if (fallback) {
           const cloned = cloneNode(fallback);
+          if (cloned.properties) {
+            delete cloned.properties['data-code-copy-source'];
+          }
           if (cloned.tagName !== undefined) {
             node.tagName = cloned.tagName;
           }
@@ -151,6 +216,7 @@ export function rehypeStaticCodeGroups(): (tree: unknown) => void {
       codeGroupCounter += 1;
       const groupId = `code-group-${String(codeGroupCounter)}`;
       const selectedKey = items[0]?.key ?? '';
+      const selectedCopySourceId = `${groupId}-copy-source-0`;
       const originalProperties = { ...(node.properties ?? {}) };
 
       node.tagName = 'section';
@@ -181,10 +247,12 @@ export function rehypeStaticCodeGroups(): (tree: unknown) => void {
               },
               children: items.map((item) => createTabButton(item.key, item.tabLabel)),
             },
-            createGroupCopyButton(),
+            createGroupCopyButton(selectedCopySourceId),
           ],
         },
-        ...items.map((item, index) => createPanel(item, index === 0)),
+        ...items.map((item, index) =>
+          createPanel(item, index === 0, `${groupId}-copy-source-${String(index)}`),
+        ),
       ];
     };
 

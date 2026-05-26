@@ -1,5 +1,5 @@
 import type { TreeNode } from './tree-node.js';
-import type { IconName } from '../icons/icons-catalog.js';
+import type { IconName } from '../icons/icon-paths.js';
 import type { NoteContentKind } from '../note/note-kind.js';
 import type { NoteChromeProfile } from '../note/note-chrome-profile.js';
 

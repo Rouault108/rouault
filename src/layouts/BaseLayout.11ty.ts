@@ -36,7 +36,6 @@ import {
 } from './html-output.js';
 import { renderSearchDialogHtml } from './search-dialog-html.js';
 import { renderDefaultLayoutFooterHtml } from './footer-html.js';
-import { FOOTER_DOCUMENT_CSS, FOOTER_DOCUMENT_STYLE_ID } from '../components/ui/footer/footer.js';
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import type { NoteNavigationEntry } from '../../build/navigation/index.js';
 import {
@@ -422,7 +421,6 @@ export class BaseLayout {
   <meta name="description"${serializeHtmlAttributes([{ name: 'content', value: description }])}>
   ${buildIdMeta}
   <script>${escapeInlineExecutableScriptText(themeBootstrapScript)}</script>
-  <style id="${FOOTER_DOCUMENT_STYLE_ID}">${FOOTER_DOCUMENT_CSS}</style>
   ${clientStyleLinks}
   <script type="module"${serializeHtmlAttributes([{ name: 'src', value: clientScriptSrc }])}></script>
 </head>

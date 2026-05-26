@@ -482,7 +482,7 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('aria-atomic="true"');
     expect(rendered).toContain('class="sr-only"');
     expect(rendered).toContain('<main id="main-content" tabindex="-1">');
-    expect(rendered).toContain('<footer class="ui-footer" data-layout-footer>');
+    expect(rendered).toContain('<footer class="ui-footer" data-footer data-layout-footer>');
     expect(rendered).toContain('<p class="ui-footer__build">build test</p>');
     expect(rendered).not.toContain('<layout-footer');
   });
@@ -553,7 +553,7 @@ describe('BaseLayout', () => {
       siteUrlContext: TEST_SITE_URL_CONTEXT,
     });
 
-    expect(rendered).toContain('<footer class="ui-footer" data-layout-footer>');
+    expect(rendered).toContain('<footer class="ui-footer" data-footer data-layout-footer>');
     expect(rendered).toContain('<p class="ui-footer__build">build test</p>');
     expect(rendered).not.toContain('<layout-footer');
   });

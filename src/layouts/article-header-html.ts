@@ -7,7 +7,7 @@ import {
   toArticleHeaderTagHref,
   toSafeArticleHeaderSourceHref,
 } from '../article-header/article-header-contract.js';
-import { renderStaticArticleHeaderIconHtml } from './article-header-icon-html.js';
+import { renderStaticIconHtml } from '../../shared/icons/render-static-icon-html.js';
 import { escapeHtmlAttribute, escapeHtmlText } from './html-output.js';
 
 type ArticleHeaderProjection = NotePageProjection['articleHeader'];
@@ -33,7 +33,7 @@ const renderBreadcrumbs = (breadcrumbs: ArticleHeaderProjection['breadcrumbs']):
           ? `<a class="article-header__breadcrumb-node article-header__breadcrumb-link" href="${escapeHtmlAttribute(item.href)}" data-link-kind="internal-document" data-link-surface="navigation">${label}</a>`
           : `<span class="article-header__breadcrumb-node article-header__breadcrumb-static">${label}</span>`;
       const separator = !isLast
-        ? `<span class="article-header__breadcrumb-separator" aria-hidden="true">${renderStaticArticleHeaderIconHtml(
+        ? `<span class="article-header__breadcrumb-separator" aria-hidden="true">${renderStaticIconHtml(
             'chevron-right',
             'article-header__breadcrumb-separator-icon',
           )}</span>`
@@ -61,7 +61,7 @@ const renderStatus = (status: ArticleHeaderProjection['status']): string => {
       class="article-header__status article-header__status--${escapeHtmlAttribute(presentation.tone)}"
       aria-label="ステータス: ${escapeHtmlAttribute(presentation.label)}"
     >
-      ${renderStaticArticleHeaderIconHtml(presentation.icon, 'article-header__metadata-icon')}
+      ${renderStaticIconHtml(presentation.icon, 'article-header__metadata-icon')}
       <span class="article-header__status-label">${escapeHtmlText(presentation.label)}</span>
     </div>
   `.trim();
@@ -82,7 +82,7 @@ const renderPrimaryMetadata = (articleHeader: ArticleHeaderProjection): string =
   return `
     <ul class="article-header__metadata article-header__metadata--primary" aria-label="記事メタデータ">
       <li class="article-header__metadata-item article-header__metadata-item--date">
-        ${renderStaticArticleHeaderIconHtml('history', 'article-header__metadata-icon')}
+        ${renderStaticIconHtml('history', 'article-header__metadata-icon')}
         <time datetime="${escapeHtmlAttribute(displayDate)}" aria-label="${escapeHtmlAttribute(ariaLabel)}">
           ${escapeHtmlText(displayDate)}
         </time>
@@ -137,7 +137,7 @@ const renderSecondaryMetadata = (articleHeader: ArticleHeaderProjection): string
     items.push(
       `
       <li class="article-header__metadata-item article-header__metadata-item--source">
-        ${renderStaticArticleHeaderIconHtml('link', 'article-header__metadata-icon')}
+        ${renderStaticIconHtml('link', 'article-header__metadata-icon')}
         <a
           class="article-header__source-link"
           href="${escapeHtmlAttribute(sourceHref)}"
@@ -160,7 +160,7 @@ const renderSecondaryMetadata = (articleHeader: ArticleHeaderProjection): string
     items.push(
       `
       <li class="article-header__metadata-item article-header__metadata-item--license">
-        ${renderStaticArticleHeaderIconHtml('scale', 'article-header__metadata-icon')}
+        ${renderStaticIconHtml('scale', 'article-header__metadata-icon')}
         <span>${escapeHtmlText(license)}</span>
       </li>
     `.trim(),

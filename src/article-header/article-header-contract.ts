@@ -1,5 +1,5 @@
-import type { IconName } from '../../shared/icons/icons-catalog.js';
-import { isIconName } from '../../shared/icons/icons-catalog.js';
+import type { IconName } from '../../shared/icons/icon-paths.js';
+import { isIconName } from '../../shared/icons/icon-paths.js';
 import type { NoteStatus } from '../types/article-status.js';
 
 export const ARTICLE_HEADER_ICON_NAMES = [

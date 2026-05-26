@@ -280,8 +280,8 @@
   justify-content: center;
 }
 
-.code-surface-copy-button-shell > ui-copy-button,
-.code-group-header-tools > ui-copy-button {
+.code-surface-copy-button-shell > .static-copy-control,
+.code-group-header-tools > .static-copy-control {
   --_copy-button-icon-size: var(--icon-sm, 14px);
 
   opacity: 0.56;
@@ -289,25 +289,25 @@
   transition: opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
 }
 
-[data-code-block-root]:hover .code-surface-copy-button-shell > ui-copy-button,
-[data-code-block-root]:focus-within .code-surface-copy-button-shell > ui-copy-button,
-section[data-code-group][data-enhanced='true']:hover .code-group-header-tools > ui-copy-button,
+[data-code-block-root]:hover .code-surface-copy-button-shell > .static-copy-control,
+[data-code-block-root]:focus-within .code-surface-copy-button-shell > .static-copy-control,
+section[data-code-group][data-enhanced='true']:hover .code-group-header-tools > .static-copy-control,
 section[data-code-group][data-enhanced='true']:focus-within
   .code-group-header-tools
-  > ui-copy-button {
+  > .static-copy-control {
   opacity: 1;
 }
 
-[data-code-block-root]:focus-within .code-surface-copy-button-shell > ui-copy-button,
+[data-code-block-root]:focus-within .code-surface-copy-button-shell > .static-copy-control,
 section[data-code-group][data-enhanced='true']:focus-within
   .code-group-header-tools
-  > ui-copy-button {
+  > .static-copy-control {
   transition-duration: var(--duration-instant, 0ms);
 }
 
 @media (hover: none) and (pointer: coarse) {
-  .code-surface-copy-button-shell > ui-copy-button,
-  .code-group-header-tools > ui-copy-button {
+  .code-surface-copy-button-shell > .static-copy-control,
+  .code-group-header-tools > .static-copy-control {
     opacity: var(--opacity-link-touch, 0.75);
   }
 }
@@ -318,8 +318,8 @@ section[data-code-group][data-enhanced='true']:focus-within
   }
 
   [data-code-block-root],
-  .code-surface-copy-button-shell > ui-copy-button,
-  .code-group-header-tools > ui-copy-button,
+  .code-surface-copy-button-shell > .static-copy-control,
+  .code-group-header-tools > .static-copy-control,
   .code-group-tablist > button[data-code-group-tab] {
     transition-duration: var(--duration-instant, 0ms);
   }

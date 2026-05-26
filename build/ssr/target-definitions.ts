@@ -52,12 +52,6 @@ export const SSR_COMPONENT_DEFINITIONS = [
     adapterKind: 'shadow-default',
   },
   {
-    tag: 'ui-checkbox',
-    ssr: 'shadow',
-    profiles: ['note'],
-    adapterKind: 'shadow-default',
-  },
-  {
     tag: 'ui-code-preview',
     ssr: 'shadow',
     profiles: ['note'],
@@ -77,6 +71,12 @@ export const SSR_COMPONENT_DEFINITIONS = [
   },
   {
     tag: 'ui-translation',
+    ssr: 'shadow',
+    profiles: ['note'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'ui-video',
     ssr: 'shadow',
     profiles: ['note'],
     adapterKind: 'shadow-default',

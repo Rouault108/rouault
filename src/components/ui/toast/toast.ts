@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
-import type { IconName } from '../../../../shared/icons/icons-catalog.js';
+import type { IconName } from '../../../../shared/icons/icon-paths.js';
 
 export type ToastVariant = 'success' | 'warning' | 'danger' | 'info';
 type ToastRole = 'status' | 'alert';

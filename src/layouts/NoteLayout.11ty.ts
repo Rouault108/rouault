@@ -108,6 +108,10 @@ export class NoteLayout {
           <div${serializeHtmlAttributes([
             { name: 'id', value: notePage.toc.contentRootId },
             { name: 'class', value: 'prose' },
+            { name: 'data-note-static-surface', value: 'true' },
+            { name: 'data-hydration-key', value: 'note-static-surface-enhancer' },
+            { name: 'data-hydration-capability', value: 'progressive' },
+            { name: 'data-hydration-trigger', value: 'post-commit' },
           ])}>
             ${notePage.contentHtml}
           </div>

@@ -13,7 +13,7 @@ import { validateNoteContentContracts } from '../../build/content/note-content-c
 import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
 import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
 import { resolveCoverAsset, type ResolvedImageAsset } from '../../build/media/image-resolver.js';
-import { isIconName, type IconName } from '../../shared/icons/icons-catalog.js';
+import { isIconName, type IconName } from '../../shared/icons/icon-paths.js';
 import type { NoteStatus } from '../../src/types/article-status.js';
 import {
   type NoteContentKind,

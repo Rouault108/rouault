@@ -5,6 +5,7 @@ import { enhanceImageLightboxes } from '../post-hydrate/image-lightbox-enhancer.
 import { enhanceScoreScroll } from '../post-hydrate/score-scroll-enhancer.js';
 import { enhanceSearchDialog } from '../post-hydrate/search-dialog-enhancer.js';
 import { enhanceSearchPage } from '../post-hydrate/search-page-enhancer.js';
+import { enhanceNoteStaticSurface } from '../post-hydrate/note-static-surface-enhancer.js';
 import type { HydrationActivationContext, HydrationRegistryEntry } from './types.js';
 
 interface ActivatableElement extends HTMLElement {
@@ -21,6 +22,10 @@ const activateCodeBlocks = ({ root }: HydrationActivationContext): void => {
 
 const activateCodeGroups = ({ root }: HydrationActivationContext): void => {
   enhanceCodeGroups(root);
+};
+
+const activateNoteStaticSurface = ({ element }: HydrationActivationContext): void => {
+  enhanceNoteStaticSurface(element);
 };
 
 const activateImageLightboxes = ({ root }: HydrationActivationContext): void => {
@@ -133,9 +138,10 @@ export const HYDRATION_REGISTRY = [
     activate: activateCodeGroups,
   },
   {
-    tag: 'ui-checkbox',
-    kind: 'custom-element',
-    loader: () => import('../../components/ui/checkbox/checkbox.js'),
+    tag: 'note-static-surface-enhancer',
+    kind: 'enhancer',
+    loader: () => Promise.resolve(undefined),
+    activate: activateNoteStaticSurface,
   },
   {
     tag: 'ui-code-preview',
@@ -170,6 +176,11 @@ export const HYDRATION_REGISTRY = [
     kind: 'custom-element',
     loader: () => import('../../components/ui/translation/translation.js'),
     activate: activateElementMethod,
+  },
+  {
+    tag: 'ui-video',
+    kind: 'custom-element',
+    loader: () => import('../../components/ui/video/video.js'),
   },
 ] as const satisfies readonly HydrationRegistryEntry[];
 

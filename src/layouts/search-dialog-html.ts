@@ -1,4 +1,4 @@
-import { renderStaticArticleHeaderIconHtml } from './article-header-icon-html.js';
+import { renderStaticIconHtml } from '../../shared/icons/render-static-icon-html.js';
 
 export const GLOBAL_SEARCH_DIALOG_ID = 'global-search-dialog';
 
@@ -16,7 +16,7 @@ export const renderSearchDialogHtml = (): string => `
         <label class="sr-only" for="global-search-input">検索</label>
         <div class="search-dialog__field">
           <span class="search-dialog__field-icon" aria-hidden="true">
-            ${renderStaticArticleHeaderIconHtml('search', 'search-dialog__field-icon-svg')}
+            ${renderStaticIconHtml('search', 'search-dialog__field-icon-svg')}
           </span>
           <input
             id="global-search-input"
@@ -37,11 +37,11 @@ export const renderSearchDialogHtml = (): string => `
             hidden
             data-search-dialog-clear
           >
-            ${renderStaticArticleHeaderIconHtml('x', 'search-dialog__clear-icon')}
+            ${renderStaticIconHtml('x', 'search-dialog__clear-icon')}
           </button>
         </div>
         <button class="search-dialog__close" type="button" aria-label="検索を閉じる" data-search-dialog-close>
-          ${renderStaticArticleHeaderIconHtml('x', 'search-dialog__icon')}
+          ${renderStaticIconHtml('x', 'search-dialog__icon')}
         </button>
       </form>
       <div class="search-dialog__body">

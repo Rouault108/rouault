@@ -1,4 +1,4 @@
-import type { IconName } from '../icons/icons-catalog.js';
+import type { IconName } from '../icons/icon-paths.js';
 
 export type TreeIcon = IconName;
 

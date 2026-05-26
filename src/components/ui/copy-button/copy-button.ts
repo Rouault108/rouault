@@ -2,7 +2,7 @@ import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import '../button/button';
 import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
-import type { IconName } from '../../../../shared/icons/icons-catalog.js';
+import type { IconName } from '../../../../shared/icons/icon-paths.js';
 
 type CopyButtonState = 'idle' | 'success' | 'error';
 type CopyButtonSize = 'sm' | 'md';

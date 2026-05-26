@@ -88,14 +88,20 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(readNodeClassList(header)).toContain('code-surface-caption');
     expect(getClassList(root?.properties?.['className'])).toContain('code-surface-root');
 
-    const pre = root?.children?.[1];
+    const copySource = root?.children?.[1];
+    expect(copySource?.tagName).toBe('template');
+    expect(copySource?.properties?.['data-code-copy-source']).toBe('true');
+    expect(copySource?.children?.[0]?.value).toBe(
+      'const highlighted = 1; // [!code highlight]\nconst added = 2; // [!code ++]',
+    );
+
+    const pre = root?.children?.[2];
     expect(pre?.tagName).toBe('pre');
     expect(readNodeClassList(pre)).toContain('shiki');
     expect(pre?.properties?.['data-code-block']).toBe(true);
     expect(pre?.properties?.['data-code-language']).toBe('ts');
-    expect(pre?.properties?.['data-code-raw']).toBe(
-      'const highlighted = 1; // [!code highlight]\nconst added = 2; // [!code ++]',
-    );
+    expect(pre?.properties?.['data-code-raw']).toBeUndefined();
+    expect(pre?.properties?.['data-code-copy-source']).toBeUndefined();
     expect(pre?.properties?.['data-code-filename']).toBe('sample.ts');
     expect(pre?.properties?.['data-code-label']).toBe('例');
     expect(pre?.properties?.['data-code-intent']).toBe('invalid');
@@ -211,6 +217,9 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(pre?.tagName).toBe('pre');
     expect(readNodeClassList(pre)).toContain('shiki');
     expect(pre?.properties?.['data-code-language']).toBe('text');
-    expect(pre?.properties?.['data-code-raw']).toBe('plain text block');
+    expect(pre?.properties?.['data-code-raw']).toBeUndefined();
+    const copySource = root?.children?.find((child) => child.tagName === 'template');
+    expect(copySource?.properties?.['data-code-copy-source']).toBe('true');
+    expect(copySource?.children?.[0]?.value).toBe('plain text block');
   });
 });

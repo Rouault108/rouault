@@ -1,4 +1,24 @@
-import type { FooterLinkItem, FooterRenderOptions } from '../components/ui/footer/footer.js';
+export interface FooterLinkItem {
+  readonly href: string;
+  readonly label: string;
+  readonly external?: boolean;
+}
+
+export interface FooterRenderOptions {
+  readonly id?: string;
+  readonly meta: {
+    readonly eyebrow?: string;
+    readonly siteName: string;
+    readonly siteUrl?: string;
+    readonly description?: string;
+    readonly copyrightText: string;
+    readonly buildLabel?: string;
+  };
+  readonly links?: readonly FooterLinkItem[];
+  readonly a11y?: {
+    readonly navLabel?: string;
+  };
+}
 
 const DEFAULT_SITE_NAME = 'Rouault';
 const DEFAULT_SITE_URL = '/';

@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
-import { ensureFooterDocumentStyles, renderFooter, type FooterRenderOptions } from './footer';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { renderFooterHtml } from '../../../layouts/footer-html.js';
+import type { FooterRenderOptions } from '../../../layouts/footer-options.js';
 
 const DEFAULT_OPTIONS: FooterRenderOptions = {
   id: 'footer-default',
@@ -16,10 +18,7 @@ const DEFAULT_OPTIONS: FooterRenderOptions = {
   ],
 };
 
-const renderStoryFooter = (options: FooterRenderOptions) => {
-  ensureFooterDocumentStyles();
-  return renderFooter(options);
-};
+const renderStoryFooter = (options: FooterRenderOptions) => unsafeHTML(renderFooterHtml(options));
 
 const meta: Meta = {
   title: 'Components/Footer',
@@ -30,8 +29,7 @@ const meta: Meta = {
     docs: {
       description: {
         component: `
-footer は純粋描画の \`renderFooter(options)\` と document style 注入の
-\`ensureFooterDocumentStyles()\` に分離されています。
+footer は \`src/layouts/footer-html.ts\` と \`src/assets/css/footer.css\` による static HTML と CSS の契約です。
 
 render 構造の合否は \`test/ssr/footer-render.test.ts\`、  
 token / forced-colors / print の CSS 構造契約は \`test/ssr/css-structure-contracts.test.ts\` を正本とします。

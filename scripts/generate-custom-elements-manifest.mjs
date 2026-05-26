@@ -24,6 +24,7 @@ const STATIC_FIRST_MANIFEST_EXCLUDED_PATHS = new Set([
   'src/components/ui/card/card.ts',
   'src/components/ui/code-group/code-group.ts',
   'src/components/ui/codeblock/codeblock.ts',
+  'src/components/ui/copy-button/copy-button.ts',
   'src/components/ui/details/details.ts',
   'src/components/ui/divider/divider.ts',
   'src/components/ui/empty-state/empty-state.ts',

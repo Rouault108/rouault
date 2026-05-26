@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import lucideCollection from '@iconify-json/lucide/icons.json' with { type: 'json' };
 
-import { ICON_NAMES } from '../../shared/icons/icons-catalog.js';
+import { ICON_NAMES } from '../../shared/icons/icon-paths.js';
 import { LUCIDE_SUBSET } from '../../src/generated/lucide-subset.js';
 
 interface IconifyAliasDefinition {
