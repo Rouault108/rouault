@@ -7,8 +7,10 @@ import {
   serializeMediaSources,
   type ResolvedImageAsset,
 } from '../media/image-resolver.js';
+import { resolveScoreSvg } from '../media/score-svg-resolver.js';
 import { type HastNode } from './hast-utils.js';
 import { createStaticIconHast } from './static-icon-hast.js';
+import { STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS } from '../content/static-first-tags.js';
 import {
   canonicalizeFootnoteId,
   createFootnoteRefId,
@@ -48,6 +50,7 @@ interface HydrationDirective {
 }
 
 let taskListItemCounter = 0;
+const forbiddenStaticFirstNoteTags = new Set<string>(STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS);
 
 const isElement = (node: HastNode, tagName?: string): boolean => {
   if (node.type !== 'element' || typeof node.tagName !== 'string') {
@@ -752,10 +755,34 @@ const normalizeScoreAspectRatio = (value: unknown): string | undefined => {
   return `${match[1]} / ${match[2]}`;
 };
 
-const toStaticScore = (node: HastNode, context: SurfaceNormalizationContext): void => {
+const isScoreCaptionSource = (node: HastNode): boolean =>
+  isElement(node, 'figcaption') &&
+  hasStaticSourceProperty(node, 'data-score-caption-source', 'dataScoreCaptionSource');
+
+const parseSvgFragment = (svg: string): HastNode[] => {
+  const fragment = parse5.parseFragment(svg, {
+    sourceCodeLocationInfo: false,
+  });
+  return fragment.childNodes
+    .map((child) => parse5NodeToHast(child))
+    .filter((child): child is HastNode => child !== null);
+};
+
+const toStaticScore = (
+  node: HastNode,
+  context: SurfaceNormalizationContext,
+  file?: VFileLike,
+): void => {
   const properties = node.properties ?? {};
-  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
-  const caption = pickOptionalString(properties['data-score-caption']);
+  const source = pickOptionalString(properties['data-score-src']);
+  if (!source) {
+    throw new Error('[markdown] score の src は必須です');
+  }
+  const originalChildren = Array.isArray(node.children) ? node.children : [];
+  const captionSource = originalChildren.find((child) => isScoreCaptionSource(child));
+  const captionChildren = captionSource?.children?.map((child) => cloneNode(child)) ?? [];
+  const sanitizedSvg = resolveScoreSvg(source, { sourceFilePath: file?.path });
+  const svgChildren = parseSvgFragment(sanitizedSvg);
   const label = pickOptionalString(properties['data-score-label']) ?? '譜面';
   const description = pickOptionalString(properties['data-score-description']);
   const primary = properties['data-score-primary'] === 'true';
@@ -799,17 +826,15 @@ const toStaticScore = (node: HastNode, context: SurfaceNormalizationContext): vo
             'data-score-stage': 'true',
             ...(stageStyle ? { style: stageStyle } : {}),
           },
-          [
-            createElement('div', { className: ['score__svg'] }, children),
-          ],
+          svgChildren,
         ),
       ],
     ),
     ...(description && descriptionId
       ? [createElement('p', { id: descriptionId, className: ['score__sr-only'] }, [createTextNode(description)])]
       : []),
-    ...(caption
-      ? [createElement('figcaption', { className: ['score__caption'] }, [createTextNode(caption)])]
+    ...(hasMeaningfulChildren(captionChildren)
+      ? [createElement('figcaption', { className: ['score__caption'] }, captionChildren)]
       : []),
   ];
 };
@@ -950,7 +975,7 @@ const isCheckboxInput = (node: HastNode): boolean => {
   return type?.toLowerCase() === 'checkbox';
 };
 
-const toUiTaskListItem = (node: HastNode): void => {
+const toStaticTaskListItem = (node: HastNode): void => {
   if (!isElement(node, 'li') || !Array.isArray(node.children)) {
     return;
   }
@@ -994,6 +1019,12 @@ const toUiTaskListItem = (node: HastNode): void => {
     createElement('span', { id: labelId, className: ['task-list-item__content'] }, labelNodes),
     ...tailChildren,
   ];
+};
+
+const assertAllowedRehypeInputElement = (node: HastNode): void => {
+  if (typeof node.tagName === 'string' && forbiddenStaticFirstNoteTags.has(node.tagName)) {
+    throw new Error(`[markdown] ${node.tagName} は static-first 化済みのため入力できません`);
+  }
 };
 
 const normalizeHighlightMark = (node: HastNode): void => {
@@ -2028,6 +2059,7 @@ export function rehypeRouaultComponents() {
         }
         return;
       }
+      assertAllowedRehypeInputElement(current);
 
       if (isElement(current, 'a')) {
         const properties = current.properties ?? {};
@@ -2042,7 +2074,7 @@ export function rehypeRouaultComponents() {
         }
       }
 
-      if (current.tagName === 'table' || current.tagName === 'ui-table') {
+      if (current.tagName === 'table') {
         toStaticTable(current);
 
         const tableRoot = Array.isArray(current.children) ? current.children[0] : undefined;
@@ -2085,7 +2117,7 @@ export function rehypeRouaultComponents() {
       }
 
       if (isElement(current, 'li')) {
-        toUiTaskListItem(current);
+        toStaticTaskListItem(current);
       } else {
         const footnoteTransformed = toStaticFootnoteReference(
           current,
@@ -2096,7 +2128,7 @@ export function rehypeRouaultComponents() {
         if (!footnoteTransformed) {
           if (current.tagName === 'figure') {
             if (isScoreFigure(current)) {
-              toStaticScore(current, surfaceContext);
+              toStaticScore(current, surfaceContext, file);
             } else {
               toStaticFigureImage(current, imageContext, file);
             }
@@ -2104,9 +2136,9 @@ export function rehypeRouaultComponents() {
             toStaticImage(current, imageContext, file);
           } else if (current.tagName === 'mark') {
             normalizeHighlightMark(current);
-          } else if (current.tagName === 'table' || current.tagName === 'ui-table') {
+          } else if (current.tagName === 'table') {
             toStaticTable(current);
-          } else if (current.tagName === 'ui-blockquote') {
+          } else if (current.tagName === 'blockquote') {
             toStaticBlockquote(current);
           } else if (isLinkCardSource(current)) {
             toStaticLinkCard(current);
@@ -2119,13 +2151,11 @@ export function rehypeRouaultComponents() {
           } else if (isSyntaxCardSource(current)) {
             toStaticSyntaxCard(current);
           } else if (
-            current.tagName === 'ui-callout' ||
-            (current.tagName === 'aside' && current.properties?.['data-callout'] !== undefined)
+            current.tagName === 'aside' && current.properties?.['data-callout'] !== undefined
           ) {
             toStaticCallout(current, surfaceContext);
           } else if (
-            current.tagName === 'ui-info-box' ||
-            (current.tagName === 'section' && current.properties?.['data-info-box'] !== undefined)
+            current.tagName === 'section' && current.properties?.['data-info-box'] !== undefined
           ) {
             toStaticInfoBox(current, surfaceContext);
           } else if (current.tagName === 'hr') {
@@ -2185,17 +2215,13 @@ const normalizeRouaultStaticSurfacesTree = (tree: HastNode): void => {
       return;
     }
 
-    if (
-      current.tagName === 'ui-callout' ||
-      (current.tagName === 'aside' && current.properties?.['data-callout'] !== undefined)
-    ) {
+    if (current.tagName === 'aside' && current.properties?.['data-callout'] !== undefined) {
       toStaticCallout(current, surfaceContext);
       return;
     }
 
     if (
-      current.tagName === 'ui-info-box' ||
-      (current.tagName === 'section' && current.properties?.['data-info-box'] !== undefined)
+      current.tagName === 'section' && current.properties?.['data-info-box'] !== undefined
     ) {
       toStaticInfoBox(current, surfaceContext);
     }

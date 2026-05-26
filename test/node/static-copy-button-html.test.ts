@@ -15,6 +15,9 @@ describe('static copy button html renderer', () => {
     expect(rendered).toContain('data-copy-button="true"');
     expect(rendered).toContain('data-copy-target-id="code-copy-source-1"');
     expect(rendered).toContain('data-copy-state="idle"');
+    expect(rendered).toContain('aria-describedby="code-copy-source-1-copy-status"');
+    expect(rendered).toContain('id="code-copy-source-1-copy-status"');
+    expect(rendered).toContain('data-copy-status="true"');
     expect(rendered).toContain('class="static-icon"');
     expect(rendered).toContain('<svg');
     expect(rendered).not.toContain('data-copy-value');

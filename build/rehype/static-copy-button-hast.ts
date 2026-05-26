@@ -55,6 +55,7 @@ export const createStaticCopyButtonHast = (options: StaticCopyButtonOptions): Ha
       createElement(
         'span',
         {
+          id: contract.statusId,
           className: ['static-copy-button__status', 'sr-only'],
           role: 'status',
           'aria-live': 'polite',

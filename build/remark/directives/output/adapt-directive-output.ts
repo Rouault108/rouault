@@ -141,12 +141,27 @@ const adaptScoreOutput = (payload: ScorePayload): RemarkOutputBinding => ({
   hProperties: toOptionalProps([
     ['data-score', 'true'],
     ['data-score-src', payload.src],
-    ['data-score-caption', payload.caption],
     ['data-score-label', payload.label],
     ['data-score-description', payload.description],
     ['data-score-aspect-ratio', payload.aspectRatio],
     ['data-score-primary', payload.primary ? 'true' : undefined],
   ]),
+  ...(payload.caption
+    ? {
+        children: [
+          {
+            type: 'paragraph',
+            data: {
+              hName: 'figcaption',
+              hProperties: {
+                'data-score-caption-source': 'true',
+              },
+            },
+            children: [{ type: 'text', value: payload.caption }],
+          },
+        ],
+      }
+    : {}),
 });
 
 const adaptTabsOutput = (payload: TabsPayload): RemarkOutputBinding => ({

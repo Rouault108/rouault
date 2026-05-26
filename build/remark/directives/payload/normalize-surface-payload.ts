@@ -167,21 +167,22 @@ export const normalizeScorePayload = (
   policyContext?: NotePolicyContext,
 ): ScorePayload => {
   const rawScoreSource = pickOptional(attrs['src']);
+  if (rawScoreSource === undefined) {
+    throw toError(file, node, 'score の src は必須です');
+  }
   const scoreSource =
-    rawScoreSource === undefined
-      ? undefined
-      : policyContext?.urlPolicyContext
+    policyContext?.urlPolicyContext
         ? sanitizeScoreSource(rawScoreSource, {
             siteUrlContext: policyContext.urlPolicyContext.siteUrlContext,
           })
         : undefined;
-  if (rawScoreSource !== undefined && scoreSource === undefined) {
+  if (scoreSource === undefined) {
     throw toError(file, node, 'score の src は /media/score/ 配下の安全な内部リソースのみ指定可能です');
   }
 
   return {
     kind: 'score',
-    ...(scoreSource ? { src: scoreSource } : {}),
+    src: scoreSource,
     ...(pickOptional(attrs['caption']) ? { caption: pickOptional(attrs['caption']) } : {}),
     ...(pickOptional(attrs['label']) ? { label: pickOptional(attrs['label']) } : {}),
     ...(pickOptional(attrs['description'])

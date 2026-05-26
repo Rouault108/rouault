@@ -35,6 +35,7 @@ export interface StaticCopyButtonContract {
   readonly buttonAttributes: readonly StaticCopyButtonExtraAttribute[];
   readonly label: string;
   readonly disabled: boolean;
+  readonly statusId: string;
 }
 
 const splitClassNames = (value: string | undefined): string[] =>
@@ -86,10 +87,21 @@ const normalizeSourceAttributes = (
   ];
 };
 
+let staticCopyButtonCounter = 0;
+
+const createStatusId = (options: StaticCopyButtonOptions): string => {
+  if ('targetId' in options) {
+    return `${options.targetId.trim()}-copy-status`;
+  }
+  staticCopyButtonCounter += 1;
+  return `static-copy-status-${String(staticCopyButtonCounter)}`;
+};
+
 export const createStaticCopyButtonContract = (
   options: StaticCopyButtonOptions,
 ): StaticCopyButtonContract => {
   const sourceAttributes = normalizeSourceAttributes(options);
+  const statusId = createStatusId(options);
   return {
     controlClassNames: mergeClassNames(['static-copy-control'], options.controlClassName),
     buttonClassNames: mergeClassNames(['static-copy-button'], options.buttonClassName),
@@ -99,11 +111,13 @@ export const createStaticCopyButtonContract = (
       ...sourceAttributes,
       { name: 'data-copy-state', value: 'idle' },
       { name: 'aria-label', value: options.label },
+      { name: 'aria-describedby', value: statusId },
       ...(options.disabled ? [{ name: 'disabled', value: true }] : []),
       ...(options.extraButtonAttributes ?? []),
     ],
     label: options.label,
     disabled: options.disabled ?? false,
+    statusId,
   };
 };
 
@@ -117,5 +131,7 @@ export const renderStaticCopyButtonHtml = (options: StaticCopyButtonOptions): st
 
   return `<span class="${controlClass}" data-copy-control="true"><button class="${buttonClass}"${buttonAttributes}>${renderStaticIconHtml(
     'copy',
-  )}</button><span class="static-copy-button__status sr-only" role="status" aria-live="polite" data-copy-status="true"></span></span>`;
+  )}</button><span id="${escapeHtmlAttribute(
+    contract.statusId,
+  )}" class="static-copy-button__status sr-only" role="status" aria-live="polite" data-copy-status="true"></span></span>`;
 };

@@ -544,11 +544,35 @@ describe('remarkRouaultDirectives', () => {
     expect(score?.data?.hProperties?.['data-score']).to.equal('true');
     expect(score?.data?.hProperties?.['data-score-src']).to.equal('/media/score/a.svg');
     expect(score?.data?.hProperties?.['data-score-label']).to.equal('譜例');
-    expect(score?.data?.hProperties?.['data-score-caption']).to.equal('譜例1');
+    expect(score?.data?.hProperties?.['data-score-caption']).to.equal(undefined);
     expect(score?.data?.hProperties?.['data-score-description']).to.equal('詳細説明');
     expect(score?.data?.hProperties?.['data-score-aspect-ratio']).to.equal('4/1');
     expect(score?.data?.hProperties?.['data-score-loading']).to.equal(undefined);
     expect(score?.data?.hProperties?.['data-score-primary']).to.equal('true');
+    const caption = score?.children?.[0];
+    expect(caption?.data?.hName).to.equal('figcaption');
+    expect(caption?.data?.hProperties?.['data-score-caption-source']).to.equal('true');
+    expect(caption?.children?.[0]?.value).to.equal('譜例1');
+  });
+
+  it('score ディレクティブの src 欠落は build error にすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::score{label="譜例"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    expect(run).to.throw('[markdown] score の src は必須です');
   });
 
   it('score ディレクティブの旧 loading 属性は build error にすること', () => {

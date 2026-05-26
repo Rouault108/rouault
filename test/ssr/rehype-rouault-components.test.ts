@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   normalizeRouaultStaticSurfaceHtml,
@@ -41,6 +44,21 @@ const getTextContent = (node: HastNode | undefined): string => {
     return node.value;
   }
   return (node.children ?? []).map((child) => getTextContent(child)).join('');
+};
+
+const withScoreSvgFixture = (test: (fixturePath: string, notePath: string) => void): void => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'rouault-score-'));
+  try {
+    const fixturePath = path.join(dir, 'score.svg');
+    writeFileSync(
+      fixturePath,
+      '<svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg"><path d="M1 1h8v8H1z"/></svg>',
+      'utf8',
+    );
+    test('./score.svg', path.join(dir, 'note.md'));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 };
 
 const createRawFootnoteRef = (refId: string, index: string, instanceSuffix = ''): HastNode => ({
@@ -136,13 +154,13 @@ describe('rehypeRouaultComponents', () => {
     expect(first?.children?.[0]?.tagName).to.equal('table');
   });
 
-  it('legacy blockquote と divider を静的本文要素へ正規化すること', () => {
+  it('native blockquote と divider を静的本文要素へ正規化すること', () => {
     const tree: HastNode = {
       type: 'root',
       children: [
         {
           type: 'element',
-          tagName: 'ui-blockquote',
+          tagName: 'blockquote',
           properties: { source: '出典', cite: 'https://example.com' },
           children: [{ type: 'element', tagName: 'p', children: [{ type: 'text', value: 'q' }] }],
         },
@@ -170,6 +188,23 @@ describe('rehypeRouaultComponents', () => {
     expect(divider?.properties?.['data-hydration-capability']).to.equal(undefined);
     expect(divider?.properties?.['data-hydration-trigger']).to.equal(undefined);
     expect(divider?.children?.length ?? 0).to.equal(0);
+  });
+
+  it('旧 static-first ui-* 入力は互換変換せず build error にすること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-blockquote',
+          children: [{ type: 'element', tagName: 'p', children: [{ type: 'text', value: 'q' }] }],
+        },
+      ],
+    };
+
+    expect(() => rehypeRouaultComponents()(tree)).to.throw(
+      '[markdown] ui-blockquote は static-first 化済みのため入力できません',
+    );
   });
 
   it('static callout / info-box root を最終 DOM に正規化すること', () => {
@@ -987,60 +1022,110 @@ describe('rehypeRouaultComponents', () => {
   });
 
   it('score は label なし primary=false でも scroll surface に既定 aria-label を持つこと', () => {
-    const tree: HastNode = {
-      type: 'root',
-      children: [
-        {
-          type: 'element',
-          tagName: 'figure',
-          properties: {
-            'data-score': 'true',
-            'data-score-aspect-ratio': '4.5 / 1.25',
-            'data-score-src': 'javascript:alert(1)',
+    withScoreSvgFixture((fixturePath, notePath) => {
+      const tree: HastNode = {
+        type: 'root',
+        children: [
+          {
+            type: 'element',
+            tagName: 'figure',
+            properties: {
+              'data-score': 'true',
+              'data-score-aspect-ratio': '4.5 / 1.25',
+              'data-score-src': fixturePath,
+            },
+            children: [],
           },
-          children: [{ type: 'element', tagName: 'svg', children: [] }],
-        },
-      ],
-    };
+        ],
+      };
 
-    rehypeRouaultComponents()(tree);
+      rehypeRouaultComponents()(tree, { path: notePath });
 
-    const score = findElement(tree, (node) => node.properties?.['data-score'] === 'true');
-    const scroll = findElement(score, (node) => node.properties?.['data-score-scroll'] === 'true');
-    const stage = findElement(score, (node) => node.properties?.['data-score-stage'] === 'true');
-    const svg = findElement(score, (node) =>
-      getClassList(node.properties?.['className']).includes('score__svg'),
-    );
+      const score = findElement(tree, (node) => node.properties?.['data-score'] === 'true');
+      const scroll = findElement(score, (node) => node.properties?.['data-score-scroll'] === 'true');
+      const stage = findElement(score, (node) => node.properties?.['data-score-stage'] === 'true');
+      const svg = findElement(stage, (node) => node.tagName === 'svg');
 
-    expect(score?.properties?.['data-score-src']).to.equal(undefined);
-    expect(score?.properties?.['data-hydration-key']).to.equal('score-scroll-enhancer');
-    expect(scroll?.properties?.['aria-label']).to.equal('譜面');
-    expect(scroll?.properties?.['role']).to.equal(undefined);
-    expect(stage?.properties?.['style']).to.equal('--_score-aspect-ratio: 4.5 / 1.25;');
-    expect(svg?.tagName).to.equal('div');
-    expect(
-      findElement(score, (node) =>
-        getClassList(node.properties?.['className']).includes('score__skeleton'),
-      ),
-    ).to.equal(undefined);
-    expect(
-      findElement(score, (node) =>
-        getClassList(node.properties?.['className']).includes('score__source'),
-      ),
-    ).to.equal(undefined);
-    expect(
-      findElement(score, (node) =>
-        getClassList(node.properties?.['className']).includes('score__label'),
-      ),
-    ).to.equal(undefined);
-    expect(
-      findElement(score, (node) =>
-        getClassList(node.properties?.['className']).includes('score__description'),
-      ),
-    ).to.equal(undefined);
+      expect(score?.properties?.['data-score-src']).to.equal(undefined);
+      expect(score?.properties?.['data-hydration-key']).to.equal('score-scroll-enhancer');
+      expect(scroll?.properties?.['aria-label']).to.equal('譜面');
+      expect(scroll?.properties?.['role']).to.equal(undefined);
+      expect(stage?.properties?.['style']).to.equal('--_score-aspect-ratio: 4.5 / 1.25;');
+      expect(svg?.tagName).to.equal('svg');
+      expect(
+        findElement(score, (node) =>
+          getClassList(node.properties?.['className']).includes('score__skeleton'),
+        ),
+      ).to.equal(undefined);
+      expect(
+        findElement(score, (node) =>
+          getClassList(node.properties?.['className']).includes('score__source'),
+        ),
+      ).to.equal(undefined);
+      expect(
+        findElement(score, (node) =>
+          getClassList(node.properties?.['className']).includes('score__label'),
+        ),
+      ).to.equal(undefined);
+      expect(
+        findElement(score, (node) =>
+          getClassList(node.properties?.['className']).includes('score__description'),
+        ),
+      ).to.equal(undefined);
+    });
   });
 
   it('primary score は region と説明参照を label aria-label とは分離して持つこと', () => {
+    withScoreSvgFixture((fixturePath, notePath) => {
+      const tree: HastNode = {
+        type: 'root',
+        children: [
+          {
+            type: 'element',
+            tagName: 'figure',
+            properties: {
+              'data-score': 'true',
+              'data-score-src': fixturePath,
+              'data-score-label': '譜例A',
+              'data-score-description': '譜例の説明',
+              'data-score-primary': 'true',
+            },
+            children: [
+              {
+                type: 'element',
+                tagName: 'figcaption',
+                properties: {
+                  'data-score-caption-source': 'true',
+                },
+                children: [
+                  { type: 'text', value: '譜例' },
+                  { type: 'element', tagName: 'em', children: [{ type: 'text', value: 'キャプション' }] },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      rehypeRouaultComponents()(tree, { path: notePath });
+
+      const score = findElement(tree, (node) => node.properties?.['data-score'] === 'true');
+      const scroll = findElement(score, (node) => node.properties?.['data-score-scroll'] === 'true');
+      const descriptionId = scroll?.properties?.['aria-describedby'];
+      const description = findElement(score, (node) => node.properties?.['id'] === descriptionId);
+      const caption = findElement(score, (node) => node.tagName === 'figcaption');
+
+      expect(scroll?.properties?.['aria-label']).to.equal('譜例A');
+      expect(scroll?.properties?.['role']).to.equal('region');
+      expect(getClassList(description?.properties?.['className'])).to.deep.equal(['score__sr-only']);
+      expect(getTextContent(description)).to.equal('譜例の説明');
+      expect(getClassList(caption?.properties?.['className'])).to.deep.equal(['score__caption']);
+      expect(getTextContent(caption)).to.equal('譜例キャプション');
+      expect(caption?.properties?.['data-score-caption-source']).to.equal(undefined);
+    });
+  });
+
+  it('score の unsafe src は build error にすること', () => {
     const tree: HastNode = {
       type: 'root',
       children: [
@@ -1049,30 +1134,16 @@ describe('rehypeRouaultComponents', () => {
           tagName: 'figure',
           properties: {
             'data-score': 'true',
-            'data-score-label': '譜例A',
-            'data-score-description': '譜例の説明',
-            'data-score-caption': '譜例キャプション',
-            'data-score-primary': 'true',
+            'data-score-src': 'javascript:alert(1)',
           },
-          children: [{ type: 'element', tagName: 'svg', children: [] }],
+          children: [],
         },
       ],
     };
 
-    rehypeRouaultComponents()(tree);
-
-    const score = findElement(tree, (node) => node.properties?.['data-score'] === 'true');
-    const scroll = findElement(score, (node) => node.properties?.['data-score-scroll'] === 'true');
-    const descriptionId = scroll?.properties?.['aria-describedby'];
-    const description = findElement(score, (node) => node.properties?.['id'] === descriptionId);
-    const caption = findElement(score, (node) => node.tagName === 'figcaption');
-
-    expect(scroll?.properties?.['aria-label']).to.equal('譜例A');
-    expect(scroll?.properties?.['role']).to.equal('region');
-    expect(getClassList(description?.properties?.['className'])).to.deep.equal(['score__sr-only']);
-    expect(getTextContent(description)).to.equal('譜例の説明');
-    expect(getClassList(caption?.properties?.['className'])).to.deep.equal(['score__caption']);
-    expect(getTextContent(caption)).to.equal('譜例キャプション');
+    expect(() => rehypeRouaultComponents()(tree)).to.throw(
+      '[markdown] score の src はローカル SVG だけ指定できます',
+    );
   });
 
   it('role-only の脚注参照を fallback candidate として救済しないこと', () => {

@@ -90,7 +90,7 @@ export interface LinkCardPayload {
 
 export interface ScorePayload {
   readonly kind: 'score';
-  readonly src?: string | undefined;
+  readonly src: string;
   readonly caption?: string | undefined;
   readonly label?: string | undefined;
   readonly description?: string | undefined;

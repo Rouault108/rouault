@@ -140,64 +140,25 @@ describe('table node contracts', () => {
     expect(first?.properties?.['data-density']).toBeUndefined();
   });
 
-  it('table 直下以外の wrapper でも最初の table を static root に包み直すこと', () => {
-    const first = transformFirstChild({
-      type: 'element',
-      tagName: 'ui-table',
-      properties: {
-        density: 'compact',
-        'aria-label': '明示ラベル',
-      },
-      children: [
-        {
-          type: 'element',
-          tagName: 'table',
-          properties: {},
-          children: [
-            {
-              type: 'element',
-              tagName: 'tbody',
-              children: [
-                {
-                  type: 'element',
-                  tagName: 'tr',
-                  children: [
-                    {
-                      type: 'element',
-                      tagName: 'td',
-                      properties: { colspan: '2' },
-                      children: [{ type: 'text', value: '全社朝礼' }],
-                    },
-                  ],
-                },
-                {
-                  type: 'element',
-                  tagName: 'tr',
-                  children: [
-                    {
-                      type: 'element',
-                      tagName: 'td',
-                      properties: { rowspan: '2' },
-                      children: [{ type: 'text', value: '設計レビュー' }],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
+  it('旧 ui-table 入力は互換変換せず build error にすること', () => {
+    expect(() =>
+      transformFirstChild({
+        type: 'element',
+        tagName: 'ui-table',
+        properties: {
+          density: 'compact',
+          'aria-label': '明示ラベル',
         },
-      ],
-    });
-
-    expect(first?.tagName).toBe('div');
-    expect(first?.properties?.['aria-label']).toBe('明示ラベル');
-    expect(first?.properties?.['data-density']).toBe('compact');
-
-    const table = first?.children?.[0];
-    expect(table?.tagName).toBe('table');
-    expect(table?.children?.[0]?.tagName).toBe('tbody');
-    expect(table?.children?.[0]?.children?.[0]?.children?.[0]?.properties?.['colspan']).toBe('2');
-    expect(table?.children?.[0]?.children?.[1]?.children?.[0]?.properties?.['rowspan']).toBe('2');
+        children: [
+          {
+            type: 'element',
+            tagName: 'table',
+            properties: {},
+            children: [],
+          },
+        ],
+      }),
+    ).toThrow('[markdown] ui-table は static-first 化済みのため入力できません');
   });
 
   it('representative な static table root 群を note content contract として受け入れること', () => {

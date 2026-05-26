@@ -169,8 +169,10 @@ describe('rehypeShikiCodeBlocks', () => {
       children: [
         {
           type: 'element',
-          tagName: 'ui-syntax-card',
-          properties: {},
+          tagName: 'section',
+          properties: {
+            'data-syntax-card-source': 'true',
+          },
           children: [
             {
               type: 'element',
@@ -191,7 +193,8 @@ describe('rehypeShikiCodeBlocks', () => {
 
     const syntaxCard = tree.children?.[0];
     const signaturePre = syntaxCard?.children?.[0];
-    expect(syntaxCard?.tagName).toBe('ui-syntax-card');
+    expect(syntaxCard?.tagName).toBe('section');
+    expect(syntaxCard?.properties?.['data-syntax-card-source']).toBe('true');
     expect(signaturePre?.tagName).toBe('pre');
     expect(signaturePre?.properties?.['data-syntax-signature']).toBe('true');
     expect(signaturePre?.properties?.['data-code-block']).toBeUndefined();

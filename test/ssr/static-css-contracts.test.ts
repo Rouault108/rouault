@@ -127,7 +127,8 @@ describe('static CSS contracts', () => {
     const score = readCss('score.css');
     expectRuleToDeclare(score, '.score__scroll', ['overflow-x:', 'scrollbar-gutter:', 'border:']);
     expectRuleToDeclare(score, '.score__stage', ['aspect-ratio:']);
-    expectRuleToDeclare(score, '.score__svg svg', ['display: block']);
+    expectRuleToDeclare(score, '.score__stage > svg', ['display: block']);
+    expect(score).not.to.contain('score__svg');
     expect(score).not.to.contain('svg-host');
     expect(score).not.to.contain('score__skeleton');
     expect(score).not.to.contain('ui-score-shimmer');
