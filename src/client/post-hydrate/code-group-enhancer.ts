@@ -37,6 +37,19 @@ const syncCopyButton = (state: GroupState, selectedKey: string): void => {
   button.disabled = activePre.dataset['codeCopyable'] === 'false';
 };
 
+const resetCopyState = (button: HTMLButtonElement | null): void => {
+  if (!button) {
+    return;
+  }
+
+  button.dataset['copyState'] = 'idle';
+  const describedBy = button.getAttribute('aria-describedby');
+  const status = describedBy ? button.ownerDocument.getElementById(describedBy) : null;
+  if (status instanceof HTMLElement && status.matches('[data-copy-status]')) {
+    status.textContent = '';
+  }
+};
+
 const syncSelection = (state: GroupState, nextKey: string): void => {
   state.group.dataset['codeGroupSelected'] = nextKey;
   state.group.dataset['codeGroupEnhanced'] = 'true';
@@ -58,6 +71,7 @@ const syncSelection = (state: GroupState, nextKey: string): void => {
     }
   }
 
+  resetCopyState(state.copyButton);
   syncCopyButton(state, nextKey);
 };
 
