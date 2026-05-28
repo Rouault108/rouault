@@ -50,17 +50,22 @@ const readTemplateCopyValue = (button: HTMLButtonElement, targetId: string): str
 };
 
 const resolveCopyValue = (button: HTMLButtonElement): string | null => {
+  const hasTargetId = button.hasAttribute('data-copy-target-id');
+  const hasCopyValue = button.hasAttribute('data-copy-value');
   const targetId = button.dataset['copyTargetId'];
   const copyValue = button.dataset['copyValue'];
-  if (targetId && copyValue !== undefined) {
+  if (hasTargetId && hasCopyValue) {
     return null;
   }
-  if (targetId) {
+  if (hasTargetId) {
+    if (!targetId) {
+      return null;
+    }
     return readTemplateCopyValue(button, targetId);
   }
-  if (copyValue !== undefined) {
+  if (hasCopyValue) {
     const kind = button.dataset['copyKind'];
-    if (kind === undefined || !allowedCopyKinds.has(kind)) {
+    if (copyValue === undefined || kind === undefined || !allowedCopyKinds.has(kind)) {
       return null;
     }
     return copyValue;
@@ -76,13 +81,14 @@ const copyFromButton = async (button: HTMLButtonElement): Promise<void> => {
     return;
   }
   const value = resolveCopyValue(button);
-  if (value === null || !('clipboard' in navigator)) {
+  const clipboard: Clipboard | undefined = 'clipboard' in navigator ? navigator.clipboard : undefined;
+  if (value === null || !clipboard || typeof clipboard.writeText !== 'function') {
     setCopyState(button, 'error');
     scheduleReset(button);
     return;
   }
   try {
-    await navigator.clipboard.writeText(value);
+    await clipboard.writeText(value);
     setCopyState(button, 'copied');
   } catch {
     setCopyState(button, 'error');
@@ -99,6 +105,7 @@ export const activateStaticCopyButtons = (root: ParentNode): void => {
     const initialValue = resolveCopyValue(button);
     if (initialValue === null && !button.disabled) {
       setCopyState(button, 'error');
+      scheduleReset(button);
     }
     button.addEventListener('click', () => {
       void copyFromButton(button);
