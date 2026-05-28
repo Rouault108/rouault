@@ -117,6 +117,52 @@ describe('rehypeRouaultComponents', () => {
     expect(first?.children?.[0]?.tagName).to.equal('code');
   });
 
+  it('details source を native details と static chevron icon へ変換すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'details',
+          properties: {
+            'data-details-source': 'true',
+            summary: '補足',
+            open: true,
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'p',
+              children: [{ type: 'text', value: '本文' }],
+            },
+          ],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const details = tree.children?.[0];
+    const summary = details?.children?.[0];
+    const body = details?.children?.[1];
+    const chevron = findElement(summary, (node) =>
+      getClassList(node.properties?.['className']).includes('details-block__chevron'),
+    );
+
+    expect(details?.tagName).to.equal('details');
+    expect(details?.properties?.['data-details']).to.equal('true');
+    expect(details?.properties?.['data-variant']).to.equal(undefined);
+    expect(summary?.tagName).to.equal('summary');
+    expect(findElement(summary, (node) =>
+      getClassList(node.properties?.['className']).includes('details-block__summary-content'),
+    )).to.not.equal(undefined);
+    expect(chevron?.properties?.['aria-hidden']).to.equal('true');
+    expect(getClassList(chevron?.properties?.['className'])).to.include('static-icon');
+    expect(chevron?.children?.[0]?.tagName).to.equal('svg');
+    expect(body?.tagName).to.equal('div');
+    expect(getClassList(body?.properties?.['className'])).to.deep.equal(['details-block__body']);
+  });
+
   it('table を static table root に変換し、caption から aria-label を補完すること', () => {
     const tree: HastNode = {
       type: 'root',

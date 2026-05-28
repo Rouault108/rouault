@@ -1,3 +1,5 @@
+import { dispatchSearchDialogEvent } from '../../search/search-dialog-events.js';
+
 interface SearchDialogTriggerSession {
   readonly signal: AbortSignal | undefined;
 }
@@ -20,14 +22,10 @@ export const enhanceSearchDialog = (root: ParentNode = document, signal?: AbortS
     trigger.addEventListener(
       'click',
       () => {
-        document.dispatchEvent(
-          new CustomEvent('search-dialog:open-request', {
-            detail: { trigger, modality: undefined },
-            bubbles: false,
-            composed: false,
-            cancelable: false,
-          }),
-        );
+        dispatchSearchDialogEvent(document, 'search-dialog:open-request', {
+          trigger,
+          modality: undefined,
+        });
       },
       options,
     );

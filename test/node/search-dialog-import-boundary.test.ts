@@ -46,4 +46,15 @@ describe('search dialog import boundary', () => {
     expect(navigation).toContain("from './search-navigation-events.js'");
     expect(navigation).not.toContain("from './search-dialog-events.js'");
   });
+
+  it('search dialog events are created only through the static event helper', () => {
+    for (const path of [
+      'src/search/bootstrap.ts',
+      'src/client/post-hydrate/search-dialog-enhancer.ts',
+    ]) {
+      const source = readSource(path);
+      expect(source, path).not.toMatch(/new\s+CustomEvent\(['"]search-dialog:/u);
+      expect(source, path).toContain('dispatchSearchDialogEvent');
+    }
+  });
 });

@@ -132,8 +132,19 @@ describe('static CSS contracts', () => {
 
   it('details, syntax, score, empty state, and corpora CSS expose static contracts', () => {
     const details = readCss('details-block.css');
-    expectRuleToDeclare(details, '.details-block__summary::before', ['inline-size:', 'block-size:']);
-    expectRuleToDeclare(details, ".details-block[data-variant='bordered']", ['border:']);
+    expectRuleToDeclare(details, '.details-block__chevron.static-icon', [
+      'inline-size:',
+      'block-size:',
+      'transition:',
+    ]);
+    expectRuleToDeclare(details, '.details-block__chevron.static-icon > svg', [
+      'inline-size: 100%',
+      'block-size: 100%',
+    ]);
+    expect(details).to.contain(
+      '.details-block[open] > .details-block__summary .details-block__chevron',
+    );
+    expect(details).not.to.contain("data-variant='bordered'");
 
     const syntax = readCss('syntax.css');
     expectRuleToDeclare(syntax, '.syntax-card__signature pre', ['margin: 0', 'background: transparent']);

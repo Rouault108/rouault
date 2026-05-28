@@ -1,4 +1,5 @@
 import { createStaticCopyButtonHast } from './static-copy-button-hast.js';
+import { createStaticCodeBlockRoot } from './static-code-block-root.js';
 import { type HastNode } from './hast-utils.js';
 import {
   createStaticRenderIdContext,
@@ -80,10 +81,17 @@ const createTabButton = (key: string, label: string): HastNode => ({
   tagName: 'button',
   properties: {
     type: 'button',
-    'data-code-group-tab': key,
+    'data-code-group-tab': 'true',
+    'data-code-group-key': key,
   },
   children: [{ type: 'text', value: label }],
 });
+
+interface CodeGroupItemIds {
+  readonly tabId: string;
+  readonly panelId: string;
+  readonly copySourceId: string;
+}
 
 const createGroupCopyButton = (targetId: string, statusId: string): HastNode => ({
   type: 'element',
@@ -120,18 +128,43 @@ const cloneStaticCodeBlock = (item: StaticCodeBlockMeta): HastNode => {
   return block;
 };
 
+const createGroupOwnedCodeBlock = (
+  item: StaticCodeBlockMeta,
+  idContext: StaticRenderIdContext,
+): HastNode => {
+  const block = cloneStaticCodeBlock(item);
+  const filename = pickOptionalString(block.properties?.['data-code-filename']);
+  return createStaticCodeBlockRoot({
+    idContext,
+    preNode: block,
+    source: item.source,
+    language: pickOptionalString(block.properties?.['data-code-language']) ?? 'text',
+    groupOwned: true,
+    assignHydrationRoot: false,
+    renderStandaloneCopyButton: false,
+    ...(filename ? { filename } : {}),
+  });
+};
+
 const createPanel = (
   item: StaticCodeBlockMeta,
   selected: boolean,
   copySourceId: string,
+  tabId: string,
+  panelId: string,
+  idContext: StaticRenderIdContext,
 ): HastNode => ({
   type: 'element',
   tagName: 'section',
   properties: {
+    id: panelId,
+    role: 'tabpanel',
     'data-code-group-panel': item.key,
     'data-code-group-panel-label': item.tabLabel,
     'data-code-copy-source-id': copySourceId,
+    'aria-labelledby': tabId,
     ...(selected ? {} : { 'data-code-group-inactive': 'true' }),
+    ...(selected ? {} : { hidden: true }),
   },
   children: [
     createCodeCopySource(copySourceId, item.source),
@@ -143,9 +176,27 @@ const createPanel = (
       },
       children: [{ type: 'text', value: item.tabLabel }],
     },
-    cloneStaticCodeBlock(item),
+    createGroupOwnedCodeBlock(item, idContext),
   ],
 });
+
+const createStandaloneFallback = (
+  item: StaticCodeBlockMeta,
+  idContext: StaticRenderIdContext,
+): HastNode => {
+  const block = cloneStaticCodeBlock(item);
+  const filename = pickOptionalString(block.properties?.['data-code-filename']);
+  return createStaticCodeBlockRoot({
+    idContext,
+    preNode: block,
+    source: item.source,
+    language: pickOptionalString(block.properties?.['data-code-language']) ?? 'text',
+    groupOwned: false,
+    assignHydrationRoot: true,
+    renderStandaloneCopyButton: true,
+    ...(filename ? { filename } : {}),
+  });
+};
 
 export function rehypeStaticCodeGroups(
   options: { readonly idContext?: StaticRenderIdContext } = {},
@@ -175,24 +226,25 @@ export function rehypeStaticCodeGroups(
         .filter((item): item is StaticCodeBlockMeta => item !== null);
 
       if (items.length <= 1) {
-        const fallback = items[0]?.block;
+        const fallback = items[0] ? createStandaloneFallback(items[0], idContext) : undefined;
         if (fallback) {
-          const cloned = cloneNode(fallback);
-          if (cloned.properties) {
-            delete cloned.properties['data-code-copy-source'];
+          if (fallback.tagName !== undefined) {
+            node.tagName = fallback.tagName;
           }
-          if (cloned.tagName !== undefined) {
-            node.tagName = cloned.tagName;
-          }
-          node.properties = cloned.properties ?? {};
-          node.children = cloned.children ?? [];
+          node.properties = fallback.properties ?? {};
+          node.children = fallback.children ?? [];
         }
         return;
       }
 
       const groupId = idContext.nextId('code-group');
       const selectedKey = items[0]?.key ?? '';
-      const selectedCopySourceId = idContext.reserveId('copy-source', `${groupId}-copy-source-0`);
+      const itemIds = items.map((item, index): CodeGroupItemIds => ({
+        tabId: idContext.reserveId('code-group-tab', `${groupId}-tab-${item.key}`),
+        panelId: idContext.reserveId('code-group-panel', `${groupId}-panel-${item.key}`),
+        copySourceId: idContext.reserveId('copy-source', `${groupId}-copy-source-${String(index)}`),
+      }));
+      const selectedCopySourceId = itemIds[0]?.copySourceId ?? `${groupId}-copy-source-0`;
       const selectedCopyStatusId = idContext.reserveId(
         'copy-status',
         `${selectedCopySourceId}-copy-status`,
@@ -226,21 +278,41 @@ export function rehypeStaticCodeGroups(
               tagName: 'div',
               properties: {
                 className: ['code-group-tablist'],
+                role: 'tablist',
+                'aria-label': pickOptionalString(originalProperties['aria-label']) ?? 'コード比較',
               },
-              children: items.map((item) => createTabButton(item.key, item.tabLabel)),
+              children: items.map((item, index) => {
+                const selected = index === 0;
+                const tab = createTabButton(item.key, item.tabLabel);
+                const ids = itemIds[index];
+                return {
+                  ...tab,
+                  properties: {
+                    ...tab.properties,
+                    id: ids?.tabId,
+                    role: 'tab',
+                    'aria-controls': ids?.panelId,
+                    'aria-selected': selected ? 'true' : 'false',
+                    'data-selected': selected ? 'true' : 'false',
+                    tabindex: selected ? 0 : -1,
+                  },
+                };
+              }),
             },
             createGroupCopyButton(selectedCopySourceId, selectedCopyStatusId),
           ],
         },
-        ...items.map((item, index) =>
-          createPanel(
+        ...items.map((item, index) => {
+          const ids = itemIds[index];
+          return createPanel(
             item,
             index === 0,
-            index === 0
-              ? selectedCopySourceId
-              : idContext.reserveId('copy-source', `${groupId}-copy-source-${String(index)}`),
-          ),
-        ),
+            ids?.copySourceId ?? `${groupId}-copy-source-${String(index)}`,
+            ids?.tabId ?? `${groupId}-tab-${item.key}`,
+            ids?.panelId ?? `${groupId}-panel-${item.key}`,
+            idContext,
+          );
+        }),
       ];
     };
 

@@ -854,13 +854,19 @@ const toStaticDetails = (node: HastNode): void => {
   };
   node.children = [
     createElement('summary', { className: ['details-block__summary'] }, [
-      createElement('span', { className: ['details-block__summary-label'] }, [
+      createElement('span', { className: ['details-block__summary-content'] }, [
         createTextNode(summary),
       ]),
+      createElement(
+        'span',
+        {
+          className: ['details-block__chevron', 'static-icon'],
+          'aria-hidden': 'true',
+        },
+        [createStaticIconHast('chevron-right')],
+      ),
     ]),
-    createElement('div', { className: ['details-block__body-wrapper'] }, [
-      createElement('div', { className: ['details-block__body'] }, children),
-    ]),
+    createElement('div', { className: ['details-block__body'] }, children),
   ];
 };
 

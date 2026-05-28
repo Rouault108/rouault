@@ -1,30 +1,16 @@
-const CODE_BLOCK_SELECTOR = 'pre[data-code-block]';
+const CODE_BLOCK_ROOT_SELECTOR = '[data-code-block-root]:not([data-code-group-owned="true"])';
 
-const isOwnedByCodeGroup = (pre: HTMLElement): boolean =>
-  pre.closest('section[data-code-group]') !== null;
-
-const enhanceStandaloneCodeBlock = (pre: HTMLElement): void => {
-  const root = pre.closest<HTMLElement>('[data-code-block-root]');
-  if (!root) {
+const enhanceStandaloneCodeBlock = (root: HTMLElement): void => {
+  if (root.dataset['codeBlockEnhanced'] === 'true') {
     return;
   }
 
-  root.dataset['enhanced'] = 'true';
-  pre.dataset['codeEnhanced'] = 'true';
-};
-
-const enhanceCodeBlock = (pre: HTMLElement): void => {
-  if (isOwnedByCodeGroup(pre)) {
-    pre.dataset['codeEnhanced'] = 'true';
-    return;
-  }
-
-  enhanceStandaloneCodeBlock(pre);
+  root.dataset['codeBlockEnhanced'] = 'true';
 };
 
 export const enhanceCodeBlocks = (root: ParentNode): void => {
-  const codeBlocks = Array.from(root.querySelectorAll<HTMLElement>(CODE_BLOCK_SELECTOR));
-  for (const codeBlock of codeBlocks) {
-    enhanceCodeBlock(codeBlock);
+  const codeBlockRoots = Array.from(root.querySelectorAll<HTMLElement>(CODE_BLOCK_ROOT_SELECTOR));
+  for (const codeBlockRoot of codeBlockRoots) {
+    enhanceStandaloneCodeBlock(codeBlockRoot);
   }
 };

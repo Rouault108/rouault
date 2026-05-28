@@ -74,14 +74,18 @@ describe('rehypeStaticCodeGroups', () => {
     const tabList = header?.children?.[0];
     expect(tabList?.tagName).toBe('div');
     expect(tabList?.properties?.['className']).toEqual(['code-group-tablist']);
-    expect(tabList?.properties?.['role']).toBeUndefined();
-    expect(tabList?.properties?.['aria-label']).toBeUndefined();
+    expect(tabList?.properties?.['role']).toBe('tablist');
+    expect(tabList?.properties?.['aria-label']).toBe('実装比較');
 
     const firstTab = tabList?.children?.[0];
     expect(firstTab?.tagName).toBe('button');
-    expect(firstTab?.properties?.['data-code-group-tab']).toBe('valid');
-    expect(firstTab?.properties?.['role']).toBeUndefined();
-    expect(firstTab?.properties?.['aria-selected']).toBeUndefined();
+    expect(firstTab?.properties?.['data-code-group-tab']).toBe('true');
+    expect(firstTab?.properties?.['data-code-group-key']).toBe('valid');
+    expect(firstTab?.properties?.['role']).toBe('tab');
+    expect(firstTab?.properties?.['aria-selected']).toBe('true');
+    expect(firstTab?.properties?.['data-selected']).toBe('true');
+    expect(firstTab?.properties?.['tabindex']).toBe(0);
+    expect(firstTab?.properties?.['aria-controls']).toEqual(expect.any(String));
 
     const headerTools = header?.children?.[1];
     expect(headerTools?.tagName).toBe('div');
@@ -101,18 +105,23 @@ describe('rehypeStaticCodeGroups', () => {
     const secondPanel = group?.children?.[2];
     expect(firstPanel?.tagName).toBe('section');
     expect(firstPanel?.properties?.['data-code-group-panel']).toBe('valid');
-    expect(firstPanel?.properties?.['role']).toBeUndefined();
+    expect(firstPanel?.properties?.['role']).toBe('tabpanel');
+    expect(firstPanel?.properties?.['aria-labelledby']).toBe(firstTab?.properties?.['id']);
+    expect(firstPanel?.properties?.['id']).toBe(firstTab?.properties?.['aria-controls']);
     expect(firstPanel?.children?.[0]?.tagName).toBe('template');
     expect(firstPanel?.children?.[1]?.tagName).toBe('p');
-    expect(firstPanel?.children?.[2]?.tagName).toBe('pre');
+    expect(firstPanel?.children?.[2]?.tagName).toBe('figure');
+    expect(firstPanel?.children?.[2]?.properties?.['data-code-block-root']).toBe('true');
+    expect(firstPanel?.children?.[2]?.properties?.['data-code-group-owned']).toBe('true');
 
     expect(secondPanel?.tagName).toBe('section');
     expect(secondPanel?.properties?.['data-code-group-panel']).toBe('invalid');
     expect(secondPanel?.properties?.['data-code-group-inactive']).toBe('true');
-    expect(secondPanel?.properties?.['role']).toBeUndefined();
+    expect(secondPanel?.properties?.['hidden']).toBe(true);
+    expect(secondPanel?.properties?.['role']).toBe('tabpanel');
   });
 
-  it('child が 1 件だけなら code block をそのまま残すこと', () => {
+  it('child が 1 件だけなら standalone code block factory 経由の figure に戻すこと', () => {
     const tree: HastNode = {
       type: 'root',
       children: [
@@ -130,7 +139,15 @@ describe('rehypeStaticCodeGroups', () => {
     transform(tree);
 
     const first = tree.children?.[0];
-    expect(first?.tagName).toBe('pre');
-    expect(first?.properties?.['data-code-block']).toBe(true);
+    expect(first?.tagName).toBe('figure');
+    expect(first?.properties?.['data-code-block-root']).toBe('true');
+    expect(first?.properties?.['data-hydration-key']).toBe('code-block-enhancer');
+    expect(first?.properties?.['data-code-group']).toBeUndefined();
+    expect(first?.children?.find((child) => child.tagName === 'template')?.properties?.[
+      'data-code-copy-source'
+    ]).toBe('true');
+    expect(first?.children?.find((child) => child.tagName === 'pre')?.properties?.[
+      'data-code-block'
+    ]).toBe(true);
   });
 });

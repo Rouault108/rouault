@@ -1,7 +1,7 @@
 /* ============================================================
    Static-first code surfaces
    - SSR / no-JS baseline: pre[data-code-block] / section[data-code-group]
-   - Runtime enhancement: [data-code-block-root], [data-enhanced='true']
+   - Runtime enhancement: [data-code-block-root], [data-code-group-enhanced='true']
    ============================================================ */
 
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) {
@@ -291,15 +291,15 @@
 
 [data-code-block-root]:hover .code-surface-copy-button-shell > .static-copy-control,
 [data-code-block-root]:focus-within .code-surface-copy-button-shell > .static-copy-control,
-section[data-code-group][data-enhanced='true']:hover .code-group-header-tools > .static-copy-control,
-section[data-code-group][data-enhanced='true']:focus-within
+section[data-code-group][data-code-group-enhanced='true']:hover .code-group-header-tools > .static-copy-control,
+section[data-code-group][data-code-group-enhanced='true']:focus-within
   .code-group-header-tools
   > .static-copy-control {
   opacity: 1;
 }
 
 [data-code-block-root]:focus-within .code-surface-copy-button-shell > .static-copy-control,
-section[data-code-group][data-enhanced='true']:focus-within
+section[data-code-group][data-code-group-enhanced='true']:focus-within
   .code-group-header-tools
   > .static-copy-control {
   transition-duration: var(--duration-instant, 0ms);
@@ -340,7 +340,7 @@ section[data-code-group] {
   isolation: isolate;
 }
 
-section[data-code-group][data-enhanced='true'] > .code-group-header {
+section[data-code-group][data-code-group-enhanced='true'] > .code-group-header {
   display: flex;
 }
 
@@ -420,7 +420,7 @@ section[data-code-group] > [data-code-group-panel] {
   padding: 0;
 }
 
-section[data-code-group][data-enhanced='true'] > [data-code-group-panel][hidden] {
+section[data-code-group][data-code-group-enhanced='true'] > [data-code-group-panel][hidden] {
   display: none;
 }
 
@@ -433,11 +433,11 @@ section[data-code-group][data-enhanced='true'] > [data-code-group-panel][hidden]
   letter-spacing: var(--tracking-wide, 0.025em);
 }
 
-section[data-code-group][data-enhanced='true'] .code-group-stack-label {
+section[data-code-group][data-code-group-enhanced='true'] .code-group-stack-label {
   display: none;
 }
 
-section[data-code-group] > [data-code-group-panel] > :where(pre[data-code-block]) {
+section[data-code-group] > [data-code-group-panel] > :where(pre[data-code-block], [data-code-block-root]) {
   padding-top: var(--space-2, 8px);
 }
 

@@ -6,7 +6,7 @@ import {
   transformerRemoveNotationEscape,
 } from '@shikijs/transformers';
 
-import { createStaticCopyButtonHast } from './static-copy-button-hast.js';
+import { createStaticCodeBlockRoot } from './static-code-block-root.js';
 import { type HastNode } from './hast-utils.js';
 import {
   createStaticRenderIdContext,
@@ -24,22 +24,6 @@ const SHIKI_TRANSFORMERS = [
   transformerNotationDiff(),
   transformerRemoveNotationEscape(),
 ];
-
-const LANGUAGE_LABEL_MAP: Record<string, string> = {
-  ts: 'TypeScript',
-  tsx: 'TypeScript',
-  js: 'JavaScript',
-  jsx: 'JavaScript',
-  css: 'CSS',
-  html: 'HTML',
-  json: 'JSON',
-  md: 'Markdown',
-  markdown: 'Markdown',
-  sh: 'Shell',
-  bash: 'Bash',
-  yml: 'YAML',
-  yaml: 'YAML',
-};
 
 const isElement = (node: HastNode, tagName?: string): boolean => {
   if (node.type !== 'element' || typeof node.tagName !== 'string') {
@@ -185,20 +169,6 @@ const resolveLanguage = (language: string | undefined): string => {
   return 'text';
 };
 
-const resolveLanguageLabel = (value: string | undefined): string | undefined => {
-  const normalized = pickOptionalString(value)?.toLowerCase();
-  if (!normalized) {
-    return undefined;
-  }
-
-  const mapped = LANGUAGE_LABEL_MAP[normalized];
-  if (mapped) {
-    return mapped;
-  }
-
-  return normalized.slice(0, 1).toUpperCase() + normalized.slice(1);
-};
-
 const getIntentLabel = (intent: string | undefined): string | undefined => {
   switch (pickOptionalString(intent)?.toLowerCase()) {
     case 'valid':
@@ -208,33 +178,6 @@ const getIntentLabel = (intent: string | undefined): string | undefined => {
     default:
       return undefined;
   }
-};
-
-const shouldRenderCopyButton = (source: string, copyMode: string | undefined): boolean => {
-  if (copyMode === 'hidden') {
-    return false;
-  }
-
-  if (copyMode === 'always') {
-    return true;
-  }
-
-  return source.trim().length > 0;
-};
-
-const isCopyDisabled = (source: string, copyable: string | undefined): boolean =>
-  copyable === 'false' || source.trim().length === 0;
-
-const resolveStandaloneCopyButtonLabel = (
-  filename: string | undefined,
-  language: string,
-): string => {
-  const contextName = filename ?? resolveLanguageLabel(language) ?? 'コード';
-  if (contextName === 'コード') {
-    return 'コードをコピー';
-  }
-
-  return `${contextName} のコードをコピー`;
 };
 
 const readLanguageFromCodeNode = (codeNode: HastNode): string | undefined => {
@@ -323,56 +266,6 @@ const deleteHostOnlyCodeProperties = (properties: Record<string, unknown>): void
   }
 };
 
-const createTextNode = (value: string): HastNode => ({
-  type: 'text',
-  value,
-});
-
-const createElement = (
-  tagName: string,
-  properties: Record<string, unknown>,
-  children: HastNode[] = [],
-): HastNode => ({
-  type: 'element',
-  tagName,
-  properties,
-  children,
-});
-
-const createCodeCopySource = (
-  source: string,
-  idContext: StaticRenderIdContext,
-): { id: string; statusId: string; template: HastNode } => {
-  const id = idContext.nextId('copy-source');
-  return {
-    id,
-    statusId: idContext.reserveId('copy-status', `${id}-copy-status`),
-    template: createElement(
-      'template',
-      {
-        id,
-        'data-code-copy-source': 'true',
-      },
-      [createTextNode(source)],
-    ),
-  };
-};
-
-const createStaticCopyButton = (
-  targetId: string,
-  statusId: string,
-  label: string,
-  disabled: boolean,
-  extraClassName: string,
-): HastNode =>
-  createStaticCopyButtonHast({
-    targetId,
-    statusId,
-    label,
-    disabled,
-    buttonClassName: extraClassName,
-  });
-
 const createStandaloneCodeSurface = (
   preNode: HastNode,
   options: {
@@ -386,103 +279,20 @@ const createStandaloneCodeSurface = (
     idContext: StaticRenderIdContext;
   },
 ): HastNode => {
-  const captionChildren: HastNode[] = [];
-  const captionMainChildren: HastNode[] = [];
-  const copySource = createCodeCopySource(options.source, options.idContext);
-  if (preNode.properties) {
-    delete preNode.properties['data-code-copy-source'];
-  }
   const intentLabel = getIntentLabel(options.intent);
-
-  if (options.filename) {
-    captionMainChildren.push(
-      createElement(
-        'span',
-        {
-          className: ['code-surface-filename'],
-          title: options.filename,
-        },
-        [createTextNode(options.filename)],
-      ),
-    );
-  }
-
-  if (intentLabel) {
-    captionMainChildren.push(
-      createElement(
-        'span',
-        {
-          className: ['code-surface-intent'],
-        },
-        [createTextNode(intentLabel)],
-      ),
-    );
-  }
-
-  if (captionMainChildren.length > 0) {
-    captionChildren.push(
-      createElement(
-        'div',
-        {
-          className: ['code-surface-caption-main'],
-        },
-        captionMainChildren,
-      ),
-    );
-  }
-
-  if (shouldRenderCopyButton(options.source, options.copyMode)) {
-    captionChildren.push(
-      createElement(
-        'div',
-        {
-          className: ['code-surface-copy-button-shell'],
-        },
-        [
-          createStaticCopyButton(
-            copySource.id,
-            copySource.statusId,
-            resolveStandaloneCopyButtonLabel(options.filename, options.language),
-            isCopyDisabled(options.source, options.copyable),
-            'code-surface-copy-button',
-          ),
-        ],
-      ),
-    );
-  }
-
-  return createElement(
-    'figure',
-    {
-      className: [
-        'code-surface-root',
-        ...(captionMainChildren.length === 0 ? ['code-surface-root--overlay'] : []),
-      ],
-      'data-code-block-root': 'true',
-      ...(options.assignHydrationRoot
-        ? {
-            'data-hydration-key': 'code-block-enhancer',
-            'data-hydration-capability': 'progressive',
-            'data-hydration-trigger': 'post-commit',
-          }
-        : {}),
-    },
-    [
-      ...(captionChildren.length > 0
-        ? [
-            createElement(
-              'div',
-              {
-                className: ['code-surface-caption'],
-              },
-              captionChildren,
-            ),
-          ]
-        : []),
-      copySource.template,
-      preNode,
-    ],
-  );
+  return createStaticCodeBlockRoot({
+    idContext: options.idContext,
+    preNode,
+    source: options.source,
+    language: options.language,
+    groupOwned: false,
+    assignHydrationRoot: options.assignHydrationRoot,
+    renderStandaloneCopyButton: true,
+    ...(options.filename ? { filename: options.filename } : {}),
+    ...(intentLabel ? { intentLabel } : {}),
+    ...(options.copyMode ? { copyMode: options.copyMode } : {}),
+    ...(options.copyable ? { copyable: options.copyable } : {}),
+  });
 };
 
 interface HighlightCodeBlockResult {

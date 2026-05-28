@@ -23,14 +23,12 @@ const syncCopyButton = (state: GroupState, selectedKey: string): void => {
   const activePre = activePanel?.querySelector<HTMLElement>(CODE_BLOCK_SELECTOR) ?? null;
   const copySourceId = activePanel?.dataset['codeCopySourceId'];
   if (!activePre || !copySourceId || activePre.dataset['codeCopyMode'] === 'hidden') {
-    button.hidden = true;
     button.disabled = true;
     button.removeAttribute('data-copy-target-id');
     button.setAttribute('aria-label', 'コードをコピー');
     return;
   }
 
-  button.hidden = false;
   button.setAttribute(
     'aria-label',
     resolveGroupCopyButtonLabel(activePre, activePanel.dataset['codeGroupPanelLabel'] ?? null),
@@ -41,10 +39,10 @@ const syncCopyButton = (state: GroupState, selectedKey: string): void => {
 
 const syncSelection = (state: GroupState, nextKey: string): void => {
   state.group.dataset['codeGroupSelected'] = nextKey;
-  state.group.dataset['enhanced'] = 'true';
+  state.group.dataset['codeGroupEnhanced'] = 'true';
 
   for (const tab of state.tabs) {
-    const selected = tab.dataset['codeGroupTab'] === nextKey;
+    const selected = (tab.dataset['codeGroupKey'] ?? tab.dataset['codeGroupTab']) === nextKey;
     tab.setAttribute('aria-selected', selected ? 'true' : 'false');
     tab.tabIndex = selected ? 0 : -1;
     tab.dataset['selected'] = selected ? 'true' : 'false';
@@ -86,8 +84,10 @@ const applyTabSemantics = (state: GroupState): void => {
 
   for (const [index, tab] of state.tabs.entries()) {
     const key = tab.dataset['codeGroupTab'] ?? `tab-${String(index)}`;
-    const tabId = `${groupId}-tab-${key}`;
-    const panelId = `${groupId}-panel-${key}`;
+    const normalizedKey = tab.dataset['codeGroupKey'] ?? key;
+    const tabId = tab.id || `${groupId}-tab-${normalizedKey}`;
+    const panelId =
+      tab.getAttribute('aria-controls') ?? `${groupId}-panel-${normalizedKey}`;
 
     tab.id = tabId;
     tab.setAttribute('role', 'tab');
@@ -96,8 +96,8 @@ const applyTabSemantics = (state: GroupState): void => {
 
   for (const [index, panel] of state.panels.entries()) {
     const key = panel.dataset['codeGroupPanel'] ?? `panel-${String(index)}`;
-    const tabId = `${groupId}-tab-${key}`;
-    const panelId = `${groupId}-panel-${key}`;
+    const tabId = panel.getAttribute('aria-labelledby') ?? `${groupId}-tab-${key}`;
+    const panelId = panel.id || `${groupId}-panel-${key}`;
 
     panel.id = panelId;
     panel.setAttribute('role', 'tabpanel');
@@ -138,7 +138,7 @@ const enhanceGroup = (group: HTMLElement): void => {
 
     tab.dataset['bound'] = 'true';
     tab.addEventListener('click', () => {
-      const nextKey = tab.dataset['codeGroupTab'] ?? '';
+      const nextKey = tab.dataset['codeGroupKey'] ?? tab.dataset['codeGroupTab'] ?? '';
       syncSelection(state, nextKey);
     });
     tab.addEventListener('keydown', (event: KeyboardEvent) => {
@@ -164,7 +164,7 @@ const enhanceGroup = (group: HTMLElement): void => {
         case 'Enter':
         case ' ':
           event.preventDefault();
-          syncSelection(state, tab.dataset['codeGroupTab'] ?? '');
+          syncSelection(state, tab.dataset['codeGroupKey'] ?? tab.dataset['codeGroupTab'] ?? '');
           break;
         default:
           break;

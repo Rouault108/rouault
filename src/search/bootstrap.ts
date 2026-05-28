@@ -22,6 +22,7 @@ import {
   type SearchBootstrapUnavailableReason,
 } from '../../shared/search/search-unavailable-reason.js';
 import { BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE } from './search-dialog-constants.js';
+import { dispatchSearchDialogEvent } from './search-dialog-events.js';
 
 interface SearchDialogRootElement extends HTMLElement {
   close?(): void;
@@ -149,14 +150,7 @@ const requestSearchDialogOpen = (
 const dispatchSearchDialogFocusReturn = (
   reason: SearchDialogCloseReason,
 ): void => {
-  document.dispatchEvent(
-    new CustomEvent('search-dialog:focus-return', {
-      detail: { reason },
-      bubbles: false,
-      composed: false,
-      cancelable: false,
-    }),
-  );
+  dispatchSearchDialogEvent(document, 'search-dialog:focus-return', { reason });
 };
 
 const completeSearchDialogClose = (
