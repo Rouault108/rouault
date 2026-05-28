@@ -1,7 +1,9 @@
 import { expect } from '@open-wc/testing';
 
+import { enhanceSearchDialog } from '../../src/client/post-hydrate/search-dialog-enhancer.js';
 import { initSearch, resetSearchBootstrapForTest } from '../../src/search/bootstrap.js';
 import { createSearchCore } from '../../src/search/search-core.js';
+import { createSearchDialogEvent } from '../../src/search/search-dialog-events.js';
 import {
   searchReturnToReadingEventName,
   type SearchReturnToReadingEventDetail,
@@ -57,6 +59,7 @@ const createTestInitSearchOptions = (controller = createTestSearchCore()) => ({
 const appendStaticSearchDialog = (): HTMLElement => {
   const dialog = document.createElement('div');
   dialog.id = 'global-search-dialog';
+  dialog.dataset['searchDialogRoot'] = '';
   dialog.innerHTML = `
     <form data-search-dialog-form>
       <input data-search-dialog-input>
@@ -137,6 +140,7 @@ describe('search-bootstrap', () => {
 
     try {
       initSearch(createTestInitSearchOptions(controller));
+      enhanceSearchDialog(document);
       trigger.dispatchEvent(
         new CustomEvent('open-search-dialog', {
           bubbles: true,
@@ -215,25 +219,20 @@ describe('search-bootstrap', () => {
     initSearch(createTestInitSearchOptions());
 
     document.dispatchEvent(
-      new CustomEvent('search-dialog:selected', {
-        bubbles: false,
-        composed: false,
-        cancelable: false,
-        detail: {
+      createSearchDialogEvent('search-dialog:selected', {
+        id: '/notes/router/',
+        renderHref: '/notes/router/',
+        canonicalPathname: '/notes/router/',
+        title: 'Router',
+        query: 'router',
+        index: 0,
+        item: {
           id: '/notes/router/',
+          title: 'Router',
           renderHref: '/notes/router/',
           canonicalPathname: '/notes/router/',
-          title: 'Router',
-          query: 'router',
-          index: 0,
-          item: {
-            id: '/notes/router/',
-            title: 'Router',
-            renderHref: '/notes/router/',
-            canonicalPathname: '/notes/router/',
-          },
-          selectionMethod: 'pointer',
         },
+        selectionMethod: 'pointer',
       }),
     );
 

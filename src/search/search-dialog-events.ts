@@ -83,7 +83,6 @@ export const createSearchDialogEvent = <Name extends SearchDialogEventName>(
   });
 
 export const dispatchSearchDialogEvent = <Name extends SearchDialogEventName>(
-  target: EventTarget,
   name: Name,
   detail: SearchDialogEventDetailMap[Name],
-): boolean => target.dispatchEvent(createSearchDialogEvent(name, detail));
+): boolean => document.dispatchEvent(createSearchDialogEvent(name, detail));
