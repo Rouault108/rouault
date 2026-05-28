@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { renderCustomElement } from '../../build/ssr/server-entry.js';
 import { SSR_COMPONENT_DEFINITIONS } from '../../build/ssr/target-definitions.js';
 import {
+  SSR_LAYOUT_TARGET_TAGS,
   SSR_NOTE_TARGET_TAGS,
   SSR_PAGE_TARGET_TAGS,
   SSR_TARGET_TAGS,
@@ -34,6 +35,13 @@ describe('component manifest / ssr targets', () => {
     for (const tagName of REQUIRED_NOTE_CONTENT_TAGS) {
       expect(SSR_TARGET_TAGS).toContain(tagName);
     }
+  });
+
+  it('layout component は note target ではなく layout target に分離すること', () => {
+    expect(SSR_LAYOUT_TARGET_TAGS).toContain('layout-toc');
+    expect(SSR_LAYOUT_TARGET_TAGS).toContain('layout-sidebar');
+    expect(SSR_NOTE_TARGET_TAGS).not.toContain('layout-toc');
+    expect(SSR_NOTE_TARGET_TAGS).not.toContain('layout-sidebar');
   });
 
   it('静的 HTML 化したノート本文タグを SSR target へ含めないこと', () => {

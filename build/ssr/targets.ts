@@ -24,3 +24,4 @@ export type SsrTargetTag = (typeof SSR_TARGET_TAGS)[number];
 export const SSR_NOTE_TARGET_TAGS = pickTags((definition) => hasProfile(definition, 'note'));
 export const SSR_PAGE_TARGET_TAGS = pickTags((definition) => hasProfile(definition, 'page'));
 export const SSR_SHELL_TARGET_TAGS = pickTags((definition) => hasProfile(definition, 'shell'));
+export const SSR_LAYOUT_TARGET_TAGS = pickTags((definition) => hasProfile(definition, 'layout'));

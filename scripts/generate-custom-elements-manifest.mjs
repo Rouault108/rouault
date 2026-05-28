@@ -28,6 +28,7 @@ const STATIC_FIRST_MANIFEST_EXCLUDED_PATHS = new Set([
   'src/components/ui/image/image.ts',
   'src/components/ui/info-box/info-box.ts',
   'src/components/ui/kbd/kbd.ts',
+  'src/components/layout/layout-toc-controller.ts',
   'src/components/ui/math/math.ts',
   'src/components/ui/ol/ol.ts',
   'src/components/ui/pagination/pagination.ts',

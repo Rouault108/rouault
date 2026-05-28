@@ -15,7 +15,9 @@ export type StaticFirstRetainedComponentKind =
 export type StaticFirstManifestPolicy = 'include' | 'exclude';
 
 export type StaticFirstFinalHtmlScope =
+  | 'note-stateful-public-light-dom'
   | 'shell'
+  | 'page'
   | 'layout'
   | 'note-stateful'
   | 'design-system-only'
@@ -85,10 +87,38 @@ const retainedSsrComponent = (
   allowedFinalHtmlScopes,
 });
 
-export const STATIC_FIRST_RETAINED_COMPONENTS = [
-  retainedSsrComponent('app-router', 'src/components/app/app-router.ts', 'retained-shell', [
-    'shell',
-  ], ['shell'], ['shell']),
+const retainedPureSsrComponent = (
+  tag: string,
+  path: string,
+  kind: StaticFirstRetainedComponentKind,
+  ssrProfiles: readonly SsrComponentProfile[],
+  hydrationProfiles: readonly HydrationRegistryProfile[],
+  allowedFinalHtmlScopes: readonly StaticFirstFinalHtmlScope[],
+  targetAdapterImportExceptionReason: string,
+): StaticFirstRetainedComponent => ({
+  tag,
+  kind,
+  implementationPaths: [path],
+  ...includeManifest(path),
+  ssrDefinitionRequired: true,
+  targetAdapterImportRequired: false,
+  targetAdapterImportExceptionReason,
+  hydrationRegistryRequired: true,
+  ssrProfiles,
+  hydrationProfiles,
+  allowedFinalHtmlScopes,
+});
+
+export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedComponent[] = [
+  retainedPureSsrComponent(
+    'app-router',
+    'src/components/app/app-router.ts',
+    'retained-shell',
+    ['shell'],
+    ['shell'],
+    ['shell'],
+    'app-router uses the light-app-router string adapter; SSR does not evaluate the HTMLElement module',
+  ),
   retainedSsrComponent('layout-header', 'src/components/layout/layout-header.ts', 'retained-shell', [
     'shell',
   ], ['shell'], ['shell']),
@@ -98,10 +128,11 @@ export const STATIC_FIRST_RETAINED_COMPONENTS = [
     implementationPaths: ['src/components/layout/layout-sidebar.ts'],
     ...includeManifest('src/components/layout/layout-sidebar.ts'),
     ssrDefinitionRequired: true,
-    targetAdapterImportRequired: true,
-    targetAdapterImportPaths: ['src/components/layout/layout-sidebar.ts'],
+    targetAdapterImportRequired: false,
+    targetAdapterImportExceptionReason:
+      'layout-sidebar SSR target is a no-op layout host; rendering does not evaluate the custom element module',
     hydrationRegistryRequired: true,
-    ssrProfiles: ['note'],
+    ssrProfiles: ['layout'],
     hydrationProfiles: ['layout'],
     allowedFinalHtmlScopes: ['layout'],
   },
@@ -109,14 +140,26 @@ export const STATIC_FIRST_RETAINED_COMPONENTS = [
     'layout-sidebar-surface',
     'src/components/layout/layout-sidebar-surface.ts',
   ),
-  retainedSsrComponent('layout-toc', 'src/components/layout/layout-toc.ts', 'retained-layout', [
-    'note',
-  ], ['layout'], ['layout']),
+  {
+    tag: 'layout-toc',
+    kind: 'retained-layout',
+    implementationPaths: ['src/components/layout/layout-toc.ts'],
+    ...includeManifest('src/components/layout/layout-toc.ts'),
+    ssrDefinitionRequired: true,
+    targetAdapterImportRequired: true,
+    targetAdapterImportPaths: ['src/components/layout/layout-toc.ts'],
+    hydrationRegistryRequired: false,
+    ssrProfiles: ['layout'],
+    hydrationProfiles: [],
+    allowedFinalHtmlScopes: ['layout'],
+  },
   {
     tag: 'layout-toc-controller',
     kind: 'retained-controller',
     implementationPaths: ['src/components/layout/layout-toc-controller.ts'],
-    ...includeManifest('src/components/layout/layout-toc-controller.ts'),
+    manifest: 'exclude',
+    manifestExcludeReason:
+      'hydration-only layout controller; not a public design-system element',
     ssrDefinitionRequired: false,
     targetAdapterImportRequired: false,
     hydrationRegistryRequired: true,
@@ -181,4 +224,4 @@ export const STATIC_FIRST_RETAINED_COMPONENTS = [
   retainedSsrComponent('ui-video', 'src/components/ui/video/video.ts', 'retained-note-stateful', [
     'note',
   ], ['note'], ['note-stateful']),
-] as const satisfies readonly StaticFirstRetainedComponent[];
+];

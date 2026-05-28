@@ -222,17 +222,13 @@ Indeterminate → Unchecked
 
 ## 5. DOM / Accessibility
 
-ルートは `:host` です。Shadow DOM 内部に `.wrapper`、対話主体となる `.control`、必要に応じた `.label`、必要に応じた `.error-message` を持ちます。
+旧 `ui-checkbox` Custom Element は production source から削除済みです。現行契約では native `<input type="checkbox">` と静的 task-list markup を使用し、フォーム参加・妥当性・アクセシビリティは HTML 標準の checkbox を基準にします。
 
 ```text
-<ui-checkbox>
-  #shadow-root
-    <div class="wrapper">
-      <span class="control" part="control" role="checkbox"></span>
-      [label.part="label"]
-    </div>
-    [span.error-message]
-</ui-checkbox>
+<label class="checkbox-field">
+  <input type="checkbox" name="..." value="...">
+  <span class="checkbox-field__label">...</span>
+</label>
 ```
 
 ### 5.1 Accessibility 契約

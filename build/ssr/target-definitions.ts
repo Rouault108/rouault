@@ -44,13 +44,13 @@ export const SSR_COMPONENT_DEFINITIONS = [
   {
     tag: 'layout-sidebar',
     ssr: 'none',
-    profiles: ['note'],
+    profiles: ['layout'],
     adapterKind: 'none',
   },
   {
     tag: 'layout-toc',
     ssr: 'shadow',
-    profiles: ['note'],
+    profiles: ['layout'],
     adapterKind: 'shadow-default',
   },
   {
