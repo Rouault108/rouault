@@ -12,6 +12,12 @@ const dispatchKey = (target: Element, key: string): void => {
   );
 };
 
+const expectElement = <T extends Element>(element: T | null | undefined, label: string): T => {
+  expect(element, label).to.not.equal(null);
+  expect(element, label).to.not.equal(undefined);
+  return element as T;
+};
+
 describe('code-group-enhancer', () => {
   afterEach(() => {
     document.body.replaceChildren();
@@ -68,6 +74,10 @@ describe('code-group-enhancer', () => {
     const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-code-group-panel]'));
     const copyButton = root.querySelector<HTMLButtonElement>('[data-code-group-copy]');
     const status = root.querySelector<HTMLElement>('[data-copy-status]');
+    const firstTab = expectElement(tabs[0], 'first tab');
+    const thirdTab = expectElement(tabs[2], 'third tab');
+    const copyControl = expectElement(copyButton, 'copy button');
+    const copyStatus = expectElement(status, 'copy status');
 
     expect(group?.dataset['codeGroupEnhanced']).to.equal('true');
     expect(tabs[0]?.getAttribute('role')).to.equal('tab');
@@ -96,8 +106,8 @@ describe('code-group-enhancer', () => {
     expect(copyButton?.disabled).to.equal(false);
     expect(copyButton?.getAttribute('aria-label')).to.equal('Bad sample のコードをコピー');
 
-    copyButton!.dataset['copyState'] = 'copied';
-    status!.textContent = 'コピーしました';
+    copyControl.dataset['copyState'] = 'copied';
+    copyStatus.textContent = 'コピーしました';
     tabs[2]?.click();
 
     expect(group?.dataset['codeGroupSelected']).to.equal('empty');
@@ -108,13 +118,13 @@ describe('code-group-enhancer', () => {
     expect(status?.textContent).to.equal('');
 
     tabs[2]?.focus();
-    dispatchKey(tabs[2]!, 'ArrowRight');
+    dispatchKey(thirdTab, 'ArrowRight');
     expect(document.activeElement).to.equal(tabs[0]);
-    dispatchKey(tabs[0]!, 'End');
+    dispatchKey(firstTab, 'End');
     expect(document.activeElement).to.equal(tabs[2]);
-    dispatchKey(tabs[2]!, 'Home');
+    dispatchKey(thirdTab, 'Home');
     expect(document.activeElement).to.equal(tabs[0]);
-    dispatchKey(tabs[0]!, ' ');
+    dispatchKey(firstTab, ' ');
     expect(group?.dataset['codeGroupSelected']).to.equal('valid');
   });
 });
