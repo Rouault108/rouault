@@ -93,7 +93,9 @@ describe('rehypeStaticCodeGroups', () => {
     const button = copyButton?.children?.[0];
     expect(button?.tagName).toBe('button');
     expect(button?.properties?.['data-code-group-copy']).toBe('true');
-    expect(button?.properties?.['data-copy-target-id']).toBe('code-group-1-copy-source-0');
+    const selectedCopySourceId = button?.properties?.['data-copy-target-id'];
+    expect(selectedCopySourceId).toMatch(/^note:code-groups-[a-z0-9]+-code-group-1-copy-source-0$/u);
+    expect(button?.properties?.['aria-describedby']).toBe(`${String(selectedCopySourceId)}-copy-status`);
 
     const firstPanel = group?.children?.[1];
     const secondPanel = group?.children?.[2];

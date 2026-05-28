@@ -18,6 +18,10 @@ import {
   parseFootnoteRefHref,
 } from '../../shared/footnotes/footnote-id.js';
 import { isIconName } from '../../shared/icons/icon-paths.js';
+import {
+  createStaticRenderIdContext,
+  type StaticRenderIdContext,
+} from '../../shared/static-render-id-context.js';
 
 interface FootnoteDefinition {
   readonly refId: string;
@@ -37,7 +41,7 @@ interface SurfaceNormalizationContext {
   calloutHeadingCount: number;
   infoBoxHeadingCount: number;
   syntaxSectionHeadingCount: number;
-  scoreDescriptionCount: number;
+  idContext: StaticRenderIdContext;
 }
 
 type Parse5Node = DefaultTreeAdapterMap['node'];
@@ -49,7 +53,6 @@ interface HydrationDirective {
   readonly trigger: 'initial' | 'post-commit' | 'visible' | 'interaction';
 }
 
-let taskListItemCounter = 0;
 const forbiddenStaticFirstNoteTags = new Set<string>(STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS);
 
 const isElement = (node: HastNode, tagName?: string): boolean => {
@@ -787,9 +790,7 @@ const toStaticScore = (
   const description = pickOptionalString(properties['data-score-description']);
   const primary = properties['data-score-primary'] === 'true';
   const aspectRatio = normalizeScoreAspectRatio(properties['data-score-aspect-ratio']);
-  const descriptionId = description
-    ? `score-description-${String(++context.scoreDescriptionCount)}`
-    : undefined;
+  const descriptionId = description ? context.idContext.nextId('score-description') : undefined;
   const existingClasses = getClassList(properties['className']).filter((className) => className !== 'score');
   const stageStyle = aspectRatio ? `--_score-aspect-ratio: ${aspectRatio};` : undefined;
 
@@ -975,7 +976,7 @@ const isCheckboxInput = (node: HastNode): boolean => {
   return type?.toLowerCase() === 'checkbox';
 };
 
-const toStaticTaskListItem = (node: HastNode): void => {
+const toStaticTaskListItem = (node: HastNode, idContext: StaticRenderIdContext): void => {
   if (!isElement(node, 'li') || !Array.isArray(node.children)) {
     return;
   }
@@ -998,7 +999,7 @@ const toStaticTaskListItem = (node: HastNode): void => {
   const checked = toBooleanAttribute(checkboxNode.properties['checked']);
   const labelNodes = children.slice(checkboxIndex + 1, contentEnd).map((child) => cloneNode(child));
   const tailChildren = nestedListIndex < 0 ? [] : children.slice(nestedListIndex);
-  const labelId = `task-list-item-label-${String(++taskListItemCounter)}`;
+  const labelId = idContext.nextId('task-list-label');
   node.properties = {
     ...(node.properties ?? {}),
     className: [
@@ -2030,8 +2031,11 @@ const synchronizeFootnoteBackrefs = (
 /**
  * CommonMark由来の標準要素を Rouault の Web Components へ正規化する。
  */
-export function rehypeRouaultComponents() {
+export function rehypeRouaultComponents(options: { readonly idContext?: StaticRenderIdContext } = {}) {
   return (tree: unknown, file?: VFileLike) => {
+    const idContext =
+      options.idContext ??
+      createStaticRenderIdContext(file?.path ? `note:${file.path}:rouault-components` : 'note:rouault-components');
     const footnoteDefinitions = new Map<string, FootnoteDefinition>();
     if (tree && typeof tree === 'object') {
       collectFootnoteDefinitions(tree as HastNode, footnoteDefinitions, { value: 0 });
@@ -2042,7 +2046,7 @@ export function rehypeRouaultComponents() {
       calloutHeadingCount: 0,
       infoBoxHeadingCount: 0,
       syntaxSectionHeadingCount: 0,
-      scoreDescriptionCount: 0,
+      idContext,
     };
 
     const visit = (node: unknown): void => {
@@ -2117,7 +2121,7 @@ export function rehypeRouaultComponents() {
       }
 
       if (isElement(current, 'li')) {
-        toStaticTaskListItem(current);
+        toStaticTaskListItem(current, idContext);
       } else {
         const footnoteTransformed = toStaticFootnoteReference(
           current,
@@ -2190,12 +2194,15 @@ export function rehypeRouaultComponents() {
   };
 }
 
-const normalizeRouaultStaticSurfacesTree = (tree: HastNode): void => {
+const normalizeRouaultStaticSurfacesTree = (
+  tree: HastNode,
+  idContext: StaticRenderIdContext,
+): void => {
   const surfaceContext: SurfaceNormalizationContext = {
     calloutHeadingCount: 0,
     infoBoxHeadingCount: 0,
     syntaxSectionHeadingCount: 0,
-    scoreDescriptionCount: 0,
+    idContext,
   };
 
   const visit = (node: unknown): void => {
@@ -2230,7 +2237,10 @@ const normalizeRouaultStaticSurfacesTree = (tree: HastNode): void => {
   visit(tree);
 };
 
-export const normalizeRouaultStaticSurfaceHtml = (html: string | undefined): string | undefined => {
+export const normalizeRouaultStaticSurfaceHtml = (
+  html: string | undefined,
+  options: { readonly idContext?: StaticRenderIdContext; readonly namespace?: string } = {},
+): string | undefined => {
   if (typeof html !== 'string' || html.trim().length === 0) {
     return html;
   }
@@ -2246,7 +2256,10 @@ export const normalizeRouaultStaticSurfaceHtml = (html: string | undefined): str
       .filter((child): child is HastNode => child !== null),
   };
 
-  normalizeRouaultStaticSurfacesTree(root);
+  const idContext =
+    options.idContext ??
+    createStaticRenderIdContext(options.namespace ? `note:${options.namespace}:static-surface` : 'note:static-surface');
+  normalizeRouaultStaticSurfacesTree(root, idContext);
 
   return toHtml(root as Parameters<typeof toHtml>[0]);
 };

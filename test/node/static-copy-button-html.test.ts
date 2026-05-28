@@ -6,6 +6,7 @@ describe('static copy button html renderer', () => {
   it('code copy target を template id 参照だけで描画すること', () => {
     const rendered = renderStaticCopyButtonHtml({
       targetId: 'code-copy-source-1',
+      statusId: 'code-copy-source-1-copy-status',
       label: 'コードをコピー',
       buttonClassName: 'code-copy-button',
     });
@@ -30,6 +31,7 @@ describe('static copy button html renderer', () => {
       renderStaticCopyButtonHtml({
         copyValue: '/notes/example/',
         copyKind: 'permalink',
+        statusId: 'permalink-copy-status',
         label: 'リンクをコピー',
       }),
     ).toContain('data-copy-kind="permalink"');
@@ -38,6 +40,7 @@ describe('static copy button html renderer', () => {
       renderStaticCopyButtonHtml({
         copyValue: 'bad',
         copyKind: 'code' as never,
+        statusId: 'bad-copy-status',
         label: 'コピー',
       }),
     ).toThrow('copyValue requires copyKind short-text or permalink');

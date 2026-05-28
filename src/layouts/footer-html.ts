@@ -4,6 +4,10 @@ import {
   type FooterLinkItem,
   type FooterRenderOptions,
 } from './footer-options.js';
+import {
+  createStaticRenderIdContext,
+  type StaticRenderIdContext,
+} from '../../shared/static-render-id-context.js';
 
 interface NormalizedFooterLink extends FooterLinkItem {
   readonly kind: string;
@@ -60,11 +64,15 @@ const renderFooterLink = (link: NormalizedFooterLink): string => {
   )}</a></span>`;
 };
 
-export const renderFooterHtml = (options: FooterRenderOptions): string => {
+export const renderFooterHtml = (
+  options: FooterRenderOptions & { readonly idContext?: StaticRenderIdContext },
+): string => {
+  const idContext = options.idContext ?? createStaticRenderIdContext('layout:footer');
   const meta = options.meta;
   const links = normalizeFooterLinks(options.links);
   const navLabel = resolveFooterNavLabel(options.a11y);
-  const idAttribute = options.id ? ` id="${escapeHtmlAttribute(options.id)}"` : '';
+  const footerId = options.id ? idContext.reserveId('footer', options.id) : undefined;
+  const idAttribute = footerId ? ` id="${escapeHtmlAttribute(footerId)}"` : '';
 
   return `
     <footer${idAttribute} class="ui-footer" data-footer data-layout-footer>
@@ -104,17 +112,23 @@ export const renderFooterHtml = (options: FooterRenderOptions): string => {
   `.trim();
 };
 
-export const renderDefaultLayoutFooterHtml = (buildLabel: string): string =>
+export const renderDefaultLayoutFooterHtml = (
+  buildLabel: string,
+  options: { readonly idContext?: StaticRenderIdContext } = {},
+): string =>
   renderFooterHtml(
-    buildLayoutFooterOptions({
-      footerId: undefined,
-      siteEyebrow: undefined,
-      siteName: undefined,
-      siteUrl: undefined,
-      siteDescription: undefined,
-      copyrightText: undefined,
-      buildLabel,
-      navLabel: undefined,
-      linksJson: undefined,
-    }),
+    {
+      ...buildLayoutFooterOptions({
+        footerId: undefined,
+        siteEyebrow: undefined,
+        siteName: undefined,
+        siteUrl: undefined,
+        siteDescription: undefined,
+        copyrightText: undefined,
+        buildLabel,
+        navLabel: undefined,
+        linksJson: undefined,
+      }),
+      ...(options.idContext ? { idContext: options.idContext } : {}),
+    },
   );

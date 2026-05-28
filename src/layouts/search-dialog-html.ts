@@ -1,11 +1,22 @@
 import { renderStaticIconHtml } from '../../shared/icons/render-static-icon-html.js';
+import {
+  createStaticRenderIdContext,
+  type StaticRenderIdContext,
+} from '../../shared/static-render-id-context.js';
 
 export const GLOBAL_SEARCH_DIALOG_ID = 'global-search-dialog';
 
-export const renderSearchDialogHtml = (): string => `
+export const renderSearchDialogHtml = (options: { readonly idContext?: StaticRenderIdContext } = {}): string => {
+  const idContext =
+    options.idContext ?? createStaticRenderIdContext('shell:search-dialog');
+  const dialogId = idContext.reserveId('search-dialog', GLOBAL_SEARCH_DIALOG_ID);
+  const inputId = idContext.reserveId('search-dialog', 'global-search-input');
+  const resultsId = idContext.reserveId('search-dialog', 'global-search-results');
+
+  return `
   <section data-hydration-scope="global-search" data-search-dialog-scope>
     <dialog
-      id="${GLOBAL_SEARCH_DIALOG_ID}"
+      id="${dialogId}"
       class="search-dialog"
       data-search-dialog-root
       data-hydration-key="search-dialog-enhancer"
@@ -13,19 +24,19 @@ export const renderSearchDialogHtml = (): string => `
       data-hydration-trigger="initial"
     >
       <form class="search-dialog__header" role="search" method="dialog" data-search-dialog-form>
-        <label class="sr-only" for="global-search-input">検索</label>
+        <label class="sr-only" for="${inputId}">検索</label>
         <div class="search-dialog__field">
           <span class="search-dialog__field-icon" aria-hidden="true">
             ${renderStaticIconHtml('search', 'search-dialog__field-icon-svg')}
           </span>
           <input
-            id="global-search-input"
+            id="${inputId}"
             class="search-dialog__input"
             type="search"
             role="combobox"
             aria-expanded="false"
             aria-autocomplete="list"
-            aria-controls="global-search-results"
+            aria-controls="${resultsId}"
             autocomplete="off"
             placeholder="メモを検索"
             data-search-dialog-input
@@ -101,7 +112,7 @@ export const renderSearchDialogHtml = (): string => `
           </div>
         </section>
         <ol
-          id="global-search-results"
+          id="${resultsId}"
           class="search-dialog__results"
           role="listbox"
           aria-label="検索結果"
@@ -115,3 +126,4 @@ export const renderSearchDialogHtml = (): string => `
     </dialog>
   </section>
 `.trim();
+};

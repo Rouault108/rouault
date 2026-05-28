@@ -37,8 +37,9 @@ describe('velite config', () => {
     expect(source).toContain('const testingArea = normalizeTestingArea(data.testingArea);');
     expect(source).toContain('const e2eFixtureId =');
     expect(source).toContain(
-      'const normalizedStaticContent = normalizeRouaultStaticSurfaceHtml(data.content);',
+      'const normalizedStaticContent = normalizeRouaultStaticSurfaceHtml(data.content, {',
     );
+    expect(source).toContain('namespace: sourcePath');
     expect(source).toContain('const normalizedContent = annotateGeneratedPageHtmlLinkContracts({');
     expect(source).toContain('html: normalizedStaticContent');
     expect(source).toContain(

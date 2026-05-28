@@ -6,6 +6,7 @@
  * app shell 上の sidebar host は BaseLayout が所有する。
  */
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
+import { createStaticRenderIdContext } from '../../shared/static-render-id-context.js';
 import { escapeHtmlText, serializeHtmlAttributes } from './html-output.js';
 import { renderArticleHeaderHtml } from './article-header-html.js';
 import { renderMobileStaticTocNavHtml, renderTocHtml } from './toc-html.js';
@@ -62,6 +63,7 @@ export class NoteLayout {
     if (!notePage) {
       return '';
     }
+    const idContext = createStaticRenderIdContext(`note-layout:${notePage.toc.contentRootId}`);
 
     const article = serializeHtmlAttributes([
       { name: 'class', value: 'layout-main-col container-reading' },
@@ -104,7 +106,7 @@ export class NoteLayout {
         }
         <article${article}>
           ${notePage.pagefind ? renderPagefindMetadata(notePage.pagefind) : ''}
-          ${renderArticleHeaderHtml(notePage.articleHeader)}
+          ${renderArticleHeaderHtml(notePage.articleHeader, { idContext })}
           <div${serializeHtmlAttributes([
             { name: 'id', value: notePage.toc.contentRootId },
             { name: 'class', value: 'prose' },

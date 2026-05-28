@@ -8,6 +8,10 @@ import {
   toSafeArticleHeaderSourceHref,
 } from '../article-header/article-header-contract.js';
 import { renderStaticIconHtml } from '../../shared/icons/render-static-icon-html.js';
+import {
+  createStaticRenderIdContext,
+  type StaticRenderIdContext,
+} from '../../shared/static-render-id-context.js';
 import { escapeHtmlAttribute, escapeHtmlText } from './html-output.js';
 
 type ArticleHeaderProjection = NotePageProjection['articleHeader'];
@@ -178,7 +182,12 @@ const renderSecondaryMetadata = (articleHeader: ArticleHeaderProjection): string
   `.trim();
 };
 
-export const renderArticleHeaderHtml = (articleHeader: ArticleHeaderProjection): string => {
+export const renderArticleHeaderHtml = (
+  articleHeader: ArticleHeaderProjection,
+  options: { readonly idContext?: StaticRenderIdContext } = {},
+): string => {
+  const idContext = options.idContext ?? createStaticRenderIdContext('layout:article-header');
+  idContext.reserveId('article-header', 'article-header');
   return `
     <header class="article-header" data-article-header>
       ${renderBreadcrumbs(articleHeader.breadcrumbs)}

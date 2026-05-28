@@ -9,6 +9,7 @@ export interface StaticCopyButtonExtraAttribute {
 
 interface StaticCopyButtonBaseOptions {
   readonly label: string;
+  readonly statusId: string;
   readonly disabled?: boolean;
   readonly controlClassName?: string;
   readonly buttonClassName?: string;
@@ -87,21 +88,14 @@ const normalizeSourceAttributes = (
   ];
 };
 
-let staticCopyButtonCounter = 0;
-
-const createStatusId = (options: StaticCopyButtonOptions): string => {
-  if ('targetId' in options) {
-    return `${options.targetId.trim()}-copy-status`;
-  }
-  staticCopyButtonCounter += 1;
-  return `static-copy-status-${String(staticCopyButtonCounter)}`;
-};
-
 export const createStaticCopyButtonContract = (
   options: StaticCopyButtonOptions,
 ): StaticCopyButtonContract => {
   const sourceAttributes = normalizeSourceAttributes(options);
-  const statusId = createStatusId(options);
+  const statusId = options.statusId.trim();
+  if (statusId.length === 0) {
+    throw new Error('static copy button requires a non-empty statusId.');
+  }
   return {
     controlClassNames: mergeClassNames(['static-copy-control'], options.controlClassName),
     buttonClassNames: mergeClassNames(['static-copy-button'], options.buttonClassName),

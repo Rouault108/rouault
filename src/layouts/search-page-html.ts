@@ -3,6 +3,10 @@ import type { StaticExploreSearchResponse } from '../../build/search/build-stati
 import { buildSearchResultRenderHref } from '../search/normalize-search-result-url.js';
 import { createSiteUrlContext } from '../../shared/site/site-url-context.js';
 import { renderStaticIconHtml } from '../../shared/icons/render-static-icon-html.js';
+import {
+  createStaticRenderIdContext,
+  type StaticRenderIdContext,
+} from '../../shared/static-render-id-context.js';
 import { escapeHtmlAttribute, escapeHtmlText, serializeHtmlAttributes } from './html-output.js';
 
 const sortOptions = [
@@ -162,8 +166,12 @@ export const renderSearchPageHtml = (options: {
   readonly initialState: SearchState;
   readonly initialResponse: StaticExploreSearchResponse;
   readonly loading?: boolean;
+  readonly idContext?: StaticRenderIdContext;
 }): string => {
   const { initialState, initialResponse, loading = false } = options;
+  const idContext = options.idContext ?? createStaticRenderIdContext('page:search');
+  const queryInputId = idContext.reserveId('search-page', 'search-page-query');
+  const selectedTagsHeadingId = idContext.reserveId('search-page', 'selected-tags-heading');
   const isTagDefaultView =
     initialState.q.length === 0 &&
     initialState.tags.length === 1 &&
@@ -199,11 +207,11 @@ export const renderSearchPageHtml = (options: {
         </div>
 
         <form class="search-controls" role="search" data-search-page-form>
-          <label class="sr-only" for="search-page-query">検索</label>
+          <label class="sr-only" for="${queryInputId}">検索</label>
           <div class="search-input-field" data-static-search-field>
             ${renderStaticIconHtml('search', 'search-input-field__icon')}
             <input
-              id="search-page-query"
+              id="${queryInputId}"
               class="search-input-control"
               type="search"
               name="q"
@@ -254,9 +262,9 @@ export const renderSearchPageHtml = (options: {
               </span>
             </summary>
             <div class="filter-panel" aria-label="タグフィルター">
-              <section class="filter-section" aria-labelledby="selected-tags-heading">
+              <section class="filter-section" aria-labelledby="${selectedTagsHeadingId}">
                 <div class="filter-section-header">
-                  <h2 id="selected-tags-heading" class="filter-section-title">選択中タグ</h2>
+                  <h2 id="${selectedTagsHeadingId}" class="filter-section-title">選択中タグ</h2>
                   <span class="filter-section-meta" data-selected-tags-count>${initialState.tags.length.toString()} 件</span>
                 </div>
                 <div class="selected-tags" data-selected-tags>${renderSelectedTags(initialState.tags)}</div>

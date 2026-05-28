@@ -46,6 +46,7 @@ import {
 } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { createCorpusNavigationProjectionPayload } from '../../shared/navigation/corpus-navigation-projection.js';
 import { validateCorpusRouteRootHrefForRender } from '../../shared/link/corpus-link-validation.js';
+import { createStaticRenderIdContext } from '../../shared/static-render-id-context.js';
 
 export interface BaseLayoutData {
   title?: string;
@@ -288,7 +289,10 @@ export class BaseLayout {
       sourceLabel: 'BaseLayout',
     });
 
-    const footerHtml = renderDefaultLayoutFooterHtml(buildMetadata.buildLabel);
+    const idContext = createStaticRenderIdContext(
+      data.page?.url ? `shell:${data.page.url}` : `shell:${title}`,
+    );
+    const footerHtml = renderDefaultLayoutFooterHtml(buildMetadata.buildLabel, { idContext });
     const themeBootstrapScript = buildThemeBootstrapScript();
     const routeManifestUrl = resolveInternalDocumentRouteManifestUrl({
       siteUrlContext,
@@ -468,7 +472,7 @@ export class BaseLayout {
     <div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer></div>
     ${footerHtml}
   </div>
-  ${renderSearchDialogHtml()}
+  ${renderSearchDialogHtml({ idContext })}
 </body>
 </html>
     `.trim();

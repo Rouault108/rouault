@@ -1,5 +1,9 @@
 import { createStaticCopyButtonHast } from './static-copy-button-hast.js';
 import { type HastNode } from './hast-utils.js';
+import {
+  createStaticRenderIdContext,
+  type StaticRenderIdContext,
+} from '../../shared/static-render-id-context.js';
 
 const isElement = (node: HastNode, tagName?: string): boolean => {
   if (node.type !== 'element' || typeof node.tagName !== 'string') {
@@ -71,8 +75,6 @@ const readStaticCodeBlockMeta = (node: HastNode): StaticCodeBlockMeta | null => 
   return { block: node, key, source, tabLabel };
 };
 
-let codeGroupCounter = 0;
-
 const createTabButton = (key: string, label: string): HastNode => ({
   type: 'element',
   tagName: 'button',
@@ -83,7 +85,7 @@ const createTabButton = (key: string, label: string): HastNode => ({
   children: [{ type: 'text', value: label }],
 });
 
-const createGroupCopyButton = (targetId: string): HastNode => ({
+const createGroupCopyButton = (targetId: string, statusId: string): HastNode => ({
   type: 'element',
   tagName: 'div',
   properties: {
@@ -92,6 +94,7 @@ const createGroupCopyButton = (targetId: string): HastNode => ({
   children: [
     createStaticCopyButtonHast({
       targetId,
+      statusId,
       label: 'コードをコピー',
       buttonClassName: 'code-group-copy-button',
       extraButtonAttributes: [{ name: 'data-code-group-copy', value: 'true' }],
@@ -144,8 +147,13 @@ const createPanel = (
   ],
 });
 
-export function rehypeStaticCodeGroups(): (tree: unknown) => void {
-  return (tree: unknown) => {
+export function rehypeStaticCodeGroups(
+  options: { readonly idContext?: StaticRenderIdContext } = {},
+): (tree: unknown, file?: { path?: string }) => void {
+  return (tree: unknown, file?: { path?: string }) => {
+    const idContext =
+      options.idContext ??
+      createStaticRenderIdContext(file?.path ? `note:${file.path}:code-groups` : 'note:code-groups');
     const visit = (node: HastNode): void => {
       if (Array.isArray(node.children)) {
         for (const child of node.children) {
@@ -182,10 +190,13 @@ export function rehypeStaticCodeGroups(): (tree: unknown) => void {
         return;
       }
 
-      codeGroupCounter += 1;
-      const groupId = `code-group-${String(codeGroupCounter)}`;
+      const groupId = idContext.nextId('code-group');
       const selectedKey = items[0]?.key ?? '';
-      const selectedCopySourceId = `${groupId}-copy-source-0`;
+      const selectedCopySourceId = idContext.reserveId('copy-source', `${groupId}-copy-source-0`);
+      const selectedCopyStatusId = idContext.reserveId(
+        'copy-status',
+        `${selectedCopySourceId}-copy-status`,
+      );
       const originalProperties = { ...(node.properties ?? {}) };
       delete originalProperties['data-code-group-source'];
       delete originalProperties['dataCodeGroupSource'];
@@ -218,11 +229,17 @@ export function rehypeStaticCodeGroups(): (tree: unknown) => void {
               },
               children: items.map((item) => createTabButton(item.key, item.tabLabel)),
             },
-            createGroupCopyButton(selectedCopySourceId),
+            createGroupCopyButton(selectedCopySourceId, selectedCopyStatusId),
           ],
         },
         ...items.map((item, index) =>
-          createPanel(item, index === 0, `${groupId}-copy-source-${String(index)}`),
+          createPanel(
+            item,
+            index === 0,
+            index === 0
+              ? selectedCopySourceId
+              : idContext.reserveId('copy-source', `${groupId}-copy-source-${String(index)}`),
+          ),
         ),
       ];
     };

@@ -8,6 +8,10 @@ import {
 
 import { createStaticCopyButtonHast } from './static-copy-button-hast.js';
 import { type HastNode } from './hast-utils.js';
+import {
+  createStaticRenderIdContext,
+  type StaticRenderIdContext,
+} from '../../shared/static-render-id-context.js';
 
 const SHIKI_THEMES = {
   light: 'github-light',
@@ -335,13 +339,14 @@ const createElement = (
   children,
 });
 
-let codeCopySourceCounter = 0;
-
-const createCodeCopySource = (source: string): { id: string; template: HastNode } => {
-  codeCopySourceCounter += 1;
-  const id = `code-copy-source-${String(codeCopySourceCounter)}`;
+const createCodeCopySource = (
+  source: string,
+  idContext: StaticRenderIdContext,
+): { id: string; statusId: string; template: HastNode } => {
+  const id = idContext.nextId('copy-source');
   return {
     id,
+    statusId: idContext.reserveId('copy-status', `${id}-copy-status`),
     template: createElement(
       'template',
       {
@@ -355,12 +360,14 @@ const createCodeCopySource = (source: string): { id: string; template: HastNode 
 
 const createStaticCopyButton = (
   targetId: string,
+  statusId: string,
   label: string,
   disabled: boolean,
   extraClassName: string,
 ): HastNode =>
   createStaticCopyButtonHast({
     targetId,
+    statusId,
     label,
     disabled,
     buttonClassName: extraClassName,
@@ -376,11 +383,12 @@ const createStandaloneCodeSurface = (
     source: string;
     copyMode?: string;
     copyable?: string;
+    idContext: StaticRenderIdContext;
   },
 ): HastNode => {
   const captionChildren: HastNode[] = [];
   const captionMainChildren: HastNode[] = [];
-  const copySource = createCodeCopySource(options.source);
+  const copySource = createCodeCopySource(options.source, options.idContext);
   if (preNode.properties) {
     delete preNode.properties['data-code-copy-source'];
   }
@@ -433,6 +441,7 @@ const createStandaloneCodeSurface = (
         [
           createStaticCopyButton(
             copySource.id,
+            copySource.statusId,
             resolveStandaloneCopyButtonLabel(options.filename, options.language),
             isCopyDisabled(options.source, options.copyable),
             'code-surface-copy-button',
@@ -482,7 +491,7 @@ interface HighlightCodeBlockResult {
 
 const highlightCodeBlock = async (
   node: HastNode,
-  options: { canAssignHydrationRoot: boolean },
+  options: { canAssignHydrationRoot: boolean; idContext: StaticRenderIdContext },
 ): Promise<HighlightCodeBlockResult> => {
   const codeNode = findCodeChild(node);
   if (!codeNode) {
@@ -574,6 +583,7 @@ const highlightCodeBlock = async (
     ...(intent ? { intent } : {}),
     ...(copyMode ? { copyMode } : {}),
     ...(copyable ? { copyable } : {}),
+    idContext: options.idContext,
   };
 
   const replacementNode = isGrouped
@@ -599,10 +609,12 @@ const isCodeBlockPre = (node: HastNode): boolean => {
   return findCodeChild(node) !== null;
 };
 
-export function rehypeShikiCodeBlocks() {
-  let hydrationRootAssigned = false;
-
-  return async (tree: unknown) => {
+export function rehypeShikiCodeBlocks(options: { readonly idContext?: StaticRenderIdContext } = {}) {
+  return async (tree: unknown, file?: { path?: string }) => {
+    let hydrationRootAssigned = false;
+    const idContext =
+      options.idContext ??
+      createStaticRenderIdContext(file?.path ? `note:${file.path}:shiki` : 'note:shiki');
     const visit = async (node: HastNode): Promise<void> => {
       if (Array.isArray(node.children)) {
         for (const child of node.children) {
@@ -613,6 +625,7 @@ export function rehypeShikiCodeBlocks() {
       if (isCodeBlockPre(node)) {
         const result = await highlightCodeBlock(node, {
           canAssignHydrationRoot: !hydrationRootAssigned,
+          idContext,
         });
         if (result.assignedHydrationRoot) {
           hydrationRootAssigned = true;

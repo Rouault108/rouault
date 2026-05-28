@@ -96,7 +96,9 @@ const notes = defineCollection({
       const hydrationBudgetProfile = normalizeNoteHydrationBudgetProfileName(
         data.hydrationBudgetProfile,
       );
-      const normalizedStaticContent = normalizeRouaultStaticSurfaceHtml(data.content);
+      const normalizedStaticContent = normalizeRouaultStaticSurfaceHtml(data.content, {
+        namespace: sourcePath,
+      });
       const linkAnnotationOptions = resolveBuildLinkAnnotationOptions();
       const sourceFilePath = sourcePath.endsWith('.md') ? sourcePath : `${sourcePath}.md`;
       const noteLinkContext = resolveNoteLinkClassificationContext({
