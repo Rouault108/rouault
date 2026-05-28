@@ -14,7 +14,7 @@
     "codegen:icons": "node --import tsx scripts/generate-icon-subset.ts",
     "codegen:content": "pnpm exec velite build --config velite.config.ts --silent",
     "generate:icons": "pnpm run codegen:icons",
-    "codegen:manifest": "pnpm run codegen:icons && node scripts/generate-custom-elements-manifest.mjs",
+    "codegen:manifest": "pnpm run codegen:icons && tsx scripts/generate-custom-elements-manifest.ts",
     "analyze": "pnpm run codegen:manifest",
     "lint": "pnpm run codegen:icons && pnpm exec eslint .",
     "lint:fix": "pnpm run codegen:icons && pnpm exec eslint . --fix && pnpm exec prettier --write .",

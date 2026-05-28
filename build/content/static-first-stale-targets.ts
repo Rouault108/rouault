@@ -148,11 +148,4 @@ export const STATIC_FIRST_STALE_TARGETS = [
     replacementContract: 'article-header static icon contract tests',
     deleteMode: 'delete-source',
   },
-  {
-    targetKind: 'stale-package-or-script-reference',
-    pathKind: 'script',
-    paths: ['scripts/generate-custom-elements-manifest.mjs'],
-    replacementContract: 'Phase 3 TypeScript manifest generation path',
-    deleteMode: 'replace-reference',
-  },
 ] as const satisfies readonly StaticFirstStaleTarget[];
