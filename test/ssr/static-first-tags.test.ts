@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   classifyStaticFirstTag,
+  getStaticFirstTagClassifications,
   STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS,
   STATIC_FIRST_NOTE_DENYLIST_TAGS,
   STATIC_FIRST_PAGE_COMPONENT_DENYLIST_TAGS,
@@ -31,5 +32,20 @@ describe('static-first tag classification', () => {
     expect(classifyStaticFirstTag('ui-video')).toBe('STATEFUL_ALLOWED_NOTE_TAGS');
     expect(classifyStaticFirstTag('search-page')).toBe('STATIC_FIRST_PAGE_COMPONENT_DENYLIST_TAGS');
     expect(classifyStaticFirstTag('article')).toBe('NON_UI_TAG');
+  });
+
+  it('exposes all matching classifications for inventory sync', () => {
+    expect(getStaticFirstTagClassifications('ui-checkbox')).toEqual([
+      'STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS',
+      'STATIC_FIRST_NOTE_DENYLIST_TAGS',
+      'STATIC_FIRST_PAGE_DENYLIST_TAGS',
+    ]);
+    expect(getStaticFirstTagClassifications('ui-code-group')).toEqual([
+      'STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS',
+      'STATIC_FIRST_NOTE_DENYLIST_TAGS',
+    ]);
+    expect(getStaticFirstTagClassifications('ui-video')).toEqual(['STATEFUL_ALLOWED_NOTE_TAGS']);
+    expect(getStaticFirstTagClassifications('ui-not-registered')).toEqual(['UNKNOWN_UI_TAGS']);
+    expect(getStaticFirstTagClassifications('article')).toEqual(['NON_UI_TAG']);
   });
 });

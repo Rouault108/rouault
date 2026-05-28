@@ -1,4 +1,5 @@
 import type { HydrationMarker } from '../../../shared/hydration/hydration-markers.js';
+import type { HydrationRegistryProfile } from '../../../shared/static-first-profiles.js';
 import type {
   HydrationCapability,
   HydrationTrigger,
@@ -38,6 +39,7 @@ export interface HydrationBootMarkerPolicy {
 export interface HydrationRegistryEntry {
   readonly tag: string;
   readonly kind?: 'custom-element' | 'enhancer';
+  readonly profiles?: readonly HydrationRegistryProfile[];
   readonly loader: () => Promise<unknown>;
   readonly activate?: (context: HydrationActivationContext) => unknown;
   readonly preload?: HydrationPreloadPolicy;

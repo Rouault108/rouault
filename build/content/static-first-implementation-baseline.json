@@ -1,0 +1,18 @@
+{
+  "repository": "Rouault108/rouault",
+  "resolvedRepositoryFullName": "Rouault108/rouault",
+  "repositoryUrl": "https://github.com/Rouault108/rouault",
+  "branch": "main",
+  "commit": "4cf6f13fbe1cb3d88fc4c7d7f46bfc0033b81e70",
+  "defaultBranchHeadSha": "4cf6f13fbe1cb3d88fc4c7d7f46bfc0033b81e70",
+  "treeSha": "06e4907849a69dae2649789dce2a43aec7765daa",
+  "generatedAt": "2026-05-28T11:29:32.337Z",
+  "source": "github-main",
+  "accessMethod": "connector",
+  "localRepositoryPath": "/Users/ruo/Desktop/Programing/rouault",
+  "localRepositoryMatchesGithubMain": true,
+  "zipFallbackCompared": {
+    "zipFilename": "rouault-main.zip",
+    "zipChecksum": "b45def247e4670a89238e7203b46ae50044728a628b94745c72c4e2a5a693132"
+  }
+}

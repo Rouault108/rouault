@@ -75,28 +75,36 @@ const pageComponentDenylistTags = new Set<string>(STATIC_FIRST_PAGE_COMPONENT_DE
 const shellDenylistTags = new Set<string>(STATIC_FIRST_SHELL_DENYLIST_TAGS);
 const statefulAllowedNoteTags = new Set<string>(STATEFUL_ALLOWED_NOTE_TAGS);
 
-export const classifyStaticFirstTag = (tag: string): StaticFirstTagClassification => {
-  const normalized = tag.trim().toLowerCase();
-  if (noteForbiddenInputTags.has(normalized)) {
-    return 'STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS';
+const STATIC_FIRST_TAG_CLASSIFICATION_SETS = [
+  ['STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS', noteForbiddenInputTags],
+  ['STATIC_FIRST_NOTE_DENYLIST_TAGS', noteDenylistTags],
+  ['STATIC_FIRST_PAGE_DENYLIST_TAGS', pageDenylistTags],
+  ['STATIC_FIRST_PAGE_COMPONENT_DENYLIST_TAGS', pageComponentDenylistTags],
+  ['STATIC_FIRST_SHELL_DENYLIST_TAGS', shellDenylistTags],
+  ['STATEFUL_ALLOWED_NOTE_TAGS', statefulAllowedNoteTags],
+] as const satisfies readonly (readonly [StaticFirstTagClassification, ReadonlySet<string>])[];
+
+const normalizeStaticFirstTag = (tag: string): string => tag.trim().toLowerCase();
+
+export const getStaticFirstTagClassifications = (
+  tag: string,
+): readonly StaticFirstTagClassification[] => {
+  const normalized = normalizeStaticFirstTag(tag);
+  const classifications = STATIC_FIRST_TAG_CLASSIFICATION_SETS.flatMap(
+    ([classification, tags]) => (tags.has(normalized) ? [classification] : []),
+  );
+
+  if (classifications.length > 0) {
+    return classifications;
   }
-  if (noteDenylistTags.has(normalized)) {
-    return 'STATIC_FIRST_NOTE_DENYLIST_TAGS';
-  }
-  if (pageDenylistTags.has(normalized)) {
-    return 'STATIC_FIRST_PAGE_DENYLIST_TAGS';
-  }
-  if (pageComponentDenylistTags.has(normalized)) {
-    return 'STATIC_FIRST_PAGE_COMPONENT_DENYLIST_TAGS';
-  }
-  if (shellDenylistTags.has(normalized)) {
-    return 'STATIC_FIRST_SHELL_DENYLIST_TAGS';
-  }
-  if (statefulAllowedNoteTags.has(normalized)) {
-    return 'STATEFUL_ALLOWED_NOTE_TAGS';
-  }
+
   if (normalized.startsWith('ui-')) {
-    return 'UNKNOWN_UI_TAGS';
+    return ['UNKNOWN_UI_TAGS'];
   }
-  return 'NON_UI_TAG';
+
+  return ['NON_UI_TAG'];
+};
+
+export const classifyStaticFirstTag = (tag: string): StaticFirstTagClassification => {
+  return getStaticFirstTagClassifications(tag)[0] ?? 'NON_UI_TAG';
 };

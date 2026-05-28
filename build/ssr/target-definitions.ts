@@ -1,4 +1,6 @@
-export type SsrComponentProfile = 'shell' | 'note' | 'page';
+import type { SsrComponentProfile } from '../../shared/static-first-profiles.js';
+
+export type { SsrComponentProfile } from '../../shared/static-first-profiles.js';
 export type SsrComponentMode = 'shadow' | 'light' | 'none';
 
 export type SsrAdapterKind =

@@ -1,0 +1,1504 @@
+{
+  "githubRepository": "Rouault108/rouault",
+  "githubResolvedRepositoryFullName": "Rouault108/rouault",
+  "githubRepositoryUrl": "https://github.com/Rouault108/rouault",
+  "githubAccessMethod": "connector",
+  "githubMainCommit": "4cf6f13fbe1cb3d88fc4c7d7f46bfc0033b81e70",
+  "githubTreeSha": "06e4907849a69dae2649789dce2a43aec7765daa",
+  "zipFilename": "rouault-main.zip",
+  "zipChecksum": "b45def247e4670a89238e7203b46ae50044728a628b94745c72c4e2a5a693132",
+  "comparedAt": "2026-05-28T11:29:32.337Z",
+  "differences": [
+    {
+      "path": "build/content/note-content-contracts.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/content/static-first-tags.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/data/notes.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/media/sanitize-svg.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/media/score-svg-resolver.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/projections/note-hydration-profile.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/rehype/annotate-link-kinds.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/rehype/preview-sandbox.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/rehype/rouault-components.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/rehype/shiki-code-blocks.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/rehype/static-code-groups.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/rehype/static-copy-button-hast.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/rehype/static-icon-hast.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/remark/directives/grammar/attribute-schemas.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/remark/directives/output/adapt-directive-output.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/remark/directives/output/adapt-syntax-output.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/remark/directives/payload/normalize-surface-payload.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/remark/directives/payload/payload-types.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/remark/directives/shared/constants.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/remark/remark-link-cards.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/ssr/target-adapters.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "build/ssr/target-definitions.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/զ�����ť�+��࿵��.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/զ�����ť�+����զ�.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/զ������զ�.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/զ���������.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/զ��������������������.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/զ��������������������+.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/ちくま学芸文庫.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/ちくま文庫.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/ちくま新書.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/中公文庫.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/中公新書.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/岩波ジュニア新書.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/岩波文庫.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/岩波新書.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/岩波現代全書.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/岩波現代文庫.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/平凡社ライブラリー.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/文庫クセジュ.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/河出文庫.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/計算機科学・ソフトウェア開発関連書籍.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/講談社学術文庫.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/講談社文芸文庫.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/講談社現代新書.md",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/޼�޽���ա�������զ�.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/޼�޽����ť�+�������.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/޼�޽������詵��զ�.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/޿������?���ա���+�������������������֦������������.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/���զ�����+�����.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/����禵��զ�.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/����༵��զ�.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/����༵�����.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/���������ա��詵��զ�.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/������������զ�.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "content/library/collection/���������������.md",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "docs/contracts/search.md",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "docs/design-system/components/code-preview.md",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "docs/design-system/components/footer.md",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "docs/design-system/components/preview-sandbox.md",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "docs/design-system/components/tabs.md",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "docs/design-system/components/translation.md",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "docs/design-system/components/video.md",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "examples/snippets/interactive/callout-details.md",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "scripts/assert-link-contract-acceptance.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "scripts/generate-custom-elements-manifest.mjs",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "scripts/generate-icon-subset.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "shared/icons/icon-paths.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "shared/icons/icons-catalog.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "shared/icons/render-static-icon-html.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "shared/navigation/navigation-types.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "shared/navigation/tree-node.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "shared/search/search-types.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "shared/static-copy-button-html.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/about.11ty.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/article-header/article-header-contract.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/about-shell.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/app-shell.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/blockquote.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/callout.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/card-link.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/code-surfaces.css",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/dialog-state.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/divider.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/fonts.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/footer.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/footnotes.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/highlight.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/home-page.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/image.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/info-box.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/layout-containers.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/layout-header.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/layout-sidebar.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/link-card.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/link-primitives.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/lists.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/main.css",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/math.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/not-found-page.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/note-shell.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/page-shell.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/result-card.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/router-shell.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/score.css",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/search-dialog.css",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/search-page.css",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/stateful-note-bridges.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/static-checkbox.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/static-copy-button.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/static-icons.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/table.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/task-list.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/translation.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/utility-surfaces.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/assets/css/view-transition.css",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/client/hydration/registry.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/client/post-hydrate/article-header-tags.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/client/post-hydrate/code-block-enhancer.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/client/post-hydrate/code-group-enhancer.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/client/post-hydrate/code-surface-shared.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/client/post-hydrate/footnote-popover-enhancer.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/client/post-hydrate/note-static-surface-enhancer.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/client/post-hydrate/search-dialog-enhancer.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/client/post-hydrate/search-page-enhancer.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/client/post-hydrate/static-copy-button-enhancer.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/layout/layout-header.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/page/page-shell-styles.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/article-header/article-header-tags-adapter.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/checkbox/checkbox.stories.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/checkbox/checkbox.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/code-preview/code-preview.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/copy-button/copy-button.stories.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/copy-button/copy-button.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/file-tree/file-tree.stories.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/footer/footer.stories.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/footer/footer.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/icon/static-icon-template.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/search-dialog/internals/interaction-modality.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/search-dialog/internals/search-dialog-highlight.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/search-dialog/internals/search-dialog-search-session.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/search-dialog/internals/search-dialog-search-worker.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/search-dialog/internals/search-dialog-selection-model.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/search-dialog/internals/search-dialog-virtualizer.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/search-dialog/search-dialog.constants.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/search-dialog/search-dialog.types.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/toast/toast.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/tree-item/tree-item.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/components/ui/video/video.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/generated/generate-icon-subset.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/layouts/article-header-html.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/layouts/article-header-icon-html.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/layouts/BaseLayout.11ty.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/layouts/footer-html.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/layouts/footer-options.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/layouts/NoteLayout.11ty.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/layouts/search-dialog-html.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/layouts/search-page-html.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/search/bootstrap.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/search/interaction-modality.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/search/navigation.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/search/search-dialog-constants.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/search/search-dialog-events.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/search/search-dialog-highlight.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/search/search-dialog-search-session.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/search/search-dialog-search-worker.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/search/search-dialog-selection-model.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/search/search-dialog-types.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/search/search-dialog-virtualizer.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "src/search/search-navigation-events.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/browser/checkbox.browser.test.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/browser/copy-button.browser.test.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/browser/helpers/load-main-css.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/browser/note-static-surface-enhancer.browser.test.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/browser/search-bootstrap.browser.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/browser/search-dialog-virtualizer.browser.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/browser/search-navigation.browser.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/browser/search-page-enhancer.browser.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/browser/static-copy-button-enhancer.browser.test.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/e2e/header-corpus-position.spec.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/node/article-header-icon-html.test.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/node/article-header-tags-adapter.test.ts",
+      "githubMainState": "absent",
+      "zipFallbackState": "present",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/node/rehype-preview-sandbox.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/node/remark-rouault-directives.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/node/search-dialog-highlight.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/node/search-dialog-import-boundary.test.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/node/search-dialog-search-session.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/node/static-copy-button-html.test.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/node/static-icon-html.test.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/node/table-contracts.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/base-layout.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/footer-render.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/footnote-endnotes-main-css-contract.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/header-body-spacing-css-contract.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/icon-catalog.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/link-card-css-contract.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/link-underline-css-contract.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/mobile-toc-css-contract.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/prose-link-css-contract.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/prose-link-wrap-css-contract.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/rehype-rouault-components.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/rehype-shiki-code-blocks.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/rehype-static-code-groups.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/remark-link-cards.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/score-svg-contract.test.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/search-dialog-static-contract.test.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/search-page-static-contract.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/sidebar-nav-contract.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/ssr-targets.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/static-css-contracts.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/static-first-tags.test.ts",
+      "githubMainState": "present",
+      "zipFallbackState": "absent",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/support/css-contract.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    },
+    {
+      "path": "test/ssr/table-static-contracts.test.ts",
+      "githubMainState": "different",
+      "zipFallbackState": "different",
+      "adoptedSource": "github-main",
+      "reason": "GitHub main is authoritative"
+    }
+  ]
+}
