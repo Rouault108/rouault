@@ -53,6 +53,7 @@ describe('StaticRenderIdContext', () => {
       'taskListItemCounter',
       'taskListLabelCounter',
       'scoreDescriptionCounter',
+      'syntaxSectionHeadingCount',
       'footnoteGeneratedIdCounter',
       'imageCaptionCounter',
       'lightboxCounter',

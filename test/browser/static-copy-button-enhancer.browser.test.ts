@@ -40,11 +40,14 @@ describe('static-copy-button-enhancer', () => {
     expect(button?.dataset['copyState']).to.equal('copied');
   });
 
-  it('root 外の copy button を activate せず、targetId と copyValue の併用を error state にすること', () => {
+  it('root 外の copy button を activate せず、targetId と copyValue の併用を error status にすること', () => {
     const root = document.createElement('article');
     root.innerHTML = `
       <template id="copy-source" data-code-copy-source>source</template>
-      <button type="button" data-copy-button data-copy-target-id="copy-source" data-copy-value="bad">bad</button>
+      <span data-copy-control>
+        <button type="button" data-copy-button data-copy-target-id="copy-source" data-copy-value="bad" aria-describedby="copy-status">bad</button>
+        <span id="copy-status" data-copy-status></span>
+      </span>
     `;
     const outside = document.createElement('button');
     outside.type = 'button';
@@ -56,7 +59,36 @@ describe('static-copy-button-enhancer', () => {
     const invalid = root.querySelector<HTMLButtonElement>('[data-copy-button]');
     expect(invalid?.dataset['copyEnhanced']).to.equal('true');
     expect(invalid?.dataset['copyState']).to.equal('error');
+    expect(root.querySelector('#copy-status')?.textContent).to.equal('コピーできませんでした');
     expect(outside.dataset['copyEnhanced']).to.equal(undefined);
+  });
+
+  it('short-text / permalink の data-copy-value だけを success path として扱うこと', async () => {
+    const copied: string[] = [];
+    installClipboardMock((value) => {
+      copied.push(value);
+      return Promise.resolve();
+    });
+
+    const root = document.createElement('article');
+    root.innerHTML = `
+      <button type="button" data-copy-button data-copy-kind="short-text" data-copy-value="短文">short</button>
+      <button type="button" data-copy-button data-copy-kind="permalink" data-copy-value="https://example.test/note">permalink</button>
+      <button type="button" data-copy-button data-copy-value="bad">invalid</button>
+    `;
+    document.body.append(root);
+
+    activateStaticCopyButtons(root);
+
+    for (const button of root.querySelectorAll<HTMLButtonElement>('[data-copy-button]')) {
+      button.click();
+    }
+    await Promise.resolve();
+
+    expect(copied).to.deep.equal(['短文', 'https://example.test/note']);
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-copy-value="bad"]')?.dataset['copyState'],
+    ).to.equal('error');
   });
 
   it('missing target / invalid kind / clipboard failure を error status にして idle へ戻すこと', async () => {
@@ -178,5 +210,59 @@ describe('static-copy-button-enhancer', () => {
 
     expect(button?.dataset['copyState']).to.equal('error');
     expect(root.querySelector('#copy-status')?.textContent).to.equal('コピーできませんでした');
+  });
+
+  it('同一 button の連続操作では既存 reset timer を破棄して新しい timer に置換すること', async () => {
+    let nextTimerId = 0;
+    const callbacks = new Map<number, () => void>();
+    const originalSetTimeout = window.setTimeout;
+    const originalClearTimeout = window.clearTimeout;
+    window.setTimeout = ((handler: TimerHandler, timeout?: number) => {
+      nextTimerId += 1;
+      const id = nextTimerId;
+      callbacks.set(id, () => {
+        if (typeof handler === 'function') {
+          handler();
+        }
+      });
+      expect(timeout).to.equal(1500);
+      return id;
+    }) as typeof window.setTimeout;
+    window.clearTimeout = ((id?: number) => {
+      if (typeof id === 'number') {
+        callbacks.delete(id);
+      }
+    }) as typeof window.clearTimeout;
+    installClipboardMock(() => Promise.resolve());
+
+    const root = document.createElement('article');
+    root.innerHTML = `
+      <template id="copy-source" data-code-copy-source>source</template>
+      <button type="button" data-copy-button data-copy-target-id="copy-source">copy</button>
+    `;
+    document.body.append(root);
+
+    try {
+      activateStaticCopyButtons(root);
+      const button = root.querySelector<HTMLButtonElement>('[data-copy-button]');
+
+      button?.click();
+      await Promise.resolve();
+      button?.click();
+      await Promise.resolve();
+
+      expect(callbacks.has(1)).to.equal(false);
+      expect(callbacks.has(2)).to.equal(true);
+      expect(button?.dataset['copyState']).to.equal('copied');
+
+      callbacks.get(1)?.();
+      expect(button?.dataset['copyState']).to.equal('copied');
+
+      callbacks.get(2)?.();
+      expect(button?.dataset['copyState']).to.equal('idle');
+    } finally {
+      window.setTimeout = originalSetTimeout;
+      window.clearTimeout = originalClearTimeout;
+    }
   });
 });

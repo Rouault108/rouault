@@ -9,6 +9,7 @@ import {
 } from '../media/image-resolver.js';
 import { resolveScoreSvg } from '../media/score-svg-resolver.js';
 import { type HastNode } from './hast-utils.js';
+import { createStaticCopyButtonHast } from './static-copy-button-hast.js';
 import { createStaticIconHast } from './static-icon-hast.js';
 import { STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS } from '../content/static-first-tags.js';
 import {
@@ -40,7 +41,6 @@ interface ImageNormalizationContext {
 interface SurfaceNormalizationContext {
   calloutHeadingCount: number;
   infoBoxHeadingCount: number;
-  syntaxSectionHeadingCount: number;
   idContext: StaticRenderIdContext;
 }
 
@@ -662,16 +662,18 @@ const toStaticLinkCard = (node: HastNode): void => {
       createElement('p', { className: ['link-card__eyebrow'] }, [createTextNode(siteName)]),
     );
   }
-  bodyChildren.push(createElement('p', { className: ['link-card__title'] }, [createTextNode(title)]));
+  bodyChildren.push(
+    createElement('p', { className: ['link-card__title'] }, [createTextNode(title)]),
+  );
   if (description) {
     bodyChildren.push(
-      createElement('p', { className: ['link-card__description'] }, [
-        createTextNode(description),
-      ]),
+      createElement('p', { className: ['link-card__description'] }, [createTextNode(description)]),
     );
   }
 
-  const linkChildren: HastNode[] = [createElement('div', { className: ['link-card__body'] }, bodyChildren)];
+  const linkChildren: HastNode[] = [
+    createElement('div', { className: ['link-card__body'] }, bodyChildren),
+  ];
   if (imageSrc) {
     linkChildren.push(
       createElement('img', {
@@ -689,10 +691,7 @@ const toStaticLinkCard = (node: HastNode): void => {
     'data-link-card': 'true',
   };
   const linkKind = resolveStaticLinkKindLike(href);
-  const linkClassNames = [
-    'link-card__link',
-    ...(imageSrc ? [] : ['link-card__link--no-image']),
-  ];
+  const linkClassNames = ['link-card__link', ...(imageSrc ? [] : ['link-card__link--no-image'])];
   node.children = [
     createElement(
       'a',
@@ -791,7 +790,9 @@ const toStaticScore = (
   const primary = properties['data-score-primary'] === 'true';
   const aspectRatio = normalizeScoreAspectRatio(properties['data-score-aspect-ratio']);
   const descriptionId = description ? context.idContext.nextId('score-description') : undefined;
-  const existingClasses = getClassList(properties['className']).filter((className) => className !== 'score');
+  const existingClasses = getClassList(properties['className']).filter(
+    (className) => className !== 'score',
+  );
   const stageStyle = aspectRatio ? `--_score-aspect-ratio: ${aspectRatio};` : undefined;
 
   const nextProperties: Record<string, unknown> = {};
@@ -832,7 +833,11 @@ const toStaticScore = (
       ],
     ),
     ...(description && descriptionId
-      ? [createElement('p', { id: descriptionId, className: ['score__sr-only'] }, [createTextNode(description)])]
+      ? [
+          createElement('p', { id: descriptionId, className: ['score__sr-only'] }, [
+            createTextNode(description),
+          ]),
+        ]
       : []),
     ...(hasMeaningfulChildren(captionChildren)
       ? [createElement('figcaption', { className: ['score__caption'] }, captionChildren)]
@@ -844,7 +849,9 @@ const toStaticDetails = (node: HastNode): void => {
   const properties = node.properties ?? {};
   const summary = pickOptionalString(properties['summary']) ?? '詳細';
   const open = toBooleanAttribute(properties['open']);
-  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+  const children = Array.isArray(node.children)
+    ? node.children.map((child) => cloneNode(child))
+    : [];
 
   node.tagName = 'details';
   node.properties = {
@@ -876,7 +883,9 @@ const toStaticSyntaxField = (node: HastNode): void => {
   const type = pickOptionalString(properties['type']);
   const defaultValue = pickOptionalString(properties['default']);
   const required = toBooleanAttribute(properties['required']);
-  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+  const children = Array.isArray(node.children)
+    ? node.children.map((child) => cloneNode(child))
+    : [];
 
   node.tagName = 'dl';
   node.properties = {
@@ -888,14 +897,14 @@ const toStaticSyntaxField = (node: HastNode): void => {
       createElement('code', { className: ['syntax-field__name'] }, [createTextNode(name)]),
       ...(required
         ? [
-            createElement(
-              'span',
-              { className: ['syntax-field__required'], 'aria-label': '必須' },
-              [createTextNode('必須')],
-            ),
+            createElement('span', { className: ['syntax-field__required'], 'aria-label': '必須' }, [
+              createTextNode('必須'),
+            ]),
           ]
         : []),
-      ...(type ? [createElement('span', { className: ['syntax-field__type'] }, [createTextNode(type)])] : []),
+      ...(type
+        ? [createElement('span', { className: ['syntax-field__type'] }, [createTextNode(type)])]
+        : []),
       ...(defaultValue
         ? [
             createElement(
@@ -918,8 +927,10 @@ const toStaticSyntaxField = (node: HastNode): void => {
 const toStaticSyntaxSection = (node: HastNode, context: SurfaceNormalizationContext): void => {
   const properties = node.properties ?? {};
   const label = pickOptionalString(properties['label']) ?? 'Section';
-  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
-  const headingId = `syntax-section-heading-${String(++context.syntaxSectionHeadingCount)}`;
+  const children = Array.isArray(node.children)
+    ? node.children.map((child) => cloneNode(child))
+    : [];
+  const headingId = context.idContext.nextId('syntax-section-heading');
 
   node.tagName = 'section';
   node.properties = {
@@ -935,13 +946,34 @@ const toStaticSyntaxSection = (node: HastNode, context: SurfaceNormalizationCont
   ];
 };
 
-const toStaticSyntaxCard = (node: HastNode): void => {
+const createSyntaxCopySource = (
+  source: string,
+  context: SurfaceNormalizationContext,
+): { readonly id: string; readonly statusId: string; readonly template: HastNode } => {
+  const id = context.idContext.nextId('copy-source');
+  return {
+    id,
+    statusId: context.idContext.reserveId('copy-status', `${id}-copy-status`),
+    template: createElement(
+      'template',
+      {
+        id,
+        'data-code-copy-source': 'true',
+      },
+      [createTextNode(source)],
+    ),
+  };
+};
+
+const toStaticSyntaxCard = (node: HastNode, context: SurfaceNormalizationContext): void => {
   const properties = node.properties ?? {};
   const kind = pickOptionalString(properties['kind']);
   const name = pickOptionalString(properties['name']) ?? 'Syntax';
   const lang = pickOptionalString(properties['data-lang']);
   const headingLevel = toSyntaxHeadingLevel(properties['heading-level']);
-  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+  const children = Array.isArray(node.children)
+    ? node.children.map((child) => cloneNode(child))
+    : [];
   const signatureChildren = children.filter(
     (child) => isElement(child) && child.properties?.['slot'] === 'signature',
   );
@@ -950,6 +982,11 @@ const toStaticSyntaxCard = (node: HastNode): void => {
   );
   const hasContent = hasMeaningfulChildren(contentChildren);
   const hasSignature = hasMeaningfulChildren(signatureChildren);
+  const signatureSource = signatureChildren.map((child) => getTextContent(child)).join('');
+  const copySource =
+    hasSignature && signatureSource.length > 0
+      ? createSyntaxCopySource(signatureSource, context)
+      : undefined;
 
   node.tagName = 'section';
   node.properties = {
@@ -960,11 +997,24 @@ const toStaticSyntaxCard = (node: HastNode): void => {
   };
   node.children = [
     createElement('header', { className: ['syntax-card__header'] }, [
-      ...(kind ? [createElement('p', { className: ['syntax-card__kind'] }, [createTextNode(kind)])] : []),
+      ...(kind
+        ? [createElement('p', { className: ['syntax-card__kind'] }, [createTextNode(kind)])]
+        : []),
       createElement(`h${String(headingLevel)}`, { className: ['syntax-card__name'] }, [
         createTextNode(name),
       ]),
+      ...(copySource
+        ? [
+            createStaticCopyButtonHast({
+              targetId: copySource.id,
+              statusId: copySource.statusId,
+              label: `${name} の署名をコピー`,
+              buttonClassName: 'syntax-card__copy-action',
+            }),
+          ]
+        : []),
     ]),
+    ...(copySource ? [copySource.template] : []),
     ...(hasSignature
       ? [createElement('div', { className: ['syntax-card__signature'] }, signatureChildren)]
       : []),
@@ -1009,7 +1059,9 @@ const toStaticTaskListItem = (node: HastNode, idContext: StaticRenderIdContext):
   node.properties = {
     ...(node.properties ?? {}),
     className: [
-      ...getClassList(node.properties?.['className']).filter((className) => className !== 'contains-task-list'),
+      ...getClassList(node.properties?.['className']).filter(
+        (className) => className !== 'contains-task-list',
+      ),
       'task-list-item',
     ],
     'data-task-list-item': 'true',
@@ -1368,7 +1420,6 @@ const parseFootnoteIndexFromText = (value: string): number | null => {
   const parsed = Number.parseInt(matched[1] ?? '', 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 };
-
 
 const isFootnotesSection = (node: HastNode): boolean => {
   if (!isElement(node, 'section')) {
@@ -2037,11 +2088,15 @@ const synchronizeFootnoteBackrefs = (
 /**
  * CommonMark由来の標準要素を Rouault の Web Components へ正規化する。
  */
-export function rehypeRouaultComponents(options: { readonly idContext?: StaticRenderIdContext } = {}) {
+export function rehypeRouaultComponents(
+  options: { readonly idContext?: StaticRenderIdContext } = {},
+) {
   return (tree: unknown, file?: VFileLike) => {
     const idContext =
       options.idContext ??
-      createStaticRenderIdContext(file?.path ? `note:${file.path}:rouault-components` : 'note:rouault-components');
+      createStaticRenderIdContext(
+        file?.path ? `note:${file.path}:rouault-components` : 'note:rouault-components',
+      );
     const footnoteDefinitions = new Map<string, FootnoteDefinition>();
     if (tree && typeof tree === 'object') {
       collectFootnoteDefinitions(tree as HastNode, footnoteDefinitions, { value: 0 });
@@ -2051,7 +2106,6 @@ export function rehypeRouaultComponents(options: { readonly idContext?: StaticRe
     const surfaceContext: SurfaceNormalizationContext = {
       calloutHeadingCount: 0,
       infoBoxHeadingCount: 0,
-      syntaxSectionHeadingCount: 0,
       idContext,
     };
 
@@ -2159,13 +2213,15 @@ export function rehypeRouaultComponents(options: { readonly idContext?: StaticRe
           } else if (isSyntaxSectionSource(current)) {
             toStaticSyntaxSection(current, surfaceContext);
           } else if (isSyntaxCardSource(current)) {
-            toStaticSyntaxCard(current);
+            toStaticSyntaxCard(current, surfaceContext);
           } else if (
-            current.tagName === 'aside' && current.properties?.['data-callout'] !== undefined
+            current.tagName === 'aside' &&
+            current.properties?.['data-callout'] !== undefined
           ) {
             toStaticCallout(current, surfaceContext);
           } else if (
-            current.tagName === 'section' && current.properties?.['data-info-box'] !== undefined
+            current.tagName === 'section' &&
+            current.properties?.['data-info-box'] !== undefined
           ) {
             toStaticInfoBox(current, surfaceContext);
           } else if (current.tagName === 'hr') {
@@ -2207,7 +2263,6 @@ const normalizeRouaultStaticSurfacesTree = (
   const surfaceContext: SurfaceNormalizationContext = {
     calloutHeadingCount: 0,
     infoBoxHeadingCount: 0,
-    syntaxSectionHeadingCount: 0,
     idContext,
   };
 
@@ -2233,9 +2288,7 @@ const normalizeRouaultStaticSurfacesTree = (
       return;
     }
 
-    if (
-      current.tagName === 'section' && current.properties?.['data-info-box'] !== undefined
-    ) {
+    if (current.tagName === 'section' && current.properties?.['data-info-box'] !== undefined) {
       toStaticInfoBox(current, surfaceContext);
     }
   };
@@ -2264,7 +2317,9 @@ export const normalizeRouaultStaticSurfaceHtml = (
 
   const idContext =
     options.idContext ??
-    createStaticRenderIdContext(options.namespace ? `note:${options.namespace}:static-surface` : 'note:static-surface');
+    createStaticRenderIdContext(
+      options.namespace ? `note:${options.namespace}:static-surface` : 'note:static-surface',
+    );
   normalizeRouaultStaticSurfacesTree(root, idContext);
 
   return toHtml(root as Parameters<typeof toHtml>[0]);

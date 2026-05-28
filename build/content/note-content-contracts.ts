@@ -236,6 +236,34 @@ const hasCounterStyle = (node: Parse5Element): boolean => {
   return /--ui-ol-counter-(?:reset|step|set)/u.test(style);
 };
 
+const FINAL_SOURCE_MARKER_ATTRIBUTES = [
+  'data-code-group-source',
+  'data-link-card-source',
+  'data-details-source',
+  'data-score-src',
+  'data-score-caption-source',
+  'data-syntax-card-source',
+  'data-syntax-signature-source',
+  'data-syntax-section-source',
+  'data-syntax-field-source',
+  'data-code-raw',
+  'data-score-loading',
+] as const;
+
+const validateFinalSourceMarkerLifecycle = (node: Parse5Element, errors: string[]): void => {
+  if (hasAttribute(node, 'data-code-copy-source') && node.tagName !== 'template') {
+    errors.push('template 以外の [data-code-copy-source] は note 最終 HTML に残してはいけません');
+    return;
+  }
+
+  for (const name of FINAL_SOURCE_MARKER_ATTRIBUTES) {
+    if (hasAttribute(node, name)) {
+      errors.push(`${name} は note 最終 HTML に残してはいけません`);
+      return;
+    }
+  }
+};
+
 interface FootnoteContractCollections {
   readonly elements: Parse5Element[];
   readonly parentByNode: Map<Parse5Node, Parse5Element>;
@@ -786,6 +814,11 @@ const validateStaticNoteRootContracts = (
   const classification = classifyStaticFirstTag(node.tagName);
   if (classification !== 'NON_UI_TAG' && classification !== 'STATEFUL_ALLOWED_NOTE_TAGS') {
     errors.push(`${node.tagName} は note 最終 HTML に残してはいけません`);
+    return;
+  }
+
+  validateFinalSourceMarkerLifecycle(node, errors);
+  if (errors.length > 0) {
     return;
   }
 

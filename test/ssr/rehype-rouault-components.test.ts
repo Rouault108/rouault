@@ -153,9 +153,11 @@ describe('rehypeRouaultComponents', () => {
     expect(details?.properties?.['data-details']).to.equal('true');
     expect(details?.properties?.['data-variant']).to.equal(undefined);
     expect(summary?.tagName).to.equal('summary');
-    expect(findElement(summary, (node) =>
-      getClassList(node.properties?.['className']).includes('details-block__summary-content'),
-    )).to.not.equal(undefined);
+    expect(
+      findElement(summary, (node) =>
+        getClassList(node.properties?.['className']).includes('details-block__summary-content'),
+      ),
+    ).to.not.equal(undefined);
     expect(chevron?.properties?.['aria-hidden']).to.equal('true');
     expect(getClassList(chevron?.properties?.['className'])).to.include('static-icon');
     expect(chevron?.children?.[0]?.tagName).to.equal('svg');
@@ -984,11 +986,21 @@ describe('rehypeRouaultComponents', () => {
         getClassList(node.properties?.['className']).includes('syntax-card__content'),
       ),
     ).to.equal(undefined);
-    expect(
-      findElement(tree, (node) =>
-        getClassList(node.properties?.['className']).includes('syntax-card__copy-action'),
-      ),
-    ).to.equal(undefined);
+    const copyAction = findElement(tree, (node) =>
+      getClassList(node.properties?.['className']).includes('syntax-card__copy-action'),
+    );
+    const copySource = findElement(
+      tree,
+      (node) =>
+        node.tagName === 'template' && node.properties?.['data-code-copy-source'] === 'true',
+    );
+    expect(copyAction?.tagName).to.equal('button');
+    expect(copyAction?.properties?.['data-copy-button']).to.equal('true');
+    expect(copyAction?.properties?.['data-copy-target-id']).to.equal(
+      copySource?.properties?.['id'],
+    );
+    expect(copyAction?.properties?.['data-copy-value']).to.equal(undefined);
+    expect(copySource?.children?.[0]?.value).to.equal('createThing()');
   });
 
   it('syntax-section と syntax-field の詳細契約を静的 HTML に固定すること', () => {
@@ -1088,7 +1100,10 @@ describe('rehypeRouaultComponents', () => {
       rehypeRouaultComponents()(tree, { path: notePath });
 
       const score = findElement(tree, (node) => node.properties?.['data-score'] === 'true');
-      const scroll = findElement(score, (node) => node.properties?.['data-score-scroll'] === 'true');
+      const scroll = findElement(
+        score,
+        (node) => node.properties?.['data-score-scroll'] === 'true',
+      );
       const stage = findElement(score, (node) => node.properties?.['data-score-stage'] === 'true');
       const svg = findElement(stage, (node) => node.tagName === 'svg');
 
@@ -1145,7 +1160,11 @@ describe('rehypeRouaultComponents', () => {
                 },
                 children: [
                   { type: 'text', value: '譜例' },
-                  { type: 'element', tagName: 'em', children: [{ type: 'text', value: 'キャプション' }] },
+                  {
+                    type: 'element',
+                    tagName: 'em',
+                    children: [{ type: 'text', value: 'キャプション' }],
+                  },
                 ],
               },
             ],
@@ -1156,14 +1175,19 @@ describe('rehypeRouaultComponents', () => {
       rehypeRouaultComponents()(tree, { path: notePath });
 
       const score = findElement(tree, (node) => node.properties?.['data-score'] === 'true');
-      const scroll = findElement(score, (node) => node.properties?.['data-score-scroll'] === 'true');
+      const scroll = findElement(
+        score,
+        (node) => node.properties?.['data-score-scroll'] === 'true',
+      );
       const descriptionId = scroll?.properties?.['aria-describedby'];
       const description = findElement(score, (node) => node.properties?.['id'] === descriptionId);
       const caption = findElement(score, (node) => node.tagName === 'figcaption');
 
       expect(scroll?.properties?.['aria-label']).to.equal('譜例A');
       expect(scroll?.properties?.['role']).to.equal('region');
-      expect(getClassList(description?.properties?.['className'])).to.deep.equal(['score__sr-only']);
+      expect(getClassList(description?.properties?.['className'])).to.deep.equal([
+        'score__sr-only',
+      ]);
       expect(getTextContent(description)).to.equal('譜例の説明');
       expect(getClassList(caption?.properties?.['className'])).to.deep.equal(['score__caption']);
       expect(getTextContent(caption)).to.equal('譜例キャプション');
