@@ -1,3 +1,5 @@
+import type { MdastNode } from '../types.js';
+
 export type CalloutKind = 'note' | 'tip' | 'success' | 'warning' | 'danger';
 export type InfoBoxVariant = 'default' | 'filled';
 export type InfoBoxDensity = 'comfortable' | 'compact';
@@ -91,7 +93,7 @@ export interface LinkCardPayload {
 export interface ScorePayload {
   readonly kind: 'score';
   readonly src: string;
-  readonly caption?: string | undefined;
+  readonly captionChildren?: readonly MdastNode[] | undefined;
   readonly label?: string | undefined;
   readonly description?: string | undefined;
   readonly aspectRatio?: string | undefined;

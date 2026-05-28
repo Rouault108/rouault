@@ -2,8 +2,6 @@ import { validateDataImageUrl } from './data-image-url.js';
 import { parseSrcset, serializeSrcset, type SrcsetCandidate } from './srcset-parser.js';
 import { detectUnsafeHref } from '../link/unsafe-href-detector.js';
 import type { SiteUrlContext } from '../site/site-url-context.js';
-import { isPathnameInsideBasePath } from '../site/site-url-context.js';
-import { stripBasePathFromPathname } from '../url/normalize-rouault-url.js';
 
 export interface MediaSourceDescriptor {
   readonly type: string;
@@ -112,33 +110,26 @@ export const sanitizeScoreSource = (
   value: unknown,
   options: SanitizeScoreSourceOptions,
 ): string | undefined => {
-  const sanitized = sanitizeMediaUrl(value, { allowDataImage: false });
-  if (sanitized === undefined) {
+  void options;
+  const source = pickOptionalString(value);
+  if (source === undefined) {
     return undefined;
   }
-
-  try {
-    const resolved = new URL(
-      sanitized,
-      `${options.siteUrlContext.siteOrigin}${options.siteUrlContext.basePath || '/'}`,
-    );
-    if (resolved.origin !== options.siteUrlContext.siteOrigin) {
-      return undefined;
-    }
-    if (!isPathnameInsideBasePath(resolved.pathname, options.siteUrlContext.basePath)) {
-      return undefined;
-    }
-    const pathnameWithoutBasePath = stripBasePathFromPathname(
-      resolved.pathname,
-      options.siteUrlContext.basePath,
-    );
-    if (!pathnameWithoutBasePath.startsWith(SCORE_MEDIA_PATH_PREFIX)) {
-      return undefined;
-    }
-    return `${resolved.pathname}${resolved.search}${resolved.hash}`;
-  } catch {
+  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/iu.test(source) || source.includes('\0')) {
     return undefined;
   }
+  if (source.startsWith('/')) {
+    return undefined;
+  }
+  const normalized = source.replaceAll('\\', '/');
+  const parts = normalized.split('/');
+  if (parts.includes('..')) {
+    return undefined;
+  }
+  if (!normalized.toLowerCase().endsWith('.svg')) {
+    return undefined;
+  }
+  return normalized;
 };
 
 export const sanitizeImageSrcset = (value: unknown): string | undefined => {

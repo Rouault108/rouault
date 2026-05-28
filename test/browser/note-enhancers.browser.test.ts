@@ -103,7 +103,10 @@ const createImageRoot = (): HTMLElement => {
     >
       <img src="/static/example-thumb.png" alt="zoom target" />
       <figcaption>lightbox caption</figcaption>
-      <button type="button" data-image-zoom-trigger="true" aria-label="画像を拡大表示">拡大</button>
+      <button type="button" data-image-zoom-trigger="true" aria-label="画像を拡大表示">
+        <span class="image-zoom-trigger__icon static-icon" aria-hidden="true"><svg></svg></span>
+        <span class="sr-only">画像を拡大表示</span>
+      </button>
     </figure>
   `;
   return root;
@@ -342,6 +345,9 @@ describe('note progressive enhancers', () => {
     );
     expect(image?.getAttribute('sizes')).to.equal('min(100vw, 72rem)');
     expect(caption?.textContent).to.equal('lightbox caption');
+    expect(closeButton?.querySelector('.image-lightbox-close__icon.static-icon > svg')).not.to.equal(
+      null,
+    );
 
     trigger?.focus();
     trigger?.click();

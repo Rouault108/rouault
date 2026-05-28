@@ -9,7 +9,7 @@ figure[data-image] {
   margin: 0;
 }
 
-figure[data-image] > picture {
+figure[data-image] > img {
   display: block;
   width: 100%;
   overflow: hidden;
@@ -46,6 +46,12 @@ figure[data-image] > [data-image-zoom-trigger] {
   cursor: zoom-in;
   backdrop-filter: blur(var(--blur-md, 12px));
   -webkit-backdrop-filter: blur(var(--blur-md, 12px));
+}
+
+figure[data-image] > [data-image-zoom-trigger] .image-zoom-trigger__icon {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  margin: auto;
 }
 
 figure[data-image] > [data-image-zoom-trigger]:focus-visible {
@@ -101,6 +107,12 @@ figure[data-image] dialog[data-image-lightbox-dialog]::backdrop {
   border-radius: 999px;
   background: oklch(100% 0 0 / 0.78);
   cursor: pointer;
+}
+
+.image-lightbox-close__icon {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  margin: auto;
 }
 
 .image-lightbox-caption {

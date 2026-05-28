@@ -1,1 +1,52 @@
-ol[data-list], ul[data-list] { padding-inline-start: max(var(--space-5, 20px), 1.5em); }
+ol[data-list],
+ul[data-list] {
+  padding-inline-start: max(var(--space-5, 20px), 1.5em);
+}
+
+ul[data-list] {
+  list-style: disc;
+}
+
+ol[data-list] {
+  list-style: none;
+  counter-reset: rouault-list-counter var(--ui-ol-counter-reset, 0);
+}
+
+ol[data-list] > li {
+  counter-increment: rouault-list-counter var(--ui-ol-counter-step, 1);
+}
+
+ol[data-list] > li[data-ol-has-value] {
+  counter-set: rouault-list-counter var(--ui-ol-counter-set, 0);
+}
+
+ol[data-list] > li::marker {
+  content: counter(rouault-list-counter) ". ";
+}
+
+ol[data-list][data-marker-digits='2'] {
+  padding-inline-start: max(var(--space-6, 24px), 2.5em);
+}
+
+ol[data-list][data-marker-digits='3'] {
+  padding-inline-start: max(var(--space-7, 32px), 3.25em);
+}
+
+ol[data-list] :is(ol[data-list], ul[data-list]),
+ul[data-list] :is(ol[data-list], ul[data-list]) {
+  margin-block: var(--space-2, 0.5rem) 0;
+}
+
+@media (forced-colors: active) {
+  ol[data-list],
+  ul[data-list] {
+    color: CanvasText;
+  }
+}
+
+@media print {
+  ol[data-list],
+  ul[data-list] {
+    break-inside: avoid-page;
+  }
+}

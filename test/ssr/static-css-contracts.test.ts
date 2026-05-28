@@ -141,10 +141,17 @@ describe('static CSS contracts', () => {
       'inline-size: 100%',
       'block-size: 100%',
     ]);
+    expect(details).to.contain('.details-block__summary::marker');
+    expect(details).to.contain('.details-block__summary::-webkit-details-marker');
     expect(details).to.contain(
       '.details-block[open] > .details-block__summary .details-block__chevron',
     );
     expect(details).not.to.contain("data-variant='bordered'");
+
+    const lists = readCss('lists.css');
+    expectRuleToDeclare(lists, 'ol[data-list]', ['counter-reset:']);
+    expectRuleToDeclare(lists, 'ol[data-list] > li', ['counter-increment:']);
+    expectRuleToDeclare(lists, 'ol[data-list] > li[data-ol-has-value]', ['counter-set:']);
 
     const syntax = readCss('syntax.css');
     expectRuleToDeclare(syntax, '.syntax-card__signature pre', ['margin: 0', 'background: transparent']);

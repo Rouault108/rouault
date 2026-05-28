@@ -526,8 +526,15 @@ describe('remarkRouaultDirectives', () => {
             {
               type: 'text',
               value:
-                '::score{src="/media/score/a.svg" label="譜例" caption="譜例1" description="詳細説明" aspect-ratio="4/1" primary="true"}',
+                '::score{src="media/score/a.svg" label="譜例" description="詳細説明" aspect-ratio="4/1" primary="true"}',
             },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [
+            { type: 'text', value: '譜例' },
+            { type: 'emphasis', children: [{ type: 'text', value: 'キャプション' }] },
           ],
         },
         {
@@ -542,7 +549,7 @@ describe('remarkRouaultDirectives', () => {
     const score = tree.children?.[0];
     expect(score?.data?.hName).to.equal('figure');
     expect(score?.data?.hProperties?.['data-score']).to.equal('true');
-    expect(score?.data?.hProperties?.['data-score-src']).to.equal('/media/score/a.svg');
+    expect(score?.data?.hProperties?.['data-score-src']).to.equal('media/score/a.svg');
     expect(score?.data?.hProperties?.['data-score-label']).to.equal('譜例');
     expect(score?.data?.hProperties?.['data-score-caption']).to.equal(undefined);
     expect(score?.data?.hProperties?.['data-score-description']).to.equal('詳細説明');
@@ -552,7 +559,8 @@ describe('remarkRouaultDirectives', () => {
     const caption = score?.children?.[0];
     expect(caption?.data?.hName).to.equal('figcaption');
     expect(caption?.data?.hProperties?.['data-score-caption-source']).to.equal('true');
-    expect(caption?.children?.[0]?.value).to.equal('譜例1');
+    expect(caption?.children?.[0]?.value).to.equal('譜例');
+    expect(caption?.children?.[1]?.type).to.equal('emphasis');
   });
 
   it('score ディレクティブの src 欠落は build error にすること', () => {

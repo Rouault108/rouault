@@ -146,7 +146,7 @@ const adaptScoreOutput = (payload: ScorePayload): RemarkOutputBinding => ({
     ['data-score-aspect-ratio', payload.aspectRatio],
     ['data-score-primary', payload.primary ? 'true' : undefined],
   ]),
-  ...(payload.caption
+  ...(payload.captionChildren && payload.captionChildren.length > 0
     ? {
         children: [
           {
@@ -157,7 +157,7 @@ const adaptScoreOutput = (payload: ScorePayload): RemarkOutputBinding => ({
                 'data-score-caption-source': 'true',
               },
             },
-            children: [{ type: 'text', value: payload.caption }],
+            children: [...payload.captionChildren],
           },
         ],
       }

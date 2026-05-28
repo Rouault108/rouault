@@ -37,7 +37,7 @@ const isCanonicalFootnoteDefinitionList = (node: HastNode, parent: HastNode | nu
 
 /**
  * `.prose ol` 向けに、桁数注釈とカウンター同期情報を build-time で付与する。
- * - `data-marker-digits="3"` の自動判定
+ * - `data-marker-digits` の自動判定
  * - `start` / `reversed` / `li[value]` を CSS カウンターへ反映
  * - list-style:none 劣化対策として role を補強
  */
@@ -49,6 +49,15 @@ export function rehypeOrderedListContracts() {
       }
 
       const current = node as HastNode;
+      if (
+        current.type === 'element' &&
+        (current.tagName === 'ol' || current.tagName === 'ul') &&
+        !isCanonicalFootnoteDefinitionList(current, parent)
+      ) {
+        const props = getOrCreateProperties(current);
+        props['data-list'] = 'true';
+      }
+
       if (
         current.type === 'element' &&
         current.tagName === 'ol' &&
@@ -80,8 +89,8 @@ export function rehypeOrderedListContracts() {
           ...explicitValues.map((value) => getDigits(value)),
         );
 
-        if (maxDigits >= 3) {
-          props['data-marker-digits'] = '3';
+        if (maxDigits >= 2) {
+          props['data-marker-digits'] = String(maxDigits);
         } else {
           delete props['data-marker-digits'];
         }

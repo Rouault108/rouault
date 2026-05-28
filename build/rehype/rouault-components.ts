@@ -1115,29 +1115,14 @@ const normalizeHighlightMark = (node: HastNode): void => {
   node.properties = properties;
 };
 
-const createPictureNode = (
+const createImageNode = (
   asset: ResolvedImageAsset | null,
   fallbackSrc: string | undefined,
   alt: string,
   loading: 'lazy' | 'eager' | undefined,
 ): HastNode => {
-  const pictureChildren: HastNode[] = [];
-
-  if (asset) {
-    for (const source of asset.inline.sources) {
-      const sourceProperties: Record<string, unknown> = {
-        type: source.type,
-        srcset: source.srcset,
-      };
-      if (source.sizes) {
-        sourceProperties['sizes'] = source.sizes;
-      }
-      pictureChildren.push(createElement('source', sourceProperties, []));
-    }
-  }
-
   const imgProperties: Record<string, unknown> = {
-    src: asset?.inline.src ?? fallbackSrc ?? '',
+    src: asset?.inline.src ?? fallbackSrc,
     alt,
   };
 
@@ -1157,8 +1142,7 @@ const createPictureNode = (
     imgProperties['height'] = asset.height;
   }
 
-  pictureChildren.push(createElement('img', imgProperties, []));
-  return createElement('picture', {}, pictureChildren);
+  return createElement('img', imgProperties, []);
 };
 
 const toStaticImage = (
@@ -1172,6 +1156,9 @@ const toStaticImage = (
 
   const originalProperties = node.properties ?? {};
   const sourcePath = pickOptionalString(originalProperties['src']);
+  if (!sourcePath) {
+    throw new Error('[markdown] image の src は必須です');
+  }
   const alt = typeof originalProperties['alt'] === 'string' ? originalProperties['alt'] : '';
   const caption = pickOptionalString(originalProperties['title']);
   const loading = pickOptionalString(originalProperties['loading'])?.toLowerCase();
@@ -1242,12 +1229,19 @@ const toStaticImage = (
           'data-image-zoom-trigger': 'true',
           'aria-label': alt.trim().length > 0 ? `画像を拡大して表示: ${alt}` : '画像を拡大して表示',
         },
-        [createElement('span', { className: 'sr-only' }, [createTextNode('画像を拡大して表示')])],
+        [
+          createElement(
+            'span',
+            { className: ['image-zoom-trigger__icon', 'static-icon'], 'aria-hidden': 'true' },
+            [createStaticIconHast('maximize')],
+          ),
+          createElement('span', { className: 'sr-only' }, [createTextNode('画像を拡大して表示')]),
+        ],
       ),
     );
   }
 
-  children.push(createPictureNode(resolvedAsset, sourcePath, alt, normalizedLoading));
+  children.push(createImageNode(resolvedAsset, sourcePath, alt, normalizedLoading));
 
   if (caption) {
     children.push(createElement('figcaption', {}, [createTextNode(caption)]));

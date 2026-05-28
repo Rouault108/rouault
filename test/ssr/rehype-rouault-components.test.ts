@@ -1,5 +1,3 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -47,18 +45,7 @@ const getTextContent = (node: HastNode | undefined): string => {
 };
 
 const withScoreSvgFixture = (test: (fixturePath: string, notePath: string) => void): void => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'rouault-score-'));
-  try {
-    const fixturePath = path.join(dir, 'score.svg');
-    writeFileSync(
-      fixturePath,
-      '<svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg"><path d="M1 1h8v8H1z"/></svg>',
-      'utf8',
-    );
-    test('./score.svg', path.join(dir, 'note.md'));
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+  test('test/fixtures/score/basic.svg', path.join(process.cwd(), 'content/notes/sample.md'));
 };
 
 const createRawFootnoteRef = (refId: string, index: string, instanceSuffix = ''): HastNode => ({
@@ -607,11 +594,10 @@ describe('rehypeRouaultComponents', () => {
         data-image-lightbox-src="/static/example.png"
       >
         <button type="button" data-image-zoom-trigger="true" aria-label="画像を拡大して表示">
-          拡大
+          <span class="image-zoom-trigger__icon static-icon" aria-hidden="true"><svg></svg></span>
+          <span class="sr-only">画像を拡大して表示</span>
         </button>
-        <picture>
-          <img src="/static/example.png" alt="example image">
-        </picture>
+        <img src="/static/example.png" alt="example image">
       </figure>
     `;
 
@@ -621,6 +607,59 @@ describe('rehypeRouaultComponents', () => {
     expect(normalized).toContain('/static/example.png');
     expect(normalized).not.toContain('content/_assets');
     expect(normalized).not.toContain('examples/media');
+  });
+
+  it('image は native figure > img と static zoom icon へ変換すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'img',
+          properties: {
+            src: 'content/_assets/example.png',
+            alt: '譜面画像',
+            title: '図版キャプション',
+          },
+          children: [],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const figure = findElement(tree, (node) => node.tagName === 'figure');
+    const trigger = findElement(figure, (node) => node.properties?.['data-image-zoom-trigger'] === 'true');
+    const triggerIcon = findElement(trigger, (node) =>
+      getClassList(node.properties?.['className']).includes('image-zoom-trigger__icon'),
+    );
+    const img = findElement(figure, (node) => node.tagName === 'img');
+    const picture = findElement(figure, (node) => node.tagName === 'picture');
+    const caption = findElement(figure, (node) => node.tagName === 'figcaption');
+
+    expect(figure?.properties?.['data-image']).to.equal('true');
+    expect(triggerIcon?.tagName).to.equal('span');
+    expect(findElement(triggerIcon, (node) => node.tagName === 'svg')).not.to.equal(undefined);
+    expect(img?.properties?.['src']).to.not.equal('');
+    expect(img?.properties?.['alt']).to.equal('譜面画像');
+    expect(picture).to.equal(undefined);
+    expect(getTextContent(caption)).to.equal('図版キャプション');
+  });
+
+  it('image の src 欠落は build error にすること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'img',
+          properties: { alt: 'missing source' },
+          children: [],
+        },
+      ],
+    };
+
+    expect(() => rehypeRouaultComponents()(tree)).to.throw('[markdown] image の src は必須です');
   });
 
   it('mark を static highlight root に正規化すること', () => {

@@ -47,7 +47,7 @@ export const directiveAttributeSchemas: Record<DirectiveName, DirectiveAttribute
     allowedKeys: ['url', 'title', 'description', 'image', 'site-name'],
   },
   score: {
-    allowedKeys: ['src', 'caption', 'label', 'description', 'aspect-ratio', 'primary'],
+    allowedKeys: ['src', 'label', 'description', 'aspect-ratio', 'primary'],
   },
   tabs: {
     allowedKeys: [

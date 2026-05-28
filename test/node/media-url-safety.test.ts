@@ -55,24 +55,20 @@ describe('media URL safety', () => {
   });
 
 
-  it('score source は SiteUrlContext の basePath 配下 /media/score/ だけを許可すること', () => {
+  it('score source はリポジトリ内の相対 SVG だけを許可すること', () => {
     const siteUrlContext = { siteOrigin: 'https://example.com', basePath: '/rouault' };
 
-    expect(sanitizeScoreSource('/rouault/media/score/fragment.svg', { siteUrlContext })).toBe(
-      '/rouault/media/score/fragment.svg',
+    expect(sanitizeScoreSource('media/score/fragment.svg', { siteUrlContext })).toBe(
+      'media/score/fragment.svg',
     );
     expect(sanitizeScoreSource('/media/score/fragment.svg', { siteUrlContext })).toBeUndefined();
-    expect(
-      sanitizeScoreSource('https://example.com/rouault/media/score/fragment.svg', {
-        siteUrlContext,
-      }),
-    ).toBe('/rouault/media/score/fragment.svg');
+    expect(sanitizeScoreSource('../media/score/fragment.svg', { siteUrlContext })).toBeUndefined();
     expect(
       sanitizeScoreSource('https://other.example/rouault/media/score/fragment.svg', {
         siteUrlContext,
       }),
     ).toBeUndefined();
-    expect(sanitizeScoreSource('/rouault/media/other/fragment.svg', { siteUrlContext })).toBeUndefined();
+    expect(sanitizeScoreSource('media/score/fragment.png', { siteUrlContext })).toBeUndefined();
   });
 
   it('srcset parser は候補 URL と descriptor を分離し、unsafe 候補がある srcset を drop すること', () => {

@@ -177,13 +177,21 @@ export const normalizeScorePayload = (
           })
         : undefined;
   if (scoreSource === undefined) {
-    throw toError(file, node, 'score の src は /media/score/ 配下の安全な内部リソースのみ指定可能です');
+    throw toError(file, node, 'score の src はリポジトリ内の相対 SVG だけ指定可能です');
   }
+
+  const rawCaptionChildren = Array.isArray(node.children) ? node.children : [];
+  const captionChildren =
+    rawCaptionChildren.length === 1 &&
+    rawCaptionChildren[0]?.type === 'paragraph' &&
+    Array.isArray(rawCaptionChildren[0].children)
+      ? rawCaptionChildren[0].children
+      : rawCaptionChildren;
 
   return {
     kind: 'score',
     src: scoreSource,
-    ...(pickOptional(attrs['caption']) ? { caption: pickOptional(attrs['caption']) } : {}),
+    ...(captionChildren.length > 0 ? { captionChildren } : {}),
     ...(pickOptional(attrs['label']) ? { label: pickOptional(attrs['label']) } : {}),
     ...(pickOptional(attrs['description'])
       ? { description: pickOptional(attrs['description']) }

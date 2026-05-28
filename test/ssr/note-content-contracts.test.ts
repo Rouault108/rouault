@@ -126,7 +126,8 @@ describe('validateNoteContentContracts', () => {
         data-image-lightbox-src="/static/example.png"
       >
         <button type="button" data-image-zoom-trigger="true" aria-label="画像を拡大して表示">
-          拡大
+          <span class="image-zoom-trigger__icon static-icon" aria-hidden="true"><svg></svg></span>
+          <span class="sr-only">画像を拡大して表示</span>
         </button>
         <img src="/static/example.png" alt="example image">
         <figcaption>caption</figcaption>

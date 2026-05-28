@@ -1,4 +1,5 @@
 import { parseMediaSourcesAttribute } from '../../../shared/media/media-source-attributes.js';
+import { renderStaticIconHtml } from '../../../shared/icons/render-static-icon-html.js';
 
 const IMAGE_SELECTOR = 'figure[data-image][data-image-zoomable="true"]';
 const TRIGGER_SELECTOR = 'button[data-image-zoom-trigger]';
@@ -34,7 +35,7 @@ const ensureDialog = (figure: HTMLElement): HTMLDialogElement | null => {
   closeButton.className = 'image-lightbox-close';
   closeButton.setAttribute('data-image-lightbox-close', 'true');
   closeButton.setAttribute('aria-label', '拡大画像を閉じる');
-  closeButton.textContent = '×';
+  closeButton.insertAdjacentHTML('beforeend', renderStaticIconHtml('x', 'image-lightbox-close__icon'));
 
   const picture = document.createElement('picture');
   for (const source of createSourceElements(figure.getAttribute('data-image-lightbox-sources'))) {
