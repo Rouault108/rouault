@@ -9,6 +9,10 @@ import {
 } from '../../shared/icons/icon-paths.js';
 
 type Parse5Node = DefaultTreeAdapterMap['node'];
+type Parse5Element = DefaultTreeAdapterMap['element'];
+
+const isParse5Element = (node: Parse5Node): node is Parse5Element =>
+  'tagName' in node && typeof node.tagName === 'string';
 
 const parse5NodeToHast = (node: Parse5Node): HastNode | null => {
   if ('nodeName' in node && node.nodeName === '#text' && 'value' in node) {
@@ -44,10 +48,19 @@ const createElement = (
 });
 
 const createIconChildren = (name: IconName): HastNode[] => {
-  const fragment = parse5.parseFragment(resolveStaticIconBody(name), {
+  const fragment = parse5.parseFragment(`<svg>${resolveStaticIconBody(name)}</svg>`, {
     sourceCodeLocationInfo: false,
   });
-  return fragment.childNodes
+
+  const svg = fragment.childNodes.find(
+    (node): node is Parse5Element => isParse5Element(node) && node.tagName === 'svg',
+  );
+
+  if (svg === undefined) {
+    throw new Error(`Static icon SVG body parse failed: "${name}".`);
+  }
+
+  return svg.childNodes
     .map((child) => parse5NodeToHast(child))
     .filter((child): child is HastNode => child !== null);
 };
