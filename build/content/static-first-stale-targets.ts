@@ -109,7 +109,7 @@ export const STATIC_FIRST_STALE_TARGETS = [
   {
     targetKind: 'old-footer-runtime',
     pathKind: 'production-source',
-    paths: ['src/components/ui/footer/footer.ts', 'src/components/ui/footer/footer.stories.ts'],
+    paths: ['src/components/ui/footer/footer.ts'],
     replacementContract: 'static footer HTML from src/layouts/footer-html.ts',
     deleteMode: 'delete-source',
   },

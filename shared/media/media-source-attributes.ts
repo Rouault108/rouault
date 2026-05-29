@@ -1,7 +1,9 @@
 import { validateDataImageUrl } from './data-image-url.js';
 import { parseSrcset, serializeSrcset, type SrcsetCandidate } from './srcset-parser.js';
 import { detectUnsafeHref } from '../link/unsafe-href-detector.js';
+import { isPathnameInsideBasePath } from '../site/site-url-context.js';
 import type { SiteUrlContext } from '../site/site-url-context.js';
+import { stripBasePathFromPathname } from '../url/normalize-rouault-url.js';
 
 export interface MediaSourceDescriptor {
   readonly type: string;
@@ -110,26 +112,45 @@ export const sanitizeScoreSource = (
   value: unknown,
   options: SanitizeScoreSourceOptions,
 ): string | undefined => {
-  void options;
   const source = pickOptionalString(value);
   if (source === undefined) {
     return undefined;
   }
-  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/iu.test(source) || source.includes('\0')) {
+  if (source.includes('\0') || source.includes('\\')) {
     return undefined;
   }
-  if (source.startsWith('/')) {
+
+  let parsed: URL;
+  try {
+    parsed = new URL(
+      source,
+      `${options.siteUrlContext.siteOrigin}${options.siteUrlContext.basePath}/`,
+    );
+  } catch {
     return undefined;
   }
-  const normalized = source.replaceAll('\\', '/');
-  const parts = normalized.split('/');
-  if (parts.includes('..')) {
+
+  if (
+    parsed.origin !== options.siteUrlContext.siteOrigin ||
+    parsed.search !== '' ||
+    parsed.hash !== '' ||
+    !isPathnameInsideBasePath(parsed.pathname, options.siteUrlContext.basePath)
+  ) {
     return undefined;
   }
-  if (!normalized.toLowerCase().endsWith('.svg')) {
+
+  const pathnameWithoutBasePath = stripBasePathFromPathname(
+    parsed.pathname,
+    options.siteUrlContext.basePath,
+  );
+  if (
+    !pathnameWithoutBasePath.startsWith(SCORE_MEDIA_PATH_PREFIX) ||
+    !pathnameWithoutBasePath.toLowerCase().endsWith('.svg')
+  ) {
     return undefined;
   }
-  return normalized;
+
+  return pathnameWithoutBasePath.slice(1);
 };
 
 export const sanitizeImageSrcset = (value: unknown): string | undefined => {

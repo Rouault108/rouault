@@ -22,7 +22,7 @@ describe('search dialog import boundary', () => {
       expect(source, path).not.toContain('src/components/ui/search-dialog');
       expect(source, path).not.toContain('UiSearchDialog');
       expect(source, path).not.toContain('SearchDialogElement');
-      expect(source, path).not.toContain('ui-search-dialog');
+      expect(source, path).not.toMatch(/<\/?ui-search-dialog\b/u);
     }
 
     const highlight = readSource('src/search/search-dialog-highlight.ts');

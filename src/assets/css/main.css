@@ -485,11 +485,6 @@ input:disabled,
     color: GrayText;
   }
 
-  /* ボーダーレスなデザインでも境界線を明確化 */
-  .card,
-  .button {
-    border: var(--border-width) solid CanvasText;
-  }
 }
 
 /* ===========================================================================

@@ -21,44 +21,113 @@ const expectRuleToDeclare = (css: string, selector: string, declarations: readon
   }
 };
 
+const mainCssImportRegistry = [
+  './fonts.css',
+  './tokens.css',
+  './static-icons.css',
+  './static-copy-button.css',
+  './static-checkbox.css',
+  './link-primitives.css',
+  './card-link.css',
+  './utility-surfaces.css',
+  './layout-containers.css',
+  './stateful-note-bridges.css',
+  './translation.css',
+  './skip-link.css',
+  './dialog-state.css',
+  './app-shell.css',
+  './router-shell.css',
+  './layout-header.css',
+  './layout-sidebar.css',
+  './note-shell.css',
+  './layout-toc.css',
+  './about-shell.css',
+  './page-shell.css',
+  './home-page.css',
+  './result-card.css',
+  './not-found-page.css',
+  './view-transition.css',
+  './article-header.css',
+  './search-dialog.css',
+  './search-page.css',
+  './empty-state.css',
+  './page-corpora.css',
+  './blockquote.css',
+  './callout.css',
+  './info-box.css',
+  './table.css',
+  './footnotes.css',
+  './divider.css',
+  './highlight.css',
+  './details-block.css',
+  './link-card.css',
+  './image.css',
+  './score.css',
+  './lists.css',
+  './task-list.css',
+  './syntax.css',
+  './code-surfaces.css',
+  './math.css',
+  './footer.css',
+] as const;
+
+const forbiddenMainCssTokens = [
+  '@fontsource/',
+  './fonts/',
+  'body[data-ui-dialog-open]',
+  'body[data-ui-search-dialog-open]',
+  '@view-transition',
+  '::view-transition-group(*)',
+  '@keyframes fade-in',
+] as const;
+
+const forbiddenMainCssSelectorPatterns = [
+  /\bapp-root\b/u,
+  /\bapp-router\b/u,
+  /\.note-shell(?![-_a-zA-Z0-9])/u,
+  /layout-header:not\(:defined\)/u,
+  /\.layout-sidebar-overlay-layer(?![-_a-zA-Z0-9])/u,
+  /\.layout-sidebar-col(?![-_a-zA-Z0-9])/u,
+  /\blayout-sidebar-surface\b/u,
+  /\.about-shell(?![-_a-zA-Z0-9])/u,
+  /\.page-shell(?![-_a-zA-Z0-9])/u,
+  /\.hero(?![-_a-zA-Z0-9])/u,
+  /\.eyebrow(?![-_a-zA-Z0-9])/u,
+  /\.heading(?![-_a-zA-Z0-9])/u,
+  /\.description(?![-_a-zA-Z0-9])/u,
+  /\.meta-row(?![-_a-zA-Z0-9])/u,
+  /\.home-shell(?![-_a-zA-Z0-9])/u,
+  /\.home-content(?![-_a-zA-Z0-9])/u,
+  /\.home-hero(?![-_a-zA-Z0-9])/u,
+  /\.home-entry(?![-_a-zA-Z0-9])/u,
+  /\.home-empty(?![-_a-zA-Z0-9])/u,
+  /\.results-section(?![-_a-zA-Z0-9])/u,
+  /\.results-list(?![-_a-zA-Z0-9])/u,
+  /\.result-card(?![-_a-zA-Z0-9])/u,
+  /\.result-link(?![-_a-zA-Z0-9])/u,
+  /\.result-title(?![-_a-zA-Z0-9])/u,
+  /\.result-path(?![-_a-zA-Z0-9])/u,
+  /\.result-meta(?![-_a-zA-Z0-9])/u,
+  /\.result-excerpt(?![-_a-zA-Z0-9])/u,
+  /\.page-transition(?![-_a-zA-Z0-9])/u,
+] as const;
+
 describe('static CSS contracts', () => {
-  it('main.css imports static UI contract files', () => {
+  it('main.css is the fixed import registry plus reset/base/prose surface', () => {
     const css = readCss('main.css');
-    for (const fileName of [
-      './link-primitives.css',
-      './card-link.css',
-      './utility-surfaces.css',
-      './layout-containers.css',
-      './stateful-note-bridges.css',
-      './translation.css',
-      './app-shell.css',
-      './router-shell.css',
-      './layout-header.css',
-      './layout-sidebar.css',
-      './note-shell.css',
-      './about-shell.css',
-      './page-shell.css',
-      './home-page.css',
-      './result-card.css',
-      './not-found-page.css',
-      './search-dialog.css',
-      './search-page.css',
-      './blockquote.css',
-      './callout.css',
-      './info-box.css',
-      './table.css',
-      './footnotes.css',
-      './link-card.css',
-      './image.css',
-      './details-block.css',
-      './syntax.css',
-      './score.css',
-      './empty-state.css',
-      './page-corpora.css',
-    ]) {
-      expect(css).to.contain(`@import '${fileName}'`);
+
+    const imports = [...css.matchAll(/@import\s+['"]([^'"]+)['"];/gu)].map(
+      (match) => match[1],
+    );
+    expect(imports).toEqual(mainCssImportRegistry);
+    expect(imports.filter((path) => path === './tokens.css')).toHaveLength(1);
+
+    for (const token of forbiddenMainCssTokens) {
+      expect(css, token).not.to.contain(token);
     }
-    expect(css).not.to.match(/\.(?:app-root|note-shell|page-shell|home-shell|result-card|result-link)\b/u);
+    for (const pattern of forbiddenMainCssSelectorPatterns) {
+      expect(css, String(pattern)).not.to.match(pattern);
+    }
     expect(css).not.to.contain('ui-list-item >');
   });
 

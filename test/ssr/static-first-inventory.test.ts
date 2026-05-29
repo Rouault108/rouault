@@ -306,6 +306,21 @@ describe('static-first inventory split', () => {
     }
   });
 
+  it('keeps delete-source and delete-if-present stale paths out of the active tree', () => {
+    const activeFiles = new Set(gitFiles());
+
+    for (const target of staleTargets) {
+      if (target.deleteMode !== 'delete-source' && target.deleteMode !== 'delete-if-present') {
+        continue;
+      }
+
+      for (const stalePath of target.paths) {
+        expect(activeFiles.has(stalePath), stalePath).toBe(false);
+        expect(existsSync(join(repoRoot, stalePath)), stalePath).toBe(false);
+      }
+    }
+  });
+
   it('evaluates target adapter imports and smoke-renders import-required SSR targets', async () => {
     await import(pathToFileURL(join(repoRoot, 'build/ssr/target-adapters.ts')).href);
 

@@ -5,21 +5,20 @@ import {
 } from '../../src/router/declarative-shadow-dom.js';
 
 describe('declarative-shadow-dom', () => {
-  it('replaceElementChildrenFromHtml が note chrome の DSD を実 shadow root に昇格すること', async () => {
+  it('replaceElementChildrenFromHtml が retained chrome の DSD を実 shadow root に昇格すること', async () => {
     const outlet = await fixture<HTMLElement>(html`<main id="main-content"></main>`);
 
     replaceElementChildrenFromHtml(
       outlet,
       `
         <article class="layout-main-col container-reading">
-          <ui-article-header heading="JavaScriptの配列">
+          <layout-header site-title="Rouault">
             <template shadowrootmode="open">
-              <header class="article-header">
-                <h1>JavaScriptの配列</h1>
-                <p>javascript programming</p>
+              <header class="layout-header">
+                <a href="/">Rouault</a>
               </header>
             </template>
-          </ui-article-header>
+          </layout-header>
 
           <aside class="layout-toc-col" aria-label="目次">
             <layout-toc>
@@ -36,9 +35,9 @@ describe('declarative-shadow-dom', () => {
       outlet.ownerDocument,
     );
 
-    const articleHeader = outlet.querySelector('ui-article-header');
-    if (!(articleHeader instanceof HTMLElement)) {
-      throw new Error('ui-article-header が見つかりません');
+    const header = outlet.querySelector('layout-header');
+    if (!(header instanceof HTMLElement)) {
+      throw new Error('layout-header が見つかりません');
     }
 
     const toc = outlet.querySelector('layout-toc');
@@ -46,9 +45,9 @@ describe('declarative-shadow-dom', () => {
       throw new Error('layout-toc が見つかりません');
     }
 
-    expect(articleHeader.shadowRoot).not.to.equal(null);
-    expect(articleHeader.querySelectorAll(':scope > template').length).to.equal(0);
-    expect(articleHeader.shadowRoot?.textContent ?? '').to.contain('JavaScriptの配列');
+    expect(header.shadowRoot).not.to.equal(null);
+    expect(header.querySelectorAll(':scope > template').length).to.equal(0);
+    expect(header.shadowRoot?.textContent ?? '').to.contain('Rouault');
 
     expect(toc.shadowRoot).not.to.equal(null);
     expect(toc.querySelectorAll(':scope > template').length).to.equal(0);
@@ -59,14 +58,14 @@ describe('declarative-shadow-dom', () => {
   it('promoteDeclarativeShadowRoots が重複した DSD template を 1 つの shadow root に正規化すること', async () => {
     const root = await fixture<HTMLElement>(html`
       <section data-hydration-scope="note-content">
-        <ui-article-header heading="JavaScriptの配列">
+        <layout-header site-title="Rouault">
           <template shadowrootmode="open">
-            <header><h1>JavaScriptの配列</h1></header>
+            <header><a href="/">Rouault</a></header>
           </template>
           <template shadowrootmode="open">
             <header><h1>duplicate</h1></header>
           </template>
-        </ui-article-header>
+        </layout-header>
 
         <layout-toc>
           <template shadowrootmode="open">
@@ -81,9 +80,9 @@ describe('declarative-shadow-dom', () => {
 
     promoteDeclarativeShadowRoots(root);
 
-    const articleHeader = root.querySelector('ui-article-header');
-    if (!(articleHeader instanceof HTMLElement)) {
-      throw new Error('ui-article-header が見つかりません');
+    const header = root.querySelector('layout-header');
+    if (!(header instanceof HTMLElement)) {
+      throw new Error('layout-header が見つかりません');
     }
 
     const toc = root.querySelector('layout-toc');
@@ -91,10 +90,10 @@ describe('declarative-shadow-dom', () => {
       throw new Error('layout-toc が見つかりません');
     }
 
-    expect(articleHeader.shadowRoot).not.to.equal(null);
-    expect(articleHeader.querySelectorAll(':scope > template').length).to.equal(0);
-    expect(articleHeader.shadowRoot?.textContent ?? '').to.contain('JavaScriptの配列');
-    expect(articleHeader.shadowRoot?.textContent ?? '').not.to.contain('duplicate');
+    expect(header.shadowRoot).not.to.equal(null);
+    expect(header.querySelectorAll(':scope > template').length).to.equal(0);
+    expect(header.shadowRoot?.textContent ?? '').to.contain('Rouault');
+    expect(header.shadowRoot?.textContent ?? '').not.to.contain('duplicate');
 
     expect(toc.shadowRoot).not.to.equal(null);
     expect(toc.querySelectorAll(':scope > template').length).to.equal(0);

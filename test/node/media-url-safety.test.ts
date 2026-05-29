@@ -61,6 +61,11 @@ describe('media URL safety', () => {
     expect(sanitizeScoreSource('media/score/fragment.svg', { siteUrlContext })).toBe(
       'media/score/fragment.svg',
     );
+    expect(
+      sanitizeScoreSource('https://example.com/rouault/media/score/fragment.svg', {
+        siteUrlContext,
+      }),
+    ).toBe('media/score/fragment.svg');
     expect(sanitizeScoreSource('/media/score/fragment.svg', { siteUrlContext })).toBeUndefined();
     expect(sanitizeScoreSource('../media/score/fragment.svg', { siteUrlContext })).toBeUndefined();
     expect(
