@@ -1,5 +1,9 @@
-export type StaticFirstSurfaceProfile = 'shell' | 'note' | 'page' | 'layout';
+export type StaticFirstRuntimeProfile = 'note' | 'page' | 'shell' | 'layout';
 
-export type SsrComponentProfile = StaticFirstSurfaceProfile;
+export type StaticFirstToolingProfile = 'storybook' | 'design-system';
 
-export type HydrationRegistryProfile = StaticFirstSurfaceProfile;
+export type StaticFirstSurfaceProfile = StaticFirstRuntimeProfile;
+
+export type SsrComponentProfile = StaticFirstRuntimeProfile;
+
+export type HydrationRegistryProfile = StaticFirstRuntimeProfile | StaticFirstToolingProfile;

@@ -101,12 +101,10 @@ const unknownAllowlist: readonly StaticFirstUnknownUiAllowlistEntry[] =
   STATIC_FIRST_UNKNOWN_UI_ALLOWLIST;
 const staleTags = new Set(staleTargets.flatMap((target) => target.tags ?? []));
 const unknownTags = new Set(unknownAllowlist.map((entry) => entry.tag));
-const retainedByTag: ReadonlyMap<string, (typeof STATIC_FIRST_RETAINED_COMPONENTS)[number]> = new Map(
-  STATIC_FIRST_RETAINED_COMPONENTS.map((component) => [component.tag, component] as const),
-);
-const ssrDefinitionsByTag: ReadonlyMap<string, (typeof SSR_COMPONENT_DEFINITIONS)[number]> = new Map(
-  SSR_COMPONENT_DEFINITIONS.map((definition) => [definition.tag, definition] as const),
-);
+const retainedByTag: ReadonlyMap<string, (typeof STATIC_FIRST_RETAINED_COMPONENTS)[number]> =
+  new Map(STATIC_FIRST_RETAINED_COMPONENTS.map((component) => [component.tag, component] as const));
+const ssrDefinitionsByTag: ReadonlyMap<string, (typeof SSR_COMPONENT_DEFINITIONS)[number]> =
+  new Map(SSR_COMPONENT_DEFINITIONS.map((definition) => [definition.tag, definition] as const));
 const hydrationRegistryByTag: ReadonlyMap<string, (typeof HYDRATION_REGISTRY)[number]> = new Map(
   HYDRATION_REGISTRY.map((entry) => [entry.tag, entry] as const),
 );
@@ -352,9 +350,10 @@ describe('static-first inventory split', () => {
       expect(manifestTags.has(tag), tag).toBe(true);
 
       for (const targetAdapterImportPath of component?.targetAdapterImportPaths ?? []) {
-        expect(adapterImports.has(targetAdapterImportPath), `${tag}:${targetAdapterImportPath}`).toBe(
-          true,
-        );
+        expect(
+          adapterImports.has(targetAdapterImportPath),
+          `${tag}:${targetAdapterImportPath}`,
+        ).toBe(true);
       }
     }
   });
@@ -405,5 +404,43 @@ describe('static-first inventory split', () => {
     const source = readRepoFile('shared/static-first-profiles.ts');
     expect(source).not.toMatch(/from ['"].*(src|build|content|lit|parse5|rehype|remark)/u);
     expect(source).not.toContain("'global'");
+    expect(source).toContain(
+      "export type StaticFirstRuntimeProfile = 'note' | 'page' | 'shell' | 'layout'",
+    );
+    expect(source).toContain(
+      "export type StaticFirstToolingProfile = 'storybook' | 'design-system'",
+    );
+    expect(source).toContain(
+      'export type HydrationRegistryProfile = StaticFirstRuntimeProfile | StaticFirstToolingProfile',
+    );
+    expect(source).toContain('export type SsrComponentProfile = StaticFirstRuntimeProfile');
+  });
+
+  it('does not redefine profile string unions outside the shared profile module', () => {
+    const checkedPaths = [
+      'build/ssr/target-definitions.ts',
+      'src/client/hydration/types.ts',
+      'build/content/static-first-retained-components.ts',
+    ] as const;
+
+    for (const path of checkedPaths) {
+      const source = readRepoFile(path);
+      expect(source, path).not.toMatch(
+        /type\s+(?:SsrComponentProfile|HydrationRegistryProfile)\s*=\s*['"]/u,
+      );
+      expect(source, path).toMatch(/from ['"](?:\.\.\/)+shared\/static-first-profiles\.js/u);
+    }
+  });
+
+  it('keeps build/content and src/client profile contracts import-boundary safe', () => {
+    for (const path of sourceFiles()) {
+      const source = readRepoFile(path);
+      if (path.startsWith('build/content/')) {
+        expect(source, path).not.toMatch(/from ['"].*src\/client/u);
+      }
+      if (path.startsWith('src/client/')) {
+        expect(source, path).not.toMatch(/from ['"].*build\/content/u);
+      }
+    }
   });
 });

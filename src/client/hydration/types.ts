@@ -15,6 +15,7 @@ export type {
   HydrationCapability,
   HydrationTrigger,
 } from '../../../shared/hydration/hydration-directives.js';
+export type { HydrationRegistryProfile } from '../../../shared/static-first-profiles.js';
 
 export type HydrationSessionKind = 'shell' | 'content';
 
@@ -38,8 +39,8 @@ export interface HydrationBootMarkerPolicy {
 
 export interface HydrationRegistryEntry {
   readonly tag: string;
-  readonly kind?: 'custom-element' | 'enhancer';
-  readonly profiles?: readonly HydrationRegistryProfile[];
+  readonly kind: 'custom-element' | 'enhancer';
+  readonly profiles: readonly HydrationRegistryProfile[];
   readonly loader: () => Promise<unknown>;
   readonly activate?: (context: HydrationActivationContext) => unknown;
   readonly preload?: HydrationPreloadPolicy;

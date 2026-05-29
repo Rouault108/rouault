@@ -5,6 +5,26 @@ import type {
   HydrationRegistryEntry,
 } from '../../src/client/hydration/types.js';
 
+type TestHydrationRegistryEntry = Omit<HydrationRegistryEntry, 'kind' | 'profiles'> &
+  Partial<Pick<HydrationRegistryEntry, 'kind' | 'profiles'>>;
+
+const createTestRegistry = (
+  entries: readonly (readonly [string, TestHydrationRegistryEntry])[],
+): ReadonlyMap<string, HydrationRegistryEntry> =>
+  new Map(
+    entries.map(
+      ([key, entry]) =>
+        [
+          key,
+          {
+            kind: 'custom-element',
+            profiles: ['shell'],
+            ...entry,
+          },
+        ] as const,
+    ),
+  );
+
 const defineTestElement = (tag: string): void => {
   if (!customElements.get(tag)) {
     customElements.define(tag, class extends HTMLElement {});
@@ -52,7 +72,7 @@ describe('HydrationScheduler', () => {
     const tag = 'x-hydration-root-scope';
     let loadCount = 0;
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         tag,
         {
@@ -88,7 +108,7 @@ describe('HydrationScheduler', () => {
     const tag = 'x-hydration-global-search-dialog';
     let loadCount = 0;
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         tag,
         {
@@ -123,7 +143,7 @@ describe('HydrationScheduler', () => {
     const tag = 'x-hydration-route-page';
     let loadCount = 0;
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         tag,
         {
@@ -169,7 +189,7 @@ describe('HydrationScheduler', () => {
 
   it('custom-element key mismatch では loader を呼ばず upgrade-failed を記録すること', async () => {
     let loadCount = 0;
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         'x-hydration-keyed-card',
         {
@@ -211,7 +231,7 @@ describe('HydrationScheduler', () => {
 
   it('custom-element key mismatch では planned preload でも loader を呼ばないこと', async () => {
     let loadCount = 0;
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         'x-hydration-keyed-preload',
         {
@@ -259,7 +279,7 @@ describe('HydrationScheduler', () => {
     defineTestElement(pageTag);
 
     const steps: string[] = [];
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         headerTag,
         {
@@ -320,7 +340,7 @@ describe('HydrationScheduler', () => {
     });
     let loadPreloadCount = 0;
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         producerTag,
         {
@@ -385,7 +405,7 @@ describe('HydrationScheduler', () => {
   it('plain DOM enhancer を data-hydration-key 経由で起動できること', async () => {
     const steps: string[] = [];
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         'code-group-enhancer',
         {
@@ -445,7 +465,7 @@ describe('HydrationScheduler', () => {
     defineTestElement(postTag);
     defineTestElement(visibleTag);
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         initialTag,
         {
@@ -555,7 +575,7 @@ describe('HydrationScheduler', () => {
       resolvePreload = resolve;
     });
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         preloadTag,
         {
@@ -619,7 +639,7 @@ describe('HydrationScheduler', () => {
     let loadCount = 0;
     let gatePromise: Promise<void> = Promise.resolve();
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         preloadTag,
         {
@@ -713,7 +733,7 @@ describe('HydrationScheduler', () => {
     defineTestElement(initialTag);
     defineTestElement(interactionTag);
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         initialTag,
         {
@@ -789,7 +809,7 @@ describe('HydrationScheduler', () => {
     defineTestElement(tag);
 
     let loadCount = 0;
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         tag,
         {
@@ -828,7 +848,7 @@ describe('HydrationScheduler', () => {
     defineTestElement(tag);
 
     let loadCount = 0;
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         tag,
         {
@@ -931,7 +951,7 @@ describe('HydrationScheduler', () => {
     });
 
     let loadCount = 0;
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         preloadTag,
         {
@@ -1015,7 +1035,7 @@ describe('HydrationScheduler', () => {
       });
 
       let loadCount = 0;
-      const registry = new Map<string, HydrationRegistryEntry>([
+      const registry = createTestRegistry([
         [
           tag,
           {
@@ -1088,7 +1108,7 @@ describe('HydrationScheduler', () => {
       </section>
     `;
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         tag,
         {
@@ -1118,7 +1138,7 @@ describe('HydrationScheduler', () => {
     const tag = 'x-hydration-boot-marker-value';
     defineTestElement(tag);
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         tag,
         {
@@ -1155,7 +1175,7 @@ describe('HydrationScheduler', () => {
     const tag = 'x-hydration-boot-marker-activate';
     defineTestElement(tag);
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         tag,
         {
@@ -1193,7 +1213,7 @@ describe('HydrationScheduler', () => {
     const tag = 'x-hydration-boot-marker-upgrade';
     defineTestElement(tag);
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         tag,
         {
@@ -1233,7 +1253,7 @@ describe('HydrationScheduler', () => {
     defineTestElement(visibleTag);
     defineTestElement(initialTag);
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         visibleTag,
         {
@@ -1304,7 +1324,7 @@ describe('HydrationScheduler', () => {
 
     defineTestElement(activateFailTag);
 
-    const registry = new Map<string, HydrationRegistryEntry>([
+    const registry = createTestRegistry([
       [
         loadFailTag,
         {
