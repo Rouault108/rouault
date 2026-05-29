@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { STATIC_FIRST_DELETION_TARGETS } from '../../build/content/static-first-deletion-targets.js';
 import { STATIC_FIRST_RETAINED_COMPONENTS } from '../../build/content/static-first-retained-components.js';
@@ -71,13 +71,6 @@ const manifestReferencePaths = (): readonly string[] =>
   });
 
 describe('static-first manifest generation contract', () => {
-  beforeAll(() => {
-    execFileSync('pnpm', ['run', 'codegen:manifest'], {
-      cwd: repoRoot,
-      stdio: 'inherit',
-    });
-  });
-
   it('generates custom-elements.json from retained manifest inventory', () => {
     const manifest = readManifest();
     const manifestTags = new Set(extractManifestCustomElementTags(manifest));
