@@ -380,6 +380,9 @@ export const createSearchDialogDomController = (
     dialog.removeAttribute('data-closing');
     delete dialog.dataset['searchDialogOpenModality'];
     syncTriggerExpanded(false);
+    if (effectiveCloseReason === 'selection' && capturedTriggerElement !== null) {
+      capturedTriggerElement.blur();
+    }
     if (
       !state.disposed &&
       !suppressEvents &&
