@@ -40,37 +40,6 @@ export interface SearchDialogItem {
   keywords?: readonly string[];
 }
 
-export interface SearchDialogOpenedDetail {
-  trigger: HTMLElement | null;
-}
-
-export interface SearchDialogClosedDetail {
-  reason: SearchDialogCloseReason;
-}
-
-export interface SearchDialogOpenRequestedDetail {
-  trigger: HTMLElement | null;
-}
-
-export interface SearchDialogCloseRequestedDetail {
-  reason: SearchDialogCloseReason;
-}
-
-export interface SearchDialogQueryChangedDetail {
-  query: string;
-}
-
-export interface SearchDialogSelectedDetail {
-  id: string;
-  renderHref: string;
-  canonicalPathname: string;
-  title: string;
-  query: string;
-  index: number;
-  item: SearchDialogItem;
-  selectionMethod: 'keyboard' | 'pointer';
-}
-
 export interface SearchDialogSearchContext {
   query: string;
   signal: AbortSignal;

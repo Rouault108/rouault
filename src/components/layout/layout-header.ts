@@ -897,6 +897,7 @@ export class LayoutHeader extends LitElement {
         composed: true,
         detail: {
           trigger: trigger instanceof HTMLElement ? trigger : null,
+          modality: 'pointer',
         },
       }),
     );

@@ -7,6 +7,15 @@ describe('search dialog static contract', () => {
     const rendered = renderSearchDialogHtml();
 
     expect(rendered).toContain('data-search-dialog-root');
+    expect(rendered).toContain('aria-label="検索"');
+    expect(rendered).toContain('aria-modal="true"');
+    expect(rendered).toContain('data-search-dialog-field');
+    expect(rendered).toContain('<ul');
+    expect(rendered).toContain('role="listbox"');
+    expect(rendered).toContain('hidden');
+    expect(rendered).not.toContain('method="dialog"');
+    expect(rendered).not.toContain('<ui-search-dialog');
+    expect(rendered).not.toContain('<ui-search-field');
     expect(rendered).toContain('class="search-dialog__state-icon static-icon"');
     expect(rendered.match(/class="search-dialog__state-icon static-icon"/gu)?.length).toBe(3);
     expect(rendered).toContain('<svg');

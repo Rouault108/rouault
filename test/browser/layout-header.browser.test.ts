@@ -408,6 +408,29 @@ describe('layout-header browser contract', () => {
     await expectFocusedHeaderItemRaised(header, searchTrigger);
   });
 
+  it('search trigger click dispatches pointer modality with the trigger', async () => {
+    const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
+    await waitForLitUpdate(header);
+    const searchTrigger = getSearchTriggerButton(header.shadowRoot);
+    const opened = new Promise<CustomEvent>((resolve) => {
+      document.addEventListener(
+        'open-search-dialog',
+        (event) => {
+          resolve(event as CustomEvent);
+        },
+        { once: true },
+      );
+    });
+
+    searchTrigger.click();
+    const event = await opened;
+
+    expect(event.detail).to.deep.equal({
+      trigger: searchTrigger,
+      modality: 'pointer',
+    });
+  });
+
   it('focused theme dropdown host is raised above adjacent controls', async () => {
     const header = await fixture<LayoutHeader>(html`<layout-header></layout-header>`);
     await waitForLitUpdate(header);

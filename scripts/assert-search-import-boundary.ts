@@ -2,6 +2,11 @@ import { readFileSync } from 'node:fs';
 import { collectImportEdges, walkSourceFiles, edgeMatches } from './import-boundary-graph.js';
 
 const roots = ['src/search', 'shared/search'];
+const searchDialogRuntimeTargets = [
+  'src/client/post-hydrate/search-dialog-enhancer.ts',
+  'src/client/post-hydrate/search-dialog-dom-controller.ts',
+  'src/client/post-hydrate/search-dialog-dom-utils.ts',
+] as const;
 const forbiddenPatterns: readonly [RegExp, string][] = [
   [/window\.location\.assign/u, 'Search/router fallback must not use window.location.assign'],
   [/\bsearchCatalogItems\b|\bsearchCatalogPromise\b/u, 'module-level Search catalog cache must be removed'],
@@ -24,6 +29,25 @@ export const findSearchImportBoundaryViolations = (): Promise<string[]> => {
         violations.push(`search import boundary violation: ${file}: ${reason}`);
       }
     }
+  }
+
+  for (const file of searchDialogRuntimeTargets) {
+    const text = readFileSync(file, 'utf8');
+    if (/src\/components\/ui\/search-dialog|UiSearchDialog|SearchDialogElement|<\/?ui-search-(?:dialog|field)\b/u.test(text)) {
+      violations.push(`search import boundary violation: ${file}: static search dialog runtime must not depend on legacy components`);
+    }
+    if (/from ['"]lit|TemplateResult|new\s+CustomEvent\(['"]search-dialog:/u.test(text)) {
+      violations.push(`search import boundary violation: ${file}: static search dialog runtime must use neutral DOM and event helpers`);
+    }
+  }
+
+  const selectionModelText = readFileSync('src/search/search-dialog-selection-model.ts', 'utf8');
+  if (/SearchDialogVirtualizer|\b(?:KeyboardEvent|Event|HTMLElement|HTMLInputElement|HTMLButtonElement|ShadowRoot)\b|composedPath|\.closest\(|querySelector|getElementById|search-option-|requestClear|requestClose/u.test(selectionModelText)) {
+    violations.push('search import boundary violation: src/search/search-dialog-selection-model.ts: selection model must remain DOM independent');
+  }
+  const searchDialogTypesText = readFileSync('src/search/search-dialog-types.ts', 'utf8');
+  if (/SearchDialog(?:Opened|Closed|OpenRequested|CloseRequested|QueryChanged|Selected)Detail/u.test(searchDialogTypesText)) {
+    violations.push('search import boundary violation: src/search/search-dialog-types.ts: event detail types must live in search-dialog-events.ts');
   }
 
   for (const edge of collectImportEdges(roots)) {

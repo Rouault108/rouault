@@ -107,6 +107,10 @@
 
 - Search core は source adapter と URL adapter を通して実行される。
 - Search bootstrap は dialog selection を return-to-reading request へ変換し、navigation adapter が遷移を実行する。
+- Global search dialog は final HTML では static `<dialog>` として表現し、runtime behavior は `search-dialog-enhancer` と static DOM controller が所有する。
+- `open-search-dialog` bridge と query debounce / abort / stale suppression は `bootstrap.ts` が所有する。
+- trigger の `aria-expanded`、body scroll lock、focus return、native close completion は static DOM controller が所有する。
+- unavailable 中は query / input value 同期だけを許可し、loading / results / error の source state を蓄積しない。
 
 ### Hydration
 

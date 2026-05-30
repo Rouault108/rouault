@@ -17,6 +17,8 @@ describe('search dialog import boundary', () => {
       'src/search/search-dialog-constants.ts',
       'src/search/bootstrap.ts',
       'src/client/post-hydrate/search-dialog-enhancer.ts',
+      'src/client/post-hydrate/search-dialog-dom-controller.ts',
+      'src/client/post-hydrate/search-dialog-dom-utils.ts',
     ]) {
       const source = readSource(path);
       expect(source, path).not.toContain('src/components/ui/search-dialog');
@@ -51,10 +53,34 @@ describe('search dialog import boundary', () => {
     for (const path of [
       'src/search/bootstrap.ts',
       'src/client/post-hydrate/search-dialog-enhancer.ts',
+      'src/client/post-hydrate/search-dialog-dom-controller.ts',
     ]) {
       const source = readSource(path);
       expect(source, path).not.toMatch(/new\s+CustomEvent\(['"]search-dialog:/u);
       expect(source, path).toContain('dispatchSearchDialogEvent');
     }
+  });
+
+  it('selection model remains DOM independent', () => {
+    const selectionModel = readSource('src/search/search-dialog-selection-model.ts');
+    expect(selectionModel).not.toContain('SearchDialogVirtualizer');
+    expect(selectionModel).not.toMatch(/\b(?:KeyboardEvent|Event|HTMLElement|HTMLInputElement|HTMLButtonElement|ShadowRoot)\b/u);
+    expect(selectionModel).not.toContain('composedPath');
+    expect(selectionModel).not.toContain('.closest(');
+    expect(selectionModel).not.toContain('querySelector');
+    expect(selectionModel).not.toContain('getElementById');
+    expect(selectionModel).not.toContain('search-option-');
+    expect(selectionModel).not.toContain('requestClear');
+    expect(selectionModel).not.toContain('requestClose');
+  });
+
+  it('event detail types live only in the event module', () => {
+    const types = readSource('src/search/search-dialog-types.ts');
+    expect(types).not.toContain('SearchDialogSelectedDetail');
+    expect(types).not.toContain('SearchDialogOpenedDetail');
+    expect(types).not.toContain('SearchDialogClosedDetail');
+    expect(types).not.toContain('SearchDialogOpenRequestedDetail');
+    expect(types).not.toContain('SearchDialogCloseRequestedDetail');
+    expect(types).not.toContain('SearchDialogQueryChangedDetail');
   });
 });

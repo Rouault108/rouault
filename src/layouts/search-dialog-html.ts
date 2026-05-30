@@ -18,14 +18,16 @@ export const renderSearchDialogHtml = (options: { readonly idContext?: StaticRen
     <dialog
       id="${dialogId}"
       class="search-dialog"
+      aria-label="検索"
+      aria-modal="true"
       data-search-dialog-root
       data-hydration-key="search-dialog-enhancer"
       data-hydration-capability="interactive"
       data-hydration-trigger="initial"
     >
-      <form class="search-dialog__header" role="search" method="dialog" data-search-dialog-form>
+      <div class="search-dialog__header" role="search" data-search-dialog-form>
         <label class="sr-only" for="${inputId}">検索</label>
-        <div class="search-dialog__field">
+        <div class="search-dialog__field" data-search-dialog-field>
           <span class="search-dialog__field-icon" aria-hidden="true">
             ${renderStaticIconHtml('search', 'search-dialog__field-icon-svg')}
           </span>
@@ -54,7 +56,7 @@ export const renderSearchDialogHtml = (options: { readonly idContext?: StaticRen
         <button class="search-dialog__close" type="button" aria-label="検索を閉じる" data-search-dialog-close>
           ${renderStaticIconHtml('x', 'search-dialog__icon')}
         </button>
-      </form>
+      </div>
       <div class="search-dialog__body">
         <p
           class="search-dialog__status sr-only"
@@ -111,13 +113,14 @@ export const renderSearchDialogHtml = (options: { readonly idContext?: StaticRen
             <p class="search-dialog__state-description" data-search-dialog-error-message></p>
           </div>
         </section>
-        <ol
+        <ul
           id="${resultsId}"
           class="search-dialog__results"
           role="listbox"
           aria-label="検索結果"
+          hidden
           data-search-dialog-results
-        ></ol>
+        ></ul>
       </div>
       <footer class="search-dialog__footer" aria-hidden="true">
         <span><kbd>Enter</kbd> 移動</span>

@@ -1,236 +1,67 @@
-import type {
-  SearchDialogCloseReason,
-  SearchDialogItem,
-  SearchDialogSelectedDetail,
-} from './search-dialog-types.js';
-import { SearchDialogVirtualizer } from './search-dialog-virtualizer.js';
+export type SearchDialogFocusTarget = 'input' | 'clear-button' | 'close-button';
 
-interface SearchDialogSearchFieldElement extends HTMLElement {
-  readonly clearButtonVisible?: boolean;
-  focusClearButton?: () => void;
-  focus: (options?: FocusOptions) => void;
+export type SearchDialogTraversalOrigin = 'input' | 'clear-button' | 'close-button';
+
+export interface SearchDialogTraversalIntent {
+  readonly origin: SearchDialogTraversalOrigin;
+  readonly shiftKey: boolean;
 }
 
 export interface SearchDialogSelectionHost {
   isLoading(): boolean;
-  isUnavailable?(): boolean;
-  getResults(): readonly SearchDialogItem[];
+  isUnavailable(): boolean;
+  isClearButtonVisible(): boolean;
+  getResultCount(): number;
+  getResultIdAt(index: number): string | null;
   getActiveId(): string | null;
-  setActiveId(id: string | null): void;
-  getQuery(): string;
-  getSearchFieldElement(): SearchDialogSearchFieldElement | undefined;
-  getCloseButtonElement(): HTMLButtonElement | null;
-  getShadowRootRef(): ShadowRoot | null;
-  getResultListElement(): HTMLUListElement | undefined;
-  getVirtualScrollTop(): number;
-  setVirtualScrollTop(value: number): void;
-  requestClose(reason: SearchDialogCloseReason): void;
-  dispatchSelected(detail: SearchDialogSelectedDetail): void;
+  setActiveId(activeId: string | null): void;
+  requestSelection(activeId: string, modality: 'keyboard' | 'pointer'): void;
+  requestFocus(target: SearchDialogFocusTarget): void;
 }
 
 export class SearchDialogSelectionModel {
-  constructor(
-    private readonly _host: SearchDialogSelectionHost,
-    private readonly _virtualizer: SearchDialogVirtualizer,
-  ) {}
+  constructor(private readonly host: SearchDialogSelectionHost) {}
 
-  readonly handleSearchFieldKeydown = (event: KeyboardEvent): void => {
-    this._onInputKeydown(event);
-
-    if (event.defaultPrevented) {
-      return;
-    }
-
-    this.handleAuxiliaryControlKeydown(event);
-  };
-
-  readonly handleAuxiliaryControlKeydown = (event: KeyboardEvent): void => {
-    if (event.key !== 'Tab') return;
-
-    const closeButton = this._host.getCloseButtonElement();
-    const searchField = this._host.getSearchFieldElement();
-    const currentTarget = event.currentTarget;
-    const origin = event.composedPath()[0];
-
-    if (!closeButton || !searchField) return;
-
-    if (currentTarget === closeButton && event.shiftKey) {
-      event.preventDefault();
-
-      if (searchField.clearButtonVisible && searchField.focusClearButton) {
-        searchField.focusClearButton();
-      } else {
-        searchField.focus({ preventScroll: true });
-      }
-      return;
-    }
-
-    if (currentTarget !== searchField) return;
-
-    if (origin instanceof HTMLButtonElement) {
-      event.preventDefault();
-
-      if (event.shiftKey) {
-        searchField.focus({ preventScroll: true });
-      } else {
-        closeButton.focus();
-      }
-      return;
-    }
-
-    if (origin instanceof HTMLInputElement && !event.shiftKey) {
-      event.preventDefault();
-
-      if (searchField.clearButtonVisible && searchField.focusClearButton) {
-        searchField.focusClearButton();
-      } else {
-        closeButton.focus();
-      }
-    }
-  };
-
-  readonly handleResultClick = (event: Event): void => {
-    if (this._isUnavailable()) return;
-    const target = event.currentTarget;
-    if (!(target instanceof HTMLElement)) return;
-
-    const index = Number(target.dataset['index'] ?? '-1');
-    const results = this._host.getResults();
-
-    if (!Number.isInteger(index) || index < 0 || index >= results.length) return;
-
-    this._host.setActiveId(results[index]?.id ?? null);
-    this._selectActiveResult('pointer');
-  };
-
-  readonly handleResultKeydown = (event: KeyboardEvent): void => {
-    if (this._isUnavailable()) return;
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      this.handleResultClick(event);
-    }
-  };
-
-  getOptionId(itemId: string): string {
-    return `search-option-${itemId}`;
-  }
-
-  scrollActiveOptionIntoView(): void {
-    const activeIndex = this.getActiveIndex();
-    if (activeIndex < 0) return;
-
-    const results = this._host.getResults();
-    if (this._virtualizer.isVirtualized(results.length)) {
-      this._scrollVirtualizedIndexIntoView(activeIndex);
-      return;
-    }
-
-    const shadowRoot = this._host.getShadowRootRef();
-    if (!shadowRoot) return;
-
-    const activeItem = results[activeIndex];
-    if (!activeItem) return;
-
-    const activeOption = shadowRoot.getElementById(this.getOptionId(activeItem.id));
-    activeOption?.scrollIntoView({ block: 'nearest' });
-  }
-
-  private _onInputKeydown(event: KeyboardEvent): void {
-    if (this._isUnavailable()) return;
-    if (this._host.isLoading()) return;
-
-    const results = this._host.getResults();
-
-    switch (event.key) {
-      case 'ArrowDown':
-        if (results.length === 0) return;
-        event.preventDefault();
-        this._moveActiveIndex(1);
-        break;
-
-      case 'ArrowUp':
-        if (results.length === 0) return;
-        event.preventDefault();
-        this._moveActiveIndex(-1);
-        break;
-
-      case 'Enter':
-        if (event.isComposing) return;
-        if (results.length === 0) return;
-        event.preventDefault();
-        this._selectActiveResult('keyboard');
-        break;
-
-      case 'Tab':
-        if (!event.shiftKey) {
-          const closeButton = this._host.getCloseButtonElement();
-          const searchField = this._host.getSearchFieldElement();
-
-          if (!searchField?.clearButtonVisible && closeButton) {
-            event.preventDefault();
-            closeButton.focus();
-          }
-        }
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  private _moveActiveIndex(delta: 1 | -1): void {
-    const results = this._host.getResults();
-    const total = results.length;
+  moveActive(delta: 1 | -1): void {
+    if (this.host.isLoading() || this.host.isUnavailable()) return;
+    const total = this.host.getResultCount();
     if (total === 0) return;
-
-    const activeIndex = this.getActiveIndex();
+    const activeId = this.host.getActiveId();
+    let activeIndex = -1;
+    for (let index = 0; index < total; index += 1) {
+      if (this.host.getResultIdAt(index) === activeId) {
+        activeIndex = index;
+        break;
+      }
+    }
     const nextIndex =
       activeIndex < 0 ? (delta === 1 ? 0 : total - 1) : (activeIndex + delta + total) % total;
-
-    this._host.setActiveId(results[nextIndex]?.id ?? null);
-    this.scrollActiveOptionIntoView();
+    this.host.setActiveId(this.host.getResultIdAt(nextIndex));
   }
 
-  private _scrollVirtualizedIndexIntoView(index: number): void {
-    const list = this._host.getResultListElement();
-    if (!list) return;
-
-    const nextScrollTop = this._virtualizer.scrollIndexIntoView(
-      index,
-      list,
-      this._host.getVirtualScrollTop(),
-    );
-    this._host.setVirtualScrollTop(nextScrollTop);
+  selectActive(method: 'keyboard' | 'pointer'): void {
+    if (this.host.isLoading() || this.host.isUnavailable()) return;
+    const activeId = this.host.getActiveId() ?? this.host.getResultIdAt(0);
+    if (activeId !== null) this.host.requestSelection(activeId, method);
   }
 
-  getActiveIndex(): number {
-    const activeId = this._host.getActiveId();
-    if (activeId === null) return -1;
-    return this._host.getResults().findIndex((item) => item.id === activeId);
+  setActiveByIndex(index: number): void {
+    if (this.host.isLoading() || this.host.isUnavailable()) return;
+    const activeId = this.host.getResultIdAt(index);
+    if (activeId !== null) this.host.setActiveId(activeId);
   }
 
-  private _isUnavailable(): boolean {
-    return this._host.isUnavailable?.() === true;
+  handleForwardTabFromInput(): void {
+    this.host.requestFocus(this.host.isClearButtonVisible() ? 'clear-button' : 'close-button');
   }
 
-  private _selectActiveResult(selectionMethod: 'keyboard' | 'pointer'): void {
-    const results = this._host.getResults();
-    const activeIndex = this.getActiveIndex();
-    const index = activeIndex >= 0 ? activeIndex : 0;
-    const item = results[index];
-
-    if (!item) return;
-
-    this._host.dispatchSelected({
-      id: item.id,
-      renderHref: item.renderHref,
-      canonicalPathname: item.canonicalPathname,
-      title: item.title,
-      query: this._host.getQuery(),
-      index,
-      item,
-      selectionMethod,
-    });
-    this._host.requestClose('selection');
+  handleAuxiliaryTraversal(intent: SearchDialogTraversalIntent): void {
+    if (intent.origin === 'clear-button') {
+      this.host.requestFocus(intent.shiftKey ? 'input' : 'close-button');
+      return;
+    }
+    if (intent.origin === 'close-button' && intent.shiftKey) {
+      this.host.requestFocus(this.host.isClearButtonVisible() ? 'clear-button' : 'input');
+    }
   }
 }

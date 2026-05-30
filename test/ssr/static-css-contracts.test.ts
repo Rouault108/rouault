@@ -8,9 +8,12 @@ const readCss = (fileName: string): string =>
   readFileSync(resolve(cssDir, fileName), 'utf8').replace(/\/\*[\s\S]*?\*\//gu, '');
 
 const ruleBlock = (css: string, selector: string): string => {
-  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-  const match = new RegExp(`(?:^|\\})\\s*${escaped}\\s*\\{(?<body>[^}]*)\\}`, 'u').exec(css);
-  return match?.groups?.['body'] ?? '';
+  const blocks: string[] = [];
+  for (const match of css.matchAll(/(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}/gu)) {
+    const selectors = match.groups?.['selectors']?.split(',').map((value) => value.trim());
+    if (selectors?.includes(selector)) blocks.push(match.groups?.['body'] ?? '');
+  }
+  return blocks.join('\n');
 };
 
 const expectRuleToDeclare = (css: string, selector: string, declarations: readonly string[]): void => {
@@ -157,7 +160,25 @@ describe('static CSS contracts', () => {
     expect(ruleBlock(css, ".search-dialog__result[aria-selected='true']")).to.match(
       /background:|outline:/u,
     );
-    expect(css).not.to.contain('.search-dialog__virtual-spacer');
+    expectRuleToDeclare(css, '.search-dialog__virtual-spacer', ['block-size: 0']);
+    expectRuleToDeclare(css, '.search-dialog__field::after', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.search-dialog__clear::after', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.search-dialog__field-icon', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.search-dialog__field-icon *', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.search-dialog__clear-icon', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.search-dialog__clear-icon *', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.search-dialog__icon', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.search-dialog__icon *', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.search-dialog__clear', [
+      'inset-block-start: 50%',
+      'inline-size: 44px',
+      'block-size: 44px',
+      'transform: translateY(-50%)',
+    ]);
+    const inputBlock = ruleBlock(css, '.search-dialog__input');
+    expect(inputBlock).not.to.match(/var\(--space-5\)(?!,)/u);
+    expect(inputBlock).to.contain('padding-inline-start: calc(16px + var(--space-5, 20px))');
+    expect(inputBlock).to.contain('padding-inline-end: calc(44px + var(--space-3, 12px))');
     expect(css).to.contain('@media print');
     expect(css).to.contain('@media (forced-colors: active)');
     expect(css).to.contain('@media (prefers-reduced-motion: reduce)');

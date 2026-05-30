@@ -1,9 +1,16 @@
 import { expect } from '@open-wc/testing';
 
 import { enhanceSearchDialog } from '../../src/client/post-hydrate/search-dialog-enhancer.js';
-import { initSearch, resetSearchBootstrapForTest } from '../../src/search/bootstrap.js';
+import {
+  initSearch,
+  initSearchUnavailable,
+  resetSearchBootstrapForTest,
+} from '../../src/search/bootstrap.js';
 import { createSearchCore } from '../../src/search/search-core.js';
-import { createSearchDialogEvent } from '../../src/search/search-dialog-events.js';
+import {
+  createSearchDialogEvent,
+  dispatchSearchDialogEvent,
+} from '../../src/search/search-dialog-events.js';
 import {
   searchReturnToReadingEventName,
   type SearchReturnToReadingEventDetail,
@@ -56,21 +63,24 @@ const createTestInitSearchOptions = (controller = createTestSearchCore()) => ({
   controller,
 });
 
-const appendStaticSearchDialog = (): HTMLElement => {
-  const dialog = document.createElement('div');
+const appendStaticSearchDialog = (): HTMLDialogElement => {
+  const dialog = document.createElement('dialog');
   dialog.id = 'global-search-dialog';
   dialog.dataset['searchDialogRoot'] = '';
   dialog.innerHTML = `
-    <form data-search-dialog-form>
-      <input data-search-dialog-input>
-      <button type="button" data-search-dialog-clear hidden></button>
-    </form>
+    <div data-search-dialog-form>
+      <div data-search-dialog-field>
+        <input data-search-dialog-input>
+        <button type="button" data-search-dialog-clear hidden></button>
+      </div>
+      <button type="button" data-search-dialog-close></button>
+    </div>
     <p data-search-dialog-status></p>
     <div data-search-dialog-loading hidden></div>
     <div data-search-dialog-empty hidden></div>
     <div data-search-dialog-error hidden><p data-search-dialog-error-message></p></div>
     <div data-search-dialog-unavailable hidden><p data-search-dialog-unavailable-message></p></div>
-    <ol data-search-dialog-results></ol>
+    <ul data-search-dialog-results hidden></ul>
   `;
   document.body.append(dialog);
   return dialog;
@@ -85,6 +95,7 @@ describe('search-bootstrap', () => {
   afterEach(() => {
     resetSearchBootstrapForTest();
     document.querySelector('#global-search-dialog')?.remove();
+    enhanceSearchDialog(document);
   });
 
   it('static dialog DOM の open request と input search を createTestSearchCore() に接続すること', async () => {
@@ -130,7 +141,7 @@ describe('search-bootstrap', () => {
 
     const dialog = appendStaticSearchDialog();
     const input = dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]');
-    const results = dialog.querySelector<HTMLOListElement>('[data-search-dialog-results]');
+    const results = dialog.querySelector<HTMLUListElement>('[data-search-dialog-results]');
     if (!input || !results) {
       throw new Error('static search dialog fixture is invalid');
     }
@@ -147,6 +158,8 @@ describe('search-bootstrap', () => {
           composed: true,
         }),
       );
+      await Promise.resolve();
+      await Promise.resolve();
 
       expect(dialog.hasAttribute('open')).to.equal(true);
       expect(trigger.getAttribute('aria-expanded')).to.equal('true');
@@ -206,6 +219,38 @@ describe('search-bootstrap', () => {
     expect(() => initSearch(createTestInitSearchOptions())).to.throw;
   });
 
+  it('open-search-dialog bridge は ready / unavailable で modality を保持すること', () => {
+    const trigger = document.createElement('button');
+    document.body.append(trigger);
+    const openRequests: unknown[] = [];
+    document.addEventListener('search-dialog:open-request', (event) => {
+      openRequests.push((event as CustomEvent).detail);
+    });
+
+    initSearch(createTestInitSearchOptions());
+    document.dispatchEvent(
+      new CustomEvent('open-search-dialog', {
+        detail: { trigger, modality: 'pointer' },
+      }),
+    );
+    resetSearchBootstrapForTest();
+
+    initSearchUnavailable({
+      runtimeEnvironment: 'test',
+      reason: 'search-runtime-unavailable',
+    });
+    document.dispatchEvent(
+      new CustomEvent('open-search-dialog', {
+        detail: { trigger, modality: 'pointer' },
+      }),
+    );
+
+    expect(openRequests).to.deep.equal([
+      { trigger, modality: 'pointer' },
+      { trigger, modality: 'pointer' },
+    ]);
+  });
+
   it('selection を return-to-reading event boundary へ変換すること', () => {
     const dialog = appendStaticSearchDialog();
     const events: SearchReturnToReadingEventDetail[] = [];
@@ -247,5 +292,50 @@ describe('search-bootstrap', () => {
         selectionMethod: 'pointer',
       },
     ]);
+  });
+
+  it('stale query settle が後続 query の AbortController を破棄しないこと', async () => {
+    const controller = createTestSearchCore();
+    const pending: {
+      readonly signal: AbortSignal | undefined;
+      readonly resolve: (value: Awaited<ReturnType<typeof controller.search>>) => void;
+    }[] = [];
+    controller.search = (_request, executionOptions) =>
+      new Promise((resolve) => {
+        pending.push({ signal: executionOptions?.signal, resolve });
+      });
+    const dialog = appendStaticSearchDialog();
+    const input = dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]');
+    if (!input) throw new Error('static search dialog fixture is invalid');
+    initSearch(createTestInitSearchOptions(controller));
+    enhanceSearchDialog(document);
+
+    input.value = 'alpha';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await waitForSearchDebounce();
+    input.value = 'beta';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await waitForSearchDebounce();
+
+    expect(pending).to.have.length(2);
+    expect(pending[0]?.signal?.aborted).to.equal(true);
+    expect(pending[1]?.signal?.aborted).to.equal(false);
+    pending[0]?.resolve({
+      mode: 'navigate',
+      items: [],
+      total: 0,
+      rankingProfileId: 'rouault-search-v1',
+      diagnostics: {
+        degraded: false,
+        activeSources: [],
+        failures: [],
+        issues: [],
+      },
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'programmatic' });
+    expect(pending[1]?.signal?.aborted).to.equal(true);
   });
 });

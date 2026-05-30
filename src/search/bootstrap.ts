@@ -1,4 +1,4 @@
-import type { SearchDialogItem, SearchDialogSelectedDetail } from './search-dialog-types.js';
+import type { SearchDialogItem } from './search-dialog-types.js';
 import {
   dispatchSearchReturnToReading,
   handleSearchReturnToReadingEvent,
@@ -18,15 +18,19 @@ import {
 } from '../../shared/search/search-unavailable-reason.js';
 import {
   dispatchSearchDialogEvent,
+  type SearchDialogCloseRequestDetail,
   type SearchDialogOpenRequestDetail,
   type SearchDialogQueryChangeDetail,
+  type SearchDialogSelectedDetail,
 } from './search-dialog-events.js';
+import { SEARCH_DEBOUNCE_MS } from './search-dialog-constants.js';
 
 let initialized = false;
 let bootstrapListenerController: AbortController | null = null;
 let initializedSearchCore: SearchCore | null = null;
 let initializedSearchRoutePredicate: ((pathname: string) => boolean) | null = null;
 let initializedSearchBootstrapState: SearchBootstrapState | null = null;
+let cleanupSearchQueryRuntime: (() => void) | null = null;
 
 export type SearchBootstrapState =
   | {
@@ -102,6 +106,22 @@ const readOpenSearchDialogTrigger = (event: Event): HTMLElement | null => {
   return event.target instanceof HTMLElement ? event.target : null;
 };
 
+const readOpenSearchDialogModality = (
+  event: Event,
+): SearchDialogOpenRequestDetail['modality'] => {
+  const detail = event instanceof CustomEvent ? (event.detail as unknown) : null;
+  if (
+    detail !== null &&
+    typeof detail === 'object' &&
+    'modality' in detail &&
+    (detail.modality === 'keyboard' || detail.modality === 'pointer')
+  ) {
+    return detail.modality;
+  }
+
+  return undefined;
+};
+
 const isTextEditingSearchShortcutTarget = (target: EventTarget | null): boolean =>
   target instanceof HTMLElement &&
   (target.isContentEditable ||
@@ -164,14 +184,29 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
   const searchEventDiagnostics = createSearchEventDiagnosticSink();
   let searchTimerId: number | undefined;
   let searchGeneration = 0;
+  let activeSearchAbortController: AbortController | null = null;
 
-  const runDialogSearch = (query: string): void => {
+  const cleanupPendingSearch = (dispatchLoadingChange: boolean): void => {
     searchGeneration += 1;
-    const generation = searchGeneration;
     if (typeof searchTimerId === 'number') {
       window.clearTimeout(searchTimerId);
+      searchTimerId = undefined;
     }
+    activeSearchAbortController?.abort();
+    activeSearchAbortController = null;
+    if (dispatchLoadingChange) {
+      dispatchSearchDialogEvent('search-dialog:loading-change', { loading: false });
+    }
+  };
+  cleanupSearchQueryRuntime = () => {
+    cleanupPendingSearch(false);
+  };
+
+  const runDialogSearch = (query: string): void => {
+    cleanupPendingSearch(false);
+    const generation = searchGeneration;
     searchTimerId = window.setTimeout(() => {
+      searchTimerId = undefined;
       const normalizedQuery = query.trim();
       if (normalizedQuery.length === 0) {
         dispatchSearchDialogEvent('search-dialog:loading-change', { loading: false });
@@ -179,6 +214,8 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
         return;
       }
 
+      const searchAbortController = new AbortController();
+      activeSearchAbortController = searchAbortController;
       dispatchSearchDialogEvent('search-dialog:loading-change', { loading: true });
       void controller
         .search(
@@ -189,7 +226,7 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
             tagMode: 'or',
             sort: 'relevance',
           },
-          { signal },
+          { signal: searchAbortController.signal },
         )
         .then((result) => {
           if (generation !== searchGeneration) {
@@ -224,22 +261,34 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
             items,
           });
         })
-        .catch(() => {
-          if (generation !== searchGeneration) {
+        .catch((error: unknown) => {
+          if (
+            generation !== searchGeneration ||
+            searchAbortController.signal.aborted ||
+            (error instanceof DOMException && error.name === 'AbortError')
+          ) {
             return;
           }
           dispatchSearchDialogEvent('search-dialog:loading-change', { loading: false });
           dispatchSearchDialogEvent('search-dialog:error', {
             message: '検索の読み込みに失敗しました。',
           });
+        })
+        .finally(() => {
+          if (
+            generation === searchGeneration &&
+            activeSearchAbortController === searchAbortController
+          ) {
+            activeSearchAbortController = null;
+          }
         });
-    }, 150);
+    }, SEARCH_DEBOUNCE_MS);
   };
 
   const onOpenSearchDialog = (event: Event): void => {
     dispatchOpenRequest({
       trigger: readOpenSearchDialogTrigger(event),
-      modality: undefined,
+      modality: readOpenSearchDialogModality(event),
     });
   };
 
@@ -282,6 +331,12 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
     );
   };
 
+  const onCloseRequested = (event: Event): void => {
+    const detail =
+      event instanceof CustomEvent ? (event.detail as SearchDialogCloseRequestDetail) : null;
+    if (detail?.reason) cleanupPendingSearch(true);
+  };
+
   const onReturnToReading = (event: Event): void => {
     void handleSearchReturnToReadingEvent(event, {
       siteUrlContext,
@@ -307,6 +362,7 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
   document.addEventListener('open-search-dialog', onOpenSearchDialog, { signal });
   document.addEventListener('search-dialog:query-change', onQueryChanged, { signal });
   document.addEventListener('search-dialog:selected', onSelected, { signal });
+  document.addEventListener('search-dialog:close-request', onCloseRequested, { signal });
   document.addEventListener(searchReturnToReadingEventName, onReturnToReading, { signal });
   document.addEventListener('keydown', onKeydown, { signal });
 
@@ -329,16 +385,11 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
   const onOpenSearchDialog = (event: Event): void => {
     dispatchOpenRequest({
       trigger: readOpenSearchDialogTrigger(event),
-      modality: undefined,
+      modality: readOpenSearchDialogModality(event),
     });
-    dispatchUnavailableState(options.reason);
   };
 
   const onOpenRequested = (): void => {
-    dispatchUnavailableState(options.reason);
-  };
-
-  const onQueryChanged = (): void => {
     dispatchUnavailableState(options.reason);
   };
 
@@ -354,17 +405,17 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
       trigger: document.activeElement instanceof HTMLElement ? document.activeElement : null,
       modality: 'keyboard',
     });
-    dispatchUnavailableState(options.reason);
   };
 
   document.addEventListener('open-search-dialog', onOpenSearchDialog, { signal });
   document.addEventListener('search-dialog:open-request', onOpenRequested, { signal });
-  document.addEventListener('search-dialog:query-change', onQueryChanged, { signal });
   document.addEventListener('keydown', onKeydown, { signal });
   return { status: 'unavailable', reason: options.reason };
 }
 
 export function resetSearchBootstrapForTest(): void {
+  cleanupSearchQueryRuntime?.();
+  cleanupSearchQueryRuntime = null;
   bootstrapListenerController?.abort();
   bootstrapListenerController = null;
   initializedSearchCore = null;
