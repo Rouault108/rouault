@@ -1,5 +1,6 @@
 import {
   BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE,
+  SEARCH_DIALOG_LOADING_INDICATOR_DELAY_MS,
   SEARCH_DIALOG_STATUS_EMPTY_MESSAGE,
   SEARCH_DIALOG_STATUS_ERROR_FALLBACK_MESSAGE,
   SEARCH_DIALOG_STATUS_IDLE_MESSAGE,
@@ -53,6 +54,7 @@ interface CompleteCloseOnceOptions {
 interface SearchDialogState {
   query: string;
   loading: boolean;
+  loadingIndicatorVisible: boolean;
   results: readonly SearchDialogItem[];
   activeId: string | null;
   errorMessage: string | null;
@@ -112,6 +114,7 @@ export const createSearchDialogDomController = (
   const state: SearchDialogState = {
     query: input?.value ?? '',
     loading: false,
+    loadingIndicatorVisible: false,
     results: [],
     activeId: null,
     errorMessage: null,
@@ -132,6 +135,8 @@ export const createSearchDialogDomController = (
     disposed: false,
   };
   let closeFallbackTimer: number | undefined;
+  let loadingIndicatorTimer: number | undefined;
+  let loadingIndicatorGeneration = 0;
   let operationQueue = Promise.resolve();
   let escapeCloseRequested = false;
   let closeRequestPending = false;
@@ -161,6 +166,51 @@ export const createSearchDialogDomController = (
       state.completedResultsQuery === currentQuery &&
       state.results.length > 0
     );
+  };
+
+  const clearLoadingIndicatorTimer = (): void => {
+    if (loadingIndicatorTimer !== undefined) {
+      window.clearTimeout(loadingIndicatorTimer);
+      loadingIndicatorTimer = undefined;
+    }
+  };
+
+  const resetLoadingIndicator = (): void => {
+    loadingIndicatorGeneration += 1;
+    clearLoadingIndicatorTimer();
+    state.loadingIndicatorVisible = false;
+  };
+
+  const resetLoadingIndicatorAndHideDom = (): void => {
+    resetLoadingIndicator();
+    setHidden(loadingState, true);
+    if (dialog.dataset['searchDialogState'] === 'loading') {
+      dialog.dataset['searchDialogState'] = 'idle';
+    }
+    if (liveRegion?.textContent === SEARCH_DIALOG_STATUS_LOADING_MESSAGE) {
+      liveRegion.textContent = '';
+    }
+  };
+
+  const scheduleLoadingIndicator = (): void => {
+    resetLoadingIndicator();
+    const generation = loadingIndicatorGeneration;
+    loadingIndicatorTimer = window.setTimeout(() => {
+      loadingIndicatorTimer = undefined;
+      if (
+        state.disposed ||
+        generation !== loadingIndicatorGeneration ||
+        state.unavailable ||
+        !state.isOpen ||
+        state.isClosing ||
+        !state.loading ||
+        state.query.trim() === ''
+      ) {
+        return;
+      }
+      state.loadingIndicatorVisible = true;
+      renderFromState();
+    }, SEARCH_DIALOG_LOADING_INDICATOR_DELAY_MS);
   };
 
   const getResultIdAt = (index: number): string | null =>
@@ -288,21 +338,23 @@ export const createSearchDialogDomController = (
     const hasCurrentCompletedResults =
       currentQuery !== '' && state.completedResultsQuery === currentQuery;
     const showUnavailable = state.unavailable;
-    const showLoading = !showUnavailable && state.loading;
-    const showError = !showUnavailable && !showLoading && state.errorMessage !== null;
+    const showLoading = !showUnavailable && state.loading && state.loadingIndicatorVisible;
+    const showError = !showUnavailable && !state.loading && state.errorMessage !== null;
     const showResults =
       !showUnavailable &&
-      !showLoading &&
+      !state.loading &&
       !showError &&
       hasCurrentCompletedResults &&
       state.results.length > 0;
     const showEmpty =
       !showUnavailable &&
-      !showLoading &&
+      !state.loading &&
       !showError &&
       hasCurrentCompletedResults &&
       state.hasCompletedSearch &&
       state.results.length === 0;
+    // data-search-dialog-state は表示中の視覚状態を表す。
+    // 検索処理中でも、遅延時間内でローディングUIを表示していない間は loading にしない。
     const stateName = showUnavailable
       ? 'unavailable'
       : showLoading
@@ -322,7 +374,7 @@ export const createSearchDialogDomController = (
     setHidden(unavailableState, !showUnavailable);
     if (input !== null) {
       input.setAttribute('aria-expanded', String(showResults));
-      input.setAttribute('aria-busy', String(showLoading));
+      input.setAttribute('aria-busy', String(state.loading));
     }
     if (clearButton !== null) clearButton.hidden = state.query.length === 0;
     if (errorMessage !== null) errorMessage.textContent = state.errorMessage ?? '';
@@ -339,6 +391,13 @@ export const createSearchDialogDomController = (
     if (activeOption !== null) input?.setAttribute('aria-activedescendant', activeOption.id);
     else input?.removeAttribute('aria-activedescendant');
     if (liveRegion !== null) {
+      const isPendingSearchStatus =
+        currentQuery !== '' &&
+        !hasCurrentCompletedResults &&
+        !showUnavailable &&
+        !showError &&
+        !showResults &&
+        !showEmpty;
       liveRegion.textContent = showUnavailable
         ? state.unavailableMessage
         : showLoading
@@ -349,7 +408,9 @@ export const createSearchDialogDomController = (
               ? createSearchDialogResultsStatusMessage(state.results.length)
               : showEmpty
                 ? SEARCH_DIALOG_STATUS_EMPTY_MESSAGE
-                : SEARCH_DIALOG_STATUS_IDLE_MESSAGE;
+                : state.loading || isPendingSearchStatus
+                  ? ''
+                  : SEARCH_DIALOG_STATUS_IDLE_MESSAGE;
     }
   }
 
@@ -363,6 +424,7 @@ export const createSearchDialogDomController = (
     if (!isDisposeCleanup && (generation !== state.closeOperationGeneration || state.closeCompletionDone)) {
       return;
     }
+    resetLoadingIndicatorAndHideDom();
     const effectiveCloseReason = state.closeReason ?? 'programmatic';
     const capturedTriggerElement = state.triggerElement;
     if (closeFallbackTimer !== undefined) window.clearTimeout(closeFallbackTimer);
@@ -489,6 +551,9 @@ export const createSearchDialogDomController = (
     input?.focus({ preventScroll: true });
     input?.setSelectionRange(state.query.length, state.query.length);
     dialog.dataset['searchDialogOpenModality'] = state.pendingOpenModality;
+    if (!wasAlreadyOpen && state.loading && state.query.trim() !== '' && !state.unavailable) {
+      scheduleLoadingIndicator();
+    }
     if (!wasAlreadyOpen && state.query.trim() !== '' && !state.loading && !state.unavailable) {
       dispatchSearchDialogEvent('search-dialog:query-change', { query: state.query });
     }
@@ -509,7 +574,9 @@ export const createSearchDialogDomController = (
   };
 
   const clearQuery = (): void => {
+    resetLoadingIndicator();
     state.query = '';
+    state.loading = false;
     if (input !== null) input.value = '';
     state.results = [];
     state.activeId = null;
@@ -524,12 +591,14 @@ export const createSearchDialogDomController = (
   const handleQueryChanged = (query: string): void => {
     state.query = query;
     if (input !== null && input.value !== query) input.value = query;
+    resetLoadingIndicator();
     if (state.unavailable) {
       renderFromState();
       return;
     }
     const currentQuery = query.trim();
     if (currentQuery === '') {
+      state.loading = false;
       state.results = [];
       state.activeId = null;
       state.errorMessage = null;
@@ -539,6 +608,7 @@ export const createSearchDialogDomController = (
       if (currentQuery !== state.completedResultsQuery) {
         state.activeId = null;
         state.hasCompletedSearch = false;
+        state.completedResultsQuery = null;
       }
       state.errorMessage = null;
     }
@@ -557,11 +627,27 @@ export const createSearchDialogDomController = (
   ownerDocument.addEventListener('search-dialog:loading-change', (event) => {
     if (state.unavailable) return;
     const loading = (event as CustomEvent<{ loading: boolean }>).detail.loading;
+    const currentQuery = state.query.trim();
+    if (loading && currentQuery === '') {
+      resetLoadingIndicator();
+      state.loading = false;
+      state.results = [];
+      state.hasCompletedSearch = false;
+      state.completedResultsQuery = null;
+      state.errorMessage = null;
+      state.activeId = null;
+      renderFromState();
+      return;
+    }
     state.loading = loading;
     if (loading) {
       state.hasCompletedSearch = false;
+      state.completedResultsQuery = null;
       state.errorMessage = null;
       state.activeId = null;
+      scheduleLoadingIndicator();
+    } else {
+      resetLoadingIndicator();
     }
     renderFromState();
   }, { signal: listeners.signal });
@@ -570,6 +656,7 @@ export const createSearchDialogDomController = (
     const detail = (event as CustomEvent<SearchDialogResultsChangeDetail>).detail;
     if (detail.query !== state.query.trim()) return;
     const normalizedQuery = detail.query.trim();
+    resetLoadingIndicator();
     state.loading = false;
     state.results = detail.items;
     state.hasCompletedSearch = normalizedQuery !== '';
@@ -584,6 +671,7 @@ export const createSearchDialogDomController = (
   }, { signal: listeners.signal });
   ownerDocument.addEventListener('search-dialog:error', (event) => {
     if (state.unavailable) return;
+    resetLoadingIndicator();
     state.loading = false;
     state.errorMessage = (event as CustomEvent<{ message: string }>).detail.message;
     state.hasCompletedSearch = true;
@@ -591,6 +679,8 @@ export const createSearchDialogDomController = (
     renderFromState();
   }, { signal: listeners.signal });
   ownerDocument.addEventListener('search-dialog:unavailable', (event) => {
+    resetLoadingIndicator();
+    state.loading = false;
     state.unavailable = true;
     state.unavailableMessage = (event as CustomEvent<{ message: string }>).detail.message;
     renderFromState();
@@ -710,6 +800,7 @@ export const createSearchDialogDomController = (
     dispose(): void {
       if (state.disposed) return;
       state.disposed = true;
+      resetLoadingIndicatorAndHideDom();
       listeners.abort();
       modalityTracker.destroy();
       completeCloseOnce('dispose', state.closeOperationGeneration, {

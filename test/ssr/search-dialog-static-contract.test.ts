@@ -23,6 +23,12 @@ describe('search dialog static contract', () => {
     expect(rendered).toContain(
       '検索結果がある場合は、上下矢印キーで候補を移動し、Enterキーでメモへ移動します。Escapeキーで検索を閉じます。',
     );
+    expect(rendered).toMatch(
+      /<p\b(?=[^>]*\bdata-search-dialog-status\b)(?=[^>]*\brole="status")(?=[^>]*\baria-live="polite")(?=[^>]*\baria-atomic="true")[^>]*>/u,
+    );
+    expect(rendered).not.toMatch(
+      /<div\b(?=[^>]*\bclass="[^"]*\bsearch-dialog__status-copy\b[^"]*")(?=[^>]*\brole="status")[^>]*>/u,
+    );
     expect(rendered).toMatch(/<ul[\s\S]*id="global-search-results"[\s\S]*role="listbox"/u);
     expect(rendered).toContain('hidden');
     expect(rendered).not.toContain('<form');

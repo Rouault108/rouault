@@ -66,6 +66,7 @@ export const renderSearchDialogHtml = (options: { readonly idContext?: StaticRen
         </p>
         <p
           class="search-dialog__status sr-only"
+          role="status"
           aria-live="polite"
           aria-atomic="true"
           data-search-dialog-status
@@ -88,7 +89,7 @@ export const renderSearchDialogHtml = (options: { readonly idContext?: StaticRen
         </section>
         <div class="search-dialog__loading search-dialog__state" hidden data-search-dialog-loading>
           <div class="search-dialog__spinner" aria-hidden="true"></div>
-          <div class="search-dialog__status-copy" role="status" aria-atomic="true">
+          <div class="search-dialog__status-copy">
             <h2 class="search-dialog__status-heading">検索しています</h2>
             <p>検索インデックスを照会しています。</p>
           </div>
