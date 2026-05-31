@@ -13,6 +13,7 @@ export const renderSearchDialogHtml = (options: { readonly idContext?: StaticRen
   const dialogId = idContext.reserveId('search-dialog', GLOBAL_SEARCH_DIALOG_ID);
   const inputId = idContext.reserveId('search-dialog', 'global-search-input');
   const resultsId = idContext.reserveId('search-dialog', 'global-search-results');
+  const instructionsId = idContext.reserveId('search-dialog', 'global-search-instructions');
 
   return `
   <section data-hydration-scope="global-search" data-search-dialog-scope>
@@ -40,6 +41,7 @@ export const renderSearchDialogHtml = (options: { readonly idContext?: StaticRen
             aria-expanded="false"
             aria-autocomplete="list"
             aria-controls="${resultsId}"
+            aria-describedby="${instructionsId}"
             autocomplete="off"
             placeholder="メモを検索"
             data-search-dialog-input
@@ -59,6 +61,9 @@ export const renderSearchDialogHtml = (options: { readonly idContext?: StaticRen
         </button>
       </div>
       <div class="search-dialog__body">
+        <p id="${instructionsId}" class="sr-only">
+          検索結果がある場合は、上下矢印キーで候補を移動し、Enterキーでメモへ移動します。Escapeキーで検索を閉じます。
+        </p>
         <p
           class="search-dialog__status sr-only"
           aria-live="polite"
@@ -124,8 +129,15 @@ export const renderSearchDialogHtml = (options: { readonly idContext?: StaticRen
         ></ul>
       </div>
       <footer class="search-dialog__footer" aria-hidden="true">
-        <span><kbd>Enter</kbd> 移動</span>
-        <span><kbd>Esc</kbd> 閉じる</span>
+        <span class="search-dialog__footer-shortcut">
+          <span class="search-dialog__footer-key-group">
+            <kbd>↑</kbd>
+            <kbd>↓</kbd>
+          </span>
+          候補移動
+        </span>
+        <span class="search-dialog__footer-shortcut"><kbd>Enter</kbd> メモへ移動</span>
+        <span class="search-dialog__footer-shortcut"><kbd>Esc</kbd> 閉じる</span>
       </footer>
     </dialog>
   </section>

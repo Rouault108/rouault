@@ -16,6 +16,13 @@ describe('search dialog static contract', () => {
     expect(rendered).toContain('data-search-dialog-field');
     expect(rendered).toContain(SEARCH_DIALOG_STATUS_IDLE_MESSAGE);
     expect(rendered).toMatch(/<input[\s\S]*role="combobox"[\s\S]*aria-controls="global-search-results"/u);
+    expect(rendered).toContain('id="global-search-instructions"');
+    expect(rendered).toMatch(
+      /<input\b(?=[^>]*\baria-describedby="global-search-instructions")(?=[^>]*\bdata-search-dialog-input\b)[^>]*>/u,
+    );
+    expect(rendered).toContain(
+      '検索結果がある場合は、上下矢印キーで候補を移動し、Enterキーでメモへ移動します。Escapeキーで検索を閉じます。',
+    );
     expect(rendered).toMatch(/<ul[\s\S]*id="global-search-results"[\s\S]*role="listbox"/u);
     expect(rendered).toContain('hidden');
     expect(rendered).not.toContain('<form');
@@ -28,5 +35,22 @@ describe('search dialog static contract', () => {
     expect(rendered.match(/data-icon="alert-circle"/gu)?.length).toBe(2);
     expect(rendered).toContain('data-icon="search"');
     expect(rendered).not.toContain('<span class="search-dialog__state-icon" aria-hidden="true"></span>');
+
+    const footerMatch = rendered.match(/<footer\b[^>]*>[\s\S]*?<\/footer>/u);
+    expect(footerMatch).not.toBeNull();
+
+    const footerHtml = footerMatch?.[0] ?? '';
+    const footerOpenTag = footerHtml.match(/<footer\b[^>]*>/u)?.[0] ?? '';
+
+    expect(footerOpenTag).toContain('aria-hidden="true"');
+
+    const footerClassMatch = footerOpenTag.match(/\bclass="([^"]*)"/u);
+    expect(footerClassMatch).not.toBeNull();
+    const footerClassValue = footerClassMatch?.[1] ?? '';
+    expect(footerClassValue.trim().split(/\s+/)).toContain('search-dialog__footer');
+
+    expect(footerHtml).toMatch(
+      /<kbd>↑<\/kbd>[\s\S]*?<kbd>↓<\/kbd>[\s\S]*?候補移動[\s\S]*?<kbd>Enter<\/kbd>\s*メモへ移動[\s\S]*?<kbd>Esc<\/kbd>\s*閉じる/u,
+    );
   });
 });

@@ -115,6 +115,93 @@ test.describe('search dialog static contract', () => {
     await expect(input).toHaveAttribute('role', 'combobox');
     await expect(input).toHaveAttribute('aria-expanded', 'false');
     await expect(input).toHaveAttribute('aria-controls', resultsId ?? '');
+
+    const footer = page.locator('.search-dialog__footer');
+    await expect(footer).toHaveAttribute('aria-hidden', 'true');
+    await expect(footer.locator('kbd')).toHaveText(['↑', '↓', 'Enter', 'Esc']);
+
+    await expect(footer.locator('.search-dialog__footer-shortcut')).toHaveText([
+      /↑\s*↓\s*候補移動/,
+      /Enter\s*メモへ移動/,
+      /Esc\s*閉じる/,
+    ]);
+
+    const describedBy = await input.getAttribute('aria-describedby');
+    expect(describedBy).toBeTruthy();
+
+    const instructionInfo = await input.evaluate((element) => {
+      const describedByValue = element.getAttribute('aria-describedby');
+      const ids = describedByValue?.trim().split(/\s+/).filter(Boolean) ?? [];
+      const root = element.closest('[data-search-dialog-root]');
+
+      for (const id of ids) {
+        const instructions = document.getElementById(id);
+        if (instructions === null) continue;
+
+        const text = instructions.textContent ?? '';
+        const sameDialogRoot =
+          root !== null && instructions.closest('[data-search-dialog-root]') === root;
+
+        if (
+          sameDialogRoot &&
+          instructions.classList.contains('sr-only') &&
+          text.includes('検索結果がある場合は、上下矢印キーで候補を移動') &&
+          text.includes('Enterキーでメモへ移動') &&
+          text.includes('Escapeキーで検索を閉じます')
+        ) {
+          return {
+            id,
+            text,
+            isSrOnly: true,
+            sameDialogRoot: true,
+          };
+        }
+      }
+
+      return null;
+    });
+
+    expect(instructionInfo).not.toBeNull();
+    expect(instructionInfo?.isSrOnly).toBe(true);
+    expect(instructionInfo?.sameDialogRoot).toBe(true);
+    expect(instructionInfo?.text ?? '').toContain('検索結果がある場合は、上下矢印キーで候補を移動');
+    expect(instructionInfo?.text ?? '').toContain('Enterキーでメモへ移動');
+    expect(instructionInfo?.text ?? '').toContain('Escapeキーで検索を閉じます');
+
+    const kbdMetrics = await page.locator('.search-dialog__footer kbd').nth(2).evaluate((kbd) => {
+      const style = getComputedStyle(kbd);
+      return {
+        display: style.display,
+        borderTopStyle: style.borderTopStyle,
+        borderTopWidth: Number.parseFloat(style.borderTopWidth),
+        paddingInlineStart: Number.parseFloat(style.paddingInlineStart),
+        backgroundColor: style.backgroundColor,
+      };
+    });
+
+    expect(kbdMetrics.display).toBe('flex');
+    expect(kbdMetrics.borderTopStyle).toBe('solid');
+    expect(kbdMetrics.borderTopWidth).toBeGreaterThan(0);
+    expect(kbdMetrics.paddingInlineStart).toBeGreaterThan(0);
+    expect(kbdMetrics.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+    expect(kbdMetrics.backgroundColor).not.toBe('transparent');
+  });
+
+  test('footer keyboard hints keep visible borders in forced colors', async ({ page }) => {
+    await page.emulateMedia({ forcedColors: 'active' });
+    await page.goto('/');
+    await waitForSearchDialogDom(page);
+
+    const kbdMetrics = await page.locator('.search-dialog__footer kbd').nth(2).evaluate((kbd) => {
+      const style = getComputedStyle(kbd);
+      return {
+        borderTopStyle: style.borderTopStyle,
+        borderTopWidth: Number.parseFloat(style.borderTopWidth),
+      };
+    });
+
+    expect(kbdMetrics.borderTopStyle).toBe('solid');
+    expect(kbdMetrics.borderTopWidth).toBeGreaterThan(0);
   });
 
   test('field CSS and real pointer operations keep the input clickable', async ({ page }) => {
