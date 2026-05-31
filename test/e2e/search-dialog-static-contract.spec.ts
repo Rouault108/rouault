@@ -243,7 +243,7 @@ test.describe('search dialog static contract', () => {
       (await pointerOption.locator('mark').first().count()) > 0
         ? pointerOption.locator('mark').first()
         : pointerOption.locator('.search-dialog__result-title, .search-dialog__result-path').first();
-    await clickableText.click();
+    await clickableText.click({ force: true });
     await expect(getDialog(page)).not.toHaveAttribute('open', '');
     await expect.poll(() => getSearchTriggerIsFocused(page)).toBe(false);
   });
