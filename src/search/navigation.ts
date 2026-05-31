@@ -3,6 +3,7 @@ import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import type { LoadedInternalDocumentRouteManifestState } from '../router/internal-document-route-manifest-loader.js';
 import { navigateInternalDocument, type NavigateInternalDocumentOptions } from '../router/navigate-internal-document.js';
 import { createSearchCanonicalPathname } from '../../shared/search/document-url.js';
+import { createSearchRouteAllowlistPredicate } from '../../shared/search/search-route-allowlist.js';
 import { buildSearchResultRenderHref } from './normalize-search-result-url.js';
 import {
   createSearchEventDiagnosticCandidateRef,
@@ -64,7 +65,7 @@ export async function handleSearchReturnToReadingEvent(
 
   const canonical = createSearchCanonicalPathname({
     pathname: detail.canonicalPathname,
-    isInternalDocumentPathname: (pathname) => options.routeManifestState.routeSet.has(pathname),
+    isInternalDocumentPathname: createSearchRouteAllowlistPredicate(options.routeManifestState.routeSet),
   });
   if (!canonical.ok) {
     const candidateRef = createSearchEventDiagnosticCandidateRef('return-to-reading:invalid-canonical');

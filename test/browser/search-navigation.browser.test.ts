@@ -118,6 +118,52 @@ describe('search-navigation', () => {
     expect(navigatedUrl).to.equal('/notes/search-result/');
   });
 
+  it('return-to-reading handler が route manifest 末尾 slash なしと canonical 末尾 slash ありの差を吸収すること', async () => {
+    const diagnostics = createSearchEventDiagnosticSink();
+    let navigatedUrl = '';
+    const routeManifestState = {
+      status: 'loaded' as const,
+      manifest: {
+        version: 1 as const,
+        buildId: 'test-build-id',
+        buildLabel: 'test-build-label',
+        generatedAt: '2026-01-01T00:00:00.000Z',
+        siteOrigin: DEFAULT_SITE_URL_CONTEXT.siteOrigin,
+        basePath: DEFAULT_SITE_URL_CONTEXT.basePath,
+        routes: ['/notes/router'],
+      },
+      routeSet: createInternalDocumentRouteSet(['/notes/router']),
+    };
+
+    await handleSearchReturnToReadingEvent(
+      new CustomEvent(searchReturnToReadingEventName, {
+        detail: {
+          schemaVersion: 1,
+          eventName: searchReturnToReadingEventName,
+          renderHref: '/notes/router/',
+          canonicalPathname: '/notes/router/',
+          title: 'Router',
+          query: 'router',
+          selectionMethod: 'pointer',
+        },
+      }),
+      {
+        siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+        routeManifestState,
+        diagnostics,
+        resolveRouter: () => ({
+          navigate: (url: string) => {
+            navigatedUrl = url;
+            return Promise.resolve(createCompletedNavigationResult(url));
+          },
+        }),
+      },
+    );
+
+    expect(diagnostics.snapshot().issues).to.deep.equal([]);
+    expect(navigatedUrl).to.equal('/notes/router/');
+  });
+
   it('return-to-reading event は renderHref mismatch を navigation しないこと', async () => {
     const target = new EventTarget();
     let navigatedUrl = '';

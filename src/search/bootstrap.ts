@@ -12,6 +12,7 @@ import { buildSearchResultRenderHref } from './normalize-search-result-url.js';
 import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
 import { createSearchCanonicalPathname } from '../../shared/search/document-url.js';
 import { createSearchEventDiagnosticSink } from '../../shared/search/search-diagnostics.js';
+import { createSearchRouteAllowlistPredicate } from '../../shared/search/search-route-allowlist.js';
 import {
   getSearchBootstrapUnavailableMessage,
   type SearchBootstrapUnavailableReason,
@@ -163,7 +164,7 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
 
   const loadedRouteSet = options.routeManifestState.routeSet;
   const siteUrlContext = options.siteUrlContext;
-  const isInternalDocumentPathname = (pathname: string): boolean => loadedRouteSet.has(pathname);
+  const isInternalDocumentPathname = createSearchRouteAllowlistPredicate(loadedRouteSet);
 
   const controller =
     options.controller ??

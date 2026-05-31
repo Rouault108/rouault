@@ -20,6 +20,7 @@ import {
   type MutableSearchDiagnosticsTarget,
 } from '../shared/search/search-diagnostics.js';
 import { parseSearchCatalogJson } from '../shared/search/search-json-artifact-parser.js';
+import { createSearchRouteAllowlistPredicate } from '../shared/search/search-route-allowlist.js';
 import type { SiteUrlContext } from '../shared/site/site-url-context.js';
 
 export interface AssertProductionSearchArtifactsOptions {
@@ -181,19 +182,6 @@ const parseCatalogForAssertion = (options: {
   }
 
   return parsed.items;
-};
-
-const createSearchCatalogRoutePredicate = (routeSet: {
-  readonly has: (pathname: string) => boolean;
-}): ((pathname: string) => boolean) => {
-  return (pathname: string): boolean => {
-    if (routeSet.has(pathname)) {
-      return true;
-    }
-
-    // route manifest は router 比較用に note URL の末尾 slash を落とすため、検索 canonical と比較できる形にも寄せる。
-    return pathname !== '/' && pathname.endsWith('/') && routeSet.has(pathname.slice(0, -1));
-  };
 };
 
 const assertUniqueCanonicalPathnames = (
@@ -375,7 +363,7 @@ export async function assertProductionSearchArtifacts(
     );
   }
   const routeSet = toInternalDocumentRouteSet(routeManifest);
-  const isInternalDocumentPathname = createSearchCatalogRoutePredicate(routeSet);
+  const isInternalDocumentPathname = createSearchRouteAllowlistPredicate(routeSet);
 
   const expectedRawItems =
     options.expectedItemsForTestOnly ??

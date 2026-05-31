@@ -2,6 +2,7 @@ import { expect } from '@open-wc/testing';
 
 import { enhanceSearchDialog } from '../../src/client/post-hydrate/search-dialog-enhancer.js';
 import {
+  getInitializedSearchRoutePredicate,
   initSearch,
   initSearchUnavailable,
   resetSearchBootstrapForTest,
@@ -61,6 +62,27 @@ const createTestInitSearchOptions = (controller = createTestSearchCore()) => ({
   runtimeEnvironment: 'test' as const,
   siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
   routeManifestState: createTestRouteManifestState(),
+  controller,
+});
+
+const createSlashlessNoteRouteManifestState = () => ({
+  status: 'loaded' as const,
+  manifest: {
+    version: 1 as const,
+    buildId: 'test-build-id',
+    buildLabel: 'test-build-label',
+    generatedAt: '2026-01-01T00:00:00.000Z',
+    siteOrigin: DEFAULT_SITE_URL_CONTEXT.siteOrigin,
+    basePath: DEFAULT_SITE_URL_CONTEXT.basePath,
+    routes: ['/', '/notes/router'],
+  },
+  routeSet: createInternalDocumentRouteSet(['/', '/notes/router']),
+});
+
+const createSlashlessRouteInitSearchOptions = (controller = createTestSearchCore()) => ({
+  runtimeEnvironment: 'test' as const,
+  siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+  routeManifestState: createSlashlessNoteRouteManifestState(),
   controller,
 });
 
@@ -220,6 +242,68 @@ describe('search-bootstrap', () => {
     expect(() => initSearch(createTestInitSearchOptions())).to.throw;
   });
 
+  it('initSearch が slash tolerant な検索 route predicate を初期化すること', () => {
+    initSearch(createSlashlessRouteInitSearchOptions());
+
+    const predicate = getInitializedSearchRoutePredicate();
+
+    expect(predicate).to.not.equal(null);
+    expect(predicate?.('/notes/router')).to.equal(true);
+    expect(predicate?.('/notes/router/')).to.equal(true);
+    expect(predicate?.('/notes/unknown/')).to.equal(false);
+  });
+
+  it('route manifest が末尾 slash なしでも bootstrap の dialog item 変換で検索結果を落とさないこと', async () => {
+    const controller = createTestSearchCore();
+    controller.search = () =>
+      Promise.resolve({
+        mode: 'navigate',
+        items: [
+          {
+            canonicalPathname: '/notes/router/' as SearchCanonicalPathname,
+            renderHref: buildSearchRenderHref({
+              canonicalPathname: '/notes/router/' as SearchCanonicalPathname,
+              basePath: DEFAULT_SITE_URL_CONTEXT.basePath,
+            }),
+            pathLabel: 'notes / router',
+            title: 'Router 設計メモ',
+            description: 'desc',
+            date: {
+              epochMs: Date.parse('2026-03-01'),
+              original: '2026-03-01',
+            },
+            tags: ['architecture'],
+            snippet: null,
+            reasons: [{ kind: 'title-prefix', tokens: ['router'] }],
+          },
+        ],
+        total: 1,
+        rankingProfileId: 'rouault-search-v1',
+        diagnostics: {
+          degraded: false,
+          activeSources: ['catalog'],
+          failures: [],
+          issues: [],
+        },
+      });
+
+    const dialog = appendStaticSearchDialog();
+    const input = dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]');
+    const results = dialog.querySelector<HTMLUListElement>('[data-search-dialog-results]');
+    if (!input || !results) {
+      throw new Error('static search dialog fixture is invalid');
+    }
+
+    initSearch(createSlashlessRouteInitSearchOptions(controller));
+    enhanceSearchDialog(document);
+
+    input.value = 'router';
+    input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+    await waitForSearchDebounce();
+
+    expect(results.textContent).to.contain('Router 設計メモ');
+  });
+
   it('open-search-dialog bridge は ready / unavailable で modality を保持すること', () => {
     const trigger = document.createElement('button');
     document.body.append(trigger);
@@ -279,7 +363,7 @@ describe('search-bootstrap', () => {
     trigger.remove();
   });
 
-  it('selection を return-to-reading event boundary へ変換すること', () => {
+  it('route manifest が末尾 slash なしでも selection を return-to-reading event boundary へ変換すること', () => {
     const dialog = appendStaticSearchDialog();
     const events: SearchReturnToReadingEventDetail[] = [];
 
@@ -289,7 +373,7 @@ describe('search-bootstrap', () => {
       events.push(customEvent.detail);
     });
 
-    initSearch(createTestInitSearchOptions());
+    initSearch(createSlashlessRouteInitSearchOptions());
 
     document.dispatchEvent(
       createSearchDialogEvent('search-dialog:selected', {

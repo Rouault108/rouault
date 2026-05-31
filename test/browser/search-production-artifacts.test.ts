@@ -8,6 +8,7 @@ import {
 import { loadSearchCatalog, SearchCatalogLoadError } from '../../shared/search/search-catalog.js';
 import { createSearchJsonParseDiagnosticSink } from '../../shared/search/search-diagnostics.js';
 import type { SearchFetchResponse } from '../../shared/search/search-loaders.js';
+import { createSearchRouteAllowlistPredicate } from '../../shared/search/search-route-allowlist.js';
 import { createSiteUrlContext } from '../../shared/site/site-url-context.js';
 
 const createResponse = (options: {
@@ -79,6 +80,33 @@ describe('search production artifacts', () => {
 
     expect(items).to.have.length(1);
     expect(items[0]?.tags).to.deep.equal(['production']);
+  });
+
+  it('route manifest が末尾 slash なしでも search catalog の末尾 slash あり canonicalPathname を allowlist 通過させること', async () => {
+    const siteUrlContext = createSiteUrlContext({ siteOrigin: 'https://example.com' });
+    const routeSet = createInternalDocumentRouteSet(['/notes/search']);
+
+    const items = await loadSearchCatalog({
+      runtimeEnvironment: 'test',
+      siteUrlContext,
+      artifactUrlResolver: createSearchArtifactUrlResolver({ siteUrlContext }),
+      isInternalDocumentPathname: createSearchRouteAllowlistPredicate(routeSet),
+      testOnlyFetcher: async () =>
+        createResponse({
+          ok: true,
+          status: 200,
+          body: [
+            {
+              canonicalPathname: '/notes/search/',
+              title: 'Search',
+              tags: ['production'],
+            },
+          ],
+        }),
+    });
+
+    expect(items).to.have.length(1);
+    expect(items[0]?.canonicalPathname).to.equal('/notes/search/');
   });
 
   it('404 は catalog-fetch-failed として扱うこと', async () => {
