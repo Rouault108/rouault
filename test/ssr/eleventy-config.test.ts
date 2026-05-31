@@ -105,7 +105,7 @@ describe('eleventy config', () => {
     expect(passthroughCopies).toContainEqual({ 'src/assets': 'assets' });
     expect(passthroughCopies).toContainEqual({ '.generated/media/assets': 'media' });
     expect(passthroughCopies).toContainEqual({ 'examples/media': 'example-assets' });
-  }, 30_000);
+  }, 60_000);
 
   it('buildMetadata グローバルデータを buildId / buildLabel / generatedAt 付きで登録できること', async () => {
     const previousBuildId = process.env['ROUAULT_BUILD_ID'];

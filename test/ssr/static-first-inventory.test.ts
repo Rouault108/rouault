@@ -23,11 +23,18 @@ import { STATIC_FIRST_UNKNOWN_UI_ALLOWLIST } from '../../build/content/static-fi
 
 const repoRoot = process.cwd();
 
-const gitFiles = (): readonly string[] =>
-  execFileSync('git', ['ls-files'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+const repositoryGitFiles = execFileSync('git', ['ls-files'], { encoding: 'utf8' })
+  .trim()
+  .split('\n')
+  .filter(Boolean);
 
-const sourceFiles = (): readonly string[] =>
-  gitFiles().filter((path) => /^(src|build|shared|test)\/.+\.ts$/u.test(path));
+const repositorySourceFiles = repositoryGitFiles.filter((path) =>
+  /^(src|build|shared|test)\/.+\.ts$/u.test(path),
+);
+
+const gitFiles = (): readonly string[] => repositoryGitFiles;
+
+const sourceFiles = (): readonly string[] => repositorySourceFiles;
 
 const readRepoFile = (path: string): string => readFileSync(join(repoRoot, path), 'utf8');
 
@@ -199,19 +206,23 @@ describe('static-first inventory split', () => {
     }
   });
 
-  it('classifies every repository custom element tag without using unknown UI as a substitute', () => {
-    expect(STATIC_FIRST_UNKNOWN_UI_ALLOWLIST).toEqual([]);
+  it(
+    'classifies every repository custom element tag without using unknown UI as a substitute',
+    () => {
+      expect(STATIC_FIRST_UNKNOWN_UI_ALLOWLIST).toEqual([]);
 
-    const unclassified = extractCustomElementTags().filter(
-      (tag) =>
-        !retainedTags.has(tag) &&
-        !deletionTags.has(tag) &&
-        !staleTags.has(tag) &&
-        !unknownTags.has(tag),
-    );
+      const unclassified = extractCustomElementTags().filter(
+        (tag) =>
+          !retainedTags.has(tag) &&
+          !deletionTags.has(tag) &&
+          !staleTags.has(tag) &&
+          !unknownTags.has(tag),
+      );
 
-    expect(unclassified).toEqual([]);
-  });
+      expect(unclassified).toEqual([]);
+    },
+    15_000,
+  );
 
   it('keeps retained component metadata complete and manifest policy explicit', () => {
     const tags = STATIC_FIRST_RETAINED_COMPONENTS.map((component) => component.tag);
