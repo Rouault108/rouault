@@ -107,10 +107,36 @@
 
 - Search core は source adapter と URL adapter を通して実行される。
 - Search bootstrap は dialog selection を return-to-reading request へ変換し、navigation adapter が遷移を実行する。
-- Global search dialog は final HTML では static `<dialog>` として表現し、runtime behavior は `search-dialog-enhancer` と static DOM controller が所有する。
-- `open-search-dialog` bridge と query debounce / abort / stale suppression は `bootstrap.ts` が所有する。
+- Global search dialog は final HTML では static `<dialog data-search-dialog-root>` として表現し、`src/layouts/search-dialog-html.ts` が light DOM shell を所有する。`<form method="dialog">`、`<ui-search-dialog>`、`<ui-search-field>` に依存してはならない。
+- Runtime behavior は `src/client/post-hydrate/search-dialog-enhancer.ts` と `src/client/post-hydrate/search-dialog-dom-controller.ts` が所有する。enhancer は static DOM controller の生成と trigger binding に責務を限定する。
+- `open-search-dialog` bridge と query debounce / `AbortController` / stale suppression は `src/search/bootstrap.ts` が所有する。
+- selection から return-to-reading への変換は bootstrap / navigation adapter 境界で行う。
 - trigger の `aria-expanded`、body scroll lock、focus return、native close completion は static DOM controller が所有する。
 - unavailable 中は query / input value 同期だけを許可し、loading / results / error の source state を蓄積しない。
+
+#### Static Global Search Dialog Lifecycle
+
+- close は `search-dialog:close-request` に集約する。native `cancel` は `preventDefault()` し、Escape の close-request に正規化する。
+- native `close` は close completion の入口である。`completeCloseOnce(source, generation)` は generation 単位で一度だけ focus return、body unlock、trigger の `aria-expanded=false` を実行する。
+- `activeCloseGeneration` は controller 起因の native close と外部 native close を区別する。外部 native close も同じ cleanup へ合流する。
+- dispose cleanup は user-facing focus-return event を発火させない。
+- selection close では trigger へ focus を返さず、必要な場合だけ blur する。
+- close pending / closing 中の open-request は破棄する。close 完了後に pending open を再実行してはならない。
+
+#### Static Global Search Dialog State And Events
+
+- event detail 型の正本は `src/search/search-dialog-events.ts` とする。`src/search/search-dialog-types.ts` に戻してはならない。
+- live region message の正本は `src/search/search-dialog-constants.ts` の `SEARCH_DIALOG_STATUS_IDLE_MESSAGE`、`SEARCH_DIALOG_STATUS_LOADING_MESSAGE`、`SEARCH_DIALOG_STATUS_ERROR_FALLBACK_MESSAGE`、`SEARCH_DIALOG_STATUS_EMPTY_MESSAGE`、`createSearchDialogResultsStatusMessage` とする。unavailable message は runtime state の `unavailableMessage` を使う。
+- query change 時は旧 query の count message を消す。`completedResultsQuery !== current trimmed query` の間は旧 count を live region に出さない。
+- results-change は current trimmed query と一致する場合だけ採用する。stale results と stale row は selection に使わない。
+
+#### Static Global Search Dialog DOM
+
+- input は `role="combobox"`、results は `role="listbox"` とする。active option は `aria-activedescendant` で同期し、virtualized list でも active option を DOM に保持する。
+- result row は safe DOM rendering で構築し、`innerHTML` を使わない。
+- result row は `role="option"`、stable DOM `id`、`data-index`、`data-item-id` を持つ。stable item id の正本 contract は `data-item-id` とする。互換目的の `data-id` は残してよい。
+- selection detail は DOM dataset から復元せず、controller state の current `SearchDialogItem` から構築する。
+- SVG / path click は button または row の操作として扱う。
 
 ### Hydration
 

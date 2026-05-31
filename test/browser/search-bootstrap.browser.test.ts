@@ -19,6 +19,7 @@ import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js'
 import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
 import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
 import { buildSearchRenderHref, type SearchCanonicalPathname } from '../../shared/search/document-url.js';
+import { SEARCH_DEBOUNCE_MS } from '../../src/search/search-dialog-constants.js';
 
 
 const createTestSearchCore = () => createSearchCore({
@@ -88,7 +89,7 @@ const appendStaticSearchDialog = (): HTMLDialogElement => {
 
 const waitForSearchDebounce = (): Promise<void> =>
   new Promise((resolve) => {
-    window.setTimeout(resolve, 180);
+    window.setTimeout(resolve, SEARCH_DEBOUNCE_MS + 30);
   });
 
 describe('search-bootstrap', () => {
@@ -249,6 +250,33 @@ describe('search-bootstrap', () => {
       { trigger, modality: 'pointer' },
       { trigger, modality: 'pointer' },
     ]);
+  });
+
+  it('light DOM trigger は unavailable mode を開き unavailable state を表示すること', async () => {
+    const dialog = appendStaticSearchDialog();
+    const trigger = document.createElement('button');
+    document.body.append(trigger);
+    initSearchUnavailable({
+      runtimeEnvironment: 'test',
+      reason: 'search-runtime-unavailable',
+    });
+    enhanceSearchDialog(document);
+
+    trigger.dispatchEvent(
+      new CustomEvent('open-search-dialog', {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(dialog.open).to.equal(true);
+    expect(dialog.querySelector<HTMLElement>('[data-search-dialog-unavailable]')?.hidden).to.equal(
+      false,
+    );
+    expect(dialog.querySelector<HTMLElement>('[data-search-dialog-loading]')?.hidden).to.equal(true);
+    trigger.remove();
   });
 
   it('selection を return-to-reading event boundary へ変換すること', () => {

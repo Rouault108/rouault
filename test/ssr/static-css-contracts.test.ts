@@ -24,6 +24,20 @@ const expectRuleToDeclare = (css: string, selector: string, declarations: readon
   }
 };
 
+const atRuleBlock = (css: string, atRule: string): string => {
+  const start = css.indexOf(atRule);
+  expect(start, `${atRule} block`).toBeGreaterThanOrEqual(0);
+  const openingBrace = css.indexOf('{', start);
+  let depth = 0;
+  for (let index = openingBrace; index < css.length; index += 1) {
+    if (css[index] === '{') depth += 1;
+    if (css[index] !== '}') continue;
+    depth -= 1;
+    if (depth === 0) return css.slice(openingBrace + 1, index);
+  }
+  throw new Error(`${atRule} block is not closed`);
+};
+
 const mainCssImportRegistry = [
   './fonts.css',
   './tokens.css',
@@ -144,6 +158,10 @@ describe('static CSS contracts', () => {
       'grid-template-rows:',
     ]);
     expectRuleToDeclare(css, '.search-dialog__body', ['min-block-size:', 'overflow:']);
+    expectRuleToDeclare(css, '.search-dialog__field', [
+      'box-sizing: border-box',
+      'position: relative',
+    ]);
     expectRuleToDeclare(css, '.search-dialog__icon', ['inline-size:', 'block-size:']);
     expectRuleToDeclare(css, '.search-dialog[data-closing]', ['animation:']);
     expectRuleToDeclare(css, '.search-dialog__spinner', [
@@ -164,21 +182,78 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(css, '.search-dialog__field::after', ['pointer-events: none']);
     expectRuleToDeclare(css, '.search-dialog__clear::after', ['pointer-events: none']);
     expectRuleToDeclare(css, '.search-dialog__field-icon', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.search-dialog__field-icon', [
+      'inset-block-start: 50%',
+      'transform: translateY(-50%)',
+      'inline-size:',
+      'block-size:',
+    ]);
     expectRuleToDeclare(css, '.search-dialog__field-icon *', ['pointer-events: none']);
     expectRuleToDeclare(css, '.search-dialog__clear-icon', ['pointer-events: none']);
     expectRuleToDeclare(css, '.search-dialog__clear-icon *', ['pointer-events: none']);
     expectRuleToDeclare(css, '.search-dialog__icon', ['pointer-events: none']);
     expectRuleToDeclare(css, '.search-dialog__icon *', ['pointer-events: none']);
     expectRuleToDeclare(css, '.search-dialog__clear', [
+      'box-sizing: border-box',
+      'position: absolute',
       'inset-block-start: 50%',
       'inline-size: 44px',
       'block-size: 44px',
+      'padding: 0',
       'transform: translateY(-50%)',
     ]);
+    expectRuleToDeclare(css, '.search-dialog [hidden]', ['display: none !important']);
+    expectRuleToDeclare(css, '.search-dialog__results', [
+      'flex: 1 1 auto',
+      'min-block-size: 0',
+      'overflow-y: auto',
+    ]);
     const inputBlock = ruleBlock(css, '.search-dialog__input');
+    expect(inputBlock).to.contain('box-sizing: border-box');
+    expect(inputBlock).to.contain('display: block');
+    expect(inputBlock).to.contain('inline-size: 100%');
+    expect(inputBlock).to.contain('block-size: 44px');
+    expect(inputBlock).to.contain('min-block-size: 44px');
+    expect(inputBlock).to.contain('margin: 0');
+    expect(inputBlock).to.contain('padding-block: 0');
     expect(inputBlock).not.to.match(/var\(--space-5\)(?!,)/u);
     expect(inputBlock).to.contain('padding-inline-start: calc(16px + var(--space-5, 20px))');
     expect(inputBlock).to.contain('padding-inline-end: calc(44px + var(--space-3, 12px))');
+    expect(inputBlock).to.contain('font: inherit');
+    expect(inputBlock).to.contain('outline: none');
+    expect(inputBlock).to.contain('background: transparent');
+    expect(inputBlock).to.contain('border: 0');
+    expect(inputBlock).to.contain('appearance: none');
+    expectRuleToDeclare(css, '.search-dialog__input:focus-visible', ['outline:']);
+    const reducedMotion = atRuleBlock(css, '@media (prefers-reduced-motion: reduce)');
+    for (const selector of [
+      '.search-dialog',
+      '.search-dialog[data-closing]',
+      '.search-dialog::backdrop',
+      '.search-dialog[data-closing]::backdrop',
+      '.search-dialog__spinner',
+      '.search-dialog__clear',
+      '.search-dialog__close',
+    ]) {
+      expect(reducedMotion).to.contain(selector);
+    }
+    const forcedColors = atRuleBlock(css, '@media (forced-colors: active)');
+    expectRuleToDeclare(forcedColors, '.search-dialog', [
+      'color: CanvasText',
+      'background: Canvas',
+      'border-color: CanvasText',
+    ]);
+    expectRuleToDeclare(forcedColors, '.search-dialog__field', [
+      'background: Field',
+      'border-color: FieldText',
+    ]);
+    expectRuleToDeclare(forcedColors, '.search-dialog__input', ['color: FieldText']);
+    expectRuleToDeclare(forcedColors, '.search-dialog__clear', ['color: ButtonText']);
+    expectRuleToDeclare(forcedColors, '.search-dialog__close', ['color: ButtonText']);
+    expectRuleToDeclare(forcedColors, '.search-dialog__spinner', [
+      'color: CanvasText',
+      'border-block-start-color: transparent',
+    ]);
     expect(css).to.contain('@media print');
     expect(css).to.contain('@media (forced-colors: active)');
     expect(css).to.contain('@media (prefers-reduced-motion: reduce)');

@@ -123,9 +123,11 @@ describe('search-dialog-enhancer', () => {
       ],
     });
     expect(dialog.querySelector<HTMLElement>('[data-search-dialog-loading]')?.hidden).to.equal(true);
-    expect(dialog.querySelector('[role="option"]')?.textContent).to.contain('Router 設計メモ');
+    const option = dialog.querySelector<HTMLElement>('[role="option"]');
+    expect(option?.textContent).to.contain('Router 設計メモ');
+    expect(option?.dataset['itemId']).to.equal('/notes/router/');
 
-    dialog.querySelector<HTMLElement>('[role="option"]')?.click();
+    option?.click();
     expect(selected).to.have.length(1);
     expect((selected[0] as { id?: string }).id).to.equal('/notes/router/');
   });
@@ -224,6 +226,80 @@ describe('search-dialog-enhancer', () => {
     dispatchSearchDialogEvent('search-dialog:open-request', { trigger: null, modality: 'keyboard' });
     await flushOperations();
     expect(queries).to.deep.equal([{ query: ' router ' }]);
+  });
+
+  it('close-request 直後の open-request は破棄し、close 完了後に自動 reopen しないこと', async () => {
+    const dialog = appendDialogFixture();
+    const trigger = document.createElement('button');
+    trigger.dataset['searchDialogTrigger'] = '';
+    document.body.append(trigger);
+    const focusReturns: unknown[] = [];
+    document.addEventListener('search-dialog:focus-return', (event) => {
+      focusReturns.push((event as CustomEvent).detail);
+    });
+    enhanceSearchDialog(document);
+    dispatchSearchDialogEvent('search-dialog:open-request', { trigger, modality: 'keyboard' });
+    await flushOperations();
+
+    dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'programmatic' });
+    dispatchSearchDialogEvent('search-dialog:open-request', { trigger, modality: 'pointer' });
+    await waitForCloseCompletion(dialog);
+
+    expect(dialog.open).to.equal(false);
+    expect(document.body.hasAttribute('data-ui-search-dialog-open')).to.equal(false);
+    expect(focusReturns).to.deep.equal([{ reason: 'programmatic' }]);
+  });
+
+  it('data-closing 中の open-request は破棄し、close completion 後の通常 reopen は成功すること', async () => {
+    const dialog = appendDialogFixture();
+    const trigger = document.createElement('button');
+    trigger.dataset['searchDialogTrigger'] = '';
+    document.body.append(trigger);
+    enhanceSearchDialog(document);
+    dispatchSearchDialogEvent('search-dialog:open-request', { trigger, modality: 'keyboard' });
+    await flushOperations();
+
+    const animation = dialog.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 60 });
+    dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'programmatic' });
+    await flushOperations();
+    expect(dialog.hasAttribute('data-closing')).to.equal(true);
+    dispatchSearchDialogEvent('search-dialog:open-request', { trigger, modality: 'pointer' });
+    await animation.finished;
+    await waitForCloseCompletion(dialog);
+    expect(dialog.open).to.equal(false);
+
+    dispatchSearchDialogEvent('search-dialog:open-request', { trigger, modality: 'pointer' });
+    await flushOperations();
+    expect(dialog.open).to.equal(true);
+  });
+
+  it('duplicate Escape close-request を抑止しても次回 Escape close が stuck しないこと', async () => {
+    const dialog = appendDialogFixture();
+    enhanceSearchDialog(document);
+    dispatchSearchDialogEvent('search-dialog:open-request', { trigger: null, modality: 'keyboard' });
+    await flushOperations();
+
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'escape' });
+    await waitForCloseCompletion(dialog);
+    expect(dialog.open).to.equal(false);
+
+    dispatchSearchDialogEvent('search-dialog:open-request', { trigger: null, modality: 'keyboard' });
+    await flushOperations();
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await waitForCloseCompletion(dialog);
+    expect(dialog.open).to.equal(false);
+  });
+
+  it('closed dialog の no-op close-request は直後の通常 open-request を阻害しないこと', async () => {
+    const dialog = appendDialogFixture();
+    enhanceSearchDialog(document);
+
+    dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'programmatic' });
+    dispatchSearchDialogEvent('search-dialog:open-request', { trigger: null, modality: 'keyboard' });
+    await flushOperations();
+
+    expect(dialog.open).to.equal(true);
   });
 
   it('stale enhancer abort は新 controller と trigger binding を破棄しないこと', async () => {

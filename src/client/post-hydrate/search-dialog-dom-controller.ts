@@ -134,6 +134,7 @@ export const createSearchDialogDomController = (
   let closeFallbackTimer: number | undefined;
   let operationQueue = Promise.resolve();
   let escapeCloseRequested = false;
+  let closeRequestPending = false;
 
   const enqueueOperation = (operation: () => Promise<void> | void): void => {
     operationQueue = operationQueue.then(operation, operation);
@@ -231,6 +232,7 @@ export const createSearchDialogDomController = (
     row.setAttribute('aria-selected', String(item.id === state.activeId));
     row.tabIndex = -1;
     row.dataset['index'] = String(index);
+    row.dataset['itemId'] = item.id;
     row.dataset['id'] = item.id;
     row.dataset['renderHref'] = item.renderHref;
     row.dataset['canonicalPathname'] = item.canonicalPathname;
@@ -399,6 +401,7 @@ export const createSearchDialogDomController = (
     state.activeCloseGeneration = null;
     state.closeCompletionDone = true;
     escapeCloseRequested = false;
+    closeRequestPending = false;
   };
 
   const startNativeClose = (generation: number): void => {
@@ -432,8 +435,31 @@ export const createSearchDialogDomController = (
     startNativeClose(generation);
   };
 
+  // no-op close で直後の通常 open を破棄しないため、実際に cleanup が必要かを受付時に判定する。
+  const hasCloseWork = (): boolean =>
+    isDialogOpen(dialog) ||
+    state.bodyLockHeld ||
+    state.isOpen ||
+    state.isClosing ||
+    state.activeCloseGeneration !== null;
+
   const requestClose = (detail: SearchDialogCloseRequestDetail): void => {
-    enqueueOperation(() => performClose(detail));
+    if (state.disposed || !hasCloseWork()) {
+      if (detail.reason === 'escape') escapeCloseRequested = false;
+      return;
+    }
+    if (closeRequestPending || state.isClosing || state.activeCloseGeneration !== null) {
+      if (detail.reason === 'escape') escapeCloseRequested = false;
+      return;
+    }
+    closeRequestPending = true;
+    enqueueOperation(async () => {
+      try {
+        await performClose(detail);
+      } finally {
+        closeRequestPending = false;
+      }
+    });
   };
 
   const shouldStartExternalNativeCloseCompletion = (): boolean =>
@@ -469,6 +495,14 @@ export const createSearchDialogDomController = (
   };
 
   const requestOpen = (detail: SearchDialogOpenRequestDetail): void => {
+    if (
+      state.disposed ||
+      closeRequestPending ||
+      state.isClosing ||
+      state.activeCloseGeneration !== null
+    ) {
+      return;
+    }
     enqueueOperation(() => {
       performOpen(detail);
     });
@@ -682,6 +716,7 @@ export const createSearchDialogDomController = (
         force: true,
         suppressEvents: true,
       });
+      closeRequestPending = false;
       state.closeOperationGeneration += 1;
     },
   };

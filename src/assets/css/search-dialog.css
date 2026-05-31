@@ -47,6 +47,7 @@
 }
 
 .search-dialog__field {
+  box-sizing: border-box;
   position: relative;
   display: flex;
   align-items: center;
@@ -76,18 +77,31 @@
 
 .search-dialog__field-icon {
   position: absolute;
-  inset-inline-start: var(--space-3);
+  inset-block-start: 50%;
+  inset-inline-start: var(--space-3, 12px);
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--icon-base, 16px);
+  block-size: var(--icon-base, 16px);
   color: var(--fg-muted);
+  transform: translateY(-50%);
 }
 
 .search-dialog__input {
+  box-sizing: border-box;
+  display: block;
   inline-size: 100%;
+  block-size: 44px;
   min-block-size: 44px;
+  margin: 0;
+  padding-block: 0;
   padding-inline-start: calc(16px + var(--space-5, 20px));
   padding-inline-end: calc(44px + var(--space-3, 12px));
   color: inherit;
-  line-height: 44px;
+  font: inherit;
+  line-height: normal;
+  outline: none;
   background: transparent;
   border: 0;
   appearance: none;
@@ -111,11 +125,13 @@
 }
 
 .search-dialog__clear {
+  box-sizing: border-box;
   position: absolute;
   inset-block-start: 50%;
   inset-inline-end: var(--space-2);
   inline-size: 44px;
   block-size: 44px;
+  padding: 0;
   display: inline-grid;
   place-items: center;
   color: var(--fg-muted);
@@ -214,6 +230,7 @@
 }
 
 .search-dialog__results {
+  flex: 1 1 auto;
   min-block-size: 0;
   margin: 0;
   padding: var(--space-2);
@@ -307,7 +324,11 @@
 
 @media (prefers-reduced-motion: reduce) {
   .search-dialog,
-  .search-dialog::backdrop {
+  .search-dialog[data-closing],
+  .search-dialog::backdrop,
+  .search-dialog[data-closing]::backdrop,
+  .search-dialog__clear,
+  .search-dialog__close {
     animation-duration: 0.01ms;
     transition-duration: 0.01ms;
   }
@@ -318,10 +339,27 @@
 }
 
 @media (forced-colors: active) {
-  .search-dialog,
-  .search-dialog__spinner,
+  .search-dialog {
+    color: CanvasText;
+    background: Canvas;
+    border-color: CanvasText;
+  }
+
+  .search-dialog__field {
+    background: Field;
+    border-color: FieldText;
+  }
+
+  .search-dialog__input {
+    color: FieldText;
+  }
+
   .search-dialog__clear,
   .search-dialog__close {
+    color: ButtonText;
+  }
+
+  .search-dialog__spinner {
     color: CanvasText;
     border-color: CanvasText;
   }

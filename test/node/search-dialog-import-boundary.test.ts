@@ -8,8 +8,6 @@ describe('search dialog import boundary', () => {
   it('neutral search dialog modules do not depend on old component or Lit rendering', () => {
     for (const path of [
       'src/search/search-dialog-highlight.ts',
-      'src/search/search-dialog-search-session.ts',
-      'src/search/search-dialog-search-worker.ts',
       'src/search/search-dialog-selection-model.ts',
       'src/search/search-dialog-virtualizer.ts',
       'src/search/search-dialog-types.ts',
@@ -74,6 +72,15 @@ describe('search dialog import boundary', () => {
     expect(selectionModel).not.toContain('requestClose');
   });
 
+  it('static dialog controller keeps close lifecycle and safe row rendering boundaries', () => {
+    const controller = readSource('src/client/post-hydrate/search-dialog-dom-controller.ts');
+    expect(controller).toContain('let closeRequestPending = false');
+    expect(controller).toContain('state.activeCloseGeneration === null && (state.bodyLockHeld || state.isOpen)');
+    expect(controller).toContain("completeCloseOnce('external-native-close', state.closeOperationGeneration)");
+    expect(controller).toContain("row.dataset['itemId'] = item.id");
+    expect(controller).not.toContain('row.innerHTML');
+  });
+
   it('event detail types live only in the event module', () => {
     const types = readSource('src/search/search-dialog-types.ts');
     expect(types).not.toContain('SearchDialogSelectedDetail');
@@ -82,5 +89,18 @@ describe('search dialog import boundary', () => {
     expect(types).not.toContain('SearchDialogOpenRequestedDetail');
     expect(types).not.toContain('SearchDialogCloseRequestedDetail');
     expect(types).not.toContain('SearchDialogQueryChangedDetail');
+  });
+
+  it('live region exact text is defined only in the constants module', () => {
+    const constants = readSource('src/search/search-dialog-constants.ts');
+    const layout = readSource('src/layouts/search-dialog-html.ts');
+    const bootstrap = readSource('src/search/bootstrap.ts');
+
+    expect(constants).toContain('SEARCH_DIALOG_STATUS_IDLE_MESSAGE');
+    expect(constants).toContain('SEARCH_DIALOG_STATUS_ERROR_FALLBACK_MESSAGE');
+    expect(layout).toContain('SEARCH_DIALOG_STATUS_IDLE_MESSAGE');
+    expect(layout).not.toContain('キーワードを入力して検索できます。');
+    expect(bootstrap).toContain('SEARCH_DIALOG_STATUS_ERROR_FALLBACK_MESSAGE');
+    expect(bootstrap).not.toContain('検索の読み込みに失敗しました。');
   });
 });

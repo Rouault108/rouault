@@ -3,6 +3,7 @@ import {
   createStaticRenderIdContext,
   type StaticRenderIdContext,
 } from '../../shared/static-render-id-context.js';
+import { SEARCH_DIALOG_STATUS_IDLE_MESSAGE } from '../search/search-dialog-constants.js';
 
 export const GLOBAL_SEARCH_DIALOG_ID = 'global-search-dialog';
 
@@ -65,7 +66,7 @@ export const renderSearchDialogHtml = (options: { readonly idContext?: StaticRen
           data-search-dialog-status
           data-search-dialog-live
         >
-          キーワードを入力して検索できます。
+          ${SEARCH_DIALOG_STATUS_IDLE_MESSAGE}
         </p>
         <section
           class="search-dialog__unavailable search-dialog__state"

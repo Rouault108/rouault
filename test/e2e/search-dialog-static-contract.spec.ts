@@ -230,6 +230,7 @@ test.describe('search dialog static contract', () => {
     await expect(getDialog(page)).toHaveAttribute('open', '');
     await renderSyntheticSearchResult(page);
     const firstOption = await waitForSearchResults(page);
+    await expect(firstOption).toHaveAttribute('data-item-id', '/notes/program/csharp/');
     await expect(firstOption.locator('mark').first()).toBeVisible();
     await page.keyboard.press('Enter');
     await expect(getDialog(page)).not.toHaveAttribute('open', '');
@@ -259,5 +260,31 @@ test.describe('search dialog static contract', () => {
     await expect(page.locator('[data-search-dialog-unavailable]')).toBeVisible();
     await expect(page.locator('[data-search-dialog-loading]')).toBeHidden();
     await expect(page.locator('[data-search-dialog-results]')).toBeHidden();
+  });
+
+  test('close/open race does not reopen and reduced motion close completes', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await openSearchDialog(page);
+
+    await page.evaluate(() => {
+      document.dispatchEvent(
+        new CustomEvent('search-dialog:close-request', {
+          detail: { reason: 'programmatic' },
+        }),
+      );
+      document.dispatchEvent(
+        new CustomEvent('search-dialog:open-request', {
+          detail: { trigger: null, modality: 'pointer' },
+        }),
+      );
+    });
+
+    await expect(getDialog(page)).not.toHaveAttribute('open', '');
+    await expect(getDialog(page)).not.toHaveAttribute('data-closing');
+
+    await openSearchDialog(page);
+    await page.locator('[data-search-dialog-close]').click();
+    await expect(getDialog(page)).not.toHaveAttribute('open', '');
   });
 });

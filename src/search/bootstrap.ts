@@ -23,7 +23,10 @@ import {
   type SearchDialogQueryChangeDetail,
   type SearchDialogSelectedDetail,
 } from './search-dialog-events.js';
-import { SEARCH_DEBOUNCE_MS } from './search-dialog-constants.js';
+import {
+  SEARCH_DEBOUNCE_MS,
+  SEARCH_DIALOG_STATUS_ERROR_FALLBACK_MESSAGE,
+} from './search-dialog-constants.js';
 
 let initialized = false;
 let bootstrapListenerController: AbortController | null = null;
@@ -271,7 +274,7 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
           }
           dispatchSearchDialogEvent('search-dialog:loading-change', { loading: false });
           dispatchSearchDialogEvent('search-dialog:error', {
-            message: '検索の読み込みに失敗しました。',
+            message: SEARCH_DIALOG_STATUS_ERROR_FALLBACK_MESSAGE,
           });
         })
         .finally(() => {

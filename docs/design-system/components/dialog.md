@@ -654,3 +654,31 @@ backdrop click で閉じるか、Esc を無効化するか、close button を隠
 ### 13.6 本節の扱い
 
 本節は、現時点で依存可能な公開契約と、なお整理途上の実装詳細を切り分けるためのメモです。未整理事項を公開契約へ昇格させる場合は、実装、Storybook、契約書の 3 点を同時に更新します。
+
+---
+
+## 14. Static Shell Dialog
+
+Global search dialog のような static shell dialog は、`ui-dialog` の派生 component ではありません。final HTML に native `<dialog>` を light DOM として保持し、Shadow DOM component に依存しません。static global search dialog の詳細契約は `docs/contracts/search.md` を正本とします。
+
+### 14.1 Controller Boundary
+
+- close button、Esc、backdrop などの閉鎖導線は static DOM controller が正規化します。
+- SVG / path click は composed path と closest boundary により button または row の操作へ正規化します。
+- pseudo-element、icon、SVG は pointer target を奪ってはなりません。
+- body scroll lock は controller-owned state とし、close completion で必ず解除します。
+- native close と controller 起因 close は generation で区別し、cleanup と focus return を重複発火させません。
+
+### 14.2 Focus And Disposal
+
+- focus return は close reason に応じて制御します。
+- selection close では reading flow を優先し、trigger への focus return を行いません。
+- dispose 中および dispose 後の native close は user-facing focus-return event を発火させません。
+- close pending / closing 中の open-request は破棄し、close 完了後に自動再実行しません。
+
+### 14.3 Environment Contract
+
+- `prefers-reduced-motion: reduce` では dialog、closing dialog、backdrop、closing backdrop、spinner、操作 button の animation / transition を抑制します。
+- `forced-colors: active` では dialog に `Canvas` / `CanvasText`、field に `Field` / `FieldText`、button に `ButtonText` を使い、spinner の transparent border side を維持します。
+
+`ui-dialog` の一般 dismiss policy と static search dialog の backdrop close policy は別契約です。static shell dialog 固有の挙動を `ui-dialog` の一般契約へ逆流させてはなりません。
