@@ -6,6 +6,26 @@ const themeStorageKey = 'rouault-theme-preference';
 
 const allowedConsoleErrorPatterns: readonly RegExp[] = [];
 
+const blockAppClientEntryScript = async (page: Page): Promise<void> => {
+  await page.route(
+    (url) => {
+      const pathname = url.pathname;
+
+      return (
+        pathname.endsWith('/src/client.ts') ||
+        /(?:^|\/)client-assets\/client-[^/]+\.js$/u.test(pathname)
+      );
+    },
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/javascript',
+        body: '',
+      });
+    },
+  );
+};
+
 const collectBrowserDiagnostics = (
   page: Page,
 ): {
@@ -180,6 +200,53 @@ const readThemeState = async (page: Page) =>
           value: item.getAttribute('value'),
           icon: item.querySelector('[data-icon]')?.getAttribute('data-icon') ?? null,
         })),
+    };
+  });
+
+const readPreHydrationThemeTriggerState = async (page: Page) =>
+  page.evaluate(() => {
+    const header = document.querySelector('layout-header');
+    if (!(header instanceof HTMLElement)) {
+      throw new Error('layout-header が見つかりません');
+    }
+
+    const root =
+      header.shadowRoot ??
+      header.querySelector<HTMLTemplateElement>(
+        'template[shadowrootmode="open"], template[shadowroot="open"]',
+      )?.content ??
+      null;
+    if (root === null) {
+      throw new Error('layout-header pre-hydration root が見つかりません');
+    }
+
+    const trigger = root.querySelector<HTMLElement>('[data-dropdown="theme"] [slot="trigger"]');
+    if (!(trigger instanceof HTMLElement)) {
+      throw new Error('theme trigger が見つかりません');
+    }
+
+    const icon = trigger.querySelector<SVGElement>('.theme-trigger-icon');
+    const label = trigger.querySelector<HTMLElement>('.theme-trigger-text');
+    const main = trigger.querySelector<HTMLElement>('.theme-trigger-main');
+    const selectedItems = [
+      ...root.querySelectorAll<HTMLElement>('[data-dropdown="theme"] ui-menu-item[data-selected]'),
+    ].map((item) => {
+      const itemIcon = item.querySelector<SVGElement>('[data-icon]');
+      return {
+        value: item.getAttribute('value'),
+        icon: itemIcon?.getAttribute('data-icon') ?? null,
+        iconChildCount: itemIcon?.childElementCount ?? 0,
+      };
+    });
+
+    return {
+      htmlTheme: document.documentElement.getAttribute('data-theme'),
+      icon: icon?.getAttribute('data-icon') ?? null,
+      iconChildCount: icon?.childElementCount ?? 0,
+      label: label?.textContent?.trim() ?? '',
+      marker: main?.getAttribute('data-theme-preference') ?? null,
+      accessibleName: trigger.getAttribute('accessible-name'),
+      selectedItems,
     };
   });
 
@@ -365,6 +432,47 @@ test.describe('theme switcher hydration regression', () => {
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
   });
+
+  for (const preference of ['light', 'dark'] as const) {
+    test(`persisted ${preference} は client entry 遮断時でも theme trigger が OSテーマ にならない`, async ({
+      page,
+    }) => {
+      await page.addInitScript(
+        ({ key, value }) => {
+          localStorage.setItem(key, value);
+        },
+        { key: themeStorageKey, value: preference },
+      );
+      await blockAppClientEntryScript(page);
+
+      await page.goto(themeSwitcherPath, { waitUntil: 'domcontentloaded' });
+
+      const state = await readPreHydrationThemeTriggerState(page);
+      const expected =
+        preference === 'light'
+          ? {
+              htmlTheme: 'light',
+              icon: 'sun',
+              label: 'ライト',
+              marker: 'light',
+              accessibleName: 'テーマ: ライト',
+              selectedItems: [{ value: 'light', icon: 'check' }],
+            }
+          : {
+              htmlTheme: 'dark',
+              icon: 'moon',
+              label: 'ダーク',
+              marker: 'dark',
+              accessibleName: 'テーマ: ダーク',
+              selectedItems: [{ value: 'dark', icon: 'check' }],
+            };
+
+      expect(state).toMatchObject(expected);
+      expect(state.selectedItems).toHaveLength(1);
+      expect(state.iconChildCount).toBeGreaterThan(0);
+      expect(state.selectedItems[0]?.iconChildCount).toBeGreaterThan(0);
+    });
+  }
 
   test('初期 system(light) から light を初回選択しても header 表示が stale にならない', async ({
     page,

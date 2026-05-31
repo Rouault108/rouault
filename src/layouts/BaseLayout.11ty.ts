@@ -10,6 +10,7 @@ import {
   THEME_STORAGE_KEY,
   RESOLVED_THEME_ATTRIBUTE,
 } from '../theme/theme-manager.js';
+import { buildThemeChromeBootstrapScript } from '../theme/theme-chrome-bootstrap.js';
 import {
   APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC,
   APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE,
@@ -294,6 +295,7 @@ export class BaseLayout {
     );
     const footerHtml = renderDefaultLayoutFooterHtml(buildMetadata.buildLabel, { idContext });
     const themeBootstrapScript = buildThemeBootstrapScript();
+    const themeChromeBootstrapScript = buildThemeChromeBootstrapScript();
     const routeManifestUrl = resolveInternalDocumentRouteManifestUrl({
       siteUrlContext,
       buildId: buildMetadata.buildId,
@@ -432,6 +434,7 @@ export class BaseLayout {
   <a${skipLinkAttributes}>${escapeHtmlText(SKIP_LINK_LABEL)}</a>
   <div id="app" class="app-root"${shellMarkerAttributes}>
     <layout-header${headerAttributes}>${corpusFallbackAnchors}</layout-header>
+    <script data-theme-chrome-bootstrap>${escapeInlineExecutableScriptText(themeChromeBootstrapScript)}</script>
     <app-router
       data-sidebar-presence="${sidebarPresence}"
       data-hydration-capability="interactive"

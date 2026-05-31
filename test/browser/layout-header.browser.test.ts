@@ -276,6 +276,55 @@ const readThemeTriggerState = async (
   };
 };
 
+const readThemeTriggerStateSync = (
+  header: LayoutHeader,
+): {
+  icon: string | null;
+  iconChildCount: number;
+  label: string;
+  marker: string | null;
+  accessibleName: string | null;
+  selectedItems: { value: string | null; icon: string | null; iconChildCount: number }[];
+} => {
+  const trigger = expectPresent(
+    header.shadowRoot?.querySelector<HTMLElement>('[data-dropdown="theme"] [slot="trigger"]'),
+    'themeTrigger',
+  );
+  const icon = expectPresent(
+    trigger.querySelector<SVGElement>('.theme-trigger-icon'),
+    'themeTriggerIcon',
+  );
+  const label = expectPresent(
+    trigger.querySelector<HTMLElement>('.theme-trigger-text'),
+    'themeTriggerText',
+  );
+  const main = expectPresent(
+    trigger.querySelector<HTMLElement>('.theme-trigger-main'),
+    'themeTriggerMain',
+  );
+  const selectedItems = [
+    ...(header.shadowRoot?.querySelectorAll<HTMLElement>(
+      '[data-dropdown="theme"] ui-menu-item[data-selected]',
+    ) ?? []),
+  ].map((item) => {
+    const itemIcon = item.querySelector<SVGElement>('[data-icon]');
+    return {
+      value: item.getAttribute('value'),
+      icon: itemIcon?.getAttribute('data-icon') ?? null,
+      iconChildCount: itemIcon?.childElementCount ?? 0,
+    };
+  });
+
+  return {
+    icon: icon.getAttribute('data-icon'),
+    iconChildCount: icon.childElementCount,
+    label: label.textContent?.trim() ?? '',
+    marker: main.getAttribute('data-theme-preference'),
+    accessibleName: trigger.getAttribute('accessible-name'),
+    selectedItems,
+  };
+};
+
 describe('layout-header browser contract', () => {
   // browser: state / accessibility / interactivity の公開契約を検証する
   beforeEach(() => {
@@ -463,6 +512,84 @@ describe('layout-header browser contract', () => {
     expect(state.accessibleName).to.equal('テーマ: ライト');
     expect(state.ariaLabel).to.equal('テーマ: ライト');
     expect(state.selectedItems).to.deep.equal([{ value: 'light', icon: 'check' }]);
+  });
+
+  it('適用済み light は初回 update から theme trigger に反映されること', async () => {
+    document.documentElement.setAttribute(THEME_ATTRIBUTE, 'light');
+    document.documentElement.setAttribute(RESOLVED_THEME_ATTRIBUTE, 'light');
+    localStorage.setItem(THEME_STORAGE_KEY, 'dark');
+
+    const header = document.createElement('layout-header') as LayoutHeader;
+    document.body.append(header);
+    const firstUpdateComplete = header.updateComplete;
+
+    try {
+      await firstUpdateComplete;
+
+      const state = readThemeTriggerStateSync(header);
+      expect(state.icon).to.equal('sun');
+      expect(state.iconChildCount).to.be.greaterThan(0);
+      expect(state.label).to.equal('ライト');
+      expect(state.marker).to.equal('light');
+      expect(state.accessibleName).to.equal('テーマ: ライト');
+      expect(state.selectedItems).to.have.length(1);
+      expect(state.selectedItems[0]).to.include({ value: 'light', icon: 'check' });
+      expect(state.selectedItems[0]?.iconChildCount).to.be.greaterThan(0);
+    } finally {
+      header.remove();
+    }
+  });
+
+  it('適用済み dark は初回 update から theme trigger に反映されること', async () => {
+    document.documentElement.setAttribute(THEME_ATTRIBUTE, 'dark');
+    document.documentElement.setAttribute(RESOLVED_THEME_ATTRIBUTE, 'dark');
+    localStorage.setItem(THEME_STORAGE_KEY, 'light');
+
+    const header = document.createElement('layout-header') as LayoutHeader;
+    document.body.append(header);
+    const firstUpdateComplete = header.updateComplete;
+
+    try {
+      await firstUpdateComplete;
+
+      const state = readThemeTriggerStateSync(header);
+      expect(state.icon).to.equal('moon');
+      expect(state.iconChildCount).to.be.greaterThan(0);
+      expect(state.label).to.equal('ダーク');
+      expect(state.marker).to.equal('dark');
+      expect(state.accessibleName).to.equal('テーマ: ダーク');
+      expect(state.selectedItems).to.have.length(1);
+      expect(state.selectedItems[0]).to.include({ value: 'dark', icon: 'check' });
+      expect(state.selectedItems[0]?.iconChildCount).to.be.greaterThan(0);
+    } finally {
+      header.remove();
+    }
+  });
+
+  it('要素生成後かつ接続前に適用された theme も初回 update から反映すること', async () => {
+    const header = document.createElement('layout-header') as LayoutHeader;
+
+    document.documentElement.setAttribute(THEME_ATTRIBUTE, 'light');
+    document.documentElement.setAttribute(RESOLVED_THEME_ATTRIBUTE, 'light');
+
+    document.body.append(header);
+    const firstUpdateComplete = header.updateComplete;
+
+    try {
+      await firstUpdateComplete;
+
+      const state = readThemeTriggerStateSync(header);
+      expect(state.icon).to.equal('sun');
+      expect(state.iconChildCount).to.be.greaterThan(0);
+      expect(state.label).to.equal('ライト');
+      expect(state.marker).to.equal('light');
+      expect(state.accessibleName).to.equal('テーマ: ライト');
+      expect(state.selectedItems).to.have.length(1);
+      expect(state.selectedItems[0]).to.include({ value: 'light', icon: 'check' });
+      expect(state.selectedItems[0]?.iconChildCount).to.be.greaterThan(0);
+    } finally {
+      header.remove();
+    }
   });
 
   it('data-theme 未設定時は system 表示へ正規化すること', async () => {

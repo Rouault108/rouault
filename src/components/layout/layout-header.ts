@@ -19,8 +19,8 @@ import {
   type ThemeChangeDetail,
   type ThemePreference,
 } from '../../theme/theme-manager.js';
+import { THEME_UI_OPTIONS } from '../../theme/theme-ui-options.js';
 import { decodeHashFragment } from '../../router/url-hash.js';
-import type { IconName } from '../../../shared/icons/icon-paths.js';
 import type { HeaderShellProjection } from '../../../shared/navigation/shell-projection.js';
 import type { TocPresence } from '../../../shared/note/toc-presence.js';
 import { createSiteUrlContext } from '../../../shared/site/site-url-context.js';
@@ -47,27 +47,6 @@ const DEFAULT_CORPUS_ITEMS: readonly CorpusNavigationItem[] = [
   },
 ];
 
-const THEME_OPTIONS: Record<
-  ThemePreference,
-  {
-    icon: IconName;
-    label: string;
-  }
-> = {
-  light: {
-    icon: 'sun',
-    label: 'ライト',
-  },
-  dark: {
-    icon: 'moon',
-    label: 'ダーク',
-  },
-  system: {
-    icon: 'monitor',
-    label: 'OSテーマ',
-  },
-};
-
 const DEFAULT_TOC_RUNTIME_VIEW: LayoutTocRuntimeSnapshot = {
   ready: false,
   hasVisibleHeadings: false,
@@ -76,6 +55,9 @@ const DEFAULT_TOC_RUNTIME_VIEW: LayoutTocRuntimeSnapshot = {
 
 const normalizeOptionalString = (value: string | null | undefined): string =>
   typeof value === 'string' ? value.trim() : '';
+
+const readInitialThemePreference = (): ThemePreference =>
+  typeof document === 'undefined' ? 'system' : readAppliedThemePreference();
 
 @customElement('layout-header')
 export class LayoutHeader extends LitElement {
@@ -543,7 +525,7 @@ export class LayoutHeader extends LitElement {
   private _overlaySidebarOpen = false;
 
   @state()
-  private _themePreference: ThemePreference = 'system';
+  private _themePreference: ThemePreference = readInitialThemePreference();
 
   @state()
   private _tocRuntimeView: LayoutTocRuntimeSnapshot = DEFAULT_TOC_RUNTIME_VIEW;
@@ -904,24 +886,6 @@ export class LayoutHeader extends LitElement {
   };
 
   private _commitThemePreference(preference: ThemePreference): void {
-    if (!this.hasUpdated && this._themePreference !== preference) {
-      void this.updateComplete.then(() => {
-        if (!this.isConnected) {
-          return;
-        }
-
-        this._themePreference = preference;
-        void this.updateComplete.then(() => {
-          if (this._themePreference !== preference || !this.isConnected) {
-            return;
-          }
-
-          this._syncThemeTriggerDom(preference);
-        });
-      });
-      return;
-    }
-
     if (this._themePreference !== preference) {
       this._themePreference = preference;
     }
@@ -938,7 +902,7 @@ export class LayoutHeader extends LitElement {
   }
 
   private _syncThemeTriggerDom(preference: ThemePreference): void {
-    const option = THEME_OPTIONS[preference];
+    const option = THEME_UI_OPTIONS[preference];
     const trigger = this.shadowRoot?.querySelector<HTMLElement>(
       '[data-dropdown="theme"] [slot="trigger"]',
     );
@@ -1078,7 +1042,7 @@ export class LayoutHeader extends LitElement {
 
   override render() {
     const sidebarToggleLabel = this._sidebarOpen ? 'サイドバーを閉じる' : 'サイドバーを開く';
-    const currentThemeOption = THEME_OPTIONS[this._themePreference];
+    const currentThemeOption = THEME_UI_OPTIONS[this._themePreference];
     const corpusItems = this._corpusItems;
     const currentCorpusLabel = this._currentCorpusItem?.label ?? 'すべてのノート';
     const shouldRenderTocTrigger = this._shouldRenderMobileTocTrigger();
@@ -1183,9 +1147,9 @@ export class LayoutHeader extends LitElement {
               </span>
             </ui-button>
             ${(
-              Object.entries(THEME_OPTIONS) as [
+              Object.entries(THEME_UI_OPTIONS) as [
                 ThemePreference,
-                (typeof THEME_OPTIONS)[ThemePreference],
+                (typeof THEME_UI_OPTIONS)[ThemePreference],
               ][]
             ).map(([value, option]) => {
               const selected = value === this._themePreference;
