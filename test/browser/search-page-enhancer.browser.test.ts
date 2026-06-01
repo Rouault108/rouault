@@ -1,6 +1,7 @@
 import { expect } from '@open-wc/testing';
 
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
+import { normalizeSearchCanonicalPathname } from '../../shared/search/document-url.js';
 import type { ExploreSearchResponse } from '../../shared/search/search-types.js';
 import { enhanceSearchPage } from '../../src/client/post-hydrate/search-page-enhancer.js';
 import {
@@ -9,6 +10,7 @@ import {
 } from '../../src/client/post-hydrate/search-page-controller.js';
 import type { SearchCore } from '../../src/search/search-core.js';
 import { SEARCH_DEBOUNCE_MS } from '../../src/search/search-constants.js';
+import { buildSearchResultRenderHref } from '../../src/search/normalize-search-result-url.js';
 
 const staticResponse: ExploreSearchResponse = {
   mode: 'explore',
@@ -63,15 +65,22 @@ const renderSearchPageFixture = (): HTMLElement => {
         <div data-selected-tags></div>
         <input data-search-filter-input>
         <button type="button" hidden data-search-filter-clear>filter clear</button>
-        <div data-filter-option data-filter-tag="architecture" data-filter-count="1">
-          <input type="checkbox" name="tag" value="architecture" data-search-tag-checkbox>
-        </div>
-        <div data-filter-option data-filter-tag="music" data-filter-count="1">
-          <input type="checkbox" name="tag" value="music" data-search-tag-checkbox>
+        <div data-search-filter-list>
+          <div data-filter-option data-filter-tag="architecture" data-filter-count="1">
+            <input type="checkbox" name="tag" value="architecture" data-search-tag-checkbox>
+            <span class="filter-option-count">1件</span>
+          </div>
+          <div data-filter-option data-filter-tag="music" data-filter-count="1">
+            <input type="checkbox" name="tag" value="music" data-search-tag-checkbox>
+            <span class="filter-option-count">1件</span>
+          </div>
         </div>
         <span data-filter-visible-count></span>
         <p hidden data-search-filter-empty></p>
       </form>
+      <span data-search-page-result-count>0 件の結果</span>
+      <div hidden data-search-page-loading></div>
+      <div hidden data-search-page-error></div>
       <div hidden data-search-page-unavailable></div>
       <div data-search-results-section><p data-search-result-fixture>SSR result</p></div>
     </section>
@@ -417,6 +426,21 @@ describe('search-page-enhancer', () => {
     expect(root.querySelector<HTMLElement>('[data-search-page-unavailable]')?.hidden).to.equal(
       false,
     );
+    for (const selector of [
+      '[data-search-query-input]',
+      '[data-search-query-clear]',
+      '[data-search-tag-checkbox]',
+      '[data-search-tag-mode-select]',
+      '[data-search-sort-select]',
+    ]) {
+      expect(root.querySelector<HTMLInputElement>(selector)?.disabled, selector).to.equal(true);
+    }
+    expect(root.querySelector<HTMLFormElement>('[data-search-page-form]')?.hasAttribute('disabled')).to.equal(
+      false,
+    );
+    expect(root.querySelector<HTMLInputElement>('[data-search-filter-input]')?.disabled).to.equal(
+      false,
+    );
     expect(root.querySelector('[data-search-result-fixture]')).not.to.equal(null);
 
     document.body.replaceChildren();
@@ -458,6 +482,28 @@ describe('search-page-enhancer', () => {
       root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="music"]')?.checked,
     ).to.equal(true);
     expect(root.querySelector('[data-search-result-fixture]')).to.equal(null);
+  });
+
+  it('bootstrap unavailable 中は生成した selected-tag remove も個別 disabled にすること', () => {
+    history.replaceState(history.state, '', '/tags/architecture/');
+    const root = renderSearchPageFixture();
+    root.querySelector<HTMLElement>('[data-search-page-root]')?.setAttribute(
+      'initial-search-state-json',
+      JSON.stringify({ q: '', tags: ['architecture'], tagMode: 'or', sort: 'relevance' }),
+    );
+    enhanceSearchPage(root, undefined, {
+      siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
+      bootstrapProvider: () => ({
+        status: 'unavailable',
+        reason: 'search-runtime-unavailable',
+      }),
+      searchRuntimeProvider: () => null,
+    });
+
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-search-selected-tag-remove="architecture"]')
+        ?.disabled,
+    ).to.equal(true);
   });
 
   it('canonical state 比較は query と tag の表記差を吸収すること', () => {
@@ -521,5 +567,177 @@ describe('search-page-enhancer', () => {
     expect(requests).to.deep.equal([
       { mode: 'explore', q: 'router', tags: ['music'], tagMode: 'or', sort: 'relevance' },
     ]);
+  });
+
+  it('client-side results は textContent と mark element で描画し card link 契約を維持すること', async () => {
+    const canonicalPathname = normalizeSearchCanonicalPathname('/notes/xss/');
+    if (canonicalPathname === null) {
+      throw new Error('Expected valid canonical pathname fixture.');
+    }
+    const response: ExploreSearchResponse = {
+      ...staticResponse,
+      total: 1,
+      items: [
+        {
+          canonicalPathname,
+          renderHref: buildSearchResultRenderHref({
+            canonicalPathname,
+            siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+          }),
+          pathLabel: '<img src=x onerror=alert(1)>',
+          title: '<script>window.__searchXss = true</script>',
+          description: 'fallback',
+          date: { epochMs: 0, original: '<b>2026-01-01</b>' },
+          tags: ['security'],
+          snippet: {
+            segments: [
+              { text: '<img src=x onerror=alert(1)>', matched: true },
+              { text: '<script>alert(1)</script>', matched: false },
+            ],
+          },
+          reasons: [],
+        },
+      ],
+      tagCounts: { security: 1 },
+      allTagCounts: { security: 1 },
+    };
+    history.replaceState(history.state, '', '/search/?q=xss');
+    const root = renderSearchPageFixture();
+    root
+      .querySelector<HTMLElement>('[data-search-page-root]')
+      ?.setAttribute('initial-search-response-json', '{');
+    enhanceWithRuntime(root, undefined, createSearchRuntime(async () => response));
+    await Promise.resolve();
+
+    const card = expectElement(
+      root.querySelector<HTMLElement>('[data-search-result-card]'),
+      'result card',
+    );
+    const link = expectElement(card.querySelector<HTMLAnchorElement>('a'), 'result link');
+    expect(link.dataset['linkKind']).to.equal('internal-document');
+    expect(link.dataset['linkSurface']).to.equal('card');
+    expect(link.querySelector('.result-title')?.textContent).to.equal(
+      '<script>window.__searchXss = true</script>',
+    );
+    expect(link.querySelector('script')).to.equal(null);
+    expect(link.querySelector('img')).to.equal(null);
+    expect(link.querySelector('mark')?.textContent).to.equal('<img src=x onerror=alert(1)>');
+    expect(root.querySelector('[data-search-page-result-count]')?.textContent).to.equal(
+      '1 件の結果',
+    );
+  });
+
+  it('tagCounts / allTagCounts から option count、disabled、visible count を更新すること', async () => {
+    const response: ExploreSearchResponse = {
+      ...staticResponse,
+      tagCounts: { architecture: 2, music: 0 },
+      allTagCounts: { architecture: 3, music: 4, security: 1 },
+    };
+    history.replaceState(history.state, '', '/search/?q=counts');
+    const root = renderSearchPageFixture();
+    root
+      .querySelector<HTMLElement>('[data-search-page-root]')
+      ?.setAttribute('initial-search-response-json', '{');
+    enhanceWithRuntime(root, undefined, createSearchRuntime(async () => response));
+    await Promise.resolve();
+
+    expect(
+      root.querySelector('[data-filter-option][data-filter-tag="architecture"] .filter-option-count')
+        ?.textContent,
+    ).to.equal('2件');
+    expect(
+      root.querySelector<HTMLInputElement>(
+        '[data-filter-option][data-filter-tag="music"] [data-search-tag-checkbox]',
+      )?.disabled,
+    ).to.equal(true);
+    expect(root.querySelector('[data-filter-option][data-filter-tag="security"]')).not.to.equal(
+      null,
+    );
+    expect(root.querySelector('[data-filter-visible-count]')?.textContent).to.equal('3 / 3 タグ');
+  });
+
+  it('status region は SSR container を再利用し loading / error / unavailable を排他的に表示すること', async () => {
+    let rejectSearch: ((reason: Error) => void) | undefined;
+    history.replaceState(history.state, '', '/search/?q=error');
+    const root = renderSearchPageFixture();
+    root
+      .querySelector<HTMLElement>('[data-search-page-root]')
+      ?.setAttribute('initial-search-response-json', '{');
+    const loading = root.querySelector<HTMLElement>('[data-search-page-loading]');
+    const error = root.querySelector<HTMLElement>('[data-search-page-error]');
+    const unavailable = root.querySelector<HTMLElement>('[data-search-page-unavailable]');
+    enhanceWithRuntime(
+      root,
+      undefined,
+      createSearchRuntime(
+        () =>
+          new Promise((_resolve, reject) => {
+            rejectSearch = reject;
+          }),
+      ),
+    );
+
+    expect(loading?.hidden).to.equal(false);
+    expect(error?.hidden).to.equal(true);
+    expect(unavailable?.hidden).to.equal(true);
+    expect(loading?.dataset['statusVariant']).to.equal('loading');
+    rejectSearch?.(new Error('failure'));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(loading?.hidden).to.equal(true);
+    expect(error?.hidden).to.equal(false);
+    expect(error?.textContent).to.equal('検索の読み込みに失敗しました。');
+    expect(error?.dataset['statusVariant']).to.equal('error');
+    expect(unavailable?.hidden).to.equal(true);
+  });
+
+  it('bootstrap unavailable 中も tag filter input / clear は URL と results を変えないこと', () => {
+    history.replaceState(history.state, '', '/tags/architecture/');
+    const root = renderSearchPageFixture();
+    root.querySelector<HTMLElement>('[data-search-page-root]')?.setAttribute(
+      'initial-search-state-json',
+      JSON.stringify({ q: '', tags: ['architecture'], tagMode: 'or', sort: 'relevance' }),
+    );
+    enhanceSearchPage(root, undefined, {
+      siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
+      bootstrapProvider: () => ({
+        status: 'unavailable',
+        reason: 'search-runtime-unavailable',
+      }),
+      searchRuntimeProvider: () => null,
+    });
+    const initialUrl = location.href;
+    const initialResults = root.querySelector('[data-search-results-section]')?.innerHTML;
+    const filter = expectElement(
+      root.querySelector<HTMLInputElement>('[data-search-filter-input]'),
+      'filter',
+    );
+    filter.value = 'music';
+    filter.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(location.href).to.equal(initialUrl);
+    expect(root.querySelector('[data-search-results-section]')?.innerHTML).to.equal(initialResults);
+    expect(
+      root.querySelector<HTMLElement>('[data-filter-option][data-filter-tag="architecture"]')
+        ?.hidden,
+    ).to.equal(true);
+    expect(
+      root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="architecture"]')
+        ?.disabled,
+    ).to.equal(true);
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-search-selected-tag-remove="architecture"]')
+        ?.disabled,
+    ).to.equal(true);
+    root.querySelector<HTMLButtonElement>('[data-search-filter-clear]')?.click();
+    expect(location.href).to.equal(initialUrl);
+    expect(root.querySelector('[data-search-results-section]')?.innerHTML).to.equal(initialResults);
+    expect(
+      root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="architecture"]')
+        ?.disabled,
+    ).to.equal(true);
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-search-selected-tag-remove="architecture"]')
+        ?.disabled,
+    ).to.equal(true);
   });
 });

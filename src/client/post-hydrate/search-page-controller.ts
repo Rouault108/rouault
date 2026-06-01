@@ -97,7 +97,9 @@ interface SearchPageRuntimeState {
   loaded: boolean;
 }
 
-type SearchPageRenderableItem = Omit<SearchResultItem, 'reasons'>;
+export type SearchPageRenderableItem = Omit<SearchResultItem, 'reasons'>;
+
+type SearchPageStatusVariant = 'loading' | 'error' | 'unavailable';
 
 const parseJsonAttribute = (page: HTMLElement, name: string): unknown => {
   const value = page.getAttribute(name);
@@ -249,11 +251,92 @@ const createSelectedTag = (document: Document, tag: string): HTMLElement => {
   return chip;
 };
 
+const createFilterOption = (document: Document, tag: string): HTMLElement => {
+  const option = document.createElement('div');
+  option.className = 'filter-option';
+  option.setAttribute('role', 'listitem');
+  option.dataset['filterOption'] = '';
+  option.dataset['filterTag'] = tag;
+
+  const label = document.createElement('label');
+  label.className = 'filter-option-checkbox';
+  const checkbox = document.createElement('input');
+  checkbox.className = 'filter-option-checkbox__input';
+  checkbox.type = 'checkbox';
+  checkbox.name = 'tag';
+  checkbox.value = tag;
+  checkbox.dataset['searchTagCheckbox'] = '';
+  const control = document.createElement('span');
+  control.className = 'filter-option-checkbox__control';
+  control.setAttribute('aria-hidden', 'true');
+  control.innerHTML = renderStaticIconHtml('check', 'filter-option-checkbox__icon');
+  const text = document.createElement('span');
+  text.className = 'filter-option-label';
+  text.textContent = tag;
+  label.append(checkbox, control, text);
+
+  const count = document.createElement('span');
+  count.className = 'filter-option-count';
+  option.append(label, count);
+  return option;
+};
+
+const syncFilterOptionsFromRuntimeState = (
+  page: HTMLElement,
+  runtimeState: SearchPageRuntimeState,
+): void => {
+  const list = page.querySelector<HTMLElement>('[data-search-filter-list]');
+  if (!list) {
+    return;
+  }
+  const existingOptions = new Map(
+    [...list.querySelectorAll<HTMLElement>('[data-filter-option]')].map((option) => [
+      option.dataset['filterTag'] ?? '',
+      option,
+    ]),
+  );
+  const tags = [
+    ...new Set([
+      ...Object.keys(runtimeState.allTagCounts),
+      ...Object.keys(runtimeState.tagCounts),
+      ...runtimeState.selectedTags,
+    ]),
+  ].sort((left, right) => {
+    const leftSelected = runtimeState.selectedTags.includes(left);
+    const rightSelected = runtimeState.selectedTags.includes(right);
+    if (leftSelected !== rightSelected) {
+      return leftSelected ? -1 : 1;
+    }
+    const countDifference =
+      (runtimeState.tagCounts[right] ?? 0) - (runtimeState.tagCounts[left] ?? 0);
+    return countDifference !== 0 ? countDifference : left.localeCompare(right, 'ja');
+  });
+  const options = tags.map((tag) => {
+    const option = existingOptions.get(tag) ?? createFilterOption(page.ownerDocument, tag);
+    const count = runtimeState.tagCounts[tag] ?? 0;
+    const selected = runtimeState.selectedTags.includes(tag);
+    const disabled = !selected && count === 0;
+    option.dataset['filterCount'] = String(count);
+    option.dataset['selected'] = String(selected);
+    option.dataset['disabled'] = String(disabled);
+    const checkbox = option.querySelector<HTMLInputElement>('[data-search-tag-checkbox]');
+    if (checkbox) {
+      checkbox.checked = selected;
+      checkbox.disabled = disabled;
+    }
+    option.querySelector<HTMLElement>('.filter-option-count')?.replaceChildren(`${String(count)}件`);
+    return option;
+  });
+  list.replaceChildren(...options);
+};
+
 const syncFilterDomFromForm = (
   page: HTMLElement,
   form: HTMLFormElement,
+  runtimeState: SearchPageRuntimeState,
   preferredTag?: string,
 ): void => {
+  syncFilterOptionsFromRuntimeState(page, runtimeState);
   const selectedTags = orderedSelectedTagValues(form, preferredTag);
   const tagMode =
     readFormString(new FormData(form).get('tagMode')) === 'and' ? 'すべて' : 'いずれか';
@@ -328,6 +411,126 @@ const syncFilterDomFromForm = (
     filterEmpty.hidden = visibleCount > 0;
   }
   syncStaticSearchFieldClearButtons(page);
+};
+
+const createSearchPageEmptyState = (document: Document, state: SearchState): HTMLElement => {
+  const hasConditions = state.q.length > 0 || state.tags.length > 0;
+  const section = document.createElement('section');
+  section.className = 'empty-hint';
+  section.dataset['emptyState'] = '';
+  section.dataset['searchEmptyState'] = '';
+  section.dataset['emptyVariant'] = 'search';
+  const message = document.createElement('div');
+  message.className = 'empty-hint__message';
+  message.dataset['announce'] = 'off';
+  const illustration = document.createElement('div');
+  illustration.className = 'empty-hint__illustration';
+  illustration.setAttribute('aria-hidden', 'true');
+  illustration.hidden = true;
+  const icon = document.createElement('div');
+  icon.className = 'empty-hint__icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.hidden = true;
+  const heading = document.createElement('h2');
+  heading.className = 'empty-hint__heading';
+  heading.textContent = hasConditions
+    ? '一致するメモが見つかりません'
+    : 'キーワードまたはタグで絞り込めます';
+  const description = document.createElement('p');
+  description.className = 'empty-hint__description';
+  description.textContent = hasConditions
+    ? '検索語を変えるか、タグの組み合わせや演算子を見直してください。'
+    : 'ヘッダーのダイアログは即時検索、ここではタグ演算子も含めて一覧で比較できます。';
+  message.append(illustration, icon, heading, description);
+  const actions = document.createElement('div');
+  actions.className = 'empty-hint__actions';
+  actions.hidden = true;
+  section.append(message, actions);
+  return section;
+};
+
+const createSearchPageResultExcerpt = (
+  document: Document,
+  item: SearchPageRenderableItem,
+): HTMLParagraphElement | null => {
+  const excerpt = document.createElement('p');
+  excerpt.className = 'result-excerpt';
+  if (item.snippet) {
+    for (const segment of item.snippet.segments) {
+      if (segment.matched) {
+        const mark = document.createElement('mark');
+        mark.textContent = segment.text;
+        excerpt.append(mark);
+      } else {
+        excerpt.append(document.createTextNode(segment.text));
+      }
+    }
+  } else {
+    excerpt.textContent = item.description;
+  }
+  return excerpt.textContent.trim() ? excerpt : null;
+};
+
+const createSearchPageResult = (
+  document: Document,
+  item: SearchPageRenderableItem,
+): HTMLLIElement => {
+  const listItem = document.createElement('li');
+  const card = document.createElement('article');
+  card.className = 'result-card';
+  card.dataset['searchResultCard'] = '';
+  const link = document.createElement('a');
+  link.className = 'result-link';
+  link.href = item.renderHref;
+  link.dataset['linkKind'] = 'internal-document';
+  link.dataset['linkSurface'] = 'card';
+  const path = document.createElement('div');
+  path.className = 'result-path';
+  path.textContent = item.pathLabel;
+  const title = document.createElement('h2');
+  title.className = 'result-title';
+  title.textContent = item.title;
+  link.append(path, title);
+  if (item.date.original) {
+    const date = document.createElement('div');
+    date.className = 'result-meta';
+    date.textContent = `更新日: ${item.date.original}`;
+    link.append(date);
+  }
+  const excerpt = createSearchPageResultExcerpt(document, item);
+  if (excerpt) {
+    link.append(excerpt);
+  }
+  card.append(link);
+  listItem.append(card);
+  return listItem;
+};
+
+const renderSearchPageResults = (
+  page: HTMLElement,
+  runtimeState: SearchPageRuntimeState,
+): void => {
+  const root = page.querySelector<HTMLElement>('[data-search-results-section]');
+  if (!root) {
+    return;
+  }
+  if (runtimeState.items.length === 0) {
+    root.replaceChildren(createSearchPageEmptyState(page.ownerDocument, {
+      q: runtimeState.normalizedQuery,
+      tags: runtimeState.selectedTags,
+      tagMode: runtimeState.tagMode,
+      sort: runtimeState.sort,
+    }));
+  } else {
+    const list = page.ownerDocument.createElement('ol');
+    list.className = 'results-list';
+    list.dataset['searchResults'] = '';
+    list.append(...runtimeState.items.map((item) => createSearchPageResult(page.ownerDocument, item)));
+    root.replaceChildren(list);
+  }
+  page
+    .querySelector<HTMLElement>('[data-search-page-result-count]')
+    ?.replaceChildren(`${String(runtimeState.items.length)} 件の結果`);
 };
 
 export const getSearchPageUnavailableMessage = (
@@ -427,7 +630,8 @@ export class SearchPageController {
         allTagCounts: response.allTagCounts,
       });
       this.syncFormFromRuntimeState(this.form);
-      syncFilterDomFromForm(this.page, this.form);
+      syncFilterDomFromForm(this.page, this.form, this.runtimeState);
+      this.showStatus(null);
       if (searchRuntime === null) {
         const reason =
           bootstrapState?.status === 'unavailable'
@@ -490,7 +694,7 @@ export class SearchPageController {
       this.runtimeState = createRuntimeState(state);
       if (this.form) {
         this.syncFormFromRuntimeState(this.form);
-        syncFilterDomFromForm(this.page, this.form);
+        syncFilterDomFromForm(this.page, this.form, this.runtimeState);
       }
       this.setDynamicSearchControlsDisabled(true);
       this.showUnavailable(message);
@@ -500,21 +704,35 @@ export class SearchPageController {
     this.runtimeState = createRuntimeState(state);
     if (this.form) {
       this.syncFormFromRuntimeState(this.form);
-      syncFilterDomFromForm(this.page, this.form);
+      syncFilterDomFromForm(this.page, this.form, this.runtimeState);
     }
     this.runSearchImmediately();
   };
 
   private showUnavailable(message: string): void {
-    const unavailable = this.page.querySelector<HTMLElement>('[data-search-page-unavailable]');
-    if (unavailable) {
-      unavailable.textContent = message;
-      unavailable.hidden = false;
-    }
+    this.showStatus('unavailable', message);
   }
 
   private clearResultsForUnavailable(): void {
     this.page.querySelector<HTMLElement>('[data-search-results-section]')?.replaceChildren();
+    this.page
+      .querySelector<HTMLElement>('[data-search-page-result-count]')
+      ?.replaceChildren('0 件の結果');
+  }
+
+  private showStatus(variant: SearchPageStatusVariant | null, message = ''): void {
+    for (const candidate of ['loading', 'error', 'unavailable'] as const) {
+      const container = this.page.querySelector<HTMLElement>(`[data-search-page-${candidate}]`);
+      if (!container) {
+        continue;
+      }
+      const visible = candidate === variant;
+      container.hidden = !visible;
+      container.dataset['statusVariant'] = candidate;
+      if (candidate !== 'loading') {
+        container.textContent = visible ? message : '';
+      }
+    }
   }
 
   private cancelPendingSearch(): void {
@@ -572,6 +790,7 @@ export class SearchPageController {
     const generation = this.searchGeneration;
     const searchAbortController = new AbortController();
     this.activeSearchAbortController = searchAbortController;
+    this.showStatus('loading');
     void this.searchRuntime
       .search({ mode: 'explore', ...this.toSearchState() }, { signal: searchAbortController.signal })
       .then((response) => {
@@ -595,11 +814,7 @@ export class SearchPageController {
         ) {
           return;
         }
-        const errorContainer = this.page.querySelector<HTMLElement>('[data-search-page-error]');
-        if (errorContainer) {
-          errorContainer.textContent = '検索の読み込みに失敗しました。';
-          errorContainer.hidden = false;
-        }
+        this.showStatus('error', '検索の読み込みに失敗しました。');
       })
       .finally(() => {
         if (
@@ -619,6 +834,12 @@ export class SearchPageController {
     this.runtimeState.tagCounts = { ...response.tagCounts };
     this.runtimeState.allTagCounts = { ...response.allTagCounts };
     this.runtimeState.loaded = true;
+    this.showStatus(null);
+    renderSearchPageResults(this.page, this.runtimeState);
+    if (this.form) {
+      this.syncFormFromRuntimeState(this.form);
+      syncFilterDomFromForm(this.page, this.form, this.runtimeState);
+    }
     if (response.diagnostics.degraded) {
       console.warn('Search page completed with degraded diagnostics.', response.diagnostics);
     }
@@ -660,7 +881,10 @@ export class SearchPageController {
       if (this.disposed || this.runtimeState === null) {
         return;
       }
-      syncFilterDomFromForm(this.page, form, preferredTag);
+      syncFilterDomFromForm(this.page, form, this.runtimeState, preferredTag);
+      if (this.searchRuntime === null) {
+        this.setDynamicSearchControlsDisabled(true);
+      }
     };
     const commitFormState = (
       method: 'pushState' | 'replaceState',
@@ -720,7 +944,7 @@ export class SearchPageController {
     form.querySelector<HTMLInputElement>('[data-search-filter-input]')?.addEventListener(
       'input',
       () => {
-        syncFilterDomFromForm(this.page, form);
+        syncFilterDom();
       },
       listenerOptions,
     );
@@ -742,7 +966,7 @@ export class SearchPageController {
         const input = form.querySelector<HTMLInputElement>('[data-search-filter-input]');
         if (input) {
           input.value = '';
-          syncFilterDomFromForm(this.page, form);
+          syncFilterDom();
           input.focus();
         }
       },

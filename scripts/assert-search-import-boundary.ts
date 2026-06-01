@@ -102,6 +102,18 @@ export const findSearchImportBoundaryViolations = (): Promise<string[]> => {
   if (searchPageControllerText.includes('internal-document-route-manifest-loader')) {
     violations.push('search import boundary violation: src/client/post-hydrate/search-page-controller.ts: search-page controller must not import the router manifest loader');
   }
+  const allowedSearchPageControllerInnerHtmlAssignments = new Set([
+    "button.innerHTML = renderStaticIconHtml('x', 'selected-tag__remove-icon');",
+    "control.innerHTML = renderStaticIconHtml('check', 'filter-option-checkbox__icon');",
+  ]);
+  for (const line of searchPageControllerText.split('\n')) {
+    if (
+      (line.includes('.innerHTML') || line.includes('.insertAdjacentHTML')) &&
+      !allowedSearchPageControllerInnerHtmlAssignments.has(line.trim())
+    ) {
+      violations.push('search import boundary violation: src/client/post-hydrate/search-page-controller.ts: client-side Search page content rendering must not use innerHTML');
+    }
+  }
   if (!internalDocumentRouteManifestLoaderText.includes("from '../site/read-site-url-context-from-document-meta.js'")) {
     violations.push('search import boundary violation: src/router/internal-document-route-manifest-loader.ts: router manifest loader must import the shared document meta site URL context reader');
   }
