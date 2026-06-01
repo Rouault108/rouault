@@ -1,4 +1,3 @@
-export const SEARCH_DEBOUNCE_MS = 150;
 export const SEARCH_DIALOG_LOADING_INDICATOR_DELAY_MS = 400;
 export const BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE = 'data-ui-search-dialog-open';
 export const VIRTUALIZATION_THRESHOLD = 100;

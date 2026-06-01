@@ -25,9 +25,9 @@ import {
   type SearchDialogSelectedDetail,
 } from './search-dialog-events.js';
 import {
-  SEARCH_DEBOUNCE_MS,
   SEARCH_DIALOG_STATUS_ERROR_FALLBACK_MESSAGE,
 } from './search-dialog-constants.js';
+import { SEARCH_DEBOUNCE_MS } from './search-constants.js';
 
 let initialized = false;
 let bootstrapListenerController: AbortController | null = null;

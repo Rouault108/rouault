@@ -60,8 +60,15 @@ export const findSearchImportBoundaryViolations = (): Promise<string[]> => {
   }
 
   const bootstrapText = readFileSync('src/search/bootstrap.ts', 'utf8');
+  const searchDialogConstantsText = readFileSync('src/search/search-dialog-constants.ts', 'utf8');
   if (!bootstrapText.includes('initSearchUnavailable(options: InitSearchUnavailableOptions): SearchBootstrapResult')) {
     violations.push('search import boundary violation: src/search/bootstrap.ts: initSearchUnavailable exact API must be present');
+  }
+  if (searchDialogConstantsText.includes('SEARCH_DEBOUNCE_MS')) {
+    violations.push('search import boundary violation: src/search/search-dialog-constants.ts: SEARCH_DEBOUNCE_MS must be owned by search-constants.ts');
+  }
+  if (!bootstrapText.includes("from './search-constants.js'")) {
+    violations.push('search import boundary violation: src/search/bootstrap.ts: SEARCH_DEBOUNCE_MS must be imported directly from search-constants.ts');
   }
   const searchPageEnhancerText = readFileSync('src/client/post-hydrate/search-page-enhancer.ts', 'utf8');
   const searchPageControllerText = readFileSync('src/client/post-hydrate/search-page-controller.ts', 'utf8');
@@ -81,8 +88,13 @@ export const findSearchImportBoundaryViolations = (): Promise<string[]> => {
       violations.push(`search import boundary violation: ${file}: production Search page site URL context must not use root basePath placeholder`);
     }
   }
-  if (/createSearchCore(?:FromSiteContext)?\b/u.test(searchPageEnhancerText)) {
-    violations.push('search import boundary violation: src/client/post-hydrate/search-page-enhancer.ts: SearchCore must not be created by the enhancer');
+  for (const [file, text] of [
+    ['src/client/post-hydrate/search-page-enhancer.ts', searchPageEnhancerText],
+    ['src/client/post-hydrate/search-page-controller.ts', searchPageControllerText],
+  ] as const) {
+    if (/createSearchCore(?:FromSiteContext)?\b/u.test(text)) {
+      violations.push(`search import boundary violation: ${file}: SearchCore must not be created by the Search page enhancer or controller`);
+    }
   }
   if (searchPageEnhancerText.includes('pathname.startsWith(\'/\')')) {
     violations.push('search import boundary violation: src/client/post-hydrate/search-page-enhancer.ts: search-page enhancer must not fake a route manifest predicate');

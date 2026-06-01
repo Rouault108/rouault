@@ -103,4 +103,17 @@ describe('search dialog import boundary', () => {
     expect(bootstrap).toContain('SEARCH_DIALOG_STATUS_ERROR_FALLBACK_MESSAGE');
     expect(bootstrap).not.toContain('検索の読み込みに失敗しました。');
   });
+
+  it('search debounce constant is owned by the shared search constants module', () => {
+    const constants = readSource('src/search/search-constants.ts');
+    const dialogConstants = readSource('src/search/search-dialog-constants.ts');
+    const bootstrap = readSource('src/search/bootstrap.ts');
+
+    expect(constants).toContain('SEARCH_DEBOUNCE_MS');
+    expect(dialogConstants).not.toContain('SEARCH_DEBOUNCE_MS');
+    expect(bootstrap).toContain("from './search-constants.js'");
+    expect(bootstrap).not.toMatch(
+      /SEARCH_DEBOUNCE_MS[\s\S]*from ['"]\.\/search-dialog-constants\.js['"]/u,
+    );
+  });
 });

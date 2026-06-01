@@ -20,7 +20,7 @@ import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js'
 import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
 import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
 import { buildSearchRenderHref, type SearchCanonicalPathname } from '../../shared/search/document-url.js';
-import { SEARCH_DEBOUNCE_MS } from '../../src/search/search-dialog-constants.js';
+import { SEARCH_DEBOUNCE_MS } from '../../src/search/search-constants.js';
 
 
 const createTestSearchCore = () => createSearchCore({
