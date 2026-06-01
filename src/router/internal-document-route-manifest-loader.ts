@@ -7,11 +7,11 @@ import {
 import { INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION } from '../../shared/navigation/internal-document-route-manifest-path.js';
 import type { InternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
 import {
-  createSiteUrlContext,
   isPathnameInsideBasePath,
   type SiteUrlContext,
 } from '../../shared/site/site-url-context.js';
 import { validateJsonContentType } from '../../shared/http/media-type.js';
+import { readSiteUrlContextFromDocumentMeta } from '../site/read-site-url-context-from-document-meta.js';
 
 
 export type InternalDocumentRouteManifestFailureReason =
@@ -69,17 +69,6 @@ const staleState = (): InternalDocumentRouteManifestState => ({
 
 const getMetaContent = (document: Document, name: string): string | null =>
   document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)?.content ?? null;
-
-export const readSiteUrlContextFromDocumentMeta = (document: Document): SiteUrlContext | null => {
-  try {
-    return createSiteUrlContext({
-      siteOrigin: getMetaContent(document, 'rouault-site-origin'),
-      basePath: getMetaContent(document, 'rouault-base-path') ?? '',
-    });
-  } catch {
-    return null;
-  }
-};
 
 export const readInternalDocumentRouteManifestMeta = (
   document: Document,

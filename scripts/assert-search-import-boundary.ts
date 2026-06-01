@@ -64,12 +64,37 @@ export const findSearchImportBoundaryViolations = (): Promise<string[]> => {
     violations.push('search import boundary violation: src/search/bootstrap.ts: initSearchUnavailable exact API must be present');
   }
   const searchPageEnhancerText = readFileSync('src/client/post-hydrate/search-page-enhancer.ts', 'utf8');
+  const searchPageControllerText = readFileSync('src/client/post-hydrate/search-page-controller.ts', 'utf8');
+  const siteUrlContextReaderText = readFileSync('src/site/read-site-url-context-from-document-meta.ts', 'utf8');
+  const internalDocumentRouteManifestLoaderText = readFileSync('src/router/internal-document-route-manifest-loader.ts', 'utf8');
   const searchPageLayoutText = readFileSync('src/layouts/search-page-html.ts', 'utf8');
+  const searchPageSiteUrlContextProductionPaths = [
+    ['src/client/post-hydrate/search-page-enhancer.ts', searchPageEnhancerText],
+    ['src/client/post-hydrate/search-page-controller.ts', searchPageControllerText],
+    ['src/site/read-site-url-context-from-document-meta.ts', siteUrlContextReaderText],
+  ] as const;
+  for (const [file, text] of searchPageSiteUrlContextProductionPaths) {
+    if (text.includes('rouault.invalid')) {
+      violations.push(`search import boundary violation: ${file}: production Search page site URL context must not use synthetic origin fallback`);
+    }
+    if (/\bbasePath\s*:\s*['"]['"]/u.test(text)) {
+      violations.push(`search import boundary violation: ${file}: production Search page site URL context must not use root basePath placeholder`);
+    }
+  }
   if (/createSearchCore(?:FromSiteContext)?\b/u.test(searchPageEnhancerText)) {
     violations.push('search import boundary violation: src/client/post-hydrate/search-page-enhancer.ts: SearchCore must not be created by the enhancer');
   }
   if (searchPageEnhancerText.includes('pathname.startsWith(\'/\')')) {
     violations.push('search import boundary violation: src/client/post-hydrate/search-page-enhancer.ts: search-page enhancer must not fake a route manifest predicate');
+  }
+  if (searchPageControllerText.includes('internal-document-route-manifest-loader')) {
+    violations.push('search import boundary violation: src/client/post-hydrate/search-page-controller.ts: search-page controller must not import the router manifest loader');
+  }
+  if (!internalDocumentRouteManifestLoaderText.includes("from '../site/read-site-url-context-from-document-meta.js'")) {
+    violations.push('search import boundary violation: src/router/internal-document-route-manifest-loader.ts: router manifest loader must import the shared document meta site URL context reader');
+  }
+  if (/\b(?:export\s+)?const\s+readSiteUrlContextFromDocumentMeta\b/u.test(internalDocumentRouteManifestLoaderText)) {
+    violations.push('search import boundary violation: src/router/internal-document-route-manifest-loader.ts: router manifest loader must not redefine the document meta site URL context reader');
   }
   if (!searchPageLayoutText.includes('data-hydration-key="search-page-enhancer"')) {
     violations.push('search import boundary violation: src/layouts/search-page-html.ts: static search page must expose search-page-enhancer hydration key');

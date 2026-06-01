@@ -7,6 +7,7 @@ import {
   loadInternalDocumentRouteManifestFromDocument,
   type InternalDocumentRouteManifestState,
 } from '../../src/router/internal-document-route-manifest-loader.js';
+import { readSiteUrlContextFromDocumentMeta } from '../../src/site/read-site-url-context-from-document-meta.js';
 
 const BUILD_ID = 'build-current';
 const BUILD_LABEL = 'build-label';
@@ -244,5 +245,41 @@ describe('internal document route manifest loader contract', () => {
       'invalid',
     );
     expect(fetched).to.equal(false);
+  });
+});
+
+describe('document meta siteUrlContext reader contract', () => {
+  beforeEach(() => {
+    document.head.replaceChildren();
+  });
+
+  afterEach(() => {
+    document.head.replaceChildren();
+  });
+
+  const appendMeta = (name: string, content: string): void => {
+    const meta = document.createElement('meta');
+    meta.name = name;
+    meta.content = content;
+    document.head.append(meta);
+  };
+
+  it('rouault-base-path content="" は root 配信として受け入れること', () => {
+    appendMeta('rouault-site-origin', 'https://example.com');
+    appendMeta('rouault-base-path', '');
+
+    expect(readSiteUrlContextFromDocumentMeta(document)).to.deep.equal({
+      siteOrigin: 'https://example.com',
+      basePath: '',
+    });
+  });
+
+  it('site origin または basePath meta 要素自体が欠落した場合は null にすること', () => {
+    appendMeta('rouault-site-origin', 'https://example.com');
+    expect(readSiteUrlContextFromDocumentMeta(document)).to.equal(null);
+
+    document.head.replaceChildren();
+    appendMeta('rouault-base-path', '');
+    expect(readSiteUrlContextFromDocumentMeta(document)).to.equal(null);
   });
 });
