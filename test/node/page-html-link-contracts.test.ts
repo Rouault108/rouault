@@ -5,6 +5,7 @@ import {
 } from '../../build/content/page-html-link-contracts.js';
 import { createManifestLoadedRouteClassificationMode } from '../../shared/link/link-annotation.js';
 import { BaseLayout } from '../../src/layouts/BaseLayout.11ty.js';
+import { renderFooterHtml } from '../../src/layouts/footer-html.js';
 
 describe('page HTML link contracts', () => {
   it('note HTML 後段の未注釈 source .md link を解決して本文リンク注釈を付与すること', () => {
@@ -111,6 +112,35 @@ describe('page HTML link contracts', () => {
         ...context,
       }),
     ).toThrow('link kind does not match classified href');
+  });
+
+  it('footer の external:false external-web nav link は data-external なしでも許可すること', () => {
+    const html = renderFooterHtml({
+      meta: {
+        siteName: 'Rouault',
+        copyrightText: '© 2026 Ruo Miyata.',
+      },
+      links: [{ href: 'https://example.com/manual', label: '抑制', external: false }],
+    });
+
+    expect(html).toContain('data-link-kind="external-web"');
+    expect(html).toContain('rel="noreferrer"');
+    expect(html).not.toContain('data-external="true"');
+    expect(() =>
+      validateGeneratedPageHtmlLinkContracts({
+        html,
+        sourceLabel: 'footer',
+      }),
+    ).not.toThrow();
+  });
+
+  it('footer 外の external-web link は data-external なしなら拒否すること', () => {
+    expect(() =>
+      validateGeneratedPageHtmlLinkContracts({
+        html: '<a href="https://example.com/manual" data-link-kind="external-web" data-link-surface="prose">外部</a>',
+        sourceLabel: 'prose',
+      }),
+    ).toThrow('external-web requires data-external="true"');
   });
 
   it('BaseLayout の generated page content で href と data-link-kind の分類不一致を拒否すること', () => {

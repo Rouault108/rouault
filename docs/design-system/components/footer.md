@@ -2,486 +2,173 @@
 
 ## 概要
 
-本書は、Rouault における `footer` の**目標契約**を定義するものです。ここでいう目標契約とは、現行実装の細部をそのまま写すものではなく、**長期的な保守性、責務分離、再利用性、アクセシビリティ、一貫した拡張面**を優先して整理した公開契約です。
+Rouault の footer は、本文終端にサイト名、著作権、任意の build label、補助ナビゲーションを静かに置くための static shell UI です。旧 `layout-footer` custom element や Lit runtime ではなく、`src/layouts/footer-html.ts` が静的 HTML を出力し、`src/assets/css/footer.css` が視覚契約を担います。
 
-`footer` は、本文終端に静かなメタ情報と補助導線を置くための部品です。情報量を増やすことや装飾を強めることは目的ではありません。本文から注意を奪わず、ページの終端で必要最小限の情報を安定して提示することを目的とします。
+footer は情報の意味づけを所有しません。サイト名、著作権文言、build label、補助リンク、補助ナビゲーションのラベルは上位が供給します。
 
-本書は、次の方針を前提とします。
-
-- `footer` は **純粋描画責務**を持つ部品として扱います。
-- Rouault 固有の値は **上位設定**が供給します。
-- CSS の公開拡張面は **CSS custom properties を中心**とします。
-- Storybook は **契約の検証器**であり、契約書そのものではありません。
-
----
-
-## 適用範囲
-
-本書は、画面用 `footer` の**公開契約**を対象とします。対象に含むのは次の事項です。
-
-- 公開契約
-- 入力モデル
-- 状態モデル
-- DOM / Accessibility
-- Visual Contract
-- 環境別の振る舞い
-- 非目標
-- 現行実装との差分
-
-また、本書では次の事項を**将来検討項目ではなく、画面用 `footer` の正式契約**として扱います。
-
-- `links` による補助リンク群の上位供給
-- `siteUrl` がある場合のみサイト名をリンク化し、未指定時はテキストとして扱うこと
-- `buildLabel` を指定時のみ表示し、未指定時は build 領域を描画しないこと
-- `a11y.navLabel` を上位から供給可能とし、未指定時は安定した既定値を用いること
-
-一方で、本書は次の事項を扱いません。
-
-- 画面全体のレイアウト責務
-- ルーター実装そのもの
-- `/about` や `/contact` のページ内容
-- 著作権表示の法的妥当性そのもの
-- ビルドメタデータ配布方式の決定
-- 外部アセット配信基盤の可用性保証
-- 印刷用簡略 footer の詳細契約
-- 外部装飾依存の切替方式やローカルアセット化方針
-- SNS アイコン群、Back to Top、テーマ切替、検索、登録導線などの追加操作要素
-
-これらは上位レイヤ、別契約、または別コンポーネントの責務です。
-
----
-
-## 設計方針
-
-### 責務分離
-
-`footer` は、**描画**、**アクセシビリティ**、**最小限の視覚整列**を責務とします。サイト名、所有者名、ライセンス表現、補助リンク群、ビルド識別子の意味づけは `footer` 自身の責務ではありません。
-
-### 純粋描画
-
-`footer` は import 時に document を変更しません。文書スコープのスタイルが必要な場合でも、それは `footer` の公開契約には含めず、明示的な初期化責務として分離します。
-
-そのような初期化が存在する場合でも、同一文書に対して重複した副作用を発生させないことを前提とします。描画関数は、入力から DOM 断片を返すことに専念します。
-
-### 上位供給
-
-Rouault 固有の定数は `footer` に埋め込まず、上位設定または呼び出し側が供給します。これにより、内容の再利用性とテスト容易性を確保します。
-
-本書では、次の入力を画面用 `footer` の正式な上位供給対象として扱います。
-
-- `meta.siteName`
-- `meta.siteUrl`
-- `meta.copyrightText`
-- `meta.buildLabel`
-- `links`
-- `a11y.navLabel`
-
-したがって、補助リンク群の固定内包、サイト名リンクの固定化、build 表示の常時表示、補助ラベルの内部固定は、いずれも目標契約では採用しません。
-
-### 明示的な公開面
-
-利用者が依存してよいものは、**入力モデル、ルート要素、公開 CSS 変数、アクセシビリティ契約**に限定します。内部 class 名、具体 DOM 深さ、装飾アイコンの要素種別は原則として公開面に含めません。
-
----
-
-## 公開契約
-
-`footer` の公開契約は、**描画入力として `FooterRenderOptions` を受け取り、静的 HTML 文字列を返すこと**です。`footer` 自身は固定値を暗黙に持たず、必要な値は上位から供給されます。
-
-### 公開 API
+## 公開 API
 
 ```ts
 export interface FooterLinkItem {
-  /**
-   * 許容する形式:
-   * - `/about`, `./license`, `../help`, `#top`, `?view=full`
-   * - `https://...`, `http://...`, `mailto:...`, `tel:...`
-   */
-  href: string;
-
-  /**
-   * 可視ラベル。
-   * trim 後に空文字列であってはなりません。
-   */
-  label: string;
-
-  /**
-   * 外部リンクかどうかを表すヒントです。
-   * 未指定時は `href` から導出します。
-   * 明示した場合は、その値を優先します。
-   */
-  external?: boolean;
-}
-
-export interface FooterMetaContent {
-  /**
-   * 可視サイト名。
-   * trim 後に空文字列であってはなりません。
-   */
-  siteName: string;
-
-  /**
-   * サイト名のリンク先です。
-   * 許容形式は `FooterLinkItem.href` と同じです。
-   * 未指定または無効値の場合、siteName はリンク化しません。
-   */
-  siteUrl?: string;
-
-  /**
-   * 著作権・ライセンス等を含む整形済みプレーンテキストです。
-   * `footer` は HTML として解釈しません。
-   */
-  copyrightText: string;
-
-  /**
-   * 版・ビルド・リビジョン等を表す整形済みプレーンテキストです。
-   * `footer` は内容の意味づけや再整形を行いません。
-   */
-  buildLabel?: string;
-}
-
-export interface FooterA11yLabels {
-  /**
-   * 補助ナビゲーションの accessible name です。
-   */
-  navLabel: string;
+  readonly href: string;
+  readonly label: string;
+  readonly external?: boolean;
 }
 
 export interface FooterRenderOptions {
-  /**
-   * ルート `<footer>` に付与する id です。
-   * trim 後に空文字列である場合は未指定として扱います。
-   */
-  id?: string;
-
-  /**
-   * footer の主要メタ情報です。
-   */
-  meta: FooterMetaContent;
-
-  /**
-   * 補助ナビゲーション項目です。
-   * 無効要素は個別に除外されます。
-   */
-  links?: readonly FooterLinkItem[];
-
-  /**
-   * アクセシビリティ補助ラベルです。
-   */
-  a11y?: Partial<FooterA11yLabels>;
+  readonly id?: string;
+  readonly meta: {
+    readonly eyebrow?: string;
+    readonly siteName: string;
+    readonly siteUrl?: string;
+    readonly description?: string;
+    readonly copyrightText: string;
+    readonly buildLabel?: string;
+  };
+  readonly links?: readonly FooterLinkItem[];
+  readonly a11y?: {
+    readonly navLabel?: string;
+  };
 }
-
-export declare function renderFooterHtml(options: FooterRenderOptions): string;
 ```
 
-### 契約の要点
+`renderFooterHtml()` の実行時防御は、`meta.siteName`、`meta.copyrightText`、optional text、`links` 配列と各 link 要素を対象にします。`options` / `options.meta` 自体の完全な `unknown` 正規化はこの contract の範囲外です。
 
-- `renderFooterHtml()` は必須の `options: FooterRenderOptions` を受け取ります。
-- `meta.siteName` と `meta.copyrightText` は必須です。`trim()` 後に空文字列であってはなりません。
-- `siteUrl` および `links[].href` は、次のいずれかの形式のみを許容します。
-  - `http:` / `https:` / `mailto:` / `tel:` で始まる絶対 URL
-  - `/`、`./`、`../`、`#`、`?` で始まるアプリ内参照
+## Text 正規化
 
-- `javascript:`、`data:`、`vbscript:`、および制御文字を含む URL は無効値として扱います。
-- `siteUrl` が未指定または無効値である場合、`siteName` はリンク化しません。
-- `links` の各要素は、`href` と `label` の双方が有効な場合にのみ描画対象とします。無効要素は個別に除外します。
-- `links` を除外した結果 0 件になった場合、`nav` 自体を描画しません。
-- `external` は未指定時に `href` から導出します。明示した場合は、その値を優先します。
-- `footer` は外部リンクであっても `target="_blank"` を自動付与しません。閲覧コンテキストの決定は上位責務とします。
-- `copyrightText` と `buildLabel` は **整形済みプレーンテキスト** として扱います。HTML として解釈してはなりません。
-- `buildLabel` は任意です。未指定または `trim()` 後に空文字列である場合、build 領域を描画しません。
-- `id` は任意です。`trim()` 後に空文字列である場合、出力しません。
-- `a11y.navLabel` は任意です。未指定時は安定した既定値 `"補助ナビゲーション"` を用います。
+- `meta.siteName` と `meta.copyrightText` は必須です。非文字列、未指定、trim 後空文字は明示エラーです。
+- `meta.eyebrow`、`meta.description`、`meta.buildLabel`、`a11y.navLabel`、`id` は trim 後空文字なら未指定として扱います。
+- `a11y.navLabel` が未指定または trim 後空文字の場合、`"補助ナビゲーション"` を使います。
+- `links[].label` は trim 後空文字なら当該 link を描画しません。
+- `links` 自体や各要素に型境界外入力が混入しても、無効要素を除外し、有効な link だけを描画します。
 
-### 固定値を持たない契約
+## URL 許可規則
 
-`footer` は次の値を固定しません。
+`links[].href` は次だけを許可します。
 
-- サイト名
-- サイト URL
-- 著作権文言
-- ライセンス文言
-- 所有者名
-- ビルド識別子の内容
-- 補助リンク群
-- UI 文言の言語
+- `http://` / `https://` で始まり、`new URL()` で parse 可能で host を持つ Web URL
+- `mailto:` / `tel:` で始まり、scheme 後 payload が 1 文字以上ある action URL
+- `/`、`./`、`../`、`#`、`?` で始まる内部参照
 
-これらはすべて上位が供給します。
+次は無効値です。
 
-### 非公開にする実装詳細
+- `javascript:`、`data:`、`vbscript:`
+- `//example.com` のような protocol-relative URL
+- `https:example.com`、`http:/example.com` のような曖昧な Web URL
+- `https://`、`https:///path`、`http://?q=1` のように host を持たない Web URL
+- trim 後の値に ASCII 空白、ASCII 制御文字、DEL / C1 制御文字、backslash を含む URL
+- scheme なし裸パス
+- 許可していない scheme
 
-次の事項は公開契約に含めません。
+`siteUrl` は siteName link 専用です。`http://` / `https://` と内部参照だけを許可し、`mailto:` / `tel:` は許可しません。
 
-- 内部 class 名の完全な一覧
-- 装飾アイコンの要素種別
-- 文書スタイル注入方式
-- buildLabel の内部正規化規則
-- 外部画像 URL の具体値
+`mailto:` / `tel:` の renderer 側検証は scheme 後 payload の存在確認に限定します。メールアドレス形式、電話番号形式、RFC レベルの完全な妥当性検証は footer renderer の責務ではありません。
 
----
+renderer は URL を自動 percent-encoding したり補正したりしません。空白や backslash を含む URL は、呼び出し側が事前に正規化しない限り無効値として除外します。
 
-## 入力モデル
+## NormalizedFooterLink
 
-### `FooterMetaContent`
+renderer 内部では link を次の正規化済み型として扱います。
 
-`meta` は footer の主要情報を表します。
+```ts
+type FooterLinkKind = 'internal-document' | 'external-web' | 'external-action';
 
-| 名前            | 必須   | 内容                                   | 契約                                                                               |
-| --------------- | ------ | -------------------------------------- | ---------------------------------------------------------------------------------- |
-| `siteName`      | はい   | サイト名                               | 可視テキストとして出力します。`trim()` 後に空文字列であってはなりません            |
-| `siteUrl`       | いいえ | サイト名リンク先                       | 有効値である場合のみリンク化します。無効値または未指定時はテキストとして出力します |
-| `copyrightText` | はい   | 著作権・ライセンス等を含む整形済み文言 | プレーンテキストとして出力します。`footer` 側で再解釈しません                      |
-| `buildLabel`    | いいえ | 版・ビルド・リビジョン等の表示値       | プレーンテキストとして指定時のみ表示します                                         |
+interface NormalizedFooterLink {
+  readonly href: string;
+  readonly label: string;
+  readonly kind: FooterLinkKind;
+  readonly external: boolean;
+}
+```
 
-ここで重要なのは、`copyrightText` と `buildLabel` を **整形済みプレーンテキスト** として扱うことです。`footer` は Git hash の妥当性判定、年範囲計算、HTML 解釈を責務に含めません。
+`NormalizedFooterLink` は `FooterLinkItem` をそのまま拡張しません。`renderFooterLink()` は正規化済み `kind` / `external` だけを参照し、`href` や未正規化の `FooterLinkItem.external` から外部表示条件を再解釈しません。
 
-### `FooterLinkItem`
+`external` は boolean が明示された場合はその値を尊重し、未指定なら `kind === 'external-web'` のとき `true` になります。
 
-`links` は補助ナビゲーションを表します。
+## External 契約
 
-| 名前       | 必須   | 内容               | 契約                                                                    |
-| ---------- | ------ | ------------------ | ----------------------------------------------------------------------- |
-| `href`     | はい   | 遷移先 URL         | 有効な URL/参照のみを受け付けます。無効値は描画対象から除外します       |
-| `label`    | はい   | 表示文言           | 可視テキストとして出力します。`trim()` 後に空文字列であってはなりません |
-| `external` | いいえ | 外部リンクかどうか | 未指定時は `href` から導出します。明示時はその値を優先します            |
+siteName link と nav link の external 契約は分離します。
 
-### `FooterA11yLabels`
-
-`a11y` は補助ラベルを表します。
-
-| 名前       | 必須   | 内容                                 | 契約                                               |
-| ---------- | ------ | ------------------------------------ | -------------------------------------------------- |
-| `navLabel` | いいえ | 補助ナビゲーションの accessible name | 未指定時は既定値 `"補助ナビゲーション"` を用います |
-
-### 無効値の扱い
-
-- `id` は `trim()` 後に空である場合、未指定として扱います。
-- `siteName` は `trim()` 後に空であってはなりません。
-- `copyrightText` は `trim()` 後に空であってはなりません。
-- `siteUrl` が未指定または無効値である場合、サイト名はリンク化しません。
-- `buildLabel` が未指定または `trim()` 後に空文字列相当である場合、build 領域は描画しません。
-- `links` は空配列を許容します。この場合、`nav` 自体を描画しないことを許容します。
-- `links` の各要素は個別に検証し、`href` または `label` が無効な要素は描画対象から除外します。
-
-入力値の妥当性検証は、**描画不能や危険な URL 混入を避けるための最小限**に留めます。業務ルール上の厳密検証や表示文言の意味づけは上位で行います。
-
----
-
-## 状態モデル
-
-`footer` の状態は、対話状態ではなく、**どの入力群が与えられたか**により決まります。
-
-### 基本状態
-
-`meta.siteName` と `meta.copyrightText` を持つ状態です。`footer` は主要メタ情報のみを描画します。
-
-### サイト名リンク状態
-
-`meta.siteUrl` が与えられた場合、サイト名をリンクとして描画します。未指定時はテキストとして描画します。
-
-### build 表示状態
-
-`meta.buildLabel` が与えられた場合、補助的な build 領域を描画します。未指定時は描画しません。
-
-### 補助ナビゲーション状態
-
-`links` が 1 件以上与えられた場合、`nav` を描画します。空または未指定の場合、`nav` 自体を描画しません。
-
-### 最小状態
-
-`meta.siteName` と `meta.copyrightText` のみを持つ最小状態を正式に許容します。footer は補助リンクや buildLabel に依存しません。
-
----
+- `siteUrl` が external-web の場合、siteName link は `data-link-kind="external-web"`、`data-external="true"`、`rel="noreferrer"` を持ちます。
+- siteName link は external-web であっても nav link 用の外部記号を表示しません。
+- siteName link は external-web であっても、原則として `aria-label="...（外部サイト）"` を持ちません。
+- nav link は `kind === 'external-web' && external === true` の場合に限り、`data-external="true"`、外部サイト aria-label、CSS 外部記号を持ちます。
+- `links[].external: false` が明示された external-web nav link は `rel="noreferrer"` を持ちますが、`data-external="true"`、外部サイト aria-label、外部記号を持ちません。
+- `mailto:` / `tel:` は `external-action` です。`external: true` が明示されても外部サイト扱いせず、`data-external="true"`、外部サイト aria-label、外部記号、`rel="noreferrer"` を持ちません。
+- `target="_blank"` は自動付与しません。
 
 ## DOM / Accessibility
 
-ルートは常にネイティブ `<footer>` とします。`role` 属性は手動付与しません。暗黙の `contentinfo` ランドマークを利用します。
+現行 DOM は次を正とします。
 
-```text
-<footer id? class="ui-footer">
+```html
+<footer id="..." class="ui-footer" data-footer data-layout-footer>
   <div class="ui-footer__inner">
     <div class="ui-footer__meta">
-      <span class="ui-footer__site">siteName</span>
-      <span class="ui-footer__copyright">copyrightText</span>
-      <span class="ui-footer__build">buildLabel?</span>
+      <div class="ui-footer__brand">
+        <p class="ui-footer__eyebrow">...</p>
+        <p class="ui-footer__site">Rouault</p>
+        <p class="ui-footer__description">...</p>
+      </div>
+      <div class="ui-footer__subline">
+        <div class="ui-footer__legal">
+          <p class="ui-footer__copyright">...</p>
+          <p class="ui-footer__build">...</p>
+        </div>
+        <nav class="ui-footer__nav" aria-label="補助ナビゲーション">
+          <div class="ui-footer__nav-list">
+            <span class="ui-footer__nav-item"><a href="/search/">検索</a></span>
+          </div>
+        </nav>
+      </div>
     </div>
-
-    <nav class="ui-footer__nav" aria-label="...">
-      <a>...</a>
-    </nav>
   </div>
 </footer>
 ```
 
-### DOM 契約
+ルートはネイティブ `<footer>` です。`role` は手動付与せず、暗黙の `contentinfo` landmark を利用します。視覚順序、DOM 順序、読み上げ順序は一致させます。
 
-- ルートはネイティブ `<footer>` とします。
-- 主要メタ情報群と補助ナビゲーション群を別領域として分離します。
-- 視覚順序・読み上げ順序・DOM 順序は一致させます。
-- `nav` は `links` が 1 件以上ある場合のみ描画します。
-- build 領域は `buildLabel` がある場合のみ描画します。
-
-### Accessibility 契約
-
-- ルートは暗黙の `contentinfo` を利用します。
-- `nav` には `aria-label` を付与します。
-- 区切り記号を用いる場合は `aria-hidden="true"` とします。
-- 装飾アイコンや装飾画像を用いる場合、読み上げ対象にしません。
-- サイト名がリンクでない場合も、主要情報として読めるテキストを保持します。
-
-### 文言と言語
-
-`footer` 自体は、文言の言語を固定しません。可視文言と補助ラベルの言語は上位入力に従います。
-
-とくに、補助ナビゲーションの accessible name は `a11y.navLabel` により上位から供給可能とし、未指定時のみ既定値を用います。これは国際化のためだけではなく、**文言所有権を `footer` 内部から切り離すための公開契約**です。
-
-ライセンス表現を英語併記するかどうか、著作権表示の語調をどうするかも上位方針の責務とします。
-
----
+`·` separator は CSS pseudo-element による視覚装飾です。DOM 要素、リンクラベル、nav の明示的 accessible name、テキスト抽出上の契約には含めません。ただし CSS generated content が支援技術から常に完全に無視されるとは断定しません。将来、読み上げからの厳密な除外が必要になった場合は、DOM separator + `aria-hidden="true"` を別契約として検討します。
 
 ## Visual Contract
 
-`footer` の視覚契約は、本文終端で**主張しすぎず、しかし読める**ことです。装飾性ではなく、終端情報の静かな整列を重視します。
+footer は上段に brand 情報、下段に legal / build / nav を置きます。下段は baseline inline wrap とし、著作権、build、補助リンクを `·` で控えめに区切ります。狭幅時は情報を隠さず折り返し、長い build label や長い link label には `overflow-wrap: anywhere` を適用します。
 
-### 情報順位
+CSS selector は `.ui-footer[data-footer]` 起点にします。`--space-5` / `--space-7` には依存しません。
 
-- 主要情報は `meta` に集約します。
-- 補助リンクは二次情報として扱います。
-- buildLabel は最も弱い情報として扱います。
+### Public Tokens
 
-### レイアウト契約
+| Token | 内容 |
+| --- | --- |
+| `--footer-bg` | 背景 |
+| `--footer-fg` | 基本文字色 |
+| `--footer-fg-strong` | siteName などの強い文字色 |
+| `--footer-fg-muted` | 補助文字色 |
+| `--footer-border` | 上端境界線色 |
+| `--footer-border-width` | 上端境界線幅 |
+| `--footer-max-inline-size` | inner の最大幅 |
+| `--footer-padding-block` | root 縦余白 |
+| `--footer-padding-inline` | root 横余白 |
+| `--footer-gap` | brand と subline の間隔 |
+| `--footer-separator-gap` | `·` separator の左右間隔 |
+| `--footer-link-underline-offset` | link underline offset |
+| `--footer-build-fg` | build 文字色 |
+| `--footer-build-opacity` | 既定 build 文字色の alpha |
 
-- `footer` は全幅を占有します。
-- 内部は中央寄せのコンテナを持ちます。
-- 狭幅時は**内容保持を優先し、複数行への折り返しを許容**します。
-- 高さは固定値に依存せず、`min-block-size` 的な扱いを基本とします。
-- オーバーフローで情報を隠さず、切り詰めより折り返しを優先します。
+`--footer-build-fg` が指定された場合は完全な build 文字色として優先します。`--footer-build-opacity` は、`--footer-build-fg` が未指定で `--_footer-fg-muted` から既定 build 文字色を導出する場合にだけ反映します。
 
-### 文字とコントラスト
+relative color syntax 対応環境では、`--footer-build-opacity` を build 文字色の alpha として反映します。非対応環境では `--footer-build-fg` または muted foreground fallback を優先し、`.ui-footer__build` 要素全体の `opacity` は使いません。
 
-- 本文より一段弱い視覚強度に抑えます。
-- ただし、補助リンクは hover / focus-visible で明確に識別可能である必要があります。
-- buildLabel は主要情報より弱く、しかし判読可能な強度を維持します。
+## Forced Colors / Print
 
-### 参照トークン
+`@media (forced-colors: active)` では、背景、文字、境界線、link、focus outline を system color へ写像します。
 
-公開トークンは、少なくとも次を含みます。
+`@media print` では画面用 footer を `display: none !important` で非表示にします。印刷用の終端情報が必要な場合は、画面用 footer に条件分岐を積み増さず別契約で扱います。
 
-| 用途             | トークン                   |
-| ---------------- | -------------------------- |
-| 背景             | `--footer-bg`              |
-| 文字色           | `--footer-fg`              |
-| 弱い文字色       | `--footer-fg-muted`        |
-| 境界線色         | `--footer-border`          |
-| 境界線幅         | `--footer-border-width`    |
-| 最大幅           | `--footer-max-inline-size` |
-| 縦余白           | `--footer-padding-block`   |
-| 横余白           | `--footer-padding-inline`  |
-| 群間隔           | `--footer-gap`             |
-| build 領域の弱度 | `--footer-build-opacity`   |
+## Test Contract
 
-トークンの正本は契約書とし、実装と Storybook はそれに一致させます。
+SSR HTML 契約は `test/ssr/footer-render.test.ts`、CSS 構造契約は `test/ssr/static-css-contracts.test.ts` を正本とします。
 
-### 直接値の扱い
+CSS 契約テストは構造 smoke test です。余白値、font-size、宣言順、整形、quote 種別の完全一致は固定しません。
 
-- 色、spacing、主要レイアウト寸法は直値に依存しません。
-- CSS 変数のフォールバック値は、互換性維持のための最小限に留めます。
-- 装飾画像の寸法や余白も、可能な限り class またはトークンで管理します。
-
----
-
-## 環境別の振る舞い
-
-### Dark Mode
-
-ダークモード対応はテーマトークン解決に委ねます。`footer` 自体は `prefers-color-scheme` 分岐を前提にしません。
-
-### Forced Colors
-
-高コントラスト環境では、境界線、区切り、リンク、主要テキストの判別性を優先します。色指定はブランド色固定より、UA が提供する system color と整合する値を優先し、少なくとも境界線と主要文字は背景上で識別可能でなければなりません。
-
-装飾要素の見栄えより、情報の識別可能性を優先します。
-
-### Print
-
-既定方針として、画面用 footer は印刷時に表示しません。印刷媒体で終端情報が必要な場合は、画面用 footer に条件分岐を積み増すのではなく、印刷用の簡略メタ情報を別契約で定義します。
-
-画面用 footer を非表示にする実装方式は問いませんが、印刷結果において確実に描画されないことを契約とします。
-
-### オフライン・外部依存劣化
-
-- 外部画像が取得不能でも、主要テキストとリンクは保持します。
-- 外部アイコンが利用不能でも、主要情報の意味が失われない構成を維持します。
-- 外部依存は装飾または補助に留めます。
-
----
-
-## 拡張面
-
-### 公開してよい拡張面
-
-- `FooterRenderOptions`
-- ルート `<footer>`
-- 公開 CSS custom properties
-- `id`
-- `nav` の accessible name
-
-### 公開しない実装詳細
-
-- 内部子要素 class 名
-- 具体 DOM 深さ
-- 区切り記号の文字種および具体スタイル
-- 装飾アイコンの要素種別
-- スタイル注入の内部方式
-
-公開拡張面を絞ることで、内部実装の変更自由度を確保します。
-
----
-
-## Storybook 契約
-
-Storybook は見本ではなく、**契約検証**を主目的とします。少なくとも次を検証します。
-
-| Story                   | 検証する契約                                                                  |
-| ----------------------- | ----------------------------------------------------------------------------- |
-| `DefaultContract`       | ネイティブ `<footer>`、主要メタ領域、任意の補助ナビゲーション領域を持つこと   |
-| `MinimalState`          | `meta` のみで描画可能であること                                               |
-| `LinkAndBuildVariants`  | `siteUrl`、`buildLabel`、`links` の有無に応じて描画有無が切り替わること       |
-| `AccessibilityContract` | `nav` の `aria-label`、装飾要素の非読み上げ、読み上げ順序の整合が保たれること |
-| `TokenContract`         | 公開トークン集合に基づいてスタイルが構成されること                            |
-| `ForcedColorsContract`  | 高コントラスト環境で可読性が維持されること                                    |
-| `PrintPolicyContract`   | 画面用 footer の印刷時方針が別契約どおりに保たれること                        |
-
-Storybook は契約書の代替ではありません。契約書を正本とし、Storybook はそれを検証します。
-
----
-
-## 実装整合メモ
-
-2026-05-26 時点で、画面用 footer は `layout-footer` Custom Element ではなく、`src/layouts/footer-html.ts` と `src/assets/css/footer.css` による static shell UI として更新済みです。とくに次の点を満たします。
-
-- `renderFooterHtml(options)` は `meta` / `links` / `a11y` を入力とする純粋描画 API です。
-- `siteUrl`、`buildLabel`、`links` はいずれも任意であり、未指定時は対応する領域を描画しません。
-- `a11y.navLabel` は上位供給可能で、未指定時は `"補助ナビゲーション"` を既定値として用います。
-- URL は最小限の検証を行い、危険なプロトコルや制御文字を含む値は描画対象から除外します。
-- 文書スタイル注入は行わず、視覚契約は `footer.css` が担います。
-- 公開トークンは `--footer-*` 群を正面に置きつつ、アプリケーショントークンへフォールバックします。
-- Storybook は `DefaultContract`、`MinimalState`、`LinkAndBuildVariants`、`AccessibilityContract`、`TokenContract`、`ForcedColorsContract`、`PrintPolicyContract` を通じて契約を検証します。
-
-なお、Rouault 固有の既定値供給は `src/layouts/footer-options.ts` が担います。`data-layout-footer` は sticky footer と sidebar overlay の layout boundary selector として維持しますが、視覚契約 selector は `data-footer` と `.ui-footer` が担います。
-
----
-
-## 補足
-
-`footer` の価値は、情報を多く持つことではありません。**責務を絞り、上位から与えられた終端情報を静かに整列させること**にあります。
-
-長期的に保守しやすい `footer` にするため、次の原則は維持します。
-
-1. 描画責務と文書副作用責務を分離します。
-2. Rouault 固有値を上位設定へ移します。
-3. build や著作権の意味づけを footer 自身へ持ち込まないようにします。
-4. 公開拡張面を CSS 変数と入力モデルへ絞ります。
-5. Storybook を正本仕様にせず、契約検証器として使います。
-
-この方針により、footer は Rouault 固有の一断片でありながら、責務境界の明確な契約対象として維持できます。
+Storybook は docs / smoke / 手動確認の補助であり、契約正本ではありません。

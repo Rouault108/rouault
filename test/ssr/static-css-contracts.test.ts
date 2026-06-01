@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import postcss, { type AtRule, type Declaration, type Rule } from 'postcss';
+import selectorParser from 'postcss-selector-parser';
 import { describe, expect, it } from 'vitest';
 
 const cssDir = resolve(process.cwd(), 'src/assets/css');
@@ -7,13 +9,121 @@ const cssDir = resolve(process.cwd(), 'src/assets/css');
 const readCss = (fileName: string): string =>
   readFileSync(resolve(cssDir, fileName), 'utf8').replace(/\/\*[\s\S]*?\*\//gu, '');
 
+const normalizeAttributeQuoteStyle = (selector: string): string =>
+  selector.replace(
+    /\[([^=\]]+)=(?:"([^"]*)"|'([^']*)')\]/gu,
+    (_match, name, doubleValue, singleValue) => {
+      const value = typeof doubleValue === 'string' ? doubleValue : singleValue;
+      return `[${String(name)}='${String(value)}']`;
+    },
+  );
+
+const normalizeSelector = (selector: string): string =>
+  selector
+    .trim()
+    .replace(/\s+/gu, ' ')
+    .replace(/\s*([>+~(,])\s*/gu, '$1')
+    .replace(/\s*\)/gu, ')');
+
+const splitSelectors = (selectorText: string): string[] => {
+  const ast = selectorParser().astSync(selectorText);
+  const selectors: string[] = [];
+  ast.each((selector) => {
+    selectors.push(normalizeAttributeQuoteStyle(normalizeSelector(selector.toString())));
+  });
+  return selectors;
+};
+
 const ruleBlock = (css: string, selector: string): string => {
   const blocks: string[] = [];
-  for (const match of css.matchAll(/(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}/gu)) {
-    const selectors = match.groups?.['selectors']?.split(',').map((value) => value.trim());
-    if (selectors?.includes(selector)) blocks.push(match.groups?.['body'] ?? '');
-  }
+  const normalizedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
+  postcss.parse(css).walkRules((rule: Rule) => {
+    if (splitSelectors(rule.selector).includes(normalizedSelector)) {
+      blocks.push(rule.nodes?.map((node) => node.toString()).join('\n') ?? '');
+    }
+  });
   return blocks.join('\n');
+};
+
+const declarationsForSelector = (
+  css: string,
+  selector: string,
+  property?: string,
+): Declaration[] => {
+  const declarations: Declaration[] = [];
+  const normalizedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
+  postcss.parse(css).walkRules((rule: Rule) => {
+    if (!splitSelectors(rule.selector).includes(normalizedSelector)) return;
+    rule.walkDecls((declaration) => {
+      if (property === undefined || declaration.prop === property) declarations.push(declaration);
+    });
+  });
+  return declarations;
+};
+
+const declarationValuesForSelector = (css: string, selector: string, property: string): string[] =>
+  declarationsForSelector(css, selector, property).map((declaration) => declaration.value.trim());
+
+const unquoteCssStringValue = (value: string): string =>
+  value.replace(/^(['"])([\s\S]*)\1$/u, '$2');
+
+const lacksDeclarationProperty = (css: string, selector: string, property: string): boolean =>
+  declarationsForSelector(css, selector, property).length === 0;
+
+const listSupportsBlocks = (css: string): string[] => {
+  const blocks: string[] = [];
+  postcss.parse(css).walkAtRules('supports', (atRule: AtRule) => {
+    blocks.push(atRule.nodes?.map((node) => node.toString()).join('\n') ?? '');
+  });
+  return blocks;
+};
+
+const isInsideKeyframes = (rule: Rule): boolean =>
+  rule.parent?.type === 'atrule' && /keyframes$/u.test(rule.parent.name);
+
+const allRuleSelectors = (css: string): string[] => {
+  const selectors: string[] = [];
+  postcss.parse(css).walkRules((rule: Rule) => {
+    if (isInsideKeyframes(rule)) return;
+    selectors.push(...splitSelectors(rule.selector));
+  });
+  return selectors;
+};
+
+const selectorHasExternalNavMarker = (selectorText: string): boolean => {
+  let found = false;
+  const ast = selectorParser().astSync(selectorText);
+  ast.each((selector) => {
+    const normalized = normalizeAttributeQuoteStyle(normalizeSelector(selector.toString()));
+    if (!normalized.includes("a[data-external='true']::after")) return;
+    found = true;
+  });
+  return found;
+};
+
+const isExternalMarkerSelectorLimitedToNav = (selectorText: string): boolean => {
+  let ok = false;
+  const ast = selectorParser().astSync(selectorText);
+  ast.each((selector) => {
+    const normalized = normalizeAttributeQuoteStyle(normalizeSelector(selector.toString()));
+    if (!normalized.includes("a[data-external='true']::after")) return;
+    const navIndex = selector.nodes.findIndex(
+      (node) => node.type === 'class' && node.value === 'ui-footer__nav',
+    );
+    const anchorIndex = selector.nodes.findIndex((node) => node.type === 'tag' && node.value === 'a');
+    if (navIndex < 0 || anchorIndex <= navIndex) return;
+    const combinators = selector.nodes
+      .slice(navIndex + 1, anchorIndex)
+      .filter((node) => node.type === 'combinator');
+    if (
+      combinators.length > 0 &&
+      combinators.every((node) => node.value.trim().length === 0 || node.value === '>') &&
+      normalized.startsWith('.ui-footer[data-footer] ')
+    ) {
+      ok = true;
+    }
+  });
+  return ok;
 };
 
 const expectRuleToDeclare = (css: string, selector: string, declarations: readonly string[]): void => {
@@ -130,6 +240,44 @@ const forbiddenMainCssSelectorPatterns = [
 ] as const;
 
 describe('static CSS contracts', () => {
+  it('selector AST helper preserves nested and quoted commas while splitting selector lists', () => {
+    const selectorFixtures = [
+      {
+        selector: '.ui-footer[data-footer] .ui-footer__site, .ui-footer[data-footer] .ui-footer__nav',
+        expected: [
+          '.ui-footer[data-footer] .ui-footer__site',
+          '.ui-footer[data-footer] .ui-footer__nav',
+        ],
+      },
+      {
+        selector:
+          '.ui-footer[data-footer] :is(.ui-footer__site, .ui-footer__nav) a[data-external="true"]::after',
+        expected: [
+          ".ui-footer[data-footer] :is(.ui-footer__site,.ui-footer__nav) a[data-external='true']::after",
+        ],
+      },
+      {
+        selector:
+          '.ui-footer[data-footer] :where(.ui-footer__site, .ui-footer__nav) a:not([data-link-kind="external-action"], [data-external="false"])',
+        expected: [
+          ".ui-footer[data-footer] :where(.ui-footer__site,.ui-footer__nav) a:not([data-link-kind='external-action'],[data-external='false'])",
+        ],
+      },
+      {
+        selector: '.ui-footer[data-footer] a[data-label=","]::after',
+        expected: [".ui-footer[data-footer] a[data-label=',']::after"],
+      },
+      {
+        selector: ".ui-footer[data-footer] a[data-label='\\,']::after",
+        expected: [".ui-footer[data-footer] a[data-label='\\,']::after"],
+      },
+    ];
+
+    for (const fixture of selectorFixtures) {
+      expect(splitSelectors(fixture.selector), fixture.selector).toEqual(fixture.expected);
+    }
+  });
+
   it('main.css is the fixed import registry plus reset/base/prose surface', () => {
     const css = readCss('main.css');
 
@@ -344,6 +492,131 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(corpora, '.corpora-overview__corpus-grid', ['grid-template-columns:']);
     expectRuleToDeclare(corpora, '.corpus-page .empty-hint[data-empty-state]', ['min-block-size:']);
     expect(corpora).not.to.match(/\.result-(card|link|title|meta|excerpt)\s*\{/u);
+  });
+
+  it('footer CSS restores static footer visual contract', () => {
+    const css = readCss('footer.css');
+
+    expectRuleToDeclare(css, '.ui-footer[data-footer]', [
+      'box-sizing: border-box',
+      'border-block-start:',
+      '--_footer-bg:',
+      '--_footer-fg:',
+      '--_footer-build-opacity:',
+      '--_footer-build-fg:',
+      '--_footer-separator-gap:',
+      '--_footer-link-underline-offset:',
+    ]);
+    expectRuleToDeclare(css, '.ui-footer[data-footer] .ui-footer__inner', [
+      'box-sizing: border-box',
+    ]);
+    expectRuleToDeclare(css, '.ui-footer[data-footer] .ui-footer__meta', ['display: grid']);
+    expectRuleToDeclare(css, '.ui-footer[data-footer] .ui-footer__subline', [
+      'display: flex',
+      'align-items: baseline',
+      'gap: 0',
+    ]);
+    expectRuleToDeclare(css, '.ui-footer[data-footer] .ui-footer__legal', [
+      'display: inline-flex',
+    ]);
+    expectRuleToDeclare(css, '.ui-footer[data-footer] .ui-footer__nav-list', [
+      'display: inline-flex',
+    ]);
+    expectRuleToDeclare(css, '.ui-footer[data-footer] .ui-footer__build', [
+      'color: var(--_footer-build-fg)',
+    ]);
+    expect(lacksDeclarationProperty(css, '.ui-footer[data-footer] .ui-footer__build', 'opacity')).toBe(
+      true,
+    );
+
+    for (const selector of [
+      '.ui-footer[data-footer] .ui-footer__build::before',
+      '.ui-footer[data-footer] .ui-footer__nav::before',
+      '.ui-footer[data-footer] .ui-footer__nav-item + .ui-footer__nav-item::before',
+    ]) {
+      expect(
+        declarationValuesForSelector(css, selector, 'content').map(unquoteCssStringValue),
+      ).toContain('·');
+    }
+
+    expect(ruleBlock(css, '.ui-footer[data-footer] .ui-footer__nav a')).toContain(
+      'overflow-wrap: anywhere',
+    );
+    expectRuleToDeclare(
+      css,
+      ".ui-footer[data-footer] .ui-footer__nav [data-link-surface='navigation']",
+      ['text-decoration-line: underline', 'text-decoration-color: transparent'],
+    );
+    expectRuleToDeclare(
+      css,
+      ".ui-footer[data-footer] .ui-footer__nav [data-link-surface='navigation']:hover",
+      ['text-decoration-color: currentColor'],
+    );
+    expectRuleToDeclare(css, '.ui-footer[data-footer] .ui-footer__site a', [
+      'text-decoration-line: none',
+    ]);
+    expect(css).toContain('@media (forced-colors: active)');
+    expect(css).toContain('@media print');
+    expect(ruleBlock(atRuleBlock(css, '@media print'), '.ui-footer[data-footer]')).toContain(
+      'display: none !important',
+    );
+    expect(css).not.toContain('--space-5');
+    expect(css).not.toContain('--space-7');
+
+    const relativeColorSupportsBlock = listSupportsBlocks(css).find(
+      (block) =>
+        block.includes('--_footer-build-fg') &&
+        block.includes('--footer-build-fg') &&
+        block.includes('oklch(from var(--_footer-fg-muted)') &&
+        block.includes('var(--_footer-build-opacity)'),
+    );
+    expect(relativeColorSupportsBlock).toBeDefined();
+
+    const footerSelectors = allRuleSelectors(css).filter((selector) =>
+      /\.ui-footer(?:__|[.[#:\s>+~]|$)/u.test(selector),
+    );
+    expect(footerSelectors.length).toBeGreaterThan(0);
+    for (const selector of footerSelectors) {
+      expect(selector.startsWith('.ui-footer[data-footer]'), selector).toBe(true);
+    }
+
+    const markerFixtures = [
+      {
+        selector:
+          '.ui-footer[data-footer] :is(.ui-footer__site, .ui-footer__nav) a[data-external="true"]::after',
+        allowed: false,
+      },
+      {
+        selector: '.ui-footer[data-footer] a[data-label=","]::after',
+        allowed: false,
+      },
+      {
+        selector: ".ui-footer[data-footer] a[data-label='\\,']::after",
+        allowed: false,
+      },
+      {
+        selector: '.ui-footer[data-footer] .ui-footer__nav a[data-external="true"]::after',
+        allowed: true,
+      },
+      {
+        selector: '.ui-footer[data-footer] .ui-footer__nav + a[data-external="true"]::after',
+        allowed: false,
+      },
+    ];
+    for (const fixture of markerFixtures) {
+      expect(isExternalMarkerSelectorLimitedToNav(fixture.selector), fixture.selector).toBe(
+        fixture.allowed,
+      );
+    }
+
+    const externalMarkerSelectors = allRuleSelectors(css).filter(selectorHasExternalNavMarker);
+    expect(externalMarkerSelectors).toEqual([
+      ".ui-footer[data-footer] .ui-footer__nav a[data-external='true']::after",
+    ]);
+    for (const selector of externalMarkerSelectors) {
+      expect(isExternalMarkerSelectorLimitedToNav(selector), selector).toBe(true);
+      expect(selector).not.toContain('.ui-footer__site');
+    }
   });
 
   it('page shell CSS is split by responsibility', () => {

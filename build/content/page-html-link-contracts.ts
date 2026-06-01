@@ -90,6 +90,11 @@ const hasClassName = (node: ElementNode, className: string): boolean =>
 
 const isLinkCardRoot = (node: ElementNode): boolean => hasAttr(node, 'data-link-card');
 
+const isFooterRoot = (node: ElementNode): boolean =>
+  hasClassName(node, 'ui-footer') && hasAttr(node, 'data-footer');
+
+const isFooterNavRoot = (node: ElementNode): boolean => hasClassName(node, 'ui-footer__nav');
+
 const isCardSurfaceLink = (node: ElementNode, insideLinkCard: boolean): boolean =>
   attr(node, 'data-link-surface') === 'card' ||
   (insideLinkCard && hasClassName(node, 'link-card__link'));
@@ -296,6 +301,7 @@ const validateAnchor = (
   node: ElementNode,
   options: ValidateGeneratedPageHtmlLinkContractsOptions,
   insideLinkCard: boolean,
+  insideFooterNav: boolean,
 ): void => {
   const href = attr(node, 'href');
   if (href === null || href.trim().length === 0) {
@@ -334,7 +340,7 @@ const validateAnchor = (
   if (attr(node, 'data-external') === 'true' && kind !== 'external-web') {
     fail(options.sourceLabel, 'data-external mismatch');
   }
-  if (kind === 'external-web' && attr(node, 'data-external') !== 'true') {
+  if (kind === 'external-web' && attr(node, 'data-external') !== 'true' && !insideFooterNav) {
     fail(options.sourceLabel, 'external-web requires data-external="true"');
   }
   if (kind === 'external-action' && attr(node, 'data-external') === 'true') {
@@ -364,16 +370,21 @@ const visit = (
   options: ValidateGeneratedPageHtmlLinkContractsOptions,
   insidePlaceholder = false,
   insideLinkCard = false,
+  insideFooter = false,
+  insideFooterNav = false,
 ): void => {
   const nextInsidePlaceholder =
     insidePlaceholder || (isElementNode(node) && isComponentShadowPlaceholder(node));
   const nextInsideLinkCard = insideLinkCard || (isElementNode(node) && isLinkCardRoot(node));
+  const nextInsideFooter = insideFooter || (isElementNode(node) && isFooterRoot(node));
+  const nextInsideFooterNav =
+    insideFooterNav || (nextInsideFooter && isElementNode(node) && isFooterNavRoot(node));
   if (isElementNode(node) && node.tagName === 'a' && !nextInsidePlaceholder) {
-    validateAnchor(node, options, nextInsideLinkCard);
+    validateAnchor(node, options, nextInsideLinkCard, nextInsideFooterNav);
   }
   const childNodes = 'childNodes' in node ? node.childNodes : [];
   for (const child of childNodes) {
-    visit(child, options, nextInsidePlaceholder, nextInsideLinkCard);
+    visit(child, options, nextInsidePlaceholder, nextInsideLinkCard, nextInsideFooter, nextInsideFooterNav);
   }
 };
 

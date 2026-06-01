@@ -38,6 +38,9 @@ const isFootnoteStructuralException = (anchor: HTMLAnchorElement): boolean =>
   anchor.hasAttribute('data-footnote-backref') ||
   anchor.hasAttribute('data-footnote-fallback-trigger');
 
+const isFooterNavLink = (anchor: HTMLAnchorElement): boolean =>
+  anchor.closest('.ui-footer[data-footer] .ui-footer__nav') !== null;
+
 const toAbsoluteCurrentUrl = (siteUrlContext: SiteUrlContext, normalizedUrl: string): string => {
   const resolved = new URL(normalizedUrl, `${siteUrlContext.siteOrigin}/`);
   return resolved.href;
@@ -143,7 +146,7 @@ const validateAnchor = (
   if (anchor.getAttribute('data-external') === 'true' && kind !== 'external-web') {
     fail(options.sourceLabel, 'data-external mismatch');
   }
-  if (kind === 'external-web' && anchor.getAttribute('data-external') !== 'true') {
+  if (kind === 'external-web' && anchor.getAttribute('data-external') !== 'true' && !isFooterNavLink(anchor)) {
     fail(options.sourceLabel, 'external-web requires data-external="true"');
   }
 };

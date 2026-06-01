@@ -32,7 +32,7 @@ const meta: Meta = {
 footer は \`src/layouts/footer-html.ts\` と \`src/assets/css/footer.css\` による static HTML と CSS の契約です。
 
 render 構造の合否は \`test/ssr/footer-render.test.ts\`、  
-token / forced-colors / print の CSS 構造契約は \`test/ssr/css-structure-contracts.test.ts\` を正本とします。
+token / forced-colors / print の CSS 構造契約は \`test/ssr/static-css-contracts.test.ts\` を正本とします。
 
 この story ファイルは **docs / smoke / 手動確認** に限定します。
         `,
@@ -170,7 +170,7 @@ export const TokenManual: Story = {
     docs: {
       description: {
         story:
-          'token / spacing / description / build の視覚確認用 story です。CSS 構造契約の合否は test/ssr/css-structure-contracts.test.ts を正本とします。',
+          'token / spacing / description / build の視覚確認用 story です。CSS 構造契約の合否は test/ssr/static-css-contracts.test.ts を正本とします。',
       },
     },
   },
@@ -190,7 +190,7 @@ export const ForcedColorsManual: Story = {
     docs: {
       description: {
         story:
-          'forced-colors の手動確認用 story です。rule existence の合否は test/ssr/css-structure-contracts.test.ts を正本とします。',
+          'forced-colors の手動確認用 story です。rule existence の合否は test/ssr/static-css-contracts.test.ts を正本とします。',
       },
     },
   },
@@ -210,7 +210,7 @@ export const PrintPolicyManual: Story = {
     docs: {
       description: {
         story:
-          'print 時の扱いを説明する手動確認用 story です。print rule の存在は test/ssr/css-structure-contracts.test.ts を正本とします。',
+          'print 時の扱いを説明する手動確認用 story です。print rule の存在は test/ssr/static-css-contracts.test.ts を正本とします。',
       },
     },
   },
