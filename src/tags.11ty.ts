@@ -1,4 +1,5 @@
 import type { TagPageEntry } from './data/tagPages.js';
+import type { SiteUrlContext } from '../shared/site/site-url-context.js';
 import {
   buildStaticExploreResponse,
   buildStaticSearchState,
@@ -11,6 +12,7 @@ interface TagPagesPaginationData extends TagPageTemplateData {
 
 interface TagPageTemplateData {
   tagPage?: TagPageEntry;
+  siteUrlContext?: SiteUrlContext | null;
 }
 
 function buildInitialSearchResponse(tagPage: TagPageEntry) {
@@ -63,10 +65,14 @@ export class TagPagesTemplate {
     if (!tagPage) {
       return '';
     }
+    if (!data.siteUrlContext) {
+      throw new Error('TagPagesTemplate requires siteUrlContext.');
+    }
 
     return renderSearchPageHtml({
       initialState: buildInitialSearchState(tagPage),
       initialResponse: buildInitialSearchResponse(tagPage),
+      siteUrlContext: data.siteUrlContext,
     });
   }
 }

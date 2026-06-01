@@ -1,7 +1,7 @@
 import type { SearchState } from '../../shared/search/search-types.js';
+import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import type { StaticExploreSearchResponse } from '../../build/search/build-static-explore-response.js';
 import { buildSearchResultRenderHref } from '../search/normalize-search-result-url.js';
-import { createSiteUrlContext } from '../../shared/site/site-url-context.js';
 import { renderStaticIconHtml } from '../../shared/icons/render-static-icon-html.js';
 import {
   createStaticRenderIdContext,
@@ -119,29 +119,54 @@ const renderFilterSummaryDetail = (selectedTags: readonly string[]): string => {
   return `${head}${rest}`;
 };
 
-const renderResults = (response: StaticExploreSearchResponse): string => {
+const renderEmptyState = (state: SearchState): string => {
+  const hasConditions = state.q.length > 0 || state.tags.length > 0;
+  const heading = hasConditions ? '一致するメモが見つかりません' : 'キーワードまたはタグで絞り込めます';
+  const description = hasConditions
+    ? '検索語を変えるか、タグの組み合わせや演算子を見直してください。'
+    : 'ヘッダーのダイアログは即時検索、ここではタグ演算子も含めて一覧で比較できます。';
+  return `
+    <section class="empty-hint" data-empty-state data-search-empty-state data-empty-variant="search">
+      <div class="empty-hint__message" data-announce="off">
+        <div class="empty-hint__illustration" aria-hidden="true" hidden></div>
+        <div class="empty-hint__icon" aria-hidden="true" hidden></div>
+        <h2 class="empty-hint__heading">${escapeHtmlText(heading)}</h2>
+        <p class="empty-hint__description">${escapeHtmlText(description)}</p>
+      </div>
+      <div class="empty-hint__actions" hidden></div>
+    </section>
+  `.trim();
+};
+
+const renderSnippetHtml = (item: StaticExploreSearchResponse['items'][number]): string => {
+  if (item.snippet) {
+    return item.snippet.segments
+      .map((segment) =>
+        segment.matched
+          ? `<mark>${escapeHtmlText(segment.text)}</mark>`
+          : escapeHtmlText(segment.text),
+      )
+      .join('');
+  }
+  return escapeHtmlText(item.description);
+};
+
+const renderResults = (
+  response: StaticExploreSearchResponse,
+  state: SearchState,
+  siteUrlContext: SiteUrlContext,
+): string => {
   if (response.items.length === 0) {
-    return `
-      <section class="empty-hint" data-empty-state data-search-empty-state data-empty-variant="search">
-        <div class="empty-hint__message" data-announce="off">
-          <div class="empty-hint__illustration" aria-hidden="true" hidden></div>
-          <div class="empty-hint__icon" aria-hidden="true"></div>
-          <h2 class="empty-hint__heading">キーワードまたはタグで絞り込めます</h2>
-          <p class="empty-hint__description">ヘッダーのダイアログは即時検索、ここではタグ演算子も含めて一覧で比較できます。</p>
-        </div>
-        <div class="empty-hint__actions" hidden></div>
-      </section>
-    `.trim();
+    return renderEmptyState(state);
   }
 
-  const siteUrlContext = createSiteUrlContext({ siteOrigin: 'https://rouault.invalid', basePath: '' });
   return `<ol class="results-list" data-search-results>${response.items
     .map((item) => {
       const href = buildSearchResultRenderHref({
         canonicalPathname: item.canonicalPathname,
         siteUrlContext,
       });
-      const description = item.snippet?.segments.map((segment) => segment.text).join('') ?? item.description;
+      const description = renderSnippetHtml(item);
       return `
         <li>
           <article class="result-card" data-search-result-card>
@@ -153,7 +178,7 @@ const renderResults = (response: StaticExploreSearchResponse): string => {
                   ? `<div class="result-meta">更新日: ${escapeHtmlText(item.date.original)}</div>`
                   : ''
               }
-              ${description.trim().length > 0 ? `<p class="result-excerpt">${escapeHtmlText(description)}</p>` : ''}
+              ${description.trim().length > 0 ? `<p class="result-excerpt">${description}</p>` : ''}
             </a>
           </article>
         </li>
@@ -165,10 +190,11 @@ const renderResults = (response: StaticExploreSearchResponse): string => {
 export const renderSearchPageHtml = (options: {
   readonly initialState: SearchState;
   readonly initialResponse: StaticExploreSearchResponse;
+  readonly siteUrlContext: SiteUrlContext;
   readonly loading?: boolean;
   readonly idContext?: StaticRenderIdContext;
 }): string => {
-  const { initialState, initialResponse, loading = false } = options;
+  const { initialState, initialResponse, siteUrlContext, loading = false } = options;
   const idContext = options.idContext ?? createStaticRenderIdContext('page:search');
   const queryInputId = idContext.reserveId('search-page', 'search-page-query');
   const selectedTagsHeadingId = idContext.reserveId('search-page', 'selected-tags-heading');
@@ -226,7 +252,7 @@ export const renderSearchPageHtml = (options: {
           </div>
 
           <div class="toolbar-row">
-            <div class="meta-row"><span>${initialResponse.total.toString()} 件の結果</span></div>
+            <div class="meta-row"><span data-search-page-result-count>${initialResponse.total.toString()} 件の結果</span></div>
             <label class="sort-field">
               <span class="sort-label">タグ演算子</span>
               <span class="tag-mode-select-wrapper" data-static-select>
@@ -260,6 +286,7 @@ export const renderSearchPageHtml = (options: {
                   <span class="filter-summary-detail">${escapeHtmlText(renderFilterSummaryDetail(initialState.tags))}</span>
                 </span>
               </span>
+              ${renderStaticIconHtml('chevron-right', 'filter-details__chevron')}
             </summary>
             <div class="filter-panel" aria-label="タグフィルター">
               <section class="filter-section" aria-labelledby="${selectedTagsHeadingId}">
@@ -289,15 +316,13 @@ export const renderSearchPageHtml = (options: {
           </details>
         </form>
 
-        ${
-          loading
-            ? `<div class="search-page__loading" aria-live="polite" data-search-page-loading>
-                <span class="search-page__spinner" aria-hidden="true"></span>
-                <span class="search-page__loading-label">検索インデックスを照会しています...</span>
-              </div>`
-            : ''
-        }
-        <div class="results-section">${renderResults(initialResponse)}</div>
+        <div class="search-page__loading" role="status" aria-live="polite" ${loading ? '' : 'hidden'} data-search-page-loading>
+          <span class="search-page__spinner" aria-hidden="true"></span>
+          <span class="search-page__loading-label">検索インデックスを照会しています...</span>
+        </div>
+        <div class="search-page__error" role="status" aria-live="polite" hidden data-search-page-error></div>
+        <div class="search-page__unavailable" role="status" aria-live="polite" hidden data-search-page-unavailable></div>
+        <div class="results-section" data-search-results-section>${renderResults(initialResponse, initialState, siteUrlContext)}</div>
       </div>
     </section>
   `.trim();

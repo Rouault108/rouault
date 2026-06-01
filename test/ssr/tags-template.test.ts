@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import { TagPagesTemplate } from '../../src/tags.11ty.js';
 
 describe('TagPagesTemplate', () => {
@@ -13,6 +14,7 @@ describe('TagPagesTemplate', () => {
   it('タグ専用の search-page 初期表示を描画すること', () => {
     const template = new TagPagesTemplate();
     const rendered = template.render({
+      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
       tagPage: {
         tag: 'music',
         searchHref: '/search/?tags=music',

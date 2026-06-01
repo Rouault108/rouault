@@ -409,12 +409,71 @@ describe('static CSS contracts', () => {
 
   it('search page CSS maps static lower-level UI recipes', () => {
     const css = readCss('search-page.css');
+    const tokens = readCss('tokens.css');
+    expect(tokens).toContain('--space-5: 1.25rem;');
     expectRuleToDeclare(css, '.search-controls', ['display: grid']);
     expectRuleToDeclare(css, '.search-input-field', ['border:', 'border-radius:']);
+    expectRuleToDeclare(css, '.search-page [hidden]', ['display: none !important']);
+    expectRuleToDeclare(css, '.search-input-field::after', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.filter-search-field::after', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.search-input-clear::after', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.filter-search-field__clear::after', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.search-input-field__icon', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.filter-search-field__icon', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.search-input-clear__icon', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.filter-search-field__clear-icon', ['pointer-events: none']);
+    expect(ruleBlock(css, '.search-input-control')).to.contain(
+      'padding-inline-start: calc(16px + var(--space-5, 20px))',
+    );
+    expect(ruleBlock(css, '.filter-search-control')).to.contain(
+      'padding-inline-start: calc(16px + var(--space-5, 20px))',
+    );
+    expect(css).not.to.match(/var\(--space-5\)(?!,)/u);
     expectRuleToDeclare(css, '.filter-summary', ['grid-template-columns:']);
+    expectRuleToDeclare(css, '.sort-select', [
+      'appearance: none',
+      'cursor: pointer',
+      'display: block',
+      'font: inherit',
+      'overflow: hidden',
+      'text-align: start',
+      'text-overflow: ellipsis',
+      'white-space: nowrap',
+    ]);
+    expectRuleToDeclare(css, '.tag-mode-select', [
+      'appearance: none',
+      'cursor: pointer',
+      'display: block',
+      'font: inherit',
+      'overflow: hidden',
+      'text-align: start',
+      'text-overflow: ellipsis',
+      'white-space: nowrap',
+    ]);
+    expectRuleToDeclare(css, '.search-input-clear', ['cursor: pointer']);
+    expectRuleToDeclare(css, '.filter-search-field__clear', ['cursor: pointer']);
+    expectRuleToDeclare(css, '.sort-select:disabled', ['cursor: not-allowed']);
+    expectRuleToDeclare(css, '.tag-mode-select:disabled', ['cursor: not-allowed']);
+    expectRuleToDeclare(css, '.sort-select__chevron', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.tag-mode-select__chevron', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.filter-details__summary', ['list-style: none']);
+    expect(css).to.contain('.filter-details > summary::marker');
+    expect(css).to.contain('.filter-details > summary::-webkit-details-marker');
+    expectRuleToDeclare(css, '.filter-details__chevron', ['pointer-events: none', 'transition:']);
+    expect(css).to.contain(
+      '.filter-details[open] > .filter-details__summary .filter-details__chevron',
+    );
     expectRuleToDeclare(css, '.filter-list', ['max-block-size:', 'overflow-y:']);
     expectRuleToDeclare(css, '.selected-tag', ['border:', 'border-radius:']);
+    expectRuleToDeclare(css, '.selected-tag__remove', [
+      'inline-size: 1.75rem',
+      'block-size: 1.75rem',
+      'cursor: pointer',
+    ]);
+    expectRuleToDeclare(css, '.selected-tag__remove-icon', ['pointer-events: none']);
+    expectRuleToDeclare(css, '.selected-tag__remove-icon *', ['pointer-events: none']);
     expectRuleToDeclare(css, '.filter-option-checkbox__control', ['inline-size: 16px', 'block-size: 16px']);
+    expectRuleToDeclare(css, '.filter-option-checkbox__control', ['pointer-events: none']);
     expectRuleToDeclare(css, '.filter-option-checkbox__icon', ['opacity: 0']);
     expectRuleToDeclare(
       css,

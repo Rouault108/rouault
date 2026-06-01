@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildStaticExploreResponse } from '../../build/search/build-static-explore-response.js';
 import type { SearchState } from '../../shared/search/search-types.js';
+import { createSiteUrlContext, DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import { renderSearchPageHtml } from '../../src/layouts/search-page-html.js';
 
 describe('renderSearchPageHtml static contract', () => {
@@ -26,6 +27,7 @@ describe('renderSearchPageHtml static contract', () => {
           },
         ],
       }),
+      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
     });
 
     expect(rendered).toContain('class="search-input-field" data-static-search-field');
@@ -49,11 +51,17 @@ describe('renderSearchPageHtml static contract', () => {
     expect(rendered).toContain('class="filter-search-field__clear-icon static-icon"');
     expect(rendered).toContain('class="sort-select__chevron static-icon"');
     expect(rendered).toContain('class="tag-mode-select__chevron static-icon"');
+    expect(rendered).toContain('class="filter-details__chevron static-icon"');
     expect(rendered).toContain('<svg ');
-    expect(rendered).not.toContain('data-search-page-loading');
+    expect(rendered).toContain('data-search-page-loading');
+    expect(rendered).toContain('data-search-page-error');
+    expect(rendered).toContain('data-search-page-unavailable');
+    expect(rendered).toContain('data-search-page-result-count');
+    expect(rendered).toContain('role="status"');
+    expect(rendered).toContain('aria-live="polite"');
   });
 
-  it('loading は renderer 入力で明示された場合だけ spinner HTML を出力すること', () => {
+  it('status containers は常時 SSR 出力し、loading 入力だけ hidden を外すこと', () => {
     const initialState: SearchState = {
       q: '',
       tags: [],
@@ -62,13 +70,110 @@ describe('renderSearchPageHtml static contract', () => {
     };
     const initialResponse = buildStaticExploreResponse({ state: initialState });
 
-    expect(renderSearchPageHtml({ initialState, initialResponse })).not.toContain(
-      'data-search-page-loading',
-    );
+    const idle = renderSearchPageHtml({
+      initialState,
+      initialResponse,
+      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+    });
+    expect(idle).toContain('hidden data-search-page-loading');
+    expect(idle).toContain('hidden data-search-page-error');
+    expect(idle).toContain('hidden data-search-page-unavailable');
 
-    const loading = renderSearchPageHtml({ initialState, initialResponse, loading: true });
+    const loading = renderSearchPageHtml({
+      initialState,
+      initialResponse,
+      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+      loading: true,
+    });
     expect(loading).toContain('class="search-page__loading"');
     expect(loading).toContain('class="search-page__spinner"');
     expect(loading).toContain('class="search-page__loading-label"');
+    expect(loading).toContain('data-search-page-loading');
+    expect(loading).not.toContain('hidden data-search-page-loading');
+  });
+
+  it('SSR result href は siteUrlContext の basePath を反映し、snippet matched segment を mark にすること', () => {
+    const initialState: SearchState = {
+      q: 'router',
+      tags: [],
+      tagMode: 'or',
+      sort: 'relevance',
+    };
+    const initialResponse = buildStaticExploreResponse({
+      state: initialState,
+      notes: [
+        {
+          title: 'Router',
+          permalink: '/notes/router/',
+          description: 'Router contract',
+          date: '2026-01-01',
+          tags: [],
+        },
+      ],
+    });
+    const [firstItem] = initialResponse.items;
+    expect(firstItem).toBeDefined();
+    if (firstItem === undefined) {
+      throw new Error('Expected static search response item.');
+    }
+    const initialResponseWithSnippet = {
+      ...initialResponse,
+      items: [
+        {
+          ...firstItem,
+          snippet: {
+            segments: [
+              { text: 'Router ', matched: true },
+              { text: 'contract', matched: false },
+            ],
+          },
+        },
+      ],
+    };
+
+    const rendered = renderSearchPageHtml({
+      initialState,
+      initialResponse: initialResponseWithSnippet,
+      siteUrlContext: createSiteUrlContext({
+        siteOrigin: 'https://example.com',
+        basePath: '/rouault',
+      }),
+    });
+
+    expect(rendered).toContain('href="/rouault/notes/router/"');
+    expect(rendered).toContain('<mark>Router </mark>contract');
+    expect(rendered).not.toContain('https://rouault.invalid');
+  });
+
+  it('empty state は条件なしと条件ありで文言を分岐し、空 icon を hidden にすること', () => {
+    const emptyState: SearchState = {
+      q: '',
+      tags: [],
+      tagMode: 'or',
+      sort: 'relevance',
+    };
+    const filteredState: SearchState = {
+      q: 'missing',
+      tags: ['unknown'],
+      tagMode: 'and',
+      sort: 'relevance',
+    };
+    const emptyRendered = renderSearchPageHtml({
+      initialState: emptyState,
+      initialResponse: buildStaticExploreResponse({ state: emptyState }),
+      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+    });
+    const filteredRendered = renderSearchPageHtml({
+      initialState: filteredState,
+      initialResponse: buildStaticExploreResponse({ state: filteredState }),
+      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+    });
+
+    expect(emptyRendered).toContain('キーワードまたはタグで絞り込めます');
+    expect(filteredRendered).toContain('一致するメモが見つかりません');
+    expect(filteredRendered).toContain(
+      '検索語を変えるか、タグの組み合わせや演算子を見直してください。',
+    );
+    expect(filteredRendered).toContain('class="empty-hint__icon" aria-hidden="true" hidden');
   });
 });
