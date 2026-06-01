@@ -359,11 +359,19 @@ requireContains(
   "readonly reason: 'invalid-search-catalog-schema'",
   'ParseSearchCatalogJsonResult.reason must be fixed to invalid-search-catalog-schema',
 );
-requireContains(
-  'shared/search/search-json-artifact-parser.ts',
-  "readonly reason: 'invalid-static-response-schema'",
-  'ParseStaticExploreSearchResponseResult.reason must be fixed to invalid-static-response-schema',
-);
+for (const reason of [
+  'invalid-static-response-schema',
+  'invalid-static-response-count-map',
+  'invalid-static-response-total',
+  'invalid-static-response-ranking-profile',
+  'invalid-static-response-diagnostics',
+]) {
+  requireContains(
+    'shared/search/search-json-artifact-parser.ts',
+    `| '${reason}'`,
+    `ParseStaticExploreSearchResponseResult.reason must include ${reason}`,
+  );
+}
 forbidPattern(
   'shared/search/search-json-artifact-parser.ts',
   /readonly reason: 'schema-mismatch'|readonly reason: 'invalid-json'/u,

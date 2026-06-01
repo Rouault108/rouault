@@ -54,7 +54,7 @@ describe('search-json-artifact-parser', () => {
     ]);
   });
 
-  it('static explore response は invalid item を drop し、counts を再構築すること', () => {
+  it('static explore response は invalid item を metadata に集約し、partial success を返すこと', () => {
     const recorder = createDiagnosticRecorder();
 
     const result = parseStaticExploreSearchResponseJson({
@@ -83,10 +83,16 @@ describe('search-json-artifact-parser', () => {
           },
         ],
         total: 3,
+        rankingProfileId: 'rouault-search-v1',
         tagCounts: { stale: 99 },
-        allTagCounts: { stale: 99 },
+        allTagCounts: { stale: 10, other: 1 },
+        diagnostics: {
+          degraded: false,
+          activeSources: ['catalog'],
+          failures: [],
+          issues: [],
+        },
       },
-      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
       isInternalDocumentPathname,
       diagnostics: recorder.diagnostics,
     });
@@ -96,12 +102,19 @@ describe('search-json-artifact-parser', () => {
       throw new Error('static explore response parse failed');
     }
 
-    expect(result.droppedItemCount).to.equal(2);
+    expect(result.metadata.droppedItemCount).to.equal(2);
+    expect(result.metadata.normalizedFromInvalidItemFields).to.deep.equal([
+      'renderHref',
+      'canonicalPathname',
+    ]);
     expect(result.response.items).to.have.length(1);
     expect(result.response.items[0]?.canonicalPathname).to.equal('/notes/valid/');
     expect(result.response.total).to.equal(1);
     expect(result.response.tagCounts).to.deep.equal({ alpha: 1, beta: 1 });
     expect(result.response.allTagCounts).to.deep.equal({ alpha: 1, beta: 1 });
+    expect(result.metadata.rawTotalMatchedAcceptedItems).to.equal(false);
+    expect(result.metadata.usedLegacyTotalFallback).to.equal(false);
+    expect(result.metadata.usedLegacyCountMapFallback).to.equal(false);
     expect(recorder.summaries).to.deep.equal([
       {
         code: 'search-json-dropped-items',

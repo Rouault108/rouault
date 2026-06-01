@@ -9,12 +9,13 @@ import {
 import {
   derivePathLabel,
   normalizeSearchCanonicalPathname,
-  type SearchCanonicalPathname,
 } from '../../shared/search/document-url.js';
 import type {
   SearchState,
   SearchSourceKind,
   SearchDiagnostics,
+  StaticExploreSearchResponse,
+  StaticExploreSearchResultItem,
 } from '../../shared/search/search-types.js';
 
 export interface StaticExploreResponseNote {
@@ -30,30 +31,6 @@ export interface StaticExploreResponseInput {
   notes?: readonly StaticExploreResponseNote[];
   activeSources?: readonly SearchSourceKind[];
   diagnostics?: SearchDiagnostics;
-}
-
-export interface StaticExploreSearchResultItem {
-  readonly canonicalPathname: SearchCanonicalPathname;
-  readonly pathLabel: string;
-  readonly title: string;
-  readonly description: string;
-  readonly date: {
-    readonly epochMs: number | null;
-    readonly original: string | null;
-  };
-  readonly tags: string[];
-  readonly snippet: { readonly segments: readonly { readonly text: string; readonly matched: boolean }[] } | null;
-  readonly reasons: readonly { readonly kind: 'tag-filter-match'; readonly tokens: readonly string[] }[];
-}
-
-export interface StaticExploreSearchResponse {
-  readonly mode: 'explore';
-  readonly items: StaticExploreSearchResultItem[];
-  readonly total: number;
-  readonly rankingProfileId: 'rouault-search-v1';
-  readonly tagCounts: Record<string, number>;
-  readonly allTagCounts: Record<string, number>;
-  readonly diagnostics: SearchDiagnostics;
 }
 
 function normalizeString(value: unknown): string {

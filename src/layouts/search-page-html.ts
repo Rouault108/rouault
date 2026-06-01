@@ -1,6 +1,5 @@
-import type { SearchState } from '../../shared/search/search-types.js';
+import type { SearchState, StaticExploreSearchResponse } from '../../shared/search/search-types.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
-import type { StaticExploreSearchResponse } from '../../build/search/build-static-explore-response.js';
 import { buildSearchResultRenderHref } from '../search/normalize-search-result-url.js';
 import { renderStaticIconHtml } from '../../shared/icons/render-static-icon-html.js';
 import {
