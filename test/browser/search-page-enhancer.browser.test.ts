@@ -610,11 +610,28 @@ describe('search-page-enhancer', () => {
 
     music.checked = true;
     music.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(location.pathname).to.equal('/tags/music/');
     expect(root.querySelector('.eyebrow')?.textContent).to.equal('Tag / Explore');
     expect(root.querySelector('h1')?.textContent).to.equal('#music');
     expect(root.querySelector('.description')?.textContent).to.equal(
       'このタグに属するノートを起点に、検索語や追加タグで探索を広げられます。',
     );
+
+    history.pushState(history.state, '', '/search/?tag=music');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    expect(
+      root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="music"]')?.checked,
+    ).to.equal(true);
+    expect(root.querySelector('.eyebrow')?.textContent).to.equal('Search / Filter');
+    expect(root.querySelector('h1')?.textContent).to.equal('検索');
+    expect(root.querySelector('.description')?.textContent).to.equal(
+      'タグとキーワードを組み合わせ、複数タグは OR / AND を切り替えて探索します。',
+    );
+
+    history.pushState(history.state, '', '/tags/music/');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    expect(root.querySelector('.eyebrow')?.textContent).to.equal('Tag / Explore');
+    expect(root.querySelector('h1')?.textContent).to.equal('#music');
 
     history.pushState(history.state, '', '/search/?q=router');
     window.dispatchEvent(new PopStateEvent('popstate'));

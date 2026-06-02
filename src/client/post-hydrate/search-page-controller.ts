@@ -808,7 +808,11 @@ export class SearchPageController {
 
   private syncHeroFromRuntimeState(): void {
     const state = this.toSearchState();
+    const pathname = this.siteUrlContext
+      ? stripBasePathFromPathname(window.location.pathname, this.siteUrlContext.basePath)
+      : window.location.pathname;
     const isTagDefaultView =
+      pathname.startsWith('/tags/') &&
       state.q.length === 0 &&
       state.tags.length === 1 &&
       state.tagMode === 'or' &&
