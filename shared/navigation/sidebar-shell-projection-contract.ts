@@ -8,7 +8,7 @@ import type {
   AbsentRuntimeSidebarShellProjection,
   PayloadSidebarShellProjection,
   RuntimeSidebarShellSnapshot,
-} from './shell-projection.js';
+} from './navigation-shell-snapshot.js';
 
 export const createCanonicalAbsentRuntimeSidebarProjection =
   (): AbsentRuntimeSidebarShellProjection => ({

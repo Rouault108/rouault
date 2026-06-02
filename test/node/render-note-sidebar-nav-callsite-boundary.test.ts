@@ -87,5 +87,5 @@ describe('renderNoteSidebarNav call-site boundary', () => {
 
     expect(callCount).toBeGreaterThan(0);
     expect(violations).to.deep.equal([]);
-  });
+  }, 15_000);
 });

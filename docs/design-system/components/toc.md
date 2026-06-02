@@ -18,7 +18,7 @@ static-first 再設計後の `ui-toc` は純粋な view です。見出し抽出
 
 ### 2.4 `layout-toc-runtime-store`
 
-- `layout-toc-controller` が算出した runtime snapshot を `layout-header` へ共有する
+- `layout-toc-controller` が算出した runtime snapshot を静的 header enhancer へ共有する
 - `ready` / `hasVisibleHeadings` / `activeId` を伝える
 
 ### 2.5 `layout-toc-mobile-controller`
@@ -34,7 +34,7 @@ mobile TOC を有効にするページでは、次を満たすこと。
 - `max-width: 639px` では desktop TOC を隠す
 - 640px 未満で隠す desktop TOC は SSR 静的 nav の `[data-layout-toc-nav]` を指し、`layout-toc-controller` が生成する `[data-layout-toc-mobile-panel]` と `[data-layout-toc-mobile-nav]` は対象に含めない
 - 旧 fixed summary bar は描画しない
-- `layout-header` 内に trigger を描画する
+- `header[data-layout-header]` 内に trigger を描画する
 - trigger は mobile TOC panel を開閉する導線として扱う
 - trigger の可視文言は固定の `目次` とし、399px 以下では icon-only へ縮退する
 - trigger 押下で `layout-toc-controller` の mobile panel が header 直下から開く

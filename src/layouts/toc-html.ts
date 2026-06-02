@@ -4,6 +4,8 @@ import { serializeTocHeadingsForSourceScript } from '../../shared/toc/toc-normal
 import { buildHashHrefFromId } from '../router/url-hash.js';
 import { resolveTocDensityTier } from '../toc/toc-density-tier.js';
 import { escapeHtmlAttribute, escapeHtmlText, serializeHtmlAttributes } from './html-output.js';
+import { resolveLayoutTocStaticRootId } from '../../shared/toc/layout-toc-static-root-id.js';
+import { resolveTocTriggerReserved } from '../../shared/toc/toc-trigger-reservation.js';
 
 const readMinimumLevel = (headings: readonly TocHeading[]): number =>
   headings.reduce((minimum, heading) => Math.min(minimum, heading.level), Number.POSITIVE_INFINITY);
@@ -84,11 +86,16 @@ ${serializeTocHeadingsForSourceScript(toc.headings)}
 export const renderTocChromeHtml = (toc: TocChromeProjection): string => {
   const densityTier = resolveTocDensityTier(toc.headings);
   const hydrationMode = toc.shouldHydrate ? 'hydrated' : 'static';
+  const tocTriggerReserved = resolveTocTriggerReserved({
+    tocPresence: 'present',
+    tocOwnerId: toc.ownerId,
+    shouldHydrate: toc.shouldHydrate,
+  });
   const controllerAttributes = serializeHtmlAttributes([
     { name: 'source-id', value: toc.sourceId },
     { name: 'toc-runtime-id', value: toc.runtimeId },
     { name: 'toc-owner-id', value: toc.ownerId },
-    { name: 'data-toc-trigger-reserved', value: 'false' },
+    { name: 'data-toc-trigger-reserved', value: tocTriggerReserved ? 'true' : 'false' },
     { name: 'capabilities-json', value: toc.capabilities, kind: 'json' },
     { name: 'content-root-id', value: toc.contentRootId },
     { name: 'data-hydration-scope', value: toc.scopeId },
@@ -114,6 +121,7 @@ export const renderTocChromeHtml = (toc: TocChromeProjection): string => {
 
   return `
     <aside
+      id="${escapeHtmlAttribute(resolveLayoutTocStaticRootId(toc.runtimeId))}"
       class="layout-toc-col"
       aria-label="目次"
       data-density-tier="${densityTier}"

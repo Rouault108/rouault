@@ -1,8 +1,11 @@
-import { dispatchSearchDialogEvent } from '../../search/search-dialog-events.js';
 import {
   createSearchDialogDomController,
   type SearchDialogDomController,
 } from './search-dialog-dom-controller.js';
+import {
+  isPlainPrimaryAnchorActivation,
+  resolveAnchorFromActivationEvent,
+} from '../../router/plain-primary-anchor-activation.js';
 
 interface ActiveEnhancement {
   readonly generation: number;
@@ -22,8 +25,8 @@ const queryWithinInvocationRoot = <ElementType extends Element>(
   return elements;
 };
 
-const findValidDialog = (root: ParentNode): HTMLDialogElement | null =>
-  queryWithinInvocationRoot<Element>(root, '[data-search-dialog-root]').find(
+const findValidDialog = (): HTMLDialogElement | null =>
+  queryWithinInvocationRoot<Element>(document, '[data-search-dialog-root]').find(
     (element): element is HTMLDialogElement =>
       element instanceof HTMLDialogElement &&
       element.isConnected &&
@@ -36,6 +39,7 @@ const cleanupEnhancement = (enhancement: ActiveEnhancement): void => {
 };
 
 export const enhanceSearchDialog = (root: ParentNode = document, signal?: AbortSignal): void => {
+  void root;
   if (signal?.aborted === true) return;
 
   enhancementGeneration += 1;
@@ -44,27 +48,25 @@ export const enhanceSearchDialog = (root: ParentNode = document, signal?: AbortS
 
   const listenerController = new AbortController();
   const controller = (() => {
-    const dialog = findValidDialog(root);
+    const dialog = findValidDialog();
     return dialog === null ? null : createSearchDialogDomController(dialog);
   })();
   const enhancement: ActiveEnhancement = { generation, listenerController, controller };
   activeEnhancement = enhancement;
 
-  for (const trigger of queryWithinInvocationRoot<HTMLElement>(
-    root,
-    '[data-search-dialog-trigger]',
-  )) {
-    trigger.addEventListener(
-      'click',
-      () => {
-        dispatchSearchDialogEvent('search-dialog:open-request', {
-          trigger,
-          modality: 'pointer',
-        });
-      },
-      { signal: listenerController.signal },
-    );
-  }
+  document.addEventListener('click', (event) => {
+    const anchor = resolveAnchorFromActivationEvent(event);
+    if (
+      !(anchor instanceof HTMLAnchorElement) ||
+      !anchor.hasAttribute('data-search-dialog-trigger') ||
+      !isPlainPrimaryAnchorActivation(event, anchor)
+    ) {
+      return;
+    }
+    if (activeEnhancement?.controller?.tryOpen({ trigger: anchor, modality: 'pointer' }) === true) {
+      event.preventDefault();
+    }
+  }, { signal: listenerController.signal });
 
   signal?.addEventListener(
     'abort',

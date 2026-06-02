@@ -1,6 +1,6 @@
 import type { DocumentRenderSnapshot } from './document-render-snapshot.js';
 import type { HydrationPlan } from './hydration-plan.js';
-import type { NavigationShellSnapshot } from './shell-projection.js';
+import type { NavigationShellSnapshot } from './navigation-shell-snapshot.js';
 
 export const NAVIGATION_ENVELOPE_SCHEMA_VERSION = 2 as const;
 

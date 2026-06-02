@@ -99,6 +99,24 @@ describe('navigation artifacts static header contract', () => {
     ).toThrow(/data-hydration-key/u);
   });
 
+  it('HTML meta と明示 SiteUrlContext の不一致を拒否すること', () => {
+    expect(() =>
+      createNavigationEnvelopeFromHtml(
+        html().replace(
+          '<meta name="rouault-generated-at" content="2026-01-01T00:00:00.000Z">',
+          '<meta name="rouault-generated-at" content="2026-01-01T00:00:00.000Z"><meta name="rouault-site-origin" content="https://wrong.invalid">',
+        ),
+        '/dist/notes/example/index.html',
+        {
+          mode: 'strict-artifact',
+          buildId: 'build-test',
+          generatedAt: '2026-01-01T00:00:00.000Z',
+        },
+        context,
+      ),
+    ).toThrow(/rouault-site-origin meta/u);
+  });
+
   it('emitNavigationArtifacts は siteUrlContext と絶対 currentUrl 意味論で artifact を出すこと', async () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'rouault-nav-artifact-'));
     try {

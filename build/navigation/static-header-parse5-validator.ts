@@ -36,7 +36,7 @@ const validateElement = (element: Parse5Element): void => {
 
   for (const attribute of element.attrs) {
     const name = attribute.name;
-    if (!isStaticHeaderAllowedAttribute(name)) {
+    if (!isStaticHeaderAllowedAttribute(tagName, name)) {
       fail(`attribute ${name} is not allowed on <${tagName}>.`);
     }
     if ((name === 'href' || name === 'xlink:href') && tagName !== 'a') {

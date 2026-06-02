@@ -52,7 +52,7 @@ Design System pattern は UI の見え方と配置判断を扱う。Router、sea
 
 ## Architecture
 
-- `docs/architecture/shell-projection.md`
+- `docs/architecture/navigation-shell-snapshot.md`
 
 ## ADR
 

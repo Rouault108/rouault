@@ -9,6 +9,9 @@ import {
   readSidebarShellSnapshot,
 } from './layout-sidebar-shell-adapter.js';
 import { prepareStaticHeaderMutation } from './static-header-shell-mutation.js';
+import { commitShellGeneration } from './app-shell-lifecycle.js';
+import type { AppShellCommittedDetail } from './app-shell-events.js';
+import { STATIC_HEADER_ROOT_SELECTOR } from '../../../../shared/navigation/static-header-contract.js';
 
 const APP_ROUTER_SELECTOR = 'app-router';
 const SIDEBAR_COLUMN_SELECTOR = '[data-app-shell-sidebar-host]';
@@ -18,21 +21,9 @@ interface SidebarProjectionHost extends HTMLElement {
   readShellProjection?(): RuntimeDocumentShellSnapshot['sidebar'];
 }
 
-let shellCommitId = 0;
-
-export const readCurrentShellCommitId = (): number => shellCommitId;
-
-const dispatchShellCommitted = (navigationUrl: string): void => {
-  shellCommitId += 1;
+const dispatchShellCommitted = (detail: AppShellCommittedDetail): void => {
   document.dispatchEvent(
-    new CustomEvent('app-shell:committed', {
-      detail: {
-        shellCommitId,
-        navigationUrl,
-      },
-      bubbles: true,
-      composed: true,
-    }),
+    new CustomEvent<AppShellCommittedDetail>('app-shell:committed', { detail }),
   );
 };
 
@@ -61,7 +52,17 @@ export const createAppShellAdapter = (): ShellAdapter => ({
       commit: () => {
         headerMutation.commit();
         applyPayloadShellSnapshot(update.shell, currentRouter, currentSidebarColumn, currentSidebar);
-        dispatchShellCommitted(update.navigationUrl);
+        const header = document.querySelector<HTMLElement>(STATIC_HEADER_ROOT_SELECTOR);
+        if (!(header instanceof HTMLElement)) {
+          throw new Error(`committed ${STATIC_HEADER_ROOT_SELECTOR} is required.`);
+        }
+        commitShellGeneration(update.shellCommitId);
+        dispatchShellCommitted({
+          header,
+          navigationUrl: update.navigationUrl,
+          shell: update.shell,
+          shellCommitId: update.shellCommitId,
+        });
       },
       rollback: () => {
         headerMutation.rollback();

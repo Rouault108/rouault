@@ -3,7 +3,18 @@ import { replaceElementChildrenFromHtml } from './declarative-shadow-dom.js';
 import { LocationAdapter } from './location-adapter.js';
 import type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
 import { validateCommittedRuntimeDomLinkContracts } from './dom-link-contract.js';
-import { readCurrentShellCommitId } from '../components/app/shell/app-shell-adapter.js';
+import {
+  commitShellGeneration,
+  readCurrentShellCommitId,
+  reserveShellCommitId,
+  restoreShellGeneration,
+} from '../components/app/shell/app-shell-lifecycle.js';
+import type {
+  AppShellRestoredDetail,
+  AppShellValidatedDetail,
+  RuntimeDomLinkValidationContext,
+} from '../components/app/shell/app-shell-events.js';
+import { STATIC_HEADER_ROOT_SELECTOR } from '../../shared/navigation/static-header-contract.js';
 import type {
   ContentUpdateAdapter,
   HistoryMode,
@@ -36,26 +47,15 @@ const createNoopMutation = (): PreparedMutation => ({
 const normalizeError = (error: unknown): Error =>
   error instanceof Error ? error : new Error(String(error));
 
-const dispatchShellValidated = (detail: {
-  shellCommitId: number;
-  navigationUrl: string;
-}): void => {
+const dispatchShellValidated = (detail: AppShellValidatedDetail): void => {
   document.dispatchEvent(
-    new CustomEvent('app-shell:validated', {
-      detail,
-      bubbles: true,
-      composed: true,
-    }),
+    new CustomEvent<AppShellValidatedDetail>('app-shell:validated', { detail }),
   );
 };
 
-const dispatchShellRestored = (navigationUrl: string): void => {
+const dispatchShellRestored = (detail: AppShellRestoredDetail): void => {
   document.dispatchEvent(
-    new CustomEvent('app-shell:restored', {
-      detail: { navigationUrl },
-      bubbles: true,
-      composed: true,
-    }),
+    new CustomEvent<AppShellRestoredDetail>('app-shell:restored', { detail }),
   );
 };
 
@@ -76,6 +76,8 @@ export class ContentCommitter {
       document.querySelector('meta[name="description"]')?.getAttribute('content') ?? null;
     const previousUrl = this.location.readCurrentUrl();
     const previousHistoryState: unknown = history.state;
+    const previousShellCommitId = readCurrentShellCommitId();
+    const shellCommitId = reserveShellCommitId();
 
     const preparedContentMutation = await this.prepareContentMutation(
       request.envelope,
@@ -84,6 +86,7 @@ export class ContentCommitter {
     const preparedShellMutation = await this.prepareShellMutation(
       request.envelope,
       request.normalizedUrl,
+      shellCommitId,
     );
 
     let historyApplied = false;
@@ -91,19 +94,31 @@ export class ContentCommitter {
     try {
       await preparedContentMutation.commit();
       await preparedShellMutation.commit();
-      validateCommittedRuntimeDomLinkContracts({
-        root: document,
-        sourceLabel: `commit:${request.normalizedUrl}`,
+      commitShellGeneration(shellCommitId);
+      const linkValidationContext: RuntimeDomLinkValidationContext = {
         siteUrlContext: this.urlDependencies.siteUrlContext,
         currentAbsoluteUrl: new URL(
           request.normalizedUrl,
           `${this.urlDependencies.siteUrlContext.siteOrigin}${this.urlDependencies.siteUrlContext.basePath}/`,
         ).href,
+        normalizedNavigationUrl: request.normalizedUrl,
         routeManifestState: this.urlDependencies.routeManifestState,
+      };
+      validateCommittedRuntimeDomLinkContracts({
+        root: document,
+        sourceLabel: `commit:${request.normalizedUrl}`,
+        ...linkValidationContext,
       });
+      const header = document.querySelector<HTMLElement>(STATIC_HEADER_ROOT_SELECTOR);
+      if (!(header instanceof HTMLElement)) {
+        throw new Error(`committed ${STATIC_HEADER_ROOT_SELECTOR} is required.`);
+      }
       dispatchShellValidated({
-        shellCommitId: readCurrentShellCommitId(),
+        header,
+        shell: request.envelope.shell,
+        shellCommitId,
         navigationUrl: request.normalizedUrl,
+        linkValidationContext,
       });
 
       this.headManager.setTitle(request.envelope.document.title);
@@ -120,6 +135,9 @@ export class ContentCommitter {
         previousUrl,
         previousHistoryState,
         historyApplied,
+        previousShellCommitId,
+        failedShellCommitId: shellCommitId,
+        failedNavigationUrl: request.normalizedUrl,
       });
 
       if (rollbackError) {
@@ -164,6 +182,7 @@ export class ContentCommitter {
   private async prepareShellMutation(
     envelope: NavigationEnvelope,
     normalizedUrl: string,
+    shellCommitId: number,
   ): Promise<PreparedMutation> {
     if (!this.shellAdapter?.prepare) {
       return createNoopMutation();
@@ -172,6 +191,7 @@ export class ContentCommitter {
     const preparedShellUpdate: PreparedShellUpdate = await this.shellAdapter.prepare({
       shell: envelope.shell,
       navigationUrl: normalizedUrl,
+      shellCommitId,
     });
 
     return {
@@ -188,11 +208,14 @@ export class ContentCommitter {
     previousUrl: string;
     previousHistoryState: unknown;
     historyApplied: boolean;
+    previousShellCommitId: number;
+    failedShellCommitId: number;
+    failedNavigationUrl: string;
   }): Promise<Error | null> {
-    let rollbackError: Error | null = null;
+    const rollbackErrors: Error[] = [];
 
     const captureRollbackError = (error: unknown): void => {
-      rollbackError ??= normalizeError(error);
+      if (rollbackErrors.length === 0) rollbackErrors.push(normalizeError(error));
     };
 
     try {
@@ -222,8 +245,17 @@ export class ContentCommitter {
       captureRollbackError(error);
     }
 
+    const rollbackError = rollbackErrors[0] ?? null;
     if (rollbackError === null) {
-      dispatchShellRestored(args.previousUrl);
+      restoreShellGeneration(args.previousShellCommitId);
+      dispatchShellRestored({
+        header: document.querySelector<HTMLElement>(STATIC_HEADER_ROOT_SELECTOR),
+        restoredUrl: args.previousUrl,
+        failedNavigationUrl: args.failedNavigationUrl,
+        restoredShellCommitId: args.previousShellCommitId,
+        failedShellCommitId: args.failedShellCommitId,
+        reason: 'rollback',
+      });
     }
 
     return rollbackError;

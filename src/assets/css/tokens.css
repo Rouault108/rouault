@@ -520,7 +520,7 @@
   /* =========================================================================
    * App Header / Chrome Width
    * =========================================================================
-   * ui-header shadow DOM 内 .inner の border-box 最大幅。
+   * static header 内 .layout-header__inner の border-box 最大幅。
    *
    * .inner は box-sizing: border-box であり、padding-inline と
    * focus ring bleed を内部に含む。content box 幅ではなく、
@@ -534,7 +534,7 @@
    * --app-header-inner-max-width:
    *   新規利用者向けの semantic override token。
    *   root default はここでは定義しない。
-   *   ui-header / layout-header 側の fallback chain で、
+   *   header[data-layout-header] 側の fallback chain で、
    *   --app-header-inner-max-width > --layout-chrome-max-width > 1384px
    *   の順に解決する。
    */

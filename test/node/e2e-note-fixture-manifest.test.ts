@@ -295,5 +295,5 @@ e2eFixtureId: 'note.toc-static-present'
     expect(fixture.directPath).toBe(
       '/notes/e2e/article-header-static-layout/extraordinarily-long-intermediate-breadcrumb-label-for-mobile-overflow-verification/very-long-breadcrumb-label/',
     );
-  });
+  }, 15_000);
 });

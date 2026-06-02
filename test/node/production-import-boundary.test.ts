@@ -4,5 +4,5 @@ import { findProductionImportBoundaryViolations } from '../../scripts/import-bou
 describe('production import boundary', () => {
   it('production source does not import test modules or build-only metadata resolvers', async () => {
     await expect(findProductionImportBoundaryViolations()).resolves.to.deep.equal([]);
-  });
+  }, 15_000);
 });

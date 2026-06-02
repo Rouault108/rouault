@@ -11,8 +11,10 @@ import {
 import { initSearch, initSearchUnavailable } from './search/bootstrap.js';
 import { initTheme } from './theme/theme-manager.js';
 import { validateInitialAppShell } from './router/initial-shell-validation.js';
+import type { AppContentHydrationReadyDetail } from './components/app/shell/app-shell-events.js';
 
 const hydrationScheduler = new HydrationScheduler();
+let contentHydrationGeneration = 0;
 
 const getAppRouter = (): AppRouter | null => document.querySelector<AppRouter>('app-router');
 
@@ -64,11 +66,9 @@ const dispatchContentHydrationReady = (detail: {
   contentRoot: HTMLElement;
   initial: boolean;
 }): void => {
-  detail.contentRoot.dispatchEvent(
-    new CustomEvent('app-content:hydration-ready', {
+  document.dispatchEvent(
+    new CustomEvent<AppContentHydrationReadyDetail>('app-content:hydration-ready', {
       detail,
-      bubbles: true,
-      composed: true,
     }),
   );
 };
@@ -77,6 +77,7 @@ const hydrateCurrentContent = async (
   contentRoot?: HTMLElement,
   options: { initial?: boolean } = {},
 ): Promise<void> => {
+  const generation = ++contentHydrationGeneration;
   const appRouter = await waitForAppRouterReady();
 
   const mainContent =
@@ -91,13 +92,19 @@ const hydrateCurrentContent = async (
   customElements.upgrade(mainContent);
   await Promise.resolve();
 
+  await hydrationScheduler.hydrateContent(mainContent, {
+    dispatchTarget: appRouter,
+  });
+  if (generation !== contentHydrationGeneration || !mainContent.isConnected) {
+    return;
+  }
+  const currentContentRoot = appRouter?.getContentRoot();
+  if (currentContentRoot instanceof HTMLElement && currentContentRoot !== mainContent) {
+    return;
+  }
   dispatchContentHydrationReady({
     contentRoot: mainContent,
     initial: options.initial === true,
-  });
-
-  await hydrationScheduler.hydrateContent(mainContent, {
-    dispatchTarget: appRouter,
   });
 };
 
@@ -153,6 +160,7 @@ const initializeAppRouterRuntime = async (): Promise<void> => {
       isInternalDocumentPathname: (pathname) => routeManifestState.routeSet.has(pathname),
     },
     currentAbsoluteUrl: window.location.href,
+    normalizedNavigationUrl: window.location.pathname + window.location.search + window.location.hash,
   });
   initSearch({
     runtimeEnvironment: 'production',

@@ -16,7 +16,7 @@ import {
 } from '../../../../shared/navigation/sidebar-shell-projection-contract.js';
 import {
   validateRuntimeSidebarProjection,
-} from '../../../../shared/navigation/shell-projection-validator.js';
+} from '../../../../shared/navigation/navigation-shell-validator.js';
 import { layoutSidebarController } from '../../layout/layout-sidebar-controller.js';
 
 const APP_ROUTER_SELECTOR = 'app-router';

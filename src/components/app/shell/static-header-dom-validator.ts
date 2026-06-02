@@ -21,7 +21,7 @@ const validateElement = (element: Element): void => {
   }
 
   for (const attribute of [...element.attributes]) {
-    if (!isStaticHeaderAllowedAttribute(attribute.name)) {
+    if (!isStaticHeaderAllowedAttribute(tagName, attribute.name)) {
       fail(`attribute ${attribute.name} is not allowed on <${tagName}>.`);
     }
     if ((attribute.name === 'href' || attribute.name === 'xlink:href') && tagName !== 'a') {

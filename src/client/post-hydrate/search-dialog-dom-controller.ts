@@ -86,6 +86,8 @@ const setHidden = (element: HTMLElement | null, hidden: boolean): void => {
 
 export interface SearchDialogDomController {
   dispose(): void;
+  canOpen(): boolean;
+  tryOpen(detail: SearchDialogOpenRequestDetail): boolean;
 }
 
 export const createSearchDialogDomController = (
@@ -527,8 +529,15 @@ export const createSearchDialogDomController = (
   const shouldStartExternalNativeCloseCompletion = (): boolean =>
     state.activeCloseGeneration === null && (state.bodyLockHeld || state.isOpen);
 
-  const performOpen = (detail: SearchDialogOpenRequestDetail): void => {
-    if (state.disposed || state.isClosing) return;
+  const canOpen = (): boolean =>
+    dialog.isConnected &&
+    !state.disposed &&
+    !closeRequestPending &&
+    !state.isClosing &&
+    state.activeCloseGeneration === null;
+
+  const performOpen = (detail: SearchDialogOpenRequestDetail): boolean => {
+    if (!canOpen()) return false;
     const wasAlreadyOpen = isDialogOpen(dialog);
     state.triggerElement = captureTrigger(ownerDocument, detail.trigger ?? undefined);
     state.pendingOpenModality = detail.modality ?? modalityTracker.getSnapshot();
@@ -538,7 +547,7 @@ export const createSearchDialogDomController = (
       state.closeCompletionDone = false;
       state.closeReason = 'programmatic';
       completeCloseOnce('close-pipeline', state.closeOperationGeneration);
-      return;
+      return false;
     }
     if (!state.bodyLockHeld) {
       searchDialogBodyScrollLock.lock();
@@ -557,6 +566,7 @@ export const createSearchDialogDomController = (
     if (!wasAlreadyOpen && state.query.trim() !== '' && !state.loading && !state.unavailable) {
       dispatchSearchDialogEvent('search-dialog:query-change', { query: state.query });
     }
+    return true;
   };
 
   const requestOpen = (detail: SearchDialogOpenRequestDetail): void => {
@@ -797,6 +807,10 @@ export const createSearchDialogDomController = (
   renderFromState();
 
   return {
+    canOpen,
+    tryOpen(detail): boolean {
+      return performOpen(detail);
+    },
     dispose(): void {
       if (state.disposed) return;
       state.disposed = true;

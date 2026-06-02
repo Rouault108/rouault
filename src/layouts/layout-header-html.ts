@@ -4,9 +4,10 @@ import type { CorpusNavigationProjectionPayload } from '../../shared/navigation/
 import { DEFAULT_SIDEBAR_ID } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { validateCorpusRouteRootHrefForRender } from '../../shared/link/corpus-link-validation.js';
 import { renderStaticIconHtml } from '../../shared/icons/render-static-icon-html.js';
+import { resolveLayoutTocStaticRootId } from '../../shared/toc/layout-toc-static-root-id.js';
 import { THEME_UI_OPTIONS } from '../theme/theme-ui-options.js';
-import { readAppliedThemePreference, type ThemePreference } from '../theme/theme-manager.js';
-import { escapeHtmlText, serializeHtmlAttributes } from './html-output.js';
+import type { ThemePreference } from '../theme/theme-manager.js';
+import { escapeHtmlAttribute, escapeHtmlText, serializeHtmlAttributes } from './html-output.js';
 
 export interface LayoutHeaderHtmlInput {
   readonly noteLayout: boolean;
@@ -24,13 +25,6 @@ export interface LayoutHeaderHtmlInput {
 
 const DEFAULT_CORPUS_LABEL = 'すべてのノート';
 
-const readThemePreferenceForStaticHtml = (): ThemePreference => {
-  if (typeof document === 'undefined') {
-    return 'system';
-  }
-  return readAppliedThemePreference();
-};
-
 const renderSidebarToggle = (input: LayoutHeaderHtmlInput): string => {
   if (!input.sidebarEnabled) {
     return '';
@@ -43,7 +37,7 @@ const renderSidebarToggle = (input: LayoutHeaderHtmlInput): string => {
       aria-label="サイドバーを開く"
       aria-expanded="false"
       data-layout-sidebar-toggle
-      data-sidebar-id="${input.sidebarId}"
+      data-sidebar-id="${escapeHtmlAttribute(input.sidebarId)}"
     >
       ${renderStaticIconHtml('panel-left')}
     </button>
@@ -95,24 +89,31 @@ const renderCorpusSwitcher = (input: LayoutHeaderHtmlInput): string => {
 
 const renderTocTrigger = (input: LayoutHeaderHtmlInput): string => {
   const hasToc = input.tocPresence === 'present';
-  const panelId = hasToc && input.tocRuntimeId ? `layout-toc-panel-${input.tocRuntimeId}` : undefined;
+  if (!hasToc || !input.tocRuntimeId) {
+    return '';
+  }
+  const staticTocRootId =
+    resolveLayoutTocStaticRootId(input.tocRuntimeId);
   return `
-    <button${serializeHtmlAttributes([
+    <a${serializeHtmlAttributes([
       { name: 'class', value: 'toc-trigger' },
-      { name: 'type', value: 'button' },
+      { name: 'href', value: `#${staticTocRootId}` },
       { name: 'data-visible', value: 'false' },
       { name: 'data-reserved', value: input.tocTriggerReserved ? 'true' : 'false' },
       { name: 'data-toc-trigger-reserved', value: input.tocTriggerReserved ? 'true' : 'false' },
       { name: 'data-toc-trigger-interactive', value: 'false' },
       { name: 'data-toc-hydration-state', value: 'unhydrated' },
+      { name: 'data-toc-trigger', value: 'true' },
+      { name: 'data-toc-runtime-id', value: input.tocRuntimeId },
+      { name: 'data-link-kind', value: 'internal-fragment' },
+      { name: 'data-link-surface', value: 'header' },
       { name: 'aria-label', value: '目次を開く' },
       { name: 'aria-expanded', value: 'false' },
-      { name: 'aria-controls', value: panelId },
-      { name: 'disabled', value: !hasToc || !input.tocTriggerReserved, kind: 'boolean' },
+      { name: 'aria-controls', value: staticTocRootId },
     ])}>
       ${renderStaticIconHtml('menu', 'toc-trigger-icon')}
       <span class="toc-trigger-text">目次</span>
-    </button>
+    </a>
   `.trim();
 };
 
@@ -134,7 +135,7 @@ const renderSearchTrigger = (input: LayoutHeaderHtmlInput): string => `
 `.trim();
 
 const renderThemeSwitcher = (): string => {
-  const preference = readThemePreferenceForStaticHtml();
+  const preference: ThemePreference = 'system';
   const current = THEME_UI_OPTIONS[preference];
   const items = (Object.entries(THEME_UI_OPTIONS) as [ThemePreference, (typeof THEME_UI_OPTIONS)[ThemePreference]][])
     .map(([value, option]) => {

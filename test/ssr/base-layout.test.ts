@@ -246,6 +246,9 @@ describe('BaseLayout', () => {
     expect(rendered).toContain('data-toc-runtime-id="toc-source-reader-with-toc"');
     expect(rendered).toContain('data-toc-trigger-reserved="true"');
     expect(rendered).toContain('data-toc-owner-id="toc-owner-reader-with-toc"');
+    expect(rendered).toContain('href="#layout-toc-toc-source-reader-with-toc"');
+    expect(rendered).toContain('data-link-kind="internal-fragment"');
+    expect(rendered).toContain('data-link-surface="header"');
     expect(rendered.match(/<header\b[^>]*data-layout-header[^>]*>/u)?.[0] ?? '').toContain(
       'data-toc-trigger-reserved',
     );

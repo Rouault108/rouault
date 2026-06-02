@@ -7,8 +7,17 @@ import {
 } from '../../theme/theme-manager.js';
 import { THEME_UI_OPTIONS } from '../../theme/theme-ui-options.js';
 import { layoutSidebarController } from '../../components/layout/layout-sidebar-controller.js';
+import {
+  enhanceLayoutHeaderTocBridge,
+  toggleHeaderTocPanel,
+} from './layout-header-toc-bridge.js';
+import {
+  isPlainPrimaryAnchorActivation,
+  resolveAnchorFromActivationEvent,
+} from '../../router/plain-primary-anchor-activation.js';
 
 const HEADER_SELECTOR = 'header[data-layout-header]';
+let activeEnhancement: AbortController | null = null;
 
 const syncThemeHeader = (root: ParentNode, preference = readAppliedThemePreference()): void => {
   const option = THEME_UI_OPTIONS[preference];
@@ -32,13 +41,31 @@ const syncThemeHeader = (root: ParentNode, preference = readAppliedThemePreferen
 };
 
 export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void => {
+  activeEnhancement?.abort();
+  const listenerController = new AbortController();
+  activeEnhancement = listenerController;
+  signal.addEventListener('abort', () => {
+    if (activeEnhancement === listenerController) activeEnhancement = null;
+    listenerController.abort();
+  }, { once: true });
   syncThemeHeader(root);
+  enhanceLayoutHeaderTocBridge(listenerController.signal);
 
   document.addEventListener(
     'click',
     (event) => {
       const target = event.target;
       if (!(target instanceof Element)) {
+        return;
+      }
+
+      const tocAnchor = resolveAnchorFromActivationEvent(event);
+      if (
+        tocAnchor?.matches('[data-toc-trigger]') === true &&
+        isPlainPrimaryAnchorActivation(event, tocAnchor) &&
+        toggleHeaderTocPanel(tocAnchor)
+      ) {
+        event.preventDefault();
         return;
       }
 
@@ -59,7 +86,7 @@ export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void
         }
       }
     },
-    { signal },
+    { signal: listenerController.signal },
   );
 
   window.addEventListener(
@@ -68,7 +95,7 @@ export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void
       const detail = (event as CustomEvent<ThemeChangeDetail>).detail;
       syncThemeHeader(document, detail.preference);
     },
-    { signal },
+    { signal: listenerController.signal },
   );
 
   document.addEventListener(
@@ -76,6 +103,6 @@ export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void
     () => {
       syncThemeHeader(document);
     },
-    { signal },
+    { signal: listenerController.signal },
   );
 };

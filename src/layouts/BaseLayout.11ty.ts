@@ -52,6 +52,7 @@ import {
 } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { createCorpusNavigationProjectionPayload } from '../../shared/navigation/corpus-navigation-projection.js';
 import { createStaticRenderIdContext } from '../../shared/static-render-id-context.js';
+import { resolveTocTriggerReserved } from '../../shared/toc/toc-trigger-reservation.js';
 
 export interface BaseLayoutData {
   title?: string;
@@ -303,10 +304,11 @@ export class BaseLayout {
           ? explicitHeaderTocOwnerId
           : (tocRuntimeId ?? '');
     const tocOwnerId = tocPresence === 'present' && rawTocOwnerId.length > 0 ? rawTocOwnerId : undefined;
-    const tocTriggerReserved =
-      tocPresence === 'present' &&
-      tocOwnerId !== undefined &&
-      (data.notePage?.toc.shouldHydrate ?? explicitHeaderTocShouldHydrate);
+    const tocTriggerReserved = resolveTocTriggerReserved({
+      tocPresence,
+      tocOwnerId,
+      shouldHydrate: data.notePage?.toc.shouldHydrate ?? explicitHeaderTocShouldHydrate,
+    });
     const searchHref = applyBasePathToRenderHref({
       pathname: '/search/',
       search: '',

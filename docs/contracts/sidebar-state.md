@@ -12,7 +12,7 @@
 ### This Layer Owns
 
 - Sidebar state を presentation state、tree state、route / shell projection state に分けること。
-- `layout-header` を command sender + snapshot consumer とすること。
+- `header[data-layout-header]` enhancer を command sender + snapshot consumer とすること。
 - `layout-sidebar` を persistent coordinator host とすること。
 - `ui-sidebar` / `ui-sidebar-shell` を表示・対話部品とすること。
 - fixed / overlay の意味論と overlay layering。

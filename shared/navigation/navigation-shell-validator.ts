@@ -7,7 +7,7 @@ import type {
   NavigationShellSnapshot,
   PayloadSidebarShellProjection,
   SidebarPresentation,
-} from './shell-projection.js';
+} from './navigation-shell-snapshot.js';
 import {
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
   DEFAULT_SIDEBAR_ID,
@@ -19,7 +19,7 @@ import {
   assertRuntimeSidebarNavHtmlPresence,
 } from './sidebar-nav-html-presence.js';
 
-export type ShellProjectionValidationReason =
+export type NavigationShellValidationReason =
   | 'invalid-shell'
   | 'invalid-header-html'
   | 'invalid-sidebar'
@@ -29,16 +29,16 @@ export type ShellProjectionValidationReason =
   | 'state-scope-id-invalid'
   | 'nav-html-invalid';
 
-export class ShellProjectionValidationError extends Error {
-  override name = 'ShellProjectionValidationError' as const;
-  readonly reason: ShellProjectionValidationReason;
+export class NavigationShellValidationError extends Error {
+  override name = 'NavigationShellValidationError' as const;
+  readonly reason: NavigationShellValidationReason;
   readonly sourceLabel?: string;
 
   constructor({
     reason,
     sourceLabel,
   }: {
-    reason: ShellProjectionValidationReason;
+    reason: NavigationShellValidationReason;
     sourceLabel?: string;
   }) {
     super(`[navigation-shell]${sourceLabel ? ` ${sourceLabel}:` : ''} ${reason}`);
@@ -51,10 +51,10 @@ export class ShellProjectionValidationError extends Error {
 
 function fail(
   _message: string,
-  reason: ShellProjectionValidationReason,
+  reason: NavigationShellValidationReason,
   sourceLabel = 'shell',
 ): never {
-  throw new ShellProjectionValidationError({ reason, sourceLabel });
+  throw new NavigationShellValidationError({ reason, sourceLabel });
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -63,7 +63,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const requireRecord = (
   value: unknown,
   message: string,
-  reason: ShellProjectionValidationReason,
+  reason: NavigationShellValidationReason,
 ): Record<string, unknown> => {
   if (!isRecord(value)) {
     fail(message, reason);

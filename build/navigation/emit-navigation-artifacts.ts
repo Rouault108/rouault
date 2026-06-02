@@ -15,8 +15,8 @@ import {
 import type { HydrationPlanScope } from '../../shared/navigation/hydration-plan.js';
 import type {
   PayloadSidebarShellProjection,
-} from '../../shared/navigation/shell-projection.js';
-import { validateNavigationEnvelopeShell } from '../../shared/navigation/shell-projection-validator.js';
+} from '../../shared/navigation/navigation-shell-snapshot.js';
+import { validateNavigationEnvelopeShell } from '../../shared/navigation/navigation-shell-validator.js';
 import {
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
   DEFAULT_SIDEBAR_ID,
@@ -176,6 +176,20 @@ const readRouterBuildIdMetaContent = (document: Parse5Document): string | undefi
 
 const readRouterGeneratedAtMetaContent = (document: Parse5Document): string | undefined =>
   readEmbeddedMetaContent(document, 'rouault-generated-at');
+
+const assertEmbeddedSiteUrlContextMatches = (
+  document: Parse5Document,
+  context: NavigationEnvelopeCreationContext,
+): void => {
+  const siteOrigin = readEmbeddedMetaContent(document, 'rouault-site-origin');
+  const basePath = readEmbeddedMetaContent(document, 'rouault-base-path');
+  if (siteOrigin !== undefined && siteOrigin !== context.siteUrlContext.siteOrigin) {
+    throw new Error('[navigation-artifact] rouault-site-origin meta must match explicit siteUrlContext.');
+  }
+  if (basePath !== undefined && basePath !== context.siteUrlContext.basePath) {
+    throw new Error('[navigation-artifact] rouault-base-path meta must match explicit siteUrlContext.');
+  }
+};
 
 const collectHydrationPlan = (document: Parse5Document): HydrationPlanScope[] => {
   const scopes = findAllElements(
@@ -472,6 +486,7 @@ export const createNavigationEnvelopeFromHtml = (
   context: NavigationEnvelopeCreationContext,
 ): NavigationEnvelope => {
   const document = parse5.parse(html);
+  assertEmbeddedSiteUrlContextMatches(document, context);
   assertUniqueLayoutSidebarIdentityInstances(document);
   assertTocOwnerCandidates(document, htmlFilePath);
   const buildMetadata = resolveNavigationEnvelopeBuildMetadata(document, metadataMode);

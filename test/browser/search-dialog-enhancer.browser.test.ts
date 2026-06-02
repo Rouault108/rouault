@@ -85,7 +85,8 @@ describe('search-dialog-enhancer', () => {
 
   it('open-request を受けて static dialog DOM を開き、legacy open event は listen しないこと', async () => {
     const dialog = appendDialogFixture();
-    const trigger = document.createElement('button');
+    const trigger = document.createElement('a');
+    trigger.href = '/search/';
     trigger.dataset['searchDialogTrigger'] = '';
     document.body.append(trigger);
 
@@ -98,6 +99,27 @@ describe('search-dialog-enhancer', () => {
     await flushOperations();
     expect(dialog.open).to.equal(true);
     expect(trigger.getAttribute('aria-expanded')).to.equal('true');
+  });
+
+  it('置換後の search link も delegation で開き、受付成功時だけ default を抑止すること', () => {
+    const dialog = appendDialogFixture();
+    enhanceSearchDialog(document);
+    const trigger = document.createElement('a');
+    trigger.href = '/search/';
+    trigger.dataset['searchDialogTrigger'] = '';
+    trigger.dataset['noRouter'] = '';
+    document.body.append(trigger);
+    const accepted = trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(accepted).to.equal(false);
+    expect(dialog.open).to.equal(true);
+
+    document.body.replaceChildren();
+    const fallback = document.createElement('a');
+    fallback.href = '#search-fallback';
+    fallback.dataset['searchDialogTrigger'] = '';
+    document.body.append(fallback);
+    enhanceSearchDialog(document);
+    expect(fallback.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))).to.equal(true);
   });
 
   it('input / state / selection を static dialog event flow に同期すること', async () => {
@@ -320,7 +342,8 @@ describe('search-dialog-enhancer', () => {
 
   it('stale enhancer abort は新 controller と trigger binding を破棄しないこと', async () => {
     const dialog = appendDialogFixture();
-    const trigger = document.createElement('button');
+    const trigger = document.createElement('a');
+    trigger.href = '/search/';
     trigger.dataset['searchDialogTrigger'] = '';
     document.body.append(trigger);
     const first = new AbortController();
@@ -334,7 +357,7 @@ describe('search-dialog-enhancer', () => {
     first.abort();
     trigger.click();
     await flushOperations();
-    expect(opens).to.have.length(1);
+    expect(opens).to.have.length(0);
     expect(dialog.open).to.equal(true);
   });
 

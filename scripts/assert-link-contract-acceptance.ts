@@ -428,21 +428,19 @@ requireContains(
   'history.state.__routerUrl recovery tests must cover encoded dangerous segments',
 );
 requireContains(
-  'src/components/layout/layout-header.ts',
-  'ui-menu-link',
-  'Corpus switcher must render link items',
+  'src/layouts/layout-header-html.ts',
+  'validateCorpusRouteRootHrefForRender',
+  'Static header corpus switcher must validate and render link items',
 );
-forbidPattern(
+forbidFileExists(
   'shared/navigation/shell-projection.ts',
-  /CorpusNavigationProjectionPayload\s*\|\s*readonly\s+CorpusNavigationItem\[\]/u,
-  'HeaderShellProjection.corpora must not accept raw CorpusNavigationItem arrays',
+  'Legacy navigation shell contract filename must not remain after NavigationEnvelope v2 migration',
 );
-forbidPattern(
-  'test/browser/app-router.browser.test.ts',
-  /corpora:\s*\[/u,
-  'app-router shellProjection fixtures must use CorpusNavigationProjectionPayload, not raw Corpus arrays',
+forbidFileExists(
+  'src/components/layout/layout-header.ts',
+  'Legacy Lit layout-header component must not remain after static header migration',
 );
-forbidPattern(
+forbidPatternIfExists(
   'test/ssr/navigation-artifacts.test.ts',
   /corpora-json=(?:'|")\[\]/u,
   'navigation artifact fixtures must use CorpusNavigationProjectionPayload JSON, not raw arrays',

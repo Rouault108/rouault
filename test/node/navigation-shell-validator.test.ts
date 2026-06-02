@@ -3,7 +3,7 @@ import { DEFAULT_SIDEBAR_ID } from '../../shared/navigation/sidebar-shell-defaul
 import {
   validateNavigationEnvelopeShell,
   validateRuntimeSidebarProjection,
-} from '../../shared/navigation/shell-projection-validator.js';
+} from '../../shared/navigation/navigation-shell-validator.js';
 import { createCanonicalAbsentRuntimeSidebarProjection } from '../../shared/navigation/sidebar-shell-projection-contract.js';
 
 describe('navigation shell validator', () => {

@@ -5,6 +5,10 @@ import type { NavigationResult } from './router-types.js';
 import type { LoadedInternalDocumentRouteManifestState } from './internal-document-route-manifest-loader.js';
 import type { RouterRuntimeDiagnosticSink } from './router-diagnostics.js';
 import { stripAsciiControlCharacters } from '../../shared/string/ascii-control.js';
+import {
+  isPlainPrimaryAnchorActivation,
+  resolveAnchorFromActivationEvent,
+} from './plain-primary-anchor-activation.js';
 
 interface InterceptorRequest {
   url: string;
@@ -23,36 +27,8 @@ export interface RouterLinkInterceptorOptions {
 
 const sanitizeTargetForDiagnostic = (target: string): string =>
   stripAsciiControlCharacters(target).slice(0, 120);
-
 const isInvalidTarget = (target: string): boolean =>
   target.length === 0 || (target !== '_blank' && target !== '_self');
-
-const hasPreviewSandboxAncestor = (event: Event): boolean =>
-  event.composedPath().some(
-    (item) =>
-      item instanceof Element &&
-      item.hasAttribute('data-link-contract-sandbox') &&
-      item.getAttribute('data-link-contract-sandbox') === 'preview',
-  );
-
-const isInteractiveElementBeforeAnchor = (event: Event, anchor: HTMLAnchorElement): boolean => {
-  for (const pathItem of event.composedPath()) {
-    if (pathItem === anchor) return false;
-    if (!(pathItem instanceof Element)) continue;
-    if (
-      pathItem instanceof HTMLButtonElement ||
-      pathItem instanceof HTMLInputElement ||
-      pathItem instanceof HTMLSelectElement ||
-      pathItem instanceof HTMLTextAreaElement ||
-      (pathItem instanceof HTMLElement && pathItem.isContentEditable) ||
-      (pathItem instanceof HTMLElement && pathItem.getAttribute('role') === 'button') ||
-      (pathItem instanceof HTMLElement && pathItem.localName === 'summary')
-    ) {
-      return true;
-    }
-  }
-  return false;
-};
 
 export class RouterLinkInterceptor {
   private readonly clickHandler: (event: MouseEvent) => void;
@@ -105,15 +81,8 @@ export class RouterLinkInterceptor {
   }
 
   private handleAnchorClick(event: MouseEvent): void {
-    if (event.defaultPrevented) return;
-    if (event.button !== 0) return;
-    if (event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) return;
-
-    const anchor = this.resolveAnchorFromClickEvent(event);
+    const anchor = resolveAnchorFromActivationEvent(event);
     if (!anchor) return;
-
-    if (isInteractiveElementBeforeAnchor(event, anchor)) return;
-
     const target = anchor.getAttribute('target');
     if (target !== null && isInvalidTarget(target)) {
       this.diagnosticSink.record({
@@ -122,8 +91,7 @@ export class RouterLinkInterceptor {
       });
       return;
     }
-
-    if (hasPreviewSandboxAncestor(event)) return;
+    if (!isPlainPrimaryAnchorActivation(event, anchor)) return;
 
     const relValue = anchor.getAttribute('rel');
     const isExternalRel =
@@ -131,8 +99,6 @@ export class RouterLinkInterceptor {
       (typeof relValue === 'string' && relValue.split(/\s+/u).includes('external'));
 
     if (
-      target === '_blank' ||
-      anchor.hasAttribute('download') ||
       isExternalRel ||
       anchor.hasAttribute('data-no-router')
     ) {
@@ -184,24 +150,6 @@ export class RouterLinkInterceptor {
       url: `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`,
       historyMode: 'push',
     });
-  }
-
-  private resolveAnchorFromClickEvent(event: MouseEvent): HTMLAnchorElement | null {
-    for (const pathItem of event.composedPath()) {
-      if (pathItem instanceof HTMLAnchorElement) {
-        return pathItem;
-      }
-    }
-
-    const target = event.target;
-    if (target instanceof Element) {
-      const closestAnchor = target.closest('a');
-      if (closestAnchor instanceof HTMLAnchorElement) {
-        return closestAnchor;
-      }
-    }
-
-    return null;
   }
 }
 

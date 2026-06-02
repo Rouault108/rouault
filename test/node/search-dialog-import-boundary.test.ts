@@ -50,13 +50,17 @@ describe('search dialog import boundary', () => {
   it('search dialog events are created only through the static event helper', () => {
     for (const path of [
       'src/search/bootstrap.ts',
-      'src/client/post-hydrate/search-dialog-enhancer.ts',
       'src/client/post-hydrate/search-dialog-dom-controller.ts',
     ]) {
       const source = readSource(path);
       expect(source, path).not.toMatch(/new\s+CustomEvent\(['"]search-dialog:/u);
       expect(source, path).toContain('dispatchSearchDialogEvent');
     }
+
+    const enhancer = readSource('src/client/post-hydrate/search-dialog-enhancer.ts');
+    expect(enhancer).not.toContain('dispatchSearchDialogEvent');
+    expect(enhancer).toContain("controller?.tryOpen({ trigger: anchor, modality: 'pointer' }) === true");
+    expect(enhancer).toContain('event.preventDefault()');
   });
 
   it('selection model remains DOM independent', () => {

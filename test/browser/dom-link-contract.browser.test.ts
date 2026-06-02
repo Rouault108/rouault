@@ -1,5 +1,8 @@
 import { expect, fixture, html } from '@open-wc/testing';
-import { validateRuntimeDomLinkContracts } from '../../src/router/dom-link-contract.js';
+import {
+  validateRuntimeDomLinkContractSubtree,
+  validateRuntimeDomLinkContracts,
+} from '../../src/router/dom-link-contract.js';
 
 const routeManifestState = {
   status: 'loaded' as const,
@@ -89,6 +92,23 @@ describe('runtime DOM link contract', () => {
       validateRuntimeDomLinkContracts({
         root,
         sourceLabel: 'runtime-footer',
+        siteUrlContext: { siteOrigin: window.location.origin, basePath: '' },
+        currentAbsoluteUrl: 'https://rouault.invalid/',
+        routeManifestState,
+      }),
+    ).to.throw('data-external mismatch');
+  });
+
+  it('subtree root 自身が anchor の場合も検証すること', () => {
+    const anchor = document.createElement('a');
+    anchor.href = 'mailto:hello@example.com';
+    anchor.dataset['linkKind'] = 'external-action';
+    anchor.dataset['linkSurface'] = 'navigation';
+    anchor.dataset['external'] = 'true';
+    expect(() =>
+      validateRuntimeDomLinkContractSubtree({
+        root: anchor,
+        sourceLabel: 'runtime-anchor-root',
         siteUrlContext: { siteOrigin: window.location.origin, basePath: '' },
         currentAbsoluteUrl: 'https://rouault.invalid/',
         routeManifestState,

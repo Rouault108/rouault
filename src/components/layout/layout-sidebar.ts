@@ -1,8 +1,8 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { createCanonicalAbsentRuntimeSidebarProjection } from '../../../shared/navigation/sidebar-shell-projection-contract.js';
-import type { RuntimeSidebarShellSnapshot } from '../../../shared/navigation/shell-projection.js';
-import { validateRuntimeSidebarProjection } from '../../../shared/navigation/shell-projection-validator.js';
+import type { RuntimeSidebarShellSnapshot } from '../../../shared/navigation/navigation-shell-snapshot.js';
+import { validateRuntimeSidebarProjection } from '../../../shared/navigation/navigation-shell-validator.js';
 import {
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
   DEFAULT_SIDEBAR_ID,

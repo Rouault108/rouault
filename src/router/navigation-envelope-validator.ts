@@ -7,9 +7,9 @@ import {
 import type { DocumentRenderSnapshot } from '../../shared/navigation/document-render-snapshot.js';
 import type { HydrationPlan } from '../../shared/navigation/hydration-plan.js';
 import {
-  ShellProjectionValidationError,
+  NavigationShellValidationError,
   validateNavigationEnvelopeShell,
-} from '../../shared/navigation/shell-projection-validator.js';
+} from '../../shared/navigation/navigation-shell-validator.js';
 import type { StrictLoadedNavigationEnvelope } from './router-types.js';
 import {
   NavigationEnvelopeContractError,
@@ -156,7 +156,7 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
   try {
     shell = validateNavigationEnvelopeShell(value['shell']);
   } catch (error) {
-    if (error instanceof ShellProjectionValidationError) {
+    if (error instanceof NavigationShellValidationError) {
       throw createInvalidEnvelopeError(`navigation envelope shell が不正です: ${error.message}`);
     }
     throw error;

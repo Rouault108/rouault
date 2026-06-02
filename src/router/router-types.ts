@@ -6,7 +6,7 @@ import type {
   NavigationShellSnapshot,
   PresentSidebarShellProjection,
   RuntimeSidebarShellSnapshot as SharedRuntimeSidebarShellSnapshot,
-} from '../../shared/navigation/shell-projection.js';
+} from '../../shared/navigation/navigation-shell-snapshot.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import type { LoadedInternalDocumentRouteManifestState } from './internal-document-route-manifest-loader.js';
 import type { RouterDiagnosticPayload } from './router-diagnostics.js';
@@ -189,6 +189,7 @@ export type { PresentSidebarShellProjection, AbsentRuntimeSidebarShellProjection
 export interface ShellUpdatePayload {
   shell: PayloadDocumentShellSnapshot;
   navigationUrl: string;
+  shellCommitId: number;
 }
 
 export interface PreparedShellUpdate {
