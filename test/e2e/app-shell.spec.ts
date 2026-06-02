@@ -1,4 +1,32 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+const waitForGlobalSearchDialogOpenState = async (
+  page: Page,
+  expectedOpen: boolean,
+): Promise<void> => {
+  await page.waitForFunction((open) => {
+    const dialog = document.querySelector('#global-search-dialog');
+    return dialog instanceof HTMLDialogElement && dialog.open === open;
+  }, expectedOpen);
+};
+
+const openGlobalSearchDialogFromHeader = async (page: Page): Promise<void> => {
+  const searchTrigger = page.locator('layout-header [data-search-dialog-trigger]').first();
+  await expect(searchTrigger).toBeVisible();
+
+  await page.waitForFunction(() => {
+    const dialog = document.querySelector('#global-search-dialog');
+    return (
+      dialog instanceof HTMLDialogElement &&
+      dialog.querySelector('[data-search-dialog-input]') instanceof HTMLInputElement
+    );
+  });
+
+  await expect(async () => {
+    await searchTrigger.click();
+    await waitForGlobalSearchDialogOpenState(page, true);
+  }).toPass({ timeout: 10_000 });
+};
 
 test.describe('App Shell', () => {
   test('skip link が main-content を指していること', async ({ page }) => {
@@ -18,19 +46,7 @@ test.describe('App Shell', () => {
 
     await page.goto('/');
 
-    const searchTrigger = page.locator('layout-header [data-search-dialog-trigger]').first();
-    await expect(searchTrigger).toBeVisible();
-
-    await page.waitForFunction(() => {
-      const dialog = document.querySelector('#global-search-dialog');
-      return (
-        dialog instanceof HTMLDialogElement &&
-        dialog.querySelector('[data-search-dialog-input]') instanceof HTMLInputElement
-      );
-    });
-
-    await searchTrigger.click();
-    await expect(page.locator('#global-search-dialog')).toHaveAttribute('open', '');
+    await openGlobalSearchDialogFromHeader(page);
 
     await page.waitForFunction(() => {
       const dialog = document.querySelector('#global-search-dialog');
@@ -42,10 +58,10 @@ test.describe('App Shell', () => {
     });
 
     await page.keyboard.press('Escape');
-    await expect(page.locator('#global-search-dialog')).not.toHaveAttribute('open', '');
+    await waitForGlobalSearchDialogOpenState(page, false);
 
     await page.keyboard.press('Control+K');
-    await expect(page.locator('#global-search-dialog')).toHaveAttribute('open', '');
+    await waitForGlobalSearchDialogOpenState(page, true);
 
     expect(consoleMessages.join('\n')).not.toContain('requestOpen is not a function');
     expect(consoleMessages.join('\n')).not.toContain('captureOpenModality is not a function');

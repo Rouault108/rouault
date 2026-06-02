@@ -51,6 +51,27 @@ const waitForSearchPageReady = async (page: Page): Promise<void> => {
   await page.locator('[data-search-page-root] [data-search-query-input]').first().waitFor();
 };
 
+const waitForAppRouterReady = async (page: Page): Promise<void> => {
+  await page.waitForFunction(() => {
+    const router = document.querySelector('app-router');
+    return (
+      router instanceof HTMLElement &&
+      typeof (router as { navigate?: unknown }).navigate === 'function' &&
+      typeof (router as { whenReady?: unknown }).whenReady === 'function'
+    );
+  });
+
+  await page.evaluate(async () => {
+    const router = document.querySelector('app-router') as
+      | (HTMLElement & { whenReady: () => Promise<void> })
+      | null;
+    if (!router || typeof router.whenReady !== 'function') {
+      throw new Error('app-router.whenReady() が利用できません');
+    }
+    await router.whenReady();
+  });
+};
+
 const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => {
   await page.waitForFunction(() => {
     const router = document.querySelector('app-router');
@@ -157,7 +178,11 @@ test.describe('Router Navigation', () => {
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
     });
 
-    await resultLinks.last().click();
+    const lastResultLink = resultLinks.last();
+    await lastResultLink.scrollIntoViewIfNeeded();
+    await expect(lastResultLink).toBeVisible();
+    await waitForAppRouterReady(page);
+    await lastResultLink.click();
     await expect(page).not.toHaveURL('/tags/Programming/');
     await expect(page.locator('#main-content article')).toBeVisible();
 

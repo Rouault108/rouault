@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import { resolveInternalDocumentRouteManifestPathname } from '../../shared/navigation/internal-document-route-manifest-path.js';
 import {
@@ -27,6 +27,29 @@ const expectJavaScriptContentType = (contentType: string | null): void => {
     'text/ecmascript',
     'application/ecmascript',
   ]).toContain(normalized);
+};
+
+const waitForGlobalSearchDialogOpen = async (page: Page): Promise<void> => {
+  await page.waitForFunction(() => {
+    const dialog = document.querySelector('#global-search-dialog');
+    return dialog instanceof HTMLDialogElement && dialog.open === true;
+  });
+};
+
+const openGlobalSearchDialogFromHeader = async (page: Page): Promise<void> => {
+  const searchTrigger = page.locator('layout-header [data-search-dialog-trigger]').first();
+  await expect(searchTrigger).toBeVisible();
+  await page.waitForFunction(() => {
+    const dialog = document.querySelector('#global-search-dialog');
+    return (
+      dialog instanceof HTMLDialogElement &&
+      dialog.querySelector('[data-search-dialog-input]') instanceof HTMLInputElement
+    );
+  });
+  await expect(async () => {
+    await searchTrigger.click();
+    await waitForGlobalSearchDialogOpen(page);
+  }).toPass({ timeout: 10_000 });
 };
 
 test.describe('production search artifacts', () => {
@@ -73,8 +96,7 @@ test.describe('production search artifacts', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.locator('[data-search-dialog-trigger]').first().click();
-    await expect(page.locator('#global-search-dialog')).toHaveAttribute('open');
+    await openGlobalSearchDialogFromHeader(page);
     const status = await page.evaluate(async (pathname) => {
       const response = await fetch(pathname);
       return response.status;

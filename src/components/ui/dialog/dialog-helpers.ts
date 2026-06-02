@@ -14,7 +14,12 @@ export const waitForDialogAnimations = async (dialog: HTMLDialogElement): Promis
     return;
   }
 
-  await Promise.allSettled(animations.map((animation) => animation.finished));
+  await Promise.race([
+    Promise.allSettled(animations.map((animation) => animation.finished)),
+    new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 250);
+    }),
+  ]);
 };
 
 // 明示的なトリガーがあればそれを使い、なければ現在フォーカス中の要素を開閉トリガーとして記録する。

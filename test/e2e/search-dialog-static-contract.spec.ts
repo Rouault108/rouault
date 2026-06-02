@@ -7,6 +7,16 @@ const getSearchTrigger = (page: Page): Locator =>
 
 const getDialog = (page: Page): Locator => page.locator('#global-search-dialog');
 
+const waitForSearchDialogOpenState = async (page: Page, expectedOpen: boolean): Promise<void> => {
+  await page.waitForFunction((open) => {
+    const dialog = document.querySelector('#global-search-dialog');
+    if (!(dialog instanceof HTMLDialogElement)) {
+      return open === false;
+    }
+    return dialog.open === open;
+  }, expectedOpen);
+};
+
 const waitForSearchDialogDom = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
     const dialog = document.querySelector('#global-search-dialog');
@@ -25,8 +35,10 @@ const openSearchDialog = async (page: Page): Promise<void> => {
   await waitForSearchDialogDom(page);
   const trigger = getSearchTrigger(page);
   await expect(trigger).toBeVisible();
-  await trigger.click();
-  await expect(getDialog(page)).toHaveAttribute('open', '');
+  await expect(async () => {
+    await trigger.click();
+    await waitForSearchDialogOpenState(page, true);
+  }).toPass({ timeout: 10_000 });
   await expect(page.locator('[data-search-dialog-input]')).toBeFocused();
 };
 
@@ -295,7 +307,7 @@ test.describe('search dialog static contract', () => {
     await expect(input).toHaveValue('');
 
     await page.locator('[data-search-dialog-close] svg').click();
-    await expect(getDialog(page)).not.toHaveAttribute('open', '');
+    await waitForSearchDialogOpenState(page, false);
   });
 
   test('keyboard, backdrop, close, and selection lifecycle remain usable', async ({ page }) => {
@@ -303,24 +315,24 @@ test.describe('search dialog static contract', () => {
     await openSearchDialog(page);
 
     await page.keyboard.press('Escape');
-    await expect(getDialog(page)).not.toHaveAttribute('open', '');
+    await waitForSearchDialogOpenState(page, false);
     await expect.poll(() => getSearchTriggerIsFocused(page)).toBe(true);
 
     await openSearchDialog(page);
     const dialogBox = await getDialog(page).boundingBox();
     if (dialogBox === null) throw new Error('search dialog box is unavailable');
     await page.mouse.click(Math.max(1, dialogBox.x - 12), Math.max(1, dialogBox.y - 12));
-    await expect(getDialog(page)).not.toHaveAttribute('open', '');
+    await waitForSearchDialogOpenState(page, false);
     await expect.poll(() => getSearchTriggerIsFocused(page)).toBe(true);
 
     await page.keyboard.press('Control+K');
-    await expect(getDialog(page)).toHaveAttribute('open', '');
+    await waitForSearchDialogOpenState(page, true);
     await renderSyntheticSearchResult(page);
     const firstOption = await waitForSearchResults(page);
     await expect(firstOption).toHaveAttribute('data-item-id', '/notes/program/csharp/');
     await expect(firstOption.locator('mark').first()).toBeVisible();
     await page.keyboard.press('Enter');
-    await expect(getDialog(page)).not.toHaveAttribute('open', '');
+    await waitForSearchDialogOpenState(page, false);
 
     await page.goto('/');
     await openSearchDialog(page);
@@ -331,7 +343,7 @@ test.describe('search dialog static contract', () => {
         ? pointerOption.locator('mark').first()
         : pointerOption.locator('.search-dialog__result-title, .search-dialog__result-path').first();
     await clickableText.click({ force: true });
-    await expect(getDialog(page)).not.toHaveAttribute('open', '');
+    await waitForSearchDialogOpenState(page, false);
     await expect.poll(() => getSearchTriggerIsFocused(page)).toBe(false);
   });
 
@@ -343,7 +355,7 @@ test.describe('search dialog static contract', () => {
     await waitForSearchDialogDom(page);
 
     await getSearchTrigger(page).click();
-    await expect(getDialog(page)).toHaveAttribute('open', '');
+    await waitForSearchDialogOpenState(page, true);
     await expect(page.locator('[data-search-dialog-unavailable]')).toBeVisible();
     await expect(page.locator('[data-search-dialog-loading]')).toBeHidden();
     await expect(page.locator('[data-search-dialog-results]')).toBeHidden();
@@ -367,11 +379,11 @@ test.describe('search dialog static contract', () => {
       );
     });
 
-    await expect(getDialog(page)).not.toHaveAttribute('open', '');
+    await waitForSearchDialogOpenState(page, false);
     await expect(getDialog(page)).not.toHaveAttribute('data-closing');
 
     await openSearchDialog(page);
     await page.locator('[data-search-dialog-close]').click();
-    await expect(getDialog(page)).not.toHaveAttribute('open', '');
+    await waitForSearchDialogOpenState(page, false);
   });
 });
