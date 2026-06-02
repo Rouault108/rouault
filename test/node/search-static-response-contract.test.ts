@@ -8,7 +8,9 @@ import {
   type ParseStaticExploreSearchResponseResult,
 } from '../../shared/search/search-json-artifact-parser.js';
 import { adoptInitialStaticExploreSearchResponse } from '../../shared/search/static-explore-response-adoption.js';
-import type {
+import {
+  createSearchJsonParseDiagnosticSink,
+  type MutableSearchDiagnosticsTarget,
   SearchArtifactDiagnosticSource,
   SearchArtifactParseIssueCode,
   SearchDiagnosticSummaryCode,
@@ -17,6 +19,15 @@ import type {
 import type { StaticExploreSearchResponse } from '../../shared/search/search-types.js';
 
 const isInternalDocumentPathname = (pathname: string): boolean => pathname.startsWith('/notes/');
+const staticParserProductionCallSitePaths = [
+  'shared/search/inline-static-explore-response-validator.ts',
+  'src/client/post-hydrate/search-page-controller.ts',
+] as const;
+const staticResponseSourceContractPaths = [
+  'shared/search/search-json-artifact-parser.ts',
+  'shared/search/search-diagnostics.ts',
+  ...staticParserProductionCallSitePaths,
+] as const;
 
 const createDiagnosticRecorder = () => {
   const issues: {
@@ -161,12 +172,8 @@ describe('static explore response contract', () => {
     });
   }
 
-  it('source-level contract keeps static parser call sites on the metadata-only signature', () => {
-    for (const path of [
-      'shared/search/inline-static-explore-response-validator.ts',
-      'src/client/post-hydrate/search-page-controller.ts',
-      'test/node/search-json-artifact-parser.test.ts',
-    ]) {
+  it('source-level contract keeps production/shared static parser call sites on the metadata-only signature', () => {
+    for (const path of staticParserProductionCallSitePaths) {
       const source = readFileSync(resolve(process.cwd(), path), 'utf8');
       const calls = source.match(/parseStaticExploreSearchResponseJson\(\{[\s\S]*?\n\s*\}\)/gu) ?? [];
       expect(calls.length, path).to.be.greaterThan(0);
@@ -324,20 +331,62 @@ describe('static explore response contract', () => {
     });
   });
 
-  it('source-level contract keeps static droppedItemCount under metadata only', () => {
+  it('source-level contract keeps scan targets limited to production/shared sources', () => {
+    for (const path of staticResponseSourceContractPaths) {
+      expect(path, path).not.toMatch(/^test\//u);
+      expect(path, path).not.toMatch(/^docs\//u);
+      expect(path, path).not.toContain('render-static-icon-html');
+      expect(path, path).not.toBe('shared/site/site-url-context.ts');
+    }
+  });
+
+  it('source-level contract removes legacy top-level static droppedItemCount but allows catalog droppedItemCount', () => {
     const parserSource = readFileSync(
       resolve(process.cwd(), 'shared/search/search-json-artifact-parser.ts'),
       'utf8',
+    );
+    const catalogResultType = parserSource.slice(
+      parserSource.indexOf('export type ParseSearchCatalogJsonResult'),
+      parserSource.indexOf('export type ParseStaticExploreSearchResponseResult'),
     );
     const staticResultType = parserSource.slice(
       parserSource.indexOf('export type ParseStaticExploreSearchResponseResult'),
       parserSource.indexOf('export const parseSearchCatalogJson'),
     );
 
+    expect(catalogResultType).toContain('readonly droppedItemCount: number;');
     expect(staticResultType).toContain('readonly metadata: StaticExploreParseMetadata;');
     expect(staticResultType).not.toMatch(/readonly response: StaticExploreSearchResponse;[\s\S]*readonly droppedItemCount/u);
+    expect(staticResultType).not.toContain('readonly droppedItemCount: number;');
     expect(staticResultType).not.toContain('usedLegacyRankingProfileFallback');
-    expect(parserSource).toContain("readonly droppedItemCount: number;");
-    expect(parserSource).toContain("code: 'allowlist-miss'");
+  });
+
+  it('source-level contract rejects raw diagnostic allowlist-miss but keeps artifact issue mapping', () => {
+    expect(
+      parse(
+        validPayload({
+          diagnostics: {
+            ...validDiagnostics,
+            issues: [{ code: 'allowlist-miss', severity: 'warn', stage: 'normalize', count: 1 }],
+          },
+        }),
+      ),
+    ).to.deep.equal({ ok: false, reason: 'invalid-static-response-diagnostics' });
+
+    const diagnostics: MutableSearchDiagnosticsTarget = { issues: [] };
+    createSearchJsonParseDiagnosticSink(diagnostics).addIssue({
+      code: 'allowlist-miss',
+      artifactSource: 'static-explore-response-json',
+    });
+
+    expect(diagnostics.issues).to.deep.equal([
+      {
+        code: 'invalid-catalog-item',
+        severity: 'warn',
+        stage: 'normalize',
+        artifactSource: 'static-explore-response-json',
+        count: 1,
+      },
+    ]);
   });
 });
