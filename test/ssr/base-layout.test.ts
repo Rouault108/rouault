@@ -181,10 +181,10 @@ describe('BaseLayout', () => {
       },
     });
 
-    expect(rendered).toContain('<layout-header note-layout sidebar-enabled');
-    expect(rendered).toContain('toc-presence="absent"');
+    expect(rendered).toContain('<header class="layout-header" data-layout-header="true" data-note-layout="true" data-sidebar-enabled="true"');
+    expect(rendered).toContain('data-toc-presence="absent"');
     expect(rendered).not.toContain('toc-runtime-id=""');
-    expect(rendered).toContain('toc-trigger-reserved="false"');
+    expect(rendered).toContain('data-toc-trigger-reserved="false"');
     expect(rendered).toContain('initial-expanded-ids="[]"');
     expect(rendered).toContain('topology-revision="reader-note-topology"');
     expect(rendered).toContain('<nav data-sidebar-nav');
@@ -242,11 +242,11 @@ describe('BaseLayout', () => {
       },
     });
 
-    expect(rendered).toContain('toc-presence="present"');
-    expect(rendered).toContain('toc-runtime-id="toc-source-reader-with-toc"');
-    expect(rendered).toContain('toc-trigger-reserved="true"');
+    expect(rendered).toContain('data-toc-presence="present"');
+    expect(rendered).toContain('data-toc-runtime-id="toc-source-reader-with-toc"');
+    expect(rendered).toContain('data-toc-trigger-reserved="true"');
     expect(rendered).toContain('data-toc-owner-id="toc-owner-reader-with-toc"');
-    expect(rendered.match(/<layout-header\b[^>]*>/u)?.[0] ?? '').not.toContain(
+    expect(rendered.match(/<header\b[^>]*data-layout-header[^>]*>/u)?.[0] ?? '').toContain(
       'data-toc-trigger-reserved',
     );
   });
@@ -380,7 +380,7 @@ describe('BaseLayout', () => {
       },
     });
 
-    expect(rendered).toContain('<layout-header note-layout sidebar-enabled');
+    expect(rendered).toContain('data-note-layout="true" data-sidebar-enabled="true"');
   });
 
   it('testing note かつ chromeProfile=plain では header に sidebar-enabled を出力しないこと', () => {
@@ -399,10 +399,10 @@ describe('BaseLayout', () => {
       },
     });
 
-    expect(rendered).toContain('<layout-header note-layout');
-    expect(rendered).toContain('toc-presence="absent"');
+    expect(rendered).toContain('data-note-layout="true"');
+    expect(rendered).toContain('data-toc-presence="absent"');
     expect(rendered).not.toContain('toc-runtime-id=""');
-    expect(rendered).not.toContain('<layout-header note-layout sidebar-enabled');
+    expect(rendered).toContain('data-sidebar-enabled="false"');
   });
 
   it('BaseLayout は layout-header へ breadcrumbs-json を出力しないこと', () => {
@@ -436,9 +436,8 @@ describe('BaseLayout', () => {
       currentCorpusKey: 'all',
     });
 
-    expect(rendered).toContain('<layout-header note-layout');
-    expect(rendered).toContain('corpora-json=');
-    expect(rendered).toContain('current-corpus-key="all"');
+    expect(rendered).toContain('data-note-layout="true"');
+    expect(rendered).toContain('data-current-corpus-key="all"');
     expect(rendered).not.toContain('breadcrumbs-json=');
   });
 
@@ -474,7 +473,7 @@ describe('BaseLayout', () => {
 
     expect(rendered).toContain('<div id="app" class="app-root" data-hydration-scope="app-shell"');
     expect(rendered).toContain('data-hydration-marker="reading-shell"');
-    expect(rendered).toContain('<layout-header');
+    expect(rendered).toContain('<header class="layout-header" data-layout-header="true"');
     expect(rendered).toContain('<app-router');
     expect(rendered).toContain('data-app-shell-sidebar-overlay-layer');
     expect(rendered).toContain('data-app-router-announcement');

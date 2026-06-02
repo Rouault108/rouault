@@ -229,7 +229,7 @@ const validateKindHrefShape = (
     try {
       classified = classifyLinkHref({
         href,
-        surface: surface === 'card' ? 'card' : 'prose',
+        surface: surface !== null && isLinkSurface(surface) ? surface : 'prose',
         siteUrlContext: options.siteUrlContext,
         currentUrl: options.currentUrl,
         routeClassificationMode: options.routeClassificationMode,

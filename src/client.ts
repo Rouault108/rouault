@@ -10,6 +10,7 @@ import {
 } from './router/internal-document-route-manifest-loader.js';
 import { initSearch, initSearchUnavailable } from './search/bootstrap.js';
 import { initTheme } from './theme/theme-manager.js';
+import { validateInitialAppShell } from './router/initial-shell-validation.js';
 
 const hydrationScheduler = new HydrationScheduler();
 
@@ -59,7 +60,23 @@ const hydrateShellScopes = async (): Promise<void> => {
   }
 };
 
-const hydrateCurrentContent = async (contentRoot?: HTMLElement): Promise<void> => {
+const dispatchContentHydrationReady = (detail: {
+  contentRoot: HTMLElement;
+  initial: boolean;
+}): void => {
+  detail.contentRoot.dispatchEvent(
+    new CustomEvent('app-content:hydration-ready', {
+      detail,
+      bubbles: true,
+      composed: true,
+    }),
+  );
+};
+
+const hydrateCurrentContent = async (
+  contentRoot?: HTMLElement,
+  options: { initial?: boolean } = {},
+): Promise<void> => {
   const appRouter = await waitForAppRouterReady();
 
   const mainContent =
@@ -73,6 +90,11 @@ const hydrateCurrentContent = async (contentRoot?: HTMLElement): Promise<void> =
   promoteDeclarativeShadowRoots(mainContent);
   customElements.upgrade(mainContent);
   await Promise.resolve();
+
+  dispatchContentHydrationReady({
+    contentRoot: mainContent,
+    initial: options.initial === true,
+  });
 
   await hydrationScheduler.hydrateContent(mainContent, {
     dispatchTarget: appRouter,
@@ -124,6 +146,14 @@ const initializeAppRouterRuntime = async (): Promise<void> => {
     routeManifestState,
     isInternalDocumentPathname: (pathname) => routeManifestState.routeSet.has(pathname),
   });
+  validateInitialAppShell({
+    urlDependencies: {
+      siteUrlContext: manifestMeta.siteUrlContext,
+      routeManifestState,
+      isInternalDocumentPathname: (pathname) => routeManifestState.routeSet.has(pathname),
+    },
+    currentAbsoluteUrl: window.location.href,
+  });
   initSearch({
     runtimeEnvironment: 'production',
     siteUrlContext: manifestMeta.siteUrlContext,
@@ -136,13 +166,15 @@ const bootstrapClient = async (): Promise<void> => {
   initTheme();
   await hydrateShellScopes();
   await initializeAppRouterRuntime();
-  await hydrateCurrentContent();
+  await hydrateCurrentContent(undefined, { initial: true });
 };
 
 document.addEventListener('app-router:navigation-committed', (event: Event) => {
   const detail = (event as CustomEvent<AppRouterNavigationCommittedDetail>).detail;
   const contentRoot = detail.contentRoot;
-  void hydrateCurrentContent(contentRoot instanceof HTMLElement ? contentRoot : undefined);
+  void hydrateCurrentContent(contentRoot instanceof HTMLElement ? contentRoot : undefined, {
+    initial: false,
+  });
 });
 
 void bootstrapClient();

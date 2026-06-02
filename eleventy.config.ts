@@ -15,6 +15,7 @@ import { createDevelopmentRouterArtifactMiddleware } from './build/dev/dev-route
 import { createDevelopmentInternalDocumentRouteManifestMiddleware } from './build/dev/dev-internal-document-route-manifest-middleware.js';
 import { createDevelopmentHtmlSiteUrlContextMiddleware } from './build/dev/dev-html-site-url-context-middleware.js';
 import { createDevelopmentSearchArtifactMiddleware } from './build/dev/dev-search-artifact-middleware.js';
+import { buildProductionInternalDocumentRouteSet } from './build/navigation/internal-document-routes.js';
 import { devBuildMetadata } from './build/dev/dev-build-metadata.js';
 import { hasExternalMediaBaseUrl } from './build/media/media-base-url.js';
 import { resolveProductionBuildMetadata } from './build/metadata/build-metadata.js';
@@ -111,11 +112,15 @@ const registerDevelopmentRouteManifest = (server: ViteDevServer): void => {
 };
 
 const registerDevelopmentRouterArtifacts = (server: ViteDevServer): void => {
+  const siteUrlContext = resolveDevelopmentSiteUrlContext();
+  const routeSet = buildProductionInternalDocumentRouteSet().routeSet;
   server.middlewares.use(
     createDevelopmentRouterArtifactMiddleware({
       outputDirectory: path.resolve(process.cwd(), 'dist'),
       buildId: devBuildMetadata.buildId,
       generatedAt: devBuildMetadata.generatedAt,
+      siteUrlContext,
+      isInternalDocumentPathname: (pathname) => routeSet.has(pathname),
     }),
   );
 };

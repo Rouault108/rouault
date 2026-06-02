@@ -212,7 +212,7 @@ const forbiddenMainCssSelectorPatterns = [
   /\bapp-root\b/u,
   /\bapp-router\b/u,
   /\.note-shell(?![-_a-zA-Z0-9])/u,
-  /layout-header:not\(:defined\)/u,
+  /header\[data-layout-header\]/u,
   /\.layout-sidebar-overlay-layer(?![-_a-zA-Z0-9])/u,
   /\.layout-sidebar-col(?![-_a-zA-Z0-9])/u,
   /\blayout-sidebar-surface\b/u,

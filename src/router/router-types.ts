@@ -3,10 +3,9 @@ import type { HydrationPlan } from '../../shared/navigation/hydration-plan.js';
 import type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
 import type {
   AbsentRuntimeSidebarShellProjection,
-  HeaderShellProjection,
+  NavigationShellSnapshot,
   PresentSidebarShellProjection,
   RuntimeSidebarShellSnapshot as SharedRuntimeSidebarShellSnapshot,
-  ShellProjectionSnapshot,
 } from '../../shared/navigation/shell-projection.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import type { LoadedInternalDocumentRouteManifestState } from './internal-document-route-manifest-loader.js';
@@ -169,16 +168,14 @@ export interface ContentUpdateAdapter {
   prepare(update: ContentUpdatePayload): PreparedContentUpdate | Promise<PreparedContentUpdate>;
 }
 
-export type HeaderShellSnapshot = HeaderShellProjection;
-
-export type PayloadDocumentShellSnapshot = ShellProjectionSnapshot;
+export type PayloadDocumentShellSnapshot = NavigationShellSnapshot;
 export type StrictLoadedNavigationEnvelope = NavigationEnvelope & {
   buildId: string;
   generatedAt: string;
 };
 export type RuntimeSidebarShellSnapshot = SharedRuntimeSidebarShellSnapshot;
 export interface RuntimeDocumentShellSnapshot {
-  header: HeaderShellProjection;
+  headerHtml: string;
   sidebar: RuntimeSidebarShellSnapshot | null;
 }
 
@@ -190,7 +187,7 @@ export type SidebarShellSnapshot = RuntimeSidebarShellSnapshot;
 export type { PresentSidebarShellProjection, AbsentRuntimeSidebarShellProjection };
 
 export interface ShellUpdatePayload {
-  shell: PayloadDocumentShellSnapshot | null;
+  shell: PayloadDocumentShellSnapshot;
   navigationUrl: string;
 }
 

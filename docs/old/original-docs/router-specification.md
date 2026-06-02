@@ -129,7 +129,7 @@ router が反映対象として扱う統一遷移表現です。route 経路で�
 - `Shell Adapter`、`URL State Policy`、`Post Commit Controller` は **任意統合** です。
 - durable commit の成立条件は `Content Committer` が担当する範囲で定義し、**shell を含み、post-commit 後処理は含みません**。
 - `Shell Adapter` が提供される場合、その失敗は durable commit failure として扱わなければなりません。
-- shell projection snapshot は router core 自身の具体属性依存ではなく、SSR が確定した shell 契約の受け渡し面です。`HeaderShellProjection.tocPresence` はこの snapshot 契約の一部として扱います。
+- shell projection snapshot は router core 自身の具体属性依存ではなく、SSR が確定した shell 契約の受け渡し面です。旧ヘッダー projection の TOC presence は当時の snapshot 契約の一部として扱っていました。
 
 ## 公開 API
 

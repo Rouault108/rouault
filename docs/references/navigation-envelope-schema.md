@@ -9,7 +9,7 @@
 - `buildId`: artifact を生成した build の識別子。client 側 buildId と不一致の場合は縮退理由になる。
 - `generatedAt`: artifact 生成時刻。表示・診断用であり routing state ではない。
 - `document`: 本文 commit に必要な payload。
-- `shellProjection`: route 由来の durable shell state。
+- `shell`: route 由来の durable shell snapshot。
 - `hydrationPlan`: client hydration の planning 情報。
 
 ## `document`
@@ -23,17 +23,15 @@
 
 本文 DOM 境界は `docs/contracts/router-document.md` を正本とする。
 
-## `shellProjection`
+## `shell`
 
-- `sidebar`: route に対応する sidebar projection。
-- `breadcrumb`: route に対応する breadcrumb projection。
-- `corpus`: route に対応する corpus projection。
-- `tocTrigger`: route に対応する reading chrome trigger projection。
+- `headerHtml`: route に対応する静的 `header[data-layout-header]` の HTML。
+- `sidebarProjection`: route に対応する sidebar projection。sidebar がない場合は `null`。
 
-Shell projection は route 由来の durable shell state を運ぶ。UI component 固有の一時状態は含めない。
-Reading chrome の mobile panel open state、current DOM、density tier の runtime 再計算結果は `shellProjection` に保存しない。
+Shell snapshot は route 由来の durable shell state を運ぶ。UI component 固有の一時状態は含めない。
+Reading chrome の mobile panel open state、current DOM、density tier の runtime 再計算結果は `shell` に保存しない。
 
-## `shellProjection.sidebar`
+## `shell.sidebarProjection`
 
 - `selectedId`: 現在 route に対応する selected tree node id。
 - `structuralExpandedIds`: route 構造上、表示に必要な展開 node id。

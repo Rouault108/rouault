@@ -41,13 +41,8 @@ const isFootnoteStructuralException = (anchor: HTMLAnchorElement): boolean =>
 const isFooterNavLink = (anchor: HTMLAnchorElement): boolean =>
   anchor.closest('.ui-footer[data-footer] .ui-footer__nav') !== null;
 
-const toAbsoluteCurrentUrl = (siteUrlContext: SiteUrlContext, normalizedUrl: string): string => {
-  const resolved = new URL(normalizedUrl, `${siteUrlContext.siteOrigin}/`);
-  return resolved.href;
-};
-
-const toCurrentPathname = (siteUrlContext: SiteUrlContext, normalizedUrl: string): string => {
-  const resolved = new URL(normalizedUrl, `${siteUrlContext.siteOrigin}/`);
+const toCurrentPathname = (siteUrlContext: SiteUrlContext, currentAbsoluteUrl: string): string => {
+  const resolved = new URL(currentAbsoluteUrl);
   return stripBasePathFromPathname(resolved.pathname, siteUrlContext.basePath);
 };
 
@@ -56,7 +51,7 @@ const validateAnchor = (
   options: {
     readonly sourceLabel: string;
     readonly siteUrlContext: SiteUrlContext;
-    readonly currentUrl: string;
+    readonly currentAbsoluteUrl: string;
     readonly routeManifestState: LoadedInternalDocumentRouteManifestState;
   },
 ): void => {
@@ -110,12 +105,12 @@ const validateAnchor = (
         ? true
         : (downloadValue ?? true)
       : undefined;
-    const currentPathname = toCurrentPathname(options.siteUrlContext, options.currentUrl);
+    const currentPathname = toCurrentPathname(options.siteUrlContext, options.currentAbsoluteUrl);
     const annotation = classifyLinkHref({
       href: annotatedHref,
       surface: annotatedSurface,
       siteUrlContext: options.siteUrlContext,
-      currentUrl: toAbsoluteCurrentUrl(options.siteUrlContext, options.currentUrl),
+      currentUrl: options.currentAbsoluteUrl,
       routeClassificationMode: createManifestLoadedRouteClassificationMode({
         isInternalDocumentPathname: (pathname) =>
           options.routeManifestState.routeSet.has(pathname) || pathname === currentPathname,
@@ -155,9 +150,26 @@ export const validateRuntimeDomLinkContracts = (options: {
   readonly root: ParentNode;
   readonly sourceLabel: string;
   readonly siteUrlContext: SiteUrlContext;
-  readonly currentUrl: string;
+  readonly currentAbsoluteUrl: string;
   readonly routeManifestState: LoadedInternalDocumentRouteManifestState;
 }): void => {
+  options.root.querySelectorAll('a').forEach((anchor) => {
+    if (anchor instanceof HTMLAnchorElement) {
+      validateAnchor(anchor, options);
+    }
+  });
+};
+
+export const validateRuntimeDomLinkContractSubtree = (options: {
+  readonly root: Element;
+  readonly sourceLabel: string;
+  readonly siteUrlContext: SiteUrlContext;
+  readonly currentAbsoluteUrl: string;
+  readonly routeManifestState: LoadedInternalDocumentRouteManifestState;
+}): void => {
+  if (options.root instanceof HTMLAnchorElement) {
+    validateAnchor(options.root, options);
+  }
   options.root.querySelectorAll('a').forEach((anchor) => {
     if (anchor instanceof HTMLAnchorElement) {
       validateAnchor(anchor, options);

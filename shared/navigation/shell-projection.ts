@@ -1,5 +1,3 @@
-import type { TocPresence } from '../note/toc-presence.js';
-import type { CorpusNavigationProjectionPayload } from './corpus-navigation-projection.js';
 import type {
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
   DEFAULT_SIDEBAR_ID,
@@ -8,18 +6,6 @@ import type {
 } from './sidebar-shell-defaults.js';
 
 export type SidebarPresentation = 'auto' | 'fixed' | 'overlay';
-
-export interface HeaderShellProjection {
-  corpora: CorpusNavigationProjectionPayload;
-  currentCorpusKey: string;
-  noteLayout: boolean;
-  sidebarEnabled: boolean;
-  sidebarId: string;
-  tocPresence: TocPresence;
-  tocRuntimeId: string | null;
-  tocOwnerId: string | null;
-  tocTriggerReserved: boolean;
-}
 
 export interface PresentSidebarShellProjection {
   present: true;
@@ -53,10 +39,7 @@ export type RuntimeSidebarShellSnapshot =
   | PresentSidebarShellProjection
   | AbsentRuntimeSidebarShellProjection;
 
-/** @deprecated Use PayloadSidebarShellProjection or RuntimeSidebarShellSnapshot explicitly. */
-export type SidebarShellProjection = RuntimeSidebarShellSnapshot;
-
-export interface ShellProjectionSnapshot {
-  header: HeaderShellProjection;
-  sidebar: PayloadSidebarShellProjection | null;
+export interface NavigationShellSnapshot {
+  headerHtml: string;
+  sidebarProjection: PayloadSidebarShellProjection | null;
 }

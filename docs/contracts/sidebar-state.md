@@ -22,14 +22,14 @@
 
 - `_config.json.label` の入力仕様。正本は `docs/contracts/content-config.md`。
 - breadcrumb / directory-index / note identity における label 消費規則。正本は `docs/contracts/note-navigation.md`。
-- `shellProjection.sidebar` payload field 詳細。正本は `docs/references/navigation-envelope-schema.md`。
+- `shell.sidebarProjection` payload field 詳細。正本は `docs/references/navigation-envelope-schema.md`。
 
 ## 3. Public Contract
 
 ### Inputs
 
 - `layout-sidebar` light DOM の nav subtree。
-- `NavigationEnvelope.shellProjection.sidebar`。
+- `NavigationEnvelope.shell.sidebarProjection`。
 - User command from header / sidebar controls。
 
 ### Outputs

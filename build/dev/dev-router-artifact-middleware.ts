@@ -4,6 +4,8 @@ import path from 'node:path';
 import type { Connect } from 'vite';
 
 import { createNavigationEnvelopeFromHtml } from '../navigation/emit-navigation-artifacts.js';
+import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
+import { resolveContentPathnameFromHtmlFile } from '../content/generated-document-route-set.js';
 
 const ROUTER_ARTIFACT_ROOT_PATHNAME = '/__router';
 const ROUTER_ARTIFACT_FILE_NAME = 'index.router.json';
@@ -85,6 +87,8 @@ export function createDevelopmentRouterArtifactMiddleware(options: {
   outputDirectory: string;
   buildId: string;
   generatedAt: string;
+  siteUrlContext: SiteUrlContext;
+  isInternalDocumentPathname: (pathname: string) => boolean;
 }): Connect.NextHandleFunction {
   const outputDirectory = path.resolve(options.outputDirectory);
   const buildId = options.buildId;
@@ -118,6 +122,10 @@ export function createDevelopmentRouterArtifactMiddleware(options: {
         mode: 'strict-artifact',
         buildId,
         generatedAt,
+      }, {
+        siteUrlContext: options.siteUrlContext,
+        currentUrl: `${options.siteUrlContext.siteOrigin}${options.siteUrlContext.basePath}${resolveContentPathnameFromHtmlFile(outputDirectory, htmlFilePath)}`,
+        isInternalDocumentPathname: options.isInternalDocumentPathname,
       });
       const body = `${JSON.stringify(envelope, null, 2)}\n`;
 

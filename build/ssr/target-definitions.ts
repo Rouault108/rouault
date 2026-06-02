@@ -30,12 +30,6 @@ export const SSR_COMPONENT_DEFINITIONS = [
     adapterKind: 'shadow-default',
   },
   {
-    tag: 'layout-header',
-    ssr: 'shadow',
-    profiles: ['shell'],
-    adapterKind: 'shadow-default',
-  },
-  {
     tag: 'app-router',
     ssr: 'light',
     profiles: ['shell'],

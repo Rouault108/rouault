@@ -39,7 +39,6 @@ export type {
   PresentSidebarShellProjection,
   AbsentRuntimeSidebarShellProjection,
   LoadDocumentResult,
-  HeaderShellSnapshot,
   HistoryMode,
   NavigateRequest,
   RouterDocumentRenderSnapshot,

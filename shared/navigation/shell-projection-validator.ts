@@ -1,30 +1,27 @@
-import type { TocPresence } from '../note/toc-presence.js';
 import {
   assertValidSidebarId,
   assertValidSidebarStateScopeId,
 } from './sidebar-identity-contract.js';
+import type {
+  RuntimeSidebarShellSnapshot,
+  NavigationShellSnapshot,
+  PayloadSidebarShellProjection,
+  SidebarPresentation,
+} from './shell-projection.js';
 import {
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
   DEFAULT_SIDEBAR_ID,
   DEFAULT_SIDEBAR_PRESENTATION,
   DEFAULT_SIDEBAR_STATE_SCOPE_ID,
 } from './sidebar-shell-defaults.js';
-import type {
-  HeaderShellProjection,
-  PayloadSidebarShellProjection,
-  RuntimeSidebarShellSnapshot,
-  ShellProjectionSnapshot,
-  SidebarPresentation,
-} from './shell-projection.js';
 import {
   SidebarNavHtmlPresenceError,
   assertRuntimeSidebarNavHtmlPresence,
 } from './sidebar-nav-html-presence.js';
-import { parseCorpusNavigationProjectionPayload } from './corpus-navigation-projection.js';
 
 export type ShellProjectionValidationReason =
   | 'invalid-shell'
-  | 'invalid-header'
+  | 'invalid-header-html'
   | 'invalid-sidebar'
   | 'payload-present-false'
   | 'runtime-absent-non-canonical'
@@ -44,7 +41,7 @@ export class ShellProjectionValidationError extends Error {
     reason: ShellProjectionValidationReason;
     sourceLabel?: string;
   }) {
-    super(`[shell-projection]${sourceLabel ? ` ${sourceLabel}:` : ''} ${reason}`);
+    super(`[navigation-shell]${sourceLabel ? ` ${sourceLabel}:` : ''} ${reason}`);
     this.reason = reason;
     if (sourceLabel !== undefined) {
       this.sourceLabel = sourceLabel;
@@ -55,7 +52,7 @@ export class ShellProjectionValidationError extends Error {
 function fail(
   _message: string,
   reason: ShellProjectionValidationReason,
-  sourceLabel = 'shellProjection',
+  sourceLabel = 'shell',
 ): never {
   throw new ShellProjectionValidationError({ reason, sourceLabel });
 }
@@ -75,9 +72,6 @@ const requireRecord = (
 };
 
 const isString = (value: unknown): value is string => typeof value === 'string';
-const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
-const isTocPresence = (value: unknown): value is TocPresence =>
-  value === 'present' || value === 'absent';
 const isSidebarPresentation = (value: unknown): value is SidebarPresentation =>
   value === 'auto' || value === 'fixed' || value === 'overlay';
 
@@ -133,54 +127,6 @@ const readStringArray = (value: unknown, label: string): string[] => {
   return value.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
 };
 
-const validateHeader = (value: unknown): HeaderShellProjection => {
-  const record = requireRecord(value, 'shellProjection.header must be object.', 'invalid-header');
-
-  const normalizedCorpora = parseCorpusNavigationProjectionPayload(record['corpora']);
-  if (normalizedCorpora === null) {
-    fail('header.corpora must be CorpusNavigationProjectionPayload.', 'invalid-header');
-  }
-
-  const currentCorpusKey = record['currentCorpusKey'];
-  const noteLayout = record['noteLayout'];
-  const sidebarEnabled = record['sidebarEnabled'];
-  if (!isString(currentCorpusKey) || !isBoolean(noteLayout) || !isBoolean(sidebarEnabled)) {
-    fail('header scalar fields are invalid.', 'invalid-header');
-  }
-
-  const sidebarId = readSidebarId(record['sidebarId'], 'header.sidebarId');
-  const tocPresence = record['tocPresence'];
-  if (!isTocPresence(tocPresence)) {
-    fail('header.tocPresence is invalid.', 'invalid-header');
-  }
-  const tocRuntimeId = optionalStringOrNull(record['tocRuntimeId'], 'header.tocRuntimeId');
-  const tocOwnerId = optionalStringOrNull(record['tocOwnerId'], 'header.tocOwnerId');
-  const tocTriggerReserved = record['tocTriggerReserved'];
-  if (!isBoolean(tocTriggerReserved)) {
-    fail('header.tocTriggerReserved must be boolean.', 'invalid-header');
-  }
-
-  if (tocPresence === 'absent') {
-    if (tocRuntimeId !== null || tocOwnerId !== null || tocTriggerReserved) {
-      fail('absent TOC header projection must clear TOC identity.', 'invalid-header');
-    }
-  } else if (tocRuntimeId === null || tocOwnerId === null) {
-    fail('present TOC header projection requires TOC identity.', 'invalid-header');
-  }
-
-  return {
-    corpora: normalizedCorpora,
-    currentCorpusKey: currentCorpusKey.trim(),
-    noteLayout,
-    sidebarEnabled,
-    sidebarId,
-    tocPresence,
-    tocRuntimeId,
-    tocOwnerId,
-    tocTriggerReserved,
-  };
-};
-
 const validatePresentSidebar = (value: Record<string, unknown>): PayloadSidebarShellProjection => {
   const sidebarId = readSidebarId(value['sidebarId'], 'sidebar.sidebarId');
   const stateScopeId = readStateScopeId(value['stateScopeId'], 'sidebar.stateScopeId');
@@ -203,7 +149,7 @@ const validatePresentSidebar = (value: Record<string, unknown>): PayloadSidebarS
     assertRuntimeSidebarNavHtmlPresence({
       sidebarPresent: true,
       navHtml,
-      sourceLabel: 'shellProjection.sidebar',
+      sourceLabel: 'shell.sidebarProjection',
     });
   } catch (error) {
     if (error instanceof SidebarNavHtmlPresenceError) {
@@ -232,80 +178,45 @@ const validatePresentSidebar = (value: Record<string, unknown>): PayloadSidebarS
 const validatePayloadSidebar = (value: unknown): PayloadSidebarShellProjection => {
   const record = requireRecord(
     value,
-    'shellProjection.sidebar must be object or null.',
+    'shell.sidebarProjection must be object or null.',
     'invalid-sidebar',
   );
 
   if (record['present'] === false) {
-    fail('payload shellProjection.sidebar must use null for absent sidebar.', 'payload-present-false');
+    fail('payload shell.sidebarProjection must use null for absent sidebar.', 'payload-present-false');
   }
 
   if (record['present'] !== true) {
-    fail('payload shellProjection.sidebar.present must be true.', 'invalid-sidebar');
+    fail('payload shell.sidebarProjection.present must be true.', 'invalid-sidebar');
   }
 
   return validatePresentSidebar(record);
-};
-
-export const validateNavigationEnvelopeShellProjection = (
-  value: unknown,
-): ShellProjectionSnapshot | null => {
-  if (value === null) {
-    return null;
-  }
-
-  const record = requireRecord(value, 'shellProjection must be object or null.', 'invalid-shell');
-  const header = validateHeader(record['header']);
-  const sidebar = record['sidebar'] === null ? null : validatePayloadSidebar(record['sidebar']);
-
-  if (header.sidebarEnabled && sidebar === null) {
-    fail('header.sidebarEnabled=true requires present sidebar payload.', 'invalid-shell');
-  }
-
-  if (!header.sidebarEnabled && sidebar !== null) {
-    fail('header.sidebarEnabled=false requires shellProjection.sidebar=null.', 'invalid-shell');
-  }
-
-  if (!header.sidebarEnabled && header.sidebarId !== DEFAULT_SIDEBAR_ID) {
-    fail('header.sidebarId must be the default sidebar id when sidebar is disabled.', 'sidebar-id-invalid');
-  }
-
-  if (sidebar !== null && header.sidebarId !== sidebar.sidebarId) {
-    fail('header.sidebarId must match sidebar.sidebarId.', 'sidebar-id-invalid');
-  }
-
-  return { header, sidebar };
 };
 
 export const validateRuntimeSidebarProjection = (
   value: unknown,
 ): RuntimeSidebarShellSnapshot => {
   const record = requireRecord(value, 'runtime sidebar projection must be object.', 'invalid-sidebar');
-
   if (record['present'] === true) {
     return validatePresentSidebar(record);
   }
-
   if (record['present'] !== false) {
     fail('runtime sidebar projection present must be boolean.', 'invalid-sidebar');
   }
-
-  const canonical =
-    record['sidebarId'] === DEFAULT_SIDEBAR_ID &&
-    record['stateScopeId'] === DEFAULT_SIDEBAR_STATE_SCOPE_ID &&
-    record['selectedId'] === null &&
-    Array.isArray(record['initialExpandedIds']) &&
-    record['initialExpandedIds'].length === 0 &&
-    record['topologyRevision'] === null &&
-    record['navHtml'] === null &&
-    record['heading'] === null &&
-    record['fixedBreakpoint'] === DEFAULT_SIDEBAR_FIXED_BREAKPOINT &&
-    record['presentation'] === DEFAULT_SIDEBAR_PRESENTATION;
-
-  if (!canonical) {
-    fail('runtime absent sidebar projection is not canonical.', 'runtime-absent-non-canonical');
+  if (
+    record['sidebarId'] !== DEFAULT_SIDEBAR_ID ||
+    record['stateScopeId'] !== DEFAULT_SIDEBAR_STATE_SCOPE_ID ||
+    record['selectedId'] !== null ||
+    !Array.isArray(record['initialExpandedIds']) ||
+    record['initialExpandedIds'].length !== 0 ||
+    record['topologyRevision'] !== null ||
+    record['navHtml'] !== null ||
+    record['heading'] !== null ||
+    record['fixedBreakpoint'] !== DEFAULT_SIDEBAR_FIXED_BREAKPOINT ||
+    record['presentation'] !== DEFAULT_SIDEBAR_PRESENTATION
+  ) {
+    fail('absent runtime sidebar projection must be canonical.', 'runtime-absent-non-canonical');
   }
-
   return {
     present: false,
     sidebarId: DEFAULT_SIDEBAR_ID,
@@ -320,11 +231,18 @@ export const validateRuntimeSidebarProjection = (
   };
 };
 
-export const normalizeRuntimeSidebarProjectionForPayload = (
-  value: RuntimeSidebarShellSnapshot | null,
-): PayloadSidebarShellProjection | null => {
-  if (value === null || value.present === false) {
-    return null;
+export const validateNavigationEnvelopeShell = (
+  value: unknown,
+): NavigationShellSnapshot => {
+  const record = requireRecord(value, 'shell must be object.', 'invalid-shell');
+  const headerHtml = record['headerHtml'];
+  if (!isString(headerHtml) || headerHtml.trim().length === 0) {
+    fail('shell.headerHtml must be a non-empty string.', 'invalid-header-html');
   }
-  return value;
+
+  return {
+    headerHtml,
+    sidebarProjection:
+      record['sidebarProjection'] === null ? null : validatePayloadSidebar(record['sidebarProjection']),
+  };
 };

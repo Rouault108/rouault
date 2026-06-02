@@ -3,16 +3,22 @@ import { describe, expect, it } from 'vitest';
 import { NOT_FOUND_PAGE_TITLE } from '../../src/components/not-found/not-found-page.js';
 import { ErrorEnvelopeFactory } from '../../src/router/error-envelope-factory.js';
 
+const factory = (): ErrorEnvelopeFactory =>
+  new ErrorEnvelopeFactory({
+    siteOrigin: 'https://rouault.invalid',
+    basePath: '/base',
+  });
+
 describe('ErrorEnvelopeFactory', () => {
   it('404 error envelope では document.title のみ文書タイトル化し announcedTitle は短いタイトルを維持すること', () => {
-    const result = new ErrorEnvelopeFactory().createHttpErrorResult(404, '/missing/');
+    const result = factory().createHttpErrorResult(404, '/missing/');
 
     expect(result.envelope.document.title).toBe(`${NOT_FOUND_PAGE_TITLE} - Rouault`);
     expect(result.envelope.document.announcedTitle).toBe(NOT_FOUND_PAGE_TITLE);
   });
 
   it('404 error envelope は static not-found fallback HTML を返すこと', () => {
-    const result = new ErrorEnvelopeFactory().createHttpErrorResult(
+    const result = factory().createHttpErrorResult(
       404,
       '/missing/?x=<script>',
     );
@@ -25,25 +31,27 @@ describe('ErrorEnvelopeFactory', () => {
     expect(result.envelope.document.html).not.toContain('</not-found-page>');
     expect(result.envelope.document.html).not.toContain(' requested-path=');
     expect(result.envelope.document.renderedKind).toBe('not-found');
+    expect(result.envelope.shell.headerHtml).toContain('header');
+    expect(result.envelope.shell.headerHtml).toContain('/base/search/');
     expect(result.envelope.hydrationPlan).toBeNull();
   });
 
   it('汎用 HTTP error envelope でも document.title と announcedTitle の責務を分離すること', () => {
-    const result = new ErrorEnvelopeFactory().createHttpErrorResult(500, '/broken/');
+    const result = factory().createHttpErrorResult(500, '/broken/');
 
     expect(result.envelope.document.title).toBe('500 - サーバーエラー - Rouault');
     expect(result.envelope.document.announcedTitle).toBe('500 - サーバーエラー');
   });
 
   it('通常 exception result でも document.title と announcedTitle の責務を分離すること', () => {
-    const result = new ErrorEnvelopeFactory().createExceptionResult(new Error('boom'));
+    const result = factory().createExceptionResult(new Error('boom'));
 
     expect(result.envelope.document.title).toBe('エラー - Rouault');
     expect(result.envelope.document.announcedTitle).toBe('エラー');
   });
 
   it('network exception result でも document.title と announcedTitle の責務を分離すること', () => {
-    const result = new ErrorEnvelopeFactory().createExceptionResult(new TypeError('fetch failed'));
+    const result = factory().createExceptionResult(new TypeError('fetch failed'));
 
     expect(result.envelope.document.title).toBe('ネットワークエラー - Rouault');
     expect(result.envelope.document.announcedTitle).toBe('ネットワークエラー');
@@ -53,7 +61,7 @@ describe('ErrorEnvelopeFactory', () => {
     const error = new Error('timeout');
     error.name = 'TimeoutError';
 
-    const result = new ErrorEnvelopeFactory().createExceptionResult(error);
+    const result = factory().createExceptionResult(error);
 
     expect(result.envelope.document.title).toBe('タイムアウト - Rouault');
     expect(result.envelope.document.announcedTitle).toBe('タイムアウト');

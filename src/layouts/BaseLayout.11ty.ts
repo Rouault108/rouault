@@ -19,8 +19,12 @@ import {
 } from '../../shared/app-router/app-router-announcement-contract.js';
 import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.js';
 import { createManifestLoadedRouteClassificationMode } from '../../shared/link/link-annotation.js';
-import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js';
+import { applyBasePathToRenderHref } from '../../shared/url/normalize-rouault-url.js';
 import { validateGeneratedPageHtmlLinkContracts } from '../../build/content/page-html-link-contracts.js';
+import {
+  buildGeneratedDocumentRouteSet,
+  resolveGeneratedDocumentCurrentUrl,
+} from '../../build/content/generated-document-route-set.js';
 import { resolveEffectiveNoteChromeProfile } from '../../shared/note/note-chrome-profile.js';
 import { resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
@@ -37,6 +41,7 @@ import {
 } from './html-output.js';
 import { renderSearchDialogHtml } from './search-dialog-html.js';
 import { renderDefaultLayoutFooterHtml } from './footer-html.js';
+import { renderLayoutHeaderHtml } from './layout-header-html.js';
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import type { NoteNavigationEntry } from '../../build/navigation/index.js';
 import {
@@ -46,7 +51,6 @@ import {
   DEFAULT_SIDEBAR_STATE_SCOPE_ID,
 } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { createCorpusNavigationProjectionPayload } from '../../shared/navigation/corpus-navigation-projection.js';
-import { validateCorpusRouteRootHrefForRender } from '../../shared/link/corpus-link-validation.js';
 import { createStaticRenderIdContext } from '../../shared/static-render-id-context.js';
 
 export interface BaseLayoutData {
@@ -145,85 +149,25 @@ const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar
   ]);
 
 
-const STATIC_GENERATED_DOCUMENT_ROUTES = ['/', '/about/', '/search/', '/corpora/'] as const;
-
-const normalizeGeneratedRoutePathname = (value: unknown): string | null => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-  const trimmed = value.trim();
-  if (trimmed.length === 0) {
-    return null;
-  }
-  let pathname: string;
-  try {
-    pathname = trimmed.startsWith('http://') || trimmed.startsWith('https://')
-      ? new URL(trimmed).pathname
-      : new URL(trimmed, 'https://rouault.invalid').pathname;
-  } catch {
-    return null;
-  }
-  if (pathname.endsWith('/index.html')) {
-    pathname = `${pathname.slice(0, -'/index.html'.length)}/`;
-  } else if (pathname === '/index.html') {
-    pathname = '/';
-  }
-  if (pathname === '/404.html') {
-    return null;
-  }
-  if (!pathname.startsWith('/')) {
-    pathname = `/${pathname}`;
-  }
-  return pathname.endsWith('/') || /\.[^/]+$/u.test(pathname) ? pathname : `${pathname}/`;
-};
-
-const addGeneratedRoute = (routes: Set<string>, value: unknown): void => {
-  const pathname = normalizeGeneratedRoutePathname(value);
-  if (pathname !== null) {
-    routes.add(pathname);
-    routes.add(normalizeRouaultPathname(pathname));
-  }
-};
-
 const buildGeneratedPageRouteSet = (data: BaseLayoutRenderInput): Set<string> => {
-  const routes = new Set<string>(STATIC_GENERATED_DOCUMENT_ROUTES);
-  addGeneratedRoute(routes, data.page?.url);
-  addGeneratedRoute(routes, data.note?.permalink);
-
-  for (const note of data.notes ?? []) {
-    addGeneratedRoute(routes, note.permalink);
-    const genres = Array.isArray((note as { readonly genre?: unknown }).genre)
-      ? ((note as { readonly genre?: unknown[] }).genre ?? [])
-      : [];
-    for (const genre of genres) {
-      if (typeof genre === 'string' && genre.trim().length > 0) {
-        addGeneratedRoute(routes, `/tags/${encodeURIComponent(genre.trim())}/`);
-      }
-    }
-  }
-
-  for (const corpusPage of data.corpusPages ?? []) {
-    addGeneratedRoute(routes, corpusPage.href);
-  }
-
-  for (const tagPage of data.tagPages ?? []) {
-    if (typeof tagPage.tag === 'string' && tagPage.tag.trim().length > 0) {
-      addGeneratedRoute(routes, `/tags/${encodeURIComponent(tagPage.tag.trim())}/`);
-    }
-  }
-
-  return routes;
+  return buildGeneratedDocumentRouteSet({
+    ...(data.page?.url !== undefined ? { pageUrl: data.page.url } : {}),
+    ...(data.note?.permalink !== undefined ? { notePermalink: data.note.permalink } : {}),
+    ...(data.notes !== undefined ? { notes: data.notes } : {}),
+    ...(data.corpusPages !== undefined ? { corpusPages: data.corpusPages } : {}),
+    ...(data.tagPages !== undefined ? { tagPages: data.tagPages } : {}),
+  });
 };
 
 const buildGeneratedPageCurrentUrl = (
   data: BaseLayoutRenderInput,
   siteUrlContext: SiteUrlContextData,
 ): string => {
-  const pagePathname =
-    normalizeGeneratedRoutePathname(data.note?.permalink) ??
-    normalizeGeneratedRoutePathname(data.page?.url) ??
-    '/';
-  return `${siteUrlContext.siteOrigin}${siteUrlContext.basePath}${pagePathname}`;
+  return resolveGeneratedDocumentCurrentUrl({
+    pathname: data.note?.permalink,
+    fallbackPathname: data.page?.url,
+    siteUrlContext,
+  });
 };
 
 const validateBaseLayoutGeneratedHtmlLinks = (
@@ -363,47 +307,25 @@ export class BaseLayout {
       tocPresence === 'present' &&
       tocOwnerId !== undefined &&
       (data.notePage?.toc.shouldHydrate ?? explicitHeaderTocShouldHydrate);
-    const headerAttributes = serializeHtmlAttributes([
-      { name: 'note-layout', value: Boolean(data.note), kind: 'boolean' },
-      {
-        name: 'sidebar-enabled',
-        value: Boolean(data.note && noteChromePolicy.sidebar),
-        kind: 'boolean',
-      },
-      {
-        name: 'sidebar-id',
-        value: data.notePage?.sidebar?.sidebarId ?? DEFAULT_SIDEBAR_ID,
-      },
-      { name: 'toc-presence', value: tocPresence },
-      { name: 'toc-runtime-id', value: tocRuntimeId },
-      { name: 'toc-trigger-reserved', value: tocTriggerReserved ? 'true' : 'false' },
-      { name: 'data-toc-owner-id', value: tocOwnerId },
-      { name: 'corpora-json', value: corpora, kind: 'json' },
-      { name: 'current-corpus-key', value: currentCorpusKey },
-      { name: 'site-origin', value: siteUrlContext.siteOrigin },
-      { name: 'base-path', value: siteUrlContext.basePath },
-      { name: 'data-hydration-capability', value: 'interactive' },
-      { name: 'data-hydration-trigger', value: 'initial' },
-    ]);
-    const corpusFallbackAnchors = corpora.items
-      .flatMap((item) => {
-        const href = validateCorpusRouteRootHrefForRender({
-          href: item.href,
-          siteUrlContext,
-        });
-        if (href === null) {
-          return [];
-        }
-
-        return [
-          `<a${serializeHtmlAttributes([
-            { name: 'href', value: href },
-            { name: 'data-link-kind', value: 'internal-document' },
-            { name: 'data-link-surface', value: 'header' },
-          ])}>${escapeHtmlText(item.label)}</a>`,
-        ];
-      })
-      .join('');
+    const searchHref = applyBasePathToRenderHref({
+      pathname: '/search/',
+      search: '',
+      hash: '',
+      siteUrlContext,
+    });
+    const headerHtml = renderLayoutHeaderHtml({
+      noteLayout: Boolean(data.note),
+      sidebarEnabled: Boolean(data.note && noteChromePolicy.sidebar),
+      sidebarId: data.notePage?.sidebar?.sidebarId ?? DEFAULT_SIDEBAR_ID,
+      tocPresence,
+      tocRuntimeId,
+      tocOwnerId,
+      tocTriggerReserved,
+      corpora,
+      currentCorpusKey,
+      siteUrlContext,
+      searchHref,
+    });
     const sidebarPresence =
       data.notePage?.showSidebar && data.notePage.sidebar ? 'present' : 'absent';
     const shellMarkerAttributes = serializeHtmlAttributes(
@@ -433,7 +355,14 @@ export class BaseLayout {
 <body${bodyAttributes}>
   <a${skipLinkAttributes}>${escapeHtmlText(SKIP_LINK_LABEL)}</a>
   <div id="app" class="app-root"${shellMarkerAttributes}>
-    <layout-header${headerAttributes}>${corpusFallbackAnchors}</layout-header>
+    <span
+      hidden
+      data-layout-header-enhancer-root
+      data-hydration-key="layout-header-enhancer"
+      data-hydration-capability="interactive"
+      data-hydration-trigger="initial"
+    ></span>
+    ${headerHtml}
     <script data-theme-chrome-bootstrap>${escapeInlineExecutableScriptText(themeChromeBootstrapScript)}</script>
     <app-router
       data-sidebar-presence="${sidebarPresence}"

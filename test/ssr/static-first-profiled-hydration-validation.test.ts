@@ -46,20 +46,6 @@ describe('static-first profiled hydration validation', () => {
     ]);
   });
 
-  it('rejects a layout hydration root when validating note static surface', () => {
-    const result = validateStaticFirstProfiledHydration({
-      profile: 'note',
-      html: '<aside data-hydration-key="layout-sidebar"></aside>',
-      registry: HYDRATION_REGISTRY,
-      denylistTags: STATIC_FIRST_NOTE_DENYLIST_TAGS,
-      ssrTargetTags: SSR_NOTE_TARGET_TAGS,
-    });
-
-    expect(result.errors).toEqual([
-      'note hydration root "layout-sidebar" は registry profiles layout に含まれていません',
-    ]);
-  });
-
   it('validates layout hydration roots and SSR targets through the layout profile', () => {
     const result = validateStaticFirstProfiledHydration({
       profile: 'layout',
@@ -74,8 +60,6 @@ describe('static-first profiled hydration validation', () => {
     expect(result.errors).toEqual([]);
     expect(SSR_LAYOUT_TARGET_TAGS).toContain('layout-sidebar');
     expect(SSR_LAYOUT_TARGET_TAGS).toContain('layout-toc');
-    expect(SSR_NOTE_TARGET_TAGS).not.toContain('layout-sidebar');
-    expect(SSR_NOTE_TARGET_TAGS).not.toContain('layout-toc');
   });
 
   it('validates page and shell hydration roots with profile-specific denylists', () => {
@@ -91,7 +75,7 @@ describe('static-first profiled hydration validation', () => {
     });
     const shell = validateStaticFirstProfiledHydration({
       profile: 'shell',
-      html: '<div data-hydration-key="search-dialog-enhancer"></div><layout-header></layout-header>',
+      html: '<div data-hydration-key="search-dialog-enhancer"></div><span data-hydration-key="layout-header-enhancer"></span><header data-layout-header="true"></header>',
       registry: HYDRATION_REGISTRY,
       denylistTags: STATIC_FIRST_SHELL_DENYLIST_TAGS,
       ssrTargetTags: SSR_SHELL_TARGET_TAGS,

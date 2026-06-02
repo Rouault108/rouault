@@ -7,6 +7,13 @@ import {
   NAVIGATION_ENVELOPE_SCHEMA_VERSION,
   type NavigationEnvelope,
 } from '../../shared/navigation/navigation-envelope.js';
+import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
+import { applyBasePathToRenderHref } from '../../shared/url/normalize-rouault-url.js';
+import {
+  DEFAULT_SIDEBAR_ID,
+} from '../../shared/navigation/sidebar-shell-defaults.js';
+import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../shared/navigation/corpus-navigation-projection.js';
+import { renderLayoutHeaderHtml } from '../layouts/layout-header-html.js';
 import type { LoadDocumentResult, NavigationLoadFailureReason } from './router-types.js';
 import {
   NavigationEnvelopeContractError,
@@ -17,16 +24,41 @@ import { buildDocumentTitle } from '../../shared/document-title.js';
 const escapeHtml = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-const createEnvelope = (document: NavigationEnvelope['document']): NavigationEnvelope => ({
-  schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
-  buildId: undefined,
-  generatedAt: undefined,
-  document,
-  shellProjection: null,
-  hydrationPlan: null,
-});
+const createErrorHeaderHtml = (siteUrlContext: SiteUrlContext): string =>
+  renderLayoutHeaderHtml({
+    noteLayout: false,
+    sidebarEnabled: false,
+    sidebarId: DEFAULT_SIDEBAR_ID,
+    tocPresence: 'absent',
+    tocTriggerReserved: false,
+    corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
+    currentCorpusKey: 'all',
+    siteUrlContext,
+    searchHref: applyBasePathToRenderHref({
+      pathname: '/search/',
+      search: '',
+      hash: '',
+      siteUrlContext,
+    }),
+  });
 
 export class ErrorEnvelopeFactory {
+  constructor(private readonly siteUrlContext: SiteUrlContext) {}
+
+  private createEnvelope(document: NavigationEnvelope['document']): NavigationEnvelope {
+    return {
+      schemaVersion: NAVIGATION_ENVELOPE_SCHEMA_VERSION,
+      buildId: undefined,
+      generatedAt: undefined,
+      document,
+      shell: {
+        headerHtml: createErrorHeaderHtml(this.siteUrlContext),
+        sidebarProjection: null,
+      },
+      hydrationPlan: null,
+    };
+  }
+
   createHttpErrorResult(status: number, normalizedUrl: string): LoadDocumentResult {
     switch (status) {
       case 401:
@@ -120,7 +152,7 @@ export class ErrorEnvelopeFactory {
 
   private createNotFoundResult(normalizedUrl: string): LoadDocumentResult {
     return {
-      envelope: createEnvelope({
+      envelope: this.createEnvelope({
         html: buildNotFoundPageMarkup({
           requestedPath: normalizedUrl,
         }),
@@ -141,7 +173,7 @@ export class ErrorEnvelopeFactory {
     error?: Error,
   ): LoadDocumentResult {
     return {
-      envelope: createEnvelope({
+      envelope: this.createEnvelope({
         html: `
           <div class="error-page" role="alert" aria-live="assertive">
             <h1>${escapeHtml(title)}</h1>

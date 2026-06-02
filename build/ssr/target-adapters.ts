@@ -5,7 +5,6 @@ import type { TemplateResult } from 'lit';
 import { html, unsafeStatic } from 'lit/static-html.js';
 
 import '../../src/components/ui/skip-link/skip-link.js';
-import '../../src/components/layout/layout-header.js';
 import '../../src/components/layout/layout-toc.js';
 import '../../src/components/ui/code-preview/code-preview.js';
 import '../../src/components/ui/preview-sandbox/preview-sandbox.js';

@@ -1,12 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import '../../../components/layout/layout-header';
 import '../../../components/layout/layout-sidebar';
 import '../../../components/layout/layout-toc-controller';
 import { renderArticleHeaderHtml } from '../../../layouts/article-header-html.js';
 import { renderDefaultLayoutFooterHtml } from '../../../layouts/footer-html.js';
+import { renderLayoutHeaderHtml } from '../../../layouts/layout-header-html.js';
 import { renderTocHtml } from '../../../layouts/toc-html.js';
+import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../../../shared/navigation/corpus-navigation-projection.js';
 import {
   renderFoundationFrame,
   renderFoundationSection,
@@ -83,14 +84,19 @@ const renderNoteShell = () =>
         html`
           <div class="foundation-stage" style="padding: 0; overflow: clip;">
             <div class="app-root">
-              <layout-header
-                note-layout
-                sidebar-enabled
-                toc-presence="present"
-                toc-runtime-id="story-note-toc-source"
-                data-toc-owner-id="story-note-toc-owner"
-                toc-trigger-reserved="true"
-              ></layout-header>
+              ${unsafeHTML(renderLayoutHeaderHtml({
+                noteLayout: true,
+                sidebarEnabled: true,
+                sidebarId: 'note-primary',
+                tocPresence: 'present',
+                tocRuntimeId: 'story-note-toc-source',
+                tocOwnerId: 'story-note-toc-owner',
+                tocTriggerReserved: true,
+                corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
+                currentCorpusKey: 'all',
+                siteUrlContext: { siteOrigin: 'https://rouault.invalid', basePath: '' },
+                searchHref: '/search/',
+              }))}
               <main id="note-shell-main" tabindex="-1">
                 <section class="note-shell" data-toc-presence="present">
                   <aside class="layout-sidebar-col" aria-label="ナビゲーション">

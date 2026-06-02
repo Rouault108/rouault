@@ -48,12 +48,14 @@ const requireCurrentMetadataValue = (
 };
 
 export class DocumentLoader {
-  private readonly errorEnvelopeFactory = new ErrorEnvelopeFactory();
+  private readonly errorEnvelopeFactory: ErrorEnvelopeFactory;
 
   constructor(
     private readonly routeRegistry: RouteRegistry,
     private readonly siteUrlContext: SiteUrlContext,
-  ) {}
+  ) {
+    this.errorEnvelopeFactory = new ErrorEnvelopeFactory(siteUrlContext);
+  }
 
   async load(normalizedUrl: InternalDocumentNormalizedUrl, signal: AbortSignal): Promise<LoadDocumentResult> {
     let routeContext: DocumentRouteContext;

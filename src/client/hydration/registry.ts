@@ -5,6 +5,7 @@ import { enhanceImageLightboxes } from '../post-hydrate/image-lightbox-enhancer.
 import { enhanceScoreScroll } from '../post-hydrate/score-scroll-enhancer.js';
 import { enhanceSearchDialog } from '../post-hydrate/search-dialog-enhancer.js';
 import { enhanceSearchPage } from '../post-hydrate/search-page-enhancer.js';
+import { enhanceLayoutHeader } from '../post-hydrate/layout-header-enhancer.js';
 import { enhanceNoteStaticSurface } from '../post-hydrate/note-static-surface-enhancer.js';
 import type { HydrationActivationContext, HydrationRegistryEntry } from './types.js';
 
@@ -44,6 +45,10 @@ const activateSearchPage = ({ root, signal }: HydrationActivationContext): void 
   enhanceSearchPage(root, signal);
 };
 
+const activateLayoutHeader = ({ root, signal }: HydrationActivationContext): void => {
+  enhanceLayoutHeader(root, signal);
+};
+
 const activateScoreScroll = ({ element, signal }: HydrationActivationContext): void => {
   enhanceScoreScroll(element, signal);
 };
@@ -78,10 +83,11 @@ export const HYDRATION_REGISTRY = [
     loader: () => import('../../components/ui/skip-link/skip-link.js'),
   },
   {
-    tag: 'layout-header',
-    kind: 'custom-element',
+    tag: 'layout-header-enhancer',
+    kind: 'enhancer',
     profiles: ['shell'],
-    loader: () => import('../../components/layout/layout-header.js'),
+    loader: () => Promise.resolve(undefined),
+    activate: activateLayoutHeader,
   },
   {
     tag: 'app-router',

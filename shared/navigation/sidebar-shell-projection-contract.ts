@@ -28,15 +28,15 @@ export const assertPayloadSidebarProjectionPresent = (
   value: RuntimeSidebarShellSnapshot,
 ): PayloadSidebarShellProjection => {
   if (value.present !== true) {
-    throw new Error('payload sidebar shellProjection must be present:true or null.');
+    throw new Error('payload sidebar shell.sidebarProjection must be present:true or null.');
   }
 
   if (typeof value.navHtml !== 'string' || value.navHtml.trim().length === 0) {
-    throw new Error('present payload sidebar shellProjection.navHtml must be non-empty.');
+    throw new Error('present payload sidebar shell.sidebarProjection.navHtml must be non-empty.');
   }
 
   if (typeof value.topologyRevision !== 'string' || value.topologyRevision.trim().length === 0) {
-    throw new Error('present payload sidebar shellProjection.topologyRevision must be non-empty.');
+    throw new Error('present payload sidebar shell.sidebarProjection.topologyRevision must be non-empty.');
   }
 
   return value;

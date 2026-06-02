@@ -13,8 +13,8 @@
 
 - `NavigationEnvelope` が client navigation の正規 payload であること。
 - route 経路と fetch 経路を同じ payload model で扱うこと。
-- `document`、`shellProjection`、`hydrationPlan` を主要構造として扱うこと。
-- Reading chrome の route 由来 shell projection を durable state として運ぶこと。
+- `document`、`shell`、`hydrationPlan` を主要構造として扱うこと。
+- Reading chrome の route 由来 shell snapshot を durable state として運ぶこと。
 - `schemaVersion`、`buildId`、`generatedAt` の互換境界。
 
 ### This Layer Must Not Own
@@ -34,7 +34,7 @@
 ### Outputs
 
 - Router が commit できる document payload。
-- App shell が反映できる shell projection。
+- App shell が反映できる shell snapshot。
 - Scheduler / registry が参照できる hydration planning 情報。
 
 ### Events
@@ -54,7 +54,7 @@
 ### Durable State
 
 - `document`
-- `shellProjection`
+- `shell`
 - `schemaVersion`
 - `buildId`
 - `generatedAt`
@@ -66,12 +66,12 @@
 ### Derived State
 
 - Hydration planning
-- Shell projection application plan
+- Shell snapshot application plan
 - Reading chrome trigger availability
 
 ### Forbidden Coupling
 
-- `shellProjection.sidebar` の詳細 field を sidebar state contract に押し込んではならない。
+- `shell.sidebarProjection` の詳細 field を sidebar state contract に押し込んではならない。
 - Reference は `NavigationEnvelope` が正規 payload であるという Contract を上書きしてはならない。
 - Reading chrome の trigger projection を component-local runtime state の保存場所として使ってはならない。
 

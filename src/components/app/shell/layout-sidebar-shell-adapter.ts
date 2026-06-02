@@ -18,7 +18,6 @@ import {
   validateRuntimeSidebarProjection,
 } from '../../../../shared/navigation/shell-projection-validator.js';
 import { layoutSidebarController } from '../../layout/layout-sidebar-controller.js';
-import { SAFE_FALLBACK_HEADER_SHELL_PROJECTION } from './layout-header-shell-adapter.js';
 
 const APP_ROUTER_SELECTOR = 'app-router';
 const SIDEBAR_COLUMN_SELECTOR = '[data-app-shell-sidebar-host]';
@@ -206,7 +205,7 @@ export const applyPayloadShellSnapshot = (
   currentSidebar: HTMLElement | null,
 ): void => {
   applyRuntimeSidebarSnapshot(
-    shell?.sidebar ?? createCanonicalAbsentRuntimeSidebarProjection(),
+    shell?.sidebarProjection ?? createCanonicalAbsentRuntimeSidebarProjection(),
     currentRouter,
     currentSidebarColumn,
     currentSidebar,
@@ -244,7 +243,7 @@ export const createLayoutSidebarShellAdapter = (): ShellAdapter => ({
     const previousShell: RuntimeDocumentShellSnapshot | null =
       currentSidebar instanceof HTMLElement
         ? {
-            header: SAFE_FALLBACK_HEADER_SHELL_PROJECTION,
+            headerHtml: '',
             sidebar: previousRuntimeSidebar,
           }
         : null;

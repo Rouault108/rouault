@@ -29,6 +29,7 @@ await emitNavigationArtifacts({
   outputDir: outputDirectory,
   buildId: readMetadataValue('buildId'),
   generatedAt: readMetadataValue('generatedAt'),
+  siteUrlContext,
 });
 
 const routeManifestOptions = {

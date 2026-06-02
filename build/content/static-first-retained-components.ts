@@ -119,9 +119,6 @@ export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedCompo
     ['shell'],
     'app-router uses the light-app-router string adapter; SSR does not evaluate the HTMLElement module',
   ),
-  retainedSsrComponent('layout-header', 'src/components/layout/layout-header.ts', 'retained-shell', [
-    'shell',
-  ], ['shell'], ['shell']),
   {
     tag: 'layout-sidebar',
     kind: 'retained-layout',
@@ -182,7 +179,6 @@ export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedCompo
   retainedDesignSystem('ui-menu-link', 'src/components/ui/dropdown/dropdown.ts'),
   retainedDesignSystem('ui-menu-separator', 'src/components/ui/dropdown/dropdown.ts'),
   retainedDesignSystem('ui-file-tree', 'src/components/ui/file-tree/file-tree.ts'),
-  retainedDesignSystem('ui-header', 'src/components/ui/header/header.ts'),
   retainedDesignSystem('ui-input', 'src/components/ui/input/input.ts'),
   retainedDesignSystem('ui-list', 'src/components/ui/list/list.ts'),
   retainedDesignSystem('ui-list-item', 'src/components/ui/list-item/list-item.ts'),

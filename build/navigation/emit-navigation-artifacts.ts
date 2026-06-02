@@ -6,6 +6,7 @@ import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.
 import { normalizeRouterBuildMetadata } from '../../shared/navigation/build-metadata-contract.js';
 import { assertValidSidebarId, assertValidSidebarStateScopeId } from '../../shared/navigation/sidebar-identity-contract.js';
 import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
+import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 
 import {
   NAVIGATION_ENVELOPE_SCHEMA_VERSION,
@@ -13,16 +14,13 @@ import {
 } from '../../shared/navigation/navigation-envelope.js';
 import type { HydrationPlanScope } from '../../shared/navigation/hydration-plan.js';
 import type {
-  HeaderShellProjection,
   PayloadSidebarShellProjection,
 } from '../../shared/navigation/shell-projection.js';
-import { validateNavigationEnvelopeShellProjection } from '../../shared/navigation/shell-projection-validator.js';
-import type { TocPresence } from '../../shared/note/toc-presence.js';
+import { validateNavigationEnvelopeShell } from '../../shared/navigation/shell-projection-validator.js';
 import {
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
   DEFAULT_SIDEBAR_ID,
 } from '../../shared/navigation/sidebar-shell-defaults.js';
-import { parseCorpusNavigationProjectionPayload } from '../../shared/navigation/corpus-navigation-projection.js';
 import { readParse5HydrationMarkerResult } from './parse5-hydration-markers.js';
 import { validateSidebarNavHtmlInvariant } from './sidebar-nav-html-invariant.js';
 import { validateDocumentSidebarIdentityContract } from './sidebar-identity-dom-contract.js';
@@ -30,6 +28,15 @@ import {
   validateTocOwnerCandidates,
   type TocOwnerCandidate,
 } from './validate-toc-owner-candidates.js';
+import { validateStaticHeaderParse5Tree } from './static-header-parse5-validator.js';
+import { STATIC_HEADER_ROOT_SELECTOR } from '../../shared/navigation/static-header-contract.js';
+import { validateGeneratedPageHtmlLinkContracts } from '../content/page-html-link-contracts.js';
+import { createManifestLoadedRouteClassificationMode } from '../../shared/link/link-annotation.js';
+import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js';
+import {
+  STATIC_GENERATED_DOCUMENT_ROUTES,
+  resolveContentPathnameFromHtmlFile,
+} from '../content/generated-document-route-set.js';
 
 type Parse5Node = DefaultTreeAdapterMap['node'];
 type Parse5ChildNode = DefaultTreeAdapterMap['childNode'];
@@ -37,9 +44,6 @@ type Parse5ParentNode = DefaultTreeAdapterMap['parentNode'];
 type Parse5Document = DefaultTreeAdapterMap['document'];
 type Parse5DocumentFragment = DefaultTreeAdapterMap['documentFragment'];
 type Parse5Element = DefaultTreeAdapterMap['element'];
-
-const FALLBACK_CURRENT_CORPUS_KEY = 'all';
-
 
 const isElementNode = (node: Parse5Node): node is Parse5Element =>
   'tagName' in node && typeof node.tagName === 'string' && Array.isArray(node.attrs);
@@ -132,15 +136,6 @@ const parseStringArrayAttribute = (value: string | null): string[] => {
     : [];
 };
 
-const toTrimmedString = (value: string | null, fallback: string): string => {
-  if (typeof value !== 'string') {
-    return fallback;
-  }
-
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : fallback;
-};
-
 const toOptionalString = (value: string | null): string | null => {
   if (typeof value !== 'string') {
     return null;
@@ -167,9 +162,6 @@ const toNumber = (value: string | null, fallback: number): number => {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : fallback;
 };
-
-const toTocPresence = (value: string | null): TocPresence =>
-  value === 'present' ? 'present' : 'absent';
 
 const readEmbeddedMetaContent = (document: Parse5Document, name: string): string | undefined => {
   const meta = findFirstElement(
@@ -266,34 +258,49 @@ const assertTocOwnerCandidates = (document: Parse5Document, htmlFilePath: string
   throw new Error(`[navigation-artifact] TOC owner candidate validation failed: ${issueText}`);
 };
 
-const extractHeaderProjection = (document: Parse5Document): HeaderShellProjection | null => {
-  const header = findFirstElement(document, (candidate) => candidate.tagName === 'layout-header');
-  if (header === null) {
-    return null;
-  }
-  const corpora = parseCorpusNavigationProjectionPayload(
-    parseJsonAttribute(getAttribute(header, 'corpora-json'), null),
+interface NavigationEnvelopeCreationContext {
+  readonly siteUrlContext: SiteUrlContext;
+  readonly currentUrl: string;
+  readonly isInternalDocumentPathname: (pathname: string) => boolean;
+}
+
+const extractLayoutHeaderHtml = (
+  document: Parse5Document,
+  htmlFilePath: string,
+  context: NavigationEnvelopeCreationContext,
+): string => {
+  const headers = findAllElements(
+    document,
+    (candidate) => candidate.tagName === 'header' && hasAttribute(candidate, 'data-layout-header'),
   );
-  if (corpora === null) {
-    throw new Error(
-      '[navigation-artifact] layout-header corpora-json must be CorpusNavigationProjectionPayload.',
-    );
+  if (headers.length !== 1) {
+    throw new Error(`[navigation-artifact] ${htmlFilePath} requires exactly one ${STATIC_HEADER_ROOT_SELECTOR}.`);
+  }
+  const header = headers[0];
+  if (header === undefined) {
+    throw new Error(`[navigation-artifact] ${htmlFilePath} requires ${STATIC_HEADER_ROOT_SELECTOR}.`);
+  }
+  const forbiddenCustomHeader = findFirstElement(
+    header,
+    (candidate) => candidate.tagName === 'layout-header' || candidate.tagName === 'ui-header',
+  );
+  if (forbiddenCustomHeader !== null) {
+    throw new Error('[navigation-artifact] static header must not contain layout-header/ui-header.');
   }
 
-  return {
-    corpora,
-    currentCorpusKey: toTrimmedString(
-      getAttribute(header, 'current-corpus-key'),
-      FALLBACK_CURRENT_CORPUS_KEY,
-    ),
-    noteLayout: hasAttribute(header, 'note-layout'),
-    sidebarEnabled: hasAttribute(header, 'sidebar-enabled'),
-    sidebarId: assertValidSidebarId(getAttribute(header, 'sidebar-id'), 'layout-header[sidebar-id]'),
-    tocPresence: toTocPresence(getAttribute(header, 'toc-presence')),
-    tocRuntimeId: toOptionalString(getAttribute(header, 'toc-runtime-id')),
-    tocOwnerId: toOptionalString(getAttribute(header, 'data-toc-owner-id')),
-    tocTriggerReserved: getAttribute(header, 'toc-trigger-reserved') === 'true',
-  };
+  validateStaticHeaderParse5Tree(header);
+  const headerHtml = parse5.serialize(createFragmentNode([header]));
+  validateGeneratedPageHtmlLinkContracts({
+    html: headerHtml,
+    sourceLabel: `navigation-header:${htmlFilePath}`,
+    scope: 'generated-page',
+    siteUrlContext: context.siteUrlContext,
+    currentUrl: context.currentUrl,
+    routeClassificationMode: createManifestLoadedRouteClassificationMode({
+      isInternalDocumentPathname: context.isInternalDocumentPathname,
+    }),
+  });
+  return headerHtml;
 };
 
 const extractSidebarProjection = (document: Parse5Document): PayloadSidebarShellProjection | null => {
@@ -424,27 +431,32 @@ const assertUniqueLayoutSidebarIdentityInstances = (document: Parse5Document): v
 };
 
 const assertHeaderSidebarConsistency = (
-  headerProjection: HeaderShellProjection | null,
+  document: Parse5Document,
   sidebarProjection: PayloadSidebarShellProjection | null,
 ): void => {
-  if (headerProjection === null) {
-    if (sidebarProjection !== null) {
-      throw new Error('[navigation-artifact] sidebar projection exists without layout-header.');
-    }
-    return;
+  const header = findFirstElement(
+    document,
+    (candidate) => candidate.tagName === 'header' && hasAttribute(candidate, 'data-layout-header'),
+  );
+  if (header === null) {
+    throw new Error('[navigation-artifact] header[data-layout-header] is required.');
   }
-
-  if (headerProjection.sidebarEnabled) {
+  const sidebarEnabled = getAttribute(header, 'data-sidebar-enabled') === 'true';
+  const sidebarId = assertValidSidebarId(
+    getAttribute(header, 'data-sidebar-id'),
+    'header[data-layout-header][data-sidebar-id]',
+  );
+  if (sidebarEnabled) {
     if (sidebarProjection === null) {
       throw new Error('[navigation-artifact] header.sidebarEnabled=true requires present sidebar.');
     }
-    if (headerProjection.sidebarId !== sidebarProjection.sidebarId) {
+    if (sidebarId !== sidebarProjection.sidebarId) {
       throw new Error('[navigation-artifact] header.sidebarId must match sidebar.sidebarId.');
     }
     return;
   }
 
-  if (headerProjection.sidebarId !== DEFAULT_SIDEBAR_ID) {
+  if (sidebarId !== DEFAULT_SIDEBAR_ID) {
     throw new Error('[navigation-artifact] header.sidebarEnabled=false requires default sidebar id.');
   }
 
@@ -457,6 +469,7 @@ export const createNavigationEnvelopeFromHtml = (
   html: string,
   htmlFilePath: string,
   metadataMode: NavigationEnvelopeHtmlMetadataMode,
+  context: NavigationEnvelopeCreationContext,
 ): NavigationEnvelope => {
   const document = parse5.parse(html);
   assertUniqueLayoutSidebarIdentityInstances(document);
@@ -480,16 +493,13 @@ export const createNavigationEnvelopeFromHtml = (
     (candidate) =>
       candidate.tagName === 'meta' && getAttribute(candidate, 'name') === 'description',
   );
-  const headerProjection = extractHeaderProjection(document);
+  const headerHtml = extractLayoutHeaderHtml(document, htmlFilePath, context);
   const sidebarProjection = extractSidebarProjection(document);
-  assertHeaderSidebarConsistency(headerProjection, sidebarProjection);
-  const shellProjection =
-    headerProjection === null
-      ? null
-      : validateNavigationEnvelopeShellProjection({
-          header: headerProjection,
-          sidebar: sidebarProjection,
-        });
+  assertHeaderSidebarConsistency(document, sidebarProjection);
+  const shell = validateNavigationEnvelopeShell({
+    headerHtml,
+    sidebarProjection,
+  });
   const hydrationPlan = collectHydrationPlan(document);
 
   return {
@@ -503,29 +513,9 @@ export const createNavigationEnvelopeFromHtml = (
       renderedKind: inferRenderedKind(document, htmlFilePath),
       announcedTitle: titleElement ? getTextContent(titleElement).trim() : '',
     },
-    shellProjection,
+    shell,
     hydrationPlan: hydrationPlan.length > 0 ? { scopes: hydrationPlan } : null,
   };
-};
-
-const normalizeRelativePath = (value: string): string => value.split(path.sep).join('/');
-
-const resolveContentPathnameFromHtmlFile = (outputDir: string, htmlFilePath: string): string => {
-  const relativeHtmlPath = normalizeRelativePath(path.relative(outputDir, htmlFilePath));
-
-  if (relativeHtmlPath === 'index.html') {
-    return '/';
-  }
-
-  if (relativeHtmlPath.endsWith('/index.html')) {
-    return `/${relativeHtmlPath.slice(0, -'/index.html'.length)}/`;
-  }
-
-  const extension = path.extname(relativeHtmlPath);
-  const basename =
-    extension.length > 0 ? relativeHtmlPath.slice(0, -extension.length) : relativeHtmlPath;
-
-  return `/${basename}`;
 };
 
 const resolveArtifactPath = (outputDir: string, htmlFilePath: string): string => {
@@ -558,17 +548,36 @@ export const emitNavigationArtifacts = async (options: {
   outputDir: string;
   buildId: string;
   generatedAt: string;
+  siteUrlContext: SiteUrlContext;
 }): Promise<void> => {
   const buildMetadata = normalizeRouterBuildMetadata(options);
   const htmlFiles = await collectHtmlFiles(options.outputDir);
+  const routeSet = new Set<string>([
+    ...STATIC_GENERATED_DOCUMENT_ROUTES,
+    ...htmlFiles
+      .map((htmlFilePath) => resolveContentPathnameFromHtmlFile(options.outputDir, htmlFilePath))
+      .filter((pathname) => pathname !== '/404'),
+  ]);
+  for (const pathname of [...routeSet]) {
+    routeSet.add(normalizeRouaultPathname(pathname));
+    if (pathname !== '/' && pathname.endsWith('/')) {
+      routeSet.add(pathname.slice(0, -1));
+    }
+  }
 
   await Promise.all(
     htmlFiles.map(async (htmlFilePath) => {
       const html = await readFile(htmlFilePath, 'utf8');
+      const pathname = resolveContentPathnameFromHtmlFile(options.outputDir, htmlFilePath);
+      const currentUrl = `${options.siteUrlContext.siteOrigin}${options.siteUrlContext.basePath}${pathname}`;
       const envelope = createNavigationEnvelopeFromHtml(html, htmlFilePath, {
         mode: 'strict-artifact',
         buildId: buildMetadata.buildId,
         generatedAt: buildMetadata.generatedAt,
+      }, {
+        siteUrlContext: options.siteUrlContext,
+        currentUrl,
+        isInternalDocumentPathname: (candidate) => routeSet.has(candidate),
       });
       const artifactPath = resolveArtifactPath(options.outputDir, htmlFilePath);
       await mkdir(path.dirname(artifactPath), { recursive: true });

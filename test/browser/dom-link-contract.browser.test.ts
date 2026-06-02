@@ -40,7 +40,7 @@ describe('runtime DOM link contract', () => {
         root,
         sourceLabel: 'runtime-footer',
         siteUrlContext: { siteOrigin: window.location.origin, basePath: '' },
-        currentUrl: '/',
+        currentAbsoluteUrl: 'https://rouault.invalid/',
         routeManifestState,
       }),
     ).not.to.throw();
@@ -65,7 +65,7 @@ describe('runtime DOM link contract', () => {
         root,
         sourceLabel: 'runtime-prose',
         siteUrlContext: { siteOrigin: window.location.origin, basePath: '' },
-        currentUrl: '/',
+        currentAbsoluteUrl: 'https://rouault.invalid/',
         routeManifestState,
       }),
     ).to.throw('external-web requires data-external="true"');
@@ -90,7 +90,7 @@ describe('runtime DOM link contract', () => {
         root,
         sourceLabel: 'runtime-footer',
         siteUrlContext: { siteOrigin: window.location.origin, basePath: '' },
-        currentUrl: '/',
+        currentAbsoluteUrl: 'https://rouault.invalid/',
         routeManifestState,
       }),
     ).to.throw('data-external mismatch');

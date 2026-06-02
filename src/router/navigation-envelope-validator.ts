@@ -8,7 +8,7 @@ import type { DocumentRenderSnapshot } from '../../shared/navigation/document-re
 import type { HydrationPlan } from '../../shared/navigation/hydration-plan.js';
 import {
   ShellProjectionValidationError,
-  validateNavigationEnvelopeShellProjection,
+  validateNavigationEnvelopeShell,
 } from '../../shared/navigation/shell-projection-validator.js';
 import type { StrictLoadedNavigationEnvelope } from './router-types.js';
 import {
@@ -148,16 +148,16 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
     normalizedHydrationPlan = hydrationPlan;
   }
 
-  if (!hasOwn(value, 'shellProjection')) {
-    throw createInvalidEnvelopeError('navigation envelope shellProjection is required.');
+  if (!hasOwn(value, 'shell')) {
+    throw createInvalidEnvelopeError('navigation envelope shell is required.');
   }
 
-  let shellProjection: NavigationEnvelope['shellProjection'];
+  let shell: NavigationEnvelope['shell'];
   try {
-    shellProjection = validateNavigationEnvelopeShellProjection(value['shellProjection']);
+    shell = validateNavigationEnvelopeShell(value['shell']);
   } catch (error) {
     if (error instanceof ShellProjectionValidationError) {
-      throw createInvalidEnvelopeError(`navigation envelope shellProjection が不正です: ${error.message}`);
+      throw createInvalidEnvelopeError(`navigation envelope shell が不正です: ${error.message}`);
     }
     throw error;
   }
@@ -167,7 +167,7 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
     buildId: readOptionalMetadataString(value['buildId'], 'buildId'),
     generatedAt: readOptionalMetadataString(value['generatedAt'], 'generatedAt'),
     document: value['document'],
-    shellProjection,
+    shell,
     hydrationPlan: normalizedHydrationPlan,
   };
 };

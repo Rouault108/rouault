@@ -3,6 +3,7 @@ import { replaceElementChildrenFromHtml } from './declarative-shadow-dom.js';
 import { LocationAdapter } from './location-adapter.js';
 import type { NavigationEnvelope } from '../../shared/navigation/navigation-envelope.js';
 import { validateCommittedRuntimeDomLinkContracts } from './dom-link-contract.js';
+import { readCurrentShellCommitId } from '../components/app/shell/app-shell-adapter.js';
 import type {
   ContentUpdateAdapter,
   HistoryMode,
@@ -34,6 +35,29 @@ const createNoopMutation = (): PreparedMutation => ({
 
 const normalizeError = (error: unknown): Error =>
   error instanceof Error ? error : new Error(String(error));
+
+const dispatchShellValidated = (detail: {
+  shellCommitId: number;
+  navigationUrl: string;
+}): void => {
+  document.dispatchEvent(
+    new CustomEvent('app-shell:validated', {
+      detail,
+      bubbles: true,
+      composed: true,
+    }),
+  );
+};
+
+const dispatchShellRestored = (navigationUrl: string): void => {
+  document.dispatchEvent(
+    new CustomEvent('app-shell:restored', {
+      detail: { navigationUrl },
+      bubbles: true,
+      composed: true,
+    }),
+  );
+};
 
 export class ContentCommitter {
   private headManager = new HeadManager();
@@ -71,8 +95,15 @@ export class ContentCommitter {
         root: document,
         sourceLabel: `commit:${request.normalizedUrl}`,
         siteUrlContext: this.urlDependencies.siteUrlContext,
-        currentUrl: request.normalizedUrl,
+        currentAbsoluteUrl: new URL(
+          request.normalizedUrl,
+          `${this.urlDependencies.siteUrlContext.siteOrigin}${this.urlDependencies.siteUrlContext.basePath}/`,
+        ).href,
         routeManifestState: this.urlDependencies.routeManifestState,
+      });
+      dispatchShellValidated({
+        shellCommitId: readCurrentShellCommitId(),
+        navigationUrl: request.normalizedUrl,
       });
 
       this.headManager.setTitle(request.envelope.document.title);
@@ -139,7 +170,7 @@ export class ContentCommitter {
     }
 
     const preparedShellUpdate: PreparedShellUpdate = await this.shellAdapter.prepare({
-      shell: envelope.shellProjection ?? null,
+      shell: envelope.shell,
       navigationUrl: normalizedUrl,
     });
 
@@ -189,6 +220,10 @@ export class ContentCommitter {
       await args.preparedContentMutation.rollback();
     } catch (error) {
       captureRollbackError(error);
+    }
+
+    if (rollbackError === null) {
+      dispatchShellRestored(args.previousUrl);
     }
 
     return rollbackError;

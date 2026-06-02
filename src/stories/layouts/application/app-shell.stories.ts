@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import '../../../components/layout/layout-header';
 import '../../../components/ui/skip-link/skip-link';
 import { renderDefaultLayoutFooterHtml } from '../../../layouts/footer-html.js';
+import { renderLayoutHeaderHtml } from '../../../layouts/layout-header-html.js';
+import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../../../shared/navigation/corpus-navigation-projection.js';
 import {
   renderFoundationFrame,
   renderFoundationSection,
@@ -27,7 +28,17 @@ const renderAppShell = () =>
                 target-id="app-shell-main"
                 label="メインコンテンツへ移動"
               ></ui-skip-link>
-              <layout-header></layout-header>
+              ${unsafeHTML(renderLayoutHeaderHtml({
+                noteLayout: false,
+                sidebarEnabled: false,
+                sidebarId: 'note-primary',
+                tocPresence: 'absent',
+                tocTriggerReserved: false,
+                corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
+                currentCorpusKey: 'all',
+                siteUrlContext: { siteOrigin: 'https://rouault.invalid', basePath: '' },
+                searchHref: '/search/',
+              }))}
               <main
                 id="app-shell-main"
                 tabindex="-1"
