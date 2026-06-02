@@ -449,6 +449,29 @@ const createSearchPageEmptyState = (document: Document, state: SearchState): HTM
   return section;
 };
 
+const createSearchPageUnavailableState = (
+  document: Document,
+  descriptionText: string,
+): HTMLElement => {
+  const section = document.createElement('section');
+  section.className = 'empty-hint';
+  section.dataset['emptyState'] = '';
+  section.dataset['searchEmptyState'] = '';
+  section.dataset['emptyVariant'] = 'error';
+  const message = document.createElement('div');
+  message.className = 'empty-hint__message';
+  message.dataset['announce'] = 'off';
+  const heading = document.createElement('h2');
+  heading.className = 'empty-hint__heading';
+  heading.textContent = '検索を利用できません';
+  const description = document.createElement('p');
+  description.className = 'empty-hint__description';
+  description.textContent = descriptionText;
+  message.append(heading, description);
+  section.append(message);
+  return section;
+};
+
 const createSearchPageResultExcerpt = (
   document: Document,
   item: SearchPageRenderableItem,
@@ -510,7 +533,7 @@ const renderSearchPageResults = (
   page: HTMLElement,
   runtimeState: SearchPageRuntimeState,
 ): void => {
-  const root = page.querySelector<HTMLElement>('[data-search-results-section]');
+  const root = page.querySelector<HTMLElement>('[data-search-page-results-section]');
   if (!root) {
     return;
   }
@@ -651,12 +674,14 @@ export class SearchPageController {
       this.currentState = { kind: 'bootstrap-unavailable', message };
       this.runtimeState = createRuntimeState(urlState);
       this.syncFormFromRuntimeState(this.form);
+      this.syncHeroFromRuntimeState();
       this.setDynamicSearchControlsDisabled(true);
       this.showUnavailable(message);
-      this.clearResultsForUnavailable();
+      this.renderResultsUnavailable(message);
     } else {
       this.runtimeState = createRuntimeState(urlState);
       this.syncFormFromRuntimeState(this.form);
+      this.syncHeroFromRuntimeState();
       this.setDynamicSearchControlsDisabled(false);
       this.runSearchImmediately();
     }
@@ -690,15 +715,23 @@ export class SearchPageController {
         kind: 'bootstrap',
         reason,
       });
-      this.currentState = { kind: 'bootstrap-unavailable', message };
-      this.runtimeState = createRuntimeState(state);
+      const canKeepCurrentResults = areSearchStatesCanonicallyEqual(this.toSearchState(), state);
+      if (!canKeepCurrentResults) {
+        this.currentState = { kind: 'bootstrap-unavailable', message };
+        this.runtimeState = createRuntimeState(state);
+      }
       if (this.form) {
         this.syncFormFromRuntimeState(this.form);
         syncFilterDomFromForm(this.page, this.form, this.runtimeState);
       }
+      this.syncHeroFromRuntimeState();
       this.setDynamicSearchControlsDisabled(true);
       this.showUnavailable(message);
-      this.clearResultsForUnavailable();
+      if (!canKeepCurrentResults) {
+        this.renderResultsUnavailable(
+          '検索 runtime が利用できないため、この URL state の結果を復元できません。',
+        );
+      }
       return;
     }
     this.runtimeState = createRuntimeState(state);
@@ -706,6 +739,7 @@ export class SearchPageController {
       this.syncFormFromRuntimeState(this.form);
       syncFilterDomFromForm(this.page, this.form, this.runtimeState);
     }
+    this.syncHeroFromRuntimeState();
     this.runSearchImmediately();
   };
 
@@ -713,26 +747,41 @@ export class SearchPageController {
     this.showStatus('unavailable', message);
   }
 
-  private clearResultsForUnavailable(): void {
-    this.page.querySelector<HTMLElement>('[data-search-results-section]')?.replaceChildren();
+  private renderResultsUnavailable(message: string): void {
+    this.page
+      .querySelector<HTMLElement>('[data-search-page-results-section]')
+      ?.replaceChildren(createSearchPageUnavailableState(this.page.ownerDocument, message));
     this.page
       .querySelector<HTMLElement>('[data-search-page-result-count]')
       ?.replaceChildren('0 件の結果');
   }
 
   private showStatus(variant: SearchPageStatusVariant | null, message = ''): void {
+    const containers = new Map<SearchPageStatusVariant, HTMLElement>();
     for (const candidate of ['loading', 'error', 'unavailable'] as const) {
       const container = this.page.querySelector<HTMLElement>(`[data-search-page-${candidate}]`);
       if (!container) {
         continue;
       }
-      const visible = candidate === variant;
-      container.hidden = !visible;
-      container.dataset['statusVariant'] = candidate;
+      containers.set(candidate, container);
+      container.hidden = true;
+      delete container.dataset['statusVariant'];
       if (candidate !== 'loading') {
-        container.textContent = visible ? message : '';
+        container.textContent = '';
       }
     }
+    if (variant === null) {
+      return;
+    }
+    const container = containers.get(variant);
+    if (!container) {
+      return;
+    }
+    if (variant !== 'loading') {
+      container.textContent = message;
+    }
+    container.hidden = false;
+    container.dataset['statusVariant'] = variant;
   }
 
   private cancelPendingSearch(): void {
@@ -754,7 +803,29 @@ export class SearchPageController {
       '',
       buildSearchPageHistoryHref(this.toSearchState(), this.siteUrlContext),
     );
-    this.page.querySelector('h1')?.replaceChildren('検索');
+    this.syncHeroFromRuntimeState();
+  }
+
+  private syncHeroFromRuntimeState(): void {
+    const state = this.toSearchState();
+    const isTagDefaultView =
+      state.q.length === 0 &&
+      state.tags.length === 1 &&
+      state.tagMode === 'or' &&
+      state.sort === 'relevance';
+    this.page
+      .querySelector<HTMLElement>('.hero .eyebrow')
+      ?.replaceChildren(isTagDefaultView ? 'Tag / Explore' : 'Search / Filter');
+    this.page
+      .querySelector<HTMLElement>('.hero h1')
+      ?.replaceChildren(isTagDefaultView ? `#${state.tags[0] ?? ''}` : '検索');
+    this.page
+      .querySelector<HTMLElement>('.hero .description')
+      ?.replaceChildren(
+        isTagDefaultView
+          ? 'このタグに属するノートを起点に、検索語や追加タグで探索を広げられます。'
+          : 'タグとキーワードを組み合わせ、複数タグは OR / AND を切り替えて探索します。',
+      );
   }
 
   private toSearchState(): SearchState {

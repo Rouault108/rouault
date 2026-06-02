@@ -130,31 +130,50 @@ describe('static explore response contract', () => {
     });
   });
 
-  it('count map one-side missing uses whole-map legacy fallback and adoption rejects it', () => {
-    const payload = Object.fromEntries(
-      Object.entries(validPayload()).filter(([key]) => key !== 'allTagCounts'),
-    );
-    const result = parse(payload);
+  for (const missingKey of ['tagCounts', 'allTagCounts'] as const) {
+    it(`${missingKey} one-side missing uses whole-map legacy fallback and adoption rejects it`, () => {
+      const payload = Object.fromEntries(
+        Object.entries(validPayload()).filter(([key]) => key !== missingKey),
+      );
+      const result = parse(payload);
 
-    const response = expectParsedResponse(result);
-    expect(response.tagCounts).to.deep.equal({ alpha: 1 });
-    expect(response.allTagCounts).to.deep.equal({ alpha: 1 });
-    if (result.ok) {
-      expect(result.metadata.usedLegacyCountMapFallback).to.equal(true);
-    }
-    expect(adoptInitialStaticExploreSearchResponse(result)).to.deep.equal({
-      ok: false,
-      reason: 'legacy-count-map-fallback',
+      const response = expectParsedResponse(result);
+      expect(response.tagCounts).to.deep.equal({ alpha: 1 });
+      expect(response.allTagCounts).to.deep.equal({ alpha: 1 });
+      if (result.ok) {
+        expect(result.metadata.usedLegacyCountMapFallback).to.equal(true);
+      }
+      expect(adoptInitialStaticExploreSearchResponse(result)).to.deep.equal({
+        ok: false,
+        reason: 'legacy-count-map-fallback',
+      });
     });
-  });
+  }
 
-  it('one invalid count map is rejected instead of falling back', () => {
-    expect(
-      parse({
-        ...validPayload(),
-        tagCounts: { alpha: -1 },
-      }),
-    ).to.deep.equal({ ok: false, reason: 'invalid-static-response-count-map' });
+  for (const invalidKey of ['tagCounts', 'allTagCounts'] as const) {
+    it(`${invalidKey} invalid count map is rejected instead of falling back`, () => {
+      expect(
+        parse({
+          ...validPayload(),
+          [invalidKey]: { alpha: -1 },
+        }),
+      ).to.deep.equal({ ok: false, reason: 'invalid-static-response-count-map' });
+    });
+  }
+
+  it('source-level contract keeps static parser call sites on the metadata-only signature', () => {
+    for (const path of [
+      'shared/search/inline-static-explore-response-validator.ts',
+      'src/client/post-hydrate/search-page-controller.ts',
+      'test/node/search-json-artifact-parser.test.ts',
+    ]) {
+      const source = readFileSync(resolve(process.cwd(), path), 'utf8');
+      const calls = source.match(/parseStaticExploreSearchResponseJson\(\{[\s\S]*?\n\s*\}\)/gu) ?? [];
+      expect(calls.length, path).to.be.greaterThan(0);
+      for (const call of calls) {
+        expect(call, path).not.toContain('siteUrlContext:');
+      }
+    }
   });
 
   it('invalid total, rankingProfileId, and diagnostics are response-level parse failures', () => {
@@ -317,6 +336,7 @@ describe('static explore response contract', () => {
 
     expect(staticResultType).toContain('readonly metadata: StaticExploreParseMetadata;');
     expect(staticResultType).not.toMatch(/readonly response: StaticExploreSearchResponse;[\s\S]*readonly droppedItemCount/u);
+    expect(staticResultType).not.toContain('usedLegacyRankingProfileFallback');
     expect(parserSource).toContain("readonly droppedItemCount: number;");
     expect(parserSource).toContain("code: 'allowlist-miss'");
   });

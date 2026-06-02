@@ -155,12 +155,19 @@
 .filter-details { border: var(--border-width) solid var(--border-muted); border-radius: var(--radius-lg); }
 .filter-details > summary,
 .filter-details__summary {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   cursor: pointer;
   list-style: none;
+}
+.filter-details__summary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 .filter-details > summary::marker,
 .filter-details > summary::-webkit-details-marker { display: none; content: ''; }

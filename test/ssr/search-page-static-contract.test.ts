@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { buildStaticExploreResponse } from '../../build/search/build-static-explore-response.js';
@@ -6,6 +9,23 @@ import { createSiteUrlContext, DEFAULT_SITE_URL_CONTEXT } from '../../shared/sit
 import { renderSearchPageHtml } from '../../src/layouts/search-page-html.js';
 
 describe('renderSearchPageHtml static contract', () => {
+  it('production templates require and pass siteUrlContext without renderer fallback', () => {
+    const searchTemplate = readFileSync(resolve(process.cwd(), 'src/search.11ty.ts'), 'utf8');
+    const tagsTemplate = readFileSync(resolve(process.cwd(), 'src/tags.11ty.ts'), 'utf8');
+    const renderer = readFileSync(resolve(process.cwd(), 'src/layouts/search-page-html.ts'), 'utf8');
+    const rendererFunctions = renderer.slice(
+      renderer.indexOf('const renderResults ='),
+      renderer.indexOf('export const renderSearchPageHtml'),
+    ) + renderer.slice(renderer.indexOf('export const renderSearchPageHtml'));
+
+    expect(searchTemplate).toContain('siteUrlContext: SiteUrlContext | null;');
+    expect(tagsTemplate).toContain('siteUrlContext: SiteUrlContext | null;');
+    expect(searchTemplate).toContain('siteUrlContext: data.siteUrlContext,');
+    expect(tagsTemplate).toContain('siteUrlContext: data.siteUrlContext,');
+    expect(rendererFunctions).not.toContain('rouault.invalid');
+    expect(rendererFunctions).not.toContain("basePath: ''");
+  });
+
   it('FormData と静的 recipe に必要な control 名と lower-level UI surface を出力すること', () => {
     const initialState: SearchState = {
       q: 'router',
@@ -57,6 +77,8 @@ describe('renderSearchPageHtml static contract', () => {
     expect(rendered).toContain('data-search-page-error');
     expect(rendered).toContain('data-search-page-unavailable');
     expect(rendered).toContain('data-search-page-result-count');
+    expect(rendered).toContain('data-search-page-results-section');
+    expect(rendered).not.toContain('data-search-results-section');
     expect(rendered).toContain('role="status"');
     expect(rendered).toContain('aria-live="polite"');
   });

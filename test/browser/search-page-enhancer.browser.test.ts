@@ -47,7 +47,11 @@ const renderSearchPageFixture = (): HTMLElement => {
   const root = document.createElement('div');
   root.innerHTML = `
     <section data-search-page-root>
-      <h1>#architecture</h1>
+      <div class="hero">
+        <p class="eyebrow">Search / Filter</p>
+        <h1>検索</h1>
+        <p class="description">タグとキーワードを組み合わせ、複数タグは OR / AND を切り替えて探索します。</p>
+      </div>
       <form data-search-page-form>
         <input name="q" value="" data-search-query-input>
         <button type="button" hidden data-search-query-clear>clear</button>
@@ -82,7 +86,7 @@ const renderSearchPageFixture = (): HTMLElement => {
       <div hidden data-search-page-loading></div>
       <div hidden data-search-page-error></div>
       <div hidden data-search-page-unavailable></div>
-      <div data-search-results-section><p data-search-result-fixture>SSR result</p></div>
+      <div data-search-page-results-section><p data-search-result-fixture>SSR result</p></div>
     </section>
   `;
   const page = root.querySelector<HTMLElement>('[data-search-page-root]');
@@ -455,6 +459,9 @@ describe('search-page-enhancer', () => {
     });
     expect(invalidController?.state?.kind).to.equal('bootstrap-unavailable');
     expect(invalidRoot.querySelector('[data-search-result-fixture]')).to.equal(null);
+    expect(invalidRoot.querySelector('.empty-hint__heading')?.textContent).to.equal(
+      '検索を利用できません',
+    );
   });
 
   it('bootstrap unavailable 中の popstate は form を復元し、旧 SSR results を破棄すること', () => {
@@ -482,6 +489,30 @@ describe('search-page-enhancer', () => {
       root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="music"]')?.checked,
     ).to.equal(true);
     expect(root.querySelector('[data-search-result-fixture]')).to.equal(null);
+    expect(root.querySelector('.empty-hint__heading')?.textContent).to.equal(
+      '検索を利用できません',
+    );
+    expect(root.querySelector('.empty-hint__description')?.textContent).to.equal(
+      '検索 runtime が利用できないため、この URL state の結果を復元できません。',
+    );
+  });
+
+  it('bootstrap unavailable 中の同一 canonical state popstate は SSR results を維持すること', () => {
+    const root = renderSearchPageFixture();
+    const controller = enhanceSearchPage(root, undefined, {
+      siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
+      bootstrapProvider: () => ({
+        status: 'unavailable',
+        reason: 'search-runtime-unavailable',
+      }),
+      searchRuntimeProvider: () => null,
+    });
+
+    history.pushState(history.state, '', '/search/');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+
+    expect(controller?.state?.kind).to.equal('ready');
+    expect(root.querySelector('[data-search-result-fixture]')).not.to.equal(null);
   });
 
   it('bootstrap unavailable 中は生成した selected-tag remove も個別 disabled にすること', () => {
@@ -567,6 +598,31 @@ describe('search-page-enhancer', () => {
     expect(requests).to.deep.equal([
       { mode: 'explore', q: 'router', tags: ['music'], tagMode: 'or', sort: 'relevance' },
     ]);
+  });
+
+  it('単一タグ state と通常 search state の pushState / popstate で hero を同期すること', () => {
+    const root = renderSearchPageFixture();
+    enhanceWithRuntime(root);
+    const music = expectElement(
+      root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="music"]'),
+      'music',
+    );
+
+    music.checked = true;
+    music.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(root.querySelector('.eyebrow')?.textContent).to.equal('Tag / Explore');
+    expect(root.querySelector('h1')?.textContent).to.equal('#music');
+    expect(root.querySelector('.description')?.textContent).to.equal(
+      'このタグに属するノートを起点に、検索語や追加タグで探索を広げられます。',
+    );
+
+    history.pushState(history.state, '', '/search/?q=router');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    expect(root.querySelector('.eyebrow')?.textContent).to.equal('Search / Filter');
+    expect(root.querySelector('h1')?.textContent).to.equal('検索');
+    expect(root.querySelector('.description')?.textContent).to.equal(
+      'タグとキーワードを組み合わせ、複数タグは OR / AND を切り替えて探索します。',
+    );
   });
 
   it('client-side results は textContent と mark element で描画し card link 契約を維持すること', async () => {
@@ -707,7 +763,7 @@ describe('search-page-enhancer', () => {
       searchRuntimeProvider: () => null,
     });
     const initialUrl = location.href;
-    const initialResults = root.querySelector('[data-search-results-section]')?.innerHTML;
+    const initialResults = root.querySelector('[data-search-page-results-section]')?.innerHTML;
     const filter = expectElement(
       root.querySelector<HTMLInputElement>('[data-search-filter-input]'),
       'filter',
@@ -715,7 +771,7 @@ describe('search-page-enhancer', () => {
     filter.value = 'music';
     filter.dispatchEvent(new Event('input', { bubbles: true }));
     expect(location.href).to.equal(initialUrl);
-    expect(root.querySelector('[data-search-results-section]')?.innerHTML).to.equal(initialResults);
+    expect(root.querySelector('[data-search-page-results-section]')?.innerHTML).to.equal(initialResults);
     expect(
       root.querySelector<HTMLElement>('[data-filter-option][data-filter-tag="architecture"]')
         ?.hidden,
@@ -730,7 +786,7 @@ describe('search-page-enhancer', () => {
     ).to.equal(true);
     root.querySelector<HTMLButtonElement>('[data-search-filter-clear]')?.click();
     expect(location.href).to.equal(initialUrl);
-    expect(root.querySelector('[data-search-results-section]')?.innerHTML).to.equal(initialResults);
+    expect(root.querySelector('[data-search-page-results-section]')?.innerHTML).to.equal(initialResults);
     expect(
       root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="architecture"]')
         ?.disabled,

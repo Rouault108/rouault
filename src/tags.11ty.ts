@@ -12,7 +12,7 @@ interface TagPagesPaginationData extends TagPageTemplateData {
 
 interface TagPageTemplateData {
   tagPage?: TagPageEntry;
-  siteUrlContext?: SiteUrlContext | null;
+  siteUrlContext: SiteUrlContext | null;
 }
 
 function buildInitialSearchResponse(tagPage: TagPageEntry) {

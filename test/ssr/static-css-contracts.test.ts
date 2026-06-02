@@ -456,7 +456,12 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(css, '.tag-mode-select:disabled', ['cursor: not-allowed']);
     expectRuleToDeclare(css, '.sort-select__chevron', ['pointer-events: none']);
     expectRuleToDeclare(css, '.tag-mode-select__chevron', ['pointer-events: none']);
-    expectRuleToDeclare(css, '.filter-details__summary', ['list-style: none']);
+    expectRuleToDeclare(css, '.filter-details__summary', ['position: relative', 'list-style: none']);
+    expectRuleToDeclare(css, '.filter-details__summary::after', [
+      "content: ''",
+      'position: absolute',
+      'pointer-events: none',
+    ]);
     expect(css).to.contain('.filter-details > summary::marker');
     expect(css).to.contain('.filter-details > summary::-webkit-details-marker');
     expectRuleToDeclare(css, '.filter-details__chevron', ['pointer-events: none', 'transition:']);

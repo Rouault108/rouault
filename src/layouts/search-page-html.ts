@@ -321,7 +321,7 @@ export const renderSearchPageHtml = (options: {
         </div>
         <div class="search-page__error" role="status" aria-live="polite" hidden data-search-page-error></div>
         <div class="search-page__unavailable" role="status" aria-live="polite" hidden data-search-page-unavailable></div>
-        <div class="results-section" data-search-results-section>${renderResults(initialResponse, initialState, siteUrlContext)}</div>
+        <div class="results-section" data-search-page-results-section>${renderResults(initialResponse, initialState, siteUrlContext)}</div>
       </div>
     </section>
   `.trim();

@@ -6,7 +6,7 @@ import type { SiteUrlContext } from '../shared/site/site-url-context.js';
 import { renderSearchPageHtml } from './layouts/search-page-html.js';
 
 interface SearchPageTemplateData {
-  siteUrlContext?: SiteUrlContext | null;
+  siteUrlContext: SiteUrlContext | null;
 }
 
 export class SearchPageTemplate {
