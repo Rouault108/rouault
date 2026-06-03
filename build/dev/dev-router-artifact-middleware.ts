@@ -5,7 +5,7 @@ import type { Connect } from 'vite';
 
 import { createNavigationEnvelopeFromHtml } from '../navigation/emit-navigation-artifacts.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
-import { resolveContentPathnameFromHtmlFile } from '../content/generated-document-route-set.js';
+import { resolveGeneratedDocumentCurrentUrlFromHtmlFile } from '../content/generated-document-route-set.js';
 
 const ROUTER_ARTIFACT_ROOT_PATHNAME = '/__router';
 const ROUTER_ARTIFACT_FILE_NAME = 'index.router.json';
@@ -124,7 +124,11 @@ export function createDevelopmentRouterArtifactMiddleware(options: {
         generatedAt,
       }, {
         siteUrlContext: options.siteUrlContext,
-        currentUrl: `${options.siteUrlContext.siteOrigin}${options.siteUrlContext.basePath}${resolveContentPathnameFromHtmlFile(outputDirectory, htmlFilePath)}`,
+        currentUrl: resolveGeneratedDocumentCurrentUrlFromHtmlFile({
+          outputDir: outputDirectory,
+          htmlFilePath,
+          siteUrlContext: options.siteUrlContext,
+        }),
         isInternalDocumentPathname: options.isInternalDocumentPathname,
       });
       const body = `${JSON.stringify(envelope, null, 2)}\n`;

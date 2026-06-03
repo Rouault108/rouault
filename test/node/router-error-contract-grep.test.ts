@@ -38,4 +38,13 @@ describe('router error contract grep boundary', () => {
     expect(source).not.toMatch(/type\s+StrictLoadedNavigationEnvelope\s*=/u);
     expect(source).not.toMatch(/interface\s+StrictLoadedNavigationEnvelope/u);
   });
+
+  it('NavigationEnvelope v2 移行後の旧 shell alias を router-types に残さないこと', () => {
+    const source = readFileSync('src/router/router-types.ts', 'utf8');
+
+    expect(source).not.toMatch(/type\s+DocumentShellSnapshot\s*=/u);
+    expect(source).not.toMatch(/type\s+SidebarShellSnapshot\s*=/u);
+    expect(source).not.toContain('@deprecated Payload shell snapshot');
+    expect(source).not.toContain('@deprecated Runtime sidebar snapshot');
+  });
 });

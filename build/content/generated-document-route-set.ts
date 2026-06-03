@@ -117,3 +117,12 @@ export const resolveContentPathnameFromHtmlFile = (
 
   return `/${basename}`;
 };
+
+export const resolveGeneratedDocumentCurrentUrlFromHtmlFile = (options: {
+  readonly outputDir: string;
+  readonly htmlFilePath: string;
+  readonly siteUrlContext: SiteUrlContext;
+}): string => {
+  const pathname = resolveContentPathnameFromHtmlFile(options.outputDir, options.htmlFilePath);
+  return `${options.siteUrlContext.siteOrigin}${options.siteUrlContext.basePath}${pathname}`;
+};

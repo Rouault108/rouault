@@ -37,6 +37,7 @@ import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js
 import {
   STATIC_GENERATED_DOCUMENT_ROUTES,
   resolveContentPathnameFromHtmlFile,
+  resolveGeneratedDocumentCurrentUrlFromHtmlFile,
 } from '../content/generated-document-route-set.js';
 
 type Parse5Node = DefaultTreeAdapterMap['node'];
@@ -276,6 +277,21 @@ const assertTocOwnerCandidates = (document: Parse5Document, htmlFilePath: string
   throw new Error(`[navigation-artifact] TOC owner candidate validation failed: ${issueText}`);
 };
 
+const assertNoLegacyHeaderCustomElements = (
+  document: Parse5Document,
+  htmlFilePath: string,
+): void => {
+  const legacyHeader = findFirstElement(
+    document,
+    (candidate) => candidate.tagName === 'layout-header' || candidate.tagName === 'ui-header',
+  );
+  if (legacyHeader !== null) {
+    throw new Error(
+      `[navigation-artifact] ${htmlFilePath} must not contain layout-header/ui-header.`,
+    );
+  }
+};
+
 interface NavigationEnvelopeCreationContext {
   readonly siteUrlContext: SiteUrlContext;
   readonly currentUrl: string;
@@ -302,16 +318,6 @@ const extractLayoutHeaderHtml = (
       `[navigation-artifact] ${htmlFilePath} requires ${STATIC_HEADER_ROOT_SELECTOR}.`,
     );
   }
-  const forbiddenCustomHeader = findFirstElement(
-    header,
-    (candidate) => candidate.tagName === 'layout-header' || candidate.tagName === 'ui-header',
-  );
-  if (forbiddenCustomHeader !== null) {
-    throw new Error(
-      '[navigation-artifact] static header must not contain layout-header/ui-header.',
-    );
-  }
-
   validateStaticHeaderParse5Tree(header);
   const headerHtml = parse5.serialize(createFragmentNode([header]));
   validateGeneratedPageHtmlLinkContracts({
@@ -512,6 +518,7 @@ export const createNavigationEnvelopeFromHtml = (
 ): NavigationEnvelope => {
   const document = parse5.parse(html);
   assertEmbeddedSiteUrlContextMatches(document, context);
+  assertNoLegacyHeaderCustomElements(document, htmlFilePath);
   assertUniqueLayoutSidebarIdentityInstances(document);
   assertTocOwnerCandidates(document, htmlFilePath);
   const buildMetadata = resolveNavigationEnvelopeBuildMetadata(document, metadataMode);
@@ -619,8 +626,11 @@ export const emitNavigationArtifacts = async (options: {
   await Promise.all(
     htmlFiles.map(async (htmlFilePath) => {
       const html = await readFile(htmlFilePath, 'utf8');
-      const pathname = resolveContentPathnameFromHtmlFile(options.outputDir, htmlFilePath);
-      const currentUrl = `${options.siteUrlContext.siteOrigin}${options.siteUrlContext.basePath}${pathname}`;
+      const currentUrl = resolveGeneratedDocumentCurrentUrlFromHtmlFile({
+        outputDir: options.outputDir,
+        htmlFilePath,
+        siteUrlContext: options.siteUrlContext,
+      });
       const envelope = createNavigationEnvelopeFromHtml(
         html,
         htmlFilePath,

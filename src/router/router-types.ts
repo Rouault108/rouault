@@ -179,11 +179,6 @@ export interface RuntimeDocumentShellSnapshot {
   sidebar: RuntimeSidebarShellSnapshot | null;
 }
 
-/** @deprecated Payload shell snapshot. Use PayloadDocumentShellSnapshot. */
-export type DocumentShellSnapshot = PayloadDocumentShellSnapshot;
-/** @deprecated Runtime sidebar snapshot. Use RuntimeSidebarShellSnapshot. */
-export type SidebarShellSnapshot = RuntimeSidebarShellSnapshot;
-
 export type { PresentSidebarShellProjection, AbsentRuntimeSidebarShellProjection };
 
 export interface ShellUpdatePayload {

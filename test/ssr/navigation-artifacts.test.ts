@@ -6,6 +6,7 @@ import {
   createNavigationEnvelopeFromHtml,
   emitNavigationArtifacts,
 } from '../../build/navigation/emit-navigation-artifacts.js';
+import { resolveGeneratedDocumentCurrentUrlFromHtmlFile } from '../../build/content/generated-document-route-set.js';
 import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 
@@ -102,6 +103,23 @@ describe('navigation artifacts static header contract', () => {
     ).toThrow(/data-hydration-key/u);
   });
 
+  it('static header 外に残った layout-header / ui-header custom element も拒否すること', () => {
+    for (const legacyElement of ['layout-header', 'ui-header']) {
+      expect(() =>
+        createNavigationEnvelopeFromHtml(
+          html().replace('</body>', `<${legacyElement}></${legacyElement}></body>`),
+          '/dist/notes/example/index.html',
+          {
+            mode: 'strict-artifact',
+            buildId: 'build-test',
+            generatedAt: '2026-01-01T00:00:00.000Z',
+          },
+          context,
+        ),
+      ).toThrow(/must not contain layout-header\/ui-header/u);
+    }
+  });
+
   it('HTML meta と明示 SiteUrlContext の不一致を拒否すること', () => {
     expect(() =>
       createNavigationEnvelopeFromHtml(
@@ -169,6 +187,13 @@ describe('navigation artifacts static header contract', () => {
         readFileSync(path.join(dir, '__router', 'notes', 'example', 'index.router.json'), 'utf8'),
       ) as { readonly shell: { readonly headerHtml: string } };
       expect(artifact.shell.headerHtml).toContain('/base/search/');
+      expect(
+        resolveGeneratedDocumentCurrentUrlFromHtmlFile({
+          outputDir: dir,
+          htmlFilePath: path.join(noteDir, 'index.html'),
+          siteUrlContext,
+        }),
+      ).toBe('https://rouault.invalid/base/notes/example/');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
