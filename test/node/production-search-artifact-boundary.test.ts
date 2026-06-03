@@ -11,11 +11,14 @@ describe('production search artifact boundary', () => {
     const packageJson = JSON.parse(readRepoFile('package.json')) as {
       scripts: Record<string, string>;
     };
-    const buildScript = packageJson.scripts['build'] ?? '';
-    const navigationIndex = buildScript.indexOf('tsx scripts/emit-navigation-artifacts.ts');
-    const searchIndex = buildScript.indexOf('tsx scripts/emit-search-artifacts.ts');
-    const pagefindIndex = buildScript.indexOf('tsx scripts/build-pagefind.ts');
+    const buildEntrypoint = readRepoFile('scripts/run-build.ts');
+    const navigationIndex = buildEntrypoint.indexOf(
+      "['tsx', ['scripts/emit-navigation-artifacts.ts']]",
+    );
+    const searchIndex = buildEntrypoint.indexOf("['tsx', ['scripts/emit-search-artifacts.ts']]");
+    const pagefindIndex = buildEntrypoint.indexOf("['tsx', ['scripts/build-pagefind.ts']]");
 
+    expect(packageJson.scripts['build']).to.equal('tsx scripts/run-build.ts');
     expect(searchIndex).to.be.greaterThan(-1);
     expect(navigationIndex).to.be.lessThan(searchIndex);
     expect(searchIndex).to.be.lessThan(pagefindIndex);

@@ -6,6 +6,8 @@ import { describe, expect, it } from 'vitest';
 const projectRoot = process.cwd();
 const workflowPath = path.resolve(projectRoot, '.github/workflows/ci-cd.yml');
 const playwrightConfigPath = path.resolve(projectRoot, 'playwright.config.ts');
+const packageJsonPath = path.resolve(projectRoot, 'package.json');
+const buildEntrypointPath = path.resolve(projectRoot, 'scripts/run-build.ts');
 const productionBuildEntrypointPath = path.resolve(projectRoot, 'scripts/run-production-build.ts');
 const productionCssArtifactAssertionPath = path.resolve(
   projectRoot,
@@ -117,6 +119,26 @@ describe('production build entrypoint contract', () => {
       "env['ROUAULT_GENERATED_AT'] = buildMetadata.generatedAt;",
     );
     expect(productionBuildEntrypoint).toMatch(/spawnSync\(command, \['build'\], \{\s*env,/su);
+  });
+
+  it('通常 build entrypoint は build metadata を一度だけ解決して subprocess env に注入すること', () => {
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+      readonly scripts?: Record<string, string>;
+    };
+    const buildEntrypoint = readFileSync(buildEntrypointPath, 'utf8');
+
+    expect(packageJson.scripts?.['build']).toBe('tsx scripts/run-build.ts');
+    expect(buildEntrypoint).toContain(
+      "import { resolveDevelopmentBuildMetadata } from '../build/metadata/build-metadata.js';",
+    );
+    expect(buildEntrypoint).toContain('const buildMetadata = (() => {');
+    expect(buildEntrypoint).toContain('ROUAULT_BUILD_ID: buildMetadata.buildId,');
+    expect(buildEntrypoint).toContain('ROUAULT_BUILD_LABEL: buildMetadata.buildLabel,');
+    expect(buildEntrypoint).toContain('ROUAULT_GENERATED_AT: buildMetadata.generatedAt,');
+    expect(buildEntrypoint).toContain("['tsx', ['scripts/emit-navigation-artifacts.ts']],");
+    expect(buildEntrypoint).toMatch(
+      /spawnSync\(commandName\(command\), \[\.\.\.args\], \{\s*env,/su,
+    );
   });
 
   it('production CSS artifact assertion は reachable CSS 全体と styling hook を検査すること', () => {
