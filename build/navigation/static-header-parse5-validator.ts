@@ -5,6 +5,7 @@ import {
   STATIC_HEADER_ALLOWED_ELEMENTS,
   STATIC_HEADER_FORBIDDEN_ELEMENTS,
   isStaticHeaderAllowedAttribute,
+  validateStaticHeaderRootAttributes,
 } from '../../shared/navigation/static-header-contract.js';
 
 type Parse5Node = DefaultTreeAdapterMap['node'];
@@ -30,8 +31,17 @@ const attr = (element: Parse5Element, name: string): string | null =>
 
 const validateElement = (element: Parse5Element): void => {
   const tagName = element.tagName;
-  if (STATIC_HEADER_FORBIDDEN_ELEMENTS.has(tagName) || !STATIC_HEADER_ALLOWED_ELEMENTS.has(tagName)) {
+  if (
+    STATIC_HEADER_FORBIDDEN_ELEMENTS.has(tagName) ||
+    !STATIC_HEADER_ALLOWED_ELEMENTS.has(tagName)
+  ) {
     fail(`element <${tagName}> is not allowed.`);
+  }
+  if (tagName === 'header' && attr(element, 'data-layout-header') !== null) {
+    validateStaticHeaderRootAttributes({
+      sourceLabel: 'static-header:parse5',
+      readAttribute: (name) => attr(element, name),
+    });
   }
 
   for (const attribute of element.attrs) {

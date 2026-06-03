@@ -5,11 +5,12 @@ import {
 } from '../../src/components/app/shell/static-header-shell-mutation.js';
 import {
   STATIC_HEADER_CONTRACT_ACCEPTED_HTML,
+  STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML,
   STATIC_HEADER_CONTRACT_REJECTED_CASES,
 } from '../fixtures/static-header-contract-cases.js';
 
 const headerHtml = (label = 'current'): string =>
-  `<header class="layout-header" data-layout-header="true"><a href="/search/" data-link-kind="internal-document" data-link-surface="header">${label}</a></header>`;
+  STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML.replace('>search</a>', `>${label}</a>`);
 
 describe('static-header-shell-mutation', () => {
   afterEach(() => {
@@ -17,13 +18,22 @@ describe('static-header-shell-mutation', () => {
   });
 
   it('単一 static header root だけを受け付けること', () => {
-    expect(() => parseAndValidateStaticHeaderHtml(`${headerHtml()}<div></div>`, document)).to.throw();
+    expect(() =>
+      parseAndValidateStaticHeaderHtml(`${headerHtml()}<div></div>`, document),
+    ).to.throw();
     expect(() => parseAndValidateStaticHeaderHtml(`text${headerHtml()}`, document)).to.throw();
-    expect(() => parseAndValidateStaticHeaderHtml('<layout-header></layout-header>', document)).to.throw();
+    expect(() =>
+      parseAndValidateStaticHeaderHtml('<layout-header></layout-header>', document),
+    ).to.throw();
   });
 
   it('parse5 validator と共有する fixture を同じ判定で扱うこと', () => {
-    expect(() => parseAndValidateStaticHeaderHtml(STATIC_HEADER_CONTRACT_ACCEPTED_HTML, document)).not.to.throw();
+    expect(() =>
+      parseAndValidateStaticHeaderHtml(STATIC_HEADER_CONTRACT_ACCEPTED_HTML, document),
+    ).not.to.throw();
+    expect(() =>
+      parseAndValidateStaticHeaderHtml(STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML, document),
+    ).not.to.throw();
     for (const { html } of STATIC_HEADER_CONTRACT_REJECTED_CASES) {
       expect(() => parseAndValidateStaticHeaderHtml(html, document)).to.throw();
     }

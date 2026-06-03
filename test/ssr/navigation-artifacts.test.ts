@@ -18,7 +18,9 @@ const context = {
   siteUrlContext,
   currentUrl: 'https://rouault.invalid/base/notes/example/',
   isInternalDocumentPathname: (pathname: string) =>
-    new Set(['/', '/search', '/search/', '/base/search/', '/notes/example/']).has(pathname),
+    new Set(['/', '/search', '/search/', '/base/search/', '/notes/example', '/notes/example/']).has(
+      pathname,
+    ),
 };
 
 const html = (headerAttrs = ''): string => `
@@ -42,10 +44,11 @@ const html = (headerAttrs = ''): string => `
       data-toc-owner-id="toc-owner"
       data-toc-trigger-reserved="true"
       data-current-corpus-key="all"
-      ${headerAttrs}
-    >
-      <a href="/base/search/" data-no-router data-link-kind="internal-document" data-link-surface="header">検索</a>
-    </header>
+	      ${headerAttrs}
+	    >
+	      <a href="/base/search/" data-no-router data-link-kind="internal-document" data-link-surface="header">検索</a>
+	      <a href="#layout-toc-toc-runtime" data-toc-trigger data-link-kind="internal-fragment" data-link-surface="header">目次</a>
+	    </header>
     <app-router data-sidebar-presence="present">
       <aside data-app-shell-sidebar-host>
         <layout-sidebar
@@ -117,12 +120,43 @@ describe('navigation artifacts static header contract', () => {
     ).toThrow(/rouault-site-origin meta/u);
   });
 
+  it('headerHtml 内の hash-only TOC fallback link を絶対 currentUrl で internal-fragment として検証すること', () => {
+    expect(() =>
+      createNavigationEnvelopeFromHtml(
+        html(),
+        '/dist/notes/example/index.html',
+        {
+          mode: 'strict-artifact',
+          buildId: 'build-test',
+          generatedAt: '2026-01-01T00:00:00.000Z',
+        },
+        context,
+      ),
+    ).not.toThrow();
+
+    expect(() =>
+      createNavigationEnvelopeFromHtml(
+        html().replace('data-link-kind="internal-fragment"', 'data-link-kind="internal-document"'),
+        '/dist/notes/example/index.html',
+        {
+          mode: 'strict-artifact',
+          buildId: 'build-test',
+          generatedAt: '2026-01-01T00:00:00.000Z',
+        },
+        context,
+      ),
+    ).toThrow(/link kind does not match classified href/u);
+  });
+
   it('emitNavigationArtifacts は siteUrlContext と絶対 currentUrl 意味論で artifact を出すこと', async () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'rouault-nav-artifact-'));
     try {
       const noteDir = path.join(dir, 'notes', 'example');
       mkdirSync(noteDir, { recursive: true });
       writeFileSync(path.join(noteDir, 'index.html'), html(), 'utf8');
+      const unicodeNoteDir = path.join(dir, 'notes', '日本語');
+      mkdirSync(unicodeNoteDir, { recursive: true });
+      writeFileSync(path.join(unicodeNoteDir, 'index.html'), html(), 'utf8');
 
       await emitNavigationArtifacts({
         outputDir: dir,

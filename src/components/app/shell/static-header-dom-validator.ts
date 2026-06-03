@@ -4,6 +4,7 @@ import {
   STATIC_HEADER_FORBIDDEN_ELEMENTS,
   STATIC_HEADER_ROOT_SELECTOR,
   isStaticHeaderAllowedAttribute,
+  validateStaticHeaderRootAttributes,
 } from '../../../../shared/navigation/static-header-contract.js';
 
 export class StaticHeaderDomValidationError extends Error {
@@ -16,7 +17,10 @@ const fail = (message: string): never => {
 
 const validateElement = (element: Element): void => {
   const tagName = element.localName;
-  if (STATIC_HEADER_FORBIDDEN_ELEMENTS.has(tagName) || !STATIC_HEADER_ALLOWED_ELEMENTS.has(tagName)) {
+  if (
+    STATIC_HEADER_FORBIDDEN_ELEMENTS.has(tagName) ||
+    !STATIC_HEADER_ALLOWED_ELEMENTS.has(tagName)
+  ) {
     fail(`element <${tagName}> is not allowed.`);
   }
 
@@ -45,6 +49,10 @@ export const validateStaticHeaderDomTree = (root: Element): void => {
   if (!(root instanceof HTMLElement) || !root.matches(STATIC_HEADER_ROOT_SELECTOR)) {
     fail(`root must match ${STATIC_HEADER_ROOT_SELECTOR}.`);
   }
+  validateStaticHeaderRootAttributes({
+    sourceLabel: 'static-header:dom',
+    readAttribute: (name) => root.getAttribute(name),
+  });
   validateElement(root);
   for (const element of root.querySelectorAll('*')) {
     validateElement(element);

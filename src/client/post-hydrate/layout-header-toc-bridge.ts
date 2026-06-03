@@ -32,15 +32,17 @@ const readRuntimeId = (): string | null => {
   return value && value.length > 0 ? value : null;
 };
 
-const resolveTriggers = (): HTMLElement[] =>
-  [...document.querySelectorAll<HTMLElement>(`${HEADER_SELECTOR} ${TOC_TRIGGER_SELECTOR}`)];
+const resolveTriggers = (): HTMLElement[] => [
+  ...document.querySelectorAll<HTMLElement>(`${HEADER_SELECTOR} ${TOC_TRIGGER_SELECTOR}`),
+];
 
 const syncRuntimeSnapshot = (snapshot: LayoutTocRuntimeSnapshot): void => {
+  const interactive = snapshot.ready && snapshot.hasVisibleHeadings;
   for (const trigger of resolveTriggers()) {
     trigger.setAttribute('data-visible', snapshot.hasVisibleHeadings ? 'true' : 'false');
     trigger.setAttribute('data-toc-hydration-state', snapshot.hydrationState ?? 'unhydrated');
-    trigger.setAttribute('data-toc-trigger-interactive', snapshot.ready ? 'true' : 'false');
-    trigger.setAttribute('aria-disabled', snapshot.ready ? 'false' : 'true');
+    trigger.setAttribute('data-toc-trigger-interactive', interactive ? 'true' : 'false');
+    trigger.setAttribute('aria-disabled', interactive ? 'false' : 'true');
   }
 };
 
@@ -61,7 +63,11 @@ const disconnectSubscriptions = (state: TocBridgeState): void => {
 
 const refreshSubscriptions = (state: TocBridgeState): void => {
   const runtimeId = readRuntimeId();
-  if (runtimeId === state.runtimeId && state.runtimeCleanup !== null && state.mobileCleanup !== null) {
+  if (
+    runtimeId === state.runtimeId &&
+    state.runtimeCleanup !== null &&
+    state.mobileCleanup !== null
+  ) {
     return;
   }
   disconnectSubscriptions(state);
@@ -79,13 +85,17 @@ const releaseAndActivateTocController = async (
 ): Promise<void> => {
   const runtimeId = readRuntimeId();
   const context = state.linkValidationContext;
-  if (runtimeId === null || context === null || state.validatedShellCommitId !== shellCommitId) return;
+  if (runtimeId === null || context === null || state.validatedShellCommitId !== shellCommitId)
+    return;
   const module = await import('../../components/layout/layout-toc-controller.js');
   if (readCurrentShellCommitId() !== shellCommitId && shellCommitId !== 0) return;
   const controller = [...document.querySelectorAll<HTMLElement>('layout-toc-controller')].find(
     (candidate) => candidate.getAttribute('toc-runtime-id') === runtimeId,
   );
   if (!(controller instanceof HTMLElement)) return;
+  await customElements.whenDefined('layout-toc-controller');
+  customElements.upgrade(controller);
+  await Promise.resolve();
   controller.removeAttribute('data-toc-trigger-reserved');
   module.activateLayoutTocController(controller);
   const panel = document.querySelector<HTMLElement>(MOBILE_PANEL_SELECTOR);
@@ -118,30 +128,46 @@ export const enhanceLayoutHeaderTocBridge = (signal: AbortSignal): void => {
   refresh();
 
   document.addEventListener('app-shell:committed', refresh, { signal });
-  document.addEventListener('app-shell:restored', (event) => {
-    const detail = (event as CustomEvent<AppShellRestoredDetail>).detail;
-    state.validatedShellCommitId = detail.restoredShellCommitId;
-    state.linkValidationContext = null;
-    refresh();
-  }, { signal });
-  document.addEventListener('app-shell:validated', (event) => {
-    const detail = (event as CustomEvent<AppShellValidatedDetail>).detail;
-    state.validatedShellCommitId = detail.shellCommitId;
-    state.linkValidationContext = detail.linkValidationContext;
-    refresh();
-    void releaseAndActivateTocController(state, detail.shellCommitId).catch(() => undefined);
-  }, { signal });
-  document.addEventListener('app-content:hydration-ready', (event) => {
-    void (event as CustomEvent<AppContentHydrationReadyDetail>).detail;
-    const shellCommitId = state.validatedShellCommitId;
-    refresh();
-    if (shellCommitId !== null) {
-      void releaseAndActivateTocController(state, shellCommitId).catch(() => undefined);
-    }
-  }, { signal });
-  signal.addEventListener('abort', () => {
-    disconnectSubscriptions(state);
-  }, { once: true });
+  document.addEventListener(
+    'app-shell:restored',
+    (event) => {
+      const detail = (event as CustomEvent<AppShellRestoredDetail>).detail;
+      state.validatedShellCommitId = detail.restoredShellCommitId;
+      state.linkValidationContext = null;
+      refresh();
+    },
+    { signal },
+  );
+  document.addEventListener(
+    'app-shell:validated',
+    (event) => {
+      const detail = (event as CustomEvent<AppShellValidatedDetail>).detail;
+      state.validatedShellCommitId = detail.shellCommitId;
+      state.linkValidationContext = detail.linkValidationContext;
+      refresh();
+      void releaseAndActivateTocController(state, detail.shellCommitId).catch(() => undefined);
+    },
+    { signal },
+  );
+  document.addEventListener(
+    'app-content:hydration-ready',
+    (event) => {
+      void (event as CustomEvent<AppContentHydrationReadyDetail>).detail;
+      const shellCommitId = state.validatedShellCommitId;
+      refresh();
+      if (shellCommitId !== null) {
+        void releaseAndActivateTocController(state, shellCommitId).catch(() => undefined);
+      }
+    },
+    { signal },
+  );
+  signal.addEventListener(
+    'abort',
+    () => {
+      disconnectSubscriptions(state);
+    },
+    { once: true },
+  );
 };
 
 export const toggleHeaderTocPanel = (trigger: HTMLElement): boolean => {

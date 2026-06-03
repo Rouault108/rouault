@@ -4,7 +4,10 @@ import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
 import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.js';
 import { normalizeRouterBuildMetadata } from '../../shared/navigation/build-metadata-contract.js';
-import { assertValidSidebarId, assertValidSidebarStateScopeId } from '../../shared/navigation/sidebar-identity-contract.js';
+import {
+  assertValidSidebarId,
+  assertValidSidebarStateScopeId,
+} from '../../shared/navigation/sidebar-identity-contract.js';
 import { resolveRouterArtifactPathname } from '../../shared/navigation/router-artifact-path.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 
@@ -13,9 +16,7 @@ import {
   type NavigationEnvelope,
 } from '../../shared/navigation/navigation-envelope.js';
 import type { HydrationPlanScope } from '../../shared/navigation/hydration-plan.js';
-import type {
-  PayloadSidebarShellProjection,
-} from '../../shared/navigation/navigation-shell-snapshot.js';
+import type { PayloadSidebarShellProjection } from '../../shared/navigation/navigation-shell-snapshot.js';
 import { validateNavigationEnvelopeShell } from '../../shared/navigation/navigation-shell-validator.js';
 import {
   DEFAULT_SIDEBAR_FIXED_BREAKPOINT,
@@ -153,7 +154,6 @@ const requireStringAttribute = (value: string | null, label: string): string => 
   return normalized;
 };
 
-
 const toNumber = (value: string | null, fallback: number): number => {
   if (typeof value !== 'string') {
     return fallback;
@@ -184,10 +184,14 @@ const assertEmbeddedSiteUrlContextMatches = (
   const siteOrigin = readEmbeddedMetaContent(document, 'rouault-site-origin');
   const basePath = readEmbeddedMetaContent(document, 'rouault-base-path');
   if (siteOrigin !== undefined && siteOrigin !== context.siteUrlContext.siteOrigin) {
-    throw new Error('[navigation-artifact] rouault-site-origin meta must match explicit siteUrlContext.');
+    throw new Error(
+      '[navigation-artifact] rouault-site-origin meta must match explicit siteUrlContext.',
+    );
   }
   if (basePath !== undefined && basePath !== context.siteUrlContext.basePath) {
-    throw new Error('[navigation-artifact] rouault-base-path meta must match explicit siteUrlContext.');
+    throw new Error(
+      '[navigation-artifact] rouault-base-path meta must match explicit siteUrlContext.',
+    );
   }
 };
 
@@ -288,18 +292,24 @@ const extractLayoutHeaderHtml = (
     (candidate) => candidate.tagName === 'header' && hasAttribute(candidate, 'data-layout-header'),
   );
   if (headers.length !== 1) {
-    throw new Error(`[navigation-artifact] ${htmlFilePath} requires exactly one ${STATIC_HEADER_ROOT_SELECTOR}.`);
+    throw new Error(
+      `[navigation-artifact] ${htmlFilePath} requires exactly one ${STATIC_HEADER_ROOT_SELECTOR}.`,
+    );
   }
   const header = headers[0];
   if (header === undefined) {
-    throw new Error(`[navigation-artifact] ${htmlFilePath} requires ${STATIC_HEADER_ROOT_SELECTOR}.`);
+    throw new Error(
+      `[navigation-artifact] ${htmlFilePath} requires ${STATIC_HEADER_ROOT_SELECTOR}.`,
+    );
   }
   const forbiddenCustomHeader = findFirstElement(
     header,
     (candidate) => candidate.tagName === 'layout-header' || candidate.tagName === 'ui-header',
   );
   if (forbiddenCustomHeader !== null) {
-    throw new Error('[navigation-artifact] static header must not contain layout-header/ui-header.');
+    throw new Error(
+      '[navigation-artifact] static header must not contain layout-header/ui-header.',
+    );
   }
 
   validateStaticHeaderParse5Tree(header);
@@ -317,7 +327,9 @@ const extractLayoutHeaderHtml = (
   return headerHtml;
 };
 
-const extractSidebarProjection = (document: Parse5Document): PayloadSidebarShellProjection | null => {
+const extractSidebarProjection = (
+  document: Parse5Document,
+): PayloadSidebarShellProjection | null => {
   const sidebarHost = findFirstElement(
     document,
     (candidate) =>
@@ -339,14 +351,20 @@ const extractSidebarProjection = (document: Parse5Document): PayloadSidebarShell
 
   const projection: PayloadSidebarShellProjection = {
     present: true,
-    sidebarId: assertValidSidebarId(getAttribute(sidebar, 'sidebar-id'), 'layout-sidebar[sidebar-id]'),
+    sidebarId: assertValidSidebarId(
+      getAttribute(sidebar, 'sidebar-id'),
+      'layout-sidebar[sidebar-id]',
+    ),
     stateScopeId: assertValidSidebarStateScopeId(
       getAttribute(sidebar, 'state-scope-id'),
       'layout-sidebar[state-scope-id]',
     ),
     selectedId: toOptionalString(getAttribute(sidebar, 'selected-id')),
     initialExpandedIds: parseStringArrayAttribute(getAttribute(sidebar, 'initial-expanded-ids')),
-    topologyRevision: requireStringAttribute(getAttribute(sidebar, 'topology-revision'), 'layout-sidebar[topology-revision]'),
+    topologyRevision: requireStringAttribute(
+      getAttribute(sidebar, 'topology-revision'),
+      'layout-sidebar[topology-revision]',
+    ),
     navHtml: requireStringAttribute(serializeInnerHtml(sidebar), 'layout-sidebar navHtml'),
     heading: toOptionalString(getAttribute(sidebar, 'heading')),
     fixedBreakpoint: toNumber(
@@ -379,9 +397,8 @@ const inferRenderedKind = (
     return 'not-found';
   }
 
-  const notFoundPage = findFirstElement(
-    document,
-    (candidate) => hasAttribute(candidate, 'data-not-found-page'),
+  const notFoundPage = findFirstElement(document, (candidate) =>
+    hasAttribute(candidate, 'data-not-found-page'),
   );
   return notFoundPage === null ? 'page' : 'not-found';
 };
@@ -413,7 +430,9 @@ const resolveNavigationEnvelopeBuildMetadata = (
 
   if (metadataMode.mode === 'strict-artifact') {
     if (embeddedBuildId === undefined || embeddedGeneratedAt === undefined) {
-      throw new Error('[navigation-artifact] strict-artifact mode requires embedded buildId and generatedAt meta.');
+      throw new Error(
+        '[navigation-artifact] strict-artifact mode requires embedded buildId and generatedAt meta.',
+      );
     }
 
     const buildMetadata = normalizeRouterBuildMetadata({
@@ -422,7 +441,9 @@ const resolveNavigationEnvelopeBuildMetadata = (
     });
 
     if (embeddedBuildId !== buildMetadata.buildId) {
-      throw new Error('[navigation-artifact] embedded buildId does not match strict-artifact buildId.');
+      throw new Error(
+        '[navigation-artifact] embedded buildId does not match strict-artifact buildId.',
+      );
     }
 
     if (embeddedGeneratedAt !== buildMetadata.generatedAt) {
@@ -471,11 +492,15 @@ const assertHeaderSidebarConsistency = (
   }
 
   if (sidebarId !== DEFAULT_SIDEBAR_ID) {
-    throw new Error('[navigation-artifact] header.sidebarEnabled=false requires default sidebar id.');
+    throw new Error(
+      '[navigation-artifact] header.sidebarEnabled=false requires default sidebar id.',
+    );
   }
 
   if (sidebarProjection !== null) {
-    throw new Error('[navigation-artifact] header.sidebarEnabled=false requires sidebar payload null.');
+    throw new Error(
+      '[navigation-artifact] header.sidebarEnabled=false requires sidebar payload null.',
+    );
   }
 };
 
@@ -559,6 +584,19 @@ const collectHtmlFiles = async (rootDirectory: string): Promise<string[]> => {
   return htmlFiles;
 };
 
+const addInternalDocumentPathnameVariants = (routeSet: Set<string>, pathname: string): void => {
+  const variants = new Set([pathname, normalizeRouaultPathname(pathname), encodeURI(pathname)]);
+  for (const variant of [...variants]) {
+    variants.add(normalizeRouaultPathname(variant));
+    if (variant !== '/' && variant.endsWith('/')) {
+      variants.add(variant.slice(0, -1));
+    }
+  }
+  for (const variant of variants) {
+    routeSet.add(variant);
+  }
+};
+
 export const emitNavigationArtifacts = async (options: {
   outputDir: string;
   buildId: string;
@@ -567,16 +605,14 @@ export const emitNavigationArtifacts = async (options: {
 }): Promise<void> => {
   const buildMetadata = normalizeRouterBuildMetadata(options);
   const htmlFiles = await collectHtmlFiles(options.outputDir);
-  const routeSet = new Set<string>([
-    ...STATIC_GENERATED_DOCUMENT_ROUTES,
-    ...htmlFiles
-      .map((htmlFilePath) => resolveContentPathnameFromHtmlFile(options.outputDir, htmlFilePath))
-      .filter((pathname) => pathname !== '/404'),
-  ]);
-  for (const pathname of [...routeSet]) {
-    routeSet.add(normalizeRouaultPathname(pathname));
-    if (pathname !== '/' && pathname.endsWith('/')) {
-      routeSet.add(pathname.slice(0, -1));
+  const routeSet = new Set<string>();
+  for (const pathname of STATIC_GENERATED_DOCUMENT_ROUTES) {
+    addInternalDocumentPathnameVariants(routeSet, pathname);
+  }
+  for (const htmlFilePath of htmlFiles) {
+    const pathname = resolveContentPathnameFromHtmlFile(options.outputDir, htmlFilePath);
+    if (pathname !== '/404') {
+      addInternalDocumentPathnameVariants(routeSet, pathname);
     }
   }
 
@@ -585,15 +621,20 @@ export const emitNavigationArtifacts = async (options: {
       const html = await readFile(htmlFilePath, 'utf8');
       const pathname = resolveContentPathnameFromHtmlFile(options.outputDir, htmlFilePath);
       const currentUrl = `${options.siteUrlContext.siteOrigin}${options.siteUrlContext.basePath}${pathname}`;
-      const envelope = createNavigationEnvelopeFromHtml(html, htmlFilePath, {
-        mode: 'strict-artifact',
-        buildId: buildMetadata.buildId,
-        generatedAt: buildMetadata.generatedAt,
-      }, {
-        siteUrlContext: options.siteUrlContext,
-        currentUrl,
-        isInternalDocumentPathname: (candidate) => routeSet.has(candidate),
-      });
+      const envelope = createNavigationEnvelopeFromHtml(
+        html,
+        htmlFilePath,
+        {
+          mode: 'strict-artifact',
+          buildId: buildMetadata.buildId,
+          generatedAt: buildMetadata.generatedAt,
+        },
+        {
+          siteUrlContext: options.siteUrlContext,
+          currentUrl,
+          isInternalDocumentPathname: (candidate) => routeSet.has(candidate),
+        },
+      );
       const artifactPath = resolveArtifactPath(options.outputDir, htmlFilePath);
       await mkdir(path.dirname(artifactPath), { recursive: true });
       await writeFile(`${artifactPath}`, `${JSON.stringify(envelope, null, 2)}\n`, 'utf8');
