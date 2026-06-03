@@ -37,6 +37,7 @@ import { normalizeRouaultPathname } from '../../shared/url/rouault-url-policy.js
 import {
   STATIC_GENERATED_DOCUMENT_ROUTES,
   resolveContentPathnameFromHtmlFile,
+  resolveContentPathnameFromHtmlFileOrThrow,
   resolveGeneratedDocumentCurrentUrlFromHtmlFile,
 } from '../content/generated-document-route-set.js';
 
@@ -566,7 +567,7 @@ export const createNavigationEnvelopeFromHtml = (
 };
 
 const resolveArtifactPath = (outputDir: string, htmlFilePath: string): string => {
-  const contentPathname = resolveContentPathnameFromHtmlFile(outputDir, htmlFilePath);
+  const contentPathname = resolveContentPathnameFromHtmlFileOrThrow(outputDir, htmlFilePath);
   const artifactPathname = resolveRouterArtifactPathname(contentPathname);
   return path.join(outputDir, artifactPathname.slice(1));
 };
@@ -618,13 +619,16 @@ export const emitNavigationArtifacts = async (options: {
   }
   for (const htmlFilePath of htmlFiles) {
     const pathname = resolveContentPathnameFromHtmlFile(options.outputDir, htmlFilePath);
-    if (pathname !== '/404') {
+    if (pathname !== null) {
       addInternalDocumentPathnameVariants(routeSet, pathname);
     }
   }
 
   await Promise.all(
     htmlFiles.map(async (htmlFilePath) => {
+      if (resolveContentPathnameFromHtmlFile(options.outputDir, htmlFilePath) === null) {
+        return;
+      }
       const html = await readFile(htmlFilePath, 'utf8');
       const currentUrl = resolveGeneratedDocumentCurrentUrlFromHtmlFile({
         outputDir: options.outputDir,

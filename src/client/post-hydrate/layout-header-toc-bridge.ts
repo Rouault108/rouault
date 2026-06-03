@@ -22,6 +22,7 @@ interface TocBridgeState {
   mobileCleanup: (() => void) | null;
   validatedShellCommitId: number | null;
   linkValidationContext: RuntimeDomLinkValidationContext | null;
+  validationContexts: Map<number, RuntimeDomLinkValidationContext>;
 }
 
 const readRuntimeId = (): string | null => {
@@ -88,7 +89,7 @@ const releaseAndActivateTocController = async (
   if (runtimeId === null || context === null || state.validatedShellCommitId !== shellCommitId)
     return;
   const module = await import('../../components/layout/layout-toc-controller.js');
-  if (readCurrentShellCommitId() !== shellCommitId && shellCommitId !== 0) return;
+  if (readCurrentShellCommitId() !== shellCommitId) return;
   const controller = [...document.querySelectorAll<HTMLElement>('layout-toc-controller')].find(
     (candidate) => candidate.getAttribute('toc-runtime-id') === runtimeId,
   );
@@ -111,6 +112,7 @@ const releaseAndActivateTocController = async (
       throw error;
     }
   }
+  syncMobileSnapshot(layoutTocMobileController.getSnapshot(runtimeId).panelOpen);
   refreshSubscriptions(state);
 };
 
@@ -121,6 +123,7 @@ export const enhanceLayoutHeaderTocBridge = (signal: AbortSignal): void => {
     mobileCleanup: null,
     validatedShellCommitId: null,
     linkValidationContext: null,
+    validationContexts: new Map(),
   };
   const refresh = (): void => {
     refreshSubscriptions(state);
@@ -133,8 +136,12 @@ export const enhanceLayoutHeaderTocBridge = (signal: AbortSignal): void => {
     (event) => {
       const detail = (event as CustomEvent<AppShellRestoredDetail>).detail;
       state.validatedShellCommitId = detail.restoredShellCommitId;
-      state.linkValidationContext = null;
+      state.linkValidationContext =
+        state.validationContexts.get(detail.restoredShellCommitId) ?? null;
       refresh();
+      void releaseAndActivateTocController(state, detail.restoredShellCommitId).catch(
+        () => undefined,
+      );
     },
     { signal },
   );
@@ -144,6 +151,7 @@ export const enhanceLayoutHeaderTocBridge = (signal: AbortSignal): void => {
       const detail = (event as CustomEvent<AppShellValidatedDetail>).detail;
       state.validatedShellCommitId = detail.shellCommitId;
       state.linkValidationContext = detail.linkValidationContext;
+      state.validationContexts.set(detail.shellCommitId, detail.linkValidationContext);
       refresh();
       void releaseAndActivateTocController(state, detail.shellCommitId).catch(() => undefined);
     },

@@ -6,7 +6,10 @@ import {
   createNavigationEnvelopeFromHtml,
   emitNavigationArtifacts,
 } from '../../build/navigation/emit-navigation-artifacts.js';
-import { resolveGeneratedDocumentCurrentUrlFromHtmlFile } from '../../build/content/generated-document-route-set.js';
+import {
+  resolveContentPathnameFromHtmlFile,
+  resolveGeneratedDocumentCurrentUrlFromHtmlFile,
+} from '../../build/content/generated-document-route-set.js';
 import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 
@@ -69,6 +72,49 @@ const html = (headerAttrs = ''): string => `
 `;
 
 describe('navigation artifacts static header contract', () => {
+  it('HTML file path 由来の document route と currentUrl を v35 の正規化意味論で解決すること', () => {
+    const dir = path.join(tmpdir(), 'rouault-nav-route-contract');
+    const cases = [
+      {
+        htmlFilePath: path.join(dir, 'index.html'),
+        pathname: '/',
+        currentUrl: 'https://rouault.invalid/base/',
+      },
+      {
+        htmlFilePath: path.join(dir, 'notes', 'example', 'index.html'),
+        pathname: '/notes/example/',
+        currentUrl: 'https://rouault.invalid/base/notes/example/',
+      },
+      {
+        htmlFilePath: path.join(dir, 'about.html'),
+        pathname: '/about/',
+        currentUrl: 'https://rouault.invalid/base/about/',
+      },
+    ] as const;
+
+    for (const testCase of cases) {
+      expect(resolveContentPathnameFromHtmlFile(dir, testCase.htmlFilePath)).toBe(
+        testCase.pathname,
+      );
+      expect(
+        resolveGeneratedDocumentCurrentUrlFromHtmlFile({
+          outputDir: dir,
+          htmlFilePath: testCase.htmlFilePath,
+          siteUrlContext,
+        }),
+      ).toBe(testCase.currentUrl);
+    }
+
+    expect(resolveContentPathnameFromHtmlFile(dir, path.join(dir, '404.html'))).toBeNull();
+    expect(() =>
+      resolveGeneratedDocumentCurrentUrlFromHtmlFile({
+        outputDir: dir,
+        htmlFilePath: path.join(dir, '404.html'),
+        siteUrlContext,
+      }),
+    ).toThrow(/does not map to an internal document route/u);
+  });
+
   it('schema v2 envelope に shell.headerHtml と sidebarProjection を格納すること', () => {
     const envelope = createNavigationEnvelopeFromHtml(
       html(),
@@ -175,6 +221,8 @@ describe('navigation artifacts static header contract', () => {
       const unicodeNoteDir = path.join(dir, 'notes', '日本語');
       mkdirSync(unicodeNoteDir, { recursive: true });
       writeFileSync(path.join(unicodeNoteDir, 'index.html'), html(), 'utf8');
+      writeFileSync(path.join(dir, 'about.html'), html(), 'utf8');
+      writeFileSync(path.join(dir, '404.html'), html(), 'utf8');
 
       await emitNavigationArtifacts({
         outputDir: dir,
@@ -186,7 +234,11 @@ describe('navigation artifacts static header contract', () => {
       const artifact = JSON.parse(
         readFileSync(path.join(dir, '__router', 'notes', 'example', 'index.router.json'), 'utf8'),
       ) as { readonly shell: { readonly headerHtml: string } };
+      const aboutArtifact = JSON.parse(
+        readFileSync(path.join(dir, '__router', 'about', 'index.router.json'), 'utf8'),
+      ) as { readonly shell: { readonly headerHtml: string } };
       expect(artifact.shell.headerHtml).toContain('/base/search/');
+      expect(aboutArtifact.shell.headerHtml).toContain('/base/search/');
       expect(
         resolveGeneratedDocumentCurrentUrlFromHtmlFile({
           outputDir: dir,
@@ -194,6 +246,9 @@ describe('navigation artifacts static header contract', () => {
           siteUrlContext,
         }),
       ).toBe('https://rouault.invalid/base/notes/example/');
+      expect(() =>
+        readFileSync(path.join(dir, '__router', '404', 'index.router.json'), 'utf8'),
+      ).toThrow();
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

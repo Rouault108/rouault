@@ -36,7 +36,7 @@ export const normalizeGeneratedDocumentRoutePathname = (value: unknown): string 
   } else if (pathname.endsWith('/index.html')) {
     pathname = `${pathname.slice(0, -'/index.html'.length)}/`;
   }
-  if (pathname === '/404.html') {
+  if (pathname === '/404.html' || pathname === '/404' || pathname === '/404/') {
     return null;
   }
   if (!pathname.startsWith('/')) {
@@ -100,7 +100,7 @@ const normalizeRelativePath = (value: string): string => value.split(path.sep).j
 export const resolveContentPathnameFromHtmlFile = (
   outputDir: string,
   htmlFilePath: string,
-): string => {
+): string | null => {
   const relativeHtmlPath = normalizeRelativePath(path.relative(outputDir, htmlFilePath));
 
   if (relativeHtmlPath === 'index.html') {
@@ -115,7 +115,18 @@ export const resolveContentPathnameFromHtmlFile = (
   const basename =
     extension.length > 0 ? relativeHtmlPath.slice(0, -extension.length) : relativeHtmlPath;
 
-  return `/${basename}`;
+  return normalizeGeneratedDocumentRoutePathname(`/${basename}`);
+};
+
+export const resolveContentPathnameFromHtmlFileOrThrow = (
+  outputDir: string,
+  htmlFilePath: string,
+): string => {
+  const pathname = resolveContentPathnameFromHtmlFile(outputDir, htmlFilePath);
+  if (pathname === null) {
+    throw new Error(`HTML file does not map to an internal document route: ${htmlFilePath}`);
+  }
+  return pathname;
 };
 
 export const resolveGeneratedDocumentCurrentUrlFromHtmlFile = (options: {
@@ -123,6 +134,6 @@ export const resolveGeneratedDocumentCurrentUrlFromHtmlFile = (options: {
   readonly htmlFilePath: string;
   readonly siteUrlContext: SiteUrlContext;
 }): string => {
-  const pathname = resolveContentPathnameFromHtmlFile(options.outputDir, options.htmlFilePath);
+  const pathname = resolveContentPathnameFromHtmlFileOrThrow(options.outputDir, options.htmlFilePath);
   return `${options.siteUrlContext.siteOrigin}${options.siteUrlContext.basePath}${pathname}`;
 };

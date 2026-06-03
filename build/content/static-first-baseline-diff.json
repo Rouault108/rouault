@@ -892,13 +892,6 @@
       "reason": "GitHub main is authoritative"
     },
     {
-      "path": "src/components/layout/layout-header.ts",
-      "githubMainState": "different",
-      "zipFallbackState": "different",
-      "adoptedSource": "github-main",
-      "reason": "GitHub main is authoritative"
-    },
-    {
       "path": "src/components/page/page-shell-styles.ts",
       "githubMainState": "absent",
       "zipFallbackState": "present",

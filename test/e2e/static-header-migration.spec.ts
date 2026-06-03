@@ -143,6 +143,89 @@ test.describe('Static header migration', () => {
       'true',
     );
   });
+
+  test('app-shell:validated 後の history 失敗時も rollback 後に TOC bridge を旧 shell へ再同期すること', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 760 });
+    await page.goto(layoutRich.directPath);
+    await waitForAppRouterReady(page);
+    const originalUrl = page.url();
+    const originalNavigationUrl = layoutRich.normalizedPath;
+
+    await expect(page.locator('header[data-layout-header] [data-toc-trigger]')).toHaveAttribute(
+      'data-toc-trigger-interactive',
+      'true',
+    );
+
+    await page.evaluate(() => {
+      const state = window as unknown as {
+        staticHeaderHistoryFailureEvents?: string[];
+        restoreStaticHeaderHistoryPatch?: () => void;
+      };
+      state.staticHeaderHistoryFailureEvents = [];
+      document.addEventListener('app-shell:validated', (event) => {
+        const detail = (event as CustomEvent<{ navigationUrl?: string }>).detail;
+        state.staticHeaderHistoryFailureEvents?.push(`validated:${detail.navigationUrl ?? ''}`);
+      });
+      document.addEventListener('app-shell:restored', (event) => {
+        const detail = (event as CustomEvent<{ restoredUrl?: string }>).detail;
+        state.staticHeaderHistoryFailureEvents?.push(`restored:${detail.restoredUrl ?? ''}`);
+      });
+
+      const originalPushState = history.pushState.bind(history);
+      history.pushState = (() => {
+        throw new Error('forced history failure after app-shell:validated');
+      }) as typeof history.pushState;
+      state.restoreStaticHeaderHistoryPatch = () => {
+        history.pushState = originalPushState;
+      };
+    });
+
+    await page.evaluate(async () => {
+      const router = document.querySelector('app-router') as
+        | (HTMLElement & {
+            navigate: (nextUrl: string) => Promise<unknown>;
+            whenReady: () => Promise<void>;
+          })
+        | null;
+      if (router === null) throw new Error('app-router is missing.');
+      await router.whenReady();
+      await router.navigate('/about/');
+    });
+
+    await page.evaluate(() => {
+      (
+        window as unknown as {
+          restoreStaticHeaderHistoryPatch?: () => void;
+        }
+      ).restoreStaticHeaderHistoryPatch?.();
+    });
+
+    await expect(page).toHaveURL(originalUrl);
+    await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
+      'data-note-layout',
+      'true',
+    );
+    await expect
+      .poll(async () =>
+        page.evaluate(
+          () =>
+            (
+              window as unknown as {
+                staticHeaderHistoryFailureEvents?: string[];
+              }
+            ).staticHeaderHistoryFailureEvents ?? [],
+        ),
+      )
+      .toEqual(['validated:/about/', `restored:${originalNavigationUrl}`]);
+
+    const trigger = page.locator('header[data-layout-header] [data-toc-trigger]');
+    await expect(trigger).toHaveAttribute('data-toc-trigger-interactive', 'true');
+    await trigger.click();
+    await expect(page.locator('[data-layout-toc-mobile-panel]')).toBeVisible();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  });
 });
 
 test.describe('Static header migration no-JS', () => {

@@ -5,7 +5,10 @@ import type { Connect } from 'vite';
 
 import { createNavigationEnvelopeFromHtml } from '../navigation/emit-navigation-artifacts.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
-import { resolveGeneratedDocumentCurrentUrlFromHtmlFile } from '../content/generated-document-route-set.js';
+import {
+  resolveContentPathnameFromHtmlFile,
+  resolveGeneratedDocumentCurrentUrlFromHtmlFile,
+} from '../content/generated-document-route-set.js';
 
 const ROUTER_ARTIFACT_ROOT_PATHNAME = '/__router';
 const ROUTER_ARTIFACT_FILE_NAME = 'index.router.json';
@@ -117,6 +120,10 @@ export function createDevelopmentRouterArtifactMiddleware(options: {
     }
 
     try {
+      if (resolveContentPathnameFromHtmlFile(outputDirectory, htmlFilePath) === null) {
+        next();
+        return;
+      }
       const html = readFileSync(htmlFilePath, 'utf8');
       const envelope = createNavigationEnvelopeFromHtml(html, htmlFilePath, {
         mode: 'strict-artifact',
