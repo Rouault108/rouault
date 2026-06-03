@@ -109,7 +109,9 @@ describe('search-dialog-enhancer', () => {
     trigger.dataset['searchDialogTrigger'] = '';
     trigger.dataset['noRouter'] = '';
     document.body.append(trigger);
-    const accepted = trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const accepted = trigger.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true }),
+    );
     expect(accepted).to.equal(false);
     expect(dialog.open).to.equal(true);
 
@@ -120,6 +122,29 @@ describe('search-dialog-enhancer', () => {
     document.body.append(fallback);
     enhanceSearchDialog(document);
     expect(fallback.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))).to.equal(true);
+  });
+
+  it('runtime unavailable では data-no-router 付き search link の通常遷移を抑止しないこと', () => {
+    const dialog = appendDialogFixture();
+    enhanceSearchDialog(document);
+    dispatchSearchDialogEvent('search-dialog:unavailable', { message: 'unavailable' });
+    const trigger = document.createElement('a');
+    trigger.href = '#search-fallback';
+    trigger.dataset['searchDialogTrigger'] = '';
+    trigger.dataset['noRouter'] = '';
+    document.body.append(trigger);
+    let openRequestCount = 0;
+    document.addEventListener('search-dialog:open-request', () => {
+      openRequestCount += 1;
+    });
+
+    const accepted = trigger.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true }),
+    );
+
+    expect(accepted).to.equal(true);
+    expect(dialog.open).to.equal(false);
+    expect(openRequestCount).to.equal(0);
   });
 
   it('input / state / selection を static dialog event flow に同期すること', async () => {

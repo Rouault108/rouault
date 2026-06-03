@@ -529,15 +529,21 @@ export const createSearchDialogDomController = (
   const shouldStartExternalNativeCloseCompletion = (): boolean =>
     state.activeCloseGeneration === null && (state.bodyLockHeld || state.isOpen);
 
-  const canOpen = (): boolean =>
+  const canOpenWithOptions = (options: { readonly allowUnavailable?: boolean } = {}): boolean =>
     dialog.isConnected &&
     !state.disposed &&
+    (options.allowUnavailable === true || !state.unavailable) &&
     !closeRequestPending &&
     !state.isClosing &&
     state.activeCloseGeneration === null;
 
-  const performOpen = (detail: SearchDialogOpenRequestDetail): boolean => {
-    if (!canOpen()) return false;
+  const canOpen = (): boolean => canOpenWithOptions();
+
+  const performOpen = (
+    detail: SearchDialogOpenRequestDetail,
+    options: { readonly allowUnavailable?: boolean } = {},
+  ): boolean => {
+    if (!canOpenWithOptions(options)) return false;
     const wasAlreadyOpen = isDialogOpen(dialog);
     state.triggerElement = captureTrigger(ownerDocument, detail.trigger ?? undefined);
     state.pendingOpenModality = detail.modality ?? modalityTracker.getSnapshot();
@@ -579,7 +585,7 @@ export const createSearchDialogDomController = (
       return;
     }
     enqueueOperation(() => {
-      performOpen(detail);
+      performOpen(detail, { allowUnavailable: true });
     });
   };
 

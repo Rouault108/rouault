@@ -23,6 +23,7 @@ interface TocBridgeState {
   validatedShellCommitId: number | null;
   linkValidationContext: RuntimeDomLinkValidationContext | null;
   validationContexts: Map<number, RuntimeDomLinkValidationContext>;
+  activationAbortController: AbortController | null;
 }
 
 const readRuntimeId = (): string | null => {
@@ -122,28 +123,62 @@ const removeRuntimeMobilePanel = (runtimeId: string): void => {
   });
 };
 
+const removeCurrentRuntimeMobilePanel = (): void => {
+  const runtimeId = readRuntimeId();
+  if (runtimeId !== null) removeRuntimeMobilePanel(runtimeId);
+};
+
+const abortPostValidationActivation = (state: TocBridgeState): void => {
+  state.activationAbortController?.abort();
+  state.activationAbortController = null;
+};
+
+const startPostValidationActivation = (state: TocBridgeState): AbortSignal => {
+  abortPostValidationActivation(state);
+  const controller = new AbortController();
+  state.activationAbortController = controller;
+  return controller.signal;
+};
+
+const isActiveSignal = (state: TocBridgeState, signal: AbortSignal): boolean =>
+  !signal.aborted && state.activationAbortController?.signal === signal;
+
 const releaseAndActivateTocController = async (
   state: TocBridgeState,
   shellCommitId: number,
+  signal: AbortSignal,
 ): Promise<void> => {
+  if (!isActiveSignal(state, signal)) return;
   const runtimeId = readRuntimeId();
   const context = state.linkValidationContext;
   if (
     runtimeId === null ||
     context === null ||
+    !isActiveSignal(state, signal) ||
     !isCurrentShellActivation(state, shellCommitId, runtimeId, context)
   ) {
     return;
   }
   const module = await import('../../components/layout/layout-toc-controller.js');
-  if (!isCurrentShellActivation(state, shellCommitId, runtimeId, context)) return;
+  if (
+    !isActiveSignal(state, signal) ||
+    !isCurrentShellActivation(state, shellCommitId, runtimeId, context)
+  ) {
+    return;
+  }
   const controller = resolveCurrentTocController(runtimeId);
   if (controller === null) return;
   await customElements.whenDefined('layout-toc-controller');
-  if (!isCurrentShellActivation(state, shellCommitId, runtimeId, context)) return;
+  if (
+    !isActiveSignal(state, signal) ||
+    !isCurrentShellActivation(state, shellCommitId, runtimeId, context)
+  ) {
+    return;
+  }
   customElements.upgrade(controller);
   await Promise.resolve();
   if (
+    !isActiveSignal(state, signal) ||
     !controller.isConnected ||
     !document.body.contains(controller) ||
     !isCurrentShellActivation(state, shellCommitId, runtimeId, context)
@@ -152,7 +187,10 @@ const releaseAndActivateTocController = async (
   }
   controller.removeAttribute('data-toc-trigger-reserved');
   module.activateLayoutTocController(controller);
-  if (!isCurrentShellActivation(state, shellCommitId, runtimeId, context)) {
+  if (
+    !isActiveSignal(state, signal) ||
+    !isCurrentShellActivation(state, shellCommitId, runtimeId, context)
+  ) {
     removeRuntimeMobilePanel(runtimeId);
     return;
   }
@@ -169,7 +207,10 @@ const releaseAndActivateTocController = async (
       throw error;
     }
   }
-  if (!isCurrentShellActivation(state, shellCommitId, runtimeId, context)) {
+  if (
+    !isActiveSignal(state, signal) ||
+    !isCurrentShellActivation(state, shellCommitId, runtimeId, context)
+  ) {
     removeRuntimeMobilePanel(runtimeId);
     return;
   }
@@ -185,25 +226,45 @@ export const enhanceLayoutHeaderTocBridge = (signal: AbortSignal): void => {
     validatedShellCommitId: null,
     linkValidationContext: null,
     validationContexts: new Map(),
+    activationAbortController: null,
   };
   const refresh = (): void => {
     refreshSubscriptions(state);
   };
   refresh();
 
-  document.addEventListener('app-shell:committed', refresh, { signal });
+  document.addEventListener(
+    'app-shell:committed',
+    () => {
+      abortPostValidationActivation(state);
+      refresh();
+    },
+    { signal },
+  );
+  document.addEventListener(
+    'app-shell:rollback-start',
+    () => {
+      abortPostValidationActivation(state);
+      removeCurrentRuntimeMobilePanel();
+    },
+    { signal },
+  );
   document.addEventListener(
     'app-shell:restored',
     (event) => {
       const detail = (event as CustomEvent<AppShellRestoredDetail>).detail;
+      abortPostValidationActivation(state);
       state.validatedShellCommitId = detail.restoredShellCommitId;
       state.linkValidationContext =
         state.validationContexts.get(detail.restoredShellCommitId) ?? null;
       refresh();
       if (state.linkValidationContext !== null) {
-        void releaseAndActivateTocController(state, detail.restoredShellCommitId).catch(
-          () => undefined,
-        );
+        const activationSignal = startPostValidationActivation(state);
+        void releaseAndActivateTocController(
+          state,
+          detail.restoredShellCommitId,
+          activationSignal,
+        ).catch(() => undefined);
       }
     },
     { signal },
@@ -212,11 +273,17 @@ export const enhanceLayoutHeaderTocBridge = (signal: AbortSignal): void => {
     'app-shell:validated',
     (event) => {
       const detail = (event as CustomEvent<AppShellValidatedDetail>).detail;
+      abortPostValidationActivation(state);
       state.validatedShellCommitId = detail.shellCommitId;
       state.linkValidationContext = detail.linkValidationContext;
       state.validationContexts.set(detail.shellCommitId, detail.linkValidationContext);
       refresh();
-      void releaseAndActivateTocController(state, detail.shellCommitId).catch(() => undefined);
+      const activationSignal = startPostValidationActivation(state);
+      void releaseAndActivateTocController(
+        state,
+        detail.shellCommitId,
+        activationSignal,
+      ).catch(() => undefined);
     },
     { signal },
   );
@@ -227,7 +294,10 @@ export const enhanceLayoutHeaderTocBridge = (signal: AbortSignal): void => {
       const shellCommitId = state.validatedShellCommitId;
       refresh();
       if (shellCommitId !== null) {
-        void releaseAndActivateTocController(state, shellCommitId).catch(() => undefined);
+        const activationSignal = startPostValidationActivation(state);
+        void releaseAndActivateTocController(state, shellCommitId, activationSignal).catch(
+          () => undefined,
+        );
       }
     },
     { signal },
@@ -235,6 +305,7 @@ export const enhanceLayoutHeaderTocBridge = (signal: AbortSignal): void => {
   signal.addEventListener(
     'abort',
     () => {
+      abortPostValidationActivation(state);
       disconnectSubscriptions(state);
     },
     { once: true },

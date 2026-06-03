@@ -222,7 +222,9 @@ test.describe('Static header migration', () => {
 
     const trigger = page.locator('header[data-layout-header] [data-toc-trigger]');
     await expect(trigger).toHaveAttribute('data-toc-trigger-interactive', 'true');
+    await expect(page.locator('[data-layout-toc-mobile-panel]')).toHaveCount(1);
     await trigger.click();
+    await expect(page.locator('[data-layout-toc-mobile-panel]')).toHaveCount(1);
     await expect(page.locator('[data-layout-toc-mobile-panel]')).toBeVisible();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   });

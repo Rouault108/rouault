@@ -29,6 +29,13 @@ export interface AppShellRestoredDetail {
   readonly reason: 'rollback';
 }
 
+export interface AppShellRollbackStartDetail {
+  readonly failedNavigationUrl: string;
+  readonly failedShellCommitId: number;
+  readonly previousShellCommitId: number;
+  readonly reason: 'rollback';
+}
+
 export interface AppContentHydrationReadyDetail {
   readonly contentRoot: HTMLElement;
   readonly initial: boolean;

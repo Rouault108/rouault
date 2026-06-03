@@ -8,7 +8,9 @@ import {
 import { layoutTocMobileController } from '../../src/components/layout/layout-toc-mobile-controller.js';
 import { layoutTocRuntimeStore } from '../../src/components/layout/layout-toc-runtime-store.js';
 import type {
+  AppContentHydrationReadyDetail,
   AppShellCommittedDetail,
+  AppShellRollbackStartDetail,
   AppShellRestoredDetail,
   AppShellValidatedDetail,
   RuntimeDomLinkValidationContext,
@@ -126,6 +128,19 @@ const dispatchValidated = (header: HTMLElement, shellCommitId: number): void => 
   );
 };
 
+const dispatchRollbackStart = (failedShellCommitId: number, previousShellCommitId: number): void => {
+  document.dispatchEvent(
+    new CustomEvent<AppShellRollbackStartDetail>('app-shell:rollback-start', {
+      detail: {
+        failedNavigationUrl: '/about/',
+        failedShellCommitId,
+        previousShellCommitId,
+        reason: 'rollback',
+      },
+    }),
+  );
+};
+
 describe('layout-header-toc-bridge', () => {
   let controller: AbortController | null = null;
 
@@ -169,6 +184,7 @@ describe('layout-header-toc-bridge', () => {
     await waitUntil(
       () => document.querySelector(TOC_MOBILE_PANEL_SELECTOR) instanceof HTMLElement,
       'TOC mobile panel is created after app-shell:validated',
+      { timeout: 4000, interval: 50 },
     );
 
     const panel = document.querySelector<HTMLElement>(TOC_MOBILE_PANEL_SELECTOR);
@@ -179,6 +195,48 @@ describe('layout-header-toc-bridge', () => {
     expect(
       root.querySelector('layout-toc-controller')?.hasAttribute('data-toc-trigger-reserved'),
     ).to.equal(false);
+  });
+
+  it('app-shell:validated 前の app-content:hydration-ready では TOC controller と mobile panel を起動しないこと', async () => {
+    const root = appendBridgeFixture();
+    const header = root.querySelector<HTMLElement>('header[data-layout-header]');
+    const contentRoot = root.querySelector<HTMLElement>('#note-content-test');
+    const tocController = root.querySelector<HTMLElement>('layout-toc-controller');
+    if (
+      !(header instanceof HTMLElement) ||
+      !(contentRoot instanceof HTMLElement) ||
+      !(tocController instanceof HTMLElement)
+    ) {
+      throw new Error('TOC bridge fixture is missing');
+    }
+
+    controller = new AbortController();
+    enhanceLayoutHeaderTocBridge(controller.signal);
+
+    commitShellGeneration(1);
+    document.dispatchEvent(
+      new CustomEvent<AppShellCommittedDetail>('app-shell:committed', {
+        detail: {
+          header,
+          navigationUrl: '/notes/current',
+          shellCommitId: 1,
+          shell: { headerHtml: header.outerHTML, sidebarProjection: null },
+        },
+      }),
+    );
+    document.dispatchEvent(
+      new CustomEvent<AppContentHydrationReadyDetail>('app-content:hydration-ready', {
+        detail: {
+          contentRoot,
+          initial: false,
+        },
+      }),
+    );
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(document.querySelector(TOC_MOBILE_PANEL_SELECTOR)).to.equal(null);
+    expect(tocController.getAttribute('data-toc-trigger-reserved')).to.equal('true');
   });
 
   it('TOC controller 定義待ち中に shell 世代が進んだ場合は旧 controller を起動しないこと', async () => {
@@ -221,7 +279,8 @@ describe('layout-header-toc-bridge', () => {
         () => whenDefinedRequested,
         'layout-toc-controller definition wait is requested',
       );
-      commitShellGeneration(2);
+      dispatchRollbackStart(1, 0);
+      commitShellGeneration(0);
       releaseWhenDefined();
       await delayedWhenDefined;
       await Promise.resolve();
@@ -232,6 +291,28 @@ describe('layout-header-toc-bridge', () => {
     } finally {
       registry.whenDefined = originalWhenDefined;
     }
+  });
+
+  it('rollback 開始時に validated 後の activation を破棄し、failed shell の mobile panel を除去すること', async () => {
+    const root = appendBridgeFixture();
+    const header = root.querySelector<HTMLElement>('header[data-layout-header]');
+    if (!(header instanceof HTMLElement)) throw new Error('header fixture is missing');
+
+    controller = new AbortController();
+    enhanceLayoutHeaderTocBridge(controller.signal);
+
+    commitShellGeneration(1);
+    dispatchValidated(header, 1);
+    await waitUntil(
+      () => document.querySelector(TOC_MOBILE_PANEL_SELECTOR) instanceof HTMLElement,
+      'TOC mobile panel is created before rollback',
+      { timeout: 4000, interval: 50 },
+    );
+
+    dispatchRollbackStart(1, 0);
+
+    expect(document.querySelector(TOC_MOBILE_PANEL_SELECTOR)).to.equal(null);
+    expect(document.getElementById('layout-toc-panel-toc-source-test')).to.equal(null);
   });
 
   it('app-shell:restored は保存済み validation context がない shell で DOM 追加しないこと', async () => {

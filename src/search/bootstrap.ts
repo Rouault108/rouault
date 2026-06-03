@@ -414,6 +414,7 @@ export function initSearchUnavailable(options: InitSearchUnavailableOptions): Se
   document.addEventListener('open-search-dialog', onOpenSearchDialog, { signal });
   document.addEventListener('search-dialog:open-request', onOpenRequested, { signal });
   document.addEventListener('keydown', onKeydown, { signal });
+  dispatchUnavailableState(options.reason);
   return { status: 'unavailable', reason: options.reason };
 }
 

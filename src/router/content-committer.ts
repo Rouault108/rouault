@@ -10,6 +10,7 @@ import {
   restoreShellGeneration,
 } from '../components/app/shell/app-shell-lifecycle.js';
 import type {
+  AppShellRollbackStartDetail,
   AppShellRestoredDetail,
   AppShellValidatedDetail,
   RuntimeDomLinkValidationContext,
@@ -56,6 +57,12 @@ const dispatchShellValidated = (detail: AppShellValidatedDetail): void => {
 const dispatchShellRestored = (detail: AppShellRestoredDetail): void => {
   document.dispatchEvent(
     new CustomEvent<AppShellRestoredDetail>('app-shell:restored', { detail }),
+  );
+};
+
+const dispatchShellRollbackStart = (detail: AppShellRollbackStartDetail): void => {
+  document.dispatchEvent(
+    new CustomEvent<AppShellRollbackStartDetail>('app-shell:rollback-start', { detail }),
   );
 };
 
@@ -217,6 +224,13 @@ export class ContentCommitter {
     const captureRollbackError = (error: unknown): void => {
       if (rollbackErrors.length === 0) rollbackErrors.push(normalizeError(error));
     };
+
+    dispatchShellRollbackStart({
+      failedNavigationUrl: args.failedNavigationUrl,
+      failedShellCommitId: args.failedShellCommitId,
+      previousShellCommitId: args.previousShellCommitId,
+      reason: 'rollback',
+    });
 
     try {
       if (args.historyApplied) {
