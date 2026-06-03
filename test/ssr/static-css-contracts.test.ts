@@ -296,6 +296,21 @@ describe('static CSS contracts', () => {
     expect(css).not.to.contain('ui-list-item >');
   });
 
+  it('layout header CSS keeps sticky and container ownership on the static header root', () => {
+    const css = readCss('layout-header.css');
+
+    expectRuleToDeclare(css, 'header[data-layout-header]', [
+      'position: sticky',
+      'z-index:',
+      'container-type: inline-size',
+      'container-name: layout-header-shell',
+    ]);
+    expect(css).not.to.contain('layout-header-query-frame');
+    expect(css).not.to.match(/(^|[,{]\s*)layout-header(?:[.#[:\s,{>+~]|$)/u);
+    expect(css).not.to.match(/(^|[,{]\s*)ui-header(?:[.#[:\s,{>+~]|$)/u);
+    expect(css.match(/container-name:\s*layout-header-shell/gu) ?? []).toHaveLength(1);
+  });
+
   it('search dialog CSS contains required layout and state declarations', () => {
     const css = readCss('search-dialog.css');
     expectRuleToDeclare(css, '.search-dialog', [

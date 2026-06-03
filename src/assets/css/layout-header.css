@@ -20,12 +20,6 @@ header[data-layout-header] {
   --_header-control-padding-compact: var(--space-2, 8px);
 }
 
-header[data-layout-header] .layout-header-query-frame {
-  inline-size: 100%;
-  container-type: inline-size;
-  container-name: layout-header-shell;
-}
-
 header[data-layout-header] .layout-header__inner {
   position: relative;
   box-sizing: border-box;

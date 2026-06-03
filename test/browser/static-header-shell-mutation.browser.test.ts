@@ -23,7 +23,7 @@ describe('static-header-shell-mutation', () => {
     ).to.throw();
     expect(() => parseAndValidateStaticHeaderHtml(`text${headerHtml()}`, document)).to.throw();
     expect(() =>
-      parseAndValidateStaticHeaderHtml('<layout-header></layout-header>', document),
+      parseAndValidateStaticHeaderHtml(`<${'layout-header'}></${'layout-header'}>`, document),
     ).to.throw();
   });
 

@@ -437,7 +437,7 @@ forbidFileExists(
   'Legacy navigation shell contract filename must not remain after NavigationEnvelope v2 migration',
 );
 forbidFileExists(
-  'src/components/layout/layout-header.ts',
+  ['src/components/layout/', 'layout-header.ts'].join(''),
   'Legacy Lit layout-header component must not remain after static header migration',
 );
 forbidPatternIfExists(

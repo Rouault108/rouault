@@ -188,19 +188,17 @@ export const renderLayoutHeaderHtml = (input: LayoutHeaderHtmlInput): string => 
     { name: 'data-toc-trigger-reserved', value: input.tocTriggerReserved ? 'true' : 'false' },
     { name: 'data-current-corpus-key', value: input.currentCorpusKey },
   ])}>
-  <div class="layout-header-query-frame">
-    <div class="layout-header__inner">
-      <div class="layout-header__start slot-group start-slot-group">
-        ${renderSidebarToggle({ ...input, sidebarId })}
-        ${renderCorpusSwitcher(input)}
-      </div>
-      <div class="layout-header__center"></div>
-      <div class="layout-header__compact-center"></div>
-      <div class="layout-header__end slot-group end-slot-group">
-        ${renderTocTrigger(input)}
-        ${renderSearchTrigger(input)}
-        ${renderThemeSwitcher()}
-      </div>
+  <div class="layout-header__inner">
+    <div class="layout-header__start slot-group start-slot-group">
+      ${renderSidebarToggle({ ...input, sidebarId })}
+      ${renderCorpusSwitcher(input)}
+    </div>
+    <div class="layout-header__center"></div>
+    <div class="layout-header__compact-center"></div>
+    <div class="layout-header__end slot-group end-slot-group">
+      ${renderTocTrigger(input)}
+      ${renderSearchTrigger(input)}
+      ${renderThemeSwitcher()}
     </div>
   </div>
 </header>

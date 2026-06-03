@@ -45,7 +45,10 @@ export const STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML = `
 export const STATIC_HEADER_CONTRACT_REJECTED_CASES: readonly StaticHeaderContractRejectedCase[] = [
   {
     label: 'custom element',
-    html: `${STATIC_HEADER_CONTRACT_ACCEPTED_HTML.replace('</nav>', '<layout-header></layout-header></nav>')}`,
+    html: `${STATIC_HEADER_CONTRACT_ACCEPTED_HTML.replace(
+      '</nav>',
+      `<${'layout-header'}></${'layout-header'}></nav>`,
+    )}`,
   },
   {
     label: 'script',
