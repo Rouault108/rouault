@@ -37,6 +37,11 @@ const resolveTriggers = (): HTMLElement[] => [
   ...document.querySelectorAll<HTMLElement>(`${HEADER_SELECTOR} ${TOC_TRIGGER_SELECTOR}`),
 ];
 
+const resolveRuntimeMobilePanel = (runtimeId: string): HTMLElement | null => {
+  const panel = document.getElementById(`layout-toc-panel-${runtimeId}`);
+  return panel instanceof HTMLElement && panel.matches(MOBILE_PANEL_SELECTOR) ? panel : null;
+};
+
 const syncRuntimeSnapshot = (snapshot: LayoutTocRuntimeSnapshot): void => {
   const interactive = snapshot.ready && snapshot.hasVisibleHeadings;
   for (const trigger of resolveTriggers()) {
@@ -50,7 +55,8 @@ const syncRuntimeSnapshot = (snapshot: LayoutTocRuntimeSnapshot): void => {
 const syncMobileSnapshot = (panelOpen: boolean): void => {
   for (const trigger of resolveTriggers()) {
     trigger.setAttribute('aria-expanded', panelOpen ? 'true' : 'false');
-    const panel = document.querySelector<HTMLElement>(MOBILE_PANEL_SELECTOR);
+    const runtimeId = trigger.getAttribute('data-toc-runtime-id')?.trim();
+    const panel = runtimeId && runtimeId.length > 0 ? resolveRuntimeMobilePanel(runtimeId) : null;
     if (panel?.id) trigger.setAttribute('aria-controls', panel.id);
   }
 };
@@ -80,26 +86,77 @@ const refreshSubscriptions = (state: TocBridgeState): void => {
   });
 };
 
+const isCurrentShellActivation = (
+  state: TocBridgeState,
+  shellCommitId: number,
+  runtimeId: string,
+  context: RuntimeDomLinkValidationContext,
+): boolean =>
+  readCurrentShellCommitId() === shellCommitId &&
+  state.validatedShellCommitId === shellCommitId &&
+  state.linkValidationContext === context &&
+  readRuntimeId() === runtimeId;
+
+const resolveCurrentTocController = (runtimeId: string): HTMLElement | null => {
+  const controller = [...document.querySelectorAll<HTMLElement>('layout-toc-controller')].find(
+    (candidate) =>
+      candidate.isConnected &&
+      candidate.ownerDocument === document &&
+      document.body.contains(candidate) &&
+      candidate.getAttribute('toc-runtime-id') === runtimeId,
+  );
+  if (!(controller instanceof HTMLElement)) return null;
+  const tocRoot = controller.closest('[data-layout-toc-root]');
+  if (!(tocRoot instanceof HTMLElement) || !tocRoot.isConnected) return null;
+  const contentRootId = controller.getAttribute('content-root-id')?.trim();
+  if (contentRootId === undefined || contentRootId.length === 0) return null;
+  const contentRoot = document.getElementById(contentRootId);
+  if (!(contentRoot instanceof HTMLElement) || !contentRoot.isConnected) return null;
+  return controller;
+};
+
+const removeRuntimeMobilePanel = (runtimeId: string): void => {
+  const panelId = `layout-toc-panel-${runtimeId}`;
+  document.querySelectorAll<HTMLElement>(MOBILE_PANEL_SELECTOR).forEach((panel) => {
+    if (panel.id === panelId) panel.remove();
+  });
+};
+
 const releaseAndActivateTocController = async (
   state: TocBridgeState,
   shellCommitId: number,
 ): Promise<void> => {
   const runtimeId = readRuntimeId();
   const context = state.linkValidationContext;
-  if (runtimeId === null || context === null || state.validatedShellCommitId !== shellCommitId)
+  if (
+    runtimeId === null ||
+    context === null ||
+    !isCurrentShellActivation(state, shellCommitId, runtimeId, context)
+  ) {
     return;
+  }
   const module = await import('../../components/layout/layout-toc-controller.js');
-  if (readCurrentShellCommitId() !== shellCommitId) return;
-  const controller = [...document.querySelectorAll<HTMLElement>('layout-toc-controller')].find(
-    (candidate) => candidate.getAttribute('toc-runtime-id') === runtimeId,
-  );
-  if (!(controller instanceof HTMLElement)) return;
+  if (!isCurrentShellActivation(state, shellCommitId, runtimeId, context)) return;
+  const controller = resolveCurrentTocController(runtimeId);
+  if (controller === null) return;
   await customElements.whenDefined('layout-toc-controller');
+  if (!isCurrentShellActivation(state, shellCommitId, runtimeId, context)) return;
   customElements.upgrade(controller);
   await Promise.resolve();
+  if (
+    !controller.isConnected ||
+    !document.body.contains(controller) ||
+    !isCurrentShellActivation(state, shellCommitId, runtimeId, context)
+  ) {
+    return;
+  }
   controller.removeAttribute('data-toc-trigger-reserved');
   module.activateLayoutTocController(controller);
-  const panel = document.querySelector<HTMLElement>(MOBILE_PANEL_SELECTOR);
+  if (!isCurrentShellActivation(state, shellCommitId, runtimeId, context)) {
+    removeRuntimeMobilePanel(runtimeId);
+    return;
+  }
+  const panel = resolveRuntimeMobilePanel(runtimeId);
   if (panel instanceof HTMLElement) {
     try {
       validateRuntimeDomLinkContractSubtree({
@@ -111,6 +168,10 @@ const releaseAndActivateTocController = async (
       panel.remove();
       throw error;
     }
+  }
+  if (!isCurrentShellActivation(state, shellCommitId, runtimeId, context)) {
+    removeRuntimeMobilePanel(runtimeId);
+    return;
   }
   syncMobileSnapshot(layoutTocMobileController.getSnapshot(runtimeId).panelOpen);
   refreshSubscriptions(state);
@@ -139,9 +200,11 @@ export const enhanceLayoutHeaderTocBridge = (signal: AbortSignal): void => {
       state.linkValidationContext =
         state.validationContexts.get(detail.restoredShellCommitId) ?? null;
       refresh();
-      void releaseAndActivateTocController(state, detail.restoredShellCommitId).catch(
-        () => undefined,
-      );
+      if (state.linkValidationContext !== null) {
+        void releaseAndActivateTocController(state, detail.restoredShellCommitId).catch(
+          () => undefined,
+        );
+      }
     },
     { signal },
   );

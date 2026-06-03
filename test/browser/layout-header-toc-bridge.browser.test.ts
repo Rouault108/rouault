@@ -9,6 +9,7 @@ import { layoutTocMobileController } from '../../src/components/layout/layout-to
 import { layoutTocRuntimeStore } from '../../src/components/layout/layout-toc-runtime-store.js';
 import type {
   AppShellCommittedDetail,
+  AppShellRestoredDetail,
   AppShellValidatedDetail,
   RuntimeDomLinkValidationContext,
 } from '../../src/components/app/shell/app-shell-events.js';
@@ -111,6 +112,20 @@ const appendBridgeFixture = (): HTMLElement => {
   return root;
 };
 
+const dispatchValidated = (header: HTMLElement, shellCommitId: number): void => {
+  document.dispatchEvent(
+    new CustomEvent<AppShellValidatedDetail>('app-shell:validated', {
+      detail: {
+        header,
+        navigationUrl: '/notes/current',
+        shellCommitId,
+        shell: { headerHtml: header.outerHTML, sidebarProjection: null },
+        linkValidationContext,
+      },
+    }),
+  );
+};
+
 describe('layout-header-toc-bridge', () => {
   let controller: AbortController | null = null;
 
@@ -149,17 +164,7 @@ describe('layout-header-toc-bridge', () => {
       root.querySelector('layout-toc-controller')?.getAttribute('data-toc-trigger-reserved'),
     ).to.equal('true');
 
-    document.dispatchEvent(
-      new CustomEvent<AppShellValidatedDetail>('app-shell:validated', {
-        detail: {
-          header,
-          navigationUrl: '/notes/current',
-          shellCommitId: 1,
-          shell: { headerHtml: header.outerHTML, sidebarProjection: null },
-          linkValidationContext,
-        },
-      }),
-    );
+    dispatchValidated(header, 1);
 
     await waitUntil(
       () => document.querySelector(TOC_MOBILE_PANEL_SELECTOR) instanceof HTMLElement,
@@ -174,5 +179,89 @@ describe('layout-header-toc-bridge', () => {
     expect(
       root.querySelector('layout-toc-controller')?.hasAttribute('data-toc-trigger-reserved'),
     ).to.equal(false);
+  });
+
+  it('TOC controller 定義待ち中に shell 世代が進んだ場合は旧 controller を起動しないこと', async () => {
+    const root = appendBridgeFixture();
+    const header = root.querySelector<HTMLElement>('header[data-layout-header]');
+    const tocController = root.querySelector<HTMLElement>('layout-toc-controller');
+    if (!(header instanceof HTMLElement) || !(tocController instanceof HTMLElement)) {
+      throw new Error('TOC bridge fixture is missing');
+    }
+
+    controller = new AbortController();
+    enhanceLayoutHeaderTocBridge(controller.signal);
+
+    const originalWhenDefined = customElements.whenDefined.bind(customElements);
+    let releaseWhenDefined = (): void => {
+      throw new Error('whenDefined gate is not initialized');
+    };
+    let whenDefinedRequested = false;
+    const delayedWhenDefined = new Promise<CustomElementConstructor>((resolve) => {
+      releaseWhenDefined = () => {
+        void originalWhenDefined('layout-toc-controller').then(resolve);
+      };
+    });
+    const registry = customElements as CustomElementRegistry & {
+      whenDefined: CustomElementRegistry['whenDefined'];
+    };
+    registry.whenDefined = ((name: string) => {
+      if (name === 'layout-toc-controller') {
+        whenDefinedRequested = true;
+        return delayedWhenDefined;
+      }
+      return originalWhenDefined(name);
+    }) as CustomElementRegistry['whenDefined'];
+
+    try {
+      commitShellGeneration(1);
+      dispatchValidated(header, 1);
+
+      await waitUntil(
+        () => whenDefinedRequested,
+        'layout-toc-controller definition wait is requested',
+      );
+      commitShellGeneration(2);
+      releaseWhenDefined();
+      await delayedWhenDefined;
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(document.querySelector(TOC_MOBILE_PANEL_SELECTOR)).to.equal(null);
+      expect(tocController.getAttribute('data-toc-trigger-reserved')).to.equal('true');
+    } finally {
+      registry.whenDefined = originalWhenDefined;
+    }
+  });
+
+  it('app-shell:restored は保存済み validation context がない shell で DOM 追加しないこと', async () => {
+    const root = appendBridgeFixture();
+    const header = root.querySelector<HTMLElement>('header[data-layout-header]');
+    const tocController = root.querySelector<HTMLElement>('layout-toc-controller');
+    if (!(header instanceof HTMLElement) || !(tocController instanceof HTMLElement)) {
+      throw new Error('TOC bridge fixture is missing');
+    }
+
+    controller = new AbortController();
+    enhanceLayoutHeaderTocBridge(controller.signal);
+
+    commitShellGeneration(3);
+    document.dispatchEvent(
+      new CustomEvent<AppShellRestoredDetail>('app-shell:restored', {
+        detail: {
+          header,
+          restoredUrl: '/notes/current',
+          failedNavigationUrl: '/about/',
+          restoredShellCommitId: 3,
+          failedShellCommitId: 4,
+          reason: 'rollback',
+        },
+      }),
+    );
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(document.querySelector(TOC_MOBILE_PANEL_SELECTOR)).to.equal(null);
+    expect(tocController.getAttribute('data-toc-trigger-reserved')).to.equal('true');
   });
 });
