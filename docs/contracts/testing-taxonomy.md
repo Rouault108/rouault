@@ -46,6 +46,7 @@
 - `test/browser/**` は custom element、enhancer、keyboard / pointer / focus、ARIA、shadow DOM を担当する。
 - `test/ssr/**` は build-time / final DOM / static artifact / CSS structure を担当する。
 - `test/e2e/**` は app shell integration、no-JS baseline、router/history/search、主要導線を担当する。
+- `pnpm test:e2e:dev` は Eleventy dev server 上の開発時専用経路に限定した smoke を担当する。production build / preview で固定する final DOM や横断的な router 挙動を重複検証してはならない。
 - `test/storybook/**` は docs / smoke / metadata に限定する。
 - Production import-boundary / CSS artifact / search import-boundary scripts は node-level verification として扱い、読書 chrome の runtime UI 挙動は browser / e2e で固定する。
 

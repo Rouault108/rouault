@@ -29,6 +29,8 @@ const mobileWebkitFinalCheck = [
   '**/toc-readable-long-heading.spec.ts',
 ];
 
+const devServerOnlyCheck = '**/dev-router-artifact.spec.ts';
+
 const isCI = !!process.env['CI'];
 const productionPreviewPort = 4173;
 const productionPreviewOrigin = `http://127.0.0.1:${productionPreviewPort}`;
@@ -63,6 +65,7 @@ const toPlaywrightEnv = (env: NodeJS.ProcessEnv): Record<string, string> => {
 
 export default defineConfig({
   testDir: './test/e2e',
+  testIgnore: devServerOnlyCheck,
 
   timeout: 30 * 1000,
   expect: {
