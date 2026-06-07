@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { STATIC_FIRST_DELETION_TARGETS } from '../../build/content/static-first-deletion-targets.js';
 import { STATIC_FIRST_RETAINED_COMPONENTS } from '../../build/content/static-first-retained-components.js';
+import { STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS } from '../../build/content/static-first-removed-or-reduced-tags.js';
 import { STATIC_FIRST_UNKNOWN_UI_ALLOWLIST } from '../../build/content/static-first-unknown-ui-allowlist.js';
 import { STATEFUL_ALLOWED_NOTE_TAGS } from '../../build/content/static-first-tags.js';
 
@@ -31,8 +32,20 @@ const gitFiles = (): readonly string[] =>
 
 const readRepoFile = (path: string): string => readFileSync(join(repoRoot, path), 'utf8');
 
-const readManifest = (): CustomElementsManifest =>
-  JSON.parse(readRepoFile('custom-elements.json')) as CustomElementsManifest;
+const assertGeneratedManifestExists = (): void => {
+  const manifestPath = join(repoRoot, 'custom-elements.json');
+
+  if (!existsSync(manifestPath)) {
+    throw new Error(
+      'Generated custom-elements.json does not exist. Run pnpm run codegen:manifest before this test.',
+    );
+  }
+};
+
+const readManifest = (): CustomElementsManifest => {
+  assertGeneratedManifestExists();
+  return JSON.parse(readRepoFile('custom-elements.json')) as CustomElementsManifest;
+};
 
 const readPackageJson = (): { readonly scripts?: Readonly<Record<string, string>> } =>
   JSON.parse(readRepoFile('package.json')) as {
@@ -108,7 +121,7 @@ describe('static-first manifest generation contract', () => {
     expect(existsSync(join(repoRoot, oldManifestScriptPath))).toBe(false);
   });
 
-  it('keeps the committed custom-elements manifest synchronized after codegen', () => {
+  it('keeps generated custom-elements manifest stable after codegen', () => {
     expect(() =>
       execFileSync('git', ['diff', '--exit-code', '--', 'custom-elements.json'], {
         cwd: repoRoot,
@@ -117,16 +130,15 @@ describe('static-first manifest generation contract', () => {
     ).not.toThrow();
   });
 
-  it('does not emit deletion targets, unknown UI entries, or non-retained stateful note gaps', () => {
+  it('does not emit removed-or-reduced legacy tags, unknown UI entries, or non-retained stateful note gaps', () => {
     const manifestTags = new Set(extractManifestCustomElementTags(readManifest()));
-    const deletionTags = new Set(STATIC_FIRST_DELETION_TARGETS.map((target) => target.tag));
     const unknownTags = new Set(
       (STATIC_FIRST_UNKNOWN_UI_ALLOWLIST as readonly { readonly tag: string }[]).map(
         (entry) => entry.tag,
       ),
     );
 
-    for (const tag of deletionTags) {
+    for (const tag of STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS) {
       expect(manifestTags.has(tag), tag).toBe(false);
     }
     for (const tag of unknownTags) {

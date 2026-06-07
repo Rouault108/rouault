@@ -5,8 +5,11 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-import { STATIC_FIRST_DELETION_TARGETS } from '../build/content/static-first-deletion-targets.js';
 import { STATIC_FIRST_RETAINED_COMPONENTS } from '../build/content/static-first-retained-components.js';
+import {
+  isStaticFirstRemovedOrReducedLegacyTag,
+  STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS,
+} from '../build/content/static-first-removed-or-reduced-tags.js';
 import { STATIC_FIRST_UNKNOWN_UI_ALLOWLIST } from '../build/content/static-first-unknown-ui-allowlist.js';
 
 interface CustomElementsManifest {
@@ -48,7 +51,7 @@ const retainedManifestTags = new Set(retainedManifestComponents.map((component) 
 const retainedManifestModulePaths = new Set(
   retainedManifestComponents.flatMap((component) => component.manifestModulePaths ?? []),
 );
-const deletionTags = new Set(STATIC_FIRST_DELETION_TARGETS.map((target) => target.tag));
+const removedOrReducedLegacyTagList = STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS.join(', ');
 const unknownTags = new Set(
   (STATIC_FIRST_UNKNOWN_UI_ALLOWLIST as readonly { readonly tag: string }[]).map(
     (entry) => entry.tag,
@@ -146,8 +149,11 @@ const assertManifestInventory = (): void => {
   }
 
   for (const tag of retainedManifestTags) {
-    if (deletionTags.has(tag)) {
-      throw new Error(`Deletion target cannot be emitted in manifest: ${tag}`);
+    if (isStaticFirstRemovedOrReducedLegacyTag(tag)) {
+      throw new Error(
+        `Removed-or-reduced legacy tag cannot be emitted in manifest: ${tag}. ` +
+          `Known removed-or-reduced legacy tags: ${removedOrReducedLegacyTagList}`,
+      );
     }
     if (unknownTags.has(tag)) {
       throw new Error(`Unknown UI allowlist cannot drive manifest inclusion: ${tag}`);
@@ -238,8 +244,11 @@ const patchManifest = (): void => {
   }
 
   for (const emittedTag of emittedTags) {
-    if (deletionTags.has(emittedTag)) {
-      throw new Error(`Deletion target emitted in manifest: ${emittedTag}`);
+    if (isStaticFirstRemovedOrReducedLegacyTag(emittedTag)) {
+      throw new Error(
+        `Removed-or-reduced legacy tag emitted in manifest: ${emittedTag}. ` +
+          `Known removed-or-reduced legacy tags: ${removedOrReducedLegacyTagList}`,
+      );
     }
     if (unknownTags.has(emittedTag)) {
       throw new Error(`Unknown UI allowlist emitted in manifest: ${emittedTag}`);
