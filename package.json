@@ -6,9 +6,9 @@
   "type": "module",
   "engines": {
     "node": "24.x",
-    "pnpm": "10.x"
+    "pnpm": "11.x"
   },
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.5.2+sha512.71c631e382066efc25625d5cf029075de07b61b37f6e27350fbd84b1bda5864c8c1967adc280776b45c30a715c0359a3be08fef42d5bb09e2b99029979692916",
   "license": "CC BY 4.0",
   "scripts": {
     "codegen:icons": "node --import tsx scripts/generate-icon-subset.ts",
@@ -45,7 +45,7 @@
     "dev": "pnpm run codegen:icons && tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
     "start": "pnpm run dev",
     "check": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run validate:note-links && pnpm run assert-production-import-boundary && pnpm run assert-search-import-boundary",
-    "ci": "pnpm run check && pnpm run assert-link-contract-acceptance && pnpm run test:extended",
+    "verify": "pnpm run check && pnpm run assert-link-contract-acceptance && pnpm run test:extended",
     "sync:link-cards": "pnpm exec tsx scripts/sync-link-card-metadata.ts",
     "assert-production-import-boundary": "tsx scripts/assert-production-import-boundary.ts",
     "assert-search-import-boundary": "tsx scripts/assert-search-import-boundary.ts",

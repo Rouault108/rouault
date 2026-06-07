@@ -77,7 +77,7 @@ Rouaultは次の用途を想定した個人向け読書アプリです。
 ### 必要条件
 
 - Node.js 24.x
-- pnpm 10.x
+- pnpm 11.x
 
 `.node-version`と `package.json`の `engines`を基準にしています。
 
@@ -119,7 +119,7 @@ pnpm lint                   # ESLint
 pnpm lint:fix               # ESLint + Prettier
 pnpm typecheck              # app + nodeの型チェック
 pnpm check                  # lint + typecheck + test
-pnpm ci                     # check + test:extended
+pnpm verify                     # check + test:extended
 ```
 
 ## ビルドの流れ
