@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS } from '../../build/content/static-first-removed-or-reduced-tags.js';
 import {
   HYDRATION_REGISTRY,
   HYDRATION_REGISTRY_BY_TAG,
@@ -26,6 +27,15 @@ const expectedProfilesByTag = new Map<string, readonly string[]>([
 ]);
 
 describe('hydration registry', () => {
+  it('does not register removed-or-reduced legacy tags', () => {
+    const registryTags = new Set<string>(HYDRATION_REGISTRY.map((entry) => entry.tag));
+    const registeredLegacyTags = STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS.filter(
+      (tag) => registryTags.has(tag) || HYDRATION_REGISTRY_BY_TAG.has(tag),
+    );
+
+    expect(registeredLegacyTags).toEqual([]);
+  });
+
   it('profile metadata を持つこと', () => {
     for (const entry of HYDRATION_REGISTRY) {
       expect(entry.profiles.length, entry.tag).toBeGreaterThan(0);

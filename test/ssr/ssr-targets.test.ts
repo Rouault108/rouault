@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
+import { STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS } from '../../build/content/static-first-removed-or-reduced-tags.js';
 import { renderCustomElement } from '../../build/ssr/server-entry.js';
 import { SSR_COMPONENT_DEFINITIONS } from '../../build/ssr/target-definitions.js';
 import {
   SSR_LAYOUT_TARGET_TAGS,
   SSR_NOTE_TARGET_TAGS,
   SSR_PAGE_TARGET_TAGS,
+  SSR_SHELL_TARGET_TAGS,
   SSR_TARGET_TAGS,
 } from '../../build/ssr/targets.js';
 
@@ -109,5 +111,28 @@ describe('component manifest / ssr targets', () => {
     );
 
     expect(rendered).toContain('<layout-toc');
+  });
+});
+
+describe('removed-or-reduced legacy SSR target guard', () => {
+  it('keeps removed-or-reduced legacy tags out of all SSR target surfaces', () => {
+    const surfaces = new Map<string, readonly string[]>([
+      [
+        'SSR_COMPONENT_DEFINITIONS',
+        SSR_COMPONENT_DEFINITIONS.map((definition) => definition.tag),
+      ],
+      ['SSR_TARGET_TAGS', SSR_TARGET_TAGS],
+      ['SSR_NOTE_TARGET_TAGS', SSR_NOTE_TARGET_TAGS],
+      ['SSR_PAGE_TARGET_TAGS', SSR_PAGE_TARGET_TAGS],
+      ['SSR_SHELL_TARGET_TAGS', SSR_SHELL_TARGET_TAGS],
+      ['SSR_LAYOUT_TARGET_TAGS', SSR_LAYOUT_TARGET_TAGS],
+    ]);
+
+    for (const [surfaceName, tags] of surfaces) {
+      const presentForbiddenTags = STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS.filter((tag) =>
+        tags.includes(tag),
+      );
+      expect(presentForbiddenTags, surfaceName).toEqual([]);
+    }
   });
 });
