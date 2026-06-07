@@ -56,10 +56,9 @@ const unknownTags = new Set(
 );
 
 const resolvePackageRoot = (packageName: string): string => {
-  const packageEntryPath = nodeRequire.resolve(packageName);
-  let currentDir = path.dirname(packageEntryPath);
+  let currentDir = path.dirname(nodeRequire.resolve(packageName));
 
-  while (true) {
+  for (;;) {
     const packageJsonPath = path.join(currentDir, 'package.json');
 
     if (existsSync(packageJsonPath)) {
@@ -75,11 +74,13 @@ const resolvePackageRoot = (packageName: string): string => {
     const parentDir = path.dirname(currentDir);
 
     if (parentDir === currentDir) {
-      throw new Error(`Unable to resolve package root: ${packageName}`);
+      break;
     }
 
     currentDir = parentDir;
   }
+
+  throw new Error(`Unable to resolve package root: ${packageName}`);
 };
 
 const resolvePackageBin = (packageName: string, binName: string): string => {
@@ -87,10 +88,7 @@ const resolvePackageBin = (packageName: string, binName: string): string => {
   const packageJsonPath = path.join(packageRoot, 'package.json');
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as PackageJsonWithBin;
 
-  const binPath =
-    typeof packageJson.bin === 'object' && packageJson.bin !== null
-      ? packageJson.bin[binName]
-      : undefined;
+  const binPath = typeof packageJson.bin === 'object' ? packageJson.bin[binName] : undefined;
 
   if (!binPath) {
     throw new Error(`Unable to resolve bin "${binName}" from package: ${packageName}`);
@@ -270,9 +268,9 @@ const runCustomElementsManifestAnalyzer = (): void => {
 
   if (result.status !== 0) {
     const reason =
-      result.signal !== null
-        ? `signal ${result.signal}`
-        : `exit code ${result.status ?? '<unknown>'}`;
+      result.signal === null
+        ? `exit code ${String(result.status ?? '<unknown>')}`
+        : `signal ${result.signal}`;
 
     throw new Error(`Custom Elements Manifest analyzer failed with ${reason}.`);
   }
