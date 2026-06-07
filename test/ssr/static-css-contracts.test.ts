@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import postcss, { type AtRule, type Declaration, type Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';
@@ -294,6 +294,31 @@ describe('static CSS contracts', () => {
       expect(css, String(pattern)).not.to.match(pattern);
     }
     expect(css).not.to.contain('ui-list-item >');
+  });
+
+  it('utility skeleton CSS exposes visual-only static skeleton contract', () => {
+    const css = readCss('utility-surfaces.css');
+
+    expectRuleToDeclare(css, '.skeleton', [
+      'background: var(--skeleton-bg)',
+      'position: relative',
+      'overflow: hidden',
+      'border-radius: var(--radius-sm)',
+    ]);
+    expectRuleToDeclare(css, '.skeleton::after', [
+      "content: ''",
+      'position: absolute',
+      'top: 0',
+      'right: 0',
+      'bottom: 0',
+      'left: 0',
+      'background: linear-gradient(90deg, transparent, var(--skeleton-shimmer), transparent)',
+      'animation: shimmer 1.5s infinite',
+    ]);
+
+    const reducedMotion = atRuleBlock(css, '@media (prefers-reduced-motion: reduce)');
+    expectRuleToDeclare(reducedMotion, '.skeleton::after', ['animation: none']);
+    expect(existsSync(resolve(cssDir, 'skeleton.css'))).to.equal(false);
   });
 
   it('layout header CSS keeps sticky and container ownership on the static header root', () => {

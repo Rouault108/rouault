@@ -221,7 +221,7 @@ describe('ui-file-tree browser contract', () => {
     await flush(retainTree);
 
     expect(retainTree.getAttribute('aria-busy')).to.equal('true');
-    expect((retainTree.shadowRoot?.querySelectorAll('.skeleton').length ?? 0) === 0).to.equal(true);
+    expect(retainTree.shadowRoot?.querySelector('.skeleton')).to.equal(null);
     expect(retainTree.shadowRoot?.querySelector('ui-tree-item')).to.not.equal(null);
 
     const replaceTree = await fixture<FileTree>(html`
@@ -235,7 +235,9 @@ describe('ui-file-tree browser contract', () => {
     await flush(replaceTree);
 
     expect(replaceTree.getAttribute('aria-busy')).to.equal('true');
-    expect((replaceTree.shadowRoot?.querySelectorAll('.skeleton').length ?? 0) > 0).to.equal(true);
+    const skeleton = replaceTree.shadowRoot?.querySelector('.skeleton[aria-hidden="true"]');
+    expect(skeleton).to.not.equal(null);
+    expect(skeleton?.querySelectorAll('.skeleton-item').length).to.equal(5);
     expect(replaceTree.shadowRoot?.querySelectorAll('ui-tree-item').length ?? 0).to.equal(0);
   });
 
