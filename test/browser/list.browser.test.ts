@@ -154,15 +154,89 @@ describe('ui-list browser contract', () => {
       host.shadowRoot?.querySelector<HTMLElement>('[data-pagination]'),
       'pagination',
     );
+    expect(paginationNav.classList.contains('ui-pagination')).to.equal(true);
+    expect(paginationNav.getAttribute('aria-label')).to.equal('ページネーション');
     expect(paginationNav.querySelector('[data-pagination-current]')?.textContent?.trim()).to.equal(
       '3 / 10',
     );
-    expect(
-      paginationNav.querySelector<HTMLAnchorElement>('[data-pagination-prev]')?.getAttribute('href'),
-    ).to.equal('/notes?page=2');
-    expect(
-      paginationNav.querySelector<HTMLAnchorElement>('[data-pagination-next]')?.getAttribute('href'),
-    ).to.equal('/notes?page=4');
+    const previous = expectPresent(
+      paginationNav.querySelector<HTMLAnchorElement>('[data-pagination-prev]'),
+      'pagination previous',
+    );
+    const next = expectPresent(
+      paginationNav.querySelector<HTMLAnchorElement>('[data-pagination-next]'),
+      'pagination next',
+    );
+    expect(previous.getAttribute('href')).to.equal('/notes?page=2');
+    expect(previous.getAttribute('rel')).to.equal('prev');
+    expect(previous.getAttribute('aria-disabled')).to.equal('false');
+    expect(next.getAttribute('href')).to.equal('/notes?page=4');
+    expect(next.getAttribute('rel')).to.equal('next');
+    expect(next.getAttribute('aria-disabled')).to.equal('false');
+    expect(paginationNav.querySelectorAll('a')).to.have.length(2);
+    expect(paginationNav.querySelectorAll('[data-pagination-current]')).to.have.length(1);
+  });
+
+  it('pagination の不正値を DOM contract へ漏らさず row index に正規化 offset を使うこと', async () => {
+    const requestedPages: number[] = [];
+    const pagination: PaginationState = {
+      offset: Number.POSITIVE_INFINITY,
+      limit: 0,
+      total: Number.NaN,
+    };
+
+    const host = await fixture<List>(html`
+      <ui-list
+        .columns=${columns}
+        .pagination=${pagination}
+        .getPageHref=${(page: number): string => {
+          requestedPages.push(page);
+          return `/notes?page=${String(page)}`;
+        }}
+      >
+        <ui-list-item row-id="row-1">
+          <a slot="title" href="/notes/row-1">row 1</a>
+          <time slot="date" datetime="2026-04-01">2026-04-01</time>
+        </ui-list-item>
+      </ui-list>
+    `);
+
+    const row = expectPresent(host.querySelector<ListItem>('ui-list-item'), 'row');
+    await flush(host);
+    await flush(row);
+
+    const grid = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('[role="grid"]'),
+      'grid',
+    );
+    const paginationNav = expectPresent(
+      host.shadowRoot?.querySelector<HTMLElement>('[data-pagination]'),
+      'pagination',
+    );
+    const previous = expectPresent(
+      paginationNav.querySelector<HTMLAnchorElement>('[data-pagination-prev]'),
+      'pagination previous',
+    );
+    const next = expectPresent(
+      paginationNav.querySelector<HTMLAnchorElement>('[data-pagination-next]'),
+      'pagination next',
+    );
+
+    expect(grid.getAttribute('aria-rowcount')).to.equal('0');
+    expect(row.rowIndex).to.equal(2);
+    expect(paginationNav.querySelector('[data-pagination-current]')?.textContent?.trim()).to.equal(
+      '1 / 1',
+    );
+    expect(previous.getAttribute('href')).to.equal('/notes?page=1');
+    expect(previous.getAttribute('aria-disabled')).to.equal('true');
+    expect(next.getAttribute('href')).to.equal('/notes?page=1');
+    expect(next.getAttribute('aria-disabled')).to.equal('true');
+    expect(requestedPages).to.deep.equal([1, 1]);
+
+    const serializedPagination = paginationNav.outerHTML;
+    expect(serializedPagination).not.to.contain('Infinity');
+    expect(serializedPagination).not.to.contain('NaN');
+    expect(serializedPagination).not.to.contain('undefined');
   });
 
   it('loading=false かつ row 不在では empty status を出し、loading=true では loading status を優先すること', async () => {
