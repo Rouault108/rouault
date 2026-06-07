@@ -127,7 +127,7 @@ describe('production build entrypoint contract', () => {
     };
     const buildEntrypoint = readFileSync(buildEntrypointPath, 'utf8');
 
-    expect(packageJson.scripts?.['build']).toBe('tsx scripts/run-build.ts');
+    expect(packageJson.scripts?.['build']).toBe('pnpm exec tsx scripts/run-build.ts');
     expect(buildEntrypoint).toContain(
       "import { resolveDevelopmentBuildMetadata } from '../build/metadata/build-metadata.js';",
     );

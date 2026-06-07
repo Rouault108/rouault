@@ -100,7 +100,7 @@ describe('static-first manifest generation contract', () => {
     const scripts = readPackageJson().scripts;
 
     expect(scripts?.['codegen:manifest']).toBe(
-      'pnpm run codegen:icons && tsx scripts/generate-custom-elements-manifest.ts',
+      'pnpm run codegen:icons && pnpm exec tsx scripts/generate-custom-elements-manifest.ts',
     );
     expect(scripts?.['test:ssr']).toBe(
       'pnpm run codegen:manifest && pnpm run codegen:content && pnpm exec vitest --project ssr',
