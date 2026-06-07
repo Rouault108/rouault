@@ -1,4 +1,5 @@
 import type { CorpusPageEntry, CorpusPageNoteSummary } from '../data/corpusPages.js';
+import { renderEmptyStateHtml } from './empty-state-html.js';
 import { escapeHtmlAttribute, escapeHtmlText } from './html-output.js';
 
 const renderNote = (note: CorpusPageNoteSummary): string => `
@@ -33,16 +34,10 @@ const renderNote = (note: CorpusPageNoteSummary): string => `
 
 const renderNotes = (corpusPage: CorpusPageEntry): string => {
   if (corpusPage.notes.length === 0) {
-    return `
-      <section class="empty-hint" data-empty-state data-empty-variant="default">
-        <div class="empty-hint__message" data-announce="off">
-          <div class="empty-hint__icon" aria-hidden="true"></div>
-          <h2 class="empty-hint__heading">このコーパスの公開ノートはまだありません</h2>
-          <p class="empty-hint__description">別のコーパスへ切り替えるか、時間をおいて再度確認してください。</p>
-        </div>
-        <div class="empty-hint__actions" hidden></div>
-      </section>
-    `.trim();
+    return renderEmptyStateHtml({
+      heading: 'このコーパスの公開ノートはまだありません',
+      description: '別のコーパスへ切り替えるか、時間をおいて再度確認してください。',
+    });
   }
 
   return `<ol class="results-list corpus-page__list">${corpusPage.notes
