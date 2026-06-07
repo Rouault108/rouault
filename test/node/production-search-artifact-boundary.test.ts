@@ -18,7 +18,7 @@ describe('production search artifact boundary', () => {
     const searchIndex = buildEntrypoint.indexOf("['tsx', ['scripts/emit-search-artifacts.ts']]");
     const pagefindIndex = buildEntrypoint.indexOf("['tsx', ['scripts/build-pagefind.ts']]");
 
-    expect(packageJson.scripts['build']).to.equal('tsx scripts/run-build.ts');
+    expect(packageJson.scripts['build']).to.equal('pnpm exec tsx scripts/run-build.ts');
     expect(searchIndex).to.be.greaterThan(-1);
     expect(navigationIndex).to.be.lessThan(searchIndex);
     expect(searchIndex).to.be.lessThan(pagefindIndex);
