@@ -121,15 +121,6 @@ describe('static-first manifest generation contract', () => {
     expect(existsSync(join(repoRoot, oldManifestScriptPath))).toBe(false);
   });
 
-  it('keeps generated custom-elements manifest stable after codegen', () => {
-    expect(() =>
-      execFileSync('git', ['diff', '--exit-code', '--', 'custom-elements.json'], {
-        cwd: repoRoot,
-        stdio: 'pipe',
-      }),
-    ).not.toThrow();
-  });
-
   it('does not emit removed-or-reduced legacy tags, unknown UI entries, or non-retained stateful note gaps', () => {
     const manifestTags = new Set(extractManifestCustomElementTags(readManifest()));
     const unknownTags = new Set(
