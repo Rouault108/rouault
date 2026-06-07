@@ -19,7 +19,7 @@ Static icon は、旧 `ui-icon` custom element を復活させずに、静的 HT
 
 ## Semantic Icon
 
-Semantic icon は options 呼び出しで非空の `label` を明示した場合だけ出力する。
+Semantic icon は options 呼び出しで非空の `label` を指定した場合だけ出力する。
 
 ```ts
 renderStaticIconHtml('search', {
