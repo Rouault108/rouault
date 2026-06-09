@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { RUN_BUILD_STEPS } from '../../scripts/run-build-process.js';
+
 const repoRoot = process.cwd();
 const readRepoFile = (filePath: string): string =>
   readFileSync(path.join(repoRoot, filePath), 'utf8');
@@ -11,14 +13,27 @@ describe('production search artifact boundary', () => {
     const packageJson = JSON.parse(readRepoFile('package.json')) as {
       scripts: Record<string, string>;
     };
-    const buildEntrypoint = readRepoFile('scripts/run-build.ts');
-    const navigationIndex = buildEntrypoint.indexOf(
-      "['tsx', ['scripts/emit-navigation-artifacts.ts']]",
-    );
-    const searchIndex = buildEntrypoint.indexOf("['tsx', ['scripts/emit-search-artifacts.ts']]");
-    const pagefindIndex = buildEntrypoint.indexOf("['tsx', ['scripts/build-pagefind.ts']]");
+    const stepLabels = RUN_BUILD_STEPS.map((step) => step.label);
+    const navigationIndex = stepLabels.indexOf('emit-navigation-artifacts');
+    const searchIndex = stepLabels.indexOf('emit-search-artifacts');
+    const pagefindIndex = stepLabels.indexOf('build-pagefind');
 
     expect(packageJson.scripts['build']).to.equal('pnpm exec tsx scripts/run-build.ts');
+    expect(RUN_BUILD_STEPS[navigationIndex]?.pnpmArgs).to.deep.equal([
+      'exec',
+      'tsx',
+      'scripts/emit-navigation-artifacts.ts',
+    ]);
+    expect(RUN_BUILD_STEPS[searchIndex]?.pnpmArgs).to.deep.equal([
+      'exec',
+      'tsx',
+      'scripts/emit-search-artifacts.ts',
+    ]);
+    expect(RUN_BUILD_STEPS[pagefindIndex]?.pnpmArgs).to.deep.equal([
+      'exec',
+      'tsx',
+      'scripts/build-pagefind.ts',
+    ]);
     expect(searchIndex).to.be.greaterThan(-1);
     expect(navigationIndex).to.be.lessThan(searchIndex);
     expect(searchIndex).to.be.lessThan(pagefindIndex);

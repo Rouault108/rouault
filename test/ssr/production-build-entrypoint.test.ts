@@ -3,6 +3,8 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { PRODUCTION_BUILD_PNPM_ARGS, RUN_BUILD_STEPS } from '../../scripts/run-build-process.js';
+
 const projectRoot = process.cwd();
 const workflowPath = path.resolve(projectRoot, '.github/workflows/ci-cd.yml');
 const playwrightConfigPath = path.resolve(projectRoot, 'playwright.config.ts');
@@ -109,16 +111,21 @@ describe('production build entrypoint contract', () => {
       "import { resolveProductionBuildMetadata } from '../build/metadata/build-metadata.js';",
     );
     expect(productionBuildEntrypoint).toContain(
-      'const buildMetadata = resolveProductionBuildMetadata();',
+      'const buildMetadata = resolveProductionBuildMetadata({',
     );
-    expect(productionBuildEntrypoint).toContain("env['ROUAULT_BUILD_ID'] = buildMetadata.buildId;");
+    expect(productionBuildEntrypoint).toContain('buildLabel: entrypointBuildLabel,');
+    expect(productionBuildEntrypoint).toContain('ROUAULT_BUILD_ID: buildMetadata.buildId,');
     expect(productionBuildEntrypoint).toContain(
-      "env['ROUAULT_BUILD_LABEL'] = buildMetadata.buildLabel;",
+      'ROUAULT_BUILD_LABEL: buildMetadata.buildLabel,',
     );
     expect(productionBuildEntrypoint).toContain(
-      "env['ROUAULT_GENERATED_AT'] = buildMetadata.generatedAt;",
+      'ROUAULT_GENERATED_AT: buildMetadata.generatedAt,',
     );
-    expect(productionBuildEntrypoint).toMatch(/spawnSync\(command, \['build'\], \{\s*env,/su);
+    expect(productionBuildEntrypoint).toContain('pnpmArgs: PRODUCTION_BUILD_PNPM_ARGS,');
+    expect(PRODUCTION_BUILD_PNPM_ARGS).to.deep.equal(['build']);
+    expect(productionBuildEntrypoint).toMatch(
+      /spawnSync\(invocation\.command, \[\.\.\.invocation\.args\], \{\s*env,/su,
+    );
   });
 
   it('通常 build entrypoint は build metadata を一度だけ解決して subprocess env に注入すること', () => {
@@ -135,9 +142,12 @@ describe('production build entrypoint contract', () => {
     expect(buildEntrypoint).toContain('ROUAULT_BUILD_ID: buildMetadata.buildId,');
     expect(buildEntrypoint).toContain('ROUAULT_BUILD_LABEL: buildMetadata.buildLabel,');
     expect(buildEntrypoint).toContain('ROUAULT_GENERATED_AT: buildMetadata.generatedAt,');
-    expect(buildEntrypoint).toContain("['tsx', ['scripts/emit-navigation-artifacts.ts']],");
+    expect(RUN_BUILD_STEPS.find((step) => step.label === 'emit-navigation-artifacts')?.pnpmArgs).to
+      .deep.equal(['exec', 'tsx', 'scripts/emit-navigation-artifacts.ts']);
+    expect(buildEntrypoint).toContain('for (const step of RUN_BUILD_STEPS) {');
+    expect(buildEntrypoint).toContain('pnpmArgs: step.pnpmArgs,');
     expect(buildEntrypoint).toMatch(
-      /spawnSync\(commandName\(command\), \[\.\.\.args\], \{\s*env,/su,
+      /spawnSync\(invocation\.command, \[\.\.\.invocation\.args\], \{\s*env,/su,
     );
   });
 
