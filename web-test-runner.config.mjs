@@ -25,7 +25,16 @@ const requestedBrowsers = new Set(
 
 const browserLaunchers = [
   ...(requestedBrowsers.has('chromium') ? [playwrightLauncher({ product: 'chromium' })] : []),
-  ...(requestedBrowsers.has('firefox') ? [playwrightLauncher({ product: 'firefox' })] : []),
+  ...(requestedBrowsers.has('firefox')
+    ? [
+        playwrightLauncher({
+          product: 'firefox',
+          // Firefox は paint / computed style 契約テストを並列実行すると
+          // ローカル環境で timeout しやすいため、ブラウザ内の並列度を固定する。
+          concurrency: 1,
+        }),
+      ]
+    : []),
   ...(includeWebkit || requestedBrowsers.has('webkit')
     ? [playwrightLauncher({ product: 'webkit', concurrency: 1 })]
     : []),
