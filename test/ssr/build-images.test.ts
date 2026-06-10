@@ -1,11 +1,16 @@
 import { existsSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { buildImageManifest } from '../../scripts/build-images.js';
+import { buildImageManifest, isDirectCliInvocation } from '../../scripts/build-images.js';
 
 const GENERATED_MEDIA_ROOT = path.resolve(process.cwd(), '.generated', 'media');
+const BUILD_IMAGES_SCRIPT_PATH = fileURLToPath(
+  new URL('../../scripts/build-images.ts', import.meta.url),
+);
+const BUILD_IMAGES_SCRIPT_URL = new URL('../../scripts/build-images.ts', import.meta.url).href;
 
 describe('build-images', () => {
   afterEach(async () => {
@@ -62,4 +67,12 @@ describe('build-images', () => {
     expect(firstFullOutput.url.startsWith('https://media.example.com/')).toBe(true);
     expect(firstFullOutput.url).not.toContain('/media/');
   }, 15000);
+
+  it('CLI entrypoint 判定は file URL と OS native path の表現差を吸収すること', () => {
+    expect(isDirectCliInvocation(BUILD_IMAGES_SCRIPT_PATH, BUILD_IMAGES_SCRIPT_URL)).toBe(true);
+    expect(isDirectCliInvocation(undefined, BUILD_IMAGES_SCRIPT_URL)).toBe(false);
+    expect(
+      isDirectCliInvocation(path.join(process.cwd(), 'scripts', 'other.ts'), BUILD_IMAGES_SCRIPT_URL),
+    ).toBe(false);
+  });
 });

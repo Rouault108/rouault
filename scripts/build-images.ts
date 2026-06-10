@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
 import type {
@@ -317,6 +318,17 @@ export const buildImageManifest = async (): Promise<MediaManifest> => {
   return manifest;
 };
 
+export const isDirectCliInvocation = (
+  entryPoint: string | undefined,
+  moduleUrl: string,
+): boolean => {
+  if (entryPoint === undefined) {
+    return false;
+  }
+
+  return path.resolve(entryPoint) === path.resolve(fileURLToPath(moduleUrl));
+};
+
 const run = async (): Promise<void> => {
   const manifest = await buildImageManifest();
   console.log(
@@ -324,7 +336,6 @@ const run = async (): Promise<void> => {
   );
 };
 
-const entryPoint = process.argv[1];
-if (typeof entryPoint === 'string' && import.meta.url === `file://${entryPoint}`) {
+if (isDirectCliInvocation(process.argv[1], import.meta.url)) {
   void run();
 }
