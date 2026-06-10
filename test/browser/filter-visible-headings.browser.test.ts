@@ -1,6 +1,7 @@
 import { expect } from '@open-wc/testing';
 import type { Heading } from '../../src/components/ui/toc/toc.js';
 import {
+  applyTocScopeSelections,
   filterHeadingsByScopeSelections,
   filterVisibleHeadings,
   readTocScopeSelectionMap,
@@ -100,20 +101,23 @@ describe('filterVisibleHeadings', () => {
     const contentRoot = document.getElementById('content-root');
     if (!contentRoot) return;
     const tabs = document.getElementById('tabs-root') as HTMLElement & {
-      calls?: string[];
-      select: (value: string) => void;
+      calls?: {
+        value: string;
+        historyMode: string | undefined;
+      }[];
+      select: (value: string, options?: { historyMode?: string }) => void;
     };
     const target = document.getElementById('details-heading');
     if (!target) return;
 
     tabs.calls = [];
-    tabs.select = (value: string) => {
-      tabs.calls?.push(value);
+    tabs.select = (value: string, options?: { historyMode?: string }) => {
+      tabs.calls?.push({ value, historyMode: options?.historyMode });
     };
 
     revealHeadingInTabs(contentRoot, target);
 
-    expect(tabs.calls).to.deep.equal(['details']);
+    expect(tabs.calls).to.deep.equal([{ value: 'details', historyMode: 'none' }]);
   });
 
   it('descendant 見出しから属する panel の tab value を解決できること', () => {
@@ -212,5 +216,41 @@ describe('filterVisibleHeadings', () => {
       },
       { id: 'shared-heading', text: 'Shared', level: 2 },
     ]);
+  });
+
+  it('scope selection 適用時に history mode を指定できること', () => {
+    document.body.innerHTML = `
+      <article id="content-root">
+        <ui-tabs id="tabs-root" data-toc-scope="toc-scope-1">
+          <div slot="tab" value="overview">概要</div>
+          <div slot="panel" role="tabpanel" aria-hidden="false"></div>
+          <div slot="tab" value="details">詳細</div>
+          <div slot="panel" role="tabpanel" aria-hidden="true" hidden></div>
+        </ui-tabs>
+      </article>
+    `;
+
+    const contentRoot = document.getElementById('content-root');
+    const tabs = document.getElementById('tabs-root') as HTMLElement & {
+      calls?: {
+        value: string;
+        historyMode: string | undefined;
+      }[];
+      select: (value: string, options?: { historyMode?: string }) => void;
+    };
+    if (!(contentRoot instanceof HTMLElement) || !(tabs instanceof HTMLElement)) return;
+
+    tabs.calls = [];
+    tabs.select = (value: string, options?: { historyMode?: string }) => {
+      tabs.calls?.push({ value, historyMode: options?.historyMode });
+    };
+
+    applyTocScopeSelections(
+      contentRoot,
+      [{ scopeId: 'toc-scope-1', value: 'details' }],
+      { historyMode: 'none' },
+    );
+
+    expect(tabs.calls).to.deep.equal([{ value: 'details', historyMode: 'none' }]);
   });
 });

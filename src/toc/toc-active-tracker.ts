@@ -355,7 +355,9 @@ export class TocActiveTracker {
       targetHeading.scopeSelections &&
       targetHeading.scopeSelections.length > 0
     ) {
-      applyTocScopeSelections(this._contentRoot, targetHeading.scopeSelections);
+      applyTocScopeSelections(this._contentRoot, targetHeading.scopeSelections, {
+        historyMode: 'none',
+      });
       this._syncVisibleHeadings();
     }
 
