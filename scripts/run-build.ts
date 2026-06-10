@@ -3,6 +3,10 @@ import process from 'node:process';
 
 import { resolveDevelopmentBuildMetadata } from '../build/metadata/build-metadata.js';
 import {
+  resolveDevelopmentSiteUrlContext,
+  resolveProductionSiteUrlContext,
+} from '../build/site/site-url-context.js';
+import {
   createPnpmInvocation,
   RunBuildProcessConfigurationError,
   RUN_BUILD_STEPS,
@@ -20,11 +24,34 @@ const buildMetadata = (() => {
   }
 })();
 
+const siteUrlContext = (() => {
+  try {
+    if (process.env['ROUAULT_SITE_ORIGIN'] === undefined) {
+      return resolveDevelopmentSiteUrlContext({
+        basePath: process.env['ROUAULT_BASE_PATH'],
+      });
+    }
+
+    return resolveProductionSiteUrlContext({
+      siteOrigin: process.env['ROUAULT_SITE_ORIGIN'],
+      basePath: process.env['ROUAULT_BASE_PATH'],
+    });
+  } catch (error) {
+    console.error(
+      '[build] invalid site URL context:',
+      error instanceof Error ? error.message : String(error),
+    );
+    process.exit(1);
+  }
+})();
+
 const env: NodeJS.ProcessEnv = {
   ...process.env,
   ROUAULT_BUILD_ID: buildMetadata.buildId,
   ROUAULT_BUILD_LABEL: buildMetadata.buildLabel,
   ROUAULT_GENERATED_AT: buildMetadata.generatedAt,
+  ROUAULT_SITE_ORIGIN: siteUrlContext.siteOrigin,
+  ROUAULT_BASE_PATH: siteUrlContext.basePath,
 };
 
 const formatSpawnDiagnosticValue = (value: unknown): string => {

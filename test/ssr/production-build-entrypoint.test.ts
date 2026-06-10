@@ -142,6 +142,11 @@ describe('production build entrypoint contract', () => {
     expect(buildEntrypoint).toContain('ROUAULT_BUILD_ID: buildMetadata.buildId,');
     expect(buildEntrypoint).toContain('ROUAULT_BUILD_LABEL: buildMetadata.buildLabel,');
     expect(buildEntrypoint).toContain('ROUAULT_GENERATED_AT: buildMetadata.generatedAt,');
+    expect(buildEntrypoint).toContain('const siteUrlContext = (() => {');
+    expect(buildEntrypoint).toContain('resolveDevelopmentSiteUrlContext({');
+    expect(buildEntrypoint).toContain('resolveProductionSiteUrlContext({');
+    expect(buildEntrypoint).toContain('ROUAULT_SITE_ORIGIN: siteUrlContext.siteOrigin,');
+    expect(buildEntrypoint).toContain('ROUAULT_BASE_PATH: siteUrlContext.basePath,');
     expect(RUN_BUILD_STEPS.find((step) => step.label === 'emit-navigation-artifacts')?.pnpmArgs).to
       .deep.equal(['exec', 'tsx', 'scripts/emit-navigation-artifacts.ts']);
     expect(buildEntrypoint).toContain('for (const step of RUN_BUILD_STEPS) {');
