@@ -76,7 +76,7 @@ export default defineConfig({
 
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
-  ...(isCI ? { workers: 1 } : {}),
+  workers: 1,
 
   reporter: 'html',
 
