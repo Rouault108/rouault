@@ -15,10 +15,15 @@ const writeWorkflowContractFixture = async (options: {
   readonly workflowStepOrder?: 'valid' | 'preflight-after-upload';
   readonly deployScriptSource?: string;
   readonly uploadR2ScriptSource?: string;
+  readonly verifyMediaDeliveryScriptSource?: string;
+  readonly releaseStateSchemaSource?: string;
+  readonly mediaObjectContractSource?: string;
   readonly productionPreflightScriptSource?: string;
   readonly packageWranglerVersion?: string;
   readonly lockWranglerSpecifier?: string;
   readonly lockWranglerVersion?: string;
+  readonly evidenceWorkflowUsesSha?: string;
+  readonly readmeWorkflowUsesSha?: string;
 }) => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'rouault-workflow-contract-'));
   const workflowPath = path.join(root, 'ci-cd.yml');
@@ -27,6 +32,9 @@ const writeWorkflowContractFixture = async (options: {
   const readmePath = path.join(snapshotRoot, 'README.md');
   const deployScriptPath = path.join(root, 'deploy-cloudflare-pages.ts');
   const uploadR2ScriptPath = path.join(root, 'upload-r2-media.ts');
+  const verifyMediaDeliveryScriptPath = path.join(root, 'verify-media-delivery.ts');
+  const releaseStateSchemaPath = path.join(root, 'release-state-schema.ts');
+  const mediaObjectContractPath = path.join(root, 'media-object-contract.ts');
   const productionPreflightScriptPath = path.join(root, 'production-authority-preflight.ts');
   const packageJsonPath = path.join(root, 'package.json');
   const lockfilePath = path.join(root, 'pnpm-lock.yaml');
@@ -35,6 +43,8 @@ const writeWorkflowContractFixture = async (options: {
   const packageWranglerVersion = options.packageWranglerVersion ?? '4.100.0';
   const lockWranglerSpecifier = options.lockWranglerSpecifier ?? packageWranglerVersion;
   const lockWranglerVersion = options.lockWranglerVersion ?? packageWranglerVersion;
+  const evidenceWorkflowUsesSha = options.evidenceWorkflowUsesSha ?? reviewedCommitSha;
+  const readmeWorkflowUsesSha = options.readmeWorkflowUsesSha ?? evidenceWorkflowUsesSha;
   const workflowDeploySteps =
     options.workflowStepOrder === 'preflight-after-upload'
       ? [
@@ -90,7 +100,7 @@ const writeWorkflowContractFixture = async (options: {
           '      - id: record-release-state-resolution-failed',
           '        env:',
           '          RUNTIME_VERIFICATION_STATUS: release-state-resolution-failed',
-          '      - if: ${{ steps.record-release-state-resolution-failed.outcome == \'success\' }}',
+          "      - if: ${{ steps.record-release-state-resolution-failed.outcome == 'success' }}",
         ]
       : [
           '      - run: pnpm exec tsx scripts/deploy/production-authority-preflight.ts',
@@ -145,7 +155,7 @@ const writeWorkflowContractFixture = async (options: {
           '      - id: record-release-state-resolution-failed',
           '        env:',
           '          RUNTIME_VERIFICATION_STATUS: release-state-resolution-failed',
-          '      - if: ${{ steps.record-release-state-resolution-failed.outcome == \'success\' }}',
+          "      - if: ${{ steps.record-release-state-resolution-failed.outcome == 'success' }}",
         ];
 
   await mkdir(snapshotDirectory, { recursive: true });
@@ -181,6 +191,24 @@ const writeWorkflowContractFixture = async (options: {
     uploadR2ScriptPath,
     options.uploadR2ScriptSource ??
       "observeProductionBranchHead(authority, 'r2-media-upload');\nconst failed = { uploadedObjects: [] };\nvoid failed;\n",
+    'utf8',
+  );
+  await writeFile(
+    verifyMediaDeliveryScriptPath,
+    options.verifyMediaDeliveryScriptSource ??
+      'const objectCount = uploadAttempt.uploadedObjects.length;\nassertUploadedVerifiedObjectSetConsistency(uploadAttempt.uploadedObjects, verifiedObjects);\nvoid objectCount;\n',
+    'utf8',
+  );
+  await writeFile(
+    releaseStateSchemaPath,
+    options.releaseStateSchemaSource ??
+      "const message = 'uploadedObjects and verifiedObjects object sets differ';\nfunction assertUploadedVerifiedObjectSetConsistency() { return message; }\nvoid assertUploadedVerifiedObjectSetConsistency;\n",
+    'utf8',
+  );
+  await writeFile(
+    mediaObjectContractPath,
+    options.mediaObjectContractSource ??
+      "if (objectIdentities.size !== MEDIA_VARIANTS.length * MEDIA_FORMATS.length) { throw new Error('media item は variant × format の9件を持つ必要があります'); }\n",
     'utf8',
   );
   await writeFile(
@@ -227,6 +255,7 @@ const writeWorkflowContractFixture = async (options: {
         action: actionName,
         adopted_tag: 'v1.0.0',
         reviewed_commit_sha: reviewedCommitSha,
+        workflowUsesSha: evidenceWorkflowUsesSha,
         runtimeReadiness: 'node24',
         action_yml_runs_using: 'node24',
       },
@@ -250,7 +279,7 @@ const writeWorkflowContractFixture = async (options: {
     [
       '| action name | adopted tag | reviewed commit SHA | runs.using | workflow uses SHA |',
       '| --- | --- | --- | --- | --- |',
-      `| \`${actionName}\` | \`v1.0.0\` | \`${reviewedCommitSha}\` | \`node24\` | \`${reviewedCommitSha}\` |`,
+      `| \`${actionName}\` | \`v1.0.0\` | \`${reviewedCommitSha}\` | \`node24\` | \`${readmeWorkflowUsesSha}\` |`,
       '',
     ].join('\n'),
     'utf8',
@@ -264,6 +293,9 @@ const writeWorkflowContractFixture = async (options: {
     packageJsonPath,
     lockfilePath,
     uploadR2ScriptPath,
+    verifyMediaDeliveryScriptPath,
+    releaseStateSchemaPath,
+    mediaObjectContractPath,
     productionPreflightScriptPath,
   };
 };
@@ -290,6 +322,44 @@ describe('workflow source contract', () => {
     await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/full SHA pin/u);
   });
 
+  it('rejects cloudflare wrangler action usage', async () => {
+    const fixture = await writeWorkflowContractFixture({
+      workflowUses: 'cloudflare/wrangler-action@0123456789abcdef0123456789abcdef01234567',
+    });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(
+      /cloudflare\/wrangler-action/u,
+    );
+  });
+
+  it('rejects non-lowercase external action SHA pins', async () => {
+    const fixture = await writeWorkflowContractFixture({
+      workflowUses: `${actionName}@0123456789ABCDEF0123456789ABCDEF01234567`,
+    });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/full SHA pin/u);
+  });
+
+  it('rejects source binding evidence SHA drift', async () => {
+    const fixture = await writeWorkflowContractFixture({
+      evidenceWorkflowUsesSha: '1111111111111111111111111111111111111111',
+    });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(
+      /workflowUsesSha must match reviewedCommitSha/u,
+    );
+  });
+
+  it('rejects source binding table SHA drift', async () => {
+    const fixture = await writeWorkflowContractFixture({
+      readmeWorkflowUsesSha: '1111111111111111111111111111111111111111',
+    });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(
+      /reviewed source binding row/u,
+    );
+  });
+
   it('rejects deployment URL stdout grep scraping', async () => {
     const fixture = await writeWorkflowContractFixture({
       extraRun: "wrangler pages deploy dist | grep -Eo 'https://[^ ]+'",
@@ -306,7 +376,7 @@ describe('workflow source contract', () => {
         "const commitDirty = '--commit-dirty=false';",
         "observeProductionBranchHead(authority, 'cloudflare-pages-deploy');",
         "const obsolete = '--json';",
-        "const deploymentUrl = stdout;",
+        'const deploymentUrl = stdout;',
         'void output;',
         'void parser;',
         'void commitDirty;',
@@ -332,7 +402,9 @@ describe('workflow source contract', () => {
   });
 
   it('rejects production preflight after production side effects', async () => {
-    const fixture = await writeWorkflowContractFixture({ workflowStepOrder: 'preflight-after-upload' });
+    const fixture = await writeWorkflowContractFixture({
+      workflowStepOrder: 'preflight-after-upload',
+    });
 
     await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(
       /preflight before production side effects/u,
@@ -359,6 +431,25 @@ describe('workflow source contract', () => {
     });
 
     await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/Pages deploy/u);
+  });
+
+  it('rejects missing per-media-item variant format validation source', async () => {
+    const fixture = await writeWorkflowContractFixture({
+      mediaObjectContractSource: 'const deploymentObjectCount = 9;\nvoid deploymentObjectCount;\n',
+    });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/per media item/u);
+  });
+
+  it('rejects deployment-wide fixed 9 object count source', async () => {
+    const fixture = await writeWorkflowContractFixture({
+      uploadR2ScriptSource:
+        "observeProductionBranchHead(authority, 'r2-media-upload');\nif (objectCount !== 9) { throw new Error('bad count'); }\nconst failed = { uploadedObjects: [] };\nvoid failed;\n",
+    });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(
+      /deployment-wide fixed 9 object count/u,
+    );
   });
 
   it('rejects full release state JSON in job outputs', async () => {

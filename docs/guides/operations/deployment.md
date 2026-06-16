@@ -9,6 +9,26 @@ Rouault の production deploy は、GitHub Actions の `deploy-production` job �
 - `deploy-production` の job-level `if` は `!cancelled()` と direct `needs` の `result == 'success'` を明示する。これは、skipped ancestor job を含む依存チェーンで GitHub Actions の暗黙 `success()` により本番 deploy が skipped になることを避けるため。
 - `workflow_dispatch` は full CI 検査に使うが、production deploy は行わない。
 - Cloudflare Pages 側の Git 連携による automatic production deployment は無効にする。
+- deploy URL の正本は Wrangler の structured output file と Cloudflare Pages API の照合結果であり、stdout の URL 抽出ではない。
+- `cloudflare/wrangler-action` は使わず、Wrangler CLI は `package.json` と lockfile の exact version を正本にする。
+
+この経路は source contract として `scripts/ci/assert-workflow-source-contract.ts` で固定する。
+
+## External Action Binding
+
+`.github/workflows/ci-cd.yml` の外部 Action は、すべて 40 桁 lowercase hex の commit SHA で実行する。tag は review 座標としてのみ扱い、実行 authority にしない。
+
+review 済み tag、commit SHA、`action.yml` snapshot の `runs.using`、workflow uses SHA は `external-action-snapshots/README.md` と各 `tag-evidence.json` に記録する。binding 表、tag evidence、workflow SHA が一致しない場合は source contract failure とする。snapshot の `runs.using` は Node.js 24 だけを許可する。
+
+## Release Artifact Contract
+
+production deploy の release state / attempt manifest は、`scripts/deploy/release-state-schema.ts` の schema を正本とする。
+
+- release state schema は extra field を拒否する。
+- secret-like field name、raw environment、local absolute path は artifact に入れない。
+- failed attempt の object evidence は `uploadedObjects: []` / `verifiedObjects: []` に固定する。
+- successful release state では `uploadedObjects` と `verifiedObjects` の object 集合が一致することを検査する。
+- media manifest は media item 単位で `variant × format` の 9 object を検査する。deployment 全体を 9 object 固定として扱わない。
 
 ## Required Repository Settings
 
@@ -88,7 +108,12 @@ fetch で個別確認する場合は、`search-catalog.json` が 200、JSON pars
 ```js
 const response = await fetch('/search-catalog.json');
 const catalog = await response.json();
-console.log(response.status, response.headers.get('content-type'), Array.isArray(catalog), catalog.length);
+console.log(
+  response.status,
+  response.headers.get('content-type'),
+  Array.isArray(catalog),
+  catalog.length,
+);
 ```
 
 ## Production Build Label

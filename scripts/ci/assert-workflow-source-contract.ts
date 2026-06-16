@@ -17,6 +17,24 @@ const DEFAULT_DEPLOY_SCRIPT_PATH = path.join(
 const DEFAULT_PACKAGE_JSON_PATH = path.join(REPOSITORY_ROOT, 'package.json');
 const DEFAULT_LOCKFILE_PATH = path.join(REPOSITORY_ROOT, 'pnpm-lock.yaml');
 const DEFAULT_UPLOAD_R2_SCRIPT_PATH = path.join(REPOSITORY_ROOT, 'scripts', 'upload-r2-media.ts');
+const DEFAULT_VERIFY_MEDIA_DELIVERY_SCRIPT_PATH = path.join(
+  REPOSITORY_ROOT,
+  'scripts',
+  'deploy',
+  'verify-media-delivery.ts',
+);
+const DEFAULT_RELEASE_STATE_SCHEMA_PATH = path.join(
+  REPOSITORY_ROOT,
+  'scripts',
+  'deploy',
+  'release-state-schema.ts',
+);
+const DEFAULT_MEDIA_OBJECT_CONTRACT_PATH = path.join(
+  REPOSITORY_ROOT,
+  'shared',
+  'media',
+  'media-object-contract.ts',
+);
 const DEFAULT_PRODUCTION_PREFLIGHT_SCRIPT_PATH = path.join(
   REPOSITORY_ROOT,
   'scripts',
@@ -53,6 +71,9 @@ interface WorkflowSourceContractOptions {
   readonly packageJsonPath?: string;
   readonly lockfilePath?: string;
   readonly uploadR2ScriptPath?: string;
+  readonly verifyMediaDeliveryScriptPath?: string;
+  readonly releaseStateSchemaPath?: string;
+  readonly mediaObjectContractPath?: string;
   readonly productionPreflightScriptPath?: string;
 }
 
@@ -148,7 +169,10 @@ const loadEvidence = async (
 
   assertCondition(commitRunsUsing === 'node24', `${commitSnapshotPath} must use node24`);
   assertCondition(tagRunsUsing === 'node24', `${tagSnapshotPath} must use node24`);
-  assertCondition(!commitSnapshot.includes('node20'), `${commitSnapshotPath} must not mention node20`);
+  assertCondition(
+    !commitSnapshot.includes('node20'),
+    `${commitSnapshotPath} must not mention node20`,
+  );
   assertCondition(!tagSnapshot.includes('node20'), `${tagSnapshotPath} must not mention node20`);
   assertCondition(
     commitSnapshot === tagSnapshot,
@@ -228,9 +252,10 @@ const assertWranglerPackageContract = async (
   const lockfile = await readFile(lockfilePath, 'utf8');
   const escapedVersion = escapeRegExp(wranglerVersion as string);
   assertCondition(
-    new RegExp(`wrangler:\\r?\\n\\s+specifier: ${escapedVersion}\\r?\\n\\s+version: ${escapedVersion}`, 'u').test(
-      lockfile,
-    ),
+    new RegExp(
+      `wrangler:\\r?\\n\\s+specifier: ${escapedVersion}\\r?\\n\\s+version: ${escapedVersion}`,
+      'u',
+    ).test(lockfile),
     `${lockfilePath} must keep the importer wrangler specifier and version aligned with package.json`,
   );
   assertCondition(
@@ -263,7 +288,9 @@ const assertWorkflowDeploymentOrder = (workflowSource: string, workflowPath: str
   );
   assertCondition(pagesDeployIndex >= 0, `${workflowPath} must run the Pages deploy script`);
   assertCondition(
-    preflightIndex < downloadIndex && preflightIndex < r2UploadIndex && preflightIndex < pagesDeployIndex,
+    preflightIndex < downloadIndex &&
+      preflightIndex < r2UploadIndex &&
+      preflightIndex < pagesDeployIndex,
     `${workflowPath} must run production authority preflight before production side effects`,
   );
   assertCondition(
@@ -281,6 +308,42 @@ const assertUploadR2ScriptContract = async (uploadR2ScriptPath: string): Promise
   assertCondition(
     source.includes('uploadedObjects: []'),
     `${uploadR2ScriptPath} must normalize failed R2 attempts to uploadedObjects: []`,
+  );
+};
+
+const assertMediaEvidenceSourceContract = async (
+  uploadR2ScriptPath: string,
+  verifyMediaDeliveryScriptPath: string,
+  releaseStateSchemaPath: string,
+  mediaObjectContractPath: string,
+): Promise<void> => {
+  const uploadR2Source = await readFile(uploadR2ScriptPath, 'utf8');
+  const verifyMediaDeliverySource = await readFile(verifyMediaDeliveryScriptPath, 'utf8');
+  const releaseStateSchemaSource = await readFile(releaseStateSchemaPath, 'utf8');
+  const mediaObjectContractSource = await readFile(mediaObjectContractPath, 'utf8');
+
+  assertCondition(
+    mediaObjectContractSource.includes(
+      'objectIdentities.size !== MEDIA_VARIANTS.length * MEDIA_FORMATS.length',
+    ) && mediaObjectContractSource.includes('media item は variant × format の9件'),
+    `${mediaObjectContractPath} must validate variant × format count per media item`,
+  );
+  for (const [filePath, source] of [
+    [uploadR2ScriptPath, uploadR2Source],
+    [verifyMediaDeliveryScriptPath, verifyMediaDeliverySource],
+    [releaseStateSchemaPath, releaseStateSchemaSource],
+  ] as const) {
+    assertCondition(
+      !/(?:objectCount|uploadedObjects\.length|verifiedObjects\.length|uploadPlan\.length)\s*[!=]==?\s*9/u.test(
+        source,
+      ),
+      `${filePath} must not enforce a deployment-wide fixed 9 object count`,
+    );
+  }
+  assertCondition(
+    releaseStateSchemaSource.includes('assertUploadedVerifiedObjectSetConsistency') &&
+      releaseStateSchemaSource.includes('uploadedObjects and verifiedObjects object sets differ'),
+    `${releaseStateSchemaPath} must enforce uploadedObjects and verifiedObjects set consistency`,
   );
 };
 
@@ -321,7 +384,9 @@ const assertReleaseStateWorkflowContract = (workflowSource: string, workflowPath
     `${workflowPath} must upload release state JSON as an artifact`,
   );
   assertCondition(
-    workflowSource.includes('artifact-ids: ${{ needs.deploy-production.outputs.release-state-artifact-id }}'),
+    workflowSource.includes(
+      'artifact-ids: ${{ needs.deploy-production.outputs.release-state-artifact-id }}',
+    ),
     `${workflowPath} verify job must download release state by deploy job artifact-id output`,
   );
   assertCondition(
@@ -333,7 +398,9 @@ const assertReleaseStateWorkflowContract = (workflowSource: string, workflowPath
     `${workflowPath} verify job must fail closed on release state artifact digest mismatch`,
   );
   assertCondition(
-    workflowSource.includes('EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}'),
+    workflowSource.includes(
+      'EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}',
+    ),
     `${workflowPath} verify job must re-check release state SHA-256`,
   );
   assertCondition(
@@ -373,7 +440,9 @@ const assertProductionOutputSafety = async (
       `${filePath} must not write raw environment values or local absolute paths to job logs`,
     );
     assertCondition(
-      !/appendFile\(\s*githubOutput\s*,\s*(?:`[^`]*(?:process\.env|OUTPUT_PATH|WRANGLER_OUTPUT_PATH)[^`]*`|"[^"]*(?:process\.env|OUTPUT_PATH|WRANGLER_OUTPUT_PATH)[^"]*"|'[^']*(?:process\.env|OUTPUT_PATH|WRANGLER_OUTPUT_PATH)[^']*')/u.test(source),
+      !/appendFile\(\s*githubOutput\s*,\s*(?:`[^`]*(?:process\.env|OUTPUT_PATH|WRANGLER_OUTPUT_PATH)[^`]*`|"[^"]*(?:process\.env|OUTPUT_PATH|WRANGLER_OUTPUT_PATH)[^"]*"|'[^']*(?:process\.env|OUTPUT_PATH|WRANGLER_OUTPUT_PATH)[^']*')/u.test(
+        source,
+      ),
       `${filePath} must not write raw environment values or local absolute paths to job outputs`,
     );
     assertCondition(
@@ -393,6 +462,12 @@ export const assertWorkflowSourceContract = async (
   const packageJsonPath = options.packageJsonPath ?? DEFAULT_PACKAGE_JSON_PATH;
   const lockfilePath = options.lockfilePath ?? DEFAULT_LOCKFILE_PATH;
   const uploadR2ScriptPath = options.uploadR2ScriptPath ?? DEFAULT_UPLOAD_R2_SCRIPT_PATH;
+  const verifyMediaDeliveryScriptPath =
+    options.verifyMediaDeliveryScriptPath ?? DEFAULT_VERIFY_MEDIA_DELIVERY_SCRIPT_PATH;
+  const releaseStateSchemaPath =
+    options.releaseStateSchemaPath ?? DEFAULT_RELEASE_STATE_SCHEMA_PATH;
+  const mediaObjectContractPath =
+    options.mediaObjectContractPath ?? DEFAULT_MEDIA_OBJECT_CONTRACT_PATH;
   const productionPreflightScriptPath =
     options.productionPreflightScriptPath ?? DEFAULT_PRODUCTION_PREFLIGHT_SCRIPT_PATH;
   const workflowSource = await readFile(workflowPath, 'utf8');
@@ -427,7 +502,9 @@ export const assertWorkflowSourceContract = async (
     snapshotDirectories.map((directory) => loadEvidence(snapshotRoot, directory)),
   );
   const uniqueExternalUses = new Set(externalUses);
-  const expectedUses = new Set(evidence.map((item) => `${item.actionName}@${item.reviewedCommitSha}`));
+  const expectedUses = new Set(
+    evidence.map((item) => `${item.actionName}@${item.reviewedCommitSha}`),
+  );
 
   assertCondition(
     uniqueExternalUses.size === expectedUses.size,
@@ -443,6 +520,12 @@ export const assertWorkflowSourceContract = async (
   await assertReadmeMatchesEvidence(readmePath, evidence);
   await assertDeployScriptContract(deployScriptPath);
   await assertUploadR2ScriptContract(uploadR2ScriptPath);
+  await assertMediaEvidenceSourceContract(
+    uploadR2ScriptPath,
+    verifyMediaDeliveryScriptPath,
+    releaseStateSchemaPath,
+    mediaObjectContractPath,
+  );
   await assertProductionOutputSafety(productionPreflightScriptPath, deployScriptPath);
 
   return {
