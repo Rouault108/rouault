@@ -329,6 +329,9 @@ jobs:
       - ci-required
     outputs:
       deployment-url: ${{ steps.deploy-cloudflare-pages.outputs.deployment-url }}
+      deployment-id: ${{ steps.deploy-cloudflare-pages.outputs.deployment-id }}
+      release-state-artifact-name: ${{ steps.deploy-cloudflare-pages.outputs.release-state-artifact-name }}
+      release-state-sha256: ${{ steps.deploy-cloudflare-pages.outputs.release-state-sha256 }}
     if: >-
       ${{
         !cancelled()
@@ -374,9 +377,15 @@ jobs:
           name: rouault-dist
           path: .
       - run: pnpm exec tsx scripts/upload-r2-media.ts
+      - run: pnpm exec tsx scripts/deploy/verify-media-delivery.ts
       - id: deploy-cloudflare-pages
         name: deploy Cloudflare Pages
         run: pnpm exec tsx scripts/deploy/deploy-cloudflare-pages.ts
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ steps.deploy-cloudflare-pages.outputs.release-state-artifact-name }}
+          path: .generated/deployment/release-attempt-final.json
+          include-hidden-files: true
 
   verify-production-deployment:
     name: verify-production-deployment
@@ -395,11 +404,46 @@ jobs:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_REF: ${{ github.ref }}
         run: python3 scripts/ci/validate_deployment_needs.py
-      - name: verify production runtime artifacts over HTTP
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         if: ${{ needs.deploy-production.result == 'success' }}
+        with:
+          name: ${{ needs.deploy-production.outputs.release-state-artifact-name }}
+          path: .generated/deployment
+      - id: verify-runtime-artifacts
+        name: verify production runtime artifacts over HTTP
+        if: ${{ needs.deploy-production.result == 'success' }}
+        continue-on-error: true
         env:
           ACTUAL_DEPLOYMENT_URL: ${{ needs.deploy-production.outputs.deployment-url }}
           ROUAULT_SITE_ORIGIN: ${{ vars.ROUAULT_SITE_ORIGIN }}
           ROUAULT_BASE_PATH: ${{ vars.ROUAULT_BASE_PATH }}
         run: python3 scripts/ci/verify_production_artifacts_http.py
+      - id: record-runtime-verification-success
+        if: ${{ needs.deploy-production.result == 'success' && steps.verify-runtime-artifacts.outcome == 'success' }}
+        env:
+          EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
+          RUNTIME_VERIFICATION_STATUS: verified-by-production-runtime-artifacts
+        run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
+      - id: record-runtime-verification-failure
+        if: ${{ needs.deploy-production.result == 'success' && steps.verify-runtime-artifacts.outcome != 'success' }}
+        env:
+          EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
+          RUNTIME_VERIFICATION_STATUS: verification-failed
+        run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: ${{ needs.deploy-production.result == 'success' && (steps.record-runtime-verification-success.outcome == 'success' || steps.record-runtime-verification-failure.outcome == 'success') }}
+        with:
+          name: rouault-release-verification-state
+          path: .generated/deployment/release-verification-final.json
+          include-hidden-files: true
+      - name: enforce production runtime verification
+        if: ${{ needs.deploy-production.result == 'success' }}
+        run: test "${{ steps.verify-runtime-artifacts.outcome }}" = "success"
 

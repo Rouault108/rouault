@@ -1,28 +1,25 @@
-const LOCAL_MEDIA_ROUTE = '/media';
-
-const normalizeTrailingSlash = (value: string): string => value.trim().replace(/\/+$/, '');
-
-const normalizePathSegment = (value: string): string => value.trim().replace(/^\/+/, '');
+import {
+  buildLocalMediaPublicUrl,
+  buildMediaPublicUrl,
+  canonicalizeMediaBaseUrl,
+} from '../../shared/media/media-object-contract.js';
 
 export const getMediaBaseUrl = (): string | undefined => {
-  const normalized = normalizeTrailingSlash(process.env['ROUAULT_MEDIA_BASE_URL'] ?? '');
-  return normalized.length > 0 ? normalized : undefined;
+  const raw = process.env['ROUAULT_MEDIA_BASE_URL'];
+  if (raw === undefined || raw.length === 0) {
+    return undefined;
+  }
+  return canonicalizeMediaBaseUrl(raw);
 };
 
 export const hasExternalMediaBaseUrl = (): boolean => getMediaBaseUrl() !== undefined;
 
 export const resolveMediaAssetUrl = (
-  hash: string,
-  fileName: string,
+  objectKey: string,
   baseUrl: string | undefined = getMediaBaseUrl(),
 ): string => {
-  const normalizedHash = normalizePathSegment(hash);
-  const normalizedFileName = normalizePathSegment(fileName);
-
-  if (normalizedHash.length === 0 || normalizedFileName.length === 0) {
-    throw new Error('[media] invalid media asset path');
+  if (baseUrl === undefined) {
+    return buildLocalMediaPublicUrl(objectKey);
   }
-
-  const prefix = baseUrl ?? LOCAL_MEDIA_ROUTE;
-  return `${prefix}/${normalizedHash}/${normalizedFileName}`;
+  return buildMediaPublicUrl(baseUrl, objectKey);
 };

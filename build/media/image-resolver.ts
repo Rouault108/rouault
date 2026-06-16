@@ -1,38 +1,12 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
-export interface MediaVariantOutput {
-  readonly format: 'avif' | 'webp' | 'jpeg';
-  readonly mediaType: string;
-  readonly byteSize: number;
-  readonly url: string;
-}
-
-export interface MediaVariantEntry {
-  readonly outputs: readonly MediaVariantOutput[];
-}
-
-export interface MediaManifestItem {
-  readonly hash: string;
-  readonly width: number;
-  readonly height: number;
-  readonly placeholder?: {
-    readonly kind: 'dominant-color';
-    readonly value: string;
-  };
-  readonly variants: {
-    readonly thumb?: MediaVariantEntry;
-    readonly reading?: MediaVariantEntry;
-    readonly full?: MediaVariantEntry;
-  };
-}
-
-export interface MediaManifest {
-  readonly schemaVersion: 1;
-  readonly generatorVersion: string;
-  readonly variantSetVersion: 'reading-v1';
-  readonly items: Record<string, MediaManifestItem>;
-}
+import {
+  assertMediaManifestContract,
+  type MediaManifest,
+  type MediaObjectContract,
+  type MediaVariant,
+} from '../../shared/media/media-object-contract.js';
 
 export interface MediaSourceDescriptor {
   readonly type: string;
@@ -63,8 +37,8 @@ export interface LinkCardThumbnailCache {
 }
 
 interface ResolveImageAssetOptions {
-  readonly inlineVariant?: 'thumb' | 'reading' | 'full';
-  readonly lightboxVariant?: 'thumb' | 'reading' | 'full';
+  readonly inlineVariant?: MediaVariant;
+  readonly lightboxVariant?: MediaVariant;
   readonly inlineSizes?: string;
   readonly lightboxSizes?: string;
   readonly strict?: boolean;
@@ -77,9 +51,6 @@ const LINK_CARD_THUMBNAIL_CACHE_PATH = path.resolve(
 );
 const LOCAL_CONTENT_ASSET_ROUTE = '/content-assets/';
 const EXAMPLE_MEDIA_ASSET_ROUTE = '/example-assets/';
-const EXPECTED_SCHEMA_VERSION = 1;
-const EXPECTED_VARIANT_SET_VERSION = 'reading-v1';
-
 let cachedManifestPath: string | null = null;
 let cachedManifestMtimeMs = -1;
 let cachedManifest: MediaManifest | null = null;
@@ -121,23 +92,12 @@ export const isLocalContentAssetPath = (value: string): boolean =>
   isContentAssetPath(value) || isExampleMediaAssetPath(value);
 
 const assertManifestShape = (value: unknown): MediaManifest => {
-  if (!isRecord(value)) {
-    throw buildError('image manifest JSON が不正です');
+  try {
+    return assertMediaManifestContract(value);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'image manifest JSON が不正です';
+    throw buildError(message.replace(/^\[media\]\s*/u, ''));
   }
-
-  if (value['schemaVersion'] !== EXPECTED_SCHEMA_VERSION) {
-    throw buildError('image manifest の schemaVersion が未対応です');
-  }
-
-  if (value['variantSetVersion'] !== EXPECTED_VARIANT_SET_VERSION) {
-    throw buildError('image manifest の variantSetVersion が未対応です');
-  }
-
-  if (!isRecord(value['items'])) {
-    throw buildError('image manifest の items が不正です');
-  }
-
-  return value as unknown as MediaManifest;
 };
 
 const loadManifest = (): MediaManifest | null => {
@@ -202,7 +162,7 @@ const buildDevelopmentAssetRoute = (sourcePath: string): string => {
 };
 
 const buildPictureSourceSet = (
-  outputs: readonly MediaVariantOutput[],
+  outputs: readonly MediaObjectContract[],
   sizes: string | undefined,
 ): ResolvedPictureSourceSet => {
   const fallback =
@@ -215,12 +175,12 @@ const buildPictureSourceSet = (
   }
 
   return {
-    src: fallback.url,
+    src: fallback.publicUrl,
     ...(sizes ? { sizes } : {}),
     sources: outputs
       .map((output) => ({
-        type: output.mediaType,
-        srcset: output.url,
+        type: output.contentType,
+        srcset: output.publicUrl,
         ...(sizes ? { sizes } : {}),
       }))
       .filter((entry, index, list) => list.findIndex((item) => item.type === entry.type) === index),
@@ -242,17 +202,6 @@ const resolveManifestBackedAsset = (
   const lightboxVariant = options.lightboxVariant ?? 'full';
   const inlineEntry = item.variants[inlineVariant];
   const lightboxEntry = item.variants[lightboxVariant];
-
-  if (!inlineEntry) {
-    throw buildError(
-      `image manifest に "${normalizedSourcePath}" の ${inlineVariant} variant がありません`,
-    );
-  }
-  if (!lightboxEntry) {
-    throw buildError(
-      `image manifest に "${normalizedSourcePath}" の ${lightboxVariant} variant がありません`,
-    );
-  }
 
   return {
     sourcePath: normalizedSourcePath,

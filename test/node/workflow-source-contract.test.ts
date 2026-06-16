@@ -40,14 +40,38 @@ const writeWorkflowContractFixture = async (options: {
       ? [
           '      - uses: ./actions/download-artifact@0123456789abcdef0123456789abcdef01234567',
           '      - run: pnpm exec tsx scripts/upload-r2-media.ts',
+          '      - run: pnpm exec tsx scripts/deploy/verify-media-delivery.ts',
           '      - run: pnpm exec tsx scripts/deploy/production-authority-preflight.ts',
           '      - run: pnpm exec tsx scripts/deploy/deploy-cloudflare-pages.ts',
+          '      release-state-artifact-name: ${{ steps.deploy-cloudflare-pages.outputs.release-state-artifact-name }}',
+          '      release-state-sha256: ${{ steps.deploy-cloudflare-pages.outputs.release-state-sha256 }}',
+          '      - uses: ./actions/upload-artifact@0123456789abcdef0123456789abcdef01234567',
+          '        with:',
+          '          path: .generated/deployment/release-attempt-final.json',
+          '      - uses: ./actions/download-artifact@0123456789abcdef0123456789abcdef01234567',
+          '        with:',
+          '          name: ${{ needs.deploy-production.outputs.release-state-artifact-name }}',
+          '      - run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts',
+          '        env:',
+          '          EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}',
         ]
       : [
           '      - run: pnpm exec tsx scripts/deploy/production-authority-preflight.ts',
           '      - uses: ./actions/download-artifact@0123456789abcdef0123456789abcdef01234567',
           '      - run: pnpm exec tsx scripts/upload-r2-media.ts',
+          '      - run: pnpm exec tsx scripts/deploy/verify-media-delivery.ts',
           '      - run: pnpm exec tsx scripts/deploy/deploy-cloudflare-pages.ts',
+          '      release-state-artifact-name: ${{ steps.deploy-cloudflare-pages.outputs.release-state-artifact-name }}',
+          '      release-state-sha256: ${{ steps.deploy-cloudflare-pages.outputs.release-state-sha256 }}',
+          '      - uses: ./actions/upload-artifact@0123456789abcdef0123456789abcdef01234567',
+          '        with:',
+          '          path: .generated/deployment/release-attempt-final.json',
+          '      - uses: ./actions/download-artifact@0123456789abcdef0123456789abcdef01234567',
+          '        with:',
+          '          name: ${{ needs.deploy-production.outputs.release-state-artifact-name }}',
+          '      - run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts',
+          '        env:',
+          '          EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}',
         ];
 
   await mkdir(snapshotDirectory, { recursive: true });
@@ -82,7 +106,7 @@ const writeWorkflowContractFixture = async (options: {
   await writeFile(
     uploadR2ScriptPath,
     options.uploadR2ScriptSource ??
-      "observeProductionBranchHead(authority, 'r2-media-upload');\n",
+      "observeProductionBranchHead(authority, 'r2-media-upload');\nconst failed = { uploadedObjects: [] };\nvoid failed;\n",
     'utf8',
   );
   await writeFile(
@@ -261,6 +285,14 @@ describe('workflow source contract', () => {
     });
 
     await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/Pages deploy/u);
+  });
+
+  it('rejects full release state JSON in job outputs', async () => {
+    const fixture = await writeWorkflowContractFixture({
+      extraRun: 'echo "release-state-json=${FULL_RELEASE_STATE_JSON}" >> "$GITHUB_OUTPUT"',
+    });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/full release state JSON/u);
   });
 
   it('rejects local absolute paths in production job logs', async () => {

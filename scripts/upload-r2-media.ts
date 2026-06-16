@@ -1,6 +1,6 @@
 /// <reference types="node" />
 
-import { readFile } from 'node:fs/promises';
+import { appendFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,16 +11,36 @@ import {
   S3ServiceException,
 } from '@aws-sdk/client-s3';
 
-import type { MediaManifest, MediaVariantOutput } from '../build/media/image-resolver.js';
+import {
+  assertMediaManifestContract,
+  type MediaManifest,
+  type MediaObjectContract,
+} from '../shared/media/media-object-contract.js';
 import {
   observeProductionBranchHead,
   productionAuthorityFromProcessEnv,
+  sha256Hex as sha256TextHex,
+  writeJsonAtomically,
 } from './deploy/production-authority.js';
+import {
+  MEDIA_DELIVERY_CACHE_CONTROL,
+  assertR2UploadAttemptManifest,
+  toFailureReason,
+  type R2UploadAttemptManifest,
+  type UploadedMediaObjectEvidence,
+} from './deploy/release-state-schema.js';
 
 const GENERATED_ROOT = path.resolve(process.cwd(), '.generated', 'media');
 const GENERATED_ASSET_ROOT = path.join(GENERATED_ROOT, 'assets');
 const MANIFEST_PATH = path.join(GENERATED_ROOT, 'image-manifest.json');
-const CACHE_CONTROL = 'public, max-age=31536000, immutable';
+const ATTEMPT_MANIFEST_PATH = path.resolve(
+  process.cwd(),
+  '.generated',
+  'deployment',
+  'r2-attempt.json',
+);
+const ATTEMPT_ARTIFACT_NAME = 'rouault-r2-attempt';
+const CACHE_CONTROL = MEDIA_DELIVERY_CACHE_CONTROL;
 const R2_REGION = 'auto';
 
 interface R2Credentials {
@@ -36,6 +56,7 @@ interface UploadTarget {
   readonly contentType: string;
   readonly contentLength: number;
   readonly sha256: string;
+  readonly contract: MediaObjectContract;
   readonly fileBuffer: Buffer;
 }
 
@@ -89,16 +110,11 @@ const loadManifest = async (): Promise<MediaManifest> => {
   const raw = await readFile(MANIFEST_PATH, 'utf8');
   const parsed = JSON.parse(raw) as unknown;
 
-  if (
-    !isRecord(parsed) ||
-    parsed['schemaVersion'] !== 1 ||
-    parsed['variantSetVersion'] !== 'reading-v1' ||
-    !isRecord(parsed['items'])
-  ) {
+  if (!isRecord(parsed) || !isRecord(parsed['items'])) {
     throw new Error('[media] invalid image manifest');
   }
 
-  return parsed as unknown as MediaManifest;
+  return assertMediaManifestContract(parsed);
 };
 
 const sha256Hex = async (fileBuffer: Buffer): Promise<string> => {
@@ -149,38 +165,58 @@ const formatS3Error = (
   ].join('\n');
 };
 
-const parseUploadTarget = (output: MediaVariantOutput): ParsedUploadTarget => {
-  const parsedUrl = new URL(output.url, 'https://media.invalid');
-  const segments = parsedUrl.pathname.split('/').filter(Boolean);
-
-  if (segments.length < 2) {
-    throw new Error(`[media] invalid media object URL: ${output.url}`);
-  }
-
-  const fileName = segments.at(-1);
-  const hash = segments.at(-2);
-  if (fileName === undefined || hash === undefined) {
-    throw new Error(`[media] invalid media object URL: ${output.url}`);
-  }
-
+const parseUploadTarget = (output: MediaObjectContract): ParsedUploadTarget => {
   return {
-    objectKey: segments.join('/'),
-    localPath: path.join(GENERATED_ASSET_ROOT, hash, fileName),
-    contentType: output.mediaType,
+    objectKey: output.objectKey,
+    localPath: path.join(
+      GENERATED_ASSET_ROOT,
+      output.mediaItemId,
+      `${output.variant}.${path.extname(output.objectKey).replace('.', '')}`,
+    ),
+    contentType: output.contentType,
   };
 };
 
-const createUploadTarget = async (output: MediaVariantOutput): Promise<UploadTarget> => {
+const createUploadTarget = async (output: MediaObjectContract): Promise<UploadTarget> => {
   const parsedTarget = parseUploadTarget(output);
   const fileBuffer = await readFile(parsedTarget.localPath);
+  const contentLength = fileBuffer.byteLength;
+  const sha256 = await sha256Hex(fileBuffer);
+
+  if (contentLength !== output.byteSize) {
+    throw new Error(`[media] local media byteSize mismatch: ${output.objectKey}`);
+  }
+  if (sha256 !== output.contentSha256) {
+    throw new Error(`[media] local media contentSha256 mismatch: ${output.objectKey}`);
+  }
 
   return {
     ...parsedTarget,
-    contentLength: fileBuffer.byteLength,
-    sha256: await sha256Hex(fileBuffer),
+    contentLength,
+    sha256,
+    contract: output,
     fileBuffer,
   };
 };
+
+const createUploadedEvidence = (
+  target: UploadTarget,
+  uploadStatus: UploadedMediaObjectEvidence['uploadStatus'],
+): UploadedMediaObjectEvidence =>
+  assertR2UploadAttemptManifest({
+    schemaVersion: 1,
+    attemptKind: 'r2-media-upload',
+    status: 'succeeded',
+    objectCount: 1,
+    uploadedObjects: [
+      {
+        ...target.contract,
+        uploadStatus,
+        cacheControl: CACHE_CONTROL,
+      },
+    ],
+    failureReason: null,
+  }).uploadedObjects[0]!;
 
 const headObject = async (
   client: S3Client,
@@ -234,6 +270,46 @@ const putObject = async (
   }
 };
 
+const collectUploadPlan = async (manifest: MediaManifest): Promise<readonly UploadTarget[]> => {
+  const items = Object.entries(manifest.items).sort(([left], [right]) => left.localeCompare(right));
+  const uploadPlan: UploadTarget[] = [];
+
+  for (const [, item] of items) {
+    const variants = Object.values(item.variants);
+    for (const variant of variants) {
+      for (const output of variant.outputs) {
+        uploadPlan.push(await createUploadTarget(output));
+      }
+    }
+  }
+
+  return uploadPlan.sort((left, right) => left.objectKey.localeCompare(right.objectKey));
+};
+
+const writeAttemptManifest = async (manifest: R2UploadAttemptManifest): Promise<string> => {
+  const normalized = assertR2UploadAttemptManifest(manifest);
+  await writeJsonAtomically(ATTEMPT_MANIFEST_PATH, normalized);
+  const serialized = `${JSON.stringify(normalized, null, 2)}\n`;
+  return sha256TextHex(serialized);
+};
+
+const writeGithubOutput = async (attemptSha256: string): Promise<void> => {
+  const githubOutput = process.env['GITHUB_OUTPUT']?.trim();
+  if (!githubOutput) {
+    return;
+  }
+
+  await appendFile(
+    githubOutput,
+    [
+      `r2-attempt-artifact-name=${ATTEMPT_ARTIFACT_NAME}`,
+      `r2-attempt-sha256=${attemptSha256}`,
+      '',
+    ].join('\n'),
+    'utf8',
+  );
+};
+
 const uploadMediaObjects = async (): Promise<void> => {
   const authority = productionAuthorityFromProcessEnv();
   await observeProductionBranchHead(authority, 'r2-media-upload');
@@ -241,34 +317,43 @@ const uploadMediaObjects = async (): Promise<void> => {
   const credentials = getCredentials();
   const client = createS3Client(credentials);
   const manifest = await loadManifest();
-  const items = Object.entries(manifest.items).sort(([left], [right]) => left.localeCompare(right));
+  const uploadPlan = await collectUploadPlan(manifest);
 
   console.log(
-    `[media] starting upload: bucket=${credentials.bucketName}, itemCount=${String(items.length)}`,
+    `[media] starting upload: bucket=${credentials.bucketName}, objectCount=${String(
+      uploadPlan.length,
+    )}`,
   );
 
   let uploadedCount = 0;
   let skippedCount = 0;
+  const uploadedObjects: UploadedMediaObjectEvidence[] = [];
 
-  for (const [, item] of items) {
-    const variants = Object.values(item.variants);
-    for (const variant of variants) {
-      for (const output of variant.outputs) {
-        const target = await createUploadTarget(output);
-        const existingObject = await headObject(client, credentials, target.objectKey);
+  for (const target of uploadPlan) {
+    const existingObject = await headObject(client, credentials, target.objectKey);
 
-        if (existingObject?.sha256 === target.sha256) {
-          skippedCount += 1;
-          console.log(`[media] skipped ${target.objectKey}`);
-          continue;
-        }
-
-        await putObject(client, credentials, target);
-        uploadedCount += 1;
-        console.log(`[media] uploaded ${target.objectKey}`);
-      }
+    if (existingObject?.sha256 === target.sha256) {
+      skippedCount += 1;
+      uploadedObjects.push(createUploadedEvidence(target, 'skipped-existing'));
+      console.log(`[media] skipped ${target.objectKey}`);
+      continue;
     }
+
+    await putObject(client, credentials, target);
+    uploadedObjects.push(createUploadedEvidence(target, 'uploaded'));
+    uploadedCount += 1;
+    console.log(`[media] uploaded ${target.objectKey}`);
   }
+
+  const attemptSha256 = await writeAttemptManifest({
+    schemaVersion: 1,
+    attemptKind: 'r2-media-upload',
+    status: 'succeeded',
+    objectCount: uploadPlan.length,
+    uploadedObjects,
+    failureReason: null,
+  });
+  await writeGithubOutput(attemptSha256);
 
   console.log(
     `[media] upload complete: ${String(uploadedCount)} uploaded, ${String(skippedCount)} skipped`,
@@ -276,7 +361,20 @@ const uploadMediaObjects = async (): Promise<void> => {
 };
 
 const run = async (): Promise<void> => {
-  await uploadMediaObjects();
+  try {
+    await uploadMediaObjects();
+  } catch (error) {
+    const attemptSha256 = await writeAttemptManifest({
+      schemaVersion: 1,
+      attemptKind: 'r2-media-upload',
+      status: 'failed',
+      objectCount: 0,
+      uploadedObjects: [],
+      failureReason: toFailureReason(error),
+    });
+    await writeGithubOutput(attemptSha256);
+    throw error;
+  }
 };
 
 const entryPoint = process.argv[1];

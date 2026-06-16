@@ -247,6 +247,9 @@ const assertWorkflowDeploymentOrder = (workflowSource: string, workflowPath: str
   );
   const downloadIndex = workflowSource.indexOf('actions/download-artifact@');
   const r2UploadIndex = workflowSource.indexOf('pnpm exec tsx scripts/upload-r2-media.ts');
+  const mediaDeliveryIndex = workflowSource.indexOf(
+    'pnpm exec tsx scripts/deploy/verify-media-delivery.ts',
+  );
   const pagesDeployIndex = workflowSource.indexOf(
     'pnpm exec tsx scripts/deploy/deploy-cloudflare-pages.ts',
   );
@@ -254,14 +257,18 @@ const assertWorkflowDeploymentOrder = (workflowSource: string, workflowPath: str
   assertCondition(preflightIndex >= 0, `${workflowPath} must run production authority preflight`);
   assertCondition(downloadIndex >= 0, `${workflowPath} must download the production artifact`);
   assertCondition(r2UploadIndex >= 0, `${workflowPath} must run the R2 upload script`);
+  assertCondition(
+    mediaDeliveryIndex >= 0,
+    `${workflowPath} must run media delivery verification after R2 upload`,
+  );
   assertCondition(pagesDeployIndex >= 0, `${workflowPath} must run the Pages deploy script`);
   assertCondition(
     preflightIndex < downloadIndex && preflightIndex < r2UploadIndex && preflightIndex < pagesDeployIndex,
     `${workflowPath} must run production authority preflight before production side effects`,
   );
   assertCondition(
-    r2UploadIndex < pagesDeployIndex,
-    `${workflowPath} must upload R2 media before Pages deploy`,
+    r2UploadIndex < mediaDeliveryIndex && mediaDeliveryIndex < pagesDeployIndex,
+    `${workflowPath} must verify R2 media delivery before Pages deploy`,
   );
 };
 
@@ -270,6 +277,47 @@ const assertUploadR2ScriptContract = async (uploadR2ScriptPath: string): Promise
   assertCondition(
     source.includes("observeProductionBranchHead(authority, 'r2-media-upload')"),
     `${uploadR2ScriptPath} must gate the current production head immediately before R2 upload`,
+  );
+  assertCondition(
+    source.includes('uploadedObjects: []'),
+    `${uploadR2ScriptPath} must normalize failed R2 attempts to uploadedObjects: []`,
+  );
+};
+
+const assertReleaseStateWorkflowContract = (workflowSource: string, workflowPath: string): void => {
+  assertCondition(
+    /release-state-artifact-name:\s*\$\{\{\s*steps\.deploy-cloudflare-pages\.outputs\.release-state-artifact-name\s*\}\}/u.test(
+      workflowSource,
+    ),
+    `${workflowPath} must expose only the release state artifact name as a deploy job output`,
+  );
+  assertCondition(
+    /release-state-sha256:\s*\$\{\{\s*steps\.deploy-cloudflare-pages\.outputs\.release-state-sha256\s*\}\}/u.test(
+      workflowSource,
+    ),
+    `${workflowPath} must expose release state SHA-256 as a deploy job output`,
+  );
+  assertCondition(
+    workflowSource.includes('path: .generated/deployment/release-attempt-final.json'),
+    `${workflowPath} must upload release state JSON as an artifact`,
+  );
+  assertCondition(
+    workflowSource.includes('name: ${{ needs.deploy-production.outputs.release-state-artifact-name }}'),
+    `${workflowPath} verify job must download release state by deploy job artifact-name output`,
+  );
+  assertCondition(
+    workflowSource.includes('EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}'),
+    `${workflowPath} verify job must re-check release state SHA-256`,
+  );
+  assertCondition(
+    workflowSource.includes('pnpm exec tsx scripts/deploy/record-runtime-verification.ts'),
+    `${workflowPath} must reflect runtime verification state into a release state artifact`,
+  );
+  assertCondition(
+    !/release-state-json|release_state_json|toJson\(\s*steps\.deploy-cloudflare-pages\.outputs\s*\)/iu.test(
+      workflowSource,
+    ),
+    `${workflowPath} must not expose full release state JSON through job outputs`,
   );
 };
 
@@ -292,6 +340,10 @@ const assertProductionOutputSafety = async (
     assertCondition(
       !/appendFile\(\s*githubOutput\s*,\s*(?:`[^`]*(?:process\.env|OUTPUT_PATH|WRANGLER_OUTPUT_PATH)[^`]*`|"[^"]*(?:process\.env|OUTPUT_PATH|WRANGLER_OUTPUT_PATH)[^"]*"|'[^']*(?:process\.env|OUTPUT_PATH|WRANGLER_OUTPUT_PATH)[^']*')/u.test(source),
       `${filePath} must not write raw environment values or local absolute paths to job outputs`,
+    );
+    assertCondition(
+      !/appendFile\(\s*githubOutput[\s\S]{0,400}JSON\.stringify/u.test(source),
+      `${filePath} must not write full JSON artifacts to job outputs`,
     );
   }
 };
@@ -325,6 +377,7 @@ export const assertWorkflowSourceContract = async (
     'deployment URL must not be scraped from stdout with grep',
   );
   assertWorkflowDeploymentOrder(workflowSource, workflowPath);
+  assertReleaseStateWorkflowContract(workflowSource, workflowPath);
 
   const externalUses = workflowUses.filter((use) => !use.startsWith('./'));
   for (const use of externalUses) {

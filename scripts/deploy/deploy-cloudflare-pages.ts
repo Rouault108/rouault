@@ -8,8 +8,17 @@ import { fileURLToPath } from 'node:url';
 import {
   observeProductionBranchHead,
   productionAuthorityFromProcessEnv,
+  sha256Hex,
   writeJsonAtomically,
 } from './production-authority.js';
+import {
+  assertMediaDeliveryAttemptManifest,
+  assertProductionReleaseStateArtifact,
+  assertR2UploadAttemptManifest,
+  assertUploadedVerifiedObjectSetConsistency,
+  type CloudflarePagesReleaseEvidence,
+  type ProductionReleaseStateArtifact,
+} from './release-state-schema.js';
 
 const OUTPUT_PATH = path.resolve(
   process.cwd(),
@@ -22,6 +31,19 @@ const WRANGLER_OUTPUT_PATH = path.resolve(
   '.generated',
   'deployment',
   'wrangler-pages-deploy.jsonl',
+);
+const R2_ATTEMPT_PATH = path.resolve(process.cwd(), '.generated', 'deployment', 'r2-attempt.json');
+const MEDIA_DELIVERY_ATTEMPT_PATH = path.resolve(
+  process.cwd(),
+  '.generated',
+  'deployment',
+  'media-delivery-attempt.json',
+);
+const RELEASE_STATE_PATH = path.resolve(
+  process.cwd(),
+  '.generated',
+  'deployment',
+  'release-attempt-final.json',
 );
 const DIST_DIRECTORY = path.resolve(process.cwd(), 'dist');
 const MAX_FILE_BYTES = 1_048_576;
@@ -63,6 +85,15 @@ const readRequiredEnv = (name: string): string => {
     throw new Error(`[pages-deploy] missing required environment variable: ${name}`);
   }
   return value;
+};
+
+const releaseStateArtifactName = (): string => {
+  const runId = process.env['GITHUB_RUN_ID']?.trim();
+  const runAttempt = process.env['GITHUB_RUN_ATTEMPT']?.trim();
+  if (runId && runAttempt && /^\d+$/u.test(runId) && /^\d+$/u.test(runAttempt)) {
+    return `rouault-release-state-${runId}-${runAttempt}`;
+  }
+  return 'rouault-release-state-local';
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -342,7 +373,10 @@ const runWranglerPagesDeploy = async (
     });
   });
 
-const writeGithubOutput = async (result: CloudflarePagesDeployResult): Promise<void> => {
+const writeGithubOutput = async (
+  result: CloudflarePagesDeployResult,
+  releaseStateSha256: string,
+): Promise<void> => {
   const githubOutput = process.env['GITHUB_OUTPUT']?.trim();
   if (!githubOutput) {
     return;
@@ -350,7 +384,13 @@ const writeGithubOutput = async (result: CloudflarePagesDeployResult): Promise<v
 
   await appendFile(
     githubOutput,
-    `deployment-url=${result.deploymentUrl}\ndeployment-id=${result.deploymentId}\n`,
+    [
+      `deployment-url=${result.deploymentUrl}`,
+      `deployment-id=${result.deploymentId}`,
+      `release-state-artifact-name=${releaseStateArtifactName()}`,
+      `release-state-sha256=${releaseStateSha256}`,
+      '',
+    ].join('\n'),
     'utf8',
   );
 };
@@ -376,6 +416,55 @@ const writeGithubSummary = async (result: CloudflarePagesDeployResult): Promise<
   );
 };
 
+const readJson = async (filePath: string): Promise<unknown> =>
+  JSON.parse(await readFile(filePath, 'utf8')) as unknown;
+
+const buildReleaseState = async (
+  result: CloudflarePagesDeployResult,
+): Promise<ProductionReleaseStateArtifact> => {
+  const r2Attempt = assertR2UploadAttemptManifest(await readJson(R2_ATTEMPT_PATH));
+  const mediaAttempt = assertMediaDeliveryAttemptManifest(await readJson(MEDIA_DELIVERY_ATTEMPT_PATH));
+
+  if (r2Attempt.status !== 'succeeded') {
+    throw new Error('[release-state] R2 upload attempt must succeed before Pages deployment');
+  }
+  if (mediaAttempt.status !== 'succeeded') {
+    throw new Error('[release-state] media delivery attempt must succeed before Pages deployment');
+  }
+  assertUploadedVerifiedObjectSetConsistency(r2Attempt.uploadedObjects, mediaAttempt.verifiedObjects);
+
+  const cloudflarePages: CloudflarePagesReleaseEvidence = {
+    deploymentId: result.deploymentId,
+    deploymentUrl: result.deploymentUrl,
+    projectName: result.projectName,
+    branch: result.branch,
+    commitSha: result.commitSha,
+    wranglerOutputKind: result.wranglerOutputKind,
+    wranglerVersion: result.wranglerVersion,
+  };
+
+  return assertProductionReleaseStateArtifact({
+    schemaVersion: 1,
+    artifactKind: 'production-release-state',
+    commitSha: result.commitSha,
+    createdAt: new Date().toISOString(),
+    uploadedObjects: r2Attempt.uploadedObjects,
+    verifiedObjects: mediaAttempt.verifiedObjects,
+    cloudflarePages,
+    runtimeVerification: {
+      status: 'not-run',
+      checkedAt: null,
+    },
+  });
+};
+
+const writeReleaseState = async (result: CloudflarePagesDeployResult): Promise<string> => {
+  const releaseState = await buildReleaseState(result);
+  await writeJsonAtomically(RELEASE_STATE_PATH, releaseState);
+  const written = await readFile(RELEASE_STATE_PATH, 'utf8');
+  return sha256Hex(written);
+};
+
 const run = async (): Promise<void> => {
   const authority = productionAuthorityFromProcessEnv();
   const projectName = readRequiredEnv('CF_PAGES_PROJECT');
@@ -387,11 +476,16 @@ const run = async (): Promise<void> => {
 
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await writeJsonAtomically(OUTPUT_PATH, result);
-  await writeGithubOutput(result);
+  const releaseStateSha256 = await writeReleaseState(result);
+  await writeGithubOutput(result, releaseStateSha256);
   await writeGithubSummary(result);
 
   const written = await readFile(OUTPUT_PATH, 'utf8');
-  console.log(`[pages-deploy] wrote normalized deployment result (${String(written.length)} bytes)`);
+  console.log(
+    `[pages-deploy] wrote normalized deployment result (${String(
+      written.length,
+    )} bytes) and release state artifact`,
+  );
 };
 
 const entryPoint = process.argv[1];
