@@ -49,7 +49,8 @@
     "sync:link-cards": "pnpm exec tsx scripts/sync-link-card-metadata.ts",
     "assert-production-import-boundary": "pnpm exec tsx scripts/assert-production-import-boundary.ts",
     "assert-search-import-boundary": "pnpm exec tsx scripts/assert-search-import-boundary.ts",
-    "assert-link-contract-acceptance": "pnpm exec tsx scripts/assert-link-contract-acceptance.ts"
+    "assert-link-contract-acceptance": "pnpm exec tsx scripts/assert-link-contract-acceptance.ts",
+    "assert-workflow-source-contract": "pnpm exec tsx scripts/ci/assert-workflow-source-contract.ts"
   },
   "dependencies": {
     "@floating-ui/dom": "1.7.5",
@@ -114,6 +115,7 @@
     "unified": "11.0.5",
     "velite": "0.3.1",
     "vite": "7.3.1",
-    "vitest": "4.0.17"
+    "vitest": "4.0.17",
+    "wrangler": "4.100.0"
   }
 }

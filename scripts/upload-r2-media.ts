@@ -2,6 +2,7 @@
 
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   HeadObjectCommand,
@@ -11,6 +12,10 @@ import {
 } from '@aws-sdk/client-s3';
 
 import type { MediaManifest, MediaVariantOutput } from '../build/media/image-resolver.js';
+import {
+  observeProductionBranchHead,
+  productionAuthorityFromProcessEnv,
+} from './deploy/production-authority.js';
 
 const GENERATED_ROOT = path.resolve(process.cwd(), '.generated', 'media');
 const GENERATED_ASSET_ROOT = path.join(GENERATED_ROOT, 'assets');
@@ -230,6 +235,9 @@ const putObject = async (
 };
 
 const uploadMediaObjects = async (): Promise<void> => {
+  const authority = productionAuthorityFromProcessEnv();
+  await observeProductionBranchHead(authority, 'r2-media-upload');
+
   const credentials = getCredentials();
   const client = createS3Client(credentials);
   const manifest = await loadManifest();
@@ -272,6 +280,6 @@ const run = async (): Promise<void> => {
 };
 
 const entryPoint = process.argv[1];
-if (typeof entryPoint === 'string' && import.meta.url === `file://${entryPoint}`) {
+if (typeof entryPoint === 'string' && fileURLToPath(import.meta.url) === path.resolve(entryPoint)) {
   void run();
 }

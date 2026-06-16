@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "actionName": "actions/download-artifact",
+  "adoptedTag": "v7",
+  "reviewedCommitSha": "37930b1c2abaa49bbe596cd826c3c89aef350131",
+  "workflowUsesSha": "37930b1c2abaa49bbe596cd826c3c89aef350131",
+  "runsUsing": "node24",
+  "reviewStatus": "reviewed"
+}

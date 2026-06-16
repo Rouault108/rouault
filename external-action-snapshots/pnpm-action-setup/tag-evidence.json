@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "actionName": "pnpm/action-setup",
+  "adoptedTag": "v5",
+  "reviewedCommitSha": "a8198c4bff370c8506180b035930dea56dbd5288",
+  "workflowUsesSha": "a8198c4bff370c8506180b035930dea56dbd5288",
+  "runsUsing": "node24",
+  "reviewStatus": "reviewed"
+}

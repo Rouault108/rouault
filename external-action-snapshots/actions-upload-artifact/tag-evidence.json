@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "actionName": "actions/upload-artifact",
+  "adoptedTag": "v6",
+  "reviewedCommitSha": "b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+  "workflowUsesSha": "b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+  "runsUsing": "node24",
+  "reviewStatus": "reviewed"
+}

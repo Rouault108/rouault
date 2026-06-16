@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "actionName": "actions/setup-node",
+  "adoptedTag": "v5",
+  "reviewedCommitSha": "a0853c24544627f65ddf259abe73b1d18a591444",
+  "workflowUsesSha": "a0853c24544627f65ddf259abe73b1d18a591444",
+  "runsUsing": "node24",
+  "reviewStatus": "reviewed"
+}
