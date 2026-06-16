@@ -32,6 +32,16 @@ interface HttpFetchResult {
   readonly body: Buffer;
 }
 
+const firstVerifiedObject = (
+  manifest: MediaDeliveryAttemptManifest,
+): VerifiedMediaObjectEvidence => {
+  const object = manifest.verifiedObjects[0];
+  if (object === undefined) {
+    throw new Error('[media-delivery] media delivery attempt did not contain verified evidence');
+  }
+  return object;
+};
+
 const readJson = async (filePath: string): Promise<unknown> =>
   JSON.parse(await readFile(filePath, 'utf8')) as unknown;
 
@@ -87,9 +97,10 @@ export const verifyUploadedMediaObjectDelivery = async (
     verifiedObjects: [verifiedObject],
     failureReason: null,
   });
-  const normalized = manifest.verifiedObjects[0]!;
+  const normalized = firstVerifiedObject(manifest);
   assertUploadedVerifiedObjectSetConsistency([object], [normalized]);
-  if (normalized.cacheControl !== MEDIA_DELIVERY_CACHE_CONTROL) {
+  const observedCacheControl: string = normalized.cacheControl;
+  if (observedCacheControl !== MEDIA_DELIVERY_CACHE_CONTROL) {
     throw new Error('[media-delivery] Cache-Control mismatch');
   }
   return normalized;

@@ -6,9 +6,11 @@ import {
   MEDIA_DELIVERY_CACHE_CONTROL,
   assertMediaDeliveryAttemptManifest,
   assertProductionReleaseStateArtifact,
+  assertR2UploadPlanArtifact,
   assertR2UploadAttemptManifest,
   assertUploadedVerifiedObjectSetConsistency,
   type ProductionReleaseStateArtifact,
+  type R2UploadPlanObject,
   type UploadedMediaObjectEvidence,
   type VerifiedMediaObjectEvidence,
 } from '../../scripts/deploy/release-state-schema.js';
@@ -39,6 +41,22 @@ const uploadedObject = (
     contentType: 'image/avif',
     publicUrl: `https://media.example.com/${objectKey}`,
     uploadStatus: 'uploaded',
+    cacheControl: MEDIA_DELIVERY_CACHE_CONTROL,
+    ...overrides,
+  };
+};
+
+const uploadPlanObject = (overrides: Partial<R2UploadPlanObject> = {}): R2UploadPlanObject => {
+  const uploaded = uploadedObject();
+  return {
+    mediaItemId: uploaded.mediaItemId,
+    variant: uploaded.variant,
+    format: uploaded.format,
+    objectKey: uploaded.objectKey,
+    contentSha256: uploaded.contentSha256,
+    byteSize: uploaded.byteSize,
+    contentType: uploaded.contentType,
+    publicUrl: uploaded.publicUrl,
     cacheControl: MEDIA_DELIVERY_CACHE_CONTROL,
     ...overrides,
   };
@@ -89,6 +107,79 @@ const releaseState = (
 });
 
 describe('release state and media attempt schemas', () => {
+  it('accepts canonical R2 upload plan artifacts', () => {
+    expect(
+      assertR2UploadPlanArtifact({
+        schemaVersion: 1,
+        artifactKind: 'r2-media-upload-plan',
+        objectCount: 1,
+        plannedObjects: [uploadPlanObject()],
+      }),
+    ).toEqual({
+      schemaVersion: 1,
+      artifactKind: 'r2-media-upload-plan',
+      objectCount: 1,
+      plannedObjects: [uploadPlanObject()],
+    });
+  });
+
+  it('rejects R2 upload plan extra fields', () => {
+    expect(() =>
+      assertR2UploadPlanArtifact({
+        schemaVersion: 1,
+        artifactKind: 'r2-media-upload-plan',
+        objectCount: 1,
+        plannedObjects: [
+          {
+            ...uploadPlanObject(),
+            extra: true,
+          },
+        ],
+      }),
+    ).toThrow(/extra field/u);
+  });
+
+  it('rejects unsafe R2 upload plan evidence', () => {
+    expect(() =>
+      assertR2UploadPlanArtifact({
+        schemaVersion: 1,
+        artifactKind: 'r2-media-upload-plan',
+        objectCount: 1,
+        plannedObjects: [
+          {
+            ...uploadPlanObject(),
+            credentialPath: 'redacted',
+          },
+        ],
+      }),
+    ).toThrow(/forbidden field name/u);
+
+    expect(() =>
+      assertR2UploadPlanArtifact({
+        schemaVersion: 1,
+        artifactKind: 'r2-media-upload-plan',
+        objectCount: 1,
+        plannedObjects: [
+          {
+            ...uploadPlanObject(),
+            publicUrl: 'C:\\Users\\runner\\media.avif',
+          },
+        ],
+      }),
+    ).toThrow(/local absolute path|HTTPS URL/u);
+  });
+
+  it('rejects duplicate R2 upload plan object identities', () => {
+    expect(() =>
+      assertR2UploadPlanArtifact({
+        schemaVersion: 1,
+        artifactKind: 'r2-media-upload-plan',
+        objectCount: 2,
+        plannedObjects: [uploadPlanObject(), uploadPlanObject()],
+      }),
+    ).toThrow(/duplicate object identity/u);
+  });
+
   it('accepts uploadedObjects evidence on successful R2 upload attempts', () => {
     expect(
       assertR2UploadAttemptManifest({

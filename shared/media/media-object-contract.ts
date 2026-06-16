@@ -93,6 +93,18 @@ const assertPositiveInteger = (value: unknown, label: string): number => {
   return value;
 };
 
+const containsAsciiControl = (value: string): boolean =>
+  [...value].some((character) => {
+    const codePoint = character.codePointAt(0);
+    return codePoint !== undefined && (codePoint <= 0x1f || codePoint === 0x7f);
+  });
+
+const containsNonAscii = (value: string): boolean =>
+  [...value].some((character) => {
+    const codePoint = character.codePointAt(0);
+    return codePoint !== undefined && codePoint > 0x7f;
+  });
+
 export const canonicalizeMediaBaseUrl = (value: string): string => {
   if (value.length === 0) {
     throw new Error('[media] mediaBaseUrl host が空です');
@@ -100,7 +112,7 @@ export const canonicalizeMediaBaseUrl = (value: string): string => {
   if (value !== value.trim()) {
     throw new Error('[media] mediaBaseUrl に前後空白は使用できません');
   }
-  if (/[\u0000-\u001f\u007f]/u.test(value)) {
+  if (containsAsciiControl(value)) {
     throw new Error('[media] mediaBaseUrl に制御文字は使用できません');
   }
   if (value.includes('\\')) {
@@ -141,7 +153,7 @@ export const canonicalizeMediaBaseUrl = (value: string): string => {
   if (host.length === 0) {
     throw new Error('[media] mediaBaseUrl host が空です');
   }
-  if (/[^\x00-\x7f]/u.test(host) || host.includes('xn--')) {
+  if (containsNonAscii(host) || host.includes('xn--')) {
     throw new Error('[media] mediaBaseUrl host はASCII DNS hostである必要があります');
   }
 
@@ -272,7 +284,13 @@ export const assertMediaManifestContract = (value: unknown): MediaManifest => {
         }
       }
       normalizedVariants[variant] = {
-        outputs: MEDIA_FORMATS.map((format) => outputsByFormat.get(format)!),
+        outputs: MEDIA_FORMATS.map((format) => {
+          const output = outputsByFormat.get(format);
+          if (output === undefined) {
+            throw new Error(`[media] ${variant} variant に ${format} format がありません`);
+          }
+          return output;
+        }),
       };
     }
 

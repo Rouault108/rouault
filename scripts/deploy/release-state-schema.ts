@@ -20,11 +20,21 @@ const HTTPS_URL_PATTERN = /^https:\/\/[A-Za-z0-9.-]+(?:\/[^\s]*)?$/u;
 const SECRET_FIELD_PATTERN =
   /(?:secret|token|credential|password|passwd|private[_-]?key|access[_-]?key|api[_-]?key|environment|process[_-]?env|raw[_-]?env|local[_-]?path)/iu;
 const WINDOWS_ABSOLUTE_PATH_PATTERN = /^[A-Za-z]:[\\/]/u;
-const POSIX_ABSOLUTE_PATH_PATTERN = /^\//u;
 
 export interface UploadedMediaObjectEvidence extends MediaObjectContract {
   readonly uploadStatus: 'uploaded' | 'skipped-existing';
   readonly cacheControl: typeof MEDIA_DELIVERY_CACHE_CONTROL;
+}
+
+export interface R2UploadPlanObject extends MediaObjectContract {
+  readonly cacheControl: typeof MEDIA_DELIVERY_CACHE_CONTROL;
+}
+
+export interface R2UploadPlanArtifact {
+  readonly schemaVersion: typeof RELEASE_STATE_SCHEMA_VERSION;
+  readonly artifactKind: 'r2-media-upload-plan';
+  readonly objectCount: number;
+  readonly plannedObjects: readonly R2UploadPlanObject[];
 }
 
 export interface VerifiedMediaObjectEvidence {
@@ -118,16 +128,16 @@ const assertSafeFieldName = (key: string, label: string): void => {
 };
 
 const assertSafeStringValue = (value: string, label: string): void => {
-  if (WINDOWS_ABSOLUTE_PATH_PATTERN.test(value) || POSIX_ABSOLUTE_PATH_PATTERN.test(value)) {
+  if (WINDOWS_ABSOLUTE_PATH_PATTERN.test(value) || value.startsWith('/')) {
     throw new Error(`[release-state] ${label} contains a local absolute path`);
   }
 };
 
 export const assertNoForbiddenReleaseStateEvidence = (value: unknown, label = 'artifact'): void => {
   if (Array.isArray(value)) {
-    value.forEach((item, index) =>
-      assertNoForbiddenReleaseStateEvidence(item, `${label}[${String(index)}]`),
-    );
+    value.forEach((item, index) => {
+      assertNoForbiddenReleaseStateEvidence(item, `${label}[${String(index)}]`);
+    });
     return;
   }
 
@@ -315,7 +325,9 @@ export const compareUploadedAndVerifiedObject = (
   if (uploaded.contentSha256 !== verified.bodySha256) {
     throw new Error('[release-state] contentSha256 mismatch');
   }
-  if (uploaded.cacheControl !== verified.cacheControl) {
+  const uploadedCacheControl: string = uploaded.cacheControl;
+  const verifiedCacheControl: string = verified.cacheControl;
+  if (uploadedCacheControl !== verifiedCacheControl) {
     throw new Error('[release-state] Cache-Control mismatch');
   }
 };
@@ -326,6 +338,82 @@ export const objectEvidenceIdentity = (object: {
   readonly format: MediaFormat;
   readonly objectKey: string;
 }): string => `${object.mediaItemId}\u0000${object.variant}\u0000${object.format}\u0000${object.objectKey}`;
+
+export const assertR2UploadPlanObject = (value: unknown): R2UploadPlanObject => {
+  const object = assertRecord(value, 'R2 upload plan object');
+  assertAllowedKeys(
+    object,
+    [
+      'mediaItemId',
+      'variant',
+      'format',
+      'objectKey',
+      'contentSha256',
+      'byteSize',
+      'contentType',
+      'publicUrl',
+      'cacheControl',
+    ],
+    'R2 upload plan object',
+  );
+  assertNoForbiddenReleaseStateEvidence(object, 'R2 upload plan object');
+
+  const mediaObject = assertMediaObjectContract(object);
+  assertHttpsUrl(mediaObject.publicUrl, 'R2 upload plan object publicUrl');
+  if (object['cacheControl'] !== MEDIA_DELIVERY_CACHE_CONTROL) {
+    throw new Error('[release-state] R2 upload plan object Cache-Control mismatch');
+  }
+
+  return {
+    ...mediaObject,
+    cacheControl: MEDIA_DELIVERY_CACHE_CONTROL,
+  };
+};
+
+export const assertR2UploadPlanArtifact = (value: unknown): R2UploadPlanArtifact => {
+  const artifact = assertRecord(value, 'R2 upload plan artifact');
+  assertAllowedKeys(
+    artifact,
+    ['schemaVersion', 'artifactKind', 'objectCount', 'plannedObjects'],
+    'R2 upload plan artifact',
+  );
+  assertNoForbiddenReleaseStateEvidence(artifact, 'R2 upload plan artifact');
+
+  if (artifact['schemaVersion'] !== RELEASE_STATE_SCHEMA_VERSION) {
+    throw new Error('[release-state] R2 upload plan schemaVersion is unsupported');
+  }
+  if (artifact['artifactKind'] !== 'r2-media-upload-plan') {
+    throw new Error('[release-state] R2 upload plan artifactKind mismatch');
+  }
+
+  const plannedObjects = Array.isArray(artifact['plannedObjects'])
+    ? artifact['plannedObjects'].map((object) => assertR2UploadPlanObject(object))
+    : null;
+  if (plannedObjects === null) {
+    throw new Error('[release-state] R2 upload plan plannedObjects must be an array');
+  }
+
+  const objectCount = assertNonNegativeInteger(artifact['objectCount'], 'R2 upload plan objectCount');
+  if (objectCount !== plannedObjects.length) {
+    throw new Error('[release-state] R2 upload plan objectCount mismatch');
+  }
+
+  const identities = new Set<string>();
+  for (const object of plannedObjects) {
+    const identity = objectEvidenceIdentity(object);
+    if (identities.has(identity)) {
+      throw new Error('[release-state] R2 upload plan contains duplicate object identity');
+    }
+    identities.add(identity);
+  }
+
+  return {
+    schemaVersion: RELEASE_STATE_SCHEMA_VERSION,
+    artifactKind: 'r2-media-upload-plan',
+    objectCount,
+    plannedObjects,
+  };
+};
 
 export const assertUploadedVerifiedObjectSetConsistency = (
   uploadedObjects: readonly UploadedMediaObjectEvidence[],

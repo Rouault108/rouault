@@ -75,6 +75,17 @@ const buildManifest = (mediaItemIds: readonly string[]): MediaManifest => ({
   ),
 });
 
+const getManifestItem = (
+  manifest: MediaManifest,
+  mediaItemId: string,
+): MediaManifest['items'][string] => {
+  const item = manifest.items[mediaItemId];
+  if (item === undefined) {
+    throw new Error(`fixture item missing: ${mediaItemId}`);
+  }
+  return item;
+};
+
 describe('media object contract', () => {
   it('valid https://media.example.com/ をcanonical化できること', () => {
     expect(canonicalizeMediaBaseUrl('https://media.example.com/')).toBe(
@@ -133,14 +144,12 @@ describe('media object contract', () => {
 
   it('format欠落を拒否すること', () => {
     const manifest = buildManifest(['content/_assets/a.jpg']);
-    const outputs = manifest.items['content/_assets/a.jpg']?.variants.reading.outputs;
-    if (!outputs) {
-      throw new Error('fixture outputs missing');
-    }
+    const item = getManifestItem(manifest, 'content/_assets/a.jpg');
+    const outputs = item.variants.reading.outputs;
     manifest.items['content/_assets/a.jpg'] = {
-      ...manifest.items['content/_assets/a.jpg']!,
+      ...item,
       variants: {
-        ...manifest.items['content/_assets/a.jpg']!.variants,
+        ...item.variants,
         reading: {
           outputs: outputs.filter((output) => output.format !== 'webp'),
         },
@@ -152,21 +161,22 @@ describe('media object contract', () => {
 
   it('extension / contentType mismatchを拒否すること', () => {
     const manifest = buildManifest(['content/_assets/a.jpg']);
-    const firstOutput = manifest.items['content/_assets/a.jpg']?.variants.reading.outputs[0];
+    const item = getManifestItem(manifest, 'content/_assets/a.jpg');
+    const firstOutput = item.variants.reading.outputs[0];
     if (!firstOutput) {
       throw new Error('fixture output missing');
     }
     manifest.items['content/_assets/a.jpg'] = {
-      ...manifest.items['content/_assets/a.jpg']!,
+      ...item,
       variants: {
-        ...manifest.items['content/_assets/a.jpg']!.variants,
+        ...item.variants,
         reading: {
           outputs: [
             {
               ...firstOutput,
               objectKey: `media-v2/${firstOutput.contentSha256}/reading.${MEDIA_FORMAT_EXTENSION.jpeg}`,
             },
-            ...manifest.items['content/_assets/a.jpg']!.variants.reading.outputs.slice(1),
+            ...item.variants.reading.outputs.slice(1),
           ],
         },
       },
@@ -174,23 +184,25 @@ describe('media object contract', () => {
     expect(() => assertMediaManifestContract(manifest)).toThrow(/objectKey/u);
 
     const contentTypeMismatch = buildManifest(['content/_assets/a.jpg']);
-    const output = contentTypeMismatch.items['content/_assets/a.jpg']?.variants.reading.outputs[0];
+    const contentTypeMismatchItem = getManifestItem(
+      contentTypeMismatch,
+      'content/_assets/a.jpg',
+    );
+    const output = contentTypeMismatchItem.variants.reading.outputs[0];
     if (!output) {
       throw new Error('fixture output missing');
     }
     contentTypeMismatch.items['content/_assets/a.jpg'] = {
-      ...contentTypeMismatch.items['content/_assets/a.jpg']!,
+      ...contentTypeMismatchItem,
       variants: {
-        ...contentTypeMismatch.items['content/_assets/a.jpg']!.variants,
+        ...contentTypeMismatchItem.variants,
         reading: {
           outputs: [
             {
               ...output,
               contentType: 'image/jpeg',
             },
-            ...contentTypeMismatch.items['content/_assets/a.jpg']!.variants.reading.outputs.slice(
-              1,
-            ),
+            ...contentTypeMismatchItem.variants.reading.outputs.slice(1),
           ],
         },
       },

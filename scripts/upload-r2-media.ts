@@ -24,8 +24,11 @@ import {
 } from './deploy/production-authority.js';
 import {
   MEDIA_DELIVERY_CACHE_CONTROL,
+  assertR2UploadPlanArtifact,
   assertR2UploadAttemptManifest,
   toFailureReason,
+  type R2UploadPlanArtifact,
+  type R2UploadPlanObject,
   type R2UploadAttemptManifest,
   type UploadedMediaObjectEvidence,
 } from './deploy/release-state-schema.js';
@@ -38,6 +41,12 @@ const ATTEMPT_MANIFEST_PATH = path.resolve(
   '.generated',
   'deployment',
   'r2-attempt.json',
+);
+const UPLOAD_PLAN_PATH = path.resolve(
+  process.cwd(),
+  '.generated',
+  'deployment',
+  'r2-upload-plan.json',
 );
 const ATTEMPT_ARTIFACT_NAME = 'rouault-r2-attempt';
 const CACHE_CONTROL = MEDIA_DELIVERY_CACHE_CONTROL;
@@ -56,7 +65,7 @@ interface UploadTarget {
   readonly contentType: string;
   readonly contentLength: number;
   readonly sha256: string;
-  readonly contract: MediaObjectContract;
+  readonly planObject: R2UploadPlanObject;
   readonly fileBuffer: Buffer;
 }
 
@@ -69,6 +78,22 @@ interface ParsedUploadTarget {
 interface HeadObjectMetadata {
   readonly sha256: string | undefined;
 }
+
+const firstPlannedObject = (artifact: R2UploadPlanArtifact): R2UploadPlanObject => {
+  const object = artifact.plannedObjects[0];
+  if (object === undefined) {
+    throw new Error('[media] R2 upload plan artifact did not contain a planned object');
+  }
+  return object;
+};
+
+const firstUploadedObject = (manifest: R2UploadAttemptManifest): UploadedMediaObjectEvidence => {
+  const object = manifest.uploadedObjects[0];
+  if (object === undefined) {
+    throw new Error('[media] R2 upload attempt manifest did not contain uploaded evidence');
+  }
+  return object;
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -194,7 +219,19 @@ const createUploadTarget = async (output: MediaObjectContract): Promise<UploadTa
     ...parsedTarget,
     contentLength,
     sha256,
-    contract: output,
+    planObject: firstPlannedObject(
+      assertR2UploadPlanArtifact({
+        schemaVersion: 1,
+        artifactKind: 'r2-media-upload-plan',
+        objectCount: 1,
+        plannedObjects: [
+          {
+            ...output,
+            cacheControl: CACHE_CONTROL,
+          },
+        ],
+      }),
+    ),
     fileBuffer,
   };
 };
@@ -203,20 +240,21 @@ const createUploadedEvidence = (
   target: UploadTarget,
   uploadStatus: UploadedMediaObjectEvidence['uploadStatus'],
 ): UploadedMediaObjectEvidence =>
-  assertR2UploadAttemptManifest({
-    schemaVersion: 1,
-    attemptKind: 'r2-media-upload',
-    status: 'succeeded',
-    objectCount: 1,
-    uploadedObjects: [
-      {
-        ...target.contract,
-        uploadStatus,
-        cacheControl: CACHE_CONTROL,
-      },
-    ],
-    failureReason: null,
-  }).uploadedObjects[0]!;
+  firstUploadedObject(
+    assertR2UploadAttemptManifest({
+      schemaVersion: 1,
+      attemptKind: 'r2-media-upload',
+      status: 'succeeded',
+      objectCount: 1,
+      uploadedObjects: [
+        {
+          ...target.planObject,
+          uploadStatus,
+        },
+      ],
+      failureReason: null,
+    }),
+  );
 
 const headObject = async (
   client: S3Client,
@@ -286,6 +324,20 @@ const collectUploadPlan = async (manifest: MediaManifest): Promise<readonly Uplo
   return uploadPlan.sort((left, right) => left.objectKey.localeCompare(right.objectKey));
 };
 
+const createUploadPlanArtifact = (
+  uploadPlan: readonly UploadTarget[],
+): R2UploadPlanArtifact =>
+  assertR2UploadPlanArtifact({
+    schemaVersion: 1,
+    artifactKind: 'r2-media-upload-plan',
+    objectCount: uploadPlan.length,
+    plannedObjects: uploadPlan.map((target) => target.planObject),
+  });
+
+const writeUploadPlanArtifact = async (uploadPlan: readonly UploadTarget[]): Promise<void> => {
+  await writeJsonAtomically(UPLOAD_PLAN_PATH, createUploadPlanArtifact(uploadPlan));
+};
+
 const writeAttemptManifest = async (manifest: R2UploadAttemptManifest): Promise<string> => {
   const normalized = assertR2UploadAttemptManifest(manifest);
   await writeJsonAtomically(ATTEMPT_MANIFEST_PATH, normalized);
@@ -318,6 +370,7 @@ const uploadMediaObjects = async (): Promise<void> => {
   const client = createS3Client(credentials);
   const manifest = await loadManifest();
   const uploadPlan = await collectUploadPlan(manifest);
+  await writeUploadPlanArtifact(uploadPlan);
 
   console.log(
     `[media] starting upload: bucket=${credentials.bucketName}, objectCount=${String(
