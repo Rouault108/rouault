@@ -98,6 +98,17 @@ export interface ProductionReleaseStateArtifact {
   readonly runtimeVerification: RuntimeVerificationState;
 }
 
+export interface ReleaseStateResolutionFailureArtifact {
+  readonly schemaVersion: typeof RELEASE_STATE_SCHEMA_VERSION;
+  readonly artifactKind: 'release-state-resolution-failure';
+  readonly createdAt: string;
+  readonly runtimeVerification: {
+    readonly status: 'release-state-resolution-failed';
+    readonly checkedAt: string;
+  };
+  readonly failureReason: string;
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -130,6 +141,9 @@ const assertSafeFieldName = (key: string, label: string): void => {
 const assertSafeStringValue = (value: string, label: string): void => {
   if (WINDOWS_ABSOLUTE_PATH_PATTERN.test(value) || value.startsWith('/')) {
     throw new Error(`[release-state] ${label} contains a local absolute path`);
+  }
+  if (SECRET_FIELD_PATTERN.test(value)) {
+    throw new Error(`[release-state] ${label} contains forbidden release evidence`);
   }
 };
 
@@ -644,8 +658,61 @@ export const assertProductionReleaseStateArtifact = (
   };
 };
 
+export const assertReleaseStateResolutionFailureArtifact = (
+  value: unknown,
+): ReleaseStateResolutionFailureArtifact => {
+  const artifact = assertRecord(value, 'release state resolution failure artifact');
+  assertAllowedKeys(
+    artifact,
+    ['schemaVersion', 'artifactKind', 'createdAt', 'runtimeVerification', 'failureReason'],
+    'release state resolution failure artifact',
+  );
+  assertNoForbiddenReleaseStateEvidence(artifact, 'release state resolution failure artifact');
+
+  if (artifact['schemaVersion'] !== RELEASE_STATE_SCHEMA_VERSION) {
+    throw new Error('[release-state] release state resolution failure schemaVersion is unsupported');
+  }
+  if (artifact['artifactKind'] !== 'release-state-resolution-failure') {
+    throw new Error('[release-state] release state resolution failure artifactKind mismatch');
+  }
+
+  const runtimeVerification = assertRuntimeVerificationState(artifact['runtimeVerification']);
+  if (
+    runtimeVerification.status !== 'release-state-resolution-failed' ||
+    runtimeVerification.checkedAt === null
+  ) {
+    throw new Error('[release-state] release state resolution failure runtimeVerification mismatch');
+  }
+
+  return {
+    schemaVersion: RELEASE_STATE_SCHEMA_VERSION,
+    artifactKind: 'release-state-resolution-failure',
+    createdAt: assertString(artifact['createdAt'], 'release state resolution failure createdAt'),
+    runtimeVerification: {
+      status: 'release-state-resolution-failed',
+      checkedAt: runtimeVerification.checkedAt,
+    },
+    failureReason: assertString(
+      artifact['failureReason'],
+      'release state resolution failure failureReason',
+    ),
+  };
+};
+
 export const sha256Json = (value: unknown): string =>
   createHash('sha256').update(`${JSON.stringify(value, null, 2)}\n`, 'utf8').digest('hex');
 
-export const toFailureReason = (error: unknown): string =>
-  error instanceof Error && error.message.trim() ? error.message.trim().slice(0, 500) : 'unknown';
+const SAFE_ERROR_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]{0,80}$/u;
+
+export const toFailureReason = (error: unknown): string => {
+  if (!(error instanceof Error)) {
+    return 'error:unknown';
+  }
+
+  const errorName = error.name.trim();
+  if (!SAFE_ERROR_NAME_PATTERN.test(errorName) || SECRET_FIELD_PATTERN.test(errorName)) {
+    return 'error:unknown';
+  }
+
+  return `error:${errorName}`;
+};

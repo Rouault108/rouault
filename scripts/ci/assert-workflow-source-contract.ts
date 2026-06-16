@@ -289,7 +289,13 @@ const assertReleaseStateWorkflowContract = (workflowSource: string, workflowPath
     /release-state-artifact-name:\s*\$\{\{\s*steps\.deploy-cloudflare-pages\.outputs\.release-state-artifact-name\s*\}\}/u.test(
       workflowSource,
     ),
-    `${workflowPath} must expose only the release state artifact name as a deploy job output`,
+    `${workflowPath} must expose the release state artifact name as a deploy job output`,
+  );
+  assertCondition(
+    /release-state-artifact-id:\s*\$\{\{\s*steps\.upload-release-state-artifact\.outputs\.artifact-id\s*\}\}/u.test(
+      workflowSource,
+    ),
+    `${workflowPath} must expose the release state artifact ID as a deploy job output`,
   );
   assertCondition(
     /release-state-sha256:\s*\$\{\{\s*steps\.deploy-cloudflare-pages\.outputs\.release-state-sha256\s*\}\}/u.test(
@@ -302,8 +308,16 @@ const assertReleaseStateWorkflowContract = (workflowSource: string, workflowPath
     `${workflowPath} must upload release state JSON as an artifact`,
   );
   assertCondition(
-    workflowSource.includes('name: ${{ needs.deploy-production.outputs.release-state-artifact-name }}'),
-    `${workflowPath} verify job must download release state by deploy job artifact-name output`,
+    workflowSource.includes('artifact-ids: ${{ needs.deploy-production.outputs.release-state-artifact-id }}'),
+    `${workflowPath} verify job must download release state by deploy job artifact-id output`,
+  );
+  assertCondition(
+    /id:\s*download-release-state[\s\S]{0,260}continue-on-error:\s*true/u.test(workflowSource),
+    `${workflowPath} verify job must preserve release state resolution failures as state`,
+  );
+  assertCondition(
+    /id:\s*download-release-state[\s\S]{0,360}digest-mismatch:\s*error/u.test(workflowSource),
+    `${workflowPath} verify job must fail closed on release state artifact digest mismatch`,
   );
   assertCondition(
     workflowSource.includes('EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}'),
@@ -312,6 +326,14 @@ const assertReleaseStateWorkflowContract = (workflowSource: string, workflowPath
   assertCondition(
     workflowSource.includes('pnpm exec tsx scripts/deploy/record-runtime-verification.ts'),
     `${workflowPath} must reflect runtime verification state into a release state artifact`,
+  );
+  assertCondition(
+    workflowSource.includes('RUNTIME_VERIFICATION_STATUS: release-state-resolution-failed'),
+    `${workflowPath} must normalize release state resolution failures`,
+  );
+  assertCondition(
+    /steps\.record-release-state-resolution-failed\.outcome\s*==\s*'success'/u.test(workflowSource),
+    `${workflowPath} must upload release state resolution failure artifacts`,
   );
   assertCondition(
     !/release-state-json|release_state_json|toJson\(\s*steps\.deploy-cloudflare-pages\.outputs\s*\)/iu.test(

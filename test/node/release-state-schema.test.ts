@@ -6,9 +6,11 @@ import {
   MEDIA_DELIVERY_CACHE_CONTROL,
   assertMediaDeliveryAttemptManifest,
   assertProductionReleaseStateArtifact,
+  assertReleaseStateResolutionFailureArtifact,
   assertR2UploadPlanArtifact,
   assertR2UploadAttemptManifest,
   assertUploadedVerifiedObjectSetConsistency,
+  toFailureReason,
   type ProductionReleaseStateArtifact,
   type R2UploadPlanObject,
   type UploadedMediaObjectEvidence,
@@ -320,6 +322,62 @@ describe('release state and media attempt schemas', () => {
         failureReason: 'C:\\Users\\runner\\secret.txt',
       }),
     ).toThrow(/local absolute path/u);
+  });
+
+  it('rejects forbidden string evidence values', () => {
+    expect(() =>
+      assertR2UploadAttemptManifest({
+        schemaVersion: 1,
+        attemptKind: 'r2-media-upload',
+        status: 'failed',
+        objectCount: 0,
+        uploadedObjects: [],
+        failureReason: 'missing raw environment value',
+      }),
+    ).toThrow(/forbidden release evidence/u);
+  });
+
+  it('normalizes raw errors to safe failure reasons', () => {
+    const error = new Error('ENOENT: C:\\Users\\runner\\secret.txt R2_SECRET_ACCESS_KEY=value');
+    error.name = 'FilesystemError';
+
+    expect(toFailureReason(error)).toBe('error:FilesystemError');
+    expect(toFailureReason('plain secret')).toBe('error:unknown');
+
+    expect(
+      assertR2UploadAttemptManifest({
+        schemaVersion: 1,
+        attemptKind: 'r2-media-upload',
+        status: 'failed',
+        objectCount: 0,
+        uploadedObjects: [],
+        failureReason: toFailureReason(error),
+      }).failureReason,
+    ).toBe('error:FilesystemError');
+  });
+
+  it('accepts release state resolution failure artifacts without object evidence', () => {
+    expect(
+      assertReleaseStateResolutionFailureArtifact({
+        schemaVersion: 1,
+        artifactKind: 'release-state-resolution-failure',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        runtimeVerification: {
+          status: 'release-state-resolution-failed',
+          checkedAt: '2026-01-01T00:00:01.000Z',
+        },
+        failureReason: 'error:NotFoundError',
+      }),
+    ).toEqual({
+      schemaVersion: 1,
+      artifactKind: 'release-state-resolution-failure',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      runtimeVerification: {
+        status: 'release-state-resolution-failed',
+        checkedAt: '2026-01-01T00:00:01.000Z',
+      },
+      failureReason: 'error:NotFoundError',
+    });
   });
 
   it('verifies public delivery evidence from HTTP response data', async () => {

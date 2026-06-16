@@ -7,7 +7,10 @@ import { fileURLToPath } from 'node:url';
 import { sha256Hex, writeJsonAtomically } from './production-authority.js';
 import {
   assertProductionReleaseStateArtifact,
+  assertReleaseStateResolutionFailureArtifact,
+  toFailureReason,
   type ProductionReleaseStateArtifact,
+  type ReleaseStateResolutionFailureArtifact,
   type RuntimeVerificationState,
 } from './release-state-schema.js';
 
@@ -53,6 +56,20 @@ const runtimeVerificationFromProcessEnv = (): RuntimeVerificationState => {
   };
 };
 
+const releaseStateResolutionFailureArtifact = (
+  error: unknown,
+): ReleaseStateResolutionFailureArtifact =>
+  assertReleaseStateResolutionFailureArtifact({
+    schemaVersion: 1,
+    artifactKind: 'release-state-resolution-failure',
+    createdAt: new Date().toISOString(),
+    runtimeVerification: {
+      status: 'release-state-resolution-failed',
+      checkedAt: new Date().toISOString(),
+    },
+    failureReason: toFailureReason(error),
+  });
+
 const writeGithubOutput = async (releaseVerificationSha256: string): Promise<void> => {
   const githubOutput = process.env['GITHUB_OUTPUT']?.trim();
   if (!githubOutput) {
@@ -71,20 +88,34 @@ const writeGithubOutput = async (releaseVerificationSha256: string): Promise<voi
 };
 
 const run = async (): Promise<void> => {
-  const releaseState = await readReleaseState();
-  const nextState = assertProductionReleaseStateArtifact({
-    ...releaseState,
-    runtimeVerification: runtimeVerificationFromProcessEnv(),
-  });
+  const runtimeVerification = runtimeVerificationFromProcessEnv();
+  let nextState: ProductionReleaseStateArtifact | ReleaseStateResolutionFailureArtifact;
+
+  try {
+    const releaseState = await readReleaseState();
+    nextState = assertProductionReleaseStateArtifact({
+      ...releaseState,
+      runtimeVerification,
+    });
+  } catch (error) {
+    if (runtimeVerification.status !== 'release-state-resolution-failed') {
+      throw error;
+    }
+    nextState = releaseStateResolutionFailureArtifact(error);
+  }
 
   await writeJsonAtomically(RELEASE_VERIFICATION_STATE_PATH, nextState);
   const written = await readFile(RELEASE_VERIFICATION_STATE_PATH, 'utf8');
   const releaseVerificationSha256 = sha256Hex(written);
   await writeGithubOutput(releaseVerificationSha256);
 
-  const verified = assertProductionReleaseStateArtifact(await readJson(RELEASE_VERIFICATION_STATE_PATH));
+  const verified = await readJson(RELEASE_VERIFICATION_STATE_PATH);
+  const verifiedState =
+    nextState.artifactKind === 'production-release-state'
+      ? assertProductionReleaseStateArtifact(verified)
+      : assertReleaseStateResolutionFailureArtifact(verified);
   console.log(
-    `[runtime-verification] recorded ${verified.runtimeVerification.status} in release state artifact`,
+    `[runtime-verification] recorded ${verifiedState.runtimeVerification.status} in release state artifact`,
   );
 };
 

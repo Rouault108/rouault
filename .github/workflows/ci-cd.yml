@@ -331,6 +331,7 @@ jobs:
       deployment-url: ${{ steps.deploy-cloudflare-pages.outputs.deployment-url }}
       deployment-id: ${{ steps.deploy-cloudflare-pages.outputs.deployment-id }}
       release-state-artifact-name: ${{ steps.deploy-cloudflare-pages.outputs.release-state-artifact-name }}
+      release-state-artifact-id: ${{ steps.upload-release-state-artifact.outputs.artifact-id }}
       release-state-sha256: ${{ steps.deploy-cloudflare-pages.outputs.release-state-sha256 }}
     if: >-
       ${{
@@ -381,7 +382,8 @@ jobs:
       - id: deploy-cloudflare-pages
         name: deploy Cloudflare Pages
         run: pnpm exec tsx scripts/deploy/deploy-cloudflare-pages.ts
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - id: upload-release-state-artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: ${{ steps.deploy-cloudflare-pages.outputs.release-state-artifact-name }}
           path: .generated/deployment/release-attempt-final.json
@@ -411,14 +413,17 @@ jobs:
           cache: pnpm
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      - id: download-release-state
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         if: ${{ needs.deploy-production.result == 'success' }}
+        continue-on-error: true
         with:
-          name: ${{ needs.deploy-production.outputs.release-state-artifact-name }}
+          artifact-ids: ${{ needs.deploy-production.outputs.release-state-artifact-id }}
           path: .generated/deployment
+          digest-mismatch: error
       - id: verify-runtime-artifacts
         name: verify production runtime artifacts over HTTP
-        if: ${{ needs.deploy-production.result == 'success' }}
+        if: ${{ needs.deploy-production.result == 'success' && steps.download-release-state.outcome == 'success' }}
         continue-on-error: true
         env:
           ACTUAL_DEPLOYMENT_URL: ${{ needs.deploy-production.outputs.deployment-url }}
@@ -426,19 +431,24 @@ jobs:
           ROUAULT_BASE_PATH: ${{ vars.ROUAULT_BASE_PATH }}
         run: python3 scripts/ci/verify_production_artifacts_http.py
       - id: record-runtime-verification-success
-        if: ${{ needs.deploy-production.result == 'success' && steps.verify-runtime-artifacts.outcome == 'success' }}
+        if: ${{ needs.deploy-production.result == 'success' && steps.download-release-state.outcome == 'success' && steps.verify-runtime-artifacts.outcome == 'success' }}
         env:
           EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
           RUNTIME_VERIFICATION_STATUS: verified-by-production-runtime-artifacts
         run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
       - id: record-runtime-verification-failure
-        if: ${{ needs.deploy-production.result == 'success' && steps.verify-runtime-artifacts.outcome != 'success' }}
+        if: ${{ needs.deploy-production.result == 'success' && steps.download-release-state.outcome == 'success' && steps.verify-runtime-artifacts.outcome != 'success' }}
         env:
           EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
           RUNTIME_VERIFICATION_STATUS: verification-failed
         run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
+      - id: record-release-state-resolution-failed
+        if: ${{ needs.deploy-production.result != 'success' || steps.download-release-state.outcome != 'success' }}
+        env:
+          RUNTIME_VERIFICATION_STATUS: release-state-resolution-failed
+        run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        if: ${{ needs.deploy-production.result == 'success' && (steps.record-runtime-verification-success.outcome == 'success' || steps.record-runtime-verification-failure.outcome == 'success') }}
+        if: ${{ steps.record-runtime-verification-success.outcome == 'success' || steps.record-runtime-verification-failure.outcome == 'success' || steps.record-release-state-resolution-failed.outcome == 'success' }}
         with:
           name: rouault-release-verification-state
           path: .generated/deployment/release-verification-final.json
