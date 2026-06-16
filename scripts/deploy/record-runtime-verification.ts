@@ -6,9 +6,11 @@ import { fileURLToPath } from 'node:url';
 
 import { sha256Hex, writeJsonAtomically } from './production-authority.js';
 import {
+  assertProductionReleaseFailedStateArtifact,
   assertProductionReleaseStateArtifact,
   assertReleaseStateResolutionFailureArtifact,
   toFailureReason,
+  type ProductionReleaseFailedStateArtifact,
   type ProductionReleaseStateArtifact,
   type ReleaseStateResolutionFailureArtifact,
   type RuntimeVerificationState,
@@ -31,13 +33,20 @@ const RELEASE_VERIFICATION_ARTIFACT_NAME = 'rouault-release-verification-state';
 const readJson = async (filePath: string): Promise<unknown> =>
   JSON.parse(await readFile(filePath, 'utf8')) as unknown;
 
-const readReleaseState = async (): Promise<ProductionReleaseStateArtifact> => {
+const readReleaseState = async (): Promise<
+  ProductionReleaseStateArtifact | ProductionReleaseFailedStateArtifact
+> => {
   const expectedSha256 = process.env['EXPECTED_RELEASE_STATE_SHA256']?.trim();
   const raw = await readFile(RELEASE_STATE_PATH, 'utf8');
   if (expectedSha256 && sha256Hex(raw) !== expectedSha256) {
     throw new Error('[runtime-verification] release state SHA-256 mismatch');
   }
-  return assertProductionReleaseStateArtifact(JSON.parse(raw) as unknown);
+  const parsed = JSON.parse(raw) as unknown;
+  try {
+    return assertProductionReleaseStateArtifact(parsed);
+  } catch {
+    return assertProductionReleaseFailedStateArtifact(parsed);
+  }
 };
 
 const runtimeVerificationFromProcessEnv = (): RuntimeVerificationState => {
@@ -89,14 +98,21 @@ const writeGithubOutput = async (releaseVerificationSha256: string): Promise<voi
 
 const run = async (): Promise<void> => {
   const runtimeVerification = runtimeVerificationFromProcessEnv();
-  let nextState: ProductionReleaseStateArtifact | ReleaseStateResolutionFailureArtifact;
+  let nextState:
+    | ProductionReleaseStateArtifact
+    | ProductionReleaseFailedStateArtifact
+    | ReleaseStateResolutionFailureArtifact;
 
   try {
     const releaseState = await readReleaseState();
-    nextState = assertProductionReleaseStateArtifact({
+    const candidate = {
       ...releaseState,
       runtimeVerification,
-    });
+    };
+    nextState =
+      releaseState.artifactKind === 'production-release-state'
+        ? assertProductionReleaseStateArtifact(candidate)
+        : assertProductionReleaseFailedStateArtifact(candidate);
   } catch (error) {
     if (runtimeVerification.status !== 'release-state-resolution-failed') {
       throw error;
@@ -113,7 +129,9 @@ const run = async (): Promise<void> => {
   const verifiedState =
     nextState.artifactKind === 'production-release-state'
       ? assertProductionReleaseStateArtifact(verified)
-      : assertReleaseStateResolutionFailureArtifact(verified);
+      : nextState.artifactKind === 'production-release-failed-state'
+        ? assertProductionReleaseFailedStateArtifact(verified)
+        : assertReleaseStateResolutionFailureArtifact(verified);
   console.log(
     `[runtime-verification] recorded ${verifiedState.runtimeVerification.status} in release state artifact`,
   );

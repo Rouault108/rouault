@@ -98,6 +98,18 @@ export interface ProductionReleaseStateArtifact {
   readonly runtimeVerification: RuntimeVerificationState;
 }
 
+export interface ProductionReleaseFailedStateArtifact {
+  readonly schemaVersion: typeof RELEASE_STATE_SCHEMA_VERSION;
+  readonly artifactKind: 'production-release-failed-state';
+  readonly commitSha: string;
+  readonly createdAt: string;
+  readonly failedPhase: 'r2-upload' | 'media-delivery' | 'pages-deploy';
+  readonly failureReason: string;
+  readonly uploadedObjects: readonly [];
+  readonly verifiedObjects: readonly [];
+  readonly runtimeVerification: RuntimeVerificationState;
+}
+
 export interface ReleaseStateResolutionFailureArtifact {
   readonly schemaVersion: typeof RELEASE_STATE_SCHEMA_VERSION;
   readonly artifactKind: 'release-state-resolution-failure';
@@ -654,6 +666,69 @@ export const assertProductionReleaseStateArtifact = (
     uploadedObjects,
     verifiedObjects,
     cloudflarePages: assertCloudflarePagesReleaseEvidence(artifact['cloudflarePages']),
+    runtimeVerification: assertRuntimeVerificationState(artifact['runtimeVerification']),
+  };
+};
+
+export const assertProductionReleaseFailedStateArtifact = (
+  value: unknown,
+): ProductionReleaseFailedStateArtifact => {
+  const artifact = assertRecord(value, 'failed release state artifact');
+  assertAllowedKeys(
+    artifact,
+    [
+      'schemaVersion',
+      'artifactKind',
+      'commitSha',
+      'createdAt',
+      'failedPhase',
+      'failureReason',
+      'uploadedObjects',
+      'verifiedObjects',
+      'runtimeVerification',
+    ],
+    'failed release state artifact',
+  );
+  assertNoForbiddenReleaseStateEvidence(artifact, 'failed release state artifact');
+
+  if (artifact['schemaVersion'] !== RELEASE_STATE_SCHEMA_VERSION) {
+    throw new Error('[release-state] failed release state schemaVersion is unsupported');
+  }
+  if (artifact['artifactKind'] !== 'production-release-failed-state') {
+    throw new Error('[release-state] failed release state artifactKind mismatch');
+  }
+  const commitSha = assertString(artifact['commitSha'], 'failed release state commitSha');
+  if (!COMMIT_SHA_PATTERN.test(commitSha)) {
+    throw new Error('[release-state] failed release state commitSha must be a commit SHA');
+  }
+  const failedPhase = artifact['failedPhase'];
+  if (
+    failedPhase !== 'r2-upload' &&
+    failedPhase !== 'media-delivery' &&
+    failedPhase !== 'pages-deploy'
+  ) {
+    throw new Error('[release-state] failed release state phase is invalid');
+  }
+  const uploadedObjects = artifact['uploadedObjects'];
+  const verifiedObjects = artifact['verifiedObjects'];
+  if (
+    !Array.isArray(uploadedObjects) ||
+    !Array.isArray(verifiedObjects) ||
+    uploadedObjects.length !== 0 ||
+    verifiedObjects.length !== 0
+  ) {
+    throw new Error('[release-state] failed release state must not contain object evidence');
+  }
+
+  return {
+    schemaVersion: RELEASE_STATE_SCHEMA_VERSION,
+    artifactKind: 'production-release-failed-state',
+    commitSha,
+    createdAt: assertString(artifact['createdAt'], 'failed release state createdAt'),
+    failedPhase,
+    failureReason: assertString(artifact['failureReason'], 'failed release state failureReason'),
+    uploadedObjects: [],
+    verifiedObjects: [],
     runtimeVerification: assertRuntimeVerificationState(artifact['runtimeVerification']),
   };
 };

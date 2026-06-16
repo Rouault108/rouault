@@ -330,9 +330,9 @@ jobs:
     outputs:
       deployment-url: ${{ steps.deploy-cloudflare-pages.outputs.deployment-url }}
       deployment-id: ${{ steps.deploy-cloudflare-pages.outputs.deployment-id }}
-      release-state-artifact-name: ${{ steps.deploy-cloudflare-pages.outputs.release-state-artifact-name }}
+      release-state-artifact-name: ${{ steps.deploy-cloudflare-pages.outputs.release-state-artifact-name || steps.finalize-r2-upload-failure.outputs.release-state-artifact-name || steps.finalize-media-delivery-failure.outputs.release-state-artifact-name || steps.finalize-pages-deploy-failure.outputs.release-state-artifact-name }}
       release-state-artifact-id: ${{ steps.upload-release-state-artifact.outputs.artifact-id }}
-      release-state-sha256: ${{ steps.deploy-cloudflare-pages.outputs.release-state-sha256 }}
+      release-state-sha256: ${{ steps.deploy-cloudflare-pages.outputs.release-state-sha256 || steps.finalize-r2-upload-failure.outputs.release-state-sha256 || steps.finalize-media-delivery-failure.outputs.release-state-sha256 || steps.finalize-pages-deploy-failure.outputs.release-state-sha256 }}
     if: >-
       ${{
         !cancelled()
@@ -377,17 +377,60 @@ jobs:
         with:
           name: rouault-dist
           path: .
-      - run: pnpm exec tsx scripts/upload-r2-media.ts
-      - run: pnpm exec tsx scripts/deploy/verify-media-delivery.ts
-      - id: deploy-cloudflare-pages
-        name: deploy Cloudflare Pages
-        run: pnpm exec tsx scripts/deploy/deploy-cloudflare-pages.ts
-      - id: upload-release-state-artifact
+      - id: upload-r2-media
+        continue-on-error: true
+        run: pnpm exec tsx scripts/upload-r2-media.ts
+      - id: upload-r2-attempt-artifact
+        if: ${{ always() && steps.upload-r2-media.outcome != 'skipped' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: ${{ steps.deploy-cloudflare-pages.outputs.release-state-artifact-name }}
-          path: .generated/deployment/release-attempt-final.json
+          name: rouault-r2-attempt
+          path: .generated/deployment/r2-attempt.json
+          if-no-files-found: error
           include-hidden-files: true
+      - id: verify-media-delivery
+        if: ${{ steps.upload-r2-media.outcome == 'success' }}
+        continue-on-error: true
+        run: pnpm exec tsx scripts/deploy/verify-media-delivery.ts
+      - id: upload-media-delivery-attempt-artifact
+        if: ${{ always() && steps.verify-media-delivery.outcome != 'skipped' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: rouault-media-delivery-attempt
+          path: .generated/deployment/media-delivery-attempt.json
+          if-no-files-found: error
+          include-hidden-files: true
+      - id: finalize-r2-upload-failure
+        if: ${{ steps.upload-r2-media.outcome != 'success' }}
+        env:
+          RELEASE_FAILURE_PHASE: r2-upload
+        run: pnpm exec tsx scripts/deploy/finalize-release-failure.ts
+      - id: finalize-media-delivery-failure
+        if: ${{ steps.upload-r2-media.outcome == 'success' && steps.verify-media-delivery.outcome != 'success' }}
+        env:
+          RELEASE_FAILURE_PHASE: media-delivery
+        run: pnpm exec tsx scripts/deploy/finalize-release-failure.ts
+      - id: deploy-cloudflare-pages
+        name: deploy Cloudflare Pages
+        if: ${{ steps.upload-r2-media.outcome == 'success' && steps.verify-media-delivery.outcome == 'success' }}
+        continue-on-error: true
+        run: pnpm exec tsx scripts/deploy/deploy-cloudflare-pages.ts
+      - id: finalize-pages-deploy-failure
+        if: ${{ steps.upload-r2-media.outcome == 'success' && steps.verify-media-delivery.outcome == 'success' && steps.deploy-cloudflare-pages.outcome != 'success' }}
+        env:
+          RELEASE_FAILURE_PHASE: pages-deploy
+        run: pnpm exec tsx scripts/deploy/finalize-release-failure.ts
+      - id: upload-release-state-artifact
+        if: ${{ always() && (steps.deploy-cloudflare-pages.outcome == 'success' || steps.finalize-r2-upload-failure.outcome == 'success' || steps.finalize-media-delivery-failure.outcome == 'success' || steps.finalize-pages-deploy-failure.outcome == 'success') }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ steps.deploy-cloudflare-pages.outputs.release-state-artifact-name || steps.finalize-r2-upload-failure.outputs.release-state-artifact-name || steps.finalize-media-delivery-failure.outputs.release-state-artifact-name || steps.finalize-pages-deploy-failure.outputs.release-state-artifact-name }}
+          path: .generated/deployment/release-attempt-final.json
+          if-no-files-found: error
+          include-hidden-files: true
+      - name: enforce deploy production outcome
+        if: ${{ always() }}
+        run: test "${{ steps.upload-r2-media.outcome }}" = "success" && test "${{ steps.verify-media-delivery.outcome }}" = "success" && test "${{ steps.deploy-cloudflare-pages.outcome }}" = "success" && test "${{ steps.upload-release-state-artifact.outcome }}" = "success"
 
   verify-production-deployment:
     name: verify-production-deployment
@@ -415,7 +458,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - id: download-release-state
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-        if: ${{ needs.deploy-production.result == 'success' }}
+        if: ${{ needs.deploy-production.outputs.release-state-artifact-id != '' }}
         continue-on-error: true
         with:
           artifact-ids: ${{ needs.deploy-production.outputs.release-state-artifact-id }}
@@ -442,13 +485,19 @@ jobs:
           EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
           RUNTIME_VERIFICATION_STATUS: verification-failed
         run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
+      - id: record-deploy-failure-state
+        if: ${{ needs.deploy-production.result != 'success' && steps.download-release-state.outcome == 'success' }}
+        env:
+          EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
+          RUNTIME_VERIFICATION_STATUS: verification-failed
+        run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
       - id: record-release-state-resolution-failed
-        if: ${{ needs.deploy-production.result != 'success' || steps.download-release-state.outcome != 'success' }}
+        if: ${{ steps.download-release-state.outcome != 'success' }}
         env:
           RUNTIME_VERIFICATION_STATUS: release-state-resolution-failed
         run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        if: ${{ steps.record-runtime-verification-success.outcome == 'success' || steps.record-runtime-verification-failure.outcome == 'success' || steps.record-release-state-resolution-failed.outcome == 'success' }}
+        if: ${{ steps.record-runtime-verification-success.outcome == 'success' || steps.record-runtime-verification-failure.outcome == 'success' || steps.record-deploy-failure-state.outcome == 'success' || steps.record-release-state-resolution-failed.outcome == 'success' }}
         with:
           name: rouault-release-verification-state
           path: .generated/deployment/release-verification-final.json

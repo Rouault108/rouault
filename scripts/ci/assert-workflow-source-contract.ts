@@ -286,10 +286,10 @@ const assertUploadR2ScriptContract = async (uploadR2ScriptPath: string): Promise
 
 const assertReleaseStateWorkflowContract = (workflowSource: string, workflowPath: string): void => {
   assertCondition(
-    /release-state-artifact-name:\s*\$\{\{\s*steps\.deploy-cloudflare-pages\.outputs\.release-state-artifact-name\s*\}\}/u.test(
+    /release-state-artifact-name:\s*\$\{\{[\s\S]*steps\.deploy-cloudflare-pages\.outputs\.release-state-artifact-name[\s\S]*steps\.finalize-r2-upload-failure\.outputs\.release-state-artifact-name[\s\S]*steps\.finalize-media-delivery-failure\.outputs\.release-state-artifact-name[\s\S]*steps\.finalize-pages-deploy-failure\.outputs\.release-state-artifact-name[\s\S]*\}\}/u.test(
       workflowSource,
     ),
-    `${workflowPath} must expose the release state artifact name as a deploy job output`,
+    `${workflowPath} must expose the release state artifact name as a deploy job output on success and failed attempts`,
   );
   assertCondition(
     /release-state-artifact-id:\s*\$\{\{\s*steps\.upload-release-state-artifact\.outputs\.artifact-id\s*\}\}/u.test(
@@ -298,10 +298,23 @@ const assertReleaseStateWorkflowContract = (workflowSource: string, workflowPath
     `${workflowPath} must expose the release state artifact ID as a deploy job output`,
   );
   assertCondition(
-    /release-state-sha256:\s*\$\{\{\s*steps\.deploy-cloudflare-pages\.outputs\.release-state-sha256\s*\}\}/u.test(
+    /release-state-sha256:\s*\$\{\{[\s\S]*steps\.deploy-cloudflare-pages\.outputs\.release-state-sha256[\s\S]*steps\.finalize-r2-upload-failure\.outputs\.release-state-sha256[\s\S]*steps\.finalize-media-delivery-failure\.outputs\.release-state-sha256[\s\S]*steps\.finalize-pages-deploy-failure\.outputs\.release-state-sha256[\s\S]*\}\}/u.test(
       workflowSource,
     ),
-    `${workflowPath} must expose release state SHA-256 as a deploy job output`,
+    `${workflowPath} must expose release state SHA-256 as a deploy job output on success and failed attempts`,
+  );
+  assertCondition(
+    workflowSource.includes('path: .generated/deployment/r2-attempt.json') &&
+      workflowSource.includes('if-no-files-found: error') &&
+      workflowSource.includes('path: .generated/deployment/media-delivery-attempt.json'),
+    `${workflowPath} must upload deterministic R2 and media delivery attempt artifacts`,
+  );
+  assertCondition(
+    workflowSource.includes('pnpm exec tsx scripts/deploy/finalize-release-failure.ts') &&
+      workflowSource.includes('RELEASE_FAILURE_PHASE: r2-upload') &&
+      workflowSource.includes('RELEASE_FAILURE_PHASE: media-delivery') &&
+      workflowSource.includes('RELEASE_FAILURE_PHASE: pages-deploy'),
+    `${workflowPath} must normalize R2, media delivery, and Pages failures into release state artifacts`,
   );
   assertCondition(
     workflowSource.includes('path: .generated/deployment/release-attempt-final.json'),

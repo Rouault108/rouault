@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MEDIA_DELIVERY_CACHE_CONTROL,
   assertMediaDeliveryAttemptManifest,
+  assertProductionReleaseFailedStateArtifact,
   assertProductionReleaseStateArtifact,
   assertReleaseStateResolutionFailureArtifact,
   assertR2UploadPlanArtifact,
@@ -378,6 +379,55 @@ describe('release state and media attempt schemas', () => {
       },
       failureReason: 'error:NotFoundError',
     });
+  });
+
+  it('accepts failed release state artifacts only without object evidence', () => {
+    expect(
+      assertProductionReleaseFailedStateArtifact({
+        schemaVersion: 1,
+        artifactKind: 'production-release-failed-state',
+        commitSha,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        failedPhase: 'r2-upload',
+        failureReason: 'error:r2-upload',
+        uploadedObjects: [],
+        verifiedObjects: [],
+        runtimeVerification: {
+          status: 'not-run',
+          checkedAt: null,
+        },
+      }),
+    ).toEqual({
+      schemaVersion: 1,
+      artifactKind: 'production-release-failed-state',
+      commitSha,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      failedPhase: 'r2-upload',
+      failureReason: 'error:r2-upload',
+      uploadedObjects: [],
+      verifiedObjects: [],
+      runtimeVerification: {
+        status: 'not-run',
+        checkedAt: null,
+      },
+    });
+
+    expect(() =>
+      assertProductionReleaseFailedStateArtifact({
+        schemaVersion: 1,
+        artifactKind: 'production-release-failed-state',
+        commitSha,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        failedPhase: 'media-delivery',
+        failureReason: 'error:media-delivery',
+        uploadedObjects: [uploadedObject()],
+        verifiedObjects: [],
+        runtimeVerification: {
+          status: 'not-run',
+          checkedAt: null,
+        },
+      }),
+    ).toThrow(/must not contain object evidence/u);
   });
 
   it('verifies public delivery evidence from HTTP response data', async () => {
