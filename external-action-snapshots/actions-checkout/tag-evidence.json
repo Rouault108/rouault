@@ -1,9 +1,17 @@
 {
-  "schemaVersion": 1,
-  "actionName": "actions/checkout",
-  "adoptedTag": "v5",
-  "reviewedCommitSha": "93cb6efe18208431cddfb8368fd83d5badbf9bfd",
-  "workflowUsesSha": "93cb6efe18208431cddfb8368fd83d5badbf9bfd",
-  "runsUsing": "node24",
-  "reviewStatus": "reviewed"
+  "action": "actions/checkout",
+  "adopted_tag": "v6.0.3",
+  "executionCoordinateAuthority": "sha-pin-only",
+  "note": "Checked-in evidence records reviewed tag coordinate correspondence for maintainability. Execution authority remains sha-pin-only; workflow uses the reviewed 40-hex commit SHA, not the tag.",
+  "reviewed_commit_sha": "df4cb1c069e1874edd31b4311f1884172cec0e10",
+  "tagCoordinateReview": "reviewed_nonblocking_for_execution",
+  "tagCoordinateReviewIsExecutionBlocking": false,
+  "tag_action_yml_snapshot_compared_with_commit_snapshot": true,
+  "tag_ref_to_commit_status": "verified",
+  "tag_ref_resolution_method": "checked-in-tag-ref-evidence",
+  "tag_ref_resolved_commit_sha": "df4cb1c069e1874edd31b4311f1884172cec0e10",
+  "tag_ref_reviewed_at_utc": "2026-06-15T12:45:00Z",
+  "workflow_uses_reviewed_commit_sha": true,
+  "runtimeReadiness": "node24",
+  "action_yml_runs_using": "node24"
 }

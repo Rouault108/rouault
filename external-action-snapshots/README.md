@@ -4,10 +4,10 @@ This directory records the reviewed source binding for external GitHub Actions u
 
 | action name | adopted tag | reviewed commit SHA | runs.using | workflow uses SHA |
 | --- | --- | --- | --- | --- |
-| `actions/checkout` | `v5` | `93cb6efe18208431cddfb8368fd83d5badbf9bfd` | `node24` | `93cb6efe18208431cddfb8368fd83d5badbf9bfd` |
-| `actions/setup-node` | `v5` | `a0853c24544627f65ddf259abe73b1d18a591444` | `node24` | `a0853c24544627f65ddf259abe73b1d18a591444` |
-| `pnpm/action-setup` | `v5` | `a8198c4bff370c8506180b035930dea56dbd5288` | `node24` | `a8198c4bff370c8506180b035930dea56dbd5288` |
-| `actions/upload-artifact` | `v6` | `b7c566a772e6b6bfb58ed0dc250532a479d7789f` | `node24` | `b7c566a772e6b6bfb58ed0dc250532a479d7789f` |
-| `actions/download-artifact` | `v7` | `37930b1c2abaa49bbe596cd826c3c89aef350131` | `node24` | `37930b1c2abaa49bbe596cd826c3c89aef350131` |
+| `actions/checkout` | `v6.0.3` | `df4cb1c069e1874edd31b4311f1884172cec0e10` | `node24` | `df4cb1c069e1874edd31b4311f1884172cec0e10` |
+| `actions/setup-node` | `v6.4.0` | `48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e` | `node24` | `48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e` |
+| `pnpm/action-setup` | `v6.0.8` | `0e279bb959325dab635dd2c09392533439d90093` | `node24` | `0e279bb959325dab635dd2c09392533439d90093` |
+| `actions/upload-artifact` | `v7.0.1` | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | `node24` | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` |
+| `actions/download-artifact` | `v8.0.1` | `3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c` | `node24` | `3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c` |
 
 Tag names are review coordinates only. The workflow execution authority is the checked-in 40 character commit SHA.
