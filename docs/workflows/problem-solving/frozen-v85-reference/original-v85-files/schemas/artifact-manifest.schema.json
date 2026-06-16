@@ -1,0 +1,325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rouault.local/schemas/artifact-manifest.schema.json",
+  "title": "Rouault R4 Artifact Manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "manifest_id",
+    "issue_id",
+    "manifest_revision",
+    "sequence",
+    "canonicalization",
+    "entries"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9-]+$",
+      "minLength": 1
+    },
+    "issue_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "manifest_revision": {
+      "type": "string",
+      "pattern": "^rev-[0-9]{4}$"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "previous_manifest_ref": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/manifestRef"
+        }
+      ]
+    },
+    "canonicalization": {
+      "type": "string",
+      "const": "utf8-bomless-lf-jcs"
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    }
+  },
+  "$defs": {
+    "manifestRef": {
+      "type": "object",
+      "required": [
+        "manifest_id",
+        "manifest_revision",
+        "immutable_relative_path"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "manifest_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "manifest_revision": {
+          "type": "string",
+          "pattern": "^rev-[0-9]{4}$"
+        },
+        "immutable_relative_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "artifactKey": {
+      "type": "object",
+      "required": [
+        "artifact_id",
+        "artifact_revision"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_revision": {
+          "type": "string",
+          "pattern": "^rev-[0-9]{4}$"
+        }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "required": [
+        "entry_id",
+        "action",
+        "artifact_key",
+        "storage_class",
+        "public_locator",
+        "sha256",
+        "digest_public",
+        "registered_at",
+        "registered_by"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "entry_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "enum": [
+            "add",
+            "correct",
+            "revoke"
+          ]
+        },
+        "artifact_key": {
+          "$ref": "#/$defs/artifactKey"
+        },
+        "storage_class": {
+          "enum": [
+            "repository-redacted",
+            "local-private",
+            "ci-private",
+            "external-restricted"
+          ]
+        },
+        "public_locator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "private_locator_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "digest_public": {
+          "type": "boolean"
+        },
+        "git_blob_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "size_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "supersedes_entry_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "registered_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "registered_by": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "storage_class": {
+                "const": "repository-redacted"
+              }
+            },
+            "required": [
+              "storage_class"
+            ]
+          },
+          "then": {
+            "required": [
+              "sha256",
+              "git_blob_id",
+              "digest_public"
+            ],
+            "properties": {
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "git_blob_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "digest_public": {
+                "const": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "digest_public": {
+                "const": false
+              }
+            },
+            "required": [
+              "digest_public"
+            ]
+          },
+          "then": {
+            "properties": {
+              "sha256": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "correct"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "supersedes_entry_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "supersedes_entry_id"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "revoke"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "supersedes_entry_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "supersedes_entry_id",
+              "reason"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "add"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "supersedes_entry_id": {
+                "type": "null"
+              },
+              "reason": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

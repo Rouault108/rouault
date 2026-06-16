@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0.0",
+  "attestation_id": "A2-001",
+  "issue_id": "ISSUE-001",
+  "risk_stage": "R4",
+  "audit_level": "A2",
+  "repository_redacted_evidence_index": {
+    "artifact_id": "EVI-001",
+    "artifact_revision": "rev-0001",
+    "public_locator": "evidence/redacted-index.json"
+  },
+  "private_restricted_evidence_index": {
+    "opaque_reference": "private-evidence-index-001",
+    "storage_scope": "local-private"
+  },
+  "public_safe_opaque_references": [
+    "opaque-public-safe-001"
+  ],
+  "redaction_policy": "private data redacted",
+  "retention_policy": "retain private evidence outside repository",
+  "revocation_policy": "rotate exposed secrets immediately",
+  "secret_revocation_rotation_record": null,
+  "private_locator_leak_check": "fail",
+  "non_public_digest_leak_check": "pass",
+  "integrity_result": "pass",
+  "derived_evidence_state": "preserved",
+  "validation_evidence": [
+    {
+      "method": "manual-review",
+      "verification_evidence_id": "VE-001",
+      "result": "pass",
+      "timestamp": "2026-06-16T00:00:00Z"
+    }
+  ],
+  "timestamp": "2026-06-16T00:00:00Z",
+  "actor": "human",
+  "human_approval": {
+    "approved": true,
+    "approver": "human",
+    "timestamp": "2026-06-16T00:00:00Z",
+    "notes": "minimal sample"
+  },
+  "notes": "minimal sample"
+}

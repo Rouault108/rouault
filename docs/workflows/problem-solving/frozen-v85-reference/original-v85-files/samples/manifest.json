@@ -1,0 +1,207 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Rouault workflow validator sample set with v85 replacement grounding and plan/timestamp chronology coverage",
+  "samples": [
+    {
+      "path": "samples/valid/lightweight-resolution-manifest.min.json",
+      "schema": "lightweight-resolution-manifest.schema.json",
+      "expect": "valid"
+    },
+    {
+      "path": "samples/valid/artifact-manifest.min.json",
+      "schema": "artifact-manifest.schema.json",
+      "expect": "valid"
+    },
+    {
+      "path": "samples/valid/r4-s-execution-ledger.min.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "valid"
+    },
+    {
+      "path": "samples/valid/r4-i-execution-ledger.min.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "valid"
+    },
+    {
+      "path": "samples/valid/closure-manifest.min.json",
+      "schema": "closure-manifest.schema.json",
+      "expect": "valid"
+    },
+    {
+      "path": "samples/valid/closure-attestation.min.json",
+      "schema": "closure-attestation.schema.json",
+      "expect": "valid"
+    },
+    {
+      "path": "samples/valid/a2-evidence-integrity-attestation.min.json",
+      "schema": "a2-evidence-integrity-attestation.schema.json",
+      "expect": "valid"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-related-reason-missing-null-kind.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-event-phase-without-evidence-map.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-empty-necessity-log.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/invalid/r4-i-ledger-lightweight-manifest.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/invalid/closure-attestation-fail-closed.json",
+      "schema": "closure-attestation.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/invalid/a2-attestation-leak-pass.json",
+      "schema": "a2-evidence-integrity-attestation.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-invalid-necessity-result.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-invalid-status-transition.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-initialization-wrong-transition.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-missing-initialization.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-broken-status-chain.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-retirement-wrong-transition.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/valid/r4-s-execution-ledger.lifecycle-passed.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "valid",
+      "mode": "completion"
+    },
+    {
+      "path": "samples/valid/r4-s-execution-ledger.lifecycle-superseded.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "valid",
+      "mode": "completion"
+    },
+    {
+      "path": "samples/valid/r4-i-execution-ledger.lifecycle-passed.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "valid",
+      "mode": "completion"
+    },
+    {
+      "path": "samples/valid/r4-i-execution-ledger.lifecycle-superseded.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "valid",
+      "mode": "completion"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-completion-required-cancelled.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid",
+      "mode": "completion"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-completion-active-terminal.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid",
+      "mode": "completion"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-completion-superseded-without-grounding.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid",
+      "mode": "completion"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-completion-superseded-marker-only.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid",
+      "mode": "completion"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-necessity-evaluation-revision-regression.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-necessity-evaluation-timestamp-regression.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-completion-superseded-self-replacement.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid",
+      "mode": "completion"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-completion-superseded-missing-replacement.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid",
+      "mode": "completion"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-completion-superseded-generic-issue-incomplete.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid",
+      "mode": "completion"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-event-plan-revision-regression.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid",
+      "mode": "structural"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-event-timestamp-regression.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid",
+      "mode": "structural"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-current-plan-revision-overflow.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid",
+      "mode": "structural"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-current-plan-revision-overflow-phase-map.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid",
+      "mode": "structural"
+    },
+    {
+      "path": "samples/invalid/r4-execution-ledger-current-plan-revision-overflow-attestation.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "invalid",
+      "mode": "structural"
+    }
+  ]
+}

@@ -1,0 +1,334 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rouault.local/schemas/lightweight-resolution-manifest.schema.json",
+  "title": "Rouault R4-S Lightweight Resolution Manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "manifest_kind",
+    "manifest_id",
+    "issue_id",
+    "manifest_revision",
+    "sequence",
+    "entries"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "manifest_kind": {
+      "type": "string",
+      "const": "lightweight-resolution-manifest"
+    },
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9-]+$",
+      "minLength": 1
+    },
+    "issue_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "manifest_revision": {
+      "type": "string",
+      "pattern": "^rev-[0-9]{4}$"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "previous_manifest_ref": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/manifestRef"
+        }
+      ]
+    },
+    "manifest_anchor_id": {
+      "anyOf": [
+        {
+          "const": "N/A"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "const": "N/A"
+          }
+        }
+      ]
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    }
+  },
+  "$defs": {
+    "manifestRef": {
+      "type": "object",
+      "required": [
+        "manifest_id",
+        "manifest_revision",
+        "immutable_relative_path"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "manifest_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "manifest_revision": {
+          "type": "string",
+          "pattern": "^rev-[0-9]{4}$"
+        },
+        "immutable_relative_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "artifactKey": {
+      "type": "object",
+      "required": [
+        "artifact_id",
+        "artifact_revision"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_revision": {
+          "type": "string",
+          "pattern": "^rev-[0-9]{4}$"
+        }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "required": [
+        "entry_id",
+        "action",
+        "artifact_key",
+        "storage_class",
+        "immutable_locator",
+        "sha256",
+        "digest_status",
+        "registered_at",
+        "registered_by"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "entry_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "enum": [
+            "add",
+            "correct",
+            "revoke"
+          ]
+        },
+        "artifact_key": {
+          "$ref": "#/$defs/artifactKey"
+        },
+        "storage_class": {
+          "enum": [
+            "repository-redacted",
+            "local-private",
+            "ci-private",
+            "external-restricted"
+          ]
+        },
+        "immutable_locator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "git_blob_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "digest_status": {
+          "enum": [
+            "not-recorded",
+            "public-digest",
+            "private-or-restricted-digest"
+          ]
+        },
+        "digest_optional_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "supersedes_entry_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "registered_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "registered_by": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "sha256": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "sha256"
+            ]
+          },
+          "then": {
+            "required": [
+              "digest_optional_reason"
+            ],
+            "properties": {
+              "digest_optional_reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "digest_status": {
+                "const": "public-digest"
+              }
+            },
+            "required": [
+              "digest_status"
+            ]
+          },
+          "then": {
+            "required": [
+              "sha256"
+            ],
+            "properties": {
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "correct"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "required": [
+              "supersedes_entry_id"
+            ],
+            "properties": {
+              "supersedes_entry_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "revoke"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "required": [
+              "supersedes_entry_id",
+              "reason"
+            ],
+            "properties": {
+              "supersedes_entry_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "add"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "supersedes_entry_id": {
+                "type": "null"
+              },
+              "reason": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

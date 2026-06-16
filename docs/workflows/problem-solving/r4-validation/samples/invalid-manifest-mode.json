@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Invalid manifest sample: mode typo must be rejected by validator.",
+  "samples": [
+    {
+      "path": "samples/valid/r4-s-execution-ledger.lifecycle-passed.json",
+      "schema": "r4-execution-ledger.schema.json",
+      "expect": "valid",
+      "mode": "completino"
+    }
+  ]
+}

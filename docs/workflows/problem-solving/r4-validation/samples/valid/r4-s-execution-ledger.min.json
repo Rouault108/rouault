@@ -1,0 +1,182 @@
+{
+  "schema_version": "1.0.0",
+  "ledger_id": "LEDGER-R4-S",
+  "issue_id": "ISSUE-001",
+  "r4_phase_plan_id": "R4PLAN-001",
+  "r4_profile": "R4-S",
+  "current_plan_revision": 1,
+  "previous_ledger_artifact_key": null,
+  "resolution_manifest": {
+    "manifest_kind": "lightweight-resolution-manifest",
+    "manifest_id": "LRM-001",
+    "manifest_revision": "rev-0001",
+    "manifest_anchor_id": null
+  },
+  "phase_necessity_evaluation_log": [
+    {
+      "evaluation_event_id": "NEC-001",
+      "qualified_phase_id": "R4P-001-P1",
+      "plan_revision": 1,
+      "necessity": "required",
+      "evaluation_result": "required",
+      "evidence_ids": [
+        "E-NEC-001"
+      ],
+      "timestamp": "2026-06-16T00:00:00Z",
+      "actor": "human"
+    }
+  ],
+  "phase_execution_event_log": [
+    {
+      "event_id": "EVT-S-001",
+      "qualified_phase_id": "R4P-001-P1",
+      "plan_revision": 1,
+      "from_status": "N/A",
+      "to_status": "planned",
+      "event_class": "initialization",
+      "trigger_artifact_keys": [
+        {
+          "artifact_id": "ART-001",
+          "artifact_revision": "rev-0001"
+        }
+      ],
+      "resolution_manifest": {
+        "manifest_kind": "lightweight-resolution-manifest",
+        "manifest_id": "LRM-001",
+        "manifest_revision": "rev-0001",
+        "manifest_anchor_id": null
+      },
+      "timestamp": "2026-06-16T00:00:00Z",
+      "actor": "human",
+      "reason": "Initialize phase status.",
+      "evidence_ids": [
+        "E-EVT-S-001"
+      ]
+    },
+    {
+      "event_id": "EVT-S-002",
+      "qualified_phase_id": "R4P-001-P1",
+      "plan_revision": 1,
+      "from_status": "planned",
+      "to_status": "ready",
+      "event_class": "progress",
+      "trigger_artifact_keys": [
+        {
+          "artifact_id": "ART-001",
+          "artifact_revision": "rev-0001"
+        }
+      ],
+      "resolution_manifest": {
+        "manifest_kind": "lightweight-resolution-manifest",
+        "manifest_id": "LRM-001",
+        "manifest_revision": "rev-0001",
+        "manifest_anchor_id": null
+      },
+      "timestamp": "2026-06-16T00:00:01Z",
+      "actor": "human",
+      "reason": "Phase is ready to execute.",
+      "evidence_ids": [
+        "E-EVT-S-002"
+      ]
+    },
+    {
+      "event_id": "EVT-S-003",
+      "qualified_phase_id": "R4P-001-P1",
+      "plan_revision": 1,
+      "from_status": "ready",
+      "to_status": "in-progress",
+      "event_class": "progress",
+      "trigger_artifact_keys": [
+        {
+          "artifact_id": "ART-001",
+          "artifact_revision": "rev-0001"
+        }
+      ],
+      "resolution_manifest": {
+        "manifest_kind": "lightweight-resolution-manifest",
+        "manifest_id": "LRM-001",
+        "manifest_revision": "rev-0001",
+        "manifest_anchor_id": null
+      },
+      "timestamp": "2026-06-16T00:00:02Z",
+      "actor": "human",
+      "reason": "Phase execution started.",
+      "evidence_ids": [
+        "E-EVT-S-003"
+      ]
+    },
+    {
+      "event_id": "EVT-S-004",
+      "qualified_phase_id": "R4P-001-P1",
+      "plan_revision": 1,
+      "from_status": "in-progress",
+      "to_status": "passed",
+      "event_class": "outcome",
+      "trigger_artifact_keys": [
+        {
+          "artifact_id": "ART-001",
+          "artifact_revision": "rev-0001"
+        }
+      ],
+      "resolution_manifest": {
+        "manifest_kind": "lightweight-resolution-manifest",
+        "manifest_id": "LRM-001",
+        "manifest_revision": "rev-0001",
+        "manifest_anchor_id": null
+      },
+      "timestamp": "2026-06-16T00:00:03Z",
+      "actor": "human",
+      "reason": "Phase passed.",
+      "evidence_ids": [
+        "E-EVT-S-004"
+      ]
+    }
+  ],
+  "phase_evidence_map": [
+    {
+      "qualified_phase_id": "R4P-001-P1",
+      "phase_r_stage": "R1",
+      "phase_type": "Implementation",
+      "evidence_record_artifact_keys": [],
+      "evidence_record_na_reason": "R1 minimal sample; Evidence Record is not required.",
+      "verification_required": false,
+      "verification_not_required_reason": "No runtime verification is required in this minimal sample.",
+      "validated_plan_revision": 1,
+      "change_classification": "minimal-sample",
+      "evidence_mapping": "Minimal sample evidence mapping.",
+      "resolution_manifest": {
+        "manifest_kind": "lightweight-resolution-manifest",
+        "manifest_id": "LRM-001",
+        "manifest_revision": "rev-0001",
+        "manifest_anchor_id": null
+      },
+      "related_failure_id": "F1",
+      "related_cause_id": "C1",
+      "related_change_id": "CH1",
+      "related_success_id": "S1",
+      "related_verification_id": "V1",
+      "related_ids_na_reason": null
+    }
+  ],
+  "artifact_validation_attestations": [
+    {
+      "attestation_id": "AVA-001",
+      "artifact_key": {
+        "artifact_id": "ART-001",
+        "artifact_revision": "rev-0001"
+      },
+      "artifact_ref": null,
+      "validated_against_plan_revision": 1,
+      "created_against_plan_revision": 1,
+      "validity": "valid",
+      "reason": null,
+      "superseded_or_invalid_artifact_key": null,
+      "superseded_or_invalid_artifact_ref": null,
+      "evidence_ids": [
+        "E-AVA-001"
+      ],
+      "timestamp": "2026-06-16T00:00:00Z",
+      "actor": "human"
+    }
+  ]
+}
