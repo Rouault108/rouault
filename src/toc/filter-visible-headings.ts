@@ -1,10 +1,6 @@
 import { getTabsUrlSyncStrategy } from '../components/ui/tabs/tabs-url-sync-strategy.js';
 import { isHTMLElement } from '../lib/dom.js';
-import type {
-  TocCapabilities,
-  TocHeading as Heading,
-  TocScopeSelection,
-} from './toc-headings.js';
+import type { TocCapabilities, TocHeading as Heading, TocScopeSelection } from './toc-headings.js';
 
 type TabsLike = HTMLElement & {
   selectedValue?: string | null;

@@ -117,10 +117,7 @@ describe('component manifest / ssr targets', () => {
 describe('removed-or-reduced legacy SSR target guard', () => {
   it('keeps removed-or-reduced legacy tags out of all SSR target surfaces', () => {
     const surfaces = new Map<string, readonly string[]>([
-      [
-        'SSR_COMPONENT_DEFINITIONS',
-        SSR_COMPONENT_DEFINITIONS.map((definition) => definition.tag),
-      ],
+      ['SSR_COMPONENT_DEFINITIONS', SSR_COMPONENT_DEFINITIONS.map((definition) => definition.tag)],
       ['SSR_TARGET_TAGS', SSR_TARGET_TAGS],
       ['SSR_NOTE_TARGET_TAGS', SSR_NOTE_TARGET_TAGS],
       ['SSR_PAGE_TARGET_TAGS', SSR_PAGE_TARGET_TAGS],

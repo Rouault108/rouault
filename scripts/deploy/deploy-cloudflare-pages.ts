@@ -170,7 +170,9 @@ const expectedCommandLineArgs = (options: WranglerStructuredParseOptions): reado
   '--commit-dirty=false',
 ];
 
-const readBoundedJsonLines = async (filePath: string): Promise<readonly Record<string, unknown>[]> => {
+const readBoundedJsonLines = async (
+  filePath: string,
+): Promise<readonly Record<string, unknown>[]> => {
   const fileStats = await stat(filePath);
   if (fileStats.size > MAX_FILE_BYTES) {
     throw new Error('[pages-deploy] Wrangler structured output file is too large');
@@ -218,10 +220,14 @@ export const parseWranglerPagesDeployStructuredOutput = async (
   const sessions = events.filter((event) => event['type'] === 'wrangler-session');
   const pagesDeployEvents = events.filter((event) => event['type'] === 'pages-deploy');
   if (sessions.length !== 1) {
-    throw new Error('[pages-deploy] Wrangler structured output must contain exactly one session event');
+    throw new Error(
+      '[pages-deploy] Wrangler structured output must contain exactly one session event',
+    );
   }
   if (pagesDeployEvents.length !== 1) {
-    throw new Error('[pages-deploy] Wrangler structured output must contain exactly one Pages deploy event');
+    throw new Error(
+      '[pages-deploy] Wrangler structured output must contain exactly one Pages deploy event',
+    );
   }
 
   const session = sessions[0] ?? {};
@@ -230,7 +236,9 @@ export const parseWranglerPagesDeployStructuredOutput = async (
     throw new Error('[pages-deploy] Wrangler structured output version is unsupported');
   }
   if (session['wrangler_version'] !== options.expectedWranglerVersion) {
-    throw new Error('[pages-deploy] Wrangler structured output version does not match package.json');
+    throw new Error(
+      '[pages-deploy] Wrangler structured output version does not match package.json',
+    );
   }
 
   const commandLineArgs = session['command_line_args'];
@@ -423,7 +431,9 @@ const buildReleaseState = async (
   result: CloudflarePagesDeployResult,
 ): Promise<ProductionReleaseStateArtifact> => {
   const r2Attempt = assertR2UploadAttemptManifest(await readJson(R2_ATTEMPT_PATH));
-  const mediaAttempt = assertMediaDeliveryAttemptManifest(await readJson(MEDIA_DELIVERY_ATTEMPT_PATH));
+  const mediaAttempt = assertMediaDeliveryAttemptManifest(
+    await readJson(MEDIA_DELIVERY_ATTEMPT_PATH),
+  );
 
   if (r2Attempt.status !== 'succeeded') {
     throw new Error('[release-state] R2 upload attempt must succeed before Pages deployment');
@@ -431,7 +441,10 @@ const buildReleaseState = async (
   if (mediaAttempt.status !== 'succeeded') {
     throw new Error('[release-state] media delivery attempt must succeed before Pages deployment');
   }
-  assertUploadedVerifiedObjectSetConsistency(r2Attempt.uploadedObjects, mediaAttempt.verifiedObjects);
+  assertUploadedVerifiedObjectSetConsistency(
+    r2Attempt.uploadedObjects,
+    mediaAttempt.verifiedObjects,
+  );
 
   const cloudflarePages: CloudflarePagesReleaseEvidence = {
     deploymentId: result.deploymentId,

@@ -95,7 +95,6 @@ export class LocationAdapter {
     return `${normalized.pathname}${normalized.search}${normalized.hash}`;
   }
 
-
   normalizePathname(pathname: string): string {
     return this.policy.normalizePathname(pathname);
   }

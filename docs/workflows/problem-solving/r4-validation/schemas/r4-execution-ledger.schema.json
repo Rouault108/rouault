@@ -80,20 +80,13 @@
       "minItems": 1
     },
     "r4_profile": {
-      "enum": [
-        "R4-S",
-        "R4-I",
-        "R4-A"
-      ]
+      "enum": ["R4-S", "R4-I", "R4-A"]
     }
   },
   "$defs": {
     "artifactKey": {
       "type": "object",
-      "required": [
-        "artifact_id",
-        "artifact_revision"
-      ],
+      "required": ["artifact_id", "artifact_revision"],
       "additionalProperties": false,
       "properties": {
         "artifact_id": {
@@ -108,19 +101,11 @@
     },
     "resolutionManifest": {
       "type": "object",
-      "required": [
-        "manifest_kind",
-        "manifest_id",
-        "manifest_revision",
-        "manifest_anchor_id"
-      ],
+      "required": ["manifest_kind", "manifest_id", "manifest_revision", "manifest_anchor_id"],
       "additionalProperties": false,
       "properties": {
         "manifest_kind": {
-          "enum": [
-            "lightweight-resolution-manifest",
-            "artifact-manifest"
-          ]
+          "enum": ["lightweight-resolution-manifest", "artifact-manifest"]
         },
         "manifest_id": {
           "type": "string",
@@ -175,11 +160,7 @@
           "minimum": 1
         },
         "necessity": {
-          "enum": [
-            "required",
-            "conditional",
-            "optional"
-          ]
+          "enum": ["required", "conditional", "optional"]
         },
         "evaluation_result": {
           "enum": [
@@ -261,13 +242,7 @@
           ]
         },
         "event_class": {
-          "enum": [
-            "initialization",
-            "progress",
-            "transition",
-            "outcome",
-            "retirement"
-          ]
+          "enum": ["initialization", "progress", "transition", "outcome", "retirement"]
         },
         "trigger_artifact_keys": {
           "type": "array",
@@ -291,10 +266,7 @@
           "format": "date-time"
         },
         "reason": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "actor": {
@@ -331,13 +303,7 @@
           "minLength": 1
         },
         "phase_r_stage": {
-          "enum": [
-            "R0-equivalent",
-            "R1",
-            "R2-lite",
-            "R2-full",
-            "R3"
-          ]
+          "enum": ["R0-equivalent", "R1", "R2-lite", "R2-full", "R3"]
         },
         "phase_type": {
           "enum": [
@@ -360,10 +326,7 @@
           "type": "boolean"
         },
         "verification_not_required_reason": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "validated_plan_revision": {
@@ -382,67 +345,46 @@
           "$ref": "#/$defs/resolutionManifest"
         },
         "evidence_record_na_reason": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "related_failure_id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1,
           "not": {
             "const": "N/A"
           }
         },
         "related_cause_id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1,
           "not": {
             "const": "N/A"
           }
         },
         "related_change_id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1,
           "not": {
             "const": "N/A"
           }
         },
         "related_success_id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1,
           "not": {
             "const": "N/A"
           }
         },
         "related_verification_id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1,
           "not": {
             "const": "N/A"
           }
         },
         "related_ids_na_reason": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1,
           "pattern": "(Failure|Cause|Change|Success|Verification)"
         }
@@ -455,14 +397,10 @@
                 "const": false
               }
             },
-            "required": [
-              "verification_required"
-            ]
+            "required": ["verification_required"]
           },
           "then": {
-            "required": [
-              "verification_not_required_reason"
-            ],
+            "required": ["verification_not_required_reason"],
             "properties": {
               "verification_not_required_reason": {
                 "type": "string",
@@ -478,9 +416,7 @@
                 "const": true
               }
             },
-            "required": [
-              "verification_required"
-            ]
+            "required": ["verification_required"]
           },
           "then": {
             "properties": {
@@ -497,14 +433,10 @@
                 "maxItems": 0
               }
             },
-            "required": [
-              "evidence_record_artifact_keys"
-            ]
+            "required": ["evidence_record_artifact_keys"]
           },
           "then": {
-            "required": [
-              "evidence_record_na_reason"
-            ],
+            "required": ["evidence_record_na_reason"],
             "properties": {
               "evidence_record_na_reason": {
                 "type": "string",
@@ -520,9 +452,7 @@
                 "minItems": 1
               }
             },
-            "required": [
-              "evidence_record_artifact_keys"
-            ]
+            "required": ["evidence_record_artifact_keys"]
           },
           "then": {
             "properties": {
@@ -541,9 +471,7 @@
                     "type": "null"
                   }
                 },
-                "required": [
-                  "related_failure_id"
-                ]
+                "required": ["related_failure_id"]
               },
               {
                 "properties": {
@@ -551,9 +479,7 @@
                     "type": "null"
                   }
                 },
-                "required": [
-                  "related_cause_id"
-                ]
+                "required": ["related_cause_id"]
               },
               {
                 "properties": {
@@ -561,9 +487,7 @@
                     "type": "null"
                   }
                 },
-                "required": [
-                  "related_change_id"
-                ]
+                "required": ["related_change_id"]
               },
               {
                 "properties": {
@@ -571,9 +495,7 @@
                     "type": "null"
                   }
                 },
-                "required": [
-                  "related_success_id"
-                ]
+                "required": ["related_success_id"]
               },
               {
                 "properties": {
@@ -581,16 +503,12 @@
                     "type": "null"
                   }
                 },
-                "required": [
-                  "related_verification_id"
-                ]
+                "required": ["related_verification_id"]
               }
             ]
           },
           "then": {
-            "required": [
-              "related_ids_na_reason"
-            ],
+            "required": ["related_ids_na_reason"],
             "properties": {
               "related_ids_na_reason": {
                 "type": "string",
@@ -609,9 +527,7 @@
                     "minLength": 1
                   }
                 },
-                "required": [
-                  "related_failure_id"
-                ]
+                "required": ["related_failure_id"]
               },
               {
                 "properties": {
@@ -620,9 +536,7 @@
                     "minLength": 1
                   }
                 },
-                "required": [
-                  "related_cause_id"
-                ]
+                "required": ["related_cause_id"]
               },
               {
                 "properties": {
@@ -631,9 +545,7 @@
                     "minLength": 1
                   }
                 },
-                "required": [
-                  "related_change_id"
-                ]
+                "required": ["related_change_id"]
               },
               {
                 "properties": {
@@ -642,9 +554,7 @@
                     "minLength": 1
                   }
                 },
-                "required": [
-                  "related_success_id"
-                ]
+                "required": ["related_success_id"]
               },
               {
                 "properties": {
@@ -653,9 +563,7 @@
                     "minLength": 1
                   }
                 },
-                "required": [
-                  "related_verification_id"
-                ]
+                "required": ["related_verification_id"]
               }
             ]
           },
@@ -674,9 +582,7 @@
                 "const": "R3"
               }
             },
-            "required": [
-              "phase_r_stage"
-            ]
+            "required": ["phase_r_stage"]
           },
           "then": {
             "properties": {
@@ -721,19 +627,10 @@
           "minimum": 1
         },
         "validity": {
-          "enum": [
-            "valid",
-            "invalid",
-            "superseded",
-            "requires-revision",
-            "manual-review-required"
-          ]
+          "enum": ["valid", "invalid", "superseded", "requires-revision", "manual-review-required"]
         },
         "reason": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "timestamp": {
@@ -745,10 +642,7 @@
           "minLength": 1
         },
         "artifact_ref": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "created_against_plan_revision": {
@@ -773,10 +667,7 @@
           ]
         },
         "superseded_or_invalid_artifact_ref": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         }
       },
@@ -785,22 +676,13 @@
           "if": {
             "properties": {
               "validity": {
-                "enum": [
-                  "invalid",
-                  "superseded",
-                  "requires-revision",
-                  "manual-review-required"
-                ]
+                "enum": ["invalid", "superseded", "requires-revision", "manual-review-required"]
               }
             },
-            "required": [
-              "validity"
-            ]
+            "required": ["validity"]
           },
           "then": {
-            "required": [
-              "reason"
-            ],
+            "required": ["reason"],
             "properties": {
               "reason": {
                 "type": "string",
@@ -816,9 +698,7 @@
                 "const": "valid"
               }
             },
-            "required": [
-              "validity"
-            ]
+            "required": ["validity"]
           },
           "then": {
             "properties": {
@@ -841,9 +721,7 @@
                 "const": "valid"
               }
             },
-            "required": [
-              "validity"
-            ]
+            "required": ["validity"]
           },
           "then": {
             "properties": {
@@ -864,16 +742,12 @@
                 "const": "superseded"
               }
             },
-            "required": [
-              "validity"
-            ]
+            "required": ["validity"]
           },
           "then": {
             "anyOf": [
               {
-                "required": [
-                  "superseded_or_invalid_artifact_key"
-                ],
+                "required": ["superseded_or_invalid_artifact_key"],
                 "properties": {
                   "superseded_or_invalid_artifact_key": {
                     "$ref": "#/$defs/artifactKey"
@@ -881,9 +755,7 @@
                 }
               },
               {
-                "required": [
-                  "superseded_or_invalid_artifact_ref"
-                ],
+                "required": ["superseded_or_invalid_artifact_ref"],
                 "properties": {
                   "superseded_or_invalid_artifact_ref": {
                     "type": "string",
@@ -905,9 +777,7 @@
             "const": "R4-S"
           }
         },
-        "required": [
-          "r4_profile"
-        ]
+        "required": ["r4_profile"]
       },
       "then": {
         "properties": {
@@ -951,15 +821,10 @@
       "if": {
         "properties": {
           "r4_profile": {
-            "enum": [
-              "R4-I",
-              "R4-A"
-            ]
+            "enum": ["R4-I", "R4-A"]
           }
         },
-        "required": [
-          "r4_profile"
-        ]
+        "required": ["r4_profile"]
       },
       "then": {
         "properties": {

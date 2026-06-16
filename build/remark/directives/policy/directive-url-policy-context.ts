@@ -1,4 +1,7 @@
-import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../../../site/site-url-context.js';
+import {
+  resolveDevelopmentSiteUrlContext,
+  resolveProductionSiteUrlContext,
+} from '../../../site/site-url-context.js';
 import type { RouteClassificationMode } from '../../../../shared/link/link-annotation.js';
 import { resolveNoteLinkClassificationContext } from '../../../content/resolve-note-current-url.js';
 import { resolveNoteSourcePathFromVFile } from '../../../content/note-source-vfile.js';

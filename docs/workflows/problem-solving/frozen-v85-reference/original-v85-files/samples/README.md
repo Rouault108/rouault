@@ -27,7 +27,7 @@ invalid/r4-execution-ledger-retirement-wrong-transition.json
 
 ## v83 completion modeサンプル
 
-`valid/*lifecycle-passed.json` は通常の完了終端、`valid/*lifecycle-superseded.json` は置換終端の正常例です。`superseded`終端は、terminal eventの`reason`に置換markerと置換先R4P-* Phase IDまたは `Issue incomplete: <ID>` 形式の具体参照を含む場合だけ通します。置換先Phase IDはLedger内に存在し、completion modeでは完了済みである必要があります。このsuperseded根拠検証はstructural modeでも必須です。
+`valid/*lifecycle-passed.json` は通常の完了終端、`valid/*lifecycle-superseded.json` は置換終端の正常例です。`superseded`終端は、terminal eventの`reason`に置換markerと置換先R4P-\* Phase IDまたは `Issue incomplete: <ID>` 形式の具体参照を含む場合だけ通します。置換先Phase IDはLedger内に存在し、completion modeでは完了済みである必要があります。このsuperseded根拠検証はstructural modeでも必須です。
 
 ```text
 valid/r4-s-execution-ledger.lifecycle-passed.json
@@ -40,7 +40,6 @@ invalid/r4-execution-ledger-completion-superseded-without-grounding.json
 ```
 
 `manifest.json` の各sampleは任意で `mode` を持つ。省略時は `structural` として検証する。`completion` 指定時は、R4 Completion / Closure前提の終端status不変条件まで検証する。
-
 
 ## v85追加サンプル
 

@@ -7,10 +7,7 @@ import {
 } from '../../theme/theme-manager.js';
 import { THEME_UI_OPTIONS } from '../../theme/theme-ui-options.js';
 import { layoutSidebarController } from '../../components/layout/layout-sidebar-controller.js';
-import {
-  enhanceLayoutHeaderTocBridge,
-  toggleHeaderTocPanel,
-} from './layout-header-toc-bridge.js';
+import { enhanceLayoutHeaderTocBridge, toggleHeaderTocPanel } from './layout-header-toc-bridge.js';
 import {
   isPlainPrimaryAnchorActivation,
   resolveAnchorFromActivationEvent,
@@ -44,10 +41,14 @@ export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void
   activeEnhancement?.abort();
   const listenerController = new AbortController();
   activeEnhancement = listenerController;
-  signal.addEventListener('abort', () => {
-    if (activeEnhancement === listenerController) activeEnhancement = null;
-    listenerController.abort();
-  }, { once: true });
+  signal.addEventListener(
+    'abort',
+    () => {
+      if (activeEnhancement === listenerController) activeEnhancement = null;
+      listenerController.abort();
+    },
+    { once: true },
+  );
   syncThemeHeader(root);
   enhanceLayoutHeaderTocBridge(listenerController.signal);
 

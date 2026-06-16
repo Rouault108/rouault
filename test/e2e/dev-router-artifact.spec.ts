@@ -21,14 +21,12 @@ const parseDevRouterArtifactEnvelope = (value: unknown): DevRouterArtifactEnvelo
 };
 
 test.describe('Development router artifact', () => {
-  test('dev server は静的 header の NavigationEnvelope smoke を返すこと', async ({
-    request,
-  }) => {
+  test('dev server は静的 header の NavigationEnvelope smoke を返すこと', async ({ request }) => {
     const artifactPathname = resolveRouterArtifactPathname(e2eNoteFixtures.layoutRich.directPath);
     const response = await request.get(artifactPathname);
 
     expect(response.ok()).toBe(true);
-    expect(response.headers()['content-type']).toMatch(/application\/json/ui);
+    expect(response.headers()['content-type']).toMatch(/application\/json/iu);
 
     const envelope = parseDevRouterArtifactEnvelope(await response.json());
     expect(envelope.schemaVersion).toBe(2);
@@ -41,8 +39,8 @@ test.describe('Development router artifact', () => {
       throw new Error('dev router artifact shell.headerHtml must be a string.');
     }
 
-    expect(headerHtml).toMatch(/<header\b[^>]*\bdata-layout-header\b/ui);
-    expect(headerHtml).not.toMatch(/<\/?layout-header\b/ui);
-    expect(headerHtml).not.toMatch(/<\/?ui-header\b/ui);
+    expect(headerHtml).toMatch(/<header\b[^>]*\bdata-layout-header\b/iu);
+    expect(headerHtml).not.toMatch(/<\/?layout-header\b/iu);
+    expect(headerHtml).not.toMatch(/<\/?ui-header\b/iu);
   });
 });

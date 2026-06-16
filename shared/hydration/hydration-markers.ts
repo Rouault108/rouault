@@ -32,7 +32,9 @@ export type HydrationMarkerReadResult =
 export type DomHydrationMarkerReadResult = HydrationMarkerReadResult;
 export type Parse5HydrationMarkerReadResult = HydrationMarkerReadResult;
 
-export const createHydrationMarkerAttributes = (marker: HydrationMarker): Record<string, string> => ({
+export const createHydrationMarkerAttributes = (
+  marker: HydrationMarker,
+): Record<string, string> => ({
   [HYDRATION_MARKER_SCOPE_ATTRIBUTE]: marker.scopeId,
   [HYDRATION_MARKER_ATTRIBUTE]: marker.marker,
   [HYDRATION_MARKER_OWNER_ATTRIBUTE]: marker.ownerId,

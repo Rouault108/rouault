@@ -1,8 +1,5 @@
 import type { SearchDialogItem } from './search-dialog-types.js';
-import {
-  dispatchSearchReturnToReading,
-  handleSearchReturnToReadingEvent,
-} from './navigation.js';
+import { dispatchSearchReturnToReading, handleSearchReturnToReadingEvent } from './navigation.js';
 import { createSearchCore, type SearchCore } from './search-core.js';
 import { searchReturnToReadingEventName } from './search-navigation-events.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
@@ -24,9 +21,7 @@ import {
   type SearchDialogQueryChangeDetail,
   type SearchDialogSelectedDetail,
 } from './search-dialog-events.js';
-import {
-  SEARCH_DIALOG_STATUS_ERROR_FALLBACK_MESSAGE,
-} from './search-dialog-constants.js';
+import { SEARCH_DIALOG_STATUS_ERROR_FALLBACK_MESSAGE } from './search-dialog-constants.js';
 import { SEARCH_DEBOUNCE_MS } from './search-constants.js';
 
 let initialized = false;
@@ -74,7 +69,9 @@ const createRuntimeSearchCore = (options: {
     runtimeEnvironment: options.runtimeEnvironment,
     siteUrlContext: options.siteUrlContext,
     isInternalDocumentPathname: options.isInternalDocumentPathname,
-    artifactUrlResolver: createSearchArtifactUrlResolver({ siteUrlContext: options.siteUrlContext }),
+    artifactUrlResolver: createSearchArtifactUrlResolver({
+      siteUrlContext: options.siteUrlContext,
+    }),
   });
 
 export const getInitializedSearchBootstrapState = (): SearchBootstrapState | null =>
@@ -110,9 +107,7 @@ const readOpenSearchDialogTrigger = (event: Event): HTMLElement | null => {
   return event.target instanceof HTMLElement ? event.target : null;
 };
 
-const readOpenSearchDialogModality = (
-  event: Event,
-): SearchDialogOpenRequestDetail['modality'] => {
+const readOpenSearchDialogModality = (event: Event): SearchDialogOpenRequestDetail['modality'] => {
   const detail = event instanceof CustomEvent ? (event.detail as unknown) : null;
   if (
     detail !== null &&
@@ -297,7 +292,8 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
   };
 
   const onQueryChanged = (event: Event): void => {
-    const detail = event instanceof CustomEvent ? (event.detail as SearchDialogQueryChangeDetail) : null;
+    const detail =
+      event instanceof CustomEvent ? (event.detail as SearchDialogQueryChangeDetail) : null;
     runDialogSearch(typeof detail?.query === 'string' ? detail.query : '');
   };
 
@@ -373,7 +369,9 @@ export function initSearch(options: InitSearchOptions): SearchBootstrapResult {
   return { status: 'ready', searchCore: controller };
 }
 
-export function initSearchUnavailable(options: InitSearchUnavailableOptions): SearchBootstrapResult {
+export function initSearchUnavailable(
+  options: InitSearchUnavailableOptions,
+): SearchBootstrapResult {
   if (typeof document === 'undefined') {
     return { status: 'unavailable', reason: options.reason };
   }

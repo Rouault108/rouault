@@ -629,7 +629,10 @@ describe('rehypeRouaultComponents', () => {
     rehypeRouaultComponents()(tree);
 
     const figure = findElement(tree, (node) => node.tagName === 'figure');
-    const trigger = findElement(figure, (node) => node.properties?.['data-image-zoom-trigger'] === 'true');
+    const trigger = findElement(
+      figure,
+      (node) => node.properties?.['data-image-zoom-trigger'] === 'true',
+    );
     const triggerIcon = findElement(trigger, (node) =>
       getClassList(node.properties?.['className']).includes('image-zoom-trigger__icon'),
     );

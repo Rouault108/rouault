@@ -25,7 +25,10 @@ describe('buildId contract', () => {
     expect(validateOptionalBuildIdInput(null)).toEqual({ kind: 'missing' });
     expect(validateOptionalBuildIdInput('   ')).toEqual({ kind: 'empty' });
     expect(validateOptionalBuildIdInput(123)).toEqual({ kind: 'invalid-type', value: 123 });
-    expect(validateOptionalBuildIdInput(tooLong)).toEqual({ kind: 'invalid-format', value: tooLong });
+    expect(validateOptionalBuildIdInput(tooLong)).toEqual({
+      kind: 'invalid-format',
+      value: tooLong,
+    });
     expect(normalizeBuildId(tooLong)).toBeNull();
   });
 

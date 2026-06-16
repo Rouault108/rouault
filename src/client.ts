@@ -160,7 +160,8 @@ const initializeAppRouterRuntime = async (): Promise<void> => {
       isInternalDocumentPathname: (pathname) => routeManifestState.routeSet.has(pathname),
     },
     currentAbsoluteUrl: window.location.href,
-    normalizedNavigationUrl: window.location.pathname + window.location.search + window.location.hash,
+    normalizedNavigationUrl:
+      window.location.pathname + window.location.search + window.location.hash,
   });
   initSearch({
     runtimeEnvironment: 'production',

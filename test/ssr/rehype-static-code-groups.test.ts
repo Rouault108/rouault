@@ -98,8 +98,12 @@ describe('rehypeStaticCodeGroups', () => {
     expect(button?.tagName).toBe('button');
     expect(button?.properties?.['data-code-group-copy']).toBe('true');
     const selectedCopySourceId = button?.properties?.['data-copy-target-id'];
-    expect(selectedCopySourceId).toMatch(/^note:code-groups-[a-z0-9]+-code-group-1-copy-source-0$/u);
-    expect(button?.properties?.['aria-describedby']).toBe(`${String(selectedCopySourceId)}-copy-status`);
+    expect(selectedCopySourceId).toMatch(
+      /^note:code-groups-[a-z0-9]+-code-group-1-copy-source-0$/u,
+    );
+    expect(button?.properties?.['aria-describedby']).toBe(
+      `${String(selectedCopySourceId)}-copy-status`,
+    );
 
     const firstPanel = group?.children?.[1];
     const secondPanel = group?.children?.[2];
@@ -143,11 +147,13 @@ describe('rehypeStaticCodeGroups', () => {
     expect(first?.properties?.['data-code-block-root']).toBe('true');
     expect(first?.properties?.['data-hydration-key']).toBe('code-block-enhancer');
     expect(first?.properties?.['data-code-group']).toBeUndefined();
-    expect(first?.children?.find((child) => child.tagName === 'template')?.properties?.[
-      'data-code-copy-source'
-    ]).toBe('true');
-    expect(first?.children?.find((child) => child.tagName === 'pre')?.properties?.[
-      'data-code-block'
-    ]).toBe(true);
+    expect(
+      first?.children?.find((child) => child.tagName === 'template')?.properties?.[
+        'data-code-copy-source'
+      ],
+    ).toBe('true');
+    expect(
+      first?.children?.find((child) => child.tagName === 'pre')?.properties?.['data-code-block'],
+    ).toBe(true);
   });
 });

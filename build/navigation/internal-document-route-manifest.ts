@@ -54,9 +54,10 @@ export const emitInternalDocumentRouteManifest = async (
   },
 ): Promise<void> => {
   const publicPathname = resolveInternalDocumentRouteManifestPathname(options.siteUrlContext);
-  const outputPathname = options.siteUrlContext.basePath.length > 0
-    ? publicPathname.slice(options.siteUrlContext.basePath.length)
-    : publicPathname;
+  const outputPathname =
+    options.siteUrlContext.basePath.length > 0
+      ? publicPathname.slice(options.siteUrlContext.basePath.length)
+      : publicPathname;
   const manifestFilePath = path.join(
     options.outputDirectory,
     ...outputPathname.split('/').filter((segment) => segment.length > 0),

@@ -89,9 +89,7 @@ const isElementRenderable = (element: HTMLElement): boolean => {
 
   const style = getComputedStyle(element);
   return (
-    style.display !== 'none' &&
-    style.visibility !== 'hidden' &&
-    style.visibility !== 'collapse'
+    style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse'
   );
 };
 
@@ -614,9 +612,9 @@ export class TocActiveTracker {
 
   private _resolveHeadingElement(id: string): HTMLElement | null {
     const root = this._contentRoot;
-    const matches = Array.from(
-      (root ?? document).querySelectorAll<HTMLElement>('[id]'),
-    ).filter((element) => element.id === id);
+    const matches = Array.from((root ?? document).querySelectorAll<HTMLElement>('[id]')).filter(
+      (element) => element.id === id,
+    );
     return matches.length === 1 ? (matches[0] ?? null) : null;
   }
 }

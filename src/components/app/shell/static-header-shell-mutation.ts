@@ -10,13 +10,18 @@ export const parseAndValidateStaticHeaderHtml = (html: string, document: Documen
   const template = document.createElement('template');
   template.innerHTML = html.trim();
   const meaningfulNodes = [...template.content.childNodes].filter(
-    (node) => node.nodeType !== Node.COMMENT_NODE && !(node.nodeType === Node.TEXT_NODE && node.textContent?.trim() === ''),
+    (node) =>
+      node.nodeType !== Node.COMMENT_NODE &&
+      !(node.nodeType === Node.TEXT_NODE && node.textContent?.trim() === ''),
   );
   const header = meaningfulNodes[0];
   if (!(header instanceof HTMLElement) || !header.matches(STATIC_HEADER_ROOT_SELECTOR)) {
     throw new Error(`shell.headerHtml must contain one ${STATIC_HEADER_ROOT_SELECTOR}.`);
   }
-  if (meaningfulNodes.length !== 1 || template.content.querySelectorAll(STATIC_HEADER_ROOT_SELECTOR).length !== 1) {
+  if (
+    meaningfulNodes.length !== 1 ||
+    template.content.querySelectorAll(STATIC_HEADER_ROOT_SELECTOR).length !== 1
+  ) {
     throw new Error(`shell.headerHtml must contain exactly one ${STATIC_HEADER_ROOT_SELECTOR}.`);
   }
   validateStaticHeaderDomTree(header);

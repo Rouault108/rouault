@@ -155,7 +155,10 @@ export function validateSearchResultRenderHref(
 
   let parsed: URL;
   try {
-    parsed = new URL(normalized, `${options.siteUrlContext.siteOrigin}${options.siteUrlContext.basePath || '/'}`);
+    parsed = new URL(
+      normalized,
+      `${options.siteUrlContext.siteOrigin}${options.siteUrlContext.basePath || '/'}`,
+    );
   } catch {
     return { ok: false, code: 'invalid-result-url' };
   }
@@ -198,14 +201,20 @@ export function validateSearchResultRenderHref(
 export const createSearchCanonicalPathname = (options: {
   readonly pathname: string;
   readonly isInternalDocumentPathname?: (pathname: string) => boolean;
-}): { readonly ok: true; readonly canonicalPathname: SearchCanonicalPathname } | { readonly ok: false; readonly reason: 'invalid-canonical-pathname' } => {
+}):
+  | { readonly ok: true; readonly canonicalPathname: SearchCanonicalPathname }
+  | { readonly ok: false; readonly reason: 'invalid-canonical-pathname' } => {
   const normalized = normalizeSearchCanonicalPathname(options.pathname);
   if (normalized === null) return { ok: false, reason: 'invalid-canonical-pathname' };
-  if (options.isInternalDocumentPathname && !options.isInternalDocumentPathname(normalized)) return { ok: false, reason: 'invalid-canonical-pathname' };
+  if (options.isInternalDocumentPathname && !options.isInternalDocumentPathname(normalized))
+    return { ok: false, reason: 'invalid-canonical-pathname' };
   return { ok: true, canonicalPathname: normalized as SearchCanonicalPathname };
 };
 
-export const buildSearchRenderHref = (options: { readonly canonicalPathname: SearchCanonicalPathname; readonly basePath?: string }): SearchRenderHref => {
+export const buildSearchRenderHref = (options: {
+  readonly canonicalPathname: SearchCanonicalPathname;
+  readonly basePath?: string;
+}): SearchRenderHref => {
   const basePath = options.basePath ?? '';
   return `${basePath}${options.canonicalPathname}` as SearchRenderHref;
 };

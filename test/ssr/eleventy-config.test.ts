@@ -197,7 +197,6 @@ describe('eleventy config', () => {
     }
   });
 
-
   it('ROUAULT_MEDIA_BASE_URL が設定されている場合は .generated/media/assets の passthrough copy を省くこと', async () => {
     const previousBaseUrl = process.env['ROUAULT_MEDIA_BASE_URL'];
     process.env['ROUAULT_MEDIA_BASE_URL'] = 'https://media.example.com/';

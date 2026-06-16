@@ -324,9 +324,7 @@ const collectUploadPlan = async (manifest: MediaManifest): Promise<readonly Uplo
   return uploadPlan.sort((left, right) => left.objectKey.localeCompare(right.objectKey));
 };
 
-const createUploadPlanArtifact = (
-  uploadPlan: readonly UploadTarget[],
-): R2UploadPlanArtifact =>
+const createUploadPlanArtifact = (uploadPlan: readonly UploadTarget[]): R2UploadPlanArtifact =>
   assertR2UploadPlanArtifact({
     schemaVersion: 1,
     artifactKind: 'r2-media-upload-plan',

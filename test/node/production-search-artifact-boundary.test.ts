@@ -42,7 +42,7 @@ describe('production search artifact boundary', () => {
   it('search artifact entrypoint は生成責務だけを持つこと', () => {
     const source = readRepoFile('scripts/emit-search-artifacts.ts');
 
-    expect(source).to.contain("../build/data/notes.js");
+    expect(source).to.contain('../build/data/notes.js');
     expect(source).to.contain('../build/search/emit-search-artifacts.js');
     expect(source).to.contain('emitSearchArtifacts');
     expect(source).not.to.match(/\brm(?:Sync)?\b|emptyDir|rimraf/u);
@@ -86,7 +86,7 @@ describe('production search artifact boundary', () => {
     const rmIndex = source.indexOf('await rm(distDir');
     const assertionCall = 'await assertProductionSearchArtifacts();';
 
-    expect(source).to.contain("import { assertProductionSearchArtifacts }");
+    expect(source).to.contain('import { assertProductionSearchArtifacts }');
     expect(source).to.contain(assertionCall);
     expect(source).not.to.contain('assertProductionSearchArtifacts({');
     expect(skipIndex).to.be.greaterThan(-1);

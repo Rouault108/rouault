@@ -44,14 +44,13 @@ Artifact RevisionとArtifact Manifest RevisionはRevision別ファイルへappen
 
 用語の分担:
 
-| 用語 | 用途 | 必須になるProfile |
-|---|---|---|
-| Lightweight Resolution Manifest | ArtifactKeyをArtifactRefへ解決するためのR4-S用軽量索引。SHA-256固定とAnchorは必須ではない | R4-S |
-| Artifact Manifest | SHA-256、storage class、訂正・失効、Manifest chainを扱う完全性Manifest | R4-I / R4-A |
-| Manifest Anchor | Artifact Manifest Revisionを固定するAnchor | R4-I / R4-A |
-| Closure Manifest | R4-Aで閉鎖候補の入力集合を固定するManifest | R4-A |
-| Closure Attestation | R4-Aでclosed / not-closedを導出するAttestation | R4-A |
-
+| 用語                            | 用途                                                                                      | 必須になるProfile |
+| ------------------------------- | ----------------------------------------------------------------------------------------- | ----------------- |
+| Lightweight Resolution Manifest | ArtifactKeyをArtifactRefへ解決するためのR4-S用軽量索引。SHA-256固定とAnchorは必須ではない | R4-S              |
+| Artifact Manifest               | SHA-256、storage class、訂正・失効、Manifest chainを扱う完全性Manifest                    | R4-I / R4-A       |
+| Manifest Anchor                 | Artifact Manifest Revisionを固定するAnchor                                                | R4-I / R4-A       |
+| Closure Manifest                | R4-Aで閉鎖候補の入力集合を固定するManifest                                                | R4-A              |
+| Closure Attestation             | R4-Aでclosed / not-closedを導出するAttestation                                            | R4-A              |
 
 ```text
 ArtifactKey:
@@ -110,6 +109,7 @@ Lightweight Resolution Manifest:
 ```
 
 Lightweight Resolution Manifest規則:
+
 - R4-S専用のArtifactKey解決表であり、ArtifactKeyをstorage classとimmutable locatorを含むArtifactRefへ一意に解決する
 - SHA-256、Git blob ID、Manifest Anchorは必須ではない。ただし、記録する場合は保存バイト列と一致している必要がある
 - `digest status`は`not-recorded` / `public-digest` / `private-or-restricted-digest`のいずれかとする
@@ -134,11 +134,13 @@ Artifact Manifest:
 ```
 
 Manifest Entry action:
+
 - `add`: ArtifactKeyを初回登録する。`supersedes Entry ID`と`reason`は持たない
 - `correct`: 既存Entryを訂正する。`supersedes Entry ID`を必須とする
 - `revoke`: 既存Entryを失効させる。`supersedes Entry ID`と失効理由を必須とする
 
 Manifest Entry解決規則:
+
 - 選択したManifest RevisionまでのEntryをappend-only順に評価する
 - 同じArtifactKeyについて、最新の有効な`add`または`correct` Entryを正本とする
 - `correct`は置換対象Entry IDを明示し、置換対象と同じArtifactKeyを持つ
@@ -146,6 +148,7 @@ Manifest Entry解決規則:
 - 同順位の有効Entryが複数存在する、訂正鎖が循環する、またはArtifactKeyが複数locatorへ解決される場合はManifest不整合として処理を停止する
 
 storage class規則:
+
 - `repository-redacted`: public locator、SHA-256、Git blob ID、`digest_public=true`を必須とする
 - `local-private`: repository-redacted Manifestには公開可能なopaque locator referenceだけを記録する。実path、未redactファイル名、digestを公開してはならない場合はprivate Manifestへ分離する
 - `ci-private`: CIのrestricted locator referenceを使い、公開可能な範囲だけをrepository-redacted Manifestへ記録する
@@ -155,6 +158,7 @@ storage class規則:
 - Git blob IDは`repository-redacted`だけで必須とし、その他は理由付きN/Aとする
 
 Artifact Manifest規則:
+
 - Manifest Revision自体を`artifacts/manifests/<manifest-id>/rev-XXXX.json`へ不変保存する
 - Artifact保存後に外部からSHA-256等を計算し、Manifestへappend-onlyで登録する
 - Artifact本文は自身のManifest Entry、hash、commit SHA、登録先Manifest Revisionを参照しない
@@ -163,6 +167,7 @@ Artifact Manifest規則:
 - repository-redacted Manifestとprivate Manifestを分離する場合、公開Manifestからprivate locatorや個人データ由来digestを推測できないようにする
 
 Manifest正規化と検証:
+
 - Manifest / Anchor / Ledger / Closure / Attestationの機械可読表現は `08_r4_schema_and_validation.md` と `schemas/` に従う
 - 公開Manifestのハッシュ対象は、UTF-8、BOMなし、LF、末尾改行ありで保存された正規化JSONのバイト列とする
 - JSONはRFC 8785相当の正規化JSONを基準とする。Markdown成果物は保存された生バイト列をSHA-256対象とし、CRLFやBOMが混入した場合は別digestになる
@@ -186,6 +191,7 @@ Manifest Anchor:
 ```
 
 Manifest Anchor規則:
+
 - R4-AのClosure判断に使うManifest RevisionはManifest Anchorで固定する。R4-IのFinal Verification判断に使うManifest RevisionもManifest Anchorで固定する
 - Git commit SHAまたは外部署名の少なくとも一方を必須とする
 - Manifest Anchorは対象Manifest Revisionおよび対象Manifestを含むGit commitの外部に保存し、対象Manifest本文へAnchor IDを書き戻さない
@@ -255,12 +261,12 @@ N/A記載規則:
 
 #### 0.1a `null` / `[]` / `N/A` / 人間向け説明の使い分け
 
-| 値 | 用途 |
-| --- | --- |
-| `null` | JSON上の該当なし。Schemaで`null`が要求される欄に使う。 |
-| `[]` | 参照リストが空であることを表す。空にする場合は、対応するN/A理由欄が非空文字列で必要になる場合がある。 |
-| `"N/A"` | Markdown表またはAnchor IDなど、明示的に許可された欄に限定して使う。 |
-| `"不要（...）"` | 人間向け説明欄だけで使う。Schema上`null`が要求される欄には使わない。 |
+| 値              | 用途                                                                                                  |
+| --------------- | ----------------------------------------------------------------------------------------------------- |
+| `null`          | JSON上の該当なし。Schemaで`null`が要求される欄に使う。                                                |
+| `[]`            | 参照リストが空であることを表す。空にする場合は、対応するN/A理由欄が非空文字列で必要になる場合がある。 |
+| `"N/A"`         | Markdown表またはAnchor IDなど、明示的に許可された欄に限定して使う。                                   |
+| `"不要（...）"` | 人間向け説明欄だけで使う。Schema上`null`が要求される欄には使わない。                                  |
 
 R4 Execution LedgerのPhase Evidence対応では、Evidence Record ArtifactKey一覧に1件以上ある場合、Evidence Record N/A理由は`null`です。関連Failure / Cause / Change / Success / Verification IDがすべて非`null`の場合、関連ID N/A理由も`null`です。
 
@@ -541,7 +547,6 @@ Minimum Evidence Packet:
 - redaction済み / 不要 / 要追加確認:
 ```
 
-
 ## 3.1 Evidence Record
 
 複数のログ、スクリーンショット、CI run、関連diffを扱う場合は、Minimum Evidence Packetに加えてEvidence Recordを作ります。R3以上では必須です。1つのEvidence Recordは複数Entryを持ち、各Entryが1回の証拠取得または1つの独立した証拠単位を表します。
@@ -631,7 +636,6 @@ B:
 C:
 - 状況証拠、未再現の仮説、補助的推定
 ```
-
 
 ## 3.2 Intermittent Failure Evidence
 
@@ -2287,6 +2291,7 @@ Final R4 Disposition Verification:
 Profile別完了順序:
 
 R4-S:
+
 1. Plan Revisionを凍結する
 2. Lightweight Resolution Manifestを確定し、ArtifactKeyを一意にArtifactRefへ解決できることを確認する
 3. Phase Execution Event Log、Necessity Evaluation Log、Phase成果物のArtifact Validation Attestationを完了する
@@ -2296,6 +2301,7 @@ R4-S:
 7. R4 Completion Recordでpre-final Ledger、Final Verification、Lightweight Resolution Manifest、再計算結果を人間承認する
 
 R4-I:
+
 1. Plan Revisionを凍結する
 2. Artifact Manifestを確定し、ArtifactKeyを一意にArtifactRefへ解決できることを確認する。R4-IではLightweight Resolution Manifestを使わない
 3. Phase Execution Event Log、Necessity Evaluation Log、Phase成果物のArtifact Validation Attestationを完了する
@@ -2307,6 +2313,7 @@ R4-I:
 9. R4 Completion RecordでManifest chain、ArtifactKey解決、SHA-256一致、pre-final Ledger、Final Verificationを人間承認する
 
 R4-A:
+
 1. Plan Revisionを凍結する
 2. Artifact Manifestを確定し、ArtifactKeyを一意にArtifactRefへ解決できることを確認する。R4-AではLightweight Resolution Manifestを使わない
 3. Phase Execution Event Log、Necessity Evaluation Log、Phase成果物のArtifact Validation Attestationを完了する
@@ -2320,7 +2327,6 @@ R4-A:
 11. Closure Manifestを次のManifest Revisionへ登録する
 12. Closure Manifest登録後の最終Manifest Revisionを不変保存し、最終Manifest Anchor集合を作成する
 13. Closure Attestationで最終Manifest Anchor集合、Closure Manifest、Final Verification、pre-final Ledger、Active Phase Setを検証し、closed / not-closedを導出する
-
 
 ## 10.5a R4 Completion Record
 
@@ -2404,6 +2410,7 @@ Closure Manifest:
 ```
 
 Closure完了後の外部登録:
+
 - Closure Manifestは次のArtifact Manifest Revisionへ登録する
 - そのManifest Revisionを不変保存し、最終Manifest Anchor集合を作成する
 - 最終Manifest Anchor ID一覧はClosure Attestation、commit、PR、completion report等のArtifact外部記録から参照する
@@ -2521,7 +2528,6 @@ Verification Matrixの必須条件です。
 - 範囲外の失敗は根拠付きで分離されている
 - Verificationで対応関係を説明できない変更は差し戻す
 ```
-
 
 ## 12. 手動確認記録
 

@@ -1,8 +1,20 @@
-import { classifyLinkHref, type ClassifyLinkOptions, type ResolvedLinkAnnotation } from '../../shared/link/link-annotation.js';
-import { hasForbiddenRelToken, parseRelTokens, serializeRelTokens } from '../../shared/link/rel-tokens.js';
+import {
+  classifyLinkHref,
+  type ClassifyLinkOptions,
+  type ResolvedLinkAnnotation,
+} from '../../shared/link/link-annotation.js';
+import {
+  hasForbiddenRelToken,
+  parseRelTokens,
+  serializeRelTokens,
+} from '../../shared/link/rel-tokens.js';
 import type { LinkSurface } from '../../shared/link/link-surface.js';
 import { hasAsciiControlCharacter } from '../../shared/string/ascii-control.js';
-import { escapeHtmlText, serializeHtmlAttributes, type HtmlAttributeDescriptor } from './html-output.js';
+import {
+  escapeHtmlText,
+  serializeHtmlAttributes,
+  type HtmlAttributeDescriptor,
+} from './html-output.js';
 
 export interface RenderTextLinkHtmlOptions extends Omit<ClassifyLinkOptions, 'surface'> {
   readonly href: string;
@@ -24,14 +36,22 @@ const validateTarget = (target: string | undefined): '_blank' | '_self' | undefi
 const validateDownload = (value: boolean | string | undefined): boolean | string | undefined => {
   if (typeof value !== 'string') return value;
   const trimmed = value.trim();
-  if (trimmed.length === 0 || trimmed === '.' || trimmed === '..' || /[/\\]/u.test(trimmed) || hasAsciiControlCharacter(trimmed) || Array.from(trimmed).length > 255) {
+  if (
+    trimmed.length === 0 ||
+    trimmed === '.' ||
+    trimmed === '..' ||
+    /[/\\]/u.test(trimmed) ||
+    hasAsciiControlCharacter(trimmed) ||
+    Array.from(trimmed).length > 255
+  ) {
     throw new Error('invalid-download');
   }
   return trimmed;
 };
 
-export const buildTextLinkAnnotation = (options: RenderTextLinkHtmlOptions): ResolvedLinkAnnotation =>
-  classifyLinkHref({ ...options, surface: options.surface });
+export const buildTextLinkAnnotation = (
+  options: RenderTextLinkHtmlOptions,
+): ResolvedLinkAnnotation => classifyLinkHref({ ...options, surface: options.surface });
 
 export const renderTextLinkHtml = (options: RenderTextLinkHtmlOptions): string => {
   const annotation = buildTextLinkAnnotation(options);
@@ -40,7 +60,10 @@ export const renderTextLinkHtml = (options: RenderTextLinkHtmlOptions): string =
   const download = validateDownload(options.download);
   const relTokens = parseRelTokens(options.rel);
   if (hasForbiddenRelToken(relTokens)) throw new Error('forbidden-rel-token');
-  const finalRel = target === '_blank' ? serializeRelTokens([...relTokens, 'noopener']) : serializeRelTokens(relTokens);
+  const finalRel =
+    target === '_blank'
+      ? serializeRelTokens([...relTokens, 'noopener'])
+      : serializeRelTokens(relTokens);
   const attrs: HtmlAttributeDescriptor[] = [
     { name: 'class', value: options.className ?? 'link-text' },
     { name: 'href', value: annotation.renderHref },
@@ -49,8 +72,14 @@ export const renderTextLinkHtml = (options: RenderTextLinkHtmlOptions): string =
     ...(annotation.isExternalWeb ? [{ name: 'data-external', value: 'true' }] : []),
     ...(target ? [{ name: 'target', value: target }] : []),
     ...(finalRel.length > 0 ? [{ name: 'rel', value: finalRel }] : []),
-    ...(options.noRouter ? [{ name: 'data-no-router', value: true, kind: 'boolean' as const }] : []),
-    ...(download === true ? [{ name: 'download', value: true, kind: 'boolean' as const }] : typeof download === 'string' ? [{ name: 'download', value: download }] : []),
+    ...(options.noRouter
+      ? [{ name: 'data-no-router', value: true, kind: 'boolean' as const }]
+      : []),
+    ...(download === true
+      ? [{ name: 'download', value: true, kind: 'boolean' as const }]
+      : typeof download === 'string'
+        ? [{ name: 'download', value: download }]
+        : []),
   ];
   return `<a${serializeHtmlAttributes(attrs)}>${escapeHtmlText(options.label)}</a>`;
 };

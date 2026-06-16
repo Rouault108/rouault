@@ -138,22 +138,22 @@ CSS selector は `.ui-footer[data-footer]` 起点にします。`--space-5` / `-
 
 ### Public Tokens
 
-| Token | 内容 |
-| --- | --- |
-| `--footer-bg` | 背景 |
-| `--footer-fg` | 基本文字色 |
-| `--footer-fg-strong` | siteName などの強い文字色 |
-| `--footer-fg-muted` | 補助文字色 |
-| `--footer-border` | 上端境界線色 |
-| `--footer-border-width` | 上端境界線幅 |
-| `--footer-max-inline-size` | inner の最大幅 |
-| `--footer-padding-block` | root 縦余白 |
-| `--footer-padding-inline` | root 横余白 |
-| `--footer-gap` | brand と subline の間隔 |
-| `--footer-separator-gap` | `·` separator の左右間隔 |
-| `--footer-link-underline-offset` | link underline offset |
-| `--footer-build-fg` | build 文字色 |
-| `--footer-build-opacity` | 既定 build 文字色の alpha |
+| Token                            | 内容                      |
+| -------------------------------- | ------------------------- |
+| `--footer-bg`                    | 背景                      |
+| `--footer-fg`                    | 基本文字色                |
+| `--footer-fg-strong`             | siteName などの強い文字色 |
+| `--footer-fg-muted`              | 補助文字色                |
+| `--footer-border`                | 上端境界線色              |
+| `--footer-border-width`          | 上端境界線幅              |
+| `--footer-max-inline-size`       | inner の最大幅            |
+| `--footer-padding-block`         | root 縦余白               |
+| `--footer-padding-inline`        | root 横余白               |
+| `--footer-gap`                   | brand と subline の間隔   |
+| `--footer-separator-gap`         | `·` separator の左右間隔  |
+| `--footer-link-underline-offset` | link underline offset     |
+| `--footer-build-fg`              | build 文字色              |
+| `--footer-build-opacity`         | 既定 build 文字色の alpha |
 
 `--footer-build-fg` が指定された場合は完全な build 文字色として優先します。`--footer-build-opacity` は、`--footer-build-fg` が未指定で `--_footer-fg-muted` から既定 build 文字色を導出する場合にだけ反映します。
 

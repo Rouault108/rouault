@@ -13,9 +13,7 @@
     "opaque_reference": "private-evidence-index-001",
     "storage_scope": "local-private"
   },
-  "public_safe_opaque_references": [
-    "opaque-public-safe-001"
-  ],
+  "public_safe_opaque_references": ["opaque-public-safe-001"],
   "redaction_policy": "private data redacted",
   "retention_policy": "retain private evidence outside repository",
   "revocation_policy": "rotate exposed secrets immediately",

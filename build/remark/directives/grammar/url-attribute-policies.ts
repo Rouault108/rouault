@@ -20,8 +20,16 @@ export const directiveUrlAttributePolicies: readonly DirectiveUrlAttributePolicy
   { directiveName: 'preview-sandbox', attributeName: 'base-url', policy: 'preview-resource-url' },
   { directiveName: 'translation', attributeName: 'original', policy: 'optional-url-like-text' },
   { directiveName: 'translation', attributeName: 'translated', policy: 'optional-url-like-text' },
-  { directiveName: 'translation-overlay', attributeName: 'original', policy: 'optional-url-like-text' },
-  { directiveName: 'translation-overlay', attributeName: 'translated', policy: 'optional-url-like-text' },
+  {
+    directiveName: 'translation-overlay',
+    attributeName: 'original',
+    policy: 'optional-url-like-text',
+  },
+  {
+    directiveName: 'translation-overlay',
+    attributeName: 'translated',
+    policy: 'optional-url-like-text',
+  },
 ] as const;
 
 const policyByDirectiveAndAttribute = new Map<string, DirectiveUrlPolicyName>(

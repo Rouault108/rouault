@@ -32,17 +32,17 @@ const createLoadedRouteManifestState = (routes: readonly string[]) => {
     ...routes.map((route) => normalizeRouaultPathname(route)),
   ]);
   return {
-  status: 'loaded' as const,
-  manifest: {
-    version: 1 as const,
-    buildId: 'test-build-id',
-    buildLabel: 'test-build-label',
-    generatedAt: '2026-01-01T00:00:00.000Z',
-    siteOrigin: DEFAULT_SITE_URL_CONTEXT.siteOrigin,
-    basePath: DEFAULT_SITE_URL_CONTEXT.basePath,
-    routes: routeSet.routes,
-  },
-  routeSet,
+    status: 'loaded' as const,
+    manifest: {
+      version: 1 as const,
+      buildId: 'test-build-id',
+      buildLabel: 'test-build-label',
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      siteOrigin: DEFAULT_SITE_URL_CONTEXT.siteOrigin,
+      basePath: DEFAULT_SITE_URL_CONTEXT.basePath,
+      routes: routeSet.routes,
+    },
+    routeSet,
   };
 };
 
@@ -238,7 +238,6 @@ describe('search-navigation', () => {
     }
   });
 
-
   it('router host がない内部文書候補は manifest failure を not-started より優先すること', async () => {
     const result = await navigateInternalDocument('/notes/example/', {
       siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
@@ -252,5 +251,4 @@ describe('search-navigation', () => {
       expect(result.reason).to.equal('route-manifest-unavailable');
     }
   });
-
 });

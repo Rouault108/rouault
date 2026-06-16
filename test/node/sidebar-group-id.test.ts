@@ -20,8 +20,14 @@ describe('sidebar group id contract', () => {
   });
 
   it('delimiter を含む rowId でも identity collision を起こさないこと', () => {
-    const firstPrefix = createSidebarGroupIdPrefixFromSidebarIdentity('note-navigation', 'note-primary');
-    const secondPrefix = createSidebarGroupIdPrefixFromSidebarIdentity('note-navigation-copy', 'note-primary');
+    const firstPrefix = createSidebarGroupIdPrefixFromSidebarIdentity(
+      'note-navigation',
+      'note-primary',
+    );
+    const secondPrefix = createSidebarGroupIdPrefixFromSidebarIdentity(
+      'note-navigation-copy',
+      'note-primary',
+    );
 
     const firstId = createSidebarGroupId(firstPrefix, 'a-b/c:d');
     const secondId = createSidebarGroupId(secondPrefix, 'a-b/c:d');
@@ -43,7 +49,12 @@ describe('sidebar group id contract', () => {
   it('invalid identity から prefix を作らないこと', () => {
     expect(() => createSidebarGroupIdPrefixFromSidebarIdentity('', 'note-primary')).toThrow();
     expect(() => createSidebarGroupIdPrefixFromSidebarIdentity('note-navigation', '')).toThrow();
-    expect(() => createSidebarGroupId(createSidebarGroupIdPrefixFromSidebarIdentity('note-navigation', 'note-primary'), '')).toThrow();
+    expect(() =>
+      createSidebarGroupId(
+        createSidebarGroupIdPrefixFromSidebarIdentity('note-navigation', 'note-primary'),
+        '',
+      ),
+    ).toThrow();
   });
 
   it('invalid groupIdPrefix では group id を作らないこと', () => {
@@ -60,5 +71,4 @@ describe('sidebar group id contract', () => {
     expect(source).not.toContain('Buffer');
     expect(source).not.toContain('node:buffer');
   });
-
 });

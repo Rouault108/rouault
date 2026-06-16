@@ -13,7 +13,10 @@ import {
   toInternalDocumentRouteSet,
 } from '../shared/navigation/internal-document-route-manifest.js';
 import { resolveInternalDocumentRouteManifestPathname } from '../shared/navigation/internal-document-route-manifest-path.js';
-import { createSearchArtifactUrlResolver, resolveSearchCatalogUrl } from '../shared/search/search-artifact-url.js';
+import {
+  createSearchArtifactUrlResolver,
+  resolveSearchCatalogUrl,
+} from '../shared/search/search-artifact-url.js';
 import type { SearchCatalogItem } from '../shared/search/search-catalog.js';
 import {
   createSearchJsonParseDiagnosticSink,
@@ -210,7 +213,10 @@ const assertArrayEquals = (options: {
 }): void => {
   const actual = normalizeArray(options.actual);
   const expected = normalizeArray(options.expected);
-  if (actual.length !== expected.length || actual.some((value, index) => value !== expected[index])) {
+  if (
+    actual.length !== expected.length ||
+    actual.some((value, index) => value !== expected[index])
+  ) {
     throw new Error(
       `[production-search-artifacts] ${options.canonicalPathname} ${options.fieldName} mismatch.`,
     );
@@ -368,9 +374,7 @@ export async function assertProductionSearchArtifacts(
   const expectedRawItems =
     options.expectedItemsForTestOnly ??
     buildSearchCatalog(
-      options.loadNotesForTestOnly !== undefined
-        ? options.loadNotesForTestOnly()
-        : loadNotesData(),
+      options.loadNotesForTestOnly !== undefined ? options.loadNotesForTestOnly() : loadNotesData(),
     );
   const actualItems = parseCatalogForAssertion({
     label: 'actual',

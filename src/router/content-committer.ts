@@ -55,9 +55,7 @@ const dispatchShellValidated = (detail: AppShellValidatedDetail): void => {
 };
 
 const dispatchShellRestored = (detail: AppShellRestoredDetail): void => {
-  document.dispatchEvent(
-    new CustomEvent<AppShellRestoredDetail>('app-shell:restored', { detail }),
-  );
+  document.dispatchEvent(new CustomEvent<AppShellRestoredDetail>('app-shell:restored', { detail }));
 };
 
 const dispatchShellRollbackStart = (detail: AppShellRollbackStartDetail): void => {

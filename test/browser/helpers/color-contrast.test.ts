@@ -34,12 +34,17 @@ describe('color contrast helper', () => {
 
   it('resolves OKLCH, relative OKLCH, and OKLab color-mix values', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
-      <div style="--primary: oklch(55% 0.2 250); --fg-default: oklch(20% 0 0); --fg-muted: oklch(45% 0 0);"></div>
+      <div
+        style="--primary: oklch(55% 0.2 250); --fg-default: oklch(20% 0 0); --fg-muted: oklch(45% 0 0);"
+      ></div>
     `);
     expect(resolveComputedColor('oklch(55% 0.2 250)', wrapper, 'color').a).to.equal(1);
-    expect(resolveComputedColor('oklch(from var(--primary) l c h / 0.5)', wrapper, 'color').a).to.equal(0.5);
     expect(
-      resolveComputedColor('color-mix(in oklab, var(--primary) 76%, transparent)', wrapper, 'color').a,
+      resolveComputedColor('oklch(from var(--primary) l c h / 0.5)', wrapper, 'color').a,
+    ).to.equal(0.5);
+    expect(
+      resolveComputedColor('color-mix(in oklab, var(--primary) 76%, transparent)', wrapper, 'color')
+        .a,
     ).to.be.closeTo(0.76, 0.01);
     expect(
       resolveComputedColor(
@@ -54,8 +59,14 @@ describe('color contrast helper', () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>
         <style>
-          .target { color: rgb(1, 2, 3); }
-          .target::before { content: ''; color: rgb(4, 5, 6); background: currentColor; }
+          .target {
+            color: rgb(1, 2, 3);
+          }
+          .target::before {
+            content: '';
+            color: rgb(4, 5, 6);
+            background: currentColor;
+          }
         </style>
         <div class="target"></div>
       </div>
@@ -66,7 +77,9 @@ describe('color contrast helper', () => {
   });
 
   it('resolves painted background across shadow host and fallback root', async () => {
-    const wrapper = await fixture<HTMLDivElement>(html`<div style="background: rgb(240, 240, 240);"></div>`);
+    const wrapper = await fixture<HTMLDivElement>(
+      html`<div style="background: rgb(240, 240, 240);"></div>`,
+    );
     const host = document.createElement('div');
     host.style.backgroundColor = 'rgba(10, 20, 30, 0.5)';
     wrapper.append(host);

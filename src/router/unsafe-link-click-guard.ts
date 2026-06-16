@@ -19,7 +19,9 @@ const blockUnsafeClick = (event: Event): void => {
   if (!result.ok) event.preventDefault();
 };
 
-export const attachUnsafeLinkClickGuard = (root: Document | ShadowRoot): UnsafeLinkClickGuardHandle => {
+export const attachUnsafeLinkClickGuard = (
+  root: Document | ShadowRoot,
+): UnsafeLinkClickGuardHandle => {
   root.addEventListener('click', blockUnsafeClick, { capture: true });
   root.addEventListener('auxclick', blockUnsafeClick, { capture: true });
   return {

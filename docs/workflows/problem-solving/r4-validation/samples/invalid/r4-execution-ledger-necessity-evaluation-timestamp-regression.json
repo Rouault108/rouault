@@ -19,9 +19,7 @@
       "plan_revision": 1,
       "necessity": "required",
       "evaluation_result": "required",
-      "evidence_ids": [
-        "E-NEC-001"
-      ],
+      "evidence_ids": ["E-NEC-001"],
       "timestamp": "2026-06-16T00:02:00Z",
       "actor": "human"
     },
@@ -31,9 +29,7 @@
       "plan_revision": 1,
       "necessity": "required",
       "evaluation_result": "required",
-      "evidence_ids": [
-        "E-NEC-001"
-      ],
+      "evidence_ids": ["E-NEC-001"],
       "timestamp": "2026-06-16T00:01:00Z",
       "actor": "human"
     }
@@ -61,9 +57,7 @@
       "timestamp": "2026-06-16T00:00:00Z",
       "actor": "human",
       "reason": "Initialize phase status.",
-      "evidence_ids": [
-        "E-EVT-S-001"
-      ]
+      "evidence_ids": ["E-EVT-S-001"]
     },
     {
       "event_id": "EVT-S-002",
@@ -87,9 +81,7 @@
       "timestamp": "2026-06-16T00:00:01Z",
       "actor": "human",
       "reason": "Phase is ready to execute.",
-      "evidence_ids": [
-        "E-EVT-S-002"
-      ]
+      "evidence_ids": ["E-EVT-S-002"]
     },
     {
       "event_id": "EVT-S-003",
@@ -113,9 +105,7 @@
       "timestamp": "2026-06-16T00:00:02Z",
       "actor": "human",
       "reason": "Phase execution started.",
-      "evidence_ids": [
-        "E-EVT-S-003"
-      ]
+      "evidence_ids": ["E-EVT-S-003"]
     },
     {
       "event_id": "EVT-S-004",
@@ -139,9 +129,7 @@
       "timestamp": "2026-06-16T00:00:03Z",
       "actor": "human",
       "reason": "Phase passed.",
-      "evidence_ids": [
-        "E-EVT-S-004"
-      ]
+      "evidence_ids": ["E-EVT-S-004"]
     }
   ],
   "phase_evidence_map": [
@@ -184,9 +172,7 @@
       "reason": null,
       "superseded_or_invalid_artifact_key": null,
       "superseded_or_invalid_artifact_ref": null,
-      "evidence_ids": [
-        "E-AVA-001"
-      ],
+      "evidence_ids": ["E-AVA-001"],
       "timestamp": "2026-06-16T00:00:00Z",
       "actor": "human"
     }

@@ -170,12 +170,11 @@ export const normalizeScorePayload = (
   if (rawScoreSource === undefined) {
     throw toError(file, node, 'score の src は必須です');
   }
-  const scoreSource =
-    policyContext?.urlPolicyContext
-        ? sanitizeScoreSource(rawScoreSource, {
-            siteUrlContext: policyContext.urlPolicyContext.siteUrlContext,
-          })
-        : undefined;
+  const scoreSource = policyContext?.urlPolicyContext
+    ? sanitizeScoreSource(rawScoreSource, {
+        siteUrlContext: policyContext.urlPolicyContext.siteUrlContext,
+      })
+    : undefined;
   if (scoreSource === undefined) {
     throw toError(file, node, 'score の src はリポジトリ内の相対 SVG だけ指定可能です');
   }

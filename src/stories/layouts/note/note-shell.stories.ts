@@ -84,19 +84,21 @@ const renderNoteShell = () =>
         html`
           <div class="foundation-stage" style="padding: 0; overflow: clip;">
             <div class="app-root">
-              ${unsafeHTML(renderLayoutHeaderHtml({
-                noteLayout: true,
-                sidebarEnabled: true,
-                sidebarId: 'note-primary',
-                tocPresence: 'present',
-                tocRuntimeId: 'story-note-toc-source',
-                tocOwnerId: 'story-note-toc-owner',
-                tocTriggerReserved: true,
-                corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
-                currentCorpusKey: 'all',
-                siteUrlContext: { siteOrigin: 'https://rouault.invalid', basePath: '' },
-                searchHref: '/search/',
-              }))}
+              ${unsafeHTML(
+                renderLayoutHeaderHtml({
+                  noteLayout: true,
+                  sidebarEnabled: true,
+                  sidebarId: 'note-primary',
+                  tocPresence: 'present',
+                  tocRuntimeId: 'story-note-toc-source',
+                  tocOwnerId: 'story-note-toc-owner',
+                  tocTriggerReserved: true,
+                  corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
+                  currentCorpusKey: 'all',
+                  siteUrlContext: { siteOrigin: 'https://rouault.invalid', basePath: '' },
+                  searchHref: '/search/',
+                }),
+              )}
               <main id="note-shell-main" tabindex="-1">
                 <section class="note-shell" data-toc-presence="present">
                   <aside class="layout-sidebar-col" aria-label="ナビゲーション">

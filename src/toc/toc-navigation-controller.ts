@@ -56,11 +56,7 @@ const SCROLL_KEYS = new Set([
 ]);
 
 const isPrimaryPlainClick = (event: MouseEvent): boolean =>
-  event.button === 0 &&
-  !event.metaKey &&
-  !event.ctrlKey &&
-  !event.shiftKey &&
-  !event.altKey;
+  event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
 const hasExternalBrowsingTarget = (link: HTMLAnchorElement): boolean => {
   const target = link.getAttribute('target');
@@ -128,10 +124,7 @@ export class TocNavigationController {
   private _cleanupUserInterventionListeners: (() => void) | null = null;
   private _context: TocNavigationContext | null = null;
 
-  handleTocLinkClick(
-    event: MouseEvent,
-    context: TocNavigationContext,
-  ): TocNavigationClickResult {
+  handleTocLinkClick(event: MouseEvent, context: TocNavigationContext): TocNavigationClickResult {
     const link = resolveLinkFromEvent(event);
     if (link === null || !isPrimaryPlainClick(event)) {
       return { owned: false, reason: 'non-primary-click' };

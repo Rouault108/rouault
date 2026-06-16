@@ -91,7 +91,8 @@ const renderRecentNotes = (recentNotes: readonly HomeNoteItem[]): string => {
     .join('')}</ol>`;
 };
 
-export const renderCorporaOverviewHtml = (overview: CorporaOverviewData): string => `
+export const renderCorporaOverviewHtml = (overview: CorporaOverviewData): string =>
+  `
   <section class="corpora-overview page-shell" aria-labelledby="corpora-overview-title">
     <div class="hero">
       <p class="eyebrow">Corpora / Overview</p>

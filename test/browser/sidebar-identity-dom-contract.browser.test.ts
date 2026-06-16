@@ -22,7 +22,9 @@ describe('sidebar identity document contract', () => {
     `);
 
     expect(() =>
-      validateSidebarIdentityInstances(readLayoutSidebarInstances(wrapper), { sourceLabel: 'browser-test' }),
+      validateSidebarIdentityInstances(readLayoutSidebarInstances(wrapper), {
+        sourceLabel: 'browser-test',
+      }),
     ).to.throw(SidebarIdentityDocumentContractError);
   });
 
@@ -35,7 +37,9 @@ describe('sidebar identity document contract', () => {
     `);
 
     expect(() =>
-      validateSidebarIdentityInstances(readLayoutSidebarInstances(wrapper), { sourceLabel: 'browser-test' }),
+      validateSidebarIdentityInstances(readLayoutSidebarInstances(wrapper), {
+        sourceLabel: 'browser-test',
+      }),
     ).not.to.throw();
   });
 });

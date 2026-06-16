@@ -30,7 +30,9 @@ const waitForFirstSyntaxCardRendered = async (page: Page): Promise<void> => {
 
     const cardName = normalize(card?.querySelector<HTMLElement>('.syntax-card__name')?.textContent);
 
-    const sectionTitle = normalize(section?.querySelector<HTMLElement>('.syntax-section__heading')?.textContent);
+    const sectionTitle = normalize(
+      section?.querySelector<HTMLElement>('.syntax-section__heading')?.textContent,
+    );
 
     return (
       card instanceof HTMLElement &&
@@ -65,7 +67,9 @@ const readFirstSyntaxCardState = async (page: Page): Promise<SyntaxCardState> =>
         firstSection?.querySelector<HTMLElement>('.syntax-section__heading')?.textContent,
       ),
       firstFieldWrapperExists: firstField?.querySelector('.syntax-field__term') !== null,
-      firstFieldTermText: normalize(firstField?.querySelector('dt.syntax-field__term')?.textContent),
+      firstFieldTermText: normalize(
+        firstField?.querySelector('dt.syntax-field__term')?.textContent,
+      ),
       firstFieldDescriptionText: normalize(
         firstField?.querySelector('dd.syntax-field__description')?.textContent,
       ),
@@ -73,7 +77,9 @@ const readFirstSyntaxCardState = async (page: Page): Promise<SyntaxCardState> =>
   });
 
 test.describe('syntax-card family e2e', () => {
-  test('code fixture 上で syntax-card family が静的 HTML として描画されること', async ({ page }) => {
+  test('code fixture 上で syntax-card family が静的 HTML として描画されること', async ({
+    page,
+  }) => {
     await page.goto(codePath);
 
     await expect(page.locator('[data-syntax-card]').first()).toBeVisible();

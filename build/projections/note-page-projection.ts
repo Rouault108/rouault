@@ -33,7 +33,10 @@ import {
 } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { createSidebarGroupIdPrefixFromSidebarIdentity } from '../../shared/navigation/sidebar-group-id.js';
 import { renderNoteSidebarNav } from '../navigation/render-note-sidebar-nav.js';
-import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
+import {
+  resolveDevelopmentSiteUrlContext,
+  resolveProductionSiteUrlContext,
+} from '../site/site-url-context.js';
 import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
 import { validateSidebarNavHtmlInvariant } from '../navigation/sidebar-nav-html-invariant.js';
 import {
@@ -227,14 +230,18 @@ const validateTocProjectionContract = (input: {
 
   if (input.tocCapabilitySource === 'testing-override') {
     if (input.headings.length === 0) {
-      throw new Error(`[projection] note "${input.slug}" の static TOC fixture に heading がありません。`);
+      throw new Error(
+        `[projection] note "${input.slug}" の static TOC fixture に heading がありません。`,
+      );
     }
 
     const hasInvalidHeading = input.headings.some(
       (heading) => heading.level < 2 || heading.level > 6,
     );
     if (hasInvalidHeading) {
-      throw new Error(`[projection] note "${input.slug}" の static TOC fixture に h2-h6 以外があります。`);
+      throw new Error(
+        `[projection] note "${input.slug}" の static TOC fixture に h2-h6 以外があります。`,
+      );
     }
 
     if (

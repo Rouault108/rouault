@@ -419,7 +419,9 @@ const isCodeBlockPre = (node: HastNode): boolean => {
   return findCodeChild(node) !== null;
 };
 
-export function rehypeShikiCodeBlocks(options: { readonly idContext?: StaticRenderIdContext } = {}) {
+export function rehypeShikiCodeBlocks(
+  options: { readonly idContext?: StaticRenderIdContext } = {},
+) {
   return async (tree: unknown, file?: { path?: string }) => {
     let hydrationRootAssigned = false;
     const idContext =

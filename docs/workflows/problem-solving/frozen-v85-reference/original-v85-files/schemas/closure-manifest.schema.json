@@ -51,10 +51,7 @@
       "$ref": "#/$defs/artifactRef"
     },
     "proposed_closure_disposition": {
-      "enum": [
-        "proposed-closed",
-        "proposed-not-closed"
-      ]
+      "enum": ["proposed-closed", "proposed-not-closed"]
     },
     "proposed_closure_timestamp": {
       "type": "string",
@@ -102,22 +99,13 @@
           "pattern": "^[a-f0-9]{64}$"
         },
         "storage_scope": {
-          "enum": [
-            "repository-redacted",
-            "private",
-            "restricted"
-          ]
+          "enum": ["repository-redacted", "private", "restricted"]
         }
       }
     },
     "artifactRef": {
       "type": "object",
-      "required": [
-        "artifact_id",
-        "artifact_revision",
-        "storage_class",
-        "immutable_locator"
-      ],
+      "required": ["artifact_id", "artifact_revision", "storage_class", "immutable_locator"],
       "additionalProperties": false,
       "properties": {
         "artifact_id": {
@@ -129,12 +117,7 @@
           "pattern": "^rev-[0-9]{4}$"
         },
         "storage_class": {
-          "enum": [
-            "repository-redacted",
-            "local-private",
-            "ci-private",
-            "external-restricted"
-          ]
+          "enum": ["repository-redacted", "local-private", "ci-private", "external-restricted"]
         },
         "immutable_locator": {
           "type": "string",

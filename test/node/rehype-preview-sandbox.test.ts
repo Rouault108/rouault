@@ -181,7 +181,6 @@ describe('rehypePreviewSandbox', () => {
     expect(cssCode?.properties?.['filename']).to.equal('preview.css');
   });
 
-
   it('preview HTML snippet 内の preview resource link を build-time に検証して許可すること', () => {
     const tree: HastNode = {
       type: 'root',

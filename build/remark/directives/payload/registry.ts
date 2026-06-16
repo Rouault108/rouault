@@ -31,8 +31,20 @@ const normalizeDirectivePayload = (
   );
 
   return (
-    normalizeSurfacePayload(directiveState.name, directiveState.rawAttributes, node, file, policyContext) ??
-    normalizePreviewPayload(directiveState.name, directiveState.rawAttributes, node, file, policyContext) ??
+    normalizeSurfacePayload(
+      directiveState.name,
+      directiveState.rawAttributes,
+      node,
+      file,
+      policyContext,
+    ) ??
+    normalizePreviewPayload(
+      directiveState.name,
+      directiveState.rawAttributes,
+      node,
+      file,
+      policyContext,
+    ) ??
     normalizeTabsPayloadByNode(directiveState.name, directiveState.rawAttributes, node, file) ??
     normalizeTranslationPayloadByNode(
       directiveState.name,
@@ -45,7 +57,11 @@ const normalizeDirectivePayload = (
   );
 };
 
-const normalizeNodePayload = (node: MdastNode, file?: VFileLike, policyContext?: NotePolicyContext): void => {
+const normalizeNodePayload = (
+  node: MdastNode,
+  file?: VFileLike,
+  policyContext?: NotePolicyContext,
+): void => {
   if (node.rouaultDirective) {
     node.rouaultDirective.payload = normalizeDirectivePayload(node, file, policyContext);
   }

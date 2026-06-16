@@ -43,7 +43,13 @@ describe('layout-sidebar-nav explicit contract', () => {
               <a href="/notes/legacy">Legacy</a>
             </li>
             <li data-node-id="explicit" data-node-kind="leaf" data-node-depth="0">
-              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/explicit" data-link-kind="internal-document" data-link-surface="navigation">
+              <a
+                data-sidebar-nav-control
+                data-sidebar-nav-link
+                href="/notes/explicit"
+                data-link-kind="internal-document"
+                data-link-surface="navigation"
+              >
                 <span data-sidebar-nav-label>Explicit</span>
               </a>
             </li>
@@ -79,10 +85,23 @@ describe('layout-sidebar-nav explicit contract', () => {
         <nav data-sidebar-nav aria-label="ノートナビゲーション">
           <ul>
             <li data-node-id="alpha" data-node-kind="leaf" data-node-depth="0">
-              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/alpha" data-link-kind="internal-document" data-link-surface="navigation">Alpha</a>
+              <a
+                data-sidebar-nav-control
+                data-sidebar-nav-link
+                href="/notes/alpha"
+                data-link-kind="internal-document"
+                data-link-surface="navigation"
+                >Alpha</a
+              >
             </li>
             <li data-node-id="beta" data-node-kind="leaf" data-node-depth="0">
-              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/beta" data-link-kind="internal-document" data-link-surface="navigation">
+              <a
+                data-sidebar-nav-control
+                data-sidebar-nav-link
+                href="/notes/beta"
+                data-link-kind="internal-document"
+                data-link-surface="navigation"
+              >
                 <span data-sidebar-nav-label>Beta</span>
               </a>
             </li>
@@ -126,25 +145,46 @@ describe('layout-sidebar-nav explicit contract', () => {
     controller.disconnect();
   });
 
-
-
   it('active fallback は data-current-branch だけを読み data-current-path-indicator だけの branch を候補にしないこと', async () => {
     const wrapper = await fixture<HTMLDivElement>(html`
       <div>
         <nav data-sidebar-nav aria-label="ノートナビゲーション">
           <ul>
             <li data-node-id="alpha" data-node-kind="leaf" data-node-depth="0">
-              <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/alpha" data-link-kind="internal-document" data-link-surface="navigation">
+              <a
+                data-sidebar-nav-control
+                data-sidebar-nav-link
+                href="/notes/alpha"
+                data-link-kind="internal-document"
+                data-link-surface="navigation"
+              >
                 <span data-sidebar-nav-label>Alpha</span>
               </a>
             </li>
-            <li data-node-id="branch" data-node-kind="branch" data-node-depth="0" data-current-branch="true" data-current-path-indicator="true">
-              <button type="button" data-sidebar-nav-control data-sidebar-nav-branch-control aria-expanded="true">
+            <li
+              data-node-id="branch"
+              data-node-kind="branch"
+              data-node-depth="0"
+              data-current-branch="true"
+              data-current-path-indicator="true"
+            >
+              <button
+                type="button"
+                data-sidebar-nav-control
+                data-sidebar-nav-branch-control
+                aria-expanded="true"
+              >
                 <span data-sidebar-nav-label>Branch</span>
               </button>
               <ul>
                 <li data-node-id="branch/leaf" data-node-kind="leaf" data-node-depth="1">
-                  <a data-sidebar-nav-control data-sidebar-nav-link href="/notes/branch/leaf" data-link-kind="internal-document" data-link-surface="navigation">
+                  <a
+                    data-sidebar-nav-control
+                    data-sidebar-nav-link
+                    href="/notes/branch/leaf"
+                    data-link-kind="internal-document"
+                    data-link-surface="navigation"
+                  >
                     <span data-sidebar-nav-label>Leaf</span>
                   </a>
                 </li>
@@ -156,7 +196,10 @@ describe('layout-sidebar-nav explicit contract', () => {
     `);
 
     const nav = expectPresent(findLayoutSidebarNav(wrapper), 'nav');
-    const branch = expectPresent(wrapper.querySelector<HTMLLIElement>('li[data-node-id="branch"]'), 'branch');
+    const branch = expectPresent(
+      wrapper.querySelector<HTMLLIElement>('li[data-node-id="branch"]'),
+      'branch',
+    );
 
     const activeWithCurrentBranch = syncLayoutSidebarNav(nav, {
       selectedId: null,
@@ -245,7 +288,6 @@ describe('layout-sidebar-nav explicit contract', () => {
   });
 });
 
-
 describe('layout-sidebar-nav paint contract', () => {
   const navMarkup = `
     <nav data-sidebar-nav aria-label="ノートナビゲーション">
@@ -279,12 +321,26 @@ describe('layout-sidebar-nav paint contract', () => {
       <layout-sidebar-surface .navMarkup=${navMarkup}></layout-sidebar-surface>
     `);
     await surface.updateComplete;
-    const shell = expectPresent(surface.querySelector<UiSidebarShell>('ui-sidebar-shell'), 'ui-sidebar-shell');
+    const shell = expectPresent(
+      surface.querySelector<UiSidebarShell>('ui-sidebar-shell'),
+      'ui-sidebar-shell',
+    );
     await shell.updateComplete;
     await waitForStyleRecalc();
-    const shellNav = expectPresent(shell.shadowRoot?.querySelector<HTMLElement>('nav'), 'shell nav');
-    const currentLink = expectPresent(surface.querySelector<HTMLAnchorElement>('[data-sidebar-nav-link][aria-current="page"]'), 'current link');
-    const branchControl = expectPresent(surface.querySelector<HTMLButtonElement>('li[data-current-branch="true"] > [data-sidebar-nav-control]'), 'current branch');
+    const shellNav = expectPresent(
+      shell.shadowRoot?.querySelector<HTMLElement>('nav'),
+      'shell nav',
+    );
+    const currentLink = expectPresent(
+      surface.querySelector<HTMLAnchorElement>('[data-sidebar-nav-link][aria-current="page"]'),
+      'current link',
+    );
+    const branchControl = expectPresent(
+      surface.querySelector<HTMLButtonElement>(
+        'li[data-current-branch="true"] > [data-sidebar-nav-control]',
+      ),
+      'current branch',
+    );
     return { surface, shell, shellNav, currentLink, branchControl };
   };
 
@@ -295,11 +351,20 @@ describe('layout-sidebar-nav paint contract', () => {
         const shellBackground = resolvePaintedElementBackground(shellNav, surface);
         expect(shellBackground.a, 'shell painted background alpha').to.equal(1);
 
-        const foreground = resolveComputedColor(getComputedStyle(currentLink).color, currentLink, 'color');
+        const foreground = resolveComputedColor(
+          getComputedStyle(currentLink).color,
+          currentLink,
+          'color',
+        );
         expect(foreground.a, 'current page foreground alpha').to.equal(1);
 
         const activeSurface = resolvePseudoColor(currentLink, '::before', 'background-color');
-        expectVisiblePseudoPaint(currentLink, '::before', activeSurface, 'current page active surface');
+        expectVisiblePseudoPaint(
+          currentLink,
+          '::before',
+          activeSurface,
+          'current page active surface',
+        );
 
         const indicator = resolvePseudoColor(currentLink, '::after', 'background-color');
         expectVisiblePseudoPaint(currentLink, '::after', indicator, 'current page indicator');
@@ -317,10 +382,17 @@ describe('layout-sidebar-nav paint contract', () => {
         const { surface, shellNav, branchControl } = await renderSurface();
         const shellBackground = resolvePaintedElementBackground(shellNav, surface);
         const branchSurface = resolvePseudoColor(branchControl, '::before', 'background-color');
-        expect(branchSurface.a, 'current branch base surface raw alpha').to.be.lessThanOrEqual(0.001);
+        expect(branchSurface.a, 'current branch base surface raw alpha').to.be.lessThanOrEqual(
+          0.001,
+        );
 
         const branchIndicator = resolvePseudoColor(branchControl, '::after', 'background-color');
-        expectVisiblePseudoPaint(branchControl, '::after', branchIndicator, 'current branch indicator');
+        expectVisiblePseudoPaint(
+          branchControl,
+          '::after',
+          branchIndicator,
+          'current branch indicator',
+        );
         const paintedBranchIndicator = compositeOver(branchIndicator, shellBackground);
         expectContrast(paintedBranchIndicator, shellBackground, 3);
       });

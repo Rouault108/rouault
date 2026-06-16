@@ -24,7 +24,7 @@ const createResponse = (options: {
   headers: {
     get: (name: string) =>
       name.toLowerCase() === 'content-type'
-        ? options.contentType ?? 'application/json; charset=utf-8'
+        ? (options.contentType ?? 'application/json; charset=utf-8')
         : null,
   },
   json: async () => options.body,
@@ -136,8 +136,7 @@ describe('search production artifacts', () => {
         siteUrlContext,
         artifactUrlResolver: createSearchArtifactUrlResolver({ siteUrlContext }),
         isInternalDocumentPathname: () => true,
-        testOnlyFetcher: async () =>
-          createResponse({ ok: true, status: 200, body: { items: [] } }),
+        testOnlyFetcher: async () => createResponse({ ok: true, status: 200, body: { items: [] } }),
       });
       throw new Error('loadSearchCatalog should have failed.');
     } catch (error) {

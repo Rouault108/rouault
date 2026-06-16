@@ -132,11 +132,12 @@ const validatePresentSidebar = (value: Record<string, unknown>): PayloadSidebarS
   const stateScopeId = readStateScopeId(value['stateScopeId'], 'sidebar.stateScopeId');
 
   const rawSelectedId = value['selectedId'];
-  const selectedId: string | null = rawSelectedId === null
-    ? null
-    : isString(rawSelectedId)
-      ? rawSelectedId
-      : fail('sidebar.selectedId must be string or null.', 'invalid-sidebar');
+  const selectedId: string | null =
+    rawSelectedId === null
+      ? null
+      : isString(rawSelectedId)
+        ? rawSelectedId
+        : fail('sidebar.selectedId must be string or null.', 'invalid-sidebar');
 
   const presentation = value['presentation'];
   const fixedBreakpoint = value['fixedBreakpoint'];
@@ -183,7 +184,10 @@ const validatePayloadSidebar = (value: unknown): PayloadSidebarShellProjection =
   );
 
   if (record['present'] === false) {
-    fail('payload shell.sidebarProjection must use null for absent sidebar.', 'payload-present-false');
+    fail(
+      'payload shell.sidebarProjection must use null for absent sidebar.',
+      'payload-present-false',
+    );
   }
 
   if (record['present'] !== true) {
@@ -193,10 +197,12 @@ const validatePayloadSidebar = (value: unknown): PayloadSidebarShellProjection =
   return validatePresentSidebar(record);
 };
 
-export const validateRuntimeSidebarProjection = (
-  value: unknown,
-): RuntimeSidebarShellSnapshot => {
-  const record = requireRecord(value, 'runtime sidebar projection must be object.', 'invalid-sidebar');
+export const validateRuntimeSidebarProjection = (value: unknown): RuntimeSidebarShellSnapshot => {
+  const record = requireRecord(
+    value,
+    'runtime sidebar projection must be object.',
+    'invalid-sidebar',
+  );
   if (record['present'] === true) {
     return validatePresentSidebar(record);
   }
@@ -231,9 +237,7 @@ export const validateRuntimeSidebarProjection = (
   };
 };
 
-export const validateNavigationEnvelopeShell = (
-  value: unknown,
-): NavigationShellSnapshot => {
+export const validateNavigationEnvelopeShell = (value: unknown): NavigationShellSnapshot => {
   const record = requireRecord(value, 'shell must be object.', 'invalid-shell');
   const headerHtml = record['headerHtml'];
   if (!isString(headerHtml) || headerHtml.trim().length === 0) {
@@ -243,6 +247,8 @@ export const validateNavigationEnvelopeShell = (
   return {
     headerHtml,
     sidebarProjection:
-      record['sidebarProjection'] === null ? null : validatePayloadSidebar(record['sidebarProjection']),
+      record['sidebarProjection'] === null
+        ? null
+        : validatePayloadSidebar(record['sidebarProjection']),
   };
 };

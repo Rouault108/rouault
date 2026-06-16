@@ -92,7 +92,11 @@ export const normalizeBasePath = (value: unknown): string => {
     return '';
   }
 
-  if (basePath !== basePath.trim() || WHITESPACE_RE.test(basePath) || hasAsciiControlCharacter(basePath)) {
+  if (
+    basePath !== basePath.trim() ||
+    WHITESPACE_RE.test(basePath) ||
+    hasAsciiControlCharacter(basePath)
+  ) {
     fail('invalid-base-path', 'basePath must not include whitespace or control characters.');
   }
 

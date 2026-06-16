@@ -46,7 +46,11 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
           whenReady: () => Promise<void>;
         })
       | null;
-    if (!router || typeof router.navigate !== 'function' || typeof router.whenReady !== 'function') {
+    if (
+      !router ||
+      typeof router.navigate !== 'function' ||
+      typeof router.whenReady !== 'function'
+    ) {
       throw new Error('app-router.navigate() が利用できません');
     }
 
@@ -69,12 +73,14 @@ const readTocSyncState = async (page: Page): Promise<TocSyncState> =>
       controllerExists: controller instanceof HTMLElement,
       desktopActiveId: desktopActiveLink?.getAttribute('data-heading-id') ?? null,
       desktopActiveLabel:
-        desktopActiveLink?.querySelector<HTMLElement>('.layout-toc__link-label')?.textContent?.trim() ??
-        null,
+        desktopActiveLink
+          ?.querySelector<HTMLElement>('.layout-toc__link-label')
+          ?.textContent?.trim() ?? null,
       mobileActiveId: mobileActiveLink?.getAttribute('data-heading-id') ?? null,
       mobileActiveLabel:
-        mobileActiveLink?.querySelector<HTMLElement>('.layout-toc__link-label')?.textContent?.trim() ??
-        null,
+        mobileActiveLink
+          ?.querySelector<HTMLElement>('.layout-toc__link-label')
+          ?.textContent?.trim() ?? null,
     };
   });
 

@@ -145,9 +145,7 @@ export class TreeItem extends LitElement {
       display: flex;
       align-self: stretch;
       inline-size: calc(var(--tree-item-ancestor-rail-count, 0) * var(--tree-item-indent-step));
-      min-inline-size: calc(
-        var(--tree-item-ancestor-rail-count, 0) * var(--tree-item-indent-step)
-      );
+      min-inline-size: calc(var(--tree-item-ancestor-rail-count, 0) * var(--tree-item-indent-step));
       flex: 0 0 calc(var(--tree-item-ancestor-rail-count, 0) * var(--tree-item-indent-step));
     }
 
@@ -931,9 +929,7 @@ export class TreeItem extends LitElement {
           <span class="current-slot is-branch" aria-hidden="true">
             <span class="current-slot-line"></span>
             <span class="expand-icon">
-              <span class="expand-glyph">
-                ${renderStaticIconTemplate('chevron-right')}
-              </span>
+              <span class="expand-glyph"> ${renderStaticIconTemplate('chevron-right')} </span>
             </span>
           </span>
         `

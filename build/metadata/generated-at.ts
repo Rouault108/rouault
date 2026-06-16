@@ -12,6 +12,7 @@ export const createBuildGeneratedAtOnce = (explicit?: string | undefined): strin
     return generatedAtOnce;
   }
 
-  generatedAtOnce = resolveGeneratedAt(explicit) ?? requireGeneratedAtInput(new Date().toISOString());
+  generatedAtOnce =
+    resolveGeneratedAt(explicit) ?? requireGeneratedAtInput(new Date().toISOString());
   return generatedAtOnce;
 };

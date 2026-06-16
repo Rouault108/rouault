@@ -25,9 +25,10 @@ export const normalizeGeneratedDocumentRoutePathname = (value: unknown): string 
   }
   let pathname: string;
   try {
-    pathname = trimmed.startsWith('http://') || trimmed.startsWith('https://')
-      ? new URL(trimmed).pathname
-      : new URL(trimmed, 'https://rouault.invalid').pathname;
+    pathname =
+      trimmed.startsWith('http://') || trimmed.startsWith('https://')
+        ? new URL(trimmed).pathname
+        : new URL(trimmed, 'https://rouault.invalid').pathname;
   } catch {
     return null;
   }
@@ -134,6 +135,9 @@ export const resolveGeneratedDocumentCurrentUrlFromHtmlFile = (options: {
   readonly htmlFilePath: string;
   readonly siteUrlContext: SiteUrlContext;
 }): string => {
-  const pathname = resolveContentPathnameFromHtmlFileOrThrow(options.outputDir, options.htmlFilePath);
+  const pathname = resolveContentPathnameFromHtmlFileOrThrow(
+    options.outputDir,
+    options.htmlFilePath,
+  );
   return `${options.siteUrlContext.siteOrigin}${options.siteUrlContext.basePath}${pathname}`;
 };

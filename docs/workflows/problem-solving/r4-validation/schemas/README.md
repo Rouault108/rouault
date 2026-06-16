@@ -36,7 +36,6 @@ JSON Schemaは、必須field、型、enum、pattern、条件付き必須項目�
 - phase_execution_event_logとphase_evidence_mapのqualified_phase_id対応が成立すること
 ```
 
-
 ## ArtifactKey表記
 
 Markdown本文では、簡略表記として `ART-001@rev-0003` を許可します。JSON Schema入力では、ArtifactKeyを次のobject表現へ正規化します。
@@ -56,7 +55,6 @@ Manifest Entryの`reason`は`correct` / `revoke`用の変更理由です。`add`
 
 Schemaがpassしても、validator意味制約がfailまたはmanual-review-requiredなら完了扱いにしません。
 
-
 ## R4 Execution Ledger Profile制約
 
 `r4-execution-ledger.schema.json`では、top-levelの`resolution_manifest`、`phase_execution_event_log[*].resolution_manifest`、`phase_evidence_map[*].resolution_manifest`のすべてにProfile別制約を適用します。R4-Sでは`manifest_kind=lightweight-resolution-manifest`、R4-I / R4-Aでは`manifest_kind=artifact-manifest`かつ`manifest_anchor_id`は非空・`N/A`不可です。
@@ -70,8 +68,6 @@ Schemaがpassしても、validator意味制約がfailまたはmanual-review-requ
 
 `artifact-manifest.schema.json`では、R4-I / R4-Aの完全性固定の正本として、Issue ID、Manifest参照、Artifact ID、Entry ID、public locator、registered_byなどの空文字列を許容しません。
 
-
-
 ## v79補足: `null` / 空配列 / N/A理由の運用
 
 `phase_evidence_map`では、`evidence_record_artifact_keys`が1件以上ある場合、`evidence_record_na_reason`は`null`です。`evidence_record_artifact_keys`が空配列`[]`の場合、`evidence_record_na_reason`は非空文字列です。`phase_r_stage=R3`では、`evidence_record_artifact_keys`は1件以上でなければなりません。
@@ -83,14 +79,12 @@ Schemaがpassしても、validator意味制約がfailまたはmanual-review-requ
 
 `phase_evidence_map.verification_required`はJSON Schema上booleanです。Markdown表でも原則として`true` / `false`を記録します。旧表現の`要` / `不要`を受け取る場合、validatorはJSON Schema検証前に`要 -> true`、`不要 -> false`へ正規化しなければなりません。
 
-
 ## v79補足: R4-A / A2補強
 
 - `phase_necessity_evaluation_log`は必須であり、空配列にしてはいけません。Schema上もrequired + `minItems: 1`を要求します。
 - R4 Execution Event Logの`evidence_ids`は、Evidenceがない場合は空配列`[]`で表します。`N/A`文字列は使いません。
 - `related_ids_na_reason`には、最低限`Failure|Cause|Change|Success|Verification`のいずれかの種別語を含めます。nullになっている全種別の網羅はvalidator意味制約で検証します。
 - Closure / A2系Schemaでも、ID、locator、actor、method、verification evidence ID等の意味を持つ文字列は空文字列を許容しません。
-
 
 ## v82補足: validatorとサンプルセット
 
@@ -111,7 +105,6 @@ Schemaがpassしても、validator意味制約がfailまたはmanual-review-requ
 - 主要ID重複
 ```
 
-
 ### v82 Event列整合制約
 
 Phase Execution Event Logは単発eventではなく、`qualified_phase_id`ごとの状態遷移列として検証します。各Phaseの最初のeventは`event_class=initialization`かつ`N/A -> planned`でなければなりません。後続eventでは、直前eventの`to_status`と現在eventの`from_status`が一致しなければなりません。`cancelled`または`superseded`へ到達した後に後続eventを追加してはいけません。
@@ -125,7 +118,6 @@ transition: ready -> blocked, in-progress -> blocked, blocked -> ready
 outcome: in-progress -> passed, in-progress -> failed
 retirement: planned / ready / in-progress / blocked -> cancelled, passed / failed -> superseded
 ```
-
 
 ## v83補足: structural / completion mode
 
@@ -142,7 +134,6 @@ optional-not-run          -> cancelled
 planned / ready / in-progress / blocked / failed 終端 -> completion不可
 superseded終端 -> terminal eventのreasonに superseded by / replacement / replaced by のいずれかを含み、かつ置換先R4P-* Phase IDまたはIssue incomplete参照を含む場合のみ許容
 ```
-
 
 ## v85補足: superseded置換先、event chronology、current_plan_revision上限
 

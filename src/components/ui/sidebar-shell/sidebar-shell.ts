@@ -161,7 +161,6 @@ export class UiSidebarShell extends LitElement {
         background: Canvas;
         border-right: var(--border-width, 1px) solid CanvasText;
       }
-
     }
 
     @media (prefers-reduced-motion: reduce) {

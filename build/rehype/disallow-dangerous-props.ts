@@ -1,7 +1,13 @@
 import { parseRelTokens } from '../../shared/link/rel-tokens.js';
 import { detectUnsafeHref } from '../../shared/link/unsafe-href-detector.js';
-import { validateMediaUrl, sanitizeImageSrcset } from '../../shared/media/media-source-attributes.js';
-import { RehypeLinkContractError, type RehypeLinkContractErrorReason } from './link-contract-error.js';
+import {
+  validateMediaUrl,
+  sanitizeImageSrcset,
+} from '../../shared/media/media-source-attributes.js';
+import {
+  RehypeLinkContractError,
+  type RehypeLinkContractErrorReason,
+} from './link-contract-error.js';
 import { type HastNode, type VFileLike } from './hast-utils.js';
 
 type UrlAttributePolicy = 'link' | 'media' | 'media-srcset' | 'cite' | 'forbidden';
@@ -28,7 +34,15 @@ const URL_ATTRIBUTE_POLICIES = new Map<string, UrlAttributePolicy>([
 
 const ALWAYS_FORBIDDEN_ELEMENTS = new Set(['iframe', 'object', 'embed', 'base', 'link', 'script']);
 const ALWAYS_FORBIDDEN_ATTRIBUTES = new Set(['srcdoc']);
-const SVG_MATH_URL_ATTRIBUTES = new Set(['href', 'xlink:href', 'src', 'data', 'poster', 'action', 'formaction']);
+const SVG_MATH_URL_ATTRIBUTES = new Set([
+  'href',
+  'xlink:href',
+  'src',
+  'data',
+  'poster',
+  'action',
+  'formaction',
+]);
 const SVG_MATH_ELEMENTS = new Set(['svg', 'math']);
 const ALLOWED_STYLE_PROPERTIES = new Set([
   '--ui-ol-counter-reset',
@@ -48,7 +62,8 @@ const throwContractError = (
 
 const getClassList = (value: unknown): string[] => {
   if (typeof value === 'string') return value.split(/\s+/u).filter(Boolean);
-  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string' && item.length > 0);
+  if (Array.isArray(value))
+    return value.filter((item): item is string => typeof item === 'string' && item.length > 0);
   return [];
 };
 
@@ -56,10 +71,17 @@ const getNodeClassList = (node: HastNode): string[] =>
   getClassList(node.properties?.['className'] ?? node.properties?.['class']);
 
 const isWithinKatex = (node: HastNode, parentWithinKatex: boolean): boolean =>
-  parentWithinKatex || getNodeClassList(node).some((className) => className === 'katex' || className.startsWith('katex-'));
+  parentWithinKatex ||
+  getNodeClassList(node).some(
+    (className) => className === 'katex' || className.startsWith('katex-'),
+  );
 
 const isWithinShiki = (node: HastNode, parentWithinShiki: boolean): boolean =>
-  parentWithinShiki || getNodeClassList(node).some((className) => className === 'shiki' || className === 'shiki-themes' || className.startsWith('shiki-'));
+  parentWithinShiki ||
+  getNodeClassList(node).some(
+    (className) =>
+      className === 'shiki' || className === 'shiki-themes' || className.startsWith('shiki-'),
+  );
 
 const getStylePropertyNames = (styleValue: string): string[] => {
   const propertyNames: string[] = [];
@@ -75,7 +97,8 @@ const getStylePropertyNames = (styleValue: string): string[] => {
   return propertyNames;
 };
 
-const getStringProperty = (value: unknown): string | null => typeof value === 'string' ? value : null;
+const getStringProperty = (value: unknown): string | null =>
+  typeof value === 'string' ? value : null;
 
 const validateLinkHref = (value: string, file: VFileLike | undefined): void => {
   const unsafe = detectUnsafeHref(value);
@@ -91,29 +114,55 @@ const validateLinkHref = (value: string, file: VFileLike | undefined): void => {
 const validateMediaAttribute = (value: string, file: VFileLike | undefined): void => {
   const result = validateMediaUrl(value, { allowDataImage: true });
   if (!result.ok) {
-    throwContractError(file, 'unsafe-url-bearing-attribute', `unsafe media URL attribute is forbidden (${result.reason})`);
+    throwContractError(
+      file,
+      'unsafe-url-bearing-attribute',
+      `unsafe media URL attribute is forbidden (${result.reason})`,
+    );
   }
 };
 
 const validateSrcsetAttribute = (value: string, file: VFileLike | undefined): void => {
   if (sanitizeImageSrcset(value) === undefined) {
-    throwContractError(file, 'unsafe-url-bearing-attribute', 'unsafe srcset URL attribute is forbidden');
+    throwContractError(
+      file,
+      'unsafe-url-bearing-attribute',
+      'unsafe srcset URL attribute is forbidden',
+    );
   }
 };
 
 const validateCiteAttribute = (value: string, file: VFileLike | undefined): void => {
   const unsafe = detectUnsafeHref(value);
   if (!unsafe.ok) {
-    throwContractError(file, unsafe.reason === 'url-with-credentials' ? 'url-with-credentials' : 'unsafe-url-bearing-attribute', `unsafe cite URL is forbidden (${unsafe.reason})`);
+    throwContractError(
+      file,
+      unsafe.reason === 'url-with-credentials'
+        ? 'url-with-credentials'
+        : 'unsafe-url-bearing-attribute',
+      `unsafe cite URL is forbidden (${unsafe.reason})`,
+    );
   }
   let parsed: URL;
   try {
     parsed = new URL(value);
   } catch {
-    return throwContractError(file, 'unsafe-url-bearing-attribute', 'cite must be an absolute http(s) URL');
+    return throwContractError(
+      file,
+      'unsafe-url-bearing-attribute',
+      'cite must be an absolute http(s) URL',
+    );
   }
-  if ((parsed.protocol !== 'http:' && parsed.protocol !== 'https:') || parsed.username.length > 0 || parsed.password.length > 0) {
-    throwContractError(file, 'unsafe-url-bearing-attribute', 'cite must be an absolute http(s) URL without credentials');
+  if (
+    (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') ||
+    parsed.username.length > 0 ||
+    parsed.password.length > 0
+  ) {
+    throwContractError(
+      file,
+      'unsafe-url-bearing-attribute',
+      'cite must be an absolute http(s) URL without credentials',
+    );
   }
 };
 
@@ -143,7 +192,11 @@ const validateUrlBearingAttribute = (
   const policy = URL_ATTRIBUTE_POLICIES.get(`${normalizedTag}:${normalizedAttribute}`);
 
   if (withinSvgMath && SVG_MATH_URL_ATTRIBUTES.has(normalizedAttribute)) {
-    throwContractError(file, 'unsafe-url-bearing-attribute', `SVG/MathML attribute ${normalizedAttribute} is not allowed in note HTML`);
+    throwContractError(
+      file,
+      'unsafe-url-bearing-attribute',
+      `SVG/MathML attribute ${normalizedAttribute} is not allowed in note HTML`,
+    );
   }
 
   if (policy === undefined) {
@@ -151,11 +204,19 @@ const validateUrlBearingAttribute = (
   }
 
   if (policy === 'forbidden') {
-    throwContractError(file, 'unsafe-url-bearing-attribute', `${normalizedTag}[${normalizedAttribute}] is not allowed in note HTML`);
+    throwContractError(
+      file,
+      'unsafe-url-bearing-attribute',
+      `${normalizedTag}[${normalizedAttribute}] is not allowed in note HTML`,
+    );
   }
 
   if (typeof rawValue !== 'string') {
-    return throwContractError(file, 'unsafe-url-bearing-attribute', `${normalizedTag}[${normalizedAttribute}] must be a string`);
+    return throwContractError(
+      file,
+      'unsafe-url-bearing-attribute',
+      `${normalizedTag}[${normalizedAttribute}] must be a string`,
+    );
   }
 
   if (policy === 'link') validateLinkHref(rawValue, file);
@@ -172,7 +233,12 @@ const validateUrlBearingAttribute = (
  */
 export function rehypeDisallowDangerousProps() {
   return (tree: unknown, file?: VFileLike) => {
-    const visit = (node: unknown, parentWithinKatex = false, parentWithinShiki = false, parentWithinSvgMath = false): void => {
+    const visit = (
+      node: unknown,
+      parentWithinKatex = false,
+      parentWithinShiki = false,
+      parentWithinSvgMath = false,
+    ): void => {
       if (!node || typeof node !== 'object') return;
 
       const current = node as HastNode;
@@ -183,7 +249,11 @@ export function rehypeDisallowDangerousProps() {
 
       if (current.type === 'element' && current.properties) {
         if (ALWAYS_FORBIDDEN_ELEMENTS.has(tagName)) {
-          throwContractError(file, 'unsafe-url-bearing-attribute', `${tagName} is not allowed in note HTML`);
+          throwContractError(
+            file,
+            'unsafe-url-bearing-attribute',
+            `${tagName} is not allowed in note HTML`,
+          );
         }
 
         validateTargetAndRel(current, file);
@@ -192,27 +262,53 @@ export function rehypeDisallowDangerousProps() {
           const normalizedName = rawName.trim().toLowerCase();
 
           if (/^on/u.test(normalizedName)) {
-            throwContractError(file, 'unsafe-url-bearing-attribute', `event handler attribute ${normalizedName} is not allowed`);
+            throwContractError(
+              file,
+              'unsafe-url-bearing-attribute',
+              `event handler attribute ${normalizedName} is not allowed`,
+            );
           }
 
           if (ALWAYS_FORBIDDEN_ATTRIBUTES.has(normalizedName)) {
-            throwContractError(file, 'unsafe-url-bearing-attribute', `${normalizedName} is not allowed`);
+            throwContractError(
+              file,
+              'unsafe-url-bearing-attribute',
+              `${normalizedName} is not allowed`,
+            );
           }
 
-          validateUrlBearingAttribute(tagName, normalizedName, rawValue, file, currentWithinSvgMath);
+          validateUrlBearingAttribute(
+            tagName,
+            normalizedName,
+            rawValue,
+            file,
+            currentWithinSvgMath,
+          );
 
           if (normalizedName !== 'style') continue;
           if (typeof rawValue !== 'string') {
-            return throwContractError(file, 'unsafe-url-bearing-attribute', 'style attribute must be a string');
+            return throwContractError(
+              file,
+              'unsafe-url-bearing-attribute',
+              'style attribute must be a string',
+            );
           }
           const styleNames = getStylePropertyNames(rawValue);
           if (styleNames.length === 0) {
-            throwContractError(file, 'unsafe-url-bearing-attribute', 'empty style attribute is not allowed');
+            throwContractError(
+              file,
+              'unsafe-url-bearing-attribute',
+              'empty style attribute is not allowed',
+            );
           }
           if (currentWithinKatex || currentWithinShiki) continue;
           for (const styleName of styleNames) {
             if (!ALLOWED_STYLE_PROPERTIES.has(styleName)) {
-              throwContractError(file, 'unsafe-url-bearing-attribute', `style property ${styleName} is not allowed`);
+              throwContractError(
+                file,
+                'unsafe-url-bearing-attribute',
+                `style property ${styleName} is not allowed`,
+              );
             }
           }
         }

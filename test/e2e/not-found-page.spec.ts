@@ -21,7 +21,11 @@ const navigateToMissingRoute = async (page: Page, url: string) => {
       __lastNotFoundNavigationResult?: unknown;
     };
 
-    if (!router || typeof router.navigate !== 'function' || typeof router.whenReady !== 'function') {
+    if (
+      !router ||
+      typeof router.navigate !== 'function' ||
+      typeof router.whenReady !== 'function'
+    ) {
       throw new Error('app-router.navigate() が利用できません');
     }
 
@@ -60,7 +64,9 @@ const tabUntilFocused = async (page: Page, expectedLabel: string): Promise<void>
         text: active?.textContent?.trim() ?? '',
         isFocusable:
           active instanceof HTMLElement &&
-          active.matches('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+          active.matches(
+            'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          ),
       };
     });
 
@@ -162,10 +168,7 @@ test.describe('not-found page', () => {
   });
 
   test('keyboard navigation can reach fallback links', async ({ page, browserName }) => {
-    test.skip(
-      browserName === 'webkit',
-      'WebKit は環境設定次第で Tab によるリンク到達可否が変わる',
-    );
+    test.skip(browserName === 'webkit', 'WebKit は環境設定次第で Tab によるリンク到達可否が変わる');
 
     await page.goto('/404.html');
 

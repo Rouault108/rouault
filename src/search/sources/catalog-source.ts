@@ -169,7 +169,6 @@ export async function loadCatalogSourceBatch(input: {
       continue;
     }
 
-
     const description = normalizeString(item.description);
     const tags = normalizeStringArray(item.tags);
     const keywords = normalizeStringArray(item.keywords);

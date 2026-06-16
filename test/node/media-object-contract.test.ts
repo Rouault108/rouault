@@ -184,10 +184,7 @@ describe('media object contract', () => {
     expect(() => assertMediaManifestContract(manifest)).toThrow(/objectKey/u);
 
     const contentTypeMismatch = buildManifest(['content/_assets/a.jpg']);
-    const contentTypeMismatchItem = getManifestItem(
-      contentTypeMismatch,
-      'content/_assets/a.jpg',
-    );
+    const contentTypeMismatchItem = getManifestItem(contentTypeMismatch, 'content/_assets/a.jpg');
     const output = contentTypeMismatchItem.variants.reading.outputs[0];
     if (!output) {
       throw new Error('fixture output missing');

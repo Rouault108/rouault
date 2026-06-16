@@ -268,10 +268,26 @@ describe('release state and media attempt schemas', () => {
 
   it.each([
     ['bodyByteSize mismatch', verifiedObject({ bodyByteSize: 13 }), /bodyByteSize mismatch/u],
-    ['contentSha256 mismatch', verifiedObject({ bodySha256: 'b'.repeat(64) }), /contentSha256 mismatch/u],
-    ['Cache-Control mismatch', verifiedObject({ cacheControl: 'no-store' as typeof MEDIA_DELIVERY_CACHE_CONTROL }), /Cache-Control mismatch/u],
-    ['publicUrl mismatch', verifiedObject({ publicUrl: 'https://media.example.com/other.avif' }), /publicUrl mismatch/u],
-    ['objectKey mismatch', verifiedObject({ objectKey: buildMediaObjectKey('b'.repeat(64), 'thumb', 'avif') }), /object sets differ/u],
+    [
+      'contentSha256 mismatch',
+      verifiedObject({ bodySha256: 'b'.repeat(64) }),
+      /contentSha256 mismatch/u,
+    ],
+    [
+      'Cache-Control mismatch',
+      verifiedObject({ cacheControl: 'no-store' as typeof MEDIA_DELIVERY_CACHE_CONTROL }),
+      /Cache-Control mismatch/u,
+    ],
+    [
+      'publicUrl mismatch',
+      verifiedObject({ publicUrl: 'https://media.example.com/other.avif' }),
+      /publicUrl mismatch/u,
+    ],
+    [
+      'objectKey mismatch',
+      verifiedObject({ objectKey: buildMediaObjectKey('b'.repeat(64), 'thumb', 'avif') }),
+      /object sets differ/u,
+    ],
   ])('rejects %s', (_label, object, errorPattern) => {
     expect(() => assertUploadedVerifiedObjectSetConsistency([uploadedObject()], [object])).toThrow(
       errorPattern,

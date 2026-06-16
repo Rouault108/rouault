@@ -15,7 +15,9 @@ const getStatusElement = (button: HTMLButtonElement): HTMLElement | null => {
       return status;
     }
   }
-  return button.closest('[data-copy-control]')?.querySelector<HTMLElement>('[data-copy-status]') ?? null;
+  return (
+    button.closest('[data-copy-control]')?.querySelector<HTMLElement>('[data-copy-status]') ?? null
+  );
 };
 
 const setCopyState = (button: HTMLButtonElement, state: CopyState): void => {
@@ -43,7 +45,10 @@ const scheduleReset = (button: HTMLButtonElement): void => {
 
 const readTemplateCopyValue = (button: HTMLButtonElement, targetId: string): string | null => {
   const target = button.ownerDocument.getElementById(targetId);
-  if (!(target instanceof HTMLTemplateElement) || !target.matches('template[data-code-copy-source]')) {
+  if (
+    !(target instanceof HTMLTemplateElement) ||
+    !target.matches('template[data-code-copy-source]')
+  ) {
     return null;
   }
   return target.content.textContent;
@@ -81,7 +86,8 @@ const copyFromButton = async (button: HTMLButtonElement): Promise<void> => {
     return;
   }
   const value = resolveCopyValue(button);
-  const clipboard: Clipboard | undefined = 'clipboard' in navigator ? navigator.clipboard : undefined;
+  const clipboard: Clipboard | undefined =
+    'clipboard' in navigator ? navigator.clipboard : undefined;
   if (value === null || !clipboard || typeof clipboard.writeText !== 'function') {
     setCopyState(button, 'error');
     scheduleReset(button);

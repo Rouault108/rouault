@@ -19,9 +19,7 @@
       "plan_revision": 1,
       "necessity": "required",
       "evaluation_result": "required",
-      "evidence_ids": [
-        "E-NEC-001"
-      ],
+      "evidence_ids": ["E-NEC-001"],
       "timestamp": "2026-06-16T00:00:00Z",
       "actor": "human"
     },
@@ -31,9 +29,7 @@
       "plan_revision": 1,
       "necessity": "required",
       "evaluation_result": "required",
-      "evidence_ids": [
-        "E-NEC-002"
-      ],
+      "evidence_ids": ["E-NEC-002"],
       "timestamp": "2026-06-16T00:01:00Z",
       "actor": "human"
     }
@@ -61,9 +57,7 @@
       "timestamp": "2026-06-16T00:00:00Z",
       "actor": "human",
       "reason": "Initialize phase status.",
-      "evidence_ids": [
-        "E-EVT-IL-001"
-      ]
+      "evidence_ids": ["E-EVT-IL-001"]
     },
     {
       "event_id": "EVT-IL-002",
@@ -87,9 +81,7 @@
       "timestamp": "2026-06-16T00:00:01Z",
       "actor": "human",
       "reason": "Phase is ready.",
-      "evidence_ids": [
-        "E-EVT-IL-002"
-      ]
+      "evidence_ids": ["E-EVT-IL-002"]
     },
     {
       "event_id": "EVT-IL-003",
@@ -113,9 +105,7 @@
       "timestamp": "2026-06-16T00:00:02Z",
       "actor": "human",
       "reason": "Phase execution started.",
-      "evidence_ids": [
-        "E-EVT-IL-003"
-      ]
+      "evidence_ids": ["E-EVT-IL-003"]
     },
     {
       "event_id": "EVT-IL-004",
@@ -139,9 +129,7 @@
       "timestamp": "2026-06-16T00:00:03Z",
       "actor": "human",
       "reason": "Phase failed and requires revision.",
-      "evidence_ids": [
-        "E-EVT-IL-004"
-      ]
+      "evidence_ids": ["E-EVT-IL-004"]
     },
     {
       "event_id": "EVT-IL-005",
@@ -165,9 +153,7 @@
       "timestamp": "2026-06-16T00:00:04Z",
       "actor": "human",
       "reason": "Phase result superseded by replacement phase R4P-001-P2.",
-      "evidence_ids": [
-        "E-EVT-IL-005"
-      ]
+      "evidence_ids": ["E-EVT-IL-005"]
     },
     {
       "event_id": "EVT-IR-001",
@@ -191,9 +177,7 @@
       "timestamp": "2026-06-16T00:01:00Z",
       "actor": "human",
       "reason": "Initialize replacement phase status.",
-      "evidence_ids": [
-        "E-EVT-IR-001"
-      ]
+      "evidence_ids": ["E-EVT-IR-001"]
     },
     {
       "event_id": "EVT-IR-002",
@@ -217,9 +201,7 @@
       "timestamp": "2026-06-16T00:01:01Z",
       "actor": "human",
       "reason": "Replacement phase is ready.",
-      "evidence_ids": [
-        "E-EVT-IR-002"
-      ]
+      "evidence_ids": ["E-EVT-IR-002"]
     },
     {
       "event_id": "EVT-IR-003",
@@ -243,9 +225,7 @@
       "timestamp": "2026-06-16T00:01:02Z",
       "actor": "human",
       "reason": "Replacement phase execution started.",
-      "evidence_ids": [
-        "E-EVT-IR-003"
-      ]
+      "evidence_ids": ["E-EVT-IR-003"]
     },
     {
       "event_id": "EVT-IR-004",
@@ -269,9 +249,7 @@
       "timestamp": "2026-06-16T00:01:03Z",
       "actor": "human",
       "reason": "Replacement phase passed.",
-      "evidence_ids": [
-        "E-EVT-IR-004"
-      ]
+      "evidence_ids": ["E-EVT-IR-004"]
     }
   ],
   "phase_evidence_map": [
@@ -348,9 +326,7 @@
       "reason": null,
       "superseded_or_invalid_artifact_key": null,
       "superseded_or_invalid_artifact_ref": null,
-      "evidence_ids": [
-        "E-AVA-001"
-      ],
+      "evidence_ids": ["E-AVA-001"],
       "timestamp": "2026-06-16T00:00:00Z",
       "actor": "human"
     }

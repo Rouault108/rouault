@@ -23,9 +23,7 @@ describe('static empty state html renderer', () => {
     );
     expect(rendered).toContain('<div class="empty-hint__message" data-announce="off">');
     expect(rendered).toContain('<div class="empty-hint__icon" aria-hidden="true"></div>');
-    expect(rendered).toContain(
-      '<h2 class="empty-hint__heading">公開ノートはまだありません</h2>',
-    );
+    expect(rendered).toContain('<h2 class="empty-hint__heading">公開ノートはまだありません</h2>');
     expect(rendered).toContain(
       '<p class="empty-hint__description">ノートが公開されると、ここに最近更新した項目が表示されます。</p>',
     );
@@ -45,9 +43,7 @@ describe('static empty state html renderer', () => {
   });
 
   it('omits description when it is missing or blank', () => {
-    expect(renderEmptyStateHtml({ heading: 'Empty' })).not.toContain(
-      'empty-hint__description',
-    );
+    expect(renderEmptyStateHtml({ heading: 'Empty' })).not.toContain('empty-hint__description');
     expect(renderEmptyStateHtml({ heading: 'Empty', description: '' })).not.toContain(
       'empty-hint__description',
     );

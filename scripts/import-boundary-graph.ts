@@ -10,15 +10,17 @@ export interface ImportEdge {
 
 const isSourceFile = (path: string): boolean => /\.(?:ts|tsx|js|mjs)$/u.test(path);
 
-export const walkSourceFiles = (roots: readonly string[]): string[] => roots.flatMap((root) => {
-  const visit = (directory: string): string[] => readdirSync(directory).flatMap((entry) => {
-    const path = join(directory, entry);
-    const stat = statSync(path);
-    if (stat.isDirectory()) return visit(path);
-    return isSourceFile(path) ? [path] : [];
+export const walkSourceFiles = (roots: readonly string[]): string[] =>
+  roots.flatMap((root) => {
+    const visit = (directory: string): string[] =>
+      readdirSync(directory).flatMap((entry) => {
+        const path = join(directory, entry);
+        const stat = statSync(path);
+        if (stat.isDirectory()) return visit(path);
+        return isSourceFile(path) ? [path] : [];
+      });
+    return visit(root);
   });
-  return visit(root);
-});
 
 const normalizeProjectPath = (path: string): string => normalize(path).replace(/\\/gu, '/');
 
@@ -92,11 +94,26 @@ const productionForbiddenPatterns: readonly [RegExp, string][] = [
   [/\bLegacyClassifyLinkOptions\b/u, 'legacy link classification options must be removed'],
   [/classifyLinkHref\s*\(\s*href\b/u, 'legacy classifyLinkHref(href, ...) API must be removed'],
   [/\bDEFAULT_SITE_URL_CONTEXT\b/u, 'production code must not import DEFAULT_SITE_URL_CONTEXT'],
-  [new RegExp('\\b' + 'isRoutable' + 'LinkKind' + '\\b', 'u'), 'legacy routable predicate must not be used'],
-  [new RegExp('\\b' + 'isExternal' + 'LinkKind' + '\\b', 'u'), 'legacy external predicate must not be used'],
-  [new RegExp('\\b' + 'Browser' + 'LinkInterceptor' + '\\b', 'u'), 'legacy router interceptor export must not be used'],
-  [new RegExp('\\b' + 'HtmlDocument' + 'Fetcher' + '\\b', 'u'), 'HTML direct fetcher must not be used'],
-  [new RegExp('\\b' + 'navigateTo' + 'Url' + '\\b', 'u'), 'legacy imperative navigation API must not be used'],
+  [
+    new RegExp('\\b' + 'isRoutable' + 'LinkKind' + '\\b', 'u'),
+    'legacy routable predicate must not be used',
+  ],
+  [
+    new RegExp('\\b' + 'isExternal' + 'LinkKind' + '\\b', 'u'),
+    'legacy external predicate must not be used',
+  ],
+  [
+    new RegExp('\\b' + 'Browser' + 'LinkInterceptor' + '\\b', 'u'),
+    'legacy router interceptor export must not be used',
+  ],
+  [
+    new RegExp('\\b' + 'HtmlDocument' + 'Fetcher' + '\\b', 'u'),
+    'HTML direct fetcher must not be used',
+  ],
+  [
+    new RegExp('\\b' + 'navigateTo' + 'Url' + '\\b', 'u'),
+    'legacy imperative navigation API must not be used',
+  ],
 ];
 
 const productionForbiddenEdges: readonly [string, string, string][] = [
@@ -122,7 +139,9 @@ export const findProductionImportBoundaryViolations = (): Promise<string[]> => {
   for (const edge of collectImportEdges(roots)) {
     for (const [fromPrefix, toPrefix, reason] of productionForbiddenEdges) {
       if (edgeMatches(edge, fromPrefix, toPrefix)) {
-        violations.push(`production import boundary violation: ${edge.from} -> ${edge.specifier}: ${reason}`);
+        violations.push(
+          `production import boundary violation: ${edge.from} -> ${edge.specifier}: ${reason}`,
+        );
       }
     }
   }

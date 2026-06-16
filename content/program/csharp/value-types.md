@@ -22,18 +22,18 @@ C#における値型は変数が値そのものを直接保持する型である
 
 整数型には符号付き整数型と符号なし整数型がある。`sbyte`、`short`、`int`、`long`は符号付き整数型であり、`byte`、`ushort`、`uint`、`ulong`は符号なし整数型である。`nint`と`nuint`はネイティブサイズ整数型であり、32ビットプロセスでは32ビット、64ビットプロセスでは64ビットの大きさを持つ。`nint`と`nuint`は相互運用や低水準処理に関係する型であり、通常のドメイン値を表すために不用意に用いるべきではない。[^3]
 
-| C#型 | .NET上の表現 | 意味 |
-| --- | --- | --- |
-| `sbyte` | `System.SByte` | 符号付き8ビット整数 |
-| `byte` | `System.Byte` | 符号なし8ビット整数 |
-| `short` | `System.Int16` | 符号付き16ビット整数 |
-| `ushort` | `System.UInt16` | 符号なし16ビット整数 |
-| `int` | `System.Int32` | 符号付き32ビット整数 |
-| `uint` | `System.UInt32` | 符号なし32ビット整数 |
-| `long` | `System.Int64` | 符号付き64ビット整数 |
-| `ulong` | `System.UInt64` | 符号なし64ビット整数 |
-| `nint` | `System.IntPtr` | ネイティブサイズ符号付き整数 |
-| `nuint` | `System.UIntPtr` | ネイティブサイズ符号なし整数 |
+| C#型     | .NET上の表現     | 意味                         |
+| -------- | ---------------- | ---------------------------- |
+| `sbyte`  | `System.SByte`   | 符号付き8ビット整数          |
+| `byte`   | `System.Byte`    | 符号なし8ビット整数          |
+| `short`  | `System.Int16`   | 符号付き16ビット整数         |
+| `ushort` | `System.UInt16`  | 符号なし16ビット整数         |
+| `int`    | `System.Int32`   | 符号付き32ビット整数         |
+| `uint`   | `System.UInt32`  | 符号なし32ビット整数         |
+| `long`   | `System.Int64`   | 符号付き64ビット整数         |
+| `ulong`  | `System.UInt64`  | 符号なし64ビット整数         |
+| `nint`   | `System.IntPtr`  | ネイティブサイズ符号付き整数 |
+| `nuint`  | `System.UIntPtr` | ネイティブサイズ符号なし整数 |
 
 整数型を選ぶ際には範囲、相互運用、メモリ量、演算コスト、API契約を分けて考える。公開APIでは、単に「小さい値しか入らない」ことを理由に`byte`や`short`を選ぶと、呼び出し側で変換が増え、オーバーロード解決や数値昇格の見通しが悪くなる場合がある。通常の個数、長さ、添字、状態値には`int`が標準的な選択になりやすい。`long`は範囲が必要な場合に用いる。`uint`や`ulong`は負値を排除する契約を表現できるが、.NET API全体との整合や符号付き整数との混在に注意が必要である。
 
@@ -535,28 +535,28 @@ int first = list[0]; // boxingなしで扱える
 
 本ノートで扱った値型の性質は、以後の参照型、継承、ジェネリクス、変換、式評価、性能の章に接続される。特にboxing/unboxingは変換の章で、値型と`object`・インターフェイスの関係は継承とジェネリクスの章で、コピーと防御的コピーは`ref`、`in`、`out`、`Span<T>`の章で再度扱う。値型を正確に読むには、単に「値を直接持つ型」と覚えるだけでは不十分であり、既定値、コピー、boxing、初期化、API契約を同時に追う必要がある。
 
-[^1]: Ecma International, *ECMA-334: C# Language Specification*, 7th ed., December 2023, §8 Types; Microsoft Learn, *Types - C# language specification*, updated 2025-09-12, §8.3 Value types. 値型、非null許容値型、null許容値型、既定値、単純型、構造体型、列挙型の仕様上の整理。
+[^1]: Ecma International, _ECMA-334: C# Language Specification_, 7th ed., December 2023, §8 Types; Microsoft Learn, _Types - C# language specification_, updated 2025-09-12, §8.3 Value types. 値型、非null許容値型、null許容値型、既定値、単純型、構造体型、列挙型の仕様上の整理。
 
-[^2]: Ecma International, *ECMA-335: Common Language Infrastructure (CLI)*, 6th ed., June 2012. CTS、値型、boxing、メタデータ、実行時表現に関する規範的仕様。
+[^2]: Ecma International, _ECMA-335: Common Language Infrastructure (CLI)_, 6th ed., June 2012. CTS、値型、boxing、メタデータ、実行時表現に関する規範的仕様。
 
-[^3]: Microsoft Learn, *Integral numeric types - C# reference*, updated 2026-01-20. C#の整数型、対応する.NET型、値域、`nint`および`nuint`の整理。ただし、`nint`/`nuint`の仕様上の扱いについては、単純な別名ではなく`System.IntPtr`/`System.UIntPtr`で表現される型として[^1]を優先して読む。
+[^3]: Microsoft Learn, _Integral numeric types - C# reference_, updated 2026-01-20. C#の整数型、対応する.NET型、値域、`nint`および`nuint`の整理。ただし、`nint`/`nuint`の仕様上の扱いについては、単純な別名ではなく`System.IntPtr`/`System.UIntPtr`で表現される型として[^1]を優先して読む。
 
-[^4]: Microsoft Learn, *Floating-point numeric types - C# reference*, updated 2026-01-20. `float`、`double`、`decimal`の範囲、精度、既定値、丸め、十進小数表現の整理。
+[^4]: Microsoft Learn, _Floating-point numeric types - C# reference_, updated 2026-01-20. `float`、`double`、`decimal`の範囲、精度、既定値、丸め、十進小数表現の整理。
 
-[^5]: Microsoft Learn, *bool type - C# reference*, updated 2026-01-20. `bool`が`System.Boolean`の別名であり、値が`true`または`false`であること、条件式や三値論理との関係。
+[^5]: Microsoft Learn, _bool type - C# reference_, updated 2026-01-20. `bool`が`System.Boolean`の別名であり、値が`true`または`false`であること、条件式や三値論理との関係。
 
-[^6]: Microsoft Learn, *The char type - C# reference*, updated 2026-01-20. `char`が`System.Char`の別名であり、Unicode UTF-16コード単位を表すこと、および`string`との関係。
+[^6]: Microsoft Learn, _The char type - C# reference_, updated 2026-01-20. `char`が`System.Char`の別名であり、Unicode UTF-16コード単位を表すこと、および`string`との関係。
 
-[^7]: Microsoft Learn, *The checked and unchecked statements - C# reference*, updated 2026-01-20. `checked`/`unchecked`文脈、整数演算と変換、定数式、既定のオーバーフロー検査文脈の整理。
+[^7]: Microsoft Learn, _The checked and unchecked statements - C# reference_, updated 2026-01-20. `checked`/`unchecked`文脈、整数演算と変換、定数式、既定のオーバーフロー検査文脈の整理。
 
-[^8]: Microsoft Learn, *Nullable value types - C# reference*, updated 2026-01-20. `T?`、`System.Nullable<T>`、`HasValue`、`Value`、lifted operators、boxing、pattern matchingとの関係。
+[^8]: Microsoft Learn, _Nullable value types - C# reference_, updated 2026-01-20. `T?`、`System.Nullable<T>`、`HasValue`、`Value`、lifted operators、boxing、pattern matchingとの関係。
 
-[^9]: Microsoft Learn, *Enumeration types - C# reference*, updated 2026-01-14. enumが基底整数型の名前付き定数集合として定義されること、既定値、ゼロ値、フラグ列挙、`Enum.IsDefined`の整理。
+[^9]: Microsoft Learn, _Enumeration types - C# reference_, updated 2026-01-14. enumが基底整数型の名前付き定数集合として定義されること、既定値、ゼロ値、フラグ列挙、`Enum.IsDefined`の整理。
 
-[^10]: Microsoft Learn, *Enums - C# language specification*, §20. 列挙型の宣言、基底型、列挙メンバー、値の範囲、`System.Enum`、列挙型に対する演算の仕様上の整理。
+[^10]: Microsoft Learn, _Enums - C# language specification_, §20. 列挙型の宣言、基底型、列挙メンバー、値の範囲、`System.Enum`、列挙型に対する演算の仕様上の整理。
 
-[^11]: Microsoft Learn, *Structs - C# language specification*, updated 2025-12-09, §16. 構造体宣言、コピー、既定値、継承不可、boxing、コンストラクター、`readonly`構造体メンバーの仕様上の整理。
+[^11]: Microsoft Learn, _Structs - C# language specification_, updated 2025-12-09, §16. 構造体宣言、コピー、既定値、継承不可、boxing、コンストラクター、`readonly`構造体メンバーの仕様上の整理。
 
-[^12]: Microsoft Learn, *Parameterless struct constructors - C# feature specifications*, updated 2023-06-23; Microsoft Learn, *Auto-default structs - C# feature specifications*, updated 2023-06-23. C# 10以降の構造体パラメーターなしコンストラクター、インスタンスフィールド初期化子、`default`式、`new()`、配列初期化、およびC# 11以降のauto-default structsとの関係。
+[^12]: Microsoft Learn, _Parameterless struct constructors - C# feature specifications_, updated 2023-06-23; Microsoft Learn, _Auto-default structs - C# feature specifications_, updated 2023-06-23. C# 10以降の構造体パラメーターなしコンストラクター、インスタンスフィールド初期化子、`default`式、`new()`、配列初期化、およびC# 11以降のauto-default structsとの関係。
 
-[^13]: Microsoft Learn, *Record structs - C# feature specifications*, updated 2023-06-23. record structが値型であり、構造体と同じ制約を受けつつ、等値性、プロパティ、分解、`with`式などの合成メンバーを持つことの整理。
+[^13]: Microsoft Learn, _Record structs - C# feature specifications_, updated 2023-06-23. record structが値型であり、構造体と同じ制約を受けつつ、等値性、プロパティ、分解、`with`式などの合成メンバーを持つことの整理。

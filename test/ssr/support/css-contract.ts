@@ -198,7 +198,6 @@ export const readCssFile = (filePath: string): { cssText: string } => ({
   cssText: readFileSync(filePath, 'utf8'),
 });
 
-
 export interface CssDeclarationSummary {
   readonly selector: string;
   readonly property: string;

@@ -102,11 +102,7 @@ export const STATIC_FIRST_DELETION_TARGETS = [
     'src/components/ui/info-box/info-box.ts',
     'static info box HTML plus CSS module',
   ),
-  createDeletionTarget(
-    'ui-math',
-    'src/components/ui/math/math.ts',
-    'KaTeX static math output',
-  ),
+  createDeletionTarget('ui-math', 'src/components/ui/math/math.ts', 'KaTeX static math output'),
   createDeletionTarget('ui-ol', 'src/components/ui/ol/ol.ts', 'native ordered list output'),
   createDeletionTarget('ui-ul', 'src/components/ui/ul/ul.ts', 'native unordered list output'),
   createDeletionTarget('ui-score', 'src/components/ui/score/score.ts', 'static score SVG output'),

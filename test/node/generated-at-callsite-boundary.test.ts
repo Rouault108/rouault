@@ -41,7 +41,9 @@ describe('generatedAt call-site boundary', () => {
 
   it('createNavigationEnvelopeFromHtml は generatedAt を生成しないこと', () => {
     const source = readFileSync('build/navigation/emit-navigation-artifacts.ts', 'utf8');
-    const createFunctionSource = source.slice(source.indexOf('export const createNavigationEnvelopeFromHtml'));
+    const createFunctionSource = source.slice(
+      source.indexOf('export const createNavigationEnvelopeFromHtml'),
+    );
 
     expect(createFunctionSource).not.toMatch(/new Date\(\)\.toISOString\(\)/u);
     expect(createFunctionSource).not.toContain('createBuildGeneratedAtOnce');

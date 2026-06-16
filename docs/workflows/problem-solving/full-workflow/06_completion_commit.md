@@ -20,7 +20,6 @@
 
 R0では、最小再検証をN/Aにできます。その場合は、diff確認で挙動影響がないことを確認します。
 
-
 ## 1.1 未実装確認
 
 git diff精査では、差分の妥当性だけでなく、必要な変更が漏れていないかも確認します。
@@ -292,7 +291,6 @@ Issue全体を修正なしで閉じる終端判断では、次を満たします
 - Manifest AnchorがManifest ID / Revision / path / SHA-256 / Git commit SHAまたは外部署名を固定している
 - invalidなManifest AnchorをClosureまたはFinal Verificationに使用していない
 ```
-
 
 ## 4.6b A2 Evidence Integrity Attestationの完了条件
 

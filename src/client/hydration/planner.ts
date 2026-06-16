@@ -62,9 +62,7 @@ const hasExecutableHydrationDirective = (element: Element): boolean =>
 const isSelfScopedCustomElement = (element: Element): boolean => {
   const scopeId = readHydrationScopeId(element);
   return (
-    scopeId !== null &&
-    isAutonomousCustomElementName(element) &&
-    scopeId === element.localName
+    scopeId !== null && isAutonomousCustomElementName(element) && scopeId === element.localName
   );
 };
 
@@ -131,19 +129,14 @@ const readPlanItem = (element: Element, scopeId: string): HydrationPlanItem | nu
   };
 };
 
-const createIsExcluded = (
-  options: HydrationPlanOptions,
-): ((element: Element) => boolean) => {
+const createIsExcluded = (options: HydrationPlanOptions): ((element: Element) => boolean) => {
   const excludedSubtrees = options.excludeSubtrees ?? [];
 
   return (element: Element): boolean =>
     excludedSubtrees.some((excluded) => excluded === element || excluded.contains(element));
 };
 
-const findScopeRoots = (
-  root: ParentNode,
-  isExcluded: (element: Element) => boolean,
-): Element[] => {
+const findScopeRoots = (root: ParentNode, isExcluded: (element: Element) => boolean): Element[] => {
   const roots: Element[] = [];
 
   if (isElement(root) && !isExcluded(root) && isHydrationScopeRootCandidate(root, true)) {
@@ -154,9 +147,7 @@ const findScopeRoots = (
     const candidates = Array.from(root.querySelectorAll(`[${HYDRATION_SCOPE_ATTRIBUTE}]`));
     roots.push(
       ...candidates.filter(
-        (candidate) =>
-          !isExcluded(candidate) &&
-          isHydrationScopeRootCandidate(candidate, false),
+        (candidate) => !isExcluded(candidate) && isHydrationScopeRootCandidate(candidate, false),
       ),
     );
   }
@@ -164,10 +155,7 @@ const findScopeRoots = (
   return roots;
 };
 
-const hasDeclaredForeignOrMalformedScope = (
-  element: Element,
-  scopeId: string,
-): boolean => {
+const hasDeclaredForeignOrMalformedScope = (element: Element, scopeId: string): boolean => {
   if (!hasHydrationScopeAttribute(element)) {
     return false;
   }
@@ -179,10 +167,7 @@ const hasDeclaredForeignOrMalformedScope = (
   return readHydrationScopeId(element) !== scopeId;
 };
 
-const findOwningScopeRoot = (
-  element: Element,
-  currentScope: Element,
-): Element | null => {
+const findOwningScopeRoot = (element: Element, currentScope: Element): Element | null => {
   let candidate: Element | null = hasHydrationKey(element) ? element.parentElement : element;
 
   while (candidate) {

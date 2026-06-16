@@ -120,7 +120,9 @@ const renderFilterSummaryDetail = (selectedTags: readonly string[]): string => {
 
 const renderEmptyState = (state: SearchState): string => {
   const hasConditions = state.q.length > 0 || state.tags.length > 0;
-  const heading = hasConditions ? '一致するメモが見つかりません' : 'キーワードまたはタグで絞り込めます';
+  const heading = hasConditions
+    ? '一致するメモが見つかりません'
+    : 'キーワードまたはタグで絞り込めます';
   const description = hasConditions
     ? '検索語を変えるか、タグの組み合わせや演算子を見直してください。'
     : 'ヘッダーのダイアログは即時検索、ここではタグ演算子も含めて一覧で比較できます。';

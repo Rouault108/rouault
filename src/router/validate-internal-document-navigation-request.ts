@@ -7,7 +7,10 @@ import {
   stripBasePathFromPathname,
 } from '../../shared/url/normalize-rouault-url.js';
 import type { InternalDocumentRouteManifestState } from './internal-document-route-manifest-loader.js';
-import { toInternalDocumentNormalizedUrl, type InternalDocumentNormalizedUrl } from './internal-document-normalized-url.js';
+import {
+  toInternalDocumentNormalizedUrl,
+  type InternalDocumentNormalizedUrl,
+} from './internal-document-normalized-url.js';
 
 export type NavigationValidationFailureReason =
   | 'disallowed-url'
@@ -42,16 +45,27 @@ export const validateInternalDocumentNavigationRequest = (options: {
     return { ok: false, reason: 'disallowed-url' };
   }
 
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') return { ok: false, reason: 'disallowed-url' };
-  if (url.username.length > 0 || url.password.length > 0) return { ok: false, reason: 'disallowed-url' };
-  if (url.origin !== options.siteUrlContext.siteOrigin) return { ok: false, reason: 'disallowed-url' };
-  if (!isPathnameInsideBasePath(url.pathname, options.siteUrlContext.basePath)) return { ok: false, reason: 'disallowed-url' };
-  if (options.routeManifestState.status !== 'loaded') return { ok: false, reason: reasonFor(options.routeManifestState) };
+  if (url.protocol !== 'http:' && url.protocol !== 'https:')
+    return { ok: false, reason: 'disallowed-url' };
+  if (url.username.length > 0 || url.password.length > 0)
+    return { ok: false, reason: 'disallowed-url' };
+  if (url.origin !== options.siteUrlContext.siteOrigin)
+    return { ok: false, reason: 'disallowed-url' };
+  if (!isPathnameInsideBasePath(url.pathname, options.siteUrlContext.basePath))
+    return { ok: false, reason: 'disallowed-url' };
+  if (options.routeManifestState.status !== 'loaded')
+    return { ok: false, reason: reasonFor(options.routeManifestState) };
 
   const pathname = stripBasePathFromPathname(url.pathname, options.siteUrlContext.basePath);
-  if (!options.routeManifestState.routeSet.has(pathname) && isDefaultInternalResourcePathname(pathname)) {
+  if (
+    !options.routeManifestState.routeSet.has(pathname) &&
+    isDefaultInternalResourcePathname(pathname)
+  ) {
     return { ok: false, reason: 'disallowed-url' };
   }
 
-  return { ok: true, normalizedUrl: toInternalDocumentNormalizedUrl(`${url.pathname}${url.search}${url.hash}`) };
+  return {
+    ok: true,
+    normalizedUrl: toInternalDocumentNormalizedUrl(`${url.pathname}${url.search}${url.hash}`),
+  };
 };

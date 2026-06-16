@@ -66,22 +66,21 @@ const createRouteManifest = (basePath = '') => ({
 const writeJson = (filePath: string, value: unknown): Promise<void> =>
   writeFile(filePath, JSON.stringify(value), 'utf8');
 
-const createFixtureRepo = async (options: {
-  readonly basePath?: string;
-  readonly catalog?: unknown;
-  readonly manifest?: unknown;
-  readonly pagefindJs?: string;
-  readonly pagefindEntry?: string;
-} = {}): Promise<string> => {
+const createFixtureRepo = async (
+  options: {
+    readonly basePath?: string;
+    readonly catalog?: unknown;
+    readonly manifest?: unknown;
+    readonly pagefindJs?: string;
+    readonly pagefindEntry?: string;
+  } = {},
+): Promise<string> => {
   const repoRoot = await mkdtemp(path.join(tmpdir(), 'rouault-search-artifacts-'));
   const distRoot = path.join(repoRoot, 'dist');
   await mkdir(path.join(distRoot, 'assets'), { recursive: true });
   await mkdir(path.join(distRoot, 'pagefind'), { recursive: true });
 
-  await writeJson(
-    path.join(distRoot, 'search-catalog.json'),
-    options.catalog ?? expectedItems,
-  );
+  await writeJson(path.join(distRoot, 'search-catalog.json'), options.catalog ?? expectedItems);
   await writeJson(
     path.join(distRoot, 'assets', 'internal-document-routes.json'),
     options.manifest ?? createRouteManifest(options.basePath ?? ''),
@@ -338,7 +337,10 @@ describe('production search artifact assertion', () => {
   });
 
   it('tags / keywords の順序を含む payload mismatch を失敗させること', async () => {
-    const cases: readonly { readonly catalog: readonly SearchCatalogItem[]; readonly message: RegExp }[] = [
+    const cases: readonly {
+      readonly catalog: readonly SearchCatalogItem[];
+      readonly message: RegExp;
+    }[] = [
       {
         catalog: [{ ...expectedItem, tags: ['production', 'search'] }],
         message: /tags mismatch/,
@@ -462,7 +464,11 @@ describe('production search artifact assertion', () => {
       },
       {
         prepare: async (repoRoot) => {
-          await writeFile(path.join(repoRoot, 'dist', 'pagefind', 'pagefind-entry.json'), '', 'utf8');
+          await writeFile(
+            path.join(repoRoot, 'dist', 'pagefind', 'pagefind-entry.json'),
+            '',
+            'utf8',
+          );
         },
         message: /Pagefind entry is empty/,
       },

@@ -77,7 +77,9 @@ const assertFailedAttemptShape = async (failedPhase: FailedReleasePhase): Promis
     return;
   }
 
-  const mediaAttempt = assertMediaDeliveryAttemptManifest(await readJson(MEDIA_DELIVERY_ATTEMPT_PATH));
+  const mediaAttempt = assertMediaDeliveryAttemptManifest(
+    await readJson(MEDIA_DELIVERY_ATTEMPT_PATH),
+  );
   if (mediaAttempt.status !== 'succeeded') {
     throw new Error('[release-state] Pages failure requires successful media delivery');
   }

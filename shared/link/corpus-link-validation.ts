@@ -1,6 +1,9 @@
 import type { SiteUrlContext } from '../site/site-url-context.js';
 import { isPathnameInsideBasePath } from '../site/site-url-context.js';
-import { applyBasePathToRenderHref, stripBasePathFromPathname } from '../url/normalize-rouault-url.js';
+import {
+  applyBasePathToRenderHref,
+  stripBasePathFromPathname,
+} from '../url/normalize-rouault-url.js';
 
 export interface ValidateCorpusHrefForRenderOptions {
   readonly href: string;
@@ -31,8 +34,7 @@ export const validateCorpusHrefForRender = (
   }
 
   if (
-    parsed.protocol !== 'http:' &&
-    parsed.protocol !== 'https:' ||
+    (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') ||
     parsed.username.length > 0 ||
     parsed.password.length > 0 ||
     parsed.origin !== options.siteUrlContext.siteOrigin
@@ -40,7 +42,10 @@ export const validateCorpusHrefForRender = (
     return null;
   }
 
-  if (options.inputKind === 'active-render' && !isPathnameInsideBasePath(parsed.pathname, options.siteUrlContext.basePath)) {
+  if (
+    options.inputKind === 'active-render' &&
+    !isPathnameInsideBasePath(parsed.pathname, options.siteUrlContext.basePath)
+  ) {
     return null;
   }
 

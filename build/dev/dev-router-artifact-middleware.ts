@@ -125,19 +125,24 @@ export function createDevelopmentRouterArtifactMiddleware(options: {
         return;
       }
       const html = readFileSync(htmlFilePath, 'utf8');
-      const envelope = createNavigationEnvelopeFromHtml(html, htmlFilePath, {
-        mode: 'strict-artifact',
-        buildId,
-        generatedAt,
-      }, {
-        siteUrlContext: options.siteUrlContext,
-        currentUrl: resolveGeneratedDocumentCurrentUrlFromHtmlFile({
-          outputDir: outputDirectory,
-          htmlFilePath,
+      const envelope = createNavigationEnvelopeFromHtml(
+        html,
+        htmlFilePath,
+        {
+          mode: 'strict-artifact',
+          buildId,
+          generatedAt,
+        },
+        {
           siteUrlContext: options.siteUrlContext,
-        }),
-        isInternalDocumentPathname: options.isInternalDocumentPathname,
-      });
+          currentUrl: resolveGeneratedDocumentCurrentUrlFromHtmlFile({
+            outputDir: outputDirectory,
+            htmlFilePath,
+            siteUrlContext: options.siteUrlContext,
+          }),
+          isInternalDocumentPathname: options.isInternalDocumentPathname,
+        },
+      );
       const body = `${JSON.stringify(envelope, null, 2)}\n`;
 
       response.statusCode = 200;

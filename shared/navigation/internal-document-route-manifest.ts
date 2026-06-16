@@ -8,7 +8,6 @@ import {
 import { INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION } from './internal-document-route-manifest-path.js';
 import { createSiteUrlContext, type SiteUrlContext } from '../site/site-url-context.js';
 
-
 export interface InternalDocumentRouteManifest {
   readonly version: typeof INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION;
   readonly buildId: string;
@@ -39,14 +38,13 @@ export class InternalDocumentRouteManifestContractError extends Error {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const fail = (
-  reason: InternalDocumentRouteManifestContractErrorReason,
-  message: string,
-): never => {
+const fail = (reason: InternalDocumentRouteManifestContractErrorReason, message: string): never => {
   throw new InternalDocumentRouteManifestContractError(reason, message);
 };
 
-const requireManifestVersion = (value: unknown): typeof INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION => {
+const requireManifestVersion = (
+  value: unknown,
+): typeof INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION => {
   if (value !== INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION) {
     fail('invalid-manifest-version', 'Internal document route manifest version is invalid.');
   }
@@ -54,8 +52,14 @@ const requireManifestVersion = (value: unknown): typeof INTERNAL_DOCUMENT_ROUTE_
 };
 
 const requireRoutes = (value: unknown): readonly string[] => {
-  if (!Array.isArray(value) || !value.every((route): route is string => typeof route === 'string')) {
-    return fail('invalid-manifest-routes', 'Internal document route manifest routes must be strings.');
+  if (
+    !Array.isArray(value) ||
+    !value.every((route): route is string => typeof route === 'string')
+  ) {
+    return fail(
+      'invalid-manifest-routes',
+      'Internal document route manifest routes must be strings.',
+    );
   }
   const routes: string[] = value;
 
@@ -101,7 +105,10 @@ export const parseInternalDocumentRouteManifest = (
       basePath: manifestRecord['basePath'],
     });
   } catch {
-    return fail('invalid-manifest-site-url-context', 'Internal document route manifest site URL context is invalid.');
+    return fail(
+      'invalid-manifest-site-url-context',
+      'Internal document route manifest site URL context is invalid.',
+    );
   }
 
   try {
@@ -119,7 +126,10 @@ export const parseInternalDocumentRouteManifest = (
       throw error;
     }
 
-    return fail('invalid-manifest-build-metadata', 'Internal document route manifest build metadata is invalid.');
+    return fail(
+      'invalid-manifest-build-metadata',
+      'Internal document route manifest build metadata is invalid.',
+    );
   }
 };
 
@@ -134,7 +144,10 @@ export const assertInternalDocumentRouteManifestMatches = (options: {
   readonly expectedSiteUrlContext: SiteUrlContext;
 }): 'ok' | 'stale' => {
   if (options.expectedVersion !== INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION) {
-    fail('invalid-manifest-version', 'Internal document route manifest expected version is invalid.');
+    fail(
+      'invalid-manifest-version',
+      'Internal document route manifest expected version is invalid.',
+    );
   }
 
   if (options.manifest.version !== INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION) {
@@ -149,7 +162,10 @@ export const assertInternalDocumentRouteManifestMatches = (options: {
     options.manifest.siteOrigin !== expectedSiteUrlContext.siteOrigin ||
     options.manifest.basePath !== expectedSiteUrlContext.basePath
   ) {
-    fail('invalid-manifest-site-url-context', 'Internal document route manifest site URL context mismatch.');
+    fail(
+      'invalid-manifest-site-url-context',
+      'Internal document route manifest site URL context mismatch.',
+    );
   }
 
   return options.manifest.buildId === options.expectedBuildId ? 'ok' : 'stale';

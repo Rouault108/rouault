@@ -30,9 +30,7 @@ describe('static-first removed or reduced legacy tags', () => {
 
   it('includes ui-checkbox through the deletion target inventory', () => {
     expect(STATIC_FIRST_DELETION_TARGETS.map((target) => target.tag)).toContain('ui-checkbox');
-    expect(STATIC_FIRST_MIGRATION_TARGETS.map((target) => target.tag)).not.toContain(
-      'ui-checkbox',
-    );
+    expect(STATIC_FIRST_MIGRATION_TARGETS.map((target) => target.tag)).not.toContain('ui-checkbox');
     expect(STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS).toContain('ui-checkbox');
   });
 

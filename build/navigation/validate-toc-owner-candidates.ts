@@ -45,9 +45,9 @@ export const validateTocOwnerCandidates = (
   for (const candidate of normalizedCandidates) {
     if (candidate.ownerId === null) {
       issues.push({
-      status: 'missing-owner',
-      ownerId: null,
-      targetPath: candidate.targetPath,
+        status: 'missing-owner',
+        ownerId: null,
+        targetPath: candidate.targetPath,
       });
       continue;
     }

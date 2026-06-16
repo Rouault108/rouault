@@ -27,7 +27,12 @@ const setFloatingRectFromStyle = (
     value: (): DOMRect => {
       const left = Number.parseFloat(element.style.left || '0');
       const top = Number.parseFloat(element.style.top || '0');
-      return new DOMRect(Number.isFinite(left) ? left : 0, Number.isFinite(top) ? top : 0, width, height);
+      return new DOMRect(
+        Number.isFinite(left) ? left : 0,
+        Number.isFinite(top) ? top : 0,
+        width,
+        height,
+      );
     },
   });
 };
@@ -143,5 +148,4 @@ describe('anchored-overlay-controller browser contract', () => {
       floating.remove();
     }
   });
-
 });

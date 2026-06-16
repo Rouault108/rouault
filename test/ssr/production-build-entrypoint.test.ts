@@ -115,12 +115,8 @@ describe('production build entrypoint contract', () => {
     );
     expect(productionBuildEntrypoint).toContain('buildLabel: entrypointBuildLabel,');
     expect(productionBuildEntrypoint).toContain('ROUAULT_BUILD_ID: buildMetadata.buildId,');
-    expect(productionBuildEntrypoint).toContain(
-      'ROUAULT_BUILD_LABEL: buildMetadata.buildLabel,',
-    );
-    expect(productionBuildEntrypoint).toContain(
-      'ROUAULT_GENERATED_AT: buildMetadata.generatedAt,',
-    );
+    expect(productionBuildEntrypoint).toContain('ROUAULT_BUILD_LABEL: buildMetadata.buildLabel,');
+    expect(productionBuildEntrypoint).toContain('ROUAULT_GENERATED_AT: buildMetadata.generatedAt,');
     expect(productionBuildEntrypoint).toContain('pnpmArgs: PRODUCTION_BUILD_PNPM_ARGS,');
     expect(PRODUCTION_BUILD_PNPM_ARGS).to.deep.equal(['build']);
     expect(productionBuildEntrypoint).toMatch(
@@ -147,8 +143,9 @@ describe('production build entrypoint contract', () => {
     expect(buildEntrypoint).toContain('resolveProductionSiteUrlContext({');
     expect(buildEntrypoint).toContain('ROUAULT_SITE_ORIGIN: siteUrlContext.siteOrigin,');
     expect(buildEntrypoint).toContain('ROUAULT_BASE_PATH: siteUrlContext.basePath,');
-    expect(RUN_BUILD_STEPS.find((step) => step.label === 'emit-navigation-artifacts')?.pnpmArgs).to
-      .deep.equal(['exec', 'tsx', 'scripts/emit-navigation-artifacts.ts']);
+    expect(
+      RUN_BUILD_STEPS.find((step) => step.label === 'emit-navigation-artifacts')?.pnpmArgs,
+    ).to.deep.equal(['exec', 'tsx', 'scripts/emit-navigation-artifacts.ts']);
     expect(buildEntrypoint).toContain('for (const step of RUN_BUILD_STEPS) {');
     expect(buildEntrypoint).toContain('pnpmArgs: step.pnpmArgs,');
     expect(buildEntrypoint).toMatch(

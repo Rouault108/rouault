@@ -77,11 +77,7 @@
   "$defs": {
     "manifestRef": {
       "type": "object",
-      "required": [
-        "manifest_id",
-        "manifest_revision",
-        "immutable_relative_path"
-      ],
+      "required": ["manifest_id", "manifest_revision", "immutable_relative_path"],
       "additionalProperties": false,
       "properties": {
         "manifest_id": {
@@ -100,10 +96,7 @@
     },
     "artifactKey": {
       "type": "object",
-      "required": [
-        "artifact_id",
-        "artifact_revision"
-      ],
+      "required": ["artifact_id", "artifact_revision"],
       "additionalProperties": false,
       "properties": {
         "artifact_id": {
@@ -136,67 +129,39 @@
           "minLength": 1
         },
         "action": {
-          "enum": [
-            "add",
-            "correct",
-            "revoke"
-          ]
+          "enum": ["add", "correct", "revoke"]
         },
         "artifact_key": {
           "$ref": "#/$defs/artifactKey"
         },
         "storage_class": {
-          "enum": [
-            "repository-redacted",
-            "local-private",
-            "ci-private",
-            "external-restricted"
-          ]
+          "enum": ["repository-redacted", "local-private", "ci-private", "external-restricted"]
         },
         "immutable_locator": {
           "type": "string",
           "minLength": 1
         },
         "sha256": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "pattern": "^[a-f0-9]{64}$"
         },
         "git_blob_id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "digest_status": {
-          "enum": [
-            "not-recorded",
-            "public-digest",
-            "private-or-restricted-digest"
-          ]
+          "enum": ["not-recorded", "public-digest", "private-or-restricted-digest"]
         },
         "digest_optional_reason": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "supersedes_entry_id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "reason": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "registered_at": {
@@ -216,14 +181,10 @@
                 "type": "null"
               }
             },
-            "required": [
-              "sha256"
-            ]
+            "required": ["sha256"]
           },
           "then": {
-            "required": [
-              "digest_optional_reason"
-            ],
+            "required": ["digest_optional_reason"],
             "properties": {
               "digest_optional_reason": {
                 "type": "string",
@@ -239,14 +200,10 @@
                 "const": "public-digest"
               }
             },
-            "required": [
-              "digest_status"
-            ]
+            "required": ["digest_status"]
           },
           "then": {
-            "required": [
-              "sha256"
-            ],
+            "required": ["sha256"],
             "properties": {
               "sha256": {
                 "type": "string",
@@ -262,14 +219,10 @@
                 "const": "correct"
               }
             },
-            "required": [
-              "action"
-            ]
+            "required": ["action"]
           },
           "then": {
-            "required": [
-              "supersedes_entry_id"
-            ],
+            "required": ["supersedes_entry_id"],
             "properties": {
               "supersedes_entry_id": {
                 "type": "string",
@@ -285,15 +238,10 @@
                 "const": "revoke"
               }
             },
-            "required": [
-              "action"
-            ]
+            "required": ["action"]
           },
           "then": {
-            "required": [
-              "supersedes_entry_id",
-              "reason"
-            ],
+            "required": ["supersedes_entry_id", "reason"],
             "properties": {
               "supersedes_entry_id": {
                 "type": "string",
@@ -313,9 +261,7 @@
                 "const": "add"
               }
             },
-            "required": [
-              "action"
-            ]
+            "required": ["action"]
           },
           "then": {
             "properties": {

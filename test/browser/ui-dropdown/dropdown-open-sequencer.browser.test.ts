@@ -40,7 +40,8 @@ const createSnapshot = (
     referenceRect: overrides.referenceRect ?? new DOMRectReadOnly(12, 12, 40, 32),
     floatingWidth,
     floatingHeight,
-    measuredRect: overrides.measuredRect ?? new DOMRectReadOnly(x, y, floatingWidth, floatingHeight),
+    measuredRect:
+      overrides.measuredRect ?? new DOMRectReadOnly(x, y, floatingWidth, floatingHeight),
     viewportCorrected: overrides.viewportCorrected ?? false,
     ...overrides,
   };
@@ -245,10 +246,7 @@ describe('dropdown-open-sequencer browser contract', () => {
     sequencer.begin({
       recomputePosition: async () => {
         recomputeCount += 1;
-        snapshot =
-          recomputeCount === 1
-            ? createSnapshot({ y: 260 })
-            : createSnapshot({ y: 44 });
+        snapshot = recomputeCount === 1 ? createSnapshot({ y: 260 }) : createSnapshot({ y: 44 });
         return true;
       },
       isStillOpen: () => true,
@@ -315,7 +313,12 @@ describe('dropdown-open-sequencer browser contract', () => {
       },
     });
 
-    await waitUntil(() => readyCount === 1, 1000, 5, 'viewport 補正 snapshot が ready になりません');
+    await waitUntil(
+      () => readyCount === 1,
+      1000,
+      5,
+      'viewport 補正 snapshot が ready になりません',
+    );
   });
 
   it('fallback timer と RAF が競合しても完了通知が二重発火しないこと', async () => {

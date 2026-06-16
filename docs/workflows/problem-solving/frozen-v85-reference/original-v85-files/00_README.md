@@ -39,35 +39,35 @@
 
 このファイル群では、同じ概念を複数ファイルで参照します。運用時の定義ドリフトを避けるため、次を正本とします。
 
-| 定義 | 正本ファイル | 備考 |
-|---|---|---|
-| R0〜R4の入口判定、R別成果物、削除・移行・縮退のR判定 | `01_entry_and_risk.md` | 他ファイルのR判定記述と衝突した場合はこのファイルを優先する |
-| 標準フロー、実装開始ゲート、再現性・Evidence作成方針 | `02_core_workflow.md` | 実装後順序の詳細は `06_completion_commit.md` を正本とする |
-| 成果物テンプレート、R2-lite Run Card、Evidence、Intermittent Failure Evidence、Synthetic Fixture Record、A2 Evidence Integrity Attestation、Lightweight Resolution Manifest、Artifact Manifest、Manifest Anchor、R4 Execution Ledger、Implementation Phase Outcome Record、Verification-only / Integration verification Record、Final R4 Disposition Verification、R4 Completion Record、Closure Manifest、Closure Attestation、Verification Matrix | `03_templates.md` | 成果物の項目名はこのファイルを正本にする。R4 Completion RecordはR4-S / R4-Iの完了記録であり、R4-Aでは任意要約である |
-| Rouault固有契約、標準Verification Set、performance候補 | `04_rouault_policy_overlay.md` | DOM / CSS / ARIA / state / generated files / search / security等の契約観点の正本 |
-| ChatGPT / Codexへ渡すプロンプト | `05_chatgpt_codex_prompts.md` | プロンプト内容は上記正本に従属する |
-| 実装後順序、完了条件、再ループ、ロールバック、コミット前確認 | `06_completion_commit.md` | 実装後順序と完了判定の正本 |
-| 人間、ChatGPT、Codexの役割分担 | `07_roles.md` | Codex利用境界の正本 |
-| R4 / A2機械可読契約、正規化、Schema、検証CLI契約 | `08_r4_schema_and_validation.md`、`schemas/` | R4 Lightweight Resolution Manifest / Artifact Manifest / Ledger / ClosureおよびA2 Evidence Integrity Attestationの構造制約とvalidator意味制約の正本 |
+| 定義                                                                                                                                                                                                                                                                                                                                                                                                                                                | 正本ファイル                                 | 備考                                                                                                                                                |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R0〜R4の入口判定、R別成果物、削除・移行・縮退のR判定                                                                                                                                                                                                                                                                                                                                                                                                | `01_entry_and_risk.md`                       | 他ファイルのR判定記述と衝突した場合はこのファイルを優先する                                                                                         |
+| 標準フロー、実装開始ゲート、再現性・Evidence作成方針                                                                                                                                                                                                                                                                                                                                                                                                | `02_core_workflow.md`                        | 実装後順序の詳細は `06_completion_commit.md` を正本とする                                                                                           |
+| 成果物テンプレート、R2-lite Run Card、Evidence、Intermittent Failure Evidence、Synthetic Fixture Record、A2 Evidence Integrity Attestation、Lightweight Resolution Manifest、Artifact Manifest、Manifest Anchor、R4 Execution Ledger、Implementation Phase Outcome Record、Verification-only / Integration verification Record、Final R4 Disposition Verification、R4 Completion Record、Closure Manifest、Closure Attestation、Verification Matrix | `03_templates.md`                            | 成果物の項目名はこのファイルを正本にする。R4 Completion RecordはR4-S / R4-Iの完了記録であり、R4-Aでは任意要約である                                 |
+| Rouault固有契約、標準Verification Set、performance候補                                                                                                                                                                                                                                                                                                                                                                                              | `04_rouault_policy_overlay.md`               | DOM / CSS / ARIA / state / generated files / search / security等の契約観点の正本                                                                    |
+| ChatGPT / Codexへ渡すプロンプト                                                                                                                                                                                                                                                                                                                                                                                                                     | `05_chatgpt_codex_prompts.md`                | プロンプト内容は上記正本に従属する                                                                                                                  |
+| 実装後順序、完了条件、再ループ、ロールバック、コミット前確認                                                                                                                                                                                                                                                                                                                                                                                        | `06_completion_commit.md`                    | 実装後順序と完了判定の正本                                                                                                                          |
+| 人間、ChatGPT、Codexの役割分担                                                                                                                                                                                                                                                                                                                                                                                                                      | `07_roles.md`                                | Codex利用境界の正本                                                                                                                                 |
+| R4 / A2機械可読契約、正規化、Schema、検証CLI契約                                                                                                                                                                                                                                                                                                                                                                                                    | `08_r4_schema_and_validation.md`、`schemas/` | R4 Lightweight Resolution Manifest / Artifact Manifest / Ledger / ClosureおよびA2 Evidence Integrity Attestationの構造制約とvalidator意味制約の正本 |
 
 正本同士が矛盾する場合は、修正を開始せず、矛盾をIssue BriefまたはR2-lite Run Cardに記録してから、該当ファイルを更新します。
 
 ## ファイル構成
 
-| ファイル | 用途 |
-|---|---|
-| `00_README.md` | ファイル群の全体説明 |
-| `01_entry_and_risk.md` | 最初に読む入口判定、重大度、リスク段階、R別成果物 |
-| `02_core_workflow.md` | 問題解決の標準フロー |
-| `03_templates.md` | 成果物テンプレート |
-| `04_rouault_policy_overlay.md` | Rouault固有の契約・設計チェックリスト |
-| `05_chatgpt_codex_prompts.md` | ChatGPT / Codexに渡すためのプロンプト集 |
-| `06_completion_commit.md` | 完了条件、再ループ、ロールバック、コミット前整理 |
-| `07_roles.md` | 人間、ChatGPT、Codexの役割分担 |
-| `08_r4_schema_and_validation.md` | R4 / A2の機械可読契約、正規化、Schema、検証CLI契約 |
-| `schemas/` | R4 / A2主要成果物のJSON Schema雛形 |
-| `tools/` | JSON Schema検証とvalidator意味制約を実行する最小実装 |
-| `samples/` | validator確認用の正常/異常最小JSONサンプル |
+| ファイル                         | 用途                                                 |
+| -------------------------------- | ---------------------------------------------------- |
+| `00_README.md`                   | ファイル群の全体説明                                 |
+| `01_entry_and_risk.md`           | 最初に読む入口判定、重大度、リスク段階、R別成果物    |
+| `02_core_workflow.md`            | 問題解決の標準フロー                                 |
+| `03_templates.md`                | 成果物テンプレート                                   |
+| `04_rouault_policy_overlay.md`   | Rouault固有の契約・設計チェックリスト                |
+| `05_chatgpt_codex_prompts.md`    | ChatGPT / Codexに渡すためのプロンプト集              |
+| `06_completion_commit.md`        | 完了条件、再ループ、ロールバック、コミット前整理     |
+| `07_roles.md`                    | 人間、ChatGPT、Codexの役割分担                       |
+| `08_r4_schema_and_validation.md` | R4 / A2の機械可読契約、正規化、Schema、検証CLI契約   |
+| `schemas/`                       | R4 / A2主要成果物のJSON Schema雛形                   |
+| `tools/`                         | JSON Schema検証とvalidator意味制約を実行する最小実装 |
+| `samples/`                       | validator確認用の正常/異常最小JSONサンプル           |
 
 ## v85更新要点
 
@@ -114,7 +114,6 @@ Evidence後にR段階を確定または昇格
   ↓
 R4では 08_r4_schema_and_validation.md と schemas/
 ```
-
 
 ## 成果物の保存場所と命名規則
 
@@ -187,7 +186,6 @@ R0で必要なのは次だけです。
 - git diff確認
 ```
 
-
 ## v79までの主な補強点
 
 v79までに、R4-S / R4-I / R4-AのProfile分離、Manifest / Ledger / Closure / A2の機械可読契約、`null` / `[]` / `N/A`の使い分け、JSON Schema制約、validator意味制約を整理しています。
@@ -223,7 +221,6 @@ v79までに、R4-S / R4-I / R4-AのProfile分離、Manifest / Ledger / Closure 
 - `related_ids_na_reason`は、`null`になっている関連ID種別をすべて含むことをvalidator意味制約として明記し、テンプレート例も追加する
 - `phase_execution_event_log`と`phase_evidence_map`のQualified Phase ID対応をvalidator意味制約として明記し、失敗時はCompletion / Closure不可とする
 ```
-
 
 ## v79最終補強点
 

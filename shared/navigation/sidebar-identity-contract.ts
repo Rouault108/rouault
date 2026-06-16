@@ -58,10 +58,7 @@ export const assertValidSidebarId = (value: unknown, label = 'sidebarId'): strin
   return result.value;
 };
 
-export const assertValidSidebarStateScopeId = (
-  value: unknown,
-  label = 'stateScopeId',
-): string => {
+export const assertValidSidebarStateScopeId = (value: unknown, label = 'stateScopeId'): string => {
   const result = validateSidebarStateScopeIdInput(value);
   if (result.kind !== 'valid') {
     throw new Error(`${label} is invalid: ${result.kind}`);

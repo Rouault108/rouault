@@ -25,7 +25,8 @@ export interface ResolveComputedColorOptions {
   readonly tokenName?: string;
 }
 
-const clamp = (value: number, min: number, max: number): number => Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(Math.max(value, min), max);
 
 const toRgba = (r: number, g: number, b: number, a = 1): Rgba => ({
   r: Math.round(clamp(r, 0, 255)),
@@ -87,7 +88,8 @@ const splitSpaceTopLevel = (value: string): string[] => {
       current += char;
       if (escaped) escaped = false;
       else if (char === '\\') escaped = true;
-      else if ((quote === 'single' && char === "'") || (quote === 'double' && char === '"')) quote = null;
+      else if ((quote === 'single' && char === "'") || (quote === 'double' && char === '"'))
+        quote = null;
       continue;
     }
     if (char === "'") {
@@ -139,7 +141,12 @@ const linearToEncodedChannel = (linear: number): number => {
   return encoded * 255;
 };
 
-interface Oklab { readonly l: number; readonly a: number; readonly b: number; readonly alpha: number }
+interface Oklab {
+  readonly l: number;
+  readonly a: number;
+  readonly b: number;
+  readonly alpha: number;
+}
 
 const rgbaToOklab = (color: Rgba): Oklab => {
   const r = srgbToLinear(color.r);
@@ -184,10 +191,16 @@ export const parseColor = (value: string): Rgba => {
   if (rgb?.groups) {
     const body = rgb.groups['body'] ?? '';
     const slashParts = splitTopLevel(body, '/');
-    const channels = slashParts.length === 2 ? splitSpaceTopLevel(slashParts[0] ?? '') : splitTopLevel(body);
+    const channels =
+      slashParts.length === 2 ? splitSpaceTopLevel(slashParts[0] ?? '') : splitTopLevel(body);
     const alpha = slashParts.length === 2 ? parseAlpha(slashParts[1]) : parseAlpha(channels[3]);
     if (channels.length < 3) throw new Error(`RGB 色を解釈できません: ${value}`);
-    return toRgba(parseRgbChannel(channels[0] ?? ''), parseRgbChannel(channels[1] ?? ''), parseRgbChannel(channels[2] ?? ''), alpha);
+    return toRgba(
+      parseRgbChannel(channels[0] ?? ''),
+      parseRgbChannel(channels[1] ?? ''),
+      parseRgbChannel(channels[2] ?? ''),
+      alpha,
+    );
   }
 
   const srgb = trimmed.match(/^color\(\s*srgb\s+(?<body>.*)\)$/u);
@@ -195,7 +208,12 @@ export const parseColor = (value: string): Rgba => {
     const parts = splitTopLevel(srgb.groups['body'] ?? '', '/');
     const channels = splitSpaceTopLevel(parts[0] ?? '');
     if (channels.length < 3) throw new Error(`color(srgb ...) を解釈できません: ${value}`);
-    return toRgba(Number(channels[0]) * 255, Number(channels[1]) * 255, Number(channels[2]) * 255, parseAlpha(parts[1]));
+    return toRgba(
+      Number(channels[0]) * 255,
+      Number(channels[1]) * 255,
+      Number(channels[2]) * 255,
+      parseAlpha(parts[1]),
+    );
   }
 
   const cssNumber = '[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?';
@@ -208,7 +226,12 @@ export const parseColor = (value: string): Rgba => {
   );
   if (oklch?.groups) {
     const l = Number(oklch.groups['l']) / (oklch.groups['lp'] === '%' ? 100 : 1);
-    return oklchToRgba(l, Number(oklch.groups['c']), Number(oklch.groups['h']), parseAlpha(oklch.groups['alpha']));
+    return oklchToRgba(
+      l,
+      Number(oklch.groups['c']),
+      Number(oklch.groups['h']),
+      parseAlpha(oklch.groups['alpha']),
+    );
   }
 
   const oklab = trimmed.match(
@@ -279,7 +302,11 @@ const expandVars = (value: string, contextElement: Element, seen = new Set<strin
         } finally {
           seen.delete(token);
         }
-        return expandVars(`${value.slice(0, varStart)}${replacement}${value.slice(index + 1)}`, contextElement, seen);
+        return expandVars(
+          `${value.slice(0, varStart)}${replacement}${value.slice(index + 1)}`,
+          contextElement,
+          seen,
+        );
       }
       depth -= 1;
     }
@@ -287,10 +314,22 @@ const expandVars = (value: string, contextElement: Element, seen = new Set<strin
   throw new Error(`var(...) が閉じられていません: ${value}`);
 };
 
-const resolveOklchFrom = (value: string, contextElement: Element, property: ColorProperty, options: ResolveComputedColorOptions): Rgba | null => {
-  const match = value.match(/^oklch\(\s*from\s+(?<source>var\(--(?:primary|fg-default)\))\s+l\s+c\s+h\s*\/\s*(?<alpha>[0-9.]+%?)\s*\)$/u);
+const resolveOklchFrom = (
+  value: string,
+  contextElement: Element,
+  property: ColorProperty,
+  options: ResolveComputedColorOptions,
+): Rgba | null => {
+  const match = value.match(
+    /^oklch\(\s*from\s+(?<source>var\(--(?:primary|fg-default)\))\s+l\s+c\s+h\s*\/\s*(?<alpha>[0-9.]+%?)\s*\)$/u,
+  );
   if (!match?.groups) return null;
-  const source = resolveComputedColor(match.groups['source'] ?? '', contextElement, property, options);
+  const source = resolveComputedColor(
+    match.groups['source'] ?? '',
+    contextElement,
+    property,
+    options,
+  );
   const lab = rgbaToOklab(source);
   return oklabToRgba({ ...lab, alpha: parseAlpha(match.groups['alpha']) });
 };
@@ -304,12 +343,18 @@ const parseColorMixPart = (part: string): { color: string; percentage?: number }
   return { color: part };
 };
 
-const resolveColorMix = (value: string, contextElement: Element, property: ColorProperty, options: ResolveComputedColorOptions): Rgba | null => {
+const resolveColorMix = (
+  value: string,
+  contextElement: Element,
+  property: ColorProperty,
+  options: ResolveComputedColorOptions,
+): Rgba | null => {
   const match = value.match(/^color-mix\(\s*in\s+oklab\s*,\s*(?<body>.*)\)$/u);
   if (!match?.groups) return null;
   const parts = splitTopLevel(match.groups['body'] ?? '');
   if (parts.length !== 2) throw new Error(`color-mix(in oklab, ...) は2色だけ対応します: ${value}`);
-  if (parts.some((part) => part.includes('color-mix('))) throw new Error(`nested color-mix は非対応です: ${value}`);
+  if (parts.some((part) => part.includes('color-mix(')))
+    throw new Error(`nested color-mix は非対応です: ${value}`);
   const first = parseColorMixPart(parts[0] ?? '');
   const second = parseColorMixPart(parts[1] ?? '');
   let p1: number;
@@ -354,7 +399,11 @@ const resolveColorMix = (value: string, contextElement: Element, property: Color
   });
 };
 
-const normalizeViaProbe = (value: string, contextElement: Element, property: ColorProperty): string | null => {
+const normalizeViaProbe = (
+  value: string,
+  contextElement: Element,
+  property: ColorProperty,
+): string | null => {
   const root = contextElement.getRootNode();
   const probe = document.createElement('span');
   probe.style.position = 'absolute';
@@ -377,10 +426,20 @@ export const resolveComputedColor = (
 ): Rgba => {
   const trimmed = value.trim();
   if (trimmed === 'currentColor') {
-    return resolveComputedColor(options.currentColorBase ?? getComputedStyle(contextElement).color, contextElement, 'color', options);
+    return resolveComputedColor(
+      options.currentColorBase ?? getComputedStyle(contextElement).color,
+      contextElement,
+      'color',
+      options,
+    );
   }
   if (trimmed.startsWith('var(')) {
-    return resolveComputedColor(expandVars(trimmed, contextElement), contextElement, property, options);
+    return resolveComputedColor(
+      expandVars(trimmed, contextElement),
+      contextElement,
+      property,
+      options,
+    );
   }
   const expanded = expandVars(trimmed, contextElement);
   const relative = resolveOklchFrom(expanded, contextElement, property, options);
@@ -392,7 +451,10 @@ export const resolveComputedColor = (
   try {
     return parseColor(expanded);
   } catch (error) {
-    throw new Error(`${options.tokenName ?? property} の色を解決できません: ${value} / ${expanded}`, { cause: error });
+    throw new Error(
+      `${options.tokenName ?? property} の色を解決できません: ${value} / ${expanded}`,
+      { cause: error },
+    );
   }
 };
 
@@ -453,7 +515,10 @@ export const resolvePaintedElementBackground = (element: Element, fallbackRoot?:
   if (painted.a !== 1) {
     throw new Error(
       `不透明な painted background を解決できません: alpha=${painted.a}; path=${candidates
-        .map(({ element, color }) => `${element.localName}:${getComputedStyle(element).backgroundColor}:${color.a}`)
+        .map(
+          ({ element, color }) =>
+            `${element.localName}:${getComputedStyle(element).backgroundColor}:${color.a}`,
+        )
         .join(' -> ')}`,
     );
   }
@@ -488,13 +553,22 @@ export const expectColorClose = (actual: Rgba, expected: Rgba, tolerance = 2): v
   expect(Math.abs(actual.a - expected.a), 'alpha channel').to.be.lessThanOrEqual(0.01);
 };
 
-export const expectPseudoElementGenerated = (element: Element, pseudoElement: '::before' | '::after', label: string): void => {
+export const expectPseudoElementGenerated = (
+  element: Element,
+  pseudoElement: '::before' | '::after',
+  label: string,
+): void => {
   const style = getComputedStyle(element, pseudoElement);
   expect(style.content, `${label} content`).not.to.equal('none');
   expect(style.content, `${label} content`).not.to.equal('normal');
 };
 
-export const expectVisiblePseudoPaint = (element: Element, pseudoElement: '::before' | '::after', color: Rgba, label: string): void => {
+export const expectVisiblePseudoPaint = (
+  element: Element,
+  pseudoElement: '::before' | '::after',
+  color: Rgba,
+  label: string,
+): void => {
   const style = getComputedStyle(element, pseudoElement);
   expectPseudoElementGenerated(element, pseudoElement, label);
   expect(style.display, `${label} display`).not.to.equal('none');
@@ -515,7 +589,11 @@ export const expectVisiblePseudoPaint = (element: Element, pseudoElement: '::bef
   expect(hostRect.height, `${label} host height fallback`).to.be.greaterThan(0);
 };
 
-export const expectVisibleElementPaint = (element: HTMLElement, color: Rgba, label: string): void => {
+export const expectVisibleElementPaint = (
+  element: HTMLElement,
+  color: Rgba,
+  label: string,
+): void => {
   const style = getComputedStyle(element);
   expect(style.display, `${label} display`).not.to.equal('none');
   expect(['hidden', 'collapse'], `${label} visibility`).not.to.include(style.visibility);

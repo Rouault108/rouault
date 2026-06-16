@@ -16,12 +16,17 @@ describe('preview sandbox link contract', () => {
 
   it('credentials を含む preview sandbox base-url を拒否すること', () => {
     expect(() =>
-      validatePreviewSandboxBaseUrl('https://user@example.com/assets/preview/demo/', siteUrlContext),
+      validatePreviewSandboxBaseUrl(
+        'https://user@example.com/assets/preview/demo/',
+        siteUrlContext,
+      ),
     ).toThrow();
   });
 
   it('encoded dangerous segment を含む preview sandbox base-url を拒否すること', () => {
-    expect(() => validatePreviewSandboxBaseUrl('/assets/preview/%2e%2e/x/', siteUrlContext)).toThrow();
+    expect(() =>
+      validatePreviewSandboxBaseUrl('/assets/preview/%2e%2e/x/', siteUrlContext),
+    ).toThrow();
   });
 
   it('basePath の segment boundary を満たさない base-url を拒否すること', () => {

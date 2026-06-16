@@ -12,7 +12,9 @@ describe('router error contract grep boundary', () => {
     ];
 
     for (const filePath of checkedFiles) {
-      expect(readFileSync(filePath, 'utf8'), filePath).not.toContain('NavigationEnvelopeBuildMismatchError');
+      expect(readFileSync(filePath, 'utf8'), filePath).not.toContain(
+        'NavigationEnvelopeBuildMismatchError',
+      );
     }
   });
 
@@ -27,14 +29,18 @@ describe('router error contract grep boundary', () => {
     ];
 
     for (const filePath of checkedFiles) {
-      expect(readFileSync(filePath, 'utf8'), filePath).not.toContain('NavigationEnvelopeValidationError');
+      expect(readFileSync(filePath, 'utf8'), filePath).not.toContain(
+        'NavigationEnvelopeValidationError',
+      );
     }
   });
 
   it('StrictLoadedNavigationEnvelope は router-types の単一型境界から import すること', () => {
     const source = readFileSync('src/router/navigation-envelope-validator.ts', 'utf8');
 
-    expect(source).toContain("import type { StrictLoadedNavigationEnvelope } from './router-types.js';");
+    expect(source).toContain(
+      "import type { StrictLoadedNavigationEnvelope } from './router-types.js';",
+    );
     expect(source).not.toMatch(/type\s+StrictLoadedNavigationEnvelope\s*=/u);
     expect(source).not.toMatch(/interface\s+StrictLoadedNavigationEnvelope/u);
   });

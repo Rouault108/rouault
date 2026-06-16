@@ -92,7 +92,9 @@ const expectUniqueControlledGroups = (root: ParentNode): string[] => {
 describe('layout-sidebar group id browser contract', () => {
   afterEach(() => {
     layoutSidebarController.reset();
-    document.querySelectorAll('[data-app-shell-sidebar-overlay-layer]').forEach((element) => element.remove());
+    document
+      .querySelectorAll('[data-app-shell-sidebar-overlay-layer]')
+      .forEach((element) => element.remove());
   });
 
   it('同一 rowId でも stateScopeId / sidebarId ごとに document-wide に一意な ul[id] を生成すること', async () => {
@@ -136,7 +138,9 @@ describe('layout-sidebar group id browser contract', () => {
 
     await settle(wrapper);
 
-    const overlayLayer = document.querySelector<HTMLElement>('[data-app-shell-sidebar-overlay-layer]');
+    const overlayLayer = document.querySelector<HTMLElement>(
+      '[data-app-shell-sidebar-overlay-layer]',
+    );
     expect(overlayLayer).to.be.instanceOf(HTMLElement);
     const ids = expectUniqueControlledGroups(document);
     const parsed = ids.map((id) => parseSidebarGroupId(id));

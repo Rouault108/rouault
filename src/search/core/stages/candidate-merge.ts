@@ -1,7 +1,4 @@
-import type {
-  SearchCandidate,
-  SearchSourceBatch,
-} from '../../../../shared/search/search-types.js';
+import type { SearchCandidate, SearchSourceBatch } from '../../../../shared/search/search-types.js';
 import type { CandidateMergeStageOutput, CandidateValidationStageOutput } from '../stage-types.js';
 
 function mergeFieldTokens(

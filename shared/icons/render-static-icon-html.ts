@@ -27,15 +27,11 @@ export const renderStaticIconHtml = (
   classNameOrOptions: string | StaticIconHtmlOptions = 'static-icon',
 ): string => {
   const options =
-    typeof classNameOrOptions === 'string'
-      ? { className: classNameOrOptions }
-      : classNameOrOptions;
+    typeof classNameOrOptions === 'string' ? { className: classNameOrOptions } : classNameOrOptions;
   const label = typeof options.label === 'string' ? options.label.trim() : '';
   const classAttribute = resolveClassAttribute(options.className ?? 'static-icon');
   const wrapperAccessibility =
-    label.length > 0
-      ? ` role="img" aria-label="${escapeAttribute(label)}"`
-      : ' aria-hidden="true"';
+    label.length > 0 ? ` role="img" aria-label="${escapeAttribute(label)}"` : ' aria-hidden="true"';
 
   return `<span class="${classAttribute}"${wrapperAccessibility}><svg viewBox="${STATIC_ICON_VIEWBOX}" aria-hidden="true" focusable="false" data-icon="${escapeAttribute(
     name,

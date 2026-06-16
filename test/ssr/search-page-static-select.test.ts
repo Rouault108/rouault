@@ -73,10 +73,7 @@ const renderSearchPageFragment = () => {
   const idContext = createStaticRenderIdContext('test:search-page-static-select');
   const expectedIdContext = createStaticRenderIdContext('test:search-page-static-select');
   expectedIdContext.reserveId('search-page', 'search-page-query');
-  const tagModeSelectId = expectedIdContext.reserveId(
-    'search-page',
-    'search-page-tag-mode-select',
-  );
+  const tagModeSelectId = expectedIdContext.reserveId('search-page', 'search-page-tag-mode-select');
   const sortSelectId = expectedIdContext.reserveId('search-page', 'search-page-sort-select');
   const rendered = renderSearchPageHtml({
     initialState: searchState,
@@ -113,12 +110,12 @@ describe('search page static select contract', () => {
 
     expect(selects.map((select) => getAttribute(select, 'name'))).toEqual(['tagMode', 'sort']);
     expect(collectElements(fragment, (element) => element.tagName === 'ui-select')).toEqual([]);
-    expect(collectElements(fragment, (element) => getAttribute(element, 'role') === 'listbox')).toEqual(
-      [],
-    );
-    expect(collectElements(fragment, (element) => getAttribute(element, 'role') === 'option')).toEqual(
-      [],
-    );
+    expect(
+      collectElements(fragment, (element) => getAttribute(element, 'role') === 'listbox'),
+    ).toEqual([]);
+    expect(
+      collectElements(fragment, (element) => getAttribute(element, 'role') === 'option'),
+    ).toEqual([]);
     expect(rendered).not.toContain('readonly');
   });
 

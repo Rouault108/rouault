@@ -110,11 +110,11 @@ minor:
 
 R0〜R4は変更・レビュー・検証のリスク段階です。A0〜A2は証拠保全・監査保証レベルです。両者は独立に判定します。R4だから常にA2ではなく、R1でも資格情報漏えいが疑われる場合はA2にします。
 
-| レベル | 使う条件 | 必須事項 |
-|---|---|---|
-| A0 | 通常の修正、公開可能なEvidenceだけで十分 | Git履歴、Verification、必要最小限のEvidence |
-| A1 | CI artifact、生成物、複数成果物、後日検証が必要 | SHA-256、保存場所、実行ログ、検証コマンド、可能なら署名付きtagまたはCI attestation |
-| A2 | 秘密情報、個人ノート漏えい、供給網、外部提出、改ざん耐性が必要 | A2 Evidence Integrity Attestation、repository-redacted evidence index、private / restricted evidence index、保持・失効・redaction方針、必要に応じた秘密情報失効・ローテーション記録。R4-Aの場合だけClosure Manifest / Closure Attestationを追加する |
+| レベル | 使う条件                                                       | 必須事項                                                                                                                                                                                                                                            |
+| ------ | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A0     | 通常の修正、公開可能なEvidenceだけで十分                       | Git履歴、Verification、必要最小限のEvidence                                                                                                                                                                                                         |
+| A1     | CI artifact、生成物、複数成果物、後日検証が必要                | SHA-256、保存場所、実行ログ、検証コマンド、可能なら署名付きtagまたはCI attestation                                                                                                                                                                  |
+| A2     | 秘密情報、個人ノート漏えい、供給網、外部提出、改ざん耐性が必要 | A2 Evidence Integrity Attestation、repository-redacted evidence index、private / restricted evidence index、保持・失効・redaction方針、必要に応じた秘密情報失効・ローテーション記録。R4-Aの場合だけClosure Manifest / Closure Attestationを追加する |
 
 A2を使う場合、公開成果物へprivate locator、未redactファイル名、個人データ由来digest、秘密情報を記録しません。公開可能なopaque referenceだけを記録し、実locatorとdigestはprivate / restricted側で管理します。A2はR段階から独立して成立し、非R4ではClosure AttestationではなくA2 Evidence Integrity Attestationを閉鎖根拠にします。
 
@@ -164,14 +164,14 @@ Containment Trigger:
 
 ## 3. R0〜R4の判定表
 
-| 段階 | 使う条件 | 成果物 | 実装方法 |
-|---|---|---|---|
-| R0 | 挙動に影響しない軽微修正 | 変更理由、diff確認 | 人間が手修正 |
-| R1 | 原因明確、少数ファイル、契約影響なし | Mini Evidence、Mini Brief、簡略Verification | 人間、またはChatGPT置換案 |
-| R2-lite | 日常的な中規模修正、採用原因と変更境界が明確 | R2-lite Run Card、またはR2-lite Brief + R2-lite Result、軽量Verification。Cause Summary相当はRun Card / Brief内包。Minimum Evidence Packet相当はRun Card / Brief内包、または単一Evidenceを別成果物化してEvidence ID参照可 | 人間、または限定Codex |
-| R2-full | 原因調査、影響範囲確認、契約確認が必要 | Issue Brief、Minimum Evidence Packet、Cause Summary / Matrix、Fix Plan、契約影響チェック、Verification Matrix | 人間、または限定Codex |
-| R3 | 仕様判断、契約変更、原因未確定かつ修正対象が分岐、安全性・アクセシビリティ意味変更 | R2-full成果物（Minimum Evidence Packetを含む） + Evidence Record + Contract Inventory + Decision Record + 反対仮説レビュー + ロールバック方針 | 限定実装 |
-| R4 | 一括実装するとレビュー不能 | R4-S: 全体Issue Brief、全体Minimum Evidence Packet、全体Evidence Record、全体Cause Matrix、全体Contract Inventoryまたは根拠付きN/A、全体Decision Record、全体Fix Plan、R4 Phase Plan、軽量Resolution Manifest（ArtifactKey解決用、Anchor任意）、R4 Execution Ledger、各フェーズ成果物、各フェーズEvidence、各フェーズ検証、Final R4 Disposition Verification、R4 Completion Record。R4-I: R4共通構造検証を行うが、ArtifactKey解決はLightweight Resolution ManifestではなくArtifact Manifestで行い、Manifest Anchor、SHA-256検証、Manifest chain検証、R4 Completion Recordを必須にする。R4-A: R4-I相当の構造検証と完全性検証に加え、private / restricted Manifest、Closure Manifest、Closure Attestation、外部署名またはCI attestation（必要時）でclosedを導出する。R4-AのR4 Completion Recordは任意要約。A0〜A2は別途判定 | フェーズ単位実装 |
+| 段階    | 使う条件                                                                           | 成果物                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | 実装方法                  |
+| ------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| R0      | 挙動に影響しない軽微修正                                                           | 変更理由、diff確認                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 人間が手修正              |
+| R1      | 原因明確、少数ファイル、契約影響なし                                               | Mini Evidence、Mini Brief、簡略Verification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 人間、またはChatGPT置換案 |
+| R2-lite | 日常的な中規模修正、採用原因と変更境界が明確                                       | R2-lite Run Card、またはR2-lite Brief + R2-lite Result、軽量Verification。Cause Summary相当はRun Card / Brief内包。Minimum Evidence Packet相当はRun Card / Brief内包、または単一Evidenceを別成果物化してEvidence ID参照可                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 人間、または限定Codex     |
+| R2-full | 原因調査、影響範囲確認、契約確認が必要                                             | Issue Brief、Minimum Evidence Packet、Cause Summary / Matrix、Fix Plan、契約影響チェック、Verification Matrix                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | 人間、または限定Codex     |
+| R3      | 仕様判断、契約変更、原因未確定かつ修正対象が分岐、安全性・アクセシビリティ意味変更 | R2-full成果物（Minimum Evidence Packetを含む） + Evidence Record + Contract Inventory + Decision Record + 反対仮説レビュー + ロールバック方針                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | 限定実装                  |
+| R4      | 一括実装するとレビュー不能                                                         | R4-S: 全体Issue Brief、全体Minimum Evidence Packet、全体Evidence Record、全体Cause Matrix、全体Contract Inventoryまたは根拠付きN/A、全体Decision Record、全体Fix Plan、R4 Phase Plan、軽量Resolution Manifest（ArtifactKey解決用、Anchor任意）、R4 Execution Ledger、各フェーズ成果物、各フェーズEvidence、各フェーズ検証、Final R4 Disposition Verification、R4 Completion Record。R4-I: R4共通構造検証を行うが、ArtifactKey解決はLightweight Resolution ManifestではなくArtifact Manifestで行い、Manifest Anchor、SHA-256検証、Manifest chain検証、R4 Completion Recordを必須にする。R4-A: R4-I相当の構造検証と完全性検証に加え、private / restricted Manifest、Closure Manifest、Closure Attestation、外部署名またはCI attestation（必要時）でclosedを導出する。R4-AのR4 Completion Recordは任意要約。A0〜A2は別途判定 | フェーズ単位実装          |
 
 ## 4. R0
 
@@ -340,7 +340,6 @@ R2-lite Run Cardは、原則として `F1 / C1 / CH1 / S1 / V1` を中心に扱�
 
 R2-lite Briefで `F2 / CH2 / S2 / V2` を扱う場合でも、採用原因は原則として `C1` に固定します。F2もC1で説明でき、CH2はC1に対する同一修正単位内の変更であり、S2 / V2も同じ原因と変更境界に対応する必要があります。F2に別の採用原因が必要な場合、またはCH2が別の修正単位になる場合は、R2-full以上へ昇格します。
 
-
 R2-lite BriefまたはR2-lite Run Cardの `generated files` / `lockfile` は、原則として「触れないことの確認欄」です。実差分が出る場合はR2-liteとして完了不可とし、差分理由、生成元、再現コマンドを説明できるかを確認したうえでR2-full以上へ昇格します。
 
 R2-liteで扱う主要仮説は最大2個までとします。ただし、R2-liteで複数仮説を扱えるのは、採用原因を1つに固定できており、残る仮説が採用原因を補強する補助仮説、または今回の修正対象・成功条件・契約影響を変えない保留仮説である場合だけです。修正対象、成功条件、契約影響、テスト更新方針が変わり得る競合仮説が残る場合は、原因候補数が2個以下でもR2-full以上へ昇格します。原因候補が3個以上残る場合は、軽量運用ではなくR2-full以上へ昇格します。
@@ -456,7 +455,6 @@ R2-fullに留める場合でも、Fix Plan内のgenerated files / lockfile欄、
 - lockfile差分の有無:
 - 差分が意図したものと言える根拠:
 ```
-
 
 ### 8.4 削除・移行・縮退の扱い
 
@@ -583,78 +581,77 @@ R4各フェーズ:
 
 R4では、Codexに一括実装させません。必ずフェーズ単位で実装、精査、検証します。
 
-
 ### 9.1 Phase種別×Phase R段階の成果物マトリクス
 
 R4各Phaseの成果物は、判断リスク成果物と活動固有成果物を合成します。ただし、判断リスク成果物のID対応はPhase種別の意味へ写像し、非Implementationへ`F / C / CH / S / V`を機械的に要求しません。
 
 判断リスク成果物です。
 
-| Phase R段階 | 共通の判断リスク成果物 |
-|---|---|
-| R0相当 | 専用Record内の影響なし確認、diff確認 |
-| R1 | Mini Evidence相当、簡略契約影響確認、専用Record内の判断根拠 |
-| R2-lite | 専用Record内のEvidence、採用原因または仮説状態、軽量な追跡対応、軽量VerificationまたはDisposition確認 |
-| R2-full | Issue Brief、Minimum Evidence Packet、Cause Summary / Matrix、契約影響チェック、活動に対応するPlan、必要なVerification Matrix |
-| R3 | R2-full判断成果物 + Evidence Record + Contract Inventory + Decision Record + 反対仮説レビュー + rollback / reversal方針 |
+| Phase R段階 | 共通の判断リスク成果物                                                                                                        |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| R0相当      | 専用Record内の影響なし確認、diff確認                                                                                          |
+| R1          | Mini Evidence相当、簡略契約影響確認、専用Record内の判断根拠                                                                   |
+| R2-lite     | 専用Record内のEvidence、採用原因または仮説状態、軽量な追跡対応、軽量VerificationまたはDisposition確認                         |
+| R2-full     | Issue Brief、Minimum Evidence Packet、Cause Summary / Matrix、契約影響チェック、活動に対応するPlan、必要なVerification Matrix |
+| R3          | R2-full判断成果物 + Evidence Record + Contract Inventory + Decision Record + 反対仮説レビュー + rollback / reversal方針       |
 
 Phase種別ごとのR2-lite追跡対応です。
 
-| Phase種別 | R2-liteで追跡する対応 |
-|---|---|
-| Implementation | Failure / Cause / Change / Success / Verification |
-| No-change | Issue / Failure / Closure condition / Closure verification |
-| No-action | Issue / 対象範囲 / 非変更根拠 / 後続影響 |
-| Investigation-only | Investigation question / Hypothesis / Evidence / HandoffまたはResume condition |
-| Verification-only | Phase Success / Verification / Detected Failure Observation |
-| Integration verification | Integration Success / Verification / Detected Failure Observation |
+| Phase種別                | R2-liteで追跡する対応                                                          |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| Implementation           | Failure / Cause / Change / Success / Verification                              |
+| No-change                | Issue / Failure / Closure condition / Closure verification                     |
+| No-action                | Issue / 対象範囲 / 非変更根拠 / 後続影響                                       |
+| Investigation-only       | Investigation question / Hypothesis / Evidence / HandoffまたはResume condition |
+| Verification-only        | Phase Success / Verification / Detected Failure Observation                    |
+| Integration verification | Integration Success / Verification / Detected Failure Observation              |
 
 活動固有成果物です。
 
-| Phase種別 | 活動固有成果物 | 要求しないもの |
-|---|---|---|
-| Implementation R1 | Mini Brief、実装、最小再検証、簡略Verification、Implementation Phase Outcome Record | Fix Plan |
-| Implementation R2-lite | R2-lite Run Card、またはR2-lite Brief + Result、実装、最小再検証、軽量Verification、Implementation Phase Outcome Record | R2-full Fix Plan |
-| Implementation R2-full / R3 | Fix Plan、実装開始ゲート、実装、修正前失敗条件の最小再検証、diff精査、Verification Matrix、Implementation Phase Outcome Record | なし |
-| R0 Record | R0 Record、影響なし確認、diff確認 | Fix Plan、実装、最小再検証 |
-| No-change | No-change Completion、closure Evidence、Final R4 Disposition Verificationのno-change closure、先行変更の不存在またはrollback確認 | 実装、実装開始ゲート、実装後最小再検証 |
-| No-action | No-action Record、対象範囲の非変更根拠、後続Phaseへの影響 | 当該Phaseでの実装、Issue終端判断 |
-| Investigation-only | Investigation Plan、Evidence取得、仮説状態、handoff / 再開条件 | Fix Plan、実装開始ゲート、実装後最小再検証 |
-| Verification-only | Verification Plan、Phase Success ID、Verification Evidence、Detected Failure Observation移管 | 当該Phaseでの実装修正 |
-| Integration verification | Integration Verification Plan、統合Success、統合Evidence、Detected Failure Observation移管 | 当該Phaseでの実装修正 |
+| Phase種別                   | 活動固有成果物                                                                                                                   | 要求しないもの                             |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Implementation R1           | Mini Brief、実装、最小再検証、簡略Verification、Implementation Phase Outcome Record                                              | Fix Plan                                   |
+| Implementation R2-lite      | R2-lite Run Card、またはR2-lite Brief + Result、実装、最小再検証、軽量Verification、Implementation Phase Outcome Record          | R2-full Fix Plan                           |
+| Implementation R2-full / R3 | Fix Plan、実装開始ゲート、実装、修正前失敗条件の最小再検証、diff精査、Verification Matrix、Implementation Phase Outcome Record   | なし                                       |
+| R0 Record                   | R0 Record、影響なし確認、diff確認                                                                                                | Fix Plan、実装、最小再検証                 |
+| No-change                   | No-change Completion、closure Evidence、Final R4 Disposition Verificationのno-change closure、先行変更の不存在またはrollback確認 | 実装、実装開始ゲート、実装後最小再検証     |
+| No-action                   | No-action Record、対象範囲の非変更根拠、後続Phaseへの影響                                                                        | 当該Phaseでの実装、Issue終端判断           |
+| Investigation-only          | Investigation Plan、Evidence取得、仮説状態、handoff / 再開条件                                                                   | Fix Plan、実装開始ゲート、実装後最小再検証 |
+| Verification-only           | Verification Plan、Phase Success ID、Verification Evidence、Detected Failure Observation移管                                     | 当該Phaseでの実装修正                      |
+| Integration verification    | Integration Verification Plan、統合Success、統合Evidence、Detected Failure Observation移管                                       | 当該Phaseでの実装修正                      |
 
 R0相当の特殊Phaseは、専用Record内へR0相当確認を内包し、別のR0 Recordを重複作成しません。R3の特殊PhaseでもDecision Record等の判断リスク成果物を省略しません。
 
 ## 10. 成果物の必須度
 
-| 成果物 | R0 | R1 | R2-lite | R2-full | R3 | R4 |
-|---|---:|---:|---:|---:|---:|---:|
-| R0 Record | 必須 | - | - | - | - | - |
-| Mini Evidence | - | 必須 | 任意 | 任意 | 任意 | 任意 |
-| Minimum Evidence Packet | - | 任意 | Run Card / Brief内包、または単一Evidenceを別成果物化してEvidence ID参照可 | 必須 | 必須 | 必須 |
-| Evidence Record | - | 任意 | 条件付き | 条件付き | 必須 | 必須 |
-| F / C / CH / S / V | - | 必須 | 必須 | 必須 | 必須 | R4のImplementation Phaseで必須。非Implementationは9.1のPhase種別別追跡対応を使う |
-| Mini Brief | - | 必須 | 任意 | - | - | フェーズ単位で可 |
-| R2-lite Run Card / Brief + Result | - | - | 必須 | 任意 | 任意 | フェーズ単位で可 |
-| Issue Brief | - | - | 任意 | 必須 | 必須 | 全体で必須 |
-| Cause Summary / Cause Matrix | - | - | Cause Summary相当はRun Card / Brief内包。分離が必要ならR2-full以上へ昇格 | SummaryまたはMatrix必須 | Matrix必須 | 全体で必須 |
-| 契約影響チェック | - | 簡略確認 | 簡略確認 | 必須 | 必須 | 全体で必須 |
-| Contract Inventory | - | - | 原則不要 / 契約影響ありなら昇格 | 影響あり・不明の場合に必須 | 必須 | 全体で必須。ただし全フェーズでDOM / CSS / ARIA / state / generated files / lockfile / routing / search / security / テスト期待値 / snapshot / visual・paint contractに一切触れないことを証明できる場合のみ根拠付きN/A可 |
-| Decision Record | - | - | - | 条件付き | 必須 | 全体で必須。フェーズ分割、統合、契約影響、削除・移行・縮退判断、ロールバック方針を説明する |
-| Fix Plan | - | 任意 | 任意 | 必須 | 必須 | 全体Fix Planは必須。各PhaseではImplementationだけに必須。非Implementationは活動固有Planを使う |
-| Fix Plan精査 | - | 任意 | 条件付き | 必須 | 必須 | 必須 |
-| 反対仮説レビュー | - | - | - | 条件付き | 必須 | 必須 |
-| R4 Phase Plan | - | - | - | - | - | 必須（計画構造の正本） |
-| Artifact Manifest / Resolution Manifest | - | - | - | - | - | R4-Sでは軽量Resolution Manifestが必須（SHA-256 / Anchor任意）。R4-I / R4-AではArtifact ManifestとManifest Anchorが必須 |
-| Manifest Anchor | - | - | - | - | - | R4-I / R4-Aで必須。R4-Sでは任意かつ未使用ならN/A |
-| R4 Execution Ledger | - | - | - | - | - | 必須（実行状態・Final State ArtifactRef・Evidence・Artifact有効性の正本） |
-| Phase Transition / Outcome / Disposition Record | - | - | - | - | - | Status遷移種別に応じて必須 |
-| Final R4 Disposition Verification | - | - | - | - | - | 必須（最終判定の正本） |
-| R4 Completion Record | - | - | - | - | - | R4-S / R4-Iで必須。R4-Aではclosed導出の正本ではなく、PR / commit向け要約として任意 |
-| Closure Manifest | - | - | - | - | - | R4-Aで必須。R4-S / R4-Iでは不要 |
-| Closure Attestation | - | - | - | - | - | R4-Aで必須。R4-S / R4-Iでは不要 |
-| A2 Evidence Integrity Attestation | A2時必須 | A2時必須 | A2時必須 | A2時必須 | A2時必須 | A2時必須。R4-AではClosure Attestationと併用可 |
-| No-change / No-action / Investigation-only / Verification-only / Integration verification Record | - | 条件付き | 条件付き | 条件付き | 条件付き | 対象Phaseで必須。非R4 Investigation-onlyも可 |
-| ロールバック方針 | - | - | 任意 | 任意 | 必須 | 必須 |
-| Verification | - | 簡略 | 軽量 | Matrix | Matrix | Phase種別に応じたVerification + Final R4 Disposition Verification |
-| 修正前失敗条件の最小再検証 | N/A可 | 必須 | 必須 | 必須 | 必須 | Implementation Phaseで必須。R0 Record / No-change / No-action / Investigation-only / Verification-only / Integration verification Phaseは各専用規則に従う |
+| 成果物                                                                                           |       R0 |       R1 |                                                                   R2-lite |                    R2-full |         R3 |                                                                                                                                                                                                                      R4 |
+| ------------------------------------------------------------------------------------------------ | -------: | -------: | ------------------------------------------------------------------------: | -------------------------: | ---------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| R0 Record                                                                                        |     必須 |        - |                                                                         - |                          - |          - |                                                                                                                                                                                                                       - |
+| Mini Evidence                                                                                    |        - |     必須 |                                                                      任意 |                       任意 |       任意 |                                                                                                                                                                                                                    任意 |
+| Minimum Evidence Packet                                                                          |        - |     任意 | Run Card / Brief内包、または単一Evidenceを別成果物化してEvidence ID参照可 |                       必須 |       必須 |                                                                                                                                                                                                                    必須 |
+| Evidence Record                                                                                  |        - |     任意 |                                                                  条件付き |                   条件付き |       必須 |                                                                                                                                                                                                                    必須 |
+| F / C / CH / S / V                                                                               |        - |     必須 |                                                                      必須 |                       必須 |       必須 |                                                                                                                                        R4のImplementation Phaseで必須。非Implementationは9.1のPhase種別別追跡対応を使う |
+| Mini Brief                                                                                       |        - |     必須 |                                                                      任意 |                          - |          - |                                                                                                                                                                                                        フェーズ単位で可 |
+| R2-lite Run Card / Brief + Result                                                                |        - |        - |                                                                      必須 |                       任意 |       任意 |                                                                                                                                                                                                        フェーズ単位で可 |
+| Issue Brief                                                                                      |        - |        - |                                                                      任意 |                       必須 |       必須 |                                                                                                                                                                                                              全体で必須 |
+| Cause Summary / Cause Matrix                                                                     |        - |        - |  Cause Summary相当はRun Card / Brief内包。分離が必要ならR2-full以上へ昇格 |    SummaryまたはMatrix必須 | Matrix必須 |                                                                                                                                                                                                              全体で必須 |
+| 契約影響チェック                                                                                 |        - | 簡略確認 |                                                                  簡略確認 |                       必須 |       必須 |                                                                                                                                                                                                              全体で必須 |
+| Contract Inventory                                                                               |        - |        - |                                           原則不要 / 契約影響ありなら昇格 | 影響あり・不明の場合に必須 |       必須 | 全体で必須。ただし全フェーズでDOM / CSS / ARIA / state / generated files / lockfile / routing / search / security / テスト期待値 / snapshot / visual・paint contractに一切触れないことを証明できる場合のみ根拠付きN/A可 |
+| Decision Record                                                                                  |        - |        - |                                                                         - |                   条件付き |       必須 |                                                                                                                              全体で必須。フェーズ分割、統合、契約影響、削除・移行・縮退判断、ロールバック方針を説明する |
+| Fix Plan                                                                                         |        - |     任意 |                                                                      任意 |                       必須 |       必須 |                                                                                                                           全体Fix Planは必須。各PhaseではImplementationだけに必須。非Implementationは活動固有Planを使う |
+| Fix Plan精査                                                                                     |        - |     任意 |                                                                  条件付き |                       必須 |       必須 |                                                                                                                                                                                                                    必須 |
+| 反対仮説レビュー                                                                                 |        - |        - |                                                                         - |                   条件付き |       必須 |                                                                                                                                                                                                                    必須 |
+| R4 Phase Plan                                                                                    |        - |        - |                                                                         - |                          - |          - |                                                                                                                                                                                                  必須（計画構造の正本） |
+| Artifact Manifest / Resolution Manifest                                                          |        - |        - |                                                                         - |                          - |          - |                                                                                                  R4-Sでは軽量Resolution Manifestが必須（SHA-256 / Anchor任意）。R4-I / R4-AではArtifact ManifestとManifest Anchorが必須 |
+| Manifest Anchor                                                                                  |        - |        - |                                                                         - |                          - |          - |                                                                                                                                                                        R4-I / R4-Aで必須。R4-Sでは任意かつ未使用ならN/A |
+| R4 Execution Ledger                                                                              |        - |        - |                                                                         - |                          - |          - |                                                                                                                                               必須（実行状態・Final State ArtifactRef・Evidence・Artifact有効性の正本） |
+| Phase Transition / Outcome / Disposition Record                                                  |        - |        - |                                                                         - |                          - |          - |                                                                                                                                                                                              Status遷移種別に応じて必須 |
+| Final R4 Disposition Verification                                                                |        - |        - |                                                                         - |                          - |          - |                                                                                                                                                                                                  必須（最終判定の正本） |
+| R4 Completion Record                                                                             |        - |        - |                                                                         - |                          - |          - |                                                                                                                                      R4-S / R4-Iで必須。R4-Aではclosed導出の正本ではなく、PR / commit向け要約として任意 |
+| Closure Manifest                                                                                 |        - |        - |                                                                         - |                          - |          - |                                                                                                                                                                                         R4-Aで必須。R4-S / R4-Iでは不要 |
+| Closure Attestation                                                                              |        - |        - |                                                                         - |                          - |          - |                                                                                                                                                                                         R4-Aで必須。R4-S / R4-Iでは不要 |
+| A2 Evidence Integrity Attestation                                                                | A2時必須 | A2時必須 |                                                                  A2時必須 |                   A2時必須 |   A2時必須 |                                                                                                                                                                           A2時必須。R4-AではClosure Attestationと併用可 |
+| No-change / No-action / Investigation-only / Verification-only / Integration verification Record |        - | 条件付き |                                                                  条件付き |                   条件付き |   条件付き |                                                                                                                                                                            対象Phaseで必須。非R4 Investigation-onlyも可 |
+| ロールバック方針                                                                                 |        - |        - |                                                                      任意 |                       任意 |       必須 |                                                                                                                                                                                                                    必須 |
+| Verification                                                                                     |        - |     簡略 |                                                                      軽量 |                     Matrix |     Matrix |                                                                                                                                                       Phase種別に応じたVerification + Final R4 Disposition Verification |
+| 修正前失敗条件の最小再検証                                                                       |    N/A可 |     必須 |                                                                      必須 |                       必須 |       必須 |                                                               Implementation Phaseで必須。R0 Record / No-change / No-action / Investigation-only / Verification-only / Integration verification Phaseは各専用規則に従う |

@@ -91,36 +91,36 @@ C# 9.0〜14で導入されたレコード、トップレベルステートメン
 
 最後に、互換性を議論するときは次の三区分を常に保つ。第一に、どの言語バージョンで構文および意味規則が受理されるか。第二に、どのTFMとライブラリ集合でその機能が実用上成立するか。第三に、どのSDK・ビルド設定でその結果が再現可能か。この三区分を保つことにより、以後のノートで型、束縛、変換、パターン、非同期、低水準制御を扱う際にも、バージョン差と実装差を混同せずに記述できる。[^1][^2][^4][^8]
 
-[^1]: Microsoft Learn, *Language versioning - C# reference*, updated 2026-02-04, “Defaults”, “C# language version reference”. TFMごとの既定言語バージョン、対応するC#バージョン、およびTFMより新しい言語バージョンの非対応扱いの整理。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-versioning
+[^1]: Microsoft Learn, _Language versioning - C# reference_, updated 2026-02-04, “Defaults”, “C# language version reference”. TFMごとの既定言語バージョン、対応するC#バージョン、およびTFMより新しい言語バージョンの非対応扱いの整理。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-versioning
 
-[^2]: Microsoft Learn, *Configure language version - C# reference*, updated 2026-01-20, “Edit the project file”, “C# language version reference”. `LangVersion`の設定方法、`latest`非推奨、`#error version`、TFMと既定の言語バージョンの対応関係。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/configure-language-version
+[^2]: Microsoft Learn, _Configure language version - C# reference_, updated 2026-01-20, “Edit the project file”, “C# language version reference”. `LangVersion`の設定方法、`latest`非推奨、`#error version`、TFMと既定の言語バージョンの対応関係。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/configure-language-version
 
-[^3]: Microsoft Learn, *Compiler Options - language feature rules - C# reference*, updated 2024-09-27, “DefineConstants”, “LangVersion”, “Nullable”. `latest`、`default`、数値指定、`DefineConstants`、`Nullable`各値、生成コードにおけるnull許容文脈の例外。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-options/language
+[^3]: Microsoft Learn, _Compiler Options - language feature rules - C# reference_, updated 2024-09-27, “DefineConstants”, “LangVersion”, “Nullable”. `latest`、`default`、数値指定、`DefineConstants`、`Nullable`各値、生成コードにおけるnull許容文脈の例外。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-options/language
 
-[^4]: Microsoft Learn, *global.json overview - .NET CLI*, updated 2026-03-09, “global.json schema”, “Matching rules”. SDK選択がランタイム対象指定とは独立であること、CIにおける固定とroll-forwardの考え方。https://learn.microsoft.com/en-us/dotnet/core/tools/global-json
+[^4]: Microsoft Learn, _global.json overview - .NET CLI_, updated 2026-03-09, “global.json schema”, “Matching rules”. SDK選択がランタイム対象指定とは独立であること、CIにおける固定とroll-forwardの考え方。https://learn.microsoft.com/en-us/dotnet/core/tools/global-json
 
-[^5]: Microsoft Learn, *Target frameworks in SDK-style projects - .NET*, updated 2026-04-17, “Target frameworks”, “OS-specific TFMs”. TFMの意味、API集合、OS固有TFM、マルチターゲット時の基本的な見方。https://learn.microsoft.com/en-us/dotnet/standard/frameworks
+[^5]: Microsoft Learn, _Target frameworks in SDK-style projects - .NET_, updated 2026-04-17, “Target frameworks”, “OS-specific TFMs”. TFMの意味、API集合、OS固有TFM、マルチターゲット時の基本的な見方。https://learn.microsoft.com/en-us/dotnet/standard/frameworks
 
-[^6]: Microsoft Learn, *Preprocessor directives - C# reference*, updated 2026-01-20, “File-based apps”, “Nullable context”, “#if”, “#define”, “#line”, “#pragma warning”. 条件付きコンパイル、ファイルベースアプリ向けディレクティブ、null許容文脈、診断制御の整理。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives
+[^6]: Microsoft Learn, _Preprocessor directives - C# reference_, updated 2026-01-20, “File-based apps”, “Nullable context”, “#if”, “#define”, “#line”, “#pragma warning”. 条件付きコンパイル、ファイルベースアプリ向けディレクティブ、null許容文脈、診断制御の整理。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives
 
-[^7]: Microsoft Learn, *Lexical structure - C# language specification*, updated 2025-12-09, §6.5.1 General. 前処理ディレクティブが独立した前処理段階ではなく字句解析の一部として処理されることの確認。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/lexical-structure
+[^7]: Microsoft Learn, _Lexical structure - C# language specification_, updated 2025-12-09, §6.5.1 General. 前処理ディレクティブが独立した前処理段階ではなく字句解析の一部として処理されることの確認。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/lexical-structure
 
-[^8]: Microsoft Learn, *The history of C#*, accessed 2026-05-04, sections for C# 8 through C# 14. バージョン史の整理と、C# 8以降で顕在化したCLR・ライブラリ依存、およびC# 9〜14の主要機能群。https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-version-history
+[^8]: Microsoft Learn, _The history of C#_, accessed 2026-05-04, sections for C# 8 through C# 14. バージョン史の整理と、C# 8以降で顕在化したCLR・ライブラリ依存、およびC# 9〜14の主要機能群。https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-version-history
 
-[^9]: Microsoft Learn, *Target frameworks in SDK-style projects - .NET*, updated 2026-04-17; *Preprocessor directives - C# reference*, updated 2026-01-20, “Target framework symbols”. TFMとSDKが供給する条件付きコンパイル記号との差異、`NET10_0_OR_GREATER`等の位置付け。https://learn.microsoft.com/en-us/dotnet/standard/frameworks ; https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives
+[^9]: Microsoft Learn, _Target frameworks in SDK-style projects - .NET_, updated 2026-04-17; _Preprocessor directives - C# reference_, updated 2026-01-20, “Target framework symbols”. TFMとSDKが供給する条件付きコンパイル記号との差異、`NET10_0_OR_GREATER`等の位置付け。https://learn.microsoft.com/en-us/dotnet/standard/frameworks ; https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives
 
-[^10]: Microsoft Learn, *The history of C#*, accessed 2026-05-04, C# 8.0 section. 既定実装を持つインターフェイスメンバー、範囲とインデックス、非同期ストリーム、null許容参照型と実行基盤・ライブラリとの関係。https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-version-history
+[^10]: Microsoft Learn, _The history of C#_, accessed 2026-05-04, C# 8.0 section. 既定実装を持つインターフェイスメンバー、範囲とインデックス、非同期ストリーム、null許容参照型と実行基盤・ライブラリとの関係。https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-version-history
 
-[^11]: Microsoft Learn, *Types - C# language specification*, updated 2025-09-12, §8.9.3–§8.9.5. null許容参照型、nullable context、診断と実行時挙動の関係。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/types
+[^11]: Microsoft Learn, _Types - C# language specification_, updated 2025-09-12, §8.9.3–§8.9.5. null許容参照型、nullable context、診断と実行時挙動の関係。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/types
 
-[^12]: Microsoft Learn, *Preprocessor directives - C# reference*, updated 2026-01-20, “Nullable context”; *Compiler Options - language feature rules - C# reference*, updated 2024-09-27, “Nullable”. `#nullable`の優先関係、`restore`の意味、`<Nullable>`の各値と既定値。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives ; https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-options/language
+[^12]: Microsoft Learn, _Preprocessor directives - C# reference_, updated 2026-01-20, “Nullable context”; _Compiler Options - language feature rules - C# reference_, updated 2024-09-27, “Nullable”. `#nullable`の優先関係、`restore`の意味、`<Nullable>`の各値と既定値。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives ; https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-options/language
 
-[^13]: Microsoft Learn, *Attributes interpreted by the compiler: Nullable static analysis*, updated 2026-01-14. nullableフロー解析と属性注釈の関係。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/attributes/nullable-analysis
+[^13]: Microsoft Learn, _Attributes interpreted by the compiler: Nullable static analysis_, updated 2026-01-14. nullableフロー解析と属性注釈の関係。https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/attributes/nullable-analysis
 
-[^14]: Microsoft Learn, *Feature specifications - C#*. feature specificationが設計文書であり、実装との差異が言語設計会議ノートに記録されうることの説明。https://learn.microsoft.com/en-us/dotnet/csharp/specification/feature-spec-overview
+[^14]: Microsoft Learn, _Feature specifications - C#_. feature specificationが設計文書であり、実装との差異が言語設計会議ノートに記録されうることの説明。https://learn.microsoft.com/en-us/dotnet/csharp/specification/feature-spec-overview
 
-[^15]: GitHub, *dotnet/csharplang* repository; *C# Language Design Meetings*. C#言語設計の公式リポジトリであり、言語設計会議ノートおよび提案の参照先。https://github.com/dotnet/csharplang ; https://github.com/dotnet/csharplang/blob/main/meetings/README.md
+[^15]: GitHub, _dotnet/csharplang_ repository; _C# Language Design Meetings_. C#言語設計の公式リポジトリであり、言語設計会議ノートおよび提案の参照先。https://github.com/dotnet/csharplang ; https://github.com/dotnet/csharplang/blob/main/meetings/README.md
 
-[^16]: Microsoft Learn, *What's new in .NET 11*, updated 2026-04-14, “This article describes new features in .NET 11. It was last updated for preview 3.”, “.NET 11 is currently in preview. The final release is expected in November 2026.” .NET 11が2026年05月04日現在プレビュー段階であることの確認。https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-11/overview
+[^16]: Microsoft Learn, _What's new in .NET 11_, updated 2026-04-14, “This article describes new features in .NET 11. It was last updated for preview 3.”, “.NET 11 is currently in preview. The final release is expected in November 2026.” .NET 11が2026年05月04日現在プレビュー段階であることの確認。https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-11/overview
 
-[^17]: Microsoft Learn, *What's new in .NET 10*, updated 2025-11-07, “.NET 10 ... is supported for three years as a long-term support (LTS) release”, “C# 14”. .NET 10がLTSリリースであり、C# 14を含むことの確認。https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-10/overview
+[^17]: Microsoft Learn, _What's new in .NET 10_, updated 2025-11-07, “.NET 10 ... is supported for three years as a long-term support (LTS) release”, “C# 14”. .NET 10がLTSリリースであり、C# 14を含むことの確認。https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-10/overview

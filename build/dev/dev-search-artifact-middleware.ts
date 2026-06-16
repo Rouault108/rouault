@@ -7,7 +7,10 @@ import type { Connect } from 'vite';
 import { renderSearchCatalogArtifact } from '../search/emit-search-artifacts.js';
 import type { SourceNote } from '../../src/data/notes.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
-import { resolvePagefindBaseUrl, resolveSearchCatalogUrl } from '../../shared/search/search-artifact-url.js';
+import {
+  resolvePagefindBaseUrl,
+  resolveSearchCatalogUrl,
+} from '../../shared/search/search-artifact-url.js';
 
 export interface DevelopmentSearchArtifactMiddlewareOptions {
   readonly siteUrlContext: SiteUrlContext;
@@ -43,7 +46,8 @@ export const createDevelopmentSearchArtifactMiddleware = (
 ): Connect.NextHandleFunction => {
   const searchCatalogPathname = resolveSearchCatalogUrl(options.siteUrlContext);
   const pagefindBaseUrl = resolvePagefindBaseUrl(options.siteUrlContext);
-  const pagefindDirectory = options.pagefindDirectory ?? path.resolve(process.cwd(), 'dist', 'pagefind');
+  const pagefindDirectory =
+    options.pagefindDirectory ?? path.resolve(process.cwd(), 'dist', 'pagefind');
 
   return async (
     request: IncomingMessage,

@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as parse5 from 'parse5';
 
-import {
-  validateDocumentSidebarIdentityContract,
-} from '../../build/navigation/sidebar-identity-dom-contract.js';
+import { validateDocumentSidebarIdentityContract } from '../../build/navigation/sidebar-identity-dom-contract.js';
 import { SidebarIdentityDocumentContractError } from '../../shared/navigation/sidebar-identity-document-contract.js';
 
 describe('sidebar identity DOM contract', () => {

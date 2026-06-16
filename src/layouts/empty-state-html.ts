@@ -13,8 +13,7 @@ export interface EmptyStateHtmlInput {
   announce?: EmptyStateAnnounce;
 }
 
-const isEmptyStateVariant = (value: unknown): value is EmptyStateVariant =>
-  value === 'default';
+const isEmptyStateVariant = (value: unknown): value is EmptyStateVariant => value === 'default';
 
 const isEmptyStateAnnounce = (value: unknown): value is EmptyStateAnnounce =>
   value === 'off' || value === 'polite';

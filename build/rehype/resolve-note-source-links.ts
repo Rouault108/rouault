@@ -11,18 +11,17 @@ export interface RehypeResolveNoteSourceLinksOptions {
 
 const getSourcePath = (file: VFileLike | undefined): string => {
   if (typeof file?.path !== 'string' || file.path.trim().length === 0) {
-    throw new Error('[markdown] Markdown source file path is required to resolve note source links.');
+    throw new Error(
+      '[markdown] Markdown source file path is required to resolve note source links.',
+    );
   }
   return file.path;
 };
 
-const toResolveOptions = (
-  sourceRootPaths: Partial<Record<NoteSourceRoot, string>> | undefined,
-) => (sourceRootPaths === undefined ? {} : { sourceRootPaths });
+const toResolveOptions = (sourceRootPaths: Partial<Record<NoteSourceRoot, string>> | undefined) =>
+  sourceRootPaths === undefined ? {} : { sourceRootPaths };
 
-export function rehypeResolveNoteSourceLinks(
-  options: RehypeResolveNoteSourceLinksOptions = {},
-) {
+export function rehypeResolveNoteSourceLinks(options: RehypeResolveNoteSourceLinksOptions = {}) {
   return (tree: unknown, file?: VFileLike): void => {
     const sourceFilePath = getSourcePath(file);
 

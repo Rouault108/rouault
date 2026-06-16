@@ -35,10 +35,7 @@
     },
     "closure_manifest_artifact_key": {
       "type": "object",
-      "required": [
-        "artifact_id",
-        "artifact_revision"
-      ],
+      "required": ["artifact_id", "artifact_revision"],
       "additionalProperties": false,
       "properties": {
         "artifact_id": {
@@ -59,17 +56,10 @@
       }
     },
     "validation_result": {
-      "enum": [
-        "pass",
-        "fail",
-        "manual-review-required"
-      ]
+      "enum": ["pass", "fail", "manual-review-required"]
     },
     "derived_closure_state": {
-      "enum": [
-        "closed",
-        "not-closed"
-      ]
+      "enum": ["closed", "not-closed"]
     },
     "timestamp": {
       "type": "string",
@@ -91,17 +81,12 @@
             "const": "pass"
           }
         },
-        "required": [
-          "validation_result"
-        ]
+        "required": ["validation_result"]
       },
       "then": {
         "properties": {
           "derived_closure_state": {
-            "enum": [
-              "closed",
-              "not-closed"
-            ]
+            "enum": ["closed", "not-closed"]
           }
         }
       }
@@ -110,15 +95,10 @@
       "if": {
         "properties": {
           "validation_result": {
-            "enum": [
-              "fail",
-              "manual-review-required"
-            ]
+            "enum": ["fail", "manual-review-required"]
           }
         },
-        "required": [
-          "validation_result"
-        ]
+        "required": ["validation_result"]
       },
       "then": {
         "properties": {
@@ -163,32 +143,20 @@
           "pattern": "^[a-f0-9]{64}$"
         },
         "storage_scope": {
-          "enum": [
-            "repository-redacted",
-            "private",
-            "restricted"
-          ]
+          "enum": ["repository-redacted", "private", "restricted"]
         },
         "git_commit_sha": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "pattern": "^[a-f0-9]{40}$|^[a-f0-9]{64}$"
         },
         "signature": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         }
       },
       "anyOf": [
         {
-          "required": [
-            "git_commit_sha"
-          ],
+          "required": ["git_commit_sha"],
           "properties": {
             "git_commit_sha": {
               "type": "string",
@@ -197,9 +165,7 @@
           }
         },
         {
-          "required": [
-            "signature"
-          ],
+          "required": ["signature"],
           "properties": {
             "signature": {
               "type": "string",

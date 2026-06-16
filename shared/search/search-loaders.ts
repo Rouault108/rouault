@@ -28,9 +28,7 @@ export type SearchCatalogFetcher = (
 export interface LoadSearchCatalogOptions {
   readonly artifactUrlResolver: SearchArtifactUrlResolver;
   readonly siteUrlContext: SiteUrlContext;
-  readonly isInternalDocumentPathname: (
-    normalizedPathnameWithoutBasePath: string,
-  ) => boolean;
+  readonly isInternalDocumentPathname: (normalizedPathnameWithoutBasePath: string) => boolean;
   readonly diagnostics?: SearchJsonParseDiagnosticSink;
   readonly signal?: AbortSignal;
 }
@@ -120,9 +118,12 @@ const importPagefindModule = (moduleUrl: string): Promise<unknown> =>
 const assertJavaScriptContentType = (contentType: string | null): void => {
   const normalized = contentType?.split(';')[0]?.trim().toLowerCase() ?? '';
   if (
-    !['text/javascript', 'application/javascript', 'text/ecmascript', 'application/ecmascript'].includes(
-      normalized,
-    )
+    ![
+      'text/javascript',
+      'application/javascript',
+      'text/ecmascript',
+      'application/ecmascript',
+    ].includes(normalized)
   ) {
     throw new Error('Pagefind module の Content-Type が不正です。');
   }

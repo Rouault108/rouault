@@ -1,6 +1,9 @@
 import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
 import { resolveNoteSourcePathFromVFile } from '../content/note-source-vfile.js';
-import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
+import {
+  resolveDevelopmentSiteUrlContext,
+  resolveProductionSiteUrlContext,
+} from '../site/site-url-context.js';
 import { type HastNode, type VFileLike } from './hast-utils.js';
 import {
   previewSandboxHtmlMayContainUrlBearingAttributes,
@@ -210,7 +213,10 @@ const createPreviewSandboxHtmlSnippetLinkContext = (
   };
 };
 
-const validatePreviewSandboxSnippets = (snippets: readonly PreviewSnippet[], file?: VFileLike): void => {
+const validatePreviewSandboxSnippets = (
+  snippets: readonly PreviewSnippet[],
+  file?: VFileLike,
+): void => {
   const htmlSnippetsWithUrlAttributes = snippets.filter(
     (snippet) =>
       snippet.kind === 'html' && previewSandboxHtmlMayContainUrlBearingAttributes(snippet.source),

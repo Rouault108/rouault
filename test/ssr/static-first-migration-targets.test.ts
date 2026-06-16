@@ -146,9 +146,7 @@ describe('static-first migration targets', () => {
         }),
       ),
     ).toEqual(EXPECTED_MIGRATION_TARGETS);
-    expect(STATIC_FIRST_MIGRATION_TARGETS.map((target) => target.tag)).not.toContain(
-      'ui-checkbox',
-    );
+    expect(STATIC_FIRST_MIGRATION_TARGETS.map((target) => target.tag)).not.toContain('ui-checkbox');
   });
 
   it('requires notes and marks every note as derived from old materials', () => {

@@ -51,10 +51,7 @@ export function splitSearchDialogHighlightParts(value: string, query: string): H
   return parts.length > 0 ? parts : [{ text: value, matched: false }];
 }
 
-export function renderSearchDialogHighlightedText(
-  value: string,
-  query: string,
-): string {
+export function renderSearchDialogHighlightedText(value: string, query: string): string {
   const parts = splitSearchDialogHighlightParts(value, query);
   const hasMatch = parts.some((part) => part.matched);
   if (!hasMatch) {

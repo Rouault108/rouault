@@ -1,7 +1,7 @@
 import { esbuildPlugin } from '@web/dev-server-esbuild';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
-const renderTestRunnerHtml = testFramework => `<!DOCTYPE html>
+const renderTestRunnerHtml = (testFramework) => `<!DOCTYPE html>
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
@@ -19,7 +19,7 @@ const includeWebkit = process.env.CI === 'true' || process.env.ROUAULT_WTR_WEBKI
 const requestedBrowsers = new Set(
   (process.env.ROUAULT_WTR_BROWSERS ?? 'chromium,firefox')
     .split(',')
-    .map(browser => browser.trim())
+    .map((browser) => browser.trim())
     .filter(Boolean),
 );
 
@@ -62,7 +62,7 @@ const config = {
       timeout: 10000,
     },
   },
-  testRunnerHtml: testFramework => renderTestRunnerHtml(testFramework),
+  testRunnerHtml: (testFramework) => renderTestRunnerHtml(testFramework),
 };
 
 export default config;

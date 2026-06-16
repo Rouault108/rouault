@@ -76,9 +76,7 @@ describe('static article-header icon html renderer', () => {
       label: ' A&B <C> "D" ',
     });
 
-    expect(rendered).toContain(
-      'class="icon&amp;A &lt;broken&gt; &quot;quoted&quot; static-icon"',
-    );
+    expect(rendered).toContain('class="icon&amp;A &lt;broken&gt; &quot;quoted&quot; static-icon"');
     expect(rendered).toContain('aria-label="A&amp;B &lt;C&gt; &quot;D&quot;"');
     expect(rendered).toContain('data-icon="link"');
   });

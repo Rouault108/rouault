@@ -28,7 +28,11 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
           whenReady: () => Promise<void>;
         })
       | null;
-    if (!router || typeof router.navigate !== 'function' || typeof router.whenReady !== 'function') {
+    if (
+      !router ||
+      typeof router.navigate !== 'function' ||
+      typeof router.whenReady !== 'function'
+    ) {
       throw new Error('app-router.navigate() が利用できません');
     }
 
@@ -58,7 +62,9 @@ const readNoteChromeState = async (
         return [];
       }
 
-      const labels = Array.from(element.querySelectorAll<HTMLElement>('.article-header__breadcrumb-item'))
+      const labels = Array.from(
+        element.querySelectorAll<HTMLElement>('.article-header__breadcrumb-item'),
+      )
         .map((node) => node.textContent?.trim() ?? '')
         .filter((text) => text.length > 0);
 

@@ -42,7 +42,9 @@ describe('validate note source links', () => {
 
   it('frontmatter ではなく Markdown body の link だけを収集すること', async () => {
     const fixture = createFixture();
-    const stripped = stripYamlFrontmatter('---\nsource: /notes/not-body/\n---\n[Target](./target.md)');
+    const stripped = stripYamlFrontmatter(
+      '---\nsource: /notes/not-body/\n---\n[Target](./target.md)',
+    );
 
     const links = await collectNoteSourceLinksFromMarkdown({
       body: stripped.body,
@@ -90,4 +92,3 @@ describe('validate note source links', () => {
     ).to.throw('/notes/testing/target');
   });
 });
-

@@ -37,14 +37,7 @@
       "minLength": 1
     },
     "risk_stage": {
-      "enum": [
-        "R0",
-        "R1",
-        "R2-lite",
-        "R2-full",
-        "R3",
-        "R4"
-      ]
+      "enum": ["R0", "R1", "R2-lite", "R2-full", "R3", "R4"]
     },
     "audit_level": {
       "type": "string",
@@ -77,39 +70,20 @@
       "minLength": 1
     },
     "secret_revocation_rotation_record": {
-      "type": [
-        "string",
-        "null"
-      ],
+      "type": ["string", "null"],
       "minLength": 1
     },
     "private_locator_leak_check": {
-      "enum": [
-        "pass",
-        "fail",
-        "manual-review-required"
-      ]
+      "enum": ["pass", "fail", "manual-review-required"]
     },
     "non_public_digest_leak_check": {
-      "enum": [
-        "pass",
-        "fail",
-        "manual-review-required"
-      ]
+      "enum": ["pass", "fail", "manual-review-required"]
     },
     "integrity_result": {
-      "enum": [
-        "pass",
-        "fail",
-        "manual-review-required"
-      ]
+      "enum": ["pass", "fail", "manual-review-required"]
     },
     "derived_evidence_state": {
-      "enum": [
-        "preserved",
-        "not-preserved",
-        "manual-review-required"
-      ]
+      "enum": ["preserved", "not-preserved", "manual-review-required"]
     },
     "validation_evidence": {
       "type": "array",
@@ -128,11 +102,7 @@
     },
     "human_approval": {
       "type": "object",
-      "required": [
-        "approved",
-        "approver",
-        "timestamp"
-      ],
+      "required": ["approved", "approver", "timestamp"],
       "additionalProperties": false,
       "properties": {
         "approved": {
@@ -158,11 +128,7 @@
   "$defs": {
     "evidenceIndexRef": {
       "type": "object",
-      "required": [
-        "artifact_id",
-        "artifact_revision",
-        "public_locator"
-      ],
+      "required": ["artifact_id", "artifact_revision", "public_locator"],
       "additionalProperties": false,
       "properties": {
         "artifact_id": {
@@ -181,10 +147,7 @@
     },
     "privateEvidenceIndexRef": {
       "type": "object",
-      "required": [
-        "opaque_reference",
-        "storage_scope"
-      ],
+      "required": ["opaque_reference", "storage_scope"],
       "additionalProperties": false,
       "properties": {
         "opaque_reference": {
@@ -192,21 +155,13 @@
           "minLength": 1
         },
         "storage_scope": {
-          "enum": [
-            "local-private",
-            "ci-private",
-            "external-restricted"
-          ]
+          "enum": ["local-private", "ci-private", "external-restricted"]
         }
       }
     },
     "validationEvidence": {
       "type": "object",
-      "required": [
-        "method",
-        "result",
-        "timestamp"
-      ],
+      "required": ["method", "result", "timestamp"],
       "additionalProperties": false,
       "properties": {
         "method": {
@@ -218,11 +173,7 @@
           "minLength": 1
         },
         "result": {
-          "enum": [
-            "pass",
-            "fail",
-            "manual-review-required"
-          ]
+          "enum": ["pass", "fail", "manual-review-required"]
         },
         "timestamp": {
           "type": "string",
@@ -239,9 +190,7 @@
             "const": "pass"
           }
         },
-        "required": [
-          "integrity_result"
-        ]
+        "required": ["integrity_result"]
       },
       "then": {
         "properties": {
@@ -255,23 +204,15 @@
       "if": {
         "properties": {
           "integrity_result": {
-            "enum": [
-              "fail",
-              "manual-review-required"
-            ]
+            "enum": ["fail", "manual-review-required"]
           }
         },
-        "required": [
-          "integrity_result"
-        ]
+        "required": ["integrity_result"]
       },
       "then": {
         "properties": {
           "derived_evidence_state": {
-            "enum": [
-              "not-preserved",
-              "manual-review-required"
-            ]
+            "enum": ["not-preserved", "manual-review-required"]
           }
         }
       }
@@ -283,9 +224,7 @@
             "const": "fail"
           }
         },
-        "required": [
-          "private_locator_leak_check"
-        ]
+        "required": ["private_locator_leak_check"]
       },
       "then": {
         "properties": {
@@ -302,9 +241,7 @@
             "const": "fail"
           }
         },
-        "required": [
-          "non_public_digest_leak_check"
-        ]
+        "required": ["non_public_digest_leak_check"]
       },
       "then": {
         "properties": {
@@ -321,17 +258,12 @@
             "const": "manual-review-required"
           }
         },
-        "required": [
-          "private_locator_leak_check"
-        ]
+        "required": ["private_locator_leak_check"]
       },
       "then": {
         "properties": {
           "integrity_result": {
-            "enum": [
-              "fail",
-              "manual-review-required"
-            ]
+            "enum": ["fail", "manual-review-required"]
           }
         }
       }
@@ -343,17 +275,12 @@
             "const": "manual-review-required"
           }
         },
-        "required": [
-          "non_public_digest_leak_check"
-        ]
+        "required": ["non_public_digest_leak_check"]
       },
       "then": {
         "properties": {
           "integrity_result": {
-            "enum": [
-              "fail",
-              "manual-review-required"
-            ]
+            "enum": ["fail", "manual-review-required"]
           }
         }
       }
@@ -367,22 +294,15 @@
                 "const": false
               }
             },
-            "required": [
-              "approved"
-            ]
+            "required": ["approved"]
           }
         },
-        "required": [
-          "human_approval"
-        ]
+        "required": ["human_approval"]
       },
       "then": {
         "properties": {
           "integrity_result": {
-            "enum": [
-              "fail",
-              "manual-review-required"
-            ]
+            "enum": ["fail", "manual-review-required"]
           }
         }
       }

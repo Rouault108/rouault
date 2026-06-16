@@ -45,7 +45,8 @@ const renderNotes = (corpusPage: CorpusPageEntry): string => {
     .join('')}</ol>`;
 };
 
-export const renderCorpusPageHtml = (corpusPage: CorpusPageEntry): string => `
+export const renderCorpusPageHtml = (corpusPage: CorpusPageEntry): string =>
+  `
   <section class="corpus-page page-shell" aria-labelledby="corpus-page-title">
     <div class="hero">
       <p class="eyebrow">Corpus</p>

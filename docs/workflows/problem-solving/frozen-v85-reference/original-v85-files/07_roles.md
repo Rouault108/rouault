@@ -16,33 +16,33 @@ Codexの自己確認は参考情報であり、証拠ではありません。必
 
 ## 2. 役割表
 
-| 工程 | 主担当 | 補助 | 注意 |
-|---|---|---|---|
-| 問題の言語化 | 人間 | ChatGPT | 症状と原因を混同しない |
-| 入口判定 | ChatGPT | 人間 | R0〜R4を過小評価しない |
-| 初動トリアージ | ChatGPT | 人間 | この段階では原因断定しない |
-| 封じ込め要否判断 | 人間 | ChatGPT | テストskipや握りつぶしは禁止 |
-| Evidence作成 | 人間 | ChatGPT | 実行ログ、CIログ、git diffを優先。間欠障害では試行回数、timeout値、trace等を残す |
-| 機密情報・redaction確認 | 人間 | ChatGPT | 個人ノート本文、ローカルパス、URL、秘密情報の共有可否を判断する |
-| Branch hygiene確認 | 人間 | ChatGPT | 既存差分と今回修正を混ぜない |
-| 重大度判定 | ChatGPT | 人間 | blockerでもR1になり得る |
-| リスク段階判定 | ChatGPT | 人間 | minorでもR3になり得る |
-| Cause Summary / Cause Matrix | ChatGPT | 人間 | 採用、棄却、保留を分ける |
-| 契約影響チェック / Contract Inventory | ChatGPT | 人間 | R2-fullでは契約影響チェック必須。契約変更なら原則R3 |
-| 削除・移行・縮退分類 | ChatGPT | 人間 | コード、テスト、生成物、契約の削除はR2-full以上で根拠を残す |
-| 設計判断 | 人間 + ChatGPT | - | Codexに設計判断をさせない |
-| Fix Plan作成 | ChatGPT | 人間 | 変更境界と禁止事項を明記する |
-| Fix Plan精査 | ChatGPT | 人間 | 反対仮説レビューを必要に応じて行う |
-| 小規模実装 | 人間 | ChatGPT置換案 | R0/R1中心 |
-| 中〜大規模実装 | 人間またはCodex | ChatGPT | Codexは限定実装のみ |
-| 最小再検証 | 人間 | ChatGPT | 修正前失敗条件を先に確認する |
-| git diff精査 | ChatGPT | 人間 | 未実装確認も含める |
-| Verification作成 | ChatGPT | 人間 | F/C/CH/S/Vを対応させる |
-| テスト結果の解釈 | ChatGPT | 人間 | 範囲外扱いには根拠が必要 |
-| 手動確認 | 人間 | ChatGPT | UI、visual、accessibilityで必要に応じて記録 |
-| コミット前最終確認 | 人間 + ChatGPT | - | 一時ファイル、生成物、lockfile差分を確認 |
-| 最終判断 | 人間 | ChatGPT | 未検証項目を完了扱いしない |
-| コミットメッセージ作成 | ChatGPT | 人間 | 責務が複数なら分割を検討 |
+| 工程                                  | 主担当          | 補助          | 注意                                                                             |
+| ------------------------------------- | --------------- | ------------- | -------------------------------------------------------------------------------- |
+| 問題の言語化                          | 人間            | ChatGPT       | 症状と原因を混同しない                                                           |
+| 入口判定                              | ChatGPT         | 人間          | R0〜R4を過小評価しない                                                           |
+| 初動トリアージ                        | ChatGPT         | 人間          | この段階では原因断定しない                                                       |
+| 封じ込め要否判断                      | 人間            | ChatGPT       | テストskipや握りつぶしは禁止                                                     |
+| Evidence作成                          | 人間            | ChatGPT       | 実行ログ、CIログ、git diffを優先。間欠障害では試行回数、timeout値、trace等を残す |
+| 機密情報・redaction確認               | 人間            | ChatGPT       | 個人ノート本文、ローカルパス、URL、秘密情報の共有可否を判断する                  |
+| Branch hygiene確認                    | 人間            | ChatGPT       | 既存差分と今回修正を混ぜない                                                     |
+| 重大度判定                            | ChatGPT         | 人間          | blockerでもR1になり得る                                                          |
+| リスク段階判定                        | ChatGPT         | 人間          | minorでもR3になり得る                                                            |
+| Cause Summary / Cause Matrix          | ChatGPT         | 人間          | 採用、棄却、保留を分ける                                                         |
+| 契約影響チェック / Contract Inventory | ChatGPT         | 人間          | R2-fullでは契約影響チェック必須。契約変更なら原則R3                              |
+| 削除・移行・縮退分類                  | ChatGPT         | 人間          | コード、テスト、生成物、契約の削除はR2-full以上で根拠を残す                      |
+| 設計判断                              | 人間 + ChatGPT  | -             | Codexに設計判断をさせない                                                        |
+| Fix Plan作成                          | ChatGPT         | 人間          | 変更境界と禁止事項を明記する                                                     |
+| Fix Plan精査                          | ChatGPT         | 人間          | 反対仮説レビューを必要に応じて行う                                               |
+| 小規模実装                            | 人間            | ChatGPT置換案 | R0/R1中心                                                                        |
+| 中〜大規模実装                        | 人間またはCodex | ChatGPT       | Codexは限定実装のみ                                                              |
+| 最小再検証                            | 人間            | ChatGPT       | 修正前失敗条件を先に確認する                                                     |
+| git diff精査                          | ChatGPT         | 人間          | 未実装確認も含める                                                               |
+| Verification作成                      | ChatGPT         | 人間          | F/C/CH/S/Vを対応させる                                                           |
+| テスト結果の解釈                      | ChatGPT         | 人間          | 範囲外扱いには根拠が必要                                                         |
+| 手動確認                              | 人間            | ChatGPT       | UI、visual、accessibilityで必要に応じて記録                                      |
+| コミット前最終確認                    | 人間 + ChatGPT  | -             | 一時ファイル、生成物、lockfile差分を確認                                         |
+| 最終判断                              | 人間            | ChatGPT       | 未検証項目を完了扱いしない                                                       |
+| コミットメッセージ作成                | ChatGPT         | 人間          | 責務が複数なら分割を検討                                                         |
 
 ## 2.1 承認権限の境界
 
@@ -97,7 +97,6 @@ Codexに任せないことです。
 
 R4では、Codexに一括実装させません。必ずフェーズ単位で実装、精査、検証します。
 
-
 ## R4特殊Phaseの実装境界
 
 ```text
@@ -106,7 +105,6 @@ R4では、Codexに一括実装させません。必ずフェーズ単位で実�
 - Verification-only / Integration verificationでは検証実行補助だけを許可し、新Failure検出時に同じPhaseで修正させない
 - No-changeの終端判断 / R4 No-actionの対象外判断をCodexへ委任しない
 ```
-
 
 ## Artifactと状態の責務
 

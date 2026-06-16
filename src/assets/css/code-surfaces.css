@@ -291,7 +291,9 @@
 
 [data-code-block-root]:hover .code-surface-copy-button-shell > .static-copy-control,
 [data-code-block-root]:focus-within .code-surface-copy-button-shell > .static-copy-control,
-section[data-code-group][data-code-group-enhanced='true']:hover .code-group-header-tools > .static-copy-control,
+section[data-code-group][data-code-group-enhanced='true']:hover
+  .code-group-header-tools
+  > .static-copy-control,
 section[data-code-group][data-code-group-enhanced='true']:focus-within
   .code-group-header-tools
   > .static-copy-control {
@@ -437,7 +439,9 @@ section[data-code-group][data-code-group-enhanced='true'] .code-group-stack-labe
   display: none;
 }
 
-section[data-code-group] > [data-code-group-panel] > :where(pre[data-code-block], [data-code-block-root]) {
+section[data-code-group]
+  > [data-code-group-panel]
+  > :where(pre[data-code-block], [data-code-block-root]) {
   padding-top: var(--space-2, 8px);
 }
 

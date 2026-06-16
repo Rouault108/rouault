@@ -367,7 +367,6 @@ R4完了時の終端不変条件です。
 - documentation
 ```
 
-
 再現性がtimeout、flaky、CIのみ、browser / viewport依存などの間欠障害である場合は、`03_templates.md` のIntermittent Failure Evidenceを使います。単発ログだけで原因断定せず、再現回数、試行回数、環境、timeout値、retry有無、trace / screenshot有無を記録します。
 
 ## 4. 封じ込め判断
@@ -578,7 +577,6 @@ Cause Summaryの正式テンプレートは `03_templates.md` を正本としま
 
 R2-fullでは、Cause SummaryまたはCause Matrixを作成します。原因候補が複数残る、説明できない症状がある、影響範囲が広い場合はCause Matrixを使います。R3以上ではCause Matrixを必須にします。
 
-
 ### 7.1 調査予算
 
 調査は無制限に続けません。R段階ごとに、次を目安にします。
@@ -695,7 +693,6 @@ Disposition別必須事項:
 
 この実装開始ゲートは、R1以上のImplementation Phaseに適用します。No-change、No-action、Investigation-only、Verification-only、Integration verificationには実装開始ゲートを適用せず、各専用Recordの活動開始条件を使います。
 
-
 非Implementation Phaseの活動開始条件です。
 
 ```text
@@ -765,7 +762,6 @@ R段階ごとの軽量化規則です。
 - R4 Phase Planで関連Contract IDまたは関連Phase Decision IDをN/Aにする場合は、Contract N/A理由またはPhase Decision N/A理由が記録されている。関連全体Decision IDはN/Aにしていない
 ```
 
-
 ## 9.1 実装後の重要な順序
 
 実装後順序の正本は `06_completion_commit.md` です。ここでは、Verificationや広範囲テストへ進む前に修正前失敗条件と実diffを確認する原則だけを示します。
@@ -830,7 +826,6 @@ unverified:
 - 完了条件にはできない
 ```
 
-
 ## 11. Artifact Revision、Manifest chain、R4台帳の不変性
 
 ```text
@@ -849,6 +844,7 @@ unverified:
 R4の完了順序はR4 Profileで分岐します。Closure Manifest / Closure AttestationはR4-Aだけで作成します。
 
 R4-S:
+
 1. Plan Revisionを凍結します。
 2. Lightweight Resolution Manifestを確定し、ArtifactKeyを一意にArtifactRefへ解決できることを確認します。Manifest AnchorはN/A可です。
 3. Phase Event、Necessity Evaluation、Phase成果物のArtifact Validation Attestationを完了します。
@@ -858,6 +854,7 @@ R4-S:
 7. R4 Completion RecordでFinal Verification、pre-final Ledger、Lightweight Resolution Manifest、再計算結果を人間承認します。
 
 R4-I:
+
 1. Plan Revisionを凍結します。
 2. Artifact Manifestを確定し、ArtifactKeyを一意にArtifactRefへ解決できることを確認します。R4-IではLightweight Resolution Manifestを使わず、Artifact ManifestがArtifactKey解決の正本になります。
 3. Phase Event、Necessity Evaluation、Phase成果物のArtifact Validation Attestationを完了します。
@@ -869,6 +866,7 @@ R4-I:
 9. R4 Completion RecordでManifest chain、ArtifactKey解決、SHA-256一致、pre-final Ledger、Final Verificationを人間承認します。
 
 R4-A:
+
 1. Plan Revisionを凍結します。
 2. Artifact Manifestを確定し、ArtifactKeyを一意にArtifactRefへ解決できることを確認します。R4-AではLightweight Resolution Manifestを使わず、Artifact ManifestがArtifactKey解決の正本になります。
 3. Phase Event、Necessity Evaluation、Phase成果物のArtifact Validation Attestationを完了します。

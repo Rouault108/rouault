@@ -19,9 +19,7 @@
       "plan_revision": 1,
       "necessity": "required",
       "evaluation_result": "required",
-      "evidence_ids": [
-        "E-NEC-001"
-      ],
+      "evidence_ids": ["E-NEC-001"],
       "timestamp": "2026-06-16T00:00:00Z",
       "actor": "human"
     },
@@ -31,9 +29,7 @@
       "plan_revision": 1,
       "necessity": "required",
       "evaluation_result": "required",
-      "evidence_ids": [
-        "E-NEC-002"
-      ],
+      "evidence_ids": ["E-NEC-002"],
       "timestamp": "2026-06-16T00:01:00Z",
       "actor": "human"
     }
@@ -61,9 +57,7 @@
       "timestamp": "2026-06-16T00:00:00Z",
       "actor": "human",
       "reason": "Initialize phase status.",
-      "evidence_ids": [
-        "E-EVT-SL-001"
-      ]
+      "evidence_ids": ["E-EVT-SL-001"]
     },
     {
       "event_id": "EVT-SL-002",
@@ -87,9 +81,7 @@
       "timestamp": "2026-06-16T00:00:01Z",
       "actor": "human",
       "reason": "Phase is ready.",
-      "evidence_ids": [
-        "E-EVT-SL-002"
-      ]
+      "evidence_ids": ["E-EVT-SL-002"]
     },
     {
       "event_id": "EVT-SL-003",
@@ -113,9 +105,7 @@
       "timestamp": "2026-06-16T00:00:02Z",
       "actor": "human",
       "reason": "Phase is blocked on review input.",
-      "evidence_ids": [
-        "E-EVT-SL-003"
-      ]
+      "evidence_ids": ["E-EVT-SL-003"]
     },
     {
       "event_id": "EVT-SL-004",
@@ -139,9 +129,7 @@
       "timestamp": "2026-06-16T00:00:03Z",
       "actor": "human",
       "reason": "Blocker resolved.",
-      "evidence_ids": [
-        "E-EVT-SL-004"
-      ]
+      "evidence_ids": ["E-EVT-SL-004"]
     },
     {
       "event_id": "EVT-SL-005",
@@ -165,9 +153,7 @@
       "timestamp": "2026-06-16T00:00:04Z",
       "actor": "human",
       "reason": "Phase execution started.",
-      "evidence_ids": [
-        "E-EVT-SL-005"
-      ]
+      "evidence_ids": ["E-EVT-SL-005"]
     },
     {
       "event_id": "EVT-SL-006",
@@ -191,9 +177,7 @@
       "timestamp": "2026-06-16T00:00:05Z",
       "actor": "human",
       "reason": "Phase passed.",
-      "evidence_ids": [
-        "E-EVT-SL-006"
-      ]
+      "evidence_ids": ["E-EVT-SL-006"]
     },
     {
       "event_id": "EVT-SL-007",
@@ -217,9 +201,7 @@
       "timestamp": "2026-06-16T00:00:06Z",
       "actor": "human",
       "reason": "Phase result superseded by Issue incomplete.",
-      "evidence_ids": [
-        "E-EVT-SL-007"
-      ]
+      "evidence_ids": ["E-EVT-SL-007"]
     },
     {
       "event_id": "EVT-SR-001",
@@ -243,9 +225,7 @@
       "timestamp": "2026-06-16T00:01:00Z",
       "actor": "human",
       "reason": "Initialize replacement phase status.",
-      "evidence_ids": [
-        "E-EVT-SR-001"
-      ]
+      "evidence_ids": ["E-EVT-SR-001"]
     },
     {
       "event_id": "EVT-SR-002",
@@ -269,9 +249,7 @@
       "timestamp": "2026-06-16T00:01:01Z",
       "actor": "human",
       "reason": "Replacement phase is ready.",
-      "evidence_ids": [
-        "E-EVT-SR-002"
-      ]
+      "evidence_ids": ["E-EVT-SR-002"]
     },
     {
       "event_id": "EVT-SR-003",
@@ -295,9 +273,7 @@
       "timestamp": "2026-06-16T00:01:02Z",
       "actor": "human",
       "reason": "Replacement phase execution started.",
-      "evidence_ids": [
-        "E-EVT-SR-003"
-      ]
+      "evidence_ids": ["E-EVT-SR-003"]
     },
     {
       "event_id": "EVT-SR-004",
@@ -321,9 +297,7 @@
       "timestamp": "2026-06-16T00:01:03Z",
       "actor": "human",
       "reason": "Replacement phase passed.",
-      "evidence_ids": [
-        "E-EVT-SR-004"
-      ]
+      "evidence_ids": ["E-EVT-SR-004"]
     }
   ],
   "phase_evidence_map": [
@@ -390,9 +364,7 @@
       "reason": null,
       "superseded_or_invalid_artifact_key": null,
       "superseded_or_invalid_artifact_ref": null,
-      "evidence_ids": [
-        "E-AVA-001"
-      ],
+      "evidence_ids": ["E-AVA-001"],
       "timestamp": "2026-06-16T00:00:00Z",
       "actor": "human"
     }

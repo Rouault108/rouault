@@ -881,11 +881,7 @@ export class Dropdown extends LitElement {
     return null;
   }
 
-  private _handleTypeahead(
-    char: string,
-    items: DropdownMenuEntry[],
-    currentIndex: number,
-  ): void {
+  private _handleTypeahead(char: string, items: DropdownMenuEntry[], currentIndex: number): void {
     if (this._positionPhase !== 'ready') {
       return;
     }
@@ -1320,8 +1316,10 @@ export class MenuLink extends LitElement {
         role="menuitem"
         tabindex="-1"
         href=${href}
-        data-link-kind=${annotations.find((item) => item.name === 'data-link-kind')?.value ?? nothing}
-        data-link-surface=${annotations.find((item) => item.name === 'data-link-surface')?.value ?? nothing}
+        data-link-kind=${annotations.find((item) => item.name === 'data-link-kind')?.value ??
+        nothing}
+        data-link-surface=${annotations.find((item) => item.name === 'data-link-surface')?.value ??
+        nothing}
         @click=${this._handleClick}
       >
         <slot></slot>

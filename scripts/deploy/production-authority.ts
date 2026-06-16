@@ -73,7 +73,9 @@ export const validateProductionAuthority = (
   }
 
   if (!COMMIT_SHA_PATTERN.test(githubSha)) {
-    throw new Error('[production-authority] GITHUB_SHA must be a 40 character lowercase commit SHA');
+    throw new Error(
+      '[production-authority] GITHUB_SHA must be a 40 character lowercase commit SHA',
+    );
   }
 
   return {

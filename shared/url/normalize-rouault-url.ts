@@ -26,7 +26,8 @@ export const applyBasePathToRenderHref = (options: {
 }): string => {
   const pathname = options.pathname.startsWith('/') ? options.pathname : `/${options.pathname}`;
   const basePath = options.siteUrlContext.basePath;
-  const publicPathname = basePath.length === 0 || pathname === '/' ? `${basePath}${pathname}` : `${basePath}${pathname}`;
+  const publicPathname =
+    basePath.length === 0 || pathname === '/' ? `${basePath}${pathname}` : `${basePath}${pathname}`;
   return `${publicPathname}${options.search ?? ''}${options.hash ?? ''}`;
 };
 
@@ -42,9 +43,10 @@ export const normalizeCurrentUrlForLinkClassification = (options: {
   readonly currentUrl: string;
   readonly context: CurrentDocumentClassificationContext;
 }): URL => {
-  const raw = options.currentUrl === options.siteUrlContext.siteOrigin
-    ? `${options.siteUrlContext.siteOrigin}/`
-    : options.currentUrl;
+  const raw =
+    options.currentUrl === options.siteUrlContext.siteOrigin
+      ? `${options.siteUrlContext.siteOrigin}/`
+      : options.currentUrl;
   const current = normalizeRouaultUrl(new URL(raw));
   if (current.origin !== options.siteUrlContext.siteOrigin) {
     throw new Error('invalid-current-url');

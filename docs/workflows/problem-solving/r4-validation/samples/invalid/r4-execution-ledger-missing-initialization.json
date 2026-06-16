@@ -19,9 +19,7 @@
       "plan_revision": 1,
       "necessity": "required",
       "evaluation_result": "required",
-      "evidence_ids": [
-        "E-NEC-001"
-      ],
+      "evidence_ids": ["E-NEC-001"],
       "timestamp": "2026-06-16T00:00:00Z",
       "actor": "human"
     }
@@ -49,9 +47,7 @@
       "timestamp": "2026-06-16T00:00:00Z",
       "actor": "human",
       "reason": "Missing initialization event.",
-      "evidence_ids": [
-        "E-EVT-MI-001"
-      ]
+      "evidence_ids": ["E-EVT-MI-001"]
     },
     {
       "event_id": "EVT-MI-002",
@@ -75,9 +71,7 @@
       "timestamp": "2026-06-16T00:00:01Z",
       "actor": "human",
       "reason": "Phase execution started.",
-      "evidence_ids": [
-        "E-EVT-MI-002"
-      ]
+      "evidence_ids": ["E-EVT-MI-002"]
     },
     {
       "event_id": "EVT-MI-003",
@@ -101,9 +95,7 @@
       "timestamp": "2026-06-16T00:00:02Z",
       "actor": "human",
       "reason": "Phase passed.",
-      "evidence_ids": [
-        "E-EVT-MI-003"
-      ]
+      "evidence_ids": ["E-EVT-MI-003"]
     }
   ],
   "phase_evidence_map": [
@@ -146,9 +138,7 @@
       "reason": null,
       "superseded_or_invalid_artifact_key": null,
       "superseded_or_invalid_artifact_ref": null,
-      "evidence_ids": [
-        "E-AVA-001"
-      ],
+      "evidence_ids": ["E-AVA-001"],
       "timestamp": "2026-06-16T00:00:00Z",
       "actor": "human"
     }

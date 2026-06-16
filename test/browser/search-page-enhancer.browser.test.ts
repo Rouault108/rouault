@@ -217,7 +217,10 @@ describe('search-page-enhancer', () => {
 
   it('provider injection で ready state を作り bootstrap と runtime を保持すること', () => {
     const root = renderSearchPageFixture();
-    const bootstrapState = { status: 'unavailable' as const, reason: 'search-runtime-unavailable' as const };
+    const bootstrapState = {
+      status: 'unavailable' as const,
+      reason: 'search-runtime-unavailable' as const,
+    };
     const searchRuntime = null;
     const controller = enhanceSearchPage(root, undefined, {
       siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
@@ -252,9 +255,9 @@ describe('search-page-enhancer', () => {
     expect(page?.querySelector<HTMLInputElement>('[data-search-query-input]')?.disabled).to.equal(
       true,
     );
-    expect(
-      page?.querySelector<HTMLSelectElement>('[data-search-sort-select]')?.disabled,
-    ).to.equal(true);
+    expect(page?.querySelector<HTMLSelectElement>('[data-search-sort-select]')?.disabled).to.equal(
+      true,
+    );
   });
 
   it('siteUrlContext provider が null の場合は bootstrap と search runtime を参照しないこと', () => {
@@ -439,9 +442,9 @@ describe('search-page-enhancer', () => {
     ]) {
       expect(root.querySelector<HTMLInputElement>(selector)?.disabled, selector).to.equal(true);
     }
-    expect(root.querySelector<HTMLFormElement>('[data-search-page-form]')?.hasAttribute('disabled')).to.equal(
-      false,
-    );
+    expect(
+      root.querySelector<HTMLFormElement>('[data-search-page-form]')?.hasAttribute('disabled'),
+    ).to.equal(false);
     expect(root.querySelector<HTMLInputElement>('[data-search-filter-input]')?.disabled).to.equal(
       false,
     );
@@ -518,10 +521,12 @@ describe('search-page-enhancer', () => {
   it('bootstrap unavailable 中は生成した selected-tag remove も個別 disabled にすること', () => {
     history.replaceState(history.state, '', '/tags/architecture/');
     const root = renderSearchPageFixture();
-    root.querySelector<HTMLElement>('[data-search-page-root]')?.setAttribute(
-      'initial-search-state-json',
-      JSON.stringify({ q: '', tags: ['architecture'], tagMode: 'or', sort: 'relevance' }),
-    );
+    root
+      .querySelector<HTMLElement>('[data-search-page-root]')
+      ?.setAttribute(
+        'initial-search-state-json',
+        JSON.stringify({ q: '', tags: ['architecture'], tagMode: 'or', sort: 'relevance' }),
+      );
     enhanceSearchPage(root, undefined, {
       siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
       bootstrapProvider: () => ({
@@ -592,9 +597,9 @@ describe('search-page-enhancer', () => {
     history.pushState(history.state, '', '/search/?q=router&tag=music');
     window.dispatchEvent(new PopStateEvent('popstate'));
 
-    expect(
-      root.querySelector<HTMLInputElement>('[data-search-query-input]')?.value,
-    ).to.equal('router');
+    expect(root.querySelector<HTMLInputElement>('[data-search-query-input]')?.value).to.equal(
+      'router',
+    );
     expect(requests).to.deep.equal([
       { mode: 'explore', q: 'router', tags: ['music'], tagMode: 'or', sort: 'relevance' },
     ]);
@@ -679,7 +684,11 @@ describe('search-page-enhancer', () => {
     root
       .querySelector<HTMLElement>('[data-search-page-root]')
       ?.setAttribute('initial-search-response-json', '{');
-    enhanceWithRuntime(root, undefined, createSearchRuntime(async () => response));
+    enhanceWithRuntime(
+      root,
+      undefined,
+      createSearchRuntime(async () => response),
+    );
     await Promise.resolve();
 
     const card = expectElement(
@@ -711,12 +720,17 @@ describe('search-page-enhancer', () => {
     root
       .querySelector<HTMLElement>('[data-search-page-root]')
       ?.setAttribute('initial-search-response-json', '{');
-    enhanceWithRuntime(root, undefined, createSearchRuntime(async () => response));
+    enhanceWithRuntime(
+      root,
+      undefined,
+      createSearchRuntime(async () => response),
+    );
     await Promise.resolve();
 
     expect(
-      root.querySelector('[data-filter-option][data-filter-tag="architecture"] .filter-option-count')
-        ?.textContent,
+      root.querySelector(
+        '[data-filter-option][data-filter-tag="architecture"] .filter-option-count',
+      )?.textContent,
     ).to.equal('2件');
     expect(
       root.querySelector<HTMLInputElement>(
@@ -767,10 +781,12 @@ describe('search-page-enhancer', () => {
   it('bootstrap unavailable 中も tag filter input / clear は URL と results を変えないこと', () => {
     history.replaceState(history.state, '', '/tags/architecture/');
     const root = renderSearchPageFixture();
-    root.querySelector<HTMLElement>('[data-search-page-root]')?.setAttribute(
-      'initial-search-state-json',
-      JSON.stringify({ q: '', tags: ['architecture'], tagMode: 'or', sort: 'relevance' }),
-    );
+    root
+      .querySelector<HTMLElement>('[data-search-page-root]')
+      ?.setAttribute(
+        'initial-search-state-json',
+        JSON.stringify({ q: '', tags: ['architecture'], tagMode: 'or', sort: 'relevance' }),
+      );
     enhanceSearchPage(root, undefined, {
       siteUrlContextProvider: () => DEFAULT_SITE_URL_CONTEXT,
       bootstrapProvider: () => ({
@@ -788,7 +804,9 @@ describe('search-page-enhancer', () => {
     filter.value = 'music';
     filter.dispatchEvent(new Event('input', { bubbles: true }));
     expect(location.href).to.equal(initialUrl);
-    expect(root.querySelector('[data-search-page-results-section]')?.innerHTML).to.equal(initialResults);
+    expect(root.querySelector('[data-search-page-results-section]')?.innerHTML).to.equal(
+      initialResults,
+    );
     expect(
       root.querySelector<HTMLElement>('[data-filter-option][data-filter-tag="architecture"]')
         ?.hidden,
@@ -803,7 +821,9 @@ describe('search-page-enhancer', () => {
     ).to.equal(true);
     root.querySelector<HTMLButtonElement>('[data-search-filter-clear]')?.click();
     expect(location.href).to.equal(initialUrl);
-    expect(root.querySelector('[data-search-page-results-section]')?.innerHTML).to.equal(initialResults);
+    expect(root.querySelector('[data-search-page-results-section]')?.innerHTML).to.equal(
+      initialResults,
+    );
     expect(
       root.querySelector<HTMLInputElement>('[data-search-tag-checkbox][value="architecture"]')
         ?.disabled,

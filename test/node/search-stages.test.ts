@@ -9,7 +9,10 @@ import {
 import { runQueryPreparationStage } from '../../src/search/core/stages/query-preparation.js';
 import { runRankingAndSortingStage } from '../../src/search/core/stages/ranking-and-sorting.js';
 import { runSourceFederationStage } from '../../src/search/core/stages/source-federation.js';
-import { createSearchCanonicalPathname, type SearchCanonicalPathname } from '../../shared/search/document-url.js';
+import {
+  createSearchCanonicalPathname,
+  type SearchCanonicalPathname,
+} from '../../shared/search/document-url.js';
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import type { SearchCandidate, SearchSourceBatch } from '../../shared/search/search-types.js';
 import type { SearchSortMode, SearchTagMode } from '../../shared/search/search-types.js';

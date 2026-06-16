@@ -1,7 +1,10 @@
 import type { SearchReturnToReadingEventDetail } from './search-navigation-events.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import type { LoadedInternalDocumentRouteManifestState } from '../router/internal-document-route-manifest-loader.js';
-import { navigateInternalDocument, type NavigateInternalDocumentOptions } from '../router/navigate-internal-document.js';
+import {
+  navigateInternalDocument,
+  type NavigateInternalDocumentOptions,
+} from '../router/navigate-internal-document.js';
 import { createSearchCanonicalPathname } from '../../shared/search/document-url.js';
 import { createSearchRouteAllowlistPredicate } from '../../shared/search/search-route-allowlist.js';
 import { buildSearchResultRenderHref } from './normalize-search-result-url.js';
@@ -54,7 +57,9 @@ export async function handleSearchReturnToReadingEvent(
 
   const detail = readSearchReturnToReadingEventDetail(customEvent.detail);
   if (detail === null) {
-    const candidateRef = createSearchEventDiagnosticCandidateRef('return-to-reading:invalid-schema');
+    const candidateRef = createSearchEventDiagnosticCandidateRef(
+      'return-to-reading:invalid-schema',
+    );
     options.diagnostics.addIssue({
       code: 'search-event-invalid-schema',
       stage: 'event',
@@ -65,10 +70,14 @@ export async function handleSearchReturnToReadingEvent(
 
   const canonical = createSearchCanonicalPathname({
     pathname: detail.canonicalPathname,
-    isInternalDocumentPathname: createSearchRouteAllowlistPredicate(options.routeManifestState.routeSet),
+    isInternalDocumentPathname: createSearchRouteAllowlistPredicate(
+      options.routeManifestState.routeSet,
+    ),
   });
   if (!canonical.ok) {
-    const candidateRef = createSearchEventDiagnosticCandidateRef('return-to-reading:invalid-canonical');
+    const candidateRef = createSearchEventDiagnosticCandidateRef(
+      'return-to-reading:invalid-canonical',
+    );
     options.diagnostics.addIssue({
       code: 'search-event-invalid-canonical-pathname',
       stage: 'event',
@@ -82,7 +91,9 @@ export async function handleSearchReturnToReadingEvent(
     siteUrlContext: options.siteUrlContext,
   });
   if (detail.renderHref !== renderHref) {
-    const candidateRef = createSearchEventDiagnosticCandidateRef('return-to-reading:render-href-mismatch');
+    const candidateRef = createSearchEventDiagnosticCandidateRef(
+      'return-to-reading:render-href-mismatch',
+    );
     options.diagnostics.addIssue({
       code: 'search-event-render-href-mismatch',
       stage: 'event',

@@ -12,13 +12,13 @@ quick-start.md
 
 ## 構成
 
-| パス | 用途 |
-|---|---|
-| `quick-start.md` | 日常運用の薄い入口。R判定、ChatGPT/Codexの使い分け、完了までの最短手順 |
-| `prompts/` | ChatGPT / Codexへ渡す短縮プロンプト |
-| `full-workflow/` | v85から抽出した詳細手順。迷った場合の参照先 |
-| `r4-validation/` | R4 / A2だけで使うSchema、validator、samples |
-| `frozen-v85-reference/` | v85完全版の凍結参照。通常は編集しない |
+| パス                    | 用途                                                                   |
+| ----------------------- | ---------------------------------------------------------------------- |
+| `quick-start.md`        | 日常運用の薄い入口。R判定、ChatGPT/Codexの使い分け、完了までの最短手順 |
+| `prompts/`              | ChatGPT / Codexへ渡す短縮プロンプト                                    |
+| `full-workflow/`        | v85から抽出した詳細手順。迷った場合の参照先                            |
+| `r4-validation/`        | R4 / A2だけで使うSchema、validator、samples                            |
+| `frozen-v85-reference/` | v85完全版の凍結参照。通常は編集しない                                  |
 
 ## 運用原則
 

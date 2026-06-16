@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { createSearchCore, type PagefindApi, type SearchCore, type SearchCoreDependencies } from '../../src/search/search-core.js';
+import {
+  createSearchCore,
+  type PagefindApi,
+  type SearchCore,
+  type SearchCoreDependencies,
+} from '../../src/search/search-core.js';
 import { createAbortError } from '../../src/search/abort.js';
 import type { SearchCatalogItem } from '../../shared/search/search-catalog.js';
 import type { SearchCatalogFetcher } from '../../shared/search/search-loaders.js';
@@ -11,7 +16,6 @@ import type {
   SearchImportBoundaryContract,
   SearchRequest,
 } from '../../shared/search/search-types.js';
-
 
 const canonicalPathname = (pathname: string): SearchCatalogItem['canonicalPathname'] => {
   const canonical = createSearchCanonicalPathname({ pathname });
@@ -24,52 +28,62 @@ const canonicalPathname = (pathname: string): SearchCatalogItem['canonicalPathna
 const testSearchCoreDefaults = {
   runtimeEnvironment: 'test',
   siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
-  artifactUrlResolver: createSearchArtifactUrlResolver({ siteUrlContext: DEFAULT_SITE_URL_CONTEXT }),
+  artifactUrlResolver: createSearchArtifactUrlResolver({
+    siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+  }),
   isInternalDocumentPathname: (pathname: string) => pathname.startsWith('/'),
 } as const satisfies Pick<
   Extract<SearchCoreDependencies, { readonly runtimeEnvironment: 'test' }>,
   'runtimeEnvironment' | 'siteUrlContext' | 'artifactUrlResolver' | 'isInternalDocumentPathname'
 >;
 
-const createCatalogFetcher = (options: {
-  readonly items?: readonly SearchCatalogItem[];
-  readonly error?: Error;
-  readonly onFetch?: () => void;
-} = {}): SearchCatalogFetcher => async () => {
-  options.onFetch?.();
-  if (options.error) {
-    throw options.error;
-  }
-  const items = options.items ?? [];
-  return {
-    ok: true,
-    status: 200,
-    type: 'basic',
-    redirected: false,
-    headers: { get: (_name: string) => 'application/json; charset=utf-8' },
-    json: async () => items,
-    text: async () => JSON.stringify(items),
+const createCatalogFetcher =
+  (
+    options: {
+      readonly items?: readonly SearchCatalogItem[];
+      readonly error?: Error;
+      readonly onFetch?: () => void;
+    } = {},
+  ): SearchCatalogFetcher =>
+  async () => {
+    options.onFetch?.();
+    if (options.error) {
+      throw options.error;
+    }
+    const items = options.items ?? [];
+    return {
+      ok: true,
+      status: 200,
+      type: 'basic',
+      redirected: false,
+      headers: { get: (_name: string) => 'application/json; charset=utf-8' },
+      json: async () => items,
+      text: async () => JSON.stringify(items),
+    };
   };
-};
 
-const createTestSearchCore = (
-  dependencies: {
-    readonly loadPagefind?: Extract<SearchCoreDependencies, { readonly runtimeEnvironment: 'test' }>['testOnlyLoadPagefind'];
-    readonly catalogItems?: readonly SearchCatalogItem[];
-    readonly catalogError?: Error;
-    readonly onCatalogFetch?: () => void;
-    readonly now?: () => number;
-  },
-): SearchCore => createSearchCore({
-  ...testSearchCoreDefaults,
-  ...(dependencies.loadPagefind ? { testOnlyLoadPagefind: dependencies.loadPagefind } : {}),
-  testOnlySearchCatalogFetcher: createCatalogFetcher({
-    ...(dependencies.catalogItems !== undefined ? { items: dependencies.catalogItems } : {}),
-    ...(dependencies.catalogError !== undefined ? { error: dependencies.catalogError } : {}),
-    ...(dependencies.onCatalogFetch !== undefined ? { onFetch: dependencies.onCatalogFetch } : {}),
-  }),
-  ...(dependencies.now ? { now: dependencies.now } : {}),
-});
+const createTestSearchCore = (dependencies: {
+  readonly loadPagefind?: Extract<
+    SearchCoreDependencies,
+    { readonly runtimeEnvironment: 'test' }
+  >['testOnlyLoadPagefind'];
+  readonly catalogItems?: readonly SearchCatalogItem[];
+  readonly catalogError?: Error;
+  readonly onCatalogFetch?: () => void;
+  readonly now?: () => number;
+}): SearchCore =>
+  createSearchCore({
+    ...testSearchCoreDefaults,
+    ...(dependencies.loadPagefind ? { testOnlyLoadPagefind: dependencies.loadPagefind } : {}),
+    testOnlySearchCatalogFetcher: createCatalogFetcher({
+      ...(dependencies.catalogItems !== undefined ? { items: dependencies.catalogItems } : {}),
+      ...(dependencies.catalogError !== undefined ? { error: dependencies.catalogError } : {}),
+      ...(dependencies.onCatalogFetch !== undefined
+        ? { onFetch: dependencies.onCatalogFetch }
+        : {}),
+    }),
+    ...(dependencies.now ? { now: dependencies.now } : {}),
+  });
 
 describe('search-core', () => {
   it('search import boundary contract uses the return-to-reading adapter event', () => {
@@ -336,7 +350,9 @@ describe('search-core', () => {
     });
 
     expect(response.mode).to.equal('explore');
-    expect(response.items.some((item) => item.canonicalPathname.startsWith('/notes/testing/'))).to.equal(true);
+    expect(
+      response.items.some((item) => item.canonicalPathname.startsWith('/notes/testing/')),
+    ).to.equal(true);
     expect(response.items.map((item) => item.title)).to.include('Testing Jazz Fixture');
   });
 
@@ -484,7 +500,9 @@ describe('search-core', () => {
       catalogItems,
     });
 
-    await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
+    await expect(
+      core.search(navigateMusicRequest, { signal: controller.signal }),
+    ).rejects.toMatchObject({
       name: 'AbortError',
     });
   });
@@ -505,7 +523,9 @@ describe('search-core', () => {
       catalogItems,
     });
 
-    await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
+    await expect(
+      core.search(navigateMusicRequest, { signal: controller.signal }),
+    ).rejects.toMatchObject({
       name: 'AbortError',
     });
   });
@@ -563,7 +583,9 @@ describe('search-core', () => {
       catalogItems,
     });
 
-    await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
+    await expect(
+      core.search(navigateMusicRequest, { signal: controller.signal }),
+    ).rejects.toMatchObject({
       name: 'AbortError',
     });
   });
@@ -606,7 +628,9 @@ describe('search-core', () => {
       catalogItems,
     });
 
-    await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
+    await expect(
+      core.search(navigateMusicRequest, { signal: controller.signal }),
+    ).rejects.toMatchObject({
       name: 'AbortError',
     });
   });
@@ -621,7 +645,9 @@ describe('search-core', () => {
       },
     });
 
-    await expect(core.search(navigateMusicRequest, { signal: controller.signal })).rejects.toMatchObject({
+    await expect(
+      core.search(navigateMusicRequest, { signal: controller.signal }),
+    ).rejects.toMatchObject({
       name: 'AbortError',
     });
   });

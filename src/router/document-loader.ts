@@ -16,7 +16,6 @@ import {
 import { RouteRegistry } from './route-registry.js';
 import type { DocumentRouteContext, LoadDocumentResult } from './router-types.js';
 
-
 const isAbortError = (error: unknown): boolean =>
   error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError');
 
@@ -57,7 +56,10 @@ export class DocumentLoader {
     this.errorEnvelopeFactory = new ErrorEnvelopeFactory(siteUrlContext);
   }
 
-  async load(normalizedUrl: InternalDocumentNormalizedUrl, signal: AbortSignal): Promise<LoadDocumentResult> {
+  async load(
+    normalizedUrl: InternalDocumentNormalizedUrl,
+    signal: AbortSignal,
+  ): Promise<LoadDocumentResult> {
     let routeContext: DocumentRouteContext;
     try {
       routeContext = this.createRouteContext(normalizedUrl, signal);
@@ -111,10 +113,7 @@ export class DocumentLoader {
         throw error;
       }
       if (error instanceof NavigationEnvelopeHttpStatusError) {
-        return this.errorEnvelopeFactory.createHttpErrorResult(
-          error.status,
-          String(normalizedUrl),
-        );
+        return this.errorEnvelopeFactory.createHttpErrorResult(error.status, String(normalizedUrl));
       }
       return this.errorEnvelopeFactory.createExceptionResult(error);
     }
@@ -124,7 +123,10 @@ export class DocumentLoader {
     return this.errorEnvelopeFactory.createExceptionResult(error);
   }
 
-  private createRouteContext(normalizedUrl: InternalDocumentNormalizedUrl, signal: AbortSignal): DocumentRouteContext {
+  private createRouteContext(
+    normalizedUrl: InternalDocumentNormalizedUrl,
+    signal: AbortSignal,
+  ): DocumentRouteContext {
     const serializedUrl = String(normalizedUrl);
     const parsedUrl = new URL(serializedUrl, window.location.origin);
     const currentBuildId = requireCurrentMetadataValue('buildId', this.readCurrentBuildId());

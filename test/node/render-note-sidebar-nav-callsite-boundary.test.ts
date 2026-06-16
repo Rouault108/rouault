@@ -17,7 +17,7 @@ const collectTypeScriptFiles = async (directory: string): Promise<string[]> => {
 
     const absolutePath = path.join(directory, entry.name);
     if (entry.isDirectory()) {
-      files.push(...await collectTypeScriptFiles(absolutePath));
+      files.push(...(await collectTypeScriptFiles(absolutePath)));
       continue;
     }
 

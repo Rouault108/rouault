@@ -204,7 +204,9 @@ export function rehypeStaticCodeGroups(
   return (tree: unknown, file?: { path?: string }) => {
     const idContext =
       options.idContext ??
-      createStaticRenderIdContext(file?.path ? `note:${file.path}:code-groups` : 'note:code-groups');
+      createStaticRenderIdContext(
+        file?.path ? `note:${file.path}:code-groups` : 'note:code-groups',
+      );
     const visit = (node: HastNode): void => {
       if (Array.isArray(node.children)) {
         for (const child of node.children) {
@@ -239,11 +241,16 @@ export function rehypeStaticCodeGroups(
 
       const groupId = idContext.nextId('code-group');
       const selectedKey = items[0]?.key ?? '';
-      const itemIds = items.map((item, index): CodeGroupItemIds => ({
-        tabId: idContext.reserveId('code-group-tab', `${groupId}-tab-${item.key}`),
-        panelId: idContext.reserveId('code-group-panel', `${groupId}-panel-${item.key}`),
-        copySourceId: idContext.reserveId('copy-source', `${groupId}-copy-source-${String(index)}`),
-      }));
+      const itemIds = items.map(
+        (item, index): CodeGroupItemIds => ({
+          tabId: idContext.reserveId('code-group-tab', `${groupId}-tab-${item.key}`),
+          panelId: idContext.reserveId('code-group-panel', `${groupId}-panel-${item.key}`),
+          copySourceId: idContext.reserveId(
+            'copy-source',
+            `${groupId}-copy-source-${String(index)}`,
+          ),
+        }),
+      );
       const selectedCopySourceId = itemIds[0]?.copySourceId ?? `${groupId}-copy-source-0`;
       const selectedCopyStatusId = idContext.reserveId(
         'copy-status',

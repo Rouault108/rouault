@@ -41,14 +41,13 @@ R4-A audit:
 
 ## 1.1a Manifest用語
 
-| 用語 | 用途 | 主な制約 |
-|---|---|---|
-| Lightweight Resolution Manifest | R4-SでArtifactKeyをArtifactRefへ解決する軽量索引 | SHA-256とAnchorは任意。ArtifactKeyの一意解決は必須 |
-| Artifact Manifest | R4-I / R4-AでArtifactの完全性、訂正、失効、chainを管理するManifest | SHA-256、storage class、`correct` / `revoke`規則、Manifest chainを検証する |
-| Manifest Anchor | R4-I / R4-AでArtifact Manifest Revisionを固定するAnchor | Manifest SHA-256、immutable path、Git commit SHAまたは署名情報を持つ |
-| Closure Manifest | R4-AでClosure入力集合を固定するManifest | `closed`を自己宣言せず、proposed dispositionだけを記録する |
-| Closure Attestation | R4-AでClosure Manifest、Ledger、Final Verification、Anchor集合を検証するAttestation | `pass + closed`だけがclosed導出条件になる |
-
+| 用語                            | 用途                                                                                | 主な制約                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Lightweight Resolution Manifest | R4-SでArtifactKeyをArtifactRefへ解決する軽量索引                                    | SHA-256とAnchorは任意。ArtifactKeyの一意解決は必須                         |
+| Artifact Manifest               | R4-I / R4-AでArtifactの完全性、訂正、失効、chainを管理するManifest                  | SHA-256、storage class、`correct` / `revoke`規則、Manifest chainを検証する |
+| Manifest Anchor                 | R4-I / R4-AでArtifact Manifest Revisionを固定するAnchor                             | Manifest SHA-256、immutable path、Git commit SHAまたは署名情報を持つ       |
+| Closure Manifest                | R4-AでClosure入力集合を固定するManifest                                             | `closed`を自己宣言せず、proposed dispositionだけを記録する                 |
+| Closure Attestation             | R4-AでClosure Manifest、Ledger、Final Verification、Anchor集合を検証するAttestation | `pass + closed`だけがclosed導出条件になる                                  |
 
 ## 1.2 Schemaとvalidatorの責務
 
@@ -168,7 +167,6 @@ ArtifactKey短縮表記はArtifactRefではありません。ArtifactKeyは、Re
 - manifest_anchor_idでAnchorなしを表す場合はnullまたはN/Aを使い、空文字列を使わない
 ```
 
-
 ## 4. Anchorと署名
 
 ```text
@@ -287,11 +285,9 @@ pnpm workflow:close
 
 validator未整備の場合、R4-I / R4-Aは`closed`として扱わず、`manual-review-required`または`proposed-closed`に留めます。R4-Sは人間承認によるCompletion Recordで閉じられますが、状態遷移、Active Phase Set、Final State ArtifactRefの再計算を省略してはいけません。A2ではEvidence Integrity Attestationが`pass / preserved`であり、漏えい検査がすべて`pass`、人間承認がtrueでない限り完了扱いにしません。
 
-
 ## 1.2.2 v79補強
 
 Closure / A2系SchemaでもID、locator、actor、method等の空文字列はSchemaで拒否します。`related_ids_na_reason`はSchemaで最低限の種別語を要求し、完全な種別網羅はvalidator意味制約で検証します。
-
 
 ## 7.1 v82最小validator実装
 
@@ -353,8 +349,6 @@ outcome: in-progress -> passed, in-progress -> failed
 retirement: planned / ready / in-progress / blocked -> cancelled, passed / failed -> superseded
 ```
 
-
-
 ## 7.2 v83 structural / completion mode
 
 `tools/validate-workflow-artifacts.py` は、R4 Execution Ledger検証に `--mode structural` と `--mode completion` を持つ。
@@ -370,7 +364,6 @@ completion:
 completion modeでは、Phaseごとの最終statusと`phase_necessity_evaluation_log.evaluation_result`の対応を検証する。`required`、`conditional-activated`、`optional-executed`は`passed`終端を要求する。`conditional-not-activated`、`optional-not-run`は`cancelled`終端を要求する。`planned`、`ready`、`in-progress`、`blocked`、`failed`で終わるPhaseはCompletion / Closure不可とする。
 
 `superseded`終端は例外的な置換終端であり、structural modeでも根拠を必須とする。terminal eventの`reason`には、`superseded by`、`replacement`、`replaced by`のいずれかのmarkerに加え、置換先`R4P-*` Phase IDまたは`Issue incomplete: <ID>`形式の具体参照を含める。置換先Phase IDは自Phase以外で、同一Ledger内に存在しなければならない。completion modeでは、置換先Phaseの最終statusが`passed`またはgrounded `superseded`でなければならない。
-
 
 ## 7.3 v85 superseded replacement / event chronology / plan revision ceiling
 

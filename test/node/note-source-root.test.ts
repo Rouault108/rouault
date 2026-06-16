@@ -12,7 +12,9 @@ describe('note source root', () => {
 
   it('absolute path 内の test fixture source root も content に誤分類しないこと', () => {
     expect(
-      resolveNoteSourceLocation('/repo/rouault/test/fixtures/content/testing/toc-static-present.md'),
+      resolveNoteSourceLocation(
+        '/repo/rouault/test/fixtures/content/testing/toc-static-present.md',
+      ),
     ).toEqual({
       sourceRoot: 'test/fixtures/content',
       slug: 'testing/toc-static-present.md',

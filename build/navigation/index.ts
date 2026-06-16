@@ -18,8 +18,14 @@ export type {
   SidebarScope,
   SidebarScopeRule,
 } from '../../shared/navigation/navigation-types.js';
-export { createSidebarGroupId, parseSidebarGroupId } from '../../shared/navigation/sidebar-group-id.js';
-export { DEFAULT_SIDEBAR_ID, DEFAULT_SIDEBAR_STATE_SCOPE_ID } from '../../shared/navigation/sidebar-shell-defaults.js';
+export {
+  createSidebarGroupId,
+  parseSidebarGroupId,
+} from '../../shared/navigation/sidebar-group-id.js';
+export {
+  DEFAULT_SIDEBAR_ID,
+  DEFAULT_SIDEBAR_STATE_SCOPE_ID,
+} from '../../shared/navigation/sidebar-shell-defaults.js';
 export {
   buildFixtureInternalDocumentRouteSet,
   buildInternalDocumentRouteSetForSourceRoot,

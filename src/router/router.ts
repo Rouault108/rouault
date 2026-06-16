@@ -93,7 +93,11 @@ export class Router {
   private currentUrl = '';
   private hasCommittedNavigation = false;
 
-  constructor(outlet: HTMLElement, urlDependencies: RouterRuntimeUrlDependencies, options?: RouterOptions) {
+  constructor(
+    outlet: HTMLElement,
+    urlDependencies: RouterRuntimeUrlDependencies,
+    options?: RouterOptions,
+  ) {
     const currentOwner = LIVE_ROUTER_OWNERS.get(document);
     if (currentOwner && !currentOwner.destroyed) {
       throw new RouterOwnershipError('document ごとに live Router は 1 つだけです。');
@@ -241,7 +245,9 @@ export class Router {
       return this.createValidationFailureResult(reason, historyMode);
     }
 
-    return this.queue.enqueue(this.normalizeValidatedRequest(request, validation.normalizedUrl, historyMode));
+    return this.queue.enqueue(
+      this.normalizeValidatedRequest(request, validation.normalizedUrl, historyMode),
+    );
   }
 
   private normalizeValidatedRequest(
@@ -389,7 +395,10 @@ export class Router {
     envelope: NavigationEnvelope,
     baseError?: Error,
     baseErrorReason?: import('./router-types.js').NavigationLoadFailureReason,
-  ): Promise<import('./router-types.js').NavigationCompletedResult | import('./router-types.js').NavigationLoadFailureResult> {
+  ): Promise<
+    | import('./router-types.js').NavigationCompletedResult
+    | import('./router-types.js').NavigationLoadFailureResult
+  > {
     try {
       await this.committer.commit({
         envelope,

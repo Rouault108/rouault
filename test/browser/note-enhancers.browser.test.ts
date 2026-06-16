@@ -345,9 +345,9 @@ describe('note progressive enhancers', () => {
     );
     expect(image?.getAttribute('sizes')).to.equal('min(100vw, 72rem)');
     expect(caption?.textContent).to.equal('lightbox caption');
-    expect(closeButton?.querySelector('.image-lightbox-close__icon.static-icon > svg')).not.to.equal(
-      null,
-    );
+    expect(
+      closeButton?.querySelector('.image-lightbox-close__icon.static-icon > svg'),
+    ).not.to.equal(null);
 
     trigger?.focus();
     trigger?.click();

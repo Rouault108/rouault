@@ -11,7 +11,8 @@ interface ImportRange {
   readonly depth: number;
 }
 
-const isIdentifierChar = (char: string | undefined): boolean => char !== undefined && /[a-zA-Z0-9_-]/u.test(char);
+const isIdentifierChar = (char: string | undefined): boolean =>
+  char !== undefined && /[a-zA-Z0-9_-]/u.test(char);
 
 const skipWhitespace = (cssText: string, cursor: number): number => {
   let next = cursor;
@@ -45,7 +46,10 @@ const readImportStatementEnd = (cssText: string, cursor: number): number => {
         escaped = true;
         continue;
       }
-      if ((state === 'single-quote' && char === "'") || (state === 'double-quote' && char === '"')) {
+      if (
+        (state === 'single-quote' && char === "'") ||
+        (state === 'double-quote' && char === '"')
+      ) {
         state = 'base';
       }
       continue;
@@ -103,7 +107,10 @@ const collectImportRanges = (cssText: string): ImportRange[] => {
         escaped = true;
         continue;
       }
-      if ((state === 'single-quote' && char === "'") || (state === 'double-quote' && char === '"')) {
+      if (
+        (state === 'single-quote' && char === "'") ||
+        (state === 'double-quote' && char === '"')
+      ) {
         state = 'base';
       }
       continue;
@@ -238,7 +245,9 @@ const inlineTopLevelImports = async (
     visited.add(resolvedHref);
     const response = await fetch(resolvedHref);
     if (!response.ok) {
-      throw new Error(`${resolvedHref} の読み込みに失敗しました: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `${resolvedHref} の読み込みに失敗しました: ${response.status} ${response.statusText}`,
+      );
     }
     output += `\n${await inlineTopLevelImports(await response.text(), resolvedHref, visited)}\n`;
     cursor = range.end;

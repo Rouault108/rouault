@@ -187,7 +187,7 @@ export const scanCustomElementDefinitions = (
     const sourceFile = ts.createSourceFile(filePath, sourceText, ts.ScriptTarget.Latest, true);
 
     const visit = (node: ts.Node): void => {
-      const decorators = ts.canHaveDecorators(node) ? ts.getDecorators(node) ?? [] : [];
+      const decorators = ts.canHaveDecorators(node) ? (ts.getDecorators(node) ?? []) : [];
       for (const decorator of decorators) {
         if (isCustomElementDecoratorExpression(decorator.expression)) {
           pushFinding(

@@ -10,11 +10,7 @@
 :is(.prose, .about-prose)
   > ui-tabs
   > [slot='panel']
-  > :is(
-    pre[data-code-block],
-    section[data-code-group],
-    [data-code-block-root]
-  ) {
+  > :is(pre[data-code-block], section[data-code-group], [data-code-block-root]) {
   width: 100%;
   margin-inline: 0;
 }
@@ -92,18 +88,8 @@
   max-width: none;
 }
 
-.prose
-  > :is(
-    pre[data-code-block],
-    section[data-code-group],
-    [data-code-block-root]
-  ),
-.about-prose
-  > :is(
-    pre[data-code-block],
-    section[data-code-group],
-    [data-code-block-root]
-  ) {
+.prose > :is(pre[data-code-block], section[data-code-group], [data-code-block-root]),
+.about-prose > :is(pre[data-code-block], section[data-code-group], [data-code-block-root]) {
   width: 100%;
   margin-inline: 0;
 }

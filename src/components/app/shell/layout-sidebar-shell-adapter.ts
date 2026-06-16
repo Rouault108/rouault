@@ -11,12 +11,8 @@ import {
   DEFAULT_SIDEBAR_PRESENTATION,
   DEFAULT_SIDEBAR_STATE_SCOPE_ID,
 } from '../../../../shared/navigation/sidebar-shell-defaults.js';
-import {
-  createCanonicalAbsentRuntimeSidebarProjection,
-} from '../../../../shared/navigation/sidebar-shell-projection-contract.js';
-import {
-  validateRuntimeSidebarProjection,
-} from '../../../../shared/navigation/navigation-shell-validator.js';
+import { createCanonicalAbsentRuntimeSidebarProjection } from '../../../../shared/navigation/sidebar-shell-projection-contract.js';
+import { validateRuntimeSidebarProjection } from '../../../../shared/navigation/navigation-shell-validator.js';
 import { layoutSidebarController } from '../../layout/layout-sidebar-controller.js';
 
 const APP_ROUTER_SELECTOR = 'app-router';
@@ -62,7 +58,6 @@ const toNumber = (value: string | null, fallback: number): number => {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : fallback;
 };
-
 
 const readCurrentSidebarIdForFallback = (sidebar: HTMLElement): string => {
   const propertyValue = (sidebar as { sidebarId?: unknown }).sidebarId;
@@ -250,7 +245,12 @@ export const createLayoutSidebarShellAdapter = (): ShellAdapter => ({
 
     return {
       commit: () => {
-        applyPayloadShellSnapshot(update.shell, currentRouter, currentSidebarColumn, currentSidebar);
+        applyPayloadShellSnapshot(
+          update.shell,
+          currentRouter,
+          currentSidebarColumn,
+          currentSidebar,
+        );
       },
       rollback: () => {
         applyRuntimeSidebarSnapshotForRollback(

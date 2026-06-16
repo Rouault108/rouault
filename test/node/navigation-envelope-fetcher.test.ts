@@ -5,9 +5,11 @@ import { createSiteUrlContext } from '../../shared/site/site-url-context.js';
 
 describe('navigation envelope fetcher', () => {
   it('internal document URL から artifact URL を導出すること', () => {
-    expect(resolveNavigationEnvelopeArtifactUrl({
-      normalizedUrl: toInternalDocumentNormalizedUrl('/about/'),
-      siteUrlContext: createSiteUrlContext({ siteOrigin: 'https://example.com' }),
-    })).toBe('/__router/about/index.router.json');
+    expect(
+      resolveNavigationEnvelopeArtifactUrl({
+        normalizedUrl: toInternalDocumentNormalizedUrl('/about/'),
+        siteUrlContext: createSiteUrlContext({ siteOrigin: 'https://example.com' }),
+      }),
+    ).toBe('/__router/about/index.router.json');
   });
 });

@@ -238,9 +238,7 @@ const assertFormat = (value: unknown, label: string): MediaFormat => {
   throw new Error(`[release-state] ${label} has invalid media format`);
 };
 
-export const assertUploadedMediaObjectEvidence = (
-  value: unknown,
-): UploadedMediaObjectEvidence => {
+export const assertUploadedMediaObjectEvidence = (value: unknown): UploadedMediaObjectEvidence => {
   const object = assertRecord(value, 'uploaded object');
   assertAllowedKeys(
     object,
@@ -277,9 +275,7 @@ export const assertUploadedMediaObjectEvidence = (
   };
 };
 
-export const assertVerifiedMediaObjectEvidence = (
-  value: unknown,
-): VerifiedMediaObjectEvidence => {
+export const assertVerifiedMediaObjectEvidence = (value: unknown): VerifiedMediaObjectEvidence => {
   const object = assertRecord(value, 'verified object');
   assertAllowedKeys(
     object,
@@ -363,7 +359,8 @@ export const objectEvidenceIdentity = (object: {
   readonly variant: MediaVariant;
   readonly format: MediaFormat;
   readonly objectKey: string;
-}): string => `${object.mediaItemId}\u0000${object.variant}\u0000${object.format}\u0000${object.objectKey}`;
+}): string =>
+  `${object.mediaItemId}\u0000${object.variant}\u0000${object.format}\u0000${object.objectKey}`;
 
 export const assertR2UploadPlanObject = (value: unknown): R2UploadPlanObject => {
   const object = assertRecord(value, 'R2 upload plan object');
@@ -419,7 +416,10 @@ export const assertR2UploadPlanArtifact = (value: unknown): R2UploadPlanArtifact
     throw new Error('[release-state] R2 upload plan plannedObjects must be an array');
   }
 
-  const objectCount = assertNonNegativeInteger(artifact['objectCount'], 'R2 upload plan objectCount');
+  const objectCount = assertNonNegativeInteger(
+    artifact['objectCount'],
+    'R2 upload plan objectCount',
+  );
   if (objectCount !== plannedObjects.length) {
     throw new Error('[release-state] R2 upload plan objectCount mismatch');
   }
@@ -540,7 +540,10 @@ export const assertMediaDeliveryAttemptManifest = (
   if (status === 'failed' && verifiedObjects.length !== 0) {
     throw new Error('[release-state] failed media delivery attempt must use verifiedObjects: []');
   }
-  const objectCount = assertNonNegativeInteger(manifest['objectCount'], 'media delivery objectCount');
+  const objectCount = assertNonNegativeInteger(
+    manifest['objectCount'],
+    'media delivery objectCount',
+  );
   if (status === 'succeeded' && objectCount !== verifiedObjects.length) {
     throw new Error('[release-state] media delivery objectCount mismatch');
   }
@@ -555,9 +558,7 @@ export const assertMediaDeliveryAttemptManifest = (
   };
 };
 
-const assertCloudflarePagesReleaseEvidence = (
-  value: unknown,
-): CloudflarePagesReleaseEvidence => {
+const assertCloudflarePagesReleaseEvidence = (value: unknown): CloudflarePagesReleaseEvidence => {
   const evidence = assertRecord(value, 'cloudflarePages');
   assertAllowedKeys(
     evidence,
@@ -745,7 +746,9 @@ export const assertReleaseStateResolutionFailureArtifact = (
   assertNoForbiddenReleaseStateEvidence(artifact, 'release state resolution failure artifact');
 
   if (artifact['schemaVersion'] !== RELEASE_STATE_SCHEMA_VERSION) {
-    throw new Error('[release-state] release state resolution failure schemaVersion is unsupported');
+    throw new Error(
+      '[release-state] release state resolution failure schemaVersion is unsupported',
+    );
   }
   if (artifact['artifactKind'] !== 'release-state-resolution-failure') {
     throw new Error('[release-state] release state resolution failure artifactKind mismatch');
@@ -756,7 +759,9 @@ export const assertReleaseStateResolutionFailureArtifact = (
     runtimeVerification.status !== 'release-state-resolution-failed' ||
     runtimeVerification.checkedAt === null
   ) {
-    throw new Error('[release-state] release state resolution failure runtimeVerification mismatch');
+    throw new Error(
+      '[release-state] release state resolution failure runtimeVerification mismatch',
+    );
   }
 
   return {
@@ -775,7 +780,9 @@ export const assertReleaseStateResolutionFailureArtifact = (
 };
 
 export const sha256Json = (value: unknown): string =>
-  createHash('sha256').update(`${JSON.stringify(value, null, 2)}\n`, 'utf8').digest('hex');
+  createHash('sha256')
+    .update(`${JSON.stringify(value, null, 2)}\n`, 'utf8')
+    .digest('hex');
 
 const SAFE_ERROR_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]{0,80}$/u;
 

@@ -1,4 +1,8 @@
-import { classifyLinkHref, type ResolvedLinkAnnotation, type RouteClassificationMode } from '../../shared/link/link-annotation.js';
+import {
+  classifyLinkHref,
+  type ResolvedLinkAnnotation,
+  type RouteClassificationMode,
+} from '../../shared/link/link-annotation.js';
 import type { LinkKind } from '../../shared/link/link-kind.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { detectUnsafeHref } from '../../shared/link/unsafe-href-detector.js';

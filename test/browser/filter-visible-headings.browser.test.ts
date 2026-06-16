@@ -245,11 +245,9 @@ describe('filterVisibleHeadings', () => {
       tabs.calls?.push({ value, historyMode: options?.historyMode });
     };
 
-    applyTocScopeSelections(
-      contentRoot,
-      [{ scopeId: 'toc-scope-1', value: 'details' }],
-      { historyMode: 'none' },
-    );
+    applyTocScopeSelections(contentRoot, [{ scopeId: 'toc-scope-1', value: 'details' }], {
+      historyMode: 'none',
+    });
 
     expect(tabs.calls).to.deep.equal([{ value: 'details', historyMode: 'none' }]);
   });

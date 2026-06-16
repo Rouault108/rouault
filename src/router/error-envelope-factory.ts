@@ -9,9 +9,7 @@ import {
 } from '../../shared/navigation/navigation-envelope.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { applyBasePathToRenderHref } from '../../shared/url/normalize-rouault-url.js';
-import {
-  DEFAULT_SIDEBAR_ID,
-} from '../../shared/navigation/sidebar-shell-defaults.js';
+import { DEFAULT_SIDEBAR_ID } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../shared/navigation/corpus-navigation-projection.js';
 import { renderLayoutHeaderHtml } from '../layouts/layout-header-html.js';
 import type { LoadDocumentResult, NavigationLoadFailureReason } from './router-types.js';

@@ -32,11 +32,7 @@ const createAboutRouteClassificationMode = () =>
     isInternalDocumentPathname: (pathname) => ABOUT_ROUTE_SET.has(pathname),
   });
 
-const renderAboutLink = (
-  context: AboutLinkContext,
-  href: string,
-  label: string,
-): string =>
+const renderAboutLink = (context: AboutLinkContext, href: string, label: string): string =>
   renderTextLinkHtml({
     href,
     label,
@@ -115,7 +111,10 @@ const renderSection = (section: AboutSection, context: AboutLinkContext): string
     { name: 'aria-label', value: `「${section.heading}」への固定リンク` },
   ]);
 
-  const body = section.bodyHtml(context).map((paragraph) => `<p>${paragraph}</p>`).join('\n');
+  const body = section
+    .bodyHtml(context)
+    .map((paragraph) => `<p>${paragraph}</p>`)
+    .join('\n');
 
   return `
     <h2${headingAttributes}>

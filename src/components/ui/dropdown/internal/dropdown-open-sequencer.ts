@@ -12,10 +12,7 @@ export interface DropdownOpenSequencerDeps {
 
 type DropdownTimeoutHandler = () => void;
 type DropdownTimeoutId = number;
-type DropdownSetTimeout = (
-  handler: DropdownTimeoutHandler,
-  timeout?: number,
-) => DropdownTimeoutId;
+type DropdownSetTimeout = (handler: DropdownTimeoutHandler, timeout?: number) => DropdownTimeoutId;
 type DropdownClearTimeout = (timeoutId: DropdownTimeoutId) => void;
 
 export interface DropdownOpenSequencerConfig {

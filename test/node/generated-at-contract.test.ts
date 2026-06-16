@@ -10,7 +10,9 @@ import {
 
 describe('generatedAt contract', () => {
   it('GeneratedAtValidationResult は公開 validation result 型として使えること', () => {
-    const result: GeneratedAtValidationResult = validateOptionalGeneratedAtInput('2026-04-11T00:00:00.000Z');
+    const result: GeneratedAtValidationResult = validateOptionalGeneratedAtInput(
+      '2026-04-11T00:00:00.000Z',
+    );
 
     expect(result).toEqual({ kind: 'valid', value: '2026-04-11T00:00:00.000Z' });
   });
@@ -64,14 +66,9 @@ describe('generatedAt contract', () => {
 
     const { createBuildGeneratedAtOnce } = await import('../../build/metadata/generated-at.js');
 
-    expect(createBuildGeneratedAtOnce('2026-04-11T00:00:00.000Z')).toBe(
-      '2026-04-11T00:00:00.000Z',
-    );
-    expect(createBuildGeneratedAtOnce('2026-04-11T00:00:01.000Z')).toBe(
-      '2026-04-11T00:00:00.000Z',
-    );
+    expect(createBuildGeneratedAtOnce('2026-04-11T00:00:00.000Z')).toBe('2026-04-11T00:00:00.000Z');
+    expect(createBuildGeneratedAtOnce('2026-04-11T00:00:01.000Z')).toBe('2026-04-11T00:00:00.000Z');
 
     vi.resetModules();
   });
-
 });

@@ -15,7 +15,9 @@ describe('search dialog static contract', () => {
     expect(rendered).toContain('aria-modal="true"');
     expect(rendered).toContain('data-search-dialog-field');
     expect(rendered).toContain(SEARCH_DIALOG_STATUS_IDLE_MESSAGE);
-    expect(rendered).toMatch(/<input[\s\S]*role="combobox"[\s\S]*aria-controls="global-search-results"/u);
+    expect(rendered).toMatch(
+      /<input[\s\S]*role="combobox"[\s\S]*aria-controls="global-search-results"/u,
+    );
     expect(rendered).toContain('id="global-search-instructions"');
     expect(rendered).toMatch(
       /<input\b(?=[^>]*\baria-describedby="global-search-instructions")(?=[^>]*\bdata-search-dialog-input\b)[^>]*>/u,
@@ -40,7 +42,9 @@ describe('search dialog static contract', () => {
     expect(rendered).toContain('<svg');
     expect(rendered.match(/data-icon="alert-circle"/gu)?.length).toBe(2);
     expect(rendered).toContain('data-icon="search"');
-    expect(rendered).not.toContain('<span class="search-dialog__state-icon" aria-hidden="true"></span>');
+    expect(rendered).not.toContain(
+      '<span class="search-dialog__state-icon" aria-hidden="true"></span>',
+    );
 
     const footerMatch = rendered.match(/<footer\b[^>]*>[\s\S]*?<\/footer>/u);
     expect(footerMatch).not.toBeNull();

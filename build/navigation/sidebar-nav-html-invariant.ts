@@ -108,10 +108,16 @@ const collectRows = (root: Parse5ParentNode, sourceLabel: string): ParsedNavRow[
       const directGroups = directChildren.filter((child) => child.tagName === 'ul');
 
       if (directControls.length > 1) {
-        fail(sourceLabel, `sidebar nav row ${id || '(missing id)'} must not have multiple direct child controls.`);
+        fail(
+          sourceLabel,
+          `sidebar nav row ${id || '(missing id)'} must not have multiple direct child controls.`,
+        );
       }
       if (directGroups.length > 1) {
-        fail(sourceLabel, `sidebar nav row ${id || '(missing id)'} must not have multiple direct child groups.`);
+        fail(
+          sourceLabel,
+          `sidebar nav row ${id || '(missing id)'} must not have multiple direct child groups.`,
+        );
       }
 
       const directControl = directControls[0] ?? null;
@@ -141,7 +147,10 @@ const collectRows = (root: Parse5ParentNode, sourceLabel: string): ParsedNavRow[
   return rows;
 };
 
-const collectAriaCurrentElements = (node: Parse5ParentNode, result: Parse5Element[] = []): Parse5Element[] => {
+const collectAriaCurrentElements = (
+  node: Parse5ParentNode,
+  result: Parse5Element[] = [],
+): Parse5Element[] => {
   for (const childNode of node.childNodes) {
     if (isElementNode(childNode) && hasAttribute(childNode, 'aria-current')) {
       result.push(childNode);
@@ -154,7 +163,6 @@ const collectAriaCurrentElements = (node: Parse5ParentNode, result: Parse5Elemen
 
   return result;
 };
-
 
 const collectElementsWithAttribute = (
   node: Parse5ParentNode,
@@ -190,7 +198,10 @@ const readTrueMarker = (
   return true;
 };
 
-const collectAncestorIds = (rowById: ReadonlyMap<string, ParsedNavRow>, row: ParsedNavRow): Set<string> => {
+const collectAncestorIds = (
+  rowById: ReadonlyMap<string, ParsedNavRow>,
+  row: ParsedNavRow,
+): Set<string> => {
   const ancestors = new Set<string>();
   let currentParentId = row.parentId;
   while (currentParentId !== null) {
@@ -204,10 +215,7 @@ const collectAncestorIds = (rowById: ReadonlyMap<string, ParsedNavRow>, row: Par
   return ancestors;
 };
 
-const assertAbsentProjection = (
-  input: SidebarNavHtmlInvariantInput,
-  sourceLabel: string,
-): void => {
+const assertAbsentProjection = (input: SidebarNavHtmlInvariantInput, sourceLabel: string): void => {
   if (toTrimmedString(input.navHtml).length > 0) {
     fail(sourceLabel, 'absent sidebar projection must not contain navHtml.');
   }
@@ -260,9 +268,7 @@ const assertSetEquals = (
   }
 };
 
-export const validateSidebarNavHtmlInvariant = (
-  input: SidebarNavHtmlInvariantInput,
-): void => {
+export const validateSidebarNavHtmlInvariant = (input: SidebarNavHtmlInvariantInput): void => {
   const sourceLabel = `${input.mode}:${input.sourceLabel}`;
 
   if (!input.sidebarPresent) {
@@ -307,7 +313,11 @@ export const validateSidebarNavHtmlInvariant = (
 
   const topLevelChildren = visibleTopLevelChildren(fragment);
   const topLevelChild = topLevelChildren[0];
-  if (topLevelChildren.length !== 1 || topLevelChild === undefined || !isElementNode(topLevelChild)) {
+  if (
+    topLevelChildren.length !== 1 ||
+    topLevelChild === undefined ||
+    !isElementNode(topLevelChild)
+  ) {
     fail(sourceLabel, 'navHtml must be a single top-level nav[data-sidebar-nav] fragment.');
   }
 
@@ -403,7 +413,8 @@ export const validateSidebarNavHtmlInvariant = (
       }
 
       const directBranchControlButtons = directElementChildren(row.element).filter(
-        (child) => child.tagName === 'button' && hasAttribute(child, 'data-sidebar-nav-branch-control'),
+        (child) =>
+          child.tagName === 'button' && hasAttribute(child, 'data-sidebar-nav-branch-control'),
       );
       if (directBranchControlButtons.length > 0) {
         fail(sourceLabel, `leaf row ${row.id} must not have a direct child branch button.`);
@@ -479,7 +490,10 @@ export const validateSidebarNavHtmlInvariant = (
       groupIdentity.stateScopeId !== stateScopeId ||
       groupIdentity.rowId !== row.id
     ) {
-      fail(sourceLabel, `branch row ${row.id} group id must encode stateScopeId, sidebarId and row id.`);
+      fail(
+        sourceLabel,
+        `branch row ${row.id} group id must encode stateScopeId, sidebarId and row id.`,
+      );
     }
 
     if ((expanded === 'false') !== hasAttribute(directGroup, 'hidden')) {
@@ -514,8 +528,11 @@ export const validateSidebarNavHtmlInvariant = (
 
   assertSetEquals(expandedBranchIds, input.initialExpandedIds, sourceLabel, 'initialExpandedIds');
 
-  const selectedRowForPath = selectedId === null ? null : rowById.get(selectedId) ?? null;
-  const inferredCurrentAncestorIds = selectedRowForPath === null ? new Set<string>() : collectAncestorIds(rowById, selectedRowForPath);
+  const selectedRowForPath = selectedId === null ? null : (rowById.get(selectedId) ?? null);
+  const inferredCurrentAncestorIds =
+    selectedRowForPath === null
+      ? new Set<string>()
+      : collectAncestorIds(rowById, selectedRowForPath);
   assertSetEquals(
     input.initialExpandedIds,
     [...inferredCurrentAncestorIds],
@@ -524,8 +541,18 @@ export const validateSidebarNavHtmlInvariant = (
   );
 
   for (const row of navElements) {
-    const hasCurrentBranch = readTrueMarker(row.element, 'data-current-branch', row.id, sourceLabel);
-    const hasCurrentPathIndicator = readTrueMarker(row.element, 'data-current-path-indicator', row.id, sourceLabel);
+    const hasCurrentBranch = readTrueMarker(
+      row.element,
+      'data-current-branch',
+      row.id,
+      sourceLabel,
+    );
+    const hasCurrentPathIndicator = readTrueMarker(
+      row.element,
+      'data-current-path-indicator',
+      row.id,
+      sourceLabel,
+    );
     const expectsCurrentBranch = row.kind === 'branch' && inferredCurrentAncestorIds.has(row.id);
     const expectsCurrentPathIndicator = expectsCurrentBranch && row.siblingCount > 1;
 

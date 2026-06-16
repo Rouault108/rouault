@@ -5,7 +5,10 @@ import {
   assertRuntimeSidebarNavHtmlPresence,
 } from '../../shared/navigation/sidebar-nav-html-presence.js';
 
-const expectPresenceError = (value: unknown, reason: SidebarNavHtmlPresenceError['reason']): void => {
+const expectPresenceError = (
+  value: unknown,
+  reason: SidebarNavHtmlPresenceError['reason'],
+): void => {
   try {
     assertRuntimeSidebarNavHtmlPresence({
       sidebarPresent: true,
@@ -42,7 +45,10 @@ describe('sidebar nav html presence contract', () => {
   });
 
   it('SidebarNavHtmlPresenceError は canonical message を持つこと', () => {
-    const error = new SidebarNavHtmlPresenceError({ sourceLabel: 'presence-test', reason: 'empty' });
+    const error = new SidebarNavHtmlPresenceError({
+      sourceLabel: 'presence-test',
+      reason: 'empty',
+    });
 
     expect(error.message).toBe('[sidebar-nav-html-presence] presence-test: empty');
   });

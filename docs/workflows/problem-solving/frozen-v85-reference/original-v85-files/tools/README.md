@@ -32,7 +32,6 @@ python tools/validate-workflow-artifacts.py \
 
 `--schema` / `--file` にはroot相対パスまたは絶対パスを指定できます。root外の絶対パスを指定した場合も、表示用パスは絶対パスのまま出力し、`Path.relative_to()`由来のTracebackを発生させません。
 
-
 ## v82追加のEvent列検証
 
 validatorは、`phase_execution_event_log`を`qualified_phase_id`ごとにグルーピングし、次を検証します。
@@ -43,7 +42,6 @@ validatorは、`phase_execution_event_log`を`qualified_phase_id`ごとにグル
 - cancelled / superseded 到達後に後続eventを追加しない
 - event_class別の許容遷移は initialization / progress / transition / outcome / retirement ごとに検証する
 ```
-
 
 ## v83追加のValidation mode
 
@@ -59,7 +57,6 @@ completion:
   planned / ready / in-progress / blocked / failed 終端は拒否する。
   superseded 終端は、terminal eventのreasonに superseded by / replacement / replaced by のいずれかを含み、かつ置換先R4P-* Phase IDまたはIssue incomplete参照を含む場合のみ許容する。
 ```
-
 
 ## v85追加の検証
 
@@ -79,4 +76,4 @@ necessity evaluation order:
 ```
 
 plan revision / chronology:
-  同一PhaseのPhase Execution Event Logでは、plan_revisionとtimestampが逆行してはならない。Ledger内の各plan_revision系fieldはcurrent_plan_revisionを超えてはならない。
+同一PhaseのPhase Execution Event Logでは、plan_revisionとtimestampが逆行してはならない。Ledger内の各plan_revision系fieldはcurrent_plan_revisionを超えてはならない。

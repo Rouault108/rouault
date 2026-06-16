@@ -20,7 +20,10 @@ const getAttribute = (element: Parse5Element, name: string): string | null =>
 const hasAttribute = (element: Parse5Element, name: string): boolean =>
   element.attrs.some((attribute) => attribute.name === name);
 
-const findLayoutSidebars = (node: Parse5ParentNode, matches: Parse5Element[] = []): Parse5Element[] => {
+const findLayoutSidebars = (
+  node: Parse5ParentNode,
+  matches: Parse5Element[] = [],
+): Parse5Element[] => {
   for (const childNode of node.childNodes) {
     if (isElementNode(childNode) && childNode.tagName === 'layout-sidebar') {
       matches.push(childNode);

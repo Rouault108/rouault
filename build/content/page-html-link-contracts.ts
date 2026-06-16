@@ -384,7 +384,14 @@ const visit = (
   }
   const childNodes = 'childNodes' in node ? node.childNodes : [];
   for (const child of childNodes) {
-    visit(child, options, nextInsidePlaceholder, nextInsideLinkCard, nextInsideFooter, nextInsideFooterNav);
+    visit(
+      child,
+      options,
+      nextInsidePlaceholder,
+      nextInsideLinkCard,
+      nextInsideFooter,
+      nextInsideFooterNav,
+    );
   }
 };
 

@@ -92,9 +92,8 @@ export const hasDynamicTocScopeSelections = (headings: readonly TocHeading[]): b
     (heading) => Array.isArray(heading.scopeSelections) && heading.scopeSelections.length > 0,
   );
 
-export const serializeTocHeadingsForSourceScript = (
-  headings: readonly TocHeading[],
-): string => JSON.stringify(headings).replace(/</g, '\\u003c');
+export const serializeTocHeadingsForSourceScript = (headings: readonly TocHeading[]): string =>
+  JSON.stringify(headings).replace(/</g, '\\u003c');
 
 export const createTocSourceVersion = (input: {
   readonly sourceId: string;

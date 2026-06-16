@@ -22,7 +22,10 @@ import {
   SearchDialogSelectionModel,
   type SearchDialogFocusTarget,
 } from '../../search/search-dialog-selection-model.js';
-import type { SearchDialogCloseReason, SearchDialogItem } from '../../search/search-dialog-types.js';
+import type {
+  SearchDialogCloseReason,
+  SearchDialogItem,
+} from '../../search/search-dialog-types.js';
 import { SearchDialogVirtualizer } from '../../search/search-dialog-virtualizer.js';
 import { createInteractionModalityTracker } from '../../search/interaction-modality.js';
 import {
@@ -216,7 +219,9 @@ export const createSearchDialogDomController = (
   };
 
   const getResultIdAt = (index: number): string | null =>
-    deriveShowResults() && resultsList?.hidden === false ? state.results[index]?.id ?? null : null;
+    deriveShowResults() && resultsList?.hidden === false
+      ? (state.results[index]?.id ?? null)
+      : null;
 
   const requestFocus = (target: SearchDialogFocusTarget): void => {
     const element =
@@ -229,7 +234,11 @@ export const createSearchDialogDomController = (
     selectionMethod: SearchDialogSelectedDetail['selectionMethod'],
   ): void => {
     const currentQuery = state.query.trim();
-    if (!deriveShowResults() || currentQuery === '' || state.completedResultsQuery !== currentQuery) {
+    if (
+      !deriveShowResults() ||
+      currentQuery === '' ||
+      state.completedResultsQuery !== currentQuery
+    ) {
       return;
     }
     const index = state.results.findIndex((item) => item.id === activeId);
@@ -252,7 +261,8 @@ export const createSearchDialogDomController = (
     isLoading: () => state.loading,
     isUnavailable: () => state.unavailable,
     isClearButtonVisible: () => clearButton?.hidden === false,
-    getResultCount: () => (deriveShowResults() && resultsList?.hidden === false ? state.results.length : 0),
+    getResultCount: () =>
+      deriveShowResults() && resultsList?.hidden === false ? state.results.length : 0,
     getResultIdAt,
     getActiveId: () => state.activeId,
     setActiveId: (activeId) => {
@@ -405,7 +415,7 @@ export const createSearchDialogDomController = (
         : showLoading
           ? SEARCH_DIALOG_STATUS_LOADING_MESSAGE
           : showError
-            ? state.errorMessage ?? SEARCH_DIALOG_STATUS_ERROR_FALLBACK_MESSAGE
+            ? (state.errorMessage ?? SEARCH_DIALOG_STATUS_ERROR_FALLBACK_MESSAGE)
             : showResults
               ? createSearchDialogResultsStatusMessage(state.results.length)
               : showEmpty
@@ -423,7 +433,10 @@ export const createSearchDialogDomController = (
   ): void => {
     const isDisposeCleanup = source === 'dispose' && options.force === true;
     const suppressEvents = source === 'dispose' && options.suppressEvents === true;
-    if (!isDisposeCleanup && (generation !== state.closeOperationGeneration || state.closeCompletionDone)) {
+    if (
+      !isDisposeCleanup &&
+      (generation !== state.closeOperationGeneration || state.closeCompletionDone)
+    ) {
       return;
     }
     resetLoadingIndicatorAndHideDom();
@@ -449,11 +462,7 @@ export const createSearchDialogDomController = (
     if (effectiveCloseReason === 'selection' && capturedTriggerElement !== null) {
       capturedTriggerElement.blur();
     }
-    if (
-      !state.disposed &&
-      !suppressEvents &&
-      effectiveCloseReason !== 'selection'
-    ) {
+    if (!state.disposed && !suppressEvents && effectiveCloseReason !== 'selection') {
       restoreTriggerFocus(capturedTriggerElement);
       dispatchSearchDialogEvent('search-dialog:focus-return', { reason: effectiveCloseReason });
     }
@@ -631,184 +640,260 @@ export const createSearchDialogDomController = (
     renderFromState();
   };
 
-  ownerDocument.addEventListener('search-dialog:open-request', (event) => {
-    requestOpen((event as CustomEvent<SearchDialogOpenRequestDetail>).detail);
-  }, { signal: listeners.signal });
-  ownerDocument.addEventListener('search-dialog:close-request', (event) => {
-    requestClose((event as CustomEvent<SearchDialogCloseRequestDetail>).detail);
-  }, { signal: listeners.signal });
-  ownerDocument.addEventListener('search-dialog:query-change', (event) => {
-    handleQueryChanged((event as CustomEvent<{ query: string }>).detail.query);
-  }, { signal: listeners.signal });
-  ownerDocument.addEventListener('search-dialog:loading-change', (event) => {
-    if (state.unavailable) return;
-    const loading = (event as CustomEvent<{ loading: boolean }>).detail.loading;
-    const currentQuery = state.query.trim();
-    if (loading && currentQuery === '') {
+  ownerDocument.addEventListener(
+    'search-dialog:open-request',
+    (event) => {
+      requestOpen((event as CustomEvent<SearchDialogOpenRequestDetail>).detail);
+    },
+    { signal: listeners.signal },
+  );
+  ownerDocument.addEventListener(
+    'search-dialog:close-request',
+    (event) => {
+      requestClose((event as CustomEvent<SearchDialogCloseRequestDetail>).detail);
+    },
+    { signal: listeners.signal },
+  );
+  ownerDocument.addEventListener(
+    'search-dialog:query-change',
+    (event) => {
+      handleQueryChanged((event as CustomEvent<{ query: string }>).detail.query);
+    },
+    { signal: listeners.signal },
+  );
+  ownerDocument.addEventListener(
+    'search-dialog:loading-change',
+    (event) => {
+      if (state.unavailable) return;
+      const loading = (event as CustomEvent<{ loading: boolean }>).detail.loading;
+      const currentQuery = state.query.trim();
+      if (loading && currentQuery === '') {
+        resetLoadingIndicator();
+        state.loading = false;
+        state.results = [];
+        state.hasCompletedSearch = false;
+        state.completedResultsQuery = null;
+        state.errorMessage = null;
+        state.activeId = null;
+        renderFromState();
+        return;
+      }
+      state.loading = loading;
+      if (loading) {
+        state.hasCompletedSearch = false;
+        state.completedResultsQuery = null;
+        state.errorMessage = null;
+        state.activeId = null;
+        scheduleLoadingIndicator();
+      } else {
+        resetLoadingIndicator();
+      }
+      renderFromState();
+    },
+    { signal: listeners.signal },
+  );
+  ownerDocument.addEventListener(
+    'search-dialog:results-change',
+    (event) => {
+      if (state.unavailable) return;
+      const detail = (event as CustomEvent<SearchDialogResultsChangeDetail>).detail;
+      if (detail.query !== state.query.trim()) return;
+      const normalizedQuery = detail.query.trim();
       resetLoadingIndicator();
       state.loading = false;
-      state.results = [];
-      state.hasCompletedSearch = false;
-      state.completedResultsQuery = null;
-      state.errorMessage = null;
+      state.results = detail.items;
+      state.hasCompletedSearch = normalizedQuery !== '';
+      state.completedResultsQuery = normalizedQuery === '' ? null : normalizedQuery;
+      state.activeId =
+        normalizedQuery === ''
+          ? null
+          : detail.items.some((item) => item.id === state.activeId)
+            ? state.activeId
+            : (detail.items[0]?.id ?? null);
+      renderFromState();
+    },
+    { signal: listeners.signal },
+  );
+  ownerDocument.addEventListener(
+    'search-dialog:error',
+    (event) => {
+      if (state.unavailable) return;
+      resetLoadingIndicator();
+      state.loading = false;
+      state.errorMessage = (event as CustomEvent<{ message: string }>).detail.message;
+      state.hasCompletedSearch = true;
       state.activeId = null;
       renderFromState();
-      return;
-    }
-    state.loading = loading;
-    if (loading) {
-      state.hasCompletedSearch = false;
-      state.completedResultsQuery = null;
-      state.errorMessage = null;
-      state.activeId = null;
-      scheduleLoadingIndicator();
-    } else {
+    },
+    { signal: listeners.signal },
+  );
+  ownerDocument.addEventListener(
+    'search-dialog:unavailable',
+    (event) => {
       resetLoadingIndicator();
-    }
-    renderFromState();
-  }, { signal: listeners.signal });
-  ownerDocument.addEventListener('search-dialog:results-change', (event) => {
-    if (state.unavailable) return;
-    const detail = (event as CustomEvent<SearchDialogResultsChangeDetail>).detail;
-    if (detail.query !== state.query.trim()) return;
-    const normalizedQuery = detail.query.trim();
-    resetLoadingIndicator();
-    state.loading = false;
-    state.results = detail.items;
-    state.hasCompletedSearch = normalizedQuery !== '';
-    state.completedResultsQuery = normalizedQuery === '' ? null : normalizedQuery;
-    state.activeId =
-      normalizedQuery === ''
-        ? null
-        : detail.items.some((item) => item.id === state.activeId)
-          ? state.activeId
-          : detail.items[0]?.id ?? null;
-    renderFromState();
-  }, { signal: listeners.signal });
-  ownerDocument.addEventListener('search-dialog:error', (event) => {
-    if (state.unavailable) return;
-    resetLoadingIndicator();
-    state.loading = false;
-    state.errorMessage = (event as CustomEvent<{ message: string }>).detail.message;
-    state.hasCompletedSearch = true;
-    state.activeId = null;
-    renderFromState();
-  }, { signal: listeners.signal });
-  ownerDocument.addEventListener('search-dialog:unavailable', (event) => {
-    resetLoadingIndicator();
-    state.loading = false;
-    state.unavailable = true;
-    state.unavailableMessage = (event as CustomEvent<{ message: string }>).detail.message;
-    renderFromState();
-  }, { signal: listeners.signal });
+      state.loading = false;
+      state.unavailable = true;
+      state.unavailableMessage = (event as CustomEvent<{ message: string }>).detail.message;
+      renderFromState();
+    },
+    { signal: listeners.signal },
+  );
 
-  input?.addEventListener('input', () => {
-    dispatchSearchDialogEvent('search-dialog:query-change', { query: input.value });
-  }, { signal: listeners.signal });
-  field?.addEventListener('keydown', (event) => {
-    if (event.target !== input) return;
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+  input?.addEventListener(
+    'input',
+    () => {
+      dispatchSearchDialogEvent('search-dialog:query-change', { query: input.value });
+    },
+    { signal: listeners.signal },
+  );
+  field?.addEventListener(
+    'keydown',
+    (event) => {
+      if (event.target !== input) return;
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        selectionModel.moveActive(event.key === 'ArrowDown' ? 1 : -1);
+      } else if (event.key === 'Enter' && !event.isComposing) {
+        event.preventDefault();
+        selectionModel.selectActive('keyboard');
+      } else if (event.key === 'Tab' && !event.shiftKey) {
+        event.preventDefault();
+        selectionModel.handleForwardTabFromInput();
+      }
+    },
+    { signal: listeners.signal },
+  );
+  clearButton?.addEventListener(
+    'keydown',
+    (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        event.stopPropagation();
+        clearQuery();
+      } else if (event.key === 'Tab') {
+        event.preventDefault();
+        selectionModel.handleAuxiliaryTraversal({
+          origin: 'clear-button',
+          shiftKey: event.shiftKey,
+        });
+      }
+    },
+    { signal: listeners.signal },
+  );
+  closeButton?.addEventListener(
+    'keydown',
+    (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        event.stopPropagation();
+        dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'close-button' });
+      } else if (event.key === 'Tab' && event.shiftKey) {
+        event.preventDefault();
+        selectionModel.handleAuxiliaryTraversal({ origin: 'close-button', shiftKey: true });
+      }
+    },
+    { signal: listeners.signal },
+  );
+  dialog.addEventListener(
+    'click',
+    (event) => {
+      if (closestFromEvent(dialog, event, '[data-search-dialog-close]') !== null) {
+        dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'close-button' });
+        return;
+      }
+      if (closestFromEvent(dialog, event, '[data-search-dialog-clear]') !== null) {
+        clearQuery();
+        return;
+      }
+      if (resultsList === null) return;
+      const row = closestFromEvent(resultsList, event, '[role="option"][data-index]');
+      if (!(row instanceof HTMLElement)) return;
+      const index = Number(row.dataset['index'] ?? '-1');
+      if (!Number.isInteger(index)) return;
+      selectionModel.setActiveByIndex(index);
+      const activeId = getResultIdAt(index);
+      if (activeId !== null) requestSelection(activeId, 'pointer');
+    },
+    { signal: listeners.signal },
+  );
+  resultsList?.addEventListener(
+    'keydown',
+    (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const row = closestFromEvent(resultsList, event, '[role="option"][data-index]');
+      if (!(row instanceof HTMLElement)) return;
+      const index = Number(row.dataset['index'] ?? '-1');
+      if (!Number.isInteger(index)) return;
       event.preventDefault();
-      selectionModel.moveActive(event.key === 'ArrowDown' ? 1 : -1);
-    } else if (event.key === 'Enter' && !event.isComposing) {
-      event.preventDefault();
+      selectionModel.setActiveByIndex(index);
       selectionModel.selectActive('keyboard');
-    } else if (event.key === 'Tab' && !event.shiftKey) {
+    },
+    { signal: listeners.signal },
+  );
+  resultsList?.addEventListener(
+    'scroll',
+    () => {
+      state.virtualScrollTop = resultsList.scrollTop;
+      renderFromState();
+    },
+    { signal: listeners.signal },
+  );
+  dialog.addEventListener(
+    'keydown',
+    (event) => {
+      if (event.key !== 'Escape') return;
       event.preventDefault();
-      selectionModel.handleForwardTabFromInput();
-    }
-  }, { signal: listeners.signal });
-  clearButton?.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
+      if (escapeCloseRequested || state.isClosing) return;
+      escapeCloseRequested = true;
+      dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'escape' });
+    },
+    { signal: listeners.signal },
+  );
+  dialog.addEventListener(
+    'cancel',
+    (event) => {
       event.preventDefault();
-      event.stopPropagation();
-      clearQuery();
-    } else if (event.key === 'Tab') {
-      event.preventDefault();
-      selectionModel.handleAuxiliaryTraversal({ origin: 'clear-button', shiftKey: event.shiftKey });
-    }
-  }, { signal: listeners.signal });
-  closeButton?.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      event.stopPropagation();
-      dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'close-button' });
-    } else if (event.key === 'Tab' && event.shiftKey) {
-      event.preventDefault();
-      selectionModel.handleAuxiliaryTraversal({ origin: 'close-button', shiftKey: true });
-    }
-  }, { signal: listeners.signal });
-  dialog.addEventListener('click', (event) => {
-    if (closestFromEvent(dialog, event, '[data-search-dialog-close]') !== null) {
-      dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'close-button' });
-      return;
-    }
-    if (closestFromEvent(dialog, event, '[data-search-dialog-clear]') !== null) {
-      clearQuery();
-      return;
-    }
-    if (resultsList === null) return;
-    const row = closestFromEvent(resultsList, event, '[role="option"][data-index]');
-    if (!(row instanceof HTMLElement)) return;
-    const index = Number(row.dataset['index'] ?? '-1');
-    if (!Number.isInteger(index)) return;
-    selectionModel.setActiveByIndex(index);
-    const activeId = getResultIdAt(index);
-    if (activeId !== null) requestSelection(activeId, 'pointer');
-  }, { signal: listeners.signal });
-  resultsList?.addEventListener('keydown', (event) => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    const row = closestFromEvent(resultsList, event, '[role="option"][data-index]');
-    if (!(row instanceof HTMLElement)) return;
-    const index = Number(row.dataset['index'] ?? '-1');
-    if (!Number.isInteger(index)) return;
-    event.preventDefault();
-    selectionModel.setActiveByIndex(index);
-    selectionModel.selectActive('keyboard');
-  }, { signal: listeners.signal });
-  resultsList?.addEventListener('scroll', () => {
-    state.virtualScrollTop = resultsList.scrollTop;
-    renderFromState();
-  }, { signal: listeners.signal });
-  dialog.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') return;
-    event.preventDefault();
-    if (escapeCloseRequested || state.isClosing) return;
-    escapeCloseRequested = true;
-    dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'escape' });
-  }, { signal: listeners.signal });
-  dialog.addEventListener('cancel', (event) => {
-    event.preventDefault();
-    if (escapeCloseRequested || state.isClosing) return;
-    escapeCloseRequested = true;
-    dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'escape' });
-  }, { signal: listeners.signal });
-  dialog.addEventListener('pointerdown', (event) => {
-    if (event.target !== dialog) return;
-    const rect = dialog.getBoundingClientRect();
-    if (
-      event.clientX < rect.left ||
-      event.clientX > rect.right ||
-      event.clientY < rect.top ||
-      event.clientY > rect.bottom
-    ) dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'backdrop' });
-  }, { signal: listeners.signal });
-  dialog.addEventListener('close', () => {
-    if (state.disposed) return;
-    if (state.activeCloseGeneration !== null) {
-      completeCloseOnce('native-close', state.activeCloseGeneration);
-      return;
-    }
-    if (shouldStartExternalNativeCloseCompletion()) {
-      state.closeOperationGeneration += 1;
-      state.closeCompletionDone = false;
-      completeCloseOnce('external-native-close', state.closeOperationGeneration);
-      return;
-    }
-    state.isClosing = false;
-    dialog.removeAttribute('data-closing');
-    syncTriggerExpanded(false);
-  }, { signal: listeners.signal });
+      if (escapeCloseRequested || state.isClosing) return;
+      escapeCloseRequested = true;
+      dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'escape' });
+    },
+    { signal: listeners.signal },
+  );
+  dialog.addEventListener(
+    'pointerdown',
+    (event) => {
+      if (event.target !== dialog) return;
+      const rect = dialog.getBoundingClientRect();
+      if (
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+      )
+        dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'backdrop' });
+    },
+    { signal: listeners.signal },
+  );
+  dialog.addEventListener(
+    'close',
+    () => {
+      if (state.disposed) return;
+      if (state.activeCloseGeneration !== null) {
+        completeCloseOnce('native-close', state.activeCloseGeneration);
+        return;
+      }
+      if (shouldStartExternalNativeCloseCompletion()) {
+        state.closeOperationGeneration += 1;
+        state.closeCompletionDone = false;
+        completeCloseOnce('external-native-close', state.closeOperationGeneration);
+        return;
+      }
+      state.isClosing = false;
+      dialog.removeAttribute('data-closing');
+      syncTriggerExpanded(false);
+    },
+    { signal: listeners.signal },
+  );
 
   renderFromState();
 

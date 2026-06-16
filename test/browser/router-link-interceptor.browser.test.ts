@@ -78,8 +78,19 @@ describe('RouterLinkInterceptor', () => {
       },
       routeManifestState: {
         status: 'loaded',
-        manifest: { version: 1, buildId: 'test', buildLabel: 'test', generatedAt: '2026-01-01T00:00:00.000Z', siteOrigin: window.location.origin, basePath: '', routes: ['/notes/current', '/notes/next'] },
-        routeSet: { routes: ['/notes/current', '/notes/next'], has: (pathname: string) => pathname === '/notes/current' || pathname === '/notes/next' },
+        manifest: {
+          version: 1,
+          buildId: 'test',
+          buildLabel: 'test',
+          generatedAt: '2026-01-01T00:00:00.000Z',
+          siteOrigin: window.location.origin,
+          basePath: '',
+          routes: ['/notes/current', '/notes/next'],
+        },
+        routeSet: {
+          routes: ['/notes/current', '/notes/next'],
+          has: (pathname: string) => pathname === '/notes/current' || pathname === '/notes/next',
+        },
       },
       diagnosticSink: { record: () => undefined },
     });
@@ -107,8 +118,6 @@ describe('RouterLinkInterceptor', () => {
       },
     ]);
   });
-
-
 
   it('root-relative internal-document link を absolute currentUrl に補正して横取りすること', async () => {
     const link = await fixture<HTMLAnchorElement>(html`<a href="/notes/next">Next</a>`);

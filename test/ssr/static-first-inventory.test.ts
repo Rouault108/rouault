@@ -26,11 +26,9 @@ const deletedHeaderImplementationPaths = [
   ['src/components/app/shell/', 'layout-header-shell-', 'adapter.ts'].join(''),
 ] as const;
 
-const profilesEqual = (
-  actual: readonly string[],
-  expected: readonly string[],
-): boolean =>
-  actual.length === expected.length && actual.every((profile, index) => profile === expected[index]);
+const profilesEqual = (actual: readonly string[], expected: readonly string[]): boolean =>
+  actual.length === expected.length &&
+  actual.every((profile, index) => profile === expected[index]);
 
 describe('static-first retained inventory', () => {
   it('does not retain removed-or-reduced legacy tags', () => {
@@ -78,9 +76,10 @@ describe('static-first retained inventory', () => {
         component.hydrationRegistryRequired,
       );
       if (hydrationEntry) {
-        expect(profilesEqual(hydrationEntry.profiles, component.hydrationProfiles), component.tag).toBe(
-          true,
-        );
+        expect(
+          profilesEqual(hydrationEntry.profiles, component.hydrationProfiles),
+          component.tag,
+        ).toBe(true);
       }
     }
   });

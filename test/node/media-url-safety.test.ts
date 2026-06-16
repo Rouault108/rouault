@@ -14,7 +14,6 @@ import {
 
 const VALID_DATA_IMAGE = 'data:image/png;base64,iVBORw0KGgo=';
 
-
 describe('media URL safety', () => {
   it('data image URL は明示 allowlist だけを許可すること', () => {
     expect(validateDataImageUrl(VALID_DATA_IMAGE)).toMatchObject({
@@ -37,7 +36,9 @@ describe('media URL safety', () => {
 
   it('image media URL は http / https / relative / allowlisted data image だけを許可すること', () => {
     expect(sanitizeImageSource('/media/image.png')).toBe('/media/image.png');
-    expect(sanitizeImageSource('https://example.com/image.png')).toBe('https://example.com/image.png');
+    expect(sanitizeImageSource('https://example.com/image.png')).toBe(
+      'https://example.com/image.png',
+    );
     expect(sanitizeImageSource(VALID_DATA_IMAGE)).toBe(VALID_DATA_IMAGE);
     expect(validateMediaUrl('javascript:alert(1)', { allowDataImage: true })).toEqual({
       ok: false,
@@ -53,7 +54,6 @@ describe('media URL safety', () => {
     expect(sanitizeVideoSource(VALID_DATA_IMAGE)).toBeUndefined();
     expect(sanitizeVideoSource('mailto:hello@example.com')).toBeUndefined();
   });
-
 
   it('score source はリポジトリ内の相対 SVG だけを許可すること', () => {
     const siteUrlContext = { siteOrigin: 'https://example.com', basePath: '/rouault' };

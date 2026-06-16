@@ -1,6 +1,9 @@
 import { expect } from '@open-wc/testing';
 
-import { DEFAULT_SITE_URL_CONTEXT, type SiteUrlContext } from '../../shared/site/site-url-context.js';
+import {
+  DEFAULT_SITE_URL_CONTEXT,
+  type SiteUrlContext,
+} from '../../shared/site/site-url-context.js';
 import { INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION } from '../../shared/navigation/internal-document-route-manifest-path.js';
 import {
   loadInternalDocumentRouteManifest,
@@ -14,7 +17,12 @@ const BUILD_LABEL = 'build-label';
 const GENERATED_AT = '2026-01-01T00:00:00.000Z';
 
 const createManifest = (
-  overrides: Partial<Record<'version' | 'buildId' | 'buildLabel' | 'generatedAt' | 'siteOrigin' | 'basePath' | 'routes', unknown>> = {},
+  overrides: Partial<
+    Record<
+      'version' | 'buildId' | 'buildLabel' | 'generatedAt' | 'siteOrigin' | 'basePath' | 'routes',
+      unknown
+    >
+  > = {},
 ): Record<string, unknown> => ({
   version: INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION,
   buildId: BUILD_ID,
@@ -26,11 +34,13 @@ const createManifest = (
   ...overrides,
 });
 
-const createResponse = (options: {
-  readonly body?: unknown;
-  readonly status?: number;
-  readonly contentType?: string | null;
-} = {}): Response => {
+const createResponse = (
+  options: {
+    readonly body?: unknown;
+    readonly status?: number;
+    readonly contentType?: string | null;
+  } = {},
+): Response => {
   const headers = new Headers();
   if (options.contentType !== null) {
     headers.set('content-type', options.contentType ?? 'application/json');
@@ -42,17 +52,20 @@ const createResponse = (options: {
   });
 };
 
-const load = async (options: {
-  readonly manifestUrl?: string;
-  readonly siteUrlContext?: SiteUrlContext;
-  readonly buildId?: string;
-  readonly version?: number;
-  readonly response?: Response;
-  readonly fetcher?: typeof fetch;
-  readonly currentLocation?: Location;
-} = {}): Promise<InternalDocumentRouteManifestState> =>
+const load = async (
+  options: {
+    readonly manifestUrl?: string;
+    readonly siteUrlContext?: SiteUrlContext;
+    readonly buildId?: string;
+    readonly version?: number;
+    readonly response?: Response;
+    readonly fetcher?: typeof fetch;
+    readonly currentLocation?: Location;
+  } = {},
+): Promise<InternalDocumentRouteManifestState> =>
   loadInternalDocumentRouteManifest({
-    manifestUrl: options.manifestUrl ?? '/assets/internal-document-routes.json?buildId=build-current',
+    manifestUrl:
+      options.manifestUrl ?? '/assets/internal-document-routes.json?buildId=build-current',
     siteUrlContext: options.siteUrlContext ?? DEFAULT_SITE_URL_CONTEXT,
     buildId: options.buildId ?? BUILD_ID,
     version: options.version ?? INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION,
@@ -174,7 +187,13 @@ describe('internal document route manifest loader contract', () => {
   });
 
   it('Content-Type は JSON media type 契約で検証すること', async () => {
-    for (const contentType of [null, '', 'text/plain', 'application/json; charset=shift_jis', 'application/json; profile=x']) {
+    for (const contentType of [
+      null,
+      '',
+      'text/plain',
+      'application/json; charset=shift_jis',
+      'application/json; profile=x',
+    ]) {
       await expectState(load({ response: createResponse({ contentType }) }), 'invalid');
     }
 
@@ -196,7 +215,10 @@ describe('internal document route manifest loader contract', () => {
     );
     await expectState(load({ response: createResponse({ body: { invalid: true } }) }), 'invalid');
     await expectState(load({ version: 2 }), 'invalid');
-    await expectState(load({ response: createResponse({ body: createManifest({ version: 2 }) }) }), 'invalid');
+    await expectState(
+      load({ response: createResponse({ body: createManifest({ version: 2 }) }) }),
+      'invalid',
+    );
   });
 
   it('manifest metadata mismatch は stale / invalid に分類すること', async () => {
@@ -205,7 +227,9 @@ describe('internal document route manifest loader contract', () => {
       'stale',
     );
     await expectState(
-      load({ response: createResponse({ body: createManifest({ siteOrigin: 'https://other.example' }) }) }),
+      load({
+        response: createResponse({ body: createManifest({ siteOrigin: 'https://other.example' }) }),
+      }),
       'invalid',
     );
     await expectState(

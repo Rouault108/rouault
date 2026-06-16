@@ -212,10 +212,10 @@ describe('table node contracts', () => {
 
     expect(() => {
       validateNoteContentContracts({
-  kind: 'reader',
-  html: html,
-  sourceLabel: 'testing/table-contracts',
-});
+        kind: 'reader',
+        html: html,
+        sourceLabel: 'testing/table-contracts',
+      });
     }).not.toThrow();
   });
 });

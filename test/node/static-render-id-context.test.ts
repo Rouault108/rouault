@@ -14,7 +14,11 @@ describe('StaticRenderIdContext', () => {
     const first = createStaticRenderIdContext('content/notes/example.md');
     const second = createStaticRenderIdContext('content/notes/example.md');
 
-    expect([first.nextId('copy-source'), first.nextId('copy-source'), first.nextId('task-list-label')]).toEqual([
+    expect([
+      first.nextId('copy-source'),
+      first.nextId('copy-source'),
+      first.nextId('task-list-label'),
+    ]).toEqual([
       second.nextId('copy-source'),
       second.nextId('copy-source'),
       second.nextId('task-list-label'),

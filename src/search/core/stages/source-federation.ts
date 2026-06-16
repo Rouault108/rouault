@@ -7,7 +7,9 @@ import type { SiteUrlContext } from '../../../../shared/site/site-url-context.js
 import type { SourceFederationStageOutput, QueryPreparationStageOutput } from '../stage-types.js';
 import type { MutableDiagnostics } from '../../diagnostics.js';
 
-export type LoadSearchCatalog = (diagnostics: MutableDiagnostics) => Promise<readonly SearchCatalogItem[]>;
+export type LoadSearchCatalog = (
+  diagnostics: MutableDiagnostics,
+) => Promise<readonly SearchCatalogItem[]>;
 
 export interface RunSourceFederationStageInput extends QueryPreparationStageOutput {
   loadPagefind: PagefindLoader;

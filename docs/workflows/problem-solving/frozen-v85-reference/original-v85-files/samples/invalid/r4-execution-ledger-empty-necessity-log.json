@@ -36,9 +36,7 @@
       "timestamp": "2026-06-16T00:00:00Z",
       "actor": "human",
       "reason": "minimal sample event",
-      "evidence_ids": [
-        "E-EVT-001"
-      ]
+      "evidence_ids": ["E-EVT-001"]
     }
   ],
   "phase_evidence_map": [
@@ -81,9 +79,7 @@
       "reason": null,
       "superseded_or_invalid_artifact_key": null,
       "superseded_or_invalid_artifact_ref": null,
-      "evidence_ids": [
-        "E-AVA-001"
-      ],
+      "evidence_ids": ["E-AVA-001"],
       "timestamp": "2026-06-16T00:00:00Z",
       "actor": "human"
     }

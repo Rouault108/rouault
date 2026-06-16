@@ -1,7 +1,4 @@
-import {
-  resolveTocHydrationState,
-  type TocHydrationState,
-} from '../../toc/toc-hydration-state.js';
+import { resolveTocHydrationState, type TocHydrationState } from '../../toc/toc-hydration-state.js';
 import {
   createTocPanelContentSignature,
   serializeTocPanelContentSignature,
@@ -71,11 +68,14 @@ class LayoutTocRuntimeStore {
     return this._ensure(id).snapshot;
   }
 
-  publishPanelContent(id: string | undefined, input: {
-    readonly ownerId: string | null | undefined;
-    readonly headingCount: number;
-    readonly sourceVersion?: string | null;
-  }): LayoutTocRuntimeSnapshot {
+  publishPanelContent(
+    id: string | undefined,
+    input: {
+      readonly ownerId: string | null | undefined;
+      readonly headingCount: number;
+      readonly sourceVersion?: string | null;
+    },
+  ): LayoutTocRuntimeSnapshot {
     const entry = this._ensure(id);
     const signature = createTocPanelContentSignature(input);
     entry.snapshot = {
