@@ -333,9 +333,11 @@ const runWranglerPagesDeploy = async (
               wranglerVersion,
             });
           })
-          .catch(reject);
+          .catch((error: unknown) => {
+            reject(error instanceof Error ? error : new Error(String(error)));
+          });
       } catch (error) {
-        reject(error);
+        reject(error instanceof Error ? error : new Error(String(error)));
       }
     });
   });

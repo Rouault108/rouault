@@ -12,7 +12,13 @@ const writeWorkflowContractFixture = async (options: {
   readonly workflowUses?: string;
   readonly runsUsing?: 'node20' | 'node24';
   readonly extraRun?: string;
+  readonly workflowStepOrder?: 'valid' | 'preflight-after-upload';
   readonly deployScriptSource?: string;
+  readonly uploadR2ScriptSource?: string;
+  readonly productionPreflightScriptSource?: string;
+  readonly packageWranglerVersion?: string;
+  readonly lockWranglerSpecifier?: string;
+  readonly lockWranglerVersion?: string;
 }) => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'rouault-workflow-contract-'));
   const workflowPath = path.join(root, 'ci-cd.yml');
@@ -20,8 +26,29 @@ const writeWorkflowContractFixture = async (options: {
   const snapshotDirectory = path.join(snapshotRoot, 'actions-example');
   const readmePath = path.join(snapshotRoot, 'README.md');
   const deployScriptPath = path.join(root, 'deploy-cloudflare-pages.ts');
+  const uploadR2ScriptPath = path.join(root, 'upload-r2-media.ts');
+  const productionPreflightScriptPath = path.join(root, 'production-authority-preflight.ts');
+  const packageJsonPath = path.join(root, 'package.json');
+  const lockfilePath = path.join(root, 'pnpm-lock.yaml');
   const runsUsing = options.runsUsing ?? 'node24';
   const workflowUses = options.workflowUses ?? `${actionName}@${reviewedCommitSha}`;
+  const packageWranglerVersion = options.packageWranglerVersion ?? '4.100.0';
+  const lockWranglerSpecifier = options.lockWranglerSpecifier ?? packageWranglerVersion;
+  const lockWranglerVersion = options.lockWranglerVersion ?? packageWranglerVersion;
+  const workflowDeploySteps =
+    options.workflowStepOrder === 'preflight-after-upload'
+      ? [
+          '      - uses: ./actions/download-artifact@0123456789abcdef0123456789abcdef01234567',
+          '      - run: pnpm exec tsx scripts/upload-r2-media.ts',
+          '      - run: pnpm exec tsx scripts/deploy/production-authority-preflight.ts',
+          '      - run: pnpm exec tsx scripts/deploy/deploy-cloudflare-pages.ts',
+        ]
+      : [
+          '      - run: pnpm exec tsx scripts/deploy/production-authority-preflight.ts',
+          '      - uses: ./actions/download-artifact@0123456789abcdef0123456789abcdef01234567',
+          '      - run: pnpm exec tsx scripts/upload-r2-media.ts',
+          '      - run: pnpm exec tsx scripts/deploy/deploy-cloudflare-pages.ts',
+        ];
 
   await mkdir(snapshotDirectory, { recursive: true });
   await writeFile(
@@ -32,6 +59,7 @@ const writeWorkflowContractFixture = async (options: {
       '    steps:',
       `      - uses: ${workflowUses}`,
       options.extraRun ? `      - run: ${options.extraRun}` : '',
+      ...workflowDeploySteps,
       '',
     ].join('\n'),
     'utf8',
@@ -43,11 +71,55 @@ const writeWorkflowContractFixture = async (options: {
         "const output = 'WRANGLER_OUTPUT_FILE_PATH';",
         "const parser = 'parseWranglerPagesDeployStructuredOutput';",
         "const commitDirty = '--commit-dirty=false';",
+        "observeProductionBranchHead(authority, 'cloudflare-pages-deploy');",
         'void output;',
         'void parser;',
         'void commitDirty;',
         '',
       ].join('\n'),
+    'utf8',
+  );
+  await writeFile(
+    uploadR2ScriptPath,
+    options.uploadR2ScriptSource ??
+      "observeProductionBranchHead(authority, 'r2-media-upload');\n",
+    'utf8',
+  );
+  await writeFile(
+    productionPreflightScriptPath,
+    options.productionPreflightScriptSource ??
+      "console.log('[production-authority] wrote validated production context');\n",
+    'utf8',
+  );
+  await writeFile(
+    packageJsonPath,
+    JSON.stringify(
+      {
+        devDependencies: {
+          wrangler: packageWranglerVersion,
+        },
+      },
+      null,
+      2,
+    ),
+    'utf8',
+  );
+  await writeFile(
+    lockfilePath,
+    [
+      'importers:',
+      '  .:',
+      '    devDependencies:',
+      '      wrangler:',
+      `        specifier: ${lockWranglerSpecifier}`,
+      `        version: ${lockWranglerVersion}`,
+      '',
+      'packages:',
+      '',
+      `  wrangler@${lockWranglerVersion}:`,
+      '    resolution: {integrity: sha512-fixture}',
+      '',
+    ].join('\n'),
     'utf8',
   );
   await writeFile(
@@ -86,7 +158,16 @@ const writeWorkflowContractFixture = async (options: {
     'utf8',
   );
 
-  return { workflowPath, snapshotRoot, readmePath, deployScriptPath };
+  return {
+    workflowPath,
+    snapshotRoot,
+    readmePath,
+    deployScriptPath,
+    packageJsonPath,
+    lockfilePath,
+    uploadR2ScriptPath,
+    productionPreflightScriptPath,
+  };
 };
 
 describe('workflow source contract', () => {
@@ -95,6 +176,8 @@ describe('workflow source contract', () => {
 
     expect(report.actionEvidence.length).toBeGreaterThan(0);
     expect(report.actionEvidence.every((evidence) => evidence.runsUsing === 'node24')).toBe(true);
+    expect(report.workflowPath).toBe('.github/workflows/ci-cd.yml');
+    expect(report.wranglerVersion).toBe('4.100.0');
   });
 
   it('rejects Node.js 20 Action runtime snapshots', async () => {
@@ -123,6 +206,7 @@ describe('workflow source contract', () => {
         "const output = 'WRANGLER_OUTPUT_FILE_PATH';",
         "const parser = 'parseWranglerPagesDeployStructuredOutput';",
         "const commitDirty = '--commit-dirty=false';",
+        "observeProductionBranchHead(authority, 'cloudflare-pages-deploy');",
         "const obsolete = '--json';",
         "const deploymentUrl = stdout;",
         'void output;',
@@ -135,5 +219,55 @@ describe('workflow source contract', () => {
     });
 
     await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/stdout JSON output/u);
+  });
+
+  it('rejects unpinned Wrangler package versions', async () => {
+    const fixture = await writeWorkflowContractFixture({ packageWranglerVersion: '^4.100.0' });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/exact devDependency/u);
+  });
+
+  it('rejects package and lockfile Wrangler drift', async () => {
+    const fixture = await writeWorkflowContractFixture({ lockWranglerVersion: '4.99.0' });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/pnpm-lock|lockfile/u);
+  });
+
+  it('rejects production preflight after production side effects', async () => {
+    const fixture = await writeWorkflowContractFixture({ workflowStepOrder: 'preflight-after-upload' });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(
+      /preflight before production side effects/u,
+    );
+  });
+
+  it('rejects missing current head gate before R2 upload', async () => {
+    const fixture = await writeWorkflowContractFixture({ uploadR2ScriptSource: 'void 0;\n' });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/R2 upload/u);
+  });
+
+  it('rejects missing current head gate before Pages deploy', async () => {
+    const fixture = await writeWorkflowContractFixture({
+      deployScriptSource: [
+        "const output = 'WRANGLER_OUTPUT_FILE_PATH';",
+        "const parser = 'parseWranglerPagesDeployStructuredOutput';",
+        "const commitDirty = '--commit-dirty=false';",
+        'void output;',
+        'void parser;',
+        'void commitDirty;',
+        '',
+      ].join('\n'),
+    });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/Pages deploy/u);
+  });
+
+  it('rejects local absolute paths in production job logs', async () => {
+    const fixture = await writeWorkflowContractFixture({
+      productionPreflightScriptSource: 'console.log(`[production-authority] ${OUTPUT_PATH}`);\n',
+    });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/local absolute paths/u);
   });
 });

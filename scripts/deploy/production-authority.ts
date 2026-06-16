@@ -47,6 +47,11 @@ const requireNonEmpty = (name: string, value: string | undefined): string => {
   return normalized;
 };
 
+const optionalTrimmedValue = (value: string | undefined): string | null => {
+  const normalized = value?.trim();
+  return normalized === undefined || normalized === '' ? null : normalized;
+};
+
 export const validateProductionAuthority = (
   environment: ProductionAuthorityEnvironment,
 ): ValidatedProductionAuthority => {
@@ -77,8 +82,8 @@ export const validateProductionAuthority = (
     productionBranch: PRODUCTION_BRANCH,
     eventName: 'push',
     commitSha: githubSha,
-    repository: environment.githubRepository?.trim() || null,
-    serverUrl: environment.githubServerUrl?.trim() || null,
+    repository: optionalTrimmedValue(environment.githubRepository),
+    serverUrl: optionalTrimmedValue(environment.githubServerUrl),
   };
 };
 

@@ -14,8 +14,20 @@ const DEFAULT_DEPLOY_SCRIPT_PATH = path.join(
   'deploy',
   'deploy-cloudflare-pages.ts',
 );
+const DEFAULT_PACKAGE_JSON_PATH = path.join(REPOSITORY_ROOT, 'package.json');
+const DEFAULT_LOCKFILE_PATH = path.join(REPOSITORY_ROOT, 'pnpm-lock.yaml');
+const DEFAULT_UPLOAD_R2_SCRIPT_PATH = path.join(REPOSITORY_ROOT, 'scripts', 'upload-r2-media.ts');
+const DEFAULT_PRODUCTION_PREFLIGHT_SCRIPT_PATH = path.join(
+  REPOSITORY_ROOT,
+  'scripts',
+  'deploy',
+  'production-authority-preflight.ts',
+);
+const DEV_DEPENDENCIES_FIELD = 'devDependencies';
+const WRANGLER_FIELD = 'wrangler';
 const SHA_PIN_PATTERN = /^[a-z0-9-]+\/[a-z0-9_.-]+@[0-9a-f]{40}$/u;
 const ACTION_USES_PATTERN = /^\s*-\s+uses:\s+([^\s#]+)\s*$/gmu;
+const FIXED_PACKAGE_VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u;
 
 interface ActionEvidence {
   readonly actionName: string;
@@ -30,6 +42,7 @@ interface SourceContractReport {
   readonly workflowPath: string;
   readonly workflowUses: readonly string[];
   readonly actionEvidence: readonly ActionEvidence[];
+  readonly wranglerVersion: string;
 }
 
 interface WorkflowSourceContractOptions {
@@ -37,6 +50,10 @@ interface WorkflowSourceContractOptions {
   readonly snapshotRoot?: string;
   readonly readmePath?: string;
   readonly deployScriptPath?: string;
+  readonly packageJsonPath?: string;
+  readonly lockfilePath?: string;
+  readonly uploadR2ScriptPath?: string;
+  readonly productionPreflightScriptPath?: string;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -44,6 +61,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const readJson = async (filePath: string): Promise<unknown> =>
   JSON.parse(await readFile(filePath, 'utf8')) as unknown;
+
+const toRepositoryRelativePath = (filePath: string): string =>
+  path.relative(REPOSITORY_ROOT, filePath).split(path.sep).join('/');
+
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 
 const assertCondition = (condition: boolean, message: string): void => {
   if (!condition) {
@@ -72,7 +94,7 @@ const readStringField = (
 };
 
 const extractRunsUsing = (source: string, filePath: string): string => {
-  const match = source.match(/^\s*using:\s*['"]?(node[0-9]+)['"]?\s*$/mu);
+  const match = /^\s*using:\s*['"]?(node[0-9]+)['"]?\s*$/mu.exec(source);
   assertCondition(match !== null, `${filePath} must declare runs.using`);
   return match?.[1] ?? '';
 };
@@ -126,8 +148,8 @@ const loadEvidence = async (
 
   assertCondition(commitRunsUsing === 'node24', `${commitSnapshotPath} must use node24`);
   assertCondition(tagRunsUsing === 'node24', `${tagSnapshotPath} must use node24`);
-  assertCondition(!/node20/u.test(commitSnapshot), `${commitSnapshotPath} must not mention node20`);
-  assertCondition(!/node20/u.test(tagSnapshot), `${tagSnapshotPath} must not mention node20`);
+  assertCondition(!commitSnapshot.includes('node20'), `${commitSnapshotPath} must not mention node20`);
+  assertCondition(!tagSnapshot.includes('node20'), `${tagSnapshotPath} must not mention node20`);
   assertCondition(
     commitSnapshot === tagSnapshot,
     `${snapshotDirectory} commit and tag action metadata snapshots must match`,
@@ -178,6 +200,100 @@ const assertDeployScriptContract = async (deployScriptPath: string): Promise<voi
     !/deploymentUrl[\s\S]{0,120}stdout|stdout[\s\S]{0,120}deploymentUrl/u.test(source),
     `${deployScriptPath} must not derive deployment URL from stdout`,
   );
+  assertCondition(
+    source.includes("observeProductionBranchHead(authority, 'cloudflare-pages-deploy')"),
+    `${deployScriptPath} must gate the current production head immediately before Pages deploy`,
+  );
+};
+
+const assertWranglerPackageContract = async (
+  packageJsonPath: string,
+  lockfilePath: string,
+): Promise<string> => {
+  const packageJson = await readJson(packageJsonPath);
+  if (!isRecord(packageJson)) {
+    throw new Error(`[workflow-source-contract] ${packageJsonPath} must contain a JSON object`);
+  }
+  const devDependencies = packageJson[DEV_DEPENDENCIES_FIELD];
+  if (!isRecord(devDependencies)) {
+    throw new Error(`[workflow-source-contract] ${packageJsonPath} must contain devDependencies`);
+  }
+
+  const wranglerVersion = devDependencies[WRANGLER_FIELD];
+  assertCondition(
+    typeof wranglerVersion === 'string' && FIXED_PACKAGE_VERSION_PATTERN.test(wranglerVersion),
+    `${packageJsonPath} must pin wrangler as an exact devDependency version`,
+  );
+
+  const lockfile = await readFile(lockfilePath, 'utf8');
+  const escapedVersion = escapeRegExp(wranglerVersion as string);
+  assertCondition(
+    new RegExp(`wrangler:\\r?\\n\\s+specifier: ${escapedVersion}\\r?\\n\\s+version: ${escapedVersion}`, 'u').test(
+      lockfile,
+    ),
+    `${lockfilePath} must keep the importer wrangler specifier and version aligned with package.json`,
+  );
+  assertCondition(
+    new RegExp(`^\\s{2}wrangler@${escapedVersion}:`, 'mu').test(lockfile),
+    `${lockfilePath} must contain the pinned wrangler package snapshot`,
+  );
+
+  return wranglerVersion as string;
+};
+
+const assertWorkflowDeploymentOrder = (workflowSource: string, workflowPath: string): void => {
+  const preflightIndex = workflowSource.indexOf(
+    'pnpm exec tsx scripts/deploy/production-authority-preflight.ts',
+  );
+  const downloadIndex = workflowSource.indexOf('actions/download-artifact@');
+  const r2UploadIndex = workflowSource.indexOf('pnpm exec tsx scripts/upload-r2-media.ts');
+  const pagesDeployIndex = workflowSource.indexOf(
+    'pnpm exec tsx scripts/deploy/deploy-cloudflare-pages.ts',
+  );
+
+  assertCondition(preflightIndex >= 0, `${workflowPath} must run production authority preflight`);
+  assertCondition(downloadIndex >= 0, `${workflowPath} must download the production artifact`);
+  assertCondition(r2UploadIndex >= 0, `${workflowPath} must run the R2 upload script`);
+  assertCondition(pagesDeployIndex >= 0, `${workflowPath} must run the Pages deploy script`);
+  assertCondition(
+    preflightIndex < downloadIndex && preflightIndex < r2UploadIndex && preflightIndex < pagesDeployIndex,
+    `${workflowPath} must run production authority preflight before production side effects`,
+  );
+  assertCondition(
+    r2UploadIndex < pagesDeployIndex,
+    `${workflowPath} must upload R2 media before Pages deploy`,
+  );
+};
+
+const assertUploadR2ScriptContract = async (uploadR2ScriptPath: string): Promise<void> => {
+  const source = await readFile(uploadR2ScriptPath, 'utf8');
+  assertCondition(
+    source.includes("observeProductionBranchHead(authority, 'r2-media-upload')"),
+    `${uploadR2ScriptPath} must gate the current production head immediately before R2 upload`,
+  );
+};
+
+const assertProductionOutputSafety = async (
+  productionPreflightScriptPath: string,
+  deployScriptPath: string,
+): Promise<void> => {
+  const preflightSource = await readFile(productionPreflightScriptPath, 'utf8');
+  const deploySource = await readFile(deployScriptPath, 'utf8');
+  const outputSensitiveSources = [
+    [productionPreflightScriptPath, preflightSource],
+    [deployScriptPath, deploySource],
+  ] as const;
+
+  for (const [filePath, source] of outputSensitiveSources) {
+    assertCondition(
+      !/console\.log\([^)]*(?:OUTPUT_PATH|WRANGLER_OUTPUT_PATH|process\.env)/su.test(source),
+      `${filePath} must not write raw environment values or local absolute paths to job logs`,
+    );
+    assertCondition(
+      !/appendFile\(\s*githubOutput\s*,\s*(?:`[^`]*(?:process\.env|OUTPUT_PATH|WRANGLER_OUTPUT_PATH)[^`]*`|"[^"]*(?:process\.env|OUTPUT_PATH|WRANGLER_OUTPUT_PATH)[^"]*"|'[^']*(?:process\.env|OUTPUT_PATH|WRANGLER_OUTPUT_PATH)[^']*')/u.test(source),
+      `${filePath} must not write raw environment values or local absolute paths to job outputs`,
+    );
+  }
 };
 
 export const assertWorkflowSourceContract = async (
@@ -187,8 +303,14 @@ export const assertWorkflowSourceContract = async (
   const snapshotRoot = options.snapshotRoot ?? DEFAULT_SNAPSHOT_ROOT;
   const readmePath = options.readmePath ?? DEFAULT_README_PATH;
   const deployScriptPath = options.deployScriptPath ?? DEFAULT_DEPLOY_SCRIPT_PATH;
+  const packageJsonPath = options.packageJsonPath ?? DEFAULT_PACKAGE_JSON_PATH;
+  const lockfilePath = options.lockfilePath ?? DEFAULT_LOCKFILE_PATH;
+  const uploadR2ScriptPath = options.uploadR2ScriptPath ?? DEFAULT_UPLOAD_R2_SCRIPT_PATH;
+  const productionPreflightScriptPath =
+    options.productionPreflightScriptPath ?? DEFAULT_PRODUCTION_PREFLIGHT_SCRIPT_PATH;
   const workflowSource = await readFile(workflowPath, 'utf8');
   const workflowUses = collectWorkflowUses(workflowSource);
+  const wranglerVersion = await assertWranglerPackageContract(packageJsonPath, lockfilePath);
 
   assertCondition(
     !workflowSource.includes('cloudflare/wrangler-action'),
@@ -202,6 +324,7 @@ export const assertWorkflowSourceContract = async (
     !/grep[^\n]*(https?:\/\/|deployment-url|deployment url)/iu.test(workflowSource),
     'deployment URL must not be scraped from stdout with grep',
   );
+  assertWorkflowDeploymentOrder(workflowSource, workflowPath);
 
   const externalUses = workflowUses.filter((use) => !use.startsWith('./'));
   for (const use of externalUses) {
@@ -231,12 +354,15 @@ export const assertWorkflowSourceContract = async (
   }
   await assertReadmeMatchesEvidence(readmePath, evidence);
   await assertDeployScriptContract(deployScriptPath);
+  await assertUploadR2ScriptContract(uploadR2ScriptPath);
+  await assertProductionOutputSafety(productionPreflightScriptPath, deployScriptPath);
 
   return {
     schemaVersion: 1,
-    workflowPath,
+    workflowPath: toRepositoryRelativePath(workflowPath),
     workflowUses,
     actionEvidence: evidence,
+    wranglerVersion,
   };
 };
 

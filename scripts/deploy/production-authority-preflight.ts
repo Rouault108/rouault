@@ -26,7 +26,7 @@ const run = async (): Promise<void> => {
     headObservation,
   });
 
-  console.log(`[production-authority] validated production context: ${OUTPUT_PATH}`);
+  console.log('[production-authority] wrote validated production context');
 };
 
 const entryPoint = process.argv[1];
