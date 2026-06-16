@@ -142,16 +142,18 @@ Cloudflare Pages project では次を確認する。
 
 ## Deployment Evidence
 
-`deploy-production` job は次をログと step summary に記録する。
+`deploy-production` job は人間向け provenance と、機械検証用の structured artifact を分けて記録する。deployment URL や deployment ID の正本は Wrangler structured output file を parser で正規化した `cloudflare-pages-deploy-result.json` と、そこから生成する release state artifact である。stdout や raw command output を deployment data source として扱ってはいけない。
+
+ログと step summary には次の人間向け provenance だけを記録する。
 
 - `GITHUB_SHA`
 - `GITHUB_REF`
 - `GITHUB_REF_NAME`
 - `ROUAULT_BUILD_LABEL`
+- Cloudflare deployment ID
 - Cloudflare deployment URL
-- Wrangler command output
 
-Cloudflare Pages 側で commit SHA が表示される場合は、GitHub Actions run の `GITHUB_SHA` と一致することを確認する。表示されない場合は、GitHub Actions の provenance ログと Wrangler output から deployment を対応付ける。
+機械検証は release state artifact、release state SHA-256、R2 attempt manifest、media delivery attempt manifest、runtime verification artifact を使って行う。Cloudflare Pages 側で commit SHA が表示される場合は、GitHub Actions run の `GITHUB_SHA` と一致することを確認する。表示されない場合は、GitHub Actions の provenance ログと normalized deployment result の `deploymentId` / `deploymentUrl` から deployment を対応付ける。
 
 ## CI Gate Roles
 

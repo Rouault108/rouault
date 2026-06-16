@@ -24,6 +24,7 @@ const writeWorkflowContractFixture = async (options: {
   readonly lockWranglerVersion?: string;
   readonly evidenceWorkflowUsesSha?: string;
   readonly readmeWorkflowUsesSha?: string;
+  readonly deploymentDocsSource?: string;
 }) => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'rouault-workflow-contract-'));
   const workflowPath = path.join(root, 'ci-cd.yml');
@@ -36,6 +37,7 @@ const writeWorkflowContractFixture = async (options: {
   const releaseStateSchemaPath = path.join(root, 'release-state-schema.ts');
   const mediaObjectContractPath = path.join(root, 'media-object-contract.ts');
   const productionPreflightScriptPath = path.join(root, 'production-authority-preflight.ts');
+  const deploymentDocsPath = path.join(root, 'deployment.md');
   const packageJsonPath = path.join(root, 'package.json');
   const lockfilePath = path.join(root, 'pnpm-lock.yaml');
   const runsUsing = options.runsUsing ?? 'node24';
@@ -284,6 +286,19 @@ const writeWorkflowContractFixture = async (options: {
     ].join('\n'),
     'utf8',
   );
+  await writeFile(
+    deploymentDocsPath,
+    options.deploymentDocsSource ??
+      [
+        '# Deployment Operations',
+        '',
+        'deployment URL や deployment ID の正本は Wrangler structured output file を parser で正規化した cloudflare-pages-deploy-result.json と、そこから生成する release state artifact である。stdout や raw command output を deployment data source として扱ってはいけない。',
+        '',
+        '機械検証は release state artifact、release state SHA-256、R2 attempt manifest、media delivery attempt manifest、runtime verification artifact を使って行う。',
+        '',
+      ].join('\n'),
+    'utf8',
+  );
 
   return {
     workflowPath,
@@ -297,6 +312,7 @@ const writeWorkflowContractFixture = async (options: {
     releaseStateSchemaPath,
     mediaObjectContractPath,
     productionPreflightScriptPath,
+    deploymentDocsPath,
   };
 };
 
@@ -466,5 +482,25 @@ describe('workflow source contract', () => {
     });
 
     await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/local absolute paths/u);
+  });
+
+  it('rejects deployment docs that restore Wrangler command output as evidence', async () => {
+    const fixture = await writeWorkflowContractFixture({
+      deploymentDocsSource: [
+        '# Deployment Operations',
+        '',
+        'deployment URL や deployment ID の正本は Wrangler structured output file を parser で正規化した cloudflare-pages-deploy-result.json と、そこから生成する release state artifact である。stdout や raw command output を deployment data source として扱ってはいけない。',
+        '',
+        '機械検証は release state artifact、release state SHA-256、R2 attempt manifest、media delivery attempt manifest、runtime verification artifact を使って行う。',
+        '',
+        'deploy-production job は次をログと step summary に記録する。',
+        '',
+        '- Cloudflare deployment URL',
+        '- Wrangler command output',
+        '',
+      ].join('\n'),
+    });
+
+    await expect(assertWorkflowSourceContract(fixture)).rejects.toThrow(/Wrangler command output/u);
   });
 });

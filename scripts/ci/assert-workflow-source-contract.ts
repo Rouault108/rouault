@@ -41,6 +41,13 @@ const DEFAULT_PRODUCTION_PREFLIGHT_SCRIPT_PATH = path.join(
   'deploy',
   'production-authority-preflight.ts',
 );
+const DEFAULT_DEPLOYMENT_DOCS_PATH = path.join(
+  REPOSITORY_ROOT,
+  'docs',
+  'guides',
+  'operations',
+  'deployment.md',
+);
 const DEV_DEPENDENCIES_FIELD = 'devDependencies';
 const WRANGLER_FIELD = 'wrangler';
 const SHA_PIN_PATTERN = /^[a-z0-9-]+\/[a-z0-9_.-]+@[0-9a-f]{40}$/u;
@@ -75,6 +82,7 @@ interface WorkflowSourceContractOptions {
   readonly releaseStateSchemaPath?: string;
   readonly mediaObjectContractPath?: string;
   readonly productionPreflightScriptPath?: string;
+  readonly deploymentDocsPath?: string;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -452,6 +460,22 @@ const assertProductionOutputSafety = async (
   }
 };
 
+const assertDeploymentDocsContract = async (deploymentDocsPath: string): Promise<void> => {
+  const docs = await readFile(deploymentDocsPath, 'utf8');
+  assertCondition(
+    docs.includes('stdout や raw command output を deployment data source として扱ってはいけない'),
+    `${deploymentDocsPath} must forbid stdout and raw command output as deployment data sources`,
+  );
+  assertCondition(
+    docs.includes('release state artifact') && docs.includes('release state SHA-256'),
+    `${deploymentDocsPath} must document release state artifacts as deployment evidence`,
+  );
+  assertCondition(
+    !docs.includes('Wrangler command output'),
+    `${deploymentDocsPath} must not require Wrangler command output as deployment evidence`,
+  );
+};
+
 export const assertWorkflowSourceContract = async (
   options: WorkflowSourceContractOptions = {},
 ): Promise<SourceContractReport> => {
@@ -470,6 +494,7 @@ export const assertWorkflowSourceContract = async (
     options.mediaObjectContractPath ?? DEFAULT_MEDIA_OBJECT_CONTRACT_PATH;
   const productionPreflightScriptPath =
     options.productionPreflightScriptPath ?? DEFAULT_PRODUCTION_PREFLIGHT_SCRIPT_PATH;
+  const deploymentDocsPath = options.deploymentDocsPath ?? DEFAULT_DEPLOYMENT_DOCS_PATH;
   const workflowSource = await readFile(workflowPath, 'utf8');
   const workflowUses = collectWorkflowUses(workflowSource);
   const wranglerVersion = await assertWranglerPackageContract(packageJsonPath, lockfilePath);
@@ -527,6 +552,7 @@ export const assertWorkflowSourceContract = async (
     mediaObjectContractPath,
   );
   await assertProductionOutputSafety(productionPreflightScriptPath, deployScriptPath);
+  await assertDeploymentDocsContract(deploymentDocsPath);
 
   return {
     schemaVersion: 1,
