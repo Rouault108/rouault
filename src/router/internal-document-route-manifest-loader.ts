@@ -13,7 +13,6 @@ import {
 import { validateJsonContentType } from '../../shared/http/media-type.js';
 import { readSiteUrlContextFromDocumentMeta } from '../site/read-site-url-context-from-document-meta.js';
 
-
 export type InternalDocumentRouteManifestFailureReason =
   | 'route-manifest-unavailable'
   | 'route-manifest-invalid'
@@ -72,18 +71,19 @@ const getMetaContent = (document: Document, name: string): string | null =>
 
 export const readInternalDocumentRouteManifestMeta = (
   document: Document,
-):
-  | {
-      readonly siteUrlContext: SiteUrlContext;
-      readonly manifestUrl: string;
-      readonly buildId: string;
-      readonly version: number;
-    }
-  | null => {
+): {
+  readonly siteUrlContext: SiteUrlContext;
+  readonly manifestUrl: string;
+  readonly buildId: string;
+  readonly version: number;
+} | null => {
   const siteUrlContext = readSiteUrlContextFromDocumentMeta(document);
   const manifestUrl = getMetaContent(document, 'rouault-route-manifest');
   const buildId = getMetaContent(document, 'rouault-route-manifest-build-id');
-  const version = Number.parseInt(getMetaContent(document, 'rouault-route-manifest-version') ?? '', 10);
+  const version = Number.parseInt(
+    getMetaContent(document, 'rouault-route-manifest-version') ?? '',
+    10,
+  );
 
   if (
     siteUrlContext === null ||
@@ -180,7 +180,11 @@ export const loadInternalDocumentRouteManifest = async (
     return unavailableState();
   }
 
-  if (response.type === 'opaqueredirect' || response.redirected || (response.status >= 300 && response.status < 400)) {
+  if (
+    response.type === 'opaqueredirect' ||
+    response.redirected ||
+    (response.status >= 300 && response.status < 400)
+  ) {
     return invalidState();
   }
 

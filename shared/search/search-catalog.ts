@@ -1,6 +1,10 @@
 import type { SearchCanonicalPathname } from './document-url.js';
 import { validateJsonContentType } from '../http/media-type.js';
-import type { LoadSearchCatalogOptions, SearchCatalogFetcher, TestLoadSearchCatalogOptions } from './search-loaders.js';
+import type {
+  LoadSearchCatalogOptions,
+  SearchCatalogFetcher,
+  TestLoadSearchCatalogOptions,
+} from './search-loaders.js';
 import { createSearchJsonParseDiagnosticSink } from './search-diagnostics.js';
 import { parseSearchCatalogJson } from './search-json-artifact-parser.js';
 
@@ -22,7 +26,6 @@ export class SearchCatalogLoadError extends Error {
     this.name = 'SearchCatalogLoadError';
   }
 }
-
 
 const defaultSearchCatalogFetcher: SearchCatalogFetcher = async (url, init) => fetch(url, init);
 
@@ -48,7 +51,10 @@ export async function loadSearchCatalog(
       ...(options.signal ? { signal: options.signal } : {}),
     });
   } catch (error: unknown) {
-    options.diagnostics?.addIssue({ code: 'invalid-search-catalog-schema', artifactSource: 'search-catalog-json' });
+    options.diagnostics?.addIssue({
+      code: 'invalid-search-catalog-schema',
+      artifactSource: 'search-catalog-json',
+    });
     throw new SearchCatalogLoadError(
       'catalog-fetch-failed',
       error instanceof Error ? error.message : '検索カタログの取得に失敗しました。',
@@ -56,7 +62,10 @@ export async function loadSearchCatalog(
   }
 
   if (response.type === 'opaqueredirect' || response.redirected || !response.ok) {
-    options.diagnostics?.addIssue({ code: 'invalid-search-catalog-schema', artifactSource: 'search-catalog-json' });
+    options.diagnostics?.addIssue({
+      code: 'invalid-search-catalog-schema',
+      artifactSource: 'search-catalog-json',
+    });
     throw new SearchCatalogLoadError(
       'catalog-fetch-failed',
       `検索カタログの読み込みに失敗しました: ${response.status.toString()}`,
@@ -65,7 +74,10 @@ export async function loadSearchCatalog(
 
   const contentType = validateJsonContentType(response.headers.get('content-type'));
   if (!contentType.ok) {
-    options.diagnostics?.addIssue({ code: 'invalid-search-catalog-schema', artifactSource: 'search-catalog-json' });
+    options.diagnostics?.addIssue({
+      code: 'invalid-search-catalog-schema',
+      artifactSource: 'search-catalog-json',
+    });
     throw new SearchCatalogLoadError(
       'catalog-fetch-failed',
       '検索カタログの Content-Type が不正です。',

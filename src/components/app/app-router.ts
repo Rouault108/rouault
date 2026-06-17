@@ -49,11 +49,7 @@ export interface AppRouterRouterDiagnosticDetail {
   diagnostic: RouterDiagnosticPayload;
 }
 
-
-export type AppRouterRuntimeInitializationState =
-  | 'not-initialized'
-  | 'initialized'
-  | 'failed';
+export type AppRouterRuntimeInitializationState = 'not-initialized' | 'initialized' | 'failed';
 
 export class AppRouterRuntimeInitializationError extends Error {
   override readonly name = 'AppRouterRuntimeInitializationError';
@@ -64,11 +60,29 @@ export class AppRouterRuntimeInitializationError extends Error {
 }
 
 type AppRouterRuntimeFailureBootstrap =
-  | { readonly reason: 'route-manifest-invalid'; readonly siteUrlContext?: RouterRuntimeUrlDependencies['siteUrlContext']; readonly routeManifestState?: Extract<InternalDocumentRouteManifestState, { readonly status: 'invalid' }> }
-  | { readonly siteUrlContext: RouterRuntimeUrlDependencies['siteUrlContext']; readonly routeManifestState: Extract<InternalDocumentRouteManifestState, { readonly status: 'unavailable' | 'stale' }> };
+  | {
+      readonly reason: 'route-manifest-invalid';
+      readonly siteUrlContext?: RouterRuntimeUrlDependencies['siteUrlContext'];
+      readonly routeManifestState?: Extract<
+        InternalDocumentRouteManifestState,
+        { readonly status: 'invalid' }
+      >;
+    }
+  | {
+      readonly siteUrlContext: RouterRuntimeUrlDependencies['siteUrlContext'];
+      readonly routeManifestState: Extract<
+        InternalDocumentRouteManifestState,
+        { readonly status: 'unavailable' | 'stale' }
+      >;
+    };
 
 const createNavigationFailureResult = (
-  reason: 'not-started' | 'disallowed-url' | 'route-manifest-unavailable' | 'route-manifest-invalid' | 'route-manifest-stale',
+  reason:
+    | 'not-started'
+    | 'disallowed-url'
+    | 'route-manifest-unavailable'
+    | 'route-manifest-invalid'
+    | 'route-manifest-stale',
   historyMode: HistoryMode,
 ): NavigationResult => {
   if (reason === 'not-started') {
@@ -113,8 +127,13 @@ export class AppRouter extends HTMLElement {
   private _serverContent: RouterContentHtml | null = null;
   private _currentContent: RouterContentHtml = createRouterContentHtml('');
   private _router: Router | null = null;
-  private _runtimeFailureReason: 'route-manifest-unavailable' | 'route-manifest-invalid' | 'route-manifest-stale' | null = null;
-  private _runtimeFailureSiteUrlContext: RouterRuntimeUrlDependencies['siteUrlContext'] | null = null;
+  private _runtimeFailureReason:
+    | 'route-manifest-unavailable'
+    | 'route-manifest-invalid'
+    | 'route-manifest-stale'
+    | null = null;
+  private _runtimeFailureSiteUrlContext: RouterRuntimeUrlDependencies['siteUrlContext'] | null =
+    null;
   private _bootstrapped = false;
   private _runtimeInitializationState: AppRouterRuntimeInitializationState = 'not-initialized';
   private _isNavigating = false;
@@ -174,7 +193,11 @@ export class AppRouter extends HTMLElement {
   }
 
   initializeRuntime(urlDependencies: RouterRuntimeUrlDependencies): void {
-    if (this._runtimeInitializationState !== 'not-initialized' || this._router || this._runtimeFailureReason !== null) {
+    if (
+      this._runtimeInitializationState !== 'not-initialized' ||
+      this._router ||
+      this._runtimeFailureReason !== null
+    ) {
       throw new AppRouterRuntimeInitializationError();
     }
 
@@ -209,12 +232,17 @@ export class AppRouter extends HTMLElement {
   }
 
   initializeRuntimeFailure(bootstrap: AppRouterRuntimeFailureBootstrap): void {
-    if (this._runtimeInitializationState !== 'not-initialized' || this._router || this._runtimeFailureReason !== null) {
+    if (
+      this._runtimeInitializationState !== 'not-initialized' ||
+      this._router ||
+      this._runtimeFailureReason !== null
+    ) {
       throw new AppRouterRuntimeInitializationError();
     }
     this._runtimeInitializationState = 'failed';
     this._router = null;
-    this._runtimeFailureReason = 'reason' in bootstrap ? bootstrap.reason : bootstrap.routeManifestState.reason;
+    this._runtimeFailureReason =
+      'reason' in bootstrap ? bootstrap.reason : bootstrap.routeManifestState.reason;
     this._runtimeFailureSiteUrlContext = bootstrap.siteUrlContext ?? null;
     this._markReady();
   }

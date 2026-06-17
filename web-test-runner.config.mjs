@@ -1,7 +1,7 @@
 import { esbuildPlugin } from '@web/dev-server-esbuild';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
-const renderTestRunnerHtml = testFramework => `<!DOCTYPE html>
+const renderTestRunnerHtml = (testFramework) => `<!DOCTYPE html>
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
@@ -19,13 +19,22 @@ const includeWebkit = process.env.CI === 'true' || process.env.ROUAULT_WTR_WEBKI
 const requestedBrowsers = new Set(
   (process.env.ROUAULT_WTR_BROWSERS ?? 'chromium,firefox')
     .split(',')
-    .map(browser => browser.trim())
+    .map((browser) => browser.trim())
     .filter(Boolean),
 );
 
 const browserLaunchers = [
   ...(requestedBrowsers.has('chromium') ? [playwrightLauncher({ product: 'chromium' })] : []),
-  ...(requestedBrowsers.has('firefox') ? [playwrightLauncher({ product: 'firefox' })] : []),
+  ...(requestedBrowsers.has('firefox')
+    ? [
+        playwrightLauncher({
+          product: 'firefox',
+          // Firefox は paint / computed style 契約テストを並列実行すると
+          // ローカル環境で timeout しやすいため、ブラウザ内の並列度を固定する。
+          concurrency: 1,
+        }),
+      ]
+    : []),
   ...(includeWebkit || requestedBrowsers.has('webkit')
     ? [playwrightLauncher({ product: 'webkit', concurrency: 1 })]
     : []),
@@ -53,7 +62,7 @@ const config = {
       timeout: 10000,
     },
   },
-  testRunnerHtml: testFramework => renderTestRunnerHtml(testFramework),
+  testRunnerHtml: (testFramework) => renderTestRunnerHtml(testFramework),
 };
 
 export default config;

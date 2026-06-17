@@ -19,10 +19,7 @@ export class InternalDocumentRouteSetContractError extends Error {
   }
 }
 
-const fail = (
-  reason: InternalDocumentRouteSetContractErrorReason,
-  message: string,
-): never => {
+const fail = (reason: InternalDocumentRouteSetContractErrorReason, message: string): never => {
   throw new InternalDocumentRouteSetContractError(reason, message);
 };
 
@@ -38,7 +35,10 @@ export const normalizeInternalDocumentRoutePathname = (
   }
 
   if (value.includes('?') || value.includes('#')) {
-    fail('invalid-route-pathname', 'Internal document route pathname must not include query or hash.');
+    fail(
+      'invalid-route-pathname',
+      'Internal document route pathname must not include query or hash.',
+    );
   }
 
   if (value.includes('\\') || hasAsciiControlCharacter(value)) {
@@ -49,7 +49,10 @@ export const normalizeInternalDocumentRoutePathname = (
   }
 
   if (value !== '/' && value.includes('//')) {
-    fail('invalid-route-pathname', 'Internal document route pathname must not include empty segments.');
+    fail(
+      'invalid-route-pathname',
+      'Internal document route pathname must not include empty segments.',
+    );
   }
 
   return value;

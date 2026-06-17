@@ -9,9 +9,7 @@ export {
   normalizeTocHeading,
   normalizeTocHeadings,
 } from '../../shared/toc/toc-normalization.js';
-import {
-  parseTocHeadingsJson as parseSharedTocHeadingsJson,
-} from '../../shared/toc/toc-normalization.js';
+import { parseTocHeadingsJson as parseSharedTocHeadingsJson } from '../../shared/toc/toc-normalization.js';
 import type { TocHeading } from '../../shared/toc/toc-chrome-projection.js';
 
 export const parseTocHeadingsJson = (value: string): readonly TocHeading[] | null => {

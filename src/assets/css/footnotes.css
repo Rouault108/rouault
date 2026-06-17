@@ -61,13 +61,13 @@ a[data-footnote-ref='true'][role='doc-noteref'].is-active-trigger {
 [data-footnote-popover]
   .footnote-popover-body
   a[href]:not(
-      :where(
-        [data-link-surface='card'],
-        .heading-anchor,
-        [data-footnote-ref='true'][role='doc-noteref'],
-        [data-footnote-backref='true'][role='doc-backlink'],
-        [data-footnote-popover] .footnote-list-link
-      )
+    :where(
+      [data-link-surface='card'],
+      .heading-anchor,
+      [data-footnote-ref='true'][role='doc-noteref'],
+      [data-footnote-backref='true'][role='doc-backlink'],
+      [data-footnote-popover] .footnote-list-link
+    )
   ) {
   color: var(--fg-default);
   text-decoration: underline;

@@ -246,11 +246,12 @@ const getSurfaceVisibleNoteRoutes = (
   noteRoutes: readonly NoteRouteSeed[],
   surface: 'corpora' | 'tags',
 ): readonly NoteRouteSeed[] =>
-  noteRoutes.filter((note) =>
-    resolveEffectiveNotePublicationPolicy({
-      kind: note.contentKind,
-      excludeFromPublicationSurfaces: note.excludeFromPublicationSurfaces,
-    })[surface],
+  noteRoutes.filter(
+    (note) =>
+      resolveEffectiveNotePublicationPolicy({
+        kind: note.contentKind,
+        excludeFromPublicationSurfaces: note.excludeFromPublicationSurfaces,
+      })[surface],
   );
 
 const buildContentDerivedRoutes = (
@@ -269,7 +270,10 @@ const buildContentDerivedRoutes = (
   const tagRoutes = [
     ...new Set(
       getSurfaceVisibleNoteRoutes(noteRoutes, 'tags').flatMap((note) =>
-        note.genres.map(normalizeSegment).filter((tag) => tag.length > 0).map(toTagRoute),
+        note.genres
+          .map(normalizeSegment)
+          .filter((tag) => tag.length > 0)
+          .map(toTagRoute),
       ),
     ),
   ].sort((left, right) => left.localeCompare(right, 'en'));

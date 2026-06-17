@@ -22,9 +22,10 @@ const resolveRequestOrigin = (request: IncomingMessage): string | null => {
   }
 
   const protocolHeader = request.headers['x-forwarded-proto'];
-  const protocol = typeof protocolHeader === 'string' && protocolHeader.trim().length > 0
-    ? protocolHeader.split(',')[0]?.trim() ?? 'http'
-    : 'http';
+  const protocol =
+    typeof protocolHeader === 'string' && protocolHeader.trim().length > 0
+      ? (protocolHeader.split(',')[0]?.trim() ?? 'http')
+      : 'http';
 
   try {
     return new URL(`${protocol}://${host}`).origin;
@@ -68,13 +69,15 @@ const rewriteHtmlSiteUrlContext = (
     buildId: buildMetadata.buildId,
   });
 
-  return ([
-    ['rouault-site-origin', siteUrlContext.siteOrigin],
-    ['rouault-base-path', siteUrlContext.basePath],
-    ['rouault-route-manifest', manifestUrl],
-    ['rouault-route-manifest-build-id', buildMetadata.buildId],
-    ['rouault-route-manifest-version', String(INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION)],
-  ] as const).reduce((result, [name, content]) => replaceMetaContent(result, name, content), html);
+  return (
+    [
+      ['rouault-site-origin', siteUrlContext.siteOrigin],
+      ['rouault-base-path', siteUrlContext.basePath],
+      ['rouault-route-manifest', manifestUrl],
+      ['rouault-route-manifest-build-id', buildMetadata.buildId],
+      ['rouault-route-manifest-version', String(INTERNAL_DOCUMENT_ROUTE_MANIFEST_VERSION)],
+    ] as const
+  ).reduce((result, [name, content]) => replaceMetaContent(result, name, content), html);
 };
 
 export const createDevelopmentHtmlSiteUrlContextMiddleware = (
@@ -104,7 +107,9 @@ export const createDevelopmentHtmlSiteUrlContextMiddleware = (
       }
 
       const contentType = response.getHeader('Content-Type');
-      const contentTypeValue = Array.isArray(contentType) ? contentType.join(';') : String(contentType ?? '');
+      const contentTypeValue = Array.isArray(contentType)
+        ? contentType.join(';')
+        : String(contentType ?? '');
       if (chunks.length > 0 && HTML_CONTENT_TYPE_PATTERN.test(contentTypeValue)) {
         const siteUrlContext = resolveRequestSiteUrlContext(request, options.siteUrlContext);
         const rewritten = rewriteHtmlSiteUrlContext(
@@ -120,7 +125,9 @@ export const createDevelopmentHtmlSiteUrlContextMiddleware = (
         return originalEnd(Buffer.concat(chunks));
       }
 
-      return originalEnd(typeof args[0] === 'string' || Buffer.isBuffer(args[0]) ? args[0] : undefined);
+      return originalEnd(
+        typeof args[0] === 'string' || Buffer.isBuffer(args[0]) ? args[0] : undefined,
+      );
     }) as typeof response.end;
 
     next();

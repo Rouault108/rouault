@@ -1,10 +1,6 @@
 import { getTabsUrlSyncStrategy } from '../components/ui/tabs/tabs-url-sync-strategy.js';
 import { isHTMLElement } from '../lib/dom.js';
-import type {
-  TocCapabilities,
-  TocHeading as Heading,
-  TocScopeSelection,
-} from './toc-headings.js';
+import type { TocCapabilities, TocHeading as Heading, TocScopeSelection } from './toc-headings.js';
 
 type TabsLike = HTMLElement & {
   selectedValue?: string | null;
@@ -132,7 +128,7 @@ export const revealHeadingInTabs = (contentRoot: HTMLElement, target: HTMLElemen
       continue;
     }
 
-    tabsHost.select(value, { historyMode: 'replace' });
+    tabsHost.select(value, { historyMode: 'none' });
   }
 };
 
@@ -198,7 +194,12 @@ export const filterHeadingsByScopeSelections = (
 export const applyTocScopeSelections = (
   contentRoot: HTMLElement,
   selections: readonly TocScopeSelection[],
+  options: {
+    historyMode?: 'none' | 'push' | 'replace';
+  } = {},
 ): void => {
+  const historyMode = options.historyMode ?? 'replace';
+
   for (const selection of selections) {
     const tabsHost = contentRoot.querySelector<TabsLike>(
       `ui-tabs[data-toc-scope="${selection.scopeId}"]`,
@@ -207,6 +208,6 @@ export const applyTocScopeSelections = (
       continue;
     }
 
-    tabsHost.select(selection.value, { historyMode: 'replace' });
+    tabsHost.select(selection.value, { historyMode });
   }
 };

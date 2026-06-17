@@ -1,0 +1,889 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rouault.local/schemas/r4-execution-ledger.schema.json",
+  "title": "Rouault R4 Execution Ledger",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "ledger_id",
+    "issue_id",
+    "r4_phase_plan_id",
+    "r4_profile",
+    "current_plan_revision",
+    "resolution_manifest",
+    "phase_necessity_evaluation_log",
+    "phase_execution_event_log",
+    "phase_evidence_map",
+    "artifact_validation_attestations"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "ledger_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "issue_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "r4_phase_plan_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "current_plan_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "previous_ledger_artifact_key": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/artifactKey"
+        }
+      ]
+    },
+    "resolution_manifest": {
+      "$ref": "#/$defs/resolutionManifest"
+    },
+    "phase_necessity_evaluation_log": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/necessityEvent"
+      },
+      "minItems": 1
+    },
+    "phase_execution_event_log": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/executionEvent"
+      }
+    },
+    "phase_evidence_map": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/phaseEvidenceMapEntry"
+      },
+      "minItems": 1
+    },
+    "artifact_validation_attestations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifactValidationAttestation"
+      },
+      "minItems": 1
+    },
+    "r4_profile": {
+      "enum": ["R4-S", "R4-I", "R4-A"]
+    }
+  },
+  "$defs": {
+    "artifactKey": {
+      "type": "object",
+      "required": ["artifact_id", "artifact_revision"],
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_revision": {
+          "type": "string",
+          "pattern": "^rev-[0-9]{4}$"
+        }
+      }
+    },
+    "resolutionManifest": {
+      "type": "object",
+      "required": ["manifest_kind", "manifest_id", "manifest_revision", "manifest_anchor_id"],
+      "additionalProperties": false,
+      "properties": {
+        "manifest_kind": {
+          "enum": ["lightweight-resolution-manifest", "artifact-manifest"]
+        },
+        "manifest_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "manifest_revision": {
+          "type": "string",
+          "pattern": "^rev-[0-9]{4}$"
+        },
+        "manifest_anchor_id": {
+          "anyOf": [
+            {
+              "const": "N/A"
+            },
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "not": {
+                "const": "N/A"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "necessityEvent": {
+      "type": "object",
+      "required": [
+        "evaluation_event_id",
+        "qualified_phase_id",
+        "plan_revision",
+        "necessity",
+        "evaluation_result",
+        "timestamp",
+        "actor"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "evaluation_event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "qualified_phase_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "plan_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "necessity": {
+          "enum": ["required", "conditional", "optional"]
+        },
+        "evaluation_result": {
+          "enum": [
+            "required",
+            "conditional-activated",
+            "conditional-not-activated",
+            "optional-executed",
+            "optional-not-run"
+          ]
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actor": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "executionEvent": {
+      "type": "object",
+      "required": [
+        "event_id",
+        "qualified_phase_id",
+        "plan_revision",
+        "from_status",
+        "to_status",
+        "event_class",
+        "trigger_artifact_keys",
+        "resolution_manifest",
+        "timestamp",
+        "actor"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "qualified_phase_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "plan_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "from_status": {
+          "enum": [
+            "N/A",
+            "planned",
+            "ready",
+            "in-progress",
+            "blocked",
+            "passed",
+            "failed",
+            "cancelled",
+            "superseded"
+          ]
+        },
+        "to_status": {
+          "enum": [
+            "planned",
+            "ready",
+            "in-progress",
+            "blocked",
+            "passed",
+            "failed",
+            "cancelled",
+            "superseded"
+          ]
+        },
+        "event_class": {
+          "enum": ["initialization", "progress", "transition", "outcome", "retirement"]
+        },
+        "trigger_artifact_keys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifactKey"
+          },
+          "minItems": 1
+        },
+        "resolution_manifest": {
+          "$ref": "#/$defs/resolutionManifest"
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "actor": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "phaseEvidenceMapEntry": {
+      "type": "object",
+      "required": [
+        "qualified_phase_id",
+        "phase_r_stage",
+        "phase_type",
+        "evidence_record_artifact_keys",
+        "verification_required",
+        "validated_plan_revision",
+        "change_classification",
+        "evidence_mapping",
+        "resolution_manifest",
+        "related_failure_id",
+        "related_cause_id",
+        "related_change_id",
+        "related_success_id",
+        "related_verification_id",
+        "related_ids_na_reason",
+        "evidence_record_na_reason",
+        "verification_not_required_reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "qualified_phase_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "phase_r_stage": {
+          "enum": ["R0-equivalent", "R1", "R2-lite", "R2-full", "R3"]
+        },
+        "phase_type": {
+          "enum": [
+            "Implementation",
+            "R0 Record",
+            "No-change",
+            "No-action",
+            "Investigation-only",
+            "Verification-only",
+            "Integration verification"
+          ]
+        },
+        "evidence_record_artifact_keys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifactKey"
+          }
+        },
+        "verification_required": {
+          "type": "boolean"
+        },
+        "verification_not_required_reason": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "validated_plan_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "change_classification": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_mapping": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resolution_manifest": {
+          "$ref": "#/$defs/resolutionManifest"
+        },
+        "evidence_record_na_reason": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "related_failure_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "not": {
+            "const": "N/A"
+          }
+        },
+        "related_cause_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "not": {
+            "const": "N/A"
+          }
+        },
+        "related_change_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "not": {
+            "const": "N/A"
+          }
+        },
+        "related_success_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "not": {
+            "const": "N/A"
+          }
+        },
+        "related_verification_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "not": {
+            "const": "N/A"
+          }
+        },
+        "related_ids_na_reason": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "pattern": "(Failure|Cause|Change|Success|Verification)"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "verification_required": {
+                "const": false
+              }
+            },
+            "required": ["verification_required"]
+          },
+          "then": {
+            "required": ["verification_not_required_reason"],
+            "properties": {
+              "verification_not_required_reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "verification_required": {
+                "const": true
+              }
+            },
+            "required": ["verification_required"]
+          },
+          "then": {
+            "properties": {
+              "verification_not_required_reason": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "evidence_record_artifact_keys": {
+                "maxItems": 0
+              }
+            },
+            "required": ["evidence_record_artifact_keys"]
+          },
+          "then": {
+            "required": ["evidence_record_na_reason"],
+            "properties": {
+              "evidence_record_na_reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "evidence_record_artifact_keys": {
+                "minItems": 1
+              }
+            },
+            "required": ["evidence_record_artifact_keys"]
+          },
+          "then": {
+            "properties": {
+              "evidence_record_na_reason": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "anyOf": [
+              {
+                "properties": {
+                  "related_failure_id": {
+                    "type": "null"
+                  }
+                },
+                "required": ["related_failure_id"]
+              },
+              {
+                "properties": {
+                  "related_cause_id": {
+                    "type": "null"
+                  }
+                },
+                "required": ["related_cause_id"]
+              },
+              {
+                "properties": {
+                  "related_change_id": {
+                    "type": "null"
+                  }
+                },
+                "required": ["related_change_id"]
+              },
+              {
+                "properties": {
+                  "related_success_id": {
+                    "type": "null"
+                  }
+                },
+                "required": ["related_success_id"]
+              },
+              {
+                "properties": {
+                  "related_verification_id": {
+                    "type": "null"
+                  }
+                },
+                "required": ["related_verification_id"]
+              }
+            ]
+          },
+          "then": {
+            "required": ["related_ids_na_reason"],
+            "properties": {
+              "related_ids_na_reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "allOf": [
+              {
+                "properties": {
+                  "related_failure_id": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["related_failure_id"]
+              },
+              {
+                "properties": {
+                  "related_cause_id": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["related_cause_id"]
+              },
+              {
+                "properties": {
+                  "related_change_id": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["related_change_id"]
+              },
+              {
+                "properties": {
+                  "related_success_id": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["related_success_id"]
+              },
+              {
+                "properties": {
+                  "related_verification_id": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["related_verification_id"]
+              }
+            ]
+          },
+          "then": {
+            "properties": {
+              "related_ids_na_reason": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "phase_r_stage": {
+                "const": "R3"
+              }
+            },
+            "required": ["phase_r_stage"]
+          },
+          "then": {
+            "properties": {
+              "evidence_record_artifact_keys": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/artifactKey"
+                }
+              },
+              "evidence_record_na_reason": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "artifactValidationAttestation": {
+      "type": "object",
+      "required": [
+        "attestation_id",
+        "artifact_key",
+        "validated_against_plan_revision",
+        "validity",
+        "timestamp",
+        "actor",
+        "created_against_plan_revision",
+        "evidence_ids"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "attestation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_key": {
+          "$ref": "#/$defs/artifactKey"
+        },
+        "validated_against_plan_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "validity": {
+          "enum": ["valid", "invalid", "superseded", "requires-revision", "manual-review-required"]
+        },
+        "reason": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_ref": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "created_against_plan_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "superseded_or_invalid_artifact_key": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/artifactKey"
+            }
+          ]
+        },
+        "superseded_or_invalid_artifact_ref": {
+          "type": ["string", "null"],
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "validity": {
+                "enum": ["invalid", "superseded", "requires-revision", "manual-review-required"]
+              }
+            },
+            "required": ["validity"]
+          },
+          "then": {
+            "required": ["reason"],
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "validity": {
+                "const": "valid"
+              }
+            },
+            "required": ["validity"]
+          },
+          "then": {
+            "properties": {
+              "reason": {
+                "type": "null"
+              },
+              "superseded_or_invalid_artifact_key": {
+                "type": "null"
+              },
+              "superseded_or_invalid_artifact_ref": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "validity": {
+                "const": "valid"
+              }
+            },
+            "required": ["validity"]
+          },
+          "then": {
+            "properties": {
+              "evidence_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "validity": {
+                "const": "superseded"
+              }
+            },
+            "required": ["validity"]
+          },
+          "then": {
+            "anyOf": [
+              {
+                "required": ["superseded_or_invalid_artifact_key"],
+                "properties": {
+                  "superseded_or_invalid_artifact_key": {
+                    "$ref": "#/$defs/artifactKey"
+                  }
+                }
+              },
+              {
+                "required": ["superseded_or_invalid_artifact_ref"],
+                "properties": {
+                  "superseded_or_invalid_artifact_ref": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "r4_profile": {
+            "const": "R4-S"
+          }
+        },
+        "required": ["r4_profile"]
+      },
+      "then": {
+        "properties": {
+          "resolution_manifest": {
+            "properties": {
+              "manifest_kind": {
+                "const": "lightweight-resolution-manifest"
+              }
+            }
+          },
+          "phase_execution_event_log": {
+            "items": {
+              "properties": {
+                "resolution_manifest": {
+                  "properties": {
+                    "manifest_kind": {
+                      "const": "lightweight-resolution-manifest"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "phase_evidence_map": {
+            "items": {
+              "properties": {
+                "resolution_manifest": {
+                  "properties": {
+                    "manifest_kind": {
+                      "const": "lightweight-resolution-manifest"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "r4_profile": {
+            "enum": ["R4-I", "R4-A"]
+          }
+        },
+        "required": ["r4_profile"]
+      },
+      "then": {
+        "properties": {
+          "resolution_manifest": {
+            "properties": {
+              "manifest_kind": {
+                "const": "artifact-manifest"
+              },
+              "manifest_anchor_id": {
+                "type": "string",
+                "minLength": 1,
+                "not": {
+                  "const": "N/A"
+                }
+              }
+            }
+          },
+          "phase_execution_event_log": {
+            "items": {
+              "properties": {
+                "resolution_manifest": {
+                  "properties": {
+                    "manifest_kind": {
+                      "const": "artifact-manifest"
+                    },
+                    "manifest_anchor_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "not": {
+                        "const": "N/A"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "phase_evidence_map": {
+            "items": {
+              "properties": {
+                "resolution_manifest": {
+                  "properties": {
+                    "manifest_kind": {
+                      "const": "artifact-manifest"
+                    },
+                    "manifest_anchor_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "not": {
+                        "const": "N/A"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

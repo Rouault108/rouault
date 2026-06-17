@@ -33,7 +33,8 @@ export class CurrentBuildMetadataInvalidError extends NavigationEnvelopeContract
     this.field = options.field;
     this.reason = options.reason;
     this.value = options.value;
-    this.kind = options.field === 'buildId' ? 'current-buildId-invalid' : 'current-generatedAt-invalid';
+    this.kind =
+      options.field === 'buildId' ? 'current-buildId-invalid' : 'current-generatedAt-invalid';
   }
 }
 

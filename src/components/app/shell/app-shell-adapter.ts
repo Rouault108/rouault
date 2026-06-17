@@ -51,7 +51,12 @@ export const createAppShellAdapter = (): ShellAdapter => ({
     return {
       commit: () => {
         headerMutation.commit();
-        applyPayloadShellSnapshot(update.shell, currentRouter, currentSidebarColumn, currentSidebar);
+        applyPayloadShellSnapshot(
+          update.shell,
+          currentRouter,
+          currentSidebarColumn,
+          currentSidebar,
+        );
         const header = document.querySelector<HTMLElement>(STATIC_HEADER_ROOT_SELECTOR);
         if (!(header instanceof HTMLElement)) {
           throw new Error(`committed ${STATIC_HEADER_ROOT_SELECTOR} is required.`);

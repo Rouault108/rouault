@@ -99,7 +99,7 @@
     row-gap: 0;
   }
 
-.note-shell[data-toc-presence='present'] .layout-toc-col {
+  .note-shell[data-toc-presence='present'] .layout-toc-col {
     grid-column: 1;
     position: static;
     block-size: 0;

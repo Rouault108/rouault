@@ -24,9 +24,9 @@ describe('score SVG contract', () => {
         '<svg viewBox="0 0 10 10"><a href="javascript:alert(1)"><path d="M0 0h1v1"/></a></svg>',
       ),
     ).not.toContain('javascript:');
-    expect(() => sanitizeScoreSvg('<svg viewBox="0 0 10 10"><script>alert(1)</script></svg>')).toThrow(
-      'sanitize 後に空',
-    );
+    expect(() =>
+      sanitizeScoreSvg('<svg viewBox="0 0 10 10"><script>alert(1)</script></svg>'),
+    ).toThrow('sanitize 後に空');
   });
 
   it('外部 URL と非 SVG path を拒否すること', () => {
@@ -40,7 +40,9 @@ describe('score SVG contract', () => {
 
   it('リポジトリ外へ解決される SVG は拒否すること', () => {
     expect(() =>
-      resolveScoreSvg('score.svg', { sourceFilePath: path.join(path.dirname(process.cwd()), 'note.md') }),
+      resolveScoreSvg('score.svg', {
+        sourceFilePath: path.join(path.dirname(process.cwd()), 'note.md'),
+      }),
     ).toThrow('見つかりません');
   });
 });

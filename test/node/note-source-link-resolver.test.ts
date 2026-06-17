@@ -99,4 +99,3 @@ describe('note source link resolver', () => {
     expect(parseRawHref('javascript:alert(1)').kind).to.equal('unsafe-scheme-url');
   });
 });
-

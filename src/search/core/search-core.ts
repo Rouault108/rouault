@@ -12,9 +12,7 @@ import {
 import { createSearchJsonParseDiagnosticSink } from '../../../shared/search/search-diagnostics.js';
 import type { SearchArtifactUrlResolver } from '../../../shared/search/search-artifact-url.js';
 import type { SearchRequest, SearchResponse } from '../../../shared/search/search-types.js';
-import {
-  runSourceFederationStage,
-} from './stages/source-federation.js';
+import { runSourceFederationStage } from './stages/source-federation.js';
 import { runCandidateMergeStage } from './stages/candidate-merge.js';
 import {
   buildEmptySearchResponse,
@@ -27,9 +25,7 @@ import { runRankingAndSortingStage } from './stages/ranking-and-sorting.js';
 export interface SearchCoreBaseDependencies {
   readonly now?: () => number;
   readonly siteUrlContext: SiteUrlContext;
-  readonly isInternalDocumentPathname: (
-    normalizedPathnameWithoutBasePath: string,
-  ) => boolean;
+  readonly isInternalDocumentPathname: (normalizedPathnameWithoutBasePath: string) => boolean;
   readonly artifactUrlResolver: SearchArtifactUrlResolver;
 }
 
@@ -43,9 +39,7 @@ export interface TestSearchCoreDependencies extends SearchCoreBaseDependencies {
   readonly testOnlySearchCatalogFetcher?: SearchCatalogFetcher;
 }
 
-export type SearchCoreDependencies =
-  | ProductionSearchCoreDependencies
-  | TestSearchCoreDependencies;
+export type SearchCoreDependencies = ProductionSearchCoreDependencies | TestSearchCoreDependencies;
 
 export interface SearchExecutionOptions {
   signal?: AbortSignal | undefined;
@@ -55,9 +49,7 @@ export interface SearchCore {
   search(request: SearchRequest, options?: SearchExecutionOptions): Promise<SearchResponse>;
 }
 
-export function createSearchCore(
-  dependencies: SearchCoreDependencies,
-): SearchCore {
+export function createSearchCore(dependencies: SearchCoreDependencies): SearchCore {
   const loadPagefind =
     dependencies.runtimeEnvironment === 'test' && dependencies.testOnlyLoadPagefind
       ? dependencies.testOnlyLoadPagefind
@@ -160,6 +152,5 @@ export function createSearchCore(
     },
   };
 }
-
 
 export type { PagefindApi, PagefindLoader, SearchCatalogItem };

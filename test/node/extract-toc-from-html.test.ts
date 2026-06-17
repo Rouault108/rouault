@@ -127,11 +127,11 @@ describe('extractTocFromHtml', () => {
     expect(prepared.html).to.contain('data-footnote-backref="true"');
     expect(() =>
       validateNoteContentContracts({
-  kind: 'testing',
-  html: prepared.html,
-  sourceLabel: 'test:post-prepare-toc',
-  testingArea: 'markdown-basic',
-}),
+        kind: 'testing',
+        html: prepared.html,
+        sourceLabel: 'test:post-prepare-toc',
+        testingArea: 'markdown-basic',
+      }),
     ).not.toThrow();
   });
 
@@ -180,11 +180,11 @@ describe('extractTocFromHtml', () => {
     expect(prepared.html).not.to.contain('data-heading-permalink');
     expect(() =>
       validateNoteContentContracts({
-  kind: 'testing',
-  html: prepared.html,
-  sourceLabel: 'test:post-prepare-toc',
-  testingArea: 'markdown-basic',
-}),
+        kind: 'testing',
+        html: prepared.html,
+        sourceLabel: 'test:post-prepare-toc',
+        testingArea: 'markdown-basic',
+      }),
     ).not.toThrow();
   });
 
@@ -243,11 +243,11 @@ describe('extractTocFromHtml', () => {
     expect(prepared.html).not.to.contain('--ui-ol-counter-');
     expect(() =>
       validateNoteContentContracts({
-  kind: 'testing',
-  html: prepared.html,
-  sourceLabel: 'test:post-prepare-toc',
-  testingArea: 'markdown-basic',
-}),
+        kind: 'testing',
+        html: prepared.html,
+        sourceLabel: 'test:post-prepare-toc',
+        testingArea: 'markdown-basic',
+      }),
     ).not.toThrow();
   });
 
@@ -296,11 +296,11 @@ describe('extractTocFromHtml', () => {
     );
     expect(() =>
       validateNoteContentContracts({
-  kind: 'testing',
-  html: prepared.html,
-  sourceLabel: 'test:post-prepare-toc',
-  testingArea: 'markdown-basic',
-}),
+        kind: 'testing',
+        html: prepared.html,
+        sourceLabel: 'test:post-prepare-toc',
+        testingArea: 'markdown-basic',
+      }),
     ).not.toThrow();
   });
 });

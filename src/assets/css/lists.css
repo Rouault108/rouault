@@ -21,7 +21,7 @@ ol[data-list] > li[data-ol-has-value] {
 }
 
 ol[data-list] > li::marker {
-  content: counter(rouault-list-counter) ". ";
+  content: counter(rouault-list-counter) '. ';
 }
 
 ol[data-list][data-marker-digits='2'] {

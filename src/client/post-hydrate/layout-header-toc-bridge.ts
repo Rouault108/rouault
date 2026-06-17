@@ -279,11 +279,9 @@ export const enhanceLayoutHeaderTocBridge = (signal: AbortSignal): void => {
       state.validationContexts.set(detail.shellCommitId, detail.linkValidationContext);
       refresh();
       const activationSignal = startPostValidationActivation(state);
-      void releaseAndActivateTocController(
-        state,
-        detail.shellCommitId,
-        activationSignal,
-      ).catch(() => undefined);
+      void releaseAndActivateTocController(state, detail.shellCommitId, activationSignal).catch(
+        () => undefined,
+      );
     },
     { signal },
   );

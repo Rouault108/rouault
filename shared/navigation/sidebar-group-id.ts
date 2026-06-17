@@ -33,10 +33,10 @@ const decodeBase64Url = (value: string): string | null => {
     return null;
   }
 
-  const padded = value.replace(/-/gu, '+').replace(/_/gu, '/').padEnd(
-    Math.ceil(value.length / 4) * 4,
-    '=',
-  );
+  const padded = value
+    .replace(/-/gu, '+')
+    .replace(/_/gu, '/')
+    .padEnd(Math.ceil(value.length / 4) * 4, '=');
 
   try {
     const binary = atob(padded);
@@ -137,10 +137,7 @@ export function createSidebarGroupIdPrefixFromSidebarIdentity(
   return `${PREFIX}-${body}` as SidebarGroupIdPrefix;
 }
 
-export function createSidebarGroupId(
-  groupIdPrefix: SidebarGroupIdPrefix,
-  rowId: string,
-): string {
+export function createSidebarGroupId(groupIdPrefix: SidebarGroupIdPrefix, rowId: string): string {
   if (parsePrefix(groupIdPrefix) === null) {
     throw new Error('sidebar group id prefix is invalid.');
   }

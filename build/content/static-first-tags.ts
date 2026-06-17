@@ -22,9 +22,7 @@ export const STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS = [
   'ui-ul',
 ] as const;
 
-export const STATIC_FIRST_NOTE_DENYLIST_TAGS = [
-  ...STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS,
-] as const;
+export const STATIC_FIRST_NOTE_DENYLIST_TAGS = [...STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS] as const;
 
 export const STATIC_FIRST_PAGE_DENYLIST_TAGS = [
   'ui-article-header',
@@ -90,8 +88,8 @@ export const getStaticFirstTagClassifications = (
   tag: string,
 ): readonly StaticFirstTagClassification[] => {
   const normalized = normalizeStaticFirstTag(tag);
-  const classifications = STATIC_FIRST_TAG_CLASSIFICATION_SETS.flatMap(
-    ([classification, tags]) => (tags.has(normalized) ? [classification] : []),
+  const classifications = STATIC_FIRST_TAG_CLASSIFICATION_SETS.flatMap(([classification, tags]) =>
+    tags.has(normalized) ? [classification] : [],
   );
 
   if (classifications.length > 0) {

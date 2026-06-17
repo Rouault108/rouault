@@ -23,9 +23,7 @@ describe('buildDocumentTitle', () => {
   });
 
   it('page title がすでに文書タイトル化済みの場合は再接尾辞化しないこと', () => {
-    expect(buildDocumentTitle('このサイトについて - Rouault')).toBe(
-      'このサイトについて - Rouault',
-    );
+    expect(buildDocumentTitle('このサイトについて - Rouault')).toBe('このサイトについて - Rouault');
   });
 
   it('page title が重複済み文書タイトルの場合は単一接尾辞に正規化すること', () => {

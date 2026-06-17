@@ -87,13 +87,16 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`
+    // 本番の静的HTMLと同じHTML parser経路で、未定義Custom Elementを生成する。
+    // LitのTemplateResult経路では、WebKitが要素にnull CustomElementRegistryを
+    // 関連付けたまま保持し、後続のグローバルregistryによるupgrade対象外とする場合がある。
+    const root = await fixture<HTMLElement>(`
       <x-hydration-root-scope
-        data-hydration-scope="x-hydration-root-scope"
-        data-hydration-capability="interactive"
-        data-hydration-trigger="initial"
+      data-hydration-scope="x-hydration-root-scope"
+      data-hydration-capability="interactive"
+      data-hydration-trigger="initial"
       ></x-hydration-root-scope>
-    `);
+      `);
 
     const scheduler = new HydrationScheduler(registry);
     const diagnostics = await scheduler.hydrateShell(root);
@@ -123,19 +126,22 @@ describe('HydrationScheduler', () => {
       ],
     ]);
 
-    const root = await fixture<HTMLElement>(html`
+    // このテストも静的HTMLの生成経路を使用し、先行テストによる
+    // グローバルCustomElementRegistry初期化の有無に依存させない。
+    const root = await fixture<HTMLElement>(`
       <x-hydration-global-search-dialog
-        data-hydration-scope="global-search"
-        data-hydration-capability="interactive"
-        data-hydration-trigger="initial"
+      data-hydration-scope="global-search"
+      data-hydration-capability="interactive"
+      data-hydration-trigger="initial"
       ></x-hydration-global-search-dialog>
-    `);
+      `);
 
     const scheduler = new HydrationScheduler(registry);
     const diagnostics = await scheduler.hydrateShell(root);
 
     expect(loadCount).to.equal(1);
     expect(root.constructor).not.to.equal(HTMLElement);
+    expect(diagnostics.plannedCount).to.equal(1);
     expect(diagnostics.upgradedCount).to.equal(1);
   });
 

@@ -3,8 +3,14 @@ import { resolveBuildId } from './build-id.js';
 import { createBuildGeneratedAtOnce } from './generated-at.js';
 
 export { normalizeBuildLabel, requireBuildLabel, resolveBuildLabel } from './build-label.js';
-export { normalizeBuildId, requireBuildIdInput } from '../../shared/navigation/build-id-contract.js';
-export { normalizeGeneratedAt, requireGeneratedAtInput } from '../../shared/navigation/generated-at-contract.js';
+export {
+  normalizeBuildId,
+  requireBuildIdInput,
+} from '../../shared/navigation/build-id-contract.js';
+export {
+  normalizeGeneratedAt,
+  requireGeneratedAtInput,
+} from '../../shared/navigation/generated-at-contract.js';
 export { createBuildGeneratedAtOnce, resolveGeneratedAt } from './generated-at.js';
 export { resolveBuildId, resolveGitShortSha } from './build-id.js';
 
@@ -20,7 +26,9 @@ export interface ResolveBuildMetadataOptions {
   readonly generatedAt?: string | undefined;
 }
 
-export const resolveBuildMetadata = (options: ResolveBuildMetadataOptions = {}): ResolvedBuildMetadata => ({
+export const resolveBuildMetadata = (
+  options: ResolveBuildMetadataOptions = {},
+): ResolvedBuildMetadata => ({
   buildId: resolveBuildId(options.buildId),
   buildLabel: requireBuildLabel(options.buildLabel),
   generatedAt: createBuildGeneratedAtOnce(options.generatedAt),

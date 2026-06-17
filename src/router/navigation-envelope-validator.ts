@@ -17,7 +17,6 @@ import {
 } from './navigation-envelope-errors.js';
 import { createRouterDiagnosticError } from './router-diagnostics.js';
 
-
 export interface ValidateLoadedEnvelopeInput {
   readonly envelope: NavigationEnvelope;
   readonly source: 'fetch' | 'document-route';
@@ -118,7 +117,9 @@ const readOptionalMetadataString = (
   }
 
   if (!isString(value)) {
-    throw createInvalidEnvelopeError(`navigation envelope ${label} は string/null/undefined である必要があります。`);
+    throw createInvalidEnvelopeError(
+      `navigation envelope ${label} は string/null/undefined である必要があります。`,
+    );
   }
 
   return value;

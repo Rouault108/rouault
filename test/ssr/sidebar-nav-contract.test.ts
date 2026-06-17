@@ -21,7 +21,8 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 const layoutSidebarCssPath = path.resolve(dirname, '../../src/assets/css/layout-sidebar.css');
 const mainCss = readFileSync(layoutSidebarCssPath, 'utf8');
 
-const hoverMedia = (params: string): boolean => /hover\s*:\s*hover/u.test(params) && /pointer\s*:\s*fine/u.test(params);
+const hoverMedia = (params: string): boolean =>
+  /hover\s*:\s*hover/u.test(params) && /pointer\s*:\s*fine/u.test(params);
 
 const currentPage = "[data-sidebar-nav-link][aria-current='page']";
 const currentBranch =
@@ -50,11 +51,12 @@ const expectNoDeclarationPropertiesForSelector = (
   selectorKind: 'element' | 'pseudo-before' | 'pseudo-after',
   forbiddenProperties: readonly string[],
 ): void => {
-  const violations = forbiddenProperties.filter((property) =>
-    !lacksDeclarationPropertyForSelectorContaining(mainCss, selectorFragment, property, {
-      scope: 'screen',
-      selectorKind,
-    }),
+  const violations = forbiddenProperties.filter(
+    (property) =>
+      !lacksDeclarationPropertyForSelectorContaining(mainCss, selectorFragment, property, {
+        scope: 'screen',
+        selectorKind,
+      }),
   );
 
   expect(violations).toEqual([]);
@@ -115,7 +117,10 @@ describe('sidebar nav explicit contract', () => {
     const markup = renderNoteSidebarNav(rows, {
       sidebarId: 'note-primary',
       topologyRevision: 'topology:test',
-      groupIdPrefix: createSidebarGroupIdPrefixFromSidebarIdentity('note-navigation', 'note-primary'),
+      groupIdPrefix: createSidebarGroupIdPrefixFromSidebarIdentity(
+        'note-navigation',
+        'note-primary',
+      ),
     });
 
     expect(markup).toContain('data-sidebar-nav-control');
@@ -152,10 +157,16 @@ describe('sidebar nav explicit contract', () => {
 
   it('raw sidebar nav は ::before を surface、::after を indicator として使うこと', () => {
     expect(
-      hasDeclarationForSelectorContaining(mainCss, '[data-sidebar-nav-control]::before', 'content', "''", {
-        scope: 'base',
-        selectorKind: 'pseudo-before',
-      }),
+      hasDeclarationForSelectorContaining(
+        mainCss,
+        '[data-sidebar-nav-control]::before',
+        'content',
+        "''",
+        {
+          scope: 'base',
+          selectorKind: 'pseudo-before',
+        },
+      ),
     ).toBe(true);
     expect(
       hasDeclarationForSelectorContaining(
@@ -235,11 +246,16 @@ describe('sidebar nav explicit contract', () => {
       }
 
       expect(
-        hasNoDeclarationValueIncludingForSelectorContaining(mainCss, `${currentBranch}::before`, forbidden, {
-          scope: 'base',
-          selectorKind: 'pseudo-before',
-          allowMissingRule: true,
-        }),
+        hasNoDeclarationValueIncludingForSelectorContaining(
+          mainCss,
+          `${currentBranch}::before`,
+          forbidden,
+          {
+            scope: 'base',
+            selectorKind: 'pseudo-before',
+            allowMissingRule: true,
+          },
+        ),
       ).toBe(true);
     }
 
@@ -257,16 +273,26 @@ describe('sidebar nav explicit contract', () => {
       ),
     ).toBe(true);
     expect(
-      lacksDeclarationPropertyForSelectorContaining(mainCss, `${currentBranch}::before`, 'background-color', {
-        scope: 'base',
-        selectorKind: 'pseudo-before',
-      }),
+      lacksDeclarationPropertyForSelectorContaining(
+        mainCss,
+        `${currentBranch}::before`,
+        'background-color',
+        {
+          scope: 'base',
+          selectorKind: 'pseudo-before',
+        },
+      ),
     ).toBe(true);
     expect(
-      lacksDeclarationPropertyForSelectorContaining(mainCss, `${currentBranch}::before`, 'background-image', {
-        scope: 'base',
-        selectorKind: 'pseudo-before',
-      }),
+      lacksDeclarationPropertyForSelectorContaining(
+        mainCss,
+        `${currentBranch}::before`,
+        'background-image',
+        {
+          scope: 'base',
+          selectorKind: 'pseudo-before',
+        },
+      ),
     ).toBe(true);
     expect(
       lacksDeclarationPropertyForSelectorContaining(mainCss, `${currentBranch}::after`, 'content', {
@@ -275,7 +301,6 @@ describe('sidebar nav explicit contract', () => {
       }),
     ).toBe(true);
   });
-
 
   it('current path selector は paint / geometry / transition 契約を allowlist で固定すること', () => {
     const forbiddenProperties = [

@@ -15,12 +15,22 @@ const sidebarShellCss = extractSingleStaticCssTemplate(
 
 describe('ui-sidebar-shell style contract', () => {
   it('keeps note sidebar current styling outside shell slotted rules', () => {
-    expect(hasRuleContainingSelectorFragment(sidebarShellCss, "[aria-current='page']", { scope: 'any' })).toBe(false);
+    expect(
+      hasRuleContainingSelectorFragment(sidebarShellCss, "[aria-current='page']", { scope: 'any' }),
+    ).toBe(false);
     expect(sidebarShellCss).not.toContain('::slotted([aria-current');
   });
 
   it('keeps shell nav background available as painted test background', () => {
-    expect(hasDeclarationValueIncluding(sidebarShellCss, 'nav', 'background', '--bg-surface-1', { scope: 'base' })).toBe(true);
-    expect(hasDeclarationForSelector(sidebarShellCss, 'nav', 'background', 'Canvas', { scope: 'forced-colors' })).toBe(true);
+    expect(
+      hasDeclarationValueIncluding(sidebarShellCss, 'nav', 'background', '--bg-surface-1', {
+        scope: 'base',
+      }),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(sidebarShellCss, 'nav', 'background', 'Canvas', {
+        scope: 'forced-colors',
+      }),
+    ).toBe(true);
   });
 });

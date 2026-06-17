@@ -28,17 +28,19 @@ const renderAppShell = () =>
                 target-id="app-shell-main"
                 label="メインコンテンツへ移動"
               ></ui-skip-link>
-              ${unsafeHTML(renderLayoutHeaderHtml({
-                noteLayout: false,
-                sidebarEnabled: false,
-                sidebarId: 'note-primary',
-                tocPresence: 'absent',
-                tocTriggerReserved: false,
-                corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
-                currentCorpusKey: 'all',
-                siteUrlContext: { siteOrigin: 'https://rouault.invalid', basePath: '' },
-                searchHref: '/search/',
-              }))}
+              ${unsafeHTML(
+                renderLayoutHeaderHtml({
+                  noteLayout: false,
+                  sidebarEnabled: false,
+                  sidebarId: 'note-primary',
+                  tocPresence: 'absent',
+                  tocTriggerReserved: false,
+                  corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
+                  currentCorpusKey: 'all',
+                  siteUrlContext: { siteOrigin: 'https://rouault.invalid', basePath: '' },
+                  searchHref: '/search/',
+                }),
+              )}
               <main
                 id="app-shell-main"
                 tabindex="-1"

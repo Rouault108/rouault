@@ -41,4 +41,35 @@ describe('CorpusPagesTemplate', () => {
     expect(rendered).not.toContain('<corpus-page');
     expect(rendered).not.toContain('data-hydration-');
   });
+
+  it('公開ノートがない場合は corpus 用 static empty state を描画すること', () => {
+    const template = new CorpusPagesTemplate();
+    const rendered = template.render({
+      corpusPage: {
+        key: 'music',
+        label: '音楽',
+        href: '/corpora/music/',
+        noteCount: 0,
+        latestUpdatedDate: null,
+        notes: [],
+      },
+    });
+
+    expect(rendered).toContain(
+      '<section class="empty-hint" data-empty-state data-empty-variant="default">',
+    );
+    expect(rendered).toContain('<div class="empty-hint__message" data-announce="off">');
+    expect(rendered).toContain('<div class="empty-hint__icon" aria-hidden="true"></div>');
+    expect(rendered).toContain(
+      '<h2 class="empty-hint__heading">このコーパスの公開ノートはまだありません</h2>',
+    );
+    expect(rendered).toContain(
+      '<p class="empty-hint__description">別のコーパスへ切り替えるか、時間をおいて再度確認してください。</p>',
+    );
+    expect(rendered).toContain('<div class="empty-hint__actions" hidden></div>');
+    expect(rendered).not.toContain('<ui-empty-state');
+    expect(rendered).not.toContain('data-empty-variant="search"');
+    expect(rendered).not.toContain('role="status"');
+    expect(rendered).not.toContain('data-hydration-');
+  });
 });

@@ -1,16 +1,16 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  type SidebarScope,
-  type SidebarScopeRule,
-} from '../../build/navigation/index.js';
+import { type SidebarScope, type SidebarScopeRule } from '../../build/navigation/index.js';
 import { resolveNotePermalink } from '../../shared/note/resolve-note-permalink.js';
 import type { NavigationDirectoryPresentationMap } from '../../shared/navigation/navigation-types.js';
 import { resolveSidebarRoot } from '../../build/navigation/resolve-sidebar-root.js';
 import { prepareTocHtml, type TocHeading } from '../../build/content/extract-toc-from-html.js';
 import { validateNoteContentContracts } from '../../build/content/note-content-contracts.js';
-import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
+import {
+  resolveDevelopmentSiteUrlContext,
+  resolveProductionSiteUrlContext,
+} from '../site/site-url-context.js';
 import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
 import { resolveCoverAsset, type ResolvedImageAsset } from '../../build/media/image-resolver.js';
 import { isIconName, type IconName } from '../../shared/icons/icon-paths.js';
@@ -126,11 +126,7 @@ const inferTocCapabilities = (
   mobilePanel: chromePolicy.tocMobilePanel && headings.length > 0,
 });
 
-const TOC_CAPABILITIES_OVERRIDE_KEYS = [
-  'activeTracking',
-  'dynamicScopes',
-  'mobilePanel',
-] as const;
+const TOC_CAPABILITIES_OVERRIDE_KEYS = ['activeTracking', 'dynamicScopes', 'mobilePanel'] as const;
 
 const isTocCapabilitiesOverrideRecord = (
   value: unknown,
@@ -165,7 +161,9 @@ const normalizeTocCapabilitiesOverride = (
 
   const override = note.tocCapabilitiesOverride;
   if (!isTocCapabilitiesOverrideRecord(override)) {
-    throw new Error(`[notes] tocCapabilitiesOverride must be an object: ${note.slug ?? '(unknown)'}`);
+    throw new Error(
+      `[notes] tocCapabilitiesOverride must be an object: ${note.slug ?? '(unknown)'}`,
+    );
   }
 
   const unknownKeys = Object.keys(override).filter(
@@ -522,7 +520,8 @@ export const buildNotesCollection = (
       const chromePolicy = resolveNoteChromePolicy(chromeProfile);
       const tocCapabilitiesOverride = normalizeTocCapabilitiesOverride(note);
       const tocCapabilities =
-        tocCapabilitiesOverride?.tocCapabilities ?? inferTocCapabilities(preparedToc.headings, chromePolicy);
+        tocCapabilitiesOverride?.tocCapabilities ??
+        inferTocCapabilities(preparedToc.headings, chromePolicy);
 
       return {
         ...noteWithoutVeliteToc,

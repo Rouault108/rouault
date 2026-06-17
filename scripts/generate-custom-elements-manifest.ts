@@ -1,10 +1,15 @@
-import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
-import { STATIC_FIRST_DELETION_TARGETS } from '../build/content/static-first-deletion-targets.js';
 import { STATIC_FIRST_RETAINED_COMPONENTS } from '../build/content/static-first-retained-components.js';
+import {
+  isStaticFirstRemovedOrReducedLegacyTag,
+  STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS,
+} from '../build/content/static-first-removed-or-reduced-tags.js';
 import { STATIC_FIRST_UNKNOWN_UI_ALLOWLIST } from '../build/content/static-first-unknown-ui-allowlist.js';
 
 interface CustomElementsManifest {
@@ -27,10 +32,17 @@ interface CustomElementsManifestDeclaration {
   readonly [key: string]: unknown;
 }
 
-const projectRoot = process.cwd();
+interface PackageJsonWithBin {
+  readonly name?: string;
+  readonly bin?: string | Readonly<Record<string, string>>;
+}
+
+const nodeRequire = createRequire(import.meta.url);
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(scriptDir, '..');
 const componentsRoot = path.join(projectRoot, 'src', 'components');
 const manifestPath = path.join(projectRoot, 'custom-elements.json');
-const pnpmBin = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 
 const retainedManifestComponents = STATIC_FIRST_RETAINED_COMPONENTS.filter(
   (component) => component.manifest === 'include',
@@ -39,12 +51,60 @@ const retainedManifestTags = new Set(retainedManifestComponents.map((component) 
 const retainedManifestModulePaths = new Set(
   retainedManifestComponents.flatMap((component) => component.manifestModulePaths ?? []),
 );
-const deletionTags = new Set(STATIC_FIRST_DELETION_TARGETS.map((target) => target.tag));
+const removedOrReducedLegacyTagList = STATIC_FIRST_REMOVED_OR_REDUCED_LEGACY_TAGS.join(', ');
 const unknownTags = new Set(
   (STATIC_FIRST_UNKNOWN_UI_ALLOWLIST as readonly { readonly tag: string }[]).map(
     (entry) => entry.tag,
   ),
 );
+
+const resolvePackageRoot = (packageName: string): string => {
+  let currentDir = path.dirname(nodeRequire.resolve(packageName));
+
+  for (;;) {
+    const packageJsonPath = path.join(currentDir, 'package.json');
+
+    if (existsSync(packageJsonPath)) {
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+        readonly name?: string;
+      };
+
+      if (packageJson.name === packageName) {
+        return currentDir;
+      }
+    }
+
+    const parentDir = path.dirname(currentDir);
+
+    if (parentDir === currentDir) {
+      break;
+    }
+
+    currentDir = parentDir;
+  }
+
+  throw new Error(`Unable to resolve package root: ${packageName}`);
+};
+
+const resolvePackageBin = (packageName: string, binName: string): string => {
+  const packageRoot = resolvePackageRoot(packageName);
+  const packageJsonPath = path.join(packageRoot, 'package.json');
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as PackageJsonWithBin;
+
+  const binPath = typeof packageJson.bin === 'object' ? packageJson.bin[binName] : undefined;
+
+  if (!binPath) {
+    throw new Error(`Unable to resolve bin "${binName}" from package: ${packageName}`);
+  }
+
+  const resolvedBinPath = path.resolve(packageRoot, binPath);
+
+  if (!existsSync(resolvedBinPath)) {
+    throw new Error(`Resolved bin does not exist: ${resolvedBinPath}`);
+  }
+
+  return resolvedBinPath;
+};
 
 const toProjectPath = (filePath: string): string =>
   path.relative(projectRoot, filePath).split(path.sep).join('/');
@@ -89,8 +149,11 @@ const assertManifestInventory = (): void => {
   }
 
   for (const tag of retainedManifestTags) {
-    if (deletionTags.has(tag)) {
-      throw new Error(`Deletion target cannot be emitted in manifest: ${tag}`);
+    if (isStaticFirstRemovedOrReducedLegacyTag(tag)) {
+      throw new Error(
+        `Removed-or-reduced legacy tag cannot be emitted in manifest: ${tag}. ` +
+          `Known removed-or-reduced legacy tags: ${removedOrReducedLegacyTagList}`,
+      );
     }
     if (unknownTags.has(tag)) {
       throw new Error(`Unknown UI allowlist cannot drive manifest inclusion: ${tag}`);
@@ -181,8 +244,11 @@ const patchManifest = (): void => {
   }
 
   for (const emittedTag of emittedTags) {
-    if (deletionTags.has(emittedTag)) {
-      throw new Error(`Deletion target emitted in manifest: ${emittedTag}`);
+    if (isStaticFirstRemovedOrReducedLegacyTag(emittedTag)) {
+      throw new Error(
+        `Removed-or-reduced legacy tag emitted in manifest: ${emittedTag}. ` +
+          `Known removed-or-reduced legacy tags: ${removedOrReducedLegacyTagList}`,
+      );
     }
     if (unknownTags.has(emittedTag)) {
       throw new Error(`Unknown UI allowlist emitted in manifest: ${emittedTag}`);
@@ -192,11 +258,37 @@ const patchManifest = (): void => {
   writeFileSync(manifestPath, `${JSON.stringify({ ...manifest, modules }, null, 2)}\n`, 'utf8');
 };
 
-assertManifestInventory();
+const runCustomElementsManifestAnalyzer = (): void => {
+  const cemBinPath = resolvePackageBin('@custom-elements-manifest/analyzer', 'cem');
 
-execFileSync(pnpmBin, ['exec', 'cem', 'analyze', '--config', 'cem.config.mjs'], {
-  cwd: projectRoot,
-  stdio: 'inherit',
-});
+  const result = spawnSync(
+    process.execPath,
+    [cemBinPath, 'analyze', '--config', 'cem.config.mjs'],
+    {
+      cwd: projectRoot,
+      stdio: 'inherit',
+      env: process.env,
+    },
+  );
 
-patchManifest();
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    const reason =
+      result.signal === null
+        ? `exit code ${String(result.status ?? '<unknown>')}`
+        : `signal ${result.signal}`;
+
+    throw new Error(`Custom Elements Manifest analyzer failed with ${reason}.`);
+  }
+};
+
+const main = (): void => {
+  assertManifestInventory();
+  runCustomElementsManifestAnalyzer();
+  patchManifest();
+};
+
+main();

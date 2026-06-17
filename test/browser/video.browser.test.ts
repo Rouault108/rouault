@@ -187,9 +187,10 @@ describe('ui-video browser contract', () => {
     expect(retryButton).to.equal(null);
   });
 
-
   it('unsafe video media URL と unsafe track を DOM に出力しないこと', async () => {
-    const component = await fixture<UiVideo>(html` <ui-video src="data:text/html;base64,PGgxPng8L2gxPg==" caption="unsafe"></ui-video> `);
+    const component = await fixture<UiVideo>(html`
+      <ui-video src="data:text/html;base64,PGgxPng8L2gxPg==" caption="unsafe"></ui-video>
+    `);
     component.tracks = [
       {
         src: 'javascript:alert(1)',

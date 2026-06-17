@@ -1,0 +1,17 @@
+{
+  "action": "actions/download-artifact",
+  "adopted_tag": "v8.0.1",
+  "executionCoordinateAuthority": "sha-pin-only",
+  "note": "Checked-in evidence records reviewed tag coordinate correspondence for maintainability. Execution authority remains sha-pin-only; workflow uses the reviewed 40-hex commit SHA, not the tag.",
+  "reviewed_commit_sha": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+  "tagCoordinateReview": "reviewed_nonblocking_for_execution",
+  "tagCoordinateReviewIsExecutionBlocking": false,
+  "tag_action_yml_snapshot_compared_with_commit_snapshot": true,
+  "tag_ref_to_commit_status": "verified",
+  "tag_ref_resolution_method": "checked-in-tag-ref-evidence",
+  "tag_ref_resolved_commit_sha": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+  "tag_ref_reviewed_at_utc": "2026-06-15T12:45:00Z",
+  "workflow_uses_reviewed_commit_sha": true,
+  "runtimeReadiness": "node24",
+  "action_yml_runs_using": "node24"
+}

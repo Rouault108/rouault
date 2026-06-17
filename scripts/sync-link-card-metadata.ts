@@ -87,7 +87,11 @@ const resolveSafeHttpUrl = (value: string | undefined, baseUrl: string): string 
 
   try {
     const resolved = new URL(trimmed, baseUrl);
-    if (!HTTP_PROTOCOLS.has(resolved.protocol) || resolved.username.length > 0 || resolved.password.length > 0) {
+    if (
+      !HTTP_PROTOCOLS.has(resolved.protocol) ||
+      resolved.username.length > 0 ||
+      resolved.password.length > 0
+    ) {
       return undefined;
     }
     const serialized = resolved.toString();
@@ -470,7 +474,9 @@ const main = async (): Promise<void> => {
         } catch (thumbnailError) {
           const thumbnailMessage =
             thumbnailError instanceof Error ? thumbnailError.message : 'unknown error';
-          process.stderr.write(`warn: thumbnail ${createUrlLogRef(metadata.image)}: ${thumbnailMessage}\n`);
+          process.stderr.write(
+            `warn: thumbnail ${createUrlLogRef(metadata.image)}: ${thumbnailMessage}\n`,
+          );
         }
       }
     } catch (error) {

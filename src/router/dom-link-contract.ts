@@ -141,7 +141,11 @@ const validateAnchor = (
   if (anchor.getAttribute('data-external') === 'true' && kind !== 'external-web') {
     fail(options.sourceLabel, 'data-external mismatch');
   }
-  if (kind === 'external-web' && anchor.getAttribute('data-external') !== 'true' && !isFooterNavLink(anchor)) {
+  if (
+    kind === 'external-web' &&
+    anchor.getAttribute('data-external') !== 'true' &&
+    !isFooterNavLink(anchor)
+  ) {
     fail(options.sourceLabel, 'external-web requires data-external="true"');
   }
 };

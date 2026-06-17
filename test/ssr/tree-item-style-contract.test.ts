@@ -16,7 +16,11 @@ const treeItemCss = extractSingleStaticCssTemplate(
 
 describe('ui-tree-item style contract', () => {
   it('generates selected surface pseudo-element and routes it through sidebar active surface', () => {
-    expect(hasDeclarationForSelector(treeItemCss, '.surface::before', 'content', "''", { scope: 'base' })).toBe(true);
+    expect(
+      hasDeclarationForSelector(treeItemCss, '.surface::before', 'content', "''", {
+        scope: 'base',
+      }),
+    ).toBe(true);
     expect(
       hasDeclarationValueIncluding(
         treeItemCss,
@@ -56,7 +60,11 @@ describe('ui-tree-item style contract', () => {
         { scope: 'base' },
       ),
     ).toBe(true);
-    expect(hasDeclarationForSelector(treeItemCss, '.expand-glyph', 'color', 'currentColor', { scope: 'base' })).toBe(true);
+    expect(
+      hasDeclarationForSelector(treeItemCss, '.expand-glyph', 'color', 'currentColor', {
+        scope: 'base',
+      }),
+    ).toBe(true);
     expect(
       hasDeclarationForSelector(treeItemCss, '.expand-glyph > svg', 'color', 'currentColor', {
         scope: 'base',
@@ -94,8 +102,12 @@ describe('ui-tree-item style contract', () => {
     ).toBe(true);
     expect(treeItemCss).not.toContain('var(--tree-indent-step, 16px)');
     expect(treeItemCss).not.toContain('font-size: 15px');
-    expect(hasDeclarationForSelector(treeItemCss, '.label', 'font-size', 'inherit', { scope: 'base' })).toBe(true);
-    expect(hasDeclarationForSelector(treeItemCss, '.label', 'line-height', 'inherit', { scope: 'base' })).toBe(true);
+    expect(
+      hasDeclarationForSelector(treeItemCss, '.label', 'font-size', 'inherit', { scope: 'base' }),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(treeItemCss, '.label', 'line-height', 'inherit', { scope: 'base' }),
+    ).toBe(true);
   });
 
   it('uses forced-colors rules for selected leaf indicator and selected branch glyph', () => {
@@ -113,7 +125,11 @@ describe('ui-tree-item style contract', () => {
       ':host([selected]) .current-slot.is-branch .expand-glyph',
       ':host([selected]) .current-slot.is-branch .expand-glyph > svg',
     ] as const) {
-      expect(hasDeclarationForSelector(treeItemCss, selector, 'color', 'HighlightText', { scope: 'forced-colors' })).toBe(true);
+      expect(
+        hasDeclarationForSelector(treeItemCss, selector, 'color', 'HighlightText', {
+          scope: 'forced-colors',
+        }),
+      ).toBe(true);
       expect(
         hasDeclarationForSelector(treeItemCss, selector, 'forced-color-adjust', 'none', {
           scope: 'forced-colors',
@@ -129,12 +145,9 @@ describe('ui-tree-item style contract', () => {
       }),
     ).toBe(true);
     expect(
-      hasNoDeclarationValueIncludingForSelectorContaining(
-        treeItemCss,
-        '.item',
-        '0.01ms',
-        { scope: 'reduced-motion' },
-      ),
+      hasNoDeclarationValueIncludingForSelectorContaining(treeItemCss, '.item', '0.01ms', {
+        scope: 'reduced-motion',
+      }),
     ).toBe(true);
     expect(
       hasDeclarationValueIncluding(

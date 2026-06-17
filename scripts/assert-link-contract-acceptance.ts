@@ -46,7 +46,9 @@ if (!packageJson.includes('"assert-link-contract-acceptance"')) {
   violations.push('package.json: assert-link-contract-acceptance script must be registered');
 }
 if (!packageJson.includes('scripts/assert-link-contract-acceptance.ts')) {
-  violations.push('package.json: assert-link-contract-acceptance must point to scripts/assert-link-contract-acceptance.ts');
+  violations.push(
+    'package.json: assert-link-contract-acceptance must point to scripts/assert-link-contract-acceptance.ts',
+  );
 }
 
 forbidPattern(
@@ -163,8 +165,6 @@ forbidPatternIfExists(
   'Search dialog docs must not reference legacy SearchResultItem' + '.url',
 );
 
-
-
 forbidFileExists(
   'src/router/rouault-url-policy.ts',
   'legacy router-local RouaultUrlPolicy module must be removed instead of kept as a compatibility wrapper',
@@ -255,7 +255,6 @@ requireContains(
   'stripBasePathFromPathname',
   'preview sandbox base-url validation must use segment-safe basePath stripping',
 );
-
 
 requireContains(
   'shared/search/search-json-artifact-parser.ts',
@@ -352,7 +351,6 @@ forbidPattern(
   /renderHref/u,
   'initial-search-response-json/static explore response must not store renderHref',
 );
-
 
 requireContains(
   'shared/search/search-json-artifact-parser.ts',

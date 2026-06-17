@@ -20,10 +20,18 @@ describe('link annotation contract', () => {
     };
 
     expect(classifyLinkHref(base).routerInterceptionPolicy).to.equal('intercept');
-    expect(classifyLinkHref({ ...base, target: '_blank' }).routerInterceptionPolicy).to.equal('passthrough');
-    expect(classifyLinkHref({ ...base, download: true }).routerInterceptionPolicy).to.equal('passthrough');
-    expect(classifyLinkHref({ ...base, rel: 'external' }).routerInterceptionPolicy).to.equal('passthrough');
-    expect(classifyLinkHref({ ...base, noRouter: true }).routerInterceptionPolicy).to.equal('passthrough');
+    expect(classifyLinkHref({ ...base, target: '_blank' }).routerInterceptionPolicy).to.equal(
+      'passthrough',
+    );
+    expect(classifyLinkHref({ ...base, download: true }).routerInterceptionPolicy).to.equal(
+      'passthrough',
+    );
+    expect(classifyLinkHref({ ...base, rel: 'external' }).routerInterceptionPolicy).to.equal(
+      'passthrough',
+    );
+    expect(classifyLinkHref({ ...base, noRouter: true }).routerInterceptionPolicy).to.equal(
+      'passthrough',
+    );
   });
 
   it('manifest 外 currentUrl を current document として扱わないこと', () => {

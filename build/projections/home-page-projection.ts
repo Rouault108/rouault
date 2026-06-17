@@ -4,7 +4,10 @@ import {
   type IntrinsicNote,
   type IntrinsicNotesCollection,
 } from '../../build/data/notes.js';
-import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
+import {
+  resolveDevelopmentSiteUrlContext,
+  resolveProductionSiteUrlContext,
+} from '../site/site-url-context.js';
 import { applyBasePathToRenderHref } from '../../shared/url/normalize-rouault-url.js';
 
 export type HomeSourceNote = IntrinsicNote;

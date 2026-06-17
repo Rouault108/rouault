@@ -1,7 +1,4 @@
-import {
-  createSiteUrlContext,
-  type SiteUrlContext,
-} from '../../shared/site/site-url-context.js';
+import { createSiteUrlContext, type SiteUrlContext } from '../../shared/site/site-url-context.js';
 
 const getMetaContent = (document: Document, name: string): string | null =>
   document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)?.content ?? null;

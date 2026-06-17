@@ -7,9 +7,10 @@ import { SEARCH_DIALOG_STATUS_IDLE_MESSAGE } from '../search/search-dialog-const
 
 export const GLOBAL_SEARCH_DIALOG_ID = 'global-search-dialog';
 
-export const renderSearchDialogHtml = (options: { readonly idContext?: StaticRenderIdContext } = {}): string => {
-  const idContext =
-    options.idContext ?? createStaticRenderIdContext('shell:search-dialog');
+export const renderSearchDialogHtml = (
+  options: { readonly idContext?: StaticRenderIdContext } = {},
+): string => {
+  const idContext = options.idContext ?? createStaticRenderIdContext('shell:search-dialog');
   const dialogId = idContext.reserveId('search-dialog', GLOBAL_SEARCH_DIALOG_ID);
   const inputId = idContext.reserveId('search-dialog', 'global-search-input');
   const resultsId = idContext.reserveId('search-dialog', 'global-search-results');

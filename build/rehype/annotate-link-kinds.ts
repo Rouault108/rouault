@@ -1,5 +1,8 @@
 import { getOrCreateProperties, type HastNode } from './hast-utils.js';
-import { classifyLinkHref, type RouteClassificationMode } from '../../shared/link/link-annotation.js';
+import {
+  classifyLinkHref,
+  type RouteClassificationMode,
+} from '../../shared/link/link-annotation.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { RehypeLinkContractError } from './link-contract-error.js';
 import { parseFootnoteBackrefHref } from '../../shared/footnotes/footnote-id.js';
@@ -186,25 +189,36 @@ const isCardSurfaceLink = (node: HastNode, context: LinkContext): boolean =>
 export interface RehypeAnnotateLinkKindsOptions {
   readonly siteUrlContext: SiteUrlContext;
   readonly currentUrl: string | ((file: { readonly path?: string } | undefined) => string);
-  readonly routeClassificationMode: RouteClassificationMode | ((file: { readonly path?: string } | undefined) => RouteClassificationMode);
+  readonly routeClassificationMode:
+    | RouteClassificationMode
+    | ((file: { readonly path?: string } | undefined) => RouteClassificationMode);
 }
 
 export function rehypeAnnotateLinkKinds(options: RehypeAnnotateLinkKindsOptions) {
-  return (tree: unknown, file?: { readonly path?: string; readonly history?: readonly unknown[]; readonly data?: unknown }) => {
+  return (
+    tree: unknown,
+    file?: {
+      readonly path?: string;
+      readonly history?: readonly unknown[];
+      readonly data?: unknown;
+    },
+  ) => {
     const sourceFilePath = resolveNoteSourcePathFromVFile(file);
     const sourceFile = sourceFilePath === undefined ? undefined : { path: sourceFilePath };
     let resolvedCurrentUrl: string | undefined;
     let resolvedRouteClassificationMode: RouteClassificationMode | undefined;
     const getCurrentUrl = (): string => {
-      resolvedCurrentUrl ??= typeof options.currentUrl === 'function'
-        ? options.currentUrl(sourceFile)
-        : options.currentUrl;
+      resolvedCurrentUrl ??=
+        typeof options.currentUrl === 'function'
+          ? options.currentUrl(sourceFile)
+          : options.currentUrl;
       return resolvedCurrentUrl;
     };
     const getRouteClassificationMode = (): RouteClassificationMode => {
-      resolvedRouteClassificationMode ??= typeof options.routeClassificationMode === 'function'
-        ? options.routeClassificationMode(sourceFile)
-        : options.routeClassificationMode;
+      resolvedRouteClassificationMode ??=
+        typeof options.routeClassificationMode === 'function'
+          ? options.routeClassificationMode(sourceFile)
+          : options.routeClassificationMode;
       return resolvedRouteClassificationMode;
     };
     const visit = (node: unknown, context: LinkContext, parent: HastNode | null): void => {
@@ -228,7 +242,11 @@ export function rehypeAnnotateLinkKinds(options: RehypeAnnotateLinkKindsOptions)
       if (current.type === 'element' && current.tagName === 'a') {
         const properties = getOrCreateProperties(current);
         if (isStructuralLink(current, nextContext)) {
-          if (typeof properties['href'] === 'string' && !isCanonicalFootnoteRef(current) && !isCanonicalFootnoteBackref(current)) {
+          if (
+            typeof properties['href'] === 'string' &&
+            !isCanonicalFootnoteRef(current) &&
+            !isCanonicalFootnoteBackref(current)
+          ) {
             properties['data-link-kind'] = 'internal-fragment';
             properties['data-link-surface'] = 'structural';
           } else {

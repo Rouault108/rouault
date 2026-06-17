@@ -25,10 +25,7 @@ export interface RuntimeSidebarNavHtmlPresenceInput {
   readonly sourceLabel?: string;
 }
 
-function fail(
-  sourceLabel: string,
-  reason: SidebarNavHtmlPresenceErrorReason,
-): never {
+function fail(sourceLabel: string, reason: SidebarNavHtmlPresenceErrorReason): never {
   throw new SidebarNavHtmlPresenceError({ sourceLabel, reason });
 }
 

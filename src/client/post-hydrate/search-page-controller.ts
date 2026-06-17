@@ -141,10 +141,7 @@ const canonicalTagKeys = (tags: readonly string[]): string[] =>
     (left, right) => left.localeCompare(right, 'ja'),
   );
 
-export const areSearchStatesCanonicallyEqual = (
-  left: SearchState,
-  right: SearchState,
-): boolean =>
+export const areSearchStatesCanonicallyEqual = (left: SearchState, right: SearchState): boolean =>
   normalizeSearchQuery(left.q) === normalizeSearchQuery(right.q) &&
   normalizeSearchTagMode(left.tagMode) === normalizeSearchTagMode(right.tagMode) &&
   normalizeSearchSort(left.sort) === normalizeSearchSort(right.sort) &&
@@ -324,7 +321,9 @@ const syncFilterOptionsFromRuntimeState = (
       checkbox.checked = selected;
       checkbox.disabled = disabled;
     }
-    option.querySelector<HTMLElement>('.filter-option-count')?.replaceChildren(`${String(count)}件`);
+    option
+      .querySelector<HTMLElement>('.filter-option-count')
+      ?.replaceChildren(`${String(count)}件`);
     return option;
   });
   list.replaceChildren(...options);
@@ -529,26 +528,27 @@ const createSearchPageResult = (
   return listItem;
 };
 
-const renderSearchPageResults = (
-  page: HTMLElement,
-  runtimeState: SearchPageRuntimeState,
-): void => {
+const renderSearchPageResults = (page: HTMLElement, runtimeState: SearchPageRuntimeState): void => {
   const root = page.querySelector<HTMLElement>('[data-search-page-results-section]');
   if (!root) {
     return;
   }
   if (runtimeState.items.length === 0) {
-    root.replaceChildren(createSearchPageEmptyState(page.ownerDocument, {
-      q: runtimeState.normalizedQuery,
-      tags: runtimeState.selectedTags,
-      tagMode: runtimeState.tagMode,
-      sort: runtimeState.sort,
-    }));
+    root.replaceChildren(
+      createSearchPageEmptyState(page.ownerDocument, {
+        q: runtimeState.normalizedQuery,
+        tags: runtimeState.selectedTags,
+        tagMode: runtimeState.tagMode,
+        sort: runtimeState.sort,
+      }),
+    );
   } else {
     const list = page.ownerDocument.createElement('ol');
     list.className = 'results-list';
     list.dataset['searchResults'] = '';
-    list.append(...runtimeState.items.map((item) => createSearchPageResult(page.ownerDocument, item)));
+    list.append(
+      ...runtimeState.items.map((item) => createSearchPageResult(page.ownerDocument, item)),
+    );
     root.replaceChildren(list);
   }
   page
@@ -867,7 +867,10 @@ export class SearchPageController {
     this.activeSearchAbortController = searchAbortController;
     this.showStatus('loading');
     void this.searchRuntime
-      .search({ mode: 'explore', ...this.toSearchState() }, { signal: searchAbortController.signal })
+      .search(
+        { mode: 'explore', ...this.toSearchState() },
+        { signal: searchAbortController.signal },
+      )
       .then((response) => {
         if (
           this.disposed ||

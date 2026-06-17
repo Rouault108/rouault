@@ -58,14 +58,17 @@ const renderCorpusSwitcher = (input: LayoutHeaderHtmlInput): string => {
   const current = items.find((item) => item.key === input.currentCorpusKey);
   const currentLabel = current?.label ?? DEFAULT_CORPUS_LABEL;
   const links = items
-    .map(
-      (item) => `
+    .map((item) =>
+      `
         <li>
           <a${serializeHtmlAttributes([
             { name: 'href', value: item.href },
             { name: 'data-link-kind', value: 'internal-document' },
             { name: 'data-link-surface', value: 'header' },
-            { name: 'aria-current', value: item.key === input.currentCorpusKey ? 'page' : undefined },
+            {
+              name: 'aria-current',
+              value: item.key === input.currentCorpusKey ? 'page' : undefined,
+            },
           ])}>${escapeHtmlText(item.label)}</a>
         </li>
       `.trim(),
@@ -92,8 +95,7 @@ const renderTocTrigger = (input: LayoutHeaderHtmlInput): string => {
   if (!hasToc || !input.tocRuntimeId) {
     return '';
   }
-  const staticTocRootId =
-    resolveLayoutTocStaticRootId(input.tocRuntimeId);
+  const staticTocRootId = resolveLayoutTocStaticRootId(input.tocRuntimeId);
   return `
     <a${serializeHtmlAttributes([
       { name: 'class', value: 'toc-trigger' },
@@ -117,7 +119,8 @@ const renderTocTrigger = (input: LayoutHeaderHtmlInput): string => {
   `.trim();
 };
 
-const renderSearchTrigger = (input: LayoutHeaderHtmlInput): string => `
+const renderSearchTrigger = (input: LayoutHeaderHtmlInput): string =>
+  `
   <a${serializeHtmlAttributes([
     { name: 'class', value: 'search-trigger' },
     { name: 'href', value: input.searchHref },
@@ -137,7 +140,12 @@ const renderSearchTrigger = (input: LayoutHeaderHtmlInput): string => `
 const renderThemeSwitcher = (): string => {
   const preference: ThemePreference = 'system';
   const current = THEME_UI_OPTIONS[preference];
-  const items = (Object.entries(THEME_UI_OPTIONS) as [ThemePreference, (typeof THEME_UI_OPTIONS)[ThemePreference]][])
+  const items = (
+    Object.entries(THEME_UI_OPTIONS) as [
+      ThemePreference,
+      (typeof THEME_UI_OPTIONS)[ThemePreference],
+    ][]
+  )
     .map(([value, option]) => {
       const selected = value === preference;
       return `

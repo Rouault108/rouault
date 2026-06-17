@@ -41,7 +41,16 @@ Rouaultを実装・修正する際は、常に次の問いを優先してくだ�
 
 ## プロジェクトの主要原則
 
-### 1. 読書体験優先
+### 1. 長期保守性優先
+
+Rouaultでは、長期保守性、責務境界、static-first契約を、既存実装との互換性や最小差分より優先してください。
+
+- 小さな差分で済ませるために、責務境界を曖昧にしないでください。
+- 既存実装を温存するために、重複実装・暫定adapter・例外的分岐を恒久化しないでください。
+- 変更が大きくなる場合でも、契約、テスト、文書が整合する設計を優先してください。
+- ただし、方針外の変更、根拠のない削除、テスト回避、仕様不明な暫定対応は禁止します。
+
+### 2. 読書体験優先
 
 Rouaultは「読むための UI」です。  
 装飾、動的挙動、強い存在感を持つインタラクションは、それが本文理解に寄与する場合に限って導入してください。
@@ -50,7 +59,7 @@ Rouaultは「読むための UI」です。
 - ナビゲーションや補助情報は、本文の主従関係を壊さない範囲で明確に表現します。
 - UIの静けさ、予測可能性、可読性を、演出的な派手さより優先します。
 
-### 2. コンテンツ資産優先
+### 3. コンテンツ資産優先
 
 Markdownと関連メタデータは長期保持される資産です。  
 表示都合を理由に、資産側へ一時的回避策を持ち込まないでください。
@@ -59,7 +68,7 @@ Markdownと関連メタデータは長期保持される資産です。
 - authoring 規約を増やす前に、既存のparser / transformer / adapterで解決できないかを検討します。
 - 一時的な表現都合をfrontmatterや本文記法へ直書きして恒久化しないでください。
 
-### 3. 責務境界優先
+### 4. 責務境界優先
 
 Rouaultは長期保守性のためにownership boundaryを重視します。  
 特に次の境界を混在させないでください。
@@ -74,7 +83,7 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 
 単に「動く」実装よりも、**どの層が何を所有するかが明確な実装** を優先します。
 
-### 4. static-first 優先
+### 5. static-first 優先
 
 現行のRouaultは、**SSG + build-time SSR + client hydration**を基本戦略とします。
 
@@ -83,7 +92,7 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 - インタラクティブ性が必要な箇所だけhydrationします。
 - request-time SSRを前提にした設計へ安易に寄せないでください。
 
-### 5. 依存追加抑制
+### 6. 依存追加抑制
 
 依存はコストです。新規ライブラリ導入時は次を満たす場合に限って検討してください。
 
@@ -117,6 +126,16 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 - package manager: `pnpm@10.33.0`
 
 `.node-version`、`package.json` の `engines`、`packageManager` を基準にしてください。
+
+### シェル / OS 前提
+
+Windowsネイティブ環境で作業する場合は、PowerShell構文を前提にしてください。WSL、Git Bash、POSIX shell、GNU coreutilsを使う前提でコマンドを組み立てないでください。
+
+- 環境変数は `$env:NAME` を使ってください。
+- ファイル検索は `Get-ChildItem`、テキスト検索は `Select-String` を優先してください。
+- パスは空白・日本語を含む可能性を前提に、必ず適切に引用してください。
+- `/tmp`、`/dev/null`、`chmod`、`rm -rf`、`grep`、`sed`、`awk`、`xargs` を暗黙に使わないでください。
+- shell固有処理を書く前に、`pnpm` scriptsなどリポジトリに定義済みの入口を優先してください。
 
 ### 中心契約
 
@@ -259,7 +278,9 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 
 ## よく使うコマンド
 
-```bash
+以下はプロジェクトスクリプトです。Windowsネイティブ環境ではPowerShellから実行してください。WSLでリポジトリを開いている場合のみ、WSL内のshellとして扱ってください。
+
+```powershell
 pnpm dev                    # Eleventy dev server
 pnpm build                  # client / images / Eleventy / Lit SSR / navigation artifacts / Pagefind
 pnpm build:production       # production条件をまとめたビルド入口
@@ -398,6 +419,19 @@ Storybookはdocs / smoke / metadataに限定します。
 ---
 
 ## 作業手順の原則
+
+### 安全確認
+
+次の操作は、ユーザーが明確な範囲で直接依頼している場合を除き、実行前にリスクを説明して明示的な確認を取ってください。
+
+- ファイルやディレクトリの削除
+- Git履歴の書き換え、force push、reset系操作
+- 認証情報、secret、token、証明書、環境ファイルの変更
+- system-wide設定、PowerShell実行ポリシー、グローバルpackageの変更
+- network-dependentなinstallやupgrade
+- workspace外のファイル変更
+
+secretらしき値を見つけた場合は、値そのものを出力せず、ファイル名と文脈だけを示してください。
 
 ### 変更前
 

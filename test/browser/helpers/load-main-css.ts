@@ -11,7 +11,8 @@ interface ImportRange {
   readonly depth: number;
 }
 
-const isIdentifierChar = (char: string | undefined): boolean => char !== undefined && /[a-zA-Z0-9_-]/u.test(char);
+const isIdentifierChar = (char: string | undefined): boolean =>
+  char !== undefined && /[a-zA-Z0-9_-]/u.test(char);
 
 const skipWhitespace = (cssText: string, cursor: number): number => {
   let next = cursor;
@@ -45,7 +46,10 @@ const readImportStatementEnd = (cssText: string, cursor: number): number => {
         escaped = true;
         continue;
       }
-      if ((state === 'single-quote' && char === "'") || (state === 'double-quote' && char === '"')) {
+      if (
+        (state === 'single-quote' && char === "'") ||
+        (state === 'double-quote' && char === '"')
+      ) {
         state = 'base';
       }
       continue;
@@ -103,7 +107,10 @@ const collectImportRanges = (cssText: string): ImportRange[] => {
         escaped = true;
         continue;
       }
-      if ((state === 'single-quote' && char === "'") || (state === 'double-quote' && char === '"')) {
+      if (
+        (state === 'single-quote' && char === "'") ||
+        (state === 'double-quote' && char === '"')
+      ) {
         state = 'base';
       }
       continue;
@@ -170,7 +177,11 @@ export const stripTopLevelImports = (cssText: string): string => {
   return output;
 };
 
-const ensureStyleTag = async (id: string, href: string, transform?: (cssText: string) => string) => {
+const ensureStyleTag = async (
+  id: string,
+  href: string,
+  transform?: (cssText: string, href: string) => string | Promise<string>,
+) => {
   if (document.getElementById(id)) {
     await waitForStyleRecalc();
     return;
@@ -184,7 +195,7 @@ const ensureStyleTag = async (id: string, href: string, transform?: (cssText: st
   const cssText = await response.text();
   const style = document.createElement('style');
   style.id = id;
-  style.textContent = transform ? transform(cssText) : cssText;
+  style.textContent = transform ? await transform(cssText, href) : cssText;
   document.head.append(style);
 
   await waitForStyleRecalc();
@@ -214,6 +225,13 @@ const inlineTopLevelImports = async (
     if (importHref === undefined) {
       throw new Error(`@import の href を解決できません: ${importText}`);
     }
+    if (importHref.endsWith('/fonts.css') || importHref === './fonts.css') {
+      // browser contract test は paint contract を固定するための場であり、
+      // フォント実体の配信経路まではここで検査しない。
+      output += '\n';
+      cursor = range.end;
+      continue;
+    }
     if (!importHref.startsWith('.') && !importHref.startsWith('/')) {
       output += '\n';
       cursor = range.end;
@@ -227,7 +245,9 @@ const inlineTopLevelImports = async (
     visited.add(resolvedHref);
     const response = await fetch(resolvedHref);
     if (!response.ok) {
-      throw new Error(`${resolvedHref} の読み込みに失敗しました: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `${resolvedHref} の読み込みに失敗しました: ${response.status} ${response.statusText}`,
+      );
     }
     output += `\n${await inlineTopLevelImports(await response.text(), resolvedHref, visited)}\n`;
     cursor = range.end;
@@ -242,10 +262,7 @@ export const ensureMainCssLoaded = async (): Promise<void> => {
     TOKENS_STYLE_ID,
     new URL('../../../src/assets/css/tokens.css', import.meta.url).href,
   );
-  await ensureStyleTag(MAIN_STYLE_ID, mainCssHref, (cssText) => cssText);
-  const style = document.getElementById(MAIN_STYLE_ID);
-  if (style instanceof HTMLStyleElement && hasTopLevelImport(style.textContent ?? '')) {
-    style.textContent = await inlineTopLevelImports(style.textContent ?? '', mainCssHref);
-    await waitForStyleRecalc();
-  }
+  await ensureStyleTag(MAIN_STYLE_ID, mainCssHref, async (cssText, href) =>
+    hasTopLevelImport(cssText) ? await inlineTopLevelImports(cssText, href) : cssText,
+  );
 };

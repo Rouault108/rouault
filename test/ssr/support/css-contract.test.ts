@@ -113,8 +113,6 @@ describe('css contract helper', () => {
     );
   });
 
-
-
   it('supports base scope and does not collect media descendants', () => {
     expect(hasDeclarationForSelector(cssText, '.base', 'color', 'red', { scope: 'base' })).toBe(
       true,
@@ -150,9 +148,15 @@ describe('css contract helper', () => {
       ),
     ).toBe(true);
     expect(
-      hasAllDeclarationValuesIncludingForSelectorContaining(cssText, '.mixed', 'color', 'var(--x)', {
-        scope: 'base',
-      }),
+      hasAllDeclarationValuesIncludingForSelectorContaining(
+        cssText,
+        '.mixed',
+        'color',
+        'var(--x)',
+        {
+          scope: 'base',
+        },
+      ),
     ).toBe(false);
     expect(
       hasNoDeclarationValueIncludingForSelectorContaining(cssText, '.mixed', 'var(--x)', {
@@ -175,7 +179,6 @@ describe('css contract helper', () => {
       }),
     ).toThrow(/scope と mediaPredicate/u);
   });
-
 
   it('checks direct property absence for a selector', () => {
     expect(lacksDeclarationPropertyForSelector(cssText, '.property-present', 'background')).toBe(

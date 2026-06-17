@@ -41,7 +41,9 @@ describe('details block static contract', () => {
           type: 'element',
           tagName: 'details',
           properties: { 'data-details-source': 'true', summary: '補足', open: true },
-          children: [{ type: 'element', tagName: 'p', children: [{ type: 'text', value: '本文' }] }],
+          children: [
+            { type: 'element', tagName: 'p', children: [{ type: 'text', value: '本文' }] },
+          ],
         },
       ],
     };

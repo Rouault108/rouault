@@ -1227,7 +1227,9 @@ describe('remarkRouaultDirectives', () => {
     expect(sandbox?.data?.hProperties?.['height-mode']).to.equal('bounded-auto');
     expect(sandbox?.data?.hProperties?.['height']).to.equal('160');
     expect(sandbox?.data?.hProperties?.['max-height']).to.equal('320');
-    expect(sandbox?.data?.hProperties?.['base-url']).to.equal('https://rouault.invalid/assets/preview/demo/');
+    expect(sandbox?.data?.hProperties?.['base-url']).to.equal(
+      'https://rouault.invalid/assets/preview/demo/',
+    );
     expect(sandbox?.children).to.have.length(3);
   });
 

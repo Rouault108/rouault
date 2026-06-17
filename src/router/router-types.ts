@@ -12,7 +12,6 @@ import type { LoadedInternalDocumentRouteManifestState } from './internal-docume
 import type { RouterDiagnosticPayload } from './router-diagnostics.js';
 import type { InternalDocumentNormalizedUrl } from './internal-document-normalized-url.js';
 
-
 export type NavigationValidationFailureReason =
   | 'disallowed-url'
   | 'route-manifest-unavailable'

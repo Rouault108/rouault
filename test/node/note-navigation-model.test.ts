@@ -461,7 +461,6 @@ describe('buildNoteNavigationModel', () => {
     expect(first.topologyRevision).to.equal(second.topologyRevision);
   });
 
-
   it('selectedId が sidebarTree 外を指す場合は hard fail すること', () => {
     expect(() =>
       buildNoteNavigationModel({
@@ -487,7 +486,8 @@ describe('buildNoteNavigationModel', () => {
           },
         ],
       }),
-    ).to.throw(/selectedId program\/csharp\/value-types must identify a leaf node inside sidebarTree/u);
+    ).to.throw(
+      /selectedId program\/csharp\/value-types must identify a leaf node inside sidebarTree/u,
+    );
   });
-
 });

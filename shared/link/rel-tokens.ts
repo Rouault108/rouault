@@ -1,4 +1,11 @@
-const REL_TOKEN_ORDER = ['noopener', 'noreferrer', 'external', 'nofollow', 'ugc', 'sponsored'] as const;
+const REL_TOKEN_ORDER = [
+  'noopener',
+  'noreferrer',
+  'external',
+  'nofollow',
+  'ugc',
+  'sponsored',
+] as const;
 export const FORBIDDEN_REL_TOKENS = ['opener'] as const;
 
 const orderOf = (token: string): number => {

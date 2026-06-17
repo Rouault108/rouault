@@ -27,7 +27,9 @@ describe('navigation shell validator', () => {
   });
 
   it('absent runtime sidebar は canonical 値だけを受け取ること', () => {
-    expect(validateRuntimeSidebarProjection(createCanonicalAbsentRuntimeSidebarProjection())).toEqual({
+    expect(
+      validateRuntimeSidebarProjection(createCanonicalAbsentRuntimeSidebarProjection()),
+    ).toEqual({
       ...createCanonicalAbsentRuntimeSidebarProjection(),
       sidebarId: DEFAULT_SIDEBAR_ID,
     });

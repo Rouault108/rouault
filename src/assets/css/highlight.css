@@ -1,1 +1,4 @@
-mark[data-highlight] { background: var(--bg-highlight-subtle, transparent); color: inherit; }
+mark[data-highlight] {
+  background: var(--bg-highlight-subtle, transparent);
+  color: inherit;
+}

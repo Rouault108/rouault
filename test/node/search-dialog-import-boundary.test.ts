@@ -59,14 +59,18 @@ describe('search dialog import boundary', () => {
 
     const enhancer = readSource('src/client/post-hydrate/search-dialog-enhancer.ts');
     expect(enhancer).not.toContain('dispatchSearchDialogEvent');
-    expect(enhancer).toContain("controller?.tryOpen({ trigger: anchor, modality: 'pointer' }) === true");
+    expect(enhancer).toContain(
+      "controller?.tryOpen({ trigger: anchor, modality: 'pointer' }) === true",
+    );
     expect(enhancer).toContain('event.preventDefault()');
   });
 
   it('selection model remains DOM independent', () => {
     const selectionModel = readSource('src/search/search-dialog-selection-model.ts');
     expect(selectionModel).not.toContain('SearchDialogVirtualizer');
-    expect(selectionModel).not.toMatch(/\b(?:KeyboardEvent|Event|HTMLElement|HTMLInputElement|HTMLButtonElement|ShadowRoot)\b/u);
+    expect(selectionModel).not.toMatch(
+      /\b(?:KeyboardEvent|Event|HTMLElement|HTMLInputElement|HTMLButtonElement|ShadowRoot)\b/u,
+    );
     expect(selectionModel).not.toContain('composedPath');
     expect(selectionModel).not.toContain('.closest(');
     expect(selectionModel).not.toContain('querySelector');
@@ -79,8 +83,12 @@ describe('search dialog import boundary', () => {
   it('static dialog controller keeps close lifecycle and safe row rendering boundaries', () => {
     const controller = readSource('src/client/post-hydrate/search-dialog-dom-controller.ts');
     expect(controller).toContain('let closeRequestPending = false');
-    expect(controller).toContain('state.activeCloseGeneration === null && (state.bodyLockHeld || state.isOpen)');
-    expect(controller).toContain("completeCloseOnce('external-native-close', state.closeOperationGeneration)");
+    expect(controller).toContain(
+      'state.activeCloseGeneration === null && (state.bodyLockHeld || state.isOpen)',
+    );
+    expect(controller).toContain(
+      "completeCloseOnce('external-native-close', state.closeOperationGeneration)",
+    );
     expect(controller).toContain("row.dataset['itemId'] = item.id");
     expect(controller).not.toContain('row.innerHTML');
   });

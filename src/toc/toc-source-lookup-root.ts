@@ -46,8 +46,8 @@ export const findTocSourceScript = (
   const source =
     lookupRoot instanceof Document
       ? lookupRoot.getElementById(normalizedSourceId)
-      : lookupRoot.querySelector(`#${escapeSelectorIdent(normalizedSourceId)}`) ??
-        (fallbackDocument !== null ? fallbackDocument.getElementById(normalizedSourceId) : null);
+      : (lookupRoot.querySelector(`#${escapeSelectorIdent(normalizedSourceId)}`) ??
+        (fallbackDocument !== null ? fallbackDocument.getElementById(normalizedSourceId) : null));
 
   return source instanceof HTMLScriptElement ? source : null;
 };

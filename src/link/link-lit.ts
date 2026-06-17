@@ -1,7 +1,11 @@
 import { classifyLinkHref, type ClassifyLinkOptions } from '../../shared/link/link-annotation.js';
 import type { LinkSurface } from '../../shared/link/link-surface.js';
 import type { SafeLinkKind } from '../../shared/link/link-kind.js';
-import { hasForbiddenRelToken, parseRelTokens, serializeRelTokens } from '../../shared/link/rel-tokens.js';
+import {
+  hasForbiddenRelToken,
+  parseRelTokens,
+  serializeRelTokens,
+} from '../../shared/link/rel-tokens.js';
 import { hasAsciiControlCharacter } from '../../shared/string/ascii-control.js';
 
 export type LitLinkAttributes =
@@ -43,12 +47,17 @@ const validateDownload = (value: boolean | string | undefined): boolean | string
   return trimmed;
 };
 
-export const buildLitLinkAttributes = (options: BuildLitLinkAttributesOptions): LitLinkAttributes => {
+export const buildLitLinkAttributes = (
+  options: BuildLitLinkAttributesOptions,
+): LitLinkAttributes => {
   const annotation = classifyLinkHref({ ...options, surface: options.surface });
   if (annotation.isUnsafe) return { isUnsafe: true, kind: 'unsafe' };
   const relTokens = parseRelTokens(options.rel);
   if (hasForbiddenRelToken(relTokens)) throw new Error('forbidden-rel-token');
-  const rel = options.target === '_blank' ? serializeRelTokens([...relTokens, 'noopener']) : serializeRelTokens(relTokens);
+  const rel =
+    options.target === '_blank'
+      ? serializeRelTokens([...relTokens, 'noopener'])
+      : serializeRelTokens(relTokens);
   const download = validateDownload(options.download);
   return {
     isUnsafe: false,
@@ -59,6 +68,10 @@ export const buildLitLinkAttributes = (options: BuildLitLinkAttributesOptions): 
     ...(options.target ? { target: options.target } : {}),
     ...(rel.length > 0 ? { rel } : {}),
     ...(options.noRouter ? { dataNoRouter: true as const } : {}),
-    ...(download === true ? { download: true as const } : typeof download === 'string' ? { download } : {}),
+    ...(download === true
+      ? { download: true as const }
+      : typeof download === 'string'
+        ? { download }
+        : {}),
   };
 };

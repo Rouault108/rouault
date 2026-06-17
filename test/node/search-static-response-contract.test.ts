@@ -175,7 +175,8 @@ describe('static explore response contract', () => {
   it('source-level contract keeps production/shared static parser call sites on the metadata-only signature', () => {
     for (const path of staticParserProductionCallSitePaths) {
       const source = readFileSync(resolve(process.cwd(), path), 'utf8');
-      const calls = source.match(/parseStaticExploreSearchResponseJson\(\{[\s\S]*?\n\s*\}\)/gu) ?? [];
+      const calls =
+        source.match(/parseStaticExploreSearchResponseJson\(\{[\s\S]*?\n\s*\}\)/gu) ?? [];
       expect(calls.length, path).to.be.greaterThan(0);
       for (const call of calls) {
         expect(call, path).not.toContain('siteUrlContext:');
@@ -356,7 +357,9 @@ describe('static explore response contract', () => {
 
     expect(catalogResultType).toContain('readonly droppedItemCount: number;');
     expect(staticResultType).toContain('readonly metadata: StaticExploreParseMetadata;');
-    expect(staticResultType).not.toMatch(/readonly response: StaticExploreSearchResponse;[\s\S]*readonly droppedItemCount/u);
+    expect(staticResultType).not.toMatch(
+      /readonly response: StaticExploreSearchResponse;[\s\S]*readonly droppedItemCount/u,
+    );
     expect(staticResultType).not.toContain('readonly droppedItemCount: number;');
     expect(staticResultType).not.toContain('usedLegacyRankingProfileFallback');
   });

@@ -1,4 +1,7 @@
-import { classifyLinkHref, createManifestLoadedRouteClassificationMode } from '../../shared/link/link-annotation.js';
+import {
+  classifyLinkHref,
+  createManifestLoadedRouteClassificationMode,
+} from '../../shared/link/link-annotation.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
 import { LocationAdapter } from './location-adapter.js';
 import type { NavigationResult } from './router-types.js';
@@ -98,10 +101,7 @@ export class RouterLinkInterceptor {
       anchor.relList.contains('external') ||
       (typeof relValue === 'string' && relValue.split(/\s+/u).includes('external'));
 
-    if (
-      isExternalRel ||
-      anchor.hasAttribute('data-no-router')
-    ) {
+    if (isExternalRel || anchor.hasAttribute('data-no-router')) {
       return;
     }
 
@@ -158,5 +158,9 @@ export const attachRouterLinkInterceptor = (
 ): { readonly dispose: () => void } => {
   const interceptor = new RouterLinkInterceptor(options);
   interceptor.attach();
-  return { dispose: () => { interceptor.detach(); } };
+  return {
+    dispose: () => {
+      interceptor.detach();
+    },
+  };
 };

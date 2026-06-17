@@ -33,7 +33,9 @@ describe('velite config', () => {
     expect(source).toContain('testingArea: s.enum(TESTING_AREAS).optional(),');
     expect(source).toContain('e2eFixtureId: s.string().optional(),');
     expect(source).toContain('const kind = normalizeNoteContentKind(data.kind);');
-    expect(source).toContain('const chromeProfile = normalizeNoteChromeProfile(data.chromeProfile);');
+    expect(source).toContain(
+      'const chromeProfile = normalizeNoteChromeProfile(data.chromeProfile);',
+    );
     expect(source).toContain('const testingArea = normalizeTestingArea(data.testingArea);');
     expect(source).toContain('const e2eFixtureId =');
     expect(source).toContain(
@@ -49,7 +51,9 @@ describe('velite config', () => {
     expect(source).toContain('html: normalizedContent');
     expect(source).toContain('sourceLabel: sourcePath');
     expect(source).toContain('content: normalizedContent,');
-    expect(source).toContain('chromeProfile: resolveEffectiveNoteChromeProfile(kind, chromeProfile),');
+    expect(source).toContain(
+      'chromeProfile: resolveEffectiveNoteChromeProfile(kind, chromeProfile),',
+    );
   });
 
   it('remarkGfm を Markdown frontmatter pipeline に含めること', () => {
@@ -93,7 +97,9 @@ describe('velite config', () => {
     const headingIdsIndex = source.lastIndexOf('rehypeHeadingIds,');
     const staticCodeGroupsIndex = source.lastIndexOf('rehypeStaticCodeGroups,');
     const rouaultComponentsIndex = source.lastIndexOf('rehypeRouaultComponents,');
-    const annotateLinkKindsIndex = source.indexOf('rehypeAnnotateLinkKinds(resolveBuildLinkAnnotationOptions()),');
+    const annotateLinkKindsIndex = source.indexOf(
+      'rehypeAnnotateLinkKinds(resolveBuildLinkAnnotationOptions()),',
+    );
     const inlineCodeTranslateNoIndex = source.indexOf('rehypeInlineCodeTranslateNo,');
 
     expect(shikiCodeBlocksIndex).toBeGreaterThan(-1);

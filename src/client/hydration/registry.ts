@@ -59,10 +59,7 @@ const activateLayoutSidebar = ({ element }: HydrationActivationContext): void =>
   }
 };
 
-const activateLayoutTocController = async ({
-  element,
-  signal,
-}: HydrationActivationContext) => {
+const activateLayoutTocController = async ({ element, signal }: HydrationActivationContext) => {
   if (signal.aborted) {
     return;
   }

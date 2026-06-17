@@ -76,7 +76,9 @@ describe('renderFooter', () => {
       ],
     });
 
-    expect(rendered).toContain('<footer id="footer-default" class="ui-footer" data-footer data-layout-footer>');
+    expect(rendered).toContain(
+      '<footer id="footer-default" class="ui-footer" data-footer data-layout-footer>',
+    );
     expect(rendered).toContain('class="ui-footer__inner"');
     expect(rendered).toContain('class="ui-footer__meta"');
     expect(rendered).toContain('class="ui-footer__brand"');
@@ -99,7 +101,9 @@ describe('renderFooter', () => {
       meta: BASE_META,
     });
 
-    expect(rendered).toContain('<footer id="footer-minimal" class="ui-footer" data-footer data-layout-footer>');
+    expect(rendered).toContain(
+      '<footer id="footer-minimal" class="ui-footer" data-footer data-layout-footer>',
+    );
     expect(rendered).toContain('class="ui-footer__meta"');
     expect(rendered).toContain('class="ui-footer__subline"');
     expect(rendered).toContain('class="ui-footer__legal"');
@@ -134,7 +138,9 @@ describe('renderFooter', () => {
 
     const externalLink = findAnchorOpenTagByHref(rendered, 'https://example.com');
 
-    expect(findAnchorOpenTagByText(rendered, 'Rouault')).toContain('href="https://rouault.example"');
+    expect(findAnchorOpenTagByText(rendered, 'Rouault')).toContain(
+      'href="https://rouault.example"',
+    );
     expect(rendered).toContain('release 2026.03.24');
     expect(rendered).toContain('aria-label="フッター補助導線"');
     expect(rendered).toContain('href="/license"');

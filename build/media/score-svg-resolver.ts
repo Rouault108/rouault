@@ -57,10 +57,7 @@ const resolveScorePath = (src: string, options: ResolveScoreSvgOptions): string 
   return matched;
 };
 
-export const resolveScoreSvg = (
-  src: string,
-  options: ResolveScoreSvgOptions = {},
-): string => {
+export const resolveScoreSvg = (src: string, options: ResolveScoreSvgOptions = {}): string => {
   const filePath = resolveScorePath(src, options);
   const rawSvg = readFileSync(filePath, 'utf8');
   return sanitizeScoreSvg(rawSvg, src);

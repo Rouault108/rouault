@@ -1,7 +1,10 @@
 import path from 'node:path';
 import { readFileSync, statSync } from 'node:fs';
 import { isLocalContentAssetPath, resolveLinkCardImage } from '../media/image-resolver.js';
-import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
+import {
+  resolveDevelopmentSiteUrlContext,
+  resolveProductionSiteUrlContext,
+} from '../site/site-url-context.js';
 import { resolveNoteLinkClassificationContext } from '../content/resolve-note-current-url.js';
 import { resolveNoteSourcePathFromVFile } from '../content/note-source-vfile.js';
 import { resolveLinkCardUrlPolicy, type LinkCardUrlPolicyContext } from './link-card-url-policy.js';
@@ -106,7 +109,6 @@ const isWhitespaceText = (node: MdastNode): boolean =>
 const getMeaningfulChildren = (node: MdastNode): MdastNode[] =>
   Array.isArray(node.children) ? node.children.filter((child) => !isWhitespaceText(child)) : [];
 
-
 const createLinkCardPolicyContext = (file?: VFileLike): LinkCardUrlPolicyContext => {
   const siteUrlContext = process.env['ROUAULT_SITE_ORIGIN']
     ? resolveProductionSiteUrlContext()
@@ -141,7 +143,11 @@ const resolveCardHref = (
   return { kind: 'fallback' };
 };
 
-const createFallbackLinkParagraph = (source: LinkCardSource, href: string, sourceNode: MdastNode): MdastNode => ({
+const createFallbackLinkParagraph = (
+  source: LinkCardSource,
+  href: string,
+  sourceNode: MdastNode,
+): MdastNode => ({
   type: 'paragraph',
   children: [
     {

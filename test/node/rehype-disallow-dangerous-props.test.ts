@@ -180,8 +180,6 @@ describe('rehypeDisallowDangerousProps', () => {
     expect(run).to.throw('style property color is not allowed');
   });
 
-
-
   it('SVG / MathML subtree の URL-bearing attribute を禁止すること', () => {
     const tree: HastNode = {
       type: 'root',

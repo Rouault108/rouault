@@ -23,9 +23,7 @@ export type HydrationActivationResult =
   | { readonly status: 'skipped'; readonly reason: HydrationSkippedReason }
   | { readonly status: 'aborted' };
 
-export const normalizeHydrationActivationResult = (
-  value: unknown,
-): HydrationActivationResult => {
+export const normalizeHydrationActivationResult = (value: unknown): HydrationActivationResult => {
   if (
     typeof value === 'object' &&
     value !== null &&

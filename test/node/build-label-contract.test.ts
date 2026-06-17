@@ -12,7 +12,10 @@ describe('buildLabel contract', () => {
   it('表示用 label として空白を trim し buildId grammar とは独立して受理すること', () => {
     expect(normalizeBuildLabel(' release 2026.04.11 ')).toBe('release 2026.04.11');
     expect(isBuildLabelString('release with spaces')).toBe(true);
-    expect(validateBuildLabelInput(' build local ')).toEqual({ kind: 'valid', value: 'build local' });
+    expect(validateBuildLabelInput(' build local ')).toEqual({
+      kind: 'valid',
+      value: 'build local',
+    });
     expect(requireBuildLabelInput(' build local ')).toBe('build local');
     expect(normalizeOptionalBuildLabel(' build local ')).toBe('build local');
   });

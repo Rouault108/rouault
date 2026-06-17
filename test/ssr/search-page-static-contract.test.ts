@@ -5,18 +5,25 @@ import { describe, expect, it } from 'vitest';
 
 import { buildStaticExploreResponse } from '../../build/search/build-static-explore-response.js';
 import type { SearchState } from '../../shared/search/search-types.js';
-import { createSiteUrlContext, DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
+import {
+  createSiteUrlContext,
+  DEFAULT_SITE_URL_CONTEXT,
+} from '../../shared/site/site-url-context.js';
 import { renderSearchPageHtml } from '../../src/layouts/search-page-html.js';
 
 describe('renderSearchPageHtml static contract', () => {
   it('production templates require and pass siteUrlContext without renderer fallback', () => {
     const searchTemplate = readFileSync(resolve(process.cwd(), 'src/search.11ty.ts'), 'utf8');
     const tagsTemplate = readFileSync(resolve(process.cwd(), 'src/tags.11ty.ts'), 'utf8');
-    const renderer = readFileSync(resolve(process.cwd(), 'src/layouts/search-page-html.ts'), 'utf8');
-    const rendererFunctions = renderer.slice(
-      renderer.indexOf('const renderResults ='),
-      renderer.indexOf('export const renderSearchPageHtml'),
-    ) + renderer.slice(renderer.indexOf('export const renderSearchPageHtml'));
+    const renderer = readFileSync(
+      resolve(process.cwd(), 'src/layouts/search-page-html.ts'),
+      'utf8',
+    );
+    const rendererFunctions =
+      renderer.slice(
+        renderer.indexOf('const renderResults ='),
+        renderer.indexOf('export const renderSearchPageHtml'),
+      ) + renderer.slice(renderer.indexOf('export const renderSearchPageHtml'));
 
     expect(searchTemplate).toContain('siteUrlContext: SiteUrlContext | null;');
     expect(tagsTemplate).toContain('siteUrlContext: SiteUrlContext | null;');

@@ -50,9 +50,7 @@ export const resolveDirectoryLabel = (
   directoryLabelMap: ReadonlyMap<string, string>,
 ): string => directoryLabelMap.get(directoryPath) ?? fallbackDirectoryLabel(directoryPath);
 
-export const resolvePageLabel = (
-  note: Pick<NoteNavigationEntry, 'slug' | 'title'>,
-): string => {
+export const resolvePageLabel = (note: Pick<NoteNavigationEntry, 'slug' | 'title'>): string => {
   const title = toTrimmedString(note.title);
   if (title.length > 0) {
     return title;

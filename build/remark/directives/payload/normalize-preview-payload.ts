@@ -114,7 +114,6 @@ export const normalizeToolbarSlotPayload = (): ToolbarSlotPayload => ({
   kind: 'toolbar',
 });
 
-
 const normalizePreviewSandboxBaseUrl = (
   value: string,
   policyContext: NotePolicyContext | undefined,

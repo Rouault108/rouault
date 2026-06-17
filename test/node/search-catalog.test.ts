@@ -9,7 +9,9 @@ import { createSearchArtifactUrlResolver } from '../../shared/search/search-arti
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import type { SearchCatalogFetcher } from '../../shared/search/search-loaders.js';
 
-const artifactUrlResolver = createSearchArtifactUrlResolver({ siteUrlContext: DEFAULT_SITE_URL_CONTEXT });
+const artifactUrlResolver = createSearchArtifactUrlResolver({
+  siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+});
 const isInternalDocumentPathname = (pathname: string): boolean => pathname.startsWith('/notes/');
 
 const makeResponse = (payload: unknown, init: ResponseInit = { status: 200 }): Response =>
@@ -70,11 +72,12 @@ describe('search-catalog', () => {
 
   it('redirect / wrong MIME を catalog-fetch-failed として拒否すること', async () => {
     await expect(
-      loadWithFetcher(async () =>
-        new Response('[]', {
-          status: 200,
-          headers: { 'Content-Type': 'text/plain' },
-        }),
+      loadWithFetcher(
+        async () =>
+          new Response('[]', {
+            status: 200,
+            headers: { 'Content-Type': 'text/plain' },
+          }),
       ),
     ).rejects.toMatchObject({ code: 'catalog-fetch-failed' });
   });

@@ -20,13 +20,17 @@ const accessibilityDocs = readFileSync(
 );
 
 describe('tokens css contract', () => {
-
-
   it('defines sidebar active surface through theme-aware surface token', () => {
     expect(
-      hasDeclarationForSelector(tokensCss, ':root', '--sidebar-item-active-bg', 'var(--bg-surface-active)', {
-        scope: 'base',
-      }),
+      hasDeclarationForSelector(
+        tokensCss,
+        ':root',
+        '--sidebar-item-active-bg',
+        'var(--bg-surface-active)',
+        {
+          scope: 'base',
+        },
+      ),
     ).toBe(true);
     expect(
       hasDeclarationForSelector(
@@ -38,9 +42,15 @@ describe('tokens css contract', () => {
       ),
     ).toBe(true);
     expect(
-      hasDeclarationForSelector(tokensCss, ':root', '--sidebar-item-indent-step', 'var(--space-4)', {
-        scope: 'base',
-      }),
+      hasDeclarationForSelector(
+        tokensCss,
+        ':root',
+        '--sidebar-item-indent-step',
+        'var(--space-4)',
+        {
+          scope: 'base',
+        },
+      ),
     ).toBe(true);
     expect(
       hasDeclarationValueIncluding(

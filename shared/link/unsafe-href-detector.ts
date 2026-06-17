@@ -48,7 +48,8 @@ const hasProtocolRelativeCredentials = (href: string): boolean => {
 
   const authorityAndRest = href.slice(2);
   const authorityEndIndex = authorityAndRest.search(/[/?#]/u);
-  const authority = authorityEndIndex < 0 ? authorityAndRest : authorityAndRest.slice(0, authorityEndIndex);
+  const authority =
+    authorityEndIndex < 0 ? authorityAndRest : authorityAndRest.slice(0, authorityEndIndex);
   return CREDENTIALS_IN_AUTHORITY_RE.test(authority);
 };
 

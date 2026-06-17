@@ -1,14 +1,24 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
 import type {
   MediaManifest,
   MediaManifestItem,
+  MediaObjectContract,
   MediaVariantEntry,
-  MediaVariantOutput,
-} from '../build/media/image-resolver.js';
+  MediaVariant,
+} from '../shared/media/media-object-contract.js';
+import {
+  buildMediaObjectKey,
+  MEDIA_FORMAT_CONTENT_TYPE,
+  MEDIA_FORMAT_EXTENSION,
+  MEDIA_FORMATS,
+  MEDIA_MANIFEST_SCHEMA_VERSION,
+  MEDIA_VARIANTS,
+} from '../shared/media/media-object-contract.js';
 import { getMediaBaseUrl, resolveMediaAssetUrl } from '../build/media/media-base-url.js';
 
 const CONTENT_ROOT = path.resolve(process.cwd(), 'content');
@@ -24,43 +34,25 @@ const LINK_CARD_THUMBNAIL_CACHE_PATH = path.join(
 const GENERATOR_VERSION = '1.0.0';
 const VARIANT_SET_VERSION = 'reading-v1';
 
-type VariantName = 'thumb' | 'reading' | 'full';
-
 interface VariantDefinition {
   readonly width: number;
-  readonly formats: readonly ('avif' | 'webp' | 'jpeg')[];
 }
 
 interface LinkCardThumbnailCache {
   readonly entries?: Record<string, { readonly sourcePath?: string }>;
 }
 
-const VARIANT_DEFINITIONS: Record<VariantName, VariantDefinition> = {
+const VARIANT_DEFINITIONS: Record<MediaVariant, VariantDefinition> = {
   thumb: {
     width: 320,
-    formats: ['avif', 'webp', 'jpeg'],
   },
   reading: {
     width: 1200,
-    formats: ['avif', 'webp', 'jpeg'],
   },
   full: {
     width: 2000,
-    formats: ['avif', 'webp', 'jpeg'],
   },
 };
-
-const MEDIA_TYPE_BY_FORMAT = {
-  avif: 'image/avif',
-  webp: 'image/webp',
-  jpeg: 'image/jpeg',
-} as const;
-
-const EXTENSION_BY_FORMAT = {
-  avif: 'avif',
-  webp: 'webp',
-  jpeg: 'jpg',
-} as const;
 
 const pickOptionalString = (value: unknown): string | undefined => {
   if (typeof value !== 'string') {
@@ -204,17 +196,17 @@ const buildPlaceholder = async (fileBuffer: Buffer): Promise<string | undefined>
 
 const createVariantOutputs = async (
   fileBuffer: Buffer,
-  hash: string,
-  variantName: VariantName,
+  mediaItemId: string,
+  variantName: MediaVariant,
   definition: VariantDefinition,
   mediaBaseUrl: string | undefined,
-): Promise<MediaVariantOutput[]> => {
-  const outputs: MediaVariantOutput[] = [];
-  const variantDirectory = path.join(GENERATED_ASSET_ROOT, hash);
+): Promise<MediaObjectContract[]> => {
+  const outputs: MediaObjectContract[] = [];
+  const variantDirectory = path.join(GENERATED_ASSET_ROOT, mediaItemId);
   await mkdir(variantDirectory, { recursive: true });
 
-  for (const format of definition.formats) {
-    const outputFileName = `${variantName}.${EXTENSION_BY_FORMAT[format]}`;
+  for (const format of MEDIA_FORMATS) {
+    const outputFileName = `${variantName}.${MEDIA_FORMAT_EXTENSION[format]}`;
     const outputPath = path.join(variantDirectory, outputFileName);
     const pipeline = sharp(fileBuffer).rotate().resize({
       width: definition.width,
@@ -230,11 +222,18 @@ const createVariantOutputs = async (
     }
 
     const outputStat = await stat(outputPath);
+    const outputBuffer = await readFile(outputPath);
+    const contentSha256 = createHash('sha256').update(outputBuffer).digest('hex');
+    const objectKey = buildMediaObjectKey(contentSha256, variantName, format);
     outputs.push({
+      mediaItemId,
+      variant: variantName,
       format,
-      mediaType: MEDIA_TYPE_BY_FORMAT[format],
+      objectKey,
+      contentSha256,
       byteSize: outputStat.size,
-      url: resolveMediaAssetUrl(hash, outputFileName, mediaBaseUrl),
+      contentType: MEDIA_FORMAT_CONTENT_TYPE[format],
+      publicUrl: resolveMediaAssetUrl(objectKey, mediaBaseUrl),
     });
   }
 
@@ -248,6 +247,7 @@ const buildManifestItem = async (
   const absolutePath = path.resolve(process.cwd(), sourcePath);
   const fileBuffer = await readFile(absolutePath);
   const hash = createHash('sha256').update(fileBuffer).digest('hex').slice(0, 12);
+  const mediaItemId = normalizeContentAssetPath(sourcePath);
   const metadata = await sharp(fileBuffer).metadata();
 
   if (!metadata.width || !metadata.height) {
@@ -256,15 +256,15 @@ const buildManifestItem = async (
 
   const placeholder = await buildPlaceholder(fileBuffer);
   const variants = await Promise.all(
-    (Object.entries(VARIANT_DEFINITIONS) as [VariantName, VariantDefinition][]).map(
-      async ([variantName, definition]): Promise<[VariantName, MediaVariantEntry]> => [
+    MEDIA_VARIANTS.map(
+      async (variantName): Promise<[MediaVariant, MediaVariantEntry]> => [
         variantName,
         {
           outputs: await createVariantOutputs(
             fileBuffer,
-            hash,
+            mediaItemId,
             variantName,
-            definition,
+            VARIANT_DEFINITIONS[variantName],
             mediaBaseUrl,
           ),
         },
@@ -273,6 +273,7 @@ const buildManifestItem = async (
   );
 
   return {
+    mediaItemId,
     hash,
     width: metadata.width,
     height: metadata.height,
@@ -284,7 +285,7 @@ const buildManifestItem = async (
           },
         }
       : {}),
-    variants: Object.fromEntries(variants) as Record<VariantName, MediaVariantEntry>,
+    variants: Object.fromEntries(variants) as Record<MediaVariant, MediaVariantEntry>,
   };
 };
 
@@ -307,7 +308,7 @@ export const buildImageManifest = async (): Promise<MediaManifest> => {
   ) as Record<string, MediaManifestItem>;
 
   const manifest: MediaManifest = {
-    schemaVersion: 1,
+    schemaVersion: MEDIA_MANIFEST_SCHEMA_VERSION,
     generatorVersion: GENERATOR_VERSION,
     variantSetVersion: VARIANT_SET_VERSION,
     items,
@@ -317,6 +318,17 @@ export const buildImageManifest = async (): Promise<MediaManifest> => {
   return manifest;
 };
 
+export const isDirectCliInvocation = (
+  entryPoint: string | undefined,
+  moduleUrl: string,
+): boolean => {
+  if (entryPoint === undefined) {
+    return false;
+  }
+
+  return path.resolve(entryPoint) === path.resolve(fileURLToPath(moduleUrl));
+};
+
 const run = async (): Promise<void> => {
   const manifest = await buildImageManifest();
   console.log(
@@ -324,7 +336,6 @@ const run = async (): Promise<void> => {
   );
 };
 
-const entryPoint = process.argv[1];
-if (typeof entryPoint === 'string' && import.meta.url === `file://${entryPoint}`) {
+if (isDirectCliInvocation(process.argv[1], import.meta.url)) {
   void run();
 }

@@ -249,19 +249,17 @@ export const renderDefaultLayoutFooterHtml = (
   buildLabel: string,
   options: { readonly idContext?: StaticRenderIdContext } = {},
 ): string =>
-  renderFooterHtml(
-    {
-      ...buildLayoutFooterOptions({
-        footerId: undefined,
-        siteEyebrow: undefined,
-        siteName: undefined,
-        siteUrl: undefined,
-        siteDescription: undefined,
-        copyrightText: undefined,
-        buildLabel,
-        navLabel: undefined,
-        linksJson: undefined,
-      }),
-      ...(options.idContext ? { idContext: options.idContext } : {}),
-    },
-  );
+  renderFooterHtml({
+    ...buildLayoutFooterOptions({
+      footerId: undefined,
+      siteEyebrow: undefined,
+      siteName: undefined,
+      siteUrl: undefined,
+      siteDescription: undefined,
+      copyrightText: undefined,
+      buildLabel,
+      navLabel: undefined,
+      linksJson: undefined,
+    }),
+    ...(options.idContext ? { idContext: options.idContext } : {}),
+  });

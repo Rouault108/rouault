@@ -1,5 +1,8 @@
 import type { IntrinsicNote, IntrinsicNotesCollection } from '../../build/data/notes.js';
-import { resolveDevelopmentSiteUrlContext, resolveProductionSiteUrlContext } from '../site/site-url-context.js';
+import {
+  resolveDevelopmentSiteUrlContext,
+  resolveProductionSiteUrlContext,
+} from '../site/site-url-context.js';
 import { applyBasePathToRenderHref } from '../../shared/url/normalize-rouault-url.js';
 import { buildCorpusPageProjection, type CorpusPageEntry } from './corpus-page-projection.js';
 import { buildHomePageProjection, type HomeNoteItem } from './home-page-projection.js';

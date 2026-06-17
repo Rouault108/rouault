@@ -65,7 +65,6 @@ describe('build metadata', () => {
     }
   });
 
-
   it('production metadata は buildLabel missing を hard fail すること', () => {
     const previousBuildLabel = process.env['ROUAULT_BUILD_LABEL'];
     delete process.env['ROUAULT_BUILD_LABEL'];
@@ -82,7 +81,10 @@ describe('build metadata', () => {
     delete process.env['ROUAULT_BUILD_LABEL'];
 
     try {
-      expect(resolveDevelopmentBuildMetadata({ buildId: 'dev', generatedAt: '2026-04-11T00:00:00.000Z' }).buildLabel).to.equal('build local');
+      expect(
+        resolveDevelopmentBuildMetadata({ buildId: 'dev', generatedAt: '2026-04-11T00:00:00.000Z' })
+          .buildLabel,
+      ).to.equal('build local');
     } finally {
       restoreEnv(previousBuildLabel);
     }

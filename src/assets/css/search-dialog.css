@@ -320,25 +320,42 @@
 }
 
 @keyframes search-dialog-enter {
-  from { opacity: 0; transform: translateY(-0.5rem) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes search-dialog-exit {
-  to { opacity: 0; transform: translateY(-0.5rem) scale(0.98); }
+  to {
+    opacity: 0;
+    transform: translateY(-0.5rem) scale(0.98);
+  }
 }
 
 @keyframes search-backdrop-enter {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes search-backdrop-exit {
-  to { opacity: 0; }
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes rouault-static-spinner-rotate {
-  to { transform: rotate(1turn); }
+  to {
+    transform: rotate(1turn);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

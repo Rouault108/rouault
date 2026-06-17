@@ -74,11 +74,11 @@ build-time で決定し、`layout-toc-controller[capabilities-json]` へ渡し�
 
 ### 4.1 入力
 
-| 名前       | 種別                               | 契約                         |
-| ---------- | ---------------------------------- | ---------------------------- |
-| `headers`  | property                           | 描画対象見出し。唯一のソース |
-| `activeId`    | property / attribute (`active-id`)       | 現在アクティブな見出し ID                                        |
-| `densityTier` | property / attribute (`density-tier`)    | `compact` / `comfortable` / `expanded` の視覚密度。意味論は変えない |
+| 名前          | 種別                                  | 契約                                                                |
+| ------------- | ------------------------------------- | ------------------------------------------------------------------- |
+| `headers`     | property                              | 描画対象見出し。唯一のソース                                        |
+| `activeId`    | property / attribute (`active-id`)    | 現在アクティブな見出し ID                                           |
+| `densityTier` | property / attribute (`density-tier`) | `compact` / `comfortable` / `expanded` の視覚密度。意味論は変えない |
 
 ### 4.2 イベント
 

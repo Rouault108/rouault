@@ -36,7 +36,9 @@ export const assertPayloadSidebarProjectionPresent = (
   }
 
   if (typeof value.topologyRevision !== 'string' || value.topologyRevision.trim().length === 0) {
-    throw new Error('present payload sidebar shell.sidebarProjection.topologyRevision must be non-empty.');
+    throw new Error(
+      'present payload sidebar shell.sidebarProjection.topologyRevision must be non-empty.',
+    );
   }
 
   return value;

@@ -16,7 +16,10 @@ const renderDisclosureIcon = (): string =>
     '</span>',
   ].join('');
 
-const renderRows = (rows: readonly SidebarNavRow[], groupIdPrefix: SidebarGroupIdPrefix): string => {
+const renderRows = (
+  rows: readonly SidebarNavRow[],
+  groupIdPrefix: SidebarGroupIdPrefix,
+): string => {
   if (rows.length === 0) {
     throw new Error('[navigation] present sidebar nav must contain at least one row.');
   }

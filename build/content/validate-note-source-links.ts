@@ -145,9 +145,8 @@ const buildPolicyContextFromFrontmatter = (
     createNoteDirectiveUrlPolicyContext(file),
   );
 
-const toResolveOptions = (
-  sourceRootPaths: Partial<Record<NoteSourceRoot, string>> | undefined,
-) => (sourceRootPaths === undefined ? {} : { sourceRootPaths });
+const toResolveOptions = (sourceRootPaths: Partial<Record<NoteSourceRoot, string>> | undefined) =>
+  sourceRootPaths === undefined ? {} : { sourceRootPaths };
 
 export const stripYamlFrontmatter = (raw: string): StrippedMarkdownBody => {
   const hadBom = raw.startsWith('\uFEFF');
@@ -187,7 +186,9 @@ export async function collectNoteSourceLinksFromMarkdown(
     value: options.body,
     data: {},
   };
-  file.data = { rouaultPolicyContext: buildPolicyContextFromFrontmatter(options.frontmatter, file) };
+  file.data = {
+    rouaultPolicyContext: buildPolicyContextFromFrontmatter(options.frontmatter, file),
+  };
 
   await remarkExpandExampleIncludes()(tree, file);
   remarkDisallowRawHtml()(tree, file);
@@ -196,7 +197,9 @@ export async function collectNoteSourceLinksFromMarkdown(
   const definitions = new Map<string, MdastNode>();
   walk(tree, (node) => {
     if (node.type === 'definition') {
-      const identifier = normalizeIdentifier((node as MdastNode & { identifier?: string }).identifier);
+      const identifier = normalizeIdentifier(
+        (node as MdastNode & { identifier?: string }).identifier,
+      );
       if (identifier && !definitions.has(identifier)) {
         definitions.set(identifier, node);
       }
@@ -262,7 +265,9 @@ export async function collectNoteSourceLinksFromMarkdown(
 }
 
 const formatLocation = (link: CollectedMarkdownUrl): string =>
-  link.position ? `${link.sourceFileDisplayPath}:${link.position.line}:${link.position.column}` : link.sourceFileDisplayPath;
+  link.position
+    ? `${link.sourceFileDisplayPath}:${link.position.line}:${link.position.column}`
+    : link.sourceFileDisplayPath;
 
 const createHrefDiagnosticRef = (href: string): string =>
   `href:${createHash('sha256').update(href).digest('hex').slice(0, 12)}`;
@@ -334,11 +339,15 @@ const sourcePathForNote = (
   sourceRootPaths: Partial<Record<NoteSourceRoot, string>>,
 ): { sourceFilePath: string; sourceFileDisplayPath: string } => {
   if (!note.sourceRoot) {
-    throw new Error(`[markdown] note.sourceRoot is required for note source link validation: ${note.rawSlug}`);
+    throw new Error(
+      `[markdown] note.sourceRoot is required for note source link validation: ${note.rawSlug}`,
+    );
   }
   const rootPath = sourceRootPaths[note.sourceRoot];
   if (!rootPath) {
-    throw new Error(`[markdown] sourceRootPaths is missing "${note.sourceRoot}" for ${note.rawSlug}`);
+    throw new Error(
+      `[markdown] sourceRootPaths is missing "${note.sourceRoot}" for ${note.rawSlug}`,
+    );
   }
   return {
     sourceFilePath: path.join(rootPath, `${note.rawSlug}.md`),

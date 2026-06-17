@@ -5,7 +5,11 @@ import { LocationAdapter } from './location-adapter.js';
 import { NavigationQueue, type QueuedNavigationRequest } from './navigation-queue.js';
 import { RouteRegistry } from './route-registry.js';
 import { RouterEventBus } from './router-event-bus.js';
-import type { NavigationResult, RouterOptions, RouterRuntimeUrlDependencies } from './router-types.js';
+import type {
+  NavigationResult,
+  RouterOptions,
+  RouterRuntimeUrlDependencies,
+} from './router-types.js';
 import { createRouterRuntimeDiagnosticSink } from './router-diagnostics.js';
 import type { RouterDiagnosticPayload } from './router-diagnostics.js';
 

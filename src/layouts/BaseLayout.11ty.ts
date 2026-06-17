@@ -149,7 +149,6 @@ const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar
     { name: 'data-hydration-trigger', value: 'initial' },
   ]);
 
-
 const buildGeneratedPageRouteSet = (data: BaseLayoutRenderInput): Set<string> => {
   return buildGeneratedDocumentRouteSet({
     ...(data.page?.url !== undefined ? { pageUrl: data.page.url } : {}),
@@ -295,7 +294,8 @@ export class BaseLayout {
       data.notePage?.tocPresence === 'present'
         ? data.notePage.toc.runtimeId
         : (data.headerTocRuntimeId ?? '').trim();
-    const tocRuntimeId = tocPresence === 'present' && rawTocRuntimeId.length > 0 ? rawTocRuntimeId : undefined;
+    const tocRuntimeId =
+      tocPresence === 'present' && rawTocRuntimeId.length > 0 ? rawTocRuntimeId : undefined;
     const explicitHeaderTocOwnerId = data.headerTocOwnerId?.trim() ?? '';
     const rawTocOwnerId =
       data.notePage?.tocPresence === 'present'
@@ -303,7 +303,8 @@ export class BaseLayout {
         : explicitHeaderTocOwnerId.length > 0
           ? explicitHeaderTocOwnerId
           : (tocRuntimeId ?? '');
-    const tocOwnerId = tocPresence === 'present' && rawTocOwnerId.length > 0 ? rawTocOwnerId : undefined;
+    const tocOwnerId =
+      tocPresence === 'present' && rawTocOwnerId.length > 0 ? rawTocOwnerId : undefined;
     const tocTriggerReserved = resolveTocTriggerReserved({
       tocPresence,
       tocOwnerId,

@@ -158,7 +158,7 @@ test.describe('Tag Page', () => {
           };
         }),
       )
-        .toEqual({
+      .toEqual({
         pathname: '/search/',
         q: 'target',
         tags: ['Programming'],
@@ -183,7 +183,7 @@ test.describe('Tag Page', () => {
           };
         }),
       )
-        .toEqual({
+      .toEqual({
         pathname: '/search/',
         tags: ['C#', 'Programming'],
       });

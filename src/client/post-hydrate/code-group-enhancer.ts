@@ -100,8 +100,7 @@ const applyTabSemantics = (state: GroupState): void => {
     const key = tab.dataset['codeGroupTab'] ?? `tab-${String(index)}`;
     const normalizedKey = tab.dataset['codeGroupKey'] ?? key;
     const tabId = tab.id || `${groupId}-tab-${normalizedKey}`;
-    const panelId =
-      tab.getAttribute('aria-controls') ?? `${groupId}-panel-${normalizedKey}`;
+    const panelId = tab.getAttribute('aria-controls') ?? `${groupId}-panel-${normalizedKey}`;
 
     tab.id = tabId;
     tab.setAttribute('role', 'tab');

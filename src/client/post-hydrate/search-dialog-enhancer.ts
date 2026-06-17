@@ -54,19 +54,25 @@ export const enhanceSearchDialog = (root: ParentNode = document, signal?: AbortS
   const enhancement: ActiveEnhancement = { generation, listenerController, controller };
   activeEnhancement = enhancement;
 
-  document.addEventListener('click', (event) => {
-    const anchor = resolveAnchorFromActivationEvent(event);
-    if (
-      !(anchor instanceof HTMLAnchorElement) ||
-      !anchor.hasAttribute('data-search-dialog-trigger') ||
-      !isPlainPrimaryAnchorActivation(event, anchor)
-    ) {
-      return;
-    }
-    if (activeEnhancement?.controller?.tryOpen({ trigger: anchor, modality: 'pointer' }) === true) {
-      event.preventDefault();
-    }
-  }, { signal: listenerController.signal });
+  document.addEventListener(
+    'click',
+    (event) => {
+      const anchor = resolveAnchorFromActivationEvent(event);
+      if (
+        !(anchor instanceof HTMLAnchorElement) ||
+        !anchor.hasAttribute('data-search-dialog-trigger') ||
+        !isPlainPrimaryAnchorActivation(event, anchor)
+      ) {
+        return;
+      }
+      if (
+        activeEnhancement?.controller?.tryOpen({ trigger: anchor, modality: 'pointer' }) === true
+      ) {
+        event.preventDefault();
+      }
+    },
+    { signal: listenerController.signal },
+  );
 
   signal?.addEventListener(
     'abort',

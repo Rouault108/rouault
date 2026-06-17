@@ -20,8 +20,7 @@ import type {
 } from './search-types.js';
 import type { SiteUrlContext } from '../site/site-url-context.js';
 
-const normalizeString = (value: unknown): string =>
-  typeof value === 'string' ? value.trim() : '';
+const normalizeString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
 
 const normalizeStringArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) {
@@ -68,10 +67,7 @@ const normalizeRequiredStringArray = (value: unknown): string[] | null => {
   return [...normalized.values()];
 };
 
-const didNormalizeRequiredStringArray = (
-  value: unknown,
-  normalized: readonly string[],
-): boolean =>
+const didNormalizeRequiredStringArray = (value: unknown, normalized: readonly string[]): boolean =>
   Array.isArray(value) &&
   value.some((item, index) => typeof item === 'string' && item !== normalized[index]);
 
@@ -152,8 +148,7 @@ const SEARCH_REASON_KINDS = [
 ] as const satisfies readonly SearchReason['kind'][];
 
 const isSearchReasonKind = (value: unknown): value is SearchReason['kind'] =>
-  typeof value === 'string' &&
-  (SEARCH_REASON_KINDS as readonly string[]).includes(value);
+  typeof value === 'string' && (SEARCH_REASON_KINDS as readonly string[]).includes(value);
 
 const validateReasons = (value: unknown): SearchReason[] | null => {
   if (!Array.isArray(value)) {
@@ -245,10 +240,8 @@ const SEARCH_ARTIFACT_DIAGNOSTIC_SOURCES = [
   'static-explore-response-json',
 ] as const;
 
-const isOneOf = <Value extends string>(
-  value: unknown,
-  choices: readonly Value[],
-): value is Value => typeof value === 'string' && (choices as readonly string[]).includes(value);
+const isOneOf = <Value extends string>(value: unknown, choices: readonly Value[]): value is Value =>
+  typeof value === 'string' && (choices as readonly string[]).includes(value);
 
 const validateSearchDiagnostics = (value: unknown): SearchDiagnostics | null => {
   if (!isRecord(value)) {
@@ -257,7 +250,11 @@ const validateSearchDiagnostics = (value: unknown): SearchDiagnostics | null => 
   if (typeof value['degraded'] !== 'boolean') {
     return null;
   }
-  if (!Array.isArray(value['activeSources']) || !Array.isArray(value['failures']) || !Array.isArray(value['issues'])) {
+  if (
+    !Array.isArray(value['activeSources']) ||
+    !Array.isArray(value['failures']) ||
+    !Array.isArray(value['issues'])
+  ) {
     return null;
   }
 
@@ -364,8 +361,7 @@ const STATIC_EXPLORE_INVALID_ITEM_FIELDS = [
   'reasons',
 ] as const;
 
-export type StaticExploreInvalidItemField =
-  (typeof STATIC_EXPLORE_INVALID_ITEM_FIELDS)[number];
+export type StaticExploreInvalidItemField = (typeof STATIC_EXPLORE_INVALID_ITEM_FIELDS)[number];
 
 export interface StaticExploreParseMetadata {
   readonly droppedItemCount: number;
@@ -406,9 +402,7 @@ export type ParseStaticExploreSearchResponseResult =
 export const parseSearchCatalogJson = (options: {
   readonly value: unknown;
   readonly siteUrlContext: SiteUrlContext;
-  readonly isInternalDocumentPathname: (
-    normalizedPathnameWithoutBasePath: string,
-  ) => boolean;
+  readonly isInternalDocumentPathname: (normalizedPathnameWithoutBasePath: string) => boolean;
   readonly diagnostics: SearchJsonParseDiagnosticSink;
 }): ParseSearchCatalogJsonResult => {
   if (!Array.isArray(options.value)) {
@@ -468,9 +462,7 @@ export const parseSearchCatalogJson = (options: {
 
 export const parseStaticExploreSearchResponseJson = (options: {
   readonly value: unknown;
-  readonly isInternalDocumentPathname: (
-    normalizedPathnameWithoutBasePath: string,
-  ) => boolean;
+  readonly isInternalDocumentPathname: (normalizedPathnameWithoutBasePath: string) => boolean;
   readonly diagnostics: SearchJsonParseDiagnosticSink;
 }): ParseStaticExploreSearchResponseResult => {
   if (!isRecord(options.value) || options.value['mode'] !== 'explore') {
@@ -694,10 +686,7 @@ export const parseStaticExploreSearchResponseJson = (options: {
 
   const normalizedInvalidItemFields = normalizeInvalidItemFields(invalidItemFields);
   const shouldUseRawCountMaps =
-    hasTagCounts &&
-    hasAllTagCounts &&
-    droppedItemCount === 0 &&
-    !invalidItemFields.has('tags');
+    hasTagCounts && hasAllTagCounts && droppedItemCount === 0 && !invalidItemFields.has('tags');
   const fallbackCountMap = buildCountMapFromItems(items);
   const usedLegacyCountMapFallback = !hasTagCounts || !hasAllTagCounts;
   const response: StaticExploreSearchResponse = {
@@ -705,8 +694,8 @@ export const parseStaticExploreSearchResponseJson = (options: {
     items,
     total: items.length,
     rankingProfileId: 'rouault-search-v1',
-    tagCounts: shouldUseRawCountMaps ? rawTagCounts ?? fallbackCountMap : fallbackCountMap,
-    allTagCounts: shouldUseRawCountMaps ? rawAllTagCounts ?? fallbackCountMap : fallbackCountMap,
+    tagCounts: shouldUseRawCountMaps ? (rawTagCounts ?? fallbackCountMap) : fallbackCountMap,
+    allTagCounts: shouldUseRawCountMaps ? (rawAllTagCounts ?? fallbackCountMap) : fallbackCountMap,
     diagnostics,
   };
 

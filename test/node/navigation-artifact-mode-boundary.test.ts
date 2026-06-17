@@ -5,13 +5,17 @@ describe('navigation artifact mode boundary', () => {
   it('production artifact emit path は strict-artifact mode を使うこと', () => {
     const source = readFileSync('build/navigation/emit-navigation-artifacts.ts', 'utf8');
 
-    expect(source).toMatch(/createNavigationEnvelopeFromHtml\(\s*html,\s*htmlFilePath,\s*\{\s*mode: 'strict-artifact'/su);
+    expect(source).toMatch(
+      /createNavigationEnvelopeFromHtml\(\s*html,\s*htmlFilePath,\s*\{\s*mode: 'strict-artifact'/su,
+    );
   });
 
   it('dev middleware request path は strict-artifact mode と injected generatedAt を使うこと', () => {
     const source = readFileSync('build/dev/dev-router-artifact-middleware.ts', 'utf8');
 
-    expect(source).toMatch(/createNavigationEnvelopeFromHtml\(html, htmlFilePath, \{\s*mode: 'strict-artifact',\s*buildId,\s*generatedAt/su);
+    expect(source).toMatch(
+      /createNavigationEnvelopeFromHtml\(html, htmlFilePath, \{\s*mode: 'strict-artifact',\s*buildId,\s*generatedAt/su,
+    );
     expect(source).not.toContain("mode: 'legacy-fixture'");
     expect(source).not.toMatch(/new Date\(\)\.toISOString\(\)/u);
   });
@@ -24,7 +28,9 @@ describe('navigation artifact mode boundary', () => {
     expect(helperSource).toContain('export const resolveGeneratedDocumentCurrentUrlFromHtmlFile');
     expect(productionSource).toContain('resolveGeneratedDocumentCurrentUrlFromHtmlFile');
     expect(devSource).toContain('resolveGeneratedDocumentCurrentUrlFromHtmlFile');
-    expect(productionSource).not.toMatch(/currentUrl:\s*`\$\{options\.siteUrlContext\.siteOrigin\}/u);
+    expect(productionSource).not.toMatch(
+      /currentUrl:\s*`\$\{options\.siteUrlContext\.siteOrigin\}/u,
+    );
     expect(devSource).not.toMatch(/currentUrl:\s*`\$\{options\.siteUrlContext\.siteOrigin\}/u);
   });
 

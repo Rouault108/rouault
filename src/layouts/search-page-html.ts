@@ -120,7 +120,9 @@ const renderFilterSummaryDetail = (selectedTags: readonly string[]): string => {
 
 const renderEmptyState = (state: SearchState): string => {
   const hasConditions = state.q.length > 0 || state.tags.length > 0;
-  const heading = hasConditions ? '一致するメモが見つかりません' : 'キーワードまたはタグで絞り込めます';
+  const heading = hasConditions
+    ? '一致するメモが見つかりません'
+    : 'キーワードまたはタグで絞り込めます';
   const description = hasConditions
     ? '検索語を変えるか、タグの組み合わせや演算子を見直してください。'
     : 'ヘッダーのダイアログは即時検索、ここではタグ演算子も含めて一覧で比較できます。';
@@ -196,6 +198,8 @@ export const renderSearchPageHtml = (options: {
   const { initialState, initialResponse, siteUrlContext, loading = false } = options;
   const idContext = options.idContext ?? createStaticRenderIdContext('page:search');
   const queryInputId = idContext.reserveId('search-page', 'search-page-query');
+  const tagModeSelectId = idContext.reserveId('search-page', 'search-page-tag-mode-select');
+  const sortSelectId = idContext.reserveId('search-page', 'search-page-sort-select');
   const selectedTagsHeadingId = idContext.reserveId('search-page', 'selected-tags-heading');
   const isTagDefaultView =
     initialState.q.length === 0 &&
@@ -252,19 +256,19 @@ export const renderSearchPageHtml = (options: {
 
           <div class="toolbar-row">
             <div class="meta-row"><span data-search-page-result-count>${initialResponse.total.toString()} 件の結果</span></div>
-            <label class="sort-field">
+            <label class="sort-field" for="${tagModeSelectId}">
               <span class="sort-label">タグ演算子</span>
               <span class="tag-mode-select-wrapper" data-static-select>
-                <select class="tag-mode-select" name="tagMode" data-search-tag-mode-select>
+                <select id="${tagModeSelectId}" class="tag-mode-select" name="tagMode" data-search-tag-mode-select>
                   ${tagModeOptions.map(([value, label]) => renderOption(value, label, initialState.tagMode)).join('')}
                 </select>
                 ${renderStaticIconHtml('chevron-down', 'tag-mode-select__chevron')}
               </span>
             </label>
-            <label class="sort-field">
+            <label class="sort-field" for="${sortSelectId}">
               <span class="sort-label">並び順</span>
               <span class="sort-select-wrapper" data-static-select>
-                <select class="sort-select" name="sort" data-search-sort-select>
+                <select id="${sortSelectId}" class="sort-select" name="sort" data-search-sort-select>
                   ${sortOptions.map(([value, label]) => renderOption(value, label, initialState.sort)).join('')}
                 </select>
                 ${renderStaticIconHtml('chevron-down', 'sort-select__chevron')}

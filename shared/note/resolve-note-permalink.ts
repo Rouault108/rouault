@@ -7,9 +7,7 @@ export interface ResolvedNotePermalink extends NormalizedNotePath {
   readonly canonicalPathname: string;
 }
 
-export const resolveNotePermalink = (
-  input: ResolveNotePermalinkInput,
-): ResolvedNotePermalink => {
+export const resolveNotePermalink = (input: ResolveNotePermalinkInput): ResolvedNotePermalink => {
   const normalized = normalizeNotePath(input);
   return {
     ...normalized,

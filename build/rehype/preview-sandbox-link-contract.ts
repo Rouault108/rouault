@@ -1,6 +1,9 @@
 import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
-import { classifyLinkHref, type RouteClassificationMode } from '../../shared/link/link-annotation.js';
+import {
+  classifyLinkHref,
+  type RouteClassificationMode,
+} from '../../shared/link/link-annotation.js';
 import { detectUnsafeHref } from '../../shared/link/unsafe-href-detector.js';
 import { parseSrcset } from '../../shared/media/srcset-parser.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
@@ -44,10 +47,7 @@ const validatePreviewResourceUrl = (value: string, siteUrlContext: SiteUrlContex
     fail('invalid-preview-sandbox-resource-url');
   }
 
-  const url = new URL(
-    value,
-    `${siteUrlContext.siteOrigin}${siteUrlContext.basePath}/`,
-  );
+  const url = new URL(value, `${siteUrlContext.siteOrigin}${siteUrlContext.basePath}/`);
   if (url.username.length > 0 || url.password.length > 0) {
     fail('invalid-preview-sandbox-resource-url');
   }
@@ -162,7 +162,10 @@ export const validatePreviewSandboxHtmlSnippetLinkContract = (
   visit(document, context);
 };
 
-export const validatePreviewSandboxBaseUrl = (value: string, siteUrlContext: SiteUrlContext): string => {
+export const validatePreviewSandboxBaseUrl = (
+  value: string,
+  siteUrlContext: SiteUrlContext,
+): string => {
   validatePreviewResourceUrl(value, siteUrlContext);
   const url = new URL(value, siteUrlContext.siteOrigin);
   return url.href;

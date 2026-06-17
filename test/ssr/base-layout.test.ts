@@ -28,7 +28,6 @@ describe('BaseLayout', () => {
     ).toThrow(/BaseLayout requires buildMetadata/u);
   });
 
-
   it('SiteUrlContext と route manifest meta を SSR head に出力すること', () => {
     const rendered = new BaseLayout().render({
       buildMetadata: TEST_BUILD_METADATA,
@@ -41,7 +40,9 @@ describe('BaseLayout', () => {
     expect(rendered).toContain(
       '<meta name="rouault-route-manifest" content="/assets/internal-document-routes.json?buildId=test-build">',
     );
-    expect(rendered).toContain('<meta name="rouault-route-manifest-build-id" content="test-build">');
+    expect(rendered).toContain(
+      '<meta name="rouault-route-manifest-build-id" content="test-build">',
+    );
     expect(rendered).toContain('<meta name="rouault-route-manifest-version" content="1">');
   });
 
@@ -181,7 +182,9 @@ describe('BaseLayout', () => {
       },
     });
 
-    expect(rendered).toContain('<header class="layout-header" data-layout-header="true" data-note-layout="true" data-sidebar-enabled="true"');
+    expect(rendered).toContain(
+      '<header class="layout-header" data-layout-header="true" data-note-layout="true" data-sidebar-enabled="true"',
+    );
     expect(rendered).toContain('data-toc-presence="absent"');
     expect(rendered).not.toContain('toc-runtime-id=""');
     expect(rendered).toContain('data-toc-trigger-reserved="false"');
@@ -452,7 +455,8 @@ describe('BaseLayout', () => {
       content: '<article><h1>本文</h1><p>静かな本文です。</p></article>',
     });
 
-    const skipLinkHtml = '<a class="skip-link" href="#main-content" data-link-kind="internal-fragment" data-link-surface="structural">メインコンテンツへ移動</a>';
+    const skipLinkHtml =
+      '<a class="skip-link" href="#main-content" data-link-kind="internal-fragment" data-link-surface="structural">メインコンテンツへ移動</a>';
     const skipLinkIndex = rendered.indexOf(skipLinkHtml);
     const appRootIndex = rendered.indexOf('<div id="app" class="app-root"');
     const renderedSkipLinkHtml = rendered.slice(

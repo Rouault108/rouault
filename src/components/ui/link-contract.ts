@@ -8,8 +8,20 @@ export interface ComponentLinkContract {
 }
 
 export const componentLinkContracts = {
-  footerSiteName: { allowedKinds: ['internal-document', 'external-web'], surface: 'navigation', unsafePolicy: 'contract-error' },
-  card: { allowedKinds: ['internal-document', 'external-web'], surface: 'card', unsafePolicy: 'fallback-node' },
-  pagination: { allowedKinds: ['internal-document'], surface: 'navigation', unsafePolicy: 'contract-error' },
+  footerSiteName: {
+    allowedKinds: ['internal-document', 'external-web'],
+    surface: 'navigation',
+    unsafePolicy: 'contract-error',
+  },
+  card: {
+    allowedKinds: ['internal-document', 'external-web'],
+    surface: 'card',
+    unsafePolicy: 'fallback-node',
+  },
+  pagination: {
+    allowedKinds: ['internal-document'],
+    surface: 'navigation',
+    unsafePolicy: 'contract-error',
+  },
   tag: { allowedKinds: ['internal-document'], surface: 'control', unsafePolicy: 'fallback-node' },
 } as const satisfies Record<string, ComponentLinkContract>;

@@ -20,6 +20,5 @@ export const createTocPanelContentSignature = (input: {
   };
 };
 
-export const serializeTocPanelContentSignature = (
-  signature: TocPanelContentSignature,
-): string => `${signature.ownerId}:${String(signature.headingCount)}:${signature.sourceVersion}`;
+export const serializeTocPanelContentSignature = (signature: TocPanelContentSignature): string =>
+  `${signature.ownerId}:${String(signature.headingCount)}:${signature.sourceVersion}`;

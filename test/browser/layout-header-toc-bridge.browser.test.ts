@@ -128,7 +128,10 @@ const dispatchValidated = (header: HTMLElement, shellCommitId: number): void => 
   );
 };
 
-const dispatchRollbackStart = (failedShellCommitId: number, previousShellCommitId: number): void => {
+const dispatchRollbackStart = (
+  failedShellCommitId: number,
+  previousShellCommitId: number,
+): void => {
   document.dispatchEvent(
     new CustomEvent<AppShellRollbackStartDetail>('app-shell:rollback-start', {
       detail: {

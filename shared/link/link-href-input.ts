@@ -93,8 +93,7 @@ const canDecodeUtf8 = (value: string): boolean => {
   }
 };
 
-const hasInvalidUtf8 = (value: string): boolean =>
-  value.includes('%') && !canDecodeUtf8(value);
+const hasInvalidUtf8 = (value: string): boolean => value.includes('%') && !canDecodeUtf8(value);
 
 const isDangerousDecodedPathSegment = (rawSegment: string, decodedSegment: string): boolean => {
   if (!rawSegment.includes('%')) {
@@ -129,9 +128,7 @@ const hasEncodedDangerousPathSegment = (path: string): boolean => {
   return false;
 };
 
-export const validateLinkHrefAttribute = (
-  value: unknown,
-): LinkHrefAttributeValidationResult => {
+export const validateLinkHrefAttribute = (value: unknown): LinkHrefAttributeValidationResult => {
   if (value === null || value === undefined) {
     return { ok: false, reason: 'missing-href' };
   }

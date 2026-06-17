@@ -26,6 +26,8 @@ describe('load-main-css import scanner', () => {
 
   it('throws for real nested imports in media and supports rules', () => {
     expect(() => stripTopLevelImports("@media screen { @import './nested.css'; }")).to.throw();
-    expect(() => stripTopLevelImports("@supports (display: grid) { @import './nested.css'; }")).to.throw();
+    expect(() =>
+      stripTopLevelImports("@supports (display: grid) { @import './nested.css'; }"),
+    ).to.throw();
   });
 });

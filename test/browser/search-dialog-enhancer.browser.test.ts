@@ -71,7 +71,11 @@ const createResultItem = (index: number): SearchDialogItem => ({
 });
 
 const waitForCloseCompletion = async (dialog: HTMLDialogElement): Promise<void> => {
-  for (let attempt = 0; attempt < 20 && (dialog.open || dialog.hasAttribute('data-closing')); attempt += 1) {
+  for (
+    let attempt = 0;
+    attempt < 20 && (dialog.open || dialog.hasAttribute('data-closing'));
+    attempt += 1
+  ) {
     await new Promise((resolve) => window.setTimeout(resolve, 20));
   }
   await flushOperations();
@@ -92,7 +96,9 @@ describe('search-dialog-enhancer', () => {
 
     enhanceSearchDialog(document);
 
-    document.dispatchEvent(new CustomEvent('open-search-dialog', { bubbles: true, composed: true }));
+    document.dispatchEvent(
+      new CustomEvent('open-search-dialog', { bubbles: true, composed: true }),
+    );
     expect(dialog.open).to.equal(false);
 
     dispatchSearchDialogEvent('search-dialog:open-request', { trigger, modality: 'keyboard' });
@@ -121,7 +127,9 @@ describe('search-dialog-enhancer', () => {
     fallback.dataset['searchDialogTrigger'] = '';
     document.body.append(fallback);
     enhanceSearchDialog(document);
-    expect(fallback.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))).to.equal(true);
+    expect(
+      fallback.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })),
+    ).to.equal(true);
   });
 
   it('runtime unavailable では data-no-router 付き search link の通常遷移を抑止しないこと', () => {
@@ -171,7 +179,9 @@ describe('search-dialog-enhancer', () => {
     expect(queries).to.deep.equal([{ query: 'router' }]);
 
     dispatchSearchDialogEvent('search-dialog:loading-change', { loading: true });
-    expect(dialog.querySelector<HTMLElement>('[data-search-dialog-loading]')?.hidden).to.equal(true);
+    expect(dialog.querySelector<HTMLElement>('[data-search-dialog-loading]')?.hidden).to.equal(
+      true,
+    );
 
     dispatchSearchDialogEvent('search-dialog:results-change', {
       query: 'router',
@@ -185,7 +195,9 @@ describe('search-dialog-enhancer', () => {
         },
       ],
     });
-    expect(dialog.querySelector<HTMLElement>('[data-search-dialog-loading]')?.hidden).to.equal(true);
+    expect(dialog.querySelector<HTMLElement>('[data-search-dialog-loading]')?.hidden).to.equal(
+      true,
+    );
     const option = dialog.querySelector<HTMLElement>('[role="option"]');
     expect(option?.textContent).to.contain('Router 設計メモ');
     expect(option?.dataset['itemId']).to.equal('/notes/router/');
@@ -200,9 +212,13 @@ describe('search-dialog-enhancer', () => {
     const input = dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]');
     const closeRequests: unknown[] = [];
     const queries: unknown[] = [];
-    document.addEventListener('search-dialog:close-request', (event) => {
-      closeRequests.push((event as CustomEvent).detail);
-    }, { once: true });
+    document.addEventListener(
+      'search-dialog:close-request',
+      (event) => {
+        closeRequests.push((event as CustomEvent).detail);
+      },
+      { once: true },
+    );
     document.addEventListener('search-dialog:query-change', (event) => {
       queries.push((event as CustomEvent).detail);
     });
@@ -213,17 +229,17 @@ describe('search-dialog-enhancer', () => {
       input.value = 'router';
       input.dispatchEvent(new Event('input', { bubbles: true }));
     }
-    dialog.querySelector('[data-search-dialog-clear] svg')?.dispatchEvent(
-      new MouseEvent('click', { bubbles: true, composed: true }),
-    );
+    dialog
+      .querySelector('[data-search-dialog-clear] svg')
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
     expect(input?.value).to.equal('');
     expect(queries.at(-1)).to.deep.equal({ query: '' });
-    dialog.querySelector('[data-search-dialog-close]')?.replaceChildren(
-      document.createElementNS('http://www.w3.org/2000/svg', 'svg'),
-    );
-    dialog.querySelector('[data-search-dialog-close] svg')?.dispatchEvent(
-      new MouseEvent('click', { bubbles: true, composed: true }),
-    );
+    dialog
+      .querySelector('[data-search-dialog-close]')
+      ?.replaceChildren(document.createElementNS('http://www.w3.org/2000/svg', 'svg'));
+    dialog
+      .querySelector('[data-search-dialog-close] svg')
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
     expect(closeRequests).to.deep.equal([{ reason: 'close-button' }]);
   });
 
@@ -232,7 +248,9 @@ describe('search-dialog-enhancer', () => {
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,
       value: (query: string) => ({
-        matches: query.includes('prefers-reduced-motion') ? false : originalMatchMedia.call(window, query).matches,
+        matches: query.includes('prefers-reduced-motion')
+          ? false
+          : originalMatchMedia.call(window, query).matches,
         media: query,
         onchange: null,
         addEventListener: () => undefined,
@@ -284,9 +302,15 @@ describe('search-dialog-enhancer', () => {
     });
     if (input) input.value = ' router ';
     enhanceSearchDialog(document);
-    dispatchSearchDialogEvent('search-dialog:open-request', { trigger: null, modality: 'keyboard' });
+    dispatchSearchDialogEvent('search-dialog:open-request', {
+      trigger: null,
+      modality: 'keyboard',
+    });
     await flushOperations();
-    dispatchSearchDialogEvent('search-dialog:open-request', { trigger: null, modality: 'keyboard' });
+    dispatchSearchDialogEvent('search-dialog:open-request', {
+      trigger: null,
+      modality: 'keyboard',
+    });
     await flushOperations();
     expect(queries).to.deep.equal([{ query: ' router ' }]);
   });
@@ -339,7 +363,10 @@ describe('search-dialog-enhancer', () => {
   it('duplicate Escape close-request を抑止しても次回 Escape close が stuck しないこと', async () => {
     const dialog = appendDialogFixture();
     enhanceSearchDialog(document);
-    dispatchSearchDialogEvent('search-dialog:open-request', { trigger: null, modality: 'keyboard' });
+    dispatchSearchDialogEvent('search-dialog:open-request', {
+      trigger: null,
+      modality: 'keyboard',
+    });
     await flushOperations();
 
     dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -347,7 +374,10 @@ describe('search-dialog-enhancer', () => {
     await waitForCloseCompletion(dialog);
     expect(dialog.open).to.equal(false);
 
-    dispatchSearchDialogEvent('search-dialog:open-request', { trigger: null, modality: 'keyboard' });
+    dispatchSearchDialogEvent('search-dialog:open-request', {
+      trigger: null,
+      modality: 'keyboard',
+    });
     await flushOperations();
     dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await waitForCloseCompletion(dialog);
@@ -359,7 +389,10 @@ describe('search-dialog-enhancer', () => {
     enhanceSearchDialog(document);
 
     dispatchSearchDialogEvent('search-dialog:close-request', { reason: 'programmatic' });
-    dispatchSearchDialogEvent('search-dialog:open-request', { trigger: null, modality: 'keyboard' });
+    dispatchSearchDialogEvent('search-dialog:open-request', {
+      trigger: null,
+      modality: 'keyboard',
+    });
     await flushOperations();
 
     expect(dialog.open).to.equal(true);
@@ -428,12 +461,14 @@ describe('search-dialog-enhancer', () => {
     }
     dispatchSearchDialogEvent('search-dialog:results-change', {
       query: 'router',
-      items: [{
-        id: '/notes/router/',
-        title: 'Router',
-        renderHref: '/notes/router/',
-        canonicalPathname: '/notes/router/',
-      }],
+      items: [
+        {
+          id: '/notes/router/',
+          title: 'Router',
+          renderHref: '/notes/router/',
+          canonicalPathname: '/notes/router/',
+        },
+      ],
     });
     dialog.querySelector<HTMLElement>('[role="option"]')?.click();
     expect((selected[0] as { query?: string }).query).to.equal('router');
@@ -495,10 +530,7 @@ describe('search-dialog-enhancer', () => {
 
     expect(document.body.hasAttribute('data-ui-search-dialog-open')).to.equal(false);
     expect(trigger.getAttribute('aria-expanded')).to.equal('false');
-    expect(focusReturns).to.deep.equal([
-      { reason: 'programmatic' },
-      { reason: 'programmatic' },
-    ]);
+    expect(focusReturns).to.deep.equal([{ reason: 'programmatic' }, { reason: 'programmatic' }]);
   });
 
   it('dispose 中と dispose 後の native close / pending completion は focus-return を発生させないこと', async () => {
@@ -543,22 +575,32 @@ describe('search-dialog-enhancer', () => {
     });
 
     expect(results.querySelectorAll('[role="option"]')).to.have.length.lessThan(150);
-    expect(results.querySelector('.search-dialog__virtual-spacer[role="presentation"][aria-hidden="true"]')).to
-      .not.equal(null);
+    expect(
+      results.querySelector(
+        '.search-dialog__virtual-spacer[role="presentation"][aria-hidden="true"]',
+      ),
+    ).to.not.equal(null);
 
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
 
-    expect(input.getAttribute('aria-activedescendant')).to.equal('search-option-/notes/result-149/');
-    expect(results.contains(document.getElementById('search-option-/notes/result-149/'))).to.equal(true);
-    expect(results.querySelector<HTMLElement>('.search-dialog__virtual-spacer')?.style.blockSize).to
-      .not.equal('0px');
+    expect(input.getAttribute('aria-activedescendant')).to.equal(
+      'search-option-/notes/result-149/',
+    );
+    expect(results.contains(document.getElementById('search-option-/notes/result-149/'))).to.equal(
+      true,
+    );
+    expect(
+      results.querySelector<HTMLElement>('.search-dialog__virtual-spacer')?.style.blockSize,
+    ).to.not.equal('0px');
 
     for (let index = 0; index < 70; index += 1) {
       input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
     }
     const spacers = [...results.querySelectorAll<HTMLElement>('.search-dialog__virtual-spacer')];
     expect(spacers).to.have.length(2);
-    expect(spacers.every((spacer) => spacer.getAttribute('role') === 'presentation')).to.equal(true);
+    expect(spacers.every((spacer) => spacer.getAttribute('role') === 'presentation')).to.equal(
+      true,
+    );
     expect(spacers.every((spacer) => spacer.getAttribute('aria-hidden') === 'true')).to.equal(true);
     expect(spacers.every((spacer) => spacer.style.blockSize.endsWith('px'))).to.equal(true);
   });
@@ -654,9 +696,13 @@ describe('search-dialog-enhancer', () => {
 
       expect(loading?.hidden).to.equal(true);
       if (mode === 'results') {
-        expect(dialog.querySelector<HTMLElement>('[role="option"]')?.textContent).to.contain('Result 1');
+        expect(dialog.querySelector<HTMLElement>('[role="option"]')?.textContent).to.contain(
+          'Result 1',
+        );
       } else {
-        expect(dialog.querySelector<HTMLElement>(`[data-search-dialog-${mode}]`)?.hidden).to.equal(false);
+        expect(dialog.querySelector<HTMLElement>(`[data-search-dialog-${mode}]`)?.hidden).to.equal(
+          false,
+        );
       }
     }
   });
@@ -686,7 +732,9 @@ describe('search-dialog-enhancer', () => {
       query: 'router',
       items: [createResultItem(1)],
     });
-    expect(dialog.querySelector<HTMLElement>('[role="option"]')?.textContent).to.contain('Result 1');
+    expect(dialog.querySelector<HTMLElement>('[role="option"]')?.textContent).to.contain(
+      'Result 1',
+    );
     expect(liveRegion?.textContent).to.equal(createSearchDialogResultsStatusMessage(1));
 
     dispatchSearchDialogEvent('search-dialog:loading-change', { loading: true });
@@ -701,7 +749,9 @@ describe('search-dialog-enhancer', () => {
       query: 'router',
       items: [createResultItem(2)],
     });
-    expect(dialog.querySelector<HTMLElement>('[role="option"]')?.textContent).to.contain('Result 2');
+    expect(dialog.querySelector<HTMLElement>('[role="option"]')?.textContent).to.contain(
+      'Result 2',
+    );
   });
 
   it('query-change は古い loading timer を破棄し、新しい loading-change true で再予約すること', async () => {

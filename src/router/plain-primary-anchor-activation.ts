@@ -2,11 +2,12 @@ const isInvalidTarget = (target: string): boolean =>
   target.length === 0 || (target !== '_blank' && target !== '_self');
 
 const hasPreviewSandboxAncestor = (event: Event): boolean =>
-  event.composedPath().some(
-    (item) =>
-      item instanceof Element &&
-      item.getAttribute('data-link-contract-sandbox') === 'preview',
-  );
+  event
+    .composedPath()
+    .some(
+      (item) =>
+        item instanceof Element && item.getAttribute('data-link-contract-sandbox') === 'preview',
+    );
 
 const hasInteractiveElementBeforeAnchor = (event: Event, anchor: HTMLAnchorElement): boolean => {
   for (const pathItem of event.composedPath()) {
@@ -40,7 +41,8 @@ export const isPlainPrimaryAnchorActivation = (
 ): boolean => {
   if (event.defaultPrevented || event.button !== 0) return false;
   if (event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) return false;
-  if (hasInteractiveElementBeforeAnchor(event, anchor) || hasPreviewSandboxAncestor(event)) return false;
+  if (hasInteractiveElementBeforeAnchor(event, anchor) || hasPreviewSandboxAncestor(event))
+    return false;
   const target = anchor.getAttribute('target');
   if (target !== null && (target === '_blank' || isInvalidTarget(target))) return false;
   if (anchor.hasAttribute('download')) return false;

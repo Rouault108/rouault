@@ -19,30 +19,34 @@ import {
 import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import { createSearchArtifactUrlResolver } from '../../shared/search/search-artifact-url.js';
 import { createInternalDocumentRouteSet } from '../../shared/navigation/internal-document-route-set.js';
-import { buildSearchRenderHref, type SearchCanonicalPathname } from '../../shared/search/document-url.js';
+import {
+  buildSearchRenderHref,
+  type SearchCanonicalPathname,
+} from '../../shared/search/document-url.js';
 import { SEARCH_DEBOUNCE_MS } from '../../src/search/search-constants.js';
 
-
-const createTestSearchCore = () => createSearchCore({
-  runtimeEnvironment: 'test',
-  siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
-  artifactUrlResolver: createSearchArtifactUrlResolver({ siteUrlContext: DEFAULT_SITE_URL_CONTEXT }),
-  isInternalDocumentPathname: (pathname: string) => pathname.startsWith('/'),
-  testOnlyLoadPagefind: async () => ({
-    filters: async () => ({}),
-    search: async () => ({ results: [], unfilteredResultCount: 0 }),
-  }),
-  testOnlySearchCatalogFetcher: async () => ({
-    ok: true,
-    status: 200,
-    type: 'basic',
-    redirected: false,
-    headers: { get: (_name: string) => 'application/json; charset=utf-8' },
-    json: async () => [],
-    text: async () => '[]',
-  }),
-});
-
+const createTestSearchCore = () =>
+  createSearchCore({
+    runtimeEnvironment: 'test',
+    siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+    artifactUrlResolver: createSearchArtifactUrlResolver({
+      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+    }),
+    isInternalDocumentPathname: (pathname: string) => pathname.startsWith('/'),
+    testOnlyLoadPagefind: async () => ({
+      filters: async () => ({}),
+      search: async () => ({ results: [], unfilteredResultCount: 0 }),
+    }),
+    testOnlySearchCatalogFetcher: async () => ({
+      ok: true,
+      status: 200,
+      type: 'basic',
+      redirected: false,
+      headers: { get: (_name: string) => 'application/json; charset=utf-8' },
+      json: async () => [],
+      text: async () => '[]',
+    }),
+  });
 
 const createTestRouteManifestState = () => ({
   status: 'loaded' as const,
@@ -225,9 +229,9 @@ describe('search-bootstrap', () => {
       ]);
       expect(options[0]).to.have.property('signal');
       expect(results.textContent).to.contain('Router 設計メモ');
-      expect(results.querySelector('[data-render-href]')?.getAttribute('data-render-href')).to.equal(
-        '/notes/router/',
-      );
+      expect(
+        results.querySelector('[data-render-href]')?.getAttribute('data-render-href'),
+      ).to.equal('/notes/router/');
     } finally {
       controller.search = originalSearch;
       dialog.remove();
@@ -359,7 +363,9 @@ describe('search-bootstrap', () => {
     expect(dialog.querySelector<HTMLElement>('[data-search-dialog-unavailable]')?.hidden).to.equal(
       false,
     );
-    expect(dialog.querySelector<HTMLElement>('[data-search-dialog-loading]')?.hidden).to.equal(true);
+    expect(dialog.querySelector<HTMLElement>('[data-search-dialog-loading]')?.hidden).to.equal(
+      true,
+    );
     trigger.remove();
   });
 

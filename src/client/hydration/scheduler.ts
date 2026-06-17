@@ -60,13 +60,10 @@ const normalizeExcludeSubtrees = (
   excludeSubtrees: readonly Element[] | undefined,
 ): readonly Element[] => (excludeSubtrees ? [...excludeSubtrees] : []);
 
-const isCustomElementEntry = (entry: HydrationRegistryEntry): boolean =>
-  entry.kind !== 'enhancer';
+const isCustomElementEntry = (entry: HydrationRegistryEntry): boolean => entry.kind !== 'enhancer';
 
-const canLoadEntryForElement = (
-  entry: HydrationRegistryEntry,
-  element: HTMLElement,
-): boolean => !isCustomElementEntry(entry) || element.localName === entry.tag;
+const canLoadEntryForElement = (entry: HydrationRegistryEntry, element: HTMLElement): boolean =>
+  !isCustomElementEntry(entry) || element.localName === entry.tag;
 
 export class HydrationScheduler {
   private loadedTags = new Map<string, Promise<void>>();
@@ -247,10 +244,7 @@ export class HydrationScheduler {
     });
   }
 
-  #preloadPlannedEntries(
-    plans: readonly HydrationScopePlan[],
-    session: HydrationSession,
-  ): void {
+  #preloadPlannedEntries(plans: readonly HydrationScopePlan[], session: HydrationSession): void {
     const seenTags = new Set<string>();
 
     for (const item of plans.flatMap((scope) => scope.items)) {
@@ -365,12 +359,14 @@ export class HydrationScheduler {
 
     try {
       if (entry.activate) {
-        const result = normalizeHydrationActivationResult(await entry.activate({
-          element: item.element,
-          root: session.root,
-          signal: session.controller.signal,
-          sessionId: String(session.id),
-        }));
+        const result = normalizeHydrationActivationResult(
+          await entry.activate({
+            element: item.element,
+            root: session.root,
+            signal: session.controller.signal,
+            sessionId: String(session.id),
+          }),
+        );
         if (result.status === 'activated') {
           diagnostics.activatedCount += 1;
         } else if (result.status === 'skipped') {

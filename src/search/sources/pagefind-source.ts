@@ -275,7 +275,10 @@ export async function loadPagefindSourceBatch(input: {
   let countMap: SearchCountMap | null | undefined = undefined;
   if (input.request.mode === 'explore') {
     throwIfAborted(input.signal);
-    countMap = normalizeCountMap((response as { readonly totalFilters?: Record<string, unknown> }).totalFilters?.['genre'] ?? undefined);
+    countMap = normalizeCountMap(
+      (response as { readonly totalFilters?: Record<string, unknown> }).totalFilters?.['genre'] ??
+        undefined,
+    );
     throwIfAborted(input.signal);
 
     if (candidates.length > 0 && countMap === null) {

@@ -42,18 +42,14 @@ export interface StaticFirstRetainedComponent {
   readonly allowedFinalHtmlScopes: readonly StaticFirstFinalHtmlScope[];
 }
 
-const includeManifest = (path: string): Pick<
-  StaticFirstRetainedComponent,
-  'manifest' | 'manifestModulePaths'
-> => ({
+const includeManifest = (
+  path: string,
+): Pick<StaticFirstRetainedComponent, 'manifest' | 'manifestModulePaths'> => ({
   manifest: 'include',
   manifestModulePaths: [path],
 });
 
-const retainedDesignSystem = (
-  tag: string,
-  path: string,
-): StaticFirstRetainedComponent => ({
+const retainedDesignSystem = (tag: string, path: string): StaticFirstRetainedComponent => ({
   tag,
   kind: 'retained-design-system',
   implementationPaths: [path],
@@ -133,10 +129,7 @@ export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedCompo
     hydrationProfiles: ['layout'],
     allowedFinalHtmlScopes: ['layout'],
   },
-  retainedDesignSystem(
-    'layout-sidebar-surface',
-    'src/components/layout/layout-sidebar-surface.ts',
-  ),
+  retainedDesignSystem('layout-sidebar-surface', 'src/components/layout/layout-sidebar-surface.ts'),
   {
     tag: 'layout-toc',
     kind: 'retained-layout',
@@ -155,8 +148,7 @@ export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedCompo
     kind: 'retained-controller',
     implementationPaths: ['src/components/layout/layout-toc-controller.ts'],
     manifest: 'exclude',
-    manifestExcludeReason:
-      'hydration-only layout controller; not a public design-system element',
+    manifestExcludeReason: 'hydration-only layout controller; not a public design-system element',
     ssrDefinitionRequired: false,
     targetAdapterImportRequired: false,
     hydrationRegistryRequired: true,
@@ -195,14 +187,24 @@ export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedCompo
   retainedDesignSystem('ui-radio-group', 'src/components/ui/radio/radio-group.ts'),
   retainedDesignSystem('ui-sidebar', 'src/components/ui/sidebar/sidebar.ts'),
   retainedDesignSystem('ui-sidebar-shell', 'src/components/ui/sidebar-shell/sidebar-shell.ts'),
-  retainedSsrComponent('ui-skip-link', 'src/components/ui/skip-link/skip-link.ts', 'retained-shell', [
-    'shell',
-  ], ['shell'], ['shell']),
+  retainedSsrComponent(
+    'ui-skip-link',
+    'src/components/ui/skip-link/skip-link.ts',
+    'retained-shell',
+    ['shell'],
+    ['shell'],
+    ['shell'],
+  ),
   retainedDesignSystem('ui-spinner', 'src/components/ui/spinner/spinner.ts'),
   retainedDesignSystem('ui-switch', 'src/components/ui/switch/switch.ts'),
-  retainedSsrComponent('ui-tabs', 'src/components/ui/tabs/tabs.ts', 'retained-note-stateful', [
-    'note',
-  ], ['note'], ['note-stateful']),
+  retainedSsrComponent(
+    'ui-tabs',
+    'src/components/ui/tabs/tabs.ts',
+    'retained-note-stateful',
+    ['note'],
+    ['note'],
+    ['note-stateful'],
+  ),
   retainedDesignSystem('ui-tag', 'src/components/ui/tag/tag.ts'),
   retainedDesignSystem('ui-textarea', 'src/components/ui/textarea/textarea.ts'),
   retainedDesignSystem('ui-toast', 'src/components/ui/toast/toast.ts'),
@@ -217,7 +219,12 @@ export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedCompo
     ['note-stateful'],
   ),
   retainedDesignSystem('ui-tree-item', 'src/components/ui/tree-item/tree-item.ts'),
-  retainedSsrComponent('ui-video', 'src/components/ui/video/video.ts', 'retained-note-stateful', [
-    'note',
-  ], ['note'], ['note-stateful']),
+  retainedSsrComponent(
+    'ui-video',
+    'src/components/ui/video/video.ts',
+    'retained-note-stateful',
+    ['note'],
+    ['note'],
+    ['note-stateful'],
+  ),
 ];

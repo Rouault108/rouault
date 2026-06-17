@@ -44,4 +44,36 @@ describe('CorporaOverviewTemplate', () => {
     expect(rendered).not.toContain('<corpora-overview-page');
     expect(rendered).not.toContain('data-hydration-');
   });
+
+  it('corpora と recent notes が空の場合は corpus 系 static empty state を描画すること', () => {
+    const template = new CorporaOverviewTemplate();
+    const rendered = template.render({
+      corporaOverview: {
+        corpusCount: 0,
+        noteCount: 0,
+        latestUpdatedDate: null,
+        corpora: [],
+        recentNotes: [],
+      },
+    });
+
+    expect(rendered).toContain(
+      '<section class="empty-hint" data-empty-state data-empty-variant="default">',
+    );
+    expect(rendered).toContain('<div class="empty-hint__message" data-announce="off">');
+    expect(rendered).toContain('<div class="empty-hint__icon" aria-hidden="true"></div>');
+    expect(rendered).toContain('<h2 class="empty-hint__heading">公開コーパスはまだありません</h2>');
+    expect(rendered).toContain(
+      '<p class="empty-hint__description">ノートが公開されると、ここにコーパス一覧が表示されます。</p>',
+    );
+    expect(rendered).toContain('<h2 class="empty-hint__heading">公開ノートはまだありません</h2>');
+    expect(rendered).toContain(
+      '<p class="empty-hint__description">ノートが公開されると、ここに最近更新した項目が表示されます。</p>',
+    );
+    expect(rendered.match(/<div class="empty-hint__actions" hidden><\/div>/gu)).toHaveLength(2);
+    expect(rendered).not.toContain('<ui-empty-state');
+    expect(rendered).not.toContain('data-empty-variant="search"');
+    expect(rendered).not.toContain('role="status"');
+    expect(rendered).not.toContain('data-hydration-');
+  });
 });

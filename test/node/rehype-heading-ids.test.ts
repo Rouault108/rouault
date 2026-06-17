@@ -89,8 +89,7 @@ const countNestedPath = (node: HastNode, insidePath = false): number => {
   return count;
 };
 
-const serializeHast = (node: HastNode): string =>
-  toHtml(node as Parameters<typeof toHtml>[0]);
+const serializeHast = (node: HastNode): string => toHtml(node as Parameters<typeof toHtml>[0]);
 
 const isParse5Element = (node: Parse5SearchNode): node is Parse5Element =>
   'tagName' in node && typeof node.tagName === 'string';

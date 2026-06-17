@@ -1,7 +1,4 @@
-import {
-  createSiteUrlContext,
-  type SiteUrlContext,
-} from '../../shared/site/site-url-context.js';
+import { createSiteUrlContext, type SiteUrlContext } from '../../shared/site/site-url-context.js';
 
 export type SiteUrlContextData = SiteUrlContext;
 
@@ -11,9 +8,7 @@ export interface LoadSiteUrlContextDataInput {
   readonly sourceLabel: string;
 }
 
-export const loadSiteUrlContextData = (
-  input: LoadSiteUrlContextDataInput,
-): SiteUrlContextData => {
+export const loadSiteUrlContextData = (input: LoadSiteUrlContextDataInput): SiteUrlContextData => {
   try {
     return createSiteUrlContext({
       siteOrigin: input.siteOrigin,

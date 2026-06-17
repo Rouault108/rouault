@@ -1,5 +1,8 @@
 import type { SearchReturnToReadingEventName } from '../../shared/search/search-types.js';
-import type { SearchCanonicalPathname, SearchRenderHref } from '../../shared/search/document-url.js';
+import type {
+  SearchCanonicalPathname,
+  SearchRenderHref,
+} from '../../shared/search/document-url.js';
 
 export const searchReturnToReadingEventName =
   'rouault-search:return-to-reading' satisfies SearchReturnToReadingEventName;
@@ -19,8 +22,7 @@ export interface SearchReturnToReadingEventDetail extends SearchReturnToReadingE
   readonly selectionMethod: 'keyboard' | 'pointer';
 }
 
-export interface ValidatedSearchReturnToReadingEventDetail
-  extends SearchReturnToReadingEventContract {
+export interface ValidatedSearchReturnToReadingEventDetail extends SearchReturnToReadingEventContract {
   readonly eventName: SearchReturnToReadingEventName;
   readonly renderHref: SearchRenderHref;
   readonly canonicalPathname: SearchCanonicalPathname;

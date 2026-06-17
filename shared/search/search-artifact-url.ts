@@ -13,7 +13,14 @@ const normalizePagefindAssetPath = (assetPath: string): string => {
   if (SCHEME_RE.test(trimmed) || trimmed.startsWith('pagefind/')) {
     throw new Error('Pagefind asset path must be relative to /pagefind/.');
   }
-  if (ASSET_UNSAFE_RE.test(trimmed) || hasAsciiControlCharacter(trimmed) || trimmed.includes('%2f') || trimmed.includes('%2F') || trimmed.includes('%5c') || trimmed.includes('%5C')) {
+  if (
+    ASSET_UNSAFE_RE.test(trimmed) ||
+    hasAsciiControlCharacter(trimmed) ||
+    trimmed.includes('%2f') ||
+    trimmed.includes('%2F') ||
+    trimmed.includes('%5c') ||
+    trimmed.includes('%5C')
+  ) {
     throw new Error('Pagefind asset path contains unsafe characters.');
   }
   const segments = trimmed.split('/');

@@ -31,7 +31,7 @@ jobs:
       app: ${{ steps.classify.outputs.app }}
       build: ${{ steps.classify.outputs.build }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           fetch-depth: 0
 
@@ -49,9 +49,9 @@ jobs:
     needs: [detect-changes]
     if: needs.detect-changes.outputs.app == 'true'
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -66,9 +66,9 @@ jobs:
     needs: [detect-changes]
     if: needs.detect-changes.outputs.app == 'true'
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -83,9 +83,9 @@ jobs:
     needs: [detect-changes]
     if: needs.detect-changes.outputs.app == 'true'
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -100,9 +100,9 @@ jobs:
     needs: [detect-changes]
     if: needs.detect-changes.outputs.app == 'true'
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -117,9 +117,9 @@ jobs:
     needs: [detect-changes]
     if: needs.detect-changes.outputs.build == 'true'
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -134,9 +134,9 @@ jobs:
     needs: [detect-changes]
     if: needs.detect-changes.outputs.app == 'true'
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -152,9 +152,9 @@ jobs:
     needs: [detect-changes]
     if: needs.detect-changes.outputs.app == 'true'
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -177,7 +177,7 @@ jobs:
       - test-browser
       - test-storybook-meta
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - name: validate prerequisite results
         env:
           NEEDS_JSON: ${{ toJson(needs) }}
@@ -192,10 +192,10 @@ jobs:
       - prebuild-gate
     if: ${{ !cancelled() && needs.detect-changes.result == 'success' && needs.prebuild-gate.result == 'success' && needs.detect-changes.outputs.app == 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.base_ref == 'main')) }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - run: echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v5
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -215,10 +215,10 @@ jobs:
     env:
       ROUAULT_MEDIA_BASE_URL: ${{ vars.ROUAULT_MEDIA_BASE_URL }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - run: echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v5
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -238,10 +238,10 @@ jobs:
     env:
       ROUAULT_MEDIA_BASE_URL: ${{ vars.ROUAULT_MEDIA_BASE_URL }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - run: echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v5
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -263,10 +263,10 @@ jobs:
       REPOSITORY_ROUAULT_SITE_ORIGIN: ${{ vars.ROUAULT_SITE_ORIGIN }}
       REPOSITORY_ROUAULT_BASE_PATH: ${{ vars.ROUAULT_BASE_PATH }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - run: echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v5
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -289,7 +289,7 @@ jobs:
 
           echo "ROUAULT_BASE_PATH=${REPOSITORY_ROUAULT_BASE_PATH:-}" >> "$GITHUB_ENV"
       - run: pnpm build:production
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: rouault-dist
           path: |
@@ -310,7 +310,7 @@ jobs:
       - test-e2e-dev
       - build-production
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - name: validate required results
         env:
           NEEDS_JSON: ${{ toJson(needs) }}
@@ -328,7 +328,11 @@ jobs:
       - build-production
       - ci-required
     outputs:
-      deployment-url: ${{ steps.record-deployment-summary.outputs.deployment-url }}
+      deployment-url: ${{ steps.deploy-cloudflare-pages.outputs.deployment-url }}
+      deployment-id: ${{ steps.deploy-cloudflare-pages.outputs.deployment-id }}
+      release-state-artifact-name: ${{ steps.deploy-cloudflare-pages.outputs.release-state-artifact-name || steps.finalize-r2-upload-failure.outputs.release-state-artifact-name || steps.finalize-media-delivery-failure.outputs.release-state-artifact-name || steps.finalize-pages-deploy-failure.outputs.release-state-artifact-name }}
+      release-state-artifact-id: ${{ steps.upload-release-state-artifact.outputs.artifact-id }}
+      release-state-sha256: ${{ steps.deploy-cloudflare-pages.outputs.release-state-sha256 || steps.finalize-r2-upload-failure.outputs.release-state-sha256 || steps.finalize-media-delivery-failure.outputs.release-state-sha256 || steps.finalize-pages-deploy-failure.outputs.release-state-sha256 }}
     if: >-
       ${{
         !cancelled()
@@ -349,8 +353,10 @@ jobs:
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
+      CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - run: echo "ROUAULT_BUILD_LABEL=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
       - name: print deployment provenance
         run: |
@@ -358,45 +364,73 @@ jobs:
           echo "GITHUB_REF=${GITHUB_REF}"
           echo "GITHUB_REF_NAME=${GITHUB_REF_NAME}"
           echo "ROUAULT_BUILD_LABEL=${ROUAULT_BUILD_LABEL}"
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v5
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v7
+      - name: validate production authority
+        run: pnpm exec tsx scripts/deploy/production-authority-preflight.ts
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: rouault-dist
           path: .
-      - run: pnpm exec tsx scripts/upload-r2-media.ts
+      - id: upload-r2-media
+        continue-on-error: true
+        run: pnpm exec tsx scripts/upload-r2-media.ts
+      - id: upload-r2-attempt-artifact
+        if: ${{ always() && steps.upload-r2-media.outcome != 'skipped' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: rouault-r2-attempt
+          path: .generated/deployment/r2-attempt.json
+          if-no-files-found: error
+          include-hidden-files: true
+      - id: verify-media-delivery
+        if: ${{ steps.upload-r2-media.outcome == 'success' }}
+        continue-on-error: true
+        run: pnpm exec tsx scripts/deploy/verify-media-delivery.ts
+      - id: upload-media-delivery-attempt-artifact
+        if: ${{ always() && steps.verify-media-delivery.outcome != 'skipped' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: rouault-media-delivery-attempt
+          path: .generated/deployment/media-delivery-attempt.json
+          if-no-files-found: error
+          include-hidden-files: true
+      - id: finalize-r2-upload-failure
+        if: ${{ steps.upload-r2-media.outcome != 'success' }}
+        env:
+          RELEASE_FAILURE_PHASE: r2-upload
+        run: pnpm exec tsx scripts/deploy/finalize-release-failure.ts
+      - id: finalize-media-delivery-failure
+        if: ${{ steps.upload-r2-media.outcome == 'success' && steps.verify-media-delivery.outcome != 'success' }}
+        env:
+          RELEASE_FAILURE_PHASE: media-delivery
+        run: pnpm exec tsx scripts/deploy/finalize-release-failure.ts
       - id: deploy-cloudflare-pages
         name: deploy Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=${{ vars.CF_PAGES_PROJECT }} --branch=${{ github.ref_name }}
-      - id: record-deployment-summary
-        name: record deployment summary
+        if: ${{ steps.upload-r2-media.outcome == 'success' && steps.verify-media-delivery.outcome == 'success' }}
+        continue-on-error: true
+        run: pnpm exec tsx scripts/deploy/deploy-cloudflare-pages.ts
+      - id: finalize-pages-deploy-failure
+        if: ${{ steps.upload-r2-media.outcome == 'success' && steps.verify-media-delivery.outcome == 'success' && steps.deploy-cloudflare-pages.outcome != 'success' }}
         env:
-          WRANGLER_COMMAND_OUTPUT: ${{ steps.deploy-cloudflare-pages.outputs.command-output }}
-        run: |
-          DEPLOYMENT_URL="$(printf '%s\n' "${WRANGLER_COMMAND_OUTPUT}" | grep -Eo 'https://[^[:space:]]+' | head -n 1 || true)"
-          echo "deployment-url=${DEPLOYMENT_URL}" >> "$GITHUB_OUTPUT"
-          {
-            echo "## Production deployment"
-            echo ""
-            echo "- GITHUB_SHA: ${GITHUB_SHA}"
-            echo "- GITHUB_REF: ${GITHUB_REF}"
-            echo "- GITHUB_REF_NAME: ${GITHUB_REF_NAME}"
-            echo "- ROUAULT_BUILD_LABEL: ${ROUAULT_BUILD_LABEL}"
-            echo "- Cloudflare deployment URL: ${DEPLOYMENT_URL:-not found in Wrangler command output}"
-            echo "- Wrangler command output:"
-            echo '```'
-            printf '%s\n' "${WRANGLER_COMMAND_OUTPUT:-See deploy Cloudflare Pages step logs.}"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          RELEASE_FAILURE_PHASE: pages-deploy
+        run: pnpm exec tsx scripts/deploy/finalize-release-failure.ts
+      - id: upload-release-state-artifact
+        if: ${{ always() && (steps.deploy-cloudflare-pages.outcome == 'success' || steps.finalize-r2-upload-failure.outcome == 'success' || steps.finalize-media-delivery-failure.outcome == 'success' || steps.finalize-pages-deploy-failure.outcome == 'success') }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ steps.deploy-cloudflare-pages.outputs.release-state-artifact-name || steps.finalize-r2-upload-failure.outputs.release-state-artifact-name || steps.finalize-media-delivery-failure.outputs.release-state-artifact-name || steps.finalize-pages-deploy-failure.outputs.release-state-artifact-name }}
+          path: .generated/deployment/release-attempt-final.json
+          if-no-files-found: error
+          include-hidden-files: true
+      - name: enforce deploy production outcome
+        if: ${{ always() }}
+        run: test "${{ steps.upload-r2-media.outcome }}" = "success" && test "${{ steps.verify-media-delivery.outcome }}" = "success" && test "${{ steps.deploy-cloudflare-pages.outcome }}" = "success" && test "${{ steps.upload-release-state-artifact.outcome }}" = "success"
 
   verify-production-deployment:
     name: verify-production-deployment
@@ -408,17 +442,66 @@ jobs:
       - ci-required
       - deploy-production
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
       - name: validate deployment result
         env:
           NEEDS_JSON: ${{ toJson(needs) }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_REF: ${{ github.ref }}
         run: python3 scripts/ci/validate_deployment_needs.py
-      - name: verify production runtime artifacts over HTTP
-        if: ${{ needs.deploy-production.result == 'success' }}
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - id: download-release-state
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        if: ${{ needs.deploy-production.outputs.release-state-artifact-id != '' }}
+        continue-on-error: true
+        with:
+          artifact-ids: ${{ needs.deploy-production.outputs.release-state-artifact-id }}
+          path: .generated/deployment
+          digest-mismatch: error
+      - id: verify-runtime-artifacts
+        name: verify production runtime artifacts over HTTP
+        if: ${{ needs.deploy-production.result == 'success' && steps.download-release-state.outcome == 'success' }}
+        continue-on-error: true
         env:
           ACTUAL_DEPLOYMENT_URL: ${{ needs.deploy-production.outputs.deployment-url }}
           ROUAULT_SITE_ORIGIN: ${{ vars.ROUAULT_SITE_ORIGIN }}
           ROUAULT_BASE_PATH: ${{ vars.ROUAULT_BASE_PATH }}
         run: python3 scripts/ci/verify_production_artifacts_http.py
+      - id: record-runtime-verification-success
+        if: ${{ needs.deploy-production.result == 'success' && steps.download-release-state.outcome == 'success' && steps.verify-runtime-artifacts.outcome == 'success' }}
+        env:
+          EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
+          RUNTIME_VERIFICATION_STATUS: verified-by-production-runtime-artifacts
+        run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
+      - id: record-runtime-verification-failure
+        if: ${{ needs.deploy-production.result == 'success' && steps.download-release-state.outcome == 'success' && steps.verify-runtime-artifacts.outcome != 'success' }}
+        env:
+          EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
+          RUNTIME_VERIFICATION_STATUS: verification-failed
+        run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
+      - id: record-deploy-failure-state
+        if: ${{ needs.deploy-production.result != 'success' && steps.download-release-state.outcome == 'success' }}
+        env:
+          EXPECTED_RELEASE_STATE_SHA256: ${{ needs.deploy-production.outputs.release-state-sha256 }}
+          RUNTIME_VERIFICATION_STATUS: verification-failed
+        run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
+      - id: record-release-state-resolution-failed
+        if: ${{ steps.download-release-state.outcome != 'success' }}
+        env:
+          RUNTIME_VERIFICATION_STATUS: release-state-resolution-failed
+        run: pnpm exec tsx scripts/deploy/record-runtime-verification.ts
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: ${{ steps.record-runtime-verification-success.outcome == 'success' || steps.record-runtime-verification-failure.outcome == 'success' || steps.record-deploy-failure-state.outcome == 'success' || steps.record-release-state-resolution-failed.outcome == 'success' }}
+        with:
+          name: rouault-release-verification-state
+          path: .generated/deployment/release-verification-final.json
+          include-hidden-files: true
+      - name: enforce production runtime verification
+        if: ${{ needs.deploy-production.result == 'success' }}
+        run: test "${{ steps.verify-runtime-artifacts.outcome }}" = "success"

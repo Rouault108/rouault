@@ -30,13 +30,7 @@ a:focus-visible {
  * - 読書面は .prose と .about-prose の両方を対象にする
  */
 .link-text[href],
-:is(.prose, .about-prose)
-  a[href]:not(
-    :where(
-      [data-link-surface='card'],
-      .heading-anchor
-    )
-  ) {
+:is(.prose, .about-prose) a[href]:not(:where([data-link-surface='card'], .heading-anchor)) {
   cursor: pointer;
   color: var(--fg-default); /* 本文色を維持し、読むリズムを優先 */
   text-decoration: underline;
@@ -62,26 +56,14 @@ a:focus-visible {
 /* Progressive Enhancement: Relative Color Syntax 対応環境 */
 @supports (color: oklch(from white l c h)) {
   .link-text[href],
-  :is(.prose, .about-prose)
-    a[href]:not(
-      :where(
-        [data-link-surface='card'],
-        .heading-anchor
-      )
-    ) {
+  :is(.prose, .about-prose) a[href]:not(:where([data-link-surface='card'], .heading-anchor)) {
     text-decoration-color: var(--link-decoration-color);
   }
 }
 
 /* Hover状態 - テキストと下線の両方を色付け */
 .link-text[href]:hover,
-:is(.prose, .about-prose)
-  a[href]:not(
-    :where(
-      [data-link-surface='card'],
-      .heading-anchor
-    )
-  ):hover {
+:is(.prose, .about-prose) a[href]:not(:where([data-link-surface='card'], .heading-anchor)):hover {
   color: var(--primary-hover);
   text-decoration-color: var(--primary-hover);
 }
@@ -89,12 +71,7 @@ a:focus-visible {
 /* Focus-Visible状態 - テキスト色は変更せず、フォーカスリングのみで状態を示す */
 .link-text[href]:focus-visible,
 :is(.prose, .about-prose)
-  a[href]:not(
-    :where(
-      [data-link-surface='card'],
-      .heading-anchor
-    )
-  ):focus-visible {
+  a[href]:not(:where([data-link-surface='card'], .heading-anchor)):focus-visible {
   outline-style: solid;
   outline-width: var(--focus-ring-width);
   outline-offset: var(--focus-ring-offset);
@@ -108,13 +85,7 @@ a:focus-visible {
 
 /* Visited状態 - 個人メモでは既読管理より読むリズムを優先 */
 .link-text[href]:visited,
-:is(.prose, .about-prose)
-  a[href]:not(
-    :where(
-      [data-link-surface='card'],
-      .heading-anchor
-    )
-  ):visited {
+:is(.prose, .about-prose) a[href]:not(:where([data-link-surface='card'], .heading-anchor)):visited {
   color: var(--fg-default);
   text-decoration-color: var(--primary);
 }
@@ -124,24 +95,14 @@ a:focus-visible {
  * 2. hand-authored な about ページ等のために href scheme でも保守的 fallback を持つ
  */
 :is(.prose, .about-prose)
-  a[href]:not(
-    :where(
-      [data-link-surface='card'],
-      .heading-anchor
-    )
-  ):is(
+  a[href]:not(:where([data-link-surface='card'], .heading-anchor)):is(
     [data-link-kind='external-web']
   ) {
   text-decoration-style: dotted;
 }
 
 :is(.prose, .about-prose)
-  a[href]:not(
-    :where(
-      [data-link-surface='card'],
-      .heading-anchor
-    )
-  ):is(
+  a[href]:not(:where([data-link-surface='card'], .heading-anchor)):is(
     [data-link-kind='external-web']
   )::after {
   content: '↗';
@@ -155,21 +116,11 @@ a:focus-visible {
 }
 
 :is(.prose, .about-prose)
-  a[href]:not(
-    :where(
-      [data-link-surface='card'],
-      .heading-anchor
-    )
-  ):is(
+  a[href]:not(:where([data-link-surface='card'], .heading-anchor)):is(
     [data-link-kind='external-web']
   ):hover::after,
 :is(.prose, .about-prose)
-  a[href]:not(
-    :where(
-      [data-link-surface='card'],
-      .heading-anchor
-    )
-  ):is(
+  a[href]:not(:where([data-link-surface='card'], .heading-anchor)):is(
     [data-link-kind='external-web']
   ):focus-visible::after {
   color: currentColor;
@@ -179,12 +130,7 @@ a:focus-visible {
 @supports (color: oklch(from white l c h)) {
   .link-text[href]:visited,
   :is(.prose, .about-prose)
-    a[href]:not(
-      :where(
-        [data-link-surface='card'],
-        .heading-anchor
-      )
-    ):visited {
+    a[href]:not(:where([data-link-surface='card'], .heading-anchor)):visited {
     text-decoration-color: var(--link-decoration-color);
   }
 }
@@ -192,13 +138,7 @@ a:focus-visible {
 /* Touch (No Hover) 判定 - タッチデバイスでは発見可能性を優先 */
 @media (hover: none) and (pointer: coarse) {
   .link-text[href],
-  :is(.prose, .about-prose)
-    a[href]:not(
-      :where(
-        [data-link-surface='card'],
-        .heading-anchor
-      )
-    ) {
+  :is(.prose, .about-prose) a[href]:not(:where([data-link-surface='card'], .heading-anchor)) {
     color: var(--primary);
     text-decoration-color: var(--link-decoration-color-touch);
   }
@@ -419,12 +359,7 @@ a:focus-visible {
 @media print {
   /* 外部リンク（http/https）のURLを表示 */
   :is(.prose, .about-prose)
-    a[href^='http']:not(
-      :where(
-        [data-link-surface='card'],
-        .heading-anchor
-      )
-    )::after {
+    a[href^='http']:not(:where([data-link-surface='card'], .heading-anchor))::after {
     content: ' (' attr(href) ')';
     font-size: 0.875em;
     color: var(--fg-muted);
@@ -438,13 +373,7 @@ a:focus-visible {
   }
 
   /* 下線は常に表示し、リンクであることを明示 */
-  :is(.prose, .about-prose)
-    a[href]:not(
-      :where(
-        [data-link-surface='card'],
-        .heading-anchor
-      )
-    ) {
+  :is(.prose, .about-prose) a[href]:not(:where([data-link-surface='card'], .heading-anchor)) {
     text-decoration: underline;
     text-decoration-color: currentColor;
   }

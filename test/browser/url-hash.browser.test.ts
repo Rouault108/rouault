@@ -100,7 +100,11 @@ describe('url-hash', () => {
     }) as typeof history.pushState;
 
     try {
-      window.history.replaceState({}, '', `${window.location.pathname}${window.location.search}#a%20b`);
+      window.history.replaceState(
+        {},
+        '',
+        `${window.location.pathname}${window.location.search}#a%20b`,
+      );
       const nextUrl = updateHashInCurrentUrlFromId('a b', 'push');
 
       expect(nextUrl).to.equal(`${window.location.pathname}${window.location.search}#a%20b`);

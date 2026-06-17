@@ -99,7 +99,6 @@ const createSsrTargetAdapter = (definition: SsrComponentDefinition): SsrTargetAd
         renderAppRouterLightElement,
         definition.documentStyle,
       );
-
   }
 };
 

@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import postcss, { type AtRule, type Declaration, type Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';
@@ -110,7 +110,9 @@ const isExternalMarkerSelectorLimitedToNav = (selectorText: string): boolean => 
     const navIndex = selector.nodes.findIndex(
       (node) => node.type === 'class' && node.value === 'ui-footer__nav',
     );
-    const anchorIndex = selector.nodes.findIndex((node) => node.type === 'tag' && node.value === 'a');
+    const anchorIndex = selector.nodes.findIndex(
+      (node) => node.type === 'tag' && node.value === 'a',
+    );
     if (navIndex < 0 || anchorIndex <= navIndex) return;
     const combinators = selector.nodes
       .slice(navIndex + 1, anchorIndex)
@@ -126,7 +128,11 @@ const isExternalMarkerSelectorLimitedToNav = (selectorText: string): boolean => 
   return ok;
 };
 
-const expectRuleToDeclare = (css: string, selector: string, declarations: readonly string[]): void => {
+const expectRuleToDeclare = (
+  css: string,
+  selector: string,
+  declarations: readonly string[],
+): void => {
   const block = ruleBlock(css, selector);
   expect(block, `${selector} rule`).not.to.equal('');
   for (const declaration of declarations) {
@@ -243,7 +249,8 @@ describe('static CSS contracts', () => {
   it('selector AST helper preserves nested and quoted commas while splitting selector lists', () => {
     const selectorFixtures = [
       {
-        selector: '.ui-footer[data-footer] .ui-footer__site, .ui-footer[data-footer] .ui-footer__nav',
+        selector:
+          '.ui-footer[data-footer] .ui-footer__site, .ui-footer[data-footer] .ui-footer__nav',
         expected: [
           '.ui-footer[data-footer] .ui-footer__site',
           '.ui-footer[data-footer] .ui-footer__nav',
@@ -281,9 +288,7 @@ describe('static CSS contracts', () => {
   it('main.css is the fixed import registry plus reset/base/prose surface', () => {
     const css = readCss('main.css');
 
-    const imports = [...css.matchAll(/@import\s+['"]([^'"]+)['"];/gu)].map(
-      (match) => match[1],
-    );
+    const imports = [...css.matchAll(/@import\s+['"]([^'"]+)['"];/gu)].map((match) => match[1]);
     expect(imports).toEqual(mainCssImportRegistry);
     expect(imports.filter((path) => path === './tokens.css')).toHaveLength(1);
 
@@ -294,6 +299,31 @@ describe('static CSS contracts', () => {
       expect(css, String(pattern)).not.to.match(pattern);
     }
     expect(css).not.to.contain('ui-list-item >');
+  });
+
+  it('utility skeleton CSS exposes visual-only static skeleton contract', () => {
+    const css = readCss('utility-surfaces.css');
+
+    expectRuleToDeclare(css, '.skeleton', [
+      'background: var(--skeleton-bg)',
+      'position: relative',
+      'overflow: hidden',
+      'border-radius: var(--radius-sm)',
+    ]);
+    expectRuleToDeclare(css, '.skeleton::after', [
+      "content: ''",
+      'position: absolute',
+      'top: 0',
+      'right: 0',
+      'bottom: 0',
+      'left: 0',
+      'background: linear-gradient(90deg, transparent, var(--skeleton-shimmer), transparent)',
+      'animation: shimmer 1.5s infinite',
+    ]);
+
+    const reducedMotion = atRuleBlock(css, '@media (prefers-reduced-motion: reduce)');
+    expectRuleToDeclare(reducedMotion, '.skeleton::after', ['animation: none']);
+    expect(existsSync(resolve(cssDir, 'skeleton.css'))).to.equal(false);
   });
 
   it('layout header CSS keeps sticky and container ownership on the static header root', () => {
@@ -471,7 +501,10 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(css, '.tag-mode-select:disabled', ['cursor: not-allowed']);
     expectRuleToDeclare(css, '.sort-select__chevron', ['pointer-events: none']);
     expectRuleToDeclare(css, '.tag-mode-select__chevron', ['pointer-events: none']);
-    expectRuleToDeclare(css, '.filter-details__summary', ['position: relative', 'list-style: none']);
+    expectRuleToDeclare(css, '.filter-details__summary', [
+      'position: relative',
+      'list-style: none',
+    ]);
     expectRuleToDeclare(css, '.filter-details__summary::after', [
       "content: ''",
       'position: absolute',
@@ -492,12 +525,15 @@ describe('static CSS contracts', () => {
     ]);
     expectRuleToDeclare(css, '.selected-tag__remove-icon', ['pointer-events: none']);
     expectRuleToDeclare(css, '.selected-tag__remove-icon *', ['pointer-events: none']);
-    expectRuleToDeclare(css, '.filter-option-checkbox__control', ['inline-size: 16px', 'block-size: 16px']);
+    expectRuleToDeclare(css, '.filter-option-checkbox__control', [
+      'inline-size: 16px',
+      'block-size: 16px',
+    ]);
     expectRuleToDeclare(css, '.filter-option-checkbox__control', ['pointer-events: none']);
     expectRuleToDeclare(css, '.filter-option-checkbox__icon', ['opacity: 0']);
     expectRuleToDeclare(
       css,
-      ".filter-option-checkbox__input:checked + .filter-option-checkbox__control .filter-option-checkbox__icon",
+      '.filter-option-checkbox__input:checked + .filter-option-checkbox__control .filter-option-checkbox__icon',
       ['opacity: 1'],
     );
     expectRuleToDeclare(css, ".filter-option[data-selected='true']", [
@@ -546,7 +582,10 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(lists, 'ol[data-list] > li[data-ol-has-value]', ['counter-set:']);
 
     const syntax = readCss('syntax.css');
-    expectRuleToDeclare(syntax, '.syntax-card__signature pre', ['margin: 0', 'background: transparent']);
+    expectRuleToDeclare(syntax, '.syntax-card__signature pre', [
+      'margin: 0',
+      'background: transparent',
+    ]);
     expectRuleToDeclare(syntax, '.syntax-field__required', ['border:', 'color:']);
     expect(syntax).to.contain('@media print');
 
@@ -595,18 +634,16 @@ describe('static CSS contracts', () => {
       'align-items: baseline',
       'gap: 0',
     ]);
-    expectRuleToDeclare(css, '.ui-footer[data-footer] .ui-footer__legal', [
-      'display: inline-flex',
-    ]);
+    expectRuleToDeclare(css, '.ui-footer[data-footer] .ui-footer__legal', ['display: inline-flex']);
     expectRuleToDeclare(css, '.ui-footer[data-footer] .ui-footer__nav-list', [
       'display: inline-flex',
     ]);
     expectRuleToDeclare(css, '.ui-footer[data-footer] .ui-footer__build', [
       'color: var(--_footer-build-fg)',
     ]);
-    expect(lacksDeclarationProperty(css, '.ui-footer[data-footer] .ui-footer__build', 'opacity')).toBe(
-      true,
-    );
+    expect(
+      lacksDeclarationProperty(css, '.ui-footer[data-footer] .ui-footer__build', 'opacity'),
+    ).toBe(true);
 
     for (const selector of [
       '.ui-footer[data-footer] .ui-footer__build::before',

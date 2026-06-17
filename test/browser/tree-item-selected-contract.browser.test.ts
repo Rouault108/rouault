@@ -29,7 +29,10 @@ const flush = async (item: TreeItem): Promise<void> => {
 };
 
 const resolveTreeItemSelectedSurface = (item: TreeItem): Rgba => {
-  const surface = expectPresent(item.shadowRoot?.querySelector<HTMLElement>('.surface'), 'tree item surface');
+  const surface = expectPresent(
+    item.shadowRoot?.querySelector<HTMLElement>('.surface'),
+    'tree item surface',
+  );
   const color = resolvePseudoColor(surface, '::before', 'background-color');
   expectVisiblePseudoPaint(surface, '::before', color, 'tree item selected surface');
   return color;
@@ -55,7 +58,8 @@ describe('ui-tree-item selected visual contract', () => {
     await flush(item);
 
     const foreground = resolveComputedColor(
-      getComputedStyle(expectPresent(item.shadowRoot?.querySelector<HTMLElement>('.item'), 'item')).color,
+      getComputedStyle(expectPresent(item.shadowRoot?.querySelector<HTMLElement>('.item'), 'item'))
+        .color,
       item,
       'color',
     );
@@ -67,7 +71,11 @@ describe('ui-tree-item selected visual contract', () => {
       item.shadowRoot?.querySelector<HTMLElement>('.current-slot-indicator'),
       'current slot indicator',
     );
-    const indicatorColor = resolveComputedColor(getComputedStyle(indicator).backgroundColor, indicator, 'background-color');
+    const indicatorColor = resolveComputedColor(
+      getComputedStyle(indicator).backgroundColor,
+      indicator,
+      'background-color',
+    );
     expectVisibleElementPaint(indicator, indicatorColor, 'current slot indicator');
     const paintedIndicator = compositeOver(indicatorColor, paintedSurface);
 
@@ -94,12 +102,21 @@ describe('ui-tree-item selected visual contract', () => {
       item.shadowRoot?.querySelector<HTMLElement>('.expand-glyph'),
       'expand glyph',
     );
-    const svgIcon = expectPresent(expandGlyph.querySelector<SVGElement>('svg[data-icon]'), 'expand icon');
+    const svgIcon = expectPresent(
+      expandGlyph.querySelector<SVGElement>('svg[data-icon]'),
+      'expand icon',
+    );
     expect(svgIcon.getAttribute('data-icon'), 'icon attribute').to.equal('chevron-right');
     await waitForStyleRecalc();
 
     const active = resolveComputedColor(getComputedStyle(currentSlot).color, currentSlot, 'color');
-    expectColorClose(resolveComputedColor(getComputedStyle(expandGlyph).color, expandGlyph, 'color'), active);
-    expectColorClose(resolveComputedColor(getComputedStyle(svgIcon).color, svgIcon, 'color'), active);
+    expectColorClose(
+      resolveComputedColor(getComputedStyle(expandGlyph).color, expandGlyph, 'color'),
+      active,
+    );
+    expectColorClose(
+      resolveComputedColor(getComputedStyle(svgIcon).color, svgIcon, 'color'),
+      active,
+    );
   });
 });

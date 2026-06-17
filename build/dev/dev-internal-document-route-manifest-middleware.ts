@@ -4,9 +4,7 @@ import type { Connect } from 'vite';
 import { renderInternalDocumentRouteManifest } from '../navigation/internal-document-route-manifest.js';
 import type { ResolvedBuildMetadata } from '../metadata/build-metadata.js';
 import { buildProductionInternalDocumentRouteSet } from '../navigation/internal-document-routes.js';
-import {
-  resolveInternalDocumentRouteManifestPathname,
-} from '../../shared/navigation/internal-document-route-manifest-path.js';
+import { resolveInternalDocumentRouteManifestPathname } from '../../shared/navigation/internal-document-route-manifest-path.js';
 import { createSiteUrlContext, type SiteUrlContext } from '../../shared/site/site-url-context.js';
 
 export interface DevelopmentInternalDocumentRouteManifestMiddlewareOptions {
@@ -21,9 +19,10 @@ const resolveRequestOrigin = (request: IncomingMessage): string | null => {
   }
 
   const protocolHeader = request.headers['x-forwarded-proto'];
-  const protocol = typeof protocolHeader === 'string' && protocolHeader.trim().length > 0
-    ? protocolHeader.split(',')[0]?.trim() ?? 'http'
-    : 'http';
+  const protocol =
+    typeof protocolHeader === 'string' && protocolHeader.trim().length > 0
+      ? (protocolHeader.split(',')[0]?.trim() ?? 'http')
+      : 'http';
 
   try {
     return new URL(`${protocol}://${host}`).origin;

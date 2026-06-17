@@ -1,0 +1,6 @@
+allowBuilds:
+  esbuild: true
+  rs-module-lexer: true
+  sharp: true
+  workerd: true
+saveExact: true

@@ -3,6 +3,10 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { map } from 'lit/directives/map.js';
+import {
+  buildPaginationItems,
+  type PaginationItem,
+} from '../../../../shared/pagination/pagination-items.js';
 import '../list-item/list-item';
 import { renderStaticIconTemplate } from '../icon/static-icon-template.js';
 
@@ -77,6 +81,17 @@ interface ListContextRequestDetail {
   callback: (payload: ListContextPayload) => void;
 }
 
+interface ListPaginationMetrics {
+  totalRows: number;
+  pageLimit: number;
+  rawPageOffset: number;
+  currentPage: number;
+  totalPages: number;
+  paginationUiOffset: number;
+  rowIndexOffset: number;
+  ariaRowCount: number;
+}
+
 interface UiListItemLike extends HTMLElement {
   rowId?: string;
   current?: boolean;
@@ -88,6 +103,46 @@ interface UiListItemLike extends HTMLElement {
 const DEFAULT_SORT_STATE: SortState = {
   key: null,
   direction: null,
+};
+
+const normalizeNonNegativeInteger = (value: number): number => {
+  if (!Number.isFinite(value)) return 0;
+
+  const normalized = Math.trunc(value);
+  return normalized < 0 ? 0 : normalized;
+};
+
+const normalizePositiveInteger = (value: number): number => {
+  if (!Number.isFinite(value)) return 1;
+
+  const normalized = Math.trunc(value);
+  return normalized < 1 ? 1 : normalized;
+};
+
+const resolveListPaginationMetrics = (pagination: PaginationState): ListPaginationMetrics => {
+  const totalRows = normalizeNonNegativeInteger(pagination.total);
+  const pageLimit = normalizePositiveInteger(pagination.limit);
+  const rawPageOffset = normalizeNonNegativeInteger(pagination.offset);
+  const rawCurrentPage = Math.trunc(rawPageOffset / pageLimit) + 1;
+  const rawTotalPages = Math.ceil(totalRows / pageLimit);
+  const statusItem = buildPaginationItems({
+    currentPage: rawCurrentPage,
+    totalPages: rawTotalPages,
+  }).find((item): item is Extract<PaginationItem, { kind: 'status' }> => item.kind === 'status');
+  const currentPage = statusItem?.currentPage ?? 1;
+  const totalPages = statusItem?.totalPages ?? 1;
+  const paginationUiOffset = (currentPage - 1) * pageLimit;
+
+  return {
+    totalRows,
+    pageLimit,
+    rawPageOffset,
+    currentPage,
+    totalPages,
+    paginationUiOffset,
+    rowIndexOffset: paginationUiOffset,
+    ariaRowCount: totalRows,
+  };
 };
 
 const DEFAULT_LOADING_LABEL = '読み込み中です';
@@ -473,7 +528,8 @@ export class List extends LitElement {
 
   private _syncRowsFromState(): void {
     const hasCurrentPair = this._hasCurrentPair();
-    const rowIndexOffset = this.pagination?.offset ?? 0;
+    const rowIndexOffset =
+      this.pagination === null ? 0 : resolveListPaginationMetrics(this.pagination).rowIndexOffset;
 
     this._rowElements.forEach((row, index) => {
       const rowId = this._getRowId(row);
@@ -767,27 +823,35 @@ export class List extends LitElement {
 
   private _renderPagination(currentPage: number, totalPages: number): TemplateResult {
     const getHref = this.getPageHref ?? ((page: number): string => `?page=${String(page)}`);
-    const previousPage = Math.max(1, currentPage - 1);
-    const nextPage = Math.min(totalPages, currentPage + 1);
+    const items = buildPaginationItems({ currentPage, totalPages });
+    const previousItem = items.find(
+      (item): item is Extract<PaginationItem, { kind: 'previous' }> => item.kind === 'previous',
+    );
+    const statusItem = items.find(
+      (item): item is Extract<PaginationItem, { kind: 'status' }> => item.kind === 'status',
+    );
+    const nextItem = items.find(
+      (item): item is Extract<PaginationItem, { kind: 'next' }> => item.kind === 'next',
+    );
 
     return html`
       <nav class="ui-pagination" aria-label="ページネーション" data-pagination>
         <a
           class="ui-pagination__control"
-          href="${getHref(previousPage)}"
+          href="${getHref(previousItem?.page ?? 1)}"
           rel="prev"
-          aria-disabled="${String(currentPage <= 1)}"
+          aria-disabled="${String(previousItem?.disabled ?? true)}"
           data-pagination-prev
           >前へ</a
         >
         <span class="ui-pagination__status" aria-current="page" data-pagination-current>
-          ${currentPage} / ${totalPages}
+          ${statusItem?.currentPage ?? 1} / ${statusItem?.totalPages ?? 1}
         </span>
         <a
           class="ui-pagination__control"
-          href="${getHref(nextPage)}"
+          href="${getHref(nextItem?.page ?? 1)}"
           rel="next"
-          aria-disabled="${String(currentPage >= totalPages)}"
+          aria-disabled="${String(nextItem?.disabled ?? true)}"
           data-pagination-next
           >次へ</a
         >
@@ -801,17 +865,12 @@ export class List extends LitElement {
     const hasRows = renderedRowCount > 0;
     const logicalColCount = this.columns.length + (this.showActions ? 1 : 0);
     const pagination = this.pagination;
+    const paginationMetrics = pagination === null ? null : resolveListPaginationMetrics(pagination);
     const currentSort = this._resolvedSort;
 
     const shouldShowLoading = this.loading;
     const shouldShowEmpty = !this.loading && !hasRows;
     const shouldShowPagination = pagination !== null && hasRows;
-    const currentPage =
-      pagination === null ? 1 : Math.floor(pagination.offset / Math.max(1, pagination.limit)) + 1;
-    const totalPages =
-      pagination === null
-        ? 1
-        : Math.max(1, Math.ceil(pagination.total / Math.max(1, pagination.limit)));
 
     return html`
       <section aria-label="${ifDefined(this.ariaLabel ?? undefined)}">
@@ -821,7 +880,9 @@ export class List extends LitElement {
           style="grid-template-columns: ${this._gridTemplateColumns}; --_gtc: ${this
             ._gridTemplateColumns};"
           aria-colcount="${String(logicalColCount)}"
-          aria-rowcount="${ifDefined(pagination !== null ? String(pagination.total) : undefined)}"
+          aria-rowcount="${ifDefined(
+            paginationMetrics === null ? undefined : String(paginationMetrics.ariaRowCount),
+          )}"
           aria-label="${ifDefined(this.ariaLabel ?? undefined)}"
           @keydown="${this._handleGridKeyDown}"
           @contextmenu="${this._handleGridContextMenu}"
@@ -899,7 +960,10 @@ export class List extends LitElement {
               <div
                 style="margin-top: var(--space-3, 12px); display: flex; justify-content: center;"
               >
-                ${this._renderPagination(currentPage, totalPages)}
+                ${this._renderPagination(
+                  paginationMetrics?.currentPage ?? 1,
+                  paginationMetrics?.totalPages ?? 1,
+                )}
               </div>
             `
           : nothing}

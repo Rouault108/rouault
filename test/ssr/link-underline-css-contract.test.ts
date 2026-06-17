@@ -31,13 +31,9 @@ describe('link underline css contract', () => {
     `;
 
     expect(
-      hasDeclarationForSelector(
-        cssText,
-        '.layout-toc__link[href]',
-        'text-decoration',
-        'none',
-        { scope: 'screen' },
-      ),
+      hasDeclarationForSelector(cssText, '.layout-toc__link[href]', 'text-decoration', 'none', {
+        scope: 'screen',
+      }),
     ).toBe(true);
     expect(
       hasDeclarationForSelector(cssText, '.print-only[href]', 'text-decoration', 'none', {
@@ -66,13 +62,9 @@ describe('link underline css contract', () => {
       }),
     ).toBe(true);
     expect(
-      hasDeclarationForSelector(
-        cssText,
-        '.three[href]',
-        'text-decoration',
-        'none',
-        { scope: 'screen' },
-      ),
+      hasDeclarationForSelector(cssText, '.three[href]', 'text-decoration', 'none', {
+        scope: 'screen',
+      }),
     ).toBe(true);
   });
 

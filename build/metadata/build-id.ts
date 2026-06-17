@@ -18,4 +18,6 @@ const resolveGitShortShaRaw = (): string | undefined => {
 export const resolveGitShortSha = (): string | undefined => resolveGitShortShaRaw();
 
 export const resolveBuildId = (explicit?: string | undefined): string =>
-  requireBuildIdInput(explicit ?? process.env['ROUAULT_BUILD_ID'] ?? resolveGitShortShaRaw() ?? DEFAULT_BUILD_ID);
+  requireBuildIdInput(
+    explicit ?? process.env['ROUAULT_BUILD_ID'] ?? resolveGitShortShaRaw() ?? DEFAULT_BUILD_ID,
+  );

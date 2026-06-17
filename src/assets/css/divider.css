@@ -1,1 +1,4 @@
-hr[data-divider-variant] { border: 0; border-top: var(--border-width, 1px) solid var(--border-default); }
+hr[data-divider-variant] {
+  border: 0;
+  border-top: var(--border-width, 1px) solid var(--border-default);
+}

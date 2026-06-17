@@ -9,7 +9,9 @@ const tokensCss = readFileSync(resolve(process.cwd(), 'src/assets/css/tokens.css
 describe('toc scroll css contract', () => {
   it('root scroll-padding は固定ヘッダー分だけを担うこと', () => {
     expect(mainCss).toContain('scroll-padding-top: var(--header-height, 48px);');
-    expect(mainCss).not.toContain('scroll-padding-top: calc(var(--header-height) + var(--space-4))');
+    expect(mainCss).not.toContain(
+      'scroll-padding-top: calc(var(--header-height) + var(--space-4))',
+    );
   });
 
   it('heading scroll-margin は TOC 専用の読書余白 token を使うこと', () => {

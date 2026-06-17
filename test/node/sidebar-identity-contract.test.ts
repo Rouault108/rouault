@@ -11,7 +11,10 @@ import {
 
 describe('sidebar identity contract', () => {
   it('sidebarId / stateScopeId は同一 grammar で trim 後 valid value を返すこと', () => {
-    expect(validateSidebarIdInput(' note-primary ')).toEqual({ kind: 'valid', value: 'note-primary' });
+    expect(validateSidebarIdInput(' note-primary ')).toEqual({
+      kind: 'valid',
+      value: 'note-primary',
+    });
     expect(validateSidebarStateScopeIdInput(' note-navigation ')).toEqual({
       kind: 'valid',
       value: 'note-navigation',
@@ -41,7 +44,10 @@ describe('sidebar identity contract', () => {
       'note@primary',
     ]) {
       expect(validateSidebarIdInput(invalid)).toEqual({ kind: 'invalid-format', value: invalid });
-      expect(validateSidebarStateScopeIdInput(invalid)).toEqual({ kind: 'invalid-format', value: invalid });
+      expect(validateSidebarStateScopeIdInput(invalid)).toEqual({
+        kind: 'invalid-format',
+        value: invalid,
+      });
       expect(normalizeSidebarId(invalid)).toBeNull();
       expect(normalizeSidebarStateScopeId(invalid)).toBeNull();
     }

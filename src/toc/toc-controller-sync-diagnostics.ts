@@ -6,8 +6,7 @@ export const tocControllerSyncDiagnosticReasons = [
   'panel-signature-mismatch',
 ] as const;
 
-export type TocControllerSyncDiagnosticReason =
-  (typeof tocControllerSyncDiagnosticReasons)[number];
+export type TocControllerSyncDiagnosticReason = (typeof tocControllerSyncDiagnosticReasons)[number];
 
 export type TocControllerSyncDiagnosticPayload =
   | {
@@ -38,8 +37,7 @@ const reasonSet = new Set<string>(tocControllerSyncDiagnosticReasons);
 
 export const isTocControllerSyncDiagnosticReason = (
   value: unknown,
-): value is TocControllerSyncDiagnosticReason =>
-  typeof value === 'string' && reasonSet.has(value);
+): value is TocControllerSyncDiagnosticReason => typeof value === 'string' && reasonSet.has(value);
 
 export const createMissingActiveHeadingDiagnostic = (
   ownerId: string,

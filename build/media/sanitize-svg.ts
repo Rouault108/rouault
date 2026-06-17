@@ -1,6 +1,7 @@
 const MAX_SCORE_SVG_BYTES = 256 * 1024;
 
-const UNSAFE_ELEMENT_PATTERN = /<(script|foreignObject|symbol|use)\b[\s\S]*?<\/\1\s*>|<(script|foreignObject|symbol|use)\b[^>]*\/?>/giu;
+const UNSAFE_ELEMENT_PATTERN =
+  /<(script|foreignObject|symbol|use)\b[\s\S]*?<\/\1\s*>|<(script|foreignObject|symbol|use)\b[^>]*\/?>/giu;
 const UNSAFE_EVENT_ATTRIBUTE_PATTERN = /\s+on[a-z0-9_-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/giu;
 const HREF_ATTRIBUTE_PATTERN = /\s+(?:xlink:)?href\s*=\s*(["'])(.*?)\1/giu;
 const STYLE_ATTRIBUTE_PATTERN = /\s+style\s*=\s*(["'])(.*?)\1/giu;

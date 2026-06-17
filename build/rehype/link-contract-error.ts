@@ -12,7 +12,11 @@ export class RehypeLinkContractError extends Error {
   override readonly name = 'RehypeLinkContractError';
   readonly reason: RehypeLinkContractErrorReason;
   readonly sourceLabel: string;
-  constructor(options: { readonly reason: RehypeLinkContractErrorReason; readonly sourceLabel: string; readonly message: string }) {
+  constructor(options: {
+    readonly reason: RehypeLinkContractErrorReason;
+    readonly sourceLabel: string;
+    readonly message: string;
+  }) {
     super(`[rehype-link-contract:${options.sourceLabel}] ${options.message}`);
     this.reason = options.reason;
     this.sourceLabel = options.sourceLabel;

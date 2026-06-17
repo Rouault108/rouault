@@ -255,7 +255,9 @@ const mergeCurrentNoteIntoSidebarNotes = (
       ? { navigationDirectoryPresentation: currentNote.navigationDirectoryPresentation }
       : {}),
     ...(currentNote.kind !== undefined ? { kind: currentNote.kind } : {}),
-    ...(currentNote.chromeProfile !== undefined ? { chromeProfile: currentNote.chromeProfile } : {}),
+    ...(currentNote.chromeProfile !== undefined
+      ? { chromeProfile: currentNote.chromeProfile }
+      : {}),
   };
 
   const alreadyIncluded = base.some((note) => {
