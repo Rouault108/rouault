@@ -32,6 +32,12 @@ const WRANGLER_OUTPUT_PATH = path.resolve(
   'deployment',
   'wrangler-pages-deploy.jsonl',
 );
+const WRANGLER_DIAGNOSTIC_PATH = path.resolve(
+  process.cwd(),
+  '.generated',
+  'deployment',
+  'wrangler-pages-deploy-diagnostic.json',
+);
 const R2_ATTEMPT_PATH = path.resolve(process.cwd(), '.generated', 'deployment', 'r2-attempt.json');
 const MEDIA_DELIVERY_ATTEMPT_PATH = path.resolve(
   process.cwd(),
@@ -79,6 +85,20 @@ interface WranglerParsedDeployment {
   readonly deploymentUrl: string;
 }
 
+interface WranglerDiagnosticArtifact {
+  readonly schemaVersion: 1;
+  readonly artifactKind: 'wrangler-pages-deploy-diagnostic';
+  readonly status: 'failure';
+  readonly phase: 'wrangler-exit' | 'structured-output-parse';
+  readonly createdAt: string;
+  readonly message: string;
+  readonly wranglerOutput: {
+    readonly path: string;
+    readonly exists: boolean;
+    readonly sizeBytes: number | null;
+  };
+}
+
 const readRequiredEnv = (name: string): string => {
   const value = process.env[name]?.trim();
   if (!value) {
@@ -96,8 +116,148 @@ const releaseStateArtifactName = (): string => {
   return 'rouault-release-state-local';
 };
 
+const boundedDiagnosticMessage = (value: string): string => {
+  const normalized = value.replace(/\s+/gu, ' ').trim();
+  return normalized.length > MAX_STRING_FIELD_BYTES
+    ? `${normalized.slice(0, MAX_STRING_FIELD_BYTES)}…`
+    : normalized;
+};
+
+const wranglerOutputMetadata = async (): Promise<WranglerDiagnosticArtifact['wranglerOutput']> => {
+  try {
+    const outputStat = await stat(WRANGLER_OUTPUT_PATH);
+    return {
+      path: path.relative(process.cwd(), WRANGLER_OUTPUT_PATH),
+      exists: true,
+      sizeBytes: outputStat.size,
+    };
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      return {
+        path: path.relative(process.cwd(), WRANGLER_OUTPUT_PATH),
+        exists: false,
+        sizeBytes: null,
+      };
+    }
+    throw error;
+  }
+};
+
+const writeWranglerDiagnosticBestEffort = async (
+  phase: WranglerDiagnosticArtifact['phase'],
+  message: string,
+): Promise<void> => {
+  try {
+    const diagnostic: WranglerDiagnosticArtifact = {
+      schemaVersion: 1,
+      artifactKind: 'wrangler-pages-deploy-diagnostic',
+      status: 'failure',
+      phase,
+      createdAt: new Date().toISOString(),
+      message: boundedDiagnosticMessage(message),
+      wranglerOutput: await wranglerOutputMetadata(),
+    };
+    await mkdir(path.dirname(WRANGLER_DIAGNOSTIC_PATH), { recursive: true });
+    await writeJsonAtomically(WRANGLER_DIAGNOSTIC_PATH, diagnostic);
+  } catch (error) {
+    const messageText = error instanceof Error ? error.message : String(error);
+    console.warn(`[pages-deploy] failed to write Wrangler diagnostic artifact: ${messageText}`);
+  }
+};
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
+
+const formatPath = (pathSegments: readonly string[]): string => pathSegments.join('.');
+
+const readStringAtPath = (
+  source: Record<string, unknown>,
+  pathSegments: readonly string[],
+): string | null => {
+  let current: unknown = source;
+  for (const segment of pathSegments) {
+    if (!isRecord(current)) {
+      return null;
+    }
+    current = current[segment];
+  }
+
+  return typeof current === 'string' && current.trim() ? current : null;
+};
+
+const readFirstStringAtPath = (
+  source: Record<string, unknown>,
+  pathCandidates: readonly (readonly string[])[],
+): string | null => {
+  for (const pathCandidate of pathCandidates) {
+    const value = readStringAtPath(source, pathCandidate);
+    if (value !== null) {
+      return value;
+    }
+  }
+
+  return null;
+};
+
+const collectAvailableKeyPaths = (
+  source: Record<string, unknown>,
+  prefix: readonly string[] = [],
+  depth = 0,
+): readonly string[] => {
+  const paths: string[] = [];
+  for (const key of Object.keys(source).sort()) {
+    const keyPath = [...prefix, key];
+    paths.push(formatPath(keyPath));
+    const value = source[key];
+    if (depth < 2 && isRecord(value)) {
+      paths.push(...collectAvailableKeyPaths(value, keyPath, depth + 1));
+    }
+  }
+
+  return paths;
+};
+
+const requirePagesDeployStringFields = (
+  pagesDeploy: Record<string, unknown>,
+  fieldPathsByName: ReadonlyMap<string, readonly (readonly string[])[]>,
+): ReadonlyMap<string, string> => {
+  const extractedFields = new Map<string, string>();
+  const missingFields: string[] = [];
+
+  for (const [fieldName, pathCandidates] of fieldPathsByName) {
+    const value = readFirstStringAtPath(pagesDeploy, pathCandidates);
+    if (value === null) {
+      missingFields.push(
+        `${fieldName} (${pathCandidates.map((pathCandidate) => formatPath(pathCandidate)).join(' or ')})`,
+      );
+      continue;
+    }
+    extractedFields.set(fieldName, value);
+  }
+
+  if (missingFields.length > 0) {
+    throw new Error(
+      [
+        '[pages-deploy] Wrangler Pages deploy event is missing required fields',
+        `missing: ${missingFields.join(', ')}`,
+        `available keys: ${collectAvailableKeyPaths(pagesDeploy).join(', ') || '(none)'}`,
+      ].join('; '),
+    );
+  }
+
+  return extractedFields;
+};
+
+const getExtractedField = (
+  extractedFields: ReadonlyMap<string, string>,
+  fieldName: string,
+): string => {
+  const value = extractedFields.get(fieldName);
+  if (value === undefined) {
+    throw new Error(`[pages-deploy] internal parser error: ${fieldName} was not extracted`);
+  }
+  return value;
+};
 
 const readPackageWranglerVersion = async (): Promise<string> => {
   const rawPackageJson = await readFile(path.resolve(process.cwd(), 'package.json'), 'utf8');
@@ -249,22 +409,31 @@ export const parseWranglerPagesDeployStructuredOutput = async (
     throw new Error('[pages-deploy] Wrangler command line args are not canonical');
   }
 
-  const deploymentId = pagesDeploy['deployment_id'];
-  const deploymentUrl = pagesDeploy['url'];
-  const projectName = pagesDeploy['project_name'];
-  const branch = pagesDeploy['branch'];
-  const environment = pagesDeploy['environment'];
-  const commitHash = pagesDeploy['commit_hash'];
-  if (
-    typeof deploymentId !== 'string' ||
-    typeof deploymentUrl !== 'string' ||
-    typeof projectName !== 'string' ||
-    typeof branch !== 'string' ||
-    typeof environment !== 'string' ||
-    typeof commitHash !== 'string'
-  ) {
-    throw new Error('[pages-deploy] Wrangler Pages deploy event is missing required fields');
-  }
+  const deployFields = requirePagesDeployStringFields(
+    pagesDeploy,
+    new Map<string, readonly (readonly string[])[]>([
+      ['deployment_id', [['deployment_id'], ['deploymentId']]],
+      ['url', [['url'], ['deployment_url'], ['deploymentUrl']]],
+      ['project_name', [['project_name'], ['projectName']]],
+      ['branch', [['branch'], ['deployment_trigger', 'metadata', 'branch']]],
+      ['environment', [['environment']]],
+      [
+        'commit_hash',
+        [
+          ['commit_hash'],
+          ['commitHash'],
+          ['deployment_trigger', 'metadata', 'commit_hash'],
+          ['deployment_trigger', 'metadata', 'commitHash'],
+        ],
+      ],
+    ]),
+  );
+  const deploymentId = getExtractedField(deployFields, 'deployment_id');
+  const deploymentUrl = getExtractedField(deployFields, 'url');
+  const projectName = getExtractedField(deployFields, 'project_name');
+  const branch = getExtractedField(deployFields, 'branch');
+  const environment = getExtractedField(deployFields, 'environment');
+  const commitHash = getExtractedField(deployFields, 'commit_hash');
   if (!DEPLOYMENT_ID_PATTERN.test(deploymentId)) {
     throw new Error('[pages-deploy] Wrangler Pages deploy deployment ID has invalid syntax');
   }
@@ -336,48 +505,62 @@ const runWranglerPagesDeploy = async (
     );
 
     let stderr = '';
+    let spawnError: Error | null = null;
     child.stderr.setEncoding('utf8');
     child.stderr.on('data', (chunk: string) => {
       stderr += chunk;
     });
-    child.on('error', reject);
+    child.on('error', (error) => {
+      spawnError = error;
+      void writeWranglerDiagnosticBestEffort('wrangler-exit', error.message).finally(() => {
+        reject(error);
+      });
+    });
     child.on('close', (exitCode) => {
-      if (exitCode !== 0) {
-        reject(
-          new Error(
-            `[pages-deploy] Wrangler failed with exit code ${String(exitCode)}: ${stderr.trim()}`,
-          ),
-        );
+      if (spawnError !== null) {
         return;
       }
+      void (async () => {
+        if (exitCode !== 0) {
+          await writeWranglerDiagnosticBestEffort(
+            'wrangler-exit',
+            `[pages-deploy] Wrangler failed with exit code ${String(exitCode)}`,
+          );
+          reject(
+            new Error(
+              `[pages-deploy] Wrangler failed with exit code ${String(exitCode)}: ${stderr.trim()}`,
+            ),
+          );
+          return;
+        }
 
-      try {
-        parseWranglerPagesDeployStructuredOutput({
-          filePath: WRANGLER_OUTPUT_PATH,
-          expectedWranglerVersion: wranglerVersion,
-          expectedDistDirectory: DIST_DIRECTORY,
-          expectedProjectName: projectName,
-          expectedBranch: 'main',
-          expectedCommitSha: commitSha,
-        })
-          .then((parsed) => {
-            resolve({
-              schemaVersion: 1,
-              deploymentId: parsed.deploymentId,
-              deploymentUrl: parsed.deploymentUrl,
-              projectName,
-              branch: 'main',
-              commitSha,
-              wranglerOutputKind: 'jsonl-structured-output',
-              wranglerVersion,
-            });
-          })
-          .catch((error: unknown) => {
-            reject(error instanceof Error ? error : new Error(String(error)));
+        try {
+          const parsed = await parseWranglerPagesDeployStructuredOutput({
+            filePath: WRANGLER_OUTPUT_PATH,
+            expectedWranglerVersion: wranglerVersion,
+            expectedDistDirectory: DIST_DIRECTORY,
+            expectedProjectName: projectName,
+            expectedBranch: 'main',
+            expectedCommitSha: commitSha,
           });
-      } catch (error) {
+          resolve({
+            schemaVersion: 1,
+            deploymentId: parsed.deploymentId,
+            deploymentUrl: parsed.deploymentUrl,
+            projectName,
+            branch: 'main',
+            commitSha,
+            wranglerOutputKind: 'jsonl-structured-output',
+            wranglerVersion,
+          });
+        } catch (error) {
+          const deployError = error instanceof Error ? error : new Error(String(error));
+          await writeWranglerDiagnosticBestEffort('structured-output-parse', deployError.message);
+          reject(deployError);
+        }
+      })().catch((error: unknown) => {
         reject(error instanceof Error ? error : new Error(String(error)));
-      }
+      });
     });
   });
 

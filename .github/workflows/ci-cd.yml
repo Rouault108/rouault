@@ -415,6 +415,17 @@ jobs:
         if: ${{ steps.upload-r2-media.outcome == 'success' && steps.verify-media-delivery.outcome == 'success' }}
         continue-on-error: true
         run: pnpm exec tsx scripts/deploy/deploy-cloudflare-pages.ts
+      - id: upload-pages-deploy-diagnostic-artifact
+        if: ${{ always() && steps.deploy-cloudflare-pages.outcome != 'skipped' }}
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: rouault-wrangler-pages-deploy-diagnostic
+          path: |
+            .generated/deployment/wrangler-pages-deploy.jsonl
+            .generated/deployment/wrangler-pages-deploy-diagnostic.json
+          if-no-files-found: warn
+          include-hidden-files: true
       - id: finalize-pages-deploy-failure
         if: ${{ steps.upload-r2-media.outcome == 'success' && steps.verify-media-delivery.outcome == 'success' && steps.deploy-cloudflare-pages.outcome != 'success' }}
         env:

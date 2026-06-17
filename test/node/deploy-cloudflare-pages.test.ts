@@ -45,7 +45,7 @@ const pagesDeploy = (overrides: Record<string, unknown> = {}): Record<string, un
   branch: expectedBranch,
   commit_hash: expectedCommitSha,
   deployment_id: 'fixture-deployment-id',
-  deployment_trigger: { metadata: { commit_hash: expectedCommitSha } },
+  deployment_trigger: { metadata: { branch: expectedBranch, commit_hash: expectedCommitSha } },
   environment: 'production',
   project_name: expectedProjectName,
   timestamp: '2026-01-01T00:00:01.000Z',
@@ -54,6 +54,15 @@ const pagesDeploy = (overrides: Record<string, unknown> = {}): Record<string, un
   version: 1,
   ...overrides,
 });
+
+const pagesDeployWithNestedGitMetadataOnly = (
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> => {
+  const event = pagesDeploy(overrides);
+  delete event['branch'];
+  delete event['commit_hash'];
+  return event;
+};
 
 const parseFixture = async (events: readonly unknown[]) =>
   parseWranglerPagesDeployStructuredOutput({
@@ -68,6 +77,15 @@ const parseFixture = async (events: readonly unknown[]) =>
 describe('Cloudflare Pages Wrangler structured output parser', () => {
   it('normalizes deployment coordinates from JSONL structured output', async () => {
     await expect(parseFixture([wranglerSession(), pagesDeploy()])).resolves.toEqual({
+      deploymentId: 'fixture-deployment-id',
+      deploymentUrl: 'https://fixture.pages.dev/',
+    });
+  });
+
+  it('accepts branch and commit hash from Wrangler deployment trigger metadata', async () => {
+    await expect(
+      parseFixture([wranglerSession(), pagesDeployWithNestedGitMetadataOnly()]),
+    ).resolves.toEqual({
       deploymentId: 'fixture-deployment-id',
       deploymentUrl: 'https://fixture.pages.dev/',
     });
@@ -105,5 +123,24 @@ describe('Cloudflare Pages Wrangler structured output parser', () => {
     await expect(parseFixture([wranglerSession(), pagesDeploy(), pagesDeploy()])).rejects.toThrow(
       /exactly one Pages deploy event/u,
     );
+  });
+
+  it('reports missing Pages deploy fields and available key paths', async () => {
+    await expect(
+      parseFixture([
+        wranglerSession(),
+        pagesDeployWithNestedGitMetadataOnly({
+          deployment_trigger: { metadata: { branch: expectedBranch } },
+        }),
+      ]),
+    ).rejects.toThrow(
+      /missing: commit_hash .*available keys: .*deployment_trigger\.metadata\.branch/u,
+    );
+  });
+
+  it('rejects non-HTTPS deployment URLs', async () => {
+    await expect(
+      parseFixture([wranglerSession(), pagesDeploy({ url: 'http://fixture.pages.dev' })]),
+    ).rejects.toThrow(/deployment URL must be an absolute HTTPS URL/u);
   });
 });

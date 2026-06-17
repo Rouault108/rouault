@@ -411,6 +411,17 @@ const assertReleaseStateWorkflowContract = (workflowSource: string, workflowPath
     `${workflowPath} must upload release state JSON as an artifact`,
   );
   assertCondition(
+    /id:\s*upload-pages-deploy-diagnostic-artifact[\s\S]{0,180}continue-on-error:\s*true/u.test(
+      workflowSource,
+    ) &&
+      workflowSource.includes('name: rouault-wrangler-pages-deploy-diagnostic') &&
+      workflowSource.includes('path: |') &&
+      workflowSource.includes('.generated/deployment/wrangler-pages-deploy.jsonl') &&
+      workflowSource.includes('.generated/deployment/wrangler-pages-deploy-diagnostic.json') &&
+      workflowSource.includes('if-no-files-found: warn'),
+    `${workflowPath} must upload Wrangler Pages deploy diagnostics as a non-blocking artifact`,
+  );
+  assertCondition(
     workflowSource.includes(
       'artifact-ids: ${{ needs.deploy-production.outputs.release-state-artifact-id }}',
     ),
