@@ -110,8 +110,8 @@ export const findSearchImportBoundaryViolations = (): Promise<string[]> => {
   const bootstrapText = readFileSync('src/search/bootstrap.ts', 'utf8');
   const searchDialogConstantsText = readFileSync('src/search/search-dialog-constants.ts', 'utf8');
   if (
-    !bootstrapText.includes(
-      'initSearchUnavailable(options: InitSearchUnavailableOptions): SearchBootstrapResult',
+    !/initSearchUnavailable\(\s*options:\s*InitSearchUnavailableOptions,\s*\):\s*SearchBootstrapResult/u.test(
+      bootstrapText,
     )
   ) {
     violations.push(

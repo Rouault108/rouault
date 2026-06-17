@@ -551,10 +551,17 @@ describe('static CSS contracts', () => {
     expect(css).not.to.contain('.search-page__spinner::before');
     expect(css).to.contain('@keyframes rouault-static-spinner-rotate');
     expect(css).to.contain('@media (max-width: 640px)');
-    expect(css).to.contain('.toolbar-row { align-items: stretch; }');
+    expectRuleToDeclare(atRuleBlock(css, '@media (max-width: 640px)'), '.toolbar-row', [
+      'align-items: stretch',
+    ]);
     expect(css).to.contain('@media (prefers-color-scheme: dark)');
-    expect(css).to.contain(
-      ".filter-option[data-selected='true'] { background: var(--bg-fill-muted); border-color: var(--border-accent, var(--border-default)); }",
+    expectRuleToDeclare(
+      atRuleBlock(css, '@media (prefers-color-scheme: dark)'),
+      ".filter-option[data-selected='true']",
+      [
+        'background: var(--bg-fill-muted)',
+        'border-color: var(--border-accent, var(--border-default))',
+      ],
     );
   });
 

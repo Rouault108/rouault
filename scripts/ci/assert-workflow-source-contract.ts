@@ -201,10 +201,29 @@ const assertReadmeMatchesEvidence = async (
   evidence: readonly ActionEvidence[],
 ): Promise<void> => {
   const readme = await readFile(readmePath, 'utf8');
+  const rows = new Set(
+    readme
+      .split(/\r?\n/u)
+      .filter((line) => line.trim().startsWith('|'))
+      .map((line) =>
+        line
+          .split('|')
+          .slice(1, -1)
+          .map((cell) => cell.trim())
+          .join('|'),
+      ),
+  );
+
   for (const item of evidence) {
-    const expectedRow = `| \`${item.actionName}\` | \`${item.adoptedTag}\` | \`${item.reviewedCommitSha}\` | \`node24\` | \`${item.workflowUsesSha}\` |`;
+    const expectedRow = [
+      `\`${item.actionName}\``,
+      `\`${item.adoptedTag}\``,
+      `\`${item.reviewedCommitSha}\``,
+      '`node24`',
+      `\`${item.workflowUsesSha}\``,
+    ].join('|');
     assertCondition(
-      readme.includes(expectedRow),
+      rows.has(expectedRow),
       `${readmePath} must include reviewed source binding row for ${item.actionName}`,
     );
   }

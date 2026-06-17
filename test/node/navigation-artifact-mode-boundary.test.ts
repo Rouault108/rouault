@@ -14,7 +14,7 @@ describe('navigation artifact mode boundary', () => {
     const source = readFileSync('build/dev/dev-router-artifact-middleware.ts', 'utf8');
 
     expect(source).toMatch(
-      /createNavigationEnvelopeFromHtml\(html, htmlFilePath, \{\s*mode: 'strict-artifact',\s*buildId,\s*generatedAt/su,
+      /createNavigationEnvelopeFromHtml\(\s*html,\s*htmlFilePath,\s*\{\s*mode: 'strict-artifact',\s*buildId,\s*generatedAt/su,
     );
     expect(source).not.toContain("mode: 'legacy-fixture'");
     expect(source).not.toMatch(/new Date\(\)\.toISOString\(\)/u);
