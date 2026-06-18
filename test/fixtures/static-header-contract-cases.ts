@@ -17,9 +17,51 @@ export const STATIC_HEADER_CONTRACT_ACCEPTED_HTML = `
     data-current-corpus-key="all"
   >
     <nav aria-label="global">
+      <details class="corpus-switcher" data-header-menu="corpus">
+        <summary class="corpus-trigger-label" aria-label="コーパス: すべて" data-header-menu-trigger="true">
+          <span>すべて</span>
+        </summary>
+        <nav class="corpus-switcher__menu" aria-label="コーパス" data-header-menu-panel="true">
+          <ul>
+            <li>
+              <a
+                href="/"
+                data-link-kind="internal-document"
+                data-link-surface="header"
+                data-header-menu-item="true"
+                data-header-menu-text="すべて"
+                aria-current="page"
+              >
+                すべて
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </details>
       <a class="search-trigger" href="/search/" data-link-kind="internal-document" data-link-surface="header">
         <span>search</span>
       </a>
+      <details class="theme-switcher" data-theme-switcher="true" data-header-menu="theme">
+        <summary class="theme-trigger-label" aria-label="テーマ: システム" data-header-menu-trigger="true">
+          <span>システム</span>
+        </summary>
+        <div class="theme-switcher__menu" role="group" aria-label="テーマ" data-header-menu-panel="true">
+          <ul>
+            <li>
+              <button
+                type="button"
+                data-theme-value="system"
+                data-selected="true"
+                data-header-menu-item="true"
+                data-header-menu-text="システム"
+                aria-pressed="true"
+              >
+                <span>システム</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </details>
       <button type="button" aria-expanded="false" data-layout-sidebar-toggle>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3z"></path></svg>
       </button>

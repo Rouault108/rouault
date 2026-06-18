@@ -65,6 +65,8 @@ const renderCorpusSwitcher = (input: LayoutHeaderHtmlInput): string => {
             { name: 'href', value: item.href },
             { name: 'data-link-kind', value: 'internal-document' },
             { name: 'data-link-surface', value: 'header' },
+            { name: 'data-header-menu-item', value: 'true' },
+            { name: 'data-header-menu-text', value: item.label },
             {
               name: 'aria-current',
               value: item.key === input.currentCorpusKey ? 'page' : undefined,
@@ -76,14 +78,25 @@ const renderCorpusSwitcher = (input: LayoutHeaderHtmlInput): string => {
     .join('');
 
   return `
-    <details class="corpus-switcher">
-      <summary class="corpus-trigger-label">
+    <details${serializeHtmlAttributes([
+      { name: 'class', value: 'corpus-switcher' },
+      { name: 'data-header-menu', value: 'corpus' },
+    ])}>
+      <summary${serializeHtmlAttributes([
+        { name: 'class', value: 'corpus-trigger-label' },
+        { name: 'aria-label', value: `コーパス: ${currentLabel}` },
+        { name: 'data-header-menu-trigger', value: 'true' },
+      ])}>
         <span class="corpus-trigger-main">
           <span class="corpus-trigger-text">${escapeHtmlText(currentLabel)}</span>
         </span>
         ${renderStaticIconHtml('chevron-down', 'corpus-trigger-icon')}
       </summary>
-      <nav class="corpus-switcher__menu" aria-label="コーパス">
+      <nav${serializeHtmlAttributes([
+        { name: 'class', value: 'corpus-switcher__menu' },
+        { name: 'aria-label', value: 'コーパス' },
+        { name: 'data-header-menu-panel', value: 'true' },
+      ])}>
         <ul>${links}</ul>
       </nav>
     </details>
@@ -154,6 +167,8 @@ const renderThemeSwitcher = (): string => {
             { name: 'type', value: 'button' },
             { name: 'data-theme-value', value },
             { name: 'data-selected', value: selected ? 'true' : undefined },
+            { name: 'data-header-menu-item', value: 'true' },
+            { name: 'data-header-menu-text', value: option.label },
             { name: 'aria-pressed', value: selected ? 'true' : 'false' },
           ])}>
             ${renderStaticIconHtml(selected ? 'check' : option.icon)}
@@ -165,15 +180,28 @@ const renderThemeSwitcher = (): string => {
     .join('');
 
   return `
-    <details class="theme-switcher" data-theme-switcher>
-      <summary class="theme-trigger-label" aria-label="テーマ: ${escapeHtmlText(current.label)}">
+    <details${serializeHtmlAttributes([
+      { name: 'class', value: 'theme-switcher' },
+      { name: 'data-theme-switcher', value: 'true' },
+      { name: 'data-header-menu', value: 'theme' },
+    ])}>
+      <summary${serializeHtmlAttributes([
+        { name: 'class', value: 'theme-trigger-label' },
+        { name: 'aria-label', value: `テーマ: ${current.label}` },
+        { name: 'data-header-menu-trigger', value: 'true' },
+      ])}>
         <span class="theme-trigger-main" data-theme-preference="${preference}">
           ${renderStaticIconHtml(current.icon, 'theme-trigger-icon')}
           <span class="theme-trigger-text" data-theme-current-label>${escapeHtmlText(current.label)}</span>
         </span>
         ${renderStaticIconHtml('chevron-down', 'theme-trigger-chevron')}
       </summary>
-      <div class="theme-switcher__menu" role="group" aria-label="テーマ">
+      <div${serializeHtmlAttributes([
+        { name: 'class', value: 'theme-switcher__menu' },
+        { name: 'role', value: 'group' },
+        { name: 'aria-label', value: 'テーマ' },
+        { name: 'data-header-menu-panel', value: 'true' },
+      ])}>
         <ul>${items}</ul>
       </div>
     </details>

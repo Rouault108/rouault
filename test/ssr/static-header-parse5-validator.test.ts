@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateStaticHeaderHtmlFragment } from '../../build/navigation/static-header-parse5-validator.js';
+import { renderLayoutHeaderHtml } from '../../src/layouts/layout-header-html.js';
+import { DEFAULT_SITE_URL_CONTEXT } from '../../shared/site/site-url-context.js';
 import {
   STATIC_HEADER_CONTRACT_ACCEPTED_HTML,
   STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML,
@@ -14,6 +16,49 @@ describe('static header parse5 validator', () => {
     expect(() =>
       validateStaticHeaderHtmlFragment(STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML),
     ).not.toThrow();
+  });
+
+  it('static header menu hook を details fallback の semantics と escaped text hook として出力すること', () => {
+    const html = renderLayoutHeaderHtml({
+      noteLayout: true,
+      sidebarEnabled: true,
+      sidebarId: 'note-primary',
+      tocPresence: 'absent',
+      tocTriggerReserved: false,
+      corpora: {
+        schemaVersion: 1,
+        source: 'corpus-navigation-projection',
+        items: [
+          {
+            key: 'all',
+            label: 'すべて "Alpha" & <Beta>',
+            href: '/corpora/all/',
+          },
+        ],
+      },
+      currentCorpusKey: 'all',
+      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+      searchHref: '/search/',
+    });
+
+    expect(() => validateStaticHeaderHtmlFragment(html)).not.toThrow();
+    expect(html).toContain('<details class="corpus-switcher" data-header-menu="corpus">');
+    expect(html).toContain('<summary class="corpus-trigger-label"');
+    expect(html).toContain('data-header-menu-trigger="true"');
+    expect(html).toContain(
+      'data-header-menu-text="すべて &quot;Alpha&quot; &amp; &lt;Beta&gt;"',
+    );
+    expect(html).toContain('<nav class="corpus-switcher__menu"');
+    expect(html).toContain('data-header-menu-panel="true"');
+    expect(html).toContain('data-header-menu-item="true"');
+    expect(html).toContain('<details class="theme-switcher"');
+    expect(html).toContain('data-header-menu="theme"');
+    expect(html).toContain('<div class="theme-switcher__menu" role="group"');
+    expect(html).toContain('data-theme-value="system"');
+    expect(html).toContain('aria-pressed="true"');
+    expect(html).not.toContain('role="menu"');
+    expect(html).not.toContain('role="menuitem"');
+    expect(html).not.toMatch(/\s(?:id|tabindex|hidden|inert)=/u);
   });
 
   it.each(STATIC_HEADER_CONTRACT_REJECTED_CASES)(
