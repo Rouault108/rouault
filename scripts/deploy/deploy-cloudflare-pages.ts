@@ -185,20 +185,6 @@ const readStringAtPath = (
   return typeof current === 'string' && current.trim() ? current : null;
 };
 
-const readFirstStringAtPath = (
-  source: Record<string, unknown>,
-  pathCandidates: readonly (readonly string[])[],
-): string | null => {
-  for (const pathCandidate of pathCandidates) {
-    const value = readStringAtPath(source, pathCandidate);
-    if (value !== null) {
-      return value;
-    }
-  }
-
-  return null;
-};
-
 const collectAvailableKeyPaths = (
   source: Record<string, unknown>,
   prefix: readonly string[] = [],
@@ -217,46 +203,99 @@ const collectAvailableKeyPaths = (
   return paths;
 };
 
-const requirePagesDeployStringFields = (
-  pagesDeploy: Record<string, unknown>,
-  fieldPathsByName: ReadonlyMap<string, readonly (readonly string[])[]>,
-): ReadonlyMap<string, string> => {
-  const extractedFields = new Map<string, string>();
-  const missingFields: string[] = [];
+interface WranglerDeployEventSource {
+  readonly label: 'pages-deploy' | 'pages-deploy-detailed';
+  readonly event: Record<string, unknown>;
+}
 
-  for (const [fieldName, pathCandidates] of fieldPathsByName) {
-    const value = readFirstStringAtPath(pagesDeploy, pathCandidates);
-    if (value === null) {
-      missingFields.push(
-        `${fieldName} (${pathCandidates.map((pathCandidate) => formatPath(pathCandidate)).join(' or ')})`,
-      );
-      continue;
+const formatCandidatePaths = (pathCandidates: readonly (readonly string[])[]): string =>
+  pathCandidates.map((pathCandidate) => formatPath(pathCandidate)).join(' or ');
+
+const collectStringCandidates = (
+  sources: readonly WranglerDeployEventSource[],
+  pathCandidates: readonly (readonly string[])[],
+): readonly string[] => {
+  const values: string[] = [];
+  for (const source of sources) {
+    for (const pathCandidate of pathCandidates) {
+      const value = readStringAtPath(source.event, pathCandidate);
+      if (value !== null) {
+        values.push(value);
+      }
     }
-    extractedFields.set(fieldName, value);
   }
 
-  if (missingFields.length > 0) {
-    throw new Error(
-      [
-        '[pages-deploy] Wrangler Pages deploy event is missing required fields',
-        `missing: ${missingFields.join(', ')}`,
-        `available keys: ${collectAvailableKeyPaths(pagesDeploy).join(', ') || '(none)'}`,
-      ].join('; '),
-    );
-  }
-
-  return extractedFields;
+  return values;
 };
 
-const getExtractedField = (
-  extractedFields: ReadonlyMap<string, string>,
+const throwMissingPagesDeployFields = (
+  sources: readonly WranglerDeployEventSource[],
+  missingFields: readonly string[],
+): never => {
+  const availableKeys = sources
+    .map(
+      (source) =>
+        `${source.label}: ${collectAvailableKeyPaths(source.event).join(', ') || '(none)'}`,
+    )
+    .join('; ');
+
+  throw new Error(
+    [
+      '[pages-deploy] Wrangler Pages deploy event is missing required fields',
+      `missing: ${missingFields.join(', ')}`,
+      `available keys: ${availableKeys}`,
+    ].join('; '),
+  );
+};
+
+const requireStringCandidates = (
+  sources: readonly WranglerDeployEventSource[],
   fieldName: string,
+  pathCandidates: readonly (readonly string[])[],
+): readonly string[] => {
+  const values = collectStringCandidates(sources, pathCandidates);
+  if (values.length === 0) {
+    throwMissingPagesDeployFields(sources, [
+      `${fieldName} (${formatCandidatePaths(pathCandidates)})`,
+    ]);
+  }
+
+  return values;
+};
+
+const requireStableStringField = (
+  sources: readonly WranglerDeployEventSource[],
+  fieldName: string,
+  pathCandidates: readonly (readonly string[])[],
+  normalize: (value: string) => string = (value) => value,
 ): string => {
-  const value = extractedFields.get(fieldName);
+  const values = requireStringCandidates(sources, fieldName, pathCandidates).map((value) =>
+    normalize(value),
+  );
+  const distinctValues = new Set(values);
+  if (distinctValues.size !== 1) {
+    throw new Error(`[pages-deploy] Wrangler Pages deploy ${fieldName} mismatch`);
+  }
+
+  const value = values[0];
   if (value === undefined) {
     throw new Error(`[pages-deploy] internal parser error: ${fieldName} was not extracted`);
   }
   return value;
+};
+
+const requireExpectedStringField = (
+  sources: readonly WranglerDeployEventSource[],
+  fieldName: string,
+  pathCandidates: readonly (readonly string[])[],
+  expectedValue: string,
+): string => {
+  const values = requireStringCandidates(sources, fieldName, pathCandidates);
+  if (values.some((value) => value !== expectedValue)) {
+    throw new Error(`[pages-deploy] Wrangler Pages deploy ${fieldName} mismatch`);
+  }
+
+  return expectedValue;
 };
 
 const readPackageWranglerVersion = async (): Promise<string> => {
@@ -379,6 +418,9 @@ export const parseWranglerPagesDeployStructuredOutput = async (
 
   const sessions = events.filter((event) => event['type'] === 'wrangler-session');
   const pagesDeployEvents = events.filter((event) => event['type'] === 'pages-deploy');
+  const pagesDeployDetailedEvents = events.filter(
+    (event) => event['type'] === 'pages-deploy-detailed',
+  );
   if (sessions.length !== 1) {
     throw new Error(
       '[pages-deploy] Wrangler structured output must contain exactly one session event',
@@ -389,10 +431,19 @@ export const parseWranglerPagesDeployStructuredOutput = async (
       '[pages-deploy] Wrangler structured output must contain exactly one Pages deploy event',
     );
   }
+  if (pagesDeployDetailedEvents.length > 1) {
+    throw new Error(
+      '[pages-deploy] Wrangler structured output must contain at most one Pages deploy detailed event',
+    );
+  }
 
   const session = sessions[0] ?? {};
   const pagesDeploy = pagesDeployEvents[0] ?? {};
+  const pagesDeployDetailed = pagesDeployDetailedEvents[0];
   if (session['version'] !== 1 || pagesDeploy['version'] !== 1) {
+    throw new Error('[pages-deploy] Wrangler structured output version is unsupported');
+  }
+  if (pagesDeployDetailed !== undefined && pagesDeployDetailed['version'] !== 1) {
     throw new Error('[pages-deploy] Wrangler structured output version is unsupported');
   }
   if (session['wrangler_version'] !== options.expectedWranglerVersion) {
@@ -409,31 +460,51 @@ export const parseWranglerPagesDeployStructuredOutput = async (
     throw new Error('[pages-deploy] Wrangler command line args are not canonical');
   }
 
-  const deployFields = requirePagesDeployStringFields(
-    pagesDeploy,
-    new Map<string, readonly (readonly string[])[]>([
-      ['deployment_id', [['deployment_id'], ['deploymentId']]],
-      ['url', [['url'], ['deployment_url'], ['deploymentUrl']]],
-      ['project_name', [['project_name'], ['projectName']]],
-      ['branch', [['branch'], ['deployment_trigger', 'metadata', 'branch']]],
-      ['environment', [['environment']]],
-      [
-        'commit_hash',
-        [
-          ['commit_hash'],
-          ['commitHash'],
-          ['deployment_trigger', 'metadata', 'commit_hash'],
-          ['deployment_trigger', 'metadata', 'commitHash'],
-        ],
-      ],
-    ]),
+  const deployEventSources: WranglerDeployEventSource[] = [
+    { label: 'pages-deploy', event: pagesDeploy },
+  ];
+  if (pagesDeployDetailed !== undefined) {
+    deployEventSources.push({ label: 'pages-deploy-detailed', event: pagesDeployDetailed });
+  }
+
+  const deploymentId = requireStableStringField(deployEventSources, 'deployment ID', [
+    ['deployment_id'],
+    ['deploymentId'],
+  ]);
+  const deploymentUrl = requireStableStringField(
+    deployEventSources,
+    'deployment URL',
+    [['url'], ['deployment_url'], ['deploymentUrl']],
+    normalizeHttpsUrl,
   );
-  const deploymentId = getExtractedField(deployFields, 'deployment_id');
-  const deploymentUrl = getExtractedField(deployFields, 'url');
-  const projectName = getExtractedField(deployFields, 'project_name');
-  const branch = getExtractedField(deployFields, 'branch');
-  const environment = getExtractedField(deployFields, 'environment');
-  const commitHash = getExtractedField(deployFields, 'commit_hash');
+  const projectName = requireStableStringField(deployEventSources, 'project name', [
+    ['project_name'],
+    ['projectName'],
+    ['pages_project'],
+  ]);
+  const branch = requireExpectedStringField(
+    deployEventSources,
+    'branch',
+    [['branch'], ['production_branch'], ['deployment_trigger', 'metadata', 'branch']],
+    options.expectedBranch,
+  );
+  const environment = requireExpectedStringField(
+    deployEventSources,
+    'environment',
+    [['environment']],
+    'production',
+  );
+  const commitHash = requireExpectedStringField(
+    deployEventSources,
+    'commit hash',
+    [
+      ['commit_hash'],
+      ['commitHash'],
+      ['deployment_trigger', 'metadata', 'commit_hash'],
+      ['deployment_trigger', 'metadata', 'commitHash'],
+    ],
+    options.expectedCommitSha,
+  );
   if (!DEPLOYMENT_ID_PATTERN.test(deploymentId)) {
     throw new Error('[pages-deploy] Wrangler Pages deploy deployment ID has invalid syntax');
   }
@@ -451,24 +522,18 @@ export const parseWranglerPagesDeployStructuredOutput = async (
   }
 
   const aliases = pagesDeploy['aliases'];
-  const candidates = [deploymentUrl];
   if (Array.isArray(aliases)) {
     for (const alias of aliases) {
       if (typeof alias !== 'string') {
         throw new Error('[pages-deploy] Wrangler Pages deploy aliases must be strings');
       }
-      candidates.push(alias);
+      normalizeHttpsUrl(alias);
     }
-  }
-
-  const normalizedDeploymentUrl = normalizeHttpsUrl(deploymentUrl);
-  for (const candidate of candidates) {
-    normalizeHttpsUrl(candidate);
   }
 
   return {
     deploymentId,
-    deploymentUrl: normalizedDeploymentUrl,
+    deploymentUrl,
   };
 };
 
