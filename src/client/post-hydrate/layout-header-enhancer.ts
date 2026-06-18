@@ -14,28 +14,46 @@ import {
   isPlainPrimaryAnchorActivation,
   resolveAnchorFromActivationEvent,
 } from '../../router/plain-primary-anchor-activation.js';
+import { resolveStaticIconBody, type IconName } from '../../../shared/icons/icon-paths.js';
 
 const HEADER_SELECTOR = 'header[data-layout-header]';
 const SIDEBAR_TOGGLE_OPEN_LABEL = 'サイドバーを開く';
 const SIDEBAR_TOGGLE_CLOSE_LABEL = 'サイドバーを閉じる';
 let activeEnhancement: AbortController | null = null;
 
+const patchStaticIcon = (container: Element | null, iconName: IconName): void => {
+  const svg = container?.querySelector('svg[data-icon]');
+  if (!(svg instanceof SVGElement)) {
+    return;
+  }
+  svg.setAttribute('data-icon', iconName);
+  svg.innerHTML = resolveStaticIconBody(iconName);
+};
+
 const syncThemeHeader = (root: ParentNode, preference = readAppliedThemePreference()): void => {
   const option = THEME_UI_OPTIONS[preference];
   for (const header of root.querySelectorAll(HEADER_SELECTOR)) {
+    const trigger = header.querySelector<HTMLElement>('[data-theme-switcher] summary');
+    trigger?.setAttribute('aria-label', `テーマ: ${option.label}`);
     const main = header.querySelector<HTMLElement>('[data-theme-preference]');
     main?.setAttribute('data-theme-preference', preference);
+    patchStaticIcon(main?.querySelector('.theme-trigger-icon') ?? null, option.icon);
     const label = header.querySelector<HTMLElement>('[data-theme-current-label]');
     if (label) {
       label.textContent = option.label;
     }
     for (const item of header.querySelectorAll<HTMLElement>('[data-theme-value]')) {
-      const selected = item.getAttribute('data-theme-value') === preference;
+      const value = item.getAttribute('data-theme-value');
+      const itemOption = isThemePreference(value) ? THEME_UI_OPTIONS[value] : null;
+      const selected = value === preference;
       item.setAttribute('aria-pressed', selected ? 'true' : 'false');
       if (selected) {
         item.setAttribute('data-selected', 'true');
       } else {
         item.removeAttribute('data-selected');
+      }
+      if (itemOption !== null) {
+        patchStaticIcon(item, selected ? 'check' : itemOption.icon);
       }
     }
   }

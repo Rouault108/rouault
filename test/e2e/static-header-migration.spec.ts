@@ -68,6 +68,42 @@ const expectHeaderControlWithinHeader = async (page: Page, selector: string): Pr
   expect(controlBox.y + controlBox.height).toBeLessThanOrEqual(headerBox.y + headerBox.height + 1);
 };
 
+const prepareHeaderMenuItems = async (
+  page: Page,
+  menu: 'corpus' | 'theme',
+  labels: readonly string[],
+): Promise<void> => {
+  await page.locator(`header[data-layout-header] [data-header-menu="${menu}"]`).evaluate(
+    (menuElement, itemLabels) => {
+      const list = menuElement.querySelector('ul');
+      if (list === null) {
+        throw new Error(
+          `${menuElement.getAttribute('data-header-menu') ?? 'header'} menu list is missing.`,
+        );
+      }
+
+      const firstItem = list.querySelector('li');
+      if (firstItem === null) {
+        throw new Error(
+          `${menuElement.getAttribute('data-header-menu') ?? 'header'} menu item is missing.`,
+        );
+      }
+
+      while (list.children.length < itemLabels.length) {
+        list.append(firstItem.cloneNode(true));
+      }
+
+      for (const [index, label] of itemLabels.entries()) {
+        const item = list.querySelectorAll<HTMLElement>('[data-header-menu-item]').item(index);
+        item.setAttribute('data-header-menu-text', label);
+        const labelNode = item.querySelector('span') ?? item;
+        labelNode.textContent = label;
+      }
+    },
+    [...labels],
+  );
+};
+
 test.describe('Static header migration', () => {
   test('SPA 遷移では shell.headerHtml で header 全体を置換すること', async ({ page }) => {
     await page.goto(layoutRich.directPath);
@@ -114,6 +150,18 @@ test.describe('Static header migration', () => {
     await expect(page.locator('header[data-layout-header] [data-theme-current-label]')).toHaveText(
       'ダーク',
     );
+    await expect(
+      page.locator('header[data-layout-header] .theme-trigger-icon svg[data-icon]'),
+    ).toHaveAttribute('data-icon', 'moon');
+    await expect(
+      page.locator('header[data-layout-header] [data-theme-value="dark"]'),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      page.locator('header[data-layout-header] [data-theme-value="dark"]'),
+    ).toHaveAttribute('data-selected', 'true');
+    await expect(
+      page.locator('header[data-layout-header] [data-theme-value="dark"] svg[data-icon]'),
+    ).toHaveAttribute('data-icon', 'check');
   });
 
   test('header menu は Escape dismissal と summary focus restore を同期すること', async ({
@@ -309,6 +357,86 @@ test.describe('Static header migration', () => {
         expanded: 'true',
       });
     await expectMenuOpen(page, 'theme', false);
+  });
+
+  test('header menu は Arrow / Home / End で補助 focus 移動し runtime tabindex を導入しないこと', async ({
+    page,
+  }) => {
+    await page.goto(markdownBasic.directPath);
+    await waitForAppRouterReady(page);
+    await prepareHeaderMenuItems(page, 'corpus', ['Alpha', 'Beta', 'Gamma']);
+
+    for (const menu of ['corpus', 'theme'] as const) {
+      const trigger = page.locator(
+        `header[data-layout-header] [data-header-menu="${menu}"] summary`,
+      );
+      const items = page.locator(
+        `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-item]`,
+      );
+
+      await trigger.click();
+      await expectMenuOpen(page, menu, true);
+
+      await page.keyboard.press('ArrowDown');
+      await expect(items.first()).toBeFocused();
+      await page.keyboard.press('ArrowDown');
+      await expect(items.nth(1)).toBeFocused();
+      await page.keyboard.press('ArrowUp');
+      await expect(items.first()).toBeFocused();
+      await page.keyboard.press('End');
+      await expect(items.nth((await items.count()) - 1)).toBeFocused();
+      await page.keyboard.press('Home');
+      await expect(items.first()).toBeFocused();
+      await expect(
+        page.locator(
+          `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-item][tabindex]`,
+        ),
+      ).toHaveCount(0);
+
+      await page.keyboard.press('Escape');
+      await expectMenuOpen(page, menu, false);
+    }
+  });
+
+  test('header menu は typeahead と close 後の buffer reset を同期すること', async ({ page }) => {
+    await page.goto(markdownBasic.directPath);
+    await waitForAppRouterReady(page);
+    const labels = ['Alpha', 'Beta', 'Gamma'] as const;
+    await prepareHeaderMenuItems(page, 'corpus', labels);
+    await prepareHeaderMenuItems(page, 'theme', labels);
+
+    for (const menu of ['corpus', 'theme'] as const) {
+      const trigger = page.locator(
+        `header[data-layout-header] [data-header-menu="${menu}"] summary`,
+      );
+      const items = page.locator(
+        `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-item]`,
+      );
+
+      await trigger.click();
+      await expectMenuOpen(page, menu, true);
+      await page.keyboard.press('G');
+      await expect(items.nth(2)).toBeFocused();
+
+      await page.keyboard.press('Escape');
+      await expectMenuOpen(page, menu, false);
+
+      await trigger.click();
+      await expectMenuOpen(page, menu, true);
+      await page.keyboard.press('B');
+      await expect(items.nth(1)).toBeFocused();
+
+      await page.evaluate(() => {
+        document.dispatchEvent(new CustomEvent('app-shell:rollback-start'));
+      });
+      await expectMenuOpen(page, menu, false);
+
+      await trigger.click();
+      await expectMenuOpen(page, menu, true);
+      await page.keyboard.press('A');
+      await expect(items.first()).toBeFocused();
+      await page.keyboard.press('Escape');
+    }
   });
 
   test('mobile TOC trigger は validated 後の controller activation で panel を開くこと', async ({

@@ -3,6 +3,7 @@ const MENU_SELECTOR = 'details[data-header-menu]';
 const TRIGGER_SELECTOR = 'summary[data-header-menu-trigger]';
 const PANEL_SELECTOR = '[data-header-menu-panel]';
 const ITEM_SELECTOR = '[data-header-menu-item]';
+const TYPEAHEAD_RESET_MS = 700;
 const APP_SHELL_EVENTS = [
   'app-shell:committed',
   'app-shell:rollback-start',
@@ -36,6 +37,8 @@ export class StaticHeaderMenuController {
   private readonly listenerController = new AbortController();
   private readonly suppressedTriggerClicks = new WeakSet<HTMLElement>();
   private readonly suppressionTimers = new Set<number>();
+  private typeaheadBuffer = '';
+  private typeaheadTimer: number | null = null;
 
   constructor() {
     this.syncMenus(document);
@@ -44,6 +47,7 @@ export class StaticHeaderMenuController {
 
   dispose(): void {
     this.closeAll();
+    this.resetTypeahead();
     for (const timer of this.suppressionTimers) {
       window.clearTimeout(timer);
     }
@@ -104,6 +108,10 @@ export class StaticHeaderMenuController {
       return;
     }
 
+    if (this.handleMenuFocusKeydown(event)) {
+      return;
+    }
+
     if (event.key !== 'Escape') {
       return;
     }
@@ -150,6 +158,7 @@ export class StaticHeaderMenuController {
 
   private close(menu: HTMLDetailsElement, options: CloseOptions = {}): void {
     menu.open = false;
+    this.resetTypeahead();
     this.syncMenu(menu);
     if (options.restoreFocus === true) {
       resolveTrigger(menu)?.focus();
@@ -157,6 +166,7 @@ export class StaticHeaderMenuController {
   }
 
   private closeAll(except?: HTMLDetailsElement): void {
+    this.resetTypeahead();
     for (const menu of document.querySelectorAll<HTMLDetailsElement>(
       `${HEADER_SELECTOR} ${MENU_SELECTOR}`,
     )) {
@@ -197,6 +207,119 @@ export class StaticHeaderMenuController {
       this.suppressionTimers.delete(timer);
     }, 0);
     this.suppressionTimers.add(timer);
+  }
+
+  private handleMenuFocusKeydown(event: KeyboardEvent): boolean {
+    const openMenu = this.resolveOpenMenuForEvent(event);
+    if (openMenu === null) {
+      return false;
+    }
+
+    const items = this.resolveMenuItems(openMenu);
+    if (items.length === 0) {
+      return false;
+    }
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.resetTypeahead();
+        this.focusRelativeItem(items, 1);
+        return true;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.resetTypeahead();
+        this.focusRelativeItem(items, -1);
+        return true;
+      case 'Home':
+        event.preventDefault();
+        this.resetTypeahead();
+        items[0]?.focus();
+        return true;
+      case 'End':
+        event.preventDefault();
+        this.resetTypeahead();
+        items.at(-1)?.focus();
+        return true;
+      default:
+        return this.handleTypeaheadKeydown(event, items);
+    }
+  }
+
+  private resolveMenuItems(menu: HTMLDetailsElement): HTMLElement[] {
+    return Array.from(menu.querySelectorAll<HTMLElement>(ITEM_SELECTOR)).filter(
+      (item) => !item.hasAttribute('disabled') && item.getAttribute('aria-disabled') !== 'true',
+    );
+  }
+
+  private focusRelativeItem(items: readonly HTMLElement[], offset: 1 | -1): void {
+    const activeElement = document.activeElement;
+    const currentIndex = activeElement instanceof HTMLElement ? items.indexOf(activeElement) : -1;
+    const fallbackIndex = offset > 0 ? -1 : 0;
+    const nextIndex = (currentIndex >= 0 ? currentIndex : fallbackIndex) + offset;
+    const wrappedIndex = (nextIndex + items.length) % items.length;
+    items[wrappedIndex]?.focus();
+  }
+
+  private handleTypeaheadKeydown(event: KeyboardEvent, items: readonly HTMLElement[]): boolean {
+    if (event.key.length !== 1 || event.altKey || event.ctrlKey || event.metaKey) {
+      return false;
+    }
+
+    const normalizedKey = event.key.toLocaleLowerCase();
+    const bufferedQuery = `${this.typeaheadBuffer}${normalizedKey}`;
+    let nextBuffer = bufferedQuery;
+    let match = this.resolveTypeaheadMatch(items, bufferedQuery);
+
+    if (match === null && this.typeaheadBuffer !== '') {
+      nextBuffer = normalizedKey;
+      match = this.resolveTypeaheadMatch(items, normalizedKey);
+    }
+
+    if (match === null) {
+      this.resetTypeahead();
+      return false;
+    }
+
+    event.preventDefault();
+    this.typeaheadBuffer = nextBuffer;
+    this.scheduleTypeaheadReset();
+    match.focus();
+    return true;
+  }
+
+  private resolveTypeaheadMatch(items: readonly HTMLElement[], buffer: string): HTMLElement | null {
+    const activeElement = document.activeElement;
+    const activeIndex = activeElement instanceof HTMLElement ? items.indexOf(activeElement) : -1;
+    const startIndex = activeIndex >= 0 ? activeIndex + 1 : 0;
+
+    for (let offset = 0; offset < items.length; offset += 1) {
+      const item = items[(startIndex + offset) % items.length];
+      const label = item?.getAttribute('data-header-menu-text')?.trim().toLocaleLowerCase() ?? '';
+      if (label.startsWith(buffer)) {
+        return item ?? null;
+      }
+    }
+
+    return null;
+  }
+
+  private scheduleTypeaheadReset(): void {
+    if (this.typeaheadTimer !== null) {
+      window.clearTimeout(this.typeaheadTimer);
+    }
+    this.typeaheadTimer = window.setTimeout(() => {
+      this.typeaheadBuffer = '';
+      this.typeaheadTimer = null;
+    }, TYPEAHEAD_RESET_MS);
+  }
+
+  private resetTypeahead(): void {
+    this.typeaheadBuffer = '';
+    if (this.typeaheadTimer !== null) {
+      window.clearTimeout(this.typeaheadTimer);
+      this.typeaheadTimer = null;
+    }
   }
 }
 
