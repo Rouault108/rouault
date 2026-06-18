@@ -7,6 +7,7 @@ import {
 } from '../../theme/theme-manager.js';
 import { THEME_UI_OPTIONS } from '../../theme/theme-ui-options.js';
 import { layoutSidebarController } from '../../components/layout/layout-sidebar-controller.js';
+import type { LayoutSidebarControllerSnapshot } from '../../components/layout/layout-sidebar-controller.js';
 import { enhanceLayoutHeaderTocBridge, toggleHeaderTocPanel } from './layout-header-toc-bridge.js';
 import {
   isPlainPrimaryAnchorActivation,
@@ -14,6 +15,8 @@ import {
 } from '../../router/plain-primary-anchor-activation.js';
 
 const HEADER_SELECTOR = 'header[data-layout-header]';
+const SIDEBAR_TOGGLE_OPEN_LABEL = 'サイドバーを開く';
+const SIDEBAR_TOGGLE_CLOSE_LABEL = 'サイドバーを閉じる';
 let activeEnhancement: AbortController | null = null;
 
 const syncThemeHeader = (root: ParentNode, preference = readAppliedThemePreference()): void => {
@@ -37,9 +40,64 @@ const syncThemeHeader = (root: ParentNode, preference = readAppliedThemePreferen
   }
 };
 
+const syncSidebarHeader = (
+  header: HTMLElement,
+  snapshot: LayoutSidebarControllerSnapshot,
+): void => {
+  const overlaySidebarOpen = snapshot.mode === 'overlay' && snapshot.state === 'expanded';
+  header.setAttribute('data-sidebar-mode', snapshot.mode);
+  header.setAttribute('data-sidebar-state', snapshot.state);
+  header.setAttribute('data-overlay-sidebar-open', overlaySidebarOpen ? 'true' : 'false');
+
+  const sidebarButton = header.querySelector<HTMLElement>('[data-layout-sidebar-toggle]');
+  if (sidebarButton === null) {
+    return;
+  }
+
+  sidebarButton.setAttribute('aria-expanded', overlaySidebarOpen ? 'true' : 'false');
+  sidebarButton.setAttribute(
+    'aria-label',
+    overlaySidebarOpen ? SIDEBAR_TOGGLE_CLOSE_LABEL : SIDEBAR_TOGGLE_OPEN_LABEL,
+  );
+};
+
+const syncSidebarHeaders = (root: ParentNode, signal: AbortSignal): void => {
+  for (const header of root.querySelectorAll<HTMLElement>(HEADER_SELECTOR)) {
+    const sidebarId = header.getAttribute('data-sidebar-id') ?? '';
+    if (sidebarId.trim().length === 0) {
+      continue;
+    }
+
+    const unsubscribe = layoutSidebarController.subscribe(sidebarId, (snapshot) => {
+      syncSidebarHeader(header, snapshot);
+    });
+
+    if (signal.aborted) {
+      unsubscribe();
+      continue;
+    }
+
+    signal.addEventListener('abort', unsubscribe, { once: true });
+  }
+};
+
 export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void => {
   activeEnhancement?.abort();
   const listenerController = new AbortController();
+  let sidebarSyncController: AbortController | null = null;
+  const syncCurrentSidebarHeaders = (syncRoot: ParentNode): void => {
+    sidebarSyncController?.abort();
+    sidebarSyncController = new AbortController();
+    syncSidebarHeaders(syncRoot, sidebarSyncController.signal);
+  };
+  listenerController.signal.addEventListener(
+    'abort',
+    () => {
+      sidebarSyncController?.abort();
+      sidebarSyncController = null;
+    },
+    { once: true },
+  );
   activeEnhancement = listenerController;
   signal.addEventListener(
     'abort',
@@ -50,6 +108,7 @@ export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void
     { once: true },
   );
   syncThemeHeader(root);
+  syncCurrentSidebarHeaders(root);
   enhanceLayoutHeaderTocBridge(listenerController.signal);
 
   document.addEventListener(
@@ -83,7 +142,7 @@ export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void
       if (sidebarButton) {
         const sidebarId = sidebarButton.getAttribute('data-sidebar-id') ?? '';
         if (sidebarId.length > 0) {
-          layoutSidebarController.toggle(sidebarId);
+          layoutSidebarController.toggle(sidebarId, sidebarButton);
         }
       }
     },
@@ -103,6 +162,7 @@ export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void
     'app-shell:committed',
     () => {
       syncThemeHeader(document);
+      syncCurrentSidebarHeaders(document);
     },
     { signal: listenerController.signal },
   );

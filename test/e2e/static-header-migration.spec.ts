@@ -4,6 +4,7 @@ import { e2eNoteFixtures } from './support/note-fixtures.js';
 
 const layoutRich = e2eNoteFixtures.layoutRich;
 const markdownBasic = e2eNoteFixtures.markdownBasic;
+const sidebarScrollTarget = e2eNoteFixtures.sidebarScrollTarget;
 
 const waitForAppRouterReady = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
@@ -148,6 +149,122 @@ test.describe('Static header migration', () => {
 
     await page.setViewportSize({ width: 1024, height: 760 });
     await expect.poll(() => visibleDisplay(page, triggerSelector)).toBe('none');
+    await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
+      'data-sidebar-mode',
+      'fixed',
+    );
+    await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
+      'data-sidebar-state',
+      'expanded',
+    );
+    await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
+      'data-overlay-sidebar-open',
+      'false',
+    );
+  });
+
+  test('sidebar toggle は controller state と aria を同期し focus return trigger を渡すこと', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 760 });
+    await page.goto(layoutRich.directPath);
+    await waitForAppRouterReady(page);
+
+    const header = page.locator('header[data-layout-header]');
+    const trigger = page.locator('header[data-layout-header] [data-layout-sidebar-toggle]');
+
+    await expect(header).toHaveAttribute('data-sidebar-mode', 'overlay');
+    await expect(header).toHaveAttribute('data-sidebar-state', 'collapsed');
+    await expect(header).toHaveAttribute('data-overlay-sidebar-open', 'false');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toHaveAttribute('aria-label', 'サイドバーを開く');
+
+    await trigger.click();
+
+    await expect(header).toHaveAttribute('data-sidebar-mode', 'overlay');
+    await expect(header).toHaveAttribute('data-sidebar-state', 'expanded');
+    await expect(header).toHaveAttribute('data-overlay-sidebar-open', 'true');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(trigger).toHaveAttribute('aria-label', 'サイドバーを閉じる');
+    await expect(page.locator('layout-sidebar-surface ui-sidebar-shell')).toHaveAttribute(
+      'data-state',
+      'expanded',
+    );
+
+    await page.locator('layout-sidebar-surface ui-sidebar-shell').evaluate((element) => {
+      const scrim = element.shadowRoot?.querySelector<HTMLElement>('.scrim');
+      if (scrim === undefined || scrim === null) {
+        throw new Error('sidebar scrim is missing.');
+      }
+      scrim.click();
+    });
+
+    await expect(header).toHaveAttribute('data-sidebar-state', 'collapsed');
+    await expect(header).toHaveAttribute('data-overlay-sidebar-open', 'false');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toHaveAttribute('aria-label', 'サイドバーを開く');
+    await expect(trigger).toBeFocused();
+  });
+
+  test('SPA header replacement 後は旧 header の sidebar subscription を解除すること', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 760 });
+    await page.goto(layoutRich.directPath);
+    await waitForAppRouterReady(page);
+
+    await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
+      'data-overlay-sidebar-open',
+      'false',
+    );
+    await page.evaluate(() => {
+      const oldHeader = document.querySelector<HTMLElement>('header[data-layout-header]');
+      if (oldHeader === null) throw new Error('static header is missing.');
+      const state = window as unknown as {
+        staticHeaderMigrationOldHeader?: HTMLElement;
+        readStaticHeaderMigrationOldHeader?: () => Record<string, string | null>;
+      };
+      state.staticHeaderMigrationOldHeader = oldHeader;
+      state.readStaticHeaderMigrationOldHeader = () => ({
+        connected: oldHeader.isConnected ? 'true' : 'false',
+        mode: oldHeader.getAttribute('data-sidebar-mode'),
+        state: oldHeader.getAttribute('data-sidebar-state'),
+        overlayOpen: oldHeader.getAttribute('data-overlay-sidebar-open'),
+      });
+    });
+
+    await navigateWithAppRouter(page, sidebarScrollTarget.normalizedPath);
+    await expect(page.locator('header[data-layout-header]')).toHaveCount(1);
+    await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
+      'data-sidebar-enabled',
+      'true',
+    );
+    await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
+      'data-overlay-sidebar-open',
+      'false',
+    );
+
+    await page.locator('header[data-layout-header] [data-layout-sidebar-toggle]').click();
+    await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
+      'data-overlay-sidebar-open',
+      'true',
+    );
+
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const state = window as unknown as {
+            readStaticHeaderMigrationOldHeader?: () => Record<string, string | null>;
+          };
+          return state.readStaticHeaderMigrationOldHeader?.() ?? {};
+        }),
+      )
+      .toEqual({
+        connected: 'false',
+        mode: 'overlay',
+        state: 'collapsed',
+        overlayOpen: 'false',
+      });
   });
 
   test('top page header controls は responsive 幅でも header 内に収まること', async ({ page }) => {

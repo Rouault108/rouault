@@ -113,6 +113,10 @@ header[data-layout-header][data-sidebar-mode='fixed'] .sidebar-toggle {
   display: none;
 }
 
+header[data-layout-header][data-overlay-sidebar-open='true'] {
+  z-index: var(--z-page-chrome, var(--z-fixed, 100));
+}
+
 header[data-layout-header] .corpus-switcher,
 header[data-layout-header] .theme-switcher {
   position: relative;
@@ -186,6 +190,10 @@ header[data-layout-header] .toc-trigger-text {
     background: oklch(from var(--bg-default) l c h / 0.85);
     backdrop-filter: blur(var(--blur-md, 12px)) saturate(0.5);
     box-shadow: inset 0 1px 0 0 oklch(100% 0 0 / 0.05);
+  }
+
+  header[data-layout-header][data-overlay-sidebar-open='true'] {
+    backdrop-filter: none;
   }
 }
 
