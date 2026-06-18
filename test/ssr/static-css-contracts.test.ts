@@ -347,6 +347,12 @@ describe('static CSS contracts', () => {
       ['display: none'],
     );
 
+    expectRuleToDeclare(
+      css,
+      "header[data-layout-header][data-overlay-sidebar-open='true']",
+      ['z-index: var(--z-non-modal-panel, var(--z-modal, 300))'],
+    );
+
     const mobileHeader = atRuleBlock(css, '@container layout-header-shell (width < 640px)');
     expectRuleToDeclare(
       mobileHeader,

@@ -114,7 +114,7 @@ header[data-layout-header][data-sidebar-mode='fixed'] .sidebar-toggle {
 }
 
 header[data-layout-header][data-overlay-sidebar-open='true'] {
-  z-index: var(--z-page-chrome, var(--z-fixed, 100));
+  z-index: var(--z-non-modal-panel, var(--z-modal, 300));
 }
 
 header[data-layout-header] .corpus-switcher,
