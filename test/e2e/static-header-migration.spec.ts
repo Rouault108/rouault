@@ -115,11 +115,19 @@ test.describe('Static header migration', () => {
     await waitForAppRouterReady(page);
 
     const trigger = page.locator('header[data-layout-header] [data-toc-trigger]');
+    await expect(trigger).toHaveAttribute('data-visible', 'true');
     await expect(trigger).toHaveAttribute('data-toc-trigger-interactive', 'true');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toHaveAttribute('aria-label', '目次を開く');
     await trigger.click();
 
     await expect(page.locator('[data-layout-toc-mobile-panel]')).toBeVisible();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(trigger).toHaveAttribute('aria-label', '目次を閉じる');
+
+    await trigger.click();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toHaveAttribute('aria-label', '目次を開く');
   });
 
   test('header responsive CSS は TOC trigger の 640px 境界を維持すること', async ({ page }) => {
@@ -133,6 +141,20 @@ test.describe('Static header migration', () => {
     });
     await expect.poll(() => visibleDisplay(page, triggerSelector)).not.toBe('none');
 
+    await page.locator(triggerSelector).evaluate((element) => {
+      element.setAttribute('data-visible', 'false');
+      element.focus();
+    });
+    await expect.poll(() => visibleDisplay(page, triggerSelector)).toBe('none');
+    await expect
+      .poll(() =>
+        page.locator(triggerSelector).evaluate((element) => document.activeElement === element),
+      )
+      .toBe(false);
+
+    await page.locator(triggerSelector).evaluate((element) => {
+      element.setAttribute('data-visible', 'true');
+    });
     await page.setViewportSize({ width: 640, height: 760 });
     await expect.poll(() => visibleDisplay(page, triggerSelector)).toBe('none');
   });

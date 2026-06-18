@@ -43,10 +43,29 @@ const resolveRuntimeMobilePanel = (runtimeId: string): HTMLElement | null => {
   return panel instanceof HTMLElement && panel.matches(MOBILE_PANEL_SELECTOR) ? panel : null;
 };
 
+const syncTriggerMobileAttributes = (trigger: HTMLElement, panelOpen: boolean): void => {
+  trigger.setAttribute('aria-expanded', panelOpen ? 'true' : 'false');
+  trigger.setAttribute('aria-label', panelOpen ? '目次を閉じる' : '目次を開く');
+  const runtimeId = trigger.getAttribute('data-toc-runtime-id')?.trim();
+  const panel = runtimeId && runtimeId.length > 0 ? resolveRuntimeMobilePanel(runtimeId) : null;
+  if (panel?.id) {
+    trigger.setAttribute('aria-controls', panel.id);
+  } else {
+    trigger.removeAttribute('aria-controls');
+  }
+};
+
 const syncRuntimeSnapshot = (snapshot: LayoutTocRuntimeSnapshot): void => {
-  const interactive = snapshot.ready && snapshot.hasVisibleHeadings;
   for (const trigger of resolveTriggers()) {
-    trigger.setAttribute('data-visible', snapshot.hasVisibleHeadings ? 'true' : 'false');
+    const reserved = trigger.getAttribute('data-toc-trigger-reserved') === 'true';
+    const visible =
+      reserved &&
+      snapshot.ready &&
+      snapshot.hasVisibleHeadings &&
+      snapshot.hydrationState !== 'disposed';
+    const interactive = visible;
+
+    trigger.setAttribute('data-visible', visible ? 'true' : 'false');
     trigger.setAttribute('data-toc-hydration-state', snapshot.hydrationState ?? 'unhydrated');
     trigger.setAttribute('data-toc-trigger-interactive', interactive ? 'true' : 'false');
     trigger.setAttribute('aria-disabled', interactive ? 'false' : 'true');
@@ -55,10 +74,7 @@ const syncRuntimeSnapshot = (snapshot: LayoutTocRuntimeSnapshot): void => {
 
 const syncMobileSnapshot = (panelOpen: boolean): void => {
   for (const trigger of resolveTriggers()) {
-    trigger.setAttribute('aria-expanded', panelOpen ? 'true' : 'false');
-    const runtimeId = trigger.getAttribute('data-toc-runtime-id')?.trim();
-    const panel = runtimeId && runtimeId.length > 0 ? resolveRuntimeMobilePanel(runtimeId) : null;
-    if (panel?.id) trigger.setAttribute('aria-controls', panel.id);
+    syncTriggerMobileAttributes(trigger, panelOpen);
   }
 };
 

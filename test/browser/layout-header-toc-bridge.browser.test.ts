@@ -61,6 +61,7 @@ const appendBridgeFixture = (): HTMLElement => {
         href="#layout-toc-toc-source-test"
         data-toc-trigger="true"
         data-toc-runtime-id="toc-source-test"
+        data-toc-trigger-reserved="true"
         data-toc-trigger-interactive="false"
         data-link-kind="internal-fragment"
         data-link-surface="header"
@@ -193,11 +194,117 @@ describe('layout-header-toc-bridge', () => {
     const panel = document.querySelector<HTMLElement>(TOC_MOBILE_PANEL_SELECTOR);
     const trigger = root.querySelector<HTMLElement>('[data-toc-trigger]');
     expect(panel?.querySelectorAll('a[href]').length).to.equal(2);
+    expect(trigger?.getAttribute('data-visible')).to.equal('true');
     expect(trigger?.getAttribute('data-toc-trigger-interactive')).to.equal('true');
+    expect(trigger?.getAttribute('aria-disabled')).to.equal('false');
     expect(trigger?.getAttribute('aria-controls')).to.equal(panel?.id);
+    expect(trigger?.getAttribute('aria-expanded')).to.equal('false');
+    expect(trigger?.getAttribute('aria-label')).to.equal('目次を開く');
     expect(
       root.querySelector('layout-toc-controller')?.hasAttribute('data-toc-trigger-reserved'),
     ).to.equal(false);
+  });
+
+  it('TOC trigger の visible と interactive を reserved / ready / hydrationState で同一条件に同期すること', async () => {
+    const root = appendBridgeFixture();
+    const trigger = root.querySelector<HTMLElement>('[data-toc-trigger]');
+    if (!(trigger instanceof HTMLElement)) throw new Error('TOC trigger fixture is missing');
+
+    controller = new AbortController();
+    enhanceLayoutHeaderTocBridge(controller.signal);
+
+    layoutTocRuntimeStore.publish('toc-source-test', {
+      ready: true,
+      hasVisibleHeadings: true,
+      activeId: 'section-1',
+      hydrationState: 'hydrated',
+    });
+
+    expect(trigger.getAttribute('data-visible')).to.equal('true');
+    expect(trigger.getAttribute('data-toc-trigger-interactive')).to.equal('true');
+    expect(trigger.getAttribute('aria-disabled')).to.equal('false');
+    expect(trigger.getAttribute('data-toc-hydration-state')).to.equal('hydrated');
+
+    trigger.setAttribute('data-toc-trigger-reserved', 'false');
+    layoutTocRuntimeStore.publish('toc-source-test', {
+      ready: true,
+      hasVisibleHeadings: true,
+      activeId: 'section-1',
+      hydrationState: 'hydrated',
+    });
+
+    expect(trigger.getAttribute('data-visible')).to.equal('false');
+    expect(trigger.getAttribute('data-toc-trigger-interactive')).to.equal('false');
+    expect(trigger.getAttribute('aria-disabled')).to.equal('true');
+
+    trigger.setAttribute('data-toc-trigger-reserved', 'true');
+    layoutTocRuntimeStore.publish('toc-source-test', {
+      ready: false,
+      hasVisibleHeadings: true,
+      activeId: 'section-1',
+      hydrationState: 'hydrating',
+    });
+
+    expect(trigger.getAttribute('data-visible')).to.equal('false');
+    expect(trigger.getAttribute('data-toc-trigger-interactive')).to.equal('false');
+    expect(trigger.getAttribute('aria-disabled')).to.equal('true');
+
+    layoutTocRuntimeStore.publish('toc-source-test', {
+      ready: true,
+      hasVisibleHeadings: false,
+      activeId: null,
+      hydrationState: 'hydrated',
+    });
+
+    expect(trigger.getAttribute('data-visible')).to.equal('false');
+    expect(trigger.getAttribute('data-toc-trigger-interactive')).to.equal('false');
+    expect(trigger.getAttribute('aria-disabled')).to.equal('true');
+    expect(trigger.getAttribute('data-toc-hydration-state')).to.equal('hydrated');
+
+    layoutTocRuntimeStore.publish('toc-source-test', {
+      ready: true,
+      hasVisibleHeadings: true,
+      activeId: 'section-1',
+      hydrationState: 'disposed',
+    });
+
+    expect(trigger.getAttribute('data-visible')).to.equal('false');
+    expect(trigger.getAttribute('data-toc-trigger-interactive')).to.equal('false');
+    expect(trigger.getAttribute('aria-disabled')).to.equal('true');
+    expect(trigger.getAttribute('data-toc-hydration-state')).to.equal('disposed');
+  });
+
+  it('mobile panel open state に応じて TOC trigger の expanded と label を同期すること', async () => {
+    const root = appendBridgeFixture();
+    const header = root.querySelector<HTMLElement>('header[data-layout-header]');
+    const trigger = root.querySelector<HTMLElement>('[data-toc-trigger]');
+    if (!(header instanceof HTMLElement) || !(trigger instanceof HTMLElement)) {
+      throw new Error('TOC bridge fixture is missing');
+    }
+
+    controller = new AbortController();
+    enhanceLayoutHeaderTocBridge(controller.signal);
+
+    commitShellGeneration(1);
+    dispatchValidated(header, 1);
+    await waitUntil(
+      () => document.querySelector(TOC_MOBILE_PANEL_SELECTOR) instanceof HTMLElement,
+      'TOC mobile panel is created after app-shell:validated',
+      { timeout: 4000, interval: 50 },
+    );
+
+    const panel = document.querySelector<HTMLElement>(TOC_MOBILE_PANEL_SELECTOR);
+    expect(trigger.getAttribute('aria-controls')).to.equal(panel?.id);
+    expect(trigger.getAttribute('aria-expanded')).to.equal('false');
+    expect(trigger.getAttribute('aria-label')).to.equal('目次を開く');
+
+    layoutTocMobileController.open('toc-source-test', trigger);
+    expect(trigger.getAttribute('aria-expanded')).to.equal('true');
+    expect(trigger.getAttribute('aria-label')).to.equal('目次を閉じる');
+
+    layoutTocMobileController.close('toc-source-test');
+    expect(trigger.getAttribute('aria-expanded')).to.equal('false');
+    expect(trigger.getAttribute('aria-label')).to.equal('目次を開く');
   });
 
   it('app-shell:validated 前の app-content:hydration-ready では TOC controller と mobile panel を起動しないこと', async () => {
