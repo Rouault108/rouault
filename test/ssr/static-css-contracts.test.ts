@@ -339,6 +339,34 @@ describe('static CSS contracts', () => {
     expect(css).not.to.match(/(^|[,{]\s*)layout-header(?:[.#[:\s,{>+~]|$)/u);
     expect(css).not.to.match(/(^|[,{]\s*)ui-header(?:[.#[:\s,{>+~]|$)/u);
     expect(css.match(/container-name:\s*layout-header-shell/gu) ?? []).toHaveLength(1);
+
+    expectRuleToDeclare(css, 'header[data-layout-header] .toc-trigger', ['display: none']);
+    expectRuleToDeclare(
+      css,
+      "header[data-layout-header][data-sidebar-mode='fixed'] .sidebar-toggle",
+      ['display: none'],
+    );
+
+    const mobileHeader = atRuleBlock(css, '@container layout-header-shell (width < 640px)');
+    expectRuleToDeclare(
+      mobileHeader,
+      "header[data-layout-header] .toc-trigger[data-visible='true']",
+      ['display: inline-flex'],
+    );
+
+    const tabletHeader = atRuleBlock(css, '@container layout-header-shell (width >= 640px)');
+    expectRuleToDeclare(
+      tabletHeader,
+      "header[data-layout-header] .toc-trigger[data-visible='true']",
+      ['display: none'],
+    );
+
+    const desktopHeader = atRuleBlock(css, '@container layout-header-shell (width >= 1024px)');
+    expectRuleToDeclare(
+      desktopHeader,
+      "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .sidebar-toggle",
+      ['display: none'],
+    );
   });
 
   it('search dialog CSS contains required layout and state declarations', () => {

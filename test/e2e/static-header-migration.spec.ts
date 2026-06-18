@@ -31,6 +31,33 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
   }, url);
 };
 
+const visibleDisplay = async (page: Page, selector: string): Promise<string> =>
+  page.locator(selector).evaluate((element) => window.getComputedStyle(element).display);
+
+const expectHeaderControlWithinHeader = async (page: Page, selector: string): Promise<void> => {
+  const header = page.locator('header[data-layout-header]');
+  const control = page.locator(selector);
+
+  await expect(control).toBeVisible();
+
+  const [headerBox, controlBox] = await Promise.all([
+    header.boundingBox(),
+    control.boundingBox(),
+  ]);
+  if (headerBox === null || controlBox === null) {
+    throw new Error(`Header or control box is missing for selector: ${selector}`);
+  }
+
+  expect(controlBox.x).toBeGreaterThanOrEqual(headerBox.x - 1);
+  expect(controlBox.y).toBeGreaterThanOrEqual(headerBox.y - 1);
+  expect(controlBox.x + controlBox.width).toBeLessThanOrEqual(
+    headerBox.x + headerBox.width + 1,
+  );
+  expect(controlBox.y + controlBox.height).toBeLessThanOrEqual(
+    headerBox.y + headerBox.height + 1,
+  );
+};
+
 test.describe('Static header migration', () => {
   test('SPA 遷移では shell.headerHtml で header 全体を置換すること', async ({ page }) => {
     await page.goto(layoutRich.directPath);
@@ -92,6 +119,67 @@ test.describe('Static header migration', () => {
 
     await expect(page.locator('[data-layout-toc-mobile-panel]')).toBeVisible();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  test('header responsive CSS は TOC trigger の 640px 境界を維持すること', async ({ page }) => {
+    await page.setViewportSize({ width: 639, height: 760 });
+    await page.goto(layoutRich.directPath);
+    await waitForAppRouterReady(page);
+
+    const triggerSelector = 'header[data-layout-header] [data-toc-trigger]';
+    await page.locator(triggerSelector).evaluate((element) => {
+      element.setAttribute('data-visible', 'true');
+    });
+    await expect.poll(() => visibleDisplay(page, triggerSelector)).not.toBe('none');
+
+    await page.setViewportSize({ width: 640, height: 760 });
+    await expect.poll(() => visibleDisplay(page, triggerSelector)).toBe('none');
+  });
+
+  test('header responsive CSS は sidebar toggle の 1024px 境界を維持すること', async ({
+    page,
+  }) => {
+    const triggerSelector = 'header[data-layout-header] [data-layout-sidebar-toggle]';
+
+    await page.setViewportSize({ width: 1023, height: 760 });
+    await page.goto(layoutRich.directPath);
+    await waitForAppRouterReady(page);
+    await expect.poll(() => visibleDisplay(page, triggerSelector)).not.toBe('none');
+
+    await page.setViewportSize({ width: 1024, height: 760 });
+    await expect.poll(() => visibleDisplay(page, triggerSelector)).toBe('none');
+  });
+
+  test('top page header controls は responsive 幅でも header 内に収まること', async ({ page }) => {
+    const widths = [390, 640, 960, 1280] as const;
+
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: 760 });
+      await page.goto('/');
+      await waitForAppRouterReady(page);
+
+      await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
+        'data-note-layout',
+        'false',
+      );
+      await expect(
+        page.locator('header[data-layout-header] [data-layout-sidebar-toggle]'),
+      ).toHaveCount(0);
+      await expect(page.locator('header[data-layout-header] [data-toc-trigger]')).toHaveCount(0);
+
+      await expectHeaderControlWithinHeader(
+        page,
+        'header[data-layout-header] .corpus-switcher > summary',
+      );
+      await expectHeaderControlWithinHeader(
+        page,
+        'header[data-layout-header] [data-search-dialog-trigger]',
+      );
+      await expectHeaderControlWithinHeader(
+        page,
+        'header[data-layout-header] [data-theme-switcher] > summary',
+      );
+    }
   });
 
   test('commit 後 link contract 失敗時は rollback 完了後に app-shell:restored を発火すること', async ({
@@ -232,6 +320,28 @@ test.describe('Static header migration', () => {
 
 test.describe('Static header migration no-JS', () => {
   test.use({ javaScriptEnabled: false });
+
+  test('narrow note page は hydration 前の静的 CSS で sidebar toggle を表示可能にすること', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1023, height: 760 });
+    await page.goto(layoutRich.directPath);
+
+    await expect(
+      page.locator('header[data-layout-header] [data-layout-sidebar-toggle]'),
+    ).toBeVisible();
+  });
+
+  test('desktop note page は hydration 前の静的 CSS で sidebar toggle を隠すこと', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1024, height: 760 });
+    await page.goto(layoutRich.directPath);
+
+    await expect(
+      page.locator('header[data-layout-header] [data-layout-sidebar-toggle]'),
+    ).toBeHidden();
+  });
 
   test('検索リンクは JS 無効時も検索ページへ通常遷移すること', async ({ page }) => {
     await page.goto('/about/');
