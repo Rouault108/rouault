@@ -24,7 +24,8 @@ const resolveMenuFromTriggerEvent = (event: Event): HTMLDetailsElement | null =>
   }
   const trigger = target.closest<HTMLElement>(TRIGGER_SELECTOR);
   const menu = trigger?.closest<HTMLDetailsElement>(MENU_SELECTOR) ?? null;
-  if (menu === null || menu.closest(HEADER_SELECTOR) === null) {
+  const header = menu?.closest(HEADER_SELECTOR) ?? null;
+  if (header === null) {
     return null;
   }
   return menu;
