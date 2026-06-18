@@ -10,9 +10,9 @@ const APP_SHELL_EVENTS = [
   'app-shell:restored',
 ] as const;
 
-type CloseOptions = {
+interface CloseOptions {
   readonly restoreFocus?: boolean;
-};
+}
 
 const isHTMLElement = (value: EventTarget | null): value is HTMLElement =>
   value instanceof HTMLElement;
@@ -57,21 +57,21 @@ export class StaticHeaderMenuController {
 
   private bindListeners(): void {
     const { signal } = this.listenerController;
-    document.addEventListener('click', (event) => this.handleClick(event), { signal });
-    document.addEventListener('keydown', (event) => this.handleKeydown(event), { signal });
-    document.addEventListener('pointerdown', (event) => this.handlePointerdown(event), {
+    document.addEventListener('click', (event) => { this.handleClick(event); }, { signal });
+    document.addEventListener('keydown', (event) => { this.handleKeydown(event); }, { signal });
+    document.addEventListener('pointerdown', (event) => { this.handlePointerdown(event); }, {
       signal,
     });
-    document.addEventListener('scroll', (event) => this.handleScroll(event), {
+    document.addEventListener('scroll', (event) => { this.handleScroll(event); }, {
       capture: true,
       signal,
     });
-    window.addEventListener('scroll', (event) => this.handleScroll(event), {
+    window.addEventListener('scroll', (event) => { this.handleScroll(event); }, {
       capture: true,
       signal,
     });
     for (const eventName of APP_SHELL_EVENTS) {
-      document.addEventListener(eventName, () => this.closeAll(), { signal });
+      document.addEventListener(eventName, () => { this.closeAll(); }, { signal });
     }
   }
 
