@@ -35,28 +35,37 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
 const visibleDisplay = async (page: Page, selector: string): Promise<string> =>
   page.locator(selector).evaluate((element) => window.getComputedStyle(element).display);
 
+const expectMenuOpen = async (
+  page: Page,
+  menu: 'corpus' | 'theme',
+  open: boolean,
+): Promise<void> => {
+  const menuLocator = page.locator(`header[data-layout-header] [data-header-menu="${menu}"]`);
+  const trigger = menuLocator.locator('[data-header-menu-trigger]');
+  if (open) {
+    await expect(menuLocator).toHaveAttribute('open', '');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  } else {
+    await expect(menuLocator).not.toHaveAttribute('open', '');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  }
+};
+
 const expectHeaderControlWithinHeader = async (page: Page, selector: string): Promise<void> => {
   const header = page.locator('header[data-layout-header]');
   const control = page.locator(selector);
 
   await expect(control).toBeVisible();
 
-  const [headerBox, controlBox] = await Promise.all([
-    header.boundingBox(),
-    control.boundingBox(),
-  ]);
+  const [headerBox, controlBox] = await Promise.all([header.boundingBox(), control.boundingBox()]);
   if (headerBox === null || controlBox === null) {
     throw new Error(`Header or control box is missing for selector: ${selector}`);
   }
 
   expect(controlBox.x).toBeGreaterThanOrEqual(headerBox.x - 1);
   expect(controlBox.y).toBeGreaterThanOrEqual(headerBox.y - 1);
-  expect(controlBox.x + controlBox.width).toBeLessThanOrEqual(
-    headerBox.x + headerBox.width + 1,
-  );
-  expect(controlBox.y + controlBox.height).toBeLessThanOrEqual(
-    headerBox.y + headerBox.height + 1,
-  );
+  expect(controlBox.x + controlBox.width).toBeLessThanOrEqual(headerBox.x + headerBox.width + 1);
+  expect(controlBox.y + controlBox.height).toBeLessThanOrEqual(headerBox.y + headerBox.height + 1);
 };
 
 test.describe('Static header migration', () => {
@@ -105,6 +114,201 @@ test.describe('Static header migration', () => {
     await expect(page.locator('header[data-layout-header] [data-theme-current-label]')).toHaveText(
       'ダーク',
     );
+  });
+
+  test('header menu は Escape dismissal と summary focus restore を同期すること', async ({
+    page,
+  }) => {
+    await page.goto(markdownBasic.directPath);
+    await waitForAppRouterReady(page);
+
+    for (const menu of ['corpus', 'theme'] as const) {
+      const trigger = page.locator(
+        `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-trigger]`,
+      );
+      await trigger.click();
+      await expectMenuOpen(page, menu, true);
+
+      await page.keyboard.press('Escape');
+
+      await expectMenuOpen(page, menu, false);
+      await expect(trigger).toBeFocused();
+    }
+  });
+
+  test('header menu は outside pointer と app-shell event で stale open state を閉じること', async ({
+    page,
+  }) => {
+    await page.goto(markdownBasic.directPath);
+    await waitForAppRouterReady(page);
+
+    await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
+    await expectMenuOpen(page, 'corpus', true);
+    await page.locator('main').click({ position: { x: 8, y: 8 } });
+    await expectMenuOpen(page, 'corpus', false);
+
+    await page.locator('header[data-layout-header] [data-header-menu="theme"] summary').click();
+    await expectMenuOpen(page, 'theme', true);
+    await page.evaluate(() => {
+      document.dispatchEvent(new CustomEvent('app-shell:rollback-start'));
+    });
+    await expectMenuOpen(page, 'theme', false);
+  });
+
+  test('header menu は one-menu-open と項目選択後 close を維持すること', async ({ page }) => {
+    await page.goto(markdownBasic.directPath);
+    await waitForAppRouterReady(page);
+
+    await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
+    await expectMenuOpen(page, 'corpus', true);
+
+    await page.locator('header[data-layout-header] [data-header-menu="theme"] summary').click();
+    await expectMenuOpen(page, 'corpus', false);
+    await expectMenuOpen(page, 'theme', true);
+
+    await page.locator('header[data-layout-header] [data-theme-value="dark"]').click();
+    await expectMenuOpen(page, 'theme', false);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  });
+
+  test('header menu は外部 scroll で閉じ、panel 内 scroll では閉じないこと', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 360 });
+    await page.goto(markdownBasic.directPath);
+    await waitForAppRouterReady(page);
+
+    await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
+    await expectMenuOpen(page, 'corpus', true);
+    await page.evaluate(() => window.dispatchEvent(new Event('scroll')));
+    await expectMenuOpen(page, 'corpus', false);
+
+    await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
+    await expectMenuOpen(page, 'corpus', true);
+    await page
+      .locator('header[data-layout-header] [data-header-menu="corpus"]')
+      .evaluate((menu) => {
+        const panel = menu.querySelector<HTMLElement>('[data-header-menu-panel]');
+        const list = panel?.querySelector('ul');
+        const item = list?.querySelector('li');
+        if (panel === null || panel === undefined || list === null || list === undefined) {
+          throw new Error('corpus menu panel is missing.');
+        }
+        if (item === null || item === undefined) {
+          throw new Error('corpus menu panel is missing.');
+        }
+        for (let index = 0; index < 24; index += 1) {
+          list.append(item.cloneNode(true));
+        }
+      });
+
+    const panel = page.locator(
+      'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-panel]',
+    );
+    await expect
+      .poll(() =>
+        panel.evaluate((element) => ({
+          clientHeight: element.clientHeight,
+          overflowY: window.getComputedStyle(element).overflowY,
+          scrollHeight: element.scrollHeight,
+          scrollbarWidth: window.getComputedStyle(element).scrollbarWidth,
+        })),
+      )
+      .toMatchObject({
+        overflowY: 'auto',
+        scrollbarWidth: 'thin',
+      });
+    await expect
+      .poll(() => panel.evaluate((element) => element.scrollHeight > element.clientHeight))
+      .toBe(true);
+
+    await panel.evaluate((element) => {
+      element.scrollTop = 80;
+      element.dispatchEvent(new Event('scroll', { bubbles: false }));
+    });
+    await expectMenuOpen(page, 'corpus', true);
+  });
+
+  test('summary click / Enter / Space は native details toggle と二重反転しないこと', async ({
+    page,
+  }) => {
+    await page.goto(markdownBasic.directPath);
+    await waitForAppRouterReady(page);
+
+    const trigger = page.locator('header[data-layout-header] [data-header-menu="corpus"] summary');
+    await trigger.click();
+    await expectMenuOpen(page, 'corpus', true);
+    await trigger.click();
+    await expectMenuOpen(page, 'corpus', false);
+
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    await expectMenuOpen(page, 'corpus', true);
+    await page.keyboard.press('Enter');
+    await expectMenuOpen(page, 'corpus', false);
+
+    await page.keyboard.press('Space');
+    await expectMenuOpen(page, 'corpus', true);
+    await page.keyboard.press('Space');
+    await expectMenuOpen(page, 'corpus', false);
+  });
+
+  test('header menu controller は Tab の通常 focus 移動と SPA 置換後の旧 header を壊さないこと', async ({
+    page,
+  }) => {
+    await page.goto(markdownBasic.directPath);
+    await waitForAppRouterReady(page);
+
+    const corpusTrigger = page.locator(
+      'header[data-layout-header] [data-header-menu="corpus"] summary',
+    );
+    await corpusTrigger.focus();
+    await page.keyboard.press('Tab');
+    await expect(
+      page.locator('header[data-layout-header] [data-search-dialog-trigger]'),
+    ).toBeFocused();
+
+    await corpusTrigger.click();
+    await expectMenuOpen(page, 'corpus', true);
+    await page.evaluate(() => {
+      const oldHeader = document.querySelector<HTMLElement>('header[data-layout-header]');
+      if (oldHeader === null) throw new Error('static header is missing.');
+      const state = window as unknown as {
+        staticHeaderMenuOldHeader?: HTMLElement;
+        readStaticHeaderMenuOldHeader?: () => Record<string, string | null>;
+      };
+      state.staticHeaderMenuOldHeader = oldHeader;
+      state.readStaticHeaderMenuOldHeader = () => {
+        const oldMenu = oldHeader.querySelector('details[data-header-menu="corpus"]');
+        const oldTrigger = oldMenu?.querySelector('[data-header-menu-trigger]');
+        return {
+          connected: oldHeader.isConnected ? 'true' : 'false',
+          open: oldMenu?.hasAttribute('open') === true ? 'true' : 'false',
+          expanded: oldTrigger?.getAttribute('aria-expanded') ?? null,
+        };
+      };
+    });
+
+    await navigateWithAppRouter(page, '/about/');
+    await page.locator('header[data-layout-header] [data-header-menu="theme"] summary').click();
+    await page.evaluate(() => {
+      document.dispatchEvent(new CustomEvent('app-shell:committed'));
+      window.dispatchEvent(new Event('scroll'));
+    });
+
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const state = window as unknown as {
+            readStaticHeaderMenuOldHeader?: () => Record<string, string | null>;
+          };
+          return state.readStaticHeaderMenuOldHeader?.() ?? {};
+        }),
+      )
+      .toEqual({
+        connected: 'false',
+        open: 'true',
+        expanded: 'true',
+      });
+    await expectMenuOpen(page, 'theme', false);
   });
 
   test('mobile TOC trigger は validated 後の controller activation で panel を開くこと', async ({
@@ -159,9 +363,7 @@ test.describe('Static header migration', () => {
     await expect.poll(() => visibleDisplay(page, triggerSelector)).toBe('none');
   });
 
-  test('header responsive CSS は sidebar toggle の 1024px 境界を維持すること', async ({
-    page,
-  }) => {
+  test('header responsive CSS は sidebar toggle の 1024px 境界を維持すること', async ({ page }) => {
     const triggerSelector = 'header[data-layout-header] [data-layout-sidebar-toggle]';
 
     await page.setViewportSize({ width: 1023, height: 760 });

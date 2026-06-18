@@ -129,6 +129,9 @@ header[data-layout-header] .theme-switcher__menu {
   inset-block-start: calc(100% + var(--space-1, 4px));
   z-index: var(--z-popover, 400);
   min-inline-size: 12rem;
+  max-block-size: min(calc(100dvb - var(--header-height, 48px) - var(--space-4, 16px)), 24rem);
+  overflow-y: auto;
+  scrollbar-width: thin;
   padding: var(--space-2, 8px);
   border: var(--border-width, 1px) solid var(--border-default);
   border-radius: var(--radius-md, 8px);

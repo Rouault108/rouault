@@ -9,6 +9,7 @@ import { THEME_UI_OPTIONS } from '../../theme/theme-ui-options.js';
 import { layoutSidebarController } from '../../components/layout/layout-sidebar-controller.js';
 import type { LayoutSidebarControllerSnapshot } from '../../components/layout/layout-sidebar-controller.js';
 import { enhanceLayoutHeaderTocBridge, toggleHeaderTocPanel } from './layout-header-toc-bridge.js';
+import { createStaticHeaderMenuController } from './static-header-menu-controller.js';
 import {
   isPlainPrimaryAnchorActivation,
   resolveAnchorFromActivationEvent,
@@ -84,6 +85,7 @@ const syncSidebarHeaders = (root: ParentNode, signal: AbortSignal): void => {
 export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void => {
   activeEnhancement?.abort();
   const listenerController = new AbortController();
+  const menuController = createStaticHeaderMenuController();
   let sidebarSyncController: AbortController | null = null;
   const syncCurrentSidebarHeaders = (syncRoot: ParentNode): void => {
     sidebarSyncController?.abort();
@@ -95,6 +97,7 @@ export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void
     () => {
       sidebarSyncController?.abort();
       sidebarSyncController = null;
+      menuController.dispose();
     },
     { once: true },
   );
