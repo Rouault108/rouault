@@ -144,9 +144,10 @@ const renderSearchTrigger = (input: LayoutHeaderHtmlInput): string =>
     { name: 'aria-haspopup', value: 'dialog' },
     { name: 'aria-controls', value: 'global-search-dialog' },
     { name: 'aria-expanded', value: 'false' },
+    { name: 'aria-label', value: '検索ダイアログを開く' },
   ])}>
     ${renderStaticIconHtml('search', 'search-trigger__icon')}
-    <span class="search-trigger__label">検索</span>
+    <span class="search-trigger__placeholder" aria-hidden="true">検索...</span>
   </a>
 `.trim();
 

@@ -18,6 +18,8 @@ header[data-layout-header] {
   --_header-control-gap-compact: var(--space-1, 4px);
   --_header-control-padding: var(--space-3, 12px);
   --_header-control-padding-compact: var(--space-2, 8px);
+  --_header-search-trigger-width: 14rem;
+  --_header-search-trigger-width-compact: 9rem;
 }
 
 header[data-layout-header] .layout-header__inner {
@@ -99,6 +101,7 @@ header[data-layout-header] .toc-trigger {
 }
 
 header[data-layout-header] .search-trigger {
+  inline-size: min(var(--_header-search-trigger-width), 32vi);
   padding-inline: var(--_header-control-padding);
   border: var(--border-width, 1px) solid var(--border-default);
   background: var(--bg-control-muted);
@@ -180,7 +183,7 @@ header[data-layout-header] .theme-trigger-main {
 
 header[data-layout-header] .corpus-trigger-text,
 header[data-layout-header] .theme-trigger-text,
-header[data-layout-header] .search-trigger__label,
+header[data-layout-header] .search-trigger__placeholder,
 header[data-layout-header] .toc-trigger-text {
   min-inline-size: 0;
   overflow: hidden;
@@ -200,6 +203,13 @@ header[data-layout-header] .toc-trigger-text {
   }
 }
 
+@container layout-header-shell (width < 960px) {
+  header[data-layout-header] .search-trigger {
+    inline-size: min(var(--_header-search-trigger-width-compact), 24vi);
+    padding-inline: var(--_header-control-padding-compact);
+  }
+}
+
 @container layout-header-shell (width < 640px) {
   header[data-layout-header] .layout-header__center {
     display: none;
@@ -215,7 +225,13 @@ header[data-layout-header] .toc-trigger-text {
   }
 
   header[data-layout-header] .search-trigger {
+    inline-size: var(--control-height-md, 36px);
+    justify-content: center;
     padding-inline: var(--_header-control-padding-compact);
+  }
+
+  header[data-layout-header] .search-trigger__placeholder {
+    display: none;
   }
 
   header[data-layout-header] .toc-trigger[data-visible='true'] {
@@ -237,8 +253,14 @@ header[data-layout-header] .toc-trigger-text {
 
 @container layout-header-shell (width < 400px) {
   header[data-layout-header] .toc-trigger-text,
-  header[data-layout-header] .search-trigger__label {
+  header[data-layout-header] .search-trigger__placeholder {
     display: none;
+  }
+
+  header[data-layout-header] .search-trigger {
+    inline-size: calc(var(--control-height-md, 36px) - var(--space-1, 4px));
+    min-block-size: calc(var(--control-height-md, 36px) - var(--space-1, 4px));
+    padding-inline: var(--space-1, 4px);
   }
 }
 

@@ -65,9 +65,13 @@ export const enhanceSearchDialog = (root: ParentNode = document, signal?: AbortS
       ) {
         return;
       }
-      if (
-        activeEnhancement?.controller?.tryOpen({ trigger: anchor, modality: 'pointer' }) === true
-      ) {
+      const modality =
+        event instanceof MouseEvent ? (event.detail === 0 ? 'keyboard' : 'pointer') : undefined;
+      const opened =
+        modality === undefined
+          ? activeEnhancement?.controller?.tryOpen({ trigger: anchor }) === true
+          : activeEnhancement?.controller?.tryOpen({ trigger: anchor, modality }) === true;
+      if (opened) {
         event.preventDefault();
       }
     },

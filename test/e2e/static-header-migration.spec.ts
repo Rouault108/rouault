@@ -35,6 +35,14 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
 const visibleDisplay = async (page: Page, selector: string): Promise<string> =>
   page.locator(selector).evaluate((element) => window.getComputedStyle(element).display);
 
+const searchTriggerSelector = 'header[data-layout-header] [data-search-dialog-trigger]';
+const searchDialogSelector = 'dialog[data-search-dialog-root]';
+
+const closeSearchDialog = async (page: Page): Promise<void> => {
+  await page.keyboard.press('Escape');
+  await expect(page.locator(searchDialogSelector)).not.toHaveAttribute('open', '');
+};
+
 const expectMenuOpen = async (
   page: Page,
   menu: 'corpus' | 'theme',
@@ -129,13 +137,119 @@ test.describe('Static header migration', () => {
     await page.goto('/about/');
     await waitForAppRouterReady(page);
 
-    await page.locator('header[data-layout-header] [data-search-dialog-trigger]').click();
+    await page.locator(searchTriggerSelector).click();
 
-    await expect(page.locator('dialog[data-search-dialog-root]')).toHaveAttribute('open', '');
-    await expect(
-      page.locator('header[data-layout-header] [data-search-dialog-trigger]'),
-    ).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator(searchDialogSelector)).toHaveAttribute('open', '');
+    await expect(page.locator(searchTriggerSelector)).toHaveAttribute('aria-expanded', 'true');
     await expect(page).toHaveURL(/\/about\/$/u);
+  });
+
+  test('検索 trigger は anchor semantics と accessible name を維持すること', async ({ page }) => {
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    const trigger = page.locator(searchTriggerSelector);
+    await expect(trigger).toHaveCount(1);
+    await expect(trigger).toHaveAttribute('href', /\/search\/$/u);
+    await expect(trigger).toHaveAttribute('aria-label', '検索ダイアログを開く');
+    await expect(trigger.locator('.search-trigger__placeholder')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
+    await expect(trigger.locator('.search-trigger__placeholder')).toHaveText('検索...');
+    await expect(trigger).toHaveJSProperty('tagName', 'A');
+  });
+
+  test('検索 trigger は responsive density を復元すること', async ({ page }) => {
+    const readDensity = async () =>
+      page.locator(searchTriggerSelector).evaluate((element) => {
+        const style = window.getComputedStyle(element);
+        const placeholder = element.querySelector<HTMLElement>('.search-trigger__placeholder');
+        const placeholderStyle = placeholder === null ? null : window.getComputedStyle(placeholder);
+        return {
+          height: Number.parseFloat(style.height),
+          placeholderDisplay: placeholderStyle?.display ?? null,
+          width: Number.parseFloat(style.width),
+        };
+      });
+
+    await page.setViewportSize({ width: 1280, height: 760 });
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+    const regular = await readDensity();
+    expect(regular.placeholderDisplay).not.toBe('none');
+    expect(regular.width).toBeGreaterThan(regular.height * 3);
+
+    await page.setViewportSize({ width: 959, height: 760 });
+    const compact = await readDensity();
+    expect(compact.placeholderDisplay).not.toBe('none');
+    expect(compact.width).toBeGreaterThan(compact.height * 2);
+    expect(compact.width).toBeLessThan(regular.width);
+
+    await page.setViewportSize({ width: 639, height: 760 });
+    const iconOnly = await readDensity();
+    expect(iconOnly.placeholderDisplay).toBe('none');
+    expect(iconOnly.width).toBeLessThanOrEqual(iconOnly.height + 2);
+
+    await page.setViewportSize({ width: 399, height: 760 });
+    const minimum = await readDensity();
+    expect(minimum.placeholderDisplay).toBe('none');
+    expect(minimum.width).toBeLessThan(iconOnly.width);
+    expect(minimum.height).toBeLessThan(iconOnly.height);
+  });
+
+  test('検索 trigger は Enter 起動時に keyboard modality で dialog を開くこと', async ({
+    page,
+  }) => {
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    await page.locator(searchTriggerSelector).focus();
+    await page.keyboard.press('Enter');
+
+    await expect(page.locator(searchDialogSelector)).toHaveAttribute('open', '');
+    await expect(page.locator(searchDialogSelector)).toHaveAttribute(
+      'data-search-dialog-open-modality',
+      'keyboard',
+    );
+    await closeSearchDialog(page);
+  });
+
+  test('検索 trigger は mouse click 起動時に pointer modality で dialog を開くこと', async ({
+    page,
+  }) => {
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    await page.locator(searchTriggerSelector).click();
+
+    await expect(page.locator(searchDialogSelector)).toHaveAttribute('open', '');
+    await expect(page.locator(searchDialogSelector)).toHaveAttribute(
+      'data-search-dialog-open-modality',
+      'pointer',
+    );
+    await closeSearchDialog(page);
+  });
+
+  test('検索 trigger は判定不能な click では controller の modalityTracker に委ねること', async ({
+    page,
+  }) => {
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    await page.keyboard.press('Tab');
+    await page.locator(searchTriggerSelector).evaluate((anchor) => {
+      const event = new Event('click', { bubbles: true, cancelable: true, composed: true });
+      Object.defineProperty(event, 'button', { value: 0 });
+      anchor.dispatchEvent(event);
+    });
+
+    await expect(page.locator(searchDialogSelector)).toHaveAttribute('open', '');
+    await expect(page.locator(searchDialogSelector)).toHaveAttribute(
+      'data-search-dialog-open-modality',
+      'keyboard',
+    );
+    await closeSearchDialog(page);
   });
 
   test('theme switcher は静的 header 置換後も delegation で同期すること', async ({ page }) => {
