@@ -45,6 +45,8 @@ const renderSidebarToggle = (input: LayoutHeaderHtmlInput): string => {
 };
 
 const renderCorpusSwitcher = (input: LayoutHeaderHtmlInput): string => {
+  const triggerId = 'static-header-corpus-trigger';
+  const panelId = 'static-header-corpus-panel';
   const items = input.corpora.items.flatMap((item) => {
     const href = validateCorpusRouteRootHrefForRender({
       href: item.href,
@@ -83,9 +85,12 @@ const renderCorpusSwitcher = (input: LayoutHeaderHtmlInput): string => {
       { name: 'data-header-menu', value: 'corpus' },
     ])}>
       <summary${serializeHtmlAttributes([
+        { name: 'id', value: triggerId },
         { name: 'class', value: 'corpus-trigger-label' },
         { name: 'aria-label', value: `コーパス: ${currentLabel}` },
+        { name: 'aria-controls', value: panelId },
         { name: 'data-header-menu-trigger', value: 'true' },
+        { name: 'data-header-menu-trigger-id', value: triggerId },
       ])}>
         <span class="corpus-trigger-main">
           <span class="corpus-trigger-text">${escapeHtmlText(currentLabel)}</span>
@@ -93,9 +98,11 @@ const renderCorpusSwitcher = (input: LayoutHeaderHtmlInput): string => {
         ${renderStaticIconHtml('chevron-down', 'corpus-trigger-icon')}
       </summary>
       <nav${serializeHtmlAttributes([
+        { name: 'id', value: panelId },
         { name: 'class', value: 'corpus-switcher__menu' },
         { name: 'aria-label', value: 'コーパス' },
         { name: 'data-header-menu-panel', value: 'true' },
+        { name: 'data-header-menu-panel-id', value: panelId },
       ])}>
         <ul>${links}</ul>
       </nav>
@@ -109,6 +116,7 @@ const renderTocTrigger = (input: LayoutHeaderHtmlInput): string => {
     return '';
   }
   const staticTocRootId = resolveLayoutTocStaticRootId(input.tocRuntimeId);
+  const mobilePanelId = `layout-toc-panel-${input.tocRuntimeId}`;
   return `
     <a${serializeHtmlAttributes([
       { name: 'class', value: 'toc-trigger' },
@@ -120,6 +128,8 @@ const renderTocTrigger = (input: LayoutHeaderHtmlInput): string => {
       { name: 'data-toc-hydration-state', value: 'unhydrated' },
       { name: 'data-toc-trigger', value: 'true' },
       { name: 'data-toc-runtime-id', value: input.tocRuntimeId },
+      { name: 'data-toc-static-root-id', value: staticTocRootId },
+      { name: 'data-toc-mobile-panel-id', value: mobilePanelId },
       { name: 'data-link-kind', value: 'internal-fragment' },
       { name: 'data-link-surface', value: 'header' },
       { name: 'aria-label', value: '目次を開く' },
@@ -152,6 +162,8 @@ const renderSearchTrigger = (input: LayoutHeaderHtmlInput): string =>
 `.trim();
 
 const renderThemeSwitcher = (): string => {
+  const triggerId = 'static-header-theme-trigger';
+  const panelId = 'static-header-theme-panel';
   const preference: ThemePreference = 'system';
   const current = THEME_UI_OPTIONS[preference];
   const items = (
@@ -187,9 +199,12 @@ const renderThemeSwitcher = (): string => {
       { name: 'data-header-menu', value: 'theme' },
     ])}>
       <summary${serializeHtmlAttributes([
+        { name: 'id', value: triggerId },
         { name: 'class', value: 'theme-trigger-label' },
         { name: 'aria-label', value: `テーマ: ${current.label}` },
+        { name: 'aria-controls', value: panelId },
         { name: 'data-header-menu-trigger', value: 'true' },
+        { name: 'data-header-menu-trigger-id', value: triggerId },
       ])}>
         <span class="theme-trigger-main" data-theme-preference="${preference}">
           ${renderStaticIconHtml(current.icon, 'theme-trigger-icon')}
@@ -198,10 +213,12 @@ const renderThemeSwitcher = (): string => {
         ${renderStaticIconHtml('chevron-down', 'theme-trigger-chevron')}
       </summary>
       <div${serializeHtmlAttributes([
+        { name: 'id', value: panelId },
         { name: 'class', value: 'theme-switcher__menu' },
         { name: 'role', value: 'group' },
         { name: 'aria-label', value: 'テーマ' },
         { name: 'data-header-menu-panel', value: 'true' },
+        { name: 'data-header-menu-panel-id', value: panelId },
       ])}>
         <ul>${items}</ul>
       </div>

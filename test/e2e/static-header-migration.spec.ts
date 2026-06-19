@@ -179,6 +179,82 @@ test.describe('Static header migration', () => {
     await expect(trigger).toHaveJSProperty('tagName', 'A');
   });
 
+  test('静的 header は disclosure と search の ARIA seed contract を維持すること', async ({
+    page,
+  }) => {
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    const corpusMenu = page.locator('header[data-layout-header] [data-header-menu="corpus"]');
+    const corpusTrigger = corpusMenu.locator('[data-header-menu-trigger]');
+    const corpusPanel = corpusMenu.locator('[data-header-menu-panel]');
+    await expect(corpusPanel).toHaveJSProperty('tagName', 'NAV');
+    await expect(corpusPanel).not.toHaveAttribute('role', 'menu');
+    await expect(corpusMenu.locator('[role="menu"], [role="menuitem"]')).toHaveCount(0);
+    await expect(corpusTrigger).not.toHaveAttribute('aria-expanded');
+    await expect(corpusTrigger).toHaveAttribute('aria-controls', /.+/u);
+    const corpusPanelId = await corpusTrigger.getAttribute('aria-controls');
+    const corpusTriggerId = await corpusTrigger.getAttribute('id');
+    expect(corpusPanelId).not.toBeNull();
+    expect(corpusTriggerId).not.toBeNull();
+    await expect(corpusTrigger).toHaveAttribute('data-header-menu-trigger-id', corpusTriggerId ?? '');
+    await expect(corpusPanel).toHaveAttribute('id', corpusPanelId ?? '');
+    await expect(corpusPanel).toHaveAttribute('data-header-menu-panel-id', corpusPanelId ?? '');
+    await expect(corpusPanel).toHaveAttribute('aria-label', 'コーパス');
+    const corpusLinkage = await page.evaluate(() => {
+      const trigger = document.querySelector(
+        'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-trigger]',
+      );
+      const panel = document.querySelector(
+        'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-panel]',
+      );
+      const controls = trigger?.getAttribute('aria-controls');
+      return Boolean(controls && panel && document.getElementById(controls) === panel);
+    });
+    expect(corpusLinkage).toBe(true);
+
+    const themeMenu = page.locator('header[data-layout-header] [data-header-menu="theme"]');
+    const themeTrigger = themeMenu.locator('[data-header-menu-trigger]');
+    const themePanel = themeMenu.locator('[data-header-menu-panel]');
+    await expect(themePanel).toHaveAttribute('role', 'group');
+    await expect(themePanel).not.toHaveAttribute('role', 'menu');
+    await expect(themeMenu.locator('[role="menu"], [role="menuitem"]')).toHaveCount(0);
+    await expect(themeTrigger).not.toHaveAttribute('aria-expanded');
+    await expect(themeTrigger).toHaveAttribute('aria-controls', /.+/u);
+    const themePanelId = await themeTrigger.getAttribute('aria-controls');
+    const themeTriggerId = await themeTrigger.getAttribute('id');
+    expect(themePanelId).not.toBeNull();
+    expect(themeTriggerId).not.toBeNull();
+    await expect(themeTrigger).toHaveAttribute('data-header-menu-trigger-id', themeTriggerId ?? '');
+    await expect(themePanel).toHaveAttribute('id', themePanelId ?? '');
+    await expect(themePanel).toHaveAttribute('data-header-menu-panel-id', themePanelId ?? '');
+    await expect(themePanel).toHaveAttribute('aria-label', 'テーマ');
+    const themeLinkage = await page.evaluate(() => {
+      const trigger = document.querySelector(
+        'header[data-layout-header] [data-header-menu="theme"] [data-header-menu-trigger]',
+      );
+      const panel = document.querySelector(
+        'header[data-layout-header] [data-header-menu="theme"] [data-header-menu-panel]',
+      );
+      const controls = trigger?.getAttribute('aria-controls');
+      return Boolean(controls && panel && document.getElementById(controls) === panel);
+    });
+    expect(themeLinkage).toBe(true);
+    const themeOptions = themePanel.locator('[data-theme-value]');
+    await expect(themeOptions.first()).toHaveJSProperty('tagName', 'BUTTON');
+    await expect(themeOptions.first()).toHaveAttribute('aria-pressed', /true|false/u);
+
+    const searchTrigger = page.locator(searchTriggerSelector);
+    await expect(searchTrigger).toHaveAttribute('href', '/search/');
+    await expect(searchTrigger).toHaveAttribute('data-no-router', 'true');
+    await expect(searchTrigger).toHaveAttribute('aria-haspopup', 'dialog');
+    await expect(searchTrigger).toHaveAttribute('aria-controls', /.+/u);
+    await expect(searchTrigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(searchTrigger).toHaveAccessibleName('検索ダイアログを開く');
+    await expect(searchTrigger.locator('.search-trigger__placeholder')).toBeVisible();
+    await expect(searchTrigger.locator('.search-trigger__placeholder')).toHaveText('検索...');
+  });
+
   test('検索 trigger は responsive density を復元すること', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 760 });
     await page.goto('/about/');
@@ -771,6 +847,13 @@ test.describe('Static header migration', () => {
     await expect(trigger).toHaveAttribute('data-toc-trigger-interactive', 'true');
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect(trigger).toHaveAttribute('aria-label', '目次を開く');
+    const staticTocRootId = await trigger.getAttribute('data-toc-static-root-id');
+    expect(staticTocRootId).not.toBeNull();
+    await expect(trigger).toHaveAttribute('href', `#${staticTocRootId ?? ''}`);
+    await expect(trigger).toHaveAttribute('aria-controls', /layout-toc-panel-/u);
+    const hydratedTocPanelId = await trigger.getAttribute('aria-controls');
+    expect(hydratedTocPanelId).not.toBeNull();
+    await expect(trigger).toHaveAttribute('data-toc-mobile-panel-id', hydratedTocPanelId ?? '');
     await trigger.click();
 
     await expect(page.locator('[data-layout-toc-mobile-panel]')).toBeVisible();
@@ -1138,5 +1221,19 @@ test.describe('Static header migration no-JS', () => {
 
     await expect(page).toHaveURL(/\/search\/$/u);
     await expect(page.locator('#main-content h1').first()).toHaveText('検索');
+  });
+
+  test('TOC trigger は JS 無効時の fallback href と static aria-controls を維持すること', async ({
+    page,
+  }) => {
+    await page.goto(layoutRich.directPath);
+
+    const trigger = page.locator('header[data-layout-header] [data-toc-trigger]');
+    const staticTocRootId = await trigger.getAttribute('data-toc-static-root-id');
+    expect(staticTocRootId).not.toBeNull();
+
+    await expect(trigger).toHaveAttribute('href', `#${staticTocRootId ?? ''}`);
+    await expect(trigger).toHaveAttribute('aria-controls', staticTocRootId ?? '');
+    await expect(page.locator(`#${staticTocRootId ?? ''}`)).toHaveCount(1);
   });
 });
