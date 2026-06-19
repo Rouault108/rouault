@@ -242,13 +242,14 @@ test.describe('TOC active state stays synchronized with rendered contract', () =
     await expectTocSynchronizedToViewport(page);
   });
 
-  test('hash 直アクセス時に初回表示から child prop / attribute / DOM の current が一致すること', async ({
+  test('同一 path の hash 遷移後に child prop / attribute / DOM の current が hash 対象へ一致すること', async ({
     page,
   }) => {
     await page.goto(layoutRichPath);
     const target = await readHeadingByText(page, '2. 状態同期');
 
     await page.goto(`${layoutRichPath}#${encodeURIComponent(target.id)}`);
+    await expect.poll(() => new URL(page.url()).hash).toBe(`#${encodeURIComponent(target.id)}`);
     await waitForTocReady(page);
     await expectTocSynchronized(page, target.id, target.label);
   });
