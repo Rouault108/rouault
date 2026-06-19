@@ -38,6 +38,25 @@ const visibleDisplay = async (page: Page, selector: string): Promise<string> =>
 const searchTriggerSelector = 'header[data-layout-header] [data-search-dialog-trigger]';
 const searchDialogSelector = 'dialog[data-search-dialog-root]';
 
+const readSearchTriggerDensity = async (page: Page) =>
+  page.locator(searchTriggerSelector).evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    const placeholder = element.querySelector<HTMLElement>('.search-trigger__placeholder');
+    const placeholderStyle = placeholder === null ? null : window.getComputedStyle(placeholder);
+    const afterStyle = window.getComputedStyle(element, '::after');
+    return {
+      afterInsetBlockEnd: afterStyle.insetBlockEnd,
+      afterInsetBlockStart: afterStyle.insetBlockStart,
+      afterInsetInlineEnd: afterStyle.insetInlineEnd,
+      afterInsetInlineStart: afterStyle.insetInlineStart,
+      afterPosition: afterStyle.position,
+      height: Number.parseFloat(style.height),
+      placeholderDisplay: placeholderStyle?.display ?? null,
+      position: style.position,
+      width: Number.parseFloat(style.width),
+    };
+  });
+
 const closeSearchDialog = async (page: Page): Promise<void> => {
   await page.keyboard.press('Escape');
   await expect(page.locator(searchDialogSelector)).not.toHaveAttribute('open', '');
@@ -161,41 +180,228 @@ test.describe('Static header migration', () => {
   });
 
   test('検索 trigger は responsive density を復元すること', async ({ page }) => {
-    const readDensity = async () =>
-      page.locator(searchTriggerSelector).evaluate((element) => {
-        const style = window.getComputedStyle(element);
-        const placeholder = element.querySelector<HTMLElement>('.search-trigger__placeholder');
-        const placeholderStyle = placeholder === null ? null : window.getComputedStyle(placeholder);
-        return {
-          height: Number.parseFloat(style.height),
-          placeholderDisplay: placeholderStyle?.display ?? null,
-          width: Number.parseFloat(style.width),
-        };
-      });
-
     await page.setViewportSize({ width: 1280, height: 760 });
     await page.goto('/about/');
     await waitForAppRouterReady(page);
-    const regular = await readDensity();
+    const regular = await readSearchTriggerDensity(page);
     expect(regular.placeholderDisplay).not.toBe('none');
     expect(regular.width).toBeGreaterThan(regular.height * 3);
 
     await page.setViewportSize({ width: 959, height: 760 });
-    const compact = await readDensity();
+    const compact = await readSearchTriggerDensity(page);
     expect(compact.placeholderDisplay).not.toBe('none');
     expect(compact.width).toBeGreaterThan(compact.height * 2);
     expect(compact.width).toBeLessThan(regular.width);
 
     await page.setViewportSize({ width: 639, height: 760 });
-    const iconOnly = await readDensity();
+    const iconOnly = await readSearchTriggerDensity(page);
     expect(iconOnly.placeholderDisplay).toBe('none');
     expect(iconOnly.width).toBeLessThanOrEqual(iconOnly.height + 2);
 
+    await page.setViewportSize({ width: 400, height: 760 });
+    const narrowBoundary = await readSearchTriggerDensity(page);
+    expect(narrowBoundary.placeholderDisplay).toBe('none');
+    expect(narrowBoundary.width).toBeLessThanOrEqual(narrowBoundary.height + 2);
+
     await page.setViewportSize({ width: 399, height: 760 });
-    const minimum = await readDensity();
+    const minimum = await readSearchTriggerDensity(page);
     expect(minimum.placeholderDisplay).toBe('none');
     expect(minimum.width).toBeLessThan(iconOnly.width);
     expect(minimum.height).toBeLessThan(iconOnly.height);
+    expect(minimum.position).toBe('relative');
+    expect(minimum.afterPosition).toBe('absolute');
+  });
+
+  test('note layout desktop header geometry は sidebar と TOC inset を CSS で適用すること', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 760 });
+    await page.goto(layoutRich.directPath);
+    await waitForAppRouterReady(page);
+
+    const geometry = await page.locator('header[data-layout-header]').evaluate((header) => {
+      const headerStyle = window.getComputedStyle(header);
+      const center = header.querySelector<HTMLElement>('.layout-header__center');
+      const corpus = header.querySelector<HTMLElement>('.corpus-switcher');
+      if (center === null || corpus === null) {
+        throw new Error('header center or corpus switcher is missing.');
+      }
+      const centerStyle = window.getComputedStyle(center);
+      const corpusStyle = window.getComputedStyle(corpus);
+      return {
+        centerEndInset: Number.parseFloat(centerStyle.insetInlineEnd),
+        centerEndInsetProperty: centerStyle
+          .getPropertyValue('--_header-center-end-inset')
+          .trim(),
+        centerStartInset: Number.parseFloat(centerStyle.insetInlineStart),
+        centerStartInsetProperty: centerStyle
+          .getPropertyValue('--_header-center-start-inset')
+          .trim(),
+        corpusInlineStartOffset: Number.parseFloat(corpusStyle.marginInlineStart),
+        corpusInlineStartOffsetProperty: corpusStyle
+          .getPropertyValue('--_header-corpus-inline-start-offset')
+          .trim(),
+        primaryStartOffsetProperty: headerStyle
+          .getPropertyValue('--_header-primary-start-offset')
+          .trim(),
+        noteLayout: header.getAttribute('data-note-layout'),
+        sidebarEnabled: header.getAttribute('data-sidebar-enabled'),
+        tocPresence: header.getAttribute('data-toc-presence'),
+      };
+    });
+
+    expect(geometry.noteLayout).toBe('true');
+    expect(geometry.sidebarEnabled).toBe('true');
+    expect(geometry.tocPresence).toBe('present');
+    expect(geometry.centerStartInsetProperty).not.toBe('');
+    expect(geometry.centerStartInsetProperty).not.toBe('0px');
+    expect(geometry.corpusInlineStartOffsetProperty).not.toBe('');
+    expect(geometry.corpusInlineStartOffsetProperty).not.toBe('0px');
+    expect(geometry.primaryStartOffsetProperty).not.toBe('');
+    expect(geometry.centerEndInsetProperty).not.toBe('');
+    expect(geometry.centerEndInsetProperty).not.toBe('0px');
+    expect(geometry.centerStartInset).toBeGreaterThan(0);
+    expect(geometry.centerEndInset).toBeGreaterThan(0);
+    expect(geometry.corpusInlineStartOffset).toBeGreaterThan(0);
+    expect(geometry.corpusInlineStartOffset).toBeLessThan(geometry.centerStartInset);
+  });
+
+  test('検索 trigger は fallback link と状態別 CSS と 44px hit area contract を維持すること', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 399, height: 760 });
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    const trigger = page.locator(searchTriggerSelector);
+    await expect(trigger).toHaveAttribute('href', /\/search\/$/u);
+    await expect(trigger).toHaveJSProperty('tagName', 'A');
+
+    const density = await readSearchTriggerDensity(page);
+    const expandedWidth =
+      density.width -
+      Number.parseFloat(density.afterInsetInlineStart) -
+      Number.parseFloat(density.afterInsetInlineEnd);
+    const expandedHeight =
+      density.height -
+      Number.parseFloat(density.afterInsetBlockStart) -
+      Number.parseFloat(density.afterInsetBlockEnd);
+
+    expect(expandedWidth).toBeGreaterThanOrEqual(44);
+    expect(expandedHeight).toBeGreaterThanOrEqual(44);
+
+    const readInteractiveStyle = async () =>
+      trigger.evaluate((element) => {
+        const style = window.getComputedStyle(element);
+        return {
+          backgroundColor: style.backgroundColor,
+          borderColor: style.borderTopColor,
+          boxShadow: style.boxShadow,
+          outlineStyle: style.outlineStyle,
+          outlineWidth: Number.parseFloat(style.outlineWidth),
+          transform: style.transform,
+        };
+      });
+
+    const restStyle = await readInteractiveStyle();
+
+    await trigger.hover();
+    const hoverStyle = await readInteractiveStyle();
+    expect(
+      hoverStyle.backgroundColor !== restStyle.backgroundColor ||
+        hoverStyle.borderColor !== restStyle.borderColor,
+    ).toBe(true);
+
+    await page.locator('header[data-layout-header] .corpus-switcher > summary').focus();
+    await page.keyboard.press('Tab');
+    await expect(trigger).toBeFocused();
+    const focusVisibleStyle = await readInteractiveStyle();
+    expect(focusVisibleStyle.outlineStyle).not.toBe('none');
+    expect(focusVisibleStyle.outlineWidth).toBeGreaterThan(0);
+    expect(focusVisibleStyle.boxShadow).not.toBe('none');
+
+    const triggerBox = await trigger.boundingBox();
+    if (triggerBox === null) {
+      throw new Error('Search trigger bounding box is missing.');
+    }
+
+    await page.mouse.move(
+      triggerBox.x + triggerBox.width / 2,
+      triggerBox.y + triggerBox.height / 2,
+    );
+    await page.mouse.down();
+    const activeStyle = await readInteractiveStyle();
+    await page.mouse.up();
+
+    expect(activeStyle.transform).not.toBe('none');
+  });
+
+  test('header controls は focus-visible で視認可能な focus ring を持つこと', async ({
+    page,
+  }) => {
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    await page.locator('header[data-layout-header] .corpus-switcher > summary').focus();
+    await page.keyboard.press('Tab');
+    await expect(page.locator(searchTriggerSelector)).toBeFocused();
+
+    const focusStyle = await page.locator(searchTriggerSelector).evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return {
+        boxShadow: style.boxShadow,
+        outlineColor: style.outlineColor,
+        outlineStyle: style.outlineStyle,
+        outlineWidth: Number.parseFloat(style.outlineWidth),
+      };
+    });
+
+    expect(focusStyle.outlineStyle).not.toBe('none');
+    expect(focusStyle.outlineWidth).toBeGreaterThan(0);
+    expect(focusStyle.outlineColor).not.toBe('rgba(0, 0, 0, 0)');
+    expect(focusStyle.boxShadow).not.toBe('none');
+
+    const controlContracts = await page
+      .locator(
+        [
+          'header[data-layout-header] .corpus-switcher > summary',
+          searchTriggerSelector,
+          'header[data-layout-header] .theme-switcher > summary',
+        ].join(', '),
+      )
+      .evaluateAll((elements) =>
+        elements.map((element) => {
+          const style = window.getComputedStyle(element);
+          const afterStyle = window.getComputedStyle(element, '::after');
+          const width = Number.parseFloat(style.width);
+          const height = Number.parseFloat(style.height);
+          const expandedWidth =
+            width -
+            Number.parseFloat(afterStyle.insetInlineStart) -
+            Number.parseFloat(afterStyle.insetInlineEnd);
+          const expandedHeight =
+            height -
+            Number.parseFloat(afterStyle.insetBlockStart) -
+            Number.parseFloat(afterStyle.insetBlockEnd);
+          return {
+            expandedHeight,
+            expandedWidth,
+            fontFeatureSettings: style.fontFeatureSettings,
+            fontWeight: Number.parseFloat(style.fontWeight),
+            letterSpacing: style.letterSpacing,
+            lineHeight: style.lineHeight,
+          };
+        }),
+      );
+
+    for (const contract of controlContracts) {
+      expect(contract.expandedWidth).toBeGreaterThanOrEqual(44);
+      expect(contract.expandedHeight).toBeGreaterThanOrEqual(44);
+      expect(contract.fontWeight).toBeGreaterThanOrEqual(500);
+      expect(contract.fontFeatureSettings).toContain('palt');
+      expect(contract.letterSpacing).not.toBe('normal');
+      expect(contract.lineHeight).not.toBe('normal');
+    }
   });
 
   test('検索 trigger は Enter 起動時に keyboard modality で dialog を開くこと', async ({
