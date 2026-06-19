@@ -156,11 +156,28 @@ test.describe('Static header migration', () => {
     await page.goto('/about/');
     await waitForAppRouterReady(page);
 
-    await page.locator(searchTriggerSelector).click();
+    const trigger = page.locator(searchTriggerSelector);
+    const dialog = page.locator(searchDialogSelector);
+    const dialogId = await dialog.getAttribute('id');
+    expect(dialogId).not.toBeNull();
 
-    await expect(page.locator(searchDialogSelector)).toHaveAttribute('open', '');
-    await expect(page.locator(searchTriggerSelector)).toHaveAttribute('aria-expanded', 'true');
+    await expect(trigger).toHaveAttribute('href', '/search/');
+    await expect(trigger).toHaveAttribute('aria-controls', dialogId ?? '');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+    await trigger.click();
+
+    await expect(dialog).toHaveAttribute('open', '');
+    await expect(trigger).toHaveAttribute('href', '/search/');
+    await expect(trigger).toHaveAttribute('aria-controls', dialogId ?? '');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
     await expect(page).toHaveURL(/\/about\/$/u);
+
+    await closeSearchDialog(page);
+    await expect(trigger).toHaveAttribute('href', '/search/');
+    await expect(trigger).toHaveAttribute('aria-controls', dialogId ?? '');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toBeFocused();
   });
 
   test('検索 trigger は anchor semantics と accessible name を維持すること', async ({ page }) => {
@@ -994,15 +1011,25 @@ test.describe('Static header migration', () => {
     const hydratedTocPanelId = await trigger.getAttribute('aria-controls');
     expect(hydratedTocPanelId).not.toBeNull();
     await expect(trigger).toHaveAttribute('data-toc-mobile-panel-id', hydratedTocPanelId ?? '');
+    await expect(page.locator(`#${hydratedTocPanelId ?? ''}`)).toHaveAttribute(
+      'data-layout-toc-mobile-panel',
+      '',
+    );
     await trigger.click();
 
     await expect(page.locator('[data-layout-toc-mobile-panel]')).toBeVisible();
+    await expect(trigger).toHaveAttribute('href', `#${staticTocRootId ?? ''}`);
+    await expect(trigger).toHaveAttribute('aria-controls', hydratedTocPanelId ?? '');
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
     await expect(trigger).toHaveAttribute('aria-label', '目次を閉じる');
 
     await trigger.click();
+    await expect(page.locator('[data-layout-toc-mobile-panel]')).toBeHidden();
+    await expect(trigger).toHaveAttribute('href', `#${staticTocRootId ?? ''}`);
+    await expect(trigger).toHaveAttribute('aria-controls', hydratedTocPanelId ?? '');
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect(trigger).toHaveAttribute('aria-label', '目次を開く');
+    await expect(trigger).toBeFocused();
   });
 
   test('header responsive CSS は TOC trigger の 640px 境界を維持すること', async ({ page }) => {
@@ -1416,7 +1443,12 @@ test.describe('Static header migration no-JS', () => {
 
   test('検索リンクは JS 無効時も検索ページへ通常遷移すること', async ({ page }) => {
     await page.goto('/about/');
-    await page.locator('header[data-layout-header] [data-search-dialog-trigger]').click();
+    const trigger = page.locator('header[data-layout-header] [data-search-dialog-trigger]');
+    await expect(trigger).toHaveAttribute('href', '/search/');
+    await expect(trigger).toHaveAttribute('aria-controls', 'global-search-dialog');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+    await trigger.click();
 
     await expect(page).toHaveURL(/\/search\/$/u);
     await expect(page.locator('#main-content h1').first()).toHaveText('検索');
@@ -1434,5 +1466,25 @@ test.describe('Static header migration no-JS', () => {
     await expect(trigger).toHaveAttribute('href', `#${staticTocRootId ?? ''}`);
     await expect(trigger).toHaveAttribute('aria-controls', staticTocRootId ?? '');
     await expect(page.locator(`#${staticTocRootId ?? ''}`)).toHaveCount(1);
+
+    await page.goto(`${layoutRich.directPath}#${staticTocRootId ?? ''}`);
+    await expect(page).toHaveURL(new RegExp(`#${staticTocRootId ?? ''}$`, 'u'));
+    await expect(page.locator(`#${staticTocRootId ?? ''}`)).toHaveCount(1);
+  });
+
+  test('corpus link は JS 無効時も通常リンクとして遷移すること', async ({ page }) => {
+    await page.goto('/about/');
+
+    await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
+    const link = page.locator(
+      'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-item]',
+    ).first();
+    const href = await link.getAttribute('href');
+    expect(href).not.toBeNull();
+    const expectedUrl = new URL(href ?? '/', page.url()).href;
+
+    await link.click();
+
+    await expect(page).toHaveURL(expectedUrl);
   });
 });

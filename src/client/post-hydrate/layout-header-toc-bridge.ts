@@ -51,7 +51,12 @@ const syncTriggerMobileAttributes = (trigger: HTMLElement, panelOpen: boolean): 
   if (panel?.id) {
     trigger.setAttribute('aria-controls', panel.id);
   } else {
-    trigger.removeAttribute('aria-controls');
+    const staticRootId = trigger.getAttribute('data-toc-static-root-id')?.trim();
+    if (staticRootId && staticRootId.length > 0) {
+      trigger.setAttribute('aria-controls', staticRootId);
+    } else {
+      trigger.removeAttribute('aria-controls');
+    }
   }
 };
 

@@ -154,9 +154,11 @@ export const createSearchDialogDomController = (
     for (const trigger of ownerDocument.querySelectorAll<HTMLElement>(
       '[data-search-dialog-trigger]',
     )) {
+      if (dialog.id.length > 0) trigger.setAttribute('aria-controls', dialog.id);
       trigger.setAttribute('aria-expanded', String(expanded));
     }
     if (state.triggerElement?.isConnected === true) {
+      if (dialog.id.length > 0) state.triggerElement.setAttribute('aria-controls', dialog.id);
       state.triggerElement.setAttribute('aria-expanded', String(expanded));
     }
   };
