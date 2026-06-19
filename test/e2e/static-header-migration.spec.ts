@@ -191,15 +191,19 @@ test.describe('Static header migration', () => {
     await expect(corpusPanel).toHaveJSProperty('tagName', 'NAV');
     await expect(corpusPanel).not.toHaveAttribute('role', 'menu');
     await expect(corpusMenu.locator('[role="menu"], [role="menuitem"]')).toHaveCount(0);
-    await expect(corpusTrigger).not.toHaveAttribute('aria-expanded');
+    await expect(corpusTrigger).toHaveAttribute('aria-expanded', 'false');
     await expect(corpusTrigger).toHaveAttribute('aria-controls', /.+/u);
     const corpusPanelId = await corpusTrigger.getAttribute('aria-controls');
     const corpusTriggerId = await corpusTrigger.getAttribute('id');
     expect(corpusPanelId).not.toBeNull();
     expect(corpusTriggerId).not.toBeNull();
-    await expect(corpusTrigger).toHaveAttribute('data-header-menu-trigger-id', corpusTriggerId ?? '');
+    await expect(corpusTrigger).toHaveAttribute(
+      'data-header-menu-trigger-id',
+      corpusTriggerId ?? '',
+    );
     await expect(corpusPanel).toHaveAttribute('id', corpusPanelId ?? '');
     await expect(corpusPanel).toHaveAttribute('data-header-menu-panel-id', corpusPanelId ?? '');
+    await expect(corpusPanel).toHaveAttribute('aria-labelledby', corpusTriggerId ?? '');
     await expect(corpusPanel).toHaveAttribute('aria-label', 'コーパス');
     const corpusLinkage = await page.evaluate(() => {
       const trigger = document.querySelector(
@@ -219,7 +223,7 @@ test.describe('Static header migration', () => {
     await expect(themePanel).toHaveAttribute('role', 'group');
     await expect(themePanel).not.toHaveAttribute('role', 'menu');
     await expect(themeMenu.locator('[role="menu"], [role="menuitem"]')).toHaveCount(0);
-    await expect(themeTrigger).not.toHaveAttribute('aria-expanded');
+    await expect(themeTrigger).toHaveAttribute('aria-expanded', 'false');
     await expect(themeTrigger).toHaveAttribute('aria-controls', /.+/u);
     const themePanelId = await themeTrigger.getAttribute('aria-controls');
     const themeTriggerId = await themeTrigger.getAttribute('id');
@@ -228,6 +232,7 @@ test.describe('Static header migration', () => {
     await expect(themeTrigger).toHaveAttribute('data-header-menu-trigger-id', themeTriggerId ?? '');
     await expect(themePanel).toHaveAttribute('id', themePanelId ?? '');
     await expect(themePanel).toHaveAttribute('data-header-menu-panel-id', themePanelId ?? '');
+    await expect(themePanel).toHaveAttribute('aria-labelledby', themeTriggerId ?? '');
     await expect(themePanel).toHaveAttribute('aria-label', 'テーマ');
     const themeLinkage = await page.evaluate(() => {
       const trigger = document.querySelector(
@@ -306,9 +311,7 @@ test.describe('Static header migration', () => {
       const corpusStyle = window.getComputedStyle(corpus);
       return {
         centerEndInset: Number.parseFloat(centerStyle.insetInlineEnd),
-        centerEndInsetProperty: centerStyle
-          .getPropertyValue('--_header-center-end-inset')
-          .trim(),
+        centerEndInsetProperty: centerStyle.getPropertyValue('--_header-center-end-inset').trim(),
         centerStartInset: Number.parseFloat(centerStyle.insetInlineStart),
         centerStartInsetProperty: centerStyle
           .getPropertyValue('--_header-center-start-inset')
@@ -412,9 +415,7 @@ test.describe('Static header migration', () => {
     expect(activeStyle.transform).not.toBe('none');
   });
 
-  test('header controls は focus-visible で視認可能な focus ring を持つこと', async ({
-    page,
-  }) => {
+  test('header controls は focus-visible で視認可能な focus ring を持つこと', async ({ page }) => {
     await page.goto('/about/');
     await waitForAppRouterReady(page);
 
@@ -605,10 +606,16 @@ test.describe('Static header migration', () => {
 
     await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
     await expectMenuOpen(page, 'corpus', true);
+    await expect(page.locator('header[data-layout-header] [data-header-menu][open]')).toHaveCount(
+      1,
+    );
 
     await page.locator('header[data-layout-header] [data-header-menu="theme"] summary').click();
     await expectMenuOpen(page, 'corpus', false);
     await expectMenuOpen(page, 'theme', true);
+    await expect(page.locator('header[data-layout-header] [data-header-menu][open]')).toHaveCount(
+      1,
+    );
 
     await page.locator('header[data-layout-header] [data-theme-value="dark"]').click();
     await expectMenuOpen(page, 'theme', false);
@@ -770,10 +777,9 @@ test.describe('Static header migration', () => {
         `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-item]`,
       );
 
-      await trigger.click();
-      await expectMenuOpen(page, menu, true);
-
+      await trigger.focus();
       await page.keyboard.press('ArrowDown');
+      await expectMenuOpen(page, menu, true);
       await expect(items.first()).toBeFocused();
       await page.keyboard.press('ArrowDown');
       await expect(items.nth(1)).toBeFocused();
@@ -789,12 +795,23 @@ test.describe('Static header migration', () => {
         ),
       ).toHaveCount(0);
 
+      await page.keyboard.press('Tab');
+      await expectMenuOpen(page, menu, false);
+
+      await trigger.focus();
+      await page.keyboard.press('ArrowUp');
+      await expectMenuOpen(page, menu, true);
+      await expect(items.nth((await items.count()) - 1)).toBeFocused();
+
       await page.keyboard.press('Escape');
       await expectMenuOpen(page, menu, false);
+      await expect(trigger).toBeFocused();
     }
   });
 
-  test('header menu は typeahead と close 後の buffer reset を同期すること', async ({ page }) => {
+  test('header menu は closed trigger の ArrowDown / ArrowUp で first / last item に focus すること', async ({
+    page,
+  }) => {
     await page.goto(markdownBasic.directPath);
     await waitForAppRouterReady(page);
     const labels = ['Alpha', 'Beta', 'Gamma'] as const;
@@ -809,18 +826,98 @@ test.describe('Static header migration', () => {
         `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-item]`,
       );
 
+      await expectMenuOpen(page, menu, false);
+      await trigger.focus();
+      await page.keyboard.press('ArrowDown');
+      await expectMenuOpen(page, menu, true);
+      await expect(items.first()).toBeFocused();
+
+      await page.keyboard.press('Escape');
+      await expectMenuOpen(page, menu, false);
+      await expect(trigger).toBeFocused();
+
+      await page.keyboard.press('ArrowUp');
+      await expectMenuOpen(page, menu, true);
+      await expect(items.nth((await items.count()) - 1)).toBeFocused();
+
+      await page.keyboard.press('Escape');
+      await expectMenuOpen(page, menu, false);
+      await expect(trigger).toBeFocused();
+    }
+  });
+
+  test('header menu は typeahead と close 後の buffer reset を同期すること', async ({ page }) => {
+    await page.goto(markdownBasic.directPath);
+    await waitForAppRouterReady(page);
+    const labels = ['Gamma', 'Gala', 'Alpha'] as const;
+    await prepareHeaderMenuItems(page, 'corpus', labels);
+    await prepareHeaderMenuItems(page, 'theme', labels);
+
+    const corpusTrigger = page.locator(
+      'header[data-layout-header] [data-header-menu="corpus"] summary',
+    );
+    const corpusItems = page.locator(
+      'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-item]',
+    );
+
+    await corpusTrigger.click();
+    await expectMenuOpen(page, 'corpus', true);
+
+    await page.keyboard.press('G');
+    await expect(corpusItems.first()).toBeFocused();
+
+    await page.keyboard.press('A');
+    await expect(corpusItems.nth(1)).toBeFocused();
+
+    await page.waitForTimeout(1100);
+    await expectMenuOpen(page, 'corpus', true);
+
+    await page.keyboard.press('A');
+    await expect(corpusItems.nth(2)).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    await expectMenuOpen(page, 'corpus', false);
+
+    await corpusTrigger.click();
+    await expectMenuOpen(page, 'corpus', true);
+
+    await page.keyboard.press('G');
+    await expect(corpusItems.first()).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    await expectMenuOpen(page, 'corpus', false);
+
+    await corpusTrigger.click();
+    await expectMenuOpen(page, 'corpus', true);
+
+    await page.keyboard.press('A');
+    await expect(corpusItems.nth(2)).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    await expectMenuOpen(page, 'corpus', false);
+
+    for (const menu of ['corpus', 'theme'] as const) {
+      const trigger = page.locator(
+        `header[data-layout-header] [data-header-menu="${menu}"] summary`,
+      );
+      const items = page.locator(
+        `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-item]`,
+      );
+
       await trigger.click();
       await expectMenuOpen(page, menu, true);
+
       await page.keyboard.press('G');
-      await expect(items.nth(2)).toBeFocused();
+      await expect(items.first()).toBeFocused();
 
       await page.keyboard.press('Escape');
       await expectMenuOpen(page, menu, false);
 
       await trigger.click();
       await expectMenuOpen(page, menu, true);
-      await page.keyboard.press('B');
-      await expect(items.nth(1)).toBeFocused();
+
+      await page.keyboard.press('A');
+      await expect(items.nth(2)).toBeFocused();
 
       await page.evaluate(() => {
         document.dispatchEvent(new CustomEvent('app-shell:rollback-start'));
@@ -829,9 +926,12 @@ test.describe('Static header migration', () => {
 
       await trigger.click();
       await expectMenuOpen(page, menu, true);
-      await page.keyboard.press('A');
+
+      await page.keyboard.press('G');
       await expect(items.first()).toBeFocused();
+
       await page.keyboard.press('Escape');
+      await expectMenuOpen(page, menu, false);
     }
   });
 

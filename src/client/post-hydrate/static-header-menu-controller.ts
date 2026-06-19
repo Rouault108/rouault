@@ -3,14 +3,26 @@ const MENU_SELECTOR = 'details[data-header-menu]';
 const TRIGGER_SELECTOR = 'summary[data-header-menu-trigger]';
 const PANEL_SELECTOR = '[data-header-menu-panel]';
 const ITEM_SELECTOR = '[data-header-menu-item]';
-const TYPEAHEAD_RESET_MS = 700;
+const TYPEAHEAD_RESET_MS = 1000;
 const APP_SHELL_EVENTS = [
   'app-shell:committed',
   'app-shell:rollback-start',
   'app-shell:restored',
 ] as const;
 
+type CloseReason =
+  | 'dispose'
+  | 'escape'
+  | 'invariant'
+  | 'item-activation'
+  | 'outside-pointer'
+  | 'scroll'
+  | 'shell'
+  | 'tab'
+  | 'toggle';
+
 interface CloseOptions {
+  readonly reason?: CloseReason;
   readonly restoreFocus?: boolean;
 }
 
@@ -34,10 +46,19 @@ const resolveMenuFromTriggerEvent = (event: Event): HTMLDetailsElement | null =>
 const resolveTrigger = (menu: HTMLDetailsElement): HTMLElement | null =>
   menu.querySelector<HTMLElement>(TRIGGER_SELECTOR);
 
+const resolvePanel = (menu: HTMLDetailsElement): HTMLElement | null =>
+  menu.querySelector<HTMLElement>(PANEL_SELECTOR);
+
+const readSeed = (element: HTMLElement, attributeName: string): string | null => {
+  const value = element.getAttribute(attributeName)?.trim();
+  return value === undefined || value === '' ? null : value;
+};
+
 export class StaticHeaderMenuController {
   private readonly listenerController = new AbortController();
   private readonly suppressedTriggerClicks = new WeakSet<HTMLElement>();
   private readonly suppressionTimers = new Set<number>();
+  private ignoreScrollUntil = 0;
   private typeaheadBuffer = '';
   private typeaheadTimer: number | null = null;
 
@@ -47,7 +68,7 @@ export class StaticHeaderMenuController {
   }
 
   dispose(): void {
-    this.closeAll();
+    this.closeAll(undefined, 'dispose');
     this.resetTypeahead();
     for (const timer of this.suppressionTimers) {
       window.clearTimeout(timer);
@@ -72,8 +93,12 @@ export class StaticHeaderMenuController {
       signal,
     });
     for (const eventName of APP_SHELL_EVENTS) {
-      document.addEventListener(eventName, () => { this.closeAll(); }, { signal });
+      document.addEventListener(eventName, () => { this.closeAll(undefined, 'shell'); }, { signal });
     }
+    document.addEventListener('toggle', (event) => { this.handleToggle(event); }, {
+      capture: true,
+      signal,
+    });
   }
 
   private handleClick(event: MouseEvent): void {
@@ -85,31 +110,54 @@ export class StaticHeaderMenuController {
         this.suppressedTriggerClicks.delete(trigger);
         return;
       }
-      this.toggle(menu);
+      this.toggle(menu, 'toggle');
       return;
     }
 
     if (isHTMLElement(event.target)) {
       const item = event.target.closest<HTMLElement>(ITEM_SELECTOR);
       if (item?.closest(MENU_SELECTOR) !== null) {
-        this.closeAll();
+        this.closeAll(undefined, 'item-activation');
       }
     }
   }
 
   private handleKeydown(event: KeyboardEvent): void {
     const menu = resolveMenuFromTriggerEvent(event);
-    if (menu !== null && (event.key === 'Enter' || event.key === ' ')) {
-      event.preventDefault();
-      const trigger = resolveTrigger(menu);
-      if (trigger !== null) {
-        this.suppressNextTriggerClick(trigger);
+    if (menu !== null) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        const trigger = resolveTrigger(menu);
+        if (trigger !== null) {
+          this.suppressNextTriggerClick(trigger);
+        }
+        this.toggle(menu, 'toggle');
+        return;
       }
-      this.toggle(menu);
-      return;
+
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        this.resetTypeahead();
+        this.open(menu);
+        const items = this.resolveMenuItems(menu);
+        if (event.key === 'ArrowDown') {
+          this.focusFirstItem(items);
+        } else {
+          this.focusLastItem(items);
+        }
+        return;
+      }
     }
 
     if (this.handleMenuFocusKeydown(event)) {
+      return;
+    }
+
+    if (event.key === 'Tab') {
+      const openMenu = this.resolveOpenMenuForEvent(event);
+      if (openMenu !== null) {
+        this.close(openMenu, { reason: 'tab' });
+      }
       return;
     }
 
@@ -122,7 +170,7 @@ export class StaticHeaderMenuController {
       return;
     }
     event.preventDefault();
-    this.close(openMenu, { restoreFocus: true });
+    this.close(openMenu, { reason: 'escape', restoreFocus: true });
   }
 
   private handlePointerdown(event: PointerEvent): void {
@@ -132,27 +180,48 @@ export class StaticHeaderMenuController {
     if (event.target.closest(MENU_SELECTOR) !== null) {
       return;
     }
-    this.closeAll();
+    this.closeAll(undefined, 'outside-pointer');
   }
 
   private handleScroll(event: Event): void {
+    if (window.performance.now() < this.ignoreScrollUntil) {
+      return;
+    }
     const target = event.target;
     if (target instanceof Element && target.closest(PANEL_SELECTOR) !== null) {
       return;
     }
-    this.closeAll();
+    if (
+      document.activeElement instanceof Element &&
+      document.activeElement.closest(PANEL_SELECTOR) !== null
+    ) {
+      return;
+    }
+    this.closeAll(undefined, 'scroll');
   }
 
-  private toggle(menu: HTMLDetailsElement): void {
+  private handleToggle(event: Event): void {
+    const menu = event.target instanceof HTMLDetailsElement ? event.target : null;
+    if (menu?.matches(`${HEADER_SELECTOR} ${MENU_SELECTOR}`) !== true) {
+      return;
+    }
+
     if (menu.open) {
-      this.close(menu);
+      this.closeAll(menu, 'invariant');
+    }
+    this.syncMenu(menu);
+  }
+
+  private toggle(menu: HTMLDetailsElement, reason: CloseReason): void {
+    if (menu.open) {
+      this.close(menu, { reason });
       return;
     }
     this.open(menu);
   }
 
   private open(menu: HTMLDetailsElement): void {
-    this.closeAll(menu);
+    this.closeAll(menu, 'invariant');
     menu.open = true;
     this.syncMenu(menu);
   }
@@ -166,13 +235,13 @@ export class StaticHeaderMenuController {
     }
   }
 
-  private closeAll(except?: HTMLDetailsElement): void {
+  private closeAll(except?: HTMLDetailsElement, reason: CloseReason = 'toggle'): void {
     this.resetTypeahead();
     for (const menu of document.querySelectorAll<HTMLDetailsElement>(
       `${HEADER_SELECTOR} ${MENU_SELECTOR}`,
     )) {
       if (menu !== except && menu.open) {
-        this.close(menu);
+        this.close(menu, { reason });
       } else {
         this.syncMenu(menu);
       }
@@ -188,7 +257,32 @@ export class StaticHeaderMenuController {
   }
 
   private syncMenu(menu: HTMLDetailsElement): void {
-    resolveTrigger(menu)?.setAttribute('aria-expanded', menu.open ? 'true' : 'false');
+    const trigger = resolveTrigger(menu);
+    const panel = resolvePanel(menu);
+    if (trigger === null) {
+      return;
+    }
+
+    const triggerId = trigger.id.trim() || readSeed(trigger, 'data-header-menu-trigger-id');
+    if (trigger.id.trim() === '' && triggerId !== null) {
+      trigger.id = triggerId;
+    }
+
+    const panelId =
+      panel?.id.trim() ||
+      (panel === null ? null : readSeed(panel, 'data-header-menu-panel-id')) ||
+      readSeed(trigger, 'aria-controls');
+    if (panel !== null && panel.id.trim() === '' && panelId !== null) {
+      panel.id = panelId;
+    }
+
+    trigger.setAttribute('aria-expanded', menu.open ? 'true' : 'false');
+    if (panelId !== null) {
+      trigger.setAttribute('aria-controls', panelId);
+    }
+    if (panel !== null && triggerId !== null) {
+      panel.setAttribute('aria-labelledby', triggerId);
+    }
   }
 
   private resolveOpenMenuForEvent(event: Event): HTMLDetailsElement | null {
@@ -235,12 +329,12 @@ export class StaticHeaderMenuController {
       case 'Home':
         event.preventDefault();
         this.resetTypeahead();
-        items[0]?.focus();
+        this.focusFirstItem(items);
         return true;
       case 'End':
         event.preventDefault();
         this.resetTypeahead();
-        items.at(-1)?.focus();
+        this.focusLastItem(items);
         return true;
       default:
         return this.handleTypeaheadKeydown(event, items);
@@ -249,8 +343,27 @@ export class StaticHeaderMenuController {
 
   private resolveMenuItems(menu: HTMLDetailsElement): HTMLElement[] {
     return Array.from(menu.querySelectorAll<HTMLElement>(ITEM_SELECTOR)).filter(
-      (item) => !item.hasAttribute('disabled') && item.getAttribute('aria-disabled') !== 'true',
+      (item) =>
+        !item.hasAttribute('disabled') &&
+        item.getAttribute('aria-disabled') !== 'true' &&
+        item.tabIndex >= 0,
     );
+  }
+
+  private focusFirstItem(items: readonly HTMLElement[]): void {
+    this.focusItem(items[0]);
+  }
+
+  private focusLastItem(items: readonly HTMLElement[]): void {
+    this.focusItem(items.at(-1));
+  }
+
+  private focusItem(item: HTMLElement | undefined): void {
+    if (item === undefined) {
+      return;
+    }
+    this.ignoreScrollUntil = window.performance.now() + TYPEAHEAD_RESET_MS;
+    item.focus();
   }
 
   private focusRelativeItem(items: readonly HTMLElement[], offset: 1 | -1): void {
@@ -259,7 +372,7 @@ export class StaticHeaderMenuController {
     const fallbackIndex = offset > 0 ? -1 : 0;
     const nextIndex = (currentIndex >= 0 ? currentIndex : fallbackIndex) + offset;
     const wrappedIndex = (nextIndex + items.length) % items.length;
-    items[wrappedIndex]?.focus();
+    this.focusItem(items[wrappedIndex]);
   }
 
   private handleTypeaheadKeydown(event: KeyboardEvent, items: readonly HTMLElement[]): boolean {
@@ -285,7 +398,7 @@ export class StaticHeaderMenuController {
     event.preventDefault();
     this.typeaheadBuffer = nextBuffer;
     this.scheduleTypeaheadReset();
-    match.focus();
+    this.focusItem(match);
     return true;
   }
 
