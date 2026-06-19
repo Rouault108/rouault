@@ -22,6 +22,7 @@ import { TocNavigationController } from '../../toc/toc-navigation-controller.js'
 import { TOC_MOBILE_PANEL_SELECTOR } from '../../toc/toc-mobile-panel-dom-css-contract.js';
 import { syncLayoutTocControllersForSession } from '../../toc/sync-layout-toc-controllers.js';
 import { decodeHashFragment } from '../../router/url-hash.js';
+import { focusWithoutScroll } from '../../lib/focus-without-scroll.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
 import {
   layoutTocRuntimeStore,
@@ -276,7 +277,9 @@ export class LayoutTocController extends HTMLElement {
           const returnFocusTarget = layoutTocMobileController.consumeReturnFocusTarget(
             this._getRuntimeId(),
           );
-          returnFocusTarget?.focus();
+          if (returnFocusTarget instanceof HTMLElement) {
+            focusWithoutScroll(returnFocusTarget);
+          }
         }
       }
     });

@@ -545,8 +545,15 @@ describe('layout-toc-controller', () => {
 
   it('mobile panel を body 直下へ生成し、リンク押下で閉じて focus を戻すこと', async () => {
     const cleanup = appendContentFixture();
+    const originalFocus = HTMLElement.prototype.focus;
+    const focusCalls: { element: HTMLElement; options: FocusOptions | undefined }[] = [];
     let root: HTMLElement | null = null;
     let trigger: HTMLButtonElement | null = null;
+
+    HTMLElement.prototype.focus = function focusSpy(options?: FocusOptions): void {
+      focusCalls.push({ element: this, options });
+      originalFocus.call(this, options);
+    };
 
     try {
       trigger = document.createElement('button');
@@ -610,10 +617,16 @@ describe('layout-toc-controller', () => {
 
       expect(panel.hasAttribute('hidden')).to.equal(true);
       expect(document.activeElement).to.equal(trigger);
+      expect(
+        focusCalls.some(
+          ({ element, options }) => element === trigger && options?.preventScroll === true,
+        ),
+      ).to.equal(true);
       const mobileSnapshot = layoutTocMobileController.getSnapshot('toc-source-test');
       expect(mobileSnapshot.cleanupDecision.directive).to.equal('refresh-panel-content');
       expect(mobileSnapshot.cleanupDecision.sourceId).to.equal('toc-source-test');
     } finally {
+      HTMLElement.prototype.focus = originalFocus;
       root?.remove();
       trigger?.remove();
       cleanup();

@@ -28,6 +28,7 @@ import { resolveTocDensityTier, type TocDensityTier } from '../../toc/toc-densit
 import { TOC_MOBILE_PANEL_SELECTOR } from '../../toc/toc-mobile-panel-dom-css-contract.js';
 import { decodeHashFragment } from '../../router/url-hash.js';
 import { isHTMLElement } from '../../lib/dom.js';
+import { focusWithoutScroll } from '../../lib/focus-without-scroll.js';
 import { layoutTocMobileController } from './layout-toc-mobile-controller.js';
 import {
   layoutTocRuntimeStore,
@@ -277,7 +278,9 @@ export class LayoutToc extends LitElement {
         const returnFocusTarget = layoutTocMobileController.consumeReturnFocusTarget(
           this._getRuntimeId(),
         );
-        returnFocusTarget?.focus();
+        if (returnFocusTarget instanceof HTMLElement) {
+          focusWithoutScroll(returnFocusTarget);
+        }
       }
     }
   }
