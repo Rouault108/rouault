@@ -263,15 +263,19 @@ export class StaticHeaderMenuController {
       return;
     }
 
-    const triggerId = trigger.id.trim() || readSeed(trigger, 'data-header-menu-trigger-id');
+    const trimmedTriggerId = trigger.id.trim();
+    const triggerId =
+      trimmedTriggerId === '' ? readSeed(trigger, 'data-header-menu-trigger-id') : trimmedTriggerId;
     if (trigger.id.trim() === '' && triggerId !== null) {
       trigger.id = triggerId;
     }
 
+    const trimmedPanelId = panel?.id.trim() ?? null;
+    const panelSeedId = panel === null ? null : readSeed(panel, 'data-header-menu-panel-id');
     const panelId =
-      panel?.id.trim() ||
-      (panel === null ? null : readSeed(panel, 'data-header-menu-panel-id')) ||
-      readSeed(trigger, 'aria-controls');
+      trimmedPanelId !== null && trimmedPanelId !== ''
+        ? trimmedPanelId
+        : (panelSeedId ?? readSeed(trigger, 'aria-controls'));
     if (panel !== null && panel.id.trim() === '' && panelId !== null) {
       panel.id = panelId;
     }
