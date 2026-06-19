@@ -561,6 +561,37 @@ test.describe('Static header migration', () => {
     ).toHaveAttribute('data-icon', 'check');
   });
 
+  test('direct data-theme mutation でも header theme 表示だけを同期すること', async ({
+    page,
+  }) => {
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    await page.evaluate(() => {
+      document.documentElement.dataset['theme'] = 'light';
+    });
+
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await expect(page.locator('header[data-layout-header] [data-theme-current-label]')).toHaveText(
+      'ライト',
+    );
+    await expect(
+      page.locator('header[data-layout-header] [data-theme-switcher] summary'),
+    ).toHaveAttribute('aria-label', 'テーマ: ライト');
+    await expect(
+      page.locator('header[data-layout-header] .theme-trigger-icon svg[data-icon]'),
+    ).toHaveAttribute('data-icon', 'sun');
+    await expect(
+      page.locator('header[data-layout-header] [data-theme-value="light"]'),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      page.locator('header[data-layout-header] [data-theme-value="light"]'),
+    ).toHaveAttribute('data-selected', 'true');
+    await expect(
+      page.locator('header[data-layout-header] [data-theme-value="light"] svg[data-icon]'),
+    ).toHaveAttribute('data-icon', 'check');
+  });
+
   test('header menu は Escape dismissal と summary focus restore を同期すること', async ({
     page,
   }) => {
@@ -598,6 +629,15 @@ test.describe('Static header migration', () => {
       document.dispatchEvent(new CustomEvent('app-shell:rollback-start'));
     });
     await expectMenuOpen(page, 'theme', false);
+
+    for (const eventName of ['app-shell:committed', 'app-shell:restored'] as const) {
+      await page.locator('header[data-layout-header] [data-header-menu="theme"] summary').click();
+      await expectMenuOpen(page, 'theme', true);
+      await page.evaluate((name) => {
+        document.dispatchEvent(new CustomEvent(name));
+      }, eventName);
+      await expectMenuOpen(page, 'theme', false);
+    }
   });
 
   test('header menu は one-menu-open と項目選択後 close を維持すること', async ({ page }) => {
@@ -1016,6 +1056,7 @@ test.describe('Static header migration', () => {
       'data-overlay-sidebar-open',
       'false',
     );
+    await expect(page.locator(triggerSelector)).toHaveAttribute('aria-expanded', 'true');
   });
 
   test('sidebar toggle は controller state と aria を同期し focus return trigger を渡すこと', async ({
@@ -1059,6 +1100,64 @@ test.describe('Static header migration', () => {
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect(trigger).toHaveAttribute('aria-label', 'サイドバーを開く');
     await expect(trigger).toBeFocused();
+  });
+
+  test('app-shell commit 後は theme と sidebar state を header へ再同期すること', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 760 });
+    await page.goto(layoutRich.directPath);
+    await waitForAppRouterReady(page);
+
+    const header = page.locator('header[data-layout-header]');
+    const sidebarTrigger = page.locator('header[data-layout-header] [data-layout-sidebar-toggle]');
+
+    await sidebarTrigger.click();
+    await expect(header).toHaveAttribute('data-sidebar-state', 'expanded');
+    await expect(header).toHaveAttribute('data-overlay-sidebar-open', 'true');
+    await expect(sidebarTrigger).toHaveAttribute('aria-expanded', 'true');
+
+    await page.evaluate(() => {
+      document.documentElement.dataset['theme'] = 'dark';
+    });
+    await expect(page.locator('header[data-layout-header] [data-theme-current-label]')).toHaveText(
+      'ダーク',
+    );
+
+    await page.locator('header[data-layout-header]').evaluate((element) => {
+      element.setAttribute('data-sidebar-mode', 'fixed');
+      element.setAttribute('data-sidebar-state', 'collapsed');
+      element.setAttribute('data-overlay-sidebar-open', 'false');
+      element
+        .querySelector<HTMLElement>('[data-layout-sidebar-toggle]')
+        ?.setAttribute('aria-expanded', 'false');
+      const label = element.querySelector<HTMLElement>('[data-theme-current-label]');
+      if (label !== null) label.textContent = 'stale';
+      element
+        .querySelector<HTMLElement>('[data-theme-value="dark"]')
+        ?.setAttribute('aria-pressed', 'false');
+      element.querySelector<HTMLElement>('[data-theme-value="dark"]')?.removeAttribute(
+        'data-selected',
+      );
+    });
+
+    await page.evaluate(() => {
+      document.dispatchEvent(new CustomEvent('app-shell:committed'));
+    });
+
+    await expect(header).toHaveAttribute('data-sidebar-mode', 'overlay');
+    await expect(header).toHaveAttribute('data-sidebar-state', 'expanded');
+    await expect(header).toHaveAttribute('data-overlay-sidebar-open', 'true');
+    await expect(sidebarTrigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('header[data-layout-header] [data-theme-current-label]')).toHaveText(
+      'ダーク',
+    );
+    await expect(
+      page.locator('header[data-layout-header] [data-theme-value="dark"]'),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      page.locator('header[data-layout-header] [data-theme-value="dark"]'),
+    ).toHaveAttribute('data-selected', 'true');
   });
 
   test('SPA header replacement 後は旧 header の sidebar subscription を解除すること', async ({

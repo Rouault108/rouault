@@ -1,5 +1,6 @@
 import {
   THEME_CHANGE_EVENT,
+  THEME_ATTRIBUTE,
   applyThemePreference,
   isThemePreference,
   readAppliedThemePreference,
@@ -19,6 +20,11 @@ import { resolveStaticIconBody, type IconName } from '../../../shared/icons/icon
 const HEADER_SELECTOR = 'header[data-layout-header]';
 const SIDEBAR_TOGGLE_OPEN_LABEL = 'サイドバーを開く';
 const SIDEBAR_TOGGLE_CLOSE_LABEL = 'サイドバーを閉じる';
+const APP_SHELL_SYNC_EVENTS = [
+  'app-shell:committed',
+  'app-shell:rollback-start',
+  'app-shell:restored',
+] as const;
 let activeEnhancement: AbortController | null = null;
 
 const patchStaticIcon = (container: Element | null, iconName: IconName): void => {
@@ -64,6 +70,7 @@ const syncSidebarHeader = (
   snapshot: LayoutSidebarControllerSnapshot,
 ): void => {
   const overlaySidebarOpen = snapshot.mode === 'overlay' && snapshot.state === 'expanded';
+  const sidebarExpanded = snapshot.state === 'expanded';
   header.setAttribute('data-sidebar-mode', snapshot.mode);
   header.setAttribute('data-sidebar-state', snapshot.state);
   header.setAttribute('data-overlay-sidebar-open', overlaySidebarOpen ? 'true' : 'false');
@@ -73,10 +80,10 @@ const syncSidebarHeader = (
     return;
   }
 
-  sidebarButton.setAttribute('aria-expanded', overlaySidebarOpen ? 'true' : 'false');
+  sidebarButton.setAttribute('aria-expanded', sidebarExpanded ? 'true' : 'false');
   sidebarButton.setAttribute(
     'aria-label',
-    overlaySidebarOpen ? SIDEBAR_TOGGLE_CLOSE_LABEL : SIDEBAR_TOGGLE_OPEN_LABEL,
+    sidebarExpanded ? SIDEBAR_TOGGLE_CLOSE_LABEL : SIDEBAR_TOGGLE_OPEN_LABEL,
   );
 };
 
@@ -104,6 +111,12 @@ export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void
   activeEnhancement?.abort();
   const listenerController = new AbortController();
   const menuController = createStaticHeaderMenuController();
+  const themeObserver =
+    typeof MutationObserver === 'function'
+      ? new MutationObserver(() => {
+          syncThemeHeader(document, readAppliedThemePreference(document.documentElement));
+        })
+      : null;
   let sidebarSyncController: AbortController | null = null;
   const syncCurrentSidebarHeaders = (syncRoot: ParentNode): void => {
     sidebarSyncController?.abort();
@@ -115,6 +128,7 @@ export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void
     () => {
       sidebarSyncController?.abort();
       sidebarSyncController = null;
+      themeObserver?.disconnect();
       menuController.dispose();
     },
     { once: true },
@@ -130,6 +144,10 @@ export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void
   );
   syncThemeHeader(root);
   syncCurrentSidebarHeaders(root);
+  themeObserver?.observe(document.documentElement, {
+    attributeFilter: [THEME_ATTRIBUTE],
+    attributes: true,
+  });
   enhanceLayoutHeaderTocBridge(listenerController.signal);
 
   document.addEventListener(
@@ -179,12 +197,14 @@ export const enhanceLayoutHeader = (root: ParentNode, signal: AbortSignal): void
     { signal: listenerController.signal },
   );
 
-  document.addEventListener(
-    'app-shell:committed',
-    () => {
-      syncThemeHeader(document);
-      syncCurrentSidebarHeaders(document);
-    },
-    { signal: listenerController.signal },
-  );
+  for (const eventName of APP_SHELL_SYNC_EVENTS) {
+    document.addEventListener(
+      eventName,
+      () => {
+        syncThemeHeader(document);
+        syncCurrentSidebarHeaders(document);
+      },
+      { signal: listenerController.signal },
+    );
+  }
 };
