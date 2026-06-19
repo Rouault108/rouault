@@ -43,22 +43,29 @@ describe('static header parse5 validator', () => {
 
     expect(() => validateStaticHeaderHtmlFragment(html)).not.toThrow();
     expect(html).toContain('<details class="corpus-switcher" data-header-menu="corpus">');
-    expect(html).toContain('<summary class="corpus-trigger-label"');
+    expect(html).toContain('<summary id="static-header-corpus-trigger"');
     expect(html).toContain('data-header-menu-trigger="true"');
+    expect(html).toContain('data-header-menu-trigger-id="static-header-corpus-trigger"');
+    expect(html).toContain('aria-controls="static-header-corpus-panel"');
     expect(html).toContain(
       'data-header-menu-text="すべて &quot;Alpha&quot; &amp; &lt;Beta&gt;"',
     );
-    expect(html).toContain('<nav class="corpus-switcher__menu"');
+    expect(html).toContain('<nav id="static-header-corpus-panel"');
     expect(html).toContain('data-header-menu-panel="true"');
+    expect(html).toContain('data-header-menu-panel-id="static-header-corpus-panel"');
     expect(html).toContain('data-header-menu-item="true"');
     expect(html).toContain('<details class="theme-switcher"');
     expect(html).toContain('data-header-menu="theme"');
-    expect(html).toContain('<div class="theme-switcher__menu" role="group"');
+    expect(html).toContain('<summary id="static-header-theme-trigger"');
+    expect(html).toContain('data-header-menu-trigger-id="static-header-theme-trigger"');
+    expect(html).toContain('aria-controls="static-header-theme-panel"');
+    expect(html).toContain('<div id="static-header-theme-panel" class="theme-switcher__menu" role="group"');
+    expect(html).toContain('data-header-menu-panel-id="static-header-theme-panel"');
     expect(html).toContain('data-theme-value="system"');
     expect(html).toContain('aria-pressed="true"');
     expect(html).not.toContain('role="menu"');
     expect(html).not.toContain('role="menuitem"');
-    expect(html).not.toMatch(/\s(?:id|tabindex|hidden|inert)=/u);
+    expect(html).not.toMatch(/\s(?:tabindex|hidden|inert)=/u);
   });
 
   it.each(STATIC_HEADER_CONTRACT_REJECTED_CASES)(

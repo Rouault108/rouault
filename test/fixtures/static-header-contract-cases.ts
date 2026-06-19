@@ -18,10 +18,23 @@ export const STATIC_HEADER_CONTRACT_ACCEPTED_HTML = `
   >
     <nav aria-label="global">
       <details class="corpus-switcher" data-header-menu="corpus">
-        <summary class="corpus-trigger-label" aria-label="コーパス: すべて" data-header-menu-trigger="true">
+        <summary
+          id="static-header-corpus-trigger"
+          class="corpus-trigger-label"
+          aria-label="コーパス: すべて"
+          aria-controls="static-header-corpus-panel"
+          data-header-menu-trigger="true"
+          data-header-menu-trigger-id="static-header-corpus-trigger"
+        >
           <span>すべて</span>
         </summary>
-        <nav class="corpus-switcher__menu" aria-label="コーパス" data-header-menu-panel="true">
+        <nav
+          id="static-header-corpus-panel"
+          class="corpus-switcher__menu"
+          aria-label="コーパス"
+          data-header-menu-panel="true"
+          data-header-menu-panel-id="static-header-corpus-panel"
+        >
           <ul>
             <li>
               <a
@@ -42,10 +55,24 @@ export const STATIC_HEADER_CONTRACT_ACCEPTED_HTML = `
         <span>search</span>
       </a>
       <details class="theme-switcher" data-theme-switcher="true" data-header-menu="theme">
-        <summary class="theme-trigger-label" aria-label="テーマ: システム" data-header-menu-trigger="true">
+        <summary
+          id="static-header-theme-trigger"
+          class="theme-trigger-label"
+          aria-label="テーマ: システム"
+          aria-controls="static-header-theme-panel"
+          data-header-menu-trigger="true"
+          data-header-menu-trigger-id="static-header-theme-trigger"
+        >
           <span>システム</span>
         </summary>
-        <div class="theme-switcher__menu" role="group" aria-label="テーマ" data-header-menu-panel="true">
+        <div
+          id="static-header-theme-panel"
+          class="theme-switcher__menu"
+          role="group"
+          aria-label="テーマ"
+          data-header-menu-panel="true"
+          data-header-menu-panel-id="static-header-theme-panel"
+        >
           <ul>
             <li>
               <button

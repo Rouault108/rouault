@@ -36,13 +36,13 @@ export const STATIC_HEADER_ALLOWED_ARIA_ATTRIBUTES = [/^aria-[a-z0-9._:-]+$/u];
 
 const STATIC_HEADER_ALLOWED_ATTRIBUTES_BY_ELEMENT: Readonly<Record<string, ReadonlySet<string>>> = {
   header: new Set(['class']),
-  div: new Set(['class', 'role']),
+  div: new Set(['class', 'id', 'role']),
   span: new Set(['class']),
   a: new Set(['class', 'href', 'title', 'hidden']),
   button: new Set(['class', 'type', 'title', 'disabled']),
   details: new Set(['class', 'open']),
-  summary: new Set(['class', 'title']),
-  nav: new Set(['class']),
+  summary: new Set(['class', 'id', 'title']),
+  nav: new Set(['class', 'id']),
   ul: new Set(['class']),
   ol: new Set(['class']),
   li: new Set(['class']),
