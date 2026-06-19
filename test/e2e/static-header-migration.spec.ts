@@ -37,6 +37,153 @@ const visibleDisplay = async (page: Page, selector: string): Promise<string> =>
 
 const searchTriggerSelector = 'header[data-layout-header] [data-search-dialog-trigger]';
 const searchDialogSelector = 'dialog[data-search-dialog-root]';
+const HEADER_CONTROL_MIN_HIT_TARGET_PX = 44;
+const CSS_PIXEL_ROUNDING_TOLERANCE_PX = 0.01;
+
+interface HeaderControlTarget {
+  name: string;
+  selector: string;
+}
+
+interface HeaderControlRawContract {
+  afterInsetBlockEnd: string;
+  afterInsetBlockStart: string;
+  afterInsetInlineEnd: string;
+  afterInsetInlineStart: string;
+  fontFeatureSettings: string;
+  fontWeight: string;
+  height: string;
+  letterSpacing: string;
+  lineHeight: string;
+  width: string;
+}
+
+interface HeaderControlHitTargetContract {
+  expandedHeight: number;
+  expandedWidth: number;
+  name: string;
+}
+
+interface HeaderControlContract extends HeaderControlHitTargetContract {
+  fontFeatureSettings: string;
+  fontWeight: number;
+  letterSpacing: string;
+  lineHeight: string;
+}
+
+const headerControlTargets = {
+  corpus: {
+    name: 'corpus switcher trigger',
+    selector: 'header[data-layout-header] .corpus-switcher > summary',
+  },
+  search: {
+    name: 'search trigger',
+    selector: searchTriggerSelector,
+  },
+  theme: {
+    name: 'theme switcher trigger',
+    selector: 'header[data-layout-header] .theme-switcher > summary',
+  },
+} as const satisfies Record<string, HeaderControlTarget>;
+
+const readRequiredNumber = (value: string, label: string): number => {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${label} must be finite. Received: ${value}`);
+  }
+
+  return parsed;
+};
+
+const readRequiredCssPx = (value: string, label: string): number =>
+  readRequiredNumber(value, `${label} CSS px`);
+
+const toHeaderControlContract = (
+  target: HeaderControlTarget,
+  raw: HeaderControlRawContract,
+): HeaderControlContract => {
+  const width = readRequiredCssPx(raw.width, `${target.name} width`);
+  const height = readRequiredCssPx(raw.height, `${target.name} height`);
+  const afterInsetInlineStart = readRequiredCssPx(
+    raw.afterInsetInlineStart,
+    `${target.name} ::after inset-inline-start`,
+  );
+  const afterInsetInlineEnd = readRequiredCssPx(
+    raw.afterInsetInlineEnd,
+    `${target.name} ::after inset-inline-end`,
+  );
+  const afterInsetBlockStart = readRequiredCssPx(
+    raw.afterInsetBlockStart,
+    `${target.name} ::after inset-block-start`,
+  );
+  const afterInsetBlockEnd = readRequiredCssPx(
+    raw.afterInsetBlockEnd,
+    `${target.name} ::after inset-block-end`,
+  );
+
+  return {
+    expandedHeight: height - afterInsetBlockStart - afterInsetBlockEnd,
+    expandedWidth: width - afterInsetInlineStart - afterInsetInlineEnd,
+    fontFeatureSettings: raw.fontFeatureSettings,
+    fontWeight: readRequiredNumber(raw.fontWeight, `${target.name} font-weight`),
+    letterSpacing: raw.letterSpacing,
+    lineHeight: raw.lineHeight,
+    name: target.name,
+  };
+};
+
+const readHeaderControlContract = async (
+  page: Page,
+  target: HeaderControlTarget,
+): Promise<HeaderControlContract> => {
+  const raw = await page.locator(target.selector).evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    const afterStyle = window.getComputedStyle(element, '::after');
+
+    return {
+      afterInsetBlockEnd: afterStyle.insetBlockEnd,
+      afterInsetBlockStart: afterStyle.insetBlockStart,
+      afterInsetInlineEnd: afterStyle.insetInlineEnd,
+      afterInsetInlineStart: afterStyle.insetInlineStart,
+      fontFeatureSettings: style.fontFeatureSettings,
+      fontWeight: style.fontWeight,
+      height: style.height,
+      letterSpacing: style.letterSpacing,
+      lineHeight: style.lineHeight,
+      width: style.width,
+    };
+  });
+
+  return toHeaderControlContract(target, raw);
+};
+
+const readHeaderControlContracts = async (
+  page: Page,
+  targets: readonly HeaderControlTarget[],
+): Promise<HeaderControlContract[]> =>
+  Promise.all(targets.map((target) => readHeaderControlContract(page, target)));
+
+const expectCssPixelAtLeast = (actual: number, expected: number, label: string): void => {
+  expect(
+    actual,
+    `${label}: expected >= ${expected}px within ${CSS_PIXEL_ROUNDING_TOLERANCE_PX}px CSS pixel rounding tolerance, received ${actual}px`,
+  ).toBeGreaterThanOrEqual(expected - CSS_PIXEL_ROUNDING_TOLERANCE_PX);
+};
+
+const expectHeaderControlHitTargetContract = (
+  contract: HeaderControlHitTargetContract,
+): void => {
+  expectCssPixelAtLeast(
+    contract.expandedWidth,
+    HEADER_CONTROL_MIN_HIT_TARGET_PX,
+    `${contract.name} expanded hit target width`,
+  );
+  expectCssPixelAtLeast(
+    contract.expandedHeight,
+    HEADER_CONTROL_MIN_HIT_TARGET_PX,
+    `${contract.name} expanded hit target height`,
+  );
+};
 
 const readSearchTriggerDensity = async (page: Page) =>
   page.locator(searchTriggerSelector).evaluate((element) => {
@@ -45,10 +192,6 @@ const readSearchTriggerDensity = async (page: Page) =>
     const placeholderStyle = placeholder === null ? null : window.getComputedStyle(placeholder);
     const afterStyle = window.getComputedStyle(element, '::after');
     return {
-      afterInsetBlockEnd: afterStyle.insetBlockEnd,
-      afterInsetBlockStart: afterStyle.insetBlockStart,
-      afterInsetInlineEnd: afterStyle.insetInlineEnd,
-      afterInsetInlineStart: afterStyle.insetInlineStart,
       afterPosition: afterStyle.position,
       height: Number.parseFloat(style.height),
       placeholderDisplay: placeholderStyle?.display ?? null,
@@ -373,18 +516,8 @@ test.describe('Static header migration', () => {
     await expect(trigger).toHaveAttribute('href', /\/search\/$/u);
     await expect(trigger).toHaveJSProperty('tagName', 'A');
 
-    const density = await readSearchTriggerDensity(page);
-    const expandedWidth =
-      density.width -
-      Number.parseFloat(density.afterInsetInlineStart) -
-      Number.parseFloat(density.afterInsetInlineEnd);
-    const expandedHeight =
-      density.height -
-      Number.parseFloat(density.afterInsetBlockStart) -
-      Number.parseFloat(density.afterInsetBlockEnd);
-
-    expect(expandedWidth).toBeGreaterThanOrEqual(44);
-    expect(expandedHeight).toBeGreaterThanOrEqual(44);
+    const hitTargetContract = await readHeaderControlContract(page, headerControlTargets.search);
+    expectHeaderControlHitTargetContract(hitTargetContract);
 
     const readInteractiveStyle = async () =>
       trigger.evaluate((element) => {
@@ -455,42 +588,14 @@ test.describe('Static header migration', () => {
     expect(focusStyle.outlineColor).not.toBe('rgba(0, 0, 0, 0)');
     expect(focusStyle.boxShadow).not.toBe('none');
 
-    const controlContracts = await page
-      .locator(
-        [
-          'header[data-layout-header] .corpus-switcher > summary',
-          searchTriggerSelector,
-          'header[data-layout-header] .theme-switcher > summary',
-        ].join(', '),
-      )
-      .evaluateAll((elements) =>
-        elements.map((element) => {
-          const style = window.getComputedStyle(element);
-          const afterStyle = window.getComputedStyle(element, '::after');
-          const width = Number.parseFloat(style.width);
-          const height = Number.parseFloat(style.height);
-          const expandedWidth =
-            width -
-            Number.parseFloat(afterStyle.insetInlineStart) -
-            Number.parseFloat(afterStyle.insetInlineEnd);
-          const expandedHeight =
-            height -
-            Number.parseFloat(afterStyle.insetBlockStart) -
-            Number.parseFloat(afterStyle.insetBlockEnd);
-          return {
-            expandedHeight,
-            expandedWidth,
-            fontFeatureSettings: style.fontFeatureSettings,
-            fontWeight: Number.parseFloat(style.fontWeight),
-            letterSpacing: style.letterSpacing,
-            lineHeight: style.lineHeight,
-          };
-        }),
-      );
+    const controlContracts = await readHeaderControlContracts(page, [
+      headerControlTargets.corpus,
+      headerControlTargets.search,
+      headerControlTargets.theme,
+    ]);
 
     for (const contract of controlContracts) {
-      expect(contract.expandedWidth).toBeGreaterThanOrEqual(44);
-      expect(contract.expandedHeight).toBeGreaterThanOrEqual(44);
+      expectHeaderControlHitTargetContract(contract);
       expect(contract.fontWeight).toBeGreaterThanOrEqual(500);
       expect(contract.fontFeatureSettings).toContain('palt');
       expect(contract.letterSpacing).not.toBe('normal');
