@@ -391,7 +391,7 @@ export class TocActiveTracker {
     const expiresAt = performance.now() + NATIVE_HASH_NAVIGATION_HOLD_MS;
     const timeoutId = window.setTimeout(() => {
       const hold = this._nativeHashNavigationHold;
-      if (hold === null || hold.targetId !== targetId || hold.timeoutId !== timeoutId) {
+      if (hold?.targetId !== targetId || hold.timeoutId !== timeoutId) {
         return;
       }
 
