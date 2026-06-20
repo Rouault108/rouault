@@ -361,9 +361,37 @@ test.describe('Static header migration', () => {
     const corpusMenu = page.locator('header[data-layout-header] [data-header-menu="corpus"]');
     const corpusTrigger = corpusMenu.locator('[data-header-menu-trigger]');
     const corpusPanel = corpusMenu.locator('[data-header-menu-panel]');
+    const corpusItems = corpusPanel.locator('ul > li > a[data-header-menu-item]');
+    const currentCorpusItems = corpusPanel.locator(
+      'ul > li > a[data-header-menu-item][aria-current="page"]',
+    );
+    await expect(corpusMenu).toHaveJSProperty('tagName', 'DETAILS');
+    await expect(corpusTrigger).toHaveJSProperty('tagName', 'SUMMARY');
     await expect(corpusPanel).toHaveJSProperty('tagName', 'NAV');
     await expect(corpusPanel).not.toHaveAttribute('role', 'menu');
     await expect(corpusMenu.locator('[role="menu"], [role="menuitem"]')).toHaveCount(0);
+    await expect(corpusItems.first()).toHaveJSProperty('tagName', 'A');
+    await expect(corpusItems.first()).toHaveAttribute('href', /.+/u);
+    await expect(corpusItems.first()).not.toHaveAttribute('role', 'menuitem');
+    await expect(corpusPanel.locator('[data-header-menu-item][role="menuitem"]')).toHaveCount(0);
+    await expect(currentCorpusItems).toHaveCount(1);
+    await expect(currentCorpusItems.first()).toHaveJSProperty('tagName', 'A');
+    const corpusItemContract = await corpusPanel
+      .locator('[data-header-menu-item]')
+      .evaluateAll((items) => ({
+        directAnchorItemCount: items.filter((item) =>
+          item.matches('ul > li > a[data-header-menu-item]'),
+        ).length,
+        itemCount: items.length,
+        missingHrefCount: items.filter(
+          (item) =>
+            !(item instanceof HTMLAnchorElement) ||
+            (item.getAttribute('href') ?? '').trim() === '',
+        ).length,
+      }));
+    expect(corpusItemContract.itemCount).toBeGreaterThan(0);
+    expect(corpusItemContract.directAnchorItemCount).toBe(corpusItemContract.itemCount);
+    expect(corpusItemContract.missingHrefCount).toBe(0);
     await expect(corpusTrigger).toHaveAttribute('aria-expanded', 'false');
     await expect(corpusTrigger).toHaveAttribute('aria-controls', /.+/u);
     const corpusPanelId = await corpusTrigger.getAttribute('aria-controls');
