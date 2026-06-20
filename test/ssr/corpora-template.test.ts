@@ -1,6 +1,41 @@
 import { describe, expect, it } from 'vitest';
+import { parseFragment, type DefaultTreeAdapterMap } from 'parse5';
 
 import { CorpusPagesTemplate } from '../../src/corpora.11ty.js';
+
+type ChildNode = DefaultTreeAdapterMap['childNode'];
+type ElementNode = DefaultTreeAdapterMap['element'];
+
+interface ParentLike {
+  readonly childNodes: readonly ChildNode[];
+}
+
+const isElementNode = (node: ChildNode): node is ElementNode => 'tagName' in node;
+
+const getAttribute = (node: ElementNode, name: string): string | null =>
+  node.attrs.find((attribute) => attribute.name === name)?.value ?? null;
+
+const hasClass = (node: ElementNode, className: string): boolean =>
+  (getAttribute(node, 'class') ?? '').split(/\s+/u).includes(className);
+
+const collectElements = (
+  node: ParentLike,
+  predicate: (element: ElementNode) => boolean,
+  matches: ElementNode[] = [],
+): ElementNode[] => {
+  for (const child of node.childNodes) {
+    if (!isElementNode(child)) {
+      continue;
+    }
+    if (predicate(child)) {
+      matches.push(child);
+    }
+    collectElements(child, predicate, matches);
+  }
+  return matches;
+};
+
+const elementChildren = (node: ElementNode): ElementNode[] => node.childNodes.filter(isElementNode);
 
 describe('CorpusPagesTemplate', () => {
   it('pagination 用の corpusPages をテンプレートデータとして返すこと', () => {
@@ -38,6 +73,19 @@ describe('CorpusPagesTemplate', () => {
     expect(rendered).toContain('<h1 id="corpus-page-title" class="heading">音楽</h1>');
     expect(rendered).toContain('href="/notes/music/symphony/"');
     expect(rendered).toContain('data-link-kind="internal-document"');
+    const fragment = parseFragment(rendered);
+    const cards = collectElements(
+      fragment,
+      (element) => element.tagName === 'article' && hasClass(element, 'result-card'),
+    );
+    expect(cards).toHaveLength(1);
+    const [card] = cards;
+    const children = card ? elementChildren(card) : [];
+    expect(children).toHaveLength(1);
+    const [link] = children;
+    expect(link?.tagName).toBe('a');
+    expect(link ? hasClass(link, 'result-link') : false).toBe(true);
+    expect(link ? getAttribute(link, 'data-link-surface') : null).toBe('card');
     expect(rendered).not.toContain('<corpus-page');
     expect(rendered).not.toContain('data-hydration-');
   });

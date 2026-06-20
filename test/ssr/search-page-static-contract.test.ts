@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { parseFragment, type DefaultTreeAdapterMap } from 'parse5';
 import { describe, expect, it } from 'vitest';
 
 import { buildStaticExploreResponse } from '../../build/search/build-static-explore-response.js';
@@ -10,6 +11,40 @@ import {
   DEFAULT_SITE_URL_CONTEXT,
 } from '../../shared/site/site-url-context.js';
 import { renderSearchPageHtml } from '../../src/layouts/search-page-html.js';
+
+type ChildNode = DefaultTreeAdapterMap['childNode'];
+type ElementNode = DefaultTreeAdapterMap['element'];
+
+interface ParentLike {
+  readonly childNodes: readonly ChildNode[];
+}
+
+const isElementNode = (node: ChildNode): node is ElementNode => 'tagName' in node;
+
+const getAttribute = (node: ElementNode, name: string): string | null =>
+  node.attrs.find((attribute) => attribute.name === name)?.value ?? null;
+
+const hasClass = (node: ElementNode, className: string): boolean =>
+  (getAttribute(node, 'class') ?? '').split(/\s+/u).includes(className);
+
+const collectElements = (
+  node: ParentLike,
+  predicate: (element: ElementNode) => boolean,
+  matches: ElementNode[] = [],
+): ElementNode[] => {
+  for (const child of node.childNodes) {
+    if (!isElementNode(child)) {
+      continue;
+    }
+    if (predicate(child)) {
+      matches.push(child);
+    }
+    collectElements(child, predicate, matches);
+  }
+  return matches;
+};
+
+const elementChildren = (node: ElementNode): ElementNode[] => node.childNodes.filter(isElementNode);
 
 describe('renderSearchPageHtml static contract', () => {
   it('production templates require and pass siteUrlContext without renderer fallback', () => {
@@ -172,6 +207,46 @@ describe('renderSearchPageHtml static contract', () => {
     expect(rendered).toContain('href="/rouault/notes/router/"');
     expect(rendered).toContain('<mark>Router </mark>contract');
     expect(rendered).not.toContain('https://rouault.invalid');
+  });
+
+  it('result card は article 直下の a.result-link をカード全面リンク面として出力すること', () => {
+    const initialState: SearchState = {
+      q: 'router',
+      tags: [],
+      tagMode: 'or',
+      sort: 'relevance',
+    };
+    const rendered = renderSearchPageHtml({
+      initialState,
+      initialResponse: buildStaticExploreResponse({
+        state: initialState,
+        notes: [
+          {
+            title: 'Router',
+            permalink: '/notes/router/',
+            description: 'Router contract',
+            date: '2026-01-01',
+            tags: [],
+          },
+        ],
+      }),
+      siteUrlContext: DEFAULT_SITE_URL_CONTEXT,
+    });
+    const fragment = parseFragment(rendered);
+    const cards = collectElements(
+      fragment,
+      (element) => element.tagName === 'article' && hasClass(element, 'result-card'),
+    );
+
+    expect(cards).toHaveLength(1);
+    for (const card of cards) {
+      const children = elementChildren(card);
+      expect(children).toHaveLength(1);
+      const [link] = children;
+      expect(link?.tagName).toBe('a');
+      expect(link ? hasClass(link, 'result-link') : false).toBe(true);
+      expect(link ? getAttribute(link, 'data-link-surface') : null).toBe('card');
+    }
   });
 
   it('empty state は条件なしと条件ありで文言を分岐し、空 icon を hidden にすること', () => {
