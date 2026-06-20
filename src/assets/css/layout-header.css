@@ -27,6 +27,11 @@ header[data-layout-header] {
   --_header-center-start-inset: 0px;
   --_header-center-end-inset: 0px;
   --_header-corpus-inline-start-offset: 0px;
+  --_header-corpus-menu-item-min-block-size: var(--control-height-md, 32px);
+  --_header-corpus-menu-item-padding-block: var(--space-2, 8px);
+  --_header-corpus-menu-item-padding-inline: var(--space-3, 12px);
+  --_header-corpus-menu-current-marker-size: var(--nav-item-indicator-width, 2px);
+  --_header-corpus-menu-current-marker-color: var(--nav-item-indicator-color, currentColor);
   --_header-hit-target-size: 44px;
   --_header-control-font-weight: var(--font-medium, 500);
   --_header-control-line-height: 1.15;
@@ -232,6 +237,31 @@ header[data-layout-header] .corpus-switcher__menu a {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item] {
+  box-sizing: border-box;
+  display: block;
+  min-block-size: var(--_header-corpus-menu-item-min-block-size, 32px);
+  padding-block: var(--_header-corpus-menu-item-padding-block, 8px);
+  padding-inline: var(--_header-corpus-menu-item-padding-inline, 12px);
+  border: 0;
+  border-inline-start: var(--_header-corpus-menu-current-marker-size, 2px) solid transparent;
+  border-radius: var(--radius-sm, 4px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item][aria-current='page'] {
+  border-inline-start-color: var(--_header-corpus-menu-current-marker-color, currentColor);
+  font-weight: var(--font-semibold, 600);
+}
+
+header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:hover,
+header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:focus-visible,
+header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:active {
+  background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%));
 }
 
 header[data-layout-header] :is(a, button, summary):hover {

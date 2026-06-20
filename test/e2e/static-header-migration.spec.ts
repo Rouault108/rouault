@@ -756,14 +756,10 @@ test.describe('Static header migration', () => {
     const itemContract = await firstItem.evaluate((element) => {
       const style = window.getComputedStyle(element);
       const height = element.getBoundingClientRect().height;
-      const lineHeight = Number.parseFloat(style.lineHeight);
-      const paddingBlockStart = Number.parseFloat(style.paddingBlockStart);
-      const paddingBlockEnd = Number.parseFloat(style.paddingBlockEnd);
       return {
         boxSizing: style.boxSizing,
         display: style.display,
         height,
-        lineBoxHeight: lineHeight + paddingBlockStart + paddingBlockEnd,
         overflow: style.overflow,
         textOverflow: style.textOverflow,
         whiteSpace: style.whiteSpace,
@@ -775,7 +771,7 @@ test.describe('Static header migration', () => {
     expect(itemContract.whiteSpace).toBe('nowrap');
     expect(itemContract.overflow).toBe('hidden');
     expect(itemContract.textOverflow).toBe('ellipsis');
-    expect(itemContract.height).toBeLessThanOrEqual(itemContract.lineBoxHeight + 2);
+    expect(itemContract.height).toBeGreaterThanOrEqual(32);
 
     const panelBox = await panel.boundingBox();
     if (panelBox === null) {
@@ -783,6 +779,36 @@ test.describe('Static header migration', () => {
     }
     expect(panelBox.x).toBeGreaterThanOrEqual(-1);
     expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width + 1);
+  });
+
+  test('current corpus item は static header 専用の視覚状態を持つこと', async ({ page }) => {
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    const panel = page.locator(
+      'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-panel]',
+    );
+    const currentItem = panel.locator('[data-header-menu-item][aria-current="page"]');
+    const nonCurrentItems = panel.locator('[data-header-menu-item]:not([aria-current="page"])');
+    const nonCurrentItem = nonCurrentItems.first();
+
+    await expect(currentItem).toHaveCount(1);
+    await expect(nonCurrentItems).not.toHaveCount(0);
+    await expect(nonCurrentItem).toHaveCount(1);
+
+    const [currentStyle, nonCurrentStyle] = await Promise.all([
+      currentItem.evaluate((element) => window.getComputedStyle(element).fontWeight),
+      nonCurrentItem.evaluate((element) => window.getComputedStyle(element).fontWeight),
+    ]);
+
+    const currentWeight = Number.parseFloat(currentStyle);
+    const nonCurrentWeight = Number.parseFloat(nonCurrentStyle);
+
+    if (Number.isFinite(currentWeight) && Number.isFinite(nonCurrentWeight)) {
+      expect(currentWeight).toBeGreaterThan(nonCurrentWeight);
+    } else {
+      expect(currentStyle).not.toBe(nonCurrentStyle);
+    }
   });
 
   test('検索 trigger は Enter 起動時に keyboard modality で dialog を開くこと', async ({
