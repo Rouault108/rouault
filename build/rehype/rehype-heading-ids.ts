@@ -146,7 +146,9 @@ const isDocEndnotesSection = (node: HastNode): boolean =>
   node.properties?.['role'] === 'doc-endnotes';
 
 const isHeadingExcludedSurface = (node: HastNode): boolean =>
-  node.type === 'element' && node.properties?.['data-link-card'] !== undefined;
+  node.type === 'element' &&
+  (node.properties?.['data-link-card'] !== undefined ||
+    node.properties?.['data-syntax-card'] !== undefined);
 
 const isEndnotesLabelHeading = (node: HastNode, insideDocEndnotes: boolean): boolean =>
   insideDocEndnotes &&

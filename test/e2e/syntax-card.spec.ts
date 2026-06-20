@@ -6,10 +6,14 @@ const codePath = e2eNoteFixtures.code.directPath;
 
 interface SyntaxCardState {
   hostExists: boolean;
+  cardLabelledByMatchesName: boolean;
+  cardNameTagName: string;
   headingText: string;
   signaturePreExists: boolean;
   signatureCodeChildExists: boolean;
   signatureWrappedAsCodeBlock: boolean;
+  sectionLabelledByMatchesHeading: boolean;
+  sectionHeadingTagName: string;
   firstSectionTitle: string;
   firstFieldWrapperExists: boolean;
   firstFieldTermText: string;
@@ -51,21 +55,34 @@ const readFirstSyntaxCardState = async (page: Page): Promise<SyntaxCardState> =>
       (value ?? '').replace(/\s+/gu, ' ').trim();
 
     const card = document.querySelector<HTMLElement>('[data-syntax-card]');
+    const cardName = card?.querySelector<HTMLElement>('.syntax-card__name') ?? null;
     const signaturePre = card?.querySelector<HTMLPreElement>('pre[data-syntax-signature]') ?? null;
     const firstSection = card?.querySelector<HTMLElement>('[data-syntax-section]') ?? null;
+    const sectionHeading =
+      firstSection?.querySelector<HTMLElement>('.syntax-section__heading') ?? null;
     const firstField = card?.querySelector<HTMLElement>('[data-syntax-field]') ?? null;
 
     return {
       hostExists: card instanceof HTMLElement,
-      headingText: normalize(card?.querySelector<HTMLElement>('.syntax-card__name')?.textContent),
+      cardLabelledByMatchesName:
+        card instanceof HTMLElement &&
+        cardName instanceof HTMLElement &&
+        card.getAttribute('aria-labelledby') === cardName.id &&
+        cardName.id.length > 0,
+      cardNameTagName: cardName?.tagName.toLowerCase() ?? '',
+      headingText: normalize(cardName?.textContent),
       signaturePreExists: signaturePre instanceof HTMLPreElement,
       signatureCodeChildExists: signaturePre?.querySelector('code') !== null,
       signatureWrappedAsCodeBlock:
         signaturePre?.matches('[data-code-block]') === true ||
         signaturePre?.closest('[data-code-block-root]') !== null,
-      firstSectionTitle: normalize(
-        firstSection?.querySelector<HTMLElement>('.syntax-section__heading')?.textContent,
-      ),
+      sectionLabelledByMatchesHeading:
+        firstSection instanceof HTMLElement &&
+        sectionHeading instanceof HTMLElement &&
+        firstSection.getAttribute('aria-labelledby') === sectionHeading.id &&
+        sectionHeading.id.length > 0,
+      sectionHeadingTagName: sectionHeading?.tagName.toLowerCase() ?? '',
+      firstSectionTitle: normalize(sectionHeading?.textContent),
       firstFieldWrapperExists: firstField?.querySelector('.syntax-field__term') !== null,
       firstFieldTermText: normalize(
         firstField?.querySelector('dt.syntax-field__term')?.textContent,
@@ -88,12 +105,16 @@ test.describe('syntax-card family e2e', () => {
     const state = await readFirstSyntaxCardState(page);
 
     expect(state.hostExists).toBe(true);
+    expect(state.cardLabelledByMatchesName).toBe(true);
+    expect(state.cardNameTagName).toBe('p');
     expect(state.headingText).toBe('useEffect');
 
     expect(state.signaturePreExists).toBe(true);
     expect(state.signatureCodeChildExists).toBe(false);
     expect(state.signatureWrappedAsCodeBlock).toBe(false);
 
+    expect(state.sectionLabelledByMatchesHeading).toBe(true);
+    expect(state.sectionHeadingTagName).toBe('p');
     expect(state.firstSectionTitle).toBe('概要');
 
     expect(state.firstFieldWrapperExists).toBe(true);
@@ -111,12 +132,16 @@ test.describe('syntax-card family e2e', () => {
     const state = await readFirstSyntaxCardState(page);
 
     expect(state.hostExists).toBe(true);
+    expect(state.cardLabelledByMatchesName).toBe(true);
+    expect(state.cardNameTagName).toBe('p');
     expect(state.headingText).toBe('useEffect');
 
     expect(state.signaturePreExists).toBe(true);
     expect(state.signatureCodeChildExists).toBe(false);
     expect(state.signatureWrappedAsCodeBlock).toBe(false);
 
+    expect(state.sectionLabelledByMatchesHeading).toBe(true);
+    expect(state.sectionHeadingTagName).toBe('p');
     expect(state.firstSectionTitle).toBe('概要');
 
     expect(state.firstFieldWrapperExists).toBe(true);

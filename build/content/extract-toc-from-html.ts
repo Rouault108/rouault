@@ -355,18 +355,23 @@ const isDocEndnotesSection = (node: Parse5Node): boolean =>
   node.tagName === 'section' &&
   getAttributeValue(node, 'role') === 'doc-endnotes';
 
+const isSyntaxCardSurface = (node: Parse5Node): boolean =>
+  isElementNode(node) && getAttributeValue(node, 'data-syntax-card') !== undefined;
+
 const visitNode = (
   node: Parse5Node,
   scopeSelections: TocScopeSelection[],
   headings: TocHeading[],
   counters: { scope: number },
   insideDocEndnotes = false,
+  insideSyntaxCard = false,
 ): void => {
   if (isElementNode(node)) {
     normalizeFootnoteStructuralBooleanAttributes(node);
   }
 
   const nextInsideDocEndnotes = insideDocEndnotes || isDocEndnotesSection(node);
+  const nextInsideSyntaxCard = insideSyntaxCard || isSyntaxCardSurface(node);
 
   if (isElementNode(node) && isDocEndnotesSection(node)) {
     normalizeCanonicalEndnotesOrderedListAttributes(node);
@@ -377,7 +382,7 @@ const visitNode = (
     removeHeadingPermalinkDescendants(node);
   }
 
-  if (isHeadingElement(node)) {
+  if (!nextInsideSyntaxCard && isHeadingElement(node)) {
     const id = getAttributeValue(node, 'id') ?? '';
     const text = normalizeText(getTextContent(node));
     const level = Number.parseInt(node.tagName.slice(1), 10);
@@ -404,7 +409,14 @@ const visitNode = (
   if (!isElementNode(node)) {
     if ('childNodes' in node && Array.isArray(node.childNodes)) {
       for (const child of node.childNodes) {
-        visitNode(child, scopeSelections, headings, counters, nextInsideDocEndnotes);
+        visitNode(
+          child,
+          scopeSelections,
+          headings,
+          counters,
+          nextInsideDocEndnotes,
+          nextInsideSyntaxCard,
+        );
       }
     }
     return;
@@ -426,11 +438,19 @@ const visitNode = (
             headings,
             counters,
             nextInsideDocEndnotes,
+            nextInsideSyntaxCard,
           );
           continue;
         }
 
-        visitNode(child, scopeSelections, headings, counters, nextInsideDocEndnotes);
+        visitNode(
+          child,
+          scopeSelections,
+          headings,
+          counters,
+          nextInsideDocEndnotes,
+          nextInsideSyntaxCard,
+        );
       }
     }
     return;
@@ -438,7 +458,14 @@ const visitNode = (
 
   if ('childNodes' in node && Array.isArray(node.childNodes)) {
     for (const child of node.childNodes) {
-      visitNode(child, scopeSelections, headings, counters, nextInsideDocEndnotes);
+      visitNode(
+        child,
+        scopeSelections,
+        headings,
+        counters,
+        nextInsideDocEndnotes,
+        nextInsideSyntaxCard,
+      );
     }
   }
 };

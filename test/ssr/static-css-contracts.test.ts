@@ -657,6 +657,36 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(lists, 'ol[data-list] > li[data-ol-has-value]', ['counter-set:']);
 
     const syntax = readCss('syntax.css');
+    expectRuleToDeclare(syntax, '.syntax-card', [
+      'margin-inline: var(',
+      '--syntax-card-breakout-margin',
+      '--ui-syntax-card-breakout-margin',
+      'width: var(--syntax-card-breakout-width, var(--ui-syntax-card-breakout-width, 100%))',
+    ]);
+    expectRuleToDeclare(syntax, '.syntax-card__name', [
+      'margin: 0',
+      'min-width: 0',
+      'line-height: var(--line-height-normal)',
+    ]);
+    expectRuleToDeclare(syntax, '.syntax-card__copy-action', [
+      'opacity: 0',
+      'pointer-events: none',
+    ]);
+    expectRuleToDeclare(syntax, '.syntax-card:hover .syntax-card__copy-action', [
+      'opacity: 1',
+      'pointer-events: auto',
+    ]);
+    expectRuleToDeclare(syntax, '.syntax-card:focus-within .syntax-card__copy-action', [
+      'opacity: 1',
+      'pointer-events: auto',
+    ]);
+    const coarsePointerSyntax = atRuleBlock(syntax, '@media (hover: none) and (pointer: coarse)');
+    expectRuleToDeclare(coarsePointerSyntax, '.syntax-card__copy-action', [
+      'opacity: 1',
+      'pointer-events: auto',
+    ]);
+    expect(allRuleSelectors(syntax)).not.toContain('h2.syntax-card__name');
+    expect(allRuleSelectors(syntax)).not.toContain('h3.syntax-section__heading');
     expectRuleToDeclare(syntax, '.syntax-card__signature pre', [
       'margin: 0',
       'background: transparent',

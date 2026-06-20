@@ -1003,9 +1003,20 @@ describe('rehypeRouaultComponents', () => {
       (node) => node.properties?.['data-syntax-section'] === 'true',
     );
     const field = findElement(tree, (node) => node.properties?.['data-syntax-field'] === 'true');
+    const cardName = findElement(card, (node) =>
+      getClassList(node.properties?.['className']).includes('syntax-card__name'),
+    );
+    const sectionHeading = findElement(section, (node) =>
+      getClassList(node.properties?.['className']).includes('syntax-section__heading'),
+    );
 
     expect(card?.tagName).to.equal('section');
+    expect(card?.properties?.['aria-labelledby']).to.equal(cardName?.properties?.['id']);
+    expect(cardName?.tagName).to.equal('p');
+    expect(typeof cardName?.properties?.['id']).to.equal('string');
     expect(section?.tagName).to.equal('section');
+    expect(section?.properties?.['aria-labelledby']).to.equal(sectionHeading?.properties?.['id']);
+    expect(sectionHeading?.tagName).to.equal('p');
     expect(field?.tagName).to.equal('dl');
     expect(
       findElement(field, (node) => node.tagName === 'dt')?.properties?.['className'],
@@ -1060,7 +1071,6 @@ describe('rehypeRouaultComponents', () => {
           properties: {
             'data-syntax-card-source': 'true',
             kind: 'Function',
-            name: 'fallbackThing',
             'heading-level': '9',
           },
           children: [],
@@ -1071,15 +1081,29 @@ describe('rehypeRouaultComponents', () => {
     rehypeRouaultComponents()(tree);
 
     const cards = findElements(tree, (node) => node.properties?.['data-syntax-card'] === 'true');
-    const firstHeading = findElement(cards[0], (node) =>
+    const firstName = findElement(cards[0], (node) =>
       getClassList(node.properties?.['className']).includes('syntax-card__name'),
     );
-    const fallbackHeading = findElement(cards[1], (node) =>
+    const fallbackName = findElement(cards[1], (node) =>
       getClassList(node.properties?.['className']).includes('syntax-card__name'),
     );
 
-    expect(firstHeading?.tagName).to.equal('h2');
-    expect(fallbackHeading?.tagName).to.equal('h4');
+    expect(firstName?.tagName).to.equal('p');
+    expect(cards[0]?.properties?.['aria-labelledby']).to.equal(firstName?.properties?.['id']);
+    expect(typeof firstName?.properties?.['id']).to.equal('string');
+    expect(getTextContent(firstName)).to.equal('createThing');
+    expect(fallbackName?.tagName).to.equal('p');
+    expect(cards[1]?.properties?.['aria-labelledby']).to.equal(fallbackName?.properties?.['id']);
+    expect(typeof fallbackName?.properties?.['id']).to.equal('string');
+    expect(getTextContent(fallbackName)).to.equal('Syntax');
+    expect(findElement(cards[0], (node) => /^h[2-6]$/u.test(node.tagName ?? ''))).to.equal(
+      undefined,
+    );
+    expect(findElement(cards[1], (node) => /^h[2-6]$/u.test(node.tagName ?? ''))).to.equal(
+      undefined,
+    );
+    expect(JSON.stringify(cards)).not.to.contain('heading-level');
+    expect(JSON.stringify(cards)).not.to.contain('data-heading-level');
     expect(
       findElement(cards[0], (node) =>
         getClassList(node.properties?.['className']).includes('syntax-card__signature'),
@@ -1167,6 +1191,7 @@ describe('rehypeRouaultComponents', () => {
       const heading = findElement(section, (node) =>
         getClassList(node.properties?.['className']).includes('syntax-section__heading'),
       );
+      expect(heading?.tagName).to.equal('p');
       expect(section.properties?.['aria-labelledby']).to.equal(heading?.properties?.['id']);
       return heading?.properties?.['id'];
     });

@@ -1,5 +1,7 @@
 .syntax-card {
   margin-block: var(--space-8);
+  margin-inline: var(--syntax-card-breakout-margin, var(--ui-syntax-card-breakout-margin, 0));
+  width: var(--syntax-card-breakout-width, var(--ui-syntax-card-breakout-width, 100%));
   color: var(--fg-default);
   background: var(--bg-default);
   border: var(--border-width) solid var(--border-muted);
@@ -8,6 +10,7 @@
 .syntax-card:hover .syntax-card__copy-action,
 .syntax-card:focus-within .syntax-card__copy-action {
   opacity: 1;
+  pointer-events: auto;
 }
 .syntax-card[data-content-empty='true'] .syntax-card__signature {
   border-bottom: 0;
@@ -35,13 +38,17 @@
   letter-spacing: 0.08em;
 }
 .syntax-card__name {
+  margin: 0;
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
+  line-height: var(--line-height-normal);
   overflow-wrap: anywhere;
 }
 .syntax-card__copy-action {
   opacity: 0;
+  pointer-events: none;
 }
 .syntax-card__signature {
   padding: var(--space-3) var(--space-4);
@@ -68,6 +75,7 @@
   gap: var(--space-2);
 }
 .syntax-section__heading {
+  margin: 0;
   margin-block-end: var(--space-1);
   color: var(--fg-muted);
   font-size: var(--text-sm);
@@ -154,6 +162,11 @@
   }
 }
 @media (hover: none) and (pointer: coarse) {
+  .syntax-card__copy-action {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
   .syntax-field {
     padding-block: var(--space-3);
   }

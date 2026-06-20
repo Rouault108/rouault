@@ -6,6 +6,7 @@ export type StaticRenderIdKind =
   | 'code-group-tab'
   | 'code-group-panel'
   | 'score-description'
+  | 'syntax-card-name'
   | 'syntax-section-heading'
   | 'task-list-label'
   | 'image-caption'

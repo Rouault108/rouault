@@ -136,11 +136,6 @@ const toHeadingLevel = (value: unknown): number | null => {
   return parsed;
 };
 
-const toSyntaxHeadingLevel = (value: unknown): number => {
-  const parsed = Number.parseInt(String(value ?? ''), 10);
-  return Number.isInteger(parsed) && parsed >= 2 && parsed <= 6 ? parsed : 4;
-};
-
 const hasMeaningfulChildren = (children: readonly HastNode[]): boolean =>
   children.some((child) => {
     if (isElement(child)) {
@@ -967,7 +962,7 @@ const toStaticSyntaxSection = (node: HastNode, context: SurfaceNormalizationCont
     'aria-labelledby': headingId,
   };
   node.children = [
-    createElement('h3', { id: headingId, className: ['syntax-section__heading'] }, [
+    createElement('p', { id: headingId, className: ['syntax-section__heading'] }, [
       createTextNode(label),
     ]),
     createElement('div', { className: ['syntax-section__content'] }, children),
@@ -998,7 +993,7 @@ const toStaticSyntaxCard = (node: HastNode, context: SurfaceNormalizationContext
   const kind = pickOptionalString(properties['kind']);
   const name = pickOptionalString(properties['name']) ?? 'Syntax';
   const lang = pickOptionalString(properties['data-lang']);
-  const headingLevel = toSyntaxHeadingLevel(properties['heading-level']);
+  const nameId = context.idContext.nextId('syntax-card-name');
   const children = Array.isArray(node.children)
     ? node.children.map((child) => cloneNode(child))
     : [];
@@ -1021,6 +1016,7 @@ const toStaticSyntaxCard = (node: HastNode, context: SurfaceNormalizationContext
     className: ['syntax-card'],
     'data-syntax-card': 'true',
     'data-content-empty': String(!hasContent),
+    'aria-labelledby': nameId,
     ...(lang ? { 'data-lang': lang } : {}),
   };
   node.children = [
@@ -1028,9 +1024,7 @@ const toStaticSyntaxCard = (node: HastNode, context: SurfaceNormalizationContext
       ...(kind
         ? [createElement('p', { className: ['syntax-card__kind'] }, [createTextNode(kind)])]
         : []),
-      createElement(`h${String(headingLevel)}`, { className: ['syntax-card__name'] }, [
-        createTextNode(name),
-      ]),
+      createElement('p', { id: nameId, className: ['syntax-card__name'] }, [createTextNode(name)]),
       ...(copySource
         ? [
             createStaticCopyButtonHast({

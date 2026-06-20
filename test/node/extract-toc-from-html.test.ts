@@ -77,6 +77,28 @@ describe('extractTocFromHtml', () => {
     ]);
   });
 
+  it('data-syntax-card subtree 内 heading を TOC から除外し、subtree 走査は維持すること', () => {
+    const source = `
+      <h2 id="outside">本文見出し</h2>
+      <section data-syntax-card="true">
+        <h2 id="inside">カード内部見出し</h2>
+        <ui-tabs>
+          <div slot="tab" value="signature">署名</div>
+          <div slot="panel">
+            <h3 id="inside-tab">カード内部タブ見出し</h3>
+          </div>
+        </ui-tabs>
+      </section>
+    `;
+
+    const prepared = prepareTocHtml(source);
+
+    expect(prepared.headings).to.deep.equal([{ id: 'outside', text: '本文見出し', level: 2 }]);
+    expect(prepared.html).to.contain('data-toc-scope="toc-scope-1"');
+    expect(prepared.html).to.contain('id="inside"');
+    expect(prepared.html).to.contain('id="inside-tab"');
+  });
+
   it('endnotes 内の footnote-label を TOC から除外すること', () => {
     const html = `
       <h2 id="intro">本文見出し</h2>
