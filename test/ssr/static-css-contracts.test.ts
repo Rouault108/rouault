@@ -352,6 +352,40 @@ describe('static CSS contracts', () => {
       "header[data-layout-header][data-overlay-sidebar-open='true']",
       ['z-index: var(--z-non-modal-panel, var(--z-modal, 300))'],
     );
+    expectRuleToDeclare(css, 'header[data-layout-header] .search-trigger', [
+      'border: var(--border-width, 1px) solid var(--border-default)',
+      'background: var(--bg-control-muted)',
+    ]);
+    expectRuleToDeclare(css, 'header[data-layout-header] .search-trigger__icon', [
+      'color: var(--fg-muted)',
+    ]);
+    expectRuleToDeclare(css, 'header[data-layout-header] .search-trigger__placeholder', [
+      'color: var(--fg-subtle)',
+    ]);
+
+    const reducedMotion = atRuleBlock(css, '@media (prefers-reduced-motion: reduce)');
+    expectRuleToDeclare(
+      reducedMotion,
+      'header[data-layout-header] :is(a, button, summary):active',
+      ['transform: none'],
+    );
+
+    const forcedColors = atRuleBlock(css, '@media (forced-colors: active)');
+    expectRuleToDeclare(forcedColors, 'header[data-layout-header] .search-trigger', [
+      'background: Canvas',
+      'border-color: ButtonText',
+    ]);
+    expectRuleToDeclare(forcedColors, 'header[data-layout-header] .search-trigger:active', [
+      'background: ButtonFace',
+    ]);
+    expectRuleToDeclare(forcedColors, 'header[data-layout-header] .search-trigger__icon', [
+      'color: CanvasText',
+    ]);
+    expectRuleToDeclare(
+      forcedColors,
+      'header[data-layout-header] .search-trigger__placeholder',
+      ['color: CanvasText'],
+    );
 
     const mobileHeader = atRuleBlock(css, '@container layout-header-shell (width < 640px)');
     expectRuleToDeclare(

@@ -133,6 +133,14 @@ header[data-layout-header] .search-trigger {
   text-decoration: none;
 }
 
+header[data-layout-header] .search-trigger__icon {
+  color: var(--fg-muted);
+}
+
+header[data-layout-header] .search-trigger__placeholder {
+  color: var(--fg-subtle);
+}
+
 header[data-layout-header] .sidebar-toggle::after,
 header[data-layout-header] .toc-trigger::after,
 header[data-layout-header] .search-trigger::after,
@@ -385,12 +393,30 @@ header[data-layout-header] .corpus-trigger-text {
   header[data-layout-header] :is(a, button, summary) {
     border: 1px solid ButtonText;
   }
+
+  header[data-layout-header] .search-trigger {
+    background: Canvas;
+    border-color: ButtonText;
+  }
+
+  header[data-layout-header] .search-trigger:active {
+    background: ButtonFace;
+  }
+
+  header[data-layout-header] .search-trigger__icon,
+  header[data-layout-header] .search-trigger__placeholder {
+    color: CanvasText;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   header[data-layout-header],
   header[data-layout-header] * {
     transition-duration: 0.01ms !important;
+  }
+
+  header[data-layout-header] :is(a, button, summary):active {
+    transform: none;
   }
 }
 
