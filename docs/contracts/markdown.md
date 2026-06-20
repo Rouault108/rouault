@@ -49,6 +49,21 @@
 - Component 化は semantic HTML と no-JS baseline を壊してはならない。
 - Hydration directive は runtime rescue ではなく build-time contract とする。
 
+### Static Card Surface Contract
+
+Markdown output 層の card surface は、旧 `ui-card` custom element の復活ではなく named static surface として扱う。`ui-card` は static-first deletion target であり、本文 DOM を Web Component lifecycle や runtime click delegation へ再依存させないため、最終 HTML に復活させてはならない。
+
+- generic `.card` surface は現行 contract として作らない。
+- 旧 `ui-card` の `variant` system と `clickable` attribute contract は復活させない。
+- 現行の named card surfaces は `result-card`、`link-card`、`syntax-card` である。
+- `result-card` は検索・一覧 UI の surface であり、全面リンク面は native `<a>` に委ねる。Markdown output 層は詳細 layout を所有しない。
+- `link-card` は Markdown directive / auto link-card 由来の static surface であり、build transform と CSS で成立させる。
+- `syntax-card` は Markdown directive 由来のコード説明 surface であり、本文 heading ではなくカード内部 label を持つ。
+
+`link-card` の description は build transform で必要に応じて切り詰め、切り詰め有無を `data-text-truncated` で示す。旧 runtime line overflow detection に基づく `data-line-overflowed` は復活させない。表示上の行数制御は CSS の責務であり、Markdown final DOM に runtime overflow state を残さない。
+
+`syntax-card__name` と `syntax-section__heading` は heading ではなく label として出力する。`heading-level` は入力互換属性として受理されるが、static-first output では `h2`〜`h6` の DOM heading 生成に使わない。final DOM に `heading-level` / `data-heading-level` を残してはならない。`syntax-card` subtree は本文 heading id、heading permalink、TOC の対象外である。
+
 ## 4. State Model
 
 ### Durable State

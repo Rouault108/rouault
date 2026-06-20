@@ -29,6 +29,27 @@
 
 各 directive は authoring guide の入力仕様に従い、最終 DOM は `docs/contracts/markdown.md` の safety boundary を満たす。
 
+### `::link-card`
+
+`::link-card` と auto link-card は、final DOM で static `article.link-card[data-link-card="true"]` へ正規化する。valid link-card は `a.link-card__link` をリンク面とし、invalid link-card は anchor を出力せず `link-card__invalid` surface として表示する。
+
+- title は `p.link-card__title` として出力する。
+- description が存在する場合は `p.link-card__description` として出力し、`data-text-truncated="true"` または `"false"` を付与する。
+- description は build transform で 140 文字を上限に、140 文字を超える場合だけ `value.slice(0, 139).trimEnd() + '…'` 相当へ切り詰める。
+- `data-line-overflowed` は final DOM に出力しない。
+- link-card link は card surface のリンク注釈として扱い、prose link へ降格しない。
+
+### `::syntax-card` family
+
+`::syntax-card` は、final DOM で `section.syntax-card[data-syntax-card="true"]` へ正規化する。カード名は `p.syntax-card__name` として出力し、root の `aria-labelledby` はこの label の id を参照する。
+
+`::syntax-section` は `section.syntax-section[data-syntax-section="true"]` へ正規化する。section label は `p.syntax-section__heading` として出力し、section の `aria-labelledby` はこの label の id を参照する。
+
+- `syntax-card__name` と `syntax-section__heading` は DOM heading ではなくカード内部 label である。
+- `heading-level` は入力互換属性として受理されるが、final DOM の `h2`〜`h6` 生成には使わない。
+- final DOM に `heading-level` / `data-heading-level` は残さない。
+- `data-syntax-card` subtree は heading id、heading permalink、TOC の対象外である。
+
 ## Hydration Directive
 
 - note ページの hydration directive は build-time annotation として出力する。

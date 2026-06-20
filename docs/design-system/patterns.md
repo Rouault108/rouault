@@ -19,6 +19,12 @@ Reading chrome の機能契約は `docs/contracts/reading-chrome.md` を正本�
 - Sidebar 専用 link は `docs/contracts/sidebar-state.md` と component 文書の境界に従う。
 - Router の URL 正規化は `docs/contracts/router.md` を正本とし、本書では再定義しない。
 
+### Block Link Surface
+
+Block Link は、遷移先を持つ面全体を native `<a>` として表す pattern である。`result-card` では `article.result-card > a.result-link` を正規構造とし、カード全面のリンク面を `a.result-link` が所有する。
+
+JS による card click delegation は使わない。Ctrl / Meta / Shift click、右クリック、コンテキストメニュー、focus は `<a>` のブラウザ標準動作に委ねる。card 外形の hover / focus 表示は CSS pattern の責務であり、リンクの意味論を上書きしない。
+
 ## 3. Selected / Current / Active / Focused
 
 - `selected` は widget 内の選択状態を表す。
