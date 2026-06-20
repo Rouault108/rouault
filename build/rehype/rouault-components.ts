@@ -151,6 +151,21 @@ const hasMeaningfulChildren = (children: readonly HastNode[]): boolean =>
     );
   });
 
+const LINK_CARD_DESCRIPTION_MAX_LENGTH = 140;
+
+const truncateLinkCardDescription = (
+  value: string,
+): { readonly value: string; readonly truncated: boolean } => {
+  if (value.length <= LINK_CARD_DESCRIPTION_MAX_LENGTH) {
+    return { value, truncated: false };
+  }
+
+  return {
+    value: `${value.slice(0, LINK_CARD_DESCRIPTION_MAX_LENGTH - 1).trimEnd()}…`,
+    truncated: true,
+  };
+};
+
 const isParse5Element = (node: Parse5Node): node is Parse5Element =>
   'tagName' in node && typeof node.tagName === 'string' && Array.isArray(node.attrs);
 
@@ -646,9 +661,14 @@ const toStaticLinkCard = (node: HastNode): void => {
               createTextNode('Invalid link card'),
             ]),
             createElement('p', { className: ['link-card__title'] }, [createTextNode(title)]),
-            createElement('p', { className: ['link-card__description'] }, [
-              createTextNode('リンク先 URL が指定されていません。'),
-            ]),
+            createElement(
+              'p',
+              {
+                className: ['link-card__description'],
+                'data-text-truncated': 'false',
+              },
+              [createTextNode('リンク先 URL が指定されていません。')],
+            ),
           ]),
         ],
       ),
@@ -666,8 +686,16 @@ const toStaticLinkCard = (node: HastNode): void => {
     createElement('p', { className: ['link-card__title'] }, [createTextNode(title)]),
   );
   if (description) {
+    const truncatedDescription = truncateLinkCardDescription(description);
     bodyChildren.push(
-      createElement('p', { className: ['link-card__description'] }, [createTextNode(description)]),
+      createElement(
+        'p',
+        {
+          className: ['link-card__description'],
+          'data-text-truncated': String(truncatedDescription.truncated),
+        },
+        [createTextNode(truncatedDescription.value)],
+      ),
     );
   }
 

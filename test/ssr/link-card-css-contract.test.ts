@@ -43,6 +43,9 @@ describe('link-card css contract', () => {
     expect(hasDeclarationForSelector(linkCardCss, '.link-card__link', 'cursor', 'pointer')).toBe(
       true,
     );
+    expect(
+      hasDeclarationForSelector(linkCardCss, '.link-card__link:focus-visible', 'outline', 'none'),
+    ).toBe(true);
     expect(hasDeclarationForSelector(linkCardCss, '.link-card__body', 'min-inline-size', '0')).toBe(
       true,
     );
@@ -85,6 +88,15 @@ describe('link-card css contract', () => {
       ),
     ).toBe(true);
     expect(
+      hasDeclarationForSelectorContainingInMedia(
+        linkCardCss,
+        (params) => /prefers-reduced-motion\s*:\s*reduce/u.test(params),
+        '.link-card:not(.link-card--invalid):hover',
+        'transform',
+        'none',
+      ),
+    ).toBe(true);
+    expect(
       hasDeclarationForSelector(linkCardCss, '.link-card--invalid', 'border-style', 'dashed'),
     ).toBe(true);
     expect(
@@ -105,6 +117,24 @@ describe('link-card css contract', () => {
         'none',
       ),
     ).toBe(true);
+    expect(linkCardCss).not.toMatch(
+      /@media\s+print\s*\{[\s\S]*\.link-card\s*\{[\s\S]*transform\s*:\s*none\s*!important/u,
+    );
+    expect(
+      hasDeclarationForSelectorContainingInMedia(
+        linkCardCss,
+        (params) => /\bprint\b/u.test(params),
+        '.link-card',
+        'border-color',
+        'currentColor',
+      ),
+    ).toBe(true);
+    expect(linkCardCss).not.toMatch(
+      /@media\s+print\s*\{[\s\S]*\.link-card\s*\{[\s\S]*box-shadow/u,
+    );
+    expect(linkCardCss).not.toMatch(
+      /@media\s+print\s*\{[\s\S]*\.link-card\s*\{[\s\S]*background/u,
+    );
   });
 
   it('excludes card surface links from prose and footnote popover text link selectors', () => {

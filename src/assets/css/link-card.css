@@ -44,6 +44,10 @@
   cursor: pointer;
 }
 
+.link-card__link:focus-visible {
+  outline: none;
+}
+
 .link-card__body {
   display: grid;
   align-content: start;
@@ -118,6 +122,12 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .link-card:not(.link-card--invalid):hover {
+    transform: none;
+  }
+}
+
 @media (max-width: 480px) {
   .link-card__link,
   .link-card__invalid {
@@ -146,8 +156,8 @@
 
 @media print {
   .link-card {
-    box-shadow: none !important;
-    transform: none !important;
+    border-color: currentColor;
+    transform: none;
   }
 
   .link-card__link,

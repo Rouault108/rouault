@@ -776,6 +776,7 @@ describe('rehypeRouaultComponents', () => {
     const body = link?.children?.[0];
     const eyebrow = body?.children?.[0];
     const title = body?.children?.[1];
+    const description = body?.children?.[2];
     const media = link?.children?.[1];
 
     expect(card?.tagName).to.equal('article');
@@ -789,9 +790,67 @@ describe('rehypeRouaultComponents', () => {
     expect(eyebrow?.properties?.['className']).to.deep.equal(['link-card__eyebrow']);
     expect(title?.tagName).to.equal('p');
     expect(title?.properties?.['className']).to.deep.equal(['link-card__title']);
+    expect(description?.tagName).to.equal('p');
+    expect(description?.properties?.['className']).to.deep.equal(['link-card__description']);
+    expect(description?.properties?.['data-text-truncated']).to.equal('false');
+    expect(getTextContent(description)).to.equal('本文の補足');
     expect(findElement(card, (node) => /^h[1-6]$/u.test(node.tagName ?? ''))).to.equal(undefined);
     expect(media?.tagName).to.equal('img');
     expect(media?.properties?.['className']).to.deep.equal(['link-card__media']);
+  });
+
+  it('link-card description を旧 ui-card と同じ 140 文字契約で切り詰めること', () => {
+    const cases = [
+      {
+        description: 'a'.repeat(140),
+        expected: 'a'.repeat(140),
+        truncated: 'false',
+      },
+      {
+        description: 'a'.repeat(141),
+        expected: `${'a'.repeat(139)}…`,
+        truncated: 'true',
+      },
+      {
+        description: `${'a'.repeat(138)}   end`,
+        expected: `${'a'.repeat(138)}…`,
+        truncated: 'true',
+      },
+      {
+        description: 'あ'.repeat(141),
+        expected: `${'あ'.repeat(139)}…`,
+        truncated: 'true',
+      },
+    ];
+
+    for (const [index, testCase] of cases.entries()) {
+      const tree: HastNode = {
+        type: 'root',
+        children: [
+          {
+            type: 'element',
+            tagName: 'div',
+            properties: {
+              'data-link-card-source': 'true',
+              href: `https://example.com/post-${String(index)}`,
+              'card-title': 'Example Post',
+              description: testCase.description,
+            },
+            children: [],
+          },
+        ],
+      };
+
+      rehypeRouaultComponents()(tree);
+
+      const description = findElement(tree, (node) =>
+        getClassList(node.properties?.['className']).includes('link-card__description'),
+      );
+
+      expect(description?.properties?.['data-text-truncated']).to.equal(testCase.truncated);
+      expect(getTextContent(description)).to.equal(testCase.expected);
+      expect(JSON.stringify(tree)).not.toContain('data-line-overflowed');
+    }
   });
 
   it('画像なし link-card に renderer 側で no-image class を付与すること', () => {
@@ -818,6 +877,11 @@ describe('rehypeRouaultComponents', () => {
       'link-card__link',
       'link-card__link--no-image',
     ]);
+    expect(
+      findElement(tree, (node) =>
+        getClassList(node.properties?.['className']).includes('link-card__description'),
+      ),
+    ).to.equal(undefined);
   });
 
   it('invalid link-card は anchor を出力せず非リンク表示面へ変換すること', () => {
@@ -845,6 +909,11 @@ describe('rehypeRouaultComponents', () => {
         ? node.properties['className'].includes('link-card__title')
         : false,
     );
+    const description = findElement(card, (node) =>
+      Array.isArray(node.properties?.['className'])
+        ? node.properties['className'].includes('link-card__description')
+        : false,
+    );
 
     expect(card?.properties?.['className']).to.deep.equal(['link-card', 'link-card--invalid']);
     expect(card?.properties?.['data-link-card-invalid']).to.equal('true');
@@ -854,6 +923,9 @@ describe('rehypeRouaultComponents', () => {
     expect(invalid?.properties?.['data-link-surface']).to.equal(undefined);
     expect(findElement(card, (node) => node.tagName === 'a')).to.equal(undefined);
     expect(title?.tagName).to.equal('p');
+    expect(description?.properties?.['data-text-truncated']).to.equal('false');
+    expect(getTextContent(description)).to.equal('リンク先 URL が指定されていません。');
+    expect(JSON.stringify(tree)).not.toContain('data-line-overflowed');
   });
 
   it('ui-syntax-card を静的 syntax-card root に正規化すること', () => {
