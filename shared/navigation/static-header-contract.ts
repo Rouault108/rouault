@@ -6,7 +6,7 @@ export const STATIC_HEADER_SEARCH_TRIGGER_CONTRACT = {
   placeholderClassName: 'search-trigger__placeholder',
   visibleLabel: '検索...',
   accessibleName: '検索ダイアログを開く',
-  ariaHaspopup: 'dialog',
+  ariaHasPopup: 'dialog',
   initialAriaExpanded: 'false',
   dialogTrigger: 'true',
   noRouter: 'true',

@@ -56,7 +56,7 @@ const validateSearchTrigger = (trigger: Element): void => {
   requireAttributeValue(trigger, 'data-no-router', contract.noRouter);
   requireAttributeValue(trigger, 'data-link-kind', contract.linkKind);
   requireAttributeValue(trigger, 'data-link-surface', contract.linkSurface);
-  requireAttributeValue(trigger, 'aria-haspopup', contract.ariaHaspopup);
+  requireAttributeValue(trigger, 'aria-haspopup', contract.ariaHasPopup);
   requireAttributeValue(trigger, 'aria-expanded', contract.initialAriaExpanded);
   requireAttributeValue(trigger, 'aria-label', contract.accessibleName);
 
