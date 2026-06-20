@@ -185,7 +185,6 @@ const visit = (node: Parse5Node): void => {
 };
 
 export const validateStaticHeaderParse5Tree = (element: Parse5Element): void => {
-  validateElement(element);
   visit(element);
 };
 
