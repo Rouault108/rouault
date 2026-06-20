@@ -168,6 +168,10 @@ header[data-layout-header] .corpus-switcher {
   margin-inline-start: var(--_header-corpus-inline-start-offset);
 }
 
+header[data-layout-header] [data-header-menu='corpus'] > [data-header-menu-trigger] {
+  padding-inline: var(--_header-control-padding);
+}
+
 header[data-layout-header] .corpus-switcher__menu,
 header[data-layout-header] .theme-switcher__menu {
   position: absolute;
@@ -188,6 +192,13 @@ header[data-layout-header] .theme-switcher__menu {
   inset-inline-end: 0;
 }
 
+header[data-layout-header] .corpus-switcher__menu {
+  box-sizing: border-box;
+  inline-size: min(18rem, calc(100vi - var(--space-8, 32px)));
+  min-inline-size: min(12rem, calc(100vi - var(--space-8, 32px)));
+  max-inline-size: calc(100vi - var(--space-8, 32px));
+}
+
 header[data-layout-header] ul {
   display: grid;
   gap: var(--space-1, 4px);
@@ -204,6 +215,15 @@ header[data-layout-header] [data-theme-value] {
   background: transparent;
   text-align: start;
   text-decoration: none;
+}
+
+header[data-layout-header] .corpus-switcher__menu a {
+  box-sizing: border-box;
+  display: block;
+  border-radius: var(--radius-sm, 4px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 header[data-layout-header] :is(a, button, summary):hover {
@@ -252,6 +272,11 @@ header[data-layout-header] .toc-trigger-text {
   white-space: nowrap;
 }
 
+header[data-layout-header] .corpus-trigger-text {
+  display: inline-block;
+  max-inline-size: min(13rem, 28vi);
+}
+
 @supports (backdrop-filter: blur(12px)) {
   header[data-layout-header] {
     background: oklch(from var(--bg-default) l c h / 0.85);
@@ -288,6 +313,10 @@ header[data-layout-header] .toc-trigger-text {
   header[data-layout-header] .search-trigger {
     inline-size: var(--control-height-md, 36px);
     justify-content: center;
+    padding-inline: var(--_header-control-padding-compact);
+  }
+
+  header[data-layout-header] [data-header-menu='corpus'] > [data-header-menu-trigger] {
     padding-inline: var(--_header-control-padding-compact);
   }
 

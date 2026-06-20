@@ -231,7 +231,7 @@ export class StaticHeaderMenuController {
     this.resetTypeahead();
     this.syncMenu(menu);
     if (options.restoreFocus === true) {
-      resolveTrigger(menu)?.focus();
+      resolveTrigger(menu)?.focus({ preventScroll: true });
     }
   }
 
@@ -367,7 +367,7 @@ export class StaticHeaderMenuController {
       return;
     }
     this.ignoreScrollUntil = window.performance.now() + TYPEAHEAD_RESET_MS;
-    item.focus();
+    item.focus({ preventScroll: true });
   }
 
   private focusRelativeItem(items: readonly HTMLElement[], offset: 1 | -1): void {
