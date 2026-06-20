@@ -313,7 +313,7 @@ export const STATIC_HEADER_CONTRACT_REJECTED_CASES: readonly StaticHeaderContrac
     label: 'search trigger icon missing',
     html: withSearchTrigger(
       SEARCH_TRIGGER_HTML.replace(
-        /        <span class="search-trigger__icon static-icon" aria-hidden="true">[\s\S]*?        <\/span>\n/u,
+        / {8}<span class="search-trigger__icon static-icon" aria-hidden="true">[\s\S]*? {8}<\/span>\n/u,
         '',
       ),
     ),

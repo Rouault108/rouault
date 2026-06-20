@@ -19,10 +19,10 @@ const fail = (message: string): never => {
 
 const requireNonEmptyAttribute = (element: Element, name: string): string => {
   const value = element.getAttribute(name);
-  if (value === null || value.trim().length === 0) {
-    fail(`search trigger ${name} is required.`);
+  if (value !== null && value.trim().length > 0) {
+    return value;
   }
-  return value as string;
+  return fail(`search trigger ${name} is required.`);
 };
 
 const requireAttributeValue = (element: Element, name: string, expected: string): void => {
@@ -33,10 +33,10 @@ const requireAttributeValue = (element: Element, name: string, expected: string)
 };
 
 const requireFoundElement = (element: Element | null, message: string): Element => {
-  if (element === null) {
-    fail(message);
+  if (element !== null) {
+    return element;
   }
-  return element as Element;
+  return fail(message);
 };
 
 const validateSearchTrigger = (trigger: Element): void => {
