@@ -10,7 +10,10 @@ import {
 } from '../fixtures/static-header-contract-cases.js';
 
 const headerHtml = (label = 'current'): string =>
-  STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML.replace('>search</a>', `>${label}</a>`);
+  STATIC_HEADER_CONTRACT_ACCEPTED_TOC_ABSENT_HTML.replace(
+    '</div>\n    </div>\n  </header>',
+    `<span>${label}</span>\n      </div>\n    </div>\n  </header>`,
+  );
 
 describe('static-header-shell-mutation', () => {
   afterEach(() => {

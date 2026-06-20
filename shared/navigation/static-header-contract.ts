@@ -1,5 +1,31 @@
 export const STATIC_HEADER_ROOT_SELECTOR = 'header[data-layout-header]' as const;
 
+export const STATIC_HEADER_SEARCH_TRIGGER_CONTRACT = {
+  className: 'search-trigger',
+  iconClassName: 'search-trigger__icon',
+  placeholderClassName: 'search-trigger__placeholder',
+  visibleLabel: '検索...',
+  accessibleName: '検索ダイアログを開く',
+  ariaHaspopup: 'dialog',
+  initialAriaExpanded: 'false',
+  dialogTrigger: 'true',
+  noRouter: 'true',
+  linkKind: 'internal-document',
+  linkSurface: 'header',
+} as const;
+
+export const STATIC_HEADER_SEARCH_TRIGGER_REQUIRED_ATTRIBUTES = [
+  'href',
+  'data-search-dialog-trigger',
+  'data-no-router',
+  'data-link-kind',
+  'data-link-surface',
+  'aria-haspopup',
+  'aria-controls',
+  'aria-expanded',
+  'aria-label',
+] as const;
+
 export class StaticHeaderRootAttributeContractError extends Error {
   override readonly name = 'StaticHeaderRootAttributeContractError';
 }
