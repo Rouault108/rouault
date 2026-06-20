@@ -1220,15 +1220,62 @@ test.describe('Static header migration', () => {
     await page.setViewportSize({ width: 1280, height: 520 });
     await page.goto('/about/');
     await waitForAppRouterReady(page);
-    await page.evaluate(() => {
-      const spacer = document.createElement('div');
-      spacer.style.blockSize = '200dvb';
-      spacer.setAttribute('data-static-header-scroll-spacer', 'true');
-      document.body.append(spacer);
+
+    await page.evaluate(async () => {
+      const router = document.querySelector('app-router') as
+        | (HTMLElement & { whenReady?: () => Promise<void> })
+        | null;
+
+      if (typeof router?.whenReady === 'function') {
+        await router.whenReady();
+      }
+
+      if (document.readyState !== 'complete') {
+        await new Promise<void>((resolve) => {
+          window.addEventListener('load', () => resolve(), { once: true });
+        });
+      }
+
+      const waitForAnimationFrame = (): Promise<void> =>
+        new Promise((resolve) => {
+          requestAnimationFrame(() => resolve());
+        });
+
+      await waitForAnimationFrame();
+      await waitForAnimationFrame();
+      await waitForAnimationFrame();
     });
 
-    await page.evaluate(() => window.scrollTo(0, 120));
-    await page.waitForFunction(() => window.scrollY >= 100);
+    const targetScrollY = 120;
+
+    await page.evaluate((nextScrollY) => {
+      const existingSpacer = document.querySelector<HTMLElement>(
+        '[data-static-header-scroll-spacer="true"]',
+      );
+      const spacer = existingSpacer ?? document.createElement('div');
+
+      spacer.style.display = 'block';
+      spacer.style.blockSize = `${Math.max(window.innerHeight * 2, nextScrollY + window.innerHeight)}px`;
+      spacer.setAttribute('data-static-header-scroll-spacer', 'true');
+
+      if (!spacer.isConnected) {
+        document.body.append(spacer);
+      }
+    }, targetScrollY);
+
+    await page.waitForFunction((nextScrollY) => {
+      const scrollingElement = document.scrollingElement;
+      return (
+        scrollingElement !== null &&
+        scrollingElement.scrollHeight - window.innerHeight >= nextScrollY
+      );
+    }, targetScrollY);
+
+    await page.evaluate((nextScrollY) => {
+      window.scrollTo({ top: nextScrollY, left: 0, behavior: 'instant' });
+    }, targetScrollY);
+
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(100);
 
     await page.evaluate(() => {
       interface FocusCall {
