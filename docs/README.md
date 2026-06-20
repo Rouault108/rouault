@@ -13,6 +13,7 @@
 - `docs/contracts/router-document.md`
 - `docs/contracts/navigation-envelope.md`
 - `docs/contracts/hydration.md`
+- `docs/contracts/code-surfaces.md`
 - `docs/contracts/sidebar-state.md`
 - `docs/contracts/note-navigation.md`
 - `docs/contracts/reading-chrome.md`
@@ -57,7 +58,10 @@ Design System pattern は UI の見え方と配置判断を扱う。Router、sea
 ## ADR
 
 - `docs/adr/README.md`
+- `docs/adr/code-surfaces-static-html-migration.md`
 - `docs/adr/`
+
+ADR は設計判断の経緯であり、正本 Contract を上書きしない。Code surface の現行正本は `docs/contracts/code-surfaces.md` であり、`docs/adr/code-surfaces-static-html-migration.md` は R3 Decision Record として扱う。
 
 ## Non-current Documents
 

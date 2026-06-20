@@ -34,7 +34,7 @@
 - 実行系 preview や sandbox の責務
 - authoring lint / CI の最終判定基準
 
-これらは上位レイヤまたは `code-composition.md` の責務です。
+これらは上位レイヤまたは `docs/contracts/code-surfaces.md` の責務です。
 
 ---
 
@@ -267,7 +267,7 @@ built-in controls または公開 property 更新により preview の公開状�
 
 ## 6.2 合成用 CSS Custom Properties
 
-`ui-code-preview` は、`code-composition.md` に定義される共通トークンを descendant の code root へ渡してよいです。  
+`ui-code-preview` は、`docs/contracts/code-surfaces.md` に定義される code surface の静的 HTML 契約を上書きしない範囲で、descendant の code root へ合成用 token を渡してよいです。  
 代表例は次のとおりです。
 
 - `--ui-code-surface-radius-top`
@@ -326,12 +326,13 @@ built-in controls または公開 property 更新により preview の公開状�
 
 - preview は group の選択状態や公開属性を所有しません。
 - group を static code root としてそのまま組み込みます。
-- 必要な外部同期は静的 code group enhancer の変更イベントを上位層が受けて行います。
+- static code group enhancer は現時点で外部同期用の変更イベントを提供しません。
+- 外部同期イベントが必要になった場合は、旧 custom event 互換ではなく別 Request / Decision として扱います。
 
-## 8.3 `code-composition.md` との関係
+## 8.3 `docs/contracts/code-surfaces.md` との関係
 
-- URL 同期、永続化、分析イベント、authoring lint、違反の重大度分類は `code-composition.md` に従います。
-- 本書は preview 単体の公開契約だけを定義します。
+- code root、copy、tab、code group の静的 HTML 正本契約は `docs/contracts/code-surfaces.md` に従います。
+- 本書は preview 単体の公開契約だけを定義し、code surface contract を上書きしません。
 
 ---
 
