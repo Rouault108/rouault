@@ -236,7 +236,9 @@ export class StaticHeaderMenuController {
   }
 
   private closeAll(except?: HTMLDetailsElement, reason: CloseReason = 'toggle'): void {
-    this.resetTypeahead();
+    if (except === undefined) {
+      this.resetTypeahead();
+    }
     for (const menu of document.querySelectorAll<HTMLDetailsElement>(
       `${HEADER_SELECTOR} ${MENU_SELECTOR}`,
     )) {
