@@ -10,8 +10,10 @@ import {
   resolveContentPathnameFromHtmlFile,
   resolveGeneratedDocumentCurrentUrlFromHtmlFile,
 } from '../../build/content/generated-document-route-set.js';
+import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../shared/navigation/corpus-navigation-projection.js';
 import { NAVIGATION_ENVELOPE_SCHEMA_VERSION } from '../../shared/navigation/navigation-envelope.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
+import { renderLayoutHeaderHtml } from '../../src/layouts/layout-header-html.js';
 
 const siteUrlContext: SiteUrlContext = {
   siteOrigin: 'https://rouault.invalid',
@@ -27,6 +29,30 @@ const context = {
     ),
 };
 
+const renderTestHeaderHtml = (): string =>
+  renderLayoutHeaderHtml({
+    noteLayout: true,
+    sidebarEnabled: true,
+    sidebarId: 'note-primary',
+    tocPresence: 'present',
+    tocRuntimeId: 'toc-runtime',
+    tocOwnerId: 'toc-owner',
+    tocTriggerReserved: true,
+    corpora: EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD,
+    currentCorpusKey: 'all',
+    siteUrlContext,
+    searchHref: '/base/search/',
+  });
+
+const injectHeaderAttributes = (headerHtml: string, headerAttrs: string): string => {
+  const trimmedHeaderAttrs = headerAttrs.trim();
+  if (trimmedHeaderAttrs.length === 0) {
+    return headerHtml;
+  }
+
+  return headerHtml.replace(/^<header/u, `<header ${trimmedHeaderAttrs}`);
+};
+
 const html = (headerAttrs = ''): string => `
 <!doctype html>
 <html>
@@ -37,22 +63,7 @@ const html = (headerAttrs = ''): string => `
     <meta name="rouault-generated-at" content="2026-01-01T00:00:00.000Z">
   </head>
   <body>
-    <header
-      class="layout-header"
-      data-layout-header="true"
-      data-note-layout="true"
-      data-sidebar-enabled="true"
-      data-sidebar-id="note-primary"
-      data-toc-presence="present"
-      data-toc-runtime-id="toc-runtime"
-      data-toc-owner-id="toc-owner"
-      data-toc-trigger-reserved="true"
-      data-current-corpus-key="all"
-	      ${headerAttrs}
-	    >
-	      <a href="/base/search/" data-no-router data-link-kind="internal-document" data-link-surface="header">検索</a>
-	      <a href="#layout-toc-toc-runtime" data-toc-trigger data-link-kind="internal-fragment" data-link-surface="header">目次</a>
-	    </header>
+    ${injectHeaderAttributes(renderTestHeaderHtml(), headerAttrs)}
     <app-router data-sidebar-presence="present">
       <aside data-app-shell-sidebar-host>
         <layout-sidebar
