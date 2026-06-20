@@ -170,9 +170,7 @@ const expectCssPixelAtLeast = (actual: number, expected: number, label: string):
   ).toBeGreaterThanOrEqual(expected - CSS_PIXEL_ROUNDING_TOLERANCE_PX);
 };
 
-const expectHeaderControlHitTargetContract = (
-  contract: HeaderControlHitTargetContract,
-): void => {
+const expectHeaderControlHitTargetContract = (contract: HeaderControlHitTargetContract): void => {
   expectCssPixelAtLeast(
     contract.expandedWidth,
     HEADER_CONTROL_MIN_HIT_TARGET_PX,
@@ -272,6 +270,21 @@ const prepareHeaderMenuItems = async (
     },
     [...labels],
   );
+};
+
+const waitForAppRouterSettled = async (page: Page): Promise<void> => {
+  await waitForAppRouterReady(page);
+  await page.evaluate(async () => {
+    const router = document.querySelector('app-router') as
+      | (HTMLElement & { whenReady: () => Promise<void> })
+      | null;
+
+    if (router === null) {
+      throw new Error('app-router is missing.');
+    }
+
+    await router.whenReady();
+  });
 };
 
 test.describe('Static header migration', () => {
@@ -603,6 +616,147 @@ test.describe('Static header migration', () => {
     }
   });
 
+  test('corpus trigger は visual padding と 44px hit area contract を維持すること', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 760 });
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    const density = await page.locator(headerControlTargets.corpus.selector).evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return {
+        minBlockSize: Number.parseFloat(style.minBlockSize),
+        paddingInlineEnd: Number.parseFloat(style.paddingInlineEnd),
+        paddingInlineStart: Number.parseFloat(style.paddingInlineStart),
+      };
+    });
+
+    expect(density.paddingInlineStart).toBeGreaterThan(0);
+    expect(density.paddingInlineEnd).toBeGreaterThan(0);
+    expect(density.minBlockSize).toBeGreaterThan(0);
+
+    const hitTargetContract = await readHeaderControlContract(page, headerControlTargets.corpus);
+    expectHeaderControlHitTargetContract(hitTargetContract);
+  });
+
+  test('corpus trigger label は長文でも ellipsis され header 内に収まること', async ({ page }) => {
+    await page.setViewportSize({ width: 640, height: 760 });
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    await page.locator('header[data-layout-header] .corpus-trigger-text').evaluate((element) => {
+      element.textContent =
+        'Extremely long corpus label for static header migration visual overflow contract';
+    });
+
+    const triggerTextContract = await page
+      .locator('header[data-layout-header] .corpus-trigger-text')
+      .evaluate((element) => {
+        const style = window.getComputedStyle(element);
+        const declaredDisplay = Array.from(document.styleSheets).some((sheet) =>
+          Array.from(sheet.cssRules).some((rule) => {
+            if (!(rule instanceof CSSStyleRule)) return false;
+            return (
+              rule.selectorText === 'header[data-layout-header] .corpus-trigger-text' &&
+              rule.style.display === 'inline-block'
+            );
+          }),
+        );
+        return {
+          declaredDisplay,
+          display: style.display,
+          maxInlineSize: style.maxInlineSize,
+          overflow: style.overflow,
+          scrollWidth: element.scrollWidth,
+          textOverflow: style.textOverflow,
+          whiteSpace: style.whiteSpace,
+          width: element.clientWidth,
+        };
+      });
+
+    expect(triggerTextContract.declaredDisplay).toBe(true);
+    expect(['block', 'inline-block']).toContain(triggerTextContract.display);
+    expect(triggerTextContract.overflow).toBe('hidden');
+    expect(triggerTextContract.textOverflow).toBe('ellipsis');
+    expect(triggerTextContract.whiteSpace).toBe('nowrap');
+    expect(triggerTextContract.maxInlineSize).not.toBe('none');
+    expect(triggerTextContract.scrollWidth).toBeGreaterThan(triggerTextContract.width);
+
+    const triggerBox = await page.locator(headerControlTargets.corpus.selector).boundingBox();
+    const viewport = page.viewportSize();
+    if (triggerBox === null || viewport === null) {
+      throw new Error('Corpus trigger box or viewport is missing.');
+    }
+    expect(triggerBox.x).toBeGreaterThanOrEqual(-1);
+    expect(triggerBox.x + triggerBox.width).toBeLessThanOrEqual(viewport.width + 1);
+    await expectHeaderControlWithinHeader(page, headerControlTargets.corpus.selector);
+  });
+
+  test('corpus menu panel と item は長文でも inline 方向へ overflow しないこと', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 760 });
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+    await prepareHeaderMenuItems(page, 'corpus', [
+      'ExtremelyLongCorpusMenuItemLabelForStaticHeaderMigrationVisualOverflowContract'.repeat(4),
+      'AnotherExtremelyLongCorpusMenuItemLabelThatShouldRemainOnOneVisualLine'.repeat(4),
+    ]);
+
+    await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
+    await expectMenuOpen(page, 'corpus', true);
+
+    const panel = page.locator(
+      'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-panel]',
+    );
+    const panelContract = await panel.evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return {
+        boxSizing: style.boxSizing,
+        width: Number.parseFloat(style.width),
+      };
+    });
+    const viewport = page.viewportSize();
+    if (viewport === null) {
+      throw new Error('Viewport is missing.');
+    }
+    expect(panelContract.boxSizing).toBe('border-box');
+    expect(panelContract.width).toBeLessThanOrEqual(viewport.width);
+
+    const firstItem = panel.locator('[data-header-menu-item]').first();
+    const itemContract = await firstItem.evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      const height = element.getBoundingClientRect().height;
+      const lineHeight = Number.parseFloat(style.lineHeight);
+      const paddingBlockStart = Number.parseFloat(style.paddingBlockStart);
+      const paddingBlockEnd = Number.parseFloat(style.paddingBlockEnd);
+      return {
+        boxSizing: style.boxSizing,
+        display: style.display,
+        height,
+        lineBoxHeight: lineHeight + paddingBlockStart + paddingBlockEnd,
+        overflow: style.overflow,
+        textOverflow: style.textOverflow,
+        whiteSpace: style.whiteSpace,
+      };
+    });
+
+    expect(itemContract.display).toBe('block');
+    expect(itemContract.boxSizing).toBe('border-box');
+    expect(itemContract.whiteSpace).toBe('nowrap');
+    expect(itemContract.overflow).toBe('hidden');
+    expect(itemContract.textOverflow).toBe('ellipsis');
+    expect(itemContract.height).toBeLessThanOrEqual(itemContract.lineBoxHeight + 2);
+
+    const panelBox = await panel.boundingBox();
+    if (panelBox === null) {
+      throw new Error('Corpus menu panel box is missing.');
+    }
+    expect(panelBox.x).toBeGreaterThanOrEqual(-1);
+    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width + 1);
+  });
+
   test('検索 trigger は Enter 起動時に keyboard modality で dialog を開くこと', async ({
     page,
   }) => {
@@ -663,8 +817,10 @@ test.describe('Static header migration', () => {
     await navigateWithAppRouter(page, '/about/');
 
     await page.locator('header[data-layout-header] [data-theme-switcher] summary').click();
+    await expectMenuOpen(page, 'theme', true);
     await page.locator('header[data-layout-header] [data-theme-value="dark"]').click();
 
+    await expectMenuOpen(page, 'theme', false);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect(page.locator('header[data-layout-header] [data-theme-current-label]')).toHaveText(
       'ダーク',
@@ -683,9 +839,59 @@ test.describe('Static header migration', () => {
     ).toHaveAttribute('data-icon', 'check');
   });
 
-  test('direct data-theme mutation でも header theme 表示だけを同期すること', async ({
+  test('corpus link の hydrated 遷移後に current state を新しい header へ同期すること', async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 1280, height: 760 });
+    await page.goto('/about/');
+    await waitForAppRouterSettled(page);
+
+    const corpusMenu = page.locator('header[data-layout-header] [data-header-menu="corpus"]');
+    await corpusMenu.locator('summary').click();
+    await expectMenuOpen(page, 'corpus', true);
+
+    const candidateInfo = await corpusMenu
+      .locator('[data-header-menu-item]')
+      .evaluateAll((items) => {
+        const currentHref = window.location.href;
+
+        for (const [index, item] of items.entries()) {
+          if (!(item instanceof HTMLAnchorElement)) continue;
+          if (item.getAttribute('aria-current') === 'page') continue;
+
+          const href = item.href;
+          const label = item.textContent?.trim() ?? '';
+          if (href.length > 0 && href !== currentHref && label.length > 0) {
+            return { href, index, label };
+          }
+        }
+
+        return null;
+      });
+
+    if (candidateInfo === null) {
+      throw new Error('No navigable corpus menu item was found.');
+    }
+
+    const candidate = corpusMenu.locator('[data-header-menu-item]').nth(candidateInfo.index);
+    const expectedUrl = new URL(candidateInfo.href);
+
+    await Promise.all([
+      page.waitForURL((url) => url.pathname === expectedUrl.pathname),
+      candidate.click(),
+    ]);
+    await waitForAppRouterSettled(page);
+
+    const nextHeader = page.locator('header[data-layout-header]');
+    await expect(nextHeader.locator('.corpus-trigger-text')).toHaveText(candidateInfo.label);
+    await expect(
+      nextHeader.locator(
+        '[data-header-menu="corpus"] [data-header-menu-item][aria-current="page"]',
+      ),
+    ).toHaveText(candidateInfo.label);
+  });
+
+  test('direct data-theme mutation でも header theme 表示だけを同期すること', async ({ page }) => {
     await page.goto('/about/');
     await waitForAppRouterReady(page);
 
@@ -1008,6 +1214,143 @@ test.describe('Static header migration', () => {
     }
   });
 
+  test('corpus menu の item focus と Escape focus restore は preventScroll で focus scroll を抑止すること', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 520 });
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+    await page.evaluate(() => {
+      const spacer = document.createElement('div');
+      spacer.style.blockSize = '200dvb';
+      spacer.setAttribute('data-static-header-scroll-spacer', 'true');
+      document.body.append(spacer);
+    });
+
+    await page.evaluate(() => window.scrollTo(0, 120));
+    await page.waitForFunction(() => window.scrollY >= 100);
+
+    await page.evaluate(() => {
+      interface FocusCall {
+        afterScrollY: number;
+        beforeScrollY: number;
+        preventScroll: boolean;
+        target: 'item' | 'trigger' | 'other';
+      }
+
+      const windowWithFocusCalls = window as Window & {
+        __staticHeaderFocusCalls?: FocusCall[];
+        __staticHeaderRestoreFocusSpy?: () => void;
+      };
+
+      windowWithFocusCalls.__staticHeaderRestoreFocusSpy?.();
+      windowWithFocusCalls.__staticHeaderFocusCalls = [];
+
+      const trigger = document.querySelector<HTMLElement>(
+        'header[data-layout-header] [data-header-menu="corpus"] summary',
+      );
+      const item = document.querySelector<HTMLElement>(
+        'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-item]',
+      );
+
+      if (trigger === null || item === null) {
+        throw new Error('Corpus menu trigger or item is missing.');
+      }
+
+      const originalTriggerFocus = trigger.focus.bind(trigger);
+      const originalItemFocus = item.focus.bind(item);
+
+      trigger.focus = (options?: FocusOptions) => {
+        const beforeScrollY = window.scrollY;
+        originalTriggerFocus(options);
+        const afterScrollY = window.scrollY;
+
+        windowWithFocusCalls.__staticHeaderFocusCalls?.push({
+          afterScrollY,
+          beforeScrollY,
+          preventScroll: options?.preventScroll === true,
+          target: 'trigger',
+        });
+      };
+
+      item.focus = (options?: FocusOptions) => {
+        const beforeScrollY = window.scrollY;
+        originalItemFocus(options);
+        const afterScrollY = window.scrollY;
+
+        windowWithFocusCalls.__staticHeaderFocusCalls?.push({
+          afterScrollY,
+          beforeScrollY,
+          preventScroll: options?.preventScroll === true,
+          target: 'item',
+        });
+      };
+
+      windowWithFocusCalls.__staticHeaderRestoreFocusSpy = () => {
+        trigger.focus = originalTriggerFocus;
+        item.focus = originalItemFocus;
+        delete windowWithFocusCalls.__staticHeaderRestoreFocusSpy;
+      };
+    });
+
+    const trigger = page.locator('header[data-layout-header] [data-header-menu="corpus"] summary');
+    await trigger.focus();
+
+    await page.keyboard.press('ArrowDown');
+    await expectMenuOpen(page, 'corpus', true);
+    await expect(
+      page
+        .locator('header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-item]')
+        .first(),
+    ).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    await expectMenuOpen(page, 'corpus', false);
+    await expect(trigger).toBeFocused();
+
+    const focusCalls = await page.evaluate(() => {
+      const windowWithFocusCalls = window as Window & {
+        __staticHeaderFocusCalls?: {
+          afterScrollY: number;
+          beforeScrollY: number;
+          preventScroll: boolean;
+          target: 'item' | 'trigger' | 'other';
+        }[];
+      };
+
+      return windowWithFocusCalls.__staticHeaderFocusCalls ?? [];
+    });
+
+    const itemFocusCall = focusCalls.find(
+      (call) => call.target === 'item' && call.preventScroll === true,
+    );
+    const triggerFocusCall = focusCalls.find(
+      (call) => call.target === 'trigger' && call.preventScroll === true,
+    );
+
+    expect(itemFocusCall).toBeDefined();
+    expect(triggerFocusCall).toBeDefined();
+
+    if (itemFocusCall === undefined || triggerFocusCall === undefined) {
+      throw new Error('Expected item and trigger focus calls with preventScroll.');
+    }
+
+    expect(Math.abs(itemFocusCall.afterScrollY - itemFocusCall.beforeScrollY)).toBeLessThanOrEqual(
+      1,
+    );
+    expect(
+      Math.abs(triggerFocusCall.afterScrollY - triggerFocusCall.beforeScrollY),
+    ).toBeLessThanOrEqual(1);
+
+    await page.evaluate(() => {
+      const windowWithFocusCalls = window as Window & {
+        __staticHeaderRestoreFocusSpy?: () => void;
+      };
+
+      windowWithFocusCalls.__staticHeaderRestoreFocusSpy?.();
+    });
+  });
+
   test('header menu は typeahead と close 後の buffer reset を同期すること', async ({ page }) => {
     await page.goto(markdownBasic.directPath);
     await waitForAppRouterReady(page);
@@ -1268,9 +1611,9 @@ test.describe('Static header migration', () => {
       element
         .querySelector<HTMLElement>('[data-theme-value="dark"]')
         ?.setAttribute('aria-pressed', 'false');
-      element.querySelector<HTMLElement>('[data-theme-value="dark"]')?.removeAttribute(
-        'data-selected',
-      );
+      element
+        .querySelector<HTMLElement>('[data-theme-value="dark"]')
+        ?.removeAttribute('data-selected');
     });
 
     await page.evaluate(() => {
@@ -1581,9 +1924,9 @@ test.describe('Static header migration no-JS', () => {
     await page.goto('/about/');
 
     await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
-    const link = page.locator(
-      'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-item]',
-    ).first();
+    const link = page
+      .locator('header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-item]')
+      .first();
     const href = await link.getAttribute('href');
     expect(href).not.toBeNull();
     const expectedUrl = new URL(href ?? '/', page.url()).href;
