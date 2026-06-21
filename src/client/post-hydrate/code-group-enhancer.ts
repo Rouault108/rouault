@@ -5,6 +5,15 @@ const TAB_SELECTOR = '[data-code-group-tab]';
 const PANEL_SELECTOR = '[data-code-group-panel]';
 const CODE_BLOCK_SELECTOR = 'pre[data-code-block]';
 
+const getTabKey = (tab: HTMLButtonElement, fallback = ''): string =>
+  tab.dataset['codeGroupKey'] ?? tab.dataset['codeGroupTab'] ?? fallback;
+
+const syncRovingTabIndex = (tabs: HTMLButtonElement[], focusedKey: string): void => {
+  for (const tab of tabs) {
+    tab.tabIndex = getTabKey(tab) === focusedKey ? 0 : -1;
+  }
+};
+
 interface GroupState {
   readonly group: HTMLElement;
   readonly tabs: HTMLButtonElement[];
@@ -23,7 +32,6 @@ const syncCopyButton = (state: GroupState, selectedKey: string): void => {
   const activePre = activePanel?.querySelector<HTMLElement>(CODE_BLOCK_SELECTOR) ?? null;
   const copySourceId = activePanel?.dataset['codeCopySourceId'];
   if (!activePre || !copySourceId || activePre.dataset['codeCopyMode'] === 'hidden') {
-    button.disabled = true;
     button.removeAttribute('data-copy-target-id');
     button.setAttribute('aria-label', 'コードをコピー');
     return;
@@ -34,20 +42,6 @@ const syncCopyButton = (state: GroupState, selectedKey: string): void => {
     resolveGroupCopyButtonLabel(activePre, activePanel.dataset['codeGroupPanelLabel'] ?? null),
   );
   button.dataset['copyTargetId'] = copySourceId;
-  button.disabled = activePre.dataset['codeCopyable'] === 'false';
-};
-
-const resetCopyState = (button: HTMLButtonElement | null): void => {
-  if (!button) {
-    return;
-  }
-
-  button.dataset['copyState'] = 'idle';
-  const describedBy = button.getAttribute('aria-describedby');
-  const status = describedBy ? button.ownerDocument.getElementById(describedBy) : null;
-  if (status instanceof HTMLElement && status.matches('[data-copy-status]')) {
-    status.textContent = '';
-  }
 };
 
 const syncSelection = (state: GroupState, nextKey: string): void => {
@@ -55,33 +49,38 @@ const syncSelection = (state: GroupState, nextKey: string): void => {
   state.group.dataset['codeGroupEnhanced'] = 'true';
 
   for (const tab of state.tabs) {
-    const selected = (tab.dataset['codeGroupKey'] ?? tab.dataset['codeGroupTab']) === nextKey;
+    const selected = getTabKey(tab) === nextKey;
     tab.setAttribute('aria-selected', selected ? 'true' : 'false');
-    tab.tabIndex = selected ? 0 : -1;
-    tab.dataset['selected'] = selected ? 'true' : 'false';
+    tab.dataset['codeGroupTabActive'] = selected ? 'true' : 'false';
   }
+  syncRovingTabIndex(state.tabs, nextKey);
 
   for (const panel of state.panels) {
     const selected = panel.dataset['codeGroupPanel'] === nextKey;
-    panel.hidden = !selected;
-    if (selected) {
-      panel.removeAttribute('data-code-group-inactive');
-    } else {
-      panel.setAttribute('data-code-group-inactive', 'true');
-    }
+    panel.removeAttribute('hidden');
+    panel.removeAttribute('aria-hidden');
+    panel.dataset['codeGroupPanelActive'] = selected ? 'true' : 'false';
   }
 
-  resetCopyState(state.copyButton);
   syncCopyButton(state, nextKey);
 };
 
-const focusNextTab = (tabs: HTMLButtonElement[], currentIndex: number, delta: number): void => {
-  if (tabs.length === 0) {
+const focusTab = (state: GroupState, tab: HTMLButtonElement | undefined): void => {
+  if (!tab) {
     return;
   }
 
-  const nextIndex = (currentIndex + delta + tabs.length) % tabs.length;
-  tabs[nextIndex]?.focus();
+  syncRovingTabIndex(state.tabs, getTabKey(tab));
+  tab.focus();
+};
+
+const focusNextTab = (state: GroupState, currentIndex: number, delta: number): void => {
+  if (state.tabs.length === 0) {
+    return;
+  }
+
+  const nextIndex = (currentIndex + delta + state.tabs.length) % state.tabs.length;
+  focusTab(state, state.tabs[nextIndex]);
 };
 
 const findCopyButton = (group: HTMLElement): HTMLButtonElement | null =>
@@ -96,25 +95,42 @@ const applyTabSemantics = (state: GroupState): void => {
     tabList.setAttribute('aria-label', groupLabel);
   }
 
+  const tabIdsByKey = new Map<string, string>();
+  const panelIdsByKey = new Map<string, string>();
+
   for (const [index, tab] of state.tabs.entries()) {
     const key = tab.dataset['codeGroupTab'] ?? `tab-${String(index)}`;
-    const normalizedKey = tab.dataset['codeGroupKey'] ?? key;
+    const normalizedKey = getTabKey(tab, key);
     const tabId = tab.id || `${groupId}-tab-${normalizedKey}`;
-    const panelId = tab.getAttribute('aria-controls') ?? `${groupId}-panel-${normalizedKey}`;
 
     tab.id = tabId;
     tab.setAttribute('role', 'tab');
-    tab.setAttribute('aria-controls', panelId);
+    tabIdsByKey.set(normalizedKey, tabId);
   }
 
   for (const [index, panel] of state.panels.entries()) {
     const key = panel.dataset['codeGroupPanel'] ?? `panel-${String(index)}`;
-    const tabId = panel.getAttribute('aria-labelledby') ?? `${groupId}-tab-${key}`;
     const panelId = panel.id || `${groupId}-panel-${key}`;
 
     panel.id = panelId;
     panel.setAttribute('role', 'tabpanel');
-    panel.setAttribute('aria-labelledby', tabId);
+    panelIdsByKey.set(key, panelId);
+  }
+
+  for (const tab of state.tabs) {
+    const key = getTabKey(tab);
+    const panelId = panelIdsByKey.get(key);
+    if (panelId) {
+      tab.setAttribute('aria-controls', panelId);
+    }
+  }
+
+  for (const panel of state.panels) {
+    const key = panel.dataset['codeGroupPanel'] ?? '';
+    const tabId = tabIdsByKey.get(key);
+    if (tabId) {
+      panel.setAttribute('aria-labelledby', tabId);
+    }
   }
 };
 
@@ -145,13 +161,13 @@ const enhanceGroup = (group: HTMLElement): void => {
     '';
 
   for (const [index, tab] of tabs.entries()) {
-    if (tab.dataset['bound'] === 'true') {
+    if (tab.dataset['codeGroupTabBound'] === 'true') {
       continue;
     }
 
-    tab.dataset['bound'] = 'true';
+    tab.dataset['codeGroupTabBound'] = 'true';
     tab.addEventListener('click', () => {
-      const nextKey = tab.dataset['codeGroupKey'] ?? tab.dataset['codeGroupTab'] ?? '';
+      const nextKey = getTabKey(tab);
       syncSelection(state, nextKey);
     });
     tab.addEventListener('keydown', (event: KeyboardEvent) => {
@@ -159,25 +175,25 @@ const enhanceGroup = (group: HTMLElement): void => {
         case 'ArrowRight':
         case 'ArrowDown':
           event.preventDefault();
-          focusNextTab(tabs, index, 1);
+          focusNextTab(state, index, 1);
           break;
         case 'ArrowLeft':
         case 'ArrowUp':
           event.preventDefault();
-          focusNextTab(tabs, index, -1);
+          focusNextTab(state, index, -1);
           break;
         case 'Home':
           event.preventDefault();
-          tabs[0]?.focus();
+          focusTab(state, tabs[0]);
           break;
         case 'End':
           event.preventDefault();
-          tabs[tabs.length - 1]?.focus();
+          focusTab(state, tabs[tabs.length - 1]);
           break;
         case 'Enter':
         case ' ':
           event.preventDefault();
-          syncSelection(state, tab.dataset['codeGroupKey'] ?? tab.dataset['codeGroupTab'] ?? '');
+          syncSelection(state, getTabKey(tab));
           break;
         default:
           break;
