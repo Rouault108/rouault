@@ -318,8 +318,17 @@
 .code-surface-intent {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-1, 4px);
   white-space: nowrap;
   color: var(--fg-muted, oklch(45% 0 0));
+}
+
+.code-surface-intent-icon {
+  inline-size: var(--icon-sm, 14px);
+  block-size: var(--icon-sm, 14px);
+  flex: 0 0 auto;
+  color: currentColor;
+  stroke: currentColor;
 }
 
 .code-surface-copy-button-shell,

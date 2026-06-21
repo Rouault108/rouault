@@ -133,6 +133,20 @@ describe('rehypeShikiCodeBlocks', () => {
     );
     expect(copyStatus?.properties?.['data-copy-status']).toBe('true');
 
+    const intent = findDescendant(header, (child) =>
+      readNodeClassList(child).includes('code-surface-intent'),
+    );
+    expect(
+      intent?.children?.some((child) => child.type === 'text' && child.value === '誤り例'),
+    ).toBe(true);
+    const intentIcon = findDescendant(
+      intent,
+      (child) => child.tagName === 'svg' && child.properties?.['data-icon'] === 'triangle-alert',
+    );
+    expect(intentIcon?.properties?.['aria-hidden']).toBe('true');
+    expect(intentIcon?.properties?.['focusable']).toBe('false');
+    expect(findDescendant(intent, (child) => child.tagName === 'ui-icon')).toBeUndefined();
+
     const pre = root?.children?.[2];
     expect(pre?.tagName).toBe('pre');
     expect(readNodeClassList(pre)).toContain('shiki');

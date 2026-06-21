@@ -1,6 +1,8 @@
 import { createStaticCopyButtonHast } from './static-copy-button-hast.js';
+import { createStaticIconHast } from './static-icon-hast.js';
 import { type HastNode } from './hast-utils.js';
 import { type StaticRenderIdContext } from '../../shared/static-render-id-context.js';
+import { type IconName } from '../../shared/icons/icon-paths.js';
 
 const createTextNode = (value: string): HastNode => ({
   type: 'text',
@@ -104,6 +106,7 @@ export interface StaticCodeBlockRootOptions {
   readonly renderStandaloneCopyButton: boolean;
   readonly filename?: string;
   readonly intentLabel?: string;
+  readonly intentIconName?: IconName;
   readonly copyMode?: string;
   readonly copyable?: string;
 }
@@ -129,13 +132,23 @@ export const createStaticCodeBlockRoot = (options: StaticCodeBlockRootOptions): 
   }
 
   if (options.intentLabel) {
+    const intentChildren: HastNode[] = [];
+    if (options.intentIconName) {
+      intentChildren.push(
+        createStaticIconHast(options.intentIconName, {
+          className: ['code-surface-intent-icon'],
+        }),
+      );
+    }
+    intentChildren.push(createTextNode(options.intentLabel));
+
     captionMainChildren.push(
       createElement(
         'span',
         {
           className: ['code-surface-intent'],
         },
-        [createTextNode(options.intentLabel)],
+        intentChildren,
       ),
     );
   }

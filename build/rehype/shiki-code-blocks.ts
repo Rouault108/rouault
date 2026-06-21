@@ -12,6 +12,7 @@ import {
   createStaticRenderIdContext,
   type StaticRenderIdContext,
 } from '../../shared/static-render-id-context.js';
+import { type IconName } from '../../shared/icons/icon-paths.js';
 
 const SHIKI_THEMES = {
   light: 'github-light',
@@ -180,6 +181,17 @@ const getIntentLabel = (intent: string | undefined): string | undefined => {
   }
 };
 
+const getIntentIconName = (intent: string | undefined): IconName | undefined => {
+  switch (pickOptionalString(intent)?.toLowerCase()) {
+    case 'valid':
+      return 'check-circle';
+    case 'invalid':
+      return 'triangle-alert';
+    default:
+      return undefined;
+  }
+};
+
 const readLanguageFromCodeNode = (codeNode: HastNode): string | undefined => {
   const classList = getClassList(codeNode.properties?.['className']);
   for (const className of classList) {
@@ -280,6 +292,7 @@ const createStandaloneCodeSurface = (
   },
 ): HastNode => {
   const intentLabel = getIntentLabel(options.intent);
+  const intentIconName = getIntentIconName(options.intent);
   return createStaticCodeBlockRoot({
     idContext: options.idContext,
     preNode,
@@ -290,6 +303,7 @@ const createStandaloneCodeSurface = (
     renderStandaloneCopyButton: true,
     ...(options.filename ? { filename: options.filename } : {}),
     ...(intentLabel ? { intentLabel } : {}),
+    ...(intentIconName ? { intentIconName } : {}),
     ...(options.copyMode ? { copyMode: options.copyMode } : {}),
     ...(options.copyable ? { copyable: options.copyable } : {}),
   });
