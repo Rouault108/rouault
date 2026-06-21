@@ -78,7 +78,7 @@ Header search trigger は、旧 `ui-search-trigger` の完全復元ではなく�
 | Header geometry | Header shell height、alignment、responsive inset を静的 CSS contract として保持する。 | `src/assets/css/layout-header.css` |
 | Sidebar inset / TOC inset | Sidebar / TOC presence に応じた header center 領域の inset を保持する。 | `src/assets/css/layout-header.css` |
 | Desktop note layout corpus offset | Desktop note layout で corpus switcher の offset contract を保持する。 | `src/assets/css/layout-header.css` |
-| Button-like visual behavior | Typography、focus-visible、hover、active、touch target を header controls に移植する。 | `src/assets/css/layout-header.css` |
+| Button-like visual behavior | Typography、outline 主体の focus-visible、hover、active、touch target を header controls に移植する。Focus-visible は box-shadow による二重リングを必須契約にしない。 | `src/assets/css/layout-header.css` |
 | Search trigger density | 静的 anchor fallback としての visual density を静的 CSS と E2E で固定する。旧 `ui-search-trigger` API 互換は保持しない。 | `src/assets/css/layout-header.css` / `test/e2e/static-header-migration.spec.ts` |
 | Search trigger ARIA | Dialog trigger として必要な ARIA seed と hydrated 同期を保持する。 | `src/layouts/layout-header-html.ts` / `src/client/post-hydrate/search-dialog-enhancer.ts` |
 | Disclosure keyboard and focus | Escape close、focus return、Arrow open などを static disclosure enhancement として保持する。 | `src/client/post-hydrate/static-header-menu-controller.ts` |
@@ -116,6 +116,10 @@ Corpus switcher は navigation disclosure である。
 - Native Tab order を維持する。
 - Arrow key、Escape、Home / End、typeahead などの hydrated 操作は menu pattern の全面採用ではなく、disclosure UI の利便性補助として扱う。
 - Corpus item は native link として扱い、Space activation を独自に強制しない。
+- Corpus menu は content-constrained な幅を持つ。通常サポート viewport では trigger width 以上を保ち、trigger width と viewport containment が衝突する場合は viewport containment を優先する。
+- Corpus item の長い label は 1 行で省略される。Default label は不自然に省略しない。
+- Current corpus item は `aria-current="page"` を保持する。
+- Current corpus item の視覚表現は text emphasis を基本とし、left border marker は採用しない。
 
 ### Theme Switcher
 
@@ -144,6 +148,16 @@ Search trigger は `/search/` fallback と dialog trigger の二重 contract を
 - Space activation は旧 button 由来の legacy behavior であり、静的 anchor fallback contract では復元しない。
 - Space activation を復元しない理由は、anchor semantics、no-JS baseline、TOC trigger / corpus link と同じ link 系 contract との一貫性を保つためである。
 - Dialog open、close、focus return、`aria-expanded` 同期は `search-dialog-enhancer.ts` / `search-dialog-dom-controller.ts` の責務である。
+
+### Header Control Visual Contract
+
+Header controls は、corpus trigger、theme trigger、search trigger、TOC trigger、sidebar trigger を含む静的 header 内の操作要素である。
+
+- Focus-visible は outline 主体で表現する。
+- Focus ring 用 box-shadow による二重リングは必須契約にしない。
+- Focus-visible は `:focus-visible` を正とし、`:focus` へ戻さない。
+- Forced-colors でも focus-visible outline を識別可能にする。
+- Header controls の visual contract は本文リンク、検索ダイアログ、sidebar、本文 TOC link へ波及させない。
 
 #### Search Trigger Visual Contract
 

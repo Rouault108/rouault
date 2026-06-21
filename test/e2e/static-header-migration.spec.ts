@@ -170,6 +170,27 @@ const expectCssPixelAtLeast = (actual: number, expected: number, label: string):
   ).toBeGreaterThanOrEqual(expected - CSS_PIXEL_ROUNDING_TOLERANCE_PX);
 };
 
+const isTransparentColor = (color: string): boolean => {
+  const normalized = color.trim().toLowerCase();
+  return (
+    normalized === 'transparent' ||
+    normalized === 'rgba(0, 0, 0, 0)' ||
+    /(?:rgba|oklch|color-mix|color)\([^)]+(?:,\s*0|\/\s*0(?:\.0+)?%?)\)$/u.test(normalized)
+  );
+};
+
+const focusHeaderControlByKeyboard = async (page: Page, selector: string): Promise<void> => {
+  await page.locator('body').click({ position: { x: 1, y: 1 } });
+
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    await page.keyboard.press('Tab');
+    const isFocused = await page.locator(selector).evaluate((element) => element.matches(':focus'));
+    if (isFocused) return;
+  }
+
+  throw new Error(`Header control was not reached by keyboard Tab navigation: ${selector}`);
+};
+
 const expectHeaderControlHitTargetContract = (contract: HeaderControlHitTargetContract): void => {
   expectCssPixelAtLeast(
     contract.expandedWidth,
@@ -385,8 +406,7 @@ test.describe('Static header migration', () => {
         itemCount: items.length,
         missingHrefCount: items.filter(
           (item) =>
-            !(item instanceof HTMLAnchorElement) ||
-            (item.getAttribute('href') ?? '').trim() === '',
+            !(item instanceof HTMLAnchorElement) || (item.getAttribute('href') ?? '').trim() === '',
         ).length,
       }));
     expect(corpusItemContract.itemCount).toBeGreaterThan(0);
@@ -567,6 +587,7 @@ test.describe('Static header migration', () => {
           backgroundColor: style.backgroundColor,
           borderColor: style.borderTopColor,
           boxShadow: style.boxShadow,
+          outlineColor: style.outlineColor,
           outlineStyle: style.outlineStyle,
           outlineWidth: Number.parseFloat(style.outlineWidth),
           transform: style.transform,
@@ -588,7 +609,8 @@ test.describe('Static header migration', () => {
     const focusVisibleStyle = await readInteractiveStyle();
     expect(focusVisibleStyle.outlineStyle).not.toBe('none');
     expect(focusVisibleStyle.outlineWidth).toBeGreaterThan(0);
-    expect(focusVisibleStyle.boxShadow).not.toBe('none');
+    expect(isTransparentColor(focusVisibleStyle.outlineColor)).toBe(false);
+    expect(focusVisibleStyle.boxShadow).toBe('none');
 
     const triggerBox = await trigger.boundingBox();
     if (triggerBox === null) {
@@ -610,24 +632,25 @@ test.describe('Static header migration', () => {
     await page.goto('/about/');
     await waitForAppRouterReady(page);
 
-    await page.locator('header[data-layout-header] .corpus-switcher > summary').focus();
-    await page.keyboard.press('Tab');
-    await expect(page.locator(searchTriggerSelector)).toBeFocused();
+    for (const target of [headerControlTargets.corpus, headerControlTargets.search] as const) {
+      await focusHeaderControlByKeyboard(page, target.selector);
+      await expect(page.locator(target.selector)).toBeFocused();
 
-    const focusStyle = await page.locator(searchTriggerSelector).evaluate((element) => {
-      const style = window.getComputedStyle(element);
-      return {
-        boxShadow: style.boxShadow,
-        outlineColor: style.outlineColor,
-        outlineStyle: style.outlineStyle,
-        outlineWidth: Number.parseFloat(style.outlineWidth),
-      };
-    });
+      const focusStyle = await page.locator(target.selector).evaluate((element) => {
+        const style = window.getComputedStyle(element);
+        return {
+          boxShadow: style.boxShadow,
+          outlineColor: style.outlineColor,
+          outlineStyle: style.outlineStyle,
+          outlineWidth: Number.parseFloat(style.outlineWidth),
+        };
+      });
 
-    expect(focusStyle.outlineStyle).not.toBe('none');
-    expect(focusStyle.outlineWidth).toBeGreaterThan(0);
-    expect(focusStyle.outlineColor).not.toBe('rgba(0, 0, 0, 0)');
-    expect(focusStyle.boxShadow).not.toBe('none');
+      expect(focusStyle.outlineStyle).not.toBe('none');
+      expect(focusStyle.outlineWidth).toBeGreaterThan(0);
+      expect(isTransparentColor(focusStyle.outlineColor)).toBe(false);
+      expect(focusStyle.boxShadow).toBe('none');
+    }
 
     const controlContracts = await readHeaderControlContracts(page, [
       headerControlTargets.corpus,
@@ -721,6 +744,50 @@ test.describe('Static header migration', () => {
     await expectHeaderControlWithinHeader(page, headerControlTargets.corpus.selector);
   });
 
+  test('default corpus menu は content-constrained 幅で default label を省略しないこと', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 760 });
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    const trigger = page.locator('header[data-layout-header] [data-header-menu="corpus"] summary');
+    await trigger.click();
+    await expectMenuOpen(page, 'corpus', true);
+
+    const panel = page.locator(
+      'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-panel]',
+    );
+    const [triggerBox, panelBox] = await Promise.all([trigger.boundingBox(), panel.boundingBox()]);
+    const viewport = page.viewportSize();
+    const rootFontSize = await page.locator('html').evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return Number.parseFloat(style.fontSize);
+    });
+
+    if (triggerBox === null || panelBox === null || viewport === null) {
+      throw new Error('Corpus trigger, panel box, or viewport is missing.');
+    }
+
+    expect(panelBox.width).toBeGreaterThanOrEqual(triggerBox.width);
+    expect(panelBox.x).toBeGreaterThanOrEqual(-1);
+    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width + 1);
+    expect(panelBox.width).toBeLessThan(rootFontSize * 18);
+
+    const defaultItemOverflow = await panel
+      .locator('[data-header-menu-item]')
+      .evaluateAll((items) =>
+        items.map((item) => ({
+          clientWidth: item.clientWidth,
+          scrollWidth: item.scrollWidth,
+        })),
+      );
+
+    for (const item of defaultItemOverflow) {
+      expect(item.scrollWidth).toBeLessThanOrEqual(item.clientWidth + 1);
+    }
+  });
+
   test('corpus menu panel と item は長文でも inline 方向へ overflow しないこと', async ({
     page,
   }) => {
@@ -796,18 +863,37 @@ test.describe('Static header migration', () => {
     await expect(nonCurrentItems).not.toHaveCount(0);
     await expect(nonCurrentItem).toHaveCount(1);
 
-    const [currentStyle, nonCurrentStyle] = await Promise.all([
-      currentItem.evaluate((element) => window.getComputedStyle(element).fontWeight),
-      nonCurrentItem.evaluate((element) => window.getComputedStyle(element).fontWeight),
+    const [currentVisual, nonCurrentVisual] = await Promise.all([
+      currentItem.evaluate((element) => {
+        const style = window.getComputedStyle(element);
+        return {
+          ariaCurrent: element.getAttribute('aria-current'),
+          borderInlineStartWidth: Number.parseFloat(style.borderInlineStartWidth),
+          fontWeight: Number.parseFloat(style.fontWeight),
+          rawFontWeight: style.fontWeight,
+        };
+      }),
+      nonCurrentItem.evaluate((element) => {
+        const style = window.getComputedStyle(element);
+        return {
+          ariaCurrent: element.getAttribute('aria-current'),
+          borderInlineStartWidth: Number.parseFloat(style.borderInlineStartWidth),
+          fontWeight: Number.parseFloat(style.fontWeight),
+          rawFontWeight: style.fontWeight,
+        };
+      }),
     ]);
 
-    const currentWeight = Number.parseFloat(currentStyle);
-    const nonCurrentWeight = Number.parseFloat(nonCurrentStyle);
+    expect(currentVisual.ariaCurrent).toBe('page');
+    expect(nonCurrentVisual.ariaCurrent).toBeNull();
+    expect(currentVisual.borderInlineStartWidth).toBe(0);
+    expect(nonCurrentVisual.borderInlineStartWidth).toBe(0);
 
-    if (Number.isFinite(currentWeight) && Number.isFinite(nonCurrentWeight)) {
-      expect(currentWeight).toBeGreaterThan(nonCurrentWeight);
+    if (Number.isFinite(currentVisual.fontWeight) && Number.isFinite(nonCurrentVisual.fontWeight)) {
+      expect(currentVisual.fontWeight).toBeGreaterThan(nonCurrentVisual.fontWeight);
+      expect(currentVisual.fontWeight).toBeGreaterThanOrEqual(600);
     } else {
-      expect(currentStyle).not.toBe(nonCurrentStyle);
+      expect(currentVisual.rawFontWeight).not.toBe(nonCurrentVisual.rawFontWeight);
     }
   });
 
