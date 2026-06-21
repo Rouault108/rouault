@@ -4,6 +4,7 @@ const COPY_ERROR_MESSAGE = 'コピーできませんでした';
 const PROGRESSIVE_DISABLED_REASON = 'no-js';
 
 type CopyState = 'idle' | 'copied' | 'error';
+type CopyDisabledReason = 'clipboard-unavailable' | 'no-js' | 'source';
 
 const allowedCopyKinds = new Set<string>(['short-text', 'permalink']);
 const resetTimers = new WeakMap<HTMLButtonElement, number>();
@@ -88,12 +89,39 @@ const getClipboard = (): Clipboard | null => {
   return clipboard && typeof clipboard.writeText === 'function' ? clipboard : null;
 };
 
-const canEnhanceButton = (button: HTMLButtonElement): boolean =>
-  !isHidden(button) &&
-  (!button.disabled || button.dataset['copyDisabledReason'] === PROGRESSIVE_DISABLED_REASON) &&
-  button.dataset['copyDisabledReason'] !== 'source' &&
-  resolveCopyValue(button) !== null &&
-  getClipboard() !== null;
+const hasProgressiveDisabledState = (button: HTMLButtonElement): boolean =>
+  !button.disabled || button.dataset['copyDisabledReason'] === PROGRESSIVE_DISABLED_REASON;
+
+const disableCopyButton = (
+  button: HTMLButtonElement,
+  reason: CopyDisabledReason,
+): void => {
+  button.disabled = true;
+  button.dataset['copyDisabledReason'] = reason;
+  setCopyState(button, 'idle');
+};
+
+const enableCopyButton = (button: HTMLButtonElement): void => {
+  if (button.dataset['copyDisabledReason'] === PROGRESSIVE_DISABLED_REASON) {
+    button.removeAttribute('data-copy-disabled-reason');
+  }
+  button.disabled = false;
+  setCopyState(button, 'idle');
+};
+
+const resolveDisabledReason = (
+  button: HTMLButtonElement,
+  value: string | null,
+  clipboard: Clipboard | null,
+): CopyDisabledReason | null => {
+  if (value === null || button.dataset['copyDisabledReason'] === 'source') {
+    return 'source';
+  }
+  if (clipboard === null) {
+    return 'clipboard-unavailable';
+  }
+  return null;
+};
 
 const copyFromButton = async (button: HTMLButtonElement): Promise<void> => {
   if (button.disabled || isHidden(button)) {
@@ -121,15 +149,16 @@ export const activateStaticCopyButtons = (root: ParentNode): void => {
       continue;
     }
     button.dataset['copyEnhanced'] = 'true';
-    if (canEnhanceButton(button)) {
-      if (button.dataset['copyDisabledReason'] === PROGRESSIVE_DISABLED_REASON) {
-        button.removeAttribute('data-copy-disabled-reason');
+    if (!isHidden(button) && hasProgressiveDisabledState(button)) {
+      const value = resolveCopyValue(button);
+      const clipboard = getClipboard();
+      const disabledReason = resolveDisabledReason(button, value, clipboard);
+
+      if (disabledReason === null) {
+        enableCopyButton(button);
+      } else {
+        disableCopyButton(button, disabledReason);
       }
-      button.disabled = false;
-      setCopyState(button, 'idle');
-    } else if (!isHidden(button)) {
-      setCopyState(button, 'error');
-      scheduleReset(button);
     }
     button.addEventListener('click', () => {
       void copyFromButton(button);
