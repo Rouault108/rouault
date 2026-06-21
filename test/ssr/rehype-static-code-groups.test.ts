@@ -70,22 +70,24 @@ describe('rehypeStaticCodeGroups', () => {
     const header = group?.children?.[0];
     expect(header?.tagName).toBe('div');
     expect(header?.properties?.['className']).toEqual(['code-group-header']);
+    expect(header?.properties?.['data-code-group-controls']).toBe('true');
 
     const tabList = header?.children?.[0];
     expect(tabList?.tagName).toBe('div');
     expect(tabList?.properties?.['className']).toEqual(['code-group-tablist']);
-    expect(tabList?.properties?.['role']).toBe('tablist');
-    expect(tabList?.properties?.['aria-label']).toBe('実装比較');
+    expect(tabList?.properties?.['role']).toBeUndefined();
+    expect(tabList?.properties?.['aria-label']).toBeUndefined();
 
     const firstTab = tabList?.children?.[0];
     expect(firstTab?.tagName).toBe('button');
     expect(firstTab?.properties?.['data-code-group-tab']).toBe('true');
     expect(firstTab?.properties?.['data-code-group-key']).toBe('valid');
-    expect(firstTab?.properties?.['role']).toBe('tab');
-    expect(firstTab?.properties?.['aria-selected']).toBe('true');
-    expect(firstTab?.properties?.['data-selected']).toBe('true');
-    expect(firstTab?.properties?.['tabindex']).toBe(0);
-    expect(firstTab?.properties?.['aria-controls']).toEqual(expect.any(String));
+    expect(firstTab?.properties?.['role']).toBeUndefined();
+    expect(firstTab?.properties?.['aria-selected']).toBeUndefined();
+    expect(firstTab?.properties?.['data-selected']).toBeUndefined();
+    expect(firstTab?.properties?.['tabindex']).toBeUndefined();
+    expect(firstTab?.properties?.['aria-controls']).toBeUndefined();
+    expect(firstTab?.properties?.['data-code-group-panel-id']).toEqual(expect.any(String));
 
     const headerTools = header?.children?.[1];
     expect(headerTools?.tagName).toBe('div');
@@ -109,20 +111,36 @@ describe('rehypeStaticCodeGroups', () => {
     const secondPanel = group?.children?.[2];
     expect(firstPanel?.tagName).toBe('section');
     expect(firstPanel?.properties?.['data-code-group-panel']).toBe('valid');
-    expect(firstPanel?.properties?.['role']).toBe('tabpanel');
-    expect(firstPanel?.properties?.['aria-labelledby']).toBe(firstTab?.properties?.['id']);
-    expect(firstPanel?.properties?.['id']).toBe(firstTab?.properties?.['aria-controls']);
+    expect(firstPanel?.properties?.['role']).toBeUndefined();
+    expect(firstPanel?.properties?.['aria-labelledby']).toBeUndefined();
+    expect(firstPanel?.properties?.['id']).toBe(firstTab?.properties?.['data-code-group-panel-id']);
+    expect(firstPanel?.properties?.['hidden']).toBeUndefined();
+    expect(firstPanel?.properties?.['data-code-group-inactive']).toBeUndefined();
+    expect(firstPanel?.properties?.['data-code-copy-source-id']).toEqual(expect.any(String));
     expect(firstPanel?.children?.[0]?.tagName).toBe('template');
+    expect(firstPanel?.children?.[0]?.properties?.['id']).toBe(
+      firstPanel?.properties?.['data-code-copy-source-id'],
+    );
+    expect(firstPanel?.children?.[0]?.properties?.['data-code-copy-source']).toBe('true');
     expect(firstPanel?.children?.[1]?.tagName).toBe('p');
+    expect(firstPanel?.children?.[1]?.properties?.['className']).toEqual(['code-group-stack-label']);
+    expect(firstPanel?.children?.[1]?.children?.[0]?.value).toBe('正しい例');
     expect(firstPanel?.children?.[2]?.tagName).toBe('figure');
     expect(firstPanel?.children?.[2]?.properties?.['data-code-block-root']).toBe('true');
     expect(firstPanel?.children?.[2]?.properties?.['data-code-group-owned']).toBe('true');
 
     expect(secondPanel?.tagName).toBe('section');
     expect(secondPanel?.properties?.['data-code-group-panel']).toBe('invalid');
-    expect(secondPanel?.properties?.['data-code-group-inactive']).toBe('true');
-    expect(secondPanel?.properties?.['hidden']).toBe(true);
-    expect(secondPanel?.properties?.['role']).toBe('tabpanel');
+    expect(secondPanel?.properties?.['data-code-group-inactive']).toBeUndefined();
+    expect(secondPanel?.properties?.['hidden']).toBeUndefined();
+    expect(secondPanel?.properties?.['role']).toBeUndefined();
+    expect(secondPanel?.properties?.['aria-labelledby']).toBeUndefined();
+    expect(secondPanel?.properties?.['data-code-copy-source-id']).toEqual(expect.any(String));
+    expect(secondPanel?.children?.[0]?.properties?.['id']).toBe(
+      secondPanel?.properties?.['data-code-copy-source-id'],
+    );
+    expect(secondPanel?.children?.[0]?.properties?.['data-code-copy-source']).toBe('true');
+    expect(secondPanel?.children?.[1]?.children?.[0]?.value).toBe('誤り例');
   });
 
   it('child が 1 件だけなら standalone code block factory 経由の figure に戻すこと', () => {

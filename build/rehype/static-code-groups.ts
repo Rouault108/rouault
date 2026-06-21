@@ -148,9 +148,7 @@ const createGroupOwnedCodeBlock = (
 
 const createPanel = (
   item: StaticCodeBlockMeta,
-  selected: boolean,
   copySourceId: string,
-  tabId: string,
   panelId: string,
   idContext: StaticRenderIdContext,
 ): HastNode => ({
@@ -158,13 +156,9 @@ const createPanel = (
   tagName: 'section',
   properties: {
     id: panelId,
-    role: 'tabpanel',
     'data-code-group-panel': item.key,
     'data-code-group-panel-label': item.tabLabel,
     'data-code-copy-source-id': copySourceId,
-    'aria-labelledby': tabId,
-    ...(selected ? {} : { 'data-code-group-inactive': 'true' }),
-    ...(selected ? {} : { hidden: true }),
   },
   children: [
     createCodeCopySource(copySourceId, item.source),
@@ -278,6 +272,7 @@ export function rehypeStaticCodeGroups(
           tagName: 'div',
           properties: {
             className: ['code-group-header'],
+            'data-code-group-controls': 'true',
           },
           children: [
             {
@@ -285,11 +280,8 @@ export function rehypeStaticCodeGroups(
               tagName: 'div',
               properties: {
                 className: ['code-group-tablist'],
-                role: 'tablist',
-                'aria-label': pickOptionalString(originalProperties['aria-label']) ?? 'コード比較',
               },
               children: items.map((item, index) => {
-                const selected = index === 0;
                 const tab = createTabButton(item.key, item.tabLabel);
                 const ids = itemIds[index];
                 return {
@@ -297,11 +289,7 @@ export function rehypeStaticCodeGroups(
                   properties: {
                     ...tab.properties,
                     id: ids?.tabId,
-                    role: 'tab',
-                    'aria-controls': ids?.panelId,
-                    'aria-selected': selected ? 'true' : 'false',
-                    'data-selected': selected ? 'true' : 'false',
-                    tabindex: selected ? 0 : -1,
+                    'data-code-group-panel-id': ids?.panelId,
                   },
                 };
               }),
@@ -313,9 +301,7 @@ export function rehypeStaticCodeGroups(
           const ids = itemIds[index];
           return createPanel(
             item,
-            index === 0,
             ids?.copySourceId ?? `${groupId}-copy-source-${String(index)}`,
-            ids?.tabId ?? `${groupId}-tab-${item.key}`,
             ids?.panelId ?? `${groupId}-panel-${item.key}`,
             idContext,
           );
