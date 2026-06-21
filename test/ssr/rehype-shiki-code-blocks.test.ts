@@ -30,6 +30,25 @@ const getLineElements = (codeNode: HastNode | undefined): HastNode[] =>
     (child) => child.type === 'element' && child.tagName === 'span',
   );
 
+const findDescendant = (
+  node: HastNode | undefined,
+  predicate: (candidate: HastNode) => boolean,
+): HastNode | undefined => {
+  if (!node) {
+    return undefined;
+  }
+  for (const child of node.children ?? []) {
+    if (predicate(child)) {
+      return child;
+    }
+    const matched = findDescendant(child, predicate);
+    if (matched) {
+      return matched;
+    }
+  }
+  return undefined;
+};
+
 const createCodeFence = (
   languageClassName: string,
   source: string,
@@ -91,9 +110,26 @@ describe('rehypeShikiCodeBlocks', () => {
     const copySource = root?.children?.[1];
     expect(copySource?.tagName).toBe('template');
     expect(copySource?.properties?.['data-code-copy-source']).toBe('true');
+    expect(copySource?.properties?.['id']).toEqual(expect.any(String));
     expect(copySource?.children?.[0]?.value).toBe(
       'const highlighted = 1; // [!code highlight]\nconst added = 2; // [!code ++]',
     );
+
+    const copyButton = findDescendant(
+      header,
+      (child) => child.tagName === 'button' && child.properties?.['data-copy-button'] === 'true',
+    );
+    expect(copyButton?.properties?.['data-copy-target-id']).toBe(copySource?.properties?.['id']);
+    expect(copyButton?.properties?.['aria-describedby']).toBe(
+      `${String(copySource?.properties?.['id'])}-copy-status`,
+    );
+    const copyStatus = findDescendant(
+      header,
+      (child) =>
+        child.tagName === 'span' &&
+        child.properties?.['id'] === copyButton?.properties?.['aria-describedby'],
+    );
+    expect(copyStatus?.properties?.['data-copy-status']).toBe('true');
 
     const pre = root?.children?.[2];
     expect(pre?.tagName).toBe('pre');

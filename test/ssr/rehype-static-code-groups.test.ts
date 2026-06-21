@@ -61,6 +61,7 @@ describe('rehypeStaticCodeGroups', () => {
     const group = tree.children?.[0];
     expect(group?.tagName).toBe('section');
     expect(group?.properties?.['data-code-group']).toBe(true);
+    expect(group?.properties?.['data-code-group-source']).toBeUndefined();
     expect(group?.properties?.['aria-label']).toBe('実装比較');
     expect(group?.properties?.['data-code-group-label']).toBe('実装比較');
     expect(group?.properties?.['data-hydration-key']).toBe('code-group-enhancer');
@@ -106,6 +107,10 @@ describe('rehypeStaticCodeGroups', () => {
     expect(button?.properties?.['aria-describedby']).toBe(
       `${String(selectedCopySourceId)}-copy-status`,
     );
+    const copyStatus = copyButton?.children?.[1];
+    expect(copyStatus?.tagName).toBe('span');
+    expect(copyStatus?.properties?.['id']).toBe(button?.properties?.['aria-describedby']);
+    expect(copyStatus?.properties?.['data-copy-status']).toBe('true');
 
     const firstPanel = group?.children?.[1];
     const secondPanel = group?.children?.[2];
@@ -123,11 +128,14 @@ describe('rehypeStaticCodeGroups', () => {
     );
     expect(firstPanel?.children?.[0]?.properties?.['data-code-copy-source']).toBe('true');
     expect(firstPanel?.children?.[1]?.tagName).toBe('p');
-    expect(firstPanel?.children?.[1]?.properties?.['className']).toEqual(['code-group-stack-label']);
+    expect(firstPanel?.children?.[1]?.properties?.['className']).toEqual([
+      'code-group-stack-label',
+    ]);
     expect(firstPanel?.children?.[1]?.children?.[0]?.value).toBe('正しい例');
     expect(firstPanel?.children?.[2]?.tagName).toBe('figure');
     expect(firstPanel?.children?.[2]?.properties?.['data-code-block-root']).toBe('true');
     expect(firstPanel?.children?.[2]?.properties?.['data-code-group-owned']).toBe('true');
+    expect(firstPanel?.children?.[2]?.properties?.['data-code-group-source']).toBeUndefined();
 
     expect(secondPanel?.tagName).toBe('section');
     expect(secondPanel?.properties?.['data-code-group-panel']).toBe('invalid');

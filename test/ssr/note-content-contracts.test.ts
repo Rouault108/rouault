@@ -36,6 +36,98 @@ const canonicalFootnoteHtml = (
   </section>
 `;
 
+const standaloneCodeBlockHtml = (
+  overrides: {
+    targetId?: string;
+    describedBy?: string;
+    statusId?: string;
+    sourceTag?: string;
+  } = {},
+): string => {
+  const sourceTag =
+    overrides.sourceTag ??
+    '<template id="code-source" data-code-copy-source>const value = 1;</template>';
+  const targetId = overrides.targetId ?? 'code-source';
+  const describedBy = overrides.describedBy ?? 'code-source-copy-status';
+  const statusId = overrides.statusId ?? 'code-source-copy-status';
+
+  return `
+    <figure data-code-block-root="true" data-code-block-id="code-block-1">
+      <div class="code-surface-caption">
+        <div class="code-surface-copy-button-shell">
+          <span class="static-copy-control" data-copy-control="true">
+            <button
+              type="button"
+              data-copy-button="true"
+              data-copy-target-id="${targetId}"
+              aria-describedby="${describedBy}"
+            >copy</button>
+            <span id="${statusId}" data-copy-status="true" role="status" aria-live="polite"></span>
+          </span>
+        </div>
+      </div>
+      ${sourceTag}
+      <pre data-code-block="true"><code>const value = 1;</code></pre>
+    </figure>
+  `;
+};
+
+const codeGroupHtml = (
+  overrides: {
+    panelAttrs?: string;
+    tabAttrs?: string;
+    groupCopyTargetId?: string;
+    groupCopyStatusId?: string;
+    groupCopyButtonAttrs?: string;
+    panelLabelHtml?: string;
+    beforeGroupHtml?: string;
+    afterGroupHtml?: string;
+  } = {},
+): string => `
+  ${overrides.beforeGroupHtml ?? ''}
+  <section data-code-group="true" data-code-group-id="group-1" data-code-group-label="比較">
+    <div class="code-group-header" data-code-group-controls="true">
+      <div class="code-group-tablist">
+        <button
+          type="button"
+          data-code-group-tab="true"
+          data-code-group-key="valid"
+          data-code-group-panel-id="panel-valid"
+          ${overrides.tabAttrs ?? ''}
+        >正しい例</button>
+      </div>
+      <div class="code-group-header-tools">
+        <span class="static-copy-control" data-copy-control="true">
+          <button
+            type="button"
+            data-copy-button="true"
+            data-code-group-copy="true"
+            data-copy-target-id="${overrides.groupCopyTargetId ?? 'panel-source'}"
+            aria-describedby="${overrides.groupCopyStatusId ?? 'panel-source-copy-status'}"
+            ${overrides.groupCopyButtonAttrs ?? ''}
+          >copy</button>
+          <span id="panel-source-copy-status" data-copy-status="true" role="status" aria-live="polite"></span>
+        </span>
+      </div>
+    </div>
+    <section
+      id="panel-valid"
+      data-code-group-panel="valid"
+      data-code-group-panel-label="正しい例"
+      data-code-copy-source-id="panel-source"
+      ${overrides.panelAttrs ?? ''}
+    >
+      <template id="panel-source" data-code-copy-source>const valid = true;</template>
+      ${overrides.panelLabelHtml ?? '<p class="code-group-stack-label">正しい例</p>'}
+      <figure data-code-block-root="true" data-code-block-id="code-block-1" data-code-group-owned="true">
+        <template id="owned-source" data-code-copy-source>const valid = true;</template>
+        <pre data-code-block="true"><code>const valid = true;</code></pre>
+      </figure>
+    </section>
+  </section>
+  ${overrides.afterGroupHtml ?? ''}
+`;
+
 describe('validateNoteContentContracts', () => {
   it('reader note の preview-sandbox を build error にすること', () => {
     expect(() => {
@@ -174,6 +266,135 @@ describe('validateNoteContentContracts', () => {
         sourceLabel: 'testing/test',
       });
     }).toThrow('template 以外の [data-code-copy-source] は note 最終 HTML に残してはいけません');
+  });
+
+  it('standalone code block の final HTML schema と copy 参照整合を受け入れること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: standaloneCodeBlockHtml(),
+        sourceLabel: 'testing/code-block',
+      });
+    }).not.toThrow();
+  });
+
+  it('copy button の data-copy-target-id が copy source を指さなければ build error にすること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: standaloneCodeBlockHtml({ targetId: 'missing-source' }),
+        sourceLabel: 'testing/code-block',
+      });
+    }).toThrow(
+      '[note-content:testing/code-block] copy button の data-copy-target-id="missing-source" は template[data-code-copy-source] を指す必要があります',
+    );
+  });
+
+  it('copy button の aria-describedby が copy status を指さなければ build error にすること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: standaloneCodeBlockHtml({ describedBy: 'missing-status' }),
+        sourceLabel: 'testing/code-block',
+      });
+    }).toThrow(
+      '[note-content:testing/code-block] copy button[data-copy-target-id="code-source"] の aria-describedby="missing-status" は [data-copy-status] を指す必要があります',
+    );
+  });
+
+  it('code group の SSR stack final HTML schema を受け入れること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml(),
+        sourceLabel: 'testing/code-group',
+      });
+    }).not.toThrow();
+  });
+
+  it('code group panel が SSR 時点で hidden なら build error にすること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml({ panelAttrs: 'hidden' }),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow(
+      '[note-content:testing/code-group] [data-code-group-id="group-1"] の #panel-valid は SSR 時点で hidden / aria-hidden / inert にしてはいけません',
+    );
+  });
+
+  it('code group panel が SSR 時点で aria-hidden または inert なら build error にすること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml({ panelAttrs: 'aria-hidden="true"' }),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow('SSR 時点で hidden / aria-hidden / inert にしてはいけません');
+
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml({ panelAttrs: 'inert' }),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow('SSR 時点で hidden / aria-hidden / inert にしてはいけません');
+  });
+
+  it('code group panel の visible label / heading が無ければ build error にすること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml({ panelLabelHtml: '' }),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow(
+      '[note-content:testing/code-group] [data-code-group-id="group-1"] の #panel-valid には識別可能な label / heading が必要です',
+    );
+  });
+
+  it('code group の group copy button が group 外の copy source を指せば build error にすること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml({
+          groupCopyTargetId: 'external-source',
+          beforeGroupHtml:
+            '<template id="external-source" data-code-copy-source>const external = true;</template>',
+        }),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow(
+      '[note-content:testing/code-group] [data-code-group-id="group-1"] の group copy button は同じ code group 内の panel copy source を指す必要があります',
+    );
+  });
+
+  it('code group の group copy status が group 内になければ build error にすること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml({
+          groupCopyStatusId: 'external-status',
+          afterGroupHtml: '<span id="external-status" data-copy-status="true"></span>',
+        }),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow(
+      '[note-content:testing/code-group] [data-code-group-id="group-1"] の group copy status は同じ code group 内に存在する必要があります',
+    );
+  });
+
+  it('code group に SSR tab semantics が混入すれば build error にすること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml({ tabAttrs: 'role="tab" aria-selected="true"' }),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow(
+      '[note-content:testing/code-group] [data-code-group-id="group-1"] の SSR code group は tab ARIA semantics を持ってはいけません',
+    );
   });
 
   it('中間 source marker を note final HTML で拒否すること', () => {
