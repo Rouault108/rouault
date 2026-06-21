@@ -94,8 +94,7 @@ header[data-layout-header] .layout-header__end {
 header[data-layout-header] .sidebar-toggle,
 header[data-layout-header] .toc-trigger,
 header[data-layout-header] .search-trigger,
-header[data-layout-header] summary,
-header[data-layout-header] [data-theme-value] {
+header[data-layout-header] [data-header-menu] > [data-header-menu-trigger] {
   position: relative;
   box-sizing: border-box;
   display: inline-flex;
@@ -112,9 +111,26 @@ header[data-layout-header] [data-theme-value] {
   transition: var(--_header-control-transition);
 }
 
-header[data-layout-header] summary,
+header[data-layout-header] [data-header-menu-item] {
+  position: relative;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--_header-control-gap);
+  min-block-size: var(--control-height-md, 36px);
+  border-radius: var(--radius-md, 8px);
+  color: var(--fg-default);
+  font: inherit;
+  font-weight: var(--_header-control-font-weight);
+  font-feature-settings: 'palt';
+  letter-spacing: var(--_header-control-letter-spacing);
+  line-height: var(--_header-control-line-height);
+  transition: var(--_header-control-transition);
+}
+
 header[data-layout-header] .sidebar-toggle,
-header[data-layout-header] [data-theme-value] {
+header[data-layout-header] [data-header-menu] > [data-header-menu-trigger],
+header[data-layout-header] [data-header-menu-item] {
   cursor: pointer;
 }
 
@@ -153,8 +169,8 @@ header[data-layout-header] .search-trigger__placeholder {
 header[data-layout-header] .sidebar-toggle::after,
 header[data-layout-header] .toc-trigger::after,
 header[data-layout-header] .search-trigger::after,
-header[data-layout-header] summary::after,
-header[data-layout-header] [data-theme-value]::after {
+header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]::after,
+header[data-layout-header] [data-header-menu-item]::after {
   content: '';
   position: absolute;
   inset-block: calc((var(--_header-hit-target-size) - 100%) / -2);
@@ -231,8 +247,7 @@ header[data-layout-header] ul {
   list-style: none;
 }
 
-header[data-layout-header] .corpus-switcher__menu a,
-header[data-layout-header] [data-theme-value] {
+header[data-layout-header] [data-header-menu-item] {
   inline-size: 100%;
   padding: var(--space-2, 8px);
   border: 0;
@@ -275,7 +290,10 @@ header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:a
   background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%));
 }
 
-header[data-layout-header] :is(a, button, summary):hover {
+header[data-layout-header] .sidebar-toggle:hover,
+header[data-layout-header] .toc-trigger:hover,
+header[data-layout-header] .search-trigger:hover,
+header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]:hover {
   background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%));
 }
 
@@ -284,7 +302,20 @@ header[data-layout-header] .search-trigger:hover {
   background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%));
 }
 
-header[data-layout-header] :is(a, button, summary):focus-visible {
+header[data-layout-header] [data-header-menu-item]:hover {
+  background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%));
+}
+
+header[data-layout-header] .sidebar-toggle:focus-visible,
+header[data-layout-header] .toc-trigger:focus-visible,
+header[data-layout-header] .search-trigger:focus-visible,
+header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+  outline-offset: var(--focus-ring-offset, 2px);
+  box-shadow: none;
+}
+
+header[data-layout-header] [data-header-menu-item]:focus-visible {
   outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
   outline-offset: var(--focus-ring-offset, 2px);
   box-shadow: none;
@@ -294,12 +325,20 @@ header[data-layout-header] .search-trigger:focus-visible {
   border-color: var(--focus-ring-color, oklch(60% 0.15 250));
 }
 
-header[data-layout-header] :is(a, button, summary):active {
+header[data-layout-header] .sidebar-toggle:active,
+header[data-layout-header] .toc-trigger:active,
+header[data-layout-header] .search-trigger:active,
+header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]:active {
   transform: scale(var(--_header-control-pressed-scale));
 }
 
 header[data-layout-header] .search-trigger:active {
   background: var(--bg-active, color-mix(in srgb, var(--bg-default) 82%, var(--fg-default) 18%));
+}
+
+header[data-layout-header] [data-header-menu-item]:active {
+  background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%));
+  transform: scale(var(--_header-control-pressed-scale));
 }
 
 header[data-layout-header] .corpus-trigger-main,
@@ -439,7 +478,14 @@ header[data-layout-header] .corpus-trigger-text {
     box-shadow: none;
   }
 
-  header[data-layout-header] :is(a, button, summary) {
+  header[data-layout-header] .sidebar-toggle,
+  header[data-layout-header] .toc-trigger,
+  header[data-layout-header] .search-trigger,
+  header[data-layout-header] [data-header-menu] > [data-header-menu-trigger] {
+    border: 1px solid ButtonText;
+  }
+
+  header[data-layout-header] [data-header-menu-item] {
     border: 1px solid ButtonText;
   }
 
@@ -452,7 +498,15 @@ header[data-layout-header] .corpus-trigger-text {
     background: ButtonFace;
   }
 
-  header[data-layout-header] :is(a, button, summary):focus-visible {
+  header[data-layout-header] .sidebar-toggle:focus-visible,
+  header[data-layout-header] .toc-trigger:focus-visible,
+  header[data-layout-header] .search-trigger:focus-visible,
+  header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]:focus-visible {
+    outline-color: Highlight;
+    box-shadow: none;
+  }
+
+  header[data-layout-header] [data-header-menu-item]:focus-visible {
     outline-color: Highlight;
     box-shadow: none;
   }
@@ -469,7 +523,11 @@ header[data-layout-header] .corpus-trigger-text {
     transition-duration: 0.01ms !important;
   }
 
-  header[data-layout-header] :is(a, button, summary):active {
+  header[data-layout-header] .sidebar-toggle:active,
+  header[data-layout-header] .toc-trigger:active,
+  header[data-layout-header] .search-trigger:active,
+  header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]:active,
+  header[data-layout-header] [data-header-menu-item]:active {
     transform: none;
   }
 }

@@ -153,11 +153,23 @@ Search trigger は `/search/` fallback と dialog trigger の二重 contract を
 
 Header controls は、corpus trigger、theme trigger、search trigger、TOC trigger、sidebar trigger を含む静的 header 内の操作要素である。
 
+- Hover は内部 icon / text ではなく、control root surface の状態として表現する。
+- Theme trigger の root control surface は `[data-header-menu='theme'] > [data-header-menu-trigger]` とする。
+- Top-level controls と menu panel 内 item は selector 上分離して扱う。Top-level controls の visual state は `.sidebar-toggle`、`.toc-trigger`、`.search-trigger`、`[data-header-menu] > [data-header-menu-trigger]` を主 selector とし、menu item 共通の visual state は `[data-header-menu-item]` を主 selector とする。
+- `summary` は disclosure semantics と UA marker reset のために使う。`summary` から data attribute selector へ移す対象は base control、hover、focus-visible、active、hit target などの visual state contract であり、`summary` の `list-style` reset と `summary::-webkit-details-marker` は summary 固有補正として残す。
 - Focus-visible は outline 主体で表現する。
+- Focus-visible outline は `--focus-ring-*` token に基づく。
 - Focus ring 用 box-shadow による二重リングは必須契約にしない。
+- Box-shadow は header control 共通契約として禁止もしない。
 - Focus-visible は `:focus-visible` を正とし、`:focus` へ戻さない。
 - Forced-colors でも focus-visible outline を識別可能にする。
+- Menu panel 内 item の hover、focus-visible、active、hit target は top-level controls の selector 整理後も維持する。
+- Corpus menu item は `display: block`、1 行 ellipsis、content-constrained menu width、viewport containment を維持する。
+- Current corpus item は `aria-current="page"` と text emphasis を維持し、left border marker / `border-inline-start` は再導入しない。
+- Search trigger 固有の hover、focus-visible、active、responsive density、border-color、background state は top-level 共通 selector によって退化させない。
+- Top-level trigger の 44px hit target pseudo-element は維持する。
 - Header controls の visual contract は本文リンク、検索ダイアログ、sidebar、本文 TOC link へ波及させない。
+- この具体化は既存 contract の明確化であり、R3 相当の公開契約変更ではない。
 
 #### Search Trigger Visual Contract
 

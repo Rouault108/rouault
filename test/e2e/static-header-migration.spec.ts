@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { e2eNoteFixtures } from './support/note-fixtures.js';
 
@@ -35,9 +35,12 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
 const visibleDisplay = async (page: Page, selector: string): Promise<string> =>
   page.locator(selector).evaluate((element) => window.getComputedStyle(element).display);
 
+type HeaderMenuKind = 'corpus' | 'theme';
+
 const searchTriggerSelector = 'header[data-layout-header] [data-search-dialog-trigger]';
-const themeTriggerRootSelector =
-  'header[data-layout-header] [data-header-menu="theme"] > [data-header-menu-trigger]';
+const headerMenuTriggerSelector = (menu: HeaderMenuKind): string =>
+  `header[data-layout-header] [data-header-menu="${menu}"] > [data-header-menu-trigger]`;
+const themeTriggerRootSelector = headerMenuTriggerSelector('theme');
 const searchDialogSelector = 'dialog[data-search-dialog-root]';
 const HEADER_CONTROL_MIN_HIT_TARGET_PX = 44;
 const CSS_PIXEL_ROUNDING_TOLERANCE_PX = 0.01;
@@ -76,7 +79,7 @@ interface HeaderControlContract extends HeaderControlHitTargetContract {
 const headerControlTargets = {
   corpus: {
     name: 'corpus switcher trigger',
-    selector: 'header[data-layout-header] .corpus-switcher > summary',
+    selector: headerMenuTriggerSelector('corpus'),
   },
   search: {
     name: 'search trigger',
@@ -181,12 +184,34 @@ const isTransparentColor = (color: string): boolean => {
   );
 };
 
+const readFocusIndicator = async (locator: Locator) =>
+  locator.evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    return {
+      outlineColor: style.outlineColor,
+      outlineOffset: Number.parseFloat(style.outlineOffset),
+      outlineStyle: style.outlineStyle,
+      outlineWidth: Number.parseFloat(style.outlineWidth),
+    };
+  });
+
+const expectVisibleFocusIndicator = (
+  focusStyle: Awaited<ReturnType<typeof readFocusIndicator>>,
+): void => {
+  expect(focusStyle.outlineStyle).not.toBe('none');
+  expect(focusStyle.outlineWidth).toBeGreaterThan(0);
+  expect(isTransparentColor(focusStyle.outlineColor)).toBe(false);
+  expect(Number.isFinite(focusStyle.outlineOffset)).toBe(true);
+};
+
 const focusHeaderControlByKeyboard = async (page: Page, selector: string): Promise<void> => {
   await page.locator('body').click({ position: { x: 1, y: 1 } });
 
   for (let attempt = 0; attempt < 24; attempt += 1) {
     await page.keyboard.press('Tab');
-    const isFocused = await page.locator(selector).evaluate((element) => element.matches(':focus'));
+    const isFocused = await page
+      .locator(selector)
+      .evaluate((element) => element === document.activeElement);
     if (isFocused) return;
   }
 
@@ -619,7 +644,7 @@ test.describe('Static header migration', () => {
         hoverStyle.borderColor !== restStyle.borderColor,
     ).toBe(true);
 
-    await page.locator('header[data-layout-header] .corpus-switcher > summary').focus();
+    await page.locator(headerControlTargets.corpus.selector).focus();
     await page.keyboard.press('Tab');
     await expect(trigger).toBeFocused();
     const focusVisibleStyle = await readInteractiveStyle();
@@ -647,22 +672,15 @@ test.describe('Static header migration', () => {
     await page.goto('/about/');
     await waitForAppRouterReady(page);
 
-    for (const target of [headerControlTargets.corpus, headerControlTargets.search] as const) {
+    for (const target of [
+      headerControlTargets.corpus,
+      headerControlTargets.search,
+      headerControlTargets.theme,
+    ] as const) {
       await focusHeaderControlByKeyboard(page, target.selector);
       await expect(page.locator(target.selector)).toBeFocused();
 
-      const focusStyle = await page.locator(target.selector).evaluate((element) => {
-        const style = window.getComputedStyle(element);
-        return {
-          outlineColor: style.outlineColor,
-          outlineStyle: style.outlineStyle,
-          outlineWidth: Number.parseFloat(style.outlineWidth),
-        };
-      });
-
-      expect(focusStyle.outlineStyle).not.toBe('none');
-      expect(focusStyle.outlineWidth).toBeGreaterThan(0);
-      expect(isTransparentColor(focusStyle.outlineColor)).toBe(false);
+      expectVisibleFocusIndicator(await readFocusIndicator(page.locator(target.selector)));
     }
 
     const controlContracts = await readHeaderControlContracts(page, [
@@ -702,6 +720,20 @@ test.describe('Static header migration', () => {
 
     const hitTargetContract = await readHeaderControlContract(page, headerControlTargets.corpus);
     expectHeaderControlHitTargetContract(hitTargetContract);
+
+    await page.setViewportSize({ width: 399, height: 760 });
+    const compactDensity = await page
+      .locator(headerControlTargets.corpus.selector)
+      .evaluate((element) => {
+        const style = window.getComputedStyle(element);
+        return {
+          paddingInlineEnd: Number.parseFloat(style.paddingInlineEnd),
+          paddingInlineStart: Number.parseFloat(style.paddingInlineStart),
+        };
+      });
+
+    expect(compactDensity.paddingInlineStart).toBeGreaterThan(0);
+    expect(compactDensity.paddingInlineEnd).toBeGreaterThan(0);
   });
 
   test('theme trigger root は padding と hover surface と focus-visible outline を維持すること', async ({
@@ -742,14 +774,45 @@ test.describe('Static header migration', () => {
     await focusHeaderControlByKeyboard(page, themeTriggerRootSelector);
     await expect(themeTrigger).toBeFocused();
     const focusVisibleStyle = await readThemeTriggerStyle();
-    expect(focusVisibleStyle.outlineStyle).not.toBe('none');
-    expect(focusVisibleStyle.outlineWidth).toBeGreaterThan(0);
-    expect(isTransparentColor(focusVisibleStyle.outlineColor)).toBe(false);
-    expect(Number.isFinite(focusVisibleStyle.outlineOffset)).toBe(true);
+    expectVisibleFocusIndicator(focusVisibleStyle);
 
     await page.setViewportSize({ width: 399, height: 760 });
+    const compactStyle = await readThemeTriggerStyle();
+    expect(compactStyle.paddingInlineStart).toBeGreaterThan(0);
+    expect(compactStyle.paddingInlineEnd).toBeGreaterThan(0);
     const compactContract = await readHeaderControlContract(page, headerControlTargets.theme);
     expectHeaderControlHitTargetContract(compactContract);
+  });
+
+  test('header menu item は keyboard focus 時に視認可能な focus indicator を維持すること', async ({
+    page,
+  }) => {
+    await page.goto(markdownBasic.directPath);
+    await waitForAppRouterReady(page);
+    await prepareHeaderMenuItems(page, 'corpus', ['Alpha', 'Beta', 'Gamma']);
+
+    for (const menu of ['corpus', 'theme'] as const) {
+      const trigger = page.locator(
+        `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-trigger]`,
+      );
+      const firstItem = page
+        .locator(`header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-item]`)
+        .first();
+
+      await trigger.focus();
+      await page.keyboard.press('ArrowDown');
+      await expectMenuOpen(page, menu, true);
+      await expect(firstItem).toBeFocused();
+      expectVisibleFocusIndicator(await readFocusIndicator(firstItem));
+
+      if (menu === 'theme') {
+        await expect(firstItem).toHaveAttribute('aria-pressed', /true|false/u);
+      }
+
+      await page.keyboard.press('Escape');
+      await expectMenuOpen(page, menu, false);
+      await expect(trigger).toBeFocused();
+    }
   });
 
   test('corpus trigger label は長文でも ellipsis され header 内に収まること', async ({ page }) => {
@@ -812,7 +875,7 @@ test.describe('Static header migration', () => {
     await page.goto('/about/');
     await waitForAppRouterReady(page);
 
-    const trigger = page.locator('header[data-layout-header] [data-header-menu="corpus"] summary');
+    const trigger = page.locator(headerMenuTriggerSelector('corpus'));
     await trigger.click();
     await expectMenuOpen(page, 'corpus', true);
 
@@ -860,7 +923,7 @@ test.describe('Static header migration', () => {
       'AnotherExtremelyLongCorpusMenuItemLabelThatShouldRemainOnOneVisualLine'.repeat(4),
     ]);
 
-    await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
+    await page.locator(headerMenuTriggerSelector('corpus')).click();
     await expectMenuOpen(page, 'corpus', true);
 
     const panel = page.locator(
@@ -1017,7 +1080,7 @@ test.describe('Static header migration', () => {
     await waitForAppRouterReady(page);
     await navigateWithAppRouter(page, '/about/');
 
-    await page.locator('header[data-layout-header] [data-theme-switcher] summary').click();
+    await page.locator(themeTriggerRootSelector).click();
     await expectMenuOpen(page, 'theme', true);
     await page.locator('header[data-layout-header] [data-theme-value="dark"]').click();
 
@@ -1048,7 +1111,7 @@ test.describe('Static header migration', () => {
     await waitForAppRouterSettled(page);
 
     const corpusMenu = page.locator('header[data-layout-header] [data-header-menu="corpus"]');
-    await corpusMenu.locator('summary').click();
+    await corpusMenu.locator('[data-header-menu-trigger]').click();
     await expectMenuOpen(page, 'corpus', true);
 
     const candidateInfo = await corpusMenu
@@ -1105,7 +1168,7 @@ test.describe('Static header migration', () => {
       'ライト',
     );
     await expect(
-      page.locator('header[data-layout-header] [data-theme-switcher] summary'),
+      page.locator(themeTriggerRootSelector),
     ).toHaveAttribute('aria-label', 'テーマ: ライト');
     await expect(
       page.locator('header[data-layout-header] .theme-trigger-icon svg[data-icon]'),
@@ -1121,7 +1184,7 @@ test.describe('Static header migration', () => {
     ).toHaveAttribute('data-icon', 'check');
   });
 
-  test('header menu は Escape dismissal と summary focus restore を同期すること', async ({
+  test('header menu は Escape dismissal と trigger focus restore を同期すること', async ({
     page,
   }) => {
     await page.goto(markdownBasic.directPath);
@@ -1147,12 +1210,12 @@ test.describe('Static header migration', () => {
     await page.goto(markdownBasic.directPath);
     await waitForAppRouterReady(page);
 
-    await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
+    await page.locator(headerMenuTriggerSelector('corpus')).click();
     await expectMenuOpen(page, 'corpus', true);
     await page.locator('main').click({ position: { x: 8, y: 8 } });
     await expectMenuOpen(page, 'corpus', false);
 
-    await page.locator('header[data-layout-header] [data-header-menu="theme"] summary').click();
+    await page.locator(headerMenuTriggerSelector('theme')).click();
     await expectMenuOpen(page, 'theme', true);
     await page.evaluate(() => {
       document.dispatchEvent(new CustomEvent('app-shell:rollback-start'));
@@ -1160,7 +1223,7 @@ test.describe('Static header migration', () => {
     await expectMenuOpen(page, 'theme', false);
 
     for (const eventName of ['app-shell:committed', 'app-shell:restored'] as const) {
-      await page.locator('header[data-layout-header] [data-header-menu="theme"] summary').click();
+      await page.locator(headerMenuTriggerSelector('theme')).click();
       await expectMenuOpen(page, 'theme', true);
       await page.evaluate((name) => {
         document.dispatchEvent(new CustomEvent(name));
@@ -1173,13 +1236,13 @@ test.describe('Static header migration', () => {
     await page.goto(markdownBasic.directPath);
     await waitForAppRouterReady(page);
 
-    await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
+    await page.locator(headerMenuTriggerSelector('corpus')).click();
     await expectMenuOpen(page, 'corpus', true);
     await expect(page.locator('header[data-layout-header] [data-header-menu][open]')).toHaveCount(
       1,
     );
 
-    await page.locator('header[data-layout-header] [data-header-menu="theme"] summary').click();
+    await page.locator(headerMenuTriggerSelector('theme')).click();
     await expectMenuOpen(page, 'corpus', false);
     await expectMenuOpen(page, 'theme', true);
     await expect(page.locator('header[data-layout-header] [data-header-menu][open]')).toHaveCount(
@@ -1196,12 +1259,12 @@ test.describe('Static header migration', () => {
     await page.goto(markdownBasic.directPath);
     await waitForAppRouterReady(page);
 
-    await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
+    await page.locator(headerMenuTriggerSelector('corpus')).click();
     await expectMenuOpen(page, 'corpus', true);
     await page.evaluate(() => window.dispatchEvent(new Event('scroll')));
     await expectMenuOpen(page, 'corpus', false);
 
-    await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
+    await page.locator(headerMenuTriggerSelector('corpus')).click();
     await expectMenuOpen(page, 'corpus', true);
     await page
       .locator('header[data-layout-header] [data-header-menu="corpus"]')
@@ -1253,6 +1316,8 @@ test.describe('Static header migration', () => {
     await page.goto(markdownBasic.directPath);
     await waitForAppRouterReady(page);
 
+    // This test intentionally targets the native summary element because it verifies
+    // details/summary toggle semantics rather than the visual state contract.
     const trigger = page.locator('header[data-layout-header] [data-header-menu="corpus"] summary');
     await trigger.click();
     await expectMenuOpen(page, 'corpus', true);
@@ -1278,7 +1343,7 @@ test.describe('Static header migration', () => {
     await waitForAppRouterReady(page);
 
     const corpusTrigger = page.locator(
-      'header[data-layout-header] [data-header-menu="corpus"] summary',
+      headerMenuTriggerSelector('corpus'),
     );
     await corpusTrigger.focus();
     await page.keyboard.press('Tab');
@@ -1308,7 +1373,7 @@ test.describe('Static header migration', () => {
     });
 
     await navigateWithAppRouter(page, '/about/');
-    await page.locator('header[data-layout-header] [data-header-menu="theme"] summary').click();
+    await page.locator(headerMenuTriggerSelector('theme')).click();
     await page.evaluate(() => {
       document.dispatchEvent(new CustomEvent('app-shell:committed'));
       window.dispatchEvent(new Event('scroll'));
@@ -1340,7 +1405,7 @@ test.describe('Static header migration', () => {
 
     for (const menu of ['corpus', 'theme'] as const) {
       const trigger = page.locator(
-        `header[data-layout-header] [data-header-menu="${menu}"] summary`,
+        headerMenuTriggerSelector(menu),
       );
       const items = page.locator(
         `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-item]`,
@@ -1389,7 +1454,7 @@ test.describe('Static header migration', () => {
 
     for (const menu of ['corpus', 'theme'] as const) {
       const trigger = page.locator(
-        `header[data-layout-header] [data-header-menu="${menu}"] summary`,
+        headerMenuTriggerSelector(menu),
       );
       const items = page.locator(
         `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-item]`,
@@ -1495,7 +1560,7 @@ test.describe('Static header migration', () => {
       windowWithFocusCalls.__staticHeaderFocusCalls = [];
 
       const trigger = document.querySelector<HTMLElement>(
-        'header[data-layout-header] [data-header-menu="corpus"] summary',
+        'header[data-layout-header] [data-header-menu="corpus"] > [data-header-menu-trigger]',
       );
       const item = document.querySelector<HTMLElement>(
         'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-item]',
@@ -1541,7 +1606,7 @@ test.describe('Static header migration', () => {
       };
     });
 
-    const trigger = page.locator('header[data-layout-header] [data-header-menu="corpus"] summary');
+    const trigger = page.locator(headerMenuTriggerSelector('corpus'));
     await trigger.focus();
 
     await page.keyboard.press('ArrowDown');
@@ -1607,7 +1672,7 @@ test.describe('Static header migration', () => {
     await prepareHeaderMenuItems(page, 'theme', labels);
 
     const corpusTrigger = page.locator(
-      'header[data-layout-header] [data-header-menu="corpus"] summary',
+      headerMenuTriggerSelector('corpus'),
     );
     const corpusItems = page.locator(
       'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-item]',
@@ -1651,7 +1716,7 @@ test.describe('Static header migration', () => {
 
     for (const menu of ['corpus', 'theme'] as const) {
       const trigger = page.locator(
-        `header[data-layout-header] [data-header-menu="${menu}"] summary`,
+        headerMenuTriggerSelector(menu),
       );
       const items = page.locator(
         `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-item]`,
@@ -1963,7 +2028,7 @@ test.describe('Static header migration', () => {
 
       await expectHeaderControlWithinHeader(
         page,
-        'header[data-layout-header] .corpus-switcher > summary',
+        headerControlTargets.corpus.selector,
       );
       await expectHeaderControlWithinHeader(
         page,
@@ -1971,7 +2036,7 @@ test.describe('Static header migration', () => {
       );
       await expectHeaderControlWithinHeader(
         page,
-        'header[data-layout-header] [data-theme-switcher] > summary',
+        themeTriggerRootSelector,
       );
     }
   });
@@ -2171,7 +2236,7 @@ test.describe('Static header migration no-JS', () => {
   test('corpus link は JS 無効時も通常リンクとして遷移すること', async ({ page }) => {
     await page.goto('/about/');
 
-    await page.locator('header[data-layout-header] [data-header-menu="corpus"] summary').click();
+    await page.locator(headerMenuTriggerSelector('corpus')).click();
     const link = page
       .locator('header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-item]')
       .first();
