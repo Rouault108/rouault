@@ -36,6 +36,8 @@ const visibleDisplay = async (page: Page, selector: string): Promise<string> =>
   page.locator(selector).evaluate((element) => window.getComputedStyle(element).display);
 
 const searchTriggerSelector = 'header[data-layout-header] [data-search-dialog-trigger]';
+const themeTriggerRootSelector =
+  'header[data-layout-header] [data-header-menu="theme"] > [data-header-menu-trigger]';
 const searchDialogSelector = 'dialog[data-search-dialog-root]';
 const HEADER_CONTROL_MIN_HIT_TARGET_PX = 44;
 const CSS_PIXEL_ROUNDING_TOLERANCE_PX = 0.01;
@@ -82,7 +84,7 @@ const headerControlTargets = {
   },
   theme: {
     name: 'theme switcher trigger',
-    selector: 'header[data-layout-header] .theme-switcher > summary',
+    selector: themeTriggerRootSelector,
   },
 } as const satisfies Record<string, HeaderControlTarget>;
 
@@ -255,6 +257,21 @@ const expectHeaderControlWithinHeader = async (page: Page, selector: string): Pr
   expect(controlBox.y).toBeGreaterThanOrEqual(headerBox.y - 1);
   expect(controlBox.x + controlBox.width).toBeLessThanOrEqual(headerBox.x + headerBox.width + 1);
   expect(controlBox.y + controlBox.height).toBeLessThanOrEqual(headerBox.y + headerBox.height + 1);
+};
+
+const movePointerOutsideHeader = async (page: Page): Promise<void> => {
+  const mainBox = await page.locator('main').boundingBox();
+  if (mainBox !== null) {
+    await page.mouse.move(mainBox.x + 1, mainBox.y + 1);
+    return;
+  }
+
+  const viewport = page.viewportSize();
+  if (viewport === null) {
+    throw new Error('Viewport is missing.');
+  }
+
+  await page.mouse.move(1, viewport.height - 1);
 };
 
 const prepareHeaderMenuItems = async (
@@ -586,7 +603,6 @@ test.describe('Static header migration', () => {
         return {
           backgroundColor: style.backgroundColor,
           borderColor: style.borderTopColor,
-          boxShadow: style.boxShadow,
           outlineColor: style.outlineColor,
           outlineStyle: style.outlineStyle,
           outlineWidth: Number.parseFloat(style.outlineWidth),
@@ -610,7 +626,6 @@ test.describe('Static header migration', () => {
     expect(focusVisibleStyle.outlineStyle).not.toBe('none');
     expect(focusVisibleStyle.outlineWidth).toBeGreaterThan(0);
     expect(isTransparentColor(focusVisibleStyle.outlineColor)).toBe(false);
-    expect(focusVisibleStyle.boxShadow).toBe('none');
 
     const triggerBox = await trigger.boundingBox();
     if (triggerBox === null) {
@@ -639,7 +654,6 @@ test.describe('Static header migration', () => {
       const focusStyle = await page.locator(target.selector).evaluate((element) => {
         const style = window.getComputedStyle(element);
         return {
-          boxShadow: style.boxShadow,
           outlineColor: style.outlineColor,
           outlineStyle: style.outlineStyle,
           outlineWidth: Number.parseFloat(style.outlineWidth),
@@ -649,7 +663,6 @@ test.describe('Static header migration', () => {
       expect(focusStyle.outlineStyle).not.toBe('none');
       expect(focusStyle.outlineWidth).toBeGreaterThan(0);
       expect(isTransparentColor(focusStyle.outlineColor)).toBe(false);
-      expect(focusStyle.boxShadow).toBe('none');
     }
 
     const controlContracts = await readHeaderControlContracts(page, [
@@ -689,6 +702,54 @@ test.describe('Static header migration', () => {
 
     const hitTargetContract = await readHeaderControlContract(page, headerControlTargets.corpus);
     expectHeaderControlHitTargetContract(hitTargetContract);
+  });
+
+  test('theme trigger root は padding と hover surface と focus-visible outline を維持すること', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 760 });
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    const themeTrigger = page.locator(themeTriggerRootSelector);
+    await expect(themeTrigger).toHaveCount(1);
+
+    const readThemeTriggerStyle = async () =>
+      themeTrigger.evaluate((element) => {
+        const style = window.getComputedStyle(element);
+        return {
+          backgroundColor: style.backgroundColor,
+          outlineColor: style.outlineColor,
+          outlineOffset: Number.parseFloat(style.outlineOffset),
+          outlineStyle: style.outlineStyle,
+          outlineWidth: Number.parseFloat(style.outlineWidth),
+          paddingInlineEnd: Number.parseFloat(style.paddingInlineEnd),
+          paddingInlineStart: Number.parseFloat(style.paddingInlineStart),
+        };
+      });
+
+    await movePointerOutsideHeader(page);
+    const restStyle = await readThemeTriggerStyle();
+    expect(restStyle.paddingInlineStart).toBeGreaterThan(0);
+    expect(restStyle.paddingInlineEnd).toBeGreaterThan(0);
+
+    await themeTrigger.hover();
+    await expect
+      .poll(async () => (await readThemeTriggerStyle()).backgroundColor)
+      .not.toBe(restStyle.backgroundColor);
+
+    await movePointerOutsideHeader(page);
+    await focusHeaderControlByKeyboard(page, themeTriggerRootSelector);
+    await expect(themeTrigger).toBeFocused();
+    const focusVisibleStyle = await readThemeTriggerStyle();
+    expect(focusVisibleStyle.outlineStyle).not.toBe('none');
+    expect(focusVisibleStyle.outlineWidth).toBeGreaterThan(0);
+    expect(isTransparentColor(focusVisibleStyle.outlineColor)).toBe(false);
+    expect(Number.isFinite(focusVisibleStyle.outlineOffset)).toBe(true);
+
+    await page.setViewportSize({ width: 399, height: 760 });
+    const compactContract = await readHeaderControlContract(page, headerControlTargets.theme);
+    expectHeaderControlHitTargetContract(compactContract);
   });
 
   test('corpus trigger label は長文でも ellipsis され header 内に収まること', async ({ page }) => {

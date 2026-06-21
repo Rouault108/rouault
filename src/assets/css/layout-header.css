@@ -189,6 +189,10 @@ header[data-layout-header] [data-header-menu='corpus'] > [data-header-menu-trigg
   padding-inline: var(--_header-control-padding);
 }
 
+header[data-layout-header] [data-header-menu='theme'] > [data-header-menu-trigger] {
+  padding-inline: var(--_header-control-padding);
+}
+
 header[data-layout-header] .corpus-switcher__menu,
 header[data-layout-header] .theme-switcher__menu {
   position: absolute;
@@ -361,6 +365,10 @@ header[data-layout-header] .corpus-trigger-text {
   }
 
   header[data-layout-header] [data-header-menu='corpus'] > [data-header-menu-trigger] {
+    padding-inline: var(--_header-control-padding-compact);
+  }
+
+  header[data-layout-header] [data-header-menu='theme'] > [data-header-menu-trigger] {
     padding-inline: var(--_header-control-padding-compact);
   }
 
