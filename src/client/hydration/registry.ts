@@ -17,8 +17,8 @@ const activateElementMethod = ({ element }: HydrationActivationContext): void | 
   return (element as ActivatableElement).activateHydration?.();
 };
 
-const activateCodeBlocks = ({ root }: HydrationActivationContext): void => {
-  enhanceCodeBlocks(root);
+const activateCodeBlocks = ({ root, signal }: HydrationActivationContext): void => {
+  enhanceCodeBlocks(root, signal);
 };
 
 const activateCodeGroups = ({ root }: HydrationActivationContext): void => {
