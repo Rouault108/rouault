@@ -633,6 +633,60 @@ describe('static CSS contracts', () => {
     );
   });
 
+  it('code surface CSS keeps code group visibility and print contracts state-based', () => {
+    const css = readCss('code-surfaces.css');
+
+    expectRuleToDeclare(css, 'section[data-code-group] > [data-code-group-panel]', [
+      'display: block',
+    ]);
+    expectRuleToDeclare(css, '.code-group-header', ['display: none']);
+    expectRuleToDeclare(
+      css,
+      "section[data-code-group][data-code-group-enhanced='true'] > .code-group-header",
+      ['display: flex'],
+    );
+    expectRuleToDeclare(
+      css,
+      "section[data-code-group]:not([data-code-group-enhanced='true']) .code-group-tablist",
+      ['display: none'],
+    );
+    expectRuleToDeclare(
+      css,
+      "section[data-code-group][data-code-group-enhanced='true'] .code-group-tablist",
+      ['display: flex'],
+    );
+    expectRuleToDeclare(
+      css,
+      "section[data-code-group][data-code-group-enhanced='true'] > [data-code-group-panel][data-code-group-panel-active='false']",
+      ['display: none'],
+    );
+    const legacyInactiveSelectors = allRuleSelectors(css).filter((selector) =>
+      selector.includes("[data-code-group-inactive='true']"),
+    );
+    expect(legacyInactiveSelectors).toEqual([]);
+
+    const codeGroupPanelHiddenSelectors = allRuleSelectors(css).filter((selector) =>
+      selector.includes('[data-code-group-panel][hidden]'),
+    );
+    expect(codeGroupPanelHiddenSelectors).toEqual([]);
+
+    const print = atRuleBlock(css, '@media print');
+    expectRuleToDeclare(print, 'section[data-code-group] > .code-group-header', [
+      'display: none !important',
+    ]);
+    expectRuleToDeclare(print, 'section[data-code-group] > [data-code-group-panel]', [
+      'display: block !important',
+    ]);
+    expectRuleToDeclare(
+      print,
+      "section[data-code-group][data-code-group-enhanced='true'] > [data-code-group-panel]",
+      ['display: block !important'],
+    );
+    expectRuleToDeclare(print, 'section[data-code-group] .code-group-stack-label', [
+      'display: block !important',
+    ]);
+  });
+
   it('details, syntax, score, empty state, and corpora CSS expose static contracts', () => {
     const details = readCss('details-block.css');
     expectRuleToDeclare(details, '.details-block__chevron.static-icon', [
