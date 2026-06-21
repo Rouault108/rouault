@@ -5,6 +5,10 @@ const PROGRESSIVE_DISABLED_REASON = 'no-js';
 
 type CopyState = 'idle' | 'copied' | 'error';
 type CopyDisabledReason = 'clipboard-unavailable' | 'no-js' | 'source';
+type ActivationErrorDisabledReason = Exclude<
+  CopyDisabledReason,
+  typeof PROGRESSIVE_DISABLED_REASON
+>;
 
 const allowedCopyKinds = new Set<string>(['short-text', 'permalink']);
 const resetTimers = new WeakMap<HTMLButtonElement, number>();
@@ -101,6 +105,19 @@ const disableCopyButton = (
   setCopyState(button, 'idle');
 };
 
+const disableCopyButtonWithActivationError = (
+  button: HTMLButtonElement,
+  reason: ActivationErrorDisabledReason,
+): void => {
+  disableCopyButton(button, reason);
+  setCopyState(button, 'error');
+  scheduleReset(button);
+};
+
+const isActivationErrorDisabledReason = (
+  reason: CopyDisabledReason,
+): reason is ActivationErrorDisabledReason => reason !== PROGRESSIVE_DISABLED_REASON;
+
 const enableCopyButton = (button: HTMLButtonElement): void => {
   if (button.dataset['copyDisabledReason'] === PROGRESSIVE_DISABLED_REASON) {
     button.removeAttribute('data-copy-disabled-reason');
@@ -156,6 +173,8 @@ export const activateStaticCopyButtons = (root: ParentNode): void => {
 
       if (disabledReason === null) {
         enableCopyButton(button);
+      } else if (isActivationErrorDisabledReason(disabledReason)) {
+        disableCopyButtonWithActivationError(button, disabledReason);
       } else {
         disableCopyButton(button, disabledReason);
       }
