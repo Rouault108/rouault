@@ -59,6 +59,7 @@ Design System pattern は UI の見え方と配置判断を扱う。Router、sea
 
 - `docs/adr/README.md`
 - `docs/adr/code-surfaces-static-html-migration.md`
+- `docs/adr/reading-chrome-note-frame-outer-gutter.md`
 - `docs/adr/`
 
 ADR は設計判断の経緯であり、正本 Contract を上書きしない。Code surface の現行正本は `docs/contracts/code-surfaces.md` であり、`docs/adr/code-surfaces-static-html-migration.md` は R3 Decision Record として扱う。

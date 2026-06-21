@@ -547,6 +547,7 @@
   --note-sidebar-width: 248px;
   --note-toc-width: clamp(15rem, 18vw, 17rem);
   --note-shell-column-gap: 32px;
+  --note-frame-outer-gutter: clamp(var(--space-4, 16px), 1.5vw, var(--space-6, 24px));
   /* wide viewport では本文 + TOC + sidebar を 1360px 前後で頭打ちにする。 */
   --note-reading-max-inline-size: 54rem;
   --note-shell-absent-max-width: min(100%, 72rem);

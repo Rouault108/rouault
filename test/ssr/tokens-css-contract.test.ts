@@ -106,6 +106,7 @@ describe('tokens css contract', () => {
   it('defines the readable TOC token recipe', () => {
     const expectedTokens = [
       ['--note-toc-width', 'clamp(15rem, 18vw, 17rem)'],
+      ['--note-frame-outer-gutter', 'clamp(var(--space-4, 16px), 1.5vw, var(--space-6, 24px))'],
       ['--toc-item-rail-offset-inline', '6px'],
       ['--toc-item-rail-gap', '6px'],
       ['--toc-item-padding-inline-end', '6px'],

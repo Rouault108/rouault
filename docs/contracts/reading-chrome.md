@@ -4,7 +4,7 @@
 
 - Type: Normative
 - Source of truth: note page projection、TOC owner validation、hydration scheduler / registry、search return-to-reading integration、production artifact validators
-- Applies to: note reading chrome、TOC owner / source / trigger boundary、mobile TOC panel、desktop TOC sync、search result return-to-reading、diagnostics、density tier、documentation audit
+- Applies to: note reading chrome、fixed sidebar note frame geometry、TOC owner / source / trigger boundary、mobile TOC panel、desktop TOC sync、search result return-to-reading、diagnostics、density tier、documentation audit
 - Non-goals: router URL 意味論の再定義、検索 ranking 詳細、component 固有 visual token の全列挙、authoring 記法の追加
 
 ## 2. Ownership
@@ -16,6 +16,7 @@
 - Build-time owner validation と runtime hydration lifecycle の分離。
 - Reading chrome に関係する diagnostics を、表示仕様ではなく契約違反の観測面として扱うこと。
 - TOC density tier を見出し量から導出し、意味論を変えずに読書面の密度だけへ反映すること。
+- Desktop fixed sidebar 表示時の note frame outer gutter。left sidebar、main、desktop TOC を含む note frame が viewport edge に接しないための最小外側余白を所有する。
 
 ### This Layer Must Not Own
 
@@ -24,6 +25,8 @@
 - `NavigationEnvelope` schema の詳細。正本は `docs/references/navigation-envelope-schema.md`。
 - 検索 ranking、source 統合、diagnostics aggregation の詳細。正本は `docs/contracts/search.md` と `docs/references/search-ranking-and-diagnostics.md`。
 - Component 単体の visual token 詳細。正本は `docs/design-system/components/`。
+- Header geometry。static header の幅・配置契約は reading chrome note frame geometry とは別契約として扱う。
+- Sidebar state persistence。tree state、overlay state、保存先、復元条件は `docs/contracts/sidebar-state.md` を正本とする。
 
 ## 3. Public Contract
 
@@ -61,6 +64,14 @@
 - `data-heading-depth` は階層インデントなどの構造表現に使うが、label wrapping を 1 行化する根拠として使ってはならない。
 - Mobile panel の DOM contract hook は `[data-layout-toc-mobile-panel]` であり、CSS styling hook は `.layout-toc-mobile-panel` である。DOM / test lookup は `[data-layout-toc-mobile-panel]` を正本とし、`.layout-toc-mobile-panel` を正本 DOM selector として扱わない。
 - Search の return-to-reading は router core の import boundary を壊さず、検索 UI は router を直接所有しない。
+
+### Desktop Note Frame Geometry
+
+- 固定サイドバー表示時、left sidebar、main、desktop TOC を含む note frame は viewport edge から最小 outer gutter を持つ。
+- Outer gutter は `--note-frame-outer-gutter` を最小値契約として使う。wide viewport では中央寄せと max-width により、実際の gutter が `--note-frame-outer-gutter` より大きくなってよい。
+- Outer gutter は sidebar item padding や TOC item padding とは別契約である。項目密度や active rail、TOC indent の調整で note frame 外側余白を代替してはならない。
+- Outer gutter は sidebar state、TOC active state、URL、hydration ownership、ARIA 意味論を変更しない。
+- Header geometry は別契約であり、この note frame outer gutter contract の対象ではない。
 
 ## 4. State Model
 

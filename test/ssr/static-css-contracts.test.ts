@@ -64,6 +64,34 @@ const declarationsForSelector = (
 const declarationValuesForSelector = (css: string, selector: string, property: string): string[] =>
   declarationsForSelector(css, selector, property).map((declaration) => declaration.value.trim());
 
+const normalizeDeclarationValue = (value: string): string =>
+  value
+    .trim()
+    .replace(/\s+/gu, ' ')
+    .replace(/\s*,\s*/gu, ', ')
+    .replace(/\(\s+/gu, '(')
+    .replace(/\s+\)/gu, ')');
+
+const declarationsForSelectorInMedia = (
+  css: string,
+  selector: string,
+  property: string,
+  mediaPredicate: (params: string) => boolean,
+): Declaration[] => {
+  const declarations: Declaration[] = [];
+  const normalizedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
+  postcss.parse(css).walkAtRules('media', (atRule: AtRule) => {
+    if (!mediaPredicate(atRule.params)) return;
+    atRule.walkRules((rule: Rule) => {
+      if (!splitSelectors(rule.selector).includes(normalizedSelector)) return;
+      rule.walkDecls(property, (declaration) => {
+        declarations.push(declaration);
+      });
+    });
+  });
+  return declarations;
+};
+
 const unquoteCssStringValue = (value: string): string =>
   value.replace(/^(['"])([\s\S]*)\1$/u, '$2');
 
@@ -335,6 +363,38 @@ describe('static CSS contracts', () => {
       expect(css, String(pattern)).not.to.match(pattern);
     }
     expect(css).not.to.contain('ui-list-item >');
+  });
+
+  it('router shell keeps desktop fixed-sidebar note frame outer gutter contract', () => {
+    const css = readCss('router-shell.css');
+    const selector = "app-router[data-sidebar-presence='present']";
+
+    const aliasValues = declarationValuesForSelector(
+      css,
+      selector,
+      '--_note-frame-outer-gutter',
+    ).map(normalizeDeclarationValue);
+    expect(aliasValues).toContain('var(--note-frame-outer-gutter, 0px)');
+
+    const widthValues = declarationValuesForSelector(css, selector, 'width').map(
+      normalizeDeclarationValue,
+    );
+    expect(widthValues.some((value) => value.startsWith('min('))).toBe(true);
+    expect(
+      widthValues.some((value) =>
+        value.includes(
+          'calc(100% - var(--_note-frame-outer-gutter) - var(--_note-frame-outer-gutter))',
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      widthValues.some((value) => value.includes('var(--note-fixed-frame-max-width, 1440px)')),
+    ).toBe(true);
+
+    const mobileWidthValues = declarationsForSelectorInMedia(css, selector, 'width', (params) =>
+      /max-width\s*:\s*1023px/u.test(params),
+    ).map((declaration) => normalizeDeclarationValue(declaration.value));
+    expect(mobileWidthValues).toContain('100%');
   });
 
   it('utility skeleton CSS exposes visual-only static skeleton contract', () => {

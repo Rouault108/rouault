@@ -6,7 +6,12 @@ app-router {
 }
 
 app-router[data-sidebar-presence='present'] {
-  width: min(100%, var(--note-fixed-frame-max-width, 1440px));
+  --_note-frame-outer-gutter: var(--note-frame-outer-gutter, 0px);
+
+  width: min(
+    calc(100% - var(--_note-frame-outer-gutter) - var(--_note-frame-outer-gutter)),
+    var(--note-fixed-frame-max-width, 1440px)
+  );
   margin-inline: auto;
   column-gap: var(--note-sidebar-main-gap, 0px);
   grid-template-columns:
@@ -32,6 +37,7 @@ app-router[data-sidebar-presence='absent'] > main#main-content {
 
 @media (max-width: 1023px) {
   app-router[data-sidebar-presence='present'] {
+    width: 100%;
     column-gap: 0;
     grid-template-columns:
       0px
