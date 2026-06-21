@@ -398,11 +398,17 @@ describe('static CSS contracts', () => {
     ]);
 
     const reducedMotion = atRuleBlock(css, '@media (prefers-reduced-motion: reduce)');
-    expectRuleToDeclare(
-      reducedMotion,
-      'header[data-layout-header] :is(a, button, summary):active',
-      ['transform: none'],
-    );
+    const reducedMotionActiveSelectors = [
+      'header[data-layout-header] .sidebar-toggle:active',
+      'header[data-layout-header] .toc-trigger:active',
+      'header[data-layout-header] .search-trigger:active',
+      'header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]:active',
+      'header[data-layout-header] [data-header-menu-item]:active',
+    ] as const;
+
+    for (const selector of reducedMotionActiveSelectors) {
+      expectRuleToDeclare(reducedMotion, selector, ['transform: none']);
+    }
 
     const forcedColors = atRuleBlock(css, '@media (forced-colors: active)');
     expectRuleToDeclare(forcedColors, 'header[data-layout-header] .search-trigger', [
