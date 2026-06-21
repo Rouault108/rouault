@@ -166,9 +166,9 @@ const enhanceStandaloneCodeBlock = (root: HTMLElement, signal?: AbortSignal): vo
   );
   scheduleMeasurement(root);
 
-  const fontReady = document.fonts?.ready;
+  const fontReady = document.fonts.ready;
   fontReady
-    ?.then(() => {
+    .then(() => {
       scheduleMeasurement(root);
     })
     .catch(() => {
