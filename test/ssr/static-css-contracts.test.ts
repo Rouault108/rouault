@@ -90,6 +90,29 @@ const allRuleSelectors = (css: string): string[] => {
   return selectors;
 };
 
+const ruleBlocksForSelectorsMatching = (
+  css: string,
+  predicate: (selector: string) => boolean,
+): string => {
+  const blocks: string[] = [];
+  postcss.parse(css).walkRules((rule: Rule) => {
+    if (isInsideKeyframes(rule)) return;
+    if (!splitSelectors(rule.selector).some(predicate)) return;
+    blocks.push(rule.nodes?.map((node) => node.toString()).join('\n') ?? '');
+  });
+  return blocks.join('\n');
+};
+
+const expectSelectorPresence = (css: string, selectors: readonly string[]): void => {
+  const actualSelectors = allRuleSelectors(css);
+  for (const selector of selectors) {
+    expect(
+      actualSelectors.some((actualSelector) => actualSelector.includes(selector)),
+      `${selector} selector presence`,
+    ).toBe(true);
+  }
+};
+
 const selectorHasExternalNavMarker = (selectorText: string): boolean => {
   let found = false;
   const ast = selectorParser().astSync(selectorText);
@@ -137,6 +160,19 @@ const expectRuleToDeclare = (
   expect(block, `${selector} rule`).not.to.equal('');
   for (const declaration of declarations) {
     expect(block, `${selector} declaration ${declaration}`).to.contain(declaration);
+  }
+};
+
+const expectSelectorMatchingRuleToDeclare = (
+  css: string,
+  description: string,
+  predicate: (selector: string) => boolean,
+  declarations: readonly string[],
+): void => {
+  const block = ruleBlocksForSelectorsMatching(css, predicate);
+  expect(block, `${description} rule`).not.to.equal('');
+  for (const declaration of declarations) {
+    expect(block, `${description} declaration ${declaration}`).to.contain(declaration);
   }
 };
 
@@ -347,11 +383,9 @@ describe('static CSS contracts', () => {
       ['display: none'],
     );
 
-    expectRuleToDeclare(
-      css,
-      "header[data-layout-header][data-overlay-sidebar-open='true']",
-      ['z-index: var(--z-non-modal-panel, var(--z-modal, 300))'],
-    );
+    expectRuleToDeclare(css, "header[data-layout-header][data-overlay-sidebar-open='true']", [
+      'z-index: var(--z-non-modal-panel, var(--z-modal, 300))',
+    ]);
     expectRuleToDeclare(css, 'header[data-layout-header] .search-trigger', [
       'border: var(--border-width, 1px) solid var(--border-default)',
       'background: var(--bg-control-muted)',
@@ -381,11 +415,9 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(forcedColors, 'header[data-layout-header] .search-trigger__icon', [
       'color: CanvasText',
     ]);
-    expectRuleToDeclare(
-      forcedColors,
-      'header[data-layout-header] .search-trigger__placeholder',
-      ['color: CanvasText'],
-    );
+    expectRuleToDeclare(forcedColors, 'header[data-layout-header] .search-trigger__placeholder', [
+      'color: CanvasText',
+    ]);
 
     const mobileHeader = atRuleBlock(css, '@container layout-header-shell (width < 640px)');
     expectRuleToDeclare(
@@ -630,6 +662,250 @@ describe('static CSS contracts', () => {
         'background: var(--bg-fill-muted)',
         'border-color: var(--border-accent, var(--border-default))',
       ],
+    );
+  });
+
+  it('general code surface CSS exposes semantic static contracts', () => {
+    const mainCss = readCss('main.css');
+    const codeSurfaces = readCss('code-surfaces.css');
+    const staticCopyButton = readCss('static-copy-button.css');
+    const imports = [...mainCss.matchAll(/@import\s+['"]([^'"]+)['"];/gu)].map((match) => match[1]);
+
+    expect(imports.filter((path) => path === './code-surfaces.css')).toHaveLength(1);
+    expect(imports.filter((path) => path === './static-copy-button.css')).toHaveLength(1);
+
+    expectSelectorPresence(codeSurfaces, [
+      'pre[data-code-block]',
+      '[data-code-block-root]',
+      'section[data-code-group]',
+      '[data-code-group-panel]',
+      '.code-surface-caption',
+      '.code-surface-copy-button-shell',
+      "[data-code-line-numbers='true']",
+      '.line::before',
+      '.line.highlighted',
+      '.line.ui-explicit-highlight',
+      '.line.diff.add',
+      '.line.diff.remove',
+    ]);
+    expectSelectorPresence(staticCopyButton, ['.static-copy-control']);
+    expectSelectorPresence(codeSurfaces, ['.static-copy-control']);
+
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'code block scroll surface',
+      (selector) => selector.includes('pre[data-code-block]'),
+      ['overflow-x: auto', 'overflow-y: hidden', 'white-space: pre'],
+    );
+
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'Shiki dark system theme',
+      (selector) =>
+        selector.includes(":root:not([data-theme='light'])") &&
+        selector.includes('pre[data-code-block]') &&
+        selector.includes('.shiki'),
+      ['background-color: var(--shiki-dark-bg', 'color: var(--shiki-dark'],
+    );
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'Shiki explicit dark theme',
+      (selector) =>
+        selector.includes(":root[data-theme='dark']") &&
+        selector.includes('pre[data-code-block]') &&
+        selector.includes('.shiki'),
+      ['background-color: var(--shiki-dark-bg', 'color: var(--shiki-dark'],
+    );
+
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'code line number counter root',
+      (selector) =>
+        selector.includes("[data-code-line-numbers='true']") && selector.endsWith('code'),
+      ['counter-reset: ui-code-block-line'],
+    );
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'code line number marker',
+      (selector) =>
+        selector.includes("[data-code-line-numbers='true']") && selector.includes('.line::before'),
+      [
+        'counter-increment: ui-code-block-line',
+        'content: counter(ui-code-block-line)',
+        'user-select: none',
+        'pointer-events: none',
+      ],
+    );
+
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'highlighted code line',
+      (selector) =>
+        selector.includes('pre[data-code-block]') &&
+        (selector.includes('.line.highlighted') ||
+          selector.includes('.line.ui-explicit-highlight')),
+      ['background:'],
+    );
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'diff added code line',
+      (selector) =>
+        selector.includes('pre[data-code-block]') && selector.includes('.line.diff.add'),
+      ['background:'],
+    );
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'diff removed code line',
+      (selector) =>
+        selector.includes('pre[data-code-block]') && selector.includes('.line.diff.remove'),
+      ['background:'],
+    );
+
+    const forcedColors = atRuleBlock(codeSurfaces, '@media (forced-colors: active)');
+    expectSelectorMatchingRuleToDeclare(
+      forcedColors,
+      'forced-colors code focus',
+      (selector) =>
+        selector.includes('pre[data-code-block]') && selector.includes(':focus-visible'),
+      ['box-shadow:'],
+    );
+    expectSelectorMatchingRuleToDeclare(
+      forcedColors,
+      'forced-colors code root focus',
+      (selector) =>
+        selector.includes('[data-code-block-root]') && selector.includes(':focus-within'),
+      ['box-shadow:'],
+    );
+  });
+
+  it('static copy button CSS exposes progressive enhancement and state contracts', () => {
+    const css = readCss('static-copy-button.css');
+
+    expectRuleToDeclare(css, '.static-copy-button', [
+      'display: inline-flex',
+      'inline-size: 2rem',
+      'block-size: 2rem',
+      'cursor: default',
+    ]);
+    expectRuleToDeclare(css, ".static-copy-button[data-copy-enhanced='true']:not(:disabled)", [
+      'cursor: pointer',
+    ]);
+    expectRuleToDeclare(
+      css,
+      ".static-copy-button[data-copy-enhanced='true']:not(:disabled):hover",
+      ['background:', 'border-color:'],
+    );
+    expectRuleToDeclare(css, '.static-copy-button:disabled', ['cursor: default', 'opacity: 0.45']);
+    expectRuleToDeclare(css, ".static-copy-button[data-copy-state='copied']", [
+      'color:',
+      'background:',
+      'border-color:',
+    ]);
+    expectRuleToDeclare(css, ".static-copy-button[data-copy-state='error']", [
+      'color:',
+      'background:',
+      'border-color:',
+    ]);
+
+    const forcedColors = atRuleBlock(css, '@media (forced-colors: active)');
+    expectRuleToDeclare(
+      forcedColors,
+      ".static-copy-button[data-copy-enhanced='true']:not(:disabled)",
+      ['border-color: ButtonText'],
+    );
+    expectRuleToDeclare(forcedColors, ".static-copy-button[data-copy-state='copied']", [
+      'border-color: Highlight',
+    ]);
+    expectRuleToDeclare(forcedColors, ".static-copy-button[data-copy-state='error']", [
+      'border-color: Mark',
+    ]);
+  });
+
+  it('code surface CSS separates top-level breakout from inline and group-owned layouts', () => {
+    const codeSurfaces = readCss('code-surfaces.css');
+    const bridge = readCss('stateful-note-bridges.css');
+
+    expectRuleToDeclare(codeSurfaces, '[data-code-block-root]', [
+      'inline-size: var(',
+      '--ui-code-block-breakout-width',
+      '--ui-code-surface-breakout-width',
+      'margin-inline: var(',
+      '--ui-code-block-breakout-margin',
+      '--ui-code-surface-breakout-margin',
+      'max-inline-size: none',
+    ]);
+    expectRuleToDeclare(codeSurfaces, 'section[data-code-group]', [
+      'inline-size: var(--ui-code-group-width, var(--ui-code-surface-breakout-width, 100%))',
+      'margin-inline: var(--ui-code-group-margin-inline, var(--ui-code-surface-breakout-margin, 0))',
+      'max-inline-size: none',
+    ]);
+
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'top-level code surface breakout defaults',
+      (selector) =>
+        selector.includes(':is(.prose,.about-prose)') &&
+        selector.includes('figure[data-code-block-root]') &&
+        selector.includes('section[data-code-group]'),
+      ['--ui-code-surface-breakout-width: 100%', '--ui-code-surface-breakout-margin: 0'],
+    );
+
+    const mobileCodeSurfaceLayout = atRuleBlock(codeSurfaces, '@media (max-width: 767px)');
+    expectSelectorMatchingRuleToDeclare(
+      mobileCodeSurfaceLayout,
+      'mobile top-level code surface breakout',
+      (selector) =>
+        selector.includes(':is(.prose,.about-prose)') &&
+        selector.includes('figure[data-code-block-root]') &&
+        selector.includes('section[data-code-group]'),
+      ['--ui-code-surface-breakout-width: calc(100% + var(--space-8))'],
+    );
+
+    const desktopCodeSurfaceLayout = atRuleBlock(codeSurfaces, '@media (min-width: 768px)');
+    expectSelectorMatchingRuleToDeclare(
+      desktopCodeSurfaceLayout,
+      'desktop top-level code surface breakout',
+      (selector) =>
+        selector.includes(':is(.prose,.about-prose)') &&
+        selector.includes('figure[data-code-block-root]') &&
+        selector.includes('section[data-code-group]'),
+      ['--ui-code-surface-breakout-width: calc(100% + var(--space-16))'],
+    );
+
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'inline code block root layout reset',
+      (selector) =>
+        selector.includes('figure[data-code-block-root]:has') &&
+        selector.includes("pre[data-code-block][data-code-layout='inline']"),
+      ['--ui-code-surface-breakout-width: 100%', '--ui-code-surface-breakout-margin: 0'],
+    );
+    expectRuleToDeclare(codeSurfaces, "[data-code-block-root][data-code-group-owned='true']", [
+      'inline-size: 100%',
+      'max-inline-size: 100%',
+      'margin-inline: 0',
+    ]);
+
+    expectSelectorMatchingRuleToDeclare(
+      bridge,
+      'prose bridge code surface variable handoff',
+      (selector) =>
+        selector.includes('.prose') &&
+        selector.includes('section[data-code-group]') &&
+        selector.includes('[data-code-block-root]'),
+      ['--ui-code-surface-breakout-width: 100%', '--ui-code-surface-breakout-margin: 0'],
+    );
+    expect(
+      ruleBlocksForSelectorsMatching(bridge, (selector) =>
+        selector.includes('[data-code-block-root]'),
+      ),
+    ).not.toMatch(/(?:^|\n)\s*(?:width|inline-size|margin-inline):/u);
+
+    expectSelectorMatchingRuleToDeclare(
+      bridge,
+      'legacy prose pre media breakout excludes static code blocks',
+      (selector) => selector.includes('.prose>pre:not([data-code-block])'),
+      ['width: calc(100% + var('],
     );
   });
 

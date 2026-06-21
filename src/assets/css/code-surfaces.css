@@ -198,6 +198,56 @@
 }
 
 [data-code-block-root] {
+  inline-size: var(--ui-code-block-breakout-width, var(--ui-code-surface-breakout-width, 100%));
+  max-inline-size: none;
+  margin-inline: var(--ui-code-block-breakout-margin, var(--ui-code-surface-breakout-margin, 0));
+  box-sizing: border-box;
+}
+
+:is(.prose, .about-prose) > :is(figure[data-code-block-root], section[data-code-group]) {
+  --ui-code-surface-breakout-width: 100%;
+  --ui-code-surface-breakout-margin: 0;
+}
+
+:is(.prose, .about-prose)
+  > figure[data-code-block-root]:has(> pre[data-code-block][data-code-layout='inline']) {
+  --ui-code-surface-breakout-width: 100%;
+  --ui-code-surface-breakout-margin: 0;
+}
+
+[data-code-block-root][data-code-group-owned='true'] {
+  inline-size: 100%;
+  max-inline-size: 100%;
+  margin-inline: 0;
+}
+
+@media (max-width: 767px) {
+  :is(.prose, .about-prose) > :is(figure[data-code-block-root], section[data-code-group]) {
+    --ui-code-surface-breakout-width: calc(100% + var(--space-8));
+    --ui-code-surface-breakout-margin: var(--space-n4);
+  }
+
+  :is(.prose, .about-prose)
+    > figure[data-code-block-root]:has(> pre[data-code-block][data-code-layout='inline']) {
+    --ui-code-surface-breakout-width: 100%;
+    --ui-code-surface-breakout-margin: 0;
+  }
+}
+
+@media (min-width: 768px) {
+  :is(.prose, .about-prose) > :is(figure[data-code-block-root], section[data-code-group]) {
+    --ui-code-surface-breakout-width: calc(100% + var(--space-16));
+    --ui-code-surface-breakout-margin: var(--space-n8);
+  }
+
+  :is(.prose, .about-prose)
+    > figure[data-code-block-root]:has(> pre[data-code-block][data-code-layout='inline']) {
+    --ui-code-surface-breakout-width: 100%;
+    --ui-code-surface-breakout-margin: 0;
+  }
+}
+
+[data-code-block-root] {
   position: relative;
   overflow: hidden;
   border: var(--ui-code-block-border, var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12)));
@@ -328,6 +378,10 @@ section[data-code-group][data-code-group-enhanced='true']:focus-within
 }
 
 section[data-code-group] {
+  inline-size: var(--ui-code-group-width, var(--ui-code-surface-breakout-width, 100%));
+  max-inline-size: none;
+  margin-inline: var(--ui-code-group-margin-inline, var(--ui-code-surface-breakout-margin, 0));
+  box-sizing: border-box;
   display: block;
   position: relative;
   border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));

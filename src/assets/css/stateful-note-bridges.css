@@ -11,8 +11,12 @@
   > ui-tabs
   > [slot='panel']
   > :is(pre[data-code-block], section[data-code-group], [data-code-block-root]) {
-  width: 100%;
-  margin-inline: 0;
+  --ui-code-surface-breakout-width: 100%;
+  --ui-code-surface-breakout-margin: 0;
+  --ui-code-block-breakout-width: 100%;
+  --ui-code-block-breakout-margin: 0;
+  --ui-code-group-width: 100%;
+  --ui-code-group-margin-inline: 0;
 }
 
 :is(.prose, .about-prose)
@@ -90,8 +94,8 @@
 
 .prose > :is(pre[data-code-block], section[data-code-group], [data-code-block-root]),
 .about-prose > :is(pre[data-code-block], section[data-code-group], [data-code-block-root]) {
-  width: 100%;
-  margin-inline: 0;
+  --ui-code-surface-breakout-width: 100%;
+  --ui-code-surface-breakout-margin: 0;
 }
 
 .prose > [data-score] {
@@ -108,7 +112,7 @@
 @media (max-width: 767px) {
   /* --bp-md */
   .prose > img,
-  .prose > pre,
+  .prose > pre:not([data-code-block]),
   .prose > video {
     width: calc(100% + var(--space-8));
     margin-inline: var(--space-n4);
@@ -119,7 +123,7 @@
 @media (min-width: 768px) {
   /* --bp-md */
   .prose > img,
-  .prose > pre,
+  .prose > pre:not([data-code-block]),
   .prose > video {
     width: calc(100% + var(--space-16));
     margin-inline: var(--space-n8);
