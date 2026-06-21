@@ -16,6 +16,8 @@ describe('static copy button html renderer', () => {
     expect(rendered).toContain('data-copy-button="true"');
     expect(rendered).toContain('data-copy-target-id="code-copy-source-1"');
     expect(rendered).toContain('data-copy-state="idle"');
+    expect(rendered).toContain('data-copy-disabled-reason="no-js"');
+    expect(rendered).toContain('disabled');
     expect(rendered).toContain('aria-describedby="code-copy-source-1-copy-status"');
     expect(rendered).toContain('id="code-copy-source-1-copy-status"');
     expect(rendered).toContain('data-copy-status="true"');
@@ -44,5 +46,17 @@ describe('static copy button html renderer', () => {
         label: 'コピー',
       }),
     ).toThrow('copyValue requires copyKind short-text or permalink');
+  });
+
+  it('source disabled は enhancer が解除しない disabled reason として描画すること', () => {
+    const rendered = renderStaticCopyButtonHtml({
+      targetId: 'empty-code-source',
+      statusId: 'empty-code-source-copy-status',
+      label: 'コードをコピー',
+      disabled: true,
+    });
+
+    expect(rendered).toContain('data-copy-disabled-reason="source"');
+    expect(rendered).toContain('disabled');
   });
 });

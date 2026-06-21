@@ -100,6 +100,8 @@ describe('rehypeStaticCodeGroups', () => {
     const button = copyButton?.children?.[0];
     expect(button?.tagName).toBe('button');
     expect(button?.properties?.['data-code-group-copy']).toBe('true');
+    expect(button?.properties?.['disabled']).toBe(true);
+    expect(button?.properties?.['data-copy-disabled-reason']).toBe('no-js');
     const selectedCopySourceId = button?.properties?.['data-copy-target-id'];
     expect(selectedCopySourceId).toMatch(
       /^note:code-groups-[a-z0-9]+-code-group-1-copy-source-0$/u,

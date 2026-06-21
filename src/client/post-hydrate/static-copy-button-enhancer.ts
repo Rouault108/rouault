@@ -1,6 +1,7 @@
 const COPY_RESET_DELAY_MS = 1500;
 const COPY_SUCCESS_MESSAGE = 'コピーしました';
 const COPY_ERROR_MESSAGE = 'コピーできませんでした';
+const PROGRESSIVE_DISABLED_REASON = 'no-js';
 
 type CopyState = 'idle' | 'copied' | 'error';
 
@@ -81,14 +82,26 @@ const resolveCopyValue = (button: HTMLButtonElement): string | null => {
 const isHidden = (button: HTMLButtonElement): boolean =>
   button.hidden || button.closest('[hidden], [aria-hidden="true"]') !== null;
 
+const getClipboard = (): Clipboard | null => {
+  const clipboard: Clipboard | undefined =
+    'clipboard' in navigator ? navigator.clipboard : undefined;
+  return clipboard && typeof clipboard.writeText === 'function' ? clipboard : null;
+};
+
+const canEnhanceButton = (button: HTMLButtonElement): boolean =>
+  !isHidden(button) &&
+  (!button.disabled || button.dataset['copyDisabledReason'] === PROGRESSIVE_DISABLED_REASON) &&
+  button.dataset['copyDisabledReason'] !== 'source' &&
+  resolveCopyValue(button) !== null &&
+  getClipboard() !== null;
+
 const copyFromButton = async (button: HTMLButtonElement): Promise<void> => {
   if (button.disabled || isHidden(button)) {
     return;
   }
   const value = resolveCopyValue(button);
-  const clipboard: Clipboard | undefined =
-    'clipboard' in navigator ? navigator.clipboard : undefined;
-  if (value === null || !clipboard || typeof clipboard.writeText !== 'function') {
+  const clipboard = getClipboard();
+  if (value === null || clipboard === null) {
     setCopyState(button, 'error');
     scheduleReset(button);
     return;
@@ -108,8 +121,13 @@ export const activateStaticCopyButtons = (root: ParentNode): void => {
       continue;
     }
     button.dataset['copyEnhanced'] = 'true';
-    const initialValue = resolveCopyValue(button);
-    if (initialValue === null && !button.disabled) {
+    if (canEnhanceButton(button)) {
+      if (button.dataset['copyDisabledReason'] === PROGRESSIVE_DISABLED_REASON) {
+        button.removeAttribute('data-copy-disabled-reason');
+      }
+      button.disabled = false;
+      setCopyState(button, 'idle');
+    } else if (!isHidden(button)) {
       setCopyState(button, 'error');
       scheduleReset(button);
     }

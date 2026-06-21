@@ -24,7 +24,7 @@ describe('static-copy-button-enhancer', () => {
     const root = document.createElement('article');
     root.innerHTML = `
       <template id="copy-source" data-code-copy-source>const answer = 42;</template>
-      <button type="button" data-copy-button data-copy-target-id="copy-source" data-copy-state="idle">copy</button>
+      <button type="button" data-copy-button data-copy-target-id="copy-source" data-copy-state="idle" data-copy-disabled-reason="no-js" disabled>copy</button>
       <pre>visible text must not be copied</pre>
     `;
     document.body.append(root);
@@ -32,6 +32,8 @@ describe('static-copy-button-enhancer', () => {
     activateStaticCopyButtons(root);
     const button = root.querySelector<HTMLButtonElement>('[data-copy-button]');
     expect(button?.dataset['copyEnhanced']).to.equal('true');
+    expect(button?.disabled).to.equal(false);
+    expect(button?.hasAttribute('data-copy-disabled-reason')).to.equal(false);
 
     button?.click();
     await Promise.resolve();
@@ -45,7 +47,7 @@ describe('static-copy-button-enhancer', () => {
     root.innerHTML = `
       <template id="copy-source" data-code-copy-source>source</template>
       <span data-copy-control>
-        <button type="button" data-copy-button data-copy-target-id="copy-source" data-copy-value="bad" aria-describedby="copy-status">bad</button>
+        <button type="button" data-copy-button data-copy-target-id="copy-source" data-copy-value="bad" data-copy-disabled-reason="no-js" aria-describedby="copy-status" disabled>bad</button>
         <span id="copy-status" data-copy-status></span>
       </span>
     `;
@@ -58,6 +60,7 @@ describe('static-copy-button-enhancer', () => {
 
     const invalid = root.querySelector<HTMLButtonElement>('[data-copy-button]');
     expect(invalid?.dataset['copyEnhanced']).to.equal('true');
+    expect(invalid?.disabled).to.equal(true);
     expect(invalid?.dataset['copyState']).to.equal('error');
     expect(root.querySelector('#copy-status')?.textContent).to.equal('コピーできませんでした');
     expect(outside.dataset['copyEnhanced']).to.equal(undefined);
@@ -72,14 +75,17 @@ describe('static-copy-button-enhancer', () => {
 
     const root = document.createElement('article');
     root.innerHTML = `
-      <button type="button" data-copy-button data-copy-kind="short-text" data-copy-value="短文">short</button>
-      <button type="button" data-copy-button data-copy-kind="permalink" data-copy-value="https://example.test/note">permalink</button>
-      <button type="button" data-copy-button data-copy-value="bad">invalid</button>
+      <button type="button" data-copy-button data-copy-kind="short-text" data-copy-value="短文" data-copy-disabled-reason="no-js" disabled>short</button>
+      <button type="button" data-copy-button data-copy-kind="permalink" data-copy-value="https://example.test/note" data-copy-disabled-reason="no-js" disabled>permalink</button>
+      <button type="button" data-copy-button data-copy-value="bad" data-copy-disabled-reason="no-js" disabled>invalid</button>
     `;
     document.body.append(root);
 
     activateStaticCopyButtons(root);
 
+    expect(root.querySelector<HTMLButtonElement>('[data-copy-value="短文"]')?.disabled).to.equal(
+      false,
+    );
     for (const button of root.querySelectorAll<HTMLButtonElement>('[data-copy-button]')) {
       button.click();
     }
@@ -118,16 +124,16 @@ describe('static-copy-button-enhancer', () => {
     const root = document.createElement('article');
     root.innerHTML = `
       <span data-copy-control>
-        <button type="button" data-copy-button data-copy-target-id="missing" aria-describedby="copy-status">copy</button>
+        <button type="button" data-copy-button data-copy-target-id="missing" data-copy-disabled-reason="no-js" aria-describedby="copy-status" disabled>copy</button>
         <span id="copy-status" data-copy-status></span>
       </span>
       <span data-copy-control>
-        <button type="button" data-copy-button data-copy-kind="code" data-copy-value="bad" aria-describedby="kind-status">copy</button>
+        <button type="button" data-copy-button data-copy-kind="code" data-copy-value="bad" data-copy-disabled-reason="no-js" aria-describedby="kind-status" disabled>copy</button>
         <span id="kind-status" data-copy-status></span>
       </span>
       <span data-copy-control>
         <template id="reject-source" data-code-copy-source>source</template>
-        <button type="button" data-copy-button data-copy-target-id="reject-source" aria-describedby="reject-status">copy</button>
+        <button type="button" data-copy-button data-copy-target-id="reject-source" data-copy-disabled-reason="no-js" aria-describedby="reject-status" disabled>copy</button>
         <span id="reject-status" data-copy-status></span>
       </span>
     `;
@@ -141,9 +147,11 @@ describe('static-copy-button-enhancer', () => {
       const rejected = root.querySelector<HTMLButtonElement>('[aria-describedby="reject-status"]');
 
       expect(missing?.dataset['copyState']).to.equal('error');
+      expect(missing?.disabled).to.equal(true);
       expect(root.querySelector('#copy-status')?.textContent).to.equal('コピーできませんでした');
       expect(invalidKind?.dataset['copyState']).to.equal('error');
       expect(root.querySelector('#kind-status')?.textContent).to.equal('コピーできませんでした');
+      expect(rejected?.disabled).to.equal(false);
 
       rejected?.click();
       await Promise.resolve();
@@ -172,12 +180,13 @@ describe('static-copy-button-enhancer', () => {
       <template id="copy-source" data-code-copy-source>source</template>
       <button type="button" data-copy-button data-copy-target-id="copy-source" disabled>disabled</button>
       <span hidden>
-        <button type="button" data-copy-button data-copy-target-id="copy-source">hidden</button>
+        <button type="button" data-copy-button data-copy-target-id="copy-source" data-copy-disabled-reason="no-js" disabled>hidden</button>
       </span>
     `;
     document.body.append(root);
 
     activateStaticCopyButtons(root);
+    expect(root.querySelector<HTMLButtonElement>('button[disabled]')?.disabled).to.equal(true);
 
     for (const button of root.querySelectorAll<HTMLButtonElement>('[data-copy-button]')) {
       button.click();
@@ -197,7 +206,7 @@ describe('static-copy-button-enhancer', () => {
     root.innerHTML = `
       <span data-copy-control>
         <template id="copy-source" data-code-copy-source>source</template>
-        <button type="button" data-copy-button data-copy-target-id="copy-source" aria-describedby="copy-status">copy</button>
+        <button type="button" data-copy-button data-copy-target-id="copy-source" data-copy-disabled-reason="no-js" aria-describedby="copy-status" disabled>copy</button>
         <span id="copy-status" data-copy-status></span>
       </span>
     `;
@@ -205,9 +214,9 @@ describe('static-copy-button-enhancer', () => {
 
     activateStaticCopyButtons(root);
     const button = root.querySelector<HTMLButtonElement>('[data-copy-button]');
-    button?.click();
-    await Promise.resolve();
 
+    expect(button?.dataset['copyEnhanced']).to.equal('true');
+    expect(button?.disabled).to.equal(true);
     expect(button?.dataset['copyState']).to.equal('error');
     expect(root.querySelector('#copy-status')?.textContent).to.equal('コピーできませんでした');
   });
@@ -238,7 +247,7 @@ describe('static-copy-button-enhancer', () => {
     const root = document.createElement('article');
     root.innerHTML = `
       <template id="copy-source" data-code-copy-source>source</template>
-      <button type="button" data-copy-button data-copy-target-id="copy-source">copy</button>
+      <button type="button" data-copy-button data-copy-target-id="copy-source" data-copy-disabled-reason="no-js" disabled>copy</button>
     `;
     document.body.append(root);
 
@@ -264,5 +273,29 @@ describe('static-copy-button-enhancer', () => {
       window.setTimeout = originalSetTimeout;
       window.clearTimeout = originalClearTimeout;
     }
+  });
+
+  it('旧 copy / copy-error custom event を発火しないこと', async () => {
+    const dispatched: string[] = [];
+    installClipboardMock(() => Promise.resolve());
+
+    const root = document.createElement('article');
+    root.innerHTML = `
+      <template id="copy-source" data-code-copy-source>source</template>
+      <button type="button" data-copy-button data-copy-target-id="copy-source" data-copy-disabled-reason="no-js" disabled>copy</button>
+    `;
+    document.body.append(root);
+    root.addEventListener('copy', () => {
+      dispatched.push('copy');
+    });
+    root.addEventListener('copy-error', () => {
+      dispatched.push('copy-error');
+    });
+
+    activateStaticCopyButtons(root);
+    root.querySelector<HTMLButtonElement>('[data-copy-button]')?.click();
+    await Promise.resolve();
+
+    expect(dispatched).to.deep.equal([]);
   });
 });

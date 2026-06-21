@@ -1134,6 +1134,8 @@ describe('rehypeRouaultComponents', () => {
     );
     expect(copyAction?.tagName).to.equal('button');
     expect(copyAction?.properties?.['data-copy-button']).to.equal('true');
+    expect(copyAction?.properties?.['disabled']).to.equal(true);
+    expect(copyAction?.properties?.['data-copy-disabled-reason']).to.equal('no-js');
     expect(copyAction?.properties?.['data-copy-target-id']).to.equal(
       copySource?.properties?.['id'],
     );

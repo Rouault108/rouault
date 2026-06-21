@@ -14,12 +14,13 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  cursor: pointer;
+  cursor: default;
 }
 
-.static-copy-button:hover {
+.static-copy-button[data-copy-enhanced='true']:not(:disabled):hover {
   color: var(--fg-default);
   background: var(--bg-fill-muted);
+  border-color: var(--border-default);
 }
 
 .static-copy-button:focus-visible {
@@ -27,10 +28,42 @@
   outline-offset: 2px;
 }
 
+.static-copy-button[data-copy-enhanced='true']:not(:disabled) {
+  cursor: pointer;
+}
+
 .static-copy-button:disabled,
 .static-copy-button[hidden] {
   cursor: default;
   opacity: 0.45;
+}
+
+.static-copy-button[data-copy-state='copied'] {
+  color: var(--fg-success, var(--fg-default));
+  background: var(--bg-success-muted, var(--bg-fill-muted));
+  border-color: var(--border-success, var(--border-default));
+}
+
+.static-copy-button[data-copy-state='error'] {
+  color: var(--fg-danger, var(--fg-default));
+  background: var(--bg-danger-muted, var(--bg-fill-muted));
+  border-color: var(--border-danger, var(--border-default));
+}
+
+@media (forced-colors: active) {
+  .static-copy-button[data-copy-enhanced='true']:not(:disabled) {
+    border-color: ButtonText;
+  }
+
+  .static-copy-button[data-copy-state='copied'] {
+    color: Highlight;
+    border-color: Highlight;
+  }
+
+  .static-copy-button[data-copy-state='error'] {
+    color: Mark;
+    border-color: Mark;
+  }
 }
 
 @media print {

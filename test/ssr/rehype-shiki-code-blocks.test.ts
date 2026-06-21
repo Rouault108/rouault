@@ -120,6 +120,8 @@ describe('rehypeShikiCodeBlocks', () => {
       (child) => child.tagName === 'button' && child.properties?.['data-copy-button'] === 'true',
     );
     expect(copyButton?.properties?.['data-copy-target-id']).toBe(copySource?.properties?.['id']);
+    expect(copyButton?.properties?.['disabled']).toBe(true);
+    expect(copyButton?.properties?.['data-copy-disabled-reason']).toBe('no-js');
     expect(copyButton?.properties?.['aria-describedby']).toBe(
       `${String(copySource?.properties?.['id'])}-copy-status`,
     );
