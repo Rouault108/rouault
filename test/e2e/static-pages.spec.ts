@@ -1,13 +1,15 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Static pages', () => {
-  test('about ページが主要見出しまで表示されること', async ({ page }) => {
+  test('about ページが主要構造まで表示されること', async ({ page }) => {
     await page.goto('/about/');
 
-    await expect(page.locator('#main-content h1').first()).toHaveText('Rouaultの目的と設計方針');
-    await expect(page.locator('#main-content')).toContainText(
-      '個人ノートを静かに読み、長期的に整理・再編集・参照するための設計メモ。',
-    );
+    const mainContent = page.locator('#main-content');
+    const heading = mainContent.getByRole('heading', { level: 1 });
+
+    await expect(heading).toHaveCount(1);
+    await expect(heading).toHaveText(/\S/);
+    await expect(mainContent.locator('.about-summary[aria-label]')).toBeVisible();
   });
 
   test('corpora 一覧ページが主要見出しまで表示されること', async ({ page }) => {

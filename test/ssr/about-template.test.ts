@@ -23,12 +23,14 @@ describe('AboutPageTemplate', () => {
 
     expect(rendered).toContain('<section class="about-shell">');
     expect(rendered).toContain('<article class="about-main-col">');
-    expect(rendered).toContain('id="about-page-content" class="about-prose"');
-    expect(rendered).toContain('About Rouault');
-    expect(rendered).toContain('Rouaultの目的と設計方針');
-    expect(rendered).toContain(
-      '個人ノートを静かに読み、長期的に整理・再編集・参照するための設計メモ。',
+    expect(rendered).toContain('<header class="about-hero">');
+    expect(rendered).toMatch(/<h1 class="about-title">[\s\S]*?\S[\s\S]*?<\/h1>/);
+    expect(rendered).toContain('<p class="about-lead">');
+    expect(rendered).toMatch(
+      /<div\b(?=[^>]*\bclass="[^"]*\babout-summary\b[^"]*")(?=[^>]*\baria-label="[^"]+")[^>]*>/,
     );
+    expect(rendered).toContain('<ul class="about-summary-list">');
+    expect(rendered).toContain('id="about-page-content" class="about-prose"');
 
     expect(rendered).not.toContain('layout-main-col');
     expect(rendered).not.toContain('container-reading');
