@@ -34,10 +34,12 @@ describe('navigation artifact mode boundary', () => {
     expect(devSource).not.toMatch(/currentUrl:\s*`\$\{options\.siteUrlContext\.siteOrigin\}/u);
   });
 
-  it('BaseLayout も generated document currentUrl helper を使うこと', () => {
-    const source = readFileSync('src/layouts/BaseLayout.11ty.ts', 'utf8');
+  it('BaseLayout も generated page link context helper 経由で currentUrl helper を使うこと', () => {
+    const layoutSource = readFileSync('src/layouts/BaseLayout.11ty.ts', 'utf8');
+    const contextSource = readFileSync('build/content/generated-page-link-context.ts', 'utf8');
 
-    expect(source).toContain('resolveGeneratedDocumentCurrentUrl');
+    expect(layoutSource).toContain('buildGeneratedPageLinkClassificationContext');
+    expect(contextSource).toContain('resolveGeneratedDocumentCurrentUrl');
   });
 
   it('production / dev script path では legacy-fixture literal を使わないこと', () => {

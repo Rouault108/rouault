@@ -108,4 +108,64 @@ describe('static article-header html contract', () => {
       expect(rendered).not.toContain('https://user@example.com/source');
     }
   });
+
+  it('raw fallback のときだけ source link を external-web fallback として描画すること', () => {
+    const rendered = render({
+      heading: '見出し',
+      source: 'https://example.com/source',
+    });
+
+    expect(rendered).toContain('class="article-header__source-link"');
+    expect(rendered).toContain('href="https://example.com/source"');
+    expect(rendered).toContain('target="_blank"');
+    expect(rendered).toContain('rel="noopener noreferrer"');
+    expect(rendered).toContain('data-link-kind="external-web"');
+    expect(rendered).toContain('data-link-surface="metadata"');
+    expect(rendered).toContain('data-external="true"');
+    expect(rendered).toContain('aria-label="出典（外部サイト、新しいタブで開く）"');
+  });
+
+  it('classified mode の annotation を source link 属性に反映すること', () => {
+    const rendered = renderArticleHeaderHtml(
+      {
+        heading: '見出し',
+        breadcrumbs: [],
+        genres: [],
+        source: 'https://example.com/source',
+      },
+      {
+        sourceLinkMode: {
+          kind: 'classified',
+          annotation: {
+            href: '/source',
+            kind: 'internal-resource',
+            surface: 'metadata',
+            isExternalWeb: false,
+            ariaLabel: '出典（新しいタブで開く）',
+          },
+        },
+      },
+    );
+
+    expect(rendered).toContain('class="article-header__source-link"');
+    expect(rendered).toContain('href="/source"');
+    expect(rendered).toContain('data-link-kind="internal-resource"');
+    expect(rendered).toContain('data-link-surface="metadata"');
+    expect(rendered).toContain('aria-label="出典（新しいタブで開く）"');
+    expect(rendered).not.toContain('data-external="true"');
+  });
+
+  it('classified mode の annotation が null なら source link を描画しないこと', () => {
+    const rendered = renderArticleHeaderHtml(
+      {
+        heading: '見出し',
+        breadcrumbs: [],
+        genres: [],
+        source: 'https://example.com/source',
+      },
+      { sourceLinkMode: { kind: 'classified', annotation: null } },
+    );
+
+    expect(rendered).not.toContain('article-header__source-link');
+  });
 });

@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { NoteLayout } from '../../src/layouts/NoteLayout.11ty.js';
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
+import type { NoteNavigationEntry } from '../../build/navigation/index.js';
+
+const TEST_SITE_URL_CONTEXT = { siteOrigin: 'https://example.com', basePath: '' };
 
 const createProjection = (
   overrides: Partial<NotePageProjection> & { sidebar?: NotePageProjection['sidebar'] | null } = {},
@@ -65,6 +68,28 @@ const createProjection = (
   };
 };
 
+const createClassificationData = () => ({
+  siteUrlContext: TEST_SITE_URL_CONTEXT,
+  page: { url: '/notes/current/' },
+  note: { permalink: '/notes/current/' },
+  notes: [
+    {
+      slug: 'current',
+      title: 'Current',
+      permalink: '/notes/current/',
+      noteKind: 'leaf',
+    },
+    {
+      slug: 'source-document',
+      title: 'Source Document',
+      permalink: '/source-document/',
+      noteKind: 'leaf',
+    },
+  ] satisfies readonly NoteNavigationEntry[],
+  corpusPages: [],
+  tagPages: [{ tag: 'music' }],
+});
+
 describe('NoteLayout', () => {
   it('projection 済みデータを描画し hydration scope を出力すること', () => {
     const layout = new NoteLayout();
@@ -99,6 +124,7 @@ describe('NoteLayout', () => {
   it('article-header の source を http/https のみリンク化し、created を aria-label へ含めること', () => {
     const layout = new NoteLayout();
     const rendered = layout.render({
+      ...createClassificationData(),
       notePage: createProjection({
         articleHeader: {
           heading: '見出し',
@@ -108,17 +134,84 @@ describe('NoteLayout', () => {
           ],
           published: '2026-01-01',
           created: '2025-12-31',
-          source: 'https://example.com/source',
+          source: 'https://external.example/source',
           genres: ['music'],
         },
       }),
     });
 
-    expect(rendered).toContain('href="https://example.com/source"');
+    expect(rendered).toContain('href="https://external.example/source"');
+    expect(rendered).toContain('data-link-kind="external-web"');
+    expect(rendered).toContain('data-external="true"');
     expect(rendered).toContain('aria-label="公開日: 2026-01-01、作成日: 2025-12-31"');
     expect(rendered).toContain(
       '<span class="article-header__breadcrumb-node article-header__breadcrumb-current" aria-current="page">見出し</span>',
     );
+  });
+
+  it('NoteLayout final HTML では source link を raw fallback ではなく分類済み internal-resource として描画すること', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      ...createClassificationData(),
+      notePage: createProjection({
+        articleHeader: {
+          heading: '見出し',
+          breadcrumbs: [
+            { label: 'Program', href: '/program/' },
+            { label: '見出し', href: '/program/example/' },
+          ],
+          published: '2026-01-01',
+          source: 'https://example.com/article-header-link-decoration',
+          genres: ['music'],
+        },
+      }),
+    });
+
+    expect(rendered).toContain('class="article-header__source-link"');
+    expect(rendered).toContain('href="/article-header-link-decoration"');
+    expect(rendered).toContain('target="_blank"');
+    expect(rendered).toContain('rel="noopener noreferrer"');
+    expect(rendered).toContain('data-link-kind="internal-resource"');
+    expect(rendered).toContain('data-link-surface="metadata"');
+    expect(rendered).toContain('aria-label="出典（新しいタブで開く）"');
+    expect(rendered).not.toContain('data-external="true"');
+    expect(rendered).not.toContain('aria-label="出典（外部サイト、新しいタブで開く）"');
+  });
+
+  it('NoteLayout final HTML では same-origin internal document source link を passthrough のまま分類すること', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      ...createClassificationData(),
+      notePage: createProjection({
+        articleHeader: {
+          heading: '見出し',
+          source: 'https://example.com/source-document/',
+          genres: ['music'],
+        },
+      }),
+    });
+
+    expect(rendered).toContain('href="/source-document"');
+    expect(rendered).toContain('target="_blank"');
+    expect(rendered).toContain('rel="noopener noreferrer"');
+    expect(rendered).toContain('data-link-kind="internal-document"');
+    expect(rendered).not.toContain('data-external="true"');
+  });
+
+  it('source link を持つ NoteLayout final HTML は classification data 欠落時に error にすること', () => {
+    const layout = new NoteLayout();
+
+    expect(() =>
+      layout.render({
+        notePage: createProjection({
+          articleHeader: {
+            heading: '見出し',
+            source: 'https://example.com/source',
+            genres: ['music'],
+          },
+        }),
+      }),
+    ).toThrow('siteUrlContext');
   });
 
   it('tocPresence=absent では TOC host / script / hydration scope を出力しないこと', () => {

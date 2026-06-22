@@ -18,13 +18,9 @@ import {
   APP_ROUTER_ANNOUNCEMENT_CLASS_NAME,
 } from '../../shared/app-router/app-router-announcement-contract.js';
 import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.js';
-import { createManifestLoadedRouteClassificationMode } from '../../shared/link/link-annotation.js';
 import { applyBasePathToRenderHref } from '../../shared/url/normalize-rouault-url.js';
 import { validateGeneratedPageHtmlLinkContracts } from '../../build/content/page-html-link-contracts.js';
-import {
-  buildGeneratedDocumentRouteSet,
-  resolveGeneratedDocumentCurrentUrl,
-} from '../../build/content/generated-document-route-set.js';
+import { buildGeneratedPageLinkClassificationContext } from '../../build/content/generated-page-link-context.js';
 import { resolveEffectiveNoteChromeProfile } from '../../shared/note/note-chrome-profile.js';
 import { resolveNoteChromePolicy } from '../../shared/note/note-chrome-policy.js';
 import type { TocPresence } from '../../shared/note/toc-presence.js';
@@ -149,42 +145,19 @@ const buildSidebarAttributes = (sidebar: NonNullable<NotePageProjection['sidebar
     { name: 'data-hydration-trigger', value: 'initial' },
   ]);
 
-const buildGeneratedPageRouteSet = (data: BaseLayoutRenderInput): Set<string> => {
-  return buildGeneratedDocumentRouteSet({
-    ...(data.page?.url !== undefined ? { pageUrl: data.page.url } : {}),
-    ...(data.note?.permalink !== undefined ? { notePermalink: data.note.permalink } : {}),
-    ...(data.notes !== undefined ? { notes: data.notes } : {}),
-    ...(data.corpusPages !== undefined ? { corpusPages: data.corpusPages } : {}),
-    ...(data.tagPages !== undefined ? { tagPages: data.tagPages } : {}),
-  });
-};
-
-const buildGeneratedPageCurrentUrl = (
-  data: BaseLayoutRenderInput,
-  siteUrlContext: SiteUrlContextData,
-): string => {
-  return resolveGeneratedDocumentCurrentUrl({
-    pathname: data.note?.permalink,
-    fallbackPathname: data.page?.url,
-    siteUrlContext,
-  });
-};
-
 const validateBaseLayoutGeneratedHtmlLinks = (
   html: string,
   data: BaseLayoutRenderInput,
   siteUrlContext: SiteUrlContextData,
 ): void => {
-  const routeSet = buildGeneratedPageRouteSet(data);
+  const context = buildGeneratedPageLinkClassificationContext(data, siteUrlContext);
   validateGeneratedPageHtmlLinkContracts({
     html,
     sourceLabel: `generated-page:${data.page?.url ?? 'unknown'}`,
     scope: 'generated-page',
     siteUrlContext,
-    currentUrl: buildGeneratedPageCurrentUrl(data, siteUrlContext),
-    routeClassificationMode: createManifestLoadedRouteClassificationMode({
-      isInternalDocumentPathname: (pathname) => routeSet.has(pathname),
-    }),
+    currentUrl: context.currentUrl,
+    routeClassificationMode: context.routeClassificationMode,
   });
 };
 
