@@ -9,13 +9,13 @@ export type ArticleHeaderSourceLinkKind =
   | 'internal-document'
   | 'internal-resource';
 
-export type ArticleHeaderSourceLinkAnnotation = {
+export interface ArticleHeaderSourceLinkAnnotation {
   readonly href: string;
   readonly kind: ArticleHeaderSourceLinkKind;
   readonly surface: 'metadata';
   readonly isExternalWeb: boolean;
   readonly ariaLabel: string;
-};
+}
 
 export type ArticleHeaderSourceLinkMode =
   | { readonly kind: 'raw-fallback' }
