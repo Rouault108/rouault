@@ -41,13 +41,30 @@
 
 - N/A
 
-### DOM / URL / State Contract
-
 - Markdown renderer は raw HTML を本文 DOM へそのまま通してはならない。
 - `javascript:` などの dangerous URL scheme を許可してはならない。
 - `on*`、`srcdoc`、許可外 `style` などの dangerous props を許可してはならない。
 - Component 化は semantic HTML と no-JS baseline を壊してはならない。
 - Hydration directive は runtime rescue ではなく build-time contract とする。
+
+### Article Header Source Link Contract
+
+Frontmatter の `source` は、note page の article header metadata surface link として出力される。
+
+`article-header__source-link` の `data-link-kind` は、出典 UI であっても link classifier の結果に従う。
+
+- external origin の source は `data-link-kind="external-web"` とし、`data-external="true"` を出力する。
+- same-origin かつ internal document route の source は `data-link-kind="internal-document"` とする。
+- same-origin かつ internal document route ではない source は `data-link-kind="internal-resource"` とする。
+- unsafe source は link 化しない。
+- `data-link-surface="metadata"` は常に維持する。
+- `target="_blank"` と `rel="noopener noreferrer"` は全分類で維持する。
+- `internal-document` に分類されても、article header source link は出典参照であり、app-router interception ではなく passthrough navigation として扱う。
+
+`data-external="true"` と `aria-label="出典（外部サイト、新しいタブで開く）"` は `external-web` のときだけ使う。  
+`internal-document` / `internal-resource` の場合は `data-external` を出さず、`aria-label="出典（新しいタブで開く）"` を使う。
+
+classification context を持たない raw render / story / unit test 用の fallback は、`renderArticleHeaderHtml()` の raw fallback mode に限定する。NoteLayout 経由の final note page HTML では、source link を分類済み mode で描画し、raw fallback を使ってはならない。
 
 ### Static Card Surface Contract
 

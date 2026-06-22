@@ -11,6 +11,8 @@
 
 この文書は decision record です。現在の contract を再定義する正本ではありません。
 
+Current contract: `docs/contracts/markdown.md` の `Article Header Source Link Contract` を参照する。
+
 ## Context
 
 `article-header__source-link` は、出典 UI であることを理由に `data-link-kind="external-web"` と `data-external="true"` を固定出力していた。
