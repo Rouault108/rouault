@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { defineConfig } from 'vite';
+import { STATIC_ASSETS_ROOT_ABSOLUTE_PATH } from './build/assets/static-font-assets.js';
 import { resolveProductionBuildMetadata } from './build/metadata/build-metadata.js';
 
 const buildMetadata = resolveProductionBuildMetadata();
@@ -10,7 +11,7 @@ export default defineConfig({
     __ROUAULT_BUILD_LABEL__: JSON.stringify(buildMetadata.buildLabel),
     __ROUAULT_GENERATED_AT__: JSON.stringify(buildMetadata.generatedAt),
   },
-  publicDir: false,
+  publicDir: STATIC_ASSETS_ROOT_ABSOLUTE_PATH,
   resolve: {
     alias: {
       '@': path.resolve(process.cwd(), 'src'),

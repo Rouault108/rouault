@@ -6,6 +6,7 @@ import process from 'node:process';
 import { resolveProductionBuildMetadata } from '../build/metadata/build-metadata.js';
 import { resolveProductionSiteUrlContext } from '../build/site/site-url-context.js';
 import { assertProductionCssArtifacts } from './assert-production-css-artifacts.js';
+import { assertProductionFontAssets } from './assert-production-font-assets.js';
 import { assertProductionSearchArtifacts } from './assert-production-search-artifacts.js';
 import { assertProductionSiteUrlContext } from './assert-production-site-url-context.js';
 import {
@@ -147,6 +148,7 @@ if (result.status !== 0) {
 
 try {
   await assertProductionCssArtifacts();
+  await assertProductionFontAssets();
   await assertProductionSiteUrlContext();
   await assertProductionSearchArtifacts();
 } catch (error) {

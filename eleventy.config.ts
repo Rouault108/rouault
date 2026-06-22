@@ -15,6 +15,7 @@ import { createDevelopmentRouterArtifactMiddleware } from './build/dev/dev-route
 import { createDevelopmentInternalDocumentRouteManifestMiddleware } from './build/dev/dev-internal-document-route-manifest-middleware.js';
 import { createDevelopmentHtmlSiteUrlContextMiddleware } from './build/dev/dev-html-site-url-context-middleware.js';
 import { createDevelopmentSearchArtifactMiddleware } from './build/dev/dev-search-artifact-middleware.js';
+import { NOTO_SANS_JP_FONT_DIR_REPO_PATH } from './build/assets/static-font-assets.js';
 import { buildProductionInternalDocumentRouteSet } from './build/navigation/internal-document-routes.js';
 import { devBuildMetadata } from './build/dev/dev-build-metadata.js';
 import { hasExternalMediaBaseUrl } from './build/media/media-base-url.js';
@@ -189,7 +190,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
 
   eleventyConfig.addPassthroughCopy({ 'src/assets': 'assets' });
   eleventyConfig.addPassthroughCopy({
-    'node_modules/@fontsource-variable/noto-sans-jp/files': 'assets/fonts/noto-sans-jp',
+    [NOTO_SANS_JP_FONT_DIR_REPO_PATH]: 'assets/fonts/noto-sans-jp',
   });
   if (!hasExternalMediaBaseUrl()) {
     eleventyConfig.addPassthroughCopy({ '.generated/media/assets': 'media' });
