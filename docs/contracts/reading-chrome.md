@@ -73,6 +73,13 @@
 - Outer gutter は sidebar state、TOC active state、URL、hydration ownership、ARIA 意味論を変更しない。
 - Header geometry は別契約であり、この note frame outer gutter contract の対象ではない。
 
+### Viewport Scrollbar Gutter
+
+- Reading chrome は classic scrollbar 環境で modal scroll lock により viewport inline-size が変化しても、header、note frame、TOC の inline position を変化させてはならない。
+- Root viewport gutter の正本は `src/assets/css/main.css` の `html { scrollbar-gutter: stable; }` とする。
+- Dialog open-state CSS は body scroll lock を所有し、viewport gutter 補正を所有しない。
+- この contract は検索ダイアログ固有ではなく、reading chrome の位置安定性に属する。
+
 ## 4. State Model
 
 ### Durable State

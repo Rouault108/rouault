@@ -365,6 +365,24 @@ describe('static CSS contracts', () => {
     expect(css).not.to.contain('ui-list-item >');
   });
 
+  it('keeps root viewport gutter stable while dialog open states only own body scroll lock', () => {
+    const mainCss = readCss('main.css');
+    const dialogStateCss = readCss('dialog-state.css');
+    const bodyOpenStateSelectors = [
+      "body[data-ui-dialog-open]",
+      "body[data-ui-search-dialog-open]",
+    ] as const;
+
+    expect(declarationValuesForSelector(mainCss, 'html', 'scrollbar-gutter')).toContain('stable');
+
+    for (const selector of bodyOpenStateSelectors) {
+      expect(declarationValuesForSelector(dialogStateCss, selector, 'overflow')).toContain(
+        'hidden',
+      );
+      expect(lacksDeclarationProperty(dialogStateCss, selector, 'scrollbar-gutter')).toBe(true);
+    }
+  });
+
   it('router shell keeps desktop fixed-sidebar note frame outer gutter contract', () => {
     const css = readCss('router-shell.css');
     const selector = "app-router[data-sidebar-presence='present']";

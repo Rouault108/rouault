@@ -1,9 +1,4 @@
-body[data-ui-dialog-open] {
-  overflow: hidden;
-  scrollbar-gutter: stable;
-}
-
+body[data-ui-dialog-open],
 body[data-ui-search-dialog-open] {
   overflow: hidden;
-  scrollbar-gutter: stable;
 }

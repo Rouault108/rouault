@@ -69,6 +69,8 @@ html {
   scroll-padding-top: var(--header-height, 48px);
   /* スクロールを滑らかに */
   scroll-behavior: smooth;
+  /* modal scroll lock 時も classic scrollbar 環境で reading chrome の inline 位置を安定させる */
+  scrollbar-gutter: stable;
 
   /* iOS Safari の text autosizing を抑止
    * - コードブロックや表のような横スクロール要素だけ文字が肥大化する現象を防ぐ
