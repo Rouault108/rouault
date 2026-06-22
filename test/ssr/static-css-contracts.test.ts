@@ -204,9 +204,9 @@ const expectSelectorMatchingRuleToDeclare = (
   }
 };
 
-const atRuleBlock = (css: string, atRule: string): string => {
+const optionalAtRuleBlock = (css: string, atRule: string): string | undefined => {
   const start = css.indexOf(atRule);
-  expect(start, `${atRule} block`).toBeGreaterThanOrEqual(0);
+  if (start < 0) return undefined;
   const openingBrace = css.indexOf('{', start);
   let depth = 0;
   for (let index = openingBrace; index < css.length; index += 1) {
@@ -216,6 +216,12 @@ const atRuleBlock = (css: string, atRule: string): string => {
     if (depth === 0) return css.slice(openingBrace + 1, index);
   }
   throw new Error(`${atRule} block is not closed`);
+};
+
+const atRuleBlock = (css: string, atRule: string): string => {
+  const block = optionalAtRuleBlock(css, atRule);
+  expect(block, `${atRule} block`).not.toBeUndefined();
+  return block ?? '';
 };
 
 const mainCssImportRegistry = [
@@ -503,26 +509,48 @@ describe('static CSS contracts', () => {
       'color: CanvasText',
     ]);
 
-    const mobileHeader = atRuleBlock(css, '@container layout-header-shell (width < 640px)');
+    const mobileVisibility = atRuleBlock(css, '@media (max-width: 639px)');
     expectRuleToDeclare(
-      mobileHeader,
+      mobileVisibility,
       "header[data-layout-header] .toc-trigger[data-visible='true']",
       ['display: inline-flex'],
     );
 
-    const tabletHeader = atRuleBlock(css, '@container layout-header-shell (width >= 640px)');
+    const tabletVisibility = atRuleBlock(css, '@media (min-width: 640px)');
     expectRuleToDeclare(
-      tabletHeader,
+      tabletVisibility,
       "header[data-layout-header] .toc-trigger[data-visible='true']",
       ['display: none'],
     );
 
-    const desktopHeader = atRuleBlock(css, '@container layout-header-shell (width >= 1024px)');
+    const desktopVisibility = atRuleBlock(css, '@media (min-width: 1024px)');
     expectRuleToDeclare(
-      desktopHeader,
+      desktopVisibility,
       "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .sidebar-toggle",
       ['display: none'],
     );
+
+    const containerVisibilityContracts = [
+      {
+        atRule: '@container layout-header-shell (width < 640px)',
+        selector: "header[data-layout-header] .toc-trigger[data-visible='true']",
+      },
+      {
+        atRule: '@container layout-header-shell (width >= 640px)',
+        selector: "header[data-layout-header] .toc-trigger[data-visible='true']",
+      },
+      {
+        atRule: '@container layout-header-shell (width >= 1024px)',
+        selector:
+          "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .sidebar-toggle",
+      },
+    ] as const;
+
+    for (const { atRule, selector } of containerVisibilityContracts) {
+      const block = optionalAtRuleBlock(css, atRule);
+      if (block === undefined) continue;
+      expect(declarationValuesForSelector(block, selector, 'display')).toHaveLength(0);
+    }
   });
 
   it('search dialog CSS contains required layout and state declarations', () => {

@@ -171,6 +171,19 @@ Header controls は、corpus trigger、theme trigger、search trigger、TOC trig
 - Header controls の visual contract は本文リンク、検索ダイアログ、sidebar、本文 TOC link へ波及させない。
 - この具体化は既存 contract の明確化であり、R3 相当の公開契約変更ではない。
 
+#### Header Responsive Breakpoint Ownership
+
+Static header controls の public visibility contract は viewport-owned breakpoint が所有する。`@container layout-header-shell` は header 内部の密度・配置補正に使ってよいが、公開表示境界を所有してはならない。
+
+- TOC trigger visibility は viewport 640px 境界が所有する。
+  - `< 640px`: `data-visible="true"` のとき表示する。
+  - `>= 640px`: `data-visible="true"` でも非表示にする。
+- Sidebar toggle の desktop fallback visibility は viewport 1024px 境界が所有する。
+  - `< 1024px`: sidebar enabled のとき表示可能にする。
+  - `>= 1024px`: sidebar enabled の note page では no-JS / hydration 前でも非表示にする。
+- Header container query は search trigger density、trigger padding、center / compact center の内部配置、corpus offset などの header-internal adjustment に限定する。
+- `@container layout-header-shell` 内で TOC trigger / sidebar toggle の public visibility を `display` で所有してはならない。
+
 #### Search Trigger Visual Contract
 
 Search trigger は、通常時には input-like に見えるが、本文への没入を妨げない muted control として表現する。
