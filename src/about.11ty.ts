@@ -20,7 +20,7 @@ interface AboutSection {
 }
 
 const ABOUT_SUMMARY_ITEMS = [
-  '個人ノートを読むためのWebアプリケーション',
+  '本文中心に個人ノートを通読するためのWebアプリケーション',
   '本文を優先し、落ち着いて通読できることを重視',
   '長期的な整理・再編集・参照を前提に設計',
 ] as const;
@@ -148,8 +148,8 @@ export class AboutPageTemplate {
           <div class="about-content">
             <header class="about-hero">
               <p class="about-eyebrow">About Rouault</p>
-              <h1 class="about-title">個人ノートを静かに読むためのアプリケーション</h1>
-              <p class="about-lead">Rouaultの目的と設計方針</p>
+              <h1 class="about-title">Rouaultの目的と設計方針</h1>
+              <p class="about-lead">個人ノートを静かに読み、長期的に整理・再編集・参照するための設計メモ。</p>
             </header>
 
             <div class="about-summary" aria-label="ページの要約">

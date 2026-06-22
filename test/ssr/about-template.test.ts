@@ -25,7 +25,10 @@ describe('AboutPageTemplate', () => {
     expect(rendered).toContain('<article class="about-main-col">');
     expect(rendered).toContain('id="about-page-content" class="about-prose"');
     expect(rendered).toContain('About Rouault');
-    expect(rendered).toContain('個人ノートを静かに読むためのアプリケーション');
+    expect(rendered).toContain('Rouaultの目的と設計方針');
+    expect(rendered).toContain(
+      '個人ノートを静かに読み、長期的に整理・再編集・参照するための設計メモ。',
+    );
 
     expect(rendered).not.toContain('layout-main-col');
     expect(rendered).not.toContain('container-reading');

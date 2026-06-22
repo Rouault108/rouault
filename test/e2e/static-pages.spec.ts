@@ -4,10 +4,10 @@ test.describe('Static pages', () => {
   test('about ページが主要見出しまで表示されること', async ({ page }) => {
     await page.goto('/about/');
 
-    await expect(page.locator('#main-content h1').first()).toHaveText(
-      '個人ノートを静かに読むためのアプリケーション',
+    await expect(page.locator('#main-content h1').first()).toHaveText('Rouaultの目的と設計方針');
+    await expect(page.locator('#main-content')).toContainText(
+      '個人ノートを静かに読み、長期的に整理・再編集・参照するための設計メモ。',
     );
-    await expect(page.locator('#main-content')).toContainText('Rouaultの目的と設計方針');
   });
 
   test('corpora 一覧ページが主要見出しまで表示されること', async ({ page }) => {
