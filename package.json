@@ -39,7 +39,7 @@
     "storybook": "pnpm run codegen:manifest && pnpm exec storybook dev",
     "storybook:build": "pnpm run codegen:manifest && pnpm exec storybook build",
     "prepare:static-font-assets": "pnpm exec tsx scripts/prepare-static-font-assets.ts",
-    "build:client": "pnpm run codegen:icons && pnpm run prepare:static-font-assets && pnpm exec vite build --config vite.client.config.ts",
+    "build:client": "pnpm exec tsx scripts/run-client-build.ts",
     "build:images": "pnpm exec tsx scripts/build-images.ts",
     "build": "pnpm exec tsx scripts/run-build.ts",
     "build:production": "pnpm exec tsx scripts/run-production-build.ts",

@@ -10,6 +10,7 @@ const workflowPath = path.resolve(projectRoot, '.github/workflows/ci-cd.yml');
 const playwrightConfigPath = path.resolve(projectRoot, 'playwright.config.ts');
 const packageJsonPath = path.resolve(projectRoot, 'package.json');
 const buildEntrypointPath = path.resolve(projectRoot, 'scripts/run-build.ts');
+const clientBuildEntrypointPath = path.resolve(projectRoot, 'scripts/run-client-build.ts');
 const productionBuildEntrypointPath = path.resolve(projectRoot, 'scripts/run-production-build.ts');
 const productionCssArtifactAssertionPath = path.resolve(
   projectRoot,
@@ -149,6 +150,40 @@ describe('production build entrypoint contract', () => {
     expect(buildEntrypoint).toContain('for (const step of RUN_BUILD_STEPS) {');
     expect(buildEntrypoint).toContain('pnpmArgs: step.pnpmArgs,');
     expect(buildEntrypoint).toMatch(
+      /spawnSync\(invocation\.command, \[\.\.\.invocation\.args\], \{\s*env,/su,
+    );
+  });
+
+  it('通常 build:client script は client build entrypoint 経由で metadata を注入すること', () => {
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+      readonly scripts?: Record<string, string>;
+    };
+    const clientBuildEntrypoint = readFileSync(clientBuildEntrypointPath, 'utf8');
+
+    expect(packageJson.scripts?.['build:client']).toBe(
+      'pnpm exec tsx scripts/run-client-build.ts',
+    );
+    expect(clientBuildEntrypoint).toContain(
+      "import { resolveDevelopmentBuildMetadata } from '../build/metadata/build-metadata.js';",
+    );
+    expect(clientBuildEntrypoint).toContain('return resolveDevelopmentBuildMetadata();');
+    expect(clientBuildEntrypoint).toContain('createPnpmInvocation');
+    expect(clientBuildEntrypoint).toContain('RunBuildProcessConfigurationError');
+    expect(clientBuildEntrypoint).toContain('ROUAULT_BUILD_ID: buildMetadata.buildId,');
+    expect(clientBuildEntrypoint).toContain('ROUAULT_BUILD_LABEL: buildMetadata.buildLabel,');
+    expect(clientBuildEntrypoint).toContain(
+      'ROUAULT_GENERATED_AT: buildMetadata.generatedAt,',
+    );
+    expect(clientBuildEntrypoint).toContain("pnpmArgs: ['run', 'codegen:icons']");
+    expect(clientBuildEntrypoint).toContain(
+      "pnpmArgs: ['run', 'prepare:static-font-assets']",
+    );
+    expect(clientBuildEntrypoint).toContain(
+      "pnpmArgs: ['exec', 'vite', 'build', '--config', 'vite.client.config.ts']",
+    );
+    expect(clientBuildEntrypoint).toContain('formatSpawnErrorDiagnostics(result.error)');
+    expect(clientBuildEntrypoint).toContain('result.status !== 0');
+    expect(clientBuildEntrypoint).toMatch(
       /spawnSync\(invocation\.command, \[\.\.\.invocation\.args\], \{\s*env,/su,
     );
   });
