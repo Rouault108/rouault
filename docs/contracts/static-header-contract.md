@@ -76,6 +76,7 @@ Header search trigger は、旧 `ui-search-trigger` の完全復元ではなく�
 | Contract | Static header policy | Primary responsibility |
 |---|---|---|
 | Header geometry | Header shell height、alignment、responsive inset を静的 CSS contract として保持する。 | `src/assets/css/layout-header.css` |
+| Header glass surface | Header の translucent glass 表現は sidebar overlay state によって解除しない。`data-overlay-sidebar-open` は stacking のみを所有し、background / background-color / backdrop-filter / -webkit-backdrop-filter を宣言しない。forced-colors などアクセシビリティ media query による base header surface の上書きは別契約として扱い、overlay-open state の責務には含めない。 | `src/assets/css/layout-header.css` / `test/ssr/static-css-contracts.test.ts` |
 | Sidebar inset / TOC inset | Sidebar / TOC presence に応じた header center 領域の inset を保持する。 | `src/assets/css/layout-header.css` |
 | Desktop note layout corpus offset | Desktop note layout で corpus switcher の offset contract を保持する。 | `src/assets/css/layout-header.css` |
 | Button-like visual behavior | Typography、outline 主体の focus-visible、hover、active、touch target を header controls に移植する。Focus-visible は box-shadow による二重リングを必須契約にしない。 | `src/assets/css/layout-header.css` |

@@ -467,9 +467,6 @@ describe('static CSS contracts', () => {
       ['display: none'],
     );
 
-    expectRuleToDeclare(css, "header[data-layout-header][data-overlay-sidebar-open='true']", [
-      'z-index: var(--z-non-modal-panel, var(--z-modal, 300))',
-    ]);
     expectRuleToDeclare(css, 'header[data-layout-header] .search-trigger', [
       'border: var(--border-width, 1px) solid var(--border-default)',
       'background: var(--bg-control-muted)',
@@ -551,6 +548,22 @@ describe('static CSS contracts', () => {
       if (block === undefined) continue;
       expect(declarationValuesForSelector(block, selector, 'display')).toHaveLength(0);
     }
+  });
+
+  it('layout header overlay-open state only owns stacking and does not override glass surface', () => {
+    const css = readCss('layout-header.css');
+    const overlayOpenSelector = "header[data-layout-header][data-overlay-sidebar-open='true']";
+
+    expectRuleToDeclare(css, overlayOpenSelector, [
+      'z-index: var(--z-non-modal-panel, var(--z-modal, 300))',
+    ]);
+
+    expect(lacksDeclarationProperty(css, overlayOpenSelector, 'background')).toBe(true);
+    expect(lacksDeclarationProperty(css, overlayOpenSelector, 'background-color')).toBe(true);
+    expect(lacksDeclarationProperty(css, overlayOpenSelector, 'backdrop-filter')).toBe(true);
+    expect(lacksDeclarationProperty(css, overlayOpenSelector, '-webkit-backdrop-filter')).toBe(
+      true,
+    );
   });
 
   it('search dialog CSS contains required layout and state declarations', () => {
