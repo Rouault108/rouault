@@ -72,20 +72,6 @@
 
 [data-table-root] > table tr {
   border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(0% 0 0 / 0.08));
-  transition: background-color var(--duration-fast, 70ms)
-    var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
-}
-
-@media (hover: hover) and (pointer: fine) {
-  [data-table-root] > table tbody tr:hover {
-    background-color: var(--bg-table-ruler, oklch(0% 0 0 / 0.04));
-  }
-}
-
-@media (hover: none) and (pointer: coarse) {
-  [data-table-root] > table tbody tr:hover {
-    background-color: transparent;
-  }
 }
 
 [data-table-root] > table tfoot tr:first-child {

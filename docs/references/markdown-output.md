@@ -7,7 +7,7 @@
 - headings: heading id を build-time に補完し、重複時は安定した suffix を付ける。
 - `pre > code`: `pre[data-code-block] > code[data-lang]` へ正規化する。
 - `blockquote`: 静的 blockquote として出力し、必要な UI wrapper は build-time で確定する。
-- `table`: `div[data-table-root] > table` へ正規化する。
+- `table`: `div[data-table-root="true"][role="region"][tabindex="0"] > table` へ正規化する。`data-table-root` は横スクロール可能な static table root であり、行クリック、行選択、行 navigation、row hover affordance を意味しない。セル内の link / button など、実際の操作要素だけが操作可能面として振る舞う。
 - `hr`: section divider として識別できる属性を付与する。
 - task list: no-JS baseline を維持した上で checkbox 表現へ変換する。
 - `img` / `figure`: `figure[data-image]` を基本構造とする。

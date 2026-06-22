@@ -64,6 +64,16 @@ Markdown output 層の card surface は、旧 `ui-card` custom element の復活
 
 `syntax-card__name` と `syntax-section__heading` は heading ではなく label として出力する。`heading-level` は入力互換属性として受理されるが、static-first output では `h2`〜`h6` の DOM heading 生成に使わない。final DOM に `heading-level` / `data-heading-level` を残してはならない。`syntax-card` subtree は本文 heading id、heading permalink、TOC の対象外である。
 
+### Static Table Surface Contract
+
+Markdown output 層の `table` は、scrollable static table surface として扱う。`data-table-root` は横スクロール可能な表領域と focusable region を示すための属性であり、row action、row selection、row navigation、interactive data grid を意味しない。
+
+- Markdown table の行全体をクリック可能面として扱ってはならない。
+- Markdown table の `tr:hover` による row-level 背景変更は標準契約に含めない。
+- 表rootの `tabindex="0"` は横スクロール領域へのキーボード到達性のためであり、行単位の操作性を意味しない。
+- セル内の link / button などの native interactive element は、それぞれの要素契約に従って操作可能面として振る舞う。
+- クリック可能な一覧や行操作UIは、Markdown table へ後付けせず、専用の list / card / interactive surface として設計する。
+
 ## 4. State Model
 
 ### Durable State

@@ -56,13 +56,19 @@ describe('table static css contracts', () => {
     ]);
   });
 
-  it('hover capability / coarse pointer / forced-colors の静的 CSS 契約を保持すること', () => {
-    expectCssIncludes(tableCss, [
-      '@media (hover: hover) and (pointer: fine)',
+  it('static table は row hover affordance を持たないこと', () => {
+    expectCssExcludes(tableCss, [
       '[data-table-root] > table tbody tr:hover',
+      '[data-table-root] > table tr:hover',
       'background-color: var(--bg-table-ruler',
+      'transition: background-color var(--duration-fast',
+    ]);
+  });
+
+  it('static table は coarse pointer / forced-colors の静的 CSS 契約を保持すること', () => {
+    expectCssIncludes(tableCss, [
       '@media (hover: none) and (pointer: coarse)',
-      'background-color: transparent',
+      '[data-table-root] > table td',
       'overflow: visible',
       'text-overflow: clip',
       '@media (forced-colors: active)',
