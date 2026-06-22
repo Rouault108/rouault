@@ -149,7 +149,7 @@ export class AboutPageTemplate {
             <header class="about-hero">
               <p class="about-eyebrow">About Rouault</p>
               <h1 class="about-title">Rouaultの目的と設計方針</h1>
-              <p class="about-lead">個人ノートを静かに読み、長期的に整理・再編集・参照するための設計メモ。</p>
+              <p class="about-lead">個人ノートを静かに読み、長期的に整理・再編集・参照するための<span class="about-lead__keep">設計メモ。</span></p>
             </header>
 
             <div class="about-summary" aria-label="ページの要約">

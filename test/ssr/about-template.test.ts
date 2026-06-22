@@ -25,7 +25,14 @@ describe('AboutPageTemplate', () => {
     expect(rendered).toContain('<article class="about-main-col">');
     expect(rendered).toContain('<header class="about-hero">');
     expect(rendered).toMatch(/<h1 class="about-title">[\s\S]*?\S[\s\S]*?<\/h1>/);
-    expect(rendered).toContain('<p class="about-lead">');
+    const leadMatch = rendered.match(/<p class="about-lead">([\s\S]*?)<\/p>/);
+    expect(leadMatch).not.toBeNull();
+
+    const leadHtml = leadMatch?.[1] ?? '';
+    expect(leadHtml).toContain('ための<span class="about-lead__keep">設計メモ。</span>');
+    expect([...leadHtml.matchAll(/class="about-lead__keep"/g)]).toHaveLength(1);
+    expect(leadHtml).not.toContain('<br');
+    expect(leadHtml).not.toContain('<wbr');
     expect(rendered).toMatch(
       /<div\b(?=[^>]*\bclass="[^"]*\babout-summary\b[^"]*")(?=[^>]*\baria-label="[^"]+")[^>]*>/,
     );

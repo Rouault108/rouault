@@ -1,5 +1,6 @@
 .about-shell {
   --about-content-max-inline-size: 52rem;
+  --about-lead-measure: var(--width-reading, 75ch);
 
   box-sizing: border-box;
   width: 100%;
@@ -62,11 +63,16 @@
 }
 
 .about-lead {
-  max-width: 62ch;
+  max-inline-size: min(100%, var(--about-lead-measure));
   margin: 0;
   color: var(--fg-muted);
   font-size: var(--text-base);
   line-height: var(--line-height-relaxed);
+  text-wrap: pretty;
+}
+
+.about-lead__keep {
+  white-space: nowrap;
 }
 
 .about-summary {

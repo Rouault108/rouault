@@ -389,6 +389,25 @@ describe('static CSS contracts', () => {
     }
   });
 
+  it('about lead keeps natural wrapping while isolating only the terminal keep phrase', () => {
+    const css = readCss('about-shell.css');
+
+    expect(declarationValuesForSelector(css, '.about-shell', '--about-lead-measure')).toContain(
+      'var(--width-reading, 75ch)',
+    );
+    expect(declarationValuesForSelector(css, '.about-lead', 'max-width')).toEqual([]);
+    expect(
+      declarationValuesForSelector(css, '.about-lead', 'max-inline-size').map(
+        normalizeDeclarationValue,
+      ),
+    ).toContain('min(100%, var(--about-lead-measure))');
+    expect(declarationValuesForSelector(css, '.about-lead', 'text-wrap')).toContain('pretty');
+    expect(declarationValuesForSelector(css, '.about-lead', 'white-space')).toEqual([]);
+    expect(declarationValuesForSelector(css, '.about-lead__keep', 'white-space')).toContain(
+      'nowrap',
+    );
+  });
+
   it('router shell keeps desktop fixed-sidebar note frame outer gutter contract', () => {
     const css = readCss('router-shell.css');
     const selector = "app-router[data-sidebar-presence='present']";
