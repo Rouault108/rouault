@@ -57,13 +57,14 @@ export interface TocProgrammaticNavigation {
   phase: 'scrolling' | 'settled-hold';
 }
 
-interface TocNativeHashNavigationHold {
+interface TocHashNavigationHold {
   targetId: string;
   expiresAt: number;
   timeoutId: number;
+  source: 'initial' | 'hashchange';
 }
 
-const NATIVE_HASH_NAVIGATION_HOLD_MS = TOC_SCROLL_SETTLE_TIMEOUT_MS;
+const HASH_NAVIGATION_HOLD_MS = TOC_SCROLL_SETTLE_TIMEOUT_MS;
 
 const decodeHash = (hash: string): string => decodeHashFragment(hash) ?? '';
 
@@ -120,7 +121,8 @@ export class TocActiveTracker {
   private _initialHashStabilizationTimer: number | null = null;
   private _pendingEmptyVisibleHeadingsTimer: number | null = null;
   private _programmaticNavigation: TocProgrammaticNavigation | null = null;
-  private _nativeHashNavigationHold: TocNativeHashNavigationHold | null = null;
+  private _hashNavigationHold: TocHashNavigationHold | null = null;
+  private _suppressedHashActivePreservationId: string | null = null;
 
   constructor(options: TocActiveTrackerOptions) {
     this._contentRootId = options.contentRootId;
@@ -157,6 +159,7 @@ export class TocActiveTracker {
     document.addEventListener('ui-tab-change', this._onTabChange as EventListener);
 
     this.refresh();
+    this._beginHashNavigationHoldFromCurrentHash('initial');
     this._scheduleViewportSync();
 
     this._initialRefreshTimer = window.setTimeout(() => {
@@ -225,7 +228,7 @@ export class TocActiveTracker {
       this._pendingEmptyVisibleHeadingsTimer = null;
     }
 
-    this._cancelNativeHashNavigationHold();
+    this._cancelHashNavigationHold();
     this.cancelProgrammaticNavigation('destroy');
   }
 
@@ -376,83 +379,92 @@ export class TocActiveTracker {
     }
   }
 
-  private _beginNativeHashNavigationHoldFromCurrentHash(): void {
-    this._cancelNativeHashNavigationHold();
+  private _beginHashNavigationHoldFromCurrentHash(source: 'initial' | 'hashchange'): void {
+    this._cancelHashNavigationHold();
 
     if (!this._capabilities.activeTracking) {
       return;
     }
 
-    const targetId = decodeHash(window.location.hash);
-    if (targetId.length === 0 || !this._canHoldNativeHashTarget(targetId)) {
+    const target = this._resolveHoldableHashTarget();
+    if (target === null) {
       return;
     }
 
-    const expiresAt = performance.now() + NATIVE_HASH_NAVIGATION_HOLD_MS;
+    this._suppressedHashActivePreservationId = null;
+
+    const targetId = target.id;
+    const expiresAt = performance.now() + HASH_NAVIGATION_HOLD_MS;
     const timeoutId = window.setTimeout(() => {
-      const hold = this._nativeHashNavigationHold;
+      const hold = this._hashNavigationHold;
       if (hold?.targetId !== targetId || hold.timeoutId !== timeoutId) {
         return;
       }
 
-      this._cancelNativeHashNavigationHold();
+      this._cancelHashNavigationHold();
       this._scheduleViewportSync();
-    }, NATIVE_HASH_NAVIGATION_HOLD_MS);
+    }, HASH_NAVIGATION_HOLD_MS);
 
-    this._nativeHashNavigationHold = {
+    this._hashNavigationHold = {
       targetId,
       expiresAt,
       timeoutId,
+      source,
     };
   }
 
-  private _cancelNativeHashNavigationHold(): void {
-    if (this._nativeHashNavigationHold === null) {
+  private _cancelHashNavigationHold(): void {
+    if (this._hashNavigationHold === null) {
       return;
     }
 
-    clearTimeout(this._nativeHashNavigationHold.timeoutId);
-    this._nativeHashNavigationHold = null;
+    clearTimeout(this._hashNavigationHold.timeoutId);
+    this._hashNavigationHold = null;
   }
 
-  private _resolveNativeHashNavigationHoldActiveId(): string {
-    const hold = this._nativeHashNavigationHold;
+  private _resolveHashNavigationHoldActiveId(): string {
+    const hold = this._hashNavigationHold;
     if (hold === null) {
       return '';
     }
 
-    const hash = decodeHash(window.location.hash);
-    if (hash !== hold.targetId) {
-      this._cancelNativeHashNavigationHold();
-      return '';
-    }
-
     if (performance.now() > hold.expiresAt) {
-      this._cancelNativeHashNavigationHold();
+      this._cancelHashNavigationHold();
       return '';
     }
 
-    if (!this._canHoldNativeHashTarget(hold.targetId)) {
-      this._cancelNativeHashNavigationHold();
+    const target = this._resolveHoldableHashTarget();
+    if (target?.id !== hold.targetId) {
+      this._cancelHashNavigationHold();
       return '';
     }
 
-    return hold.targetId;
+    if (hold.source === 'initial' && !shouldPreserveHashActiveId(hold.targetId)) {
+      this._cancelHashNavigationHold();
+      return '';
+    }
+
+    return target.id;
   }
 
-  private _canHoldNativeHashTarget(targetId: string): boolean {
+  private _resolveHoldableHashTarget(): { id: string; element: HTMLElement } | null {
+    const targetId = decodeHash(window.location.hash);
     const contentRoot = this._contentRoot;
     if (targetId.length === 0 || contentRoot === null) {
-      return false;
+      return null;
     }
 
     const target = this._resolveHeadingElement(targetId);
-    return (
-      target instanceof HTMLElement &&
-      contentRoot.contains(target) &&
-      this._visibleHeadings.some((heading) => heading.id === targetId) &&
-      isElementRenderable(target)
-    );
+    if (
+      !(target instanceof HTMLElement) ||
+      !contentRoot.contains(target) ||
+      !this._visibleHeadings.some((heading) => heading.id === targetId) ||
+      !isElementRenderable(target)
+    ) {
+      return null;
+    }
+
+    return { id: targetId, element: target };
   }
 
   private _syncInitialHashActiveId(): void {
@@ -531,15 +543,15 @@ export class TocActiveTracker {
       return;
     }
 
-    const nativeHashId = this._resolveNativeHashNavigationHoldActiveId();
-    if (nativeHashId.length > 0) {
-      if (nativeHashId !== this._getActiveId()) {
-        this._onActiveIdChange(nativeHashId);
+    const hashHoldId = this._resolveHashNavigationHoldActiveId();
+    if (hashHoldId.length > 0) {
+      if (hashHoldId !== this._getActiveId()) {
+        this._onActiveIdChange(hashHoldId);
       }
       return;
     }
 
-    if (shouldPreserveHashActiveId(this._getActiveId())) {
+    if (this._shouldPreserveCurrentHashActiveId()) {
       return;
     }
 
@@ -549,6 +561,24 @@ export class TocActiveTracker {
     }
 
     this._onActiveIdChange(nextId);
+  }
+
+  private _shouldPreserveCurrentHashActiveId(): boolean {
+    const hash = decodeHash(window.location.hash);
+    if (hash.length === 0) {
+      this._suppressedHashActivePreservationId = null;
+      return false;
+    }
+
+    if (this._suppressedHashActivePreservationId !== null) {
+      if (this._suppressedHashActivePreservationId === hash) {
+        return false;
+      }
+
+      this._suppressedHashActivePreservationId = null;
+    }
+
+    return shouldPreserveHashActiveId(this._getActiveId());
   }
 
   private _scheduleViewportSync(): void {
@@ -628,9 +658,10 @@ export class TocActiveTracker {
   }
 
   private _onHashChange = (): void => {
+    this._suppressedHashActivePreservationId = null;
     this.cancelProgrammaticNavigation('hashchange');
     this._syncActiveHeadingFromHash();
-    this._beginNativeHashNavigationHoldFromCurrentHash();
+    this._beginHashNavigationHoldFromCurrentHash('hashchange');
     this._scheduleViewportSync();
   };
 
@@ -641,15 +672,21 @@ export class TocActiveTracker {
 
   private _onResize = (): void => {
     this.cancelProgrammaticNavigation('resize');
-    this._cancelNativeHashNavigationHold();
+    this._cancelHashNavigationHold();
     this._scheduleViewportSync();
   };
 
   private _onUserScrollIntent = (): void => {
     let shouldSync = false;
 
-    if (this._nativeHashNavigationHold !== null) {
-      this._cancelNativeHashNavigationHold();
+    if (this._hashNavigationHold !== null) {
+      this._cancelHashNavigationHold();
+      shouldSync = true;
+    }
+
+    const hash = decodeHash(window.location.hash);
+    if (hash.length > 0 && this._getActiveId() === hash) {
+      this._suppressedHashActivePreservationId = hash;
       shouldSync = true;
     }
 

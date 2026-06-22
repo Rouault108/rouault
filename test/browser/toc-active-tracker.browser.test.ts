@@ -1,6 +1,7 @@
 import { expect } from '@open-wc/testing';
 import type { Heading } from '../../src/components/ui/toc/toc.js';
 import { TocActiveTracker } from '../../src/toc/toc-active-tracker.js';
+import { TOC_SCROLL_SETTLE_TIMEOUT_MS } from '../../src/toc/toc-scroll-contract.js';
 
 const waitForRefresh = async (): Promise<void> => {
   await Promise.resolve();
@@ -344,6 +345,106 @@ describe('TocActiveTracker', () => {
 
     window.history.replaceState(null, '', '#section-2');
     window.dispatchEvent(new Event('hashchange'));
+    await waitForRefresh();
+    expect(activeId).to.equal('section-2');
+
+    window.dispatchEvent(new WheelEvent('wheel'));
+    await waitForRefresh();
+    expect(activeId).to.equal('section-1');
+
+    tracker.destroy();
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    document.documentElement.style.scrollPaddingTop = '';
+  });
+
+  it('同一 document hashchange 後は hold と preservation で hash 対象 current を維持すること', async () => {
+    document.body.innerHTML = `
+      <article id="content-root">
+        <h2 id="section-1">Section 1</h2>
+        <h2 id="section-2">Section 2</h2>
+        <h2 id="section-3">Section 3</h2>
+      </article>
+    `;
+
+    document.documentElement.style.scrollPaddingTop = '80px';
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+
+    const headings: Heading[] = [
+      { id: 'section-1', text: 'Section 1', level: 2 },
+      { id: 'section-2', text: 'Section 2', level: 2 },
+      { id: 'section-3', text: 'Section 3', level: 2 },
+    ];
+
+    const topById = new Map<string, number>([
+      ['section-1', -120],
+      ['section-2', 160],
+      ['section-3', 520],
+    ]);
+
+    for (const heading of headings) {
+      const element = document.getElementById(heading.id);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`${heading.id} の fixture 構築に失敗しました。`);
+      }
+
+      Object.defineProperty(element, 'getClientRects', {
+        configurable: true,
+        value: () => {
+          const top = topById.get(heading.id) ?? 0;
+          return [{ top, bottom: top + 32, width: 800, height: 32 }];
+        },
+      });
+      Object.defineProperty(element, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => {
+          const top = topById.get(heading.id) ?? 0;
+          return {
+            x: 0,
+            y: top,
+            top,
+            left: 0,
+            right: 800,
+            bottom: top + 32,
+            width: 800,
+            height: 32,
+            toJSON: () => undefined,
+          } satisfies DOMRect;
+        },
+      });
+    }
+
+    let activeId = '';
+    const tracker = new TocActiveTracker({
+      contentRootId: 'content-root',
+      headings,
+      capabilities: {
+        activeTracking: true,
+        dynamicScopes: false,
+        mobilePanel: false,
+      },
+      getActiveId: () => activeId,
+      onVisibleHeadingsChange: () => undefined,
+      onActiveIdChange: (id) => {
+        activeId = id;
+      },
+    });
+
+    tracker.start();
+    await waitForRefresh();
+    expect(activeId).to.equal('section-1');
+
+    window.history.replaceState(null, '', '#section-2');
+    window.dispatchEvent(new Event('hashchange'));
+    await waitForRefresh();
+    expect(activeId).to.equal('section-2');
+
+    window.dispatchEvent(new Event('scroll'));
+    await waitForRefresh();
+    expect(activeId).to.equal('section-2');
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, TOC_SCROLL_SETTLE_TIMEOUT_MS + 50);
+    });
     await waitForRefresh();
     expect(activeId).to.equal('section-2');
 
