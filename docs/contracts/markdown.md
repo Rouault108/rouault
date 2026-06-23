@@ -91,6 +91,38 @@ Markdown output 層の `table` は、scrollable static table surface として�
 - セル内の link / button などの native interactive element は、それぞれの要素契約に従って操作可能面として振る舞う。
 - クリック可能な一覧や行操作UIは、Markdown table へ後付けせず、専用の list / card / interactive surface として設計する。
 
+### Table Authoring Extension Contract
+
+Markdown table authoring extension は、static table surface の契約を弱めない。raw HTML 禁止、interactive data grid ではない意味論、row hover affordance 不在は維持する。
+
+`::table{column-widths="..."}` は GFM table へ列幅ヒントを付与する authoring wrapper である。`::table` は GFM table 1個だけを包む。表以外、複数表、表と段落の混在は build error とする。
+
+`column-widths` は固定トークン列であり、任意CSS値ではない。許可トークンは `auto` / `fit` / `narrow` / `medium` / `wide` / `numeric` とする。
+
+- `column-widths` は空白区切り、順序保持、重複許可とする。
+- comma区切り、未知トークン、空値は build error とする。
+- `column-widths` の指定数は table列数と一致しなければならない。
+- `column-widths` 指定 table では `colspan` / `rowspan` を許可しない。
+- `numeric` は幅ヒントだけであり、右揃えを暗黙指定しない。
+- 右揃えは既存GFM記法 `---:` に委ねる。
+
+`{{break}}` は table cell text escape である。exact `{{break}}` のみを特殊扱いし、`{{...}}` 全体はRouault構文として予約しない。`{{foo}}` / `{{ break }}` / `{{BREAK}}` / `{{br}}` は通常テキストとして扱い、build error にしない。
+
+- `{{break}}` は plain GFM table cell でも `::table` 内 table cell でも有効とする。
+- table cell外の exact `{{break}}` は build error とする。
+- table cell内 link / linkReference 配下の `{{break}}` は build error とする。
+- table cell内 emphasis / strong 配下の `{{break}}` は許可する。
+- code span / code block内の `{{break}}` は変換対象外とする。
+- 同一 text node 内の Unicode whitespace 隣接と `{{break}}{{break}}` 連続は build error とする。
+- text nodeの先頭・末尾であること自体は build error条件にしない。
+- text node境界をまたぐ whitespace隣接や `{{break}}{{break}}` 連続の semantic adjacency 判定は初期実装では行わない。
+- `{{break}}` は table cell実質先頭・実質末尾には置けない。
+- `{{break}}` の前後には meaningful inline content が必要である。
+
+cell-level の meaningful inline content 有無検査は、cell実質先頭・実質末尾禁止のための最小検査であり、inline node境界をまたぐ semantic adjacency 判定とは別扱いにする。meaningful inline content として数えるnodeは、非空白text、emphasis / strong配下の非空白text、inlineCode、link / linkReference表示テキストに限定する。未列挙inline nodeは、内部に列挙済みnodeとして評価可能な内容を持つ場合だけ meaningful とする。image / image alt text は初期実装では meaningful content として数えない。
+
+raw `<br>`、Markdown hard break、`:br[]` は table cell break contract として採用しない。mdast `break` node または実装上対応する hard break node が table cell配下に存在する場合、remark側で build error とする。mdastで検出できない経路では final contract の markerなし `<br>` 拒否で防御する。
+
 ## 4. State Model
 
 ### Durable State
