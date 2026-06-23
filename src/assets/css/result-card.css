@@ -21,16 +21,44 @@
     box-shadow var(--duration-fast) var(--ease-out);
 }
 
-.page-shell .result-card:hover,
-.page-shell .result-card:focus-within {
+.page-shell .result-card:hover {
   border-color: var(--border-muted);
   box-shadow: var(--elevation-md);
 }
 
-.page-shell .result-card:focus-within {
+.page-shell .result-link:focus-visible {
   outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset, 2px);
+  outline-offset: calc(0px - var(--focus-ring-offset, 2px));
   animation: var(--animation-focus);
+}
+
+@supports selector(.result-card:has(> .result-link:focus-visible)) {
+  .page-shell .result-card:has(> .result-link:focus-visible) {
+    border-color: var(--border-muted);
+    box-shadow: var(--elevation-md);
+    outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset, 2px);
+    animation: var(--animation-focus);
+  }
+
+  .page-shell .result-link:focus-visible {
+    outline: none;
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .page-shell .result-link:focus-visible {
+    outline-color: Highlight;
+  }
+
+  @supports selector(.result-card:has(> .result-link:focus-visible)) {
+    .page-shell .result-card:has(> .result-link:focus-visible) {
+      border-color: Highlight;
+      outline: var(--focus-ring-width, 2px) solid Highlight;
+      box-shadow: none;
+    }
+  }
 }
 
 .page-shell .result-link {
@@ -44,10 +72,6 @@
   color: inherit;
   text-decoration: none;
   cursor: pointer;
-}
-
-.page-shell .result-link:focus-visible {
-  outline: none;
 }
 
 .page-shell .result-title {

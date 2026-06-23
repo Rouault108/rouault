@@ -61,6 +61,7 @@ Design System pattern は UI の見え方と配置判断を扱う。Router、sea
 - `docs/adr/code-surfaces-static-html-migration.md`
 - `docs/adr/article-header-source-link-classification.md`
 - `docs/adr/markdown-static-table-row-hover-affordance.md`
+- `docs/adr/result-card-focus-visible-projection.md`
 - `docs/adr/reading-chrome-note-frame-outer-gutter.md`
 - `docs/adr/`
 

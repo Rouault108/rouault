@@ -31,6 +31,25 @@ const clickNearLeftEdgeAndType = async (
   await expect(input).toHaveValue(value);
 };
 
+const tabUntilFocused = async (page: Page, target: Locator): Promise<void> => {
+  if (await target.evaluate((element) => document.activeElement === element)) {
+    return;
+  }
+
+  for (let index = 0; index < 20; index += 1) {
+    await page.keyboard.press('Tab');
+
+    if (await target.evaluate((element) => document.activeElement === element)) {
+      return;
+    }
+  }
+
+  expect(
+    await target.evaluate((element) => document.activeElement === element),
+    'Tab should reach the first result link',
+  ).toBe(true);
+};
+
 test.describe('Search Page', () => {
   test('検索 input と tag filter input は左端寄りの実クリックから keyboard.type で入力できること', async ({
     page,
@@ -89,19 +108,41 @@ test.describe('Search Page', () => {
       );
 
       expect(hitSurface.linkTagName, `${hitPoint.label} should hit a.result-link`).toBe('A');
-      expect(hitSurface.linkSurface, `${hitPoint.label} should keep card link surface`).toBe('card');
+      expect(hitSurface.linkSurface, `${hitPoint.label} should keep card link surface`).toBe(
+        'card',
+      );
     }
+  });
 
-    for (let index = 0; index < 20; index += 1) {
-      const focusedResultLink = await page.evaluate(() => {
-        const active = document.activeElement;
-        return active instanceof HTMLAnchorElement && active.matches('a.result-link');
-      });
-      if (focusedResultLink) {
-        break;
-      }
-      await page.keyboard.press('Tab');
-    }
+  test('mouse click focus does not show the result card outer focus ring', async ({ page }) => {
+    await waitForSearchPageReady(page, '/search/?q=router');
+
+    const firstCard = page.locator('article.result-card').first();
+    const firstLink = firstCard.locator(':scope > a.result-link').first();
+    await expect(firstCard).toBeVisible();
+    await expect(firstLink).toBeVisible();
+
+    await firstLink.evaluate((link) => {
+      link.addEventListener('click', (event) => event.preventDefault(), { once: true });
+    });
+
+    await firstLink.click();
+
+    await expect(firstLink).toBeFocused();
+    await expect(firstCard).toHaveCSS('outline-style', 'none');
+  });
+
+  test('keyboard focus-visible projects the result link focus ring to the result card', async ({
+    page,
+  }) => {
+    await waitForSearchPageReady(page, '/search/?q=router');
+
+    const firstCard = page.locator('article.result-card').first();
+    const firstLink = firstCard.locator(':scope > a.result-link').first();
+    await expect(firstCard).toBeVisible();
+    await expect(firstLink).toBeVisible();
+
+    await tabUntilFocused(page, firstLink);
 
     await expect(firstLink).toBeFocused();
     await expect(firstCard).toHaveCSS('outline-style', 'solid');

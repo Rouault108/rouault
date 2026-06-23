@@ -25,6 +25,20 @@ Block Link は、遷移先を持つ面全体を native `<a>` として表す pat
 
 JS による card click delegation は使わない。Ctrl / Meta / Shift click、右クリック、コンテキストメニュー、focus は `<a>` のブラウザ標準動作に委ねる。card 外形の hover / focus 表示は CSS pattern の責務であり、リンクの意味論を上書きしない。
 
+#### result-card focus projection
+
+result-card は、一覧・検索結果で使う block link surface であり、`article.result-card > a.result-link` を正規構造とする。
+
+この契約は result-card に限定する。`card-link.css` / `link-card.css` / Markdown link-card の現行 focus contract を変更済みとみなしてはならない。
+
+result-card の focus 表示では、ポインター click 由来の `:focus-within` と、キーボード由来の `:focus-visible` を混同しない。
+
+カード外形へ focus ring を投影する場合は、`.result-link:focus-visible` を source of truth とする。
+
+`:has()` 対応環境では、`.result-card:has(> .result-link:focus-visible)` に外周 focus ring を投影する。
+
+`:has()` 非対応環境では、`.result-link:focus-visible` の fallback outline を残し、キーボード focus visible を不可視にしない。
+
 ## 3. Selected / Current / Active / Focused
 
 - `selected` は widget 内の選択状態を表す。
