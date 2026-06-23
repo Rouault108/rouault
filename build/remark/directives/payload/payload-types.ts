@@ -16,6 +16,7 @@ export type TranslationOverlaySurface = 'popover' | 'drawer';
 export type CodeBlockIntent = 'neutral' | 'valid' | 'invalid';
 export type CodeBlockCopyMode = 'auto' | 'always' | 'hidden';
 export type CodeBlockLayout = 'standalone' | 'inline';
+export type TableColumnWidth = 'auto' | 'fit' | 'narrow' | 'medium' | 'wide' | 'numeric';
 
 export interface CalloutPayload {
   readonly kind: 'callout';
@@ -100,6 +101,11 @@ export interface ScorePayload {
   readonly primary: boolean;
 }
 
+export interface TablePayload {
+  readonly kind: 'table';
+  readonly columnWidths?: readonly TableColumnWidth[] | undefined;
+}
+
 export interface TabsPayload {
   readonly kind: 'tabs';
   readonly selectedValue?: string | undefined;
@@ -171,6 +177,7 @@ export type DirectivePayload =
   | InfoBoxPayload
   | LinkCardPayload
   | ScorePayload
+  | TablePayload
   | TabsPayload
   | TabPayload
   | PanelPayload

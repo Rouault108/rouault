@@ -49,6 +49,9 @@ export const directiveAttributeSchemas: Record<DirectiveName, DirectiveAttribute
   score: {
     allowedKeys: ['src', 'label', 'description', 'aspect-ratio', 'primary'],
   },
+  table: {
+    allowedKeys: ['column-widths'],
+  },
   tabs: {
     allowedKeys: [
       'selected-value',

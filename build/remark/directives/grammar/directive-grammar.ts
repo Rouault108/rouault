@@ -70,6 +70,13 @@ export const directiveGrammar: Record<DirectiveName, DirectiveGrammarDescriptor>
     attributeSchema: directiveAttributeSchemas.score,
     structuralRule: directiveStructuralRules.score,
   },
+  table: {
+    name: 'table',
+    kind: 'container',
+    nodeType: 'rouaultDirectiveTable',
+    attributeSchema: directiveAttributeSchemas.table,
+    structuralRule: directiveStructuralRules.table,
+  },
   tabs: {
     name: 'tabs',
     kind: 'container',

@@ -9,6 +9,8 @@ interface MdastNode {
   url?: string;
   title?: string | null;
   alt?: string | null;
+  identifier?: string;
+  referenceType?: string;
   children?: MdastNode[];
   data?: {
     hName?: string;
@@ -2816,5 +2818,430 @@ describe('remarkRouaultDirectives', () => {
     };
 
     expect(run).to.throw('[markdown] syntax-fields の直下には syntax-field のみ配置できます');
+  });
+
+  it('table ディレクティブを rouaultDirectiveTable source marker へ変換すること', () => {
+    const table: MdastNode = {
+      type: 'table',
+      children: [
+        {
+          type: 'tableRow',
+          children: [{ type: 'tableCell', children: [{ type: 'text', value: '値' }] }],
+        },
+      ],
+    };
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::table{column-widths="fit wide numeric"}' }],
+        },
+        table,
+        { type: 'paragraph', children: [{ type: 'text', value: '::' }] },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const wrapper = tree.children?.[0];
+    expect(wrapper?.type).to.equal('rouaultDirectiveTable');
+    expect(wrapper?.data?.hName).to.equal('div');
+    expect(wrapper?.data?.hProperties?.['data-table-source']).to.equal('true');
+    expect(wrapper?.data?.hProperties?.['data-table-column-widths']).to.equal('fit wide numeric');
+    expect(wrapper?.children?.[0]?.type).to.equal('table');
+  });
+
+  it('table column-widths の未知トークンと comma 区切りは build error にすること', () => {
+    for (const source of [
+      '::table{column-widths="fit huge"}',
+      '::table{column-widths="fit,wide"}',
+      '::table{column-widths=""}',
+    ]) {
+      const tree: MdastNode = {
+        type: 'root',
+        children: [
+          { type: 'paragraph', children: [{ type: 'text', value: source }] },
+          { type: 'table', children: [] },
+          { type: 'paragraph', children: [{ type: 'text', value: '::' }] },
+        ],
+      };
+
+      expect(() => {
+        remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+      }).to.throw('[markdown] table の column-widths');
+    }
+  });
+
+  it('table column-widths は順序保持で重複を許可すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::table{column-widths="fit fit wide"}' }],
+        },
+        { type: 'table', children: [] },
+        { type: 'paragraph', children: [{ type: 'text', value: '::' }] },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    expect(tree.children?.[0]?.data?.hProperties?.['data-table-column-widths']).to.equal(
+      'fit fit wide',
+    );
+  });
+
+  it('table ディレクティブが GFM table 1 個だけを包まない場合は validate-structure 経由でエラーにすること', () => {
+    const cases: MdastNode[][] = [
+      [{ type: 'paragraph', children: [{ type: 'text', value: '本文' }] }],
+      [
+        { type: 'table', children: [] },
+        { type: 'table', children: [] },
+      ],
+      [
+        { type: 'table', children: [] },
+        { type: 'paragraph', children: [{ type: 'text', value: '本文' }] },
+      ],
+    ];
+
+    for (const children of cases) {
+      const tree: MdastNode = {
+        type: 'root',
+        children: [
+          { type: 'paragraph', children: [{ type: 'text', value: '::table' }] },
+          ...children,
+          { type: 'paragraph', children: [{ type: 'text', value: '::' }] },
+        ],
+      };
+
+      expect(() => {
+        remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+      }).to.throw('[markdown] table ディレクティブは GFM table 1 個だけを包んでください');
+    }
+  });
+
+  it('plain GFM table cell 内の exact {{break}} を br marker へ変換すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'table',
+          children: [
+            {
+              type: 'tableRow',
+              children: [
+                { type: 'tableCell', children: [{ type: 'text', value: '1行目{{break}}2行目' }] },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const cell = tree.children?.[0]?.children?.[0]?.children?.[0];
+    expect(cell?.children?.[1]?.type).to.equal('rouaultInlineTableCellBreak');
+    expect(cell?.children?.[1]?.data?.hName).to.equal('br');
+    expect(cell?.children?.[1]?.data?.hProperties?.['data-table-cell-break']).to.equal('true');
+  });
+
+  it('{{break}} 以外の {{...}} 類似テキストは通常テキストとして保持すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'table',
+          children: [
+            {
+              type: 'tableRow',
+              children: [
+                {
+                  type: 'tableCell',
+                  children: [{ type: 'text', value: '{{foo}} {{ break }} {{BREAK}} {{br}}' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const cell = tree.children?.[0]?.children?.[0]?.children?.[0];
+    expect(cell?.children?.[0]?.value).to.equal('{{foo}} {{ break }} {{BREAK}} {{br}}');
+  });
+
+  it('table cell 外および link / linkReference 配下の exact {{break}} は build error にすること', () => {
+    const cases: MdastNode[] = [
+      { type: 'paragraph', children: [{ type: 'text', value: '前{{break}}後' }] },
+      {
+        type: 'table',
+        children: [
+          {
+            type: 'tableRow',
+            children: [
+              {
+                type: 'tableCell',
+                children: [
+                  { type: 'text', value: '前' },
+                  {
+                    type: 'link',
+                    url: 'https://example.com',
+                    children: [{ type: 'text', value: '{{break}}' }],
+                  },
+                  { type: 'text', value: '後' },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        type: 'table',
+        children: [
+          {
+            type: 'tableRow',
+            children: [
+              {
+                type: 'tableCell',
+                children: [
+                  { type: 'text', value: '前' },
+                  {
+                    type: 'linkReference',
+                    identifier: 'ref',
+                    referenceType: 'full',
+                    children: [{ type: 'text', value: '{{break}}' }],
+                  },
+                  { type: 'text', value: '後' },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    for (const child of cases) {
+      const tree: MdastNode = { type: 'root', children: [child] };
+      expect(() => {
+        remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+      }).to.throw('[markdown] {{break}}');
+    }
+  });
+
+  it('emphasis / strong 配下の {{break}} は変換し、code span 内は変換しないこと', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'table',
+          children: [
+            {
+              type: 'tableRow',
+              children: [
+                {
+                  type: 'tableCell',
+                  children: [
+                    { type: 'text', value: '前' },
+                    { type: 'emphasis', children: [{ type: 'text', value: '{{break}}' }] },
+                    { type: 'strong', children: [{ type: 'text', value: '後' }] },
+                  ],
+                },
+                {
+                  type: 'tableCell',
+                  children: [
+                    { type: 'inlineCode', value: '{{break}}' },
+                    { type: 'text', value: '{{break}}説明' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const firstCell = tree.children?.[0]?.children?.[0]?.children?.[0];
+    const secondCell = tree.children?.[0]?.children?.[0]?.children?.[1];
+    expect(firstCell?.children?.[1]?.children?.[0]?.type).to.equal('rouaultInlineTableCellBreak');
+    expect(secondCell?.children?.[0]?.type).to.equal('inlineCode');
+    expect(secondCell?.children?.[0]?.value).to.equal('{{break}}');
+    expect(secondCell?.children?.[1]?.type).to.equal('rouaultInlineTableCellBreak');
+  });
+
+  it('{{break}} の同一 text node 内 whitespace 隣接と連続を build error にすること', () => {
+    for (const value of [
+      '1行目 {{break}}2行目',
+      '1行目{{break}} 2行目',
+      '1行目 {{break}} 2行目',
+      '1行目　{{break}}2行目',
+      '1行目{{break}}　2行目',
+      '1行目{{break}}{{break}}2行目',
+    ]) {
+      const tree: MdastNode = {
+        type: 'root',
+        children: [
+          {
+            type: 'table',
+            children: [
+              {
+                type: 'tableRow',
+                children: [{ type: 'tableCell', children: [{ type: 'text', value }] }],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(() => {
+        remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+      }).to.throw('[markdown] {{break}}');
+    }
+  });
+
+  it('emphasis / strong 配下でも {{break}} の whitespace 隣接と連続は build error にすること', () => {
+    const cases: MdastNode[][] = [
+      [{ type: 'emphasis', children: [{ type: 'text', value: '1行目 {{break}}2行目' }] }],
+      [{ type: 'emphasis', children: [{ type: 'text', value: '1行目{{break}} 2行目' }] }],
+      [{ type: 'emphasis', children: [{ type: 'text', value: '1行目{{break}}{{break}}2行目' }] }],
+      [{ type: 'strong', children: [{ type: 'text', value: '1行目 {{break}}2行目' }] }],
+      [{ type: 'strong', children: [{ type: 'text', value: '1行目{{break}} 2行目' }] }],
+      [{ type: 'strong', children: [{ type: 'text', value: '1行目{{break}}{{break}}2行目' }] }],
+    ];
+
+    for (const cellChildren of cases) {
+      const tree: MdastNode = {
+        type: 'root',
+        children: [
+          {
+            type: 'table',
+            children: [
+              {
+                type: 'tableRow',
+                children: [{ type: 'tableCell', children: cellChildren }],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(() => {
+        remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+      }).to.throw('[markdown] {{break}}');
+    }
+  });
+
+  it('{{break}} 前後の meaningful inline content を node 境界越しに検査すること', () => {
+    const allowedCases: MdastNode[][] = [
+      [
+        { type: 'text', value: '1行目{{break}}' },
+        { type: 'strong', children: [{ type: 'text', value: '2行目' }] },
+      ],
+      [
+        { type: 'strong', children: [{ type: 'text', value: '1行目' }] },
+        { type: 'text', value: '{{break}}2行目' },
+      ],
+      [
+        { type: 'inlineCode', value: 'code' },
+        { type: 'text', value: '{{break}}説明' },
+      ],
+      [
+        { type: 'link', url: 'https://example.com', children: [{ type: 'text', value: 'リンク' }] },
+        { type: 'text', value: '{{break}}説明' },
+      ],
+    ];
+
+    for (const cellChildren of allowedCases) {
+      const tree: MdastNode = {
+        type: 'root',
+        children: [
+          {
+            type: 'table',
+            children: [
+              {
+                type: 'tableRow',
+                children: [{ type: 'tableCell', children: cellChildren }],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(() => {
+        remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+      }).not.to.throw();
+    }
+  });
+
+  it('{{break}} が table cell の実質先頭・実質末尾にある場合は build error にすること', () => {
+    const cases: MdastNode[][] = [
+      [{ type: 'text', value: '{{break}}先頭' }],
+      [{ type: 'text', value: '末尾{{break}}' }],
+      [
+        { type: 'image', url: 'image.png', alt: '代替テキスト' },
+        { type: 'text', value: '{{break}}説明' },
+      ],
+      [
+        { type: 'text', value: '説明{{break}}' },
+        { type: 'image', url: 'image.png', alt: '代替テキスト' },
+      ],
+    ];
+
+    for (const cellChildren of cases) {
+      const tree: MdastNode = {
+        type: 'root',
+        children: [
+          {
+            type: 'table',
+            children: [
+              {
+                type: 'tableRow',
+                children: [{ type: 'tableCell', children: cellChildren }],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(() => {
+        remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+      }).to.throw('[markdown] {{break}} は table cell の実質先頭または実質末尾');
+    }
+  });
+
+  it('table cell 内の Markdown hard break は build error にすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'table',
+          children: [
+            {
+              type: 'tableRow',
+              children: [
+                {
+                  type: 'tableCell',
+                  children: [
+                    { type: 'text', value: '前' },
+                    { type: 'break' },
+                    { type: 'text', value: '後' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(() => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    }).to.throw('[markdown] Markdown hard break は table cell 内では使用できません');
   });
 });

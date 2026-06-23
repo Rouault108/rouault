@@ -10,6 +10,7 @@ import type {
   PreviewSandboxPayload,
   ScorePayload,
   TabPayload,
+  TablePayload,
   TabsPayload,
   TranslationOverlayPayload,
   TranslationPayload,
@@ -164,6 +165,14 @@ const adaptScoreOutput = (payload: ScorePayload): RemarkOutputBinding => ({
     : {}),
 });
 
+const adaptTableOutput = (payload: TablePayload): RemarkOutputBinding => ({
+  hName: 'div',
+  hProperties: toOptionalProps([
+    ['data-table-source', 'true'],
+    ['data-table-column-widths', payload.columnWidths?.join(' ')],
+  ]),
+});
+
 const adaptTabsOutput = (payload: TabsPayload): RemarkOutputBinding => ({
   hName: 'ui-tabs',
   hProperties: toOptionalProps([
@@ -223,6 +232,8 @@ export const adaptDirectiveOutput = (payload: DirectivePayload): RemarkOutputBin
       return adaptLinkCardOutput(payload);
     case 'score':
       return adaptScoreOutput(payload);
+    case 'table':
+      return adaptTableOutput(payload);
     case 'tabs':
       return adaptTabsOutput(payload);
     case 'tab':

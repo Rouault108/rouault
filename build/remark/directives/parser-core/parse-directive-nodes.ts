@@ -1,7 +1,11 @@
 import type { DirectiveMarker, MdastNode, VFileLike } from '../types.js';
 import { getDirectiveDescriptor } from '../grammar/directive-grammar.js';
 import { toError } from '../shared/errors.js';
-import { transformInlineTextNode } from '../shared/inline.js';
+import {
+  type InlineTransformContext,
+  transformInlineTextNode,
+  validateTableCellBreakPlacement,
+} from '../shared/inline.js';
 import {
   expandDirectiveParagraphs,
   tryParseFoldedDirectiveParagraph,
@@ -23,7 +27,39 @@ const toParsedDirectiveNode = (
   children,
 });
 
-const transformChildren = (nodes: MdastNode[], file?: VFileLike): MdastNode[] => {
+const rootInlineContext: InlineTransformContext = {
+  insideTableCell: false,
+  insideTableCellLink: false,
+};
+
+const toChildInlineContext = (
+  node: MdastNode,
+  context: InlineTransformContext,
+): InlineTransformContext => ({
+  insideTableCell: context.insideTableCell || node.type === 'tableCell',
+  insideTableCellLink:
+    context.insideTableCellLink || node.type === 'link' || node.type === 'linkReference',
+});
+
+const validateTableCellHardBreak = (
+  node: MdastNode,
+  context: InlineTransformContext,
+  file?: VFileLike,
+): void => {
+  if (!context.insideTableCell) {
+    return;
+  }
+
+  if (node.type === 'break' || node.type === 'hardBreak') {
+    throw toError(file, node, 'Markdown hard break は table cell 内では使用できません');
+  }
+};
+
+const transformChildren = (
+  nodes: MdastNode[],
+  file?: VFileLike,
+  context: InlineTransformContext = rootInlineContext,
+): MdastNode[] => {
   const normalizedNodes = expandDirectiveParagraphs(nodes, file);
   const result: MdastNode[] = [];
   let index = 0;
@@ -49,10 +85,19 @@ const transformChildren = (nodes: MdastNode[], file?: VFileLike): MdastNode[] =>
 
     const marker = parseStartMarker(current, file);
     if (!marker) {
+      validateTableCellHardBreak(current, context, file);
+
       if (Array.isArray(current.children)) {
-        current.children = transformChildren(current.children, file);
+        current.children = transformChildren(
+          current.children,
+          file,
+          toChildInlineContext(current, context),
+        );
+        if (current.type === 'tableCell') {
+          validateTableCellBreakPlacement(current, file);
+        }
       }
-      result.push(...transformInlineTextNode(current, file));
+      result.push(...transformInlineTextNode(current, file, context));
       index += 1;
       continue;
     }
@@ -73,7 +118,11 @@ const transformChildren = (nodes: MdastNode[], file?: VFileLike): MdastNode[] =>
       );
     }
 
-    const innerNodes = transformChildren(normalizedNodes.slice(index + 1, closingIndex), file);
+    const innerNodes = transformChildren(
+      normalizedNodes.slice(index + 1, closingIndex),
+      file,
+      context,
+    );
     result.push(toParsedDirectiveNode(marker, innerNodes, attrs));
     index = closingIndex + 1;
   }

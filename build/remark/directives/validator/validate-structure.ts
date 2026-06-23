@@ -290,6 +290,21 @@ const validateTabsStructure = (node: MdastNode, payload: TabsPayload, file?: VFi
   }
 };
 
+const isIgnorableTableWrapperNode = (node: MdastNode): boolean =>
+  node.type === 'text' && typeof node.value === 'string' && node.value.trim().length === 0;
+
+const validateTableStructure = (node: MdastNode, file?: VFileLike): void => {
+  const children = node.children ?? [];
+  const tableChildren = children.filter((child) => child.type === 'table');
+  const nonTableMeaningfulChildren = children.filter(
+    (child) => child.type !== 'table' && !isIgnorableTableWrapperNode(child),
+  );
+
+  if (tableChildren.length !== 1 || nonTableMeaningfulChildren.length > 0) {
+    throw toError(file, node, 'table ディレクティブは GFM table 1 個だけを包んでください');
+  }
+};
+
 const readSyntaxSignatureCodeNodes = (node: MdastNode): MdastNode[] =>
   (node.children ?? []).filter((child) => child.type === 'code');
 
@@ -484,6 +499,9 @@ export const validateStructure = (
       }
 
       validateTabsStructure(node, payload, file);
+    }
+    if (directiveName === 'table') {
+      validateTableStructure(node, file);
     }
     if (directiveName === 'tab') {
       validateTabStructure(node, getDirectivePayload<TabPayload>(node), file);

@@ -7,6 +7,7 @@ import { normalizePreviewPayload } from './normalize-preview-registry.js';
 import { normalizeSurfacePayload } from './normalize-surface-registry.js';
 import { normalizeSyntaxPayloadByNode } from './normalize-syntax-payload.js';
 import { normalizeTabsPayloadByNode } from './normalize-tabs-registry.js';
+import { normalizeTablePayload } from './normalize-table-payload.js';
 import { normalizeTranslationPayloadByNode } from './normalize-translation-registry.js';
 import type { DirectivePayload } from './payload-types.js';
 import type { NotePolicyContext } from '../policy/note-policy-context.js';
@@ -46,6 +47,9 @@ const normalizeDirectivePayload = (
       policyContext,
     ) ??
     normalizeTabsPayloadByNode(directiveState.name, directiveState.rawAttributes, node, file) ??
+    (directiveState.name === 'table'
+      ? normalizeTablePayload(directiveState.rawAttributes, node, file)
+      : undefined) ??
     normalizeTranslationPayloadByNode(
       directiveState.name,
       directiveState.rawAttributes,

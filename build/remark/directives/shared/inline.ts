@@ -10,6 +10,21 @@ import {
 import { appendText, createInlineNode } from './ast.js';
 import { parseAttributes, pickOptional } from '../parser-core/parse-attributes.js';
 import { assertAllowedAttributes, parseBooleanAttribute } from '../payload/normalize-helpers.js';
+import { toError } from './errors.js';
+
+export interface InlineTransformContext {
+  readonly insideTableCell: boolean;
+  readonly insideTableCellLink: boolean;
+}
+
+const defaultInlineTransformContext: InlineTransformContext = {
+  insideTableCell: false,
+  insideTableCellLink: false,
+};
+
+const TABLE_CELL_BREAK_TOKEN = '{{break}}';
+const tableCellBreakPattern = /\{\{break\}\}/gu;
+const unicodeWhitespacePattern = /\s/u;
 
 export const applyEmojiInlineAttributes = (
   attrs: Record<string, string>,
@@ -146,6 +161,70 @@ export const parseInlineText = (source: string, node: MdastNode, file?: VFileLik
   return result;
 };
 
+const createTableCellBreakNode = (): MdastNode => ({
+  type: 'rouaultInlineTableCellBreak',
+  data: {
+    hName: 'br',
+    hProperties: {
+      'data-table-cell-break': 'true',
+    },
+  },
+});
+
+const hasWhitespaceAdjacentBreak = (source: string, index: number): boolean => {
+  const before = index > 0 ? source.charAt(index - 1) : '';
+  const afterIndex = index + TABLE_CELL_BREAK_TOKEN.length;
+  const after = afterIndex < source.length ? source.charAt(afterIndex) : '';
+
+  return unicodeWhitespacePattern.test(before) || unicodeWhitespacePattern.test(after);
+};
+
+const transformTableCellBreakText = (
+  source: string,
+  node: MdastNode,
+  file: VFileLike | undefined,
+  context: InlineTransformContext,
+): MdastNode[] | null => {
+  tableCellBreakPattern.lastIndex = 0;
+  const firstMatch = tableCellBreakPattern.exec(source);
+  if (!firstMatch) {
+    return null;
+  }
+
+  if (!context.insideTableCell) {
+    throw toError(file, node, '{{break}} は table cell 内でのみ使用できます');
+  }
+
+  if (context.insideTableCellLink) {
+    throw toError(file, node, '{{break}} は table cell 内の link では使用できません');
+  }
+
+  const result: MdastNode[] = [];
+  let cursor = 0;
+  let match: RegExpExecArray | null = firstMatch;
+
+  while (match) {
+    const index = match.index;
+    const afterIndex = index + TABLE_CELL_BREAK_TOKEN.length;
+
+    if (hasWhitespaceAdjacentBreak(source, index)) {
+      throw toError(file, node, '{{break}} の隣に whitespace は置けません');
+    }
+
+    if (source.startsWith(TABLE_CELL_BREAK_TOKEN, afterIndex)) {
+      throw toError(file, node, '{{break}} は連続して配置できません');
+    }
+
+    result.push(...parseInlineText(source.slice(cursor, index), node, file));
+    result.push(createTableCellBreakNode());
+    cursor = afterIndex;
+    match = tableCellBreakPattern.exec(source);
+  }
+
+  result.push(...parseInlineText(source.slice(cursor), node, file));
+  return result;
+};
+
 export const extractNodeSource = (node: MdastNode, file?: VFileLike): string | null => {
   if (typeof file?.value !== 'string') {
     return null;
@@ -170,7 +249,11 @@ export const isSingleTildeWrapped = (source: string): boolean =>
   source.endsWith('~') &&
   !source.endsWith('~~');
 
-export const transformInlineTextNode = (node: MdastNode, file?: VFileLike): MdastNode[] => {
+export const transformInlineTextNode = (
+  node: MdastNode,
+  file?: VFileLike,
+  context: InlineTransformContext = defaultInlineTransformContext,
+): MdastNode[] => {
   if (node.type !== 'text' || typeof node.value !== 'string') {
     if (node.type === 'delete') {
       const source = extractNodeSource(node, file);
@@ -188,5 +271,58 @@ export const transformInlineTextNode = (node: MdastNode, file?: VFileLike): Mdas
     return [node];
   }
 
-  return parseInlineText(node.value, node, file);
+  return (
+    transformTableCellBreakText(node.value, node, file, context) ??
+    parseInlineText(node.value, node, file)
+  );
+};
+
+const hasNonWhitespaceText = (value: string | undefined): boolean =>
+  typeof value === 'string' && value.trim().length > 0;
+
+const collectTableCellInlineMarkers = (
+  nodes: readonly MdastNode[],
+  result: ('break' | 'meaningful')[],
+): void => {
+  for (const node of nodes) {
+    if (node.type === 'rouaultInlineTableCellBreak') {
+      result.push('break');
+      continue;
+    }
+
+    if (node.type === 'text' && hasNonWhitespaceText(node.value)) {
+      result.push('meaningful');
+      continue;
+    }
+
+    if (node.type === 'inlineCode' && hasNonWhitespaceText(node.value)) {
+      result.push('meaningful');
+      continue;
+    }
+
+    if (node.type === 'image') {
+      continue;
+    }
+
+    if (Array.isArray(node.children)) {
+      collectTableCellInlineMarkers(node.children, result);
+    }
+  }
+};
+
+export const validateTableCellBreakPlacement = (node: MdastNode, file?: VFileLike): void => {
+  const markers: ('break' | 'meaningful')[] = [];
+  collectTableCellInlineMarkers(node.children ?? [], markers);
+
+  for (const [index, marker] of markers.entries()) {
+    if (marker !== 'break') {
+      continue;
+    }
+
+    const hasBefore = markers.slice(0, index).includes('meaningful');
+    const hasAfter = markers.slice(index + 1).includes('meaningful');
+    if (!hasBefore || !hasAfter) {
+      throw toError(file, node, '{{break}} は table cell の実質先頭または実質末尾に配置できません');
+    }
+  }
 };

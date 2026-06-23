@@ -37,6 +37,9 @@ export const directiveStructuralRules: Record<DirectiveName, DirectiveStructural
   score: {
     allowsChildren: true,
   },
+  table: {
+    allowsChildren: true,
+  },
   tabs: {
     allowsChildren: true,
   },

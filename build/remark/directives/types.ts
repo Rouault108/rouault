@@ -55,6 +55,7 @@ export type DirectiveName =
   | 'info-box'
   | 'link-card'
   | 'score'
+  | 'table'
   | 'tabs'
   | 'translation'
   | 'translation-overlay'
