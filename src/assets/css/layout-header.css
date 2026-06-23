@@ -424,8 +424,7 @@ header[data-layout-header] .corpus-trigger-text {
     );
   }
 
-  header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true']
-    .corpus-switcher {
+  header[data-layout-header] .corpus-switcher {
     --_header-corpus-inline-start-offset: var(--_header-primary-start-offset);
   }
 

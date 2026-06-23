@@ -78,7 +78,7 @@ Header search trigger は、旧 `ui-search-trigger` の完全復元ではなく�
 | Header geometry | Header shell height、alignment、responsive inset を静的 CSS contract として保持する。 | `src/assets/css/layout-header.css` |
 | Header glass surface | Header の translucent glass 表現は sidebar overlay state によって解除しない。`data-overlay-sidebar-open` は stacking のみを所有し、background / background-color / backdrop-filter / -webkit-backdrop-filter を宣言しない。forced-colors などアクセシビリティ media query による base header surface の上書きは別契約として扱い、overlay-open state の責務には含めない。 | `src/assets/css/layout-header.css` / `test/ssr/static-css-contracts.test.ts` |
 | Sidebar inset / TOC inset | Sidebar / TOC presence に応じた header center 領域の inset を保持する。 | `src/assets/css/layout-header.css` |
-| Desktop note layout corpus offset | Desktop note layout で corpus switcher の offset contract を保持する。 | `src/assets/css/layout-header.css` |
+| Desktop header corpus offset | Desktop header では、corpus switcher は note layout / sidebar enabled の有無に依存せず、primary start offset によって inline-start 位置を統一する。 | `src/assets/css/layout-header.css` |
 | Button-like visual behavior | Typography、outline 主体の focus-visible、hover、active、touch target を header controls に移植する。Focus-visible は box-shadow による二重リングを必須契約にしない。 | `src/assets/css/layout-header.css` |
 | Search trigger density | 静的 anchor fallback としての visual density を静的 CSS と E2E で固定する。旧 `ui-search-trigger` API 互換は保持しない。 | `src/assets/css/layout-header.css` / `test/e2e/static-header-migration.spec.ts` |
 | Search trigger ARIA | Dialog trigger として必要な ARIA seed と hydrated 同期を保持する。 | `src/layouts/layout-header-html.ts` / `src/client/post-hydrate/search-dialog-enhancer.ts` |
@@ -184,6 +184,32 @@ Static header controls の public visibility contract は viewport-owned breakpo
   - `>= 1024px`: sidebar enabled の note page では no-JS / hydration 前でも非表示にする。
 - Header container query は search trigger density、trigger padding、center / compact center の内部配置、corpus offset などの header-internal adjustment に限定する。
 - `@container layout-header-shell` 内で TOC trigger / sidebar toggle の public visibility を `display` で所有してはならない。
+
+#### Desktop Header Corpus Offset
+
+Desktop header では、corpus switcher は note layout / sidebar enabled の有無に依存せず、primary start offset によって inline-start 位置を統一する。
+
+- Corpus switcher offset は desktop header 共通契約である。
+- Center start inset は note layout + sidebar enabled 専用契約である。
+- Center end inset は note layout + TOC presence 専用契約である。
+- Mobile / compact header の表示条件はこの契約変更の対象外である。
+
+Decision note: D-HEADER-CORPUS-OFFSET-001
+
+Desktop header の corpus switcher offset は、note/sidebar 条件ではなく header geometry の共通契約として扱う。
+
+棄却案:
+
+- コーパスページだけを特別扱いする案
+- non-note page だけを追加対象にする案
+- corpus page を note layout 扱いにする案
+- `@container` 内で header root 自身に custom property を宣言する案
+
+境界:
+
+- Corpus switcher offset は desktop header 共通契約である。
+- Center start/end inset は引き続き note layout 専用契約に残す。
+- DOM、`data-note-layout`、`data-sidebar-enabled`、menu behavior は変更しない。
 
 #### Search Trigger Visual Contract
 

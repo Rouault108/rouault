@@ -76,6 +76,15 @@ interface HeaderControlContract extends HeaderControlHitTargetContract {
   lineHeight: string;
 }
 
+interface HeaderCorpusOffsetGeometry {
+  corpusInlineStartOffset: number;
+  corpusLeft: number;
+  corpusOffsetToken: string;
+  noteLayout: string | null;
+  sidebarEnabled: string | null;
+  triggerLeft: number;
+}
+
 const headerControlTargets = {
   corpus: {
     name: 'corpus switcher trigger',
@@ -350,6 +359,39 @@ const waitForAppRouterSettled = async (page: Page): Promise<void> => {
   });
 };
 
+const readHeaderCorpusOffsetGeometry = async (page: Page): Promise<HeaderCorpusOffsetGeometry> =>
+  page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>('header[data-layout-header]');
+    if (header === null) {
+      throw new Error('header[data-layout-header] was not found');
+    }
+
+    const corpus = header.querySelector<HTMLElement>("[data-header-menu='corpus']");
+    if (corpus === null) {
+      throw new Error("[data-header-menu='corpus'] was not found");
+    }
+
+    const trigger = corpus.querySelector<HTMLElement>(':scope > [data-header-menu-trigger]');
+    if (trigger === null) {
+      throw new Error('corpus trigger was not found');
+    }
+
+    const corpusStyle = window.getComputedStyle(corpus);
+    const corpusRect = corpus.getBoundingClientRect();
+    const triggerRect = trigger.getBoundingClientRect();
+
+    return {
+      noteLayout: header.getAttribute('data-note-layout'),
+      sidebarEnabled: header.getAttribute('data-sidebar-enabled'),
+      corpusLeft: corpusRect.left,
+      triggerLeft: triggerRect.left,
+      corpusInlineStartOffset: Number.parseFloat(corpusStyle.marginInlineStart),
+      corpusOffsetToken: corpusStyle
+        .getPropertyValue('--_header-corpus-inline-start-offset')
+        .trim(),
+    };
+  });
+
 test.describe('Static header migration', () => {
   test('SPA 遷移では shell.headerHtml で header 全体を置換すること', async ({ page }) => {
     await page.goto(layoutRich.directPath);
@@ -564,27 +606,17 @@ test.describe('Static header migration', () => {
     await waitForAppRouterReady(page);
 
     const geometry = await page.locator('header[data-layout-header]').evaluate((header) => {
-      const headerStyle = window.getComputedStyle(header);
       const center = header.querySelector<HTMLElement>('.layout-header__center');
-      const corpus = header.querySelector<HTMLElement>('.corpus-switcher');
-      if (center === null || corpus === null) {
-        throw new Error('header center or corpus switcher is missing.');
+      if (center === null) {
+        throw new Error('header center is missing.');
       }
       const centerStyle = window.getComputedStyle(center);
-      const corpusStyle = window.getComputedStyle(corpus);
       return {
         centerEndInset: Number.parseFloat(centerStyle.insetInlineEnd),
         centerEndInsetProperty: centerStyle.getPropertyValue('--_header-center-end-inset').trim(),
         centerStartInset: Number.parseFloat(centerStyle.insetInlineStart),
         centerStartInsetProperty: centerStyle
           .getPropertyValue('--_header-center-start-inset')
-          .trim(),
-        corpusInlineStartOffset: Number.parseFloat(corpusStyle.marginInlineStart),
-        corpusInlineStartOffsetProperty: corpusStyle
-          .getPropertyValue('--_header-corpus-inline-start-offset')
-          .trim(),
-        primaryStartOffsetProperty: headerStyle
-          .getPropertyValue('--_header-primary-start-offset')
           .trim(),
         noteLayout: header.getAttribute('data-note-layout'),
         sidebarEnabled: header.getAttribute('data-sidebar-enabled'),
@@ -597,15 +629,41 @@ test.describe('Static header migration', () => {
     expect(geometry.tocPresence).toBe('present');
     expect(geometry.centerStartInsetProperty).not.toBe('');
     expect(geometry.centerStartInsetProperty).not.toBe('0px');
-    expect(geometry.corpusInlineStartOffsetProperty).not.toBe('');
-    expect(geometry.corpusInlineStartOffsetProperty).not.toBe('0px');
-    expect(geometry.primaryStartOffsetProperty).not.toBe('');
     expect(geometry.centerEndInsetProperty).not.toBe('');
     expect(geometry.centerEndInsetProperty).not.toBe('0px');
     expect(geometry.centerStartInset).toBeGreaterThan(0);
     expect(geometry.centerEndInset).toBeGreaterThan(0);
-    expect(geometry.corpusInlineStartOffset).toBeGreaterThan(0);
-    expect(geometry.corpusInlineStartOffset).toBeLessThan(geometry.centerStartInset);
+  });
+
+  test('desktop header corpus switcher は note/sidebar 有無に依存せず primary start offset を持つこと', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 760 });
+
+    await page.goto(layoutRich.directPath);
+    await waitForAppRouterReady(page);
+    const notePage = await readHeaderCorpusOffsetGeometry(page);
+
+    await page.goto('/corpora/library/');
+    await waitForAppRouterReady(page);
+    const corpusPage = await readHeaderCorpusOffsetGeometry(page);
+
+    expect(notePage.noteLayout).toBe('true');
+    expect(notePage.sidebarEnabled).toBe('true');
+    expect(notePage.corpusOffsetToken).not.toBe('');
+    expect(notePage.corpusOffsetToken).not.toBe('0px');
+    expect(notePage.corpusInlineStartOffset).toBeGreaterThan(0);
+
+    expect(corpusPage.noteLayout).toBe('false');
+    expect(corpusPage.sidebarEnabled).toBe('false');
+    expect(corpusPage.corpusOffsetToken).not.toBe('');
+    expect(corpusPage.corpusOffsetToken).not.toBe('0px');
+    expect(corpusPage.corpusInlineStartOffset).toBeGreaterThan(0);
+
+    expect(Math.abs(corpusPage.triggerLeft - notePage.triggerLeft)).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(corpusPage.corpusInlineStartOffset - notePage.corpusInlineStartOffset),
+    ).toBeLessThanOrEqual(1);
   });
 
   test('検索 trigger は fallback link と状態別 CSS と 44px hit area contract を維持すること', async ({

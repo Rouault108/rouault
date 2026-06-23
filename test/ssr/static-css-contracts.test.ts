@@ -567,6 +567,18 @@ describe('static CSS contracts', () => {
       if (block === undefined) continue;
       expect(declarationValuesForSelector(block, selector, 'display')).toHaveLength(0);
     }
+
+    const desktopContainer = atRuleBlock(css, '@container layout-header-shell (width >= 1024px)');
+    expectRuleToDeclare(desktopContainer, 'header[data-layout-header] .corpus-switcher', [
+      '--_header-corpus-inline-start-offset: var(--_header-primary-start-offset)',
+    ]);
+    expect(
+      declarationValuesForSelector(
+        desktopContainer,
+        "header[data-layout-header][data-note-layout='true'][data-sidebar-enabled='true'] .corpus-switcher",
+        '--_header-corpus-inline-start-offset',
+      ),
+    ).toEqual([]);
   });
 
   it('layout header overlay-open state only owns stacking and does not override glass surface', () => {
