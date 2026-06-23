@@ -17,6 +17,7 @@
 - `docs/contracts/sidebar-state.md`
 - `docs/contracts/note-navigation.md`
 - `docs/contracts/reading-chrome.md`
+- `docs/contracts/static-header-contract.md`
 - `docs/contracts/theme.md`
 - `docs/contracts/permanent-url.md`
 - `docs/contracts/search.md`
@@ -65,6 +66,7 @@ Design System pattern は UI の見え方と配置判断を扱う。Router、sea
 - `docs/adr/markdown-table-authoring-extension.md`
 - `docs/adr/result-card-focus-visible-projection.md`
 - `docs/adr/reading-chrome-note-frame-outer-gutter.md`
+- `docs/adr/corpus-current-selected-surface.md`
 - `docs/adr/theme-contract-and-document-bootstrap.md`
 - `docs/adr/`
 

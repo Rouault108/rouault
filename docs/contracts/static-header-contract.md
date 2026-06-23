@@ -119,8 +119,13 @@ Corpus switcher は navigation disclosure である。
 - Corpus item は native link として扱い、Space activation を独自に強制しない。
 - Corpus menu は content-constrained な幅を持つ。通常サポート viewport では trigger width 以上を保ち、trigger width と viewport containment が衝突する場合は viewport containment を優先する。
 - Corpus item の長い label は 1 行で省略される。Default label は不自然に省略しない。
-- Current corpus item は `aria-current="page"` を保持する。
-- Current corpus item の視覚表現は text emphasis を基本とし、left border marker は採用しない。
+- Current corpus item は `aria-current="page"` を semantic source of truth として保持する。
+- Current corpus item の視覚表現は text emphasis のみではなく、persistent selected surface と semibold text emphasis の組み合わせで表現する。
+- Non-current corpus item は normal weight を baseline とする。
+- Current corpus item の selected surface は `--bg-surface-active` を第一候補 token とする。
+- Current corpus item の selected surface は hover / focus-visible / active によって消されない。
+- Left border marker / `border-inline-start` は再導入しない。
+- Forced-colors では current corpus item を `background: Highlight` と `color: HighlightText` で識別可能にする。
 
 ### Theme Switcher
 
@@ -170,11 +175,16 @@ Header controls は、corpus trigger、theme trigger、search trigger、TOC trig
 - Forced-colors でも focus-visible outline を識別可能にする。
 - Menu panel 内 item の hover、focus-visible、active、hit target は top-level controls の selector 整理後も維持する。
 - Corpus menu item は `display: block`、1 行 ellipsis、content-constrained menu width、viewport containment を維持する。
-- Current corpus item は `aria-current="page"` と text emphasis を維持し、left border marker / `border-inline-start` は再導入しない。
+- Current corpus item は `aria-current="page"` を semantic source of truth とし、persistent selected surface と semibold text emphasis で表現する。
+- Current corpus item の selected surface は `--bg-surface-active` を第一候補 token とし、hover / focus-visible / active によって消されない。
+- Non-current corpus item は normal weight を baseline とし、medium / bold を default visual state にしない。
+- Current corpus item は text emphasis のみで識別しない。
+- Left border marker / `border-inline-start` は再導入しない。
+- Forced-colors では current corpus item を `background: Highlight` と `color: HighlightText` で識別可能にし、`border-color: Highlight` を current marker の必須契約にしない。
 - Search trigger 固有の hover、focus-visible、active、responsive density、border-color、background state は top-level 共通 selector によって退化させない。
 - Top-level trigger の 44px hit target pseudo-element は維持する。
 - Header controls の visual contract は本文リンク、検索ダイアログ、sidebar、本文 TOC link へ波及させない。
-- この具体化は既存 contract の明確化であり、R3 相当の公開契約変更ではない。
+- Current corpus selected surface contract は `ADR-CORPUS-CURRENT-SELECTED-SURFACE-001` に基づく R3 / A0 の公開 visual contract 変更である。
 
 #### Header Responsive Breakpoint Ownership
 

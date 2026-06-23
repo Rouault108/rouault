@@ -61,6 +61,34 @@ const declarationsForSelector = (
   return declarations;
 };
 
+const rootRuleIndexForSelectorDeclaring = (
+  css: string,
+  selector: string,
+  property: string,
+): number => {
+  const targetSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
+  let ruleIndex = 0;
+  let foundIndex = -1;
+
+  postcss.parse(css).walkRules((rule: Rule) => {
+    if (rule.parent?.type !== 'root') return;
+
+    const selectors = splitSelectors(rule.selector).map((selector) =>
+      normalizeAttributeQuoteStyle(normalizeSelector(selector)),
+    );
+    const declaresProperty =
+      rule.nodes?.some((node) => node.type === 'decl' && node.prop === property) ?? false;
+
+    if (selectors.includes(targetSelector) && declaresProperty && foundIndex < 0) {
+      foundIndex = ruleIndex;
+    }
+
+    ruleIndex += 1;
+  });
+
+  return foundIndex;
+};
+
 const declarationValuesForSelector = (css: string, selector: string, property: string): string[] =>
   declarationsForSelector(css, selector, property).map((declaration) => declaration.value.trim());
 
@@ -595,6 +623,84 @@ describe('static CSS contracts', () => {
     expect(lacksDeclarationProperty(css, overlayOpenSelector, '-webkit-backdrop-filter')).toBe(
       true,
     );
+  });
+
+  it('layout header corpus current item uses aria-current selected surface contract', () => {
+    const css = readCss('layout-header.css');
+    const corpusItemSelector =
+      "header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]";
+    const currentCorpusItemSelector = [
+      'header[data-layout-header]',
+      "[data-header-menu='corpus']",
+      "[data-header-menu-item][aria-current='page']",
+    ].join(' ');
+    const corpusHoverSelector =
+      "header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:hover";
+    const corpusFocusVisibleSelector =
+      "header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:focus-visible";
+    const corpusActiveSelector =
+      "header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:active";
+
+    expectRuleToDeclare(css, corpusItemSelector, ['font-weight: var(--font-normal, 400)']);
+    expectRuleToDeclare(css, currentCorpusItemSelector, [
+      'background: var(--bg-surface-active, var(--bg-active, var(--bg-control-muted)))',
+      'color: var(--fg-default)',
+      'font-weight: var(--font-semibold, 600)',
+    ]);
+    expect(lacksDeclarationProperty(css, currentCorpusItemSelector, 'border-inline-start')).toBe(
+      true,
+    );
+    expect(
+      lacksDeclarationProperty(css, currentCorpusItemSelector, 'border-inline-start-width'),
+    ).toBe(true);
+
+    const forcedColorsCss = atRuleBlock(css, '@media (forced-colors: active)');
+    expectRuleToDeclare(forcedColorsCss, currentCorpusItemSelector, [
+      'background: Highlight',
+      'color: HighlightText',
+    ]);
+
+    const currentBackgroundIndex = rootRuleIndexForSelectorDeclaring(
+      css,
+      currentCorpusItemSelector,
+      'background',
+    );
+    const corpusHoverBackgroundIndex = rootRuleIndexForSelectorDeclaring(
+      css,
+      corpusHoverSelector,
+      'background',
+    );
+    const corpusFocusVisibleBackgroundIndex = rootRuleIndexForSelectorDeclaring(
+      css,
+      corpusFocusVisibleSelector,
+      'background',
+    );
+    const corpusActiveBackgroundIndex = rootRuleIndexForSelectorDeclaring(
+      css,
+      corpusActiveSelector,
+      'background',
+    );
+
+    expect(
+      currentBackgroundIndex,
+      'current corpus item background root rule index',
+    ).toBeGreaterThanOrEqual(0);
+    expect(
+      corpusHoverBackgroundIndex,
+      'corpus hover background root rule index',
+    ).toBeGreaterThanOrEqual(0);
+    expect(
+      corpusFocusVisibleBackgroundIndex,
+      'corpus focus-visible background root rule index',
+    ).toBeGreaterThanOrEqual(0);
+    expect(
+      corpusActiveBackgroundIndex,
+      'corpus active background root rule index',
+    ).toBeGreaterThanOrEqual(0);
+
+    expect(currentBackgroundIndex).toBeGreaterThan(corpusHoverBackgroundIndex);
+    expect(currentBackgroundIndex).toBeGreaterThan(corpusFocusVisibleBackgroundIndex);
+    expect(currentBackgroundIndex).toBeGreaterThan(corpusActiveBackgroundIndex);
   });
 
   it('search dialog CSS contains required layout and state declarations', () => {

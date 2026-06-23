@@ -274,21 +274,24 @@ header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item] {
   padding-inline: var(--_header-corpus-menu-item-padding-inline, 12px);
   border: 0;
   border-radius: var(--radius-sm, 4px);
+  font-weight: var(--font-normal, 400);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-header[data-layout-header]
-  [data-header-menu='corpus']
-  [data-header-menu-item][aria-current='page'] {
-  font-weight: var(--font-semibold, 600);
 }
 
 header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:hover,
 header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:focus-visible,
 header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:active {
   background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%));
+}
+
+header[data-layout-header]
+  [data-header-menu='corpus']
+  [data-header-menu-item][aria-current='page'] {
+  background: var(--bg-surface-active, var(--bg-active, var(--bg-control-muted)));
+  color: var(--fg-default);
+  font-weight: var(--font-semibold, 600);
 }
 
 header[data-layout-header] .sidebar-toggle:hover,
@@ -514,6 +517,13 @@ header[data-layout-header] .corpus-trigger-text {
   header[data-layout-header] .search-trigger__icon,
   header[data-layout-header] .search-trigger__placeholder {
     color: CanvasText;
+  }
+
+  header[data-layout-header]
+    [data-header-menu='corpus']
+    [data-header-menu-item][aria-current='page'] {
+    background: Highlight;
+    color: HighlightText;
   }
 }
 

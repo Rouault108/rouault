@@ -1030,52 +1030,81 @@ test.describe('Static header migration', () => {
     expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width + 1);
   });
 
-  test('current corpus item は static header 専用の視覚状態を持つこと', async ({ page }) => {
+  test('current corpus item は selected surface と text emphasis で非current item と区別できること', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 760 });
     await page.goto('/about/');
     await waitForAppRouterReady(page);
+
+    await page.locator(headerMenuTriggerSelector('corpus')).click();
+    await expectMenuOpen(page, 'corpus', true);
 
     const panel = page.locator(
       'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-panel]',
     );
-    const currentItem = panel.locator('[data-header-menu-item][aria-current="page"]');
-    const nonCurrentItems = panel.locator('[data-header-menu-item]:not([aria-current="page"])');
-    const nonCurrentItem = nonCurrentItems.first();
+    await expect(panel).toBeVisible();
 
-    await expect(currentItem).toHaveCount(1);
-    await expect(nonCurrentItems).not.toHaveCount(0);
-    await expect(nonCurrentItem).toHaveCount(1);
+    const viewport = page.viewportSize();
+    if (viewport !== null) {
+      await page.mouse.move(viewport.width - 1, viewport.height - 1);
+    }
+    await expect(panel).toBeVisible();
 
-    const [currentVisual, nonCurrentVisual] = await Promise.all([
-      currentItem.evaluate((element) => {
+    const visualState = await panel.evaluate((panelElement) => {
+      const current = panelElement.querySelector('[data-header-menu-item][aria-current="page"]');
+      const nonCurrent = Array.from(
+        panelElement.querySelectorAll('[data-header-menu-item]'),
+      ).find((item) => item.getAttribute('aria-current') !== 'page');
+
+      if (!(current instanceof HTMLElement) || !(nonCurrent instanceof HTMLElement)) {
+        return null;
+      }
+
+      const read = (element: HTMLElement) => {
         const style = window.getComputedStyle(element);
         return {
           ariaCurrent: element.getAttribute('aria-current'),
+          backgroundColor: style.backgroundColor,
           borderInlineStartWidth: Number.parseFloat(style.borderInlineStartWidth),
           fontWeight: Number.parseFloat(style.fontWeight),
           rawFontWeight: style.fontWeight,
         };
-      }),
-      nonCurrentItem.evaluate((element) => {
-        const style = window.getComputedStyle(element);
-        return {
-          ariaCurrent: element.getAttribute('aria-current'),
-          borderInlineStartWidth: Number.parseFloat(style.borderInlineStartWidth),
-          fontWeight: Number.parseFloat(style.fontWeight),
-          rawFontWeight: style.fontWeight,
-        };
-      }),
-    ]);
+      };
 
-    expect(currentVisual.ariaCurrent).toBe('page');
-    expect(nonCurrentVisual.ariaCurrent).toBeNull();
-    expect(currentVisual.borderInlineStartWidth).toBe(0);
-    expect(nonCurrentVisual.borderInlineStartWidth).toBe(0);
+      return {
+        current: read(current),
+        currentCount: panelElement.querySelectorAll(
+          '[data-header-menu-item][aria-current="page"]',
+        ).length,
+        nonCurrent: read(nonCurrent),
+      };
+    });
 
-    if (Number.isFinite(currentVisual.fontWeight) && Number.isFinite(nonCurrentVisual.fontWeight)) {
-      expect(currentVisual.fontWeight).toBeGreaterThan(nonCurrentVisual.fontWeight);
-      expect(currentVisual.fontWeight).toBeGreaterThanOrEqual(600);
+    expect(visualState).not.toBeNull();
+    expect(visualState?.currentCount).toBe(1);
+
+    expect(visualState?.current.ariaCurrent).toBe('page');
+    expect(visualState?.nonCurrent.ariaCurrent).toBeNull();
+    expect(visualState?.current.borderInlineStartWidth).toBe(0);
+    expect(visualState?.nonCurrent.borderInlineStartWidth).toBe(0);
+
+    expect(isTransparentColor(visualState?.current.backgroundColor ?? '')).toBe(false);
+    expect(visualState?.current.backgroundColor).not.toBe(
+      visualState?.nonCurrent.backgroundColor,
+    );
+
+    const currentWeight = visualState?.current.fontWeight ?? Number.NaN;
+    const nonCurrentWeight = visualState?.nonCurrent.fontWeight ?? Number.NaN;
+
+    if (Number.isFinite(currentWeight) && Number.isFinite(nonCurrentWeight)) {
+      expect(currentWeight).toBeGreaterThan(nonCurrentWeight);
+      expect(currentWeight).toBeGreaterThanOrEqual(600);
+      expect(nonCurrentWeight).toBeLessThanOrEqual(500);
     } else {
-      expect(currentVisual.rawFontWeight).not.toBe(nonCurrentVisual.rawFontWeight);
+      expect(visualState?.current.rawFontWeight).not.toBe(
+        visualState?.nonCurrent.rawFontWeight,
+      );
     }
   });
 
