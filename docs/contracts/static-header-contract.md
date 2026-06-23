@@ -126,6 +126,10 @@ Corpus switcher は navigation disclosure である。
 
 Theme switcher は theme option button group である。
 
+- Theme preference、storage key、root attributes、resolved theme、document bootstrap、CSS token ownership は `docs/contracts/theme.md` を正本とする。
+- Static header contract は theme switcher の静的 HTML projection、disclosure、button group semantics、keyboard enhancement、focus、visual density を所有する。
+- Header theme switcher は root theme state の source of truth ではない。Root state は `data-theme` / `data-resolved-theme` と theme manager が所有する。
+- SSR projection の初期表示は `system` として成立し、document bootstrap と theme chrome bootstrap により root state と header chrome 表示が同期される。
 - Trigger は disclosure を開閉する導線である。
 - Panel 内部は theme option button 群である。
 - 各 option は `aria-pressed` または現行実装と整合する選択状態属性で表現する。

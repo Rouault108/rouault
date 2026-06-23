@@ -5,12 +5,8 @@ import {
 } from '../data/corpusPages.js';
 import { loadBuildMetadataData, type BuildMetadataData } from '../data/buildMetadata.js';
 import { loadSiteUrlContextData, type SiteUrlContextData } from '../data/siteUrlContext.js';
-import {
-  THEME_ATTRIBUTE,
-  THEME_STORAGE_KEY,
-  RESOLVED_THEME_ATTRIBUTE,
-} from '../theme/theme-manager.js';
 import { buildThemeChromeBootstrapScript } from '../theme/theme-chrome-bootstrap.js';
+import { buildThemeDocumentBootstrapScript } from '../theme/theme-document-bootstrap.js';
 import {
   APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC,
   APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE,
@@ -74,34 +70,6 @@ type BaseLayoutRenderInput = Omit<BaseLayoutData, 'buildMetadata' | 'siteUrlCont
   buildMetadata?: BuildMetadataData | null;
   siteUrlContext?: SiteUrlContextData | null;
 };
-
-const buildThemeBootstrapScript = (): string =>
-  `
-(() => {
-  const root = document.documentElement;
-  const storageKey = ${JSON.stringify(THEME_STORAGE_KEY)};
-  const themeAttribute = ${JSON.stringify(THEME_ATTRIBUTE)};
-  const resolvedThemeAttribute = ${JSON.stringify(RESOLVED_THEME_ATTRIBUTE)};
-  let preference = 'system';
-
-  try {
-    const stored = window.localStorage.getItem(storageKey);
-    if (stored === 'light' || stored === 'dark' || stored === 'system') {
-      preference = stored;
-    }
-  } catch {
-    preference = 'system';
-  }
-
-  const resolvedTheme = preference === 'system'
-    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-    : preference;
-
-  root.setAttribute(themeAttribute, preference);
-  root.setAttribute(resolvedThemeAttribute, resolvedTheme);
-  root.style.colorScheme = preference === 'system' ? 'light dark' : preference;
-})();
-`.trim();
 
 const DEFAULT_CLIENT_SCRIPT_SRC = '/src/client.ts';
 const DEFAULT_CLIENT_STYLE_SRCS = ['/src/assets/css/main.css'] as const;
@@ -211,7 +179,7 @@ export class BaseLayout {
       data.page?.url ? `shell:${data.page.url}` : `shell:${title}`,
     );
     const footerHtml = renderDefaultLayoutFooterHtml(buildMetadata.buildLabel, { idContext });
-    const themeBootstrapScript = buildThemeBootstrapScript();
+    const themeBootstrapScript = buildThemeDocumentBootstrapScript();
     const themeChromeBootstrapScript = buildThemeChromeBootstrapScript();
     const routeManifestUrl = resolveInternalDocumentRouteManifestUrl({
       siteUrlContext,

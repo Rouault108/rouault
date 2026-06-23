@@ -3,8 +3,20 @@ import { describe, expect, it } from 'vitest';
 import { BaseLayout } from '../../src/layouts/BaseLayout.11ty.js';
 import { loadBuildMetadataData } from '../../src/data/buildMetadata.js';
 import { loadSiteUrlContextData } from '../../src/data/siteUrlContext.js';
+import { THEME_STORAGE_KEY } from '../../src/theme/theme-manager.js';
 
 const getBodyTag = (html: string): string => html.match(/<body[^>]*>/u)?.[0] ?? '';
+
+const enumerateScriptBlocks = (
+  html: string,
+): readonly { readonly attributes: string; readonly body: string; readonly index: number }[] => {
+  const scriptPattern = /<script\b([^>]*)>([\s\S]*?)<\/script>/gu;
+  return [...html.matchAll(scriptPattern)].map((match) => ({
+    attributes: match[1] ?? '',
+    body: match[2] ?? '',
+    index: match.index ?? -1,
+  }));
+};
 
 const TEST_BUILD_METADATA = loadBuildMetadataData({
   buildId: 'test-build',
@@ -44,6 +56,47 @@ describe('BaseLayout', () => {
       '<meta name="rouault-route-manifest-build-id" content="test-build">',
     );
     expect(rendered).toContain('<meta name="rouault-route-manifest-version" content="1">');
+  });
+
+  it('theme document bootstrap script を stylesheet と client module script より前に出力すること', () => {
+    const rendered = new BaseLayout().render({
+      buildMetadata: TEST_BUILD_METADATA,
+      siteUrlContext: TEST_SITE_URL_CONTEXT,
+      content: '<p>Home</p>',
+    });
+    const scripts = enumerateScriptBlocks(rendered);
+    const themeDocumentBootstrap = scripts.find(
+      (script) =>
+        script.attributes.trim() === '' && script.body.includes(JSON.stringify(THEME_STORAGE_KEY)),
+    );
+    const themeChromeBootstrap = scripts.find((script) =>
+      script.attributes.includes('data-theme-chrome-bootstrap'),
+    );
+    const firstStylesheetIndex = rendered.indexOf('<link rel="stylesheet"');
+    const clientModuleScript = scripts.find((script) => script.attributes.includes('type="module"'));
+
+    expect(themeDocumentBootstrap).toBeDefined();
+    expect(themeChromeBootstrap).toBeDefined();
+    expect(clientModuleScript).toBeDefined();
+    expect(themeDocumentBootstrap).not.toBe(themeChromeBootstrap);
+    expect(themeDocumentBootstrap?.index).toBeGreaterThanOrEqual(0);
+    expect(firstStylesheetIndex).toBeGreaterThanOrEqual(0);
+    expect(themeDocumentBootstrap?.index).toBeLessThan(firstStylesheetIndex);
+    expect(themeDocumentBootstrap?.index).toBeLessThan(clientModuleScript?.index ?? -1);
+
+    const themeDocumentBootstrapBody = themeDocumentBootstrap?.body ?? '';
+    for (const literal of [
+      THEME_STORAGE_KEY,
+      'data-theme',
+      'data-resolved-theme',
+      'prefers-color-scheme: dark',
+      'colorScheme',
+      'light',
+      'dark',
+      'system',
+    ]) {
+      expect(themeDocumentBootstrapBody).toContain(literal);
+    }
   });
 
   it('page title が未指定の場合は site title のみを出力すること', () => {

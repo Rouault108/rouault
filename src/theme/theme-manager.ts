@@ -2,9 +2,13 @@ export const THEME_STORAGE_KEY = 'rouault-theme-preference';
 export const THEME_ATTRIBUTE = 'data-theme';
 export const RESOLVED_THEME_ATTRIBUTE = 'data-resolved-theme';
 export const THEME_CHANGE_EVENT = 'rouault-theme-change';
+export const THEME_PREFERENCE_VALUES = ['light', 'dark', 'system'] as const;
+export const RESOLVED_THEME_VALUES = ['light', 'dark'] as const;
+export const DEFAULT_THEME_PREFERENCE = 'system';
+export const DARK_MODE_MEDIA_QUERY = '(prefers-color-scheme: dark)';
 
-export type ThemePreference = 'light' | 'dark' | 'system';
-export type ResolvedTheme = 'light' | 'dark';
+export type ThemePreference = (typeof THEME_PREFERENCE_VALUES)[number];
+export type ResolvedTheme = (typeof RESOLVED_THEME_VALUES)[number];
 
 export interface ThemeChangeDetail {
   preference: ThemePreference;
@@ -24,16 +28,17 @@ interface ApplyThemeOptions {
   emit?: boolean;
 }
 
-const DARK_MODE_MEDIA_QUERY = '(prefers-color-scheme: dark)';
-
 let themeBootstrapInitialized = false;
 
 export function isThemePreference(value: unknown): value is ThemePreference {
-  return value === 'light' || value === 'dark' || value === 'system';
+  return (
+    typeof value === 'string' &&
+    THEME_PREFERENCE_VALUES.some((preference) => preference === value)
+  );
 }
 
 export function normalizeThemePreference(value: unknown): ThemePreference {
-  return isThemePreference(value) ? value : 'system';
+  return isThemePreference(value) ? value : DEFAULT_THEME_PREFERENCE;
 }
 
 function getDefaultRoot(): HTMLElement | null {
@@ -68,13 +73,13 @@ export function readStoredThemePreference(
   storage: Storage | null = getDefaultStorage(),
 ): ThemePreference {
   if (storage === null) {
-    return 'system';
+    return DEFAULT_THEME_PREFERENCE;
   }
 
   try {
     return normalizeThemePreference(storage.getItem(THEME_STORAGE_KEY));
   } catch {
-    return 'system';
+    return DEFAULT_THEME_PREFERENCE;
   }
 }
 
@@ -88,7 +93,7 @@ export function resolveThemePreference(
   preference: ThemePreference,
   mediaQueryList: ThemeMediaQueryLike | null = getDefaultMediaQueryList(),
 ): ResolvedTheme {
-  if (preference === 'system') {
+  if (preference === DEFAULT_THEME_PREFERENCE) {
     return mediaQueryList?.matches === true ? 'dark' : 'light';
   }
 
@@ -119,7 +124,7 @@ export function applyThemePreference(
     root.setAttribute(THEME_ATTRIBUTE, normalizedPreference);
     root.setAttribute(RESOLVED_THEME_ATTRIBUTE, resolvedTheme);
     root.style.colorScheme =
-      normalizedPreference === 'system' ? 'light dark' : normalizedPreference;
+      normalizedPreference === DEFAULT_THEME_PREFERENCE ? 'light dark' : normalizedPreference;
   }
 
   const detail: ThemeChangeDetail = {
@@ -157,7 +162,7 @@ export function initTheme(): void {
   applyStoredPreference(false);
 
   const handleMediaQueryChange = (): void => {
-    if (readStoredThemePreference() !== 'system') {
+    if (readStoredThemePreference() !== DEFAULT_THEME_PREFERENCE) {
       return;
     }
 
