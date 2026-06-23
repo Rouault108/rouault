@@ -1,6 +1,8 @@
 # Markdown Output Reference
 
 この文書は Markdown 出力の詳細表である。安全境界と出力責務の正本は `docs/contracts/markdown.md` とする。
+入力記法の網羅表は `docs/references/markdown-authoring-syntax.md` を参照する。
+この文書は final DOM と出力詳細を扱い、入力記法一覧を所有しない。
 
 ## Standard Element Normalization
 
@@ -30,7 +32,7 @@
 - `::syntax-card`
 - `::table`
 
-各 directive は authoring guide の入力仕様に従い、最終 DOM は `docs/contracts/markdown.md` の safety boundary を満たす。
+各 directive の入力記法は `docs/references/markdown-authoring-syntax.md` を参照し、最終 DOM は `docs/contracts/markdown.md` の safety boundary を満たす。
 
 ### `::link-card`
 

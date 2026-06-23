@@ -21,6 +21,7 @@
 
 - Component 別 DOM 詳細表。`docs/references/markdown-output.md` を参照する。
 - 執筆者向け説明。`docs/guides/markdown-authoring.md` と `docs/guides/note-authoring.md` を参照する。
+- Markdown 入力記法の網羅表。`docs/references/markdown-authoring-syntax.md` を参照する。
 - Permanent URL hash 生成規則。`docs/contracts/permanent-url.md` を参照する。
 
 ## 3. Public Contract

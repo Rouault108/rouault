@@ -42,6 +42,7 @@ Design System pattern は UI の見え方と配置判断を扱う。Router、sea
 - `docs/references/navigation-envelope-schema.md`
 - `docs/references/search-data-model.md`
 - `docs/references/search-ranking-and-diagnostics.md`
+- `docs/references/markdown-authoring-syntax.md`
 - `docs/references/markdown-output.md`
 - `docs/references/compatibility.md`
 
