@@ -335,6 +335,135 @@ const cloneNode = (node: HastNode): HastNode => {
   return clonedNode;
 };
 
+const TABLE_COLUMN_WIDTH_TOKENS = new Set(['auto', 'fit', 'narrow', 'medium', 'wide', 'numeric']);
+
+const isTableSource = (node: HastNode): boolean =>
+  isElement(node) && node.properties?.['data-table-source'] === 'true';
+
+const getDirectElementChildren = (
+  node: HastNode,
+  predicate: (candidate: HastNode) => boolean,
+): HastNode[] =>
+  Array.isArray(node.children)
+    ? node.children.filter((child) => isElement(child) && predicate(child))
+    : [];
+
+const findFirstDescendantElement = (
+  node: HastNode,
+  predicate: (candidate: HastNode) => boolean,
+): HastNode | undefined => {
+  if (isElement(node) && predicate(node)) {
+    return node;
+  }
+
+  if (!Array.isArray(node.children)) {
+    return undefined;
+  }
+
+  for (const child of node.children) {
+    const matched = findFirstDescendantElement(child, predicate);
+    if (matched) {
+      return matched;
+    }
+  }
+
+  return undefined;
+};
+
+const collectDescendantElements = (
+  node: HastNode,
+  predicate: (candidate: HastNode) => boolean,
+  result: HastNode[] = [],
+): HastNode[] => {
+  if (isElement(node) && predicate(node)) {
+    result.push(node);
+  }
+
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) {
+      collectDescendantElements(child, predicate, result);
+    }
+  }
+
+  return result;
+};
+
+const getTableColumnCount = (table: HastNode): number => {
+  const thead = getDirectElementChildren(table, (child) => child.tagName === 'thead')[0];
+  if (thead) {
+    const firstHeaderRow = getDirectElementChildren(thead, (child) => child.tagName === 'tr')[0];
+    if (firstHeaderRow) {
+      return getDirectElementChildren(firstHeaderRow, (child) => child.tagName === 'th').length;
+    }
+  }
+
+  const firstRow = findFirstDescendantElement(table, (child) => child.tagName === 'tr');
+  if (!firstRow) {
+    return 0;
+  }
+
+  return getDirectElementChildren(
+    firstRow,
+    (child) => child.tagName === 'th' || child.tagName === 'td',
+  ).length;
+};
+
+const assertNoTableCellSpans = (table: HastNode): void => {
+  const spannedCell = collectDescendantElements(
+    table,
+    (child) =>
+      (child.tagName === 'td' || child.tagName === 'th') &&
+      (child.properties?.['colspan'] !== undefined ||
+        child.properties?.['colSpan'] !== undefined ||
+        child.properties?.['rowspan'] !== undefined ||
+        child.properties?.['rowSpan'] !== undefined),
+  )[0];
+
+  if (spannedCell) {
+    throw new Error('[markdown] column-widths 指定 table では colspan / rowspan は使用できません');
+  }
+};
+
+const parseTableColumnWidths = (value: unknown): string[] => {
+  const source = pickOptionalString(value);
+  if (!source) {
+    return [];
+  }
+
+  const tokens = source.split(/\s+/u).filter((token) => token.length > 0);
+  for (const token of tokens) {
+    if (!TABLE_COLUMN_WIDTH_TOKENS.has(token)) {
+      throw new Error(`[markdown] table の column-widths に未知の token "${token}" が残っています`);
+    }
+  }
+  return tokens;
+};
+
+const insertTableColgroup = (table: HastNode, columnWidths: readonly string[]): void => {
+  const columnCount = getTableColumnCount(table);
+  if (columnWidths.length !== columnCount) {
+    throw new Error('[markdown] table の column-widths 数は table 列数と一致する必要があります');
+  }
+
+  assertNoTableCellSpans(table);
+
+  const colgroup = createElement(
+    'colgroup',
+    {},
+    columnWidths.map((token) => createElement('col', { 'data-table-col-width': token }, [])),
+  );
+  const children = Array.isArray(table.children) ? table.children : [];
+  const captionIndex = children.findIndex((child) => isElement(child, 'caption'));
+  table.children =
+    captionIndex >= 0
+      ? [
+          ...children.slice(0, captionIndex + 1),
+          colgroup,
+          ...children.slice(captionIndex + 1),
+        ]
+      : [colgroup, ...children];
+};
+
 const unwrapTableNode = (node: HastNode): HastNode | null => {
   if (isElement(node, 'table')) {
     return cloneNode(node);
@@ -364,21 +493,49 @@ const unwrapTableNode = (node: HastNode): HastNode | null => {
   return null;
 };
 
+const unwrapSourceTableNode = (node: HastNode): HastNode => {
+  const children = Array.isArray(node.children) ? node.children : [];
+  const meaningfulChildren = children.filter((child) => !isWhitespaceText(child));
+  const directTables = meaningfulChildren.filter((child) => isElement(child, 'table'));
+  const meaningfulNonTables = meaningfulChildren.filter((child) => !isElement(child, 'table'));
+
+  if (directTables.length !== 1 || meaningfulNonTables.length > 0) {
+    throw new Error('[markdown] table source は GFM table 1 個だけを含む必要があります');
+  }
+
+  const table = directTables[0];
+  if (!table || !isElement(table, 'table')) {
+    throw new Error('[markdown] table source は GFM table 1 個だけを含む必要があります');
+  }
+
+  return cloneNode(table);
+};
+
 const toStaticTable = (node: HastNode): void => {
   const originalProperties = node.properties ?? {};
   const originalChildren = Array.isArray(node.children) ? node.children : [];
 
   const density = pickOptionalString(originalProperties['density']);
   const existingAriaLabel = pickOptionalString(originalProperties['aria-label']);
+  const sourceTable = isTableSource(node);
+  const columnWidths = sourceTable
+    ? parseTableColumnWidths(originalProperties['data-table-column-widths'])
+    : [];
 
   let tableChild: HastNode;
   if (node.tagName === 'table') {
     tableChild = createElement('table', originalProperties, originalChildren);
+  } else if (sourceTable) {
+    tableChild = unwrapSourceTableNode(node);
   } else {
     const firstTable = originalChildren
       .map((child) => unwrapTableNode(child))
       .find((child): child is HastNode => child !== null);
     tableChild = firstTable ?? createElement('table', {}, []);
+  }
+
+  if (columnWidths.length > 0) {
+    insertTableColgroup(tableChild, columnWidths);
   }
 
   const tableChildren = Array.isArray(tableChild.children) ? tableChild.children : [];
@@ -2154,7 +2311,7 @@ export function rehypeRouaultComponents(
         }
       }
 
-      if (current.tagName === 'table') {
+      if (current.tagName === 'table' || isTableSource(current)) {
         toStaticTable(current);
 
         const tableRoot = Array.isArray(current.children) ? current.children[0] : undefined;

@@ -240,6 +240,8 @@ const FINAL_SOURCE_MARKER_ATTRIBUTES = [
   'data-code-group-source',
   'data-link-card-source',
   'data-details-source',
+  'data-table-source',
+  'data-table-column-widths',
   'data-score-src',
   'data-score-caption-source',
   'data-syntax-card-source',
@@ -263,6 +265,8 @@ const validateFinalSourceMarkerLifecycle = (node: Parse5Element, errors: string[
     }
   }
 };
+
+const TABLE_COLUMN_WIDTH_TOKENS = new Set(['auto', 'fit', 'narrow', 'medium', 'wide', 'numeric']);
 
 interface CodeSurfaceContractCollections {
   readonly elements: Parse5Element[];
@@ -1202,6 +1206,135 @@ const validateFootnoteContracts = (fragment: Parse5DocumentFragment, errors: str
   }
 };
 
+interface TableContractCollections {
+  readonly elements: Parse5Element[];
+  readonly parentByNode: Map<Parse5Node, Parse5Element>;
+}
+
+const collectTableContractNodes = (fragment: Parse5DocumentFragment): TableContractCollections => {
+  const elements: Parse5Element[] = [];
+  const parentByNode = new Map<Parse5Node, Parse5Element>();
+
+  const visit = (node: Parse5Node, parent: Parse5Element | null): void => {
+    if (parent) {
+      parentByNode.set(node, parent);
+    }
+    if (isElementNode(node)) {
+      elements.push(node);
+    }
+
+    for (const child of getChildNodes(node)) {
+      visit(child, isElementNode(node) ? node : parent);
+    }
+  };
+
+  for (const child of fragment.childNodes) {
+    visit(child, null);
+  }
+
+  return { elements, parentByNode };
+};
+
+const getTableColumnCount = (table: Parse5Element): number => {
+  const thead = findDirectChild(table, (child) => child.tagName === 'thead');
+  if (thead) {
+    const firstHeaderRow = findDirectChild(thead, (child) => child.tagName === 'tr');
+    if (firstHeaderRow) {
+      return getDirectChildren(firstHeaderRow, (child) => child.tagName === 'th').length;
+    }
+  }
+
+  const firstRow = collectDescendantElements(table, (child) => child.tagName === 'tr')[0];
+  if (!firstRow) {
+    return 0;
+  }
+
+  return getDirectChildren(
+    firstRow,
+    (child) => child.tagName === 'th' || child.tagName === 'td',
+  ).length;
+};
+
+const isTableCellElement = (node: Parse5Element): boolean =>
+  node.tagName === 'td' || node.tagName === 'th';
+
+const getContainingTableCell = (
+  node: Parse5Element,
+  parentByNode: Map<Parse5Node, Parse5Element>,
+): Parse5Element | undefined => {
+  let current = parentByNode.get(node);
+  while (current) {
+    if (isTableCellElement(current)) {
+      return current;
+    }
+    current = parentByNode.get(current);
+  }
+  return undefined;
+};
+
+const getContainingTable = (
+  node: Parse5Element,
+  parentByNode: Map<Parse5Node, Parse5Element>,
+): Parse5Element | undefined => {
+  let current = parentByNode.get(node);
+  while (current) {
+    if (current.tagName === 'table') {
+      return current;
+    }
+    current = parentByNode.get(current);
+  }
+  return undefined;
+};
+
+const validateTableFinalContracts = (
+  fragment: Parse5DocumentFragment,
+  errors: string[],
+): void => {
+  const collections = collectTableContractNodes(fragment);
+
+  for (const element of collections.elements) {
+    if (element.tagName === 'col' && hasAttribute(element, 'data-table-col-width')) {
+      const token = getAttributeValue(element, 'data-table-col-width')?.trim() ?? '';
+      if (!TABLE_COLUMN_WIDTH_TOKENS.has(token)) {
+        errors.push('col[data-table-col-width] は許可された table column width token だけを持てます');
+        return;
+      }
+    }
+
+    if (element.tagName === 'br') {
+      const hasCellBreakMarker = getAttributeValue(element, 'data-table-cell-break') === 'true';
+      const containingCell = getContainingTableCell(element, collections.parentByNode);
+      if (hasCellBreakMarker && !containingCell) {
+        errors.push('br[data-table-cell-break="true"] は td / th の子孫にだけ配置できます');
+        return;
+      }
+
+      if (getContainingTable(element, collections.parentByNode) && !hasCellBreakMarker) {
+        errors.push('table 内の br は data-table-cell-break="true" が必要です');
+        return;
+      }
+    }
+  }
+
+  for (const table of collections.elements.filter((element) => element.tagName === 'table')) {
+    const colgroups = getDirectChildren(table, (child) => child.tagName === 'colgroup');
+    for (const colgroup of colgroups) {
+      const cols = getDirectChildren(colgroup, (child) => child.tagName === 'col');
+      for (const col of cols) {
+        if (!hasAttribute(col, 'data-table-col-width')) {
+          errors.push('table の colgroup col には data-table-col-width が必要です');
+          return;
+        }
+      }
+
+      if (cols.length !== getTableColumnCount(table)) {
+        errors.push('table の colgroup col 数は table 列数と一致する必要があります');
+        return;
+      }
+    }
+  }
+};
+
 interface StaticContractState {
   sawFootnoteRef: boolean;
   sawEndnotes: boolean;
@@ -1435,6 +1568,10 @@ export const validateNoteContentContracts = (
 
   if (errors.length === 0) {
     validateFootnoteContracts(fragment, errors);
+  }
+
+  if (errors.length === 0) {
+    validateTableFinalContracts(fragment, errors);
   }
 
   if (

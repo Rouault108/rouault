@@ -44,6 +44,17 @@ describe('table static css contracts', () => {
     ]);
   });
 
+  it('column width token ごとの col selector と width declaration を保持すること', () => {
+    for (const token of ['auto', 'fit', 'narrow', 'medium', 'wide', 'numeric']) {
+      expectCssIncludes(tableCss, [
+        `[data-table-root] col[data-table-col-width='${token}']`,
+        'width:',
+      ]);
+    }
+
+    expectCssIncludes(tableCss, ["[data-table-root] col[data-table-col-width='auto']", 'width: auto']);
+  });
+
   it('align attribute と numeric data の静的 CSS 契約を保持すること', () => {
     expectCssIncludes(tableCss, [
       "[data-table-root] > table th[align='center']",
@@ -62,6 +73,16 @@ describe('table static css contracts', () => {
       '[data-table-root] > table tr:hover',
       'background-color: var(--bg-table-ruler',
       'transition: background-color var(--duration-fast',
+    ]);
+  });
+
+  it('column width token は inline style や numeric の暗黙 alignment に依存しないこと', () => {
+    expectCssExcludes(tableCss, [
+      '[data-table-col-width] style',
+      '[data-table-col-width="numeric"]',
+      "[data-table-col-width='numeric'] { text-align",
+      "[data-table-col-width='numeric'] {\n  text-align",
+      "[data-table-col-width='numeric'] {\n  font-feature-settings",
     ]);
   });
 

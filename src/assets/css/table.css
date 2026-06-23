@@ -43,6 +43,30 @@
   table-layout: auto;
 }
 
+[data-table-root] col[data-table-col-width='auto'] {
+  width: auto;
+}
+
+[data-table-root] col[data-table-col-width='fit'] {
+  width: 1%;
+}
+
+[data-table-root] col[data-table-col-width='narrow'] {
+  width: 12ch;
+}
+
+[data-table-root] col[data-table-col-width='medium'] {
+  width: 20ch;
+}
+
+[data-table-root] col[data-table-col-width='wide'] {
+  width: 32ch;
+}
+
+[data-table-root] col[data-table-col-width='numeric'] {
+  width: 12ch;
+}
+
 [data-table-root] > table > caption {
   caption-side: top;
   font-size: var(--text-xs, 0.75rem);
