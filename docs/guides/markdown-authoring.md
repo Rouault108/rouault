@@ -61,6 +61,8 @@ meta key の網羅表は `docs/references/markdown-authoring-syntax.md` を参�
 
 列幅ヒントが必要な場合は、GFM table 1個だけを `::table{column-widths="..."}` で包む。
 
+`::table` の開始 marker、GFM table、終端 `::` の間へ workaround として空行を追加する必要はない。表以外の段落や複数の表を wrapper 内へ混ぜると build error になる。
+
 ```md
 ::table{column-widths="fit wide numeric"}
 | 項目 | 説明 | 点数 |

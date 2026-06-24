@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { remarkRouaultDirectives } from '../../build/remark/rouault-directives.js';
+import { parseRouaultDirectiveMdastFromMarkdown } from '../helpers/markdown-directive-test-utils.js';
 
 interface MdastNode {
   type: string;
@@ -2920,6 +2921,117 @@ describe('remarkRouaultDirectives', () => {
         remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
       }).to.throw('[markdown] table ディレクティブは GFM table 1 個だけを包んでください');
     }
+  });
+
+  it('blank line なしの ::table + GFM table + closing :: が成功すること', () => {
+    const tree = parseRouaultDirectiveMdastFromMarkdown(
+      [
+        '::table{column-widths="fit wide"}',
+        '| 名前 | 値 |',
+        '| :--- | ---: |',
+        '| A | 1 |',
+        '::',
+      ].join('\n'),
+    );
+
+    const wrapper = tree.children?.[0];
+    const table = wrapper?.children?.[0] as (MdastNode & { align?: unknown[] }) | undefined;
+    expect(wrapper?.type).to.equal('rouaultDirectiveTable');
+    expect(table?.type).to.equal('table');
+    expect(table?.align).to.deep.equal(['left', 'right']);
+  });
+
+  it('recovered closing :: が table data として残らないこと', () => {
+    const tree = parseRouaultDirectiveMdastFromMarkdown(
+      ['::table', '| 名前 | 値 |', '| --- | --- |', '| A | 1 |', '::'].join('\n'),
+    );
+
+    const table = tree.children?.[0]?.children?.[0];
+    const cellValues =
+      table?.children
+        ?.flatMap((row) => row.children ?? [])
+        .flatMap((cell) => cell.children ?? [])
+        .map((child) => child.value)
+        .filter((value): value is string => typeof value === 'string') ?? [];
+
+    expect(cellValues).to.not.include('::');
+    expect(cellValues).to.deep.equal(['名前', '値', 'A', '1']);
+  });
+
+  it('GFM が補完した空セルを伴う closing marker candidate row を認識すること', () => {
+    const tree = parseRouaultDirectiveMdastFromMarkdown(
+      ['::table', '| 名前 | 値 |', '| --- | --- |', '| A | 1 |', '| :: |   |'].join('\n'),
+    );
+
+    const table = tree.children?.[0]?.children?.[0];
+    const rowCount = table?.children?.length;
+    const lastRowFirstCellText = table?.children?.[1]?.children?.[0]?.children?.[0]?.value;
+
+    expect(rowCount).to.equal(2);
+    expect(lastRowFirstCellText).to.equal('A');
+  });
+
+  it('| :: | data | は closing marker として扱わず table-specific missing terminator error を投げること', () => {
+    const invalidRows = ['| :: | data |', '| **::** |   |', '| `::` |   |', '| [::](x) |   |', '| ::: |   |'];
+
+    for (const row of invalidRows) {
+      const run = () => {
+        parseRouaultDirectiveMdastFromMarkdown(
+          ['::table', '| 名前 | 値 |', '| --- | --- |', row].join('\n'),
+        );
+      };
+
+      expect(run).to.throw('table ディレクティブの終端 "::" が見つかりません');
+    }
+  });
+
+  it('closing marker candidate row の後に meaningful table row が続く場合は table-specific post-terminator-row error を投げること', () => {
+    const run = () => {
+      parseRouaultDirectiveMdastFromMarkdown(
+        [
+          '::table',
+          '| 名前 | 値 |',
+          '| --- | --- |',
+          '| A | 1 |',
+          '::',
+          '| 後続 | row |',
+        ].join('\n'),
+      );
+    };
+
+    expect(run).to.throw('table ディレクティブの終端 "::" の後に table row が続いています');
+  });
+
+  it('::table が GFM table を包まない場合は table-specific error を投げること', () => {
+    const run = () => {
+      parseRouaultDirectiveMdastFromMarkdown(['::table', '本文です。', '::'].join('\n'));
+    };
+
+    expect(run).to.throw('table ディレクティブは GFM table 1 個だけを包んでください');
+  });
+
+  it('plain GFM table outside ::table is unaffected であること', () => {
+    const tree = parseRouaultDirectiveMdastFromMarkdown(
+      ['| 名前 | 値 |', '| --- | --- |', '| A | 1 |', '| :: |   |'].join('\n'),
+    );
+
+    const table = tree.children?.[0];
+    const lastRowFirstCellText = table?.children?.[2]?.children?.[0]?.children?.[0]?.value;
+
+    expect(table?.type).to.equal('table');
+    expect(lastRowFirstCellText).to.equal('::');
+  });
+
+  it('wrapper 内の meaningful non-table child は parser で捨てず既存 validator の table-specific structure error にすること', () => {
+    const run = () => {
+      parseRouaultDirectiveMdastFromMarkdown(
+        ['::table', '| 名前 | 値 |', '| --- | --- |', '| A | 1 |', '', '本文です。', '::'].join(
+          '\n',
+        ),
+      );
+    };
+
+    expect(run).to.throw('table ディレクティブは GFM table 1 個だけを包んでください');
   });
 
   it('plain GFM table cell 内の exact {{break}} を br marker へ変換すること', () => {

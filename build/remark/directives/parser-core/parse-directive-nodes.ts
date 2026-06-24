@@ -12,6 +12,7 @@ import {
 } from './expand-folded-paragraph.js';
 import { parseAttributes } from './parse-attributes.js';
 import { isEndMarker, parseStartMarker } from './parse-directive-line.js';
+import { parseTableDirectiveBlock } from './parse-table-directive-block.js';
 import { findClosingDirectiveIndex } from './scan-block-markers.js';
 
 const toParsedDirectiveNode = (
@@ -106,6 +107,14 @@ const transformChildren = (
     if (getDirectiveDescriptor(marker.name).kind === 'leaf') {
       result.push(toParsedDirectiveNode(marker, [], attrs));
       index += 1;
+      continue;
+    }
+
+    if (marker.name === 'table') {
+      const parsedTableBlock = parseTableDirectiveBlock(normalizedNodes, index, marker, file);
+      const innerNodes = transformChildren(parsedTableBlock.children, file, context);
+      result.push(toParsedDirectiveNode(marker, innerNodes, attrs));
+      index = parsedTableBlock.nextIndex;
       continue;
     }
 

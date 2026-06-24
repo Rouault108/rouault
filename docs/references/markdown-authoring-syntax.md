@@ -152,6 +152,8 @@ Authoring status の初期分類は次の方針に従う。これは文書分類
 
 `::table{column-widths="..."}` は GFM table 1個へ列幅ヒントを付与する authoring wrapper である。`::table` は interactive table、sortable table、filterable table、row action を意味しない。
 
+`::table` wrapper marker の周囲へ blank line workaround を追加する必要はない。Rouault-owned syntax boundary は Rouault の contract surface であり、`remark-gfm` の偶発的な post-GFM mdast shape に従属しない。ただし現行実装は table に限定した Tier 1 post-GFM recovery であり、true pre-GFM source parser ownership ではない。
+
 `column-widths` の値域、列数一致、build error 条件は `docs/contracts/markdown.md` と `build/remark/directives/payload/normalize-table-payload.ts` を参照する。
 
 ### Table Cell Break Escape

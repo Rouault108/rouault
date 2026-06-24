@@ -98,6 +98,10 @@ Markdown table authoring extension は、static table surface の契約を弱め
 
 `::table{column-widths="..."}` は GFM table へ列幅ヒントを付与する authoring wrapper である。`::table` は GFM table 1個だけを包む。表以外、複数表、表と段落の混在は build error とする。
 
+`::table ... ::` の wrapper boundary は Rouault-owned syntax boundary であり、偶発的な post-GFM mdast shape に従属しない。現行 Phase 1 は table に限定した Tier 1 post-GFM recovery island であり、true pre-GFM source parser ownership ではない。`remark-gfm` が closing `::` を table row / table cell 側へ吸収した場合でも、remarkRouaultDirectives は recovered closing marker だけを table payload から除去する。authors は `::table` wrapper marker の周囲に blank lines を workaround として追加する必要はない。
+
+runtime、final HTML、rehype normalization は lost parser boundary を repair しない。非 table directive の parser ownership migration はこの table boundary recovery の scope 外である。
+
 `column-widths` は固定トークン列であり、任意CSS値ではない。許可トークンは `auto` / `fit` / `narrow` / `medium` / `wide` / `numeric` とする。
 
 - `column-widths` は空白区切り、順序保持、重複許可とする。
