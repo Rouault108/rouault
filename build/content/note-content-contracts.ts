@@ -1,6 +1,7 @@
 import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
 
+import { FINAL_SOURCE_MARKER_ATTRIBUTES } from './final-source-marker-contract.js';
 import { validateGeneratedPageHtmlLinkContracts } from './page-html-link-contracts.js';
 import { classifyStaticFirstTag } from './static-first-tags.js';
 import type { SiteUrlContext } from '../../shared/site/site-url-context.js';
@@ -235,22 +236,6 @@ const hasCounterStyle = (node: Parse5Element): boolean => {
   const style = getAttributeValue(node, 'style') ?? '';
   return /--ui-ol-counter-(?:reset|step|set)/u.test(style);
 };
-
-const FINAL_SOURCE_MARKER_ATTRIBUTES = [
-  'data-code-group-source',
-  'data-link-card-source',
-  'data-details-source',
-  'data-table-source',
-  'data-table-column-widths',
-  'data-score-src',
-  'data-score-caption-source',
-  'data-syntax-card-source',
-  'data-syntax-signature-source',
-  'data-syntax-section-source',
-  'data-syntax-field-source',
-  'data-code-raw',
-  'data-score-loading',
-] as const;
 
 const validateFinalSourceMarkerLifecycle = (node: Parse5Element, errors: string[]): void => {
   if (hasAttribute(node, 'data-code-copy-source') && node.tagName !== 'template') {

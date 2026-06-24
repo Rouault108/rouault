@@ -7,6 +7,7 @@ import { resolveProductionBuildMetadata } from '../build/metadata/build-metadata
 import { resolveProductionSiteUrlContext } from '../build/site/site-url-context.js';
 import { assertProductionCssArtifacts } from './assert-production-css-artifacts.js';
 import { assertProductionFontAssets } from './assert-production-font-assets.js';
+import { assertProductionHtmlContracts } from './assert-production-html-contracts.js';
 import { assertProductionSearchArtifacts } from './assert-production-search-artifacts.js';
 import { assertProductionSiteUrlContext } from './assert-production-site-url-context.js';
 import {
@@ -150,6 +151,7 @@ try {
   await assertProductionCssArtifacts();
   await assertProductionFontAssets();
   await assertProductionSiteUrlContext();
+  await assertProductionHtmlContracts();
   await assertProductionSearchArtifacts();
 } catch (error) {
   console.error(
