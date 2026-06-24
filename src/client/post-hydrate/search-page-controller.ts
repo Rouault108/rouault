@@ -43,10 +43,29 @@ const DYNAMIC_SEARCH_CONTROL_SELECTOR = [
   '[data-search-query-input]',
   '[data-search-query-clear]',
   '[data-search-tag-checkbox]',
-  '[data-search-tag-mode-select]',
-  '[data-search-sort-select]',
   '[data-search-selected-tag-remove]',
 ].join(',');
+
+const searchChoiceLabels = {
+  tagMode: {
+    or: 'いずれか',
+    and: 'すべて',
+  },
+  sort: {
+    relevance: '関連度順',
+    'date-desc': '新しい順',
+  },
+} as const;
+
+type SearchChoiceName = 'tagMode' | 'sort';
+
+const choiceInputSelector = (name: SearchChoiceName): string =>
+  name === 'tagMode' ? '[data-search-tag-mode-value]' : '[data-search-sort-value]';
+
+const choiceValueLabel = (name: SearchChoiceName, value: string): string =>
+  name === 'tagMode'
+    ? searchChoiceLabels.tagMode[normalizeSearchTagMode(value)]
+    : searchChoiceLabels.sort[normalizeSearchSort(value)];
 
 export type SearchPageControllerState =
   | {
@@ -705,6 +724,7 @@ export class SearchPageController {
       return;
     }
     const state = parseCurrentSearchState(this.siteUrlContext);
+    this.closeAllSearchChoiceMenus();
     if (this.searchRuntime === null) {
       const reason =
         this.currentState?.kind === 'ready' &&
@@ -923,6 +943,136 @@ export class SearchPageController {
     }
   }
 
+  private searchChoiceMenus(): HTMLDetailsElement[] {
+    return [...this.page.querySelectorAll<HTMLDetailsElement>('[data-search-choice-menu]')];
+  }
+
+  private closeSearchChoiceMenu(details: HTMLDetailsElement, restoreFocus = false): void {
+    details.open = false;
+    const trigger = details.querySelector<HTMLElement>('[data-static-choice-trigger]');
+    trigger?.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) {
+      trigger?.focus();
+    }
+  }
+
+  private closeOtherSearchChoiceMenus(current: HTMLDetailsElement): void {
+    for (const details of this.searchChoiceMenus()) {
+      if (details !== current) {
+        this.closeSearchChoiceMenu(details);
+      }
+    }
+  }
+
+  private closeAllSearchChoiceMenus(): void {
+    for (const details of this.searchChoiceMenus()) {
+      this.closeSearchChoiceMenu(details);
+    }
+  }
+
+  private openSearchChoiceMenu(details: HTMLDetailsElement): void {
+    this.closeOtherSearchChoiceMenus(details);
+    details.open = true;
+    details.querySelector<HTMLElement>('[data-static-choice-trigger]')?.setAttribute(
+      'aria-expanded',
+      'true',
+    );
+  }
+
+  private toggleSearchChoiceMenu(details: HTMLDetailsElement): void {
+    if (details.open) {
+      this.closeSearchChoiceMenu(details);
+    } else {
+      this.openSearchChoiceMenu(details);
+    }
+  }
+
+  private syncSearchChoiceMenu(
+    form: HTMLFormElement,
+    name: SearchChoiceName,
+    value: SearchState[SearchChoiceName],
+  ): void {
+    const input = form.querySelector<HTMLInputElement>(choiceInputSelector(name));
+    if (input) {
+      input.name = name;
+      input.value = value;
+      input.disabled = false;
+    }
+    const menu = form.querySelector<HTMLDetailsElement>(
+      `[data-search-choice-menu="${name === 'tagMode' ? 'tag-mode' : 'sort'}"]`,
+    );
+    if (!menu) {
+      return;
+    }
+    const label = choiceValueLabel(name, value);
+    menu.querySelector<HTMLElement>('[data-static-choice-current-label]')?.replaceChildren(label);
+    const trigger = menu.querySelector<HTMLElement>('[data-static-choice-trigger]');
+    trigger?.setAttribute('aria-expanded', menu.open ? 'true' : 'false');
+
+    let selectedCount = 0;
+    const items = [...menu.querySelectorAll<HTMLButtonElement>('[data-static-choice-item]')];
+    for (const item of items) {
+      const selected = item.dataset['value'] === value && selectedCount === 0;
+      item.dataset['selected'] = String(selected);
+      item.setAttribute('aria-pressed', String(selected));
+      if (selected) {
+        selectedCount += 1;
+      }
+    }
+    if (selectedCount === 0 && items[0]) {
+      items[0].dataset['selected'] = 'true';
+      items[0].setAttribute('aria-pressed', 'true');
+    }
+  }
+
+  private syncSearchChoiceMenusFromRuntimeState(form: HTMLFormElement): void {
+    const state = this.runtimeState;
+    if (state === null) {
+      return;
+    }
+    this.syncSearchChoiceMenu(form, 'tagMode', state.tagMode);
+    this.syncSearchChoiceMenu(form, 'sort', state.sort);
+  }
+
+  private setSearchChoiceMenusDisabled(disabled: boolean): void {
+    for (const details of this.searchChoiceMenus()) {
+      const trigger = details.querySelector<HTMLElement>('[data-static-choice-trigger]');
+      if (trigger) {
+        if (disabled) {
+          trigger.setAttribute('aria-disabled', 'true');
+          trigger.dataset['disabled'] = 'true';
+        } else {
+          trigger.removeAttribute('aria-disabled');
+          delete trigger.dataset['disabled'];
+        }
+        trigger.setAttribute('aria-expanded', disabled || !details.open ? 'false' : 'true');
+      }
+      if (disabled) {
+        details.open = false;
+      }
+      for (const item of details.querySelectorAll<HTMLButtonElement>('[data-static-choice-item]')) {
+        item.disabled = disabled;
+      }
+    }
+    for (const input of this.page.querySelectorAll<HTMLInputElement>('[data-search-choice-value]')) {
+      input.disabled = false;
+    }
+  }
+
+  private focusChoiceItem(details: HTMLDetailsElement, direction: 1 | -1): void {
+    this.openSearchChoiceMenu(details);
+    const items = [...details.querySelectorAll<HTMLButtonElement>('[data-static-choice-item]')].filter(
+      (item) => !item.disabled,
+    );
+    if (items.length === 0) {
+      return;
+    }
+    const activeIndex = items.findIndex((item) => item === this.page.ownerDocument.activeElement);
+    const nextIndex =
+      activeIndex < 0 ? (direction > 0 ? 0 : items.length - 1) : (activeIndex + direction + items.length) % items.length;
+    items[nextIndex]?.focus();
+  }
+
   private syncFormFromRuntimeState(form: HTMLFormElement): void {
     const state = this.runtimeState;
     if (state === null) {
@@ -935,22 +1085,16 @@ export class SearchPageController {
     for (const checkbox of form.querySelectorAll<HTMLInputElement>('[data-search-tag-checkbox]')) {
       checkbox.checked = state.selectedTags.includes(checkbox.value);
     }
-    const tagMode = form.querySelector<HTMLSelectElement>('[data-search-tag-mode-select]');
-    if (tagMode) {
-      tagMode.value = state.tagMode;
-    }
-    const sort = form.querySelector<HTMLSelectElement>('[data-search-sort-select]');
-    if (sort) {
-      sort.value = state.sort;
-    }
+    this.syncSearchChoiceMenusFromRuntimeState(form);
   }
 
   private setDynamicSearchControlsDisabled(disabled: boolean): void {
     for (const control of this.page.querySelectorAll<
-      HTMLButtonElement | HTMLInputElement | HTMLSelectElement
+      HTMLButtonElement | HTMLInputElement
     >(DYNAMIC_SEARCH_CONTROL_SELECTOR)) {
       control.disabled = disabled;
     }
+    this.setSearchChoiceMenusDisabled(disabled);
   }
 
   private bindReadyListeners(form: HTMLFormElement): void {
@@ -982,6 +1126,7 @@ export class SearchPageController {
       this.runtimeState.tagMode = normalizeSearchTagMode(readFormString(data.get('tagMode')));
       this.runtimeState.sort = normalizeSearchSort(readFormString(data.get('sort')));
       this.commitUrl(method);
+      this.syncSearchChoiceMenusFromRuntimeState(form);
       syncFilterDom(preferredTag);
       if (search === 'debounced') {
         this.scheduleSearch();
@@ -996,9 +1141,7 @@ export class SearchPageController {
         const target = event.target;
         if (
           !(target instanceof HTMLElement) ||
-          !target.matches(
-            '[data-search-tag-checkbox], [data-search-tag-mode-select], [data-search-sort-select]',
-          )
+          !target.matches('[data-search-tag-checkbox]')
         ) {
           return;
         }
@@ -1009,6 +1152,150 @@ export class SearchPageController {
             ? target.value
             : undefined;
         commitFormState('pushState', 'immediate', preferredTag);
+      },
+      listenerOptions,
+    );
+    form.addEventListener(
+      'click',
+      (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+        const trigger = target.closest<HTMLElement>('[data-static-choice-trigger]');
+        if (!trigger || !form.contains(trigger)) {
+          return;
+        }
+        const details = trigger.closest<HTMLDetailsElement>('[data-search-choice-menu]');
+        if (!details) {
+          return;
+        }
+        event.preventDefault();
+        if (trigger.getAttribute('aria-disabled') === 'true' || trigger.dataset['disabled'] === 'true') {
+          return;
+        }
+        this.toggleSearchChoiceMenu(details);
+      },
+      listenerOptions,
+    );
+    form.addEventListener(
+      'click',
+      (event) => {
+        const target = event.target;
+        const item =
+          target instanceof HTMLElement
+            ? target.closest<HTMLButtonElement>('[data-static-choice-item]')
+            : null;
+        if (!item || item.disabled) {
+          return;
+        }
+        const details = item.closest<HTMLDetailsElement>('[data-search-choice-menu]');
+        const kind = details?.dataset['searchChoiceMenu'];
+        const value = item.dataset['value'];
+        if (!details || (kind !== 'tag-mode' && kind !== 'sort') || typeof value !== 'string') {
+          return;
+        }
+        const name: SearchChoiceName = kind === 'tag-mode' ? 'tagMode' : 'sort';
+        const input = form.querySelector<HTMLInputElement>(choiceInputSelector(name));
+        if (input) {
+          input.value = value;
+        }
+        commitFormState('pushState', 'immediate');
+        this.closeSearchChoiceMenu(details, true);
+      },
+      listenerOptions,
+    );
+    form.addEventListener(
+      'keydown',
+      (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+        const trigger = target.closest<HTMLElement>('[data-static-choice-trigger]');
+        if (trigger && form.contains(trigger)) {
+          const details = trigger.closest<HTMLDetailsElement>('[data-search-choice-menu]');
+          if (!details) {
+            return;
+          }
+          if (
+            trigger.getAttribute('aria-disabled') === 'true' ||
+            trigger.dataset['disabled'] === 'true'
+          ) {
+            return;
+          }
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            this.toggleSearchChoiceMenu(details);
+          } else if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            this.focusChoiceItem(details, 1);
+          } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            this.focusChoiceItem(details, -1);
+          } else if (event.key === 'Escape') {
+            event.preventDefault();
+            this.closeSearchChoiceMenu(details, true);
+          } else if (event.key === 'Tab') {
+            this.closeSearchChoiceMenu(details);
+          }
+          return;
+        }
+        const item = target.closest<HTMLButtonElement>('[data-static-choice-item]');
+        if (!item || !form.contains(item)) {
+          return;
+        }
+        const details = item.closest<HTMLDetailsElement>('[data-search-choice-menu]');
+        if (!details) {
+          return;
+        }
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          this.focusChoiceItem(details, 1);
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          this.focusChoiceItem(details, -1);
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          this.closeSearchChoiceMenu(details, true);
+        } else if (event.key === 'Tab') {
+          this.closeSearchChoiceMenu(details);
+        }
+      },
+      listenerOptions,
+    );
+    form.addEventListener(
+      'toggle',
+      (event) => {
+        const details =
+          event.target instanceof HTMLDetailsElement &&
+          event.target.matches('[data-search-choice-menu]')
+            ? event.target
+            : null;
+        if (!details) {
+          return;
+        }
+        if (details.open) {
+          this.closeOtherSearchChoiceMenus(details);
+        }
+        details
+          .querySelector<HTMLElement>('[data-static-choice-trigger]')
+          ?.setAttribute('aria-expanded', details.open ? 'true' : 'false');
+      },
+      listenerOptions,
+    );
+    this.page.ownerDocument.addEventListener(
+      'pointerdown',
+      (event) => {
+        const target = event.target;
+        if (!(target instanceof Node)) {
+          return;
+        }
+        for (const details of this.searchChoiceMenus()) {
+          if (details.open && !details.contains(target)) {
+            this.closeSearchChoiceMenu(details);
+          }
+        }
       },
       listenerOptions,
     );

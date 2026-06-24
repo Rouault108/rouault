@@ -55,14 +55,28 @@ const renderSearchPageFixture = (): HTMLElement => {
       <form data-search-page-form>
         <input name="q" value="" data-search-query-input>
         <button type="button" hidden data-search-query-clear>clear</button>
-        <select name="tagMode" data-search-tag-mode-select>
-          <option value="or" selected>or</option>
-          <option value="and">and</option>
-        </select>
-        <select name="sort" data-search-sort-select>
-          <option value="relevance" selected>relevance</option>
-          <option value="date-desc">date-desc</option>
-        </select>
+        <input type="hidden" name="tagMode" value="or" data-search-choice-value data-search-tag-mode-value>
+        <input type="hidden" name="sort" value="relevance" data-search-choice-value data-search-sort-value>
+        <details data-search-choice-menu="tag-mode">
+          <summary aria-expanded="false" aria-labelledby="tag-mode-label tag-mode-current" data-static-choice-trigger>
+            <span id="tag-mode-label">タグ演算子</span>
+            <span id="tag-mode-current" data-static-choice-current-label>いずれか</span>
+          </summary>
+          <div data-static-choice-panel>
+            <button type="button" data-static-choice-item data-value="or" data-selected="true" aria-pressed="true">いずれか</button>
+            <button type="button" data-static-choice-item data-value="and" data-selected="false" aria-pressed="false">すべて</button>
+          </div>
+        </details>
+        <details data-search-choice-menu="sort">
+          <summary aria-expanded="false" aria-labelledby="sort-label sort-current" data-static-choice-trigger>
+            <span id="sort-label">並び順</span>
+            <span id="sort-current" data-static-choice-current-label>関連度順</span>
+          </summary>
+          <div data-static-choice-panel>
+            <button type="button" data-static-choice-item data-value="relevance" data-selected="true" aria-pressed="true">関連度順</button>
+            <button type="button" data-static-choice-item data-value="date-desc" data-selected="false" aria-pressed="false">新しい順</button>
+          </div>
+        </details>
         <div class="filter-summary-state"></div>
         <div class="filter-summary-detail"></div>
         <span data-selected-tags-count></span>
@@ -255,8 +269,9 @@ describe('search-page-enhancer', () => {
     expect(page?.querySelector<HTMLInputElement>('[data-search-query-input]')?.disabled).to.equal(
       true,
     );
-    expect(page?.querySelector<HTMLSelectElement>('[data-search-sort-select]')?.disabled).to.equal(
-      true,
+    expect(page?.querySelector<HTMLElement>('[data-search-choice-menu="sort"] summary')?.getAttribute('aria-disabled')).to.equal('true');
+    expect(page?.querySelector<HTMLInputElement>('[data-search-sort-value]')?.disabled).to.equal(
+      false,
     );
   });
 
@@ -437,11 +452,20 @@ describe('search-page-enhancer', () => {
       '[data-search-query-input]',
       '[data-search-query-clear]',
       '[data-search-tag-checkbox]',
-      '[data-search-tag-mode-select]',
-      '[data-search-sort-select]',
     ]) {
       expect(root.querySelector<HTMLInputElement>(selector)?.disabled, selector).to.equal(true);
     }
+    expect(root.querySelector<HTMLInputElement>('[data-search-tag-mode-value]')?.disabled).to.equal(
+      false,
+    );
+    expect(root.querySelector<HTMLInputElement>('[data-search-sort-value]')?.disabled).to.equal(
+      false,
+    );
+    expect(
+      root.querySelector<HTMLElement>('[data-search-choice-menu="tag-mode"] summary')?.dataset[
+        'disabled'
+      ],
+    ).to.equal('true');
     expect(
       root.querySelector<HTMLFormElement>('[data-search-page-form]')?.hasAttribute('disabled'),
     ).to.equal(false);

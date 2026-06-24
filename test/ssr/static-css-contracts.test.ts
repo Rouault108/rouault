@@ -283,6 +283,7 @@ const mainCssImportRegistry = [
   './app-shell.css',
   './router-shell.css',
   './layout-header.css',
+  './static-choice-menu.css',
   './layout-sidebar.css',
   './note-shell.css',
   './layout-toc.css',
@@ -623,6 +624,118 @@ describe('static CSS contracts', () => {
     ).toEqual([]);
   });
 
+  it('static choice menu CSS shares header menu surface tokens and fixes search menu declarations', () => {
+    const header = readCss('layout-header.css');
+    const css = readCss('static-choice-menu.css');
+
+    const panel = '.static-choice-menu__panel';
+    const item = '.static-choice-menu__item';
+    const headerPanel = 'header[data-layout-header] .corpus-switcher__menu';
+    const headerItem =
+      "header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]";
+
+    expect(declarationValuesForSelector(css, panel, 'border')).toContain(
+      'var(--static-choice-menu-panel-border)',
+    );
+    expect(declarationValuesForSelector(css, '.static-choice-menu', '--static-choice-menu-panel-border')).toContain(
+      'var(--border-width, 1px) solid var(--border-default)',
+    );
+    expect(declarationValuesForSelector(header, headerPanel, 'border')).toContain(
+      'var(--border-width, 1px) solid var(--border-default)',
+    );
+
+    expect(declarationValuesForSelector(css, panel, 'border-radius')).toContain(
+      'var(--static-choice-menu-panel-radius)',
+    );
+    expect(
+      declarationValuesForSelector(css, '.static-choice-menu', '--static-choice-menu-panel-radius'),
+    ).toContain('var(--radius-md, 8px)');
+    expect(declarationValuesForSelector(header, headerPanel, 'border-radius')).toContain(
+      'var(--radius-md, 8px)',
+    );
+
+    expect(declarationValuesForSelector(css, panel, 'background')).toContain(
+      'var(--static-choice-menu-panel-background)',
+    );
+    expect(
+      declarationValuesForSelector(
+        css,
+        '.static-choice-menu',
+        '--static-choice-menu-panel-background',
+      ),
+    ).toContain('var(--bg-default)');
+    expect(declarationValuesForSelector(header, headerPanel, 'background')).toContain(
+      'var(--bg-default)',
+    );
+
+    expect(declarationValuesForSelector(css, panel, 'box-shadow')).toContain(
+      'var(--static-choice-menu-panel-shadow)',
+    );
+    expect(
+      declarationValuesForSelector(css, '.static-choice-menu', '--static-choice-menu-panel-shadow'),
+    ).toContain('var(--shadow-md)');
+    expect(declarationValuesForSelector(header, headerPanel, 'box-shadow')).toContain(
+      'var(--shadow-md)',
+    );
+
+    expect(declarationValuesForSelector(css, panel, 'padding')).toContain(
+      'var(--static-choice-menu-panel-padding)',
+    );
+    expect(
+      declarationValuesForSelector(css, '.static-choice-menu', '--static-choice-menu-panel-padding'),
+    ).toContain('var(--space-2, 8px)');
+    expect(declarationValuesForSelector(header, headerPanel, 'padding')).toContain(
+      'var(--space-2, 8px)',
+    );
+
+    expect(declarationValuesForSelector(css, item, 'border-radius')).toContain(
+      'var(--static-choice-menu-item-radius)',
+    );
+    expect(
+      declarationValuesForSelector(css, '.static-choice-menu', '--static-choice-menu-item-radius'),
+    ).toContain('var(--radius-sm, 4px)');
+    expect(declarationValuesForSelector(header, headerItem, 'border-radius')).toContain(
+      'var(--radius-sm, 4px)',
+    );
+
+    expect(declarationValuesForSelector(css, item, 'padding')).toContain(
+      'var(--static-choice-menu-item-padding)',
+    );
+    expect(
+      declarationValuesForSelector(css, '.static-choice-menu', '--static-choice-menu-item-padding'),
+    ).toContain('var(--space-2, 8px)');
+
+    expect(
+      declarationValuesForSelector(css, ".static-choice-menu__item[data-selected='true']", 'background'),
+    ).toContain('var(--static-choice-menu-selected-background)');
+    expect(
+      declarationValuesForSelector(
+        css,
+        '.static-choice-menu',
+        '--static-choice-menu-selected-background',
+      ).map(normalizeDeclarationValue),
+    ).toContain('var(--bg-surface-active, var(--bg-active, var(--bg-control-muted)))');
+
+    expect(declarationValuesForSelector(css, '.static-choice-menu__item:hover', 'background')).toContain(
+      'var(--static-choice-menu-hover-background)',
+    );
+    expect(
+      declarationValuesForSelector(css, '.static-choice-menu', '--static-choice-menu-hover-background')
+        .map(normalizeDeclarationValue),
+    ).toContain(
+      'var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%))',
+    );
+
+    for (const selector of ['.static-choice-menu__trigger:focus-visible', '.static-choice-menu__item:focus-visible']) {
+      expect(declarationValuesForSelector(css, selector, 'outline')).toContain(
+        'var(--static-choice-menu-focus-outline)',
+      );
+      expect(declarationValuesForSelector(css, selector, 'outline-offset')).toContain(
+        'var(--static-choice-menu-focus-outline-offset)',
+      );
+    }
+  });
+
   it('layout header overlay-open state only owns stacking and does not override glass surface', () => {
     const css = readCss('layout-header.css');
     const overlayOpenSelector = "header[data-layout-header][data-overlay-sidebar-open='true']";
@@ -907,32 +1020,11 @@ describe('static CSS contracts', () => {
     );
     expect(css).not.to.match(/var\(--space-5\)(?!,)/u);
     expectRuleToDeclare(css, '.filter-summary', ['grid-template-columns:']);
-    expectRuleToDeclare(css, '.sort-select', [
-      'appearance: none',
-      'cursor: pointer',
-      'display: block',
-      'font: inherit',
-      'overflow: hidden',
-      'text-align: start',
-      'text-overflow: ellipsis',
-      'white-space: nowrap',
-    ]);
-    expectRuleToDeclare(css, '.tag-mode-select', [
-      'appearance: none',
-      'cursor: pointer',
-      'display: block',
-      'font: inherit',
-      'overflow: hidden',
-      'text-align: start',
-      'text-overflow: ellipsis',
-      'white-space: nowrap',
-    ]);
+    expectRuleToDeclare(css, '.search-choice-field', ['display: grid', 'gap: var(--space-1)']);
+    expect(css).not.to.contain('.sort-select');
+    expect(css).not.to.contain('.tag-mode-select');
     expectRuleToDeclare(css, '.search-input-clear', ['cursor: pointer']);
     expectRuleToDeclare(css, '.filter-search-field__clear', ['cursor: pointer']);
-    expectRuleToDeclare(css, '.sort-select:disabled', ['cursor: not-allowed']);
-    expectRuleToDeclare(css, '.tag-mode-select:disabled', ['cursor: not-allowed']);
-    expectRuleToDeclare(css, '.sort-select__chevron', ['pointer-events: none']);
-    expectRuleToDeclare(css, '.tag-mode-select__chevron', ['pointer-events: none']);
     expectRuleToDeclare(css, '.filter-details__summary', [
       'position: relative',
       'list-style: none',

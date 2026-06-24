@@ -96,9 +96,11 @@ describe('renderSearchPageHtml static contract', () => {
     expect(rendered).toContain('class="search-input-clear"');
     expect(rendered).toContain('data-search-query-clear');
     expect(rendered).toContain('name="q"');
-    expect(rendered).toContain('class="tag-mode-select-wrapper" data-static-select');
+    expect(rendered).toContain('data-search-choice-menu="tag-mode"');
+    expect(rendered).toContain('data-search-tag-mode-value');
     expect(rendered).toContain('name="tagMode"');
-    expect(rendered).toContain('class="sort-select-wrapper" data-static-select');
+    expect(rendered).toContain('data-search-choice-menu="sort"');
+    expect(rendered).toContain('data-search-sort-value');
     expect(rendered).toContain('name="sort"');
     expect(rendered).toContain('class="filter-search-field" data-static-search-field');
     expect(rendered).toContain('class="filter-search-field__clear"');
@@ -111,8 +113,7 @@ describe('renderSearchPageHtml static contract', () => {
     expect(rendered).toContain('class="search-input-clear__icon static-icon"');
     expect(rendered).toContain('class="filter-search-field__icon static-icon"');
     expect(rendered).toContain('class="filter-search-field__clear-icon static-icon"');
-    expect(rendered).toContain('class="sort-select__chevron static-icon"');
-    expect(rendered).toContain('class="tag-mode-select__chevron static-icon"');
+    expect(rendered).toContain('class="static-choice-menu__chevron static-icon"');
     expect(rendered).toContain('class="filter-details__chevron static-icon"');
     expect(rendered).toContain('<svg ');
     expect(rendered).toContain('data-search-page-loading');

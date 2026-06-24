@@ -2,13 +2,13 @@
 
 ## 位置づけ
 
-Static select は、旧 `ui-select` custom element を復活させず、標準の `<select>` に責務を委譲するための契約である。現行の適用対象は search page の静的 HTML surface に限定する。
+Static select は、旧 `ui-select` custom element を復活させず、標準の `<select>` に責務を委譲するための契約であった。search page の `tagMode` / `sort` に対する native select surface は `D-SEARCH-DROPDOWN-UNIFY-001` により superseded であり、現行の正本は `docs/contracts/static-choice-menu.md` である。
 
 この契約は、旧 custom element の API 互換を維持するものではない。選択状態、フォーム送信名、初期 selected option、ブラウザ標準の change event は native element の契約として扱う。
 
-## 現行契約
+## Superseded 契約
 
-`renderSearchPageHtml()` が search page の select を出力するときは、次を満たす。
+過去の search page select は、次を満たしていた。
 
 - 各 `<select>` は `name` を持ち、FormData から検索状態へ読める。
 - 各 `<select>` は `id` を持ち、対応する `<label for>` と一致する。
@@ -26,6 +26,12 @@ Static select は、旧 `ui-select` custom element を復活させず、標準�
   </select>
 </label>
 ```
+
+## 現行契約
+
+`renderSearchPageHtml()` は search page の `tagMode` / `sort` 用 `<select>` を出力しない。`FormData` の `name="tagMode"` / `name="sort"` 契約は、`form[data-search-page-form]` 内の disabled ではない hidden input によって維持する。
+
+旧 `ui-select`、`role="listbox"` / `role="option"` による custom select、native select surface は復活させない。
 
 ## 旧契約
 

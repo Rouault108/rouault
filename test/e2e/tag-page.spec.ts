@@ -29,14 +29,16 @@ const expectNoteHeading = async (page: Page, headingText: string): Promise<void>
   await expect(page.locator('.article-header .article-header__heading')).toHaveText(headingText);
 };
 
-const changeSearchSelect = async (
+const changeSearchChoice = async (
   page: Page,
   index: number,
   value: 'and' | 'or' | 'relevance' | 'date-desc',
 ): Promise<void> => {
   await waitForSearchInputReady(page);
-  const selector = index === 0 ? '[data-search-tag-mode-select]' : '[data-search-sort-select]';
-  await page.locator(selector).selectOption(value);
+  const kind = index === 0 ? 'tag-mode' : 'sort';
+  const menu = page.locator(`[data-search-choice-menu="${kind}"]`).first();
+  await menu.locator('[data-static-choice-trigger]').click();
+  await menu.locator(`[data-static-choice-item][data-value="${value}"]`).click();
 };
 
 const waitForSearchInputReady = async (page: Page): Promise<void> => {
@@ -193,12 +195,12 @@ test.describe('Tag Page', () => {
   test('タグページでタグ演算子や並び順を変えると /search/ へ遷移すること', async ({ page }) => {
     await page.goto(publicTagPagePath);
 
-    await changeSearchSelect(page, 0, 'and');
+    await changeSearchChoice(page, 0, 'and');
     await expect(page).toHaveURL('/search/?tag=Programming&tagMode=and');
 
     await page.goto(publicTagPagePath);
 
-    await changeSearchSelect(page, 1, 'date-desc');
+    await changeSearchChoice(page, 1, 'date-desc');
     await expect(page).toHaveURL('/search/?tag=Programming&sort=date-desc');
   });
 });

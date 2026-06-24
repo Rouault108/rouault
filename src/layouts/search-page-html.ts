@@ -18,10 +18,77 @@ const tagModeOptions = [
   ['and', 'すべて'],
 ] as const;
 
-const renderOption = (value: string, label: string, selectedValue: string): string =>
-  `<option value="${escapeHtmlAttribute(value)}"${value === selectedValue ? ' selected' : ''}>${escapeHtmlText(
-    label,
-  )}</option>`;
+const optionLabel = (
+  options: readonly (readonly [string, string])[],
+  selectedValue: string,
+): string => options.find(([value]) => value === selectedValue)?.[1] ?? options[0]?.[1] ?? '';
+
+const renderSearchChoiceMenu = (options: {
+  readonly name: 'tagMode' | 'sort';
+  readonly label: string;
+  readonly selectedValue: string;
+  readonly items: readonly (readonly [string, string])[];
+  readonly ids: {
+    readonly label: string;
+    readonly current: string;
+    readonly panel: string;
+  };
+  readonly valueDataAttribute: 'data-search-tag-mode-value' | 'data-search-sort-value';
+}): string => {
+  const currentLabel = optionLabel(options.items, options.selectedValue);
+  const choiceKind = options.name === 'tagMode' ? 'tag-mode' : 'sort';
+  return `
+    <div class="search-choice-field" data-search-choice="${choiceKind}">
+      <span id="${options.ids.label}" class="sort-label">${escapeHtmlText(options.label)}</span>
+      <input
+        type="hidden"
+        name="${options.name}"
+        value="${escapeHtmlAttribute(options.selectedValue)}"
+        data-search-choice-value
+        ${options.valueDataAttribute}
+      >
+      <details class="static-choice-menu search-choice-menu" data-static-choice-menu data-search-choice-menu="${choiceKind}">
+        <summary
+          class="static-choice-menu__trigger"
+          aria-labelledby="${options.ids.label} ${options.ids.current}"
+          aria-controls="${options.ids.panel}"
+          aria-expanded="false"
+          data-static-choice-trigger
+        >
+          <span id="${options.ids.current}" class="static-choice-menu__current" data-static-choice-current-label>${escapeHtmlText(currentLabel)}</span>
+          ${renderStaticIconHtml('chevron-down', 'static-choice-menu__chevron')}
+        </summary>
+        <div
+          id="${options.ids.panel}"
+          class="static-choice-menu__panel"
+          role="group"
+          aria-labelledby="${options.ids.label}"
+          data-static-choice-panel
+        >
+          <ul class="static-choice-menu__list">
+            ${options.items
+              .map(([value, label]) => {
+                const selected = value === options.selectedValue;
+                return `
+                  <li>
+                    <button
+                      type="button"
+                      class="static-choice-menu__item"
+                      data-static-choice-item
+                      data-value="${escapeHtmlAttribute(value)}"
+                      data-selected="${String(selected)}"
+                      aria-pressed="${String(selected)}"
+                    >${escapeHtmlText(label)}</button>
+                  </li>
+                `;
+              })
+              .join('')}
+          </ul>
+        </div>
+      </details>
+    </div>
+  `;
+};
 
 const renderTagCheckboxes = (
   response: StaticExploreSearchResponse,
@@ -198,8 +265,12 @@ export const renderSearchPageHtml = (options: {
   const { initialState, initialResponse, siteUrlContext, loading = false } = options;
   const idContext = options.idContext ?? createStaticRenderIdContext('page:search');
   const queryInputId = idContext.reserveId('search-page', 'search-page-query');
-  const tagModeSelectId = idContext.reserveId('search-page', 'search-page-tag-mode-select');
-  const sortSelectId = idContext.reserveId('search-page', 'search-page-sort-select');
+  const tagModeLabelId = idContext.reserveId('search-page', 'search-page-tag-mode-label');
+  const tagModeCurrentId = idContext.reserveId('search-page', 'search-page-tag-mode-current');
+  const tagModePanelId = idContext.reserveId('search-page', 'search-page-tag-mode-panel');
+  const sortLabelId = idContext.reserveId('search-page', 'search-page-sort-label');
+  const sortCurrentId = idContext.reserveId('search-page', 'search-page-sort-current');
+  const sortPanelId = idContext.reserveId('search-page', 'search-page-sort-panel');
   const selectedTagsHeadingId = idContext.reserveId('search-page', 'selected-tags-heading');
   const isTagDefaultView =
     initialState.q.length === 0 &&
@@ -256,24 +327,30 @@ export const renderSearchPageHtml = (options: {
 
           <div class="toolbar-row">
             <div class="meta-row"><span data-search-page-result-count>${initialResponse.total.toString()} 件の結果</span></div>
-            <label class="sort-field" for="${tagModeSelectId}">
-              <span class="sort-label">タグ演算子</span>
-              <span class="tag-mode-select-wrapper" data-static-select>
-                <select id="${tagModeSelectId}" class="tag-mode-select" name="tagMode" data-search-tag-mode-select>
-                  ${tagModeOptions.map(([value, label]) => renderOption(value, label, initialState.tagMode)).join('')}
-                </select>
-                ${renderStaticIconHtml('chevron-down', 'tag-mode-select__chevron')}
-              </span>
-            </label>
-            <label class="sort-field" for="${sortSelectId}">
-              <span class="sort-label">並び順</span>
-              <span class="sort-select-wrapper" data-static-select>
-                <select id="${sortSelectId}" class="sort-select" name="sort" data-search-sort-select>
-                  ${sortOptions.map(([value, label]) => renderOption(value, label, initialState.sort)).join('')}
-                </select>
-                ${renderStaticIconHtml('chevron-down', 'sort-select__chevron')}
-              </span>
-            </label>
+            ${renderSearchChoiceMenu({
+              name: 'tagMode',
+              label: 'タグ演算子',
+              selectedValue: initialState.tagMode,
+              items: tagModeOptions,
+              ids: {
+                label: tagModeLabelId,
+                current: tagModeCurrentId,
+                panel: tagModePanelId,
+              },
+              valueDataAttribute: 'data-search-tag-mode-value',
+            })}
+            ${renderSearchChoiceMenu({
+              name: 'sort',
+              label: '並び順',
+              selectedValue: initialState.sort,
+              items: sortOptions,
+              ids: {
+                label: sortLabelId,
+                current: sortCurrentId,
+                panel: sortPanelId,
+              },
+              valueDataAttribute: 'data-search-sort-value',
+            })}
           </div>
 
           <details class="filter-details" data-details data-variant="bordered">

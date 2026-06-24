@@ -50,6 +50,34 @@ const tabUntilFocused = async (page: Page, target: Locator): Promise<void> => {
   ).toBe(true);
 };
 
+const choiceMenu = (page: Page, kind: 'tag-mode' | 'sort') =>
+  page.locator(`[data-search-choice-menu="${kind}"]`).first();
+
+const choiceItem = (page: Page, kind: 'tag-mode' | 'sort', value: string) =>
+  choiceMenu(page, kind).locator(`[data-static-choice-item][data-value="${value}"]`).first();
+
+const expectChoiceState = async (
+  page: Page,
+  kind: 'tag-mode' | 'sort',
+  value: string,
+  label: string,
+): Promise<void> => {
+  const menu = choiceMenu(page, kind);
+  const name = kind === 'tag-mode' ? 'tagMode' : 'sort';
+  const inputSelector = kind === 'tag-mode' ? '[data-search-tag-mode-value]' : '[data-search-sort-value]';
+  await expect(menu.locator('[data-static-choice-current-label]').first()).toHaveText(label);
+  await expect(page.locator(inputSelector).first()).toHaveValue(value);
+  await expect(menu.locator(`[data-static-choice-item][data-value="${value}"]`).first()).toHaveAttribute(
+    'data-selected',
+    'true',
+  );
+  await expect(menu.locator(`[data-static-choice-item][data-value="${value}"]`).first()).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.locator(`input[type="hidden"][name="${name}"]`).first()).not.toBeDisabled();
+};
+
 test.describe('Search Page', () => {
   test('検索 input と tag filter input は左端寄りの実クリックから keyboard.type で入力できること', async ({
     page,
@@ -147,5 +175,92 @@ test.describe('Search Page', () => {
     await expect(firstLink).toBeFocused();
     await expect(firstCard).toHaveCSS('outline-style', 'solid');
     await expect(firstLink).toHaveCSS('outline-style', 'none');
+  });
+
+  test('タグ演算子と並び順は static choice menu として開閉し、選択状態を同期すること', async ({
+    page,
+  }) => {
+    await waitForSearchPageReady(page, '/search/?tag=architecture&tag=music');
+
+    const tagMenu = choiceMenu(page, 'tag-mode');
+    const sortMenu = choiceMenu(page, 'sort');
+
+    await tagMenu.locator('[data-static-choice-trigger]').click();
+    await expect(tagMenu).toHaveAttribute('open', '');
+    await expect(tagMenu.locator('[data-static-choice-trigger]')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    await expect(choiceItem(page, 'tag-mode', 'and')).toBeVisible();
+
+    await sortMenu.locator('[data-static-choice-trigger]').click();
+    await expect(sortMenu).toHaveAttribute('open', '');
+    await expect(tagMenu).not.toHaveAttribute('open', '');
+    await expect(choiceItem(page, 'sort', 'date-desc')).toBeVisible();
+
+    await page.locator('[data-search-query-input]').click();
+    await expect(sortMenu).not.toHaveAttribute('open', '');
+
+    await tagMenu.locator('[data-static-choice-trigger]').click();
+    await choiceItem(page, 'tag-mode', 'and').click();
+    await expect(tagMenu).not.toHaveAttribute('open', '');
+    await expect(tagMenu.locator('[data-static-choice-trigger]')).toBeFocused();
+    await expectChoiceState(page, 'tag-mode', 'and', 'すべて');
+    expect(new URL(page.url()).searchParams.get('tagMode')).toBe('and');
+
+    await sortMenu.locator('[data-static-choice-trigger]').click();
+    await choiceItem(page, 'sort', 'date-desc').click();
+    await expect(sortMenu).not.toHaveAttribute('open', '');
+    await expect(sortMenu.locator('[data-static-choice-trigger]')).toBeFocused();
+    await expectChoiceState(page, 'sort', 'date-desc', '新しい順');
+    expect(new URL(page.url()).searchParams.get('sort')).toBe('date-desc');
+    await expect(page.locator('[data-search-page-loading]')).toBeHidden();
+  });
+
+  test('static choice menu は keyboard 操作と browser history 復元に追従すること', async ({
+    page,
+  }) => {
+    await waitForSearchPageReady(page, '/search/?tag=architecture&tag=music');
+
+    const tagMenu = choiceMenu(page, 'tag-mode');
+    const tagTrigger = tagMenu.locator('[data-static-choice-trigger]');
+
+    await tagTrigger.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(tagMenu).toHaveAttribute('open', '');
+    await expect(choiceItem(page, 'tag-mode', 'or')).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(choiceItem(page, 'tag-mode', 'and')).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(tagMenu).not.toHaveAttribute('open', '');
+    await expect(tagTrigger).toBeFocused();
+    await expectChoiceState(page, 'tag-mode', 'and', 'すべて');
+
+    await tagTrigger.focus();
+    await page.keyboard.press('Enter');
+    await expect(tagMenu).toHaveAttribute('open', '');
+    await page.keyboard.press('Escape');
+    await expect(tagMenu).not.toHaveAttribute('open', '');
+    await expect(tagTrigger).toBeFocused();
+    await expect(tagTrigger).toHaveAttribute('aria-expanded', 'false');
+
+    const sortTrigger = choiceMenu(page, 'sort').locator('[data-static-choice-trigger]');
+    await sortTrigger.click();
+    await choiceItem(page, 'sort', 'date-desc').click();
+    await expectChoiceState(page, 'sort', 'date-desc', '新しい順');
+
+    await page.goBack();
+    await expectChoiceState(page, 'sort', 'relevance', '関連度順');
+    await expect(choiceMenu(page, 'sort').locator('[data-static-choice-trigger]')).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+
+    await page.goBack();
+    await expectChoiceState(page, 'tag-mode', 'or', 'いずれか');
+    await expect(tagTrigger).toHaveAttribute('aria-expanded', 'false');
+
+    await page.goForward();
+    await expectChoiceState(page, 'tag-mode', 'and', 'すべて');
   });
 });

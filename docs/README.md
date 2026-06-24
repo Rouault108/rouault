@@ -18,6 +18,7 @@
 - `docs/contracts/note-navigation.md`
 - `docs/contracts/reading-chrome.md`
 - `docs/contracts/static-header-contract.md`
+- `docs/contracts/static-choice-menu.md`
 - `docs/contracts/theme.md`
 - `docs/contracts/permanent-url.md`
 - `docs/contracts/search.md`
@@ -70,6 +71,7 @@ Design System pattern は UI の見え方と配置判断を扱う。Router、sea
 - `docs/adr/reading-chrome-note-frame-outer-gutter.md`
 - `docs/adr/corpus-current-selected-surface.md`
 - `docs/adr/theme-contract-and-document-bootstrap.md`
+- `docs/adr/search-page-static-choice-menu.md`
 - `docs/adr/`
 
 ADR は設計判断の経緯であり、正本 Contract を上書きしない。各ADRの現行正本は、対応する `docs/contracts/` 配下のContractを参照する。

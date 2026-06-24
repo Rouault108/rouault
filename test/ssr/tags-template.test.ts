@@ -49,7 +49,11 @@ describe('TagPagesTemplate', () => {
     expect(rendered).not.toContain('<search-page');
     expect(rendered).toContain('<input');
     expect(rendered).toContain('type="search"');
-    expect(rendered).toContain('<select');
+    expect(rendered).not.toContain('<select');
+    expect(rendered).toContain('data-search-choice-menu="tag-mode"');
+    expect(rendered).toContain('data-search-tag-mode-value');
+    expect(rendered).toContain('data-search-choice-menu="sort"');
+    expect(rendered).toContain('data-search-sort-value');
     expect(rendered).toContain('initial-search-response-json="');
     expect(rendered).toContain('&quot;tagMode&quot;:&quot;or&quot;');
     expect(rendered).toContain('&quot;tags&quot;:[&quot;music&quot;]');
