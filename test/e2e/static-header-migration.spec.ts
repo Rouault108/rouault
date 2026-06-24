@@ -970,6 +970,56 @@ test.describe('Static header migration', () => {
     }
   });
 
+  test('theme menu は content-constrained 幅で短い option label に対して過剰に広がらないこと', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 760 });
+    await page.goto('/about/');
+    await waitForAppRouterReady(page);
+
+    const trigger = page.locator(headerMenuTriggerSelector('theme'));
+    await trigger.click();
+    await expectMenuOpen(page, 'theme', true);
+
+    const panel = page.locator(
+      'header[data-layout-header] [data-header-menu="theme"] [data-header-menu-panel]',
+    );
+    const [triggerBox, panelBox] = await Promise.all([trigger.boundingBox(), panel.boundingBox()]);
+    const viewport = page.viewportSize();
+    const rootFontSize = await page.locator('html').evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return Number.parseFloat(style.fontSize);
+    });
+
+    if (triggerBox === null || panelBox === null || viewport === null) {
+      throw new Error('Theme trigger, panel box, or viewport is missing.');
+    }
+
+    expect(panelBox.width).toBeGreaterThanOrEqual(triggerBox.width);
+    expect(panelBox.x).toBeGreaterThanOrEqual(-1);
+    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width + 1);
+    // 旧 generic 12rem floor への退行を desktop 条件で検出する。
+    expect(panelBox.width).toBeLessThan(rootFontSize * 12);
+
+    const optionContracts = await panel
+      .locator('[data-header-menu-item]')
+      .evaluateAll((items) =>
+        items.map((item) => {
+          const style = window.getComputedStyle(item);
+          return {
+            clientWidth: item.clientWidth,
+            scrollWidth: item.scrollWidth,
+            whiteSpace: style.whiteSpace,
+          };
+        }),
+      );
+
+    for (const item of optionContracts) {
+      expect(item.whiteSpace).toBe('nowrap');
+      expect(item.scrollWidth).toBeLessThanOrEqual(item.clientWidth + 1);
+    }
+  });
+
   test('corpus menu panel と item は長文でも inline 方向へ overflow しないこと', async ({
     page,
   }) => {

@@ -141,6 +141,11 @@ Theme switcher は theme option button group である。
 - `role="menu"` と `role="menuitem"` は付与しない。
 - Roving tabindex は採用しない。
 - Keyboard enhancement は corpus と同等の static disclosure enhancement として扱う。
+- Theme menu は content-constrained な幅を持つ。通常サポート viewport では trigger width 以上を保ち、short theme option label に対して generic header menu の `12rem` fixed floor へ依存しない。
+- Theme menu は viewport containment を維持する。
+- Theme menu の content-constrained width は visual density / width containment contract であり、theme preference、storage、root attributes、resolved theme、document bootstrap の source of truth を変更しない。
+- Theme menu は corpus menu と同系統の visual density / width containment を採用するが、navigation semantics、link semantics、selected state semantics は共有しない。
+- Theme option item は折り返しを避ける。ただし、長文 theme label の ellipsis 設計は今回の contract に含めない。
 
 ### Search Trigger
 
@@ -175,6 +180,7 @@ Header controls は、corpus trigger、theme trigger、search trigger、TOC trig
 - Forced-colors でも focus-visible outline を識別可能にする。
 - Menu panel 内 item の hover、focus-visible、active、hit target は top-level controls の selector 整理後も維持する。
 - Corpus menu item は `display: block`、1 行 ellipsis、content-constrained menu width、viewport containment を維持する。
+- Theme menu panel は content-constrained visual density を持つ。Corpus menu と width containment の考え方は揃えるが、corpus navigation semantics と theme button group semantics は混同しない。
 - Current corpus item は `aria-current="page"` を semantic source of truth とし、persistent selected surface と semibold text emphasis で表現する。
 - Current corpus item の selected surface は `--bg-surface-active` を第一候補 token とし、hover / focus-visible / active によって消されない。
 - Non-current corpus item は normal weight を baseline とし、medium / bold を default visual state にしない。

@@ -34,7 +34,7 @@ const splitSelectors = (selectorText: string): string[] => {
   return selectors;
 };
 
-const ruleBlock = (css: string, selector: string): string => {
+const ruleBlocksForSelector = (css: string, selector: string): string[] => {
   const blocks: string[] = [];
   const normalizedSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
   postcss.parse(css).walkRules((rule: Rule) => {
@@ -42,8 +42,11 @@ const ruleBlock = (css: string, selector: string): string => {
       blocks.push(rule.nodes?.map((node) => node.toString()).join('\n') ?? '');
     }
   });
-  return blocks.join('\n');
+  return blocks;
 };
+
+const ruleBlock = (css: string, selector: string): string =>
+  ruleBlocksForSelector(css, selector).join('\n');
 
 const declarationsForSelector = (
   css: string,
@@ -61,14 +64,19 @@ const declarationsForSelector = (
   return declarations;
 };
 
-const rootRuleIndexForSelectorDeclaring = (
+interface SourceOrderedDeclaration {
+  readonly ruleIndex: number;
+  readonly value: string;
+}
+
+const rootDeclarationRecordsForSelector = (
   css: string,
   selector: string,
   property: string,
-): number => {
+): SourceOrderedDeclaration[] => {
+  const records: SourceOrderedDeclaration[] = [];
   const targetSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
   let ruleIndex = 0;
-  let foundIndex = -1;
 
   postcss.parse(css).walkRules((rule: Rule) => {
     if (rule.parent?.type !== 'root') return;
@@ -76,18 +84,24 @@ const rootRuleIndexForSelectorDeclaring = (
     const selectors = splitSelectors(rule.selector).map((selector) =>
       normalizeAttributeQuoteStyle(normalizeSelector(selector)),
     );
-    const declaresProperty =
-      rule.nodes?.some((node) => node.type === 'decl' && node.prop === property) ?? false;
 
-    if (selectors.includes(targetSelector) && declaresProperty && foundIndex < 0) {
-      foundIndex = ruleIndex;
+    if (selectors.includes(targetSelector)) {
+      rule.walkDecls(property, (declaration) => {
+        records.push({ ruleIndex, value: declaration.value.trim() });
+      });
     }
 
     ruleIndex += 1;
   });
 
-  return foundIndex;
+  return records;
 };
+
+const rootRuleIndexForSelectorDeclaring = (
+  css: string,
+  selector: string,
+  property: string,
+): number => rootDeclarationRecordsForSelector(css, selector, property)[0]?.ruleIndex ?? -1;
 
 const declarationValuesForSelector = (css: string, selector: string, property: string): string[] =>
   declarationsForSelector(css, selector, property).map((declaration) => declaration.value.trim());
@@ -623,6 +637,62 @@ describe('static CSS contracts', () => {
     expect(lacksDeclarationProperty(css, overlayOpenSelector, '-webkit-backdrop-filter')).toBe(
       true,
     );
+  });
+
+  it('layout header theme menu は専用 override で content-constrained 幅を持つこと', () => {
+    const css = readCss('layout-header.css');
+    const rootSelector = 'header[data-layout-header]';
+    const corpusMenuSelector = 'header[data-layout-header] .corpus-switcher__menu';
+    const themeMenuSelector = 'header[data-layout-header] .theme-switcher__menu';
+    const themeItemSelector =
+      "header[data-layout-header] [data-header-menu='theme'] [data-header-menu-item]";
+
+    expectRuleToDeclare(css, rootSelector, [
+      '--_header-theme-menu-viewport-inline-size:',
+      '--_header-theme-menu-max-inline-size:',
+      '--_header-theme-menu-min-inline-size:',
+    ]);
+
+    const themeMenuBlocks = ruleBlocksForSelector(css, themeMenuSelector);
+    expect(themeMenuBlocks.length, `${themeMenuSelector} rule count`).toBeGreaterThanOrEqual(2);
+    const themeMenuOverrideBlock = themeMenuBlocks[themeMenuBlocks.length - 1] ?? '';
+    expect(themeMenuOverrideBlock, `${themeMenuSelector} final override rule`).to.contain(
+      'box-sizing: border-box',
+    );
+    expect(themeMenuOverrideBlock, `${themeMenuSelector} final override rule`).to.contain(
+      'inline-size: max-content',
+    );
+    expect(themeMenuOverrideBlock, `${themeMenuSelector} final override rule`).to.contain(
+      'min-inline-size: min(',
+    );
+    expect(themeMenuOverrideBlock, `${themeMenuSelector} final override rule`).to.contain(
+      'max-inline-size: var(--_header-theme-menu-max-inline-size)',
+    );
+    expect(themeMenuOverrideBlock, `${themeMenuSelector} final override rule`).to.contain(
+      'inset-inline-end: 0',
+    );
+    expectRuleToDeclare(css, themeItemSelector, ['white-space: nowrap']);
+
+    const themeMinInlineSizeRecords = rootDeclarationRecordsForSelector(
+      css,
+      themeMenuSelector,
+      'min-inline-size',
+    );
+    const sharedMinInlineSizeRecord = themeMinInlineSizeRecords.find(
+      (record) => record.value === '12rem',
+    );
+    const finalThemeMinInlineSizeRecord =
+      themeMinInlineSizeRecords[themeMinInlineSizeRecords.length - 1];
+
+    expect(sharedMinInlineSizeRecord, 'shared generic theme menu min-inline-size').not.toBeUndefined();
+    expect(finalThemeMinInlineSizeRecord, 'final theme menu min-inline-size').not.toBeUndefined();
+    expect(finalThemeMinInlineSizeRecord?.value).not.toBe('12rem');
+    expect(finalThemeMinInlineSizeRecord?.ruleIndex).toBeGreaterThan(
+      sharedMinInlineSizeRecord?.ruleIndex ?? -1,
+    );
+
+    expect(ruleBlock(css, corpusMenuSelector)).not.to.contain('--_header-theme-menu-');
+    expect(ruleBlock(css, themeMenuSelector)).not.to.contain('--_header-corpus-menu-');
   });
 
   it('layout header corpus current item uses aria-current selected surface contract', () => {
