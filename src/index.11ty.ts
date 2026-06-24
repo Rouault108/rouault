@@ -51,13 +51,13 @@ export class HomePageTemplate {
         <article class="home-content">
           <header class="home-hero">
             <p class="home-eyebrow">Rouault</p>
-            <h1 class="home-title">調べたことと考えたことを、ここに置いています。</h1>
-            <p class="home-lead">技術とその周辺についての個人ノートです。公開しているものを、新しい順に並べています。</p>
+            <h1 class="home-title">調べたこと、考えたこと、読み返したいこと。</h1>
+            <p class="home-lead">ソフトウェア、計算機科学、設計、読書から得た理解を、後から辿れる形で整理しています。</p>
             <p${serializeHtmlAttributes([
               { name: 'class', value: 'home-meta' },
               { name: 'aria-label', value: '公開ノートの概要' },
             ])}>
-              <span class="home-meta-item">最新更新 ${latestUpdatedDate}</span>
+              <span class="home-meta-item">最終更新 ${latestUpdatedDate}</span>
               <span class="home-meta-separator" aria-hidden="true">・</span>
               <a class="home-meta-link link-text link-text--muted" href="/about/" data-link-kind="internal-document" data-link-surface="metadata">このサイトについて</a>
             </p>
