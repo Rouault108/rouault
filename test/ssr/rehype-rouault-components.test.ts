@@ -44,6 +44,9 @@ const getTextContent = (node: HastNode | undefined): string => {
   return (node.children ?? []).map((child) => getTextContent(child)).join('');
 };
 
+const countOccurrences = (source: string, pattern: string): number =>
+  source.split(pattern).length - 1;
+
 const withScoreSvgFixture = (test: (fixturePath: string, notePath: string) => void): void => {
   test('test/fixtures/score/basic.svg', path.join(process.cwd(), 'content/notes/sample.md'));
 };
@@ -187,6 +190,69 @@ describe('rehypeRouaultComponents', () => {
     expect(first?.properties?.['data-hydration-capability']).to.equal(undefined);
     expect(first?.properties?.['data-hydration-trigger']).to.equal(undefined);
     expect(first?.children?.[0]?.tagName).to.equal('table');
+  });
+
+  it('camelCase hProperties の table source を child traversal 前に static table root へ変換すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          properties: {
+            dataTableSource: 'true',
+            dataTableColumnWidths: 'fit wide',
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'table',
+              children: [
+                {
+                  type: 'element',
+                  tagName: 'thead',
+                  children: [
+                    {
+                      type: 'element',
+                      tagName: 'tr',
+                      children: [
+                        {
+                          type: 'element',
+                          tagName: 'th',
+                          children: [{ type: 'text', value: '名前' }],
+                        },
+                        {
+                          type: 'element',
+                          tagName: 'th',
+                          children: [{ type: 'text', value: '値' }],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const first = tree.children?.[0];
+    const table = first?.children?.[0];
+    const colgroup = table?.children?.[0];
+
+    expect(first?.tagName).to.equal('div');
+    expect(first?.properties?.['data-table-root']).to.equal('true');
+    expect(first?.properties?.['dataTableSource']).to.equal(undefined);
+    expect(first?.properties?.['dataTableColumnWidths']).to.equal(undefined);
+    expect(table?.tagName).to.equal('table');
+    expect(colgroup?.tagName).to.equal('colgroup');
+    expect(colgroup?.children?.map((child) => child.properties?.['data-table-col-width'])).to.deep
+      .equal(['fit', 'wide']);
+    expect(findElements(first, (node) => node.properties?.['data-table-root'] === 'true')).to.have
+      .length(1);
   });
 
   it('native blockquote と divider を静的本文要素へ正規化すること', () => {
@@ -558,6 +624,103 @@ describe('rehypeRouaultComponents', () => {
     expect(normalized).toContain('data-callout-body="true"');
     expect(normalized).toContain('data-info-box-body="true"');
     expect(normalized).toContain('data-info-box-header="true"');
+  });
+
+  it('保存前 surface HTML の data-table-source を static table root に正規化すること', () => {
+    const html = `
+      <div data-table-source="true" data-table-column-widths="fit wide numeric">
+        <table>
+          <thead>
+            <tr><th>項目</th><th>説明</th><th>点数</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>A</td><td>B</td><td>1</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    const normalized = normalizeRouaultStaticSurfaceHtml(html) ?? '';
+
+    expect(normalized).toContain('data-table-root="true"');
+    expect(normalized).toContain('role="region"');
+    expect(normalized).toContain('tabindex="0"');
+    expect(normalized).toContain('aria-label="Data table"');
+    expect(normalized).not.toContain('data-table-source');
+    expect(normalized).not.toContain('data-table-column-widths');
+    expect(normalized).toContain('<colgroup>');
+    expect(normalized).toContain('data-table-col-width="fit"');
+    expect(normalized).toContain('data-table-col-width="wide"');
+    expect(normalized).toContain('data-table-col-width="numeric"');
+  });
+
+  it('保存前 surface HTML の table source column-widths 数不一致は既存 error にすること', () => {
+    const html = `
+      <div data-table-source="true" data-table-column-widths="fit wide numeric">
+        <table>
+          <thead>
+            <tr><th>項目</th><th>説明</th></tr>
+          </thead>
+        </table>
+      </div>
+    `;
+
+    expect(() => normalizeRouaultStaticSurfaceHtml(html)).toThrow(
+      '[markdown] table の column-widths 数は table 列数と一致する必要があります',
+    );
+  });
+
+  it('保存前 surface HTML の table source に意味のある非 table 子があれば既存 error にすること', () => {
+    const html = `
+      <div data-table-source="true">
+        <p>本文</p>
+        <table><tbody><tr><td>A</td></tr></tbody></table>
+      </div>
+    `;
+
+    expect(() => normalizeRouaultStaticSurfaceHtml(html)).toThrow(
+      '[markdown] table source は GFM table 1 個だけを含む必要があります',
+    );
+  });
+
+  it('保存前 surface HTML の plain table 正規化契約を維持すること', () => {
+    const html = `
+      <table density="compact">
+        <caption>売上データ</caption>
+        <tbody><tr><td>A</td></tr></tbody>
+      </table>
+    `;
+
+    const normalized = normalizeRouaultStaticSurfaceHtml(html) ?? '';
+
+    expect(normalized).toContain('data-table-root="true"');
+    expect(normalized).toContain('data-density="compact"');
+    expect(normalized).toContain('aria-label="売上データ"');
+    expect(normalized).toContain('<table density="compact">');
+    expect(normalized).toContain('<caption>売上データ</caption>');
+  });
+
+  it('保存前 surface HTML の table source 正規化が冪等であること', () => {
+    const html = `
+      <div data-table-source="true" data-table-column-widths="fit wide numeric">
+        <table>
+          <thead>
+            <tr><th>項目</th><th>説明</th><th>点数</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>A</td><td>B</td><td>1</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    const once = normalizeRouaultStaticSurfaceHtml(html) ?? '';
+    const twice = normalizeRouaultStaticSurfaceHtml(once) ?? '';
+
+    expect(twice).toBe(once);
+    expect(countOccurrences(twice, 'data-table-root="true"')).toBe(1);
+    expect(countOccurrences(twice, '<colgroup>')).toBe(1);
+    expect(countOccurrences(twice, 'data-table-col-width=')).toBe(3);
   });
 
   it('保存前 surface HTML 正規化が冪等であること', () => {

@@ -338,7 +338,12 @@ const cloneNode = (node: HastNode): HastNode => {
 const TABLE_COLUMN_WIDTH_TOKENS = new Set(['auto', 'fit', 'narrow', 'medium', 'wide', 'numeric']);
 
 const isTableSource = (node: HastNode): boolean =>
-  isElement(node) && node.properties?.['data-table-source'] === 'true';
+  isElement(node) &&
+  (toBooleanAttribute(node.properties?.['data-table-source']) ||
+    toBooleanAttribute(node.properties?.['dataTableSource']));
+
+const isStaticTableRoot = (node: HastNode): boolean =>
+  isElement(node, 'div') && node.properties?.['data-table-root'] === 'true';
 
 const getDirectElementChildren = (
   node: HastNode,
@@ -519,7 +524,10 @@ const toStaticTable = (node: HastNode): void => {
   const existingAriaLabel = pickOptionalString(originalProperties['aria-label']);
   const sourceTable = isTableSource(node);
   const columnWidths = sourceTable
-    ? parseTableColumnWidths(originalProperties['data-table-column-widths'])
+    ? parseTableColumnWidths(
+        originalProperties['data-table-column-widths'] ??
+          originalProperties['dataTableColumnWidths'],
+      )
     : [];
 
   let tableChild: HastNode;
@@ -2445,6 +2453,15 @@ const normalizeRouaultStaticSurfacesTree = (
     }
 
     const current = node as HastNode;
+
+    if (isElement(current) && (isTableSource(current) || current.tagName === 'table')) {
+      toStaticTable(current);
+      return;
+    }
+
+    if (isStaticTableRoot(current)) {
+      return;
+    }
 
     if (Array.isArray(current.children)) {
       for (const child of current.children) {
