@@ -26,7 +26,7 @@ const meta: Meta<UiVideo> = {
     docs: {
       description: {
         component: `
-video の **表示見本** です。
+videoの **表示見本** です。
 
 - Storybook には representative display / caption surface / empty surface / manual review を残します。
 - play/pause/retry の public API、keyboard shortcut、seek、mute、captions、empty/error recovery、ended restart は \`test/browser/video.browser.test.ts\` を正本にします。

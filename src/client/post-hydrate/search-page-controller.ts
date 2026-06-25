@@ -37,7 +37,7 @@ import {
 } from '../../../shared/search/search-unavailable-reason.js';
 
 const SITE_URL_CONTEXT_UNAVAILABLE_MESSAGE =
-  'サイト URL 情報を読み込めないため、検索ページの動的機能を利用できません。通常リンクはそのまま利用できます。';
+  'サイトURL情報を読み込めないため、検索ページの動的機能を利用できません。通常リンクはそのまま利用できます。';
 
 const DYNAMIC_SEARCH_CONTROL_SELECTOR = [
   '[data-search-query-input]',
@@ -260,7 +260,7 @@ const createSelectedTag = (document: Document, tag: string): HTMLElement => {
   const button = document.createElement('button');
   button.className = 'selected-tag__remove';
   button.type = 'button';
-  button.setAttribute('aria-label', `${tag} を解除`);
+  button.setAttribute('aria-label', `${tag}を解除`);
   button.dataset['searchSelectedTagRemove'] = tag;
   button.innerHTML = renderStaticIconHtml('x', 'selected-tag__remove-icon');
   chip.append(label, button);
@@ -422,7 +422,7 @@ const syncFilterDomFromForm = (
   }
   const visibleMeta = page.querySelector<HTMLElement>('[data-filter-visible-count]');
   if (visibleMeta) {
-    visibleMeta.textContent = `${String(visibleCount)} / ${String(options.length)} タグ`;
+    visibleMeta.textContent = `${String(visibleCount)} / ${String(options.length)}タグ`;
   }
   const filterEmpty = page.querySelector<HTMLElement>('[data-search-filter-empty]');
   if (filterEmpty) {
@@ -773,7 +773,7 @@ export class SearchPageController {
       ?.replaceChildren(createSearchPageUnavailableState(this.page.ownerDocument, message));
     this.page
       .querySelector<HTMLElement>('[data-search-page-result-count]')
-      ?.replaceChildren('0 件の結果');
+      ?.replaceChildren('0件の結果');
   }
 
   private showStatus(variant: SearchPageStatusVariant | null, message = ''): void {
@@ -848,7 +848,7 @@ export class SearchPageController {
       ?.replaceChildren(
         isTagDefaultView
           ? 'このタグに属するノートを起点に、検索語や追加タグで探索を広げられます。'
-          : 'タグとキーワードを組み合わせ、複数タグは OR / AND を切り替えて探索します。',
+          : 'タグとキーワードを組み合わせ、複数タグはOR / ANDを切り替えて探索します。',
       );
   }
 

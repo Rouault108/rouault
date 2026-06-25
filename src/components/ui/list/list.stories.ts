@@ -145,7 +145,7 @@ export const MobileColumnsAndSupplement: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'hideOnMobile 列と mobile-supplement の見え方を観察する docs story です。',
+        story: 'hideOnMobile列とmobile-supplementの見え方を観察するdocs storyです。',
       },
     },
   },
@@ -161,7 +161,7 @@ export const LoadingAndEdgeSurface: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'loading と単一行境界の見え方だけを残した docs story です。',
+        story: 'loadingと単一行境界の見え方だけを残したdocs storyです。',
       },
     },
   },

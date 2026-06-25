@@ -13,7 +13,7 @@ const columns = [
 const item = {
   id: 'row-1',
   href: '/notes/row-1',
-  title: 'List Item 単体検証',
+  title: 'List Item単体検証',
   date: '2026-02-01',
   tags: 'component',
 };
@@ -74,7 +74,7 @@ export const DefaultInList: Story = {
   parameters: {
     docs: {
       description: {
-        story: '標準 row surface の代表表示用 smoke story です。',
+        story: '標準row surfaceの代表表示用smoke storyです。',
       },
     },
   },
@@ -108,7 +108,7 @@ export const StandaloneFallback: Story = {
   parameters: {
     docs: {
       description: {
-        story: '親 list なしの fallback surface を見るための smoke story です。',
+        story: '親listなしのfallback surfaceを見るためのsmoke storyです。',
       },
     },
   },

@@ -29,7 +29,7 @@ export const Default: Story = {
       {
         title: 'Semantic Colors',
         description:
-          'Rouault の色は飾りではなく意味を持ちます。本文・状態・強調の役割単位で確認します。',
+          'Rouaultの色は飾りではなく意味を持ちます。本文・状態・強調の役割単位で確認します。',
       },
       html`
         ${renderFoundationSection(

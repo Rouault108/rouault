@@ -23,7 +23,7 @@ const meta: Meta<UiTooltip> = {
     docs: {
       description: {
         component: `
-tooltip の **表示見本** です。
+tooltipの **表示見本** です。
 
 この story ファイルは **docs / smoke / 手動確認** に限定します。  
 hover / focus / Escape / aria-describedby / document.body への portal-like surface / disabled / 空文字抑止は
@@ -79,7 +79,7 @@ export const VariantStateMatrix: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'variant ごとの視覚差を観察する docs story です。',
+        story: 'variantごとの視覚差を観察するdocs storyです。',
       },
     },
   },

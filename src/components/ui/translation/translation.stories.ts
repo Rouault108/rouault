@@ -12,7 +12,7 @@ const meta: Meta<UiTranslation> = {
     docs: {
       description: {
         component: `
-overlay 専用の translation コンポーネントです。
+overlay専用のtranslationコンポーネントです。
 
 - \`surface\` は \`popover | drawer\`
 - 開閉は click と API のみ

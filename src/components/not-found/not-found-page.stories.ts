@@ -60,7 +60,7 @@ export const RequestedPathExample: Story = {
   parameters: {
     docs: {
       description: {
-        story: '要求されたパスがある場合の 404 fallback 表示例です。',
+        story: '要求されたパスがある場合の404 fallback表示例です。',
       },
     },
   },
@@ -75,9 +75,9 @@ export const AccessibilityMediaManual: Story = {
 手動確認用 story です。
 
 確認内容:
-- 404 fallback の全体レイアウト
-- action link の視認性
-- mobile 相当でのリンク並び
+- 404 fallbackの全体レイアウト
+- action linkの視認性
+- mobile相当でのリンク並び
 - forced-colors / reduced-motion を含む見え方
 
 CSS 構造契約の合否は \`test/ssr/css-structure-contracts.test.ts\` を正本とします。

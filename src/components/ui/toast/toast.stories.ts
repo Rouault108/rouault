@@ -300,7 +300,7 @@ export const DangerManual: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'danger variant の表示と duration を手動確認する story です。',
+        story: 'danger variantの表示とdurationを手動確認するstoryです。',
       },
     },
   },

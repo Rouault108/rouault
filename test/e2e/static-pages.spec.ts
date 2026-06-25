@@ -26,7 +26,7 @@ test.describe('Static pages', () => {
 
     await expect(page.locator('#main-content h1').first()).toHaveText('検索');
     await expect(page.locator('#main-content')).toContainText(
-      'タグとキーワードを組み合わせ、複数タグは OR / AND を切り替えて探索します。',
+      'タグとキーワードを組み合わせ、複数タグはOR / ANDを切り替えて探索します。',
     );
   });
 });

@@ -167,7 +167,7 @@ const renderSelectedTags = (selectedTags: readonly string[]): string => {
           <button
             class="selected-tag__remove"
             type="button"
-            aria-label="${escapeHtmlAttribute(`${tag} を解除`)}"
+            aria-label="${escapeHtmlAttribute(`${tag}を解除`)}"
             data-search-selected-tag-remove="${escapeHtmlAttribute(tag)}"
           >${renderStaticIconHtml('x', 'selected-tag__remove-icon')}</button>
         </span>
@@ -181,7 +181,7 @@ const renderFilterSummaryDetail = (selectedTags: readonly string[]): string => {
     return '必要な時だけ展開して絞り込めます。';
   }
   const head = selectedTags.slice(0, 2).join(' / ');
-  const rest = selectedTags.length > 2 ? ` / ほか ${String(selectedTags.length - 2)} 件` : '';
+  const rest = selectedTags.length > 2 ? ` / ほか${String(selectedTags.length - 2)}件` : '';
   return `${head}${rest}`;
 };
 
@@ -302,7 +302,7 @@ export const renderSearchPageHtml = (options: {
           <p class="description">${
             isTagDefaultView
               ? 'このタグに属するノートを起点に、検索語や追加タグで探索を広げられます。'
-              : 'タグとキーワードを組み合わせ、複数タグは OR / AND を切り替えて探索します。'
+              : 'タグとキーワードを組み合わせ、複数タグはOR / ANDを切り替えて探索します。'
           }</p>
         </div>
 
@@ -326,7 +326,7 @@ export const renderSearchPageHtml = (options: {
           </div>
 
           <div class="toolbar-row">
-            <div class="meta-row"><span data-search-page-result-count>${initialResponse.total.toString()} 件の結果</span></div>
+            <div class="meta-row"><span data-search-page-result-count>${initialResponse.total.toString()}件の結果</span></div>
             ${renderSearchChoiceMenu({
               name: 'tagMode',
               label: 'タグ演算子',
@@ -372,14 +372,14 @@ export const renderSearchPageHtml = (options: {
               <section class="filter-section" aria-labelledby="${selectedTagsHeadingId}">
                 <div class="filter-section-header">
                   <h2 id="${selectedTagsHeadingId}" class="filter-section-title">選択中タグ</h2>
-                  <span class="filter-section-meta" data-selected-tags-count>${initialState.tags.length.toString()} 件</span>
+                  <span class="filter-section-meta" data-selected-tags-count>${initialState.tags.length.toString()}件</span>
                 </div>
                 <div class="selected-tags" data-selected-tags>${renderSelectedTags(initialState.tags)}</div>
               </section>
               <section class="filter-section" aria-labelledby="filter-list-heading">
                 <div class="filter-list-header">
                   <h2 id="filter-list-heading" class="filter-section-title">タグを絞り込む</h2>
-                  <span class="filter-section-meta" data-filter-visible-count>${Object.keys(initialResponse.allTagCounts).length.toString()} / ${Object.keys(initialResponse.allTagCounts).length.toString()} タグ</span>
+                  <span class="filter-section-meta" data-filter-visible-count>${Object.keys(initialResponse.allTagCounts).length.toString()} / ${Object.keys(initialResponse.allTagCounts).length.toString()}タグ</span>
                 </div>
                 <label class="sr-only" for="search-page-filter-query">タグを絞り込む</label>
                 <div class="filter-search-field" data-static-search-field>

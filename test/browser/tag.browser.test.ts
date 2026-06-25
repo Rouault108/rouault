@@ -238,7 +238,7 @@ describe('ui-tag browser contract', () => {
     const removeButton = expectPresent(getTagRemoveButton(tag), 'remove button');
 
     expect(group.getAttribute('role')).to.equal('group');
-    expect(group.getAttribute('aria-label')).to.equal('Rust タグ');
+    expect(group.getAttribute('aria-label')).to.equal('Rustタグ');
     expect(link.getAttribute('href')).to.equal('/tags/rust');
     expect(text(tag.textContent)).to.equal('Rust');
     expect(removeButton.getAttribute('aria-label')).to.equal('Rustを削除');

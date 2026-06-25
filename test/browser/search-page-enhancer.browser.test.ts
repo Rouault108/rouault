@@ -50,7 +50,7 @@ const renderSearchPageFixture = (): HTMLElement => {
       <div class="hero">
         <p class="eyebrow">Search / Filter</p>
         <h1>検索</h1>
-        <p class="description">タグとキーワードを組み合わせ、複数タグは OR / AND を切り替えて探索します。</p>
+        <p class="description">タグとキーワードを組み合わせ、複数タグはOR / ANDを切り替えて探索します。</p>
       </div>
       <form data-search-page-form>
         <input name="q" value="" data-search-query-input>
@@ -96,7 +96,7 @@ const renderSearchPageFixture = (): HTMLElement => {
         <span data-filter-visible-count></span>
         <p hidden data-search-filter-empty></p>
       </form>
-      <span data-search-page-result-count>0 件の結果</span>
+      <span data-search-page-result-count>0件の結果</span>
       <div hidden data-search-page-loading></div>
       <div hidden data-search-page-error></div>
       <div hidden data-search-page-unavailable></div>
@@ -264,7 +264,7 @@ describe('search-page-enhancer', () => {
     expect(root.querySelectorAll('[data-search-page-unavailable]')).to.have.length(1);
     expect(unavailableAfter?.hidden).to.equal(false);
     expect(unavailableAfter?.textContent).to.equal(
-      'サイト URL 情報を読み込めないため、検索ページの動的機能を利用できません。通常リンクはそのまま利用できます。',
+      'サイトURL情報を読み込めないため、検索ページの動的機能を利用できません。通常リンクはそのまま利用できます。',
     );
     expect(page?.querySelector<HTMLInputElement>('[data-search-query-input]')?.disabled).to.equal(
       true,
@@ -313,7 +313,7 @@ describe('search-page-enhancer', () => {
       'selected tag remove',
     );
 
-    expect(remove.getAttribute('aria-label')).to.equal('architecture を解除');
+    expect(remove.getAttribute('aria-label')).to.equal('architectureを解除');
     expect(remove.querySelector('.selected-tag__remove-icon.static-icon > svg')).not.to.equal(null);
     expect(remove.hasAttribute('data-selected-tag-remove')).to.equal(false);
     expect(root.querySelector('[data-filter-option]')?.getAttribute('data-selected')).to.equal(
@@ -654,7 +654,7 @@ describe('search-page-enhancer', () => {
     expect(root.querySelector('.eyebrow')?.textContent).to.equal('Search / Filter');
     expect(root.querySelector('h1')?.textContent).to.equal('検索');
     expect(root.querySelector('.description')?.textContent).to.equal(
-      'タグとキーワードを組み合わせ、複数タグは OR / AND を切り替えて探索します。',
+      'タグとキーワードを組み合わせ、複数タグはOR / ANDを切り替えて探索します。',
     );
 
     history.pushState(history.state, '', '/tags/music/');
@@ -667,7 +667,7 @@ describe('search-page-enhancer', () => {
     expect(root.querySelector('.eyebrow')?.textContent).to.equal('Search / Filter');
     expect(root.querySelector('h1')?.textContent).to.equal('検索');
     expect(root.querySelector('.description')?.textContent).to.equal(
-      'タグとキーワードを組み合わせ、複数タグは OR / AND を切り替えて探索します。',
+      'タグとキーワードを組み合わせ、複数タグはOR / ANDを切り替えて探索します。',
     );
   });
 
@@ -764,7 +764,7 @@ describe('search-page-enhancer', () => {
     expect(root.querySelector('[data-filter-option][data-filter-tag="security"]')).not.to.equal(
       null,
     );
-    expect(root.querySelector('[data-filter-visible-count]')?.textContent).to.equal('3 / 3 タグ');
+    expect(root.querySelector('[data-filter-visible-count]')?.textContent).to.equal('3 / 3タグ');
   });
 
   it('status region は SSR container を再利用し loading / error / unavailable を排他的に表示すること', async () => {

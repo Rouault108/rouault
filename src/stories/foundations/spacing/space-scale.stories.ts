@@ -40,7 +40,7 @@ export const Default: Story = {
       {
         title: 'Space Scale',
         description:
-          'Rouault の間隔は 4px 系列を基準にしつつ、読書体験のリズムに合わせて跳び幅を作っています。',
+          'Rouaultの間隔は4px系列を基準にしつつ、読書体験のリズムに合わせて跳び幅を作っています。',
       },
       html`
         ${renderFoundationSection(

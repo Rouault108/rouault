@@ -201,7 +201,7 @@ const meta: Meta<InputStoryArgs> = {
     },
     name: {
       control: 'text',
-      description: 'FormData のキー',
+      description: 'FormDataのキー',
       table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
     placeholder: {
@@ -285,7 +285,7 @@ const meta: Meta<InputStoryArgs> = {
     },
     enterkeyhint: {
       control: 'text',
-      description: 'Enter キーラベルのヒント',
+      description: 'Enterキーラベルのヒント',
       table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
     autocapitalize: {
@@ -300,7 +300,7 @@ const meta: Meta<InputStoryArgs> = {
     },
     describedBy: {
       control: 'text',
-      description: '外部説明要素の ID 群',
+      description: '外部説明要素のID群',
       table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
   },

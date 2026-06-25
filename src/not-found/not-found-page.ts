@@ -36,7 +36,7 @@ export class HomePageTemplate {
   data() {
     return {
       layout: 'base',
-      description: 'Rouault の公開ノートを静かに読むためのトップページ。',
+      description: 'Rouaultの公開ノートを静かに読むためのトップページ。',
       permalink: '/index.html',
     };
   }

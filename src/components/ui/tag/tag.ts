@@ -605,7 +605,7 @@ export class Tag extends LitElement {
     // <a> と <button> を Flexbox で並列配置する
     if (hasHref && hasRemovable) {
       return html`
-        <div class="tag-group" role="group" aria-label="${this._textLabel} タグ">
+        <div class="tag-group" role="group" aria-label="${this._textLabel}タグ">
           <a
             class="tag-link"
             href="${this.disabled ? nothing : this.href}"

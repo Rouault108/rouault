@@ -43,7 +43,7 @@ const meta: Meta<Toc> = {
     docs: {
       description: {
         component: `
-static view 専用の TOC です。
+static view専用のTOCです。
 
 - 見出し配列は外部入力
 - \`activeId\` は controlled

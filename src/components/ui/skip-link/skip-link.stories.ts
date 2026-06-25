@@ -151,7 +151,7 @@ export const CustomTarget: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'target-id と label を変えた利用例です。',
+        story: 'target-idとlabelを変えた利用例です。',
       },
     },
   },
