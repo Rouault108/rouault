@@ -29,7 +29,7 @@ const createOverviewNote = (
 };
 
 describe('buildCorporaOverviewProjection', () => {
-  it('コーパス一覧と最近更新ノート一覧を同時に構築すること', () => {
+  it('コーパス一覧と Corpora meta を構築すること', () => {
     const notes: CorporaOverviewSourceNote[] = [
       createOverviewNote({
         title: '音楽',
@@ -91,35 +91,30 @@ describe('buildCorporaOverviewProjection', () => {
           latestUpdatedDate: '2026-03-10',
         },
       ],
-      recentNotes: [
-        {
-          title: '和声のメモ',
-          permalink: '/notes/music/harmony/',
-          renderHref: '/notes/music/harmony/',
-          summary: '機能和声の整理',
-          date: '2026-03-10',
-          pathLabel: 'music / harmony',
-          genres: ['music'],
-        },
-        {
-          title: 'ソート比較',
-          permalink: '/notes/computer-science/algorithms/',
-          renderHref: '/notes/computer-science/algorithms/',
-          summary: '',
-          date: '2026-03-08',
-          pathLabel: 'computer-science / algorithms',
-          genres: ['algorithms'],
-        },
-        {
-          title: '音楽',
-          permalink: '/notes/music/',
-          renderHref: '/notes/music/',
-          summary: '',
-          date: '2026-03-01',
-          pathLabel: 'music',
-          genres: [],
-        },
-      ],
     });
+  });
+
+  it('Corpora meta の最新更新日は空文字列を候補から除外すること', () => {
+    const notes: CorporaOverviewSourceNote[] = [
+      createOverviewNote({
+        title: '日付なし',
+        permalink: '/notes/undated/entry/',
+        slug: 'undated/entry',
+      }),
+      createOverviewNote({
+        title: '日付あり',
+        permalink: '/notes/dated/entry/',
+        slug: 'dated/entry',
+        date: '2026-04-01',
+      }),
+    ];
+
+    const overview = buildCorporaOverviewProjection(notes);
+
+    expect(overview.noteCount).toBe(2);
+    expect(overview.latestUpdatedDate).toBe('2026-04-01');
+    expect(overview.corpora.find((corpus) => corpus.key === 'undated')?.latestUpdatedDate).toBe(
+      '',
+    );
   });
 });

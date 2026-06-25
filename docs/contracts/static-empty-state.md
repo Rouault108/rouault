@@ -13,8 +13,8 @@ Static empty stateは、旧`ui-empty-state` custom elementを復活させずに�
 ```ts
 renderEmptyStateHtml({
   variant: 'default',
-  heading: '公開ノートはまだありません',
-  description: 'ノートが公開されると、ここに最近更新した項目が表示されます。',
+  heading: '公開コーパスはまだありません',
+  description: 'コーパス対象のノートが公開されると、ここにコーパス一覧が表示されます。',
   announce: 'off',
 });
 ```
@@ -44,6 +44,25 @@ rendererは次の静的構造を維持する。
 ## Search Page Boundary
 
 search pageのempty stateは`src/layouts/search-page-html.ts`とpost-hydrate search controllerの契約に属する。`renderEmptyStateHtml()`はsearch variant、search-specific data attribute、search result stateの文言分岐を所有しない。
+
+## Corpus Examples
+
+`corpus-page`では、公開ノートがない場合に次の文脈で使用する。
+
+```ts
+renderEmptyStateHtml({
+  heading: '公開ノートはまだありません',
+});
+```
+
+`corpora-overview`では、公開コーパスがない場合に次の文脈で使用する。
+
+```ts
+renderEmptyStateHtml({
+  heading: '公開コーパスはまだありません',
+  description: 'コーパス対象のノートが公開されると、ここにコーパス一覧が表示されます。',
+});
+```
 
 ## Future constraints only: trusted static HTML
 

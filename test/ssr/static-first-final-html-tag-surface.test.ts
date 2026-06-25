@@ -131,17 +131,6 @@ const corporaOverview: CorporaOverviewData = {
       latestUpdatedDate: '2024-01-01',
     },
   ],
-  recentNotes: [
-    {
-      title: 'Static first note',
-      permalink: '/notes/test-local/static-first/',
-      renderHref: '/notes/test-local/static-first/',
-      summary: 'Representative overview output with ui-kbd prose.',
-      date: '2024-01-01',
-      pathLabel: 'test-local / static-first',
-      genres: ['test-local'],
-    },
-  ],
 };
 
 const renderTestLocalNoteHtml = (): string => {

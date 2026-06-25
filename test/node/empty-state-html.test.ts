@@ -14,8 +14,8 @@ describe('static empty state html renderer', () => {
 
   it('renders the corpus empty-state structure without restoring ui-empty-state', () => {
     const rendered = renderEmptyStateHtml({
-      heading: '公開ノートはまだありません',
-      description: 'ノートが公開されると、ここに最近更新した項目が表示されます。',
+      heading: '公開コーパスはまだありません',
+      description: 'コーパス対象のノートが公開されると、ここにコーパス一覧が表示されます。',
     });
 
     expect(rendered).toContain(
@@ -23,9 +23,9 @@ describe('static empty state html renderer', () => {
     );
     expect(rendered).toContain('<div class="empty-hint__message" data-announce="off">');
     expect(rendered).toContain('<div class="empty-hint__icon" aria-hidden="true"></div>');
-    expect(rendered).toContain('<h2 class="empty-hint__heading">公開ノートはまだありません</h2>');
+    expect(rendered).toContain('<h2 class="empty-hint__heading">公開コーパスはまだありません</h2>');
     expect(rendered).toContain(
-      '<p class="empty-hint__description">ノートが公開されると、ここに最近更新した項目が表示されます。</p>',
+      '<p class="empty-hint__description">コーパス対象のノートが公開されると、ここにコーパス一覧が表示されます。</p>',
     );
     expect(rendered).toContain('<div class="empty-hint__actions" hidden></div>');
     expect(rendered).not.toContain('<ui-empty-state');

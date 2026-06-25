@@ -38,7 +38,7 @@ const collectElements = (
 const elementChildren = (node: ElementNode): ElementNode[] => node.childNodes.filter(isElementNode);
 
 describe('CorporaOverviewTemplate', () => {
-  it('すべてのノート用の overview を静的 HTML として描画すること', () => {
+  it('コーパス索引用の overview を静的 HTML として描画すること', () => {
     const template = new CorporaOverviewTemplate();
     const rendered = template.render({
       corporaOverview: {
@@ -54,16 +54,13 @@ describe('CorporaOverviewTemplate', () => {
             noteCount: 2,
             latestUpdatedDate: '2026-03-10',
           },
-        ],
-        recentNotes: [
           {
-            title: '和声のメモ',
-            permalink: '/notes/music/harmony/',
-            renderHref: '/notes/music/harmony/',
-            summary: '機能和声の整理',
-            date: '2026-03-10',
-            pathLabel: 'music / harmony',
-            genres: ['music'],
+            key: 'computer-science',
+            label: 'Computer Science',
+            href: '/corpora/computer-science/',
+            renderHref: '/corpora/computer-science/',
+            noteCount: 1,
+            latestUpdatedDate: '2026-03-08',
           },
         ],
       },
@@ -73,9 +70,14 @@ describe('CorporaOverviewTemplate', () => {
     expect(rendered).toContain('<div class="meta-row corpora-overview__meta">');
     expect(rendered).toContain('2件のコーパス');
     expect(rendered).toContain('3件のノート');
+    expect(rendered).toContain('<span>最新更新 <time datetime="2026-03-10">2026-03-10</time></span>');
+    expect(rendered).toContain('<h2 id="corpora-list-title" class="corpora-overview__section-title">公開コーパス</h2>');
+    expect(rendered).toContain('閲覧単位を選び、そのまとまりに属するノートへ進みます。');
     expect(rendered).toContain('<article class="result-card" data-result-card>');
     expect(rendered).toContain('href="/corpora/music/"');
-    expect(rendered).toContain('href="/notes/music/harmony/"');
+    expect(rendered).not.toContain('href="/notes/music/harmony/"');
+    expect(rendered).not.toContain('id="recent-notes-title"');
+    expect(rendered).not.toContain('最近更新したノート');
     const fragment = parseFragment(rendered);
     const cards = collectElements(
       fragment,
@@ -94,7 +96,7 @@ describe('CorporaOverviewTemplate', () => {
     expect(rendered).not.toContain('data-hydration-');
   });
 
-  it('corpora と recent notes が空の場合は corpus 系 static empty state を描画すること', () => {
+  it('corpora が空の場合は corpus 系 static empty state を描画すること', () => {
     const template = new CorporaOverviewTemplate();
     const rendered = template.render({
       corporaOverview: {
@@ -102,10 +104,11 @@ describe('CorporaOverviewTemplate', () => {
         noteCount: 0,
         latestUpdatedDate: null,
         corpora: [],
-        recentNotes: [],
       },
     });
 
+    expect(rendered).toContain('<span>最新更新なし</span>');
+    expect(rendered).not.toContain('<time datetime="なし">なし</time>');
     expect(rendered).toContain(
       '<section class="empty-hint" data-empty-state data-empty-variant="default">',
     );
@@ -113,13 +116,9 @@ describe('CorporaOverviewTemplate', () => {
     expect(rendered).toContain('<div class="empty-hint__icon" aria-hidden="true"></div>');
     expect(rendered).toContain('<h2 class="empty-hint__heading">公開コーパスはまだありません</h2>');
     expect(rendered).toContain(
-      '<p class="empty-hint__description">ノートが公開されると、ここにコーパス一覧が表示されます。</p>',
+      '<p class="empty-hint__description">コーパス対象のノートが公開されると、ここにコーパス一覧が表示されます。</p>',
     );
-    expect(rendered).toContain('<h2 class="empty-hint__heading">公開ノートはまだありません</h2>');
-    expect(rendered).toContain(
-      '<p class="empty-hint__description">ノートが公開されると、ここに最近更新した項目が表示されます。</p>',
-    );
-    expect(rendered.match(/<div class="empty-hint__actions" hidden><\/div>/gu)).toHaveLength(2);
+    expect(rendered.match(/<div class="empty-hint__actions" hidden><\/div>/gu)).toHaveLength(1);
     expect(rendered).not.toContain('<ui-empty-state');
     expect(rendered).not.toContain('data-empty-variant="search"');
     expect(rendered).not.toContain('role="status"');

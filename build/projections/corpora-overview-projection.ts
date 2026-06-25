@@ -5,7 +5,6 @@ import {
 } from '../site/site-url-context.js';
 import { applyBasePathToRenderHref } from '../../shared/url/normalize-rouault-url.js';
 import { buildCorpusPageProjection, type CorpusPageEntry } from './corpus-page-projection.js';
-import { buildHomePageProjection, type HomeNoteItem } from './home-page-projection.js';
 
 export type CorporaOverviewSourceNote = IntrinsicNote;
 
@@ -23,7 +22,6 @@ export interface CorporaOverviewData {
   noteCount: number;
   latestUpdatedDate: string | null;
   corpora: CorporaOverviewCorpusItem[];
-  recentNotes: HomeNoteItem[];
 }
 
 const resolveBuildRenderHref = (pathname: string): string => {
@@ -46,13 +44,16 @@ export function buildCorporaOverviewProjection(
   notes: IntrinsicNotesCollection | readonly CorporaOverviewSourceNote[],
 ): CorporaOverviewData {
   const corpusPages = buildCorpusPageProjection(notes);
-  const home = buildHomePageProjection(notes);
+  const latestUpdatedDate =
+    corpusPages
+      .map((entry) => entry.latestUpdatedDate)
+      .filter((value): value is string => typeof value === 'string' && value.length > 0)
+      .sort((left, right) => right.localeCompare(left))[0] ?? null;
 
   return {
     corpusCount: corpusPages.length,
-    noteCount: home.publicNoteCount,
-    latestUpdatedDate: home.latestUpdatedDate,
+    noteCount: corpusPages.reduce((sum, entry) => sum + entry.noteCount, 0),
+    latestUpdatedDate,
     corpora: corpusPages.map(toCorporaOverviewCorpusItem),
-    recentNotes: home.notes,
   };
 }

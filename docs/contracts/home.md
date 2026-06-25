@@ -1,0 +1,75 @@
+# Home Contract
+
+## 1. Status
+
+- Type: Normative
+- Source of truth: `build/projections/home-page-projection.ts`、`src/index.11ty.ts`、`test/ssr/home-template.test.ts`
+- Applies to: top page route`/`、home hero、home feed、home metadata links
+- Non-goals: corpus index、all-notes archive、search result list
+
+## 2. Ownership
+
+### This Layer Owns
+
+- トップページ`/`の導入文脈。
+- Rouaultの公開ノートを最近の更新から読み始める入口。
+- `HomePageData.notes`を描画する`最近の更新`section。
+- `/corpora/`、`/search/`、`/about/`へのmetadata導線。
+
+### This Layer Must Not Own
+
+- Corpus index。正本は`docs/contracts/corpus.md`。
+- 全ノート全件一覧。
+- 検索結果一覧。正本は`docs/contracts/search.md`。
+- `HomePageData.notes`の件数、並び順、上限の決定。正本は`buildHomePageProjection()`。
+
+## 3. Public Contract
+
+### Inputs
+
+- `HomePageData.publicNoteCount`。
+- `HomePageData.latestUpdatedDate`。
+- `HomePageData.notes`。
+
+### Outputs
+
+- Rouaultの導入hero。
+- 最近の更新feed。
+- metadata導線。
+
+### DOM/URL/State Contract
+
+- トップページ`/`はRouaultの導入と最近の更新を担う。
+- `最近の更新`sectionは`HomePageData.notes`を描画する。
+- `HomePageData.notes`の件数、並び順、上限は`buildHomePageProjection()`が所有する。
+- metadata導線は`/corpora/`、`/search/`、`/about/`への控えめな内部リンクとして出力する。
+- metadata導線は`data-link-kind="internal-document"`と`data-link-surface="metadata"`を持つ。
+- metadata導線はCTAbuttonではなく、本文の静けさを妨げないtext linkとして扱う。
+- トップページはcorpus index、全ノート全件一覧、検索結果一覧を所有しない。
+
+## 4. Integration Boundaries
+
+### Build-time
+
+- `buildHomePageProjection()`が公開ノート数、最新更新日、home feed項目を構築する。
+
+### SSR
+
+- `src/index.11ty.ts`がstatic HTMLとしてhero、metadata導線、最近の更新feedを出力する。
+
+### Client Runtime
+
+- トップページ固有のclient stateを持たない。
+
+### Tests
+
+- `test/ssr/home-template.test.ts`がhome templateのDOM契約を検証する。
+
+## 5. Acceptance Criteria
+
+- `/`のh1とleadがRouaultの静かな導入文脈を維持する。
+- `最近の更新`sectionが`HomePageData.notes`を描画する。
+- feed metaが表示件数と公開ノート数を示す。
+- `/corpora/`、`/search/`、`/about/`へのmetadata導線が存在する。
+- metadata導線は`data-link-kind="internal-document"`と`data-link-surface="metadata"`を持つ。
+- トップページがcorpus index、全ノート全件一覧、検索結果一覧を所有しない。

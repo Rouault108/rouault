@@ -4,9 +4,8 @@ import {
   type CorporaOverviewCorpusItem,
   type CorporaOverviewData,
 } from '../projections/corpora-overview-projection.js';
-import type { HomeNoteItem } from '../projections/home-page-projection.js';
 
-export type { CorporaOverviewCorpusItem, CorporaOverviewData, HomeNoteItem };
+export type { CorporaOverviewCorpusItem, CorporaOverviewData };
 
 export type CorporaOverviewSourceNote = IntrinsicNote;
 

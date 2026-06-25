@@ -1507,9 +1507,21 @@ describe('static CSS contracts', () => {
     expect(empty).to.contain('@keyframes empty-state-enter');
 
     const corpora = readCss('page-corpora.css');
+    const removedCorporaRecentNoteSelectors = [
+      '.corpora-overview__recent-list',
+      '.corpora-overview__recent-item',
+      '.corpora-overview__note-path',
+      '.corpora-overview__note-meta',
+      '.corpora-overview__genres',
+      '.corpora-overview__note-summary',
+    ] as const;
+
     expectRuleToDeclare(corpora, '.corpora-overview__corpus-grid', ['grid-template-columns:']);
     expectRuleToDeclare(corpora, '.corpus-page .empty-hint[data-empty-state]', ['min-block-size:']);
     expect(corpora).not.to.match(/\.result-(card|link|title|meta|excerpt)\s*\{/u);
+    for (const selector of removedCorporaRecentNoteSelectors) {
+      expect(allRuleSelectors(corpora), selector).not.toContain(selector);
+    }
   });
 
   it('footer CSS restores static footer visual contract', () => {

@@ -8,9 +8,6 @@
 .corpora-overview__summary {
   color: var(--fg-default);
 }
-.corpora-overview__section + .corpora-overview__section {
-  margin-top: var(--space-10);
-}
 .corpora-overview__section-header {
   display: grid;
   gap: var(--space-2);
@@ -35,27 +32,11 @@
 .corpora-overview__corpus-item {
   min-width: 0;
 }
-.corpora-overview__corpus-meta,
-.corpora-overview__note-meta {
+.corpora-overview__corpus-meta {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   align-items: center;
-}
-.corpora-overview__recent-list {
-  display: grid;
-  gap: var(--space-3);
-}
-.corpora-overview__recent-item {
-  min-width: 0;
-}
-.corpora-overview__note-path,
-.corpora-overview__genres {
-  color: var(--fg-muted);
-  font-size: var(--text-xs);
-}
-.corpora-overview__note-summary {
-  margin: 0;
 }
 .corpora-overview .empty-hint[data-empty-state] {
   min-block-size: 20vh;

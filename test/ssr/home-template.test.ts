@@ -1,6 +1,47 @@
 import { describe, expect, it } from 'vitest';
+import { parseFragment, type DefaultTreeAdapterMap } from 'parse5';
 
 import { HomePageTemplate } from '../../src/index.11ty.js';
+
+type ChildNode = DefaultTreeAdapterMap['childNode'];
+type ElementNode = DefaultTreeAdapterMap['element'];
+type TextNode = DefaultTreeAdapterMap['textNode'];
+
+interface ParentLike {
+  readonly childNodes: readonly ChildNode[];
+}
+
+const isElementNode = (node: ChildNode): node is ElementNode => 'tagName' in node;
+const isTextNode = (node: ChildNode): node is TextNode => node.nodeName === '#text';
+
+const getAttribute = (node: ElementNode, name: string): string | null =>
+  node.attrs.find((attribute) => attribute.name === name)?.value ?? null;
+
+const collectElements = (
+  node: ParentLike,
+  predicate: (element: ElementNode) => boolean,
+  matches: ElementNode[] = [],
+): ElementNode[] => {
+  for (const child of node.childNodes) {
+    if (!isElementNode(child)) {
+      continue;
+    }
+    if (predicate(child)) {
+      matches.push(child);
+    }
+    collectElements(child, predicate, matches);
+  }
+  return matches;
+};
+
+const textContent = (node: ParentLike): string =>
+  node.childNodes
+    .map((child) => {
+      if (isTextNode(child)) return child.value;
+      if (isElementNode(child)) return textContent(child);
+      return '';
+    })
+    .join('');
 
 describe('HomePageTemplate', () => {
   it('静かなトップページの静的マークアップを描画すること', () => {
@@ -30,15 +71,52 @@ describe('HomePageTemplate', () => {
     expect(rendered).toContain(
       'ソフトウェア、計算機科学、設計、読書から得た理解を、後から辿れる形で整理しています。',
     );
-    expect(rendered).toContain('3件');
     expect(rendered).toContain('最終更新 <time datetime="2026-03-10">2026-03-10</time>');
-    expect(rendered).toContain('class="home-meta-link link-text link-text--muted"');
-    expect(rendered).toContain('href="/about/"');
-    expect(rendered).toContain('data-link-kind="internal-document"');
-    expect(rendered).toContain('このサイトについて</a>');
-    expect(rendered).toContain('<h2 id="home-feed-heading" class="home-feed-title">新着一覧</h2>');
     expect(rendered).toContain('music / romantic');
     expect(rendered).toContain('和声進行の整理');
+
+    const fragment = parseFragment(rendered);
+    const [feedHeading] = collectElements(
+      fragment,
+      (element) => getAttribute(element, 'id') === 'home-feed-heading',
+    );
+    expect(feedHeading).toBeDefined();
+    expect(feedHeading ? textContent(feedHeading) : '').toBe('最近の更新');
+    expect(feedHeading ? textContent(feedHeading) : '').not.toBe('新着一覧');
+
+    const [feedMeta] = collectElements(fragment, (element) =>
+      (getAttribute(element, 'class') ?? '').split(/\s+/u).includes('home-feed-meta'),
+    );
+    expect(feedMeta ? textContent(feedMeta) : '').toBe('最新1件・公開ノート3件');
+
+    const [homeMeta] = collectElements(fragment, (element) =>
+      (getAttribute(element, 'class') ?? '').split(/\s+/u).includes('home-meta'),
+    );
+    expect(homeMeta ? getAttribute(homeMeta, 'aria-label') : null).toBe(
+      'トップページの補足情報と導線',
+    );
+    expect(homeMeta ? textContent(homeMeta).replace(/\s+/gu, ' ').trim() : '').toBe(
+      '最終更新 2026-03-10 ・ コーパスから辿る ・ 検索する ・ このサイトについて',
+    );
+
+    const metadataLinks = collectElements(
+      homeMeta ?? fragment,
+      (element) =>
+        element.tagName === 'a' && getAttribute(element, 'data-link-surface') === 'metadata',
+    );
+    expect(metadataLinks.map((link) => getAttribute(link, 'href'))).toEqual([
+      '/corpora/',
+      '/search/',
+      '/about/',
+    ]);
+    expect(metadataLinks.filter((link) => getAttribute(link, 'href') === '/about/')).toHaveLength(
+      1,
+    );
+    for (const link of metadataLinks) {
+      expect(getAttribute(link, 'class')).toBe('home-meta-link link-text link-text--muted');
+      expect(getAttribute(link, 'data-link-kind')).toBe('internal-document');
+      expect(getAttribute(link, 'data-link-surface')).toBe('metadata');
+    }
   });
 
   it('要約が空ならプレースホルダーを描画しないこと', () => {

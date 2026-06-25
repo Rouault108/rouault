@@ -15,10 +15,11 @@ test.describe('Static pages', () => {
   test('corpora 一覧ページが主要見出しまで表示されること', async ({ page }) => {
     await page.goto('/corpora/');
 
-    await expect(page.locator('#main-content h1').first()).toHaveText('すべてのノート');
+    await expect(page.locator('#main-content h1').first()).toHaveText('コーパスから辿る');
     await expect(page.locator('#main-content')).toContainText(
-      '公開しているコーパスと最近更新したノートを',
+      '公開ノートを、コーパスというまとまりごとに辿るための索引です。',
     );
+    await expect(page.locator('#main-content')).not.toContainText('最近更新したノート');
   });
 
   test('search ページが主要見出しまで表示されること', async ({ page }) => {

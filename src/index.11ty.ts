@@ -43,7 +43,8 @@ export class HomePageTemplate {
 
   render(data: HomePageTemplateData) {
     const home = data.home ?? loadHomeData();
-    const noteCount = home.publicNoteCount.toLocaleString('ja-JP');
+    const visibleNoteCount = home.notes.length.toLocaleString('ja-JP');
+    const publicNoteCount = home.publicNoteCount.toLocaleString('ja-JP');
     const latestUpdatedDate = renderTime(home.latestUpdatedDate);
 
     return `
@@ -55,9 +56,13 @@ export class HomePageTemplate {
             <p class="home-lead">ソフトウェア、計算機科学、設計、読書から得た理解を、後から辿れる形で整理しています。</p>
             <p${serializeHtmlAttributes([
               { name: 'class', value: 'home-meta' },
-              { name: 'aria-label', value: '公開ノートの概要' },
+              { name: 'aria-label', value: 'トップページの補足情報と導線' },
             ])}>
               <span class="home-meta-item">最終更新 ${latestUpdatedDate}</span>
+              <span class="home-meta-separator" aria-hidden="true">・</span>
+              <a class="home-meta-link link-text link-text--muted" href="/corpora/" data-link-kind="internal-document" data-link-surface="metadata">コーパスから辿る</a>
+              <span class="home-meta-separator" aria-hidden="true">・</span>
+              <a class="home-meta-link link-text link-text--muted" href="/search/" data-link-kind="internal-document" data-link-surface="metadata">検索する</a>
               <span class="home-meta-separator" aria-hidden="true">・</span>
               <a class="home-meta-link link-text link-text--muted" href="/about/" data-link-kind="internal-document" data-link-surface="metadata">このサイトについて</a>
             </p>
@@ -65,8 +70,8 @@ export class HomePageTemplate {
 
           <section aria-labelledby="home-feed-heading" class="home-feed-section">
             <div class="home-feed-header">
-              <h2 id="home-feed-heading" class="home-feed-title">新着一覧</h2>
-              <p class="home-feed-meta">${escapeHtmlText(noteCount)}件</p>
+              <h2 id="home-feed-heading" class="home-feed-title">最近の更新</h2>
+              <p class="home-feed-meta">最新${escapeHtmlText(visibleNoteCount)}件・公開ノート${escapeHtmlText(publicNoteCount)}件</p>
             </div>
             ${
               home.notes.length > 0

@@ -9,8 +9,8 @@ export class CorporaOverviewTemplate {
   data() {
     return {
       layout: 'base',
-      title: 'すべてのノート',
-      description: '公開しているコーパスと最近更新したノートを横断して辿るための一覧ページ。',
+      title: 'コーパスから辿る',
+      description: '公開ノートを、コーパスというまとまりごとに辿るための索引ページ。',
       permalink: '/corpora/index.html',
       currentCorpusKey: 'all',
     };
