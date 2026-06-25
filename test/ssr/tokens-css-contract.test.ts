@@ -151,7 +151,7 @@ describe('tokens css contract', () => {
 
     expect(foundationsDocs).toContain('`--line-height-snug`');
     expect(foundationsDocs).toContain('`1.35`');
-    expect(accessibilityDocs).toContain('最低 24×24px、推奨 44×44px');
+    expect(accessibilityDocs).toMatch(/最低\s*24×24px、推奨\s*44×44px/u);
     expect(accessibilityDocs).toContain('| `--control-min-touch` | 24px |');
   });
 

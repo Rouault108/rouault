@@ -26,6 +26,10 @@ const extractMarkdownSection = (markdown: string, heading: string, level = 3): s
   return markdown.slice(start, next?.index ?? markdown.length);
 };
 
+const withoutSpacingNoise = (value: string): string => {
+  return value.replace(/\s+/gu, '');
+};
+
 describe('ui-tag docs contract', () => {
   it('public API sections do not expose unimplemented label/value override inputs', () => {
     const publicApiSections = [
@@ -44,11 +48,13 @@ describe('ui-tag docs contract', () => {
     expect(publicApiSections).not.toMatch(/\bremove-label\b|\bgroup-label\b/u);
     expect(publicApiSections).not.toMatch(/\|\s*`value`\s*\|/u);
     expect(publicApiSections).not.toMatch(/`value`[、,]\s*`removeLabel`[、,]\s*`groupLabel`/u);
+    const normalizedPublicApiSections = withoutSpacingNoise(publicApiSections);
+
     expect(publicApiSections).not.toMatch(/`value`\s*を公開入力/u);
-    expect(publicApiSections).not.toContain('`value` を安定識別子');
-    expect(publicApiSections).not.toContain('`value` によって固定');
-    expect(publicApiSections).not.toContain('value を指定');
-    expect(publicApiSections).toContain('可視ラベルを trim');
+    expect(normalizedPublicApiSections).not.toContain('`value`を安定識別子');
+    expect(normalizedPublicApiSections).not.toContain('`value`によって固定');
+    expect(publicApiSections).not.toMatch(/\bvalue\s*を\s*指定/u);
+    expect(normalizedPublicApiSections).toContain('可視ラベルをtrim');
   });
 
   it('remove event docs keep propagation contract and current detail.value source', () => {
@@ -57,9 +63,11 @@ describe('ui-tag docs contract', () => {
       extractMarkdownSection(tagDocs, 'イベント伝播契約'),
     ].join('\n');
 
+    const normalizedEventSection = withoutSpacingNoise(eventSection);
+
     expect(eventSection).toContain('| `ui-tag-remove` |');
     expect(eventSection).toContain('| `true`  | `true`   | `false`');
-    expect(eventSection).toContain('公開入力 `value` 由来ではありません');
-    expect(eventSection).toContain('可視ラベルの trim 結果');
+    expect(normalizedEventSection).toContain('公開入力`value`由来ではありません');
+    expect(normalizedEventSection).toContain('可視ラベルのtrim結果');
   });
 });
