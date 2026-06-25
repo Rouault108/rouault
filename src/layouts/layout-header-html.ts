@@ -62,9 +62,6 @@ const renderCorpusSwitcher = (input: LayoutHeaderHtmlInput): string => {
   const links = items
     .map((item) => {
       const isCurrent = item.key === input.currentCorpusKey;
-      const indicatorHtml = isCurrent
-        ? renderStaticIconHtml('check', 'corpus-menu-item__indicator')
-        : '<span class="corpus-menu-item__indicator corpus-menu-item__indicator--placeholder" aria-hidden="true"></span>';
       const labelHtml = escapeHtmlText(item.label);
       return `
         <li>
@@ -79,7 +76,6 @@ const renderCorpusSwitcher = (input: LayoutHeaderHtmlInput): string => {
               value: isCurrent ? 'page' : undefined,
             },
           ])}>
-            ${indicatorHtml}
             <span class="corpus-menu-item__label">${labelHtml}</span>
           </a>
         </li>
@@ -192,7 +188,7 @@ const renderThemeSwitcher = (): string => {
             { name: 'data-header-menu-text', value: option.label },
             { name: 'aria-pressed', value: selected ? 'true' : 'false' },
           ])}>
-            ${renderStaticIconHtml(selected ? 'check' : option.icon)}
+            ${renderStaticIconHtml(option.icon)}
             <span>${escapeHtmlText(option.label)}</span>
           </button>
         </li>

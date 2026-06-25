@@ -72,6 +72,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 - `docs/adr/reading-chrome-note-frame-outer-gutter.md`
 - `docs/adr/corpus-current-selected-surface.md`
 - `docs/adr/header-corpus-current-indicator.md`
+- `docs/adr/header-menu-selected-surface-without-check.md`
 - `docs/adr/theme-contract-and-document-bootstrap.md`
 - `docs/adr/search-page-static-choice-menu.md`
 - `docs/adr/japanese-ascii-spacing-policy.md`

@@ -850,6 +850,26 @@ test.describe('Static header migration', () => {
     expect(compactStyle.paddingInlineEnd).toBeGreaterThan(0);
     const compactContract = await readHeaderControlContract(page, headerControlTargets.theme);
     expectHeaderControlHitTargetContract(compactContract);
+    await expect(themeTrigger).toHaveAttribute('aria-label', /テーマ: .+/u);
+    await expect(
+      page.locator('header[data-layout-header] .theme-trigger-icon svg[data-icon]'),
+    ).toHaveAttribute('data-icon', /sun|moon|monitor/u);
+    await expect(page.locator('header[data-layout-header] .theme-trigger-text')).toBeHidden();
+
+    await themeTrigger.click();
+    await expectMenuOpen(page, 'theme', true);
+    const selectedThemeItem = page.locator(
+      'header[data-layout-header] [data-theme-value][aria-pressed="true"][data-selected="true"]',
+    );
+    await expect(selectedThemeItem).toHaveCount(1);
+    await expect(selectedThemeItem.locator('svg[data-icon]')).toHaveAttribute(
+      'data-icon',
+      /sun|moon|monitor/u,
+    );
+    const selectedThemeWeight = await selectedThemeItem.evaluate((element) =>
+      Number.parseFloat(window.getComputedStyle(element).fontWeight),
+    );
+    expect(selectedThemeWeight).toBeGreaterThanOrEqual(600);
   });
 
   test('header menu item は keyboard focus 時に視認可能な focus indicator を維持すること', async ({
@@ -1074,16 +1094,17 @@ test.describe('Static header migration', () => {
         gridTemplateColumns: style.gridTemplateColumns,
         height,
         labelOverflow: labelStyle.overflow,
+        labelMinInlineSize: labelStyle.minInlineSize,
         labelTextOverflow: labelStyle.textOverflow,
         labelWhiteSpace: labelStyle.whiteSpace,
       };
     });
 
-    expect(itemContract.display).toBe('grid');
-    expect(itemContract.gridTemplateColumns).not.toBe('');
+    expect(itemContract.gridTemplateColumns).not.toContain('1em');
     expect(itemContract.boxSizing).toBe('border-box');
     expect(itemContract.labelWhiteSpace).toBe('nowrap');
     expect(itemContract.labelOverflow).toBe('hidden');
+    expect(itemContract.labelMinInlineSize).toBe('0px');
     expect(itemContract.labelTextOverflow).toBe('ellipsis');
     expect(itemContract.height).toBeGreaterThanOrEqual(32);
 
@@ -1095,7 +1116,7 @@ test.describe('Static header migration', () => {
     expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width + 1);
   });
 
-  test('current corpus item は check indicator と text emphasis で非current item と区別できること', async ({
+  test('current corpus item は quiet selected surface と text emphasis で非current item と区別できること', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 760 });
@@ -1131,19 +1152,14 @@ test.describe('Static header migration', () => {
 
       const read = (element: HTMLElement) => {
         const style = window.getComputedStyle(element);
-        const children = Array.from(element.children);
-        const indicator = children[0];
-        const label = children.find((child) => child.classList.contains('corpus-menu-item__label'));
+        const label = element.querySelector('.corpus-menu-item__label');
         return {
           ariaCurrent: element.getAttribute('aria-current'),
+          backgroundColor: style.backgroundColor,
           borderInlineStartWidth: Number.parseFloat(style.borderInlineStartWidth),
-          firstChildIsIndicator:
-            indicator instanceof HTMLElement &&
-            indicator.classList.contains('corpus-menu-item__indicator'),
           fontWeight: Number.parseFloat(style.fontWeight),
-          hasCheckIcon:
-            indicator instanceof Element &&
-            indicator.querySelector('svg[data-icon="check"]') !== null,
+          hasCheckIcon: element.querySelector('svg[data-icon="check"]') !== null,
+          hasIndicator: element.querySelector('.corpus-menu-item__indicator') !== null,
           hasLabel: label instanceof HTMLElement,
           label: element.getAttribute('data-header-menu-text') ?? '',
           rawFontWeight: style.fontWeight,
@@ -1162,9 +1178,9 @@ test.describe('Static header migration', () => {
 
     expect(visualState?.current.ariaCurrent).toBe('page');
     expect(visualState?.nonCurrent.ariaCurrent).toBeNull();
-    expect(visualState?.current.firstChildIsIndicator).toBe(true);
-    expect(visualState?.nonCurrent.firstChildIsIndicator).toBe(true);
-    expect(visualState?.current.hasCheckIcon).toBe(true);
+    expect(visualState?.current.hasIndicator).toBe(false);
+    expect(visualState?.nonCurrent.hasIndicator).toBe(false);
+    expect(visualState?.current.hasCheckIcon).toBe(false);
     expect(visualState?.nonCurrent.hasCheckIcon).toBe(false);
     expect(visualState?.current.hasLabel).toBe(true);
     expect(visualState?.nonCurrent.hasLabel).toBe(true);
@@ -1172,6 +1188,7 @@ test.describe('Static header migration', () => {
     expect(visualState?.nonCurrent.label).not.toBe('');
     expect(visualState?.current.borderInlineStartWidth).toBe(0);
     expect(visualState?.nonCurrent.borderInlineStartWidth).toBe(0);
+    expect(visualState?.current.backgroundColor).not.toBe(visualState?.nonCurrent.backgroundColor);
 
     const currentWeight = visualState?.current.fontWeight ?? Number.NaN;
     const nonCurrentWeight = visualState?.nonCurrent.fontWeight ?? Number.NaN;
@@ -1264,7 +1281,7 @@ test.describe('Static header migration', () => {
     ).toHaveAttribute('data-selected', 'true');
     await expect(
       page.locator('header[data-layout-header] [data-theme-value="dark"] svg[data-icon]'),
-    ).toHaveAttribute('data-icon', 'check');
+    ).toHaveAttribute('data-icon', 'moon');
   });
 
   test('corpus link の hydrated 遷移後に current state を新しい header へ同期すること', async ({
@@ -1323,11 +1340,11 @@ test.describe('Static header migration', () => {
     await expect(
       nextCurrentItems
         .first()
-        .locator(':scope > .corpus-menu-item__indicator svg[data-icon="check"]'),
-    ).toHaveCount(1);
+        .locator(':scope svg[data-icon="check"], :scope .corpus-menu-item__indicator'),
+    ).toHaveCount(0);
     await expect(
       nextHeader.locator(
-        '[data-header-menu="corpus"] [data-header-menu-item]:not([aria-current="page"]) > .corpus-menu-item__indicator svg[data-icon="check"]',
+        '[data-header-menu="corpus"] [data-header-menu-item]:not([aria-current="page"]) svg[data-icon="check"], [data-header-menu="corpus"] [data-header-menu-item]:not([aria-current="page"]) .corpus-menu-item__indicator',
       ),
     ).toHaveCount(0);
   });
@@ -1359,7 +1376,7 @@ test.describe('Static header migration', () => {
     ).toHaveAttribute('data-selected', 'true');
     await expect(
       page.locator('header[data-layout-header] [data-theme-value="light"] svg[data-icon]'),
-    ).toHaveAttribute('data-icon', 'check');
+    ).toHaveAttribute('data-icon', 'sun');
   });
 
   test('header menu は Escape dismissal と trigger focus restore を同期すること', async ({

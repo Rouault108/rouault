@@ -59,7 +59,7 @@ const syncThemeHeader = (root: ParentNode, preference = readAppliedThemePreferen
         item.removeAttribute('data-selected');
       }
       if (itemOption !== null) {
-        patchStaticIcon(item, selected ? 'check' : itemOption.icon);
+        patchStaticIcon(item, itemOption.icon);
       }
     }
   }

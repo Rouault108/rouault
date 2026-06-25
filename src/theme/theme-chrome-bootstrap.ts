@@ -60,7 +60,7 @@ export const buildThemeChromeBootstrapScript = (): string => {
       }
       const itemOption = value ? themeOptions[value] : null;
       if (itemOption) {
-        patchIcon(item, selected ? 'check' : itemOption.icon);
+        patchIcon(item, itemOption.icon);
       }
     }
   }

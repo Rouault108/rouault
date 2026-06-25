@@ -51,8 +51,6 @@ const findElements = (
   return results;
 };
 
-const elementChildren = (node: ElementNode): ElementNode[] => node.childNodes.filter(isElementNode);
-
 const requireElement = (element: ElementNode | undefined, message: string): ElementNode => {
   if (element === undefined) {
     throw new Error(message);
@@ -105,16 +103,13 @@ describe('static header parse5 validator', () => {
     expect(html).toContain('data-header-menu-trigger-id="static-header-corpus-trigger"');
     expect(html).toContain('aria-controls="static-header-corpus-panel"');
     expect(html).toContain('data-header-menu-text="すべて &quot;Alpha&quot; &amp; &lt;Beta&gt;"');
-    expect(html).toContain(
-      '<span class="corpus-menu-item__indicator static-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-icon="check">',
-    );
+    expect(html).not.toContain('corpus-menu-item__indicator');
+    expect(html).not.toContain('corpus-menu-item__indicator--placeholder');
     expect(html).toContain(
       '<span class="corpus-menu-item__label">すべて "Alpha" &amp; &lt;Beta&gt;</span>',
     );
-    expect(html).toContain(
-      '<span class="corpus-menu-item__indicator corpus-menu-item__indicator--placeholder" aria-hidden="true"></span>',
-    );
     expect(html).toContain('<nav id="static-header-corpus-panel"');
+    expect(html).toContain('aria-label="コーパス"');
     expect(html).toContain('data-header-menu-panel="true"');
     expect(html).toContain('data-header-menu-panel-id="static-header-corpus-panel"');
     expect(html).toContain('data-header-menu-item="true"');
@@ -126,9 +121,11 @@ describe('static header parse5 validator', () => {
     expect(html).toContain(
       '<div id="static-header-theme-panel" class="theme-switcher__menu" role="group"',
     );
+    expect(html).toContain('aria-label="テーマ"');
     expect(html).toContain('data-header-menu-panel-id="static-header-theme-panel"');
     expect(html).toContain('data-theme-value="system"');
     expect(html).toContain('aria-pressed="true"');
+    expect(html).toContain('data-selected="true"');
     expect(html).not.toContain('role="menu"');
     expect(html).not.toContain('role="menuitem"');
     expect(html).not.toContain('aria-selected');
@@ -150,46 +147,65 @@ describe('static header parse5 validator', () => {
     expect(nonCurrentItems.length).toBeGreaterThan(0);
 
     const currentItem = requireElement(currentItems[0], 'Current corpus item is missing.');
-    const currentChildren = elementChildren(currentItem);
-    const currentIndicator = requireElement(
-      currentChildren[0],
-      'Current corpus indicator is missing.',
+    const currentLabel = requireElement(
+      findElements(currentItem, (element) => hasClass(element, 'corpus-menu-item__label'))[0],
+      'Current corpus label is missing.',
     );
-    const currentLabel = requireElement(currentChildren[1], 'Current corpus label is missing.');
-    expect(hasClass(currentIndicator, 'corpus-menu-item__indicator')).toBe(true);
-    expect(hasClass(currentIndicator, 'static-icon')).toBe(true);
-    expect(currentIndicator.attrs.some((attribute) => attribute.name === 'aria-hidden')).toBe(true);
     expect(hasClass(currentLabel, 'corpus-menu-item__label')).toBe(true);
     expect(getTextContent(currentLabel)).toBe('すべて "Alpha" & <Beta>');
     expect(getAttribute(currentItem, 'data-header-menu-text')).toBe('すべて "Alpha" & <Beta>');
+    expect(getAttribute(currentItem, 'aria-current')).toBe('page');
     expect(
       findElements(
-        currentIndicator,
+        currentItem,
         (element) => element.tagName === 'svg' && getAttribute(element, 'data-icon') === 'check',
       ),
-    ).toHaveLength(1);
+    ).toHaveLength(0);
+    expect(
+      findElements(currentItem, (element) => hasClass(element, 'corpus-menu-item__indicator')),
+    ).toHaveLength(0);
 
     const nonCurrentItem = requireElement(
       nonCurrentItems[0],
       'Non-current corpus item is missing.',
     );
-    const nonCurrentChildren = elementChildren(nonCurrentItem);
-    const nonCurrentIndicator = requireElement(
-      nonCurrentChildren[0],
-      'Non-current corpus indicator is missing.',
-    );
     const nonCurrentLabel = requireElement(
-      nonCurrentChildren[1],
+      findElements(nonCurrentItem, (element) => hasClass(element, 'corpus-menu-item__label'))[0],
       'Non-current corpus label is missing.',
     );
-    expect(hasClass(nonCurrentIndicator, 'corpus-menu-item__indicator')).toBe(true);
-    expect(hasClass(nonCurrentIndicator, 'corpus-menu-item__indicator--placeholder')).toBe(true);
     expect(hasClass(nonCurrentLabel, 'corpus-menu-item__label')).toBe(true);
     expect(getTextContent(nonCurrentLabel)).toBe('日誌 & Memo');
     expect(getAttribute(nonCurrentItem, 'data-header-menu-text')).toBe('日誌 & Memo');
     expect(
       findElements(
-        nonCurrentIndicator,
+        nonCurrentItem,
+        (element) => element.tagName === 'svg' && getAttribute(element, 'data-icon') === 'check',
+      ),
+    ).toHaveLength(0);
+    expect(
+      findElements(nonCurrentItem, (element) => hasClass(element, 'corpus-menu-item__indicator')),
+    ).toHaveLength(0);
+
+    const selectedThemeItem = requireElement(
+      findElements(
+        fragment,
+        (element) =>
+          element.tagName === 'button' &&
+          getAttribute(element, 'data-theme-value') === 'system' &&
+          getAttribute(element, 'aria-pressed') === 'true',
+      )[0],
+      'Selected theme item is missing.',
+    );
+    expect(getAttribute(selectedThemeItem, 'data-selected')).toBe('true');
+    expect(
+      findElements(
+        selectedThemeItem,
+        (element) => element.tagName === 'svg' && getAttribute(element, 'data-icon') === 'monitor',
+      ),
+    ).toHaveLength(1);
+    expect(
+      findElements(
+        selectedThemeItem,
         (element) => element.tagName === 'svg' && getAttribute(element, 'data-icon') === 'check',
       ),
     ).toHaveLength(0);

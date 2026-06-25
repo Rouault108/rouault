@@ -39,6 +39,10 @@ header[data-layout-header] {
   --_header-corpus-menu-item-min-block-size: var(--control-height-md, 32px);
   --_header-corpus-menu-item-padding-block: var(--space-2, 8px);
   --_header-corpus-menu-item-padding-inline: var(--space-3, 12px);
+  --_header-menu-selected-background: var(
+    --bg-surface-selected,
+    color-mix(in srgb, var(--bg-default) 94%, var(--fg-default) 6%)
+  );
   --_header-hit-target-size: 44px;
   --_header-control-font-weight: var(--font-medium, 500);
   --_header-control-line-height: 1.15;
@@ -268,6 +272,7 @@ header[data-layout-header] [data-header-menu-item] {
 }
 
 header[data-layout-header] [data-header-menu='theme'] [data-header-menu-item] {
+  font-weight: var(--font-normal, 400);
   white-space: nowrap;
 }
 
@@ -282,10 +287,8 @@ header[data-layout-header] .corpus-switcher__menu a {
 
 header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item] {
   box-sizing: border-box;
-  display: grid;
-  grid-template-columns: 1em minmax(0, 1fr);
+  display: inline-flex;
   align-items: center;
-  column-gap: var(--space-2, 8px);
   min-block-size: var(--_header-corpus-menu-item-min-block-size, 32px);
   padding-block: var(--_header-corpus-menu-item-padding-block, 8px);
   padding-inline: var(--_header-corpus-menu-item-padding-inline, 12px);
@@ -301,15 +304,7 @@ header[data-layout-header] .corpus-menu-item__label {
   text-overflow: ellipsis;
 }
 
-header[data-layout-header] .corpus-menu-item__indicator {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 1em;
-  block-size: 1em;
-}
-
 header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:hover,
-header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:focus-visible,
 header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:active {
   background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%));
 }
@@ -317,6 +312,12 @@ header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:a
 header[data-layout-header]
   [data-header-menu='corpus']
   [data-header-menu-item][aria-current='page'] {
+  background: var(--_header-menu-selected-background);
+  font-weight: var(--font-semibold, 600);
+}
+
+header[data-layout-header] [data-header-menu='theme'] [data-header-menu-item][data-selected='true'] {
+  background: var(--_header-menu-selected-background);
   font-weight: var(--font-semibold, 600);
 }
 

@@ -9,11 +9,14 @@
 - Acceptance ID: ACC-HEADER-CORPUS-CURRENT-INDICATOR-001
 - Verification ID: VER-HEADER-CORPUS-CURRENT-INDICATOR-001
 - R段階 / Aレベル: R3 / A0
-- Status: Accepted
+- Status: Superseded
+- Superseded by: `docs/adr/header-menu-selected-surface-without-check.md`
 - Date: 2026-06-25
 - Contract source of truth: `docs/contracts/static-header-contract.md`
 
-この文書はdecision recordです。現在のcontractを再定義する正本ではありません。現行挙動の契約正本は`docs/contracts/static-header-contract.md`です。
+この文書は歴史的なdecision recordです。現在のcontractを再定義する正本ではありません。現行挙動の契約正本は`docs/contracts/static-header-contract.md`です。
+
+このDecisionは`docs/adr/header-menu-selected-surface-without-check.md`によりSupersededとなった。Corpus current itemのcheck indicatorとindicator slotは現行contractでは廃止され、`aria-current="page"`、低ノイズなselected surface、semiboldによる補助表示へ置き換えられた。この文書は当時の判断を追跡するために削除しない。
 
 ## Decision
 

@@ -26,5 +26,4 @@ export const THEME_CHROME_BOOTSTRAP_ICON_NAMES = [
   'sun',
   'moon',
   'monitor',
-  'check',
 ] as const satisfies readonly IconName[];

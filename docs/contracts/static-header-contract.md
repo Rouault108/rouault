@@ -118,22 +118,22 @@ Corpus switcherはnavigation disclosureである。
 - Arrow key、Escape、Home / End、typeaheadなどのhydrated操作はmenu patternの全面採用ではなく、disclosure UIの利便性補助として扱う。
 - Corpus itemはnative linkとして扱い、Space activationを独自に強制しない。
 - Corpus menuはcontent-constrainedな幅を持つ。通常サポートviewportではtrigger width以上を保ち、trigger widthとviewport containmentが衝突する場合はviewport containmentを優先する。
-- Corpus itemはindicator + label layoutを持つ。`.corpus-switcher__menu a`の既存ruleは残してよいが、corpus itemの正本layoutは後続の`[data-header-menu='corpus'] [data-header-menu-item]` ruleで定義する。
-- Corpus itemの長いlabelは`.corpus-menu-item__label`が所有する1行ellipsisで省略される。Default labelは不自然に省略しない。
+- Corpus panelは`nav aria-label="コーパス"`を維持する。
+- Corpus itemはlabel主導layoutを持つ。左indicator slot、placeholder indicator、check indicatorは持たない。
+- Corpus itemのlink直下のelement child数や具体display方式は契約化しない。
+- Corpus itemの長いlabelは`.corpus-menu-item__label`が所有する1行ellipsisで省略される。`.corpus-menu-item__label`は`white-space: nowrap`、`overflow: hidden`、`text-overflow: ellipsis`、`min-inline-size: 0`相当の縮小可能性を持つ。Default labelは不自然に省略しない。
 - Current corpus itemは`aria-current="page"`をsemantic source of truthとして保持する。
-- Current corpus itemの視覚表現はcheck indicatorとsemibold text emphasisの組み合わせで表現する。
-- Current / non-current corpus itemは、どちらもlink直下の先頭element childに`.corpus-menu-item__indicator` slotを持つ。Link直下構造の契約は、空白text nodeを除外したelement children基準で解釈する。
-- Current corpus itemのindicator slotは`svg[data-icon="check"]`を内包し、non-current corpus itemのindicator slotはcheck iconを表示しない。
-- Typeahead / searchable labelの正本は`data-header-menu-text`であり、indicator iconやlabel span構造には依存しない。
+- Current corpus itemの視覚表現はsubtle selected surfaceとsemibold text emphasisの組み合わせで補助的に表現する。
+- Current / non-current corpus itemは`.corpus-menu-item__indicator`と`.corpus-menu-item__indicator--placeholder`を持たない。
+- Current corpus itemは`svg[data-icon="check"]`を内包しない。
+- Typeahead / searchable labelの正本は`data-header-menu-text`であり、label span構造には依存しない。
 - Non-current corpus itemはnormal weightをbaselineとする。
-- Current corpus itemの通常状態selectorには、`background`、`color`、`border-inline-start`、`border-inline-start-width`、`border-inline-start-style`、`border-inline-start-color`を宣言しない。
-- Persistent selected backgroundは通常状態のcurrent表現に使わない。
-- Hover / active / focus-visibleは操作状態としてcurrent状態と分離する。Hover / activeはneutral backgroundを維持する。
+- Current corpus itemの通常状態selectorは低ノイズな`background`と`font-weight: var(--font-semibold, 600)`を持つ。
+- Hover / active / focus-visibleは操作状態としてcurrent状態と分離する。Hover / activeは操作予告としてselected surfaceより強くなってよい。
 - Focus-visibleはoutlineを主表現とする。既存neutral focus surfaceは操作状態として許容するが、selected / current表現とは扱わない。
 - Left border marker / `border-inline-start`は再導入しない。
-- Forced-colorsではcheck indicatorと`aria-current` semanticsを維持し、current専用background / color / border塗りを契約にしない。
-- Forced-colors内のcurrent corpus item専用selectorには、`background`、`color`、`border-inline-start`、`border-inline-start-width`、`border-inline-start-style`、`border-inline-start-color`を宣言しない。
-- 現行挙動の契約正本は`docs/contracts/static-header-contract.md`である。`docs/adr/header-corpus-current-indicator.md`は今回のDecision Recordであり、現行contractを置き換えるものではない。
+- Forced-colorsではfocus-visible outlineの識別性を優先し、selected/current専用の強いHighlight backgroundを必須契約にしない。Selected/current backgroundの存在・不在そのものは過剰固定しない。
+- 現行挙動の契約正本は`docs/contracts/static-header-contract.md`である。`docs/adr/header-menu-selected-surface-without-check.md`は今回のDecision Recordであり、`docs/adr/header-corpus-current-indicator.md`は歴史的Decision Recordとして保持する。
 
 ### Theme Switcher
 
@@ -144,8 +144,9 @@ Theme switcherはtheme option button groupである。
 - Header theme switcherはroot theme stateのsource of truthではない。Root stateは`data-theme` / `data-resolved-theme`とtheme managerが所有する。
 - SSR projectionの初期表示は`system`として成立し、document bootstrapとtheme chrome bootstrapによりroot stateとheader chrome表示が同期される。
 - Triggerはdisclosureを開閉する導線である。
-- Panel内部はtheme option button群である。
-- 各optionは`aria-pressed`または現行実装と整合する選択状態属性で表現する。
+- Panel内部は`role="group" aria-label="テーマ"`を持つtheme option button群である。
+- 各optionは`aria-pressed`をaccessibility source of truthとして表現する。`data-selected`はstyling / sync hookであり、アクセシビリティ意味論の正本ではない。
+- Theme optionは選択中でも項目固有icon（`sun`、`moon`、`monitor`）を常時表示し、`check`へ置換しない。
 - `role="menu"`と`role="menuitem"`は付与しない。
 - Roving tabindexは採用しない。
 - Keyboard enhancementはcorpusと同等のstatic disclosure enhancementとして扱う。
@@ -154,6 +155,8 @@ Theme switcherはtheme option button groupである。
 - Theme menuのcontent-constrained widthはvisual density / width containment contractであり、theme preference、storage、root attributes、resolved theme、document bootstrapのsource of truthを変更しない。
 - Theme menuはcorpus menuと同系統のvisual density / width containmentを採用するが、navigation semantics、link semantics、selected state semanticsは共有しない。
 - Theme option itemは折り返しを避ける。ただし、長文theme labelのellipsis設計は今回のcontractに含めない。
+- Theme option itemの通常状態はTheme menu item限定selectorでnormal weightをbaselineとし、selected itemだけsubtle selected surfaceと`font-weight: var(--font-semibold, 600)`で補助的に示す。Genericな`[data-header-menu-item]`全体のfont-weight contractへ波及させない。
+- Compact表示ではTheme trigger textが隠れる場合がある。その場合もtrigger icon / `aria-label`同期とmenu selected補助表示により現在Themeを確認できる。
 
 ### Search Trigger
 
@@ -187,24 +190,22 @@ Header controlsは、corpus trigger、theme trigger、search trigger、TOC trigg
 - Focus-visibleは`:focus-visible`を正とし、`:focus`へ戻さない。
 - Forced-colorsでもfocus-visible outlineを識別可能にする。
 - Menu panel内itemのhover、focus-visible、active、hit targetはtop-level controlsのselector整理後も維持する。
-- Corpus menu itemはindicator + label layout、content-constrained menu width、viewport containmentを維持する。`.corpus-menu-item__label`が1行ellipsisの正本であり、anchor自身のellipsisを正本にしない。
+- Corpus menu itemはlabel主導layout、content-constrained menu width、viewport containmentを維持する。`.corpus-menu-item__label`が1行ellipsisの正本であり、anchor自身のellipsisを正本にしない。Labelは`min-inline-size: 0`相当の縮小可能性を持つ。
 - Theme menu panelはcontent-constrained visual densityを持つ。Corpus menuとwidth containmentの考え方は揃えるが、corpus navigation semanticsとtheme button group semanticsは混同しない。
-- Current corpus itemは`aria-current="page"`をsemantic source of truthとし、check indicatorとsemibold text emphasisで表現する。
-- Current / non-current corpus itemは、どちらもlink直下の先頭element childに`.corpus-menu-item__indicator` slotを持つ。Link直下構造の契約は、空白text nodeを除外したelement children基準で解釈する。
-- Current corpus itemのindicator slotは`svg[data-icon="check"]`を内包し、non-current corpus itemのindicator slotはcheck iconを表示しない。
-- Typeahead / searchable labelの正本は`data-header-menu-text`であり、indicator iconやlabel span構造には依存しない。
-- Current corpus itemの通常状態selectorには、`background`、`color`、`border-inline-start`、`border-inline-start-width`、`border-inline-start-style`、`border-inline-start-color`を宣言しない。
-- Persistent selected backgroundは通常状態のcurrent表現に使わない。
-- Hover / active / focus-visibleは操作状態としてcurrent状態と分離する。Hover / activeはneutral backgroundを維持し、focus-visibleはoutlineを主表現とする。既存neutral focus surfaceは操作状態として許容するが、selected / current表現とは扱わない。
+- Current corpus itemは`aria-current="page"`をsemantic source of truthとし、subtle selected surfaceとsemibold text emphasisで補助的に表現する。
+- Current / non-current corpus itemは`.corpus-menu-item__indicator` slotを持たない。Link直下構造の契約は、空白text nodeを除外したelement children数で固定しない。
+- Current corpus itemは`svg[data-icon="check"]`を内包しない。
+- Typeahead / searchable labelの正本は`data-header-menu-text`であり、label span構造には依存しない。
+- Current corpus itemの通常状態selectorは低ノイズな`background`と`font-weight: var(--font-semibold, 600)`を持つ。
+- Hover / active / focus-visibleは操作状態としてcurrent状態と分離する。Hover / activeは操作予告としてselected surfaceより強くなってよく、focus-visibleはoutlineを主表現とする。既存neutral focus surfaceは操作状態として許容するが、selected / current表現とは扱わない。
 - Non-current corpus itemはnormal weightをbaselineとし、medium / boldをdefault visual stateにしない。
-- Current corpus itemはtext emphasisのみで識別しない。
+- Current corpus itemはbackgroundだけ、またはtext emphasisだけで識別しない。
 - Left border marker / `border-inline-start`は再導入しない。
-- Forced-colorsではcheck indicatorと`aria-current` semanticsを維持し、current専用background / color / border塗りを契約にしない。
-- Forced-colors内のcurrent corpus item専用selectorには、`background`、`color`、`border-inline-start`、`border-inline-start-width`、`border-inline-start-style`、`border-inline-start-color`を宣言しない。
+- Forced-colorsではfocus-visible outlineの識別性を優先し、selected/current専用の強いHighlight backgroundを必須契約にしない。Selected/current backgroundの存在・不在そのものは過剰固定しない。
 - Search trigger固有のhover、focus-visible、active、responsive density、border-color、background stateはtop-level共通selectorによって退化させない。
 - Top-level triggerの44px hit target pseudo-elementは維持する。
 - Header controlsのvisual contractは本文リンク、検索ダイアログ、sidebar、本文TOC linkへ波及させない。
-- Current corpus indicator contractは`ADR-HEADER-CORPUS-CURRENT-INDICATOR-001`に基づくR3 / A0の公開visual contract変更である。現行挙動の契約正本は引き続き`docs/contracts/static-header-contract.md`であり、新ADRはDecision Recordである。
+- Header menu selected surface without check contractは`ADR-HEADER-MENU-SELECTED-SURFACE-WITHOUT-CHECK-001`に基づくR3 / A0の公開visual contract変更である。現行挙動の契約正本は引き続き`docs/contracts/static-header-contract.md`であり、新ADRはDecision Recordである。
 
 #### Header Responsive Breakpoint Ownership
 

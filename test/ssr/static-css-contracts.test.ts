@@ -819,7 +819,7 @@ describe('static CSS contracts', () => {
     expect(ruleBlock(css, themeMenuSelector)).not.to.contain('--_header-corpus-menu-');
   });
 
-  it('layout header corpus current item uses check indicator contract', () => {
+  it('layout header menu selected/current state uses quiet selected surface without check indicators', () => {
     const css = readCss('layout-header.css');
     const corpusItemSelector =
       "header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]";
@@ -830,46 +830,62 @@ describe('static CSS contracts', () => {
     ].join(' ');
     const corpusHoverSelector =
       "header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:hover";
-    const corpusFocusVisibleSelector =
-      "header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:focus-visible";
     const corpusActiveSelector =
       "header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:active";
+    const themeItemSelector =
+      "header[data-layout-header] [data-header-menu='theme'] [data-header-menu-item]";
+    const selectedThemeItemSelector =
+      "header[data-layout-header] [data-header-menu='theme'] [data-header-menu-item][data-selected='true']";
+    const menuItemFocusVisibleSelector =
+      'header[data-layout-header] [data-header-menu-item]:focus-visible';
     const labelSelector = 'header[data-layout-header] .corpus-menu-item__label';
     const indicatorSelector = 'header[data-layout-header] .corpus-menu-item__indicator';
     const forbiddenCurrentProperties = [
-      'background',
-      'color',
       'border-inline-start',
       'border-inline-start-width',
       'border-inline-start-style',
       'border-inline-start-color',
+      'outline',
     ];
 
     expectRuleToDeclare(css, corpusItemSelector, [
-      'display: grid',
-      'grid-template-columns: 1em minmax(0, 1fr)',
       'align-items: center',
-      'column-gap: var(--space-2, 8px)',
       'font-weight: var(--font-normal, 400)',
     ]);
-    expectRuleToDeclare(css, currentCorpusItemSelector, ['font-weight: var(--font-semibold, 600)']);
+    expect(ruleBlock(css, corpusItemSelector)).not.to.contain('grid-template-columns: 1em');
+    expect(ruleBlock(css, corpusItemSelector)).not.to.contain('grid-template-columns: 1em minmax');
+    expect(ruleBlocksForSelector(css, indicatorSelector)).toHaveLength(0);
+    expect(css).not.to.contain('corpus-menu-item__indicator--placeholder');
+    expectRuleToDeclare(css, currentCorpusItemSelector, [
+      'background: var(--_header-menu-selected-background)',
+      'font-weight: var(--font-semibold, 600)',
+    ]);
+    expectRuleToDeclare(css, selectedThemeItemSelector, [
+      'background: var(--_header-menu-selected-background)',
+      'font-weight: var(--font-semibold, 600)',
+    ]);
+    expectRuleToDeclare(css, themeItemSelector, [
+      'font-weight: var(--font-normal, 400)',
+      'white-space: nowrap',
+    ]);
+    expect(ruleBlock(css, "header[data-layout-header] [data-header-menu-item]")).not.to.contain(
+      'font-weight: var(--font-normal, 400)',
+    );
     expectRuleToDeclare(css, labelSelector, [
       'min-inline-size: 0',
       'white-space: nowrap',
       'overflow: hidden',
       'text-overflow: ellipsis',
     ]);
-    expectRuleToDeclare(css, indicatorSelector, [
-      'display: inline-grid',
-      'place-items: center',
-      'inline-size: 1em',
-      'block-size: 1em',
-    ]);
 
     for (const property of forbiddenCurrentProperties) {
       expect(
         rootDeclarationRecordsForSelector(css, currentCorpusItemSelector, property),
         `${currentCorpusItemSelector} root ${property}`,
+      ).toHaveLength(0);
+      expect(
+        rootDeclarationRecordsForSelector(css, selectedThemeItemSelector, property),
+        `${selectedThemeItemSelector} root ${property}`,
       ).toHaveLength(0);
     }
 
@@ -879,11 +895,36 @@ describe('static CSS contracts', () => {
         lacksDeclarationProperty(forcedColorsCss, currentCorpusItemSelector, property),
         `${currentCorpusItemSelector} forced-colors ${property}`,
       ).toBe(true);
+      expect(
+        lacksDeclarationProperty(forcedColorsCss, selectedThemeItemSelector, property),
+        `${selectedThemeItemSelector} forced-colors ${property}`,
+      ).toBe(true);
     }
 
+    const forcedColorsSelectedBackgroundValues = [
+      ...declarationValuesForSelector(forcedColorsCss, currentCorpusItemSelector, 'background'),
+      ...declarationValuesForSelector(
+        forcedColorsCss,
+        currentCorpusItemSelector,
+        'background-color',
+      ),
+      ...declarationValuesForSelector(forcedColorsCss, selectedThemeItemSelector, 'background'),
+      ...declarationValuesForSelector(
+        forcedColorsCss,
+        selectedThemeItemSelector,
+        'background-color',
+      ),
+    ].map(normalizeDeclarationValue);
+
+    expect(
+      forcedColorsSelectedBackgroundValues.some((value) => /\bHighlight\b/u.test(value)),
+      'forced-colors selected/current background must not require Highlight surface',
+    ).toBe(false);
+
     expectRuleToDeclare(css, corpusHoverSelector, ['background: var(--bg-hover']);
-    expectRuleToDeclare(css, corpusFocusVisibleSelector, ['background: var(--bg-hover']);
     expectRuleToDeclare(css, corpusActiveSelector, ['background: var(--bg-hover']);
+    expectRuleToDeclare(css, menuItemFocusVisibleSelector, ['outline:', 'outline-offset:']);
+    expect(ruleBlock(css, menuItemFocusVisibleSelector)).not.to.contain('background:');
   });
 
   it('search dialog CSS contains required layout and state declarations', () => {

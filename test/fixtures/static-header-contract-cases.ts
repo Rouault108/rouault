@@ -90,11 +90,6 @@ export const STATIC_HEADER_CONTRACT_ACCEPTED_HTML = `
                   data-header-menu-text="すべて"
                   aria-current="page"
                 >
-                  <span class="corpus-menu-item__indicator static-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-icon="check">
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </span>
                   <span class="corpus-menu-item__label">すべて</span>
                 </a>
               </li>
@@ -167,6 +162,11 @@ ${SEARCH_TRIGGER_HTML}
                   data-header-menu-text="システム"
                   aria-pressed="true"
                 >
+                  <span class="static-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-icon="monitor">
+                      <rect x="2" y="3" width="20" height="14"></rect>
+                    </svg>
+                  </span>
                   <span>システム</span>
                 </button>
               </li>
