@@ -1,13 +1,13 @@
 # Rouault Documentation
 
-`docs/contracts/` は機能契約の正本である。
-`docs/design-system/` は Design System 契約の正本である。
-`docs/references/` は詳細参照であり、Contract を上書きしない。
-`docs/guides/` は使い方説明であり、Contract を上書きしない。
-`docs/adr/` は設計判断の経緯であり、現在の挙動を再定義しない。
-`docs/old/` と `docs/temporary/` は現行契約の正本ではない。
+`docs/contracts/`は機能契約の正本である。
+`docs/design-system/`はDesign System契約の正本である。
+`docs/references/`は詳細参照であり、Contractを上書きしない。
+`docs/guides/`は使い方説明であり、Contractを上書きしない。
+`docs/adr/`は設計判断の経緯であり、現在の挙動を再定義しない。
+`docs/old/`と`docs/temporary/`は現行契約の正本ではない。
 
-## 正本 Contract
+## 正本Contract
 
 - `docs/contracts/router.md`
 - `docs/contracts/router-document.md`
@@ -36,7 +36,7 @@
 - `docs/design-system/pattern-reading-block-intrusion.md`
 - `docs/design-system/components/`
 
-Design System pattern は UI の見え方と配置判断を扱う。Router、search、hydration、note navigation、reading chrome の機能契約を上書きしない。
+Design System patternはUIの見え方と配置判断を扱う。Router、search、hydration、note navigation、reading chromeの機能契約を上書きしない。
 
 ## Reference
 
@@ -77,7 +77,7 @@ Design System pattern は UI の見え方と配置判断を扱う。Router、sea
 - `docs/adr/japanese-ascii-spacing-policy.md`
 - `docs/adr/`
 
-ADR は設計判断の経緯であり、正本 Contract を上書きしない。各ADRの現行正本は、対応する `docs/contracts/` 配下のContractを参照する。
+ADRは設計判断の経緯であり、正本Contractを上書きしない。各ADRの現行正本は、対応する`docs/contracts/`配下のContractを参照する。
 
 ## Non-current Documents
 

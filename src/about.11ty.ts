@@ -63,7 +63,7 @@ const ABOUT_SECTIONS: readonly AboutSection[] = [
     heading: '著作権について',
     bodyHtml: (context) => [
       `当サイトの文章は特記がない限り、${renderAboutLink(context, 'https://creativecommons.org/licenses/by/4.0/', 'Creative Commons Attribution 4.0 International License（CC BY 4.0）')}のもとで利用を許諾します。`,
-      'ただし引用部分、第三者著作物、外部サイトのスクリーンショット、ロゴ・商標、埋め込みコンテンツその他個別注記のある素材は各権利者に権利が帰属し、上記 CC BY 4.0 の対象外です。',
+      'ただし引用部分、第三者著作物、外部サイトのスクリーンショット、ロゴ・商標、埋め込みコンテンツその他個別注記のある素材は各権利者に権利が帰属し、上記CC BY 4.0の対象外です。',
       '個別の注記がある場合は当該注記を優先します。',
     ],
   },

@@ -69,7 +69,7 @@ describe('HomePageTemplate', () => {
     const data = template.data();
 
     expect(data.layout).toBe('base');
-    expect(data.description).toBe('Rouault の公開ノートを静かに読むためのトップページ。');
+    expect(data.description).toBe('Rouaultの公開ノートを静かに読むためのトップページ。');
     expect(data.permalink).toBe('/index.html');
   });
 });
