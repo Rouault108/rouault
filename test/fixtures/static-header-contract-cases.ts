@@ -90,7 +90,12 @@ export const STATIC_HEADER_CONTRACT_ACCEPTED_HTML = `
                   data-header-menu-text="すべて"
                   aria-current="page"
                 >
-                  すべて
+                  <span class="corpus-menu-item__indicator static-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-icon="check">
+                      <path d="M20 6 9 17l-5-5"></path>
+                    </svg>
+                  </span>
+                  <span class="corpus-menu-item__label">すべて</span>
                 </a>
               </li>
             </ul>

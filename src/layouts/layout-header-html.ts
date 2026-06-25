@@ -60,8 +60,13 @@ const renderCorpusSwitcher = (input: LayoutHeaderHtmlInput): string => {
   const current = items.find((item) => item.key === input.currentCorpusKey);
   const currentLabel = current?.label ?? DEFAULT_CORPUS_LABEL;
   const links = items
-    .map((item) =>
-      `
+    .map((item) => {
+      const isCurrent = item.key === input.currentCorpusKey;
+      const indicatorHtml = isCurrent
+        ? renderStaticIconHtml('check', 'corpus-menu-item__indicator')
+        : '<span class="corpus-menu-item__indicator corpus-menu-item__indicator--placeholder" aria-hidden="true"></span>';
+      const labelHtml = escapeHtmlText(item.label);
+      return `
         <li>
           <a${serializeHtmlAttributes([
             { name: 'href', value: item.href },
@@ -71,12 +76,15 @@ const renderCorpusSwitcher = (input: LayoutHeaderHtmlInput): string => {
             { name: 'data-header-menu-text', value: item.label },
             {
               name: 'aria-current',
-              value: item.key === input.currentCorpusKey ? 'page' : undefined,
+              value: isCurrent ? 'page' : undefined,
             },
-          ])}>${escapeHtmlText(item.label)}</a>
+          ])}>
+            ${indicatorHtml}
+            <span class="corpus-menu-item__label">${labelHtml}</span>
+          </a>
         </li>
-      `.trim(),
-    )
+      `.trim();
+    })
     .join('');
 
   return `

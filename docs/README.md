@@ -70,6 +70,7 @@ Design System pattern は UI の見え方と配置判断を扱う。Router、sea
 - `docs/adr/result-card-focus-visible-projection.md`
 - `docs/adr/reading-chrome-note-frame-outer-gutter.md`
 - `docs/adr/corpus-current-selected-surface.md`
+- `docs/adr/header-corpus-current-indicator.md`
 - `docs/adr/theme-contract-and-document-bootstrap.md`
 - `docs/adr/search-page-static-choice-menu.md`
 - `docs/adr/`

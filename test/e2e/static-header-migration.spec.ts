@@ -333,10 +333,20 @@ const prepareHeaderMenuItems = async (
         list.append(firstItem.cloneNode(true));
       }
 
+      const menuKind = menuElement.getAttribute('data-header-menu');
+
       for (const [index, label] of itemLabels.entries()) {
         const item = list.querySelectorAll<HTMLElement>('[data-header-menu-item]').item(index);
         item.setAttribute('data-header-menu-text', label);
-        const labelNode = item.querySelector('span') ?? item;
+        const labelNode =
+          menuKind === 'corpus'
+            ? item.querySelector<HTMLElement>('.corpus-menu-item__label')
+            : item.querySelector<HTMLElement>('span');
+
+        if (labelNode === null) {
+          throw new Error(`${menuKind ?? 'header'} menu item label is missing.`);
+        }
+
         labelNode.textContent = label;
       }
     },
@@ -1001,18 +1011,16 @@ test.describe('Static header migration', () => {
     // 旧 generic 12rem floor への退行を desktop 条件で検出する。
     expect(panelBox.width).toBeLessThan(rootFontSize * 12);
 
-    const optionContracts = await panel
-      .locator('[data-header-menu-item]')
-      .evaluateAll((items) =>
-        items.map((item) => {
-          const style = window.getComputedStyle(item);
-          return {
-            clientWidth: item.clientWidth,
-            scrollWidth: item.scrollWidth,
-            whiteSpace: style.whiteSpace,
-          };
-        }),
-      );
+    const optionContracts = await panel.locator('[data-header-menu-item]').evaluateAll((items) =>
+      items.map((item) => {
+        const style = window.getComputedStyle(item);
+        return {
+          clientWidth: item.clientWidth,
+          scrollWidth: item.scrollWidth,
+          whiteSpace: style.whiteSpace,
+        };
+      }),
+    );
 
     for (const item of optionContracts) {
       expect(item.whiteSpace).toBe('nowrap');
@@ -1053,23 +1061,30 @@ test.describe('Static header migration', () => {
 
     const firstItem = panel.locator('[data-header-menu-item]').first();
     const itemContract = await firstItem.evaluate((element) => {
+      const label = element.querySelector('.corpus-menu-item__label');
+      if (!(label instanceof HTMLElement)) {
+        throw new Error('Corpus menu item label is missing.');
+      }
       const style = window.getComputedStyle(element);
+      const labelStyle = window.getComputedStyle(label);
       const height = element.getBoundingClientRect().height;
       return {
         boxSizing: style.boxSizing,
         display: style.display,
+        gridTemplateColumns: style.gridTemplateColumns,
         height,
-        overflow: style.overflow,
-        textOverflow: style.textOverflow,
-        whiteSpace: style.whiteSpace,
+        labelOverflow: labelStyle.overflow,
+        labelTextOverflow: labelStyle.textOverflow,
+        labelWhiteSpace: labelStyle.whiteSpace,
       };
     });
 
-    expect(itemContract.display).toBe('block');
+    expect(itemContract.display).toBe('grid');
+    expect(itemContract.gridTemplateColumns).not.toBe('');
     expect(itemContract.boxSizing).toBe('border-box');
-    expect(itemContract.whiteSpace).toBe('nowrap');
-    expect(itemContract.overflow).toBe('hidden');
-    expect(itemContract.textOverflow).toBe('ellipsis');
+    expect(itemContract.labelWhiteSpace).toBe('nowrap');
+    expect(itemContract.labelOverflow).toBe('hidden');
+    expect(itemContract.labelTextOverflow).toBe('ellipsis');
     expect(itemContract.height).toBeGreaterThanOrEqual(32);
 
     const panelBox = await panel.boundingBox();
@@ -1080,7 +1095,7 @@ test.describe('Static header migration', () => {
     expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width + 1);
   });
 
-  test('current corpus item は selected surface と text emphasis で非current item と区別できること', async ({
+  test('current corpus item は check indicator と text emphasis で非current item と区別できること', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 760 });
@@ -1102,10 +1117,13 @@ test.describe('Static header migration', () => {
     await expect(panel).toBeVisible();
 
     const visualState = await panel.evaluate((panelElement) => {
-      const current = panelElement.querySelector('[data-header-menu-item][aria-current="page"]');
-      const nonCurrent = Array.from(
-        panelElement.querySelectorAll('[data-header-menu-item]'),
-      ).find((item) => item.getAttribute('aria-current') !== 'page');
+      const currentItems = Array.from(
+        panelElement.querySelectorAll('[data-header-menu-item][aria-current="page"]'),
+      );
+      const current = currentItems[0];
+      const nonCurrent = Array.from(panelElement.querySelectorAll('[data-header-menu-item]')).find(
+        (item) => item.getAttribute('aria-current') !== 'page',
+      );
 
       if (!(current instanceof HTMLElement) || !(nonCurrent instanceof HTMLElement)) {
         return null;
@@ -1113,20 +1131,28 @@ test.describe('Static header migration', () => {
 
       const read = (element: HTMLElement) => {
         const style = window.getComputedStyle(element);
+        const children = Array.from(element.children);
+        const indicator = children[0];
+        const label = children.find((child) => child.classList.contains('corpus-menu-item__label'));
         return {
           ariaCurrent: element.getAttribute('aria-current'),
-          backgroundColor: style.backgroundColor,
           borderInlineStartWidth: Number.parseFloat(style.borderInlineStartWidth),
+          firstChildIsIndicator:
+            indicator instanceof HTMLElement &&
+            indicator.classList.contains('corpus-menu-item__indicator'),
           fontWeight: Number.parseFloat(style.fontWeight),
+          hasCheckIcon:
+            indicator instanceof Element &&
+            indicator.querySelector('svg[data-icon="check"]') !== null,
+          hasLabel: label instanceof HTMLElement,
+          label: element.getAttribute('data-header-menu-text') ?? '',
           rawFontWeight: style.fontWeight,
         };
       };
 
       return {
         current: read(current),
-        currentCount: panelElement.querySelectorAll(
-          '[data-header-menu-item][aria-current="page"]',
-        ).length,
+        currentCount: currentItems.length,
         nonCurrent: read(nonCurrent),
       };
     });
@@ -1136,13 +1162,16 @@ test.describe('Static header migration', () => {
 
     expect(visualState?.current.ariaCurrent).toBe('page');
     expect(visualState?.nonCurrent.ariaCurrent).toBeNull();
+    expect(visualState?.current.firstChildIsIndicator).toBe(true);
+    expect(visualState?.nonCurrent.firstChildIsIndicator).toBe(true);
+    expect(visualState?.current.hasCheckIcon).toBe(true);
+    expect(visualState?.nonCurrent.hasCheckIcon).toBe(false);
+    expect(visualState?.current.hasLabel).toBe(true);
+    expect(visualState?.nonCurrent.hasLabel).toBe(true);
+    expect(visualState?.current.label).not.toBe('');
+    expect(visualState?.nonCurrent.label).not.toBe('');
     expect(visualState?.current.borderInlineStartWidth).toBe(0);
     expect(visualState?.nonCurrent.borderInlineStartWidth).toBe(0);
-
-    expect(isTransparentColor(visualState?.current.backgroundColor ?? '')).toBe(false);
-    expect(visualState?.current.backgroundColor).not.toBe(
-      visualState?.nonCurrent.backgroundColor,
-    );
 
     const currentWeight = visualState?.current.fontWeight ?? Number.NaN;
     const nonCurrentWeight = visualState?.nonCurrent.fontWeight ?? Number.NaN;
@@ -1152,9 +1181,7 @@ test.describe('Static header migration', () => {
       expect(currentWeight).toBeGreaterThanOrEqual(600);
       expect(nonCurrentWeight).toBeLessThanOrEqual(500);
     } else {
-      expect(visualState?.current.rawFontWeight).not.toBe(
-        visualState?.nonCurrent.rawFontWeight,
-      );
+      expect(visualState?.current.rawFontWeight).not.toBe(visualState?.nonCurrent.rawFontWeight);
     }
   });
 
@@ -1261,7 +1288,7 @@ test.describe('Static header migration', () => {
           if (item.getAttribute('aria-current') === 'page') continue;
 
           const href = item.href;
-          const label = item.textContent?.trim() ?? '';
+          const label = item.getAttribute('data-header-menu-text') ?? '';
           if (href.length > 0 && href !== currentHref && label.length > 0) {
             return { href, index, label };
           }
@@ -1285,11 +1312,24 @@ test.describe('Static header migration', () => {
 
     const nextHeader = page.locator('header[data-layout-header]');
     await expect(nextHeader.locator('.corpus-trigger-text')).toHaveText(candidateInfo.label);
+    const nextCurrentItems = nextHeader.locator(
+      '[data-header-menu="corpus"] [data-header-menu-item][aria-current="page"]',
+    );
+    await expect(nextCurrentItems).toHaveCount(1);
+    await expect(nextCurrentItems.first()).toHaveAttribute(
+      'data-header-menu-text',
+      candidateInfo.label,
+    );
+    await expect(
+      nextCurrentItems
+        .first()
+        .locator(':scope > .corpus-menu-item__indicator svg[data-icon="check"]'),
+    ).toHaveCount(1);
     await expect(
       nextHeader.locator(
-        '[data-header-menu="corpus"] [data-header-menu-item][aria-current="page"]',
+        '[data-header-menu="corpus"] [data-header-menu-item]:not([aria-current="page"]) > .corpus-menu-item__indicator svg[data-icon="check"]',
       ),
-    ).toHaveText(candidateInfo.label);
+    ).toHaveCount(0);
   });
 
   test('direct data-theme mutation でも header theme 表示だけを同期すること', async ({ page }) => {
@@ -1304,9 +1344,10 @@ test.describe('Static header migration', () => {
     await expect(page.locator('header[data-layout-header] [data-theme-current-label]')).toHaveText(
       'ライト',
     );
-    await expect(
-      page.locator(themeTriggerRootSelector),
-    ).toHaveAttribute('aria-label', 'テーマ: ライト');
+    await expect(page.locator(themeTriggerRootSelector)).toHaveAttribute(
+      'aria-label',
+      'テーマ: ライト',
+    );
     await expect(
       page.locator('header[data-layout-header] .theme-trigger-icon svg[data-icon]'),
     ).toHaveAttribute('data-icon', 'sun');
@@ -1479,9 +1520,7 @@ test.describe('Static header migration', () => {
     await page.goto(markdownBasic.directPath);
     await waitForAppRouterReady(page);
 
-    const corpusTrigger = page.locator(
-      headerMenuTriggerSelector('corpus'),
-    );
+    const corpusTrigger = page.locator(headerMenuTriggerSelector('corpus'));
     await corpusTrigger.focus();
     await page.keyboard.press('Tab');
     await expect(
@@ -1541,9 +1580,7 @@ test.describe('Static header migration', () => {
     await prepareHeaderMenuItems(page, 'corpus', ['Alpha', 'Beta', 'Gamma']);
 
     for (const menu of ['corpus', 'theme'] as const) {
-      const trigger = page.locator(
-        headerMenuTriggerSelector(menu),
-      );
+      const trigger = page.locator(headerMenuTriggerSelector(menu));
       const items = page.locator(
         `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-item]`,
       );
@@ -1590,9 +1627,7 @@ test.describe('Static header migration', () => {
     await prepareHeaderMenuItems(page, 'theme', labels);
 
     for (const menu of ['corpus', 'theme'] as const) {
-      const trigger = page.locator(
-        headerMenuTriggerSelector(menu),
-      );
+      const trigger = page.locator(headerMenuTriggerSelector(menu));
       const items = page.locator(
         `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-item]`,
       );
@@ -1808,9 +1843,7 @@ test.describe('Static header migration', () => {
     await prepareHeaderMenuItems(page, 'corpus', labels);
     await prepareHeaderMenuItems(page, 'theme', labels);
 
-    const corpusTrigger = page.locator(
-      headerMenuTriggerSelector('corpus'),
-    );
+    const corpusTrigger = page.locator(headerMenuTriggerSelector('corpus'));
     const corpusItems = page.locator(
       'header[data-layout-header] [data-header-menu="corpus"] [data-header-menu-item]',
     );
@@ -1852,9 +1885,7 @@ test.describe('Static header migration', () => {
     await expectMenuOpen(page, 'corpus', false);
 
     for (const menu of ['corpus', 'theme'] as const) {
-      const trigger = page.locator(
-        headerMenuTriggerSelector(menu),
-      );
+      const trigger = page.locator(headerMenuTriggerSelector(menu));
       const items = page.locator(
         `header[data-layout-header] [data-header-menu="${menu}"] [data-header-menu-item]`,
       );
@@ -2163,18 +2194,12 @@ test.describe('Static header migration', () => {
       ).toHaveCount(0);
       await expect(page.locator('header[data-layout-header] [data-toc-trigger]')).toHaveCount(0);
 
-      await expectHeaderControlWithinHeader(
-        page,
-        headerControlTargets.corpus.selector,
-      );
+      await expectHeaderControlWithinHeader(page, headerControlTargets.corpus.selector);
       await expectHeaderControlWithinHeader(
         page,
         'header[data-layout-header] [data-search-dialog-trigger]',
       );
-      await expectHeaderControlWithinHeader(
-        page,
-        themeTriggerRootSelector,
-      );
+      await expectHeaderControlWithinHeader(page, themeTriggerRootSelector);
     }
   });
 

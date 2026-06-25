@@ -97,12 +97,6 @@ const rootDeclarationRecordsForSelector = (
   return records;
 };
 
-const rootRuleIndexForSelectorDeclaring = (
-  css: string,
-  selector: string,
-  property: string,
-): number => rootDeclarationRecordsForSelector(css, selector, property)[0]?.ruleIndex ?? -1;
-
 const declarationValuesForSelector = (css: string, selector: string, property: string): string[] =>
   declarationsForSelector(css, selector, property).map((declaration) => declaration.value.trim());
 
@@ -418,8 +412,8 @@ describe('static CSS contracts', () => {
     const mainCss = readCss('main.css');
     const dialogStateCss = readCss('dialog-state.css');
     const bodyOpenStateSelectors = [
-      "body[data-ui-dialog-open]",
-      "body[data-ui-search-dialog-open]",
+      'body[data-ui-dialog-open]',
+      'body[data-ui-search-dialog-open]',
     ] as const;
 
     expect(declarationValuesForSelector(mainCss, 'html', 'scrollbar-gutter')).toContain('stable');
@@ -637,9 +631,9 @@ describe('static CSS contracts', () => {
     expect(declarationValuesForSelector(css, panel, 'border')).toContain(
       'var(--static-choice-menu-panel-border)',
     );
-    expect(declarationValuesForSelector(css, '.static-choice-menu', '--static-choice-menu-panel-border')).toContain(
-      'var(--border-width, 1px) solid var(--border-default)',
-    );
+    expect(
+      declarationValuesForSelector(css, '.static-choice-menu', '--static-choice-menu-panel-border'),
+    ).toContain('var(--border-width, 1px) solid var(--border-default)');
     expect(declarationValuesForSelector(header, headerPanel, 'border')).toContain(
       'var(--border-width, 1px) solid var(--border-default)',
     );
@@ -682,7 +676,11 @@ describe('static CSS contracts', () => {
       'var(--static-choice-menu-panel-padding)',
     );
     expect(
-      declarationValuesForSelector(css, '.static-choice-menu', '--static-choice-menu-panel-padding'),
+      declarationValuesForSelector(
+        css,
+        '.static-choice-menu',
+        '--static-choice-menu-panel-padding',
+      ),
     ).toContain('var(--space-2, 8px)');
     expect(declarationValuesForSelector(header, headerPanel, 'padding')).toContain(
       'var(--space-2, 8px)',
@@ -706,7 +704,11 @@ describe('static CSS contracts', () => {
     ).toContain('var(--space-2, 8px)');
 
     expect(
-      declarationValuesForSelector(css, ".static-choice-menu__item[data-selected='true']", 'background'),
+      declarationValuesForSelector(
+        css,
+        ".static-choice-menu__item[data-selected='true']",
+        'background',
+      ),
     ).toContain('var(--static-choice-menu-selected-background)');
     expect(
       declarationValuesForSelector(
@@ -716,17 +718,23 @@ describe('static CSS contracts', () => {
       ).map(normalizeDeclarationValue),
     ).toContain('var(--bg-surface-active, var(--bg-active, var(--bg-control-muted)))');
 
-    expect(declarationValuesForSelector(css, '.static-choice-menu__item:hover', 'background')).toContain(
-      'var(--static-choice-menu-hover-background)',
-    );
     expect(
-      declarationValuesForSelector(css, '.static-choice-menu', '--static-choice-menu-hover-background')
-        .map(normalizeDeclarationValue),
+      declarationValuesForSelector(css, '.static-choice-menu__item:hover', 'background'),
+    ).toContain('var(--static-choice-menu-hover-background)');
+    expect(
+      declarationValuesForSelector(
+        css,
+        '.static-choice-menu',
+        '--static-choice-menu-hover-background',
+      ).map(normalizeDeclarationValue),
     ).toContain(
       'var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%))',
     );
 
-    for (const selector of ['.static-choice-menu__trigger:focus-visible', '.static-choice-menu__item:focus-visible']) {
+    for (const selector of [
+      '.static-choice-menu__trigger:focus-visible',
+      '.static-choice-menu__item:focus-visible',
+    ]) {
       expect(declarationValuesForSelector(css, selector, 'outline')).toContain(
         'var(--static-choice-menu-focus-outline)',
       );
@@ -797,7 +805,10 @@ describe('static CSS contracts', () => {
     const finalThemeMinInlineSizeRecord =
       themeMinInlineSizeRecords[themeMinInlineSizeRecords.length - 1];
 
-    expect(sharedMinInlineSizeRecord, 'shared generic theme menu min-inline-size').not.toBeUndefined();
+    expect(
+      sharedMinInlineSizeRecord,
+      'shared generic theme menu min-inline-size',
+    ).not.toBeUndefined();
     expect(finalThemeMinInlineSizeRecord, 'final theme menu min-inline-size').not.toBeUndefined();
     expect(finalThemeMinInlineSizeRecord?.value).not.toBe('12rem');
     expect(finalThemeMinInlineSizeRecord?.ruleIndex).toBeGreaterThan(
@@ -808,7 +819,7 @@ describe('static CSS contracts', () => {
     expect(ruleBlock(css, themeMenuSelector)).not.to.contain('--_header-corpus-menu-');
   });
 
-  it('layout header corpus current item uses aria-current selected surface contract', () => {
+  it('layout header corpus current item uses check indicator contract', () => {
     const css = readCss('layout-header.css');
     const corpusItemSelector =
       "header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]";
@@ -823,67 +834,56 @@ describe('static CSS contracts', () => {
       "header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:focus-visible";
     const corpusActiveSelector =
       "header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:active";
+    const labelSelector = 'header[data-layout-header] .corpus-menu-item__label';
+    const indicatorSelector = 'header[data-layout-header] .corpus-menu-item__indicator';
+    const forbiddenCurrentProperties = [
+      'background',
+      'color',
+      'border-inline-start',
+      'border-inline-start-width',
+      'border-inline-start-style',
+      'border-inline-start-color',
+    ];
 
-    expectRuleToDeclare(css, corpusItemSelector, ['font-weight: var(--font-normal, 400)']);
-    expectRuleToDeclare(css, currentCorpusItemSelector, [
-      'background: var(--bg-surface-active, var(--bg-active, var(--bg-control-muted)))',
-      'color: var(--fg-default)',
-      'font-weight: var(--font-semibold, 600)',
+    expectRuleToDeclare(css, corpusItemSelector, [
+      'display: grid',
+      'grid-template-columns: 1em minmax(0, 1fr)',
+      'align-items: center',
+      'column-gap: var(--space-2, 8px)',
+      'font-weight: var(--font-normal, 400)',
     ]);
-    expect(lacksDeclarationProperty(css, currentCorpusItemSelector, 'border-inline-start')).toBe(
-      true,
-    );
-    expect(
-      lacksDeclarationProperty(css, currentCorpusItemSelector, 'border-inline-start-width'),
-    ).toBe(true);
+    expectRuleToDeclare(css, currentCorpusItemSelector, ['font-weight: var(--font-semibold, 600)']);
+    expectRuleToDeclare(css, labelSelector, [
+      'min-inline-size: 0',
+      'white-space: nowrap',
+      'overflow: hidden',
+      'text-overflow: ellipsis',
+    ]);
+    expectRuleToDeclare(css, indicatorSelector, [
+      'display: inline-grid',
+      'place-items: center',
+      'inline-size: 1em',
+      'block-size: 1em',
+    ]);
+
+    for (const property of forbiddenCurrentProperties) {
+      expect(
+        rootDeclarationRecordsForSelector(css, currentCorpusItemSelector, property),
+        `${currentCorpusItemSelector} root ${property}`,
+      ).toHaveLength(0);
+    }
 
     const forcedColorsCss = atRuleBlock(css, '@media (forced-colors: active)');
-    expectRuleToDeclare(forcedColorsCss, currentCorpusItemSelector, [
-      'background: Highlight',
-      'color: HighlightText',
-    ]);
+    for (const property of forbiddenCurrentProperties) {
+      expect(
+        lacksDeclarationProperty(forcedColorsCss, currentCorpusItemSelector, property),
+        `${currentCorpusItemSelector} forced-colors ${property}`,
+      ).toBe(true);
+    }
 
-    const currentBackgroundIndex = rootRuleIndexForSelectorDeclaring(
-      css,
-      currentCorpusItemSelector,
-      'background',
-    );
-    const corpusHoverBackgroundIndex = rootRuleIndexForSelectorDeclaring(
-      css,
-      corpusHoverSelector,
-      'background',
-    );
-    const corpusFocusVisibleBackgroundIndex = rootRuleIndexForSelectorDeclaring(
-      css,
-      corpusFocusVisibleSelector,
-      'background',
-    );
-    const corpusActiveBackgroundIndex = rootRuleIndexForSelectorDeclaring(
-      css,
-      corpusActiveSelector,
-      'background',
-    );
-
-    expect(
-      currentBackgroundIndex,
-      'current corpus item background root rule index',
-    ).toBeGreaterThanOrEqual(0);
-    expect(
-      corpusHoverBackgroundIndex,
-      'corpus hover background root rule index',
-    ).toBeGreaterThanOrEqual(0);
-    expect(
-      corpusFocusVisibleBackgroundIndex,
-      'corpus focus-visible background root rule index',
-    ).toBeGreaterThanOrEqual(0);
-    expect(
-      corpusActiveBackgroundIndex,
-      'corpus active background root rule index',
-    ).toBeGreaterThanOrEqual(0);
-
-    expect(currentBackgroundIndex).toBeGreaterThan(corpusHoverBackgroundIndex);
-    expect(currentBackgroundIndex).toBeGreaterThan(corpusFocusVisibleBackgroundIndex);
-    expect(currentBackgroundIndex).toBeGreaterThan(corpusActiveBackgroundIndex);
+    expectRuleToDeclare(css, corpusHoverSelector, ['background: var(--bg-hover']);
+    expectRuleToDeclare(css, corpusFocusVisibleSelector, ['background: var(--bg-hover']);
+    expectRuleToDeclare(css, corpusActiveSelector, ['background: var(--bg-hover']);
   });
 
   it('search dialog CSS contains required layout and state declarations', () => {

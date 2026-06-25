@@ -73,36 +73,36 @@ Header search trigger は、旧 `ui-search-trigger` の完全復元ではなく�
 
 旧 Lit 版は復元対象ではないが、次の contract は静的 HTML 版へ保持・移植する。
 
-| Contract | Static header policy | Primary responsibility |
-|---|---|---|
-| Header geometry | Header shell height、alignment、responsive inset を静的 CSS contract として保持する。 | `src/assets/css/layout-header.css` |
-| Header glass surface | Header の translucent glass 表現は sidebar overlay state によって解除しない。`data-overlay-sidebar-open` は stacking のみを所有し、background / background-color / backdrop-filter / -webkit-backdrop-filter を宣言しない。forced-colors などアクセシビリティ media query による base header surface の上書きは別契約として扱い、overlay-open state の責務には含めない。 | `src/assets/css/layout-header.css` / `test/ssr/static-css-contracts.test.ts` |
-| Sidebar inset / TOC inset | Sidebar / TOC presence に応じた header center 領域の inset を保持する。 | `src/assets/css/layout-header.css` |
-| Desktop header corpus offset | Desktop header では、corpus switcher は note layout / sidebar enabled の有無に依存せず、primary start offset によって inline-start 位置を統一する。 | `src/assets/css/layout-header.css` |
-| Button-like visual behavior | Typography、outline 主体の focus-visible、hover、active、touch target を header controls に移植する。Focus-visible は box-shadow による二重リングを必須契約にしない。 | `src/assets/css/layout-header.css` |
-| Search trigger density | 静的 anchor fallback としての visual density を静的 CSS と E2E で固定する。旧 `ui-search-trigger` API 互換は保持しない。 | `src/assets/css/layout-header.css` / `test/e2e/static-header-migration.spec.ts` |
-| Search trigger ARIA | Dialog trigger として必要な ARIA seed と hydrated 同期を保持する。 | `src/layouts/layout-header-html.ts` / `src/client/post-hydrate/search-dialog-enhancer.ts` |
-| Disclosure keyboard and focus | Escape close、focus return、Arrow open などを static disclosure enhancement として保持する。 | `src/client/post-hydrate/static-header-menu-controller.ts` |
-| Header state sync | Sidebar、theme、TOC、search の表示状態同期を post-hydrate 層で保持する。 | `src/client/post-hydrate/layout-header-enhancer.ts` and related bridges |
-| No-JS fallback | Search、TOC、corpus navigation の fallback を静的 HTML で保持する。 | `src/layouts/layout-header-html.ts` / E2E |
+| Contract                      | Static header policy                                                                                                                                                                                                                                                                                                                                                     | Primary responsibility                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Header geometry               | Header shell height、alignment、responsive inset を静的 CSS contract として保持する。                                                                                                                                                                                                                                                                                    | `src/assets/css/layout-header.css`                                                        |
+| Header glass surface          | Header の translucent glass 表現は sidebar overlay state によって解除しない。`data-overlay-sidebar-open` は stacking のみを所有し、background / background-color / backdrop-filter / -webkit-backdrop-filter を宣言しない。forced-colors などアクセシビリティ media query による base header surface の上書きは別契約として扱い、overlay-open state の責務には含めない。 | `src/assets/css/layout-header.css` / `test/ssr/static-css-contracts.test.ts`              |
+| Sidebar inset / TOC inset     | Sidebar / TOC presence に応じた header center 領域の inset を保持する。                                                                                                                                                                                                                                                                                                  | `src/assets/css/layout-header.css`                                                        |
+| Desktop header corpus offset  | Desktop header では、corpus switcher は note layout / sidebar enabled の有無に依存せず、primary start offset によって inline-start 位置を統一する。                                                                                                                                                                                                                      | `src/assets/css/layout-header.css`                                                        |
+| Button-like visual behavior   | Typography、outline 主体の focus-visible、hover、active、touch target を header controls に移植する。Focus-visible は box-shadow による二重リングを必須契約にしない。                                                                                                                                                                                                    | `src/assets/css/layout-header.css`                                                        |
+| Search trigger density        | 静的 anchor fallback としての visual density を静的 CSS と E2E で固定する。旧 `ui-search-trigger` API 互換は保持しない。                                                                                                                                                                                                                                                 | `src/assets/css/layout-header.css` / `test/e2e/static-header-migration.spec.ts`           |
+| Search trigger ARIA           | Dialog trigger として必要な ARIA seed と hydrated 同期を保持する。                                                                                                                                                                                                                                                                                                       | `src/layouts/layout-header-html.ts` / `src/client/post-hydrate/search-dialog-enhancer.ts` |
+| Disclosure keyboard and focus | Escape close、focus return、Arrow open などを static disclosure enhancement として保持する。                                                                                                                                                                                                                                                                             | `src/client/post-hydrate/static-header-menu-controller.ts`                                |
+| Header state sync             | Sidebar、theme、TOC、search の表示状態同期を post-hydrate 層で保持する。                                                                                                                                                                                                                                                                                                 | `src/client/post-hydrate/layout-header-enhancer.ts` and related bridges                   |
+| No-JS fallback                | Search、TOC、corpus navigation の fallback を静的 HTML で保持する。                                                                                                                                                                                                                                                                                                      | `src/layouts/layout-header-html.ts` / E2E                                                 |
 
 ## 5. Contracts Intentionally Not Restored / 意図的に復元しない契約
 
 次の legacy contract は意図的に復元しない。
 
-| Legacy contract | Policy | Reason |
-|---|---|---|
-| `layout-header` custom element API | Restore しない。 | 静的 HTML 版を正とするため。 |
-| `ui-header-sidebar-toggle` event | Restore しない。 | 現行 header contract の主要経路ではないため。 |
-| `ui-search-trigger` custom element API | Restore しない。 | Search trigger は anchor fallback を持つ静的要素として扱うため。 |
-| Header search trigger からの `open-search-dialog` custom event 発火保証 | Restore しない。 | Dialog open は static enhancer / DOM controller の責務であり、legacy event 発火を header trigger の contract にしないため。 |
-| Search trigger の button 化 | 採用しない。 | `/search/` fallback link と native link semantics を維持するため。 |
-| Search trigger の Space activation | Restore しない。 | Space activation は旧 button 由来の legacy behavior であり、静的 anchor fallback、no-JS baseline、TOC / corpus link との一貫性を優先するため。 |
-| `ui-dropdown` の完全な menu role contract | Restore しない。 | Corpus は navigation disclosure、theme は button group として扱うため。 |
-| `role="menu"` / `role="menuitem"` / roving tabindex | 採用しない。 | 現行構造の意味論、native Tab order、fallback link contract と衝突するため。 |
-| Corpus link の Space activation | 原則 restore しない。 | Corpus item は native link として扱い、Enter activation を基本とするため。 |
-| TOC trigger の button 化 | Restore しない。 | `#static-toc` fallback link を維持するため。 |
-| Search trigger の anchor fallback 廃止 | 廃止しない。 | `/search/` fallback を維持するため。 |
+| Legacy contract                                                         | Policy                | Reason                                                                                                                                         |
+| ----------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layout-header` custom element API                                      | Restore しない。      | 静的 HTML 版を正とするため。                                                                                                                   |
+| `ui-header-sidebar-toggle` event                                        | Restore しない。      | 現行 header contract の主要経路ではないため。                                                                                                  |
+| `ui-search-trigger` custom element API                                  | Restore しない。      | Search trigger は anchor fallback を持つ静的要素として扱うため。                                                                               |
+| Header search trigger からの `open-search-dialog` custom event 発火保証 | Restore しない。      | Dialog open は static enhancer / DOM controller の責務であり、legacy event 発火を header trigger の contract にしないため。                    |
+| Search trigger の button 化                                             | 採用しない。          | `/search/` fallback link と native link semantics を維持するため。                                                                             |
+| Search trigger の Space activation                                      | Restore しない。      | Space activation は旧 button 由来の legacy behavior であり、静的 anchor fallback、no-JS baseline、TOC / corpus link との一貫性を優先するため。 |
+| `ui-dropdown` の完全な menu role contract                               | Restore しない。      | Corpus は navigation disclosure、theme は button group として扱うため。                                                                        |
+| `role="menu"` / `role="menuitem"` / roving tabindex                     | 採用しない。          | 現行構造の意味論、native Tab order、fallback link contract と衝突するため。                                                                    |
+| Corpus link の Space activation                                         | 原則 restore しない。 | Corpus item は native link として扱い、Enter activation を基本とするため。                                                                     |
+| TOC trigger の button 化                                                | Restore しない。      | `#static-toc` fallback link を維持するため。                                                                                                   |
+| Search trigger の anchor fallback 廃止                                  | 廃止しない。          | `/search/` fallback を維持するため。                                                                                                           |
 
 ## 6. Public Contract
 
@@ -118,14 +118,22 @@ Corpus switcher は navigation disclosure である。
 - Arrow key、Escape、Home / End、typeahead などの hydrated 操作は menu pattern の全面採用ではなく、disclosure UI の利便性補助として扱う。
 - Corpus item は native link として扱い、Space activation を独自に強制しない。
 - Corpus menu は content-constrained な幅を持つ。通常サポート viewport では trigger width 以上を保ち、trigger width と viewport containment が衝突する場合は viewport containment を優先する。
-- Corpus item の長い label は 1 行で省略される。Default label は不自然に省略しない。
+- Corpus item は indicator + label layout を持つ。`.corpus-switcher__menu a` の既存 rule は残してよいが、corpus item の正本 layout は後続の `[data-header-menu='corpus'] [data-header-menu-item]` rule で定義する。
+- Corpus item の長い label は `.corpus-menu-item__label` が所有する 1 行 ellipsis で省略される。Default label は不自然に省略しない。
 - Current corpus item は `aria-current="page"` を semantic source of truth として保持する。
-- Current corpus item の視覚表現は text emphasis のみではなく、persistent selected surface と semibold text emphasis の組み合わせで表現する。
+- Current corpus item の視覚表現は check indicator と semibold text emphasis の組み合わせで表現する。
+- Current / non-current corpus item は、どちらも link 直下の先頭 element child に `.corpus-menu-item__indicator` slot を持つ。Link 直下構造の契約は、空白 text node を除外した element children 基準で解釈する。
+- Current corpus item の indicator slot は `svg[data-icon="check"]` を内包し、non-current corpus item の indicator slot は check icon を表示しない。
+- Typeahead / searchable label の正本は `data-header-menu-text` であり、indicator icon や label span 構造には依存しない。
 - Non-current corpus item は normal weight を baseline とする。
-- Current corpus item の selected surface は `--bg-surface-active` を第一候補 token とする。
-- Current corpus item の selected surface は hover / focus-visible / active によって消されない。
+- Current corpus item の通常状態 selector には、`background`、`color`、`border-inline-start`、`border-inline-start-width`、`border-inline-start-style`、`border-inline-start-color` を宣言しない。
+- Persistent selected background は通常状態の current 表現に使わない。
+- Hover / active / focus-visible は操作状態として current 状態と分離する。Hover / active は neutral background を維持する。
+- Focus-visible は outline を主表現とする。既存 neutral focus surface は操作状態として許容するが、selected / current 表現とは扱わない。
 - Left border marker / `border-inline-start` は再導入しない。
-- Forced-colors では current corpus item を `background: Highlight` と `color: HighlightText` で識別可能にする。
+- Forced-colors では check indicator と `aria-current` semantics を維持し、current 専用 background / color / border 塗りを契約にしない。
+- Forced-colors 内の current corpus item 専用 selector には、`background`、`color`、`border-inline-start`、`border-inline-start-width`、`border-inline-start-style`、`border-inline-start-color` を宣言しない。
+- 現行挙動の契約正本は `docs/contracts/static-header-contract.md` である。`docs/adr/header-corpus-current-indicator.md` は今回の Decision Record であり、現行 contract を置き換えるものではない。
 
 ### Theme Switcher
 
@@ -179,18 +187,24 @@ Header controls は、corpus trigger、theme trigger、search trigger、TOC trig
 - Focus-visible は `:focus-visible` を正とし、`:focus` へ戻さない。
 - Forced-colors でも focus-visible outline を識別可能にする。
 - Menu panel 内 item の hover、focus-visible、active、hit target は top-level controls の selector 整理後も維持する。
-- Corpus menu item は `display: block`、1 行 ellipsis、content-constrained menu width、viewport containment を維持する。
+- Corpus menu item は indicator + label layout、content-constrained menu width、viewport containment を維持する。`.corpus-menu-item__label` が 1 行 ellipsis の正本であり、anchor 自身の ellipsis を正本にしない。
 - Theme menu panel は content-constrained visual density を持つ。Corpus menu と width containment の考え方は揃えるが、corpus navigation semantics と theme button group semantics は混同しない。
-- Current corpus item は `aria-current="page"` を semantic source of truth とし、persistent selected surface と semibold text emphasis で表現する。
-- Current corpus item の selected surface は `--bg-surface-active` を第一候補 token とし、hover / focus-visible / active によって消されない。
+- Current corpus item は `aria-current="page"` を semantic source of truth とし、check indicator と semibold text emphasis で表現する。
+- Current / non-current corpus item は、どちらも link 直下の先頭 element child に `.corpus-menu-item__indicator` slot を持つ。Link 直下構造の契約は、空白 text node を除外した element children 基準で解釈する。
+- Current corpus item の indicator slot は `svg[data-icon="check"]` を内包し、non-current corpus item の indicator slot は check icon を表示しない。
+- Typeahead / searchable label の正本は `data-header-menu-text` であり、indicator icon や label span 構造には依存しない。
+- Current corpus item の通常状態 selector には、`background`、`color`、`border-inline-start`、`border-inline-start-width`、`border-inline-start-style`、`border-inline-start-color` を宣言しない。
+- Persistent selected background は通常状態の current 表現に使わない。
+- Hover / active / focus-visible は操作状態として current 状態と分離する。Hover / active は neutral background を維持し、focus-visible は outline を主表現とする。既存 neutral focus surface は操作状態として許容するが、selected / current 表現とは扱わない。
 - Non-current corpus item は normal weight を baseline とし、medium / bold を default visual state にしない。
 - Current corpus item は text emphasis のみで識別しない。
 - Left border marker / `border-inline-start` は再導入しない。
-- Forced-colors では current corpus item を `background: Highlight` と `color: HighlightText` で識別可能にし、`border-color: Highlight` を current marker の必須契約にしない。
+- Forced-colors では check indicator と `aria-current` semantics を維持し、current 専用 background / color / border 塗りを契約にしない。
+- Forced-colors 内の current corpus item 専用 selector には、`background`、`color`、`border-inline-start`、`border-inline-start-width`、`border-inline-start-style`、`border-inline-start-color` を宣言しない。
 - Search trigger 固有の hover、focus-visible、active、responsive density、border-color、background state は top-level 共通 selector によって退化させない。
 - Top-level trigger の 44px hit target pseudo-element は維持する。
 - Header controls の visual contract は本文リンク、検索ダイアログ、sidebar、本文 TOC link へ波及させない。
-- Current corpus selected surface contract は `ADR-CORPUS-CURRENT-SELECTED-SURFACE-001` に基づく R3 / A0 の公開 visual contract 変更である。
+- Current corpus indicator contract は `ADR-HEADER-CORPUS-CURRENT-INDICATOR-001` に基づく R3 / A0 の公開 visual contract 変更である。現行挙動の契約正本は引き続き `docs/contracts/static-header-contract.md` であり、新 ADR は Decision Record である。
 
 #### Header Responsive Breakpoint Ownership
 

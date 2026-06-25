@@ -33,6 +33,14 @@ Static select は、旧 `ui-select` custom element を復活させず、標準�
 
 旧 `ui-select`、`role="listbox"` / `role="option"` による custom select、native select surface は復活させない。
 
+## Native Select Popup Boundary
+
+検索ページに native `<select>` が存在する場合でも、展開 popup 内部の option selected background、hover state、popup shadow、row height は UA / OS rendering として扱う。
+
+Rouault が所有するのは、閉じた select control、label、spacing、focus-visible、disabled state、form value contract までである。
+
+Header custom menu との popup 内 visual parity は保証しない。
+
 ## 旧契約
 
 旧 `ui-select` の custom listbox、custom event detail、独自 property、独自 readonly 表現は現行契約として維持しない。`<ui-select>` を final HTML、SSR target、hydration registry、manifest へ戻してはならない。

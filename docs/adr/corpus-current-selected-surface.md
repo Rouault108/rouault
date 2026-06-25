@@ -8,9 +8,14 @@
 - Acceptance ID: ACC-CORPUS-CURRENT-VISUAL-001
 - Verification ID: VER-CORPUS-CURRENT-VISUAL-001
 - R段階 / Aレベル: R3 / A0
-- Status: Accepted
+- Status: Superseded
 - Date: 2026-06-23
+- Superseded by: ADR-HEADER-CORPUS-CURRENT-INDICATOR-001
+- Superseded date: 2026-06-25
 - Contract source of truth: `docs/contracts/static-header-contract.md`
+
+> This decision has been superseded by `docs/adr/header-corpus-current-indicator.md`.
+> Historical rationale is retained for review traceability.
 
 この文書は decision record です。現在の contract を再定義する正本ではありません。現行 contract の正本は `docs/contracts/static-header-contract.md` です。
 

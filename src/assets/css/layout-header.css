@@ -34,14 +34,8 @@ header[data-layout-header] {
   );
   --_header-corpus-menu-min-inline-size: min(10rem, var(--_header-corpus-menu-max-inline-size));
   --_header-theme-menu-viewport-inline-size: calc(100vi - var(--space-8, 32px));
-  --_header-theme-menu-max-inline-size: min(
-    14rem,
-    var(--_header-theme-menu-viewport-inline-size)
-  );
-  --_header-theme-menu-min-inline-size: min(
-    10rem,
-    var(--_header-theme-menu-max-inline-size)
-  );
+  --_header-theme-menu-max-inline-size: min(14rem, var(--_header-theme-menu-viewport-inline-size));
+  --_header-theme-menu-min-inline-size: min(10rem, var(--_header-theme-menu-max-inline-size));
   --_header-corpus-menu-item-min-block-size: var(--control-height-md, 32px);
   --_header-corpus-menu-item-padding-block: var(--space-2, 8px);
   --_header-corpus-menu-item-padding-inline: var(--space-3, 12px);
@@ -288,16 +282,30 @@ header[data-layout-header] .corpus-switcher__menu a {
 
 header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item] {
   box-sizing: border-box;
-  display: block;
+  display: grid;
+  grid-template-columns: 1em minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--space-2, 8px);
   min-block-size: var(--_header-corpus-menu-item-min-block-size, 32px);
   padding-block: var(--_header-corpus-menu-item-padding-block, 8px);
   padding-inline: var(--_header-corpus-menu-item-padding-inline, 12px);
   border: 0;
   border-radius: var(--radius-sm, 4px);
   font-weight: var(--font-normal, 400);
+}
+
+header[data-layout-header] .corpus-menu-item__label {
+  min-inline-size: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+header[data-layout-header] .corpus-menu-item__indicator {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1em;
+  block-size: 1em;
 }
 
 header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:hover,
@@ -309,8 +317,6 @@ header[data-layout-header] [data-header-menu='corpus'] [data-header-menu-item]:a
 header[data-layout-header]
   [data-header-menu='corpus']
   [data-header-menu-item][aria-current='page'] {
-  background: var(--bg-surface-active, var(--bg-active, var(--bg-control-muted)));
-  color: var(--fg-default);
   font-weight: var(--font-semibold, 600);
 }
 
@@ -537,13 +543,6 @@ header[data-layout-header] .corpus-trigger-text {
   header[data-layout-header] .search-trigger__icon,
   header[data-layout-header] .search-trigger__placeholder {
     color: CanvasText;
-  }
-
-  header[data-layout-header]
-    [data-header-menu='corpus']
-    [data-header-menu-item][aria-current='page'] {
-    background: Highlight;
-    color: HighlightText;
   }
 }
 
