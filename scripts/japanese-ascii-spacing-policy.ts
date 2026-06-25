@@ -49,46 +49,45 @@ export type JapaneseAsciiSpacingReason =
   | 'japanese-to-inline-code'
   | 'number-unit-to-japanese';
 
-export type JapaneseAsciiSpacingCandidate = {
+export interface JapaneseAsciiSpacingCandidate {
   readonly filePath: string;
   readonly line: number;
   readonly column: number;
   readonly matchedText: string;
   readonly snippet: string;
   readonly reason: JapaneseAsciiSpacingReason;
-};
+}
 
-export type JapaneseAsciiSpacingReport = {
+export interface JapaneseAsciiSpacingReport {
   readonly filePath: string;
   readonly candidates: readonly JapaneseAsciiSpacingCandidate[];
-};
+}
 
-export type JapaneseAsciiSpacingScanOptions = {
+export interface JapaneseAsciiSpacingScanOptions {
   readonly filePath: string;
-};
+}
 
-type Range = {
+interface Range {
   readonly start: number;
   readonly end: number;
-};
+}
 
-type FenceState = {
+interface FenceState {
   readonly marker: '`' | '~';
   readonly length: number;
-};
+}
 
 const ASCII_ALNUM_PATTERN = /^[A-Za-z0-9]$/u;
 const HAN_PATTERN = /^\p{Script=Han}$/u;
 const HIRAGANA_PATTERN = /^\p{Script=Hiragana}$/u;
 const KATAKANA_PATTERN = /^\p{Script=Katakana}$/u;
-const TABLE_ALIGNMENT_ROW_PATTERN =
-  /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/u;
+const TABLE_ALIGNMENT_ROW_PATTERN = /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/u;
 const FRONTMATTER_DELIMITER_PATTERN = /^\s*---\s*$/u;
 const FRONTMATTER_KEY_PATTERN = /^\s*[A-Za-z0-9_-]+(?=\s*:)/u;
 const INLINE_CODE_PATTERN = /`+[^`\n]*?`+/gu;
 const URL_RANGE_PATTERN = /https?:\/\/[^\s<>)\]]+/giu;
 const URL_TEST_PATTERN = /https?:\/\/[^\s<>)\]]+/iu;
-const MARKDOWN_LINK_PATTERN = /\[[^\]\n]*\]\(([^)\n]*)\)/gu;
+const MARKDOWN_LINK_PATTERN = /\[[^\]\n]*\]\([^)\n]*\)/gu;
 const FILE_PATH_END_PATTERN =
   /(?:[A-Za-z]:)?(?:\.{1,2}[\\/]|[A-Za-z0-9_.-]+[\\/])(?:[A-Za-z0-9_.-]+[\\/])*[A-Za-z0-9_.-]+$/u;
 const COMMAND_END_PATTERN =
@@ -212,7 +211,10 @@ export const detectJapaneseAsciiSpacingCandidates = (
   return candidates;
 };
 
-const matchSegments = (fileSegments: readonly string[], patternSegments: readonly string[]): boolean => {
+const matchSegments = (
+  fileSegments: readonly string[],
+  patternSegments: readonly string[],
+): boolean => {
   const matchFrom = (fileIndex: number, patternIndex: number): boolean => {
     if (patternIndex === patternSegments.length) {
       return fileIndex === fileSegments.length;
@@ -225,7 +227,11 @@ const matchSegments = (fileSegments: readonly string[], patternSegments: readonl
         return true;
       }
 
-      for (let nextFileIndex = fileIndex; nextFileIndex <= fileSegments.length; nextFileIndex += 1) {
+      for (
+        let nextFileIndex = fileIndex;
+        nextFileIndex <= fileSegments.length;
+        nextFileIndex += 1
+      ) {
         if (matchFrom(nextFileIndex, patternIndex + 1)) {
           return true;
         }
@@ -240,7 +246,9 @@ const matchSegments = (fileSegments: readonly string[], patternSegments: readonl
       return false;
     }
 
-    return matchSegment(fileSegment, patternSegment ?? '') && matchFrom(fileIndex + 1, patternIndex + 1);
+    return (
+      matchSegment(fileSegment, patternSegment ?? '') && matchFrom(fileIndex + 1, patternIndex + 1)
+    );
   };
 
   return matchFrom(0, 0);
@@ -299,10 +307,6 @@ const collectPatternRanges = (line: string, pattern: RegExp): Range[] => {
   pattern.lastIndex = 0;
 
   for (const match of line.matchAll(pattern)) {
-    if (match.index === undefined) {
-      continue;
-    }
-
     ranges.push({ start: match.index, end: match.index + match[0].length });
   }
 
@@ -315,12 +319,17 @@ const collectMarkdownLinkUrlRanges = (line: string): Range[] => {
   MARKDOWN_LINK_PATTERN.lastIndex = 0;
 
   for (const match of line.matchAll(MARKDOWN_LINK_PATTERN)) {
-    if (match.index === undefined || match[1] === undefined) {
+    const matchedLink = match[0];
+    const urlOpenIndex = matchedLink.indexOf('(');
+    const urlCloseIndex = matchedLink.lastIndexOf(')');
+
+    if (urlOpenIndex < 0 || urlCloseIndex <= urlOpenIndex) {
       continue;
     }
 
-    const urlStart = match.index + match[0].indexOf('(') + 1;
-    ranges.push({ start: urlStart, end: urlStart + match[1].length });
+    const urlStart = match.index + urlOpenIndex + 1;
+    const urlEnd = match.index + urlCloseIndex;
+    ranges.push({ start: urlStart, end: urlEnd });
   }
 
   return ranges;
@@ -384,7 +393,11 @@ const detectSpaceBoundaryCandidates = (
   const candidates: JapaneseAsciiSpacingCandidate[] = [];
 
   for (let index = 0; index < line.length; index += 1) {
-    if (line[index] !== ' ' || isMasked(index, maskedRanges) || isTableDelimiterPadding(line, index)) {
+    if (
+      line[index] !== ' ' ||
+      isMasked(index, maskedRanges) ||
+      isTableDelimiterPadding(line, index)
+    ) {
       continue;
     }
 

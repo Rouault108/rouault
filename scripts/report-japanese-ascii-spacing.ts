@@ -12,10 +12,10 @@ import {
   type JapaneseAsciiSpacingReport,
 } from './japanese-ascii-spacing-policy.js';
 
-type CliOptions = {
+interface CliOptions {
   readonly rootDir: string;
   readonly maxExamples: number;
-};
+}
 
 const DEFAULT_MAX_EXAMPLES = 80;
 const PRUNED_DIRECTORIES = new Set([
@@ -92,6 +92,10 @@ export const createJapaneseAsciiSpacingReports = async (
   return reports;
 };
 
+const formatCount = (value: number): string => {
+  return String(value);
+};
+
 export const formatReport = (
   targetFileCount: number,
   reports: readonly JapaneseAsciiSpacingReport[],
@@ -100,22 +104,22 @@ export const formatReport = (
   const candidateCount = reports.reduce((total, report) => total + report.candidates.length, 0);
   const lines = [
     'Japanese ASCII spacing report (report-only)',
-    `Target files: ${targetFileCount}`,
-    `Candidates: ${candidateCount}`,
-    `Files with candidates: ${reports.length}`,
+    `Target files: ${formatCount(targetFileCount)}`,
+    `Candidates: ${formatCount(candidateCount)}`,
+    `Files with candidates: ${formatCount(reports.length)}`,
   ];
 
   if (reports.length > 0) {
     lines.push('', 'Candidate files:');
 
     for (const report of reports) {
-      lines.push(`- ${report.filePath} (${report.candidates.length})`);
+      lines.push(`- ${report.filePath} (${formatCount(report.candidates.length)})`);
     }
   }
 
   if (candidateCount > 0 && maxExamples > 0) {
     let emittedExamples = 0;
-    lines.push('', `Representative candidates (max ${maxExamples}):`);
+    lines.push('', `Representative candidates (max ${formatCount(maxExamples)}):`);
 
     for (const report of reports) {
       for (const candidate of report.candidates.slice(0, 3)) {
@@ -124,9 +128,9 @@ export const formatReport = (
         }
 
         lines.push(
-          `- ${candidate.filePath}:${candidate.line}:${candidate.column} ${candidate.reason} ${JSON.stringify(
-            candidate.snippet,
-          )}`,
+          `- ${candidate.filePath}:${formatCount(candidate.line)}:${formatCount(candidate.column)} ${
+            candidate.reason
+          } ${JSON.stringify(candidate.snippet)}`,
         );
         emittedExamples += 1;
       }
@@ -184,7 +188,9 @@ const collectFiles = async (rootDir: string, currentDir: string): Promise<string
 const isCliEntrypoint = (): boolean => {
   const entrypointPath = process.argv[1];
 
-  return entrypointPath !== undefined && fileURLToPath(import.meta.url) === path.resolve(entrypointPath);
+  return (
+    entrypointPath !== undefined && fileURLToPath(import.meta.url) === path.resolve(entrypointPath)
+  );
 };
 
 if (isCliEntrypoint()) {
