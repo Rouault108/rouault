@@ -105,7 +105,7 @@ C# 14の機能仕様では、ファイルベースアプリを支えるために
 
 [^8]: Microsoft Learn, _.NET project SDK overview_; _dotnet build_. SDKスタイルプロジェクト、MSBuild、`dotnet build`、関連成果物の位置付け。[https://learn.microsoft.com/en-us/dotnet/core/project-sdk/overview](https://learn.microsoft.com/en-us/dotnet/core/project-sdk/overview) ; [https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build)。
 
-[^9]: NuGet documentation, _PackageReference in project files_; Microsoft Learn, _MSBuild reference for .NET SDK projects_. `PackageReference` とMSBuild設定による参照解決およびビルド文脈の構成。[https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files](https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files) ; [https://learn.microsoft.com/en-us/dotnet/core/project-sdk/msbuild-props](https://learn.microsoft.com/en-us/dotnet/core/project-sdk/msbuild-props)。
+[^9]: NuGet documentation, _PackageReference in project files_; Microsoft Learn, _MSBuild reference for .NET SDK projects_. `PackageReference`とMSBuild設定による参照解決およびビルド文脈の構成。[https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files](https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files) ; [https://learn.microsoft.com/en-us/dotnet/core/project-sdk/msbuild-props](https://learn.microsoft.com/en-us/dotnet/core/project-sdk/msbuild-props)。
 
 [^10]: Microsoft Learn, _Symbols in .NET_. PDBとシンボル情報の役割、ソースとバイナリの対応付け。[https://learn.microsoft.com/en-us/dotnet/core/diagnostics/symbols](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/symbols)。
 
