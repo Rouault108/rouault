@@ -1,59 +1,59 @@
 # Navigation Envelope Schema Reference
 
-この文書は `NavigationEnvelope` の詳細 schema を記述する Reference である。
-`NavigationEnvelope` が client navigation の正規 payload であるという契約は `docs/contracts/navigation-envelope.md` を正本とする。
+この文書は`NavigationEnvelope`の詳細schemaを記述するReferenceである。
+`NavigationEnvelope`がclient navigationの正規payloadであるという契約は`docs/contracts/navigation-envelope.md`を正本とする。
 
 ## Top-level Fields
 
-- `schemaVersion`: envelope schema の互換単位。互換性を破る payload 変更では更新する。
-- `buildId`: artifact を生成した build の識別子。client 側 buildId と不一致の場合は縮退理由になる。
-- `generatedAt`: artifact 生成時刻。表示・診断用であり routing state ではない。
-- `document`: 本文 commit に必要な payload。
-- `shell`: route 由来の durable shell snapshot。
-- `hydrationPlan`: client hydration の planning 情報。
+- `schemaVersion`: envelope schemaの互換単位。互換性を破るpayload変更では更新する。
+- `buildId`: artifactを生成したbuildの識別子。client側buildIdと不一致の場合は縮退理由になる。
+- `generatedAt`: artifact生成時刻。表示・診断用でありrouting stateではない。
+- `document`: 本文commitに必要なpayload。
+- `shell`: route由来のdurable shell snapshot。
+- `hydrationPlan`: client hydrationのplanning情報。
 
 ## `document`
 
-- `url`: document が対応する URL。
+- `url`: documentが対応するURL。
 - `title`: document title。
-- `description`: head metadata に反映できる説明。
-- `html`: router document boundary に挿入する本文 HTML。
-- `canonicalPathname`: document metadata としての canonical URL。
-- `head`: head 更新に必要な最小情報。
+- `description`: head metadataに反映できる説明。
+- `html`: router document boundaryに挿入する本文HTML。
+- `canonicalPathname`: document metadataとしてのcanonical URL。
+- `head`: head更新に必要な最小情報。
 
-本文 DOM 境界は `docs/contracts/router-document.md` を正本とする。
+本文DOM境界は`docs/contracts/router-document.md`を正本とする。
 
 ## `shell`
 
-- `headerHtml`: route に対応する静的 `header[data-layout-header]` の HTML。
-- `sidebarProjection`: route に対応する sidebar projection。sidebar がない場合は `null`。
+- `headerHtml`: routeに対応する静的`header[data-layout-header]`のHTML。
+- `sidebarProjection`: routeに対応するsidebar projection。sidebarがない場合は`null`。
 
-Shell snapshot は route 由来の durable shell state を運ぶ。UI component 固有の一時状態は含めない。
-Reading chrome の mobile panel open state、current DOM、density tier の runtime 再計算結果は `shell` に保存しない。
+Shell snapshotはroute由来のdurable shell stateを運ぶ。UI component固有の一時状態は含めない。
+Reading chromeのmobile panel open state、current DOM、density tierのruntime再計算結果は`shell`に保存しない。
 
 ## `shell.sidebarProjection`
 
-- `selectedId`: 現在 route に対応する selected tree node id。
-- `structuralExpandedIds`: route 構造上、表示に必要な展開 node id。
-- `topologyRevision`: nav topology の更新単位。
+- `selectedId`: 現在routeに対応するselected tree node id。
+- `structuralExpandedIds`: route構造上、表示に必要な展開node id。
+- `topologyRevision`: nav topologyの更新単位。
 - `navHtml`: server-first navigation subtree。
-- `sidebarId`: sidebar instance の識別子。
-- `stateScopeId`: presentation / tree state の保存範囲。
+- `sidebarId`: sidebar instanceの識別子。
+- `stateScopeId`: presentation / tree stateの保存範囲。
 - `heading`: sidebar landmark label。
-- `fixedBreakpoint`: fixed / overlay 切り替えの breakpoint 情報。
-- `presentation`: route 由来で初期表示に必要な presentation hint。
+- `fixedBreakpoint`: fixed / overlay切り替えのbreakpoint情報。
+- `presentation`: route由来で初期表示に必要なpresentation hint。
 
-Sidebar state ownership は `docs/contracts/sidebar-state.md` を正本とする。
+Sidebar state ownershipは`docs/contracts/sidebar-state.md`を正本とする。
 
 ## `hydrationPlan`
 
-- `shell`: shell hydration に必要な planning 情報。
-- `content`: content hydration に必要な planning 情報。
-- `islands`: hydration 対象 component と trigger 分類。
-- Reading chrome island は planning 情報であり、scheduler / registry の trigger ownership を置き換えない。
+- `shell`: shell hydrationに必要なplanning情報。
+- `content`: content hydrationに必要なplanning情報。
+- `islands`: hydration対象componentとtrigger分類。
+- Reading chrome islandはplanning情報であり、scheduler / registryのtrigger ownershipを置き換えない。
 
-Hydration trigger の正本は `docs/contracts/hydration.md` と scheduler / registry である。
+Hydration triggerの正本は`docs/contracts/hydration.md`とscheduler / registryである。
 
 ## Schema Version Rule
 
-Payload field の追加、削除、意味変更、互換性を破る型変更を行う場合は `schemaVersion` を更新し、`docs/contracts/navigation-envelope.md` とこの Reference を同時に確認する。
+Payload fieldの追加、削除、意味変更、互換性を破る型変更を行う場合は`schemaVersion`を更新し、`docs/contracts/navigation-envelope.md`とこのReferenceを同時に確認する。

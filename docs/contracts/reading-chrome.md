@@ -5,80 +5,80 @@
 - Type: Normative
 - Source of truth: note page projection、TOC owner validation、hydration scheduler / registry、search return-to-reading integration、production artifact validators
 - Applies to: note reading chrome、fixed sidebar note frame geometry、TOC owner / source / trigger boundary、mobile TOC panel、desktop TOC sync、search result return-to-reading、diagnostics、density tier、documentation audit
-- Non-goals: router URL 意味論の再定義、検索 ranking 詳細、component 固有 visual token の全列挙、authoring 記法の追加
+- Non-goals: router URL意味論の再定義、検索ranking詳細、component固有visual tokenの全列挙、authoring記法の追加
 
 ## 2. Ownership
 
 ### This Layer Owns
 
-- 読書中に本文外へ置く補助 chrome の責務境界。
-- TOC owner、TOC source、desktop nav、mobile panel clone、header trigger の接続条件。
-- Build-time owner validation と runtime hydration lifecycle の分離。
-- Reading chrome に関係する diagnostics を、表示仕様ではなく契約違反の観測面として扱うこと。
-- TOC density tier を見出し量から導出し、意味論を変えずに読書面の密度だけへ反映すること。
-- Desktop fixed sidebar 表示時の note frame outer gutter。left sidebar、main、desktop TOC を含む note frame が viewport edge に接しないための最小外側余白を所有する。
+- 読書中に本文外へ置く補助chromeの責務境界。
+- TOC owner、TOC source、desktop nav、mobile panel clone、header triggerの接続条件。
+- Build-time owner validationとruntime hydration lifecycleの分離。
+- Reading chromeに関係するdiagnosticsを、表示仕様ではなく契約違反の観測面として扱うこと。
+- TOC density tierを見出し量から導出し、意味論を変えずに読書面の密度だけへ反映すること。
+- Desktop fixed sidebar表示時のnote frame outer gutter。left sidebar、main、desktop TOCを含むnote frameがviewport edgeに接しないための最小外側余白を所有する。
 
 ### This Layer Must Not Own
 
-- Navigation URL、fetch target URL、history commit。正本は `docs/contracts/router.md` と `docs/contracts/note-navigation.md`。
-- Hydration trigger の正本。正本は `docs/contracts/hydration.md`。
-- `NavigationEnvelope` schema の詳細。正本は `docs/references/navigation-envelope-schema.md`。
-- 検索 ranking、source 統合、diagnostics aggregation の詳細。正本は `docs/contracts/search.md` と `docs/references/search-ranking-and-diagnostics.md`。
-- Component 単体の visual token 詳細。正本は `docs/design-system/components/`。
-- Header geometry。static header の幅・配置契約は reading chrome note frame geometry とは別契約として扱う。
-- Sidebar state persistence。tree state、overlay state、保存先、復元条件は `docs/contracts/sidebar-state.md` を正本とする。
+- Navigation URL、fetch target URL、history commit。正本は`docs/contracts/router.md`と`docs/contracts/note-navigation.md`。
+- Hydration triggerの正本。正本は`docs/contracts/hydration.md`。
+- `NavigationEnvelope` schemaの詳細。正本は`docs/references/navigation-envelope-schema.md`。
+- 検索ranking、source統合、diagnostics aggregationの詳細。正本は`docs/contracts/search.md`と`docs/references/search-ranking-and-diagnostics.md`。
+- Component単体のvisual token詳細。正本は`docs/design-system/components/`。
+- Header geometry。static headerの幅・配置契約はreading chrome note frame geometryとは別契約として扱う。
+- Sidebar state persistence。tree state、overlay state、保存先、復元条件は`docs/contracts/sidebar-state.md`を正本とする。
 
 ## 3. Public Contract
 
 ### Inputs
 
-- Note page projection が生成する TOC presence、TOC headings、runtime id、owner candidate、shell trigger projection。
-- SSR が出力する desktop TOC nav、TOC JSON source、hydration marker。
-- Scheduler / registry が所有する hydration target。
-- Search dialog の selection event から変換される return-to-reading request。
+- Note page projectionが生成するTOC presence、TOC headings、runtime id、owner candidate、shell trigger projection。
+- SSRが出力するdesktop TOC nav、TOC JSON source、hydration marker。
+- Scheduler / registryが所有するhydration target。
+- Search dialogのselection eventから変換されるreturn-to-reading request。
 
 ### Outputs
 
-- Static-first で読める note HTML。
-- Hydration 後に同期された desktop nav、mobile panel nav、header trigger state。
-- `ready`、`hasVisibleHeadings`、`activeId` を含む header 向け runtime snapshot。
-- Build-time / runtime / production artifact validation で観測できる diagnostics。
+- Static-firstで読めるnote HTML。
+- Hydration後に同期されたdesktop nav、mobile panel nav、header trigger state。
+- `ready`、`hasVisibleHeadings`、`activeId`を含むheader向けruntime snapshot。
+- Build-time / runtime / production artifact validationで観測できるdiagnostics。
 
 ### Events
 
-- Reading chrome は router event を hydration trigger の正本にしない。
-- Search result selection は検索 UI からの選択通知であり、navigation adapter が return-to-reading request へ橋渡しする。
+- Reading chromeはrouter eventをhydration triggerの正本にしない。
+- Search result selectionは検索UIからの選択通知であり、navigation adapterがreturn-to-reading requestへ橋渡しする。
 
 ### DOM / URL / State Contract
 
-- Note page では SSR の desktop TOC nav を正本とし、mobile panel は runtime clone として扱う。
-- Header trigger は TOC content owner にならない。trigger は open / close の導線であり、TOC headings を保持しない。
-- TOC owner candidate が未確定または不正な場合、interactive trigger を有効な reading chrome として見せない。
-- Hydration marker は build-time / runtime 接続点であり、visual variant として使わない。
-- Desktop nav と mobile panel nav は同じ visible headings と active id から current DOM を同期する。
-- Density tier は `compact`、`comfortable`、`expanded` の視覚密度であり、heading identity、URL、active state の意味を変えない。
-- TOC density tier は表示密度を調整するが、階層だけを理由に見出しラベルを 1 行省略してはならない。
-- `compact` density は余白を詰めるための契約であり、見出し情報を過剰に欠落させる契約ではない。
-- Desktop TOC nav、static-first mobile panel clone、Lit `ui-toc` は同じ label wrapping contract を共有する。
-- SSR `.layout-toc` と Lit `ui-toc` は、同じ `--toc-item-inactive-max-lines` / `--toc-item-active-max-lines` contract に従う。
-- `data-heading-depth` は階層インデントなどの構造表現に使うが、label wrapping を 1 行化する根拠として使ってはならない。
-- Mobile panel の DOM contract hook は `[data-layout-toc-mobile-panel]` であり、CSS styling hook は `.layout-toc-mobile-panel` である。DOM / test lookup は `[data-layout-toc-mobile-panel]` を正本とし、`.layout-toc-mobile-panel` を正本 DOM selector として扱わない。
-- Search の return-to-reading は router core の import boundary を壊さず、検索 UI は router を直接所有しない。
+- Note pageではSSRのdesktop TOC navを正本とし、mobile panelはruntime cloneとして扱う。
+- Header triggerはTOC content ownerにならない。triggerはopen / closeの導線であり、TOC headingsを保持しない。
+- TOC owner candidateが未確定または不正な場合、interactive triggerを有効なreading chromeとして見せない。
+- Hydration markerはbuild-time / runtime接続点であり、visual variantとして使わない。
+- Desktop navとmobile panel navは同じvisible headingsとactive idからcurrent DOMを同期する。
+- Density tierは`compact`、`comfortable`、`expanded`の視覚密度であり、heading identity、URL、active stateの意味を変えない。
+- TOC density tierは表示密度を調整するが、階層だけを理由に見出しラベルを1行省略してはならない。
+- `compact` densityは余白を詰めるための契約であり、見出し情報を過剰に欠落させる契約ではない。
+- Desktop TOC nav、static-first mobile panel clone、Lit `ui-toc`は同じlabel wrapping contractを共有する。
+- SSR `.layout-toc`とLit `ui-toc`は、同じ`--toc-item-inactive-max-lines` / `--toc-item-active-max-lines` contractに従う。
+- `data-heading-depth`は階層インデントなどの構造表現に使うが、label wrappingを1行化する根拠として使ってはならない。
+- Mobile panelのDOM contract hookは`[data-layout-toc-mobile-panel]`であり、CSS styling hookは`.layout-toc-mobile-panel`である。DOM / test lookupは`[data-layout-toc-mobile-panel]`を正本とし、`.layout-toc-mobile-panel`を正本DOM selectorとして扱わない。
+- Searchのreturn-to-readingはrouter coreのimport boundaryを壊さず、検索UIはrouterを直接所有しない。
 
 ### Desktop Note Frame Geometry
 
-- 固定サイドバー表示時、left sidebar、main、desktop TOC を含む note frame は viewport edge から最小 outer gutter を持つ。
-- Outer gutter は `--note-frame-outer-gutter` を最小値契約として使う。wide viewport では中央寄せと max-width により、実際の gutter が `--note-frame-outer-gutter` より大きくなってよい。
-- Outer gutter は sidebar item padding や TOC item padding とは別契約である。項目密度や active rail、TOC indent の調整で note frame 外側余白を代替してはならない。
-- Outer gutter は sidebar state、TOC active state、URL、hydration ownership、ARIA 意味論を変更しない。
-- Header geometry は別契約であり、この note frame outer gutter contract の対象ではない。
+- 固定サイドバー表示時、left sidebar、main、desktop TOCを含むnote frameはviewport edgeから最小outer gutterを持つ。
+- Outer gutterは`--note-frame-outer-gutter`を最小値契約として使う。wide viewportでは中央寄せとmax-widthにより、実際のgutterが`--note-frame-outer-gutter`より大きくなってよい。
+- Outer gutterはsidebar item paddingやTOC item paddingとは別契約である。項目密度やactive rail、TOC indentの調整でnote frame外側余白を代替してはならない。
+- Outer gutterはsidebar state、TOC active state、URL、hydration ownership、ARIA意味論を変更しない。
+- Header geometryは別契約であり、このnote frame outer gutter contractの対象ではない。
 
 ### Viewport Scrollbar Gutter
 
-- Reading chrome は classic scrollbar 環境で modal scroll lock により viewport inline-size が変化しても、header、note frame、TOC の inline position を変化させてはならない。
-- Root viewport gutter の正本は `src/assets/css/main.css` の `html { scrollbar-gutter: stable; }` とする。
-- Dialog open-state CSS は body scroll lock を所有し、viewport gutter 補正を所有しない。
-- この contract は検索ダイアログ固有ではなく、reading chrome の位置安定性に属する。
+- Reading chromeはclassic scrollbar環境でmodal scroll lockによりviewport inline-sizeが変化しても、header、note frame、TOCのinline positionを変化させてはならない。
+- Root viewport gutterの正本は`src/assets/css/main.css`の`html { scrollbar-gutter: stable; }`とする。
+- Dialog open-state CSSはbody scroll lockを所有し、viewport gutter補正を所有しない。
+- このcontractは検索ダイアログ固有ではなく、reading chromeの位置安定性に属する。
 
 ## 4. State Model
 
@@ -87,15 +87,15 @@
 - Build-time TOC projection。
 - Validated owner candidate。
 - Runtime id。
-- Navigation envelope の shell projection。
-- Search index / catalog に含まれる destination URL。
+- Navigation envelopeのshell projection。
+- Search index / catalogに含まれるdestination URL。
 
 ### Ephemeral State
 
 - Hydration session。
 - Mobile panel open state。
 - Active heading snapshot。
-- Desktop nav / mobile panel clone の current DOM。
+- Desktop nav / mobile panel cloneのcurrent DOM。
 - Search dialog open / query / selection state。
 
 ### Derived State
@@ -108,50 +108,50 @@
 
 ### Forbidden Coupling
 
-- Router core が TOC current DOM、mobile panel、focus return、search dialog state を所有してはならない。
-- Search UI が router core を runtime import してはならない。
-- Header trigger が TOC headings の source になってはならない。
-- `NavigationEnvelope.hydrationPlan` を hydration trigger 正本として扱ってはならない。
-- Density tier を content authoring 規約、URL、search ranking へ逆流させてはならない。
+- Router coreがTOC current DOM、mobile panel、focus return、search dialog stateを所有してはならない。
+- Search UIがrouter coreをruntime importしてはならない。
+- Header triggerがTOC headingsのsourceになってはならない。
+- `NavigationEnvelope.hydrationPlan`をhydration trigger正本として扱ってはならない。
+- Density tierをcontent authoring規約、URL、search rankingへ逆流させてはならない。
 
 ## 5. Failure Semantics
 
-- Owner candidate 不整合は build-time validation で拒否する。
-- Runtime source 欠落、duplicate owner、source cleanup failure は diagnostics として観測可能にする。
-- Hydration target 欠落時も no-JS baseline の読書構造を壊さない。
-- Production CSS artifact に mobile TOC / density selector が到達していない場合は production build gate の失敗として扱う。
-- Search return-to-reading adapter が接続できない場合、検索 UI は選択通知までに留まり、検索意味論を再計算しない。
+- Owner candidate不整合はbuild-time validationで拒否する。
+- Runtime source欠落、duplicate owner、source cleanup failureはdiagnosticsとして観測可能にする。
+- Hydration target欠落時もno-JS baselineの読書構造を壊さない。
+- Production CSS artifactにmobile TOC / density selectorが到達していない場合はproduction build gateの失敗として扱う。
+- Search return-to-reading adapterが接続できない場合、検索UIは選択通知までに留まり、検索意味論を再計算しない。
 
 ## 6. Integration Boundaries
 
 ### Build-time
 
-- Note projection、owner candidate validation、navigation artifact、production CSS artifact assertion を担当する。
+- Note projection、owner candidate validation、navigation artifact、production CSS artifact assertionを担当する。
 
 ### SSR
 
-- No-JS baseline と desktop TOC nav、TOC JSON source、必要な hydration marker を出力する。
-- TOC absent note は TOC DOM / TOC JSON source / header TOC identity を出力しない。
-- Static TOC present fixture は `data-toc-hydration="static"` の desktop nav と article 前 mobile static nav を出し、controller / JSON source / mobile panel trigger は出力しない。
+- No-JS baselineとdesktop TOC nav、TOC JSON source、必要なhydration markerを出力する。
+- TOC absent noteはTOC DOM / TOC JSON source / header TOC identityを出力しない。
+- Static TOC present fixtureは`data-toc-hydration="static"`のdesktop navとarticle前mobile static navを出し、controller / JSON source / mobile panel triggerは出力しない。
 
 ### Client Runtime
 
-- `layout-toc-controller` と sync helper が desktop nav / mobile panel clone / header snapshot を同期する。
-- Search bootstrap は選択 event を return-to-reading request へ橋渡しする。
+- `layout-toc-controller`とsync helperがdesktop nav / mobile panel clone / header snapshotを同期する。
+- Search bootstrapは選択eventをreturn-to-reading requestへ橋渡しする。
 
 ### Hydration
 
-- Scheduler / registry が hydration trigger と lifecycle を所有し、component-local connected timing へ戻さない。
+- Scheduler / registryがhydration triggerとlifecycleを所有し、component-local connected timingへ戻さない。
 
 ### Tests
 
-- Placement は `docs/contracts/testing-taxonomy.md` に従う。DOM / CSS structure は SSR、observable runtime は browser / e2e、pure boundary validators は node / script で固定する。
+- Placementは`docs/contracts/testing-taxonomy.md`に従う。DOM / CSS structureはSSR、observable runtimeはbrowser / e2e、pure boundary validatorsはnode / scriptで固定する。
 
 ## 7. Acceptance Criteria
 
-- Reading chrome は static-first の本文読書構造を壊さない。
-- TOC owner / source / trigger / mobile panel の ownership が分離されている。
-- Desktop nav と mobile panel clone が同じ active state と visible headings で同期する。
-- Search return-to-reading が検索 UI と router の import boundary を壊さない。
-- Production CSS artifact と import-boundary assertion が final validation に含まれている。
-- Design System pattern docs は機能 Contract を上書きせず、読書面での見え方と intrusion 判断だけを扱う。
+- Reading chromeはstatic-firstの本文読書構造を壊さない。
+- TOC owner / source / trigger / mobile panelのownershipが分離されている。
+- Desktop navとmobile panel cloneが同じactive stateとvisible headingsで同期する。
+- Search return-to-readingが検索UIとrouterのimport boundaryを壊さない。
+- Production CSS artifactとimport-boundary assertionがfinal validationに含まれている。
+- Design System pattern docsは機能Contractを上書きせず、読書面での見え方とintrusion判断だけを扱う。

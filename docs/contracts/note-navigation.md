@@ -11,18 +11,18 @@
 
 ### This Layer Owns
 
-- Note identity と公開 navigation URL の意味論。
-- `directory-index` の URL 対応と path 衝突禁止。
-- Breadcrumb の階層表現、リンク可否、label consumption。
-- note page navigation URL と fetch target URL の境界。
+- Note identityと公開navigation URLの意味論。
+- `directory-index`のURL対応とpath衝突禁止。
+- Breadcrumbの階層表現、リンク可否、label consumption。
+- note page navigation URLとfetch target URLの境界。
 
 ### This Layer Must Not Own
 
-- `_config.json` の固定入力仕様。正本は `docs/contracts/content-config.md`。
-- Sidebar presentation / tree state。正本は `docs/contracts/sidebar-state.md`。
-- Reading chrome の owner / source / trigger 境界。正本は `docs/contracts/reading-chrome.md`。
-- Search の `SearchCanonicalPathname` / `SearchStateUrl`。正本は `docs/contracts/search.md`。
-- Permanent URL / `/archives/{hash}` / hash 生成規則。正本は `docs/contracts/permanent-url.md`。
+- `_config.json`の固定入力仕様。正本は`docs/contracts/content-config.md`。
+- Sidebar presentation / tree state。正本は`docs/contracts/sidebar-state.md`。
+- Reading chromeのowner / source / trigger境界。正本は`docs/contracts/reading-chrome.md`。
+- Searchの`SearchCanonicalPathname` / `SearchStateUrl`。正本は`docs/contracts/search.md`。
+- Permanent URL / `/archives/{hash}` / hash生成規則。正本は`docs/contracts/permanent-url.md`。
 
 ## 3. Public Contract
 
@@ -30,16 +30,16 @@
 
 - Source file path。
 - Note frontmatter。
-- Directory `_config.json` から解決された label。
-- Note collection の path topology。
+- Directory `_config.json`から解決されたlabel。
+- Note collectionのpath topology。
 
 ### Outputs
 
 - `rawSlug`: ソースファイル実体を識別する内部キー。
-- `slug`: 公開 route の canonical key。
-- `permalink`: `slug` から導出される note page navigation URL。
+- `slug`: 公開routeのcanonical key。
+- `permalink`: `slug`から導出されるnote page navigation URL。
 - Breadcrumb projection。
-- Sidebar tree が参照する note identity。
+- Sidebar treeが参照するnote identity。
 
 ### Events
 
@@ -47,16 +47,16 @@
 
 ### DOM / URL / State Contract
 
-- `rawSlug` は UI 表示、公開 URL、breadcrumb、検索結果の基準にしてはならない。
-- `slug` は先頭末尾の `/` を除去した正規化済み path である。
-- `directory-index` の場合、`slug` は `rawSlug` から末尾 `/index` を除去したものとする。
-- `permalink` は `/notes/${slug}` 形式で、末尾スラッシュを含めない。
-- note page navigation URL の canonical form は末尾スラッシュなしである。
-- history 更新、breadcrumb、sidebar href、note page 間比較には note page navigation URL を使う。
-- 表示層に trailing slash 付き note page URL を混在させてはならない。
-- note page navigation URL と `SearchCanonicalPathname` を混同してはならない。
-- note page navigation URL と fetch target URL を混同してはならない。
-- 静的 HTML の `index.html` 解決に必要な trailing slash 補完は fetch target 解決層だけが行う。
+- `rawSlug`はUI表示、公開URL、breadcrumb、検索結果の基準にしてはならない。
+- `slug`は先頭末尾の`/`を除去した正規化済みpathである。
+- `directory-index`の場合、`slug`は`rawSlug`から末尾`/index`を除去したものとする。
+- `permalink`は`/notes/${slug}`形式で、末尾スラッシュを含めない。
+- note page navigation URLのcanonical formは末尾スラッシュなしである。
+- history更新、breadcrumb、sidebar href、note page間比較にはnote page navigation URLを使う。
+- 表示層にtrailing slash付きnote page URLを混在させてはならない。
+- note page navigation URLと`SearchCanonicalPathname`を混同してはならない。
+- note page navigation URLとfetch target URLを混同してはならない。
+- 静的HTMLの`index.html`解決に必要なtrailing slash補完はfetch target解決層だけが行う。
 
 ## 4. State Model
 
@@ -81,47 +81,47 @@
 
 ### Forbidden Coupling
 
-- `permalink` と表示 label を混同してはならない。
-- directory label と page title を混同してはならない。
-- trailing slash 補完を `permalink` の canonical 定義へ逆流させてはならない。
+- `permalink`と表示labelを混同してはならない。
+- directory labelとpage titleを混同してはならない。
+- trailing slash補完を`permalink`のcanonical定義へ逆流させてはならない。
 
 ## 5. Failure Semantics
 
-- `slug` は公開 route 空間で一意でなければならない。
-- `content/<slug>.md` と `content/<slug>/index.md` の併存を禁止する。
-- `content/<slug>.md` と `content/<slug>/**` の併存を禁止する。
-- Path 衝突は build 時または note collection 構築時にエラーとして拒否する。
-- 存在しない directory URL を breadcrumb link として合成してはならない。
+- `slug`は公開route空間で一意でなければならない。
+- `content/<slug>.md`と`content/<slug>/index.md`の併存を禁止する。
+- `content/<slug>.md`と`content/<slug>/**`の併存を禁止する。
+- Path衝突はbuild時またはnote collection構築時にエラーとして拒否する。
+- 存在しないdirectory URLをbreadcrumb linkとして合成してはならない。
 
 ## 6. Integration Boundaries
 
 ### Build-time
 
-- Note collection は identity、URL、breadcrumb に必要な projection を生成する。
+- Note collectionはidentity、URL、breadcrumbに必要なprojectionを生成する。
 
 ### SSR
 
-- Breadcrumb と sidebar href は canonical note page navigation URL を出力する。
+- Breadcrumbとsidebar hrefはcanonical note page navigation URLを出力する。
 
 ### Client Runtime
 
-- Router は note page navigation URL を history 更新に使い、fetch target URL は取得直前に導出する。
+- Routerはnote page navigation URLをhistory更新に使い、fetch target URLは取得直前に導出する。
 
 ### Hydration
 
-- Reading chrome の TOC owner / source / trigger marker は build-time projection と runtime hydration の接続点として扱う。
-- Stage 7 完了前の TOC reservation は fail-closed skeleton であり、owner validation の完了とはみなさない。
-- Header の `tocPresence` と `tocRuntimeId` は navigation artifact へ投影するが、interactive trigger の可否は reservation state と分離する。
-- Reading chrome の current DOM、density tier、mobile panel clone は note identity や note page navigation URL の意味を変更しない。
+- Reading chromeのTOC owner / source / trigger markerはbuild-time projectionとruntime hydrationの接続点として扱う。
+- Stage 7完了前のTOC reservationはfail-closed skeletonであり、owner validationの完了とはみなさない。
+- Headerの`tocPresence`と`tocRuntimeId`はnavigation artifactへ投影するが、interactive triggerの可否はreservation stateと分離する。
+- Reading chromeのcurrent DOM、density tier、mobile panel cloneはnote identityやnote page navigation URLの意味を変更しない。
 
 ### Tests
 
-- URL、breadcrumb、directory-index、path 衝突の検証は `docs/contracts/testing-taxonomy.md` に従う。
+- URL、breadcrumb、directory-index、path衝突の検証は`docs/contracts/testing-taxonomy.md`に従う。
 
 ## 7. Acceptance Criteria
 
-- `rawSlug`、`slug`、`permalink` の役割が分離されている。
-- `directory-index` が routable な directory page として扱われる。
-- Breadcrumb の中間 crumb は対応する `directory-index` が存在する場合だけリンクを持つ。
-- `directory-index` が現在位置の場合、breadcrumb は当該 directory crumb で終わり、page title crumb を追加しない。
-- Directory label は `_config.json.label` を source of truth とし、page title と混同しない。
+- `rawSlug`、`slug`、`permalink`の役割が分離されている。
+- `directory-index`がroutableなdirectory pageとして扱われる。
+- Breadcrumbの中間crumbは対応する`directory-index`が存在する場合だけリンクを持つ。
+- `directory-index`が現在位置の場合、breadcrumbは当該directory crumbで終わり、page title crumbを追加しない。
+- Directory labelは`_config.json.label`をsource of truthとし、page titleと混同しない。

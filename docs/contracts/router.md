@@ -3,61 +3,61 @@
 ## 1. Status
 
 - Type: Normative
-- Source of truth: `src/router/` の router core、router adapters、対応する router tests
+- Source of truth: `src/router/`のrouter core、router adapters、対応するrouter tests
 - Applies to: client navigation、history commit、route/fetch 経路の統合
-- Non-goals: focus、scroll、announcement、component-local UI state、hydration trigger、sidebar presentation state、検索 UI state
+- Non-goals: focus、scroll、announcement、component-local UI state、hydration trigger、sidebar presentation state、検索UI state
 
 ## 2. Ownership
 
 ### This layer owns
 
-- `NavigationEnvelope` を入力とする client navigation の遷移意味論。
-- URL 正規化、route 解決、document 取得、history state、本文・shell・document metadata の durable commit。
-- `start()`、`destroy()`、`navigate()` の lifecycle と、latest-wins / superseded の制御。
-- `NavigationResult`、`NavigationOutcome`、`committed`、`degraded`、`issues` の意味。
+- `NavigationEnvelope`を入力とするclient navigationの遷移意味論。
+- URL正規化、route解決、document取得、history state、本文・shell・document metadataのdurable commit。
+- `start()`、`destroy()`、`navigate()`のlifecycleと、latest-wins / supersededの制御。
+- `NavigationResult`、`NavigationOutcome`、`committed`、`degraded`、`issues`の意味。
 
 ### This layer must not own
 
-- 本文 DOM 境界。正本は `docs/contracts/router-document.md` とする。
-- `NavigationEnvelope` schema 詳細。正本は `docs/references/navigation-envelope-schema.md` とする。
-- hydration trigger。正本は `docs/contracts/hydration.md` と scheduler / registry とする。
-- sidebar state ownership。正本は `docs/contracts/sidebar-state.md` とする。
-- note identity、permalink、breadcrumb、directory-index。正本は `docs/contracts/note-navigation.md` とする。
-- Permanent URL の hash 生成規則。正本は `docs/contracts/permanent-url.md` とする。
-- 検索 URL state。正本は `docs/contracts/search.md` とする。
-- Reading chrome の owner / trigger / mobile panel / current DOM。正本は `docs/contracts/reading-chrome.md` とする。
+- 本文DOM境界。正本は`docs/contracts/router-document.md`とする。
+- `NavigationEnvelope` schema詳細。正本は`docs/references/navigation-envelope-schema.md`とする。
+- hydration trigger。正本は`docs/contracts/hydration.md`とscheduler / registryとする。
+- sidebar state ownership。正本は`docs/contracts/sidebar-state.md`とする。
+- note identity、permalink、breadcrumb、directory-index。正本は`docs/contracts/note-navigation.md`とする。
+- Permanent URLのhash生成規則。正本は`docs/contracts/permanent-url.md`とする。
+- 検索URL state。正本は`docs/contracts/search.md`とする。
+- Reading chromeのowner / trigger / mobile panel / current DOM。正本は`docs/contracts/reading-chrome.md`とする。
 
 ## 3. Public Contract
 
 ### Inputs
 
-- `new Router(outlet, options?)` は、router が所有する outlet と adapter 群を受け取る。
-- `start()` は未開始 router を起動し、リンク intercept と `popstate` 監視を有効にする。
-- `destroy()` は router を停止し、登録済み listener と進行中 navigation を終了させる。
-- `navigate(request)` は navigation URL、replace/state、route handler、fetch 経路の結果を統合して遷移を試みる。
+- `new Router(outlet, options?)`は、routerが所有するoutletとadapter群を受け取る。
+- `start()`は未開始routerを起動し、リンクinterceptと`popstate`監視を有効にする。
+- `destroy()`はrouterを停止し、登録済みlistenerと進行中navigationを終了させる。
+- `navigate(request)`はnavigation URL、replace/state、route handler、fetch経路の結果を統合して遷移を試みる。
 
 ### Outputs
 
-- `navigate()` は、遷移が durable commit に到達したかを示す `NavigationResult` を返す。
-- `committed` は history / document / shell の durable commit が成立したことを示す。
-- `degraded` は主要 commit は成立したが、post-commit 処理や付随情報に問題があったことを示す。
-- `issues` は縮退理由を列挙する。router は issue を UI 表示へ直接変換しない。
+- `navigate()`は、遷移がdurable commitに到達したかを示す`NavigationResult`を返す。
+- `committed`はhistory / document / shellのdurable commitが成立したことを示す。
+- `degraded`は主要commitは成立したが、post-commit処理や付随情報に問題があったことを示す。
+- `issues`は縮退理由を列挙する。routerはissueをUI表示へ直接変換しない。
 
 ### Events
 
-- `before:navigate` は navigation 開始前の観測・キャンセル点である。
-- `navigation:busy-change` は navigation 中状態の変化を通知する。
-- `after:navigate` は `NavigationResult` が確定した後に通知する。
+- `before:navigate`はnavigation開始前の観測・キャンセル点である。
+- `navigation:busy-change`はnavigation中状態の変化を通知する。
+- `after:navigate`は`NavigationResult`が確定した後に通知する。
 
 ### DOM / URL / State Contract
 
-- navigation URL は共有可能で再構成可能な route state を表す。
-- state-only navigation は document fetch と content hydration trigger を発生させない。
-- feature-local URL state は各 feature が所有し、router core は意味を解釈しない。
-- Search return-to-reading は router の公開 navigation adapter へ接続されるが、search UI や reading chrome state は router core の durable state ではない。
-- fetch target URL は取得直前にのみ導出する。
-- 静的 HTML の `index.html` 解決に必要な trailing slash 補完は fetch target 解決層の責務である。
-- trailing slash 補完は note page navigation URL の canonical 定義を書き換えない。
+- navigation URLは共有可能で再構成可能なroute stateを表す。
+- state-only navigationはdocument fetchとcontent hydration triggerを発生させない。
+- feature-local URL stateは各featureが所有し、router coreは意味を解釈しない。
+- Search return-to-readingはrouterの公開navigation adapterへ接続されるが、search UIやreading chrome stateはrouter coreのdurable stateではない。
+- fetch target URLは取得直前にのみ導出する。
+- 静的HTMLの`index.html`解決に必要なtrailing slash補完はfetch target解決層の責務である。
+- trailing slash補完はnote page navigation URLのcanonical定義を書き換えない。
 
 ## 4. State Model
 
@@ -79,50 +79,50 @@
 ### Derived State
 
 - fetch target URL
-- state-only 判定
+- state-only判定
 - `NavigationOutcome`
 - degraded issues
 
 ### Forbidden Coupling
 
-- router core は focus 移動、scroll 復帰、読み上げ文言、component-local state を所有してはならない。
-- router core は TOC current DOM、mobile panel open state、search dialog selection state を所有してはならない。
-- router core は fetched HTML の component 属性形式を router protocol として扱ってはならない。
-- router core は `/archives/{hash}` を通常の note page navigation URL として扱ってはならない。
+- router coreはfocus移動、scroll復帰、読み上げ文言、component-local stateを所有してはならない。
+- router coreはTOC current DOM、mobile panel open state、search dialog selection stateを所有してはならない。
+- router coreはfetched HTMLのcomponent属性形式をrouter protocolとして扱ってはならない。
+- router coreは`/archives/{hash}`を通常のnote page navigation URLとして扱ってはならない。
 
 ## 5. Failure Semantics
 
-- durable commit 前の失敗は `committed: false` として扱う。
-- durable commit 後の失敗は、可能な限り `committed: true` かつ `degraded: true` として扱う。
-- 新しい navigation が開始された場合、古い navigation は superseded として扱う。
-- buildId 不一致や envelope 不整合は、可能なら document navigation へ縮退する。
+- durable commit前の失敗は`committed: false`として扱う。
+- durable commit後の失敗は、可能な限り`committed: true`かつ`degraded: true`として扱う。
+- 新しいnavigationが開始された場合、古いnavigationはsupersededとして扱う。
+- buildId不一致やenvelope不整合は、可能ならdocument navigationへ縮退する。
 
 ## 6. Integration Boundaries
 
 ### Build-time
 
-- Build-time は route artifact と `NavigationEnvelope` を生成する。router core は生成処理を所有しない。
+- Build-timeはroute artifactと`NavigationEnvelope`を生成する。router coreは生成処理を所有しない。
 
 ### SSR
 
-- SSR 初期表示の本文境界は `docs/contracts/router-document.md` に従う。
+- SSR初期表示の本文境界は`docs/contracts/router-document.md`に従う。
 
 ### Client Runtime
 
-- `contentAdapter` は本文 commit、`shellAdapter` は shell commit、`urlStateNavigationPolicy` は state-only 判定、`postCommitController` は commit 後処理を担う。
+- `contentAdapter`は本文commit、`shellAdapter`はshell commit、`urlStateNavigationPolicy`はstate-only判定、`postCommitController`はcommit後処理を担う。
 
 ### Hydration
 
-- router core は hydration trigger を所有しない。SPA 遷移後の content hydration trigger は scheduler / registry が所有する。
+- router coreはhydration triggerを所有しない。SPA遷移後のcontent hydration triggerはscheduler / registryが所有する。
 
 ### Tests
 
-- 検証レイヤは `docs/contracts/testing-taxonomy.md` の一般分類に従う。
+- 検証レイヤは`docs/contracts/testing-taxonomy.md`の一般分類に従う。
 
 ## 7. Acceptance Criteria
 
-- `navigate()` の戻り値と `after:navigate` が同じ outcome を観測できる。
-- durable commit 前後の failure semantics が区別されている。
-- state-only navigation が document fetch と content hydration trigger を起こさない。
-- note page navigation URL と fetch target URL が混同されていない。
-- router core が focus / scroll / announcement / UI state を所有していない。
+- `navigate()`の戻り値と`after:navigate`が同じoutcomeを観測できる。
+- durable commit前後のfailure semanticsが区別されている。
+- state-only navigationがdocument fetchとcontent hydration triggerを起こさない。
+- note page navigation URLとfetch target URLが混同されていない。
+- router coreがfocus / scroll / announcement / UI stateを所有していない。

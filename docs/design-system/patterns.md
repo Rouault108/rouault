@@ -1,82 +1,82 @@
 # Rouault Patterns
 
-この文書は Design System の横断 UI pattern を定義する正本である。
-URL、routing、search、note identity、Permanent URL の意味論は機能 Contract を正本とし、本書は UI pattern としての扱いだけを説明する。
-Reading chrome の機能契約は `docs/contracts/reading-chrome.md` を正本とし、詳細 pattern は `docs/design-system/pattern-reading-chrome.md` と `docs/design-system/pattern-reading-block-intrusion.md` に分離する。
+この文書はDesign Systemの横断UI patternを定義する正本である。
+URL、routing、search、note identity、Permanent URLの意味論は機能Contractを正本とし、本書はUI patternとしての扱いだけを説明する。
+Reading chromeの機能契約は`docs/contracts/reading-chrome.md`を正本とし、詳細patternは`docs/design-system/pattern-reading-chrome.md`と`docs/design-system/pattern-reading-block-intrusion.md`に分離する。
 
 ## 1. Status
 
 - Type: Normative for Design System patterns
 - Source of truth: Design System components、layout patterns、browser/e2e tests
 - Applies to: link classification、selected/current/active/focused、overlay、URL-aware UI controls、Permanent URL UI
-- Non-goals: router/search/note/permanent URL の機能契約再定義、component 固有の全属性定義
+- Non-goals: router/search/note/permanent URLの機能契約再定義、component固有の全属性定義
 
 ## 2. Link Classification
 
-- Text Link は本文・説明文中の遷移を表す。
-- Control Link は button-like な操作導線として扱う。
-- Block Link は card や result item 全体の遷移導線として扱う。
-- Sidebar 専用 link は `docs/contracts/sidebar-state.md` と component 文書の境界に従う。
-- Router の URL 正規化は `docs/contracts/router.md` を正本とし、本書では再定義しない。
+- Text Linkは本文・説明文中の遷移を表す。
+- Control Linkはbutton-likeな操作導線として扱う。
+- Block Linkはcardやresult item全体の遷移導線として扱う。
+- Sidebar専用linkは`docs/contracts/sidebar-state.md`とcomponent文書の境界に従う。
+- RouterのURL正規化は`docs/contracts/router.md`を正本とし、本書では再定義しない。
 
 ### Block Link Surface
 
-Block Link は、遷移先を持つ面全体を native `<a>` として表す pattern である。`result-card` では `article.result-card > a.result-link` を正規構造とし、カード全面のリンク面を `a.result-link` が所有する。
+Block Linkは、遷移先を持つ面全体をnative `<a>`として表すpatternである。`result-card`では`article.result-card > a.result-link`を正規構造とし、カード全面のリンク面を`a.result-link`が所有する。
 
-JS による card click delegation は使わない。Ctrl / Meta / Shift click、右クリック、コンテキストメニュー、focus は `<a>` のブラウザ標準動作に委ねる。card 外形の hover / focus 表示は CSS pattern の責務であり、リンクの意味論を上書きしない。
+JSによるcard click delegationは使わない。Ctrl / Meta / Shift click、右クリック、コンテキストメニュー、focusは`<a>`のブラウザ標準動作に委ねる。card外形のhover / focus表示はCSS patternの責務であり、リンクの意味論を上書きしない。
 
 #### result-card focus projection
 
-result-card は、一覧・検索結果で使う block link surface であり、`article.result-card > a.result-link` を正規構造とする。
+result-cardは、一覧・検索結果で使うblock link surfaceであり、`article.result-card > a.result-link`を正規構造とする。
 
-この契約は result-card に限定する。`card-link.css` / `link-card.css` / Markdown link-card の現行 focus contract を変更済みとみなしてはならない。
+この契約はresult-cardに限定する。`card-link.css` / `link-card.css` / Markdown link-cardの現行focus contractを変更済みとみなしてはならない。
 
-result-card の focus 表示では、ポインター click 由来の `:focus-within` と、キーボード由来の `:focus-visible` を混同しない。
+result-cardのfocus表示では、ポインター click由来の`:focus-within`と、キーボード由来の`:focus-visible`を混同しない。
 
-カード外形へ focus ring を投影する場合は、`.result-link:focus-visible` を source of truth とする。
+カード外形へfocus ringを投影する場合は、`.result-link:focus-visible`をsource of truthとする。
 
-`:has()` 対応環境では、`.result-card:has(> .result-link:focus-visible)` に外周 focus ring を投影する。
+`:has()`対応環境では、`.result-card:has(> .result-link:focus-visible)`に外周focus ringを投影する。
 
-`:has()` 非対応環境では、`.result-link:focus-visible` の fallback outline を残し、キーボード focus visible を不可視にしない。
+`:has()`非対応環境では、`.result-link:focus-visible`のfallback outlineを残し、キーボードfocus visibleを不可視にしない。
 
 ## 3. Selected / Current / Active / Focused
 
-- `selected` は widget 内の選択状態を表す。
-- `current` は現在位置または現在 route との対応を表す。
-- `active` は押下中または一時的な操作状態を表す。
-- `focused` は focus を受けている状態を表す。
+- `selected`はwidget内の選択状態を表す。
+- `current`は現在位置または現在routeとの対応を表す。
+- `active`は押下中または一時的な操作状態を表す。
+- `focused`はfocusを受けている状態を表す。
 - これらを視覚都合で混同してはならない。
 
 ## 4. Overlay Pattern
 
-- Overlay は閉じ方、focus return、background interaction、escape behavior を先に定義する。
-- Dialog、search dialog、popover、sidebar overlay は同じ z-index 語彙を共有するが、component 固有動作は component 文書へ置く。
-- Accessibility 要求事項は `docs/design-system/accessibility.md` を正本とする。
+- Overlayは閉じ方、focus return、background interaction、escape behaviorを先に定義する。
+- Dialog、search dialog、popover、sidebar overlayは同じz-index語彙を共有するが、component固有動作はcomponent文書へ置く。
+- Accessibility要求事項は`docs/design-system/accessibility.md`を正本とする。
 
 ## 5. URL-aware UI
 
-- URL 同期は source of truth を 1 つにする。
-- Tabs などの UI state を URL に出す場合、共有可能で再構成可能な状態だけに限る。
-- Search page の URL state は `docs/contracts/search.md` を正本とする。
-- Note page navigation URL、permalink、directory-index、breadcrumb は `docs/contracts/note-navigation.md` を正本とする。
-- Router document boundary は `docs/contracts/router-document.md` を正本とする。
+- URL同期はsource of truthを1つにする。
+- TabsなどのUI stateをURLに出す場合、共有可能で再構成可能な状態だけに限る。
+- Search pageのURL stateは`docs/contracts/search.md`を正本とする。
+- Note page navigation URL、permalink、directory-index、breadcrumbは`docs/contracts/note-navigation.md`を正本とする。
+- Router document boundaryは`docs/contracts/router-document.md`を正本とする。
 
 ## 6. Permanent URL UI
 
-- Permanent URL の意味論、`/archives/{hash}`、hash 生成規則、版保証は `docs/contracts/permanent-url.md` を正本とする。
-- 本書は Permanent URL を UI 上で提示、コピー、最新版案内する pattern だけを扱う。
-- Copy UI は成功・失敗状態を支援技術へ通知できるようにする。
-- `/archives/{hash}` を通常 note page navigation URL として見せてはならない。
+- Permanent URLの意味論、`/archives/{hash}`、hash生成規則、版保証は`docs/contracts/permanent-url.md`を正本とする。
+- 本書はPermanent URLをUI上で提示、コピー、最新版案内するpatternだけを扱う。
+- Copy UIは成功・失敗状態を支援技術へ通知できるようにする。
+- `/archives/{hash}`を通常note page navigation URLとして見せてはならない。
 
 ## 7. Acceptance Criteria
 
-- Patterns が component 固有契約を過剰に再定義していない。
-- Accessibility 要求事項を上書きしていない。
-- Router / search / note-navigation / permanent-url の契約を上書きしていない。
+- Patternsがcomponent固有契約を過剰に再定義していない。
+- Accessibility要求事項を上書きしていない。
+- Router / search / note-navigation / permanent-urlの契約を上書きしていない。
 
 ## 8. Reading Chrome Reservation
 
-- Reading chrome の TOC trigger は、本文より強い視覚要素にしない。
-- 予約状態と interactive 状態は分離し、未確定の TOC owner を操作可能 UI として見せない。
-- Hydration marker は build-time / runtime の接続点を示す属性であり、見た目の variant として扱わない。
-- Reading chrome の配置・密度・侵入度は専用 pattern 文書を参照し、本書では機能 Contract を再定義しない。
+- Reading chromeのTOC triggerは、本文より強い視覚要素にしない。
+- 予約状態とinteractive状態は分離し、未確定のTOC ownerを操作可能UIとして見せない。
+- Hydration markerはbuild-time / runtimeの接続点を示す属性であり、見た目のvariantとして扱わない。
+- Reading chromeの配置・密度・侵入度は専用pattern文書を参照し、本書では機能Contractを再定義しない。

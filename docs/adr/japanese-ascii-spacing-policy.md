@@ -11,7 +11,7 @@
 ## Evidence
 
 - 現行README、About、Guideなどに「Rouaultは」「Markdownを」「UIはLitとTypeScriptで実装」のようなスペースなし表記が多い。
-- 一方で、現行docsには「Markdown 入力記法」「CommonMark を」「生 HTML」「Design System 契約」などの表記揺れがある。
+- 一方で、現行docsには「Markdown入力記法」「CommonMarkを」「生HTML」「Design System契約」などの表記揺れがある。
 - JTF系の日本語スタイルでは、半角文字と全角文字の間に半角スペースを入れない方針が成立する。
 - MDN日本語翻訳ガイドなど、半角スペースを入れるスタイルも存在するため、これは絶対的な正誤ではなくRouault内スタイル選択である。
 - 本変更では本文データの表記方針だけを扱い、CSSによる和欧間アキ調整は扱わない。

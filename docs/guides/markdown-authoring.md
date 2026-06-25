@@ -6,7 +6,7 @@
 
 - CommonMarkを優先する。
 - 生HTMLは書かない。
-- 独自directiveは許可された名前と属性だけを使う。
+- 独自ディレクティブは許可された名前と属性だけを使う。
 - 表示都合のために本文資産へ一時的な回避策を書かない。
 
 ## 使える主なブロック
@@ -41,7 +41,7 @@
 - emoji
 - superscript / subscript
 - shortcode
-- table cell break escape
+- 表セル改行エスケープ
 
 ## Fenced code block meta
 
@@ -57,11 +57,11 @@ meta keyの網羅表は`docs/references/markdown-authoring-syntax.md`を参照�
 
 ## 表
 
-通常のGFM tableを使う。Markdown由来の表はstatic table surfaceであり、interactive table、sortable table、filterable table、row actionではない。
+通常のGFM表を使う。Markdown由来の表はstatic table surfaceであり、interactive table、sortable table、filterable table、row actionではない。
 
-列幅ヒントが必要な場合は、GFM tableを1個だけ`::table{column-widths="..."}`で包む。
+列幅ヒントが必要な場合は、GFM表を1個だけ`::table{column-widths="..."}`で包む。
 
-`::table`の開始marker、GFM table、終端`::`の間へworkaroundとして空行を追加する必要はない。表以外の段落や複数の表をwrapper内へ混ぜるとbuild errorになる。
+`::table`の開始marker、GFM表、終端`::`の間へworkaroundとして空行を追加する必要はない。表以外の段落や複数の表をwrapper内へ混ぜるとbuild errorになる。
 
 ```md
 ::table{column-widths="fit wide numeric"}
@@ -72,9 +72,9 @@ meta keyの網羅表は`docs/references/markdown-authoring-syntax.md`を参照�
 ::
 ```
 
-`column-widths`で使えるtokenは`auto` / `fit` / `narrow` / `medium` / `wide` / `numeric`だけである。tokenは空白区切りで書き、列数と同じ数を指定する。任意CSS値、comma区切り、空値は使わない。`numeric`は幅ヒントであり、右揃えはGFM tableの`---:`で指定する。
+`column-widths`で使えるtokenは`auto` / `fit` / `narrow` / `medium` / `wide` / `numeric`だけである。tokenは空白区切りで書き、列数と同じ数を指定する。任意CSS値、comma区切り、空値は使わない。`numeric`は幅ヒントであり、右揃えはGFM表の`---:`で指定する。
 
-table cell内の意味上の行区切りは`{{break}}`を使う。plain GFM tableでも`::table`内tableでも有効である。
+表セル内の意味上の行区切りは`{{break}}`を使う。plain GFM表でも`::table`内tableでも有効である。
 
 ```md
 | 項目 | 説明 |
@@ -82,9 +82,9 @@ table cell内の意味上の行区切りは`{{break}}`を使う。plain GFM tabl
 | A | 1行目{{break}}2行目 |
 ```
 
-`{{break}}`はexact tokenだけが特殊扱いされる。`{{foo}}` / `{{ break }}` / `{{BREAK}}` / `{{br}}`は通常テキストであり、table cell breakではない。
+`{{break}}`はexact tokenだけが特殊扱いされる。`{{foo}}` / `{{ break }}` / `{{BREAK}}` / `{{br}}`は通常テキストであり、表セル改行ではない。
 
-`{{break}}`はtable cellの実質先頭・実質末尾には置けない。前後に意味のあるinline contentが必要である。`{{break}}`の同一text node内の直前・直後へ空白を置かず、連続して書かない。
+`{{break}}`は表セルの実質先頭・実質末尾には置けない。前後に意味のあるinline contentが必要である。`{{break}}`の同一text node内の直前・直後へ空白を置かず、連続して書かない。
 
 ```md
 | A | 1行目{{break}}**2行目** |
@@ -93,7 +93,7 @@ table cell内の意味上の行区切りは`{{break}}`を使う。plain GFM tabl
 | A | [リンク](https://example.com){{break}}説明 |
 ```
 
-raw `<br>`、Markdown hard break、`:br[]`はtable cell breakとして使わない。
+raw `<br>`、Markdown hard break、`:br[]`は表セル改行として使わない。
 
 ## 注意
 

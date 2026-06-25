@@ -3,59 +3,59 @@
 ## 1. Status
 
 - Type: Normative
-- Source of truth: `src/client/` の scheduler / registry、hydration tests
-- Applies to: shell hydration、content hydration、SPA 遷移後の hydration planning
-- Non-goals: router commit、component 固有 DOM 契約、Markdown 出力詳細
+- Source of truth: `src/client/`のscheduler / registry、hydration tests
+- Applies to: shell hydration、content hydration、SPA遷移後のhydration planning
+- Non-goals: router commit、component固有DOM契約、Markdown出力詳細
 
 ## 2. Ownership
 
 ### This Layer Owns
 
-- Hydration trigger の正本。
-- Hydration scheduler / registry の登録、起動、重複抑止。
-- Shell hydration と content hydration の入口。
-- SPA 遷移後の content hydration trigger。
-- Reading chrome の hydration session は scheduler / registry の target として扱う。
+- Hydration triggerの正本。
+- Hydration scheduler / registryの登録、起動、重複抑止。
+- Shell hydrationとcontent hydrationの入口。
+- SPA遷移後のcontent hydration trigger。
+- Reading chromeのhydration sessionはscheduler / registryのtargetとして扱う。
 
 ### This Layer Must Not Own
 
 - Router durable commit。
-- Markdown output contract。
-- Component が connected 時に hydration timing を自己決定する仕組み。
+- Markdown出力契約。
+- Componentがconnected時にhydration timingを自己決定する仕組み。
 
 ## 3. Public Contract
 
 ### Inputs
 
-- SSR HTML に付与された build-time hydration annotation。
-- `NavigationEnvelope.hydrationPlan` による planning 情報。
-- Scheduler / registry に登録された component hydration target。
-- SSR が出力した reading chrome hydration marker。
+- SSR HTMLに付与されたbuild-time hydration annotation。
+- `NavigationEnvelope.hydrationPlan`によるplanning情報。
+- Scheduler / registryに登録されたcomponent hydration target。
+- SSRが出力したreading chrome hydration marker。
 
 ### Outputs
 
-- shell hydration の実行。
-- content hydration の実行。
-- 重複 hydration の抑止。
+- shell hydrationの実行。
+- content hydrationの実行。
+- 重複hydrationの抑止。
 
 ### Events
 
-- `app-router:content-dom-replaced` は hydration の参考 event になりうるが、trigger 正本ではない。
+- `app-router:content-dom-replaced`はhydrationの参考eventになりうるが、trigger正本ではない。
 
 ### DOM / URL / State Contract
 
-- `src/client.ts` は bootstrap と scheduler 呼び出しだけを持つ。
-- component は hydration timing を自己決定してはならない。
-- state-only navigation は content hydration trigger にしてはならない。
-- Hydration directive は build-time 注釈を正本とする。
-- Reading chrome の owner / source / trigger marker は hydration 接続点であり、component が connected 時に独自 trigger 判定をしてはならない。
+- `src/client.ts`はbootstrapとscheduler呼び出しだけを持つ。
+- componentはhydration timingを自己決定してはならない。
+- state-only navigationはcontent hydration triggerにしてはならない。
+- Hydration directiveはbuild-time注釈を正本とする。
+- Reading chromeのowner / source / trigger markerはhydration接続点であり、componentがconnected時に独自trigger判定をしてはならない。
 
 ## 4. State Model
 
 ### Durable State
 
 - Build-time hydration annotation。
-- Registry に登録された hydration target。
+- Registryに登録されたhydration target。
 
 ### Ephemeral State
 
@@ -69,29 +69,29 @@
 
 ### Forbidden Coupling
 
-- Router event を hydration trigger 正本にしてはならない。
-- Component-local lifecycle に hydration timing を戻してはならない。
-- Reading chrome の mobile panel open state や current DOM 同期を hydration trigger 正本にしてはならない。
+- Router eventをhydration trigger正本にしてはならない。
+- Component-local lifecycleにhydration timingを戻してはならない。
+- Reading chromeのmobile panel open stateやcurrent DOM同期をhydration trigger正本にしてはならない。
 
 ## 5. Failure Semantics
 
-- Hydration target が欠落した場合、no-JS baseline を壊さずに縮退する。
-- 個別 component hydration の失敗は可能な限り他 target の hydration を止めない。
+- Hydration targetが欠落した場合、no-JS baselineを壊さずに縮退する。
+- 個別component hydrationの失敗は可能な限り他targetのhydrationを止めない。
 
 ## 6. Integration Boundaries
 
 ### Build-time
 
-- Hydration directive と対象 metadata を付与する。
+- Hydration directiveと対象metadataを付与する。
 
 ### SSR
 
-- Hydration なしでも読める HTML を出力する。
+- Hydrationなしでも読めるHTMLを出力する。
 
 ### Client Runtime
 
-- Scheduler / registry が trigger と実行を所有する。
-- `layout-toc-controller` などの reading chrome component は登録された target として起動し、起動条件を自分で所有しない。
+- Scheduler / registryがtriggerと実行を所有する。
+- `layout-toc-controller`などのreading chrome componentは登録されたtargetとして起動し、起動条件を自分で所有しない。
 
 ### Hydration
 
@@ -99,11 +99,11 @@
 
 ### Tests
 
-- Observable behavior の検証場所は `docs/contracts/testing-taxonomy.md` に従う。
+- Observable behaviorの検証場所は`docs/contracts/testing-taxonomy.md`に従う。
 
 ## 7. Acceptance Criteria
 
-- Hydration trigger の正本が scheduler / registry にある。
-- `src/client.ts` が bootstrap 以上の ownership を持たない。
-- state-only navigation が content hydration を発火しない。
-- component が connected 時に独自 trigger 判定をしない。
+- Hydration triggerの正本がscheduler / registryにある。
+- `src/client.ts`がbootstrap以上のownershipを持たない。
+- state-only navigationがcontent hydrationを発火しない。
+- componentがconnected時に独自trigger判定をしない。

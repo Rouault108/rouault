@@ -2,48 +2,48 @@
 
 ## 位置づけ
 
-Static skeleton は、旧 `ui-skeleton` custom element を復活させずに、静的 HTML 主体のローディング表現を維持するための縮退契約である。
+Static skeletonは、旧`ui-skeleton` custom elementを復活させずに、静的HTML主体のローディング表現を維持するための縮退契約である。
 
 この契約は次の二つを分けて扱う。
 
 - global `.skeleton` utility
 - `ui-file-tree` internal skeleton markup
 
-旧 `ui-skeleton` の `variant`、`width`、`height`、`animated` API は現行 contract ではない。`@customElement('ui-skeleton')`、`customElements.define('ui-skeleton', ...)`、`<ui-skeleton>` の復活は禁止する。
+旧`ui-skeleton`の`variant`、`width`、`height`、`animated` APIは現行contractではない。`@customElement('ui-skeleton')`、`customElements.define('ui-skeleton', ...)`、`<ui-skeleton>`の復活は禁止する。
 
 ## Global `.skeleton` Utility
 
-global `.skeleton` は `src/assets/css/utility-surfaces.css` にある visual-only CSS utility である。任意の静的 HTML へ loading shimmer の見た目を与えるための CSS hook であり、意味や状態を所有しない。
+global `.skeleton`は`src/assets/css/utility-surfaces.css`にあるvisual-only CSS utilityである。任意の静的HTMLへloading shimmerの見た目を与えるためのCSS hookであり、意味や状態を所有しない。
 
-`.skeleton` utility は次を持つ。
+`.skeleton` utilityは次を持つ。
 
-- `.skeleton` の背景、角丸、overflow、position の視覚 contract
-- `.skeleton::after` の shimmer layer
-- `prefers-reduced-motion: reduce` で `.skeleton::after` の animation を停止する contract
+- `.skeleton`の背景、角丸、overflow、positionの視覚contract
+- `.skeleton::after`のshimmer layer
+- `prefers-reduced-motion: reduce`で`.skeleton::after`のanimationを停止するcontract
 
-`.skeleton` utility は次を持つ契約ではない。
+`.skeleton` utilityは次を持つ契約ではない。
 
 - `role`
 - `aria-live`
 - `aria-busy`
 - `aria-hidden`
 
-したがって、global `.skeleton` を付けた DOM が支援技術から隠されるか、処理中状態として通知されるかは、utility CSS ではなく skeleton DOM を出す側の契約で決める。
+したがって、global `.skeleton`を付けたDOMが支援技術から隠されるか、処理中状態として通知されるかは、utility CSSではなくskeleton DOMを出す側の契約で決める。
 
 ## `ui-file-tree` Internal Skeleton
 
-`ui-file-tree` は retained Lit component であり、`loadingStrategy="replace"` かつ `loading=true` の場合に、内部 shadow DOM の tree item 群を skeleton markup へ置き換える。
+`ui-file-tree`はretained Lit componentであり、`loadingStrategy="replace"`かつ`loading=true`の場合に、内部shadow DOMのtree item群をskeleton markupへ置き換える。
 
-この internal skeleton markup は次を維持する。
+このinternal skeleton markupは次を維持する。
 
-- host は `aria-busy="true"` を持つ。
-- skeleton wrapper は `.skeleton[aria-hidden="true"]` を持つ。
-- skeleton item は `.skeleton-item` として 5 件出力する。
-- `ui-tree-item` は出力しない。
+- hostは`aria-busy="true"`を持つ。
+- skeleton wrapperは`.skeleton[aria-hidden="true"]`を持つ。
+- skeleton itemは`.skeleton-item`として5件出力する。
+- `ui-tree-item`は出力しない。
 
-`loadingStrategy="retain"` かつ `loading=true` の場合、host は `aria-busy="true"` を持つが、既存 tree item を維持し、internal `.skeleton` は出力しない。
+`loadingStrategy="retain"`かつ`loading=true`の場合、hostは`aria-busy="true"`を持つが、既存tree itemを維持し、internal `.skeleton`は出力しない。
 
-`aria-hidden="true"` は global `.skeleton` utility の契約ではなく、実際に skeleton DOM を出す側の契約である。現行では `ui-file-tree` internal skeleton がその所有者である。
+`aria-hidden="true"`はglobal `.skeleton` utilityの契約ではなく、実際にskeleton DOMを出す側の契約である。現行では`ui-file-tree` internal skeletonがその所有者である。
 
 ## 追加しないもの
 
@@ -51,7 +51,7 @@ global `.skeleton` は `src/assets/css/utility-surfaces.css` にある visual-on
 
 - `src/layouts/skeleton-html.ts`
 - `src/assets/css/skeleton.css`
-- 旧 `ui-skeleton` custom element
-- 旧 custom element API を受ける互換層
+- 旧`ui-skeleton` custom element
+- 旧custom element APIを受ける互換層
 
-現行 contract を満たす `src/assets/css/utility-surfaces.css` と `src/components/ui/file-tree/file-tree.ts` は、整理名目では変更しない。
+現行contractを満たす`src/assets/css/utility-surfaces.css`と`src/components/ui/file-tree/file-tree.ts`は、整理名目では変更しない。

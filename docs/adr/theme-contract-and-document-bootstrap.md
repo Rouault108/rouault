@@ -79,23 +79,23 @@ Deleting or changing any of the following requires a future breaking-change revi
 
 ## Acceptance
 
-- A-THEME-001: `docs/contracts/theme.md` が追加され、theme preference、storage、root attribute、resolved theme、SSR bootstrap、system theme、CSS token ownership、header projection が契約として読めること。
-- A-THEME-002: `docs/contracts/static-header-contract.md` が、theme switcher UI semantics と theme contract 本体の責務境界を明示していること。
-- A-THEME-003: `docs/README.md` の正本 Contract 一覧に `docs/contracts/theme.md` が登録されていること。
-- A-THEME-004: `docs/adr/theme-contract-and-document-bootstrap.md` が採用仕様、棄却案、反対仮説、Delete / Breaking Change Gate の non-breaking passage、rollback 方針を記録していること。
-- A-THEME-005: `docs/README.md` の ADR 一覧に `docs/adr/theme-contract-and-document-bootstrap.md` が登録されていること。
-- A-THEME-006: ADR は `docs/contracts/theme.md` を上書きせず、根拠を現行実装・既存テスト・既存 docs から確認できる範囲に限定していること。
-- A-THEME-007: `theme-manager.ts` が theme preference 値集合、resolved theme 値集合、`ThemePreference` 型、`ResolvedTheme` 型、既定 preference、dark mode media query を shared source of truth として定義していること。
-- A-THEME-007a: `ResolvedTheme` は `Exclude<ThemePreference, 'system'>` ではなく、`RESOLVED_THEME_VALUES = ['light', 'dark']` から導出されていること。
-- A-THEME-008: `theme-manager.ts` の既存関数が shared constants と矛盾していないこと。
-- A-THEME-009: `BaseLayout.11ty.ts` が theme bootstrap script body を直接所有せず、`src/theme/theme-document-bootstrap.ts` の `buildThemeDocumentBootstrapScript()` を使っていること。
-- A-THEME-010: `theme-document-bootstrap.ts` が `theme-manager.ts` の constants を参照し、runtime 関数を inline script から直接呼ぶ設計にしていないこと。
-- A-THEME-011: `theme-document-bootstrap.ts` が constants を `JSON.stringify()` で script 文字列へ埋め込み、HTML escape 済み文字列を返していないこと。
-- A-THEME-012: SSR 出力で document theme bootstrap が stylesheet より前、かつ client module script より前に出力されること。
-- A-THEME-013: SSR contract test が `<script>` block を列挙し、theme document bootstrap script を `THEME_STORAGE_KEY` literal を含む script として特定し、theme chrome bootstrap と混同していないこと。
-- A-THEME-014: document bootstrap の semantic parity test が、iframe で document root と `matchMedia` stub を分離しつつ、共有 localStorage key の元値を保存・復元していること。
-- A-THEME-015: document bootstrap は storage を読み取るだけで、保存・event 発火を行わないこと。
-- A-THEME-016: 既存の runtime 挙動、DOM 属性名、storage key、theme switcher 表示、CSS token ownership が変わらないこと。
+- A-THEME-001: `docs/contracts/theme.md`が追加され、theme preference、storage、root attribute、resolved theme、SSR bootstrap、system theme、CSS token ownership、header projectionが契約として読めること。
+- A-THEME-002: `docs/contracts/static-header-contract.md`が、theme switcher UI semanticsとtheme contract本体の責務境界を明示していること。
+- A-THEME-003: `docs/README.md`の正本Contract一覧に`docs/contracts/theme.md`が登録されていること。
+- A-THEME-004: `docs/adr/theme-contract-and-document-bootstrap.md`が採用仕様、棄却案、反対仮説、Delete / Breaking Change Gateのnon-breaking passage、rollback方針を記録していること。
+- A-THEME-005: `docs/README.md`のADR一覧に`docs/adr/theme-contract-and-document-bootstrap.md`が登録されていること。
+- A-THEME-006: ADRは`docs/contracts/theme.md`を上書きせず、根拠を現行実装・既存テスト・既存docsから確認できる範囲に限定していること。
+- A-THEME-007: `theme-manager.ts`がtheme preference値集合、resolved theme値集合、`ThemePreference`型、`ResolvedTheme`型、既定preference、dark mode media queryをshared source of truthとして定義していること。
+- A-THEME-007a: `ResolvedTheme`は`Exclude<ThemePreference, 'system'>`ではなく、`RESOLVED_THEME_VALUES = ['light', 'dark']`から導出されていること。
+- A-THEME-008: `theme-manager.ts`の既存関数がshared constantsと矛盾していないこと。
+- A-THEME-009: `BaseLayout.11ty.ts`がtheme bootstrap script bodyを直接所有せず、`src/theme/theme-document-bootstrap.ts`の`buildThemeDocumentBootstrapScript()`を使っていること。
+- A-THEME-010: `theme-document-bootstrap.ts`が`theme-manager.ts`のconstantsを参照し、runtime関数をinline scriptから直接呼ぶ設計にしていないこと。
+- A-THEME-011: `theme-document-bootstrap.ts`がconstantsを`JSON.stringify()`でscript文字列へ埋め込み、HTML escape済み文字列を返していないこと。
+- A-THEME-012: SSR出力でdocument theme bootstrapがstylesheetより前、かつclient module scriptより前に出力されること。
+- A-THEME-013: SSR contract testが`<script>` blockを列挙し、theme document bootstrap scriptを`THEME_STORAGE_KEY` literalを含むscriptとして特定し、theme chrome bootstrapと混同していないこと。
+- A-THEME-014: document bootstrapのsemantic parity testが、iframeでdocument rootと`matchMedia` stubを分離しつつ、共有localStorage keyの元値を保存・復元していること。
+- A-THEME-015: document bootstrapはstorageを読み取るだけで、保存・event発火を行わないこと。
+- A-THEME-016: 既存のランタイム挙動、DOM属性名、storage key、theme switcher表示、CSS token ownershipが変わらないこと。
 
 ## Verification
 
@@ -107,17 +107,17 @@ Deleting or changing any of the following requires a future breaking-change revi
 
 ## Out of Scope
 
-- 新 theme option 追加。
-- Theme UI デザイン変更。
-- CSS token 値変更。
-- Cookie / server persistence への移行。
-- `data-theme` / `data-resolved-theme` の名前変更。
-- Theme switcher の ARIA pattern 変更。
-- e2e 大規模追加。
-- OS theme 変更時の UX 変更。
+- 新theme option追加。
+- Theme UIデザイン変更。
+- CSS token値変更。
+- Cookie / server persistenceへの移行。
+- `data-theme` / `data-resolved-theme`の名前変更。
+- Theme switcherのARIA pattern変更。
+- e2e大規模追加。
+- OS theme変更時のUX変更。
 - user preference import/export 対応。
-- theme-chrome-bootstrap の再設計。
-- `initTheme()` runtime 挙動変更。
+- theme-chrome-bootstrapの再設計。
+- `initTheme()`ランタイム挙動変更。
 
 ## Rollback
 
