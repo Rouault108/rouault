@@ -1,6 +1,6 @@
 ---
 title: 'Media'
-description: '画像、caption、link-card など media 系の出力を確認します。'
+description: '画像、caption、link-cardなどmedia系の出力を確認します。'
 date: 2026-03-29
 updated: 2026-03-29
 kind: 'testing'

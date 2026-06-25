@@ -1,6 +1,6 @@
 ---
 title: 'Reader Basic'
-description: 'reader shell の最小 hydration 契約を確認します。'
+description: 'reader shellの最小hydration契約を確認します。'
 date: 2026-03-31
 updated: 2026-03-31
 kind: 'testing'
@@ -12,11 +12,11 @@ status: 'wip'
 
 ## 概要
 
-このノートは reader shell 専用 canary です。
+このノートはreader shell専用canaryです。
 
 - sidebar
 - TOC
 
 のみを監視対象とします。
 
-本文には code、tags、translation、sandbox、tabs を含めません。
+本文にはcode、tags、translation、sandbox、tabsを含めません。
