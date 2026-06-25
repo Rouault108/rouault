@@ -53,6 +53,7 @@ Design System pattern は UI の見え方と配置判断を扱う。Router、sea
 - `docs/guides/note-authoring.md`
 - `docs/guides/content-config.md`
 - `docs/guides/corpus.md`
+- `docs/guides/japanese-writing-style.md`
 - `docs/guides/operations/`
 
 ## Architecture
@@ -73,6 +74,7 @@ Design System pattern は UI の見え方と配置判断を扱う。Router、sea
 - `docs/adr/header-corpus-current-indicator.md`
 - `docs/adr/theme-contract-and-document-bootstrap.md`
 - `docs/adr/search-page-static-choice-menu.md`
+- `docs/adr/japanese-ascii-spacing-policy.md`
 - `docs/adr/`
 
 ADR は設計判断の経緯であり、正本 Contract を上書きしない。各ADRの現行正本は、対応する `docs/contracts/` 配下のContractを参照する。
