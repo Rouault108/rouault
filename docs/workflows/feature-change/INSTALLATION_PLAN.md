@@ -17,11 +17,11 @@ docs/workflows/feature-change/
     05-chatgpt-completion-review.md
 ```
 
-zipトップレベルの `README.md` は配布物説明です。Rouaultリポジトリへ導入する場合は、必要に応じて内容を既存READMEへ統合してください。
+zipトップレベルの`README.md`は配布物説明です。Rouaultリポジトリへ導入する場合は、必要に応じて内容を既存READMEへ統合してください。
 
 ## 2. 既存problem-solvingとの関係
 
-`docs/workflows/problem-solving/` は削除・移動・改名しないでください。
+`docs/workflows/problem-solving/`は削除・移動・改名しないでください。
 
 本ワークフローは、問題解決ワークフローの置換ではなく、機能変更用の並列ワークフローです。
 

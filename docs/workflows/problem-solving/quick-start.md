@@ -1,6 +1,6 @@
 # Quick Start: Rouault 問題解決の薄い運用フロー
 
-このファイルは日常運用の入口です。詳細版は `full-workflow/`、R4/A2の機械検証は `r4-validation/` を参照します。
+このファイルは日常運用の入口です。詳細版は`full-workflow/`、R4/A2の機械検証は`r4-validation/`を参照します。
 
 ## 0. 目的
 
@@ -55,7 +55,7 @@ ChatGPTによる差分精査
 | R2-lite | 原因と変更境界が明確な日常的中規模修正               | F1/C1/CH1/S1/V1中心で進める               |
 | R2-full | 原因調査、影響範囲、契約確認が必要                   | Issue Brief / Cause / Fix Planを分離      |
 | R3      | 仕様判断、契約変更、安全性、アクセシビリティ意味変更 | Decision Recordと反対仮説レビューを必須化 |
-| R4      | 一括レビュー不能、複数Phaseが必要                    | `r4-validation/` を例外的に使う           |
+| R4      | 一括レビュー不能、複数Phaseが必要                    | `r4-validation/`を例外的に使う           |
 
 迷ったら高めに置き、Evidenceで下げます。根拠なく軽く扱わないでください。
 
@@ -143,7 +143,7 @@ Codexに渡してはいけない状態です。
 - Rouault契約を壊していないか
 ```
 
-Rouault固有契約は `full-workflow/04_rouault_policy_overlay.md` を参照します。
+Rouault固有契約は`full-workflow/04_rouault_policy_overlay.md`を参照します。
 
 ## 8. 完了判定
 
@@ -161,7 +161,7 @@ Rouault固有契約は `full-workflow/04_rouault_policy_overlay.md` を参照し
 
 ## 9. R4/A2を使う条件
 
-通常はR4/A2を使いません。次の場合だけ `r4-validation/` を使います。
+通常はR4/A2を使いません。次の場合だけ`r4-validation/`を使います。
 
 ```text
 - 一括レビュー不能
@@ -171,7 +171,7 @@ Rouault固有契約は `full-workflow/04_rouault_policy_overlay.md` を参照し
 - 後日、Phaseごとの状態遷移と成果物完全性を機械検証したい
 ```
 
-R4/A2に該当しない場合は、`quick-start.md` と `prompts/` だけで進めます。
+R4/A2に該当しない場合は、`quick-start.md`と`prompts/`だけで進めます。
 
 ## 10. 終了基準
 

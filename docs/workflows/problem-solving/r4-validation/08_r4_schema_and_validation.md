@@ -1,6 +1,6 @@
 # 08. R4 Schema and Validation
 
-このファイルは、R4 / A2の機械可読契約、正規化、Schema、検証CLI契約の正本です。Markdownテンプレートは人間が読むための正本ですが、R4-S / R4-I / R4-AおよびA2完了判定では本ファイル、`schemas/` の構造制約、validatorの意味制約に照合します。
+このファイルは、R4 / A2の機械可読契約、正規化、Schema、検証CLI契約の正本です。Markdownテンプレートは人間が読むための正本ですが、R4-S / R4-I / R4-AおよびA2完了判定では本ファイル、`schemas/`の構造制約、validatorの意味制約に照合します。
 
 ## 1. 位置づけ
 
@@ -78,7 +78,7 @@ validatorで検証するもの:
 
 Schemaだけでvalidator意味制約を満たしたと見なしてはいけません。Schemaがpassしても、validator意味制約がfailまたはmanual-review-requiredなら完了扱いにしません。
 
-`format: date-time` は注釈ではなく検証条件として扱います。validatorはJSON Schema Draft 2020-12のformat assertionを有効化し、RFC 3339として時刻文字列を検証します。format assertionを利用できない実装では、同等のRFC 3339検証をvalidator意味制約で必ず実施します。
+`format: date-time`は注釈ではなく検証条件として扱います。validatorはJSON Schema Draft 2020-12のformat assertionを有効化し、RFC 3339として時刻文字列を検証します。format assertionを利用できない実装では、同等のRFC 3339検証をvalidator意味制約で必ず実施します。
 
 ### 1.2.1 R4 Execution Ledgerの対応関係validator条件
 
@@ -291,7 +291,7 @@ Closure / A2系SchemaでもID、locator、actor、method等の空文字列はSch
 
 ## 7.1 v82最小validator実装
 
-このファイル群には、実運用前の破綻検出用として `tools/validate-workflow-artifacts.py` を同梱する。これは本番validatorの完全実装ではなく、次を確認する最小実装である。
+このファイル群には、実運用前の破綻検出用として`tools/validate-workflow-artifacts.py`を同梱する。これは本番validatorの完全実装ではなく、次を確認する最小実装である。
 
 ```text
 - `schemas/*.schema.json` によるJSON Schema Draft 2020-12検証
@@ -314,7 +314,7 @@ python tools/validate-workflow-artifacts.py --sample-manifest samples/manifest.j
 python tools/validate-workflow-artifacts.py --schema schemas/r4-execution-ledger.schema.json --file samples/valid/r4-s-execution-ledger.min.json
 ```
 
-`--sample-manifest` は、正常系サンプルがvalidになり、異常系サンプルがinvalidになることをまとめて確認する。Schemaを通過するがvalidator意味制約に違反するサンプルも含めるため、Schemaだけの合格を完了条件としては扱わない。
+`--sample-manifest`は、正常系サンプルがvalidになり、異常系サンプルがinvalidになることをまとめて確認する。Schemaを通過するがvalidator意味制約に違反するサンプルも含めるため、Schemaだけの合格を完了条件としては扱わない。
 
 validatorは、少なくとも次の組合せだけを許可する。
 
@@ -351,7 +351,7 @@ retirement: planned / ready / in-progress / blocked -> cancelled, passed / faile
 
 ## 7.2 v83 structural / completion mode
 
-`tools/validate-workflow-artifacts.py` は、R4 Execution Ledger検証に `--mode structural` と `--mode completion` を持つ。
+`tools/validate-workflow-artifacts.py`は、R4 Execution Ledger検証に`--mode structural`と`--mode completion`を持つ。
 
 ```text
 structural:
@@ -377,10 +377,10 @@ completion modeでは、Phaseごとの最終statusと`phase_necessity_evaluation
 - completion modeでは、置換先Phaseの最終statusがpassedまたはgrounded supersededであること
 ```
 
-`Issue incomplete`で閉じる場合、単なる語句ではなく `Issue incomplete: <ID>` 形式を使う。
+`Issue incomplete`で閉じる場合、単なる語句ではなく`Issue incomplete: <ID>`形式を使う。
 
 `phase_necessity_evaluation_log`はappend-only配列として扱う。正本順序はJSON配列順であり、同一Qualified Phase IDに複数評価がある場合、completion modeでは配列上の最後の評価を最新評価として採用する。同一Phaseの評価eventは、`plan_revision`と`timestamp`が逆行してはならない。逆行が検出された場合は、structural modeでも不正とする。
 
 `phase_execution_event_log`もQualified Phase IDごとのappend-only状態遷移列として扱う。同一Phaseのevent列では、`plan_revision`と`timestamp`が逆行してはならない。
 
-Ledger内の`phase_necessity_evaluation_log[*].plan_revision`、`phase_execution_event_log[*].plan_revision`、`phase_evidence_map[*].validated_plan_revision`、`artifact_validation_attestations[*].validated_against_plan_revision`、`artifact_validation_attestations[*].created_against_plan_revision`は、top-level `current_plan_revision` を超えてはならない。
+Ledger内の`phase_necessity_evaluation_log[*].plan_revision`、`phase_execution_event_log[*].plan_revision`、`phase_evidence_map[*].validated_plan_revision`、`artifact_validation_attestations[*].validated_against_plan_revision`、`artifact_validation_attestations[*].created_against_plan_revision`は、top-level `current_plan_revision`を超えてはならない。

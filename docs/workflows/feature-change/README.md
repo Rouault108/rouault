@@ -44,7 +44,7 @@ diff精査
 
 ## 日常運用
 
-通常は `quick-start.md` を入口にしてください。
+通常は`quick-start.md`を入口にしてください。
 
 ```text
 1. quick-start.md で入口判定する
@@ -71,7 +71,7 @@ Decision Record、Delete / Breaking Change Gate、A1/A2 Evidence保全要件が�
 
 ## 問題解決ワークフローとの関係
 
-機能変更の途中で、既存挙動の失敗、回帰、不具合、CIエラーが主要論点になった場合は、`problem-solving` に切り替えてください。
+機能変更の途中で、既存挙動の失敗、回帰、不具合、CIエラーが主要論点になった場合は、`problem-solving`に切り替えてください。
 
 逆に、問題解決中に「既存仕様自体を変える必要がある」と判断した場合は、原因特定を終えたうえで、本ワークフローのDecision段階へ移行してください。
 

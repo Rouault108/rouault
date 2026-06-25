@@ -4,7 +4,7 @@
 
 このファイル群は、Rouaultで問題が発覚した際に、原因誤認、対象漏れ、方針外変更、テスト回避、契約破壊、検証漏れを防ぎつつ、問題規模に応じて効率よく修正を完了するための標準手順です。
 
-軽微な問題では過剰な成果物を要求せず、中規模以上では `Failure / Cause / Change / Success / Verification` の対応関係を保ちます。Rouaultの基本方針である静的HTML主体、Lit enhancement、個人ノート保護、DOM / CSS / ARIA / state等の契約保全を前提にします。
+軽微な問題では過剰な成果物を要求せず、中規模以上では`Failure / Cause / Change / Success / Verification`の対応関係を保ちます。Rouaultの基本方針である静的HTML主体、Lit enhancement、個人ノート保護、DOM / CSS / ARIA / state等の契約保全を前提にします。
 
 ## 設計上の主要原則
 
@@ -42,7 +42,7 @@
 | 定義                                                                                                                                                                                                                                                                                                                                                                                                                                                | 正本ファイル                                                                   | 備考                                                                                                                                                |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | R0〜R4の入口判定、R別成果物、削除・移行・縮退のR判定                                                                                                                                                                                                                                                                                                                                                                                                | `01_entry_and_risk.md`                                                         | 他ファイルのR判定記述と衝突した場合はこのファイルを優先する                                                                                         |
-| 標準フロー、実装開始ゲート、再現性・Evidence作成方針                                                                                                                                                                                                                                                                                                                                                                                                | `02_core_workflow.md`                                                          | 実装後順序の詳細は `06_completion_commit.md` を正本とする                                                                                           |
+| 標準フロー、実装開始ゲート、再現性・Evidence作成方針                                                                                                                                                                                                                                                                                                                                                                                                | `02_core_workflow.md`                                                          | 実装後順序の詳細は`06_completion_commit.md`を正本とする                                                                                           |
 | 成果物テンプレート、R2-lite Run Card、Evidence、Intermittent Failure Evidence、Synthetic Fixture Record、A2 Evidence Integrity Attestation、Lightweight Resolution Manifest、Artifact Manifest、Manifest Anchor、R4 Execution Ledger、Implementation Phase Outcome Record、Verification-only / Integration verification Record、Final R4 Disposition Verification、R4 Completion Record、Closure Manifest、Closure Attestation、Verification Matrix | `03_templates.md`                                                              | 成果物の項目名はこのファイルを正本にする。R4 Completion RecordはR4-S / R4-Iの完了記録であり、R4-Aでは任意要約である                                 |
 | Rouault固有契約、標準Verification Set、performance候補                                                                                                                                                                                                                                                                                                                                                                                              | `04_rouault_policy_overlay.md`                                                 | DOM / CSS / ARIA / state / generated files / search / security等の契約観点の正本                                                                    |
 | ChatGPT / Codexへ渡すプロンプト                                                                                                                                                                                                                                                                                                                                                                                                                     | `05_chatgpt_codex_prompts.md`                                                  | プロンプト内容は上記正本に従属する                                                                                                                  |
@@ -91,7 +91,7 @@ python ../r4-validation/tools/validate-workflow-artifacts.py --schema ../r4-vali
 
 ## 推奨運用
 
-最初は必ず `01_entry_and_risk.md` を読み、R0〜R4の暫定段階を決めます。Evidence作成後、`02_core_workflow.md` でR段階を確定または昇格します。
+最初は必ず`01_entry_and_risk.md`を読み、R0〜R4の暫定段階を決めます。Evidence作成後、`02_core_workflow.md`でR段階を確定または昇格します。
 
 ```text
 01_entry_and_risk.md
@@ -171,7 +171,7 @@ Support ID
 
 ## R0での例外
 
-R0では、`Failure / Cause / Change / Success / Verification` を必須にしません。
+R0では、`Failure / Cause / Change / Success / Verification`を必須にしません。
 
 R0は、誤字、コメント、ドキュメントの軽微修正など、挙動・契約・テスト・生成物・lockfileに影響しない変更だけに限定します。
 

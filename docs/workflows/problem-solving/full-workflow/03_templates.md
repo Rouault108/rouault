@@ -168,7 +168,7 @@ Artifact Manifest規則:
 
 Manifest正規化と検証:
 
-- Manifest / Anchor / Ledger / Closure / Attestationの機械可読表現は `../r4-validation/08_r4_schema_and_validation.md` と `../r4-validation/schemas/` に従う
+- Manifest / Anchor / Ledger / Closure / Attestationの機械可読表現は`../r4-validation/08_r4_schema_and_validation.md`と`../r4-validation/schemas/`に従う
 - 公開Manifestのハッシュ対象は、UTF-8、BOMなし、LF、末尾改行ありで保存された正規化JSONのバイト列とする
 - JSONはRFC 8785相当の正規化JSONを基準とする。Markdown成果物は保存された生バイト列をSHA-256対象とし、CRLFやBOMが混入した場合は別digestになる
 - Git blob IDは補助識別子であり、SHA-1 / SHA-256リポジトリの差異を明記する。Artifact完全性の主キーはSHA-256とManifest Anchorとする
@@ -780,8 +780,8 @@ R2-liteでは、計画と結果を分けてもよいですが、日常運用で�
 
 R2-lite Run CardまたはR2-lite Briefは、Cause Summary相当を内包し、Minimum Evidence Packet相当は内包または単一Evidenceの別成果物参照で扱います。Cause Summary相当はRun Card / Brief内に内包します。Cause Summaryを別成果物として分離する必要がある場合は、R2-full以上へ昇格します。単一のEvidenceを見やすさのために別成果物化することは許可しますが、その場合はRun Card / BriefのEvidence欄にEvidence ID、保存場所 / ファイル名、Evidence IDとの対応を必ず記録します。Evidenceが複数種類または複数箇所に分散し、Run Card / BriefのEvidence欄と単一の別成果物Evidenceだけでは根拠を十分に追跡できない場合、原因候補3個以上、契約影響不明、generated files / lockfile実差分、削除・移行・縮退判断がある場合は、R2-liteとして完了不可とし、R2-full以上へ昇格します。
 
-Run Cardは原則として `F1 / C1 / CH1 / S1 / V1` を中心に扱います。C2は補助仮説、保留仮説、棄却仮説としてのみ記録します。Failure ID、Change ID、Success ID、Verification IDのいずれかが2個以上あり、対応関係を表で追跡した方がよい場合は、R2-lite Brief + R2-lite Resultを使います。
-R2-lite Briefで `F2 / CH2 / S2 / V2` を扱う場合でも、F2は採用原因C1で説明できる必要があります。CH2はC1に対する同一修正単位内の変更に限定し、F2に別の採用原因が必要な場合はR2-full以上へ昇格します。
+Run Cardは原則として`F1 / C1 / CH1 / S1 / V1`を中心に扱います。C2は補助仮説、保留仮説、棄却仮説としてのみ記録します。Failure ID、Change ID、Success ID、Verification IDのいずれかが2個以上あり、対応関係を表で追跡した方がよい場合は、R2-lite Brief + R2-lite Resultを使います。
+R2-lite Briefで`F2 / CH2 / S2 / V2`を扱う場合でも、F2は採用原因C1で説明できる必要があります。CH2はC1に対する同一修正単位内の変更に限定し、F2に別の採用原因が必要な場合はR2-full以上へ昇格します。
 
 R2-lite Run Cardは、通常運用では次の最小Profileだけを必須とします。詳細Profileは、条件付き項目に該当した場合、または後から監査可能な記録が必要な場合に展開します。最小Profileで説明できない時点で、R2-fullへ昇格します。
 

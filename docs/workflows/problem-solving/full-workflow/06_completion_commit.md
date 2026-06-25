@@ -78,7 +78,7 @@ unverified:
 - CIでも検証不能なら、テストまたは確認手段を追加する
 ```
 
-手動確認をVerificationの根拠にする場合は、`03_templates.md` の手動確認記録を残します。手動確認だけで完了判定する場合は、自動化できない理由を記録します。
+手動確認をVerificationの根拠にする場合は、`03_templates.md`の手動確認記録を残します。手動確認だけで完了判定する場合は、自動化できない理由を記録します。
 
 ## 3. 失敗が残った場合の再ループ条件
 
@@ -333,7 +333,7 @@ Issue全体を修正なしで閉じる終端判断では、次を満たします
 
 ## 5. R別完了条件
 
-R1〜R3の通常完了条件はImplementation Phaseを前提とします。非Implementation Phaseは、該当する4.xの専用完了条件と、`01_entry_and_risk.md` の判断リスク成果物だけを適用し、Fix Plan、実装開始ゲート、実装、実装後最小再検証を要求しません。
+R1〜R3の通常完了条件はImplementation Phaseを前提とします。非Implementation Phaseは、該当する4.xの専用完了条件と、`01_entry_and_risk.md`の判断リスク成果物だけを適用し、Fix Plan、実装開始ゲート、実装、実装後最小再検証を要求しません。
 
 ### R0
 
@@ -533,7 +533,7 @@ R3以上では、再発防止の要否を明示します。
 
 ## 6.1 標準Verification Set
 
-問題種別ごとの標準Verification Setは `04_rouault_policy_overlay.md` を正本とします。ここでは重複管理を避けるため、実行方針だけを定めます。
+問題種別ごとの標準Verification Setは`04_rouault_policy_overlay.md`を正本とします。ここでは重複管理を避けるため、実行方針だけを定めます。
 
 ```text
 - 問題種別に応じて `04_rouault_policy_overlay.md` の標準Verification Setから候補を選ぶ

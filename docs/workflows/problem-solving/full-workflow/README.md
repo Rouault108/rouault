@@ -1,6 +1,6 @@
 # Full workflow reference
 
-このディレクトリは、v85から抽出した詳細ワークフローです。日常運用では `../quick-start.md` を入口にし、迷った場合だけこの詳細版を参照します。
+このディレクトリは、v85から抽出した詳細ワークフローです。日常運用では`../quick-start.md`を入口にし、迷った場合だけこの詳細版を参照します。
 
 | ファイル                       | 用途                                                    |
 | ------------------------------ | ------------------------------------------------------- |
@@ -12,4 +12,4 @@
 | `06_completion_commit.md`      | 完了条件、再ループ、コミット整理                        |
 | `07_roles.md`                  | 人間、ChatGPT、Codexの役割分担                          |
 
-R4/A2のSchema、validator、samplesは `../r4-validation/` に分離しています。
+R4/A2のSchema、validator、samplesは`../r4-validation/`に分離しています。

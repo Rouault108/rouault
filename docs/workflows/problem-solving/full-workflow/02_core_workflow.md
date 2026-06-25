@@ -1,6 +1,6 @@
 # 02. コアワークフロー
 
-このファイルは、標準フロー、実装開始ゲート、Evidence作成方針の正本です。実装後の詳細順序、完了条件、再ループ、ロールバック、コミット前確認は `06_completion_commit.md` を正本とします。
+このファイルは、標準フロー、実装開始ゲート、Evidence作成方針の正本です。実装後の詳細順序、完了条件、再ループ、ロールバック、コミット前確認は`06_completion_commit.md`を正本とします。
 
 ## 1. 基本方針
 
@@ -289,7 +289,7 @@ R4完了時の終端不変条件です。
 - No-change closureでは旧required PhaseをActive Phase Setから除外し、差分不存在またはrollbackを確認する
 ```
 
-実装後順序の正本は `06_completion_commit.md` です。ここでは要約だけを示します。
+実装後順序の正本は`06_completion_commit.md`です。ここでは要約だけを示します。
 
 ```text
 実装
@@ -304,7 +304,7 @@ R4完了時の終端不変条件です。
 
 ### 2.2 封じ込めトリガーがある場合
 
-`01_entry_and_risk.md` のContainment Triggerに該当する場合は、次を通常フローに先行させます。
+`01_entry_and_risk.md`のContainment Triggerに該当する場合は、次を通常フローに先行させます。
 
 ```text
 1. 証拠が消えない最小範囲で、redaction前提の時刻、場所、再現条件、該当commit / CI runを記録する
@@ -367,7 +367,7 @@ R4完了時の終端不変条件です。
 - documentation
 ```
 
-再現性がtimeout、flaky、CIのみ、browser / viewport依存などの間欠障害である場合は、`03_templates.md` のIntermittent Failure Evidenceを使います。単発ログだけで原因断定せず、再現回数、試行回数、環境、timeout値、retry有無、trace / screenshot有無を記録します。
+再現性がtimeout、flaky、CIのみ、browser / viewport依存などの間欠障害である場合は、`03_templates.md`のIntermittent Failure Evidenceを使います。単発ログだけで原因断定せず、再現回数、試行回数、環境、timeout値、retry有無、trace / screenshot有無を記録します。
 
 ## 4. 封じ込め判断
 
@@ -453,11 +453,11 @@ Pre-containment Evidence:
 
 R0ではEvidence作成を省略できます。
 
-R1ではMini Evidenceで足ります。R1で使うMini Evidenceの正式テンプレートは `03_templates.md` を正本とします。
+R1ではMini Evidenceで足ります。R1で使うMini Evidenceの正式テンプレートは`03_templates.md`を正本とします。
 
 R2-liteでは、Minimum Evidence Packet相当をR2-lite Run CardまたはR2-lite BriefのEvidence欄に内包するか、単一Evidenceを見やすさのために別成果物化してEvidence IDで参照します。別成果物化した場合は、Run Card / BriefのEvidence欄に保存場所 / ファイル名とEvidence IDとの対応を記録します。保存場所 / ファイル名はredaction済みで後から参照可能な成果物を指し、失効し得るCI artifactだけを保存場所にしません。Evidenceが複数種類または複数箇所に分散し、Run Card / BriefのEvidence欄と単一の別成果物Evidenceだけでは根拠を十分に追跡できない場合、または原因候補が3個以上残る場合は、R2-liteとして完了不可とし、Minimum Evidence Packetを分離してR2-full以上へ昇格します。R2-full以上ではMinimum Evidence Packetを作成します。R3以上ではMinimum Evidence Packetに加えてEvidence Recordを必須で作成します。Evidence Recordは複数Entryを持つ形式とし、各EntryへEntry ID、Evidence ID、対応対象ID、attempt、timestamp、environment、result、ログまたは関連diff、証拠確度、確度根拠、機密情報・redactionを記録します。CI artifactや外部ログが失効する可能性がある場合は、redaction済みの最小抜粋をEvidenceに保存します。
 
-Mini EvidenceとMinimum Evidence Packetの正式テンプレートは `03_templates.md` を正本とします。ここでは、次だけを要求します。
+Mini EvidenceとMinimum Evidence Packetの正式テンプレートは`03_templates.md`を正本とします。ここでは、次だけを要求します。
 
 ```text
 Evidence作成の必須事項:
@@ -573,7 +573,7 @@ R1では、採用原因を1つだけ明示できれば足ります。
 
 R2-liteでは、R2-lite Run CardまたはR2-lite Brief内のC欄にCause Summary相当を記録します。Cause Summary相当をRun Card / Brief内で十分に説明できない場合、または別成果物としてCause Summaryを分離する必要がある場合は、R2-full以上へ昇格します。R2-liteで複数仮説を残せるのは、採用原因を1つに固定できており、残る仮説が採用原因を補強する補助仮説、または今回の修正対象・成功条件・契約影響を変えない保留仮説である場合だけです。
 
-Cause Summaryの正式テンプレートは `03_templates.md` を正本とします。ここでは、採用・棄却・保留をFailure IDとEvidence IDに対応させ、証拠確度、検証方法、修正対象、判定理由を記録することだけを要求します。
+Cause Summaryの正式テンプレートは`03_templates.md`を正本とします。ここでは、採用・棄却・保留をFailure IDとEvidence IDに対応させ、証拠確度、検証方法、修正対象、判定理由を記録することだけを要求します。
 
 R2-fullでは、Cause SummaryまたはCause Matrixを作成します。原因候補が複数残る、説明できない症状がある、影響範囲が広い場合はCause Matrixを使います。R3以上ではCause Matrixを必須にします。
 
@@ -704,7 +704,7 @@ Disposition別必須事項:
 - Codexへ実装修正を依頼しない
 ```
 
-R0では、`01_entry_and_risk.md` のR0条件を満たし、R0 Recordで次を確認できれば実装に進んでよいです。
+R0では、`01_entry_and_risk.md`のR0条件を満たし、R0 Recordで次を確認できれば実装に進んでよいです。
 
 ```text
 - 変更理由
@@ -764,7 +764,7 @@ R段階ごとの軽量化規則です。
 
 ## 9.1 実装後の重要な順序
 
-実装後順序の正本は `06_completion_commit.md` です。ここでは、Verificationや広範囲テストへ進む前に修正前失敗条件と実diffを確認する原則だけを示します。
+実装後順序の正本は`06_completion_commit.md`です。ここでは、Verificationや広範囲テストへ進む前に修正前失敗条件と実diffを確認する原則だけを示します。
 
 ```text
 実装

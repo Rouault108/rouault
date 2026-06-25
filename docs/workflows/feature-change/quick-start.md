@@ -28,7 +28,7 @@ ChatGPTによる差分精査
 完了判定・コミット整理
 ```
 
-本ワークフローは、不具合原因を特定するためのものではありません。失敗、回帰、CIエラー、期待結果と実際の結果のずれが主題の場合は、`problem-solving` ワークフローを使います。
+本ワークフローは、不具合原因を特定するためのものではありません。失敗、回帰、CIエラー、期待結果と実際の結果のずれが主題の場合は、`problem-solving`ワークフローを使います。
 
 ## 1. 情報境界を固定する
 
@@ -69,7 +69,7 @@ ChatGPTによる差分精査
 3. 仕様変更後に発生した失敗は、再び problem-solving で扱う
 ```
 
-`problem-solving` から `feature-change` へ移行する場合は、次を橋渡し情報として残します。
+`problem-solving`から`feature-change`へ移行する場合は、次を橋渡し情報として残します。
 
 ```text
 - 元のFailure ID
@@ -93,7 +93,7 @@ ChatGPTによる差分精査
 | Acceptance ID | 何を満たせば受け入れるか |
 | Verification ID | どう検証するか |
 
-問題修正ワークフローの `Failure / Cause / Change / Success / Verification` を無理に使わないでください。機能変更では、原因ではなく採用判断が中心です。
+問題修正ワークフローの`Failure / Cause / Change / Success / Verification`を無理に使わないでください。機能変更では、原因ではなく採用判断が中心です。
 
 ## 4. 変更種別を判定する
 
@@ -102,7 +102,7 @@ ChatGPTによる差分精査
 | add | 新機能追加 | 既存契約を壊さないか確認する |
 | change | 既存機能変更 | 互換性、URL、UX、アクセシビリティ、テスト影響を確認する |
 | remove | 機能削除 | Delete / Breaking Change Gateを使う |
-| refactor | 内部構造変更 | 外部挙動を変えるなら `change` として扱う |
+| refactor | 内部構造変更 | 外部挙動を変えるなら`change`として扱う |
 | contract-change | 公開契約変更 | 原則R3以上。Decision RecordとDelete / Breaking Change Gateを使う |
 | migration | データ・設定・URLなどの移行 | 旧形式、移行失敗時、ロールバックを確認する |
 | deprecation | 非推奨化 | 削除予定、警告、移行先を明示する |
@@ -265,7 +265,7 @@ R3 Decision Recordは、仕様判断、契約変更、削除、移行、アク�
 
 Gate通過可否が未判断の場合、Codexへ削除または破壊的変更を依頼してはいけません。
 
-本ワークフローでは `Delete / Breaking Change Gate` を正式名称とします。略称を使う場合は、同一文脈内で `Delete Gate` としてもよいですが、成果物名、見出し、Change Plan、プロンプト入力欄では正式名称を使います。
+本ワークフローでは`Delete / Breaking Change Gate`を正式名称とします。略称を使う場合は、同一文脈内で`Delete Gate`としてもよいですが、成果物名、見出し、Change Plan、プロンプト入力欄では正式名称を使います。
 
 
 ## 9. Change Planを作る
