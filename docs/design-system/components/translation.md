@@ -2,15 +2,15 @@
 
 ## 1. 概要
 
-本書は、`ui-translation` と `TranslationOverlayOrchestrator` の公開契約を定義します。
+本書は、`ui-translation`と`TranslationOverlayOrchestrator`の公開契約を定義します。
 
-Rouault の translation は static-first です。常時読める対訳は Markdown 出力の `.translation-static` が担い、`ui-translation` は必要時に開く overlay 専用コンポーネントとして扱います。
+Rouaultのtranslationはstatic-firstです。常時読める対訳はMarkdown出力の`.translation-static`が担い、`ui-translation`は必要時に開くoverlay専用コンポーネントとして扱います。
 
 ## static-first 境界
 
-`ui-translation` は stateful allowlist component として維持します。開閉状態、focus return、overlay positioning、keyboard 操作は component / orchestration が所有し、global CSS は `.translation-static` など公開 Light DOM fallback の本文内配置だけを扱います。
+`ui-translation`はstateful allowlist componentとして維持します。開閉状態、focus return、overlay positioning、keyboard操作はcomponent / orchestrationが所有し、global CSSは`.translation-static`など公開Light DOM fallbackの本文内配置だけを扱います。
 
-note SSR では host と公開 Light DOM fallback を保持し、hydration registry から component を起動します。host と公開 Light DOM 子孫は note static output 検査対象ですが、内部状態と lifecycle は `note-static-surface-enhancer` へ移しません。
+note SSRではhostと公開Light DOM fallbackを保持し、hydration registryからcomponentを起動します。hostと公開Light DOM子孫はnote static output検査対象ですが、内部状態とlifecycleは`note-static-surface-enhancer`へ移しません。
 
 ---
 
@@ -18,17 +18,17 @@ note SSR では host と公開 Light DOM fallback を保持し、hydration regis
 
 対象:
 
-- `ui-translation` の公開入力
-- 開閉 API
-- `translation-toggle` イベント
-- overlay のアクセシビリティ契約
-- document 単位の orchestration
+- `ui-translation`の公開入力
+- 開閉API
+- `translation-toggle`イベント
+- overlayのアクセシビリティ契約
+- document単位のorchestration
 
 非対象:
 
-- static translation の本文 CSS 詳細
+- static translationの本文CSS詳細
 - 翻訳生成品質
-- 旧 `render-mode` / intent mode / study mode 契約
+- 旧`render-mode` / intent mode / study mode契約
 
 ---
 
@@ -38,19 +38,19 @@ note SSR では host と公開 Light DOM fallback を保持し、hydration regis
 
 | 名前         | 種別                                 | 必須   | 契約                                                                    |
 | ------------ | ------------------------------------ | ------ | ----------------------------------------------------------------------- | -------------------------------------------- |
-| `original`   | property / attribute                 | いいえ | trigger ラベル。空の場合は `翻訳を表示` にフォールバック                |
-| `translated` | property / attribute                 | いいえ | content 本文。空の場合は trigger を disabled にし、content を描画しない |
+| `original`   | property / attribute                 | いいえ | triggerラベル。空の場合は`翻訳を表示`にフォールバック                |
+| `translated` | property / attribute                 | いいえ | content本文。空の場合はtriggerをdisabledにし、contentを描画しない |
 | `lang`       | property / attribute                 | いいえ | 原文言語。未指定でも描画は継続する                                      |
-| `targetLang` | property / attribute (`target-lang`) | いいえ | 訳文言語。空文字は `ja` に正規化する                                    |
-| `surface`    | property / attribute                 | いいえ | `popover                                                                | drawer`。不正値は `popover` にフォールバック |
+| `targetLang` | property / attribute (`target-lang`) | いいえ | 訳文言語。空文字は`ja`に正規化する                                    |
+| `surface`    | property / attribute                 | いいえ | `popover                                                                | drawer`。不正値は`popover`にフォールバック |
 | `open`       | property / attribute                 | いいえ | 開閉状態                                                                |
 
 ### 3.1.1 入力意味論
 
-- `ui-translation` が受け取る `original` / `translated` は plain-text 文字列です。
-- `ui-translation` は Markdown AST・HTML fragment・structured bilingual content を受け取りません。
-- 強調・脚注・リンク・ルビ等を含む構造化対訳は、この component の責務ではありません。
-- そのような内容は `translation` family へ流し込まず、別 directive / 別出力契約で扱います。
+- `ui-translation`が受け取る`original` / `translated`はplain-text文字列です。
+- `ui-translation`はMarkdown AST・HTML fragment・structured bilingual contentを受け取りません。
+- 強調・脚注・リンク・ルビ等を含む構造化対訳は、このcomponentの責務ではありません。
+- そのような内容は`translation` familyへ流し込まず、別directive / 別出力契約で扱います。
 
 ### 3.2 公開メソッド
 
@@ -60,31 +60,31 @@ note SSR では host と公開 Light DOM fallback を保持し、hydration regis
 - `getTriggerElement()`
 - `getContentElement()`
 
-状態変化がない場合は no-op とします。
+状態変化がない場合はno-opとします。
 
 ### 3.3 公開イベント
 
 | 名前                 | detail                               | 契約        |
 | -------------------- | ------------------------------------ | ----------- | -------------------------------------------------- |
-| `translation-toggle` | `{ open: boolean; surface: 'popover' | 'drawer' }` | 開閉時に `bubbles: true` / `composed: true` で発火 |
+| `translation-toggle` | `{ open: boolean; surface: 'popover' | 'drawer' }` | 開閉時に`bubbles: true` / `composed: true`で発火 |
 
-旧 `translation-mode-change` と `translation-request-mode-toggle` は公開契約に含めません。
+旧`translation-mode-change`と`translation-request-mode-toggle`は公開契約に含めません。
 
 ---
 
 ## 4. 状態モデル
 
-- `translated` が空なら disabled trigger とし、open できません。
-- `surface='popover'` は trigger 近傍の overlay です。
-- `surface='drawer'` は画面右側の固定 panel です。
-- `Escape` は open 時だけ受理し、close 後に trigger へ focus を返します。
-- 開閉は click と API のみで行います。hover / focus auto-open は行いません。
+- `translated`が空ならdisabled triggerとし、openできません。
+- `surface='popover'`はtrigger近傍のoverlayです。
+- `surface='drawer'`は画面右側の固定panelです。
+- `Escape`はopen時だけ受理し、close後にtriggerへfocusを返します。
+- 開閉はclickとAPIのみで行います。hover / focus auto-openは行いません。
 
 ---
 
 ## 5. DOM / Accessibility
 
-`ui-translation` は Light DOM を使います。
+`ui-translation`はLight DOMを使います。
 
 ```html
 <ui-translation>
@@ -115,41 +115,41 @@ note SSR では host と公開 Light DOM fallback を保持し、hydration regis
 
 契約:
 
-- trigger は常に `button`
-- overlay content は `role="dialog"` / `aria-modal="false"`
-- `aria-expanded` は open と同期
-- `aria-controls` と `aria-details` は content id を参照
+- triggerは常に`button`
+- overlay contentは`role="dialog"` / `aria-modal="false"`
+- `aria-expanded`はopenと同期
+- `aria-controls`と`aria-details`はcontent idを参照
 
 ---
 
 ## 6. Orchestration
 
-`TranslationOverlayOrchestrator` は document 単位で open な `ui-translation` を管理します。
+`TranslationOverlayOrchestrator`はdocument単位でopenな`ui-translation`を管理します。
 
 契約:
 
-- 同時に open な overlay translation は 1 件まで
-- open な要素が 1 件以上あり、その中に `surface='popover'` があるときだけ共有 `scroll` / `resize` listener を購読
-- 再配置対象は open な popover のみ
-- drawer は再配置しない
+- 同時にopenなoverlay translationは1件まで
+- openな要素が1件以上あり、その中に`surface='popover'`があるときだけ共有`scroll` / `resize` listenerを購読
+- 再配置対象はopenなpopoverのみ
+- drawerは再配置しない
 
-旧 localStorage 永続化、global keyboard mode toggle、MutationObserver による集合管理は行いません。
+旧localStorage永続化、global keyboard mode toggle、MutationObserverによる集合管理は行いません。
 
 ---
 
 ## 7. 関連契約
 
-- static translation は `::translation` から `div.translation-static[data-translation-kind="static"]` を出力する
-- interactive overlay は `::translation-overlay` から `ui-translation[surface]` を出力する
-- いずれも `original` / `translated` の plain-text 2 片のみを契約対象とする
-- note 本文では overlay だけが `data-hydration-trigger="visible"` を持つ
-- rich bilingual content は `ui-translation` の責務ではなく、別 directive / 別 grammar の責務とする
+- static translationは`::translation`から`div.translation-static[data-translation-kind="static"]`を出力する
+- interactive overlayは`::translation-overlay`から`ui-translation[surface]`を出力する
+- いずれも`original` / `translated`のplain-text 2片のみを契約対象とする
+- note本文ではoverlayだけが`data-hydration-trigger="visible"`を持つ
+- rich bilingual contentは`ui-translation`の責務ではなく、別directive / 別grammarの責務とする
 
 ---
 
 ## 8. テスト固定範囲
 
-- click で open / close できること
-- `Escape` で close し、trigger に focus を戻すこと
-- `translation-toggle.detail.surface` が正しいこと
-- 2 つ目の overlay を開くと 1 つ目が閉じること
+- clickでopen / closeできること
+- `Escape`でcloseし、triggerにfocusを戻すこと
+- `translation-toggle.detail.surface`が正しいこと
+- 2つ目のoverlayを開くと1つ目が閉じること

@@ -2,28 +2,28 @@
 
 ## 概要
 
-`ui-sidebar-shell` は Rouault 内部で使う sidebar surface primitive です。
-汎用 public component としての拡張性より、現在の責務境界を明確に保つことを優先します。
+`ui-sidebar-shell`はRouault内部で使うsidebar surface primitiveです。
+汎用public componentとしての拡張性より、現在の責務境界を明確に保つことを優先します。
 
-この component が担うのは次だけです。
+このcomponentが担うのは次だけです。
 
-- `fixed` / `overlay` の表示面の切替
-- overlay 時の scrim
-- Escape / scrim click による close request
-- overlay 展開時の初期 focus
-- overlay 格納時の focus return
-- 表示面の inert / visibility / animation coordination
+- `fixed` / `overlay`の表示面の切替
+- overlay時のscrim
+- Escape / scrim clickによるclose request
+- overlay展開時の初期focus
+- overlay格納時のfocus return
+- 表示面のinert / visibility / animation coordination
 
-この component が担わないもの:
+このcomponentが担わないもの:
 
-- mode 自動判定
-- breakpoint 監視
-- localStorage 永続化
-- router 連携
-- hydration timing の自己決定
+- mode自動判定
+- breakpoint監視
+- localStorage永続化
+- router連携
+- hydration timingの自己決定
 - state source of truth
 
-sidebar state の ownership は [`docs/contracts/sidebar-state.md`](../../contracts/sidebar-state.md) を正本とします。
+sidebar stateのownershipは [`docs/contracts/sidebar-state.md`](../../contracts/sidebar-state.md) を正本とします。
 
 ## 公開入力
 
@@ -31,7 +31,7 @@ sidebar state の ownership は [`docs/contracts/sidebar-state.md`](../../contra
 | ------------------- | ----------------------------------- | ---------- | ---------------------------------- |
 | `state`             | property / attribute (`data-state`) | `expanded` | 表示状態。`expanded` / `collapsed` |
 | `mode`              | property / attribute                | `fixed`    | 表示モード。`fixed` / `overlay`    |
-| `returnFocusTarget` | property                            | `null`     | overlay 格納時に focus を戻す対象  |
+| `returnFocusTarget` | property                            | `null`     | overlay格納時にfocusを戻す対象  |
 
 `mode="auto"`、`fixedBreakpoint`、永続化関連入力は現行契約に含めません。
 
@@ -40,40 +40,40 @@ sidebar state の ownership は [`docs/contracts/sidebar-state.md`](../../contra
 | 名前         | 内容                     |
 | ------------ | ------------------------ |
 | 既定スロット | ナビゲーション本文       |
-| `header`     | overlay 時の補助ヘッダー |
+| `header`     | overlay時の補助ヘッダー |
 
-- `header` は overlay 時にだけ表示対象です
-- fixed 時は `header` を描画対象に含めません
+- `header`はoverlay時にだけ表示対象です
+- fixed時は`header`を描画対象に含めません
 
 ## 公開メソッド
 
 | 名前                 | 契約                                |
 | -------------------- | ----------------------------------- |
-| `expand(trigger?)`   | `state` を `expanded` へ更新する    |
-| `collapse(trigger?)` | `state` を `collapsed` へ更新する   |
-| `toggle(trigger?)`   | 現在 state に応じて開閉を切り替える |
+| `expand(trigger?)`   | `state`を`expanded`へ更新する    |
+| `collapse(trigger?)` | `state`を`collapsed`へ更新する   |
+| `toggle(trigger?)`   | 現在stateに応じて開閉を切り替える |
 
-- `trigger` は focus return 候補の記録に使います
-- state が変わらない no-op では追加の state-change を発火しません
+- `trigger`はfocus return候補の記録に使います
+- stateが変わらないno-opでは追加のstate-changeを発火しません
 
 ## 公開イベント
 
 | 名前                       | detail            | bubbles | composed | 内容                           |
 | -------------------------- | ----------------- | ------- | -------- | ------------------------------ |
-| `ui-sidebar-state-change`  | `{ state, mode }` | `false` | `false`  | shell 内 state が確定したこと  |
-| `ui-sidebar-request-close` | `{ reason }`      | `false` | `false`  | 利用者操作による close request |
+| `ui-sidebar-state-change`  | `{ state, mode }` | `false` | `false`  | shell内stateが確定したこと  |
+| `ui-sidebar-request-close` | `{ reason }`      | `false` | `false`  | 利用者操作によるclose request |
 
-`reason` は `scrim` または `escape` です。
+`reason`は`scrim`または`escape`です。
 
-`ui-sidebar-state-settled`、`ui-sidebar-state-request-accepted`、`resolved-mode-change` などの event は現行契約に含めません。
+`ui-sidebar-state-settled`、`ui-sidebar-state-request-accepted`、`resolved-mode-change`などのeventは現行契約に含めません。
 
 ## DOM / Accessibility
 
-- ルートは `nav` を持ち、`aria-label` は内部既定値で与えます
-- collapsed 時は `nav.inert = true` と `visibility: hidden` を併用します
-- overlay 展開時は最初の focusable 要素へ移動します
-- overlay 格納時は `returnFocusTarget` が有効ならそこへ戻します
-- fixed 時は scrim を表示しません
+- ルートは`nav`を持ち、`aria-label`は内部既定値で与えます
+- collapsed時は`nav.inert = true`と`visibility: hidden`を併用します
+- overlay展開時は最初のfocusable要素へ移動します
+- overlay格納時は`returnFocusTarget`が有効ならそこへ戻します
+- fixed時はscrimを表示しません
 
 ## テスト正本
 
@@ -82,4 +82,4 @@ sidebar state の ownership は [`docs/contracts/sidebar-state.md`](../../contra
 - Storybook docs:
   [`src/components/ui/sidebar-shell/sidebar-shell.stories.ts`](../../../src/components/ui/sidebar-shell/sidebar-shell.stories.ts)
 
-Storybook は表示見本に限定し、契約の正本にはしません。
+Storybookは表示見本に限定し、契約の正本にはしません。
