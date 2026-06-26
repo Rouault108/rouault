@@ -67,26 +67,6 @@
   color: var(--fg-ghost, var(--fg-muted));
 }
 
-.home-meta-link {
-  color: var(--fg-muted);
-  text-decoration-line: underline;
-  text-decoration-color: var(--border-default);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
-}
-
-.home-meta-link:hover,
-.home-meta-link:focus-visible {
-  color: var(--fg-default);
-  text-decoration-color: currentColor;
-}
-
-.home-meta-link:focus-visible {
-  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
-  outline-offset: var(--focus-ring-offset, 2px);
-  border-radius: var(--focus-ring-radius, 4px);
-}
-
 .home-entry[href] {
   text-decoration: none;
 }

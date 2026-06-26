@@ -144,6 +144,32 @@ a:focus-visible {
   }
 }
 
+/*
+ * Metadata Text Link Surface
+ * - metadata面の補助導線用
+ * - touch環境でもprimaryへ昇格しない
+ * - :visitedは色差分だけを所有し、下線形状はbase ruleに委ねる
+ * - Text Links section内、Control Links sectionより前に置く
+ */
+.link-text.link-text--muted[href][data-link-surface='metadata'] {
+  color: var(--fg-muted);
+  text-decoration-line: underline;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: var(--border-width);
+  text-underline-offset: 0.18em;
+}
+
+.link-text.link-text--muted[href][data-link-surface='metadata']:visited {
+  color: var(--fg-muted);
+  text-decoration-color: currentColor;
+}
+
+.link-text.link-text--muted[href][data-link-surface='metadata']:hover,
+.link-text.link-text--muted[href][data-link-surface='metadata']:focus-visible {
+  color: var(--fg-default);
+  text-decoration-color: currentColor;
+}
+
 /* ===========================================================================
  * Control Links（構造型リンク / UIリンク）
  * @see docs/design-system/components.md - Contextual Link仕様

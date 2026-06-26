@@ -43,8 +43,14 @@
 - `最近の更新`sectionは`HomePageData.notes`を描画する。
 - `HomePageData.notes`の件数、並び順、上限は`buildHomePageProjection()`が所有する。
 - metadata導線は`/corpora/`、`/search/`、`/about/`への控えめな内部リンクとして出力する。
+- metadata導線は`home-meta-link link-text link-text--muted`を持つ。
 - metadata導線は`data-link-kind="internal-document"`と`data-link-surface="metadata"`を持つ。
 - metadata導線はCTAbuttonではなく、本文の静けさを妨げないtext linkとして扱う。
+- metadata導線の視覚外観はDesign Systemのmetadata muted text link variantが所有する。
+- home pageはmetadata導線のhref、順序、文言、存在を所有する。
+- home page CSSはmetadata linkの色、下線、focus ringを再所有しない。
+- metadata導線は通常時、visited時、touch環境でprimary色へ昇格しない。
+- metadata導線は常時下線でリンク識別を担保する。
 - トップページはcorpus index、全ノート全件一覧、検索結果一覧を所有しない。
 
 ## 4. Integration Boundaries
@@ -71,5 +77,8 @@
 - `最近の更新`sectionが`HomePageData.notes`を描画する。
 - feed metaが表示件数と公開ノート数を示す。
 - `/corpora/`、`/search/`、`/about/`へのmetadata導線が存在する。
+- metadata導線は`home-meta-link link-text link-text--muted`を持つ。
 - metadata導線は`data-link-kind="internal-document"`と`data-link-surface="metadata"`を持つ。
+- metadata導線は通常時、visited時、touch環境でprimary色へ昇格しない。
+- metadata導線は常時下線でリンク識別を担保する。
 - トップページがcorpus index、全ノート全件一覧、検索結果一覧を所有しない。

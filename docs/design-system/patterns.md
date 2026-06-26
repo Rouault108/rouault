@@ -19,6 +19,18 @@ Reading chromeの機能契約は`docs/contracts/reading-chrome.md`を正本と�
 - Sidebar専用linkは`docs/contracts/sidebar-state.md`とcomponent文書の境界に従う。
 - RouterのURL正規化は`docs/contracts/router.md`を正本とし、本書では再定義しない。
 
+### Metadata Muted Text Link
+
+`link-text link-text--muted`かつ`data-link-surface="metadata"`を持つlinkは、metadata面の補助導線である。CTA、Control Link、Block Link、prose本文リンクではなく、prose本文リンクの代替として使わない。
+
+通常時・visited時は控えめな`fg-muted`相当で表示する。下線はbase ruleで常時残し、リンク識別を色だけに依存させない。`:visited`ruleは既読差分として`color`と`text-decoration-color`だけを所有し、下線形状はbase ruleへ委ねる。hover / focus-visibleでは`fg-default`相当に上げ、focus-visibleのfocus ringは弱めない。
+
+touch環境でもprimary色へ昇格しない。metadata面では、発見可能性は常時下線で担保し、色による一次導線化を避ける。
+
+この分類はcontrol surfaceのlinkとは別分類である。`data-link-surface="control"`を持つcontrol link、特に正規404 fallbackのcontrol linkとは混同しない。
+
+`text-underline-offset`などの下線メトリクスはDesign System側で調整可能な実装値であり、Home Contractは具体値を所有しない。CSS内での物理的なrule順序は、読みやすさのための配置方針に留める。契約としてはselector限定、primary系token非使用、`:visited`の所有property制限、surface隔離を重視する。
+
 ### Block Link Surface
 
 Block Linkは、遷移先を持つ面全体をnative `<a>`として表すpatternである。`result-card`では`article.result-card > a.result-link`を正規構造とし、カード全面のリンク面を`a.result-link`が所有する。
