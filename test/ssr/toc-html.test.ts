@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseFragment, type DefaultTreeAdapterMap } from 'parse5';
 
 import { buildHashHrefFromId } from '../../src/router/url-hash.js';
-import { renderTocHtml } from '../../src/layouts/toc-html.js';
+import { renderMobileStaticTocNavHtml, renderTocHtml } from '../../src/layouts/toc-html.js';
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 
 type ChildNode = DefaultTreeAdapterMap['childNode'];
@@ -65,6 +65,46 @@ const createToc = (headings: NotePageProjection['toc']['headings']): NotePagePro
 });
 
 describe('renderTocHtml', () => {
+  it('desktop TOC root は layout container として出力し、nav が landmark label を所有すること', () => {
+    const rendered = renderTocHtml(createToc([{ id: 'intro', text: 'Intro', level: 2 }]));
+    const fragment = parseFragment(rendered);
+    const root = findElement(
+      fragment,
+      (element) => getAttribute(element, 'class') === 'layout-toc-col',
+    );
+    const nav = root
+      ? findElement(
+          root,
+          (element) =>
+            element.tagName === 'nav' && getAttribute(element, 'class') === 'layout-toc',
+        )
+      : null;
+
+    expect(root).not.to.equal(null);
+    expect(root?.tagName).to.equal('div');
+    expect(root ? getAttribute(root, 'aria-label') : null).to.equal(null);
+    expect(root ? getAttribute(root, 'role') : null).to.equal(null);
+    expect(root ? getAttribute(root, 'data-layout-toc-root') : null).to.equal('');
+    expect(nav).not.to.equal(null);
+    expect(nav ? getAttribute(nav, 'aria-label') : null).to.equal('目次');
+    expect(nav ? getAttribute(nav, 'data-layout-toc-nav') : null).to.equal('');
+  });
+
+  it('mobile static TOC nav は全 surface 共通の navigation label を出力すること', () => {
+    const rendered = renderMobileStaticTocNavHtml(
+      createToc([{ id: 'intro', text: 'Intro', level: 2 }]),
+    );
+    const fragment = parseFragment(rendered);
+    const nav = findElement(
+      fragment,
+      (element) => getAttribute(element, 'data-layout-toc-mobile-static-nav') === '',
+    );
+
+    expect(nav).not.to.equal(null);
+    expect(nav?.tagName).to.equal('nav');
+    expect(nav ? getAttribute(nav, 'aria-label') : null).to.equal('目次');
+  });
+
   it('SSR TOC link に depth と title を出力し、href / attribute / text escape を分離すること', () => {
     const headingText = 'A "quoted" <heading> & detail';
     const headingId = '見出し id "x"&<>';

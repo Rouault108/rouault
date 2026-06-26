@@ -52,6 +52,9 @@
 ### DOM / URL / State Contract
 
 - Note pageではSSRのdesktop TOC navを正本とし、mobile panelはruntime cloneとして扱う。
+- Reading chrome上のTOC landmark ownerは`nav.layout-toc`である。
+- Desktopの`.layout-toc-col`はランドマークではなくレイアウトコンテナである。
+- TOCのnavigation landmark labelは全surfaceで`目次`に統一する。
 - Header triggerはTOC content ownerにならない。triggerはopen / closeの導線であり、TOC headingsを保持しない。
 - TOC owner candidateが未確定または不正な場合、interactive triggerを有効なreading chromeとして見せない。
 - Hydration markerはbuild-time / runtime接続点であり、visual variantとして使わない。

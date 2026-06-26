@@ -120,10 +120,9 @@ export const renderTocChromeHtml = (toc: TocChromeProjection): string => {
   );
 
   return `
-    <aside
+    <div
       id="${escapeHtmlAttribute(resolveLayoutTocStaticRootId(toc.runtimeId))}"
       class="layout-toc-col"
-      aria-label="目次"
       data-density-tier="${densityTier}"
       data-layout-toc-root
       data-toc-hydration="${hydrationMode}"
@@ -136,7 +135,7 @@ export const renderTocChromeHtml = (toc: TocChromeProjection): string => {
       </nav>
       ${toc.shouldHydrate ? renderTocJsonSourceScript(toc) : ''}
       ${toc.shouldHydrate ? `<layout-toc-controller${controllerAttributes}></layout-toc-controller>` : ''}
-    </aside>
+    </div>
   `.trim();
 };
 
@@ -146,7 +145,7 @@ export const renderMobileStaticTocNavHtml = (toc: TocChromeProjection): string =
   const densityTier = resolveTocDensityTier(toc.headings);
   const attributes = serializeHtmlAttributes([
     { name: 'class', value: 'layout-toc layout-toc--mobile-static' },
-    { name: 'aria-label', value: 'モバイル目次' },
+    { name: 'aria-label', value: '目次' },
     { name: 'data-layout-toc-mobile-static-nav', value: true, kind: 'boolean' },
     { name: 'data-toc-hydration', value: 'static' },
     { name: 'data-density-tier', value: densityTier },

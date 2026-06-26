@@ -322,7 +322,7 @@ export class LayoutTocController extends HTMLElement {
 
     mobileNav.classList.add('layout-toc--mobile');
     mobileNav.removeAttribute('data-layout-toc-nav');
-    mobileNav.setAttribute('aria-label', 'モバイル目次');
+    mobileNav.setAttribute('aria-label', '目次');
     mobileNav.setAttribute('data-layout-toc-mobile-nav', '');
     removeIdsFromTree(mobileNav);
     mobileNav.addEventListener('click', this._handleNavClick);

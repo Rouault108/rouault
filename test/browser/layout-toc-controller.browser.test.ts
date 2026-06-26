@@ -59,7 +59,7 @@ describe('layout-toc-controller', () => {
 
     try {
       const currentRoot = await fixture<HTMLElement>(html`
-        <aside data-layout-toc-root>
+        <div data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
               <li class="layout-toc__item" data-heading-id="section-1">
@@ -90,7 +90,7 @@ describe('layout-toc-controller', () => {
             content-root-id="note-content-test"
             capabilities-json='{"activeTracking":true,"dynamicScopes":false,"mobilePanel":true}'
           ></layout-toc-controller>
-        </aside>
+        </div>
       `);
       root = currentRoot;
 
@@ -205,7 +205,7 @@ describe('layout-toc-controller', () => {
 
     try {
       const currentRoot = await fixture<HTMLElement>(html`
-        <aside data-layout-toc-root>
+        <div data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
               <li class="layout-toc__item" data-heading-id="section-1">
@@ -236,7 +236,7 @@ describe('layout-toc-controller', () => {
             content-root-id="note-content-test"
             capabilities-json='{"activeTracking":true,"dynamicScopes":false,"mobilePanel":true}'
           ></layout-toc-controller>
-        </aside>
+        </div>
       `);
       root = currentRoot;
 
@@ -281,7 +281,7 @@ describe('layout-toc-controller', () => {
 
     try {
       const currentRoot = await fixture<HTMLElement>(html`
-        <aside data-layout-toc-root>
+        <div data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
               <li class="layout-toc__item" data-heading-id="section-1">
@@ -312,7 +312,7 @@ describe('layout-toc-controller', () => {
             content-root-id="note-content-test"
             capabilities-json='{"activeTracking":true,"dynamicScopes":false,"mobilePanel":true}'
           ></layout-toc-controller>
-        </aside>
+        </div>
       `);
       root = currentRoot;
 
@@ -385,7 +385,7 @@ describe('layout-toc-controller', () => {
       hiddenPanel.append(section2);
 
       const currentRoot = await fixture<HTMLElement>(html`
-        <aside data-layout-toc-root>
+        <div data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
               <li class="layout-toc__item" data-heading-id="section-1">
@@ -416,7 +416,7 @@ describe('layout-toc-controller', () => {
             content-root-id="note-content-test"
             capabilities-json='{"activeTracking":false,"dynamicScopes":false,"mobilePanel":false}'
           ></layout-toc-controller>
-        </aside>
+        </div>
       `);
       root = currentRoot;
 
@@ -473,7 +473,7 @@ describe('layout-toc-controller', () => {
       });
 
       const currentRoot = await fixture<HTMLElement>(html`
-        <aside data-layout-toc-root>
+        <div data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
               <li class="layout-toc__item" data-heading-id="section-1">
@@ -504,7 +504,7 @@ describe('layout-toc-controller', () => {
             content-root-id="note-content-test"
             capabilities-json='{"activeTracking":false,"dynamicScopes":false,"mobilePanel":false}'
           ></layout-toc-controller>
-        </aside>
+        </div>
       `);
       root = currentRoot;
 
@@ -562,7 +562,7 @@ describe('layout-toc-controller', () => {
       document.body.append(trigger);
 
       const currentRoot = await fixture<HTMLElement>(html`
-        <aside data-layout-toc-root>
+        <div data-layout-toc-root>
           <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
             <ol class="layout-toc__list">
               <li class="layout-toc__item" data-heading-id="section-1">
@@ -583,7 +583,7 @@ describe('layout-toc-controller', () => {
             content-root-id="note-content-test"
             capabilities-json='{"activeTracking":false,"dynamicScopes":false,"mobilePanel":true}'
           ></layout-toc-controller>
-        </aside>
+        </div>
       `);
       root = currentRoot;
 
@@ -608,7 +608,7 @@ describe('layout-toc-controller', () => {
       expect(panel.getAttribute('data-hydration-state')).to.equal('hydrated');
       expect(
         panel.querySelector('[data-layout-toc-mobile-nav]')?.getAttribute('aria-label'),
-      ).to.equal('モバイル目次');
+      ).to.equal('目次');
 
       link.addEventListener('click', (event) => event.preventDefault(), { once: true });
       link.dispatchEvent(

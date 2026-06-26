@@ -76,7 +76,7 @@ const appendBridgeFixture = (): HTMLElement => {
         <h2 id="section-2">Section 2</h2>
         <p>second</p>
       </article>
-      <aside id="layout-toc-toc-source-test" data-layout-toc-root>
+      <div id="layout-toc-toc-source-test" data-layout-toc-root>
         <nav class="layout-toc" aria-label="目次" data-layout-toc-nav>
           <ol>
             <li data-heading-id="section-1">
@@ -107,7 +107,7 @@ const appendBridgeFixture = (): HTMLElement => {
           capabilities-json='{"activeTracking":true,"dynamicScopes":false,"mobilePanel":true}'
           data-toc-trigger-reserved="true"
         ></layout-toc-controller>
-      </aside>
+      </div>
       <script id="toc-source-test" type="application/json">${JSON.stringify(headings)}</script>
     </main>
   `;

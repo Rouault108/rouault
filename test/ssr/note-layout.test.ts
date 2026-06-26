@@ -1,10 +1,44 @@
 import { describe, expect, it } from 'vitest';
+import { parseFragment, type DefaultTreeAdapterMap } from 'parse5';
 
 import { NoteLayout } from '../../src/layouts/NoteLayout.11ty.js';
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 import type { NoteNavigationEntry } from '../../build/navigation/index.js';
 
 const TEST_SITE_URL_CONTEXT = { siteOrigin: 'https://example.com', basePath: '' };
+
+type ChildNode = DefaultTreeAdapterMap['childNode'];
+type ElementNode = DefaultTreeAdapterMap['element'];
+interface ParentLike {
+  childNodes: ChildNode[];
+}
+
+const isElementNode = (node: ChildNode): node is ElementNode => 'tagName' in node;
+
+const getAttribute = (node: ElementNode, name: string): string | null =>
+  node.attrs.find((attribute) => attribute.name === name)?.value ?? null;
+
+const findElement = (
+  node: ParentLike,
+  predicate: (element: ElementNode) => boolean,
+): ElementNode | null => {
+  for (const child of node.childNodes) {
+    if (!isElementNode(child)) {
+      continue;
+    }
+
+    if (predicate(child)) {
+      return child;
+    }
+
+    const match = findElement(child, predicate);
+    if (match) {
+      return match;
+    }
+  }
+
+  return null;
+};
 
 const createProjection = (
   overrides: Partial<NotePageProjection> & { sidebar?: NotePageProjection['sidebar'] | null } = {},
@@ -119,6 +153,56 @@ describe('NoteLayout', () => {
     expect(rendered).toContain('<layout-toc-controller');
     expect(rendered).not.toContain('<ui-article-header');
     expect(rendered).not.toContain('<layout-toc ');
+
+    const fragment = parseFragment(rendered);
+    const tocRoot = findElement(
+      fragment,
+      (element) => getAttribute(element, 'class') === 'layout-toc-col',
+    );
+    const tocNav = tocRoot
+      ? findElement(
+          tocRoot,
+          (element) =>
+            element.tagName === 'nav' && getAttribute(element, 'class') === 'layout-toc',
+        )
+      : null;
+
+    expect(tocRoot?.tagName).to.equal('div');
+    expect(tocRoot ? getAttribute(tocRoot, 'aria-label') : null).to.equal(null);
+    expect(tocRoot ? getAttribute(tocRoot, 'role') : null).to.equal(null);
+    expect(tocNav ? getAttribute(tocNav, 'aria-label') : null).to.equal('目次');
+  });
+
+  it('static TOC 経路では mobile static nav も共通の navigation label を持つこと', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      notePage: createProjection({
+        toc: {
+          sourceId: 'toc-source-note',
+          runtimeId: 'toc-source-note',
+          ownerId: 'toc-owner-note',
+          scopeId: 'note-toc',
+          headings: [{ id: 'intro', text: 'Intro', level: 2 }],
+          capabilities: {
+            activeTracking: false,
+            dynamicScopes: false,
+            mobilePanel: false,
+          },
+          contentRootId: 'note-content-note',
+          homeHref: '/',
+          shouldHydrate: false,
+        },
+      }),
+    });
+    const fragment = parseFragment(rendered);
+    const mobileStaticNav = findElement(
+      fragment,
+      (element) => getAttribute(element, 'data-layout-toc-mobile-static-nav') === '',
+    );
+
+    expect(mobileStaticNav).not.to.equal(null);
+    expect(mobileStaticNav?.tagName).to.equal('nav');
+    expect(mobileStaticNav ? getAttribute(mobileStaticNav, 'aria-label') : null).to.equal('目次');
   });
 
   it('article-header の source を http/https のみリンク化し、created を aria-label へ含めること', () => {

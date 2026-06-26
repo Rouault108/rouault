@@ -100,9 +100,8 @@ describe('layout-toc SSR entry hydration', () => {
       replaceElementChildrenFromHtml(
         root,
         `
-          <aside
+          <div
             class="layout-toc-col"
-            aria-label="目次"
             data-hydration-scope="note-toc"
           >
             <layout-toc
@@ -146,7 +145,7 @@ describe('layout-toc SSR entry hydration', () => {
                 ></div>
               </template>
             </layout-toc>
-          </aside>
+          </div>
         `,
         root.ownerDocument,
       );

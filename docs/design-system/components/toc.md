@@ -92,6 +92,11 @@ build-timeで決定し、`layout-toc-controller[capabilities-json]`へ渡しま�
 - 各項目はネイティブ`<a>`
 - アクティブ項目のみ`aria-current="location"`
 - 見出しが空なら何も描画しない
+- TOCのnavigation landmark labelは全surfaceで`目次`とする
+- 対象surfaceは`ui-toc`内`nav`、SSR `.layout-toc`、mobile static nav、runtime mobile panel clone navである
+- `.layout-toc-col`はレイアウトコンテナであり、ランドマーク名を所有しない
+- desktop TOCは視覚見出しを持たず、`nav`のaccessible nameでTOC領域を示す
+- 旧モバイル専用ラベルは使わない
 
 ### 4.4 Visual current state
 

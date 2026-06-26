@@ -199,9 +199,8 @@ const renderStaleSsrLayoutTocController = async (): Promise<{
   replaceElementChildrenFromHtml(
     root,
     `
-      <aside
+      <div
         class="layout-toc-col"
-        aria-label="目次"
         data-layout-toc-root
         data-hydration-scope="note-toc"
       >
@@ -239,7 +238,7 @@ const renderStaleSsrLayoutTocController = async (): Promise<{
           data-hydration-capability="interactive"
           data-hydration-trigger="initial"
         ></layout-toc-controller>
-      </aside>
+      </div>
     `,
     root.ownerDocument,
   );

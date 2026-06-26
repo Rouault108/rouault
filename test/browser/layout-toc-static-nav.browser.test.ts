@@ -40,7 +40,7 @@ describe('layout-toc static nav browser style contract', () => {
 
   it('SSR layout toc uses readable compact wrapping for inactive and active labels', async () => {
     const root = await fixture<HTMLElement>(html`
-      <aside class="layout-toc-col" data-density-tier="compact">
+      <div class="layout-toc-col" data-density-tier="compact">
         <nav class="layout-toc" data-layout-toc-nav data-density-tier="compact" aria-label="目次">
           <ol class="layout-toc__list">
             <li class="layout-toc__item" data-heading-id="overview" data-heading-depth="0">
@@ -79,7 +79,7 @@ describe('layout-toc static nav browser style contract', () => {
             </li>
           </ol>
         </nav>
-      </aside>
+      </div>
     `);
 
     const inactiveLabel = root.querySelector<HTMLElement>(
