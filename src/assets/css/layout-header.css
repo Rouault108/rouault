@@ -354,9 +354,6 @@ header[data-layout-header] [data-header-menu-item]:focus-visible {
   box-shadow: none;
 }
 
-header[data-layout-header] .search-trigger:focus-visible {
-  border-color: var(--focus-ring-color, oklch(60% 0.15 250));
-}
 
 header[data-layout-header] .sidebar-toggle:active,
 header[data-layout-header] .toc-trigger:active,

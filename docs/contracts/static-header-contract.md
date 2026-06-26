@@ -206,7 +206,7 @@ Header controlsは、corpus trigger、theme trigger、search trigger、TOC trigg
 - Current corpus itemはbackgroundだけ、またはtext emphasisだけで識別しない。
 - Left border marker / `border-inline-start`は再導入しない。
 - Forced-colorsではfocus-visible outlineの識別性を優先し、selected/current専用の強いHighlight backgroundを必須契約にしない。Selected/current backgroundの存在・不在そのものは過剰固定しない。
-- Search trigger固有のhover、focus-visible、active、responsive density、border-color、background stateはtop-level共通selectorによって退化させない。
+- Search trigger固有のhover、active、responsive density、background state、および通常時 / hover時 / forced-colors時のborder-color contractはtop-level共通selectorによって退化させない。Focus-visibleはheader control共通outlineを正本とし、通常カラーモードでは検索トグル固有のfocus色borderを重ねない。
 - Top-level triggerの44px hit target pseudo-elementは維持する。
 - Header controlsのvisual contractは本文リンク、検索ダイアログ、sidebar、本文TOC linkへ波及させない。
 - Header menu selected surface without check contractは`ADR-HEADER-MENU-SELECTED-SURFACE-WITHOUT-CHECK-001`に基づくR3 / A0の公開visual contract変更である。現行挙動の契約正本は引き続き`docs/contracts/static-header-contract.md`であり、新ADRはDecision Recordである。
@@ -258,7 +258,7 @@ Search triggerは、通常時にはinput-like surfaceを持たないquiet launch
 - Labelはvisible labelだが、accessible nameには参加させない。
 - 通常時のbackground / borderはtransparentを基本とする。ただし1px border boxはlayoutとforced-colors識別性のため維持する。
 - Hoverはbackground中心で表現し、通常カラーモードではborder強調を復活させない。
-- Focus-visibleは読書体験よりもキーボード操作視認性を優先し、明確なoutline / ringを持つ。
+- Focus-visibleは読書体験よりもキーボード操作視認性を優先し、header control共通outlineを正本とする。通常カラーモードでは検索トグル固有のfocus色borderを重ねない。
 - Activeは押下感を持つ。
 - Reduced motionではactive transformに依存しない。
 - Forced-colorsでは操作可能要素の識別性を優先し、`ButtonText` borderを維持する。

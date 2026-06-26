@@ -567,6 +567,18 @@ describe('static CSS contracts', () => {
       'border-color: transparent',
     ]);
 
+    const searchFocusVisibleSelector =
+      'header[data-layout-header] .search-trigger:focus-visible';
+
+    expectRuleToDeclare(css, searchFocusVisibleSelector, [
+      'outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250))',
+      'outline-offset: var(--focus-ring-offset, 2px)',
+      'box-shadow: none',
+    ]);
+    expect(
+      rootDeclarationRecordsForSelector(css, searchFocusVisibleSelector, 'border-color'),
+    ).toEqual([]);
+
     const compactDensity = atRuleBlock(css, '@container layout-header-shell (width < 960px)');
     expectRuleToDeclare(compactDensity, 'header[data-layout-header] .search-trigger', [
       'max-inline-size: min(var(--_header-search-trigger-max-inline-size-compact), 24vi)',
@@ -602,6 +614,10 @@ describe('static CSS contracts', () => {
     ]);
     expectRuleToDeclare(forcedColors, 'header[data-layout-header] .search-trigger:active', [
       'background: ButtonFace',
+    ]);
+    expectRuleToDeclare(forcedColors, searchFocusVisibleSelector, [
+      'outline-color: Highlight',
+      'box-shadow: none',
     ]);
     expectRuleToDeclare(forcedColors, 'header[data-layout-header] .search-trigger__icon', [
       'color: CanvasText',
