@@ -5,6 +5,15 @@ import { escapeHtmlAttribute, escapeHtmlText } from './html-output.js';
 const renderDate = (value: string | null): string =>
   value ? `<time datetime="${escapeHtmlAttribute(value)}">${escapeHtmlText(value)}</time>` : '—';
 
+const toCorpusIndexRowIdPart = (key: string): string =>
+  key.replace(/[^a-zA-Z0-9_-]+/gu, '-').replace(/^-+|-+$/gu, '') || 'corpus';
+
+const toCorpusIndexRowId = (
+  corpus: CorporaOverviewCorpusItem,
+  index: number,
+  part: 'title' | 'path' | 'meta',
+): string => `corpus-index-row-${index}-${toCorpusIndexRowIdPart(corpus.key)}-${part}`;
+
 const renderCorpora = (corpora: readonly CorporaOverviewCorpusItem[]): string => {
   if (corpora.length === 0) {
     return renderEmptyStateHtml({
@@ -13,32 +22,37 @@ const renderCorpora = (corpora: readonly CorporaOverviewCorpusItem[]): string =>
     });
   }
 
-  return `<ol class="results-list corpora-overview__corpus-grid">${corpora
-    .map(
-      (corpus) => `
+  return `<ol class="corpora-overview__corpus-index">${corpora
+    .map((corpus, index) => {
+      const titleId = toCorpusIndexRowId(corpus, index, 'title');
+      const pathId = toCorpusIndexRowId(corpus, index, 'path');
+      const metaId = toCorpusIndexRowId(corpus, index, 'meta');
+
+      return `
         <li class="corpora-overview__corpus-item">
-          <article class="result-card" data-result-card>
-            <a
-              class="result-link"
-              href="${escapeHtmlAttribute(corpus.renderHref)}"
-              data-link-kind="internal-document"
-              data-link-surface="card"
-            >
-              <div class="result-path">${escapeHtmlText(corpus.href)}</div>
-              <h2 class="result-title">${escapeHtmlText(corpus.label)}</h2>
-              <div class="result-meta corpora-overview__corpus-meta">
-                <span>${corpus.noteCount.toLocaleString('ja-JP')}件のノート</span>
-                ${
-                  corpus.latestUpdatedDate
-                    ? `<span>最新更新 ${renderDate(corpus.latestUpdatedDate)}</span>`
-                    : ''
-                }
-              </div>
-            </a>
-          </article>
+          <a
+            class="corpus-index-row"
+            data-corpus-index-row
+            href="${escapeHtmlAttribute(corpus.renderHref)}"
+            data-link-kind="internal-document"
+            data-link-surface="navigation"
+            aria-labelledby="${escapeHtmlAttribute(titleId)}"
+            aria-describedby="${escapeHtmlAttribute(pathId)} ${escapeHtmlAttribute(metaId)}"
+          >
+            <span id="${escapeHtmlAttribute(titleId)}" class="corpus-index-row__title">${escapeHtmlText(corpus.label)}</span>
+            <span id="${escapeHtmlAttribute(pathId)}" class="corpus-index-row__path">${escapeHtmlText(corpus.href)}</span>
+            <span id="${escapeHtmlAttribute(metaId)}" class="corpus-index-row__meta">
+              <span>${corpus.noteCount.toLocaleString('ja-JP')}件のノート</span>
+              ${
+                corpus.latestUpdatedDate
+                  ? `<span>最新更新 ${renderDate(corpus.latestUpdatedDate)}</span>`
+                  : ''
+              }
+            </span>
+          </a>
         </li>
-      `,
-    )
+      `;
+    })
     .join('')}</ol>`;
 };
 

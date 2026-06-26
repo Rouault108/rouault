@@ -52,6 +52,11 @@
 - `corpusKey`はcorpus routeとswitcher stateのstable keyである。
 - `/corpora/`は全ノート一覧ではなく、corpora surface対象ノートをコーパス単位で辿る索引である。
 - `/corpora/`の`noteCount`はcorpora surface対象ノート数として扱う。
+- `/corpora/`overviewの公開コーパス一覧は`corpus index row`として描画する。
+- `/corpora/`overviewは`result-card`を所有しない。
+- `/corpora/`overviewの各`corpus index row`は単一の内部文書navigation linkである。
+- `/corpora/`overviewの`data-link-surface="navigation"`は、内部文書への索引行リンクであることを示す。
+- この`navigation`指定は、header/footer/sidebarのnavigation component契約を再定義しない。
 - Corpus contractは最近更新ノート一覧を所有しない。最近更新ノート一覧の現行責務は`docs/contracts/home.md`が扱う。
 - Corpus page URLは`/corpora/{corpusKey}/`とする。
 - Header corpus switcherはcorpus間移動の入口であり、route stateの正本を持たない。

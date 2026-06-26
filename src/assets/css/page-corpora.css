@@ -24,19 +24,75 @@
   font-size: var(--text-sm);
   line-height: var(--line-height-relaxed);
 }
-.corpora-overview__corpus-grid {
+.corpora-overview__corpus-index {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
-  gap: var(--space-4);
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-block-start: var(--border-width, 1px) solid var(--border-muted);
 }
 .corpora-overview__corpus-item {
   min-width: 0;
+  border-block-end: var(--border-width, 1px) solid var(--border-muted);
 }
-.corpora-overview__corpus-meta {
+.corpus-index-row {
+  display: grid;
+  gap: var(--space-1);
+  padding-block: var(--space-4);
+  color: inherit;
+  text-decoration: none;
+}
+.corpus-index-row:visited {
+  color: inherit;
+}
+.corpus-index-row__title {
+  --_corpus-index-title-decoration-color: var(--fg-subtle, var(--fg-muted));
+
+  color: var(--fg-default);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold, 600);
+  line-height: var(--line-height-tight);
+  text-decoration-line: underline;
+  text-decoration-color: var(--_corpus-index-title-decoration-color);
+  text-decoration-thickness: 0.04em;
+  text-underline-offset: 0.2em;
+}
+@supports (color: oklch(from white l c h / 0.35)) {
+  .corpus-index-row__title {
+    --_corpus-index-title-decoration-color: oklch(from var(--fg-muted) l c h / 0.35);
+  }
+}
+.corpus-index-row__path,
+.corpus-index-row__meta {
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+  line-height: var(--line-height-relaxed);
+}
+.corpus-index-row__meta {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   align-items: center;
+}
+.corpus-index-row:hover .corpus-index-row__title {
+  text-decoration-color: currentColor;
+}
+.corpus-index-row:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, currentColor);
+  outline-offset: var(--focus-ring-offset, 2px);
+  border-radius: var(--focus-ring-radius, var(--radius-sm, 4px));
+  animation: var(--animation-focus);
+}
+@media (forced-colors: active) {
+  .corpus-index-row__title {
+    --_corpus-index-title-decoration-color: currentColor;
+    text-decoration-color: currentColor;
+  }
+
+  .corpus-index-row:focus-visible {
+    outline-color: Highlight;
+  }
 }
 .corpora-overview .empty-hint[data-empty-state] {
   min-block-size: 20vh;

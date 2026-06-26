@@ -1573,9 +1573,63 @@ describe('static CSS contracts', () => {
       '.corpora-overview__note-summary',
     ] as const;
 
-    expectRuleToDeclare(corpora, '.corpora-overview__corpus-grid', ['grid-template-columns:']);
+    expect(allRuleSelectors(corpora)).not.toContain('.corpora-overview__corpus-grid');
+    expectRuleToDeclare(corpora, '.corpora-overview__corpus-index', [
+      'display: grid',
+      'gap: 0',
+      'list-style: none',
+      'border-block-start:',
+    ]);
+    expectRuleToDeclare(corpora, '.corpus-index-row', [
+      'display: grid',
+      'padding-block: var(--space-4)',
+      'color: inherit',
+      'text-decoration: none',
+    ]);
+    expectRuleToDeclare(corpora, '.corpus-index-row__title', [
+      'text-decoration-line: underline',
+      'text-decoration-thickness: 0.04em',
+      'text-underline-offset: 0.2em',
+      'font-weight: var(--font-semibold, 600)',
+    ]);
+    expect(atRuleBlock(corpora, '@supports (color: oklch(from white l c h / 0.35))')).toContain(
+      'oklch(from var(--fg-muted) l c h / 0.35)',
+    );
+    expect(corpora).not.toContain('oklch(from var(--fg-muted) l c h / 0.65)');
+    expectRuleToDeclare(corpora, '.corpus-index-row__path', [
+      'color: var(--fg-muted)',
+      'font-size: var(--text-sm)',
+    ]);
+    expectRuleToDeclare(corpora, '.corpus-index-row__meta', [
+      'color: var(--fg-muted)',
+      'font-size: var(--text-sm)',
+    ]);
+    expectRuleToDeclare(corpora, '.corpus-index-row:hover .corpus-index-row__title', [
+      'text-decoration-color: currentColor',
+    ]);
+    expectRuleToDeclare(corpora, '.corpus-index-row:focus-visible', ['outline:']);
+    expect(atRuleBlock(corpora, '@media (forced-colors: active)')).toContain(
+      'outline-color: Highlight',
+    );
+    expect(ruleBlock(corpora, '.corpus-index-row__title')).not.toContain(
+      '--link-decoration-color-subtle',
+    );
+    expect(ruleBlock(corpora, '.corpus-index-row__title')).not.toContain(
+      '--font-weight-semibold',
+    );
+    expect(corpora).not.toContain('--link-decoration-color-subtle');
+    expect(corpora).not.toContain('--font-weight-semibold');
+    const corpusIndexRowHoverBlocks = ruleBlocksForSelectorsMatching(corpora, (selector) =>
+      selector.includes('.corpus-index-row:hover'),
+    );
+    expect(corpusIndexRowHoverBlocks).not.toMatch(/(?:^|\n)\s*background(?:-color)?:/u);
+    expect(corpusIndexRowHoverBlocks).not.toMatch(/(?:^|\n)\s*box-shadow:/u);
+    expect(corpusIndexRowHoverBlocks).not.toMatch(/(?:^|\n)\s*transform:/u);
     expectRuleToDeclare(corpora, '.corpus-page .empty-hint[data-empty-state]', ['min-block-size:']);
-    expect(corpora).not.to.match(/\.result-(card|link|title|meta|excerpt)\s*\{/u);
+    const ownedResultSelectors = allRuleSelectors(corpora).filter((selector) =>
+      /\.result-(?:card|link|title|path|meta|excerpt)(?![-_a-zA-Z0-9])/u.test(selector),
+    );
+    expect(ownedResultSelectors).toEqual([]);
     for (const selector of removedCorporaRecentNoteSelectors) {
       expect(allRuleSelectors(corpora), selector).not.toContain(selector);
     }

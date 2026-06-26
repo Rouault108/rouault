@@ -20,6 +20,12 @@ test.describe('Static pages', () => {
       '公開ノートを、コーパスというまとまりごとに辿るための索引です。',
     );
     await expect(page.locator('#main-content')).not.toContainText('最近更新したノート');
+    const libraryRow = page.locator('a[data-corpus-index-row][href="/corpora/library/"]');
+    await expect(libraryRow).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Library', exact: true })).toBeVisible();
+
+    await libraryRow.click();
+    await expect(page).toHaveURL(/\/corpora\/library\/$/u);
   });
 
   test('search ページが主要見出しまで表示されること', async ({ page }) => {

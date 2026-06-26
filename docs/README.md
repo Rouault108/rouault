@@ -79,6 +79,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 - `docs/adr/search-page-static-choice-menu.md`
 - `docs/adr/japanese-ascii-spacing-policy.md`
 - `docs/adr/home-corpora-information-architecture.md`
+- `docs/adr/corpus-index-row.md`
 - `docs/adr/`
 
 ADRは設計判断の経緯であり、正本Contractを上書きしない。各ADRの現行正本は、対応する`docs/contracts/`配下のContractを参照する。

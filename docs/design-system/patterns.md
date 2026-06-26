@@ -58,6 +58,16 @@ result-cardのfocus表示では、ポインター click由来の`:focus-within`�
 
 `:has()`非対応環境では、`.result-link:focus-visible`のfallback outlineを残し、キーボードfocus visibleを不可視にしない。
 
+### Corpus Index Row
+
+Corpus Index Rowは、`/corpora/`overviewで公開コーパスを静かに列挙するための索引行patternであり、Block Link Surfaceとは別分類である。
+
+行全体はnative `<a>`だが、カード面ではない。titleは主ラベルであり、通常時からごく弱い中立色下線を持つ。通常時のtitle下線は`fg-muted`由来の0.35 alpha相当に抑え、thicknessは`0.04em`、underline offsetは`0.2em`を基準にする。hoverはtitle装飾の軽微な強調に限定する。
+
+row全体のbackground hover、shadow、transform、elevationは禁止する。`focus-visible`はrow linkに明確に出す。
+
+`padding-inline`は必須仕様ではない。視覚確認でfocus outlineが窮屈、またはタップ領域が不足すると判断した場合だけ、focus/touch安定化のための最小inline paddingを許容する。
+
 ## 3. Selected / Current / Active / Focused
 
 - `selected`はwidget内の選択状態を表す。
