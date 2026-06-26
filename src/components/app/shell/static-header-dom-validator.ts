@@ -65,13 +65,13 @@ const validateSearchTrigger = (trigger: Element): void => {
     'search trigger icon is required.',
   );
 
-  const placeholder = requireFoundElement(
-    trigger.querySelector(`.${contract.placeholderClassName}`),
-    'search trigger placeholder is required.',
+  const label = requireFoundElement(
+    trigger.querySelector(`.${contract.labelClassName}`),
+    'search trigger label is required.',
   );
-  requireAttributeValue(placeholder, 'aria-hidden', 'true');
-  if (placeholder.textContent !== contract.visibleLabel) {
-    fail(`search trigger placeholder text must be "${contract.visibleLabel}".`);
+  requireAttributeValue(label, 'aria-hidden', 'true');
+  if (label.textContent !== contract.visibleLabel) {
+    fail(`search trigger label text must be "${contract.visibleLabel}".`);
   }
 };
 

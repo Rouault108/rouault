@@ -160,12 +160,15 @@ Theme switcherはtheme option button groupである。
 
 ### Search Trigger
 
-Search triggerは`/search/` fallbackとdialog triggerの二重contractを持つ。
+Search triggerは入力欄ではなく、`/search/` fallbackとdialog triggerの二重contractを持つquiet launcherである。
 
 - No-JS: `/search/`へのlinkとして機能する。
 - JS enabled: `data-search-dialog-trigger`を起点にsearch dialog triggerとして機能する。
-- Visible labelは`検索...`とする。
+- Visible labelは`検索`とする。
 - Accessible nameは`検索ダイアログを開く`とする。
+- DOM class contractは`.search-trigger__label`とする。
+- Desktop / compactではicon + labelを表示する。
+- `<640px`ではicon-onlyに切り替える。
 - `aria-haspopup="dialog"`、`aria-controls`、`aria-expanded`を検証対象にする。
 - Header search triggerは`open-search-dialog` custom event発火を保証しない。
 - Header search triggerは旧`ui-search-trigger` custom element APIの復元対象ではない。
@@ -248,16 +251,19 @@ Desktop headerのcorpus switcher offsetは、note/sidebar 条件ではなくhead
 
 #### Search Trigger Visual Contract
 
-Search triggerは、通常時にはinput-likeに見えるが、本文への没入を妨げないmuted controlとして表現する。
+Search triggerは、通常時にはinput-like surfaceを持たないquiet launcherとして表現する。
 
-- Iconはmuted、placeholderはsubtleな視覚強度を基本とする。
-- Placeholderはvisible labelだが、accessible nameには参加させない。
-- Hoverはclickableであることを示すため、background / borderの変化を持つ。
-- Focus-visibleは明確なoutline / ringを持つ。
+- Iconはmuted、labelはsubtleな視覚強度を基本とする。
+- Labelはvisible labelだが、accessible nameには参加させない。
+- 通常時のbackground / borderはtransparentを基本とする。ただし1px border boxはlayoutとforced-colors識別性のため維持する。
+- Hoverはbackground中心で表現し、通常カラーモードではborder強調を復活させない。
+- Focus-visibleは読書体験よりもキーボード操作視認性を優先し、明確なoutline / ringを持つ。
 - Activeは押下感を持つ。
 - Reduced motionではactive transformに依存しない。
-- Forced-colorsではborder、background、icon、placeholderが判別可能である。
-- Responsive densityはregular / compact / icon-onlyを維持する。
+- Forced-colorsでは操作可能要素の識別性を優先し、`ButtonText` borderを維持する。
+- Forced-colorsではbackground、icon、labelが判別可能である。
+- Responsive densityはdesktop / compact / icon-onlyを維持する。
+- Desktop / compactではcontent-sized幅を基本とし、不自然な右余白を作らない。
 - Icon-only densityでもexpanded hit areaは44pxを下回らない。
 
 ### TOC Trigger

@@ -510,11 +510,19 @@ describe('static CSS contracts', () => {
       'z-index:',
       'container-type: inline-size',
       'container-name: layout-header-shell',
+      '--_header-search-trigger-max-inline-size: 9rem',
+      '--_header-search-trigger-max-inline-size-compact: 7rem',
     ]);
     expect(css).not.to.contain('layout-header-query-frame');
     expect(css).not.to.match(/(^|[,{]\s*)layout-header(?:[.#[:\s,{>+~]|$)/u);
     expect(css).not.to.match(/(^|[,{]\s*)ui-header(?:[.#[:\s,{>+~]|$)/u);
     expect(css.match(/container-name:\s*layout-header-shell/gu) ?? []).toHaveLength(1);
+    const deprecatedSearchTriggerWidth = `--_header-search-trigger-${'width'}`;
+    const deprecatedSearchTriggerCompactWidth = `${deprecatedSearchTriggerWidth}-compact`;
+    const deprecatedSearchTriggerSelector = `search-trigger__${'placeholder'}`;
+    expect(css).not.toContain(deprecatedSearchTriggerWidth);
+    expect(css).not.toContain(deprecatedSearchTriggerCompactWidth);
+    expect(css).not.toContain(deprecatedSearchTriggerSelector);
 
     expectRuleToDeclare(css, 'header[data-layout-header] .toc-trigger', ['display: none']);
     expectRuleToDeclare(
@@ -524,14 +532,34 @@ describe('static CSS contracts', () => {
     );
 
     expectRuleToDeclare(css, 'header[data-layout-header] .search-trigger', [
-      'border: var(--border-width, 1px) solid var(--border-default)',
-      'background: var(--bg-control-muted)',
+      'inline-size: auto',
+      'max-inline-size: min(var(--_header-search-trigger-max-inline-size), 24vi)',
+      'border: var(--border-width, 1px) solid transparent',
+      'background: transparent',
     ]);
     expectRuleToDeclare(css, 'header[data-layout-header] .search-trigger__icon', [
       'color: var(--fg-muted)',
     ]);
-    expectRuleToDeclare(css, 'header[data-layout-header] .search-trigger__placeholder', [
+    expectRuleToDeclare(css, 'header[data-layout-header] .search-trigger__label', [
       'color: var(--fg-subtle)',
+    ]);
+    expectRuleToDeclare(css, 'header[data-layout-header] .search-trigger:hover', [
+      'border-color: transparent',
+    ]);
+
+    const compactDensity = atRuleBlock(css, '@container layout-header-shell (width < 960px)');
+    expectRuleToDeclare(compactDensity, 'header[data-layout-header] .search-trigger', [
+      'max-inline-size: min(var(--_header-search-trigger-max-inline-size-compact), 24vi)',
+    ]);
+
+    const iconOnlyDensity = atRuleBlock(css, '@container layout-header-shell (width < 640px)');
+    expectRuleToDeclare(iconOnlyDensity, 'header[data-layout-header] .search-trigger__label', [
+      'display: none',
+    ]);
+
+    const minimumDensity = atRuleBlock(css, '@container layout-header-shell (width < 400px)');
+    expectRuleToDeclare(minimumDensity, 'header[data-layout-header] .search-trigger__label', [
+      'display: none',
     ]);
 
     const reducedMotion = atRuleBlock(css, '@media (prefers-reduced-motion: reduce)');
@@ -558,7 +586,7 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(forcedColors, 'header[data-layout-header] .search-trigger__icon', [
       'color: CanvasText',
     ]);
-    expectRuleToDeclare(forcedColors, 'header[data-layout-header] .search-trigger__placeholder', [
+    expectRuleToDeclare(forcedColors, 'header[data-layout-header] .search-trigger__label', [
       'color: CanvasText',
     ]);
 

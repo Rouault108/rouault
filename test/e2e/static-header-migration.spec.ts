@@ -243,13 +243,13 @@ const expectHeaderControlHitTargetContract = (contract: HeaderControlHitTargetCo
 const readSearchTriggerDensity = async (page: Page) =>
   page.locator(searchTriggerSelector).evaluate((element) => {
     const style = window.getComputedStyle(element);
-    const placeholder = element.querySelector<HTMLElement>('.search-trigger__placeholder');
-    const placeholderStyle = placeholder === null ? null : window.getComputedStyle(placeholder);
+    const label = element.querySelector<HTMLElement>('.search-trigger__label');
+    const labelStyle = label === null ? null : window.getComputedStyle(label);
     const afterStyle = window.getComputedStyle(element, '::after');
     return {
       afterPosition: afterStyle.position,
       height: Number.parseFloat(style.height),
-      placeholderDisplay: placeholderStyle?.display ?? null,
+      labelDisplay: labelStyle?.display ?? null,
       position: style.position,
       width: Number.parseFloat(style.width),
     };
@@ -459,11 +459,11 @@ test.describe('Static header migration', () => {
     await expect(trigger).toHaveCount(1);
     await expect(trigger).toHaveAttribute('href', /\/search\/$/u);
     await expect(trigger).toHaveAttribute('aria-label', '検索ダイアログを開く');
-    await expect(trigger.locator('.search-trigger__placeholder')).toHaveAttribute(
+    await expect(trigger.locator('.search-trigger__label')).toHaveAttribute(
       'aria-hidden',
       'true',
     );
-    await expect(trigger.locator('.search-trigger__placeholder')).toHaveText('検索...');
+    await expect(trigger.locator('.search-trigger__label')).toHaveText('検索');
     await expect(trigger).toHaveJSProperty('tagName', 'A');
   });
 
@@ -571,37 +571,40 @@ test.describe('Static header migration', () => {
     await expect(searchTrigger).toHaveAttribute('aria-controls', /.+/u);
     await expect(searchTrigger).toHaveAttribute('aria-expanded', 'false');
     await expect(searchTrigger).toHaveAccessibleName('検索ダイアログを開く');
-    await expect(searchTrigger.locator('.search-trigger__placeholder')).toBeVisible();
-    await expect(searchTrigger.locator('.search-trigger__placeholder')).toHaveText('検索...');
+    await expect(searchTrigger.locator('.search-trigger__label')).toBeVisible();
+    await expect(searchTrigger.locator('.search-trigger__label')).toHaveText('検索');
   });
 
-  test('検索 trigger は responsive density を復元すること', async ({ page }) => {
+  test('検索 trigger は quiet launcher として responsive density を維持すること', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1280, height: 760 });
     await page.goto('/about/');
     await waitForAppRouterReady(page);
     const regular = await readSearchTriggerDensity(page);
-    expect(regular.placeholderDisplay).not.toBe('none');
-    expect(regular.width).toBeGreaterThan(regular.height * 3);
+    expect(regular.labelDisplay).not.toBe('none');
+    expect(regular.width).toBeGreaterThan(regular.height * 1.5);
+    expect(regular.width).toBeLessThanOrEqual(144);
 
     await page.setViewportSize({ width: 959, height: 760 });
     const compact = await readSearchTriggerDensity(page);
-    expect(compact.placeholderDisplay).not.toBe('none');
-    expect(compact.width).toBeGreaterThan(compact.height * 2);
-    expect(compact.width).toBeLessThan(regular.width);
+    expect(compact.labelDisplay).not.toBe('none');
+    expect(compact.width).toBeLessThanOrEqual(regular.width);
+    expect(compact.width).toBeLessThanOrEqual(128);
 
     await page.setViewportSize({ width: 639, height: 760 });
     const iconOnly = await readSearchTriggerDensity(page);
-    expect(iconOnly.placeholderDisplay).toBe('none');
+    expect(iconOnly.labelDisplay).toBe('none');
     expect(iconOnly.width).toBeLessThanOrEqual(iconOnly.height + 2);
 
     await page.setViewportSize({ width: 400, height: 760 });
     const narrowBoundary = await readSearchTriggerDensity(page);
-    expect(narrowBoundary.placeholderDisplay).toBe('none');
+    expect(narrowBoundary.labelDisplay).toBe('none');
     expect(narrowBoundary.width).toBeLessThanOrEqual(narrowBoundary.height + 2);
 
     await page.setViewportSize({ width: 399, height: 760 });
     const minimum = await readSearchTriggerDensity(page);
-    expect(minimum.placeholderDisplay).toBe('none');
+    expect(minimum.labelDisplay).toBe('none');
     expect(minimum.width).toBeLessThan(iconOnly.width);
     expect(minimum.height).toBeLessThan(iconOnly.height);
     expect(minimum.position).toBe('relative');

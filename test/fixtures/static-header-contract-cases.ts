@@ -22,7 +22,7 @@ const SEARCH_TRIGGER_HTML = `
             <circle cx="11" cy="11" r="8"></circle>
           </svg>
         </span>
-        <span class="search-trigger__placeholder" aria-hidden="true">検索...</span>
+        <span class="search-trigger__label" aria-hidden="true">検索</span>
       </a>
 `;
 
@@ -223,8 +223,8 @@ export const STATIC_HEADER_CONTRACT_REJECTED_CASES: readonly StaticHeaderContrac
   {
     label: 'element-specific attribute',
     html: `${STATIC_HEADER_CONTRACT_ACCEPTED_HTML.replace(
-      '<span class="search-trigger__placeholder" aria-hidden="true">検索...</span>',
-      '<span class="search-trigger__placeholder" href="/search/" aria-hidden="true">検索...</span>',
+      '<span class="search-trigger__label" aria-hidden="true">検索</span>',
+      '<span class="search-trigger__label" href="/search/" aria-hidden="true">検索</span>',
     )}`,
   },
   {
@@ -272,7 +272,7 @@ export const STATIC_HEADER_CONTRACT_REJECTED_CASES: readonly StaticHeaderContrac
     label: 'search trigger is button',
     html: withSearchTrigger(
       `
-      <button class="search-trigger" type="button">検索...</button>
+      <button class="search-trigger" type="button">検索</button>
 `,
     ),
   },
@@ -324,25 +324,25 @@ export const STATIC_HEADER_CONTRACT_REJECTED_CASES: readonly StaticHeaderContrac
     ),
   },
   {
-    label: 'search trigger placeholder missing',
+    label: 'search trigger label missing',
     html: withSearchTrigger(
       SEARCH_TRIGGER_HTML.replace(
-        /\s+<span class="search-trigger__placeholder" aria-hidden="true">検索\.\.\.<\/span>/u,
+        /\s+<span class="search-trigger__label" aria-hidden="true">検索<\/span>/u,
         '',
       ),
     ),
   },
   {
-    label: 'search trigger placeholder aria-hidden missing',
+    label: 'search trigger label aria-hidden missing',
     html: withSearchTrigger(
       SEARCH_TRIGGER_HTML.replace(
-        '<span class="search-trigger__placeholder" aria-hidden="true">',
-        '<span class="search-trigger__placeholder">',
+        '<span class="search-trigger__label" aria-hidden="true">',
+        '<span class="search-trigger__label">',
       ),
     ),
   },
   {
-    label: 'search trigger placeholder text mismatch',
-    html: withSearchTrigger(SEARCH_TRIGGER_HTML.replace('>検索...</span>', '>Search</span>')),
+    label: 'search trigger label text mismatch',
+    html: withSearchTrigger(SEARCH_TRIGGER_HTML.replace('>検索</span>', '>Search</span>')),
   },
 ];

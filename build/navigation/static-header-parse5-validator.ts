@@ -110,13 +110,13 @@ const validateSearchTrigger = (trigger: Parse5Element): void => {
     'search trigger icon is required.',
   );
 
-  const placeholder = requireFoundElement(
-    descendants.find((element) => classListContains(element, contract.placeholderClassName)),
-    'search trigger placeholder is required.',
+  const label = requireFoundElement(
+    descendants.find((element) => classListContains(element, contract.labelClassName)),
+    'search trigger label is required.',
   );
-  requireAttributeValue(placeholder, 'aria-hidden', 'true');
-  if (directTextContent(placeholder) !== contract.visibleLabel) {
-    fail(`search trigger placeholder text must be "${contract.visibleLabel}".`);
+  requireAttributeValue(label, 'aria-hidden', 'true');
+  if (directTextContent(label) !== contract.visibleLabel) {
+    fail(`search trigger label text must be "${contract.visibleLabel}".`);
   }
 };
 

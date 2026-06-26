@@ -3,8 +3,8 @@ export const STATIC_HEADER_ROOT_SELECTOR = 'header[data-layout-header]' as const
 export const STATIC_HEADER_SEARCH_TRIGGER_CONTRACT = {
   className: 'search-trigger',
   iconClassName: 'search-trigger__icon',
-  placeholderClassName: 'search-trigger__placeholder',
-  visibleLabel: '検索...',
+  labelClassName: 'search-trigger__label',
+  visibleLabel: '検索',
   accessibleName: '検索ダイアログを開く',
   ariaHasPopup: 'dialog',
   initialAriaExpanded: 'false',
