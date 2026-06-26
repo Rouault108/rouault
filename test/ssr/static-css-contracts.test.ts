@@ -1578,8 +1578,11 @@ describe('static CSS contracts', () => {
       'display: grid',
       'gap: 0',
       'list-style: none',
-      'border-block-start:',
     ]);
+    expect(ruleBlock(corpora, '.corpora-overview__corpus-index')).not.toContain(
+      'border-block-start:',
+    );
+    expectRuleToDeclare(corpora, '.corpora-overview__corpus-item', ['border-block-end:']);
     expectRuleToDeclare(corpora, '.corpus-index-row', [
       'display: grid',
       'padding-block: var(--space-4)',
@@ -1592,9 +1595,10 @@ describe('static CSS contracts', () => {
       'text-underline-offset: 0.2em',
       'font-weight: var(--font-semibold, 600)',
     ]);
-    expect(atRuleBlock(corpora, '@supports (color: oklch(from white l c h / 0.35))')).toContain(
-      'oklch(from var(--fg-muted) l c h / 0.35)',
+    expect(atRuleBlock(corpora, '@supports (color: oklch(from white l c h / 0.3))')).toContain(
+      'oklch(from var(--fg-muted) l c h / 0.3)',
     );
+    expect(corpora).not.toContain('oklch(from var(--fg-muted) l c h / 0.35)');
     expect(corpora).not.toContain('oklch(from var(--fg-muted) l c h / 0.65)');
     expectRuleToDeclare(corpora, '.corpus-index-row__path', [
       'color: var(--fg-muted)',

@@ -62,7 +62,9 @@ result-cardのfocus表示では、ポインター click由来の`:focus-within`�
 
 Corpus Index Rowは、`/corpora/`overviewで公開コーパスを静かに列挙するための索引行patternであり、Block Link Surfaceとは別分類である。
 
-行全体はnative `<a>`だが、カード面ではない。titleは主ラベルであり、通常時からごく弱い中立色下線を持つ。通常時のtitle下線は`fg-muted`由来の0.35 alpha相当に抑え、thicknessは`0.04em`、underline offsetは`0.2em`を基準にする。hoverはtitle装飾の軽微な強調に限定する。
+行全体はnative `<a>`だが、カード面ではない。titleは主ラベルであり、通常時からごく弱い中立色下線を持つ。通常時のtitle下線は`fg-muted`由来の0.30 alpha相当に抑え、thicknessは`0.04em`、underline offsetは`0.2em`を基準にする。hoverはtitle装飾の軽微な強調に限定する。
+
+Corpus Index Rowのroot listは先頭borderを持たない。section説明文から最初のrowへ自然に流し、row間の分離は各itemのend borderで担う。
 
 row全体のbackground hover、shadow、transform、elevationは禁止する。`focus-visible`はrow linkに明確に出す。
 

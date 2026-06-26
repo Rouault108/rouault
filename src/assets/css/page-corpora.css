@@ -30,7 +30,6 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  border-block-start: var(--border-width, 1px) solid var(--border-muted);
 }
 .corpora-overview__corpus-item {
   min-width: 0;
@@ -58,9 +57,9 @@
   text-decoration-thickness: 0.04em;
   text-underline-offset: 0.2em;
 }
-@supports (color: oklch(from white l c h / 0.35)) {
+@supports (color: oklch(from white l c h / 0.3)) {
   .corpus-index-row__title {
-    --_corpus-index-title-decoration-color: oklch(from var(--fg-muted) l c h / 0.35);
+    --_corpus-index-title-decoration-color: oklch(from var(--fg-muted) l c h / 0.3);
   }
 }
 .corpus-index-row__path,
