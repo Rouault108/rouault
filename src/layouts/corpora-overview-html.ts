@@ -12,7 +12,7 @@ const toCorpusIndexRowId = (
   corpus: CorporaOverviewCorpusItem,
   index: number,
   part: 'title' | 'path' | 'meta',
-): string => `corpus-index-row-${index}-${toCorpusIndexRowIdPart(corpus.key)}-${part}`;
+): string => `corpus-index-row-${index.toString()}-${toCorpusIndexRowIdPart(corpus.key)}-${part}`;
 
 const renderCorpora = (corpora: readonly CorporaOverviewCorpusItem[]): string => {
   if (corpora.length === 0) {
