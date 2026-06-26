@@ -17,6 +17,9 @@ const isTextNode = (node: ChildNode): node is TextNode => node.nodeName === '#te
 const getAttribute = (node: ElementNode, name: string): string | null =>
   node.attrs.find((attribute) => attribute.name === name)?.value ?? null;
 
+const hasClass = (node: ElementNode, className: string): boolean =>
+  (getAttribute(node, 'class') ?? '').split(/\s+/u).includes(className);
+
 const collectElements = (
   node: ParentLike,
   predicate: (element: ElementNode) => boolean,
@@ -68,14 +71,25 @@ describe('HomePageTemplate', () => {
     expect(rendered).toContain(
       '<h1 class="home-title">調べたこと、考えたこと、読み返したいこと。</h1>',
     );
-    expect(rendered).toContain(
-      'ソフトウェア、計算機科学、設計、読書から得た理解を、後から辿れる形で整理しています。',
-    );
     expect(rendered).toContain('最終更新 <time datetime="2026-03-10">2026-03-10</time>');
     expect(rendered).toContain('music / romantic');
     expect(rendered).toContain('和声進行の整理');
 
     const fragment = parseFragment(rendered);
+    const homeLeads = collectElements(fragment, (element) => hasClass(element, 'home-lead'));
+    expect(homeLeads).toHaveLength(1);
+    const [homeLead] = homeLeads;
+    expect(homeLead ? textContent(homeLead) : '').toBe(
+      'ソフトウェア、計算機科学、設計、読書で得た理解を、後から辿れる形で残します。',
+    );
+
+    const leadKeepPhrases = collectElements(homeLead ?? fragment, (element) =>
+      hasClass(element, 'home-lead__keep'),
+    );
+    expect(leadKeepPhrases).toHaveLength(1);
+    const [leadKeepPhrase] = leadKeepPhrases;
+    expect(leadKeepPhrase ? textContent(leadKeepPhrase) : '').toBe('形で残します。');
+
     const [feedHeading] = collectElements(
       fragment,
       (element) => getAttribute(element, 'id') === 'home-feed-heading',
@@ -84,14 +98,10 @@ describe('HomePageTemplate', () => {
     expect(feedHeading ? textContent(feedHeading) : '').toBe('最近の更新');
     expect(feedHeading ? textContent(feedHeading) : '').not.toBe('新着一覧');
 
-    const [feedMeta] = collectElements(fragment, (element) =>
-      (getAttribute(element, 'class') ?? '').split(/\s+/u).includes('home-feed-meta'),
-    );
+    const [feedMeta] = collectElements(fragment, (element) => hasClass(element, 'home-feed-meta'));
     expect(feedMeta ? textContent(feedMeta) : '').toBe('最新1件・公開ノート3件');
 
-    const [homeMeta] = collectElements(fragment, (element) =>
-      (getAttribute(element, 'class') ?? '').split(/\s+/u).includes('home-meta'),
-    );
+    const [homeMeta] = collectElements(fragment, (element) => hasClass(element, 'home-meta'));
     expect(homeMeta ? getAttribute(homeMeta, 'aria-label') : null).toBe(
       'トップページの補足情報と導線',
     );

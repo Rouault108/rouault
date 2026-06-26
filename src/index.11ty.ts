@@ -53,7 +53,7 @@ export class HomePageTemplate {
           <header class="home-hero">
             <p class="home-eyebrow">Rouault</p>
             <h1 class="home-title">調べたこと、考えたこと、読み返したいこと。</h1>
-            <p class="home-lead">ソフトウェア、計算機科学、設計、読書から得た理解を、後から辿れる形で整理しています。</p>
+            <p class="home-lead">ソフトウェア、計算機科学、設計、読書で得た理解を、後から辿れる<span class="home-lead__keep">形で残します。</span></p>
             <p${serializeHtmlAttributes([
               { name: 'class', value: 'home-meta' },
               { name: 'aria-label', value: 'トップページの補足情報と導線' },

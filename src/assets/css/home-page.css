@@ -1,4 +1,5 @@
 .home-shell {
+  --home-lead-measure: 44em;
   box-sizing: border-box;
   width: min(100%, var(--page-shell-max-width, 72rem));
   margin-inline: auto;
@@ -39,10 +40,15 @@
 
 .home-lead {
   margin: 0;
-  max-inline-size: var(--reading-measure, 72ch);
+  max-inline-size: min(100%, var(--home-lead-measure));
   color: var(--fg-default);
   font-size: var(--text-base, 14px);
   line-height: 1.8;
+  text-wrap: pretty;
+}
+
+.home-lead__keep {
+  white-space: nowrap;
 }
 
 .home-meta {

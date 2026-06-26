@@ -3,7 +3,7 @@
 ## 1. Status
 
 - Type: Normative
-- Source of truth: `build/projections/home-page-projection.ts`、`src/index.11ty.ts`、`test/ssr/home-template.test.ts`
+- Source of truth: `build/projections/home-page-projection.ts`、`src/index.11ty.ts`、`src/assets/css/home-page.css`、`test/ssr/home-template.test.ts`、`test/ssr/static-css-contracts.test.ts`
 - Applies to: top page route`/`、home hero、home feed、home metadata links
 - Non-goals: corpus index、all-notes archive、search result list
 
@@ -51,6 +51,9 @@
 - home page CSSはmetadata linkの色、下線、focus ringを再所有しない。
 - metadata導線は通常時、visited時、touch環境でprimary色へ昇格しない。
 - metadata導線は常時下線でリンク識別を担保する。
+- home leadは本文用reading measureを直接参照せず、home固有のlead measureを使う。
+- home leadは短い導入文として自然な折り返しを優先し、終端の短い語尾だけが孤立しない構造を持つ。
+- home leadの組版契約はhome hero内に閉じ、metadata導線、home feed、global reading measureを再所有しない。
 - トップページはcorpus index、全ノート全件一覧、検索結果一覧を所有しない。
 
 ## 4. Integration Boundaries
@@ -70,6 +73,7 @@
 ### Tests
 
 - `test/ssr/home-template.test.ts`がhome templateのDOM契約を検証する。
+- `test/ssr/static-css-contracts.test.ts`がhome lead CSS契約を検証する。
 
 ## 5. Acceptance Criteria
 
@@ -81,4 +85,6 @@
 - metadata導線は`data-link-kind="internal-document"`と`data-link-surface="metadata"`を持つ。
 - metadata導線は通常時、visited時、touch環境でprimary色へ昇格しない。
 - metadata導線は常時下線でリンク識別を担保する。
+- home leadがhome固有のlead measureを使い、global reading measureへ直接依存しない。
+- home leadの終端意味単位が短い孤立行になりにくい構造を持つ。
 - トップページがcorpus index、全ノート全件一覧、検索結果一覧を所有しない。
