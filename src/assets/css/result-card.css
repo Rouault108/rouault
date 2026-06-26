@@ -16,14 +16,15 @@
   border: var(--border-width, 1px) solid var(--border-default);
   border-radius: var(--radius-lg, 12px);
   background: var(--bg-surface-2);
-  transition:
-    border-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
+  transition: border-color var(--duration-fast) var(--ease-out);
 }
 
 .page-shell .result-card:hover {
-  border-color: var(--border-muted);
-  box-shadow: var(--elevation-md);
+  border-color: var(--border-default);
+  background:
+    linear-gradient(var(--bg-hover), var(--bg-hover)),
+    var(--bg-surface-2);
+  box-shadow: none;
 }
 
 .page-shell .result-link:focus-visible {
@@ -34,8 +35,8 @@
 
 @supports selector(.result-card:has(> .result-link:focus-visible)) {
   .page-shell .result-card:has(> .result-link:focus-visible) {
-    border-color: var(--border-muted);
-    box-shadow: var(--elevation-md);
+    border-color: var(--border-default);
+    box-shadow: none;
     outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
     outline-offset: var(--focus-ring-offset, 2px);
     animation: var(--animation-focus);

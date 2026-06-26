@@ -224,6 +224,20 @@ describe('result card static CSS contract', () => {
         focusVisibleSupportsParams,
         '.page-shell .result-card:has(> .result-link:focus-visible)',
       ),
+    ).toContain('border-color: var(--border-default)');
+    expect(
+      supportsRuleBlock(
+        css,
+        focusVisibleSupportsParams,
+        '.page-shell .result-card:has(> .result-link:focus-visible)',
+      ),
+    ).toContain('box-shadow: none');
+    expect(
+      supportsRuleBlock(
+        css,
+        focusVisibleSupportsParams,
+        '.page-shell .result-card:has(> .result-link:focus-visible)',
+      ),
     ).toContain('outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color)');
     expect(
       supportsRuleBlock(
@@ -239,6 +253,27 @@ describe('result card static CSS contract', () => {
         '.page-shell .result-card:has(> .result-link:focus-visible)',
       ),
     ).toContain('animation: var(--animation-focus)');
+    expect(
+      supportsRuleBlock(
+        css,
+        focusVisibleSupportsParams,
+        '.page-shell .result-card:has(> .result-link:focus-visible)',
+      ),
+    ).not.toContain('--elevation-md');
+    expect(
+      supportsRuleBlock(
+        css,
+        focusVisibleSupportsParams,
+        '.page-shell .result-card:has(> .result-link:focus-visible)',
+      ),
+    ).not.toContain('--border-muted');
+    expect(
+      supportsRuleBlock(
+        css,
+        focusVisibleSupportsParams,
+        '.page-shell .result-card:has(> .result-link:focus-visible)',
+      ),
+    ).not.toContain('--border-strong');
 
     expect(
       supportsRuleBlock(css, focusVisibleSupportsParams, '.page-shell .result-link:focus-visible'),
@@ -301,17 +336,46 @@ describe('result card static CSS contract', () => {
     );
   });
 
-  it('restores outlined clickable hover treatment without height contracts', () => {
+  it('result-card の hover は elevation に依存しない静かな surface 反応にする', () => {
     const css = readResultCardCss();
 
-    expect(ruleBlock(css, '.page-shell .result-card')).toContain('overflow: hidden');
-    expect(ruleBlock(css, '.page-shell .result-card')).toContain('transition:');
-    expect(ruleBlock(css, '.page-shell .result-card:hover')).toContain(
-      'border-color: var(--border-muted)',
+    const cardBlock = topLevelRuleBlock(css, '.page-shell .result-card');
+    const hoverBlock = topLevelRuleBlock(css, '.page-shell .result-card:hover');
+
+    expect(cardBlock).toContain('overflow: hidden');
+    expect(cardBlock).toContain('background: var(--bg-surface-2)');
+    expect(cardBlock).toContain(
+      'border: var(--border-width, 1px) solid var(--border-default)',
     );
-    expect(ruleBlock(css, '.page-shell .result-card:hover')).toContain(
-      'box-shadow: var(--elevation-md)',
+    expect(cardBlock).toContain('transition:');
+    expect(cardBlock).not.toContain('box-shadow');
+    expect(cardBlock).not.toContain('--border-muted');
+    expect(cardBlock).not.toContain('--border-strong');
+
+    expect(hoverBlock).toContain('border-color: var(--border-default)');
+    expect(hoverBlock).toContain('box-shadow: none');
+    expect(hoverBlock).toContain('linear-gradient(var(--bg-hover), var(--bg-hover))');
+    expect(hoverBlock).toContain('var(--bg-surface-2)');
+    expect(hoverBlock).not.toContain('--elevation-md');
+    expect(hoverBlock).not.toContain('--border-muted');
+    expect(hoverBlock).not.toContain('--border-strong');
+    expect(hoverBlock).not.toContain('transform:');
+
+    const focusProjectionBlock = supportsRuleBlock(
+      css,
+      focusVisibleSupportsParams,
+      '.page-shell .result-card:has(> .result-link:focus-visible)',
     );
+    expect(focusProjectionBlock).toContain('border-color: var(--border-default)');
+    expect(focusProjectionBlock).toContain('box-shadow: none');
+    expect(focusProjectionBlock).toContain(
+      'outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color)',
+    );
+    expect(focusProjectionBlock).toContain('outline-offset: var(--focus-ring-offset, 2px)');
+    expect(focusProjectionBlock).toContain('animation: var(--animation-focus)');
+    expect(focusProjectionBlock).not.toContain('--elevation-md');
+    expect(focusProjectionBlock).not.toContain('--border-muted');
+    expect(focusProjectionBlock).not.toContain('--border-strong');
 
     const heightContractProperties = new Set([
       'block-size',

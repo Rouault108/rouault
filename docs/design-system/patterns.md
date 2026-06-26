@@ -37,6 +37,13 @@ Block Linkは、遷移先を持つ面全体をnative `<a>`として表すpattern
 
 JSによるcard click delegationは使わない。Ctrl / Meta / Shift click、右クリック、コンテキストメニュー、focusは`<a>`のブラウザ標準動作に委ねる。card外形のhover / focus表示はCSS patternの責務であり、リンクの意味論を上書きしない。
 
+#### result-card hover surface
+
+result-cardのhoverは、カードを物理的に浮上させる状態ではない。
+現行result-cardでは、elevation shadowやtransformを使わず、`--bg-hover`を`--bg-surface-2`へ重ねた背景の微差で操作可能性を示す。
+hover時に境界線を`--border-muted`へ弱めない。
+この方針はresult-cardに限定し、`link-card.css`、`card-link.css`、`syntax.css`、Markdown link-cardへ一般化しない。
+
 #### result-card focus projection
 
 result-cardは、一覧・検索結果で使うblock link surfaceであり、`article.result-card > a.result-link`を正規構造とする。

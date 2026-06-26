@@ -40,5 +40,10 @@ Tabなどのキーボード操作では、カード単位のfocus位置を明確
 マウスクリック時には、カード外周の強いfocus ringを抑制できる。
 :has() 非対応環境でも、キーボードfocus visibleは不可視にならない。
 
+result-cardのfocus-visible投影はoutlineを正本とする。
+elevation shadowはfocus-visible可視性の要件ではない。
+hover elevationを廃止しても、keyboard focus-visibleの可視性はoutline、outline-offset、focus animationで担保する。
+`:focus-within`を使ったポインタークリック由来の外周強調は復活させない。
+
 link-card.cssとcard-link.cssには同種のfocus-within契約が残る。
 それらは今回の対象外とし、必要であれば別Requestで統一方針を検討する。
