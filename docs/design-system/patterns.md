@@ -21,15 +21,15 @@ Reading chromeの機能契約は`docs/contracts/reading-chrome.md`を正本と�
 
 ### Metadata Muted Text Link
 
-`link-text link-text--muted`かつ`data-link-surface="metadata"`を持つlinkは、metadata面の補助導線である。CTA、Control Link、Block Link、prose本文リンクではなく、prose本文リンクの代替として使わない。
+`.link-text.link-text--muted[href][data-link-surface='metadata']`に一致するlinkは、metadata面の補助導線variantである。CTA、Control Link、Block Link、prose本文リンクではなく、prose本文リンクの代替として使わない。このvariantはトップページ専用ではない。同じclass / surfaceの組み合わせを持つ`src/not-found/not-found-page.ts`内のhome-style markupにも、CSS selector上は同じ変更が適用される。
 
-通常時・visited時は控えめな`fg-muted`相当で表示する。下線はbase ruleで常時残し、リンク識別を色だけに依存させない。`:visited`ruleは既読差分として`color`と`text-decoration-color`だけを所有し、下線形状はbase ruleへ委ねる。hover / focus-visibleでは`fg-default`相当に上げ、focus-visibleのfocus ringは弱めない。
+通常時・visited時は控えめな`fg-muted`相当の文字色を維持する。下線はbase ruleで常時残し、リンク識別を色だけに依存させない。ただし、通常時・visited時の下線色は文字色より弱くする。`:visited`ruleは既読差分として`color`と`text-decoration-color`だけを所有し、下線形状はbase ruleへ委ねる。hover / focus-visibleでは文字色と下線色を`fg-default`相当に一段上げ、focus-visibleのfocus ringは弱めない。
 
-touch環境でもprimary色へ昇格しない。metadata面では、発見可能性は常時下線で担保し、色による一次導線化を避ける。
+touch環境でもprimary色へ昇格しない。metadata面では、発見可能性は常時下線で担保し、色による一次導線化を避ける。forced-colorsでは弱い下線より視認性を優先し、下線色はsystem colorへ合流させる。
 
-この分類はcontrol surfaceのlinkとは別分類である。`data-link-surface="control"`を持つcontrol link、特に正規404 fallbackのcontrol linkとは混同しない。
+このvariantは`data-link-surface="metadata"`を持つlink全体へ適用されるわけではない。article header source linkなど、独自classと独自CSSで視覚外観を所有するmetadata surface linkとは別分類である。また、`src/components/not-found/not-found-page.ts`の正規404 fallback control linkとは別surfaceであり、今回のvariant変更対象ではない。
 
-`text-underline-offset`などの下線メトリクスはDesign System側で調整可能な実装値であり、Home Contractは具体値を所有しない。CSS内での物理的なrule順序は、読みやすさのための配置方針に留める。契約としてはselector限定、primary系token非使用、`:visited`の所有property制限、surface隔離を重視する。
+今回の下線サリエンス採用値は`oklch(from var(--fg-muted) l c h / 0.65)`である。将来値を変更する場合は、CSS、CSS contract test、必要に応じて本節を同時に更新する。`text-underline-offset`などの下線メトリクスはDesign System側で調整可能な実装値であり、Home Contractは具体値を所有しない。CSS内での物理的なrule順序は、読みやすさのための配置方針に留める。契約としてはselector限定、primary系token非使用、`:visited`の所有property制限、surface隔離を重視する。
 
 ### Block Link Surface
 

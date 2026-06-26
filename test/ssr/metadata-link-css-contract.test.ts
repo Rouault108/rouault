@@ -1,10 +1,10 @@
 import { resolve } from 'node:path';
 
+import postcss, { type AtRule, type Declaration, type Rule } from 'postcss';
 import { describe, expect, it } from 'vitest';
 
 import {
   hasDeclarationForSelector,
-  hasDeclarationPropertyForSelector,
   hasNoDeclarationValueIncludingForSelectorContaining,
   hasRuleForSelector,
   lacksDeclarationPropertyForSelector,
@@ -19,6 +19,7 @@ const { cssText: linkPrimitivesCss } = readCssFile(resolve(cssDir, 'link-primiti
 const { cssText: homePageCss } = readCssFile(resolve(cssDir, 'home-page.css'));
 
 const metadataMutedSelector = ".link-text.link-text--muted[href][data-link-surface='metadata']";
+const metadataRelativeColorSupports = '(color: oklch(from white l c h / 0.65))';
 const forbiddenVariantTokens = [
   'var(--primary)',
   'var(--primary-hover)',
@@ -41,12 +42,78 @@ const homeMetaForbiddenProperties = [
   'border-radius',
 ] as const;
 
+const normalizeCssValue = (value: string): string => value.trim().replace(/\s+/gu, ' ');
+
+const declarationsForSelectorInSupports = (
+  cssText: string,
+  supportsParams: string,
+  selector: string,
+): Declaration[] => {
+  const declarations: Declaration[] = [];
+
+  postcss.parse(cssText).walkAtRules('supports', (atRule: AtRule) => {
+    if (atRule.params.trim() !== supportsParams) return;
+
+    atRule.walkRules((rule: Rule) => {
+      if (rule.selector !== selector) return;
+
+      rule.walkDecls((declaration) => {
+        declarations.push(declaration);
+      });
+    });
+  });
+
+  return declarations;
+};
+
+const hasDeclarationInSupports = (
+  cssText: string,
+  supportsParams: string,
+  selector: string,
+  property: string,
+  expectedValue: string,
+): boolean =>
+  declarationsForSelectorInSupports(cssText, supportsParams, selector).some(
+    (declaration) =>
+      declaration.prop === property &&
+      normalizeCssValue(declaration.value) === normalizeCssValue(expectedValue),
+  );
+
+const normalizeSelectorForSearch = (selector: string): string =>
+  selector.replace(/\[([^=\]]+)="([^"]*)"\]/gu, "[$1='$2']");
+
+const listSelectorsContaining = (cssText: string, selectorFragment: string): string[] => {
+  const selectors = new Set<string>();
+  const normalizedFragment = normalizeSelectorForSearch(selectorFragment);
+
+  postcss.parse(cssText).walkRules((rule: Rule) => {
+    for (const selector of rule.selectors) {
+      const normalizedSelector = normalizeSelectorForSearch(selector);
+
+      if (normalizedSelector.includes(normalizedFragment)) {
+        selectors.add(normalizedSelector);
+      }
+    }
+  });
+
+  return [...selectors].sort();
+};
+
 describe('metadata muted text link CSS contract', () => {
   describe('Design System ownership', () => {
     it('defines the metadata muted text link surface as a text link variant', () => {
       expect(hasRuleForSelector(linkPrimitivesCss, metadataMutedSelector, { scope: 'base' })).toBe(
         true,
       );
+      expect(
+        hasDeclarationForSelector(
+          linkPrimitivesCss,
+          metadataMutedSelector,
+          '--_metadata-link-decoration-color',
+          'var(--fg-subtle, var(--fg-muted))',
+          { scope: 'base' },
+        ),
+      ).toBe(true);
       expect(
         hasDeclarationForSelector(
           linkPrimitivesCss,
@@ -70,7 +137,7 @@ describe('metadata muted text link CSS contract', () => {
           linkPrimitivesCss,
           metadataMutedSelector,
           'text-decoration-color',
-          'currentColor',
+          'var(--_metadata-link-decoration-color)',
           { scope: 'base' },
         ),
       ).toBe(true);
@@ -84,16 +151,41 @@ describe('metadata muted text link CSS contract', () => {
         ),
       ).toBe(true);
       expect(
-        hasDeclarationPropertyForSelector(
+        hasDeclarationForSelector(
           linkPrimitivesCss,
           metadataMutedSelector,
           'text-underline-offset',
+          '0.18em',
           { scope: 'base' },
         ),
       ).toBe(true);
     });
 
-    it('keeps visited ownership to color differences only', () => {
+    it('places the relative-color decoration value inside the metadata supports rule', () => {
+      expect(linkPrimitivesCss).toContain(
+        '@supports (color: oklch(from white l c h / 0.65))',
+      );
+      expect(
+        hasDeclarationForSelector(
+          linkPrimitivesCss,
+          metadataMutedSelector,
+          '--_metadata-link-decoration-color',
+          'oklch(from var(--fg-muted) l c h / 0.65)',
+          { scope: 'base' },
+        ),
+      ).toBe(true);
+      expect(
+        hasDeclarationInSupports(
+          linkPrimitivesCss,
+          metadataRelativeColorSupports,
+          metadataMutedSelector,
+          '--_metadata-link-decoration-color',
+          'oklch(from var(--fg-muted) l c h / 0.65)',
+        ),
+      ).toBe(true);
+    });
+
+    it('keeps visited ownership to color and decoration color only', () => {
       const visitedSelector = `${metadataMutedSelector}:visited`;
 
       expect(hasRuleForSelector(linkPrimitivesCss, visitedSelector, { scope: 'base' })).toBe(true);
@@ -107,7 +199,7 @@ describe('metadata muted text link CSS contract', () => {
           linkPrimitivesCss,
           visitedSelector,
           'text-decoration-color',
-          'currentColor',
+          'var(--_metadata-link-decoration-color)',
           { scope: 'base' },
         ),
       ).toBe(true);
@@ -159,6 +251,25 @@ describe('metadata muted text link CSS contract', () => {
         ),
       ).toBe(true);
 
+      expect(
+        hasDeclarationForSelector(
+          linkPrimitivesCss,
+          hoverSelector,
+          'text-decoration-color',
+          'currentColor',
+          { scope: 'base' },
+        ),
+      ).toBe(true);
+      expect(
+        hasDeclarationForSelector(
+          linkPrimitivesCss,
+          focusVisibleSelector,
+          'text-decoration-color',
+          'currentColor',
+          { scope: 'base' },
+        ),
+      ).toBe(true);
+
       const focusOutlineValues = listDeclarationsForSelectorContaining(
         linkPrimitivesCss,
         focusVisibleSelector,
@@ -179,6 +290,27 @@ describe('metadata muted text link CSS contract', () => {
           ),
         ).toBe(true);
       }
+    });
+
+    it('uses currentColor for metadata underline in forced-colors', () => {
+      expect(
+        hasDeclarationForSelector(
+          linkPrimitivesCss,
+          metadataMutedSelector,
+          '--_metadata-link-decoration-color',
+          'currentColor',
+          { scope: 'forced-colors' },
+        ),
+      ).toBe(true);
+      expect(
+        hasDeclarationForSelector(
+          linkPrimitivesCss,
+          metadataMutedSelector,
+          'text-decoration-color',
+          'currentColor',
+          { scope: 'forced-colors' },
+        ),
+      ).toBe(true);
     });
   });
 
@@ -208,6 +340,34 @@ describe('metadata muted text link CSS contract', () => {
           declaration.selector.includes("[data-link-surface='control']"),
         ),
       ).toBe(false);
+    });
+
+    it('detects metadata surface selectors regardless of attribute quote style', () => {
+      const css = `
+        .link-text.link-text--muted[href][data-link-surface="metadata"] {
+          text-decoration-color: currentColor;
+        }
+      `;
+
+      expect(listSelectorsContaining(css, "[data-link-surface='metadata']")).toEqual([
+        ".link-text.link-text--muted[href][data-link-surface='metadata']",
+      ]);
+    });
+
+    it('does not generalize metadata surface selectors beyond muted text links', () => {
+      const metadataSurfaceSelectors = listSelectorsContaining(
+        linkPrimitivesCss,
+        "[data-link-surface='metadata']",
+      );
+
+      expect(metadataSurfaceSelectors.length).toBeGreaterThan(0);
+      expect(
+        metadataSurfaceSelectors.every(
+          (selector) =>
+            selector.includes('.link-text') && selector.includes('.link-text--muted'),
+        ),
+      ).toBe(true);
+      expect(linkPrimitivesCss).not.toContain('.article-header__source-link');
     });
   });
 
