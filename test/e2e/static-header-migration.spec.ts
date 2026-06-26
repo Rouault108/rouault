@@ -1031,8 +1031,9 @@ test.describe('Static header migration', () => {
     expect(panelBox.width).toBeGreaterThanOrEqual(triggerBox.width);
     expect(panelBox.x).toBeGreaterThanOrEqual(-1);
     expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width + 1);
-    // 旧 generic 12rem floor への退行を desktop 条件で検出する。
-    expect(panelBox.width).toBeLessThan(rootFontSize * 12);
+    // 現行theme triggerが旧10rem floor未満である前提を固定し、旧floorへの退行を検出する。
+    expect(triggerBox.width).toBeLessThan(rootFontSize * 10);
+    expect(panelBox.width).toBeLessThan(rootFontSize * 10);
 
     const optionContracts = await panel.locator('[data-header-menu-item]').evaluateAll((items) =>
       items.map((item) => {

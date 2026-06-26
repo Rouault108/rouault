@@ -35,7 +35,7 @@ header[data-layout-header] {
   --_header-corpus-menu-min-inline-size: min(10rem, var(--_header-corpus-menu-max-inline-size));
   --_header-theme-menu-viewport-inline-size: calc(100vi - var(--space-8, 32px));
   --_header-theme-menu-max-inline-size: min(14rem, var(--_header-theme-menu-viewport-inline-size));
-  --_header-theme-menu-min-inline-size: min(10rem, var(--_header-theme-menu-max-inline-size));
+  --_header-theme-menu-min-inline-size: min(9rem, var(--_header-theme-menu-max-inline-size));
   --_header-corpus-menu-item-min-block-size: var(--control-height-md, 32px);
   --_header-corpus-menu-item-padding-block: var(--space-2, 8px);
   --_header-corpus-menu-item-padding-inline: var(--space-3, 12px);
@@ -239,7 +239,7 @@ header[data-layout-header] .theme-switcher__menu {
   box-sizing: border-box;
   inline-size: max-content;
   min-inline-size: min(
-    max(100%, var(--_header-theme-menu-min-inline-size, 10rem)),
+    max(100%, var(--_header-theme-menu-min-inline-size, 9rem)),
     var(--_header-theme-menu-max-inline-size)
   );
   max-inline-size: var(--_header-theme-menu-max-inline-size);

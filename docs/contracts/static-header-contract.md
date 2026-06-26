@@ -151,6 +151,7 @@ Theme switcherはtheme option button groupである。
 - Roving tabindexは採用しない。
 - Keyboard enhancementはcorpusと同等のstatic disclosure enhancementとして扱う。
 - Theme menuはcontent-constrainedな幅を持つ。通常サポートviewportではtrigger width以上を保ち、short theme option labelに対してgeneric header menuの`12rem` fixed floorへ依存しない。
+- Theme menuはshort theme option label向けに、Corpus menuより狭い専用floorを持ってよい。
 - Theme menuはviewport containmentを維持する。
 - Theme menuのcontent-constrained widthはvisual density / width containment contractであり、theme preference、storage、root attributes、resolved theme、document bootstrapのsource of truthを変更しない。
 - Theme menuはcorpus menuと同系統のvisual density / width containmentを採用するが、navigation semantics、link semantics、selected state semanticsは共有しない。

@@ -799,8 +799,11 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(css, rootSelector, [
       '--_header-theme-menu-viewport-inline-size:',
       '--_header-theme-menu-max-inline-size:',
-      '--_header-theme-menu-min-inline-size:',
+      '--_header-theme-menu-min-inline-size: min(9rem, var(--_header-theme-menu-max-inline-size))',
     ]);
+    expect(ruleBlock(css, rootSelector), `${rootSelector} rule`).not.to.contain(
+      '--_header-theme-menu-min-inline-size: min(10rem',
+    );
 
     const themeMenuBlocks = ruleBlocksForSelector(css, themeMenuSelector);
     expect(themeMenuBlocks.length, `${themeMenuSelector} rule count`).toBeGreaterThanOrEqual(2);
@@ -813,6 +816,12 @@ describe('static CSS contracts', () => {
     );
     expect(themeMenuOverrideBlock, `${themeMenuSelector} final override rule`).to.contain(
       'min-inline-size: min(',
+    );
+    expect(themeMenuOverrideBlock, `${themeMenuSelector} final override rule`).to.contain(
+      'max(100%, var(--_header-theme-menu-min-inline-size, 9rem))',
+    );
+    expect(themeMenuOverrideBlock, `${themeMenuSelector} final override rule`).not.to.contain(
+      'var(--_header-theme-menu-min-inline-size, 10rem)',
     );
     expect(themeMenuOverrideBlock, `${themeMenuSelector} final override rule`).to.contain(
       'max-inline-size: var(--_header-theme-menu-max-inline-size)',
