@@ -12,6 +12,7 @@ describe('SearchDialogVirtualizer', () => {
   it('非 virtualized 時は全件範囲を返す', () => {
     const virtualizer = new SearchDialogVirtualizer();
 
+    expect(virtualizer.getVisibleRange.length).to.equal(3);
     expect(virtualizer.getVisibleRange(4, 0, 320)).to.deep.equal({
       start: 0,
       end: 4,
@@ -20,18 +21,65 @@ describe('SearchDialogVirtualizer', () => {
     });
   });
 
-  it('virtualized 時は可視範囲と spacer を返す', () => {
+  it('virtualized 時は scrollTop と listHeight だけで可視範囲と spacer を返す', () => {
     const virtualizer = new SearchDialogVirtualizer();
 
     const range = virtualizer.getVisibleRange(160, 480, 240);
+    const sameRangeWithFormerActiveIndex = virtualizer.getVisibleRange(160, 480, 240);
 
     expect(range.start).to.be.greaterThanOrEqual(0);
     expect(range.end).to.be.greaterThan(range.start);
     expect(range.topSpacer).to.equal(range.start * 48);
     expect(range.bottomSpacer).to.be.greaterThanOrEqual(0);
+    expect(sameRangeWithFormerActiveIndex).to.deep.equal(range);
   });
 
-  it('指定 index が view 外にある場合は scrollTop を更新する', () => {
+  it('total=0 では空 range を返す', () => {
+    const virtualizer = new SearchDialogVirtualizer();
+
+    expect(virtualizer.getVisibleRange(0, 480, 240)).to.deep.equal({
+      start: 0,
+      end: 0,
+      topSpacer: 0,
+      bottomSpacer: 0,
+    });
+  });
+
+  it('過大な scrollTop でも range 上限へ clamp する', () => {
+    const virtualizer = new SearchDialogVirtualizer();
+
+    const range = virtualizer.getVisibleRange(160, 999_999, 240);
+
+    expect(range.start).to.be.greaterThanOrEqual(0);
+    expect(range.start).to.be.lessThanOrEqual(149);
+    expect(range.end).to.be.greaterThanOrEqual(range.start);
+    expect(range.end).to.be.lessThanOrEqual(160);
+    expect(range.bottomSpacer).to.equal(0);
+  });
+
+  it('viewport range は overscan を含まない視覚範囲を返す', () => {
+    const virtualizer = new SearchDialogVirtualizer();
+
+    expect(virtualizer.getViewportIndexRange(160, 480, 240)).to.deep.equal({
+      start: 10,
+      end: 15,
+    });
+  });
+
+  it('viewport range は空 total と高さ 0 の境界を固定する', () => {
+    const virtualizer = new SearchDialogVirtualizer();
+
+    expect(virtualizer.getViewportIndexRange(0, 480, 240)).to.deep.equal({
+      start: 0,
+      end: 0,
+    });
+    expect(virtualizer.getViewportIndexRange(160, 480, 0)).to.deep.equal({
+      start: 10,
+      end: 11,
+    });
+  });
+
+  it('keyboard navigation 用に指定 index が view 外にある場合は scrollTop を更新する', () => {
     const virtualizer = new SearchDialogVirtualizer();
     const list = document.createElement('div');
 

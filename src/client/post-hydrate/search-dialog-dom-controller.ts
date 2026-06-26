@@ -20,6 +20,7 @@ import {
 } from '../../search/search-dialog-highlight.js';
 import {
   SearchDialogSelectionModel,
+  type SearchDialogActiveChangeOrigin,
   type SearchDialogFocusTarget,
 } from '../../search/search-dialog-selection-model.js';
 import type {
@@ -76,6 +77,30 @@ interface SearchDialogState {
   closeCompletionDone: boolean;
   bodyLockHeld: boolean;
   disposed: boolean;
+}
+
+interface RenderFromStateOptions {
+  readonly activeChangeOrigin?: SearchDialogActiveChangeOrigin;
+}
+
+interface RenderResultsOptions {
+  readonly syncActiveIntoView: boolean;
+  readonly preserveScrollTop?: number;
+}
+
+interface RenderedVirtualRangeSignature {
+  readonly start: number;
+  readonly end: number;
+  readonly topSpacer: number;
+  readonly bottomSpacer: number;
+  readonly total: number;
+}
+
+interface RenderableResultsRange {
+  readonly start: number;
+  readonly end: number;
+  readonly topSpacer: number;
+  readonly bottomSpacer: number;
 }
 
 const searchDialogBodyScrollLock = createBodyScrollLock(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE);
@@ -145,9 +170,32 @@ export const createSearchDialogDomController = (
   let operationQueue = Promise.resolve();
   let escapeCloseRequested = false;
   let closeRequestPending = false;
+  let lastRenderedVirtualRange: RenderedVirtualRangeSignature | null = null;
+  let programmaticScrollDepth = 0;
 
   const enqueueOperation = (operation: () => Promise<void> | void): void => {
     operationQueue = operationQueue.then(operation, operation);
+  };
+
+  const withProgrammaticScroll = (operation: () => number | undefined): void => {
+    programmaticScrollDepth += 1;
+    try {
+      const nextScrollTop = operation();
+      if (typeof nextScrollTop === 'number') {
+        state.virtualScrollTop = nextScrollTop;
+      }
+    } finally {
+      window.requestAnimationFrame(() => {
+        programmaticScrollDepth = Math.max(0, programmaticScrollDepth - 1);
+      });
+    }
+  };
+
+  const applyActiveId = (
+    activeId: string | null,
+    _origin: SearchDialogActiveChangeOrigin,
+  ): void => {
+    state.activeId = activeId;
   };
 
   const syncTriggerExpanded = (expanded: boolean): void => {
@@ -267,9 +315,24 @@ export const createSearchDialogDomController = (
       deriveShowResults() && resultsList?.hidden === false ? state.results.length : 0,
     getResultIdAt,
     getActiveId: () => state.activeId,
-    setActiveId: (activeId) => {
-      state.activeId = activeId;
-      renderFromState();
+    getNavigationStartIndex: (delta) => {
+      const total =
+        deriveShowResults() && resultsList?.hidden === false ? state.results.length : 0;
+      if (total === 0) return null;
+      if (virtualizer.isVirtualized(total) && resultsList !== null) {
+        const range = virtualizer.getViewportIndexRange(
+          total,
+          state.virtualScrollTop,
+          resultsList.clientHeight,
+        );
+        if (range.end <= range.start) return null;
+        return delta === 1 ? range.start : range.end - 1;
+      }
+      return delta === 1 ? 0 : total - 1;
+    },
+    setActiveId: (activeId, origin) => {
+      applyActiveId(activeId, origin);
+      renderFromState({ activeChangeOrigin: origin });
     },
     requestSelection,
     requestFocus,
@@ -312,32 +375,6 @@ export const createSearchDialogDomController = (
     return row;
   };
 
-  const renderResults = (showResults: boolean): void => {
-    if (resultsList === null) return;
-    resultsList.replaceChildren();
-    if (!showResults) return;
-    const activeIndex = state.results.findIndex((item) => item.id === state.activeId);
-    if (activeIndex >= 0 && virtualizer.isVirtualized(state.results.length)) {
-      state.virtualScrollTop = virtualizer.scrollIndexIntoView(
-        activeIndex,
-        resultsList,
-        state.virtualScrollTop,
-      );
-    }
-    const range = virtualizer.getVisibleRange(
-      state.results.length,
-      state.virtualScrollTop,
-      resultsList.clientHeight,
-      activeIndex,
-    );
-    if (range.topSpacer > 0) resultsList.append(createVirtualSpacer(range.topSpacer));
-    for (let index = range.start; index < range.end; index += 1) {
-      const item = state.results[index];
-      if (item) resultsList.append(createResultRow(item, index, state.query.trim()));
-    }
-    if (range.bottomSpacer > 0) resultsList.append(createVirtualSpacer(range.bottomSpacer));
-  };
-
   const createVirtualSpacer = (blockSize: number): HTMLLIElement => {
     const spacer = ownerDocument.createElement('li');
     spacer.className = 'search-dialog__virtual-spacer';
@@ -347,7 +384,153 @@ export const createSearchDialogDomController = (
     return spacer;
   };
 
-  function renderFromState(): void {
+  const getVirtualRangeSignature = (
+    range: RenderedVirtualRangeSignature,
+  ): RenderedVirtualRangeSignature => ({
+    start: range.start,
+    end: range.end,
+    topSpacer: range.topSpacer,
+    bottomSpacer: range.bottomSpacer,
+    total: range.total,
+  });
+
+  const isSameVirtualRangeSignature = (
+    left: RenderedVirtualRangeSignature | null,
+    right: RenderedVirtualRangeSignature,
+  ): boolean =>
+    left !== null &&
+    left.start === right.start &&
+    left.end === right.end &&
+    left.topSpacer === right.topSpacer &&
+    left.bottomSpacer === right.bottomSpacer &&
+    left.total === right.total;
+
+  const createResultsFragment = (range: RenderableResultsRange): DocumentFragment => {
+    const fragment = ownerDocument.createDocumentFragment();
+    if (range.topSpacer > 0) fragment.append(createVirtualSpacer(range.topSpacer));
+    for (let index = range.start; index < range.end; index += 1) {
+      const item = state.results[index];
+      if (item) fragment.append(createResultRow(item, index, state.query.trim()));
+    }
+    if (range.bottomSpacer > 0) fragment.append(createVirtualSpacer(range.bottomSpacer));
+    return fragment;
+  };
+
+  const syncAriaActiveDescendant = (): void => {
+    if (input === null || resultsList === null || state.activeId === null) {
+      input?.removeAttribute('aria-activedescendant');
+      return;
+    }
+
+    const activeOption = getSearchDialogOptionElementById(
+      ownerDocument,
+      resultsList,
+      getSearchDialogOptionId(state.activeId),
+    );
+
+    if (activeOption !== null) input.setAttribute('aria-activedescendant', activeOption.id);
+    else input.removeAttribute('aria-activedescendant');
+  };
+
+  const renderResults = (showResults: boolean, options: RenderResultsOptions): void => {
+    if (resultsList === null) return;
+    if (!showResults) {
+      lastRenderedVirtualRange = null;
+      resultsList.replaceChildren();
+      syncAriaActiveDescendant();
+      return;
+    }
+
+    const total = state.results.length;
+    const isVirtualized = virtualizer.isVirtualized(total);
+    const activeIndex = state.results.findIndex((item) => item.id === state.activeId);
+    if (options.syncActiveIntoView && activeIndex >= 0 && isVirtualized) {
+      withProgrammaticScroll(() =>
+        virtualizer.scrollIndexIntoView(activeIndex, resultsList, state.virtualScrollTop),
+      );
+    }
+
+    const range = virtualizer.getVisibleRange(
+      total,
+      state.virtualScrollTop,
+      resultsList.clientHeight,
+    );
+    const fragment = createResultsFragment(range);
+
+    if (typeof options.preserveScrollTop === 'number') {
+      const preserveScrollTop = options.preserveScrollTop;
+      withProgrammaticScroll(() => {
+        resultsList.replaceChildren(fragment);
+        resultsList.scrollTop = preserveScrollTop;
+        return preserveScrollTop;
+      });
+    } else {
+      resultsList.replaceChildren(fragment);
+    }
+
+    if (isVirtualized) {
+      lastRenderedVirtualRange = getVirtualRangeSignature({ ...range, total });
+    } else {
+      lastRenderedVirtualRange = null;
+    }
+    syncAriaActiveDescendant();
+  };
+
+  const syncVirtualResultsAfterPassiveScroll = (desiredScrollTop: number): void => {
+    if (resultsList === null || !deriveShowResults()) {
+      state.virtualScrollTop = desiredScrollTop;
+      syncAriaActiveDescendant();
+      return;
+    }
+
+    const total = state.results.length;
+    if (!virtualizer.isVirtualized(total)) {
+      lastRenderedVirtualRange = null;
+      state.virtualScrollTop = desiredScrollTop;
+      syncAriaActiveDescendant();
+      return;
+    }
+
+    state.virtualScrollTop = desiredScrollTop;
+    const range = virtualizer.getVisibleRange(total, desiredScrollTop, resultsList.clientHeight);
+    const viewportRange = virtualizer.getViewportIndexRange(
+      total,
+      desiredScrollTop,
+      resultsList.clientHeight,
+    );
+    const signature = getVirtualRangeSignature({ ...range, total });
+    const activeIndex = state.results.findIndex((item) => item.id === state.activeId);
+    const shouldClearActive =
+      activeIndex >= 0 && (activeIndex < viewportRange.start || activeIndex >= viewportRange.end);
+    if (shouldClearActive) {
+      applyActiveId(null, 'passive-scroll');
+    }
+
+    if (!isSameVirtualRangeSignature(lastRenderedVirtualRange, signature) || shouldClearActive) {
+      const fragment = createResultsFragment(range);
+      withProgrammaticScroll(() => {
+        resultsList.replaceChildren(fragment);
+        resultsList.scrollTop = desiredScrollTop;
+        return desiredScrollTop;
+      });
+      lastRenderedVirtualRange = signature;
+    }
+
+    syncAriaActiveDescendant();
+  };
+
+  const resetResultsViewport = (): void => {
+    state.virtualScrollTop = 0;
+    lastRenderedVirtualRange = null;
+    if (resultsList !== null) {
+      withProgrammaticScroll(() => {
+        resultsList.scrollTop = 0;
+        return 0;
+      });
+    }
+  };
+
+  function renderFromState(options: RenderFromStateOptions = {}): void {
     const currentQuery = state.query.trim();
     const hasCurrentCompletedResults =
       currentQuery !== '' && state.completedResultsQuery === currentQuery;
@@ -393,17 +576,9 @@ export const createSearchDialogDomController = (
     if (clearButton !== null) clearButton.hidden = state.query.length === 0;
     if (errorMessage !== null) errorMessage.textContent = state.errorMessage ?? '';
     if (unavailableMessage !== null) unavailableMessage.textContent = state.unavailableMessage;
-    renderResults(showResults);
-    const activeOption =
-      showResults && state.activeId !== null && resultsList !== null
-        ? getSearchDialogOptionElementById(
-            ownerDocument,
-            resultsList,
-            getSearchDialogOptionId(state.activeId),
-          )
-        : null;
-    if (activeOption !== null) input?.setAttribute('aria-activedescendant', activeOption.id);
-    else input?.removeAttribute('aria-activedescendant');
+    renderResults(showResults, {
+      syncActiveIntoView: options.activeChangeOrigin === 'keyboard-navigation',
+    });
     if (liveRegion !== null) {
       const isPendingSearchStatus =
         currentQuery !== '' &&
@@ -606,11 +781,12 @@ export const createSearchDialogDomController = (
     state.loading = false;
     if (input !== null) input.value = '';
     state.results = [];
-    state.activeId = null;
+    applyActiveId(null, 'state-reset');
     state.errorMessage = null;
     state.hasCompletedSearch = false;
     state.completedResultsQuery = null;
-    renderFromState();
+    resetResultsViewport();
+    renderFromState({ activeChangeOrigin: 'state-reset' });
     input?.focus();
     dispatchSearchDialogEvent('search-dialog:query-change', { query: '' });
   };
@@ -627,19 +803,20 @@ export const createSearchDialogDomController = (
     if (currentQuery === '') {
       state.loading = false;
       state.results = [];
-      state.activeId = null;
+      applyActiveId(null, 'state-reset');
       state.errorMessage = null;
       state.hasCompletedSearch = false;
       state.completedResultsQuery = null;
+      resetResultsViewport();
     } else {
       if (currentQuery !== state.completedResultsQuery) {
-        state.activeId = null;
+        applyActiveId(null, 'state-reset');
         state.hasCompletedSearch = false;
         state.completedResultsQuery = null;
       }
       state.errorMessage = null;
     }
-    renderFromState();
+    renderFromState({ activeChangeOrigin: 'state-reset' });
   };
 
   ownerDocument.addEventListener(
@@ -676,8 +853,9 @@ export const createSearchDialogDomController = (
         state.hasCompletedSearch = false;
         state.completedResultsQuery = null;
         state.errorMessage = null;
-        state.activeId = null;
-        renderFromState();
+        applyActiveId(null, 'state-reset');
+        resetResultsViewport();
+        renderFromState({ activeChangeOrigin: 'state-reset' });
         return;
       }
       state.loading = loading;
@@ -685,12 +863,14 @@ export const createSearchDialogDomController = (
         state.hasCompletedSearch = false;
         state.completedResultsQuery = null;
         state.errorMessage = null;
-        state.activeId = null;
+        applyActiveId(null, 'state-reset');
+        resetResultsViewport();
         scheduleLoadingIndicator();
       } else {
         resetLoadingIndicator();
       }
-      renderFromState();
+      if (loading) renderFromState({ activeChangeOrigin: 'state-reset' });
+      else renderFromState();
     },
     { signal: listeners.signal },
   );
@@ -706,13 +886,12 @@ export const createSearchDialogDomController = (
       state.results = detail.items;
       state.hasCompletedSearch = normalizedQuery !== '';
       state.completedResultsQuery = normalizedQuery === '' ? null : normalizedQuery;
-      state.activeId =
-        normalizedQuery === ''
-          ? null
-          : detail.items.some((item) => item.id === state.activeId)
-            ? state.activeId
-            : (detail.items[0]?.id ?? null);
-      renderFromState();
+      resetResultsViewport();
+      applyActiveId(
+        normalizedQuery === '' || detail.items.length === 0 ? null : (detail.items[0]?.id ?? null),
+        'state-reset',
+      );
+      renderFromState({ activeChangeOrigin: 'state-reset' });
     },
     { signal: listeners.signal },
   );
@@ -724,8 +903,9 @@ export const createSearchDialogDomController = (
       state.loading = false;
       state.errorMessage = (event as CustomEvent<{ message: string }>).detail.message;
       state.hasCompletedSearch = true;
-      state.activeId = null;
-      renderFromState();
+      applyActiveId(null, 'state-reset');
+      resetResultsViewport();
+      renderFromState({ activeChangeOrigin: 'state-reset' });
     },
     { signal: listeners.signal },
   );
@@ -736,7 +916,9 @@ export const createSearchDialogDomController = (
       state.loading = false;
       state.unavailable = true;
       state.unavailableMessage = (event as CustomEvent<{ message: string }>).detail.message;
-      renderFromState();
+      applyActiveId(null, 'state-reset');
+      resetResultsViewport();
+      renderFromState({ activeChangeOrigin: 'state-reset' });
     },
     { signal: listeners.signal },
   );
@@ -812,7 +994,7 @@ export const createSearchDialogDomController = (
       if (!(row instanceof HTMLElement)) return;
       const index = Number(row.dataset['index'] ?? '-1');
       if (!Number.isInteger(index)) return;
-      selectionModel.setActiveByIndex(index);
+      selectionModel.setActiveByIndex(index, 'pointer');
       const activeId = getResultIdAt(index);
       if (activeId !== null) requestSelection(activeId, 'pointer');
     },
@@ -827,7 +1009,7 @@ export const createSearchDialogDomController = (
       const index = Number(row.dataset['index'] ?? '-1');
       if (!Number.isInteger(index)) return;
       event.preventDefault();
-      selectionModel.setActiveByIndex(index);
+      selectionModel.setActiveByIndex(index, 'keyboard-navigation');
       selectionModel.selectActive('keyboard');
     },
     { signal: listeners.signal },
@@ -836,7 +1018,12 @@ export const createSearchDialogDomController = (
     'scroll',
     () => {
       state.virtualScrollTop = resultsList.scrollTop;
-      renderFromState();
+      if (programmaticScrollDepth > 0) return;
+      if (!virtualizer.isVirtualized(state.results.length)) {
+        lastRenderedVirtualRange = null;
+        return;
+      }
+      syncVirtualResultsAfterPassiveScroll(resultsList.scrollTop);
     },
     { signal: listeners.signal },
   );

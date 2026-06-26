@@ -132,7 +132,13 @@
 
 #### Static Global Search Dialog DOM
 
-- inputは`role="combobox"`、resultsは`role="listbox"`とする。active optionは`aria-activedescendant`で同期し、virtualized listでもactive optionをDOMに保持する。
+- inputは`role="combobox"`、resultsは`role="listbox"`とする。
+- `aria-activedescendant`を設定する場合、その参照先optionはDOM上に存在しなければならない。
+- virtualized listのpassive scroll中は`scrollTop`をviewport正本とし、active optionは仮想化描画範囲を強制的に引き戻してはならない。
+- virtualized listのpassive scrollによりactive optionが現在の視覚viewport外へ出た場合、controllerはactive状態を解除し、`aria-activedescendant`を外す。
+- ArrowUp/ArrowDownなどのkeyboard navigationでactive optionを移動した場合だけ、必要に応じてactive optionをviewport内へscroll into viewしてよい。
+- active解除後のArrowDown/ArrowUpは現在の視覚viewport内の候補から再開する。
+- activeがない状態でEnterを押しても、先頭候補を暗黙選択してはならない。
 - result rowはsafe DOM renderingで構築し、`innerHTML`を使わない。
 - result rowは`role="option"`、stable DOM `id`、`data-index`、`data-item-id`を持つ。stable item idの正本contractは`data-item-id`とする。互換目的の`data-id`は残してよい。
 - selection detailはDOM datasetから復元せず、controller stateのcurrent `SearchDialogItem`から構築する。

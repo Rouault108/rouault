@@ -54,6 +54,11 @@ const waitForLoadingIndicatorDelay = async (): Promise<void> => {
   await flushOperations();
 };
 
+const waitForAnimationFrame = async (): Promise<void> => {
+  await new Promise((resolve) => window.requestAnimationFrame(resolve));
+  await flushOperations();
+};
+
 const waitForNativeClose = async (dialog: HTMLDialogElement, close: () => void): Promise<void> => {
   const closeEvent = new Promise<void>((resolve) => {
     dialog.addEventListener('close', () => resolve(), { once: true });
@@ -69,6 +74,17 @@ const createResultItem = (index: number): SearchDialogItem => ({
   renderHref: `/notes/result-${index.toString()}/`,
   canonicalPathname: `/notes/result-${index.toString()}/`,
 });
+
+const installMockScrollTop = (element: HTMLElement): void => {
+  let scrollTop = 0;
+  Object.defineProperty(element, 'scrollTop', {
+    configurable: true,
+    get: () => scrollTop,
+    set: (nextScrollTop: number) => {
+      scrollTop = nextScrollTop;
+    },
+  });
+};
 
 const waitForCloseCompletion = async (dialog: HTMLDialogElement): Promise<void> => {
   for (
@@ -561,18 +577,46 @@ describe('search-dialog-enhancer', () => {
     expect(focusReturns).to.deep.equal([]);
   });
 
-  it('virtualization は visible range spacer と range 外 active option の aria-activedescendant を同期すること', () => {
+  it('100件以下の結果では scroll しても上端へ戻らないこと', async () => {
     const dialog = appendDialogFixture();
     const input = dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]');
     const results = dialog.querySelector<HTMLUListElement>('[data-search-dialog-results]');
     if (!input || !results) throw new Error('search dialog fixture is invalid');
     Object.defineProperty(results, 'clientHeight', { configurable: true, value: 96 });
+    installMockScrollTop(results);
+    results.style.blockSize = '96px';
+    results.style.overflow = 'auto';
+    enhanceSearchDialog(document);
+    dispatchSearchDialogEvent('search-dialog:query-change', { query: 'result' });
+    dispatchSearchDialogEvent('search-dialog:results-change', {
+      query: 'result',
+      items: Array.from({ length: 100 }, (_, index) => createResultItem(index)),
+    });
+    await waitForAnimationFrame();
+
+    results.scrollTop = 240;
+    results.dispatchEvent(new Event('scroll'));
+
+    expect(results.scrollTop).to.equal(240);
+    expect(input.getAttribute('aria-activedescendant')).to.equal(
+      'search-option-/notes/result-0/',
+    );
+  });
+
+  it('virtualized passive scroll は旧 active 位置へ戻さず active と aria を解除すること', async () => {
+    const dialog = appendDialogFixture();
+    const input = dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]');
+    const results = dialog.querySelector<HTMLUListElement>('[data-search-dialog-results]');
+    if (!input || !results) throw new Error('search dialog fixture is invalid');
+    Object.defineProperty(results, 'clientHeight', { configurable: true, value: 96 });
+    installMockScrollTop(results);
     enhanceSearchDialog(document);
     dispatchSearchDialogEvent('search-dialog:query-change', { query: 'result' });
     dispatchSearchDialogEvent('search-dialog:results-change', {
       query: 'result',
       items: Array.from({ length: 150 }, (_, index) => createResultItem(index)),
     });
+    await waitForAnimationFrame();
 
     expect(results.querySelectorAll('[role="option"]')).to.have.length.lessThan(150);
     expect(
@@ -581,7 +625,73 @@ describe('search-dialog-enhancer', () => {
       ),
     ).to.not.equal(null);
 
+    results.scrollTop = 2400;
+    results.dispatchEvent(new Event('scroll'));
+
+    expect(results.scrollTop).to.equal(2400);
+    expect(input.hasAttribute('aria-activedescendant')).to.equal(false);
+    expect(results.querySelector('[aria-selected="true"]')).to.equal(null);
+    expect(results.querySelector('[data-active="true"]')).to.equal(null);
+  });
+
+  it('active なし Enter は選択せず、passive scroll 後の ArrowDown/ArrowUp は視覚 viewport から再開すること', async () => {
+    const dialog = appendDialogFixture();
+    const input = dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]');
+    const results = dialog.querySelector<HTMLUListElement>('[data-search-dialog-results]');
+    if (!input || !results) throw new Error('search dialog fixture is invalid');
+    const selected: unknown[] = [];
+    document.addEventListener('search-dialog:selected', (event) => {
+      selected.push((event as CustomEvent).detail);
+    });
+    Object.defineProperty(results, 'clientHeight', { configurable: true, value: 96 });
+    installMockScrollTop(results);
+    enhanceSearchDialog(document);
+    dispatchSearchDialogEvent('search-dialog:query-change', { query: 'result' });
+    dispatchSearchDialogEvent('search-dialog:results-change', {
+      query: 'result',
+      items: Array.from({ length: 150 }, (_, index) => createResultItem(index)),
+    });
+    await waitForAnimationFrame();
+
+    results.scrollTop = 2400;
+    results.dispatchEvent(new Event('scroll'));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(selected).to.deep.equal([]);
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(input.getAttribute('aria-activedescendant')).to.equal(
+      'search-option-/notes/result-50/',
+    );
+    await waitForAnimationFrame();
+
+    results.scrollTop = 2496;
+    results.dispatchEvent(new Event('scroll'));
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    expect(input.getAttribute('aria-activedescendant')).to.equal(
+      'search-option-/notes/result-53/',
+    );
+  });
+
+  it('keyboard navigation は active option を DOM に保持し、内部 scroll event を passive 扱いしないこと', async () => {
+    const dialog = appendDialogFixture();
+    const input = dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]');
+    const results = dialog.querySelector<HTMLUListElement>('[data-search-dialog-results]');
+    if (!input || !results) throw new Error('search dialog fixture is invalid');
+    Object.defineProperty(results, 'clientHeight', { configurable: true, value: 96 });
+    installMockScrollTop(results);
+    enhanceSearchDialog(document);
+    dispatchSearchDialogEvent('search-dialog:query-change', { query: 'result' });
+    dispatchSearchDialogEvent('search-dialog:results-change', {
+      query: 'result',
+      items: Array.from({ length: 150 }, (_, index) => createResultItem(index)),
+    });
+    await waitForAnimationFrame();
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    expect(results.scrollTop).to.be.greaterThan(0);
+
+    results.scrollTop = 0;
+    results.dispatchEvent(new Event('scroll'));
 
     expect(input.getAttribute('aria-activedescendant')).to.equal(
       'search-option-/notes/result-149/',
@@ -589,20 +699,70 @@ describe('search-dialog-enhancer', () => {
     expect(results.contains(document.getElementById('search-option-/notes/result-149/'))).to.equal(
       true,
     );
+    expect(results.scrollTop).to.equal(0);
     expect(
       results.querySelector<HTMLElement>('.search-dialog__virtual-spacer')?.style.blockSize,
     ).to.not.equal('0px');
+  });
 
-    for (let index = 0; index < 70; index += 1) {
-      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-    }
-    const spacers = [...results.querySelectorAll<HTMLElement>('.search-dialog__virtual-spacer')];
-    expect(spacers).to.have.length(2);
-    expect(spacers.every((spacer) => spacer.getAttribute('role') === 'presentation')).to.equal(
-      true,
+  it('query 変更と results-change は scroll を reset し、旧 active と同じ ID が残っても先頭へ初期化すること', async () => {
+    const dialog = appendDialogFixture();
+    const input = dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]');
+    const results = dialog.querySelector<HTMLUListElement>('[data-search-dialog-results]');
+    if (!input || !results) throw new Error('search dialog fixture is invalid');
+    Object.defineProperty(results, 'clientHeight', { configurable: true, value: 96 });
+    installMockScrollTop(results);
+    enhanceSearchDialog(document);
+    dispatchSearchDialogEvent('search-dialog:query-change', { query: 'result' });
+    dispatchSearchDialogEvent('search-dialog:results-change', {
+      query: 'result',
+      items: Array.from({ length: 150 }, (_, index) => createResultItem(index)),
+    });
+    await waitForAnimationFrame();
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    results.scrollTop = 2400;
+    results.dispatchEvent(new Event('scroll'));
+    expect(results.scrollTop).to.equal(2400);
+
+    dispatchSearchDialogEvent('search-dialog:query-change', { query: '' });
+    expect(results.scrollTop).to.equal(0);
+
+    dispatchSearchDialogEvent('search-dialog:query-change', { query: 'result' });
+    dispatchSearchDialogEvent('search-dialog:results-change', {
+      query: 'result',
+      items: [createResultItem(10), createResultItem(1), createResultItem(2)],
+    });
+    expect(input.getAttribute('aria-activedescendant')).to.equal(
+      'search-option-/notes/result-10/',
     );
-    expect(spacers.every((spacer) => spacer.getAttribute('aria-hidden') === 'true')).to.equal(true);
-    expect(spacers.every((spacer) => spacer.style.blockSize.endsWith('px'))).to.equal(true);
+  });
+
+  it('passive scroll で range が不変なら virtual rows を再構築しないこと', async () => {
+    const dialog = appendDialogFixture();
+    const results = dialog.querySelector<HTMLUListElement>('[data-search-dialog-results]');
+    if (!results) throw new Error('search dialog fixture is invalid');
+    Object.defineProperty(results, 'clientHeight', { configurable: true, value: 96 });
+    installMockScrollTop(results);
+    enhanceSearchDialog(document);
+    dispatchSearchDialogEvent('search-dialog:query-change', { query: 'result' });
+    dispatchSearchDialogEvent('search-dialog:results-change', {
+      query: 'result',
+      items: Array.from({ length: 150 }, (_, index) => createResultItem(index)),
+    });
+    await waitForAnimationFrame();
+
+    const originalReplaceChildren = results.replaceChildren.bind(results);
+    let replaceChildrenCount = 0;
+    results.replaceChildren = (...nodes: (Node | string)[]) => {
+      replaceChildrenCount += 1;
+      originalReplaceChildren(...nodes);
+    };
+
+    results.scrollTop = 10;
+    results.dispatchEvent(new Event('scroll'));
+
+    expect(replaceChildrenCount).to.equal(0);
   });
 
   it('live region は exact text と unavailable 優先順位を維持し、query change で旧 count を消すこと', () => {

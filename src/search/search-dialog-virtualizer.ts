@@ -5,39 +5,56 @@ import {
 } from './search-dialog-constants.js';
 import type { VisibleRange } from './search-dialog-types.js';
 
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
+
 export class SearchDialogVirtualizer {
   isVirtualized(total: number): boolean {
     return total > VIRTUALIZATION_THRESHOLD;
   }
 
-  getVisibleRange(
-    total: number,
-    scrollTop: number,
-    listHeight: number,
-    activeIndex = -1,
-  ): VisibleRange {
+  getVisibleRange(total: number, scrollTop: number, listHeight: number): VisibleRange {
+    if (total <= 0) {
+      return { start: 0, end: 0, topSpacer: 0, bottomSpacer: 0 };
+    }
+
     if (!this.isVirtualized(total)) {
       return { start: 0, end: total, topSpacer: 0, bottomSpacer: 0 };
     }
 
     const visibleCount = Math.max(1, Math.ceil(listHeight / VIRTUAL_ROW_HEIGHT_PX));
-    let start = Math.max(0, Math.floor(scrollTop / VIRTUAL_ROW_HEIGHT_PX) - VIRTUAL_OVERSCAN);
-    let end = Math.min(total, start + visibleCount + VIRTUAL_OVERSCAN * 2);
-
-    if (activeIndex >= 0) {
-      if (activeIndex < start) {
-        start = Math.max(0, activeIndex - VIRTUAL_OVERSCAN);
-        end = Math.min(total, start + visibleCount + VIRTUAL_OVERSCAN * 2);
-      } else if (activeIndex >= end) {
-        end = Math.min(total, activeIndex + VIRTUAL_OVERSCAN + 1);
-        start = Math.max(0, end - visibleCount - VIRTUAL_OVERSCAN * 2);
-      }
-    }
-
+    const windowSize = Math.min(total, visibleCount + VIRTUAL_OVERSCAN * 2);
+    const rawStart =
+      Math.floor(Math.max(0, scrollTop) / VIRTUAL_ROW_HEIGHT_PX) - VIRTUAL_OVERSCAN;
+    const maxStart = Math.max(0, total - windowSize);
+    const start = Math.min(maxStart, Math.max(0, rawStart));
+    const end = Math.min(total, start + windowSize);
     const topSpacer = start * VIRTUAL_ROW_HEIGHT_PX;
     const bottomSpacer = Math.max(0, (total - end) * VIRTUAL_ROW_HEIGHT_PX);
 
     return { start, end, topSpacer, bottomSpacer };
+  }
+
+  getViewportIndexRange(
+    total: number,
+    scrollTop: number,
+    listHeight: number,
+  ): { start: number; end: number } {
+    if (total <= 0) return { start: 0, end: 0 };
+
+    const normalizedScrollTop = Math.max(0, scrollTop);
+    const start = clamp(
+      Math.floor(normalizedScrollTop / VIRTUAL_ROW_HEIGHT_PX),
+      0,
+      total - 1,
+    );
+    const visibleCount = Math.max(
+      1,
+      Math.ceil(Math.max(0, listHeight) / VIRTUAL_ROW_HEIGHT_PX),
+    );
+    const end = clamp(start + visibleCount, start + 1, total);
+
+    return { start, end };
   }
 
   scrollIndexIntoView(index: number, list: HTMLElement, scrollTop: number): number {
