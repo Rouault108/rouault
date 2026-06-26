@@ -17,6 +17,24 @@ import {
 
 const layoutTocCss = readFileSync(resolve(process.cwd(), 'src/assets/css/layout-toc.css'), 'utf8');
 
+const currentTocSelectors = [
+  '.layout-toc__link.is-active',
+  ".layout-toc__link[data-active='true']",
+  ".layout-toc__link[aria-current='location']",
+] as const;
+
+const currentTocRailSelectors = [
+  '.layout-toc__link.is-active::before',
+  ".layout-toc__link[data-active='true']::before",
+  ".layout-toc__link[aria-current='location']::before",
+] as const;
+
+const currentTocSurfaceSelectors = [
+  '.layout-toc__link.is-active::after',
+  ".layout-toc__link[data-active='true']::after",
+  ".layout-toc__link[aria-current='location']::after",
+] as const;
+
 describe('layout toc css contract', () => {
   it('disposed mobile panel state is hidden by the shared CSS artifact', () => {
     expect(TOC_MOBILE_PANEL_SELECTOR).toBe('[data-layout-toc-mobile-panel]');
@@ -161,7 +179,7 @@ describe('layout toc css contract', () => {
     expect(
       hasDeclarationForAllSelectors(
         layoutTocCss,
-        ['.layout-toc__link.is-active::before', ".layout-toc__link[data-active='true']::before"],
+        currentTocRailSelectors,
         'inset-block',
         'var(--_toc-active-inset-block)',
       ),
@@ -169,7 +187,7 @@ describe('layout toc css contract', () => {
     expect(
       hasDeclarationForAllSelectors(
         layoutTocCss,
-        ['.layout-toc__link.is-active::before', ".layout-toc__link[data-active='true']::before"],
+        currentTocRailSelectors,
         'block-size',
         'auto',
       ),
@@ -177,7 +195,7 @@ describe('layout toc css contract', () => {
     expect(
       hasDeclarationForAllSelectors(
         layoutTocCss,
-        ['.layout-toc__link.is-active::before', ".layout-toc__link[data-active='true']::before"],
+        currentTocRailSelectors,
         'transform',
         'none',
       ),
@@ -185,7 +203,7 @@ describe('layout toc css contract', () => {
     expect(
       hasDeclarationForAllSelectors(
         layoutTocCss,
-        ['.layout-toc__link.is-active::before', ".layout-toc__link[data-active='true']::before"],
+        currentTocRailSelectors,
         'opacity',
         '1',
       ),
@@ -209,7 +227,7 @@ describe('layout toc css contract', () => {
     expect(
       hasDeclarationValueIncludingForAllSelectors(
         layoutTocCss,
-        ['.layout-toc__link.is-active::after', ".layout-toc__link[data-active='true']::after"],
+        currentTocSurfaceSelectors,
         'background-color',
         '--toc-item-active-bg',
       ),
@@ -299,7 +317,15 @@ describe('layout toc css contract', () => {
     expect(
       hasDeclarationValueIncludingForAllSelectors(
         layoutTocCss,
-        ['.layout-toc__link.is-active', ".layout-toc__link[data-active='true']"],
+        currentTocSelectors,
+        'color',
+        '--toc-item-fg-active',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationValueIncludingForAllSelectors(
+        layoutTocCss,
+        currentTocSelectors,
         'font-weight',
         '--toc-item-font-weight-active',
       ),
@@ -307,7 +333,7 @@ describe('layout toc css contract', () => {
     expect(
       hasDeclarationValueIncludingForAllSelectors(
         layoutTocCss,
-        ['.layout-toc__link.is-active', ".layout-toc__link[data-active='true']"],
+        currentTocSelectors,
         'font-weight',
         '--font-normal',
       ),
@@ -315,7 +341,7 @@ describe('layout toc css contract', () => {
     expect(
       hasDeclarationValueNotIncludingForAllSelectors(
         layoutTocCss,
-        ['.layout-toc__link.is-active', ".layout-toc__link[data-active='true']"],
+        currentTocSelectors,
         'font-weight',
         '600',
       ),
@@ -380,10 +406,7 @@ describe('layout toc css contract', () => {
   });
 
   it('keeps active foreground preferred over hover and focus-visible in screen scope', () => {
-    for (const activeSelector of [
-      '.layout-toc__link.is-active',
-      ".layout-toc__link[data-active='true']",
-    ]) {
+    for (const activeSelector of currentTocSelectors) {
       const activeOrder = findLastDeclarationRuleOrderForSelector(
         layoutTocCss,
         activeSelector,
@@ -404,10 +427,7 @@ describe('layout toc css contract', () => {
   });
 
   it('keeps current surface preferred over hover and focus-visible surfaces in screen scope', () => {
-    for (const activeSelector of [
-      '.layout-toc__link.is-active::after',
-      ".layout-toc__link[data-active='true']::after",
-    ]) {
+    for (const activeSelector of currentTocSurfaceSelectors) {
       const activeOrder = findLastDeclarationRuleOrderForSelector(
         layoutTocCss,
         activeSelector,
@@ -440,7 +460,7 @@ describe('layout toc css contract', () => {
     expect(
       hasDeclarationForAllSelectors(
         layoutTocCss,
-        ['.layout-toc__link.is-active', ".layout-toc__link[data-active='true']"],
+        currentTocSelectors,
         'color',
         'Highlight',
         { scope: 'forced-colors' },
@@ -455,6 +475,7 @@ describe('layout toc css contract', () => {
           '.layout-toc__link:focus-visible',
           '.layout-toc__link.is-active',
           ".layout-toc__link[data-active='true']",
+          ".layout-toc__link[aria-current='location']",
         ],
         'color',
         'GrayText',
@@ -470,6 +491,7 @@ describe('layout toc css contract', () => {
           '.layout-toc__link:focus-visible',
           '.layout-toc__link.is-active',
           ".layout-toc__link[data-active='true']",
+          ".layout-toc__link[aria-current='location']",
         ],
         'color',
         'LinkText',
@@ -482,7 +504,7 @@ describe('layout toc css contract', () => {
     expect(
       hasDeclarationValueIncludingForAllSelectors(
         layoutTocCss,
-        ['.layout-toc__link.is-active::before', ".layout-toc__link[data-active='true']::before"],
+        currentTocRailSelectors,
         'border',
         'var(--border-width, 1px)',
         { scope: 'forced-colors' },
@@ -491,7 +513,7 @@ describe('layout toc css contract', () => {
     expect(
       hasDeclarationValueIncludingForAllSelectors(
         layoutTocCss,
-        ['.layout-toc__link.is-active::before', ".layout-toc__link[data-active='true']::before"],
+        currentTocRailSelectors,
         'border',
         'Highlight',
         { scope: 'forced-colors' },
@@ -500,7 +522,7 @@ describe('layout toc css contract', () => {
     expect(
       hasDeclarationValueNotIncludingForAllSelectors(
         layoutTocCss,
-        ['.layout-toc__link.is-active::before', ".layout-toc__link[data-active='true']::before"],
+        currentTocRailSelectors,
         'border',
         '--border-width-thick',
         { scope: 'forced-colors' },
@@ -527,10 +549,7 @@ describe('layout toc css contract', () => {
   });
 
   it('keeps active foreground preferred over hover and focus-visible in forced-colors', () => {
-    for (const activeSelector of [
-      '.layout-toc__link.is-active',
-      ".layout-toc__link[data-active='true']",
-    ]) {
+    for (const activeSelector of currentTocSelectors) {
       const activeOrder = findLastDeclarationRuleOrderForSelector(
         layoutTocCss,
         activeSelector,

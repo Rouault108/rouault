@@ -240,7 +240,10 @@
 
   --sidebar-item-hover-bg: oklch(from var(--fg-default) l c h / 0.035);
   --sidebar-item-branch-hover-bg: oklch(from var(--fg-default) l c h / 0.022);
-  --sidebar-item-active-bg: var(--bg-surface-active);
+  --sidebar-item-active-bg-alpha: 0.045;
+  --sidebar-item-active-bg: oklch(
+    from var(--primary) l c h / var(--sidebar-item-active-bg-alpha)
+  );
   --sidebar-item-active-radius: var(--radius-sm);
   --sidebar-item-font-weight-current-branch: var(--sidebar-item-font-weight);
   --sidebar-item-indent-step: var(--space-4);
@@ -686,6 +689,7 @@
     /* 上記は Light と同じ相対色構文を使用 */
     --bg-active: oklch(from var(--primary) l c h / 0.15);
     --bg-surface-active: var(--bg-active);
+    --sidebar-item-active-bg-alpha: 0.075;
     --focus-ring-color-subtle: oklch(53% 0.12 var(--hue-primary));
 
     --bg-danger-subtle: oklch(25% 0.05 25);
@@ -803,6 +807,7 @@
   --bg-control-muted: oklch(95% 0 0);
   --bg-active: oklch(from var(--primary) l c h / 0.08);
   --bg-surface-active: var(--bg-active);
+  --sidebar-item-active-bg-alpha: 0.045;
   --focus-ring-color-subtle: oklch(65% 0.12 var(--hue-primary));
   --bg-danger-subtle: oklch(96% 0.03 25);
   --bg-warning-subtle: oklch(96% 0.04 85);
@@ -880,6 +885,7 @@
   --bg-control-muted: var(--bg-surface-2);
   --bg-active: oklch(from var(--primary) l c h / 0.15);
   --bg-surface-active: var(--bg-active);
+  --sidebar-item-active-bg-alpha: 0.075;
   --focus-ring-color-subtle: oklch(53% 0.12 var(--hue-primary));
   --bg-danger-subtle: oklch(25% 0.05 25);
   --bg-warning-subtle: oklch(25% 0.05 85);

@@ -14,9 +14,19 @@
 
 - Reading chromeは本文の理解を補助する場合だけ視覚的に前へ出す。
 - 本文のrhythmを壊す固定bar、過剰なshadow、強い色面を導入しない。
+- サイドバーとTOCは、読書中のcurrent visual grammarとしてleft railを共有する。
+- primary blueは広い背景面ではなく、railとfocus-visibleを中心に使う。
+- focus-visibleはcurrentとは独立したoutlineとして維持する。
+- サイドバーcurrent surfaceは補助表現であり、global active surfaceへ直結しない。
 - Desktop TOCは補助navigationとして扱い、本文より高い階層に見せない。
 - ただし、章題・節題の意味が把握できないほど圧縮してはならない。
 - Mobile triggerは読書面の入口であり、TOC内容のownerではない。
+
+## 2.1 Current Salience Pattern
+
+- サイドバーは現在のノートを示す構造ナビゲーションであり、TOCより1段強い。
+- TOCは現在の見出しを示す補助ナビゲーションであり、railを主、active surfaceを従とする。
+- サイドバーとTOCはcurrent visual grammarを共有するが、背景濃度は同一化しない。
 
 ## 3. Frame Outer Gutter Pattern
 

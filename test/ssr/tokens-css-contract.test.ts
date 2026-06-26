@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   hasDeclarationForSelector,
   hasDeclarationValueIncluding,
+  hasDeclarationValueNotIncluding,
   lacksDeclarationPropertyForSelector,
 } from './support/css-contract.js';
 
@@ -20,9 +21,31 @@ const accessibilityDocs = readFileSync(
 );
 
 describe('tokens css contract', () => {
-  it('defines sidebar active surface through theme-aware surface token', () => {
+  it('defines sidebar active surface through dedicated low-salience recipe', () => {
     expect(
       hasDeclarationForSelector(
+        tokensCss,
+        ':root',
+        '--sidebar-item-active-bg-alpha',
+        '0.045',
+        {
+          scope: 'base',
+        },
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tokensCss,
+        ':root',
+        '--sidebar-item-active-bg',
+        'oklch(from var(--primary) l c h / var(--sidebar-item-active-bg-alpha))',
+        {
+          scope: 'base',
+        },
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationValueNotIncluding(
         tokensCss,
         ':root',
         '--sidebar-item-active-bg',
@@ -74,6 +97,15 @@ describe('tokens css contract', () => {
       hasDeclarationForSelector(
         tokensCss,
         ':root',
+        '--sidebar-item-active-bg-alpha',
+        '0.075',
+        { mediaPredicate: (params) => /prefers-color-scheme\s*:\s*dark/u.test(params) },
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tokensCss,
+        ':root',
         '--bg-active',
         'oklch(from var(--primary) l c h / 0.15)',
         { mediaPredicate: (params) => /prefers-color-scheme\s*:\s*dark/u.test(params) },
@@ -83,8 +115,26 @@ describe('tokens css contract', () => {
       hasDeclarationForSelector(
         tokensCss,
         ":root[data-theme='dark']",
+        '--sidebar-item-active-bg-alpha',
+        '0.075',
+        { scope: 'base' },
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tokensCss,
+        ":root[data-theme='dark']",
         '--bg-active',
         'oklch(from var(--primary) l c h / 0.15)',
+        { scope: 'base' },
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        tokensCss,
+        ":root[data-theme='light']",
+        '--sidebar-item-active-bg-alpha',
+        '0.045',
         { scope: 'base' },
       ),
     ).toBe(true);
@@ -102,6 +152,16 @@ describe('tokens css contract', () => {
         scope: 'base',
       }),
     ).toBe(true);
+    expect(
+      lacksDeclarationPropertyForSelector(
+        tokensCss,
+        ":root[data-theme='system']",
+        '--sidebar-item-active-bg-alpha',
+        {
+          scope: 'base',
+        },
+      ),
+    ).toBe(true);
   });
   it('defines the readable TOC token recipe', () => {
     const expectedTokens = [
@@ -114,6 +174,9 @@ describe('tokens css contract', () => {
       ['--toc-item-font-weight-active', 'var(--font-medium)'],
       ['--toc-item-inactive-max-lines', '2'],
       ['--toc-item-active-max-lines', '3'],
+      ['--nav-item-indicator-color', 'var(--primary)'],
+      ['--nav-item-indicator-width', '2px'],
+      ['--toc-item-active-bg', 'oklch(from var(--primary) l c h / 0.028)'],
     ] as const;
 
     for (const [property, value] of expectedTokens) {
