@@ -1134,6 +1134,10 @@ describe('static CSS contracts', () => {
     );
     expect(css).not.to.match(/var\(--space-5\)(?!,)/u);
     expectRuleToDeclare(css, '.filter-summary', ['grid-template-columns:']);
+    expectRuleToDeclare(css, '.filter-summary-main', [
+      'align-self: center',
+      'font-weight: var(--font-semibold)',
+    ]);
     expectRuleToDeclare(css, '.search-choice-field', ['display: grid', 'gap: var(--space-1)']);
     expect(css).not.to.contain('.sort-select');
     expect(css).not.to.contain('.tag-mode-select');
