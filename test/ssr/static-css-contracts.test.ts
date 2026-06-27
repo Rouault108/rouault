@@ -69,6 +69,11 @@ interface SourceOrderedDeclaration {
   readonly value: string;
 }
 
+interface SelectorRuleDeclarationRecord {
+  readonly selectors: readonly string[];
+  readonly value: string;
+}
+
 const rootDeclarationRecordsForSelector = (
   css: string,
   selector: string,
@@ -92,6 +97,31 @@ const rootDeclarationRecordsForSelector = (
     }
 
     ruleIndex += 1;
+  });
+
+  return records;
+};
+
+const declarationRuleRecordsForSelector = (
+  css: string,
+  selector: string,
+  property: string,
+  options: { readonly rootOnly?: boolean } = {},
+): SelectorRuleDeclarationRecord[] => {
+  const records: SelectorRuleDeclarationRecord[] = [];
+  const targetSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
+
+  postcss.parse(css).walkRules((rule: Rule) => {
+    if (options.rootOnly === true && rule.parent?.type !== 'root') return;
+
+    const selectors = splitSelectors(rule.selector).map((selector) =>
+      normalizeAttributeQuoteStyle(normalizeSelector(selector)),
+    );
+    if (!selectors.includes(targetSelector)) return;
+
+    rule.walkDecls(property, (declaration) => {
+      records.push({ selectors, value: declaration.value.trim() });
+    });
   });
 
   return records;
@@ -533,6 +563,15 @@ describe('static CSS contracts', () => {
       '--_header-search-trigger-max-inline-size: 9rem',
       '--_header-search-trigger-max-inline-size-compact: 7rem',
     ]);
+    expect(declarationValuesForSelector(css, 'header[data-layout-header]', '--_header-control-pressed-scale')).toEqual([]);
+    expect(
+      declarationValuesForSelector(
+        css,
+        'header[data-layout-header]',
+        '--_header-control-transition',
+      ).some((value) => /\btransform\b/u.test(value)),
+      'header control transition must not include transform',
+    ).toBe(false);
     expect(css).not.to.contain('layout-header-query-frame');
     expect(css).not.to.match(/(^|[,{]\s*)layout-header(?:[.#[:\s,{>+~]|$)/u);
     expect(css).not.to.match(/(^|[,{]\s*)ui-header(?:[.#[:\s,{>+~]|$)/u);
@@ -567,6 +606,103 @@ describe('static CSS contracts', () => {
       'border-color: transparent',
     ]);
 
+    const topLevelActiveSelectors = [
+      'header[data-layout-header] .sidebar-toggle:active',
+      'header[data-layout-header] .toc-trigger:active',
+      'header[data-layout-header] .search-trigger:active',
+      'header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]:active',
+    ] as const;
+    const activeSelectors = [
+      ...topLevelActiveSelectors,
+      'header[data-layout-header] [data-header-menu-item]:active',
+    ] as const;
+    const normalizedTopLevelActiveSelectors = topLevelActiveSelectors.map((selector) =>
+      normalizeAttributeQuoteStyle(normalizeSelector(selector)),
+    );
+    const normalizedSearchActiveSelector = normalizeAttributeQuoteStyle(
+      normalizeSelector('header[data-layout-header] .search-trigger:active'),
+    );
+    const rootSearchActiveBackgroundRecords = [
+      ...declarationRuleRecordsForSelector(
+        css,
+        'header[data-layout-header] .search-trigger:active',
+        'background',
+        { rootOnly: true },
+      ),
+      ...declarationRuleRecordsForSelector(
+        css,
+        'header[data-layout-header] .search-trigger:active',
+        'background-color',
+        { rootOnly: true },
+      ),
+    ];
+    expect(rootSearchActiveBackgroundRecords).toHaveLength(1);
+    for (const record of rootSearchActiveBackgroundRecords) {
+      expect(record.value, 'search active background must not use --bg-active').not.toContain(
+        '--bg-active',
+      );
+      for (const selector of normalizedTopLevelActiveSelectors) {
+        expect(record.selectors, 'search active background must be top-level common rule').toContain(
+          selector,
+        );
+      }
+    }
+
+    for (const selector of activeSelectors) {
+      expect(declarationValuesForSelector(css, selector, 'transform'), selector).toEqual([]);
+    }
+    expectRuleToDeclare(css, topLevelActiveSelectors[0], [
+      'background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%))',
+    ]);
+    for (const selector of topLevelActiveSelectors) {
+      const backgroundRecords = declarationRuleRecordsForSelector(css, selector, 'background', {
+        rootOnly: true,
+      });
+      expect(
+        backgroundRecords.some((record) =>
+          normalizedTopLevelActiveSelectors.every((topLevelSelector) =>
+            record.selectors.includes(topLevelSelector),
+          ),
+        ),
+        `${selector} top-level active background rule`,
+      ).toBe(true);
+    }
+    expectRuleToDeclare(css, 'header[data-layout-header] [data-header-menu-item]:active', [
+      'background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%))',
+    ]);
+
+    const topLevelFocusVisibleSelectors = [
+      'header[data-layout-header] .sidebar-toggle:focus-visible',
+      'header[data-layout-header] .toc-trigger:focus-visible',
+      'header[data-layout-header] .search-trigger:focus-visible',
+      'header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]:focus-visible',
+    ] as const;
+    for (const selector of topLevelFocusVisibleSelectors) {
+      expectRuleToDeclare(css, selector, [
+        'outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250))',
+        'outline-offset: var(--focus-ring-offset, 2px)',
+      ]);
+    }
+    expectRuleToDeclare(css, 'header[data-layout-header] [data-header-menu-item]:focus-visible', [
+      'outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250))',
+      'outline-offset: var(--focus-ring-offset, 2px)',
+    ]);
+
+    const hitTargetSelectors = [
+      'header[data-layout-header] .sidebar-toggle::after',
+      'header[data-layout-header] .toc-trigger::after',
+      'header[data-layout-header] .search-trigger::after',
+      'header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]::after',
+      'header[data-layout-header] [data-header-menu-item]::after',
+    ] as const;
+    for (const selector of hitTargetSelectors) {
+      expectRuleToDeclare(css, selector, [
+        "content: ''",
+        'inset-block: calc((var(--_header-hit-target-size) - 100%) / -2)',
+        'inset-inline: calc((var(--_header-hit-target-size) - 100%) / -2)',
+      ]);
+    }
+
     const searchFocusVisibleSelector =
       'header[data-layout-header] .search-trigger:focus-visible';
 
@@ -595,16 +731,11 @@ describe('static CSS contracts', () => {
     ]);
 
     const reducedMotion = atRuleBlock(css, '@media (prefers-reduced-motion: reduce)');
-    const reducedMotionActiveSelectors = [
-      'header[data-layout-header] .sidebar-toggle:active',
-      'header[data-layout-header] .toc-trigger:active',
-      'header[data-layout-header] .search-trigger:active',
-      'header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]:active',
-      'header[data-layout-header] [data-header-menu-item]:active',
-    ] as const;
 
-    for (const selector of reducedMotionActiveSelectors) {
-      expectRuleToDeclare(reducedMotion, selector, ['transform: none']);
+    for (const selector of activeSelectors) {
+      expect(declarationValuesForSelector(reducedMotion, selector, 'transform'), selector).toEqual(
+        [],
+      );
     }
 
     const forcedColors = atRuleBlock(css, '@media (forced-colors: active)');
@@ -612,9 +743,40 @@ describe('static CSS contracts', () => {
       'background: Canvas',
       'border-color: ButtonText',
     ]);
-    expectRuleToDeclare(forcedColors, 'header[data-layout-header] .search-trigger:active', [
-      'background: ButtonFace',
-    ]);
+    const forcedColorsSearchActiveBackgroundRecords = [
+      ...declarationRuleRecordsForSelector(
+        forcedColors,
+        'header[data-layout-header] .search-trigger:active',
+        'background',
+      ),
+      ...declarationRuleRecordsForSelector(
+        forcedColors,
+        'header[data-layout-header] .search-trigger:active',
+        'background-color',
+      ),
+    ];
+    expect(forcedColorsSearchActiveBackgroundRecords).toHaveLength(1);
+    for (const record of forcedColorsSearchActiveBackgroundRecords) {
+      expect(record.value).toBe('ButtonFace');
+      for (const selector of normalizedTopLevelActiveSelectors) {
+        expect(record.selectors, 'forced-colors active background must be common rule').toContain(
+          selector,
+        );
+      }
+      expect(record.selectors, 'forced-colors active background includes menu items').toContain(
+        normalizeAttributeQuoteStyle(
+          normalizeSelector('header[data-layout-header] [data-header-menu-item]:active'),
+        ),
+      );
+    }
+    for (const selector of activeSelectors) {
+      expectRuleToDeclare(forcedColors, selector, ['background: ButtonFace']);
+    }
+    expect(
+      forcedColorsSearchActiveBackgroundRecords.every((record) =>
+        record.selectors.includes(normalizedSearchActiveSelector),
+      ),
+    ).toBe(true);
     expectRuleToDeclare(forcedColors, searchFocusVisibleSelector, [
       'outline-color: Highlight',
       'box-shadow: none',

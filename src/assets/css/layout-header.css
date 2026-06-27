@@ -47,13 +47,11 @@ header[data-layout-header] {
   --_header-control-font-weight: var(--font-medium, 500);
   --_header-control-line-height: 1.15;
   --_header-control-letter-spacing: 0.02em;
-  --_header-control-pressed-scale: var(--scale-pressed, 0.98);
   --_header-control-transition:
     background-color var(--duration-fast, 120ms) var(--ease-out, ease-out),
     border-color var(--duration-fast, 120ms) var(--ease-out, ease-out),
     box-shadow var(--duration-fast, 120ms) var(--ease-out, ease-out),
-    color var(--duration-fast, 120ms) var(--ease-out, ease-out),
-    transform var(--duration-fast, 120ms) var(--ease-out, ease-out);
+    color var(--duration-fast, 120ms) var(--ease-out, ease-out);
 }
 
 header[data-layout-header] .layout-header__inner {
@@ -359,16 +357,11 @@ header[data-layout-header] .sidebar-toggle:active,
 header[data-layout-header] .toc-trigger:active,
 header[data-layout-header] .search-trigger:active,
 header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]:active {
-  transform: scale(var(--_header-control-pressed-scale));
-}
-
-header[data-layout-header] .search-trigger:active {
-  background: var(--bg-active, color-mix(in srgb, var(--bg-default) 82%, var(--fg-default) 18%));
+  background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%));
 }
 
 header[data-layout-header] [data-header-menu-item]:active {
   background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%));
-  transform: scale(var(--_header-control-pressed-scale));
 }
 
 header[data-layout-header] .corpus-trigger-main,
@@ -523,7 +516,11 @@ header[data-layout-header] .corpus-trigger-text {
     border-color: ButtonText;
   }
 
-  header[data-layout-header] .search-trigger:active {
+  header[data-layout-header] .sidebar-toggle:active,
+  header[data-layout-header] .toc-trigger:active,
+  header[data-layout-header] .search-trigger:active,
+  header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]:active,
+  header[data-layout-header] [data-header-menu-item]:active {
     background: ButtonFace;
   }
 
@@ -550,14 +547,6 @@ header[data-layout-header] .corpus-trigger-text {
   header[data-layout-header],
   header[data-layout-header] * {
     transition-duration: 0.01ms !important;
-  }
-
-  header[data-layout-header] .sidebar-toggle:active,
-  header[data-layout-header] .toc-trigger:active,
-  header[data-layout-header] .search-trigger:active,
-  header[data-layout-header] [data-header-menu] > [data-header-menu-trigger]:active,
-  header[data-layout-header] [data-header-menu-item]:active {
-    transform: none;
   }
 }
 

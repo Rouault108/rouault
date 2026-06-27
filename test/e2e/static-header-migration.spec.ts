@@ -459,10 +459,7 @@ test.describe('Static header migration', () => {
     await expect(trigger).toHaveCount(1);
     await expect(trigger).toHaveAttribute('href', /\/search\/$/u);
     await expect(trigger).toHaveAttribute('aria-label', '検索ダイアログを開く');
-    await expect(trigger.locator('.search-trigger__label')).toHaveAttribute(
-      'aria-hidden',
-      'true',
-    );
+    await expect(trigger.locator('.search-trigger__label')).toHaveAttribute('aria-hidden', 'true');
     await expect(trigger.locator('.search-trigger__label')).toHaveText('検索');
     await expect(trigger).toHaveJSProperty('tagName', 'A');
   });
@@ -736,7 +733,7 @@ test.describe('Static header migration', () => {
     const activeStyle = await readInteractiveStyle();
     await page.mouse.up();
 
-    expect(activeStyle.transform).not.toBe('none');
+    expect(activeStyle.transform).toBe('none');
   });
 
   test('header controls は focus-visible で視認可能な focus ring を持つこと', async ({ page }) => {

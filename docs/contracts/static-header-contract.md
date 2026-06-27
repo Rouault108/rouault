@@ -194,6 +194,15 @@ Header controlsは、corpus trigger、theme trigger、search trigger、TOC trigg
 - Focus-visibleは`:focus-visible`を正とし、`:focus`へ戻さない。
 - Forced-colorsでもfocus-visible outlineを識別可能にする。
 - Menu panel内itemのhover、focus-visible、active、hit targetはtop-level controlsのselector整理後も維持する。
+- Header top-level controlsとmenu panel itemsはselector上分離して扱う。
+- Header top-level controlsとmenu panel itemsはいずれもactive stateでtransformを使わない。
+- 通常色では、active stateをneutral surface feedbackで表現する。
+- Forced-colorsでは、active stateをButtonFaceによるsystem surface feedbackで表現する。
+- ButtonFaceは押下中の一時的なactive feedbackであり、current / selected stateの意味表現ではない。
+- Hover / active / focus-visibleは操作状態としてcurrent / selected状態と分離する。
+- Focus-visibleはoutlineを主表現とする。
+- Current / selected stateは現在位置・選択状態の意味表現であり、active feedbackとは混同しない。
+- Reduced motion環境でも、active stateは非motion feedbackで成立する。
 - Corpus menu itemはlabel主導layout、content-constrained menu width、viewport containmentを維持する。`.corpus-menu-item__label`が1行ellipsisの正本であり、anchor自身のellipsisを正本にしない。Labelは`min-inline-size: 0`相当の縮小可能性を持つ。
 - Theme menu panelはcontent-constrained visual densityを持つ。Corpus menuとwidth containmentの考え方は揃えるが、corpus navigation semanticsとtheme button group semanticsは混同しない。
 - Current corpus itemは`aria-current="page"`をsemantic source of truthとし、subtle selected surfaceとsemibold text emphasisで補助的に表現する。
@@ -206,7 +215,10 @@ Header controlsは、corpus trigger、theme trigger、search trigger、TOC trigg
 - Current corpus itemはbackgroundだけ、またはtext emphasisだけで識別しない。
 - Left border marker / `border-inline-start`は再導入しない。
 - Forced-colorsではfocus-visible outlineの識別性を優先し、selected/current専用の強いHighlight backgroundを必須契約にしない。Selected/current backgroundの存在・不在そのものは過剰固定しない。
-- Search trigger固有のhover、active、responsive density、background state、および通常時 / hover時 / forced-colors時のborder-color contractはtop-level共通selectorによって退化させない。Focus-visibleはheader control共通outlineを正本とし、通常カラーモードでは検索トグル固有のfocus色borderを重ねない。
+- Search trigger固有契約からactive surfaceの特別扱いを外す。Activeはheader control共通のneutral / system surface feedbackに従う。
+- Search triggerのresponsive density、通常時 / hover時 / forced-colors時のborder-color、icon / label toneは維持する。
+- Search triggerのborder識別性は操作可能要素としての識別性であり、active surfaceの特別扱いとは分離する。
+- Focus-visibleはheader control共通outlineを正本とし、通常カラーモードでは検索トグル固有のfocus色borderを重ねない。
 - Top-level triggerの44px hit target pseudo-elementは維持する。
 - Header controlsのvisual contractは本文リンク、検索ダイアログ、sidebar、本文TOC linkへ波及させない。
 - Header menu selected surface without check contractは`ADR-HEADER-MENU-SELECTED-SURFACE-WITHOUT-CHECK-001`に基づくR3 / A0の公開visual contract変更である。現行挙動の契約正本は引き続き`docs/contracts/static-header-contract.md`であり、新ADRはDecision Recordである。
@@ -259,10 +271,14 @@ Search triggerは、通常時にはinput-like surfaceを持たないquiet launch
 - 通常時のbackground / borderはtransparentを基本とする。ただし1px border boxはlayoutとforced-colors識別性のため維持する。
 - Hoverはbackground中心で表現し、通常カラーモードではborder強調を復活させない。
 - Focus-visibleは読書体験よりもキーボード操作視認性を優先し、header control共通outlineを正本とする。通常カラーモードでは検索トグル固有のfocus色borderを重ねない。
-- Activeは押下感を持つ。
-- Reduced motionではactive transformに依存しない。
+- Activeは押下transformではなく、header control共通のsurface feedbackで表現する。
+- Search triggerのactive stateはprimary系active surfaceへ昇格させない。
+- Search triggerのactive stateはforced-colorsでもheader control共通のsystem surface feedbackに従う。
+- Search trigger専用のactive background ruleは通常色・forced-colorsの双方で持たない。
+- Reduced motion環境でも、active stateは非motion feedbackで成立する。
 - Forced-colorsでは操作可能要素の識別性を優先し、`ButtonText` borderを維持する。
 - Forced-colorsではbackground、icon、labelが判別可能である。
+- Search triggerのborder識別性は操作可能要素としての識別性であり、active surfaceの特別扱いとは分離する。
 - Responsive densityはdesktop / compact / icon-onlyを維持する。
 - Desktop / compactではcontent-sized幅を基本とし、不自然な右余白を作らない。
 - Icon-only densityでもexpanded hit areaは44pxを下回らない。
