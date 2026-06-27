@@ -416,6 +416,25 @@ export const createSearchDialogDomController = (
     return fragment;
   };
 
+  const adjustNonVirtualActiveOptionScroll = (): number | undefined => {
+    if (resultsList === null || state.activeId === null) return undefined;
+    const activeOption = getSearchDialogOptionElementById(
+      ownerDocument,
+      resultsList,
+      getSearchDialogOptionId(state.activeId),
+    );
+    if (activeOption === null) return resultsList.scrollTop;
+
+    const viewportRect = resultsList.getBoundingClientRect();
+    const activeRect = activeOption.getBoundingClientRect();
+    if (activeRect.top < viewportRect.top) {
+      resultsList.scrollTop -= viewportRect.top - activeRect.top;
+    } else if (activeRect.bottom > viewportRect.bottom) {
+      resultsList.scrollTop += activeRect.bottom - viewportRect.bottom;
+    }
+    return resultsList.scrollTop;
+  };
+
   const syncAriaActiveDescendant = (): void => {
     if (input === null || resultsList === null || state.activeId === null) {
       input?.removeAttribute('aria-activedescendant');
@@ -466,6 +485,10 @@ export const createSearchDialogDomController = (
       });
     } else {
       resultsList.replaceChildren(fragment);
+    }
+
+    if (options.syncActiveIntoView && activeIndex >= 0 && !isVirtualized) {
+      withProgrammaticScroll(() => adjustNonVirtualActiveOptionScroll());
     }
 
     if (isVirtualized) {

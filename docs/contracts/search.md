@@ -136,7 +136,7 @@
 - `aria-activedescendant`を設定する場合、その参照先optionはDOM上に存在しなければならない。
 - virtualized listのpassive scroll中は`scrollTop`をviewport正本とし、active optionは仮想化描画範囲を強制的に引き戻してはならない。
 - virtualized listのpassive scrollによりactive optionが現在の視覚viewport外へ出た場合、controllerはactive状態を解除し、`aria-activedescendant`を外す。
-- ArrowUp/ArrowDownなどのkeyboard navigationでactive optionを移動した場合だけ、必要に応じてactive optionをviewport内へscroll into viewしてよい。
+- ArrowUp/ArrowDownなどのkeyboard navigationでactive optionを移動した場合だけ、virtualized / non-virtualizedのどちらの結果表示でも、必要に応じてactive optionがresults viewport内に収まるようscrollTopを調整してよい。
 - active解除後のArrowDown/ArrowUpは現在の視覚viewport内の候補から再開する。
 - activeがない状態でEnterを押しても、先頭候補を暗黙選択してはならない。
 - result rowはsafe DOM renderingで構築し、`innerHTML`を使わない。

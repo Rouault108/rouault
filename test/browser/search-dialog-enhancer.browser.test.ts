@@ -598,9 +598,74 @@ describe('search-dialog-enhancer', () => {
     results.dispatchEvent(new Event('scroll'));
 
     expect(results.scrollTop).to.equal(240);
-    expect(input.getAttribute('aria-activedescendant')).to.equal(
-      'search-option-/notes/result-0/',
-    );
+    expect(input.getAttribute('aria-activedescendant')).to.equal('search-option-/notes/result-0/');
+  });
+
+  it('non-virtualized keyboard navigation は active option を viewport 内へ scroll し、focus を input に保つこと', async () => {
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+
+    try {
+      const dialog = appendDialogFixture();
+      const input = dialog.querySelector<HTMLInputElement>('[data-search-dialog-input]');
+      const results = dialog.querySelector<HTMLUListElement>('[data-search-dialog-results]');
+      if (!input || !results) throw new Error('search dialog fixture is invalid');
+      Object.defineProperty(results, 'clientHeight', { configurable: true, value: 96 });
+      installMockScrollTop(results);
+      HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+        if (this === results) return new DOMRect(0, 0, 320, 96);
+        if (this instanceof HTMLElement && this.getAttribute('role') === 'option') {
+          const index = Number(this.dataset['index'] ?? '0');
+          const top = index * 32 - results.scrollTop;
+          return new DOMRect(0, top, 320, 32);
+        }
+        return originalGetBoundingClientRect.call(this);
+      };
+      enhanceSearchDialog(document);
+      dispatchSearchDialogEvent('search-dialog:open-request', {
+        trigger: null,
+        modality: 'keyboard',
+      });
+      await flushOperations();
+      dispatchSearchDialogEvent('search-dialog:query-change', { query: 'result' });
+      dispatchSearchDialogEvent('search-dialog:results-change', {
+        query: 'result',
+        items: Array.from({ length: 12 }, (_, index) => createResultItem(index)),
+      });
+      await waitForAnimationFrame();
+
+      input.focus();
+      expect(document.activeElement).to.equal(input);
+
+      for (let count = 0; count < 4; count += 1) {
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+        expect(document.activeElement).to.equal(input);
+      }
+
+      expect(input.getAttribute('aria-activedescendant')).to.equal(
+        'search-option-/notes/result-4/',
+      );
+      expect(
+        results.querySelector<HTMLElement>('[aria-selected="true"]')?.dataset['index'],
+      ).to.equal('4');
+      expect(results.scrollTop).to.equal(64);
+
+      for (let count = 0; count < 3; count += 1) {
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+        expect(document.activeElement).to.equal(input);
+      }
+
+      expect(input.getAttribute('aria-activedescendant')).to.equal(
+        'search-option-/notes/result-1/',
+      );
+      expect(
+        results.querySelector<HTMLElement>('[aria-selected="true"]')?.dataset['index'],
+      ).to.equal('1');
+      expect(results.scrollTop).to.equal(32);
+      expect(results.querySelectorAll('[role="option"]')).to.have.length(12);
+      expect(results.querySelector('.search-dialog__virtual-spacer')).to.equal(null);
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+    }
   });
 
   it('virtualized passive scroll は旧 active 位置へ戻さず active と aria を解除すること', async () => {
@@ -659,17 +724,13 @@ describe('search-dialog-enhancer', () => {
     expect(selected).to.deep.equal([]);
 
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-    expect(input.getAttribute('aria-activedescendant')).to.equal(
-      'search-option-/notes/result-50/',
-    );
+    expect(input.getAttribute('aria-activedescendant')).to.equal('search-option-/notes/result-50/');
     await waitForAnimationFrame();
 
     results.scrollTop = 2496;
     results.dispatchEvent(new Event('scroll'));
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
-    expect(input.getAttribute('aria-activedescendant')).to.equal(
-      'search-option-/notes/result-53/',
-    );
+    expect(input.getAttribute('aria-activedescendant')).to.equal('search-option-/notes/result-53/');
   });
 
   it('keyboard navigation は active option を DOM に保持し、内部 scroll event を passive 扱いしないこと', async () => {
@@ -733,9 +794,7 @@ describe('search-dialog-enhancer', () => {
       query: 'result',
       items: [createResultItem(10), createResultItem(1), createResultItem(2)],
     });
-    expect(input.getAttribute('aria-activedescendant')).to.equal(
-      'search-option-/notes/result-10/',
-    );
+    expect(input.getAttribute('aria-activedescendant')).to.equal('search-option-/notes/result-10/');
   });
 
   it('passive scroll で range が不変なら virtual rows を再構築しないこと', async () => {
