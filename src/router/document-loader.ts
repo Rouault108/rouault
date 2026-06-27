@@ -20,6 +20,7 @@ import type {
   DocumentNavigationFallbackReason,
   DocumentRouteContext,
   ErrorFallbackLoadDocumentResult,
+  InternalDocumentRoutePresence,
   LoadDocumentResult,
 } from './router-types.js';
 
@@ -75,6 +76,7 @@ export class DocumentLoader {
   async load(
     normalizedUrl: InternalDocumentNormalizedUrl,
     signal: AbortSignal,
+    routePresence: InternalDocumentRoutePresence,
   ): Promise<LoadDocumentResult> {
     let routeContext: DocumentRouteContext;
     try {
@@ -139,6 +141,10 @@ export class DocumentLoader {
         throw error;
       }
       if (error instanceof NavigationEnvelopeHttpStatusError) {
+        if (routePresence === 'missing-route-candidate' && error.status === 404) {
+          return this.errorEnvelopeFactory.createHttpErrorResult(404, String(normalizedUrl));
+        }
+
         return createDocumentNavigationFallbackResult(
           'fetch-navigation-envelope-http-status',
           error,

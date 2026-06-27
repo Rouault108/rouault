@@ -58,6 +58,8 @@
 - fetch target URLは取得直前にのみ導出する。
 - 静的HTMLの`index.html`解決に必要なtrailing slash補完はfetch target解決層の責務である。
 - trailing slash補完はnote page navigation URLのcanonical定義を書き換えない。
+- internal document navigation validationは、basePath除去後の`pathname`だけでroute manifest掲載有無を判定し、`known-route`または`missing-route-candidate`としてrouter queueからdocument loaderへ引き継ぐ。query/hashはroute presence判定に使わない。
+- manifest非掲載でもinternal document navigationとして許可される`missing-route-candidate`はSPA遷移候補である。ただしdefault internal resource pathは従来どおり`disallowed-url`として拒否する。
 - document navigation fallbackは、`urlStateNavigationPolicy`評価後のfull navigationにのみ適用する。
 - state-only navigationでは`DocumentLoader.load()`も`LocationAdapter.navigateDocument()`も呼ばない。
 
@@ -98,6 +100,9 @@
 - durable commit後の失敗は、可能な限り`committed: true`かつ`degraded: true`として扱う。
 - 新しいnavigationが開始された場合、古いnavigationはsupersededとして扱う。
 - fetch artifact由来の`buildId`不一致、`schemaVersion`不一致、NavigationEnvelope contract error、artifact HTTP status errorは、通常内部遷移ではSPA commitせず、目的URLへのdocument navigationへ縮退する。
+- 例外として、`missing-route-candidate`のfetch artifactがHTTP 404を返した場合は、stale artifactではなくnot-foundとして扱い、`error-fallback` sourceのnot-found envelopeをSPA commitする。この場合もnot-foundに渡すURLはquery/hashを含むnormalized URLである。
+- `known-route`のfetch artifact HTTP 404は、引き続き`fetch-navigation-envelope-http-status`のdocument navigation fallbackであり、not-found envelopeをSPA commitしない。
+- `missing-route-candidate`であっても、`schemaVersion`不一致、`buildId`不一致、invalid content-type、invalid JSON、構造不正NavigationEnvelope、HTTP 404以外のstatus errorをnot-foundへ寄せない。
 - fetch artifact由来のfallback reasonは`NavigationResult.reason`で表す。`NavigationIssue`はこの分類のために拡張しない。
 - current document側`buildId`欠落・不正は`current-build-id-invalid`としてfetch artifact由来とは別に分類し、通常内部遷移ではdocument navigationへ縮退する。
 - 初期navigationで同一URLへのdocument navigation fallbackが必要になった場合はreload loopを避け、`LocationAdapter.navigateDocument()`を呼ばずにerror fallback envelopeをcommitする。

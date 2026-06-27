@@ -11,6 +11,7 @@ import {
   toInternalDocumentNormalizedUrl,
   type InternalDocumentNormalizedUrl,
 } from './internal-document-normalized-url.js';
+import type { InternalDocumentRoutePresence } from './router-types.js';
 
 export type NavigationValidationFailureReason =
   | 'disallowed-url'
@@ -19,7 +20,11 @@ export type NavigationValidationFailureReason =
   | 'route-manifest-stale';
 
 export type InternalDocumentNavigationValidationResult =
-  | { readonly ok: true; readonly normalizedUrl: InternalDocumentNormalizedUrl }
+  | {
+      readonly ok: true;
+      readonly normalizedUrl: InternalDocumentNormalizedUrl;
+      readonly routePresence: InternalDocumentRoutePresence;
+    }
   | { readonly ok: false; readonly reason: NavigationValidationFailureReason };
 
 const reasonFor = (state: InternalDocumentRouteManifestState): NavigationValidationFailureReason =>
@@ -57,15 +62,14 @@ export const validateInternalDocumentNavigationRequest = (options: {
     return { ok: false, reason: reasonFor(options.routeManifestState) };
 
   const pathname = stripBasePathFromPathname(url.pathname, options.siteUrlContext.basePath);
-  if (
-    !options.routeManifestState.routeSet.has(pathname) &&
-    isDefaultInternalResourcePathname(pathname)
-  ) {
+  const isKnownRoute = options.routeManifestState.routeSet.has(pathname);
+  if (!isKnownRoute && isDefaultInternalResourcePathname(pathname)) {
     return { ok: false, reason: 'disallowed-url' };
   }
 
   return {
     ok: true,
     normalizedUrl: toInternalDocumentNormalizedUrl(`${url.pathname}${url.search}${url.hash}`),
+    routePresence: isKnownRoute ? 'known-route' : 'missing-route-candidate',
   };
 };
