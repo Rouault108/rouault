@@ -139,6 +139,15 @@ export class LocationAdapter {
     window.history.replaceState(this.createHistoryState(state, normalizedUrl), '', normalizedUrl);
   }
 
+  navigateDocument(normalizedUrl: string, historyMode: 'none' | 'push' | 'replace'): void {
+    if (historyMode === 'push') {
+      window.location.assign(normalizedUrl);
+      return;
+    }
+
+    window.location.replace(normalizedUrl);
+  }
+
   private isHistoryStateObject(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null;
   }

@@ -7,7 +7,7 @@
 
 - `schemaVersion`: envelope schemaの互換単位。互換性を破るpayload変更では更新する。
 - `buildId`: artifactを生成したbuildの識別子。client側buildIdと不一致の場合は縮退理由になる。
-- `generatedAt`: artifact生成時刻。表示・診断用でありrouting stateではない。
+- `generatedAt`: artifact生成時刻。fetch artifact上では必須の診断用metadataであり、routing互換キーではない。
 - `document`: 本文commitに必要なpayload。
 - `shell`: route由来のdurable shell snapshot。
 - `hydrationPlan`: client hydrationのplanning情報。
@@ -57,3 +57,11 @@ Hydration triggerの正本は`docs/contracts/hydration.md`とscheduler / registr
 ## Schema Version Rule
 
 Payload fieldの追加、削除、意味変更、互換性を破る型変更を行う場合は`schemaVersion`を更新し、`docs/contracts/navigation-envelope.md`とこのReferenceを同時に確認する。
+
+## Runtime Compatibility Rule
+
+- `schemaVersion`はpayload schema互換キーである。
+- `buildId`はartifact世代の互換キーである。
+- `generatedAt`はartifact生成時刻の診断用metadataであり、current document側の値と一致する必要はない。
+- fetch artifact側`generatedAt`の欠落・不正はNavigationEnvelope contract errorである。
+- current document側`generatedAt`の欠落・不正はfetch artifactの`buildId`互換判定を止めない。

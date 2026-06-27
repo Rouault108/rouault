@@ -12,7 +12,7 @@ import { applyBasePathToRenderHref } from '../../shared/url/normalize-rouault-ur
 import { DEFAULT_SIDEBAR_ID } from '../../shared/navigation/sidebar-shell-defaults.js';
 import { EMPTY_CORPUS_NAVIGATION_PROJECTION_PAYLOAD } from '../../shared/navigation/corpus-navigation-projection.js';
 import { renderLayoutHeaderHtml } from '../layouts/layout-header-html.js';
-import type { LoadDocumentResult, NavigationLoadFailureReason } from './router-types.js';
+import type { ErrorFallbackLoadDocumentResult, NavigationLoadFailureReason } from './router-types.js';
 import {
   NavigationEnvelopeContractError,
   NavigationEnvelopeMetadataMismatchError,
@@ -57,7 +57,10 @@ export class ErrorEnvelopeFactory {
     };
   }
 
-  createHttpErrorResult(status: number, normalizedUrl: string): LoadDocumentResult {
+  createHttpErrorResult(
+    status: number,
+    normalizedUrl: string,
+  ): ErrorFallbackLoadDocumentResult {
     switch (status) {
       case 401:
         return this.createErrorResult('401 - 認証エラー', 'ログインが必要です。', 'auth', status);
@@ -94,7 +97,7 @@ export class ErrorEnvelopeFactory {
     }
   }
 
-  createExceptionResult(error: unknown): LoadDocumentResult {
+  createExceptionResult(error: unknown): ErrorFallbackLoadDocumentResult {
     if (error instanceof Error && error.name === 'AbortError') {
       throw error;
     }
@@ -121,8 +124,8 @@ export class ErrorEnvelopeFactory {
 
     if (error instanceof NavigationEnvelopeMetadataMismatchError) {
       return this.createErrorResult(
-        'ビルド不整合',
-        '表示中の文書と取得した router artifact の build metadata が一致しません。再読み込みしてください。',
+        'ページを更新できませんでした',
+        'サイトが更新された可能性があります。ページを再読み込みしてください。',
         'unexpected',
         undefined,
         error,
@@ -131,8 +134,8 @@ export class ErrorEnvelopeFactory {
 
     if (error instanceof NavigationEnvelopeContractError) {
       return this.createErrorResult(
-        'router artifact 契約エラー',
-        '取得した router artifact が NavigationEnvelope 契約を満たしていません。',
+        'ページを読み込めませんでした',
+        '内部ナビゲーションデータが不正です。ページを再読み込みしてください。',
         'unexpected',
         undefined,
         error,
@@ -148,7 +151,7 @@ export class ErrorEnvelopeFactory {
     );
   }
 
-  private createNotFoundResult(normalizedUrl: string): LoadDocumentResult {
+  private createNotFoundResult(normalizedUrl: string): ErrorFallbackLoadDocumentResult {
     return {
       envelope: this.createEnvelope({
         html: buildNotFoundPageMarkup({
@@ -169,7 +172,7 @@ export class ErrorEnvelopeFactory {
     reason: NavigationLoadFailureReason,
     _statusCode?: number,
     error?: Error,
-  ): LoadDocumentResult {
+  ): ErrorFallbackLoadDocumentResult {
     return {
       envelope: this.createEnvelope({
         html: `

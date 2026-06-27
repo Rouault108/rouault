@@ -173,6 +173,72 @@ describe('LocationAdapter', () => {
     });
   });
 
+  it('navigateDocument() は push で location.assign を使うこと', () => {
+    const originalWindow = globalThis.window;
+    const calls: string[] = [];
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: {
+        location: {
+          assign(url: string) {
+            calls.push(`assign:${url}`);
+          },
+          replace(url: string) {
+            calls.push(`replace:${url}`);
+          },
+        } as unknown as Location,
+      } satisfies Pick<Window, 'location'>,
+    });
+
+    try {
+      new LocationAdapter().navigateDocument('/notes/next/', 'push');
+      expect(calls).to.deep.equal(['assign:/notes/next/']);
+    } finally {
+      if (originalWindow === undefined) {
+        Reflect.deleteProperty(globalThis, 'window');
+      } else {
+        Object.defineProperty(globalThis, 'window', {
+          configurable: true,
+          value: originalWindow,
+        });
+      }
+    }
+  });
+
+  it('navigateDocument() は replace/none で location.replace を使うこと', () => {
+    const originalWindow = globalThis.window;
+    const calls: string[] = [];
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: {
+        location: {
+          assign(url: string) {
+            calls.push(`assign:${url}`);
+          },
+          replace(url: string) {
+            calls.push(`replace:${url}`);
+          },
+        } as unknown as Location,
+      } satisfies Pick<Window, 'location'>,
+    });
+
+    try {
+      const adapter = new LocationAdapter();
+      adapter.navigateDocument('/notes/replace/', 'replace');
+      adapter.navigateDocument('/notes/current/', 'none');
+      expect(calls).to.deep.equal(['replace:/notes/replace/', 'replace:/notes/current/']);
+    } finally {
+      if (originalWindow === undefined) {
+        Reflect.deleteProperty(globalThis, 'window');
+      } else {
+        Object.defineProperty(globalThis, 'window', {
+          configurable: true,
+          value: originalWindow,
+        });
+      }
+    }
+  });
+
   it('readCurrentUrl() は __routerUrl が無ければ window.location から現在 URL を組み立てること', () => {
     const policy: UrlPolicy = {
       normalizePathname(pathname) {

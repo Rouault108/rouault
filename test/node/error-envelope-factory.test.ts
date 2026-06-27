@@ -4,6 +4,10 @@ import { describe, expect, it } from 'vitest';
 import { NOT_FOUND_PAGE_TITLE } from '../../src/components/not-found/not-found-page.js';
 import { ErrorEnvelopeFactory } from '../../src/router/error-envelope-factory.js';
 import { collectImportEdges } from '../../scripts/import-boundary-graph.js';
+import {
+  NavigationEnvelopeContractError,
+  NavigationEnvelopeMetadataMismatchError,
+} from '../../src/router/navigation-envelope-errors.js';
 
 const factory = (): ErrorEnvelopeFactory =>
   new ErrorEnvelopeFactory({
@@ -64,6 +68,34 @@ describe('ErrorEnvelopeFactory', () => {
 
     expect(result.envelope.document.title).toBe('タイムアウト - Rouault');
     expect(result.envelope.document.announcedTitle).toBe('タイムアウト');
+  });
+
+  it('metadata mismatch error はビルド不整合ではなく更新失敗文言で表示すること', () => {
+    const result = factory().createExceptionResult(
+      new NavigationEnvelopeMetadataMismatchError({
+        kind: 'buildId',
+        currentValue: 'current',
+        envelopeValue: 'stale',
+        normalizedUrl: '/notes/example/',
+      }),
+    );
+
+    expect(result.envelope.document.html).toContain('ページを更新できませんでした');
+    expect(result.envelope.document.html).toContain(
+      'サイトが更新された可能性があります。ページを再読み込みしてください。',
+    );
+    expect(result.envelope.document.html).not.toContain('ビルド不整合');
+  });
+
+  it('contract error は内部ナビゲーションデータ不正文言で表示すること', () => {
+    const result = factory().createExceptionResult(
+      new NavigationEnvelopeContractError('invalid envelope'),
+    );
+
+    expect(result.envelope.document.html).toContain('ページを読み込めませんでした');
+    expect(result.envelope.document.html).toContain(
+      '内部ナビゲーションデータが不正です。ページを再読み込みしてください。',
+    );
   });
 
   it('browser bundle unsafe な依存へ到達しないこと', () => {

@@ -8,13 +8,16 @@ export const normalizeDocumentRouteEnvelope = (
   const hasBuildId = envelope.buildId !== undefined && envelope.buildId !== null;
   const hasGeneratedAt = envelope.generatedAt !== undefined && envelope.generatedAt !== null;
 
-  if (hasBuildId || hasGeneratedAt) {
+  if (hasBuildId && (hasGeneratedAt || context.currentGeneratedAt === null)) {
     return envelope;
   }
 
   return {
     ...envelope,
-    buildId: context.currentBuildId,
-    generatedAt: context.currentGeneratedAt,
+    buildId: hasBuildId ? envelope.buildId : context.currentBuildId,
+    generatedAt:
+      hasGeneratedAt || context.currentGeneratedAt === null
+        ? envelope.generatedAt
+        : context.currentGeneratedAt,
   };
 };

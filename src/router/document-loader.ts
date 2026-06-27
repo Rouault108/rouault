@@ -7,14 +7,21 @@ import { normalizeDocumentRouteEnvelope } from './document-route-envelope.js';
 import { ErrorEnvelopeFactory } from './error-envelope-factory.js';
 import {
   CurrentBuildMetadataInvalidError,
+  NavigationEnvelopeContractError,
   NavigationEnvelopeHttpStatusError,
+  NavigationEnvelopeMetadataMismatchError,
 } from './navigation-envelope-errors.js';
 import {
   validateLoadedEnvelope,
   validateNavigationEnvelope,
 } from './navigation-envelope-validator.js';
 import { RouteRegistry } from './route-registry.js';
-import type { DocumentRouteContext, LoadDocumentResult } from './router-types.js';
+import type {
+  DocumentNavigationFallbackReason,
+  DocumentRouteContext,
+  ErrorFallbackLoadDocumentResult,
+  LoadDocumentResult,
+} from './router-types.js';
 
 const isAbortError = (error: unknown): boolean =>
   error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError');
@@ -36,7 +43,7 @@ const createCurrentMetadataInvalidError = (
   });
 
 const requireCurrentMetadataValue = (
-  field: 'buildId' | 'generatedAt',
+  field: 'buildId',
   result: CurrentMetadataReadResult,
 ): string => {
   if (result.kind === 'valid') {
@@ -45,6 +52,15 @@ const requireCurrentMetadataValue = (
 
   throw createCurrentMetadataInvalidError(field, result);
 };
+
+const createDocumentNavigationFallbackResult = (
+  reason: DocumentNavigationFallbackReason,
+  error: Error,
+): LoadDocumentResult => ({
+  source: 'document-navigation-fallback',
+  reason,
+  error,
+});
 
 export class DocumentLoader {
   private readonly errorEnvelopeFactory: ErrorEnvelopeFactory;
@@ -64,12 +80,24 @@ export class DocumentLoader {
     try {
       routeContext = this.createRouteContext(normalizedUrl, signal);
     } catch (error) {
+      if (error instanceof CurrentBuildMetadataInvalidError && error.field === 'buildId') {
+        return createDocumentNavigationFallbackResult('current-build-id-invalid', error);
+      }
       return this.errorEnvelopeFactory.createExceptionResult(error);
     }
 
+    let routeEnvelope: Awaited<ReturnType<RouteRegistry['execute']>>;
     try {
-      const routeEnvelope = await this.routeRegistry.execute(routeContext);
-      if (routeEnvelope !== null) {
+      routeEnvelope = await this.routeRegistry.execute(routeContext);
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
+      }
+      return this.errorEnvelopeFactory.createExceptionResult(error);
+    }
+
+    if (routeEnvelope !== null) {
+      try {
         const envelope = validateNavigationEnvelope(routeEnvelope);
         const normalizedEnvelope = normalizeDocumentRouteEnvelope(envelope, routeContext);
 
@@ -78,17 +106,16 @@ export class DocumentLoader {
             envelope: normalizedEnvelope,
             source: 'document-route',
             currentBuildId: routeContext.currentBuildId,
-            currentGeneratedAt: routeContext.currentGeneratedAt,
             normalizedUrl: String(normalizedUrl),
           }),
           source: 'document-route',
         };
+      } catch (error) {
+        if (isAbortError(error)) {
+          throw error;
+        }
+        return this.errorEnvelopeFactory.createExceptionResult(error);
       }
-    } catch (error) {
-      if (isAbortError(error)) {
-        throw error;
-      }
-      return this.errorEnvelopeFactory.createExceptionResult(error);
     }
 
     try {
@@ -103,7 +130,6 @@ export class DocumentLoader {
           envelope,
           source: 'fetch',
           currentBuildId: routeContext.currentBuildId,
-          currentGeneratedAt: routeContext.currentGeneratedAt,
           normalizedUrl: String(normalizedUrl),
         }),
         source: 'fetch',
@@ -113,13 +139,27 @@ export class DocumentLoader {
         throw error;
       }
       if (error instanceof NavigationEnvelopeHttpStatusError) {
-        return this.errorEnvelopeFactory.createHttpErrorResult(error.status, String(normalizedUrl));
+        return createDocumentNavigationFallbackResult(
+          'fetch-navigation-envelope-http-status',
+          error,
+        );
+      }
+      if (error instanceof NavigationEnvelopeMetadataMismatchError) {
+        return createDocumentNavigationFallbackResult('fetch-build-id-mismatch', error);
+      }
+      if (error instanceof NavigationEnvelopeContractError) {
+        return createDocumentNavigationFallbackResult(
+          error.code === 'schema-version-mismatch'
+            ? 'fetch-schema-version-mismatch'
+            : 'fetch-navigation-envelope-invalid',
+          error,
+        );
       }
       return this.errorEnvelopeFactory.createExceptionResult(error);
     }
   }
 
-  createExceptionResult(error: unknown): LoadDocumentResult {
+  createExceptionResult(error: unknown): ErrorFallbackLoadDocumentResult {
     return this.errorEnvelopeFactory.createExceptionResult(error);
   }
 
@@ -130,10 +170,9 @@ export class DocumentLoader {
     const serializedUrl = String(normalizedUrl);
     const parsedUrl = new URL(serializedUrl, window.location.origin);
     const currentBuildId = requireCurrentMetadataValue('buildId', this.readCurrentBuildId());
-    const currentGeneratedAt = requireCurrentMetadataValue(
-      'generatedAt',
-      this.readCurrentGeneratedAt(),
-    );
+    const currentGeneratedAtResult = this.readCurrentGeneratedAt();
+    const currentGeneratedAt =
+      currentGeneratedAtResult.kind === 'valid' ? currentGeneratedAtResult.value : null;
 
     return {
       url: serializedUrl,

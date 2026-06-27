@@ -29,6 +29,13 @@ export type NavigationLoadFailureReason =
   | 'service-unavailable'
   | 'unexpected';
 
+export type DocumentNavigationFallbackReason =
+  | 'fetch-build-id-mismatch'
+  | 'fetch-schema-version-mismatch'
+  | 'fetch-navigation-envelope-invalid'
+  | 'fetch-navigation-envelope-http-status'
+  | 'current-build-id-invalid';
+
 export interface RouterRuntimeUrlDependencies {
   readonly siteUrlContext: SiteUrlContext;
   readonly isInternalDocumentPathname: (pathname: string) => boolean;
@@ -62,7 +69,13 @@ export interface NavigationResultMetadata {
   readonly committed: boolean;
   degraded: boolean;
   readonly issues: NavigationIssue[];
-  readonly source: 'document-route' | 'fetch' | 'error-fallback' | 'state-only' | 'none';
+  readonly source:
+    | 'document-route'
+    | 'fetch'
+    | 'error-fallback'
+    | 'document-navigation-fallback'
+    | 'state-only'
+    | 'none';
   readonly renderedKind: 'page' | 'not-found' | 'error' | null;
 }
 
@@ -144,13 +157,29 @@ export interface NavigationLoadFailureResult extends NavigationResultMetadata {
   readonly errorReason: NavigationLoadFailureReason;
 }
 
+export interface DocumentNavigationFallbackResult extends NavigationResultMetadata {
+  readonly kind: 'document-navigation-fallback';
+  readonly outcome: 'completed';
+  readonly reason: DocumentNavigationFallbackReason;
+  readonly historyMode: HistoryMode;
+  readonly normalizedUrl: InternalDocumentNormalizedUrl;
+  readonly requestedUrl?: never;
+  readonly error?: Error | undefined;
+  readonly errorReason?: undefined;
+  readonly source: 'document-navigation-fallback';
+  readonly renderedKind: null;
+  readonly stateOnly: false;
+  readonly committed: false;
+}
+
 export type NavigationResult =
   | NavigationCompletedResult
   | NavigationCancelledResult
   | NavigationSupersededResult
   | NavigationValidationFailureResult
   | NavigationLifecycleFailureResult
-  | NavigationLoadFailureResult;
+  | NavigationLoadFailureResult
+  | DocumentNavigationFallbackResult;
 
 export interface ContentUpdatePayload {
   html: string;
@@ -232,19 +261,34 @@ export interface RouterOptions {
   navigationTimeoutMs?: number | null | undefined;
 }
 
-export type LoadDocumentSource = 'document-route' | 'fetch' | 'error-fallback';
+export type LoadDocumentSource =
+  | 'document-route'
+  | 'fetch'
+  | 'error-fallback'
+  | 'document-navigation-fallback';
+
+export interface LoadedEnvelopeDocumentResult {
+  envelope: StrictLoadedNavigationEnvelope;
+  source: 'document-route' | 'fetch';
+}
+
+export interface ErrorFallbackLoadDocumentResult {
+  envelope: NavigationEnvelope;
+  source: 'error-fallback';
+  error?: Error | undefined;
+  errorReason?: NavigationLoadFailureReason | undefined;
+}
+
+export interface DocumentNavigationFallbackLoadDocumentResult {
+  source: 'document-navigation-fallback';
+  reason: DocumentNavigationFallbackReason;
+  error: Error;
+}
 
 export type LoadDocumentResult =
-  | {
-      envelope: StrictLoadedNavigationEnvelope;
-      source: 'document-route' | 'fetch';
-    }
-  | {
-      envelope: NavigationEnvelope;
-      source: 'error-fallback';
-      error?: Error | undefined;
-      errorReason?: NavigationLoadFailureReason | undefined;
-    };
+  | LoadedEnvelopeDocumentResult
+  | ErrorFallbackLoadDocumentResult
+  | DocumentNavigationFallbackLoadDocumentResult;
 
 export interface DocumentRouteContext {
   url: string;
@@ -254,7 +298,7 @@ export interface DocumentRouteContext {
   hash: string;
   signal: AbortSignal;
   currentBuildId: string;
-  currentGeneratedAt: string;
+  currentGeneratedAt: string | null;
 }
 
 export type RouterDocumentRenderSnapshot = DocumentRenderSnapshot;

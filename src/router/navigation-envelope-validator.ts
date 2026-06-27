@@ -21,7 +21,6 @@ export interface ValidateLoadedEnvelopeInput {
   readonly envelope: NavigationEnvelope;
   readonly source: 'fetch' | 'document-route';
   readonly currentBuildId: string;
-  readonly currentGeneratedAt: string;
   readonly normalizedUrl: string;
 }
 
@@ -37,6 +36,15 @@ const isRenderedKind = (value: unknown): value is DocumentRenderSnapshot['render
 
 const createInvalidEnvelopeError = (message: string): NavigationEnvelopeContractError =>
   new NavigationEnvelopeContractError(message, {
+    cause: createRouterDiagnosticError(message, {
+      reason: 'navigation-envelope-invalid',
+      routeId: 'navigation-envelope',
+    }),
+  });
+
+const createSchemaVersionMismatchError = (message: string): NavigationEnvelopeContractError =>
+  new NavigationEnvelopeContractError(message, {
+    code: 'schema-version-mismatch',
     cause: createRouterDiagnosticError(message, {
       reason: 'navigation-envelope-invalid',
       routeId: 'navigation-envelope',
@@ -131,7 +139,7 @@ export const validateNavigationEnvelope = (value: unknown): NavigationEnvelope =
   }
 
   if (value['schemaVersion'] !== NAVIGATION_ENVELOPE_SCHEMA_VERSION) {
-    throw createInvalidEnvelopeError(
+    throw createSchemaVersionMismatchError(
       `navigation envelope schemaVersion ${String(value['schemaVersion'])} は未対応です。`,
     );
   }
@@ -196,7 +204,6 @@ const requireLoadedEnvelopeGeneratedAt = (value: unknown): string => {
 export const validateLoadedEnvelope = ({
   envelope,
   currentBuildId,
-  currentGeneratedAt,
   normalizedUrl,
 }: ValidateLoadedEnvelopeInput): StrictLoadedNavigationEnvelope => {
   const envelopeBuildId = requireLoadedEnvelopeBuildId(envelope.buildId);
@@ -207,15 +214,6 @@ export const validateLoadedEnvelope = ({
       kind: 'buildId',
       currentValue: currentBuildId,
       envelopeValue: envelopeBuildId,
-      normalizedUrl,
-    });
-  }
-
-  if (envelopeGeneratedAt !== currentGeneratedAt) {
-    throw new NavigationEnvelopeMetadataMismatchError({
-      kind: 'generatedAt',
-      currentValue: currentGeneratedAt,
-      envelopeValue: envelopeGeneratedAt,
       normalizedUrl,
     });
   }

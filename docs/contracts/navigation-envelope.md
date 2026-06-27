@@ -15,7 +15,8 @@
 - route経路とfetch経路を同じpayload modelで扱うこと。
 - `document`、`shell`、`hydrationPlan`を主要構造として扱うこと。
 - Reading chromeのroute由来shell snapshotをdurable stateとして運ぶこと。
-- `schemaVersion`、`buildId`、`generatedAt`の互換境界。
+- `schemaVersion`と`buildId`の互換境界。
+- `generatedAt`をartifact生成時刻の診断用metadataとして扱うこと。
 
 ### This Layer Must Not Own
 
@@ -48,6 +49,9 @@
 - `hydrationPlan`はplanning情報であり、hydration triggerの正本ではない。
 - Reading chromeのTOC trigger projectionはshell stateであり、mobile panel open stateやcurrent DOMのephemeral stateではない。
 - `buildId`が一致しない場合、client navigationは安全なdocument navigationへ縮退する。
+- `generatedAt`はrouting互換キーではない。current document側`generatedAt`との不一致だけでcommitを拒否しない。
+- fetch artifact側`generatedAt`欠落・不正はcontract errorであり、通常内部遷移ではdocument navigation fallbackへ分類する。
+- current document側`generatedAt`欠落・不正はfetch artifactの`buildId`互換判定を止めない。
 
 ## 4. State Model
 
@@ -77,7 +81,9 @@
 
 ## 5. Failure Semantics
 
-- `schemaVersion`不一致、`buildId`不一致、payload欠損はclient navigationの縮退理由である。
+- fetch artifact由来の`schemaVersion`不一致、`buildId`不一致、payload欠損、artifact HTTP status errorはclient navigationの縮退理由である。
+- `schemaVersion`不一致は`fetch-schema-version-mismatch`、`buildId`不一致は`fetch-build-id-mismatch`、その他のfetch artifact不正は`fetch-navigation-envelope-invalid`、artifact HTTP status errorは`fetch-navigation-envelope-http-status`として分類する。
+- document-route handler例外とdocument-route由来の不正NavigationEnvelopeはstale fetch artifact fallback対象ではない。
 - 縮退時もURLとdocumentの整合を優先する。
 
 ## 6. Integration Boundaries

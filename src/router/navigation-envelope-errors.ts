@@ -1,5 +1,19 @@
+export type NavigationEnvelopeContractErrorCode =
+  | 'schema-version-mismatch'
+  | 'invalid-envelope';
+
 export class NavigationEnvelopeContractError extends Error {
   override name = 'NavigationEnvelopeContractError';
+
+  readonly code: NavigationEnvelopeContractErrorCode;
+
+  constructor(
+    message: string,
+    options: ErrorOptions & { readonly code?: NavigationEnvelopeContractErrorCode } = {},
+  ) {
+    super(message, options);
+    this.code = options.code ?? 'invalid-envelope';
+  }
 }
 
 export class NavigationEnvelopeHttpStatusError extends Error {
@@ -39,7 +53,7 @@ export class CurrentBuildMetadataInvalidError extends NavigationEnvelopeContract
 }
 
 export interface NavigationEnvelopeMetadataMismatchErrorOptions {
-  readonly kind: 'buildId' | 'generatedAt';
+  readonly kind: 'buildId';
   readonly currentValue: string;
   readonly envelopeValue: string;
   readonly normalizedUrl: string;
@@ -48,8 +62,8 @@ export interface NavigationEnvelopeMetadataMismatchErrorOptions {
 export class NavigationEnvelopeMetadataMismatchError extends NavigationEnvelopeContractError {
   override name = 'NavigationEnvelopeMetadataMismatchError';
 
-  readonly kind: 'buildId' | 'generatedAt';
-  readonly field: 'buildId' | 'generatedAt';
+  readonly kind: 'buildId';
+  readonly field: 'buildId';
   readonly currentValue: string;
   readonly envelopeValue: string;
   readonly normalizedUrl: string;

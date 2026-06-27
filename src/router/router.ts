@@ -313,6 +313,49 @@ export class Router {
         return this.createSupersededResult(request);
       }
 
+      if (loadResult.source === 'document-navigation-fallback') {
+        if (this.canUseDocumentNavigationFallback(request, currentUrl)) {
+          this.location.navigateDocument(request.normalizedUrl, request.historyMode);
+          const result = this.createDocumentNavigationFallbackResult(
+            request,
+            loadResult.reason,
+            loadResult.error,
+          );
+          this.eventBus.emit('after:navigate', result);
+          return result;
+        }
+
+        const errorFallbackResult = this.loader.createExceptionResult(loadResult.error);
+        const loadError = errorFallbackResult.error;
+        const loadErrorReason = errorFallbackResult.errorReason;
+        const durableCommitResult = await this.commitLoadedSnapshot(
+          request,
+          currentUrl,
+          errorFallbackResult.envelope,
+          loadResult.error,
+          loadErrorReason,
+        );
+        const finalResult: NavigationResult =
+          durableCommitResult.outcome === 'failed'
+            ? {
+                ...durableCommitResult,
+                source: errorFallbackResult.source,
+              }
+            : {
+                ...durableCommitResult,
+                source: errorFallbackResult.source,
+                error: loadError ?? loadResult.error,
+                errorReason: loadErrorReason,
+              };
+
+        this.eventBus.emit('error', {
+          error: finalResult.error ?? loadResult.error,
+          stage: 'load',
+        });
+        this.eventBus.emit('after:navigate', finalResult);
+        return finalResult;
+      }
+
       const durableCommitResult = await this.commitLoadedSnapshot(
         request,
         currentUrl,
@@ -349,9 +392,8 @@ export class Router {
       }
 
       const loadResult = this.loader.createExceptionResult(error);
-      const loadError = loadResult.source === 'error-fallback' ? loadResult.error : undefined;
-      const loadErrorReason =
-        loadResult.source === 'error-fallback' ? loadResult.errorReason : undefined;
+      const loadError = loadResult.error;
+      const loadErrorReason = loadResult.errorReason;
 
       const durableCommitResult = await this.commitLoadedSnapshot(
         request,
@@ -597,6 +639,38 @@ export class Router {
     }
 
     return null;
+  }
+
+  private canUseDocumentNavigationFallback(
+    request: NormalizedNavigationRequest,
+    currentUrl: string,
+  ): boolean {
+    return !(
+      !this.hasCommittedNavigation &&
+      request.historyMode === 'none' &&
+      request.normalizedUrl === currentUrl
+    );
+  }
+
+  private createDocumentNavigationFallbackResult(
+    request: NormalizedNavigationRequest,
+    reason: import('./router-types.js').DocumentNavigationFallbackReason,
+    error: Error,
+  ): NavigationResult {
+    return {
+      kind: 'document-navigation-fallback',
+      outcome: 'completed',
+      reason,
+      normalizedUrl: request.normalizedUrl,
+      historyMode: request.historyMode,
+      stateOnly: false,
+      committed: false,
+      degraded: false,
+      issues: [],
+      source: 'document-navigation-fallback',
+      renderedKind: null,
+      error,
+    };
   }
 
   private setBusy(nextValue: boolean): void {
