@@ -122,8 +122,8 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 ### 実行環境
 
 - Node.js: 24.x
-- pnpm: 10.x
-- package manager: `pnpm@10.33.0`
+- pnpm: 11.x
+- package manager: `package.json` の `packageManager` を正本とする
 
 `.node-version`、`package.json` の `engines`、`packageManager` を基準にしてください。
 
@@ -282,7 +282,7 @@ Windowsネイティブ環境で作業する場合は、PowerShell構文を前提
 
 ```powershell
 pnpm dev                    # Eleventy dev server
-pnpm build                  # client / images / Eleventy / Lit SSR / navigation artifacts / Pagefind
+pnpm build                  # client / images / Eleventy / Lit SSR / navigation/search artifacts / Pagefind
 pnpm build:production       # production条件をまとめたビルド入口
 pnpm build:client           # client bundleのみ生成
 pnpm build:images           # 画像生成
@@ -293,16 +293,20 @@ pnpm test:ssr               # build-time / final DOM / static artifact / CSS str
 pnpm test:e2e               # app shell / no-JS baseline / router / search / 主要導線
 pnpm test:storybook:meta    # story metadata / import boundary
 pnpm test:storybook:smoke   # Storybook smoke
+pnpm test:storybook         # storybook meta + smoke
 pnpm test                   # node + ssr + browser + storybook:meta
 pnpm test:extended          # storybook smoke + e2e:production + e2e:dev
 
 pnpm lint                   # ESLint
+pnpm lint:fix               # ESLint auto-fix + Prettier write
+pnpm format                 # Prettier write
 pnpm typecheck              # app + node の型チェック
-pnpm check                  # lint + typecheck + test
-pnpm ci                     # check + test:extended
+pnpm validate:note-links    # note source link validation
+pnpm check                  # lint + typecheck + test + note links / import boundary checks
+pnpm verify                 # check + link contract acceptance + test:extended
 ```
 
-通常ビルドは、client bundle、画像生成、Eleventy、Lit SSR、navigation artifact、Pagefind indexの順に進みます。build-time契約を変更する場合は、この順序に依存したテストの有無を確認してください。
+通常ビルドは、client bundle、画像生成、Eleventy、Lit SSR、navigation artifact、search artifact、Pagefind indexの順に進みます。build-time契約を変更する場合は、この順序に依存したテストの有無を確認してください。
 
 ---
 
@@ -408,7 +412,7 @@ Storybookはdocs / smoke / metadataに限定します。
 
 アクセシビリティは後付けではなく、設計の初期条件です。
 
-- 目標基準はWCAG 2.1 Level AAとします。
+- WCAG 2.1 Level AAを最低基準とし、WCAG 2.2のtarget size、focus appearanceなど実装可能な項目は積極的に採用してください。
 - semantic HTMLを優先してください。
 - ARIAはsemantic HTMLを補うためにのみ使ってください。
 - focus visible、キーボード操作、名前・役割・状態の露出を確認してください。
