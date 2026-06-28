@@ -246,19 +246,26 @@ export class Router {
     }
 
     return this.queue.enqueue(
-      this.normalizeValidatedRequest(request, validation.normalizedUrl, historyMode),
+      this.normalizeValidatedRequest(
+        request,
+        validation.normalizedUrl,
+        validation.routePresence,
+        historyMode,
+      ),
     );
   }
 
   private normalizeValidatedRequest(
     request: NavigateRequest,
     normalizedUrl: InternalDocumentNormalizedUrl,
+    routePresence: import('./router-types.js').InternalDocumentRoutePresence,
     historyMode: HistoryMode,
   ): NormalizedNavigationRequest {
     return {
       requestedUrl: request.url,
       normalizedUrl,
       historyMode,
+      routePresence,
       state: request.state,
     };
   }
@@ -307,7 +314,11 @@ export class Router {
     }
 
     try {
-      const loadResult = await this.loader.load(request.normalizedUrl, executionController.signal);
+      const loadResult = await this.loader.load(
+        request.normalizedUrl,
+        executionController.signal,
+        request.routePresence,
+      );
 
       if (executionController.signal.aborted && externalSignal.aborted) {
         return this.createSupersededResult(request);

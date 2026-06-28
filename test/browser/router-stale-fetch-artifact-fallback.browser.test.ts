@@ -42,12 +42,18 @@ const createRouteManifestState = (): RouterRuntimeUrlDependencies['routeManifest
     generatedAt: GENERATED_AT,
     siteOrigin: window.location.origin,
     basePath: '',
-    routes: ['/', '/notes/current/', '/notes/next/'],
+    routes: ['/', '/about/', '/search/', '/notes/current', '/notes/next'],
   },
   routeSet: {
-    routes: ['/', '/notes/current/', '/notes/next/'],
+    routes: ['/', '/about/', '/search/', '/notes/current', '/notes/next'],
     has(pathname: string) {
-      return pathname === '/' || pathname === '/notes/current/' || pathname === '/notes/next/';
+      return (
+        pathname === '/' ||
+        pathname === '/about/' ||
+        pathname === '/search/' ||
+        pathname === '/notes/current' ||
+        pathname === '/notes/next'
+      );
     },
   },
 });
@@ -271,6 +277,89 @@ describe('Router stale fetch artifact fallback', () => {
 
         assertDocumentNavigationFallback(result, 'fetch-navigation-envelope-http-status');
         expect(calls).to.deep.equal([{ url: '/notes/next', historyMode: 'push' }]);
+      });
+    });
+  });
+
+  it('missing-route-candidate の fetch artifact HTTP 404 は not-found として SPA commit すること', async () => {
+    const outlet = setupCurrentDocument();
+
+    await withFetchStatus(404, async () => {
+      await withNavigateDocumentSpy(async (calls) => {
+        router = new Router(outlet, createUrlDependencies(), { skipInitialNavigation: true });
+        await router.start();
+
+        const result = await router.navigate({
+          url: '/__playwright_missing_route__?from=browser#section-x',
+          historyMode: 'push',
+        });
+
+        expect(result.kind).to.equal('completed');
+        expect(result.outcome).to.equal('completed');
+        expect(result.source).to.equal('error-fallback');
+        expect(result.renderedKind).to.equal('not-found');
+        expect(result.committed).to.equal(true);
+        expect(result.normalizedUrl).to.equal('/__playwright_missing_route__?from=browser#section-x');
+        expect(calls).to.deep.equal([]);
+        expect(outlet.querySelector('[data-not-found-fallback]')).to.not.equal(null);
+        expect(outlet.textContent).to.contain('/__playwright_missing_route__?from=browser#section-x');
+      });
+    });
+  });
+
+  it('missing-route-candidate の fetch artifact HTTP 500 は not-found に寄せないこと', async () => {
+    const outlet = setupCurrentDocument();
+
+    await withFetchStatus(500, async () => {
+      await withNavigateDocumentSpy(async (calls) => {
+        router = new Router(outlet, createUrlDependencies(), { skipInitialNavigation: true });
+        await router.start();
+
+        const result = await router.navigate({
+          url: '/__playwright_missing_route__',
+          historyMode: 'push',
+        });
+
+        assertDocumentNavigationFallback(result, 'fetch-navigation-envelope-http-status');
+        expect(calls).to.deep.equal([{ url: '/__playwright_missing_route__', historyMode: 'push' }]);
+      });
+    });
+  });
+
+  it('missing-route-candidate の schemaVersion mismatch は not-found に寄せないこと', async () => {
+    const outlet = setupCurrentDocument();
+
+    await withFetchResponse({ ...createEnvelope(), schemaVersion: 1 }, async () => {
+      await withNavigateDocumentSpy(async (calls) => {
+        router = new Router(outlet, createUrlDependencies(), { skipInitialNavigation: true });
+        await router.start();
+
+        const result = await router.navigate({
+          url: '/__playwright_missing_route__',
+          historyMode: 'push',
+        });
+
+        assertDocumentNavigationFallback(result, 'fetch-schema-version-mismatch');
+        expect(calls).to.deep.equal([{ url: '/__playwright_missing_route__', historyMode: 'push' }]);
+      });
+    });
+  });
+
+  it('missing-route-candidate の buildId mismatch は not-found に寄せないこと', async () => {
+    const outlet = setupCurrentDocument();
+
+    await withFetchResponse(createEnvelope({ buildId: 'build-stale' }), async () => {
+      await withNavigateDocumentSpy(async (calls) => {
+        router = new Router(outlet, createUrlDependencies(), { skipInitialNavigation: true });
+        await router.start();
+
+        const result = await router.navigate({
+          url: '/__playwright_missing_route__',
+          historyMode: 'push',
+        });
+
+        assertDocumentNavigationFallback(result, 'fetch-build-id-mismatch');
+        expect(calls).to.deep.equal([{ url: '/__playwright_missing_route__', historyMode: 'push' }]);
       });
     });
   });

@@ -83,6 +83,8 @@
 
 - fetch artifact由来の`schemaVersion`不一致、`buildId`不一致、payload欠損、artifact HTTP status errorはclient navigationの縮退理由である。
 - `schemaVersion`不一致は`fetch-schema-version-mismatch`、`buildId`不一致は`fetch-build-id-mismatch`、その他のfetch artifact不正は`fetch-navigation-envelope-invalid`、artifact HTTP status errorは`fetch-navigation-envelope-http-status`として分類する。
+- route manifest非掲載だがinternal document navigationとして許可された`missing-route-candidate`で、fetch artifactがHTTP 404を返した場合だけは、artifact縮退ではなくnot-found envelopeを生成してSPA commitする。
+- `known-route`のHTTP 404、`missing-route-candidate`のHTTP 404以外のstatus error、`schemaVersion`不一致、`buildId`不一致、invalid content-type、invalid JSON、構造不正NavigationEnvelopeはnot-found envelopeへ寄せない。
 - document-route handler例外とdocument-route由来の不正NavigationEnvelopeはstale fetch artifact fallback対象ではない。
 - 縮退時もURLとdocumentの整合を優先する。
 

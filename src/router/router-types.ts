@@ -45,6 +45,8 @@ export interface RouterRuntimeUrlDependencies {
 
 export type HistoryMode = 'none' | 'push' | 'replace';
 
+export type InternalDocumentRoutePresence = 'known-route' | 'missing-route-candidate';
+
 export type NavigationOutcome = 'completed' | 'cancelled' | 'superseded' | 'failed';
 
 export type NavigationErrorReason =

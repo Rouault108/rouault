@@ -16,6 +16,9 @@ Accepted.
 - `schemaVersion`はNavigationEnvelope payload schemaの互換キーとする。
 - `generatedAt`は診断用metadataとし、routing互換キーにしない。
 - fetch artifact由来の`buildId`不一致、`schemaVersion`不一致、NavigationEnvelope contract error、artifact HTTP status errorは、通常内部遷移ではSPA commitせず目的URLへのdocument navigation fallbackへ送る。
+- route manifestに存在する`known-route`のfetch artifact HTTP 404は、artifact HTTP status errorとしてdocument navigation fallbackへ送る。
+- route manifestに存在しないがinternal document navigationとして許可された`missing-route-candidate`のfetch artifact HTTP 404だけは、stale artifactではなくnot-foundとして扱い、`error-fallback` sourceのnot-found envelopeをSPA commitする。not-foundに渡すURLはquery/hashを含むnormalized URLである。
+- `missing-route-candidate`であっても、`schemaVersion`不一致、`buildId`不一致、invalid content-type、invalid JSON、構造不正NavigationEnvelope、HTTP 404以外のstatus errorはnot-foundへ寄せない。
 - current document側`buildId`欠落・不正は`current-build-id-invalid`としてfetch artifact由来とは別に分類する。
 - 初期navigationで同一URLへのdocument navigation fallbackはreload loopを避け、error fallback envelope commitへ戻す。
 - document-route handler例外とdocument-route由来の不正NavigationEnvelopeはstale fetch artifact fallback対象にしない。
