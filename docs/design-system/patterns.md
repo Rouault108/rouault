@@ -3,6 +3,7 @@
 この文書はDesign Systemの横断UI patternを定義する正本である。
 URL、routing、search、note identity、Permanent URLの意味論は機能Contractを正本とし、本書はUI patternとしての扱いだけを説明する。
 Reading chromeの機能契約は`docs/contracts/reading-chrome.md`を正本とし、詳細patternは`docs/design-system/pattern-reading-chrome.md`と`docs/design-system/pattern-reading-block-intrusion.md`に分離する。
+読書面の段落間余白とblock間余白の分離は`docs/design-system/pattern-reading-surface.md`を正本とする。
 
 ## 1. Status
 
@@ -10,6 +11,14 @@ Reading chromeの機能契約は`docs/contracts/reading-chrome.md`を正本と�
 - Source of truth: Design System components、layout patterns、browser/e2e tests
 - Applies to: link classification、selected/current/active/focused、overlay、URL-aware UI controls、Permanent URL UI
 - Non-goals: router/search/note/permanent URLの機能契約再定義、component固有の全属性定義
+
+## 1.1 Pattern Index
+
+- Reading surface flow: `docs/design-system/pattern-reading-surface.md`
+- Reading chrome: `docs/design-system/pattern-reading-chrome.md`
+- Reading block intrusion: `docs/design-system/pattern-reading-block-intrusion.md`
+
+Reading surface flowは本文のCSS余白patternだけを所有する。Markdown parser / transformer、About本文データ、router、URL、ARIA、hydration、search、TOCの契約を変更しない。
 
 ## 2. Link Classification
 

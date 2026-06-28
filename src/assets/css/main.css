@@ -340,6 +340,10 @@ hr[data-divider-variant='layout'] {
   margin-block-start: var(--reading-flow-space);
 }
 
+:is(.prose, .about-prose) > p + p {
+  margin-block-start: var(--reading-paragraph-space);
+}
+
 :is(.prose, .about-prose) > * + h2 {
   margin-block-start: var(--reading-h2-space);
 }

@@ -34,6 +34,7 @@
 - `docs/design-system/foundations.md`
 - `docs/design-system/accessibility.md`
 - `docs/design-system/patterns.md`
+- `docs/design-system/pattern-reading-surface.md`
 - `docs/design-system/pattern-reading-chrome.md`
 - `docs/design-system/pattern-reading-block-intrusion.md`
 - `docs/design-system/components/`
@@ -84,6 +85,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 - `docs/adr/japanese-ascii-spacing-policy.md`
 - `docs/adr/home-corpora-information-architecture.md`
 - `docs/adr/corpus-index-row.md`
+- `docs/adr/reading-surface-paragraph-flow-separation.md`
 - `docs/adr/router-document-navigation-fallback-on-stale-fetch-artifacts.md`
 - `docs/adr/`
 

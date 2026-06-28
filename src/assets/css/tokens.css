@@ -380,6 +380,7 @@
   --reading-h6-color: var(--fg-subtle);
 
   --reading-flow-space: var(--space-4);
+  --reading-paragraph-space: var(--space-3);
   --reading-h2-space: var(--space-8);
   --reading-h3-space: var(--space-6);
   --reading-h4-space: var(--space-4);
