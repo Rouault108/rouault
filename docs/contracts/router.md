@@ -61,14 +61,11 @@
 - Routerはnavigation requestの正規化とfetch target導出を扱う。
 - 静的HTMLの`index.html`解決に必要なtrailing slash補完はfetch target解決層の責務である。
 - trailing slash補完はnote page navigation URLのcanonical定義を書き換えない。
-<<<<<<< HEAD
 - generated document routeSetはroute presence判定用であり、note permalinkのcanonicalを定義しない。
 - `GeneratedDocumentRouteSet`はURL意味分類ではなく、静的生成済みrouteのpresence判定集合である。
 - `resolveRouaultContentPath()`はfetch target pathを導出する関数であり、公開canonicalを定義しない。
-=======
 - internal document navigation validationは、basePath除去後の`pathname`だけでroute manifest掲載有無を判定し、`known-route`または`missing-route-candidate`としてrouter queueからdocument loaderへ引き継ぐ。query/hashはroute presence判定に使わない。
 - manifest非掲載でもinternal document navigationとして許可される`missing-route-candidate`はSPA遷移候補である。ただしdefault internal resource pathは従来どおり`disallowed-url`として拒否する。
->>>>>>> af39ba1384f8f4cc3e8817b6ff8a438c02ef2dfa
 - document navigation fallbackは、`urlStateNavigationPolicy`評価後のfull navigationにのみ適用する。
 - state-only navigationでは`DocumentLoader.load()`も`LocationAdapter.navigateDocument()`も呼ばない。
 
