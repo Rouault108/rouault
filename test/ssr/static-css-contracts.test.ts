@@ -671,6 +671,50 @@ describe('static CSS contracts', () => {
       'background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%))',
     ]);
 
+    expectRuleToDeclare(css, 'header[data-layout-header] .corpus-trigger-icon', [
+      'pointer-events: none',
+      'transform-origin: center',
+      'transition: transform var(--duration-fast, 120ms) var(--ease-out, ease-out)',
+    ]);
+    expectRuleToDeclare(css, 'header[data-layout-header] .theme-trigger-chevron', [
+      'pointer-events: none',
+      'transform-origin: center',
+      'transition: transform var(--duration-fast, 120ms) var(--ease-out, ease-out)',
+    ]);
+    expectRuleToDeclare(css, 'header[data-layout-header] .corpus-trigger-icon *', [
+      'pointer-events: none',
+    ]);
+    expectRuleToDeclare(css, 'header[data-layout-header] .theme-trigger-chevron *', [
+      'pointer-events: none',
+    ]);
+    const corpusChevronOpenSelector = normalizeSelector(
+      "header[data-layout-header] [data-header-menu='corpus'][open] > [data-header-menu-trigger] .corpus-trigger-icon",
+    );
+    const themeChevronOpenSelector = normalizeSelector(
+      "header[data-layout-header] [data-header-menu='theme'][open] > [data-header-menu-trigger] .theme-trigger-chevron",
+    );
+    expectRuleToDeclare(css, corpusChevronOpenSelector, ['transform: rotate(180deg)']);
+    expectRuleToDeclare(css, themeChevronOpenSelector, ['transform: rotate(180deg)']);
+
+    const headerTargetsWithoutDirectTransform = [
+      'header[data-layout-header] .theme-trigger-icon',
+      'header[data-layout-header] .theme-trigger-main',
+      'header[data-layout-header] .corpus-trigger-main',
+      'header[data-layout-header] [data-header-menu-trigger]',
+      'header[data-layout-header] [data-header-menu-item]',
+    ] as const;
+    for (const selector of headerTargetsWithoutDirectTransform) {
+      expect(declarationValuesForSelector(css, selector, 'transform'), selector).toEqual([]);
+    }
+
+    postcss.parse(css).walkRules((rule: Rule) => {
+      if (!splitSelectors(rule.selector).some((selector) => selector.includes(':active'))) return;
+      expect(
+        rule.nodes?.some((node) => node.type === 'decl' && node.prop === 'transform') ?? false,
+        `${rule.selector} active rule must not declare transform`,
+      ).toBe(false);
+    });
+
     const topLevelFocusVisibleSelectors = [
       'header[data-layout-header] .sidebar-toggle:focus-visible',
       'header[data-layout-header] .toc-trigger:focus-visible',
@@ -731,6 +775,13 @@ describe('static CSS contracts', () => {
     ]);
 
     const reducedMotion = atRuleBlock(css, '@media (prefers-reduced-motion: reduce)');
+
+    expectRuleToDeclare(reducedMotion, 'header[data-layout-header]', [
+      'transition-duration: 0.01ms !important',
+    ]);
+    expectRuleToDeclare(reducedMotion, 'header[data-layout-header] *', [
+      'transition-duration: 0.01ms !important',
+    ]);
 
     for (const selector of activeSelectors) {
       expect(declarationValuesForSelector(reducedMotion, selector, 'transform'), selector).toEqual(

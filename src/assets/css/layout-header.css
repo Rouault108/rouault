@@ -364,6 +364,29 @@ header[data-layout-header] [data-header-menu-item]:active {
   background: var(--bg-hover, color-mix(in srgb, var(--bg-default) 88%, var(--fg-default) 12%));
 }
 
+header[data-layout-header] .corpus-trigger-icon,
+header[data-layout-header] .theme-trigger-chevron {
+  pointer-events: none;
+  transform-origin: center;
+  transition: transform var(--duration-fast, 120ms) var(--ease-out, ease-out);
+}
+
+header[data-layout-header] .corpus-trigger-icon *,
+header[data-layout-header] .theme-trigger-chevron * {
+  pointer-events: none;
+}
+
+header[data-layout-header]
+  [data-header-menu='corpus'][open]
+  > [data-header-menu-trigger]
+  .corpus-trigger-icon,
+header[data-layout-header]
+  [data-header-menu='theme'][open]
+  > [data-header-menu-trigger]
+  .theme-trigger-chevron {
+  transform: rotate(180deg);
+}
+
 header[data-layout-header] .corpus-trigger-main,
 header[data-layout-header] .theme-trigger-main {
   display: inline-flex;

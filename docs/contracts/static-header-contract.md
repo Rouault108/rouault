@@ -199,6 +199,11 @@ Header controlsは、corpus trigger、theme trigger、search trigger、TOC trigg
 - 通常色では、active stateをneutral surface feedbackで表現する。
 - Forced-colorsでは、active stateをButtonFaceによるsystem surface feedbackで表現する。
 - ButtonFaceは押下中の一時的なactive feedbackであり、current / selected stateの意味表現ではない。
+- Header menu chevronはdisclosure open-state indicatorである。
+- Header menuがopenのとき、対応するchevronだけがrotateしてよい。Corpusでは`.corpus-trigger-icon`、Themeでは`.theme-trigger-chevron`のみを対象にする。
+- Chevron rotateはactive / pressed feedbackではない。Trigger root、label、current / selected state、menu itemはこのtransform behaviorを継承しない。
+- Active stateは引き続き非motion feedbackで成立する。
+- Reduced motion環境では、chevron open-state indicatorも既存のheader-wide transition duration reductionに従う。Open / closed state自体は変化してよい。
 - Hover / active / focus-visibleは操作状態としてcurrent / selected状態と分離する。
 - Focus-visibleはoutlineを主表現とする。
 - Current / selected stateは現在位置・選択状態の意味表現であり、active feedbackとは混同しない。
