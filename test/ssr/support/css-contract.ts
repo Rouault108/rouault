@@ -252,6 +252,20 @@ export const hasDeclarationForSelector = (
   );
 };
 
+export const hasImportantDeclarationForSelector = (
+  cssText: string,
+  selector: string,
+  property: string,
+  expectedValue: string,
+  options: CssDeclarationSearchOptions = {},
+): boolean => {
+  const expected = normalizeCssDeclarationValue(expectedValue);
+  return matchingDeclarations(cssText, selector, property, options, 'exact').some(
+    (declaration) =>
+      declaration.important && normalizeCssDeclarationValue(declaration.value) === expected,
+  );
+};
+
 export const hasDeclarationForSelectorContaining = (
   cssText: string,
   selectorFragment: string,

@@ -193,6 +193,14 @@ hydration後のcurrent DOM契約:
 - mobile panel cloneもcurrent DOM契約の対象であり、open / closeによりstale current stateを残してはならない
 - desktop nav、mobile panel nav、`ui-toc`は同じdensity tier語彙を使う。SSR static navでは`data-density-tier`、Lit componentでは`density-tier` attributeを使う。
 
+hydration後のvisible headings同期契約:
+
+- `layout-toc-controller`は、現在のvisible headingsに含まれないTOC itemへ`hidden`と`aria-hidden="true"`を同期する
+- 現在のvisible headingsに含まれるTOC itemへは`hidden=false`と`aria-hidden="false"`を同期する
+- `.layout-toc`内の`[hidden]`要素は、CSS artifactにより視覚的にも非表示でなければならない
+- inactive tab scope由来の見出しはTOC sourceに残るが、現在のvisible headingsに含まれない限りdesktop / mobile TOC navには表示しない
+- `.layout-toc` root自体のhidden挙動はこの契約の対象外とする
+
 ---
 
 ## 6. tabs 連動

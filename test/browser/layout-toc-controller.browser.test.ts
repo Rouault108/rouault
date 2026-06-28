@@ -176,6 +176,12 @@ describe('layout-toc-controller', () => {
     `);
 
     syncTocHeadingVisibility(nav, new Set(['section-2']));
+    const hiddenItem = nav.querySelector<HTMLElement>(
+      '.layout-toc__item[data-heading-id="section-1"]',
+    );
+    const visibleItem = nav.querySelector<HTMLElement>(
+      '.layout-toc__item[data-heading-id="section-2"]',
+    );
     const snapshot = syncTocActiveLinks({
       nav,
       ownerId: 'toc-source-test',
@@ -183,9 +189,10 @@ describe('layout-toc-controller', () => {
       visibleHeadingIds: new Set(['section-2']),
     });
 
-    expect(
-      nav.querySelector<HTMLElement>('.layout-toc__item[data-heading-id="section-1"]')?.hidden,
-    ).to.equal(true);
+    expect(hiddenItem?.hidden).to.equal(true);
+    expect(hiddenItem?.getAttribute('aria-hidden')).to.equal('true');
+    expect(visibleItem?.hidden).to.equal(false);
+    expect(visibleItem?.getAttribute('aria-hidden')).to.equal('false');
     expect(nav.querySelector('[aria-current]')).to.equal(null);
     expect(nav.querySelector('[data-active]')).to.equal(null);
     expect(nav.querySelector('.is-active')).to.equal(null);

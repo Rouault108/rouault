@@ -47,6 +47,10 @@
   padding: 0;
 }
 
+.layout-toc [hidden] {
+  display: none !important;
+}
+
 .layout-toc__item {
   display: block;
 }

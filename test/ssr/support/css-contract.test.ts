@@ -6,6 +6,7 @@ import {
   hasDeclarationPropertyForSelector,
   hasDeclarationValueNotIncluding,
   hasAllDeclarationValuesIncludingForSelectorContaining,
+  hasImportantDeclarationForSelector,
   hasNoDeclarationValueIncludingForSelectorContaining,
   hasOnlyAllowedDeclarationValuesForSelectorContaining,
   hasRuleContainingSelectorFragment,
@@ -19,6 +20,8 @@ const cssText = `
   .absent-value { color: CanvasText; }
   .dead-value { color: CanvasText; color: GrayText; }
   .property-present { background-color: red; }
+  .important { display: none !important; }
+  .not-important { display: none; }
   .pseudo::before { content: ''; background: transparent; }
   .pseudo::after { content: ''; background: currentColor; }
   .mixed { color: var(--x); }
@@ -190,5 +193,26 @@ describe('css contract helper', () => {
     expect(
       hasDeclarationPropertyForSelector(cssText, '.property-present', 'background-color'),
     ).toBe(true);
+  });
+
+  it('checks important declarations from the parsed declaration flag', () => {
+    expect(
+      hasImportantDeclarationForSelector(cssText, '.important', 'display', 'none', {
+        scope: 'base',
+      }),
+    ).toBe(true);
+  });
+
+  it('rejects matching declarations that are not important', () => {
+    expect(
+      hasImportantDeclarationForSelector(cssText, '.not-important', 'display', 'none', {
+        scope: 'base',
+      }),
+    ).toBe(false);
+    expect(
+      hasImportantDeclarationForSelector(cssText, '.important', 'display', 'block', {
+        scope: 'base',
+      }),
+    ).toBe(false);
   });
 });

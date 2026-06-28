@@ -11,8 +11,9 @@ import {
   hasDeclarationValueIncluding,
   hasDeclarationValueIncludingForAllSelectors,
   hasDeclarationValueNotIncludingForAllSelectors,
-  lacksRuleForSelector,
+  hasImportantDeclarationForSelector,
   lacksDeclarationPropertyForAllSelectors,
+  lacksRuleForSelector,
 } from './support/css-contract.js';
 
 const layoutTocCss = readFileSync(resolve(process.cwd(), 'src/assets/css/layout-toc.css'), 'utf8');
@@ -46,6 +47,22 @@ describe('layout toc css contract', () => {
         'none',
       ),
     ).toBe(true);
+  });
+
+  it('honors hidden state for descendants inside the TOC surface only', () => {
+    expect(
+      hasImportantDeclarationForSelector(
+        layoutTocCss,
+        '.layout-toc [hidden]',
+        'display',
+        'none',
+      ),
+    ).toBe(true);
+    expect(hasDeclarationForSelector(layoutTocCss, '.layout-toc__item', 'display', 'block')).toBe(
+      true,
+    );
+    expect(lacksRuleForSelector(layoutTocCss, '[hidden]')).toBe(true);
+    expect(lacksRuleForSelector(layoutTocCss, '.layout-toc[hidden]')).toBe(true);
   });
 
   it('keeps layout toc density tier selectors on the shared CSS artifact', () => {

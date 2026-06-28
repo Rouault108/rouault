@@ -127,4 +127,29 @@ describe('layout-toc static nav browser style contract', () => {
     expect(style.webkitLineClamp).to.equal('2');
     expect(style.whiteSpace).to.equal('normal');
   });
+
+  it('hidden TOC items inside the layout TOC surface do not render boxes', async () => {
+    const root = await fixture<HTMLElement>(html`
+      <nav class="layout-toc" data-layout-toc-nav aria-label="目次">
+        <ol class="layout-toc__list">
+          <li class="layout-toc__item" data-heading-id="visible">
+            <a class="layout-toc__link" href="#visible">Visible</a>
+          </li>
+          <li class="layout-toc__item" data-heading-id="hidden" hidden aria-hidden="true">
+            <a class="layout-toc__link" href="#hidden">Hidden</a>
+          </li>
+        </ol>
+      </nav>
+    `);
+
+    const visibleItem = root.querySelector<HTMLElement>('[data-heading-id="visible"]');
+    const hiddenItem = root.querySelector<HTMLElement>('[data-heading-id="hidden"]');
+    if (!(visibleItem instanceof HTMLElement) || !(hiddenItem instanceof HTMLElement)) {
+      throw new Error('layout toc item が見つかりません。');
+    }
+
+    expect(getComputedStyle(visibleItem).display).to.equal('block');
+    expect(getComputedStyle(hiddenItem).display).to.equal('none');
+    expect(hiddenItem.getClientRects()).to.have.length(0);
+  });
 });

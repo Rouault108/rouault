@@ -4,6 +4,9 @@ import { e2eNoteFixtures } from './support/note-fixtures.js';
 
 const path = e2eNoteFixtures.interactive.directPath;
 
+const tocItem = (page: Page, id: string) =>
+  page.locator(`[data-layout-toc-nav] .layout-toc__item[data-heading-id="${id}"]`);
+
 const expectInteractiveCanaryContent = async (page: Page): Promise<void> => {
   await expect(page.locator('#main-content')).toContainText('JavaScriptのHello, World!');
   await expect(page.locator('#main-content')).toContainText('RustのHello, World!');
@@ -38,5 +41,23 @@ test.describe('TOC follows active tab', () => {
     await page.goto(`${path}#rustのhello-world`);
     await expect(page).toHaveURL(`${path}#rustのhello-world`);
     await expectInteractiveCanaryContent(page);
+  });
+
+  test('desktop TOC は現在の tab scope の見出しだけを表示すること', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(path);
+
+    await expect(tocItem(page, 'javascriptのhello-world')).toBeVisible();
+    await expect(tocItem(page, 'rustのhello-world')).toBeHidden();
+    await expect(tocItem(page, '概要の内容')).toBeVisible();
+    await expect(tocItem(page, '詳細の内容')).toBeHidden();
+
+    await page.getByRole('tab', { name: 'Rust' }).click();
+    await expect(tocItem(page, 'rustのhello-world')).toBeVisible();
+    await expect(tocItem(page, 'javascriptのhello-world')).toBeHidden();
+
+    await page.getByRole('tab', { name: '詳細' }).click();
+    await expect(tocItem(page, '詳細の内容')).toBeVisible();
+    await expect(tocItem(page, '概要の内容')).toBeHidden();
   });
 });
