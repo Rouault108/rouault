@@ -44,10 +44,15 @@ code surfaceの正本は、旧Lit Custom Elementではなく静的HTMLです。
 - `pre[data-code-block]`はcode bodyのscroll / overflowとsyntax highlightの対象です。
 - Shiki token、line number、line highlight、diff add/remove、wrapは静的HTMLとCSSの組み合わせで成立させます。
 - overflow accessibilityはenhancerが補助してよいですが、code本文の存在と可読性はJSに依存してはなりません。
+- 単独code blockは本文中の読書単位です。`.prose` / `.about-prose`直下の`figure[data-code-block-root]`は本文幅に収めます。
+- 長いコード行は外枠を広げず、`pre[data-code-block]`内部の横スクロールで処理します。
+- 単独code blockのtop-level layoutは`--ui-code-block-breakout-width` / `--ui-code-block-breakout-margin`で制御します。
 
 ### Code Group
 
 code groupはSSR / no-JS時点でstackとして出力し、enhancer実行後にtabs UIへ昇格します。
+
+code groupは比較・切替・複数panelを扱うsurfaceです。`.prose` / `.about-prose`直下の`section[data-code-group]`は、panel間比較とtabs surfaceの視認性のため本文幅からのbreakoutを許可します。code groupのtop-level layoutは`--ui-code-group-width` / `--ui-code-group-margin-inline`で制御します。
 
 #### SSR / no-JS
 
@@ -120,6 +125,16 @@ code groupはSSR / no-JS時点でstackとして出力し、enhancer実行後にt
 - layout / breakoutの視覚制御。
 
 CSSはfinal DOMの意味状態を再定義しません。CSS state contractとcopy button state contractは混同しません。
+
+### CSS Custom Property Override Semantics
+
+単独code blockとcode groupはlayout責務を分離します。
+
+- 単独code blockを広げたい場合は`--ui-code-block-breakout-width` / `--ui-code-block-breakout-margin`をoverrideします。
+- code groupを広げたい場合は`--ui-code-group-width` / `--ui-code-group-margin-inline`をoverrideします。
+- `--ui-code-surface-breakout-width` / `--ui-code-surface-breakout-margin`は互換用fallbackです。`[data-code-block-root]`と`section[data-code-group]`のbase ruleでは参照を維持しますが、top-level layoutの主制御にはしません。
+
+このため、過去に`--ui-code-surface-breakout-*`だけで単独code blockとcode groupを同時に広げていたoverrideはsemanticsが変わります。今後、単独code blockの幅を変更する場合はblock専用変数を使ってください。
 
 ## 7. Old Custom Element API Removal
 

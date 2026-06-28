@@ -67,6 +67,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 
 - `docs/adr/README.md`
 - `docs/adr/code-surfaces-static-html-migration.md`
+- `docs/adr/code-block-prose-contained-default.md`
 - `docs/adr/article-header-source-link-classification.md`
 - `docs/adr/markdown-static-table-row-hover-affordance.md`
 - `docs/adr/markdown-table-authoring-extension.md`

@@ -204,13 +204,20 @@
   box-sizing: border-box;
 }
 
-:is(.prose, .about-prose) > :is(figure[data-code-block-root], section[data-code-group]) {
-  --ui-code-surface-breakout-width: 100%;
-  --ui-code-surface-breakout-margin: 0;
+:is(.prose, .about-prose) > figure[data-code-block-root] {
+  --ui-code-block-breakout-width: 100%;
+  --ui-code-block-breakout-margin: 0;
+}
+
+:is(.prose, .about-prose) > section[data-code-group] {
+  --ui-code-group-width: 100%;
+  --ui-code-group-margin-inline: 0;
 }
 
 :is(.prose, .about-prose)
   > figure[data-code-block-root]:has(> pre[data-code-block][data-code-layout='inline']) {
+  --ui-code-block-breakout-width: 100%;
+  --ui-code-block-breakout-margin: 0;
   --ui-code-surface-breakout-width: 100%;
   --ui-code-surface-breakout-margin: 0;
 }
@@ -222,26 +229,30 @@
 }
 
 @media (max-width: 767px) {
-  :is(.prose, .about-prose) > :is(figure[data-code-block-root], section[data-code-group]) {
-    --ui-code-surface-breakout-width: calc(100% + var(--space-8));
-    --ui-code-surface-breakout-margin: var(--space-n4);
+  :is(.prose, .about-prose) > section[data-code-group] {
+    --ui-code-group-width: calc(100% + var(--space-8));
+    --ui-code-group-margin-inline: var(--space-n4);
   }
 
   :is(.prose, .about-prose)
     > figure[data-code-block-root]:has(> pre[data-code-block][data-code-layout='inline']) {
+    --ui-code-block-breakout-width: 100%;
+    --ui-code-block-breakout-margin: 0;
     --ui-code-surface-breakout-width: 100%;
     --ui-code-surface-breakout-margin: 0;
   }
 }
 
 @media (min-width: 768px) {
-  :is(.prose, .about-prose) > :is(figure[data-code-block-root], section[data-code-group]) {
-    --ui-code-surface-breakout-width: calc(100% + var(--space-16));
-    --ui-code-surface-breakout-margin: var(--space-n8);
+  :is(.prose, .about-prose) > section[data-code-group] {
+    --ui-code-group-width: calc(100% + var(--space-16));
+    --ui-code-group-margin-inline: var(--space-n8);
   }
 
   :is(.prose, .about-prose)
     > figure[data-code-block-root]:has(> pre[data-code-block][data-code-layout='inline']) {
+    --ui-code-block-breakout-width: 100%;
+    --ui-code-block-breakout-margin: 0;
     --ui-code-surface-breakout-width: 100%;
     --ui-code-surface-breakout-margin: 0;
   }

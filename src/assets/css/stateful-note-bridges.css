@@ -96,12 +96,6 @@
   max-width: none;
 }
 
-.prose > :is(pre[data-code-block], section[data-code-group], [data-code-block-root]),
-.about-prose > :is(pre[data-code-block], section[data-code-group], [data-code-block-root]) {
-  --ui-code-surface-breakout-width: 100%;
-  --ui-code-surface-breakout-margin: 0;
-}
-
 .prose > [data-score] {
   --ui-table-breakout-width: 100%;
   --ui-table-breakout-margin: 0;

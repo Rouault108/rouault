@@ -1579,14 +1579,14 @@ describe('static CSS contracts', () => {
   it('code surface CSS separates top-level breakout from inline and group-owned layouts', () => {
     const codeSurfaces = readCss('code-surfaces.css');
     const bridge = readCss('stateful-note-bridges.css');
+    const codeGroupBreakoutDeclarations = [
+      '--ui-code-group-width: calc(100% + var(',
+      '--ui-code-group-margin-inline: var(',
+    ] as const;
 
     expectRuleToDeclare(codeSurfaces, '[data-code-block-root]', [
-      'inline-size: var(',
-      '--ui-code-block-breakout-width',
-      '--ui-code-surface-breakout-width',
-      'margin-inline: var(',
-      '--ui-code-block-breakout-margin',
-      '--ui-code-surface-breakout-margin',
+      'inline-size: var(--ui-code-block-breakout-width, var(--ui-code-surface-breakout-width, 100%))',
+      'margin-inline: var(--ui-code-block-breakout-margin, var(--ui-code-surface-breakout-margin, 0))',
       'max-inline-size: none',
     ]);
     expectRuleToDeclare(codeSurfaces, 'section[data-code-group]', [
@@ -1597,35 +1597,64 @@ describe('static CSS contracts', () => {
 
     expectSelectorMatchingRuleToDeclare(
       codeSurfaces,
-      'top-level code surface breakout defaults',
+      'top-level single code block contained defaults',
       (selector) =>
         selector.includes(':is(.prose,.about-prose)') &&
-        selector.includes('figure[data-code-block-root]') &&
-        selector.includes('section[data-code-group]'),
-      ['--ui-code-surface-breakout-width: 100%', '--ui-code-surface-breakout-margin: 0'],
+        selector.includes('>figure[data-code-block-root]') &&
+        !selector.includes('section[data-code-group]'),
+      ['--ui-code-block-breakout-width: 100%', '--ui-code-block-breakout-margin: 0'],
+    );
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'top-level code group contained base defaults',
+      (selector) =>
+        selector.includes(':is(.prose,.about-prose)') &&
+        selector.includes('>section[data-code-group]') &&
+        !selector.includes('figure[data-code-block-root]'),
+      ['--ui-code-group-width: 100%', '--ui-code-group-margin-inline: 0'],
     );
 
     const mobileCodeSurfaceLayout = atRuleBlock(codeSurfaces, '@media (max-width: 767px)');
     expectSelectorMatchingRuleToDeclare(
       mobileCodeSurfaceLayout,
-      'mobile top-level code surface breakout',
+      'mobile top-level code group breakout',
       (selector) =>
         selector.includes(':is(.prose,.about-prose)') &&
-        selector.includes('figure[data-code-block-root]') &&
-        selector.includes('section[data-code-group]'),
-      ['--ui-code-surface-breakout-width: calc(100% + var(--space-8))'],
+        selector.includes('>section[data-code-group]') &&
+        !selector.includes('figure[data-code-block-root]'),
+      codeGroupBreakoutDeclarations,
+    );
+    expect(mobileCodeSurfaceLayout).toContain(
+      '--ui-code-group-width: calc(100% + var(--space-8))',
     );
 
     const desktopCodeSurfaceLayout = atRuleBlock(codeSurfaces, '@media (min-width: 768px)');
     expectSelectorMatchingRuleToDeclare(
       desktopCodeSurfaceLayout,
-      'desktop top-level code surface breakout',
+      'desktop top-level code group breakout',
       (selector) =>
         selector.includes(':is(.prose,.about-prose)') &&
-        selector.includes('figure[data-code-block-root]') &&
-        selector.includes('section[data-code-group]'),
-      ['--ui-code-surface-breakout-width: calc(100% + var(--space-16))'],
+        selector.includes('>section[data-code-group]') &&
+        !selector.includes('figure[data-code-block-root]'),
+      codeGroupBreakoutDeclarations,
     );
+    expect(desktopCodeSurfaceLayout).toContain(
+      '--ui-code-group-width: calc(100% + var(--space-16))',
+    );
+
+    for (const mediaBlock of [mobileCodeSurfaceLayout, desktopCodeSurfaceLayout]) {
+      const figureSelectorsWithBreakoutDeclarations = allRuleSelectors(mediaBlock).filter(
+        (selector) => {
+          if (!selector.includes('figure[data-code-block-root]')) return false;
+          const block = ruleBlock(mediaBlock, selector);
+          return (
+            block.includes('calc(100% + var(--space-8))') ||
+            block.includes('calc(100% + var(--space-16))')
+          );
+        },
+      );
+      expect(figureSelectorsWithBreakoutDeclarations).toEqual([]);
+    }
 
     expectSelectorMatchingRuleToDeclare(
       codeSurfaces,
@@ -1633,7 +1662,12 @@ describe('static CSS contracts', () => {
       (selector) =>
         selector.includes('figure[data-code-block-root]:has') &&
         selector.includes("pre[data-code-block][data-code-layout='inline']"),
-      ['--ui-code-surface-breakout-width: 100%', '--ui-code-surface-breakout-margin: 0'],
+      [
+        '--ui-code-block-breakout-width: 100%',
+        '--ui-code-block-breakout-margin: 0',
+        '--ui-code-surface-breakout-width: 100%',
+        '--ui-code-surface-breakout-margin: 0',
+      ],
     );
     expectRuleToDeclare(codeSurfaces, "[data-code-block-root][data-code-group-owned='true']", [
       'inline-size: 100%',
@@ -1641,14 +1675,35 @@ describe('static CSS contracts', () => {
       'margin-inline: 0',
     ]);
 
+    expect(
+      ruleBlocksForSelectorsMatching(
+        bridge,
+        (selector) =>
+          selector.includes('.prose') &&
+          selector.includes('>') &&
+          (selector.includes('pre[data-code-block]') ||
+            selector.includes('section[data-code-group]') ||
+            selector.includes('[data-code-block-root]')) &&
+          !selector.includes('ui-tabs'),
+      ),
+    ).not.toMatch(/--ui-code-(?:surface|block|group)-/u);
+
     expectSelectorMatchingRuleToDeclare(
       bridge,
-      'prose bridge code surface variable handoff',
+      'tabs panel code surface variable reset',
       (selector) =>
-        selector.includes('.prose') &&
+        selector.includes('ui-tabs>[slot=\'panel\']') &&
+        selector.includes('pre[data-code-block]') &&
         selector.includes('section[data-code-group]') &&
         selector.includes('[data-code-block-root]'),
-      ['--ui-code-surface-breakout-width: 100%', '--ui-code-surface-breakout-margin: 0'],
+      [
+        '--ui-code-surface-breakout-width: 100%',
+        '--ui-code-surface-breakout-margin: 0',
+        '--ui-code-block-breakout-width: 100%',
+        '--ui-code-block-breakout-margin: 0',
+        '--ui-code-group-width: 100%',
+        '--ui-code-group-margin-inline: 0',
+      ],
     );
     expect(
       ruleBlocksForSelectorsMatching(bridge, (selector) =>
@@ -1662,6 +1717,12 @@ describe('static CSS contracts', () => {
       (selector) => selector.includes('.prose>pre:not([data-code-block])'),
       ['width: calc(100% + var('],
     );
+    expect(
+      ruleBlocksForSelectorsMatching(
+        bridge,
+        (selector) => selector.includes('.prose>pre[data-code-block]'),
+      ),
+    ).to.equal('');
   });
 
   it('code surface CSS keeps code group visibility and print contracts state-based', () => {
