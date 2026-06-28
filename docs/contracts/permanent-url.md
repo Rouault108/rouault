@@ -20,6 +20,7 @@
 
 - Note page navigation URL、`slug`、`permalink`、`directory-index`。正本は`docs/contracts/note-navigation.md`。
 - `SearchCanonicalPathname`と`SearchStateUrl`の検索上の意味。正本は`docs/contracts/search.md`。
+- URL分類の横断意味論。正本は`docs/contracts/url-policy.md`。
 - コピー UIの詳細pattern。`docs/design-system/patterns.md`が扱ってよい。
 
 ## 3. Public Contract
@@ -43,6 +44,8 @@
 
 - Canonical URLは最新版の通常閲覧先を表す。
 - Permanent URLは特定内容の固定参照を表し、URL同期ではない。
+- `/archives/{hash}`はPermanent URL Contract所有の固定内容参照URLである。
+- `/archives/{hash}`はnote permalink、SearchStateUrl、SearchCanonicalPathname、SearchRenderHref、fetch targetとは別分類である。
 - `/archives/{hash}`は`/{slug}`や`/notes/{slug}`へ自動正規化してはならない。
 - Routerは`/archives/{hash}`から最新版へ自動redirectしてはならない。
 - 過去版での「最新版はこちら」案内はUIまたは上位統合の責務である。

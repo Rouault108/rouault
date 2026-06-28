@@ -26,6 +26,7 @@
 - Permanent URLのhash生成規則。正本は`docs/contracts/permanent-url.md`とする。
 - 検索URL state。正本は`docs/contracts/search.md`とする。
 - Reading chromeのowner / trigger / mobile panel / current DOM。正本は`docs/contracts/reading-chrome.md`とする。
+- URL分類の意味論。正本は`docs/contracts/url-policy.md`とする。
 
 ## 3. Public Contract
 
@@ -52,12 +53,17 @@
 ### DOM / URL / State Contract
 
 - navigation URLは共有可能で再構成可能なroute stateを表す。
+- URL分類の意味論は`docs/contracts/url-policy.md`を参照する。
 - state-only navigationはdocument fetchとcontent hydration triggerを発生させない。
 - feature-local URL stateは各featureが所有し、router coreは意味を解釈しない。
 - Search return-to-readingはrouterの公開navigation adapterへ接続されるが、search UIやreading chrome stateはrouter coreのdurable stateではない。
 - fetch target URLは取得直前にのみ導出する。
+- Routerはnavigation requestの正規化とfetch target導出を扱う。
 - 静的HTMLの`index.html`解決に必要なtrailing slash補完はfetch target解決層の責務である。
 - trailing slash補完はnote page navigation URLのcanonical定義を書き換えない。
+- generated document routeSetはroute presence判定用であり、note permalinkのcanonicalを定義しない。
+- `GeneratedDocumentRouteSet`はURL意味分類ではなく、静的生成済みrouteのpresence判定集合である。
+- `resolveRouaultContentPath()`はfetch target pathを導出する関数であり、公開canonicalを定義しない。
 - document navigation fallbackは、`urlStateNavigationPolicy`評価後のfull navigationにのみ適用する。
 - state-only navigationでは`DocumentLoader.load()`も`LocationAdapter.navigateDocument()`も呼ばない。
 

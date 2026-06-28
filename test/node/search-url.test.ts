@@ -106,5 +106,7 @@ describe('search-url', () => {
       normalizeSearchStateUrl('https://example.com/search/?q=Rouault%20Search&tag=music#hash'),
     ).to.equal('/search/?q=rouault+search&tag=music');
     expect(normalizeSearchStateUrl('https://example.com/tags/music/')).to.equal('/tags/music/');
+    expect(normalizeSearchStateUrl('/tags/music/')).to.equal('/tags/music/');
+    expect(normalizeSearchStateUrl('/tags/music')).to.equal('/search/');
   });
 });

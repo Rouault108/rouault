@@ -27,6 +27,10 @@ describe('shared Rouault URL policy', () => {
     expect(normalizeRouaultPathname('/tags/music/')).to.equal('/tags/music/');
   });
 
+  it('/tags/<tag> は tag SearchStateUrl canonical へ補完しないこと', () => {
+    expect(normalizeRouaultPathname('/tags/music')).to.equal('/tags/music');
+  });
+
   it('通常ページは trailing slash を除去すること', () => {
     expect(normalizeRouaultPathname('/notes/example/')).to.equal('/notes/example');
   });

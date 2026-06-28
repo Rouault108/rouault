@@ -10,6 +10,7 @@
 ## 正本Contract
 
 - `docs/contracts/router.md`
+- `docs/contracts/url-policy.md`
 - `docs/contracts/router-document.md`
 - `docs/contracts/navigation-envelope.md`
 - `docs/contracts/hydration.md`

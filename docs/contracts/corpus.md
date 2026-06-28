@@ -24,6 +24,7 @@
 - `_config.json`の入力仕様。正本は`docs/contracts/content-config.md`。
 - corpus作成手順。`docs/guides/corpus.md`を参照する。
 - note page navigation URL。正本は`docs/contracts/note-navigation.md`。
+- URL分類の横断意味論。正本は`docs/contracts/url-policy.md`。
 - 最近更新ノート一覧。現行責務は`docs/contracts/home.md`を参照する。
 - 全ノート全件一覧。
 
@@ -59,6 +60,8 @@
 - この`navigation`指定は、header/footer/sidebarのnavigation component契約を再定義しない。
 - Corpus contractは最近更新ノート一覧を所有しない。最近更新ノート一覧の現行責務は`docs/contracts/home.md`が扱う。
 - Corpus page URLは`/corpora/{corpusKey}/`とする。
+- `/corpora/`と`/corpora/{corpusKey}/`はSurface URLであり、slash付きcanonicalである。
+- note permalinkのslashless方針をcorpus URLへ適用してはならない。
 - Header corpus switcherはcorpus間移動の入口であり、route stateの正本を持たない。
 
 ## 4. State Model

@@ -23,6 +23,7 @@
 - Reading chromeのowner / source / trigger境界。正本は`docs/contracts/reading-chrome.md`。
 - Searchの`SearchCanonicalPathname` / `SearchStateUrl`。正本は`docs/contracts/search.md`。
 - Permanent URL / `/archives/{hash}` / hash生成規則。正本は`docs/contracts/permanent-url.md`。
+- URL分類の横断意味論。正本は`docs/contracts/url-policy.md`。
 
 ## 3. Public Contract
 
@@ -52,9 +53,12 @@
 - `directory-index`の場合、`slug`は`rawSlug`から末尾`/index`を除去したものとする。
 - `permalink`は`/notes/${slug}`形式で、末尾スラッシュを含めない。
 - note page navigation URLのcanonical formは末尾スラッシュなしである。
+- note permalink / note page navigation URLはslashlessである。
 - history更新、breadcrumb、sidebar href、note page間比較にはnote page navigation URLを使う。
 - 表示層にtrailing slash付きnote page URLを混在させてはならない。
 - note page navigation URLと`SearchCanonicalPathname`を混同してはならない。
+- note page navigation URLと`SearchRenderHref`を混同してはならない。
+- note page navigation URLとGenerated document route pathnameを混同してはならない。
 - note page navigation URLとfetch target URLを混同してはならない。
 - 静的HTMLの`index.html`解決に必要なtrailing slash補完はfetch target解決層だけが行う。
 

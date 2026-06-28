@@ -22,6 +22,7 @@
 
 - Note permalink / slug / directory-index。正本は`docs/contracts/note-navigation.md`。
 - Permanent URL / `/archives/{hash}` / hash生成規則。正本は`docs/contracts/permanent-url.md`。
+- URL分類の横断意味論。正本は`docs/contracts/url-policy.md`。
 - UI patternとしての検索導線。`docs/design-system/patterns.md`が扱ってよい。
 - Reading chromeへのreturn-to-reading UI pattern。正本は`docs/contracts/reading-chrome.md`とDesign System pattern docs。
 
@@ -53,7 +54,14 @@
 - `explore`は結果を比較・探索するための検索modeである。
 - `canonicalPathname` / `SearchCanonicalPathname`はdocument重複判定と結果識別に使う。
 - `SearchStateUrl`は検索画面のquery / filter / mode stateを表す。
+- SearchStateUrl、SearchCanonicalPathname、SearchRenderHrefは分離して扱う。
+- SearchCanonicalPathnameは検索結果のdocument重複判定・結果識別用canonicalである。
+- SearchCanonicalPathnameはSearchStateUrlではなく、note permalinkでもない。
+- どのrouteを検索対象documentとして採用するかは、検索index生成・内部document判定側の責務である。
 - `SearchCanonicalPathname`とnote page navigation URLを同一視してはならない。
+- SearchRenderHrefは検索結果表示用hrefであり、note permalinkではない。
+- SearchRenderHrefはbasePath付きになり得る。
+- `/tags/{tag}/`はtag SearchStateUrlとしてのcanonicalであり、`/tags/{tag}`はtag SearchStateUrlのcanonicalではない。
 - Snippetは構造化表現であり、生HTMLをUI境界へ渡してはならない。
 - UIは検索rankingやsource統合の意味論を持たない。
 - Search UIはrouter coreをruntime importせず、return-to-reading requestをevent / adapter境界で扱う。
