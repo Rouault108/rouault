@@ -200,12 +200,16 @@ export class UiTranslation extends LitElement {
   private _overlayController: AnchoredOverlayController | null = null;
   private _cleanupDrawerPointerDown: (() => void) | null = null;
   private _cleanupDrawerKeyDown: (() => void) | null = null;
+  private _didCaptureFallbackState = false;
+  private _didQueueInitialOpenReconciliation = false;
+  private _fallbackSummaryHadFocus = false;
 
   override createRenderRoot(): this {
     return this;
   }
 
   override connectedCallback(): void {
+    this._capturePreHydrationFallbackState();
     super.connectedCallback();
     this._warnLongTriggerTextIfNeeded();
     this._warnMissingLangIfNeeded();
@@ -227,9 +231,17 @@ export class UiTranslation extends LitElement {
       return;
     }
 
+    this._capturePreHydrationFallbackState();
+    this._removePreHydrationFallback();
     this._hydrationActivated = true;
     ensureDocumentStyles();
     initTranslationOverlayOrchestrator();
+    this.requestUpdate();
+    this._queueInitialOpenReconciliation();
+  }
+
+  override shouldUpdate(): boolean {
+    return this._hydrationActivated;
   }
 
   override willUpdate(changedProperties: Map<PropertyKey, unknown>): void {
@@ -322,6 +334,10 @@ export class UiTranslation extends LitElement {
     }
 
     this.open = nextOpen;
+    this._dispatchTranslationToggle();
+  }
+
+  private _dispatchTranslationToggle(): void {
     this.dispatchEvent(
       new CustomEvent<{ open: boolean; surface: TranslationOverlaySurface }>('translation-toggle', {
         detail: {
@@ -332,6 +348,63 @@ export class UiTranslation extends LitElement {
         composed: true,
       }),
     );
+  }
+
+  private _capturePreHydrationFallbackState(): void {
+    if (this._didCaptureFallbackState) {
+      return;
+    }
+
+    this._didCaptureFallbackState = true;
+
+    const fallback = this.querySelector<HTMLDetailsElement>('details[data-translation-fallback]');
+    if (!fallback) {
+      return;
+    }
+
+    const summary = fallback.querySelector<HTMLElement>(
+      'summary[data-translation-fallback-trigger]',
+    );
+    this._fallbackSummaryHadFocus =
+      summary !== null && this.ownerDocument.activeElement === summary;
+
+    if (this.hasAttribute('open')) {
+      return;
+    }
+
+    if (fallback.open) {
+      this.open = true;
+    }
+  }
+
+  private _removePreHydrationFallback(): void {
+    const fallbacks = Array.from(
+      this.querySelectorAll<HTMLElement>(':scope > [data-translation-fallback]'),
+    );
+
+    for (const fallback of fallbacks) {
+      fallback.remove();
+    }
+  }
+
+  private _queueInitialOpenReconciliation(): void {
+    if (this._didQueueInitialOpenReconciliation) {
+      return;
+    }
+
+    this._didQueueInitialOpenReconciliation = true;
+
+    void this.updateComplete.then(() => {
+      if (this._fallbackSummaryHadFocus) {
+        this.getTriggerElement()?.focus();
+      }
+
+      if (!this.open || !this._hasTranslation) {
+        return;
+      }
+
+      this._dispatchTranslationToggle();
+    });
   }
 
   private _warnLongTriggerTextIfNeeded(): void {

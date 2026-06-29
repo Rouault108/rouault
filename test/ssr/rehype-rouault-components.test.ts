@@ -155,6 +155,70 @@ describe('rehypeRouaultComponents', () => {
     expect(getClassList(body?.properties?.['className'])).to.deep.equal(['details-block__body']);
   });
 
+  it('translation fallback Light DOM を保持し hydration 注釈を付与すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-translation',
+          properties: {
+            lang: 'fr',
+            'target-lang': 'ja',
+            original: 'Je pense, donc je suis.',
+            translated: '我思う、ゆえに我あり。',
+            surface: 'drawer',
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'details',
+              properties: {
+                className: ['translation-overlay-fallback'],
+                'data-translation-fallback': true,
+              },
+              children: [
+                {
+                  type: 'element',
+                  tagName: 'summary',
+                  properties: {
+                    'data-translation-fallback-trigger': true,
+                    lang: 'fr',
+                  },
+                  children: [{ type: 'text', value: 'Je pense, donc je suis.' }],
+                },
+                {
+                  type: 'element',
+                  tagName: 'p',
+                  properties: {
+                    'data-translation-fallback-content': true,
+                    lang: 'ja',
+                  },
+                  children: [{ type: 'text', value: '我思う、ゆえに我あり。' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const translation = tree.children?.[0];
+    const fallback = findElement(
+      translation,
+      (node) => node.properties?.['data-translation-fallback'] === true,
+    );
+
+    expect(translation?.tagName).to.equal('ui-translation');
+    expect(translation?.properties?.['data-hydration-capability']).to.equal('interactive');
+    expect(translation?.properties?.['data-hydration-trigger']).to.equal('visible');
+    expect(fallback?.tagName).to.equal('details');
+    expect(getTextContent(fallback)).to.contain('Je pense, donc je suis.');
+    expect(getTextContent(fallback)).to.contain('我思う、ゆえに我あり。');
+  });
+
   it('table を static table root に変換し、caption から aria-label を補完すること', () => {
     const tree: HastNode = {
       type: 'root',
@@ -249,10 +313,12 @@ describe('rehypeRouaultComponents', () => {
     expect(first?.properties?.['dataTableColumnWidths']).to.equal(undefined);
     expect(table?.tagName).to.equal('table');
     expect(colgroup?.tagName).to.equal('colgroup');
-    expect(colgroup?.children?.map((child) => child.properties?.['data-table-col-width'])).to.deep
-      .equal(['fit', 'wide']);
-    expect(findElements(first, (node) => node.properties?.['data-table-root'] === 'true')).to.have
-      .length(1);
+    expect(
+      colgroup?.children?.map((child) => child.properties?.['data-table-col-width']),
+    ).to.deep.equal(['fit', 'wide']);
+    expect(
+      findElements(first, (node) => node.properties?.['data-table-root'] === 'true'),
+    ).to.have.length(1);
   });
 
   it('native blockquote と divider を静的本文要素へ正規化すること', () => {
@@ -824,7 +890,11 @@ describe('rehypeRouaultComponents', () => {
     expect(triggerIcon?.tagName).to.equal('span');
     expect(triggerIcon?.properties?.['aria-hidden']).to.equal('true');
     expect(findElement(triggerIcon, (node) => node.tagName === 'svg')).not.to.equal(undefined);
-    expect(findElement(trigger, (node) => getClassList(node.properties?.['className']).includes('sr-only'))).to.equal(undefined);
+    expect(
+      findElement(trigger, (node) =>
+        getClassList(node.properties?.['className']).includes('sr-only'),
+      ),
+    ).to.equal(undefined);
     expect(img?.properties?.['src']).to.not.equal('');
     expect(img?.properties?.['alt']).to.equal('譜面画像');
     expect(picture).to.equal(undefined);
@@ -860,9 +930,9 @@ describe('rehypeRouaultComponents', () => {
     expect(
       directChildren.filter((node) => node.properties?.['data-image-preview-frame'] === 'true'),
     ).to.have.length(0);
-    expect(findElement(figure, (node) => node.properties?.['data-image-zoom-trigger'] === 'true')).to.equal(
-      undefined,
-    );
+    expect(
+      findElement(figure, (node) => node.properties?.['data-image-zoom-trigger'] === 'true'),
+    ).to.equal(undefined);
   });
 
   it('image の src 欠落は build error にすること', () => {

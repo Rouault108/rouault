@@ -1414,6 +1414,29 @@ describe('remarkRouaultDirectives', () => {
     expect(translation?.data?.hProperties?.['surface']).to.equal('drawer');
     expect(translation?.data?.hProperties?.['original']).to.equal('Je pense, donc je suis.');
     expect(translation?.data?.hProperties?.['translated']).to.equal('我思う、ゆえに我あり。');
+    expect(translation?.data?.hProperties?.['data-hydration-capability']).to.equal('interactive');
+    expect(translation?.data?.hProperties?.['data-hydration-trigger']).to.equal('visible');
+
+    const fallback = translation?.children?.[0];
+    const summary = fallback?.children?.[0];
+    const content = fallback?.children?.[1];
+
+    expect(fallback?.data?.hName).to.equal('details');
+    expect(fallback?.data?.hProperties?.['data-translation-fallback']).to.equal(true);
+    expect(fallback?.data?.hProperties?.['data-surface']).to.equal(undefined);
+    expect(JSON.stringify(fallback?.data?.hProperties ?? {})).not.to.contain('data-part');
+
+    expect(summary?.data?.hName).to.equal('summary');
+    expect(summary?.data?.hProperties?.['data-translation-fallback-trigger']).to.equal(true);
+    expect(summary?.data?.hProperties?.['lang']).to.equal('fr');
+    expect(summary?.children?.[0]?.value).to.equal('Je pense, donc je suis.');
+    expect(JSON.stringify(summary?.data?.hProperties ?? {})).not.to.contain('data-part');
+
+    expect(content?.data?.hName).to.equal('p');
+    expect(content?.data?.hProperties?.['data-translation-fallback-content']).to.equal(true);
+    expect(content?.data?.hProperties?.['lang']).to.equal('ja');
+    expect(content?.children?.[0]?.value).to.equal('我思う、ゆえに我あり。');
+    expect(JSON.stringify(content?.data?.hProperties ?? {})).not.to.contain('data-part');
   });
 
   it('translation-overlay ディレクティブ本文の inline markup も plain text へ flatten されること', () => {
@@ -1462,6 +1485,12 @@ describe('remarkRouaultDirectives', () => {
     expect(translation?.data?.hName).to.equal('ui-translation');
     expect(translation?.data?.hProperties?.['original']).to.equal('Je pense, donc je suis.');
     expect(translation?.data?.hProperties?.['translated']).to.equal('我思う、ゆえに我あり。');
+    expect(translation?.children?.[0]?.children?.[0]?.children?.[0]?.value).to.equal(
+      'Je pense, donc je suis.',
+    );
+    expect(translation?.children?.[0]?.children?.[1]?.children?.[0]?.value).to.equal(
+      '我思う、ゆえに我あり。',
+    );
   });
 
   it('旧 translation の render-mode は未対応エラーにすること', () => {
@@ -2972,7 +3001,13 @@ describe('remarkRouaultDirectives', () => {
   });
 
   it('| :: | data | は closing marker として扱わず table-specific missing terminator error を投げること', () => {
-    const invalidRows = ['| :: | data |', '| **::** |   |', '| `::` |   |', '| [::](x) |   |', '| ::: |   |'];
+    const invalidRows = [
+      '| :: | data |',
+      '| **::** |   |',
+      '| `::` |   |',
+      '| [::](x) |   |',
+      '| ::: |   |',
+    ];
 
     for (const row of invalidRows) {
       const run = () => {
@@ -2988,14 +3023,9 @@ describe('remarkRouaultDirectives', () => {
   it('closing marker candidate row の後に meaningful table row が続く場合は table-specific post-terminator-row error を投げること', () => {
     const run = () => {
       parseRouaultDirectiveMdastFromMarkdown(
-        [
-          '::table',
-          '| 名前 | 値 |',
-          '| --- | --- |',
-          '| A | 1 |',
-          '::',
-          '| 後続 | row |',
-        ].join('\n'),
+        ['::table', '| 名前 | 値 |', '| --- | --- |', '| A | 1 |', '::', '| 後続 | row |'].join(
+          '\n',
+        ),
       );
     };
 

@@ -26,10 +26,30 @@
 - `::score`
 - `::tabs`
 - `::translation`
+- `::translation-overlay`
 - `::syntax-card`
 - `::table`
 
 `preview-sandbox`は`code-preview` family内の特殊childとして扱う。これは非推奨化、削除、受理条件変更ではなく、現行実装上の親子制約に合わせた説明位置の整理である。
+
+### `::translation` / `::translation-overlay`
+
+常時本文として読ませたい対訳は`::translation`を使う。必要時だけ開く短い訳注は`::translation-overlay`を使う。
+
+```md
+::translation-overlay{lang="fr" target-lang="ja" surface="drawer" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}
+::
+
+::translation{lang="fr" target-lang="ja"}
+Je pense, donc je suis.
+
+我思う、ゆえに我あり。
+::
+```
+
+`translation` familyが保持する意味内容は`original` / `translated`のplain-text 2片だけである。強調、リンク、脚注、ruby、辞書UI、複数段落の対応関係はこのfamilyへ入れない。`translation-overlay`はJS無効でもnative `summary`から訳文を開いて読めるfallbackを出力する。
+
+`translation-overlay`で使えるsurfaceは`popover` / `drawer`だけである。`open`はMarkdown属性ではない。
 
 ### `::callout`
 
@@ -37,13 +57,13 @@
 
 kindの使い分けは次を基準にする。
 
-| kind | 用途 |
-|---|---|
-| `note` | 中立的な補足、前提、余談。`heading="補助情報"`の標準。 |
-| `tip` | 読み方や実践上の助言、ヒント。単なる補助情報には使わない。 |
-| `success` | 確認済み、成立、完了など、検証済みの短い注記。 |
-| `warning` | 制約、誤読防止、注意。可視headingを強く推奨する。 |
-| `danger` | 重大危険、破壊的操作、強い警告。可視headingを強く推奨する。 |
+| kind      | 用途                                                        |
+| --------- | ----------------------------------------------------------- |
+| `note`    | 中立的な補足、前提、余談。`heading="補助情報"`の標準。      |
+| `tip`     | 読み方や実践上の助言、ヒント。単なる補助情報には使わない。  |
+| `success` | 確認済み、成立、完了など、検証済みの短い注記。              |
+| `warning` | 制約、誤読防止、注意。可視headingを強く推奨する。           |
+| `danger`  | 重大危険、破壊的操作、強い警告。可視headingを強く推奨する。 |
 
 ```md
 ::callout{kind="note" heading="補助情報"}
@@ -56,9 +76,11 @@ kindの使い分けは次を基準にする。
 ````md
 ::code-preview{heading="Preview"}
 :::preview-sandbox
+
 ```preview-html
 <p>Hello</p>
 ```
+
 :::
 ::
 ````
@@ -105,9 +127,9 @@ meta keyの網羅表は`docs/references/markdown-authoring-syntax.md`を参照�
 表セル内の意味上の行区切りは`{{break}}`を使う。plain GFM表でも`::table`内tableでも有効である。
 
 ```md
-| 項目 | 説明 |
-|---|---|
-| A | 1行目{{break}}2行目 |
+| 項目 | 説明                |
+| ---- | ------------------- |
+| A    | 1行目{{break}}2行目 |
 ```
 
 `{{break}}`はexact tokenだけが特殊扱いされる。`{{foo}}` / `{{ break }}` / `{{BREAK}}` / `{{br}}`は通常テキストであり、表セル改行ではない。
@@ -130,7 +152,7 @@ raw `<br>`、Markdown hard break、`:br[]`は表セル改行として使わな�
 拡大表示にしない画像は`zoomable=false`を指定する。小さな装飾画像、本文の流れの中で拡大操作を期待しない画像、Lightbox対象にしたくない図版に使う。
 
 ```md
-![本文画像](./image.png "図版キャプション")
+![本文画像](./image.png '図版キャプション')
 
 ![拡大しない画像](./small.png){zoomable=false}
 ```

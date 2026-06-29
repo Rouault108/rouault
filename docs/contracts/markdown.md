@@ -138,6 +138,19 @@ cell-levelのmeaningful inline content有無検査は、cell実質先頭・実�
 
 raw `<br>`、Markdown hard break、`:br[]`は表セル改行契約として採用しない。mdast `break` nodeまたは実装上対応するhard break nodeが表セル配下に存在する場合、remark側でbuild errorとする。mdastで検出できない経路ではfinal contractのmarkerなし`<br>`拒否で防御する。
 
+### Translation Output Contract
+
+`translation` familyは、`original` / `translated`のplain-text 2片だけをMarkdown出力契約として扱う。inline markup、脚注、リンク、ruby、辞書UI、rich bilingual contentはこのfamilyへ保持しない。
+
+- `::translation`は`div.translation-static[data-translation-kind="static"]`へ出力し、hydration directiveを持たない。
+- `::translation-overlay`はLight DOMの`ui-translation` hostへ出力し、`data-hydration-capability="interactive"` / `data-hydration-trigger="visible"`を持つ。
+- `ui-translation` hostは`lang`、`target-lang`、`original`、`translated`、`surface`を保持する。
+- SSR / pre-hydrationの`ui-translation` host直下には`details[data-translation-fallback]`を置き、`summary[data-translation-fallback-trigger]`に原文、`[data-translation-fallback-content]`に訳文を置く。
+- fallback childには対応する`lang`を付与する。
+- fallbackはhydrated UI用の`data-part` selectorを使わず、generic `data-surface`も持たない。
+- JS無効またはJS遅延時でも、読者はnative `summary`から訳文へ到達できなければならない。
+- hostの`open`属性はcomponent API / Storybook / direct HTML compatibilityの範囲に限る。Markdown `translation-overlay`の入力属性として復活させてはならない。
+
 ## 4. State Model
 
 ### Durable State

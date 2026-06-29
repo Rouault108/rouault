@@ -29,6 +29,7 @@
 - `::score`
 - `::tabs`
 - `::translation`
+- `::translation-overlay`
 - `::syntax-card`
 - `::table`
 
@@ -88,6 +89,49 @@
 - raw `<br>`、Markdown hard break、`:br[]`は表セル改行契約として扱わない。
 - 表セル内のmarkerなし`<br>`はdefensive final contract errorとする。
 - exact `{{break}}`以外の`{{...}}` tokenはこの出力契約の対象外であり、通常テキストとして保持する。
+
+### `::translation` / `::translation-overlay`
+
+`::translation`はstatic translationとして次のLight DOMを出力する。
+
+```html
+<div class="translation-static" data-translation-kind="static">
+  <p class="translation-original" lang="fr">Je pense, donc je suis.</p>
+  <p class="translation-translated" lang="ja">我思う、ゆえに我あり。</p>
+</div>
+```
+
+`::translation-overlay`はinteractive overlay用hostとnative disclosure fallbackを出力する。
+
+```html
+<ui-translation
+  lang="fr"
+  target-lang="ja"
+  original="Je pense, donc je suis."
+  translated="我思う、ゆえに我あり。"
+  surface="drawer"
+  data-hydration-capability="interactive"
+  data-hydration-trigger="visible"
+>
+  <details class="translation-overlay-fallback" data-translation-fallback>
+    <summary
+      class="translation-overlay-fallback__summary"
+      data-translation-fallback-trigger
+      lang="fr"
+    >
+      Je pense, donc je suis.
+    </summary>
+    <p class="translation-overlay-fallback__content" data-translation-fallback-content lang="ja">
+      我思う、ゆえに我あり。
+    </p>
+  </details>
+</ui-translation>
+```
+
+- `original` / `translated`とfallback textはplain-text 2片だけを保持する。
+- fallbackは`data-part`とgeneric `data-surface`を使わない。
+- hydration後の`ui-translation`は`button[data-part="trigger"]`と`div[data-part="content"][role="dialog"]`へ置き換える。
+- host`[open]`はMarkdown outputとして生成しない。
 
 ## Hydration Directive
 

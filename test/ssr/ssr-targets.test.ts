@@ -5,8 +5,10 @@ import { renderCustomElement } from '../../build/ssr/server-entry.js';
 import { SSR_COMPONENT_DEFINITIONS } from '../../build/ssr/target-definitions.js';
 import {
   SSR_LAYOUT_TARGET_TAGS,
+  SSR_LIGHT_TARGET_TAGS,
   SSR_NOTE_TARGET_TAGS,
   SSR_PAGE_TARGET_TAGS,
+  SSR_SHADOW_TARGET_TAGS,
   SSR_SHELL_TARGET_TAGS,
   SSR_TARGET_TAGS,
 } from '../../build/ssr/targets.js';
@@ -31,6 +33,12 @@ describe('component manifest / ssr targets', () => {
     for (const tagName of REQUIRED_NOTE_CONTENT_TAGS) {
       expect(SSR_NOTE_TARGET_TAGS).toContain(tagName);
     }
+  });
+
+  it('ui-translation は note 向け Light DOM SSR target として分類すること', () => {
+    expect(SSR_NOTE_TARGET_TAGS).toContain('ui-translation');
+    expect(SSR_SHADOW_TARGET_TAGS).not.toContain('ui-translation');
+    expect(SSR_LIGHT_TARGET_TAGS).toContain('ui-translation');
   });
 
   it('SSR target 全体に note target を含めること', () => {

@@ -8,6 +8,58 @@
   display: block;
 }
 
+ui-translation > [data-translation-fallback] {
+  margin: 0;
+}
+
+ui-translation > [data-translation-fallback] > [data-translation-fallback-trigger] {
+  display: inline;
+  min-height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  list-style: none;
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.16em;
+}
+
+ui-translation > [data-translation-fallback] > [data-translation-fallback-trigger]::marker {
+  content: '';
+}
+
+ui-translation
+  > [data-translation-fallback]
+  > [data-translation-fallback-trigger]::-webkit-details-marker {
+  display: none;
+}
+
+ui-translation > [data-translation-fallback] > [data-translation-fallback-trigger]:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+  outline-offset: var(--focus-ring-offset, 2px);
+}
+
+ui-translation > [data-translation-fallback] > [data-translation-fallback-content] {
+  box-sizing: border-box;
+  max-inline-size: min(100%, 40rem);
+  margin-block: var(--space-2, 8px) 0;
+  margin-inline: 0;
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border-inline-start: var(--border-width-thick, 2px) solid var(--border-subtle);
+  background: var(--bg-surface-1);
+  color: var(--fg-default);
+  font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif);
+  font-size: var(--text-sm, 13px);
+  line-height: var(--line-height-relaxed, 1.75);
+}
+
 :is(.prose, .about-prose) > .translation-static {
   display: grid;
   gap: var(--space-2);
@@ -28,4 +80,31 @@
 :is(.prose, .about-prose) > .translation-static > .translation-translated {
   color: var(--fg-muted);
   font-size: var(--text-sm);
+}
+
+@media (forced-colors: active) {
+  ui-translation > [data-translation-fallback] > [data-translation-fallback-trigger] {
+    color: LinkText;
+    text-decoration-color: LinkText;
+  }
+
+  ui-translation > [data-translation-fallback] > [data-translation-fallback-trigger]:focus-visible {
+    outline-color: Highlight;
+  }
+
+  ui-translation > [data-translation-fallback] > [data-translation-fallback-content] {
+    border-inline-start-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+}
+
+@media print {
+  ui-translation > [data-translation-fallback] {
+    display: block;
+  }
+
+  ui-translation > [data-translation-fallback] > [data-translation-fallback-content] {
+    display: block;
+  }
 }

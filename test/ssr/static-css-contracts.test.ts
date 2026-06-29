@@ -469,6 +469,58 @@ describe('static CSS contracts', () => {
     expect(css).not.to.contain('ui-list-item >');
   });
 
+  it('translation fallback CSS exposes readable disclosure contracts only for fallback markup', () => {
+    const css = readCss('translation.css');
+
+    expectRuleToDeclare(css, 'ui-translation > [data-translation-fallback]', ['margin: 0']);
+    expectRuleToDeclare(
+      css,
+      'ui-translation > [data-translation-fallback] > [data-translation-fallback-trigger]',
+      [
+        'display: inline',
+        'background: transparent',
+        'font: inherit',
+        'cursor: pointer',
+        'list-style: none',
+        'text-decoration-line: underline',
+      ],
+    );
+    expectRuleToDeclare(
+      css,
+      'ui-translation > [data-translation-fallback] > [data-translation-fallback-content]',
+      [
+        'padding: var(--space-3, 12px) var(--space-4, 16px)',
+        'background: var(--bg-surface-1)',
+        'color: var(--fg-default)',
+        'line-height: var(--line-height-relaxed, 1.75)',
+      ],
+    );
+
+    const forcedColors = atRuleBlock(css, '@media (forced-colors: active)');
+    expectRuleToDeclare(
+      forcedColors,
+      'ui-translation > [data-translation-fallback] > [data-translation-fallback-trigger]',
+      ['color: LinkText'],
+    );
+    expectRuleToDeclare(
+      forcedColors,
+      'ui-translation > [data-translation-fallback] > [data-translation-fallback-content]',
+      ['background: Canvas', 'color: CanvasText'],
+    );
+
+    const print = atRuleBlock(css, '@media print');
+    expectRuleToDeclare(print, 'ui-translation > [data-translation-fallback]', ['display: block']);
+    expectRuleToDeclare(
+      print,
+      'ui-translation > [data-translation-fallback] > [data-translation-fallback-content]',
+      ['display: block'],
+    );
+
+    expect(css).to.contain('.translation-static');
+    expect(css).not.to.contain('[data-translation-fallback] [data-part');
+    expect(css).not.to.contain('[data-translation-fallback][data-surface');
+  });
+
   it('keeps root viewport gutter stable while dialog open states only own body scroll lock', () => {
     const mainCss = readCss('main.css');
     const dialogStateCss = readCss('dialog-state.css');
@@ -594,7 +646,13 @@ describe('static CSS contracts', () => {
       '--_header-search-trigger-max-inline-size: 9rem',
       '--_header-search-trigger-max-inline-size-compact: 7rem',
     ]);
-    expect(declarationValuesForSelector(css, 'header[data-layout-header]', '--_header-control-pressed-scale')).toEqual([]);
+    expect(
+      declarationValuesForSelector(
+        css,
+        'header[data-layout-header]',
+        '--_header-control-pressed-scale',
+      ),
+    ).toEqual([]);
     expect(
       declarationValuesForSelector(
         css,
@@ -673,9 +731,10 @@ describe('static CSS contracts', () => {
         '--bg-active',
       );
       for (const selector of normalizedTopLevelActiveSelectors) {
-        expect(record.selectors, 'search active background must be top-level common rule').toContain(
-          selector,
-        );
+        expect(
+          record.selectors,
+          'search active background must be top-level common rule',
+        ).toContain(selector);
       }
     }
 
@@ -778,8 +837,7 @@ describe('static CSS contracts', () => {
       ]);
     }
 
-    const searchFocusVisibleSelector =
-      'header[data-layout-header] .search-trigger:focus-visible';
+    const searchFocusVisibleSelector = 'header[data-layout-header] .search-trigger:focus-visible';
 
     expectRuleToDeclare(css, searchFocusVisibleSelector, [
       'outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250))',
@@ -1185,7 +1243,7 @@ describe('static CSS contracts', () => {
       'font-weight: var(--font-normal, 400)',
       'white-space: nowrap',
     ]);
-    expect(ruleBlock(css, "header[data-layout-header] [data-header-menu-item]")).not.to.contain(
+    expect(ruleBlock(css, 'header[data-layout-header] [data-header-menu-item]')).not.to.contain(
       'font-weight: var(--font-normal, 400)',
     );
     expectRuleToDeclare(css, labelSelector, [
@@ -1717,7 +1775,7 @@ describe('static CSS contracts', () => {
       bridge,
       'tabs panel code surface variable reset',
       (selector) =>
-        selector.includes('ui-tabs>[slot=\'panel\']') &&
+        selector.includes("ui-tabs>[slot='panel']") &&
         selector.includes('pre[data-code-block]') &&
         selector.includes('section[data-code-group]') &&
         selector.includes('[data-code-block-root]'),
@@ -1752,9 +1810,8 @@ describe('static CSS contracts', () => {
       ['width: calc(100% + var('],
     );
     expect(
-      ruleBlocksForSelectorsMatching(
-        bridge,
-        (selector) => selector.includes('.prose>pre[data-code-block]'),
+      ruleBlocksForSelectorsMatching(bridge, (selector) =>
+        selector.includes('.prose>pre[data-code-block]'),
       ),
     ).to.equal('');
   });
@@ -2080,9 +2137,7 @@ describe('static CSS contracts', () => {
     expect(ruleBlock(corpora, '.corpus-index-row__title')).not.toContain(
       '--link-decoration-color-subtle',
     );
-    expect(ruleBlock(corpora, '.corpus-index-row__title')).not.toContain(
-      '--font-weight-semibold',
-    );
+    expect(ruleBlock(corpora, '.corpus-index-row__title')).not.toContain('--font-weight-semibold');
     expect(corpora).not.toContain('--link-decoration-color-subtle');
     expect(corpora).not.toContain('--font-weight-semibold');
     const corpusIndexRowHoverBlocks = ruleBlocksForSelectorsMatching(corpora, (selector) =>

@@ -206,8 +206,47 @@ const adaptTranslationOverlayOutput = (
     ['original', payload.original],
     ['translated', payload.translated],
     ['surface', payload.surface],
+    ['data-hydration-capability', 'interactive'],
+    ['data-hydration-trigger', 'visible'],
   ]),
-  children: [],
+  children: [
+    {
+      type: 'paragraph',
+      data: {
+        hName: 'details',
+        hProperties: {
+          className: ['translation-overlay-fallback'],
+          'data-translation-fallback': true,
+        },
+      },
+      children: [
+        {
+          type: 'paragraph',
+          data: {
+            hName: 'summary',
+            hProperties: toOptionalProps([
+              ['className', ['translation-overlay-fallback__summary']],
+              ['data-translation-fallback-trigger', true],
+              ['lang', payload.lang],
+            ]),
+          },
+          children: [{ type: 'text', value: payload.original }],
+        },
+        {
+          type: 'paragraph',
+          data: {
+            hName: 'p',
+            hProperties: toOptionalProps([
+              ['className', ['translation-overlay-fallback__content']],
+              ['data-translation-fallback-content', true],
+              ['lang', payload.targetLang],
+            ]),
+          },
+          children: [{ type: 'text', value: payload.translated }],
+        },
+      ],
+    },
+  ],
 });
 
 export const adaptDirectiveOutput = (payload: DirectivePayload): RemarkOutputBinding => {

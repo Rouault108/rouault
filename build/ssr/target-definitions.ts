@@ -67,9 +67,9 @@ export const SSR_COMPONENT_DEFINITIONS = [
   },
   {
     tag: 'ui-translation',
-    ssr: 'shadow',
+    ssr: 'light',
     profiles: ['note'],
-    adapterKind: 'shadow-default',
+    adapterKind: 'light-host-passthrough',
   },
   {
     tag: 'ui-video',

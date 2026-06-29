@@ -16,6 +16,32 @@ describe('server-entry', () => {
     expect(styles.some((style) => style.id === 'ui-footnote-document-styles')).toBe(false);
   });
 
+  it('ui-translation は Light DOM children を保持し declarative shadow DOM を生成しないこと', async () => {
+    const rendered = await renderCustomElement(
+      'ui-translation',
+      [
+        { name: 'lang', value: 'fr' },
+        { name: 'target-lang', value: 'ja' },
+        { name: 'original', value: 'Je pense, donc je suis.' },
+        { name: 'translated', value: '我思う、ゆえに我あり。' },
+        { name: 'surface', value: 'drawer' },
+      ],
+      [
+        '<details class="translation-overlay-fallback" data-translation-fallback>',
+        '<summary data-translation-fallback-trigger lang="fr">Je pense, donc je suis.</summary>',
+        '<p data-translation-fallback-content lang="ja">我思う、ゆえに我あり。</p>',
+        '</details>',
+      ].join(''),
+    );
+
+    expect(rendered).toContain('<ui-translation');
+    expect(rendered).toContain('data-translation-fallback');
+    expect(rendered).toContain('data-translation-fallback-trigger');
+    expect(rendered).toContain('data-translation-fallback-content');
+    expect(rendered).not.toContain('shadowrootmode');
+    expect(rendered).not.toContain('<template');
+  });
+
   it('app-router は main#main-content を持たない raw content を strict contract violation として拒否すること', async () => {
     await expect(
       renderCustomElement('app-router', [], '<h1>SSR App Router</h1><p>Body</p>'),

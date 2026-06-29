@@ -1,5 +1,4 @@
 import { expect, fixture, html } from '@open-wc/testing';
-import '../../src/components/ui/translation/translation.js';
 import type { UiTranslation } from '../../src/components/ui/translation/translation.js';
 import {
   getTranslationOverlayOrchestrator,
@@ -25,8 +24,48 @@ const flush = async (translation: UiTranslation): Promise<void> => {
   await waitForLitUpdate(translation);
 };
 
+const ensureTranslationElementDefined = async (): Promise<void> => {
+  await import('../../src/components/ui/translation/translation.js');
+};
+
+describe('ui-translation fallback focus handoff', () => {
+  it('fallback summary focus は hydrated trigger へ引き継ぐこと', async () => {
+    const tagName = 'ui-translation';
+    expect(customElements.get(tagName), 'focus handoff test must run before definition').to.equal(
+      undefined,
+    );
+
+    const element = document.createElement(tagName) as UiTranslation;
+    element.setAttribute('lang', 'fr');
+    element.setAttribute('target-lang', 'ja');
+    element.setAttribute('original', 'Je pense, donc je suis.');
+    element.setAttribute('translated', '我思う、ゆえに我あり。');
+    element.innerHTML = [
+      '<details data-translation-fallback>',
+      '<summary data-translation-fallback-trigger lang="fr" tabindex="0">Je pense, donc je suis.</summary>',
+      '<p data-translation-fallback-content lang="ja">我思う、ゆえに我あり。</p>',
+      '</details>',
+    ].join('');
+    document.body.append(element);
+
+    const summary = expectPresent(
+      element.querySelector<HTMLElement>('[data-translation-fallback-trigger]'),
+      'fallback summary',
+    );
+    summary.focus();
+
+    await ensureTranslationElementDefined();
+    element.activateHydration();
+    await flush(element);
+
+    expect(document.activeElement).to.equal(element.getTriggerElement());
+    element.remove();
+  });
+});
+
 describe('ui-translation browser contract', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await ensureTranslationElementDefined();
     initTranslationOverlayOrchestrator();
   });
 
@@ -142,5 +181,144 @@ describe('ui-translation browser contract', () => {
     await flush(second);
     expect(first.open).to.equal(false);
     expect(second.open).to.equal(true);
+  });
+
+  it('closed fallback は hydration 後も closed のまま hydrated UI に置き換わること', async () => {
+    await ensureTranslationElementDefined();
+
+    const translation = document.createElement('ui-translation') as UiTranslation;
+    translation.setAttribute('lang', 'fr');
+    translation.setAttribute('target-lang', 'ja');
+    translation.setAttribute('original', 'Je pense, donc je suis.');
+    translation.setAttribute('translated', '我思う、ゆえに我あり。');
+    translation.setAttribute('surface', 'drawer');
+    translation.setAttribute('data-hydration-trigger', 'visible');
+    translation.innerHTML = `
+      <details class="translation-overlay-fallback" data-translation-fallback>
+        <summary data-translation-fallback-trigger lang="fr">Je pense, donc je suis.</summary>
+        <p data-translation-fallback-content lang="ja">我思う、ゆえに我あり。</p>
+      </details>
+    `;
+
+    document.body.append(translation);
+
+    try {
+      translation.activateHydration();
+      await flush(translation);
+
+      expect(translation.open).to.equal(false);
+      expect(translation.querySelector('[data-translation-fallback]')).to.equal(null);
+      expect(translation.getTriggerElement()?.dataset['part']).to.equal('trigger');
+      expect(translation.getContentElement()?.dataset['part']).to.equal('content');
+      expect(translation.getContentElement()?.hidden).to.equal(true);
+    } finally {
+      translation.remove();
+    }
+  });
+
+  it('open fallback は hydration 後に open と content visibility を引き継ぐこと', async () => {
+    const events: CustomEvent<{ open: boolean; surface: string }>[] = [];
+    const translation = await fixture<UiTranslation>(html`
+      <ui-translation
+        lang="fr"
+        target-lang="ja"
+        original="Je pense, donc je suis."
+        translated="我思う、ゆえに我あり。"
+        surface="drawer"
+        data-hydration-trigger="visible"
+      >
+        <details class="translation-overlay-fallback" data-translation-fallback open>
+          <summary data-translation-fallback-trigger lang="fr">Je pense, donc je suis.</summary>
+          <p data-translation-fallback-content lang="ja">我思う、ゆえに我あり。</p>
+        </details>
+      </ui-translation>
+    `);
+
+    translation.addEventListener('translation-toggle', (event) => {
+      events.push(event as CustomEvent<{ open: boolean; surface: string }>);
+    });
+    translation.activateHydration();
+    await flush(translation);
+
+    const content = expectPresent(translation.getContentElement(), 'content');
+    expect(translation.open).to.equal(true);
+    expect(content.hidden).to.equal(false);
+    expect(events.filter((event) => event.detail.open)).to.have.length(1);
+    expect(events[0]?.detail).to.deep.equal({ open: true, surface: 'drawer' });
+  });
+
+  it('host open 属性は fallback open より優先され、初期 open 通知を dispatch すること', async () => {
+    const events: CustomEvent<{ open: boolean; surface: string }>[] = [];
+    const translation = await fixture<UiTranslation>(html`
+      <ui-translation
+        open
+        lang="fr"
+        target-lang="ja"
+        original="Je pense, donc je suis."
+        translated="我思う、ゆえに我あり。"
+        surface="popover"
+        data-hydration-trigger="visible"
+      >
+        <details class="translation-overlay-fallback" data-translation-fallback>
+          <summary data-translation-fallback-trigger lang="fr">Je pense, donc je suis.</summary>
+          <p data-translation-fallback-content lang="ja">我思う、ゆえに我あり。</p>
+        </details>
+      </ui-translation>
+    `);
+
+    translation.addEventListener('translation-toggle', (event) => {
+      events.push(event as CustomEvent<{ open: boolean; surface: string }>);
+    });
+    translation.activateHydration();
+    await flush(translation);
+
+    expect(translation.open).to.equal(true);
+    expect(translation.getContentElement()?.hidden).to.equal(false);
+    expect(events.map((event) => event.detail)).to.deep.equal([{ open: true, surface: 'popover' }]);
+  });
+
+  it('複数の fallback open は hydration reconciliation 後に最大1件だけ open にすること', async () => {
+    const wrapper = await fixture<HTMLDivElement>(html`
+      <div>
+        <ui-translation
+          id="first"
+          lang="fr"
+          target-lang="ja"
+          original="Bonjour"
+          translated="こんにちは"
+          surface="popover"
+          data-hydration-trigger="visible"
+        >
+          <details data-translation-fallback open>
+            <summary data-translation-fallback-trigger lang="fr">Bonjour</summary>
+            <p data-translation-fallback-content lang="ja">こんにちは</p>
+          </details>
+        </ui-translation>
+        <ui-translation
+          id="second"
+          lang="de"
+          target-lang="ja"
+          original="Guten Tag"
+          translated="こんにちは"
+          surface="drawer"
+          data-hydration-trigger="visible"
+        >
+          <details data-translation-fallback open>
+            <summary data-translation-fallback-trigger lang="de">Guten Tag</summary>
+            <p data-translation-fallback-content lang="ja">こんにちは</p>
+          </details>
+        </ui-translation>
+      </div>
+    `);
+
+    const translations = Array.from(wrapper.querySelectorAll<UiTranslation>('ui-translation'));
+    for (const translation of translations) {
+      translation.activateHydration();
+      await flush(translation);
+    }
+
+    expect(translations.filter((translation) => translation.open)).to.have.length.lessThanOrEqual(
+      1,
+    );
   });
 });
