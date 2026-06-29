@@ -185,6 +185,8 @@ raw `<br>`、Markdown hard break、`:br[]`は表セル改行契約として採�
 - authoring grammarに関わる意味論変更は、remark層の正本と実装順序の双方を整合させる。
 - 出力DOMに関わる意味論変更は、rehype層の正本と実装順序の双方を整合させる。
 - Markdown本文内の相対`.md`ノートリンクは`rehypeResolveNoteSourceLinks`でnote page navigation URLへ解決してから、本文リンクの種別注釈をrehype層で確定する。詳細な出力属性契約は`docs/references/markdown-output.md`を参照する。
+- `zoomable=true`の本文画像は`figure[data-image] > [data-image-preview-frame] > img + button[data-image-zoom-trigger]`のdirect child構造を持つ。`img`はbuttonで包まず、triggerはSSR時点で`hidden`とし、enhancer初期化成功後だけ操作可能化する。
+- `zoomable=false`の本文画像は`figure[data-image] > img`を維持し、preview frame、zoom trigger、`image-lightbox-enhancer` hydration key、dialogを生成しない。
 - 安全規約は後段検査へ押し込むだけでなく、可能なものは前段で早期拒否してよい。
 - 実装順序の変更は意味論変更を伴いうるため、単なるリファクタリングとして扱ってはならない。
 

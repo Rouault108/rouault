@@ -756,11 +756,12 @@ describe('rehypeRouaultComponents', () => {
         data-hydration-trigger="visible"
         data-image-lightbox-src="/static/example.png"
       >
-        <button type="button" data-image-zoom-trigger="true" aria-label="画像を拡大して表示">
-          <span class="image-zoom-trigger__icon static-icon" aria-hidden="true"><svg></svg></span>
-          <span class="sr-only">画像を拡大して表示</span>
-        </button>
-        <img src="/static/example.png" alt="example image">
+        <div data-image-preview-frame="true" class="image-preview-frame">
+          <img src="/static/example.png" alt="example image">
+          <button hidden type="button" data-image-zoom-trigger="true" class="image-preview-trigger" aria-label="画像を拡大して表示: example image" aria-haspopup="dialog">
+            <span class="image-zoom-trigger__icon static-icon" aria-hidden="true"><svg></svg></span>
+          </button>
+        </div>
       </figure>
     `;
 
@@ -772,7 +773,7 @@ describe('rehypeRouaultComponents', () => {
     expect(normalized).not.toContain('examples/media');
   });
 
-  it('image は native figure > img と static zoom icon へ変換すること', () => {
+  it('zoomable image は preview frame 内の img と hidden overlay trigger へ変換すること', () => {
     const tree: HastNode = {
       type: 'root',
       children: [
@@ -792,24 +793,76 @@ describe('rehypeRouaultComponents', () => {
     rehypeRouaultComponents()(tree);
 
     const figure = findElement(tree, (node) => node.tagName === 'figure');
+    const directChildren = figure?.children?.filter((child) => child.type === 'element') ?? [];
+    const previewFrame = directChildren.find(
+      (node) => node.properties?.['data-image-preview-frame'] === 'true',
+    );
+    const frameChildren = previewFrame?.children?.filter((child) => child.type === 'element') ?? [];
     const trigger = findElement(
-      figure,
+      previewFrame,
       (node) => node.properties?.['data-image-zoom-trigger'] === 'true',
     );
     const triggerIcon = findElement(trigger, (node) =>
       getClassList(node.properties?.['className']).includes('image-zoom-trigger__icon'),
     );
-    const img = findElement(figure, (node) => node.tagName === 'img');
+    const img = findElement(previewFrame, (node) => node.tagName === 'img');
     const picture = findElement(figure, (node) => node.tagName === 'picture');
     const caption = findElement(figure, (node) => node.tagName === 'figcaption');
 
     expect(figure?.properties?.['data-image']).to.equal('true');
+    expect(figure?.properties?.['data-image-zoomable']).to.equal('true');
+    expect(figure?.properties?.['data-hydration-key']).to.equal('image-lightbox-enhancer');
+    expect(directChildren.filter((node) => node.tagName === 'img')).to.have.length(0);
+    expect(previewFrame?.tagName).to.equal('div');
+    expect(frameChildren[0]?.tagName).to.equal('img');
+    expect(frameChildren[1]).to.equal(trigger);
+    expect(trigger?.tagName).to.equal('button');
+    expect(trigger?.properties?.['hidden']).to.equal(true);
+    expect(trigger?.properties?.['type']).to.equal('button');
+    expect(trigger?.properties?.['aria-label']).to.equal('画像を拡大して表示: 譜面画像');
+    expect(trigger?.properties?.['aria-haspopup']).to.equal('dialog');
     expect(triggerIcon?.tagName).to.equal('span');
+    expect(triggerIcon?.properties?.['aria-hidden']).to.equal('true');
     expect(findElement(triggerIcon, (node) => node.tagName === 'svg')).not.to.equal(undefined);
+    expect(findElement(trigger, (node) => getClassList(node.properties?.['className']).includes('sr-only'))).to.equal(undefined);
     expect(img?.properties?.['src']).to.not.equal('');
     expect(img?.properties?.['alt']).to.equal('譜面画像');
     expect(picture).to.equal(undefined);
     expect(getTextContent(caption)).to.equal('図版キャプション');
+  });
+
+  it('zoomable=false image は figure 直下 img の静的構造を維持すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'img',
+          properties: {
+            src: 'content/_assets/example.png',
+            alt: '通常画像',
+            zoomable: 'false',
+          },
+          children: [],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const figure = findElement(tree, (node) => node.tagName === 'figure');
+    const directChildren = figure?.children?.filter((child) => child.type === 'element') ?? [];
+
+    expect(figure?.properties?.['data-image']).to.equal('true');
+    expect(figure?.properties?.['data-image-zoomable']).to.equal('false');
+    expect(figure?.properties?.['data-hydration-key']).to.equal(undefined);
+    expect(directChildren.filter((node) => node.tagName === 'img')).to.have.length(1);
+    expect(
+      directChildren.filter((node) => node.properties?.['data-image-preview-frame'] === 'true'),
+    ).to.have.length(0);
+    expect(findElement(figure, (node) => node.properties?.['data-image-zoom-trigger'] === 'true')).to.equal(
+      undefined,
+    );
   });
 
   it('image の src 欠落は build error にすること', () => {

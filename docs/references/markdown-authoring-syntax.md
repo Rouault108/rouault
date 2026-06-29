@@ -54,6 +54,7 @@ Rouault固有の注意点は次の通りである。
 
 - raw HTMLは標準Markdownとして存在してもRouaultでは禁止される。
 - GFM表はstatic table surfaceへ正規化される。
+- Markdown画像は既定で拡大表示対象になる。拡大表示を無効にする場合は画像属性で`zoomable=false`を指定する。
 - task list、footnote、tableなどの出力詳細は`docs/references/markdown-output.md`を参照する。
 - 安全境界は`docs/contracts/markdown.md`を参照する。
 

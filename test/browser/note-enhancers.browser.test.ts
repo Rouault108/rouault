@@ -46,6 +46,31 @@ const installDialogPolyfill = (): void => {
 installPopoverPolyfill();
 installDialogPolyfill();
 
+const withShowModalDescriptor = (value: unknown, callback: () => void): void => {
+  const originalDescriptor = Object.getOwnPropertyDescriptor(
+    HTMLDialogElement.prototype,
+    'showModal',
+  );
+
+  try {
+    if (value === undefined) {
+      Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
+    } else {
+      Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+        configurable: true,
+        value,
+      });
+    }
+    callback();
+  } finally {
+    if (originalDescriptor) {
+      Object.defineProperty(HTMLDialogElement.prototype, 'showModal', originalDescriptor);
+    } else {
+      Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
+    }
+  }
+};
+
 const expectPresent = <T>(value: T | null | undefined, name: string): T => {
   expect(value, `${name} should exist`).to.not.equal(null);
   expect(value, `${name} should exist`).to.not.equal(undefined);
@@ -101,12 +126,13 @@ const createImageRoot = (): HTMLElement => {
       data-image-lightbox-srcset="/static/example.png 1x, /static/example@2x.png 2x"
       data-image-lightbox-sizes="min(100vw, 72rem)"
     >
-      <img src="/static/example-thumb.png" alt="zoom target" />
+      <div data-image-preview-frame="true" class="image-preview-frame">
+        <img src="/static/example-thumb.png" alt="zoom target" />
+        <button hidden type="button" data-image-zoom-trigger="true" class="image-preview-trigger" aria-label="画像を拡大表示: zoom target" aria-haspopup="dialog">
+          <span class="image-zoom-trigger__icon static-icon" aria-hidden="true"><svg></svg></span>
+        </button>
+      </div>
       <figcaption>lightbox caption</figcaption>
-      <button type="button" data-image-zoom-trigger="true" aria-label="画像を拡大表示">
-        <span class="image-zoom-trigger__icon static-icon" aria-hidden="true"><svg></svg></span>
-        <span class="sr-only">画像を拡大表示</span>
-      </button>
     </figure>
   `;
   return root;
@@ -130,6 +156,11 @@ const clickPrimary = (target: HTMLElement): MouseEvent => {
   target.dispatchEvent(event);
   return event;
 };
+
+const waitForClose = (dialog: HTMLDialogElement): Promise<void> =>
+  new Promise((resolve) => {
+    dialog.addEventListener('close', () => resolve(), { once: true });
+  });
 
 const setClientRect = (
   element: Element,
@@ -322,7 +353,7 @@ describe('note progressive enhancers', () => {
     expect(popover.style.top).to.equal('280px');
   });
 
-  it('image lightbox enhancer が static figure に dialog を付与し close 後に scroll / focus を戻すこと', () => {
+  it('image lightbox enhancer が static figure に dialog を付与し close 後に scroll / focus を戻すこと', async () => {
     const root = createImageRoot();
     document.body.append(root);
 
@@ -334,10 +365,18 @@ describe('note progressive enhancers', () => {
     const image = dialog?.querySelector<HTMLImageElement>('img.image-lightbox-image');
     const caption = dialog?.querySelector<HTMLElement>('.image-lightbox-caption');
     const closeButton = dialog?.querySelector<HTMLButtonElement>('[data-image-lightbox-close]');
+    const figureChildren = Array.from(figure?.children ?? []);
 
     expect(figure?.dataset['imageEnhanced']).to.equal('true');
+    expect(trigger?.hidden).to.equal(false);
     expect(dialog).to.not.equal(null);
     expect(dialog?.getAttribute('aria-modal')).to.equal('true');
+    expect(dialog?.getAttribute('aria-label')).to.equal('拡大画像');
+    expect(dialog?.querySelector('[data-image-lightbox-surface]')).to.not.equal(null);
+    expect(figureChildren.at(-1)?.tagName.toLowerCase()).to.equal('figcaption');
+    expect(figureChildren.indexOf(expectPresent(dialog, 'dialog'))).to.equal(
+      figureChildren.indexOf(expectPresent(caption?.parentElement?.parentElement, 'caption dialog')),
+    );
     expect(image?.getAttribute('src')).to.contain('/static/example.png');
     expect(image?.getAttribute('alt')).to.equal('zoom target');
     expect(image?.getAttribute('srcset')).to.equal(
@@ -356,11 +395,219 @@ describe('note progressive enhancers', () => {
     expect(document.documentElement.style.overflow).to.equal('hidden');
     expect(document.body.style.overflow).to.equal('hidden');
 
+    const closeSettled = waitForClose(expectPresent(dialog, 'dialog'));
     closeButton?.click();
+    await closeSettled;
 
     expect(dialog?.open).to.equal(false);
     expect(document.documentElement.style.overflow).to.equal('');
     expect(document.body.style.overflow).to.equal('');
     expect(document.activeElement).to.equal(trigger);
+  });
+
+  it('image lightbox enhancer は keyboard activation 用の native button contract を維持すること', async () => {
+    const root = createImageRoot();
+    document.body.append(root);
+
+    enhanceImageLightboxes(root);
+
+    const trigger = expectPresent(
+      root.querySelector<HTMLButtonElement>('button[data-image-zoom-trigger]'),
+      'image trigger',
+    );
+    const dialog = expectPresent(
+      root.querySelector<HTMLDialogElement>('dialog[data-image-lightbox-dialog]'),
+      'image dialog',
+    );
+    const closeButton = expectPresent(
+      dialog.querySelector<HTMLButtonElement>('[data-image-lightbox-close]'),
+      'lightbox close button',
+    );
+
+    trigger.focus();
+
+    expect(document.activeElement).to.equal(trigger);
+    expect(trigger.tagName.toLowerCase()).to.equal('button');
+    expect(trigger.type).to.equal('button');
+    expect(trigger.getAttribute('aria-haspopup')).to.equal('dialog');
+
+    // Real keyboard Enter/Space activation for a focused native button dispatches click.
+    // Programmatic KeyboardEvent dispatch does not invoke that browser default action reliably
+    // in the web test runner, so this test fixes the keyboard contract as native button + click path.
+    clickPrimary(trigger);
+
+    expect(dialog.open).to.equal(true);
+
+    const closeSettled = waitForClose(dialog);
+    closeButton.click();
+    await closeSettled;
+  });
+
+  it('image lightbox enhancer は背景 click / Escape で閉じ、画像と caption click では閉じないこと', async () => {
+    const root = createImageRoot();
+    document.body.append(root);
+
+    enhanceImageLightboxes(root);
+
+    const trigger = expectPresent(
+      root.querySelector<HTMLButtonElement>('button[data-image-zoom-trigger]'),
+      'image trigger',
+    );
+    const dialog = expectPresent(
+      root.querySelector<HTMLDialogElement>('dialog[data-image-lightbox-dialog]'),
+      'image dialog',
+    );
+    const surface = expectPresent(
+      dialog.querySelector<HTMLElement>('[data-image-lightbox-surface]'),
+      'lightbox surface',
+    );
+    const image = expectPresent(
+      dialog.querySelector<HTMLImageElement>('img.image-lightbox-image'),
+      'lightbox image',
+    );
+    const caption = expectPresent(
+      dialog.querySelector<HTMLElement>('.image-lightbox-caption'),
+      'lightbox caption',
+    );
+
+    trigger.click();
+    expect(dialog.open).to.equal(true);
+    clickPrimary(image);
+    expect(dialog.open).to.equal(true);
+    clickPrimary(caption);
+    expect(dialog.open).to.equal(true);
+    let closeSettled = waitForClose(dialog);
+    clickPrimary(surface);
+    await closeSettled;
+    expect(dialog.open).to.equal(false);
+
+    trigger.click();
+    expect(dialog.open).to.equal(true);
+    closeSettled = waitForClose(dialog);
+    dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+    await closeSettled;
+    expect(dialog.open).to.equal(false);
+
+    trigger.click();
+    expect(dialog.open).to.equal(true);
+    closeSettled = waitForClose(dialog);
+    clickPrimary(dialog);
+    await closeSettled;
+    expect(dialog.open).to.equal(false);
+  });
+
+  it('image lightbox enhancer は showModal 非対応や必須DOM欠落では trigger を hidden のままにすること', () => {
+    withShowModalDescriptor(undefined, () => {
+      const root = createImageRoot();
+      document.body.append(root);
+
+      enhanceImageLightboxes(root);
+
+      const figure = expectPresent(root.querySelector<HTMLElement>('figure[data-image]'), 'figure');
+      const trigger = expectPresent(
+        root.querySelector<HTMLButtonElement>('button[data-image-zoom-trigger]'),
+        'image trigger',
+      );
+
+      expect(figure.dataset['imageEnhanced']).to.equal(undefined);
+      expect(trigger.hidden).to.equal(true);
+      trigger.click();
+      expect(root.querySelector('dialog[data-image-lightbox-dialog]')?.open).to.not.equal(true);
+    });
+
+    const root = createImageRoot();
+    root.querySelector('img')?.remove();
+    document.body.append(root);
+
+    enhanceImageLightboxes(root);
+
+    const figure = expectPresent(root.querySelector<HTMLElement>('figure[data-image]'), 'figure');
+    const trigger = expectPresent(
+      root.querySelector<HTMLButtonElement>('button[data-image-zoom-trigger]'),
+      'image trigger',
+    );
+
+    expect(figure.dataset['imageEnhanced']).to.equal(undefined);
+    expect(trigger.hidden).to.equal(true);
+  });
+
+  it('image lightbox enhancer は showModal 失敗時に scroll lock を戻し trigger を隠すこと', () => {
+    withShowModalDescriptor(function showModalFailure() {
+      throw new Error('showModal failed');
+    }, () => {
+      const root = createImageRoot();
+      document.body.append(root);
+
+      enhanceImageLightboxes(root);
+
+      const trigger = expectPresent(
+        root.querySelector<HTMLButtonElement>('button[data-image-zoom-trigger]'),
+        'image trigger',
+      );
+
+      expect(trigger.hidden).to.equal(false);
+      trigger.click();
+
+      expect(trigger.hidden).to.equal(true);
+      expect(document.documentElement.style.overflow).to.equal('');
+      expect(document.body.style.overflow).to.equal('');
+    });
+  });
+
+  it('image lightbox enhancer は canonical でない既存 dialog を操作可能化しないこと', () => {
+    const root = createImageRoot();
+    const figure = expectPresent(root.querySelector<HTMLElement>('figure[data-image]'), 'figure');
+    figure.insertAdjacentHTML(
+      'beforeend',
+      '<dialog data-image-lightbox-dialog="true" open><div></div></dialog>',
+    );
+    document.body.append(root);
+
+    enhanceImageLightboxes(root);
+
+    const trigger = expectPresent(
+      root.querySelector<HTMLButtonElement>('button[data-image-zoom-trigger]'),
+      'image trigger',
+    );
+
+    expect(figure.dataset['imageEnhanced']).to.equal(undefined);
+    expect(trigger.hidden).to.equal(true);
+    expect(root.querySelectorAll('dialog[data-image-lightbox-dialog]')).to.have.length(1);
+  });
+
+  it('image lightbox enhancer は既存 dialog の aria-modal / aria-label だけなら補完して再利用すること', () => {
+    const root = createImageRoot();
+    const figure = expectPresent(root.querySelector<HTMLElement>('figure[data-image]'), 'figure');
+    figure.insertAdjacentHTML(
+      'beforeend',
+      [
+        '<dialog data-image-lightbox-dialog="true">',
+        '<div class="image-lightbox-surface" data-image-lightbox-surface="true">',
+        '<button type="button" data-image-lightbox-close="true"></button>',
+        '<img class="image-lightbox-image" src="/static/existing.png" alt="">',
+        '</div>',
+        '</dialog>',
+      ].join(''),
+    );
+    document.body.append(root);
+
+    enhanceImageLightboxes(root);
+
+    const trigger = expectPresent(
+      root.querySelector<HTMLButtonElement>('button[data-image-zoom-trigger]'),
+      'image trigger',
+    );
+    const dialog = expectPresent(
+      root.querySelector<HTMLDialogElement>('dialog[data-image-lightbox-dialog]'),
+      'image dialog',
+    );
+    const figureChildren = Array.from(figure.children);
+
+    expect(figure.dataset['imageEnhanced']).to.equal('true');
+    expect(trigger.hidden).to.equal(false);
+    expect(dialog.getAttribute('aria-modal')).to.equal('true');
+    expect(dialog.getAttribute('aria-label')).to.equal('拡大画像');
+    expect(figureChildren.at(-1)?.tagName.toLowerCase()).to.equal('figcaption');
+    expect(figureChildren.at(-2)).to.equal(dialog);
   });
 });

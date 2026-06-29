@@ -40,11 +40,12 @@ const staticNoteHtml = `
     data-hydration-trigger="visible"
     data-image-lightbox-src="/static/example.png"
   >
-    <button type="button" data-image-zoom-trigger="true" aria-label="画像を拡大して表示">
-      <span class="image-zoom-trigger__icon static-icon" aria-hidden="true"><svg></svg></span>
-      <span class="sr-only">画像を拡大して表示</span>
-    </button>
-    <img src="/static/example.png" alt="example image">
+    <div data-image-preview-frame="true" class="image-preview-frame">
+      <img src="/static/example.png" alt="example image">
+      <button hidden type="button" data-image-zoom-trigger="true" class="image-preview-trigger" aria-label="画像を拡大して表示: example image" aria-haspopup="dialog">
+        <span class="image-zoom-trigger__icon static-icon" aria-hidden="true"><svg></svg></span>
+      </button>
+    </div>
     <figcaption>example caption</figcaption>
   </figure>
   <p>
@@ -175,7 +176,16 @@ describe('note final html static contract', () => {
         (element) =>
           element.tagName === 'figure' &&
           getAttribute(element, 'data-image') === 'true' &&
-          hasChildElement(element, (child) => child.tagName === 'img'),
+          hasChildElement(
+            element,
+            (child) =>
+              getAttribute(child, 'data-image-preview-frame') === 'true' &&
+              hasChildElement(child, (frameChild) => frameChild.tagName === 'img') &&
+              hasChildElement(
+                child,
+                (frameChild) => getAttribute(frameChild, 'data-image-zoom-trigger') === 'true',
+              ),
+          ),
       ),
     ).toBe(true);
     expect(

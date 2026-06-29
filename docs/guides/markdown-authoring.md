@@ -101,6 +101,20 @@ meta keyの網羅表は`docs/references/markdown-authoring-syntax.md`を参照�
 
 raw `<br>`、Markdown hard break、`:br[]`は表セル改行として使わない。
 
+## 画像
+
+通常のMarkdown画像は、本文中の読解対象として静的な`figure[data-image]`へ正規化される。既定では`zoomable=true`として扱われ、enhancer初期化に成功した環境では画像面全体から拡大表示を開ける。
+
+拡大表示にしない画像は`zoomable=false`を指定する。小さな装飾画像、本文の流れの中で拡大操作を期待しない画像、Lightbox対象にしたくない図版に使う。
+
+```md
+![本文画像](./image.png "図版キャプション")
+
+![拡大しない画像](./small.png){zoomable=false}
+```
+
+`zoomable=false`は画像variantや読み込み状態を変えるための指定ではない。出力ではpreview frame、拡大trigger、Lightbox用hydrationは生成されない。
+
 ## 注意
 
 - `on*`属性、`srcdoc`、危険URL scheme、許可外`style`は使わない。

@@ -1390,13 +1390,34 @@ const validateStaticNoteRootContracts = (
   }
 
   if (node.tagName === 'figure' && hasAttribute(node, 'data-image')) {
-    if (!hasDescendant(node, (child) => child.tagName === 'img')) {
-      errors.push('figure[data-image] は img を含む必要があります');
-      return;
-    }
-
     const zoomable = getAttributeValue(node, 'data-image-zoomable') !== 'false';
     if (!zoomable) {
+      const directImages = getDirectChildren(node, (child) => child.tagName === 'img');
+      if (directImages.length !== 1) {
+        errors.push('zoomable=false の figure[data-image] は直下に img を 1 つだけ持つ必要があります');
+        return;
+      }
+      if (findDirectChild(node, (child) => hasAttribute(child, 'data-image-preview-frame'))) {
+        errors.push('zoomable=false の figure[data-image] は preview frame を持ってはいけません');
+        return;
+      }
+      if (hasDescendant(node, (child) => hasAttribute(child, 'data-image-zoom-trigger'))) {
+        errors.push('zoomable=false の figure[data-image] は zoom trigger を持ってはいけません');
+        return;
+      }
+      if (getAttributeValue(node, 'data-hydration-key') === 'image-lightbox-enhancer') {
+        errors.push('zoomable=false の figure[data-image] は image lightbox hydration key を持ってはいけません');
+        return;
+      }
+      if (
+        hasDescendant(
+          node,
+          (child) => child.tagName === 'dialog' && hasAttribute(child, 'data-image-lightbox-dialog'),
+        )
+      ) {
+        errors.push('zoomable=false の figure[data-image] は lightbox dialog を持ってはいけません');
+        return;
+      }
       return;
     }
 
@@ -1407,8 +1428,85 @@ const validateStaticNoteRootContracts = (
       return;
     }
 
-    if (!hasDescendant(node, (child) => hasAttribute(child, 'data-image-zoom-trigger'))) {
+    if (getDirectChildren(node, (child) => child.tagName === 'img').length > 0) {
+      errors.push('zoomable な figure[data-image] は figure 直下に img を置いてはいけません');
+      return;
+    }
+
+    const previewFrames = getDirectChildren(node, (child) =>
+      hasAttribute(child, 'data-image-preview-frame'),
+    );
+    if (previewFrames.length !== 1) {
+      errors.push('zoomable な figure[data-image] は直下に preview frame を 1 つだけ持つ必要があります');
+      return;
+    }
+
+    const previewFrame = previewFrames[0];
+    if (!previewFrame) {
+      errors.push('zoomable な figure[data-image] は直下に preview frame を 1 つだけ持つ必要があります');
+      return;
+    }
+
+    const frameImages = getDirectChildren(previewFrame, (child) => child.tagName === 'img');
+    const frameTriggers = getDirectChildren(
+      previewFrame,
+      (child) => child.tagName === 'button' && hasAttribute(child, 'data-image-zoom-trigger'),
+    );
+    if (frameImages.length !== 1 || frameTriggers.length !== 1) {
+      errors.push('zoomable な figure[data-image] の preview frame は img と zoom trigger を 1 つずつ直下に持つ必要があります');
+      return;
+    }
+
+    const meaningfulFrameChildren = getMeaningfulChildren(previewFrame).filter(isElementNode);
+    if (meaningfulFrameChildren[0] !== frameImages[0] || meaningfulFrameChildren[1] !== frameTriggers[0]) {
+      errors.push('zoomable な figure[data-image] の preview frame では img を trigger より前に置く必要があります');
+      return;
+    }
+
+    const trigger = frameTriggers[0];
+    if (!trigger) {
       errors.push('zoomable な figure[data-image] は data-image-zoom-trigger を含む必要があります');
+      return;
+    }
+    if (!hasAttribute(trigger, 'hidden')) {
+      errors.push('zoomable な figure[data-image] の trigger は SSR 時点で hidden が必要です');
+      return;
+    }
+    if (getAttributeValue(trigger, 'type') !== 'button') {
+      errors.push('zoomable な figure[data-image] の trigger は type="button" が必要です');
+      return;
+    }
+    if ((getAttributeValue(trigger, 'aria-label')?.trim() ?? '').length === 0) {
+      errors.push('zoomable な figure[data-image] の trigger は aria-label が必要です');
+      return;
+    }
+    if (getAttributeValue(trigger, 'aria-haspopup') !== 'dialog') {
+      errors.push('zoomable な figure[data-image] の trigger は aria-haspopup="dialog" が必要です');
+      return;
+    }
+    const triggerIcon = findDirectChild(
+      trigger,
+      (child) =>
+        child.tagName === 'span' &&
+        hasClassName(child, 'image-zoom-trigger__icon') &&
+        hasClassName(child, 'static-icon'),
+    );
+    if (!triggerIcon || getAttributeValue(triggerIcon, 'aria-hidden') !== 'true') {
+      errors.push('zoomable な figure[data-image] の trigger icon は aria-hidden="true" が必要です');
+      return;
+    }
+    if (hasDescendant(trigger, (child) => hasClassName(child, 'sr-only'))) {
+      errors.push('zoomable な figure[data-image] の trigger は sr-only text を持ってはいけません');
+      return;
+    }
+
+    const meaningfulFigureChildren = getMeaningfulChildren(node).filter(isElementNode);
+    const lastFigureChild = meaningfulFigureChildren[meaningfulFigureChildren.length - 1];
+    if (
+      meaningfulFigureChildren.some((child) => child.tagName === 'figcaption') &&
+      lastFigureChild?.tagName !== 'figcaption'
+    ) {
+      errors.push('caption 付き figure[data-image] では figcaption が最後の直下子である必要があります');
       return;
     }
   }

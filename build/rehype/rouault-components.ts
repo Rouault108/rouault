@@ -1410,25 +1410,35 @@ const toStaticImage = (
   if (zoomable) {
     children.push(
       createElement(
-        'button',
-        {
-          type: 'button',
-          'data-image-zoom-trigger': 'true',
-          'aria-label': alt.trim().length > 0 ? `画像を拡大して表示: ${alt}` : '画像を拡大して表示',
-        },
+        'div',
+        { 'data-image-preview-frame': 'true', className: 'image-preview-frame' },
         [
+          createImageNode(resolvedAsset, sourcePath, alt, normalizedLoading),
           createElement(
-            'span',
-            { className: ['image-zoom-trigger__icon', 'static-icon'], 'aria-hidden': 'true' },
-            [createStaticIconHast('maximize')],
+            'button',
+            {
+              hidden: true,
+              type: 'button',
+              'data-image-zoom-trigger': 'true',
+              className: 'image-preview-trigger',
+              'aria-label':
+                alt.trim().length > 0 ? `画像を拡大して表示: ${alt}` : '画像を拡大して表示',
+              'aria-haspopup': 'dialog',
+            },
+            [
+              createElement(
+                'span',
+                { className: ['image-zoom-trigger__icon', 'static-icon'], 'aria-hidden': 'true' },
+                [createStaticIconHast('maximize')],
+              ),
+            ],
           ),
-          createElement('span', { className: 'sr-only' }, [createTextNode('画像を拡大して表示')]),
         ],
       ),
     );
+  } else {
+    children.push(createImageNode(resolvedAsset, sourcePath, alt, normalizedLoading));
   }
-
-  children.push(createImageNode(resolvedAsset, sourcePath, alt, normalizedLoading));
 
   if (caption) {
     children.push(createElement('figcaption', {}, [createTextNode(caption)]));

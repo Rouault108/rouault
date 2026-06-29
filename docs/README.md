@@ -80,6 +80,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 - `docs/adr/header-control-active-transform-removal.md`
 - `docs/adr/header-menu-chevron-open-state.md`
 - `docs/adr/header-search-quiet-launcher.md`
+- `docs/adr/image-preview-surface-trigger.md`
 - `docs/adr/theme-contract-and-document-bootstrap.md`
 - `docs/adr/search-page-static-choice-menu.md`
 - `docs/adr/search-dialog-passive-scroll-active-descendant.md`

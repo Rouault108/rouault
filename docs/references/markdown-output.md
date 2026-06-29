@@ -14,7 +14,7 @@
 - `{{break}}`: 表セルテキストエスケープとして、final DOMではmarker付きの表セル改行へ正規化する。表セル内のmarkerなし`<br>`はdefensive final contract errorとする。
 - `hr`: section dividerとして識別できる属性を付与する。
 - task list: no-JS baselineを維持した上でcheckbox表現へ変換する。
-- `img` / `figure`: `figure[data-image]`を基本構造とする。
+- `img` / `figure`: `figure[data-image]`を基本構造とする。`zoomable=true`では`figure[data-image][data-image-zoomable="true"] > div[data-image-preview-frame] > img + button[data-image-zoom-trigger][hidden]`を出力し、buttonは画像面全体を覆うenhancer用triggerである。`img`はbutton外に置く。captionがある場合は`figcaption`をfigure最後のdirect childに置く。`zoomable=false`では`figure[data-image][data-image-zoomable="false"] > img`だけを本文画像surfaceとし、preview frame、trigger、lightbox hydration key、dialogは出力しない。
 - 本文link: 安全なURL検証と注釈属性を経て出力する。
 
 ## Directive Families

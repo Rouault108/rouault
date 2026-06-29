@@ -217,11 +217,12 @@ describe('validateNoteContentContracts', () => {
         data-hydration-trigger="visible"
         data-image-lightbox-src="/static/example.png"
       >
-        <button type="button" data-image-zoom-trigger="true" aria-label="画像を拡大して表示">
-          <span class="image-zoom-trigger__icon static-icon" aria-hidden="true"><svg></svg></span>
-          <span class="sr-only">画像を拡大して表示</span>
-        </button>
-        <img src="/static/example.png" alt="example image">
+        <div data-image-preview-frame="true" class="image-preview-frame">
+          <img src="/static/example.png" alt="example image">
+          <button hidden type="button" data-image-zoom-trigger="true" class="image-preview-trigger" aria-label="画像を拡大して表示: example image" aria-haspopup="dialog">
+            <span class="image-zoom-trigger__icon static-icon" aria-hidden="true"><svg></svg></span>
+          </button>
+        </div>
         <figcaption>caption</figcaption>
       </figure>
       <p>
@@ -423,8 +424,10 @@ describe('validateNoteContentContracts', () => {
         kind: 'reader',
         html: [
           '<figure data-image="true" data-image-zoomable="true">',
-          '<button type="button" data-image-zoom-trigger="true">拡大</button>',
+          '<div data-image-preview-frame="true">',
           '<img src="/static/example.png" alt="example image">',
+          '<button hidden type="button" data-image-zoom-trigger="true" aria-label="画像を拡大して表示" aria-haspopup="dialog"><span class="image-zoom-trigger__icon static-icon" aria-hidden="true"></span></button>',
+          '</div>',
           '</figure>',
         ].join(''),
         sourceLabel: 'testing/test',
@@ -432,6 +435,60 @@ describe('validateNoteContentContracts', () => {
     }).toThrow(
       '[note-content:testing/test] zoomable な figure[data-image] には data-hydration-key="image-lightbox-enhancer" が必要です',
     );
+  });
+
+  it('zoomable image の preview frame direct child contract が崩れれば build error にすること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: [
+          '<figure data-image="true" data-image-zoomable="true" data-hydration-key="image-lightbox-enhancer">',
+          '<img src="/static/example.png" alt="example image">',
+          '<div data-image-preview-frame="true">',
+          '<button hidden type="button" data-image-zoom-trigger="true" aria-label="画像を拡大して表示" aria-haspopup="dialog"><span class="image-zoom-trigger__icon static-icon" aria-hidden="true"></span></button>',
+          '<img src="/static/example.png" alt="example image">',
+          '</div>',
+          '</figure>',
+        ].join(''),
+        sourceLabel: 'testing/test',
+      });
+    }).toThrow('zoomable な figure[data-image] は figure 直下に img を置いてはいけません');
+  });
+
+  it('zoomable=false image は direct child img だけを受け入れ、lightbox 対象化を拒否すること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: '<figure data-image="true" data-image-zoomable="false"><img src="/static/example.png" alt="example image"></figure>',
+        sourceLabel: 'testing/test',
+      });
+    }).not.toThrow();
+
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: [
+          '<figure data-image="true" data-image-zoomable="false" data-hydration-key="image-lightbox-enhancer">',
+          '<img src="/static/example.png" alt="example image">',
+          '<button hidden type="button" data-image-zoom-trigger="true" aria-label="画像を拡大して表示" aria-haspopup="dialog"></button>',
+          '</figure>',
+        ].join(''),
+        sourceLabel: 'testing/test',
+      });
+    }).toThrow('zoomable=false の figure[data-image] は zoom trigger を持ってはいけません');
+
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: [
+          '<figure data-image="true" data-image-zoomable="false">',
+          '<img src="/static/example.png" alt="example image">',
+          '<dialog data-image-lightbox-dialog="true"></dialog>',
+          '</figure>',
+        ].join(''),
+        sourceLabel: 'testing/test',
+      });
+    }).toThrow('zoomable=false の figure[data-image] は lightbox dialog を持ってはいけません');
   });
 
   it('footnote ref に doc-endnotes が無ければ build error にすること', () => {
