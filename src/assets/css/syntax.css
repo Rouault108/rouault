@@ -154,13 +154,6 @@
     align-items: baseline;
   }
 }
-@media (hover: hover) {
-  .syntax-field:hover {
-    background: var(--bg-hover, var(--bg-fill-muted));
-    border-radius: var(--radius-md);
-    transition: background var(--duration-fast) var(--ease-out);
-  }
-}
 @media (hover: none) and (pointer: coarse) {
   .syntax-card__copy-action {
     opacity: 1;
@@ -169,11 +162,6 @@
 
   .syntax-field {
     padding-block: var(--space-3);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .syntax-field:hover {
-    transition-duration: 0.01ms;
   }
 }
 @media (forced-colors: active) {

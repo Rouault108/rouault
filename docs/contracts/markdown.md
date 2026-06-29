@@ -86,6 +86,8 @@ Markdown link-cardのfocus表示は、native anchorである`.link-card__link:fo
 
 `syntax-card__name`と`syntax-section__heading`はheadingではなくlabelとして出力する。`heading-level`は入力互換属性として受理されるが、static-first outputでは`h2`〜`h6`のDOM heading生成に使わない。final DOMに`heading-level` / `data-heading-level`を残してはならない。`syntax-card` subtreeは本文heading id、heading permalink、TOCの対象外である。
 
+`syntax-field`は、構文カード内の静的説明行であり、row action、row selection、row navigationを意味しない。`syntax-field:hover`によるrow-level背景変更は標準契約に含めない。field内部にlink / buttonなどの実操作要素が存在する場合は、その要素自体のinteractive契約に従う。`syntax-card`全体のhover / focus-withinによるcopy action表示は、field row hoverとは別契約として維持する。
+
 ### Static Callout Surface Contract
 
 `::callout`はstatic-firstな短い読書注記surfaceとして出力する。操作surface、runtime-dependent component、dangerous props、raw HTMLの抜け道として扱ってはならない。

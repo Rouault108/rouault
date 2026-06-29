@@ -68,6 +68,10 @@
 - `heading-level`は入力互換属性として受理されるが、final DOMの`h2`〜`h6`生成には使わない。
 - final DOMに`heading-level` / `data-heading-level`は残さない。
 - `data-syntax-card` subtreeはheading id、heading permalink、TOCの対象外である。
+- `::syntax-field`は`dl.syntax-field[data-syntax-field="true"]`へ正規化される。
+- 内部は`dt.syntax-field__term`と`dd.syntax-field__description`で構成される。
+- `syntax-field`自体はinteractive rowではない。
+- `syntax-field`はrow hover affordanceを持たない。
 
 ### `::table`
 

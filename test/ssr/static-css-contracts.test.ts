@@ -2028,6 +2028,25 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(lists, 'ol[data-list] > li[data-ol-has-value]', ['counter-set:']);
 
     const syntax = readCss('syntax.css');
+    const syntaxSelectors = allRuleSelectors(syntax);
+    const isSyntaxFieldRowHoverSelector = (selector: string): boolean =>
+      selector.split(',').some((selectorPart) => {
+        const trimmedSelectorPart = selectorPart.trim();
+        const syntaxFieldClassMatch = /(^|[\s>+~])\.syntax-field(?=$|[\s>+~.:[#])/.exec(
+          trimmedSelectorPart,
+        );
+
+        if (!syntaxFieldClassMatch) {
+          return false;
+        }
+
+        const syntaxFieldCompoundSelector = trimmedSelectorPart
+          .slice(syntaxFieldClassMatch.index + syntaxFieldClassMatch[1].length)
+          .split(/[\s>+~]/, 1)[0];
+
+        return syntaxFieldCompoundSelector.includes(':hover');
+      });
+
     expectRuleToDeclare(syntax, '.syntax-card', [
       'margin-inline: var(',
       '--syntax-card-breakout-margin',
@@ -2051,6 +2070,17 @@ describe('static CSS contracts', () => {
       'opacity: 1',
       'pointer-events: auto',
     ]);
+    expect(syntaxSelectors.some(isSyntaxFieldRowHoverSelector)).toBe(false);
+    expect(
+      (optionalAtRuleBlock(syntax, '@media (hover: hover)') ?? '')
+        .split(',')
+        .some(isSyntaxFieldRowHoverSelector),
+    ).toBe(false);
+    expect(
+      (optionalAtRuleBlock(syntax, '@media (prefers-reduced-motion: reduce)') ?? '')
+        .split(',')
+        .some(isSyntaxFieldRowHoverSelector),
+    ).toBe(false);
     const coarsePointerSyntax = atRuleBlock(syntax, '@media (hover: none) and (pointer: coarse)');
     expectRuleToDeclare(coarsePointerSyntax, '.syntax-card__copy-action', [
       'opacity: 1',
