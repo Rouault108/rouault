@@ -232,9 +232,7 @@ describe('callout CSS contract', () => {
   it('icon互換selectorを scope 付きで維持すること', () => {
     const selectors = selectorsIn();
     expect(selectors).toContain(':is(.prose,.about-prose)>[data-callout]>.callout-icon');
-    expect(selectors).toContain(
-      ':is(.prose,.about-prose)>[data-callout]>[data-callout-icon-svg]',
-    );
+    expect(selectors).toContain(':is(.prose,.about-prose)>[data-callout]>[data-callout-icon-svg]');
     expect(selectors).toContain(
       ":is(.prose,.about-prose)>ui-tabs>[slot='panel']>[data-callout]>.callout-icon",
     );
@@ -245,9 +243,10 @@ describe('callout CSS contract', () => {
 
   it('note/tip/danger の読書注記proxy条件を固定すること', () => {
     expect(declarationValuesForSelector(kindSelector('note'), '--_callout-bg')).toContain(
-      declarationValuesForSelector(':is(.prose, .about-prose) > [data-callout]', '--_callout-bg')[
-        0
-      ],
+      declarationValuesForSelector(
+        ':is(.prose, .about-prose) > [data-callout]',
+        '--_callout-bg',
+      )[0],
     );
     expect(ruleBlock(kindSelector('note'))).not.toContain('--bg-tip-subtle');
     expect(ruleBlock(kindSelector('note'))).not.toContain('--bg-info-subtle');
@@ -277,16 +276,16 @@ describe('callout CSS contract', () => {
 
   it('rootの操作surface化と内部focus-visible禁止を追加しないこと', () => {
     expect(css).not.toMatch(
-      /\[data-callout[^\{]*(?::hover|:active|:focus|:focus-within|:focus-visible)/u,
+      /\[data-callout[^{]*(?::hover|:active|:focus|:focus-within|:focus-visible)/u,
     );
     expect(css).not.toMatch(/box-shadow\s*:/u);
     expect(css).not.toMatch(/transition\s*:/u);
     expect(css).not.toMatch(/animation\s*:/u);
     expect(css).not.toMatch(
-      /\[data-callout[^\{]*(?:a|button)[^\{]*:focus-visible[^\{]*\{[^}]*outline\s*:\s*(?:0|none)/u,
+      /\[data-callout[^{]*(?:a|button)[^{]*:focus-visible[^{]*\{[^}]*outline\s*:\s*(?:0|none)/u,
     );
     expect(css).not.toMatch(
-      /\[data-callout[^\{]*(?:a|button)[^\{]*:focus-visible[^\{]*\{[^}]*box-shadow\s*:\s*none/u,
+      /\[data-callout[^{]*(?:a|button)[^{]*:focus-visible[^{]*\{[^}]*box-shadow\s*:\s*none/u,
     );
   });
 
