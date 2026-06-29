@@ -33,3 +33,14 @@ triggerはSSR時点では`hidden`であり、image lightbox enhancerがdialog、
 - no-JSまたはenhancer初期化失敗時はtriggerが表示されず、通常の画像読解を妨げない。
 - caption付きfigureでは、enhance後も`figcaption`を最後のdirect childとして維持する。
 - JS有効かつenhancer初期化成功後は、画像面全体がoverlay triggerになるため、サムネイル画像上のnative context menu、drag、直接画像保存操作は従来より使いにくくなる可能性がある。今回の主要契約は画像面からLightboxを開くことであり、画像保存/drag操作は主要契約に含めない。
+
+## Addendum: Quiet Affordance
+
+- Decision ID: D-IMAGE-PREVIEW-QUIET-AFFORDANCE-001
+- Request ID: REQ-IMAGE-PREVIEW-QUIET-AFFORDANCE-001
+
+画像面全体をLightbox triggerとして維持しつつ、読書中の本文画像へhover時の面全体washを重ねない。hover時の視覚反応は右上の`.image-zoom-trigger__icon`だけへ閉じ、trigger本体は`background: transparent`を維持する。
+
+右上iconは常時表示されるが、通常時の背景alphaとbackdrop blurを弱め、本文画像の視認性を優先する。iconの位置、サイズ、形状はDOM契約および操作契約の一部として維持する。
+
+Lightbox close buttonの通常時visualは既存契約を維持し、keyboard focus時だけoutline系の`:focus-visible`を追加する。forced-colorsではopen affordance、trigger focus、close button、close focusをそれぞれ識別できるよう、対象selectorを明示する。

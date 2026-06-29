@@ -60,18 +60,18 @@ figure[data-image] [data-image-zoom-trigger] .image-zoom-trigger__icon {
   block-size: 2.25rem;
   border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.08));
   border-radius: 999px;
-  background: oklch(100% 0 0 / 0.78);
-  backdrop-filter: blur(var(--blur-md, 12px));
-  -webkit-backdrop-filter: blur(var(--blur-md, 12px));
+  background: oklch(100% 0 0 / 0.62);
+  backdrop-filter: blur(var(--blur-sm, 6px));
+  -webkit-backdrop-filter: blur(var(--blur-sm, 6px));
 }
 
 figure[data-image] [data-image-zoom-trigger]:hover {
-  background: oklch(100% 0 0 / 0.08);
+  background: transparent;
 }
 
 figure[data-image] [data-image-zoom-trigger]:hover .image-zoom-trigger__icon {
   color: var(--fg-default, oklch(20% 0 0));
-  background: oklch(100% 0 0 / 0.88);
+  background: oklch(100% 0 0 / 0.78);
 }
 
 figure[data-image] [data-image-zoom-trigger]:focus-visible {
@@ -135,6 +135,11 @@ figure[data-image] dialog[data-image-lightbox-dialog]::backdrop {
   margin: auto;
 }
 
+.image-lightbox-close:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 252));
+  outline-offset: var(--focus-ring-offset, 2px);
+}
+
 .image-lightbox-caption {
   margin: 0;
   color: oklch(98% 0 0);
@@ -143,6 +148,10 @@ figure[data-image] dialog[data-image-lightbox-dialog]::backdrop {
 }
 
 @media (forced-colors: active) {
+  figure[data-image] [data-image-zoom-trigger] {
+    color: ButtonText;
+  }
+
   figure[data-image] [data-image-zoom-trigger]:focus-visible {
     outline: 2px solid CanvasText;
   }
@@ -152,6 +161,18 @@ figure[data-image] dialog[data-image-lightbox-dialog]::backdrop {
     background: ButtonFace;
     color: ButtonText;
     forced-color-adjust: auto;
+  }
+
+  .image-lightbox-close {
+    border-color: ButtonText;
+    background: ButtonFace;
+    color: ButtonText;
+    forced-color-adjust: auto;
+  }
+
+  .image-lightbox-close:focus-visible {
+    outline: 2px solid CanvasText;
+    outline-offset: 2px;
   }
 }
 

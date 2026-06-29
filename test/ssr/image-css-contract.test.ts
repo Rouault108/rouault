@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
   hasDeclarationForSelector,
   hasDeclarationPropertyForSelector,
+  lacksDeclarationPropertyForSelector,
 } from './support/css-contract.js';
 
 const cssText = readFileSync(resolve(process.cwd(), 'src/assets/css/image.css'), 'utf8');
@@ -172,10 +173,18 @@ describe('image css contract', () => {
       ),
     ).toBe(true);
     expect(
-      hasDeclarationPropertyForSelector(
+      hasDeclarationForSelector(
         cssText,
         'figure[data-image] [data-image-zoom-trigger]:hover',
         'background',
+        'transparent',
+      ),
+    ).toBe(true);
+    expect(
+      lacksDeclarationPropertyForSelector(
+        cssText,
+        'figure[data-image] [data-image-zoom-trigger]:hover',
+        'background-color',
       ),
     ).toBe(true);
   });
@@ -195,5 +204,70 @@ describe('image css contract', () => {
     expect(cssText).toContain('@media print');
     expect(cssText).toContain('figure[data-image] [data-image-zoom-trigger],');
     expect(cssText).toContain('figure[data-image] dialog[data-image-lightbox-dialog],');
+  });
+
+  it('Lightbox close button は base visual と独立した focus-visible 契約を持つこと', () => {
+    expect(
+      hasDeclarationPropertyForSelector(cssText, '.image-lightbox-close:focus-visible', 'outline'),
+    ).toBe(true);
+    expect(
+      hasDeclarationPropertyForSelector(
+        cssText,
+        '.image-lightbox-close:focus-visible',
+        'outline-offset',
+      ),
+    ).toBe(true);
+    expect(
+      lacksDeclarationPropertyForSelector(
+        cssText,
+        '.image-lightbox-close:focus-visible',
+        'box-shadow',
+      ),
+    ).toBe(true);
+  });
+
+  it('forced-colors で open affordance / trigger focus / close focus を識別できること', () => {
+    expect(
+      hasDeclarationForSelector(
+        cssText,
+        'figure[data-image] [data-image-zoom-trigger] .image-zoom-trigger__icon',
+        'background',
+        'ButtonFace',
+        { scope: 'forced-colors' },
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        cssText,
+        'figure[data-image] [data-image-zoom-trigger]:focus-visible',
+        'outline',
+        '2px solid CanvasText',
+        { scope: 'forced-colors' },
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(cssText, '.image-lightbox-close', 'background', 'ButtonFace', {
+        scope: 'forced-colors',
+      }),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(cssText, '.image-lightbox-close', 'color', 'ButtonText', {
+        scope: 'forced-colors',
+      }),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(cssText, '.image-lightbox-close', 'border-color', 'ButtonText', {
+        scope: 'forced-colors',
+      }),
+    ).toBe(true);
+    expect(
+      hasDeclarationForSelector(
+        cssText,
+        '.image-lightbox-close:focus-visible',
+        'outline',
+        '2px solid CanvasText',
+        { scope: 'forced-colors' },
+      ),
+    ).toBe(true);
   });
 });
