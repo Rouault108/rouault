@@ -196,6 +196,39 @@ describe('callout CSS contract', () => {
     );
   });
 
+  it('root default/note/success の背景面を弱め、構造proxyを維持すること', () => {
+    const rootSelector = ':is(.prose, .about-prose) > [data-callout]';
+    const rootBgValues = declarationValuesForSelector(rootSelector, '--_callout-bg');
+    const noteBgValues = declarationValuesForSelector(kindSelector('note'), '--_callout-bg');
+    const successBgValues = declarationValuesForSelector(kindSelector('success'), '--_callout-bg');
+
+    expect(rootBgValues).toHaveLength(1);
+    expect(noteBgValues).toHaveLength(1);
+    expect(successBgValues).toHaveLength(1);
+
+    const [rootBg] = rootBgValues;
+    const [noteBg] = noteBgValues;
+    const [successBg] = successBgValues;
+
+    expect(rootBg).not.toBe('var(--bg-note-subtle)');
+    expect(rootBg).toContain('var(--bg-note-subtle)');
+    expect(rootBg).toContain('color-mix(');
+
+    expect(noteBg).toBe(rootBg);
+    expect(noteBg).not.toBe('var(--bg-note-subtle)');
+    expect(noteBg).not.toMatch(/--bg-(?:info|success|warning|danger)-subtle/u);
+
+    expect(successBg).not.toBe('var(--bg-success-subtle)');
+    expect(successBg).toContain('var(--bg-success-subtle)');
+    expect(successBg).toContain('color-mix(');
+    expect(declarationValuesForSelector(kindSelector('success'), '--_callout-rule-width')).toEqual(
+      [],
+    );
+    expect(
+      declarationValuesForSelector(kindSelector('success', true), '--_callout-rule-width'),
+    ).toEqual([]);
+  });
+
   it('icon互換selectorを scope 付きで維持すること', () => {
     const selectors = selectorsIn();
     expect(selectors).toContain(':is(.prose,.about-prose)>[data-callout]>.callout-icon');
@@ -212,9 +245,13 @@ describe('callout CSS contract', () => {
 
   it('note/tip/danger の読書注記proxy条件を固定すること', () => {
     expect(declarationValuesForSelector(kindSelector('note'), '--_callout-bg')).toContain(
-      'var(--bg-note-subtle)',
+      declarationValuesForSelector(':is(.prose, .about-prose) > [data-callout]', '--_callout-bg')[
+        0
+      ],
     );
     expect(ruleBlock(kindSelector('note'))).not.toContain('--bg-tip-subtle');
+    expect(ruleBlock(kindSelector('note'))).not.toContain('--bg-info-subtle');
+    expect(ruleBlock(kindSelector('note'))).not.toContain('--bg-success-subtle');
     expect(ruleBlock(kindSelector('note'))).not.toContain('--bg-warning-subtle');
     expect(ruleBlock(kindSelector('note'))).not.toContain('--bg-danger-subtle');
 

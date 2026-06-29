@@ -24,8 +24,9 @@
 ## Visual Contract
 
 - rootは本文に従属する軽いsurfaceとして表示する。
-- `note`はneutral/subtle系の背景と控えめな左線を使う。
+- root defaultと`note`はneutral/subtle系の背景面を抑え、左線と余白で読書注記としての構造を保つ。
 - `tip`はinfo subtle系tokenを優先し、強い青い通知カードにしない。
+- `success`は成功通知カードではなく、確認済み事項の短い読書注記として扱い、緑の背景面を強くしすぎない。
 - `warning` / `danger`は識別性を維持し、背景色だけに意味を依存させない。
 - `danger`だけがkind別ruleで左線幅を強めてよい。
 - rootにhover、active、focus、transition、animation、shadowによる操作surface表現を付けない。
