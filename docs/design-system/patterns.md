@@ -54,19 +54,23 @@ hover時に境界線を`--border-muted`へ弱めない。
 Markdown link-cardも本文内のstatic reference surfaceとして、hover affordanceにelevation shadowやtransformによる物理的浮上を使わない。ただし、result-cardとMarkdown link-cardは同一componentではなく、それぞれのCSSとMarkdown契約で扱う。
 この方針はresult-cardとMarkdown link-cardのhover surfaceに限定し、`card-link.css`、`syntax.css`へ一般化しない。
 
-#### result-card focus projection
+#### Block link focus-visible projection
 
 result-cardは、一覧・検索結果で使うblock link surfaceであり、`article.result-card > a.result-link`を正規構造とする。
+Markdown link-cardは、本文内参照として使うblock link surfaceであり、`.link-card > .link-card__link`のnative anchorを正規の操作面とする。
 
-この契約はresult-cardに限定する。`card-link.css` / `link-card.css` / Markdown link-cardの現行focus contractを変更済みとみなしてはならない。
+result-cardとMarkdown link-cardは別componentであり、それぞれ`result-card.css`と`link-card.css`でfocus表示を所有する。
+この契約は`card-link.css` / `syntax.css`へ一般化しない。`card-link.css`のfocus contractを変更済みとみなしてはならない。
 
-result-cardのfocus表示では、ポインター click由来の`:focus-within`と、キーボード由来の`:focus-visible`を混同しない。
+Block Link Surfaceのfocus表示では、ポインター click由来の`:focus-within`と、キーボード由来の`:focus-visible`を混同しない。
 
-カード外形へfocus ringを投影する場合は、`.result-link:focus-visible`をsource of truthとする。
+カード外形へfocus ringを投影する場合は、native anchorの`:focus-visible`をsource of truthとする。
+result-cardでは`.result-link:focus-visible`、Markdown link-cardでは`.link-card__link:focus-visible`を正本とする。
 
-`:has()`対応環境では、`.result-card:has(> .result-link:focus-visible)`に外周focus ringを投影する。
+`:has()`対応環境では、親surfaceへ外周focus ringを投影する。
+result-cardでは`.result-card:has(> .result-link:focus-visible)`、Markdown link-cardでは`.link-card:has(> .link-card__link:focus-visible)`が投影先である。
 
-`:has()`非対応環境では、`.result-link:focus-visible`のfallback outlineを残し、キーボードfocus visibleを不可視にしない。
+`:has()`非対応環境では、native anchorのfallback outlineを残し、キーボードfocus visibleを不可視にしない。
 
 ### Corpus Index Row
 

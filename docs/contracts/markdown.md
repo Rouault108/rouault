@@ -80,7 +80,9 @@ Markdown出力層のcard surfaceは、旧`ui-card` custom elementの復活では
 
 `link-card`のdescriptionはbuild transformで必要に応じて切り詰め、切り詰め有無を`data-text-truncated`で示す。旧runtime line overflow detectionに基づく`data-line-overflowed`は復活させない。表示上の行数制御はCSSの責務であり、Markdown final DOMにruntime overflow stateを残さない。
 
-Markdown link-cardは本文内のstatic reference surfaceである。hover affordanceは`--bg-hover`を`--bg-surface-2`へ重ねた背景差分に限定し、elevation shadowやtransformによる物理的浮上を使わない。invalid link-cardは引き続きhover対象外である。この契約はhover表示だけを対象とし、focus-visible projectionや`:focus-within`契約を変更しない。
+Markdown link-cardは本文内のstatic reference surfaceである。hover affordanceは`--bg-hover`を`--bg-surface-2`へ重ねた背景差分に限定し、elevation shadowやtransformによる物理的浮上を使わない。invalid link-cardは引き続きhover対象外である。
+
+Markdown link-cardのfocus表示は、native anchorである`.link-card__link:focus-visible`を正本とする。CSSは`:has()`対応環境で`.link-card:has(> .link-card__link:focus-visible)`へfocus ringを投影してよい。`:has()`非対応環境では`.link-card__link:focus-visible`のfallback outlineでキーボードfocus visibleを担保する。ポインターclick由来の`:focus-within`をMarkdown link-cardの外周focus ring正本にしてはならない。このfocus-visible projection契約は`link-card.css`に限定し、`card-link.css`や`syntax.css`へ一般化しない。
 
 `syntax-card__name`と`syntax-section__heading`はheadingではなくlabelとして出力する。`heading-level`は入力互換属性として受理されるが、static-first outputでは`h2`〜`h6`のDOM heading生成に使わない。final DOMに`heading-level` / `data-heading-level`を残してはならない。`syntax-card` subtreeは本文heading id、heading permalink、TOCの対象外である。
 

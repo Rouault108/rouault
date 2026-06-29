@@ -17,13 +17,6 @@
   transition: border-color var(--duration-fast) var(--ease-out);
 }
 
-.link-card:focus-within {
-  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset, 2px);
-  border-color: var(--focus-ring-color);
-  animation: var(--animation-focus);
-}
-
 .link-card__link,
 .link-card__invalid {
   box-sizing: border-box;
@@ -39,10 +32,7 @@
 
 .link-card__link {
   cursor: pointer;
-}
-
-.link-card__link:focus-visible {
-  outline: none;
+  border-radius: inherit;
 }
 
 .link-card__body {
@@ -121,6 +111,27 @@
   }
 }
 
+.link-card__link:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
+  outline-offset: calc(0px - var(--focus-ring-offset, 2px));
+  animation: var(--animation-focus);
+}
+
+@supports selector(.link-card:has(> .link-card__link:focus-visible)) {
+  .link-card:has(> .link-card__link:focus-visible) {
+    border-color: var(--border-default);
+    box-shadow: none;
+    outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset, 2px);
+    animation: var(--animation-focus);
+  }
+
+  .link-card__link:focus-visible {
+    outline: none;
+    animation: none;
+  }
+}
+
 @media (max-width: 480px) {
   .link-card__link,
   .link-card__invalid {
@@ -140,10 +151,21 @@
     forced-color-adjust: auto;
   }
 
-  .link-card:not(.link-card--invalid):hover,
-  .link-card:not(.link-card--invalid):focus-within {
+  .link-card:not(.link-card--invalid):hover {
     outline: var(--focus-ring-width) solid CanvasText;
     outline-offset: var(--focus-ring-offset);
+  }
+
+  .link-card__link:focus-visible {
+    outline-color: Highlight;
+  }
+
+  @supports selector(.link-card:has(> .link-card__link:focus-visible)) {
+    .link-card:has(> .link-card__link:focus-visible) {
+      border-color: Highlight;
+      outline: var(--focus-ring-width, 2px) solid Highlight;
+      box-shadow: none;
+    }
   }
 }
 

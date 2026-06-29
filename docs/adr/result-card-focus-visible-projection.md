@@ -45,5 +45,5 @@ elevation shadowはfocus-visible可視性の要件ではない。
 hover elevationを廃止しても、keyboard focus-visibleの可視性はoutline、outline-offset、focus animationで担保する。
 `:focus-within`を使ったポインタークリック由来の外周強調は復活させない。
 
-link-card.cssとcard-link.cssには同種のfocus-within契約が残る。
-それらは今回の対象外とし、必要であれば別Requestで統一方針を検討する。
+Follow-up: link-card.cssについては、後続ADR `docs/adr/link-card-static-reference-surface.md`でfocus-visible projectionへ移行した。
+card-link.cssは引き続き本ADRの対象外である。
