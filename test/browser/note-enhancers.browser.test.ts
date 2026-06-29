@@ -512,7 +512,9 @@ describe('note progressive enhancers', () => {
       expect(figure.dataset['imageEnhanced']).to.equal(undefined);
       expect(trigger.hidden).to.equal(true);
       trigger.click();
-      expect(root.querySelector('dialog[data-image-lightbox-dialog]')?.open).to.not.equal(true);
+      expect(
+        root.querySelector<HTMLDialogElement>('dialog[data-image-lightbox-dialog]')?.open,
+      ).to.not.equal(true);
     });
 
     const root = createImageRoot();

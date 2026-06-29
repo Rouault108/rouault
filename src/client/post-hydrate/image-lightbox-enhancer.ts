@@ -40,7 +40,7 @@ const isCanonicalDialog = (dialog: HTMLDialogElement): boolean => {
 };
 
 const createDialog = (figure: HTMLElement, inlineImage: HTMLImageElement): HTMLDialogElement => {
-  const captionText = figure.querySelector(':scope > figcaption')?.textContent?.trim() ?? '';
+  const captionText = figure.querySelector(':scope > figcaption')?.textContent.trim() ?? '';
 
   const dialog = document.createElement('dialog');
   dialog.setAttribute('data-image-lightbox-dialog', 'true');
