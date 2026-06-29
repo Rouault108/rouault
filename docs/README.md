@@ -73,6 +73,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 - `docs/adr/markdown-table-authoring-extension.md`
 - `docs/adr/markdown-parser-ownership-migration.md`
 - `docs/adr/result-card-focus-visible-projection.md`
+- `docs/adr/link-card-static-reference-surface.md`
 - `docs/adr/reading-chrome-note-frame-outer-gutter.md`
 - `docs/adr/corpus-current-selected-surface.md`
 - `docs/adr/header-corpus-current-indicator.md`

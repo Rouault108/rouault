@@ -51,7 +51,8 @@ JSによるcard click delegationは使わない。Ctrl / Meta / Shift click、�
 result-cardのhoverは、カードを物理的に浮上させる状態ではない。
 現行result-cardでは、elevation shadowやtransformを使わず、`--bg-hover`を`--bg-surface-2`へ重ねた背景の微差で操作可能性を示す。
 hover時に境界線を`--border-muted`へ弱めない。
-この方針はresult-cardに限定し、`link-card.css`、`card-link.css`、`syntax.css`、Markdown link-cardへ一般化しない。
+Markdown link-cardも本文内のstatic reference surfaceとして、hover affordanceにelevation shadowやtransformによる物理的浮上を使わない。ただし、result-cardとMarkdown link-cardは同一componentではなく、それぞれのCSSとMarkdown契約で扱う。
+この方針はresult-cardとMarkdown link-cardのhover surfaceに限定し、`card-link.css`、`syntax.css`へ一般化しない。
 
 #### result-card focus projection
 

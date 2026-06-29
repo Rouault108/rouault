@@ -9,6 +9,9 @@ import {
   hasDeclarationForSelectorContainingInMedia,
   hasDeclarationValueIncluding,
   hasDeclarationValueIncludingForSelectorContainingInMedia,
+  hasDeclarationValueNotIncluding,
+  hasNoDeclarationValueIncludingForSelectorContaining,
+  lacksDeclarationPropertyForSelectorContaining,
   PROSE_TEXT_LINK_SELECTOR,
 } from './support/css-contract.js';
 
@@ -83,19 +86,76 @@ describe('link-card css contract', () => {
         linkCardCss,
         (params) => /hover:\s*hover/u.test(params) && /pointer:\s*fine/u.test(params),
         '.link-card:not(.link-card--invalid):hover',
-        'transform',
-        'translateY(-1px)',
+        'border-color',
+        'var(--border-default)',
       ),
     ).toBe(true);
     expect(
       hasDeclarationForSelectorContainingInMedia(
         linkCardCss,
-        (params) => /prefers-reduced-motion\s*:\s*reduce/u.test(params),
+        (params) => /hover:\s*hover/u.test(params) && /pointer:\s*fine/u.test(params),
         '.link-card:not(.link-card--invalid):hover',
-        'transform',
+        'box-shadow',
         'none',
       ),
     ).toBe(true);
+    expect(
+      hasDeclarationValueIncludingForSelectorContainingInMedia(
+        linkCardCss,
+        (params) => /hover:\s*hover/u.test(params) && /pointer:\s*fine/u.test(params),
+        '.link-card:not(.link-card--invalid):hover',
+        'background',
+        'linear-gradient(var(--bg-hover), var(--bg-hover))',
+      ),
+    ).toBe(true);
+    expect(
+      hasDeclarationValueIncludingForSelectorContainingInMedia(
+        linkCardCss,
+        (params) => /hover:\s*hover/u.test(params) && /pointer:\s*fine/u.test(params),
+        '.link-card:not(.link-card--invalid):hover',
+        'background',
+        'var(--bg-surface-2)',
+      ),
+    ).toBe(true);
+    expect(
+      lacksDeclarationPropertyForSelectorContaining(
+        linkCardCss,
+        '.link-card:not(.link-card--invalid):hover',
+        'transform',
+        {
+          mediaPredicate: (params) =>
+            /hover:\s*hover/u.test(params) && /pointer:\s*fine/u.test(params),
+        },
+      ),
+    ).toBe(true);
+    expect(
+      hasNoDeclarationValueIncludingForSelectorContaining(
+        linkCardCss,
+        '.link-card:not(.link-card--invalid):hover',
+        '--elevation-',
+        {
+          mediaPredicate: (params) =>
+            /hover:\s*hover/u.test(params) && /pointer:\s*fine/u.test(params),
+        },
+      ),
+    ).toBe(true);
+    expect(
+      hasNoDeclarationValueIncludingForSelectorContaining(
+        linkCardCss,
+        '.link-card:not(.link-card--invalid):hover',
+        '--border-strong',
+        {
+          mediaPredicate: (params) =>
+            /hover:\s*hover/u.test(params) && /pointer:\s*fine/u.test(params),
+        },
+      ),
+    ).toBe(true);
+    expect(hasDeclarationValueNotIncluding(linkCardCss, '.link-card', 'transition', 'box-shadow', {
+      scope: 'base',
+    })).toBe(true);
+    expect(hasDeclarationValueNotIncluding(linkCardCss, '.link-card', 'transition', 'transform', {
+      scope: 'base',
+    })).toBe(true);
     expect(
       hasDeclarationForSelector(linkCardCss, '.link-card--invalid', 'border-style', 'dashed'),
     ).toBe(true);
