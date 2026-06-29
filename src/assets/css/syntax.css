@@ -4,7 +4,7 @@
   width: var(--syntax-card-breakout-width, var(--ui-syntax-card-breakout-width, 100%));
   color: var(--fg-default);
   background: var(--bg-default);
-  border: var(--border-width) solid var(--border-muted);
+  border: var(--border-width) solid var(--border-default);
   border-radius: var(--radius-sm);
 }
 .syntax-card:hover .syntax-card__copy-action,

@@ -2088,6 +2088,48 @@ describe('static CSS contracts', () => {
       '--ui-syntax-card-breakout-margin',
       'width: var(--syntax-card-breakout-width, var(--ui-syntax-card-breakout-width, 100%))',
     ]);
+
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-card', 'border', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['var(--border-width) solid var(--border-default)']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-card', 'border-color', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual([]);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-card__header', 'border-bottom', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['var(--border-width) solid var(--border-muted)']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-card__signature', 'border-bottom', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['var(--border-width) solid var(--border-muted)']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-card__kind', 'border', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['var(--border-width) solid var(--border-muted)']);
+    expect(
+      declarationRuleRecordsForSelector(
+        syntax,
+        ".syntax-card[data-content-empty='true'] .syntax-card__signature",
+        'border-bottom',
+        { rootOnly: true },
+      ).map((record) => record.value),
+    ).toEqual(['0']);
+    expect(
+      declarationRuleRecordsForSelector(
+        syntax,
+        ".syntax-card[data-content-empty='true'] .syntax-card__content",
+        'display',
+        { rootOnly: true },
+      ).map((record) => record.value),
+    ).toEqual(['none']);
     expectRuleToDeclare(syntax, '.syntax-card__name', [
       'margin: 0',
       'min-width: 0',
