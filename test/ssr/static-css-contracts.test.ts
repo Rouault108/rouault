@@ -1579,10 +1579,13 @@ describe('static CSS contracts', () => {
   it('code surface CSS separates top-level breakout from inline and group-owned layouts', () => {
     const codeSurfaces = readCss('code-surfaces.css');
     const bridge = readCss('stateful-note-bridges.css');
-    const codeGroupBreakoutDeclarations = [
-      '--ui-code-group-width: calc(100% + var(',
-      '--ui-code-group-margin-inline: var(',
-    ] as const;
+    const isTopLevelProseCodeGroupSelector = (selector: string): boolean =>
+      selector.includes('>section[data-code-group]') &&
+      (selector.includes('.prose>section[data-code-group]') ||
+        selector.includes('.about-prose>section[data-code-group]') ||
+        (selector.includes(':is(') &&
+          selector.includes('.prose') &&
+          selector.includes('.about-prose')));
 
     expectRuleToDeclare(codeSurfaces, '[data-code-block-root]', [
       'inline-size: var(--ui-code-block-breakout-width, var(--ui-code-surface-breakout-width, 100%))',
@@ -1615,34 +1618,18 @@ describe('static CSS contracts', () => {
     );
 
     const mobileCodeSurfaceLayout = atRuleBlock(codeSurfaces, '@media (max-width: 767px)');
-    expectSelectorMatchingRuleToDeclare(
-      mobileCodeSurfaceLayout,
-      'mobile top-level code group breakout',
-      (selector) =>
-        selector.includes(':is(.prose,.about-prose)') &&
-        selector.includes('>section[data-code-group]') &&
-        !selector.includes('figure[data-code-block-root]'),
-      codeGroupBreakoutDeclarations,
-    );
-    expect(mobileCodeSurfaceLayout).toContain(
-      '--ui-code-group-width: calc(100% + var(--space-8))',
-    );
-
     const desktopCodeSurfaceLayout = atRuleBlock(codeSurfaces, '@media (min-width: 768px)');
-    expectSelectorMatchingRuleToDeclare(
-      desktopCodeSurfaceLayout,
-      'desktop top-level code group breakout',
-      (selector) =>
-        selector.includes(':is(.prose,.about-prose)') &&
-        selector.includes('>section[data-code-group]') &&
-        !selector.includes('figure[data-code-block-root]'),
-      codeGroupBreakoutDeclarations,
-    );
-    expect(desktopCodeSurfaceLayout).toContain(
-      '--ui-code-group-width: calc(100% + var(--space-16))',
-    );
 
     for (const mediaBlock of [mobileCodeSurfaceLayout, desktopCodeSurfaceLayout]) {
+      const topLevelCodeGroupLayoutOverrides = allRuleSelectors(mediaBlock).flatMap((selector) => {
+        if (!isTopLevelProseCodeGroupSelector(selector)) return [];
+        const block = ruleBlock(mediaBlock, selector);
+        return [...block.matchAll(/--ui-code-group-(?:width|margin-inline)\s*:/gu)].map(
+          (match) => `${selector} ${String(match[0])}`,
+        );
+      });
+      expect(topLevelCodeGroupLayoutOverrides).toEqual([]);
+
       const figureSelectorsWithBreakoutDeclarations = allRuleSelectors(mediaBlock).filter(
         (selector) => {
           if (!selector.includes('figure[data-code-block-root]')) return false;
@@ -1674,6 +1661,7 @@ describe('static CSS contracts', () => {
       'max-inline-size: 100%',
       'margin-inline: 0',
     ]);
+    expectRuleToDeclare(codeSurfaces, '.code-group-tablist', ['overflow-x: auto']);
 
     expect(
       ruleBlocksForSelectorsMatching(

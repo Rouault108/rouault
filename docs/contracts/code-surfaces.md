@@ -52,7 +52,7 @@ code surfaceの正本は、旧Lit Custom Elementではなく静的HTMLです。
 
 code groupはSSR / no-JS時点でstackとして出力し、enhancer実行後にtabs UIへ昇格します。
 
-code groupは比較・切替・複数panelを扱うsurfaceです。`.prose` / `.about-prose`直下の`section[data-code-group]`は、panel間比較とtabs surfaceの視認性のため本文幅からのbreakoutを許可します。code groupのtop-level layoutは`--ui-code-group-width` / `--ui-code-group-margin-inline`で制御します。
+code groupは比較・切替・複数panelを扱うsurfaceです。ただし、`.prose` / `.about-prose`直下の`section[data-code-group]`は既定では本文幅内に収めます。top-level surface自体を本文幅から広げず、長いコード行は`pre[data-code-block]`内部の横スクロールで処理します。長いtab列はtablist側の横スクロールで処理します。code groupのtop-level layoutは`--ui-code-group-width` / `--ui-code-group-margin-inline`で制御します。
 
 #### SSR / no-JS
 
@@ -131,10 +131,11 @@ CSSはfinal DOMの意味状態を再定義しません。CSS state contractとco
 単独code blockとcode groupはlayout責務を分離します。
 
 - 単独code blockを広げたい場合は`--ui-code-block-breakout-width` / `--ui-code-block-breakout-margin`をoverrideします。
-- code groupを広げたい場合は`--ui-code-group-width` / `--ui-code-group-margin-inline`をoverrideします。
+- code groupを特殊な文脈で広げたい場合は`--ui-code-group-width` / `--ui-code-group-margin-inline`をoverrideします。
+- `.prose` / `.about-prose`直下のcode group既定layoutはcontainedです。既定の本文layoutでは`--ui-code-group-width: 100%`、`--ui-code-group-margin-inline: 0`を使います。
 - `--ui-code-surface-breakout-width` / `--ui-code-surface-breakout-margin`は互換用fallbackです。`[data-code-block-root]`と`section[data-code-group]`のbase ruleでは参照を維持しますが、top-level layoutの主制御にはしません。
 
-このため、過去に`--ui-code-surface-breakout-*`だけで単独code blockとcode groupを同時に広げていたoverrideはsemanticsが変わります。今後、単独code blockの幅を変更する場合はblock専用変数を使ってください。
+このため、過去に`--ui-code-surface-breakout-*`だけで単独code blockとcode groupを同時に広げていたoverrideはsemanticsが変わります。今後、単独code blockの幅を変更する場合はblock専用変数を使い、特殊な文脈でcode groupの幅を変更する場合はgroup専用変数を使ってください。
 
 ## 7. Old Custom Element API Removal
 

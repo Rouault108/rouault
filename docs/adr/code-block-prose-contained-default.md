@@ -4,6 +4,14 @@
 
 Accepted
 
+## Partially superseded by
+
+`ADR-CODE-GROUP-PROSE-CONTAINED-001`は、このADRのcode group breakout部分を上書きする。
+
+上書き対象には`A-CODE-GROUP-BREAKOUT-001`と`V-CODE-GROUP-BREAKOUT-001`を含む。
+
+単独code blockのcontained decisionは引き続き有効である。
+
 ## Decision Record ID
 
 D-CODE-BLOCK-CONTAINED-GROUP-BREAKOUT-001

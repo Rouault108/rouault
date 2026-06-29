@@ -229,11 +229,6 @@
 }
 
 @media (max-width: 767px) {
-  :is(.prose, .about-prose) > section[data-code-group] {
-    --ui-code-group-width: calc(100% + var(--space-8));
-    --ui-code-group-margin-inline: var(--space-n4);
-  }
-
   :is(.prose, .about-prose)
     > figure[data-code-block-root]:has(> pre[data-code-block][data-code-layout='inline']) {
     --ui-code-block-breakout-width: 100%;
@@ -244,11 +239,6 @@
 }
 
 @media (min-width: 768px) {
-  :is(.prose, .about-prose) > section[data-code-group] {
-    --ui-code-group-width: calc(100% + var(--space-16));
-    --ui-code-group-margin-inline: var(--space-n8);
-  }
-
   :is(.prose, .about-prose)
     > figure[data-code-block-root]:has(> pre[data-code-block][data-code-layout='inline']) {
     --ui-code-block-breakout-width: 100%;
