@@ -74,6 +74,37 @@ interface SelectorRuleDeclarationRecord {
   readonly value: string;
 }
 
+interface SelectorRuleRecord {
+  readonly ruleIndex: number;
+  readonly selectors: readonly string[];
+  readonly block: string;
+}
+
+const rootRuleRecords = (css: string): SelectorRuleRecord[] => {
+  const records: SelectorRuleRecord[] = [];
+  let ruleIndex = 0;
+
+  postcss.parse(css).walkRules((rule: Rule) => {
+    if (rule.parent?.type !== 'root') return;
+
+    records.push({
+      ruleIndex,
+      selectors: splitSelectors(rule.selector).map((selector) =>
+        normalizeAttributeQuoteStyle(normalizeSelector(selector)),
+      ),
+      block: rule.nodes?.map((node) => node.toString()).join('\n') ?? '',
+    });
+    ruleIndex += 1;
+  });
+
+  return records;
+};
+
+const rootRuleRecordsForSelector = (css: string, selector: string): SelectorRuleRecord[] => {
+  const targetSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
+  return rootRuleRecords(css).filter((record) => record.selectors.includes(targetSelector));
+};
+
 const rootDeclarationRecordsForSelector = (
   css: string,
   selector: string,
@@ -1659,7 +1690,13 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(codeSurfaces, "[data-code-block-root][data-code-group-owned='true']", [
       'inline-size: 100%',
       'max-inline-size: 100%',
+      'margin-block: 0',
       'margin-inline: 0',
+      'overflow: visible',
+      'border: 0',
+      'background: transparent',
+      'border-radius: 0',
+      'box-shadow: none',
     ]);
     expectRuleToDeclare(codeSurfaces, '.code-group-tablist', ['overflow-x: auto']);
 
@@ -1698,6 +1735,15 @@ describe('static CSS contracts', () => {
         selector.includes('[data-code-block-root]'),
       ),
     ).not.toMatch(/(?:^|\n)\s*(?:width|inline-size|margin-inline):/u);
+    expect(
+      ruleBlocksForSelectorsMatching(
+        bridge,
+        (selector) =>
+          selector.includes('pre[data-code-block]') ||
+          selector.includes('section[data-code-group]') ||
+          selector.includes('[data-code-block-root]'),
+      ),
+    ).not.toMatch(/(?:^|\n)\s*(?:border|background|border-radius|box-shadow|overflow):/u);
 
     expectSelectorMatchingRuleToDeclare(
       bridge,
@@ -1713,6 +1759,103 @@ describe('static CSS contracts', () => {
     ).to.equal('');
   });
 
+  it('code surface CSS keeps group-owned code blocks embedded in the outer code group surface', () => {
+    const css = readCss('code-surfaces.css');
+    const groupOwnedSelector = "[data-code-block-root][data-code-group-owned='true']";
+    const groupOwnedFocusWithinSelector =
+      "[data-code-block-root][data-code-group-owned='true']:focus-within";
+    const groupOwnedFocusVisibleSelector =
+      "[data-code-block-root][data-code-group-owned='true']:has(> pre[data-code-block]:focus-visible)";
+
+    const visualResetRecords = rootRuleRecordsForSelector(css, groupOwnedSelector).filter(
+      (record) => record.selectors.length === 1,
+    );
+    expect(visualResetRecords).toHaveLength(1);
+    expect(visualResetRecords[0]?.block).toContain('margin-block: 0');
+    expect(visualResetRecords[0]?.block).toContain('margin-inline: 0');
+    expect(visualResetRecords[0]?.block).toContain('overflow: visible');
+    expect(visualResetRecords[0]?.block).toContain('border: 0');
+    expect(visualResetRecords[0]?.block).toContain('background: transparent');
+    expect(visualResetRecords[0]?.block).toContain('border-radius: 0');
+    expect(visualResetRecords[0]?.block).toContain('box-shadow: none');
+
+    const normalSurfaceRecord = rootRuleRecordsForSelector(css, '[data-code-block-root]').find(
+      (record) =>
+        record.block.includes('border:') &&
+        record.block.includes('background:') &&
+        record.block.includes('border-radius:') &&
+        record.block.includes('overflow: hidden'),
+    );
+    expect(normalSurfaceRecord, 'normal code block surface rule').toBeDefined();
+
+    const genericFocusRecords = [
+      ...rootRuleRecordsForSelector(css, '[data-code-block-root]:focus-within'),
+      ...rootRuleRecordsForSelector(
+        css,
+        '[data-code-block-root]:has(> pre[data-code-block]:focus-visible)',
+      ),
+    ];
+    expect(genericFocusRecords).toHaveLength(2);
+    expect(genericFocusRecords.every((record) => record.block.includes('box-shadow:'))).toBe(true);
+
+    const captionRecord = rootRuleRecordsForSelector(
+      css,
+      '[data-code-block-root] > .code-surface-caption',
+    )[0];
+    expect(captionRecord, 'caption rule').toBeDefined();
+    expect(normalSurfaceRecord?.ruleIndex).toBeLessThan(visualResetRecords[0]?.ruleIndex ?? -1);
+    for (const focusRecord of genericFocusRecords) {
+      expect(focusRecord.ruleIndex).toBeLessThan(visualResetRecords[0]?.ruleIndex ?? -1);
+    }
+    expect(visualResetRecords[0]?.ruleIndex).toBeLessThan(captionRecord?.ruleIndex ?? -1);
+
+    expectRuleToDeclare(css, groupOwnedFocusWithinSelector, ['box-shadow: none']);
+    expectRuleToDeclare(css, groupOwnedFocusVisibleSelector, ['box-shadow: none']);
+    const groupOwnedFocusRecords = [
+      ...rootRuleRecordsForSelector(css, groupOwnedFocusWithinSelector),
+      ...rootRuleRecordsForSelector(css, groupOwnedFocusVisibleSelector),
+    ];
+    for (const focusRecord of genericFocusRecords) {
+      for (const groupOwnedFocusRecord of groupOwnedFocusRecords) {
+        expect(focusRecord.ruleIndex).toBeLessThan(groupOwnedFocusRecord.ruleIndex);
+      }
+    }
+
+    expectRuleToDeclare(css, '[data-code-block-root]', [
+      'overflow: hidden',
+      'border: var(--ui-code-block-border',
+      'background: var(--ui-code-block-background',
+      'border-radius: var(--ui-code-block-radius-top',
+    ]);
+    expectRuleToDeclare(css, '[data-code-block-root]:focus-within', ['box-shadow:']);
+    expectRuleToDeclare(css, '[data-code-block-root]:has(> pre[data-code-block]:focus-visible)', [
+      'box-shadow:',
+    ]);
+
+    const forcedColors = atRuleBlock(css, '@media (forced-colors: active)');
+    const forcedGenericFocusRecords = [
+      ...rootRuleRecordsForSelector(forcedColors, '[data-code-block-root]:focus-within'),
+      ...rootRuleRecordsForSelector(
+        forcedColors,
+        '[data-code-block-root]:has(> pre[data-code-block]:focus-visible)',
+      ),
+    ];
+    const forcedGroupOwnedFocusRecords = [
+      ...rootRuleRecordsForSelector(forcedColors, groupOwnedFocusWithinSelector),
+      ...rootRuleRecordsForSelector(forcedColors, groupOwnedFocusVisibleSelector),
+    ];
+    expect(forcedGenericFocusRecords).toHaveLength(2);
+    expect(forcedGroupOwnedFocusRecords).toHaveLength(2);
+    for (const forcedGroupOwnedFocusRecord of forcedGroupOwnedFocusRecords) {
+      expect(forcedGroupOwnedFocusRecord.block).toContain('box-shadow: none');
+      for (const forcedGenericFocusRecord of forcedGenericFocusRecords) {
+        expect(forcedGenericFocusRecord.ruleIndex).toBeLessThan(
+          forcedGroupOwnedFocusRecord.ruleIndex,
+        );
+      }
+    }
+  });
+
   it('code surface CSS keeps code group visibility and print contracts state-based', () => {
     const css = readCss('code-surfaces.css');
 
@@ -1723,8 +1866,17 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(
       css,
       "section[data-code-group][data-code-group-enhanced='true'] > .code-group-header",
-      ['display: flex'],
+      [
+        'display: flex',
+        'border-block-end: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12))',
+      ],
     );
+    expect(
+      rootRuleRecordsForSelector(
+        css,
+        "section[data-code-group][data-code-group-enhanced='true'] > .code-group-header",
+      ),
+    ).toHaveLength(1);
     expectRuleToDeclare(
       css,
       "section[data-code-group]:not([data-code-group-enhanced='true']) .code-group-tablist",
@@ -1749,7 +1901,30 @@ describe('static CSS contracts', () => {
       selector.includes('[data-code-group-panel][hidden]'),
     );
     expect(codeGroupPanelHiddenSelectors).toEqual([]);
+    expect(
+      declarationValuesForSelector(
+        css,
+        'section[data-code-group] > [data-code-group-panel] > :where(pre[data-code-block], [data-code-block-root])',
+        'padding-top',
+      ),
+    ).toEqual([]);
+    expectRuleToDeclare(
+      css,
+      "section[data-code-group]:not([data-code-group-enhanced='true']) > [data-code-group-panel] > :where(pre[data-code-block], [data-code-block-root])",
+      ['padding-top: var(--space-2, 8px)'],
+    );
+    expectRuleToDeclare(
+      css,
+      "section[data-code-group]:not([data-code-group-enhanced='true']) > [data-code-group-panel] + [data-code-group-panel]",
+      ['border-block-start: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12))'],
+    );
 
+    const forcedColors = atRuleBlock(css, '@media (forced-colors: active)');
+    expectRuleToDeclare(
+      forcedColors,
+      "section[data-code-group][data-code-group-enhanced='true'] > .code-group-header",
+      ['border-block-end: 1px solid CanvasText'],
+    );
     const print = atRuleBlock(css, '@media print');
     expectRuleToDeclare(print, 'section[data-code-group] > .code-group-header', [
       'display: none !important',
@@ -1761,6 +1936,11 @@ describe('static CSS contracts', () => {
       print,
       "section[data-code-group][data-code-group-enhanced='true'] > [data-code-group-panel]",
       ['display: block !important'],
+    );
+    expectRuleToDeclare(
+      print,
+      'section[data-code-group] > [data-code-group-panel] + [data-code-group-panel]',
+      ['border-block-start: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12))'],
     );
     expectRuleToDeclare(print, 'section[data-code-group] .code-group-stack-label', [
       'display: block !important',

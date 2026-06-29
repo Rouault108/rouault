@@ -54,6 +54,16 @@ code groupはSSR / no-JS時点でstackとして出力し、enhancer実行後にt
 
 code groupは比較・切替・複数panelを扱うsurfaceです。ただし、`.prose` / `.about-prose`直下の`section[data-code-group]`は既定では本文幅内に収めます。top-level surface自体を本文幅から広げず、長いコード行は`pre[data-code-block]`内部の横スクロールで処理します。長いtab列はtablist側の横スクロールで処理します。code groupのtop-level layoutは`--ui-code-group-width` / `--ui-code-group-margin-inline`で制御します。
 
+`section[data-code-group]`はcode groupのouter surfaceを所有します。border、background、radius、overflow clippingは`section[data-code-group]`の責務であり、group-owned code block rootへ重ねて持たせません。
+
+`[data-code-block-root][data-code-group-owned='true']`は独立したcode block cardではなく、code group内部のsemantic / code body wrapperです。このrootは`margin-block`、`margin-inline`、overflow clipping、border、background、radius、box-shadow、root-level focus shadowを持ちません。focus-visible自体は`pre[data-code-block]`側で維持し、抑止対象はroot側の二重surface ringに限定します。
+
+group-owned rootでは、`box-sizing`や`position: relative`など視覚surfaceを作らないgeneric root性質を過剰にresetしません。reset対象はsurface視覚、余白、overflow clippingに限定します。
+
+enhanced状態では、header、tab controls、copy control、code bodyを1つのouter surface内の上下領域として表示します。header / body dividerはselected tab下線と重なって過剰な二重線に見えないようにしつつ、forced-colorsでも視認可能でなければなりません。dividerを`box-shadow`だけへ依存させ、forced-colorsで消失する設計は禁止します。
+
+filename / caption付きのgroup-owned code blockでも、captionは独立card headerとして見せません。captionやfilenameはcode group内の補助情報であり、outer surface ownershipを分裂させません。
+
 #### SSR / no-JS
 
 - 全panelを読める状態で出力します。
@@ -62,6 +72,7 @@ code groupは比較・切替・複数panelを扱うsurfaceです。ただし、`
 - 各panelはlabelまたはheadingで識別できる必要があります。
 - `data-code-group-tab`はenhancer用識別子であり、SSR / no-JS時点のtab semanticsではありません。
 - copy sourceは各panel内に維持します。
+- no-JSでは全panel stack表示を維持し、stack labelとpanel dividerでpanel境界を担保します。
 
 #### Enhanced
 
@@ -90,6 +101,7 @@ code groupは比較・切替・複数panelを扱うsurfaceです。ただし、`
 
 - printではcode groupの全panelを読める状態にします。
 - enhanced stateで隠れているinactive panelもprint mediaでは表示対象に戻します。
+- printではpanel dividerでpanel境界を担保します。
 - tab controlsやcopy controlsは印刷上の主内容ではありません。
 - beforeprint / afterprintによるDOM変更は最後の手段とし、CSSで成立する方針を優先します。
 
@@ -190,3 +202,14 @@ hydration triggerはscheduler / registryが所有します。code surface enhanc
 - printでは全panelを読める。
 - SSR generator / enhancer / CSSのDOM・属性所有権が分離されている。
 - 旧Custom Element APIが復元されていない。
+- A-CODE-GROUP-SINGLE-SURFACE-001: group-owned code block rootは独立surfaceを持たず、`section[data-code-group]`がouter surfaceを所有する。
+- A-CODE-GROUP-NOJS-STACK-001: no-JSでは全panel stack表示とpanel dividerで読解境界を維持する。
+- A-CODE-GROUP-PRINT-001: printでは全panel表示とpanel dividerで読解境界を維持する。
+- A-CODE-GROUP-TABS-VARIANT-001: code group tabsは通常`ui-tabs`へ統合せず、code surface内部の局所切替として扱う。
+- A-CODE-GROUP-CAPTION-NONREGRESSION-001: filename / caption付きgroup-owned code blockを独立cardとして見せない。
+- A-CODE-GROUP-FORCED-COLORS-001: forced-colorsでselected tab、focus-visible、outer borderの識別性を維持する。
+- A-CODE-GROUP-HEADER-DIVIDER-001: enhanced header / body dividerはselected tab下線と過剰な二重線に見えない。
+- A-CODE-GROUP-HEADER-DIVIDER-FORCED-COLORS-001: header / body dividerはforced-colorsでも視認可能である。
+- A-CODE-GROUP-OVERFLOW-OWNERSHIP-001: overflow clippingはouter code group surfaceが所有し、group-owned rootへ残さない。
+- A-CODE-GROUP-RESET-SCOPE-001: group-owned resetはsurface視覚、余白、overflow clippingを超えて過剰化しない。
+- A-CODE-GROUP-NONREGRESSION-001: DOM、Markdown構文、ARIA enhancer、copy同期、URL、routing、通常`ui-tabs`は変更しない。

@@ -20,6 +20,14 @@ Reading chromeの機能契約は`docs/contracts/reading-chrome.md`を正本と�
 
 Reading surface flowは本文のCSS余白patternだけを所有する。Markdown parser / transformer、About本文データ、router、URL、ARIA、hydration、search、TOCの契約を変更しない。
 
+### Content Tabs / Embedded Code Tabs Boundary
+
+Content Tabsの正本は`docs/design-system/components/tabs.md`であり、実装は`ui-tabs`である。用途は本文構造、説明コンテンツ、主セクション切替である。
+
+Embedded Code Tabsの正本は`docs/contracts/code-surfaces.md`であり、実装は`section[data-code-group]`と`code-group-enhancer`である。用途はcode surface内部の局所切替である。
+
+両者はselected、hover、focus-visible、forced-colorsの識別性を維持する。ただし、同一componentでも同一visual variantでもない。詳細なcode group surface仕様は本書では再定義せず、`docs/contracts/code-surfaces.md`と対応ADRを参照する。
+
 ## 2. Link Classification
 
 - Text Linkは本文・説明文中の遷移を表す。
