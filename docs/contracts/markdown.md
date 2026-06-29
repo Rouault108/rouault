@@ -104,6 +104,18 @@ Markdown出力層の`table`は、scrollable static table surfaceとして扱う�
 - セル内のlink / buttonなどのnative interactive elementは、それぞれの要素契約に従って操作可能面として振る舞う。
 - クリック可能な一覧や行操作UIは、Markdown tableへ後付けせず、専用のlist / card / interactive surfaceとして設計する。
 
+### Details Prose Disclosure Contract
+
+`::details`は本文内のprose disclosureであり、row navigation、settings row、panel surfaceではない。
+
+- final DOMはnative `details` / `summary`を維持し、JSなしでも開閉できなければならない。
+- rootは`details.details-block[data-details="true"]`として出力する。
+- 旧`ui-details` custom element、旧Lit API、JS animation、bordered variantは復活させない。
+- chevronは`summary`直下でsummary textの左に置く。
+- 展開本文はsummary text開始位置に視覚的に従属する。
+- `data-details-source`とsource-onlyの`summary`属性はfinal DOMに残さない。
+- `variant`、`region`、`aria-label`など旧Lit版APIをMarkdown入力属性として復活させない。
+
 ### Table Authoring Extension Contract
 
 Markdown table authoring extensionは、static table surfaceの契約を弱めない。raw HTML禁止、interactive data gridではない意味論、row hover affordance不在は維持する。

@@ -93,6 +93,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 - `docs/adr/home-corpora-information-architecture.md`
 - `docs/adr/corpus-index-row.md`
 - `docs/adr/callout-reading-annotation-redesign.md`
+- `docs/adr/details-block-static-prose-disclosure.md`
 - `docs/adr/reading-surface-paragraph-flow-separation.md`
 - `docs/adr/router-document-navigation-fallback-on-stale-fetch-artifacts.md`
 - `docs/adr/translation-light-dom-disclosure-fallback.md`

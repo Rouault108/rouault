@@ -135,24 +135,33 @@ describe('rehypeRouaultComponents', () => {
     const details = tree.children?.[0];
     const summary = details?.children?.[0];
     const body = details?.children?.[1];
-    const chevron = findElement(summary, (node) =>
-      getClassList(node.properties?.['className']).includes('details-block__chevron'),
-    );
+    const chevron = summary?.children?.[0];
+    const summaryContent = summary?.children?.[1];
 
     expect(details?.tagName).to.equal('details');
+    expect(getClassList(details?.properties?.['className'])).to.deep.equal(['details-block']);
     expect(details?.properties?.['data-details']).to.equal('true');
+    expect(details?.properties?.['data-details-source']).to.equal(undefined);
+    expect(details?.properties?.['summary']).to.equal(undefined);
+    expect(details?.properties?.['open']).to.equal(true);
     expect(details?.properties?.['data-variant']).to.equal(undefined);
     expect(summary?.tagName).to.equal('summary');
-    expect(
-      findElement(summary, (node) =>
-        getClassList(node.properties?.['className']).includes('details-block__summary-content'),
-      ),
-    ).to.not.equal(undefined);
+    expect(getClassList(summary?.properties?.['className'])).to.deep.equal([
+      'details-block__summary',
+    ]);
+    expect(getClassList(chevron?.properties?.['className'])).to.deep.equal([
+      'details-block__chevron',
+      'static-icon',
+    ]);
     expect(chevron?.properties?.['aria-hidden']).to.equal('true');
-    expect(getClassList(chevron?.properties?.['className'])).to.include('static-icon');
     expect(chevron?.children?.[0]?.tagName).to.equal('svg');
+    expect(getClassList(summaryContent?.properties?.['className'])).to.deep.equal([
+      'details-block__summary-content',
+    ]);
+    expect(getTextContent(summaryContent)).to.equal('補足');
     expect(body?.tagName).to.equal('div');
     expect(getClassList(body?.properties?.['className'])).to.deep.equal(['details-block__body']);
+    expect(findElement(tree, (node) => node.tagName === 'ui-details')).to.equal(undefined);
   });
 
   it('translation fallback Light DOM を保持し hydration 注釈を付与すること', () => {

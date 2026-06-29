@@ -2006,20 +2006,53 @@ describe('static CSS contracts', () => {
 
   it('details, syntax, score, empty state, and corpora CSS expose static contracts', () => {
     const details = readCss('details-block.css');
+    expectRuleToDeclare(details, '.details-block__summary', [
+      'display: flex',
+      'gap: var(--space-2)',
+      'padding: var(--space-2) 0',
+      'font-weight: var(--font-medium, 500)',
+      'line-height: var(--line-height-normal)',
+      'text-align: start',
+    ]);
+    expect(declarationValuesForSelector(details, '.details-block__summary-content', 'flex')).toEqual(
+      ['0 1 auto'],
+    );
+    expect(ruleBlock(details, '.details-block__summary-content')).not.toContain('flex: 1 1 auto');
     expectRuleToDeclare(details, '.details-block__chevron.static-icon', [
-      'inline-size:',
-      'block-size:',
-      'transition:',
+      'inline-size: var(--icon-base, 16px)',
+      'block-size: var(--icon-base, 16px)',
+      'display: inline-flex',
+      'align-self: var(--details-block-icon-align-self, flex-start)',
+      'transition: transform var(--duration-fast) var(--ease-out)',
+    ]);
+    expect(
+      declarationValuesForSelector(
+        details,
+        '.details-block__chevron.static-icon',
+        'margin-block-start',
+      ).map(normalizeDeclarationValue),
+    ).toEqual([
+      'var(--details-block-icon-offset-block-start, calc((1em * var(--line-height-normal, 1.5) - var(--icon-base, 16px)) / 2))',
     ]);
     expectRuleToDeclare(details, '.details-block__chevron.static-icon > svg', [
       'inline-size: 100%',
       'block-size: 100%',
     ]);
+    expect(
+      declarationValuesForSelector(details, '.details-block__body', 'margin-inline-start'),
+    ).toEqual(['calc(var(--icon-base, 16px) + var(--space-2))']);
     expect(details).to.contain('.details-block__summary::marker');
     expect(details).to.contain('.details-block__summary::-webkit-details-marker');
-    expect(details).to.contain(
-      '.details-block[open] > .details-block__summary .details-block__chevron',
-    );
+    expect(
+      declarationValuesForSelector(
+        details,
+        '.details-block[open] > .details-block__summary .details-block__chevron',
+        'transform',
+      ),
+    ).toEqual(['rotate(90deg)']);
+    expect(
+      declarationsForSelector(details, '.details-block[open] > .details-block__body', 'border-top'),
+    ).toHaveLength(0);
     expect(details).not.to.contain("data-variant='bordered'");
 
     const lists = readCss('lists.css');

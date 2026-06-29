@@ -85,6 +85,26 @@
 - `column-widths`指定tableに`colspan` / `rowspan`がある場合はbuild errorとする。
 - final DOMに`data-table-source`などの中間markerを残さない。
 
+### `::details`
+
+`::details`は、本文内prose disclosureとしてnative `details` / `summary`へ正規化する。row navigation、settings row、panel surfaceではない。
+
+```html
+<details class="details-block" data-details="true">
+  <summary class="details-block__summary">
+    <span class="details-block__chevron static-icon" aria-hidden="true">...</span>
+    <span class="details-block__summary-content">補足情報</span>
+  </summary>
+  <div class="details-block__body">...</div>
+</details>
+```
+
+- chevronはsummary textの左に置く。
+- body indentはsummary text開始位置に従属する。
+- native `details` / `summary`を維持し、旧`ui-details` custom elementは復活させない。
+- `data-details-source`とsource-onlyの`summary`属性はfinal DOMに残さない。
+- bordered variant、region、JS animationはこの出力契約の範囲外であり、復活させない。
+
 ### Table cell break
 
 `{{break}}`は表セルテキストエスケープとして、final DOMでmarker付きの`<br>`へ正規化する。marker付きbreakは表セル内の意味上の行区切りであり、raw HTML許可を意味しない。

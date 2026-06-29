@@ -7,8 +7,11 @@
   display: flex;
   gap: var(--space-2);
   align-items: center;
-  padding: var(--space-3) 0;
+  padding: var(--space-2) 0;
   color: var(--fg-default);
+  font-weight: var(--font-medium, 500);
+  line-height: var(--line-height-normal);
+  text-align: start;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -21,14 +24,22 @@
 
 .details-block__summary-content {
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
 }
 
 .details-block__chevron.static-icon {
   inline-size: var(--icon-base, 16px);
   block-size: var(--icon-base, 16px);
-  color: var(--fg-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: var(--details-block-icon-align-self, flex-start);
+  margin-block-start: var(
+    --details-block-icon-offset-block-start,
+    calc((1em * var(--line-height-normal, 1.5) - var(--icon-base, 16px)) / 2)
+  );
   flex-shrink: 0;
+  color: var(--fg-muted);
   transition: transform var(--duration-fast) var(--ease-out);
 }
 
@@ -53,10 +64,6 @@
   outline-offset: var(--focus-ring-offset, 2px);
   border-radius: var(--radius-md);
   z-index: 1;
-}
-
-.details-block[open] > .details-block__body {
-  border-top: var(--border-width) solid var(--border-muted);
 }
 
 .details-block__body {
