@@ -2040,9 +2040,11 @@ describe('static CSS contracts', () => {
           return false;
         }
 
-        const syntaxFieldCompoundSelector = trimmedSelectorPart
-          .slice(syntaxFieldClassMatch.index + syntaxFieldClassMatch[1].length)
-          .split(/[\s>+~]/, 1)[0];
+        const syntaxFieldClassPrefix = syntaxFieldClassMatch[1] ?? '';
+        const syntaxFieldCompoundSelector =
+          trimmedSelectorPart
+            .slice(syntaxFieldClassMatch.index + syntaxFieldClassPrefix.length)
+            .split(/[\s>+~]/, 1)[0] ?? '';
 
         return syntaxFieldCompoundSelector.includes(':hover');
       });
