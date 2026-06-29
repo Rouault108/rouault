@@ -34,6 +34,19 @@
 
 各directiveの入力記法は`docs/references/markdown-authoring-syntax.md`を参照し、最終DOMは`docs/contracts/markdown.md`のsafety boundaryを満たす。
 
+### `::callout`
+
+`::callout`は、final DOMで`aside[data-callout="true"][data-callout-kind]`へ正規化する。読書面の短い注記surfaceであり、custom elementやruntime-dependent componentへ変換しない。
+
+- rootは`aside`のまま維持する。
+- `data-callout-kind`は`note` / `tip` / `success` / `warning` / `danger`を維持する。
+- headingがある場合は、内部labelを生成し、rootの`aria-labelledby`から参照する。
+- headingがなくlabelがある場合は、rootへ`aria-label`を付与する。
+- content wrapperは`[data-callout-content="true"]`、body wrapperは`[data-callout-body="true"]`として出力する。
+- 既定iconはfinal DOM内に生成され、装飾アイコンとして`aria-hidden="true"`を持つ。
+- `data-callout-icon-svg`と互換classである`.callout-icon`はCSS互換のため維持される。
+- `data-hydration-capability` / `data-hydration-trigger`は出力しない。
+
 ### `::link-card`
 
 `::link-card`とauto link-cardは、final DOMでstatic `article.link-card[data-link-card="true"]`へ正規化する。valid link-cardは`a.link-card__link`をリンク面とし、invalid link-cardはanchorを出力せず`link-card__invalid` surfaceとして表示する。

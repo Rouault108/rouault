@@ -86,6 +86,12 @@ Markdown link-cardのfocus表示は、native anchorである`.link-card__link:fo
 
 `syntax-card__name`と`syntax-section__heading`はheadingではなくlabelとして出力する。`heading-level`は入力互換属性として受理されるが、static-first outputでは`h2`〜`h6`のDOM heading生成に使わない。final DOMに`heading-level` / `data-heading-level`を残してはならない。`syntax-card` subtreeは本文heading id、heading permalink、TOCの対象外である。
 
+### Static Callout Surface Contract
+
+`::callout`はstatic-firstな短い読書注記surfaceとして出力する。操作surface、runtime-dependent component、dangerous props、raw HTMLの抜け道として扱ってはならない。
+
+`::callout`の入力記法、kind値、final DOM、aria契約はMarkdown transform pipelineが所有する。詳細DOM mappingは`docs/references/markdown-output.md`、kind別の意味と視覚強度は`docs/design-system/components/callout.md`、author向け使い分けは`docs/guides/markdown-authoring.md`を参照する。
+
 ### Static Table Surface Contract
 
 Markdown出力層の`table`は、scrollable static table surfaceとして扱う。`data-table-root`は横スクロール可能な表領域とfocusable regionを示すための属性であり、row action、row selection、row navigation、interactive data gridを意味しない。

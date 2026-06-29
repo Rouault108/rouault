@@ -1,6 +1,6 @@
 ## 補助コンポーネント
 
-::callout{kind="tip" heading="補助情報"}
+::callout{kind="note" heading="補助情報"}
 読書面と interaction 面を分離したうえで表示契約を確認します。
 ::
 

@@ -31,6 +31,28 @@
 
 `preview-sandbox`は`code-preview` family内の特殊childとして扱う。これは非推奨化、削除、受理条件変更ではなく、現行実装上の親子制約に合わせた説明位置の整理である。
 
+### `::callout`
+
+`::callout`は、本文中の短い読書注記surfaceとして使う。通知カード、操作面、長い構造化情報の置き場ではない。作品情報、属性一覧、複数項目のまとまった説明は`::info-box`へ分ける。
+
+kindの使い分けは次を基準にする。
+
+| kind | 用途 |
+|---|---|
+| `note` | 中立的な補足、前提、余談。`heading="補助情報"`の標準。 |
+| `tip` | 読み方や実践上の助言、ヒント。単なる補助情報には使わない。 |
+| `success` | 確認済み、成立、完了など、検証済みの短い注記。 |
+| `warning` | 制約、誤読防止、注意。可視headingを強く推奨する。 |
+| `danger` | 重大危険、破壊的操作、強い警告。可視headingを強く推奨する。 |
+
+```md
+::callout{kind="note" heading="補助情報"}
+読書面とinteraction面を分離したうえで表示契約を確認します。
+::
+```
+
+`warning` / `danger`は色だけに頼らず、`heading`で何に注意すべきかを明示する。長い手順、定義リスト、複数の関連情報をまとめる場合は`::callout`を伸ばさず、`::info-box`、`::details`、通常の見出しと本文へ分ける。
+
 ````md
 ::code-preview{heading="Preview"}
 :::preview-sandbox

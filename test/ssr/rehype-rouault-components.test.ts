@@ -725,7 +725,7 @@ describe('rehypeRouaultComponents', () => {
 
   it('保存前 surface HTML 正規化が冪等であること', () => {
     const html = `
-      <aside data-callout="true" data-callout-kind="tip" data-callout-heading="補助情報">
+      <aside data-callout="true" data-callout-kind="note" data-callout-heading="補助情報">
         <p>本文</p>
       </aside>
       <section
