@@ -48,6 +48,25 @@ export function validateTabsSnapshot(
   );
 }
 
+export function resolveTabValueForPanelTarget(
+  snapshot: TabsSnapshot,
+  target: HTMLElement,
+): string | null {
+  const count = snapshot.interactiveCount;
+
+  for (let index = 0; index < count; index += 1) {
+    const panel = snapshot.panels[index];
+    if (panel === undefined || (panel !== target && !panel.contains(target))) {
+      continue;
+    }
+
+    const value = snapshot.tabs[index]?.getAttribute('value')?.trim() ?? '';
+    return value.length > 0 ? value : null;
+  }
+
+  return null;
+}
+
 export function applyTabsAria(
   snapshot: TabsSnapshot,
   uid: number,

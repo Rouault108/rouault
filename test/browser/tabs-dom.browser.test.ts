@@ -1,5 +1,9 @@
 import { expect } from '@open-wc/testing';
-import { applyTabsAria, readTabsSnapshot } from '../../src/components/ui/tabs/tabs-dom.js';
+import {
+  applyTabsAria,
+  readTabsSnapshot,
+  resolveTabValueForPanelTarget,
+} from '../../src/components/ui/tabs/tabs-dom.js';
 
 const createSlotMock = (elements: Element[]): HTMLSlotElement => {
   const slot = document.createElement('slot');
@@ -78,5 +82,111 @@ describe('tabs-dom', () => {
 
     expect(tabA.getAttribute('aria-controls')).to.be.a('string');
     expect(tabB.hasAttribute('aria-controls')).to.equal(false);
+  });
+
+  it('resolveTabValueForPanelTarget: panel 自身を target として対応 tab value を返すこと', () => {
+    const tabA = document.createElement('button');
+    tabA.setAttribute('value', 'overview');
+    const panelA = document.createElement('section');
+
+    expect(
+      resolveTabValueForPanelTarget(
+        {
+          tabs: [tabA],
+          panels: [panelA],
+          interactiveCount: 1,
+        },
+        panelA,
+      ),
+    ).to.equal('overview');
+  });
+
+  it('resolveTabValueForPanelTarget: panel 配下 target から対応 tab value を返すこと', () => {
+    const tabA = document.createElement('button');
+    tabA.setAttribute('value', 'overview');
+    const panelA = document.createElement('section');
+    const heading = document.createElement('h2');
+    panelA.append(heading);
+
+    expect(
+      resolveTabValueForPanelTarget(
+        {
+          tabs: [tabA],
+          panels: [panelA],
+          interactiveCount: 1,
+        },
+        heading,
+      ),
+    ).to.equal('overview');
+  });
+
+  it('resolveTabValueForPanelTarget: interactiveCount 範囲外の panel は採用しないこと', () => {
+    const tabA = document.createElement('button');
+    tabA.setAttribute('value', 'overview');
+    const tabB = document.createElement('button');
+    tabB.setAttribute('value', 'details');
+    const panelA = document.createElement('section');
+    const panelB = document.createElement('section');
+
+    expect(
+      resolveTabValueForPanelTarget(
+        {
+          tabs: [tabA, tabB],
+          panels: [panelA, panelB],
+          interactiveCount: 1,
+        },
+        panelB,
+      ),
+    ).to.equal(null);
+  });
+
+  it('resolveTabValueForPanelTarget: 対応 tab が欠落している場合は null を返すこと', () => {
+    const panelA = document.createElement('section');
+
+    expect(
+      resolveTabValueForPanelTarget(
+        {
+          tabs: [],
+          panels: [panelA],
+          interactiveCount: 1,
+        },
+        panelA,
+      ),
+    ).to.equal(null);
+  });
+
+  it('resolveTabValueForPanelTarget: 対応 tab value が空の場合は null を返すこと', () => {
+    const tabA = document.createElement('button');
+    tabA.setAttribute('value', ' ');
+    const panelA = document.createElement('section');
+
+    expect(
+      resolveTabValueForPanelTarget(
+        {
+          tabs: [tabA],
+          panels: [panelA],
+          interactiveCount: 1,
+        },
+        panelA,
+      ),
+    ).to.equal(null);
+  });
+
+  it('resolveTabValueForPanelTarget: panel 外 target は採用しないこと', () => {
+    const tabA = document.createElement('button');
+    tabA.setAttribute('value', 'overview');
+    const panelA = document.createElement('section');
+    const outside = document.createElement('h2');
+
+    expect(
+      resolveTabValueForPanelTarget(
+        {
+          tabs: [tabA],
+          panels: [panelA],
+          interactiveCount: 1,
+        },
+        outside,
+      ),
+    ).to.equal(null);
   });
 });

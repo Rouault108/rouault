@@ -39,7 +39,23 @@ test.describe('TOC follows active tab', () => {
     page,
   }) => {
     await page.goto(`${path}#rustのhello-world`);
-    await expect(page).toHaveURL(`${path}#rustのhello-world`);
+    await expect(page).toHaveURL(`${path}?tab=rust#rustのhello-world`);
+    await expectInteractiveCanaryContent(page);
+  });
+
+  test('矛盾する query/hash 直アクセスでは hash 側 tab を選択し URL を正規化すること', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`${path}?tab=rust#javascriptのhello-world`);
+
+    await expect(page).toHaveURL(`${path}?tab=javascript#javascriptのhello-world`);
+    await expect(page.getByRole('tab', { name: 'JavaScript' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(tocItem(page, 'javascriptのhello-world')).toBeVisible();
+    await expect(tocItem(page, 'rustのhello-world')).toBeHidden();
     await expectInteractiveCanaryContent(page);
   });
 

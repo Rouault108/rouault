@@ -45,6 +45,40 @@ describe('ui-tabs browser contract', () => {
     return () => history.replaceState(history.state, '', original);
   };
 
+  const spyOnHistoryWrites = (): {
+    pushUrls: string[];
+    replaceUrls: string[];
+    restore: () => void;
+  } => {
+    const originalPushState = history.pushState.bind(history);
+    const originalReplaceState = history.replaceState.bind(history);
+    const pushUrls: string[] = [];
+    const replaceUrls: string[] = [];
+
+    history.pushState = ((data: unknown, unused: string, url?: string | URL | null) => {
+      if (url !== undefined && url !== null) {
+        pushUrls.push(url.toString());
+      }
+      originalPushState(data, unused, url);
+    }) as typeof history.pushState;
+
+    history.replaceState = ((data: unknown, unused: string, url?: string | URL | null) => {
+      if (url !== undefined && url !== null) {
+        replaceUrls.push(url.toString());
+      }
+      originalReplaceState(data, unused, url);
+    }) as typeof history.replaceState;
+
+    return {
+      pushUrls,
+      replaceUrls,
+      restore: () => {
+        history.pushState = originalPushState;
+        history.replaceState = originalReplaceState;
+      },
+    };
+  };
+
   it('初期描画で tab / tabpanel / roving tabindex を公開すること', async () => {
     const tabs = await fixture<Tabs>(withThreeTabs);
     await waitForLitUpdate(tabs);
@@ -210,36 +244,9 @@ describe('ui-tabs browser contract', () => {
     }
   });
 
-  it('url-sync は hash より query を優先し、hash 単独では既定 tab を崩さないこと', async () => {
-    const conflictRestore = replaceUrl('/?tab=details#overview-heading');
-
-    try {
-      const tabs = await fixture<Tabs>(html`
-        <ui-tabs url-sync>
-          <button slot="tab" value="overview">概要</button>
-          <div slot="panel"><h3 id="overview-heading">概要見出し</h3></div>
-          <button slot="tab" value="details">詳細</button>
-          <div slot="panel"><h3 id="details-heading">詳細見出し</h3></div>
-        </ui-tabs>
-      `);
-      await waitForLitUpdate(tabs);
-
-      const overviewTab = must(
-        tabs.querySelector<HTMLElement>('[slot="tab"][value="overview"]'),
-        'overview tab が見つかりません',
-      );
-      const detailTab = must(
-        tabs.querySelector<HTMLElement>('[slot="tab"][value="details"]'),
-        'details tab が見つかりません',
-      );
-
-      expect(detailTab.getAttribute('aria-selected')).to.equal('true');
-      expect(overviewTab.getAttribute('aria-selected')).to.equal('false');
-    } finally {
-      conflictRestore();
-    }
-
-    const hashOnlyRestore = replaceUrl('/#details-heading');
+  it('url-sync は host-owned hash を query より優先し replaceState で ?tab= を正規化すること', async () => {
+    const restoreUrl = replaceUrl('/?tab=details#overview-heading');
+    const historySpy = spyOnHistoryWrites();
 
     try {
       const tabs = await fixture<Tabs>(html`
@@ -263,8 +270,205 @@ describe('ui-tabs browser contract', () => {
 
       expect(overviewTab.getAttribute('aria-selected')).to.equal('true');
       expect(detailTab.getAttribute('aria-selected')).to.equal('false');
+      expect(window.location.search).to.equal('?tab=overview');
+      expect(window.location.hash).to.equal('#overview-heading');
+      expect(historySpy.pushUrls).to.deep.equal([]);
+      expect(historySpy.replaceUrls).to.deep.equal(['/?tab=overview#overview-heading']);
     } finally {
-      hashOnlyRestore();
+      historySpy.restore();
+      restoreUrl();
+    }
+  });
+
+  it('url-sync は hash-only direct access で host-owned hash の tab を選択し ?tab= を補うこと', async () => {
+    const restoreUrl = replaceUrl('/#details-heading');
+    const historySpy = spyOnHistoryWrites();
+
+    try {
+      const tabs = await fixture<Tabs>(html`
+        <ui-tabs url-sync>
+          <button slot="tab" value="overview">概要</button>
+          <div slot="panel"><h3 id="overview-heading">概要見出し</h3></div>
+          <button slot="tab" value="details">詳細</button>
+          <div slot="panel"><h3 id="details-heading">詳細見出し</h3></div>
+        </ui-tabs>
+      `);
+      await waitForLitUpdate(tabs);
+
+      const overviewTab = must(
+        tabs.querySelector<HTMLElement>('[slot="tab"][value="overview"]'),
+        'overview tab が見つかりません',
+      );
+      const detailTab = must(
+        tabs.querySelector<HTMLElement>('[slot="tab"][value="details"]'),
+        'details tab が見つかりません',
+      );
+
+      expect(overviewTab.getAttribute('aria-selected')).to.equal('false');
+      expect(detailTab.getAttribute('aria-selected')).to.equal('true');
+      expect(window.location.search).to.equal('?tab=details');
+      expect(window.location.hash).to.equal('#details-heading');
+      expect(historySpy.pushUrls).to.deep.equal([]);
+      expect(historySpy.replaceUrls).to.deep.equal(['/?tab=details#details-heading']);
+    } finally {
+      historySpy.restore();
+      restoreUrl();
+    }
+  });
+
+  it('url-sync は host 外 hash / unknown hash / malformed hash では ?tab= を新規生成しないこと', async () => {
+    const cases = ['/#outside-heading', '/#unknown-heading', '/#%E0%A4%A'];
+
+    for (const url of cases) {
+      const outside = document.createElement('h2');
+      outside.id = 'outside-heading';
+      document.body.append(outside);
+      const restoreUrl = replaceUrl(url);
+      const historySpy = spyOnHistoryWrites();
+
+      try {
+        const tabs = await fixture<Tabs>(html`
+          <ui-tabs url-sync>
+            <button slot="tab" value="overview">概要</button>
+            <div slot="panel"><h3 id="overview-heading">概要見出し</h3></div>
+            <button slot="tab" value="details">詳細</button>
+            <div slot="panel"><h3 id="details-heading">詳細見出し</h3></div>
+          </ui-tabs>
+        `);
+        await waitForLitUpdate(tabs);
+
+        const overviewTab = must(
+          tabs.querySelector<HTMLElement>('[slot="tab"][value="overview"]'),
+          'overview tab が見つかりません',
+        );
+        const detailTab = must(
+          tabs.querySelector<HTMLElement>('[slot="tab"][value="details"]'),
+          'details tab が見つかりません',
+        );
+
+        expect(overviewTab.getAttribute('aria-selected')).to.equal('true');
+        expect(detailTab.getAttribute('aria-selected')).to.equal('false');
+        expect(window.location.search).to.equal('');
+        expect(historySpy.pushUrls).to.deep.equal([]);
+        expect(historySpy.replaceUrls).to.deep.equal([]);
+      } finally {
+        historySpy.restore();
+        restoreUrl();
+        outside.remove();
+      }
+    }
+  });
+
+  it('url-sync は無効な query 値を有効 activeValue へ replaceState で回復すること', async () => {
+    const restoreUrl = replaceUrl('/?tab=missing');
+    const historySpy = spyOnHistoryWrites();
+
+    try {
+      const tabs = await fixture<Tabs>(html`
+        <ui-tabs url-sync default-selected-value="details">
+          <button slot="tab" value="overview">概要</button>
+          <div slot="panel">概要パネル</div>
+          <button slot="tab" value="details">詳細</button>
+          <div slot="panel">詳細パネル</div>
+        </ui-tabs>
+      `);
+      await waitForLitUpdate(tabs);
+
+      const detailTab = must(
+        tabs.querySelector<HTMLElement>('[slot="tab"][value="details"]'),
+        'details tab が見つかりません',
+      );
+
+      expect(detailTab.getAttribute('aria-selected')).to.equal('true');
+      expect(window.location.search).to.equal('?tab=details');
+      expect(historySpy.pushUrls).to.deep.equal([]);
+      expect(historySpy.replaceUrls).to.deep.equal(['/?tab=details']);
+    } finally {
+      historySpy.restore();
+      restoreUrl();
+    }
+  });
+
+  it('url-sync は空白のみ query と source=null 初期表示で ?tab= を新規生成しないこと', async () => {
+    for (const url of ['/?tab=%20', '/']) {
+      const restoreUrl = replaceUrl(url);
+      const historySpy = spyOnHistoryWrites();
+
+      try {
+        const tabs = await fixture<Tabs>(html`
+          <ui-tabs url-sync>
+            <button slot="tab" value="overview">概要</button>
+            <div slot="panel">概要パネル</div>
+            <button slot="tab" value="details">詳細</button>
+            <div slot="panel">詳細パネル</div>
+          </ui-tabs>
+        `);
+        await waitForLitUpdate(tabs);
+
+        expect(tabs.selectedValue).to.equal('overview');
+        expect(window.location.search).to.equal(url === '/' ? '' : '?tab=%20');
+        expect(historySpy.pushUrls).to.deep.equal([]);
+        expect(historySpy.replaceUrls).to.deep.equal([]);
+      } finally {
+        historySpy.restore();
+        restoreUrl();
+      }
+    }
+  });
+
+  it('url-sync は query 値が activeValue と一致する場合に副作用的な query 正規化をしないこと', async () => {
+    const restoreUrl = replaceUrl('/?tag=lit&tab=details&tab=overview');
+    const historySpy = spyOnHistoryWrites();
+
+    try {
+      const tabs = await fixture<Tabs>(html`
+        <ui-tabs url-sync>
+          <button slot="tab" value="overview">概要</button>
+          <div slot="panel">概要パネル</div>
+          <button slot="tab" value="details">詳細</button>
+          <div slot="panel">詳細パネル</div>
+        </ui-tabs>
+      `);
+      await waitForLitUpdate(tabs);
+
+      expect(tabs.selectedValue).to.equal('details');
+      expect(window.location.search).to.equal('?tag=lit&tab=details&tab=overview');
+      expect(historySpy.pushUrls).to.deep.equal([]);
+      expect(historySpy.replaceUrls).to.deep.equal([]);
+    } finally {
+      historySpy.restore();
+      restoreUrl();
+    }
+  });
+
+  it('url-sync は内側 ui-tabs 配下 hash を外側 ui-tabs の host-owned hash として採用しないこと', async () => {
+    const restoreUrl = replaceUrl('/#inner-heading');
+    const historySpy = spyOnHistoryWrites();
+
+    try {
+      const tabs = await fixture<Tabs>(html`
+        <ui-tabs url-sync>
+          <button slot="tab" value="overview">概要</button>
+          <section slot="panel">
+            <h3 id="overview-heading">概要見出し</h3>
+            <ui-tabs>
+              <button slot="tab" value="inner">Inner</button>
+              <section slot="panel"><h4 id="inner-heading">Inner heading</h4></section>
+            </ui-tabs>
+          </section>
+          <button slot="tab" value="details">詳細</button>
+          <section slot="panel"><h3 id="details-heading">詳細見出し</h3></section>
+        </ui-tabs>
+      `);
+      await waitForLitUpdate(tabs);
+
+      expect(tabs.selectedValue).to.equal('overview');
+      expect(window.location.search).to.equal('');
+      expect(historySpy.pushUrls).to.deep.equal([]);
+      expect(historySpy.replaceUrls).to.deep.equal([]);
+    } finally {
+      historySpy.restore();
+      restoreUrl();
     }
   });
 });

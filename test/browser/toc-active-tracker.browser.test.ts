@@ -83,6 +83,61 @@ describe('TocActiveTracker', () => {
     tracker.destroy();
   });
 
+  it('hash 回復後の tab 状態を visible headings に反映すること', async () => {
+    document.body.innerHTML = `
+      <article id="content-root">
+        <ui-tabs data-toc-scope="toc-scope-1" selected-value="rust" hydrated>
+          <button slot="tab" value="javascript">JavaScript</button>
+          <section slot="panel" role="tabpanel" aria-hidden="true" hidden>
+            <h3 id="js-heading">JavaScript</h3>
+          </section>
+          <button slot="tab" value="rust">Rust</button>
+          <section slot="panel" role="tabpanel">
+            <h3 id="rust-heading">Rust</h3>
+          </section>
+        </ui-tabs>
+      </article>
+    `;
+
+    const headings: Heading[] = [
+      {
+        id: 'js-heading',
+        text: 'JavaScript',
+        level: 3,
+        scopeSelections: [{ scopeId: 'toc-scope-1', value: 'javascript' }],
+      },
+      {
+        id: 'rust-heading',
+        text: 'Rust',
+        level: 3,
+        scopeSelections: [{ scopeId: 'toc-scope-1', value: 'rust' }],
+      },
+    ];
+
+    const snapshots: string[][] = [];
+    const tracker = new TocActiveTracker({
+      contentRootId: 'content-root',
+      headings,
+      capabilities: {
+        activeTracking: false,
+        dynamicScopes: true,
+        mobilePanel: false,
+      },
+      getActiveId: () => '',
+      onVisibleHeadingsChange: (visibleHeadings) => {
+        snapshots.push(visibleHeadings.map((heading) => heading.id));
+      },
+      onActiveIdChange: () => undefined,
+    });
+
+    tracker.start();
+    await waitForRefresh();
+
+    expect(snapshots.at(-1)).to.deep.equal(['rust-heading']);
+
+    tracker.destroy();
+  });
+
   it('スクロール位置に応じて現在見出しを幾何学的に再計算すること', async () => {
     document.body.innerHTML = `
       <article id="content-root">

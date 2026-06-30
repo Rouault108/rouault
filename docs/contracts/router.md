@@ -65,6 +65,7 @@
 - `GeneratedDocumentRouteSet`はURL意味分類ではなく、静的生成済みrouteのpresence判定集合である。
 - `resolveRouaultContentPath()`はfetch target pathを導出する関数であり、公開canonicalを定義しない。
 - internal document navigation validationは、basePath除去後の`pathname`だけでroute manifest掲載有無を判定し、`known-route`または`missing-route-candidate`としてrouter queueからdocument loaderへ引き継ぐ。query/hashはroute presence判定に使わない。
+- `?tab=`と`#hash`の矛盾はRouterのNot Found責務ではない。有効pathでroute presenceが成立する場合、tabsなどのfeature-local URL state ownerが回復し、必要に応じて`replaceState`で正規化する。
 - manifest非掲載でもinternal document navigationとして許可される`missing-route-candidate`はSPA遷移候補である。ただしdefault internal resource pathは従来どおり`disallowed-url`として拒否する。
 - document navigation fallbackは、`urlStateNavigationPolicy`評価後のfull navigationにのみ適用する。
 - state-only navigationでは`DocumentLoader.load()`も`LocationAdapter.navigateDocument()`も呼ばない。

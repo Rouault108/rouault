@@ -97,6 +97,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 - `docs/adr/details-block-static-prose-disclosure.md`
 - `docs/adr/reading-surface-paragraph-flow-separation.md`
 - `docs/adr/router-document-navigation-fallback-on-stale-fetch-artifacts.md`
+- `docs/adr/tabs-owned-hash-url-recovery.md`
 - `docs/adr/translation-light-dom-disclosure-fallback.md`
 - `docs/adr/`
 

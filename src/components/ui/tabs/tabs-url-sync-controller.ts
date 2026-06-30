@@ -6,6 +6,7 @@ export interface TabsUrlSyncHost {
   getHostElement(): HTMLElement;
   isUrlSyncEnabled(): boolean;
   getActiveValue(): string | null;
+  resolveTabValueForHash(decodedHash: string): string | null;
   clearControlledSelection(): void;
   onUrlStateChanged(): void;
 }
@@ -77,7 +78,20 @@ export class TabsUrlSyncController implements ReactiveController {
       };
     }
 
-    const queryValue = getTabsUrlSyncStrategy()?.readValue(window.location.href) ?? null;
+    const currentUrl = window.location.href;
+    const strategy = getTabsUrlSyncStrategy();
+    const hashValue = strategy?.readHash(currentUrl) ?? '';
+    if (hashValue !== '') {
+      const hashTabValue = this.host.resolveTabValueForHash(hashValue);
+      if (hashTabValue !== null) {
+        return {
+          value: hashTabValue,
+          source: 'hash',
+        };
+      }
+    }
+
+    const queryValue = strategy?.readValue(currentUrl) ?? null;
     if (queryValue !== null) {
       return {
         value: queryValue,
@@ -105,6 +119,10 @@ export class TabsUrlSyncController implements ReactiveController {
     let nextUrl = currentUrl;
 
     if (source === 'hash') {
+      nextUrl = strategy.writeValue(currentUrl, activeValue);
+    }
+
+    if (source === 'query' && strategy.readValue(currentUrl) !== activeValue) {
       nextUrl = strategy.writeValue(currentUrl, activeValue);
     }
 

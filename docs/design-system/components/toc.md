@@ -212,6 +212,7 @@ runtime契約:
 - `ui-tabs`は`ui-tab-change.detail.scopeId`を発火する
 - trackerはtabsの内部DOM構造ではなく`scopeId`とscope snapshot helperを使う
 - hidden tab内のhash対象見出しに遷移するときは、対応するtabを先に選択してからTOCを同期する
+- TOCは`?tab=`の正規化を所有しない。hashと`?tab=`の矛盾回復、host-owned hash判定、`replaceState`によるURL正規化は`ui-tabs[url-sync]`のfeature-local URL stateとして扱う
 
 ---
 

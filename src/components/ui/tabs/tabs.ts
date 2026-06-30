@@ -6,6 +6,7 @@ import {
   applyTabsAria,
   readTabsSnapshot,
   readTabsSnapshotFromLightDom,
+  resolveTabValueForPanelTarget,
   scrollTabElementIntoView,
   switchPanels,
   validateTabsSnapshot,
@@ -76,6 +77,19 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
 
   getActiveValue(): string | null {
     return this.snapshot.tabs[this.activeIndex]?.getAttribute('value') ?? null;
+  }
+
+  resolveTabValueForHash(decodedHash: string): string | null {
+    if (decodedHash.trim().length === 0) {
+      return null;
+    }
+
+    const target = document.getElementById(decodedHash);
+    if (target === null || target.closest('ui-tabs') !== this) {
+      return null;
+    }
+
+    return resolveTabValueForPanelTarget(this.snapshot, target);
   }
 
   clearControlledSelection(): void {
