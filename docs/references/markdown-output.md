@@ -35,6 +35,80 @@
 
 各directiveの入力記法は`docs/references/markdown-authoring-syntax.md`を参照し、最終DOMは`docs/contracts/markdown.md`のsafety boundaryを満たす。
 
+### `::code-group`
+
+`::code-group`は、final DOMで`section[data-code-group]`へ正規化する。SSR / no-JSでは全panelをstackとして読める状態で出力し、hydration後にcode group enhancerがtabs UIへ昇格する。
+
+```html
+<section
+  data-code-group="true"
+  data-code-group-id="code-group-1"
+  data-code-group-selected="valid"
+  data-hydration-key="code-group-enhancer"
+  data-hydration-capability="interactive"
+  data-hydration-trigger="visible"
+>
+  <div class="code-group-header" data-code-group-controls="true">
+    <div class="code-group-tablist">
+      <button
+        id="code-group-1-tab-valid"
+        type="button"
+        data-code-group-tab="true"
+        data-code-group-key="valid"
+        data-code-group-panel-id="code-group-1-panel-valid"
+      >正しい例</button>
+      <button
+        id="code-group-1-tab-invalid"
+        type="button"
+        data-code-group-tab="true"
+        data-code-group-key="invalid"
+        data-code-group-panel-id="code-group-1-panel-invalid"
+      >誤り例</button>
+    </div>
+    <div class="code-group-header-tools">
+      <button
+        type="button"
+        data-copy-button="true"
+        data-code-group-copy="true"
+        data-copy-target-id="code-group-1-copy-source-0"
+        aria-describedby="code-group-1-copy-source-0-copy-status"
+      ></button>
+      <span id="code-group-1-copy-source-0-copy-status" data-copy-status="true"></span>
+    </div>
+  </div>
+  <section
+    id="code-group-1-panel-valid"
+    data-code-group-panel="valid"
+    data-code-group-panel-active="true"
+    data-code-copy-source-id="code-group-1-copy-source-0"
+  >
+    <template id="code-group-1-copy-source-0" data-code-copy-source="true">...</template>
+    <p class="code-group-stack-label">正しい例</p>
+    <figure data-code-block-root="true" data-code-group-owned="true">...</figure>
+  </section>
+  <section
+    id="code-group-1-panel-invalid"
+    data-code-group-panel="invalid"
+    data-code-group-panel-active="false"
+    data-code-copy-source-id="code-group-1-copy-source-1"
+  >
+    <template id="code-group-1-copy-source-1" data-code-copy-source="true">...</template>
+    <p class="code-group-stack-label">誤り例</p>
+    <figure data-code-block-root="true" data-code-group-owned="true">...</figure>
+  </section>
+</section>
+```
+
+- root selected keyは非空の`data-code-group-selected`で表す。
+- tab markerは`data-code-group-tab="true"`であり、tab keyではない。tab keyは非空の`data-code-group-key`で表す。
+- panel keyはroot直下panelの非空`data-code-group-panel`で表す。
+- `data-code-group-panel-active`は文字列`"true"`または`"false"`で出力する。空属性や単独属性は出力しない。
+- `data-code-group-panel-active="true"`は1件だけで、root selected key、selected key対応tab、group copy targetと整合する。
+- tab key集合とroot直下のdirect child panel key集合は一致する。
+- group copy buttonの`data-copy-target-id`はactive panelの`data-code-copy-source-id`を指す。
+- tab id、panel id、`data-code-group-panel-id`は非空で、同じkeyのtabとpanelを結ぶ。
+- SSR時点では`hidden`、`aria-hidden`、`inert`、`role="tablist"`、`role="tab"`、`role="tabpanel"`、`aria-selected`、`aria-controls`、`tabindex`を付与しない。
+
 ### `::callout`
 
 `::callout`は、final DOMで`aside[data-callout="true"][data-callout-kind]`へ正規化する。読書面の短い注記surfaceであり、custom elementやruntime-dependent componentへ変換しない。

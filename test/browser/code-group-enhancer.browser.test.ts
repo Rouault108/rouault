@@ -27,13 +27,13 @@ describe('code-group-enhancer', () => {
     const root = document.createElement('article');
     root.innerHTML = `
       <section data-code-group data-code-group-id="example" data-code-group-label="比較" data-code-group-selected="valid">
-        <div class="code-group-header">
+        <div class="code-group-header" data-code-group-controls="true">
           <div class="code-group-tablist">
-            <button type="button" data-code-group-tab data-code-group-key="valid">Valid</button>
-            <button type="button" data-code-group-tab data-code-group-key="invalid">Invalid</button>
-            <button type="button" data-code-group-tab data-code-group-key="empty">Empty</button>
+            <button type="button" data-code-group-tab="true" data-code-group-key="valid">Valid</button>
+            <button type="button" data-code-group-tab="true" data-code-group-key="invalid">Invalid</button>
+            <button type="button" data-code-group-tab="true" data-code-group-key="empty">Empty</button>
           </div>
-          <span data-copy-control>
+          <div class="code-group-header-tools">
             <button
               type="button"
               data-copy-button
@@ -43,21 +43,21 @@ describe('code-group-enhancer', () => {
               aria-describedby="copy-status"
             >copy</button>
             <span id="copy-status" data-copy-status>コピーしました</span>
-          </span>
+          </div>
         </div>
-        <section data-code-group-panel="valid" data-code-group-panel-label="正しい例" data-code-copy-source-id="source-a">
+        <section data-code-group-panel="valid" data-code-group-panel-active="true" data-code-group-panel-label="正しい例" data-code-copy-source-id="source-a">
           <template id="source-a" data-code-copy-source>const valid = true;</template>
           <figure data-code-block-root data-code-group-owned="true">
             <pre data-code-block data-code-language="ts"><code>const valid = true;</code></pre>
           </figure>
         </section>
-        <section data-code-group-panel="invalid" data-code-group-panel-label="誤り例" data-code-copy-source-id="source-b">
+        <section data-code-group-panel="invalid" data-code-group-panel-active="false" data-code-group-panel-label="誤り例" data-code-copy-source-id="source-b">
           <template id="source-b" data-code-copy-source>const invalid = true;</template>
           <figure data-code-block-root data-code-group-owned="true">
             <pre data-code-block data-code-language="ts" data-code-copy-label="Bad sample"><code>const invalid = true;</code></pre>
           </figure>
         </section>
-        <section data-code-group-panel="empty" data-code-group-panel-label="空">
+        <section data-code-group-panel="empty" data-code-group-panel-active="false" data-code-group-panel-label="空">
           <figure data-code-block-root data-code-group-owned="true">
             <pre data-code-block data-code-language="ts"><code></code></pre>
           </figure>
@@ -87,6 +87,7 @@ describe('code-group-enhancer', () => {
     expect(tablist.getAttribute('role')).to.equal('tablist');
     expect(tablist.getAttribute('aria-label')).to.equal('比較');
     expect(tabs.every((tab) => tab.dataset['codeGroupTabBound'] === 'true')).to.equal(true);
+    expect(tabs.every((tab) => tab.dataset['codeGroupTab'] === 'true')).to.equal(true);
     expect(tabs.some((tab) => tab.hasAttribute('data-bound'))).to.equal(false);
     expect(tabs[0]?.getAttribute('role')).to.equal('tab');
     expect(tabs[0]?.getAttribute('aria-selected')).to.equal('true');
@@ -156,5 +157,97 @@ describe('code-group-enhancer', () => {
     expect(group?.dataset['codeGroupSelected']).to.equal('valid');
     expect(tabs[0]?.getAttribute('aria-selected')).to.equal('true');
     expect(tabs[0]?.tabIndex).to.equal(0);
+  });
+
+  it('tab key は data-code-group-key だけから読み、nested descendant を親 group state に混ぜないこと', () => {
+    const root = document.createElement('article');
+    root.innerHTML = `
+      <section data-code-group data-code-group-id="outer" data-code-group-label="外側" data-code-group-selected="">
+        <div class="code-group-header" data-code-group-controls="true">
+          <div class="code-group-tablist">
+            <button type="button" data-code-group-tab="true" data-code-group-key="outer-a">Outer A</button>
+            <button type="button" data-code-group-tab="true" data-code-group-key="outer-b">Outer B</button>
+          </div>
+          <div class="code-group-header-tools">
+            <button type="button" data-copy-button data-code-group-copy data-copy-target-id="outer-source-a" aria-describedby="outer-status">copy</button>
+            <span id="outer-status" data-copy-status></span>
+          </div>
+        </div>
+        <section data-code-group-panel="outer-a" data-code-group-panel-active="true" data-code-copy-source-id="outer-source-a">
+          <template id="outer-source-a" data-code-copy-source>outer a</template>
+          <figure data-code-block-root data-code-group-owned="true">
+            <pre data-code-block><code>outer a</code></pre>
+          </figure>
+          <section data-code-group data-code-group-id="inner" data-code-group-selected="inner-a">
+            <div class="code-group-header" data-code-group-controls="true">
+              <div class="code-group-tablist">
+                <button type="button" data-code-group-tab="true" data-code-group-key="inner-a">Inner A</button>
+              </div>
+              <div class="code-group-header-tools">
+                <button type="button" data-copy-button data-code-group-copy data-copy-target-id="inner-source-a" aria-describedby="inner-status">copy</button>
+                <span id="inner-status" data-copy-status></span>
+              </div>
+            </div>
+            <section data-code-group-panel="inner-a" data-code-group-panel-active="true" data-code-copy-source-id="inner-source-a">
+              <template id="inner-source-a" data-code-copy-source>inner a</template>
+              <figure data-code-block-root data-code-group-owned="true">
+                <pre data-code-block><code>inner a</code></pre>
+              </figure>
+            </section>
+          </section>
+        </section>
+        <section data-code-group-panel="outer-b" data-code-group-panel-active="false" data-code-copy-source-id="outer-source-b">
+          <template id="outer-source-b" data-code-copy-source>outer b</template>
+          <figure data-code-block-root data-code-group-owned="true">
+            <pre data-code-block><code>outer b</code></pre>
+          </figure>
+        </section>
+      </section>
+    `;
+    document.body.append(root);
+
+    enhanceCodeGroups(root);
+
+    const groups = Array.from(root.querySelectorAll<HTMLElement>('section[data-code-group]'));
+    const outer = expectElement(groups[0], 'outer group');
+    const inner = expectElement(groups[1], 'inner group');
+    const outerTabs = Array.from(
+      outer.querySelector<HTMLElement>(':scope > .code-group-header .code-group-tablist')?.querySelectorAll<HTMLButtonElement>(':scope > button[data-code-group-tab]') ?? [],
+    );
+    const outerPanels = Array.from(outer.children).filter(
+      (child): child is HTMLElement =>
+        child instanceof HTMLElement && child.hasAttribute('data-code-group-panel'),
+    );
+    const outerCopyButton = expectElement(
+      outer.querySelector<HTMLButtonElement>(
+        ':scope > .code-group-header > .code-group-header-tools > button[data-code-group-copy][data-copy-button]',
+      ),
+      'outer copy button',
+    );
+    const innerCopyButton = expectElement(
+      inner.querySelector<HTMLButtonElement>(
+        ':scope > .code-group-header > .code-group-header-tools > button[data-code-group-copy][data-copy-button]',
+      ),
+      'inner copy button',
+    );
+
+    expect(outer.dataset['codeGroupSelected']).to.equal('outer-a');
+    expect(outerTabs).to.have.length(2);
+    expect(outerPanels).to.have.length(2);
+    expect(outer.querySelectorAll('[role="tab"]')).to.have.length(3);
+    expect(outerTabs.every((tab) => tab.dataset['codeGroupTab'] === 'true')).to.equal(true);
+    expect(outerTabs[0]?.getAttribute('aria-selected')).to.equal('true');
+    expect(outerTabs[0]?.dataset['codeGroupTabActive']).to.equal('true');
+    expect(outerCopyButton.dataset['copyTargetId']).to.equal('outer-source-a');
+    expect(innerCopyButton.dataset['copyTargetId']).to.equal('inner-source-a');
+
+    outerTabs[1]?.click();
+
+    expect(outer.dataset['codeGroupSelected']).to.equal('outer-b');
+    expect(outerPanels[0]?.dataset['codeGroupPanelActive']).to.equal('false');
+    expect(outerPanels[1]?.dataset['codeGroupPanelActive']).to.equal('true');
+    expect(inner.dataset['codeGroupSelected']).to.equal('inner-a');
+    expect(innerCopyButton.dataset['copyTargetId']).to.equal('inner-source-a');
+    expect(outerCopyButton.dataset['copyTargetId']).to.equal('outer-source-b');
   });
 });

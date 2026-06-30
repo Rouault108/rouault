@@ -99,15 +99,14 @@ const createGroupCopyButton = (targetId: string, statusId: string): HastNode => 
   properties: {
     className: ['code-group-header-tools'],
   },
-  children: [
+  children:
     createStaticCopyButtonHast({
       targetId,
       statusId,
       label: 'コードをコピー',
       buttonClassName: 'code-group-copy-button',
       extraButtonAttributes: [{ name: 'data-code-group-copy', value: 'true' }],
-    }),
-  ],
+    }).children ?? [],
 });
 
 const createCodeCopySource = (id: string, source: string): HastNode => ({
@@ -150,6 +149,7 @@ const createPanel = (
   item: StaticCodeBlockMeta,
   copySourceId: string,
   panelId: string,
+  active: boolean,
   idContext: StaticRenderIdContext,
 ): HastNode => ({
   type: 'element',
@@ -157,6 +157,7 @@ const createPanel = (
   properties: {
     id: panelId,
     'data-code-group-panel': item.key,
+    'data-code-group-panel-active': active ? 'true' : 'false',
     'data-code-group-panel-label': item.tabLabel,
     'data-code-copy-source-id': copySourceId,
   },
@@ -303,6 +304,7 @@ export function rehypeStaticCodeGroups(
             item,
             ids?.copySourceId ?? `${groupId}-copy-source-${String(index)}`,
             ids?.panelId ?? `${groupId}-panel-${item.key}`,
+            item.key === selectedKey,
             idContext,
           );
         }),

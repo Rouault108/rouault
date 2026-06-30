@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { toHtml } from 'hast-util-to-html';
 
 import { rehypeStaticCodeGroups } from '../../build/rehype/static-code-groups.js';
 
@@ -94,10 +95,7 @@ describe('rehypeStaticCodeGroups', () => {
     expect(headerTools?.tagName).toBe('div');
     expect(headerTools?.properties?.['className']).toEqual(['code-group-header-tools']);
 
-    const copyButton = headerTools?.children?.[0];
-    expect(copyButton?.tagName).toBe('span');
-    expect(copyButton?.properties?.['data-copy-control']).toBe('true');
-    const button = copyButton?.children?.[0];
+    const button = headerTools?.children?.[0];
     expect(button?.tagName).toBe('button');
     expect(button?.properties?.['data-code-group-copy']).toBe('true');
     expect(button?.properties?.['disabled']).toBe(true);
@@ -109,7 +107,7 @@ describe('rehypeStaticCodeGroups', () => {
     expect(button?.properties?.['aria-describedby']).toBe(
       `${String(selectedCopySourceId)}-copy-status`,
     );
-    const copyStatus = copyButton?.children?.[1];
+    const copyStatus = headerTools?.children?.[1];
     expect(copyStatus?.tagName).toBe('span');
     expect(copyStatus?.properties?.['id']).toBe(button?.properties?.['aria-describedby']);
     expect(copyStatus?.properties?.['data-copy-status']).toBe('true');
@@ -118,6 +116,8 @@ describe('rehypeStaticCodeGroups', () => {
     const secondPanel = group?.children?.[2];
     expect(firstPanel?.tagName).toBe('section');
     expect(firstPanel?.properties?.['data-code-group-panel']).toBe('valid');
+    expect(firstPanel?.properties?.['data-code-group-panel-active']).toBe('true');
+    expect(typeof firstPanel?.properties?.['data-code-group-panel-active']).toBe('string');
     expect(firstPanel?.properties?.['role']).toBeUndefined();
     expect(firstPanel?.properties?.['aria-labelledby']).toBeUndefined();
     expect(firstPanel?.properties?.['id']).toBe(firstTab?.properties?.['data-code-group-panel-id']);
@@ -141,6 +141,8 @@ describe('rehypeStaticCodeGroups', () => {
 
     expect(secondPanel?.tagName).toBe('section');
     expect(secondPanel?.properties?.['data-code-group-panel']).toBe('invalid');
+    expect(secondPanel?.properties?.['data-code-group-panel-active']).toBe('false');
+    expect(typeof secondPanel?.properties?.['data-code-group-panel-active']).toBe('string');
     expect(secondPanel?.properties?.['data-code-group-inactive']).toBeUndefined();
     expect(secondPanel?.properties?.['hidden']).toBeUndefined();
     expect(secondPanel?.properties?.['role']).toBeUndefined();
@@ -151,6 +153,12 @@ describe('rehypeStaticCodeGroups', () => {
     );
     expect(secondPanel?.children?.[0]?.properties?.['data-code-copy-source']).toBe('true');
     expect(secondPanel?.children?.[1]?.children?.[0]?.value).toBe('誤り例');
+
+    const html = toHtml(group as unknown as Parameters<typeof toHtml>[0]);
+    expect(html).toContain('data-code-group-panel-active="true"');
+    expect(html).toContain('data-code-group-panel-active="false"');
+    expect(html).not.toContain('data-code-group-panel-active=""');
+    expect(html).not.toMatch(/\sdata-code-group-panel-active(?:\s|>)/u);
   });
 
   it('child が 1 件だけなら standalone code block factory 経由の figure に戻すこと', () => {

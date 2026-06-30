@@ -34,7 +34,7 @@ code surfaceの正本は、旧Lit Custom Elementではなく静的HTMLです。
 - code bodyは`pre[data-code-block] > code[data-lang]`を基本構造とする。
 - code group rootは`section[data-code-group]`とする。
 - copy sourceは`template[data-code-copy-source]`とする。
-- copy controlは`button.static-copy-control`とする。
+- copy controlは`button[data-copy-button]`とする。
 
 旧`ui-code-block`、`ui-code-group`、`ui-copy-button`はfinal DOMの正本ではありません。これらのtag、property、attribute、custom eventを互換APIとして提供しません。
 
@@ -70,9 +70,20 @@ filename / caption付きのgroup-owned code blockでも、captionは独立card h
 - `role="tablist"`、`role="tab"`、`role="tabpanel"`は付与しません。
 - inactive panelを`hidden`で隠すことを主要方針にしません。
 - 各panelはlabelまたはheadingで識別できる必要があります。
-- `data-code-group-tab`はenhancer用識別子であり、SSR / no-JS時点のtab semanticsではありません。
+- root selected keyは非空の`data-code-group-selected`で表します。
+- tab keyは非空の`data-code-group-key`で表します。
+- panel keyはdirect child panelの非空`data-code-group-panel`で表します。
+- `data-code-group-tab`はtab marker属性であり、値は`"true"`です。tab keyとして扱いません。
+- 各panelは`data-code-group-panel-active="true|false"`を文字列値として持ちます。空属性、boolean由来の単独属性、`"yes"`などは不正です。
+- `data-code-group-panel-active="true"`は1件だけで、keyはrootの`data-code-group-selected`と一致します。
+- scoped topologyとして、現在のcode group root直下の`.code-group-header[data-code-group-controls="true"]`内tablist直下にある`button[data-code-group-tab]`の`data-code-group-key`集合と、root直下の`section[data-code-group-panel]`集合は一致します。
+- tab id、panel id、tabの`data-code-group-panel-id`は非空で、tabの`data-code-group-panel-id`は同じkeyのpanel idと一致します。
+- group copy buttonの初期`data-copy-target-id`はactive panelの`data-code-copy-source-id`を指します。
+- `data-code-group-value`は現行code group contractでは使いません。旧Custom Element時代の選択値表現としてobsoleteです。
 - copy sourceは各panel内に維持します。
 - no-JSでは全panel stack表示を維持し、stack labelとpanel dividerでpanel境界を担保します。
+- JS有効かつ`@media screen and (scripting: enabled)`対応環境では、enhanced前のinactive panelだけを視覚的に非表示にしてfirst paintのstack flashを抑制します。active panelのstack labelはpre-hydration段階では表示します。
+- JS有効だがclient bundleまたはenhancerが失敗した場合、scripting対応環境では初期active panelだけがstack label付きで表示され得ます。これはglobal hydration failure fallbackを導入しない今回Decisionのtrade-offです。
 
 #### Enhanced
 
@@ -80,6 +91,8 @@ filename / caption付きのgroup-owned code blockでも、captionは独立card h
 - enhancerはtablist / tab / tabpanel semantics、keyboard navigation、active panel stateを付与します。
 - inactive panelの非表示はenhanced stateとCSS selectorの組み合わせで行います。
 - group copy controlが存在する場合、enhancerはactive panelのcopy sourceを参照できる状態へ同期します。
+- enhancerはtab keyを`data-code-group-key`だけから読み、`data-code-group-tab`をkey fallbackに使いません。
+- enhancerのtabs / panels / copy button取得は現在のcode group rootにscopeします。tabsはroot直下header内tablist直下の`button[data-code-group-tab]`、panelsはroot直下の`section[data-code-group-panel]`、copy buttonはroot直下`.code-group-header[data-code-group-controls="true"]`配下`.code-group-header-tools > button[data-code-group-copy][data-copy-button]`だけを対象にします。
 
 ## 4. No-JS Controls
 
@@ -101,6 +114,8 @@ filename / caption付きのgroup-owned code blockでも、captionは独立card h
 
 - printではcode groupの全panelを読める状態にします。
 - enhanced stateで隠れているinactive panelもprint mediaでは表示対象に戻します。
+- scripting mediaでpre-hydrationに隠したinactive panelもprint mediaでは表示対象に戻します。
+- printではstack labelを表示します。
 - printではpanel dividerでpanel境界を担保します。
 - tab controlsやcopy controlsは印刷上の主内容ではありません。
 - beforeprint / afterprintによるDOM変更は最後の手段とし、CSSで成立する方針を優先します。
@@ -111,9 +126,9 @@ filename / caption付きのgroup-owned code blockでも、captionは独立card h
 
 - stable id。
 - `data-code-block-root`、`data-code-block`、`data-code-group`。
-- `data-code-group-tab`、`data-code-group-panel`、`data-code-group-value`。
+- `data-code-group-selected`、`data-code-group-tab="true"`、`data-code-group-key`、`data-code-group-panel`。
+- `data-code-group-panel-active="true|false"`。これはSSR initial stateであり、hydration後はenhancerが同じ属性をruntime mutable stateとして同期します。
 - panel label / heading。
-- initial selected valueを表すdata属性。
 - `template[data-code-copy-source]`。
 - copy target id、status id、`aria-describedby`の参照整合。
 - hydration annotation。

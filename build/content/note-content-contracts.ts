@@ -499,16 +499,55 @@ const getScopedCopyStatus = (
     (child) => getAttributeValue(child, 'id') === statusId && hasAttribute(child, 'data-copy-status'),
   )[0];
 
+const getDirectCodeGroupHeader = (group: Parse5Element): Parse5Element | undefined =>
+  findDirectChild(
+    group,
+    (child) =>
+      hasClassName(child, 'code-group-header') &&
+      getAttributeValue(child, 'data-code-group-controls') === 'true',
+  );
+
+const getDirectCodeGroupTabList = (group: Parse5Element): Parse5Element | undefined => {
+  const header = getDirectCodeGroupHeader(group);
+  return header
+    ? findDirectChild(header, (child) => hasClassName(child, 'code-group-tablist'))
+    : undefined;
+};
+
+const getDirectCodeGroupTabs = (group: Parse5Element): Parse5Element[] => {
+  const tabList = getDirectCodeGroupTabList(group);
+  return tabList
+    ? getDirectChildren(tabList, (child) => hasAttribute(child, 'data-code-group-tab'))
+    : [];
+};
+
+const getDirectCodeGroupHeaderTools = (group: Parse5Element): Parse5Element | undefined => {
+  const header = getDirectCodeGroupHeader(group);
+  return header
+    ? findDirectChild(header, (child) => hasClassName(child, 'code-group-header-tools'))
+    : undefined;
+};
+
+const getDirectCodeGroupCopyButtons = (group: Parse5Element): Parse5Element[] => {
+  const tools = getDirectCodeGroupHeaderTools(group);
+  return tools
+    ? getDirectChildren(
+        tools,
+        (child) =>
+          child.tagName === 'button' &&
+          hasAttribute(child, 'data-code-group-copy') &&
+          hasAttribute(child, 'data-copy-button'),
+      )
+    : [];
+};
+
 const validateCodeGroupCopyButtonContract = (
   group: Parse5Element,
-  panelCopySourceIds: ReadonlySet<string>,
+  activePanelCopySourceId: string,
   errors: string[],
 ): void => {
   const label = getCodeSurfaceContextLabel(group);
-  const groupCopyButtons = collectDescendantElements(
-    group,
-    (child) => child.tagName === 'button' && hasAttribute(child, 'data-code-group-copy'),
-  );
+  const groupCopyButtons = getDirectCodeGroupCopyButtons(group);
 
   if (groupCopyButtons.length !== 1) {
     errors.push(`${label} は button[data-code-group-copy] を 1 つだけ含む必要があります`);
@@ -522,9 +561,9 @@ const validateCodeGroupCopyButtonContract = (
   }
 
   const targetId = getAttributeValue(groupCopyButton, 'data-copy-target-id')?.trim() ?? '';
-  if (!panelCopySourceIds.has(targetId)) {
+  if (targetId !== activePanelCopySourceId) {
     errors.push(
-      `${label} の group copy button は同じ code group 内の panel copy source を指す必要があります`,
+      `${label} の group copy button は active panel の copy source を指す必要があります`,
     );
     return;
   }
@@ -535,12 +574,37 @@ const validateCodeGroupCopyButtonContract = (
   }
 };
 
+const validateUniqueNonEmptyValue = (
+  values: readonly string[],
+  label: string,
+  errors: string[],
+): boolean => {
+  const seen = new Set<string>();
+  for (const value of values) {
+    if (value.length === 0) {
+      errors.push(`${label} は空にできません`);
+      return false;
+    }
+    if (seen.has(value)) {
+      errors.push(`${label} "${value}" が重複しています`);
+      return false;
+    }
+    seen.add(value);
+  }
+  return true;
+};
+
 const validateCodeGroupContract = (
   group: Parse5Element,
   collections: CodeSurfaceContractCollections,
   errors: string[],
 ): void => {
   const label = getCodeSurfaceContextLabel(group);
+  if (!getDirectCodeGroupHeader(group)) {
+    errors.push(`${label} の code-group-header は data-code-group-controls="true" を持つ必要があります`);
+    return;
+  }
+
   const controls = collectDescendantElements(group, (child) =>
     hasAttribute(child, 'data-code-group-controls'),
   );
@@ -562,16 +626,27 @@ const validateCodeGroupContract = (
     }
   }
 
-  const tabs = collectDescendantElements(group, (child) =>
-    hasAttribute(child, 'data-code-group-tab'),
-  );
+  const selectedKey = getAttributeValue(group, 'data-code-group-selected')?.trim() ?? '';
+  if (selectedKey.length === 0) {
+    errors.push(`${label} の data-code-group-selected は空にできません`);
+    return;
+  }
+
+  const tabs = getDirectCodeGroupTabs(group);
   if (tabs.length === 0) {
     errors.push(`${label} は enhancer 用の [data-code-group-tab] を含む必要があります`);
     return;
   }
+  const tabKeys: string[] = [];
+  const tabIds: string[] = [];
+  const panelIdByTabKey = new Map<string, string>();
   for (const tab of tabs) {
     if (tab.tagName !== 'button') {
       errors.push(`${label} の [data-code-group-tab] は button である必要があります`);
+      return;
+    }
+    if (getAttributeValue(tab, 'data-code-group-tab') !== 'true') {
+      errors.push(`${label} の data-code-group-tab は marker として "true" である必要があります`);
       return;
     }
     for (const name of ['role', 'aria-selected', 'aria-controls', 'tabindex', 'data-selected']) {
@@ -582,10 +657,30 @@ const validateCodeGroupContract = (
         return;
       }
     }
-    if ((getAttributeValue(tab, 'data-code-group-key')?.trim() ?? '').length === 0) {
+    const tabKey = getAttributeValue(tab, 'data-code-group-key')?.trim() ?? '';
+    if (tabKey.length === 0) {
       errors.push(`${label} の [data-code-group-tab] には data-code-group-key が必要です`);
       return;
     }
+    const tabId = getAttributeValue(tab, 'id')?.trim() ?? '';
+    if (tabId.length === 0) {
+      errors.push(`${label} の [data-code-group-tab] には id が必要です`);
+      return;
+    }
+    const panelId = getAttributeValue(tab, 'data-code-group-panel-id')?.trim() ?? '';
+    if (panelId.length === 0) {
+      errors.push(`${label} の [data-code-group-tab] には data-code-group-panel-id が必要です`);
+      return;
+    }
+    tabKeys.push(tabKey);
+    tabIds.push(tabId);
+    panelIdByTabKey.set(tabKey, panelId);
+  }
+  if (!validateUniqueNonEmptyValue(tabKeys, `${label} の data-code-group-key`, errors)) return;
+  if (!validateUniqueNonEmptyValue(tabIds, `${label} の tab id`, errors)) return;
+  if (!tabs.some((tab) => getAttributeValue(tab, 'data-code-group-key')?.trim() === selectedKey)) {
+    errors.push(`${label} の data-code-group-selected に対応する tab が必要です`);
+    return;
   }
 
   const panels = getDirectChildren(group, (child) => hasAttribute(child, 'data-code-group-panel'));
@@ -594,10 +689,31 @@ const validateCodeGroupContract = (
     return;
   }
 
-  const panelCopySourceIds = new Set<string>();
+  const panelKeys: string[] = [];
+  const panelIds: string[] = [];
+  const panelByKey = new Map<string, Parse5Element>();
+  let activePanelKey = '';
+  let activePanelCopySourceId = '';
 
   for (const panel of panels) {
     const panelLabel = getCodeSurfaceContextLabel(panel);
+    const panelKey = getAttributeValue(panel, 'data-code-group-panel')?.trim() ?? '';
+    if (panelKey.length === 0) {
+      errors.push(`${label} の direct child panel key は空にできません`);
+      return;
+    }
+    const panelId = getAttributeValue(panel, 'id')?.trim() ?? '';
+    if (panelId.length === 0) {
+      errors.push(`${label} の ${panelLabel} には id が必要です`);
+      return;
+    }
+    const activeState = getAttributeValue(panel, 'data-code-group-panel-active');
+    if (activeState !== 'true' && activeState !== 'false') {
+      errors.push(
+        `${label} の ${panelLabel} の data-code-group-panel-active は "true" または "false" である必要があります`,
+      );
+      return;
+    }
     if (isSsrHiddenCodeGroupPanel(panel)) {
       errors.push(
         `${label} の ${panelLabel} は SSR 時点で hidden / aria-hidden / inert にしてはいけません`,
@@ -630,10 +746,42 @@ const validateCodeGroupContract = (
       );
       return;
     }
-    panelCopySourceIds.add(copySourceId);
+    panelKeys.push(panelKey);
+    panelIds.push(panelId);
+    panelByKey.set(panelKey, panel);
+    if (activeState === 'true') {
+      if (activePanelKey.length > 0) {
+        errors.push(`${label} の data-code-group-panel-active="true" は 1 件だけ必要です`);
+        return;
+      }
+      activePanelKey = panelKey;
+      activePanelCopySourceId = copySourceId;
+    }
   }
 
-  validateCodeGroupCopyButtonContract(group, panelCopySourceIds, errors);
+  if (!validateUniqueNonEmptyValue(panelKeys, `${label} の direct child panel key`, errors)) return;
+  if (!validateUniqueNonEmptyValue(panelIds, `${label} の panel id`, errors)) return;
+  if (activePanelKey.length === 0) {
+    errors.push(`${label} の data-code-group-panel-active="true" は 1 件だけ必要です`);
+    return;
+  }
+  if (activePanelKey !== selectedKey) {
+    errors.push(`${label} の active panel key は data-code-group-selected と一致する必要があります`);
+    return;
+  }
+  if (tabKeys.length !== panelKeys.length || tabKeys.some((key) => !panelByKey.has(key))) {
+    errors.push(`${label} の tab key集合と direct child panel key集合は一致する必要があります`);
+    return;
+  }
+  for (const [tabKey, panelId] of panelIdByTabKey) {
+    const panel = panelByKey.get(tabKey);
+    if (!panel || getAttributeValue(panel, 'id')?.trim() !== panelId) {
+      errors.push(`${label} の data-code-group-panel-id は同じ key の panel id と一致する必要があります`);
+      return;
+    }
+  }
+
+  validateCodeGroupCopyButtonContract(group, activePanelCopySourceId, errors);
 };
 
 const validateCodeSurfaceContracts = (fragment: Parse5DocumentFragment, errors: string[]): void => {

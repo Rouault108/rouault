@@ -352,7 +352,7 @@
 }
 
 .code-surface-copy-button-shell > .static-copy-control,
-.code-group-header-tools > .static-copy-control {
+.code-group-header-tools > .static-copy-button {
   --_copy-button-icon-size: var(--icon-sm, 14px);
 
   opacity: 0.56;
@@ -364,23 +364,23 @@
 [data-code-block-root]:focus-within .code-surface-copy-button-shell > .static-copy-control,
 section[data-code-group][data-code-group-enhanced='true']:hover
   .code-group-header-tools
-  > .static-copy-control,
+  > .static-copy-button,
 section[data-code-group][data-code-group-enhanced='true']:focus-within
   .code-group-header-tools
-  > .static-copy-control {
+  > .static-copy-button {
   opacity: 1;
 }
 
 [data-code-block-root]:focus-within .code-surface-copy-button-shell > .static-copy-control,
 section[data-code-group][data-code-group-enhanced='true']:focus-within
   .code-group-header-tools
-  > .static-copy-control {
+  > .static-copy-button {
   transition-duration: var(--duration-instant, 0ms);
 }
 
 @media (hover: none) and (pointer: coarse) {
   .code-surface-copy-button-shell > .static-copy-control,
-  .code-group-header-tools > .static-copy-control {
+  .code-group-header-tools > .static-copy-button {
     opacity: var(--opacity-link-touch, 0.75);
   }
 }
@@ -392,7 +392,7 @@ section[data-code-group][data-code-group-enhanced='true']:focus-within
 
   [data-code-block-root],
   .code-surface-copy-button-shell > .static-copy-control,
-  .code-group-header-tools > .static-copy-control,
+  .code-group-header-tools > .static-copy-button,
   .code-group-tablist > button[data-code-group-tab] {
     transition-duration: var(--duration-instant, 0ms);
   }
@@ -509,6 +509,13 @@ section[data-code-group] > [data-code-group-panel] {
 section[data-code-group][data-code-group-enhanced='true']
   > [data-code-group-panel][data-code-group-panel-active='false'] {
   display: none;
+}
+
+@media screen and (scripting: enabled) {
+  section[data-code-group]:not([data-code-group-enhanced='true'])
+    > [data-code-group-panel][data-code-group-panel-active='false'] {
+    display: none;
+  }
 }
 
 .code-group-stack-label {

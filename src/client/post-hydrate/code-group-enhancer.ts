@@ -1,12 +1,13 @@
 import { resolveGroupCopyButtonLabel } from './code-surface-shared.js';
 
 const GROUP_SELECTOR = 'section[data-code-group]';
-const TAB_SELECTOR = '[data-code-group-tab]';
-const PANEL_SELECTOR = '[data-code-group-panel]';
 const CODE_BLOCK_SELECTOR = 'pre[data-code-block]';
 
 const getTabKey = (tab: HTMLButtonElement, fallback = ''): string =>
-  tab.dataset['codeGroupKey'] ?? tab.dataset['codeGroupTab'] ?? fallback;
+  tab.dataset['codeGroupKey'] ?? fallback;
+
+const firstNonEmpty = (...values: (string | undefined)[]): string =>
+  values.find((value): value is string => typeof value === 'string' && value.length > 0) ?? '';
 
 const syncRovingTabIndex = (tabs: HTMLButtonElement[], focusedKey: string): void => {
   for (const tab of tabs) {
@@ -83,13 +84,61 @@ const focusNextTab = (state: GroupState, currentIndex: number, delta: number): v
   focusTab(state, state.tabs[nextIndex]);
 };
 
-const findCopyButton = (group: HTMLElement): HTMLButtonElement | null =>
-  group.querySelector<HTMLButtonElement>('button[data-code-group-copy][data-copy-button]');
+const getDirectHeader = (group: HTMLElement): HTMLElement | null =>
+  Array.from(group.children).find(
+    (child): child is HTMLElement =>
+      child instanceof HTMLElement &&
+      child.classList.contains('code-group-header') &&
+      child.dataset['codeGroupControls'] === 'true',
+  ) ?? null;
+
+const getDirectTabList = (group: HTMLElement): HTMLElement | null => {
+  const header = getDirectHeader(group);
+  return (
+    Array.from(header?.children ?? []).find(
+      (child): child is HTMLElement =>
+        child instanceof HTMLElement && child.classList.contains('code-group-tablist'),
+    ) ?? null
+  );
+};
+
+const findCopyButton = (group: HTMLElement): HTMLButtonElement | null => {
+  const header = getDirectHeader(group);
+  const tools =
+    Array.from(header?.children ?? []).find(
+      (child): child is HTMLElement =>
+        child instanceof HTMLElement && child.classList.contains('code-group-header-tools'),
+    ) ?? null;
+
+  return (
+    Array.from(tools?.children ?? []).find(
+      (child): child is HTMLButtonElement =>
+        child instanceof HTMLButtonElement &&
+        child.matches('button[data-code-group-copy][data-copy-button]'),
+    ) ?? null
+  );
+};
+
+const getScopedTabs = (group: HTMLElement): HTMLButtonElement[] => {
+  const tabList = getDirectTabList(group);
+  return Array.from(tabList?.children ?? []).filter(
+    (child): child is HTMLButtonElement =>
+      child instanceof HTMLButtonElement && child.matches('button[data-code-group-tab]'),
+  );
+};
+
+const getScopedPanels = (group: HTMLElement): HTMLElement[] =>
+  Array.from(group.children).filter(
+    (child): child is HTMLElement =>
+      child instanceof HTMLElement &&
+      child.tagName.toLowerCase() === 'section' &&
+      child.hasAttribute('data-code-group-panel'),
+  );
 
 const applyTabSemantics = (state: GroupState): void => {
   const groupId = state.group.dataset['codeGroupId'] ?? 'code-group';
   const groupLabel = state.group.dataset['codeGroupLabel'] ?? 'コード比較';
-  const tabList = state.group.querySelector<HTMLElement>('.code-group-tablist');
+  const tabList = getDirectTabList(state.group);
   if (tabList) {
     tabList.setAttribute('role', 'tablist');
     tabList.setAttribute('aria-label', groupLabel);
@@ -99,7 +148,7 @@ const applyTabSemantics = (state: GroupState): void => {
   const panelIdsByKey = new Map<string, string>();
 
   for (const [index, tab] of state.tabs.entries()) {
-    const key = tab.dataset['codeGroupTab'] ?? `tab-${String(index)}`;
+    const key = tab.dataset['codeGroupKey'] ?? `tab-${String(index)}`;
     const normalizedKey = getTabKey(tab, key);
     const tabId = tab.id || `${groupId}-tab-${normalizedKey}`;
 
@@ -139,8 +188,8 @@ const enhanceGroup = (group: HTMLElement): void => {
     return;
   }
 
-  const tabs = Array.from(group.querySelectorAll<HTMLButtonElement>(TAB_SELECTOR));
-  const panels = Array.from(group.querySelectorAll<HTMLElement>(PANEL_SELECTOR));
+  const tabs = getScopedTabs(group);
+  const panels = getScopedPanels(group);
   if (tabs.length === 0 || panels.length === 0) {
     return;
   }
@@ -154,11 +203,11 @@ const enhanceGroup = (group: HTMLElement): void => {
 
   applyTabSemantics(state);
 
-  const initialKey =
-    group.dataset['codeGroupSelected'] ??
-    panels[0]?.dataset['codeGroupPanel'] ??
-    tabs[0]?.dataset['codeGroupTab'] ??
-    '';
+  const initialKey = firstNonEmpty(
+    group.dataset['codeGroupSelected'],
+    panels[0]?.dataset['codeGroupPanel'],
+    tabs[0] ? getTabKey(tabs[0]) : undefined,
+  );
 
   for (const [index, tab] of tabs.entries()) {
     if (tab.dataset['codeGroupTabBound'] === 'true') {

@@ -2024,6 +2024,13 @@ describe('static CSS contracts', () => {
       "section[data-code-group][data-code-group-enhanced='true'] > [data-code-group-panel][data-code-group-panel-active='false']",
       ['display: none'],
     );
+    const scripting = atRuleBlock(css, '@media screen and (scripting: enabled)');
+    expectRuleToDeclare(
+      scripting,
+      "section[data-code-group]:not([data-code-group-enhanced='true']) > [data-code-group-panel][data-code-group-panel-active='false']",
+      ['display: none'],
+    );
+    expect(ruleBlock(scripting, 'section[data-code-group] .code-group-stack-label')).toBe('');
     const legacyInactiveSelectors = allRuleSelectors(css).filter((selector) =>
       selector.includes("[data-code-group-inactive='true']"),
     );

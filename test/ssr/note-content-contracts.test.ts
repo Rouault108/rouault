@@ -85,43 +85,64 @@ const codeGroupHtml = (
   } = {},
 ): string => `
   ${overrides.beforeGroupHtml ?? ''}
-  <section data-code-group="true" data-code-group-id="group-1" data-code-group-label="比較">
+  <section data-code-group="true" data-code-group-id="group-1" data-code-group-label="比較" data-code-group-selected="valid">
     <div class="code-group-header" data-code-group-controls="true">
       <div class="code-group-tablist">
         <button
+          id="tab-valid"
           type="button"
           data-code-group-tab="true"
           data-code-group-key="valid"
           data-code-group-panel-id="panel-valid"
           ${overrides.tabAttrs ?? ''}
         >正しい例</button>
+        <button
+          id="tab-invalid"
+          type="button"
+          data-code-group-tab="true"
+          data-code-group-key="invalid"
+          data-code-group-panel-id="panel-invalid"
+        >誤り例</button>
       </div>
       <div class="code-group-header-tools">
-        <span class="static-copy-control" data-copy-control="true">
-          <button
-            type="button"
-            data-copy-button="true"
-            data-code-group-copy="true"
-            data-copy-target-id="${overrides.groupCopyTargetId ?? 'panel-source'}"
-            aria-describedby="${overrides.groupCopyStatusId ?? 'panel-source-copy-status'}"
-            ${overrides.groupCopyButtonAttrs ?? ''}
-          >copy</button>
-          <span id="panel-source-copy-status" data-copy-status="true" role="status" aria-live="polite"></span>
-        </span>
+        <button
+          type="button"
+          data-copy-button="true"
+          data-code-group-copy="true"
+          data-copy-target-id="${overrides.groupCopyTargetId ?? 'panel-source-valid'}"
+          aria-describedby="${overrides.groupCopyStatusId ?? 'panel-source-valid-copy-status'}"
+          ${overrides.groupCopyButtonAttrs ?? ''}
+        >copy</button>
+        <span id="panel-source-valid-copy-status" data-copy-status="true" role="status" aria-live="polite"></span>
       </div>
     </div>
     <section
       id="panel-valid"
       data-code-group-panel="valid"
+      data-code-group-panel-active="true"
       data-code-group-panel-label="正しい例"
-      data-code-copy-source-id="panel-source"
+      data-code-copy-source-id="panel-source-valid"
       ${overrides.panelAttrs ?? ''}
     >
-      <template id="panel-source" data-code-copy-source>const valid = true;</template>
+      <template id="panel-source-valid" data-code-copy-source>const valid = true;</template>
       ${overrides.panelLabelHtml ?? '<p class="code-group-stack-label">正しい例</p>'}
       <figure data-code-block-root="true" data-code-block-id="code-block-1" data-code-group-owned="true">
         <template id="owned-source" data-code-copy-source>const valid = true;</template>
         <pre data-code-block="true"><code>const valid = true;</code></pre>
+      </figure>
+    </section>
+    <section
+      id="panel-invalid"
+      data-code-group-panel="invalid"
+      data-code-group-panel-active="false"
+      data-code-group-panel-label="誤り例"
+      data-code-copy-source-id="panel-source-invalid"
+    >
+      <template id="panel-source-invalid" data-code-copy-source>const valid = false;</template>
+      <p class="code-group-stack-label">誤り例</p>
+      <figure data-code-block-root="true" data-code-block-id="code-block-2" data-code-group-owned="true">
+        <template id="owned-source-invalid" data-code-copy-source>const valid = false;</template>
+        <pre data-code-block="true"><code>const valid = false;</code></pre>
       </figure>
     </section>
   </section>
@@ -313,6 +334,144 @@ describe('validateNoteContentContracts', () => {
     }).not.toThrow();
   });
 
+
+  it('code group header controls が true でなければ build error にすること', () => {
+    for (const html of [
+      codeGroupHtml().replace('data-code-group-controls="true"', 'data-code-group-controls="false"'),
+      codeGroupHtml().replace('data-code-group-controls="true"', 'data-code-group-controls'),
+    ]) {
+      expect(() => {
+        validateNoteContentContracts({
+          kind: 'reader',
+          html,
+          sourceLabel: 'testing/code-group',
+        });
+      }).toThrow('code-group-header は data-code-group-controls="true" を持つ必要があります');
+    }
+  });
+
+  it('code group active state が文字列 true/false でなければ build error にすること', () => {
+    for (const html of [
+      codeGroupHtml().replace('data-code-group-panel-active="true"', 'data-code-group-panel-active=""'),
+      codeGroupHtml().replace('data-code-group-panel-active="true"', 'data-code-group-panel-active'),
+      codeGroupHtml().replace('data-code-group-panel-active="true"', 'data-code-group-panel-active="yes"'),
+    ]) {
+      expect(() => {
+        validateNoteContentContracts({
+          kind: 'reader',
+          html,
+          sourceLabel: 'testing/code-group',
+        });
+      }).toThrow('data-code-group-panel-active は "true" または "false" である必要があります');
+    }
+  });
+
+  it('code group selected key と active panel / copy target が一致しなければ build error にすること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml().replace(
+          'data-code-group-panel-active="true"',
+          'data-code-group-panel-active="false"',
+        ),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow('data-code-group-panel-active="true" は 1 件だけ必要です');
+
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml({ groupCopyTargetId: 'owned-source' }),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow('group copy button は active panel の copy source を指す必要があります');
+  });
+
+  it('code group tab marker と key topology が崩れれば build error にすること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml().replace('data-code-group-tab="true"', 'data-code-group-tab="valid"'),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow('data-code-group-tab は marker として "true" である必要があります');
+
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml().replace('data-code-group-key="valid"', 'data-code-group-key=""'),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow('[data-code-group-tab] には data-code-group-key が必要です');
+
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml().replace(
+          'data-code-group-panel-id="panel-valid"',
+          'data-code-group-panel-id="missing-panel"',
+        ),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow('data-code-group-panel-id は同じ key の panel id と一致する必要があります');
+  });
+
+
+  it('code group selected key と direct child panel key が空なら build error にすること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml().replace('data-code-group-selected="valid"', 'data-code-group-selected=""'),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow('data-code-group-selected は空にできません');
+
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml().replace('data-code-group-panel="invalid"', 'data-code-group-panel=""'),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow('direct child panel key は空にできません');
+  });
+
+  it('code group key topology の代表的な不整合を build error にすること', () => {
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml().replace('data-code-group-key="invalid"', 'data-code-group-key="valid"'),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow('data-code-group-key "valid" が重複しています');
+
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml().replace('data-code-group-panel="invalid"', 'data-code-group-panel="valid"'),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow('direct child panel key "valid" が重複しています');
+
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml().replace('data-code-group-key="invalid"', 'data-code-group-key="other"'),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow('tab key集合と direct child panel key集合は一致する必要があります');
+
+    expect(() => {
+      validateNoteContentContracts({
+        kind: 'reader',
+        html: codeGroupHtml().replace(
+          'data-code-group-panel-active="false"',
+          'data-code-group-panel-active="true"',
+        ),
+        sourceLabel: 'testing/code-group',
+      });
+    }).toThrow('data-code-group-panel-active="true" は 1 件だけ必要です');
+  });
+
   it('code group panel が SSR 時点で hidden なら build error にすること', () => {
     expect(() => {
       validateNoteContentContracts({
@@ -367,7 +526,7 @@ describe('validateNoteContentContracts', () => {
         sourceLabel: 'testing/code-group',
       });
     }).toThrow(
-      '[note-content:testing/code-group] [data-code-group-id="group-1"] の group copy button は同じ code group 内の panel copy source を指す必要があります',
+      '[note-content:testing/code-group] [data-code-group-id="group-1"] の group copy button は active panel の copy source を指す必要があります',
     );
   });
 
