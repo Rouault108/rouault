@@ -86,6 +86,11 @@ const PREVIEW_SANDBOX_BOOLEAN_PROPERTIES = [
   ...PREVIEW_SANDBOX_MANUAL_ONLY_CAPABILITY_PROPERTIES,
 ] as const;
 
+type PreviewSandboxBooleanPropertyPair = (typeof PREVIEW_SANDBOX_BOOLEAN_PROPERTIES)[number];
+type PreviewSandboxBooleanPropertyName =
+  | PreviewSandboxBooleanPropertyPair['kebab']
+  | PreviewSandboxBooleanPropertyPair['camel'];
+
 const isElement = (node: HastNode, tagName?: string): boolean => {
   if (node.type !== 'element' || typeof node.tagName !== 'string') {
     return false;
@@ -192,9 +197,47 @@ const readBooleanPresenceValue = (
   );
 };
 
+const deletePreviewSandboxBooleanProperty = (
+  properties: Record<string, unknown>,
+  name: PreviewSandboxBooleanPropertyName,
+): void => {
+  switch (name) {
+    case 'allow-js':
+      delete properties['allow-js'];
+      return;
+    case 'allowJs':
+      delete properties['allowJs'];
+      return;
+    case 'allow-forms':
+      delete properties['allow-forms'];
+      return;
+    case 'allowForms':
+      delete properties['allowForms'];
+      return;
+    case 'allow-downloads':
+      delete properties['allow-downloads'];
+      return;
+    case 'allowDownloads':
+      delete properties['allowDownloads'];
+      return;
+    case 'allow-pointer-lock':
+      delete properties['allow-pointer-lock'];
+      return;
+    case 'allowPointerLock':
+      delete properties['allowPointerLock'];
+      return;
+    case 'allow-popups':
+      delete properties['allow-popups'];
+      return;
+    case 'allowPopups':
+      delete properties['allowPopups'];
+      return;
+  }
+};
+
 const readPreviewSandboxBooleanProperty = (
   properties: Record<string, unknown>,
-  pair: (typeof PREVIEW_SANDBOX_BOOLEAN_PROPERTIES)[number],
+  pair: PreviewSandboxBooleanPropertyPair,
 ): boolean => {
   const hasKebab = hasOwnProperty(properties, pair.kebab);
   const hasCamel = hasOwnProperty(properties, pair.camel);
@@ -210,11 +253,11 @@ const readPreviewSandboxBooleanProperty = (
   }
 
   const normalizedValue = kebabValue ?? camelValue ?? false;
-  delete properties[pair.camel];
+  deletePreviewSandboxBooleanProperty(properties, pair.camel);
   if (normalizedValue) {
     properties[pair.kebab] = true;
   } else {
-    delete properties[pair.kebab];
+    deletePreviewSandboxBooleanProperty(properties, pair.kebab);
   }
   return normalizedValue;
 };
