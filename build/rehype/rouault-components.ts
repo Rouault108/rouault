@@ -47,6 +47,11 @@ interface SurfaceNormalizationContext {
 type Parse5Node = DefaultTreeAdapterMap['node'];
 type Parse5Element = DefaultTreeAdapterMap['element'];
 type Parse5TextNode = DefaultTreeAdapterMap['textNode'];
+type Parse5TemplateElement = Parse5Element & {
+  readonly content?: {
+    readonly childNodes?: readonly Parse5Node[];
+  };
+};
 
 interface HydrationDirective {
   readonly capability: 'progressive' | 'interactive' | 'sandboxed';
@@ -167,6 +172,22 @@ const isParse5Element = (node: Parse5Node): node is Parse5Element =>
 const isParse5Text = (node: Parse5Node): node is Parse5TextNode =>
   'nodeName' in node && node.nodeName === '#text' && 'value' in node;
 
+const isParse5TemplateElement = (node: Parse5Element): node is Parse5TemplateElement =>
+  node.tagName === 'template' &&
+  'content' in node &&
+  typeof node.content === 'object' &&
+  node.content !== null;
+
+const parse5ChildrenToHast = (children: readonly Parse5Node[] | undefined): HastNode[] =>
+  Array.isArray(children)
+    ? children
+        .map((child) => parse5NodeToHast(child))
+        .filter((child): child is HastNode => child !== null)
+    : [];
+
+const parse5TemplateContentChildrenToHast = (node: Parse5TemplateElement): HastNode[] =>
+  parse5ChildrenToHast(node.content?.childNodes);
+
 const parse5NodeToHast = (node: Parse5Node): HastNode | null => {
   if (isParse5Text(node)) {
     return createTextNode(typeof node.value === 'string' ? node.value : '');
@@ -179,12 +200,21 @@ const parse5NodeToHast = (node: Parse5Node): HastNode | null => {
   const properties = Object.fromEntries(
     node.attrs.map((attribute) => [attribute.name, attribute.value]),
   );
-  const children =
-    'childNodes' in node && Array.isArray(node.childNodes)
-      ? node.childNodes
-          .map((child) => parse5NodeToHast(child))
-          .filter((child): child is HastNode => child !== null)
-      : [];
+
+  if (isParse5TemplateElement(node)) {
+    return {
+      type: 'element',
+      tagName: node.tagName,
+      properties,
+      children: [],
+      content: {
+        type: 'root',
+        children: parse5TemplateContentChildrenToHast(node),
+      },
+    };
+  }
+
+  const children = parse5ChildrenToHast('childNodes' in node ? node.childNodes : undefined);
 
   return createElement(node.tagName, properties, children);
 };

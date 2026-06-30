@@ -47,6 +47,17 @@ const getTextContent = (node: HastNode | undefined): string => {
 const countOccurrences = (source: string, pattern: string): number =>
   source.split(pattern).length - 1;
 
+const emptyPreviewPayloadTemplatePattern =
+  /<template\b[^>]*data-preview-kind="(?:html|css|js)"[^>]*>\s*<\/template>/;
+
+const previewSandboxTemplatePayloadHtml = `
+  <ui-preview-sandbox iframe-title="Preview sandbox" allow-js>
+    <template data-preview-kind="html">&lt;button class="demo-button"&gt;押す&lt;/button&gt;</template>
+    <template data-preview-kind="css">.demo-button { padding: 0.5rem; }</template>
+    <template data-preview-kind="js">console.log("sandbox");</template>
+  </ui-preview-sandbox>
+`;
+
 const withScoreSvgFixture = (test: (fixturePath: string, notePath: string) => void): void => {
   test('test/fixtures/score/basic.svg', path.join(process.cwd(), 'content/notes/sample.md'));
 };
@@ -699,6 +710,46 @@ describe('rehypeRouaultComponents', () => {
     expect(normalized).toContain('data-callout-body="true"');
     expect(normalized).toContain('data-info-box-body="true"');
     expect(normalized).toContain('data-info-box-header="true"');
+  });
+
+  it('保存前 surface HTML 正規化は preview sandbox template payload を保持すること', () => {
+    const normalized = normalizeRouaultStaticSurfaceHtml(previewSandboxTemplatePayloadHtml) ?? '';
+
+    expect(normalized).toContain('data-preview-kind="html"');
+    expect(normalized).toContain('data-preview-kind="css"');
+    expect(normalized).toContain('data-preview-kind="js"');
+    expect(normalized).toContain('demo-button');
+    expect(normalized).toContain('.demo-button { padding: 0.5rem; }');
+    expect(normalized).toContain('console.log("sandbox");');
+    expect(normalized).not.toMatch(emptyPreviewPayloadTemplatePattern);
+  });
+
+  it('保存前 surface HTML 正規化は preview sandbox template payload について冪等であること', () => {
+    const once = normalizeRouaultStaticSurfaceHtml(previewSandboxTemplatePayloadHtml) ?? '';
+    const twice = normalizeRouaultStaticSurfaceHtml(once) ?? '';
+
+    expect(twice).toBe(once);
+    expect(twice).toContain('demo-button');
+    expect(twice).not.toMatch(emptyPreviewPayloadTemplatePattern);
+  });
+
+  it('保存前 surface HTML 正規化は通常の template 内容を保持すること', () => {
+    const html = `
+      <div>
+        <template data-generic-template="true">
+          <span class="template-content">保持される内容</span>
+        </template>
+      </div>
+    `;
+
+    const normalized = normalizeRouaultStaticSurfaceHtml(html) ?? '';
+
+    expect(normalized).toContain('data-generic-template="true"');
+    expect(normalized).toContain('template-content');
+    expect(normalized).toContain('保持される内容');
+    expect(normalized).not.toMatch(
+      /<template\b[^>]*data-generic-template="true"[^>]*>\s*<\/template>/,
+    );
   });
 
   it('保存前 surface HTML の data-table-source を static table root に正規化すること', () => {

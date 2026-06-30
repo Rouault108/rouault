@@ -587,7 +587,7 @@ export class PreviewSandbox extends LitElement {
     return {
       payload: {
         html: this._sanitizeHtmlFragment(
-          normalizeLineBreaks(htmlTemplate?.innerHTML ?? ''),
+          normalizeLineBreaks(this._readHtmlTemplatePayload(htmlTemplate)),
           warnings,
         ),
         css: normalizeLineBreaks(cssTemplate?.content.textContent ?? ''),
@@ -595,6 +595,30 @@ export class PreviewSandbox extends LitElement {
       },
       warnings,
     };
+  }
+
+  private _readHtmlTemplatePayload(template: HTMLTemplateElement | undefined): string {
+    if (!template) {
+      return '';
+    }
+
+    const nonWhitespaceNodes = Array.from(template.content.childNodes).filter((node) => {
+      if (node.nodeType !== Node.TEXT_NODE) {
+        return true;
+      }
+
+      return (node.textContent ?? '').trim().length > 0;
+    });
+
+    const isTextEncodedPayload =
+      nonWhitespaceNodes.length > 0 &&
+      nonWhitespaceNodes.every((node) => node.nodeType === Node.TEXT_NODE);
+
+    if (isTextEncodedPayload) {
+      return template.content.textContent ?? '';
+    }
+
+    return template.innerHTML;
   }
 
   private _sanitizeHtmlFragment(rawHtml: string, warnings: string[]): string {

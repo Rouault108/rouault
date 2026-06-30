@@ -74,4 +74,45 @@ describe('ui-preview-sandbox contract', () => {
     expect(iframe?.srcdoc).to.contain('<button>Push</button>');
     expect(iframe?.srcdoc).to.contain("console.log('sandbox');");
   });
+
+  it('text-encoded HTML payload は activation 後に実 HTML として iframe へ渡すこと', async () => {
+    const sandbox = await fixture<PreviewSandboxHost>(html`
+      <ui-preview-sandbox activation-policy="manual" iframe-title="Text encoded preview">
+        <template data-preview-kind="html"
+          >&lt;button class="demo-button"&gt;押す&lt;/button&gt;</template
+        >
+      </ui-preview-sandbox>
+    `);
+
+    await waitForElement(sandbox);
+
+    const placeholder = sandbox.shadowRoot?.querySelector<HTMLElement>('.placeholder');
+    placeholder?.focus();
+    await waitForElement(sandbox);
+
+    const iframe = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe');
+    expect(iframe).to.not.equal(null);
+    expect(iframe?.srcdoc).to.contain('<button class="demo-button">押す</button>');
+    expect(iframe?.srcdoc).not.to.contain('&lt;button');
+  });
+
+  it('手書き DOM fragment 形式の HTML payload を維持すること', async () => {
+    const sandbox = await fixture<PreviewSandboxHost>(html`
+      <ui-preview-sandbox activation-policy="manual" iframe-title="DOM fragment preview">
+        <template data-preview-kind="html"
+          ><button class="demo-button">押す</button></template
+        >
+      </ui-preview-sandbox>
+    `);
+
+    await waitForElement(sandbox);
+
+    const placeholder = sandbox.shadowRoot?.querySelector<HTMLElement>('.placeholder');
+    placeholder?.focus();
+    await waitForElement(sandbox);
+
+    const iframe = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe');
+    expect(iframe).to.not.equal(null);
+    expect(iframe?.srcdoc).to.contain('<button class="demo-button">押す</button>');
+  });
 });
