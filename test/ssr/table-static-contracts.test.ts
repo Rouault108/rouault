@@ -1,13 +1,27 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { expectCssExcludes, expectCssIncludes } from './css-contract-test-helpers.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const tableCssPath = path.resolve(dirname, '../../src/assets/css/table.css');
 const tableCss = readFileSync(tableCssPath, 'utf8');
+
+const extractSelectorPreludeList = (cssText: string): string[] => {
+  const selectors: string[] = [];
+  const rulePattern = /(^|[{}])\s*([^@{}][^{}]*)\{/gu;
+
+  for (const match of cssText.matchAll(rulePattern)) {
+    const selector = match[2]?.trim();
+    if (selector) {
+      selectors.push(selector);
+    }
+  }
+
+  return selectors;
+};
 
 describe('table static css contracts', () => {
   it('prose 内 table root が static scroll container / focus-visible / reduced-motion 契約を保持すること', () => {
@@ -44,6 +58,35 @@ describe('table static css contracts', () => {
     ]);
   });
 
+  it('horizontal overflow affordance は root layout selector に限定し shadow layer を合成すること', () => {
+    expectCssIncludes(tableCss, [
+      '--_table-scroll-fade-left-shadow: inset 0 0 0 0 transparent',
+      '--_table-scroll-fade-right-shadow: inset 0 0 0 0 transparent',
+      'box-shadow:\n    var(--_table-scroll-fade-left-shadow),\n    var(--_table-scroll-fade-right-shadow)',
+      ':is(.prose, .about-prose) > [data-table-root][data-fade-left]',
+      ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-left]",
+      ':is(.prose, .about-prose) > [data-table-root][data-fade-right]',
+      ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-right]",
+      '--_table-scroll-fade-left-shadow: inset 18px 0 18px -18px',
+      '--_table-scroll-fade-right-shadow: inset -18px 0 18px -18px',
+      '@media (forced-colors: active)',
+      '--_table-scroll-fade-left-shadow: inset 2px 0 0 0 CanvasText',
+      '--_table-scroll-fade-right-shadow: inset -2px 0 0 0 CanvasText',
+    ]);
+  });
+
+  it('overflow affordance state selector を裸 selector として公開しないこと', () => {
+    const bareOverflowAffordanceStateSelector =
+      /^\[data-(?:overflow|fade-left|fade-right)(?:=['"]?true['"]?)?\]$/u;
+    const selectors = extractSelectorPreludeList(tableCss);
+
+    for (const selectorList of selectors) {
+      for (const selector of selectorList.split(',')) {
+        expect(selector.trim()).not.toMatch(bareOverflowAffordanceStateSelector);
+      }
+    }
+  });
+
   it('column width token ごとの col selector と width declaration を保持すること', () => {
     for (const token of ['auto', 'fit', 'narrow', 'medium', 'wide', 'numeric']) {
       expectCssIncludes(tableCss, [
@@ -52,7 +95,10 @@ describe('table static css contracts', () => {
       ]);
     }
 
-    expectCssIncludes(tableCss, ["[data-table-root] col[data-table-col-width='auto']", 'width: auto']);
+    expectCssIncludes(tableCss, [
+      "[data-table-root] col[data-table-col-width='auto']",
+      'width: auto',
+    ]);
   });
 
   it('align attribute と numeric data の静的 CSS 契約を保持すること', () => {

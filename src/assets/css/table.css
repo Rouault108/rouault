@@ -1,15 +1,31 @@
 :is(.prose, .about-prose) > [data-table-root],
 :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root] {
+  --_table-scroll-fade-left-shadow: inset 0 0 0 0 transparent;
+  --_table-scroll-fade-right-shadow: inset 0 0 0 0 transparent;
+
   width: 100%;
   margin-inline: 0;
   box-sizing: border-box;
   overflow-x: auto;
   overflow-y: visible;
+  box-shadow:
+    var(--_table-scroll-fade-left-shadow),
+    var(--_table-scroll-fade-right-shadow);
 
   /* iOS Safari:
    * 横スクロール面を root 側でも固定し、表だけ文字が肥大化するのを防ぐ */
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
+}
+
+:is(.prose, .about-prose) > [data-table-root][data-fade-left],
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-left] {
+  --_table-scroll-fade-left-shadow: inset 18px 0 18px -18px oklch(0% 0 0 / 0.24);
+}
+
+:is(.prose, .about-prose) > [data-table-root][data-fade-right],
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-right] {
+  --_table-scroll-fade-right-shadow: inset -18px 0 18px -18px oklch(0% 0 0 / 0.24);
 }
 
 :is(.prose, .about-prose) > [data-table-root]:focus-visible,
@@ -143,6 +159,16 @@
 }
 
 @media (forced-colors: active) {
+  :is(.prose, .about-prose) > [data-table-root][data-fade-left],
+  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-left] {
+    --_table-scroll-fade-left-shadow: inset 2px 0 0 0 CanvasText;
+  }
+
+  :is(.prose, .about-prose) > [data-table-root][data-fade-right],
+  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-right] {
+    --_table-scroll-fade-right-shadow: inset -2px 0 0 0 CanvasText;
+  }
+
   [data-table-root] > table tr {
     border-bottom: 1px solid CanvasText;
   }

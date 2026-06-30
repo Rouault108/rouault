@@ -106,6 +106,8 @@ Markdown出力層の`table`は、scrollable static table surfaceとして扱う�
 - セル内のlink / buttonなどのnative interactive elementは、それぞれの要素契約に従って操作可能面として振る舞う。
 - クリック可能な一覧や行操作UIは、Markdown tableへ後付けせず、専用のlist / card / interactive surfaceとして設計する。
 
+横溢れ表のedge affordanceはruntime enhancementに限定する。`data-overflow` / `data-fade-left` / `data-fade-right`は、`data-table-root`上へ付与される一時的な表示状態であり、Markdown authoring APIではない。これらの属性は列が続く方向を静かに示すためだけに使い、DOM追加、row hover、row click、row selection、row navigation、interactive grid化、sort / filter、sticky header、top scroll rail、列固定、列並べ替えを意味しない。横溢れが解消された場合、runtimeはこれらの状態属性を削除する。
+
 ### Details Prose Disclosure Contract
 
 `::details`は本文内のprose disclosureであり、row navigation、settings row、panel surfaceではない。

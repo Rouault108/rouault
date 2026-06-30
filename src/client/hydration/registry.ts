@@ -25,8 +25,8 @@ const activateCodeGroups = ({ root }: HydrationActivationContext): void => {
   enhanceCodeGroups(root);
 };
 
-const activateNoteStaticSurface = ({ element }: HydrationActivationContext): void => {
-  enhanceNoteStaticSurface(element);
+const activateNoteStaticSurface = ({ element, signal }: HydrationActivationContext): void => {
+  enhanceNoteStaticSurface(element, signal);
 };
 
 const activateImageLightboxes = ({ root }: HydrationActivationContext): void => {
