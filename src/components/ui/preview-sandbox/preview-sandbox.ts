@@ -229,7 +229,10 @@ export class PreviewSandbox extends LitElement {
       font: inherit;
     }
 
-    .placeholder[role='button'] {
+    button.placeholder {
+      appearance: none;
+      padding: 0;
+      text-align: center;
       cursor: pointer;
     }
 
@@ -321,7 +324,19 @@ export class PreviewSandbox extends LitElement {
     this._syncTemplateObservers();
     this._reportContractWarnings();
 
-    if (this.hasAttribute('data-hydration-trigger')) {
+    const hydrationTrigger = this.getAttribute('data-hydration-trigger');
+    if (
+      (hydrationTrigger === 'visible' || hydrationTrigger === 'initial') &&
+      this._normalizedActivationPolicy !== 'manual'
+    ) {
+      this._activatePreview();
+      return;
+    }
+    if (hydrationTrigger === 'visible' || hydrationTrigger === 'initial') {
+      this._refreshSandboxDocument();
+      return;
+    }
+    if (hydrationTrigger === 'interaction') {
       this._activatePreview();
       return;
     }
@@ -412,7 +427,14 @@ export class PreviewSandbox extends LitElement {
     if (this._normalizedActivationPolicy !== 'manual') {
       return;
     }
-    this._activatePreview();
+
+    if (!this._hydrationActivated) {
+      this.activateHydration();
+    }
+
+    if (!this._isActivated) {
+      this._activatePreview();
+    }
   };
 
   private _activatePreview(): void {
@@ -840,6 +862,14 @@ export class PreviewSandbox extends LitElement {
     return [...this._effectiveSandboxTokens].join(' ');
   }
 
+  private get _hasManualOnlyCapability(): boolean {
+    return this.allowForms || this.allowDownloads || this.allowPointerLock || this.allowPopups;
+  }
+
+  private get _manualActionLabel(): string {
+    return this.allowJs || this._hasManualOnlyCapability ? 'プレビューを実行' : 'プレビューを表示';
+  }
+
   override render(): TemplateResult {
     return html`
       <div
@@ -858,22 +888,26 @@ export class PreviewSandbox extends LitElement {
               ></iframe>
             `
           : html`
-              <div
-                class="placeholder"
-                role=${this._normalizedActivationPolicy === 'manual' ? 'button' : 'status'}
-                tabindex=${this._normalizedActivationPolicy === 'manual' ? '0' : '-1'}
-                aria-label=${this._iframeAccessibleTitle}
-                @pointerdown=${this._handleManualActivationRequest}
-                @keydown=${(event: KeyboardEvent) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    this._handleManualActivationRequest();
-                  }
-                }}
-                @focus=${this._handleManualActivationRequest}
-              >
-                プレビューを準備しています
-              </div>
+              ${this._normalizedActivationPolicy === 'manual'
+                ? html`
+                    <button
+                      class="placeholder"
+                      type="button"
+                      aria-label=${`${this._manualActionLabel}: ${this._iframeAccessibleTitle}`}
+                      @click=${this._handleManualActivationRequest}
+                    >
+                      ${this._manualActionLabel}
+                    </button>
+                  `
+                : html`
+                    <div
+                      class="placeholder"
+                      role="status"
+                      aria-label=${`プレビューを読み込んでいます: ${this._iframeAccessibleTitle}`}
+                    >
+                      プレビューを読み込んでいます
+                    </div>
+                  `}
             `}
       </div>
     `;

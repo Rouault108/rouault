@@ -235,6 +235,12 @@
 
 - noteページのhydration directiveはbuild-time annotationとして出力する。
 - Hydration budgetはSSR artifactとclient schedulerの境界で検証する。
+- Markdown由来`ui-preview-sandbox`は`data-hydration-capability="sandboxed"`を持つ。
+- `activation-policy`未指定または明示`visible`のpreviewは`data-hydration-trigger="visible"`を持つ。未指定default visibleでは`activation-policy="visible"`を出力しない。
+- `activation-policy="eager"`は`data-hydration-trigger="initial"`を持つ。
+- `activation-policy="manual"`は`data-hydration-trigger="interaction"`を持つ。
+- manual-only capabilityによりmanualへ正規化された場合だけ`activation-policy="manual"`を出力する。
+- raw HAST/HTML経由の同義camelCase属性は最終出力でkebab-caseへ正規化し、`data-hydration-capability` / `data-hydration-trigger`はbuild-owned値で上書きする。
 
 ## Final HAST Invariants
 

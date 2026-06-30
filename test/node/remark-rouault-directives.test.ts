@@ -31,6 +31,39 @@ interface MdastNode {
   };
 }
 
+const createPreviewSandboxTree = (attributes: string): MdastNode => ({
+  type: 'root',
+  children: [
+    {
+      type: 'paragraph',
+      children: [{ type: 'text', value: '::code-preview{heading="Sandbox例"}' }],
+    },
+    {
+      type: 'paragraph',
+      children: [{ type: 'text', value: `::preview-sandbox{${attributes}}` }],
+    },
+    {
+      type: 'code',
+      lang: 'preview-html',
+      value: '<button class="demo">押す</button>',
+    },
+    {
+      type: 'paragraph',
+      children: [{ type: 'text', value: '::' }],
+    },
+    {
+      type: 'paragraph',
+      children: [{ type: 'text', value: '::' }],
+    },
+  ],
+});
+
+const getPreviewSandboxProperties = (tree: MdastNode): Record<string, unknown> => {
+  const preview = tree.children?.[0];
+  const sandbox = preview?.children?.[0];
+  return sandbox?.data?.hProperties ?? {};
+};
+
 describe('remarkRouaultDirectives', () => {
   it('callout ディレクティブを aside[data-callout] ノードへ変換すること', () => {
     const tree: MdastNode = {
@@ -1298,8 +1331,116 @@ describe('remarkRouaultDirectives', () => {
     expect(sandbox?.data?.hProperties?.['allow-downloads']).to.equal(true);
     expect(sandbox?.data?.hProperties?.['allow-pointer-lock']).to.equal(true);
     expect(sandbox?.data?.hProperties?.['allow-popups']).to.equal(true);
+    expect(sandbox?.data?.hProperties?.['activation-policy']).to.equal('manual');
     expect(sandbox?.data?.hProperties?.['height']).to.equal('160');
     expect(sandbox?.children).to.have.length(3);
+  });
+
+  it('allow-js="true" だけでは preview-sandbox の activation-policy を manual にしないこと', () => {
+    const tree = createPreviewSandboxTree('iframe-title="sandbox" allow-js="true"');
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    expect(getPreviewSandboxProperties(tree)['allow-js']).to.equal(true);
+    expect(getPreviewSandboxProperties(tree)['activation-policy']).to.equal(undefined);
+  });
+
+  it('manual-only capability があり activation-policy 未指定なら manual に正規化すること', () => {
+    const tree = createPreviewSandboxTree('iframe-title="sandbox" allow-forms="true"');
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    expect(getPreviewSandboxProperties(tree)['allow-forms']).to.equal(true);
+    expect(getPreviewSandboxProperties(tree)['activation-policy']).to.equal('manual');
+  });
+
+  it('manual-only capability と activation-policy="visible" の併用はエラーにすること', () => {
+    const tree = createPreviewSandboxTree(
+      'iframe-title="sandbox" allow-forms="true" activation-policy="visible"',
+    );
+    const run = (): void => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw(
+      'preview-sandbox の allow-forms/allow-downloads/allow-pointer-lock/allow-popups は activation-policy="manual" でのみ使用できます',
+    );
+  });
+
+  it('manual-only capability と activation-policy="eager" の併用はエラーにすること', () => {
+    const tree = createPreviewSandboxTree(
+      'iframe-title="sandbox" allow-downloads="true" activation-policy="eager"',
+    );
+    const run = (): void => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw(
+      'preview-sandbox の allow-forms/allow-downloads/allow-pointer-lock/allow-popups は activation-policy="manual" でのみ使用できます',
+    );
+  });
+
+  it('allow-js と manual-only capability が併存しても manual-only capability の規則を優先すること', () => {
+    const tree = createPreviewSandboxTree(
+      'iframe-title="sandbox" allow-js="true" allow-forms="true"',
+    );
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const properties = getPreviewSandboxProperties(tree);
+    expect(properties['allow-js']).to.equal(true);
+    expect(properties['allow-forms']).to.equal(true);
+    expect(properties['activation-policy']).to.equal('manual');
+  });
+
+  it('allow-js と manual-only capability は activation-policy="manual" なら併用できること', () => {
+    const tree = createPreviewSandboxTree(
+      'iframe-title="sandbox" allow-js="true" allow-forms="true" activation-policy="manual"',
+    );
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const properties = getPreviewSandboxProperties(tree);
+    expect(properties['allow-js']).to.equal(true);
+    expect(properties['allow-forms']).to.equal(true);
+    expect(properties['activation-policy']).to.equal('manual');
+  });
+
+  it('allow-js と manual-only capability は activation-policy="visible" ならエラーにすること', () => {
+    const tree = createPreviewSandboxTree(
+      'iframe-title="sandbox" allow-js="true" allow-forms="true" activation-policy="visible"',
+    );
+    const run = (): void => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw(
+      'preview-sandbox の allow-forms/allow-downloads/allow-pointer-lock/allow-popups は activation-policy="manual" でのみ使用できます',
+    );
+  });
+
+  it('allow-js と manual-only capability は activation-policy="eager" ならエラーにすること', () => {
+    const tree = createPreviewSandboxTree(
+      'iframe-title="sandbox" allow-js="true" allow-forms="true" activation-policy="eager"',
+    );
+    const run = (): void => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw(
+      'preview-sandbox の allow-forms/allow-downloads/allow-pointer-lock/allow-popups は activation-policy="manual" でのみ使用できます',
+    );
+  });
+
+  it('preview-sandbox の列挙外 activation-policy はエラーにすること', () => {
+    const tree = createPreviewSandboxTree('iframe-title="sandbox" activation-policy="auto"');
+    const run = (): void => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw(
+      'preview-sandbox の activation-policy は eager/visible/manual で指定してください',
+    );
   });
 
   it('translation ディレクティブを静的本文ノードへ変換すること', () => {

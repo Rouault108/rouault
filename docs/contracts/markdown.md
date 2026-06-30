@@ -167,6 +167,31 @@ raw `<br>`、Markdown hard break、`:br[]`は表セル改行契約として採�
 - JS無効またはJS遅延時でも、読者はnative `summary`から訳文へ到達できなければならない。
 - hostの`open`属性はcomponent API / Storybook / direct HTML compatibilityの範囲に限る。Markdown `translation-overlay`の入力属性として復活させてはならない。
 
+### Preview Sandbox Output Contract
+
+`::preview-sandbox`は`code-preview`直下のspecialized childであり、Markdown出力層は`ui-preview-sandbox` hostとbuild-time hydration directiveを所有する。`build/rehype/preview-sandbox.ts`はsnippet/template変換責務であり、manual-only capability validationの正本ではない。
+
+- 通常previewはreading-firstのため`activation-policy`未指定時にvisibleとして扱う。
+- `activation-policy`未指定のdefault visibleでは、SSR/build outputに`activation-policy="visible"`を追加しない。
+- authorが`activation-policy="visible"`を明示した場合は属性を維持する。
+- client runtimeではLitの`reflect: true`により`activation-policy="visible"`がDOMへ現れる場合がある。このruntime reflectionはSSR/build output契約とは分ける。
+- `activation-policy="eager"`はclient hydration sessionのinitial phaseでpreviewを構築する契約であり、SSR時点でiframe `srcdoc`を生成しない。
+- hydration directive mappingは、default/explicit visibleが`sandboxed`/`visible`、`eager`が`sandboxed`/`initial`、`manual`が`sandboxed`/`interaction`である。
+- `allow-js`単独ではmanualを強制しない。`allow-js`と`activation-policy`未指定、`visible`、`eager`、`manual`の併用は許可する。
+- `allow-js`はmanual-only capabilityではないが、manual時の文言を「プレビューを実行」系にする根拠になる。
+- `allow-js`はmanual-only capabilityの判定を弱めない。`allow-js`とmanual-only capabilityが併存する場合はmanual-only capabilityの規則を優先する。
+- `allow-forms`、`allow-downloads`、`allow-pointer-lock`、`allow-popups`はmanual-only capabilityである。
+- manual-only capabilityがあり`activation-policy`未指定なら、build outputに`activation-policy="manual"`を明示し`sandboxed`/`interaction`を出力する。
+- manual-only capabilityと`activation-policy="visible"`または`activation-policy="eager"`の併用はbuild errorとする。
+- build outputでは`activation-policy="manual"`と`data-hydration-trigger="visible"`または`initial`の組み合わせを出力しない。
+- raw HAST/HTML経由の`activation-policy`はexact lowercaseの`visible` / `eager` / `manual`のみ許可する。前後空白、大文字小文字違い、空文字列、列挙外値、文字列以外の値はbuild errorとする。
+- raw HAST/HTML経由のboolean属性`allow-js`、`allow-forms`、`allow-downloads`、`allow-pointer-lock`、`allow-popups`は、`true`、空文字列、canonical kebab-case属性名と同一文字列、`"true"`だけをpresenceとして受け付ける。`false` / `null` / `undefined`は無効として削除し、`"false"`、`"0"`、`"off"`、`"no"`、`"1"`、`"on"`、number、object、array、function、symbol、bigintなどはbuild errorとする。
+- raw HAST/HTML経由でkebab-caseとcamelCaseの同義属性が併存する場合、同じ意味ならkebab-caseへ正規化し、意味が異なる場合はbuild errorとする。
+- `data-hydration-capability` / `data-hydration-trigger`はbuild-ownedであり、入力に旧値やcamelCaseがあっても新契約のkebab-case属性へ上書きする。
+- manual UIは準備中表示ではなく操作可能なnative buttonである。focusだけでpreviewを起動してはならない。
+- 非manual statusでは「読み込んでいます」という状態表示を支援技術上も消してはならない。
+- 旧クリック待ち挙動を維持する場合は`activation-policy="manual"`を明示する。
+
 ## 4. State Model
 
 ### Durable State

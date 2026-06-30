@@ -6,3 +6,7 @@ ADRは必須作成物ではない。
 根拠を抽出できない設計理由を創作してはならない。
 
 このディレクトリにADR本文が存在しない場合でも、このREADMEはADR分類の入口として維持する。
+
+## Accepted Records
+
+- `preview-sandbox-visible-by-default.md` - `ui-preview-sandbox`の既定activationをvisibleにする。

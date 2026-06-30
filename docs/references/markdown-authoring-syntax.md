@@ -149,6 +149,8 @@ Authoring statusの初期分類は次の方針に従う。これは文書分類�
 
 `preview-sandbox`は`code-preview` family内の特殊childとして扱う。この整理は非推奨化、削除、受理条件変更ではない。
 
+`preview-sandbox`の`activation-policy`は`visible` / `eager` / `manual`だけを受け付ける。未指定の通常previewはvisibleとして扱うが、出力に`activation-policy="visible"`は追加しない。`allow-js`単独ではmanualを強制しない。`allow-forms`、`allow-downloads`、`allow-pointer-lock`、`allow-popups`はmanual-only capabilityであり、未指定時はmanualへ正規化し、`visible` / `eager`との併用はbuild errorにする。
+
 `translation` / `translation-overlay`はplain-text 2片を扱うdirective familyである。`translation-overlay`の`open`はauthoring属性ではなく、host`[open]`はcomponent API / Storybook / direct HTML compatibilityに限定される。
 
 ### Table Authoring Extension

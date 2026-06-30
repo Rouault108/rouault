@@ -193,11 +193,23 @@ note SSRではhostと公開Light DOMの`template[data-preview-kind]` fallbackを
 - `activationPolicy="eager"`の場合、previewは接続後に初回構築します
 - `activationPolicy="visible"`の場合、previewはviewport近傍に達した時点で初回構築します
 - `activationPolicy="manual"`の場合、previewは利用者または上位UIからの明示的な活性化までは初回構築しません
-- noteページではbuild-timeのhydration directiveにより、`ui-preview-sandbox`自体の活性化がさらに遅延されてよいものとします。この場合`activationPolicy`はcomponentがhydrateされた後の初回構築条件として評価します
+- noteページではbuild-timeのhydration directiveにより、`ui-preview-sandbox`自体の活性化がさらに遅延されてよいものとします。通常のMarkdown由来previewは`data-hydration-trigger="visible"`を持ち、`activationPolicy`未指定でもvisibleとして扱います
+- `activationPolicy="eager"`はclient hydration sessionのinitial phaseでpreviewを構築する契約であり、SSR時点でiframe `srcdoc`を生成する契約ではありません
+- `activationPolicy="manual"`と`data-hydration-trigger="visible"`または`initial`がcomponent単体利用で併存しても、robustnessとして即時preview生成しません
 - activationは **初回構築の開始条件**であり、構築後の挙動、capability、network、sanitizationの意味を変更しません
 - 未活性状態ではpreview文書は未構築であってよく、その間の高さは`height`を用います
 - 未活性状態のhostはplaceholderのみを描画してよく、iframeを先に生成してはなりません
 - 一度構築したpreviewは、以後`activationPolicy`の違いによって自動破棄しません
+- 列挙外の`activationPolicy` propertyはruntime上の正規化挙動としてvisible扱いにします。ただしproperty自体を`visible`へ書き換えることは要求しません
+
+### Manual UI Policy
+
+- manual placeholderはnative `button type="button"`です
+- manual起動はclick、およびnative buttonの標準Enter/Space操作に限定します
+- focus、pointerdown、独自keydown handlerだけでpreviewを起動してはなりません
+- manual buttonの可視文言は、`allowJs=false`かつmanual-only capabilityなしなら「プレビューを表示」、`allowJs=true`またはmanual-only capabilityありなら「プレビューを実行」です
+- manual buttonのアクセシブル名には「表示」または「実行」という操作語を含めます
+- 非manualの未構築状態は「プレビューを読み込んでいます」と表示し、statusのアクセシブル名でも「読み込んでいます」という状態語を消しません
 
 ### Height Policy
 

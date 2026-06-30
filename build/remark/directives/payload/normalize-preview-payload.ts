@@ -23,6 +23,12 @@ import type {
 } from './payload-types.js';
 
 const PREVIEW_CONTROLS = ['theme', 'surface', 'viewport'] as const;
+const MANUAL_ONLY_PREVIEW_SANDBOX_CAPABILITIES = [
+  'allow-forms',
+  'allow-downloads',
+  'allow-pointer-lock',
+  'allow-popups',
+] as const;
 
 export const normalizeCodePreviewPayload = (
   attrs: Record<string, string>,
@@ -156,6 +162,46 @@ export const normalizePreviewSandboxPayload = (
     );
   }
 
+  const allowJs =
+    parseBooleanAttribute(attrs['allow-js'], node, file, 'preview-sandbox', 'allow-js') === true;
+  const allowForms =
+    parseBooleanAttribute(attrs['allow-forms'], node, file, 'preview-sandbox', 'allow-forms') ===
+    true;
+  const allowDownloads =
+    parseBooleanAttribute(
+      attrs['allow-downloads'],
+      node,
+      file,
+      'preview-sandbox',
+      'allow-downloads',
+    ) === true;
+  const allowPointerLock =
+    parseBooleanAttribute(
+      attrs['allow-pointer-lock'],
+      node,
+      file,
+      'preview-sandbox',
+      'allow-pointer-lock',
+    ) === true;
+  const allowPopups =
+    parseBooleanAttribute(attrs['allow-popups'], node, file, 'preview-sandbox', 'allow-popups') ===
+    true;
+  const hasManualOnlyCapability =
+    allowForms || allowDownloads || allowPointerLock || allowPopups;
+
+  if (hasManualOnlyCapability && (activationPolicy === 'visible' || activationPolicy === 'eager')) {
+    throw toError(
+      file,
+      node,
+      `preview-sandbox の ${MANUAL_ONLY_PREVIEW_SANDBOX_CAPABILITIES.join(
+        '/',
+      )} は activation-policy="manual" でのみ使用できます`,
+    );
+  }
+
+  const normalizedActivationPolicy =
+    activationPolicy ?? (hasManualOnlyCapability ? 'manual' : undefined);
+
   const heightMode = pickOptional(attrs['height-mode']);
   if (heightMode && !['fixed', 'auto', 'bounded-auto'].includes(heightMode)) {
     throw toError(
@@ -171,11 +217,11 @@ export const normalizePreviewSandboxPayload = (
       ? { iframeTitle: pickOptional(attrs['iframe-title']) }
       : {}),
     ...(normalizedBaseUrl ? { baseUrl: normalizedBaseUrl } : {}),
-    allowJs:
-      parseBooleanAttribute(attrs['allow-js'], node, file, 'preview-sandbox', 'allow-js') === true,
-    ...(activationPolicy
+    allowJs,
+    ...(normalizedActivationPolicy
       ? {
-          activationPolicy: activationPolicy as PreviewSandboxPayload['activationPolicy'],
+          activationPolicy:
+            normalizedActivationPolicy as PreviewSandboxPayload['activationPolicy'],
         }
       : {}),
     ...(heightMode
@@ -183,33 +229,10 @@ export const normalizePreviewSandboxPayload = (
           heightMode: heightMode as PreviewSandboxPayload['heightMode'],
         }
       : {}),
-    allowForms:
-      parseBooleanAttribute(attrs['allow-forms'], node, file, 'preview-sandbox', 'allow-forms') ===
-      true,
-    allowDownloads:
-      parseBooleanAttribute(
-        attrs['allow-downloads'],
-        node,
-        file,
-        'preview-sandbox',
-        'allow-downloads',
-      ) === true,
-    allowPointerLock:
-      parseBooleanAttribute(
-        attrs['allow-pointer-lock'],
-        node,
-        file,
-        'preview-sandbox',
-        'allow-pointer-lock',
-      ) === true,
-    allowPopups:
-      parseBooleanAttribute(
-        attrs['allow-popups'],
-        node,
-        file,
-        'preview-sandbox',
-        'allow-popups',
-      ) === true,
+    allowForms,
+    allowDownloads,
+    allowPointerLock,
+    allowPopups,
     ...(typeof parseIntegerMin(attrs['height'], node, file, 'preview-sandbox', 'height', 1) ===
     'number'
       ? {

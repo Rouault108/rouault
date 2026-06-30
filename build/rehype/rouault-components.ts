@@ -59,6 +59,32 @@ interface HydrationDirective {
 }
 
 const forbiddenStaticFirstNoteTags = new Set<string>(STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS);
+const PREVIEW_SANDBOX_ACTIVATION_POLICIES = new Set(['visible', 'eager', 'manual']);
+const PREVIEW_SANDBOX_MANUAL_ONLY_CAPABILITY_PROPERTIES = [
+  {
+    kebab: 'allow-forms',
+    camel: 'allowForms',
+  },
+  {
+    kebab: 'allow-downloads',
+    camel: 'allowDownloads',
+  },
+  {
+    kebab: 'allow-pointer-lock',
+    camel: 'allowPointerLock',
+  },
+  {
+    kebab: 'allow-popups',
+    camel: 'allowPopups',
+  },
+] as const;
+const PREVIEW_SANDBOX_BOOLEAN_PROPERTIES = [
+  {
+    kebab: 'allow-js',
+    camel: 'allowJs',
+  },
+  ...PREVIEW_SANDBOX_MANUAL_ONLY_CAPABILITY_PROPERTIES,
+] as const;
 
 const isElement = (node: HastNode, tagName?: string): boolean => {
   if (node.type !== 'element' || typeof node.tagName !== 'string') {
@@ -100,6 +126,149 @@ const toBooleanAttribute = (value: unknown): boolean => {
     return normalized === '' || normalized === 'true' || normalized === '1' || normalized === 'on';
   }
   return false;
+};
+
+const hasOwnProperty = (properties: Record<string, unknown>, key: string): boolean =>
+  Object.prototype.hasOwnProperty.call(properties, key);
+
+const assertValidPreviewSandboxActivationPolicy = (value: unknown): string => {
+  if (typeof value !== 'string' || !PREVIEW_SANDBOX_ACTIVATION_POLICIES.has(value)) {
+    throw new Error(
+      '[markdown] ui-preview-sandbox の activation-policy は exact lowercase の visible/eager/manual のみ指定できます',
+    );
+  }
+  return value;
+};
+
+const readPreviewSandboxActivationPolicy = (
+  properties: Record<string, unknown>,
+): string | undefined => {
+  const hasKebab = hasOwnProperty(properties, 'activation-policy');
+  const hasCamel = hasOwnProperty(properties, 'activationPolicy');
+  if (!hasKebab && !hasCamel) {
+    return undefined;
+  }
+
+  const kebabValue = hasKebab
+    ? assertValidPreviewSandboxActivationPolicy(properties['activation-policy'])
+    : undefined;
+  const camelValue = hasCamel
+    ? assertValidPreviewSandboxActivationPolicy(properties['activationPolicy'])
+    : undefined;
+
+  if (kebabValue !== undefined && camelValue !== undefined && kebabValue !== camelValue) {
+    throw new Error('[markdown] ui-preview-sandbox の activation-policy 指定が競合しています');
+  }
+
+  delete properties['activationPolicy'];
+  const normalizedValue = kebabValue ?? camelValue;
+  if (normalizedValue !== undefined) {
+    properties['activation-policy'] = normalizedValue;
+  }
+  return normalizedValue;
+};
+
+const readBooleanPresenceValue = (
+  value: unknown,
+  canonicalAttributeName: string,
+  contextAttributeName: string,
+): boolean => {
+  if (value === undefined || value === null || value === false) {
+    return false;
+  }
+  if (value === true) {
+    return true;
+  }
+  if (typeof value !== 'string') {
+    throw new Error(
+      `[markdown] ui-preview-sandbox の ${contextAttributeName} は boolean presence 属性として指定してください`,
+    );
+  }
+  if (value === '' || value === canonicalAttributeName || value === 'true') {
+    return true;
+  }
+  throw new Error(
+    `[markdown] ui-preview-sandbox の ${contextAttributeName} は boolean presence 属性として指定してください`,
+  );
+};
+
+const readPreviewSandboxBooleanProperty = (
+  properties: Record<string, unknown>,
+  pair: (typeof PREVIEW_SANDBOX_BOOLEAN_PROPERTIES)[number],
+): boolean => {
+  const hasKebab = hasOwnProperty(properties, pair.kebab);
+  const hasCamel = hasOwnProperty(properties, pair.camel);
+  const kebabValue = hasKebab
+    ? readBooleanPresenceValue(properties[pair.kebab], pair.kebab, pair.kebab)
+    : undefined;
+  const camelValue = hasCamel
+    ? readBooleanPresenceValue(properties[pair.camel], pair.kebab, pair.camel)
+    : undefined;
+
+  if (kebabValue !== undefined && camelValue !== undefined && kebabValue !== camelValue) {
+    throw new Error(`[markdown] ui-preview-sandbox の ${pair.kebab}/${pair.camel} 指定が競合しています`);
+  }
+
+  const normalizedValue = kebabValue ?? camelValue ?? false;
+  delete properties[pair.camel];
+  if (normalizedValue) {
+    properties[pair.kebab] = true;
+  } else {
+    delete properties[pair.kebab];
+  }
+  return normalizedValue;
+};
+
+const applyPreviewSandboxHydrationDirective = (node: HastNode): void => {
+  const properties = node.properties ?? {};
+  const explicitActivationPolicy = readPreviewSandboxActivationPolicy(properties);
+
+  const booleanValues = new Map<string, boolean>();
+  for (const pair of PREVIEW_SANDBOX_BOOLEAN_PROPERTIES) {
+    booleanValues.set(pair.kebab, readPreviewSandboxBooleanProperty(properties, pair));
+  }
+
+  const hasManualOnlyCapability = PREVIEW_SANDBOX_MANUAL_ONLY_CAPABILITY_PROPERTIES.some(
+    (pair) => booleanValues.get(pair.kebab) === true,
+  );
+
+  if (
+    hasManualOnlyCapability &&
+    (explicitActivationPolicy === 'visible' || explicitActivationPolicy === 'eager')
+  ) {
+    throw new Error(
+      '[markdown] ui-preview-sandbox の allow-forms/allow-downloads/allow-pointer-lock/allow-popups は activation-policy="manual" でのみ使用できます',
+    );
+  }
+
+  const activationPolicy =
+    explicitActivationPolicy ?? (hasManualOnlyCapability ? 'manual' : 'visible');
+  if (hasManualOnlyCapability && explicitActivationPolicy === undefined) {
+    properties['activation-policy'] = 'manual';
+  }
+
+  delete properties['dataHydrationCapability'];
+  delete properties['dataHydrationTrigger'];
+  properties['data-hydration-capability'] = 'sandboxed';
+  properties['data-hydration-trigger'] =
+    activationPolicy === 'manual'
+      ? 'interaction'
+      : activationPolicy === 'eager'
+        ? 'initial'
+        : 'visible';
+  node.properties = properties;
+};
+
+const applyResolvedHydrationDirective = (node: HastNode): void => {
+  if (isElement(node, 'ui-preview-sandbox')) {
+    applyPreviewSandboxHydrationDirective(node);
+    return;
+  }
+
+  const directive = resolveHydrationDirective(node);
+  if (directive) {
+    setHydrationDirective(node, directive);
+  }
 };
 
 const getTextContent = (node: HastNode): string => {
@@ -318,9 +487,6 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
 
     case 'ui-translation':
       return { capability: 'interactive', trigger: 'visible' };
-
-    case 'ui-preview-sandbox':
-      return { capability: 'sandboxed', trigger: 'interaction' };
 
     case 'figure':
       if (
@@ -2373,10 +2539,7 @@ export function rehypeRouaultComponents(
           }
         }
 
-        const hydrationDirective = resolveHydrationDirective(current);
-        if (hydrationDirective) {
-          setHydrationDirective(current, hydrationDirective);
-        }
+        applyResolvedHydrationDirective(current);
         return;
       }
 
@@ -2387,10 +2550,7 @@ export function rehypeRouaultComponents(
           footnoteRefCounters,
         );
         if (footnoteTransformed) {
-          const hydrationDirective = resolveHydrationDirective(current);
-          if (hydrationDirective) {
-            setHydrationDirective(current, hydrationDirective);
-          }
+          applyResolvedHydrationDirective(current);
           return;
         }
       }
@@ -2451,10 +2611,7 @@ export function rehypeRouaultComponents(
         }
       }
 
-      const hydrationDirective = resolveHydrationDirective(current);
-      if (hydrationDirective) {
-        setHydrationDirective(current, hydrationDirective);
-      }
+      applyResolvedHydrationDirective(current);
     };
 
     visit(tree);

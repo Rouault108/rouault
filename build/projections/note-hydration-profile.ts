@@ -52,8 +52,8 @@ export const NOTE_HYDRATION_BUDGET_PROFILES = {
     budget: {
       initial: 0,
       postCommit: 1,
-      visible: 2,
-      interaction: 1,
+      visible: 3,
+      interaction: 0,
       total: 4,
     },
   },

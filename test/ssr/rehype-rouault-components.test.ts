@@ -47,6 +47,28 @@ const getTextContent = (node: HastNode | undefined): string => {
 const countOccurrences = (source: string, pattern: string): number =>
   source.split(pattern).length - 1;
 
+const createPreviewSandboxTree = (properties: Record<string, unknown> = {}): HastNode => ({
+  type: 'root',
+  children: [
+    {
+      type: 'element',
+      tagName: 'ui-preview-sandbox',
+      properties,
+      children: [],
+    },
+  ],
+});
+
+const normalizePreviewSandbox = (properties: Record<string, unknown> = {}): HastNode => {
+  const tree = createPreviewSandboxTree(properties);
+  rehypeRouaultComponents()(tree);
+  const sandbox = tree.children?.[0];
+  if (!sandbox) {
+    throw new Error('ui-preview-sandbox fixture was not found');
+  }
+  return sandbox;
+};
+
 const emptyPreviewPayloadTemplatePattern =
   /<template\b[^>]*data-preview-kind="(?:html|css|js)"[^>]*>\s*<\/template>/;
 
@@ -116,6 +138,261 @@ describe('rehypeRouaultComponents', () => {
     expect(first?.properties?.['data-hydration-capability']).to.equal(undefined);
     expect(first?.properties?.['data-hydration-trigger']).to.equal(undefined);
     expect(first?.children?.[0]?.tagName).to.equal('code');
+  });
+
+  it('通常 ui-preview-sandbox は sandboxed/visible を持ち activation-policy は出力しないこと', () => {
+    const sandbox = normalizePreviewSandbox();
+
+    expect(sandbox.properties?.['data-hydration-capability']).to.equal('sandboxed');
+    expect(sandbox.properties?.['data-hydration-trigger']).to.equal('visible');
+    expect(sandbox.properties?.['activation-policy']).to.equal(undefined);
+  });
+
+  it('明示 activation-policy="visible" は維持し sandboxed/visible を持つこと', () => {
+    const sandbox = normalizePreviewSandbox({ 'activation-policy': 'visible' });
+
+    expect(sandbox.properties?.['activation-policy']).to.equal('visible');
+    expect(sandbox.properties?.['data-hydration-capability']).to.equal('sandboxed');
+    expect(sandbox.properties?.['data-hydration-trigger']).to.equal('visible');
+  });
+
+  it('activation-policy="eager" は sandboxed/initial を持つこと', () => {
+    const sandbox = normalizePreviewSandbox({ 'activation-policy': 'eager' });
+
+    expect(sandbox.properties?.['activation-policy']).to.equal('eager');
+    expect(sandbox.properties?.['data-hydration-capability']).to.equal('sandboxed');
+    expect(sandbox.properties?.['data-hydration-trigger']).to.equal('initial');
+  });
+
+  it('activation-policy="manual" は sandboxed/interaction を持つこと', () => {
+    const sandbox = normalizePreviewSandbox({ 'activation-policy': 'manual' });
+
+    expect(sandbox.properties?.['activation-policy']).to.equal('manual');
+    expect(sandbox.properties?.['data-hydration-capability']).to.equal('sandboxed');
+    expect(sandbox.properties?.['data-hydration-trigger']).to.equal('interaction');
+  });
+
+  it('manual-only capability ありなら activation-policy="manual" を明示し sandboxed/interaction を持つこと', () => {
+    const sandbox = normalizePreviewSandbox({ 'allow-forms': true });
+
+    expect(sandbox.properties?.['allow-forms']).to.equal(true);
+    expect(sandbox.properties?.['activation-policy']).to.equal('manual');
+    expect(sandbox.properties?.['data-hydration-capability']).to.equal('sandboxed');
+    expect(sandbox.properties?.['data-hydration-trigger']).to.equal('interaction');
+  });
+
+  it('manual-only capability と activation-policy="visible"/"eager" の併用はエラーにすること', () => {
+    for (const activationPolicy of ['visible', 'eager']) {
+      const run = (): void => {
+        normalizePreviewSandbox({
+          'allow-forms': true,
+          'activation-policy': activationPolicy,
+        });
+      };
+
+      expect(run).to.throw(
+        'ui-preview-sandbox の allow-forms/allow-downloads/allow-pointer-lock/allow-popups は activation-policy="manual" でのみ使用できます',
+      );
+    }
+  });
+
+  it('raw HAST の activation-policy は exact lowercase の visible/eager/manual だけを許可すること', () => {
+    for (const activationPolicy of ['visible', 'eager', 'manual']) {
+      const sandbox = normalizePreviewSandbox({ 'activation-policy': activationPolicy });
+      expect(sandbox.properties?.['activation-policy']).to.equal(activationPolicy);
+    }
+
+    for (const activationPolicy of [
+      ' manual ',
+      'Manual',
+      'VISIBLE',
+      'auto',
+      '',
+      1,
+      true,
+      {},
+      [],
+      () => undefined,
+      Symbol('activation-policy'),
+      BigInt(1),
+    ]) {
+      const run = (): void => {
+        normalizePreviewSandbox({ 'activation-policy': activationPolicy });
+      };
+
+      expect(run).to.throw(
+        'ui-preview-sandbox の activation-policy は exact lowercase の visible/eager/manual のみ指定できます',
+      );
+    }
+  });
+
+  it('raw HAST の boolean presence 属性を厳格に解釈して kebab-case へ正規化すること', () => {
+    for (const value of ['', 'allow-js', 'true', true]) {
+      const sandbox = normalizePreviewSandbox({ allowJs: value });
+      expect(sandbox.properties?.['allow-js']).to.equal(true);
+      expect(sandbox.properties?.['allowJs']).to.equal(undefined);
+    }
+
+    for (const value of [undefined, null, false]) {
+      const sandbox = normalizePreviewSandbox({ 'allow-js': value });
+      expect(sandbox.properties?.['allow-js']).to.equal(undefined);
+      expect(sandbox.properties?.['allowJs']).to.equal(undefined);
+    }
+  });
+
+  it('raw HAST の boolean presence 属性の曖昧値と異常型はエラーにすること', () => {
+    for (const value of [
+      'false',
+      '0',
+      'off',
+      'no',
+      '1',
+      'on',
+      'allowJs',
+      'maybe',
+      0,
+      1,
+      {},
+      [],
+      () => undefined,
+      Symbol('allow-js'),
+      BigInt(1),
+    ]) {
+      const run = (): void => {
+        normalizePreviewSandbox({ allowJs: value });
+      };
+
+      expect(run).to.throw('ui-preview-sandbox の allowJs は boolean presence 属性として指定してください');
+    }
+  });
+
+  it('allow-js 単独と activation-policy の各組み合わせを許可すること', () => {
+    const defaultSandbox = normalizePreviewSandbox({ 'allow-js': true });
+    expect(defaultSandbox.properties?.['data-hydration-trigger']).to.equal('visible');
+    expect(defaultSandbox.properties?.['activation-policy']).to.equal(undefined);
+
+    const visibleSandbox = normalizePreviewSandbox({
+      'allow-js': true,
+      'activation-policy': 'visible',
+    });
+    expect(visibleSandbox.properties?.['activation-policy']).to.equal('visible');
+    expect(visibleSandbox.properties?.['data-hydration-trigger']).to.equal('visible');
+
+    const eagerSandbox = normalizePreviewSandbox({
+      'allow-js': true,
+      'activation-policy': 'eager',
+    });
+    expect(eagerSandbox.properties?.['data-hydration-trigger']).to.equal('initial');
+
+    const manualSandbox = normalizePreviewSandbox({
+      'allow-js': true,
+      'activation-policy': 'manual',
+    });
+    expect(manualSandbox.properties?.['data-hydration-trigger']).to.equal('interaction');
+  });
+
+  it('allow-js と manual-only capability が併存すると manual-only capability の規則を優先すること', () => {
+    const sandbox = normalizePreviewSandbox({ 'allow-js': true, 'allow-forms': true });
+    expect(sandbox.properties?.['activation-policy']).to.equal('manual');
+    expect(sandbox.properties?.['data-hydration-trigger']).to.equal('interaction');
+
+    const manualSandbox = normalizePreviewSandbox({
+      'allow-js': true,
+      'allow-forms': true,
+      'activation-policy': 'manual',
+    });
+    expect(manualSandbox.properties?.['data-hydration-trigger']).to.equal('interaction');
+
+    for (const activationPolicy of ['visible', 'eager']) {
+      const run = (): void => {
+        normalizePreviewSandbox({
+          'allow-js': true,
+          'allow-forms': true,
+          'activation-policy': activationPolicy,
+        });
+      };
+      expect(run).to.throw(
+        'ui-preview-sandbox の allow-forms/allow-downloads/allow-pointer-lock/allow-popups は activation-policy="manual" でのみ使用できます',
+      );
+    }
+  });
+
+  it('preview sandbox の旧 hydration 属性と camelCase 入力は build-owned な kebab-case 出力へ正規化すること', () => {
+    const sandbox = normalizePreviewSandbox({
+      activationPolicy: 'eager',
+      allowJs: 'allow-js',
+      dataHydrationCapability: 'interactive',
+      dataHydrationTrigger: 'interaction',
+    });
+
+    expect(sandbox.properties?.['activation-policy']).to.equal('eager');
+    expect(sandbox.properties?.['activationPolicy']).to.equal(undefined);
+    expect(sandbox.properties?.['allow-js']).to.equal(true);
+    expect(sandbox.properties?.['allowJs']).to.equal(undefined);
+    expect(sandbox.properties?.['data-hydration-capability']).to.equal('sandboxed');
+    expect(sandbox.properties?.['dataHydrationCapability']).to.equal(undefined);
+    expect(sandbox.properties?.['data-hydration-trigger']).to.equal('initial');
+    expect(sandbox.properties?.['dataHydrationTrigger']).to.equal(undefined);
+  });
+
+  it('通常 preview に旧 data-hydration-trigger="interaction" があっても visible へ正規化すること', () => {
+    const sandbox = normalizePreviewSandbox({
+      'data-hydration-trigger': 'interaction',
+      'data-hydration-capability': 'interactive',
+    });
+
+    expect(sandbox.properties?.['data-hydration-capability']).to.equal('sandboxed');
+    expect(sandbox.properties?.['data-hydration-trigger']).to.equal('visible');
+  });
+
+  it('activation-policy と boolean 属性の kebab/camel 競合はエラーにすること', () => {
+    const activationRun = (): void => {
+      normalizePreviewSandbox({ 'activation-policy': 'manual', activationPolicy: 'visible' });
+    };
+    expect(activationRun).to.throw('ui-preview-sandbox の activation-policy 指定が競合しています');
+
+    const booleanRun = (): void => {
+      normalizePreviewSandbox({ 'allow-js': true, allowJs: false });
+    };
+    expect(booleanRun).to.throw('ui-preview-sandbox の allow-js/allowJs 指定が競合しています');
+  });
+
+  it('build output として manual+visible/manual+initial を出力しないこと', () => {
+    for (const properties of [
+      { 'activation-policy': 'manual' },
+      { 'allow-forms': true },
+      { 'activation-policy': 'visible' },
+      { 'activation-policy': 'eager' },
+      {},
+    ]) {
+      const sandbox = normalizePreviewSandbox(properties);
+      if (sandbox.properties?.['activation-policy'] === 'manual') {
+        expect(sandbox.properties?.['data-hydration-trigger']).to.equal('interaction');
+      }
+    }
+  });
+
+  it('汎用 hydration directive は preview sandbox 以外では既存属性を温存すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-translation',
+          properties: {
+            'data-hydration-capability': 'interactive',
+            'data-hydration-trigger': 'interaction',
+          },
+          children: [],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const translation = tree.children?.[0];
+    expect(translation?.properties?.['data-hydration-capability']).to.equal('interactive');
+    expect(translation?.properties?.['data-hydration-trigger']).to.equal('interaction');
   });
 
   it('details source を native details と static chevron icon へ変換すること', () => {

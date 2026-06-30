@@ -32,6 +32,8 @@
 
 `preview-sandbox`は`code-preview` family内の特殊childとして扱う。これは非推奨化、削除、受理条件変更ではなく、現行実装上の親子制約に合わせた説明位置の整理である。
 
+通常の軽量なHTML/CSS中心previewは、`activation-policy`未指定でviewport到達時に自動表示される。旧来のクリック待ちにしたい場合は`activation-policy="manual"`を明示する。`allow-js`単独ではmanualにならないが、manual時のbutton文言は「プレビューを実行」になる。`allow-forms`、`allow-downloads`、`allow-pointer-lock`、`allow-popups`はmanual-only capabilityであり、未指定時は`activation-policy="manual"`へ正規化され、`visible` / `eager`との併用はbuild errorになる。
+
 ### `::translation` / `::translation-overlay`
 
 常時本文として読ませたい対訳は`::translation`を使う。必要時だけ開く短い訳注は`::translation-overlay`を使う。

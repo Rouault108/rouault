@@ -83,6 +83,8 @@
 ### Build-time
 
 - Hydration directiveと対象metadataを付与する。
+- Markdown由来の`ui-preview-sandbox`はMarkdown出力層が`data-hydration-capability="sandboxed"`とtriggerを決める。通常previewは`visible`、`activation-policy="eager"`は`initial`、`activation-policy="manual"`は`interaction`としてschedulerへ渡す。
+- `ui-preview-sandbox`のactivation-policy、capability属性、raw HAST入力検証の詳細正本は`docs/contracts/markdown.md`と`docs/design-system/components/preview-sandbox.md`に置き、本契約はhydration layerとの接続だけを扱う。
 
 ### SSR
 

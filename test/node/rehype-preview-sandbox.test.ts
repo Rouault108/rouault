@@ -52,7 +52,7 @@ describe('rehypePreviewSandbox', () => {
                 slot: 'preview',
                 'iframe-title': 'ボタンの sandbox',
                 'allow-js': true,
-                'activation-policy': 'visible',
+                'activation-policy': 'manual',
                 'height-mode': 'bounded-auto',
                 'allow-forms': true,
                 'allow-downloads': true,
