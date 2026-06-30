@@ -9,9 +9,6 @@ import { setCustomElementsManifest } from '@storybook/web-components-vite';
 import type { Preview } from '@storybook/web-components';
 import customElements from '../custom-elements.json';
 
-import '@fontsource/jetbrains-mono/400.css';
-import '@fontsource/jetbrains-mono/700.css';
-
 import '../src/assets/css/main.css';
 
 setCustomElementsManifest(customElements);

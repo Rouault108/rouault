@@ -57,8 +57,8 @@
   },
   "dependencies": {
     "@floating-ui/dom": "1.7.5",
+    "@fontsource-variable/geist-mono": "5.2.8",
     "@fontsource-variable/noto-sans-jp": "5.2.10",
-    "@fontsource/jetbrains-mono": "5.2.8",
     "@lit-labs/ssr": "~4.0.0",
     "@lit-labs/ssr-client": "~1.1.8",
     "@lit/reactive-element": "~2.1.2",

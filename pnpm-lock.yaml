@@ -11,12 +11,12 @@ importers:
       '@floating-ui/dom':
         specifier: 1.7.5
         version: 1.7.5
+      '@fontsource-variable/geist-mono':
+        specifier: 5.2.8
+        version: 5.2.8
       '@fontsource-variable/noto-sans-jp':
         specifier: 5.2.10
         version: 5.2.10
-      '@fontsource/jetbrains-mono':
-        specifier: 5.2.8
-        version: 5.2.8
       '@lit-labs/ssr':
         specifier: ~4.0.0
         version: 4.0.0(@types/node@24.10.9)
@@ -993,11 +993,11 @@ packages:
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
 
+  '@fontsource-variable/geist-mono@5.2.8':
+    resolution: {integrity: sha512-KI5bj+hkkRiHttYHmccotUZ80ZuZyai+RwI1d7UId0clkx/jXxlo8qYK8j54WzmpBjtMoEMPyllV7faDcj+6RA==}
+
   '@fontsource-variable/noto-sans-jp@5.2.10':
     resolution: {integrity: sha512-m0XfZ38rZtCaGAuAQL0cBPQ6fc/RguYEOqw66zvuLOV9vNRUBf9MFqyoazTu2JVCRIcnkrxbwF29UUaHHgTKdg==}
-
-  '@fontsource/jetbrains-mono@5.2.8':
-    resolution: {integrity: sha512-6w8/SG4kqvIMu7xd7wt6x3idn1Qux3p9N62s6G3rfldOUYHpWcc2FKrqf+Vo44jRvqWj2oAtTHrZXEP23oSKwQ==}
 
   '@github/catalyst@1.7.0':
     resolution: {integrity: sha512-qOAxrDdRZz9+v4y2WoAfh11rpRY/x4FRofPNmJyZFzAjubtzE3sCa/tAycWWufmQGoYiwwzL/qJBBgyg7avxPw==}
@@ -5944,9 +5944,9 @@ snapshots:
 
   '@floating-ui/utils@0.2.10': {}
 
-  '@fontsource-variable/noto-sans-jp@5.2.10': {}
+  '@fontsource-variable/geist-mono@5.2.8': {}
 
-  '@fontsource/jetbrains-mono@5.2.8': {}
+  '@fontsource-variable/noto-sans-jp@5.2.10': {}
 
   '@github/catalyst@1.7.0': {}
 

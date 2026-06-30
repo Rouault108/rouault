@@ -493,6 +493,22 @@ describe('static CSS contracts', () => {
     expect(css).not.to.contain('ui-list-item >');
   });
 
+  it('loads Geist Mono Variable as the project mono font source', () => {
+    const fontsCss = readCss('fonts.css');
+    const tokensCss = readCss('tokens.css');
+
+    expect(fontsCss).toContain("@import '@fontsource-variable/geist-mono/wght.css';");
+    expect(fontsCss).not.toContain('@fontsource/jetbrains-mono');
+
+    const monoFontValues = declarationValuesForSelector(tokensCss, ':root', '--font-mono').map(
+      normalizeDeclarationValue,
+    );
+
+    expect(monoFontValues).toEqual([
+      "'Geist Mono Variable', 'Consolas', 'Liberation Mono', 'Courier New', monospace",
+    ]);
+  });
+
   it('translation fallback CSS exposes readable disclosure contracts only for fallback markup', () => {
     const css = readCss('translation.css');
 
