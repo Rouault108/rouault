@@ -96,6 +96,14 @@ Markdown link-cardのfocus表示は、native anchorである`.link-card__link:fo
 
 `::callout`の入力記法、kind値、final DOM、aria契約はMarkdown transform pipelineが所有する。詳細DOM mappingは`docs/references/markdown-output.md`、kind別の意味と視覚強度は`docs/design-system/components/callout.md`、author向け使い分けは`docs/guides/markdown-authoring.md`を参照する。
 
+### Static Code Group Sync Scope
+
+`::code-group`は既定では他のcode groupと連動しない。authorが`sync-scope`を明示した場合だけ、同一`enhanceCodeGroups(root)`配下のenhanced済みcode group間でユーザー選択に限って同じ`data-code-group-key`へ同期してよい。
+
+`sync-scope`はtrim後に空なら未指定扱いとする。非空の場合は64文字以下で`^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$`に一致する値だけを許可し、final DOMでは`data-code-group-sync-scope`として出力する。この属性はfinal DOM契約属性であり、final source markerではない。
+
+同期は通常`ui-tabs`、`ui-tabs[url-sync]`、`?tab=`、hash、history、storage、TOC、primary tab URL stateを所有しない。詳細DOMとenhancer契約は`docs/contracts/code-surfaces.md`と`docs/references/markdown-output.md`を参照する。
+
 ### Static Table Surface Contract
 
 Markdown出力層の`table`は、scrollable static table surfaceとして扱う。`data-table-root`は横スクロール可能な表領域とfocusable regionを示すための属性であり、row action、row selection、row navigation、interactive data gridを意味しない。

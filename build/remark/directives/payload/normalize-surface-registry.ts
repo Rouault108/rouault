@@ -21,7 +21,7 @@ export const normalizeSurfacePayload = (
     case 'callout':
       return normalizeCalloutPayload(attrs, node, file);
     case 'code-group':
-      return normalizeCodeGroupPayload(attrs);
+      return normalizeCodeGroupPayload(attrs, node, file);
     case 'details':
       return normalizeDetailsPayload(attrs, node, file);
     case 'info-box':

@@ -3,6 +3,7 @@ import type { NotePolicyContext } from '../policy/note-policy-context.js';
 import { resolveLinkCardUrlPolicy } from '../../link-card-url-policy.js';
 import { CALLOUT_VARIANTS, INFO_BOX_VARIANTS } from '../shared/constants.js';
 import { pickOptional } from '../parser-core/parse-attributes.js';
+import { isValidCodeGroupSyncScope } from '../../../../shared/code-group/code-group-sync-scope.js';
 import { sanitizeScoreSource } from '../../../../shared/media/media-source-attributes.js';
 import { toError } from '../shared/errors.js';
 import { parseBooleanAttribute, parseIntegerInRange } from './normalize-helpers.js';
@@ -58,10 +59,26 @@ export const normalizeCalloutPayload = (
   };
 };
 
-export const normalizeCodeGroupPayload = (attrs: Record<string, string>): CodeGroupPayload => ({
-  kind: 'code-group',
-  ...(pickOptional(attrs['aria-label']) ? { ariaLabel: pickOptional(attrs['aria-label']) } : {}),
-});
+export const normalizeCodeGroupPayload = (
+  attrs: Record<string, string>,
+  node: MdastNode,
+  file?: VFileLike,
+): CodeGroupPayload => {
+  const syncScope = pickOptional(attrs['sync-scope']);
+  if (syncScope && !isValidCodeGroupSyncScope(syncScope)) {
+    throw toError(
+      file,
+      node,
+      'code-group の sync-scope は 64文字以下の kebab-case 識別子だけ指定可能です',
+    );
+  }
+
+  return {
+    kind: 'code-group',
+    ...(pickOptional(attrs['aria-label']) ? { ariaLabel: pickOptional(attrs['aria-label']) } : {}),
+    ...(syncScope ? { syncScope } : {}),
+  };
+};
 
 export const normalizeDetailsPayload = (
   attrs: Record<string, string>,

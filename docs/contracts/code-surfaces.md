@@ -74,6 +74,7 @@ filename / caption付きのgroup-owned code blockでも、captionは独立card h
 - inactive panelを`hidden`で隠すことを主要方針にしません。
 - 各panelはlabelまたはheadingで識別できる必要があります。
 - root selected keyは非空の`data-code-group-selected`で表します。
+- `data-code-group-sync-scope`は任意のfinal DOM契約属性です。未指定のcode groupは他groupと連動しません。指定する場合は64文字以下で`^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$`に一致するkebab-case識別子だけを許可します。
 - tab keyは非空の`data-code-group-key`で表します。
 - panel keyはdirect child panelの非空`data-code-group-panel`で表します。
 - `data-code-group-tab`はtab marker属性であり、値は`"true"`です。tab keyとして扱いません。
@@ -96,6 +97,11 @@ filename / caption付きのgroup-owned code blockでも、captionは独立card h
 - group copy controlが存在する場合、enhancerはactive panelのcopy sourceを参照できる状態へ同期します。
 - enhancerはtab keyを`data-code-group-key`だけから読み、`data-code-group-tab`をkey fallbackに使いません。
 - enhancerのtabs / panels / copy button取得は現在のcode group rootにscopeします。tabsはroot直下header内tablist直下の`button[data-code-group-tab]`、panelsはroot直下の`section[data-code-group-panel]`、copy buttonはroot直下`.code-group-header[data-code-group-controls="true"]`配下`.code-group-header-tools > button[data-code-group-copy][data-copy-button]`だけを対象にします。
+- 同期はauthorが`sync-scope`を明示したcode groupだけが対象です。同期範囲は`enhanceCodeGroups(root)`に渡された同一root配下に限定し、`ownerDocument`全体、URL、history、storage、通常`ui-tabs`、`ui-tabs[url-sync]`、TOC、primary tab URL stateへ波及させません。
+- 同期はclick、Enter、Spaceによるユーザー選択時だけ発火します。初期hydration、arrow key、Home、End、URL変更、history navigationでは発火しません。
+- peer判定は`data-code-group-sync-scope`と`data-code-group-key`の完全一致に基づきます。同期先は`data-code-group-enhanced="true"`のcode groupだけで、同期先に同じkeyのdirect tabとdirect panelの両方がない場合は変更しません。
+- 同期先更新はroot selected key、`data-code-group-enhanced` marker、tab selected / active state、roving tabindex、panel active state、group copy targetだけを更新します。focus、scroll、URL、history、storage、custom event dispatchを発生させません。
+- nested code groupは親groupのlocal stateに混ぜません。ただしnested code group自体が同一enhance root内で同じsync-scopeを持ちenhanced済みであれば、独立peerとして同期対象になり得ます。
 
 ## 4. No-JS Controls
 
@@ -130,6 +136,7 @@ filename / caption付きのgroup-owned code blockでも、captionは独立card h
 - stable id。
 - `data-code-block-root`、`data-code-block`、`data-code-group`。
 - `data-code-group-selected`、`data-code-group-tab="true"`、`data-code-group-key`、`data-code-group-panel`。
+- `data-code-group-sync-scope`。これはfinal DOM契約属性であり、中間source markerではありません。
 - `data-code-group-panel-active="true|false"`。これはSSR initial stateであり、hydration後はenhancerが同じ属性をruntime mutable stateとして同期します。
 - panel label / heading。
 - `template[data-code-copy-source]`。

@@ -205,7 +205,12 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::code-group{aria-label="比較"}' }],
+          children: [
+            {
+              type: 'text',
+              value: '::code-group{aria-label="比較" sync-scope="package-manager"}',
+            },
+          ],
         },
         {
           type: 'code',
@@ -233,6 +238,7 @@ describe('remarkRouaultDirectives', () => {
     expect(group?.data?.hName).to.equal('section');
     expect(group?.data?.hProperties?.['data-code-group-source']).to.equal('true');
     expect(group?.data?.hProperties?.['aria-label']).to.equal('比較');
+    expect(group?.data?.hProperties?.['data-code-group-sync-scope']).to.equal('package-manager');
     expect(group?.children).to.have.length(2);
 
     const firstCode = group?.children?.[0];
@@ -244,6 +250,69 @@ describe('remarkRouaultDirectives', () => {
     expect(secondCode?.data?.hProperties?.['filename']).to.equal('two.ts');
     expect(secondCode?.data?.hProperties?.['group-key']).to.equal('two');
     expect(secondCode?.data?.hProperties?.['tab-label']).to.equal('誤り例');
+  });
+
+  it('code-group の空 sync-scope は未指定扱いにし、不正値は build error にすること', () => {
+    const emptyTree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::code-group{sync-scope="   "}' }],
+        },
+        {
+          type: 'code',
+          lang: 'ts',
+          meta: 'group-key="one" tab-label="One"',
+          value: 'const one = 1;',
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(emptyTree, { path: 'content/notes/sample.md' });
+    expect(emptyTree.children?.[0]?.data?.hProperties?.['data-code-group-sync-scope']).to.equal(
+      undefined,
+    );
+
+    for (const syncScope of [
+      'package-',
+      'package--manager',
+      'Package Manager',
+      'rust_go',
+      'npm/pnpm',
+      '日本語',
+      'a'.repeat(65),
+    ]) {
+      const tree: MdastNode = {
+        type: 'root',
+        children: [
+          {
+            type: 'paragraph',
+            children: [{ type: 'text', value: `::code-group{sync-scope="${syncScope}"}` }],
+          },
+          {
+            type: 'code',
+            lang: 'ts',
+            meta: 'group-key="one" tab-label="One"',
+            value: 'const one = 1;',
+          },
+          {
+            type: 'paragraph',
+            children: [{ type: 'text', value: '::' }],
+          },
+        ],
+      };
+
+      const run = () => {
+        remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+      };
+
+      expect(run).to.throw('code-group の sync-scope は 64文字以下の kebab-case 識別子だけ指定可能です');
+    }
   });
 
   it('standalone fenced code の meta を正規化すること', () => {

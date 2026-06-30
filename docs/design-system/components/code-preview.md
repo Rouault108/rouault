@@ -326,8 +326,8 @@ built-in controlsまたは公開property更新によりpreviewの公開状態が
 
 - previewはgroupの選択状態や公開属性を所有しません。
 - groupをstatic code rootとしてそのまま組み込みます。
-- static code group enhancerは現時点で外部同期用の変更イベントを提供しません。
-- 外部同期イベントが必要になった場合は、旧custom event互換ではなく別Request / Decisionとして扱います。
+- static code group enhancerは`data-code-group-sync-scope`による同一enhance root内同期をcode group内部契約として扱います。previewはその同期scopeを拡張、再解釈、外部公開しません。
+- static code group enhancerは外部同期用の変更イベントを提供しません。外部同期イベントが必要になった場合は、旧custom event互換ではなく別Request / Decisionとして扱います。
 
 ## 8.3 `docs/contracts/code-surfaces.md` との関係
 

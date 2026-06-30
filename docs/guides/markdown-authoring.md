@@ -107,6 +107,24 @@ const sample = 1;
 
 meta keyの網羅表は`docs/references/markdown-authoring-syntax.md`を参照する。`data-shiki-meta`はauthoring meta keyではない。
 
+## Code group
+
+code groupは既定では互いに連動しない。同じ読書単位の中で、複数のcode groupを同じtab keyへ揃えたい場合だけ`sync-scope`を明示する。
+
+````md
+:::code-group{aria-label="Package manager" sync-scope="package-manager"}
+```sh group-key="npm" tab-label="npm"
+npm install
+```
+
+```sh group-key="pnpm" tab-label="pnpm"
+pnpm install
+```
+:::
+````
+
+`sync-scope`は64文字以下のlower kebab-case識別子だけを使う。空白だけなら未指定扱いになる。`package-`、`package--manager`、`Package Manager`、`rust_go`、`npm/pnpm`、非ASCII文字は使えない。
+
 ## 表
 
 通常のGFM表を使う。Markdown由来の表はstatic table surfaceであり、interactive table、sortable table、filterable table、row actionではない。

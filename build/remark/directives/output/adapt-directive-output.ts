@@ -55,6 +55,7 @@ const adaptCodeGroupOutput = (payload: CodeGroupPayload): RemarkOutputBinding =>
   hProperties: toOptionalProps([
     ['data-code-group-source', 'true'],
     ['aria-label', payload.ariaLabel],
+    ['data-code-group-sync-scope', payload.syncScope],
   ]),
 });
 

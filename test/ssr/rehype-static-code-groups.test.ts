@@ -46,7 +46,11 @@ describe('rehypeStaticCodeGroups', () => {
         {
           type: 'element',
           tagName: 'section',
-          properties: { 'data-code-group-source': 'true', 'aria-label': '実装比較' },
+          properties: {
+            'data-code-group-source': 'true',
+            'aria-label': '実装比較',
+            'data-code-group-sync-scope': 'package-manager',
+          },
           children: [
             createStaticCodeBlock('valid', '正しい例', 'ts', 'valid.ts'),
             createStaticCodeBlock('invalid', '誤り例', 'ts', 'invalid.ts'),
@@ -64,6 +68,7 @@ describe('rehypeStaticCodeGroups', () => {
     expect(group?.properties?.['data-code-group']).toBe(true);
     expect(group?.properties?.['data-code-group-source']).toBeUndefined();
     expect(group?.properties?.['aria-label']).toBe('実装比較');
+    expect(group?.properties?.['data-code-group-sync-scope']).toBe('package-manager');
     expect(group?.properties?.['data-code-group-label']).toBe('実装比較');
     expect(group?.properties?.['data-hydration-key']).toBe('code-group-enhancer');
     expect(group?.properties?.['data-hydration-capability']).toBe('interactive');
@@ -157,6 +162,7 @@ describe('rehypeStaticCodeGroups', () => {
     const html = toHtml(group as unknown as Parameters<typeof toHtml>[0]);
     expect(html).toContain('data-code-group-panel-active="true"');
     expect(html).toContain('data-code-group-panel-active="false"');
+    expect(html).toContain('data-code-group-sync-scope="package-manager"');
     expect(html).not.toContain('data-code-group-panel-active=""');
     expect(html).not.toMatch(/\sdata-code-group-panel-active(?:\s|>)/u);
   });

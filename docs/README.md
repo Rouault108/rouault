@@ -72,6 +72,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 - `docs/adr/code-group-prose-contained-default.md`
 - `docs/adr/code-group-embedded-code-surface.md`
 - `docs/adr/code-group-scripting-preselected-panel.md`
+- `docs/adr/code-group-enhance-root-sync-scope.md`
 - `docs/adr/article-header-source-link-classification.md`
 - `docs/adr/markdown-static-table-row-hover-affordance.md`
 - `docs/adr/markdown-table-authoring-extension.md`

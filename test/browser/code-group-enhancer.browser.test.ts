@@ -18,6 +18,56 @@ const expectElement = <T extends Element>(element: T | null | undefined, label: 
   return element as T;
 };
 
+const codeGroupFixture = (
+  id: string,
+  options: {
+    syncScope?: string;
+    includeInvalidTab?: boolean;
+    includeInvalidPanel?: boolean;
+    selected?: string;
+    enhanced?: boolean;
+  } = {},
+): string => {
+  const selected = options.selected ?? 'valid';
+  const syncScope = options.syncScope
+    ? ` data-code-group-sync-scope="${options.syncScope}"`
+    : '';
+  const enhanced = options.enhanced ? ' data-code-group-enhanced="true"' : '';
+  const invalidTab = options.includeInvalidTab === false
+    ? ''
+    : `<button type="button" data-code-group-tab="true" data-code-group-key="invalid">Invalid</button>`;
+  const invalidPanel = options.includeInvalidPanel === false
+    ? ''
+    : `<section data-code-group-panel="invalid" data-code-group-panel-active="${selected === 'invalid' ? 'true' : 'false'}" data-code-group-panel-label="Invalid" data-code-copy-source-id="${id}-source-invalid">
+        <template id="${id}-source-invalid" data-code-copy-source>const invalid = true;</template>
+        <figure data-code-block-root data-code-group-owned="true">
+          <pre data-code-block data-code-language="ts" data-code-copy-label="${id} invalid"><code>const invalid = true;</code></pre>
+        </figure>
+      </section>`;
+
+  return `
+    <section data-code-group data-code-group-id="${id}" data-code-group-label="${id}" data-code-group-selected="${selected}"${syncScope}${enhanced}>
+      <div class="code-group-header" data-code-group-controls="true">
+        <div class="code-group-tablist">
+          <button type="button" data-code-group-tab="true" data-code-group-key="valid">Valid</button>
+          ${invalidTab}
+        </div>
+        <div class="code-group-header-tools">
+          <button type="button" data-copy-button data-code-group-copy data-copy-target-id="${id}-source-valid" aria-describedby="${id}-status">copy</button>
+          <span id="${id}-status" data-copy-status></span>
+        </div>
+      </div>
+      <section data-code-group-panel="valid" data-code-group-panel-active="${selected === 'valid' ? 'true' : 'false'}" data-code-group-panel-label="Valid" data-code-copy-source-id="${id}-source-valid">
+        <template id="${id}-source-valid" data-code-copy-source>const valid = true;</template>
+        <figure data-code-block-root data-code-group-owned="true">
+          <pre data-code-block data-code-language="ts" data-code-copy-label="${id} valid"><code>const valid = true;</code></pre>
+        </figure>
+      </section>
+      ${invalidPanel}
+    </section>
+  `;
+};
+
 describe('code-group-enhancer', () => {
   afterEach(() => {
     document.body.replaceChildren();
@@ -249,5 +299,220 @@ describe('code-group-enhancer', () => {
     expect(inner.dataset['codeGroupSelected']).to.equal('inner-a');
     expect(innerCopyButton.dataset['copyTargetId']).to.equal('inner-source-a');
     expect(outerCopyButton.dataset['copyTargetId']).to.equal('outer-source-b');
+  });
+
+  it('sync-scope 未指定の code group はユーザー選択時も他 group と連動しないこと', () => {
+    const root = document.createElement('article');
+    root.innerHTML = `${codeGroupFixture('a')}${codeGroupFixture('b')}`;
+    document.body.append(root);
+
+    enhanceCodeGroups(root);
+
+    const groups = Array.from(root.querySelectorAll<HTMLElement>('section[data-code-group]'));
+    const sourceTab = expectElement(
+      groups[0]?.querySelector<HTMLButtonElement>('[data-code-group-key="invalid"]'),
+      'source invalid tab',
+    );
+    sourceTab.click();
+
+    expect(groups[0]?.dataset['codeGroupSelected']).to.equal('invalid');
+    expect(groups[1]?.dataset['codeGroupSelected']).to.equal('valid');
+  });
+
+  it('同一 enhance root 内の同じ sync-scope だけをユーザー選択で同期すること', () => {
+    const root = document.createElement('article');
+    root.innerHTML = `
+      ${codeGroupFixture('a', { syncScope: 'package-manager' })}
+      ${codeGroupFixture('b', { syncScope: 'package-manager' })}
+      ${codeGroupFixture('c', { syncScope: 'runtime' })}
+    `;
+    document.body.append(root);
+
+    enhanceCodeGroups(root);
+
+    const groups = Array.from(root.querySelectorAll<HTMLElement>('section[data-code-group]'));
+    const sourceTab = expectElement(
+      groups[0]?.querySelector<HTMLButtonElement>('[data-code-group-key="invalid"]'),
+      'source invalid tab',
+    );
+    const sourceValidTab = expectElement(
+      groups[0]?.querySelector<HTMLButtonElement>('[data-code-group-key="valid"]'),
+      'source valid tab',
+    );
+    const peerCopyButton = expectElement(
+      groups[1]?.querySelector<HTMLButtonElement>('[data-code-group-copy]'),
+      'peer copy button',
+    );
+
+    sourceTab.click();
+
+    expect(groups[0]?.dataset['codeGroupSelected']).to.equal('invalid');
+    expect(groups[1]?.dataset['codeGroupSelected']).to.equal('invalid');
+    expect(groups[2]?.dataset['codeGroupSelected']).to.equal('valid');
+    expect(peerCopyButton.dataset['copyTargetId']).to.equal('b-source-invalid');
+    expect(document.activeElement).to.not.equal(
+      groups[1]?.querySelector<HTMLButtonElement>('[data-code-group-key="invalid"]'),
+    );
+
+    dispatchKey(sourceValidTab, 'Enter');
+    expect(groups[0]?.dataset['codeGroupSelected']).to.equal('valid');
+    expect(groups[1]?.dataset['codeGroupSelected']).to.equal('valid');
+    expect(groups[2]?.dataset['codeGroupSelected']).to.equal('valid');
+    expect(peerCopyButton.dataset['copyTargetId']).to.equal('b-source-valid');
+
+    dispatchKey(sourceTab, ' ');
+    expect(groups[0]?.dataset['codeGroupSelected']).to.equal('invalid');
+    expect(groups[1]?.dataset['codeGroupSelected']).to.equal('invalid');
+    expect(groups[2]?.dataset['codeGroupSelected']).to.equal('valid');
+    expect(peerCopyButton.dataset['copyTargetId']).to.equal('b-source-invalid');
+  });
+
+  it('別 enhance root、未enhanced peer、該当key不足の peer には同期しないこと', () => {
+    const firstRoot = document.createElement('article');
+    const secondRoot = document.createElement('article');
+    firstRoot.innerHTML = `
+      ${codeGroupFixture('a', { syncScope: 'package-manager' })}
+      ${codeGroupFixture('missing-panel', {
+        syncScope: 'package-manager',
+        includeInvalidTab: true,
+        includeInvalidPanel: false,
+      })}
+      ${codeGroupFixture('missing-tab', {
+        syncScope: 'package-manager',
+        includeInvalidTab: false,
+        includeInvalidPanel: true,
+      })}
+    `;
+    secondRoot.innerHTML = codeGroupFixture('other-root', { syncScope: 'package-manager' });
+    document.body.append(firstRoot, secondRoot);
+
+    enhanceCodeGroups(firstRoot);
+    enhanceCodeGroups(secondRoot);
+
+    firstRoot.insertAdjacentHTML(
+      'beforeend',
+      codeGroupFixture('late', { syncScope: 'package-manager' }),
+    );
+
+    const source = expectElement(
+      firstRoot.querySelector<HTMLElement>('[data-code-group-id="a"]'),
+      'source group',
+    );
+    const missingPanel = expectElement(
+      firstRoot.querySelector<HTMLElement>('[data-code-group-id="missing-panel"]'),
+      'missing-panel-key group',
+    );
+    const missingTab = expectElement(
+      firstRoot.querySelector<HTMLElement>('[data-code-group-id="missing-tab"]'),
+      'missing-tab-key group',
+    );
+    const late = expectElement(
+      firstRoot.querySelector<HTMLElement>('[data-code-group-id="late"]'),
+      'late group',
+    );
+    const otherRoot = expectElement(
+      secondRoot.querySelector<HTMLElement>('[data-code-group-id="other-root"]'),
+      'other root group',
+    );
+    const sourceTab = expectElement(
+      source.querySelector<HTMLButtonElement>('[data-code-group-key="invalid"]'),
+      'source invalid tab',
+    );
+
+    sourceTab.click();
+
+    expect(source.dataset['codeGroupSelected']).to.equal('invalid');
+    expect(missingPanel.dataset['codeGroupSelected']).to.equal('valid');
+    expect(missingTab.dataset['codeGroupSelected']).to.equal('valid');
+    expect(late.dataset['codeGroupSelected']).to.equal('valid');
+    expect(late.dataset['codeGroupEnhanced']).to.equal(undefined);
+    expect(otherRoot.dataset['codeGroupSelected']).to.equal('valid');
+  });
+
+  it('arrow / Home / End と初期 hydration では sync-scope peer の selection を同期しないこと', () => {
+    const root = document.createElement('article');
+    root.innerHTML = `
+      ${codeGroupFixture('a', { syncScope: 'package-manager', selected: 'invalid' })}
+      ${codeGroupFixture('b', { syncScope: 'package-manager', selected: 'valid' })}
+    `;
+    document.body.append(root);
+
+    enhanceCodeGroups(root);
+
+    const groups = Array.from(root.querySelectorAll<HTMLElement>('section[data-code-group]'));
+    const sourceTabs = Array.from(
+      groups[0]?.querySelectorAll<HTMLButtonElement>('[data-code-group-tab]') ?? [],
+    );
+
+    expect(groups[0]?.dataset['codeGroupSelected']).to.equal('invalid');
+    expect(groups[1]?.dataset['codeGroupSelected']).to.equal('valid');
+
+    const secondTab = expectElement(sourceTabs[1], 'source second tab');
+    secondTab.focus();
+    dispatchKey(secondTab, 'ArrowLeft');
+    dispatchKey(expectElement(sourceTabs[0], 'source first tab'), 'End');
+    dispatchKey(secondTab, 'Home');
+
+    expect(groups[0]?.dataset['codeGroupSelected']).to.equal('invalid');
+    expect(groups[1]?.dataset['codeGroupSelected']).to.equal('valid');
+  });
+
+  it('同一 root 内の nested code group は親 state に混ざらず独立 peer として同期できること', () => {
+    const root = document.createElement('article');
+    root.innerHTML = `
+      <section data-code-group data-code-group-id="outer" data-code-group-label="outer" data-code-group-selected="valid" data-code-group-sync-scope="package-manager">
+        <div class="code-group-header" data-code-group-controls="true">
+          <div class="code-group-tablist">
+            <button type="button" data-code-group-tab="true" data-code-group-key="valid">Outer Valid</button>
+            <button type="button" data-code-group-tab="true" data-code-group-key="invalid">Outer Invalid</button>
+          </div>
+          <div class="code-group-header-tools">
+            <button type="button" data-copy-button data-code-group-copy data-copy-target-id="outer-source-valid" aria-describedby="outer-status">copy</button>
+            <span id="outer-status" data-copy-status></span>
+          </div>
+        </div>
+        <section data-code-group-panel="valid" data-code-group-panel-active="true" data-code-copy-source-id="outer-source-valid">
+          <template id="outer-source-valid" data-code-copy-source>outer valid</template>
+          <figure data-code-block-root data-code-group-owned="true">
+            <pre data-code-block><code>outer valid</code></pre>
+          </figure>
+          ${codeGroupFixture('inner', { syncScope: 'package-manager' })}
+        </section>
+        <section data-code-group-panel="invalid" data-code-group-panel-active="false" data-code-copy-source-id="outer-source-invalid">
+          <template id="outer-source-invalid" data-code-copy-source>outer invalid</template>
+          <figure data-code-block-root data-code-group-owned="true">
+            <pre data-code-block><code>outer invalid</code></pre>
+          </figure>
+        </section>
+      </section>
+    `;
+    document.body.append(root);
+
+    enhanceCodeGroups(root);
+
+    const outer = expectElement(
+      root.querySelector<HTMLElement>('[data-code-group-id="outer"]'),
+      'outer group',
+    );
+    const inner = expectElement(
+      root.querySelector<HTMLElement>('[data-code-group-id="inner"]'),
+      'inner group',
+    );
+    const outerDirectTabs = Array.from(
+      outer
+        .querySelector<HTMLElement>(':scope > .code-group-header .code-group-tablist')
+        ?.querySelectorAll<HTMLButtonElement>(':scope > button[data-code-group-tab]') ?? [],
+    );
+    const innerTab = expectElement(
+      inner.querySelector<HTMLButtonElement>('[data-code-group-key="invalid"]'),
+      'inner invalid tab',
+    );
+
+    expect(outerDirectTabs).to.have.length(2);
+    innerTab.click();
+
+    expect(inner.dataset['codeGroupSelected']).to.equal('invalid');
+    expect(outer.dataset['codeGroupSelected']).to.equal('invalid');
+    expect(outerDirectTabs[1]?.getAttribute('aria-selected')).to.equal('true');
   });
 });

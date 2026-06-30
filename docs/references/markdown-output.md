@@ -44,6 +44,7 @@
   data-code-group="true"
   data-code-group-id="code-group-1"
   data-code-group-selected="valid"
+  data-code-group-sync-scope="package-manager"
   data-hydration-key="code-group-enhancer"
   data-hydration-capability="interactive"
   data-hydration-trigger="visible"
@@ -100,6 +101,7 @@
 ```
 
 - root selected keyは非空の`data-code-group-selected`で表す。
+- `sync-scope`を指定した場合だけ、final DOM rootへ`data-code-group-sync-scope`を出力する。値は64文字以下で`^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$`に一致する。空または空白のみの入力は未指定扱いになり、この属性を出力しない。
 - tab markerは`data-code-group-tab="true"`であり、tab keyではない。tab keyは非空の`data-code-group-key`で表す。
 - panel keyはroot直下panelの非空`data-code-group-panel`で表す。
 - `data-code-group-panel-active`は文字列`"true"`または`"false"`で出力する。空属性や単独属性は出力しない。
@@ -108,6 +110,7 @@
 - group copy buttonの`data-copy-target-id`はactive panelの`data-code-copy-source-id`を指す。
 - tab id、panel id、`data-code-group-panel-id`は非空で、同じkeyのtabとpanelを結ぶ。
 - SSR時点では`hidden`、`aria-hidden`、`inert`、`role="tablist"`、`role="tab"`、`role="tabpanel"`、`aria-selected`、`aria-controls`、`tabindex`を付与しない。
+- 同期scopeはenhancerの同一root配下に限定され、通常`ui-tabs`、URL、history、storage、custom eventには接続しない。
 
 ### `::callout`
 

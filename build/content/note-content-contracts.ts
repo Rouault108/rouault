@@ -22,6 +22,7 @@ import {
   parseFootnoteBackrefHref,
   parseFootnoteRefHref,
 } from '../../shared/footnotes/footnote-id.js';
+import { isValidCodeGroupSyncScope } from '../../shared/code-group/code-group-sync-scope.js';
 
 type Parse5DocumentFragment = DefaultTreeAdapterMap['documentFragment'];
 type Parse5Element = DefaultTreeAdapterMap['element'];
@@ -600,6 +601,17 @@ const validateCodeGroupContract = (
   errors: string[],
 ): void => {
   const label = getCodeSurfaceContextLabel(group);
+  const syncScopeValue = getAttributeValue(group, 'data-code-group-sync-scope');
+  if (syncScopeValue !== undefined) {
+    const syncScope = syncScopeValue.trim();
+    if (!isValidCodeGroupSyncScope(syncScope)) {
+      errors.push(
+        `${label} の data-code-group-sync-scope は 64文字以下の kebab-case 識別子だけ指定可能です`,
+      );
+      return;
+    }
+  }
+
   if (!getDirectCodeGroupHeader(group)) {
     errors.push(`${label} の code-group-header は data-code-group-controls="true" を持つ必要があります`);
     return;

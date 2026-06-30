@@ -30,6 +30,7 @@ export interface CalloutPayload {
 export interface CodeGroupPayload {
   readonly kind: 'code-group';
   readonly ariaLabel?: string | undefined;
+  readonly syncScope?: string | undefined;
 }
 
 export interface CodePreviewPayload {

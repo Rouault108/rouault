@@ -66,6 +66,58 @@ const syncSelection = (state: GroupState, nextKey: string): void => {
   syncCopyButton(state, nextKey);
 };
 
+const hasDirectTabAndPanelForKey = (
+  tabs: readonly HTMLButtonElement[],
+  panels: readonly HTMLElement[],
+  nextKey: string,
+): boolean =>
+  tabs.some((tab) => getTabKey(tab) === nextKey) &&
+  panels.some((panel) => panel.dataset['codeGroupPanel'] === nextKey);
+
+const propagateSelectionWithinScope = (
+  state: GroupState,
+  nextKey: string,
+  syncRoot: ParentNode,
+): void => {
+  const syncScope = state.group.dataset['codeGroupSyncScope'];
+  if (!syncScope) {
+    return;
+  }
+
+  const groups = Array.from(syncRoot.querySelectorAll<HTMLElement>(GROUP_SELECTOR));
+  for (const target of groups) {
+    if (
+      target === state.group ||
+      target.dataset['codeGroupEnhanced'] !== 'true' ||
+      target.dataset['codeGroupSyncScope'] !== syncScope
+    ) {
+      continue;
+    }
+
+    const tabs = getScopedTabs(target);
+    const panels = getScopedPanels(target);
+    if (!hasDirectTabAndPanelForKey(tabs, panels, nextKey)) {
+      continue;
+    }
+
+    syncSelection({
+      group: target,
+      tabs,
+      panels,
+      copyButton: findCopyButton(target),
+    }, nextKey);
+  }
+};
+
+const selectFromUserInteraction = (
+  state: GroupState,
+  nextKey: string,
+  syncRoot: ParentNode,
+): void => {
+  syncSelection(state, nextKey);
+  propagateSelectionWithinScope(state, nextKey, syncRoot);
+};
+
 const focusTab = (state: GroupState, tab: HTMLButtonElement | undefined): void => {
   if (!tab) {
     return;
@@ -183,7 +235,7 @@ const applyTabSemantics = (state: GroupState): void => {
   }
 };
 
-const enhanceGroup = (group: HTMLElement): void => {
+const enhanceGroup = (group: HTMLElement, syncRoot: ParentNode): void => {
   if (group.dataset['codeGroupEnhanced'] === 'true') {
     return;
   }
@@ -217,7 +269,7 @@ const enhanceGroup = (group: HTMLElement): void => {
     tab.dataset['codeGroupTabBound'] = 'true';
     tab.addEventListener('click', () => {
       const nextKey = getTabKey(tab);
-      syncSelection(state, nextKey);
+      selectFromUserInteraction(state, nextKey, syncRoot);
     });
     tab.addEventListener('keydown', (event: KeyboardEvent) => {
       switch (event.key) {
@@ -242,7 +294,7 @@ const enhanceGroup = (group: HTMLElement): void => {
         case 'Enter':
         case ' ':
           event.preventDefault();
-          syncSelection(state, getTabKey(tab));
+          selectFromUserInteraction(state, getTabKey(tab), syncRoot);
           break;
         default:
           break;
@@ -257,6 +309,6 @@ const enhanceGroup = (group: HTMLElement): void => {
 export const enhanceCodeGroups = (root: ParentNode): void => {
   const groups = Array.from(root.querySelectorAll<HTMLElement>(GROUP_SELECTOR));
   for (const group of groups) {
-    enhanceGroup(group);
+    enhanceGroup(group, root);
   }
 };

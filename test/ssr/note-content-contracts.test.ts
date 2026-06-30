@@ -82,10 +82,11 @@ const codeGroupHtml = (
     panelLabelHtml?: string;
     beforeGroupHtml?: string;
     afterGroupHtml?: string;
+    groupAttrs?: string;
   } = {},
 ): string => `
   ${overrides.beforeGroupHtml ?? ''}
-  <section data-code-group="true" data-code-group-id="group-1" data-code-group-label="比較" data-code-group-selected="valid">
+  <section data-code-group="true" data-code-group-id="group-1" data-code-group-label="比較" data-code-group-selected="valid" ${overrides.groupAttrs ?? ''}>
     <div class="code-group-header" data-code-group-controls="true">
       <div class="code-group-tablist">
         <button
@@ -328,10 +329,32 @@ describe('validateNoteContentContracts', () => {
     expect(() => {
       validateNoteContentContracts({
         kind: 'reader',
-        html: codeGroupHtml(),
+        html: codeGroupHtml({ groupAttrs: 'data-code-group-sync-scope="package-manager"' }),
         sourceLabel: 'testing/code-group',
       });
     }).not.toThrow();
+  });
+
+  it('code group sync scope が不正なら build error にすること', () => {
+    for (const syncScope of [
+      '',
+      '   ',
+      'package-',
+      'package--manager',
+      'Package Manager',
+      'rust_go',
+      'npm/pnpm',
+      '日本語',
+      'a'.repeat(65),
+    ]) {
+      expect(() => {
+        validateNoteContentContracts({
+          kind: 'reader',
+          html: codeGroupHtml({ groupAttrs: `data-code-group-sync-scope="${syncScope}"` }),
+          sourceLabel: 'testing/code-group',
+        });
+      }).toThrow('data-code-group-sync-scope は 64文字以下の kebab-case 識別子だけ指定可能です');
+    }
   });
 
 

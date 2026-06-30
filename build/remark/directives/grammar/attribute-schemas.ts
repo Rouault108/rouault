@@ -9,7 +9,7 @@ export const directiveAttributeSchemas: Record<DirectiveName, DirectiveAttribute
     allowedKeys: ['kind', 'heading', 'label', 'icon', 'heading-level'],
   },
   'code-group': {
-    allowedKeys: ['aria-label'],
+    allowedKeys: ['aria-label', 'sync-scope'],
   },
   'code-preview': {
     allowedKeys: [
