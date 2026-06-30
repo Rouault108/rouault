@@ -615,7 +615,7 @@ export class PreviewSandbox extends LitElement {
       nonWhitespaceNodes.every((node) => node.nodeType === Node.TEXT_NODE);
 
     if (isTextEncodedPayload) {
-      return template.content.textContent ?? '';
+      return template.content.textContent;
     }
 
     return template.innerHTML;
