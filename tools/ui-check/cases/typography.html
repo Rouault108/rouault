@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Typography - UI Check</title>
+    <script type="module" src="../ui-check-entry.ts"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <p><a href="../">UI Check Workbench</a></p>
+      <article class="prose" aria-labelledby="typography-title">
+        <h1 id="typography-title">Typography</h1>
+        <p>
+          本文の段落、リンク、<code>inline code</code>、マーク表示の基本的なリズムを確認します。
+          <a href="#">本文リンク</a> は周囲の文脈から浮きすぎないことを観察します。
+        </p>
+        <p>
+          日本語の長めの段落が続いたとき、行間と字間が読みやすく保たれるかを確認します。
+          <mark>検索一致のような強調</mark>も本文の可読性を妨げない程度に見える必要があります。
+        </p>
+        <h2 id="section-heading">
+          <span class="heading-text">見出し二</span>
+          <a class="heading-anchor" href="#section-heading" aria-label="見出し二へのリンク">#</a>
+        </h2>
+        <p>見出し後の本文余白、アンカー表示、段落間隔を観察します。</p>
+        <h3>見出し三</h3>
+        <ul>
+          <li>箇条書きの行間</li>
+          <li>複数行になった場合のインデントと余白</li>
+        </ul>
+        <blockquote>
+          <p>引用文の境界と本文面に対する強さを確認します。</p>
+        </blockquote>
+      </article>
+    </main>
+  </body>
+</html>

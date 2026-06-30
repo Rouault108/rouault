@@ -89,6 +89,7 @@ export default defineConfig(
       'eleventy.config.ts',
       'scripts/**/*.ts',
       'src/data/**/*.ts',
+      'tools/**/*.ts',
       'test/ssr/**/*.ts',
       'web-test-runner.config.ts',
       'cem.config.ts',

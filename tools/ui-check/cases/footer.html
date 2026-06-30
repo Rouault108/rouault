@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Footer - UI Check</title>
+    <script type="module" src="../ui-check-entry.ts"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <p><a href="../">UI Check Workbench</a></p>
+      <section class="hero" aria-labelledby="footer-title">
+        <p class="eyebrow">Layout fragment</p>
+        <h1 id="footer-title" class="heading">Footer</h1>
+        <p class="description">ページ末尾の補助情報としての静かな表示を確認します。</p>
+      </section>
+    </main>
+    <footer class="ui-footer" data-footer data-layout-footer>
+      <div class="ui-footer__inner">
+        <div class="ui-footer__meta">
+          <div class="ui-footer__brand">
+            <p class="ui-footer__eyebrow">Personal notes</p>
+            <p class="ui-footer__site"><a href="#" data-link-kind="internal-document" data-link-surface="navigation">Rouault</a></p>
+            <p class="ui-footer__description">読むための静かなノート閲覧面。</p>
+          </div>
+          <div class="ui-footer__subline">
+            <div class="ui-footer__legal">
+              <p class="ui-footer__copyright">© 2026 Rouault</p>
+              <p class="ui-footer__build">ui-check local</p>
+            </div>
+            <nav class="ui-footer__nav" aria-label="補助ナビゲーション">
+              <div class="ui-footer__nav-list">
+                <span class="ui-footer__nav-item"><a href="#" data-link-kind="internal-document" data-link-surface="navigation">Home</a></span>
+                <span class="ui-footer__nav-item"><a href="#" data-link-kind="internal-document" data-link-surface="navigation">Search</a></span>
+                <span class="ui-footer__nav-item"><a href="https://example.com" data-link-kind="external-web" data-link-surface="navigation" data-external="true" rel="noreferrer">External</a></span>
+              </div>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
+

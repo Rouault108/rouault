@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Table overflow - UI Check</title>
+    <script type="module" src="../ui-check-entry.ts"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <p><a href="../">UI Check Workbench</a></p>
+      <article class="prose" aria-labelledby="table-title">
+        <h1 id="table-title">Table overflow</h1>
+        <p>横に長い表が本文幅を押し広げず、表面だけでスクロールすることを観察します。</p>
+        <div data-table-root="true" role="region" tabindex="0" aria-label="UI確認用の横長テーブル">
+          <table>
+            <caption>
+              横スクロールを含む表
+            </caption>
+            <colgroup>
+              <col data-table-col-width="narrow" />
+              <col data-table-col-width="wide" />
+              <col data-table-col-width="wide" />
+              <col data-table-col-width="numeric" />
+              <col data-table-col-width="wide" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col">状態</th>
+                <th scope="col">説明</th>
+                <th scope="col">長い列見出し</th>
+                <th scope="col" align="right">件数</th>
+                <th scope="col">備考</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Draft</td>
+                <td>初期観察用の断片</td>
+                <td>本文幅より長いセル内容の見え方</td>
+                <td align="right">128</td>
+                <td>スクロールバーと余白を確認</td>
+              </tr>
+              <tr>
+                <td>Ready</td>
+                <td>既存CSSに準じた表示</td>
+                <td>折り返しと列幅tokenの組み合わせ</td>
+                <td align="right">42</td>
+                <td>contractではなく観察用</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </main>
+  </body>
+</html>
+

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Callout - UI Check</title>
+    <script type="module" src="../ui-check-entry.ts"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <p><a href="../">UI Check Workbench</a></p>
+      <article class="prose" aria-labelledby="callout-title">
+        <h1 id="callout-title">Callout</h1>
+        <aside data-callout data-callout-kind="note">
+          <span class="callout-icon" aria-hidden="true">i</span>
+          <div data-callout-content="true">
+            <p data-callout-heading="true">Note</p>
+            <div data-callout-body="true">
+              <p>本文の流れを止めすぎない補足情報の見え方を確認します。</p>
+            </div>
+          </div>
+        </aside>
+        <aside data-callout data-callout-kind="tip">
+          <span class="callout-icon" aria-hidden="true">✓</span>
+          <div data-callout-content="true">
+            <p data-callout-heading="true">Tip</p>
+            <div data-callout-body="true">
+              <p>淡い情報色の面と本文テキストのコントラストを観察します。</p>
+            </div>
+          </div>
+        </aside>
+        <aside data-callout data-callout-kind="warning">
+          <span class="callout-icon" aria-hidden="true">!</span>
+          <div data-callout-content="true">
+            <p data-callout-heading="true">Warning</p>
+            <div data-callout-body="true">
+              <p>注意喚起の強さが本文面で過剰にならないかを確認します。</p>
+            </div>
+          </div>
+        </aside>
+        <aside data-callout data-callout-kind="danger">
+          <span class="callout-icon" aria-hidden="true">!</span>
+          <div data-callout-content="true">
+            <p data-callout-heading="true">Danger</p>
+            <div data-callout-body="true">
+              <p>強い警告表示の境界線と背景色を確認します。</p>
+            </div>
+          </div>
+        </aside>
+      </article>
+    </main>
+  </body>
+</html>
+

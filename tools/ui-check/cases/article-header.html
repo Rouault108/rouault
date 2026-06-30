@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Article header - UI Check</title>
+    <script type="module" src="../ui-check-entry.ts"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <p><a href="../">UI Check Workbench</a></p>
+      <article class="note-shell" data-toc-presence="absent">
+        <div class="layout-main-col">
+          <div class="container-reading">
+            <header class="article-header" data-article-header>
+              <nav class="article-header__breadcrumbs" aria-label="現在の階層">
+                <ol class="article-header__breadcrumb-list">
+                  <li class="article-header__breadcrumb-item">
+                    <a
+                      class="article-header__breadcrumb-node article-header__breadcrumb-link"
+                      href="#"
+                      data-link-kind="internal-document"
+                      data-link-surface="navigation"
+                      >Notes</a
+                    >
+                    <span class="article-header__breadcrumb-separator" aria-hidden="true">›</span>
+                  </li>
+                  <li class="article-header__breadcrumb-item">
+                    <span
+                      class="article-header__breadcrumb-node article-header__breadcrumb-current"
+                      aria-current="page"
+                      >UI断片</span
+                    >
+                  </li>
+                </ol>
+              </nav>
+              <div class="article-header__status article-header__status--draft" aria-label="ステータス: 下書き">
+                <span class="article-header__metadata-icon" aria-hidden="true">◌</span>
+                <span class="article-header__status-label">下書き</span>
+              </div>
+              <h1 class="article-header__heading">長いタイトルを持つ記事ヘッダーの視覚確認</h1>
+              <ul class="article-header__metadata article-header__metadata--primary" aria-label="記事メタデータ">
+                <li class="article-header__metadata-item article-header__metadata-item--date">
+                  <span class="article-header__metadata-icon" aria-hidden="true">↺</span>
+                  <time datetime="2026-06-30">2026-06-30</time>
+                </li>
+              </ul>
+              <nav class="article-header__tags" aria-label="タグ">
+                <ul class="article-header__tag-list">
+                  <li class="article-header__tag-item">
+                    <a class="article-header__tag-link" href="#" rel="tag">
+                      <span class="article-header__tag-label">reading-ui</span>
+                    </a>
+                  </li>
+                  <li class="article-header__tag-item">
+                    <a class="article-header__tag-link" href="#" rel="tag">
+                      <span class="article-header__tag-label">長いタグ名の確認</span>
+                    </a>
+                  </li>
+                </ul>
+              </nav>
+              <ul class="article-header__metadata article-header__metadata--secondary" aria-label="出典・ライセンス情報">
+                <li class="article-header__metadata-item article-header__metadata-item--source">
+                  <span class="article-header__metadata-icon" aria-hidden="true">↗</span>
+                  <a
+                    class="article-header__source-link"
+                    href="https://example.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-link-kind="external-web"
+                    data-link-surface="metadata"
+                    data-external="true"
+                    >出典</a
+                  >
+                </li>
+                <li class="article-header__metadata-item article-header__metadata-item--license">
+                  <span class="article-header__metadata-icon" aria-hidden="true">§</span>
+                  <span>CC BY 4.0</span>
+                </li>
+              </ul>
+            </header>
+          </div>
+        </div>
+      </article>
+    </main>
+  </body>
+</html>
+

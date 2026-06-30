@@ -21,6 +21,7 @@
     "scripts/**/*.ts",
     "shared/**/*.ts",
     "src/data/**/*.ts",
+    "tools/**/*.ts",
     "types/**/*.d.ts",
     "test/node/**/*.test.ts",
     "test/ssr/**/*.test.ts",

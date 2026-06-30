@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Code surface - UI Check</title>
+    <script type="module" src="../ui-check-entry.ts"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <p><a href="../">UI Check Workbench</a></p>
+      <article class="prose" aria-labelledby="code-title">
+        <h1 id="code-title">Code surface</h1>
+        <p>本文中の <code>inline code</code> と、静的コード面の余白・スクロールを確認します。</p>
+        <figure data-code-block-root>
+          <figcaption class="code-surface-caption">
+            <span class="code-surface-caption-main">
+              <span class="code-surface-filename">tools/ui-check/example.ts</span>
+              <span class="code-surface-intent">sample</span>
+            </span>
+          </figcaption>
+          <pre data-code-block data-code-line-numbers="true" tabindex="0"><code><span class="line">const message = 'Rouault UI check';</span>
+<span class="line highlighted">const normalize = (value: string): string =&gt; value.trim();</span>
+<span class="line">console.log(normalize(message));</span>
+<span class="line">console.log('a very long line that should overflow horizontally without changing the page reading measure or forcing layout expansion');</span></code></pre>
+        </figure>
+        <section data-code-group data-code-group-enhanced="true" aria-label="コードグループ">
+          <div class="code-group-header">
+            <div class="code-group-tablist" role="tablist" aria-label="言語">
+              <button type="button" data-code-group-tab data-selected="true" aria-selected="true">TypeScript</button>
+              <button type="button" data-code-group-tab aria-selected="false">HTML</button>
+            </div>
+          </div>
+          <div data-code-group-panel data-code-group-panel-active="true">
+            <figure data-code-block-root data-code-group-owned="true">
+              <pre data-code-block tabindex="0"><code><span class="line">export const state = 'static';</span></code></pre>
+            </figure>
+          </div>
+        </section>
+      </article>
+    </main>
+  </body>
+</html>
+

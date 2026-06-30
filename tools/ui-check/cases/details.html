@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Details - UI Check</title>
+    <script type="module" src="../ui-check-entry.ts"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <p><a href="../">UI Check Workbench</a></p>
+      <article class="prose" aria-labelledby="details-title">
+        <h1 id="details-title">Details</h1>
+        <details class="details-block" data-details>
+          <summary class="details-block__summary">
+            <span class="details-block__chevron static-icon" aria-hidden="true">›</span>
+            <span class="details-block__summary-content">閉じた状態の要約</span>
+          </summary>
+          <div class="details-block__body">
+            <p>開いたときの本文余白と行間を確認します。</p>
+          </div>
+        </details>
+        <details class="details-block" data-details open>
+          <summary class="details-block__summary">
+            <span class="details-block__chevron static-icon" aria-hidden="true">›</span>
+            <span class="details-block__summary-content">開いた状態の要約</span>
+          </summary>
+          <div class="details-block__body">
+            <p>長い説明文が入ったとき、本文面の流れを壊さずに読めるかを観察します。</p>
+          </div>
+        </details>
+      </article>
+    </main>
+  </body>
+</html>
+

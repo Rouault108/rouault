@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Search controls - UI Check</title>
+    <script type="module" src="../ui-check-entry.ts"></script>
+  </head>
+  <body>
+    <main class="page-shell search-page">
+      <p><a href="../">UI Check Workbench</a></p>
+      <section class="hero" aria-labelledby="search-title">
+        <p class="eyebrow">Static controls</p>
+        <h1 id="search-title" class="heading">Search controls</h1>
+        <p class="description">検索画面の入力欄、選択済みタグ、フィルター行の静的表示を確認します。</p>
+      </section>
+      <section class="search-controls" aria-label="検索条件">
+        <div class="search-input-field">
+          <span class="search-input-field__icon" aria-hidden="true">⌕</span>
+          <input class="search-input-control" type="search" value="reading ui" aria-label="検索語" />
+          <button class="search-input-clear" type="button" aria-label="検索語を消去">
+            <span class="search-input-clear__icon" aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="selected-tags" aria-label="選択済みタグ">
+          <span class="selected-tag">
+            <span class="selected-tag__label">UI</span>
+            <button class="selected-tag__remove" type="button" aria-label="UIを解除">×</button>
+          </span>
+          <span class="selected-tag">
+            <span class="selected-tag__label">長いタグ名の表示確認</span>
+            <button class="selected-tag__remove" type="button" aria-label="長いタグ名の表示確認を解除">×</button>
+          </span>
+        </div>
+        <details class="filter-details" open>
+          <summary class="filter-details__summary">
+            <span class="filter-details__chevron" aria-hidden="true">›</span>
+            <span class="filter-summary">
+              <span class="filter-summary-main">フィルター</span>
+              <span class="filter-summary-meta">
+                <span class="filter-summary-state">2件選択中</span>
+                <span class="filter-summary-detail">タグとコーパス</span>
+              </span>
+            </span>
+          </summary>
+          <div class="filter-panel">
+            <div class="filter-search-field">
+              <span class="filter-search-field__icon" aria-hidden="true">⌕</span>
+              <input class="filter-search-control" type="search" placeholder="タグを絞り込む" aria-label="タグを絞り込む" />
+            </div>
+            <div class="filter-list">
+              <div class="filter-option" data-selected="true">
+                <label class="filter-option-checkbox">
+                  <input class="filter-option-checkbox__input" type="checkbox" checked />
+                  <span class="filter-option-checkbox__control" aria-hidden="true">
+                    <span class="filter-option-checkbox__icon">✓</span>
+                  </span>
+                  <span class="filter-option-label">UI</span>
+                </label>
+                <span class="filter-option-count">12</span>
+              </div>
+              <div class="filter-option">
+                <label class="filter-option-checkbox">
+                  <input class="filter-option-checkbox__input" type="checkbox" />
+                  <span class="filter-option-checkbox__control" aria-hidden="true"></span>
+                  <span class="filter-option-label">Markdown</span>
+                </label>
+                <span class="filter-option-count">7</span>
+              </div>
+            </div>
+          </div>
+        </details>
+      </section>
+    </main>
+  </body>
+</html>
+

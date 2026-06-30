@@ -33,6 +33,8 @@
     "test:e2e": "pnpm run codegen:icons && pnpm run codegen:content && pnpm exec playwright test",
     "test:e2e:dev": "pnpm run codegen:icons && pnpm run codegen:content && pnpm exec playwright test --config playwright.dev.config.ts",
     "test:e2e:production": "pnpm run codegen:icons && pnpm run codegen:content && pnpm exec playwright test",
+    "ui:check": "pnpm run codegen:icons && pnpm run prepare:static-font-assets && pnpm exec vite --config tools/ui-check/vite.config.ts --host 127.0.0.1 --port 5174 --strictPort",
+    "ui:screenshot": "pnpm exec playwright test --config tools/ui-check/playwright.config.ts",
     "test": "pnpm run test:node && pnpm run test:ssr && pnpm run test:browser && pnpm run test:storybook:meta",
     "validate:note-links": "pnpm run codegen:content && pnpm exec tsx scripts/validate-note-source-links.ts",
     "test:extended": "pnpm run test:storybook:smoke && pnpm run test:e2e:production && pnpm run test:e2e:dev",
