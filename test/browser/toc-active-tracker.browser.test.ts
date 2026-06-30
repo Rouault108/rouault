@@ -83,7 +83,7 @@ describe('TocActiveTracker', () => {
     tracker.destroy();
   });
 
-  it('hash 回復後の tab 状態を visible headings に反映すること', async () => {
+  it('selected-value と panel visibility の初期状態を visible headings に反映すること', async () => {
     document.body.innerHTML = `
       <article id="content-root">
         <ui-tabs data-toc-scope="toc-scope-1" selected-value="rust" hydrated>

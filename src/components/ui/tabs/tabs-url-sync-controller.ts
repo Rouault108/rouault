@@ -178,10 +178,12 @@ export class TabsUrlSyncController implements ReactiveController {
     const strategy = getTabsUrlSyncStrategy();
     const url = typeof window === 'undefined' ? '' : window.location.href;
     const hasQueryValue = (strategy?.readValue(url) ?? null) !== null;
-    const hasHashValue = (strategy?.readHash(url) ?? '') !== '';
+    const hashValue = strategy?.readHash(url) ?? '';
+    const hasHostOwnedHash =
+      hashValue !== '' && this.host.resolveTabValueForHash(hashValue) !== null;
 
     this.withSuppressedWrite(() => {
-      if (!hasQueryValue && !hasHashValue) {
+      if (!hasQueryValue && !hasHostOwnedHash) {
         this.host.clearControlledSelection();
       }
       this.host.onUrlStateChanged();

@@ -359,6 +359,50 @@ describe('ui-tabs browser contract', () => {
     }
   });
 
+  it('url-sync は host 外 hash への location 同期で controlled selection を保持しないこと', async () => {
+    const outside = document.createElement('h2');
+    outside.id = 'outside-heading';
+    document.body.append(outside);
+
+    const restoreUrl = replaceUrl('/?tab=details');
+    const historySpy = spyOnHistoryWrites();
+
+    try {
+      const tabs = await fixture<Tabs>(html`
+        <ui-tabs url-sync>
+          <button slot="tab" value="overview">概要</button>
+          <div slot="panel"><h3 id="overview-heading">概要見出し</h3></div>
+          <button slot="tab" value="details">詳細</button>
+          <div slot="panel"><h3 id="details-heading">詳細見出し</h3></div>
+        </ui-tabs>
+      `);
+      await waitForLitUpdate(tabs);
+
+      expect(tabs.selectedValue).to.equal('details');
+
+      history.replaceState(history.state, '', '/#outside-heading');
+      historySpy.pushUrls.length = 0;
+      historySpy.replaceUrls.length = 0;
+
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      await waitForLitUpdate(tabs);
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve());
+      });
+      await waitForLitUpdate(tabs);
+
+      expect(tabs.selectedValue).to.equal(null);
+      expect(window.location.search).to.equal('');
+      expect(window.location.hash).to.equal('#outside-heading');
+      expect(historySpy.pushUrls).to.deep.equal([]);
+      expect(historySpy.replaceUrls).to.deep.equal([]);
+    } finally {
+      historySpy.restore();
+      restoreUrl();
+      outside.remove();
+    }
+  });
+
   it('url-sync は無効な query 値を有効 activeValue へ replaceState で回復すること', async () => {
     const restoreUrl = replaceUrl('/?tab=missing');
     const historySpy = spyOnHistoryWrites();
