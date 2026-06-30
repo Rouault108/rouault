@@ -122,6 +122,10 @@ top auxiliary scroll railは、横溢れするMarkdown table rootに対するrun
 - top railはrow hover、row selection、row navigation、sort / filter、interactive grid化、sticky header、Library wide table viewを意味しない。
 - Phase3Bのtop railは、Phase1の`data-overflow` / `data-fade-left` / `data-fade-right` state属性とは別のruntime enhancementである。
 
+Markdown table rootと、表示される環境におけるtop auxiliary scroll railは、native scrollbarを`scrollbar-width: none`などで不可視化してはならない。横スクロール可能性と現在位置を読者が認識できるようにしつつ、読書面を過剰に分断しないthin / subtleなscrollbar視覚契約を持つ。
+
+このscrollbar視覚契約は、Markdown authoring API、SSR table構造、runtime aria意味、Tab順序を変更しない。top railは引き続きfocus可能な補助scroll regionであり、row hover、row selection、row navigation、interactive grid化を意味しない。coarse pointer環境では既存契約によりtop railが`display: none`になるため、常にtop railのnative scrollbarを表示する契約ではない。
+
 R3 Decision RecordとBreaking Change Gateは`docs/adr/table-top-scroll-rail-accessible-region.md`に保存する。
 
 ### Details Prose Disclosure Contract
