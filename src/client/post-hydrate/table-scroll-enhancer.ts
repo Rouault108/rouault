@@ -31,7 +31,7 @@ const removeRail = (state: TableScrollState): void => {
 
 const resolveTableRailLabel = (root: HTMLElement): string => {
   const captionText =
-    root.querySelector('table > caption')?.textContent?.replace(/\s+/gu, ' ').trim() ?? '';
+    root.querySelector('table > caption')?.textContent.replace(/\s+/gu, ' ').trim() ?? '';
 
   return captionText ? `${captionText}の横スクロール補助` : TABLE_RAIL_FALLBACK_LABEL;
 };
@@ -41,7 +41,7 @@ const createGeneratedTableRootId = (): string => {
 
   do {
     generatedTableRootIdSequence += 1;
-    generatedId = `rouault-table-root-${generatedTableRootIdSequence}`;
+    generatedId = `rouault-table-root-${generatedTableRootIdSequence.toString()}`;
   } while (document.getElementById(generatedId));
 
   return generatedId;
@@ -77,7 +77,7 @@ const updateRailMetrics = (root: HTMLElement, state: TableScrollState): void => 
     return;
   }
 
-  state.spacer.style.inlineSize = `${Math.max(root.scrollWidth, root.clientWidth)}px`;
+  state.spacer.style.inlineSize = `${Math.max(root.scrollWidth, root.clientWidth).toString()}px`;
 };
 
 const ensureRail = (root: HTMLElement, state: TableScrollState): HTMLElement | null => {
