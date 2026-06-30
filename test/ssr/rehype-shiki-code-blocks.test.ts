@@ -30,6 +30,9 @@ const getLineElements = (codeNode: HastNode | undefined): HastNode[] =>
     (child) => child.type === 'element' && child.tagName === 'span',
   );
 
+const getElementChildren = (node: HastNode | undefined): HastNode[] =>
+  (node?.children ?? []).filter((child) => child.type === 'element');
+
 const findDescendant = (
   node: HastNode | undefined,
   predicate: (candidate: HastNode) => boolean,
@@ -180,6 +183,45 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(readNodeClassList(lines[0])).toContain('ui-explicit-highlight');
     expect(readNodeClassList(lines[1])).toContain('diff');
     expect(readNodeClassList(lines[1])).toContain('add');
+  });
+
+  it('filename と intent を持たない standalone fenced code は root 直下に overlay copy DOM を維持する', async () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [createCodeFence('language-csharp', 'Console.WriteLine("Hello, World!");')],
+    };
+
+    await rehypeShikiCodeBlocks()(tree);
+
+    const root = tree.children?.[0];
+    expect(root?.tagName).toBe('figure');
+    expect(root?.properties?.['data-code-block-root']).toBe('true');
+    expect(readNodeClassList(root)).toContain('code-surface-root--overlay');
+
+    const rootElementChildren = getElementChildren(root);
+    expect(rootElementChildren).toHaveLength(3);
+
+    const caption = rootElementChildren[0];
+    expect(caption?.tagName).toBe('div');
+    expect(readNodeClassList(caption)).toContain('code-surface-caption');
+    expect(
+      findDescendant(caption, (child) =>
+        readNodeClassList(child).includes('code-surface-copy-button-shell'),
+      ),
+    ).toBeDefined();
+    expect(
+      findDescendant(caption, (child) =>
+        readNodeClassList(child).includes('code-surface-caption-main'),
+      ),
+    ).toBeUndefined();
+
+    const copySource = rootElementChildren[1];
+    expect(copySource?.tagName).toBe('template');
+    expect(copySource?.properties?.['data-code-copy-source']).toBe('true');
+
+    const pre = rootElementChildren[2];
+    expect(pre?.tagName).toBe('pre');
+    expect(pre?.properties?.['data-code-block']).toBe(true);
   });
 
   it('ページ内最初の standalone code block だけに enhancer 用 hydration root を付与すること', async () => {

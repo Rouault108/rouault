@@ -69,6 +69,12 @@ interface SourceOrderedDeclaration {
   readonly value: string;
 }
 
+interface RuleDeclarationRecord {
+  readonly property: string;
+  readonly ruleIndex: number;
+  readonly value: string;
+}
+
 interface SelectorRuleDeclarationRecord {
   readonly selectors: readonly string[];
   readonly value: string;
@@ -78,6 +84,7 @@ interface SelectorRuleRecord {
   readonly ruleIndex: number;
   readonly selectors: readonly string[];
   readonly block: string;
+  readonly declarations: readonly RuleDeclarationRecord[];
 }
 
 const rootRuleRecords = (css: string): SelectorRuleRecord[] => {
@@ -93,6 +100,14 @@ const rootRuleRecords = (css: string): SelectorRuleRecord[] => {
         normalizeAttributeQuoteStyle(normalizeSelector(selector)),
       ),
       block: rule.nodes?.map((node) => node.toString()).join('\n') ?? '',
+      declarations:
+        rule.nodes
+          ?.filter((node): node is Declaration => node.type === 'decl')
+          .map((declaration) => ({
+            ruleIndex,
+            value: declaration.value.trim(),
+            property: declaration.prop,
+          })) ?? [],
     });
     ruleIndex += 1;
   });
@@ -103,6 +118,15 @@ const rootRuleRecords = (css: string): SelectorRuleRecord[] => {
 const rootRuleRecordsForSelector = (css: string, selector: string): SelectorRuleRecord[] => {
   const targetSelector = normalizeAttributeQuoteStyle(normalizeSelector(selector));
   return rootRuleRecords(css).filter((record) => record.selectors.includes(targetSelector));
+};
+
+const declarationValuesForRuleRecord = (
+  record: SelectorRuleRecord,
+  property: string,
+): string[] => {
+  return record.declarations
+    .filter((declaration) => declaration.property === property)
+    .map((declaration) => declaration.value);
 };
 
 const rootDeclarationRecordsForSelector = (
@@ -1738,6 +1762,81 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(forcedColors, ".static-copy-button[data-copy-state='error']", [
       'border-color: Mark',
     ]);
+  });
+
+  it('code surface CSS owns overlay copy positioning with semantic surface tokens', () => {
+    const css = readCss('code-surfaces.css');
+    const staticCopyButton = readCss('static-copy-button.css');
+    const overlayTokenProperties = [
+      '--ui-code-copy-overlay-code-padding-block-start',
+      '--ui-code-copy-overlay-center-offset',
+      '--ui-code-copy-overlay-min-block-start',
+      '--ui-code-copy-overlay-block-start',
+    ] as const;
+
+    const codeBlockRootRecords = rootRuleRecordsForSelector(css, '[data-code-block-root]').filter(
+      (record) => record.selectors.length === 1,
+    );
+    const surfaceRootRecord = codeBlockRootRecords.find(
+      (record) =>
+        record.block.includes('position: relative') && record.block.includes('overflow: hidden'),
+    );
+    const layoutRootRecord = codeBlockRootRecords.find(
+      (record) =>
+        record.block.includes('inline-size:') || record.block.includes('margin-inline:'),
+    );
+
+    expect(surfaceRootRecord, 'surface root rule').toBeDefined();
+    expect(layoutRootRecord, 'layout root rule').toBeDefined();
+
+    for (const property of overlayTokenProperties) {
+      expect(
+        declarationValuesForRuleRecord(surfaceRootRecord as SelectorRuleRecord, property),
+        `${property} surface declaration`,
+      ).toHaveLength(1);
+      expect(
+        declarationValuesForRuleRecord(layoutRootRecord as SelectorRuleRecord, property),
+        `${property} layout declaration`,
+      ).toEqual([]);
+    }
+
+    const overlayCaptionSelector =
+      '[data-code-block-root].code-surface-root--overlay > .code-surface-caption';
+    const overlayCaptionInsetBlockStart = declarationValuesForSelector(
+      css,
+      overlayCaptionSelector,
+      'inset-block-start',
+    ).map(normalizeDeclarationValue);
+    expect(overlayCaptionInsetBlockStart).toEqual([
+      'var(--ui-code-copy-overlay-block-start, var(--space-1, 4px))',
+    ]);
+    expect(overlayCaptionInsetBlockStart).not.toContain('var(--space-2, 8px)');
+
+    const overlayBlockStartValue = normalizeDeclarationValue(
+      declarationValuesForRuleRecord(
+        surfaceRootRecord as SelectorRuleRecord,
+        '--ui-code-copy-overlay-block-start',
+      )[0] ?? '',
+    );
+    for (const property of overlayTokenProperties) {
+      const normalizedValues = declarationValuesForRuleRecord(
+        surfaceRootRecord as SelectorRuleRecord,
+        property,
+      ).map(normalizeDeclarationValue);
+      expect(normalizedValues.join('\n'), `${property} shorthand safety`).not.toContain(
+        '--ui-code-surface-padding',
+      );
+      expect(normalizedValues.join('\n'), `${property} block padding safety`).not.toContain(
+        '--ui-code-block-padding',
+      );
+    }
+    expect(overlayBlockStartValue).toContain('max(var(--ui-code-copy-overlay-min-block-start)');
+    expect(overlayBlockStartValue).not.toContain('max(0px');
+
+    const copyFocusBlock = ruleBlock(staticCopyButton, '.static-copy-button:focus-visible');
+    expect(copyFocusBlock, 'static copy button focus-visible rule').not.toBe('');
+    expect(copyFocusBlock).toContain('outline:');
+    expect(copyFocusBlock).toContain('outline-offset:');
   });
 
   it('code surface CSS separates top-level breakout from inline and group-owned layouts', () => {

@@ -243,6 +243,19 @@
 }
 
 [data-code-block-root] {
+  --ui-code-copy-overlay-code-padding-block-start: var(--space-3, 12px);
+  --ui-code-copy-overlay-center-offset: var(--space-2, 8px);
+  --ui-code-copy-overlay-min-block-start: var(--space-1, 4px);
+  /* overlay位置は単一長さ値tokenだけで計算し、padding shorthand依存を避ける。
+   * focus outlineが欠けないよう最小block-startも保持する。 */
+  --ui-code-copy-overlay-block-start: max(
+    var(--ui-code-copy-overlay-min-block-start),
+    calc(
+      var(--ui-code-copy-overlay-code-padding-block-start) -
+        var(--ui-code-copy-overlay-center-offset)
+    )
+  );
+
   position: relative;
   overflow: hidden;
   border: var(--ui-code-block-border, var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12)));
@@ -300,7 +313,7 @@
 
 [data-code-block-root].code-surface-root--overlay > .code-surface-caption {
   position: absolute;
-  inset-block-start: var(--space-2, 8px);
+  inset-block-start: var(--ui-code-copy-overlay-block-start, var(--space-1, 4px));
   inset-inline-end: var(--space-2, 8px);
   z-index: 1;
   min-height: 0;

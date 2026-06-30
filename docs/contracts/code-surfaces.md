@@ -47,6 +47,9 @@ code surfaceの正本は、旧Lit Custom Elementではなく静的HTMLです。
 - 単独code blockは本文中の読書単位です。`.prose` / `.about-prose`直下の`figure[data-code-block-root]`は本文幅に収めます。
 - 長いコード行は外枠を広げず、`pre[data-code-block]`内部の横スクロールで処理します。
 - 単独code blockのtop-level layoutは`--ui-code-block-breakout-width` / `--ui-code-block-breakout-margin`で制御します。
+- caption mainを持たない単独code blockでは、copy controlはoverlay captionとして表示します。
+- overlay copy controlのblock方向位置は`--ui-code-copy-overlay-block-start`で制御します。
+- overlay copy controlは、first code lineの視覚中心に近づけつつ、keyboard focus outlineが欠けないblock-startクリアランスを保持します。
 
 ### Code Group
 
@@ -161,6 +164,10 @@ CSSはfinal DOMの意味状態を再定義しません。CSS state contractとco
 - code groupを特殊な文脈で広げたい場合は`--ui-code-group-width` / `--ui-code-group-margin-inline`をoverrideします。
 - `.prose` / `.about-prose`直下のcode group既定layoutはcontainedです。既定の本文layoutでは`--ui-code-group-width: 100%`、`--ui-code-group-margin-inline: 0`を使います。
 - `--ui-code-surface-breakout-width` / `--ui-code-surface-breakout-margin`は互換用fallbackです。`[data-code-block-root]`と`section[data-code-group]`のbase ruleでは参照を維持しますが、top-level layoutの主制御にはしません。
+- code typography、copy control寸法、code body padding、focus outline / offsetを変更する場合は、overlay copy位置tokenとCSS契約テストを同時に更新します。
+- `--ui-code-surface-padding`および`--ui-code-block-padding`のようなshorthand相当tokenを、overlay copy位置の`calc()`へ直接入れてはなりません。
+- overlay配置のために上書きする場合は、単一長さ値を取る`--ui-code-copy-overlay-code-padding-block-start`、`--ui-code-copy-overlay-center-offset`、`--ui-code-copy-overlay-min-block-start`を使います。
+- `--ui-code-copy-overlay-*`は、surface側`[data-code-block-root]`ruleに定義します。layout側ruleには定義しません。
 
 このため、過去に`--ui-code-surface-breakout-*`だけで単独code blockとcode groupを同時に広げていたoverrideはsemanticsが変わります。今後、単独code blockの幅を変更する場合はblock専用変数を使い、特殊な文脈でcode groupの幅を変更する場合はgroup専用変数を使ってください。
 
