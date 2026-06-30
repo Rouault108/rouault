@@ -36,9 +36,41 @@
   animation: var(--animation-focus);
 }
 
+:is(.prose, .about-prose) > [data-table-scroll-rail],
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail] {
+  box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: hidden;
+  block-size: 0.875rem;
+  margin-block: var(--space-1, 0.25rem) calc(var(--space-1, 0.25rem) * -1);
+  scrollbar-gutter: stable;
+}
+
+:is(.prose, .about-prose) > [data-table-scroll-rail] > [data-table-scroll-rail-spacer],
+:is(.prose, .about-prose)
+  > ui-tabs
+  > [slot='panel']
+  > [data-table-scroll-rail]
+  > [data-table-scroll-rail-spacer] {
+  block-size: 1px;
+}
+
+:is(.prose, .about-prose) > [data-table-scroll-rail]:focus-visible,
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+  outline-offset: var(--focus-ring-offset, 2px);
+  border-radius: var(--radius-sm, 4px);
+  animation: var(--animation-focus);
+}
+
 @media (prefers-reduced-motion: reduce) {
   :is(.prose, .about-prose) > [data-table-root]:focus-visible,
-  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]:focus-visible {
+  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]:focus-visible,
+  :is(.prose, .about-prose) > [data-table-scroll-rail]:focus-visible,
+  :is(.prose, .about-prose)
+    > ui-tabs
+    > [slot='panel']
+    > [data-table-scroll-rail]:focus-visible {
     animation: none;
   }
 }
@@ -151,6 +183,11 @@
 }
 
 @media (hover: none) and (pointer: coarse) {
+  :is(.prose, .about-prose) > [data-table-scroll-rail],
+  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail] {
+    display: none;
+  }
+
   [data-table-root] > table td {
     white-space: normal;
     overflow: visible;
@@ -159,6 +196,11 @@
 }
 
 @media (forced-colors: active) {
+  :is(.prose, .about-prose) > [data-table-scroll-rail]:focus-visible,
+  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]:focus-visible {
+    outline-color: Highlight;
+  }
+
   :is(.prose, .about-prose) > [data-table-root][data-fade-left],
   :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-left] {
     --_table-scroll-fade-left-shadow: inset 2px 0 0 0 CanvasText;

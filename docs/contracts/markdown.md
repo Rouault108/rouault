@@ -108,6 +108,22 @@ Markdown出力層の`table`は、scrollable static table surfaceとして扱う�
 
 横溢れ表のedge affordanceはruntime enhancementに限定する。`data-overflow` / `data-fade-left` / `data-fade-right`は、`data-table-root`上へ付与される一時的な表示状態であり、Markdown authoring APIではない。これらの属性は列が続く方向を静かに示すためだけに使い、DOM追加、row hover、row click、row selection、row navigation、interactive grid化、sort / filter、sticky header、top scroll rail、列固定、列並べ替えを意味しない。横溢れが解消された場合、runtimeはこれらの状態属性を削除する。
 
+top auxiliary scroll railは、横溢れするMarkdown table rootに対するruntime enhancementであり、Markdown authoring APIではない。PCマウス操作時に表の途中から横位置を変えやすくする補助UIであり、SSR table構造やMarkdown入力記法を変更しないnon-breaking additive changeとして扱う。
+
+- top railはfocus可能な補助scroll regionであり、`role="region"`とaccessible nameを持つ。
+- top railは`aria-hidden="true"`を持たない。
+- captionあり表ではcaption text由来のaccessible nameを持つ。
+- captionなし表では、直後の表の横スクロール補助であることを示すfallback accessible nameを持つ。
+- top railはsemantic table subtreeへ挿入せず、`data-table-root`の外側にruntimeで追加する。
+- top railは表示される環境ではTab順序に入り、静かな`:focus-visible`表現を持つ。
+- coarse pointer環境では、top railは視覚・Tab順序上のノイズにならない。
+- キーボード操作の正本は`data-table-root`に残るが、top railでも横scroll操作が可能であり、table rootの横scroll位置と同期する。
+- top railはcaptionとtableの視覚的関係を過剰に分断してはならない。
+- top railはrow hover、row selection、row navigation、sort / filter、interactive grid化、sticky header、Library wide table viewを意味しない。
+- Phase3Bのtop railは、Phase1の`data-overflow` / `data-fade-left` / `data-fade-right` state属性とは別のruntime enhancementである。
+
+R3 Decision RecordとBreaking Change Gateは`docs/adr/table-top-scroll-rail-accessible-region.md`に保存する。
+
 ### Details Prose Disclosure Contract
 
 `::details`は本文内のprose disclosureであり、row navigation、settings row、panel surfaceではない。

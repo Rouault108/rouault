@@ -87,6 +87,50 @@ describe('table static css contracts', () => {
     }
   });
 
+  it('top scroll rail CSS は prose / about-prose 直下と ui-tabs panel 直下に限定されること', () => {
+    expectCssIncludes(tableCss, [
+      ':is(.prose, .about-prose) > [data-table-scroll-rail]',
+      ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]",
+      'overflow-x: auto',
+      'overflow-y: hidden',
+      'block-size: 0.875rem',
+      'margin-block: var(--space-1, 0.25rem) calc(var(--space-1, 0.25rem) * -1)',
+      ':is(.prose, .about-prose) > [data-table-scroll-rail] > [data-table-scroll-rail-spacer]',
+      ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail] > [data-table-scroll-rail-spacer]",
+      'block-size: 1px',
+    ]);
+
+    const selectors = extractSelectorPreludeList(tableCss);
+    for (const selectorList of selectors) {
+      for (const selector of selectorList.split(',')) {
+        expect(selector.trim()).not.to.equal('[data-table-scroll-rail]');
+        expect(selector.trim()).not.to.equal('[data-table-scroll-rail-spacer]');
+      }
+    }
+
+    expectCssExcludes(tableCss, [
+      'ui-table [data-table-scroll-rail]',
+    ]);
+  });
+
+  it('top scroll rail は focus-visible / reduced-motion / coarse pointer / forced-colors 契約を持つこと', () => {
+    expectCssIncludes(tableCss, [
+      ':is(.prose, .about-prose) > [data-table-scroll-rail]:focus-visible',
+      ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]:focus-visible",
+      'outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color',
+      'outline-offset: var(--focus-ring-offset, 2px)',
+      'animation: var(--animation-focus)',
+      '@media (prefers-reduced-motion: reduce)',
+      'animation: none',
+      '@media (hover: none) and (pointer: coarse)',
+      ':is(.prose, .about-prose) > [data-table-scroll-rail]',
+      ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]",
+      'display: none',
+      '@media (forced-colors: active)',
+      'outline-color: Highlight',
+    ]);
+  });
+
   it('column width token ごとの col selector と width declaration を保持すること', () => {
     for (const token of ['auto', 'fit', 'narrow', 'medium', 'wide', 'numeric']) {
       expectCssIncludes(tableCss, [
@@ -117,6 +161,7 @@ describe('table static css contracts', () => {
     expectCssExcludes(tableCss, [
       '[data-table-root] > table tbody tr:hover',
       '[data-table-root] > table tr:hover',
+      '[data-table-scroll-rail]:hover',
       'background-color: var(--bg-table-ruler',
       'transition: background-color var(--duration-fast',
     ]);
