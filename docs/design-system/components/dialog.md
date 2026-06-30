@@ -659,7 +659,11 @@ backdrop clickで閉じるか、Escを無効化するか、close buttonを隠せ
 
 ## 14. Static Shell Dialog
 
-Global search dialogのようなstatic shell dialogは、`ui-dialog`の派生componentではありません。final HTMLにnative `<dialog>`をlight DOMとして保持し、Shadow DOM componentに依存しません。static global search dialogの詳細契約は`docs/contracts/search.md`を正本とします。
+Global search dialogのようなstatic shell dialogは、`ui-dialog`の派生componentではありません。final HTMLにnative `<dialog>`をlight DOMとして保持し、Shadow DOM componentに依存しません。
+
+static global search dialogの検索意味論、URL状態、責務境界、縮退diagnosticsは`docs/contracts/search.md`を正本とします。一方で、static shell dialogとしてのcontroller、focus、environment、control surfaceの契約は本節で扱います。
+
+`ui-dialog`の一般dismiss policyとstatic search dialogのbackdrop close policyは別契約です。static shell dialog固有の挙動を`ui-dialog`の一般契約へ逆流させてはなりません。
 
 ### 14.1 Controller Boundary
 
@@ -681,4 +685,10 @@ Global search dialogのようなstatic shell dialogは、`ui-dialog`の派生com
 - `prefers-reduced-motion: reduce`ではdialog、closing dialog、backdrop、closing backdrop、spinner、操作buttonのanimation / transitionを抑制します。
 - `forced-colors: active`ではdialogに`Canvas` / `CanvasText`、fieldに`Field` / `FieldText`、buttonに`ButtonText`を使い、spinnerのtransparent border sideを維持します。
 
-`ui-dialog`の一般dismiss policyとstatic search dialogのbackdrop close policyは別契約です。static shell dialog固有の挙動を`ui-dialog`の一般契約へ逆流させてはなりません。
+### 14.4 Static Search Dialog Control Surfaces
+
+- clear buttonは44px targetを維持するが、hover backgroundはbutton本体ではなく内側のvisual surfaceに限定する。
+- close buttonはdialog全体を閉じる独立controlであり、44px target全体のhover surfaceを維持する。
+- focus-visibleはclear / closeともにtarget全体を示す。hover surface縮退をfocus-visibleへ適用してはならない。
+- clear buttonのhover visual surfaceはpointer targetを縮小してはならない。
+- clear buttonのhover visual surfaceは、14.1のpseudo-element / icon / SVG pointer target契約に従う。

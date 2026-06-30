@@ -141,7 +141,24 @@
   transform: translateY(-50%);
 }
 
-.search-dialog__clear:hover,
+.search-dialog__clear::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  z-index: 0;
+  border-radius: inherit;
+  background: transparent;
+  pointer-events: none;
+}
+
+.search-dialog__clear:hover {
+  background: transparent;
+}
+
+.search-dialog__clear:hover::before {
+  background: var(--bg-hover, var(--bg-fill-muted));
+}
+
 .search-dialog__close:hover {
   background: var(--bg-hover, var(--bg-fill-muted));
 }
@@ -150,6 +167,11 @@
 .search-dialog__icon {
   inline-size: var(--icon-base, 16px);
   block-size: var(--icon-base, 16px);
+}
+
+.search-dialog__clear-icon {
+  position: relative;
+  z-index: 1;
 }
 
 .search-dialog__icon {

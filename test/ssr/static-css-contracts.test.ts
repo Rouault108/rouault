@@ -1356,6 +1356,81 @@ describe('static CSS contracts', () => {
       'padding: 0',
       'transform: translateY(-50%)',
     ]);
+    expect(lacksDeclarationProperty(css, '.search-dialog__clear', 'z-index')).toBe(true);
+
+    const clearBeforeRootBlock = rootRuleRecordsForSelector(css, '.search-dialog__clear::before')
+      .map((record) => record.block)
+      .join('\n');
+    expect(clearBeforeRootBlock).to.contain("content: ''");
+    expect(clearBeforeRootBlock).to.contain('position: absolute');
+    expect(clearBeforeRootBlock).to.contain('inset: 6px');
+    expect(clearBeforeRootBlock).to.contain('z-index: 0');
+    expect(clearBeforeRootBlock).to.contain('border-radius: inherit');
+    expect(clearBeforeRootBlock).to.contain('background: transparent');
+    expect(clearBeforeRootBlock).to.contain('pointer-events: none');
+
+    expect(
+      rootDeclarationRecordsForSelector(css, '.search-dialog__clear:hover', 'background').map(
+        (record) => record.value,
+      ),
+    ).toEqual(['transparent']);
+    expect(
+      rootDeclarationRecordsForSelector(
+        css,
+        '.search-dialog__clear:hover::before',
+        'background',
+      ).map((record) => record.value),
+    ).toContain('var(--bg-hover, var(--bg-fill-muted))');
+    expect(
+      rootDeclarationRecordsForSelector(css, '.search-dialog__close:hover', 'background').map(
+        (record) => record.value,
+      ),
+    ).toContain('var(--bg-hover, var(--bg-fill-muted))');
+
+    const clearIconRootBlock = rootRuleRecordsForSelector(css, '.search-dialog__clear-icon')
+      .map((record) => record.block)
+      .join('\n');
+    expect(clearIconRootBlock).to.contain('position: relative');
+    expect(clearIconRootBlock).to.contain('z-index: 1');
+    expect(lacksDeclarationProperty(css, '.search-dialog__icon', 'position')).toBe(true);
+    expect(lacksDeclarationProperty(css, '.search-dialog__icon', 'z-index')).toBe(true);
+
+    const clearAfterRootBlock = rootRuleRecordsForSelector(css, '.search-dialog__clear::after')
+      .map((record) => record.block)
+      .join('\n');
+    expect(clearAfterRootBlock).to.contain("content: ''");
+    expect(clearAfterRootBlock).to.contain('position: absolute');
+    expect(clearAfterRootBlock).to.contain('inset: calc(var(--space-2) * -1)');
+    expect(clearAfterRootBlock).to.contain('pointer-events: none');
+
+    const clearHoverRootRules = rootRuleRecordsForSelector(css, '.search-dialog__clear:hover');
+    expect(
+      clearHoverRootRules.some((record) =>
+        record.selectors.includes('.search-dialog__close:hover'),
+      ),
+      'clear hover must not share the same root rule with close hover',
+    ).toBe(false);
+
+    const clearBeforeRootRules = rootRuleRecordsForSelector(css, '.search-dialog__clear::before');
+    expect(
+      clearBeforeRootRules.some(
+        (record) =>
+          record.selectors.includes('.search-dialog__clear::after') ||
+          record.selectors.includes('.search-dialog__field::after'),
+      ),
+      'clear hover visual surface must not share the existing after hit-area rule',
+    ).toBe(false);
+
+    const clearHoverBeforeRootRules = rootRuleRecordsForSelector(
+      css,
+      '.search-dialog__clear:hover::before',
+    );
+    expect(
+      clearHoverBeforeRootRules.some((record) =>
+        record.selectors.includes('.search-dialog__close:hover'),
+      ),
+      'clear hover visual surface must not share the same root rule with close hover',
+    ).toBe(false);
     expectRuleToDeclare(css, '.search-dialog [hidden]', ['display: none !important']);
     expectRuleToDeclare(css, '.search-dialog__results', [
       'flex: 1 1 auto',
