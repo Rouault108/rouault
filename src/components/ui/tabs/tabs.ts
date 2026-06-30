@@ -85,7 +85,7 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
     }
 
     const target = document.getElementById(decodedHash);
-    if (target === null || target.closest('ui-tabs') !== this) {
+    if (target?.closest('ui-tabs') !== this) {
       return null;
     }
 
