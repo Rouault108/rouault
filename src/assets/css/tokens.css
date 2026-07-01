@@ -344,7 +344,7 @@
   --line-height-snug: 1.35;
   --line-height-normal: 1.5;
   --line-height-relaxed: 1.75;
-  --line-height-code: 1;
+  --line-height-code: var(--line-height-tight);
 
   /* =========================================================================
    * Typography - Reading Width

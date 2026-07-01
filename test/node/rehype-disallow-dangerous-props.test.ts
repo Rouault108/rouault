@@ -75,7 +75,7 @@ describe('rehypeDisallowDangerousProps', () => {
                 {
                   type: 'element',
                   tagName: 'span',
-                  properties: { style: 'color:#D73A49;--shiki-dark:#F97583' },
+                  properties: { style: 'color:#8f4a52;--shiki-dark:#d08b90' },
                   children: [],
                 },
               ],

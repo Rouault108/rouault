@@ -7,17 +7,16 @@ import {
 } from '@shikijs/transformers';
 
 import { createStaticCodeBlockRoot } from './static-code-block-root.js';
+import {
+  ROUAULT_SHIKI_COLOR_REPLACEMENTS,
+  ROUAULT_SHIKI_THEMES,
+} from './shiki-themes.js';
 import { type HastNode } from './hast-utils.js';
 import {
   createStaticRenderIdContext,
   type StaticRenderIdContext,
 } from '../../shared/static-render-id-context.js';
 import { type IconName } from '../../shared/icons/icon-paths.js';
-
-const SHIKI_THEMES = {
-  light: 'github-light',
-  dark: 'github-dark',
-} as const;
 
 const SHIKI_TRANSFORMERS = [
   transformerMetaHighlight(),
@@ -326,7 +325,8 @@ const highlightCodeBlock = async (
   const language = resolveLanguage(readLanguageFromCodeNode(codeNode));
   const shikiTree = await codeToHast(source, {
     lang: language as BundledLanguage | 'text',
-    themes: SHIKI_THEMES,
+    themes: ROUAULT_SHIKI_THEMES,
+    colorReplacements: ROUAULT_SHIKI_COLOR_REPLACEMENTS,
     meta: toShikiMeta(codeNode),
     transformers: SHIKI_TRANSFORMERS,
     tabindex: false,

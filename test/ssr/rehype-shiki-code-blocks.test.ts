@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { codeToHast } from 'shiki';
 
 import { rehypeShikiCodeBlocks } from '../../build/rehype/shiki-code-blocks.js';
+import {
+  ROUAULT_SHIKI_COLOR_REPLACEMENTS,
+  ROUAULT_SHIKI_THEMES,
+} from '../../build/rehype/shiki-themes.js';
 
 interface HastNode {
   type: string;
@@ -52,6 +57,81 @@ const findDescendant = (
   return undefined;
 };
 
+const parseStyleDeclarations = (style: string): Map<string, string> => {
+  const declarations = new Map<string, string>();
+  for (const declaration of style.split(';')) {
+    const separatorIndex = declaration.indexOf(':');
+    if (separatorIndex < 0) {
+      continue;
+    }
+
+    const property = declaration.slice(0, separatorIndex).trim();
+    const value = declaration.slice(separatorIndex + 1).trim();
+    if (property !== '' && value !== '') {
+      declarations.set(property, value);
+    }
+  }
+  return declarations;
+};
+
+const collectStyledTokenSpans = (node: HastNode | undefined): HastNode[] => {
+  if (!node) {
+    return [];
+  }
+
+  const ownStyle = typeof node.properties?.['style'] === 'string' ? node.properties['style'] : '';
+  const ownDeclarations = parseStyleDeclarations(ownStyle);
+  const ownMatches =
+    node.type === 'element' &&
+    node.tagName === 'span' &&
+    (ownDeclarations.has('color') || ownDeclarations.has('--shiki-dark'))
+      ? [node]
+      : [];
+
+  return [...ownMatches, ...(node.children ?? []).flatMap((child) => collectStyledTokenSpans(child))];
+};
+
+const SHIKI_THEME_POLICY_FIXTURE_SOURCE = [
+  'namespace Quiet.Space {',
+  '  public interface Reader<T> {',
+  '    T Read();',
+  '  }',
+  '  public class NoteReader : Reader<string> {',
+  '    public string Read() => "note";',
+  '  }',
+  '}',
+].join('\n');
+
+const renderShikiFixture = async (
+  options: { readonly colorReplacements: boolean },
+): Promise<HastNode> => {
+  return (await codeToHast(SHIKI_THEME_POLICY_FIXTURE_SOURCE, {
+    lang: 'csharp',
+    themes: ROUAULT_SHIKI_THEMES,
+    ...(options.colorReplacements ? { colorReplacements: ROUAULT_SHIKI_COLOR_REPLACEMENTS } : {}),
+    tabindex: false,
+  })) as unknown as HastNode;
+};
+
+const tokenForegrounds = (
+  node: HastNode,
+  property: 'color' | '--shiki-dark',
+): Set<string> => {
+  return new Set(
+    collectStyledTokenSpans(node)
+      .map((span) => {
+        const style = span.properties?.['style'];
+        return typeof style === 'string'
+          ? parseStyleDeclarations(style).get(property)?.toLowerCase()
+          : undefined;
+      })
+      .filter((value): value is string => typeof value === 'string'),
+  );
+};
+
+const findPreElement = (node: HastNode): HastNode | undefined =>
+  findDescendant(node, (child) => child.tagName === 'pre');
+
 const createCodeFence = (
   languageClassName: string,
   source: string,
@@ -74,6 +154,82 @@ const createCodeFence = (
 });
 
 describe('rehypeShikiCodeBlocks', () => {
+  it('control render では置換元の github-light/github-dark token foreground が出る', async () => {
+    const tree = await renderShikiFixture({ colorReplacements: false });
+
+    const lightForegrounds = tokenForegrounds(tree, 'color');
+    const darkForegrounds = tokenForegrounds(tree, '--shiki-dark');
+
+    expect(lightForegrounds.has('#d73a49')).toBe(true);
+    expect(lightForegrounds.has('#6f42c1')).toBe(true);
+    expect(darkForegrounds.has('#f97583')).toBe(true);
+    expect(darkForegrounds.has('#b392f0')).toBe(true);
+
+    const preStyle = findPreElement(tree)?.properties?.['style'];
+    expect(typeof preStyle).toBe('string');
+    const preDeclarations = parseStyleDeclarations(String(preStyle));
+    expect(preDeclarations.has('background-color')).toBe(true);
+    expect(preDeclarations.has('--shiki-dark-bg')).toBe(true);
+  });
+
+  it('Rouault Shiki theme policy は対象 token foreground だけを静かな採用色へ置換する', async () => {
+    const tree = await renderShikiFixture({ colorReplacements: true });
+    const lightForegrounds = tokenForegrounds(tree, 'color');
+    const darkForegrounds = tokenForegrounds(tree, '--shiki-dark');
+
+    expect(lightForegrounds.has('#d73a49')).toBe(false);
+    expect(lightForegrounds.has('#6f42c1')).toBe(false);
+    expect(lightForegrounds.has('#8f4a52')).toBe(true);
+    expect(lightForegrounds.has('#67527c')).toBe(true);
+    expect(darkForegrounds.has('#f97583')).toBe(false);
+    expect(darkForegrounds.has('#b392f0')).toBe(false);
+    expect(darkForegrounds.has('#d08b90')).toBe(true);
+    expect(darkForegrounds.has('#b7a0cf')).toBe(true);
+
+    const preStyle = findPreElement(tree)?.properties?.['style'];
+    expect(typeof preStyle).toBe('string');
+    const preDeclarations = parseStyleDeclarations(String(preStyle));
+    expect(preDeclarations.has('background-color')).toBe(true);
+    expect(preDeclarations.has('--shiki-dark-bg')).toBe(true);
+  });
+
+  it('rehypeShikiCodeBlocks 経由の実出力にも Rouault Shiki theme policy を適用する', async () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [createCodeFence('language-csharp', SHIKI_THEME_POLICY_FIXTURE_SOURCE)],
+    };
+
+    await rehypeShikiCodeBlocks()(tree);
+
+    const root = tree.children?.[0];
+    expect(root?.tagName).toBe('figure');
+    expect(root?.properties?.['data-code-block-root']).toBe('true');
+
+    const pre = findPreElement(tree);
+    expect(pre?.tagName).toBe('pre');
+    expect(readNodeClassList(pre)).toContain('shiki');
+    expect(pre?.properties?.['data-code-block']).toBe(true);
+    expect(pre?.properties?.['data-code-language']).toBe('csharp');
+
+    const lightForegrounds = tokenForegrounds(tree, 'color');
+    const darkForegrounds = tokenForegrounds(tree, '--shiki-dark');
+
+    expect(lightForegrounds.has('#d73a49')).toBe(false);
+    expect(lightForegrounds.has('#6f42c1')).toBe(false);
+    expect(lightForegrounds.has('#8f4a52')).toBe(true);
+    expect(lightForegrounds.has('#67527c')).toBe(true);
+    expect(darkForegrounds.has('#f97583')).toBe(false);
+    expect(darkForegrounds.has('#b392f0')).toBe(false);
+    expect(darkForegrounds.has('#d08b90')).toBe(true);
+    expect(darkForegrounds.has('#b7a0cf')).toBe(true);
+
+    const preStyle = pre?.properties?.['style'];
+    expect(typeof preStyle).toBe('string');
+    const preDeclarations = parseStyleDeclarations(String(preStyle));
+    expect(preDeclarations.has('background-color')).toBe(true);
+    expect(preDeclarations.has('--shiki-dark-bg')).toBe(true);
+  });
+
   it('standalone fenced code を静的 code surface 構造へ変換し、meta を data 属性へ保持する', async () => {
     const tree: HastNode = {
       type: 'root',

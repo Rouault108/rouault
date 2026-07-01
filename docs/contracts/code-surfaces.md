@@ -51,6 +51,37 @@ code surfaceの正本は、旧Lit Custom Elementではなく静的HTMLです。
 - overlay copy controlのblock方向位置は`--ui-code-copy-overlay-block-start`で制御します。
 - overlay copy controlは、first code lineの視覚中心に近づけつつ、keyboard focus outlineが欠けないblock-startクリアランスを保持します。
 
+### Shiki Theme Policy
+
+Rouaultのcode surfaceは、本文中のコードブロックが本文より過度に前景化しないように、Shiki theme policyをRouault側で所有します。
+
+- theme policyの正本は`build/rehype/shiki-themes.ts`です。
+- base themeはShiki bundled themeの`github-light` / `github-dark`を使います。
+- `codeToHast`は`themes`でlight / darkのdual theme出力を維持します。theme単数指定へ退行してはなりません。
+- `defaultColor`は指定しません。Shikiのdual theme出力形式と`--shiki-dark` / `--shiki-dark-bg`を維持します。
+- 色調整はShikiの`colorReplacements`で行います。`pre.shiki span`などへRouault採用色をCSSで直接再マッピングしてはなりません。
+- `colorReplacements`の置換元keyはlowercaseのhexに統一します。uppercase / lowercaseの重複keyを定義しません。
+
+採用する置換は次に固定します。
+
+| Theme | Source | Replacement | Token family |
+| --- | --- | --- | --- |
+| `github-light` | `#d73a49` | `#8f4a52` | keyword / storage |
+| `github-light` | `#6f42c1` | `#67527c` | type / entity / class / namespace |
+| `github-dark` | `#f97583` | `#d08b90` | keyword / storage |
+| `github-dark` | `#b392f0` | `#b7a0cf` | type / entity / class / namespace |
+
+Shikiやbase themeの更新で置換元色が対象token foregroundとして出なくなった場合、Rouault側で任意の別色へ差し替えてはなりません。まずcontrol renderで置換元色の不在を確認し、theme policyの見直しとして扱います。
+
+### Code Line Height
+
+読書中のcode blockは本文より強く前景化しない行間を使います。
+
+- `--line-height-tight: 1.25`を維持します。
+- `--line-height-code`は`var(--line-height-tight)`を参照します。
+- `code-surfaces.css`のcode body ruleは`line-height: var(--line-height-code, 1.35)`を維持します。
+- code blockのフォントサイズ、フォントファミリー、背景、枠線、角丸はこの契約では変更しません。
+
 ### Code Group
 
 code groupはSSR / no-JS時点でstackとして出力し、enhancer実行後にtabs UIへ昇格します。

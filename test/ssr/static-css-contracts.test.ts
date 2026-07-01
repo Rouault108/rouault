@@ -1626,6 +1626,7 @@ describe('static CSS contracts', () => {
 
   it('general code surface CSS exposes semantic static contracts', () => {
     const mainCss = readCss('main.css');
+    const tokensCss = readCss('tokens.css');
     const codeSurfaces = readCss('code-surfaces.css');
     const staticCopyButton = readCss('static-copy-button.css');
     const imports = [...mainCss.matchAll(/@import\s+['"]([^'"]+)['"];/gu)].map((match) => match[1]);
@@ -1654,7 +1655,22 @@ describe('static CSS contracts', () => {
       codeSurfaces,
       'code block scroll surface',
       (selector) => selector.includes('pre[data-code-block]'),
-      ['overflow-x: auto', 'overflow-y: hidden', 'white-space: pre'],
+      [
+        'line-height: var(--line-height-code, 1.35)',
+        'overflow-x: auto',
+        'overflow-y: hidden',
+        'white-space: pre',
+      ],
+    );
+
+    expect(declarationValuesForSelector(tokensCss, ':root', '--line-height-tight')).toContain(
+      '1.25',
+    );
+    expect(declarationValuesForSelector(tokensCss, ':root', '--line-height-code')).toContain(
+      'var(--line-height-tight)',
+    );
+    expect(declarationValuesForSelector(tokensCss, ':root', '--line-height-code')).not.toContain(
+      '1',
     );
 
     expectSelectorMatchingRuleToDeclare(
