@@ -88,6 +88,8 @@ Markdown link-cardのfocus表示は、native anchorである`.link-card__link:fo
 
 `syntax-card`の通常表示におけるCSS visual contractでは、root外枠を`--border-muted`による静かなカード単位の境界として扱う。`header`は下罫線を持たず、`signature`の下罫線は`--border-ghost`へ弱める。`kind`と`required`は枠付きbadgeではなくtext-onlyな補助metaとして表示し、field listはdesktop幅でも2カラムgridへ変化させない。この視覚階層はfield rowのinteractive affordanceやrow hoverを意味しない。空コンテンツ時は、既存のsignature下罫線除去とcontent非表示の縮退契約を維持する。forced-colors契約では`syntax-card`の外枠だけを`CanvasText`対象にし、`required`へborder-color対象を戻してはならない。
 
+`syntax-field__name`は、一般本文のinline code chipではなく、`syntax-card`内の静的なmonospace term labelとして扱う。field nameは背景・padding・角丸を持たず、`effect`や`deps`などのパラメータ名として読めるだけの識別性をfont weightとmono fontで担保する。global inline codeの通常表示契約は変更せず、forced-colorsおよびprintでも`syntax-field__name`を背景付きchipやoutline付きchipへ戻してはならない。
+
 `syntax-field`は、構文カード内の静的説明行であり、row action、row selection、row navigationを意味しない。`syntax-field:hover`によるrow-level背景変更は標準契約に含めない。field内部にlink / buttonなどの実操作要素が存在する場合は、その要素自体のinteractive契約に従う。`syntax-card`全体のhover / focus-withinによるcopy action表示は、field row hoverとは別契約として維持する。
 
 ### Static Callout Surface Contract

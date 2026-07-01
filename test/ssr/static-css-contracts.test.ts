@@ -129,6 +129,17 @@ const declarationValuesForRuleRecord = (
     .map((declaration) => declaration.value);
 };
 
+const rootRuleRecordsDeclaring = (
+  css: string,
+  declarations: readonly { readonly property: string; readonly value: string }[],
+): SelectorRuleRecord[] => {
+  return rootRuleRecords(css).filter((record) =>
+    declarations.every(({ property, value }) =>
+      declarationValuesForRuleRecord(record, property).includes(value),
+    ),
+  );
+};
+
 const rootDeclarationRecordsForSelector = (
   css: string,
   selector: string,
@@ -184,6 +195,22 @@ const declarationRuleRecordsForSelector = (
 
 const declarationValuesForSelector = (css: string, selector: string, property: string): string[] =>
   declarationsForSelector(css, selector, property).map((declaration) => declaration.value.trim());
+
+const declarationsForSelectors = (
+  css: string,
+  selectors: readonly string[],
+  property: string,
+): Declaration[] =>
+  selectors.flatMap((selector) => declarationsForSelector(css, selector, property));
+
+const declarationValuesForSelectors = (
+  css: string,
+  selectors: readonly string[],
+  property: string,
+): string[] =>
+  declarationsForSelectors(css, selectors, property).map((declaration) =>
+    declaration.value.trim(),
+  );
 
 const normalizeDeclarationValue = (value: string): string =>
   value
@@ -2273,8 +2300,94 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(lists, 'ol[data-list] > li', ['counter-increment:']);
     expectRuleToDeclare(lists, 'ol[data-list] > li[data-ol-has-value]', ['counter-set:']);
 
+    const mainCss = readCss('main.css');
+    const globalInlineCodeRuleRecords = rootRuleRecordsDeclaring(mainCss, [
+      { property: 'font-family', value: 'var(--font-mono)' },
+      { property: 'color', value: 'var(--fg-default)' },
+      { property: 'background', value: 'var(--bg-fill-muted)' },
+      { property: 'padding', value: '0.2em 0.4em' },
+      { property: 'border-radius', value: 'var(--radius-sm)' },
+    ]);
+    expect(globalInlineCodeRuleRecords).toHaveLength(1);
+    const globalInlineCodeSelectors = globalInlineCodeRuleRecords.flatMap(
+      (record) => record.selectors,
+    );
+    expect(globalInlineCodeSelectors.every((selector) => selector.includes('code'))).toBe(true);
+    for (const selector of globalInlineCodeSelectors) {
+      expectRuleToDeclare(mainCss, selector, [
+        'font-family: var(--font-mono)',
+        'font-size: max(var(--text-xs), 0.875em)',
+        'line-height: inherit',
+        'vertical-align: baseline',
+        'color: var(--fg-default)',
+        'background: var(--bg-fill-muted)',
+        'padding: 0.2em 0.4em',
+        'border: none',
+        'border-radius: var(--radius-sm)',
+        'overflow-wrap: break-word',
+        'box-decoration-break: clone',
+        '-webkit-box-decoration-break: clone',
+      ]);
+    }
+    for (const selector of globalInlineCodeSelectors) {
+      expect(
+        declarationsForSelectorInMedia(
+          mainCss,
+          selector,
+          'outline',
+          (params) => params.trim() === '(forced-colors: active)',
+        ).map((declaration) => declaration.value.trim()),
+      ).toEqual(['var(--border-width) solid CanvasText']);
+
+      const printInlineCodeBackgrounds = declarationsForSelectorInMedia(
+        mainCss,
+        selector,
+        'background',
+        (params) => params.trim() === 'print',
+      );
+      expect(printInlineCodeBackgrounds.map((declaration) => declaration.value.trim())).toEqual([
+        '#f5f5f5',
+      ]);
+      expect(printInlineCodeBackgrounds.every((declaration) => declaration.important)).toBe(true);
+      expect(
+        declarationsForSelectorInMedia(
+          mainCss,
+          selector,
+          'padding',
+          (params) => params.trim() === 'print',
+        ).map((declaration) => declaration.value.trim()),
+      ).toEqual(['2pt 4pt']);
+      expect(
+        declarationsForSelectorInMedia(
+          mainCss,
+          selector,
+          'border',
+          (params) => params.trim() === 'print',
+        ).map((declaration) => declaration.value.trim()),
+      ).toEqual(['none']);
+      expect(
+        declarationsForSelectorInMedia(
+          mainCss,
+          selector,
+          'font-size',
+          (params) => params.trim() === 'print',
+        ).map((declaration) => declaration.value.trim()),
+      ).toEqual(['10pt']);
+    }
+
     const syntax = readCss('syntax.css');
     const syntaxSelectors = allRuleSelectors(syntax);
+    const syntaxFieldNameTermSelectors = [
+      '.syntax-field__name',
+      'code.syntax-field__name',
+      '.syntax-card .syntax-field__name',
+    ] as const;
+    const rootDeclarationValuesForSyntaxFieldName = (property: string): string[] =>
+      syntaxFieldNameTermSelectors.flatMap((selector) =>
+        declarationRuleRecordsForSelector(syntax, selector, property, { rootOnly: true }).map(
+          (record) => record.value,
+        ),
+      );
     const isSyntaxFieldRowHoverSelector = (selector: string): boolean =>
       selector.split(',').some((selectorPart) => {
         const trimmedSelectorPart = selectorPart.trim();
@@ -2353,6 +2466,47 @@ describe('static CSS contracts', () => {
       }).map((record) => record.value),
     ).toEqual(['var(--font-sans)']);
     expect(ruleBlock(syntax, '.syntax-field__required')).not.toContain('--fg-warning');
+    expect(rootDeclarationValuesForSyntaxFieldName('background')).toContain('transparent');
+    expect(rootDeclarationValuesForSyntaxFieldName('padding')).toContain('0');
+    expect(rootDeclarationValuesForSyntaxFieldName('border-radius')).toContain('0');
+    expect(declarationValuesForSelector(syntax, '.syntax-field__name', 'font-family')).toContain(
+      'var(--font-mono)',
+    );
+    expect(declarationValuesForSelector(syntax, '.syntax-field__name', 'font-size')).toContain(
+      'var(--text-sm)',
+    );
+    expect(declarationValuesForSelector(syntax, '.syntax-field__name', 'font-weight')).toContain(
+      'var(--font-semibold)',
+    );
+    expect(declarationValuesForSelector(syntax, '.syntax-field__name', 'line-height')).toContain(
+      'normal',
+    );
+    expect(declarationValuesForSelector(syntax, '.syntax-field__name', 'overflow-wrap')).toContain(
+      'break-word',
+    );
+    for (const property of ['background', 'padding', 'border-radius', 'outline'] as const) {
+      expect(declarationsForSelector(syntax, '.syntax-field__term code', property)).toHaveLength(0);
+    }
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-field__type', 'color', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['var(--fg-muted)']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-field__type', 'font-family', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['var(--font-mono)']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-field__default', 'color', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['var(--fg-muted)']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-field__default', 'font-family', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['var(--font-mono)']);
     expect(
       declarationRuleRecordsForSelector(
         syntax,
@@ -2416,6 +2570,13 @@ describe('static CSS contracts', () => {
     }
     const forcedColorsSyntax = atRuleBlock(syntax, '@media (forced-colors: active)');
     expectRuleToDeclare(forcedColorsSyntax, '.syntax-card', ['border-color: CanvasText']);
+    const forcedColorsSyntaxFieldNameOutlines = declarationValuesForSelectors(
+      forcedColorsSyntax,
+      syntaxFieldNameTermSelectors,
+      'outline',
+    );
+    expect(forcedColorsSyntaxFieldNameOutlines).toContain('0');
+    expect(forcedColorsSyntaxFieldNameOutlines.every((value) => value === '0')).toBe(true);
     expect(
       declarationValuesForSelector(forcedColorsSyntax, '.syntax-field__required', 'border-color'),
     ).toEqual([]);
@@ -2427,6 +2588,43 @@ describe('static CSS contracts', () => {
       'padding: 0',
       'margin: 0',
     ]);
+    const printSyntaxFieldNameBackgrounds = declarationsForSelectors(
+      printSyntax,
+      syntaxFieldNameTermSelectors,
+      'background',
+    );
+    expect(printSyntaxFieldNameBackgrounds.map((declaration) => declaration.value.trim())).toContain(
+      'transparent',
+    );
+    expect(
+      printSyntaxFieldNameBackgrounds.every(
+        (declaration) => declaration.value.trim() === 'transparent',
+      ),
+    ).toBe(true);
+    expect(printSyntaxFieldNameBackgrounds.every((declaration) => declaration.important)).toBe(
+      true,
+    );
+    const printSyntaxFieldNamePaddings = declarationValuesForSelectors(
+      printSyntax,
+      syntaxFieldNameTermSelectors,
+      'padding',
+    );
+    expect(printSyntaxFieldNamePaddings).toContain('0');
+    expect(printSyntaxFieldNamePaddings.every((value) => value === '0')).toBe(true);
+    const printSyntaxFieldNameRadii = declarationValuesForSelectors(
+      printSyntax,
+      syntaxFieldNameTermSelectors,
+      'border-radius',
+    );
+    expect(printSyntaxFieldNameRadii).toContain('0');
+    expect(printSyntaxFieldNameRadii.every((value) => value === '0')).toBe(true);
+    const printSyntaxFieldNameOutlines = declarationValuesForSelectors(
+      printSyntax,
+      syntaxFieldNameTermSelectors,
+      'outline',
+    );
+    expect(printSyntaxFieldNameOutlines).toContain('0');
+    expect(printSyntaxFieldNameOutlines.every((value) => value === '0')).toBe(true);
     expect(syntax).to.contain('@media print');
 
     const score = readCss('score.css');

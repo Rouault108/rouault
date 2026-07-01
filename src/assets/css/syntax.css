@@ -113,6 +113,12 @@
   line-height: normal;
   overflow-wrap: break-word;
 }
+.syntax-field__name {
+  padding: 0;
+  color: var(--fg-default);
+  background: transparent;
+  border-radius: 0;
+}
 .syntax-field__required {
   padding: 0;
   color: var(--fg-muted);
@@ -160,6 +166,9 @@
   .syntax-card {
     border-color: CanvasText;
   }
+  .syntax-field__name {
+    outline: 0;
+  }
 }
 @media print {
   .syntax-card__copy-action {
@@ -171,5 +180,11 @@
     background: transparent;
     padding: 0;
     margin: 0;
+  }
+  .syntax-field__name {
+    padding: 0;
+    background: transparent !important;
+    border-radius: 0;
+    outline: 0;
   }
 }
