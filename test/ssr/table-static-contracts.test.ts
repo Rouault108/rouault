@@ -95,6 +95,15 @@ const tableScrollbarSelectorScopes = [
   ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]",
 ] as const;
 
+const tableScrollbarPseudoPattern =
+  /::-(?:webkit-scrollbar|webkit-scrollbar-track|webkit-scrollbar-corner|webkit-scrollbar-thumb|webkit-scrollbar-button)/u;
+
+const bareTableScrollbarSelectorPattern =
+  /(?:^|,)\s*::-(?:webkit-scrollbar|webkit-scrollbar-track|webkit-scrollbar-corner|webkit-scrollbar-thumb|webkit-scrollbar-button)(?:\b|:)/u;
+
+const directTableScrollbarPseudoPattern =
+  /\[data-table-(?:root|scroll-rail)\]::-(?:webkit-scrollbar|webkit-scrollbar-track|webkit-scrollbar-corner|webkit-scrollbar-thumb|webkit-scrollbar-button)(?:\b|:)/u;
+
 describe('table static css contracts', () => {
   it('prose 内 table root が static scroll container / focus-visible / reduced-motion 契約を保持すること', () => {
     expectCssIncludes(tableCss, [
@@ -136,16 +145,22 @@ describe('table static css contracts', () => {
     expectCssIncludes(tableCss, [
       '--_table-scroll-fade-left-shadow: inset 0 0 0 0 transparent',
       '--_table-scroll-fade-right-shadow: inset 0 0 0 0 transparent',
+      '--_table-scroll-fade-color: oklch(from var(--fg-default, oklch(20% 0 0)) l c h / 0.16)',
       'box-shadow:\n    var(--_table-scroll-fade-left-shadow),\n    var(--_table-scroll-fade-right-shadow)',
       ':is(.prose, .about-prose) > [data-table-root][data-fade-left]',
       ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-left]",
       ':is(.prose, .about-prose) > [data-table-root][data-fade-right]',
       ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-right]",
-      '--_table-scroll-fade-left-shadow: inset 18px 0 18px -18px',
-      '--_table-scroll-fade-right-shadow: inset -18px 0 18px -18px',
+      '--_table-scroll-fade-left-shadow: inset 14px 0 14px -14px var(--_table-scroll-fade-color)',
+      '--_table-scroll-fade-right-shadow: inset -14px 0 14px -14px var(--_table-scroll-fade-color)',
       '@media (forced-colors: active)',
       '--_table-scroll-fade-left-shadow: inset 2px 0 0 0 CanvasText',
       '--_table-scroll-fade-right-shadow: inset -2px 0 0 0 CanvasText',
+    ]);
+
+    expectCssExcludes(tableCss, [
+      'inset 18px 0 18px -18px oklch(0% 0 0 / 0.24)',
+      'inset -18px 0 18px -18px oklch(0% 0 0 / 0.24)',
     ]);
   });
 
@@ -167,29 +182,12 @@ describe('table static css contracts', () => {
       ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]",
       ':is(.prose, .about-prose) > [data-table-scroll-rail]',
       ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]",
-      '--_table-scrollbar-size: 10px',
+      '--_table-scrollbar-size: 8px',
       '--_table-scrollbar-track: transparent',
       '--_table-scrollbar-thumb: color-mix(',
-      'var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0))) 64%',
+      'var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0))) 48%',
       'scrollbar-width: thin',
       'scrollbar-color: var(--_table-scrollbar-thumb) var(--_table-scrollbar-track)',
-      '[data-table-root]::-webkit-scrollbar',
-      '[data-table-root]::-webkit-scrollbar-track',
-      '[data-table-root]::-webkit-scrollbar-thumb',
-      '[data-table-root]::-webkit-scrollbar-button',
-      '[data-table-scroll-rail]::-webkit-scrollbar',
-      '[data-table-scroll-rail]::-webkit-scrollbar-track',
-      '[data-table-scroll-rail]::-webkit-scrollbar-thumb',
-      '[data-table-scroll-rail]::-webkit-scrollbar-button',
-      'inline-size: var(--_table-scrollbar-size)',
-      'block-size: var(--_table-scrollbar-size)',
-      'background-color: var(--_table-scrollbar-track)',
-      'background-color: var(--_table-scrollbar-thumb)',
-      'background-clip: content-box',
-      'border: 2px solid transparent',
-      'display: none',
-      'inline-size: 0',
-      'block-size: 0',
       '@media (forced-colors: active)',
       'scrollbar-color: auto',
       'background-color: CanvasText',
@@ -197,14 +195,46 @@ describe('table static css contracts', () => {
     ]);
   });
 
-  it('table scrollbar WebKit 補助 selector は table scope 内に限定されること', () => {
+  it('table scrollbar WebKit 補助 selector と宣言は table root / top rail に限定されること', () => {
+    expectCssIncludes(tableCss, [
+      ':is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar',
+      ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]::-webkit-scrollbar",
+      'width: var(--_table-scrollbar-size)',
+      'height: var(--_table-scrollbar-size)',
+      ':is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar-track',
+      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-root]::-webkit-scrollbar-track",
+      ':is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar-corner',
+      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-root]::-webkit-scrollbar-corner",
+      ':is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar-thumb',
+      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-root]::-webkit-scrollbar-thumb",
+      'background-color: var(--_table-scrollbar-track)',
+      'background-color: var(--_table-scrollbar-thumb)',
+      'background-clip: content-box',
+      'border: 2px solid transparent',
+      ':is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar',
+      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-scroll-rail]::-webkit-scrollbar",
+      ':is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar-track',
+      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-scroll-rail]::-webkit-scrollbar-track",
+      ':is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar-corner',
+      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-scroll-rail]::-webkit-scrollbar-corner",
+      ':is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar-thumb',
+      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-scroll-rail]::-webkit-scrollbar-thumb",
+      '[data-table-root]::-webkit-scrollbar-button',
+      '[data-table-scroll-rail]::-webkit-scrollbar-button',
+      'display: none',
+      'inline-size: 0',
+      'block-size: 0',
+    ]);
+
     const selectorLists = extractSelectorPreludeList(tableCss).filter((selectorList) =>
-      selectorList.includes('::-webkit-scrollbar'),
+      tableScrollbarPseudoPattern.test(selectorList),
     );
 
     expect(selectorLists.length).toBeGreaterThan(0);
 
     for (const selectorList of selectorLists) {
+      expect(selectorList).not.toMatch(bareTableScrollbarSelectorPattern);
+
       for (const selector of splitSelectorPreludeListAtTopLevelComma(selectorList)) {
         const normalizedSelector = normalizeSelectorWhitespace(selector);
         const isScopedToTableScrollbar = tableScrollbarSelectorScopes.some((scope) =>
@@ -212,6 +242,10 @@ describe('table static css contracts', () => {
         );
 
         expect(isScopedToTableScrollbar, normalizedSelector).toBe(true);
+        expect(normalizedSelector, normalizedSelector).toMatch(directTableScrollbarPseudoPattern);
+        expect(normalizedSelector, normalizedSelector).not.toMatch(
+          /\[data-table-(?:root|scroll-rail)\]\s+.+::-/u,
+        );
         expect(normalizedSelector).not.toContain('html::-webkit-scrollbar');
         expect(normalizedSelector).not.toContain('body::-webkit-scrollbar');
         expect(normalizedSelector).not.toContain('ui-table');
@@ -296,6 +330,8 @@ describe('table static css contracts', () => {
       '[data-table-root] > table tbody tr:hover',
       '[data-table-root] > table tr:hover',
       '[data-table-scroll-rail]:hover',
+      '[data-table-root]:hover',
+      '::-webkit-scrollbar-thumb:hover',
       'background-color: var(--bg-table-ruler',
       'transition: background-color var(--duration-fast',
     ]);

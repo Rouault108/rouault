@@ -2,11 +2,12 @@
 :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root] {
   --_table-scroll-fade-left-shadow: inset 0 0 0 0 transparent;
   --_table-scroll-fade-right-shadow: inset 0 0 0 0 transparent;
-  --_table-scrollbar-size: 10px;
+  --_table-scroll-fade-color: oklch(from var(--fg-default, oklch(20% 0 0)) l c h / 0.16);
+  --_table-scrollbar-size: calc(var(--scrollbar-width, 12px) * 0.75);
   --_table-scrollbar-track: transparent;
   --_table-scrollbar-thumb: color-mix(
     in oklch,
-    var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0))) 64%,
+    var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0))) 48%,
     transparent
   );
 
@@ -17,9 +18,7 @@
   overflow-y: visible;
   scrollbar-width: thin;
   scrollbar-color: var(--_table-scrollbar-thumb) var(--_table-scrollbar-track);
-  box-shadow:
-    var(--_table-scroll-fade-left-shadow),
-    var(--_table-scroll-fade-right-shadow);
+  box-shadow: var(--_table-scroll-fade-left-shadow), var(--_table-scroll-fade-right-shadow);
 
   /* iOS Safari:
    * 横スクロール面を root 側でも固定し、表だけ文字が肥大化するのを防ぐ */
@@ -29,23 +28,22 @@
 
 :is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar,
 :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]::-webkit-scrollbar {
-  inline-size: var(--_table-scrollbar-size);
-  block-size: var(--_table-scrollbar-size);
+  width: var(--_table-scrollbar-size);
+  height: var(--_table-scrollbar-size);
 }
 
 :is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar-track,
-:is(.prose, .about-prose)
-  > ui-tabs
-  > [slot='panel']
-  > [data-table-root]::-webkit-scrollbar-track {
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]::-webkit-scrollbar-track {
+  background-color: var(--_table-scrollbar-track);
+}
+
+:is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar-corner,
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]::-webkit-scrollbar-corner {
   background-color: var(--_table-scrollbar-track);
 }
 
 :is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar-thumb,
-:is(.prose, .about-prose)
-  > ui-tabs
-  > [slot='panel']
-  > [data-table-root]::-webkit-scrollbar-thumb {
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]::-webkit-scrollbar-thumb {
   background-color: var(--_table-scrollbar-thumb);
   background-clip: content-box;
   border: 2px solid transparent;
@@ -53,10 +51,7 @@
 }
 
 :is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar-button,
-:is(.prose, .about-prose)
-  > ui-tabs
-  > [slot='panel']
-  > [data-table-root]::-webkit-scrollbar-button {
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]::-webkit-scrollbar-button {
   display: none;
   inline-size: 0;
   block-size: 0;
@@ -64,12 +59,12 @@
 
 :is(.prose, .about-prose) > [data-table-root][data-fade-left],
 :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-left] {
-  --_table-scroll-fade-left-shadow: inset 18px 0 18px -18px oklch(0% 0 0 / 0.24);
+  --_table-scroll-fade-left-shadow: inset 14px 0 14px -14px var(--_table-scroll-fade-color);
 }
 
 :is(.prose, .about-prose) > [data-table-root][data-fade-right],
 :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root][data-fade-right] {
-  --_table-scroll-fade-right-shadow: inset -18px 0 18px -18px oklch(0% 0 0 / 0.24);
+  --_table-scroll-fade-right-shadow: inset -14px 0 14px -14px var(--_table-scroll-fade-color);
 }
 
 :is(.prose, .about-prose) > [data-table-root]:focus-visible,
@@ -82,11 +77,11 @@
 
 :is(.prose, .about-prose) > [data-table-scroll-rail],
 :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail] {
-  --_table-scrollbar-size: 10px;
+  --_table-scrollbar-size: 8px;
   --_table-scrollbar-track: transparent;
   --_table-scrollbar-thumb: color-mix(
     in oklch,
-    var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0))) 64%,
+    var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0))) 48%,
     transparent
   );
 
@@ -101,12 +96,9 @@
 }
 
 :is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar,
-:is(.prose, .about-prose)
-  > ui-tabs
-  > [slot='panel']
-  > [data-table-scroll-rail]::-webkit-scrollbar {
-  inline-size: var(--_table-scrollbar-size);
-  block-size: var(--_table-scrollbar-size);
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]::-webkit-scrollbar {
+  width: var(--_table-scrollbar-size);
+  height: var(--_table-scrollbar-size);
 }
 
 :is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar-track,
@@ -114,6 +106,14 @@
   > ui-tabs
   > [slot='panel']
   > [data-table-scroll-rail]::-webkit-scrollbar-track {
+  background-color: var(--_table-scrollbar-track);
+}
+
+:is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar-corner,
+:is(.prose, .about-prose)
+  > ui-tabs
+  > [slot='panel']
+  > [data-table-scroll-rail]::-webkit-scrollbar-corner {
   background-color: var(--_table-scrollbar-track);
 }
 
@@ -159,10 +159,7 @@
   :is(.prose, .about-prose) > [data-table-root]:focus-visible,
   :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]:focus-visible,
   :is(.prose, .about-prose) > [data-table-scroll-rail]:focus-visible,
-  :is(.prose, .about-prose)
-    > ui-tabs
-    > [slot='panel']
-    > [data-table-scroll-rail]:focus-visible {
+  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]:focus-visible {
     animation: none;
   }
 }
@@ -296,23 +293,27 @@
   }
 
   :is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar-track,
+  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]::-webkit-scrollbar-track,
+  :is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar-corner,
   :is(.prose, .about-prose)
     > ui-tabs
     > [slot='panel']
-    > [data-table-root]::-webkit-scrollbar-track,
+    > [data-table-root]::-webkit-scrollbar-corner,
   :is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar-track,
   :is(.prose, .about-prose)
     > ui-tabs
     > [slot='panel']
-    > [data-table-scroll-rail]::-webkit-scrollbar-track {
+    > [data-table-scroll-rail]::-webkit-scrollbar-track,
+  :is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar-corner,
+  :is(.prose, .about-prose)
+    > ui-tabs
+    > [slot='panel']
+    > [data-table-scroll-rail]::-webkit-scrollbar-corner {
     background-color: Canvas;
   }
 
   :is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar-thumb,
-  :is(.prose, .about-prose)
-    > ui-tabs
-    > [slot='panel']
-    > [data-table-root]::-webkit-scrollbar-thumb,
+  :is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]::-webkit-scrollbar-thumb,
   :is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar-thumb,
   :is(.prose, .about-prose)
     > ui-tabs
