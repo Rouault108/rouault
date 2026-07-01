@@ -10,3 +10,4 @@ ADRは必須作成物ではない。
 ## Accepted Records
 
 - `preview-sandbox-visible-by-default.md` - `ui-preview-sandbox`の既定activationをvisibleにする。
+- `syntax-card-quiet-definition-surface.md` - Syntax Cardを本文中に挿入される静的リファレンスsurfaceとして扱う。
