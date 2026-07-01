@@ -2290,7 +2290,7 @@ describe('static CSS contracts', () => {
       declarationRuleRecordsForSelector(syntax, '.syntax-card', 'border', {
         rootOnly: true,
       }).map((record) => record.value),
-    ).toEqual(['var(--border-width) solid var(--border-default)']);
+    ).toEqual(['var(--border-width) solid var(--border-muted)']);
     expect(
       declarationRuleRecordsForSelector(syntax, '.syntax-card', 'border-color', {
         rootOnly: true,
@@ -2300,17 +2300,43 @@ describe('static CSS contracts', () => {
       declarationRuleRecordsForSelector(syntax, '.syntax-card__header', 'border-bottom', {
         rootOnly: true,
       }).map((record) => record.value),
-    ).toEqual(['var(--border-width) solid var(--border-muted)']);
+    ).toEqual(['0']);
     expect(
       declarationRuleRecordsForSelector(syntax, '.syntax-card__signature', 'border-bottom', {
         rootOnly: true,
       }).map((record) => record.value),
-    ).toEqual(['var(--border-width) solid var(--border-muted)']);
+    ).toEqual(['var(--border-width) solid var(--border-ghost)']);
     expect(
       declarationRuleRecordsForSelector(syntax, '.syntax-card__kind', 'border', {
         rootOnly: true,
       }).map((record) => record.value),
-    ).toEqual(['var(--border-width) solid var(--border-muted)']);
+    ).toEqual(['0']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-card__content', 'gap', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['var(--space-5)']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-section__heading', 'font-weight', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['var(--font-semibold)']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-section__content > p', 'padding', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['0']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-field__required', 'border', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['0']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-field__required', 'font-family', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['var(--font-sans)']);
+    expect(ruleBlock(syntax, '.syntax-field__required')).not.toContain('--fg-warning');
     expect(
       declarationRuleRecordsForSelector(
         syntax,
@@ -2366,7 +2392,25 @@ describe('static CSS contracts', () => {
       'margin: 0',
       'background: transparent',
     ]);
-    expectRuleToDeclare(syntax, '.syntax-field__required', ['border:', 'color:']);
+    const desktopSyntax = optionalAtRuleBlock(syntax, '@media (min-width: 768px)');
+    if (desktopSyntax !== undefined) {
+      expect(
+        declarationValuesForSelector(desktopSyntax, '.syntax-field', 'grid-template-columns'),
+      ).toEqual([]);
+    }
+    const forcedColorsSyntax = atRuleBlock(syntax, '@media (forced-colors: active)');
+    expectRuleToDeclare(forcedColorsSyntax, '.syntax-card', ['border-color: CanvasText']);
+    expect(
+      declarationValuesForSelector(forcedColorsSyntax, '.syntax-field__required', 'border-color'),
+    ).toEqual([]);
+    const printSyntax = atRuleBlock(syntax, '@media print');
+    expectRuleToDeclare(printSyntax, '.syntax-field', [
+      'display: grid',
+      'page-break-inside: avoid',
+      'background: transparent',
+      'padding: 0',
+      'margin: 0',
+    ]);
     expect(syntax).to.contain('@media print');
 
     const score = readCss('score.css');

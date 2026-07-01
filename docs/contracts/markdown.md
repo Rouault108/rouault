@@ -86,7 +86,7 @@ Markdown link-cardのfocus表示は、native anchorである`.link-card__link:fo
 
 `syntax-card__name`と`syntax-section__heading`はheadingではなくlabelとして出力する。`heading-level`は入力互換属性として受理されるが、static-first outputでは`h2`〜`h6`のDOM heading生成に使わない。final DOMに`heading-level` / `data-heading-level`を残してはならない。`syntax-card` subtreeは本文heading id、heading permalink、TOCの対象外である。
 
-`syntax-card`の通常表示におけるCSS visual contractでは、root外枠をカード単位の境界として扱う。`header`、`signature`、`kind`などの内部罫線は補助区切りであり、root外枠より控えめな視覚強度に留める。この視覚階層はfield rowのinteractive affordanceやrow hoverを意味しない。空コンテンツ時は、既存のsignature下罫線除去とcontent非表示の縮退契約を維持する。forced-colors契約は別途CSS上の既存指定を維持する。
+`syntax-card`の通常表示におけるCSS visual contractでは、root外枠を`--border-muted`による静かなカード単位の境界として扱う。`header`は下罫線を持たず、`signature`の下罫線は`--border-ghost`へ弱める。`kind`と`required`は枠付きbadgeではなくtext-onlyな補助metaとして表示し、field listはdesktop幅でも2カラムgridへ変化させない。この視覚階層はfield rowのinteractive affordanceやrow hoverを意味しない。空コンテンツ時は、既存のsignature下罫線除去とcontent非表示の縮退契約を維持する。forced-colors契約では`syntax-card`の外枠だけを`CanvasText`対象にし、`required`へborder-color対象を戻してはならない。
 
 `syntax-field`は、構文カード内の静的説明行であり、row action、row selection、row navigationを意味しない。`syntax-field:hover`によるrow-level背景変更は標準契約に含めない。field内部にlink / buttonなどの実操作要素が存在する場合は、その要素自体のinteractive契約に従う。`syntax-card`全体のhover / focus-withinによるcopy action表示は、field row hoverとは別契約として維持する。
 

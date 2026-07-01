@@ -80,6 +80,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 - `docs/adr/result-card-focus-visible-projection.md`
 - `docs/adr/link-card-static-reference-surface.md`
 - `docs/adr/syntax-field-static-hover-affordance.md`
+- `docs/adr/syntax-card-quiet-definition-surface.md`
 - `docs/adr/reading-chrome-note-frame-outer-gutter.md`
 - `docs/adr/corpus-current-selected-surface.md`
 - `docs/adr/header-corpus-current-indicator.md`
