@@ -1832,6 +1832,7 @@ describe('static CSS contracts', () => {
       '--ui-code-copy-overlay-min-block-start',
       '--ui-code-copy-overlay-block-start',
     ] as const;
+    expect(overlayTokenProperties).not.toContain('--ui-code-copy-control-inline-rail');
 
     const codeBlockRootRecords = rootRuleRecordsForSelector(css, '[data-code-block-root]').filter(
       (record) => record.selectors.length === 1,
@@ -1896,6 +1897,135 @@ describe('static CSS contracts', () => {
     expect(copyFocusBlock, 'static copy button focus-visible rule').not.toBe('');
     expect(copyFocusBlock).toContain('outline:');
     expect(copyFocusBlock).toContain('outline-offset:');
+  });
+
+  it('code surface CSS aligns copy controls with the inline rail contract', () => {
+    const css = readCss('code-surfaces.css');
+    const copyControlInlineRailValue = 'var(--space-2, 8px)';
+    const copyControlInlineRailReference =
+      'var(--ui-code-copy-control-inline-rail, var(--space-2, 8px))';
+    const codeBodyPaddingReference =
+      'var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-3, 12px)))';
+
+    const codeBlockRootRecords = rootRuleRecordsForSelector(css, '[data-code-block-root]').filter(
+      (record) => record.selectors.length === 1,
+    );
+    const surfaceRootRecord = codeBlockRootRecords.find(
+      (record) =>
+        record.block.includes('position: relative') &&
+        record.block.includes('overflow: hidden') &&
+        record.block.includes('border:') &&
+        record.block.includes('background:') &&
+        record.block.includes('border-radius:'),
+    );
+    const layoutRootRecord = codeBlockRootRecords.find(
+      (record) =>
+        record.block.includes('inline-size:') || record.block.includes('margin-inline:'),
+    );
+    expect(surfaceRootRecord, 'code block surface root rule').toBeDefined();
+    expect(layoutRootRecord, 'code block layout root rule').toBeDefined();
+    if (surfaceRootRecord === undefined || layoutRootRecord === undefined) {
+      throw new Error('code block root rules are missing');
+    }
+
+    expect(
+      declarationValuesForRuleRecord(surfaceRootRecord, '--ui-code-copy-control-inline-rail'),
+    ).toEqual([copyControlInlineRailValue]);
+    expect(
+      declarationValuesForRuleRecord(layoutRootRecord, '--ui-code-copy-control-inline-rail'),
+    ).toEqual([]);
+
+    const codeGroupRootRecord = rootRuleRecordsForSelector(css, 'section[data-code-group]').find(
+      (record) =>
+        record.block.includes('position: relative') &&
+        record.block.includes('overflow: hidden') &&
+        record.block.includes('border:') &&
+        record.block.includes('background:') &&
+        record.block.includes('border-radius:'),
+    );
+    expect(codeGroupRootRecord, 'code group base rule').toBeDefined();
+    if (codeGroupRootRecord === undefined) throw new Error('code group base rule is missing');
+    expect(
+      declarationValuesForRuleRecord(codeGroupRootRecord, '--ui-code-copy-control-inline-rail'),
+    ).toEqual([copyControlInlineRailValue]);
+
+    const captionRecord = rootRuleRecordsForSelector(
+      css,
+      '[data-code-block-root] > .code-surface-caption',
+    )[0];
+    expect(captionRecord, 'normal caption rule').toBeDefined();
+    if (captionRecord === undefined) throw new Error('normal caption rule is missing');
+    expect(declarationValuesForRuleRecord(captionRecord, 'padding')).toEqual([]);
+    expect(
+      declarationValuesForRuleRecord(captionRecord, 'padding-block-start').map(
+        normalizeDeclarationValue,
+      ),
+    ).toEqual(['var(--space-2, 8px)']);
+    expect(
+      declarationValuesForRuleRecord(captionRecord, 'padding-block-end').map(
+        normalizeDeclarationValue,
+      ),
+    ).toEqual(['0']);
+    expect(
+      declarationValuesForRuleRecord(captionRecord, 'padding-inline-start').map(
+        normalizeDeclarationValue,
+      ),
+    ).toEqual([codeBodyPaddingReference]);
+    expect(
+      declarationValuesForRuleRecord(captionRecord, 'padding-inline-end').map(
+        normalizeDeclarationValue,
+      ),
+    ).toEqual([copyControlInlineRailReference]);
+
+    const overlayCaptionSelector =
+      '[data-code-block-root].code-surface-root--overlay > .code-surface-caption';
+    expect(
+      declarationValuesForSelector(css, overlayCaptionSelector, 'inset-inline-end').map(
+        normalizeDeclarationValue,
+      ),
+    ).toEqual([copyControlInlineRailReference]);
+    expect(declarationValuesForSelector(css, overlayCaptionSelector, 'padding')).toEqual(['0']);
+
+    const rootHeaderToolsRecords = rootRuleRecordsForSelector(
+      css,
+      '.code-group-header-tools',
+    ).filter((record) => record.selectors.length === 1);
+    expect(rootHeaderToolsRecords).toHaveLength(1);
+    const [rootHeaderToolsRecord] = rootHeaderToolsRecords;
+    if (rootHeaderToolsRecord === undefined) {
+      throw new Error('root code group header tools rule is missing');
+    }
+    expect(
+      rootRuleRecordsForSelector(css, '.code-group-header-tools').flatMap((record) =>
+        declarationValuesForRuleRecord(record, 'padding-inline'),
+      ),
+    ).toEqual([]);
+    expect(
+      declarationValuesForRuleRecord(rootHeaderToolsRecord, 'padding-inline-start').map(
+        normalizeDeclarationValue,
+      ),
+    ).toEqual([copyControlInlineRailReference]);
+    const headerToolsPaddingInlineEnd = declarationValuesForRuleRecord(
+      rootHeaderToolsRecord,
+      'padding-inline-end',
+    ).map(normalizeDeclarationValue);
+    expect(headerToolsPaddingInlineEnd).toEqual([copyControlInlineRailReference]);
+    expect(headerToolsPaddingInlineEnd.join('\n')).not.toContain('--ui-code-surface-padding');
+    expect(headerToolsPaddingInlineEnd.join('\n')).not.toContain('--ui-code-block-padding');
+
+    const forcedColors = atRuleBlock(css, '@media (forced-colors: active)');
+    const print = atRuleBlock(css, '@media print');
+    for (const mediaCss of [forcedColors, print]) {
+      expect(
+        declarationValuesForSelector(mediaCss, '.code-group-header-tools', 'padding-inline'),
+      ).toEqual([]);
+      expect(
+        declarationValuesForSelector(mediaCss, '.code-group-header-tools', 'padding-inline-start'),
+      ).toEqual([]);
+      expect(
+        declarationValuesForSelector(mediaCss, '.code-group-header-tools', 'padding-inline-end'),
+      ).toEqual([]);
+    }
   });
 
   it('code surface CSS separates top-level breakout from inline and group-owned layouts', () => {

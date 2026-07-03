@@ -246,6 +246,7 @@
   --ui-code-copy-overlay-code-padding-block-start: var(--space-3, 12px);
   --ui-code-copy-overlay-center-offset: var(--space-2, 8px);
   --ui-code-copy-overlay-min-block-start: var(--space-1, 4px);
+  --ui-code-copy-control-inline-rail: var(--space-2, 8px);
   /* overlay位置は単一長さ値tokenだけで計算し、padding shorthand依存を避ける。
    * focus outlineが欠けないよう最小block-startも保持する。 */
   --ui-code-copy-overlay-block-start: max(
@@ -302,9 +303,13 @@
   justify-content: space-between;
   gap: var(--space-2, 8px);
   min-height: var(--control-height-sm, 24px);
-  padding: var(--space-2, 8px)
-    var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-3, 12px))) 0
-    var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-3, 12px)));
+  padding-block-start: var(--space-2, 8px);
+  padding-block-end: 0;
+  padding-inline-start: var(
+    --ui-code-surface-padding,
+    var(--ui-code-block-padding, var(--space-3, 12px))
+  );
+  padding-inline-end: var(--ui-code-copy-control-inline-rail, var(--space-2, 8px));
   color: var(--fg-muted, oklch(45% 0 0));
   font-size: var(--text-xs, 12px);
   font-weight: var(--font-medium, 500);
@@ -314,7 +319,7 @@
 [data-code-block-root].code-surface-root--overlay > .code-surface-caption {
   position: absolute;
   inset-block-start: var(--ui-code-copy-overlay-block-start, var(--space-1, 4px));
-  inset-inline-end: var(--space-2, 8px);
+  inset-inline-end: var(--ui-code-copy-control-inline-rail, var(--space-2, 8px));
   z-index: 1;
   min-height: 0;
   padding: 0;
@@ -412,6 +417,8 @@ section[data-code-group][data-code-group-enhanced='true']:focus-within
 }
 
 section[data-code-group] {
+  --ui-code-copy-control-inline-rail: var(--space-2, 8px);
+
   inline-size: var(--ui-code-group-width, var(--ui-code-surface-breakout-width, 100%));
   max-inline-size: none;
   margin-inline: var(--ui-code-group-margin-inline, var(--ui-code-surface-breakout-margin, 0));
@@ -510,7 +517,8 @@ section[data-code-group][data-code-group-enhanced='true'] .code-group-tablist {
 .code-group-header-tools {
   position: relative;
   z-index: 10;
-  padding-inline: var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-2, 8px)));
+  padding-inline-start: var(--ui-code-copy-control-inline-rail, var(--space-2, 8px));
+  padding-inline-end: var(--ui-code-copy-control-inline-rail, var(--space-2, 8px));
   background: var(--bg-default, oklch(1 0 0));
 }
 

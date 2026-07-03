@@ -206,6 +206,14 @@ CSSはfinal DOMの意味状態を再定義しません。CSS state contractとco
 - `--ui-code-surface-padding`および`--ui-code-block-padding`のようなshorthand相当tokenを、overlay copy位置の`calc()`へ直接入れてはなりません。
 - overlay配置のために上書きする場合は、単一長さ値を取る`--ui-code-copy-overlay-code-padding-block-start`、`--ui-code-copy-overlay-center-offset`、`--ui-code-copy-overlay-min-block-start`を使います。
 - `--ui-code-copy-overlay-*`は、surface側`[data-code-block-root]`ruleに定義します。layout側ruleには定義しません。
+- copy controlのinline-end位置は本文gutterではなく`--ui-code-copy-control-inline-rail`で制御します。
+- `--ui-code-copy-control-inline-rail`は単独code blockのsurface側`[data-code-block-root]`ruleと、code groupの`section[data-code-group]`base ruleに定義します。
+- layout側`[data-code-block-root]`ruleには`--ui-code-copy-control-inline-rail`を定義しません。
+- 通常captionは`padding-inline-start`で本文gutter、`padding-inline-end`でcopy control railを参照し、本文余白と補助control位置の責務を分離します。
+- overlay captionの`padding: 0` resetは維持してよいものとします。
+- root-levelの`.code-group-header-tools`は`padding-inline` shorthandではなく、`padding-inline-start` / `padding-inline-end`で定義します。
+- forced-colors / print media内の`.code-group-header-tools`ruleは、このcopy control rail変更の対象ではありません。
+- `--ui-code-copy-control-inline-rail`は既存の`--ui-code-copy-overlay-*`token群とは別のinline-end control railです。
 
 このため、過去に`--ui-code-surface-breakout-*`だけで単独code blockとcode groupを同時に広げていたoverrideはsemanticsが変わります。今後、単独code blockの幅を変更する場合はblock専用変数を使い、特殊な文脈でcode groupの幅を変更する場合はgroup専用変数を使ってください。
 
