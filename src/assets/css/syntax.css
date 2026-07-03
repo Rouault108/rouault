@@ -33,9 +33,9 @@
   border: 0;
   border-radius: 0;
   font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
+  font-weight: var(--font-medium);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
 }
 .syntax-card__name {
   margin: 0;

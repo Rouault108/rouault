@@ -2571,6 +2571,36 @@ describe('static CSS contracts', () => {
       }).map((record) => record.value),
     ).toEqual(['0']);
     expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-card__kind', 'font-weight', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['var(--font-medium)']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-card__kind', 'letter-spacing', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['0.06em']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-card__kind', 'padding', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['0']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-card__kind', 'border-radius', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual(['0']);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-card__kind', 'background', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual([]);
+    expect(
+      declarationRuleRecordsForSelector(syntax, '.syntax-card__kind', 'background-color', {
+        rootOnly: true,
+      }).map((record) => record.value),
+    ).toEqual([]);
+    expect(
       declarationRuleRecordsForSelector(syntax, '.syntax-card__content', 'gap', {
         rootOnly: true,
       }).map((record) => record.value),
