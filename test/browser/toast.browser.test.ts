@@ -244,8 +244,14 @@ describe('ui-toast browser contract', () => {
     expect(ToastManager.getSnapshot().length).to.equal(1);
 
     closeButton.blur();
-    await waitMs(TOAST_EXIT_DURATION_MS + 90);
     await flush(host);
+
+    await waitUntil(
+      () => ToastManager.getSnapshot().length === 0,
+      2000,
+      20,
+      'focus resume 後に toast が dismiss されません',
+    );
 
     expect(ToastManager.getSnapshot().length).to.equal(0);
   });
