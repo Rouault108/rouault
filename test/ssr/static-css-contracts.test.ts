@@ -1878,6 +1878,12 @@ describe('static CSS contracts', () => {
         '--ui-code-copy-overlay-block-start',
       )[0] ?? '',
     );
+    const overlayCenterOffsetValue = normalizeDeclarationValue(
+      declarationValuesForRuleRecord(
+        surfaceRootRecord as SelectorRuleRecord,
+        '--ui-code-copy-overlay-center-offset',
+      )[0] ?? '',
+    );
     for (const property of overlayTokenProperties) {
       const normalizedValues = declarationValuesForRuleRecord(
         surfaceRootRecord as SelectorRuleRecord,
@@ -1890,7 +1896,13 @@ describe('static CSS contracts', () => {
         '--ui-code-block-padding',
       );
     }
+    expect(overlayCenterOffsetValue).toBe('0.375rem');
+    expect(overlayCenterOffsetValue).not.toBe('var(--space-2, 8px)');
     expect(overlayBlockStartValue).toContain('max(var(--ui-code-copy-overlay-min-block-start)');
+    expect(overlayBlockStartValue).toContain(
+      'var(--ui-code-copy-overlay-code-padding-block-start)',
+    );
+    expect(overlayBlockStartValue).toContain('var(--ui-code-copy-overlay-center-offset)');
     expect(overlayBlockStartValue).not.toContain('max(0px');
 
     const copyFocusBlock = ruleBlock(staticCopyButton, '.static-copy-button:focus-visible');

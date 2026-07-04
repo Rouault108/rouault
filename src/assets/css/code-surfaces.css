@@ -244,7 +244,8 @@
 
 [data-code-block-root] {
   --ui-code-copy-overlay-code-padding-block-start: var(--space-3, 12px);
-  --ui-code-copy-overlay-center-offset: var(--space-2, 8px);
+  /* Rouault既定token下で、2rem copy buttonの中心を1rem × 1.25 line-heightの1行目line box中心へ合わせる。 */
+  --ui-code-copy-overlay-center-offset: 0.375rem;
   --ui-code-copy-overlay-min-block-start: var(--space-1, 4px);
   --ui-code-copy-control-inline-rail: var(--space-2, 8px);
   /* overlay位置は単一長さ値tokenだけで計算し、padding shorthand依存を避ける。

@@ -47,9 +47,10 @@ code surfaceの正本は、旧Lit Custom Elementではなく静的HTMLです。
 - 単独code blockは本文中の読書単位です。`.prose` / `.about-prose`直下の`figure[data-code-block-root]`は本文幅に収めます。
 - 長いコード行は外枠を広げず、`pre[data-code-block]`内部の横スクロールで処理します。
 - 単独code blockのtop-level layoutは`--ui-code-block-breakout-width` / `--ui-code-block-breakout-margin`で制御します。
-- caption mainを持たない単独code blockでは、copy controlはoverlay captionとして表示します。
+- filename / intentを持たずcaption mainが生成されない単独code blockでcopy controlが生成される場合、copy controlのみをoverlay captionとして表示します。
 - overlay copy controlのblock方向位置は`--ui-code-copy-overlay-block-start`で制御します。
-- overlay copy controlは、first code lineの視覚中心に近づけつつ、keyboard focus outlineが欠けないblock-startクリアランスを保持します。
+- Rouault既定token下では、overlay copy controlの中心を1行目code line box中心へ合わせます。glyphの濃色ピクセル中心へのpixel-perfect合わせは保証しません。
+- overlay copy controlは、keyboard focus outlineが欠けないblock-startクリアランスを保持します。
 
 ### Shiki Theme Policy
 
@@ -205,6 +206,9 @@ CSSはfinal DOMの意味状態を再定義しません。CSS state contractとco
 - code typography、copy control寸法、code body padding、focus outline / offsetを変更する場合は、overlay copy位置tokenとCSS契約テストを同時に更新します。
 - `--ui-code-surface-padding`および`--ui-code-block-padding`のようなshorthand相当tokenを、overlay copy位置の`calc()`へ直接入れてはなりません。
 - overlay配置のために上書きする場合は、単一長さ値を取る`--ui-code-copy-overlay-code-padding-block-start`、`--ui-code-copy-overlay-center-offset`、`--ui-code-copy-overlay-min-block-start`を使います。
+- `--ui-code-copy-overlay-center-offset: 0.375rem`はspacing tokenではなく、Rouault既定token下の2rem copy button、1rem code font-size、1.25 line-heightから導出したcode overlay専用の派生定数です。
+- code bodyのblock-start paddingを変更する場合は、overlay copy controlのline box中心合わせを維持するため、`--ui-code-copy-overlay-code-padding-block-start`も同時に更新します。
+- `--ui-code-copy-overlay-block-start`はfocus outlineのblock-start clearanceを守る`max()`式を維持します。このため、line box中心一致の保証はRouault既定token下に限定します。
 - `--ui-code-copy-overlay-*`は、surface側`[data-code-block-root]`ruleに定義します。layout側ruleには定義しません。
 - copy controlのinline-end位置は本文gutterではなく`--ui-code-copy-control-inline-rail`で制御します。
 - `--ui-code-copy-control-inline-rail`は単独code blockのsurface側`[data-code-block-root]`ruleと、code groupの`section[data-code-group]`base ruleに定義します。
