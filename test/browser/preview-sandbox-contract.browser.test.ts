@@ -40,10 +40,7 @@ describe('ui-preview-sandbox contract', () => {
     expect(defaultSandbox.getAttribute('activation-policy')).to.equal('visible');
 
     const invalidSandbox = await fixture<PreviewSandboxHost>(html`
-      <ui-preview-sandbox
-        activation-policy="unexpected"
-        iframe-title="Invalid fallback"
-      >
+      <ui-preview-sandbox activation-policy="unexpected" iframe-title="Invalid fallback">
         <template data-preview-kind="html"><button>Push</button></template>
       </ui-preview-sandbox>
     `);
@@ -66,9 +63,9 @@ describe('ui-preview-sandbox contract', () => {
     visibleSandbox.activateHydration?.();
     await waitForElement(visibleSandbox);
 
-    expect(visibleSandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc).to.contain(
-      '<button>Visible</button>',
-    );
+    expect(
+      visibleSandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc,
+    ).to.contain('<button>Visible</button>');
 
     const eagerSandbox = await fixture<PreviewSandboxHost>(html`
       <ui-preview-sandbox
@@ -166,7 +163,9 @@ describe('ui-preview-sandbox contract', () => {
         iframe-title="Manual forms preview"
         allow-forms
       >
-        <template data-preview-kind="html"><form><button>Send</button></form></template>
+        <template data-preview-kind="html">
+          <form><button>Send</button></form>
+        </template>
       </ui-preview-sandbox>
     `);
     await waitForElement(manualOnlySandbox);
@@ -196,7 +195,9 @@ describe('ui-preview-sandbox contract', () => {
     expect(iframe).to.not.equal(null);
     expect(iframe?.srcdoc).to.contain('<button>Before</button>');
 
-    const template = sandbox.querySelector<HTMLTemplateElement>('template[data-preview-kind="html"]');
+    const template = sandbox.querySelector<HTMLTemplateElement>(
+      'template[data-preview-kind="html"]',
+    );
     expect(template).to.not.equal(null);
     if (template) {
       template.content.replaceChildren(document.createElement('strong'));
@@ -278,9 +279,7 @@ describe('ui-preview-sandbox contract', () => {
         data-hydration-trigger="interaction"
         iframe-title="DOM fragment preview"
       >
-        <template data-preview-kind="html"
-          ><button class="demo-button">押す</button></template
-        >
+        <template data-preview-kind="html"><button class="demo-button">押す</button></template>
       </ui-preview-sandbox>
     `);
 
