@@ -39,9 +39,7 @@ const createOpenFilterDetailsVariant = (html: string): string => {
   }
 
   const openStartTag = startTag.replace(/>$/u, ' open>');
-  return `${html.slice(0, match.index)}${openStartTag}${html.slice(
-    (match.index ?? 0) + startTag.length,
-  )}`;
+  return `${html.slice(0, match.index)}${openStartTag}${html.slice(match.index + startTag.length)}`;
 };
 
 const renderSearchControlsCase = (): string => {
