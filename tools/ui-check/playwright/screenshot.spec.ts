@@ -2,7 +2,10 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
 
+import { searchPageFixture } from '../fixtures/search-page-fixture.js';
+
 const screenshotDir = path.resolve(process.cwd(), '.generated/ui-check/screenshots');
+const mainStylesheetHref = '/src/assets/css/main.css';
 
 const cases = [
   { name: 'index', path: '/tools/ui-check/' },
@@ -31,3 +34,27 @@ test('captures ui-check workbench screenshots', async ({ page }) => {
   }
 });
 
+test('keeps ui-check pages on direct stylesheet loading', async ({ page }) => {
+  for (const workbenchCase of cases) {
+    await page.goto(workbenchCase.path);
+    await expect(page.locator(`link[rel="stylesheet"][href="${mainStylesheetHref}"]`)).toHaveCount(
+      1,
+    );
+    await expect(page.locator('script[src$="ui-check-entry.ts"]')).toHaveCount(0);
+  }
+});
+
+test('renders generated search controls operational smoke surface', async ({ page }) => {
+  await page.goto('/tools/ui-check/cases/search-controls.html');
+
+  await expect(page.locator('form.search-controls[data-search-page-form]')).toBeVisible();
+  await expect(page.locator('.toolbar-row')).toBeVisible();
+  await expect(page.locator('[data-search-choice="tag-mode"]')).toBeVisible();
+  await expect(page.locator('[data-search-choice="sort"]')).toBeVisible();
+  await expect(page.locator('.results-section[data-search-page-results-section]')).toBeVisible();
+  await expect(page.locator('details.filter-details')).toHaveCount(1);
+  await expect(page.locator('details.filter-details')).toHaveAttribute('open', '');
+  await expect(page.locator('[data-search-page-result-count]')).toHaveText(
+    `${searchPageFixture.initialResponse.total.toString()}件の結果`,
+  );
+});

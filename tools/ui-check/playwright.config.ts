@@ -29,7 +29,7 @@ export default defineConfig({
   ],
   webServer: {
     command:
-      'pnpm run codegen:icons && pnpm run prepare:static-font-assets && pnpm exec vite --config tools/ui-check/vite.config.ts --host 127.0.0.1 --port 5174 --strictPort',
+      'pnpm run codegen:icons && pnpm run codegen:ui-check-cases && pnpm run prepare:static-font-assets && pnpm exec vite --config tools/ui-check/vite.config.ts --host 127.0.0.1 --port 5174 --strictPort',
     cwd: process.cwd(),
     url: 'http://127.0.0.1:5174/tools/ui-check/',
     reuseExistingServer: false,
