@@ -49,6 +49,30 @@ const getClassList = (value: unknown): string[] => {
   return [];
 };
 
+const getNodeClassList = (node: HastNode): string[] => [
+  ...getClassList(node.properties?.['className']),
+  ...getClassList(node.properties?.['class']),
+];
+
+const isShikiLineElement = (node: HastNode): boolean =>
+  isElement(node, 'span') && getNodeClassList(node).includes('line');
+
+const isLineSeparatorTextNode = (node: HastNode): boolean =>
+  node.type === 'text' && typeof node.value === 'string' && /^\n+$/u.test(node.value);
+
+const removeShikiLineSeparatorTextNodes = (codeNode: HastNode): void => {
+  if (!Array.isArray(codeNode.children)) {
+    return;
+  }
+
+  const hasLineElements = codeNode.children.some((child) => isShikiLineElement(child));
+  if (!hasLineElements) {
+    return;
+  }
+
+  codeNode.children = codeNode.children.filter((child) => !isLineSeparatorTextNode(child));
+};
+
 const findCodeChild = (preNode: HastNode): HastNode | null => {
   if (!Array.isArray(preNode.children)) {
     return null;
@@ -368,6 +392,7 @@ const highlightCodeBlock = async (
   };
 
   deleteHostOnlyCodeProperties(highlightedCode.properties);
+  removeShikiLineSeparatorTextNodes(highlightedCode);
   annotateExplicitHighlights(highlightedCode, highlightLines);
 
   const classList = getClassList(highlightedPre.properties?.['className']);

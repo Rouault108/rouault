@@ -32,6 +32,8 @@ code surfaceの正本は、旧Lit Custom Elementではなく静的HTMLです。
 
 - 単独code block rootは`figure[data-code-block-root]`とする。
 - code bodyは`pre[data-code-block] > code[data-lang]`を基本構造とする。
+- 既存のcode line height / static HTML authority契約を満たすため、静的出力HTMLでは`pre[data-code-block] > code[data-lang]`直下にShiki由来のnewline-only整形用text nodeを残しません。
+- ソース上の空行は削除せず、空の`.line`要素として保持します。
 - code group rootは`section[data-code-group]`とする。
 - copy sourceは`template[data-code-copy-source]`とする。
 - copy controlは`button[data-copy-button]`とする。

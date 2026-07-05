@@ -27,13 +27,42 @@ const getClassList = (value: unknown): string[] => {
   return [];
 };
 
-const readNodeClassList = (node: HastNode | undefined): string[] =>
-  getClassList(node?.properties?.['className'] ?? node?.properties?.['class']);
+const readMergedNodeClassList = (node: HastNode | undefined): string[] => [
+  ...getClassList(node?.properties?.['className']),
+  ...getClassList(node?.properties?.['class']),
+];
 
-const getLineElements = (codeNode: HastNode | undefined): HastNode[] =>
-  (codeNode?.children ?? []).filter(
-    (child) => child.type === 'element' && child.tagName === 'span',
+const readNodeClassList = readMergedNodeClassList;
+
+const getDirectNewlineOnlyTextNodes = (node: HastNode | undefined): HastNode[] =>
+  (node?.children ?? []).filter(
+    (child) =>
+      child.type === 'text' &&
+      typeof child.value === 'string' &&
+      /^\n+$/u.test(child.value),
   );
+
+const readTextContent = (node: HastNode | undefined): string => {
+  if (!node) {
+    return '';
+  }
+
+  if (node.type === 'text') {
+    return typeof node.value === 'string' ? node.value : '';
+  }
+
+  return (node.children ?? []).map((child) => readTextContent(child)).join('');
+};
+
+const getDirectLineElements = (codeNode: HastNode | undefined): HastNode[] =>
+  (codeNode?.children ?? []).filter(
+    (child) =>
+      child.type === 'element' &&
+      child.tagName === 'span' &&
+      readMergedNodeClassList(child).includes('line'),
+  );
+
+const getLineElements = getDirectLineElements;
 
 const getElementChildren = (node: HastNode | undefined): HastNode[] =>
   (node?.children ?? []).filter((child) => child.type === 'element');
@@ -339,6 +368,61 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(readNodeClassList(lines[0])).toContain('ui-explicit-highlight');
     expect(readNodeClassList(lines[1])).toContain('diff');
     expect(readNodeClassList(lines[1])).toContain('add');
+  });
+
+  it('standalone fenced code は Shiki の直下改行 text node を除去し、実ソースの空行とcopy sourceを維持する', async () => {
+    const source = [
+      'double x = 0.1 + 0.2;',
+      'decimal y = 0.1m + 0.2m;',
+      '',
+      'Console.WriteLine(x); // 二進浮動小数点の丸めの影響を受ける',
+      'Console.WriteLine(y); // 十進小数として扱われる',
+    ].join('\n');
+    const tree: HastNode = {
+      type: 'root',
+      children: [createCodeFence('language-csharp', source)],
+    };
+
+    await rehypeShikiCodeBlocks()(tree);
+
+    const root = tree.children?.[0];
+    const pre = findPreElement(root ?? tree);
+    const code = pre?.children?.find((child) => child.tagName === 'code');
+    expect(pre?.properties?.['data-code-block']).toBe(true);
+    expect(code?.properties?.['data-lang']).toBe('csharp');
+    expect(getDirectNewlineOnlyTextNodes(code)).toHaveLength(0);
+
+    const lines = getDirectLineElements(code);
+    expect(lines).toHaveLength(5);
+    expect(readTextContent(lines[2])).toBe('');
+
+    const copySource = root?.children?.find(
+      (child) =>
+        child.tagName === 'template' && child.properties?.['data-code-copy-source'] === 'true',
+    );
+    expect(readTextContent(copySource)).toBe(source);
+  });
+
+  it('group-key 付き fenced code でも code 直下の Shiki 改行 text node を除去する', async () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        createCodeFence('language-ts', 'const a = 1;\nconst b = 2;', {
+          'group-key': 'demo',
+          'tab-label': 'TypeScript',
+        }),
+      ],
+    };
+
+    await rehypeShikiCodeBlocks()(tree);
+
+    const pre = tree.children?.[0];
+    expect(pre?.tagName).toBe('pre');
+    expect(pre?.properties?.['data-code-block']).toBe(true);
+
+    const code = pre?.children?.find((child) => child.tagName === 'code');
+    expect(getDirectNewlineOnlyTextNodes(code)).toHaveLength(0);
+    expect(getDirectLineElements(code)).toHaveLength(2);
   });
 
   it('filename と intent を持たない standalone fenced code は root 直下に overlay copy DOM を維持する', async () => {
