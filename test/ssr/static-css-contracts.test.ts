@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import postcss, { type AtRule, type Declaration, type Rule } from 'postcss';
+import postcss, { type AnyNode, type AtRule, type Declaration, type Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';
 import { describe, expect, it } from 'vitest';
 
@@ -77,6 +77,12 @@ interface RuleDeclarationRecord {
 
 interface SelectorRuleDeclarationRecord {
   readonly selectors: readonly string[];
+  readonly value: string;
+}
+
+interface SelectorDeclarationLocationRecord {
+  readonly mediaParams: readonly string[];
+  readonly selector: string;
   readonly value: string;
 }
 
@@ -238,6 +244,44 @@ const declarationsForSelectorInMedia = (
     });
   });
   return declarations;
+};
+
+const mediaParamsForRule = (rule: Rule): string[] => {
+  const params: string[] = [];
+  let parent = rule.parent as AnyNode | undefined;
+  while (parent !== undefined) {
+    if (parent.type === 'atrule' && parent.name === 'media') params.unshift(parent.params.trim());
+    parent = parent.parent as AnyNode | undefined;
+  }
+  return params;
+};
+
+const declarationLocationsForPropertyValue = (
+  css: string,
+  property: string,
+  value: string,
+): SelectorDeclarationLocationRecord[] => {
+  const records: SelectorDeclarationLocationRecord[] = [];
+  const expectedValue = normalizeDeclarationValue(value);
+
+  postcss.parse(css).walkRules((rule: Rule) => {
+    if (isInsideKeyframes(rule)) return;
+    const selectors = splitSelectors(rule.selector);
+    const mediaParams = mediaParamsForRule(rule);
+
+    rule.walkDecls(property, (declaration) => {
+      if (normalizeDeclarationValue(declaration.value) !== expectedValue) return;
+      for (const selector of selectors) {
+        records.push({
+          mediaParams,
+          selector,
+          value: declaration.value.trim(),
+        });
+      }
+    });
+  });
+
+  return records;
 };
 
 const unquoteCssStringValue = (value: string): string =>
@@ -2038,6 +2082,154 @@ describe('static CSS contracts', () => {
         declarationValuesForSelector(mediaCss, '.code-group-header-tools', 'padding-inline-end'),
       ).toEqual([]);
     }
+  });
+
+  it('code surface CSS reserves overlay copy inline-end clearance only for eligible standalone overlays', () => {
+    const css = readCss('code-surfaces.css');
+    const staticCopyButton = readCss('static-copy-button.css');
+    const overlayClearanceSelector =
+      "[data-code-block-root].code-surface-root--overlay:not([data-code-group-owned='true']):has(> .code-surface-caption > .code-surface-copy-button-shell) > pre[data-code-block]";
+    const overlayClearanceDeclarationValue =
+      'var(--ui-code-copy-overlay-code-padding-inline-end)';
+    const overlayClearanceTokenProperties = [
+      '--ui-code-copy-control-inline-size',
+      '--ui-code-copy-overlay-code-padding-inline-end-base',
+      '--ui-code-copy-overlay-inline-end-clearance',
+      '--ui-code-copy-overlay-code-padding-inline-end',
+    ] as const;
+
+    const codeBlockRootRecords = rootRuleRecordsForSelector(css, '[data-code-block-root]').filter(
+      (record) => record.selectors.length === 1,
+    );
+    const surfaceRootRecord = codeBlockRootRecords.find(
+      (record) =>
+        record.block.includes('position: relative') &&
+        record.block.includes('overflow: hidden') &&
+        record.block.includes('border:') &&
+        record.block.includes('background:') &&
+        record.block.includes('border-radius:'),
+    );
+    const layoutRootRecord = codeBlockRootRecords.find(
+      (record) =>
+        record.block.includes('inline-size:') || record.block.includes('margin-inline:'),
+    );
+    expect(surfaceRootRecord, 'code block surface root rule').toBeDefined();
+    expect(layoutRootRecord, 'code block layout root rule').toBeDefined();
+    if (surfaceRootRecord === undefined || layoutRootRecord === undefined) {
+      throw new Error('code block root rules are missing');
+    }
+
+    for (const property of overlayClearanceTokenProperties) {
+      expect(
+        declarationValuesForRuleRecord(surfaceRootRecord, property),
+        `${property} surface declaration`,
+      ).toHaveLength(1);
+      expect(
+        declarationValuesForRuleRecord(layoutRootRecord, property),
+        `${property} layout declaration`,
+      ).toEqual([]);
+    }
+
+    expect(
+      declarationValuesForRuleRecord(surfaceRootRecord, '--ui-code-copy-control-inline-size').map(
+        normalizeDeclarationValue,
+      ),
+    ).toEqual(['2rem']);
+    expect(
+      declarationValuesForSelector(staticCopyButton, '.static-copy-button', 'inline-size').map(
+        normalizeDeclarationValue,
+      ),
+    ).toEqual(['2rem']);
+    expect(
+      declarationValuesForRuleRecord(
+        surfaceRootRecord,
+        '--ui-code-copy-overlay-code-padding-inline-end-base',
+      ).map(normalizeDeclarationValue),
+    ).toEqual(['var(--space-3, 12px)']);
+    expect(
+      declarationValuesForRuleRecord(
+        surfaceRootRecord,
+        '--ui-code-copy-overlay-inline-end-clearance',
+      ).map(normalizeDeclarationValue),
+    ).toEqual([
+      'calc(var(--ui-code-copy-control-inline-rail) + var(--ui-code-copy-control-inline-size))',
+    ]);
+    expect(
+      declarationValuesForRuleRecord(
+        surfaceRootRecord,
+        '--ui-code-copy-overlay-code-padding-inline-end',
+      ).map(normalizeDeclarationValue),
+    ).toEqual([
+      'calc(var(--ui-code-copy-overlay-code-padding-inline-end-base) + var(--ui-code-copy-overlay-inline-end-clearance))',
+    ]);
+
+    for (const property of [
+      '--ui-code-copy-overlay-inline-end-clearance',
+      '--ui-code-copy-overlay-code-padding-inline-end',
+    ] as const) {
+      const normalizedValues = declarationValuesForRuleRecord(surfaceRootRecord, property).map(
+        normalizeDeclarationValue,
+      );
+      expect(
+        normalizedValues.join('\n'),
+        `${property} surface padding shorthand safety`,
+      ).not.toContain('--ui-code-surface-padding');
+      expect(
+        normalizedValues.join('\n'),
+        `${property} block padding shorthand safety`,
+      ).not.toContain('--ui-code-block-padding');
+    }
+
+    expect(
+      declarationsForSelectorInMedia(
+        css,
+        overlayClearanceSelector,
+        'padding-inline-end',
+        (params) => normalizeDeclarationValue(params) === 'not print',
+      ).map((declaration) => normalizeDeclarationValue(declaration.value)),
+    ).toEqual([overlayClearanceDeclarationValue]);
+
+    const overlayClearanceDeclarationLocations = declarationLocationsForPropertyValue(
+      css,
+      'padding-inline-end',
+      overlayClearanceDeclarationValue,
+    );
+    expect(overlayClearanceDeclarationLocations.length).toBeGreaterThan(0);
+    expect(
+      overlayClearanceDeclarationLocations.map((record) => ({
+        mediaParams: record.mediaParams,
+        selector: record.selector,
+      })),
+    ).toEqual([
+      {
+        mediaParams: ['not print'],
+        selector: normalizeAttributeQuoteStyle(normalizeSelector(overlayClearanceSelector)),
+      },
+    ]);
+
+    const requiredHasFragment = ':has(>.code-surface-caption>.code-surface-copy-button-shell)';
+    const requiredStandaloneFragment = ":not([data-code-group-owned='true'])";
+    for (const record of overlayClearanceDeclarationLocations) {
+      expect(record.mediaParams, `${record.selector} media scope`).toEqual(['not print']);
+      expect(record.selector, `${record.selector} overlay root`).toContain(
+        '[data-code-block-root].code-surface-root--overlay',
+      );
+      expect(record.selector, `${record.selector} copy shell gate`).toContain(requiredHasFragment);
+      expect(record.selector, `${record.selector} group-owned exclusion`).toContain(
+        requiredStandaloneFragment,
+      );
+      expect(record.selector, `${record.selector} code body target`).toContain(
+        '>pre[data-code-block]',
+      );
+    }
+
+    const overlayCaptionSelector =
+      '[data-code-block-root].code-surface-root--overlay > .code-surface-caption';
+    expect(
+      declarationValuesForSelector(css, overlayCaptionSelector, 'inset-inline-end').map(
+        normalizeDeclarationValue,
+      ),
+    ).toEqual(['var(--ui-code-copy-control-inline-rail, var(--space-2, 8px))']);
   });
 
   it('code surface CSS separates top-level breakout from inline and group-owned layouts', () => {

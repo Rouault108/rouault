@@ -51,6 +51,9 @@ code surfaceの正本は、旧Lit Custom Elementではなく静的HTMLです。
 - overlay copy controlのblock方向位置は`--ui-code-copy-overlay-block-start`で制御します。
 - Rouault既定token下では、overlay copy controlの中心を1行目code line box中心へ合わせます。glyphの濃色ピクセル中心へのpixel-perfect合わせは保証しません。
 - overlay copy controlは、keyboard focus outlineが欠けないblock-startクリアランスを保持します。
+- overlay copy button shellがfinal DOMに存在するstandalone code blockでは、横スクロール終端で末尾文字列がcopy button下に潜らないようにinline-end終端clearanceを予約します。
+- inline-end終端clearanceの適用条件は`:has(> .code-surface-caption > .code-surface-copy-button-shell)`で固定します。
+- copy buttonがないoverlay root、`data-code-group-owned='true'` root、filename / intent付きcaption layoutにはinline-end終端clearanceを適用しません。
 
 ### Shiki Theme Policy
 
@@ -208,13 +211,18 @@ CSSはfinal DOMの意味状態を再定義しません。CSS state contractとco
 - overlay配置のために上書きする場合は、単一長さ値を取る`--ui-code-copy-overlay-code-padding-block-start`、`--ui-code-copy-overlay-center-offset`、`--ui-code-copy-overlay-min-block-start`を使います。
 - `--ui-code-copy-overlay-center-offset: 0.375rem`はspacing tokenではなく、Rouault既定token下の2rem copy button、1rem code font-size、1.25 line-heightから導出したcode overlay専用の派生定数です。
 - code bodyのblock-start paddingを変更する場合は、overlay copy controlのline box中心合わせを維持するため、`--ui-code-copy-overlay-code-padding-block-start`も同時に更新します。
+- code body paddingを変更する場合は、overlay copy controlのblock-start位置tokenだけでなく、inline-end終端clearanceの基準値である`--ui-code-copy-overlay-code-padding-inline-end-base`も確認します。
 - `--ui-code-copy-overlay-block-start`はfocus outlineのblock-start clearanceを守る`max()`式を維持します。このため、line box中心一致の保証はRouault既定token下に限定します。
 - `--ui-code-copy-overlay-*`は、surface側`[data-code-block-root]`ruleに定義します。layout側ruleには定義しません。
+- overlay copy inline-end終端clearanceのための`--ui-code-copy-control-inline-size`、`--ui-code-copy-overlay-code-padding-inline-end-base`、`--ui-code-copy-overlay-inline-end-clearance`、`--ui-code-copy-overlay-code-padding-inline-end`は、surface側`[data-code-block-root]`ruleに定義します。layout側ruleには定義しません。
+- overlay clearance用の`padding-inline-end: var(--ui-code-copy-overlay-code-padding-inline-end)`宣言は`@media not print`配下に限定します。print表示には適用しません。
 - copy controlのinline-end位置は本文gutterではなく`--ui-code-copy-control-inline-rail`で制御します。
+- `--ui-code-copy-control-inline-rail`はcopy controlの配置railであり、code本文側のinline-end clearance全体ではありません。本文側clearanceはbase padding、配置rail、copy control寸法を合成したoverlay clearance tokenで制御します。
 - `--ui-code-copy-control-inline-rail`は単独code blockのsurface側`[data-code-block-root]`ruleと、code groupの`section[data-code-group]`base ruleに定義します。
 - layout側`[data-code-block-root]`ruleには`--ui-code-copy-control-inline-rail`を定義しません。
 - 通常captionは`padding-inline-start`で本文gutter、`padding-inline-end`でcopy control railを参照し、本文余白と補助control位置の責務を分離します。
 - overlay captionの`padding: 0` resetは維持してよいものとします。
+- `--ui-code-surface-padding`および`--ui-code-block-padding`のようなshorthand相当tokenを、overlay copy位置またはinline-end終端clearanceの`calc()`へ直接入れてはなりません。
 - root-levelの`.code-group-header-tools`は`padding-inline` shorthandではなく、`padding-inline-start` / `padding-inline-end`で定義します。
 - forced-colors / print media内の`.code-group-header-tools`ruleは、このcopy control rail変更の対象ではありません。
 - `--ui-code-copy-control-inline-rail`は既存の`--ui-code-copy-overlay-*`token群とは別のinline-end control railです。

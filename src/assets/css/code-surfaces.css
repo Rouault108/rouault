@@ -244,10 +244,19 @@
 
 [data-code-block-root] {
   --ui-code-copy-overlay-code-padding-block-start: var(--space-3, 12px);
+  --ui-code-copy-control-inline-size: 2rem;
+  --ui-code-copy-overlay-code-padding-inline-end-base: var(--space-3, 12px);
   /* Rouault既定token下で、2rem copy buttonの中心を1rem × 1.25 line-heightの1行目line box中心へ合わせる。 */
   --ui-code-copy-overlay-center-offset: 0.375rem;
   --ui-code-copy-overlay-min-block-start: var(--space-1, 4px);
   --ui-code-copy-control-inline-rail: var(--space-2, 8px);
+  --ui-code-copy-overlay-inline-end-clearance: calc(
+    var(--ui-code-copy-control-inline-rail) + var(--ui-code-copy-control-inline-size)
+  );
+  --ui-code-copy-overlay-code-padding-inline-end: calc(
+    var(--ui-code-copy-overlay-code-padding-inline-end-base) +
+      var(--ui-code-copy-overlay-inline-end-clearance)
+  );
   /* overlay位置は単一長さ値tokenだけで計算し、padding shorthand依存を避ける。
    * focus outlineが欠けないよう最小block-startも保持する。 */
   --ui-code-copy-overlay-block-start: max(
@@ -414,6 +423,15 @@ section[data-code-group][data-code-group-enhanced='true']:focus-within
   .code-group-header-tools > .static-copy-button,
   .code-group-tablist > button[data-code-group-tab] {
     transition-duration: var(--duration-instant, 0ms);
+  }
+}
+
+@media not print {
+  [data-code-block-root].code-surface-root--overlay:not([data-code-group-owned='true']):has(
+      > .code-surface-caption > .code-surface-copy-button-shell
+    )
+    > pre[data-code-block] {
+    padding-inline-end: var(--ui-code-copy-overlay-code-padding-inline-end);
   }
 }
 
