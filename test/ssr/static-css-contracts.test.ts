@@ -1737,10 +1737,23 @@ describe('static CSS contracts', () => {
     expect(declarationValuesForSelector(tokensCss, ':root', '--line-height-tight')).toContain(
       '1.25',
     );
-    expect(declarationValuesForSelector(tokensCss, ':root', '--line-height-code')).toContain(
-      'var(--line-height-tight)',
+    expect(declarationValuesForSelector(tokensCss, ':root', '--line-height-snug')).toContain(
+      '1.35',
     );
-    expect(declarationValuesForSelector(tokensCss, ':root', '--line-height-code')).not.toContain(
+    const lineHeightCodeValues = declarationValuesForSelector(
+      tokensCss,
+      ':root',
+      '--line-height-code',
+    ).map(normalizeDeclarationValue);
+    expect(lineHeightCodeValues).toContain('var(--line-height-snug)');
+    expect(lineHeightCodeValues).not.toContain('var(--line-height-tight)');
+    expect(lineHeightCodeValues).not.toContain('1.35');
+    for (const value of lineHeightCodeValues) {
+      expect(value, '--line-height-code must remain a token alias').not.toMatch(
+        /^(?:\d+(?:\.\d+)?|\.\d+)$/u,
+      );
+    }
+    expect(lineHeightCodeValues).not.toContain(
       '1',
     );
 
@@ -1940,7 +1953,7 @@ describe('static CSS contracts', () => {
         '--ui-code-block-padding',
       );
     }
-    expect(overlayCenterOffsetValue).toBe('0.375rem');
+    expect(overlayCenterOffsetValue).toBe('0.325rem');
     expect(overlayCenterOffsetValue).not.toBe('var(--space-2, 8px)');
     expect(overlayBlockStartValue).toContain('max(var(--ui-code-copy-overlay-min-block-start)');
     expect(overlayBlockStartValue).toContain(

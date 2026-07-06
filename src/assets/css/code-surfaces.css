@@ -246,8 +246,8 @@
   --ui-code-copy-overlay-code-padding-block-start: var(--space-3, 12px);
   --ui-code-copy-control-inline-size: 2rem;
   --ui-code-copy-overlay-code-padding-inline-end-base: var(--space-3, 12px);
-  /* Rouault既定token下で、2rem copy buttonの中心を1rem × 1.25 line-heightの1行目line box中心へ合わせる。 */
-  --ui-code-copy-overlay-center-offset: 0.375rem;
+  /* Rouault既定token下で、2rem copy buttonの中心を1rem × 1.35 line-heightの1行目line box中心へ合わせる。 */
+  --ui-code-copy-overlay-center-offset: 0.325rem;
   --ui-code-copy-overlay-min-block-start: var(--space-1, 4px);
   --ui-code-copy-control-inline-rail: var(--space-2, 8px);
   --ui-code-copy-overlay-inline-end-clearance: calc(

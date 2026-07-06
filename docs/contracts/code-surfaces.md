@@ -84,7 +84,8 @@ Shikiやbase themeの更新で置換元色が対象token foregroundとして出�
 読書中のcode blockは本文より強く前景化しない行間を使います。
 
 - `--line-height-tight: 1.25`を維持します。
-- `--line-height-code`は`var(--line-height-tight)`を参照します。
+- `--line-height-snug: 1.35`を維持します。
+- `--line-height-code`は`var(--line-height-snug)`を参照します。
 - `code-surfaces.css`のcode body ruleは`line-height: var(--line-height-code, 1.35)`を維持します。
 - code blockのフォントサイズ、フォントファミリー、背景、枠線、角丸はこの契約では変更しません。
 
@@ -211,7 +212,7 @@ CSSはfinal DOMの意味状態を再定義しません。CSS state contractとco
 - code typography、copy control寸法、code body padding、focus outline / offsetを変更する場合は、overlay copy位置tokenとCSS契約テストを同時に更新します。
 - `--ui-code-surface-padding`および`--ui-code-block-padding`のようなshorthand相当tokenを、overlay copy位置の`calc()`へ直接入れてはなりません。
 - overlay配置のために上書きする場合は、単一長さ値を取る`--ui-code-copy-overlay-code-padding-block-start`、`--ui-code-copy-overlay-center-offset`、`--ui-code-copy-overlay-min-block-start`を使います。
-- `--ui-code-copy-overlay-center-offset: 0.375rem`はspacing tokenではなく、Rouault既定token下の2rem copy button、1rem code font-size、1.25 line-heightから導出したcode overlay専用の派生定数です。
+- `--ui-code-copy-overlay-center-offset: 0.325rem`はspacing tokenではなく、Rouault既定token下の2rem copy button、1rem code font-size、1.35 line-heightから導出したcode overlay専用の派生定数です。
 - code bodyのblock-start paddingを変更する場合は、overlay copy controlのline box中心合わせを維持するため、`--ui-code-copy-overlay-code-padding-block-start`も同時に更新します。
 - code body paddingを変更する場合は、overlay copy controlのblock-start位置tokenだけでなく、inline-end終端clearanceの基準値である`--ui-code-copy-overlay-code-padding-inline-end-base`も確認します。
 - `--ui-code-copy-overlay-block-start`はfocus outlineのblock-start clearanceを守る`max()`式を維持します。このため、line box中心一致の保証はRouault既定token下に限定します。
