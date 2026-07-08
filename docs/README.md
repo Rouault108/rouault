@@ -17,6 +17,7 @@
 - `docs/contracts/code-surfaces.md`
 - `docs/contracts/sidebar-state.md`
 - `docs/contracts/note-navigation.md`
+- `docs/contracts/note-metadata.md`
 - `docs/contracts/reading-chrome.md`
 - `docs/contracts/static-header-contract.md`
 - `docs/contracts/static-choice-menu.md`

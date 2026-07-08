@@ -11,8 +11,25 @@
 ## Frontmatter
 
 - `title`はpage titleとして扱われる。
-- 更新日などのmetadataは表示・検索・archive hashの契約と衝突しない範囲で使う。
+- `date`は公開日または作成相当日として扱われる。
+- `updated`はreader-facingかつ公開対象noteの読者向け公開更新日として扱われる。
+- 通常は`pnpm notes:stamp-updated`で`updated`を更新する。
+- 現在日以外にしたい場合は`pnpm notes:stamp-updated --date YYYY-MM-DD`を使う。
+- build時に`updated`は暗黙補完されない。
+- 更新日などのmetadataは表示・検索・archive hashの契約と衝突しない範囲で使う。詳細は`docs/contracts/note-metadata.md`を参照する。
 - 表示labelをURLやslugの代わりに使わない。
+
+### Updated Stamp
+
+`pnpm notes:stamp-updated`はMarkdown sourceを書き換えるauthoring commandであり、自動で`git add`しない。commitに含める場合は、stamp後に対象fileを確認し、必要に応じて`git add`する。
+
+draft、testing、demo、fixtureは対象外である。`status: archived`、`status: wip`、`status: deprecated`はdraftではないため対象候補である。deleted fileはstamp/check対象外である。untracked fileは既定対象外であり、対象にしたい場合は先に`git add`する。
+
+renamed content noteはpost-change stateでreader/publicならreader-facing変更として扱う。`kind`変更はpublication-facing metadata変更である。`excludeFromPublicationSurfaces`変更もpublication-facing metadata変更である。
+
+`--check`は今日の日付であることではなく、同一diff内で`updated`が更新されていることを確認する。Phase1の`--check`はworkspace差分検査であり、staged-only commit検査ではない。
+
+`updated`のみの変更と`date`のみの変更は、updated変更要求の対象外である。
 
 ## Directory Index
 

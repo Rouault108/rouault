@@ -15,6 +15,7 @@
     "codegen:ui-check-cases": "node --import tsx tools/ui-check/codegen-ui-check-cases.ts",
     "codegen:content": "pnpm exec velite build --config velite.config.ts --silent",
     "generate:icons": "pnpm run codegen:icons",
+    "notes:stamp-updated": "pnpm exec tsx scripts/stamp-note-updated.ts",
     "codegen:manifest": "pnpm run codegen:icons && pnpm exec tsx scripts/generate-custom-elements-manifest.ts",
     "analyze": "pnpm run codegen:manifest",
     "lint": "pnpm run codegen:icons && pnpm exec eslint .",

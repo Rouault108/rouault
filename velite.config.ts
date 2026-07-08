@@ -132,7 +132,14 @@ const notes = defineCollection({
         );
       }
 
-      validateNoteMetadataContracts(kind, chromeProfile, testingArea, sourcePath);
+      validateNoteMetadataContracts({
+        kind,
+        chromeProfile,
+        testingArea,
+        date: data.date,
+        updated: data.updated,
+        sourceLabel: sourcePath,
+      });
       validateNoteContentContracts({
         kind,
         html: normalizedContent,

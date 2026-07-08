@@ -44,9 +44,13 @@ describe('velite config', () => {
     expect(source).toContain('namespace: sourcePath');
     expect(source).toContain('const normalizedContent = annotateGeneratedPageHtmlLinkContracts({');
     expect(source).toContain('html: normalizedStaticContent');
-    expect(source).toContain(
-      'validateNoteMetadataContracts(kind, chromeProfile, testingArea, sourcePath);',
-    );
+    expect(source).toContain('validateNoteMetadataContracts({');
+    expect(source).toContain('kind,');
+    expect(source).toContain('chromeProfile,');
+    expect(source).toContain('testingArea,');
+    expect(source).toContain('date: data.date,');
+    expect(source).toContain('updated: data.updated,');
+    expect(source).toContain('sourceLabel: sourcePath,');
     expect(source).toContain('validateNoteContentContracts({');
     expect(source).toContain('html: normalizedContent');
     expect(source).toContain('sourceLabel: sourcePath');
@@ -132,5 +136,29 @@ describe('velite config', () => {
     const source = readFileSync(configPath, 'utf8');
 
     expect(source).toContain('copyLinkedFiles: false,');
+  });
+
+  it('updated stamp契約のため、metadata validatorへobject引数でdate/updatedを渡すこと', () => {
+    const configPath = new URL('../../velite.config.ts', import.meta.url);
+    const source = readFileSync(configPath, 'utf8');
+
+    expect(source).toContain('validateNoteMetadataContracts({');
+    expect(source).toContain('date: data.date,');
+    expect(source).toContain('updated: data.updated,');
+    expect(source).not.toContain(
+      'validateNoteMetadataContracts(kind, chromeProfile, testingArea, sourcePath);',
+    );
+  });
+
+  it('updated stamp契約ではVelite schema変更やbuild時補完を行わないこと', () => {
+    const configPath = new URL('../../velite.config.ts', import.meta.url);
+    const source = readFileSync(configPath, 'utf8');
+
+    expect(source).toContain('date: s.isodate().optional(),');
+    expect(source).toContain('updated: s.isodate().optional(),');
+    expect(source).not.toContain('updated: s.isodate(),');
+    expect(source).not.toContain('updated: data.updated ??');
+    expect(source).not.toContain('updated: data.updated ||');
+    expect(source).not.toContain('new Date()');
   });
 });
