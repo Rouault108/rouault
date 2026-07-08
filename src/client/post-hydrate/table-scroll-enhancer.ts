@@ -69,8 +69,7 @@ const removeRail = (state: TableScrollState, root: HTMLElement): void => {
 };
 
 const resolveTableRailLabel = (root: HTMLElement): string => {
-  const captionText =
-    getOwnedTable(root)?.caption?.textContent?.replace(/\s+/gu, ' ').trim() ?? '';
+  const captionText = getOwnedTable(root)?.caption?.textContent.replace(/\s+/gu, ' ').trim() ?? '';
 
   return captionText ? `${captionText}の横スクロール補助` : TABLE_RAIL_FALLBACK_LABEL;
 };
