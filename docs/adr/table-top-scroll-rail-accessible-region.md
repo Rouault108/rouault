@@ -16,13 +16,32 @@ Markdown static table surfaceは`data-table-root`を横スクロール可能なs
 
 ## Decision
 
-横溢れしている`[data-table-root]`の直前に、runtime enhancementとして`[data-table-scroll-rail]`を追加する。railはnative overflow scroll containerであり、非semanticな飾りではなくaccessible auxiliary scroll regionとして扱う。
+横溢れしており、top rail eligibilityを満たす`[data-table-root]`の直前に、runtime enhancementとして`[data-table-scroll-rail]`を追加する。railはnative overflow scroll containerであり、非semanticな飾りではなくaccessible auxiliary scroll regionとして扱う。
 
 railは`role="region"`、accessible name、`tabindex="0"`を持ち、`aria-controls`で対応するtable rootの`id`を参照する。captionあり表ではcaption text由来のaccessible nameを使い、captionなし表または正規化後に空文字のcaptionでは「直後の表の横スクロール補助」を使う。
 
 rootに既存`id`がある場合は上書きしない。rootに`id`がない場合はruntimeで一意な`id`を付与する。runtime生成`id`はabort時、overflow解消時、rail削除時のいずれでも削除しない。これは、再overflow化や別signalでの再enhance時に`aria-controls`の参照先を安定させるためである。
 
 coarse pointer環境ではrailを表示しない。PCマウス向けの補助UIをtouch操作面へ持ち込まず、視覚・Tab順序上のノイズにしないためである。
+
+## Amendment: Eligible-only Rail Generation
+
+- Decision ID: D-TABLE-TOP-RAIL-ELIGIBLE-ONLY-001
+- Request ID: REQ-TABLE-TOP-RAIL-ELIGIBLE-ONLY-001
+- Decision Record: DR-TABLE-TOP-RAIL-ELIGIBLE-ONLY-001
+- Breaking Change Gate: G-TABLE-TOP-RAIL-ELIGIBLE-ONLY-001
+
+初期eligibilityは、`data-table-root`直下のowned tableのDOM総行数が16行以上、または対象rootの`clientHeight`が640px以上の場合に満たす。owned tableがない`data-table-root`は、root自体の高さが閾値を満たしていてもeligibleにしない。
+
+eligibilityを満たさない横溢れ表ではtop railを生成しない。この場合、`data-table-root`本体のnative horizontal scrollbarとedge fadeを横スクロール可能性の正本にし、rail生成目的のruntime id付与は行わない。既存idおよび過去生成済みruntime idは削除しない。
+
+runtime cleanupは対象root直前に限定し、対象root直前のstale adjacent railを除去する。document全体の`data-table-scroll-rail`を一括削除したり、他のtable rootに対応するrailを削除したりしない。
+
+eligible overflow時にも、対応railは対象root直前の1つへ正規化する。stateに保持された接続済みrailがroot直前から外れている場合はroot直前へ再配置する。
+
+active rail要素が切り替わる場合は、旧railのscroll listenerを解除し、新active railへscroll listenerを再束縛する。spacer参照もactive rail直下の要素として再取得または再作成する。
+
+state.railに紐づかないroot直前の既存railはactive railとして採用しない。未知railに付いている可能性のある旧listener ownershipを引き継がず、stale railとして削除する。
 
 ## Rationale
 
@@ -46,4 +65,6 @@ Phase1の`data-overflow`、`data-fade-left`、`data-fade-right`は引き続きru
 
 ## Breaking Change Gate
 
-non-breaking additive change。Markdown authoring API、`column-widths`構文、SSR table出力構造、routing、URL契約は変更しない。
+G-TABLE-TOP-RAIL-ELIGIBLE-ONLY-001は通過可とする。Markdown authoring API、`column-widths`構文、SSR table出力構造、routing、URL契約は変更しない。
+
+ただし、eligibilityを満たさない横溢れ表ではruntime DOM、Tab順序、`role="region"`露出、rail用`aria-controls`生成条件が変わるため、単なるnon-breaking additive changeとして扱わない。eligible overflow表では既存のARIA、Tab順序、scroll同期、runtime idを削除しない契約を維持する。

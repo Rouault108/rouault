@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 const wideTableNotePath = '/notes/library/collection/%E5%B2%A9%E6%B3%A2%E6%96%87%E5%BA%AB/';
 
 test.describe('Accessible top scroll rail', () => {
-  test('fine pointer 相当では実 Tab 順序で rail に到達し、次の focusable へ進めること', async ({
+  test('eligible long overflow table では実 Tab 順序で rail に到達し、隣接 root を制御すること', async ({
     page,
     browserName,
   }) => {
@@ -15,18 +15,20 @@ test.describe('Accessible top scroll rail', () => {
     await page.setViewportSize({ width: 900, height: 900 });
     await page.goto(wideTableNotePath);
 
-    const root = page.locator('[data-table-root]').first();
     const rail = page.locator('[data-table-scroll-rail]').first();
+    const root = page.locator('[data-table-scroll-rail] + [data-table-root]').first();
 
     await expect(root).toBeVisible();
     await expect(rail).toBeVisible();
     await expect(rail).toHaveAttribute('role', 'region');
     await expect(rail).toHaveAttribute('tabindex', '0');
-    await expect(rail).toHaveAttribute('aria-controls', /.+/u);
+    await expect(root).toHaveAttribute('id', /.+/u);
+    const rootId = await root.getAttribute('id');
+    expect(rootId).not.toBeNull();
+    await expect(rail).toHaveAttribute('aria-controls', rootId as string);
     await expect(rail).not.toHaveAttribute('aria-hidden', 'true');
 
-    const inserted = await page.evaluate(() => {
-      const railElement = document.querySelector('[data-table-scroll-rail]');
+    const inserted = await rail.evaluate((railElement) => {
       const rootElement = railElement?.nextElementSibling;
 
       if (

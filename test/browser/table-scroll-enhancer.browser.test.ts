@@ -13,11 +13,13 @@ const createTableFixture = ({
   tableWidth = 360,
   caption,
   rootId,
+  rowCount = 1,
 }: {
   readonly rootWidth?: number;
   readonly tableWidth?: number;
   readonly caption?: string;
   readonly rootId?: string;
+  readonly rowCount?: number;
 } = {}): HTMLElement => {
   const root = document.createElement('div');
   root.dataset['tableRoot'] = 'true';
@@ -27,15 +29,20 @@ const createTableFixture = ({
   root.tabIndex = 0;
   root.style.inlineSize = `${rootWidth}px`;
   root.style.overflowX = 'auto';
+  const rows = Array.from({ length: rowCount }, (_, index) => {
+    const label = (index + 1).toString();
+    return `
+        <tr>
+          <td>Alpha ${label}</td>
+          <td>Beta ${label}</td>
+          <td>Gamma ${label}</td>
+        </tr>`;
+  }).join('');
   root.innerHTML = `
     <table style="inline-size: ${tableWidth}px; min-inline-size: ${tableWidth}px;">
       ${caption === undefined ? '' : `<caption>${caption}</caption>`}
       <tbody>
-        <tr>
-          <td>Alpha</td>
-          <td>Beta</td>
-          <td>Gamma</td>
-        </tr>
+${rows}
       </tbody>
     </table>
   `;
@@ -43,10 +50,26 @@ const createTableFixture = ({
   return root;
 };
 
+const createEligibleTableFixture = (
+  options: Parameters<typeof createTableFixture>[0] = {},
+): HTMLElement => {
+  return createTableFixture({ rowCount: 16, ...options });
+};
+
+const getOwnedTableInFixture = (root: HTMLElement): HTMLTableElement | null => {
+  return root.querySelector<HTMLTableElement>(':scope > table');
+};
+
 const getRail = (root: HTMLElement): HTMLElement | null => {
   const rail = root.previousElementSibling;
 
   return rail instanceof HTMLElement && rail.matches('[data-table-scroll-rail]') ? rail : null;
+};
+
+const createStaleRail = (): HTMLElement => {
+  const rail = document.createElement('div');
+  rail.dataset['tableScrollRail'] = 'true';
+  return rail;
 };
 
 const makeRailScrollableInFixture = (root: HTMLElement): HTMLElement | null => {
@@ -118,7 +141,7 @@ describe('table-scroll-enhancer non-overflow / overflow解消', () => {
 
   it('overflow解消時に state をすべて削除すること', async () => {
     const root = createTableFixture();
-    const table = root.querySelector<HTMLTableElement>('table');
+    const table = getOwnedTableInFixture(root);
 
     enhanceTableScroll(root);
     await nextFrame();
@@ -206,7 +229,7 @@ describe('table-scroll-enhancer targeting / DOM contract', () => {
   });
 
   it('rail を table root 内や semantic table subtree へ追加しないこと', async () => {
-    const root = createTableFixture();
+    const root = createEligibleTableFixture();
     const before = root.querySelectorAll('*').length;
 
     enhanceTableScroll(root);
@@ -223,8 +246,8 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
     document.body.replaceChildren();
   });
 
-  it('overflow 表で rail を生成し、non-overflow 表では生成しないこと', async () => {
-    const overflowRoot = createTableFixture();
+  it('eligible overflow 表で rail を生成し、non-overflow 表では生成しないこと', async () => {
+    const overflowRoot = createEligibleTableFixture();
     const nonOverflowRoot = createTableFixture({ rootWidth: 360, tableWidth: 120 });
 
     enhanceTableScroll(overflowRoot);
@@ -235,9 +258,315 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
     expect(getRail(nonOverflowRoot)).to.equal(null);
   });
 
+  it('eligibility なし overflow 表では rail を生成せず overflow / fade state を維持し runtime id も生成しないこと', async () => {
+    const root = createTableFixture();
+
+    enhanceTableScroll(root);
+    await nextFrame();
+
+    expect(getRail(root)).to.equal(null);
+    expect(root.id).to.equal('');
+    expect(root.dataset['overflow']).to.equal('true');
+    expect(root.dataset['fadeRight']).to.equal('true');
+    expect(root.dataset['fadeLeft']).to.equal(undefined);
+  });
+
+  it('rowCount 境界では 15 行は rail なし、16 行は rail ありにすること', async () => {
+    const shortRoot = createTableFixture({ rowCount: 15 });
+    const eligibleRoot = createTableFixture({ rowCount: 16 });
+
+    expect(shortRoot.clientHeight).to.be.lessThan(640);
+
+    enhanceTableScroll(document.body);
+    await nextFrame();
+
+    expect(getRail(shortRoot)).to.equal(null);
+    expect(getRail(eligibleRoot)).to.not.equal(null);
+  });
+
+  it('clientHeight 境界では短表でも 640px 以上なら rail を生成すること', async () => {
+    const root = createTableFixture();
+    root.style.blockSize = '640px';
+
+    expect(root.clientHeight).to.be.at.least(640);
+
+    enhanceTableScroll(root);
+    await nextFrame();
+
+    expect(getRail(root)).to.not.equal(null);
+  });
+
+  it('owned table がない data-table-root は高さ条件だけでは eligible にしないこと', async () => {
+    const root = document.createElement('div');
+    root.dataset['tableRoot'] = 'true';
+    root.tabIndex = 0;
+    root.style.inlineSize = '120px';
+    root.style.blockSize = '640px';
+    root.style.overflowX = 'auto';
+    const inner = document.createElement('div');
+    inner.style.inlineSize = '360px';
+    inner.style.blockSize = '1px';
+    root.append(inner);
+    document.body.append(root);
+
+    expect(root.clientHeight).to.be.at.least(640);
+
+    enhanceTableScroll(root);
+    await nextFrame();
+
+    expect(root.dataset['overflow']).to.equal('true');
+    expect(getRail(root)).to.equal(null);
+  });
+
+  it('owned table がない data-table-root は descendant table の行数だけでは eligible にしないこと', async () => {
+    const root = document.createElement('div');
+    root.dataset['tableRoot'] = 'true';
+    root.tabIndex = 0;
+    root.style.inlineSize = '120px';
+    root.style.overflowX = 'auto';
+    const inner = document.createElement('div');
+    inner.style.inlineSize = '360px';
+    inner.innerHTML = `
+      <table style="inline-size: 360px; min-inline-size: 360px;">
+        <tbody>
+          ${Array.from({ length: 16 }, () => '<tr><td>Descendant</td></tr>').join('')}
+        </tbody>
+      </table>
+    `;
+    root.append(inner);
+    document.body.append(root);
+
+    enhanceTableScroll(root);
+    await nextFrame();
+
+    expect(root.dataset['overflow']).to.equal('true');
+    expect(root.id).to.equal('');
+    expect(getRail(root)).to.equal(null);
+  });
+
+  it('nested table の行数や caption を owned table として扱わないこと', async () => {
+    const root = createTableFixture();
+    const table = getOwnedTableInFixture(root);
+    const firstCell = table?.rows.item(0)?.cells.item(0);
+    if (firstCell) {
+      firstCell.innerHTML = `
+        <table>
+          <caption>入れ子表</caption>
+          <tbody>
+            ${Array.from({ length: 16 }, () => '<tr><td>Nested</td></tr>').join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    enhanceTableScroll(root);
+    await nextFrame();
+
+    expect(getRail(root)).to.equal(null);
+    expect(root.id).to.equal('');
+  });
+
+  it('short overflow / non-overflow / AbortSignal 解除時に root 直前の stale rail を削除すること', async () => {
+    const shortRoot = createTableFixture();
+    const shortStaleA = createStaleRail();
+    const shortStaleB = createStaleRail();
+    shortRoot.before(shortStaleA, shortStaleB);
+
+    enhanceTableScroll(shortRoot);
+    await nextFrame();
+
+    expect(shortStaleA.isConnected).to.equal(false);
+    expect(shortStaleB.isConnected).to.equal(false);
+    expect(getRail(shortRoot)).to.equal(null);
+
+    const nonOverflowRoot = createTableFixture({ rootWidth: 360, tableWidth: 120 });
+    const nonOverflowStale = createStaleRail();
+    nonOverflowRoot.before(nonOverflowStale);
+
+    enhanceTableScroll(nonOverflowRoot);
+    await nextFrame();
+
+    expect(nonOverflowStale.isConnected).to.equal(false);
+    expect(getRail(nonOverflowRoot)).to.equal(null);
+
+    const eligibleRoot = createEligibleTableFixture();
+    const controller = new AbortController();
+    enhanceTableScroll(eligibleRoot, controller.signal);
+    await nextFrame();
+    const activeRail = getRail(eligibleRoot);
+    const abortStale = createStaleRail();
+    eligibleRoot.before(abortStale);
+
+    controller.abort();
+    await nextFrame();
+
+    expect(activeRail?.isConnected).to.equal(false);
+    expect(abortStale.isConnected).to.equal(false);
+    expect(getRail(eligibleRoot)).to.equal(null);
+  });
+
+  it('eligible overflow 更新時に root 直前の連続 stale rail を 1 つの active rail へ正規化すること', async () => {
+    const root = createEligibleTableFixture();
+    const staleA = createStaleRail();
+    const staleB = createStaleRail();
+    root.before(staleA, staleB);
+
+    enhanceTableScroll(root);
+    await nextFrame();
+
+    const rail = getRail(root);
+    expect(rail).to.not.equal(null);
+    expect(staleA.isConnected).to.equal(false);
+    expect(staleB.isConnected).to.equal(false);
+    expect(document.body.querySelectorAll('[data-table-scroll-rail]').length).to.equal(1);
+  });
+
+  it('state.rail が接続済みで root 直前から外れている場合は eligible 更新で戻すこと', async () => {
+    const root = createEligibleTableFixture();
+
+    enhanceTableScroll(root);
+    await nextFrame();
+    const rail = getRail(root);
+    expect(rail).to.not.equal(null);
+
+    if (rail) {
+      document.body.append(rail);
+    }
+    expect(getRail(root)).to.equal(null);
+
+    root.dispatchEvent(new Event('scroll'));
+    await nextFrame();
+
+    expect(getRail(root)).to.equal(rail);
+  });
+
+  it('state.rail が未接続の場合は root 直前の未知 rail を採用せず新規 rail に listener を束縛すること', async () => {
+    const root = createEligibleTableFixture();
+
+    enhanceTableScroll(root);
+    await nextFrame();
+    const originalRail = getRail(root);
+    originalRail?.remove();
+
+    const unknownRail = createStaleRail();
+    root.before(unknownRail);
+
+    root.dispatchEvent(new Event('scroll'));
+    await nextFrame();
+    const newRail = makeRailScrollableInFixture(root);
+
+    expect(newRail).to.not.equal(null);
+    expect(newRail).to.not.equal(originalRail);
+    expect(newRail).to.not.equal(unknownRail);
+    expect(unknownRail.isConnected).to.equal(false);
+
+    if (newRail) {
+      newRail.scrollLeft = 150;
+      newRail.dispatchEvent(new Event('scroll'));
+    }
+    expect(root.scrollLeft).to.equal(150);
+  });
+
+  it('state.rail が未接続の場合は eligible 更新で新規 rail を作り直し scroll 同期を復旧すること', async () => {
+    const root = createEligibleTableFixture();
+
+    enhanceTableScroll(root);
+    await nextFrame();
+    const originalRail = getRail(root);
+    originalRail?.remove();
+
+    root.dispatchEvent(new Event('scroll'));
+    await nextFrame();
+    const newRail = makeRailScrollableInFixture(root);
+
+    expect(newRail).to.not.equal(null);
+    expect(newRail).to.not.equal(originalRail);
+
+    if (newRail) {
+      newRail.scrollLeft = 130;
+      newRail.dispatchEvent(new Event('scroll'));
+    }
+    expect(root.scrollLeft).to.equal(130);
+  });
+
+  it('active rail が同一でも spacer が不正なら active rail 直下で再取得または再作成すること', async () => {
+    const root = createEligibleTableFixture();
+
+    enhanceTableScroll(root);
+    await nextFrame();
+    const rail = getRail(root);
+    expect(rail).to.not.equal(null);
+
+    const firstSpacer = rail?.querySelector<HTMLElement>(':scope > [data-table-scroll-rail-spacer]');
+    firstSpacer?.remove();
+    root.dispatchEvent(new Event('scroll'));
+    await nextFrame();
+    const recreatedSpacer = rail?.querySelector<HTMLElement>(
+      ':scope > [data-table-scroll-rail-spacer]',
+    );
+
+    expect(recreatedSpacer).to.not.equal(null);
+    expect(recreatedSpacer).to.not.equal(firstSpacer);
+
+    const otherRail = createStaleRail();
+    document.body.append(otherRail);
+    if (recreatedSpacer) {
+      otherRail.append(recreatedSpacer);
+    }
+    root.dispatchEvent(new Event('scroll'));
+    await nextFrame();
+    const reparentedReplacement = rail?.querySelector<HTMLElement>(
+      ':scope > [data-table-scroll-rail-spacer]',
+    );
+
+    expect(reparentedReplacement).to.not.equal(null);
+    expect(reparentedReplacement).to.not.equal(recreatedSpacer);
+
+    rail?.replaceChildren();
+    root.dispatchEvent(new Event('scroll'));
+    await nextFrame();
+
+    expect(rail?.querySelector(':scope > [data-table-scroll-rail-spacer]')).to.not.equal(null);
+  });
+
+  it('eligible overflow から short overflow へ変化した場合は rail だけ削除し id と overflow state を維持すること', async () => {
+    const root = createEligibleTableFixture();
+    const table = getOwnedTableInFixture(root);
+
+    enhanceTableScroll(root);
+    await nextFrame();
+    const generatedId = root.id;
+    expect(getRail(root)).to.not.equal(null);
+
+    while (table && table.rows.length > 1) {
+      table.deleteRow(1);
+    }
+    root.dispatchEvent(new Event('scroll'));
+    await nextFrame();
+
+    expect(getRail(root)).to.equal(null);
+    expect(root.id).to.equal(generatedId);
+    expect(root.dataset['overflow']).to.equal('true');
+    expect(root.dataset['fadeRight']).to.equal('true');
+  });
+
+  it('caption label 解決では直下 table の caption だけを使い nested caption を拾わないこと', async () => {
+    const root = createEligibleTableFixture();
+    const table = getOwnedTableInFixture(root);
+    const firstCell = table?.rows.item(0)?.cells.item(0);
+    if (firstCell) {
+      firstCell.innerHTML = '<table><caption>入れ子 caption</caption><tbody><tr><td>N</td></tr></tbody></table>';
+    }
+
+    enhanceTableScroll(root);
+    await nextFrame();
+
+    expect(getRail(root)?.getAttribute('aria-label')).to.equal('直後の表の横スクロール補助');
+  });
+
   it('初期 non-overflow から overflow 化した場合に rail を生成すること', async () => {
-    const root = createTableFixture({ rootWidth: 360, tableWidth: 120 });
-    const table = root.querySelector<HTMLTableElement>('table');
+    const root = createEligibleTableFixture({ rootWidth: 360, tableWidth: 120 });
+    const table = getOwnedTableInFixture(root);
 
     enhanceTableScroll(root);
     await nextFrame();
@@ -255,8 +584,8 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
   });
 
   it('初期 overflow から overflow 解消時に rail を削除し、再 overflow 化で同じ id を参照すること', async () => {
-    const root = createTableFixture();
-    const table = root.querySelector<HTMLTableElement>('table');
+    const root = createEligibleTableFixture();
+    const table = getOwnedTableInFixture(root);
 
     enhanceTableScroll(root);
     await nextFrame();
@@ -286,7 +615,7 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
   });
 
   it('root scroll と rail scroll を別々の値で双方向同期すること', async () => {
-    const root = createTableFixture();
+    const root = createEligibleTableFixture();
 
     enhanceTableScroll(root);
     await nextFrame();
@@ -305,7 +634,7 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
   });
 
   it('scroll 同期が scroll event の明確な無限ループを起こさないこと', async () => {
-    const root = createTableFixture();
+    const root = createEligibleTableFixture();
     let rootScrollCount = 0;
     let railScrollCount = 0;
 
@@ -333,7 +662,7 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
   });
 
   it('複数回 enhance しても rail を重複生成しないこと', async () => {
-    const root = createTableFixture();
+    const root = createEligibleTableFixture();
 
     enhanceTableScroll(root);
     enhanceTableScroll(root);
@@ -344,7 +673,7 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
   });
 
   it('AbortSignal 解除で rail を削除し、abort 済み signal では生成しないこと', async () => {
-    const root = createTableFixture();
+    const root = createEligibleTableFixture();
     const first = new AbortController();
 
     enhanceTableScroll(root, first.signal);
@@ -363,7 +692,7 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
   });
 
   it('AbortSignal 解除後に別 signal で再 enhance でき、scroll 同期も復旧すること', async () => {
-    const root = createTableFixture();
+    const root = createEligibleTableFixture();
     const first = new AbortController();
     const second = new AbortController();
 
@@ -393,7 +722,7 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
   });
 
   it('accessible region 属性、caption 由来 name、aria-controls、tabindex を持つこと', async () => {
-    const root = createTableFixture({
+    const root = createEligibleTableFixture({
       caption: '  岩波\n  文庫\t一覧  ',
       rootId: 'existing-table-root',
     });
@@ -411,7 +740,7 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
   });
 
   it('caption なし表では fallback accessible name を使うこと', async () => {
-    const root = createTableFixture();
+    const root = createEligibleTableFixture();
 
     enhanceTableScroll(root);
     await nextFrame();
@@ -420,7 +749,7 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
   });
 
   it('caption 正規化後に空文字の場合は fallback accessible name を使うこと', async () => {
-    const root = createTableFixture({ caption: ' \n\t ' });
+    const root = createEligibleTableFixture({ caption: ' \n\t ' });
 
     enhanceTableScroll(root);
     await nextFrame();
@@ -429,8 +758,8 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
   });
 
   it('root に id がない場合は重複しない runtime id を付与すること', async () => {
-    const firstRoot = createTableFixture();
-    const secondRoot = createTableFixture();
+    const firstRoot = createEligibleTableFixture();
+    const secondRoot = createEligibleTableFixture();
 
     enhanceTableScroll(document.body);
     await nextFrame();
@@ -443,7 +772,7 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
   });
 
   it('rail focus 中の scroll event でも root へ同期されること', async () => {
-    const root = createTableFixture();
+    const root = createEligibleTableFixture();
 
     enhanceTableScroll(root);
     await nextFrame();
@@ -465,7 +794,7 @@ describe('table-scroll-enhancer Phase3B accessible top scroll rail', () => {
     const sentinel = document.createElement('button');
     sentinel.textContent = 'before';
     document.body.append(sentinel);
-    const root = createTableFixture();
+    const root = createEligibleTableFixture();
     const after = document.createElement('button');
     after.textContent = 'after';
     document.body.append(after);

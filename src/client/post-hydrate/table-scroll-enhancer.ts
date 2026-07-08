@@ -12,6 +12,8 @@ interface TableScrollState {
 const activeTableRoots = new WeakMap<HTMLElement, TableScrollState>();
 
 const SCROLL_EDGE_THRESHOLD = 2;
+const TOP_RAIL_MIN_TABLE_ROW_COUNT = 16;
+const TOP_RAIL_MIN_CLIENT_HEIGHT_PX = 640;
 const TABLE_RAIL_FALLBACK_LABEL = '直後の表の横スクロール補助';
 let generatedTableRootIdSequence = 0;
 
@@ -21,17 +23,54 @@ const removeOverflowState = (root: HTMLElement): void => {
   root.removeAttribute('data-fade-right');
 };
 
-const removeRail = (state: TableScrollState): void => {
+const isTableScrollRailElement = (element: Element | null): element is HTMLElement => {
+  return element instanceof HTMLElement && element.hasAttribute('data-table-scroll-rail');
+};
+
+const getAdjacentTableScrollRail = (root: HTMLElement): HTMLElement | null => {
+  const previous = root.previousElementSibling;
+  return isTableScrollRailElement(previous) ? previous : null;
+};
+
+const removeContiguousTableScrollRailsBefore = (anchor: HTMLElement): void => {
+  let previous = anchor.previousElementSibling;
+
+  while (isTableScrollRailElement(previous)) {
+    const rail = previous;
+    previous = rail.previousElementSibling;
+    rail.remove();
+  }
+};
+
+const getOwnedTable = (root: HTMLElement): HTMLTableElement | null => {
+  return root.querySelector<HTMLTableElement>(':scope > table');
+};
+
+const isTopRailEligibleTable = (root: HTMLElement): boolean => {
+  const table = getOwnedTable(root);
+
+  if (!table) {
+    return false;
+  }
+
+  return (
+    table.rows.length >= TOP_RAIL_MIN_TABLE_ROW_COUNT ||
+    root.clientHeight >= TOP_RAIL_MIN_CLIENT_HEIGHT_PX
+  );
+};
+
+const removeRail = (state: TableScrollState, root: HTMLElement): void => {
   state.removeRailScrollListener?.();
   state.removeRailScrollListener = null;
   state.rail?.remove();
   state.rail = null;
   state.spacer = null;
+  removeContiguousTableScrollRailsBefore(root);
 };
 
 const resolveTableRailLabel = (root: HTMLElement): string => {
   const captionText =
-    root.querySelector('table > caption')?.textContent.replace(/\s+/gu, ' ').trim() ?? '';
+    getOwnedTable(root)?.caption?.textContent?.replace(/\s+/gu, ' ').trim() ?? '';
 
   return captionText ? `${captionText}の横スクロール補助` : TABLE_RAIL_FALLBACK_LABEL;
 };
@@ -85,52 +124,63 @@ const ensureRail = (root: HTMLElement, state: TableScrollState): HTMLElement | n
     return null;
   }
 
-  let rail = state.rail;
+  const previousRail = state.rail;
+  const adjacentRail = getAdjacentTableScrollRail(root);
+  const activeRail = previousRail?.isConnected ? previousRail : document.createElement('div');
 
-  if (!rail?.isConnected) {
-    const previousElement = root.previousElementSibling;
-    rail =
-      previousElement instanceof HTMLElement && previousElement.matches('[data-table-scroll-rail]')
-        ? previousElement
-        : document.createElement('div');
-
-    rail.dataset['tableScrollRail'] = 'true';
-
-    if (rail.parentElement !== root.parentElement || rail.nextElementSibling !== root) {
-      root.before(rail);
-    }
-
-    state.rail = rail;
+  if (activeRail !== previousRail) {
+    state.removeRailScrollListener?.();
+    state.removeRailScrollListener = null;
+    state.spacer = null;
   }
 
-  rail.setAttribute('role', 'region');
-  rail.setAttribute('aria-label', resolveTableRailLabel(root));
-  rail.setAttribute('aria-controls', ensureRootId(root, state));
-  rail.tabIndex = 0;
-  rail.removeAttribute('aria-hidden');
+  activeRail.dataset['tableScrollRail'] = 'true';
 
-  let spacer = rail.querySelector<HTMLElement>(':scope > [data-table-scroll-rail-spacer]');
+  if (adjacentRail && adjacentRail !== activeRail) {
+    removeContiguousTableScrollRailsBefore(root);
+  }
+
+  if (activeRail.parentElement !== root.parentElement || activeRail.nextElementSibling !== root) {
+    root.before(activeRail);
+  }
+
+  removeContiguousTableScrollRailsBefore(activeRail);
+  state.rail = activeRail;
+
+  activeRail.setAttribute('role', 'region');
+  activeRail.setAttribute('aria-label', resolveTableRailLabel(root));
+  activeRail.setAttribute('aria-controls', ensureRootId(root, state));
+  activeRail.tabIndex = 0;
+  activeRail.removeAttribute('aria-hidden');
+
+  const currentSpacerIsValid =
+    state.spacer?.isConnected === true &&
+    state.spacer.parentElement === activeRail &&
+    state.spacer.matches('[data-table-scroll-rail-spacer]');
+  let spacer = currentSpacerIsValid
+    ? state.spacer
+    : activeRail.querySelector<HTMLElement>(':scope > [data-table-scroll-rail-spacer]');
   if (!spacer) {
     spacer = document.createElement('div');
     spacer.dataset['tableScrollRailSpacer'] = 'true';
-    rail.replaceChildren(spacer);
+    activeRail.replaceChildren(spacer);
   }
 
   state.spacer = spacer;
 
   if (!state.removeRailScrollListener) {
     const handleRailScroll = (): void => {
-      syncScrollLeft(rail, root, state);
+      syncScrollLeft(activeRail, root, state);
       updateTableScrollState(root, state);
     };
 
-    rail.addEventListener('scroll', handleRailScroll, { passive: true });
+    activeRail.addEventListener('scroll', handleRailScroll, { passive: true });
     state.removeRailScrollListener = () => {
-      rail.removeEventListener('scroll', handleRailScroll);
+      activeRail.removeEventListener('scroll', handleRailScroll);
     };
   }
 
-  return rail;
+  return activeRail;
 };
 
 const updateTableScrollState = (root: HTMLElement, state: TableScrollState): void => {
@@ -138,14 +188,18 @@ const updateTableScrollState = (root: HTMLElement, state: TableScrollState): voi
 
   if (!hasOverflow) {
     removeOverflowState(root);
-    removeRail(state);
+    removeRail(state, root);
     return;
   }
 
   root.dataset['overflow'] = 'true';
-  const rail = ensureRail(root, state);
-  updateRailMetrics(root, state);
-  syncScrollLeft(root, rail, state);
+  const rail = isTopRailEligibleTable(root) ? ensureRail(root, state) : null;
+  if (rail) {
+    updateRailMetrics(root, state);
+    syncScrollLeft(root, rail, state);
+  } else {
+    removeRail(state, root);
+  }
 
   if (root.scrollLeft > SCROLL_EDGE_THRESHOLD) {
     root.dataset['fadeLeft'] = 'true';
@@ -179,7 +233,7 @@ const disposeTableScrollState = (root: HTMLElement, state: TableScrollState): vo
   state.resizeObserver = null;
   state.removeWindowResizeListener?.();
   state.removeWindowResizeListener = null;
-  removeRail(state);
+  removeRail(state, root);
   activeTableRoots.delete(root);
 };
 
@@ -223,7 +277,7 @@ export const enhanceTableScroll = (root: ParentNode = document, signal?: AbortSi
     if ('ResizeObserver' in browserWindow) {
       resizeObserver = new ResizeObserver(update);
       resizeObserver.observe(tableRoot);
-      const table = tableRoot.querySelector('table');
+      const table = getOwnedTable(tableRoot);
       if (table) {
         resizeObserver.observe(table);
       }
