@@ -139,6 +139,8 @@ Corpus switcherはnavigation disclosureである。
 
 Theme switcherはtheme option button groupである。
 
+- Theme triggerはheader visual hierarchy上、低頻度のpreference option群へのdisclosure triggerとして扱う。
+- これはanalyticsによる使用頻度の実測値ではなく、Rouaultのproduct premiseである。
 - Theme preference、storage key、root attributes、resolved theme、document bootstrap、CSS token ownershipは`docs/contracts/theme.md`を正本とする。
 - Static header contractはtheme switcherの静的HTML projection、disclosure、button group semantics、keyboard enhancement、focus、visual densityを所有する。
 - Header theme switcherはroot theme stateのsource of truthではない。Root stateは`data-theme` / `data-resolved-theme`とtheme managerが所有する。
@@ -183,6 +185,13 @@ Search triggerは入力欄ではなく、`/search/` fallbackとdialog triggerの
 
 Header controlsは、corpus trigger、theme trigger、search trigger、TOC trigger、sidebar triggerを含む静的header内の操作要素である。
 
+- corpus、search、themeのvisible labelを比較できるresting stateでは、corpus trigger > search trigger > theme triggerの視覚階層を目標にする。
+- Theme triggerはsearch triggerより低い視覚強度を目標にする。
+- Top-level theme icon、text、chevronは通常色で`--fg-subtle`を使う。
+- content toneはopen / closedに依存しない。
+- forced-colorsでは同3要素に`CanvasText`を使う。
+- `layout-header.css`は同iconのfill / strokeを所有せず、shared static iconの`currentColor` paint ownershipを維持する。
+- Corpus、search、theme / corpus panel item、ARIA、state synchronizationの既存契約は変更しない。
 - Hoverは内部icon / textではなく、control root surfaceの状態として表現する。
 - Theme triggerのroot control surfaceは`[data-header-menu='theme'] > [data-header-menu-trigger]`とする。
 - Top-level controlsとmenu panel内itemはselector上分離して扱う。Top-level controlsのvisual stateは`.sidebar-toggle`、`.toc-trigger`、`.search-trigger`、`[data-header-menu] > [data-header-menu-trigger]`を主selectorとし、menu item共通のvisual stateは`[data-header-menu-item]`を主selectorとする。
