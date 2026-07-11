@@ -200,6 +200,51 @@ a > code {
   letter-spacing: 0;
 }
 
+@supports (text-autospace: no-autospace) and
+  (text-autospace: ideograph-alpha ideograph-numeric) {
+  body {
+    text-autospace: no-autospace;
+  }
+
+  :is(.prose, .about-prose) {
+    text-autospace: ideograph-alpha ideograph-numeric;
+  }
+
+  :is(.prose, .about-prose) :where(ui-tabs) {
+    text-autospace: no-autospace;
+  }
+
+  :is(.prose, .about-prose) ui-tabs > [slot='panel'] {
+    text-autospace: ideograph-alpha ideograph-numeric;
+  }
+
+  :is(.prose, .about-prose)
+    :where(
+      pre,
+      pre *,
+      code,
+      code *,
+      kbd,
+      kbd *,
+      samp,
+      samp *,
+      .katex,
+      .katex *,
+      [data-math],
+      [data-math] *,
+      pre[data-code-block],
+      pre[data-code-block] *,
+      [data-code-block-root],
+      [data-code-block-root] *,
+      section[data-code-group],
+      section[data-code-group] *,
+      [data-score],
+      [data-score] *
+    ) {
+    text-autospace: no-autospace;
+  }
+}
+
 .prose {
   max-width: var(--reading-measure);
   margin-inline: auto;
