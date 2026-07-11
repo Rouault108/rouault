@@ -112,7 +112,7 @@ describe('story discovery', () => {
     expect(vitestConfig).not.toContain("name: 'storybook-runtime'");
 
     expect(wtrConfig).toContain(
-      "files: ['test/browser/**/*.test.ts', '!test/browser/app-router.browser.test.ts']",
+      "files: ['test/browser/**/*.test.ts']",
     );
     expect(wtrConfig).not.toContain('test/unit/');
     expect(wtrConfig).not.toContain('src/**/*.test.ts');

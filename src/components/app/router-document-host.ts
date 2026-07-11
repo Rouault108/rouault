@@ -20,46 +20,46 @@ import {
   replaceElementChildrenFromHtml,
 } from '../../router/declarative-shadow-dom.js';
 import {
-  APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC,
-  APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE,
-  APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE,
-  APP_ROUTER_ANNOUNCEMENT_CLASS_NAME,
-  APP_ROUTER_ANNOUNCEMENT_SELECTOR,
-} from '../../../shared/app-router/app-router-announcement-contract.js';
+  ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC,
+  ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_LIVE,
+  ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ATTRIBUTE,
+  ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_CLASS_NAME,
+  ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_SELECTOR,
+} from '../../../shared/router-document-host/router-document-host-announcement-contract.js';
 import {
   MAIN_CONTENT_ID,
   MAIN_CONTENT_SELECTOR,
 } from '../../../shared/navigation/main-landmark-contract.js';
 import { registerTabsUrlSyncStrategy } from '../ui/tabs/tabs-url-sync-strategy.js';
-import { AppRouterPostRenderController } from './controllers/app-router-post-render-controller.js';
+import { RouterDocumentHostPostRenderController } from './controllers/router-document-host-post-render-controller.js';
 import { PrimaryTabNavigationPolicy } from './navigation/primary-tab-navigation-policy.js';
 import { primaryTabTabsUrlSyncStrategy } from './navigation/primary-tab-url-state.js';
 import { createAppShellAdapter } from './shell/app-shell-adapter.js';
 
-export interface AppRouterContentDomReplacedDetail {
+export interface RouterDocumentHostContentDomReplacedDetail {
   contentRoot: HTMLElement;
 }
 
-export interface AppRouterNavigationCommittedDetail {
+export interface RouterDocumentHostNavigationCommittedDetail {
   contentRoot: HTMLElement;
   result: NavigationResult;
 }
 
-export interface AppRouterRouterDiagnosticDetail {
+export interface RouterDocumentHostRouterDiagnosticDetail {
   diagnostic: RouterDiagnosticPayload;
 }
 
-export type AppRouterRuntimeInitializationState = 'not-initialized' | 'initialized' | 'failed';
+export type RouterDocumentHostRuntimeInitializationState = 'not-initialized' | 'initialized' | 'failed';
 
-export class AppRouterRuntimeInitializationError extends Error {
-  override readonly name = 'AppRouterRuntimeInitializationError';
+export class RouterDocumentHostRuntimeInitializationError extends Error {
+  override readonly name = 'RouterDocumentHostRuntimeInitializationError';
 
-  constructor(message = 'AppRouter runtime は二重初期化できません。') {
+  constructor(message = 'RouterDocumentHost runtime は二重初期化できません。') {
     super(message);
   }
 }
 
-type AppRouterRuntimeFailureBootstrap =
+type RouterDocumentHostRuntimeFailureBootstrap =
   | {
       readonly reason: 'route-manifest-invalid';
       readonly siteUrlContext?: RouterRuntimeUrlDependencies['siteUrlContext'];
@@ -97,7 +97,7 @@ const createNavigationFailureResult = (
       issues: [],
       source: 'none',
       renderedKind: null,
-      error: new RouterNotStartedError('app-router が未初期化です。'),
+      error: new RouterNotStartedError('router-document-host が未初期化です。'),
       errorReason: 'not-started',
     };
   }
@@ -120,10 +120,10 @@ const createNavigationFailureResult = (
 registerTabsUrlSyncStrategy(primaryTabTabsUrlSyncStrategy);
 
 /**
- * `app-router` は Rouault の document-first 契約を保持する light DOM host です。
+ * `router-document-host` は Rouault の document-first 契約を保持する light DOM host です。
  * SSR 初期本文と遷移後本文の双方を `main#main-content` に集約し、本文境界を増やしません。
  */
-export class AppRouter extends HTMLElement {
+export class RouterDocumentHost extends HTMLElement {
   private _serverContent: RouterContentHtml | null = null;
   private _currentContent: RouterContentHtml = createRouterContentHtml('');
   private _router: Router | null = null;
@@ -135,9 +135,9 @@ export class AppRouter extends HTMLElement {
   private _runtimeFailureSiteUrlContext: RouterRuntimeUrlDependencies['siteUrlContext'] | null =
     null;
   private _bootstrapped = false;
-  private _runtimeInitializationState: AppRouterRuntimeInitializationState = 'not-initialized';
+  private _runtimeInitializationState: RouterDocumentHostRuntimeInitializationState = 'not-initialized';
   private _isNavigating = false;
-  private readonly _postRenderController: AppRouterPostRenderController;
+  private readonly _postRenderController: RouterDocumentHostPostRenderController;
   private _resolveReady: (() => void) | null = null;
   private _readyResolved = false;
 
@@ -146,7 +146,7 @@ export class AppRouter extends HTMLElement {
   constructor() {
     super();
 
-    this._postRenderController = new AppRouterPostRenderController((text) => {
+    this._postRenderController = new RouterDocumentHostPostRenderController((text) => {
       this._syncAnnouncement(text);
     });
 
@@ -198,7 +198,7 @@ export class AppRouter extends HTMLElement {
       this._router ||
       this._runtimeFailureReason !== null
     ) {
-      throw new AppRouterRuntimeInitializationError();
+      throw new RouterDocumentHostRuntimeInitializationError();
     }
 
     const router = new Router(this, urlDependencies, {
@@ -231,13 +231,13 @@ export class AppRouter extends HTMLElement {
     this._markReady();
   }
 
-  initializeRuntimeFailure(bootstrap: AppRouterRuntimeFailureBootstrap): void {
+  initializeRuntimeFailure(bootstrap: RouterDocumentHostRuntimeFailureBootstrap): void {
     if (
       this._runtimeInitializationState !== 'not-initialized' ||
       this._router ||
       this._runtimeFailureReason !== null
     ) {
-      throw new AppRouterRuntimeInitializationError();
+      throw new RouterDocumentHostRuntimeInitializationError();
     }
     this._runtimeInitializationState = 'failed';
     this._router = null;
@@ -354,19 +354,19 @@ export class AppRouter extends HTMLElement {
   }
 
   private _ensureAnnouncementRegion(): HTMLElement {
-    const existingRegion = this.querySelector<HTMLElement>(APP_ROUTER_ANNOUNCEMENT_SELECTOR);
+    const existingRegion = this.querySelector<HTMLElement>(ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_SELECTOR);
     if (existingRegion instanceof HTMLElement) {
-      existingRegion.setAttribute('aria-live', APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE);
-      existingRegion.setAttribute('aria-atomic', APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC);
-      existingRegion.classList.add(APP_ROUTER_ANNOUNCEMENT_CLASS_NAME);
+      existingRegion.setAttribute('aria-live', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_LIVE);
+      existingRegion.setAttribute('aria-atomic', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC);
+      existingRegion.classList.add(ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_CLASS_NAME);
       return existingRegion;
     }
 
     const region = this.ownerDocument.createElement('div');
-    region.setAttribute(APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE, '');
-    region.setAttribute('aria-live', APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE);
-    region.setAttribute('aria-atomic', APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC);
-    region.className = APP_ROUTER_ANNOUNCEMENT_CLASS_NAME;
+    region.setAttribute(ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ATTRIBUTE, '');
+    region.setAttribute('aria-live', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_LIVE);
+    region.setAttribute('aria-atomic', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC);
+    region.className = ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_CLASS_NAME;
     this.prepend(region);
     return region;
   }
@@ -405,7 +405,7 @@ export class AppRouter extends HTMLElement {
 
   private _dispatchContentDomReplaced(contentRoot: HTMLElement): void {
     this.dispatchEvent(
-      new CustomEvent<AppRouterContentDomReplacedDetail>('app-router:content-dom-replaced', {
+      new CustomEvent<RouterDocumentHostContentDomReplacedDetail>('router-document-host:content-dom-replaced', {
         detail: { contentRoot },
         bubbles: true,
         composed: true,
@@ -429,7 +429,7 @@ export class AppRouter extends HTMLElement {
     }
 
     this.dispatchEvent(
-      new CustomEvent<AppRouterNavigationCommittedDetail>('app-router:navigation-committed', {
+      new CustomEvent<RouterDocumentHostNavigationCommittedDetail>('router-document-host:navigation-committed', {
         detail: {
           contentRoot,
           result,
@@ -442,7 +442,7 @@ export class AppRouter extends HTMLElement {
 
   private _dispatchRouterDiagnostic(diagnostic: RouterDiagnosticPayload): void {
     this.dispatchEvent(
-      new CustomEvent<AppRouterRouterDiagnosticDetail>('app-router:router-diagnostic', {
+      new CustomEvent<RouterDocumentHostRouterDiagnosticDetail>('router-document-host:router-diagnostic', {
         detail: { diagnostic },
         bubbles: true,
         composed: true,
@@ -453,10 +453,10 @@ export class AppRouter extends HTMLElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'app-router': AppRouter;
+    'router-document-host': RouterDocumentHost;
   }
 }
 
-if (!customElements.get('app-router')) {
-  customElements.define('app-router', AppRouter);
+if (!customElements.get('router-document-host')) {
+  customElements.define('router-document-host', RouterDocumentHost);
 }

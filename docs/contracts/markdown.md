@@ -60,7 +60,7 @@ Frontmatterの`source`は、note pageのarticle header metadata surface linkと�
 - unsafe sourceはlink化しない。
 - `data-link-surface="metadata"`は常に維持する。
 - `target="_blank"`と`rel="noopener noreferrer"`は全分類で維持する。
-- `internal-document`に分類されても、article header source linkは出典参照であり、app-router interceptionではなくpassthrough navigationとして扱う。
+- `internal-document`に分類されても、article header source linkは出典参照であり、router-document-host interceptionではなくpassthrough navigationとして扱う。
 
 `data-external="true"`と`aria-label="出典（外部サイト、新しいタブで開く）"`は`external-web`のときだけ使う。  
 `internal-document` / `internal-resource`の場合は`data-external`を出さず、`aria-label="出典（新しいタブで開く）"`を使う。

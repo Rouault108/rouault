@@ -7,7 +7,7 @@ import {
   readDecodedHash,
 } from '../navigation/primary-tab-url-state.js';
 
-export class AppRouterPostRenderController {
+export class RouterDocumentHostPostRenderController {
   private readonly focusManager = new FocusManager();
   private clearTimer: number | null = null;
   private currentHashTarget: HTMLElement | null = null;

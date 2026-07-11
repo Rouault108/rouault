@@ -8,7 +8,7 @@ import {
 const expectedProfilesByTag = new Map<string, readonly string[]>([
   ['ui-skip-link', ['shell']],
   ['layout-header-enhancer', ['shell']],
-  ['app-router', ['shell']],
+  ['router-document-host', ['shell']],
   ['search-dialog-enhancer', ['shell']],
   ['search-page-enhancer', ['page']],
   ['layout-sidebar', ['layout']],

@@ -157,7 +157,7 @@ export class HydrationScheduler {
   ): void {
     if (dispatchTarget instanceof EventTarget) {
       dispatchTarget.dispatchEvent(
-        new CustomEvent<HydrationDiagnostics>('app-router:hydration-diagnostics', {
+        new CustomEvent<HydrationDiagnostics>('router-document-host:hydration-diagnostics', {
           detail: diagnostics,
           bubbles: true,
           composed: true,

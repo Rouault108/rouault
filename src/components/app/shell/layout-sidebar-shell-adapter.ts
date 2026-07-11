@@ -15,7 +15,7 @@ import { createCanonicalAbsentRuntimeSidebarProjection } from '../../../../share
 import { validateRuntimeSidebarProjection } from '../../../../shared/navigation/navigation-shell-validator.js';
 import { layoutSidebarController } from '../../layout/layout-sidebar-controller.js';
 
-const APP_ROUTER_SELECTOR = 'app-router';
+const ROUTER_DOCUMENT_HOST_SELECTOR = 'router-document-host';
 const SIDEBAR_COLUMN_SELECTOR = '[data-app-shell-sidebar-host]';
 const SIDEBAR_HOST_SELECTOR = `${SIDEBAR_COLUMN_SELECTOR} layout-sidebar`;
 const SIDEBAR_PROJECTION_ATTRIBUTES = [
@@ -226,7 +226,7 @@ export const applySidebarSnapshot = applyPayloadShellSnapshot;
 
 export const createLayoutSidebarShellAdapter = (): ShellAdapter => ({
   prepare(update): PreparedShellUpdate {
-    const currentRouter = document.querySelector<HTMLElement>(APP_ROUTER_SELECTOR);
+    const currentRouter = document.querySelector<HTMLElement>(ROUTER_DOCUMENT_HOST_SELECTOR);
     const currentSidebarColumn = document.querySelector<HTMLElement>(SIDEBAR_COLUMN_SELECTOR);
     const currentSidebar = document.querySelector<SidebarProjectionHost>(SIDEBAR_HOST_SELECTOR);
     const previousRuntimeSidebar =

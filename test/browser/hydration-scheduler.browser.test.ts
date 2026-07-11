@@ -174,7 +174,7 @@ describe('HydrationScheduler', () => {
     `;
 
     let diagnostics: HydrationDiagnostics | null = null;
-    root.addEventListener('app-router:hydration-diagnostics', (event: Event) => {
+    root.addEventListener('router-document-host:hydration-diagnostics', (event: Event) => {
       diagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
     });
 
@@ -441,7 +441,7 @@ describe('HydrationScheduler', () => {
     `;
 
     let diagnostics: HydrationDiagnostics | null = null;
-    root.addEventListener('app-router:hydration-diagnostics', (event: Event) => {
+    root.addEventListener('router-document-host:hydration-diagnostics', (event: Event) => {
       diagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
     });
 
@@ -533,7 +533,7 @@ describe('HydrationScheduler', () => {
     `;
 
     let diagnostics: HydrationDiagnostics | null = null;
-    root.addEventListener('app-router:hydration-diagnostics', (event: Event) => {
+    root.addEventListener('router-document-host:hydration-diagnostics', (event: Event) => {
       diagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
     });
 
@@ -882,7 +882,7 @@ describe('HydrationScheduler', () => {
     `;
 
     let firstDiagnostics: HydrationDiagnostics | null = null;
-    firstRoot.addEventListener('app-router:hydration-diagnostics', (event: Event) => {
+    firstRoot.addEventListener('router-document-host:hydration-diagnostics', (event: Event) => {
       firstDiagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
     });
 
@@ -913,7 +913,7 @@ describe('HydrationScheduler', () => {
     `;
 
     let secondDiagnostics: HydrationDiagnostics | null = null;
-    secondRoot.addEventListener('app-router:hydration-diagnostics', (event: Event) => {
+    secondRoot.addEventListener('router-document-host:hydration-diagnostics', (event: Event) => {
       secondDiagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
     });
 
@@ -1301,10 +1301,10 @@ describe('HydrationScheduler', () => {
     let firstDiagnosticsCount = 0;
     let secondDiagnostics: HydrationDiagnostics | null = null;
 
-    firstRoot.addEventListener('app-router:hydration-diagnostics', () => {
+    firstRoot.addEventListener('router-document-host:hydration-diagnostics', () => {
       firstDiagnosticsCount += 1;
     });
-    secondRoot.addEventListener('app-router:hydration-diagnostics', (event: Event) => {
+    secondRoot.addEventListener('router-document-host:hydration-diagnostics', (event: Event) => {
       secondDiagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
     });
 
@@ -1365,7 +1365,7 @@ describe('HydrationScheduler', () => {
     `;
 
     let diagnostics: HydrationDiagnostics | null = null;
-    root.addEventListener('app-router:hydration-diagnostics', (event: Event) => {
+    root.addEventListener('router-document-host:hydration-diagnostics', (event: Event) => {
       diagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
     });
 

@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 const navigateToMissingRoute = async (page: Page, url: string) => {
   await page.waitForFunction(() => {
-    const router = document.querySelector('app-router');
+    const router = document.querySelector('router-document-host');
     return (
       router instanceof HTMLElement &&
       typeof (router as { navigate?: unknown }).navigate === 'function' &&
@@ -11,7 +11,7 @@ const navigateToMissingRoute = async (page: Page, url: string) => {
   });
 
   await page.evaluate(async (targetUrl) => {
-    const router = document.querySelector('app-router') as
+    const router = document.querySelector('router-document-host') as
       | (HTMLElement & {
           navigate: (nextUrl: string) => Promise<unknown>;
           whenReady: () => Promise<void>;
@@ -26,7 +26,7 @@ const navigateToMissingRoute = async (page: Page, url: string) => {
       typeof router.navigate !== 'function' ||
       typeof router.whenReady !== 'function'
     ) {
-      throw new Error('app-router.navigate() が利用できません');
+      throw new Error('router-document-host.navigate() が利用できません');
     }
 
     await router.whenReady();

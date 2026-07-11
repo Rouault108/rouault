@@ -7,17 +7,17 @@ const tocAbsentPath = e2eNoteFixtures.tocAbsent.directPath;
 
 interface NoteWideFrameSnapshot {
   hasAppRoot: boolean;
-  hasAppRouter: boolean;
+  hasRouterDocumentHost: boolean;
   hasSidebarColumn: boolean;
   hasNoteShell: boolean;
   layoutInlineLeft: number | null;
   layoutInlineRight: number | null;
   layoutInlineWidth: number | null;
   outerGutterUsedValue: number;
-  appRouterWidth: number | null;
-  appRouterLeft: number | null;
-  appRouterRight: number | null;
-  appRouterGridTemplateColumns: string | null;
+  routerDocumentHostWidth: number | null;
+  routerDocumentHostLeft: number | null;
+  routerDocumentHostRight: number | null;
+  routerDocumentHostGridTemplateColumns: string | null;
   sidebarColumnLeft: number | null;
   sidebarColumnWidth: number | null;
   noteShellWidth: number | null;
@@ -43,8 +43,8 @@ const settleLayout = async (page: Page): Promise<void> => {
 const readNoteWideFrameSnapshot = async (page: Page): Promise<NoteWideFrameSnapshot> =>
   page.evaluate(() => {
     const appRoot = document.querySelector<HTMLElement>('#app.app-root');
-    const appRouter = document.querySelector<HTMLElement>(
-      'app-router[data-sidebar-presence="present"]',
+    const routerDocumentHost = document.querySelector<HTMLElement>(
+      'router-document-host[data-sidebar-presence="present"]',
     );
     const sidebarColumn = document.querySelector<HTMLElement>('[data-app-shell-sidebar-host]');
     const mainContent = document.querySelector<HTMLElement>('main#main-content');
@@ -70,7 +70,7 @@ const readNoteWideFrameSnapshot = async (page: Page): Promise<NoteWideFrameSnaps
     };
 
     const appRootRect = appRoot?.getBoundingClientRect() ?? null;
-    const appRouterRect = appRouter?.getBoundingClientRect() ?? null;
+    const routerDocumentHostRect = routerDocumentHost?.getBoundingClientRect() ?? null;
     const sidebarColumnRect = sidebarColumn?.getBoundingClientRect() ?? null;
     const mainContentRect = mainContent?.getBoundingClientRect() ?? null;
     const noteShellRect = noteShell?.getBoundingClientRect() ?? null;
@@ -79,18 +79,18 @@ const readNoteWideFrameSnapshot = async (page: Page): Promise<NoteWideFrameSnaps
 
     return {
       hasAppRoot: appRoot instanceof HTMLElement,
-      hasAppRouter: appRouter instanceof HTMLElement,
+      hasRouterDocumentHost: routerDocumentHost instanceof HTMLElement,
       hasSidebarColumn: sidebarColumn instanceof HTMLElement,
       hasNoteShell: noteShell instanceof HTMLElement,
       layoutInlineLeft: appRootRect?.left ?? null,
       layoutInlineRight: appRootRect?.right ?? null,
       layoutInlineWidth: appRootRect?.width ?? null,
       outerGutterUsedValue: readCssLengthTokenUsedValue('--note-frame-outer-gutter'),
-      appRouterWidth: appRouterRect?.width ?? null,
-      appRouterLeft: appRouterRect?.left ?? null,
-      appRouterRight: appRouterRect?.right ?? null,
-      appRouterGridTemplateColumns: appRouter
-        ? getComputedStyle(appRouter).gridTemplateColumns
+      routerDocumentHostWidth: routerDocumentHostRect?.width ?? null,
+      routerDocumentHostLeft: routerDocumentHostRect?.left ?? null,
+      routerDocumentHostRight: routerDocumentHostRect?.right ?? null,
+      routerDocumentHostGridTemplateColumns: routerDocumentHost
+        ? getComputedStyle(routerDocumentHost).gridTemplateColumns
         : null,
       sidebarColumnLeft: sidebarColumnRect?.left ?? null,
       sidebarColumnWidth: sidebarColumnRect?.width ?? null,
@@ -105,20 +105,20 @@ const readNoteWideFrameSnapshot = async (page: Page): Promise<NoteWideFrameSnaps
     };
   });
 
-const appRouterLeftGutter = (snapshot: NoteWideFrameSnapshot): number => {
-  if (snapshot.layoutInlineLeft === null || snapshot.appRouterLeft === null) {
+const routerDocumentHostLeftGutter = (snapshot: NoteWideFrameSnapshot): number => {
+  if (snapshot.layoutInlineLeft === null || snapshot.routerDocumentHostLeft === null) {
     return Number.NaN;
   }
 
-  return snapshot.appRouterLeft - snapshot.layoutInlineLeft;
+  return snapshot.routerDocumentHostLeft - snapshot.layoutInlineLeft;
 };
 
-const appRouterRightGutter = (snapshot: NoteWideFrameSnapshot): number => {
-  if (snapshot.layoutInlineRight === null || snapshot.appRouterRight === null) {
+const routerDocumentHostRightGutter = (snapshot: NoteWideFrameSnapshot): number => {
+  if (snapshot.layoutInlineRight === null || snapshot.routerDocumentHostRight === null) {
     return Number.NaN;
   }
 
-  return snapshot.layoutInlineRight - snapshot.appRouterRight;
+  return snapshot.layoutInlineRight - snapshot.routerDocumentHostRight;
 };
 
 test.describe('note frame balance', () => {
@@ -130,12 +130,12 @@ test.describe('note frame balance', () => {
     await settleLayout(page);
 
     const wide = await readNoteWideFrameSnapshot(page);
-    expect(wide.hasAppRouter).toBe(true);
+    expect(wide.hasRouterDocumentHost).toBe(true);
     expect(wide.hasSidebarColumn).toBe(true);
     expect(wide.hasNoteShell).toBe(true);
 
-    expect(wide.appRouterWidth).toBeGreaterThanOrEqual(1414);
-    expect(wide.appRouterWidth).toBeLessThanOrEqual(1418);
+    expect(wide.routerDocumentHostWidth).toBeGreaterThanOrEqual(1414);
+    expect(wide.routerDocumentHostWidth).toBeLessThanOrEqual(1418);
     expect(wide.sidebarColumnLeft).not.toBeNull();
     expect(wide.sidebarColumnWidth).toBeGreaterThanOrEqual(246);
     expect(wide.sidebarColumnWidth).toBeLessThanOrEqual(250);
@@ -155,10 +155,10 @@ test.describe('note frame balance', () => {
 
     const wider = await readNoteWideFrameSnapshot(page);
 
-    expect(wider.appRouterWidth).toBeGreaterThanOrEqual(1414);
-    expect(wider.appRouterWidth).toBeLessThanOrEqual(1418);
+    expect(wider.routerDocumentHostWidth).toBeGreaterThanOrEqual(1414);
+    expect(wider.routerDocumentHostWidth).toBeLessThanOrEqual(1418);
 
-    expect(Math.abs((wider.appRouterWidth ?? 0) - (wide.appRouterWidth ?? 0))).toBeLessThanOrEqual(
+    expect(Math.abs((wider.routerDocumentHostWidth ?? 0) - (wide.routerDocumentHostWidth ?? 0))).toBeLessThanOrEqual(
       1,
     );
     expect(wider.sidebarColumnLeft).not.toBeNull();
@@ -182,16 +182,16 @@ test.describe('note frame balance', () => {
     const state = await readNoteWideFrameSnapshot(page);
 
     expect(state.hasAppRoot).toBe(true);
-    expect(state.hasAppRouter).toBe(true);
+    expect(state.hasRouterDocumentHost).toBe(true);
     expect(state.hasSidebarColumn).toBe(true);
     expect(state.hasNoteShell).toBe(true);
-    expect(appRouterLeftGutter(state)).toBeGreaterThanOrEqual(state.outerGutterUsedValue - 1);
-    expect(appRouterRightGutter(state)).toBeGreaterThanOrEqual(state.outerGutterUsedValue - 1);
-    expect(Math.abs(appRouterLeftGutter(state) - appRouterRightGutter(state))).toBeLessThanOrEqual(
+    expect(routerDocumentHostLeftGutter(state)).toBeGreaterThanOrEqual(state.outerGutterUsedValue - 1);
+    expect(routerDocumentHostRightGutter(state)).toBeGreaterThanOrEqual(state.outerGutterUsedValue - 1);
+    expect(Math.abs(routerDocumentHostLeftGutter(state) - routerDocumentHostRightGutter(state))).toBeLessThanOrEqual(
       1,
     );
     expect(
-      Math.abs((state.sidebarColumnLeft ?? 0) - (state.appRouterLeft ?? 0)),
+      Math.abs((state.sidebarColumnLeft ?? 0) - (state.routerDocumentHostLeft ?? 0)),
     ).toBeLessThanOrEqual(1);
     expect(state.mainContentWidth).toBeGreaterThan(0);
     expect(state.horizontalOverflow).toBeLessThanOrEqual(1);
@@ -264,12 +264,12 @@ test.describe('note frame balance', () => {
     const absent = await readNoteWideFrameSnapshot(page);
 
     expect(present.hasAppRoot).toBe(true);
-    expect(present.hasAppRouter).toBe(true);
+    expect(present.hasRouterDocumentHost).toBe(true);
     expect(absent.hasAppRoot).toBe(true);
-    expect(absent.hasAppRouter).toBe(true);
+    expect(absent.hasRouterDocumentHost).toBe(true);
     expect(absent.tocColumnExists).toBe(false);
-    expect(appRouterLeftGutter(absent)).toBeGreaterThanOrEqual(absent.outerGutterUsedValue - 1);
-    expect(appRouterRightGutter(absent)).toBeGreaterThanOrEqual(absent.outerGutterUsedValue - 1);
+    expect(routerDocumentHostLeftGutter(absent)).toBeGreaterThanOrEqual(absent.outerGutterUsedValue - 1);
+    expect(routerDocumentHostRightGutter(absent)).toBeGreaterThanOrEqual(absent.outerGutterUsedValue - 1);
     expect(Math.abs((absent.articleLeft ?? 0) - (present.articleLeft ?? 0))).toBeLessThanOrEqual(1);
     expect(absent.articleWidth ?? 0).toBeGreaterThan(present.articleWidth ?? 0);
     expect(absent.mainContentWidth).toBeGreaterThan(0);
@@ -285,14 +285,14 @@ test.describe('note frame balance', () => {
     const state = await readNoteWideFrameSnapshot(page);
 
     expect(state.hasAppRoot).toBe(true);
-    expect(state.hasAppRouter).toBe(true);
-    expect(appRouterLeftGutter(state)).toBeGreaterThanOrEqual(state.outerGutterUsedValue - 1);
-    expect(appRouterRightGutter(state)).toBeGreaterThanOrEqual(state.outerGutterUsedValue - 1);
+    expect(state.hasRouterDocumentHost).toBe(true);
+    expect(routerDocumentHostLeftGutter(state)).toBeGreaterThanOrEqual(state.outerGutterUsedValue - 1);
+    expect(routerDocumentHostRightGutter(state)).toBeGreaterThanOrEqual(state.outerGutterUsedValue - 1);
     expect(state.mainContentWidth).toBeGreaterThan(0);
     expect(state.horizontalOverflow).toBeLessThanOrEqual(1);
   });
 
-  test('1023px 以下では app-router 幅へ fixed sidebar 用 gutter を二重適用しないこと', async ({
+  test('1023px 以下では router-document-host 幅へ fixed sidebar 用 gutter を二重適用しないこと', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1023, height: 900 });
@@ -302,11 +302,11 @@ test.describe('note frame balance', () => {
     const state = await readNoteWideFrameSnapshot(page);
 
     expect(state.hasAppRoot).toBe(true);
-    expect(state.hasAppRouter).toBe(true);
-    expect(Math.abs(appRouterLeftGutter(state))).toBeLessThanOrEqual(1);
-    expect(Math.abs(appRouterRightGutter(state))).toBeLessThanOrEqual(1);
+    expect(state.hasRouterDocumentHost).toBe(true);
+    expect(Math.abs(routerDocumentHostLeftGutter(state))).toBeLessThanOrEqual(1);
+    expect(Math.abs(routerDocumentHostRightGutter(state))).toBeLessThanOrEqual(1);
     expect(state.sidebarColumnWidth ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(1);
-    expect(state.appRouterGridTemplateColumns ?? '').toContain('0px');
+    expect(state.routerDocumentHostGridTemplateColumns ?? '').toContain('0px');
     expect(state.mainContentWidth).toBeGreaterThan(0);
     expect(state.horizontalOverflow).toBeLessThanOrEqual(1);
   });

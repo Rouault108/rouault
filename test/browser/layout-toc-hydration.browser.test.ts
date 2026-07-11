@@ -94,7 +94,7 @@ const hydrateWithScheduler = async (root: HTMLElement): Promise<HydrationDiagnos
   let diagnostics: HydrationDiagnostics | null = null;
 
   root.addEventListener(
-    'app-router:hydration-diagnostics',
+    'router-document-host:hydration-diagnostics',
     (event: Event) => {
       diagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
     },

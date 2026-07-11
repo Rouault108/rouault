@@ -13,7 +13,7 @@ import { commitShellGeneration } from './app-shell-lifecycle.js';
 import type { AppShellCommittedDetail } from './app-shell-events.js';
 import { STATIC_HEADER_ROOT_SELECTOR } from '../../../../shared/navigation/static-header-contract.js';
 
-const APP_ROUTER_SELECTOR = 'app-router';
+const ROUTER_DOCUMENT_HOST_SELECTOR = 'router-document-host';
 const SIDEBAR_COLUMN_SELECTOR = '[data-app-shell-sidebar-host]';
 const SIDEBAR_HOST_SELECTOR = `${SIDEBAR_COLUMN_SELECTOR} layout-sidebar`;
 
@@ -29,7 +29,7 @@ const dispatchShellCommitted = (detail: AppShellCommittedDetail): void => {
 
 export const createAppShellAdapter = (): ShellAdapter => ({
   prepare(update): PreparedShellUpdate {
-    const currentRouter = document.querySelector<HTMLElement>(APP_ROUTER_SELECTOR);
+    const currentRouter = document.querySelector<HTMLElement>(ROUTER_DOCUMENT_HOST_SELECTOR);
     const currentSidebarColumn = document.querySelector<HTMLElement>(SIDEBAR_COLUMN_SELECTOR);
     const currentSidebar = document.querySelector<SidebarProjectionHost>(SIDEBAR_HOST_SELECTOR);
     const headerMutation = prepareStaticHeaderMutation(update.shell.headerHtml);

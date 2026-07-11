@@ -8,11 +8,11 @@ import { loadSiteUrlContextData, type SiteUrlContextData } from '../data/siteUrl
 import { buildThemeChromeBootstrapScript } from '../theme/theme-chrome-bootstrap.js';
 import { buildThemeDocumentBootstrapScript } from '../theme/theme-document-bootstrap.js';
 import {
-  APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC,
-  APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE,
-  APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE,
-  APP_ROUTER_ANNOUNCEMENT_CLASS_NAME,
-} from '../../shared/app-router/app-router-announcement-contract.js';
+  ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC,
+  ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_LIVE,
+  ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ATTRIBUTE,
+  ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_CLASS_NAME,
+} from '../../shared/router-document-host/router-document-host-announcement-contract.js';
 import { MAIN_CONTENT_ID } from '../../shared/navigation/main-landmark-contract.js';
 import { applyBasePathToRenderHref } from '../../shared/url/normalize-rouault-url.js';
 import { validateGeneratedPageHtmlLinkContracts } from '../../build/content/page-html-link-contracts.js';
@@ -308,16 +308,16 @@ export class BaseLayout {
     ></span>
     ${headerHtml}
     <script data-theme-chrome-bootstrap>${escapeInlineExecutableScriptText(themeChromeBootstrapScript)}</script>
-    <app-router
+    <router-document-host
       data-sidebar-presence="${sidebarPresence}"
       data-hydration-capability="interactive"
       data-hydration-trigger="initial"
     >
       <div
-        ${APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE}
-        aria-live="${APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE}"
-        aria-atomic="${APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC}"
-        class="${APP_ROUTER_ANNOUNCEMENT_CLASS_NAME}"
+        ${ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ATTRIBUTE}
+        aria-live="${ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_LIVE}"
+        aria-atomic="${ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC}"
+        class="${ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_CLASS_NAME}"
       ></div>
       <aside
         class="layout-sidebar-col"
@@ -344,7 +344,7 @@ export class BaseLayout {
       <main id="${MAIN_CONTENT_ID}" tabindex="-1">
         ${data.content}
       </main>
-    </app-router>
+    </router-document-host>
     <div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer></div>
     ${footerHtml}
   </div>

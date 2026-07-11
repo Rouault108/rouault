@@ -27,7 +27,7 @@ const literalDefinitions = [
 describe('static-first custom element revival guard', () => {
   it('scans runtime source roots with TypeScript AST custom element definition detection', () => {
     expect(sourceFiles.length).toBeGreaterThan(0);
-    expect(literalDefinitions.some((finding) => finding.tag === 'app-router')).toBe(true);
+    expect(literalDefinitions.some((finding) => finding.tag === 'router-document-host')).toBe(true);
     expect(literalDefinitions.some((finding) => finding.tag === 'layout-toc-controller')).toBe(
       true,
     );

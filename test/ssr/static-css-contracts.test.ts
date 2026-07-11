@@ -479,7 +479,7 @@ const forbiddenMainCssTokens = [
 
 const forbiddenMainCssSelectorPatterns = [
   /\bapp-root\b/u,
-  /\bapp-router\b/u,
+  /\brouter-document-host\b/u,
   /\.note-shell(?![-_a-zA-Z0-9])/u,
   /header\[data-layout-header\]/u,
   /\.layout-sidebar-overlay-layer(?![-_a-zA-Z0-9])/u,
@@ -691,7 +691,7 @@ describe('static CSS contracts', () => {
 
   it('router shell keeps desktop fixed-sidebar note frame outer gutter contract', () => {
     const css = readCss('router-shell.css');
-    const selector = "app-router[data-sidebar-presence='present']";
+    const selector = "router-document-host[data-sidebar-presence='present']";
 
     const aliasValues = declarationValuesForSelector(
       css,

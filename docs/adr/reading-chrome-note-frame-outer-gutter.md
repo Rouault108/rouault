@@ -21,12 +21,12 @@
 
 ## Decision
 
-`app-router[data-sidebar-presence='present']`のdesktop fixed sidebar layoutに、`--note-frame-outer-gutter`を最小outer gutterとして導入します。
+`router-document-host[data-sidebar-presence='present']`のdesktop fixed sidebar layoutに、`--note-frame-outer-gutter`を最小outer gutterとして導入します。
 
 - `--note-frame-outer-gutter`は`clamp(var(--space-4, 16px), 1.5vw, var(--space-6, 24px))`とする。
-- `app-router[data-sidebar-presence='present']`はviewport幅から左右のouter gutterを差し引いた幅と`--note-fixed-frame-max-width`の小さい方を使う。
+- `router-document-host[data-sidebar-presence='present']`はviewport幅から左右のouter gutterを差し引いた幅と`--note-fixed-frame-max-width`の小さい方を使う。
 - `margin-inline: auto`によりwide viewportでは実際のgutterが最小値より大きくなってよい。
-- `@media (max-width: 1023px)`ではapp-router幅を`100%`へ戻し、fixed sidebar用outer gutterを二重適用しない。
+- `@media (max-width: 1023px)`ではrouter-document-host幅を`100%`へ戻し、fixed sidebar用outer gutterを二重適用しない。
 
 この変更はURL、DOM意味論、ARIA、sidebar state、TOC active tracking、hydration ownership、NavigationEnvelopeを変更しません。Header geometryも変更対象ではありません。
 
@@ -38,7 +38,7 @@
 
 ### `.layout-sidebar-col` に `margin-inline-start` を直接付ける案
 
-棄却します。sidebar columnだけを動かすとapp-router grid、main、TOCのframe境界とずれ、left sidebar / main / desktop TOCを含むnote frame全体の契約になりません。
+棄却します。sidebar columnだけを動かすとrouter-document-host grid、main、TOCのframe境界とずれ、left sidebar / main / desktop TOCを含むnote frame全体の契約になりません。
 
 ### `--note-fixed-frame-max-width` に `--note-sidebar-main-gap` を含める案
 
@@ -53,7 +53,7 @@
 - 1366px〜1394px付近でもfixed sidebar note frameはviewport edgeから最小outer gutterを持つ。
 - Wide viewportでは既存の`--note-fixed-frame-max-width`によるnote frame最大幅契約を維持する。
 - Sidebar item padding、TOC item padding、active rail、TOC indentはouter gutterと独立して調整できる。
-- 1023px以下ではapp-router自体がviewport幅に戻り、mobile / overlay側の余白契約と二重適用しない。
+- 1023px以下ではrouter-document-host自体がviewport幅に戻り、mobile / overlay側の余白契約と二重適用しない。
 
 ## Counter-hypothesis review
 
@@ -73,4 +73,4 @@
 
 ## Rollback
 
-問題が見つかった場合は、`--note-frame-outer-gutter`の利用を`app-router[data-sidebar-presence='present']`の幅計算から外し、`width: min(100%, var(--note-fixed-frame-max-width, 1440px))`へ戻します。Rollback時もsidebar item paddingやheader geometryへ代替変更を混ぜず、別Decisionとして再検討します。
+問題が見つかった場合は、`--note-frame-outer-gutter`の利用を`router-document-host[data-sidebar-presence='present']`の幅計算から外し、`width: min(100%, var(--note-fixed-frame-max-width, 1440px))`へ戻します。Rollback時もsidebar item paddingやheader geometryへ代替変更を混ぜず、別Decisionとして再検討します。

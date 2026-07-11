@@ -1,6 +1,6 @@
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import { MAIN_CONTENT_SELECTOR } from '../shared/navigation/main-landmark-contract.js';
-import type { AppRouter, AppRouterNavigationCommittedDetail } from './components/app/app-router.js';
+import type { RouterDocumentHost, RouterDocumentHostNavigationCommittedDetail } from './components/app/router-document-host.js';
 import { HydrationScheduler } from './client/hydration/scheduler.js';
 import { promoteDeclarativeShadowRoots } from './router/declarative-shadow-dom.js';
 import { attachUnsafeLinkClickGuard } from './router/unsafe-link-click-guard.js';
@@ -16,11 +16,11 @@ import type { AppContentHydrationReadyDetail } from './components/app/shell/app-
 const hydrationScheduler = new HydrationScheduler();
 let contentHydrationGeneration = 0;
 
-const getAppRouter = (): AppRouter | null => document.querySelector<AppRouter>('app-router');
+const getRouterDocumentHost = (): RouterDocumentHost | null => document.querySelector<RouterDocumentHost>('router-document-host');
 
 const resolveCurrentContentRoot = (): HTMLElement | null => {
-  const appRouter = getAppRouter();
-  const routerContentRoot = appRouter?.getContentRoot();
+  const routerDocumentHost = getRouterDocumentHost();
+  const routerContentRoot = routerDocumentHost?.getContentRoot();
   if (routerContentRoot instanceof HTMLElement) {
     return routerContentRoot;
   }
@@ -28,15 +28,15 @@ const resolveCurrentContentRoot = (): HTMLElement | null => {
   return document.querySelector<HTMLElement>(MAIN_CONTENT_SELECTOR);
 };
 
-const waitForAppRouterReady = async (): Promise<AppRouter | null> => {
-  await customElements.whenDefined('app-router');
+const waitForRouterDocumentHostReady = async (): Promise<RouterDocumentHost | null> => {
+  await customElements.whenDefined('router-document-host');
 
-  const appRouter = getAppRouter();
-  if (appRouter && typeof appRouter.whenReady === 'function') {
-    await appRouter.whenReady();
+  const routerDocumentHost = getRouterDocumentHost();
+  if (routerDocumentHost && typeof routerDocumentHost.whenReady === 'function') {
+    await routerDocumentHost.whenReady();
   }
 
-  return appRouter;
+  return routerDocumentHost;
 };
 
 const hydrateShellScopes = async (): Promise<void> => {
@@ -78,11 +78,11 @@ const hydrateCurrentContent = async (
   options: { initial?: boolean } = {},
 ): Promise<void> => {
   const generation = ++contentHydrationGeneration;
-  const appRouter = await waitForAppRouterReady();
+  const routerDocumentHost = await waitForRouterDocumentHostReady();
 
   const mainContent =
     contentRoot ??
-    (appRouter?.getContentRoot() instanceof HTMLElement ? appRouter.getContentRoot() : null) ??
+    (routerDocumentHost?.getContentRoot() instanceof HTMLElement ? routerDocumentHost.getContentRoot() : null) ??
     resolveCurrentContentRoot();
   if (!(mainContent instanceof HTMLElement)) {
     return;
@@ -93,12 +93,12 @@ const hydrateCurrentContent = async (
   await Promise.resolve();
 
   await hydrationScheduler.hydrateContent(mainContent, {
-    dispatchTarget: appRouter,
+    dispatchTarget: routerDocumentHost,
   });
   if (generation !== contentHydrationGeneration || !mainContent.isConnected) {
     return;
   }
-  const currentContentRoot = appRouter?.getContentRoot();
+  const currentContentRoot = routerDocumentHost?.getContentRoot();
   if (currentContentRoot instanceof HTMLElement && currentContentRoot !== mainContent) {
     return;
   }
@@ -108,13 +108,13 @@ const hydrateCurrentContent = async (
   });
 };
 
-const initializeAppRouterRuntime = async (): Promise<void> => {
-  const appRouter = getAppRouter();
-  if (!appRouter) return;
+const initializeRouterDocumentHostRuntime = async (): Promise<void> => {
+  const routerDocumentHost = getRouterDocumentHost();
+  if (!routerDocumentHost) return;
 
   const manifestMeta = readInternalDocumentRouteManifestMeta(document);
   if (manifestMeta === null) {
-    appRouter.initializeRuntimeFailure({ reason: 'route-manifest-invalid' });
+    routerDocumentHost.initializeRuntimeFailure({ reason: 'route-manifest-invalid' });
     initSearchUnavailable({ runtimeEnvironment: 'production', reason: 'route-manifest-invalid' });
     return;
   }
@@ -129,13 +129,13 @@ const initializeAppRouterRuntime = async (): Promise<void> => {
 
   if (routeManifestState.status !== 'loaded') {
     if (routeManifestState.status === 'invalid') {
-      appRouter.initializeRuntimeFailure({
+      routerDocumentHost.initializeRuntimeFailure({
         reason: 'route-manifest-invalid',
         siteUrlContext: manifestMeta.siteUrlContext,
         routeManifestState,
       });
     } else {
-      appRouter.initializeRuntimeFailure({
+      routerDocumentHost.initializeRuntimeFailure({
         siteUrlContext: manifestMeta.siteUrlContext,
         routeManifestState,
       });
@@ -148,7 +148,7 @@ const initializeAppRouterRuntime = async (): Promise<void> => {
     return;
   }
 
-  appRouter.initializeRuntime({
+  routerDocumentHost.initializeRuntime({
     siteUrlContext: manifestMeta.siteUrlContext,
     routeManifestState,
     isInternalDocumentPathname: (pathname) => routeManifestState.routeSet.has(pathname),
@@ -174,12 +174,12 @@ const bootstrapClient = async (): Promise<void> => {
   attachUnsafeLinkClickGuard(document);
   initTheme();
   await hydrateShellScopes();
-  await initializeAppRouterRuntime();
+  await initializeRouterDocumentHostRuntime();
   await hydrateCurrentContent(undefined, { initial: true });
 };
 
-document.addEventListener('app-router:navigation-committed', (event: Event) => {
-  const detail = (event as CustomEvent<AppRouterNavigationCommittedDetail>).detail;
+document.addEventListener('router-document-host:navigation-committed', (event: Event) => {
+  const detail = (event as CustomEvent<RouterDocumentHostNavigationCommittedDetail>).detail;
   const contentRoot = detail.contentRoot;
   void hydrateCurrentContent(contentRoot instanceof HTMLElement ? contentRoot : undefined, {
     initial: false,

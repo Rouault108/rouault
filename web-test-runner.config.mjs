@@ -41,7 +41,7 @@ const browserLaunchers = [
 ];
 
 const config = {
-  files: ['test/browser/**/*.test.ts', '!test/browser/app-router.browser.test.ts'],
+  files: ['test/browser/**/*.test.ts'],
   nodeResolve: {
     exportConditions: ['browser', 'development'],
   },

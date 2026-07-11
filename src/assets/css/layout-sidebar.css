@@ -350,7 +350,7 @@ layout-sidebar-surface .heading {
 }
 
 @media (max-width: 1023px) {
-  app-router[data-sidebar-presence='present'] .layout-sidebar-col {
+  router-document-host[data-sidebar-presence='present'] .layout-sidebar-col {
     grid-column: 1;
     border-right: none;
     inline-size: 0;
@@ -361,7 +361,7 @@ layout-sidebar-surface .heading {
   /* overlay breakpoint 専用の pre-hydration guard
    * - SSR raw sidebar DOM は layout-sidebar が ownership を取得するまで paint させない
    * - 0px track からの leakage は列コンテナ側でも遮断する */
-  app-router[data-sidebar-presence='present']
+  router-document-host[data-sidebar-presence='present']
     .layout-sidebar-col
     > layout-sidebar[data-sidebar-boot-state='ssr'] {
     visibility: hidden;
@@ -370,7 +370,7 @@ layout-sidebar-surface .heading {
 }
 
 @media (max-width: 639px) {
-  app-router[data-sidebar-presence='present'] .layout-sidebar-col {
+  router-document-host[data-sidebar-presence='present'] .layout-sidebar-col {
     grid-column: 1;
     border-right: none;
     inline-size: 0;

@@ -64,7 +64,7 @@ const html = (headerAttrs = ''): string => `
   </head>
   <body>
     ${injectHeaderAttributes(renderTestHeaderHtml(), headerAttrs)}
-    <app-router data-sidebar-presence="present">
+    <router-document-host data-sidebar-presence="present">
       <aside data-app-shell-sidebar-host>
         <layout-sidebar
           sidebar-id="note-primary"
@@ -77,7 +77,7 @@ const html = (headerAttrs = ''): string => `
         ><nav data-sidebar-nav data-sidebar-id="note-primary" data-topology-revision="rev-1"><ul><li data-node-id="notes/example" data-node-kind="leaf" data-node-depth="0"><a data-sidebar-nav-control data-sidebar-nav-link href="/base/notes/example/" data-link-kind="internal-document" data-link-surface="navigation" aria-current="page">Example</a></li></ul></nav></layout-sidebar>
       </aside>
       <main id="main-content"><article>本文</article></main>
-    </app-router>
+    </router-document-host>
   </body>
 </html>
 `;

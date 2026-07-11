@@ -7,7 +7,7 @@ export type SsrAdapterKind =
   | 'none'
   | 'light-host-passthrough'
   | 'shadow-default'
-  | 'light-app-router';
+  | 'light-router-document-host';
 
 export interface SsrDocumentStyleDefinition {
   readonly id: string;
@@ -30,10 +30,10 @@ export const SSR_COMPONENT_DEFINITIONS = [
     adapterKind: 'shadow-default',
   },
   {
-    tag: 'app-router',
+    tag: 'router-document-host',
     ssr: 'light',
     profiles: ['shell'],
-    adapterKind: 'light-app-router',
+    adapterKind: 'light-router-document-host',
   },
   {
     tag: 'layout-sidebar',

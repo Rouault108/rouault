@@ -5,9 +5,9 @@ const noteCanonicalPath = '/notes/program/csharp/';
 const publicTagPagePath = '/tags/Programming/';
 const targetTitle = 'C#とは何か';
 
-const waitForAppRouterReady = async (page: Page): Promise<void> => {
+const waitForRouterDocumentHostReady = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
-    const router = document.querySelector('app-router');
+    const router = document.querySelector('router-document-host');
     return (
       router instanceof HTMLElement &&
       typeof (router as { navigate?: unknown }).navigate === 'function' &&
@@ -15,11 +15,11 @@ const waitForAppRouterReady = async (page: Page): Promise<void> => {
     );
   });
   await page.evaluate(async () => {
-    const router = document.querySelector('app-router') as
+    const router = document.querySelector('router-document-host') as
       | (HTMLElement & { whenReady: () => Promise<void> })
       | null;
     if (!router || typeof router.whenReady !== 'function') {
-      throw new Error('app-router.whenReady() が利用できません');
+      throw new Error('router-document-host.whenReady() が利用できません');
     }
     await router.whenReady();
   });
@@ -65,7 +65,7 @@ const openTagFilter = async (page: Page): Promise<void> => {
 };
 
 const clickArticleHeaderTag = async (page: Page, href: string): Promise<void> => {
-  await waitForAppRouterReady(page);
+  await waitForRouterDocumentHostReady(page);
   const link = page.locator(`.article-header a.article-header__tag-link[href="${href}"]`).first();
   await expect(link).toBeVisible();
   await link.click();
@@ -83,7 +83,7 @@ const toggleFilterCheckbox = async (page: Page, label: string): Promise<void> =>
 
 const clickSearchResultLink = async (page: Page, title: string): Promise<void> => {
   await waitForSearchInputReady(page);
-  await waitForAppRouterReady(page);
+  await waitForRouterDocumentHostReady(page);
   await page
     .locator('#main-content a.result-link')
     .filter({

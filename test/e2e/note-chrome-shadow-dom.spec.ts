@@ -7,9 +7,9 @@ const layoutRich = e2eNoteFixtures.layoutRich;
 const layoutRichDirectPath = layoutRich.directPath;
 const layoutRichSpaPath = layoutRich.normalizedPath;
 
-const waitForAppRouterReady = async (page: Page): Promise<void> => {
+const waitForRouterDocumentHostReady = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
-    const router = document.querySelector('app-router');
+    const router = document.querySelector('router-document-host');
     return (
       router instanceof HTMLElement &&
       typeof (router as { navigate?: unknown }).navigate === 'function' &&
@@ -18,11 +18,11 @@ const waitForAppRouterReady = async (page: Page): Promise<void> => {
   });
 };
 
-const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => {
-  await waitForAppRouterReady(page);
+const navigateWithRouterDocumentHost = async (page: Page, url: string): Promise<void> => {
+  await waitForRouterDocumentHostReady(page);
 
   await page.evaluate(async (targetUrl) => {
-    const router = document.querySelector('app-router') as
+    const router = document.querySelector('router-document-host') as
       | (HTMLElement & {
           navigate: (nextUrl: string) => Promise<unknown>;
           whenReady: () => Promise<void>;
@@ -33,7 +33,7 @@ const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => 
       typeof router.navigate !== 'function' ||
       typeof router.whenReady !== 'function'
     ) {
-      throw new Error('app-router.navigate() が利用できません');
+      throw new Error('router-document-host.navigate() が利用できません');
     }
 
     await router.whenReady();
@@ -151,7 +151,7 @@ test.describe('note chrome shadow DOM', () => {
       };
     });
 
-    await navigateWithAppRouter(page, layoutRichSpaPath);
+    await navigateWithRouterDocumentHost(page, layoutRichSpaPath);
 
     await expect(page).toHaveURL(layoutRichSpaPath);
     await expectLayoutRichNoteChrome(page);

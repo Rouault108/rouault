@@ -2,11 +2,11 @@ import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
 
 import {
-  APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC,
-  APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE,
-  APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE,
-  APP_ROUTER_ANNOUNCEMENT_CLASS_NAME,
-} from '../../shared/app-router/app-router-announcement-contract.js';
+  ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC,
+  ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_LIVE,
+  ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ATTRIBUTE,
+  ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_CLASS_NAME,
+} from '../../shared/router-document-host/router-document-host-announcement-contract.js';
 import {
   MAIN_CONTENT_ID,
   MAIN_CONTENT_TABINDEX,
@@ -63,19 +63,19 @@ const appendClassName = (element: Parse5Element, className: string): void => {
 };
 
 const isAnnouncementRegion = (element: Parse5Element): boolean =>
-  getAttributeIndex(element, APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE) >= 0;
+  getAttributeIndex(element, ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ATTRIBUTE) >= 0;
 
 const createAnnouncementRegion = (): Parse5Element => {
   const fragment = parse5.parseFragment('<div></div>');
   const region = fragment.childNodes[0];
   if (region === undefined || !isElementNode(region) || region.tagName !== 'div') {
-    throw new Error('app-router announcement region を生成できませんでした。');
+    throw new Error('router-document-host announcement region を生成できませんでした。');
   }
 
-  setAttribute(region, APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE, '');
-  setAttribute(region, 'aria-live', APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE);
-  setAttribute(region, 'aria-atomic', APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC);
-  setAttribute(region, 'class', APP_ROUTER_ANNOUNCEMENT_CLASS_NAME);
+  setAttribute(region, ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ATTRIBUTE, '');
+  setAttribute(region, 'aria-live', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_LIVE);
+  setAttribute(region, 'aria-atomic', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC);
+  setAttribute(region, 'class', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_CLASS_NAME);
   return region;
 };
 
@@ -92,7 +92,7 @@ const summarizeHtml = (html: string): string => {
 const createContractViolationError = (message: string, html: string): Error =>
   new Error(`${message} Input: ${summarizeHtml(html)}`);
 
-export const normalizeAppRouterLightDom = (innerHtml: string): string => {
+export const normalizeRouterDocumentHostLightDom = (innerHtml: string): string => {
   const fragment = parse5.parseFragment(innerHtml);
   const directChildElements = fragment.childNodes.filter((node) => isElementNode(node));
   const directChildMains = directChildElements.filter((node) => node.tagName === 'main');
@@ -103,21 +103,21 @@ export const normalizeAppRouterLightDom = (innerHtml: string): string => {
 
   if (directChildMains.length > 1) {
     throw createContractViolationError(
-      'app-router SSR は direct child の <main> を 1 つまでしか許可しません。',
+      'router-document-host SSR は direct child の <main> を 1 つまでしか許可しません。',
       innerHtml,
     );
   }
 
   if (announcementRegions.length > 1) {
     throw createContractViolationError(
-      'app-router SSR は direct child の announcement region を 1 つまでしか許可しません。',
+      'router-document-host SSR は direct child の announcement region を 1 つまでしか許可しません。',
       innerHtml,
     );
   }
 
   if (directChildMains.length === 1 && directChildCanonicalMains.length === 0) {
     throw createContractViolationError(
-      `app-router SSR は direct child の <main> に id="${MAIN_CONTENT_ID}" を要求します。`,
+      `router-document-host SSR は direct child の <main> に id="${MAIN_CONTENT_ID}" を要求します。`,
       innerHtml,
     );
   }
@@ -125,16 +125,16 @@ export const normalizeAppRouterLightDom = (innerHtml: string): string => {
   const main = directChildCanonicalMains[0];
   if (main === undefined) {
     throw createContractViolationError(
-      `app-router SSR は direct child に main#${MAIN_CONTENT_ID} を要求します。`,
+      `router-document-host SSR は direct child に main#${MAIN_CONTENT_ID} を要求します。`,
       innerHtml,
     );
   }
 
   const announcementRegion = announcementRegions[0] ?? createAnnouncementRegion();
-  setAttribute(announcementRegion, APP_ROUTER_ANNOUNCEMENT_ATTRIBUTE, '');
-  setAttribute(announcementRegion, 'aria-live', APP_ROUTER_ANNOUNCEMENT_ARIA_LIVE);
-  setAttribute(announcementRegion, 'aria-atomic', APP_ROUTER_ANNOUNCEMENT_ARIA_ATOMIC);
-  appendClassName(announcementRegion, APP_ROUTER_ANNOUNCEMENT_CLASS_NAME);
+  setAttribute(announcementRegion, ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ATTRIBUTE, '');
+  setAttribute(announcementRegion, 'aria-live', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_LIVE);
+  setAttribute(announcementRegion, 'aria-atomic', ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_ARIA_ATOMIC);
+  appendClassName(announcementRegion, ROUTER_DOCUMENT_HOST_ANNOUNCEMENT_CLASS_NAME);
   ensureCanonicalMainAttributes(main);
 
   const nextChildren = directChildMains[0]

@@ -40,7 +40,7 @@
 
 ### Events
 
-- `app-router:content-dom-replaced`はhydrationの参考eventになりうるが、trigger正本ではない。
+- `router-document-host:content-dom-replaced`はhydrationの参考eventになりうるが、trigger正本ではない。
 
 ### DOM / URL / State Contract
 

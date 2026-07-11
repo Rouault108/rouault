@@ -87,10 +87,10 @@ export const HYDRATION_REGISTRY = [
     activate: activateLayoutHeader,
   },
   {
-    tag: 'app-router',
+    tag: 'router-document-host',
     kind: 'custom-element',
     profiles: ['shell'],
-    loader: () => import('../../components/app/app-router.js'),
+    loader: () => import('../../components/app/router-document-host.js'),
   },
   {
     tag: 'search-dialog-enhancer',

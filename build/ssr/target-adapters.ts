@@ -19,7 +19,7 @@ import {
   type SsrComponentDefinition,
   type SsrDocumentStyleDefinition,
 } from './target-definitions.js';
-import { normalizeAppRouterLightDom } from './app-router-light-dom-normalizer.js';
+import { normalizeRouterDocumentHostLightDom } from './router-document-host-light-dom-normalizer.js';
 import { type SsrShadowTargetTag, type SsrTargetTag } from './targets.js';
 
 interface SsrTargetAdapter {
@@ -50,15 +50,15 @@ const buildShadowTemplate = (
   return html`<${staticTagName}${staticAttributes}>${unsafeHTML(innerHtml)}</${staticTagName}>`;
 };
 
-const renderAppRouterLightElement = async (
+const renderRouterDocumentHostLightElement = async (
   attributes: readonly SsrAttribute[],
   innerHtml: string,
 ): Promise<string> => {
-  const renderedInnerHtml = normalizeAppRouterLightDom(innerHtml);
+  const renderedInnerHtml = normalizeRouterDocumentHostLightDom(innerHtml);
 
-  return `<app-router${serializeAttributes(attributes)}>
+  return `<router-document-host${serializeAttributes(attributes)}>
     ${renderedInnerHtml}
-  </app-router>`;
+  </router-document-host>`;
 };
 
 const renderLightHostPassthroughElement = async (
@@ -93,10 +93,10 @@ const createSsrTargetAdapter = (definition: SsrComponentDefinition): SsrTargetAd
         definition.documentStyle,
       );
 
-    case 'light-app-router':
+    case 'light-router-document-host':
       return createSsrTargetAdapterResult(
         tag,
-        renderAppRouterLightElement,
+        renderRouterDocumentHostLightElement,
         definition.documentStyle,
       );
   }

@@ -1,11 +1,11 @@
-app-router {
+router-document-host {
   flex: 1 1 auto;
   display: grid;
   align-items: start;
   min-height: calc(100vh - var(--header-height));
 }
 
-app-router[data-sidebar-presence='present'] {
+router-document-host[data-sidebar-presence='present'] {
   --_note-frame-outer-gutter: var(--note-frame-outer-gutter, 0px);
 
   width: min(
@@ -19,24 +19,24 @@ app-router[data-sidebar-presence='present'] {
     minmax(0, 1fr);
 }
 
-app-router[data-sidebar-presence='absent'] {
+router-document-host[data-sidebar-presence='absent'] {
   grid-template-columns: minmax(0, 1fr);
 }
 
-app-router[data-sidebar-presence='present'] .layout-sidebar-col {
+router-document-host[data-sidebar-presence='present'] .layout-sidebar-col {
   grid-column: 1;
 }
 
-app-router[data-sidebar-presence='present'] > main#main-content {
+router-document-host[data-sidebar-presence='present'] > main#main-content {
   grid-column: 2;
 }
 
-app-router[data-sidebar-presence='absent'] > main#main-content {
+router-document-host[data-sidebar-presence='absent'] > main#main-content {
   grid-column: 1;
 }
 
 @media (max-width: 1023px) {
-  app-router[data-sidebar-presence='present'] {
+  router-document-host[data-sidebar-presence='present'] {
     width: 100%;
     column-gap: 0;
     grid-template-columns:
@@ -46,7 +46,7 @@ app-router[data-sidebar-presence='absent'] > main#main-content {
 }
 
 @media (max-width: 639px) {
-  app-router[data-sidebar-presence='present'] {
+  router-document-host[data-sidebar-presence='present'] {
     grid-template-columns:
       0px
       minmax(0, 1fr);

@@ -6,9 +6,9 @@ const layoutRich = e2eNoteFixtures.layoutRich;
 const markdownBasic = e2eNoteFixtures.markdownBasic;
 const sidebarScrollTarget = e2eNoteFixtures.sidebarScrollTarget;
 
-const waitForAppRouterReady = async (page: Page): Promise<void> => {
+const waitForRouterDocumentHostReady = async (page: Page): Promise<void> => {
   await page.waitForFunction(() => {
-    const router = document.querySelector('app-router');
+    const router = document.querySelector('router-document-host');
     return (
       router instanceof HTMLElement &&
       typeof (router as { navigate?: unknown }).navigate === 'function' &&
@@ -17,16 +17,16 @@ const waitForAppRouterReady = async (page: Page): Promise<void> => {
   });
 };
 
-const navigateWithAppRouter = async (page: Page, url: string): Promise<void> => {
-  await waitForAppRouterReady(page);
+const navigateWithRouterDocumentHost = async (page: Page, url: string): Promise<void> => {
+  await waitForRouterDocumentHostReady(page);
   await page.evaluate(async (targetUrl) => {
-    const router = document.querySelector('app-router') as
+    const router = document.querySelector('router-document-host') as
       | (HTMLElement & {
           navigate: (nextUrl: string) => Promise<unknown>;
           whenReady: () => Promise<void>;
         })
       | null;
-    if (router === null) throw new Error('app-router is missing.');
+    if (router === null) throw new Error('router-document-host is missing.');
     await router.whenReady();
     await router.navigate(targetUrl);
   }, url);
@@ -354,15 +354,15 @@ const prepareHeaderMenuItems = async (
   );
 };
 
-const waitForAppRouterSettled = async (page: Page): Promise<void> => {
-  await waitForAppRouterReady(page);
+const waitForRouterDocumentHostSettled = async (page: Page): Promise<void> => {
+  await waitForRouterDocumentHostReady(page);
   await page.evaluate(async () => {
-    const router = document.querySelector('app-router') as
+    const router = document.querySelector('router-document-host') as
       | (HTMLElement & { whenReady: () => Promise<void> })
       | null;
 
     if (router === null) {
-      throw new Error('app-router is missing.');
+      throw new Error('router-document-host is missing.');
     }
 
     await router.whenReady();
@@ -405,13 +405,13 @@ const readHeaderCorpusOffsetGeometry = async (page: Page): Promise<HeaderCorpusO
 test.describe('Static header migration', () => {
   test('SPA 遷移では shell.headerHtml で header 全体を置換すること', async ({ page }) => {
     await page.goto(layoutRich.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
       'data-note-layout',
       'true',
     );
-    await navigateWithAppRouter(page, '/about/');
+    await navigateWithRouterDocumentHost(page, '/about/');
 
     await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
       'data-note-layout',
@@ -425,7 +425,7 @@ test.describe('Static header migration', () => {
     page,
   }) => {
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const trigger = page.locator(searchTriggerSelector);
     const dialog = page.locator(searchDialogSelector);
@@ -453,7 +453,7 @@ test.describe('Static header migration', () => {
 
   test('検索 trigger は anchor semantics と accessible name を維持すること', async ({ page }) => {
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const trigger = page.locator(searchTriggerSelector);
     await expect(trigger).toHaveCount(1);
@@ -468,7 +468,7 @@ test.describe('Static header migration', () => {
     page,
   }) => {
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const corpusMenu = page.locator('header[data-layout-header] [data-header-menu="corpus"]');
     const corpusTrigger = corpusMenu.locator('[data-header-menu-trigger]');
@@ -577,7 +577,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 760 });
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
     const regular = await readSearchTriggerDensity(page);
     expect(regular.labelDisplay).not.toBe('none');
     expect(regular.width).toBeGreaterThan(regular.height * 1.5);
@@ -613,7 +613,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 760 });
     await page.goto(layoutRich.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const geometry = await page.locator('header[data-layout-header]').evaluate((header) => {
       const center = header.querySelector<HTMLElement>('.layout-header__center');
@@ -651,11 +651,11 @@ test.describe('Static header migration', () => {
     await page.setViewportSize({ width: 1280, height: 760 });
 
     await page.goto(layoutRich.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
     const notePage = await readHeaderCorpusOffsetGeometry(page);
 
     await page.goto('/corpora/library/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
     const corpusPage = await readHeaderCorpusOffsetGeometry(page);
 
     expect(notePage.noteLayout).toBe('true');
@@ -681,7 +681,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 399, height: 760 });
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const trigger = page.locator(searchTriggerSelector);
     await expect(trigger).toHaveAttribute('href', /\/search\/$/u);
@@ -738,7 +738,7 @@ test.describe('Static header migration', () => {
 
   test('header controls は focus-visible で視認可能な focus ring を持つこと', async ({ page }) => {
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     for (const target of [
       headerControlTargets.corpus,
@@ -771,7 +771,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 760 });
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const density = await page.locator(headerControlTargets.corpus.selector).evaluate((element) => {
       const style = window.getComputedStyle(element);
@@ -809,7 +809,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 760 });
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const themeTrigger = page.locator(themeTriggerRootSelector);
     await expect(themeTrigger).toHaveCount(1);
@@ -876,7 +876,7 @@ test.describe('Static header migration', () => {
     page,
   }) => {
     await page.goto(markdownBasic.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
     await prepareHeaderMenuItems(page, 'corpus', ['Alpha', 'Beta', 'Gamma']);
 
     for (const menu of ['corpus', 'theme'] as const) {
@@ -906,7 +906,7 @@ test.describe('Static header migration', () => {
   test('corpus trigger label は長文でも ellipsis され header 内に収まること', async ({ page }) => {
     await page.setViewportSize({ width: 640, height: 760 });
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     await page.locator('header[data-layout-header] .corpus-trigger-text').evaluate((element) => {
       element.textContent =
@@ -961,7 +961,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 760 });
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const trigger = page.locator(headerMenuTriggerSelector('corpus'));
     await trigger.click();
@@ -1005,7 +1005,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 760 });
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const trigger = page.locator(headerMenuTriggerSelector('theme'));
     await trigger.click();
@@ -1054,7 +1054,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 760 });
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
     await prepareHeaderMenuItems(page, 'corpus', [
       'ExtremelyLongCorpusMenuItemLabelForStaticHeaderMigrationVisualOverflowContract'.repeat(4),
       'AnotherExtremelyLongCorpusMenuItemLabelThatShouldRemainOnOneVisualLine'.repeat(4),
@@ -1122,7 +1122,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 760 });
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     await page.locator(headerMenuTriggerSelector('corpus')).click();
     await expectMenuOpen(page, 'corpus', true);
@@ -1207,7 +1207,7 @@ test.describe('Static header migration', () => {
     page,
   }) => {
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     await page.locator(searchTriggerSelector).focus();
     await page.keyboard.press('Enter');
@@ -1224,7 +1224,7 @@ test.describe('Static header migration', () => {
     page,
   }) => {
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     await page.locator(searchTriggerSelector).click();
 
@@ -1240,7 +1240,7 @@ test.describe('Static header migration', () => {
     page,
   }) => {
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     await page.keyboard.press('Tab');
     await page.locator(searchTriggerSelector).evaluate((anchor) => {
@@ -1259,8 +1259,8 @@ test.describe('Static header migration', () => {
 
   test('theme switcher は静的 header 置換後も delegation で同期すること', async ({ page }) => {
     await page.goto(markdownBasic.directPath);
-    await waitForAppRouterReady(page);
-    await navigateWithAppRouter(page, '/about/');
+    await waitForRouterDocumentHostReady(page);
+    await navigateWithRouterDocumentHost(page, '/about/');
 
     await page.locator(themeTriggerRootSelector).click();
     await expectMenuOpen(page, 'theme', true);
@@ -1290,7 +1290,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 760 });
     await page.goto('/about/');
-    await waitForAppRouterSettled(page);
+    await waitForRouterDocumentHostSettled(page);
 
     const corpusMenu = page.locator('header[data-layout-header] [data-header-menu="corpus"]');
     await corpusMenu.locator('[data-header-menu-trigger]').click();
@@ -1326,7 +1326,7 @@ test.describe('Static header migration', () => {
       page.waitForURL((url) => url.pathname === expectedUrl.pathname),
       candidate.click(),
     ]);
-    await waitForAppRouterSettled(page);
+    await waitForRouterDocumentHostSettled(page);
 
     const nextHeader = page.locator('header[data-layout-header]');
     await expect(nextHeader.locator('.corpus-trigger-text')).toHaveText(candidateInfo.label);
@@ -1352,7 +1352,7 @@ test.describe('Static header migration', () => {
 
   test('direct data-theme mutation でも header theme 表示だけを同期すること', async ({ page }) => {
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     await page.evaluate(() => {
       document.documentElement.dataset['theme'] = 'light';
@@ -1384,7 +1384,7 @@ test.describe('Static header migration', () => {
     page,
   }) => {
     await page.goto(markdownBasic.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     for (const menu of ['corpus', 'theme'] as const) {
       const trigger = page.locator(
@@ -1404,7 +1404,7 @@ test.describe('Static header migration', () => {
     page,
   }) => {
     await page.goto(markdownBasic.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     await page.locator(headerMenuTriggerSelector('corpus')).click();
     await expectMenuOpen(page, 'corpus', true);
@@ -1430,7 +1430,7 @@ test.describe('Static header migration', () => {
 
   test('header menu は one-menu-open と項目選択後 close を維持すること', async ({ page }) => {
     await page.goto(markdownBasic.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     await page.locator(headerMenuTriggerSelector('corpus')).click();
     await expectMenuOpen(page, 'corpus', true);
@@ -1453,7 +1453,7 @@ test.describe('Static header migration', () => {
   test('header menu は外部 scroll で閉じ、panel 内 scroll では閉じないこと', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 360 });
     await page.goto(markdownBasic.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     await page.locator(headerMenuTriggerSelector('corpus')).click();
     await expectMenuOpen(page, 'corpus', true);
@@ -1510,7 +1510,7 @@ test.describe('Static header migration', () => {
     page,
   }) => {
     await page.goto(markdownBasic.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     // This test intentionally targets the native summary element because it verifies
     // details/summary toggle semantics rather than the visual state contract.
@@ -1536,7 +1536,7 @@ test.describe('Static header migration', () => {
     page,
   }) => {
     await page.goto(markdownBasic.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const corpusTrigger = page.locator(headerMenuTriggerSelector('corpus'));
     await corpusTrigger.focus();
@@ -1566,7 +1566,7 @@ test.describe('Static header migration', () => {
       };
     });
 
-    await navigateWithAppRouter(page, '/about/');
+    await navigateWithRouterDocumentHost(page, '/about/');
     await page.locator(headerMenuTriggerSelector('theme')).click();
     await page.evaluate(() => {
       document.dispatchEvent(new CustomEvent('app-shell:committed'));
@@ -1594,7 +1594,7 @@ test.describe('Static header migration', () => {
     page,
   }) => {
     await page.goto(markdownBasic.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
     await prepareHeaderMenuItems(page, 'corpus', ['Alpha', 'Beta', 'Gamma']);
 
     for (const menu of ['corpus', 'theme'] as const) {
@@ -1639,7 +1639,7 @@ test.describe('Static header migration', () => {
     page,
   }) => {
     await page.goto(markdownBasic.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
     const labels = ['Alpha', 'Beta', 'Gamma'] as const;
     await prepareHeaderMenuItems(page, 'corpus', labels);
     await prepareHeaderMenuItems(page, 'theme', labels);
@@ -1675,10 +1675,10 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 520 });
     await page.goto('/about/');
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     await page.evaluate(async () => {
-      const router = document.querySelector('app-router') as
+      const router = document.querySelector('router-document-host') as
         | (HTMLElement & { whenReady?: () => Promise<void> })
         | null;
 
@@ -1856,7 +1856,7 @@ test.describe('Static header migration', () => {
 
   test('header menu は typeahead と close 後の buffer reset を同期すること', async ({ page }) => {
     await page.goto(markdownBasic.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
     const labels = ['Gamma', 'Gala', 'Alpha'] as const;
     await prepareHeaderMenuItems(page, 'corpus', labels);
     await prepareHeaderMenuItems(page, 'theme', labels);
@@ -1944,7 +1944,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 760 });
     await page.goto(layoutRich.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const trigger = page.locator('header[data-layout-header] [data-toc-trigger]');
     await expect(trigger).toHaveAttribute('data-visible', 'true');
@@ -1982,7 +1982,7 @@ test.describe('Static header migration', () => {
   test('header responsive CSS は TOC trigger の 640px 境界を維持すること', async ({ page }) => {
     await page.setViewportSize({ width: 639, height: 760 });
     await page.goto(layoutRich.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const triggerSelector = 'header[data-layout-header] [data-toc-trigger]';
     await page.locator(triggerSelector).evaluate((element) => {
@@ -2013,7 +2013,7 @@ test.describe('Static header migration', () => {
 
     await page.setViewportSize({ width: 1023, height: 760 });
     await page.goto(layoutRich.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
     await expect.poll(() => visibleDisplay(page, triggerSelector)).not.toBe('none');
 
     await page.setViewportSize({ width: 1024, height: 760 });
@@ -2038,7 +2038,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 760 });
     await page.goto(layoutRich.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const header = page.locator('header[data-layout-header]');
     const trigger = page.locator('header[data-layout-header] [data-layout-sidebar-toggle]');
@@ -2081,7 +2081,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 760 });
     await page.goto(layoutRich.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     const header = page.locator('header[data-layout-header]');
     const sidebarTrigger = page.locator('header[data-layout-header] [data-layout-sidebar-toggle]');
@@ -2139,7 +2139,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 760 });
     await page.goto(layoutRich.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
 
     await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
       'data-overlay-sidebar-open',
@@ -2161,7 +2161,7 @@ test.describe('Static header migration', () => {
       });
     });
 
-    await navigateWithAppRouter(page, sidebarScrollTarget.normalizedPath);
+    await navigateWithRouterDocumentHost(page, sidebarScrollTarget.normalizedPath);
     await expect(page.locator('header[data-layout-header]')).toHaveCount(1);
     await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
       'data-sidebar-enabled',
@@ -2201,7 +2201,7 @@ test.describe('Static header migration', () => {
     for (const width of widths) {
       await page.setViewportSize({ width, height: 760 });
       await page.goto('/');
-      await waitForAppRouterReady(page);
+      await waitForRouterDocumentHostReady(page);
 
       await expect(page.locator('header[data-layout-header]')).toHaveAttribute(
         'data-note-layout',
@@ -2225,7 +2225,7 @@ test.describe('Static header migration', () => {
     page,
   }) => {
     await page.goto(markdownBasic.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
     const originalUrl = page.url();
 
     await page.route('**/__router/about/index.router.json', async (route) => {
@@ -2252,13 +2252,13 @@ test.describe('Static header migration', () => {
     );
 
     await page.evaluate(async () => {
-      const router = document.querySelector('app-router') as
+      const router = document.querySelector('router-document-host') as
         | (HTMLElement & {
             navigate: (nextUrl: string) => Promise<unknown>;
             whenReady: () => Promise<void>;
           })
         | null;
-      if (router === null) throw new Error('app-router is missing.');
+      if (router === null) throw new Error('router-document-host is missing.');
       await router.whenReady();
       await router.navigate('/about/');
     });
@@ -2276,7 +2276,7 @@ test.describe('Static header migration', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 760 });
     await page.goto(layoutRich.directPath);
-    await waitForAppRouterReady(page);
+    await waitForRouterDocumentHostReady(page);
     const originalUrl = page.url();
     const originalNavigationUrl = layoutRich.normalizedPath;
 
@@ -2310,13 +2310,13 @@ test.describe('Static header migration', () => {
     });
 
     await page.evaluate(async () => {
-      const router = document.querySelector('app-router') as
+      const router = document.querySelector('router-document-host') as
         | (HTMLElement & {
             navigate: (nextUrl: string) => Promise<unknown>;
             whenReady: () => Promise<void>;
           })
         | null;
-      if (router === null) throw new Error('app-router is missing.');
+      if (router === null) throw new Error('router-document-host is missing.');
       await router.whenReady();
       await router.navigate('/about/');
     });

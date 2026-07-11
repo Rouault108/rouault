@@ -47,8 +47,8 @@ const createLoadedRouteManifestState = (routes: readonly string[]) => {
 };
 
 describe('search-navigation', () => {
-  it('app-router が存在する場合は SPA navigate を優先すること', async () => {
-    const host = await fixture<HTMLElement>(html`<app-router></app-router>`);
+  it('router-document-host が存在する場合は SPA navigate を優先すること', async () => {
+    const host = await fixture<HTMLElement>(html`<router-document-host></router-document-host>`);
     let navigatedUrl = '';
 
     (host as HTMLElement & { navigate: (url: string) => Promise<NavigationResult> }).navigate = (
@@ -64,7 +64,7 @@ describe('search-navigation', () => {
     host.remove();
   });
 
-  it('app-router が存在しない場合は fallback navigation を行わないこと', async () => {
+  it('router-document-host が存在しない場合は fallback navigation を行わないこと', async () => {
     const result = await navigateInternalDocument('/tags/music/', {
       resolveRouter: () => null,
     });

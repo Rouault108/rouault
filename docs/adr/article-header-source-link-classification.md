@@ -30,7 +30,7 @@ Article header source linkの`data-link-kind`は、出典UIであってもlink c
 - `data-link-surface="metadata"`は維持する。
 - `data-external="true"`は`external-web`のときだけ出力する。
 
-`target="_blank"`と`rel="noopener noreferrer"`は全分類で維持する。`internal-document`に分類されても、article header source linkは本文閲覧中の出典参照であり、app-router interceptionではなくpassthrough navigationとして扱う。
+`target="_blank"`と`rel="noopener noreferrer"`は全分類で維持する。`internal-document`に分類されても、article header source linkは本文閲覧中の出典参照であり、router-document-host interceptionではなくpassthrough navigationとして扱う。
 
 `NoteLayout`は`renderArticleHeaderHtml()`を呼ぶ前にsource hrefを分類し、分類済みmodeをarticle header rendererへ渡す。classification contextを持たないraw render / story / unit test用のfallbackは、`renderArticleHeaderHtml()`のraw fallback modeに限定する。
 

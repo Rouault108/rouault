@@ -9,7 +9,7 @@ import type {
 import { RouterNotStartedError } from './router-types.js';
 import { validateInternalDocumentNavigationRequest } from './validate-internal-document-navigation-request.js';
 
-export interface AppRouterNavigationHost {
+export interface RouterDocumentHostNavigationHost {
   readonly navigate: (
     url: string,
     options?: { readonly historyMode?: HistoryMode },
@@ -18,7 +18,7 @@ export interface AppRouterNavigationHost {
 
 export interface NavigateInternalDocumentOptions {
   readonly historyMode?: HistoryMode;
-  readonly resolveRouter?: () => AppRouterNavigationHost | null;
+  readonly resolveRouter?: () => RouterDocumentHostNavigationHost | null;
   readonly siteUrlContext?: SiteUrlContext;
   readonly routeManifestState?: InternalDocumentRouteManifestState;
   readonly currentUrl?: string;
@@ -53,11 +53,11 @@ const createNotStartedResult = (historyMode: HistoryMode): NavigationResult => (
   issues: [],
   source: 'none',
   renderedKind: null,
-  error: new RouterNotStartedError('app-router が見つかりません。'),
+  error: new RouterNotStartedError('router-document-host が見つかりません。'),
 });
 
-const defaultResolveRouter = (): AppRouterNavigationHost | null =>
-  document.querySelector<HTMLElement & AppRouterNavigationHost>('app-router');
+const defaultResolveRouter = (): RouterDocumentHostNavigationHost | null =>
+  document.querySelector<HTMLElement & RouterDocumentHostNavigationHost>('router-document-host');
 
 const defaultCurrentUrl = (siteUrlContext: SiteUrlContext): string => {
   if (typeof document !== 'undefined') {

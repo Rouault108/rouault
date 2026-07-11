@@ -107,13 +107,13 @@ const retainedPureSsrComponent = (
 
 export const STATIC_FIRST_RETAINED_COMPONENTS: readonly StaticFirstRetainedComponent[] = [
   retainedPureSsrComponent(
-    'app-router',
-    'src/components/app/app-router.ts',
+    'router-document-host',
+    'src/components/app/router-document-host.ts',
     'retained-shell',
     ['shell'],
     ['shell'],
     ['shell'],
-    'app-router uses the light-app-router string adapter; SSR does not evaluate the HTMLElement module',
+    'router-document-host uses the light-router-document-host string adapter; SSR does not evaluate the HTMLElement module',
   ),
   {
     tag: 'layout-sidebar',
