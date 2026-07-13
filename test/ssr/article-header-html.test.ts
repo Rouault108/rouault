@@ -1,8 +1,40 @@
 import { describe, expect, it } from 'vitest';
+import { parseFragment, type DefaultTreeAdapterMap } from 'parse5';
 
 import { renderArticleHeaderHtml } from '../../src/layouts/article-header-html.js';
 
 type ArticleHeaderProjection = Parameters<typeof renderArticleHeaderHtml>[0];
+type ChildNode = DefaultTreeAdapterMap['childNode'];
+type ElementNode = DefaultTreeAdapterMap['element'];
+
+interface ParentLike {
+  readonly childNodes: readonly ChildNode[];
+}
+
+const isElementNode = (node: ChildNode): node is ElementNode => 'tagName' in node;
+
+const getClassTokens = (node: ElementNode): string[] =>
+  (node.attrs.find((attribute) => attribute.name === 'class')?.value ?? '')
+    .split(/\s+/u)
+    .filter((token) => token.length > 0);
+
+const collectElementsByClass = (
+  node: ParentLike,
+  className: string,
+  matches: ElementNode[] = [],
+): ElementNode[] => {
+  for (const child of node.childNodes) {
+    if (!isElementNode(child)) continue;
+    if (getClassTokens(child).includes(className)) {
+      matches.push(child);
+    }
+    collectElementsByClass(child, className, matches);
+  }
+  return matches;
+};
+
+const getDirectChildElements = (node: ElementNode): ElementNode[] =>
+  node.childNodes.filter(isElementNode);
 
 const render = (overrides: Partial<ArticleHeaderProjection>): string => {
   const projection: ArticleHeaderProjection = {
@@ -16,6 +48,72 @@ const render = (overrides: Partial<ArticleHeaderProjection>): string => {
 };
 
 describe('static article-header html contract', () => {
+  const baseProjection: ArticleHeaderProjection = {
+    heading: '見出し',
+    breadcrumbs: [{ label: 'Notes', href: '/notes/' }, { label: '見出し' }],
+    genres: [],
+  };
+
+  it('statusなしではbreadcrumbsとheadingをarticle headerのdirect siblingにすること', () => {
+    const fragment = parseFragment(renderArticleHeaderHtml(baseProjection));
+    const articleHeaders = collectElementsByClass(fragment, 'article-header').filter(
+      (element) => element.tagName === 'header',
+    );
+    expect(articleHeaders).toHaveLength(1);
+
+    const directChildren = articleHeaders[0] ? getDirectChildElements(articleHeaders[0]) : [];
+    const breadcrumbs = directChildren.filter((element) =>
+      getClassTokens(element).includes('article-header__breadcrumbs'),
+    );
+    const statuses = directChildren.filter((element) =>
+      getClassTokens(element).includes('article-header__status'),
+    );
+    const headings = directChildren.filter((element) =>
+      getClassTokens(element).includes('article-header__heading'),
+    );
+
+    expect(breadcrumbs).toHaveLength(1);
+    expect(statuses).toHaveLength(0);
+    expect(headings).toHaveLength(1);
+    expect(directChildren.indexOf(headings[0] as ElementNode)).toBe(
+      directChildren.indexOf(breadcrumbs[0] as ElementNode) + 1,
+    );
+  });
+
+  it('statusありではbreadcrumbs、status、headingをarticle headerのdirect siblingにすること', () => {
+    const fragment = parseFragment(
+      renderArticleHeaderHtml({
+        ...baseProjection,
+        status: 'wip',
+      }),
+    );
+    const articleHeaders = collectElementsByClass(fragment, 'article-header').filter(
+      (element) => element.tagName === 'header',
+    );
+    expect(articleHeaders).toHaveLength(1);
+
+    const directChildren = articleHeaders[0] ? getDirectChildElements(articleHeaders[0]) : [];
+    const breadcrumbs = directChildren.filter((element) =>
+      getClassTokens(element).includes('article-header__breadcrumbs'),
+    );
+    const statuses = directChildren.filter((element) =>
+      getClassTokens(element).includes('article-header__status'),
+    );
+    const headings = directChildren.filter((element) =>
+      getClassTokens(element).includes('article-header__heading'),
+    );
+
+    expect(breadcrumbs).toHaveLength(1);
+    expect(statuses).toHaveLength(1);
+    expect(headings).toHaveLength(1);
+    expect(directChildren.indexOf(statuses[0] as ElementNode)).toBe(
+      directChildren.indexOf(breadcrumbs[0] as ElementNode) + 1,
+    );
+    expect(directChildren.indexOf(headings[0] as ElementNode)).toBe(
+      directChildren.indexOf(statuses[0] as ElementNode) + 1,
+    );
+  });
+
   it('production note page 用の静的 header を描画し custom element を使わないこと', () => {
     const rendered = render({
       heading: '見出し',
