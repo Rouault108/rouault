@@ -126,13 +126,13 @@ const assertAppShellRootContract = (options: {
 
   visit(options.document);
 
-  if (structuralRoots.length !== 1) {
+  const [appShellRoot] = structuralRoots;
+  if (structuralRoots.length !== 1 || appShellRoot === undefined) {
     throw new Error(
       `[production-html-contracts] ${repoPath} contains ${structuralRoots.length.toString()} app shell roots identified by ${APP_SHELL_ROOT_ATTRIBUTE}; expected exactly 1.`,
     );
   }
 
-  const appShellRoot = structuralRoots[0];
   const appShellRootClass = appShellRoot.attrs.find((attribute) => attribute.name === 'class');
   if (
     appShellRootClass === undefined ||
