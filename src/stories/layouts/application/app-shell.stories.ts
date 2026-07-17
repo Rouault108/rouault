@@ -22,7 +22,7 @@ const renderAppShell = () =>
         'BaseLayout Preview',
         html`
           <div class="foundation-stage" style="padding: 0; overflow: clip;">
-            <div class="app-root" id="app-shell-root">
+            <div class="app-shell-root" id="app-shell-root">
               <ui-skip-link
                 id="app-shell-skip-link"
                 target-id="app-shell-main"

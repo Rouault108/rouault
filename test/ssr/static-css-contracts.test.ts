@@ -126,10 +126,7 @@ const rootRuleRecordsForSelector = (css: string, selector: string): SelectorRule
   return rootRuleRecords(css).filter((record) => record.selectors.includes(targetSelector));
 };
 
-const declarationValuesForRuleRecord = (
-  record: SelectorRuleRecord,
-  property: string,
-): string[] => {
+const declarationValuesForRuleRecord = (record: SelectorRuleRecord, property: string): string[] => {
   return record.declarations
     .filter((declaration) => declaration.property === property)
     .map((declaration) => declaration.value);
@@ -214,9 +211,7 @@ const declarationValuesForSelectors = (
   selectors: readonly string[],
   property: string,
 ): string[] =>
-  declarationsForSelectors(css, selectors, property).map((declaration) =>
-    declaration.value.trim(),
-  );
+  declarationsForSelectors(css, selectors, property).map((declaration) => declaration.value.trim());
 
 const normalizeDeclarationValue = (value: string): string =>
   value
@@ -479,6 +474,7 @@ const forbiddenMainCssTokens = [
 
 const forbiddenMainCssSelectorPatterns = [
   /\bapp-root\b/u,
+  /\bapp-shell-root\b/u,
   /\brouter-document-host\b/u,
   /\.note-shell(?![-_a-zA-Z0-9])/u,
   /header\[data-layout-header\]/u,
@@ -562,6 +558,32 @@ describe('static CSS contracts', () => {
       expect(css, String(pattern)).not.to.match(pattern);
     }
     expect(css).not.to.contain('ui-list-item >');
+  });
+
+  it('app shell CSS uses only the presentation class and preserves its declarations', () => {
+    const css = readCss('app-shell.css');
+    const selectors = allRuleSelectors(css);
+    const legacyCompatibilityRules: string[] = [];
+
+    postcss.parse(css).walkRules((rule: Rule) => {
+      const ruleSelectors = splitSelectors(rule.selector);
+      if (ruleSelectors.includes('.app-root') && ruleSelectors.includes('.app-shell-root')) {
+        legacyCompatibilityRules.push(rule.selector);
+      }
+    });
+
+    expect(selectors).toContain('.app-shell-root');
+    expect(declarationValuesForSelector(css, '.app-shell-root', '--note-sidebar-main-gap')).toEqual(
+      ['clamp(24px, 2vw, 40px)'],
+    );
+    expect(declarationValuesForSelector(css, '.app-shell-root', 'min-height')).toEqual(['100vh']);
+    expect(declarationValuesForSelector(css, '.app-shell-root', 'display')).toEqual(['flex']);
+    expect(declarationValuesForSelector(css, '.app-shell-root', 'flex-direction')).toEqual([
+      'column',
+    ]);
+    expect(selectors).not.toContain('.app-root');
+    expect(selectors.some((selector) => selector.includes('[data-app-shell-root]'))).toBe(false);
+    expect(legacyCompatibilityRules).toEqual([]);
   });
 
   it('loads Geist Mono Variable as the project mono font source', () => {
@@ -1753,9 +1775,7 @@ describe('static CSS contracts', () => {
         /^(?:\d+(?:\.\d+)?|\.\d+)$/u,
       );
     }
-    expect(lineHeightCodeValues).not.toContain(
-      '1',
-    );
+    expect(lineHeightCodeValues).not.toContain('1');
 
     expectSelectorMatchingRuleToDeclare(
       codeSurfaces,
@@ -1899,8 +1919,7 @@ describe('static CSS contracts', () => {
         record.block.includes('position: relative') && record.block.includes('overflow: hidden'),
     );
     const layoutRootRecord = codeBlockRootRecords.find(
-      (record) =>
-        record.block.includes('inline-size:') || record.block.includes('margin-inline:'),
+      (record) => record.block.includes('inline-size:') || record.block.includes('margin-inline:'),
     );
 
     expect(surfaceRootRecord, 'surface root rule').toBeDefined();
@@ -1988,8 +2007,7 @@ describe('static CSS contracts', () => {
         record.block.includes('border-radius:'),
     );
     const layoutRootRecord = codeBlockRootRecords.find(
-      (record) =>
-        record.block.includes('inline-size:') || record.block.includes('margin-inline:'),
+      (record) => record.block.includes('inline-size:') || record.block.includes('margin-inline:'),
     );
     expect(surfaceRootRecord, 'code block surface root rule').toBeDefined();
     expect(layoutRootRecord, 'code block layout root rule').toBeDefined();
@@ -2102,8 +2120,7 @@ describe('static CSS contracts', () => {
     const staticCopyButton = readCss('static-copy-button.css');
     const overlayClearanceSelector =
       "[data-code-block-root].code-surface-root--overlay:not([data-code-group-owned='true']):has(> .code-surface-caption > .code-surface-copy-button-shell) > pre[data-code-block]";
-    const overlayClearanceDeclarationValue =
-      'var(--ui-code-copy-overlay-code-padding-inline-end)';
+    const overlayClearanceDeclarationValue = 'var(--ui-code-copy-overlay-code-padding-inline-end)';
     const overlayClearanceTokenProperties = [
       '--ui-code-copy-control-inline-size',
       '--ui-code-copy-overlay-code-padding-inline-end-base',
@@ -2123,8 +2140,7 @@ describe('static CSS contracts', () => {
         record.block.includes('border-radius:'),
     );
     const layoutRootRecord = codeBlockRootRecords.find(
-      (record) =>
-        record.block.includes('inline-size:') || record.block.includes('margin-inline:'),
+      (record) => record.block.includes('inline-size:') || record.block.includes('margin-inline:'),
     );
     expect(surfaceRootRecord, 'code block surface root rule').toBeDefined();
     expect(layoutRootRecord, 'code block layout root rule').toBeDefined();
@@ -2601,9 +2617,9 @@ describe('static CSS contracts', () => {
       'line-height: var(--line-height-normal)',
       'text-align: start',
     ]);
-    expect(declarationValuesForSelector(details, '.details-block__summary-content', 'flex')).toEqual(
-      ['0 1 auto'],
-    );
+    expect(
+      declarationValuesForSelector(details, '.details-block__summary-content', 'flex'),
+    ).toEqual(['0 1 auto']);
     expect(ruleBlock(details, '.details-block__summary-content')).not.toContain('flex: 1 1 auto');
     expectRuleToDeclare(details, '.details-block__chevron.static-icon', [
       'inline-size: var(--icon-base, 16px)',
@@ -2970,9 +2986,9 @@ describe('static CSS contracts', () => {
       syntaxFieldNameTermSelectors,
       'background',
     );
-    expect(printSyntaxFieldNameBackgrounds.map((declaration) => declaration.value.trim())).toContain(
-      'transparent',
-    );
+    expect(
+      printSyntaxFieldNameBackgrounds.map((declaration) => declaration.value.trim()),
+    ).toContain('transparent');
     expect(
       printSyntaxFieldNameBackgrounds.every(
         (declaration) => declaration.value.trim() === 'transparent',

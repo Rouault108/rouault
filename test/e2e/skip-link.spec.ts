@@ -14,19 +14,19 @@ const expectNativeSkipLinkStructure = async (page: Page): Promise<void> => {
 
   const order = await page.evaluate(() => {
     const skipLinkElement = document.querySelector('body > a.skip-link');
-    const appRootElement = document.querySelector('#app');
+    const appShellRootElement = document.querySelector('[data-app-shell-root]');
 
-    if (!skipLinkElement || !appRootElement) {
+    if (!skipLinkElement || !appShellRootElement) {
       return 'missing';
     }
 
-    return skipLinkElement.compareDocumentPosition(appRootElement) &
+    return skipLinkElement.compareDocumentPosition(appShellRootElement) &
       Node.DOCUMENT_POSITION_FOLLOWING
-      ? 'before-app'
-      : 'after-app';
+      ? 'before-app-shell'
+      : 'after-app-shell';
   });
 
-  expect(order).toBe('before-app');
+  expect(order).toBe('before-app-shell');
 };
 
 const expectSkipLinkHiddenBeforeFocus = async (page: Page): Promise<void> => {

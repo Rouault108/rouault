@@ -49,7 +49,7 @@ describe('static-header-shell-mutation', () => {
   });
 
   it('commit と rollback は検証済み outerHTML で header を置換すること', () => {
-    document.body.innerHTML = `<div id="app">${headerHtml('previous')}</div>`;
+    document.body.innerHTML = `<div data-test-shell>${headerHtml('previous')}</div>`;
     const mutation = prepareStaticHeaderMutation(headerHtml('next'));
     mutation.commit();
     expect(document.querySelector('header')?.textContent).to.contain('next');

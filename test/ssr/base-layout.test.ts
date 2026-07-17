@@ -1,9 +1,51 @@
 import { describe, expect, it } from 'vitest';
+import * as parse5 from 'parse5';
+import type { DefaultTreeAdapterMap } from 'parse5';
 
 import { BaseLayout } from '../../src/layouts/BaseLayout.11ty.js';
 import { loadBuildMetadataData } from '../../src/data/buildMetadata.js';
 import { loadSiteUrlContextData } from '../../src/data/siteUrlContext.js';
 import { THEME_STORAGE_KEY } from '../../src/theme/theme-manager.js';
+
+type Parse5Element = DefaultTreeAdapterMap['element'];
+type Parse5Node = DefaultTreeAdapterMap['node'];
+
+const isElementNode = (node: Parse5Node): node is Parse5Element =>
+  'tagName' in node && typeof node.tagName === 'string' && Array.isArray(node.attrs);
+
+const getChildNodes = (node: Parse5Node): readonly Parse5Node[] =>
+  'childNodes' in node && Array.isArray(node.childNodes) ? node.childNodes : [];
+
+const collectElements = (root: Parse5Node): Parse5Element[] => {
+  const elements: Parse5Element[] = [];
+  const visit = (node: Parse5Node): void => {
+    if (isElementNode(node)) elements.push(node);
+    for (const child of getChildNodes(node)) visit(child);
+  };
+  visit(root);
+  return elements;
+};
+
+const hasAttribute = (element: Parse5Element, name: string): boolean =>
+  element.attrs.some((attribute) => attribute.name === name);
+
+const getAttribute = (element: Parse5Element, name: string): string | undefined =>
+  element.attrs.find((attribute) => attribute.name === name)?.value;
+
+const hasClassToken = (element: Parse5Element, token: string): boolean =>
+  (getAttribute(element, 'class') ?? '').split(/[\t\n\f\r ]+/u).includes(token);
+
+const getTextContent = (root: Parse5Node): string =>
+  'value' in root && typeof root.value === 'string'
+    ? root.value
+    : getChildNodes(root)
+        .map((child) => getTextContent(child))
+        .join('');
+
+const requireElement = (element: Parse5Element | undefined, label: string): Parse5Element => {
+  if (element === undefined) throw new Error(`${label} is required`);
+  return element;
+};
 
 const getBodyTag = (html: string): string => html.match(/<body[^>]*>/u)?.[0] ?? '';
 
@@ -73,7 +115,9 @@ describe('BaseLayout', () => {
       script.attributes.includes('data-theme-chrome-bootstrap'),
     );
     const firstStylesheetIndex = rendered.indexOf('<link rel="stylesheet"');
-    const clientModuleScript = scripts.find((script) => script.attributes.includes('type="module"'));
+    const clientModuleScript = scripts.find((script) =>
+      script.attributes.includes('type="module"'),
+    );
 
     expect(themeDocumentBootstrap).toBeDefined();
     expect(themeChromeBootstrap).toBeDefined();
@@ -500,7 +544,7 @@ describe('BaseLayout', () => {
     expect(rendered).not.toContain('breadcrumbs-json=');
   });
 
-  it('app shell の骨格として skip link / app root / main / footer を出力すること', () => {
+  it('app shell の骨格として skip link / app shell root / main / footer を出力すること', () => {
     const layout = new BaseLayout();
     const rendered = layout.render({
       buildMetadata: TEST_BUILD_METADATA,
@@ -508,42 +552,80 @@ describe('BaseLayout', () => {
       content: '<article><h1>本文</h1><p>静かな本文です。</p></article>',
     });
 
-    const skipLinkHtml =
-      '<a class="skip-link" href="#main-content" data-link-kind="internal-fragment" data-link-surface="structural">メインコンテンツへ移動</a>';
-    const skipLinkIndex = rendered.indexOf(skipLinkHtml);
-    const appRootIndex = rendered.indexOf('<div id="app" class="app-root"');
-    const renderedSkipLinkHtml = rendered.slice(
-      skipLinkIndex,
-      rendered.indexOf('</a>', skipLinkIndex) + 4,
+    const document = parse5.parse(rendered);
+    const elements = collectElements(document);
+    const structuralRoots = elements.filter((element) =>
+      hasAttribute(element, 'data-app-shell-root'),
     );
 
-    expect(rendered).toContain(skipLinkHtml);
-    expect(rendered).not.toContain('<ui-skip-link');
-    expect(
-      rendered.match(
-        /<a class="skip-link" href="#main-content" data-link-kind="internal-fragment" data-link-surface="structural">メインコンテンツへ移動<\/a>/g,
-      )?.length ?? 0,
-    ).to.equal(1);
-    expect(skipLinkIndex).toBeGreaterThanOrEqual(0);
-    expect(appRootIndex).toBeGreaterThanOrEqual(0);
-    expect(skipLinkIndex).toBeLessThan(appRootIndex);
-    expect(renderedSkipLinkHtml).toContain('data-link-kind="internal-fragment"');
-    expect(renderedSkipLinkHtml).toContain('data-link-surface="structural"');
-    expect(renderedSkipLinkHtml).not.toContain('data-hydration-');
+    expect(structuralRoots).toHaveLength(1);
+    const appShellRoot = structuralRoots[0];
+    if (appShellRoot === undefined) throw new Error('app shell root is required');
 
-    expect(rendered).toContain('<div id="app" class="app-root" data-hydration-scope="app-shell"');
-    expect(rendered).toContain('data-hydration-marker="reading-shell"');
-    expect(rendered).toContain('<header class="layout-header" data-layout-header="true"');
-    expect(rendered).toContain('<router-document-host');
-    expect(rendered).toContain('data-app-shell-sidebar-overlay-layer');
-    expect(rendered).toContain('data-router-document-host-announcement');
-    expect(rendered).toContain('aria-live="polite"');
-    expect(rendered).toContain('aria-atomic="true"');
-    expect(rendered).toContain('class="sr-only"');
-    expect(rendered).toContain('<main id="main-content" tabindex="-1">');
-    expect(rendered).toContain('<footer class="ui-footer" data-footer data-layout-footer>');
-    expect(rendered).toContain('<p class="ui-footer__build">build test</p>');
-    expect(rendered).not.toContain('<layout-footer');
+    const appShellElements = collectElements(appShellRoot);
+    const skipLinks = elements.filter(
+      (element) => element.tagName === 'a' && hasClassToken(element, 'skip-link'),
+    );
+    const skipLink = skipLinks[0];
+    const staticHeader = appShellElements.find(
+      (element) => element.tagName === 'header' && hasAttribute(element, 'data-layout-header'),
+    );
+    const routerDocumentHost = appShellElements.find(
+      (element) => element.tagName === 'router-document-host',
+    );
+    const overlayLayer = appShellElements.find((element) =>
+      hasAttribute(element, 'data-app-shell-sidebar-overlay-layer'),
+    );
+    const main = appShellElements.find(
+      (element) => element.tagName === 'main' && getAttribute(element, 'id') === 'main-content',
+    );
+    const footer = appShellElements.find(
+      (element) => element.tagName === 'footer' && hasAttribute(element, 'data-layout-footer'),
+    );
+    const announcement = appShellElements.find((element) =>
+      hasAttribute(element, 'data-router-document-host-announcement'),
+    );
+    const footerBuild = appShellElements.find(
+      (element) => element.tagName === 'p' && hasClassToken(element, 'ui-footer__build'),
+    );
+    const requiredStaticHeader = requireElement(staticHeader, 'static header');
+    const requiredMain = requireElement(main, 'main');
+    const requiredFooter = requireElement(footer, 'footer');
+    const requiredAnnouncement = requireElement(announcement, 'announcement');
+    const requiredFooterBuild = requireElement(footerBuild, 'footer build');
+
+    expect(hasClassToken(appShellRoot, 'app-shell-root')).toBe(true);
+    expect(hasAttribute(appShellRoot, 'id')).toBe(false);
+    expect(elements.some((element) => getAttribute(element, 'id') === 'app')).toBe(false);
+    expect(elements.some((element) => hasClassToken(element, 'app-root'))).toBe(false);
+    expect(getAttribute(appShellRoot, 'data-hydration-scope')).toBe('app-shell');
+    expect(getAttribute(appShellRoot, 'data-hydration-marker')).toBe('reading-shell');
+    expect(getAttribute(appShellRoot, 'data-hydration-owner-id')).toBe('app-shell');
+
+    expect(skipLinks).toHaveLength(1);
+    expect(skipLink).toBeDefined();
+    if (skipLink === undefined) throw new Error('skip link is required');
+    expect(getAttribute(skipLink, 'href')).toBe('#main-content');
+    expect(getAttribute(skipLink, 'data-link-kind')).toBe('internal-fragment');
+    expect(getAttribute(skipLink, 'data-link-surface')).toBe('structural');
+    expect(skipLink.attrs.some((attribute) => attribute.name.startsWith('data-hydration-'))).toBe(
+      false,
+    );
+    expect(getTextContent(skipLink)).toBe('メインコンテンツへ移動');
+    expect(elements.some((element) => element.tagName === 'ui-skip-link')).toBe(false);
+    expect(elements.indexOf(skipLink)).toBeLessThan(elements.indexOf(appShellRoot));
+
+    expect(routerDocumentHost).toBeDefined();
+    expect(overlayLayer).toBeDefined();
+    expect(getAttribute(requiredStaticHeader, 'data-layout-header')).toBe('true');
+    expect(getAttribute(requiredMain, 'tabindex')).toBe('-1');
+    expect(hasClassToken(requiredFooter, 'ui-footer')).toBe(true);
+    expect(hasAttribute(requiredFooter, 'data-footer')).toBe(true);
+    expect(getAttribute(requiredAnnouncement, 'aria-live')).toBe('polite');
+    expect(getAttribute(requiredAnnouncement, 'aria-atomic')).toBe('true');
+    expect(hasClassToken(requiredAnnouncement, 'sr-only')).toBe(true);
+    expect(getTextContent(requiredFooterBuild)).toBe('build test');
+    expect(elements.some((element) => element.tagName === 'layout-footer')).toBe(false);
   });
 
   it('app shell sidebar host と overlay layer を単一実体として出力すること', () => {

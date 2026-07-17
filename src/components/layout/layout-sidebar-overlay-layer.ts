@@ -1,8 +1,9 @@
+import { APP_SHELL_ROOT_SELECTOR } from '../../../shared/app-shell/app-shell-root-contract.js';
+
 export const APP_SHELL_SIDEBAR_OVERLAY_LAYER_ATTRIBUTE = 'data-app-shell-sidebar-overlay-layer';
 
 export const APP_SHELL_SIDEBAR_OVERLAY_LAYER_SELECTOR = `[${APP_SHELL_SIDEBAR_OVERLAY_LAYER_ATTRIBUTE}]`;
 
-const APP_ROOT_SELECTOR = '#app';
 const FOOTER_SELECTOR = '[data-layout-footer]';
 
 export const ensureLayoutSidebarOverlayLayer = (documentRoot: Document): HTMLElement => {
@@ -18,14 +19,14 @@ export const ensureLayoutSidebarOverlayLayer = (documentRoot: Document): HTMLEle
   layer.className = 'layout-sidebar-overlay-layer';
   layer.setAttribute(APP_SHELL_SIDEBAR_OVERLAY_LAYER_ATTRIBUTE, '');
 
-  const appRoot = documentRoot.querySelector<HTMLElement>(APP_ROOT_SELECTOR);
-  const footer = appRoot?.querySelector<HTMLElement>(FOOTER_SELECTOR) ?? null;
+  const appShellRoot = documentRoot.querySelector<HTMLElement>(APP_SHELL_ROOT_SELECTOR);
+  const footer = appShellRoot?.querySelector<HTMLElement>(FOOTER_SELECTOR) ?? null;
 
-  if (appRoot instanceof HTMLElement) {
-    if (footer instanceof HTMLElement && footer.parentElement === appRoot) {
-      appRoot.insertBefore(layer, footer);
+  if (appShellRoot instanceof HTMLElement) {
+    if (footer instanceof HTMLElement && footer.parentElement === appShellRoot) {
+      appShellRoot.insertBefore(layer, footer);
     } else {
-      appRoot.append(layer);
+      appShellRoot.append(layer);
     }
     return layer;
   }

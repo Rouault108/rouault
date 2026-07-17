@@ -45,6 +45,7 @@ import {
 import { createCorpusNavigationProjectionPayload } from '../../shared/navigation/corpus-navigation-projection.js';
 import { createStaticRenderIdContext } from '../../shared/static-render-id-context.js';
 import { resolveTocTriggerReserved } from '../../shared/toc/toc-trigger-reservation.js';
+import { APP_SHELL_ROOT_ATTRIBUTE } from '../../shared/app-shell/app-shell-root-contract.js';
 
 export interface BaseLayoutData {
   title?: string;
@@ -272,15 +273,21 @@ export class BaseLayout {
     });
     const sidebarPresence =
       data.notePage?.showSidebar && data.notePage.sidebar ? 'present' : 'absent';
-    const shellMarkerAttributes = serializeHtmlAttributes(
-      Object.entries(
+    const appShellRootAttributes = serializeHtmlAttributes([
+      { name: 'class', value: 'app-shell-root' },
+      {
+        name: APP_SHELL_ROOT_ATTRIBUTE,
+        value: true,
+        kind: 'boolean',
+      },
+      ...Object.entries(
         createHydrationMarkerAttributes({
           marker: 'reading-shell',
           ownerId: 'app-shell',
           scopeId: 'app-shell',
         }),
       ).map(([name, value]) => ({ name, value })),
-    );
+    ]);
 
     const html = `
 <!DOCTYPE html>
@@ -298,7 +305,7 @@ export class BaseLayout {
 </head>
 <body${bodyAttributes}>
   <a${skipLinkAttributes}>${escapeHtmlText(SKIP_LINK_LABEL)}</a>
-  <div id="app" class="app-root"${shellMarkerAttributes}>
+  <div${appShellRootAttributes}>
     <span
       hidden
       data-layout-header-enhancer-root

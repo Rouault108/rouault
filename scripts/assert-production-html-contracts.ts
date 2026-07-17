@@ -7,6 +7,7 @@ import * as parse5 from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
 
 import { FINAL_SOURCE_MARKER_ATTRIBUTES } from '../build/content/final-source-marker-contract.js';
+import { APP_SHELL_ROOT_ATTRIBUTE } from '../shared/app-shell/app-shell-root-contract.js';
 
 type Parse5Element = DefaultTreeAdapterMap['element'];
 type Parse5Node = DefaultTreeAdapterMap['node'];
@@ -21,6 +22,34 @@ export interface ProductionHtmlContractResult {
 }
 
 const DIST_DIR = 'dist';
+const EXPECTED_APP_SHELL_ROOT_CLASS_TOKEN = 'app-shell-root';
+const LEGACY_APP_SHELL_ROOT_ID = 'app';
+const LEGACY_APP_SHELL_ROOT_CLASS_TOKEN = 'app-root';
+const LEGACY_APP_SHELL_ROOT_FRAGMENT = '#app';
+
+const ARIA_ID_REFERENCE_ATTRIBUTES = [
+  'aria-controls',
+  'aria-describedby',
+  'aria-labelledby',
+  'aria-owns',
+  'aria-details',
+  'aria-errormessage',
+  'aria-flowto',
+  'aria-activedescendant',
+] as const;
+
+const HTML_ID_REFERENCE_ATTRIBUTES = [
+  'for',
+  'form',
+  'list',
+  'headers',
+  'itemref',
+  'popovertarget',
+  'commandfor',
+] as const;
+
+const splitAsciiWhitespaceTokens = (value: string): readonly string[] =>
+  value.split(/[\t\n\f\r ]+/u).filter(Boolean);
 
 const isElementNode = (node: Parse5Node): node is Parse5Element =>
   'tagName' in node && typeof node.tagName === 'string' && Array.isArray(node.attrs);
@@ -50,9 +79,8 @@ const collectHtmlFiles = async (root: string): Promise<string[]> => {
 const assertNoFinalSourceMarkerAttributes = (options: {
   readonly repoRoot: string;
   readonly htmlFile: string;
-  readonly html: string;
+  readonly document: Parse5Node;
 }): void => {
-  const document = parse5.parse(options.html);
   const markerAttributes = new Set<string>(FINAL_SOURCE_MARKER_ATTRIBUTES);
   const repoPath = toRepoPath(options.repoRoot, options.htmlFile);
 
@@ -71,7 +99,107 @@ const assertNoFinalSourceMarkerAttributes = (options: {
     }
   };
 
-  visit(document);
+  visit(options.document);
+};
+
+const assertAppShellRootContract = (options: {
+  readonly repoRoot: string;
+  readonly htmlFile: string;
+  readonly document: Parse5Node;
+}): void => {
+  const repoPath = toRepoPath(options.repoRoot, options.htmlFile);
+  const elements: Parse5Element[] = [];
+  const structuralRoots: Parse5Element[] = [];
+
+  const visit = (node: Parse5Node): void => {
+    if (isElementNode(node)) {
+      elements.push(node);
+      if (node.attrs.some((attribute) => attribute.name === APP_SHELL_ROOT_ATTRIBUTE)) {
+        structuralRoots.push(node);
+      }
+    }
+
+    for (const child of getChildNodes(node)) {
+      visit(child);
+    }
+  };
+
+  visit(options.document);
+
+  if (structuralRoots.length !== 1) {
+    throw new Error(
+      `[production-html-contracts] ${repoPath} contains ${structuralRoots.length.toString()} app shell roots identified by ${APP_SHELL_ROOT_ATTRIBUTE}; expected exactly 1.`,
+    );
+  }
+
+  const appShellRoot = structuralRoots[0];
+  const appShellRootClass = appShellRoot.attrs.find((attribute) => attribute.name === 'class');
+  if (
+    appShellRootClass === undefined ||
+    !splitAsciiWhitespaceTokens(appShellRootClass.value).includes(
+      EXPECTED_APP_SHELL_ROOT_CLASS_TOKEN,
+    )
+  ) {
+    throw new Error(
+      `[production-html-contracts] ${repoPath} app shell root is missing ${EXPECTED_APP_SHELL_ROOT_CLASS_TOKEN} class token.`,
+    );
+  }
+
+  if (appShellRoot.attrs.some((attribute) => attribute.name === 'id')) {
+    throw new Error(
+      `[production-html-contracts] ${repoPath} app shell root must not have an id attribute.`,
+    );
+  }
+
+  for (const element of elements) {
+    const id = element.attrs.find((attribute) => attribute.name === 'id');
+    if (id?.value === LEGACY_APP_SHELL_ROOT_ID) {
+      throw new Error(
+        `[production-html-contracts] ${repoPath} contains legacy id="${LEGACY_APP_SHELL_ROOT_ID}" on <${element.tagName}>.`,
+      );
+    }
+
+    const classAttribute = element.attrs.find((attribute) => attribute.name === 'class');
+    if (
+      classAttribute !== undefined &&
+      splitAsciiWhitespaceTokens(classAttribute.value).includes(LEGACY_APP_SHELL_ROOT_CLASS_TOKEN)
+    ) {
+      throw new Error(
+        `[production-html-contracts] ${repoPath} contains legacy ${LEGACY_APP_SHELL_ROOT_CLASS_TOKEN} class token on <${element.tagName}>.`,
+      );
+    }
+
+    const href = element.attrs.find((attribute) => attribute.name === 'href');
+    if (href?.value === LEGACY_APP_SHELL_ROOT_FRAGMENT) {
+      throw new Error(
+        `[production-html-contracts] ${repoPath} contains legacy href="${LEGACY_APP_SHELL_ROOT_FRAGMENT}" on <${element.tagName}>.`,
+      );
+    }
+
+    for (const attributeName of ARIA_ID_REFERENCE_ATTRIBUTES) {
+      const attribute = element.attrs.find((candidate) => candidate.name === attributeName);
+      if (
+        attribute !== undefined &&
+        splitAsciiWhitespaceTokens(attribute.value).includes(LEGACY_APP_SHELL_ROOT_ID)
+      ) {
+        throw new Error(
+          `[production-html-contracts] ${repoPath} contains legacy app ID-reference token in ${attributeName} on <${element.tagName}>.`,
+        );
+      }
+    }
+
+    for (const attributeName of HTML_ID_REFERENCE_ATTRIBUTES) {
+      const attribute = element.attrs.find((candidate) => candidate.name === attributeName);
+      if (
+        attribute !== undefined &&
+        splitAsciiWhitespaceTokens(attribute.value).includes(LEGACY_APP_SHELL_ROOT_ID)
+      ) {
+        throw new Error(
+          `[production-html-contracts] ${repoPath} contains legacy app ID-reference token in ${attributeName} on <${element.tagName}>.`,
+        );
+      }
+    }
+  }
 };
 
 export const assertProductionHtmlContracts = async (
@@ -90,10 +218,18 @@ export const assertProductionHtmlContracts = async (
   }
 
   for (const htmlFile of htmlFiles) {
+    const html = await readFile(htmlFile, 'utf8');
+    const document = parse5.parse(html);
+
     assertNoFinalSourceMarkerAttributes({
       repoRoot,
       htmlFile,
-      html: await readFile(htmlFile, 'utf8'),
+      document,
+    });
+    assertAppShellRootContract({
+      repoRoot,
+      htmlFile,
+      document,
     });
   }
 

@@ -83,7 +83,7 @@ const renderNoteShell = () =>
         'NoteLayout Preview',
         html`
           <div class="foundation-stage" style="padding: 0; overflow: clip;">
-            <div class="app-root">
+            <div class="app-shell-root">
               ${unsafeHTML(
                 renderLayoutHeaderHtml({
                   noteLayout: true,

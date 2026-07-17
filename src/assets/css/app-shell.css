@@ -1,4 +1,4 @@
-.app-root {
+.app-shell-root {
   --note-sidebar-main-gap: clamp(24px, 2vw, 40px);
   min-height: 100vh;
   display: flex;

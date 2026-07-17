@@ -11,3 +11,4 @@ ADRは必須作成物ではない。
 
 - `preview-sandbox-visible-by-default.md` - `ui-preview-sandbox`の既定activationをvisibleにする。
 - `syntax-card-quiet-definition-surface.md` - Syntax Cardを本文中に挿入される静的リファレンスsurfaceとして扱う。
+- `app-shell-root-identity.md` - production app shell rootのstructural hookとpresentation hookを分離する。

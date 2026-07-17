@@ -12,6 +12,7 @@
 - `docs/contracts/router.md`
 - `docs/contracts/url-policy.md`
 - `docs/contracts/router-document.md`
+- `docs/contracts/app-shell-root.md`
 - `docs/contracts/navigation-envelope.md`
 - `docs/contracts/hydration.md`
 - `docs/contracts/code-surfaces.md`
@@ -104,6 +105,7 @@ Design System patternはUIの見え方と配置判断を扱う。Router、search
 - `docs/adr/tabs-owned-hash-url-recovery.md`
 - `docs/adr/translation-light-dom-disclosure-fallback.md`
 - `docs/adr/preview-sandbox-visible-by-default.md`
+- `docs/adr/app-shell-root-identity.md`
 - `docs/adr/`
 
 ADRは設計判断の経緯であり、正本Contractを上書きしない。各ADRの現行正本は、対応する`docs/contracts/`配下のContractを参照する。

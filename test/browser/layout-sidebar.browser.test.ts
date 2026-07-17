@@ -573,7 +573,7 @@ describe('layout-sidebar browser contract', () => {
       await ensureLayoutSidebarDefined();
 
       const shell = await fixture<HTMLElement>(html`
-        <div id="app">
+        <div>
           <div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer></div>
           ${renderSidebarFixture({ presentation: 'overlay' })}
         </div>
@@ -604,7 +604,7 @@ describe('layout-sidebar browser contract', () => {
       await ensureLayoutSidebarDefined();
 
       const shell = await fixture<HTMLElement>(html`
-        <div id="app">
+        <div>
           <div class="layout-sidebar-overlay-layer" data-app-shell-sidebar-overlay-layer></div>
           ${renderSidebarFixture({ presentation: 'overlay' })}
         </div>
