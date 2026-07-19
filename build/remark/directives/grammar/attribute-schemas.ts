@@ -29,6 +29,7 @@ export const directiveAttributeSchemas: Record<DirectiveName, DirectiveAttribute
       'allow-js',
       'activation-policy',
       'height-mode',
+      'content-layout',
       'allow-forms',
       'allow-downloads',
       'allow-pointer-lock',

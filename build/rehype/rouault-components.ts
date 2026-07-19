@@ -23,6 +23,10 @@ import {
   createStaticRenderIdContext,
   type StaticRenderIdContext,
 } from '../../shared/static-render-id-context.js';
+import {
+  isPreviewSandboxContentLayout,
+  type PreviewSandboxContentLayout,
+} from '../../shared/preview-sandbox/content-layout.js';
 
 interface FootnoteDefinition {
   readonly refId: string;
@@ -173,6 +177,43 @@ const readPreviewSandboxActivationPolicy = (
   return normalizedValue;
 };
 
+const assertValidPreviewSandboxContentLayout = (value: unknown): PreviewSandboxContentLayout => {
+  if (!isPreviewSandboxContentLayout(value)) {
+    throw new Error(
+      '[markdown] ui-preview-sandbox の content-layout は exact lowercase の stage/flow のみ指定できます',
+    );
+  }
+  return value;
+};
+
+const readPreviewSandboxContentLayout = (
+  properties: Record<string, unknown>,
+): PreviewSandboxContentLayout | undefined => {
+  const hasKebab = hasOwnProperty(properties, 'content-layout');
+  const hasCamel = hasOwnProperty(properties, 'contentLayout');
+  if (!hasKebab && !hasCamel) {
+    return undefined;
+  }
+
+  const kebabValue = hasKebab
+    ? assertValidPreviewSandboxContentLayout(properties['content-layout'])
+    : undefined;
+  const camelValue = hasCamel
+    ? assertValidPreviewSandboxContentLayout(properties['contentLayout'])
+    : undefined;
+
+  if (kebabValue !== undefined && camelValue !== undefined && kebabValue !== camelValue) {
+    throw new Error('[markdown] ui-preview-sandbox の content-layout 指定が競合しています');
+  }
+
+  delete properties['contentLayout'];
+  const normalizedValue = kebabValue ?? camelValue;
+  if (normalizedValue !== undefined) {
+    properties['content-layout'] = normalizedValue;
+  }
+  return normalizedValue;
+};
+
 const readBooleanPresenceValue = (
   value: unknown,
   canonicalAttributeName: string,
@@ -264,6 +305,7 @@ const readPreviewSandboxBooleanProperty = (
 
 const applyPreviewSandboxHydrationDirective = (node: HastNode): void => {
   const properties = node.properties ?? {};
+  readPreviewSandboxContentLayout(properties);
   const explicitActivationPolicy = readPreviewSandboxActivationPolicy(properties);
 
   const booleanValues = new Map<string, boolean>();

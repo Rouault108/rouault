@@ -7,7 +7,13 @@ type LitLikeElement = HTMLElement & {
 
 type PreviewSandboxHost = LitLikeElement & {
   activationPolicy?: string;
+  contentLayout?: string;
+  height?: number;
+  heightMode?: string;
+  maxHeight?: number;
   activateHydration?: () => void;
+  readonly _messageToken?: string;
+  _handleWindowMessage?: (event: MessageEvent<unknown>) => void;
 };
 
 const waitForElement = async (element: LitLikeElement): Promise<void> => {
@@ -29,6 +35,140 @@ const waitForMutationFrame = async (element: LitLikeElement): Promise<void> => {
 };
 
 describe('ui-preview-sandbox contract', () => {
+  it('content-layout は stage を既定として reflect し、runtime 列挙外値は property を保ったまま実効 stage として扱うこと', async () => {
+    const sandbox = await fixture<PreviewSandboxHost>(html`
+      <ui-preview-sandbox activation-policy="eager" iframe-title="Layout preview">
+        <template data-preview-kind="html"><button>Push</button></template>
+      </ui-preview-sandbox>
+    `);
+
+    await waitForElement(sandbox);
+
+    const initialSrcdoc =
+      sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc ?? '';
+    expect(sandbox.contentLayout).to.equal('stage');
+    expect(sandbox.getAttribute('content-layout')).to.equal('stage');
+    expect(initialSrcdoc).to.contain('<body data-preview-content-layout="stage">');
+
+    sandbox.contentLayout = 'unexpected';
+    await waitForElement(sandbox);
+
+    expect(sandbox.contentLayout).to.equal('unexpected');
+    expect(sandbox.getAttribute('content-layout')).to.equal('unexpected');
+    expect(sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc).to.equal(
+      initialSrcdoc,
+    );
+
+    sandbox.contentLayout = 'flow';
+    await waitForElement(sandbox);
+    const flowSrcdoc = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc ?? '';
+    expect(sandbox.getAttribute('content-layout')).to.equal('flow');
+    expect(flowSrcdoc).to.contain('<body data-preview-content-layout="flow">');
+    expect(flowSrcdoc).not.to.equal(initialSrcdoc);
+
+    sandbox.contentLayout = 'flow';
+    await waitForElement(sandbox);
+    expect(sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc).to.equal(
+      flowSrcdoc,
+    );
+  });
+
+  it('srcdoc は author JS より前に body 直下の正規 content root を1個だけ持つこと', async () => {
+    const sandbox = await fixture<PreviewSandboxHost>(html`
+      <ui-preview-sandbox activation-policy="eager" iframe-title="Root preview" allow-js>
+        <template data-preview-kind="html">
+          <section>
+            <ui-preview-content-root id="nested">Nested</ui-preview-content-root>
+          </section>
+        </template>
+        <template data-preview-kind="js">document.body.dataset.authorScriptRan = 'true';</template>
+      </ui-preview-sandbox>
+    `);
+
+    await waitForElement(sandbox);
+
+    const srcdoc = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc ?? '';
+    const previewDocument = new DOMParser().parseFromString(srcdoc, 'text/html');
+    const directRoots = Array.from(previewDocument.body.children).filter(
+      (child) => child.tagName.toLowerCase() === 'ui-preview-content-root',
+    );
+    const allRoots = previewDocument.querySelectorAll('ui-preview-content-root');
+
+    expect(directRoots).to.have.length(1);
+    expect(allRoots).to.have.length(2);
+    expect(directRoots[0]?.querySelector('#nested')).to.not.equal(null);
+    expect(previewDocument.body.firstElementChild).to.equal(directRoots[0]);
+    expect(directRoots[0]?.nextElementSibling?.tagName).to.equal('SCRIPT');
+    expect(srcdoc.indexOf('<ui-preview-content-root>')).to.be.lessThan(
+      srcdoc.indexOf('document.body.dataset.authorScriptRan'),
+    );
+  });
+
+  it('author CSS の後に shell だけを対象とする structural guard を配置すること', async () => {
+    const authorCss = 'div { color: rgb(1 2 3); } html, body { display: block; }';
+    const sandbox = await fixture<PreviewSandboxHost>(html`
+      <ui-preview-sandbox activation-policy="eager" iframe-title="Cascade preview">
+        <template data-preview-kind="html"><div>Payload</div></template>
+        <template data-preview-kind="css"
+          >div { color: rgb(1 2 3); } html, body { display: block; }</template
+        >
+      </ui-preview-sandbox>
+    `);
+
+    await waitForElement(sandbox);
+
+    const srcdoc = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe')?.srcdoc ?? '';
+    const authorIndex = srcdoc.indexOf(authorCss);
+    const guardIndex = srcdoc.indexOf('body[data-preview-content-layout]');
+
+    expect(authorIndex).to.be.greaterThan(-1);
+    expect(guardIndex).to.be.greaterThan(authorIndex);
+    expect(srcdoc).to.contain('body > ui-preview-content-root');
+    expect(srcdoc).not.to.contain('ui-preview-content-root div');
+    expect(srcdoc).not.to.contain('ui-preview-content-root *');
+  });
+
+  it('fixed/auto/bounded-auto の高さ解決を content root 導入後も維持すること', async () => {
+    const cases = [
+      { heightMode: 'fixed', maxHeight: undefined, expectedHeight: 160 },
+      { heightMode: 'auto', maxHeight: undefined, expectedHeight: 420 },
+      { heightMode: 'bounded-auto', maxHeight: 300, expectedHeight: 300 },
+    ] as const;
+
+    for (const testCase of cases) {
+      const sandbox = await fixture<PreviewSandboxHost>(html`
+        <ui-preview-sandbox
+          activation-policy="eager"
+          iframe-title="Height preview"
+          height="160"
+          height-mode=${testCase.heightMode}
+          max-height=${testCase.maxHeight ?? ''}
+        >
+          <template data-preview-kind="html"><div>Payload</div></template>
+        </ui-preview-sandbox>
+      `);
+      await waitForElement(sandbox);
+
+      const iframe = sandbox.shadowRoot?.querySelector<HTMLIFrameElement>('iframe');
+      expect(iframe).to.not.equal(null);
+      expect(sandbox._messageToken).to.be.a('string');
+      sandbox._handleWindowMessage?.({
+        source: iframe?.contentWindow ?? null,
+        data: {
+          source: 'ui-preview-sandbox',
+          token: sandbox._messageToken,
+          height: 420,
+        },
+      } as MessageEvent<unknown>);
+      await waitForElement(sandbox);
+
+      const root = sandbox.shadowRoot?.querySelector<HTMLElement>('.root');
+      expect(root?.style.getPropertyValue('--_ui-preview-sandbox-resolved-height').trim()).to.equal(
+        `${String(testCase.expectedHeight)}px`,
+      );
+    }
+  });
+
   it('activation-policy の既定値は visible で、列挙外の値は visible として扱うこと', async () => {
     const defaultSandbox = await fixture<PreviewSandboxHost>(html`
       <ui-preview-sandbox data-hydration-trigger="interaction"></ui-preview-sandbox>

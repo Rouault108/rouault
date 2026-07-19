@@ -1,5 +1,10 @@
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import {
+  DEFAULT_PREVIEW_SANDBOX_CONTENT_LAYOUT,
+  normalizePreviewSandboxContentLayout,
+  type PreviewSandboxContentLayout,
+} from '../../../../shared/preview-sandbox/content-layout.js';
 
 type PreviewPayloadKind = 'html' | 'css' | 'js';
 type ActivationPolicy = 'eager' | 'visible' | 'manual';
@@ -267,6 +272,9 @@ export class PreviewSandbox extends LitElement {
   @property({ type: String, attribute: 'height-mode', reflect: true })
   heightMode = 'auto';
 
+  @property({ type: String, attribute: 'content-layout', reflect: true })
+  contentLayout: PreviewSandboxContentLayout = DEFAULT_PREVIEW_SANDBOX_CONTENT_LAYOUT;
+
   @property({ type: Boolean, attribute: 'allow-forms', reflect: true })
   allowForms = false;
 
@@ -391,6 +399,7 @@ export class PreviewSandbox extends LitElement {
       this._hydrationActivated &&
       (changedProperties.has('baseUrl') ||
         changedProperties.has('allowJs') ||
+        changedProperties.has('contentLayout') ||
         changedProperties.has('allowForms') ||
         changedProperties.has('allowDownloads') ||
         changedProperties.has('allowPointerLock') ||
@@ -721,6 +730,7 @@ export class PreviewSandbox extends LitElement {
   private _serializePreviewDocument(payload: PreviewPayload): string {
     const helperScriptBlock = this._buildHelperScriptBlock();
     const authorScriptBlock = this._buildAuthorScriptBlock(payload);
+    const contentLayout = this._normalizedContentLayout;
 
     return [
       '<!doctype html>',
@@ -737,9 +747,20 @@ export class PreviewSandbox extends LitElement {
       '<style>',
       escapeStyleText(payload.css),
       '</style>',
+      '<style>',
+      'html { display: block; inline-size: auto; min-inline-size: 100%; min-block-size: 100%; overflow: auto; }',
+      'body[data-preview-content-layout] { box-sizing: border-box; inline-size: auto; min-inline-size: 100%; min-block-size: 100vh; margin: 0; padding: 0; overflow: visible; }',
+      'body[data-preview-content-layout="stage"] { display: flex; flex-flow: row nowrap; }',
+      'body[data-preview-content-layout="flow"] { display: block; }',
+      'body > ui-preview-content-root { display: block; min-inline-size: 0; max-inline-size: 100%; block-size: auto; max-block-size: none; overflow: visible; }',
+      'body[data-preview-content-layout="stage"] > ui-preview-content-root { flex: none; inline-size: fit-content; margin: auto; }',
+      'body[data-preview-content-layout="flow"] > ui-preview-content-root { inline-size: auto; margin: 0; }',
+      '</style>',
       '</head>',
-      '<body>',
+      `<body data-preview-content-layout="${contentLayout}">`,
+      '<ui-preview-content-root>',
       payload.html,
+      '</ui-preview-content-root>',
       helperScriptBlock,
       authorScriptBlock,
       '</body>',
@@ -759,6 +780,7 @@ export class PreviewSandbox extends LitElement {
       payload,
       baseUrl: this._normalizedBaseUrl,
       sandbox: this._sandboxValue,
+      contentLayout: this._normalizedContentLayout,
     });
     if (!force && signature === this._lastBuildSignature) {
       return;
@@ -783,6 +805,10 @@ export class PreviewSandbox extends LitElement {
 
   private get _normalizedHeightMode(): HeightMode {
     return normalizeHeightMode(this.heightMode);
+  }
+
+  private get _normalizedContentLayout(): PreviewSandboxContentLayout {
+    return normalizePreviewSandboxContentLayout(this.contentLayout);
   }
 
   private get _normalizedBaseUrl(): string {

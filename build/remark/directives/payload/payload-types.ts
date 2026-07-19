@@ -1,4 +1,5 @@
 import type { MdastNode } from '../types.js';
+import type { PreviewSandboxContentLayout } from '../../../../shared/preview-sandbox/content-layout.js';
 
 export type CalloutKind = 'note' | 'tip' | 'success' | 'warning' | 'danger';
 export type InfoBoxVariant = 'default' | 'filled';
@@ -59,6 +60,7 @@ export interface PreviewSandboxPayload {
   readonly allowJs: boolean;
   readonly activationPolicy?: PreviewSandboxActivationPolicy | undefined;
   readonly heightMode?: PreviewSandboxHeightMode | undefined;
+  readonly contentLayout?: PreviewSandboxContentLayout | undefined;
   readonly allowForms: boolean;
   readonly allowDownloads: boolean;
   readonly allowPointerLock: boolean;

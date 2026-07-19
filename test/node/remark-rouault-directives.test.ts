@@ -1414,6 +1414,37 @@ describe('remarkRouaultDirectives', () => {
     expect(getPreviewSandboxProperties(tree)['activation-policy']).to.equal(undefined);
   });
 
+  it('preview-sandbox の content-layout は stage/flow の明示値だけを出力し、未指定時は出力しないこと', () => {
+    for (const contentLayout of ['stage', 'flow']) {
+      const tree = createPreviewSandboxTree(
+        `iframe-title="sandbox" content-layout="${contentLayout}"`,
+      );
+
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+      expect(getPreviewSandboxProperties(tree)['content-layout']).to.equal(contentLayout);
+    }
+
+    const unspecifiedTree = createPreviewSandboxTree('iframe-title="sandbox"');
+    remarkRouaultDirectives()(unspecifiedTree, { path: 'content/notes/sample.md' });
+    expect(getPreviewSandboxProperties(unspecifiedTree)['content-layout']).to.equal(undefined);
+  });
+
+  it('preview-sandbox の content-layout は uppercase、前後空白、空文字列、列挙外値をエラーにすること', () => {
+    for (const contentLayout of ['Stage', ' stage ', '', 'center']) {
+      const tree = createPreviewSandboxTree(
+        `iframe-title="sandbox" content-layout="${contentLayout}"`,
+      );
+      const run = (): void => {
+        remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+      };
+
+      expect(run).to.throw(
+        'preview-sandbox の content-layout は exact lowercase の stage/flow で指定してください',
+      );
+    }
+  });
+
   it('manual-only capability があり activation-policy 未指定なら manual に正規化すること', () => {
     const tree = createPreviewSandboxTree('iframe-title="sandbox" allow-forms="true"');
 

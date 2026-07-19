@@ -65,7 +65,7 @@ note SSRではhostと公開Light DOMの`template[data-preview-kind]` fallbackを
 
 ## 公開契約
 
-`ui-preview-sandbox`は、`iframeTitle`、`height`、`baseUrl`、`allowJs`、`allowForms`、`allowDownloads`、`allowPointerLock`、`allowPopups`を公開入力として扱います。preview内容は、**直下子の`template[data-preview-kind]`** から受け取ります。
+`ui-preview-sandbox`は、`iframeTitle`、`height`、`baseUrl`、`allowJs`、`contentLayout`、`allowForms`、`allowDownloads`、`allowPointerLock`、`allowPopups`を公開入力として扱います。preview内容は、**直下子の`template[data-preview-kind]`** から受け取ります。
 
 ### 入力契約
 
@@ -78,6 +78,7 @@ note SSRではhostと公開Light DOMの`template[data-preview-kind]` fallbackを
 | `allowJs`          | property / attribute (`allow-js`)           | `false`              | author JSの注入可否    | `true`の場合のみ`js` payloadを有効入力として扱います                                                                                        |
 | `activationPolicy` | property / attribute (`activation-policy`)  | `visible`            | 初回構築タイミング      | `eager` / `visible` / `manual`だけを受け付けます。無効値は`visible`に正規化します                                                           |
 | `heightMode`       | property / attribute (`height-mode`)        | `auto`               | 高さ解決方式            | `fixed` / `auto` / `bounded-auto`だけを受け付けます。無効値は`auto`に正規化します                                                           |
+| `contentLayout`    | property / attribute (`content-layout`)     | `stage`              | iframe内content配置     | `stage` / `flow`だけを実効値として扱います。列挙外値はpropertyを保ったまま実効`stage`へ正規化します                                          |
 | `allowForms`       | property / attribute (`allow-forms`)        | `false`              | form capability         | sandbox tokenに`allow-forms`を追加します                                                                                                    |
 | `allowDownloads`   | property / attribute (`allow-downloads`)    | `false`              | download capability     | sandbox tokenに`allow-downloads`を追加します                                                                                                |
 | `allowPointerLock` | property / attribute (`allow-pointer-lock`) | `false`              | pointer lock capability | sandbox tokenに`allow-pointer-lock`を追加します                                                                                             |
@@ -99,6 +100,8 @@ note SSRではhostと公開Light DOMの`template[data-preview-kind]` fallbackを
 - 無効な`activationPolicy`入力は`visible`に正規化します
 - `heightMode`は`fixed` / `auto` / `bounded-auto`だけを受け付けます
 - 無効な`heightMode`入力は`auto`に正規化します
+- `contentLayout`は`stage` / `flow`だけを実効値として受け付けます
+- 列挙外`contentLayout`はproperty自体を書き換えず、srcdoc、build signature、layout判定で`stage`として扱います
 - boolean公開属性は、属性が存在すれば`true`、存在しなければ`false`として扱います
 
 ### 既定仕様
@@ -107,6 +110,7 @@ note SSRではhostと公開Light DOMの`template[data-preview-kind]` fallbackを
 
 - preview文書の既定言語は`ja`です
 - preview文書の既定`color-scheme`は`light`です
+- preview文書の既定content layoutは`stage`です
 - `base`要素による基準URLの差し替えは許可しません
 
 これらの既定値は、**Rouaultにおけるreading-first previewの既定**として固定するものです。これは汎用sandboxコンポーネント一般の普遍既定を主張するものではありません。
@@ -183,10 +187,11 @@ note SSRではhostと公開Light DOMの`template[data-preview-kind]` fallbackを
 
 - preview文書は差分更新しません
 - 有効入力の変更だけが再構築判定に参加します
-- payload変更、`allowJs`変更、capability変更は **破壊的再構築**です
+- payload変更、`allowJs`変更、capability変更、実効`contentLayout`変更は **破壊的再構築**です
 - `iframeTitle`変更、`height` / `maxHeight` / `heightMode`の変更、表示高さ更新は **非破壊更新**です
 - `activationPolicy`は **初回構築タイミングだけ**を制御し、構築済みpreviewの再構築判定には参加しません
 - preview内stateの継続利用には依存しません
+- 同じ実効`contentLayout`への変更では再構築せず、layout専用postMessageやDOM patchは用いません
 
 ### Activation Policy
 
@@ -270,7 +275,7 @@ payload用templateは、**ホスト要素の直下子**でなければなりま�
 
 ### `html` 契約
 
-`html` payloadは、**preview文書のbodyに挿入されるfragment**です。HTML document全体を渡す入力ではありません。`head`、`meta`、`base`、`script`を`html` payload側で制御してはなりません。
+`html` payloadは、**preview文書の`body > ui-preview-content-root`直下へ挿入されるfragment**です。HTML document全体を渡す入力ではありません。`head`、`meta`、`base`、`script`を`html` payload側で制御してはなりません。
 
 `html` payloadは、template contentをfragmentとして直列化した結果を扱います。入力文字列の字面を保持する契約は持ちません。正規形はparser round-trip後のfragmentです。
 
@@ -299,11 +304,17 @@ preview文書は、次の順序で構成します。
 1. 文書骨格
 2. base style
 3. author CSS
-4. sanitized HTML
-5. helper script
-6. author JS
+4. sandbox structural guard style
+5. `body[data-preview-content-layout] > ui-preview-content-root`
+6. sanitized HTML
+7. helper script
+8. author JS
 
 author JSは、sanitized HTMLとauthor CSSが配置された後に評価します。helper scriptはauthor JSより前に配置します。
+
+正規content rootはauthor JS実行前に`body`の直接子として正確に1個だけ存在します。payload内の同名nested要素は正規rootではありません。第2identity属性、Custom Element登録、Shadow DOM、landmark role、author JSによるshell改変の監視・復旧は追加しません。
+
+`contentLayout`の値域、型、既定値、type guard、normalizationは`shared/preview-sandbox/content-layout.ts`を単一source of truthとし、build-timeとruntimeが共有します。
 
 ---
 
@@ -398,6 +409,7 @@ opt-in tokenは次のとおりです。
 - `allowJs`
 - `activationPolicy`
 - `heightMode`
+- `contentLayout`
 - opt-in capability群
 - `html` / `css` / `js` payload
 
@@ -433,6 +445,7 @@ opt-in tokenは次のとおりです。
 - 有効な直下子payload templateの追加・削除・内容変更
 - `allowJs`の変更
 - opt-in capabilityの変更
+- 実効`contentLayout`の変更
 
 次の変更は再構築対象に含めません。
 
@@ -465,6 +478,7 @@ preview文書は、破壊的再構築時に全体を破棄して再生成しま�
 - 有効payload変更
 - `allowJs`変更
 - capability変更
+- 実効`contentLayout`変更
 
 ### 非破壊更新の対象
 
@@ -477,7 +491,7 @@ preview文書は、破壊的再構築時に全体を破棄して再生成しま�
 
 ## DOM / Accessibility
 
-ルートは`:host`です。Shadow DOM内部に`.root`と単一の`<iframe>`を持ちます。preview payloadはShadow DOMへ展開せず、`iframe.srcdoc`にシリアライズします。
+ルートは`:host`です。Shadow DOM内部に`.root`と単一の`<iframe>`を持ちます。preview payloadはShadow DOMへ展開せず、`iframe.srcdoc`内の恒久content rootへシリアライズします。
 
 ```text
 <ui-preview-sandbox>
@@ -490,6 +504,8 @@ preview文書は、破壊的再構築時に全体を破棄して再生成しま�
     </div>
 </ui-preview-sandbox>
 ```
+
+iframe document内ではsandboxが`html`、`body[data-preview-content-layout]`、`body > ui-preview-content-root`の構造を所有します。sanitized author HTMLは正規root直下にあり、helper scriptとauthor scriptは正規rootの後に置きます。
 
 ### Accessibility 契約
 
@@ -528,12 +544,18 @@ preview文書は常に`<html lang="ja">`を用います。`lang`は公開入力�
 - `iframe`の`block-size`は`resolvedHeight`に一致します
 - `iframe`の`min-block-size`は`height`に一致します
 
+iframe document内の`stage`では、正規root全体を1つの展示単位として縦横中央へ置きます。rootはshrink-to-fit相当かつ利用可能inline size以下で、payload siblingの通常フローを変更しません。oversized軸はstartへ安全に退行し、iframe documentのscrollでinline-end／block-endまで到達できます。
+
+`flow`では正規rootをblock-start／inline-startから通常フローへ参加させます。配置例はauthor supplied wrapperが所有します。外側の`preview-align`はiframe内部layoutへ伝播しません。
+
+stylesheet順序はbase style、author CSS、structural guardです。guardの対象は`html`、`body[data-preview-content-layout]`、`body > ui-preview-content-root`だけで、payload descendantの色、typography、spacing、wrapper layoutを上書きしません。overflow ownerはiframe documentであり、正規rootやauthor supplied wrapperへsandbox都合のscroll containerを追加しません。
+
 ### 視覚仕様
 
 - `iframe`のborderは`0`です
 - 背景色は`--ui-preview-sandbox-bg`を優先し、未指定時は白を用います
 - preview文書は既定で`color-scheme: light`を用います
-- これらは **ベーススタイル** であり、最終描画結果はauthor CSSが上書きできます
+- 色とtypographyは **ベーススタイル** であり、author CSSが上書きできます。sandbox-owned shell構造はauthor CSS後のstructural guardが維持します
 - reading-firstの視覚契約はhostとiframe枠に適用し、iframe内文書の最終見た目はauthor inputに委ねます
 
 ### 高さ追従
@@ -638,13 +660,14 @@ Storybookはtokenの**集合**を検証し、属性文字列の順序には依�
 
 ### payload 不在
 
-- `html`不在時は空bodyとして扱います
+- `html`不在時は空の正規content rootを持つbodyとして扱います
 - `css`不在時はbase styleのみを適用します
 - `js`不在時はauthor JSを挿入しません
 
 ### 無効入力
 
 - `height`が不正な場合は`160`に正規化します
+- `contentLayout`が列挙外の場合はpropertyを保持し、実効値を`stage`に正規化します
 - `iframeTitle`が空白のみの場合は`プレビュー sandbox`を用います
 - `baseUrl`が不正な場合は埋め込み元文書のURLに正規化します
 - 列挙外`data-preview-kind`は無視します

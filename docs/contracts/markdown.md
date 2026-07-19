@@ -206,6 +206,13 @@ raw `<br>`、Markdown hard break、`:br[]`は表セル改行契約として採�
 
 `::preview-sandbox`は`code-preview`直下のspecialized childであり、Markdown出力層は`ui-preview-sandbox` hostとbuild-time hydration directiveを所有する。`build/rehype/preview-sandbox.ts`はsnippet/template変換責務であり、manual-only capability validationの正本ではない。
 
+- `content-layout`はexact lowercaseの`stage` / `flow`だけを受け付け、既定の実効値は`stage`とする。
+- `content-layout`未指定時はbuild outputへ属性を追加せず、明示値だけをcanonical kebab-caseでhostへ出力する。
+- client runtimeではLitのreflectionにより既定の`content-layout="stage"`がDOMへ現れる場合がある。このruntime reflectionはbuild outputの非出力契約とは分ける。
+- directive parser経由のuppercase、前後空白、空文字列、列挙外値はbuild errorとし、検証前にtrimまたはcase-foldしない。
+- raw HAST/HTML経由の`content-layout` / `contentLayout`もexact lowercaseの`stage` / `flow`だけを受け付ける。文字列以外はbuild errorとする。
+- raw HAST/HTMLでkebab-caseとcamelCaseが同値なら`content-layout`へ統合し、競合すればbuild errorとする。未指定時に既定属性を追加しない。
+- runtime componentへ直接渡された列挙外値を実効`stage`へ正規化する挙動は、build-time rejectionの代替ではない。
 - 通常previewはreading-firstのため`activation-policy`未指定時にvisibleとして扱う。
 - `activation-policy`未指定のdefault visibleでは、SSR/build outputに`activation-policy="visible"`を追加しない。
 - authorが`activation-policy="visible"`を明示した場合は属性を維持する。

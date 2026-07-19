@@ -226,6 +226,47 @@ describe('rehypeRouaultComponents', () => {
     }
   });
 
+  it('raw HAST の content-layout は kebab/camel を canonical kebab-case へ正規化し、未指定時は追加しないこと', () => {
+    for (const contentLayout of ['stage', 'flow']) {
+      const sandbox = normalizePreviewSandbox({ 'content-layout': contentLayout });
+      expect(sandbox.properties?.['content-layout']).to.equal(contentLayout);
+    }
+
+    const camelSandbox = normalizePreviewSandbox({ contentLayout: 'flow' });
+    expect(camelSandbox.properties?.['content-layout']).to.equal('flow');
+    expect(camelSandbox.properties?.['contentLayout']).to.equal(undefined);
+
+    const matchingSandbox = normalizePreviewSandbox({
+      'content-layout': 'stage',
+      contentLayout: 'stage',
+    });
+    expect(matchingSandbox.properties?.['content-layout']).to.equal('stage');
+    expect(matchingSandbox.properties?.['contentLayout']).to.equal(undefined);
+
+    const unspecifiedSandbox = normalizePreviewSandbox();
+    expect(unspecifiedSandbox.properties?.['content-layout']).to.equal(undefined);
+  });
+
+  it('raw HAST の content-layout の kebab/camel 競合はエラーにすること', () => {
+    const run = (): void => {
+      normalizePreviewSandbox({ 'content-layout': 'stage', contentLayout: 'flow' });
+    };
+
+    expect(run).to.throw('ui-preview-sandbox の content-layout 指定が競合しています');
+  });
+
+  it('raw HAST の content-layout は uppercase、前後空白、空文字列、非文字列、列挙外値をエラーにすること', () => {
+    for (const contentLayout of ['Stage', ' stage ', '', 1, 'center']) {
+      const run = (): void => {
+        normalizePreviewSandbox({ 'content-layout': contentLayout });
+      };
+
+      expect(run).to.throw(
+        'ui-preview-sandbox の content-layout は exact lowercase の stage/flow のみ指定できます',
+      );
+    }
+  });
+
   it('raw HAST の boolean presence 属性を厳格に解釈して kebab-case へ正規化すること', () => {
     for (const value of ['', 'allow-js', 'true', true]) {
       const sandbox = normalizePreviewSandbox({ allowJs: value });

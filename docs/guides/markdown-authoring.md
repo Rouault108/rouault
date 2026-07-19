@@ -34,6 +34,8 @@
 
 通常の軽量なHTML/CSS中心previewは、`activation-policy`未指定でviewport到達時に自動表示される。旧来のクリック待ちにしたい場合は`activation-policy="manual"`を明示する。`allow-js`単独ではmanualにならないが、manual時のbutton文言は「プレビューを実行」になる。`allow-forms`、`allow-downloads`、`allow-pointer-lock`、`allow-popups`はmanual-only capabilityであり、未指定時は`activation-policy="manual"`へ正規化され、`visible` / `eager`との併用はbuild errorになる。
 
+単体button、input、badgeなどは`content-layout`未指定の`stage`を使う。展示用の中央配置CSSを`preview-css`へ加える必要はない。通常の文書フローや配置そのものを示す例は`content-layout="flow"`を明示し、必要な配置は`preview-html`内のauthor supplied wrapperと`preview-css`へ記述する。`preview-css`から`body`や予約要素`ui-preview-content-root`をlayout ownerとして扱わない。
+
 ### `::translation` / `::translation-overlay`
 
 常時本文として読ませたい対訳は`::translation`を使う。必要時だけ開く短い訳注は`::translation-overlay`を使う。
@@ -87,6 +89,27 @@ kindの使い分けは次を基準にする。
 ::
 ````
 
+通常フローを示す場合は、次のように`flow`を明示する。
+
+````md
+::code-preview{heading="通常フローの例"}
+:::preview-sandbox{content-layout="flow"}
+
+```preview-html
+<div class="stack">
+  <p>先頭</p>
+  <p>末尾</p>
+</div>
+```
+
+```preview-css
+.stack { display: grid; gap: 1rem; }
+```
+
+:::
+::
+````
+
 ## インライン拡張
 
 - highlight
@@ -113,6 +136,7 @@ code groupは既定では互いに連動しない。同じ読書単位の中で�
 
 ````md
 :::code-group{aria-label="Package manager" sync-scope="package-manager"}
+
 ```sh group-key="npm" tab-label="npm"
 npm install
 ```
@@ -120,6 +144,7 @@ npm install
 ```sh group-key="pnpm" tab-label="pnpm"
 pnpm install
 ```
+
 :::
 ````
 

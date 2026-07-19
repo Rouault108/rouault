@@ -21,6 +21,7 @@ import type {
   PreviewSlotPayload,
   ToolbarSlotPayload,
 } from './payload-types.js';
+import { isPreviewSandboxContentLayout } from '../../../../shared/preview-sandbox/content-layout.js';
 
 const PREVIEW_CONTROLS = ['theme', 'surface', 'viewport'] as const;
 const MANUAL_ONLY_PREVIEW_SANDBOX_CAPABILITIES = [
@@ -211,6 +212,15 @@ export const normalizePreviewSandboxPayload = (
     );
   }
 
+  const contentLayout = attrs['content-layout'];
+  if (contentLayout !== undefined && !isPreviewSandboxContentLayout(contentLayout)) {
+    throw toError(
+      file,
+      node,
+      'preview-sandbox の content-layout は exact lowercase の stage/flow で指定してください',
+    );
+  }
+
   return {
     kind: 'preview-sandbox',
     ...(pickOptional(attrs['iframe-title'])
@@ -229,6 +239,7 @@ export const normalizePreviewSandboxPayload = (
           heightMode: heightMode as PreviewSandboxPayload['heightMode'],
         }
       : {}),
+    ...(contentLayout !== undefined ? { contentLayout } : {}),
     allowForms,
     allowDownloads,
     allowPointerLock,

@@ -239,6 +239,8 @@
 - noteページのhydration directiveはbuild-time annotationとして出力する。
 - Hydration budgetはSSR artifactとclient schedulerの境界で検証する。
 - Markdown由来`ui-preview-sandbox`は`data-hydration-capability="sandboxed"`を持つ。
+- `content-layout`未指定時はfinal hostへ属性を出力せず、明示した`stage` / `flow`だけをcanonical `content-layout`として出力する。
+- hydration後にcomponentのreflectionで既定の`content-layout="stage"`が現れることは、build outputの非出力契約と矛盾しない。
 - `activation-policy`未指定または明示`visible`のpreviewは`data-hydration-trigger="visible"`を持つ。未指定default visibleでは`activation-policy="visible"`を出力しない。
 - `activation-policy="eager"`は`data-hydration-trigger="initial"`を持つ。
 - `activation-policy="manual"`は`data-hydration-trigger="interaction"`を持つ。

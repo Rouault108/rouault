@@ -81,6 +81,7 @@ const adaptPreviewSandboxOutput = (payload: PreviewSandboxPayload): RemarkOutput
     ['allow-js', payload.allowJs ? true : undefined],
     ['activation-policy', payload.activationPolicy],
     ['height-mode', payload.heightMode],
+    ['content-layout', payload.contentLayout],
     ['allow-forms', payload.allowForms ? true : undefined],
     ['allow-downloads', payload.allowDownloads ? true : undefined],
     ['allow-pointer-lock', payload.allowPointerLock ? true : undefined],
