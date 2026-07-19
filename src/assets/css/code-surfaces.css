@@ -14,8 +14,11 @@
   background: transparent !important;
   color: var(--fg-default, oklch(20% 0 0));
   font-family: var(--font-mono, monospace);
-  font-size: var(--text-lg, 1rem);
-  line-height: var(--line-height-code, 1.35);
+  font-size: var(--text-sm, 0.8125rem);
+  font-weight: var(--font-normal, 400);
+  line-height: var(--line-height-code, 1.5);
+  letter-spacing: var(--tracking-normal, 0);
+  font-style: normal;
   padding: var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-3, 12px)));
   overflow-x: auto;
   overflow-y: hidden;
@@ -110,21 +113,33 @@
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line.highlighted,
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block])
   .line.ui-explicit-highlight {
-  background: color-mix(in oklch, var(--bg-highlight-subtle, oklch(96% 0.04 65)) 78%, transparent);
+  background: color-mix(
+    in oklch,
+    var(--bg-highlight-subtle, oklch(96% 0.04 65)) 20%,
+    transparent
+  );
 }
 
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line.diff.add {
-  background: color-mix(in oklch, var(--success, oklch(60% 0.15 160)) 14%, transparent);
+  background: color-mix(
+    in oklch,
+    var(--bg-success-subtle, oklch(96% 0.04 145)) 50%,
+    transparent
+  );
 }
 
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line.diff.remove {
-  background: color-mix(in oklch, var(--danger, oklch(55% 0.2 28)) 12%, transparent);
+  background: color-mix(
+    in oklch,
+    var(--bg-danger-subtle, oklch(96% 0.03 25)) 50%,
+    transparent
+  );
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light'])
     :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki {
-    background-color: var(--shiki-dark-bg, transparent) !important;
+    background-color: transparent !important;
     color: var(--shiki-dark, inherit) !important;
   }
 
@@ -137,7 +152,7 @@
 
 :root[data-theme='dark']
   :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki {
-  background-color: var(--shiki-dark-bg, transparent) !important;
+  background-color: transparent !important;
   color: var(--shiki-dark, inherit) !important;
 }
 
@@ -246,8 +261,8 @@
   --ui-code-copy-overlay-code-padding-block-start: var(--space-3, 12px);
   --ui-code-copy-control-inline-size: 2rem;
   --ui-code-copy-overlay-code-padding-inline-end-base: var(--space-3, 12px);
-  /* Rouault既定token下で、2rem copy buttonの中心を1rem × 1.35 line-heightの1行目line box中心へ合わせる。 */
-  --ui-code-copy-overlay-center-offset: 0.325rem;
+  /* 2rem copy buttonの中心を13px × 1.5の1行目line box中心へ合わせる。 */
+  --ui-code-copy-overlay-center-offset: 0.390625rem;
   --ui-code-copy-overlay-min-block-start: var(--space-1, 4px);
   --ui-code-copy-control-inline-rail: var(--space-2, 8px);
   --ui-code-copy-overlay-inline-end-clearance: calc(
@@ -269,12 +284,12 @@
 
   position: relative;
   overflow: hidden;
-  border: var(--ui-code-block-border, var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12)));
-  background: var(--ui-code-block-background, var(--bg-default, oklch(1 0 0)));
-  border-radius: var(--ui-code-block-radius-top, var(--radius-md, 6px))
-    var(--ui-code-block-radius-top, var(--radius-md, 6px))
-    var(--ui-code-block-radius-bottom, var(--radius-md, 6px))
-    var(--ui-code-block-radius-bottom, var(--radius-md, 6px));
+  border: var(--ui-code-block-border, 0);
+  background: var(--ui-code-block-background, var(--bg-fill-muted, oklch(96% 0 0)));
+  border-radius: var(--ui-code-block-radius-top, var(--radius-sm, 4px))
+    var(--ui-code-block-radius-top, var(--radius-sm, 4px))
+    var(--ui-code-block-radius-bottom, var(--radius-sm, 4px))
+    var(--ui-code-block-radius-bottom, var(--radius-sm, 4px));
   transition:
     box-shadow var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
     border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
@@ -444,9 +459,9 @@ section[data-code-group] {
   box-sizing: border-box;
   display: block;
   position: relative;
-  border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
-  background: var(--bg-default, oklch(1 0 0));
-  border-radius: var(--radius-md, 6px);
+  border: var(--border-width, 1px) solid var(--border-muted, oklch(20% 0 0 / 0.06));
+  background: var(--bg-fill-muted, oklch(96% 0 0));
+  border-radius: var(--radius-sm, 4px);
   overflow: hidden;
 }
 
@@ -454,11 +469,13 @@ section[data-code-group] {
   display: none;
   align-items: stretch;
   isolation: isolate;
+  background: transparent;
 }
 
 section[data-code-group][data-code-group-enhanced='true'] > .code-group-header {
   display: flex;
-  border-block-end: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
+  border-block-end: var(--border-width, 1px) solid
+    var(--border-muted, oklch(20% 0 0 / 0.06));
 }
 
 section[data-code-group]:not([data-code-group-enhanced='true']) .code-group-tablist {
@@ -474,7 +491,7 @@ section[data-code-group][data-code-group-enhanced='true'] .code-group-tablist {
   min-width: 0;
   display: flex;
   align-items: stretch;
-  background: var(--bg-default, oklch(1 0 0));
+  background: transparent;
   overflow-x: auto;
   overflow-y: clip;
   overflow-clip-margin: calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px) + 2px);
@@ -538,7 +555,7 @@ section[data-code-group][data-code-group-enhanced='true'] .code-group-tablist {
   z-index: 10;
   padding-inline-start: var(--ui-code-copy-control-inline-rail, var(--space-2, 8px));
   padding-inline-end: var(--ui-code-copy-control-inline-rail, var(--space-2, 8px));
-  background: var(--bg-default, oklch(1 0 0));
+  background: transparent;
 }
 
 section[data-code-group] > [data-code-group-panel] {
@@ -580,10 +597,16 @@ section[data-code-group]:not([data-code-group-enhanced='true'])
 section[data-code-group]:not([data-code-group-enhanced='true'])
   > [data-code-group-panel]
   + [data-code-group-panel] {
-  border-block-start: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
+  border-block-start: var(--border-width, 1px) solid
+    var(--border-muted, oklch(20% 0 0 / 0.06));
 }
 
 @media (forced-colors: active) {
+  [data-code-block-root]:not([data-code-group-owned='true']) {
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+
   :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .comment,
   :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .token.comment {
     font-style: italic;
@@ -637,6 +660,17 @@ section[data-code-group]:not([data-code-group-enhanced='true'])
 }
 
 @media print {
+  [data-code-block-root]:not([data-code-group-owned='true']),
+  section[data-code-group] {
+    border: var(--border-width, 1px) solid currentColor;
+    background: transparent !important;
+  }
+
+  [data-code-block-root][data-code-group-owned='true'] {
+    border: 0;
+    background: transparent !important;
+  }
+
   :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) {
     white-space: pre-wrap !important;
     word-wrap: break-word !important;
@@ -659,7 +693,7 @@ section[data-code-group]:not([data-code-group-enhanced='true'])
   }
 
   section[data-code-group] > [data-code-group-panel] + [data-code-group-panel] {
-    border-block-start: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
+    border-block-start: var(--border-width, 1px) solid currentColor;
   }
 
   section[data-code-group] .code-group-stack-label {

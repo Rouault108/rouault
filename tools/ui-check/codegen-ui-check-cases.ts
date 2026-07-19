@@ -2,6 +2,11 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { toHtml } from 'hast-util-to-html';
+
+import { type HastNode } from '../../build/rehype/hast-utils.js';
+import { rehypeShikiCodeBlocks } from '../../build/rehype/shiki-code-blocks.js';
+import { rehypeStaticCodeGroups } from '../../build/rehype/static-code-groups.js';
 import { createStaticRenderIdContext } from '../../shared/static-render-id-context.js';
 import { renderSearchPageHtml } from '../../src/layouts/search-page-html.js';
 import { searchPageFixture } from './fixtures/search-page-fixture.js';
@@ -16,7 +21,237 @@ const normalizeGeneratedHtml = (html: string): string => html.replace(/[ \t]+$/g
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const codeSurfacePath = path.join(__dirname, 'cases', 'code-surface.html');
 const searchControlsPath = path.join(__dirname, 'cases', 'search-controls.html');
+
+const createCodeFence = (
+  language: string,
+  source: string,
+  properties: Record<string, unknown> = {},
+): HastNode => ({
+  type: 'element',
+  tagName: 'pre',
+  properties: {},
+  children: [
+    {
+      type: 'element',
+      tagName: 'code',
+      properties: {
+        className: [`language-${language}`],
+        ...properties,
+      },
+      children: [{ type: 'text', value: source }],
+    },
+  ],
+});
+
+const createCodeSurfaceFixtureTree = (): HastNode => ({
+  type: 'root',
+  children: [
+    createCodeFence(
+      'ts',
+      [
+        '// UI Check comment',
+        "const normalState = 'normal';",
+        "const highlightedState = 'highlight'; // [!code highlight]",
+        "const addedState = 'added'; // [!code ++]",
+        "const removedState = 'removed'; // [!code --]",
+        'const longLine = "A deliberately long line verifies horizontal overflow without changing the reading measure or copy clearance.";',
+      ].join('\n'),
+      {
+        filename: 'ui-check-states.ts',
+        'show-line-numbers': true,
+      },
+    ),
+    {
+      type: 'element',
+      tagName: 'section',
+      properties: {
+        'data-code-group-source': 'true',
+        'aria-label': '5言語のコード比較',
+      },
+      children: [
+        createCodeFence(
+          'c',
+          ['// C comment', 'int main(void) {', '  return 0;', '}'].join('\n'),
+          {
+            filename: 'ui-check.c',
+            'group-key': 'c',
+            'tab-label': 'C',
+          },
+        ),
+        createCodeFence(
+          'json',
+          ['{', '  "name": "rouault",', '  "enabled": true', '}'].join('\n'),
+          {
+            filename: 'ui-check.json',
+            'group-key': 'json',
+            'tab-label': 'JSON',
+          },
+        ),
+        createCodeFence(
+          'shell',
+          ['# shell comment', 'set -euo pipefail', "printf '%s\\n' \"$PWD\""].join('\n'),
+          {
+            filename: 'ui-check.sh',
+            'group-key': 'shell',
+            'tab-label': 'shell',
+          },
+        ),
+        createCodeFence(
+          'csharp',
+          [
+            '// C# comment',
+            'namespace Quiet.Space {',
+            '  public sealed class Reader {',
+            '    public string Read() => "note";',
+            '  }',
+            '}',
+          ].join('\n'),
+          {
+            filename: 'UiCheck.cs',
+            'group-key': 'csharp',
+            'tab-label': 'C#',
+          },
+        ),
+      ],
+    },
+  ],
+});
+
+const findElements = (
+  node: HastNode,
+  predicate: (candidate: HastNode) => boolean,
+): HastNode[] => {
+  const own = node.type === 'element' && predicate(node) ? [node] : [];
+  return [...own, ...(node.children ?? []).flatMap((child) => findElements(child, predicate))];
+};
+
+const readStringProperty = (node: HastNode, property: string): string | undefined => {
+  const value = node.properties?.[property];
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+};
+
+const collectIds = (tree: HastNode): string[] =>
+  findElements(tree, () => true).flatMap((node) => {
+    const id = readStringProperty(node, 'id');
+    return id ? [id] : [];
+  });
+
+const renderCodeSurfaceFixtureVariant = async (
+  variant: 'no-js' | 'enhanced',
+): Promise<{ readonly html: string; readonly ids: readonly string[] }> => {
+  const tree = createCodeSurfaceFixtureTree();
+  await rehypeShikiCodeBlocks({
+    idContext: createStaticRenderIdContext(`ui-check:code-surface:${variant}:shiki`),
+  })(tree);
+  rehypeStaticCodeGroups({
+    idContext: createStaticRenderIdContext(`ui-check:code-surface:${variant}:code-groups`),
+  })(tree);
+
+  const groups = findElements(
+    tree,
+    (node) => node.tagName === 'section' && node.properties?.['data-code-group'] === true,
+  );
+  if (groups.length !== 1 || groups[0] === undefined) {
+    throw new Error(
+      `Expected exactly one production code group for ${variant}, but found ${groups.length.toString()}.`,
+    );
+  }
+
+  const group = groups[0];
+  const selectedKey = readStringProperty(group, 'data-code-group-selected');
+  if (!selectedKey) {
+    throw new Error(`Production code group for ${variant} has no selected key.`);
+  }
+
+  const selectedTabs = findElements(
+    group,
+    (node) =>
+      node.tagName === 'button' &&
+      node.properties?.['data-code-group-tab'] === 'true' &&
+      node.properties['data-code-group-key'] === selectedKey,
+  );
+  if (selectedTabs.length !== 1 || selectedTabs[0] === undefined) {
+    throw new Error(
+      `Expected one selected production tab for ${variant}/${selectedKey}, but found ${selectedTabs.length.toString()}.`,
+    );
+  }
+
+  const panels = findElements(
+    group,
+    (node) => node.tagName === 'section' && node.properties?.['data-code-group-panel'] !== undefined,
+  );
+  const activePanels = panels.filter(
+    (panel) => panel.properties?.['data-code-group-panel-active'] === 'true',
+  );
+  if (
+    panels.length !== 4 ||
+    activePanels.length !== 1 ||
+    panels.some(
+      (panel) =>
+        panel.properties?.['data-code-group-panel-active'] !== 'true' &&
+        panel.properties?.['data-code-group-panel-active'] !== 'false',
+    )
+  ) {
+    throw new Error(`Production panel active-state contract is invalid for ${variant}.`);
+  }
+
+  if (variant === 'enhanced') {
+    group.properties = {
+      ...group.properties,
+      'data-code-group-enhanced': 'true',
+    };
+    selectedTabs[0].properties = {
+      ...selectedTabs[0].properties,
+      'data-selected': 'true',
+    };
+  }
+
+  const ids = collectIds(tree);
+  if (new Set(ids).size !== ids.length) {
+    throw new Error(`Generated ${variant} code surface contains duplicate IDs.`);
+  }
+
+  return {
+    html: toHtml(tree as unknown as Parameters<typeof toHtml>[0]),
+    ids,
+  };
+};
+
+const renderCodeSurfaceCase = async (): Promise<string> => {
+  const noJs = await renderCodeSurfaceFixtureVariant('no-js');
+  const enhanced = await renderCodeSurfaceFixtureVariant('enhanced');
+  const repeatedIds = noJs.ids.filter((id) => enhanced.ids.includes(id));
+  if (repeatedIds.length > 0) {
+    throw new Error(`Code surface variants contain duplicate IDs: ${repeatedIds.join(', ')}`);
+  }
+
+  return `<!doctype html>
+${generatedComment}
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Code surface - UI Check</title>
+    <link rel="stylesheet" href="/src/assets/css/main.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <p><a href="../">UI Check Workbench</a></p>
+      <article class="prose" aria-labelledby="code-title">
+        <h1 id="code-title">Code surface</h1>
+        <p>本文中の <code>inline code</code> と、静的コード面の密度・状態・copy clearanceを確認します。</p>
+        <h2>Canonical no-JS variant</h2>
+        <div data-ui-check-code-variant="no-js">${noJs.html}</div>
+        <h2>Enhanced visual inspection variant</h2>
+        <div data-ui-check-code-variant="enhanced">${enhanced.html}</div>
+      </article>
+    </main>
+  </body>
+</html>
+`;
+};
 
 const createOpenFilterDetailsVariant = (html: string): string => {
   const matches = [...html.matchAll(filterDetailsStartTagRe)];
@@ -90,3 +325,4 @@ const writeIfChanged = async (filePath: string, content: string): Promise<void> 
 };
 
 await writeIfChanged(searchControlsPath, normalizeGeneratedHtml(renderSearchControlsCase()));
+await writeIfChanged(codeSurfacePath, normalizeGeneratedHtml(await renderCodeSurfaceCase()));

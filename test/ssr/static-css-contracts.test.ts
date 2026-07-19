@@ -1749,7 +1749,12 @@ describe('static CSS contracts', () => {
       'code block scroll surface',
       (selector) => selector.includes('pre[data-code-block]'),
       [
-        'line-height: var(--line-height-code, 1.35)',
+        'font-family: var(--font-mono, monospace)',
+        'font-size: var(--text-sm, 0.8125rem)',
+        'font-weight: var(--font-normal, 400)',
+        'line-height: var(--line-height-code, 1.5)',
+        'letter-spacing: var(--tracking-normal, 0)',
+        'font-style: normal',
         'overflow-x: auto',
         'overflow-y: hidden',
         'white-space: pre',
@@ -1767,7 +1772,8 @@ describe('static CSS contracts', () => {
       ':root',
       '--line-height-code',
     ).map(normalizeDeclarationValue);
-    expect(lineHeightCodeValues).toContain('var(--line-height-snug)');
+    expect(lineHeightCodeValues).toContain('var(--line-height-normal)');
+    expect(lineHeightCodeValues).not.toContain('var(--line-height-snug)');
     expect(lineHeightCodeValues).not.toContain('var(--line-height-tight)');
     expect(lineHeightCodeValues).not.toContain('1.35');
     for (const value of lineHeightCodeValues) {
@@ -1784,7 +1790,7 @@ describe('static CSS contracts', () => {
         selector.includes(":root:not([data-theme='light'])") &&
         selector.includes('pre[data-code-block]') &&
         selector.includes('.shiki'),
-      ['background-color: var(--shiki-dark-bg', 'color: var(--shiki-dark'],
+      ['background-color: transparent !important', 'color: var(--shiki-dark'],
     );
     expectSelectorMatchingRuleToDeclare(
       codeSurfaces,
@@ -1793,7 +1799,7 @@ describe('static CSS contracts', () => {
         selector.includes(":root[data-theme='dark']") &&
         selector.includes('pre[data-code-block]') &&
         selector.includes('.shiki'),
-      ['background-color: var(--shiki-dark-bg', 'color: var(--shiki-dark'],
+      ['background-color: transparent !important', 'color: var(--shiki-dark'],
     );
 
     expectSelectorMatchingRuleToDeclare(
@@ -1813,7 +1819,17 @@ describe('static CSS contracts', () => {
         'content: counter(ui-code-block-line)',
         'user-select: none',
         'pointer-events: none',
+        'width: var(--space-8, 2rem)',
       ],
+    );
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'code line number gutter',
+      (selector) =>
+        selector.includes("[data-code-line-numbers='true']") &&
+        selector.includes('.line') &&
+        !selector.includes('::before'),
+      ['padding-inline-start: calc(var(--space-8, 2rem) + var(--space-2, 0.5rem))'],
     );
 
     expectSelectorMatchingRuleToDeclare(
@@ -1823,22 +1839,51 @@ describe('static CSS contracts', () => {
         selector.includes('pre[data-code-block]') &&
         (selector.includes('.line.highlighted') ||
           selector.includes('.line.ui-explicit-highlight')),
-      ['background:'],
+      [
+        'background: color-mix(',
+        'var(--bg-highlight-subtle, oklch(96% 0.04 65)) 20%',
+      ],
     );
     expectSelectorMatchingRuleToDeclare(
       codeSurfaces,
       'diff added code line',
       (selector) =>
         selector.includes('pre[data-code-block]') && selector.includes('.line.diff.add'),
-      ['background:'],
+      [
+        'background: color-mix(',
+        'var(--bg-success-subtle, oklch(96% 0.04 145)) 50%',
+      ],
     );
     expectSelectorMatchingRuleToDeclare(
       codeSurfaces,
       'diff removed code line',
       (selector) =>
         selector.includes('pre[data-code-block]') && selector.includes('.line.diff.remove'),
-      ['background:'],
+      [
+        'background: color-mix(',
+        'var(--bg-danger-subtle, oklch(96% 0.03 25)) 50%',
+      ],
     );
+    expect(codeSurfaces).not.toMatch(/\.line\.diff\.add[\s\S]*?var\(--success[,)]/u);
+    expect(codeSurfaces).not.toMatch(/\.line\.diff\.remove[\s\S]*?var\(--danger[,)]/u);
+    expect(codeSurfaces).not.toContain('font-size: var(--text-lg, 1rem)');
+    for (const replacement of [
+      '#8f4a52',
+      '#67527c',
+      '#4f6578',
+      '#3f5f66',
+      '#7a5b47',
+      '#646a71',
+      '#d08b90',
+      '#b7a0cf',
+      '#9bb0c2',
+      '#9ab1b4',
+      '#c3a087',
+      '#8b949e',
+    ]) {
+      expect(codeSurfaces).not.toContain(replacement);
+      expect(mainCss).not.toContain(replacement);
+    }
 
     const forcedColors = atRuleBlock(codeSurfaces, '@media (forced-colors: active)');
     expectSelectorMatchingRuleToDeclare(
@@ -1972,7 +2017,7 @@ describe('static CSS contracts', () => {
         '--ui-code-block-padding',
       );
     }
-    expect(overlayCenterOffsetValue).toBe('0.325rem');
+    expect(overlayCenterOffsetValue).toBe('0.390625rem');
     expect(overlayCenterOffsetValue).not.toBe('var(--space-2, 8px)');
     expect(overlayBlockStartValue).toContain('max(var(--ui-code-copy-overlay-min-block-start)');
     expect(overlayBlockStartValue).toContain(
@@ -2414,6 +2459,10 @@ describe('static CSS contracts', () => {
 
   it('code surface CSS keeps group-owned code blocks embedded in the outer code group surface', () => {
     const css = readCss('code-surfaces.css');
+    const codePreviewSource = readFileSync(
+      resolve(process.cwd(), 'src/components/ui/code-preview/code-preview.ts'),
+      'utf8',
+    );
     const groupOwnedSelector = "[data-code-block-root][data-code-group-owned='true']";
     const groupOwnedFocusWithinSelector =
       "[data-code-block-root][data-code-group-owned='true']:focus-within";
@@ -2476,10 +2525,11 @@ describe('static CSS contracts', () => {
 
     expectRuleToDeclare(css, '[data-code-block-root]', [
       'overflow: hidden',
-      'border: var(--ui-code-block-border',
-      'background: var(--ui-code-block-background',
-      'border-radius: var(--ui-code-block-radius-top',
+      'border: var(--ui-code-block-border, 0)',
+      'background: var(--ui-code-block-background, var(--bg-fill-muted, oklch(96% 0 0)))',
+      'border-radius: var(--ui-code-block-radius-top, var(--radius-sm, 4px))',
     ]);
+    expect(codePreviewSource).toContain('--ui-code-block-radius-top: 0');
     expectRuleToDeclare(css, '[data-code-block-root]:focus-within', ['box-shadow:']);
     expectRuleToDeclare(css, '[data-code-block-root]:has(> pre[data-code-block]:focus-visible)', [
       'box-shadow:',
@@ -2521,7 +2571,8 @@ describe('static CSS contracts', () => {
       "section[data-code-group][data-code-group-enhanced='true'] > .code-group-header",
       [
         'display: flex',
-        'border-block-end: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12))',
+        'border-block-end: var(--border-width, 1px) solid',
+        'var(--border-muted, oklch(20% 0 0 / 0.06))',
       ],
     );
     expect(
@@ -2576,14 +2627,31 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(
       css,
       "section[data-code-group]:not([data-code-group-enhanced='true']) > [data-code-group-panel] + [data-code-group-panel]",
-      ['border-block-start: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12))'],
+      [
+        'border-block-start: var(--border-width, 1px) solid',
+        'var(--border-muted, oklch(20% 0 0 / 0.06))',
+      ],
     );
+
+    expectRuleToDeclare(css, 'section[data-code-group]', [
+      'border: var(--border-width, 1px) solid var(--border-muted, oklch(20% 0 0 / 0.06))',
+      'background: var(--bg-fill-muted, oklch(96% 0 0))',
+      'border-radius: var(--radius-sm, 4px)',
+    ]);
+    expectRuleToDeclare(css, '.code-group-header', ['background: transparent']);
+    expectRuleToDeclare(css, '.code-group-tablist', ['background: transparent']);
+    expectRuleToDeclare(css, '.code-group-header-tools', ['background: transparent']);
 
     const forcedColors = atRuleBlock(css, '@media (forced-colors: active)');
     expectRuleToDeclare(
       forcedColors,
       "section[data-code-group][data-code-group-enhanced='true'] > .code-group-header",
       ['border-block-end: 1px solid CanvasText'],
+    );
+    expectRuleToDeclare(
+      forcedColors,
+      "[data-code-block-root]:not([data-code-group-owned='true'])",
+      ['border: 1px solid CanvasText', 'background: Canvas'],
     );
     const print = atRuleBlock(css, '@media print');
     expectRuleToDeclare(print, 'section[data-code-group] > .code-group-header', [
@@ -2600,8 +2668,24 @@ describe('static CSS contracts', () => {
     expectRuleToDeclare(
       print,
       'section[data-code-group] > [data-code-group-panel] + [data-code-group-panel]',
-      ['border-block-start: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12))'],
+      ['border-block-start: var(--border-width, 1px) solid currentColor'],
     );
+    expectRuleToDeclare(
+      print,
+      "[data-code-block-root]:not([data-code-group-owned='true'])",
+      [
+        'border: var(--border-width, 1px) solid currentColor',
+        'background: transparent !important',
+      ],
+    );
+    expectRuleToDeclare(print, 'section[data-code-group]', [
+      'border: var(--border-width, 1px) solid currentColor',
+      'background: transparent !important',
+    ]);
+    expectRuleToDeclare(print, "[data-code-block-root][data-code-group-owned='true']", [
+      'border: 0',
+      'background: transparent !important',
+    ]);
     expectRuleToDeclare(print, 'section[data-code-group] .code-group-stack-label', [
       'display: block !important',
     ]);
@@ -2667,9 +2751,12 @@ describe('static CSS contracts', () => {
     const globalInlineCodeRuleRecords = rootRuleRecordsDeclaring(mainCss, [
       { property: 'font-family', value: 'var(--font-mono)' },
       { property: 'color', value: 'var(--fg-default)' },
-      { property: 'background', value: 'var(--bg-fill-muted)' },
-      { property: 'padding', value: '0.2em 0.4em' },
-      { property: 'border-radius', value: 'var(--radius-sm)' },
+      {
+        property: 'background',
+        value: 'color-mix(in oklab, var(--bg-fill-muted) 62%, var(--bg-default) 38%)',
+      },
+      { property: 'padding', value: '0.05em 0.25em' },
+      { property: 'border-radius', value: '0.2em' },
     ]);
     expect(globalInlineCodeRuleRecords).toHaveLength(1);
     const globalInlineCodeSelectors = globalInlineCodeRuleRecords.flatMap(
@@ -2680,13 +2767,14 @@ describe('static CSS contracts', () => {
       expectRuleToDeclare(mainCss, selector, [
         'font-family: var(--font-mono)',
         'font-size: max(var(--text-xs), 0.875em)',
+        'font-weight: inherit',
         'line-height: inherit',
         'vertical-align: baseline',
         'color: var(--fg-default)',
-        'background: var(--bg-fill-muted)',
-        'padding: 0.2em 0.4em',
+        'background: color-mix(in oklab, var(--bg-fill-muted) 62%, var(--bg-default) 38%)',
+        'padding: 0.05em 0.25em',
         'border: none',
-        'border-radius: var(--radius-sm)',
+        'border-radius: 0.2em',
         'overflow-wrap: break-word',
         'box-decoration-break: clone',
         '-webkit-box-decoration-break: clone',

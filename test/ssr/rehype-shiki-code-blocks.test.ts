@@ -120,6 +120,125 @@ const collectStyledTokenSpans = (node: HastNode | undefined): HastNode[] => {
   return [...ownMatches, ...(node.children ?? []).flatMap((child) => collectStyledTokenSpans(child))];
 };
 
+const EXPECTED_CANDIDATE_SHIKI_COLOR_REPLACEMENTS = {
+  'github-light': {
+    '#d73a49': '#8f4a52',
+    '#6f42c1': '#67527c',
+    '#005cc5': '#4f6578',
+    '#032f62': '#3f5f66',
+    '#e36209': '#7a5b47',
+    '#6a737d': '#646a71',
+  },
+  'github-dark': {
+    '#f97583': '#d08b90',
+    '#b392f0': '#b7a0cf',
+    '#79b8ff': '#9bb0c2',
+    '#9ecbff': '#9ab1b4',
+    '#ffab70': '#c3a087',
+    '#6a737d': '#8b949e',
+  },
+} as const;
+
+const SHIKI_SOURCE_INVENTORY_FIXTURES = [
+  {
+    language: 'typescript',
+    lang: 'tsx',
+    source: [
+      '// rouault inventory comment',
+      'export async function readNote<T extends string>(path: URL): Promise<T> {',
+      "  const response = await fetch(path, { method: 'GET' });",
+      '  if (!response.ok) throw new Error("failed");',
+      '  return (await response.text()) as T;',
+      '}',
+      'const preview = <article data-kind="note">Rouault</article>;',
+    ].join('\n'),
+  },
+  {
+    language: 'c',
+    lang: 'c',
+    source: [
+      '#include <stdio.h>',
+      '// rouault inventory comment',
+      'int main(int argc, char **argv) {',
+      '  const char *message = argc > 1 ? argv[1] : "note";',
+      '  printf("%s\\n", message);',
+      '  return 0;',
+      '}',
+    ].join('\n'),
+  },
+  {
+    language: 'json',
+    lang: 'json',
+    source: [
+      '{',
+      '  "name": "rouault",',
+      '  "enabled": true,',
+      '  "count": 3,',
+      '  "fallback": null',
+      '}',
+    ].join('\n'),
+  },
+  {
+    language: 'shell',
+    lang: 'shellscript',
+    source: [
+      '#!/usr/bin/env bash',
+      '# rouault inventory comment',
+      'set -euo pipefail',
+      'name="${1:-note}"',
+      'if [[ -n "$name" ]]; then',
+      "  printf '%s\\n' \"$name\"",
+      'fi',
+    ].join('\n'),
+  },
+  {
+    language: 'csharp',
+    lang: 'csharp',
+    source: [
+      '// rouault inventory comment',
+      'namespace Quiet.Space {',
+      '  public interface Reader<T> { T Read(); }',
+      '  public sealed class NoteReader : Reader<string> {',
+      '    public string Read() => "note";',
+      '  }',
+      '}',
+    ].join('\n'),
+  },
+] as const;
+
+type CandidateThemeName = keyof typeof EXPECTED_CANDIDATE_SHIKI_COLOR_REPLACEMENTS;
+
+const CANDIDATE_THEME_FOREGROUND_PROPERTIES = {
+  'github-light': 'color',
+  'github-dark': '--shiki-dark',
+} as const satisfies Record<CandidateThemeName, 'color' | '--shiki-dark'>;
+
+const tokenForegroundInventory = (
+  node: HastNode,
+  property: 'color' | '--shiki-dark',
+): string[] =>
+  collectStyledTokenSpans(node)
+    .map((span) => {
+      const style = span.properties?.['style'];
+      return typeof style === 'string'
+        ? parseStyleDeclarations(style).get(property)?.toLowerCase()
+        : undefined;
+    })
+    .filter((value): value is string => typeof value === 'string');
+
+const commentTokenForegrounds = (
+  node: HastNode,
+  property: 'color' | '--shiki-dark',
+): string[] =>
+  collectStyledTokenSpans(node)
+    .filter((span) => readTextContent(span).includes('rouault inventory comment'))
+    .flatMap((span) => {
+      const style = span.properties?.['style'];
+      const foreground =
+        typeof style === 'string' ? parseStyleDeclarations(style).get(property) : undefined;
+      return foreground ? [foreground.toLowerCase()] : [];
+    });
+
 const SHIKI_THEME_POLICY_FIXTURE_SOURCE = [
   'namespace Quiet.Space {',
   '  public interface Reader<T> {',
@@ -183,6 +302,138 @@ const createCodeFence = (
 });
 
 describe('rehypeShikiCodeBlocks', () => {
+  it('Phase 0-A: candidate source inventory と replacement collision を5言語で検証する', async () => {
+    const controlRenders = await Promise.all(
+      SHIKI_SOURCE_INVENTORY_FIXTURES.map(async (fixture) => ({
+        fixture,
+        tree: (await codeToHast(fixture.source, {
+          lang: fixture.lang,
+          themes: ROUAULT_SHIKI_THEMES,
+          tabindex: false,
+        })) as unknown as HastNode,
+      })),
+    );
+
+    const evidence = Object.fromEntries(
+      (Object.keys(EXPECTED_CANDIDATE_SHIKI_COLOR_REPLACEMENTS) as CandidateThemeName[]).map(
+        (theme) => {
+          const mapping = EXPECTED_CANDIDATE_SHIKI_COLOR_REPLACEMENTS[theme];
+          const property = CANDIDATE_THEME_FOREGROUND_PROPERTIES[theme];
+          const fixtureInventory = Object.fromEntries(
+            controlRenders.map(({ fixture, tree }) => [
+              fixture.language,
+              [...new Set(tokenForegroundInventory(tree, property))].sort(),
+            ]),
+          );
+          const controlForegrounds = new Set(Object.values(fixtureInventory).flat());
+          const candidateSources = Object.keys(mapping);
+          const candidateOutputs = Object.values(mapping);
+          const candidateSourceSet = new Set(candidateSources);
+          const missingCandidateSources = candidateSources.filter(
+            (source) => !controlForegrounds.has(source),
+          );
+          const mappingTargetForegrounds = new Set(
+            [...controlForegrounds].filter((foreground) => !candidateSourceSet.has(foreground)),
+          );
+          const replacementOutputCollisions = candidateOutputs.filter((output) =>
+            mappingTargetForegrounds.has(output),
+          );
+          const commentSource = mapping['#6a737d'];
+          const commentTokenSources = controlRenders.flatMap(({ tree }) =>
+            commentTokenForegrounds(tree, property),
+          );
+
+          return [
+            theme,
+            {
+              candidateSourceCount: candidateSources.length,
+              candidateReplacementOutputCount: candidateOutputs.length,
+              uniqueReplacementOutputCount: new Set(candidateOutputs).size,
+              missingCandidateSources,
+              replacementOutputCollisions,
+              commentSourceAppliedToCommentToken:
+                typeof commentSource === 'string' && commentTokenSources.includes('#6a737d'),
+              commentTokenSources,
+              fixtureInventory,
+            },
+          ];
+        },
+      ),
+    );
+
+    const failures = Object.entries(evidence).flatMap(([theme, themeEvidence]) => {
+      const problems: string[] = [];
+      if (themeEvidence.candidateSourceCount !== 6) {
+        problems.push(`candidate source count=${themeEvidence.candidateSourceCount}`);
+      }
+      if (themeEvidence.candidateReplacementOutputCount !== 6) {
+        problems.push(
+          `candidate replacement output count=${themeEvidence.candidateReplacementOutputCount}`,
+        );
+      }
+      if (themeEvidence.uniqueReplacementOutputCount !== 6) {
+        problems.push(`unique replacement output count=${themeEvidence.uniqueReplacementOutputCount}`);
+      }
+      if (themeEvidence.missingCandidateSources.length > 0) {
+        problems.push(`missing source=${themeEvidence.missingCandidateSources.join(', ')}`);
+      }
+      if (themeEvidence.replacementOutputCollisions.length > 0) {
+        problems.push(`collision=${themeEvidence.replacementOutputCollisions.join(', ')}`);
+      }
+      if (!themeEvidence.commentSourceAppliedToCommentToken) {
+        problems.push(`comment token source=${themeEvidence.commentTokenSources.join(', ') || 'none'}`);
+      }
+      return problems.map((problem) => `${theme}: ${problem}`);
+    });
+
+    expect(
+      failures,
+      `Phase 0-A Shiki Source Inventory Gate failed:\n${failures.join('\n')}\nEvidence:\n${JSON.stringify(evidence, null, 2)}`,
+    ).toEqual([]);
+  });
+
+  it('Phase 0-B: production Shiki mapping は採用candidateと完全一致する', async () => {
+    expect(ROUAULT_SHIKI_THEMES).toEqual({
+      light: 'github-light',
+      dark: 'github-dark',
+    });
+    expect(ROUAULT_SHIKI_COLOR_REPLACEMENTS).toEqual(
+      EXPECTED_CANDIDATE_SHIKI_COLOR_REPLACEMENTS,
+    );
+
+    for (const mapping of Object.values(ROUAULT_SHIKI_COLOR_REPLACEMENTS)) {
+      expect(Object.keys(mapping).every((source) => source === source.toLowerCase())).toBe(true);
+    }
+
+    const candidateRenders = await Promise.all(
+      SHIKI_SOURCE_INVENTORY_FIXTURES.map(async (fixture) =>
+        codeToHast(fixture.source, {
+          lang: fixture.lang,
+          themes: ROUAULT_SHIKI_THEMES,
+          colorReplacements: ROUAULT_SHIKI_COLOR_REPLACEMENTS,
+          tabindex: false,
+        }),
+      ),
+    );
+
+    for (const theme of Object.keys(
+      EXPECTED_CANDIDATE_SHIKI_COLOR_REPLACEMENTS,
+    ) as CandidateThemeName[]) {
+      const property = CANDIDATE_THEME_FOREGROUND_PROPERTIES[theme];
+      const foregrounds = new Set(
+        candidateRenders.flatMap((tree) =>
+          tokenForegroundInventory(tree as unknown as HastNode, property),
+        ),
+      );
+      for (const [source, replacement] of Object.entries(
+        EXPECTED_CANDIDATE_SHIKI_COLOR_REPLACEMENTS[theme],
+      )) {
+        expect(foregrounds.has(source), `${theme} source ${source}`).toBe(false);
+        expect(foregrounds.has(replacement), `${theme} replacement ${replacement}`).toBe(true);
+      }
+    }
+  });
+
   it('control render では置換元の github-light/github-dark token foreground が出る', async () => {
     const tree = await renderShikiFixture({ colorReplacements: false });
 
@@ -368,6 +619,33 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(readNodeClassList(lines[0])).toContain('ui-explicit-highlight');
     expect(readNodeClassList(lines[1])).toContain('diff');
     expect(readNodeClassList(lines[1])).toContain('add');
+  });
+
+  it('rehype pipeline経由でも採用candidate全12色を同じpolicyで置換する', async () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: SHIKI_SOURCE_INVENTORY_FIXTURES.map((fixture) =>
+        createCodeFence(`language-${fixture.lang}`, fixture.source),
+      ),
+    };
+
+    await rehypeShikiCodeBlocks()(tree);
+
+    for (const theme of Object.keys(
+      EXPECTED_CANDIDATE_SHIKI_COLOR_REPLACEMENTS,
+    ) as CandidateThemeName[]) {
+      const foregrounds = new Set(
+        tokenForegroundInventory(tree, CANDIDATE_THEME_FOREGROUND_PROPERTIES[theme]),
+      );
+      for (const [source, replacement] of Object.entries(
+        EXPECTED_CANDIDATE_SHIKI_COLOR_REPLACEMENTS[theme],
+      )) {
+        expect(foregrounds.has(source), `${theme} pipeline source ${source}`).toBe(false);
+        expect(foregrounds.has(replacement), `${theme} pipeline replacement ${replacement}`).toBe(
+          true,
+        );
+      }
+    }
   });
 
   it('standalone fenced code は Shiki の直下改行 text node を除去し、実ソースの空行とcopy sourceを維持する', async () => {

@@ -169,20 +169,21 @@ dd {
 
 /* ===========================================================================
  * Inline Code
- * @see docs/design-system/components.md - インラインコード
+ * @see docs/contracts/markdown.md - Inline Code Visual Contract
  * =========================================================================== */
 
 :not(pre) > code {
   font-family: var(--font-mono);
   /* 12px未満を防ぎつつ本文サイズに追従 */
   font-size: max(var(--text-xs), 0.875em);
+  font-weight: inherit;
   line-height: inherit;
   vertical-align: baseline;
   color: var(--fg-default);
-  background: var(--bg-fill-muted);
-  padding: 0.2em 0.4em;
+  background: color-mix(in oklab, var(--bg-fill-muted) 62%, var(--bg-default) 38%);
+  padding: 0.05em 0.25em;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 0.2em;
   overflow-wrap: break-word;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
