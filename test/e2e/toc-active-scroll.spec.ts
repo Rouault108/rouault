@@ -247,6 +247,7 @@ test.describe('TOC active state stays synchronized with rendered contract', () =
   }) => {
     await page.goto(layoutRichPath);
     const target = await readHeadingByText(page, '2. 状態同期');
+    await waitForTocReady(page);
 
     await page.goto(`${layoutRichPath}#${encodeURIComponent(target.id)}`);
     await expect.poll(() => new URL(page.url()).hash).toBe(`#${encodeURIComponent(target.id)}`);
