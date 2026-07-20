@@ -13,6 +13,7 @@ const crossBrowserFinalCheck = [
   '**/sidebar-pre-hydration-leakage.spec.ts',
   '**/skip-link.spec.ts',
   '**/code-line-state-visual.spec.ts',
+  '**/code-line-state-accessibility.spec.ts',
 ];
 
 const articleHeaderStaticLayoutCheck = '**/article-header-static-layout.spec.ts';

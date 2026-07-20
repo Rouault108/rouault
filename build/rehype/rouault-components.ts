@@ -9,6 +9,7 @@ import {
 } from '../media/image-resolver.js';
 import { resolveScoreSvg } from '../media/score-svg-resolver.js';
 import { type HastNode } from './hast-utils.js';
+import { createStaticCodeCopySourceHast } from './static-code-copy-source.js';
 import { createStaticCopyButtonHast } from './static-copy-button-hast.js';
 import { createStaticIconHast } from './static-icon-hast.js';
 import { STATIC_FIRST_NOTE_FORBIDDEN_INPUT_TAGS } from '../content/static-first-tags.js';
@@ -1423,14 +1424,7 @@ const createSyntaxCopySource = (
   return {
     id,
     statusId: context.idContext.reserveId('copy-status', `${id}-copy-status`),
-    template: createElement(
-      'template',
-      {
-        id,
-        'data-code-copy-source': 'true',
-      },
-      [createTextNode(source)],
-    ),
+    template: createStaticCodeCopySourceHast(id, source),
   };
 };
 

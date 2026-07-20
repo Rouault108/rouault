@@ -1,3 +1,4 @@
+import { createStaticCodeCopySourceHast } from './static-code-copy-source.js';
 import { createStaticCopyButtonHast } from './static-copy-button-hast.js';
 import { createStaticIconHast } from './static-icon-hast.js';
 import { type HastNode } from './hast-utils.js';
@@ -78,14 +79,7 @@ const createCodeCopySource = (
   return {
     id,
     statusId: idContext.reserveId('copy-status', `${id}-copy-status`),
-    template: createElement(
-      'template',
-      {
-        id,
-        'data-code-copy-source': 'true',
-      },
-      [createTextNode(source)],
-    ),
+    template: createStaticCodeCopySourceHast(id, source),
   };
 };
 

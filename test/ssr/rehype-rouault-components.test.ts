@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { toHtml } from 'hast-util-to-html';
 import { describe, expect, it } from 'vitest';
 import {
   normalizeRouaultStaticSurfaceHtml,
@@ -11,6 +12,10 @@ interface HastNode {
   value?: string;
   properties?: Record<string, unknown>;
   children?: HastNode[];
+  content?: {
+    type: 'root';
+    children: HastNode[];
+  };
 }
 
 const findElements = (
@@ -1804,7 +1809,11 @@ describe('rehypeRouaultComponents', () => {
       copySource?.properties?.['id'],
     );
     expect(copyAction?.properties?.['data-copy-value']).to.equal(undefined);
-    expect(copySource?.children?.[0]?.value).to.equal('createThing()');
+    expect(copySource?.children).to.deep.equal([]);
+    expect(copySource?.content?.type).to.equal('root');
+    expect(copySource?.content?.children?.[0]?.value).to.equal('createThing()');
+    const copySourceHtml = toHtml(copySource as unknown as Parameters<typeof toHtml>[0]);
+    expect(copySourceHtml).to.contain('>createThing()</template>');
   });
 
   it('syntax-section と syntax-field の詳細契約を静的 HTML に固定すること', () => {

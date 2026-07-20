@@ -1,3 +1,4 @@
+import { createStaticCodeCopySourceHast } from './static-code-copy-source.js';
 import { createStaticCopyButtonHast } from './static-copy-button-hast.js';
 import { createStaticCodeBlockRoot } from './static-code-block-root.js';
 import { type HastNode } from './hast-utils.js';
@@ -109,16 +110,6 @@ const createGroupCopyButton = (targetId: string, statusId: string): HastNode => 
     }).children ?? [],
 });
 
-const createCodeCopySource = (id: string, source: string): HastNode => ({
-  type: 'element',
-  tagName: 'template',
-  properties: {
-    id,
-    'data-code-copy-source': 'true',
-  },
-  children: [{ type: 'text', value: source }],
-});
-
 const cloneStaticCodeBlock = (item: StaticCodeBlockMeta): HastNode => {
   const block = cloneNode(item.block);
   if (block.properties) {
@@ -162,7 +153,7 @@ const createPanel = (
     'data-code-copy-source-id': copySourceId,
   },
   children: [
-    createCodeCopySource(copySourceId, item.source),
+    createStaticCodeCopySourceHast(copySourceId, item.source),
     {
       type: 'element',
       tagName: 'p',

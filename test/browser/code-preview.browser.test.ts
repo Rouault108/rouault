@@ -1,6 +1,7 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/code-preview/code-preview.js';
 import '../../src/components/ui/button/button.js';
+import { activateStaticCopyButtons } from '../../src/client/post-hydrate/static-copy-button-enhancer.js';
 import type {
   CodePreview,
   CodePreviewStateChangeDetail,
@@ -48,6 +49,36 @@ const expectPresent = <T>(value: T | null | undefined, name: string): T => {
 
   return value;
 };
+
+const textFingerprint = (value: string): number => {
+  let hash = 2_166_136_261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16_777_619);
+  }
+  return hash >>> 0;
+};
+
+const semanticSubtreeSignature = (owner: ParentNode): unknown[] =>
+  Array.from(owner.querySelectorAll<HTMLElement>('[data-code-line-state]')).map((line) => {
+    const wrapper = line.firstElementChild;
+    return {
+      state: line.dataset['codeLineState'] ?? null,
+      role: line.getAttribute('role'),
+      label: line.getAttribute('aria-label'),
+      wrapper: wrapper?.localName ?? null,
+      wrapperCount: line.querySelectorAll(':scope > mark, :scope > ins, :scope > del').length,
+      descendantWrapperCount: line.querySelectorAll('mark, ins, del').length,
+      tokens: Array.from(wrapper?.childNodes ?? line.childNodes).map((node) => ({
+        kind: node.nodeType,
+        tag: node instanceof Element ? node.localName : null,
+        className: node instanceof Element ? node.getAttribute('class') : null,
+        style: node instanceof Element ? node.getAttribute('style') : null,
+        textLength: node.textContent?.length ?? 0,
+        textFingerprint: textFingerprint(node.textContent ?? ''),
+      })),
+    };
+  });
 
 describe('ui-code-preview browser contract', () => {
   it('header の表示条件と aria-label を heading / toolbar / controls / profile に応じて切り替えること', async () => {
@@ -245,6 +276,69 @@ describe('ui-code-preview browser contract', () => {
 
     expect(preview.querySelector('#copy-block')).to.not.equal(null);
     expect(preview.querySelector('#copy-group')).to.not.equal(null);
+  });
+
+  it('preview compositionとstate更新でsemantic subtreeを保ち、template sourceだけをcopyすること', async () => {
+    const copied: string[] = [];
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: (value: string) => {
+          copied.push(value);
+          return Promise.resolve();
+        },
+      },
+    });
+
+    const preview = await fixture<CodePreview>(html`
+      <ui-code-preview heading="Semantic Preview" controls="theme">
+        <div slot="preview">preview</div>
+        <figure data-code-block-root>
+          <template id="preview-semantic-source" data-code-copy-source
+            >const previewSource = true;</template
+          >
+          <button
+            type="button"
+            data-copy-button
+            data-copy-target-id="preview-semantic-source"
+            data-copy-disabled-reason="no-js"
+            disabled
+          >
+            copy
+          </button>
+          <pre data-code-block><code>
+            <span class="line" data-code-line-state="normal"><span class="token">n0</span></span>
+            <span class="line highlighted" data-code-line-state="highlight" role="group" aria-label="強調行"><mark><span class="token keyword" style="color: rgb(42, 46, 51)">n1</span></mark></span>
+            <span class="line diff add" data-code-line-state="add" role="group" aria-label="追加行"><ins><span class="token string">n2</span></ins></span>
+            <span class="line diff remove" data-code-line-state="remove" role="group" aria-label="削除行"><del><span class="token number">n3</span></del></span>
+          </code></pre>
+        </figure>
+      </ui-code-preview>
+    `);
+
+    await waitForLitUpdate(preview);
+    await nextAnimationFrame();
+    const before = semanticSubtreeSignature(preview);
+    expect(preview.querySelectorAll('[data-code-line-state][role="group"]')).to.have.length(3);
+    expect(preview.querySelectorAll('[data-code-line-state] mark')).to.have.length(1);
+    expect(preview.querySelectorAll('[data-code-line-state] ins')).to.have.length(1);
+    expect(preview.querySelectorAll('[data-code-line-state] del')).to.have.length(1);
+
+    const themeDropdown = expectPresent(getDropdown(preview, 'theme'), 'themeDropdown');
+    dispatchMenuSelect(themeDropdown, 'dark', 'Dark');
+    await waitForLitUpdate(preview);
+    await nextAnimationFrame();
+    expect(semanticSubtreeSignature(preview)).to.deep.equal(before);
+
+    activateStaticCopyButtons(preview);
+    const copyButton = expectPresent(
+      preview.querySelector<HTMLButtonElement>('[data-copy-button]'),
+      'copyButton',
+    );
+    copyButton.click();
+    await Promise.resolve();
+    expect(copied).to.deep.equal(['const previewSource = true;']);
+    expect(semanticSubtreeSignature(preview)).to.deep.equal(before);
   });
 
   it('invalid padding / invalid align は安全にフォールバックすること', async () => {

@@ -1,6 +1,8 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { toHtml } from 'hast-util-to-html';
 import { describe, expect, it } from 'vitest';
 import { codeToHast, codeToTokensWithThemes, type ThemedTokenWithVariants } from 'shiki';
 
@@ -23,6 +25,10 @@ interface HastNode {
   value?: string;
   properties?: Record<string, unknown>;
   children?: HastNode[];
+  content?: {
+    type: 'root';
+    children: HastNode[];
+  };
 }
 
 const getClassList = (value: unknown): string[] => {
@@ -59,8 +65,11 @@ const readTextContent = (node: HastNode | undefined): string => {
     return typeof node.value === 'string' ? node.value : '';
   }
 
-  return (node.children ?? []).map((child) => readTextContent(child)).join('');
+  const children = node.tagName === 'template' ? node.content?.children : node.children;
+  return (children ?? []).map((child) => readTextContent(child)).join('');
 };
+
+const sha256 = (value: string): string => createHash('sha256').update(value, 'utf8').digest('hex');
 
 const getDirectLineElements = (codeNode: HastNode | undefined): HastNode[] =>
   (codeNode?.children ?? []).filter(
@@ -599,8 +608,14 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(copySource?.tagName).toBe('template');
     expect(copySource?.properties?.['data-code-copy-source']).toBe('true');
     expect(copySource?.properties?.['id']).toEqual(expect.any(String));
-    expect(copySource?.children?.[0]?.value).toBe(
+    expect(copySource?.children).toEqual([]);
+    expect(copySource?.content?.type).toBe('root');
+    expect(copySource?.content?.children?.[0]?.value).toBe(
       'const highlighted = 1; // [!code highlight]\nconst added = 2; // [!code ++]',
+    );
+    const copySourceHtml = toHtml(copySource as unknown as Parameters<typeof toHtml>[0]);
+    expect(copySourceHtml).toContain(
+      '>const highlighted = 1; // [!code highlight]\nconst added = 2; // [!code ++]</template>',
     );
 
     const copyButton = findDescendant(
@@ -671,20 +686,15 @@ describe('rehypeShikiCodeBlocks', () => {
   });
 
   it('全lineを単一stateへ正規化し、stateを持つblockだけをopt-inする', async () => {
+    const stateSource = [
+      "const normal = 'normal';",
+      "const highlighted = 'highlight'; // [!code highlight]",
+      "const added = 'add'; // [!code ++]",
+      "const removed = 'remove'; // [!code --]",
+    ].join('\n');
     const stateTree: HastNode = {
       type: 'root',
-      children: [
-        createCodeFence(
-          'language-ts',
-          [
-            "const normal = 'normal';",
-            "const highlighted = 'highlight'; // [!code highlight]",
-            "const added = 'add'; // [!code ++]",
-            "const removed = 'remove'; // [!code --]",
-          ].join('\n'),
-          { 'highlight-lines': '2' },
-        ),
-      ],
+      children: [createCodeFence('language-ts', stateSource, { 'highlight-lines': '2' })],
     };
     const normalTree: HastNode = {
       type: 'root',
@@ -702,12 +712,147 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(statePre?.properties?.['data-code-has-line-state']).toBe('true');
     expect(statePre?.properties?.['data-code-block-identifier']).toBeUndefined();
 
+    const stateLines = getLineElements(stateCode);
+    const semanticMatrix = [
+      { state: 'normal', label: undefined, wrapper: undefined },
+      { state: 'highlight', label: '強調行', wrapper: 'mark' },
+      { state: 'add', label: '追加行', wrapper: 'ins' },
+      { state: 'remove', label: '削除行', wrapper: 'del' },
+    ] as const;
+    for (const [index, expected] of semanticMatrix.entries()) {
+      const line = stateLines[index];
+      expect(line?.properties?.['data-code-line-state']).toBe(expected.state);
+      expect(line?.properties?.['role']).toBe(expected.state === 'normal' ? undefined : 'group');
+      expect(line?.properties?.['aria-label']).toBe(expected.label);
+
+      const elementChildren = getElementChildren(line);
+      const semanticWrappers = elementChildren.filter((child) =>
+        ['mark', 'ins', 'del'].includes(child.tagName ?? ''),
+      );
+      if (expected.wrapper === undefined) {
+        expect(semanticWrappers).toHaveLength(0);
+      } else {
+        expect(semanticWrappers).toHaveLength(1);
+        expect(semanticWrappers[0]?.tagName).toBe(expected.wrapper);
+        expect(
+          getElementChildren(semanticWrappers[0]).filter((child) =>
+            ['mark', 'ins', 'del'].includes(child.tagName ?? ''),
+          ),
+        ).toHaveLength(0);
+      }
+      expect(readTextContent(line)).not.toContain('強調行');
+      expect(readTextContent(line)).not.toContain('追加行');
+      expect(readTextContent(line)).not.toContain('削除行');
+    }
+
+    const stateRoot = stateTree.children?.[0];
+    const copySource = stateRoot?.children?.find(
+      (child) =>
+        child.tagName === 'template' && child.properties?.['data-code-copy-source'] === 'true',
+    );
+    expect(copySource).toBeDefined();
+    expect(findDescendant(statePre, (node) => node === copySource)).toBeUndefined();
+    expect(readTextContent(copySource).length).toBe(stateSource.length);
+    expect(sha256(readTextContent(copySource))).toBe(sha256(stateSource));
+
     const normalPre = findPreElement(normalTree);
     const normalCode = normalPre?.children?.find((child) => child.tagName === 'code');
     expect(
       getLineElements(normalCode).map((line) => line.properties?.['data-code-line-state']),
     ).toEqual(['normal']);
     expect(normalPre?.properties?.['data-code-has-line-state']).toBeUndefined();
+  });
+
+  it('semantic applicationはtoken subtreeを保ち、再実行でもwrapperを重複・積層しない', () => {
+    const tokenChildren: HastNode[] = [
+      { type: 'text', value: 'const ' },
+      {
+        type: 'element',
+        tagName: 'span',
+        properties: {
+          className: ['token', 'identifier'],
+          style: 'color: #2a2e33; --shiki-dark: #d9dfe5',
+        },
+        children: [{ type: 'text', value: 'value' }],
+      },
+      { type: 'text', value: ' = 1;' },
+    ];
+    const tokenSourceRoot: HastNode = { type: 'root', children: tokenChildren };
+    const createLine = (className: string[]): HastNode => ({
+      type: 'element',
+      tagName: 'span',
+      properties: { className },
+      children: structuredClone(tokenChildren),
+    });
+    const lines = [
+      createLine(['line']),
+      createLine(['line', 'highlighted']),
+      createLine(['line', 'diff', 'add']),
+      createLine(['line', 'diff', 'remove']),
+    ];
+    const originalDigests = lines.map((line) => sha256(JSON.stringify(line.children)));
+    const code: HastNode = { type: 'element', tagName: 'code', children: lines };
+    const pre: HastNode = { type: 'element', tagName: 'pre', properties: {} };
+    const context = {
+      blockIdentifier: 'code-block:1' as const,
+      language: 'typescript',
+      notePath: 'content/semantic-fixture.md',
+    };
+
+    normalizeCodeLineStates(code, pre, context);
+    const firstSignature = sha256(JSON.stringify(code));
+    normalizeCodeLineStates(code, pre, context);
+    const secondSignature = sha256(JSON.stringify(code));
+
+    expect(secondSignature).toBe(firstSignature);
+    expect(pre.properties?.['data-code-has-line-state']).toBe('true');
+    expect(lines[0]?.children).toHaveLength(3);
+    for (const [index, line] of lines.entries()) {
+      const contentOwner = index === 0 ? line : line.children?.[0];
+      expect(sha256(JSON.stringify(contentOwner?.children))).toBe(originalDigests[index]);
+      expect(readTextContent(line).length).toBe(readTextContent(tokenSourceRoot).length);
+      expect(sha256(readTextContent(line))).toBe(sha256(readTextContent(tokenSourceRoot)));
+      expect(line.properties?.['data-code-block-identifier']).toBeUndefined();
+    }
+
+    const addLine = lines[2];
+    const addWrapper = addLine?.children?.[0];
+    expect(addWrapper?.tagName).toBe('ins');
+    expect(getElementChildren(addWrapper)).toHaveLength(1);
+    expect(getElementChildren(addWrapper)[0]?.tagName).toBe('span');
+  });
+
+  it('既存の異種semantic wrapperを正しい単一wrapperへ置換する', () => {
+    const line: HastNode = {
+      type: 'element',
+      tagName: 'span',
+      properties: { className: ['line', 'diff', 'add'] },
+      children: [
+        {
+          type: 'element',
+          tagName: 'mark',
+          children: [{ type: 'text', value: 'value' }],
+        },
+      ],
+    };
+    const code: HastNode = { type: 'element', tagName: 'code', children: [line] };
+    const pre: HastNode = { type: 'element', tagName: 'pre', properties: {} };
+
+    normalizeCodeLineStates(code, pre, {
+      blockIdentifier: 'code-block:1',
+      language: 'typescript',
+      notePath: 'content/semantic-fixture.md',
+    });
+
+    expect(line.children).toHaveLength(1);
+    expect(line.children?.[0]?.tagName).toBe('ins');
+    expect(line.children?.[0]?.children).toHaveLength(1);
+    expect(line.children?.[0]?.children?.[0]?.type).toBe('text');
+    expect(
+      getElementChildren(line.children?.[0]).filter((child) =>
+        ['mark', 'ins', 'del'].includes(child.tagName ?? ''),
+      ),
+    ).toHaveLength(0);
   });
 
   it('異種state originをsource orderのblock identifier付きbuild errorにする', async () => {
@@ -1014,6 +1159,11 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(pre?.properties?.['data-code-raw']).toBeUndefined();
     const copySource = root?.children?.find((child) => child.tagName === 'template');
     expect(copySource?.properties?.['data-code-copy-source']).toBe('true');
-    expect(copySource?.children?.[0]?.value).toBe('plain text block');
+    expect(copySource?.children).toEqual([]);
+    expect(copySource?.content?.type).toBe('root');
+    expect(copySource?.content?.children?.[0]?.value).toBe('plain text block');
+    expect(toHtml(copySource as unknown as Parameters<typeof toHtml>[0])).toContain(
+      '>plain text block</template>',
+    );
   });
 });

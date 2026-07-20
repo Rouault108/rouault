@@ -113,7 +113,28 @@ sticky marker backingはrailだけを覆う不透明なeffective-background back
 
 visual cueはhighlightがdot、addがplus、removeがminusです。いずれもCSS pseudo-elementだけで描画し、markerのDOM text nodeやliteral記号を追加しません。`user-select: none`と`pointer-events: none`を維持し、copy sourceとmanual selectionへmarker文字を混入させません。marker foregroundは全state共通のneutral colorで、normal modeのownerは`var(--fg-default)`です。computed pseudo-element foregroundとeffective line backgroundのnon-text contrastはlight / darkそれぞれで`3.0:1`以上を要求します。
 
-forced-colorsでは`CanvasText` / `Canvas`を使ってdot／plus／minusを維持します。printではstate backgroundを除去してもmonochrome markerを残します。state行の`role="group"`、`aria-label`、`mark` / `ins` / `del`などのprogrammatic semanticsはP-V12-3の責務であり、P-V12-2では実装しません。
+forced-colorsでは`CanvasText` / `Canvas`を使ってdot／plus／minusを維持します。printではstate backgroundを除去してもmonochrome markerを残します。
+
+#### Programmatic Semantics
+
+normalized stateからsemantic DOMを生成する単一ownerは`build/rehype/code-line-state.ts`のline state normalizationです。semantic applicationはstate判定を再実装せず、同じnormalized stateを次の固定contractへ投影します。
+
+| State       | Line root      | Accessible name       | Native wrapper |
+| ----------- | -------------- | --------------------- | -------------- |
+| `highlight` | `role="group"` | `aria-label="強調行"` | `mark`         |
+| `add`       | `role="group"` | `aria-label="追加行"` | `ins`          |
+| `remove`    | `role="group"` | `aria-label="削除行"` | `del`          |
+| `normal`    | 追加なし       | 追加なし              | 追加なし       |
+
+state付きlineでは、line root直下の単一native wrapperが既存token childrenを元の順序のまま所有します。source text、token element、class、styleは変更しません。normal lineのdescendant DOMは変更しません。normalizationを再実行してもwrapperを二重化せず、異なるstate wrapperを積層しません。`aria-live`、hidden state text、line numberを含むlabel、marker DOM text、正常DOMのdiagnostic identifierは追加しません。semanticsはbuild-timeに生成するため、SSR／no-JS時点で成立します。
+
+UA resetは`pre[data-code-block]`内の対応する`data-code-line-state`直下wrapperだけを対象にします。`mark`のbackgroundはtransparent、`ins` / `del`のtext decorationはnoneとし、color、font、line-heightはline／tokenから継承します。global `mark` / `ins` / `del`、article本文、code surface外へ影響させません。state backgroundとmarker backingのownerはline root、marker shapeのownerはline rootのpseudo-elementのままです。wrapperをlayout、rail、forced-colors、printの新しい装飾ownerにしません。
+
+copy exactnessとmanual selection非回帰は別contractです。copyの単一sourceはdisplay subtreeから独立した`template[data-code-copy-source]`であり、standalone、active code group panel、no-JS group source、code previewのcopy button結果は元sourceと完全一致しなければなりません。display DOMの`textContent`をcopy sourceへ戻しません。
+
+manual selectionはstate label、ARIA補助文字、marker文字を含めません。P-V12-3ではproduction編集前にChromium／Firefox／WebKitの各projectで一時baselineを生成し、同一Phaseの実装後にfixture keyごとのSHA-256、UTF-16 length、line count、`containsStateLabel: false`を比較します。baselineは同一Phase内の一時Evidenceで、repositoryへcommitせず、P-V12-3のChatGPT精査完了まで保持した後に削除できます。Closure Gateや後日の独立監査のEvidenceには使いません。
+
+manual AT smokeの代表stackはNarrator＋EdgeとVoiceOver＋Safariです。state labelがcode内容より先に取得可能で、code内容が欠落・置換・著しく二重読みされず、navigationが不能または著しく反復的でないことを確認します。語調、句読点、native element announcement、OS／browserによる自然な読み上げ差は許容します。重大な二重読み、本文欠落、順序逆転はBlockerであり、automated snapshotでmanual Evidenceを置換しません。P-V12-3後もv12は完了候補であり、`G-V12-CLOSURE`前は完了扱いしません。
 
 ### Code Line Height
 

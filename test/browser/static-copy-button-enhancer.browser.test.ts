@@ -9,6 +9,34 @@ const installClipboardMock = (writeText: (value: string) => Promise<void>): void
   });
 };
 
+const textFingerprint = (value: string): number => {
+  let hash = 2_166_136_261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16_777_619);
+  }
+  return hash >>> 0;
+};
+
+const semanticLineSignature = (line: Element | null): unknown => {
+  const wrapper = line?.firstElementChild;
+  return {
+    role: line?.getAttribute('role') ?? null,
+    label: line?.getAttribute('aria-label') ?? null,
+    wrapper: wrapper?.localName ?? null,
+    wrapperCount: line?.querySelectorAll(':scope > mark, :scope > ins, :scope > del').length ?? 0,
+    descendantWrapperCount: line?.querySelectorAll('mark, ins, del').length ?? 0,
+    tokens: Array.from(wrapper?.childNodes ?? []).map((node) => ({
+      kind: node.nodeType,
+      tag: node instanceof Element ? node.localName : null,
+      className: node instanceof Element ? node.getAttribute('class') : null,
+      style: node instanceof Element ? node.getAttribute('style') : null,
+      textLength: node.textContent?.length ?? 0,
+      textFingerprint: textFingerprint(node.textContent ?? ''),
+    })),
+  };
+};
+
 describe('static-copy-button-enhancer', () => {
   afterEach(() => {
     document.body.replaceChildren();
@@ -25,9 +53,12 @@ describe('static-copy-button-enhancer', () => {
     root.innerHTML = `
       <template id="copy-source" data-code-copy-source>const answer = 42;</template>
       <button type="button" data-copy-button data-copy-target-id="copy-source" data-copy-state="idle" data-copy-disabled-reason="no-js" disabled>copy</button>
-      <pre>visible text must not be copied</pre>
+      <pre data-code-block><code><span class="line diff add" data-code-line-state="add" role="group" aria-label="追加行"><ins><span class="token keyword" style="color: rgb(42, 46, 51)">visible</span> text must not be copied</ins></span></code></pre>
     `;
     document.body.append(root);
+
+    const line = root.querySelector('[data-code-line-state="add"]');
+    const beforeSemanticSignature = semanticLineSignature(line);
 
     activateStaticCopyButtons(root);
     const button = root.querySelector<HTMLButtonElement>('[data-copy-button]');
@@ -40,6 +71,7 @@ describe('static-copy-button-enhancer', () => {
 
     expect(copied).to.deep.equal(['const answer = 42;']);
     expect(button?.dataset['copyState']).to.equal('copied');
+    expect(semanticLineSignature(line)).to.deep.equal(beforeSemanticSignature);
   });
 
   it('root 外の copy button を activate せず、targetId と copyValue の併用を error status にすること', () => {

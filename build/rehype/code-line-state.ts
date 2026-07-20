@@ -2,6 +2,21 @@ import { type HastNode } from './hast-utils.js';
 
 export type CodeLineState = 'normal' | 'highlight' | 'add' | 'remove';
 
+type StatefulCodeLineState = Exclude<CodeLineState, 'normal'>;
+
+interface CodeLineSemanticDefinition {
+  readonly label: string;
+  readonly wrapperTagName: 'mark' | 'ins' | 'del';
+}
+
+const CODE_LINE_SEMANTICS = {
+  highlight: { label: '強調行', wrapperTagName: 'mark' },
+  add: { label: '追加行', wrapperTagName: 'ins' },
+  remove: { label: '削除行', wrapperTagName: 'del' },
+} as const satisfies Record<StatefulCodeLineState, CodeLineSemanticDefinition>;
+
+const CODE_LINE_SEMANTIC_WRAPPER_TAGS = new Set<string>(['mark', 'ins', 'del']);
+
 export type CodeLineStateOrigin =
   | 'highlight-lines'
   | 'highlight notation'
@@ -17,7 +32,7 @@ interface CodeLineStateContext {
 
 interface CodeLineStateCandidate {
   readonly origin: CodeLineStateOrigin;
-  readonly state: Exclude<CodeLineState, 'normal'>;
+  readonly state: StatefulCodeLineState;
 }
 
 const getClassList = (value: unknown): string[] => {
@@ -82,6 +97,47 @@ const formatConflictError = (
   );
 };
 
+const isOwnedSemanticWrapper = (node: HastNode | undefined): node is HastNode =>
+  node?.type === 'element' &&
+  typeof node.tagName === 'string' &&
+  CODE_LINE_SEMANTIC_WRAPPER_TAGS.has(node.tagName);
+
+const readUnwrappedLineChildren = (lineNode: HastNode): HastNode[] => {
+  const children = lineNode.children ?? [];
+  const onlyChild = children.length === 1 ? children[0] : undefined;
+  return isOwnedSemanticWrapper(onlyChild) ? (onlyChild.children ?? []) : children;
+};
+
+const applyCodeLineSemantics = (lineNode: HastNode, state: CodeLineState): void => {
+  lineNode.properties ??= {};
+
+  if (state === 'normal') {
+    delete lineNode.properties['role'];
+    delete lineNode.properties['aria-label'];
+    lineNode.children = readUnwrappedLineChildren(lineNode);
+    return;
+  }
+
+  const semantics = CODE_LINE_SEMANTICS[state];
+  lineNode.properties['role'] = 'group';
+  lineNode.properties['aria-label'] = semantics.label;
+
+  const children = lineNode.children ?? [];
+  const onlyChild = children.length === 1 ? children[0] : undefined;
+  if (isOwnedSemanticWrapper(onlyChild) && onlyChild.tagName === semantics.wrapperTagName) {
+    return;
+  }
+
+  lineNode.children = [
+    {
+      type: 'element',
+      tagName: semantics.wrapperTagName,
+      properties: {},
+      children: readUnwrappedLineChildren(lineNode),
+    },
+  ];
+};
+
 export const normalizeCodeLineStates = (
   codeNode: HastNode,
   preNode: HastNode,
@@ -101,6 +157,7 @@ export const normalizeCodeLineStates = (
       ...(lineNode.properties ?? {}),
       'data-code-line-state': state,
     };
+    applyCodeLineSemantics(lineNode, state);
     hasLineState ||= state !== 'normal';
   });
 

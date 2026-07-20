@@ -1862,6 +1862,41 @@ describe('static CSS contracts', () => {
     expect(codeSurfaces).not.toMatch(/\[data-code-line-state='remove'\][\s\S]*?var\(--danger[,)]/u);
     expect(codeSurfaces).not.toMatch(/\.line\.(?:highlighted|ui-explicit-highlight|diff)/u);
 
+    const semanticWrapperSelectors = {
+      mark: ":where(pre[data-code-block],[data-code-block-root] pre[data-code-block]) [data-code-line-state='highlight']>mark",
+      ins: ":where(pre[data-code-block],[data-code-block-root] pre[data-code-block]) [data-code-line-state='add']>ins",
+      del: ":where(pre[data-code-block],[data-code-block-root] pre[data-code-block]) [data-code-line-state='remove']>del",
+    } as const;
+    for (const selector of Object.values(semanticWrapperSelectors)) {
+      expectRuleToDeclare(codeSurfaces, selector, [
+        'color: inherit',
+        'font: inherit',
+        'line-height: inherit',
+      ]);
+    }
+    expectRuleToDeclare(codeSurfaces, semanticWrapperSelectors.mark, ['background: transparent']);
+    expectRuleToDeclare(codeSurfaces, semanticWrapperSelectors.ins, ['text-decoration: none']);
+    expectRuleToDeclare(codeSurfaces, semanticWrapperSelectors.del, ['text-decoration: none']);
+    for (const tagName of ['mark', 'ins', 'del']) {
+      expect(rootRuleRecordsForSelector(codeSurfaces, tagName)).toHaveLength(0);
+      expect(rootRuleRecordsForSelector(mainCss, tagName)).toHaveLength(0);
+    }
+
+    const semanticWrapperRecords = rootRuleRecords(codeSurfaces).filter((record) =>
+      record.selectors.some((selector) =>
+        /(?:^|[ >+~])(?:mark|ins|del)(?:$|[.:# >+~])/u.test(selector),
+      ),
+    );
+    expect(semanticWrapperRecords.length).toBeGreaterThan(0);
+    for (const record of semanticWrapperRecords) {
+      for (const selector of record.selectors.filter((candidate) =>
+        /(?:^|[ >+~])(?:mark|ins|del)(?:$|[.:# >+~])/u.test(candidate),
+      )) {
+        expect(selector).toContain('pre[data-code-block]');
+        expect(selector).toContain('[data-code-line-state=');
+      }
+    }
+
     expectSelectorMatchingRuleToDeclare(
       codeSurfaces,
       'state marker rail geometry',

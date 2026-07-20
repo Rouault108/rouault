@@ -125,6 +125,35 @@
   background: color-mix(in oklch, var(--bg-danger-subtle, oklch(96% 0.03 25)) 50%, transparent);
 }
 
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])
+  [data-code-line-state='highlight']
+  > mark,
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])
+  [data-code-line-state='add']
+  > ins,
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])
+  [data-code-line-state='remove']
+  > del {
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])
+  [data-code-line-state='highlight']
+  > mark {
+  background: transparent;
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])
+  [data-code-line-state='add']
+  > ins,
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])
+  [data-code-line-state='remove']
+  > del {
+  text-decoration: none;
+}
+
 :where(
   pre[data-code-block][data-code-has-line-state='true'],
   [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']

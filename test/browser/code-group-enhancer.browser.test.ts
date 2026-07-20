@@ -1,6 +1,7 @@
 import { expect } from '@open-wc/testing';
 
 import { enhanceCodeGroups } from '../../src/client/post-hydrate/code-group-enhancer.js';
+import { activateStaticCopyButtons } from '../../src/client/post-hydrate/static-copy-button-enhancer.js';
 
 const dispatchKey = (target: Element, key: string): void => {
   target.dispatchEvent(
@@ -18,6 +19,36 @@ const expectElement = <T extends Element>(element: T | null | undefined, label: 
   return element as T;
 };
 
+const textFingerprint = (value: string): number => {
+  let hash = 2_166_136_261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16_777_619);
+  }
+  return hash >>> 0;
+};
+
+const semanticSubtreeSignature = (owner: ParentNode): unknown[] =>
+  Array.from(owner.querySelectorAll<HTMLElement>('[data-code-line-state]')).map((line) => {
+    const wrapper = line.firstElementChild;
+    return {
+      state: line.dataset['codeLineState'] ?? null,
+      role: line.getAttribute('role'),
+      label: line.getAttribute('aria-label'),
+      wrapper: wrapper?.localName ?? null,
+      wrapperCount: line.querySelectorAll(':scope > mark, :scope > ins, :scope > del').length,
+      descendantWrapperCount: line.querySelectorAll('mark, ins, del').length,
+      tokens: Array.from(wrapper?.childNodes ?? line.childNodes).map((node) => ({
+        kind: node.nodeType,
+        tag: node instanceof Element ? node.localName : null,
+        className: node instanceof Element ? node.getAttribute('class') : null,
+        style: node instanceof Element ? node.getAttribute('style') : null,
+        textLength: node.textContent?.length ?? 0,
+        textFingerprint: textFingerprint(node.textContent ?? ''),
+      })),
+    };
+  });
+
 const codeGroupFixture = (
   id: string,
   options: {
@@ -29,16 +60,16 @@ const codeGroupFixture = (
   } = {},
 ): string => {
   const selected = options.selected ?? 'valid';
-  const syncScope = options.syncScope
-    ? ` data-code-group-sync-scope="${options.syncScope}"`
-    : '';
+  const syncScope = options.syncScope ? ` data-code-group-sync-scope="${options.syncScope}"` : '';
   const enhanced = options.enhanced ? ' data-code-group-enhanced="true"' : '';
-  const invalidTab = options.includeInvalidTab === false
-    ? ''
-    : `<button type="button" data-code-group-tab="true" data-code-group-key="invalid">Invalid</button>`;
-  const invalidPanel = options.includeInvalidPanel === false
-    ? ''
-    : `<section data-code-group-panel="invalid" data-code-group-panel-active="${selected === 'invalid' ? 'true' : 'false'}" data-code-group-panel-label="Invalid" data-code-copy-source-id="${id}-source-invalid">
+  const invalidTab =
+    options.includeInvalidTab === false
+      ? ''
+      : `<button type="button" data-code-group-tab="true" data-code-group-key="invalid">Invalid</button>`;
+  const invalidPanel =
+    options.includeInvalidPanel === false
+      ? ''
+      : `<section data-code-group-panel="invalid" data-code-group-panel-active="${selected === 'invalid' ? 'true' : 'false'}" data-code-group-panel-label="Invalid" data-code-copy-source-id="${id}-source-invalid">
         <template id="${id}-source-invalid" data-code-copy-source>const invalid = true;</template>
         <figure data-code-block-root data-code-group-owned="true">
           <pre data-code-block data-code-language="ts" data-code-copy-label="${id} invalid"><code>const invalid = true;</code></pre>
@@ -209,6 +240,77 @@ describe('code-group-enhancer', () => {
     expect(tabs[0]?.tabIndex).to.equal(0);
   });
 
+  it('no-JS semantic subtreeをtabs昇格・panel切替・再実行後も保ち、active sourceを正確にcopyすること', async () => {
+    const copied: string[] = [];
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: (value: string) => {
+          copied.push(value);
+          return Promise.resolve();
+        },
+      },
+    });
+
+    const stateLines = (prefix: string): string => `
+      <span class="line" data-code-line-state="normal"><span class="token">${prefix}0</span></span>
+      <span class="line highlighted" data-code-line-state="highlight" role="group" aria-label="強調行"><mark><span class="token keyword" style="color: rgb(42, 46, 51)">${prefix}1</span></mark></span>
+      <span class="line diff add" data-code-line-state="add" role="group" aria-label="追加行"><ins><span class="token string">${prefix}2</span></ins></span>
+      <span class="line diff remove" data-code-line-state="remove" role="group" aria-label="削除行"><del><span class="token number">${prefix}3</span></del></span>
+    `;
+    const root = document.createElement('article');
+    root.innerHTML = `
+      <section data-code-group data-code-group-id="semantic" data-code-group-label="semantic" data-code-group-selected="active">
+        <div class="code-group-header" data-code-group-controls="true">
+          <div class="code-group-tablist">
+            <button type="button" data-code-group-tab="true" data-code-group-key="active">Active</button>
+            <button type="button" data-code-group-tab="true" data-code-group-key="secondary">Secondary</button>
+          </div>
+          <div class="code-group-header-tools">
+            <button type="button" data-copy-button data-code-group-copy data-copy-target-id="semantic-source-active" data-copy-disabled-reason="no-js" aria-describedby="semantic-status" disabled>copy</button>
+            <span id="semantic-status" data-copy-status></span>
+          </div>
+        </div>
+        <section data-code-group-panel="active" data-code-group-panel-active="true" data-code-copy-source-id="semantic-source-active">
+          <template id="semantic-source-active" data-code-copy-source>const active = true;</template>
+          <figure data-code-block-root data-code-group-owned="true"><pre data-code-block><code>${stateLines('a')}</code></pre></figure>
+        </section>
+        <section data-code-group-panel="secondary" data-code-group-panel-active="false" data-code-copy-source-id="semantic-source-secondary">
+          <template id="semantic-source-secondary" data-code-copy-source>const secondary = true;</template>
+          <figure data-code-block-root data-code-group-owned="true"><pre data-code-block><code>${stateLines('b')}</code></pre></figure>
+        </section>
+      </section>
+    `;
+    document.body.append(root);
+
+    const before = semanticSubtreeSignature(root);
+    enhanceCodeGroups(root);
+    enhanceCodeGroups(root);
+    expect(semanticSubtreeSignature(root)).to.deep.equal(before);
+
+    const secondaryTab = expectElement(
+      root.querySelector<HTMLButtonElement>('[data-code-group-key="secondary"]'),
+      'secondary tab',
+    );
+    secondaryTab.click();
+    expect(semanticSubtreeSignature(root)).to.deep.equal(before);
+    expect(root.querySelectorAll('[data-code-line-state][role="group"]')).to.have.length(6);
+    expect(root.querySelectorAll('[data-code-line-state] mark')).to.have.length(2);
+    expect(root.querySelectorAll('[data-code-line-state] ins')).to.have.length(2);
+    expect(root.querySelectorAll('[data-code-line-state] del')).to.have.length(2);
+
+    activateStaticCopyButtons(root);
+    const copyButton = expectElement(
+      root.querySelector<HTMLButtonElement>('[data-code-group-copy]'),
+      'group copy button',
+    );
+    expect(copyButton.dataset['copyTargetId']).to.equal('semantic-source-secondary');
+    copyButton.click();
+    await Promise.resolve();
+    expect(copied).to.deep.equal(['const secondary = true;']);
+    expect(semanticSubtreeSignature(root)).to.deep.equal(before);
+  });
+
   it('tab key は data-code-group-key だけから読み、nested descendant を親 group state に混ぜないこと', () => {
     const root = document.createElement('article');
     root.innerHTML = `
@@ -262,7 +364,9 @@ describe('code-group-enhancer', () => {
     const outer = expectElement(groups[0], 'outer group');
     const inner = expectElement(groups[1], 'inner group');
     const outerTabs = Array.from(
-      outer.querySelector<HTMLElement>(':scope > .code-group-header .code-group-tablist')?.querySelectorAll<HTMLButtonElement>(':scope > button[data-code-group-tab]') ?? [],
+      outer
+        .querySelector<HTMLElement>(':scope > .code-group-header .code-group-tablist')
+        ?.querySelectorAll<HTMLButtonElement>(':scope > button[data-code-group-tab]') ?? [],
     );
     const outerPanels = Array.from(outer.children).filter(
       (child): child is HTMLElement =>
