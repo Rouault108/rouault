@@ -1985,6 +1985,10 @@ test.describe('Static header migration', () => {
     await waitForRouterDocumentHostReady(page);
 
     const triggerSelector = 'header[data-layout-header] [data-toc-trigger]';
+    await expect(page.locator(triggerSelector)).toHaveAttribute(
+      'data-toc-trigger-interactive',
+      'true',
+    );
     await page.locator(triggerSelector).evaluate((element) => {
       element.setAttribute('data-visible', 'true');
     });
