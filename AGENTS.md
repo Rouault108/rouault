@@ -27,7 +27,7 @@ README・AGENTS・実装の内容が衝突した場合は、次の優先順位�
 **Rouault**は、個人的なノートを閲覧するための専用 Webアプリケーションです。  
 主目的は、一般的なドキュメントサイトを作ることではなく、**「没入して読む」ことに適した静かなUIを構築すること** にあります。
 
-現行実装は、Eleventyを基盤とする静的生成、Litによる UI、build-time SSR、client hydration、Markdownベースのノート管理、Pagefindによる検索を中核に構成されています。
+現行実装は、Eleventyによる静的生成を基盤とし、semanticな静的HTMLをbaselineに、build-time SSR、必要箇所に限定したLitによるclient hydration、Markdownベースのノート管理、Pagefindによる検索を中核に構成されています。
 
 Rouaultを実装・修正する際は、常に次の問いを優先してください。
 
@@ -110,7 +110,8 @@ Rouaultは長期保守性のためにownership boundaryを重視します。
 ### 基盤
 
 - SSG: Eleventy
-- UI: Lit
+- UI baseline: semanticな静的HTML
+- 対話的UI: 必要箇所に限定したLit
 - 言語: TypeScript
 - ビルド時 SSR: `@lit-labs/ssr`
 - 検索: Pagefind
@@ -168,55 +169,44 @@ Windowsネイティブ環境で作業する場合は、PowerShell構文を前提
 
 ### 主なコード配置
 
+- `.github/` : CI、release、repository automation
+- `.storybook/` : Storybook設定
 - `build/` : build-time専用処理。content / navigation / projections / search / ssr / remark / rehype
 - `content/` : ノート本文、frontmatter、関連アセット
-- `examples/` : authoring / media / manifest 用の例示資産
+- `docs/` : 契約、Design System、guide、ADR、reference、architecture snapshot
+- `examples/` : authoring / media / manifest用の例示資産
+- `external-action-snapshots/` : 外部GitHub Action bindingの監査用snapshot
+- `scripts/` : codegen、build補助、CI補助、content同期補助、deployment補助
 - `shared/` : build-time / runtime共有ドメインロジック
-- `shared/navigation/` : `NavigationEnvelope` などbuild-time / runtime共有のnavigation契約
+- `shared/navigation/` : `NavigationEnvelope`などbuild-time / runtime共有のnavigation契約
 - `shared/search/` : 検索データモデルなど共有検索ロジック
 - `src/components/` : UIコンポーネント
 - `src/router/` : router core、navigation commit、head / history / route coordination
-- `src/search/` : 検索 core、ranking、source adapter、bootstrap、navigation、diagnostics、snippet整形
+- `src/search/` : 検索core、ranking、source adapter、bootstrap、navigation、diagnostics、snippet整形
 - `src/client/` : hydration scheduler / registry / post-hydrate coordination
-- `src/layout/` / `src/layouts/` : layout-level helper と Eleventy layout / page shell
+- `src/layout/` / `src/layouts/` : layout-level helperとEleventy layout / page shell
 - `src/data/` : page projection / data shaping
-- `src/article-header/` : article header の共有契約
+- `src/article-header/` : article headerの共有契約
 - `src/icons/` / `src/generated/` : icon登録と生成済みicon subset
 - `src/theme/` : テーマ切替と状態
-- `src/toc/` : TOC 公開入口
+- `src/toc/` : TOC公開入口
 - `src/assets/` / `src/styles/` : CSS、静的UI資産、design token利用箇所
 - `src/testing/` / `src/stories/` : テスト・Storybook補助
 - `test/` : node / browser / ssr / e2e / storybook
-- `scripts/` : codegen、build補助、CI補助、content同期補助
-- `docs/` : 契約・仕様・設計資料
+- `tools/` : `ui-check`などの開発ツール
+- `types/` : repository-wideな型補助
 
 ### 優先して参照すべき文書
 
-- `docs/README.md`
-- `docs/contracts/router.md`
-- `docs/contracts/router-document.md`
-- `docs/contracts/navigation-envelope.md`
-- `docs/contracts/hydration.md`
-- `docs/contracts/sidebar-state.md`
-- `docs/contracts/note-navigation.md`
-- `docs/contracts/permanent-url.md`
-- `docs/contracts/search.md`
-- `docs/contracts/markdown.md`
-- `docs/contracts/corpus.md`
-- `docs/contracts/content-config.md`
-- `docs/contracts/testing-taxonomy.md`
-- `docs/references/navigation-envelope-schema.md`
-- `docs/references/search-data-model.md`
-- `docs/references/search-ranking-and-diagnostics.md`
-- `docs/references/markdown-output.md`
-- `docs/references/compatibility.md`
-- `docs/guides/markdown-authoring.md`
-- `docs/guides/note-authoring.md`
-- `docs/guides/content-config.md`
-- `docs/guides/corpus.md`
-- `docs/guides/operations/`
-- `docs/design-system/`
-- `docs/architecture/shell-projection.md`
+- `docs/README.md` : 文書分類、正本ルール、現行文書の完全な一覧
+- `docs/contracts/` : 機能契約の正本。個別Contractは`docs/README.md`の現行一覧から選ぶ
+- `docs/design-system/` : Design System契約
+- `docs/references/` : 型、詳細schema、詳細表、棚卸し
+- `docs/guides/` : 執筆・実装・運用案内
+- `docs/adr/` : 設計判断の経緯
+- `docs/architecture/navigation-shell-snapshot.md` : navigation shellの現行architecture snapshot
+
+READMEやAGENTSに個別Contractの完全な一覧を重複管理しないでください。文書の追加・移動・廃止は`docs/README.md`へ反映し、そこを現行目録の正本としてください。
 
 ---
 
@@ -283,12 +273,17 @@ Windowsネイティブ環境で作業する場合は、PowerShell構文を前提
 ```powershell
 pnpm dev                    # Eleventy dev server
 pnpm build                  # client / images / Eleventy / Lit SSR / navigation/search artifacts / Pagefind
-pnpm build:production       # production条件をまとめたビルド入口
+pnpm build:production       # production条件と成果物assertionを含むビルド入口
 pnpm build:client           # client bundleのみ生成
 pnpm build:images           # 画像生成
 
+pnpm ui:check               # UI確認用sandboxを起動
+pnpm ui:screenshot          # UI確認用screenshotを生成・検証
+pnpm storybook              # Storybook起動
+pnpm storybook:build        # Storybook静的ビルド
+
 pnpm test:node              # pure logic / policy / parser / projection helper
-pnpm test:browser           # custom element / enhancer のbrowser-observable contract
+pnpm test:browser           # custom element / enhancerのbrowser-observable contract
 pnpm test:ssr               # build-time / final DOM / static artifact / CSS structure
 pnpm test:e2e               # app shell / no-JS baseline / router / search / 主要導線
 pnpm test:storybook:meta    # story metadata / import boundary
@@ -300,13 +295,20 @@ pnpm test:extended          # storybook smoke + e2e:production + e2e:dev
 pnpm lint                   # ESLint
 pnpm lint:fix               # ESLint auto-fix + Prettier write
 pnpm format                 # Prettier write
-pnpm typecheck              # app + node の型チェック
+pnpm typecheck              # app + nodeの型チェック
 pnpm validate:note-links    # note source link validation
-pnpm check                  # lint + typecheck + test + note links / import boundary checks
+pnpm check                  # lint + typecheck + test + note link検証 + production/search import boundary検証
 pnpm verify                 # check + link contract acceptance + test:extended
+
+pnpm notes:stamp-updated    # noteのupdated metadataを更新
+pnpm sync:link-cards        # link card metadataを同期
 ```
 
+`package.json`の`scripts`をコマンド構成の正本とします。
+
 通常ビルドは、client bundle、画像生成、Eleventy、Lit SSR、navigation artifact、search artifact、Pagefind indexの順に進みます。build-time契約を変更する場合は、この順序に依存したテストの有無を確認してください。
+
+`pnpm build:production`のbuild labelは、明示された`ROUAULT_BUILD_LABEL`、`GITHUB_SHA`の先頭7文字、`production local`の順で解決されます。明示指定を必須と仮定せず、実装事実は`scripts/run-production-build.ts`を正本としてください。
 
 ---
 
