@@ -1735,11 +1735,12 @@ describe('static CSS contracts', () => {
       '.code-surface-caption',
       '.code-surface-copy-button-shell',
       "[data-code-line-numbers='true']",
+      "[data-code-has-line-state='true']",
+      "[data-code-line-state='highlight']",
+      "[data-code-line-state='add']",
+      "[data-code-line-state='remove']",
       '.line::before',
-      '.line.highlighted',
-      '.line.ui-explicit-highlight',
-      '.line.diff.add',
-      '.line.diff.remove',
+      '.line::after',
     ]);
     expectSelectorPresence(staticCopyButton, ['.static-copy-control']);
     expectSelectorPresence(codeSurfaces, ['.static-copy-control']);
@@ -1813,7 +1814,7 @@ describe('static CSS contracts', () => {
       codeSurfaces,
       'code line number marker',
       (selector) =>
-        selector.includes("[data-code-line-numbers='true']") && selector.includes('.line::before'),
+        selector.includes("[data-code-line-numbers='true']") && selector.includes('.line::after'),
       [
         'counter-increment: ui-code-block-line',
         'content: counter(ui-code-block-line)',
@@ -1828,7 +1829,8 @@ describe('static CSS contracts', () => {
       (selector) =>
         selector.includes("[data-code-line-numbers='true']") &&
         selector.includes('.line') &&
-        !selector.includes('::before'),
+        !selector.includes('::after') &&
+        !selector.includes("[data-code-has-line-state='true']"),
       ['padding-inline-start: calc(var(--space-8, 2rem) + var(--space-2, 0.5rem))'],
     );
 
@@ -1837,35 +1839,69 @@ describe('static CSS contracts', () => {
       'highlighted code line',
       (selector) =>
         selector.includes('pre[data-code-block]') &&
-        (selector.includes('.line.highlighted') ||
-          selector.includes('.line.ui-explicit-highlight')),
-      [
-        'background: color-mix(',
-        'var(--bg-highlight-subtle, oklch(96% 0.04 65)) 20%',
-      ],
+        selector.includes("[data-code-line-state='highlight']"),
+      ['background: color-mix(', 'var(--bg-highlight-subtle, oklch(96% 0.04 65)) 20%'],
     );
     expectSelectorMatchingRuleToDeclare(
       codeSurfaces,
       'diff added code line',
       (selector) =>
-        selector.includes('pre[data-code-block]') && selector.includes('.line.diff.add'),
-      [
-        'background: color-mix(',
-        'var(--bg-success-subtle, oklch(96% 0.04 145)) 50%',
-      ],
+        selector.includes('pre[data-code-block]') &&
+        selector.includes("[data-code-line-state='add']"),
+      ['background: color-mix(', 'var(--bg-success-subtle, oklch(96% 0.04 145)) 50%'],
     );
     expectSelectorMatchingRuleToDeclare(
       codeSurfaces,
       'diff removed code line',
       (selector) =>
-        selector.includes('pre[data-code-block]') && selector.includes('.line.diff.remove'),
+        selector.includes('pre[data-code-block]') &&
+        selector.includes("[data-code-line-state='remove']"),
+      ['background: color-mix(', 'var(--bg-danger-subtle, oklch(96% 0.03 25)) 50%'],
+    );
+    expect(codeSurfaces).not.toMatch(/\[data-code-line-state='add'\][\s\S]*?var\(--success[,)]/u);
+    expect(codeSurfaces).not.toMatch(/\[data-code-line-state='remove'\][\s\S]*?var\(--danger[,)]/u);
+    expect(codeSurfaces).not.toMatch(/\.line\.(?:highlighted|ui-explicit-highlight|diff)/u);
+
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'state marker rail geometry',
+      (selector) =>
+        selector.includes("[data-code-has-line-state='true']") &&
+        selector.includes('.line::before'),
       [
-        'background: color-mix(',
-        'var(--bg-danger-subtle, oklch(96% 0.03 25)) 50%',
+        "content: ''",
+        'display: inline-block',
+        'position: sticky',
+        'inset-inline-start: 0',
+        'inline-size: var(--ui-code-state-marker-rail-size)',
+        'block-size: 1lh',
+        'color: var(--fg-default',
+        'pointer-events: none',
+        'user-select: none',
       ],
     );
-    expect(codeSurfaces).not.toMatch(/\.line\.diff\.add[\s\S]*?var\(--success[,)]/u);
-    expect(codeSurfaces).not.toMatch(/\.line\.diff\.remove[\s\S]*?var\(--danger[,)]/u);
+    expectSelectorMatchingRuleToDeclare(
+      codeSurfaces,
+      'state line number composition',
+      (selector) =>
+        selector.includes("[data-code-line-numbers='true'][data-code-has-line-state='true']") &&
+        selector.includes('.line'),
+      [
+        'var(--space-8, 2rem)',
+        'var(--ui-code-state-marker-rail-size)',
+        'var(--ui-code-state-marker-gap)',
+      ],
+    );
+    for (const state of ['highlight', 'add', 'remove']) {
+      expectSelectorMatchingRuleToDeclare(
+        codeSurfaces,
+        `${state} state marker shape`,
+        (selector) =>
+          selector.includes(`[data-code-line-state='${state}']::before`) &&
+          selector.includes("[data-code-has-line-state='true']"),
+        ['background-image:', 'background-color: color-mix('],
+      );
+    }
     expect(codeSurfaces).not.toContain('font-size: var(--text-lg, 1rem)');
     for (const replacement of [
       '#8f4a52',
@@ -1886,6 +1922,23 @@ describe('static CSS contracts', () => {
     }
 
     const forcedColors = atRuleBlock(codeSurfaces, '@media (forced-colors: active)');
+    expectSelectorMatchingRuleToDeclare(
+      forcedColors,
+      'forced-colors state marker',
+      (selector) =>
+        selector.includes("[data-code-has-line-state='true']") &&
+        selector.includes('.line::before'),
+      ['color: CanvasText', 'background-color: Canvas', 'forced-color-adjust: none'],
+    );
+    const print = atRuleBlock(codeSurfaces, '@media print');
+    expectSelectorMatchingRuleToDeclare(
+      print,
+      'print state marker',
+      (selector) =>
+        selector.includes("[data-code-has-line-state='true']") &&
+        selector.includes('.line::before'),
+      ['color: currentColor', 'background-color: white'],
+    );
     expectSelectorMatchingRuleToDeclare(
       forcedColors,
       'forced-colors code focus',
@@ -2670,14 +2723,10 @@ describe('static CSS contracts', () => {
       'section[data-code-group] > [data-code-group-panel] + [data-code-group-panel]',
       ['border-block-start: var(--border-width, 1px) solid currentColor'],
     );
-    expectRuleToDeclare(
-      print,
-      "[data-code-block-root]:not([data-code-group-owned='true'])",
-      [
-        'border: var(--border-width, 1px) solid currentColor',
-        'background: transparent !important',
-      ],
-    );
+    expectRuleToDeclare(print, "[data-code-block-root]:not([data-code-group-owned='true'])", [
+      'border: var(--border-width, 1px) solid currentColor',
+      'background: transparent !important',
+    ]);
     expectRuleToDeclare(print, 'section[data-code-group]', [
       'border: var(--border-width, 1px) solid currentColor',
       'background: transparent !important',

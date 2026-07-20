@@ -12,6 +12,7 @@ const crossBrowserFinalCheck = [
   '**/toc-tabs.spec.ts',
   '**/sidebar-pre-hydration-leakage.spec.ts',
   '**/skip-link.spec.ts',
+  '**/code-line-state-visual.spec.ts',
 ];
 
 const articleHeaderStaticLayoutCheck = '**/article-header-static-layout.spec.ts';

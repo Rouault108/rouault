@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { codeToHast, codeToTokensWithThemes, type ThemedTokenWithVariants } from 'shiki';
 
 import { rehypeShikiCodeBlocks } from '../../build/rehype/shiki-code-blocks.js';
+import { normalizeCodeLineStates } from '../../build/rehype/code-line-state.js';
 import { ROUAULT_SHIKI_THEMES } from '../../build/rehype/shiki-themes.js';
 import {
   type PaletteSlot,
@@ -401,12 +402,8 @@ describe('rehypeShikiCodeBlocks', () => {
   it('Rouault custom theme definition はclosed paletteとordered scope contractを満たす', () => {
     expect(validateRouaultSyntaxThemeDefinition()).toEqual([]);
     expect(Object.keys(ROUAULT_SYNTAX_PALETTES)).toEqual(['light', 'dark']);
-    expect(Object.keys(ROUAULT_SYNTAX_PALETTES.light)).toEqual(
-      ROUAULT_SYNTAX_PALETTE_SLOTS,
-    );
-    expect(Object.keys(ROUAULT_SYNTAX_PALETTES.dark)).toEqual(
-      ROUAULT_SYNTAX_PALETTE_SLOTS,
-    );
+    expect(Object.keys(ROUAULT_SYNTAX_PALETTES.light)).toEqual(ROUAULT_SYNTAX_PALETTE_SLOTS);
+    expect(Object.keys(ROUAULT_SYNTAX_PALETTES.dark)).toEqual(ROUAULT_SYNTAX_PALETTE_SLOTS);
     expect(ROUAULT_SYNTAX_RULES.map((rule) => rule.order)).toEqual([
       10, 20, 30, 40, 50, 60, 70, 80,
     ]);
@@ -573,7 +570,7 @@ describe('rehypeShikiCodeBlocks', () => {
             filename: 'sample.ts',
             label: '例',
             intent: 'invalid',
-            'show-line-numbers': true,
+            'show-line-numbers': '',
             'copy-mode': 'always',
             wrap: true,
             'highlight-lines': '1,3-4',
@@ -671,6 +668,141 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(readNodeClassList(lines[0])).toContain('ui-explicit-highlight');
     expect(readNodeClassList(lines[1])).toContain('diff');
     expect(readNodeClassList(lines[1])).toContain('add');
+  });
+
+  it('全lineを単一stateへ正規化し、stateを持つblockだけをopt-inする', async () => {
+    const stateTree: HastNode = {
+      type: 'root',
+      children: [
+        createCodeFence(
+          'language-ts',
+          [
+            "const normal = 'normal';",
+            "const highlighted = 'highlight'; // [!code highlight]",
+            "const added = 'add'; // [!code ++]",
+            "const removed = 'remove'; // [!code --]",
+          ].join('\n'),
+          { 'highlight-lines': '2' },
+        ),
+      ],
+    };
+    const normalTree: HastNode = {
+      type: 'root',
+      children: [createCodeFence('language-ts', "const normal = 'normal';")],
+    };
+
+    await rehypeShikiCodeBlocks()(stateTree, { path: 'content/state-fixture.md' });
+    await rehypeShikiCodeBlocks()(normalTree, { path: 'content/normal-fixture.md' });
+
+    const statePre = findPreElement(stateTree);
+    const stateCode = statePre?.children?.find((child) => child.tagName === 'code');
+    expect(
+      getLineElements(stateCode).map((line) => line.properties?.['data-code-line-state']),
+    ).toEqual(['normal', 'highlight', 'add', 'remove']);
+    expect(statePre?.properties?.['data-code-has-line-state']).toBe('true');
+    expect(statePre?.properties?.['data-code-block-identifier']).toBeUndefined();
+
+    const normalPre = findPreElement(normalTree);
+    const normalCode = normalPre?.children?.find((child) => child.tagName === 'code');
+    expect(
+      getLineElements(normalCode).map((line) => line.properties?.['data-code-line-state']),
+    ).toEqual(['normal']);
+    expect(normalPre?.properties?.['data-code-has-line-state']).toBeUndefined();
+  });
+
+  it('異種state originをsource orderのblock identifier付きbuild errorにする', async () => {
+    const sentinel = 'ROUAULT_PRIVATE_CONFLICT_SENTINEL_7F31';
+    const createConflictTree = (
+      firstHasFilename: boolean,
+      notation: '[!code ++]' | '[!code --]',
+    ): HastNode => ({
+      type: 'root',
+      children: [
+        createCodeFence('language-ts', 'const first = 1;', {
+          ...(firstHasFilename ? { filename: 'first.ts' } : {}),
+        }),
+        createCodeFence('language-ts', `${sentinel}; // ${notation}`, {
+          filename: 'conflict.ts',
+          'highlight-lines': '1',
+        }),
+      ],
+    });
+
+    for (const conflict of [
+      { notation: '[!code ++]' as const, states: 'add, highlight', origin: 'diff add' },
+      { notation: '[!code --]' as const, states: 'highlight, remove', origin: 'diff remove' },
+    ]) {
+      for (const firstHasFilename of [false, true]) {
+        let errorMessage = '';
+        try {
+          await rehypeShikiCodeBlocks()(createConflictTree(firstHasFilename, conflict.notation), {
+            path: 'content/conflict-fixture.md',
+          });
+        } catch (error) {
+          errorMessage = error instanceof Error ? error.message : String(error);
+        }
+
+        expect(errorMessage).toContain('note path: content/conflict-fixture.md');
+        expect(errorMessage).toContain('block: code-block:2');
+        expect(errorMessage).toContain('filename: conflict.ts');
+        expect(errorMessage).toContain('language: typescript');
+        expect(errorMessage).toContain('code line: 1');
+        expect(errorMessage).toContain(`states: ${conflict.states}`);
+        expect(errorMessage).toContain(`origins: ${conflict.origin}, highlight-lines`);
+        expect(errorMessage).not.toContain(sentinel);
+      }
+    }
+  });
+
+  it('filenameとfile.pathがないconflictでもordinalとprivacy contractを維持する', async () => {
+    const sentinel = 'ROUAULT_PRIVATE_CONFLICT_SENTINEL_7F31';
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        createCodeFence('language-ts', 'const first = 1;', {
+          filename: 'first.ts',
+        }),
+        createCodeFence('language-ts', `${sentinel}; // [!code ++]`, {
+          'highlight-lines': '1',
+        }),
+      ],
+    };
+
+    let errorMessage = '';
+    try {
+      await rehypeShikiCodeBlocks()(tree);
+    } catch (error) {
+      errorMessage = error instanceof Error ? error.message : String(error);
+    }
+
+    expect(errorMessage).toContain('note path: <unknown>');
+    expect(errorMessage).toContain('block: code-block:2');
+    expect(errorMessage).not.toContain('filename:');
+    expect(errorMessage).toContain('language: typescript');
+    expect(errorMessage).toContain('code line: 1');
+    expect(errorMessage).toContain('states: add, highlight');
+    expect(errorMessage).toContain('origins: diff add, highlight-lines');
+    expect(errorMessage).not.toContain(sentinel);
+    expect(errorMessage).not.toContain(`${sentinel}; // [!code ++]`);
+  });
+
+  it('addとremoveの複合classもsilent precedenceせずrejectする', () => {
+    const line: HastNode = {
+      type: 'element',
+      tagName: 'span',
+      properties: { className: ['line', 'diff', 'add', 'remove'] },
+      children: [{ type: 'text', value: 'private source must not be reported' }],
+    };
+    const code: HastNode = { type: 'element', tagName: 'code', children: [line] };
+    const pre: HastNode = { type: 'element', tagName: 'pre', properties: {} };
+
+    expect(() =>
+      normalizeCodeLineStates(code, pre, {
+        blockIdentifier: 'code-block:1',
+        language: 'typescript',
+        notePath: 'content/conflict-fixture.md',
+      }),
+    ).toThrow(/states: add, remove; origins: diff add, diff remove/u);
   });
 
   it('rehype pipeline経由でも5言語のforegroundをclosed paletteへ閉じる', async () => {

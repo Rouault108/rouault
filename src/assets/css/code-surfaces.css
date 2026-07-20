@@ -110,30 +110,122 @@
   display: block;
 }
 
-:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line.highlighted,
 :where(pre[data-code-block], [data-code-block-root] pre[data-code-block])
-  .line.ui-explicit-highlight {
-  background: color-mix(
-    in oklch,
+  [data-code-line-state='highlight'] {
+  background: color-mix(in oklch, var(--bg-highlight-subtle, oklch(96% 0.04 65)) 20%, transparent);
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])
+  [data-code-line-state='add'] {
+  background: color-mix(in oklch, var(--bg-success-subtle, oklch(96% 0.04 145)) 50%, transparent);
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])
+  [data-code-line-state='remove'] {
+  background: color-mix(in oklch, var(--bg-danger-subtle, oklch(96% 0.03 25)) 50%, transparent);
+}
+
+:where(
+  pre[data-code-block][data-code-has-line-state='true'],
+  [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']
+) {
+  --ui-code-state-marker-rail-size: var(--space-4, 1rem);
+  --ui-code-state-marker-gap: var(--space-2, 0.5rem);
+  --ui-code-state-marker-inline-offset: var(--space-1, 0.25rem);
+  --ui-code-state-marker-stroke: var(--border-width, 1px);
+  --ui-code-state-marker-surface-background: var(
+    --ui-code-block-background,
+    var(--bg-fill-muted, oklch(96% 0 0))
+  );
+}
+
+:where(
+    pre[data-code-block][data-code-has-line-state='true'],
+    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']
+  )
+  .line {
+  --ui-code-state-marker-backing: var(--ui-code-state-marker-surface-background);
+  position: relative;
+  padding-inline-start: calc(
+    var(--ui-code-state-marker-rail-size) + var(--ui-code-state-marker-gap)
+  );
+}
+
+:where(
+    pre[data-code-block][data-code-has-line-state='true'],
+    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']
+  )
+  .line::before {
+  content: '';
+  display: inline-block;
+  position: sticky;
+  z-index: 1;
+  inset-inline-start: 0;
+  inline-size: var(--ui-code-state-marker-rail-size);
+  block-size: 1lh;
+  box-sizing: border-box;
+  margin-inline-start: calc(
+    -1 * (var(--ui-code-state-marker-rail-size) + var(--ui-code-state-marker-gap))
+  );
+  margin-inline-end: var(--ui-code-state-marker-gap);
+  vertical-align: top;
+  color: var(--fg-default, oklch(20% 0 0));
+  background-color: var(--ui-code-state-marker-backing);
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  user-select: none;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+:where(
+    pre[data-code-block][data-code-has-line-state='true'],
+    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']
+  )
+  [data-code-line-state='highlight']::before {
+  background-color: color-mix(
+    in srgb,
     var(--bg-highlight-subtle, oklch(96% 0.04 65)) 20%,
-    transparent
+    var(--ui-code-state-marker-surface-background)
+  );
+  background-image: radial-gradient(
+    circle,
+    currentColor 0 calc(var(--ui-code-state-marker-rail-size) / 8),
+    transparent calc(var(--ui-code-state-marker-rail-size) / 8 + 0.5px)
   );
 }
 
-:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line.diff.add {
-  background: color-mix(
-    in oklch,
+:where(
+    pre[data-code-block][data-code-has-line-state='true'],
+    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']
+  )
+  [data-code-line-state='add']::before {
+  background-color: color-mix(
+    in srgb,
     var(--bg-success-subtle, oklch(96% 0.04 145)) 50%,
-    transparent
+    var(--ui-code-state-marker-surface-background)
   );
+  background-image:
+    linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
+  background-size:
+    calc(100% - 2 * var(--ui-code-state-marker-inline-offset)) var(--ui-code-state-marker-stroke),
+    var(--ui-code-state-marker-stroke) calc(100% - 2 * var(--ui-code-state-marker-inline-offset));
 }
 
-:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line.diff.remove {
-  background: color-mix(
-    in oklch,
+:where(
+    pre[data-code-block][data-code-has-line-state='true'],
+    [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']
+  )
+  [data-code-line-state='remove']::before {
+  background-color: color-mix(
+    in srgb,
     var(--bg-danger-subtle, oklch(96% 0.03 25)) 50%,
-    transparent
+    var(--ui-code-state-marker-surface-background)
   );
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: calc(100% - 2 * var(--ui-code-state-marker-inline-offset))
+    var(--ui-code-state-marker-stroke);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -193,8 +285,19 @@
 :where(
     pre[data-code-block],
     [data-code-block-root] pre[data-code-block]
+  )[data-code-line-numbers='true'][data-code-has-line-state='true']
+  .line {
+  padding-inline-start: calc(
+    var(--space-8, 2rem) + var(--space-2, 0.5rem) + var(--ui-code-state-marker-rail-size) +
+      var(--ui-code-state-marker-gap)
+  );
+}
+
+:where(
+    pre[data-code-block],
+    [data-code-block-root] pre[data-code-block]
   )[data-code-line-numbers='true']
-  .line::before {
+  .line::after {
   counter-increment: ui-code-block-line;
   content: counter(ui-code-block-line);
   position: absolute;
@@ -474,8 +577,7 @@ section[data-code-group] {
 
 section[data-code-group][data-code-group-enhanced='true'] > .code-group-header {
   display: flex;
-  border-block-end: var(--border-width, 1px) solid
-    var(--border-muted, oklch(20% 0 0 / 0.06));
+  border-block-end: var(--border-width, 1px) solid var(--border-muted, oklch(20% 0 0 / 0.06));
 }
 
 section[data-code-group]:not([data-code-group-enhanced='true']) .code-group-tablist {
@@ -597,8 +699,7 @@ section[data-code-group]:not([data-code-group-enhanced='true'])
 section[data-code-group]:not([data-code-group-enhanced='true'])
   > [data-code-group-panel]
   + [data-code-group-panel] {
-  border-block-start: var(--border-width, 1px) solid
-    var(--border-muted, oklch(20% 0 0 / 0.06));
+  border-block-start: var(--border-width, 1px) solid var(--border-muted, oklch(20% 0 0 / 0.06));
 }
 
 @media (forced-colors: active) {
@@ -614,6 +715,16 @@ section[data-code-group]:not([data-code-group-enhanced='true'])
 
   :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):focus-visible {
     box-shadow: inset 0 0 0 2px CanvasText;
+  }
+
+  :where(
+      pre[data-code-block][data-code-has-line-state='true'],
+      [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']
+    )
+    .line::before {
+    color: CanvasText;
+    background-color: Canvas;
+    forced-color-adjust: none;
   }
 
   .code-surface-copy-button-shell,
@@ -676,6 +787,19 @@ section[data-code-group]:not([data-code-group-enhanced='true'])
     word-wrap: break-word !important;
     font-size: 9pt !important;
     background: transparent !important;
+  }
+
+  :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) [data-code-line-state] {
+    background: transparent !important;
+  }
+
+  :where(
+      pre[data-code-block][data-code-has-line-state='true'],
+      [data-code-block-root] pre[data-code-block][data-code-has-line-state='true']
+    )
+    .line::before {
+    color: currentColor;
+    background-color: white;
   }
 
   .code-surface-copy-button-shell,

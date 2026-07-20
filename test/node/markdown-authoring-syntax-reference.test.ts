@@ -135,13 +135,9 @@ const parseListCell = (value: string): string[] => {
   return normalized.split(',').map((item) => item.trim());
 };
 
-const formatList = (values: readonly string[] | undefined): string[] => values ? [...values] : [];
+const formatList = (values: readonly string[] | undefined): string[] => (values ? [...values] : []);
 
-const findRow = (
-  table: MarkdownTable,
-  column: string,
-  value: string,
-): Record<string, string> => {
+const findRow = (table: MarkdownTable, column: string, value: string): Record<string, string> => {
   const row = table.rows.find((candidate) => stripBackticks(candidate[column] ?? '') === value);
   expect(row, `${value} row should exist in ${column}`).toBeDefined();
   return row as Record<string, string>;
@@ -179,6 +175,15 @@ describe('Markdown authoring syntax reference', () => {
       const row = findRow(metaTable, 'Key', key);
       expect(row['Authoring key']).toBe('true');
     }
+
+    const lineStateConflict = getSection(fencedCodeBlockMeta, 'Code Line State Conflict');
+    expect(lineStateConflict).toContain('highlight-lines');
+    expect(lineStateConflict).toContain('highlight notation');
+    expect(lineStateConflict).toContain('同一highlight');
+    expect(lineStateConflict).toContain('`highlight + add`');
+    expect(lineStateConflict).toContain('`highlight + remove`');
+    expect(lineStateConflict).toContain('`add + remove`');
+    expect(lineStateConflict).toContain('silent precedence');
 
     const autoLinkCardTransform = getSection(reference, 'Auto Link Card Transform');
     expect(autoLinkCardTransform).toContain('::link-card');

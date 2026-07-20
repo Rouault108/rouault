@@ -101,6 +101,20 @@ Browser contrast Gateはcomputed foregroundをbaseまたはslotへ一意に逆�
 
 repository usage smokeは`content/**/*.md`と`examples/snippets/**/*.md`のcode fenceをproductionと同じMarkdown AST parserでinventoryし、`build/rehype/shiki-language.ts`の単一ownerでexact ID、alias、明示的`text`、language省略、unknown fallbackを区別します。unknown explicit languageのsilent text fallback、grammar load error、closed palette外foregroundを許可しません。Evidenceへsource本文、path、excerptを出力しません。
 
+### Code Line State
+
+code line stateの正本は、全`.line` rootへbuild-timeに付与する`data-code-line-state="normal|highlight|add|remove"`です。Shikiの`highlighted`、`diff add`、`diff remove`などのclassは正規化処理への入力Evidenceであり、下流のCSS、E2E、文書契約ではありません。非normal stateを1行以上含む`pre[data-code-block]`だけが`data-code-has-line-state="true"`でmarker railへopt-inし、stateのないblockは従来の密度を維持します。
+
+同一行にある`highlight-lines`とhighlight notationは同じ`highlight`へ正規化します。`highlight + add`、`highlight + remove`、`add + remove`は異種state conflictとしてbuild errorにし、silent precedence、state破棄、複合stateを認めません。diagnostic identifierはdocument source orderの1-based ordinalによる`code-block:<ordinal>`であり、正常DOMへ出力しません。
+
+state-containing blockではnormalを含む全行が同じmarker railを予約します。line numberなしは「state rail、gap、code」、line numberありは「line-number rail、gap、state rail、gap、code」の順に合成します。line numberありのmarkerはscroll開始時にはline-number railとgapの後ろにある自然位置を取り、line-number railがscrollport外へ流れた後にscrollportのinline-startへstickyし、それ以降はscroll終端まで同じviewport位置を維持します。
+
+sticky marker backingはrailだけを覆う不透明なeffective-background backingであり、layout上のcode text rangeが背後を通過してもcode textを視認させません。Visual Acceptanceはmarkerとcode textのDOM rectangle交差ゼロではなく、backing領域でcode textが透過せず、marker、line number、copy controlが視覚的に競合しないことを要求します。backingはmarker rail外へ広げず、state背景との視覚的連続性を維持します。
+
+visual cueはhighlightがdot、addがplus、removeがminusです。いずれもCSS pseudo-elementだけで描画し、markerのDOM text nodeやliteral記号を追加しません。`user-select: none`と`pointer-events: none`を維持し、copy sourceとmanual selectionへmarker文字を混入させません。marker foregroundは全state共通のneutral colorで、normal modeのownerは`var(--fg-default)`です。computed pseudo-element foregroundとeffective line backgroundのnon-text contrastはlight / darkそれぞれで`3.0:1`以上を要求します。
+
+forced-colorsでは`CanvasText` / `Canvas`を使ってdot／plus／minusを維持します。printではstate backgroundを除去してもmonochrome markerを残します。state行の`role="group"`、`aria-label`、`mark` / `ins` / `del`などのprogrammatic semanticsはP-V12-3の責務であり、P-V12-2では実装しません。
+
 ### Code Line Height
 
 読書中のcode blockは本文より強く前景化しない行間を使います。

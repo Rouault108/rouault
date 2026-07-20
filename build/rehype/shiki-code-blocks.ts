@@ -7,6 +7,7 @@ import {
 } from '@shikijs/transformers';
 
 import { createStaticCodeBlockRoot } from './static-code-block-root.js';
+import { normalizeCodeLineStates } from './code-line-state.js';
 import { resolveShikiLanguage } from './shiki-language.js';
 import { ROUAULT_SHIKI_THEMES } from './shiki-themes.js';
 import { type HastNode } from './hast-utils.js';
@@ -314,7 +315,12 @@ interface HighlightCodeBlockResult {
 
 const highlightCodeBlock = async (
   node: HastNode,
-  options: { canAssignHydrationRoot: boolean; idContext: StaticRenderIdContext },
+  options: {
+    blockIdentifier: `code-block:${number}`;
+    canAssignHydrationRoot: boolean;
+    idContext: StaticRenderIdContext;
+    notePath: string;
+  },
 ): Promise<HighlightCodeBlockResult> => {
   const codeNode = findCodeChild(node);
   if (!codeNode) {
@@ -359,7 +365,10 @@ const highlightCodeBlock = async (
     mergedProperties['copyable'].trim().toLowerCase() === 'false'
       ? 'false'
       : undefined;
-  const showLineNumbers = mergedProperties['show-line-numbers'] === true;
+  const showLineNumbers =
+    mergedProperties['show-line-numbers'] === true ||
+    mergedProperties['show-line-numbers'] === '' ||
+    mergedProperties['show-line-numbers'] === 'true';
 
   highlightedCode.properties = {
     ...mergedProperties,
@@ -395,6 +404,13 @@ const highlightCodeBlock = async (
     ...(highlightLines ? { 'data-code-highlight-lines': highlightLines } : {}),
     ...(layout ? { 'data-code-layout': layout } : {}),
   };
+
+  normalizeCodeLineStates(highlightedCode, highlightedPre, {
+    blockIdentifier: options.blockIdentifier,
+    language,
+    notePath: options.notePath,
+    ...(filename ? { filename } : {}),
+  });
 
   const isGrouped = groupKey !== undefined;
   const assignHydrationRoot = !isGrouped && options.canAssignHydrationRoot;
@@ -438,23 +454,28 @@ export function rehypeShikiCodeBlocks(
 ) {
   return async (tree: unknown, file?: { path?: string }) => {
     let hydrationRootAssigned = false;
+    let codeBlockOrdinal = 0;
     const idContext =
       options.idContext ??
       createStaticRenderIdContext(file?.path ? `note:${file.path}:shiki` : 'note:shiki');
     const visit = async (node: HastNode): Promise<void> => {
-      if (Array.isArray(node.children)) {
-        for (const child of node.children) {
-          await visit(child);
-        }
-      }
-
       if (isCodeBlockPre(node)) {
+        codeBlockOrdinal += 1;
         const result = await highlightCodeBlock(node, {
+          blockIdentifier: `code-block:${codeBlockOrdinal}`,
           canAssignHydrationRoot: !hydrationRootAssigned,
           idContext,
+          notePath: file?.path ?? '<unknown>',
         });
         if (result.assignedHydrationRoot) {
           hydrationRootAssigned = true;
+        }
+        return;
+      }
+
+      if (Array.isArray(node.children)) {
+        for (const child of node.children) {
+          await visit(child);
         }
       }
     };

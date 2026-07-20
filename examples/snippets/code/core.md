@@ -80,14 +80,37 @@ const addedState = 'added'; // [!code ++]
 const removedState = 'removed'; // [!code --]
 ```
 
-::code-group{aria-label="実装比較"}
+### 行state selection fixture
 
-```ts filename="valid.ts" group-key="valid" tab-label="正しい例"
-const value = 1;
+```ts filename="line-state-standalone.ts" show-line-numbers="true"
+const standaloneNormal = 'normal-reading-width-normal-reading-width-normal-reading-width-normal-reading-width';
+const standaloneHighlight = 'highlight-reading-width-highlight-reading-width-highlight-reading-width'; // [!code highlight]
+const standaloneAdd = 'add-reading-width-add-reading-width-add-reading-width-add-reading-width'; // [!code ++]
+const standaloneRemove = 'remove-reading-width-remove-reading-width-remove-reading-width'; // [!code --]
 ```
 
-```ts filename="invalid.ts" group-key="invalid" tab-label="誤り例"
-const value = '1';
+::code-preview{heading="行state selection preview"}
+
+```html filename="line-state-preview.html"
+<p data-state="normal">normal-reading-width-normal-reading-width-normal-reading-width-normal-reading-width-normal-reading-width-normal-reading-width</p>
+<p data-state="highlight">highlight-reading-width-highlight-reading-width-highlight-reading-width-highlight-reading-width-highlight-reading-width</p> <!-- [!code highlight] -->
+<p data-state="add">add-reading-width-add-reading-width-add-reading-width-add-reading-width-add-reading-width-add-reading-width-add-reading-width</p> <!-- [!code ++] -->
+<p data-state="remove">remove-reading-width-remove-reading-width-remove-reading-width-remove-reading-width-remove-reading-width-remove-reading-width</p> <!-- [!code --] -->
+```
+
+::
+
+::code-group{aria-label="行state selection group"}
+
+```ts filename="line-state-group-active.ts" group-key="active" tab-label="Active"
+const groupNormal = 'normal-reading-width-normal-reading-width-normal-reading-width-normal-reading-width';
+const groupHighlight = 'highlight-reading-width-highlight-reading-width-highlight-reading-width'; // [!code highlight]
+const groupAdd = 'add-reading-width-add-reading-width-add-reading-width-add-reading-width'; // [!code ++]
+const groupRemove = 'remove-reading-width-remove-reading-width-remove-reading-width'; // [!code --]
+```
+
+```ts filename="line-state-group-secondary.ts" group-key="secondary" tab-label="Secondary"
+const secondaryState = 'normal';
 ```
 
 ::

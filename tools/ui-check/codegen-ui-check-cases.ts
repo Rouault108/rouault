@@ -53,6 +53,11 @@ const CANONICAL_CODE_SURFACE_SOURCE = [
   'const preview = <article data-kind="note">Rouault</article>;',
 ].join('\n');
 
+const STATELESS_OVERFLOW_SOURCE = [
+  '// State-free overflow fixture keeps the original compact density.',
+  `const uninterruptedReadingWidth = '${'quiet-reading-column-'.repeat(10)}';`,
+].join('\n');
+
 const createCodeFence = (
   language: string,
   source: string,
@@ -80,6 +85,9 @@ const createCodeSurfaceFixtureTree = (): HastNode => ({
     createCodeFence('ts', CANONICAL_CODE_SURFACE_SOURCE, {
       filename: 'ui-check-canonical.tsx',
       'show-line-numbers': true,
+    }),
+    createCodeFence('ts', STATELESS_OVERFLOW_SOURCE, {
+      filename: 'ui-check-stateless-overflow.ts',
     }),
     {
       type: 'element',

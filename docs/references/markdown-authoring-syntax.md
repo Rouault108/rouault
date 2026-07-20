@@ -97,6 +97,18 @@ const sample = 1;
 
 `data-shiki-meta`はauthoring meta keyではない。元のcode fence metaが出力側補助情報として保持される場合の詳細は`docs/references/markdown-output.md`と`build/remark/directives/output/adapt-code-block-output.ts`を参照する。
 
+#### Code Line State Conflict
+
+`highlight-lines`とhighlight notationが同じ行を指す場合は、同一highlightの複数originとして一つの`highlight`へ正規化する。
+
+次の異種state組合せはbuild errorである。
+
+- `highlight + add`
+- `highlight + remove`
+- `add + remove`
+
+異種stateにsilent precedenceはない。一方のstateを暗黙に破棄せず、複合stateにも正規化しない。この契約は既存notationのconflict validationであり、Markdown authoring syntaxの追加・変更ではない。
+
 ### Rouault Directive Inventory
 
 `Rouault Directive Inventory table`はこのsection内の最初のMarkdown表である。

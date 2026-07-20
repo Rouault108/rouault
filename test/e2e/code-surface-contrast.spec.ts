@@ -22,6 +22,7 @@ const STATES = ['normal', 'highlight', 'diff-add', 'diff-remove'] as const;
 const PALETTE_SLOTS = ROUAULT_SYNTAX_PALETTE_SLOTS;
 type ContrastTheme = (typeof THEMES)[number];
 type ContrastState = (typeof STATES)[number];
+type MarkerState = 'highlight' | 'add' | 'remove';
 type ForegroundOwner = 'base-foreground' | 'palette-slot' | 'unexpected-foreground';
 type ContrastRunKind = 'standard' | 'targeted' | 'regression';
 
@@ -106,8 +107,19 @@ interface ThemeMeasurement {
   >;
   readonly foregroundOwnerCounts: Readonly<Record<ForegroundOwner, number>>;
   readonly stateBackgrounds: Readonly<Record<ContrastState, string>>;
+  readonly markerContrastRecords: readonly MarkerContrastRecord[];
   readonly records: readonly ContrastRecord[];
   readonly errors: readonly string[];
+}
+
+interface MarkerContrastRecord {
+  readonly theme: ContrastTheme;
+  readonly state: MarkerState;
+  readonly foregroundCss: string;
+  readonly foregroundRgb: string;
+  readonly effectiveBackgroundRgb: string;
+  readonly markerBackingRgb: string;
+  readonly ratio: number;
 }
 
 interface ContrastCoverage {
@@ -137,6 +149,7 @@ interface ContrastEvidence {
   readonly project: string;
   readonly runKind: ContrastRunKind;
   readonly coverage: ContrastCoverage;
+  readonly markerContrastRecords: readonly MarkerContrastRecord[];
   readonly records: readonly ContrastRecord[];
   readonly errors: readonly string[];
 }
@@ -165,6 +178,7 @@ const createFallbackThemeMeasurement = (theme: ContrastTheme, error: string): Th
     'unexpected-foreground': 0,
   },
   stateBackgrounds: { normal: '', highlight: '', 'diff-add': '', 'diff-remove': '' },
+  markerContrastRecords: [],
   records: [],
   errors: [error],
 });
@@ -414,6 +428,7 @@ test('production code surface palette slots maintain contrast across all semanti
             'diff-add': '',
             'diff-remove': '',
           };
+          const markerContrastRecords: MarkerContrastRecord[] = [];
           const stateBlocks = document.querySelectorAll(
             `pre[data-code-block][data-code-filename="${CSS.escape(stateFixtureFilename)}"]`,
           );
@@ -423,25 +438,13 @@ test('production code surface palette slots maintain contrast across all semanti
               `Expected exactly one state fixture ${stateFixtureFilename}, found ${stateBlocks.length.toString()}.`,
             );
           } else {
-            const lines = [...stateBlock.querySelectorAll('.line')];
             const lineByState: Record<ContrastState, Element | undefined> = {
-              normal: lines.find(
-                (line) =>
-                  !line.classList.contains('highlighted') &&
-                  !line.classList.contains('ui-explicit-highlight') &&
-                  !line.classList.contains('diff'),
-              ),
-              highlight: lines.find(
-                (line) =>
-                  line.classList.contains('highlighted') ||
-                  line.classList.contains('ui-explicit-highlight'),
-              ),
-              'diff-add': lines.find(
-                (line) => line.classList.contains('diff') && line.classList.contains('add'),
-              ),
-              'diff-remove': lines.find(
-                (line) => line.classList.contains('diff') && line.classList.contains('remove'),
-              ),
+              normal: stateBlock.querySelector("[data-code-line-state='normal']") ?? undefined,
+              highlight:
+                stateBlock.querySelector("[data-code-line-state='highlight']") ?? undefined,
+              'diff-add': stateBlock.querySelector("[data-code-line-state='add']") ?? undefined,
+              'diff-remove':
+                stateBlock.querySelector("[data-code-line-state='remove']") ?? undefined,
             };
             for (const state of states) {
               const line = lineByState[state];
@@ -453,6 +456,41 @@ test('production code surface palette slots maintain contrast across all semanti
               if (background) {
                 stateBackgroundColors[state] = background;
                 stateBackgrounds[state] = rgbString(background);
+                const markerBackingCss = getComputedStyle(line, '::before').backgroundColor;
+                const markerBacking = parseColor(markerBackingCss);
+                const markerBackingRgb = opaqueRgb(
+                  markerBackingCss,
+                  `${activeTheme}/${state}/marker backing`,
+                );
+                const backingContrast = markerBacking
+                  ? contrastRatio(markerBacking, background)
+                  : Number.POSITIVE_INFINITY;
+                if (backingContrast > 1.02) {
+                  errors.push(
+                    `${activeTheme}/${state}: marker backing contrast ${backingContrast.toFixed(4)} exceeds 1.02:1.`,
+                  );
+                }
+                if (state !== 'normal') {
+                  const markerState: MarkerState =
+                    state === 'diff-add' ? 'add' : state === 'diff-remove' ? 'remove' : state;
+                  const markerForegroundCss = getComputedStyle(line, '::before').color;
+                  const markerForeground = parseColor(markerForegroundCss);
+                  const markerForegroundRgb = opaqueRgb(
+                    markerForegroundCss,
+                    `${activeTheme}/${markerState}/marker foreground`,
+                  );
+                  if (markerForeground && markerForegroundRgb) {
+                    markerContrastRecords.push({
+                      theme: activeTheme,
+                      state: markerState,
+                      foregroundCss: markerForegroundCss,
+                      foregroundRgb: markerForegroundRgb,
+                      effectiveBackgroundRgb: rgbString(background),
+                      markerBackingRgb: markerBackingRgb ?? '',
+                      ratio: Number(contrastRatio(markerForeground, background).toFixed(4)),
+                    });
+                  }
+                }
               }
             }
           }
@@ -568,6 +606,7 @@ test('production code surface palette slots maintain contrast across all semanti
             slotStateCoverage,
             foregroundOwnerCounts,
             stateBackgrounds,
+            markerContrastRecords,
             records,
             errors,
           };
@@ -608,6 +647,11 @@ test('production code surface palette slots maintain contrast across all semanti
     measurements.map((measurement) => [measurement.theme, measurement]),
   ) as Record<ContrastTheme, ThemeMeasurement>;
   const records = sortRecords(measurements.flatMap((measurement) => measurement.records));
+  const markerContrastRecords = measurements
+    .flatMap((measurement) => measurement.markerContrastRecords)
+    .sort((left, right) =>
+      [left.theme, left.state].join('/').localeCompare([right.theme, right.state].join('/')),
+    );
   const errors = [...lifecycleErrors, ...measurements.flatMap((measurement) => measurement.errors)];
   const coverage: ContrastCoverage = {
     expectedBlocks: EXPECTED_BLOCKS,
@@ -644,6 +688,7 @@ test('production code surface palette slots maintain contrast across all semanti
     project: testInfo.project.name,
     runKind: RUN_CONFIGURATION.runKind,
     coverage,
+    markerContrastRecords,
     records,
     errors,
   };
@@ -702,6 +747,31 @@ test('production code surface palette slots maintain contrast across all semanti
   expect(errors).toEqual([]);
   expect(records.length).toBeGreaterThan(0);
   expect(records.filter((record) => record.result === 'fail' || record.ratio < 4.5)).toEqual([]);
+  expect(markerContrastRecords).toHaveLength(THEMES.length * 3);
+  expect(markerContrastRecords.filter((record) => record.ratio < 3)).toEqual([]);
+
+  for (const theme of THEMES) {
+    const themeMarkerRecords = markerContrastRecords.filter((record) => record.theme === theme);
+    expect(themeMarkerRecords.map((record) => record.state).sort()).toEqual([
+      'add',
+      'highlight',
+      'remove',
+    ]);
+    expect(
+      new Set(themeMarkerRecords.map((record) => record.foregroundRgb)).size,
+      `${theme} neutral marker foreground`,
+    ).toBe(1);
+  }
+
+  console.info(
+    `code line marker contrast: ${markerContrastRecords
+      .map(
+        (record) =>
+          `${record.theme}/${record.state}=${record.ratio.toFixed(4)} ` +
+          `(${record.foregroundRgb} on ${record.effectiveBackgroundRgb})`,
+      )
+      .join('; ')}`,
+  );
 
   for (const theme of THEMES) {
     for (const slot of PALETTE_SLOTS) {

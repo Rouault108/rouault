@@ -130,6 +130,12 @@ const sample = 1;
 
 meta keyの網羅表は`docs/references/markdown-authoring-syntax.md`を参照する。`data-shiki-meta`はauthoring meta keyではない。
 
+### Code line stateの重複と競合
+
+`highlight-lines`とcode内のhighlight notationが同じ行を指す場合は、同一highlightの複数originとして一つの`highlight`へ正規化される。authorは片方へ書き換える必要はない。
+
+一方、同じ行の`highlight + add`、`highlight + remove`、`add + remove`はbuild errorになる。異種stateにsilent precedenceはなく、一方を暗黙に破棄したり複合stateとして表示したりしない。authoring syntax自体は従来どおりであり、競合するannotationのどちらかを意図に合わせて解消する。
+
 ## Code group
 
 code groupは既定では互いに連動しない。同じ読書単位の中で、複数のcode groupを同じtab keyへ揃えたい場合だけ`sync-scope`を明示する。
