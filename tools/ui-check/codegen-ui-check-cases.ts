@@ -22,7 +22,36 @@ const normalizeGeneratedHtml = (html: string): string => html.replace(/[ \t]+$/g
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const codeSurfacePath = path.join(__dirname, 'cases', 'code-surface.html');
+const codeSurfaceDarkPath = path.join(__dirname, 'cases', 'code-surface-dark.html');
 const searchControlsPath = path.join(__dirname, 'cases', 'search-controls.html');
+
+const CANONICAL_CODE_SURFACE_SOURCE = [
+  '// Rouault canonical syntax palette fixture',
+  'interface NoteRecord<T extends string> {',
+  '  path: URL;',
+  '  title: T;',
+  '  archived: boolean;',
+  '}',
+  '',
+  'export async function readNote<T extends string>(',
+  '  path: URL,',
+  '  fallback = "note",',
+  '): Promise<NoteRecord<T>> {',
+  "  const response = await fetch(path, { method: 'GET' });",
+  '  if (!response.ok) throw new Error("failed");',
+  '  const title = (await response.text()) as T;',
+  '  const archived = false;',
+  '  const retryCount = 3;',
+  '  const highlighted = `${fallback}:${retryCount}`; // [!code highlight]',
+  '  const added = { path, title, archived }; // [!code ++]',
+  '  const removed = { path, title: fallback, archived }; // [!code --]',
+  '  if (highlighted.length === 0) {',
+  '    return removed as NoteRecord<T>;',
+  '  }',
+  '  return added;',
+  '}',
+  'const preview = <article data-kind="note">Rouault</article>;',
+].join('\n');
 
 const createCodeFence = (
   language: string,
@@ -48,21 +77,10 @@ const createCodeFence = (
 const createCodeSurfaceFixtureTree = (): HastNode => ({
   type: 'root',
   children: [
-    createCodeFence(
-      'ts',
-      [
-        '// UI Check comment',
-        "const normalState = 'normal';",
-        "const highlightedState = 'highlight'; // [!code highlight]",
-        "const addedState = 'added'; // [!code ++]",
-        "const removedState = 'removed'; // [!code --]",
-        'const longLine = "A deliberately long line verifies horizontal overflow without changing the reading measure or copy clearance.";',
-      ].join('\n'),
-      {
-        filename: 'ui-check-states.ts',
-        'show-line-numbers': true,
-      },
-    ),
+    createCodeFence('ts', CANONICAL_CODE_SURFACE_SOURCE, {
+      filename: 'ui-check-canonical.tsx',
+      'show-line-numbers': true,
+    }),
     {
       type: 'element',
       tagName: 'section',
@@ -71,15 +89,16 @@ const createCodeSurfaceFixtureTree = (): HastNode => ({
         'aria-label': '5言語のコード比較',
       },
       children: [
-        createCodeFence(
-          'c',
-          ['// C comment', 'int main(void) {', '  return 0;', '}'].join('\n'),
-          {
-            filename: 'ui-check.c',
-            'group-key': 'c',
-            'tab-label': 'C',
-          },
-        ),
+        createCodeFence('tsx', CANONICAL_CODE_SURFACE_SOURCE, {
+          filename: 'ui-check.tsx',
+          'group-key': 'typescript',
+          'tab-label': 'TypeScript',
+        }),
+        createCodeFence('c', ['// C comment', 'int main(void) {', '  return 0;', '}'].join('\n'), {
+          filename: 'ui-check.c',
+          'group-key': 'c',
+          'tab-label': 'C',
+        }),
         createCodeFence(
           'json',
           ['{', '  "name": "rouault",', '  "enabled": true', '}'].join('\n'),
@@ -91,7 +110,7 @@ const createCodeSurfaceFixtureTree = (): HastNode => ({
         ),
         createCodeFence(
           'shell',
-          ['# shell comment', 'set -euo pipefail', "printf '%s\\n' \"$PWD\""].join('\n'),
+          ['# shell comment', 'set -euo pipefail', 'printf \'%s\\n\' "$PWD"'].join('\n'),
           {
             filename: 'ui-check.sh',
             'group-key': 'shell',
@@ -116,13 +135,23 @@ const createCodeSurfaceFixtureTree = (): HastNode => ({
         ),
       ],
     },
+    {
+      type: 'element',
+      tagName: 'ui-code-preview',
+      properties: {
+        heading: 'Canonical code preview',
+        'data-ui-check-code-preview': 'true',
+      },
+      children: [
+        createCodeFence('tsx', CANONICAL_CODE_SURFACE_SOURCE, {
+          filename: 'ui-check-preview.tsx',
+        }),
+      ],
+    },
   ],
 });
 
-const findElements = (
-  node: HastNode,
-  predicate: (candidate: HastNode) => boolean,
-): HastNode[] => {
+const findElements = (node: HastNode, predicate: (candidate: HastNode) => boolean): HastNode[] => {
   const own = node.type === 'element' && predicate(node) ? [node] : [];
   return [...own, ...(node.children ?? []).flatMap((child) => findElements(child, predicate))];
 };
@@ -180,13 +209,14 @@ const renderCodeSurfaceFixtureVariant = async (
 
   const panels = findElements(
     group,
-    (node) => node.tagName === 'section' && node.properties?.['data-code-group-panel'] !== undefined,
+    (node) =>
+      node.tagName === 'section' && node.properties?.['data-code-group-panel'] !== undefined,
   );
   const activePanels = panels.filter(
     (panel) => panel.properties?.['data-code-group-panel-active'] === 'true',
   );
   if (
-    panels.length !== 4 ||
+    panels.length !== 5 ||
     activePanels.length !== 1 ||
     panels.some(
       (panel) =>
@@ -219,7 +249,7 @@ const renderCodeSurfaceFixtureVariant = async (
   };
 };
 
-const renderCodeSurfaceCase = async (): Promise<string> => {
+const renderCodeSurfaceCase = async (resolvedTheme?: 'dark'): Promise<string> => {
   const noJs = await renderCodeSurfaceFixtureVariant('no-js');
   const enhanced = await renderCodeSurfaceFixtureVariant('enhanced');
   const repeatedIds = noJs.ids.filter((id) => enhanced.ids.includes(id));
@@ -229,7 +259,7 @@ const renderCodeSurfaceCase = async (): Promise<string> => {
 
   return `<!doctype html>
 ${generatedComment}
-<html lang="ja">
+<html lang="ja"${resolvedTheme ? ` data-theme="${resolvedTheme}" data-resolved-theme="${resolvedTheme}"` : ''}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -326,3 +356,7 @@ const writeIfChanged = async (filePath: string, content: string): Promise<void> 
 
 await writeIfChanged(searchControlsPath, normalizeGeneratedHtml(renderSearchControlsCase()));
 await writeIfChanged(codeSurfacePath, normalizeGeneratedHtml(await renderCodeSurfaceCase()));
+await writeIfChanged(
+  codeSurfaceDarkPath,
+  normalizeGeneratedHtml(await renderCodeSurfaceCase('dark')),
+);

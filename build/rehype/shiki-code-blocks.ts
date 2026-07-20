@@ -1,4 +1,4 @@
-import { bundledLanguages, bundledLanguagesAlias, codeToHast, type BundledLanguage } from 'shiki';
+import { codeToHast } from 'shiki';
 import {
   transformerMetaHighlight,
   transformerNotationDiff,
@@ -7,10 +7,8 @@ import {
 } from '@shikijs/transformers';
 
 import { createStaticCodeBlockRoot } from './static-code-block-root.js';
-import {
-  ROUAULT_SHIKI_COLOR_REPLACEMENTS,
-  ROUAULT_SHIKI_THEMES,
-} from './shiki-themes.js';
+import { resolveShikiLanguage } from './shiki-language.js';
+import { ROUAULT_SHIKI_THEMES } from './shiki-themes.js';
 import { type HastNode } from './hast-utils.js';
 import {
   createStaticRenderIdContext,
@@ -171,28 +169,6 @@ const annotateExplicitHighlights = (
   });
 };
 
-const resolveLanguage = (language: string | undefined): string => {
-  if (!language) {
-    return 'text';
-  }
-
-  const normalized = language.trim().toLowerCase();
-  if (normalized === '') {
-    return 'text';
-  }
-
-  if (normalized in bundledLanguages) {
-    return normalized;
-  }
-
-  const aliased = bundledLanguagesAlias[normalized as keyof typeof bundledLanguagesAlias];
-  if (typeof aliased === 'string' && aliased in bundledLanguages) {
-    return aliased;
-  }
-
-  return 'text';
-};
-
 const getIntentLabel = (intent: string | undefined): string | undefined => {
   switch (pickOptionalString(intent)?.toLowerCase()) {
     case 'valid':
@@ -346,11 +322,10 @@ const highlightCodeBlock = async (
   }
 
   const source = normalizeLineEndings(getTextContent(codeNode));
-  const language = resolveLanguage(readLanguageFromCodeNode(codeNode));
+  const language = resolveShikiLanguage(readLanguageFromCodeNode(codeNode)).resolvedLanguage;
   const shikiTree = await codeToHast(source, {
-    lang: language as BundledLanguage | 'text',
+    lang: language,
     themes: ROUAULT_SHIKI_THEMES,
-    colorReplacements: ROUAULT_SHIKI_COLOR_REPLACEMENTS,
     meta: toShikiMeta(codeNode),
     transformers: SHIKI_TRANSFORMERS,
     tabindex: false,

@@ -61,33 +61,56 @@ code surfaceの正本は、旧Lit Custom Elementではなく静的HTMLです。
 
 Rouaultのcode surfaceは、本文中のコードブロックが本文より過度に前景化しないように、Shiki theme policyをRouault側で所有します。
 
-- theme policyの正本は`build/rehype/shiki-themes.ts`です。
-- base themeはShiki bundled themeの`github-light` / `github-dark`を使います。
+- paletteとordered TextMate scope ruleの正本は`build/rehype/shiki-theme-definition.ts`です。
+- compiled themeの正本は`build/rehype/shiki-themes.ts`です。
+- theme名は`rouault-light` / `rouault-dark`です。外部bundled themeをforeground ownerとして使用しません。
+- 従来のGitHub bundled theme＋partial replacement経路は終了し、foregroundの正本をRouault custom dual themeのclosed paletteへ一本化します。
 - `codeToHast`は`themes`でlight / darkのdual theme出力を維持します。theme単数指定へ退行してはなりません。
 - `defaultColor`は指定しません。Shikiのdual theme出力形式と`--shiki-dark` / `--shiki-dark-bg`を維持します。
-- 色調整はShikiの`colorReplacements`で行います。`pre.shiki span`などへRouault採用色をCSSで直接再マッピングしてはなりません。
-- `colorReplacements`の置換元keyはlowercaseのhexに統一します。uppercase / lowercaseの重複keyを定義しません。
+- themeの`fg`は`base`、`bg`はShiki安全fallbackとしてlight `#f2f2f2`、dark `#020202`を使用します。
+- fallback backgroundは最終表示backgroundのownerではありません。final computed `pre.shiki` backgroundはcode surface CSSによりtransparentを維持します。
+- themeからfont style、font weight、text decorationを付与しません。
+- `pre.shiki span`などへcanonical foregroundをCSSで再マッピングしません。
 
-採用する置換は次に固定します。
+canonical foreground paletteは次に固定します。値はlowercase six-digit hexとし、同一theme内でbaseを含めて一意でなければなりません。
 
-| Theme | Source | Replacement | Token family |
-| --- | --- | --- | --- |
-| `github-light` | `#d73a49` | `#8f4a52` | keyword / storage |
-| `github-light` | `#6f42c1` | `#67527c` | type / entity / class / namespace |
-| `github-dark` | `#f97583` | `#d08b90` | keyword / storage |
-| `github-dark` | `#b392f0` | `#b7a0cf` | type / entity / class / namespace |
+| Slot      | Light     | Dark      | Owner role                                                       |
+| --------- | --------- | --------- | ---------------------------------------------------------------- |
+| `base`    | `#2a2e33` | `#d9dfe5` | plain text、variable、parameter、punctuation、operator、fallback |
+| `subdued` | `#5f6469` | `#9a9fa5` | comment、documentation                                           |
+| `red`     | `#764b47` | `#c1908c` | control keyword、declaration、modifier、invalid                  |
+| `amber`   | `#6c5330` | `#b59a75` | numeric／language constant                                       |
+| `green`   | `#3f6246` | `#84a98b` | string、regexp                                                   |
+| `blue`    | `#3e5b79` | `#82a2c3` | function、property、tag、attribute                               |
+| `purple`  | `#604f73` | `#a795bd` | type、class、interface、namespace                                |
 
-Shikiやbase themeの更新で置換元色が対象token foregroundとして出なくなった場合、Rouault側で任意の別色へ差し替えてはなりません。まずcontrol renderで置換元色の不在を確認し、theme policyの見直しとして扱います。
+ordered TextMate ruleは次に固定します。Shiki / TextMate標準のscope selector解決を使用し、Rouault独自classifier、semantic parser、precedence resolverを追加しません。未一致scopeは`base`へfallbackします。`meta.function-call`は過剰着色を避けるため使用しません。
+
+| Order | Rule ID           | Slot      | Scope                                                                                                                                                                         |
+| ----: | ----------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|    10 | `comment-subdued` | `subdued` | `comment`, `punctuation.definition.comment`, `meta.documentation`                                                                                                             |
+|    20 | `string-green`    | `green`   | `string`, `string.regexp`                                                                                                                                                     |
+|    30 | `constant-amber`  | `amber`   | `constant.numeric`, `constant.language`, `constant.character`, `constant.other`, `variable.language`, `support.constant`                                                      |
+|    40 | `keyword-red`     | `red`     | `keyword.control`, `keyword.declaration`, `keyword.other`, `storage.type`, `storage.modifier`, `invalid`                                                                      |
+|    50 | `callable-blue`   | `blue`    | `entity.name.function`, `support.function`, `variable.function`                                                                                                               |
+|    60 | `property-blue`   | `blue`    | `entity.other.attribute-name`, `support.type.property-name`, `meta.object-literal.key`, `entity.name.tag`                                                                     |
+|    70 | `type-purple`     | `purple`  | `keyword.type`, `storage.type.built-in.primitive`, `entity.name.type`, `entity.name.class`, `entity.name.interface`, `entity.name.namespace`, `support.type`, `support.class` |
+|    80 | `operator-base`   | `base`    | `keyword.operator`                                                                                                                                                            |
+
+Browser contrast Gateはcomputed foregroundをbaseまたはslotへ一意に逆引きし、light / dark × TypeScript / C / JSON / shell / C# × normal / highlight / diff-add / diff-remove × 使用slot × effective backgroundを測定します。全measurementは`4.5:1`以上、使用slotごとの最小値は`5.0:1`以上を要求します。palette外foreground、base coverage欠落、required slot欠落、state background collapseはfailureです。
+
+repository usage smokeは`content/**/*.md`と`examples/snippets/**/*.md`のcode fenceをproductionと同じMarkdown AST parserでinventoryし、`build/rehype/shiki-language.ts`の単一ownerでexact ID、alias、明示的`text`、language省略、unknown fallbackを区別します。unknown explicit languageのsilent text fallback、grammar load error、closed palette外foregroundを許可しません。Evidenceへsource本文、path、excerptを出力しません。
 
 ### Code Line Height
 
 読書中のcode blockは本文より強く前景化しない行間を使います。
 
-- `--line-height-tight: 1.25`を維持します。
-- `--line-height-snug: 1.35`を維持します。
-- `--line-height-code`は`var(--line-height-snug)`を参照します。
-- `code-surfaces.css`のcode body ruleは`line-height: var(--line-height-code, 1.35)`を維持します。
-- code blockのフォントサイズ、フォントファミリー、背景、枠線、角丸はこの契約では変更しません。
+- code bodyのfont sizeは13px（`var(--text-sm, 0.8125rem)`）です。
+- font weightは400（`var(--font-normal, 400)`）です。
+- line-heightは1.5です。
+- `--line-height-code`は`var(--line-height-normal)`を参照します。
+- `code-surfaces.css`のcode body ruleは`line-height: var(--line-height-code, 1.5)`を維持します。
+- code blockのフォントファミリー、背景、枠線、角丸はこの契約では変更しません。
 
 ### Code Group
 
@@ -212,7 +235,7 @@ CSSはfinal DOMの意味状態を再定義しません。CSS state contractとco
 - code typography、copy control寸法、code body padding、focus outline / offsetを変更する場合は、overlay copy位置tokenとCSS契約テストを同時に更新します。
 - `--ui-code-surface-padding`および`--ui-code-block-padding`のようなshorthand相当tokenを、overlay copy位置の`calc()`へ直接入れてはなりません。
 - overlay配置のために上書きする場合は、単一長さ値を取る`--ui-code-copy-overlay-code-padding-block-start`、`--ui-code-copy-overlay-center-offset`、`--ui-code-copy-overlay-min-block-start`を使います。
-- `--ui-code-copy-overlay-center-offset: 0.325rem`はspacing tokenではなく、Rouault既定token下の2rem copy button、1rem code font-size、1.35 line-heightから導出したcode overlay専用の派生定数です。
+- `--ui-code-copy-overlay-center-offset: 0.390625rem`はspacing tokenではなく、Rouault既定token下の2rem copy button、13px code font-size、1.5 line-heightから導出したcode overlay専用の派生定数です。
 - code bodyのblock-start paddingを変更する場合は、overlay copy controlのline box中心合わせを維持するため、`--ui-code-copy-overlay-code-padding-block-start`も同時に更新します。
 - code body paddingを変更する場合は、overlay copy controlのblock-start位置tokenだけでなく、inline-end終端clearanceの基準値である`--ui-code-copy-overlay-code-padding-inline-end-base`も確認します。
 - `--ui-code-copy-overlay-block-start`はfocus outlineのblock-start clearanceを守る`max()`式を維持します。このため、line box中心一致の保証はRouault既定token下に限定します。

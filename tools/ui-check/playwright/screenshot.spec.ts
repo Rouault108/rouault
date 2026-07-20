@@ -12,6 +12,7 @@ const cases = [
   { name: 'article-header', path: '/tools/ui-check/cases/article-header.html' },
   { name: 'callout', path: '/tools/ui-check/cases/callout.html' },
   { name: 'code-surface', path: '/tools/ui-check/cases/code-surface.html' },
+  { name: 'code-surface-dark', path: '/tools/ui-check/cases/code-surface-dark.html' },
   { name: 'details', path: '/tools/ui-check/cases/details.html' },
   { name: 'footer', path: '/tools/ui-check/cases/footer.html' },
   { name: 'search-controls', path: '/tools/ui-check/cases/search-controls.html' },

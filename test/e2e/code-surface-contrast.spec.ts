@@ -4,7 +4,11 @@ import process from 'node:process';
 
 import { expect, test } from '@playwright/test';
 
-import { ROUAULT_SHIKI_COLOR_REPLACEMENTS } from '../../build/rehype/shiki-themes.js';
+import {
+  type PaletteSlot,
+  ROUAULT_SYNTAX_PALETTES,
+  ROUAULT_SYNTAX_PALETTE_SLOTS,
+} from '../../build/rehype/shiki-theme-definition.js';
 import {
   RESOLVED_THEME_ATTRIBUTE,
   THEME_ATTRIBUTE,
@@ -15,16 +19,10 @@ import { e2eNoteFixtures } from './support/note-fixtures.js';
 const TEST_FILE = 'test/e2e/code-surface-contrast.spec.ts';
 const THEMES = ['light', 'dark'] as const;
 const STATES = ['normal', 'highlight', 'diff-add', 'diff-remove'] as const;
-const REQUIRED_FOREGROUND_OWNERS = [
-  'replaced-token',
-  'theme-default-token',
-  'unreplaced-token',
-] as const;
-
+const PALETTE_SLOTS = ROUAULT_SYNTAX_PALETTE_SLOTS;
 type ContrastTheme = (typeof THEMES)[number];
 type ContrastState = (typeof STATES)[number];
-type RequiredForegroundOwner = (typeof REQUIRED_FOREGROUND_OWNERS)[number];
-type ForegroundOwner = RequiredForegroundOwner | 'inherited-text';
+type ForegroundOwner = 'base-foreground' | 'palette-slot' | 'unexpected-foreground';
 type ContrastRunKind = 'standard' | 'targeted' | 'regression';
 
 interface FixtureDefinition {
@@ -53,9 +51,7 @@ interface RunConfiguration {
 
 const resolveRunConfiguration = (): RunConfiguration => {
   const rawRunKind = process.env['ROUAULT_CODE_CONTRAST_RUN_KIND']?.trim();
-  if (!rawRunKind) {
-    return { runKind: 'standard', artifactPath: null };
-  }
+  if (!rawRunKind) return { runKind: 'standard', artifactPath: null };
   if (rawRunKind === 'targeted' || rawRunKind === 'regression') {
     return {
       runKind: rawRunKind,
@@ -79,15 +75,13 @@ interface ContrastRecord {
   readonly sourceCodeBlockId: string;
   readonly sourceLineIndex: number;
   readonly sourceElementPath: string;
-  readonly foregroundSource: 'token-inline' | 'inherited-computed';
   readonly foregroundOwner: ForegroundOwner;
-  readonly rawForegroundCss: string | null;
+  readonly paletteSlot: PaletteSlot | null;
+  readonly rawForegroundCss: string;
   readonly normalizedRawForegroundRgb: string | null;
-  readonly themeDefaultForegroundCss: string;
-  readonly normalizedThemeDefaultForegroundRgb: string;
-  readonly matchedReplacementOutputRgb: string | null;
+  readonly computedForegroundCss: string;
+  readonly normalizedComputedForegroundRgb: string | null;
   readonly state: ContrastState;
-  readonly foregroundCss: string;
   readonly finalForegroundRgb: string;
   readonly finalBackgroundRgb: string;
   readonly ratio: number;
@@ -105,14 +99,12 @@ interface ThemeMeasurement {
   readonly theme: ContrastTheme;
   readonly themeState: ThemeStateEvidence;
   readonly resolvedBlockCounts: Readonly<Record<string, number>>;
-  readonly expectedReplacementOutputs: readonly string[];
-  readonly observedReplacementOutputs: readonly string[];
-  readonly missingReplacementOutputs: readonly string[];
-  readonly replacementOutputStateCoverage: Readonly<
-    Record<string, Readonly<Record<ContrastState, number>>>
+  readonly paletteRgbBySlot: Readonly<Record<PaletteSlot, string>>;
+  readonly usedPaletteSlots: readonly PaletteSlot[];
+  readonly slotStateCoverage: Readonly<
+    Record<PaletteSlot, Readonly<Record<ContrastState, number>>>
   >;
-  readonly requiredForegroundOwnerCounts: Readonly<Record<RequiredForegroundOwner, number>>;
-  readonly inheritedTextCount: number;
+  readonly foregroundOwnerCounts: Readonly<Record<ForegroundOwner, number>>;
   readonly stateBackgrounds: Readonly<Record<ContrastState, string>>;
   readonly records: readonly ContrastRecord[];
   readonly errors: readonly string[];
@@ -124,18 +116,13 @@ interface ContrastCoverage {
   readonly themes: readonly ThemeStateEvidence[];
   readonly languages: readonly FixtureDefinition['language'][];
   readonly states: readonly ContrastState[];
-  readonly requiredForegroundOwnersByTheme: Readonly<
-    Record<ContrastTheme, Readonly<Record<RequiredForegroundOwner, number>>>
+  readonly expectedPaletteSlots: readonly PaletteSlot[];
+  readonly usedPaletteSlotsByTheme: Readonly<Record<ContrastTheme, readonly PaletteSlot[]>>;
+  readonly foregroundOwnerCountsByTheme: Readonly<
+    Record<ContrastTheme, Readonly<Record<ForegroundOwner, number>>>
   >;
-  readonly optionalInheritedTextCountByTheme: Readonly<Record<ContrastTheme, number>>;
-  readonly expectedReplacementOutputsByTheme: Readonly<Record<ContrastTheme, readonly string[]>>;
-  readonly observedReplacementOutputsByTheme: Readonly<Record<ContrastTheme, readonly string[]>>;
-  readonly missingReplacementOutputsByTheme: Readonly<Record<ContrastTheme, readonly string[]>>;
-  readonly replacementOutputStateCoverageByTheme: Readonly<
-    Record<
-      ContrastTheme,
-      Readonly<Record<string, Readonly<Record<ContrastState, number>>>>
-    >
+  readonly slotStateCoverageByTheme: Readonly<
+    Record<ContrastTheme, Readonly<Record<PaletteSlot, Readonly<Record<ContrastState, number>>>>>
   >;
   readonly stateBackgroundsByTheme: Readonly<
     Record<ContrastTheme, Readonly<Record<ContrastState, string>>>
@@ -154,65 +141,58 @@ interface ContrastEvidence {
   readonly errors: readonly string[];
 }
 
-const expectedReplacementHexesForTheme = (theme: ContrastTheme): readonly string[] => {
-  const themeName = theme === 'light' ? 'github-light' : 'github-dark';
-  return Object.values(ROUAULT_SHIKI_COLOR_REPLACEMENTS[themeName]);
-};
+const emptySlotStateCoverage = (): Record<PaletteSlot, Record<ContrastState, number>> =>
+  Object.fromEntries(
+    PALETTE_SLOTS.map((slot) => [
+      slot,
+      { normal: 0, highlight: 0, 'diff-add': 0, 'diff-remove': 0 },
+    ]),
+  ) as Record<PaletteSlot, Record<ContrastState, number>>;
 
-const createFallbackThemeMeasurement = (
-  theme: ContrastTheme,
-  error: string,
-): ThemeMeasurement => ({
+const createFallbackThemeMeasurement = (theme: ContrastTheme, error: string): ThemeMeasurement => ({
   theme,
-  themeState: {
-    requestedTheme: theme,
-    preference: null,
-    resolvedTheme: null,
-    colorScheme: '',
-  },
+  themeState: { requestedTheme: theme, preference: null, resolvedTheme: null, colorScheme: '' },
   resolvedBlockCounts: Object.fromEntries(EXPECTED_BLOCKS.map((filename) => [filename, 0])),
-  expectedReplacementOutputs: [],
-  observedReplacementOutputs: [],
-  missingReplacementOutputs: [],
-  replacementOutputStateCoverage: {},
-  requiredForegroundOwnerCounts: {
-    'replaced-token': 0,
-    'theme-default-token': 0,
-    'unreplaced-token': 0,
+  paletteRgbBySlot: Object.fromEntries(PALETTE_SLOTS.map((slot) => [slot, ''])) as Record<
+    PaletteSlot,
+    string
+  >,
+  usedPaletteSlots: [],
+  slotStateCoverage: emptySlotStateCoverage(),
+  foregroundOwnerCounts: {
+    'base-foreground': 0,
+    'palette-slot': 0,
+    'unexpected-foreground': 0,
   },
-  inheritedTextCount: 0,
-  stateBackgrounds: {
-    normal: '',
-    highlight: '',
-    'diff-add': '',
-    'diff-remove': '',
-  },
+  stateBackgrounds: { normal: '', highlight: '', 'diff-add': '', 'diff-remove': '' },
   records: [],
   errors: [error],
 });
 
 const sortRecords = (records: readonly ContrastRecord[]): ContrastRecord[] =>
-  [...records].sort((left, right) => {
-    const leftKey = [
+  [...records].sort((left, right) =>
+    [
       left.theme,
       left.sourceLanguage,
       left.sourceCodeBlockId,
       left.sourceLineIndex.toString().padStart(6, '0'),
       left.sourceElementPath,
-      left.foregroundOwner,
+      left.paletteSlot ?? 'unexpected',
       left.state,
-    ].join('\u0000');
-    const rightKey = [
-      right.theme,
-      right.sourceLanguage,
-      right.sourceCodeBlockId,
-      right.sourceLineIndex.toString().padStart(6, '0'),
-      right.sourceElementPath,
-      right.foregroundOwner,
-      right.state,
-    ].join('\u0000');
-    return leftKey.localeCompare(rightKey);
-  });
+    ]
+      .join('\u0000')
+      .localeCompare(
+        [
+          right.theme,
+          right.sourceLanguage,
+          right.sourceCodeBlockId,
+          right.sourceLineIndex.toString().padStart(6, '0'),
+          right.sourceElementPath,
+          right.paletteSlot ?? 'unexpected',
+          right.state,
+        ].join('\u0000'),
+      ),
+  );
 
 const writeFormalArtifact = async (
   artifactPath: string,
@@ -224,7 +204,7 @@ const writeFormalArtifact = async (
   await rename(temporaryPath, artifactPath);
 };
 
-test('production code surface foregrounds maintain contrast across all semantic line states', async ({
+test('production code surface palette slots maintain contrast across all semantic line states', async ({
   browser,
   baseURL,
 }, testInfo) => {
@@ -237,10 +217,7 @@ test('production code surface foregrounds maintain contrast across all semantic 
   for (const theme of THEMES) {
     let context: Awaited<ReturnType<typeof browser.newContext>> | null = null;
     try {
-      context = await browser.newContext({
-        ...(baseURL ? { baseURL } : {}),
-        colorScheme: theme,
-      });
+      context = await browser.newContext({ ...(baseURL ? { baseURL } : {}), colorScheme: theme });
       await context.addInitScript(
         ({ storageKey, requestedTheme }) => {
           window.localStorage.setItem(storageKey, requestedTheme);
@@ -260,7 +237,8 @@ test('production code surface foregrounds maintain contrast across all semantic 
           readonly inventoryFixtures: readonly FixtureDefinition[];
           readonly stateFixtureFilename: string;
           readonly expectedBlocks: readonly string[];
-          readonly expectedReplacementHexes: readonly string[];
+          readonly palette: Readonly<Record<PaletteSlot, string>>;
+          readonly paletteSlots: readonly PaletteSlot[];
           readonly states: readonly ContrastState[];
         }
       >(
@@ -271,7 +249,8 @@ test('production code surface foregrounds maintain contrast across all semantic 
           inventoryFixtures,
           stateFixtureFilename,
           expectedBlocks,
-          expectedReplacementHexes,
+          palette,
+          paletteSlots,
           states,
         }) => {
           interface RgbaColor {
@@ -280,20 +259,17 @@ test('production code surface foregrounds maintain contrast across all semantic 
             readonly b: number;
             readonly a: number;
           }
-
           interface ForegroundOccurrence {
             readonly sourceLanguage: FixtureDefinition['language'];
             readonly sourceCodeBlockId: string;
             readonly sourceLineIndex: number;
             readonly sourceElementPath: string;
-            readonly foregroundSource: 'token-inline' | 'inherited-computed';
             readonly foregroundOwner: ForegroundOwner;
-            readonly rawForegroundCss: string | null;
+            readonly paletteSlot: PaletteSlot | null;
+            readonly rawForegroundCss: string;
             readonly normalizedRawForegroundRgb: string | null;
-            readonly themeDefaultForegroundCss: string;
-            readonly normalizedThemeDefaultForegroundRgb: string;
-            readonly matchedReplacementOutputRgb: string | null;
-            readonly foregroundCss: string;
+            readonly computedForegroundCss: string;
+            readonly normalizedComputedForegroundRgb: string | null;
           }
 
           const errors: string[] = [];
@@ -301,7 +277,6 @@ test('production code surface foregrounds maintain contrast across all semantic 
           canvas.width = 1;
           canvas.height = 1;
           const canvasContext = canvas.getContext('2d', { willReadFrequently: true });
-
           const parseColor = (cssColor: string): RgbaColor | null => {
             if (!canvasContext || cssColor.trim().length === 0) return null;
             canvasContext.clearRect(0, 0, 1, 1);
@@ -314,43 +289,36 @@ test('production code surface foregrounds maintain contrast across all semantic 
             const [r = 0, g = 0, b = 0, alpha = 0] = canvasContext.getImageData(0, 0, 1, 1).data;
             return { r, g, b, a: alpha / 255 };
           };
-
           const composite = (foreground: RgbaColor, background: RgbaColor): RgbaColor => {
             const alpha = foreground.a + background.a * (1 - foreground.a);
             if (alpha <= 0) return { r: 0, g: 0, b: 0, a: 0 };
             return {
               r:
-                (foreground.r * foreground.a +
-                  background.r * background.a * (1 - foreground.a)) /
+                (foreground.r * foreground.a + background.r * background.a * (1 - foreground.a)) /
                 alpha,
               g:
-                (foreground.g * foreground.a +
-                  background.g * background.a * (1 - foreground.a)) /
+                (foreground.g * foreground.a + background.g * background.a * (1 - foreground.a)) /
                 alpha,
               b:
-                (foreground.b * foreground.a +
-                  background.b * background.a * (1 - foreground.a)) /
+                (foreground.b * foreground.a + background.b * background.a * (1 - foreground.a)) /
                 alpha,
               a: alpha,
             };
           };
-
           const rgbString = (color: RgbaColor): string =>
             `rgb(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)})`;
-
           const opaqueRgb = (cssColor: string, label: string): string | null => {
             const parsed = parseColor(cssColor);
             if (!parsed) {
-              errors.push(`${label}: Canvas could not parse ${JSON.stringify(cssColor)}.`);
+              errors.push(`${label}: color parse failed.`);
               return null;
             }
             if (parsed.a < 0.999) {
-              errors.push(`${label}: expected an opaque color, received alpha ${parsed.a.toFixed(4)}.`);
+              errors.push(`${label}: expected opaque color.`);
               return null;
             }
             return rgbString(parsed);
           };
-
           const finalBackgroundFor = (element: Element, label: string): RgbaColor | null => {
             const ancestors: Element[] = [];
             let current: Element | null = element;
@@ -362,18 +330,17 @@ test('production code surface foregrounds maintain contrast across all semantic 
             for (const ancestor of ancestors) {
               const layer = parseColor(getComputedStyle(ancestor).backgroundColor);
               if (!layer) {
-                errors.push(`${label}: could not parse ${ancestor.tagName} background.`);
+                errors.push(`${label}: background parse failed.`);
                 return null;
               }
               result = composite(layer, result);
             }
             if (result.a < 0.999) {
-              errors.push(`${label}: final background is not opaque (alpha ${result.a.toFixed(4)}).`);
+              errors.push(`${label}: final background is not opaque.`);
               return null;
             }
             return result;
           };
-
           const relativeLuminance = (color: RgbaColor): number => {
             const channel = (value: number): number => {
               const normalized = value / 255;
@@ -381,9 +348,10 @@ test('production code surface foregrounds maintain contrast across all semantic 
                 ? normalized / 12.92
                 : ((normalized + 0.055) / 1.055) ** 2.4;
             };
-            return 0.2126 * channel(color.r) + 0.7152 * channel(color.g) + 0.0722 * channel(color.b);
+            return (
+              0.2126 * channel(color.r) + 0.7152 * channel(color.g) + 0.0722 * channel(color.b)
+            );
           };
-
           const contrastRatio = (foreground: RgbaColor, background: RgbaColor): number => {
             const foregroundLuminance = relativeLuminance(foreground);
             const backgroundLuminance = relativeLuminance(background);
@@ -392,7 +360,6 @@ test('production code surface foregrounds maintain contrast across all semantic 
               (Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
             );
           };
-
           const elementPath = (element: Element, root: Element): string => {
             const parts: string[] = [];
             let current: Element | null = element;
@@ -417,35 +384,7 @@ test('production code surface foregrounds maintain contrast across all semantic 
             themeState.resolvedTheme !== activeTheme ||
             themeState.colorScheme !== activeTheme
           ) {
-            errors.push(
-              `Theme contract mismatch for ${activeTheme}: preference=${String(themeState.preference)}, ` +
-                `resolved=${String(themeState.resolvedTheme)}, color-scheme=${themeState.colorScheme}.`,
-            );
-            return {
-              theme: activeTheme,
-              themeState,
-              resolvedBlockCounts: Object.fromEntries(
-                expectedBlocks.map((filename) => [filename, 0]),
-              ),
-              expectedReplacementOutputs: [],
-              observedReplacementOutputs: [],
-              missingReplacementOutputs: [],
-              replacementOutputStateCoverage: {},
-              requiredForegroundOwnerCounts: {
-                'replaced-token': 0,
-                'theme-default-token': 0,
-                'unreplaced-token': 0,
-              },
-              inheritedTextCount: 0,
-              stateBackgrounds: {
-                normal: '',
-                highlight: '',
-                'diff-add': '',
-                'diff-remove': '',
-              },
-              records: [],
-              errors,
-            };
+            errors.push(`${activeTheme}: theme contract mismatch.`);
           }
 
           const resolvedBlockCounts = Object.fromEntries(
@@ -456,14 +395,17 @@ test('production code surface foregrounds maintain contrast across all semantic 
               ).length,
             ]),
           );
-
-          const expectedReplacementOutputs = expectedReplacementHexes
-            .flatMap((hex, index) => {
-              const normalized = opaqueRgb(hex, `${activeTheme} expected replacement ${index.toString()}`);
-              return normalized ? [normalized] : [];
-            })
-            .filter((value, index, values) => values.indexOf(value) === index)
-            .sort();
+          const paletteRgbBySlot = Object.fromEntries(
+            paletteSlots.map((slot) => [
+              slot,
+              opaqueRgb(palette[slot], `${activeTheme}/${slot} palette`) ?? '',
+            ]),
+          ) as Record<PaletteSlot, string>;
+          if (new Set(Object.values(paletteRgbBySlot)).size !== paletteSlots.length) {
+            errors.push(`${activeTheme}: palette colors are not uniquely reversible.`);
+          }
+          const slotsForRgb = (rgb: string | null): PaletteSlot[] =>
+            rgb ? paletteSlots.filter((slot) => paletteRgbBySlot[slot] === rgb) : [];
 
           const stateBackgroundColors: Partial<Record<ContrastState, RgbaColor>> = {};
           const stateBackgrounds: Record<ContrastState, string> = {
@@ -472,7 +414,6 @@ test('production code surface foregrounds maintain contrast across all semantic 
             'diff-add': '',
             'diff-remove': '',
           };
-
           const stateBlocks = document.querySelectorAll(
             `pre[data-code-block][data-code-filename="${CSS.escape(stateFixtureFilename)}"]`,
           );
@@ -508,7 +449,7 @@ test('production code surface foregrounds maintain contrast across all semantic 
                 errors.push(`${activeTheme}: missing ${state} state line.`);
                 continue;
               }
-              const background = finalBackgroundFor(line, `${activeTheme} ${state}`);
+              const background = finalBackgroundFor(line, `${activeTheme}/${state}`);
               if (background) {
                 stateBackgroundColors[state] = background;
                 stateBackgrounds[state] = rgbString(background);
@@ -518,13 +459,11 @@ test('production code surface foregrounds maintain contrast across all semantic 
 
           const activeRawProperty = activeTheme === 'light' ? 'color' : '--shiki-dark';
           const occurrences: ForegroundOccurrence[] = [];
-          const requiredForegroundOwnerCounts: Record<RequiredForegroundOwner, number> = {
-            'replaced-token': 0,
-            'theme-default-token': 0,
-            'unreplaced-token': 0,
+          const foregroundOwnerCounts: Record<ForegroundOwner, number> = {
+            'base-foreground': 0,
+            'palette-slot': 0,
+            'unexpected-foreground': 0,
           };
-          let inheritedTextCount = 0;
-
           for (const fixture of inventoryFixtures) {
             const blocks = document.querySelectorAll<HTMLElement>(
               `pre[data-code-block][data-code-filename="${CSS.escape(fixture.filename)}"]`,
@@ -536,164 +475,98 @@ test('production code surface foregrounds maintain contrast across all semantic 
               continue;
             }
             const block = blocks[0];
-            const themeDefaultForegroundCss = block.style
-              .getPropertyValue(activeRawProperty)
-              .trim();
-            const normalizedThemeDefaultForegroundRgb = opaqueRgb(
-              themeDefaultForegroundCss,
-              `${activeTheme} ${fixture.filename} theme default`,
-            );
-            if (!normalizedThemeDefaultForegroundRgb) continue;
-
             const lineElements = [...block.querySelectorAll('.line')];
-            const styledTokens = [...block.querySelectorAll<HTMLElement>('span[style]')].filter(
+            const tokens = [...block.querySelectorAll<HTMLElement>('span[style]')].filter(
               (token) => token.style.getPropertyValue(activeRawProperty).trim().length > 0,
             );
-            for (const token of styledTokens) {
+            for (const token of tokens) {
               const rawForegroundCss = token.style.getPropertyValue(activeRawProperty).trim();
               const normalizedRawForegroundRgb = opaqueRgb(
                 rawForegroundCss,
-                `${activeTheme} ${fixture.filename} token`,
+                `${activeTheme}/${fixture.filename}/raw`,
               );
-              if (!normalizedRawForegroundRgb) continue;
-              const matchedReplacementOutputRgb = expectedReplacementOutputs.includes(
-                normalizedRawForegroundRgb,
-              )
-                ? normalizedRawForegroundRgb
-                : null;
-              const foregroundOwner: RequiredForegroundOwner = matchedReplacementOutputRgb
-                ? 'replaced-token'
-                : normalizedRawForegroundRgb === normalizedThemeDefaultForegroundRgb
-                  ? 'theme-default-token'
-                  : 'unreplaced-token';
-              requiredForegroundOwnerCounts[foregroundOwner] += 1;
+              const computedForegroundCss = getComputedStyle(token).color;
+              const normalizedComputedForegroundRgb = opaqueRgb(
+                computedForegroundCss,
+                `${activeTheme}/${fixture.filename}/computed`,
+              );
+              const rawSlots = slotsForRgb(normalizedRawForegroundRgb);
+              const computedSlots = slotsForRgb(normalizedComputedForegroundRgb);
+              const paletteSlot =
+                rawSlots.length === 1 &&
+                computedSlots.length === 1 &&
+                rawSlots[0] === computedSlots[0]
+                  ? (rawSlots[0] ?? null)
+                  : null;
+              const foregroundOwner: ForegroundOwner = paletteSlot
+                ? paletteSlot === 'base'
+                  ? 'base-foreground'
+                  : 'palette-slot'
+                : 'unexpected-foreground';
+              foregroundOwnerCounts[foregroundOwner] += 1;
               const line = token.closest('.line');
               occurrences.push({
                 sourceLanguage: fixture.language,
                 sourceCodeBlockId: fixture.filename,
                 sourceLineIndex: line ? lineElements.indexOf(line) : -1,
                 sourceElementPath: elementPath(token, block),
-                foregroundSource: 'token-inline',
                 foregroundOwner,
+                paletteSlot,
                 rawForegroundCss,
                 normalizedRawForegroundRgb,
-                themeDefaultForegroundCss,
-                normalizedThemeDefaultForegroundRgb,
-                matchedReplacementOutputRgb,
-                foregroundCss: getComputedStyle(token).color,
+                computedForegroundCss,
+                normalizedComputedForegroundRgb,
               });
-            }
-
-            const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
-            let textNode = walker.nextNode();
-            while (textNode) {
-              const parent = textNode.parentElement;
-              const styledAncestor = parent?.closest<HTMLElement>('span[style]');
-              const line = parent?.closest('.line') ?? null;
-              if (
-                parent &&
-                line &&
-                textNode.textContent?.trim() &&
-                !styledAncestor?.style.getPropertyValue(activeRawProperty).trim()
-              ) {
-                inheritedTextCount += 1;
-                occurrences.push({
-                  sourceLanguage: fixture.language,
-                  sourceCodeBlockId: fixture.filename,
-                  sourceLineIndex: lineElements.indexOf(line),
-                  sourceElementPath: `${elementPath(parent, block)} > text()`,
-                  foregroundSource: 'inherited-computed',
-                  foregroundOwner: 'inherited-text',
-                  rawForegroundCss: null,
-                  normalizedRawForegroundRgb: null,
-                  themeDefaultForegroundCss,
-                  normalizedThemeDefaultForegroundRgb,
-                  matchedReplacementOutputRgb: null,
-                  foregroundCss: getComputedStyle(parent).color,
-                });
-              }
-              textNode = walker.nextNode();
             }
           }
 
-          const observedReplacementOutputs = expectedReplacementOutputs
-            .filter((expected) =>
-              occurrences.some(
-                (occurrence) => occurrence.normalizedRawForegroundRgb === expected,
-              ),
-            )
-            .sort();
-          const missingReplacementOutputs = expectedReplacementOutputs.filter(
-            (expected) => !observedReplacementOutputs.includes(expected),
-          );
-          const records: ContrastRecord[] = [];
-          const replacementOutputStateCoverage = Object.fromEntries(
-            expectedReplacementOutputs.map((output) => [
-              output,
+          const slotStateCoverage = Object.fromEntries(
+            paletteSlots.map((slot) => [
+              slot,
               { normal: 0, highlight: 0, 'diff-add': 0, 'diff-remove': 0 },
             ]),
-          ) as Record<string, Record<ContrastState, number>>;
-
+          ) as Record<PaletteSlot, Record<ContrastState, number>>;
+          const records: ContrastRecord[] = [];
           for (const occurrence of occurrences) {
-            const foreground = parseColor(occurrence.foregroundCss);
-            if (!foreground) {
-              errors.push(
-                `${activeTheme} ${occurrence.sourceCodeBlockId} ${occurrence.sourceElementPath}: ` +
-                  `could not parse computed foreground ${occurrence.foregroundCss}.`,
-              );
-              continue;
-            }
+            const foreground = parseColor(occurrence.computedForegroundCss);
+            if (!foreground) continue;
             for (const state of states) {
               const background = stateBackgroundColors[state];
               if (!background) continue;
               const finalForeground = composite(foreground, background);
               const ratio = contrastRatio(finalForeground, background);
-              const record: ContrastRecord = {
+              records.push({
                 theme: activeTheme,
                 sourceLanguage: occurrence.sourceLanguage,
                 sourceCodeBlockId: occurrence.sourceCodeBlockId,
                 sourceLineIndex: occurrence.sourceLineIndex,
                 sourceElementPath: occurrence.sourceElementPath,
-                foregroundSource: occurrence.foregroundSource,
                 foregroundOwner: occurrence.foregroundOwner,
+                paletteSlot: occurrence.paletteSlot,
                 rawForegroundCss: occurrence.rawForegroundCss,
                 normalizedRawForegroundRgb: occurrence.normalizedRawForegroundRgb,
-                themeDefaultForegroundCss: occurrence.themeDefaultForegroundCss,
-                normalizedThemeDefaultForegroundRgb:
-                  occurrence.normalizedThemeDefaultForegroundRgb,
-                matchedReplacementOutputRgb: occurrence.matchedReplacementOutputRgb,
+                computedForegroundCss: occurrence.computedForegroundCss,
+                normalizedComputedForegroundRgb: occurrence.normalizedComputedForegroundRgb,
                 state,
-                foregroundCss: occurrence.foregroundCss,
                 finalForegroundRgb: rgbString(finalForeground),
                 finalBackgroundRgb: rgbString(background),
                 ratio: Number(ratio.toFixed(4)),
                 result: ratio >= 4.5 ? 'pass' : 'fail',
-              };
-              records.push(record);
-              if (occurrence.matchedReplacementOutputRgb) {
-                const outputCoverage =
-                  replacementOutputStateCoverage[occurrence.matchedReplacementOutputRgb];
-                if (outputCoverage) {
-                  outputCoverage[state] += 1;
-                } else {
-                  errors.push(
-                    `${activeTheme}: missing coverage bucket for ${occurrence.matchedReplacementOutputRgb}.`,
-                  );
-                }
-              }
+              });
+              if (occurrence.paletteSlot) slotStateCoverage[occurrence.paletteSlot][state] += 1;
             }
           }
-
+          const usedPaletteSlots = paletteSlots.filter((slot) =>
+            Object.values(slotStateCoverage[slot]).some((count) => count > 0),
+          );
           return {
             theme: activeTheme,
             themeState,
             resolvedBlockCounts,
-            expectedReplacementOutputs,
-            observedReplacementOutputs,
-            missingReplacementOutputs,
-            replacementOutputStateCoverage,
-            requiredForegroundOwnerCounts,
-            inheritedTextCount,
+            paletteRgbBySlot,
+            usedPaletteSlots,
+            slotStateCoverage,
+            foregroundOwnerCounts,
             stateBackgrounds,
             records,
             errors,
@@ -706,7 +579,8 @@ test('production code surface foregrounds maintain contrast across all semantic 
           inventoryFixtures: INVENTORY_FIXTURES,
           stateFixtureFilename: STATE_FIXTURE_FILENAME,
           expectedBlocks: EXPECTED_BLOCKS,
-          expectedReplacementHexes: expectedReplacementHexesForTheme(theme),
+          palette: ROUAULT_SYNTAX_PALETTES[theme],
+          paletteSlots: PALETTE_SLOTS,
           states: STATES,
         },
       );
@@ -734,10 +608,7 @@ test('production code surface foregrounds maintain contrast across all semantic 
     measurements.map((measurement) => [measurement.theme, measurement]),
   ) as Record<ContrastTheme, ThemeMeasurement>;
   const records = sortRecords(measurements.flatMap((measurement) => measurement.records));
-  const errors = [
-    ...lifecycleErrors,
-    ...measurements.flatMap((measurement) => measurement.errors),
-  ];
+  const errors = [...lifecycleErrors, ...measurements.flatMap((measurement) => measurement.errors)];
   const coverage: ContrastCoverage = {
     expectedBlocks: EXPECTED_BLOCKS,
     resolvedBlocks: {
@@ -747,29 +618,18 @@ test('production code surface foregrounds maintain contrast across all semantic 
     themes: measurements.map((measurement) => measurement.themeState),
     languages: [...INVENTORY_FIXTURES.map((fixture) => fixture.language)],
     states: STATES,
-    requiredForegroundOwnersByTheme: {
-      light: measurementByTheme.light.requiredForegroundOwnerCounts,
-      dark: measurementByTheme.dark.requiredForegroundOwnerCounts,
+    expectedPaletteSlots: PALETTE_SLOTS,
+    usedPaletteSlotsByTheme: {
+      light: measurementByTheme.light.usedPaletteSlots,
+      dark: measurementByTheme.dark.usedPaletteSlots,
     },
-    optionalInheritedTextCountByTheme: {
-      light: measurementByTheme.light.inheritedTextCount,
-      dark: measurementByTheme.dark.inheritedTextCount,
+    foregroundOwnerCountsByTheme: {
+      light: measurementByTheme.light.foregroundOwnerCounts,
+      dark: measurementByTheme.dark.foregroundOwnerCounts,
     },
-    expectedReplacementOutputsByTheme: {
-      light: measurementByTheme.light.expectedReplacementOutputs,
-      dark: measurementByTheme.dark.expectedReplacementOutputs,
-    },
-    observedReplacementOutputsByTheme: {
-      light: measurementByTheme.light.observedReplacementOutputs,
-      dark: measurementByTheme.dark.observedReplacementOutputs,
-    },
-    missingReplacementOutputsByTheme: {
-      light: measurementByTheme.light.missingReplacementOutputs,
-      dark: measurementByTheme.dark.missingReplacementOutputs,
-    },
-    replacementOutputStateCoverageByTheme: {
-      light: measurementByTheme.light.replacementOutputStateCoverage,
-      dark: measurementByTheme.dark.replacementOutputStateCoverage,
+    slotStateCoverageByTheme: {
+      light: measurementByTheme.light.slotStateCoverage,
+      dark: measurementByTheme.dark.slotStateCoverage,
     },
     stateBackgroundsByTheme: {
       light: measurementByTheme.light.stateBackgrounds,
@@ -800,25 +660,32 @@ test('production code surface foregrounds maintain contrast across all semantic 
 
   for (const theme of THEMES) {
     for (const filename of EXPECTED_BLOCKS) {
-      expect(
-        coverage.resolvedBlocks[theme][filename],
-        `${theme} fixture count for ${filename}`,
-      ).toBe(1);
-    }
-  }
-
-  for (const theme of THEMES) {
-    expect(coverage.themes.some((item) => item.requestedTheme === theme)).toBe(true);
-    for (const state of STATES) {
-      expect(coverage.stateBackgroundsByTheme[theme][state], `${theme}/${state} background`).not.toBe(
-        '',
+      expect(coverage.resolvedBlocks[theme][filename], `${theme}/${filename} fixture count`).toBe(
+        1,
       );
     }
-    for (const owner of REQUIRED_FOREGROUND_OWNERS) {
-      expect(
-        coverage.requiredForegroundOwnersByTheme[theme][owner],
-        `${theme}/${owner} coverage`,
-      ).toBeGreaterThan(0);
+    expect(coverage.usedPaletteSlotsByTheme[theme], `${theme} palette coverage`).toEqual(
+      PALETTE_SLOTS,
+    );
+    expect(
+      coverage.foregroundOwnerCountsByTheme[theme]['base-foreground'],
+      `${theme} base coverage`,
+    ).toBeGreaterThan(0);
+    expect(
+      coverage.foregroundOwnerCountsByTheme[theme]['palette-slot'],
+      `${theme} accent coverage`,
+    ).toBeGreaterThan(0);
+    expect(
+      coverage.foregroundOwnerCountsByTheme[theme]['unexpected-foreground'],
+      `${theme} unexpected foreground`,
+    ).toBe(0);
+    for (const slot of PALETTE_SLOTS) {
+      for (const state of STATES) {
+        expect(
+          coverage.slotStateCoverageByTheme[theme][slot][state],
+          `${theme}/${slot}/${state}`,
+        ).toBeGreaterThan(0);
+      }
     }
     for (const language of coverage.languages) {
       expect(
@@ -826,35 +693,26 @@ test('production code surface foregrounds maintain contrast across all semantic 
         `${theme}/${language} foreground coverage`,
       ).toBe(true);
     }
-  }
-
-  for (const theme of THEMES) {
-    expect(coverage.expectedReplacementOutputsByTheme[theme], `${theme} expected outputs`).toHaveLength(
-      6,
-    );
-    expect(coverage.missingReplacementOutputsByTheme[theme], `${theme} missing outputs`).toEqual([]);
-  }
-
-  for (const theme of THEMES) {
-    for (const output of coverage.expectedReplacementOutputsByTheme[theme]) {
-      const stateCoverage = coverage.replacementOutputStateCoverageByTheme[theme][output];
-      expect(stateCoverage, `${theme}/${output} state coverage`).toBeDefined();
-      for (const state of STATES) {
-        expect(stateCoverage?.[state] ?? 0, `${theme}/${output}/${state}`).toBeGreaterThan(0);
-      }
-    }
-  }
-
-  expect(errors).toEqual([]);
-  expect(records.length).toBeGreaterThan(0);
-
-  const failingRecords = records.filter((record) => record.result === 'fail' || record.ratio < 4.5);
-  expect(failingRecords).toEqual([]);
-
-  for (const theme of THEMES) {
     expect(
       new Set(Object.values(coverage.stateBackgroundsByTheme[theme])).size,
       `${theme} semantic state backgrounds must not collapse`,
     ).toBe(STATES.length);
+  }
+
+  expect(errors).toEqual([]);
+  expect(records.length).toBeGreaterThan(0);
+  expect(records.filter((record) => record.result === 'fail' || record.ratio < 4.5)).toEqual([]);
+
+  for (const theme of THEMES) {
+    for (const slot of PALETTE_SLOTS) {
+      const slotRecords = records.filter(
+        (record) => record.theme === theme && record.paletteSlot === slot,
+      );
+      expect(slotRecords.length, `${theme}/${slot} measurement count`).toBeGreaterThan(0);
+      expect(
+        Math.min(...slotRecords.map((record) => record.ratio)),
+        `${theme}/${slot} minimum contrast`,
+      ).toBeGreaterThanOrEqual(5);
+    }
   }
 });

@@ -63,8 +63,8 @@ describe('rehypeDisallowDangerousProps', () => {
           type: 'element',
           tagName: 'pre',
           properties: {
-            className: ['shiki', 'shiki-themes', 'github-light', 'github-dark'],
-            style: 'background-color:#fff;color:#111',
+            className: ['shiki', 'shiki-themes', 'rouault-light', 'rouault-dark'],
+            style: 'background-color:#f2f2f2;color:#2a2e33',
           },
           children: [
             {
@@ -75,7 +75,7 @@ describe('rehypeDisallowDangerousProps', () => {
                 {
                   type: 'element',
                   tagName: 'span',
-                  properties: { style: 'color:#8f4a52;--shiki-dark:#d08b90' },
+                  properties: { style: 'color:#764b47;--shiki-dark:#c1908c' },
                   children: [],
                 },
               ],
@@ -99,8 +99,8 @@ describe('rehypeDisallowDangerousProps', () => {
           type: 'element',
           tagName: 'pre',
           properties: {
-            class: 'shiki shiki-themes github-light github-dark',
-            style: 'background-color:#fff;color:#111',
+            class: 'shiki shiki-themes rouault-light rouault-dark',
+            style: 'background-color:#f2f2f2;color:#2a2e33',
           },
           children: [
             {
