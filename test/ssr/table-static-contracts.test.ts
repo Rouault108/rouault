@@ -86,24 +86,6 @@ const splitSelectorPreludeListAtTopLevelComma = (selectorList: string): string[]
   return selectors;
 };
 
-const normalizeSelectorWhitespace = (selector: string): string => selector.replace(/\s+/gu, ' ').trim();
-
-const tableScrollbarSelectorScopes = [
-  ':is(.prose, .about-prose) > [data-table-root]',
-  ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]",
-  ':is(.prose, .about-prose) > [data-table-scroll-rail]',
-  ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]",
-] as const;
-
-const tableScrollbarPseudoPattern =
-  /::-(?:webkit-scrollbar|webkit-scrollbar-track|webkit-scrollbar-corner|webkit-scrollbar-thumb|webkit-scrollbar-button)/u;
-
-const bareTableScrollbarSelectorPattern =
-  /(?:^|,)\s*::-(?:webkit-scrollbar|webkit-scrollbar-track|webkit-scrollbar-corner|webkit-scrollbar-thumb|webkit-scrollbar-button)(?:\b|:)/u;
-
-const directTableScrollbarPseudoPattern =
-  /\[data-table-(?:root|scroll-rail)\]::-(?:webkit-scrollbar|webkit-scrollbar-track|webkit-scrollbar-corner|webkit-scrollbar-thumb|webkit-scrollbar-button)(?:\b|:)/u;
-
 describe('table static css contracts', () => {
   it('prose 内 table root が static scroll container / focus-visible / reduced-motion 契約を保持すること', () => {
     expectCssIncludes(tableCss, [
@@ -114,8 +96,6 @@ describe('table static css contracts', () => {
       'box-sizing: border-box',
       'overflow-x: auto',
       'overflow-y: visible',
-      'scrollbar-width: thin',
-      'scrollbar-color: var(--_table-scrollbar-thumb) var(--_table-scrollbar-track)',
       '-webkit-text-size-adjust: none',
       'text-size-adjust: none',
       'outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color',
@@ -176,81 +156,22 @@ describe('table static css contracts', () => {
     }
   });
 
-  it('table root / top rail は thin native scrollbar の視覚契約を保持すること', () => {
+  it('table root / top rail は native scrollbar rendering を UA / OS へ委譲すること', () => {
     expectCssIncludes(tableCss, [
       ':is(.prose, .about-prose) > [data-table-root]',
       ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]",
       ':is(.prose, .about-prose) > [data-table-scroll-rail]',
       ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail]",
-      '--_table-scrollbar-size: 8px',
-      '--_table-scrollbar-track: transparent',
-      '--_table-scrollbar-thumb: color-mix(',
-      'var(--scrollbar-thumb, var(--fg-control-affordance, oklch(60% 0 0))) 48%',
-      'scrollbar-width: thin',
-      'scrollbar-color: var(--_table-scrollbar-thumb) var(--_table-scrollbar-track)',
-      '@media (forced-colors: active)',
-      'scrollbar-color: auto',
-      'background-color: CanvasText',
-      'border-color: Canvas',
-    ]);
-  });
-
-  it('table scrollbar WebKit 補助 selector と宣言は table root / top rail に限定されること', () => {
-    expectCssIncludes(tableCss, [
-      ':is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar',
-      ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-root]::-webkit-scrollbar",
-      'width: var(--_table-scrollbar-size)',
-      'height: var(--_table-scrollbar-size)',
-      ':is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar-track',
-      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-root]::-webkit-scrollbar-track",
-      ':is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar-corner',
-      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-root]::-webkit-scrollbar-corner",
-      ':is(.prose, .about-prose) > [data-table-root]::-webkit-scrollbar-thumb',
-      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-root]::-webkit-scrollbar-thumb",
-      'background-color: var(--_table-scrollbar-track)',
-      'background-color: var(--_table-scrollbar-thumb)',
-      'background-clip: content-box',
-      'border: 2px solid transparent',
-      ':is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar',
-      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-scroll-rail]::-webkit-scrollbar",
-      ':is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar-track',
-      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-scroll-rail]::-webkit-scrollbar-track",
-      ':is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar-corner',
-      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-scroll-rail]::-webkit-scrollbar-corner",
-      ':is(.prose, .about-prose) > [data-table-scroll-rail]::-webkit-scrollbar-thumb',
-      ":is(.prose, .about-prose)\n  > ui-tabs\n  > [slot='panel']\n  > [data-table-scroll-rail]::-webkit-scrollbar-thumb",
-      '[data-table-root]::-webkit-scrollbar-button',
-      '[data-table-scroll-rail]::-webkit-scrollbar-button',
-      'display: none',
-      'inline-size: 0',
-      'block-size: 0',
+      'overflow-x: auto',
+      'scrollbar-gutter: stable',
     ]);
 
-    const selectorLists = extractSelectorPreludeList(tableCss).filter((selectorList) =>
-      tableScrollbarPseudoPattern.test(selectorList),
-    );
-
-    expect(selectorLists.length).toBeGreaterThan(0);
-
-    for (const selectorList of selectorLists) {
-      expect(selectorList).not.toMatch(bareTableScrollbarSelectorPattern);
-
-      for (const selector of splitSelectorPreludeListAtTopLevelComma(selectorList)) {
-        const normalizedSelector = normalizeSelectorWhitespace(selector);
-        const isScopedToTableScrollbar = tableScrollbarSelectorScopes.some((scope) =>
-          normalizedSelector.startsWith(`${scope}::-webkit-scrollbar`),
-        );
-
-        expect(isScopedToTableScrollbar, normalizedSelector).toBe(true);
-        expect(normalizedSelector, normalizedSelector).toMatch(directTableScrollbarPseudoPattern);
-        expect(normalizedSelector, normalizedSelector).not.toMatch(
-          /\[data-table-(?:root|scroll-rail)\]\s+.+::-/u,
-        );
-        expect(normalizedSelector).not.toContain('html::-webkit-scrollbar');
-        expect(normalizedSelector).not.toContain('body::-webkit-scrollbar');
-        expect(normalizedSelector).not.toContain('ui-table');
-      }
-    }
+    expectCssExcludes(tableCss, [
+      'scrollbar-width:',
+      'scrollbar-color:',
+      '--_table-scrollbar-',
+      '::-webkit-scrollbar',
+    ]);
   });
 
   it('top scroll rail CSS は prose / about-prose 直下と ui-tabs panel 直下に限定されること', () => {
@@ -261,8 +182,7 @@ describe('table static css contracts', () => {
       'overflow-y: hidden',
       'block-size: 0.875rem',
       'margin-block: var(--space-1, 0.25rem) calc(var(--space-1, 0.25rem) * -1)',
-      'scrollbar-width: thin',
-      'scrollbar-color: var(--_table-scrollbar-thumb) var(--_table-scrollbar-track)',
+      'scrollbar-gutter: stable',
       ':is(.prose, .about-prose) > [data-table-scroll-rail] > [data-table-scroll-rail-spacer]',
       ":is(.prose, .about-prose) > ui-tabs > [slot='panel'] > [data-table-scroll-rail] > [data-table-scroll-rail-spacer]",
       'block-size: 1px',

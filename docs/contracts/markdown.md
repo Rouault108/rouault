@@ -120,7 +120,7 @@ Markdown出力層の`table`は、scrollable static table surfaceとして扱う�
 
 top auxiliary scroll railは、横溢れし、かつtop rail eligibilityを満たすMarkdown table rootに対するruntime enhancementであり、Markdown authoring APIではない。PCマウス操作時に表の途中から横位置を変えやすくする補助UIであり、SSR table構造やMarkdown入力記法を変更しない。eligibilityはruntimeが所有する表示・操作補助の判定であり、authoring syntaxやcontent metadataとして公開しない。
 
-- top rail eligibilityを満たさない横溢れ表ではtop railを生成しない。その場合、`data-table-root`本体のnative horizontal scrollbarとedge fadeを横スクロール可能性の正本にする。
+- top rail eligibilityを満たさない横溢れ表ではtop railを生成しない。その場合、`data-table-root`本体のnative horizontal scrollingとedge fadeを横scroll操作・affordanceの基盤とする。scrollbar rendering自体のownerはUA / OSである。
 - top railが生成される場合、focus可能な補助scroll regionであり、`role="region"`とaccessible nameを持つ。
 - top railが生成される場合、`aria-hidden="true"`を持たない。
 - top railが生成される場合、captionあり表ではcaption text由来のaccessible nameを持つ。
@@ -135,9 +135,9 @@ top auxiliary scroll railは、横溢れし、かつtop rail eligibilityを満�
 - top railはrow hover、row selection、row navigation、sort / filter、interactive grid化、sticky header、Library wide table viewを意味しない。
 - Phase3Bのtop railは、Phase1の`data-overflow` / `data-fade-left` / `data-fade-right` state属性とは別のruntime enhancementである。
 
-Markdown table rootと、表示される環境におけるtop auxiliary scroll railは、native scrollbarを`scrollbar-width: none`などで不可視化してはならない。横スクロール可能性と現在位置を読者が認識できるようにしつつ、読書面を過剰に分断しないthin / subtleなscrollbar視覚契約を持つ。
+Markdown table rootとtop auxiliary scroll railでは、native scrollbarをauthor CSSで不可視化または視覚的に再定義してはならない。scrollbarの太さ、配色、部品形状、classic / overlay、表示・自動非表示のタイミングはUA / OSが所有し、OSの「scrollbarを常時表示する」設定を尊重する。ブラウザー / OS間のscrollbar外観差は不具合ではない。
 
-このscrollbar視覚契約自体は、Markdown authoring APIやSSR table構造を変更しない。top railが生成される場合はfocus可能な補助scroll regionであり、row hover、row selection、row navigation、interactive grid化を意味しない。eligibilityを満たさない横溢れ表ではtop railを生成せず、補助regionのTab順序参加やrail用`aria-controls`生成も発生しない。coarse pointer環境では既存契約によりtop railが`display: none`になるため、常にtop railのnative scrollbarを表示する契約ではない。
+Rouaultはoverflow container、edge fade、focus可能なtable root、eligible tableのtop railを所有する。UA / OSがnative scrollbarを表示する場合、その描画と操作を妨げない。このcontainer / accessibility契約自体は、Markdown authoring APIやSSR table構造を変更しない。top railが生成される場合はfocus可能な補助scroll regionであり、row hover、row selection、row navigation、interactive grid化を意味しない。eligibilityを満たさない横溢れ表ではtop railを生成せず、補助regionのTab順序参加やrail用`aria-controls`生成も発生しない。coarse pointer環境では既存契約によりtop railが`display: none`になる。
 
 R3 Decision RecordとBreaking Change Gateは`docs/adr/table-top-scroll-rail-accessible-region.md`に保存する。
 

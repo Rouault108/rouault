@@ -43,6 +43,25 @@ active rail要素が切り替わる場合は、旧railのscroll listenerを解�
 
 state.railに紐づかないroot直前の既存railはactive railとして採用しない。未知railに付いている可能性のある旧listener ownershipを引き継がず、stale railとして削除する。
 
+## Amendment: Native Scrollbar Rendering Ownership
+
+- Request ID: `REQ-TABLE-NATIVE-SCROLLBAR-OWNERSHIP-001`
+- Handoff ID: `HO-TABLE-NATIVE-SCROLLBAR-OWNERSHIP-001`
+- Decision ID: `D-TABLE-NATIVE-SCROLLBAR-OWNERSHIP-001`
+- Gate ID: `G-TABLE-NATIVE-SCROLLBAR-OWNERSHIP-001`
+- Gate result: Passed
+- Decision status: Confirmed
+- Current owner: Rouault author CSS
+- Target owner: UA / OS
+
+Markdown table rootとtop auxiliary scroll railのscrollbar renderingを、Rouault author CSSからUA / OSへ委譲する。
+
+旧ownerの範囲として、root / railの表専用`scrollbar-width`、`scrollbar-color`、`--_table-scrollbar-*`custom property、`::-webkit-scrollbar*`rule、forced-colorsの表専用scrollbar paintingを削除する。browser-specific fallback、custom scrollbar、compatibility shimは採用しない。これらはUA / OSのnative renderingと利用者設定を上書きし、ブラウザー間の外観差をRouaultの保守対象へ持ち込むためである。
+
+Rouaultはroot / railのoverflow container、rootのfocus可能性、railのaccessible region、eligible-only generation、ARIA、Tab順序、root / railのscroll同期、edge fade、rail geometry、`scrollbar-gutter`を引き続き所有する。UA / OSがnative scrollbarを表示する場合、その描画と操作を妨げない。scrollbarの太さ、配色、部品形状、classic / overlay、表示・自動非表示のタイミングはUA / OSが所有し、OSの「scrollbarを常時表示する」設定を尊重する。ブラウザー / OS間の外観差は不具合として扱わない。
+
+PRE-2では、unexpected owner、関連untracked file、検索不能ファイル、root / railへ影響する残存author scrollbar rule、CSS-in-JS / runtime stylesheet生成経路がないこと、および変更を4ファイルへ限定できることが確認された。人間によるMinimal PRE-1ではChromeとFirefoxでnative scrollbarの発見可能性、mouse-only / keyboard操作、root / railのscroll同期、非clip、現行rail geometryでの操作可能性が確認された。Edgeは実装後manual Verificationで確認する。
+
 ## Rationale
 
 native overflow scroll containerを使うことで、既存のtable root scroll契約を保ったまま、上部にも同じ横scroll操作面を提供できる。railをaccessible auxiliary scroll regionとして公開することで、Tab到達可能なscroll領域であることを支援技術にも説明できる。
